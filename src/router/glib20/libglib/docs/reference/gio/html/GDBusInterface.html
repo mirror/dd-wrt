@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GDBusInterface: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="gdbus-convenience.html" title="High-level D-Bus Support">
 <link rel="prev" href="gio-Watching-Bus-Names.html" title="Watching Bus Names">
 <link rel="next" href="GDBusInterfaceSkeleton.html" title="GDBusInterfaceSkeleton">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GDBusInterface.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -79,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="GDBusInterface.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -106,7 +106,7 @@
 <a name="GDBusInterface.prerequisites"></a><h2>Prerequisites</h2>
 <p>
 GDBusInterface requires
- <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>.</p>
+ <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>.</p>
 </div>
 <div class="refsect1">
 <a name="GDBusInterface.implementations"></a><h2>Known Implementations</h2>
@@ -135,8 +135,8 @@ g_dbus_interface_get_info (<em class="parameter"><code><a class="link" href="GDB
 implemented by <em class="parameter"><code>interface_</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dbus-interface-get-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -150,7 +150,7 @@ implemented by <em class="parameter"><code>interface_</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.2.6"></a><h4>Returns</h4>
+<a name="g-dbus-interface-get-info.returns"></a><h4>Returns</h4>
 <p> A <a class="link" href="gio-D-Bus-Introspection-Data.html#GDBusInterfaceInfo"><span class="type">GDBusInterfaceInfo</span></a>. Do not free. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -169,8 +169,8 @@ the returned object is being used from other threads. See
 <a class="link" href="GDBusInterface.html#g-dbus-interface-dup-object" title="g_dbus_interface_dup_object ()"><code class="function">g_dbus_interface_dup_object()</code></a> for a thread-safe alternative.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.3.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dbus-interface-get-object.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -184,8 +184,8 @@ the returned object is being used from other threads. See
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.3.8"></a><h4>Returns</h4>
-<p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. The returned
+<a name="g-dbus-interface-get-object.returns"></a><h4>Returns</h4>
+<p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. The returned
 reference belongs to <em class="parameter"><code>interface_</code></em>
 and should not be freed. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -201,8 +201,8 @@ g_dbus_interface_dup_object (<em class="parameter"><code><a class="link" href="G
  belongs to, if any.</p>
 <p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_dbus_interface_get_object]</span></p>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.4.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dbus-interface-dup-object.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -216,9 +216,9 @@ g_dbus_interface_dup_object (<em class="parameter"><code><a class="link" href="G
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.4.7"></a><h4>Returns</h4>
-<p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. The returned
-reference should be freed with <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a>. </p>
+<a name="g-dbus-interface-dup-object.returns"></a><h4>Returns</h4>
+<p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. The returned
+reference should be freed with <a href="../gobject-The-Base-Object-Type.html#g-object-unref"><code class="function">g_object_unref()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
@@ -236,8 +236,8 @@ g_dbus_interface_set_object (<em class="parameter"><code><a class="link" href="G
  will hold a weak reference to <em class="parameter"><code>object</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.18.4.10.5.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dbus-interface-set-object.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -251,7 +251,7 @@ g_dbus_interface_set_object (<em class="parameter"><code><a class="link" href="G
 </tr>
 <tr>
 <td class="parameter_name"><p>object</p></td>
-<td class="parameter_description"><p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_description"><p> A <a class="link" href="GDBusObject.html" title="GDBusObject"><span class="type">GDBusObject</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 </tbody>
@@ -284,8 +284,8 @@ g_dbus_interface_set_object (<em class="parameter"><code><a class="link" href="G
 </pre>
 <p>Base type for D-Bus interfaces.</p>
 <div class="refsect3">
-<a name="id-1.4.18.4.11.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GDBusInterfaceIface.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -293,7 +293,7 @@ g_dbus_interface_set_object (<em class="parameter"><code><a class="link" href="G
 </colgroup>
 <tbody>
 <tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a> <em class="structfield"><code><a name="GDBusInterfaceIface.parent-iface"></a>parent_iface</code></em>;</p></td>
+<td class="struct_member_name"><p><a href="../gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a> <em class="structfield"><code><a name="GDBusInterfaceIface.parent-iface"></a>parent_iface</code></em>;</p></td>
 <td class="struct_member_description"><p>The parent interface.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -325,6 +325,6 @@ g_dbus_interface_set_object (<em class="parameter"><code><a class="link" href="G
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -64,7 +64,8 @@
  *
  * Normally, a schema has as fixed path that determines where the settings
  * are stored in the conceptual global tree of settings. However, schemas
- * can also be 'relocatable', i.e. not equipped with a fixed path. This is
+ * can also be '[relocatable][gsettings-relocatable]', i.e. not equipped with
+ * a fixed path. This is
  * useful e.g. when the schema describes an 'account', and you want to be
  * able to store a arbitrary number of accounts.
  *
@@ -83,22 +84,36 @@
  * the names must begin with a lowercase character, must not end
  * with a '-', and must not contain consecutive dashes.
  *
- * GSettings supports change notification.  The primary mechanism to
- * watch for changes is to connect to the "changed" signal.  You can
- * optionally watch for changes on only a single key by using a signal
- * detail.  Signals are only guaranteed to be emitted for a given key
- * after you have read the value of that key while a signal handler was
- * connected for that key.  Signals may or may not be emitted in the
- * case that the key "changed" to the value that you had previously
- * read.  Signals may be reported in additional cases as well and the
- * "changed" signal should really be treated as "may have changed".
- *
  * Similar to GConf, the default values in GSettings schemas can be
  * localized, but the localized values are stored in gettext catalogs
  * and looked up with the domain that is specified in the
- * gettext-domain attribute of the <schemalist> or <schema>
- * elements and the category that is specified in the l10n attribute of
- * the <key> element.
+ * `gettext-domain` attribute of the <schemalist> or <schema>
+ * elements and the category that is specified in the `l10n` attribute of
+ * the <default> element. The string which is translated includes all text in
+ * the <default> element, including any surrounding quotation marks.
+ *
+ * The `l10n` attribute must be set to `messages` or `time`, and sets the
+ * [locale category for
+ * translation](https://www.gnu.org/software/gettext/manual/html_node/Aspects.html#index-locale-categories-1).
+ * The `messages` category should be used by default; use `time` for
+ * translatable date or time formats. A translation comment can be added as an
+ * XML comment immediately above the <default> element — it is recommended to
+ * add these comments to aid translators understand the meaning and
+ * implications of the default value. An optional translation `context`
+ * attribute can be set on the <default> element to disambiguate multiple
+ * defaults which use the same string.
+ *
+ * For example:
+ * |[
+ *  <!-- Translators: A list of words which are not allowed to be typed, in
+ *       GVariant serialization syntax.
+ *       See: https://developer.gnome.org/glib/stable/gvariant-text.html -->
+ *  <default l10n='messages' context='Banned words'>['bad', 'words']</default>
+ * ]|
+ *
+ * Translations of default values must remain syntactically valid serialized
+ * #GVariants (e.g. retaining any surrounding quotation marks) or runtime
+ * errors will occur.
  *
  * GSettings uses schemas in a compact binary form that is created
  * by the [glib-compile-schemas][glib-compile-schemas]
@@ -228,6 +243,83 @@
  * automatically binds it to the writability of the bound setting.
  * If this 'magic' gets in the way, it can be suppressed with the
  * #G_SETTINGS_BIND_NO_SENSITIVITY flag.
+ *
+ * ## Relocatable schemas # {#gsettings-relocatable}
+ *
+ * A relocatable schema is one with no `path` attribute specified on its
+ * <schema> element. By using g_settings_new_with_path(), a #GSettings object
+ * can be instantiated for a relocatable schema, assigning a path to the
+ * instance. Paths passed to g_settings_new_with_path() will typically be
+ * constructed dynamically from a constant prefix plus some form of instance
+ * identifier; but they must still be valid GSettings paths. Paths could also
+ * be constant and used with a globally installed schema originating from a
+ * dependency library.
+ *
+ * For example, a relocatable schema could be used to store geometry information
+ * for different windows in an application. If the schema ID was
+ * `org.foo.MyApp.Window`, it could be instantiated for paths
+ * `/org/foo/MyApp/main/`, `/org/foo/MyApp/document-1/`,
+ * `/org/foo/MyApp/document-2/`, etc. If any of the paths are well-known
+ * they can be specified as <child> elements in the parent schema, e.g.:
+ * |[
+ * <schema id="org.foo.MyApp" path="/org/foo/MyApp/">
+ *   <child name="main" schema="org.foo.MyApp.Window"/>
+ * </schema>
+ * ]|
+ *
+ * ## Build system integration # {#gsettings-build-system}
+ *
+ * GSettings comes with autotools integration to simplify compiling and
+ * installing schemas. To add GSettings support to an application, add the
+ * following to your `configure.ac`:
+ * |[
+ * GLIB_GSETTINGS
+ * ]|
+ *
+ * In the appropriate `Makefile.am`, use the following snippet to compile and
+ * install the named schema:
+ * |[
+ * gsettings_SCHEMAS = org.foo.MyApp.gschema.xml
+ * EXTRA_DIST = $(gsettings_SCHEMAS)
+ *
+ * @GSETTINGS_RULES@
+ * ]|
+ *
+ * No changes are needed to the build system to mark a schema XML file for
+ * translation. Assuming it sets the `gettext-domain` attribute, a schema may
+ * be marked for translation by adding it to `POTFILES.in`, assuming gettext
+ * 0.19 is in use (the preferred method for translation):
+ * |[
+ * data/org.foo.MyApp.gschema.xml
+ * ]|
+ *
+ * Alternatively, if intltool 0.50.1 is in use:
+ * |[
+ * [type: gettext/gsettings]data/org.foo.MyApp.gschema.xml
+ * ]|
+ *
+ * GSettings will use gettext to look up translations for the <summary> and
+ * <description> elements, and also any <default> elements which have a `l10n`
+ * attribute set. Translations must not be included in the `.gschema.xml` file
+ * by the build system, for example by using intltool XML rules with a
+ * `.gschema.xml.in` template.
+ *
+ * If an enumerated type defined in a C header file is to be used in a GSettings
+ * schema, it can either be defined manually using an <enum> element in the
+ * schema XML, or it can be extracted automatically from the C header. This
+ * approach is preferred, as it ensures the two representations are always
+ * synchronised. To do so, add the following to the relevant `Makefile.am`:
+ * |[
+ * gsettings_ENUM_NAMESPACE = org.foo.MyApp
+ * gsettings_ENUM_FILES = my-app-enums.h my-app-misc.h
+ * ]|
+ *
+ * `gsettings_ENUM_NAMESPACE` specifies the schema namespace for the enum files,
+ * which are specified in `gsettings_ENUM_FILES`. This will generate a
+ * `org.foo.MyApp.enums.xml` file containing the extracted enums, which will be
+ * automatically included in the schema compilation, install and uninstall
+ * rules. It should not be committed to version control or included in
+ * `EXTRA_DIST`.
  */
 
 /**
@@ -245,8 +337,6 @@ struct _GSettingsPrivate
   GSettingsBackend *backend;
   GSettingsSchema *schema;
   gchar *path;
-
-  gboolean is_subscribed;
 
   GDelayedSettingsBackend *delayed;
 };
@@ -322,32 +412,6 @@ g_settings_real_writable_change_event (GSettings *settings,
 
   return FALSE;
 }
-
-static gboolean
-g_settings_has_signal_handlers (GSettings   *settings,
-                                const gchar *key)
-{
-  GSettingsClass *class = G_SETTINGS_GET_CLASS (settings);
-  GQuark keyq;
-
-  if (class->change_event != g_settings_real_change_event ||
-      class->writable_change_event != g_settings_real_writable_change_event)
-    return TRUE;
-
-  keyq = g_quark_from_string (key);
-
-  if (g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_WRITABLE_CHANGE_EVENT], 0, TRUE) ||
-      g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_WRITABLE_CHANGED], 0, TRUE) ||
-      g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_WRITABLE_CHANGED], keyq, TRUE) ||
-      g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_CHANGE_EVENT], 0, TRUE) ||
-      g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_CHANGED], 0, TRUE) ||
-      g_signal_has_handler_pending (settings, g_settings_signals[SIGNAL_CHANGED], keyq, TRUE))
-    return TRUE;
-
-  /* None of that?  Then surely nobody is watching.... */
-  return FALSE;
-}
-
 
 static void
 settings_backend_changed (GObject             *target,
@@ -615,6 +679,8 @@ g_settings_constructed (GObject *object)
   g_settings_backend_watch (settings->priv->backend,
                             &listener_vtable, G_OBJECT (settings),
                             settings->priv->main_context);
+  g_settings_backend_subscribe (settings->priv->backend,
+                                settings->priv->path);
 }
 
 static void
@@ -622,10 +688,8 @@ g_settings_finalize (GObject *object)
 {
   GSettings *settings = G_SETTINGS (object);
 
-  if (settings->priv->is_subscribed)
-    g_settings_backend_unsubscribe (settings->priv->backend,
-                                    settings->priv->path);
-
+  g_settings_backend_unsubscribe (settings->priv->backend,
+                                  settings->priv->path);
   g_main_context_unref (settings->priv->main_context);
   g_object_unref (settings->priv->backend);
   g_settings_schema_unref (settings->priv->schema);
@@ -666,9 +730,12 @@ g_settings_class_init (GSettingsClass *class)
    * This signal supports detailed connections.  You can connect to the
    * detailed signal "changed::x" in order to only receive callbacks
    * when key "x" changes.
+   *
+   * Note that @settings only emits this signal if you have read @key at
+   * least once while a signal handler was already connected for @key.
    */
   g_settings_signals[SIGNAL_CHANGED] =
-    g_signal_new ("changed", G_TYPE_SETTINGS,
+    g_signal_new (I_("changed"), G_TYPE_SETTINGS,
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   G_STRUCT_OFFSET (GSettingsClass, changed),
                   NULL, NULL, g_cclosure_marshal_VOID__STRING, G_TYPE_NONE,
@@ -701,7 +768,7 @@ g_settings_class_init (GSettingsClass *class)
    *          event. FALSE to propagate the event further.
    */
   g_settings_signals[SIGNAL_CHANGE_EVENT] =
-    g_signal_new ("change-event", G_TYPE_SETTINGS,
+    g_signal_new (I_("change-event"), G_TYPE_SETTINGS,
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GSettingsClass, change_event),
                   g_signal_accumulator_true_handled, NULL,
@@ -722,7 +789,7 @@ g_settings_class_init (GSettingsClass *class)
    * callbacks when the writability of "x" changes.
    */
   g_settings_signals[SIGNAL_WRITABLE_CHANGED] =
-    g_signal_new ("writable-changed", G_TYPE_SETTINGS,
+    g_signal_new (I_("writable-changed"), G_TYPE_SETTINGS,
                   G_SIGNAL_RUN_LAST | G_SIGNAL_DETAILED,
                   G_STRUCT_OFFSET (GSettingsClass, writable_changed),
                   NULL, NULL, g_cclosure_marshal_VOID__STRING, G_TYPE_NONE,
@@ -756,7 +823,7 @@ g_settings_class_init (GSettingsClass *class)
    *          event. FALSE to propagate the event further.
    */
   g_settings_signals[SIGNAL_WRITABLE_CHANGE_EVENT] =
-    g_signal_new ("writable-change-event", G_TYPE_SETTINGS,
+    g_signal_new (I_("writable-change-event"), G_TYPE_SETTINGS,
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GSettingsClass, writable_change_event),
                   g_signal_accumulator_true_handled, NULL,
@@ -868,7 +935,7 @@ g_settings_class_init (GSettingsClass *class)
    g_object_class_install_property (object_class, PROP_DELAY_APPLY,
      g_param_spec_boolean ("delay-apply",
                            P_("Delay-apply mode"),
-                           P_("Whether this settings object is in 'delay-apply' mode"),
+                           P_("Whether this settings object is in “delay-apply” mode"),
                            FALSE,
                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS));
 }
@@ -1089,13 +1156,6 @@ g_settings_read_from_backend (GSettings          *settings,
   GVariant *value;
   GVariant *fixup;
   gchar *path;
-
-  /* If we are not yet watching for changes, consider doing it now... */
-  if (!settings->priv->is_subscribed && g_settings_has_signal_handlers (settings, key->name))
-    {
-      g_settings_backend_subscribe (settings->priv->backend, settings->priv->path);
-      settings->priv->is_subscribed = TRUE;
-    }
 
   path = g_strconcat (settings->priv->path, key->name, NULL);
   if (user_value_only)
@@ -1817,6 +1877,62 @@ g_settings_set_int (GSettings   *settings,
 }
 
 /**
+ * g_settings_get_int64:
+ * @settings: a #GSettings object
+ * @key: the key to get the value for
+ *
+ * Gets the value that is stored at @key in @settings.
+ *
+ * A convenience variant of g_settings_get() for 64-bit integers.
+ *
+ * It is a programmer error to give a @key that isn't specified as
+ * having a int64 type in the schema for @settings.
+ *
+ * Returns: a 64-bit integer
+ *
+ * Since: 2.50
+ */
+gint64
+g_settings_get_int64 (GSettings   *settings,
+                      const gchar *key)
+{
+  GVariant *value;
+  gint64 result;
+
+  value = g_settings_get_value (settings, key);
+  result = g_variant_get_int64 (value);
+  g_variant_unref (value);
+
+  return result;
+}
+
+/**
+ * g_settings_set_int64:
+ * @settings: a #GSettings object
+ * @key: the name of the key to set
+ * @value: the value to set it to
+ *
+ * Sets @key in @settings to @value.
+ *
+ * A convenience variant of g_settings_set() for 64-bit integers.
+ *
+ * It is a programmer error to give a @key that isn't specified as
+ * having a int64 type in the schema for @settings.
+ *
+ * Returns: %TRUE if setting the key succeeded,
+ *     %FALSE if the key was not writable
+ *
+ * Since: 2.50
+ */
+gboolean
+g_settings_set_int64 (GSettings   *settings,
+                      const gchar *key,
+                      gint64       value)
+{
+  return g_settings_set_value (settings, key, g_variant_new_int64 (value));
+}
+
+/**
  * g_settings_get_uint:
  * @settings: a #GSettings object
  * @key: the key to get the value for
@@ -1872,6 +1988,64 @@ g_settings_set_uint (GSettings   *settings,
                      guint        value)
 {
   return g_settings_set_value (settings, key, g_variant_new_uint32 (value));
+}
+
+/**
+ * g_settings_get_uint64:
+ * @settings: a #GSettings object
+ * @key: the key to get the value for
+ *
+ * Gets the value that is stored at @key in @settings.
+ *
+ * A convenience variant of g_settings_get() for 64-bit unsigned
+ * integers.
+ *
+ * It is a programmer error to give a @key that isn't specified as
+ * having a uint64 type in the schema for @settings.
+ *
+ * Returns: a 64-bit unsigned integer
+ *
+ * Since: 2.50
+ */
+guint64
+g_settings_get_uint64 (GSettings   *settings,
+                       const gchar *key)
+{
+  GVariant *value;
+  guint64 result;
+
+  value = g_settings_get_value (settings, key);
+  result = g_variant_get_uint64 (value);
+  g_variant_unref (value);
+
+  return result;
+}
+
+/**
+ * g_settings_set_uint64:
+ * @settings: a #GSettings object
+ * @key: the name of the key to set
+ * @value: the value to set it to
+ *
+ * Sets @key in @settings to @value.
+ *
+ * A convenience variant of g_settings_set() for 64-bit unsigned
+ * integers.
+ *
+ * It is a programmer error to give a @key that isn't specified as
+ * having a uint64 type in the schema for @settings.
+ *
+ * Returns: %TRUE if setting the key succeeded,
+ *     %FALSE if the key was not writable
+ *
+ * Since: 2.50
+ */
+gboolean
+g_settings_set_uint64 (GSettings   *settings,
+                       const gchar *key,
+                       guint64      value)
+{
+  return g_settings_set_value (settings, key, g_variant_new_uint64 (value));
 }
 
 /**
@@ -2167,6 +2341,9 @@ g_settings_reset (GSettings *settings,
 {
   gchar *path;
 
+  g_return_if_fail (G_IS_SETTINGS (settings));
+  g_return_if_fail (key != NULL);
+
   path = g_strconcat (settings->priv->path, key, NULL);
   g_settings_backend_reset (settings->priv->backend, path, NULL);
   g_free (path);
@@ -2284,23 +2461,7 @@ g_settings_get_child (GSettings   *settings,
 gchar **
 g_settings_list_keys (GSettings *settings)
 {
-  const GQuark *keys;
-  gchar **strv;
-  gint n_keys;
-  gint i, j;
-
-  keys = g_settings_schema_list (settings->priv->schema, &n_keys);
-  strv = g_new (gchar *, n_keys + 1);
-  for (i = j = 0; i < n_keys; i++)
-    {
-      const gchar *key = g_quark_to_string (keys[i]);
-
-      if (!g_str_has_suffix (key, "/"))
-        strv[j++] = g_strdup (key);
-    }
-  strv[j] = NULL;
-
-  return strv;
+  return g_settings_schema_list_keys (settings->priv->schema);
 }
 
 /**

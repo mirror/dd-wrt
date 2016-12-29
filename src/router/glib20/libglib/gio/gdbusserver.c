@@ -419,7 +419,7 @@ g_dbus_server_class_init (GDBusServerClass *klass)
    *
    * Since: 2.26
    */
-  _signals[NEW_CONNECTION_SIGNAL] = g_signal_new ("new-connection",
+  _signals[NEW_CONNECTION_SIGNAL] = g_signal_new (I_("new-connection"),
                                                   G_TYPE_DBUS_SERVER,
                                                   G_SIGNAL_RUN_LAST,
                                                   G_STRUCT_OFFSET (GDBusServerClass, new_connection),
@@ -870,7 +870,7 @@ try_tcp (GDBusServer  *server,
               g_set_error (error,
                            G_IO_ERROR,
                            g_io_error_from_errno (errno),
-                           _("Error writing nonce file at '%s': %s"),
+                           _("Error writing nonce file at “%s”: %s"),
                            server->nonce_file,
                            strerror (errno));
               goto out;
@@ -1041,7 +1041,7 @@ initable_init (GInitable     *initable,
       g_set_error (&last_error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("The string '%s' is not a valid D-Bus GUID"),
+                   _("The string “%s” is not a valid D-Bus GUID"),
                    server->guid);
       goto out;
     }
@@ -1081,7 +1081,7 @@ initable_init (GInitable     *initable,
             g_set_error (&this_error,
                          G_IO_ERROR,
                          G_IO_ERROR_INVALID_ARGUMENT,
-                         _("Cannot listen on unsupported transport '%s'"),
+                         _("Cannot listen on unsupported transport “%s”"),
                          transport_name);
 
           g_free (transport_name);

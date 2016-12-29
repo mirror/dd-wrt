@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
-<book xmlns="" title="GLib Reference Manual" link="index.html" author="" name="glib" version="2" language="c">
+<book xmlns="http://www.devhelp.net/book" title="GLib Reference Manual" link="index.html" author="" name="glib" version="2" language="c" online="https://developer.gnome.org/glib/unstable/">
   <chapters>
     <sub name="GLib Overview" link="glib.html">
       <sub name="Compiling the GLib package" link="glib-building.html"/>
@@ -16,6 +16,7 @@
       <sub name="Standard Macros" link="glib-Standard-Macros.html"/>
       <sub name="Type Conversion Macros" link="glib-Type-Conversion-Macros.html"/>
       <sub name="Byte Order Macros" link="glib-Byte-Order-Macros.html"/>
+      <sub name="Bounds-checking integer arithmetic" link="glib-Bounds-checked-integer-arithmetic.html"/>
       <sub name="Numerical Definitions" link="glib-Numerical-Definitions.html"/>
       <sub name="Miscellaneous Macros" link="glib-Miscellaneous-Macros.html"/>
       <sub name="Atomic Operations" link="glib-Atomic-Operations.html"/>
@@ -30,8 +31,8 @@
       <sub name="Memory Slices" link="glib-Memory-Slices.html"/>
       <sub name="IO Channels" link="glib-IO-Channels.html"/>
       <sub name="Error Reporting" link="glib-Error-Reporting.html"/>
-      <sub name="Message Output and Debugging Functions" link="glib-Warnings-and-Assertions.html"/>
-      <sub name="Message Logging" link="glib-Message-Logging.html"/>
+      <sub name="Warnings and Assertions" link="glib-Warnings-and-Assertions.html"/>
+      <sub name="Message Output and Debugging Functions" link="glib-Message-Logging.html"/>
     </sub>
     <sub name="GLib Utilities" link="glib-utilities.html">
       <sub name="String Utility Functions" link="glib-String-Utility-Functions.html"/>
@@ -122,11 +123,22 @@
     <sub name="Index of new symbols in 2.40" link="api-index-2-40.html"/>
     <sub name="Index of new symbols in 2.42" link="api-index-2-42.html"/>
     <sub name="Index of new symbols in 2.44" link="api-index-2-44.html"/>
+    <sub name="Index of new symbols in 2.46" link="api-index-2-46.html"/>
+    <sub name="Index of new symbols in 2.48" link="api-index-2-48.html"/>
+    <sub name="Index of new symbols in 2.50" link="api-index-2-50.html"/>
     <sub name="Annotation Glossary" link="annotation-glossary.html"/>
   </chapters>
   <functions>
     <keyword type="function" name="glib_check_version ()" link="glib-Version-Information.html#glib-check-version" since="2.6"/>
     <keyword type="macro" name="GLIB_CHECK_VERSION()" link="glib-Version-Information.html#GLIB-CHECK-VERSION:CAPS"/>
+    <keyword type="variable" name="glib_major_version" link="glib-Version-Information.html#glib-major-version"/>
+    <keyword type="variable" name="glib_minor_version" link="glib-Version-Information.html#glib-minor-version"/>
+    <keyword type="variable" name="glib_micro_version" link="glib-Version-Information.html#glib-micro-version"/>
+    <keyword type="variable" name="glib_binary_age" link="glib-Version-Information.html#glib-binary-age"/>
+    <keyword type="variable" name="glib_interface_age" link="glib-Version-Information.html#glib-interface-age"/>
+    <keyword type="macro" name="GLIB_MAJOR_VERSION" link="glib-Version-Information.html#GLIB-MAJOR-VERSION:CAPS"/>
+    <keyword type="macro" name="GLIB_MINOR_VERSION" link="glib-Version-Information.html#GLIB-MINOR-VERSION:CAPS"/>
+    <keyword type="macro" name="GLIB_MICRO_VERSION" link="glib-Version-Information.html#GLIB-MICRO-VERSION:CAPS"/>
     <keyword type="macro" name="GLIB_VERSION_2_26" link="glib-Version-Information.html#GLIB-VERSION-2-26:CAPS" since="2.32"/>
     <keyword type="macro" name="GLIB_VERSION_2_28" link="glib-Version-Information.html#GLIB-VERSION-2-28:CAPS" since="2.32"/>
     <keyword type="macro" name="GLIB_VERSION_2_30" link="glib-Version-Information.html#GLIB-VERSION-2-30:CAPS" since="2.32"/>
@@ -138,17 +150,13 @@
     <keyword type="macro" name="GLIB_VERSION_2_42" link="glib-Version-Information.html#GLIB-VERSION-2-42:CAPS" since="2.42"/>
     <keyword type="macro" name="GLIB_VERSION_2_44" link="glib-Version-Information.html#GLIB-VERSION-2-44:CAPS" since="2.44"/>
     <keyword type="macro" name="GLIB_VERSION_2_46" link="glib-Version-Information.html#GLIB-VERSION-2-46:CAPS" since="2.46"/>
+    <keyword type="macro" name="GLIB_VERSION_2_48" link="glib-Version-Information.html#GLIB-VERSION-2-48:CAPS" since="2.48"/>
+    <keyword type="macro" name="GLIB_VERSION_2_50" link="glib-Version-Information.html#GLIB-VERSION-2-50:CAPS" since="2.50"/>
     <keyword type="macro" name="GLIB_VERSION_MIN_REQUIRED" link="glib-Version-Information.html#GLIB-VERSION-MIN-REQUIRED:CAPS" since="2.32"/>
     <keyword type="macro" name="GLIB_VERSION_MAX_ALLOWED" link="glib-Version-Information.html#GLIB-VERSION-MAX-ALLOWED:CAPS" since="2.32"/>
-    <keyword type="variable" name="glib_major_version" link="glib-Version-Information.html#glib-major-version"/>
-    <keyword type="variable" name="glib_minor_version" link="glib-Version-Information.html#glib-minor-version"/>
-    <keyword type="variable" name="glib_micro_version" link="glib-Version-Information.html#glib-micro-version"/>
-    <keyword type="variable" name="glib_binary_age" link="glib-Version-Information.html#glib-binary-age"/>
-    <keyword type="variable" name="glib_interface_age" link="glib-Version-Information.html#glib-interface-age"/>
-    <keyword type="macro" name="GLIB_MAJOR_VERSION" link="glib-Version-Information.html#GLIB-MAJOR-VERSION:CAPS"/>
-    <keyword type="macro" name="GLIB_MINOR_VERSION" link="glib-Version-Information.html#GLIB-MINOR-VERSION:CAPS"/>
-    <keyword type="macro" name="GLIB_MICRO_VERSION" link="glib-Version-Information.html#GLIB-MICRO-VERSION:CAPS"/>
     <keyword type="macro" name="GLIB_DISABLE_DEPRECATION_WARNINGS" link="glib-Version-Information.html#GLIB-DISABLE-DEPRECATION-WARNINGS:CAPS"/>
+    <keyword type="function" name="gint ()" link="glib-Basic-Types.html#gint"/>
+    <keyword type="function" name="guint ()" link="glib-Basic-Types.html#guint"/>
     <keyword type="macro" name="G_GINT64_CONSTANT()" link="glib-Basic-Types.html#G-GINT64-CONSTANT:CAPS"/>
     <keyword type="macro" name="G_GUINT64_CONSTANT()" link="glib-Basic-Types.html#G-GUINT64-CONSTANT:CAPS" since="2.10"/>
     <keyword type="macro" name="G_GOFFSET_CONSTANT()" link="glib-Basic-Types.html#G-GOFFSET-CONSTANT:CAPS" since="2.20"/>
@@ -157,10 +165,8 @@
     <keyword type="typedef" name="gconstpointer" link="glib-Basic-Types.html#gconstpointer"/>
     <keyword type="typedef" name="gchar" link="glib-Basic-Types.html#gchar"/>
     <keyword type="typedef" name="guchar" link="glib-Basic-Types.html#guchar"/>
-    <keyword type="typedef" name="gint" link="glib-Basic-Types.html#gint"/>
     <keyword type="macro" name="G_MININT" link="glib-Basic-Types.html#G-MININT:CAPS"/>
     <keyword type="macro" name="G_MAXINT" link="glib-Basic-Types.html#G-MAXINT:CAPS"/>
-    <keyword type="typedef" name="guint" link="glib-Basic-Types.html#guint"/>
     <keyword type="macro" name="G_MAXUINT" link="glib-Basic-Types.html#G-MAXUINT:CAPS"/>
     <keyword type="typedef" name="gshort" link="glib-Basic-Types.html#gshort"/>
     <keyword type="macro" name="G_MINSHORT" link="glib-Basic-Types.html#G-MINSHORT:CAPS"/>
@@ -227,7 +233,6 @@
     <keyword type="typedef" name="guintptr" link="glib-Basic-Types.html#guintptr" since="2.18"/>
     <keyword type="macro" name="G_GUINTPTR_FORMAT" link="glib-Basic-Types.html#G-GUINTPTR-FORMAT:CAPS" since="2.22"/>
     <keyword type="macro" name="G_IS_DIR_SEPARATOR()" link="glib-Standard-Macros.html#G-IS-DIR-SEPARATOR:CAPS" since="2.6"/>
-    <keyword type="macro" name="NULL" link="glib-Standard-Macros.html#NULL:CAPS"/>
     <keyword type="macro" name="MIN()" link="glib-Standard-Macros.html#MIN:CAPS"/>
     <keyword type="macro" name="MAX()" link="glib-Standard-Macros.html#MAX:CAPS"/>
     <keyword type="macro" name="ABS()" link="glib-Standard-Macros.html#ABS:CAPS"/>
@@ -244,6 +249,7 @@
     <keyword type="macro" name="G_SEARCHPATH_SEPARATOR_S" link="glib-Standard-Macros.html#G-SEARCHPATH-SEPARATOR-S:CAPS"/>
     <keyword type="macro" name="TRUE" link="glib-Standard-Macros.html#TRUE:CAPS"/>
     <keyword type="macro" name="FALSE" link="glib-Standard-Macros.html#FALSE:CAPS"/>
+    <keyword type="macro" name="NULL" link="glib-Standard-Macros.html#NULL:CAPS"/>
     <keyword type="macro" name="G_MEM_ALIGN" link="glib-Standard-Macros.html#G-MEM-ALIGN:CAPS"/>
     <keyword type="macro" name="G_CONST_RETURN" link="glib-Standard-Macros.html#G-CONST-RETURN:CAPS" deprecated=""/>
     <keyword type="macro" name="GINT_TO_POINTER()" link="glib-Type-Conversion-Macros.html#GINT-TO-POINTER:CAPS"/>
@@ -315,6 +321,12 @@
     <keyword type="macro" name="G_LITTLE_ENDIAN" link="glib-Byte-Order-Macros.html#G-LITTLE-ENDIAN:CAPS"/>
     <keyword type="macro" name="G_BIG_ENDIAN" link="glib-Byte-Order-Macros.html#G-BIG-ENDIAN:CAPS"/>
     <keyword type="macro" name="G_PDP_ENDIAN" link="glib-Byte-Order-Macros.html#G-PDP-ENDIAN:CAPS"/>
+    <keyword type="macro" name="g_uint_checked_add()" link="glib-Bounds-checked-integer-arithmetic.html#g-uint-checked-add" since="2.48"/>
+    <keyword type="macro" name="g_uint_checked_mul()" link="glib-Bounds-checked-integer-arithmetic.html#g-uint-checked-mul" since="2.48"/>
+    <keyword type="macro" name="g_uint64_checked_add()" link="glib-Bounds-checked-integer-arithmetic.html#g-uint64-checked-add" since="2.48"/>
+    <keyword type="macro" name="g_uint64_checked_mul()" link="glib-Bounds-checked-integer-arithmetic.html#g-uint64-checked-mul" since="2.48"/>
+    <keyword type="macro" name="g_size_checked_add()" link="glib-Bounds-checked-integer-arithmetic.html#g-size-checked-add" since="2.48"/>
+    <keyword type="macro" name="g_size_checked_mul()" link="glib-Bounds-checked-integer-arithmetic.html#g-size-checked-mul" since="2.48"/>
     <keyword type="macro" name="G_IEEE754_FLOAT_BIAS" link="glib-Numerical-Definitions.html#G-IEEE754-FLOAT-BIAS:CAPS"/>
     <keyword type="macro" name="G_IEEE754_DOUBLE_BIAS" link="glib-Numerical-Definitions.html#G-IEEE754-DOUBLE-BIAS:CAPS"/>
     <keyword type="union" name="union GFloatIEEE754" link="glib-Numerical-Definitions.html#GFloatIEEE754"/>
@@ -337,6 +349,7 @@
     <keyword type="macro" name="G_PASTE()" link="glib-Miscellaneous-Macros.html#G-PASTE:CAPS" since="2.20"/>
     <keyword type="macro" name="G_STATIC_ASSERT()" link="glib-Miscellaneous-Macros.html#G-STATIC-ASSERT:CAPS" since="2.20"/>
     <keyword type="macro" name="G_STATIC_ASSERT_EXPR()" link="glib-Miscellaneous-Macros.html#G-STATIC-ASSERT-EXPR:CAPS" since="2.30"/>
+    <keyword type="macro" name="G_GNUC_CHECK_VERSION()" link="glib-Miscellaneous-Macros.html#G-GNUC-CHECK-VERSION:CAPS" since="2.42"/>
     <keyword type="macro" name="G_GNUC_ALLOC_SIZE()" link="glib-Miscellaneous-Macros.html#G-GNUC-ALLOC-SIZE:CAPS" since="2.18"/>
     <keyword type="macro" name="G_GNUC_ALLOC_SIZE2()" link="glib-Miscellaneous-Macros.html#G-GNUC-ALLOC-SIZE2:CAPS" since="2.18"/>
     <keyword type="macro" name="G_GNUC_DEPRECATED_FOR()" link="glib-Miscellaneous-Macros.html#G-GNUC-DEPRECATED-FOR:CAPS" since="2.26"/>
@@ -347,8 +360,7 @@
     <keyword type="macro" name="G_UNAVAILABLE()" link="glib-Miscellaneous-Macros.html#G-UNAVAILABLE:CAPS" since="2.32"/>
     <keyword type="macro" name="G_LIKELY()" link="glib-Miscellaneous-Macros.html#G-LIKELY:CAPS" since="2.2"/>
     <keyword type="macro" name="G_UNLIKELY()" link="glib-Miscellaneous-Macros.html#G-UNLIKELY:CAPS" since="2.2"/>
-    <keyword type="macro" name="G_STRFUNC" link="glib-Miscellaneous-Macros.html#G-STRFUNC:CAPS" since="2.4"/>
-    <keyword type="macro" name="G_INLINE_FUNC" link="glib-Miscellaneous-Macros.html#G-INLINE-FUNC:CAPS"/>
+    <keyword type="macro" name="G_INLINE_FUNC" link="glib-Miscellaneous-Macros.html#G-INLINE-FUNC:CAPS" deprecated="2.48: Use &quot;static inline&quot; instead"/>
     <keyword type="macro" name="g_autofree" link="glib-Miscellaneous-Macros.html#g-autofree" since="2.44"/>
     <keyword type="macro" name="G_STMT_START" link="glib-Miscellaneous-Macros.html#G-STMT-START:CAPS"/>
     <keyword type="macro" name="G_STMT_END" link="glib-Miscellaneous-Macros.html#G-STMT-END:CAPS"/>
@@ -373,6 +385,7 @@
     <keyword type="macro" name="G_GNUC_MAY_ALIAS" link="glib-Miscellaneous-Macros.html#G-GNUC-MAY-ALIAS:CAPS" since="2.14"/>
     <keyword type="macro" name="G_DEPRECATED" link="glib-Miscellaneous-Macros.html#G-DEPRECATED:CAPS" since="2.32"/>
     <keyword type="macro" name="G_STRLOC" link="glib-Miscellaneous-Macros.html#G-STRLOC:CAPS"/>
+    <keyword type="macro" name="G_STRFUNC" link="glib-Miscellaneous-Macros.html#G-STRFUNC:CAPS" since="2.4"/>
     <keyword type="function" name="g_atomic_int_get ()" link="glib-Atomic-Operations.html#g-atomic-int-get" since="2.4"/>
     <keyword type="function" name="g_atomic_int_set ()" link="glib-Atomic-Operations.html#g-atomic-int-set" since="2.4"/>
     <keyword type="function" name="g_atomic_int_inc ()" link="glib-Atomic-Operations.html#g-atomic-int-inc" since="2.4"/>
@@ -497,6 +510,7 @@
     <keyword type="macro" name="G_SOURCE_REMOVE" link="glib-The-Main-Event-Loop.html#G-SOURCE-REMOVE:CAPS" since="2.32"/>
     <keyword type="struct" name="GMainContext" link="glib-The-Main-Event-Loop.html#GMainContext"/>
     <keyword type="typedef" name="GPid" link="glib-The-Main-Event-Loop.html#GPid"/>
+    <keyword type="macro" name="G_PID_FORMAT" link="glib-The-Main-Event-Loop.html#G-PID-FORMAT:CAPS" since="2.50"/>
     <keyword type="struct" name="struct GPollFD" link="glib-The-Main-Event-Loop.html#GPollFD"/>
     <keyword type="macro" name="G_POLLFD_FORMAT" link="glib-The-Main-Event-Loop.html#G-POLLFD-FORMAT:CAPS"/>
     <keyword type="struct" name="struct GSource" link="glib-The-Main-Event-Loop.html#GSource"/>
@@ -584,6 +598,7 @@
     <keyword type="function" name="g_thread_pool_set_sort_function ()" link="glib-Thread-Pools.html#g-thread-pool-set-sort-function" since="2.10"/>
     <keyword type="function" name="g_thread_pool_set_max_idle_time ()" link="glib-Thread-Pools.html#g-thread-pool-set-max-idle-time" since="2.10"/>
     <keyword type="function" name="g_thread_pool_get_max_idle_time ()" link="glib-Thread-Pools.html#g-thread-pool-get-max-idle-time" since="2.10"/>
+    <keyword type="function" name="g_thread_pool_move_to_front ()" link="glib-Thread-Pools.html#g-thread-pool-move-to-front" since="2.46"/>
     <keyword type="struct" name="struct GThreadPool" link="glib-Thread-Pools.html#GThreadPool"/>
     <keyword type="function" name="g_async_queue_new ()" link="glib-Asynchronous-Queues.html#g-async-queue-new"/>
     <keyword type="function" name="g_async_queue_new_full ()" link="glib-Asynchronous-Queues.html#g-async-queue-new-full" since="2.16"/>
@@ -591,6 +606,8 @@
     <keyword type="function" name="g_async_queue_unref ()" link="glib-Asynchronous-Queues.html#g-async-queue-unref"/>
     <keyword type="function" name="g_async_queue_push ()" link="glib-Asynchronous-Queues.html#g-async-queue-push"/>
     <keyword type="function" name="g_async_queue_push_sorted ()" link="glib-Asynchronous-Queues.html#g-async-queue-push-sorted" since="2.10"/>
+    <keyword type="function" name="g_async_queue_push_front ()" link="glib-Asynchronous-Queues.html#g-async-queue-push-front" since="2.46"/>
+    <keyword type="function" name="g_async_queue_remove ()" link="glib-Asynchronous-Queues.html#g-async-queue-remove" since="2.46"/>
     <keyword type="function" name="g_async_queue_pop ()" link="glib-Asynchronous-Queues.html#g-async-queue-pop"/>
     <keyword type="function" name="g_async_queue_try_pop ()" link="glib-Asynchronous-Queues.html#g-async-queue-try-pop"/>
     <keyword type="function" name="g_async_queue_timeout_pop ()" link="glib-Asynchronous-Queues.html#g-async-queue-timeout-pop"/>
@@ -602,6 +619,8 @@
     <keyword type="function" name="g_async_queue_unref_and_unlock ()" link="glib-Asynchronous-Queues.html#g-async-queue-unref-and-unlock" deprecated=""/>
     <keyword type="function" name="g_async_queue_push_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-push-unlocked"/>
     <keyword type="function" name="g_async_queue_push_sorted_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-push-sorted-unlocked" since="2.10"/>
+    <keyword type="function" name="g_async_queue_push_front_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-push-front-unlocked" since="2.46"/>
+    <keyword type="function" name="g_async_queue_remove_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-remove-unlocked" since="2.46"/>
     <keyword type="function" name="g_async_queue_pop_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-pop-unlocked"/>
     <keyword type="function" name="g_async_queue_try_pop_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-try-pop-unlocked"/>
     <keyword type="function" name="g_async_queue_timeout_pop_unlocked ()" link="glib-Asynchronous-Queues.html#g-async-queue-timeout-pop-unlocked"/>
@@ -650,12 +669,12 @@
     <keyword type="macro" name="g_newa()" link="glib-Memory-Allocation.html#g-newa"/>
     <keyword type="macro" name="g_memmove()" link="glib-Memory-Allocation.html#g-memmove" deprecated="2.40: Just use memmove()."/>
     <keyword type="function" name="g_memdup ()" link="glib-Memory-Allocation.html#g-memdup"/>
-    <keyword type="function" name="g_mem_set_vtable ()" link="glib-Memory-Allocation.html#g-mem-set-vtable"/>
-    <keyword type="function" name="g_mem_is_system_malloc ()" link="glib-Memory-Allocation.html#g-mem-is-system-malloc"/>
-    <keyword type="function" name="g_mem_profile ()" link="glib-Memory-Allocation.html#g-mem-profile"/>
+    <keyword type="function" name="g_mem_set_vtable ()" link="glib-Memory-Allocation.html#g-mem-set-vtable" deprecated="2.46: Use other memory profiling tools instead"/>
+    <keyword type="function" name="g_mem_is_system_malloc ()" link="glib-Memory-Allocation.html#g-mem-is-system-malloc" deprecated=""/>
+    <keyword type="function" name="g_mem_profile ()" link="glib-Memory-Allocation.html#g-mem-profile" deprecated="2.46: Use other memory profiling tools instead"/>
     <keyword type="variable" name="g_mem_gc_friendly" link="glib-Memory-Allocation.html#g-mem-gc-friendly"/>
     <keyword type="struct" name="struct GMemVTable" link="glib-Memory-Allocation.html#GMemVTable"/>
-    <keyword type="variable" name="glib_mem_profiler_table" link="glib-Memory-Allocation.html#glib-mem-profiler-table"/>
+    <keyword type="variable" name="glib_mem_profiler_table" link="glib-Memory-Allocation.html#glib-mem-profiler-table" deprecated="2.46: Use other memory profiling tools instead"/>
     <keyword type="function" name="g_slice_alloc ()" link="glib-Memory-Slices.html#g-slice-alloc" since="2.10"/>
     <keyword type="function" name="g_slice_alloc0 ()" link="glib-Memory-Slices.html#g-slice-alloc0" since="2.10"/>
     <keyword type="function" name="g_slice_copy ()" link="glib-Memory-Slices.html#g-slice-copy" since="2.14"/>
@@ -743,9 +762,6 @@
     <keyword type="function" name="g_on_error_query ()" link="glib-Warnings-and-Assertions.html#g-on-error-query"/>
     <keyword type="function" name="g_on_error_stack_trace ()" link="glib-Warnings-and-Assertions.html#g-on-error-stack-trace"/>
     <keyword type="macro" name="G_BREAKPOINT" link="glib-Warnings-and-Assertions.html#G-BREAKPOINT:CAPS"/>
-    <keyword type="macro" name="G_LOG_DOMAIN" link="glib-Message-Logging.html#G-LOG-DOMAIN:CAPS"/>
-    <keyword type="macro" name="G_LOG_FATAL_MASK" link="glib-Message-Logging.html#G-LOG-FATAL-MASK:CAPS"/>
-    <keyword type="macro" name="G_LOG_LEVEL_USER_SHIFT" link="glib-Message-Logging.html#G-LOG-LEVEL-USER-SHIFT:CAPS"/>
     <keyword type="function" name="GLogFunc ()" link="glib-Message-Logging.html#GLogFunc"/>
     <keyword type="function" name="g_log ()" link="glib-Message-Logging.html#g-log"/>
     <keyword type="function" name="g_logv ()" link="glib-Message-Logging.html#g-logv"/>
@@ -756,12 +772,30 @@
     <keyword type="macro" name="g_info()" link="glib-Message-Logging.html#g-info" since="2.40"/>
     <keyword type="macro" name="g_debug()" link="glib-Message-Logging.html#g-debug" since="2.6"/>
     <keyword type="function" name="g_log_set_handler ()" link="glib-Message-Logging.html#g-log-set-handler"/>
+    <keyword type="function" name="g_log_set_handler_full ()" link="glib-Message-Logging.html#g-log-set-handler-full" since="2.46"/>
     <keyword type="function" name="g_log_remove_handler ()" link="glib-Message-Logging.html#g-log-remove-handler"/>
     <keyword type="function" name="g_log_set_always_fatal ()" link="glib-Message-Logging.html#g-log-set-always-fatal"/>
     <keyword type="function" name="g_log_set_fatal_mask ()" link="glib-Message-Logging.html#g-log-set-fatal-mask"/>
     <keyword type="function" name="g_log_default_handler ()" link="glib-Message-Logging.html#g-log-default-handler"/>
     <keyword type="function" name="g_log_set_default_handler ()" link="glib-Message-Logging.html#g-log-set-default-handler" since="2.6"/>
+    <keyword type="function" name="g_log_structured ()" link="glib-Message-Logging.html#g-log-structured" since="2.50"/>
+    <keyword type="function" name="g_log_variant ()" link="glib-Message-Logging.html#g-log-variant" since="2.50"/>
+    <keyword type="function" name="g_log_structured_array ()" link="glib-Message-Logging.html#g-log-structured-array" since="2.50"/>
+    <keyword type="macro" name="G_DEBUG_HERE" link="glib-Message-Logging.html#G-DEBUG-HERE:CAPS" since="2.50"/>
+    <keyword type="function" name="GLogWriterFunc ()" link="glib-Message-Logging.html#GLogWriterFunc" since="2.50"/>
+    <keyword type="function" name="g_log_set_writer_func ()" link="glib-Message-Logging.html#g-log-set-writer-func" since="2.50"/>
+    <keyword type="function" name="g_log_writer_supports_color ()" link="glib-Message-Logging.html#g-log-writer-supports-color" since="2.50"/>
+    <keyword type="function" name="g_log_writer_is_journald ()" link="glib-Message-Logging.html#g-log-writer-is-journald" since="2.50"/>
+    <keyword type="function" name="g_log_writer_format_fields ()" link="glib-Message-Logging.html#g-log-writer-format-fields" since="2.50"/>
+    <keyword type="function" name="g_log_writer_journald ()" link="glib-Message-Logging.html#g-log-writer-journald" since="2.50"/>
+    <keyword type="function" name="g_log_writer_standard_streams ()" link="glib-Message-Logging.html#g-log-writer-standard-streams" since="2.50"/>
+    <keyword type="function" name="g_log_writer_default ()" link="glib-Message-Logging.html#g-log-writer-default" since="2.50"/>
+    <keyword type="macro" name="G_LOG_DOMAIN" link="glib-Message-Logging.html#G-LOG-DOMAIN:CAPS"/>
+    <keyword type="macro" name="G_LOG_FATAL_MASK" link="glib-Message-Logging.html#G-LOG-FATAL-MASK:CAPS"/>
+    <keyword type="macro" name="G_LOG_LEVEL_USER_SHIFT" link="glib-Message-Logging.html#G-LOG-LEVEL-USER-SHIFT:CAPS"/>
     <keyword type="enum" name="enum GLogLevelFlags" link="glib-Message-Logging.html#GLogLevelFlags"/>
+    <keyword type="struct" name="struct GLogField" link="glib-Message-Logging.html#GLogField" since="2.50"/>
+    <keyword type="enum" name="enum GLogWriterOutput" link="glib-Message-Logging.html#GLogWriterOutput" since="2.50"/>
     <keyword type="function" name="g_strdup ()" link="glib-String-Utility-Functions.html#g-strdup"/>
     <keyword type="function" name="g_strndup ()" link="glib-String-Utility-Functions.html#g-strndup"/>
     <keyword type="function" name="g_strdupv ()" link="glib-String-Utility-Functions.html#g-strdupv"/>
@@ -773,7 +807,7 @@
     <keyword type="function" name="g_str_has_prefix ()" link="glib-String-Utility-Functions.html#g-str-has-prefix" since="2.2"/>
     <keyword type="function" name="g_str_has_suffix ()" link="glib-String-Utility-Functions.html#g-str-has-suffix" since="2.2"/>
     <keyword type="function" name="g_strcmp0 ()" link="glib-String-Utility-Functions.html#g-strcmp0" since="2.16"/>
-    <keyword type="function" name="g_str_to_ascii ()" link="glib-String-Utility-Functions.html#g-str-to-ascii"/>
+    <keyword type="function" name="g_str_to_ascii ()" link="glib-String-Utility-Functions.html#g-str-to-ascii" since="2.40"/>
     <keyword type="function" name="g_str_tokenize_and_fold ()" link="glib-String-Utility-Functions.html#g-str-tokenize-and-fold" since="2.40"/>
     <keyword type="function" name="g_str_match_string ()" link="glib-String-Utility-Functions.html#g-str-match-string" since="2.40"/>
     <keyword type="function" name="g_strlcpy ()" link="glib-String-Utility-Functions.html#g-strlcpy"/>
@@ -819,7 +853,6 @@
     <keyword type="function" name="g_strreverse ()" link="glib-String-Utility-Functions.html#g-strreverse"/>
     <keyword type="function" name="g_ascii_strtoll ()" link="glib-String-Utility-Functions.html#g-ascii-strtoll" since="2.12"/>
     <keyword type="function" name="g_ascii_strtoull ()" link="glib-String-Utility-Functions.html#g-ascii-strtoull" since="2.2"/>
-    <keyword type="macro" name="G_ASCII_DTOSTR_BUF_SIZE" link="glib-String-Utility-Functions.html#G-ASCII-DTOSTR-BUF-SIZE:CAPS"/>
     <keyword type="function" name="g_ascii_strtod ()" link="glib-String-Utility-Functions.html#g-ascii-strtod"/>
     <keyword type="function" name="g_ascii_dtostr ()" link="glib-String-Utility-Functions.html#g-ascii-dtostr"/>
     <keyword type="function" name="g_ascii_formatd ()" link="glib-String-Utility-Functions.html#g-ascii-formatd"/>
@@ -841,7 +874,9 @@
     <keyword type="function" name="g_strv_contains ()" link="glib-String-Utility-Functions.html#g-strv-contains" since="2.44"/>
     <keyword type="function" name="g_strerror ()" link="glib-String-Utility-Functions.html#g-strerror"/>
     <keyword type="function" name="g_strsignal ()" link="glib-String-Utility-Functions.html#g-strsignal"/>
+    <keyword type="macro" name="G_ASCII_DTOSTR_BUF_SIZE" link="glib-String-Utility-Functions.html#G-ASCII-DTOSTR-BUF-SIZE:CAPS"/>
     <keyword type="macro" name="G_STR_DELIMITERS" link="glib-String-Utility-Functions.html#G-STR-DELIMITERS:CAPS"/>
+    <keyword type="typedef" name="GStrv" link="glib-String-Utility-Functions.html#GStrv"/>
     <keyword type="function" name="g_convert ()" link="glib-Character-Set-Conversion.html#g-convert"/>
     <keyword type="function" name="g_convert_with_fallback ()" link="glib-Character-Set-Conversion.html#g-convert-with-fallback"/>
     <keyword type="function" name="g_convert_with_iconv ()" link="glib-Character-Set-Conversion.html#g-convert-with-iconv"/>
@@ -910,6 +945,7 @@
     <keyword type="function" name="g_utf8_strreverse ()" link="glib-Unicode-Manipulation.html#g-utf8-strreverse" since="2.2"/>
     <keyword type="function" name="g_utf8_substring ()" link="glib-Unicode-Manipulation.html#g-utf8-substring" since="2.30"/>
     <keyword type="function" name="g_utf8_validate ()" link="glib-Unicode-Manipulation.html#g-utf8-validate"/>
+    <keyword type="function" name="g_utf8_make_valid ()" link="glib-Unicode-Manipulation.html#g-utf8-make-valid" since="2.52"/>
     <keyword type="function" name="g_utf8_strup ()" link="glib-Unicode-Manipulation.html#g-utf8-strup"/>
     <keyword type="function" name="g_utf8_strdown ()" link="glib-Unicode-Manipulation.html#g-utf8-strdown"/>
     <keyword type="function" name="g_utf8_casefold ()" link="glib-Unicode-Manipulation.html#g-utf8-casefold"/>
@@ -961,8 +997,8 @@
     <keyword type="function" name="g_hmac_get_digest ()" link="glib-Data-HMACs.html#g-hmac-get-digest" since="2.30"/>
     <keyword type="function" name="g_compute_hmac_for_data ()" link="glib-Data-HMACs.html#g-compute-hmac-for-data" since="2.30"/>
     <keyword type="function" name="g_compute_hmac_for_string ()" link="glib-Data-HMACs.html#g-compute-hmac-for-string" since="2.30"/>
+    <keyword type="function" name="g_compute_hmac_for_bytes ()" link="glib-Data-HMACs.html#g-compute-hmac-for-bytes" since="2.50"/>
     <keyword type="struct" name="GHmac" link="glib-Data-HMACs.html#GHmac" since="2.30"/>
-    <keyword type="macro" name="_()" link="glib-I18N.html#gettext-macro" since="2.4"/>
     <keyword type="macro" name="Q_()" link="glib-I18N.html#Q-:CAPS" since="2.4"/>
     <keyword type="macro" name="C_()" link="glib-I18N.html#C-:CAPS" since="2.16"/>
     <keyword type="macro" name="N_()" link="glib-I18N.html#N-:CAPS" since="2.4"/>
@@ -1054,11 +1090,6 @@
     <keyword type="function" name="g_time_zone_is_dst ()" link="glib-GTimeZone.html#g-time-zone-is-dst" since="2.26"/>
     <keyword type="struct" name="GTimeZone" link="glib-GTimeZone.html#GTimeZone" since="2.26"/>
     <keyword type="enum" name="enum GTimeType" link="glib-GTimeZone.html#GTimeType"/>
-    <keyword type="macro" name="G_TIME_SPAN_DAY" link="glib-GDateTime.html#G-TIME-SPAN-DAY:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TIME_SPAN_HOUR" link="glib-GDateTime.html#G-TIME-SPAN-HOUR:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TIME_SPAN_MINUTE" link="glib-GDateTime.html#G-TIME-SPAN-MINUTE:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TIME_SPAN_SECOND" link="glib-GDateTime.html#G-TIME-SPAN-SECOND:CAPS" since="2.26"/>
-    <keyword type="macro" name="G_TIME_SPAN_MILLISECOND" link="glib-GDateTime.html#G-TIME-SPAN-MILLISECOND:CAPS" since="2.26"/>
     <keyword type="function" name="g_date_time_unref ()" link="glib-GDateTime.html#g-date-time-unref" since="2.26"/>
     <keyword type="function" name="g_date_time_ref ()" link="glib-GDateTime.html#g-date-time-ref" since="2.26"/>
     <keyword type="function" name="g_date_time_new_now ()" link="glib-GDateTime.html#g-date-time-new-now" since="2.26"/>
@@ -1107,6 +1138,11 @@
     <keyword type="function" name="g_date_time_to_utc ()" link="glib-GDateTime.html#g-date-time-to-utc" since="2.26"/>
     <keyword type="function" name="g_date_time_format ()" link="glib-GDateTime.html#g-date-time-format" since="2.26"/>
     <keyword type="typedef" name="GTimeSpan" link="glib-GDateTime.html#GTimeSpan" since="2.26"/>
+    <keyword type="macro" name="G_TIME_SPAN_DAY" link="glib-GDateTime.html#G-TIME-SPAN-DAY:CAPS" since="2.26"/>
+    <keyword type="macro" name="G_TIME_SPAN_HOUR" link="glib-GDateTime.html#G-TIME-SPAN-HOUR:CAPS" since="2.26"/>
+    <keyword type="macro" name="G_TIME_SPAN_MINUTE" link="glib-GDateTime.html#G-TIME-SPAN-MINUTE:CAPS" since="2.26"/>
+    <keyword type="macro" name="G_TIME_SPAN_SECOND" link="glib-GDateTime.html#G-TIME-SPAN-SECOND:CAPS" since="2.26"/>
+    <keyword type="macro" name="G_TIME_SPAN_MILLISECOND" link="glib-GDateTime.html#G-TIME-SPAN-MILLISECOND:CAPS" since="2.26"/>
     <keyword type="struct" name="GDateTime" link="glib-GDateTime.html#GDateTime" since="2.26"/>
     <keyword type="function" name="g_rand_new_with_seed ()" link="glib-Random-Numbers.html#g-rand-new-with-seed"/>
     <keyword type="function" name="g_rand_new_with_seed_array ()" link="glib-Random-Numbers.html#g-rand-new-with-seed-array" since="2.4"/>
@@ -1206,10 +1242,10 @@
     <keyword type="function" name="g_format_size ()" link="glib-Miscellaneous-Utility-Functions.html#g-format-size" since="2.30"/>
     <keyword type="function" name="g_format_size_full ()" link="glib-Miscellaneous-Utility-Functions.html#g-format-size-full" since="2.30"/>
     <keyword type="function" name="g_format_size_for_display ()" link="glib-Miscellaneous-Utility-Functions.html#g-format-size-for-display" deprecated="" since="2.16"/>
-    <keyword type="function" name="g_find_program_in_path ()" link="glib-Miscellaneous-Utility-Functions.html#g-find-program-in-path" deprecated=""/>
-    <keyword type="function" name="g_bit_nth_lsf ()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-lsf"/>
-    <keyword type="function" name="g_bit_nth_msf ()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-msf"/>
-    <keyword type="function" name="g_bit_storage ()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-storage"/>
+    <keyword type="function" name="g_find_program_in_path ()" link="glib-Miscellaneous-Utility-Functions.html#g-find-program-in-path"/>
+    <keyword type="macro" name="g_bit_nth_lsf()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-lsf"/>
+    <keyword type="macro" name="g_bit_nth_msf()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-msf"/>
+    <keyword type="macro" name="g_bit_storage()" link="glib-Miscellaneous-Utility-Functions.html#g-bit-storage"/>
     <keyword type="function" name="g_spaced_primes_closest ()" link="glib-Miscellaneous-Utility-Functions.html#g-spaced-primes-closest"/>
     <keyword type="function" name="g_atexit ()" link="glib-Miscellaneous-Utility-Functions.html#g-atexit" deprecated="2.32: It is best to avoid g_atexit()."/>
     <keyword type="function" name="g_parse_debug_string ()" link="glib-Miscellaneous-Utility-Functions.html#g-parse-debug-string"/>
@@ -1346,7 +1382,6 @@
     <keyword type="function" name="g_shell_unquote ()" link="glib-Shell-related-Utilities.html#g-shell-unquote"/>
     <keyword type="enum" name="enum GShellError" link="glib-Shell-related-Utilities.html#GShellError"/>
     <keyword type="macro" name="G_SHELL_ERROR" link="glib-Shell-related-Utilities.html#G-SHELL-ERROR:CAPS"/>
-    <keyword type="macro" name="G_OPTION_ERROR" link="glib-Commandline-option-parser.html#G-OPTION-ERROR:CAPS"/>
     <keyword type="function" name="GOptionArgFunc ()" link="glib-Commandline-option-parser.html#GOptionArgFunc"/>
     <keyword type="function" name="g_option_context_new ()" link="glib-Commandline-option-parser.html#g-option-context-new" since="2.6"/>
     <keyword type="function" name="g_option_context_set_summary ()" link="glib-Commandline-option-parser.html#g-option-context-set-summary" since="2.12"/>
@@ -1382,6 +1417,7 @@
     <keyword type="function" name="g_option_group_set_translate_func ()" link="glib-Commandline-option-parser.html#g-option-group-set-translate-func" since="2.6"/>
     <keyword type="function" name="g_option_group_set_translation_domain ()" link="glib-Commandline-option-parser.html#g-option-group-set-translation-domain" since="2.6"/>
     <keyword type="enum" name="enum GOptionError" link="glib-Commandline-option-parser.html#GOptionError"/>
+    <keyword type="macro" name="G_OPTION_ERROR" link="glib-Commandline-option-parser.html#G-OPTION-ERROR:CAPS"/>
     <keyword type="struct" name="GOptionContext" link="glib-Commandline-option-parser.html#GOptionContext"/>
     <keyword type="enum" name="enum GOptionArg" link="glib-Commandline-option-parser.html#GOptionArg"/>
     <keyword type="enum" name="enum GOptionFlags" link="glib-Commandline-option-parser.html#GOptionFlags"/>
@@ -1471,6 +1507,7 @@
     <keyword type="function" name="g_key_file_set_list_separator ()" link="glib-Key-value-file-parser.html#g-key-file-set-list-separator" since="2.6"/>
     <keyword type="function" name="g_key_file_load_from_file ()" link="glib-Key-value-file-parser.html#g-key-file-load-from-file" since="2.6"/>
     <keyword type="function" name="g_key_file_load_from_data ()" link="glib-Key-value-file-parser.html#g-key-file-load-from-data" since="2.6"/>
+    <keyword type="function" name="g_key_file_load_from_bytes ()" link="glib-Key-value-file-parser.html#g-key-file-load-from-bytes" since="2.50"/>
     <keyword type="function" name="g_key_file_load_from_data_dirs ()" link="glib-Key-value-file-parser.html#g-key-file-load-from-data-dirs" since="2.6"/>
     <keyword type="function" name="g_key_file_load_from_dirs ()" link="glib-Key-value-file-parser.html#g-key-file-load-from-dirs" since="2.14"/>
     <keyword type="function" name="g_key_file_to_data ()" link="glib-Key-value-file-parser.html#g-key-file-to-data" since="2.6"/>
@@ -1643,6 +1680,7 @@
     <keyword type="macro" name="g_assert_cmpuint()" link="glib-Testing.html#g-assert-cmpuint" since="2.16"/>
     <keyword type="macro" name="g_assert_cmphex()" link="glib-Testing.html#g-assert-cmphex" since="2.16"/>
     <keyword type="macro" name="g_assert_cmpfloat()" link="glib-Testing.html#g-assert-cmpfloat" since="2.16"/>
+    <keyword type="macro" name="g_assert_cmpmem()" link="glib-Testing.html#g-assert-cmpmem" since="2.46"/>
     <keyword type="macro" name="g_assert_no_error()" link="glib-Testing.html#g-assert-no-error" since="2.20"/>
     <keyword type="macro" name="g_assert_error()" link="glib-Testing.html#g-assert-error" since="2.20"/>
     <keyword type="macro" name="g_assert_true()" link="glib-Testing.html#g-assert-true" since="2.38"/>
@@ -1662,7 +1700,6 @@
     <keyword type="enum" name="enum GTestSubprocessFlags" link="glib-Testing.html#GTestSubprocessFlags"/>
     <keyword type="typedef" name="GTestCase" link="glib-Testing.html#GTestCase"/>
     <keyword type="typedef" name="GTestSuite" link="glib-Testing.html#GTestSuite"/>
-    <keyword type="macro" name="G_UNIX_ERROR" link="glib-UNIX-specific-utilities-and-integration.html#G-UNIX-ERROR:CAPS"/>
     <keyword type="function" name="g_unix_open_pipe ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-open-pipe" since="2.30"/>
     <keyword type="function" name="g_unix_set_fd_nonblocking ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-set-fd-nonblocking" since="2.30"/>
     <keyword type="function" name="g_unix_signal_add ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-signal-add" since="2.30"/>
@@ -1672,6 +1709,7 @@
     <keyword type="function" name="g_unix_fd_add ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-fd-add" since="2.36"/>
     <keyword type="function" name="g_unix_fd_add_full ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-fd-add-full" since="2.36"/>
     <keyword type="function" name="g_unix_fd_source_new ()" link="glib-UNIX-specific-utilities-and-integration.html#g-unix-fd-source-new" since="2.36"/>
+    <keyword type="macro" name="G_UNIX_ERROR" link="glib-UNIX-specific-utilities-and-integration.html#G-UNIX-ERROR:CAPS"/>
     <keyword type="function" name="g_win32_check_windows_version ()" link="glib-Windows-Compatibility-Functions.html#g-win32-check-windows-version" since="2.44"/>
     <keyword type="function" name="g_win32_get_command_line ()" link="glib-Windows-Compatibility-Functions.html#g-win32-get-command-line" since="2.40"/>
     <keyword type="function" name="g_win32_error_message ()" link="glib-Windows-Compatibility-Functions.html#g-win32-error-message"/>
@@ -1802,6 +1840,7 @@
     <keyword type="function" name="g_sequence_new ()" link="glib-Sequences.html#g-sequence-new" since="2.14"/>
     <keyword type="function" name="g_sequence_free ()" link="glib-Sequences.html#g-sequence-free" since="2.14"/>
     <keyword type="function" name="g_sequence_get_length ()" link="glib-Sequences.html#g-sequence-get-length" since="2.14"/>
+    <keyword type="function" name="g_sequence_is_empty ()" link="glib-Sequences.html#g-sequence-is-empty" since="2.48"/>
     <keyword type="function" name="g_sequence_foreach ()" link="glib-Sequences.html#g-sequence-foreach" since="2.14"/>
     <keyword type="function" name="g_sequence_foreach_range ()" link="glib-Sequences.html#g-sequence-foreach-range" since="2.14"/>
     <keyword type="function" name="g_sequence_sort ()" link="glib-Sequences.html#g-sequence-sort" since="2.14"/>
@@ -1838,11 +1877,11 @@
     <keyword type="function" name="g_sequence_range_get_midpoint ()" link="glib-Sequences.html#g-sequence-range-get-midpoint" since="2.14"/>
     <keyword type="struct" name="GSequence" link="glib-Sequences.html#GSequence"/>
     <keyword type="typedef" name="GSequenceIter" link="glib-Sequences.html#GSequenceIter"/>
-    <keyword type="function" name="g_trash_stack_push ()" link="glib-Trash-Stacks.html#g-trash-stack-push"/>
-    <keyword type="function" name="g_trash_stack_pop ()" link="glib-Trash-Stacks.html#g-trash-stack-pop"/>
-    <keyword type="function" name="g_trash_stack_peek ()" link="glib-Trash-Stacks.html#g-trash-stack-peek"/>
-    <keyword type="function" name="g_trash_stack_height ()" link="glib-Trash-Stacks.html#g-trash-stack-height"/>
-    <keyword type="struct" name="struct GTrashStack" link="glib-Trash-Stacks.html#GTrashStack"/>
+    <keyword type="function" name="g_trash_stack_push ()" link="glib-Trash-Stacks.html#g-trash-stack-push" deprecated="2.48: #GTrashStack is deprecated without replacement"/>
+    <keyword type="function" name="g_trash_stack_pop ()" link="glib-Trash-Stacks.html#g-trash-stack-pop" deprecated="2.48: #GTrashStack is deprecated without replacement"/>
+    <keyword type="function" name="g_trash_stack_peek ()" link="glib-Trash-Stacks.html#g-trash-stack-peek" deprecated="2.48: #GTrashStack is deprecated without replacement"/>
+    <keyword type="function" name="g_trash_stack_height ()" link="glib-Trash-Stacks.html#g-trash-stack-height" deprecated="2.48: #GTrashStack is deprecated without replacement"/>
+    <keyword type="struct" name="struct GTrashStack" link="glib-Trash-Stacks.html#GTrashStack" deprecated="2.48: #GTrashStack is deprecated without replacement"/>
     <keyword type="function" name="g_hash_table_new ()" link="glib-Hash-Tables.html#g-hash-table-new"/>
     <keyword type="function" name="g_hash_table_new_full ()" link="glib-Hash-Tables.html#g-hash-table-new-full"/>
     <keyword type="function" name="GHashFunc ()" link="glib-Hash-Tables.html#GHashFunc"/>
@@ -2110,33 +2149,6 @@
     <keyword type="function" name="g_dataset_foreach ()" link="glib-Datasets.html#g-dataset-foreach"/>
     <keyword type="function" name="GDataForeachFunc ()" link="glib-Datasets.html#GDataForeachFunc"/>
     <keyword type="function" name="g_dataset_destroy ()" link="glib-Datasets.html#g-dataset-destroy"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_BOOLEAN" link="glib-GVariantType.html#G-VARIANT-TYPE-BOOLEAN:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_BYTE" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_INT16" link="glib-GVariantType.html#G-VARIANT-TYPE-INT16:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_UINT16" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT16:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_INT32" link="glib-GVariantType.html#G-VARIANT-TYPE-INT32:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_UINT32" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT32:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_INT64" link="glib-GVariantType.html#G-VARIANT-TYPE-INT64:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_UINT64" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT64:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_HANDLE" link="glib-GVariantType.html#G-VARIANT-TYPE-HANDLE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_DOUBLE" link="glib-GVariantType.html#G-VARIANT-TYPE-DOUBLE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_STRING" link="glib-GVariantType.html#G-VARIANT-TYPE-STRING:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_OBJECT_PATH" link="glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_SIGNATURE" link="glib-GVariantType.html#G-VARIANT-TYPE-SIGNATURE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_VARIANT" link="glib-GVariantType.html#G-VARIANT-TYPE-VARIANT:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_ANY" link="glib-GVariantType.html#G-VARIANT-TYPE-ANY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_BASIC" link="glib-GVariantType.html#G-VARIANT-TYPE-BASIC:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_MAYBE" link="glib-GVariantType.html#G-VARIANT-TYPE-MAYBE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-ARRAY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_TUPLE" link="glib-GVariantType.html#G-VARIANT-TYPE-TUPLE:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_UNIT" link="glib-GVariantType.html#G-VARIANT-TYPE-UNIT:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_DICT_ENTRY" link="glib-GVariantType.html#G-VARIANT-TYPE-DICT-ENTRY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_DICTIONARY" link="glib-GVariantType.html#G-VARIANT-TYPE-DICTIONARY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_STRING_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-STRING-ARRAY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_OBJECT_PATH_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH-ARRAY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_BYTESTRING" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_BYTESTRING_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING-ARRAY:CAPS"/>
-    <keyword type="macro" name="G_VARIANT_TYPE_VARDICT" link="glib-GVariantType.html#G-VARIANT-TYPE-VARDICT:CAPS" since="2.30"/>
     <keyword type="macro" name="G_VARIANT_TYPE()" link="glib-GVariantType.html#G-VARIANT-TYPE:CAPS"/>
     <keyword type="function" name="g_variant_type_free ()" link="glib-GVariantType.html#g-variant-type-free"/>
     <keyword type="function" name="g_variant_type_copy ()" link="glib-GVariantType.html#g-variant-type-copy"/>
@@ -2168,6 +2180,33 @@
     <keyword type="function" name="g_variant_type_key ()" link="glib-GVariantType.html#g-variant-type-key"/>
     <keyword type="function" name="g_variant_type_value ()" link="glib-GVariantType.html#g-variant-type-value"/>
     <keyword type="struct" name="GVariantType" link="glib-GVariantType.html#GVariantType"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_BOOLEAN" link="glib-GVariantType.html#G-VARIANT-TYPE-BOOLEAN:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_BYTE" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_INT16" link="glib-GVariantType.html#G-VARIANT-TYPE-INT16:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_UINT16" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT16:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_INT32" link="glib-GVariantType.html#G-VARIANT-TYPE-INT32:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_UINT32" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT32:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_INT64" link="glib-GVariantType.html#G-VARIANT-TYPE-INT64:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_UINT64" link="glib-GVariantType.html#G-VARIANT-TYPE-UINT64:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_HANDLE" link="glib-GVariantType.html#G-VARIANT-TYPE-HANDLE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_DOUBLE" link="glib-GVariantType.html#G-VARIANT-TYPE-DOUBLE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_STRING" link="glib-GVariantType.html#G-VARIANT-TYPE-STRING:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_OBJECT_PATH" link="glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_SIGNATURE" link="glib-GVariantType.html#G-VARIANT-TYPE-SIGNATURE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_VARIANT" link="glib-GVariantType.html#G-VARIANT-TYPE-VARIANT:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_ANY" link="glib-GVariantType.html#G-VARIANT-TYPE-ANY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_BASIC" link="glib-GVariantType.html#G-VARIANT-TYPE-BASIC:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_MAYBE" link="glib-GVariantType.html#G-VARIANT-TYPE-MAYBE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-ARRAY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_TUPLE" link="glib-GVariantType.html#G-VARIANT-TYPE-TUPLE:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_UNIT" link="glib-GVariantType.html#G-VARIANT-TYPE-UNIT:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_DICT_ENTRY" link="glib-GVariantType.html#G-VARIANT-TYPE-DICT-ENTRY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_DICTIONARY" link="glib-GVariantType.html#G-VARIANT-TYPE-DICTIONARY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_STRING_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-STRING-ARRAY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_OBJECT_PATH_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-OBJECT-PATH-ARRAY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_BYTESTRING" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_BYTESTRING_ARRAY" link="glib-GVariantType.html#G-VARIANT-TYPE-BYTESTRING-ARRAY:CAPS"/>
+    <keyword type="macro" name="G_VARIANT_TYPE_VARDICT" link="glib-GVariantType.html#G-VARIANT-TYPE-VARDICT:CAPS" since="2.30"/>
     <keyword type="function" name="g_variant_unref ()" link="glib-GVariant.html#g-variant-unref" since="2.24"/>
     <keyword type="function" name="g_variant_ref ()" link="glib-GVariant.html#g-variant-ref" since="2.24"/>
     <keyword type="function" name="g_variant_ref_sink ()" link="glib-GVariant.html#g-variant-ref-sink" since="2.24"/>
@@ -2260,6 +2299,7 @@
     <keyword type="function" name="g_variant_iter_next_value ()" link="glib-GVariant.html#g-variant-iter-next-value" since="2.24"/>
     <keyword type="function" name="g_variant_iter_next ()" link="glib-GVariant.html#g-variant-iter-next" since="2.24"/>
     <keyword type="function" name="g_variant_iter_loop ()" link="glib-GVariant.html#g-variant-iter-loop" since="2.24"/>
+    <keyword type="macro" name="G_VARIANT_BUILDER_INIT()" link="glib-GVariant.html#G-VARIANT-BUILDER-INIT:CAPS" since="2.50"/>
     <keyword type="function" name="g_variant_builder_unref ()" link="glib-GVariant.html#g-variant-builder-unref" since="2.24"/>
     <keyword type="function" name="g_variant_builder_ref ()" link="glib-GVariant.html#g-variant-builder-ref" since="2.24"/>
     <keyword type="function" name="g_variant_builder_new ()" link="glib-GVariant.html#g-variant-builder-new" since="2.24"/>
@@ -2283,7 +2323,6 @@
     <keyword type="function" name="g_variant_dict_insert_value ()" link="glib-GVariant.html#g-variant-dict-insert-value" since="2.40"/>
     <keyword type="function" name="g_variant_dict_remove ()" link="glib-GVariant.html#g-variant-dict-remove" since="2.40"/>
     <keyword type="function" name="g_variant_dict_end ()" link="glib-GVariant.html#g-variant-dict-end" since="2.40"/>
-    <keyword type="macro" name="G_VARIANT_PARSE_ERROR" link="glib-GVariant.html#G-VARIANT-PARSE-ERROR:CAPS"/>
     <keyword type="function" name="g_variant_parse ()" link="glib-GVariant.html#g-variant-parse"/>
     <keyword type="function" name="g_variant_new_parsed_va ()" link="glib-GVariant.html#g-variant-new-parsed-va"/>
     <keyword type="function" name="g_variant_new_parsed ()" link="glib-GVariant.html#g-variant-new-parsed"/>
@@ -2294,6 +2333,7 @@
     <keyword type="struct" name="struct GVariantBuilder" link="glib-GVariant.html#GVariantBuilder"/>
     <keyword type="struct" name="struct GVariantDict" link="glib-GVariant.html#GVariantDict" since="2.40"/>
     <keyword type="enum" name="enum GVariantParseError" link="glib-GVariant.html#GVariantParseError"/>
+    <keyword type="macro" name="G_VARIANT_PARSE_ERROR" link="glib-GVariant.html#G-VARIANT-PARSE-ERROR:CAPS"/>
     <keyword type="function" name="g_thread_init ()" link="glib-Deprecated-Thread-APIs.html#g-thread-init" deprecated=""/>
     <keyword type="function" name="g_thread_supported ()" link="glib-Deprecated-Thread-APIs.html#g-thread-supported" deprecated=""/>
     <keyword type="function" name="g_thread_get_initialized ()" link="glib-Deprecated-Thread-APIs.html#g-thread-get-initialized" deprecated="" since="2.20"/>
@@ -2427,6 +2467,8 @@
     <keyword type="constant" name="G_LOG_LEVEL_INFO" link="glib-Message-Logging.html#G-LOG-LEVEL-INFO:CAPS"/>
     <keyword type="constant" name="G_LOG_LEVEL_DEBUG" link="glib-Message-Logging.html#G-LOG-LEVEL-DEBUG:CAPS"/>
     <keyword type="constant" name="G_LOG_LEVEL_MASK" link="glib-Message-Logging.html#G-LOG-LEVEL-MASK:CAPS"/>
+    <keyword type="constant" name="G_LOG_WRITER_HANDLED" link="glib-Message-Logging.html#G-LOG-WRITER-HANDLED:CAPS"/>
+    <keyword type="constant" name="G_LOG_WRITER_UNHANDLED" link="glib-Message-Logging.html#G-LOG-WRITER-UNHANDLED:CAPS"/>
     <keyword type="constant" name="G_CONVERT_ERROR_NO_CONVERSION" link="glib-Character-Set-Conversion.html#G-CONVERT-ERROR-NO-CONVERSION:CAPS"/>
     <keyword type="constant" name="G_CONVERT_ERROR_ILLEGAL_SEQUENCE" link="glib-Character-Set-Conversion.html#G-CONVERT-ERROR-ILLEGAL-SEQUENCE:CAPS"/>
     <keyword type="constant" name="G_CONVERT_ERROR_FAILED" link="glib-Character-Set-Conversion.html#G-CONVERT-ERROR-FAILED:CAPS"/>
@@ -2504,6 +2546,9 @@
     <keyword type="constant" name="G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-CONDITIONAL-JAPANESE-STARTER:CAPS"/>
     <keyword type="constant" name="G_UNICODE_BREAK_HEBREW_LETTER" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-HEBREW-LETTER:CAPS"/>
     <keyword type="constant" name="G_UNICODE_BREAK_REGIONAL_INDICATOR" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-REGIONAL-INDICATOR:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_BREAK_EMOJI_BASE" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-EMOJI-BASE:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_BREAK_EMOJI_MODIFIER" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-EMOJI-MODIFIER:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_BREAK_ZERO_WIDTH_JOINER" link="glib-Unicode-Manipulation.html#G-UNICODE-BREAK-ZERO-WIDTH-JOINER:CAPS"/>
     <keyword type="constant" name="G_UNICODE_SCRIPT_INVALID_CODE" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-INVALID-CODE:CAPS"/>
     <keyword type="constant" name="G_UNICODE_SCRIPT_COMMON" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-COMMON:CAPS"/>
     <keyword type="constant" name="G_UNICODE_SCRIPT_INHERITED" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-INHERITED:CAPS"/>
@@ -2631,6 +2676,18 @@
     <keyword type="constant" name="G_UNICODE_SCRIPT_SIDDHAM" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-SIDDHAM:CAPS"/>
     <keyword type="constant" name="G_UNICODE_SCRIPT_TIRHUTA" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-TIRHUTA:CAPS"/>
     <keyword type="constant" name="G_UNICODE_SCRIPT_WARANG_CITI" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-WARANG-CITI:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_AHOM" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-AHOM:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_ANATOLIAN_HIEROGLYPHS" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-ANATOLIAN-HIEROGLYPHS:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_HATRAN" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-HATRAN:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_MULTANI" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-MULTANI:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_OLD_HUNGARIAN" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-OLD-HUNGARIAN:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_SIGNWRITING" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-SIGNWRITING:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_ADLAM" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-ADLAM:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_BHAIKSUKI" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-BHAIKSUKI:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_MARCHEN" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-MARCHEN:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_NEWA" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-NEWA:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_OSAGE" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-OSAGE:CAPS"/>
+    <keyword type="constant" name="G_UNICODE_SCRIPT_TANGUT" link="glib-Unicode-Manipulation.html#G-UNICODE-SCRIPT-TANGUT:CAPS"/>
     <keyword type="constant" name="G_NORMALIZE_DEFAULT" link="glib-Unicode-Manipulation.html#G-NORMALIZE-DEFAULT:CAPS"/>
     <keyword type="constant" name="G_NORMALIZE_NFD" link="glib-Unicode-Manipulation.html#G-NORMALIZE-NFD:CAPS"/>
     <keyword type="constant" name="G_NORMALIZE_DEFAULT_COMPOSE" link="glib-Unicode-Manipulation.html#G-NORMALIZE-DEFAULT-COMPOSE:CAPS"/>
@@ -2985,5 +3042,147 @@
     <keyword type="constant" name="G_THREAD_PRIORITY_NORMAL" link="glib-Deprecated-Thread-APIs.html#G-THREAD-PRIORITY-NORMAL:CAPS"/>
     <keyword type="constant" name="G_THREAD_PRIORITY_HIGH" link="glib-Deprecated-Thread-APIs.html#G-THREAD-PRIORITY-HIGH:CAPS"/>
     <keyword type="constant" name="G_THREAD_PRIORITY_URGENT" link="glib-Deprecated-Thread-APIs.html#G-THREAD-PRIORITY-URGENT:CAPS"/>
+    <keyword type="member" name="GPollFD.fd" link="glib-The-Main-Event-Loop.html#GPollFD.fd"/>
+    <keyword type="member" name="GPollFD.events" link="glib-The-Main-Event-Loop.html#GPollFD.events"/>
+    <keyword type="member" name="GPollFD.revents" link="glib-The-Main-Event-Loop.html#GPollFD.revents"/>
+    <keyword type="member" name="GSourceFuncs.prepare" link="glib-The-Main-Event-Loop.html#GSourceFuncs.prepare"/>
+    <keyword type="member" name="GSourceFuncs.check" link="glib-The-Main-Event-Loop.html#GSourceFuncs.check"/>
+    <keyword type="member" name="GSourceFuncs.dispatch" link="glib-The-Main-Event-Loop.html#GSourceFuncs.dispatch"/>
+    <keyword type="member" name="GSourceFuncs.finalize" link="glib-The-Main-Event-Loop.html#GSourceFuncs.finalize"/>
+    <keyword type="member" name="GSourceCallbackFuncs.ref" link="glib-The-Main-Event-Loop.html#GSourceCallbackFuncs.ref"/>
+    <keyword type="member" name="GSourceCallbackFuncs.unref" link="glib-The-Main-Event-Loop.html#GSourceCallbackFuncs.unref"/>
+    <keyword type="member" name="GSourceCallbackFuncs.get" link="glib-The-Main-Event-Loop.html#GSourceCallbackFuncs.get"/>
+    <keyword type="member" name="GOnce.status" link="glib-Threads.html#GOnce.status"/>
+    <keyword type="member" name="GOnce.retval" link="glib-Threads.html#GOnce.retval"/>
+    <keyword type="member" name="GThreadPool.func" link="glib-Thread-Pools.html#GThreadPool.func"/>
+    <keyword type="member" name="GThreadPool.user-data" link="glib-Thread-Pools.html#GThreadPool.user-data"/>
+    <keyword type="member" name="GThreadPool.exclusive" link="glib-Thread-Pools.html#GThreadPool.exclusive"/>
+    <keyword type="member" name="GMemVTable.malloc" link="glib-Memory-Allocation.html#GMemVTable.malloc"/>
+    <keyword type="member" name="GMemVTable.realloc" link="glib-Memory-Allocation.html#GMemVTable.realloc"/>
+    <keyword type="member" name="GMemVTable.free" link="glib-Memory-Allocation.html#GMemVTable.free"/>
+    <keyword type="member" name="GMemVTable.calloc" link="glib-Memory-Allocation.html#GMemVTable.calloc"/>
+    <keyword type="member" name="GMemVTable.try-malloc" link="glib-Memory-Allocation.html#GMemVTable.try-malloc"/>
+    <keyword type="member" name="GMemVTable.try-realloc" link="glib-Memory-Allocation.html#GMemVTable.try-realloc"/>
+    <keyword type="member" name="GIOFuncs.io-read" link="glib-IO-Channels.html#GIOFuncs.io-read"/>
+    <keyword type="member" name="GIOFuncs.io-write" link="glib-IO-Channels.html#GIOFuncs.io-write"/>
+    <keyword type="member" name="GIOFuncs.io-seek" link="glib-IO-Channels.html#GIOFuncs.io-seek"/>
+    <keyword type="member" name="GIOFuncs.io-close" link="glib-IO-Channels.html#GIOFuncs.io-close"/>
+    <keyword type="member" name="GIOFuncs.io-create-watch" link="glib-IO-Channels.html#GIOFuncs.io-create-watch"/>
+    <keyword type="member" name="GIOFuncs.io-free" link="glib-IO-Channels.html#GIOFuncs.io-free"/>
+    <keyword type="member" name="GIOFuncs.io-set-flags" link="glib-IO-Channels.html#GIOFuncs.io-set-flags"/>
+    <keyword type="member" name="GIOFuncs.io-get-flags" link="glib-IO-Channels.html#GIOFuncs.io-get-flags"/>
+    <keyword type="member" name="GError.domain" link="glib-Error-Reporting.html#GError.domain"/>
+    <keyword type="member" name="GError.code" link="glib-Error-Reporting.html#GError.code"/>
+    <keyword type="member" name="GError.message" link="glib-Error-Reporting.html#GError.message"/>
+    <keyword type="member" name="GLogField.key" link="glib-Message-Logging.html#GLogField.key"/>
+    <keyword type="member" name="GLogField.value" link="glib-Message-Logging.html#GLogField.value"/>
+    <keyword type="member" name="GLogField.length" link="glib-Message-Logging.html#GLogField.length"/>
+    <keyword type="member" name="GTimeVal.tv-sec" link="glib-Date-and-Time-Functions.html#GTimeVal.tv-sec"/>
+    <keyword type="member" name="GTimeVal.tv-usec" link="glib-Date-and-Time-Functions.html#GTimeVal.tv-usec"/>
+    <keyword type="member" name="GDate.julian-days" link="glib-Date-and-Time-Functions.html#GDate.julian-days"/>
+    <keyword type="member" name="GDate.julian" link="glib-Date-and-Time-Functions.html#GDate.julian"/>
+    <keyword type="member" name="GDate.dmy" link="glib-Date-and-Time-Functions.html#GDate.dmy"/>
+    <keyword type="member" name="GDate.day" link="glib-Date-and-Time-Functions.html#GDate.day"/>
+    <keyword type="member" name="GDate.month" link="glib-Date-and-Time-Functions.html#GDate.month"/>
+    <keyword type="member" name="GDate.year" link="glib-Date-and-Time-Functions.html#GDate.year"/>
+    <keyword type="member" name="GHookList.seq-id" link="glib-Hook-Functions.html#GHookList.seq-id"/>
+    <keyword type="member" name="GHookList.hook-size" link="glib-Hook-Functions.html#GHookList.hook-size"/>
+    <keyword type="member" name="GHookList.is-setup" link="glib-Hook-Functions.html#GHookList.is-setup"/>
+    <keyword type="member" name="GHookList.hooks" link="glib-Hook-Functions.html#GHookList.hooks"/>
+    <keyword type="member" name="GHookList.dummy3" link="glib-Hook-Functions.html#GHookList.dummy3"/>
+    <keyword type="member" name="GHookList.finalize-hook" link="glib-Hook-Functions.html#GHookList.finalize-hook"/>
+    <keyword type="member" name="GHookList.dummy" link="glib-Hook-Functions.html#GHookList.dummy"/>
+    <keyword type="member" name="GHook.data" link="glib-Hook-Functions.html#GHook.data"/>
+    <keyword type="member" name="GHook.next" link="glib-Hook-Functions.html#GHook.next"/>
+    <keyword type="member" name="GHook.prev" link="glib-Hook-Functions.html#GHook.prev"/>
+    <keyword type="member" name="GHook.ref-count" link="glib-Hook-Functions.html#GHook.ref-count"/>
+    <keyword type="member" name="GHook.hook-id" link="glib-Hook-Functions.html#GHook.hook-id"/>
+    <keyword type="member" name="GHook.flags" link="glib-Hook-Functions.html#GHook.flags"/>
+    <keyword type="member" name="GHook.func" link="glib-Hook-Functions.html#GHook.func"/>
+    <keyword type="member" name="GHook.destroy" link="glib-Hook-Functions.html#GHook.destroy"/>
+    <keyword type="member" name="GDebugKey.key" link="glib-Miscellaneous-Utility-Functions.html#GDebugKey.key"/>
+    <keyword type="member" name="GDebugKey.value" link="glib-Miscellaneous-Utility-Functions.html#GDebugKey.value"/>
+    <keyword type="member" name="GScanner.user-data" link="glib-Lexical-Scanner.html#GScanner.user-data"/>
+    <keyword type="member" name="GScanner.max-parse-errors" link="glib-Lexical-Scanner.html#GScanner.max-parse-errors"/>
+    <keyword type="member" name="GScanner.parse-errors" link="glib-Lexical-Scanner.html#GScanner.parse-errors"/>
+    <keyword type="member" name="GScanner.input-name" link="glib-Lexical-Scanner.html#GScanner.input-name"/>
+    <keyword type="member" name="GScanner.qdata" link="glib-Lexical-Scanner.html#GScanner.qdata"/>
+    <keyword type="member" name="GScanner.config" link="glib-Lexical-Scanner.html#GScanner.config"/>
+    <keyword type="member" name="GScanner.token" link="glib-Lexical-Scanner.html#GScanner.token"/>
+    <keyword type="member" name="GScanner.value" link="glib-Lexical-Scanner.html#GScanner.value"/>
+    <keyword type="member" name="GScanner.line" link="glib-Lexical-Scanner.html#GScanner.line"/>
+    <keyword type="member" name="GScanner.position" link="glib-Lexical-Scanner.html#GScanner.position"/>
+    <keyword type="member" name="GScanner.next-token" link="glib-Lexical-Scanner.html#GScanner.next-token"/>
+    <keyword type="member" name="GScanner.next-value" link="glib-Lexical-Scanner.html#GScanner.next-value"/>
+    <keyword type="member" name="GScanner.next-line" link="glib-Lexical-Scanner.html#GScanner.next-line"/>
+    <keyword type="member" name="GScanner.next-position" link="glib-Lexical-Scanner.html#GScanner.next-position"/>
+    <keyword type="member" name="GScanner.msg-handler" link="glib-Lexical-Scanner.html#GScanner.msg-handler"/>
+    <keyword type="member" name="GScannerConfig.cset-skip-characters" link="glib-Lexical-Scanner.html#GScannerConfig.cset-skip-characters"/>
+    <keyword type="member" name="GScannerConfig.cset-identifier-first" link="glib-Lexical-Scanner.html#GScannerConfig.cset-identifier-first"/>
+    <keyword type="member" name="GScannerConfig.cset-identifier-nth" link="glib-Lexical-Scanner.html#GScannerConfig.cset-identifier-nth"/>
+    <keyword type="member" name="GScannerConfig.cpair-comment-single" link="glib-Lexical-Scanner.html#GScannerConfig.cpair-comment-single"/>
+    <keyword type="member" name="GScannerConfig.case-sensitive" link="glib-Lexical-Scanner.html#GScannerConfig.case-sensitive"/>
+    <keyword type="member" name="GScannerConfig.skip-comment-multi" link="glib-Lexical-Scanner.html#GScannerConfig.skip-comment-multi"/>
+    <keyword type="member" name="GScannerConfig.skip-comment-single" link="glib-Lexical-Scanner.html#GScannerConfig.skip-comment-single"/>
+    <keyword type="member" name="GScannerConfig.scan-comment-multi" link="glib-Lexical-Scanner.html#GScannerConfig.scan-comment-multi"/>
+    <keyword type="member" name="GScannerConfig.scan-identifier" link="glib-Lexical-Scanner.html#GScannerConfig.scan-identifier"/>
+    <keyword type="member" name="GScannerConfig.scan-identifier-1char" link="glib-Lexical-Scanner.html#GScannerConfig.scan-identifier-1char"/>
+    <keyword type="member" name="GScannerConfig.scan-identifier-NULL" link="glib-Lexical-Scanner.html#GScannerConfig.scan-identifier-NULL"/>
+    <keyword type="member" name="GScannerConfig.scan-symbols" link="glib-Lexical-Scanner.html#GScannerConfig.scan-symbols"/>
+    <keyword type="member" name="GScannerConfig.scan-binary" link="glib-Lexical-Scanner.html#GScannerConfig.scan-binary"/>
+    <keyword type="member" name="GScannerConfig.scan-octal" link="glib-Lexical-Scanner.html#GScannerConfig.scan-octal"/>
+    <keyword type="member" name="GScannerConfig.scan-float" link="glib-Lexical-Scanner.html#GScannerConfig.scan-float"/>
+    <keyword type="member" name="GScannerConfig.scan-hex" link="glib-Lexical-Scanner.html#GScannerConfig.scan-hex"/>
+    <keyword type="member" name="GScannerConfig.scan-hex-dollar" link="glib-Lexical-Scanner.html#GScannerConfig.scan-hex-dollar"/>
+    <keyword type="member" name="GScannerConfig.scan-string-sq" link="glib-Lexical-Scanner.html#GScannerConfig.scan-string-sq"/>
+    <keyword type="member" name="GScannerConfig.scan-string-dq" link="glib-Lexical-Scanner.html#GScannerConfig.scan-string-dq"/>
+    <keyword type="member" name="GScannerConfig.numbers-2-int" link="glib-Lexical-Scanner.html#GScannerConfig.numbers-2-int"/>
+    <keyword type="member" name="GScannerConfig.int-2-float" link="glib-Lexical-Scanner.html#GScannerConfig.int-2-float"/>
+    <keyword type="member" name="GScannerConfig.identifier-2-string" link="glib-Lexical-Scanner.html#GScannerConfig.identifier-2-string"/>
+    <keyword type="member" name="GScannerConfig.char-2-token" link="glib-Lexical-Scanner.html#GScannerConfig.char-2-token"/>
+    <keyword type="member" name="GScannerConfig.symbol-2-token" link="glib-Lexical-Scanner.html#GScannerConfig.symbol-2-token"/>
+    <keyword type="member" name="GScannerConfig.scope-0-fallback" link="glib-Lexical-Scanner.html#GScannerConfig.scope-0-fallback"/>
+    <keyword type="member" name="GScannerConfig.store-int64" link="glib-Lexical-Scanner.html#GScannerConfig.store-int64"/>
+    <keyword type="member" name="GOptionEntry.long-name" link="glib-Commandline-option-parser.html#GOptionEntry.long-name"/>
+    <keyword type="member" name="GOptionEntry.short-name" link="glib-Commandline-option-parser.html#GOptionEntry.short-name"/>
+    <keyword type="member" name="GOptionEntry.flags" link="glib-Commandline-option-parser.html#GOptionEntry.flags"/>
+    <keyword type="member" name="GOptionEntry.arg" link="glib-Commandline-option-parser.html#GOptionEntry.arg"/>
+    <keyword type="member" name="GOptionEntry.arg-data" link="glib-Commandline-option-parser.html#GOptionEntry.arg-data"/>
+    <keyword type="member" name="GOptionEntry.description" link="glib-Commandline-option-parser.html#GOptionEntry.description"/>
+    <keyword type="member" name="GOptionEntry.arg-description" link="glib-Commandline-option-parser.html#GOptionEntry.arg-description"/>
+    <keyword type="member" name="GMarkupParser.start-element" link="glib-Simple-XML-Subset-Parser.html#GMarkupParser.start-element"/>
+    <keyword type="member" name="GMarkupParser.end-element" link="glib-Simple-XML-Subset-Parser.html#GMarkupParser.end-element"/>
+    <keyword type="member" name="GMarkupParser.text" link="glib-Simple-XML-Subset-Parser.html#GMarkupParser.text"/>
+    <keyword type="member" name="GMarkupParser.passthrough" link="glib-Simple-XML-Subset-Parser.html#GMarkupParser.passthrough"/>
+    <keyword type="member" name="GMarkupParser.error" link="glib-Simple-XML-Subset-Parser.html#GMarkupParser.error"/>
+    <keyword type="member" name="GList.data" link="glib-Doubly-Linked-Lists.html#GList.data"/>
+    <keyword type="member" name="GList.next" link="glib-Doubly-Linked-Lists.html#GList.next"/>
+    <keyword type="member" name="GList.prev" link="glib-Doubly-Linked-Lists.html#GList.prev"/>
+    <keyword type="member" name="GSList.data" link="glib-Singly-Linked-Lists.html#GSList.data"/>
+    <keyword type="member" name="GSList.next" link="glib-Singly-Linked-Lists.html#GSList.next"/>
+    <keyword type="member" name="GQueue.head" link="glib-Double-ended-Queues.html#GQueue.head"/>
+    <keyword type="member" name="GQueue.tail" link="glib-Double-ended-Queues.html#GQueue.tail"/>
+    <keyword type="member" name="GQueue.length" link="glib-Double-ended-Queues.html#GQueue.length"/>
+    <keyword type="member" name="GTrashStack.next" link="glib-Trash-Stacks.html#GTrashStack.next"/>
+    <keyword type="member" name="GString.str" link="glib-Strings.html#GString.str"/>
+    <keyword type="member" name="GString.len" link="glib-Strings.html#GString.len"/>
+    <keyword type="member" name="GString.allocated-len" link="glib-Strings.html#GString.allocated-len"/>
+    <keyword type="member" name="GArray.data" link="glib-Arrays.html#GArray.data"/>
+    <keyword type="member" name="GArray.len" link="glib-Arrays.html#GArray.len"/>
+    <keyword type="member" name="GPtrArray.pdata" link="glib-Pointer-Arrays.html#GPtrArray.pdata"/>
+    <keyword type="member" name="GPtrArray.len" link="glib-Pointer-Arrays.html#GPtrArray.len"/>
+    <keyword type="member" name="GByteArray.data" link="glib-Byte-Arrays.html#GByteArray.data"/>
+    <keyword type="member" name="GByteArray.len" link="glib-Byte-Arrays.html#GByteArray.len"/>
+    <keyword type="member" name="GNode.data" link="glib-N-ary-Trees.html#GNode.data"/>
+    <keyword type="member" name="GNode.next" link="glib-N-ary-Trees.html#GNode.next"/>
+    <keyword type="member" name="GNode.prev" link="glib-N-ary-Trees.html#GNode.prev"/>
+    <keyword type="member" name="GNode.parent" link="glib-N-ary-Trees.html#GNode.parent"/>
+    <keyword type="member" name="GNode.children" link="glib-N-ary-Trees.html#GNode.children"/>
+    <keyword type="member" name="GTuples.len" link="glib-Relations-and-Tuples.html#GTuples.len"/>
+    <keyword type="member" name="GCompletion.items" link="glib-Automatic-String-Completion.html#GCompletion.items"/>
+    <keyword type="member" name="GCompletion.func" link="glib-Automatic-String-Completion.html#GCompletion.func"/>
+    <keyword type="member" name="GCompletion.prefix" link="glib-Automatic-String-Completion.html#GCompletion.prefix"/>
+    <keyword type="member" name="GCompletion.cache" link="glib-Automatic-String-Completion.html#GCompletion.cache"/>
+    <keyword type="member" name="GCompletion.strncmp-func" link="glib-Automatic-String-Completion.html#GCompletion.strncmp-func"/>
   </functions>
 </book>

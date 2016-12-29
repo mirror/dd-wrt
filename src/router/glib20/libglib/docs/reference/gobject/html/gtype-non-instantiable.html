@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Non-instantiable non-classed fundamental types: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="chapter-gtype.html" title="The GLib Dynamic Type System">
 <link rel="prev" href="gtype-conventions.html" title="Conventions">
 <link rel="next" href="gtype-instantiable-classed.html" title="Instantiable classed types: objects">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -25,10 +25,11 @@
 <p>
           A lot of types are not instantiable by the type system and do not have
           a class. Most of these types are fundamental trivial types such as <span class="emphasis"><em>gchar</em></span>, 
-          registered in <code class="function">_g_value_types_init</code> (in <code class="filename">gvaluetypes.c</code>).
+          and are already registered by GLib.
         </p>
 <p>
-          To register such a type in the type system, you just need to fill the 
+          In the rare case of needing to register such a type in the type
+          system, fill a
           <a class="link" href="gobject-Type-Information.html#GTypeInfo" title="struct GTypeInfo"><span class="type">GTypeInfo</span></a> structure with zeros since these types are also most of the time
           fundamental:
           </p>
@@ -60,30 +61,30 @@
 22
 23
 24</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GTypeInfo</span><span class="normal"> info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">  </span><span class="number">0</span><span class="symbol">,</span><span class="normal">                                </span><span class="comment">/* class_size */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* base_init */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* base_destroy */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* class_init */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* class_destroy */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* class_data */</span>
-<span class="normal">  </span><span class="number">0</span><span class="symbol">,</span><span class="normal">                                </span><span class="comment">/* instance_size */</span>
-<span class="normal">  </span><span class="number">0</span><span class="symbol">,</span><span class="normal">                                </span><span class="comment">/* n_preallocs */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* instance_init */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* value_table */</span>
-<span class="cbracket">}</span><span class="symbol">;</span>
-<span class="keyword">static</span><span class="normal"> </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GTypeValueTable</span><span class="normal"> value_table </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">  value_init_long0</span><span class="symbol">,</span><span class="normal">                </span><span class="comment">/* value_init */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* value_free */</span>
-<span class="normal">  value_copy_long0</span><span class="symbol">,</span><span class="normal">                </span><span class="comment">/* value_copy */</span>
-<span class="normal">  <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* value_peek_pointer */</span>
-<span class="normal">  </span><span class="string">"i"</span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* collect_format */</span>
-<span class="normal">  value_collect_int</span><span class="symbol">,</span><span class="normal">        </span><span class="comment">/* collect_value */</span>
-<span class="normal">  </span><span class="string">"p"</span><span class="symbol">,</span><span class="normal">                        </span><span class="comment">/* lcopy_format */</span>
-<span class="normal">  value_lcopy_char</span><span class="symbol">,</span><span class="normal">                </span><span class="comment">/* lcopy_value */</span>
-<span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">info</span><span class="symbol">.</span><span class="normal">value_table </span><span class="symbol">=</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">value_table</span><span class="symbol">;</span>
-<span class="normal">type </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-register-fundamental">g_type_register_fundamental</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#G-TYPE-CHAR:CAPS">G_TYPE_CHAR</a></span><span class="symbol">,</span><span class="normal"> </span><span class="string">"gchar"</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">info</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">finfo</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">GTypeInfo info <span class="gtkdoc opt">= {</span>
+  <span class="number">0</span><span class="gtkdoc opt">,</span>                                <span class="comment">/* class_size */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* base_init */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* base_destroy */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* class_init */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* class_destroy */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* class_data */</span>
+  <span class="number">0</span><span class="gtkdoc opt">,</span>                                <span class="comment">/* instance_size */</span>
+  <span class="number">0</span><span class="gtkdoc opt">,</span>                                <span class="comment">/* n_preallocs */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* instance_init */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* value_table */</span>
+<span class="gtkdoc opt">};</span>
+<span class="gtkdoc kwb">static const</span> GTypeValueTable value_table <span class="gtkdoc opt">= {</span>
+  value_init_long0<span class="gtkdoc opt">,</span>                <span class="comment">/* value_init */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* value_free */</span>
+  value_copy_long0<span class="gtkdoc opt">,</span>                <span class="comment">/* value_copy */</span>
+  NULL<span class="gtkdoc opt">,</span>                        <span class="comment">/* value_peek_pointer */</span>
+  <span class="string">&quot;i&quot;</span><span class="gtkdoc opt">,</span>                        <span class="comment">/* collect_format */</span>
+  value_collect_int<span class="gtkdoc opt">,</span>        <span class="comment">/* collect_value */</span>
+  <span class="string">&quot;p&quot;</span><span class="gtkdoc opt">,</span>                        <span class="comment">/* lcopy_format */</span>
+  value_lcopy_char<span class="gtkdoc opt">,</span>                <span class="comment">/* lcopy_value */</span>
+<span class="gtkdoc opt">};</span>
+info<span class="gtkdoc opt">.</span>value_table <span class="gtkdoc opt">= &amp;</span>value_table<span class="gtkdoc opt">;</span>
+type <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-register-fundamental">g_type_register_fundamental</a></span> <span class="gtkdoc opt">(</span>G_TYPE_CHAR<span class="gtkdoc opt">,</span> <span class="string">&quot;gchar&quot;</span><span class="gtkdoc opt">, &amp;</span>info<span class="gtkdoc opt">, &amp;</span>finfo<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -101,6 +102,6 @@
         </p>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

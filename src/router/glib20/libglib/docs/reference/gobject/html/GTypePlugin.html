@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTypePlugin: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-Type-Information.html" title="Type Information">
 <link rel="next" href="GTypeModule.html" title="GTypeModule">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GTypePlugin.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -110,7 +110,7 @@
 </div>
 <div class="refsect1">
 <a name="GTypePlugin.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -162,10 +162,10 @@ introduces what types), like this:</p>
 2
 3
 4</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="normal">new_type_id </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-register-dynamic">g_type_register_dynamic</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">parent_type_id</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="string">"TypeName"</span><span class="symbol">,</span>
-<span class="normal">                                      new_type_plugin</span><span class="symbol">,</span>
-<span class="normal">                                      type_flags</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">new_type_id <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-register-dynamic">g_type_register_dynamic</a></span> <span class="gtkdoc opt">(</span>parent_type_id<span class="gtkdoc opt">,</span>
+                                      <span class="string">&quot;TypeName&quot;</span><span class="gtkdoc opt">,</span>
+                                      new_type_plugin<span class="gtkdoc opt">,</span>
+                                      type_flags<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -217,8 +217,8 @@ unloading. It even handles multiple registered types per module.</p>
 to increase the use count of <em class="parameter"><code>plugin</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypePluginUse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -240,8 +240,8 @@ to increase the use count of <em class="parameter"><code>plugin</code></em>
 <p>The type of the <em class="parameter"><code>unuse_plugin</code></em>
  function of <a class="link" href="GTypePlugin.html#GTypePluginClass" title="struct GTypePluginClass"><span class="type">GTypePluginClass</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypePluginUnuse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -266,8 +266,8 @@ to increase the use count of <em class="parameter"><code>plugin</code></em>
 <p>The type of the <em class="parameter"><code>complete_type_info</code></em>
  function of <a class="link" href="GTypePlugin.html#GTypePluginClass" title="struct GTypePluginClass"><span class="type">GTypePluginClass</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypePluginCompleteTypeInfo.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -309,8 +309,8 @@ to increase the use count of <em class="parameter"><code>plugin</code></em>
 <p>The type of the <em class="parameter"><code>complete_interface_info</code></em>
  function of <a class="link" href="GTypePlugin.html#GTypePluginClass" title="struct GTypePluginClass"><span class="type">GTypePluginClass</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypePluginCompleteInterfaceInfo.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -353,8 +353,8 @@ g_type_plugin_use (<em class="parameter"><code><a class="link" href="GTypePlugin
 .  There should be no need to use this function outside of
 the GObject type system itself.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-plugin-use.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -379,8 +379,8 @@ g_type_plugin_unuse (<em class="parameter"><code><a class="link" href="GTypePlug
 .  There should be no need to use this function outside of
 the GObject type system itself.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-plugin-unuse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -408,8 +408,8 @@ g_type_plugin_complete_type_info (<em class="parameter"><code><a class="link" hr
 There should be no need to use this function outside of the GObject 
 type system itself.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-plugin-complete-type-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -454,8 +454,8 @@ g_type_plugin_complete_interface_info (<em class="parameter"><code><a class="lin
 . There should be no need to use this
 function outside of the GObject type system itself.</p>
 <div class="refsect3">
-<a name="id-1.4.3.9.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-plugin-complete-interface-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -509,8 +509,8 @@ for objects that implement the GTypePlugin interface.</p>
 <p>The <a class="link" href="GTypePlugin.html" title="GTypePlugin"><span class="type">GTypePlugin</span></a> interface is used by the type system in order to handle
 the lifecycle of dynamically loaded types.</p>
 <div class="refsect3">
-<a name="id-1.4.3.10.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypePluginClass.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -552,6 +552,6 @@ for the interface. The structs is initialized with
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

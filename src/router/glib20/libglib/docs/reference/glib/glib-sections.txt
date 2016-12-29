@@ -127,6 +127,8 @@ GLIB_VERSION_2_40
 GLIB_VERSION_2_42
 GLIB_VERSION_2_44
 GLIB_VERSION_2_46
+GLIB_VERSION_2_48
+GLIB_VERSION_2_50
 GLIB_VERSION_MIN_REQUIRED
 GLIB_VERSION_MAX_ALLOWED
 GLIB_DISABLE_DEPRECATION_WARNINGS
@@ -145,6 +147,8 @@ GLIB_AVAILABLE_IN_2_40
 GLIB_AVAILABLE_IN_2_42
 GLIB_AVAILABLE_IN_2_44
 GLIB_AVAILABLE_IN_2_46
+GLIB_AVAILABLE_IN_2_48
+GLIB_AVAILABLE_IN_2_50
 GLIB_DEPRECATED_IN_2_26
 GLIB_DEPRECATED_IN_2_26_FOR
 GLIB_DEPRECATED_IN_2_28
@@ -167,6 +171,10 @@ GLIB_DEPRECATED_IN_2_44
 GLIB_DEPRECATED_IN_2_44_FOR
 GLIB_DEPRECATED_IN_2_46
 GLIB_DEPRECATED_IN_2_46_FOR
+GLIB_DEPRECATED_IN_2_48
+GLIB_DEPRECATED_IN_2_48_FOR
+GLIB_DEPRECATED_IN_2_50
+GLIB_DEPRECATED_IN_2_50_FOR
 GLIB_VERSION_CUR_STABLE
 GLIB_VERSION_PREV_STABLE
 </SECTION>
@@ -343,6 +351,17 @@ GUINT64_SWAP_LE_BE_X86_64
 </SECTION>
 
 <SECTION>
+<TITLE>Bounds-checked integer arithmetic</TITLE>
+<FILE>checkedmath</FILE>
+g_uint_checked_add
+g_uint_checked_mul
+g_uint64_checked_add
+g_uint64_checked_mul
+g_size_checked_add
+g_size_checked_mul
+</SECTION>
+
+<SECTION>
 <TITLE>Numerical Definitions</TITLE>
 <FILE>numerical</FILE>
 G_IEEE754_FLOAT_BIAS
@@ -392,6 +411,7 @@ G_STATIC_ASSERT
 G_STATIC_ASSERT_EXPR
 
 <SUBSECTION>
+G_GNUC_CHECK_VERSION
 G_GNUC_EXTENSION
 G_GNUC_CONST
 G_GNUC_PURE
@@ -551,6 +571,7 @@ g_idle_remove_by_data
 
 <SUBSECTION>
 GPid
+G_PID_FORMAT
 GChildWatchFunc
 g_child_watch_source_new
 g_child_watch_add
@@ -827,6 +848,7 @@ g_thread_pool_stop_unused_threads
 g_thread_pool_set_sort_function
 g_thread_pool_set_max_idle_time
 g_thread_pool_get_max_idle_time
+g_thread_pool_move_to_front
 </SECTION>
 
 <SECTION>
@@ -839,6 +861,8 @@ g_async_queue_ref
 g_async_queue_unref
 g_async_queue_push
 g_async_queue_push_sorted
+g_async_queue_push_front
+g_async_queue_remove
 g_async_queue_pop
 g_async_queue_try_pop
 g_async_queue_timeout_pop
@@ -852,6 +876,8 @@ g_async_queue_ref_unlocked
 g_async_queue_unref_and_unlock
 g_async_queue_push_unlocked
 g_async_queue_push_sorted_unlocked
+g_async_queue_push_front_unlocked
+g_async_queue_remove_unlocked
 g_async_queue_pop_unlocked
 g_async_queue_try_pop_unlocked
 g_async_queue_timeout_pop_unlocked
@@ -1142,11 +1168,30 @@ g_debug
 
 <SUBSECTION>
 g_log_set_handler
+g_log_set_handler_full
 g_log_remove_handler
 g_log_set_always_fatal
 g_log_set_fatal_mask
 g_log_default_handler
 g_log_set_default_handler
+
+<SUBSECTION>
+g_log_structured
+g_log_variant
+GLogField
+g_log_structured_array
+G_DEBUG_HERE
+
+<SUBSECTION>
+GLogWriterOutput
+GLogWriterFunc
+g_log_set_writer_func
+g_log_writer_supports_color
+g_log_writer_is_journald
+g_log_writer_format_fields
+g_log_writer_journald
+g_log_writer_standard_streams
+g_log_writer_default
 </SECTION>
 
 <SECTION>
@@ -1447,6 +1492,9 @@ g_strfreev
 g_strconcat
 g_strjoin
 g_strjoinv
+
+<SUBSECTION>
+GStrv
 g_strv_length
 g_strv_contains
 
@@ -1896,6 +1944,7 @@ g_key_file_unref
 g_key_file_set_list_separator
 g_key_file_load_from_file
 g_key_file_load_from_data
+g_key_file_load_from_bytes
 g_key_file_load_from_data_dirs
 g_key_file_load_from_dirs
 g_key_file_to_data
@@ -2295,6 +2344,7 @@ GSequenceIterCompareFunc
 g_sequence_new
 g_sequence_free
 g_sequence_get_length
+g_sequence_is_empty
 g_sequence_foreach
 g_sequence_foreach_range
 g_sequence_sort
@@ -2450,6 +2500,7 @@ g_string_equal
 
 <SUBSECTION Private>
 g_string_append_c_inline
+g_autoptr_cleanup_gstring_free
 </SECTION>
 
 <SECTION>
@@ -2872,6 +2923,7 @@ g_utf8_strrchr
 g_utf8_strreverse
 g_utf8_substring
 g_utf8_validate
+g_utf8_make_valid
 
 <SUBSECTION>
 g_utf8_strup
@@ -2978,6 +3030,7 @@ g_hmac_get_digest
 <SUBSECTION>
 g_compute_hmac_for_data
 g_compute_hmac_for_string
+g_compute_hmac_for_bytes
 </SECTION>
 
 <SECTION>
@@ -3056,6 +3109,7 @@ g_assert_cmpint
 g_assert_cmpuint
 g_assert_cmphex
 g_assert_cmpfloat
+g_assert_cmpmem
 g_assert_no_error
 g_assert_error
 g_assert_true
@@ -3294,6 +3348,7 @@ g_variant_iter_next
 g_variant_iter_loop
 
 <SUBSECTION>
+G_VARIANT_BUILDER_INIT
 GVariantBuilder
 g_variant_builder_unref
 g_variant_builder_ref

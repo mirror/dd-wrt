@@ -192,39 +192,8 @@ enum
 };
 
 static guint gobject_notify_signal_id;
-static GQuark quark_gbinding = 0;
 
 G_DEFINE_TYPE (GBinding, g_binding, G_TYPE_OBJECT);
-
-static inline void
-add_binding_qdata (GObject  *gobject,
-                   GBinding *binding)
-{
-  GHashTable *bindings;
-
-  bindings = g_object_get_qdata (gobject, quark_gbinding);
-  if (bindings == NULL)
-    {
-      bindings = g_hash_table_new (NULL, NULL);
-
-      g_object_set_qdata_full (gobject, quark_gbinding,
-                               bindings,
-                               (GDestroyNotify) g_hash_table_unref);
-    }
-
-  g_hash_table_add (bindings, binding);
-}
-
-static inline void
-remove_binding_qdata (GObject  *gobject,
-                      GBinding *binding)
-{
-  GHashTable *bindings;
-
-  bindings = g_object_get_qdata (gobject, quark_gbinding);
-  if (binding != NULL)
-    g_hash_table_remove (bindings, binding);
-}
 
 /* the basic assumption is that if either the source or the target
  * goes away then the binding does not exist any more and it should
@@ -248,7 +217,6 @@ weak_unbind (gpointer  user_data,
         g_signal_handler_disconnect (binding->source, binding->source_notify);
 
       g_object_weak_unref (binding->source, weak_unbind, user_data);
-      remove_binding_qdata (binding->source, binding);
 
       binding->source_notify = 0;
       binding->source = NULL;
@@ -263,7 +231,6 @@ weak_unbind (gpointer  user_data,
         g_signal_handler_disconnect (binding->target, binding->target_notify);
 
       g_object_weak_unref (binding->target, weak_unbind, user_data);
-      remove_binding_qdata (binding->target, binding);
 
       binding->target_notify = 0;
       binding->target = NULL;
@@ -273,9 +240,11 @@ weak_unbind (gpointer  user_data,
   g_object_unref (binding);
 }
 
-static inline gboolean
-default_transform (const GValue *value_a,
-                   GValue       *value_b)
+static gboolean
+default_transform (GBinding     *binding,
+                   const GValue *value_a,
+                   GValue       *value_b,
+                   gpointer      user_data G_GNUC_UNUSED)
 {
   /* if it's not the same type, try to convert it using the GValue
    * transformation API; otherwise just copy it
@@ -287,14 +256,14 @@ default_transform (const GValue *value_a,
                                    G_VALUE_TYPE (value_b)))
         {
           g_value_copy (value_a, value_b);
-          goto done;
+          return TRUE;
         }
 
       if (g_value_type_transformable (G_VALUE_TYPE (value_a),
                                       G_VALUE_TYPE (value_b)))
         {
           if (g_value_transform (value_a, value_b))
-            goto done;
+            return TRUE;
         }
 
       g_warning ("%s: Unable to convert a value of type %s to a "
@@ -305,16 +274,16 @@ default_transform (const GValue *value_a,
 
       return FALSE;
     }
-  else
-    g_value_copy (value_a, value_b);
 
-done:
+  g_value_copy (value_a, value_b);
   return TRUE;
 }
 
-static inline gboolean
-default_invert_boolean_transform (const GValue *value_a,
-                                  GValue       *value_b)
+static gboolean
+default_invert_boolean_transform (GBinding     *binding,
+                                  const GValue *value_a,
+                                  GValue       *value_b,
+                                  gpointer      user_data G_GNUC_UNUSED)
 {
   gboolean value;
 
@@ -327,30 +296,6 @@ default_invert_boolean_transform (const GValue *value_a,
   g_value_set_boolean (value_b, value);
 
   return TRUE;
-}
-
-static gboolean
-default_transform_to (GBinding     *binding,
-                      const GValue *value_a,
-                      GValue       *value_b,
-                      gpointer      user_data G_GNUC_UNUSED)
-{
-  if (binding->flags & G_BINDING_INVERT_BOOLEAN)
-    return default_invert_boolean_transform (value_a, value_b);
-
-  return default_transform (value_a, value_b);
-}
-
-static gboolean
-default_transform_from (GBinding     *binding,
-                        const GValue *value_a,
-                        GValue       *value_b,
-                        gpointer      user_data G_GNUC_UNUSED)
-{
-  if (binding->flags & G_BINDING_INVERT_BOOLEAN)
-    return default_invert_boolean_transform (value_a, value_b);
-
-  return default_transform (value_a, value_b);
 }
 
 static void
@@ -444,7 +389,6 @@ g_binding_unbind_internal (GBinding *binding,
         g_signal_handler_disconnect (binding->source, binding->source_notify);
 
       g_object_weak_unref (binding->source, weak_unbind, binding);
-      remove_binding_qdata (binding->source, binding);
 
       binding->source_notify = 0;
       binding->source = NULL;
@@ -456,10 +400,7 @@ g_binding_unbind_internal (GBinding *binding,
         g_signal_handler_disconnect (binding->target, binding->target_notify);
 
       if (!source_is_target)
-        {
-          g_object_weak_unref (binding->target, weak_unbind, binding);
-          remove_binding_qdata (binding->target, binding);
-        }
+        g_object_weak_unref (binding->target, weak_unbind, binding);
 
       binding->target_notify = 0;
       binding->target = NULL;
@@ -555,6 +496,7 @@ static void
 g_binding_constructed (GObject *gobject)
 {
   GBinding *binding = G_BINDING (gobject);
+  GBindingTransformFunc transform_func = default_transform;
   GQuark source_property_detail;
   GClosure *source_notify_closure;
 
@@ -573,9 +515,13 @@ g_binding_constructed (GObject *gobject)
   g_assert (binding->source_pspec != NULL);
   g_assert (binding->target_pspec != NULL);
 
+  /* switch to the invert boolean transform if needed */
+  if (binding->flags & G_BINDING_INVERT_BOOLEAN)
+    transform_func = default_invert_boolean_transform;
+
   /* set the default transformation functions here */
-  binding->transform_s2t = default_transform_to;
-  binding->transform_t2s = default_transform_from;
+  binding->transform_s2t = transform_func;
+  binding->transform_t2s = transform_func;
 
   binding->transform_data = NULL;
   binding->notify = NULL;
@@ -590,7 +536,6 @@ g_binding_constructed (GObject *gobject)
                                                            FALSE);
 
   g_object_weak_ref (binding->source, weak_unbind, binding);
-  add_binding_qdata (binding->source, binding);
 
   if (binding->flags & G_BINDING_BIDIRECTIONAL)
     {
@@ -608,10 +553,7 @@ g_binding_constructed (GObject *gobject)
     }
 
   if (binding->target != binding->source)
-    {
-      g_object_weak_ref (binding->target, weak_unbind, binding);
-      add_binding_qdata (binding->target, binding);
-    }
+    g_object_weak_ref (binding->target, weak_unbind, binding);
 }
 
 static void
@@ -619,7 +561,6 @@ g_binding_class_init (GBindingClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS (klass);
 
-  quark_gbinding = g_quark_from_static_string ("g-binding");
   gobject_notify_signal_id = g_signal_lookup ("notify", G_TYPE_OBJECT);
   g_assert (gobject_notify_signal_id != 0);
 

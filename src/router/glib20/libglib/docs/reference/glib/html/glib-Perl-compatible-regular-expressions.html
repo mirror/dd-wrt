@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Perl-compatible regular expressions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Glob-style-pattern-matching.html" title="Glob-style pattern matching">
 <link rel="next" href="glib-regex-syntax.html" title="Regular expression syntax">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Perl-compatible-regular-expressions.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -80,7 +80,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-get-max-backref" title="g_regex_get_max_backref ()">g_regex_get_max_backref</a> <span class="c_punctuation">()</span>
@@ -88,7 +88,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-get-capture-count" title="g_regex_get_capture_count ()">g_regex_get_capture_count</a> <span class="c_punctuation">()</span>
@@ -104,7 +104,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-get-max-lookbehind" title="g_regex_get_max_lookbehind ()">g_regex_get_max_lookbehind</a> <span class="c_punctuation">()</span>
@@ -112,7 +112,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-get-string-number" title="g_regex_get_string_number ()">g_regex_get_string_number</a> <span class="c_punctuation">()</span>
@@ -303,7 +303,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-match-info-get-match-count" title="g_match_info_get_match_count ()">g_match_info_get_match_count</a> <span class="c_punctuation">()</span>
@@ -370,7 +370,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Perl-compatible-regular-expressions.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -485,8 +485,8 @@ to <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-r
 <em class="parameter"><code>result</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GRegexEvalCallback.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -514,7 +514,7 @@ need the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRe
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.2.6"></a><h4>Returns</h4>
+<a name="GRegexEvalCallback.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> to continue the replacement process, <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> to stop it</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -530,8 +530,8 @@ g_regex_new (<em class="parameter"><code>const <a class="link" href="glib-Basic-
 <p>Compiles the regular expression to an internal form, and does
 the initial setup of the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> structure.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -562,9 +562,10 @@ the initial setup of the <a class="link" href="glib-Perl-compatible-regular-expr
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.3.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> structure. Call <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-unref" title="g_regex_unref ()"><code class="function">g_regex_unref()</code></a> when you
-are done with it</p>
+<a name="g-regex-new.returns"></a><h4>Returns</h4>
+<p> a <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> structure or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error occured. Call
+<a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-unref" title="g_regex_unref ()"><code class="function">g_regex_unref()</code></a> when you are done with it. </p>
+<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -576,8 +577,8 @@ g_regex_ref (<em class="parameter"><code><a class="link" href="glib-Perl-compati
 <p>Increases reference count of <em class="parameter"><code>regex</code></em>
  by 1.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -591,7 +592,7 @@ g_regex_ref (<em class="parameter"><code><a class="link" href="glib-Perl-compati
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.4.6"></a><h4>Returns</h4>
+<a name="g-regex-ref.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>regex</code></em>
 </p>
 </div>
@@ -606,8 +607,8 @@ g_regex_unref (<em class="parameter"><code><a class="link" href="glib-Perl-compa
  by 1. When reference count drops
 to zero, it frees all the memory associated with the regex structure.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -631,8 +632,8 @@ g_regex_get_pattern (<em class="parameter"><code>const <a class="link" href="gli
 , i.e. a copy of
 the string passed to <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-new" title="g_regex_new ()"><code class="function">g_regex_new()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-pattern.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -646,7 +647,7 @@ the string passed to <a class="link" href="glib-Perl-compatible-regular-expressi
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.6.6"></a><h4>Returns</h4>
+<a name="g-regex-get-pattern.returns"></a><h4>Returns</h4>
 <p> the pattern of <em class="parameter"><code>regex</code></em>
 </p>
 </div>
@@ -655,14 +656,14 @@ the string passed to <a class="link" href="glib-Perl-compatible-regular-expressi
 <hr>
 <div class="refsect2">
 <a name="g-regex-get-max-backref"></a><h3>g_regex_get_max_backref ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_regex_get_max_backref (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>);</pre>
 <p>Returns the number of the highest back reference
 in the pattern, or 0 if the pattern does not contain
 back references.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-max-backref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -676,7 +677,7 @@ back references.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.7.6"></a><h4>Returns</h4>
+<a name="g-regex-get-max-backref.returns"></a><h4>Returns</h4>
 <p> the number of the highest back reference</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -684,12 +685,12 @@ back references.</p>
 <hr>
 <div class="refsect2">
 <a name="g-regex-get-capture-count"></a><h3>g_regex_get_capture_count ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_regex_get_capture_count (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>);</pre>
 <p>Returns the number of capturing subpatterns in the pattern.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-capture-count.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -703,7 +704,7 @@ g_regex_get_capture_count (<em class="parameter"><code>const <a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.8.6"></a><h4>Returns</h4>
+<a name="g-regex-get-capture-count.returns"></a><h4>Returns</h4>
 <p> the number of capturing subpatterns</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -715,8 +716,8 @@ g_regex_get_capture_count (<em class="parameter"><code>const <a class="link" hre
 g_regex_get_has_cr_or_lf (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>);</pre>
 <p>Checks whether the pattern contains explicit CR or LF references.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-has-cr-or-lf.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -730,7 +731,7 @@ g_regex_get_has_cr_or_lf (<em class="parameter"><code>const <a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.9.6"></a><h4>Returns</h4>
+<a name="g-regex-get-has-cr-or-lf.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the pattern contains explicit CR or LF references</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-34.html#api-index-2.34">2.34</a></p>
@@ -738,14 +739,14 @@ g_regex_get_has_cr_or_lf (<em class="parameter"><code>const <a class="link" href
 <hr>
 <div class="refsect2">
 <a name="g-regex-get-max-lookbehind"></a><h3>g_regex_get_max_lookbehind ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_regex_get_max_lookbehind (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>);</pre>
 <p>Gets the number of characters in the longest lookbehind assertion in the
 pattern. This information is useful when doing multi-segment matching using
 the partial matching facilities.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-max-lookbehind.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -759,7 +760,7 @@ the partial matching facilities.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.10.6"></a><h4>Returns</h4>
+<a name="g-regex-get-max-lookbehind.returns"></a><h4>Returns</h4>
 <p> the number of characters in the longest lookbehind assertion.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-38.html#api-index-2.38">2.38</a></p>
@@ -767,14 +768,14 @@ the partial matching facilities.</p>
 <hr>
 <div class="refsect2">
 <a name="g-regex-get-string-number"></a><h3>g_regex_get_string_number ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_regex_get_string_number (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                            <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *name</code></em>);</pre>
 <p>Retrieves the number of the subexpression named <em class="parameter"><code>name</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-string-number.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -795,7 +796,7 @@ g_regex_get_string_number (<em class="parameter"><code>const <a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.11.6"></a><h4>Returns</h4>
+<a name="g-regex-get-string-number.returns"></a><h4>Returns</h4>
 <p> The number of the subexpression or -1 if <em class="parameter"><code>name</code></em>
 does not exists</p>
 </div>
@@ -808,9 +809,12 @@ does not exists</p>
 g_regex_get_compile_flags (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>);</pre>
 <p>Returns the compile options that <em class="parameter"><code>regex</code></em>
  was created with.</p>
+<p>Depending on the version of PCRE that is used, this may or may not
+include flags set by option expressions such as <code class="literal">(?i)</code> found at the
+top-level within the compiled pattern.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-compile-flags.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -824,7 +828,7 @@ g_regex_get_compile_flags (<em class="parameter"><code>const <a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.12.6"></a><h4>Returns</h4>
+<a name="g-regex-get-compile-flags.returns"></a><h4>Returns</h4>
 <p> flags from <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexCompileFlags" title="enum GRegexCompileFlags"><span class="type">GRegexCompileFlags</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
@@ -837,8 +841,8 @@ g_regex_get_match_flags (<em class="parameter"><code>const <a class="link" href=
 <p>Returns the match options that <em class="parameter"><code>regex</code></em>
  was created with.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-get-match-flags.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -852,7 +856,7 @@ g_regex_get_match_flags (<em class="parameter"><code>const <a class="link" href=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.13.6"></a><h4>Returns</h4>
+<a name="g-regex-get-match-flags.returns"></a><h4>Returns</h4>
 <p> flags from <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
@@ -862,7 +866,7 @@ g_regex_get_match_flags (<em class="parameter"><code>const <a class="link" href=
 <a name="g-regex-escape-string"></a><h3>g_regex_escape_string ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_regex_escape_string (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
-                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> length</code></em>);</pre>
+                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> length</code></em>);</pre>
 <p>Escapes the special characters used for regular expressions
 in <em class="parameter"><code>string</code></em>
 , for instance "a.b*c" becomes "a.b*c". This
@@ -874,8 +878,8 @@ in this case remember to specify the correct length of <em class="parameter"><co
 in <em class="parameter"><code>length</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.14.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-escape-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -898,7 +902,7 @@ is nul-terminated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.14.7"></a><h4>Returns</h4>
+<a name="g-regex-escape-string.returns"></a><h4>Returns</h4>
 <p> a newly-allocated escaped string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -908,7 +912,7 @@ is nul-terminated</p></td>
 <a name="g-regex-escape-nul"></a><h3>g_regex_escape_nul ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_regex_escape_nul (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> length</code></em>);</pre>
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> length</code></em>);</pre>
 <p>Escapes the nul characters in <em class="parameter"><code>string</code></em>
  to "\x00".  It can be used
 to compile a regex with embedded nul characters.</p>
@@ -917,8 +921,8 @@ to compile a regex with embedded nul characters.</p>
 In this case the output string will be of course equal to <em class="parameter"><code>string</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.15.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-escape-nul.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -940,7 +944,7 @@ In this case the output string will be of course equal to <em class="parameter">
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.15.7"></a><h4>Returns</h4>
+<a name="g-regex-escape-nul.returns"></a><h4>Returns</h4>
 <p> a newly-allocated escaped string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-30.html#api-index-2.30">2.30</a></p>
@@ -965,8 +969,8 @@ substrings, capture counts, and so on.</p>
 once, it's more efficient to compile the pattern once with
 <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-new" title="g_regex_new ()"><code class="function">g_regex_new()</code></a> and then use <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-match" title="g_regex_match ()"><code class="function">g_regex_match()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.16.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-match-simple.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -997,7 +1001,7 @@ once, it's more efficient to compile the pattern once with
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.16.8"></a><h4>Returns</h4>
+<a name="g-regex-match-simple.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1048,25 +1052,25 @@ string you can use <a class="link" href="glib-Perl-compatible-regular-expression
 17
 18
 19</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">print_uppercase_words</span><span class="normal"> </span><span class="symbol">(</span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">string</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="comment">// Print all uppercase-only words.</span>
-<span class="normal">  </span><span class="usertype">GRegex</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">regex</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">GMatchInfo</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">match_info</span><span class="symbol">;</span>
-<span class="normal"> </span>
-<span class="normal">  regex </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"[A-Z]+"</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-match">g_regex_match</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">regex</span><span class="symbol">,</span><span class="normal"> string</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">match_info</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="keyword">while</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-matches">g_match_info_matches</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">))</span>
-<span class="normal">    </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">word </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Found: %s</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">,</span><span class="normal"> word</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">word</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-next">g_match_info_next</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="normal">    </span><span class="cbracket">}</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-free">g_match_info_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-unref">g_regex_unref</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">regex</span><span class="symbol">);</span>
-<span class="cbracket">}</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">print_uppercase_words</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc slc">// Print all uppercase-only words.</span>
+  GRegex <span class="gtkdoc opt">*</span>regex<span class="gtkdoc opt">;</span>
+  GMatchInfo <span class="gtkdoc opt">*</span>match_info<span class="gtkdoc opt">;</span>
+ 
+  regex <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;[A-Z]+&quot;</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-match">g_regex_match</a></span> <span class="gtkdoc opt">(</span>regex<span class="gtkdoc opt">,</span> string<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">, &amp;</span>match_info<span class="gtkdoc opt">);</span>
+  <span class="keyword">while</span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-matches">g_match_info_matches</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">))</span>
+    <span class="gtkdoc opt">{</span>
+      gchar <span class="gtkdoc opt">*</span>word <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Found: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> word<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>word<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-next">g_match_info_next</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+    <span class="gtkdoc opt">}</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-free">g_match_info_free</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-unref">g_regex_unref</a></span> <span class="gtkdoc opt">(</span>regex<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -1079,8 +1083,8 @@ you use any <a class="link" href="glib-Perl-compatible-regular-expressions.html#
 freeing or modifying <em class="parameter"><code>string</code></em>
  then the behaviour is undefined.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.17.10"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-match.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1112,7 +1116,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.17.11"></a><h4>Returns</h4>
+<a name="g-regex-match.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1124,7 +1128,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 g_regex_match_full (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                     <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> **match_info</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
@@ -1182,31 +1186,31 @@ string you can use <a class="link" href="glib-Perl-compatible-regular-expression
 23
 24
 25</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">print_uppercase_words</span><span class="normal"> </span><span class="symbol">(</span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">string</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="comment">// Print all uppercase-only words.</span>
-<span class="normal">  </span><span class="usertype">GRegex</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">regex</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">GMatchInfo</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">match_info</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">GError</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">error </span><span class="symbol">=</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
-<span class="normal">  </span>
-<span class="normal">  regex </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"[A-Z]+"</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-match-full">g_regex_match_full</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">regex</span><span class="symbol">,</span><span class="normal"> string</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">-</span><span class="number">1</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">match_info</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">error</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="keyword">while</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-matches">g_match_info_matches</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">))</span>
-<span class="normal">    </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">word </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Found: %s</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">,</span><span class="normal"> word</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">word</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-next">g_match_info_next</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">error</span><span class="symbol">);</span>
-<span class="normal">    </span><span class="cbracket">}</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-free">g_match_info_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match_info</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-unref">g_regex_unref</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">regex</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">error </span><span class="symbol">!=</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">)</span>
-<span class="normal">    </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="function"><a href="glib-Warnings-and-Assertions.html#g-printerr">g_printerr</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Error while matching: %s</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">,</span><span class="normal"> error</span><span class="symbol">-&gt;</span><span class="normal">message</span><span class="symbol">);</span>
-<span class="normal">      </span><span class="function"><a href="glib-Error-Reporting.html#g-error-free">g_error_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">error</span><span class="symbol">);</span>
-<span class="normal">    </span><span class="cbracket">}</span>
-<span class="cbracket">}</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>
+<span class="function">print_uppercase_words</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">const</span> gchar <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc slc">// Print all uppercase-only words.</span>
+  GRegex <span class="gtkdoc opt">*</span>regex<span class="gtkdoc opt">;</span>
+  GMatchInfo <span class="gtkdoc opt">*</span>match_info<span class="gtkdoc opt">;</span>
+  GError <span class="gtkdoc opt">*</span>error <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+  
+  regex <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;[A-Z]+&quot;</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-match-full">g_regex_match_full</a></span> <span class="gtkdoc opt">(</span>regex<span class="gtkdoc opt">,</span> string<span class="gtkdoc opt">, -</span><span class="number">1</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">, &amp;</span>match_info<span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">);</span>
+  <span class="keyword">while</span> <span class="gtkdoc opt">(</span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-matches">g_match_info_matches</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">))</span>
+    <span class="gtkdoc opt">{</span>
+      gchar <span class="gtkdoc opt">*</span>word <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Found: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> word<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>word<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-next">g_match_info_next</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">, &amp;</span>error<span class="gtkdoc opt">);</span>
+    <span class="gtkdoc opt">}</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-free">g_match_info_free</a></span> <span class="gtkdoc opt">(</span>match_info<span class="gtkdoc opt">);</span>
+  <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-unref">g_regex_unref</a></span> <span class="gtkdoc opt">(</span>regex<span class="gtkdoc opt">);</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span>error <span class="gtkdoc opt">!=</span> NULL<span class="gtkdoc opt">)</span>
+    <span class="gtkdoc opt">{</span>
+      <span class="function"><a href="glib-Warnings-and-Assertions.html#g-printerr">g_printerr</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Error while matching: %s</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> error<span class="gtkdoc opt">-&gt;</span>message<span class="gtkdoc opt">);</span>
+      <span class="function"><a href="glib-Error-Reporting.html#g-error-free">g_error_free</a></span> <span class="gtkdoc opt">(</span>error<span class="gtkdoc opt">);</span>
+    <span class="gtkdoc opt">}</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -1214,8 +1218,8 @@ string you can use <a class="link" href="glib-Perl-compatible-regular-expression
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.5.24.7.18.11"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-match-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1241,7 +1245,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1264,7 +1268,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.18.12"></a><h4>Returns</h4>
+<a name="g-regex-match-full.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1294,8 +1298,8 @@ you use any <a class="link" href="glib-Perl-compatible-regular-expressions.html#
 freeing or modifying <em class="parameter"><code>string</code></em>
  then the behaviour is undefined.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.19.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-match-all.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1327,7 +1331,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.19.8"></a><h4>Returns</h4>
+<a name="g-regex-match-all.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1339,7 +1343,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 g_regex_match_all_full (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                         <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                         <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                         <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
                         <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> **match_info</code></em>,
                         <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
@@ -1379,8 +1383,8 @@ you use any <a class="link" href="glib-Perl-compatible-regular-expressions.html#
 freeing or modifying <em class="parameter"><code>string</code></em>
  then the behaviour is undefined.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.20.11"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-match-all-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1406,7 +1410,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1429,7 +1433,7 @@ the <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchIn
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.20.12"></a><h4>Returns</h4>
+<a name="g-regex-match-all-full.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1468,8 +1472,8 @@ separate characters wherever it matches the empty string between
 characters. For example splitting "ab c" using as a separator
 "\s*", you will get "a", "b" and "c".</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.21.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-split-simple.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1500,7 +1504,7 @@ characters. For example splitting "ab c" using as a separator
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.21.10"></a><h4>Returns</h4>
+<a name="g-regex-split-simple.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings. Free
 it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -1531,8 +1535,8 @@ characters wherever it matches the empty string between characters.
 For example splitting "ab c" using as a separator "\s*", you will get
 "a", "b" and "c".</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.22.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-split.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1558,7 +1562,7 @@ For example splitting "ab c" using as a separator "\s*", you will get
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.22.8"></a><h4>Returns</h4>
+<a name="g-regex-split.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated gchar ** array. Free
 it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -1572,9 +1576,9 @@ it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" ti
 g_regex_split_full (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                     <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> max_tokens</code></em>,
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> max_tokens</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Breaks the string on the pattern, and returns an array of the tokens.
 If the pattern contains capturing parentheses, then the text for each
@@ -1597,8 +1601,8 @@ For example splitting "ab c" using as a separator "\s*", you will get
 string and setting <a class="link" href="glib-Perl-compatible-regular-expressions.html#G-REGEX-MATCH-NOTBOL:CAPS"><span class="type">G_REGEX_MATCH_NOTBOL</span></a> in the case of a pattern
 that begins with any kind of lookbehind assertion, such as "\b".</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.23.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-split-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1624,7 +1628,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1648,7 +1652,7 @@ If this is less than 1, the string is split completely</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.23.9"></a><h4>Returns</h4>
+<a name="g-regex-split-full.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated gchar ** array. Free
 it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -1662,7 +1666,7 @@ it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" ti
 g_regex_replace (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                  <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                 <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                 <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                  <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *replacement</code></em>,
                  <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
                  <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
@@ -1693,8 +1697,8 @@ you can use <a class="link" href="glib-Perl-compatible-regular-expressions.html#
 string and setting <a class="link" href="glib-Perl-compatible-regular-expressions.html#G-REGEX-MATCH-NOTBOL:CAPS"><span class="type">G_REGEX_MATCH_NOTBOL</span></a> in the case of a pattern that
 begins with any kind of lookbehind assertion, such as "\b".</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.24.10"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-replace.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1720,7 +1724,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1742,7 +1746,7 @@ is nul-terminated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.24.11"></a><h4>Returns</h4>
+<a name="g-regex-replace.returns"></a><h4>Returns</h4>
 <p> a newly allocated string containing the replacements</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1754,7 +1758,7 @@ is nul-terminated</p></td>
 g_regex_replace_literal (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                          <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                          <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                         <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                         <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                          <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *replacement</code></em>,
                          <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
                          <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
@@ -1769,8 +1773,8 @@ shortened string and setting <a class="link" href="glib-Perl-compatible-regular-
 case of a pattern that begins with any kind of lookbehind
 assertion, such as "\b".</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.25.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-replace-literal.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1796,7 +1800,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1818,7 +1822,7 @@ is nul-terminated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.25.7"></a><h4>Returns</h4>
+<a name="g-regex-replace-literal.returns"></a><h4>Returns</h4>
 <p> a newly allocated string containing the replacements</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -1830,7 +1834,7 @@ is nul-terminated</p></td>
 g_regex_replace_eval (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> *regex</code></em>,
                       <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> string_len</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> start_position</code></em>,
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> start_position</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexMatchFlags" title="enum GRegexMatchFlags"><span class="type">GRegexMatchFlags</span></a> match_options</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegexEvalCallback" title="GRegexEvalCallback ()"><span class="type">GRegexEvalCallback</span></a> eval</code></em>,
                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> user_data</code></em>,
@@ -1882,40 +1886,40 @@ strings at once:</p>
 32
 33
 34</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> <a href="glib-Basic-Types.html#gboolean">gboolean</a></span>
-<span class="function">eval_cb</span><span class="normal"> </span><span class="symbol">(</span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GMatchInfo</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">info</span><span class="symbol">,</span>
-<span class="normal">         </span><span class="usertype">GString</span><span class="normal">          </span><span class="symbol">*</span><span class="normal">res</span><span class="symbol">,</span>
-<span class="normal">         </span><span class="usertype">gpointer</span><span class="normal">          data</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">match</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">r</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static</span> gboolean
+<span class="function">eval_cb</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">const</span> GMatchInfo <span class="gtkdoc opt">*</span>info<span class="gtkdoc opt">,</span>
+         GString          <span class="gtkdoc opt">*</span>res<span class="gtkdoc opt">,</span>
+         gpointer          data<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  gchar <span class="gtkdoc opt">*</span>match<span class="gtkdoc opt">;</span>
+  gchar <span class="gtkdoc opt">*</span>r<span class="gtkdoc opt">;</span>
 
-<span class="normal">   match </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">   r </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Hash-Tables.html#g-hash-table-lookup">g_hash_table_lookup</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal"><a href="glib-Hash-Tables.html#GHashTable">GHashTable</a> </span><span class="symbol">*)</span><span class="normal">data</span><span class="symbol">,</span><span class="normal"> match</span><span class="symbol">);</span>
-<span class="normal">   </span><span class="function"><a href="glib-Strings.html#g-string-append">g_string_append</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">res</span><span class="symbol">,</span><span class="normal"> r</span><span class="symbol">);</span>
-<span class="normal">   </span><span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">match</span><span class="symbol">);</span>
+   match <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-match-info-fetch">g_match_info_fetch</a></span> <span class="gtkdoc opt">(</span>info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+   r <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Hash-Tables.html#g-hash-table-lookup">g_hash_table_lookup</a></span> <span class="gtkdoc opt">((</span>GHashTable <span class="gtkdoc opt">*)</span>data<span class="gtkdoc opt">,</span> match<span class="gtkdoc opt">);</span>
+   <span class="function"><a href="glib-Strings.html#g-string-append">g_string_append</a></span> <span class="gtkdoc opt">(</span>res<span class="gtkdoc opt">,</span> r<span class="gtkdoc opt">);</span>
+   <span class="function"><a href="glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>match<span class="gtkdoc opt">);</span>
 
-<span class="normal">   </span><span class="keyword">return</span><span class="normal"> <a href="glib-Standard-Macros.html#FALSE:CAPS">FALSE</a></span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+   <span class="keyword">return</span> FALSE<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="symbol">...</span>
+<span class="gtkdoc opt">...</span>
 
-<span class="usertype">GRegex</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">reg</span><span class="symbol">;</span>
-<span class="usertype">GHashTable</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">h</span><span class="symbol">;</span>
-<span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">res</span><span class="symbol">;</span>
+GRegex <span class="gtkdoc opt">*</span>reg<span class="gtkdoc opt">;</span>
+GHashTable <span class="gtkdoc opt">*</span>h<span class="gtkdoc opt">;</span>
+gchar <span class="gtkdoc opt">*</span>res<span class="gtkdoc opt">;</span>
 
-<span class="normal">h </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Hash-Tables.html#g-hash-table-new">g_hash_table_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-Hash-Tables.html#g-str-hash">g_str_hash</a></span><span class="symbol">,</span><span class="normal"> <a href="glib-Hash-Tables.html#g-str-equal">g_str_equal</a></span><span class="symbol">);</span>
+h <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Hash-Tables.html#g-hash-table-new">g_hash_table_new</a></span> <span class="gtkdoc opt">(</span>g_str_hash<span class="gtkdoc opt">,</span> g_str_equal<span class="gtkdoc opt">);</span>
 
-<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">h</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"1"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"ONE"</span><span class="symbol">);</span>
-<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">h</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"2"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"TWO"</span><span class="symbol">);</span>
-<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">h</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"3"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"THREE"</span><span class="symbol">);</span>
-<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">h</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"4"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"FOUR"</span><span class="symbol">);</span>
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span> <span class="gtkdoc opt">(</span>h<span class="gtkdoc opt">,</span> <span class="string">&quot;1&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;ONE&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span> <span class="gtkdoc opt">(</span>h<span class="gtkdoc opt">,</span> <span class="string">&quot;2&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;TWO&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span> <span class="gtkdoc opt">(</span>h<span class="gtkdoc opt">,</span> <span class="string">&quot;3&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;THREE&quot;</span><span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-insert">g_hash_table_insert</a></span> <span class="gtkdoc opt">(</span>h<span class="gtkdoc opt">,</span> <span class="string">&quot;4&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;FOUR&quot;</span><span class="gtkdoc opt">);</span>
 
-<span class="normal">reg </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"1|2|3|4"</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="normal">res </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-replace-eval">g_regex_replace_eval</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">reg</span><span class="symbol">,</span><span class="normal"> text</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">-</span><span class="number">1</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">,</span><span class="normal"> eval_cb</span><span class="symbol">,</span><span class="normal"> h</span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-destroy">g_hash_table_destroy</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">h</span><span class="symbol">);</span>
+reg <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-new">g_regex_new</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;1|2|3|4&quot;</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+res <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Perl-compatible-regular-expressions.html#g-regex-replace-eval">g_regex_replace_eval</a></span> <span class="gtkdoc opt">(</span>reg<span class="gtkdoc opt">,</span> text<span class="gtkdoc opt">, -</span><span class="number">1</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">,</span> eval_cb<span class="gtkdoc opt">,</span> h<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="glib-Hash-Tables.html#g-hash-table-destroy">g_hash_table_destroy</a></span> <span class="gtkdoc opt">(</span>h<span class="gtkdoc opt">);</span>
 
-<span class="symbol">...</span></pre></td>
+<span class="gtkdoc opt">...</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -1923,8 +1927,8 @@ strings at once:</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.5.24.7.26.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-replace-eval.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1950,7 +1954,7 @@ is nul-terminated</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>start_position</p></td>
-<td class="parameter_description"><p>starting index of the string to match</p></td>
+<td class="parameter_description"><p>starting index of the string to match, in bytes</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1977,7 +1981,7 @@ is nul-terminated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.26.10"></a><h4>Returns</h4>
+<a name="g-regex-replace-eval.returns"></a><h4>Returns</h4>
 <p> a newly allocated string containing the replacements</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -2001,8 +2005,8 @@ does not contain references and may be evaluated without information
 about actual match, but '\0\1' (whole match followed by first
 subpattern) requires valid <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> object.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.27.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-regex-check-replacement.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2030,7 +2034,7 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.27.7"></a><h4>Returns</h4>
+<a name="g-regex-check-replacement.returns"></a><h4>Returns</h4>
 <p> whether <em class="parameter"><code>replacement</code></em>
 is a valid replacement string</p>
 </div>
@@ -2047,8 +2051,8 @@ and must not be freed. Use <a class="link" href="glib-Perl-compatible-regular-ex
 after you free <em class="parameter"><code>match_info</code></em>
  object.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.28.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-get-regex.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2062,7 +2066,7 @@ after you free <em class="parameter"><code>match_info</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.28.6"></a><h4>Returns</h4>
+<a name="g-match-info-get-regex.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Perl-compatible-regular-expressions.html#GRegex" title="GRegex"><span class="type">GRegex</span></a> object used in <em class="parameter"><code>match_info</code></em>
 </p>
 </div>
@@ -2078,8 +2082,8 @@ g_match_info_get_string (<em class="parameter"><code>const <a class="link" href=
 string passed to <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-match" title="g_regex_match ()"><code class="function">g_regex_match()</code></a> or <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-replace" title="g_regex_replace ()"><code class="function">g_regex_replace()</code></a> so
 you may not free it before calling this function.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.29.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-get-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2093,7 +2097,7 @@ you may not free it before calling this function.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.29.6"></a><h4>Returns</h4>
+<a name="g-match-info-get-string.returns"></a><h4>Returns</h4>
 <p> the string searched with <em class="parameter"><code>match_info</code></em>
 </p>
 </div>
@@ -2107,8 +2111,8 @@ g_match_info_ref (<em class="parameter"><code><a class="link" href="glib-Perl-co
 <p>Increases reference count of <em class="parameter"><code>match_info</code></em>
  by 1.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.30.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2122,7 +2126,7 @@ g_match_info_ref (<em class="parameter"><code><a class="link" href="glib-Perl-co
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.30.6"></a><h4>Returns</h4>
+<a name="g-match-info-ref.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>match_info</code></em>
 </p>
 </div>
@@ -2137,8 +2141,8 @@ g_match_info_unref (<em class="parameter"><code><a class="link" href="glib-Perl-
  by 1. When reference count drops
 to zero, it frees all the memory associated with the match_info structure.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.31.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2162,8 +2166,8 @@ g_match_info_free (<em class="parameter"><code><a class="link" href="glib-Perl-c
  is not <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>, calls <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-match-info-unref" title="g_match_info_unref ()"><code class="function">g_match_info_unref()</code></a>; otherwise does
 nothing.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.32.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2185,8 +2189,8 @@ nothing.</p>
 g_match_info_matches (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> *match_info</code></em>);</pre>
 <p>Returns whether the previous match operation succeeded.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.33.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-matches.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2200,7 +2204,7 @@ g_match_info_matches (<em class="parameter"><code>const <a class="link" href="gl
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.33.6"></a><h4>Returns</h4>
+<a name="g-match-info-matches.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the previous match operation succeeded,
 <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
@@ -2219,8 +2223,8 @@ call to <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-re
 <p>The match is done on the string passed to the match function, so you
 cannot free it before calling this function.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.34.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-next.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2241,7 +2245,7 @@ cannot free it before calling this function.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.34.7"></a><h4>Returns</h4>
+<a name="g-match-info-next.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is the string matched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -2249,7 +2253,7 @@ cannot free it before calling this function.</p>
 <hr>
 <div class="refsect2">
 <a name="g-match-info-get-match-count"></a><h3>g_match_info_get_match_count ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_match_info_get_match_count (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> *match_info</code></em>);</pre>
 <p>Retrieves the number of matched substrings (including substring 0,
 that is the whole matched text), so 1 is returned if the pattern
@@ -2259,8 +2263,8 @@ using <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-rege
 count is not that of the number of capturing parentheses but that of
 the number of matched substrings.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.35.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-get-match-count.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2274,7 +2278,7 @@ the number of matched substrings.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.35.7"></a><h4>Returns</h4>
+<a name="g-match-info-get-match-count.returns"></a><h4>Returns</h4>
 <p> Number of matched substrings, or -1 if an error occurred</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -2313,8 +2317,8 @@ are set, the latter takes precedence.</p>
 The restrictions no longer apply.</p>
 <p>See pcrepartial(3) for more information on partial matching.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.36.10"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-is-partial-match.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2328,7 +2332,7 @@ The restrictions no longer apply.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.36.11"></a><h4>Returns</h4>
+<a name="g-match-info-is-partial-match.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the match was partial, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
@@ -2362,8 +2366,8 @@ Use <a class="link" href="glib-Perl-compatible-regular-expressions.html#g-regex-
 
 contains references.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.37.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-expand-references.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2389,7 +2393,7 @@ contains references.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.37.9"></a><h4>Returns</h4>
+<a name="g-match-info-expand-references.returns"></a><h4>Returns</h4>
 <p> the expanded string, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error occurred. </p>
 <p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
 </div>
@@ -2400,7 +2404,7 @@ contains references.</p>
 <a name="g-match-info-fetch"></a><h3>g_match_info_fetch ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_match_info_fetch (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> *match_info</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> match_num</code></em>);</pre>
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> match_num</code></em>);</pre>
 <p>Retrieves the text matching the <em class="parameter"><code>match_num</code></em>
 'th capturing
 parentheses. 0 is the full text of the match, 1 is the first paren
@@ -2417,8 +2421,8 @@ substring. Substrings are matched in reverse order of length, so
 <p>The string is fetched from the string passed to the match function,
 so you cannot call this function after freeing the string.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.38.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-fetch.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2439,7 +2443,7 @@ so you cannot call this function after freeing the string.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.38.9"></a><h4>Returns</h4>
+<a name="g-match-info-fetch.returns"></a><h4>Returns</h4>
 <p> The matched substring, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error
 occurred. You have to free the string yourself. </p>
 <p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
@@ -2451,9 +2455,9 @@ occurred. You have to free the string yourself. </p>
 <a name="g-match-info-fetch-pos"></a><h3>g_match_info_fetch_pos ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
 g_match_info_fetch_pos (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> *match_info</code></em>,
-                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> match_num</code></em>,
-                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *start_pos</code></em>,
-                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *end_pos</code></em>);</pre>
+                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> match_num</code></em>,
+                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *start_pos</code></em>,
+                        <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *end_pos</code></em>);</pre>
 <p>Retrieves the position in bytes of the <em class="parameter"><code>match_num</code></em>
 'th capturing
 parentheses. 0 is the full text of the match, 1 is the first
@@ -2470,8 +2474,8 @@ position is not that of a set of parentheses but that of a matched
 substring. Substrings are matched in reverse order of length, so
 0 is the longest match.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.39.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-fetch-pos.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2504,7 +2508,7 @@ the end position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" 
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.39.8"></a><h4>Returns</h4>
+<a name="g-match-info-fetch-pos.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the position was fetched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise. If
 the position cannot be fetched, <em class="parameter"><code>start_pos</code></em>
 and <em class="parameter"><code>end_pos</code></em>
@@ -2528,8 +2532,8 @@ then an empty string is returned.</p>
 <p>The string is fetched from the string passed to the match function,
 so you cannot call this function after freeing the string.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.40.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-fetch-named.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2550,7 +2554,7 @@ so you cannot call this function after freeing the string.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.40.8"></a><h4>Returns</h4>
+<a name="g-match-info-fetch-named.returns"></a><h4>Returns</h4>
 <p> The matched substring, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if an error
 occurred. You have to free the string yourself. </p>
 <p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
@@ -2563,8 +2567,8 @@ occurred. You have to free the string yourself. </p>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
 g_match_info_fetch_named_pos (<em class="parameter"><code>const <a class="link" href="glib-Perl-compatible-regular-expressions.html#GMatchInfo" title="GMatchInfo"><span class="type">GMatchInfo</span></a> *match_info</code></em>,
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *name</code></em>,
-                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *start_pos</code></em>,
-                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *end_pos</code></em>);</pre>
+                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *start_pos</code></em>,
+                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *end_pos</code></em>);</pre>
 <p>Retrieves the position in bytes of the capturing parentheses named <em class="parameter"><code>name</code></em>
 .</p>
 <p>If <em class="parameter"><code>name</code></em>
@@ -2574,8 +2578,8 @@ then <em class="parameter"><code>start_pos</code></em>
  and <em class="parameter"><code>end_pos</code></em>
  are set to -1 and <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> is returned.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.41.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-fetch-named-pos.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2608,7 +2612,7 @@ the end position, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" 
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.41.7"></a><h4>Returns</h4>
+<a name="g-match-info-fetch-named-pos.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the position was fetched, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise.
 If the position cannot be fetched, <em class="parameter"><code>start_pos</code></em>
 and <em class="parameter"><code>end_pos</code></em>
@@ -2635,8 +2639,8 @@ so the first one is the longest match.</p>
 <p>The strings are fetched from the string passed to the match function,
 so you cannot call this function after freeing the string.</p>
 <div class="refsect3">
-<a name="id-1.5.24.7.42.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-match-info-fetch-all.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2650,7 +2654,7 @@ so you cannot call this function after freeing the string.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.24.7.42.9"></a><h4>Returns</h4>
+<a name="g-match-info-fetch-all.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of gchar *
 pointers.  It must be freed using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. If the previous
 match failed <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is returned. </p>
@@ -2665,8 +2669,8 @@ match failed <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="N
 <a name="GRegexError"></a><h3>enum GRegexError</h3>
 <p>Error codes returned by regular expressions functions.</p>
 <div class="refsect3">
-<a name="id-1.5.24.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GRegexError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -3135,8 +3139,8 @@ error domains.</p>
 <a name="GRegexCompileFlags"></a><h3>enum GRegexCompileFlags</h3>
 <p>Flags specifying compile-time options.</p>
 <div class="refsect3">
-<a name="id-1.5.24.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GRegexCompileFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -3330,8 +3334,8 @@ error domains.</p>
 <a name="GRegexMatchFlags"></a><h3>enum GRegexMatchFlags</h3>
 <p>Flags specifying match-time options.</p>
 <div class="refsect3">
-<a name="id-1.5.24.8.5.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GRegexMatchFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -3514,6 +3518,6 @@ matches.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>String Chunks: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Strings.html" title="Strings">
 <link rel="next" href="glib-Arrays.html" title="Arrays">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-String-Chunks.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -92,7 +92,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-String-Chunks.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -135,8 +135,8 @@ not possible to free individual strings.</p>
 g_string_chunk_new (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> size</code></em>);</pre>
 <p>Creates a new <a class="link" href="glib-String-Chunks.html#GStringChunk" title="GStringChunk"><span class="type">GStringChunk</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -153,7 +153,7 @@ memory will be allocated for it.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.9.7.2.6"></a><h4>Returns</h4>
+<a name="g-string-chunk-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="glib-String-Chunks.html#GStringChunk" title="GStringChunk"><span class="type">GStringChunk</span></a></p>
 </div>
 </div>
@@ -175,8 +175,8 @@ with <a class="link" href="glib-String-Chunks.html#g-string-chunk-insert" title=
 by <a class="link" href="glib-String-Chunks.html#g-string-chunk-insert-const" title="g_string_chunk_insert_const ()"><code class="function">g_string_chunk_insert_const()</code></a> when looking for
 duplicates.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-insert.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -197,7 +197,7 @@ duplicates.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.9.7.3.7"></a><h4>Returns</h4>
+<a name="g-string-chunk-insert.returns"></a><h4>Returns</h4>
 <p> a pointer to the copy of <em class="parameter"><code>string</code></em>
 within
 the <a class="link" href="glib-String-Chunks.html#GStringChunk" title="GStringChunk"><span class="type">GStringChunk</span></a></p>
@@ -222,8 +222,8 @@ should be done very carefully.</p>
 pointer to a string added with <a class="link" href="glib-String-Chunks.html#g-string-chunk-insert" title="g_string_chunk_insert ()"><code class="function">g_string_chunk_insert()</code></a>, even
 if they do match.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.4.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-insert-const.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -244,7 +244,7 @@ if they do match.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.9.7.4.8"></a><h4>Returns</h4>
+<a name="g-string-chunk-insert-const.returns"></a><h4>Returns</h4>
 <p> a pointer to the new or existing copy of <em class="parameter"><code>string</code></em>
 within the <a class="link" href="glib-String-Chunks.html#GStringChunk" title="GStringChunk"><span class="type">GStringChunk</span></a></p>
 </div>
@@ -268,8 +268,8 @@ bytes.</p>
 <p>The characters in the returned string can be changed, if necessary,
 though you should not change anything after the end of the string.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.5.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-insert-len.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -297,7 +297,7 @@ nul-terminated string</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.9.7.5.8"></a><h4>Returns</h4>
+<a name="g-string-chunk-insert-len.returns"></a><h4>Returns</h4>
 <p> a pointer to the copy of <em class="parameter"><code>string</code></em>
 within the <a class="link" href="glib-String-Chunks.html#GStringChunk" title="GStringChunk"><span class="type">GStringChunk</span></a></p>
 </div>
@@ -312,8 +312,8 @@ g_string_chunk_clear (<em class="parameter"><code><a class="link" href="glib-Str
 After calling <a class="link" href="glib-String-Chunks.html#g-string-chunk-clear" title="g_string_chunk_clear ()"><code class="function">g_string_chunk_clear()</code></a> it is not safe to
 access any of the strings which were contained within it.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-clear.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -337,8 +337,8 @@ g_string_chunk_free (<em class="parameter"><code><a class="link" href="glib-Stri
 After calling <a class="link" href="glib-String-Chunks.html#g-string-chunk-free" title="g_string_chunk_free ()"><code class="function">g_string_chunk_free()</code></a> it is not safe to
 access any of the strings which were contained within it.</p>
 <div class="refsect3">
-<a name="id-1.6.9.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-string-chunk-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -364,6 +364,6 @@ It should only be accessed by using the following functions.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Internationalization: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Data-HMACs.html" title="Secure HMAC Digests">
 <link rel="next" href="glib-Date-and-Time-Functions.html" title="Date and Time Functions">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,18 +33,12 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-I18N.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
 </colgroup>
 <tbody>
-<tr>
-<td class="define_keyword">#define</td>
-<td class="function_name">
-<a class="link" href="glib-I18N.html#gettext-macro" title="_()">_</a><span class="c_punctuation">()</span>
-</td>
-</tr>
 <tr>
 <td class="define_keyword">#define</td>
 <td class="function_name">
@@ -151,8 +145,8 @@ after defining the <code class="literal">GETTEXT_PACKAGE</code> macro suitably f
       <tr>
         <td class="listing_lines" align="right"><pre>1
 2</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="preproc">#define</span><span class="normal"> GETTEXT_PACKAGE </span><span class="string">"gtk20"</span>
-<span class="preproc">#include</span><span class="normal"> </span><span class="string">&lt;glib/gi18n-lib.h&gt;</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc">#define GETTEXT_PACKAGE</span> <span class="gtkdoc pps">&quot;gtk20&quot;</span><span class="gtkdoc ppc"></span>
+<span class="gtkdoc ppc">#include &lt;glib/gi18n-lib.h&gt;</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -179,19 +173,19 @@ For an application, note that you also have to call <code class="function">bindt
 11
 12
 13</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="preproc">#include</span><span class="normal"> </span><span class="string">&lt;glib/gi18n.h&gt;</span>
-<span class="preproc">#include</span><span class="normal"> </span><span class="string">&lt;locale.h&gt;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc">#include &lt;glib/gi18n.h&gt;</span>
+<span class="gtkdoc ppc">#include &lt;locale.h&gt;</span>
 
-<span class="type">int</span>
-<span class="function">main</span><span class="normal"> </span><span class="symbol">(</span><span class="type">int</span><span class="normal"> argc</span><span class="symbol">,</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">**</span><span class="normal">argv</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="function"><a href="glib-running.html#setlocale">setlocale</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">LC_ALL</span><span class="symbol">,</span><span class="normal"> </span><span class="string">""</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function">bindtextdomain</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GETTEXT_PACKAGE</span><span class="symbol">,</span><span class="normal"> DATADIR </span><span class="string">"/locale"</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function">bind_textdomain_codeset</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GETTEXT_PACKAGE</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"UTF-8"</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="function">textdomain</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GETTEXT_PACKAGE</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">int</span>
+<span class="function">main</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">int</span> argc<span class="gtkdoc opt">,</span> <span class="gtkdoc kwb">char</span> <span class="gtkdoc opt">**</span>argv<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="function">setlocale</span> <span class="gtkdoc opt">(</span>LC_ALL<span class="gtkdoc opt">,</span> <span class="string">&quot;&quot;</span><span class="gtkdoc opt">);</span>
+  <span class="function">bindtextdomain</span> <span class="gtkdoc opt">(</span>GETTEXT_PACKAGE<span class="gtkdoc opt">,</span> DATADIR <span class="string">&quot;/locale&quot;</span><span class="gtkdoc opt">);</span>
+  <span class="function">bind_textdomain_codeset</span> <span class="gtkdoc opt">(</span>GETTEXT_PACKAGE<span class="gtkdoc opt">,</span> <span class="string">&quot;UTF-8&quot;</span><span class="gtkdoc opt">);</span>
+  <span class="function">textdomain</span> <span class="gtkdoc opt">(</span>GETTEXT_PACKAGE<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">// Rest of your application.</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="gtkdoc slc">// Rest of your application.</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -211,32 +205,9 @@ workflow.</p>
 <div class="refsect1">
 <a name="glib-I18N.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
-<a name="gettext-macro"></a><h3>_()</h3>
-<pre class="programlisting">#define             _(String)</pre>
-<p>Marks a string for translation, gets replaced with the translated string
-at runtime.</p>
-<div class="refsect3">
-<a name="id-1.5.8.6.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
-<colgroup>
-<col width="150px" class="parameters_name">
-<col class="parameters_description">
-<col width="200px" class="parameters_annotations">
-</colgroup>
-<tbody><tr>
-<td class="parameter_name"><p>String</p></td>
-<td class="parameter_description"><p>the string to be translated</p></td>
-<td class="parameter_annotations"> </td>
-</tr></tbody>
-</table></div>
-</div>
-<p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
-</div>
-<hr>
-<div class="refsect2">
 <a name="Q-:CAPS"></a><h3>Q_()</h3>
 <pre class="programlisting">#define             Q_(String)</pre>
-<p>Like <a class="link" href="glib-I18N.html#gettext-macro" title="_()"><code class="function">_()</code></a>, but handles context in message ids. This has the advantage
+<p>Like <code class="function">_()</code>, but handles context in message ids. This has the advantage
 that the string can be adorned with a prefix to guarantee uniqueness
 and provide context to the translator.</p>
 <p>One use case given in the gettext manual is GUI translation, where one
@@ -253,8 +224,8 @@ If you are using GNU gettext &gt;= 0.15, you can also use
 <code class="literal">--keyword=Q_:1g</code> to let xgettext split the context
 string off into a msgctxt line in the po file.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.3.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="Q-.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -269,7 +240,7 @@ which must not be translated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.3.9"></a><h4>Returns</h4>
+<a name="Q-.returns"></a><h4>Returns</h4>
 <p> the translated message</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -290,8 +261,8 @@ they are used.</p>
       <tr>
         <td class="listing_lines" align="right"><pre>1
 2</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="normal">label1 </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-I18N.html#C-:CAPS">C_</a></span><span class="symbol">(</span><span class="string">"Navigation"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"Back"</span><span class="symbol">);</span>
-<span class="normal">label2 </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-I18N.html#C-:CAPS">C_</a></span><span class="symbol">(</span><span class="string">"Body part"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"Back"</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">label1 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-I18N.html#C-:CAPS">C_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;Navigation&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;Back&quot;</span><span class="gtkdoc opt">);</span>
+label2 <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-I18N.html#C-:CAPS">C_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;Body part&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;Back&quot;</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -302,8 +273,8 @@ they are used.</p>
 <code class="literal">--keyword=C_:1c,2</code> to xgettext when extracting messages.
 Note that this only works with GNU gettext &gt;= 0.15.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.4.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="C-.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -324,7 +295,7 @@ Note that this only works with GNU gettext &gt;= 0.15.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.4.9"></a><h4>Returns</h4>
+<a name="C-.returns"></a><h4>Returns</h4>
 <p> the translated message</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-16.html#api-index-2.16">2.16</a></p>
@@ -354,19 +325,19 @@ at runtime.</p>
 11
 12
 13</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">static</span><span class="normal"> </span><span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">messages</span><span class="symbol">[]</span><span class="normal"> </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="function"><a href="glib-I18N.html#N-:CAPS">N_</a></span><span class="symbol">(</span><span class="string">"some very meaningful message"</span><span class="symbol">),</span>
-<span class="normal">    </span><span class="function"><a href="glib-I18N.html#N-:CAPS">N_</a></span><span class="symbol">(</span><span class="string">"and another one"</span><span class="symbol">)</span>
-<span class="normal">  </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">string</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="symbol">...</span>
-<span class="normal">  string</span>
-<span class="normal">    </span><span class="symbol">=</span><span class="normal"> index </span><span class="symbol">&gt;</span><span class="normal"> </span><span class="number">1</span><span class="normal"> </span><span class="symbol">?</span><span class="normal"> </span><span class="function"><a href="glib-I18N.html#gettext-macro">_</a></span><span class="symbol">(</span><span class="string">"a default message"</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">:</span><span class="normal"> </span><span class="function">gettext</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">messages</span><span class="symbol">[</span><span class="normal">index</span><span class="symbol">]);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static const char</span> <span class="gtkdoc opt">*</span>messages<span class="gtkdoc opt">[] = {</span>
+    <span class="function"><a href="glib-I18N.html#N-:CAPS">N_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;some very meaningful message&quot;</span><span class="gtkdoc opt">),</span>
+    <span class="function"><a href="glib-I18N.html#N-:CAPS">N_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;and another one&quot;</span><span class="gtkdoc opt">)</span>
+  <span class="gtkdoc opt">};</span>
+  <span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">...</span>
+  string
+    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&amp;</span>gt<span class="gtkdoc opt">;</span> <span class="number">1</span> ? <span class="function">_</span><span class="gtkdoc opt">(</span><span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">) :</span> <span class="function">gettext</span> <span class="gtkdoc opt">(</span>messages<span class="gtkdoc opt">[</span>index<span class="gtkdoc opt">]);</span>
 
-<span class="normal">  </span><span class="function">fputs</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">string</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="symbol">...</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="function">fputs</span> <span class="gtkdoc opt">(</span>string<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">...</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -374,8 +345,8 @@ at runtime.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.5.8.6.5.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="N-.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -416,20 +387,20 @@ translated string, you should call <a class="link" href="glib-I18N.html#g-dpgett
 12
 13
 14</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">static</span><span class="normal"> </span><span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">messages</span><span class="symbol">[]</span><span class="normal"> </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="function"><a href="glib-I18N.html#NC-:CAPS">NC_</a></span><span class="symbol">(</span><span class="string">"some context"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"some very meaningful message"</span><span class="symbol">),</span>
-<span class="normal">    </span><span class="function"><a href="glib-I18N.html#NC-:CAPS">NC_</a></span><span class="symbol">(</span><span class="string">"some context"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"and another one"</span><span class="symbol">)</span>
-<span class="normal">  </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">string</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="symbol">...</span>
-<span class="normal">  string</span>
-<span class="normal">    </span><span class="symbol">=</span><span class="normal"> index </span><span class="symbol">&gt;</span><span class="normal"> </span><span class="number">1</span><span class="normal"> </span><span class="symbol">?</span><span class="normal"> </span><span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> </span><span class="string">"some context"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"a default message"</span><span class="symbol">)</span>
-<span class="normal">                </span><span class="symbol">:</span><span class="normal"> </span><span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> </span><span class="string">"some context"</span><span class="symbol">,</span><span class="normal"> messages</span><span class="symbol">[</span><span class="normal">index</span><span class="symbol">]);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static const char</span> <span class="gtkdoc opt">*</span>messages<span class="gtkdoc opt">[] = {</span>
+    <span class="function"><a href="glib-I18N.html#NC-:CAPS">NC_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;some very meaningful message&quot;</span><span class="gtkdoc opt">),</span>
+    <span class="function"><a href="glib-I18N.html#NC-:CAPS">NC_</a></span><span class="gtkdoc opt">(</span><span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;and another one&quot;</span><span class="gtkdoc opt">)</span>
+  <span class="gtkdoc opt">};</span>
+  <span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>string<span class="gtkdoc opt">;</span>
+  <span class="gtkdoc opt">...</span>
+  string
+    <span class="gtkdoc opt">=</span> index <span class="gtkdoc opt">&gt;</span> <span class="number">1</span> ? <span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> <span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;a default message&quot;</span><span class="gtkdoc opt">)</span>
+                <span class="gtkdoc opt">:</span> <span class="function"><a href="glib-I18N.html#g-dpgettext2">g_dpgettext2</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> <span class="string">&quot;some context&quot;</span><span class="gtkdoc opt">,</span> messages<span class="gtkdoc opt">[</span>index<span class="gtkdoc opt">]);</span>
 
-<span class="normal">  </span><span class="function">fputs</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">string</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="symbol">...</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="function">fputs</span> <span class="gtkdoc opt">(</span>string<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">...</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -441,8 +412,8 @@ translated string, you should call <a class="link" href="glib-I18N.html#g-dpgett
 Note that this only works with GNU gettext &gt;= 0.15. Intltool has support
 for the <a class="link" href="glib-I18N.html#NC-:CAPS" title="NC_()"><code class="function">NC_()</code></a> macro since version 0.40.1.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.6.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="NC-.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -496,10 +467,10 @@ starting with "en_")</p></li>
 has its untranslated messages in a language other than English. In those
 cases the application should call <code class="function">textdomain()</code> after initializing GTK+.</p>
 <p>Applications should normally not use this function directly,
-but use the <a class="link" href="glib-I18N.html#gettext-macro" title="_()"><code class="function">_()</code></a> macro for translations.</p>
+but use the <code class="function">_()</code> macro for translations.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.7.10"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dgettext.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -521,7 +492,7 @@ the domain set with <code class="function">textdomain()</code>. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.7.11"></a><h4>Returns</h4>
+<a name="g-dgettext.returns"></a><h4>Returns</h4>
 <p> The translated string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -532,14 +503,14 @@ the domain set with <code class="function">textdomain()</code>. </p></td>
 <pre class="programlisting">const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_dcgettext (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *domain</code></em>,
              <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *msgid</code></em>,
-             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> category</code></em>);</pre>
+             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> category</code></em>);</pre>
 <p>This is a variant of <a class="link" href="glib-I18N.html#g-dgettext" title="g_dgettext ()"><code class="function">g_dgettext()</code></a> that allows specifying a locale
 category instead of always using <code class="literal">LC_MESSAGES</code>. See <a class="link" href="glib-I18N.html#g-dgettext" title="g_dgettext ()"><code class="function">g_dgettext()</code></a> for
 more information about how this functions differs from calling
 <code class="function">dcgettext()</code> directly.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dcgettext.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -566,7 +537,7 @@ the domain set with <code class="function">textdomain()</code>. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.8.6"></a><h4>Returns</h4>
+<a name="g-dcgettext.returns"></a><h4>Returns</h4>
 <p> the translated string for the given locale category</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
@@ -585,8 +556,8 @@ translations for the current locale.</p>
 <p>See <a class="link" href="glib-I18N.html#g-dgettext" title="g_dgettext ()"><code class="function">g_dgettext()</code></a> for details of how this differs from <code class="function">dngettext()</code>
 proper.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.9.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dngettext.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -618,7 +589,7 @@ the domain set with <code class="function">textdomain()</code>. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.9.7"></a><h4>Returns</h4>
+<a name="g-dngettext.returns"></a><h4>Returns</h4>
 <p> The translated string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -644,8 +615,8 @@ with <code class="function">dgettext()</code> proper.</p>
 <p>Applications should normally not use this function directly,
 but use the <a class="link" href="glib-I18N.html#C-:CAPS" title="C_()"><code class="function">C_()</code></a> macro for translations with context.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.10.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dpgettext.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -674,7 +645,7 @@ by a \004 character</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.10.8"></a><h4>Returns</h4>
+<a name="g-dpgettext.returns"></a><h4>Returns</h4>
 <p> The translated string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-16.html#api-index-2.16">2.16</a></p>
@@ -696,8 +667,8 @@ with <code class="function">dgettext()</code> proper.</p>
 <p>This function differs from <a class="link" href="glib-I18N.html#C-:CAPS" title="C_()"><code class="function">C_()</code></a> in that it is not a macro and
 thus you may use non-string-literals as context and msgid arguments.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.11.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dpgettext2.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -724,7 +695,7 @@ the domain set with <code class="function">textdomain()</code>. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.11.8"></a><h4>Returns</h4>
+<a name="g-dpgettext2.returns"></a><h4>Returns</h4>
 <p> The translated string</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -737,8 +708,8 @@ g_strip_context (<em class="parameter"><code>const <a class="link" href="glib-Ba
                  <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *msgval</code></em>);</pre>
 <p>An auxiliary function for <code class="function">gettext()</code> support (see <a class="link" href="glib-I18N.html#Q-:CAPS" title="Q_()"><code class="function">Q_()</code></a>).</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-strip-context.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -759,7 +730,7 @@ g_strip_context (<em class="parameter"><code>const <a class="link" href="glib-Ba
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.12.6"></a><h4>Returns</h4>
+<a name="g-strip-context.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>msgval</code></em>
 , unless <em class="parameter"><code>msgval</code></em>
 is identical to <em class="parameter"><code>msgid</code></em>
@@ -783,7 +754,7 @@ the default locale "C".</p>
 <code class="literal">LC_MESSAGES</code> and <code class="literal">LANG</code> to find the list of locales specified by the
 user.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.13.7"></a><h4>Returns</h4>
+<a name="g-get-language-names.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib
 that must not be modified or freed. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -806,8 +777,8 @@ is "fr_BE", "fr".</p>
 <p>If you need the list of variants for the current locale,
 use <a class="link" href="glib-I18N.html#g-get-language-names" title="g_get_language_names ()"><code class="function">g_get_language_names()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.8.6.14.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-get-locale-variants.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -821,7 +792,7 @@ use <a class="link" href="glib-I18N.html#g-get-language-names" title="g_get_lang
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.8.6.14.8"></a><h4>Returns</h4>
+<a name="g-get-locale-variants.returns"></a><h4>Returns</h4>
 <p> a newly
 allocated array of newly allocated strings with the locale variants. Free with
 <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
@@ -839,6 +810,6 @@ allocated array of newly allocated strings with the locale variants. Free with
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

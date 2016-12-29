@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GListModel: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="data-models.html" title="Data Models">
 <link rel="prev" href="data-models.html" title="Data Models">
 <link rel="next" href="GListStore.html" title="GListStore">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -37,7 +37,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GListModel.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -45,7 +45,7 @@
 <tbody>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GListModel.html#g-list-model-get-item-type" title="g_list_model_get_item_type ()">g_list_model_get_item_type</a> <span class="c_punctuation">()</span>
@@ -53,7 +53,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GListModel.html#g-list-model-get-n-items" title="g_list_model_get_n_items ()">g_list_model_get_n_items</a> <span class="c_punctuation">()</span>
@@ -61,7 +61,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()">g_list_model_get_item</a> <span class="c_punctuation">()</span>
@@ -69,7 +69,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="returnvalue">GObject</span></a> *
+<a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="returnvalue">GObject</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GListModel.html#g-list-model-get-object" title="g_list_model_get_object ()">g_list_model_get_object</a> <span class="c_punctuation">()</span>
@@ -88,7 +88,7 @@
 </div>
 <div class="refsect1">
 <a name="GListModel.signals"></a><h2>Signals</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="signals_return">
 <col width="300px" class="signals_name">
@@ -97,13 +97,13 @@
 <tbody><tr>
 <td class="signal_type"><span class="returnvalue">void</span></td>
 <td class="signal_name"><a class="link" href="GListModel.html#GListModel-items-changed" title="The “items-changed” signal">items-changed</a></td>
-<td class="signal_flags"><a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
+<td class="signal_flags"><a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
 <a name="GListModel.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -130,7 +130,7 @@
 <a name="GListModel.prerequisites"></a><h2>Prerequisites</h2>
 <p>
 GListModel requires
- <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>.</p>
+ <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>.</p>
 </div>
 <div class="refsect1">
 <a name="GListModel.implementations"></a><h2>Known Implementations</h2>
@@ -146,12 +146,12 @@ GListModel is implemented by
 <div class="refsect1">
 <a name="GListModel.description"></a><h2>Description</h2>
 <p><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> is an interface that represents a mutable list of
-<a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="type">GObjects</span></a>. Its main intention is as a model for various widgets in
+<a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObjects</span></a>. Its main intention is as a model for various widgets in
 user interfaces, such as list views, but it can also be used as a
 convenient method of returning lists of data, with support for
 updates.</p>
 <p>Each object in the list may also report changes in itself via some
-mechanism (normally the <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject-notify"><span class="type">“notify”</span></a> signal).  Taken together
+mechanism (normally the <a href="../gobject-The-Base-Object-Type.html#GObject-notify"><span class="type">“notify”</span></a> signal).  Taken together
 with the <a class="link" href="GListModel.html#GListModel-items-changed" title="The “items-changed” signal"><span class="type">“items-changed”</span></a> signal, this provides for a list
 that can change its membership, and in which the members can change
 their individual properties.</p>
@@ -167,11 +167,11 @@ interested in.</p>
 <a class="link" href="GListModel.html#g-list-model-get-item-type" title="g_list_model_get_item_type ()"><code class="function">g_list_model_get_item_type()</code></a> returns that type.  The type may be an
 interface, in which case all objects in the list must implement it.</p>
 <p>The semantics are close to that of an array:
-<code class="function">g_list_model_get_length()</code> returns the number of items in the list and
+<a class="link" href="GListModel.html#g-list-model-get-n-items" title="g_list_model_get_n_items ()"><code class="function">g_list_model_get_n_items()</code></a> returns the number of items in the list and
 <a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()"><code class="function">g_list_model_get_item()</code></a> returns an item at a (0-based) position. In
 order to allow implementations to calculate the list length lazily,
 you can also iterate over items: starting from 0, repeatedly call
-<a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()"><code class="function">g_list_model_get_item()</code></a> until it returns <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
+<a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()"><code class="function">g_list_model_get_item()</code></a> until it returns <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <p>An implementation may create objects lazily, but must take care to
 return the same object for a given position until all references to
 it are gone.</p>
@@ -182,14 +182,14 @@ reduce the required number of signal connections at a given time.</p>
 <p>This interface is intended only to be used from a single thread.  The
 thread in which it is appropriate to use it depends on the particular
 implementation, but typically it will be from the thread that owns
-the <a href="https://developer.gnome.org/glib/unstable/glib-The-Main-Event-Loop.html#g-main-context-push-thread-default">thread-default main context</a>
+the <a href="../glib-The-Main-Event-Loop.html#g-main-context-push-thread-default">thread-default main context</a>
 in effect at the time that the model was created.</p>
 </div>
 <div class="refsect1">
 <a name="GListModel.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
 <a name="g-list-model-get-item-type"></a><h3>g_list_model_get_item_type ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
+<pre class="programlisting"><a href="../gobject-Type-Information.html#GType"><span class="returnvalue">GType</span></a>
 g_list_model_get_item_type (<em class="parameter"><code><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list</code></em>);</pre>
 <p>Gets the type of the items in <em class="parameter"><code>list</code></em>
 . All items returned from
@@ -198,8 +198,8 @@ implementation of that interface.</p>
 <p>The item type of a <a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> can not change during the life of the
 model.</p>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-list-model-get-item-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -213,8 +213,8 @@ model.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.2.7"></a><h4>Returns</h4>
-<p> the <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GType"><span class="type">GType</span></a> of the items contained in <em class="parameter"><code>list</code></em>
+<a name="g-list-model-get-item-type.returns"></a><h4>Returns</h4>
+<p> the <a href="../gobject-Type-Information.html#GType"><span class="type">GType</span></a> of the items contained in <em class="parameter"><code>list</code></em>
 .</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-44.html#api-index-2.44">2.44</a></p>
@@ -222,17 +222,17 @@ model.</p>
 <hr>
 <div class="refsect2">
 <a name="g-list-model-get-n-items"></a><h3>g_list_model_get_n_items ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_list_model_get_n_items (<em class="parameter"><code><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list</code></em>);</pre>
 <p>Gets the number of items in <em class="parameter"><code>list</code></em>
 .</p>
 <p>Depending on the model implementation, calling this function may be
 less efficient than iterating the list with increasing values for
 <em class="parameter"><code>position</code></em>
- until <a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()"><code class="function">g_list_model_get_item()</code></a> returns <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
+ until <a class="link" href="GListModel.html#g-list-model-get-item" title="g_list_model_get_item ()"><code class="function">g_list_model_get_item()</code></a> returns <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-list-model-get-n-items.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -246,7 +246,7 @@ less efficient than iterating the list with increasing values for
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.3.7"></a><h4>Returns</h4>
+<a name="g-list-model-get-n-items.returns"></a><h4>Returns</h4>
 <p> the number of items in <em class="parameter"><code>list</code></em>
 .</p>
 </div>
@@ -255,20 +255,20 @@ less efficient than iterating the list with increasing values for
 <hr>
 <div class="refsect2">
 <a name="g-list-model-get-item"></a><h3>g_list_model_get_item ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 g_list_model_get_item (<em class="parameter"><code><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list</code></em>,
-                       <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>);</pre>
+                       <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>);</pre>
 <p>Get the item at <em class="parameter"><code>position</code></em>
 . If <em class="parameter"><code>position</code></em>
  is greater than the number of
 items in <em class="parameter"><code>list</code></em>
-, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned.</p>
-<p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is never returned for an index that is smaller than the length
+, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned.</p>
+<p><a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is never returned for an index that is smaller than the length
 of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items" title="g_list_model_get_n_items ()"><code class="function">g_list_model_get_n_items()</code></a>.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.4.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-list-model-get-item.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -289,7 +289,7 @@ of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.4.8"></a><h4>Returns</h4>
+<a name="g-list-model-get-item.returns"></a><h4>Returns</h4>
 <p> the item at <em class="parameter"><code>position</code></em>
 . </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> GObject]</span></p>
@@ -299,20 +299,20 @@ of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items
 <hr>
 <div class="refsect2">
 <a name="g-list-model-get-object"></a><h3>g_list_model_get_object ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="returnvalue">GObject</span></a> *
+<pre class="programlisting"><a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="returnvalue">GObject</span></a> *
 g_list_model_get_object (<em class="parameter"><code><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list</code></em>,
-                         <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>);</pre>
+                         <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>);</pre>
 <p>Get the item at <em class="parameter"><code>position</code></em>
 . If <em class="parameter"><code>position</code></em>
  is greater than the number of
 items in <em class="parameter"><code>list</code></em>
-, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned.</p>
-<p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is never returned for an index that is smaller than the length
+, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned.</p>
+<p><a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is never returned for an index that is smaller than the length
 of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items" title="g_list_model_get_n_items ()"><code class="function">g_list_model_get_n_items()</code></a>.</p>
 <p><span class="annotation">[<acronym title="Rename the original symbol's name to SYMBOL."><span class="acronym">rename-to</span></acronym> g_list_model_get_item]</span></p>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.5.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-list-model-get-object.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -333,7 +333,7 @@ of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.5.8"></a><h4>Returns</h4>
+<a name="g-list-model-get-object.returns"></a><h4>Returns</h4>
 <p> the object at <em class="parameter"><code>position</code></em>
 . </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
@@ -345,9 +345,9 @@ of the list.  See <a class="link" href="GListModel.html#g-list-model-get-n-items
 <a name="g-list-model-items-changed"></a><h3>g_list_model_items_changed ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_list_model_items_changed (<em class="parameter"><code><a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list</code></em>,
-                            <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>,
-                            <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> removed</code></em>,
-                            <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> added</code></em>);</pre>
+                            <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> position</code></em>,
+                            <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> removed</code></em>,
+                            <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> added</code></em>);</pre>
 <p>Emits the <a class="link" href="GListModel.html#GListModel-items-changed" title="The “items-changed” signal"><span class="type">“items-changed”</span></a> signal on <em class="parameter"><code>list</code></em>
 .</p>
 <p>This function should only be called by classes implementing
@@ -368,8 +368,8 @@ series of accesses to the model via the API, without returning to the
 mainloop, and without calling other code, will continue to view the
 same contents of the model.</p>
 <div class="refsect3">
-<a name="id-1.4.22.2.11.6.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-list-model-items-changed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -427,19 +427,14 @@ using the following functions.</p>
 </pre>
 <p>The virtual function table for <a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.22.2.12.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GListModelInterface.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody>
-<tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a> <em class="structfield"><code><a name="GListModelInterface.g-iface"></a>g_iface</code></em>;</p></td>
-<td class="struct_member_description"><p>parent <a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a></p></td>
-<td class="struct_member_annotations"> </td>
-</tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GListModelInterface.get-item-type"></a>get_item_type</code></em> ()</p></td>
 <td class="struct_member_description"><p>the virtual function pointer for <a class="link" href="GListModel.html#g-list-model-get-item-type" title="g_list_model_get_item_type ()"><code class="function">g_list_model_get_item_type()</code></a></p></td>
@@ -467,10 +462,10 @@ using the following functions.</p>
 <a name="GListModel-items-changed"></a><h3>The <code class="literal">“items-changed”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="GListModel.html" title="GListModel"><span class="type">GListModel</span></a> *list,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a>       position,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a>       removed,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a>       added,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>    user_data)</pre>
+               <a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a>       position,
+               <a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a>       removed,
+               <a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a>       added,
+               <a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>    user_data)</pre>
 <p>This signal is emitted whenever items were added or removed to
 <em class="parameter"><code>list</code></em>
 . At <em class="parameter"><code>position</code></em>
@@ -479,8 +474,8 @@ user_function (<a class="link" href="GListModel.html" title="GListModel"><span c
  items
 were added in their place.</p>
 <div class="refsect3">
-<a name="id-1.4.22.2.13.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GListModel-items-changed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -516,7 +511,7 @@ changed</p></td>
 </tbody>
 </table></div>
 </div>
-<p>Flags: <a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
+<p>Flags: <a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
 <p class="since">Since: <a class="link" href="api-index-2-44.html#api-index-2.44">2.44</a></p>
 </div>
 </div>
@@ -526,6 +521,6 @@ changed</p></td>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

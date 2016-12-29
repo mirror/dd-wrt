@@ -205,7 +205,7 @@ set_auth_msg (guint8	  *msg,
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_PROXY_FAILED,
 			   _("Username or password is too long for SOCKSv5 "
 			     "protocol."));
-      return FALSE;
+      return -1;
     }
 
   msg[len++] = SOCKS5_AUTH_VERSION;
@@ -283,7 +283,7 @@ set_connect_msg (guint8       *msg,
       if (host_len > SOCKS5_MAX_LEN)
 	{
 	  g_set_error (error, G_IO_ERROR, G_IO_ERROR_PROXY_FAILED,
-		       _("Hostname '%s' is too long for SOCKSv5 protocol"),
+		       _("Hostname “%s” is too long for SOCKSv5 protocol"),
 		       hostname);
 	  return -1;
 	}
@@ -383,7 +383,7 @@ parse_connect_reply (const guint8 *data, gint *atype, GError **error)
 
       case SOCKS5_REP_CMD_NOT_SUP:
 	g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_PROXY_FAILED,
-			     _("SOCKSv5 proxy does not support 'connect' command."));
+			     _("SOCKSv5 proxy does not support “connect” command."));
 	return FALSE;
 	break;
 
@@ -626,6 +626,7 @@ g_socks5_proxy_connect_async (GProxy               *proxy,
   data->io_stream = g_object_ref (io_stream);
 
   task = g_task_new (proxy, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_socks5_proxy_connect_async);
   g_task_set_task_data (task, data, (GDestroyNotify) free_connect_data);
 
   g_object_get (G_OBJECT (proxy_address),

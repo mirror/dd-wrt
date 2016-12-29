@@ -36,12 +36,12 @@
  * @see_also: #GInputStream, #GOutputStream
  *
  * GIOStream represents an object that has both read and write streams.
- * Generally the two streams acts as separate input and output streams,
+ * Generally the two streams act as separate input and output streams,
  * but they share some common resources and state. For instance, for
- * seekable streams they may use the same position in both streams.
+ * seekable streams, both streams may use the same position.
  *
- * Examples of #GIOStream objects are #GSocketConnection which represents
- * a two-way network connection, and #GFileIOStream which represent a
+ * Examples of #GIOStream objects are #GSocketConnection, which represents
+ * a two-way network connection; and #GFileIOStream, which represents a
  * file handle opened in read-write mode.
  *
  * To do the actual reading and writing you need to get the substreams
@@ -50,8 +50,8 @@
  * The #GIOStream object owns the input and the output streams, not the other
  * way around, so keeping the substreams alive will not keep the #GIOStream
  * object alive. If the #GIOStream object is freed it will be closed, thus
- * closing the substream, so even if the substreams stay alive they will
- * always just return a %G_IO_ERROR_CLOSED for all operations.
+ * closing the substreams, so even if the substreams stay alive they will
+ * always return %G_IO_ERROR_CLOSED for all operations.
  *
  * To close a stream use g_io_stream_close() which will close the common
  * stream object and also the individual substreams. You can also close
@@ -59,6 +59,28 @@
  * substream as closed, so further I/O on it fails but common state in the
  * #GIOStream may still be open. However, some streams may support
  * "half-closed" states where one direction of the stream is actually shut down.
+ *
+ * Operations on #GIOStreams cannot be started while another operation on the
+ * #GIOStream or its substreams is in progress. Specifically, an application can
+ * read from the #GInputStream and write to the #GOutputStream simultaneously
+ * (either in separate threads, or as asynchronous operations in the same
+ * thread), but an application cannot start any #GIOStream operation while there
+ * is a #GIOStream, #GInputStream or #GOutputStream operation in progress, and
+ * an application can’t start any #GInputStream or #GOutputStream operation
+ * while there is a #GIOStream operation in progress.
+ *
+ * This is a product of individual stream operations being associated with a
+ * given #GMainContext (the thread-default context at the time the operation was
+ * started), rather than entire streams being associated with a single
+ * #GMainContext.
+ *
+ * GIO may run operations on #GIOStreams from other (worker) threads, and this
+ * may be exposed to application code in the behaviour of wrapper streams, such
+ * as #GBufferedInputStream or #GTlsConnection. With such wrapper APIs,
+ * application code may only run operations on the base (wrapped) stream when
+ * the wrapper stream is idle. Note that the semantics of such operations may
+ * not be well-defined due to the state the wrapper stream leaves the base
+ * stream in (though they are guaranteed not to crash).
  *
  * Since: 2.22
  */
@@ -337,7 +359,7 @@ g_io_stream_real_close (GIOStream     *stream,
  * @error: location to store the error occurring, or %NULL to ignore
  *
  * Closes the stream, releasing resources related to it. This will also
- * closes the individual input and output streams, if they are not already
+ * close the individual input and output streams, if they are not already
  * closed.
  *
  * Once the stream is closed, all other operations will return
@@ -470,6 +492,7 @@ g_io_stream_close_async (GIOStream           *stream,
   g_return_if_fail (G_IS_IO_STREAM (stream));
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_io_stream_close_async);
 
   if (stream->priv->closed)
     {
@@ -602,6 +625,7 @@ g_io_stream_real_close_async (GIOStream           *stream,
   GTask *task;
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_io_stream_real_close_async);
   g_task_set_check_cancellable (task, FALSE);
   g_task_set_priority (task, io_priority);
 
@@ -848,6 +872,7 @@ g_io_stream_splice_async (GIOStream            *stream1,
   ctx->completed = 0;
 
   task = g_task_new (NULL, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_io_stream_splice_async);
   g_task_set_task_data (task, ctx, (GDestroyNotify) splice_context_free);
 
   if (cancellable != NULL)

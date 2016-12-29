@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: gdbus-codegen
 .\"    Author: David Zeuthen <zeuthen@gmail.com>
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 05/25/2015
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2016
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -31,7 +31,7 @@
 gdbus-codegen \- D\-Bus code and documentation generator
 .SH "SYNOPSIS"
 .HP \w'\fBgdbus\-codegen\fR\ 'u
-\fBgdbus\-codegen\fR [\fB\-h\fR,\ \fB\-\-help\fR] [\fB\-\-interface\-prefix\fR\ \fIorg\&.project\&.Prefix\fR] [\fB\-\-generate\-c\-code\fR\ \fIOUTFILES\fR] [\fB\-\-c\-namespace\fR\ \fIYourProject\fR] [\fB\-\-c\-generate\-object\-manager\fR] [\fB\-\-generate\-docbook\fR\ \fIOUTFILES\fR] [\fB\-\-xml\-files\fR\ \fIFILE\fR] [\fB\-\-annotate\fR\ \fIELEMENT\fR\ \fIKEY\fR\ \fIVALUE\fR]...  FILE [FILE...]
+\fBgdbus\-codegen\fR [\fB\-h\fR,\ \fB\-\-help\fR] [\fB\-\-interface\-prefix\fR\ \fIorg\&.project\&.Prefix\fR] [\fB\-\-generate\-c\-code\fR\ \fIOUTFILES\fR] [\fB\-\-c\-namespace\fR\ \fIYourProject\fR] [\fB\-\-c\-generate\-object\-manager\fR] [\fB\-\-c\-generate\-autocleanup\fR\ none|objects|all] [\fB\-\-generate\-docbook\fR\ \fIOUTFILES\fR] [\fB\-\-xml\-files\fR\ \fIFILE\fR] [\fB\-\-annotate\fR\ \fIELEMENT\fR\ \fIKEY\fR\ \fIVALUE\fR]...  FILE [FILE...]
 .SH "DESCRIPTION"
 .PP
 \fBgdbus\-codegen\fR
@@ -57,7 +57,8 @@ the name used is
 ComAcmeCoyote\&. For the D\-Bus interface
 org\&.project\&.Bar\&.Frobnicator
 with
-\fB\-\-interface\-prefix\fRorg\&.project\&., the name used is
+\fB\-\-interface\-prefix\fR
+org\&.project\&., the name used is
 BarFrobnicator\&.
 .PP
 For methods, signals and properties, if not specified, the name defaults to the name of the method, signal or property\&.
@@ -141,6 +142,11 @@ or
 If this option is passed, suitable #GDBusObject, #GDBusObjectProxy, #GDBusObjectSkeleton and #GDBusObjectManagerClient subclasses are generated\&.
 .RE
 .PP
+\fB\-\-c\-generate\-autocleanup\fR none|objects|all
+.RS 4
+This option influences what types autocleanup functions are generated for\&. \*(Aqnone\*(Aq means to not generate any autocleanup functions\&. \*(Aqobjects\*(Aq means to generate them for object types, and \*(Aqall\*(Aq means to generate them for object types and interfaces\&. The default is \*(Aqobjects\*(Aq due to a corner case in backwards compatibility with a few projects, but you should likely switch your project to use \*(Aqall\*(Aq\&. This option was added in GLib 2\&.50\&.
+.RE
+.PP
 \fB\-\-annotate\fR \fIELEMENT\fR \fIKEY\fR \fIVALUE\fR
 .RS 4
 Used to inject D\-Bus annotations into the given XML files\&. It can be used with interfaces, methods, signals, properties and arguments in the following way:
@@ -173,7 +179,7 @@ Any UTF\-8 string can be used for
 and
 \fIVALUE\fR\&.
 .RE
-.SH "SUPPORTED D-BUS ANNOTATIONS"
+.SH "SUPPORTED D\-BUS ANNOTATIONS"
 .PP
 The following D\-Bus annotations are supported by
 \fBgdbus\-codegen\fR:
@@ -546,7 +552,7 @@ Instead of using the generic #GDBusProxy facilities, one can use the generated m
 \fBmy_app_frobber_call_hello_world()\fR
 to invoke the
 \fBnet\&.Corp\&.MyApp\&.Frobber\&.HelloWorld()\fR
-D\-Bus method, connect to the the
+D\-Bus method, connect to the
 \fB::notification\fR
 GObject signal to receive the
 \fBnet\&.Corp\&.MyApp\&.Frobber::Notication\fR
@@ -649,32 +655,32 @@ on_handle_hello_world (MyAppFrobber           *interface,
 .\}
 .PP
 To facilitate atomic changesets (multiple properties changing at the same time), #GObject::notify signals are queued up when received\&. The queue is drained in an idle handler (which is called from the
-thread-default main loop
+thread\-default main loop
 of the thread where the skeleton object was contructed) and will cause emissions of the
 \m[blue]\fBorg\&.freedesktop\&.DBus\&.Properties::PropertiesChanged\fR\m[]\&\s-2\u[8]\d\s+2
 signal with all the properties that have changed\&. Use g_dbus_interface_skeleton_flush() or g_dbus_object_skeleton_flush() to empty the queue immediately\&. Use g_object_freeze_notify() and g_object_thaw_notify() for atomic changesets if on a different thread\&.
 .SH "C TYPE MAPPING"
 .PP
 Scalar types (type\-strings
-'b',
-'y',
-'n',
-'q',
-'i',
-'u',
-'x',
-'t'
+\*(Aqb\*(Aq,
+\*(Aqy\*(Aq,
+\*(Aqn\*(Aq,
+\*(Aqq\*(Aq,
+\*(Aqi\*(Aq,
+\*(Aqu\*(Aq,
+\*(Aqx\*(Aq,
+\*(Aqt\*(Aq
 and
-'d') ), strings (type\-strings
-'s',
-'ay',
-'o'
+\*(Aqd\*(Aq) ), strings (type\-strings
+\*(Aqs\*(Aq,
+\*(Aqay\*(Aq,
+\*(Aqo\*(Aq
 and
-'g') and arrays of string (type\-strings
-'as',
-'ao'
+\*(Aqg\*(Aq) and arrays of string (type\-strings
+\*(Aqas\*(Aq,
+\*(Aqao\*(Aq
 and
-'aay') are mapped to the natural types, e\&.g\&. #gboolean, #gdouble, #gint,
+\*(Aqaay\*(Aq) are mapped to the natural types, e\&.g\&. #gboolean, #gdouble, #gint,
 gchar*,
 gchar**
 and so on\&. Everything else is mapped to the #GVariant type\&.
@@ -682,7 +688,7 @@ and so on\&. Everything else is mapped to the #GVariant type\&.
 This automatic mapping can be turned off by using the annotation
 org\&.gtk\&.GDBus\&.C\&.ForceGVariant
 \- if used then a #GVariant is always exchanged instead of the corresponding native C type\&. This annotation may be convenient to use when using bytestrings (type\-string
-'ay') for data that could have embedded NUL bytes\&.
+\*(Aqay\*(Aq) for data that could have embedded NUL bytes\&.
 .SH "STABILITY GUARANTEES"
 .PP
 The generated C functions are guaranteed to not change their ABI that is, if a method, signal or property does not change its signature in the introspection XML, the generated C functions will not change its C ABI either\&. The ABI of the generated instance and class structures will be preserved as well\&.

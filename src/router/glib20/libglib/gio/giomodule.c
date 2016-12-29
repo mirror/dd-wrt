@@ -339,7 +339,7 @@ g_io_module_unload_module (GTypeModule *gmodule)
 
 /**
  * g_io_module_new:
- * @filename: filename of the shared library module.
+ * @filename: (type filename): filename of the shared library module.
  * 
  * Creates a new GIOModule that will load the specific
  * shared library when in use.
@@ -389,7 +389,8 @@ is_valid_module_name (const gchar        *basename,
 
 /**
  * g_io_modules_scan_all_in_directory_with_scope:
- * @dirname: pathname for a directory containing modules to scan.
+ * @dirname: (type filename): pathname for a directory containing modules
+ *     to scan.
  * @scope: a scope to use when scanning the modules
  *
  * Scans all the modules in the specified directory, ensuring that
@@ -531,7 +532,8 @@ g_io_modules_scan_all_in_directory_with_scope (const char     *dirname,
 
 /**
  * g_io_modules_scan_all_in_directory:
- * @dirname: pathname for a directory containing modules to scan.
+ * @dirname: (type filename): pathname for a directory containing modules
+ *     to scan.
  *
  * Scans all the modules in the specified directory, ensuring that
  * any extension point implemented by a module is registered.
@@ -555,7 +557,8 @@ g_io_modules_scan_all_in_directory (const char *dirname)
 
 /**
  * g_io_modules_load_all_in_directory_with_scope:
- * @dirname: pathname for a directory containing modules to load.
+ * @dirname: (type filename): pathname for a directory containing modules
+ *     to load.
  * @scope: a scope to use when scanning the modules.
  *
  * Loads all the modules in the specified directory.
@@ -620,7 +623,8 @@ g_io_modules_load_all_in_directory_with_scope (const char     *dirname,
 
 /**
  * g_io_modules_load_all_in_directory:
- * @dirname: pathname for a directory containing modules to load.
+ * @dirname: (type filename): pathname for a directory containing modules
+ *     to load.
  *
  * Loads all the modules in the specified directory.
  *
@@ -909,6 +913,13 @@ extern GType _g_network_monitor_nm_get_type (void);
 #ifdef G_OS_UNIX
 extern GType g_fdo_notification_backend_get_type (void);
 extern GType g_gtk_notification_backend_get_type (void);
+extern GType g_portal_notification_backend_get_type (void);
+extern GType g_proxy_resolver_portal_get_type (void);
+extern GType g_network_monitor_portal_get_type (void);
+#endif
+
+#ifdef HAVE_COCOA
+extern GType g_cocoa_notification_backend_get_type (void);
 #endif
 
 #ifdef G_PLATFORM_WIN32
@@ -945,16 +956,6 @@ _g_io_win32_get_module (void)
                         &gio_dll);
   return gio_dll;
 }
-
-#undef GIO_MODULE_DIR
-
-/* GIO_MODULE_DIR is used only in code called just once,
- * so no problem leaking this
- */
-#define GIO_MODULE_DIR \
-  g_build_filename (g_win32_get_package_installation_directory_of_module (gio_dll), \
-		    "lib/gio/modules", \
-		    NULL)
 
 #endif
 
@@ -1016,13 +1017,45 @@ _g_io_modules_ensure_extension_points_registered (void)
   G_UNLOCK (registered_extensions);
 }
 
+static gchar *
+get_gio_module_dir (void)
+{
+  gchar *module_dir;
+
+  module_dir = g_strdup (g_getenv ("GIO_MODULE_DIR"));
+  if (module_dir == NULL)
+    {
+#ifdef G_OS_WIN32
+      gchar *install_dir;
+
+      install_dir = g_win32_get_package_installation_directory_of_module (gio_dll);
+#ifdef _MSC_VER
+      /* On Visual Studio builds we have all the libraries and binaries in bin
+       * so better load the gio modules from bin instead of lib
+       */
+      module_dir = g_build_filename (install_dir,
+                                     "bin", "gio", "modules",
+                                     NULL);
+#else
+      module_dir = g_build_filename (install_dir,
+                                     "lib", "gio", "modules",
+                                     NULL);
+#endif
+      g_free (install_dir);
+#else
+      module_dir = g_strdup (GIO_MODULE_DIR);
+#endif
+    }
+
+  return module_dir;
+}
+
 void
 _g_io_modules_ensure_loaded (void)
 {
   static gboolean loaded_dirs = FALSE;
   const char *module_path;
   GIOModuleScope *scope;
-  const gchar *module_dir;
 
   _g_io_modules_ensure_extension_points_registered ();
   
@@ -1030,6 +1063,8 @@ _g_io_modules_ensure_loaded (void)
 
   if (!loaded_dirs)
     {
+      gchar *module_dir;
+
       loaded_dirs = TRUE;
       scope = g_io_module_scope_new (G_IO_MODULE_SCOPE_BLOCK_DUPLICATES);
 
@@ -1051,11 +1086,10 @@ _g_io_modules_ensure_loaded (void)
 	}
 
       /* Then load the compiled in path */
-      module_dir = g_getenv ("GIO_MODULE_DIR");
-      if (module_dir == NULL)
-        module_dir = GIO_MODULE_DIR;
+      module_dir = get_gio_module_dir ();
 
       g_io_modules_scan_all_in_directory_with_scope (module_dir, scope);
+      g_free (module_dir);
 
       g_io_module_scope_free (scope);
 
@@ -1083,6 +1117,12 @@ _g_io_modules_ensure_loaded (void)
       g_type_ensure (_g_unix_volume_monitor_get_type ());
       g_type_ensure (g_fdo_notification_backend_get_type ());
       g_type_ensure (g_gtk_notification_backend_get_type ());
+      g_type_ensure (g_portal_notification_backend_get_type ());
+      g_type_ensure (g_network_monitor_portal_get_type ());
+      g_type_ensure (g_proxy_resolver_portal_get_type ());
+#endif
+#ifdef HAVE_COCOA
+      g_type_ensure (g_cocoa_notification_backend_get_type ());
 #endif
 #ifdef G_OS_WIN32
       g_type_ensure (_g_winhttp_vfs_get_type ());

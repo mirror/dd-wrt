@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GFilenameCompleter: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="utils.html" title="File-related Utilities">
 <link rel="prev" href="utils.html" title="File-related Utilities">
 <link rel="next" href="async.html" title="Asynchronous I/O">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GFilenameCompleter.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -78,7 +78,7 @@
 </div>
 <div class="refsect1">
 <a name="GFilenameCompleter.signals"></a><h2>Signals</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="signals_return">
 <col width="300px" class="signals_name">
@@ -87,13 +87,13 @@
 <tbody><tr>
 <td class="signal_type"><span class="returnvalue">void</span></td>
 <td class="signal_name"><a class="link" href="GFilenameCompleter.html#GFilenameCompleter-got-completion-data" title="The “got-completion-data” signal">got-completion-data</a></td>
-<td class="signal_flags"><a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
+<td class="signal_flags"><a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect1">
 <a name="GFilenameCompleter.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -106,7 +106,7 @@
 </div>
 <div class="refsect1">
 <a name="GFilenameCompleter.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GFilenameCompleter
 </pre>
 </div>
@@ -129,7 +129,7 @@ completion strings for widget implementations.</p>
 g_filename_completer_new (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Creates a new filename completer.</p>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.2.5"></a><h4>Returns</h4>
+<a name="g-filename-completer-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GFilenameCompleter.html" title="GFilenameCompleter"><span class="type">GFilenameCompleter</span></a>.</p>
 </div>
 </div>
@@ -144,8 +144,8 @@ g_filename_completer_get_completion_suffix
  from <em class="parameter"><code>completer</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-filename-completer-get-completion-suffix.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -166,9 +166,9 @@ g_filename_completer_get_completion_suffix
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.3.6"></a><h4>Returns</h4>
-<p> a completed string, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no completion exists.
-This string is not owned by GIO, so remember to <a href="https://developer.gnome.org/glib/unstable/glib-Memory-Allocation.html#g-free"><code class="function">g_free()</code></a> it
+<a name="g-filename-completer-get-completion-suffix.returns"></a><h4>Returns</h4>
+<p> a completed string, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no completion exists.
+This string is not owned by GIO, so remember to <a href="../glib-Memory-Allocation.html#g-free"><code class="function">g_free()</code></a> it
 when finished.</p>
 </div>
 </div>
@@ -180,8 +180,8 @@ g_filename_completer_get_completions (<em class="parameter"><code><a class="link
                                       <em class="parameter"><code>const <span class="type">char</span> *initial_text</code></em>);</pre>
 <p>Gets an array of completion strings for a given initial text.</p>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-filename-completer-get-completions.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -202,10 +202,10 @@ g_filename_completer_get_completions (<em class="parameter"><code><a class="link
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.4.6"></a><h4>Returns</h4>
+<a name="g-filename-completer-get-completions.returns"></a><h4>Returns</h4>
 <p> array of strings with possible completions for <em class="parameter"><code>initial_text</code></em>
 .
-This array must be freed by <a href="https://developer.gnome.org/glib/unstable/glib-String-Utility-Functions.html#g-strfreev"><code class="function">g_strfreev()</code></a> when finished. </p>
+This array must be freed by <a href="../glib-String-Utility-Functions.html#g-strfreev"><code class="function">g_strfreev()</code></a> when finished. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -214,14 +214,14 @@ This array must be freed by <a href="https://developer.gnome.org/glib/unstable/g
 <a name="g-filename-completer-set-dirs-only"></a><h3>g_filename_completer_set_dirs_only ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_filename_completer_set_dirs_only (<em class="parameter"><code><a class="link" href="GFilenameCompleter.html" title="GFilenameCompleter"><span class="type">GFilenameCompleter</span></a> *completer</code></em>,
-                                    <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> dirs_only</code></em>);</pre>
+                                    <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> dirs_only</code></em>);</pre>
 <p>If <em class="parameter"><code>dirs_only</code></em>
- is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, <em class="parameter"><code>completer</code></em>
+ is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, <em class="parameter"><code>completer</code></em>
  will only 
 complete directory names, and not file names.</p>
 <div class="refsect3">
-<a name="id-1.4.4.2.9.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-filename-completer-set-dirs-only.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -235,7 +235,7 @@ complete directory names, and not file names.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>dirs_only</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -257,11 +257,11 @@ complete directory names, and not file names.</p>
 <a name="GFilenameCompleter-got-completion-data"></a><h3>The <code class="literal">“got-completion-data”</code> signal</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 user_function (<a class="link" href="GFilenameCompleter.html" title="GFilenameCompleter"><span class="type">GFilenameCompleter</span></a> *arg0,
-               <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>            user_data)</pre>
+               <a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a>            user_data)</pre>
 <p>Emitted when the file name completion information comes available.</p>
 <div class="refsect3">
-<a name="id-1.4.4.2.11.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFilenameCompleter-got-completion-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -274,11 +274,11 @@ user_function (<a class="link" href="GFilenameCompleter.html" title="GFilenameCo
 </tr></tbody>
 </table></div>
 </div>
-<p>Flags: <a href="https://developer.gnome.org/gobject/unstable/gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
+<p>Flags: <a href="../gobject-Signals.html#G-SIGNAL-RUN-LAST:CAPS">Run Last</a></p>
 </div>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

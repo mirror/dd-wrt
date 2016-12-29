@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GBufferedOutputStream: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="GBufferedInputStream.html" title="GBufferedInputStream">
 <link rel="next" href="GDataInputStream.html" title="GDataInputStream">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GBufferedOutputStream.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -60,7 +60,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="returnvalue">gsize</span></a>
+<a href="../glib-Basic-Types.html#gsize"><span class="returnvalue">gsize</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GBufferedOutputStream.html#g-buffered-output-stream-get-buffer-size" title="g_buffered_output_stream_get_buffer_size ()">g_buffered_output_stream_get_buffer_size</a> <span class="c_punctuation">()</span>
@@ -76,7 +76,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GBufferedOutputStream.html#g-buffered-output-stream-get-auto-grow" title="g_buffered_output_stream_get_auto_grow ()">g_buffered_output_stream_get_auto_grow</a> <span class="c_punctuation">()</span>
@@ -95,7 +95,7 @@
 </div>
 <div class="refsect1">
 <a name="GBufferedOutputStream.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -103,12 +103,12 @@
 </colgroup>
 <tbody>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
 <td class="property_name"><a class="link" href="GBufferedOutputStream.html#GBufferedOutputStream--auto-grow" title="The “auto-grow” property">auto-grow</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a></td>
 <td class="property_name"><a class="link" href="GBufferedOutputStream.html#GBufferedOutputStream--buffer-size" title="The “buffer-size” property">buffer-size</a></td>
 <td class="property_flags">Read / Write / Construct</td>
 </tr>
@@ -117,7 +117,7 @@
 </div>
 <div class="refsect1">
 <a name="GBufferedOutputStream.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -130,7 +130,7 @@
 </div>
 <div class="refsect1">
 <a name="GBufferedOutputStream.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> <a class="link" href="GOutputStream.html" title="GOutputStream">GOutputStream</a>
         <span class="lineart">╰──</span> <a class="link" href="GFilterOutputStream.html" title="GFilterOutputStream">GFilterOutputStream</a>
             <span class="lineart">╰──</span> GBufferedOutputStream
@@ -169,8 +169,8 @@ size cannot be reduced below the size of the data within the buffer.</p>
 g_buffered_output_stream_new (<em class="parameter"><code><a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a> *base_stream</code></em>);</pre>
 <p>Creates a new buffered output stream for a base stream.</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -184,7 +184,7 @@ g_buffered_output_stream_new (<em class="parameter"><code><a class="link" href="
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.2.6"></a><h4>Returns</h4>
+<a name="g-buffered-output-stream-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a> for the given <em class="parameter"><code>base_stream</code></em>
 .</p>
 </div>
@@ -194,11 +194,11 @@ g_buffered_output_stream_new (<em class="parameter"><code><a class="link" href="
 <a name="g-buffered-output-stream-new-sized"></a><h3>g_buffered_output_stream_new_sized ()</h3>
 <pre class="programlisting"><a class="link" href="GOutputStream.html" title="GOutputStream"><span class="returnvalue">GOutputStream</span></a> *
 g_buffered_output_stream_new_sized (<em class="parameter"><code><a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a> *base_stream</code></em>,
-                                    <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="type">gsize</span></a> size</code></em>);</pre>
+                                    <em class="parameter"><code><a href="../glib-Basic-Types.html#gsize"><span class="type">gsize</span></a> size</code></em>);</pre>
 <p>Creates a new buffered output stream with a given buffer size.</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-new-sized.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -212,14 +212,14 @@ g_buffered_output_stream_new_sized (<em class="parameter"><code><a class="link" 
 </tr>
 <tr>
 <td class="parameter_name"><p>size</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="type">gsize</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gsize"><span class="type">gsize</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.3.6"></a><h4>Returns</h4>
+<a name="g-buffered-output-stream-new-sized.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a> with an internal buffer set to <em class="parameter"><code>size</code></em>
 .</p>
 </div>
@@ -227,14 +227,14 @@ g_buffered_output_stream_new_sized (<em class="parameter"><code><a class="link" 
 <hr>
 <div class="refsect2">
 <a name="g-buffered-output-stream-get-buffer-size"></a><h3>g_buffered_output_stream_get_buffer_size ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="returnvalue">gsize</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gsize"><span class="returnvalue">gsize</span></a>
 g_buffered_output_stream_get_buffer_size
                                (<em class="parameter"><code><a class="link" href="GBufferedOutputStream.html" title="GBufferedOutputStream"><span class="type">GBufferedOutputStream</span></a> *stream</code></em>);</pre>
 <p>Gets the size of the buffer in the <em class="parameter"><code>stream</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-get-buffer-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -248,7 +248,7 @@ g_buffered_output_stream_get_buffer_size
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.4.6"></a><h4>Returns</h4>
+<a name="g-buffered-output-stream-get-buffer-size.returns"></a><h4>Returns</h4>
 <p> the current size of the buffer.</p>
 </div>
 </div>
@@ -258,12 +258,12 @@ g_buffered_output_stream_get_buffer_size
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_buffered_output_stream_set_buffer_size
                                (<em class="parameter"><code><a class="link" href="GBufferedOutputStream.html" title="GBufferedOutputStream"><span class="type">GBufferedOutputStream</span></a> *stream</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="type">gsize</span></a> size</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gsize"><span class="type">gsize</span></a> size</code></em>);</pre>
 <p>Sets the size of the internal buffer to <em class="parameter"><code>size</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-set-buffer-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -277,7 +277,7 @@ g_buffered_output_stream_set_buffer_size
 </tr>
 <tr>
 <td class="parameter_name"><p>size</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gsize"><span class="type">gsize</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gsize"><span class="type">gsize</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -287,13 +287,13 @@ g_buffered_output_stream_set_buffer_size
 <hr>
 <div class="refsect2">
 <a name="g-buffered-output-stream-get-auto-grow"></a><h3>g_buffered_output_stream_get_auto_grow ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_buffered_output_stream_get_auto_grow
                                (<em class="parameter"><code><a class="link" href="GBufferedOutputStream.html" title="GBufferedOutputStream"><span class="type">GBufferedOutputStream</span></a> *stream</code></em>);</pre>
 <p>Checks if the buffer automatically grows as data is added.</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-get-auto-grow.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -307,10 +307,10 @@ g_buffered_output_stream_get_auto_grow
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.6.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the <em class="parameter"><code>stream</code></em>
+<a name="g-buffered-output-stream-get-auto-grow.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the <em class="parameter"><code>stream</code></em>
 's buffer automatically grows,
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
+<a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
 </div>
 </div>
 <hr>
@@ -319,7 +319,7 @@ g_buffered_output_stream_get_auto_grow
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_buffered_output_stream_set_auto_grow
                                (<em class="parameter"><code><a class="link" href="GBufferedOutputStream.html" title="GBufferedOutputStream"><span class="type">GBufferedOutputStream</span></a> *stream</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> auto_grow</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> auto_grow</code></em>);</pre>
 <p>Sets whether or not the <em class="parameter"><code>stream</code></em>
 's buffer should automatically grow.
 If <em class="parameter"><code>auto_grow</code></em>
@@ -327,8 +327,8 @@ If <em class="parameter"><code>auto_grow</code></em>
 larger, and you must manually flush the buffer to actually write out
 the data to the underlying stream.</p>
 <div class="refsect3">
-<a name="id-1.4.7.16.10.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-buffered-output-stream-set-auto-grow.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -342,7 +342,7 @@ the data to the underlying stream.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>auto_grow</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -362,7 +362,7 @@ the data to the underlying stream.</p>
 <a name="GBufferedOutputStream.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="GBufferedOutputStream--auto-grow"></a><h3>The <code class="literal">“auto-grow”</code> property</h3>
-<pre class="programlisting">  “auto-grow”                <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
+<pre class="programlisting">  “auto-grow”                <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
 <p>Whether the buffer should automatically grow.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: FALSE</p>
@@ -370,7 +370,7 @@ the data to the underlying stream.</p>
 <hr>
 <div class="refsect2">
 <a name="GBufferedOutputStream--buffer-size"></a><h3>The <code class="literal">“buffer-size”</code> property</h3>
-<pre class="programlisting">  “buffer-size”              <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a></pre>
+<pre class="programlisting">  “buffer-size”              <a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a></pre>
 <p>The size of the backend buffer.</p>
 <p>Flags: Read / Write / Construct</p>
 <p>Allowed values: &gt;= 1</p>
@@ -383,6 +383,6 @@ the data to the underlying stream.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

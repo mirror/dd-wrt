@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Miscellaneous Utility Functions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Hook-Functions.html" title="Hook Functions">
 <link rel="next" href="glib-Lexical-Scanner.html" title="Lexical Scanner">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Miscellaneous-Utility-Functions.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -334,32 +334,26 @@
 </td>
 </tr>
 <tr>
-<td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
-</td>
+<td class="define_keyword">#define</td>
 <td class="function_name">
-<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-lsf" title="g_bit_nth_lsf ()">g_bit_nth_lsf</a> <span class="c_punctuation">()</span>
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-lsf" title="g_bit_nth_lsf()">g_bit_nth_lsf</a><span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name">
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-msf" title="g_bit_nth_msf()">g_bit_nth_msf</a><span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name">
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-storage" title="g_bit_storage()">g_bit_storage</a><span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
-</td>
-<td class="function_name">
-<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-nth-msf" title="g_bit_nth_msf ()">g_bit_nth_msf</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-<tr>
-<td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
-</td>
-<td class="function_name">
-<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-bit-storage" title="g_bit_storage ()">g_bit_storage</a> <span class="c_punctuation">()</span>
-</td>
-</tr>
-<tr>
-<td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-spaced-primes-closest" title="g_spaced_primes_closest ()">g_spaced_primes_closest</a> <span class="c_punctuation">()</span>
@@ -375,7 +369,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-parse-debug-string" title="g_parse_debug_string ()">g_parse_debug_string</a> <span class="c_punctuation">()</span>
@@ -418,7 +412,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Miscellaneous-Utility-Functions.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -466,7 +460,7 @@ possible, and is intended for display to the user.  Contrast with
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-prgname" title="g_get_prgname ()"><code class="function">g_get_prgname()</code></a> (which may be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a> has also not
 been called).</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.2.5"></a><h4>Returns</h4>
+<a name="g-get-application-name.returns"></a><h4>Returns</h4>
 <p> human-readable application name. may return <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-2.html#api-index-2.2">2.2</a></p>
@@ -479,15 +473,15 @@ g_set_application_name (<em class="parameter"><code>const <a class="link" href="
 <p>Sets a human-readable name for the application. This name should be
 localized if possible, and is intended for display to the user.
 Contrast with <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a>, which sets a non-localized name.
-<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a> will be called automatically by <a href="http://developer.gnome.org/gtk2/gtk3-General.html#gtk-init"><code class="function">gtk_init()</code></a>,
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-prgname" title="g_set_prgname ()"><code class="function">g_set_prgname()</code></a> will be called automatically by <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a>,
 but <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-application-name" title="g_set_application_name ()"><code class="function">g_set_application_name()</code></a> will not.</p>
 <p>Note that for thread safety reasons, this function can only
 be called once.</p>
 <p>The application name will be used in contexts such as error messages,
 or when displaying an application's name in the task list.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.3.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-set-application-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -509,12 +503,12 @@ or when displaying an application's name in the task list.</p>
 g_get_prgname (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Gets the name of the program. This name should not be localized,
 in contrast to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-application-name" title="g_get_application_name ()"><code class="function">g_get_application_name()</code></a>.</p>
-<p>If you are using GDK or GTK+ the program name is set in <a href="http://developer.gnome.org/gdk2/gdk3-General.html#gdk-init"><code class="function">gdk_init()</code></a>, 
-which is called by <a href="http://developer.gnome.org/gtk2/gtk3-General.html#gtk-init"><code class="function">gtk_init()</code></a>. The program name is found by taking 
+<p>If you are using GDK or GTK+ the program name is set in <a href="http://developer.gnome.org/gdk3/gdk4-General.html#gdk-init"><code class="function">gdk_init()</code></a>, 
+which is called by <a href="http://developer.gnome.org/gtk4/gtk4-General.html#gtk-init"><code class="function">gtk_init()</code></a>. The program name is found by taking 
 the last component of <em class="parameter"><code>argv</code></em>
 [0].</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.4.6"></a><h4>Returns</h4>
+<a name="g-get-prgname.returns"></a><h4>Returns</h4>
 <p> the name of the program. The returned string belongs
 to GLib and must not be modified or freed.</p>
 </div>
@@ -528,8 +522,8 @@ g_set_prgname (<em class="parameter"><code>const <a class="link" href="glib-Basi
 in contrast to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-set-application-name" title="g_set_application_name ()"><code class="function">g_set_application_name()</code></a>.</p>
 <p>Note that for thread-safety reasons this function can only be called once.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.5.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-set-prgname.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -556,7 +550,7 @@ except portable.</p>
 <p>The return value is freshly allocated and it should be freed with
 <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> when it is no longer needed.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.6.8"></a><h4>Returns</h4>
+<a name="g-get-environ.returns"></a><h4>Returns</h4>
 <p> the list of
 environment variables. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -574,8 +568,8 @@ g_environ_getenv (<em class="parameter"><code><a class="link" href="glib-Basic-T
 provided list <em class="parameter"><code>envp</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-environ-getenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -591,15 +585,14 @@ for an empty environment list. </p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to get, in the GLib file name
-encoding</p></td>
+<td class="parameter_description"><p>the environment variable to get</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.7.6"></a><h4>Returns</h4>
+<a name="g-environ-getenv.returns"></a><h4>Returns</h4>
 <p> the value of the environment variable, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if
 the environment variable is not set in <em class="parameter"><code>envp</code></em>
 . The returned
@@ -624,8 +617,8 @@ g_environ_setenv (<em class="parameter"><code><a class="link" href="glib-Basic-T
  to <em class="parameter"><code>value</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-environ-setenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -659,7 +652,7 @@ environment list. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.8.6"></a><h4>Returns</h4>
+<a name="g-environ-setenv.returns"></a><h4>Returns</h4>
 <p> the
 updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -677,8 +670,8 @@ g_environ_unsetenv (<em class="parameter"><code><a class="link" href="glib-Basic
 environment <em class="parameter"><code>envp</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-environ-unsetenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -701,7 +694,7 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.9.6"></a><h4>Returns</h4>
+<a name="g-environ-unsetenv.returns"></a><h4>Returns</h4>
 <p> the
 updated environment list. Free it using <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -714,14 +707,14 @@ updated environment list. Free it using <a class="link" href="glib-String-Utilit
 <pre class="programlisting">const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_getenv (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *variable</code></em>);</pre>
 <p>Returns the value of an environment variable.</p>
-<p>The name and value are in the GLib file name encoding. On UNIX,
-this means the actual bytes which might or might not be in some
-consistent character set and encoding. On Windows, it is in UTF-8.
+<p>On UNIX, the name and value are byte strings which might or might not
+be in some consistent character set and encoding. On Windows, they are
+in UTF-8.
 On Windows, in case the environment variable's value contains
 references to other environment variables, they are expanded.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-getenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -729,14 +722,13 @@ references to other environment variables, they are expanded.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>variable</p></td>
-<td class="parameter_description"><p>the environment variable to get, in the GLib file name
-encoding</p></td>
+<td class="parameter_description"><p>the environment variable to get</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.10.7"></a><h4>Returns</h4>
+<a name="g-getenv.returns"></a><h4>Returns</h4>
 <p> the value of the environment variable, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if
 the environment variable is not found. The returned string
 may be overwritten by the next call to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-getenv" title="g_getenv ()"><code class="function">g_getenv()</code></a>, <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-setenv" title="g_setenv ()"><code class="function">g_setenv()</code></a>
@@ -750,10 +742,9 @@ or <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-unsetenv" t
 g_setenv (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *variable</code></em>,
           <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *value</code></em>,
           <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> overwrite</code></em>);</pre>
-<p>Sets an environment variable. Both the variable's name and value
-should be in the GLib file name encoding. On UNIX, this means that
-they can be arbitrary byte strings. On Windows, they should be in
-UTF-8.</p>
+<p>Sets an environment variable. On UNIX, both the variable's name and
+value can be arbitrary byte strings, except that the variable's name
+cannot contain '='. On Windows, they should be in UTF-8.</p>
 <p>Note that on some systems, when variables are overwritten, the memory
 used for the previous variables and its value isn't reclaimed.</p>
 <p>You should be mindful of the fact that environment variable handling
@@ -768,8 +759,8 @@ use <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-enviro
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-environ-setenv" title="g_environ_setenv ()"><code class="function">g_environ_setenv()</code></a> and <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-environ-unsetenv" title="g_environ_unsetenv ()"><code class="function">g_environ_unsetenv()</code></a>, and then pass that
 array directly to <code class="function">execvpe()</code>, <a class="link" href="glib-Spawning-Processes.html#g-spawn-async" title="g_spawn_async ()"><code class="function">g_spawn_async()</code></a>, or the like.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.11.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-setenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -795,7 +786,7 @@ array directly to <code class="function">execvpe()</code>, <a class="link" href=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.11.9"></a><h4>Returns</h4>
+<a name="g-setenv.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> if the environment variable couldn't be set.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -820,8 +811,8 @@ use <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-enviro
 <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-environ-setenv" title="g_environ_setenv ()"><code class="function">g_environ_setenv()</code></a> and <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-environ-unsetenv" title="g_environ_unsetenv ()"><code class="function">g_environ_unsetenv()</code></a>, and then pass that
 array directly to <code class="function">execvpe()</code>, <a class="link" href="glib-Spawning-Processes.html#g-spawn-async" title="g_spawn_async ()"><code class="function">g_spawn_async()</code></a>, or the like.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.12.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-unsetenv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -849,7 +840,7 @@ array are in system codepage encoding, while in most of the typical
 use cases for environment variables in GLib-using programs you want
 the UTF-8 encoding that this function and <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-getenv" title="g_getenv ()"><code class="function">g_getenv()</code></a> provide.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.13.6"></a><h4>Returns</h4>
+<a name="g-listenv.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated
 list of strings which must be freed with <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -866,8 +857,9 @@ string is system-defined. On UNIX, it might be the preferred file name
 encoding, or something else, and there is no guarantee that it is even
 consistent on a machine. On Windows, it is always UTF-8.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.14.5"></a><h4>Returns</h4>
-<p> the user name of the current user.</p>
+<a name="g-get-user-name.returns"></a><h4>Returns</h4>
+<p> the user name of the current user. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -881,8 +873,9 @@ system-defined. (On Windows, it is, however, always UTF-8.) If the
 real user name cannot be determined, the string "Unknown" is 
 returned.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.15.5"></a><h4>Returns</h4>
-<p> the user's real name.</p>
+<a name="g-get-real-name.returns"></a><h4>Returns</h4>
+<p> the user's real name. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -901,9 +894,10 @@ temporary Internet files. A typical path is
 C:\Documents and Settings\username\Local Settings\Temporary Internet Files.
 See documentation for CSIDL_INTERNET_CACHE.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.16.7"></a><h4>Returns</h4>
+<a name="g-get-user-cache-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
-or freed.</p>
+or freed. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
 </div>
@@ -923,9 +917,10 @@ roaming) application data. See documentation for
 CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
 what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-config-dir" title="g_get_user_config_dir ()"><code class="function">g_get_user_config_dir()</code></a> returns.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.17.7"></a><h4>Returns</h4>
+<a name="g-get-user-data-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
-or freed.</p>
+or freed. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
 </div>
@@ -945,9 +940,10 @@ roaming) application data. See documentation for
 CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
 what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-data-dir" title="g_get_user_data_dir ()"><code class="function">g_get_user_data_dir()</code></a> returns.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.18.7"></a><h4>Returns</h4>
+<a name="g-get-user-config-dir.returns"></a><h4>Returns</h4>
 <p> a string owned by GLib that must not be modified
-or freed.</p>
+or freed. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
 </div>
@@ -963,15 +959,17 @@ in the
 <a class="ulink" href="http://www.freedesktop.org/Standards/basedir-spec" target="_top">XDG Base Directory Specification</a>.
 This is the directory
 specified in the <code class="literal">XDG_RUNTIME_DIR</code> environment variable.
-In the case that this variable is not set, GLib will issue a warning
-message to stderr and return the value of <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-cache-dir" title="g_get_user_cache_dir ()"><code class="function">g_get_user_cache_dir()</code></a>.</p>
+In the case that this variable is not set, we return the value of
+<a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-cache-dir" title="g_get_user_cache_dir ()"><code class="function">g_get_user_cache_dir()</code></a>, after verifying that it exists.</p>
 <p>On Windows this is the folder to use for local (as opposed to
 roaming) application data. See documentation for
 CSIDL_LOCAL_APPDATA.  Note that on Windows it thus is the same as
 what <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-get-user-config-dir" title="g_get_user_config_dir ()"><code class="function">g_get_user_config_dir()</code></a> returns.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.19.7"></a><h4>Returns</h4>
-<p> a string owned by GLib that must not be modified or freed.</p>
+<a name="g-get-user-runtime-dir.returns"></a><h4>Returns</h4>
+<p> a string owned by GLib that must not be
+modified or freed. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-28.html#api-index-2.28">2.28</a></p>
 </div>
@@ -989,8 +987,8 @@ not been set up. </p>
 of the special directory without requiring the session to restart; GLib
 will not reflect any change once the special directories are loaded.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.20.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-get-user-special-dir.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1004,10 +1002,11 @@ will not reflect any change once the special directories are loaded.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.20.8"></a><h4>Returns</h4>
-<p> the path to the specified special directory, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
-if the logical id was not found. The returned string is owned by
-GLib and should not be modified or freed.</p>
+<a name="g-get-user-special-dir.returns"></a><h4>Returns</h4>
+<p> the path to the specified special directory, or
+<a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the logical id was not found. The returned string is owned by
+GLib and should not be modified or freed. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-14.html#api-index-2.14">2.14</a></p>
 </div>
@@ -1040,10 +1039,10 @@ itself.</p>
 <p>Note that on Windows the returned list can vary depending on where
 this function is called.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.21.11"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib that must
-not be modified or freed. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<a name="g-get-system-data-dirs.returns"></a><h4>Returns</h4>
+<p>    a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib that must not be
+modified or freed. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
 </div>
@@ -1065,10 +1064,10 @@ For example, an application can store a spell-check dictionary, a database
 of clip art, or a log file in the CSIDL_COMMON_APPDATA folder.
 This information will not roam and is available to anyone using the computer.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.22.7"></a><h4>Returns</h4>
-<p> a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib that must
-not be modified or freed. </p>
-<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
+<a name="g-get-system-config-dirs.returns"></a><h4>Returns</h4>
+<p>    a <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings owned by GLib that must not be
+modified or freed. </p>
+<p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename][<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
 </div>
@@ -1103,7 +1102,7 @@ string is owned by GLib and should not be modified or freed. If no
 name can be determined, a default fixed string "localhost" is
 returned.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.24.6"></a><h4>Returns</h4>
+<a name="g-get-host-name.returns"></a><h4>Returns</h4>
 <p> the host name of the machine.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-8.html#api-index-2.8">2.8</a></p>
@@ -1130,8 +1129,9 @@ dependency to ensure that the new behaviour is in effect) then you
 should either directly check the <code class="literal">HOME</code> environment variable yourself
 or unset it before calling any functions in GLib.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.25.9"></a><h4>Returns</h4>
-<p> the current user's home directory</p>
+<a name="g-get-home-dir.returns"></a><h4>Returns</h4>
+<p> the current user's home directory. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1151,8 +1151,9 @@ as a default.</p>
 it is always UTF-8. The return value is never <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> or the empty
 string.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.26.8"></a><h4>Returns</h4>
-<p> the directory to use for temporary files.</p>
+<a name="g-get-tmp-dir.returns"></a><h4>Returns</h4>
+<p> the directory to use for temporary files. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1169,8 +1170,9 @@ environment variable if it is set and it happens to be the same as
 the current directory.  This can make a difference in the case that
 the current directory is the target of a symbolic link.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.27.7"></a><h4>Returns</h4>
-<p> the current directory</p>
+<a name="g-get-current-dir.returns"></a><h4>Returns</h4>
+<p> the current directory. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1189,8 +1191,8 @@ g_basename (<em class="parameter"><code>const <a class="link" href="glib-Basic-T
 components. It returns a pointer into the given file name
 string.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.28.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-basename.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1198,15 +1200,16 @@ string.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>the name of the file</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the name of the file. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.28.7"></a><h4>Returns</h4>
+<a name="g-basename.returns"></a><h4>Returns</h4>
 <p> the name of the file without any leading
-directory components</p>
+directory components. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1236,8 +1239,8 @@ directory as returned by <code class="function">getcwd()</code> or <a class="lin
 either. Such paths should be avoided, or need to be handled using
 Windows-specific code.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.29.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-path-is-absolute.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1245,13 +1248,13 @@ Windows-specific code.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>a file name</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a file name. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.29.10"></a><h4>Returns</h4>
+<a name="g-path-is-absolute.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>file_name</code></em>
 is absolute</p>
 </div>
@@ -1267,8 +1270,8 @@ i.e. after the "/" in UNIX or "C:\" under Windows. If <em class="parameter"><cod
 
 is not an absolute path it returns <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.30.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-path-skip-root.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1276,16 +1279,17 @@ is not an absolute path it returns <a class="link" href="glib-Standard-Macros.ht
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>a file name</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a file name. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.30.6"></a><h4>Returns</h4>
+<a name="g-path-skip-root.returns"></a><h4>Returns</h4>
 <p> a pointer into <em class="parameter"><code>file_name</code></em>
-after the root component. </p>
-<p><span class="annotation">[<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
+after the
+root component. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL may be passed as the value in, out, in-out; or as a return value."><span class="acronym">nullable</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
@@ -1302,8 +1306,8 @@ separators (and on Windows, possibly a drive letter), a single
 separator is returned. If <em class="parameter"><code>file_name</code></em>
  is empty, it gets ".".</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.31.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-path-get-basename.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1311,15 +1315,16 @@ separator is returned. If <em class="parameter"><code>file_name</code></em>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>the name of the file</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the name of the file. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.31.7"></a><h4>Returns</h4>
+<a name="g-path-get-basename.returns"></a><h4>Returns</h4>
 <p> a newly allocated string containing the last
-component of the filename</p>
+component of the filename. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1331,8 +1336,8 @@ g_path_get_dirname (<em class="parameter"><code>const <a class="link" href="glib
 <p>If the file name has no directory components "." is returned.
 The returned string should be freed when no longer needed.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.32.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-path-get-dirname.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1340,14 +1345,15 @@ The returned string should be freed when no longer needed.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>the name of the file</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the name of the file. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.32.7"></a><h4>Returns</h4>
-<p> the directory components of the file</p>
+<a name="g-path-get-dirname.returns"></a><h4>Returns</h4>
+<p> the directory components of the file. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1369,8 +1375,8 @@ parameters (reading from left to right) is used.</p>
 path. If the first element is a relative path, the result will
 be a relative path.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.33.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-build-filename.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1379,8 +1385,8 @@ be a relative path.</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>first_element</p></td>
-<td class="parameter_description"><p>the first element in the path</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the first element in the path. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>...</p></td>
@@ -1391,8 +1397,10 @@ be a relative path.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.33.9"></a><h4>Returns</h4>
-<p> a newly-allocated string that must be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
+<a name="g-build-filename.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string that must be freed with
+<a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1404,8 +1412,8 @@ g_build_filenamev (<em class="parameter"><code><a class="link" href="glib-Basic-
 as a string array, instead of varargs. This function is mainly
 meant for language bindings.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.34.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-build-filenamev.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1413,14 +1421,17 @@ meant for language bindings.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>args</p></td>
-<td class="parameter_description"><p> <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings containing the path elements. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+<td class="parameter_description"><p> <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated
+array of strings containing the path elements. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.34.6"></a><h4>Returns</h4>
-<p> a newly-allocated string that must be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
+<a name="g-build-filenamev.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string that must be freed
+with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-8.html#api-index-2.8">2.8</a></p>
 </div>
@@ -1454,8 +1465,8 @@ of that element.</p>
 copies of the separator, elements consisting only of copies
 of the separator are ignored.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.35.10"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-build-path.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1464,13 +1475,13 @@ of the separator are ignored.</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>separator</p></td>
-<td class="parameter_description"><p>a string used to separator the elements of the path.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a string used to separator the elements of the path. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>first_element</p></td>
-<td class="parameter_description"><p>the first element in the path</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the first element in the path. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>...</p></td>
@@ -1481,8 +1492,10 @@ of the separator are ignored.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.35.11"></a><h4>Returns</h4>
-<p> a newly-allocated string that must be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
+<a name="g-build-path.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string that must be freed with
+<a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -1495,8 +1508,8 @@ g_build_pathv (<em class="parameter"><code>const <a class="link" href="glib-Basi
 as a string array, instead of varargs. This function is mainly
 meant for language bindings.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.36.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-build-pathv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1510,15 +1523,18 @@ meant for language bindings.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>args</p></td>
-<td class="parameter_description"><p> <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings containing the path elements. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1]</span></td>
+<td class="parameter_description"><p> <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated
+array of strings containing the path elements. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> zero-terminated=1][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> filename]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.36.6"></a><h4>Returns</h4>
-<p> a newly-allocated string that must be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
+<a name="g-build-pathv.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string that must be freed
+with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-8.html#api-index-2.8">2.8</a></p>
 </div>
@@ -1536,8 +1552,8 @@ and are displayed rounded to the nearest tenth. E.g. the file size
 <p>See <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-format-size-full" title="g_format_size_full ()"><code class="function">g_format_size_full()</code></a> for more options about how the size might be
 formatted.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.37.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-format-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1551,7 +1567,7 @@ formatted.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.37.9"></a><h4>Returns</h4>
+<a name="g-format-size.returns"></a><h4>Returns</h4>
 <p> a newly-allocated formatted string containing a human readable
 file size</p>
 </div>
@@ -1567,8 +1583,8 @@ g_format_size_full (<em class="parameter"><code><a class="link" href="glib-Basic
 <p>This function is similar to <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-format-size" title="g_format_size ()"><code class="function">g_format_size()</code></a> but allows for flags
 that modify the output. See <a class="link" href="glib-Miscellaneous-Utility-Functions.html#GFormatSizeFlags" title="enum GFormatSizeFlags"><span class="type">GFormatSizeFlags</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.38.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-format-size-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1589,7 +1605,7 @@ that modify the output. See <a class="link" href="glib-Miscellaneous-Utility-Fun
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.38.7"></a><h4>Returns</h4>
+<a name="g-format-size-full.returns"></a><h4>Returns</h4>
 <p> a newly-allocated formatted string containing a human
 readable file size</p>
 </div>
@@ -1613,8 +1629,8 @@ string "3.1 MB".</p>
 <p>The prefix units base is 1024 (i.e. 1 KB is 1024 bytes).</p>
 <p>This string should be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a> when not needed any longer.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.39.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-format-size-for-display.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1628,7 +1644,7 @@ string "3.1 MB".</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.39.10"></a><h4>Returns</h4>
+<a name="g-format-size-for-display.returns"></a><h4>Returns</h4>
 <p> a newly-allocated formatted string containing a human
 readable file size</p>
 </div>
@@ -1639,7 +1655,6 @@ readable file size</p>
 <a name="g-find-program-in-path"></a><h3>g_find_program_in_path ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
 g_find_program_in_path (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *program</code></em>);</pre>
-<div class="warning"><p><code class="literal">g_find_program_in_path</code> is deprecated and should not be used in newly-written code.</p></div>
 <p>Locates the first executable named <em class="parameter"><code>program</code></em>
  in the user's path, in the
 same way that <code class="function">execvp()</code> would locate it. Returns an allocated string
@@ -1661,8 +1676,8 @@ finally in the directories in the <code class="literal">PATH</code> environment 
 the program is found, the return value contains the full name
 including the type suffix.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.40.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-find-program-in-path.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1670,22 +1685,22 @@ including the type suffix.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>program</p></td>
-<td class="parameter_description"><p>a program name in the GLib file name encoding</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a program name in the GLib file name encoding. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.40.9"></a><h4>Returns</h4>
-<p> a newly-allocated string with the absolute path, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a></p>
+<a name="g-find-program-in-path.returns"></a><h4>Returns</h4>
+<p> a newly-allocated string with the absolute path,
+or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
-<a name="g-bit-nth-lsf"></a><h3>g_bit_nth_lsf ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
-g_bit_nth_lsf (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> mask</code></em>,
-               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> nth_bit</code></em>);</pre>
+<a name="g-bit-nth-lsf"></a><h3>g_bit_nth_lsf()</h3>
+<pre class="programlisting">#define             g_bit_nth_lsf(mask, nth_bit)</pre>
 <p>Find the position of the first bit set in <em class="parameter"><code>mask</code></em>
 , searching
 from (but not including) <em class="parameter"><code>nth_bit</code></em>
@@ -1694,8 +1709,8 @@ from 0 (least significant) to sizeof(<a class="link" href="glib-Basic-Types.html
 usually). To start searching from the 0th bit, set <em class="parameter"><code>nth_bit</code></em>
  to -1.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.41.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bit-nth-lsf.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1716,17 +1731,16 @@ usually). To start searching from the 0th bit, set <em class="parameter"><code>n
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.41.6"></a><h4>Returns</h4>
+<a name="g-bit-nth-lsf.returns"></a><h4>Returns</h4>
 <p> the index of the first bit set which is higher than <em class="parameter"><code>nth_bit</code></em>
-</p>
+, or -1
+if no higher bits are set</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
-<a name="g-bit-nth-msf"></a><h3>g_bit_nth_msf ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
-g_bit_nth_msf (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> mask</code></em>,
-               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> nth_bit</code></em>);</pre>
+<a name="g-bit-nth-msf"></a><h3>g_bit_nth_msf()</h3>
+<pre class="programlisting">#define             g_bit_nth_msf(mask, nth_bit)</pre>
 <p>Find the position of the first bit set in <em class="parameter"><code>mask</code></em>
 , searching
 from (but not including) <em class="parameter"><code>nth_bit</code></em>
@@ -1736,8 +1750,8 @@ usually). To start searching from the last bit, set <em class="parameter"><code>
  to
 -1 or GLIB_SIZEOF_LONG * 8.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.42.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bit-nth-msf.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1758,23 +1772,23 @@ usually). To start searching from the last bit, set <em class="parameter"><code>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.42.6"></a><h4>Returns</h4>
+<a name="g-bit-nth-msf.returns"></a><h4>Returns</h4>
 <p> the index of the first bit set which is lower than <em class="parameter"><code>nth_bit</code></em>
-</p>
+, or -1
+if no lower bits are set</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
-<a name="g-bit-storage"></a><h3>g_bit_storage ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
-g_bit_storage (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> number</code></em>);</pre>
+<a name="g-bit-storage"></a><h3>g_bit_storage()</h3>
+<pre class="programlisting">#define             g_bit_storage(number)</pre>
 <p>Gets the number of bits used to hold <em class="parameter"><code>number</code></em>
 ,
 e.g. if <em class="parameter"><code>number</code></em>
  is 4, 3 bits are needed.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.43.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bit-storage.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1782,13 +1796,13 @@ e.g. if <em class="parameter"><code>number</code></em>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>number</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a></p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.43.6"></a><h4>Returns</h4>
+<a name="g-bit-storage.returns"></a><h4>Returns</h4>
 <p> the number of bits used to hold <em class="parameter"><code>number</code></em>
 </p>
 </div>
@@ -1796,8 +1810,8 @@ e.g. if <em class="parameter"><code>number</code></em>
 <hr>
 <div class="refsect2">
 <a name="g-spaced-primes-closest"></a><h3>g_spaced_primes_closest ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
-g_spaced_primes_closest (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> num</code></em>);</pre>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
+g_spaced_primes_closest (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> num</code></em>);</pre>
 <p>Gets the smallest prime number from a built-in array of primes which
 is larger than <em class="parameter"><code>num</code></em>
 . This is used within GLib to calculate the optimum
@@ -1805,8 +1819,8 @@ size of a <a class="link" href="glib-Hash-Tables.html#GHashTable" title="GHashTa
 <p>The built-in array of primes ranges from 11 to 13845163 such that
 each prime is approximately 1.5-2 times the previous prime.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.44.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-spaced-primes-closest.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1814,13 +1828,13 @@ each prime is approximately 1.5-2 times the previous prime.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>num</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a></p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.44.7"></a><h4>Returns</h4>
+<a name="g-spaced-primes-closest.returns"></a><h4>Returns</h4>
 <p> the smallest prime number from a built-in array of primes
 which is larger than <em class="parameter"><code>num</code></em>
 </p>
@@ -1860,8 +1874,8 @@ resided. This is presumably the most robust approach.</p>
 calling <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-atexit" title="g_atexit ()"><code class="function">g_atexit()</code></a> (or <code class="function">atexit()</code>) except in the main executable of a
 program.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.45.12"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-atexit.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1878,12 +1892,12 @@ program.</p>
 <hr>
 <div class="refsect2">
 <a name="g-parse-debug-string"></a><h3>g_parse_debug_string ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_parse_debug_string (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *string</code></em>,
                       <em class="parameter"><code>const <a class="link" href="glib-Miscellaneous-Utility-Functions.html#GDebugKey" title="struct GDebugKey"><span class="type">GDebugKey</span></a> *keys</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> nkeys</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> nkeys</code></em>);</pre>
 <p>Parses a string containing debugging options
-into a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><code class="literal">guint</code></a> containing bit flags. This is used
+into a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><code class="literal">guint</code></a> containing bit flags. This is used
 within GDK and GTK+ to parse the debug options passed on the
 command line or through environment variables.</p>
 <p>If <em class="parameter"><code>string</code></em>
@@ -1897,8 +1911,8 @@ corresponding to "foo" and "bar".</p>
 
 are printed out to standard error.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.46.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-parse-debug-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1926,7 +1940,7 @@ strings with bit flags. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.7.46.8"></a><h4>Returns</h4>
+<a name="g-parse-debug-string.returns"></a><h4>Returns</h4>
 <p> the combined set of bit flags.</p>
 </div>
 </div>
@@ -1949,8 +1963,8 @@ function passed to <a class="link" href="glib-Miscellaneous-Utility-Functions.ht
 data pointer argument and has no return value. It is
 not currently used in GLib or GTK+.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.48.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFreeFunc.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1969,7 +1983,7 @@ not currently used in GLib or GTK+.</p>
 <a name="g-qsort-with-data"></a><h3>g_qsort_with_data ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_qsort_with_data (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> pbase</code></em>,
-                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> total_elems</code></em>,
+                   <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> total_elems</code></em>,
                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> size</code></em>,
                    <em class="parameter"><code><a class="link" href="glib-Doubly-Linked-Lists.html#GCompareDataFunc" title="GCompareDataFunc ()"><span class="type">GCompareDataFunc</span></a> compare_func</code></em>,
                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
@@ -1977,8 +1991,8 @@ g_qsort_with_data (<em class="parameter"><code><a class="link" href="glib-Basic-
 the comparison routine accepts a user data argument.</p>
 <p>This is guaranteed to be a stable sort since version 2.32.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.49.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-qsort-with-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1987,8 +2001,8 @@ the comparison routine accepts a user data argument.</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>pbase</p></td>
-<td class="parameter_description"><p>start of array to sort</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> start of array to sort. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>total_elems</p></td>
@@ -2022,8 +2036,8 @@ the comparison routine accepts a user data argument.</p>
 g_nullify_pointer (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> *nullify_location</code></em>);</pre>
 <p>Set the pointer at the specified location to <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.14.7.50.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-nullify-pointer.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2031,8 +2045,8 @@ g_nullify_pointer (<em class="parameter"><code><a class="link" href="glib-Basic-
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>nullify_location</p></td>
-<td class="parameter_description"><p>the memory address of the pointer.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the memory address of the pointer. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL must not be passed as the value in, out, in-out; or as a return value."><span class="acronym">not nullable</span></acronym>]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -2049,8 +2063,8 @@ to retrieve the full path associated to the logical id.</p>
 every platform has a directory for every logical id in this
 enumeration.</p>
 <div class="refsect3">
-<a name="id-1.5.14.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUserDirectory.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -2137,8 +2151,8 @@ enumeration.</p>
 <p>If the file name has no directory components "." is returned.
 The returned string should be freed when no longer needed.</p>
 <div class="refsect3">
-<a name="id-1.5.14.8.3.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-dirname.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2146,14 +2160,15 @@ The returned string should be freed when no longer needed.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>file_name</p></td>
-<td class="parameter_description"><p>the name of the file</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the name of the file. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.14.8.3.8"></a><h4>Returns</h4>
-<p> the directory components of the file</p>
+<a name="g-dirname.returns"></a><h4>Returns</h4>
+<p> the directory components of the file. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></p>
 </div>
 </div>
 <hr>
@@ -2161,8 +2176,8 @@ The returned string should be freed when no longer needed.</p>
 <a name="GFormatSizeFlags"></a><h3>enum GFormatSizeFlags</h3>
 <p>Flags to modify the format of the string returned by <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-format-size-full" title="g_format_size_full ()"><code class="function">g_format_size_full()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.14.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFormatSizeFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -2209,8 +2224,8 @@ The returned string should be freed when no longer needed.</p>
 <p>Associates a string with a bit flag.
 Used in <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-parse-debug-string" title="g_parse_debug_string ()"><code class="function">g_parse_debug_string()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.14.8.5.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GDebugKey.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -2223,7 +2238,7 @@ Used in <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-parse-
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GDebugKey.value"></a>value</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GDebugKey.value"></a>value</code></em>;</p></td>
 <td class="struct_member_description"><p>the flag</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -2234,6 +2249,6 @@ Used in <a class="link" href="glib-Miscellaneous-Utility-Functions.html#g-parse-
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

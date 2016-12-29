@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GFileAttribute: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="file_ops.html" title="File Operations">
 <link rel="prev" href="GFile.html" title="GFile">
 <link rel="next" href="GFileInfo.html" title="GFileInfo">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,7 +34,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gio-GFileAttribute.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -92,7 +92,7 @@
 </div>
 <a name="GFileAttributeInfoList"></a><div class="refsect1">
 <a name="gio-GFileAttribute.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -166,7 +166,7 @@ to uniquely identify files.</p></li>
 <li class="listitem"><p><code class="literal">"access"</code>: The "Access" namespace. Used to check if a user has the
 proper privileges to access files and perform file operations. Keys in
 this namespace are made to be generic and easily understood, e.g. the
-"can_read" key is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the current user has permission to read the
+"can_read" key is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the current user has permission to read the
 file. UNIX permissions and NTFS ACLs in Windows should be mapped to
 these values.</p></li>
 <li class="listitem"><p><code class="literal">"mountable"</code>: The "Mountable" namespace. Includes simple boolean keys
@@ -237,7 +237,7 @@ where <code class="literal">nn</code> is a 2-digit hexadecimal number.</p>
 g_file_attribute_info_list_new (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Creates a new file attribute info list.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.2.5"></a><h4>Returns</h4>
+<a name="g-file-attribute-info-list-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="gio-GFileAttribute.html#GFileAttributeInfoList"><span class="type">GFileAttributeInfoList</span></a>.</p>
 </div>
 </div>
@@ -248,8 +248,8 @@ g_file_attribute_info_list_new (<em class="parameter"><code><span class="type">v
 g_file_attribute_info_list_ref (<em class="parameter"><code><a class="link" href="gio-GFileAttribute.html#GFileAttributeInfoList"><span class="type">GFileAttributeInfoList</span></a> *list</code></em>);</pre>
 <p>References a file attribute info list.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-attribute-info-list-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -263,8 +263,8 @@ g_file_attribute_info_list_ref (<em class="parameter"><code><a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.3.6"></a><h4>Returns</h4>
-<p> <a class="link" href="gio-GFileAttribute.html#GFileAttributeInfoList"><span class="type">GFileAttributeInfoList</span></a> or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error.</p>
+<a name="g-file-attribute-info-list-ref.returns"></a><h4>Returns</h4>
+<p> <a class="link" href="gio-GFileAttribute.html#GFileAttributeInfoList"><span class="type">GFileAttributeInfoList</span></a> or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error.</p>
 </div>
 </div>
 <hr>
@@ -277,8 +277,8 @@ g_file_attribute_info_list_unref (<em class="parameter"><code><a class="link" hr
 falls to zero, the <em class="parameter"><code>list</code></em>
  is deleted.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-attribute-info-list-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -299,8 +299,8 @@ falls to zero, the <em class="parameter"><code>list</code></em>
 g_file_attribute_info_list_dup (<em class="parameter"><code><a class="link" href="gio-GFileAttribute.html#GFileAttributeInfoList"><span class="type">GFileAttributeInfoList</span></a> *list</code></em>);</pre>
 <p>Makes a duplicate of a file attribute info list.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-attribute-info-list-dup.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -314,7 +314,7 @@ g_file_attribute_info_list_dup (<em class="parameter"><code><a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.5.6"></a><h4>Returns</h4>
+<a name="g-file-attribute-info-list-dup.returns"></a><h4>Returns</h4>
 <p> a copy of the given <em class="parameter"><code>list</code></em>
 .</p>
 </div>
@@ -329,8 +329,8 @@ g_file_attribute_info_list_lookup (<em class="parameter"><code><a class="link" h
  from <em class="parameter"><code>list</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-attribute-info-list-lookup.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -351,9 +351,9 @@ g_file_attribute_info_list_lookup (<em class="parameter"><code><a class="link" h
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.6.6"></a><h4>Returns</h4>
+<a name="g-file-attribute-info-list-lookup.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="gio-GFileAttribute.html#GFileAttributeInfo" title="GFileAttributeInfo"><span class="type">GFileAttributeInfo</span></a> for the <em class="parameter"><code>name</code></em>
-, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if an
+, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if an
 attribute isn't found.</p>
 </div>
 </div>
@@ -372,8 +372,8 @@ its <em class="parameter"><code>type</code></em>
  and <em class="parameter"><code>flags</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.9.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-attribute-info-list-add.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -411,8 +411,8 @@ its <em class="parameter"><code>type</code></em>
 <a name="GFileAttributeType"></a><h3>enum GFileAttributeType</h3>
 <p>The data types for file attributes.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.10.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFileAttributeType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -478,14 +478,14 @@ its <em class="parameter"><code>type</code></em>
 <tr>
 <td class="enum_member_name"><p><a name="G-FILE-ATTRIBUTE-TYPE-OBJECT:CAPS"></a>G_FILE_ATTRIBUTE_TYPE_OBJECT</p></td>
 <td class="enum_member_description">
-<p>a <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a>.</p>
+<p>a <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a>.</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
 <tr>
 <td class="enum_member_name"><p><a name="G-FILE-ATTRIBUTE-TYPE-STRINGV:CAPS"></a>G_FILE_ATTRIBUTE_TYPE_STRINGV</p></td>
 <td class="enum_member_description">
-<p>a <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> terminated char **. Since 2.22</p>
+<p>a <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> terminated char **. Since 2.22</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
@@ -498,8 +498,8 @@ its <em class="parameter"><code>type</code></em>
 <a name="GFileAttributeInfoFlags"></a><h3>enum GFileAttributeInfoFlags</h3>
 <p>Flags specifying the behaviour of an attribute.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.10.3.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFileAttributeInfoFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -536,8 +536,8 @@ its <em class="parameter"><code>type</code></em>
 <a name="GFileAttributeStatus"></a><h3>enum GFileAttributeStatus</h3>
 <p>Used by <a class="link" href="GFile.html#g-file-set-attributes-from-info" title="g_file_set_attributes_from_info ()"><code class="function">g_file_set_attributes_from_info()</code></a> when setting file attributes.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.10.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFileAttributeStatus.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -580,8 +580,8 @@ its <em class="parameter"><code>type</code></em>
 </pre>
 <p>Information about a specific attribute.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.10.5.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFileAttributeInfo.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -618,8 +618,8 @@ its <em class="parameter"><code>type</code></em>
 <p>Acts as a lightweight registry for possible valid file attributes.
 The registry stores Key-Value pair formats as <a href="gio-GFileAttribute.html#GFileAttributeInfo"><span class="type">GFileAttributeInfos</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.2.3.10.6.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GFileAttributeInfoList.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -647,6 +647,6 @@ The registry stores Key-Value pair formats as <a href="gio-GFileAttribute.html#G
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

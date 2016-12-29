@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Shell-related Utilities: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Hostname-Utilities.html" title="Hostname Utilities">
 <link rel="next" href="glib-Commandline-option-parser.html" title="Commandline option parser">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Shell-related-Utilities.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -68,7 +68,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Shell-related-Utilities.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -105,7 +105,7 @@ are good enough in practice, though.</p>
 <a name="g-shell-parse-argv"></a><h3>g_shell_parse_argv ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
 g_shell_parse_argv (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *command_line</code></em>,
-                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *argcp</code></em>,
+                    <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *argcp</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> ***argvp</code></em>,
                     <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Parses a command line into an argument vector, in much the same way
@@ -118,8 +118,8 @@ does contain such expansions, they are passed through
 literally. Possible errors are those from the <a class="link" href="glib-Shell-related-Utilities.html#G-SHELL-ERROR:CAPS" title="G_SHELL_ERROR"><span class="type">G_SHELL_ERROR</span></a>
 domain. Free the returned vector with <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.21.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-shell-parse-argv.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -133,25 +133,25 @@ domain. Free the returned vector with <a class="link" href="glib-String-Utility-
 </tr>
 <tr>
 <td class="parameter_name"><p>argcp</p></td>
-<td class="parameter_description"><p> return location for number of args, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_description"><p> return location for number of args. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>argvp</p></td>
 <td class="parameter_description"><p> return
-location for array of args, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+location for array of args. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="Parameter for returning results. Default is transfer full."><span class="acronym">out</span></acronym>][<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>][<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=argcp zero-terminated=1]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p> return location for error, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_description"><p> return location for error. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL may be passed instead of a pointer to a location."><span class="acronym">optional</span></acronym>]</span></td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.21.7.2.6"></a><h4>Returns</h4>
+<a name="g-shell-parse-argv.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> on success, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> if error set</p>
 </div>
 </div>
@@ -168,8 +168,8 @@ function.  The return value must be freed with <a class="link" href="glib-Memory
 quoting style used is undefined (single or double quotes may be
 used).</p>
 <div class="refsect3">
-<a name="id-1.5.21.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-shell-quote.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -183,7 +183,7 @@ used).</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.21.7.3.6"></a><h4>Returns</h4>
+<a name="g-shell-quote.returns"></a><h4>Returns</h4>
 <p> quoted string</p>
 </div>
 </div>
@@ -215,8 +215,8 @@ like 'foo'\''bar'.  Double quotes allow $, `, ", \, and newline to
 be escaped with backslash. Otherwise double quotes preserve things
 literally.</p>
 <div class="refsect3">
-<a name="id-1.5.21.7.4.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-shell-unquote.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -237,7 +237,7 @@ literally.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.21.7.4.7"></a><h4>Returns</h4>
+<a name="g-shell-unquote.returns"></a><h4>Returns</h4>
 <p> an unquoted string</p>
 </div>
 </div>
@@ -248,8 +248,8 @@ literally.</p>
 <a name="GShellError"></a><h3>enum GShellError</h3>
 <p>Error codes returned by shell functions.</p>
 <div class="refsect3">
-<a name="id-1.5.21.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GShellError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -293,6 +293,6 @@ domains.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

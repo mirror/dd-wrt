@@ -45,6 +45,8 @@ G_BEGIN_DECLS
  * A set of functions used to perform memory allocation. The same #GMemVTable must
  * be used for all allocations in the same program; a call to g_mem_set_vtable(),
  * if it exists, should be prior to any use of GLib.
+ *
+ * This functions related to this has been deprecated in 2.46, and no longer work.
  */
 typedef struct _GMemVTable GMemVTable;
 
@@ -127,7 +129,7 @@ gpointer g_try_realloc_n  (gpointer	 mem,
 
 /**
  * g_steal_pointer:
- * @pp: a pointer to a pointer
+ * @pp: (not nullable): a pointer to a pointer
  *
  * Sets @pp to %NULL, returning the value that was there before.
  *
@@ -311,7 +313,7 @@ g_steal_pointer (gpointer pp)
  * to 0's, and returns %NULL on failure. Contrast with g_new0(), which aborts
  * the program on failure.
  * The returned pointer is cast to a pointer to the given type.
- * The function returns %NULL when @n_structs is 0 of if an overflow occurs.
+ * The function returns %NULL when @n_structs is 0 or if an overflow occurs.
  * 
  * Since: 2.8
  * Returns: a pointer to the allocated memory, cast to a pointer to @struct_type
@@ -351,9 +353,9 @@ struct _GMemVTable {
   gpointer (*try_realloc) (gpointer mem,
 			   gsize    n_bytes);
 };
-GLIB_AVAILABLE_IN_ALL
+GLIB_DEPRECATED_IN_2_46
 void	 g_mem_set_vtable (GMemVTable	*vtable);
-GLIB_AVAILABLE_IN_ALL
+GLIB_DEPRECATED_IN_2_46
 gboolean g_mem_is_system_malloc (void);
 
 GLIB_VAR gboolean g_mem_gc_friendly;
@@ -361,7 +363,7 @@ GLIB_VAR gboolean g_mem_gc_friendly;
 /* Memory profiler and checker, has to be enabled via g_mem_set_vtable()
  */
 GLIB_VAR GMemVTable	*glib_mem_profiler_table;
-GLIB_AVAILABLE_IN_ALL
+GLIB_DEPRECATED_IN_2_46
 void	g_mem_profile	(void);
 
 G_END_DECLS

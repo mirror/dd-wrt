@@ -112,7 +112,7 @@ typedef guint16 gunichar2;
  *
  * These are the possible character classifications from the
  * Unicode specification.
- * See <ulink url="http://www.unicode.org/Public/UNIDATA/UnicodeData.html">http://www.unicode.org/Public/UNIDATA/UnicodeData.html</ulink>.
+ * See <ulink url="http://www.unicode.org/reports/tr44/#General_Category_Values">Unicode Character Database</unlink>.
  */
 typedef enum
 {
@@ -201,6 +201,9 @@ typedef enum
  * @G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER: Conditional Japanese Starter (CJ). Since: 2.32
  * @G_UNICODE_BREAK_HEBREW_LETTER: Hebrew Letter (HL). Since: 2.32
  * @G_UNICODE_BREAK_REGIONAL_INDICATOR: Regional Indicator (RI). Since: 2.36
+ * @G_UNICODE_BREAK_EMOJI_BASE: Emoji Base (EB). Since: 2.50
+ * @G_UNICODE_BREAK_EMOJI_MODIFIER: Emoji Modifier (EM). Since: 2.50
+ * @G_UNICODE_BREAK_ZERO_WIDTH_JOINER: Zero Width Joiner (ZWJ). Since: 2.50
  *
  * These are the possible line break classifications.
  *
@@ -250,7 +253,10 @@ typedef enum
   G_UNICODE_BREAK_CLOSE_PARANTHESIS,
   G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER,
   G_UNICODE_BREAK_HEBREW_LETTER,
-  G_UNICODE_BREAK_REGIONAL_INDICATOR
+  G_UNICODE_BREAK_REGIONAL_INDICATOR,
+  G_UNICODE_BREAK_EMOJI_BASE,
+  G_UNICODE_BREAK_EMOJI_MODIFIER,
+  G_UNICODE_BREAK_ZERO_WIDTH_JOINER
 } GUnicodeBreakType;
 
 /**
@@ -394,6 +400,18 @@ typedef enum
  * @G_UNICODE_SCRIPT_SIDDHAM:              Siddham. Since: 2.42
  * @G_UNICODE_SCRIPT_TIRHUTA:              Tirhuta. Since: 2.42
  * @G_UNICODE_SCRIPT_WARANG_CITI:          Warang Citi. Since: 2.42
+ * @G_UNICODE_SCRIPT_AHOM:                 Ahom. Since: 2.48
+ * @G_UNICODE_SCRIPT_ANATOLIAN_HIEROGLYPHS: Anatolian Hieroglyphs. Since: 2.48
+ * @G_UNICODE_SCRIPT_HATRAN:               Hatran. Since: 2.48
+ * @G_UNICODE_SCRIPT_MULTANI:              Multani. Since: 2.48
+ * @G_UNICODE_SCRIPT_OLD_HUNGARIAN:        Old Hungarian. Since: 2.48
+ * @G_UNICODE_SCRIPT_SIGNWRITING:          Signwriting. Since: 2.48
+ * @G_UNICODE_SCRIPT_ADLAM:                Adlam. Since: 2.50
+ * @G_UNICODE_SCRIPT_BHAIKSUKI:            Bhaiksuki. Since: 2.50
+ * @G_UNICODE_SCRIPT_MARCHEN:              Marchen. Since: 2.50
+ * @G_UNICODE_SCRIPT_NEWA:                 Newa. Since: 2.50
+ * @G_UNICODE_SCRIPT_OSAGE:                Osage. Since: 2.50
+ * @G_UNICODE_SCRIPT_TANGUT:               Tangut. Since: 2.50
  *
  * The #GUnicodeScript enumeration identifies different writing
  * systems. The values correspond to the names as defined in the
@@ -550,7 +568,23 @@ typedef enum
   G_UNICODE_SCRIPT_PSALTER_PAHLAVI,        /* Phlp */
   G_UNICODE_SCRIPT_SIDDHAM,                /* Sidd */
   G_UNICODE_SCRIPT_TIRHUTA,                /* Tirh */
-  G_UNICODE_SCRIPT_WARANG_CITI             /* Wara */
+  G_UNICODE_SCRIPT_WARANG_CITI,            /* Wara */
+
+  /* Unicode 8.0 additions */
+  G_UNICODE_SCRIPT_AHOM,                   /* Ahom */
+  G_UNICODE_SCRIPT_ANATOLIAN_HIEROGLYPHS,  /* Hluw */
+  G_UNICODE_SCRIPT_HATRAN,                 /* Hatr */
+  G_UNICODE_SCRIPT_MULTANI,                /* Mult */
+  G_UNICODE_SCRIPT_OLD_HUNGARIAN,          /* Hung */
+  G_UNICODE_SCRIPT_SIGNWRITING,            /* Sgnw */
+
+  /* Unicode 9.0 additions */
+  G_UNICODE_SCRIPT_ADLAM,                  /* Adlm */
+  G_UNICODE_SCRIPT_BHAIKSUKI,              /* Bhks */
+  G_UNICODE_SCRIPT_MARCHEN,                /* Marc */
+  G_UNICODE_SCRIPT_NEWA,                   /* Newa */
+  G_UNICODE_SCRIPT_OSAGE,                  /* Osge */
+  G_UNICODE_SCRIPT_TANGUT                  /* Tang */
 } GUnicodeScript;
 
 GLIB_AVAILABLE_IN_ALL
@@ -851,9 +885,8 @@ GLIB_AVAILABLE_IN_ALL
 gchar *g_utf8_collate_key_for_filename (const gchar *str,
                                         gssize       len) G_GNUC_MALLOC;
 
-
-/* private */
-gchar *_g_utf8_make_valid (const gchar *name);
+GLIB_AVAILABLE_IN_2_52
+gchar *g_utf8_make_valid (const gchar *str);
 
 G_END_DECLS
 

@@ -277,6 +277,13 @@ test_g_slist (void)
 }
 
 static void
+test_g_string (void)
+{
+  g_autoptr(GString) val = g_string_new ("");
+  g_assert (val != NULL);
+}
+
+static void
 test_g_string_chunk (void)
 {
   g_autoptr(GStringChunk) val = g_string_chunk_new (42);
@@ -391,6 +398,13 @@ test_g_variant_type (void)
   g_assert (val != NULL);
 }
 
+static void
+test_strv (void)
+{
+  g_auto(GStrv) val = g_strsplit("a:b:c", ":", -1);
+  g_assert (val != NULL);
+}
+
 int
 main (int argc, gchar *argv[])
 {
@@ -428,6 +442,7 @@ main (int argc, gchar *argv[])
   g_test_add_func ("/autoptr/g_scanner", test_g_scanner);
   g_test_add_func ("/autoptr/g_sequence", test_g_sequence);
   g_test_add_func ("/autoptr/g_slist", test_g_slist);
+  g_test_add_func ("/autoptr/g_string", test_g_string);
   g_test_add_func ("/autoptr/g_string_chunk", test_g_string_chunk);
   g_test_add_func ("/autoptr/g_thread", test_g_thread);
   g_test_add_func ("/autoptr/g_mutex", test_g_mutex);
@@ -438,10 +453,10 @@ main (int argc, gchar *argv[])
   g_test_add_func ("/autoptr/g_tree", test_g_tree);
   g_test_add_func ("/autoptr/g_variant", test_g_variant);
   g_test_add_func ("/autoptr/g_variant_builder", test_g_variant_builder);
-  g_test_add_func ("/autoptr/g_variant_builder", test_g_variant_builder);
   g_test_add_func ("/autoptr/g_variant_iter", test_g_variant_iter);
   g_test_add_func ("/autoptr/g_variant_dict", test_g_variant_dict);
   g_test_add_func ("/autoptr/g_variant_type", test_g_variant_type);
+  g_test_add_func ("/autoptr/strv", test_strv);
 
   return g_test_run ();
 }

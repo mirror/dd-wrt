@@ -9,13 +9,15 @@ include $(top_srcdir)/glib.mk
 # to config.status will not result in changes to glibconfig.h so we
 # avoid touching its timestamp (in order not to rebuild the whole tree).
 #
-DISTCLEANFILES += glibconfig-stamp glibconfig.h
+DISTCLEANFILES += glibconfig-stamp glibconfig.h glibconfig.h.win32
 BUILT_SOURCES += glibconfig-stamp
 configexecincludedir = $(libdir)/glib-2.0/include
 nodist_configexecinclude_HEADERS = glibconfig.h
 glibconfig-stamp: ../config.status
 	$(AM_V_GEN) cd $(top_builddir) && \
 	  $(SHELL) ./config.status glib/glibconfig.h
+	$(AM_V_GEN) cd $(top_builddir) && \
+	  $(SHELL) ./config.status glib/glibconfig.h.win32
 	@touch glibconfig-stamp
 
 
@@ -348,8 +350,8 @@ pcre_lib = pcre/libpcre.la
 pcre_inc =
 endif
 
-libglib_2_0_la_CFLAGS = $(AM_CFLAGS) $(GLIB_HIDDEN_VISIBILITY_CFLAGS)
-libglib_2_0_la_LIBADD = libcharset/libcharset.la $(printf_la) @GIO@ @GSPAWN@ @PLATFORMDEP@ @ICONV_LIBS@ @G_LIBS_EXTRA@ $(pcre_lib) $(G_THREAD_LIBS_EXTRA) $(G_THREAD_LIBS_FOR_GTHREAD)
+libglib_2_0_la_CFLAGS = $(AM_CFLAGS) $(GLIB_HIDDEN_VISIBILITY_CFLAGS) $(LIBSYSTEMD_CFLAGS)
+libglib_2_0_la_LIBADD = libcharset/libcharset.la $(printf_la) @GIO@ @GSPAWN@ @PLATFORMDEP@ @ICONV_LIBS@ @G_LIBS_EXTRA@ $(pcre_lib) $(G_THREAD_LIBS_EXTRA) $(G_THREAD_LIBS_FOR_GTHREAD) $(LIBSYSTEMD_LIBS)
 libglib_2_0_la_DEPENDENCIES = libcharset/libcharset.la $(printf_la) @GIO@ @GSPAWN@ @PLATFORMDEP@ $(glib_win32_res) $(glib_def)
 
 libglib_2_0_la_LDFLAGS = $(GLIB_LINK_FLAGS) \
@@ -360,26 +362,34 @@ libglib_2_0_la_LDFLAGS = $(GLIB_LINK_FLAGS) \
 INSTALL_PROGS=
 
 if ENABLE_DTRACE
-DTCOMPILE = $(patsubst -W%,,$(LTCOMPILE))
-DTCFLAGS = $(patsubst -W%,,$(CFLAGS))
-
 glib_probes.h: glib_probes.d
 	$(AM_V_GEN) $(DTRACE) -C -h -s $< -o $@.tmp
-	@$(SED) -e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," < $@.tmp > $@ && rm -f $@.tmp
+	@$(SED) \
+		-e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," \
+		-e "s,define _SDT_HAS_SEMAPHORES 1,undef _SDT_HAS_SEMAPHORES," \
+		< $@.tmp > $@ && rm -f $@.tmp
 
 glib_probes.lo: glib_probes.d
-	$(AM_V_GEN) env CC="$(DTCOMPILE)" CFLAGS="$(DTCFLAGS)" $(DTRACE) -G -s $< -o $@
+	$(AM_V_GEN) $(LIBTOOL) --mode=compile $(AM_V_lt) --tag=CC $(DTRACE) -G -s $< -o $@
 
 BUILT_SOURCES += glib_probes.h glib_probes.lo
 CLEANFILES += glib_probes.h glib_probes.h.tmp
 libglib_2_0_la_LIBADD += glib_probes.lo
 endif
 
-if ENABLE_SYSTEMTAP
-tapset_in_files = glib.stp.in
 tapsetdir   = @ABS_TAPSET_DIR@
-tapset_DATA = $(tapset_in_files:.stp.in=.stp)
-EXTRA_DIST += $(tapset_in_files)
+EXTRA_DIST += glib.stp.in
+
+if ENABLE_SYSTEMTAP
+tapset_DATA = libglib-2.0.so.0.@LT_CURRENT@.@LT_REVISION@.stp
+CLEANFILES += $(tapset_DATA)
+
+$(tapset_DATA): glib.stp.in Makefile
+	$(AM_V_GEN)$(SED) \
+		-e 's|[@]ABS_GLIB_RUNTIME_LIBDIR[@]|$(ABS_GLIB_RUNTIME_LIBDIR)|g' \
+		-e 's|[@]LT_CURRENT[@]|$(LT_CURRENT)|g' \
+		-e 's|[@]LT_REVISION[@]|$(LT_REVISION)|g' \
+		$< > $@
 endif
 
 gspawn-win32-helper-console.c:
@@ -446,55 +456,36 @@ glib.def: libglib-2.0.la
 glib-2.0.lib: libglib-2.0.la glib.def
 	$(AM_V_GEN) lib.exe -machine:@LIB_EXE_MACHINE_FLAG@ -name:libglib-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:$(builddir)/glib.def -out:$@
 
-dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/glib.vcproj ../build/win32/vs10/glib.vcxproj ../build/win32/vs10/glib.vcxproj.filters
+# ------ MSVC Project File Generation ------
+MSVCPROJS = glib
+
+glib_FILES = $(libglib_2_0_la_SOURCES)
+glib_EXCLUDES = *-unix.c|gthread-*.c
+
+glib_HEADERS_DIR = $(glibsubincludedir)
+glib_HEADERS_INST = $(deprecatedinclude_HEADERS) $(glibsubinclude_HEADERS)
+glib_HEADERS_EXCLUDES = dummy
+
+include $(top_srcdir)/build/Makefile.msvcproj
+
+dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/build/win32/vs9/glib.vcproj $(top_builddir)/build/win32/vs9/glib.headers
 	files='$(BUILT_EXTRA_DIST)'; \
 	for f in $$files; do \
 	  if test -f $$f; then d=.; else d=$(srcdir); fi; \
 	  cp $$d/$$f $(distdir) || exit 1; done
 
-../build/win32/vs9/glib.vcproj: $(top_srcdir)/build/win32/vs9/glib.vcprojin
-	for F in `echo $(libglib_2_0_la_SOURCES) | tr '/' '\\'`; do \
-		case $$F in \
-		*-unix.c|gthread-*.c) \
-			;; \
-		*.c)	echo '   <File RelativePath="..\..\..\glib\'$$F'" />' \
-			;; \
-		esac; \
-	done >libglib.sourcefiles
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/glib.vcprojin >$@
-	rm libglib.sourcefiles
-
-../build/win32/vs10/glib.vcxproj: $(top_srcdir)/build/win32/vs10/glib.vcxprojin
-	for F in `echo $(libglib_2_0_la_SOURCES) | tr '/' '\\'`; do \
-		case $$F in \
-		*-unix.c|gthread-*.c) \
-			;; \
-		*.c) echo '    <ClCompile Include="..\..\..\glib\'$$F'" />' \
-		     ;; \
-		esac; \
-	done >libglib.vs10.sourcefiles
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/glib.vcxprojin >$@
-	rm libglib.vs10.sourcefiles
-
-../build/win32/vs10/glib.vcxproj.filters: $(top_srcdir)/build/win32/vs10/glib.vcxproj.filtersin
-	for F in `echo $(libglib_2_0_la_SOURCES) | tr '/' '\\'`; do \
-		case $$F in \
-		*-unix.c|gthread-*.c) \
-			;; \
-		*.c) echo '    <ClCompile Include="..\..\..\glib\'$$F'"><Filter>Source Files</Filter></ClCompile>' \
-		     ;; \
-		esac; \
-	done >libglib.vs10.sourcefiles.filters
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/glib.vcxproj.filtersin >$@	
-	rm libglib.vs10.sourcefiles.filters
-
 # install gdb scripts
 gdbdir = $(datadir)/glib-2.0/gdb
-dist_gdb_SCRIPTS = glib.py
+dist_gdb_SCRIPTS = glib_gdb.py
 
 libglib-gdb.py: libglib-gdb.py.in
 	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libglib-gdb.py.in > $(builddir)/libglib-gdb.py
 
+if HAVE_GLIB_RUNTIME_LIBDIR
+ABS_GLIB_RUNTIME_LIBDIR = $(realpath $(libdir)/$(GLIB_RUNTIME_LIBDIR))
+else
+ABS_GLIB_RUNTIME_LIBDIR = $(libdir)
+endif
 
 install-data-hook: libglib-gdb.py
 	mkdir -p $(DESTDIR)$(datadir)/gdb/auto-load$(ABS_GLIB_RUNTIME_LIBDIR)

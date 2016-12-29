@@ -53,15 +53,6 @@
 /* Define to the GLIB minor version */
 #undef GLIB_MINOR_VERSION
 
-/* Have inline keyword */
-#undef G_HAVE_INLINE
-
-/* Have __inline keyword */
-#undef G_HAVE___INLINE
-
-/* Have __inline__ keyword */
-#undef G_HAVE___INLINE__
-
 /* A 'va_copy' style function */
 #undef G_VA_COPY
 
@@ -165,11 +156,17 @@
 /* Define to 1 if you have the `getfsstat' function. */
 #undef HAVE_GETFSSTAT
 
+/* Define to 1 if you have the `getgrgid_r' function. */
+#undef HAVE_GETGRGID_R
+
 /* Define to 1 if you have the `getmntent_r' function. */
 #undef HAVE_GETMNTENT_R
 
 /* Define to 1 if you have the `getprotobyname_r' function. */
 #undef HAVE_GETPROTOBYNAME_R
+
+/* Define to 1 if you have the `getpwuid_r' function. */
+#undef HAVE_GETPWUID_R
 
 /* Define to 1 if you have the `getresuid' function. */
 #undef HAVE_GETRESUID
@@ -247,6 +244,9 @@
 /* Define if libelf is available */
 #undef HAVE_LIBELF
 
+/* Define if libmount is available */
+#undef HAVE_LIBMOUNT
+
 /* Define to 1 if you have the <linux/magic.h> header file. */
 #undef HAVE_LINUX_MAGIC_H
 
@@ -274,6 +274,9 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
 
+/* Define to 1 if you have the `mbrtowc' function. */
+#undef HAVE_MBRTOWC
+
 /* Define to 1 if you have the `memalign' function. */
 #undef HAVE_MEMALIGN
 
@@ -298,12 +301,6 @@
 /* Define to 1 if you have the `newlocale' function. */
 #undef HAVE_NEWLOCALE
 
-/* Have non-POSIX function getgrgid_r */
-#undef HAVE_NONPOSIX_GETGRGID_R
-
-/* Have non-POSIX function getpwuid_r */
-#undef HAVE_NONPOSIX_GETPWUID_R
-
 /* open option O_DIRECTORY */
 #undef HAVE_OPEN_O_DIRECTORY
 
@@ -312,12 +309,6 @@
 
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
-
-/* Have POSIX function getgrgid_r */
-#undef HAVE_POSIX_GETGRGID_R
-
-/* Have POSIX function getpwuid_r */
-#undef HAVE_POSIX_GETPWUID_R
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
@@ -337,11 +328,17 @@
 /* Have function pthread_setname_np(const char*) */
 #undef HAVE_PTHREAD_SETNAME_NP_WITHOUT_TID
 
+/* Have function pthread_setname_np(pthread_t, const char*) */
+#undef HAVE_PTHREAD_SETNAME_NP_WITH_TID
+
 /* Define to 1 if the system has the type `ptrdiff_t'. */
 #undef HAVE_PTRDIFF_T
 
 /* Define to 1 if you have the `readlink' function. */
 #undef HAVE_READLINK
+
+/* Define to 1 if you have the `recvmmsg' function. */
+#undef HAVE_RECVMMSG
 
 /* Define to 1 if you have the 'res_init' function. */
 #undef HAVE_RES_INIT
@@ -395,6 +392,9 @@
 /* Define to 1 if you have the `strcasecmp' function. */
 #undef HAVE_STRCASECMP
 
+/* Define to 1 if you have the `strerror_r' function. */
+#undef HAVE_STRERROR_R
+
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
@@ -406,6 +406,9 @@
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #undef HAVE_STRNCASECMP
+
+/* Define to 1 if you have the `strnlen' function. */
+#undef HAVE_STRNLEN
 
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
@@ -439,6 +442,18 @@
 
 /* Define to 1 if `st_atim.tv_nsec' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_ATIM_TV_NSEC
+
+/* Define to 1 if `st_birthtim' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BIRTHTIM
+
+/* Define to 1 if `st_birthtime' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BIRTHTIME
+
+/* Define to 1 if `st_birthtimensec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC
+
+/* Define to 1 if `st_birthtim.tv_nsec' is a member of `struct stat'. */
+#undef HAVE_STRUCT_STAT_ST_BIRTHTIM_TV_NSEC
 
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
@@ -498,9 +513,6 @@
 
 /* Define to 1 if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
-
-/* Define to 1 if you have the <sys/prctl.h> header file. */
-#undef HAVE_SYS_PRCTL_H
 
 /* Define to 1 if you have the <sys/resource.h> header file. */
 #undef HAVE_SYS_RESOURCE_H
@@ -572,8 +584,14 @@
 /* Define if you have the 'wchar_t' type. */
 #undef HAVE_WCHAR_T
 
+/* Define to 1 if you have the `wcrtomb' function. */
+#undef HAVE_WCRTOMB
+
 /* Define to 1 if you have the `wcslen' function. */
 #undef HAVE_WCSLEN
+
+/* Define to 1 if you have the `wcsnlen' function. */
+#undef HAVE_WCSNLEN
 
 /* Define if you have the 'wint_t' type. */
 #undef HAVE_WINT_T
@@ -590,8 +608,7 @@
 /* Define to 1 if you have the `_NSGetEnviron' function. */
 #undef HAVE__NSGETENVIRON
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define to 1 if `major', `minor', and `makedev' are declared in <mkdev.h>.

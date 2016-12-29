@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GFileOutputStream: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="GFileInputStream.html" title="GFileInputStream">
 <link rel="next" href="GFileIOStream.html" title="GFileIOStream">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GFileOutputStream.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -78,7 +78,7 @@
 </div>
 <div class="refsect1">
 <a name="GFileOutputStream.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -91,7 +91,7 @@
 </div>
 <div class="refsect1">
 <a name="GFileOutputStream.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> <a class="link" href="GOutputStream.html" title="GOutputStream">GOutputStream</a>
         <span class="lineart">╰──</span> GFileOutputStream
 </pre>
@@ -130,7 +130,7 @@ stream, use <a class="link" href="GSeekable.html#g-seekable-truncate" title="g_s
 g_file_output_stream_query_info (<em class="parameter"><code><a class="link" href="GFileOutputStream.html" title="GFileOutputStream"><span class="type">GFileOutputStream</span></a> *stream</code></em>,
                                  <em class="parameter"><code>const <span class="type">char</span> *attributes</code></em>,
                                  <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
-                                 <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                                 <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Queries a file output stream for the given <em class="parameter"><code>attributes</code></em>
 . 
 This function blocks while querying the stream. For the asynchronous 
@@ -145,15 +145,15 @@ internally, and any other operations on the stream will fail with
 set to <a class="link" href="gio-GIOError.html#G-IO-ERROR-PENDING:CAPS"><code class="literal">G_IO_ERROR_PENDING</code></a>), or if querying info is not supported for 
 the stream's interface (with <em class="parameter"><code>error</code></em>
  being set to <a class="link" href="gio-GIOError.html#G-IO-ERROR-NOT-SUPPORTED:CAPS"><code class="literal">G_IO_ERROR_NOT_SUPPORTED</code></a>). In
-all cases of failure, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> will be returned.</p>
+all cases of failure, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> will be returned.</p>
 <p>If <em class="parameter"><code>cancellable</code></em>
- is not <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
+ is not <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
 triggering the cancellable object from another thread. If the operation
-was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANCELLED:CAPS"><code class="literal">G_IO_ERROR_CANCELLED</code></a> will be set, and <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> will 
+was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANCELLED:CAPS"><code class="literal">G_IO_ERROR_CANCELLED</code></a> will be set, and <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> will 
 be returned.</p>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.2.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-output-stream-query-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -172,21 +172,21 @@ be returned.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p>optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
+<td class="parameter_description"><p>optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.2.8"></a><h4>Returns</h4>
+<a name="g-file-output-stream-query-info.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a> for the <em class="parameter"><code>stream</code></em>
-, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
+, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
@@ -199,7 +199,7 @@ g_file_output_stream_query_info_async (<em class="parameter"><code><a class="lin
                                        <em class="parameter"><code><span class="type">int</span> io_priority</code></em>,
                                        <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
                                        <em class="parameter"><code><a class="link" href="GAsyncResult.html#GAsyncReadyCallback" title="GAsyncReadyCallback ()"><span class="type">GAsyncReadyCallback</span></a> callback</code></em>,
-                                       <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
+                                       <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Asynchronously queries the <em class="parameter"><code>stream</code></em>
  for a <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a>. When completed,
 <em class="parameter"><code>callback</code></em>
@@ -208,8 +208,8 @@ finish the operation with <a class="link" href="GFileOutputStream.html#g-file-ou
 <p>For the synchronous version of this function, see 
 <a class="link" href="GFileOutputStream.html#g-file-output-stream-query-info" title="g_file_output_stream_query_info ()"><code class="function">g_file_output_stream_query_info()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-output-stream-query-info-async.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -233,7 +233,7 @@ finish the operation with <a class="link" href="GFileOutputStream.html#g-file-ou
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p>optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
+<td class="parameter_description"><p>optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -257,12 +257,12 @@ finish the operation with <a class="link" href="GFileOutputStream.html#g-file-ou
 g_file_output_stream_query_info_finish
                                (<em class="parameter"><code><a class="link" href="GFileOutputStream.html" title="GFileOutputStream"><span class="type">GFileOutputStream</span></a> *stream</code></em>,
                                 <em class="parameter"><code><a class="link" href="GAsyncResult.html" title="GAsyncResult"><span class="type">GAsyncResult</span></a> *result</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Finalizes the asynchronous query started 
 by <a class="link" href="GFileOutputStream.html#g-file-output-stream-query-info-async" title="g_file_output_stream_query_info_async ()"><code class="function">g_file_output_stream_query_info_async()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-output-stream-query-info-finish.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -281,14 +281,14 @@ by <a class="link" href="GFileOutputStream.html#g-file-output-stream-query-info-
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.4.6"></a><h4>Returns</h4>
+<a name="g-file-output-stream-query-info-finish.returns"></a><h4>Returns</h4>
 <p> A <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a> for the finished query. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -302,8 +302,8 @@ g_file_output_stream_get_etag (<em class="parameter"><code><a class="link" href=
 This must be called after the stream has been written
 and closed, as the etag can change while writing.</p>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-output-stream-get-etag.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -317,7 +317,7 @@ and closed, as the etag can change while writing.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.8.9.5.6"></a><h4>Returns</h4>
+<a name="g-file-output-stream-get-etag.returns"></a><h4>Returns</h4>
 <p> the entity tag for the stream.</p>
 </div>
 </div>
@@ -338,6 +338,6 @@ a few file-specific operations and seeking and truncating.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: glib-compile-resources
 .\"    Author: Alexander Larsson
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 05/25/2015
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2016
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -50,6 +50,11 @@ documentation\&.
 \fB\-h\fR, \fB\-\-help\fR
 .RS 4
 Print help and exit
+.RE
+.PP
+\fB\-\-version\fR
+.RS 4
+Print program version and exit
 .RE
 .PP
 \fB\-\-target=\fR\fB\fITARGET\fR\fR
@@ -119,6 +124,9 @@ test\&.gresource: test\&.gresource\&.xml $(shell $(GLIB_COMPILE_RESOURCES) \-\-g
 .sp
 Note that this may or may not be portable to non\-GNU
 \fBmake\fR\&.
+.sp
+Also see
+\fB\-\-dependency\-file\fR\&.
 .RE
 .PP
 \fB\-\-c\-name\fR
@@ -147,6 +155,16 @@ G_GNUC_INTERNAL
 which is what
 \fB\-\-internal\fR
 does\&.
+.RE
+.PP
+\fB\-\-dependency\-file=\fR\fB\fIFILE\fR\fR
+.RS 4
+Write dependencies in the same style as gcc \-M \-MF to the given file\&. If
+\fBFILE\fR
+is \-, the dependencies are written to the standard output\&. Unlike
+\fB\-\-generate\-dependencies\fR, this option can be combined with other
+\fB\-\-generate\fR
+options to generate dependencies as a side\-effect of generating sources\&.
 .RE
 .SH "ENVIRONMENT"
 .PP

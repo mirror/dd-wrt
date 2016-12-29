@@ -20,7 +20,7 @@ all :				\
 	gmarshal.strings \
 	gobject-query.exe \
 	libgobject-2.0-0.dll	\
-	gobject-2.45s.lib \
+	gobject-2.51s.lib \
 	testgobject.exe
 
 gobject_OBJECTS =		\
@@ -63,13 +63,13 @@ libgobject-2.0-0.dll : $(gobject_OBJECTS) gobject.def gobject.res
 	$(CC) $(CFLAGS) -Fm -LD -Fe$@ $(gobject_OBJECTS) gobject.res \
 	..\glib\glib-2.0.lib $(LDFLAGS) /implib:gobject-2.0.lib /def:gobject.def || del $@
 
-gobject-2.45s.lib : $(gobject_OBJECTS) 
+gobject-2.51s.lib : $(gobject_OBJECTS) 
 	lib /out:$@ $(gobject_OBJECTS)
 
 # link glib's static version to avoid installing 
 glib-genmarshal.exe : glib-genmarshal.c gmarshal.strings
 	$(CC) -Fe$@ $(CFLAGS) -UGOBJECT_COMPILATION glib-genmarshal.c \
-	..\glib\glib-2.45s.lib user32.lib advapi32.lib ole32.lib shell32.lib $(INTL_LIBS) 
+	..\glib\glib-2.51s.lib user32.lib advapi32.lib ole32.lib shell32.lib $(INTL_LIBS) 
 
 gobject-query.exe : gobject-query.c libgobject-2.0-0.dll
 	$(CC) -Fe$@ $(CFLAGS) -UGOBJECT_COMPILATION gobject-query.c \

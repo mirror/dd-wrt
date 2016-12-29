@@ -335,6 +335,7 @@ test_complex_types (void)
   gchar *s;
   gint i1, i2;
   GVariantIter *iter = NULL;
+  GVariant *v = NULL;
 
   settings = g_settings_new ("org.gtk.test.complex-types");
 
@@ -369,6 +370,22 @@ test_complex_types (void)
   g_assert_cmpint (i1, ==, 5);
   g_assert (!g_variant_iter_next (iter, "i", &i1));
   g_variant_iter_free (iter);
+
+  g_settings_get (settings, "test-dict", "a{sau}", &iter);
+  g_assert_cmpint (g_variant_iter_n_children (iter), ==, 2);
+  g_assert (g_variant_iter_next (iter, "{&s@au}", &s, &v));
+  g_assert_cmpstr (s, ==, "AC");
+  g_assert_cmpstr ((char *)g_variant_get_type (v), ==, "au");
+  g_variant_unref (v);
+  g_assert (g_variant_iter_next (iter, "{&s@au}", &s, &v));
+  g_assert_cmpstr (s, ==, "IV");
+  g_assert_cmpstr ((char *)g_variant_get_type (v), ==, "au");
+  g_variant_unref (v);
+  g_variant_iter_free (iter);
+
+  v = g_settings_get_value (settings, "test-dict");
+  g_assert_cmpstr ((char *)g_variant_get_type (v), ==, "a{sau}");
+  g_variant_unref (v);
 
   g_object_unref (settings);
 }
@@ -737,7 +754,6 @@ test_l10n (void)
       str = g_settings_get_string (settings, "error-message");
 
       g_assert_cmpstr (str, ==, "Unbenannt");
-      g_object_unref (settings);
       g_free (str);
       str = NULL;
     }
@@ -746,6 +762,7 @@ test_l10n (void)
 
   setlocale (LC_MESSAGES, locale);
   g_free (locale);
+  g_object_unref (settings);
 }
 
 /* Test that message context works as expected with translated
@@ -784,7 +801,6 @@ test_l10n_context (void)
       g_settings_get (settings, "backspace", "s", &str);
 
       g_assert_cmpstr (str, ==, "Löschen");
-      g_object_unref (settings);
       g_free (str);
       str = NULL;
     }
@@ -793,6 +809,7 @@ test_l10n_context (void)
 
   setlocale (LC_MESSAGES, locale);
   g_free (locale);
+  g_object_unref (settings);
 }
 
 enum
@@ -1179,6 +1196,16 @@ test_simple_binding (void)
   u = 1111;
   g_object_get (obj, "uint", &u, NULL);
   g_assert_cmpuint (u, ==, 54321);
+
+  g_settings_bind (settings, "uint64", obj, "uint64", G_SETTINGS_BIND_DEFAULT);
+
+  g_object_set (obj, "uint64", (guint64) 12345, NULL);
+  g_assert_cmpuint (g_settings_get_uint64 (settings, "uint64"), ==, 12345);
+
+  g_settings_set_uint64 (settings, "uint64", 54321);
+  u64 = 1111;
+  g_object_get (obj, "uint64", &u64, NULL);
+  g_assert_cmpuint (u64, ==, 54321);
 
   g_settings_bind (settings, "int64", obj, "int64", G_SETTINGS_BIND_DEFAULT);
 
@@ -1761,9 +1788,7 @@ test_strinfo (void)
     strinfo_builder_append_item (builder, "foo", 1);
     strinfo_builder_append_item (builder, "bar", 2);
     g_assert (strinfo_builder_append_alias (builder, "baz", "bar"));
-    g_assert_cmpint (builder->len % 4, ==, 0);
-    g_assert_cmpint (builder->len / 4, ==, length);
-    g_assert (memcmp (builder->str, strinfo, length * 4) == 0);
+    g_assert_cmpmem (builder->str, builder->len, strinfo, length * 4);
     g_string_free (builder, TRUE);
   }
 
@@ -1885,6 +1910,9 @@ test_enums (void)
   g_free (str);
 
   g_assert_cmpint (g_settings_get_enum (settings, "test"), ==, TEST_ENUM_QUUX);
+
+  g_object_unref (direct);
+  g_object_unref (settings);
 }
 
 static void
@@ -1993,6 +2021,9 @@ test_flags (void)
 
   g_assert_cmpint (g_settings_get_flags (settings, "f-test"), ==,
                    TEST_FLAGS_TALKING | TEST_FLAGS_LAUGHING);
+
+  g_object_unref (direct);
+  g_object_unref (settings);
 }
 
 static void
@@ -2057,6 +2088,9 @@ G_GNUC_BEGIN_IGNORE_DEPRECATIONS
   g_assert (!g_settings_range_check (settings, "val", value));
   g_variant_unref (value);
 G_GNUC_END_IGNORE_DEPRECATIONS
+
+  g_object_unref (direct);
+  g_object_unref (settings);
 }
 
 static gboolean
@@ -2107,13 +2141,15 @@ strv_set_equal (gchar **strv, ...)
 static void
 test_list_items (void)
 {
+  GSettingsSchema *schema;
   GSettings *settings;
   gchar **children;
   gchar **keys;
 
   settings = g_settings_new ("org.gtk.test");
+  g_object_get (settings, "settings-schema", &schema, NULL);
   children = g_settings_list_children (settings);
-  keys = g_settings_list_keys (settings);
+  keys = g_settings_schema_list_keys (schema);
 
   g_assert (strv_set_equal (children, "basic-types", "complex-types", "localized", NULL));
   g_assert (strv_set_equal (keys, "greeting", "farewell", NULL));
@@ -2121,6 +2157,7 @@ test_list_items (void)
   g_strfreev (children);
   g_strfreev (keys);
 
+  g_settings_schema_unref (schema);
   g_object_unref (settings);
 }
 
@@ -2319,6 +2356,27 @@ test_schema_source (void)
   g_settings_schema_unref (schema);
 
   g_settings_schema_source_unref (source);
+}
+
+static void
+test_schema_list_keys (void)
+{
+  gchar                 **keys;
+  GSettingsSchemaSource  *src    = g_settings_schema_source_get_default ();
+  GSettingsSchema        *schema = g_settings_schema_source_lookup (src, "org.gtk.test", TRUE);
+  g_assert (schema != NULL);
+
+  keys = g_settings_schema_list_keys (schema);
+
+  g_assert (strv_set_equal ((gchar **)keys,
+                            "greeting",
+                            "farewell",
+                            NULL));
+
+
+  g_strfreev (keys);
+  g_settings_schema_unref (schema);
+  g_settings_schema_source_unref (src);
 }
 
 static void
@@ -2526,14 +2584,17 @@ test_default_value (void)
 static void
 test_extended_schema (void)
 {
+  GSettingsSchema *schema;
   GSettings *settings;
   gchar **keys;
 
   settings = g_settings_new_with_path ("org.gtk.test.extends.extended", "/test/extendes/");
-  keys = g_settings_list_keys (settings);
+  g_object_get (settings, "settings-schema", &schema, NULL);
+  keys = g_settings_schema_list_keys (schema);
   g_assert (strv_set_equal (keys, "int32", "string", "another-int32", NULL));
   g_strfreev (keys);
   g_object_unref (settings);
+  g_settings_schema_unref (schema);
 }
 
 int
@@ -2646,6 +2707,7 @@ main (int argc, char *argv[])
   g_test_add_func ("/gsettings/mapped", test_get_mapped);
   g_test_add_func ("/gsettings/get-range", test_get_range);
   g_test_add_func ("/gsettings/schema-source", test_schema_source);
+  g_test_add_func ("/gsettings/schema-list-keys", test_schema_list_keys);
   g_test_add_func ("/gsettings/actions", test_actions);
   g_test_add_func ("/gsettings/null-backend", test_null_backend);
   g_test_add_func ("/gsettings/memory-backend", test_memory_backend);

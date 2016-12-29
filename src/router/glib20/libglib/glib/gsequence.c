@@ -184,20 +184,24 @@ check_iter_access (GSequenceIter *iter)
 static gboolean
 is_end (GSequenceIter *iter)
 {
-  GSequence *seq;
+  GSequenceIter *parent = iter->parent;
 
   if (iter->right)
     return FALSE;
 
-  if (!iter->parent)
+  if (!parent)
     return TRUE;
 
-  if (iter->parent->right != iter)
-    return FALSE;
+  while (parent->right == iter)
+    {
+      iter = parent;
+      parent = iter->parent;
 
-  seq = get_sequence (iter);
+      if (!parent)
+        return TRUE;
+    }
 
-  return seq->end_node == iter;
+  return FALSE;
 }
 
 typedef struct
@@ -883,7 +887,7 @@ g_sequence_sort_iter (GSequence                *seq,
   seq->access_prohibited = TRUE;
   tmp->access_prohibited = TRUE;
 
-  while (g_sequence_get_length (tmp) > 0)
+  while (!g_sequence_is_empty (tmp))
     {
       GSequenceNode *node = g_sequence_get_begin_iter (tmp);
 
@@ -1231,7 +1235,9 @@ g_sequence_set (GSequenceIter *iter,
  * g_sequence_get_length:
  * @seq: a #GSequence
  *
- * Returns the length of @seq
+ * Returns the length of @seq. Note that this method is O(h) where `h' is the
+ * height of the tree. It is thus more efficient to use g_sequence_is_empty()
+ * when comparing the length to zero.
  *
  * Returns: the length of @seq
  *
@@ -1241,6 +1247,26 @@ gint
 g_sequence_get_length (GSequence *seq)
 {
   return node_get_length (seq->end_node) - 1;
+}
+
+/**
+ * g_sequence_is_empty:
+ * @seq: a #GSequence
+ *
+ * Returns %TRUE if the sequence contains zero items.
+ *
+ * This function is functionally identical to checking the result of
+ * g_sequence_get_length() being equal to zero. However this function is
+ * implemented in O(1) running time.
+ *
+ * Returns: %TRUE if the sequence is empty, otherwise %FALSE.
+ *
+ * Since: 2.48
+ */
+gboolean
+g_sequence_is_empty (GSequence *seq)
+{
+  return (seq->end_node->parent == NULL) && (seq->end_node->left == NULL);
 }
 
 /**

@@ -242,7 +242,7 @@ g_dbus_interface_skeleton_class_init (GDBusInterfaceSkeletonClass *klass)
    * Since: 2.30
    */
   signals[G_AUTHORIZE_METHOD_SIGNAL] =
-    g_signal_new ("g-authorize-method",
+    g_signal_new (I_("g-authorize-method"),
                   G_TYPE_DBUS_INTERFACE_SKELETON,
                   G_SIGNAL_RUN_LAST,
                   G_STRUCT_OFFSET (GDBusInterfaceSkeletonClass, g_authorize_method),
@@ -627,6 +627,7 @@ g_dbus_interface_method_dispatch_helper (GDBusInterfaceSkeleton       *interface
       data->ref_count = 1;
 
       task = g_task_new (interface, NULL, NULL, NULL);
+      g_task_set_source_tag (task, g_dbus_interface_method_dispatch_helper);
       g_task_set_task_data (task, data, (GDestroyNotify) dispatch_data_unref);
       g_task_run_in_thread (task, dispatch_in_thread_func);
       g_object_unref (task);

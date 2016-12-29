@@ -53,6 +53,42 @@
  * Since: 2.30
  */
 
+/**
+ * GTlsDatabaseClass:
+ * @verify_chain: Virtual method implementing
+ *  g_tls_database_verify_chain().
+ * @verify_chain_async: Virtual method implementing
+ *  g_tls_database_verify_chain_async().
+ * @verify_chain_finish: Virtual method implementing
+ *  g_tls_database_verify_chain_finish().
+ * @create_certificate_handle: Virtual method implementing
+ *  g_tls_database_create_certificate_handle().
+ * @lookup_certificate_for_handle: Virtual method implementing
+ *  g_tls_database_lookup_certificate_for_handle().
+ * @lookup_certificate_for_handle_async: Virtual method implementing
+ *  g_tls_database_lookup_certificate_for_handle_async().
+ * @lookup_certificate_for_handle_finish: Virtual method implementing
+ *  g_tls_database_lookup_certificate_for_handle_finish().
+ * @lookup_certificate_issuer: Virtual method implementing
+ *  g_tls_database_lookup_certificate_issuer().
+ * @lookup_certificate_issuer_async: Virtual method implementing
+ *  g_tls_database_lookup_certificate_issuer_async().
+ * @lookup_certificate_issuer_finish: Virtual method implementing
+ *  g_tls_database_lookup_certificate_issuer_finish().
+ * @lookup_certificates_issued_by: Virtual method implementing
+ *  g_tls_database_lookup_certificates_issued_by().
+ * @lookup_certificates_issued_by_async: Virtual method implementing
+ *  g_tls_database_lookup_certificates_issued_by_async().
+ * @lookup_certificates_issued_by_finish: Virtual method implementing
+ *  g_tls_database_lookup_certificates_issued_by_finish().
+ *
+ * The class for #GTlsDatabase. Derived classes should implement the various
+ * virtual methods. _async and _finish methods have a default
+ * implementation that runs the corresponding sync method in a thread.
+ *
+ * Since: 2.30
+ */
+
 G_DEFINE_ABSTRACT_TYPE (GTlsDatabase, g_tls_database, G_TYPE_OBJECT);
 
 enum {
@@ -146,6 +182,7 @@ g_tls_database_real_verify_chain_async (GTlsDatabase           *self,
   args->flags = flags;
 
   task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_tls_database_real_verify_chain_async);
   g_task_set_task_data (task, args, async_verify_chain_free);
   g_task_run_in_thread (task, async_verify_chain_thread);
   g_object_unref (task);
@@ -222,6 +259,8 @@ g_tls_database_real_lookup_certificate_for_handle_async (GTlsDatabase           
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
   task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task,
+                         g_tls_database_real_lookup_certificate_for_handle_async);
   g_task_set_task_data (task, args, async_lookup_certificate_for_handle_free);
   g_task_run_in_thread (task, async_lookup_certificate_for_handle_thread);
   g_object_unref (task);
@@ -294,6 +333,8 @@ g_tls_database_real_lookup_certificate_issuer_async (GTlsDatabase           *sel
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
   task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task,
+                         g_tls_database_real_lookup_certificate_issuer_async);
   g_task_set_task_data (task, args, async_lookup_certificate_issuer_free);
   g_task_run_in_thread (task, async_lookup_certificate_issuer_thread);
   g_object_unref (task);
@@ -373,6 +414,8 @@ g_tls_database_real_lookup_certificates_issued_by_async (GTlsDatabase           
   args->interaction = interaction ? g_object_ref (interaction) : NULL;
 
   task = g_task_new (self, cancellable, callback, user_data);
+  g_task_set_source_tag (task,
+                         g_tls_database_real_lookup_certificates_issued_by_async);
   g_task_set_task_data (task, args, async_lookup_certificates_issued_by_free);
   g_task_run_in_thread (task, async_lookup_certificates_issued_by_thread);
   g_object_unref (task);

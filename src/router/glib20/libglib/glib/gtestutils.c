@@ -88,11 +88,11 @@
  * "assertions", which consists of running the test_assertions function.
  *
  * In addition to the traditional g_assert(), the test framework provides
- * an extended set of assertions for string and numerical comparisons:
- * g_assert_cmpfloat(), g_assert_cmpint(), g_assert_cmpuint(),
- * g_assert_cmphex(), g_assert_cmpstr(). The advantage of these variants
- * over plain g_assert() is that the assertion messages can be more
- * elaborate, and include the values of the compared entities.
+ * an extended set of assertions for comparisons: g_assert_cmpfloat(),
+ * g_assert_cmpint(), g_assert_cmpuint(), g_assert_cmphex(),
+ * g_assert_cmpstr(), and g_assert_cmpmem(). The advantage of these
+ * variants over plain g_assert() is that the assertion messages can be
+ * more elaborate, and include the values of the compared entities.
  *
  * GLib ships with two utilities called [gtester][gtester] and
  * [gtester-report][gtester-report] to facilitate running tests and producing
@@ -545,6 +545,29 @@
  */
 
 /**
+ * g_assert_cmpmem:
+ * @m1: pointer to a buffer
+ * @l1: length of @m1
+ * @m2: pointer to another buffer
+ * @l2: length of @m2
+ *
+ * Debugging macro to compare memory regions. If the comparison fails,
+ * an error message is logged and the application is either terminated
+ * or the testcase marked as failed.
+ *
+ * The effect of `g_assert_cmpmem (m1, l1, m2, l2)` is
+ * the same as `g_assert_true (l1 == l2 && memcmp (m1, m2, l1) == 0)`.
+ * The advantage of this macro is that it can produce a message that
+ * includes the actual values of @l1 and @l2.
+ *
+ * |[<!-- language="C" -->
+ *   g_assert_cmpmem (buf->data, buf->len, expected, sizeof (expected));
+ * ]|
+ *
+ * Since: 2.46
+ */
+
+/**
  * g_assert_no_error:
  * @err: a #GError, possibly %NULL
  *
@@ -645,6 +668,12 @@ typedef enum {
   G_TEST_RUN_FAILURE,
   G_TEST_RUN_INCOMPLETE
 } GTestResult;
+static const char * const g_test_result_names[] = {
+  "OK",
+  "SKIP",
+  "FAIL",
+  "TODO"
+};
 
 /* --- variables --- */
 static int         test_log_fd = -1;
@@ -657,6 +686,7 @@ static gchar      *test_run_name = "";
 static GSList    **test_filename_free_list;
 static guint       test_run_forks = 0;
 static guint       test_run_count = 0;
+static guint       test_count = 0;
 static guint       test_skipped_count = 0;
 static GTestResult test_run_success = G_TEST_RUN_FAILURE;
 static gchar      *test_run_msg = NULL;
@@ -764,6 +794,7 @@ g_test_log (GTestLogType lbit,
             guint        n_args,
             long double *largs)
 {
+  GTestResult result;
   gboolean fail;
   GTestLogMsg msg;
   gchar *astrings[3] = { NULL, NULL, NULL };
@@ -783,6 +814,8 @@ g_test_log (GTestLogType lbit,
         {
           if (string1[0] != 0)
             g_print ("# Start of %s tests\n", string1);
+          else
+            g_print ("1..%d\n", test_count);
         }
       break;
     case G_TEST_LOG_STOP_SUITE:
@@ -790,33 +823,32 @@ g_test_log (GTestLogType lbit,
         {
           if (string1[0] != 0)
             g_print ("# End of %s tests\n", string1);
-          else
-            g_print ("1..%d\n", test_run_count);
         }
       break;
     case G_TEST_LOG_STOP_CASE:
-      fail = largs[0] != G_TEST_RUN_SUCCESS && largs[0] != G_TEST_RUN_SKIPPED;
+      result = largs[0];
+      fail = result == G_TEST_RUN_FAILURE;
       if (test_tap_log)
         {
           g_print ("%s %d %s", fail ? "not ok" : "ok", test_run_count, string1);
-          if (largs[0] == G_TEST_RUN_INCOMPLETE)
+          if (result == G_TEST_RUN_INCOMPLETE)
             g_print (" # TODO %s\n", string2 ? string2 : "");
-          else if (largs[0] == G_TEST_RUN_SKIPPED)
+          else if (result == G_TEST_RUN_SKIPPED)
             g_print (" # SKIP %s\n", string2 ? string2 : "");
           else
             g_print ("\n");
         }
       else if (g_test_verbose())
-        g_print ("GTest: result: %s\n", fail ? "FAIL" : "OK");
+        g_print ("GTest: result: %s\n", g_test_result_names[result]);
       else if (!g_test_quiet())
-        g_print ("%s\n", fail ? "FAIL" : "OK");
+        g_print ("%s\n", g_test_result_names[result]);
       if (fail && test_mode_fatal)
         {
           if (test_tap_log)
             g_print ("Bail out!\n");
-          abort();
+          g_abort();
         }
-      if (largs[0] == G_TEST_RUN_SKIPPED)
+      if (result == G_TEST_RUN_SKIPPED)
         test_skipped_count++;
       break;
     case G_TEST_LOG_MIN_RESULT:
@@ -1043,7 +1075,7 @@ parse_args (gint    *argc_p,
                   "  -m {undefined|no-undefined}    Execute tests according to mode\n"
                   "  -p TESTPATH                    Only start test cases matching TESTPATH\n"
                   "  -s TESTPATH                    Skip all tests matching TESTPATH\n"
-                  "  -seed=SEEDSTRING               Start tests with random seed SEEDSTRING\n"
+                  "  --seed=SEEDSTRING              Start tests with random seed SEEDSTRING\n"
                   "  --debug-log                    debug test logging output\n"
                   "  -q, --quiet                    Run tests quietly\n"
                   "  --verbose                      Run tests verbosely\n",
@@ -1085,6 +1117,7 @@ parse_args (gint    *argc_p,
  * - `--verbose`: Run tests verbosely.
  * - `-q`, `--quiet`: Run tests quietly.
  * - `-p PATH`: Execute all tests matching the given path.
+ * - `-s PATH`: Skip all tests matching the given path.
  *   This can also be used to force a test to run that would otherwise
  *   be skipped (ie, a test whose name contains "/subprocess").
  * - `-m {perf|slow|thorough|quick|undefined|no-undefined}`: Execute tests according to these test modes:
@@ -1096,7 +1129,7 @@ parse_args (gint    *argc_p,
  *   `quick`: Quick tests, should run really quickly and give good coverage.
  *
  *   `undefined`: Tests for undefined behaviour, may provoke programming errors
- *   under g_test_trap_subprocess() or g_test_expect_messages() to check
+ *   under g_test_trap_subprocess() or g_test_expect_message() to check
  *   that appropriate assertions or warnings are given
  *
  *   `no-undefined`: Avoid tests for undefined behaviour
@@ -1141,6 +1174,17 @@ g_test_init (int    *argc,
 
   if (!g_get_prgname() && !no_g_set_prgname)
     g_set_prgname ((*argv)[0]);
+
+  /* sanity check */
+  if (test_tap_log)
+    {
+      if (test_paths || test_paths_skipped || test_startup_skip_count)
+        {
+          g_printerr ("%s: options that skip some tests are incompatible with --tap\n",
+                      (*argv)[0]);
+          exit (1);
+        }
+    }
 
   /* verify GRand reliability, needed for reliable seeds */
   if (1)
@@ -1514,8 +1558,9 @@ g_test_get_root (void)
  * Runs all tests under the toplevel suite which can be retrieved
  * with g_test_get_root(). Similar to g_test_run_suite(), the test
  * cases to be run are filtered according to test path arguments
- * (`-p testpath`) as parsed by g_test_init(). g_test_run_suite()
- * or g_test_run() may only be called once in a program.
+ * (`-p testpath` and `-s testpath`) as parsed by g_test_init().
+ * g_test_run_suite() or g_test_run() may only be called once in a
+ * program.
  *
  * In general, the tests and sub-suites within each suite are run in
  * the order in which they are defined. However, note that prior to
@@ -1627,9 +1672,18 @@ find_suite (gconstpointer l, gconstpointer s)
   return strcmp (suite->name, str);
 }
 
+static gint
+find_case (gconstpointer l, gconstpointer s)
+{
+  const GTestCase *tc = l;
+  const gchar *str = s;
+
+  return strcmp (tc->name, str);
+}
+
 /**
  * GTestFixtureFunc:
- * @fixture: the test fixture
+ * @fixture: (not nullable): the test fixture
  * @user_data: the data provided when registering the test
  *
  * The type used for functions that operate on test fixtures.  This is
@@ -1692,7 +1746,12 @@ g_test_add_vtable (const char       *testpath,
         }
       else /* islast */
         {
-          GTestCase *tc = g_test_create_case (seg, data_size, test_data, data_setup, fixture_test_func, data_teardown);
+          GTestCase *tc;
+
+          if (g_slist_find_custom (suite->cases, seg, find_case))
+            g_error ("duplicate test case path: %s", testpath);
+
+          tc = g_test_create_case (seg, data_size, test_data, data_setup, fixture_test_func, data_teardown);
           g_test_suite_add (suite, tc);
         }
     }
@@ -1998,7 +2057,7 @@ g_test_suite_add (GTestSuite     *suite,
   g_return_if_fail (suite != NULL);
   g_return_if_fail (test_case != NULL);
 
-  suite->cases = g_slist_prepend (suite->cases, test_case);
+  suite->cases = g_slist_append (suite->cases, test_case);
 }
 
 /**
@@ -2017,7 +2076,7 @@ g_test_suite_add_suite (GTestSuite     *suite,
   g_return_if_fail (suite != NULL);
   g_return_if_fail (nestedsuite != NULL);
 
-  suite->suites = g_slist_prepend (suite->suites, nestedsuite);
+  suite->suites = g_slist_append (suite->suites, nestedsuite);
 }
 
 /**
@@ -2069,35 +2128,12 @@ g_test_queue_destroy (GDestroyNotify destroy_func,
 static gboolean
 test_case_run (GTestCase *tc)
 {
-  gchar *old_name = test_run_name, *old_base = g_strdup (test_uri_base);
+  gchar *old_base = g_strdup (test_uri_base);
   GSList **old_free_list, *filename_free_list = NULL;
   gboolean success = G_TEST_RUN_SUCCESS;
 
   old_free_list = test_filename_free_list;
   test_filename_free_list = &filename_free_list;
-
-  test_run_name = g_strconcat (old_name, "/", tc->name, NULL);
-  if (strstr (test_run_name, "/subprocess"))
-    {
-      GSList *iter;
-      gboolean found = FALSE;
-
-      for (iter = test_paths; iter; iter = iter->next)
-        {
-          if (!strcmp (test_run_name, iter->data))
-            {
-              found = TRUE;
-              break;
-            }
-        }
-
-      if (!found)
-        {
-          if (g_test_verbose ())
-            g_print ("GTest: skipping: %s\n", test_run_name);
-          goto out;
-        }
-    }
 
   if (++test_run_count <= test_startup_skip_count)
     g_test_log (G_TEST_LOG_SKIP_CASE, test_run_name, NULL, 0, NULL);
@@ -2145,11 +2181,8 @@ test_case_run (GTestCase *tc)
       g_timer_destroy (test_run_timer);
     }
 
- out:
   g_slist_free_full (filename_free_list, g_free);
   test_filename_free_list = old_free_list;
-  g_free (test_run_name);
-  test_run_name = old_name;
   g_free (test_uri_base);
   test_uri_base = old_base;
 
@@ -2157,51 +2190,104 @@ test_case_run (GTestCase *tc)
           success == G_TEST_RUN_SKIPPED);
 }
 
+static gboolean
+path_has_prefix (const char *path,
+                 const char *prefix)
+{
+  int prefix_len = strlen (prefix);
+
+  return (strncmp (path, prefix, prefix_len) == 0 &&
+          (path[prefix_len] == '\0' ||
+           path[prefix_len] == '/'));
+}
+
+static gboolean
+test_should_run (const char *test_path,
+                 const char *cmp_path)
+{
+  if (strstr (test_run_name, "/subprocess"))
+    {
+      if (g_strcmp0 (test_path, cmp_path) == 0)
+        return TRUE;
+
+      if (g_test_verbose ())
+        g_print ("GTest: skipping: %s\n", test_run_name);
+      return FALSE;
+    }
+
+  return !cmp_path || path_has_prefix (test_path, cmp_path);
+}
+
+/* Recurse through @suite, running tests matching @path (or all tests
+ * if @path is %NULL).
+ */
 static int
 g_test_run_suite_internal (GTestSuite *suite,
                            const char *path)
 {
-  guint n_bad = 0, l;
-  gchar *rest, *old_name = test_run_name;
-  GSList *slist, *reversed;
+  guint n_bad = 0;
+  gchar *old_name = test_run_name;
+  GSList *iter;
 
   g_return_val_if_fail (suite != NULL, -1);
 
   g_test_log (G_TEST_LOG_START_SUITE, suite->name, NULL, 0, NULL);
 
-  while (path[0] == '/')
-    path++;
-  l = strlen (path);
-  rest = strchr (path, '/');
-  l = rest ? MIN (l, rest - path) : l;
-  test_run_name = suite->name[0] == 0 ? g_strdup (test_run_name) : g_strconcat (old_name, "/", suite->name, NULL);
-  reversed = g_slist_reverse (g_slist_copy (suite->cases));
-  for (slist = reversed; slist; slist = slist->next)
+  for (iter = suite->cases; iter; iter = iter->next)
     {
-      GTestCase *tc = slist->data;
-      guint n = l ? strlen (tc->name) : 0;
-      if (l == n && !rest && strncmp (path, tc->name, n) == 0)
+      GTestCase *tc = iter->data;
+
+      test_run_name = g_build_path ("/", old_name, tc->name, NULL);
+      if (test_should_run (test_run_name, path))
         {
           if (!test_case_run (tc))
             n_bad++;
         }
+      g_free (test_run_name);
     }
-  g_slist_free (reversed);
-  reversed = g_slist_reverse (g_slist_copy (suite->suites));
-  for (slist = reversed; slist; slist = slist->next)
+
+  for (iter = suite->suites; iter; iter = iter->next)
     {
-      GTestSuite *ts = slist->data;
-      guint n = l ? strlen (ts->name) : 0;
-      if (l == n && strncmp (path, ts->name, n) == 0)
-        n_bad += g_test_run_suite_internal (ts, rest ? rest : "");
+      GTestSuite *ts = iter->data;
+
+      test_run_name = g_build_path ("/", old_name, ts->name, NULL);
+      if (!path || path_has_prefix (path, test_run_name))
+        n_bad += g_test_run_suite_internal (ts, path);
+      g_free (test_run_name);
     }
-  g_slist_free (reversed);
-  g_free (test_run_name);
+
   test_run_name = old_name;
 
   g_test_log (G_TEST_LOG_STOP_SUITE, suite->name, NULL, 0, NULL);
 
   return n_bad;
+}
+
+static int
+g_test_suite_count (GTestSuite *suite)
+{
+  int n = 0;
+  GSList *iter;
+
+  g_return_val_if_fail (suite != NULL, -1);
+
+  for (iter = suite->cases; iter; iter = iter->next)
+    {
+      GTestCase *tc = iter->data;
+
+      if (strcmp (tc->name, "subprocess") != 0)
+        n++;
+    }
+
+  for (iter = suite->suites; iter; iter = iter->next)
+    {
+      GTestSuite *ts = iter->data;
+
+      if (strcmp (ts->name, "subprocess") != 0)
+        n += g_test_suite_count (ts);
+    }
+
+  return n;
 }
 
 /**
@@ -2210,9 +2296,10 @@ g_test_run_suite_internal (GTestSuite *suite,
  *
  * Execute the tests within @suite and all nested #GTestSuites.
  * The test suites to be executed are filtered according to
- * test path arguments (`-p testpath`) as parsed by g_test_init().
- * See the g_test_run() documentation for more information on the
- * order that tests are run in.
+ * test path arguments (`-p testpath` and `-s testpath`) as parsed by
+ * g_test_init(). See the g_test_run() documentation for more
+ * information on the order that tests are run in.
+
  *
  * g_test_run_suite() or g_test_run() may only be called once
  * in a program.
@@ -2224,38 +2311,27 @@ g_test_run_suite_internal (GTestSuite *suite,
 int
 g_test_run_suite (GTestSuite *suite)
 {
-  GSList *my_test_paths;
-  guint n_bad = 0;
+  int n_bad = 0;
 
-  g_return_val_if_fail (g_test_config_vars->test_initialized, -1);
   g_return_val_if_fail (g_test_run_once == TRUE, -1);
 
   g_test_run_once = FALSE;
+  test_count = g_test_suite_count (suite);
+
+  test_run_name = g_strdup_printf ("/%s", suite->name);
 
   if (test_paths)
-    my_test_paths = g_slist_copy (test_paths);
-  else
-    my_test_paths = g_slist_prepend (NULL, "");
-
-  while (my_test_paths)
     {
-      const char *rest, *path = my_test_paths->data;
-      guint l, n = strlen (suite->name);
-      my_test_paths = g_slist_delete_link (my_test_paths, my_test_paths);
-      while (path[0] == '/')
-        path++;
-      if (!n) /* root suite, run unconditionally */
-        {
-          n_bad += g_test_run_suite_internal (suite, path);
-          continue;
-        }
-      /* regular suite, match path */
-      rest = strchr (path, '/');
-      l = strlen (path);
-      l = rest ? MIN (l, rest - path) : l;
-      if ((!l || l == n) && strncmp (path, suite->name, n) == 0)
-        n_bad += g_test_run_suite_internal (suite, rest ? rest : "");
+      GSList *iter;
+
+      for (iter = test_paths; iter; iter = iter->next)
+        n_bad += g_test_run_suite_internal (suite, iter->data);
     }
+  else
+    n_bad = g_test_run_suite_internal (suite, NULL);
+
+  g_free (test_run_name);
+  test_run_name = NULL;
 
   return n_bad;
 }
@@ -2353,9 +2429,17 @@ g_assertion_message (const char     *domain,
       _exit (1);
     }
   else
-    abort ();
+    g_abort ();
 }
 
+/**
+ * g_assertion_message_expr: (skip)
+ * @domain: (nullable):
+ * @file:
+ * @line:
+ * @func:
+ * @expr: (nullable):
+ */
 void
 g_assertion_message_expr (const char     *domain,
                           const char     *file,
@@ -2378,7 +2462,7 @@ g_assertion_message_expr (const char     *domain,
   if (test_in_subprocess)
     _exit (1);
   else
-    abort ();
+    g_abort ();
 }
 
 void
@@ -2822,7 +2906,7 @@ g_test_trap_fork (guint64        usec_timeout,
  *
  * |[<!-- language="C" --> 
  *   static void
- *   test_create_large_object_subprocess (void)
+ *   test_create_large_object (void)
  *   {
  *     if (g_test_subprocess ())
  *       {
@@ -3327,7 +3411,7 @@ g_test_build_filename_va (GTestFileType  file_type,
  * 'built' terminology that automake uses and are explicitly used to
  * distinguish between the 'srcdir' and 'builddir' being separate.  All
  * files in your project should either be dist (in the
- * `DIST_EXTRA` or `dist_schema_DATA`
+ * `EXTRA_DIST` or `dist_schema_DATA`
  * sense, in which case they will always be in the srcdir) or built (in
  * the `BUILT_SOURCES` sense, in which case they will
  * always be in the builddir).
@@ -3366,7 +3450,7 @@ g_test_build_filename (GTestFileType  file_type,
  * This is approximately the same as calling g_test_build_filename("."),
  * but you don't need to free the return value.
  *
- * Returns: the path of the directory, owned by GLib
+ * Returns: (type filename): the path of the directory, owned by GLib
  *
  * Since: 2.38
  **/

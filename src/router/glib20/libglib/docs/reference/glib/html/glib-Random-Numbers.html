@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Random Numbers: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-GDateTime.html" title="GDateTime">
 <link rel="next" href="glib-Hook-Functions.html" title="Hook Functions">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Random-Numbers.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -182,7 +182,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Random-Numbers.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -247,8 +247,8 @@ g_rand_new_with_seed (<em class="parameter"><code><a class="link" href="glib-Bas
 <p>Creates a new random number generator initialized with <em class="parameter"><code>seed</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-new-with-seed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -262,7 +262,7 @@ g_rand_new_with_seed (<em class="parameter"><code><a class="link" href="glib-Bas
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.2.6"></a><h4>Returns</h4>
+<a name="g-rand-new-with-seed.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a></p>
 </div>
 </div>
@@ -271,12 +271,12 @@ g_rand_new_with_seed (<em class="parameter"><code><a class="link" href="glib-Bas
 <a name="g-rand-new-with-seed-array"></a><h3>g_rand_new_with_seed_array ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="returnvalue">GRand</span></a> *
 g_rand_new_with_seed_array (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> *seed</code></em>,
-                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> seed_length</code></em>);</pre>
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> seed_length</code></em>);</pre>
 <p>Creates a new random number generator initialized with <em class="parameter"><code>seed</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-new-with-seed-array.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -298,7 +298,7 @@ generator</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.3.6"></a><h4>Returns</h4>
+<a name="g-rand-new-with-seed-array.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -313,7 +313,7 @@ either from <code class="literal">/dev/urandom</code> (if existing) or from the 
 (as a fallback).</p>
 <p>On Windows, the seed is taken from <code class="function">rand_s()</code>.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.4.6"></a><h4>Returns</h4>
+<a name="g-rand-new.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a></p>
 </div>
 </div>
@@ -326,8 +326,8 @@ g_rand_copy (<em class="parameter"><code><a class="link" href="glib-Random-Numbe
 This way you can take a snapshot of the random number generator for
 replaying later.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -341,7 +341,7 @@ replaying later.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.5.6"></a><h4>Returns</h4>
+<a name="g-rand-copy.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -353,8 +353,8 @@ replaying later.</p>
 g_rand_free (<em class="parameter"><code><a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a> *rand_</code></em>);</pre>
 <p>Frees the memory allocated for the <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -377,8 +377,8 @@ g_rand_set_seed (<em class="parameter"><code><a class="link" href="glib-Random-N
 <p>Sets the seed for the random number generator <a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a> to <em class="parameter"><code>seed</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-set-seed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -405,15 +405,15 @@ g_rand_set_seed (<em class="parameter"><code><a class="link" href="glib-Random-N
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_rand_set_seed_array (<em class="parameter"><code><a class="link" href="glib-Random-Numbers.html#GRand" title="GRand"><span class="type">GRand</span></a> *rand_</code></em>,
                        <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> *seed</code></em>,
-                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> seed_length</code></em>);</pre>
+                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> seed_length</code></em>);</pre>
 <p>Initializes the random number generator by an array of longs.
 Array can be of arbitrary size, though only the first 624 values
 are taken.  This function is useful if you have many low entropy
 seeds, or if you require more then 32 bits of actual entropy for
 your application.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-set-seed-array.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -448,8 +448,8 @@ your application.</p>
 .
 This corresponds to a unbiased coin toss.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-boolean.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -463,7 +463,7 @@ This corresponds to a unbiased coin toss.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.9.6"></a><h4>Returns</h4>
+<a name="g-rand-boolean.returns"></a><h4>Returns</h4>
 <p> a random <a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a></p>
 </div>
 </div>
@@ -476,8 +476,8 @@ g_rand_int (<em class="parameter"><code><a class="link" href="glib-Random-Number
  equally distributed over
 the range [0..2^32-1].</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-int.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -491,7 +491,7 @@ the range [0..2^32-1].</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.10.6"></a><h4>Returns</h4>
+<a name="g-rand-int.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -508,8 +508,8 @@ the range [<em class="parameter"><code>begin</code></em>
 ..<em class="parameter"><code>end</code></em>
 -1].</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-int-range.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -535,7 +535,7 @@ the range [<em class="parameter"><code>begin</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.11.6"></a><h4>Returns</h4>
+<a name="g-rand-int-range.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -548,8 +548,8 @@ g_rand_double (<em class="parameter"><code><a class="link" href="glib-Random-Num
  equally distributed over
 the range [0..1).</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-double.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -563,7 +563,7 @@ the range [0..1).</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.12.6"></a><h4>Returns</h4>
+<a name="g-rand-double.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -580,8 +580,8 @@ the range [<em class="parameter"><code>begin</code></em>
 ..<em class="parameter"><code>end</code></em>
 ).</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-rand-double-range.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -607,7 +607,7 @@ the range [<em class="parameter"><code>begin</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.13.6"></a><h4>Returns</h4>
+<a name="g-rand-double-range.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -620,8 +620,8 @@ g_random_set_seed (<em class="parameter"><code><a class="link" href="glib-Basic-
 by the g_random_* functions, to <em class="parameter"><code>seed</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-random-set-seed.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -642,7 +642,7 @@ by the g_random_* functions, to <em class="parameter"><code>seed</code></em>
 <p>Returns a random <a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a>.
 This corresponds to a unbiased coin toss.</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.15.5"></a><h4>Returns</h4>
+<a name="g-random-boolean.returns"></a><h4>Returns</h4>
 <p> a random <a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a></p>
 </div>
 </div>
@@ -654,7 +654,7 @@ g_random_int (<em class="parameter"><code><span class="type">void</span></code><
 <p>Return a random <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> equally distributed over the range
 [0..2^32-1].</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.16.5"></a><h4>Returns</h4>
+<a name="g-random-int.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -669,8 +669,8 @@ g_random_int_range (<em class="parameter"><code><a class="link" href="glib-Basic
 ..<em class="parameter"><code>end</code></em>
 -1].</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.17.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-random-int-range.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -691,7 +691,7 @@ g_random_int_range (<em class="parameter"><code><a class="link" href="glib-Basic
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.17.6"></a><h4>Returns</h4>
+<a name="g-random-int-range.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -702,7 +702,7 @@ g_random_int_range (<em class="parameter"><code><a class="link" href="glib-Basic
 g_random_double (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <p>Returns a random <a class="link" href="glib-Basic-Types.html#gdouble" title="gdouble"><span class="type">gdouble</span></a> equally distributed over the range [0..1).</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.18.5"></a><h4>Returns</h4>
+<a name="g-random-double.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -717,8 +717,8 @@ g_random_double_range (<em class="parameter"><code><a class="link" href="glib-Ba
 ..<em class="parameter"><code>end</code></em>
 ).</p>
 <div class="refsect3">
-<a name="id-1.5.12.7.19.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-random-double-range.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -739,7 +739,7 @@ g_random_double_range (<em class="parameter"><code><a class="link" href="glib-Ba
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.12.7.19.6"></a><h4>Returns</h4>
+<a name="g-random-double-range.returns"></a><h4>Returns</h4>
 <p> a random number</p>
 </div>
 </div>
@@ -755,6 +755,6 @@ accessed through the g_rand_* functions.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -679,10 +679,10 @@ g_hash_table_new (GHashFunc  hash_func,
  * g_hash_table_new_full:
  * @hash_func: a function to create a hash value from a key
  * @key_equal_func: a function to check two keys for equality
- * @key_destroy_func: (allow-none): a function to free the memory allocated for the key
+ * @key_destroy_func: (nullable): a function to free the memory allocated for the key
  *     used when removing the entry from the #GHashTable, or %NULL
  *     if you don't want to supply such a function.
- * @value_destroy_func: (allow-none): a function to free the memory allocated for the
+ * @value_destroy_func: (nullable): a function to free the memory allocated for the
  *     value used when removing the entry from the #GHashTable, or %NULL
  *     if you don't want to supply such a function.
  *
@@ -767,8 +767,8 @@ g_hash_table_iter_init (GHashTableIter *iter,
 /**
  * g_hash_table_iter_next:
  * @iter: an initialized #GHashTableIter
- * @key: (allow-none): a location to store the key, or %NULL
- * @value: (allow-none): a location to store the value, or %NULL
+ * @key: (out) (optional): a location to store the key
+ * @value: (out) (nullable) (optional): a location to store the value
  *
  * Advances @iter and retrieves the key and/or value that are now
  * pointed to as a result of this advancement. If %FALSE is returned,
@@ -886,7 +886,7 @@ g_hash_table_iter_remove (GHashTableIter *iter)
  * @hash_table: our #GHashTable
  * @node_index: pointer to node to insert/replace
  * @key_hash: key hash
- * @key: (allow-none): key to replace with, or %NULL
+ * @key: (nullable): key to replace with, or %NULL
  * @value: value to replace with
  * @keep_new_key: whether to replace the key in the node with @key
  * @reusing_key: whether @key was taken out of the existing node
@@ -1133,7 +1133,7 @@ g_hash_table_destroy (GHashTable *hash_table)
  * and has the value %NULL. If you need this distinction, use
  * g_hash_table_lookup_extended().
  *
- * Returns: (allow-none): the associated value, or %NULL if the key is not found
+ * Returns: (nullable): the associated value, or %NULL if the key is not found
  */
 gpointer
 g_hash_table_lookup (GHashTable    *hash_table,
@@ -1155,8 +1155,9 @@ g_hash_table_lookup (GHashTable    *hash_table,
  * g_hash_table_lookup_extended:
  * @hash_table: a #GHashTable
  * @lookup_key: the key to look up
- * @orig_key: (allow-none): return location for the original key, or %NULL
- * @value: (allow-none): return location for the value associated with the key, or %NULL
+ * @orig_key: (out) (optional) (nullable): return location for the original key
+ * @value: (out) (optional) (nullable): return location for the value associated
+ * with the key
  *
  * Looks up a key in the #GHashTable, returning the original key and the
  * associated value and a #gboolean which is %TRUE if the key was found. This
@@ -1267,7 +1268,7 @@ g_hash_table_insert (GHashTable *hash_table,
  * If you supplied a @key_destroy_func when creating the
  * #GHashTable, the old key is freed using that function.
  *
- * Returns: %TRUE of the key did not exist yet
+ * Returns: %TRUE if the key did not exist yet
  */
 gboolean
 g_hash_table_replace (GHashTable *hash_table,
@@ -1632,7 +1633,7 @@ g_hash_table_foreach (GHashTable *hash_table,
  * (keep in mind that an O(n) find/foreach operation issued for all n
  * values in a hash table ends up needing O(n*n) operations).
  *
- * Returns: (allow-none): The value of the first key/value pair is returned,
+ * Returns: (nullable): The value of the first key/value pair is returned,
  *     for which @predicate evaluates to %TRUE. If no pair with the
  *     requested property is found, %NULL is returned.
  *
@@ -1705,10 +1706,10 @@ g_hash_table_size (GHashTable *hash_table)
  * To iterate over the entries in a #GHashTable more efficiently, use a
  * #GHashTableIter.
  *
- * Returns: a #GList containing all the keys inside the hash
- *     table. The content of the list is owned by the hash table and
- *     should not be modified or freed. Use g_list_free() when done
- *     using the list.
+ * Returns: (transfer container): a #GList containing all the keys
+ *     inside the hash table. The content of the list is owned by the
+ *     hash table and should not be modified or freed. Use g_list_free()
+ *     when done using the list.
  *
  * Since: 2.14
  */
@@ -1791,10 +1792,10 @@ g_hash_table_get_keys_as_array (GHashTable *hash_table,
  * To iterate over the entries in a #GHashTable more efficiently, use a
  * #GHashTableIter.
  *
- * Returns: a #GList containing all the values inside the hash
- *     table. The content of the list is owned by the hash table and
- *     should not be modified or freed. Use g_list_free() when done
- *     using the list.
+ * Returns: (transfer container): a #GList containing all the values
+ *     inside the hash table. The content of the list is owned by the
+ *     hash table and should not be modified or freed. Use g_list_free()
+ *     when done using the list.
  *
  * Since: 2.14
  */
@@ -1821,8 +1822,8 @@ g_hash_table_get_values (GHashTable *hash_table)
 
 /**
  * g_str_equal:
- * @v1: a key
- * @v2: a key to compare with @v1
+ * @v1: (not nullable): a key
+ * @v2: (not nullable): a key to compare with @v1
  *
  * Compares two strings for byte-by-byte equality and returns %TRUE
  * if they are equal. It can be passed to g_hash_table_new() as the
@@ -1847,7 +1848,7 @@ g_str_equal (gconstpointer v1,
 
 /**
  * g_str_hash:
- * @v: a string key
+ * @v: (not nullable): a string key
  *
  * Converts a string to a hash value.
  *
@@ -1859,6 +1860,10 @@ g_str_equal (gconstpointer v1,
  *
  * It can be passed to g_hash_table_new() as the @hash_func parameter,
  * when using non-%NULL strings as keys in a #GHashTable.
+ *
+ * Note that this function may not be a perfect fit for all use cases.
+ * For example, it produces some hash collisions with strings as short
+ * as 2.
  *
  * Returns: a hash value corresponding to the key
  */
@@ -1876,7 +1881,7 @@ g_str_hash (gconstpointer v)
 
 /**
  * g_direct_hash:
- * @v: (allow-none): a #gpointer key
+ * @v: (nullable): a #gpointer key
  *
  * Converts a gpointer to a hash value.
  * It can be passed to g_hash_table_new() as the @hash_func parameter,
@@ -1896,8 +1901,8 @@ g_direct_hash (gconstpointer v)
 
 /**
  * g_direct_equal:
- * @v1: (allow-none): a key
- * @v2: (allow-none): a key to compare with @v1
+ * @v1: (nullable): a key
+ * @v2: (nullable): a key to compare with @v1
  *
  * Compares two #gpointer arguments and returns %TRUE if they are equal.
  * It can be passed to g_hash_table_new() as the @key_equal_func
@@ -1918,8 +1923,8 @@ g_direct_equal (gconstpointer v1,
 
 /**
  * g_int_equal:
- * @v1: a pointer to a #gint key
- * @v2: a pointer to a #gint key to compare with @v1
+ * @v1: (not nullable): a pointer to a #gint key
+ * @v2: (not nullable): a pointer to a #gint key to compare with @v1
  *
  * Compares the two #gint values being pointed to and returns
  * %TRUE if they are equal.
@@ -1942,7 +1947,7 @@ g_int_equal (gconstpointer v1,
 
 /**
  * g_int_hash:
- * @v: a pointer to a #gint key
+ * @v: (not nullable): a pointer to a #gint key
  *
  * Converts a pointer to a #gint to a hash value.
  * It can be passed to g_hash_table_new() as the @hash_func parameter,
@@ -1962,8 +1967,8 @@ g_int_hash (gconstpointer v)
 
 /**
  * g_int64_equal:
- * @v1: a pointer to a #gint64 key
- * @v2: a pointer to a #gint64 key to compare with @v1
+ * @v1: (not nullable): a pointer to a #gint64 key
+ * @v2: (not nullable): a pointer to a #gint64 key to compare with @v1
  *
  * Compares the two #gint64 values being pointed to and returns
  * %TRUE if they are equal.
@@ -1984,7 +1989,7 @@ g_int64_equal (gconstpointer v1,
 
 /**
  * g_int64_hash:
- * @v: a pointer to a #gint64 key
+ * @v: (not nullable): a pointer to a #gint64 key
  *
  * Converts a pointer to a #gint64 to a hash value.
  *
@@ -2004,8 +2009,8 @@ g_int64_hash (gconstpointer v)
 
 /**
  * g_double_equal:
- * @v1: a pointer to a #gdouble key
- * @v2: a pointer to a #gdouble key to compare with @v1
+ * @v1: (not nullable): a pointer to a #gdouble key
+ * @v2: (not nullable): a pointer to a #gdouble key to compare with @v1
  *
  * Compares the two #gdouble values being pointed to and returns
  * %TRUE if they are equal.
@@ -2026,7 +2031,7 @@ g_double_equal (gconstpointer v1,
 
 /**
  * g_double_hash:
- * @v: a pointer to a #gdouble key
+ * @v: (not nullable): a pointer to a #gdouble key
  *
  * Converts a pointer to a #gdouble to a hash value.
  * It can be passed to g_hash_table_new() as the @hash_func parameter,

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTypeModule: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="GTypePlugin.html" title="GTypePlugin">
 <link rel="next" href="gobject-The-Base-Object-Type.html" title="GObject">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GTypeModule.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -43,7 +43,7 @@
 <tbody>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GTypeModule.html#g-type-module-use" title="g_type_module_use ()">g_type_module_use</a> <span class="c_punctuation">()</span>
@@ -126,7 +126,7 @@
 </div>
 <div class="refsect1">
 <a name="GTypeModule.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -191,15 +191,15 @@ in <a class="link" href="GTypeModule.html#GTypeModuleClass" title="struct GTypeM
 <a name="GTypeModule.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
 <a name="g-type-module-use"></a><h3>g_type_module_use ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_type_module_use (<em class="parameter"><code><a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> *module</code></em>);</pre>
 <p>Increases the use count of a <a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> by one. If the
 use count was zero before, the plugin will be loaded.
 If loading the plugin fails, the use count is reset to 
 its prior value.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-use.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -213,8 +213,8 @@ its prior value.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.9.2.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if the plugin needed to be loaded and
+<a name="g-type-module-use.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> if the plugin needed to be loaded and
 loading the plugin failed.</p>
 </div>
 </div>
@@ -229,8 +229,8 @@ result is zero, the module will be unloaded. (However, the
 <a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> are not unregistered. Once a <a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> is
 initialized, it must exist forever.)</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-unuse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -249,11 +249,11 @@ initialized, it must exist forever.)</p>
 <a name="g-type-module-set-name"></a><h3>g_type_module_set_name ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_type_module_set_name (<em class="parameter"><code><a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> *module</code></em>,
-                        <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>);</pre>
+                        <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>);</pre>
 <p>Sets the name for a <a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a></p>
 <div class="refsect3">
-<a name="id-1.4.4.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-set-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -280,7 +280,7 @@ g_type_module_set_name (<em class="parameter"><code><a class="link" href="GTypeM
 <pre class="programlisting"><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="returnvalue">GType</span></a>
 g_type_module_register_type (<em class="parameter"><code><a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> *module</code></em>,
                              <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> parent_type</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *type_name</code></em>,
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *type_name</code></em>,
                              <em class="parameter"><code>const <a class="link" href="gobject-Type-Information.html#GTypeInfo" title="struct GTypeInfo"><span class="type">GTypeInfo</span></a> *type_info</code></em>,
                              <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GTypeFlags" title="enum GTypeFlags"><span class="type">GTypeFlags</span></a> flags</code></em>);</pre>
 <p>Looks up or registers a type that is implemented with a particular
@@ -296,8 +296,8 @@ be the same as they were previously.</p>
 <p>As long as any instances of the type exist, the type plugin will
 not be unloaded.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.5.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-register-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -333,7 +333,7 @@ not be unloaded.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.9.5.8"></a><h4>Returns</h4>
+<a name="g-type-module-register-type.returns"></a><h4>Returns</h4>
 <p> the new or existing type ID</p>
 </div>
 </div>
@@ -351,8 +351,8 @@ for the type in this plugin, nothing will be done.</p>
 <p>As long as any instances of the type exist, the type plugin will
 not be unloaded.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.6.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-add-interface.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -388,7 +388,7 @@ not be unloaded.</p>
 <a name="g-type-module-register-enum"></a><h3>g_type_module_register_enum ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="returnvalue">GType</span></a>
 g_type_module_register_enum (<em class="parameter"><code><a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> *module</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                              <em class="parameter"><code>const <a class="link" href="gobject-Enumeration-and-Flag-Types.html#GEnumValue" title="struct GEnumValue"><span class="type">GEnumValue</span></a> *const_static_values</code></em>);</pre>
 <p>Looks up or registers an enumeration that is implemented with a particular
 type plugin. If a type with name <em class="parameter"><code>type_name</code></em>
@@ -398,8 +398,8 @@ is newly registered, and the resulting <a class="link" href="gobject-Type-Inform
 <p>As long as any instances of the type exist, the type plugin will
 not be unloaded.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-register-enum.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -428,7 +428,7 @@ terminated by a struct with all members being
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.9.7.7"></a><h4>Returns</h4>
+<a name="g-type-module-register-enum.returns"></a><h4>Returns</h4>
 <p> the new or existing type ID</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
@@ -438,7 +438,7 @@ terminated by a struct with all members being
 <a name="g-type-module-register-flags"></a><h3>g_type_module_register_flags ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="returnvalue">GType</span></a>
 g_type_module_register_flags (<em class="parameter"><code><a class="link" href="GTypeModule.html" title="GTypeModule"><span class="type">GTypeModule</span></a> *module</code></em>,
-                              <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                              <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                               <em class="parameter"><code>const <a class="link" href="gobject-Enumeration-and-Flag-Types.html#GFlagsValue" title="struct GFlagsValue"><span class="type">GFlagsValue</span></a> *const_static_values</code></em>);</pre>
 <p>Looks up or registers a flags type that is implemented with a particular
 type plugin. If a type with name <em class="parameter"><code>type_name</code></em>
@@ -448,8 +448,8 @@ is newly registered, and the resulting <a class="link" href="gobject-Type-Inform
 <p>As long as any instances of the type exist, the type plugin will
 not be unloaded.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.8.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-type-module-register-flags.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -478,7 +478,7 @@ terminated by a struct with all members being
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.4.9.8.7"></a><h4>Returns</h4>
+<a name="g-type-module-register-flags.returns"></a><h4>Returns</h4>
 <p> the new or existing type ID</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-6.html#api-index-2.6">2.6</a></p>
@@ -497,8 +497,8 @@ it defines a <code class="literal">*_get_type()</code> and a static <code class=
 for use in your <code class="literal"><code class="function">module_init()</code></code>.</p>
 <p>See <a class="link" href="GTypeModule.html#G-DEFINE-DYNAMIC-TYPE-EXTENDED:CAPS" title="G_DEFINE_DYNAMIC_TYPE_EXTENDED()"><code class="function">G_DEFINE_DYNAMIC_TYPE_EXTENDED()</code></a> for an example.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.9.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-DEFINE-DYNAMIC-TYPE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -542,12 +542,12 @@ allows to specify <a class="link" href="gobject-Type-Information.html#GTypeFlags
 4
 5
 6</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="GTypeModule.html#G-DEFINE-DYNAMIC-TYPE-EXTENDED:CAPS">G_DEFINE_DYNAMIC_TYPE_EXTENDED</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GtkGadget</span><span class="symbol">,</span>
-<span class="normal">                                gtk_gadget</span><span class="symbol">,</span>
-<span class="normal">                                GTK_TYPE_THING</span><span class="symbol">,</span>
-<span class="normal">                                </span><span class="number">0</span><span class="symbol">,</span>
-<span class="normal">                                </span><span class="function"><a href="GTypeModule.html#G-IMPLEMENT-INTERFACE-DYNAMIC:CAPS">G_IMPLEMENT_INTERFACE_DYNAMIC</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">TYPE_GIZMO</span><span class="symbol">,</span>
-<span class="normal">                                                               gtk_gadget_gizmo_init</span><span class="symbol">));</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="GTypeModule.html#G-DEFINE-DYNAMIC-TYPE-EXTENDED:CAPS">G_DEFINE_DYNAMIC_TYPE_EXTENDED</a></span> <span class="gtkdoc opt">(</span>GtkGadget<span class="gtkdoc opt">,</span>
+                                gtk_gadget<span class="gtkdoc opt">,</span>
+                                GTK_TYPE_THING<span class="gtkdoc opt">,</span>
+                                <span class="number">0</span><span class="gtkdoc opt">,</span>
+                                <span class="function"><a href="GTypeModule.html#G-IMPLEMENT-INTERFACE-DYNAMIC:CAPS">G_IMPLEMENT_INTERFACE_DYNAMIC</a></span> <span class="gtkdoc opt">(</span>TYPE_GIZMO<span class="gtkdoc opt">,</span>
+                                                               gtk_gadget_gizmo_init<span class="gtkdoc opt">));</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -605,52 +605,52 @@ expands to</p>
 44
 45
 46</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal">     </span><span class="function">gtk_gadget_init</span><span class="normal">              </span><span class="symbol">(</span><span class="usertype">GtkGadget</span><span class="normal">      </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">);</span>
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal">     </span><span class="function">gtk_gadget_class_init</span><span class="normal">        </span><span class="symbol">(</span><span class="usertype">GtkGadgetClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">);</span>
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal">     </span><span class="function">gtk_gadget_class_finalize</span><span class="normal">    </span><span class="symbol">(</span><span class="usertype">GtkGadgetClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span>     <span class="function">gtk_gadget_init</span>              <span class="gtkdoc opt">(</span>GtkGadget      <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">);</span>
+<span class="gtkdoc kwb">static void</span>     <span class="function">gtk_gadget_class_init</span>        <span class="gtkdoc opt">(</span>GtkGadgetClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">);</span>
+<span class="gtkdoc kwb">static void</span>     <span class="function">gtk_gadget_class_finalize</span>    <span class="gtkdoc opt">(</span>GtkGadgetClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">);</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="usertype">gpointer</span><span class="normal"> gtk_gadget_parent_class </span><span class="symbol">=</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
-<span class="keyword">static</span><span class="normal"> </span><span class="usertype">GType</span><span class="normal">    gtk_gadget_type_id </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span>
+<span class="gtkdoc kwb">static</span> gpointer gtk_gadget_parent_class <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">static</span> GType    gtk_gadget_type_id <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal">     </span><span class="function">gtk_gadget_class_intern_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal"> klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  gtk_gadget_parent_class </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-class-peek-parent">g_type_class_peek_parent</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">);</span><span class="normal"> </span>
-<span class="normal">  </span><span class="function">gtk_gadget_class_init</span><span class="normal"> </span><span class="symbol">((</span><span class="normal">GtkGadgetClass</span><span class="symbol">*)</span><span class="normal"> klass</span><span class="symbol">);</span><span class="normal"> </span>
-<span class="cbracket">}</span>
+<span class="gtkdoc kwb">static void</span>     <span class="function">gtk_gadget_class_intern_init</span> <span class="gtkdoc opt">(</span>gpointer klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  gtk_gadget_parent_class <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-class-peek-parent">g_type_class_peek_parent</a></span> <span class="gtkdoc opt">(</span>klass<span class="gtkdoc opt">);</span> 
+  <span class="function">gtk_gadget_class_init</span> <span class="gtkdoc opt">((</span>GtkGadgetClass<span class="gtkdoc opt">*)</span> klass<span class="gtkdoc opt">);</span> 
+<span class="gtkdoc opt">}</span>
 
-<span class="normal"><a href="gobject-Type-Information.html#GType">GType</a></span>
-<span class="function">gtk_gadget_get_type</span><span class="normal"> </span><span class="symbol">(</span><span class="type">void</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">return</span><span class="normal"> gtk_gadget_type_id</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+GType
+<span class="function">gtk_gadget_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="keyword">return</span> gtk_gadget_type_id<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">gtk_gadget_register_type</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GTypeModule</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">type_module</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GTypeInfo</span><span class="normal"> g_define_type_info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GtkGadgetClass</span><span class="symbol">),</span>
-<span class="normal">    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GBaseInitFunc">GBaseInitFunc</a></span><span class="symbol">)</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span>
-<span class="normal">    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GBaseFinalizeFunc">GBaseFinalizeFunc</a></span><span class="symbol">)</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span>
-<span class="normal">    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GClassInitFunc">GClassInitFunc</a></span><span class="symbol">)</span><span class="normal"> gtk_gadget_class_intern_init</span><span class="symbol">,</span>
-<span class="normal">    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GClassFinalizeFunc">GClassFinalizeFunc</a></span><span class="symbol">)</span><span class="normal"> gtk_gadget_class_finalize</span><span class="symbol">,</span>
-<span class="normal">    <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal">   </span><span class="comment">// class_data</span>
-<span class="normal">    </span><span class="keyword">sizeof</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GtkGadget</span><span class="symbol">),</span>
-<span class="normal">    </span><span class="number">0</span><span class="symbol">,</span><span class="normal">      </span><span class="comment">// n_preallocs</span>
-<span class="normal">    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GInstanceInitFunc">GInstanceInitFunc</a></span><span class="symbol">)</span><span class="normal"> gtk_gadget_init</span><span class="symbol">,</span><span class="normal"> </span>
-<span class="normal">    NULL    </span><span class="comment">// value_table</span>
-<span class="normal">  </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">  gtk_gadget_type_id </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="GTypeModule.html#g-type-module-register-type">g_type_module_register_type</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">type_module</span><span class="symbol">,</span>
-<span class="normal">                                                    GTK_TYPE_THING</span><span class="symbol">,</span>
-<span class="normal">                                                    </span><span class="string">"GtkGadget"</span><span class="symbol">,</span>
-<span class="normal">                                                    </span><span class="symbol">&amp;</span><span class="normal">g_define_type_info</span><span class="symbol">,</span>
-<span class="normal">                                                    </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GTypeFlags">GTypeFlags</a></span><span class="symbol">)</span><span class="normal"> flags</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GInterfaceInfo</span><span class="normal"> g_implement_interface_info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#GInterfaceInitFunc">GInterfaceInitFunc</a></span><span class="symbol">)</span><span class="normal"> gtk_gadget_gizmo_init</span>
-<span class="normal">    </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">    </span><span class="function"><a href="GTypeModule.html#g-type-module-add-interface">g_type_module_add_interface</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">type_module</span><span class="symbol">,</span><span class="normal"> g_define_type_id</span><span class="symbol">,</span><span class="normal"> TYPE_GIZMO</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">g_implement_interface_info</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="cbracket">}</span>
-<span class="cbracket">}</span></pre></td>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">gtk_gadget_register_type</span> <span class="gtkdoc opt">(</span>GTypeModule <span class="gtkdoc opt">*</span>type_module<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">const</span> GTypeInfo g_define_type_info <span class="gtkdoc opt">= {</span>
+    <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>GtkGadgetClass<span class="gtkdoc opt">),</span>
+    <span class="gtkdoc opt">(</span>GBaseInitFunc<span class="gtkdoc opt">)</span> NULL<span class="gtkdoc opt">,</span>
+    <span class="gtkdoc opt">(</span>GBaseFinalizeFunc<span class="gtkdoc opt">)</span> NULL<span class="gtkdoc opt">,</span>
+    <span class="gtkdoc opt">(</span>GClassInitFunc<span class="gtkdoc opt">)</span> gtk_gadget_class_intern_init<span class="gtkdoc opt">,</span>
+    <span class="gtkdoc opt">(</span>GClassFinalizeFunc<span class="gtkdoc opt">)</span> gtk_gadget_class_finalize<span class="gtkdoc opt">,</span>
+    NULL<span class="gtkdoc opt">,</span>   <span class="gtkdoc slc">// class_data</span>
+    <span class="keyword">sizeof</span> <span class="gtkdoc opt">(</span>GtkGadget<span class="gtkdoc opt">),</span>
+    <span class="number">0</span><span class="gtkdoc opt">,</span>      <span class="gtkdoc slc">// n_preallocs</span>
+    <span class="gtkdoc opt">(</span>GInstanceInitFunc<span class="gtkdoc opt">)</span> gtk_gadget_init<span class="gtkdoc opt">,</span> 
+    NULL    <span class="gtkdoc slc">// value_table</span>
+  <span class="gtkdoc opt">};</span>
+  gtk_gadget_type_id <span class="gtkdoc opt">=</span> <span class="function"><a href="GTypeModule.html#g-type-module-register-type">g_type_module_register_type</a></span> <span class="gtkdoc opt">(</span>type_module<span class="gtkdoc opt">,</span>
+                                                    GTK_TYPE_THING<span class="gtkdoc opt">,</span>
+                                                    <span class="string">&quot;GtkGadget&quot;</span><span class="gtkdoc opt">,</span>
+                                                    <span class="gtkdoc opt">&amp;</span>g_define_type_info<span class="gtkdoc opt">,</span>
+                                                    <span class="gtkdoc opt">(</span>GTypeFlags<span class="gtkdoc opt">)</span> flags<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">{</span>
+    <span class="gtkdoc kwb">const</span> GInterfaceInfo g_implement_interface_info <span class="gtkdoc opt">= {</span>
+      <span class="gtkdoc opt">(</span>GInterfaceInitFunc<span class="gtkdoc opt">)</span> gtk_gadget_gizmo_init
+    <span class="gtkdoc opt">};</span>
+    <span class="function"><a href="GTypeModule.html#g-type-module-add-interface">g_type_module_add_interface</a></span> <span class="gtkdoc opt">(</span>type_module<span class="gtkdoc opt">,</span> g_define_type_id<span class="gtkdoc opt">,</span> TYPE_GIZMO<span class="gtkdoc opt">, &amp;</span>g_implement_interface_info<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -658,8 +658,8 @@ expands to</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.4.4.9.10.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-DEFINE-DYNAMIC-TYPE-EXTENDED.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -709,8 +709,8 @@ for an example.</p>
 G_DEFINE_DYNAMIC_TYPE_EXTENDED macros, since it depends on variable
 names from that macro.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-IMPLEMENT-INTERFACE-DYNAMIC.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -744,8 +744,8 @@ type in the <em class="parameter"><code>_C_</code></em>
 G_DEFINE_DYNAMIC_TYPE_EXTENDED macros, since it depends on variable
 names from that macro.</p>
 <div class="refsect3">
-<a name="id-1.4.4.9.12.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-ADD-PRIVATE-DYNAMIC.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -773,15 +773,15 @@ names from that macro.</p>
 be accessed directly, except for the <em class="parameter"><code>name</code></em>
  field.</p>
 <div class="refsect3">
-<a name="id-1.4.4.10.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypeModule.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody><tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *<em class="structfield"><code><a name="GTypeModule-struct.name"></a>name</code></em>;</p></td>
+<td class="struct_member_name"><p><a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *<em class="structfield"><code><a name="GTypeModule-struct.name"></a>name</code></em>;</p></td>
 <td class="struct_member_description"><p>the name of the module</p></td>
 <td class="struct_member_annotations"> </td>
 </tr></tbody>
@@ -803,19 +803,14 @@ the <em class="parameter"><code>load</code></em>
  and <em class="parameter"><code>unload</code></em>
  functions in <a class="link" href="GTypeModule.html#GTypeModuleClass" title="struct GTypeModuleClass"><span class="type">GTypeModuleClass</span></a> must be implemented.</p>
 <div class="refsect3">
-<a name="id-1.4.4.10.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypeModuleClass.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody>
-<tr>
-<td class="struct_member_name"><p><a class="link" href="gobject-The-Base-Object-Type.html#GObjectClass" title="struct GObjectClass"><span class="type">GObjectClass</span></a> <em class="structfield"><code><a name="GTypeModuleClass.parent-class"></a>parent_class</code></em>;</p></td>
-<td class="struct_member_description"><p>the parent class</p></td>
-<td class="struct_member_annotations"> </td>
-</tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GTypeModuleClass.load"></a>load</code></em> ()</p></td>
 <td class="struct_member_description"><p>loads the module and registers one or more types using
@@ -834,10 +829,10 @@ the <em class="parameter"><code>load</code></em>
 </div>
 <div class="refsect1">
 <a name="GTypeModule.see-also"></a><h2>See Also</h2>
-<p><a class="link" href="GTypePlugin.html" title="GTypePlugin"><span class="type">GTypePlugin</span></a>, <a href="https://developer.gnome.org/glib/unstable/glib-Dynamic-Loading-of-Modules.html#GModule"><span class="type">GModule</span></a></p>
+<p><a class="link" href="GTypePlugin.html" title="GTypePlugin"><span class="type">GTypePlugin</span></a>, <a href="../glib-Dynamic-Loading-of-Modules.html#GModule"><span class="type">GModule</span></a></p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

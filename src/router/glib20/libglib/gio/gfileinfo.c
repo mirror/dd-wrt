@@ -203,6 +203,7 @@ ensure_attribute_hash (void)
   REGISTER_ATTRIBUTE (STANDARD_TARGET_URI);
   REGISTER_ATTRIBUTE (STANDARD_SORT_ORDER);
   REGISTER_ATTRIBUTE (STANDARD_SYMBOLIC_ICON);
+  REGISTER_ATTRIBUTE (STANDARD_IS_VOLATILE);
   REGISTER_ATTRIBUTE (ETAG_VALUE);
   REGISTER_ATTRIBUTE (ID_FILE);
   REGISTER_ATTRIBUTE (ID_FILESYSTEM);
@@ -364,8 +365,8 @@ g_file_info_new (void)
  * @src_info: source to copy attributes from.
  * @dest_info: destination to copy attributes to.
  *
- * Copies all of the [GFileAttribute][gio-GFileAttribute]
- * from @src_info to @dest_info.
+ * First clears all of the [GFileAttribute][gio-GFileAttribute] of @dest_info,
+ * and then copies all of the file attributes from @src_info to @dest_info.
  **/
 void
 g_file_info_copy_into (GFileInfo *src_info,
@@ -615,7 +616,8 @@ g_file_info_has_namespace (GFileInfo  *info,
 /**
  * g_file_info_list_attributes:
  * @info: a #GFileInfo.
- * @name_space: a file attribute key's namespace.
+ * @name_space: (nullable): a file attribute key's namespace, or %NULL to list
+ *   all attributes.
  *
  * Lists the file info structure's attributes.
  *
@@ -710,9 +712,10 @@ g_file_info_remove_attribute (GFileInfo  *info,
  * g_file_info_get_attribute_data:
  * @info: a #GFileInfo
  * @attribute: a file attribute key
- * @type: (out) (allow-none): return location for the attribute type, or %NULL
- * @value_pp: (out) (allow-none): return location for the attribute value, or %NULL
- * @status: (out) (allow-none): return location for the attribute status, or %NULL
+ * @type: (out) (optional): return location for the attribute type, or %NULL
+ * @value_pp: (out) (optional) (not nullable): return location for the
+ *    attribute value, or %NULL; the attribute value will not be %NULL
+ * @status: (out) (optional): return location for the attribute status, or %NULL
  *
  * Gets the attribute type, value and status for an attribute key.
  *
@@ -1107,7 +1110,7 @@ _g_file_info_set_attribute_by_id (GFileInfo                 *info,
  * @info: a #GFileInfo.
  * @attribute: a file attribute key.
  * @type: a #GFileAttributeType
- * @value_p: pointer to the value
+ * @value_p: (not nullable): pointer to the value
  *
  * Sets the @attribute to contain the given value, if possible. To unset the
  * attribute, use %G_ATTRIBUTE_TYPE_INVALID for @type.
@@ -1573,7 +1576,7 @@ g_file_info_get_is_symlink (GFileInfo *info)
  *
  * Gets the name for a file.
  *
- * Returns: a string containing the file name.
+ * Returns: (type filename): a string containing the file name.
  **/
 const char *
 g_file_info_get_name (GFileInfo *info)
@@ -1918,7 +1921,7 @@ g_file_info_set_is_symlink (GFileInfo *info,
 /**
  * g_file_info_set_name:
  * @info: a #GFileInfo.
- * @name: a string containing a name.
+ * @name: (type filename): a string containing a name.
  *
  * Sets the name attribute for the current #GFileInfo.
  * See %G_FILE_ATTRIBUTE_STANDARD_NAME.
