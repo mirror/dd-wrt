@@ -787,6 +787,50 @@ jb_err cgi_send_stylesheet(struct client_state *csp,
 
 }
 
+/*********************************************************************
+ *
+ * Function    :  cgi_send_wpad
+ *
+ * Description :  CGI function that sends a proxy pac file
+ *
+ * Parameters  :
+ *          1  :  csp = Current client state (buffers, headers, etc...)
+ *          2  :  rsp = http_response data structure for output
+ *          3  :  parameters = map of cgi parameters
+ *
+ * CGI Parameters : None
+ *
+ * Returns     :  JB_ERR_OK on success
+ *                JB_ERR_MEMORY on out-of-memory error.
+ *
+ *********************************************************************/
+jb_err cgi_send_wpad(struct client_state *csp,
+                           struct http_response *rsp,
+                           const struct map *parameters)
+{
+ 
+   struct map *exports;
+
+   assert(csp);
+   assert(rsp);
+   assert(parameters);
+
+   if (NULL == (exports = default_exports(csp, NULL)))
+   {
+      return JB_ERR_MEMORY;
+   }
+   
+   if (enlist(rsp->headers, "Content-Type: application/x-ns-proxy-autoconfig"))
+   {
+      return JB_ERR_MEMORY;
+   }
+
+   //rsp->status = strdup_or_die("404 Privoxy configuration page not found");
+
+   return template_fill_for_cgi(csp, "wpad.dat", exports, rsp);
+
+}
+
 
 /*********************************************************************
  *
@@ -852,11 +896,12 @@ static const char *get_content_type(const char *filename)
    struct content_type
    {
       const char extension[6];
-      const char content_type[11];
+      const char content_type[34];
    };
    static const struct content_type content_types[] =
    {
       {".css",  "text/css"},
+      {".dat",  "application/x-ns-proxy-autoconfig"},
       {".jpg",  "image/jpeg"},
       {".jpeg", "image/jpeg"},
       {".png",  "image/png"},
