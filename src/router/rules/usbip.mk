@@ -4,7 +4,7 @@ usbip-configure: util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(TOP)/util-linux/.libs/libuuid.a
 	rm -f $(TOP)/util-linux/.libs/libblkid.so*
