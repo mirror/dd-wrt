@@ -2,11 +2,13 @@ rm .config
 rm .config.old
 for i in .config*
 do 
+    echo COPY $i
+    cp $i .config
+    echo "# CONFIG_EXFAT_FS is not set" >> .config
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
 	    echo COPY $i
-	    cp $i .config
 	    grep "CONFIG_X86_64=y" $i
 	    if [ $? -eq 0 ] 
 		then 
@@ -14,32 +16,30 @@ do
 		else
 		    make oldconfig ARCH=i386
 		fi
-	    cp .config $i
     fi
 
     grep "CONFIG_ARM=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    make oldconfig ARCH=arm
-	    cp .config $i
+    fi
+
+    grep "CONFIG_ARCH_IXP4XX" $i
+    if [ $? -eq 0 ] 
+	then 
+	    sed -i 's/\# CONFIG_CPU_BIG_ENDIAN is not set/CONFIG_CPU_BIG_ENDIAN=y/g' .config	    
+	    make oldconfig ARCH=arm
     fi
 
     grep "CONFIG_PPC32=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    make oldconfig ARCH=powerpc
-	    cp .config $i
     fi
 
     grep "CONFIG_MIPS=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    echo CONFIG_DIR615I=y >> .config
 	    echo CONFIG_WPE72=y >> .config
 	    echo CONFIG_WA901=y >> .config
@@ -48,6 +48,7 @@ do
 	    echo CONFIG_WDR2543=y >> .config
 	    echo CONFIG_WR841V8=y >> .config
 	    echo CONFIG_WR841V9=y >> .config
+	    echo CONFIG_WR941V6=y >> .config
 	    echo CONFIG_NVRAM_64K=y >> .config
 	    echo CONFIG_NVRAM_60K=y >> .config
 	    echo CONFIG_ALFANX=y >> .config
@@ -63,7 +64,17 @@ do
 	    echo CONFIG_DAP2230=y >> .config
 	    echo CONFIG_DAP2330=y >> .config
 	    echo CONFIG_JWAP606=y >> .config
+	    echo CONFIG_UAPAC=y >> .config
+	    echo CONFIG_XWLOCO=y >> .config
 	    echo CONFIG_WR710=y >> .config
+	    echo CONFIG_GL150=y >> .config
+	    echo CONFIG_WR650AC=y >> .config
+	    echo CONFIG_E355AC=y >> .config
+	    echo CONFIG_E325N=y >> .config
+	    echo CONFIG_WR615N=y >> .config
+	    echo CONFIG_E380AC=y >> .config
+	    echo CONFIG_XD3200=y >> .config
+	    echo CONFIG_AP120C=y >> .config
 	    make oldconfig ARCH=mips
 	    sed -i 's/\CONFIG_WR841V8=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WR710=y/ /g' .config	    
@@ -89,6 +100,18 @@ do
 	    sed -i 's/\CONFIG_DAP3662=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DAP2230=y/ /g' .config	    
 	    sed -i 's/\CONFIG_DAP2330=y/ /g' .config	    
-	    cp .config $i
+	    sed -i 's/\CONFIG_UAPAC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_XWLOCO=y/ /g' .config	    
+	    sed -i 's/\CONFIG_GL150=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR650AC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_E355AC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_E325N=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR615N=y/ /g' .config	    
+	    sed -i 's/\CONFIG_WR941V6=y/ /g' .config	    
+	    sed -i 's/\CONFIG_E380AC=y/ /g' .config	    
+	    sed -i 's/\CONFIG_XD3200=y/ /g' .config	    
+	    sed -i 's/\CONFIG_AP120C=y/ /g' .config	    
     fi
+    sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
+    cp .config $i
 done
