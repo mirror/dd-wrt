@@ -1,21 +1,164 @@
-# Nmap Changelog ($Id: CHANGELOG 36374 2016-10-18 13:36:24Z dmiller $); -*-text-*-
+# Nmap Changelog ($Id: CHANGELOG 36505 2016-12-19 06:01:39Z fyodor $); -*-text-*-
+
+Nmap 7.40 [2016-12-20]
+
+o [Windows] Updated the bundled Npcap from 0.10r9 to 0.78r5, with an
+  improved installer experience, driver signing updates to work with
+  Windows 10 build 1607, and bugfixes for WiFi connectivity
+  problems. [Yang Luo, Daniel Miller]
+
+o Integrated all of your IPv4 OS fingerprint submissions from April to
+  September (568 of them). Added 149 fingerprints, bringing the new total to
+  5,336. Additions include Linux 4.6, macOS 10.12 Sierra, NetBSD 7.0, and more.
+  Highlights: http://seclists.org/nmap-dev/2016/q4/110 [Daniel Miller]
+
+o Integrated all of your service/version detection fingerprints submitted from
+  April to September (779 of them). The signature count went up 3.1% to 11,095.
+  We now detect 1161 protocols, from airserv-ng, domaintime, and mep to
+  nutcracker, rhpp, and usher. Highlights: http://seclists.org/nmap-dev/2016/q4/115
+  [Daniel Miller]
+
+o Fix reverse DNS on Windows which was failing with the message "mass_dns:
+  warning: Unable to determine any DNS servers." This was because the interface
+  GUID comparison needed to be case-insensitive. [Robert Croteau]
+
+o [NSE] Added 12 NSE scripts from 4 authors, bringing the total up to 552!
+  They are all listed at https://nmap.org/nsedoc/, and the summaries are below:
+
+  + cics-enum enumerates CICS transaction IDs, mapping to screens in TN3270
+    services. [Soldier of Fortran]
+
+  + cics-user-enum brute-forces usernames for CICS users on TN3270 services.
+    [Soldier of Fortran]
+
+  + fingerprint-strings will print the ASCII strings it finds in the service
+    fingerprints that Nmap shows for unidentified services. [Daniel Miller]
+
+  + [GH#606] ip-geolocation-map-bing renders IP geolocation data as an image
+    via Bing Maps API. [Mak Kolybabi]
+
+  + [GH#606] ip-geolocation-map-google renders IP geolocation data as an image
+    via Google Maps API. [Mak Kolybabi]
+
+  + [GH#606] ip-geolocation-map-kml records IP geolocation data in a KML file
+    for import into other mapping software [Mak Kolybabi]
+
+  + nje-pass-brute brute-forces the password to a NJE node, given a valid RHOST
+    and OHOST. Helpfully, nje-node-brute can now brute force both of those
+    values. [Soldier of Fortran]
+
+  + [GH#557] ssl-cert-intaddr will search for private IP addresses in TLS
+    certificate fields and extensions. [Steve Benson]
+
+  + tn3270-screen shows the login screen from mainframe TN3270 Telnet services,
+    including any hidden fields. The script is accompanied by the new tn3270
+    library. [Soldier of Fortran]
+
+  + tso-enum enumerates usernames for TN3270 Telnet services. [Soldier of Fortran]
+
+  + tso-brute brute-forces passwords for TN3270 Telnet services. [Soldier of Fortran]
+
+  + vtam-enum brute-forces VTAM application IDs for TN3270 services.
+    [Soldier of Fortran]
+
+o [NSE][GH#518] Brute scripts are faster and more accurate. New feedback and
+  adaptivity mechanisms in brute.lua help brute scripts use resources more
+  efficiently, dynamically changing number of threads based on protocol
+  messages like FTP 421 errors, network errors like timeouts, etc.
+  [Sergey Khegay]
+
+o [GH#353] New option --defeat-icmp-ratelimit dramatically reduces UDP scan
+  times in exchange for labeling unresponsive (and possibly open) ports as
+  "closed|filtered". Ports which give a UDP protocol response to one of Nmap's
+  scanning payloads will be marked "open". [Sergey Khegay]
+
+o [NSE][GH#533] Removed ssl-google-cert-catalog, since Google shut off that
+  service at some point. Reported by Brian Morin.
+
+o [NSE][GH#606] New NSE library, geoip.lua, provides a common framework for
+  storing and retrieving IP geolocation results. [Mak Kolybabi]
+
+o [Ncat] Restore the connection success message that Ncat prints with -v. This
+  was accidentally suppressed when not using -z.
+
+o [GH#316] Added scan resume from Nmap's XML output. Now you can --resume a
+  canceled scan from all 3 major output formats: -oN, -oG, and -oX.
+  [Tudor Emil Coman]
+
+o [Ndiff][GH#591] Fix a bug where hosts with the same IP but different
+  hostnames were shown as changing hostnames between scans. Made sort stable
+  with regard to hostnames. [Daniel Miller]
+
+o [NSE][GH#540] Add tls.servername script-arg for forcing a name to be used for
+  TLS Server Name Indication extension. The argument overrides the default use
+  of the host's targetname. [Bertrand Bonnefoy-Claudet]
+
+o [GH#505] Updated Russian translation of Zenmap by Alexander Kozlov.
+
+o [NSE][GH#588] Fix a crash in smb.lua when using smb-ls due to a
+  floating-point number being passed to os.time ("bad argument").
+  [Dallas Winger]
+
+o [NSE][GH#596] Fix a bug in mysql.lua that caused authentication failures in
+  mysql-brute and other scripts due to including a null terminator in the salt
+  value. This bug affects Nmap 7.25BETA2 and later releases.  [Daniel Miller]
+
+o The --open option now implies --defeat-rst-ratelimit. This may result in
+  inaccuracies in the numbers of "Not shown:" closed and filtered ports, but
+  only in situations where it also speeds up scan times. [Daniel Miller]
+
+o [NSE] Added known Diffie-Hellman parameters for haproxy, postfix, and
+  IronPort to ssl-dh-params. [Frank Bergmann]
+
+o Added service probe for ClamAV servers (clam),
+  an open source antivirus engine used in mail scanning. [Paulino Calderon]
+
+o Added service probe and UDP payload for Quick UDP Internet Connection (QUIC),
+  a secure transport developed by Google and used with HTTP/2. [Daniel Miller]
+
+o [NSE] Enabled resolveall to run against any target provided as a hostname, so
+  the resolveall.hosts script-arg is no longer required. [Daniel Miller]
+
+o [NSE] Revised script http-default-accounts in several ways [nnposter]:
+  - Added 21 new fingerprints, plus broadened 5 to cover more variants.
+  - [GH#577] It can now can test systems that return status 200 for
+    non-existent pages.
+  - [GH#604] Implemented XML output. Layout of the classic text output has also
+    changed, including reporting blank usernames or passwords as "<blank>",
+    instead of just empty strings.
+  - Added CPE entries to individual fingerprints (where known). They are
+    reported only in the XML output.
+
+o [NSE][GH#573] Updated http.lua to allow processing of HTTP responses with
+  malformed header names. Such header lines are still captured in the rawheader
+  list but skipped otherwise. [nnposter]
+
+o [GH#416] New service probe and match line for iperf3. [Eric Gershman]
+
+o [NSE][GH#555] Add Drupal to the set of web apps brute forced by
+  http-form-brute. [Nima Ghotbi]
 
 Nmap 7.31 [2016-10-20]
+
+o [Windows] Updated the bundled Npcap from 0.10r2 to 0.10r9, bringing
+  increased stability, bug fixes, and raw 802.11 WiFi capture (unused
+  by Nmap). Further details on these changes can be found at
+  https://github.com/nmap/npcap/releases. [Yang Luo]
 
 o Fixed the way Nmap handles scanning names that resolve to the same IP. Due to
   changes in 7.30, the IP was only being scanned once, with bogus results
   displayed for the other names. The previous behavior is now restored.
   [Tudor Emil Coman]
 
+o [Nping][GH#559] Fix Nping's ability to use Npcap on Windows. A privilege
+  check was performed too late, so the Npcap loading code assumed the user had no
+  rights. [Yang Luo, Daniel Miller]
+
 o [GH#350] Fix an assertion failure due to floating point error in equality
   comparison, which triggered mainly on OpenBSD:
     assertion "diff <= interval" failed: file "timing.cc", line 440
   This was reported earlier as [GH#472] but the assertion fixed there was a
   different one. [David Carlier]
-
-o [Nping][GH#559] Fix Nping's ability to use Npcap on Windows. A privilege
-  check was performed too late, so the Npcap loading code assumed the user had no
-  rights. [Yang Luo, Daniel Miller]
 
 o [Zenmap] Fix a crash in the About page in the Spanish translation due to a
   missing format specifier:
@@ -172,9 +315,6 @@ o [NSE] Fix a crash when parsing TLS certificates that OpenSSL doesn't support,
 o [NSE][GH#531] Fix two issues in sslcert.lua that prevented correct operations
   against LDAP services when version detection or STARTTLS were used.
   [Tom Sellers]
-
-o [Zenmap] Long-overdue Spanish language translation has been added! Muy bien!
-  [Vincent Dumont, Marta Garcia De La Paz, Paulino Calderon, Patricio Castagnaro]
 
 o [GH#426] Remove a workaround for lack of selectable pcap file descriptors on
   Windows, which required including pcap-int.h and locking us to a single

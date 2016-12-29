@@ -5,18 +5,18 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC. Nmap is    *
- * also a registered trademark of Insecure.Com LLC.  This program is free  *
- * software; you may redistribute and/or modify it under the terms of the  *
- * GNU General Public License as published by the Free Software            *
- * Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE CLARIFICATIONS  *
- * AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your right to use,    *
- * modify, and redistribute this software under certain conditions.  If    *
- * you wish to embed Nmap technology into proprietary software, we sell    *
- * alternative licenses (contact sales@nmap.com).  Dozens of software      *
- * vendors already license Nmap technology such as host discovery, port    *
- * scanning, OS detection, version detection, and the Nmap Scripting       *
- * Engine.                                                                 *
+ * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * Project"). Nmap is also a registered trademark of the Nmap Project.     *
+ * This program is free software; you may redistribute and/or modify it    *
+ * under the terms of the GNU General Public License as published by the   *
+ * Free Software Foundation; Version 2 ("GPL"), BUT ONLY WITH ALL OF THE   *
+ * CLARIFICATIONS AND EXCEPTIONS DESCRIBED HEREIN.  This guarantees your   *
+ * right to use, modify, and redistribute this software under certain      *
+ * conditions.  If you wish to embed Nmap technology into proprietary      *
+ * software, we sell alternative licenses (contact sales@nmap.com).        *
+ * Dozens of software vendors already license Nmap technology such as      *
+ * host discovery, port scanning, OS detection, version detection, and     *
+ * the Nmap Scripting Engine.                                              *
  *                                                                         *
  * Note that the GPL places important restrictions on "derivative works",  *
  * yet it does not provide a detailed definition of that term.  To avoid   *
@@ -58,11 +58,18 @@
  * particularly including the GPL Section 3 requirements of providing      *
  * source code and allowing free redistribution of the work as a whole.    *
  *                                                                         *
- * As another special exception to the GPL terms, Insecure.Com LLC grants  *
+ * As another special exception to the GPL terms, the Nmap Project grants  *
  * permission to link the code of this program with any version of the     *
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
+ *                                                                         * 
+ * The Nmap Project has permission to redistribute Npcap, a packet         *
+ * capturing driver and library for the Microsoft Windows platform.        *
+ * Npcap is a separate work with it's own license rather than this Nmap    *
+ * license.  Since the Npcap license does not permit redistribution        *
+ * without special permission, our Nmap Windows binary packages which      *
+ * contain Npcap may not be redistributed without special permission.      *
  *                                                                         *
  * Any redistribution of Covered Software, including any derived works,    *
  * must obey and carry forward all of the terms of this license, including *
@@ -103,12 +110,12 @@
  * to the dev@nmap.org mailing list for possible incorporation into the    *
  * main distribution.  By sending these changes to Fyodor or one of the    *
  * Insecure.Org development mailing lists, or checking them into the Nmap  *
- * source code repository, it is understood (unless you specify otherwise) *
- * that you are offering the Nmap Project (Insecure.Com LLC) the           *
- * unlimited, non-exclusive right to reuse, modify, and relicense the      *
- * code.  Nmap will always be available Open Source, but this is important *
- * because the inability to relicense code has caused devastating problems *
- * for other Free Software projects (such as KDE and NASM).  We also       *
+ * source code repository, it is understood (unless you specify            *
+ * otherwise) that you are offering the Nmap Project the unlimited,        *
+ * non-exclusive right to reuse, modify, and relicense the code.  Nmap     *
+ * will always be available Open Source, but this is important because     *
+ * the inability to relicense code has caused devastating problems for     *
+ * other Free Software projects (such as KDE and NASM).  We also           *
  * occasionally relicense the code to third parties as discussed above.    *
  * If you wish to specify special license conditions of your               *
  * contributions, just say so when you send them.                          *
@@ -121,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 36341 2016-09-29 14:56:47Z dmiller $ */
+/* $Id: nmap.cc 36488 2016-12-14 00:12:23Z fyodor $ */
 
 #include "nmap.h"
 #include "osscan.h"
@@ -595,6 +602,8 @@ void parse_options(int argc, char **argv) {
     {"scanflags", required_argument, 0, 0},
     {"defeat_rst_ratelimit", no_argument, 0, 0},
     {"defeat-rst-ratelimit", no_argument, 0, 0},
+    {"defeat_icmp_ratelimit", no_argument, 0, 0},
+    {"defeat-icmp-ratelimit", no_argument, 0, 0},
     {"host_timeout", required_argument, 0, 0},
     {"host-timeout", required_argument, 0, 0},
     {"scan_delay", required_argument, 0, 0},
@@ -786,6 +795,8 @@ void parse_options(int argc, char **argv) {
             error("Warning: You specified a highly aggressive --min-hostgroup.");
         } else if (strcmp(long_options[option_index].name, "open") == 0) {
           o.setOpenOnly(true);
+          // If they only want open, don't spend extra time (potentially) distinguishing closed from filtered.
+          o.defeat_rst_ratelimit = 1;
         } else if (strcmp(long_options[option_index].name, "scanflags") == 0) {
           o.scanflags = parse_scanflags(optarg);
           if (o.scanflags < 0) {
@@ -850,6 +861,8 @@ void parse_options(int argc, char **argv) {
           delayed_options.pre_scan_delay = l;
         } else if (optcmp(long_options[option_index].name, "defeat-rst-ratelimit") == 0) {
           o.defeat_rst_ratelimit = 1;
+        } else if (optcmp(long_options[option_index].name, "defeat-icmp-ratelimit") == 0) {
+          o.defeat_icmp_ratelimit = 1;
         } else if (optcmp(long_options[option_index].name, "max-scan-delay") == 0) {
           l = tval2msecs(optarg);
           if (l < 0)
@@ -1885,18 +1898,48 @@ int nmap_main(int argc, char *argv[]) {
   fflush(stderr);
 
   timep = time(NULL);
-
-  /* Brief info in case they forget what was scanned */
   Strncpy(mytime, ctime(&timep), sizeof(mytime));
   chomp(mytime);
-  char *xslfname = o.XSLStyleSheet();
-  xml_start_document("nmaprun");
-  if (xslfname) {
-    xml_open_pi("xml-stylesheet");
-    xml_attribute("href", "%s", xslfname);
-    xml_attribute("type", "text/xsl");
-    xml_close_pi();
+
+  if (!o.resuming) {
+    /* Brief info in case they forget what was scanned */
+    char *xslfname = o.XSLStyleSheet();
+    xml_start_document("nmaprun");
+    if (xslfname) {
+      xml_open_pi("xml-stylesheet");
+      xml_attribute("href", "%s", xslfname);
+      xml_attribute("type", "text/xsl");
+      xml_close_pi();
+      xml_newline();
+    }
+
+    xml_start_comment();
+    xml_write_escaped(" %s %s scan initiated %s as: %s ", NMAP_NAME, NMAP_VERSION, mytime, join_quoted(argv, argc).c_str());
+    xml_end_comment();
     xml_newline();
+
+    xml_open_start_tag("nmaprun");
+    xml_attribute("scanner", "nmap");
+    xml_attribute("args", "%s", join_quoted(argv, argc).c_str());
+    xml_attribute("start", "%lu", (unsigned long) timep);
+    xml_attribute("startstr", "%s", mytime);
+    xml_attribute("version", "%s", NMAP_VERSION);
+    xml_attribute("xmloutputversion", NMAP_XMLOUTPUTVERSION);
+    xml_close_start_tag();
+    xml_newline();
+
+    output_xml_scaninfo_records(&ports);
+
+    xml_open_start_tag("verbose");
+    xml_attribute("level", "%d", o.verbose);
+    xml_close_empty_tag();
+    xml_newline();
+    xml_open_start_tag("debugging");
+    xml_attribute("level", "%d", o.debugging);
+    xml_close_empty_tag();
+    xml_newline();
+  } else {
+    xml_start_tag("nmaprun", false);
   }
 
   std::string command;
@@ -1907,36 +1950,10 @@ int nmap_main(int argc, char *argv[]) {
     command += argv[i];
   }
 
-  xml_start_comment();
-  xml_write_escaped(" %s %s scan initiated %s as: %s ", NMAP_NAME, NMAP_VERSION, mytime, join_quoted(argv, argc).c_str());
-  xml_end_comment();
-  xml_newline();
-
   log_write(LOG_NORMAL | LOG_MACHINE, "# ");
   log_write(LOG_NORMAL | LOG_MACHINE, "%s %s scan initiated %s as: ", NMAP_NAME, NMAP_VERSION, mytime);
   log_write(LOG_NORMAL | LOG_MACHINE, "%s", command.c_str());
   log_write(LOG_NORMAL | LOG_MACHINE, "\n");
-
-  xml_open_start_tag("nmaprun");
-  xml_attribute("scanner", "nmap");
-  xml_attribute("args", "%s", join_quoted(argv, argc).c_str());
-  xml_attribute("start", "%lu", (unsigned long) timep);
-  xml_attribute("startstr", "%s", mytime);
-  xml_attribute("version", "%s", NMAP_VERSION);
-  xml_attribute("xmloutputversion", NMAP_XMLOUTPUTVERSION);
-  xml_close_start_tag();
-  xml_newline();
-
-  output_xml_scaninfo_records(&ports);
-
-  xml_open_start_tag("verbose");
-  xml_attribute("level", "%d", o.verbose);
-  xml_close_empty_tag();
-  xml_newline();
-  xml_open_start_tag("debugging");
-  xml_attribute("level", "%d", o.debugging);
-  xml_close_empty_tag();
-  xml_newline();
 
   /* Before we randomize the ports scanned, lets output them to machine
      parseable output */
@@ -2409,12 +2426,21 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
   if (!q || ((unsigned int) (q - p) >= sizeof(nmap_arg_buffer) - 32))
     fatal("Unable to parse supposed log file %s.  Perhaps the Nmap execution had not finished at least one host?  In that case there is no use \"resuming\"", fname);
 
-
   strncpy(nmap_arg_buffer, "nmap --append-output ", sizeof(nmap_arg_buffer));
   if ((q - p) + 21 + 1 >= (int) sizeof(nmap_arg_buffer))
     fatal("0verfl0w");
   memcpy(nmap_arg_buffer + 21, p, q - p);
   nmap_arg_buffer[21 + q - p] = '\0';
+
+  q = strstr(nmap_arg_buffer, "-->");
+  if (q) {
+    *q = '\0';
+     char *unescaped = xml_unescape(nmap_arg_buffer);
+     if (sizeof(nmap_arg_buffer) < strlen(unescaped) + 1)
+       fatal("0verfl0w");
+     memcpy(nmap_arg_buffer, unescaped, strlen(unescaped) + 1);
+     free(unescaped);
+  }
 
   if (strstr(nmap_arg_buffer, "--randomize-hosts") != NULL) {
     error("WARNING: You are attempting to resume a scan which used --randomize-hosts.  Some hosts in the last randomized batch may be missed and others may be repeated once");
@@ -2441,37 +2467,52 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
       fatal("Unable to parse supposed log file %s.  Sorry", fname);
     *q = ' ';
   } else {
-    /* OK, I guess (hope) it is a normal log then (-oN) */
+    /* Let's see if it's an XML log (-oX) */
     q = p;
     found = NULL;
-    while ((q = strstr(q, "\nNmap scan report for ")))
-      found = q = q + 22;
-
-    /*  There may be some later IPs of the form :
-        "Nmap scan report for florence (x.x.7.10)" (dns reverse lookup)
-        or "Nmap scan report for x.x.7.10".
-    */
+    while ((q = strstr(q, "\n<address addr=\"")))
+      found = q = q + 16;
     if (found) {
-      q = strchr(found, '\n');
+      q = strchr(found, '"');
       if (!q)
         fatal("Unable to parse supposed log file %s.  Sorry", fname);
       *q = '\0';
-      p = strchr(found, '(');
-      if (!p) { /* No DNS reverse lookup, found should already contain IP */
-        lastipstr = strdup(found);
-      } else { /* DNS reverse lookup, IP is between parentheses */
-        *q = '\n';
-        q--;
-        *q = '\0';
-        lastipstr = strdup(p + 1);
-      }
-      *q = p ? ')' : '\n'; /* recover changed chars */
-      if (inet_pton(AF_INET, lastipstr, &lastip) == 0)
-        fatal("Unable to parse ip (%s) in supposed log file %s.  Sorry", lastipstr, fname);
-      free(lastipstr);
+      if (inet_pton(AF_INET, found, &lastip) == 0)
+        fatal("Unable to parse supposed log file %s.  Sorry", fname);
+      *q = '"';
     } else {
-      error("Warning: You asked for --resume but it doesn't look like any hosts in the log file were successfully scanned.  Starting from the beginning.");
-      lastip.s_addr = 0;
+      /* OK, I guess (hope) it is a normal log then (-oN) */
+      q = p;
+      found = NULL;
+      while ((q = strstr(q, "\nNmap scan report for ")))
+        found = q = q + 22;
+
+      /*  There may be some later IPs of the form :
+          "Nmap scan report for florence (x.x.7.10)" (dns reverse lookup)
+          or "Nmap scan report for x.x.7.10".
+      */
+      if (found) {
+        q = strchr(found, '\n');
+        if (!q)
+          fatal("Unable to parse supposed log file %s.  Sorry", fname);
+        *q = '\0';
+        p = strchr(found, '(');
+        if (!p) { /* No DNS reverse lookup, found should already contain IP */
+          lastipstr = strdup(found);
+        } else { /* DNS reverse lookup, IP is between parentheses */
+          *q = '\n';
+          q--;
+          *q = '\0';
+          lastipstr = strdup(p + 1);
+        }
+        *q = p ? ')' : '\n'; /* recover changed chars */
+        if (inet_pton(AF_INET, lastipstr, &lastip) == 0)
+          fatal("Unable to parse ip (%s) in supposed log file %s.  Sorry", lastipstr, fname);
+        free(lastipstr);
+      } else {
+        error("Warning: You asked for --resume but it doesn't look like any hosts in the log file were successfully scanned.  Starting from the beginning.");
+        lastip.s_addr = 0;
+      }
     }
   }
   o.resume_ip = lastip;
