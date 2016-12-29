@@ -698,8 +698,8 @@ g_date_get_day_of_year (const GDate *d)
  * @date: a #GDate
  *
  * Returns the week of the year, where weeks are understood to start on
- * Monday. If the date is before the first Monday of the year, return
- * 0. The date must be valid.
+ * Monday. If the date is before the first Monday of the year, return 0.
+ * The date must be valid.
  *
  * Returns: week of the year
  */
@@ -731,9 +731,9 @@ g_date_get_monday_week_of_year (const GDate *d)
  * g_date_get_sunday_week_of_year:
  * @date: a #GDate
  *
- * Returns the week of the year during which this date falls, if weeks
- * are understood to being on Sunday. The date must be valid. Can return
- * 0 if the day is before the first Sunday of the year.
+ * Returns the week of the year during which this date falls, if
+ * weeks are understood to begin on Sunday. The date must be valid.
+ * Can return 0 if the day is before the first Sunday of the year.
  *
  * Returns: week number
  */
@@ -1938,7 +1938,7 @@ g_date_compare (const GDate *lhs,
 /**
  * g_date_to_struct_tm:
  * @date: a #GDate to set the struct tm from
- * @tm: struct tm to fill
+ * @tm: (not nullable): struct tm to fill
  *
  * Fills in the date-related bits of a struct tm using the @date value.
  * Initializes the non-date parts with something sane but meaningless.
@@ -2439,6 +2439,9 @@ win32_strftime_helper (const GDate     *d,
  *
  * Returns: number of characters written to the buffer, or 0 the buffer was too small
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 gsize     
 g_date_strftime (gchar       *s, 
                  gsize        slen, 
@@ -2552,3 +2555,5 @@ g_date_strftime (gchar       *s,
   return retval;
 #endif
 }
+
+#pragma GCC diagnostic pop

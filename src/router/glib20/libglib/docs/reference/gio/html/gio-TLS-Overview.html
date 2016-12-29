@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>TLS Overview: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="tls.html" title="TLS (SSL) support">
 <link rel="prev" href="tls.html" title="TLS (SSL) support">
 <link rel="next" href="GTlsCertificate.html" title="GTlsCertificate">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -32,26 +32,17 @@
 <td class="gallery_image" valign="top" align="right"></td>
 </tr></table></div>
 <div class="refsect1">
-<a name="gio-TLS-Overview.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
-<colgroup>
-<col width="150px" class="functions_return">
-<col class="functions_name">
-</colgroup>
-<tbody><tr>
-<td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="gio-TLS-Overview.html#G-TLS-ERROR:CAPS" title="G_TLS_ERROR">G_TLS_ERROR</a></td>
-</tr></tbody>
-</table></div>
-</div>
-<div class="refsect1">
 <a name="gio-TLS-Overview.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
 </colgroup>
 <tbody>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="gio-TLS-Overview.html#G-TLS-ERROR:CAPS" title="G_TLS_ERROR">G_TLS_ERROR</a></td>
+</tr>
 <tr>
 <td class="datatype_keyword">enum</td>
 <td class="function_name"><a class="link" href="gio-TLS-Overview.html#GTlsError" title="enum GTlsError">GTlsError</a></td>
@@ -77,7 +68,11 @@
 <p><a class="link" href="GTlsConnection.html" title="GTlsConnection"><span class="type">GTlsConnection</span></a> and related classes provide TLS (Transport Layer
 Security, previously known as SSL, Secure Sockets Layer) support for
 gio-based network streams.</p>
-<p>In the simplest case, for a client connection, you can just set the
+<p><a class="link" href="GDtlsConnection.html" title="GDtlsConnection"><span class="type">GDtlsConnection</span></a> and related classes provide DTLS (Datagram TLS) support for
+GIO-based network sockets, using the <a class="link" href="GDatagramBased.html" title="GDatagramBased"><span class="type">GDatagramBased</span></a> interface. The TLS and
+DTLS APIs are almost identical, except TLS is stream-based and DTLS is
+datagram-based. They share certificate and backend infrastructure.</p>
+<p>In the simplest case, for a client TLS connection, you can just set the
 <a class="link" href="GSocketClient.html#GSocketClient--tls" title="The “tls” property"><span class="type">“tls”</span></a> flag on a <a class="link" href="GSocketClient.html" title="GSocketClient"><span class="type">GSocketClient</span></a>, and then any
 connections created by that client will have TLS negotiated
 automatically, using appropriate default settings, and rejecting
@@ -97,24 +92,26 @@ connections.</p>
 </div>
 <div class="refsect1">
 <a name="gio-TLS-Overview.functions_details"></a><h2>Functions</h2>
+<p></p>
+</div>
+<div class="refsect1">
+<a name="gio-TLS-Overview.other_details"></a><h2>Types and Values</h2>
 <div class="refsect2">
 <a name="G-TLS-ERROR:CAPS"></a><h3>G_TLS_ERROR</h3>
 <pre class="programlisting">#define G_TLS_ERROR (g_tls_error_quark ())
 </pre>
 <p>Error domain for TLS. Errors in this domain will be from the
-<a class="link" href="gio-TLS-Overview.html#GTlsError" title="enum GTlsError"><span class="type">GTlsError</span></a> enumeration. See <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> for more information on error
+<a class="link" href="gio-TLS-Overview.html#GTlsError" title="enum GTlsError"><span class="type">GTlsError</span></a> enumeration. See <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> for more information on error
 domains.</p>
 </div>
-</div>
-<div class="refsect1">
-<a name="gio-TLS-Overview.other_details"></a><h2>Types and Values</h2>
+<hr>
 <div class="refsect2">
 <a name="GTlsError"></a><h3>enum GTlsError</h3>
-<p>An error code used with <a class="link" href="gio-TLS-Overview.html#G-TLS-ERROR:CAPS" title="G_TLS_ERROR"><code class="literal">G_TLS_ERROR</code></a> in a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> returned from a
+<p>An error code used with <a class="link" href="gio-TLS-Overview.html#G-TLS-ERROR:CAPS" title="G_TLS_ERROR"><code class="literal">G_TLS_ERROR</code></a> in a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> returned from a
 TLS-related routine.</p>
 <div class="refsect3">
-<a name="id-1.4.15.2.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTlsError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -186,8 +183,8 @@ TLS-related routine.</p>
 <a name="GTlsAuthenticationMode"></a><h3>enum GTlsAuthenticationMode</h3>
 <p>The client authentication mode for a <a class="link" href="GTlsServerConnection.html" title="GTlsServerConnection"><span class="type">GTlsServerConnection</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.15.2.8.3.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTlsAuthenticationMode.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -229,8 +226,8 @@ used to set which validation steps to perform (eg, with
 a particular certificate was rejected (eg, in
 <a class="link" href="GTlsConnection.html#GTlsConnection-accept-certificate" title="The “accept-certificate” signal"><span class="type">“accept-certificate”</span></a>).</p>
 <div class="refsect3">
-<a name="id-1.4.15.2.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTlsCertificateFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -308,6 +305,6 @@ a particular certificate was rejected (eg, in
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GInetAddressMask: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="networking.html" title="Low-level network support">
 <link rel="prev" href="GInetAddress.html" title="GInetAddress">
 <link rel="next" href="GSocketAddress.html" title="GSocketAddress">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GInetAddressMask.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -60,7 +60,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GInetAddressMask.html#g-inet-address-mask-to-string" title="g_inet_address_mask_to_string ()">g_inet_address_mask_to_string</a> <span class="c_punctuation">()</span>
@@ -84,7 +84,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GInetAddressMask.html#g-inet-address-mask-get-length" title="g_inet_address_mask_get_length ()">g_inet_address_mask_get_length</a> <span class="c_punctuation">()</span>
@@ -92,7 +92,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GInetAddressMask.html#g-inet-address-mask-matches" title="g_inet_address_mask_matches ()">g_inet_address_mask_matches</a> <span class="c_punctuation">()</span>
@@ -100,7 +100,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GInetAddressMask.html#g-inet-address-mask-equal" title="g_inet_address_mask_equal ()">g_inet_address_mask_equal</a> <span class="c_punctuation">()</span>
@@ -111,7 +111,7 @@
 </div>
 <div class="refsect1">
 <a name="GInetAddressMask.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -130,7 +130,7 @@
 <td class="property_flags">Read</td>
 </tr>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a></td>
 <td class="property_name"><a class="link" href="GInetAddressMask.html#GInetAddressMask--length" title="The “length” property">length</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
@@ -139,7 +139,7 @@
 </div>
 <div class="refsect1">
 <a name="GInetAddressMask.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -152,7 +152,7 @@
 </div>
 <div class="refsect1">
 <a name="GInetAddressMask.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GInetAddressMask
 </pre>
 </div>
@@ -180,15 +180,15 @@ often given in string form. Eg, "10.0.0.0/8", or "fe80::/10".</p>
 <a name="g-inet-address-mask-new"></a><h3>g_inet_address_mask_new ()</h3>
 <pre class="programlisting"><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="returnvalue">GInetAddressMask</span></a> *
 g_inet_address_mask_new (<em class="parameter"><code><a class="link" href="GInetAddress.html" title="GInetAddress"><span class="type">GInetAddress</span></a> *addr</code></em>,
-                         <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> length</code></em>,
-                         <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                         <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> length</code></em>,
+                         <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Creates a new <a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> representing all addresses whose
 first <em class="parameter"><code>length</code></em>
  bits match <em class="parameter"><code>addr</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -208,15 +208,15 @@ to use</p></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>return location for <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>return location for <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.2.6"></a><h4>Returns</h4>
-<p> a new <a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error</p>
+<a name="g-inet-address-mask-new.returns"></a><h4>Returns</h4>
+<p> a new <a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
 </div>
@@ -224,16 +224,16 @@ to use</p></td>
 <div class="refsect2">
 <a name="g-inet-address-mask-new-from-string"></a><h3>g_inet_address_mask_new_from_string ()</h3>
 <pre class="programlisting"><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="returnvalue">GInetAddressMask</span></a> *
-g_inet_address_mask_new_from_string (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *mask_string</code></em>,
-                                     <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+g_inet_address_mask_new_from_string (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *mask_string</code></em>,
+                                     <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Parses <em class="parameter"><code>mask_string</code></em>
  as an IP address and (optional) length, and
 creates a new <a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a>. The length, if present, is
 delimited by a "/". If it is not present, then the length is
 assumed to be the full length of the address.</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-new-from-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -247,16 +247,16 @@ assumed to be the full length of the address.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>return location for <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
+<td class="parameter_description"><p>return location for <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.3.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-new-from-string.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> corresponding to <em class="parameter"><code>string</code></em>
-, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
+, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>
 on error.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-32.html#api-index-2.32">2.32</a></p>
@@ -264,13 +264,13 @@ on error.</p>
 <hr>
 <div class="refsect2">
 <a name="g-inet-address-mask-to-string"></a><h3>g_inet_address_mask_to_string ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_inet_address_mask_to_string (<em class="parameter"><code><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> *mask</code></em>);</pre>
 <p>Converts <em class="parameter"><code>mask</code></em>
  back to its corresponding string form.</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-to-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -284,7 +284,7 @@ g_inet_address_mask_to_string (<em class="parameter"><code><a class="link" href=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.4.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-to-string.returns"></a><h4>Returns</h4>
 <p> a string corresponding to <em class="parameter"><code>mask</code></em>
 .</p>
 </div>
@@ -298,8 +298,8 @@ g_inet_address_mask_get_family (<em class="parameter"><code><a class="link" href
 <p>Gets the <a class="link" href="GSocketAddress.html#GSocketFamily" title="enum GSocketFamily"><span class="type">GSocketFamily</span></a> of <em class="parameter"><code>mask</code></em>
 's address</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-get-family.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -313,7 +313,7 @@ g_inet_address_mask_get_family (<em class="parameter"><code><a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.5.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-get-family.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="GSocketAddress.html#GSocketFamily" title="enum GSocketFamily"><span class="type">GSocketFamily</span></a> of <em class="parameter"><code>mask</code></em>
 's address</p>
 </div>
@@ -327,8 +327,8 @@ g_inet_address_mask_get_address (<em class="parameter"><code><a class="link" hre
 <p>Gets <em class="parameter"><code>mask</code></em>
 's base address</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-get-address.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -342,7 +342,7 @@ g_inet_address_mask_get_address (<em class="parameter"><code><a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.6.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-get-address.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>mask</code></em>
 's base address. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -352,13 +352,13 @@ g_inet_address_mask_get_address (<em class="parameter"><code><a class="link" hre
 <hr>
 <div class="refsect2">
 <a name="g-inet-address-mask-get-length"></a><h3>g_inet_address_mask_get_length ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint"><span class="returnvalue">guint</span></a>
 g_inet_address_mask_get_length (<em class="parameter"><code><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> *mask</code></em>);</pre>
 <p>Gets <em class="parameter"><code>mask</code></em>
 's length</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-get-length.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -372,7 +372,7 @@ g_inet_address_mask_get_length (<em class="parameter"><code><a class="link" href
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.7.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-get-length.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>mask</code></em>
 's length</p>
 </div>
@@ -381,15 +381,15 @@ g_inet_address_mask_get_length (<em class="parameter"><code><a class="link" href
 <hr>
 <div class="refsect2">
 <a name="g-inet-address-mask-matches"></a><h3>g_inet_address_mask_matches ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_inet_address_mask_matches (<em class="parameter"><code><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> *mask</code></em>,
                              <em class="parameter"><code><a class="link" href="GInetAddress.html" title="GInetAddress"><span class="type">GInetAddress</span></a> *address</code></em>);</pre>
 <p>Tests if <em class="parameter"><code>address</code></em>
  falls within the range described by <em class="parameter"><code>mask</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-matches.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -410,7 +410,7 @@ g_inet_address_mask_matches (<em class="parameter"><code><a class="link" href="G
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.8.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-matches.returns"></a><h4>Returns</h4>
 <p> whether <em class="parameter"><code>address</code></em>
 falls within the range described by
 <em class="parameter"><code>mask</code></em>
@@ -421,15 +421,15 @@ falls within the range described by
 <hr>
 <div class="refsect2">
 <a name="g-inet-address-mask-equal"></a><h3>g_inet_address_mask_equal ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_inet_address_mask_equal (<em class="parameter"><code><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> *mask</code></em>,
                            <em class="parameter"><code><a class="link" href="GInetAddressMask.html" title="GInetAddressMask"><span class="type">GInetAddressMask</span></a> *mask2</code></em>);</pre>
 <p>Tests if <em class="parameter"><code>mask</code></em>
  and <em class="parameter"><code>mask2</code></em>
  are the same mask.</p>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-inet-address-mask-equal.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -450,7 +450,7 @@ g_inet_address_mask_equal (<em class="parameter"><code><a class="link" href="GIn
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.13.4.10.9.6"></a><h4>Returns</h4>
+<a name="g-inet-address-mask-equal.returns"></a><h4>Returns</h4>
 <p> whether <em class="parameter"><code>mask</code></em>
 and <em class="parameter"><code>mask2</code></em>
 are the same mask</p>
@@ -487,7 +487,7 @@ representing a range of IP addresses.</p>
 <hr>
 <div class="refsect2">
 <a name="GInetAddressMask--length"></a><h3>The <code class="literal">“length”</code> property</h3>
-<pre class="programlisting">  “length”                   <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a></pre>
+<pre class="programlisting">  “length”                   <a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a></pre>
 <p>The prefix length.</p>
 <p>Flags: Read / Write</p>
 <p>Allowed values: &lt;= 128</p>
@@ -496,6 +496,6 @@ representing a range of IP addresses.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

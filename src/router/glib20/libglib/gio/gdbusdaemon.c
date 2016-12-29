@@ -7,6 +7,7 @@
 #include <gio/gio.h>
 #include <gio/gunixsocketaddress.h>
 #include "gdbusdaemon.h"
+#include "glibintl.h"
 
 #include "gdbus-daemon-generated.h"
 
@@ -1695,7 +1696,7 @@ g_dbus_daemon_class_init (GDBusDaemonClass *klass)
   gobject_class->get_property = g_dbus_daemon_get_property;
 
   g_dbus_daemon_signals[SIGNAL_IDLE_TIMEOUT] =
-    g_signal_new ("idle-timeout",
+    g_signal_new (I_("idle-timeout"),
 		  G_TYPE_DBUS_DAEMON,
 		  G_SIGNAL_RUN_LAST,
 		  0,

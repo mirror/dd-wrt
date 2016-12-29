@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GTestDBus: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="testing.html" title="GIO Testing">
 <link rel="prev" href="testing.html" title="GIO Testing">
 <link rel="next" href="migrating.html" title="Part III. Migrating to GIO">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GTestDBus.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -58,7 +58,7 @@
 </td>
 </tr>
 <tr>
-<td class="function_type">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<td class="function_type">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GTestDBus.html#g-test-dbus-get-bus-address" title="g_test_dbus_get_bus_address ()">g_test_dbus_get_bus_address</a> <span class="c_punctuation">()</span>
@@ -109,7 +109,7 @@
 </div>
 <div class="refsect1">
 <a name="GTestDBus.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -124,7 +124,7 @@
 </div>
 <div class="refsect1">
 <a name="GTestDBus.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -143,7 +143,7 @@
 </div>
 <div class="refsect1">
 <a name="GTestDBus.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GTestDBus
 </pre>
 </div>
@@ -162,7 +162,7 @@ threads are spawned, or should have appropriate locking to ensure no access
 conflicts to environment variables shared between <a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> and other
 threads.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.8.4"></a><h4>Creating unit tests using GTestDBus</h4>
+<a name="id-1.4.27.2.8.4"></a><h4>Creating unit tests using GTestDBus</h4>
 <p>Testing of D-Bus services can be tricky because normally we only ever run
 D-Bus services over an existing instance of the D-Bus daemon thus we
 usually don't activate D-Bus services that are not yet installed into the
@@ -184,9 +184,9 @@ directory and have it processed by configure.</p>
         <td class="listing_lines" align="right"><pre>1
 2
 3</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="symbol">[</span><span class="normal">D</span><span class="symbol">-</span><span class="usertype">BUS</span><span class="normal"> Service</span><span class="symbol">]</span>
-<span class="normal">Name</span><span class="symbol">=</span><span class="normal">org</span><span class="symbol">.</span><span class="normal">gtk</span><span class="symbol">.</span><span class="normal">GDBus</span><span class="symbol">.</span><span class="normal">Examples</span><span class="symbol">.</span><span class="normal">ObjectManager</span>
-<span class="normal">Exec</span><span class="symbol">=</span><span class="normal">@abs_top_builddir@</span><span class="symbol">/</span><span class="normal">gio</span><span class="symbol">/</span><span class="normal">tests</span><span class="symbol">/</span><span class="normal"><a href="gdbus.html">gdbus</a></span><span class="symbol">-</span><span class="normal">example</span><span class="symbol">-</span><span class="normal">objectmanager</span><span class="symbol">-</span><span class="normal">server</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">[</span>D<span class="gtkdoc opt">-</span>BUS Service<span class="gtkdoc opt">]</span>
+Name<span class="gtkdoc opt">=</span>org<span class="gtkdoc opt">.</span>gtk<span class="gtkdoc opt">.</span>GDBus<span class="gtkdoc opt">.</span>Examples<span class="gtkdoc opt">.</span>ObjectManager
+Exec<span class="gtkdoc opt">=</span>&#64;abs_top_builddir&#64;<span class="gtkdoc opt">/</span>gio<span class="gtkdoc opt">/</span>tests<span class="gtkdoc opt">/</span>gdbus<span class="gtkdoc opt">-</span>example<span class="gtkdoc opt">-</span>objectmanager<span class="gtkdoc opt">-</span>server</pre></td>
       </tr>
     </tbody>
   </table>
@@ -202,7 +202,7 @@ preprocessor flag specified to compile your tests such as:</p>
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="symbol">-</span><span class="normal">DTEST_SERVICES</span><span class="symbol">=\</span><span class="string">""</span><span class="normal">$</span><span class="symbol">(</span><span class="normal">abs_top_builddir</span><span class="symbol">)/</span><span class="normal">tests</span><span class="symbol">/</span><span class="normal">services</span><span class="string">"</span><span class="specialchar">\"</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc opt">-</span>DTEST_SERVICES<span class="gtkdoc opt">=</span><span class="gtkdoc esc">\&quot;</span><span class="string">&quot;$(abs_top_builddir)/tests/services&quot;</span><span class="gtkdoc esc">\&quot;</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -240,10 +240,10 @@ do the following in the directory holding schemas:</p>
 2
 3
 4</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="normal">all</span><span class="symbol">-</span><span class="normal">am</span><span class="symbol">:</span>
-<span class="normal">        $</span><span class="symbol">(</span><span class="normal">GLIB_COMPILE_SCHEMAS</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">.</span>
+        <td class="listing_code"><pre class="programlisting">all<span class="gtkdoc opt">-</span>am<span class="gtkdoc opt">:</span>
+        $<span class="gtkdoc opt">(</span>GLIB_COMPILE_SCHEMAS<span class="gtkdoc opt">) .</span>
 
-<span class="normal">CLEANFILES </span><span class="symbol">+=</span><span class="normal"> gschemas</span><span class="symbol">.</span><span class="normal">compiled</span></pre></td>
+CLEANFILES <span class="gtkdoc opt">+=</span> gschemas<span class="gtkdoc opt">.</span>compiled</pre></td>
       </tr>
     </tbody>
   </table>
@@ -260,8 +260,8 @@ do the following in the directory holding schemas:</p>
 g_test_dbus_new (<em class="parameter"><code><a class="link" href="GTestDBus.html#GTestDBusFlags" title="enum GTestDBusFlags"><span class="type">GTestDBusFlags</span></a> flags</code></em>);</pre>
 <p>Create a new <a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> object.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -275,7 +275,7 @@ g_test_dbus_new (<em class="parameter"><code><a class="link" href="GTestDBus.htm
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.2.6"></a><h4>Returns</h4>
+<a name="g-test-dbus-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -287,8 +287,8 @@ g_test_dbus_new (<em class="parameter"><code><a class="link" href="GTestDBus.htm
 g_test_dbus_get_flags (<em class="parameter"><code><a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> *self</code></em>);</pre>
 <p>Get the flags of the <a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> object.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-get-flags.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -302,21 +302,21 @@ g_test_dbus_get_flags (<em class="parameter"><code><a class="link" href="GTestDB
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.3.6"></a><h4>Returns</h4>
+<a name="g-test-dbus-get-flags.returns"></a><h4>Returns</h4>
 <p> the value of <a class="link" href="GTestDBus.html#GTestDBus--flags" title="The “flags” property"><span class="type">“flags”</span></a> property</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-test-dbus-get-bus-address"></a><h3>g_test_dbus_get_bus_address ()</h3>
-<pre class="programlisting">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_test_dbus_get_bus_address (<em class="parameter"><code><a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> *self</code></em>);</pre>
 <p>Get the address on which dbus-daemon is running. If <a class="link" href="GTestDBus.html#g-test-dbus-up" title="g_test_dbus_up ()"><code class="function">g_test_dbus_up()</code></a> has not
-been called yet, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned. This can be used with
+been called yet, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> is returned. This can be used with
 <a class="link" href="GDBusConnection.html#g-dbus-connection-new-for-address" title="g_dbus_connection_new_for_address ()"><code class="function">g_dbus_connection_new_for_address()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-get-bus-address.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -330,8 +330,8 @@ been called yet, <a href="https://developer.gnome.org/glib/unstable/glib-Standar
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.4.6"></a><h4>Returns</h4>
-<p> the address of the bus, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="g-test-dbus-get-bus-address.returns"></a><h4>Returns</h4>
+<p> the address of the bus, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
 <p><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></p>
 </div>
 </div>
@@ -340,12 +340,12 @@ been called yet, <a href="https://developer.gnome.org/glib/unstable/glib-Standar
 <a name="g-test-dbus-add-service-dir"></a><h3>g_test_dbus_add_service_dir ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_test_dbus_add_service_dir (<em class="parameter"><code><a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> *self</code></em>,
-                             <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *path</code></em>);</pre>
+                             <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *path</code></em>);</pre>
 <p>Add a path where dbus-daemon will look up .service files. This can't be
 called after <a class="link" href="GTestDBus.html#g-test-dbus-up" title="g_test_dbus_up ()"><code class="function">g_test_dbus_up()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-add-service-dir.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -373,13 +373,13 @@ called after <a class="link" href="GTestDBus.html#g-test-dbus-up" title="g_test_
 g_test_dbus_up (<em class="parameter"><code><a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> *self</code></em>);</pre>
 <p>Start a dbus-daemon instance and set DBUS_SESSION_BUS_ADDRESS. After this
 call, it is safe for unit tests to start sending messages on the session bus.</p>
-<p>If this function is called from setup callback of <a href="https://developer.gnome.org/glib/unstable/glib-Testing.html#g-test-add"><code class="function">g_test_add()</code></a>,
+<p>If this function is called from setup callback of <a href="../glib-Testing.html#g-test-add"><code class="function">g_test_add()</code></a>,
 <a class="link" href="GTestDBus.html#g-test-dbus-down" title="g_test_dbus_down ()"><code class="function">g_test_dbus_down()</code></a> must be called in its teardown callback.</p>
 <p>If this function is called from unit test's <code class="function">main()</code>, then <a class="link" href="GTestDBus.html#g-test-dbus-down" title="g_test_dbus_down ()"><code class="function">g_test_dbus_down()</code></a>
-must be called after <a href="https://developer.gnome.org/glib/unstable/glib-Testing.html#g-test-run"><code class="function">g_test_run()</code></a>.</p>
+must be called after <a href="../glib-Testing.html#g-test-run"><code class="function">g_test_run()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.6.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-up.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -404,8 +404,8 @@ singleton returned by <a class="link" href="GDBusConnection.html#g-bus-get" titl
 tests wanting to verify behaviour after the session bus has been stopped
 can use this function but should still call <a class="link" href="GTestDBus.html#g-test-dbus-down" title="g_test_dbus_down ()"><code class="function">g_test_dbus_down()</code></a> when done.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-stop.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -429,8 +429,8 @@ g_test_dbus_down (<em class="parameter"><code><a class="link" href="GTestDBus.ht
 is destroyed. This is done to ensure that the next unit test won't get a
 leaked singleton from this test.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.9.8.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-test-dbus-down.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -470,8 +470,8 @@ should only be accessed using the provided API.</p>
 <a name="GTestDBusFlags"></a><h3>enum GTestDBusFlags</h3>
 <p>Flags to define future <a class="link" href="GTestDBus.html" title="GTestDBus"><span class="type">GTestDBus</span></a> behaviour.</p>
 <div class="refsect3">
-<a name="id-1.4.26.2.10.3.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTestDBusFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -501,6 +501,6 @@ should only be accessed using the provided API.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

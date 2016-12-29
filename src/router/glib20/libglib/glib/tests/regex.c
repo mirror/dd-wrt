@@ -2165,6 +2165,24 @@ test_max_lookbehind (void)
   g_regex_unref (regex);
 }
 
+static gboolean
+pcre_ge (guint64 major, guint64 minor)
+{
+    const char *version;
+    gchar *ptr;
+    guint64 pcre_major, pcre_minor;
+
+    /* e.g. 8.35 2014-04-04 */
+    version = pcre_version ();
+
+    pcre_major = g_ascii_strtoull (version, &ptr, 10);
+    /* ptr points to ".MINOR (release date)" */
+    g_assert (ptr[0] == '.');
+    pcre_minor = g_ascii_strtoull (ptr + 1, NULL, 10);
+
+    return (pcre_major > major) || (pcre_major == major && pcre_minor >= minor);
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -2200,17 +2218,16 @@ main (int argc, char *argv[])
   TEST_NEW("(?P<A>x)|(?P<A>y)", G_REGEX_DUPNAMES | G_REGEX_OPTIMIZE, 0);
   /* This gives "internal error: code overflow" with pcre 6.0 */
   TEST_NEW("(?i)(?-i)", 0, 0);
+  TEST_NEW ("(?i)a", 0, 0);
+  TEST_NEW ("(?m)a", 0, 0);
+  TEST_NEW ("(?s)a", 0, 0);
+  TEST_NEW ("(?x)a", 0, 0);
+  TEST_NEW ("(?J)a", 0, 0);
+  TEST_NEW ("(?U)[a-z]+", 0, 0);
 
-  /* Check that flags are correct if the pattern modifies them */
   /* TEST_NEW_CHECK_FLAGS(pattern, compile_opts, match_ops, real_compile_opts, real_match_opts) */
   TEST_NEW_CHECK_FLAGS ("a", G_REGEX_OPTIMIZE, 0, G_REGEX_OPTIMIZE, 0);
   TEST_NEW_CHECK_FLAGS ("a", G_REGEX_RAW, 0, G_REGEX_RAW, 0);
-  TEST_NEW_CHECK_FLAGS ("(?i)a", 0, 0, G_REGEX_CASELESS, 0);
-  TEST_NEW_CHECK_FLAGS ("(?m)a", 0, 0, G_REGEX_MULTILINE, 0);
-  TEST_NEW_CHECK_FLAGS ("(?s)a", 0, 0, G_REGEX_DOTALL, 0);
-  TEST_NEW_CHECK_FLAGS ("(?x)a", 0, 0, G_REGEX_EXTENDED, 0);
-  TEST_NEW_CHECK_FLAGS ("(?J)a", 0, 0, G_REGEX_DUPNAMES, 0);
-  TEST_NEW_CHECK_FLAGS ("(?U)[a-z]+", 0, 0, G_REGEX_UNGREEDY, 0);
   TEST_NEW_CHECK_FLAGS ("(?X)a", 0, 0, 0 /* not exposed by GRegex */, 0);
   TEST_NEW_CHECK_FLAGS ("^.*", 0, 0, G_REGEX_ANCHORED, 0);
   TEST_NEW_CHECK_FLAGS ("(*UTF8)a", 0, 0, 0 /* this is the default in GRegex */, 0);
@@ -2261,7 +2278,25 @@ main (int argc, char *argv[])
   TEST_NEW_FAIL ("^(?(0)f|b)oo", 0, G_REGEX_ERROR_INVALID_CONDITION);
   TEST_NEW_FAIL ("(?<=\\C)X", 0, G_REGEX_ERROR_SINGLE_BYTE_MATCH_IN_LOOKBEHIND);
   TEST_NEW_FAIL ("(?!\\w)(?R)", 0, G_REGEX_ERROR_INFINITE_LOOP);
-  TEST_NEW_FAIL ("(?(?<ab))", 0, G_REGEX_ERROR_MISSING_SUBPATTERN_NAME_TERMINATOR);
+  if (pcre_ge (8, 37))
+    {
+      /* The expected errors changed here. */
+      TEST_NEW_FAIL ("(?(?<ab))", 0, G_REGEX_ERROR_ASSERTION_EXPECTED);
+    }
+  else
+    {
+      TEST_NEW_FAIL ("(?(?<ab))", 0, G_REGEX_ERROR_MISSING_SUBPATTERN_NAME_TERMINATOR);
+    }
+
+  if (pcre_ge (8, 35))
+    {
+      /* The expected errors changed here. */
+      TEST_NEW_FAIL ("(?P<sub>foo)\\g<sub", 0, G_REGEX_ERROR_MISSING_SUBPATTERN_NAME_TERMINATOR);
+    }
+  else
+    {
+      TEST_NEW_FAIL ("(?P<sub>foo)\\g<sub", 0, G_REGEX_ERROR_MISSING_BACK_REFERENCE);
+    }
   TEST_NEW_FAIL ("(?P<x>eks)(?P<x>eccs)", 0, G_REGEX_ERROR_DUPLICATE_SUBPATTERN_NAME);
 #if 0
   TEST_NEW_FAIL (?, 0, G_REGEX_ERROR_MALFORMED_PROPERTY);
@@ -2379,16 +2414,16 @@ main (int argc, char *argv[])
   TEST_MATCH("a", 0, 0, "ba", 1, 0, 0, FALSE);
   TEST_MATCH("a", 0, 0, "bab", -1, 0, 0, TRUE);
   TEST_MATCH("a", 0, 0, "b", -1, 0, 0, FALSE);
-  TEST_MATCH("a", 0, G_REGEX_ANCHORED, "a", -1, 0, 0, TRUE);
-  TEST_MATCH("a", 0, G_REGEX_ANCHORED, "ab", -1, 1, 0, FALSE);
-  TEST_MATCH("a", 0, G_REGEX_ANCHORED, "ba", 1, 0, 0, FALSE);
-  TEST_MATCH("a", 0, G_REGEX_ANCHORED, "bab", -1, 0, 0, FALSE);
-  TEST_MATCH("a", 0, G_REGEX_ANCHORED, "b", -1, 0, 0, FALSE);
-  TEST_MATCH("a", 0, 0, "a", -1, 0, G_REGEX_ANCHORED, TRUE);
-  TEST_MATCH("a", 0, 0, "ab", -1, 1, G_REGEX_ANCHORED, FALSE);
-  TEST_MATCH("a", 0, 0, "ba", 1, 0, G_REGEX_ANCHORED, FALSE);
-  TEST_MATCH("a", 0, 0, "bab", -1, 0, G_REGEX_ANCHORED, FALSE);
-  TEST_MATCH("a", 0, 0, "b", -1, 0, G_REGEX_ANCHORED, FALSE);
+  TEST_MATCH("a", 0, G_REGEX_MATCH_ANCHORED, "a", -1, 0, 0, TRUE);
+  TEST_MATCH("a", 0, G_REGEX_MATCH_ANCHORED, "ab", -1, 1, 0, FALSE);
+  TEST_MATCH("a", 0, G_REGEX_MATCH_ANCHORED, "ba", 1, 0, 0, FALSE);
+  TEST_MATCH("a", 0, G_REGEX_MATCH_ANCHORED, "bab", -1, 0, 0, FALSE);
+  TEST_MATCH("a", 0, G_REGEX_MATCH_ANCHORED, "b", -1, 0, 0, FALSE);
+  TEST_MATCH("a", 0, 0, "a", -1, 0, G_REGEX_MATCH_ANCHORED, TRUE);
+  TEST_MATCH("a", 0, 0, "ab", -1, 1, G_REGEX_MATCH_ANCHORED, FALSE);
+  TEST_MATCH("a", 0, 0, "ba", 1, 0, G_REGEX_MATCH_ANCHORED, FALSE);
+  TEST_MATCH("a", 0, 0, "bab", -1, 0, G_REGEX_MATCH_ANCHORED, FALSE);
+  TEST_MATCH("a", 0, 0, "b", -1, 0, G_REGEX_MATCH_ANCHORED, FALSE);
   TEST_MATCH("a|b", 0, 0, "a", -1, 0, 0, TRUE);
   TEST_MATCH("\\d", 0, 0, EURO, -1, 0, 0, FALSE);
   TEST_MATCH("^.$", 0, 0, EURO, -1, 0, 0, TRUE);

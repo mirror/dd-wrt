@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Singly-Linked Lists: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-data-types.html" title="GLib Data Types">
 <link rel="prev" href="glib-Doubly-Linked-Lists.html" title="Doubly-Linked Lists">
 <link rel="next" href="glib-Double-ended-Queues.html" title="Double-ended Queues">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Singly-Linked-Lists.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -145,7 +145,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-length" title="g_slist_length ()">g_slist_length</a> <span class="c_punctuation">()</span>
@@ -263,7 +263,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-position" title="g_slist_position ()">g_slist_position</a> <span class="c_punctuation">()</span>
@@ -271,7 +271,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-index" title="g_slist_index ()">g_slist_index</a> <span class="c_punctuation">()</span>
@@ -282,7 +282,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Singly-Linked-Lists.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -345,7 +345,7 @@ g_slist_alloc (<em class="parameter"><code><span class="type">void</span></code>
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-append" title="g_slist_append ()"><code class="function">g_slist_append()</code></a>, <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-prepend" title="g_slist_prepend ()"><code class="function">g_slist_prepend()</code></a>, <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-insert" title="g_slist_insert ()"><code class="function">g_slist_insert()</code></a> and
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-insert-sorted" title="g_slist_insert_sorted ()"><code class="function">g_slist_insert_sorted()</code></a> functions and so is rarely used on its own.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.2.5"></a><h4>Returns</h4>
+<a name="g-slist-alloc.returns"></a><h4>Returns</h4>
 <p> a pointer to the newly-allocated <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> element.</p>
 </div>
 </div>
@@ -376,16 +376,16 @@ the elements and reverse the list when all elements have been added.</p>
 8
 9
 10</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="comment">// Notice that these are initialized to the empty list.</span>
-<span class="usertype">GSList</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">list </span><span class="symbol">=</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">number_list </span><span class="symbol">=</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc slc">// Notice that these are initialized to the empty list.</span>
+GSList <span class="gtkdoc opt">*</span>list <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">, *</span>number_list <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
 
-<span class="comment">// This is a list of strings.</span>
-<span class="normal">list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">list</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"first"</span><span class="symbol">);</span>
-<span class="normal">list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">list</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"second"</span><span class="symbol">);</span>
+<span class="gtkdoc slc">// This is a list of strings.</span>
+list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span> <span class="gtkdoc opt">(</span>list<span class="gtkdoc opt">,</span> <span class="string">&quot;first&quot;</span><span class="gtkdoc opt">);</span>
+list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span> <span class="gtkdoc opt">(</span>list<span class="gtkdoc opt">,</span> <span class="string">&quot;second&quot;</span><span class="gtkdoc opt">);</span>
 
-<span class="comment">// This is a list of integers.</span>
-<span class="normal">number_list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">number_list</span><span class="symbol">,</span><span class="normal"> </span><span class="function"><a href="glib-Type-Conversion-Macros.html#GINT-TO-POINTER:CAPS">GINT_TO_POINTER</a></span><span class="normal"> </span><span class="symbol">(</span><span class="number">27</span><span class="symbol">));</span>
-<span class="normal">number_list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">number_list</span><span class="symbol">,</span><span class="normal"> </span><span class="function"><a href="glib-Type-Conversion-Macros.html#GINT-TO-POINTER:CAPS">GINT_TO_POINTER</a></span><span class="normal"> </span><span class="symbol">(</span><span class="number">14</span><span class="symbol">));</span></pre></td>
+<span class="gtkdoc slc">// This is a list of integers.</span>
+number_list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span> <span class="gtkdoc opt">(</span>number_list<span class="gtkdoc opt">,</span> <span class="function"><a href="glib-Type-Conversion-Macros.html#GINT-TO-POINTER:CAPS">GINT_TO_POINTER</a></span> <span class="gtkdoc opt">(</span><span class="number">27</span><span class="gtkdoc opt">));</span>
+number_list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-append">g_slist_append</a></span> <span class="gtkdoc opt">(</span>number_list<span class="gtkdoc opt">,</span> <span class="function"><a href="glib-Type-Conversion-Macros.html#GINT-TO-POINTER:CAPS">GINT_TO_POINTER</a></span> <span class="gtkdoc opt">(</span><span class="number">14</span><span class="gtkdoc opt">));</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -393,8 +393,8 @@ the elements and reverse the list when all elements have been added.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.6.3.7.3.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-append.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -415,7 +415,7 @@ the elements and reverse the list when all elements have been added.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.3.10"></a><h4>Returns</h4>
+<a name="g-slist-append.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -436,10 +436,10 @@ may have changed, so make sure you store the new value.</p>
 2
 3
 4</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="comment">// Notice that it is initialized to the empty list.</span>
-<span class="usertype">GSList</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">list </span><span class="symbol">=</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">;</span>
-<span class="normal">list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-prepend">g_slist_prepend</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">list</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"last"</span><span class="symbol">);</span>
-<span class="normal">list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-prepend">g_slist_prepend</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">list</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"first"</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc slc">// Notice that it is initialized to the empty list.</span>
+GSList <span class="gtkdoc opt">*</span>list <span class="gtkdoc opt">=</span> NULL<span class="gtkdoc opt">;</span>
+list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-prepend">g_slist_prepend</a></span> <span class="gtkdoc opt">(</span>list<span class="gtkdoc opt">,</span> <span class="string">&quot;last&quot;</span><span class="gtkdoc opt">);</span>
+list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-prepend">g_slist_prepend</a></span> <span class="gtkdoc opt">(</span>list<span class="gtkdoc opt">,</span> <span class="string">&quot;first&quot;</span><span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -447,8 +447,8 @@ may have changed, so make sure you store the new value.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.6.3.7.4.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-prepend.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -469,7 +469,7 @@ may have changed, so make sure you store the new value.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.4.9"></a><h4>Returns</h4>
+<a name="g-slist-prepend.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -479,11 +479,11 @@ may have changed, so make sure you store the new value.</p>
 <pre class="programlisting"><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="returnvalue">GSList</span></a> *
 g_slist_insert (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>,
                 <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> data</code></em>,
-                <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> position</code></em>);</pre>
+                <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> position</code></em>);</pre>
 <p>Inserts a new element into the list at the given position.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-insert.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -512,7 +512,7 @@ to the end of the list.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.5.6"></a><h4>Returns</h4>
+<a name="g-slist-insert.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -527,8 +527,8 @@ g_slist_insert_before (<em class="parameter"><code><a class="link" href="glib-Si
  containing <em class="parameter"><code>data</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-insert-before.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -555,7 +555,7 @@ before</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.6.6"></a><h4>Returns</h4>
+<a name="g-slist-insert-before.returns"></a><h4>Returns</h4>
 <p> the new head of the list.</p>
 </div>
 </div>
@@ -569,8 +569,8 @@ g_slist_insert_sorted (<em class="parameter"><code><a class="link" href="glib-Si
 <p>Inserts a new element into the list, using the given
 comparison function to determine its position.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-insert-sorted.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -598,7 +598,7 @@ comes after the second parameter in the sort order.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.7.6"></a><h4>Returns</h4>
+<a name="g-slist-insert-sorted.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -612,8 +612,8 @@ g_slist_remove (<em class="parameter"><code><a class="link" href="glib-Singly-Li
 If two elements contain the same data, only the first is removed.
 If none of the elements contain the data, the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> is unchanged.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-remove.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -634,7 +634,7 @@ If none of the elements contain the data, the <a class="link" href="glib-Singly-
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.8.6"></a><h4>Returns</h4>
+<a name="g-slist-remove.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -654,8 +654,8 @@ requires time that is proportional to the length of the list
 frequently, you should consider a different data structure,
 such as the doubly-linked <a class="link" href="glib-Doubly-Linked-Lists.html#GList" title="struct GList"><span class="type">GList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.9.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-remove-link.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -676,7 +676,7 @@ such as the doubly-linked <a class="link" href="glib-Doubly-Linked-Lists.html#GL
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.9.7"></a><h4>Returns</h4>
+<a name="g-slist-remove-link.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>, without the element</p>
 </div>
 </div>
@@ -695,8 +695,8 @@ find yourself using <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-
 consider a different data structure, such as the doubly-linked
 <a class="link" href="glib-Doubly-Linked-Lists.html#GList" title="struct GList"><span class="type">GList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-delete-link.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -717,7 +717,7 @@ consider a different data structure, such as the doubly-linked
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.10.7"></a><h4>Returns</h4>
+<a name="g-slist-delete-link.returns"></a><h4>Returns</h4>
 <p> the new head of <em class="parameter"><code>list</code></em>
 </p>
 </div>
@@ -734,8 +734,8 @@ Returns the new head of the list. Contrast with
 <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-remove" title="g_slist_remove ()"><code class="function">g_slist_remove()</code></a> which removes only the first node
 matching the given data.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-remove-all.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -756,7 +756,7 @@ matching the given data.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.11.6"></a><h4>Returns</h4>
+<a name="g-slist-remove-all.returns"></a><h4>Returns</h4>
 <p> new head of <em class="parameter"><code>list</code></em>
 </p>
 </div>
@@ -772,8 +772,8 @@ The freed elements are returned to the slice allocator.</p>
 you should either use <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-free-full" title="g_slist_free_full ()"><code class="function">g_slist_free_full()</code></a> or free them manually
 first.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.12.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -796,8 +796,8 @@ g_slist_free_full (<em class="parameter"><code><a class="link" href="glib-Singly
 <p>Convenience method, which frees all the memory used by a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>, and
 calls the specified destroy function on every element's data.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-free-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -827,8 +827,8 @@ g_slist_free_1 (<em class="parameter"><code><a class="link" href="glib-Singly-Li
 <p>Frees one <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> element.
 It is usually used after <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-remove-link" title="g_slist_remove_link ()"><code class="function">g_slist_remove_link()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-free-1.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -845,7 +845,7 @@ It is usually used after <a class="link" href="glib-Singly-Linked-Lists.html#g-s
 <hr>
 <div class="refsect2">
 <a name="g-slist-length"></a><h3>g_slist_length ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_slist_length (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>);</pre>
 <p>Gets the number of elements in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <p>This function iterates over the whole list to
@@ -853,8 +853,8 @@ count its elements. To check whether the list is non-empty, it is faster to
 check <em class="parameter"><code>list</code></em>
  against <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.15.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-length.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -868,7 +868,7 @@ check <em class="parameter"><code>list</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.15.7"></a><h4>Returns</h4>
+<a name="g-slist-length.returns"></a><h4>Returns</h4>
 <p> the number of elements in the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -883,8 +883,8 @@ consist of pointers to data, the pointers are copied but
 the actual data isn't. See <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-copy-deep" title="g_slist_copy_deep ()"><code class="function">g_slist_copy_deep()</code></a> if you need
 to copy the data as well.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.16.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -898,7 +898,7 @@ to copy the data as well.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.16.7"></a><h4>Returns</h4>
+<a name="g-slist-copy.returns"></a><h4>Returns</h4>
 <p> a copy of <em class="parameter"><code>list</code></em>
 </p>
 </div>
@@ -925,7 +925,7 @@ one argument.</p>
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="normal">another_list </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-copy-deep">g_slist_copy_deep</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">list</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="glib-N-ary-Trees.html#GCopyFunc">GCopyFunc</a></span><span class="symbol">)</span><span class="normal"> <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#g-object-ref">g_object_ref</a></span><span class="symbol">,</span><span class="normal"> <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">another_list <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-copy-deep">g_slist_copy_deep</a></span> <span class="gtkdoc opt">(</span>list<span class="gtkdoc opt">, (</span>GCopyFunc<span class="gtkdoc opt">)</span> g_object_ref<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -938,7 +938,7 @@ one argument.</p>
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-free-full">g_slist_free_full</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">another_list</span><span class="symbol">,</span><span class="normal"> <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#g-object-unref">g_object_unref</a></span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="glib-Singly-Linked-Lists.html#g-slist-free-full">g_slist_free_full</a></span> <span class="gtkdoc opt">(</span>another_list<span class="gtkdoc opt">,</span> g_object_unref<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -946,8 +946,8 @@ one argument.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.6.3.7.17.13"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-copy-deep.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -974,7 +974,7 @@ one argument.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.17.14"></a><h4>Returns</h4>
+<a name="g-slist-copy-deep.returns"></a><h4>Returns</h4>
 <p> a full copy of <em class="parameter"><code>list</code></em>
 , use <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-free-full" title="g_slist_free_full ()"><span class="type">g_slist_free_full</span></a> to free it</p>
 </div>
@@ -987,8 +987,8 @@ one argument.</p>
 g_slist_reverse (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>);</pre>
 <p>Reverses a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.18.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-reverse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1002,7 +1002,7 @@ g_slist_reverse (<em class="parameter"><code><a class="link" href="glib-Singly-L
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.18.6"></a><h4>Returns</h4>
+<a name="g-slist-reverse.returns"></a><h4>Returns</h4>
 <p> the start of the reversed <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -1017,8 +1017,8 @@ g_slist_insert_sorted_with_data (<em class="parameter"><code><a class="link" hre
 <p>Inserts a new element into the list, using the given
 comparison function to determine its position.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.19.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-insert-sorted-with-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1051,7 +1051,7 @@ comes after the second parameter in the sort order.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.19.6"></a><h4>Returns</h4>
+<a name="g-slist-insert-sorted-with-data.returns"></a><h4>Returns</h4>
 <p> the new start of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-10.html#api-index-2.10">2.10</a></p>
@@ -1064,8 +1064,8 @@ g_slist_sort (<em class="parameter"><code><a class="link" href="glib-Singly-Link
               <em class="parameter"><code><a class="link" href="glib-Doubly-Linked-Lists.html#GCompareFunc" title="GCompareFunc ()"><span class="type">GCompareFunc</span></a> compare_func</code></em>);</pre>
 <p>Sorts a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> using the given comparison function.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.20.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-sort.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1090,7 +1090,7 @@ the first element comes after the second.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.20.6"></a><h4>Returns</h4>
+<a name="g-slist-sort.returns"></a><h4>Returns</h4>
 <p> the start of the sorted <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -1103,8 +1103,8 @@ g_slist_sort_with_data (<em class="parameter"><code><a class="link" href="glib-S
                         <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Like <a class="link" href="glib-Singly-Linked-Lists.html#g-slist-sort" title="g_slist_sort ()"><code class="function">g_slist_sort()</code></a>, but the sort function accepts a user data argument.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.21.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-sort-with-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1130,7 +1130,7 @@ g_slist_sort_with_data (<em class="parameter"><code><a class="link" href="glib-S
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.21.6"></a><h4>Returns</h4>
+<a name="g-slist-sort-with-data.returns"></a><h4>Returns</h4>
 <p> new head of the list</p>
 </div>
 </div>
@@ -1144,8 +1144,8 @@ g_slist_concat (<em class="parameter"><code><a class="link" href="glib-Singly-Li
 Note that the elements of the second <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> are not copied.
 They are used directly.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.22.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-concat.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1166,7 +1166,7 @@ They are used directly.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.22.6"></a><h4>Returns</h4>
+<a name="g-slist-concat.returns"></a><h4>Returns</h4>
 <p> the start of the new <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
 </div>
@@ -1179,8 +1179,8 @@ g_slist_foreach (<em class="parameter"><code><a class="link" href="glib-Singly-L
                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Calls a function for each element of a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.23.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-foreach.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1214,8 +1214,8 @@ g_slist_last (<em class="parameter"><code><a class="link" href="glib-Singly-Link
 <p>Gets the last element in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <p>This function iterates over the whole list.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.24.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-last.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1229,7 +1229,7 @@ g_slist_last (<em class="parameter"><code><a class="link" href="glib-Singly-Link
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.24.7"></a><h4>Returns</h4>
+<a name="g-slist-last.returns"></a><h4>Returns</h4>
 <p> the last element in the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>,
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> has no elements</p>
 </div>
@@ -1240,8 +1240,8 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 <pre class="programlisting">#define             g_slist_next(slist)</pre>
 <p>A convenience macro to get the next element in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.25.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-next.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1255,7 +1255,7 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.25.6"></a><h4>Returns</h4>
+<a name="g-slist-next.returns"></a><h4>Returns</h4>
 <p> the next element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if there are no more elements.</p>
 </div>
 </div>
@@ -1264,11 +1264,11 @@ or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 <a name="g-slist-nth"></a><h3>g_slist_nth ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="returnvalue">GSList</span></a> *
 g_slist_nth (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>,
-             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> n</code></em>);</pre>
+             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> n</code></em>);</pre>
 <p>Gets the element at the given position in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.26.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-nth.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1289,7 +1289,7 @@ g_slist_nth (<em class="parameter"><code><a class="link" href="glib-Singly-Linke
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.26.6"></a><h4>Returns</h4>
+<a name="g-slist-nth.returns"></a><h4>Returns</h4>
 <p> the element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the position is off
 the end of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
@@ -1299,11 +1299,11 @@ the end of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title
 <a name="g-slist-nth-data"></a><h3>g_slist_nth_data ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="returnvalue">gpointer</span></a>
 g_slist_nth_data (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>,
-                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> n</code></em>);</pre>
+                  <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> n</code></em>);</pre>
 <p>Gets the data of the element at the given position.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.27.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-nth-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1324,7 +1324,7 @@ g_slist_nth_data (<em class="parameter"><code><a class="link" href="glib-Singly-
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.27.6"></a><h4>Returns</h4>
+<a name="g-slist-nth-data.returns"></a><h4>Returns</h4>
 <p> the element's data, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the position
 is off the end of the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a></p>
 </div>
@@ -1338,8 +1338,8 @@ g_slist_find (<em class="parameter"><code><a class="link" href="glib-Singly-Link
 <p>Finds the element in a <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> which
 contains the given data.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.28.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-find.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1360,7 +1360,7 @@ contains the given data.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.28.6"></a><h4>Returns</h4>
+<a name="g-slist-find.returns"></a><h4>Returns</h4>
 <p> the found <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> element,
 or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if it is not found</p>
 </div>
@@ -1379,8 +1379,8 @@ element is found. The function takes two <a class="link" href="glib-Basic-Types.
 the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> element's data as the first argument and the
 given user data.</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.29.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-find-custom.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1407,21 +1407,21 @@ It should return 0 when the desired element is found</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.29.6"></a><h4>Returns</h4>
+<a name="g-slist-find-custom.returns"></a><h4>Returns</h4>
 <p> the found <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if it is not found</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-slist-position"></a><h3>g_slist_position ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_slist_position (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>,
                   <em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *llink</code></em>);</pre>
 <p>Gets the position of the given element
 in the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> (starting from 0).</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.30.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-position.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1442,7 +1442,7 @@ in the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.30.6"></a><h4>Returns</h4>
+<a name="g-slist-position.returns"></a><h4>Returns</h4>
 <p> the position of the element in the <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a>,
 or -1 if the element is not found</p>
 </div>
@@ -1450,14 +1450,14 @@ or -1 if the element is not found</p>
 <hr>
 <div class="refsect2">
 <a name="g-slist-index"></a><h3>g_slist_index ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_slist_index (<em class="parameter"><code><a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> *list</code></em>,
                <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a> data</code></em>);</pre>
 <p>Gets the position of the element containing
 the given data (starting from 0).</p>
 <div class="refsect3">
-<a name="id-1.6.3.7.31.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-slist-index.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1478,7 +1478,7 @@ the given data (starting from 0).</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.6.3.7.31.6"></a><h4>Returns</h4>
+<a name="g-slist-index.returns"></a><h4>Returns</h4>
 <p> the index of the element containing the data,
 or -1 if the data is not found</p>
 </div>
@@ -1496,8 +1496,8 @@ or -1 if the data is not found</p>
 <p>The <a class="link" href="glib-Singly-Linked-Lists.html#GSList" title="struct GSList"><span class="type">GSList</span></a> struct is used for each element in the singly-linked
 list.</p>
 <div class="refsect3">
-<a name="id-1.6.3.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSList.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1530,6 +1530,6 @@ of data, or any integer value using the
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

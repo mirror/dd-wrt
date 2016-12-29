@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSimpleProxyResolver: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="resolver.html" title="DNS resolution">
 <link rel="prev" href="GProxyResolver.html" title="GProxyResolver">
 <link rel="next" href="GSocketConnectable.html" title="GSocketConnectable">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GSimpleProxyResolver.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -79,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="GSimpleProxyResolver.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -88,12 +88,12 @@
 <tbody>
 <tr>
 <td class="property_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
+<a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</td>
 <td class="property_name"><a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--default-proxy" title="The “default-proxy” property">default-proxy</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/gobject/unstable/gobject-Boxed-Types.html#GStrv"><span class="type">GStrv</span></a></td>
+<td class="property_type"><a href="../glib-String-Utility-Functions.html#GStrv"><span class="type">GStrv</span></a></td>
 <td class="property_name"><a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--ignore-hosts" title="The “ignore-hosts” property">ignore-hosts</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
@@ -102,7 +102,7 @@
 </div>
 <div class="refsect1">
 <a name="GSimpleProxyResolver.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -115,7 +115,7 @@
 </div>
 <div class="refsect1">
 <a name="GSimpleProxyResolver.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GSimpleProxyResolver
 </pre>
 </div>
@@ -145,15 +145,15 @@ with <a class="link" href="GSocketClient.html#g-socket-client-set-proxy-resolver
 <div class="refsect2">
 <a name="g-simple-proxy-resolver-new"></a><h3>g_simple_proxy_resolver_new ()</h3>
 <pre class="programlisting"><a class="link" href="GProxyResolver.html" title="GProxyResolver"><span class="returnvalue">GProxyResolver</span></a> *
-g_simple_proxy_resolver_new (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *default_proxy</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> **ignore_hosts</code></em>);</pre>
+g_simple_proxy_resolver_new (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *default_proxy</code></em>,
+                             <em class="parameter"><code><a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> **ignore_hosts</code></em>);</pre>
 <p>Creates a new <a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a>. See
 <a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--default-proxy" title="The “default-proxy” property"><span class="type">“default-proxy”</span></a> and
 <a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--ignore-hosts" title="The “ignore-hosts” property"><span class="type">“ignore-hosts”</span></a> for more details on how the
 arguments are interpreted.</p>
 <div class="refsect3">
-<a name="id-1.4.16.4.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-simple-proxy-resolver-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -176,7 +176,7 @@ to not use a proxy for. </p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.4.10.2.6"></a><h4>Returns</h4>
+<a name="g-simple-proxy-resolver-new.returns"></a><h4>Returns</h4>
 <p> (transfer full) a new <a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-36.html#api-index-2.36">2.36</a></p>
@@ -187,7 +187,7 @@ to not use a proxy for. </p></td>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_simple_proxy_resolver_set_default_proxy
                                (<em class="parameter"><code><a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a> *resolver</code></em>,
-                                <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *default_proxy</code></em>);</pre>
+                                <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *default_proxy</code></em>);</pre>
 <p>Sets the default proxy on <em class="parameter"><code>resolver</code></em>
 , to be used for any URIs that
 don't match <a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--ignore-hosts" title="The “ignore-hosts” property"><span class="type">“ignore-hosts”</span></a> or a proxy set
@@ -197,8 +197,8 @@ via <a class="link" href="GSimpleProxyResolver.html#g-simple-proxy-resolver-set-
 <a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a> will treat it as referring to all three of
 the socks5, socks4a, and socks4 proxy types.</p>
 <div class="refsect3">
-<a name="id-1.4.16.4.10.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-simple-proxy-resolver-set-default-proxy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -226,14 +226,14 @@ the socks5, socks4a, and socks4 proxy types.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_simple_proxy_resolver_set_ignore_hosts
                                (<em class="parameter"><code><a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a> *resolver</code></em>,
-                                <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> **ignore_hosts</code></em>);</pre>
+                                <em class="parameter"><code><a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> **ignore_hosts</code></em>);</pre>
 <p>Sets the list of ignored hosts.</p>
 <p>See <a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--ignore-hosts" title="The “ignore-hosts” property"><span class="type">“ignore-hosts”</span></a> for more details on how the
 <em class="parameter"><code>ignore_hosts</code></em>
  argument is interpreted.</p>
 <div class="refsect3">
-<a name="id-1.4.16.4.10.4.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-simple-proxy-resolver-set-ignore-hosts.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -247,7 +247,7 @@ g_simple_proxy_resolver_set_ignore_hosts
 </tr>
 <tr>
 <td class="parameter_name"><p>ignore_hosts</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>-terminated list of hosts/IP addresses
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>-terminated list of hosts/IP addresses
 to not use a proxy for</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -261,8 +261,8 @@ to not use a proxy for</p></td>
 <a name="g-simple-proxy-resolver-set-uri-proxy"></a><h3>g_simple_proxy_resolver_set_uri_proxy ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_simple_proxy_resolver_set_uri_proxy (<em class="parameter"><code><a class="link" href="GSimpleProxyResolver.html" title="GSimpleProxyResolver"><span class="type">GSimpleProxyResolver</span></a> *resolver</code></em>,
-                                       <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *uri_scheme</code></em>,
-                                       <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *proxy</code></em>);</pre>
+                                       <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *uri_scheme</code></em>,
+                                       <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *proxy</code></em>);</pre>
 <p>Adds a URI-scheme-specific proxy to <em class="parameter"><code>resolver</code></em>
 ; URIs whose scheme
 matches <em class="parameter"><code>uri_scheme</code></em>
@@ -275,8 +275,8 @@ matches <em class="parameter"><code>uri_scheme</code></em>
 as referring to all three of the socks5, socks4a, and socks4 proxy
 types.</p>
 <div class="refsect3">
-<a name="id-1.4.16.4.10.5.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-simple-proxy-resolver-set-uri-proxy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -317,7 +317,7 @@ types.</p>
 <a name="GSimpleProxyResolver.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="GSimpleProxyResolver--default-proxy"></a><h3>The <code class="literal">“default-proxy”</code> property</h3>
-<pre class="programlisting">  “default-proxy”            <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
+<pre class="programlisting">  “default-proxy”            <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *</pre>
 <p>The default proxy URI that will be used for any URI that doesn't
 match <a class="link" href="GSimpleProxyResolver.html#GSimpleProxyResolver--ignore-hosts" title="The “ignore-hosts” property"><span class="type">“ignore-hosts”</span></a>, and doesn't match any
 of the schemes set with <a class="link" href="GSimpleProxyResolver.html#g-simple-proxy-resolver-set-uri-proxy" title="g_simple_proxy_resolver_set_uri_proxy ()"><code class="function">g_simple_proxy_resolver_set_uri_proxy()</code></a>.</p>
@@ -330,7 +330,7 @@ to all three of the socks5, socks4a, and socks4 proxy types.</p>
 <hr>
 <div class="refsect2">
 <a name="GSimpleProxyResolver--ignore-hosts"></a><h3>The <code class="literal">“ignore-hosts”</code> property</h3>
-<pre class="programlisting">  “ignore-hosts”             <a href="https://developer.gnome.org/gobject/unstable/gobject-Boxed-Types.html#GStrv"><span class="type">GStrv</span></a></pre>
+<pre class="programlisting">  “ignore-hosts”             <a href="../glib-String-Utility-Functions.html#GStrv"><span class="type">GStrv</span></a></pre>
 <p>A list of hostnames and IP addresses that the resolver should
 allow direct connections to.</p>
 <p>Entries can be in one of 4 formats:</p>
@@ -368,6 +368,6 @@ commonly used by other applications.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

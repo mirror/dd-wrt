@@ -158,6 +158,7 @@ g_content_type_get_description (const gchar *type)
 
   if (g_content_type_is_unknown (type))
     return g_strdup (_("Unknown type"));
+
   return g_strdup_printf (_("%s filetype"), type);
 }
 
@@ -175,6 +176,8 @@ g_content_type_get_mime_type (const gchar *type)
     return g_strdup ("application/octet-stream");
   else if (*type == '.')
     return g_strdup_printf ("application/x-ext-%s", type+1);
+  else if (strcmp ("inode/directory", type) == 0)
+    return g_strdup (type);
   /* TODO: Map "image" to "image/ *", etc? */
 
   return g_strdup ("application/octet-stream");
@@ -224,19 +227,18 @@ g_content_type_get_icon (const gchar *type)
       g_free (key);
     }
 
-  /* icon-name similar to how it was with gtk-2-12 */
-  if (name)
+  if (!name)
     {
-      themed_icon = g_themed_icon_new (name);
-    }
-  else
-    {
-      /* if not found an icon fall back to gtk-builtins */
-      name = strcmp (type, "inode/directory") == 0 ? "gtk-directory" : 
-                           g_content_type_can_be_executable (type) ? "gtk-execute" : "gtk-file";
+      /* if no icon found, fall back to standard generic names */
+      if (strcmp (type, "inode/directory") == 0)
+        name = "folder";
+      else if (g_content_type_can_be_executable (type))
+        name = "system-run";
+      else
+        name = "text-x-generic";
       g_hash_table_insert (_type_icons, g_strdup (type), g_strdup (name));
-      themed_icon = g_themed_icon_new_with_default_fallbacks (name);
     }
+  themed_icon = g_themed_icon_new (name);
   G_UNLOCK (_type_icons);
 
   return G_ICON (themed_icon);
@@ -299,6 +301,10 @@ g_content_type_from_mime_type (const gchar *mime_type)
   char *key, *content_type;
 
   g_return_val_if_fail (mime_type != NULL, NULL);
+
+  /* This is a hack to allow directories to have icons in filechooser */
+  if (strcmp ("inode/directory", mime_type) == 0)
+    return g_strdup (mime_type);
 
   key = g_strconcat ("MIME\\DataBase\\Content Type\\", mime_type, NULL);
   content_type = get_registry_classes_key (key, L"Extension");

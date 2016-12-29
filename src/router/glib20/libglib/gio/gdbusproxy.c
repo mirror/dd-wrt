@@ -590,7 +590,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    *
    * Since: 2.26
    */
-  signals[PROPERTIES_CHANGED_SIGNAL] = g_signal_new ("g-properties-changed",
+  signals[PROPERTIES_CHANGED_SIGNAL] = g_signal_new (I_("g-properties-changed"),
                                                      G_TYPE_DBUS_PROXY,
                                                      G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                                                      G_STRUCT_OFFSET (GDBusProxyClass, g_properties_changed),
@@ -613,7 +613,7 @@ g_dbus_proxy_class_init (GDBusProxyClass *klass)
    *
    * Since: 2.26
    */
-  signals[SIGNAL_SIGNAL] = g_signal_new ("g-signal",
+  signals[SIGNAL_SIGNAL] = g_signal_new (I_("g-signal"),
                                          G_TYPE_DBUS_PROXY,
                                          G_SIGNAL_RUN_LAST | G_SIGNAL_MUST_COLLECT,
                                          G_STRUCT_OFFSET (GDBusProxyClass, g_signal),
@@ -1454,8 +1454,9 @@ async_init_data_set_name_owner (GTask       *task,
 
   if (name_owner != NULL)
     {
-      /* it starts as NULL anyway */
       G_LOCK (properties_lock);
+      /* Must free first, since on_name_owner_changed() could run before us */
+      g_free (proxy->priv->name_owner);
       proxy->priv->name_owner = g_strdup (name_owner);
       G_UNLOCK (properties_lock);
     }
@@ -1678,6 +1679,7 @@ async_initable_init_second_async (GAsyncInitable      *initable,
   GTask *task;
 
   task = g_task_new (proxy, cancellable, callback, user_data);
+  g_task_set_source_tag (task, async_initable_init_second_async);
   g_task_set_priority (task, io_priority);
 
   /* Check name ownership asynchronously - possibly also start the service */
@@ -1720,6 +1722,7 @@ async_initable_init_second_finish (GAsyncInitable  *initable,
   if (result != NULL)
     {
       process_get_all_reply (proxy, result);
+      g_variant_unref (result);
     }
 
   proxy->priv->initialized = TRUE;
@@ -1846,6 +1849,7 @@ async_initable_init_async (GAsyncInitable      *initable,
   GTask *task;
 
   task = g_task_new (proxy, cancellable, callback, user_data);
+  g_task_set_source_tag (task, async_initable_init_async);
   g_task_set_priority (task, io_priority);
 
   if (proxy->priv->bus_type != G_BUS_TYPE_NONE)
@@ -2672,6 +2676,7 @@ g_dbus_proxy_call_internal (GDBusProxy          *proxy,
     {
       my_callback = (GAsyncReadyCallback) reply_cb;
       task = g_task_new (proxy, cancellable, callback, user_data);
+      g_task_set_source_tag (task, g_dbus_proxy_call_internal);
     }
   else
     {

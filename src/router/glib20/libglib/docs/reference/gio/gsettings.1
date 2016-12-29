@@ -1,8 +1,8 @@
 '\" t
 .\"     Title: gsettings
 .\"    Author: Ryan Lortie
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 05/25/2015
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 10/24/2016
 .\"    Manual: User Commands
 .\"    Source: GIO
 .\"  Language: English
@@ -38,6 +38,8 @@ gsettings \- GSettings configuration tool
 \fBgsettings\fR writable \fISCHEMA\fR\ [:\fIPATH\fR]  \fIKEY\fR
 .HP \w'\fBgsettings\fR\ 'u
 \fBgsettings\fR range \fISCHEMA\fR\ [:\fIPATH\fR]  \fIKEY\fR
+.HP \w'\fBgsettings\fR\ 'u
+\fBgsettings\fR describe \fISCHEMA\fR\ [:\fIPATH\fR]  \fIKEY\fR
 .HP \w'\fBgsettings\fR\ 'u
 \fBgsettings\fR set \fISCHEMA\fR\ [:\fIPATH\fR]  \fIKEY\fR \fIVALUE\fR
 .HP \w'\fBgsettings\fR\ 'u
@@ -103,6 +105,12 @@ is writable\&.
 \fBrange\fR
 .RS 4
 Queries the range of valid values for
+\fIKEY\fR\&.
+.RE
+.PP
+\fBdescribe\fR
+.RS 4
+Queries the description of valid values for
 \fIKEY\fR\&.
 .RE
 .PP

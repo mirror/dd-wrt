@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GEmblem: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="icons.html" title="Icons">
 <link rel="prev" href="GEmblemedIcon.html" title="GEmblemedIcon">
 <link rel="next" href="failable_initialization.html" title="Failable Initialization">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GEmblem.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -79,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="GEmblem.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -88,7 +88,7 @@
 <tbody>
 <tr>
 <td class="property_type">
-<a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> *</td>
+<a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> *</td>
 <td class="property_name"><a class="link" href="GEmblem.html#GEmblem--icon" title="The “icon” property">icon</a></td>
 <td class="property_flags">Read / Write / Construct Only</td>
 </tr>
@@ -102,7 +102,7 @@
 </div>
 <div class="refsect1">
 <a name="GEmblem.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -121,7 +121,7 @@
 </div>
 <div class="refsect1">
 <a name="GEmblem.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GEmblem
 </pre>
 </div>
@@ -153,8 +153,8 @@ g_emblem_new (<em class="parameter"><code><a class="link" href="GIcon.html" titl
 <p>Creates a new emblem for <em class="parameter"><code>icon</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-emblem-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -168,7 +168,7 @@ g_emblem_new (<em class="parameter"><code><a class="link" href="GIcon.html" titl
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.2.6"></a><h4>Returns</h4>
+<a name="g-emblem-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmblem</span></a>.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -182,8 +182,8 @@ g_emblem_new_with_origin (<em class="parameter"><code><a class="link" href="GIco
 <p>Creates a new emblem for <em class="parameter"><code>icon</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-emblem-new-with-origin.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -204,7 +204,7 @@ g_emblem_new_with_origin (<em class="parameter"><code><a class="link" href="GIco
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.3.6"></a><h4>Returns</h4>
+<a name="g-emblem-new-with-origin.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmblem</span></a>.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -217,8 +217,8 @@ g_emblem_get_icon (<em class="parameter"><code><a class="link" href="GEmblem.htm
 <p>Gives back the icon from <em class="parameter"><code>emblem</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-emblem-get-icon.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -232,7 +232,7 @@ g_emblem_get_icon (<em class="parameter"><code><a class="link" href="GEmblem.htm
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.4.6"></a><h4>Returns</h4>
+<a name="g-emblem-get-icon.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a>. The returned object belongs to
 the emblem and should not be modified or freed. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
@@ -246,8 +246,8 @@ the emblem and should not be modified or freed. </p>
 g_emblem_get_origin (<em class="parameter"><code><a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmblem</span></a> *emblem</code></em>);</pre>
 <p>Gets the origin of the emblem.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-emblem-get-origin.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -261,7 +261,7 @@ g_emblem_get_origin (<em class="parameter"><code><a class="link" href="GEmblem.h
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.8.10.5.6"></a><h4>Returns</h4>
+<a name="g-emblem-get-origin.returns"></a><h4>Returns</h4>
 <p> the origin of the emblem. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -281,8 +281,8 @@ g_emblem_get_origin (<em class="parameter"><code><a class="link" href="GEmblem.h
 <p>GEmblemOrigin is used to add information about the origin of the emblem
 to <a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmblem</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.11.3.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GEmblemOrigin.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -327,7 +327,7 @@ to <a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmble
 <a name="GEmblem.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="GEmblem--icon"></a><h3>The <code class="literal">“icon”</code> property</h3>
-<pre class="programlisting">  “icon”                     <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject"><span class="type">GObject</span></a> *</pre>
+<pre class="programlisting">  “icon”                     <a href="../gobject-The-Base-Object-Type.html#GObject-struct"><span class="type">GObject</span></a> *</pre>
 <p>The actual icon of the emblem.</p>
 <p>Flags: Read / Write / Construct Only</p>
 </div>
@@ -346,6 +346,6 @@ to <a class="link" href="GEmblem.html" title="GEmblem"><span class="type">GEmble
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

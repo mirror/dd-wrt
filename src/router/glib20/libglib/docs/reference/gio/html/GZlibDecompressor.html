@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GZlibDecompressor: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="conversion.html" title="Data conversion">
 <link rel="prev" href="GZlibCompressor.html" title="GZlibCompressor">
 <link rel="next" href="streaming.html" title="Streaming I/O">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GZlibDecompressor.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -63,7 +63,7 @@
 </div>
 <div class="refsect1">
 <a name="GZlibDecompressor.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -86,7 +86,7 @@
 </div>
 <div class="refsect1">
 <a name="GZlibDecompressor.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -99,7 +99,7 @@
 </div>
 <div class="refsect1">
 <a name="GZlibDecompressor.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GZlibDecompressor
 </pre>
 </div>
@@ -127,8 +127,8 @@ decompresses data compressed with zlib.</p>
 g_zlib_decompressor_new (<em class="parameter"><code><a class="link" href="GZlibCompressor.html#GZlibCompressorFormat" title="enum GZlibCompressorFormat"><span class="type">GZlibCompressorFormat</span></a> format</code></em>);</pre>
 <p>Creates a new <a class="link" href="GZlibDecompressor.html" title="GZlibDecompressor"><span class="type">GZlibDecompressor</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.6.5.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-zlib-decompressor-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -142,7 +142,7 @@ g_zlib_decompressor_new (<em class="parameter"><code><a class="link" href="GZlib
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.6.5.10.2.6"></a><h4>Returns</h4>
+<a name="g-zlib-decompressor-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GZlibDecompressor.html" title="GZlibDecompressor"><span class="type">GZlibDecompressor</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
@@ -154,14 +154,14 @@ g_zlib_decompressor_new (<em class="parameter"><code><a class="link" href="GZlib
 g_zlib_decompressor_get_file_info (<em class="parameter"><code><a class="link" href="GZlibDecompressor.html" title="GZlibDecompressor"><span class="type">GZlibDecompressor</span></a> *decompressor</code></em>);</pre>
 <p>Retrieves the <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a> constructed from the GZIP header data
 of compressed data processed by <em class="parameter"><code>compressor</code></em>
-, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if <em class="parameter"><code>decompressor</code></em>
+, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if <em class="parameter"><code>decompressor</code></em>
 's
 <a class="link" href="GZlibDecompressor.html#GZlibDecompressor--format" title="The “format” property"><span class="type">“format”</span></a> property is not <a class="link" href="GZlibCompressor.html#G-ZLIB-COMPRESSOR-FORMAT-GZIP:CAPS"><code class="literal">G_ZLIB_COMPRESSOR_FORMAT_GZIP</code></a>,
 or the header data was not fully processed yet, or it not present in the
 data stream at all.</p>
 <div class="refsect3">
-<a name="id-1.4.6.5.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-zlib-decompressor-get-file-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -175,8 +175,8 @@ data stream at all.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.6.5.10.3.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="g-zlib-decompressor-get-file-info.returns"></a><h4>Returns</h4>
+<p> a <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-26.html#api-index-2.26">2.26</a></p>
@@ -196,7 +196,7 @@ data stream at all.</p>
 <a name="GZlibDecompressor--file-info"></a><h3>The <code class="literal">“file-info”</code> property</h3>
 <pre class="programlisting">  “file-info”                <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a> *</pre>
 <p>A <a class="link" href="GFileInfo.html" title="GFileInfo"><span class="type">GFileInfo</span></a> containing the information found in the GZIP header
-of the data stream processed, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the header was not yet
+of the data stream processed, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if the header was not yet
 fully processed, is not present at all, or the compressor's
 <a class="link" href="GZlibDecompressor.html#GZlibDecompressor--format" title="The “format” property"><span class="type">“format”</span></a> property is not <a class="link" href="GZlibCompressor.html#G-ZLIB-COMPRESSOR-FORMAT-GZIP:CAPS"><code class="literal">G_ZLIB_COMPRESSOR_FORMAT_GZIP</code></a>.</p>
 <p>Flags: Read</p>
@@ -213,6 +213,6 @@ fully processed, is not present at all, or the compressor's
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -68,6 +68,16 @@ typedef void (*GTestFixtureFunc) (gpointer      fixture,
                                                g_assertion_message_cmpnum (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
                                                  #n1 " " #cmp " " #n2, __n1, #cmp, __n2, 'f'); \
                                         } G_STMT_END
+#define g_assert_cmpmem(m1, l1, m2, l2) G_STMT_START {\
+                                             gconstpointer __m1 = m1, __m2 = m2; \
+                                             int __l1 = l1, __l2 = l2; \
+                                             if (__l1 != __l2) \
+                                               g_assertion_message_cmpnum (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
+                                                                           #l1 " (len(" #m1 ")) == " #l2 " (len(" #m2 "))", __l1, "==", __l2, 'i'); \
+                                             else if (memcmp (__m1, __m2, __l1) != 0) \
+                                               g_assertion_message (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
+                                                                    "assertion failed (" #m1 " == " #m2 ")"); \
+                                        } G_STMT_END
 #define g_assert_no_error(err)          G_STMT_START { \
                                              if (err) \
                                                g_assertion_message_error (G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, \
@@ -253,7 +263,11 @@ GLIB_AVAILABLE_IN_ALL
 double   g_test_rand_double_range       (double          range_start,
                                          double          range_end);
 
-/* semi-internal API */
+/*
+ * semi-internal API: non-documented symbols with stable ABI. You
+ * should use the non-internal helper macros instead. However, for
+ * compatibility reason, you may use this semi-internal API.
+ */
 GLIB_AVAILABLE_IN_ALL
 GTestCase*    g_test_create_case        (const char       *test_name,
                                          gsize             data_size,
@@ -274,7 +288,6 @@ void          g_test_suite_add_suite    (GTestSuite     *suite,
 GLIB_AVAILABLE_IN_ALL
 int           g_test_run_suite          (GTestSuite     *suite);
 
-/* internal ABI */
 GLIB_AVAILABLE_IN_ALL
 void    g_test_trap_assertions          (const char     *domain,
                                          const char     *file,

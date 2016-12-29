@@ -31,7 +31,6 @@
 #include <glib/gstdio.h>
 #include <glib/glib-unix.h>
 #include "gioerror.h"
-#include "gsimpleasyncresult.h"
 #include "gunixinputstream.h"
 #include "gcancellable.h"
 #include "gasynchelper.h"
@@ -461,6 +460,7 @@ g_unix_input_stream_close_async (GInputStream        *stream,
   GError *error = NULL;
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_unix_input_stream_close_async);
   g_task_set_priority (task, io_priority);
 
   if (g_unix_input_stream_close (stream, cancellable, &error))

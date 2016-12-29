@@ -146,7 +146,7 @@ g_file_input_stream_query_info (GFileInputStream  *stream,
     info = class->query_info (stream, attributes, cancellable, error);
   else
     g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                         _("Stream doesn't support query_info"));
+                         _("Stream doesn’t support query_info"));
 
   if (cancellable)
     g_cancellable_pop_current (cancellable);
@@ -391,7 +391,7 @@ query_info_async_thread (GTask        *task,
     info = class->query_info (stream, attributes, cancellable, &error);
   else
     g_set_error_literal (&error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                         _("Stream doesn't support query_info"));
+                         _("Stream doesn’t support query_info"));
 
   if (info == NULL)
     g_task_return_error (task, error);
@@ -410,6 +410,7 @@ g_file_input_stream_real_query_info_async (GFileInputStream    *stream,
   GTask *task;
 
   task = g_task_new (stream, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_input_stream_real_query_info_async);
   g_task_set_task_data (task, g_strdup (attributes), g_free);
   g_task_set_priority (task, io_priority);
   

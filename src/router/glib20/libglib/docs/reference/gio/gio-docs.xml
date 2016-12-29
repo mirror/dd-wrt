@@ -118,6 +118,7 @@
     <chapter id="networking">
       <title>Low-level network support</title>
       <xi:include href="xml/gsocket.xml"/>
+      <xi:include href="xml/gdatagrambased.xml"/>
       <xi:include href="xml/ginetaddress.xml"/>
       <xi:include href="xml/ginetaddressmask.xml"/>
       <xi:include href="xml/gsocketaddress.xml"/>
@@ -151,6 +152,9 @@
       <xi:include href="xml/gtlsconnection.xml"/>
       <xi:include href="xml/gtlsclientconnection.xml"/>
       <xi:include href="xml/gtlsserverconnection.xml"/>
+      <xi:include href="xml/gdtlsconnection.xml"/>
+      <xi:include href="xml/gdtlsclientconnection.xml"/>
+      <xi:include href="xml/gdtlsserverconnection.xml"/>
       <xi:include href="xml/gtlsbackend.xml"/>
       <xi:include href="xml/gtlsdatabase.xml"/>
       <xi:include href="xml/gtlsfiledatabase.xml"/>
@@ -213,6 +217,10 @@
         <xi:include href="xml/glistmodel.xml"/>
         <xi:include href="xml/gliststore.xml"/>
     </chapter>
+    <chapter id='registry'>
+        <title>Win32 registry support</title>
+        <xi:include href="xml/gwin32registrykey.xml"/>
+    </chapter>
     <chapter id="application">
         <title>Application support</title>
         <xi:include href="xml/gapplication.xml"/>
@@ -248,6 +256,7 @@
         <xi:include href="xml/gdbus-codegen.xml"/>
         <xi:include href="gresource.xml"/>
         <xi:include href="gapplication.xml"/>
+        <xi:include href="gio.xml"/>
     </chapter>
     <chapter id="testing">
         <title>GIO Testing</title>
@@ -331,6 +340,18 @@
   <index id="api-index-2-44" role="2.44">
     <title>Index of new symbols in 2.44</title>
     <xi:include href="xml/api-index-2.44.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-46" role="2.46">
+    <title>Index of new symbols in 2.46</title>
+    <xi:include href="xml/api-index-2.46.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-48" role="2.48">
+    <title>Index of new symbols in 2.48</title>
+    <xi:include href="xml/api-index-2.48.xml"><xi:fallback /></xi:include>
+  </index>
+  <index id="api-index-2-50" role="2.50">
+    <title>Index of new symbols in 2.50</title>
+    <xi:include href="xml/api-index-2.50.xml"><xi:fallback /></xi:include>
   </index>
 
   <xi:include href="xml/annotation-glossary.xml"><xi:fallback /></xi:include>

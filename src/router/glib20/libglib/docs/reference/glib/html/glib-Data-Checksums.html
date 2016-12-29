@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Data Checksums: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Base64-Encoding.html" title="Base64 Encoding">
 <link rel="next" href="glib-Data-HMACs.html" title="Secure HMAC Digests">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Data-Checksums.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -131,7 +131,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Data-Checksums.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -178,8 +178,8 @@ g_checksum_type_get_length (<em class="parameter"><code><a class="link" href="gl
 <p>Gets the length in bytes of digests of type <em class="parameter"><code>checksum_type</code></em>
 </p>
 <div class="refsect3">
-<a name="id-1.5.6.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-type-get-length.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -193,7 +193,7 @@ g_checksum_type_get_length (<em class="parameter"><code><a class="link" href="gl
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.2.6"></a><h4>Returns</h4>
+<a name="g-checksum-type-get-length.returns"></a><h4>Returns</h4>
 <p> the checksum length, or -1 if <em class="parameter"><code>checksum_type</code></em>
 is
 not supported.</p>
@@ -220,8 +220,8 @@ vector of raw bytes. Once either <a class="link" href="glib-Data-Checksums.html#
 will be closed and it won't be possible to call <a class="link" href="glib-Data-Checksums.html#g-checksum-update" title="g_checksum_update ()"><code class="function">g_checksum_update()</code></a>
 on it anymore.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -235,7 +235,7 @@ on it anymore.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.3.7"></a><h4>Returns</h4>
+<a name="g-checksum-new.returns"></a><h4>Returns</h4>
 <p> the newly created <a class="link" href="glib-Data-Checksums.html#GChecksum" title="GChecksum"><span class="type">GChecksum</span></a>, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.
 Use <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_checksum_free ()"><code class="function">g_checksum_free()</code></a> to free the memory allocated by it. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -252,8 +252,8 @@ g_checksum_copy (<em class="parameter"><code>const <a class="link" href="glib-Da
 <a class="link" href="glib-Data-Checksums.html#g-checksum-get-string" title="g_checksum_get_string ()"><code class="function">g_checksum_get_string()</code></a> or <a class="link" href="glib-Data-Checksums.html#g-checksum-get-digest" title="g_checksum_get_digest ()"><code class="function">g_checksum_get_digest()</code></a>, the copied
 checksum will be closed as well.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -267,7 +267,7 @@ checksum will be closed as well.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.4.6"></a><h4>Returns</h4>
+<a name="g-checksum-copy.returns"></a><h4>Returns</h4>
 <p> the copy of the passed <a class="link" href="glib-Data-Checksums.html#GChecksum" title="GChecksum"><span class="type">GChecksum</span></a>. Use <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_checksum_free ()"><code class="function">g_checksum_free()</code></a>
 when finished using it.</p>
 </div>
@@ -281,8 +281,8 @@ g_checksum_free (<em class="parameter"><code><a class="link" href="glib-Data-Che
 <p>Frees the memory allocated for <em class="parameter"><code>checksum</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -305,8 +305,8 @@ g_checksum_reset (<em class="parameter"><code><a class="link" href="glib-Data-Ch
 <p>Resets the state of the <em class="parameter"><code>checksum</code></em>
  back to its initial state.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-reset.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -334,8 +334,8 @@ open, that is <a class="link" href="glib-Data-Checksums.html#g-checksum-get-stri
 not have been called on <em class="parameter"><code>checksum</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-update.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -372,8 +372,8 @@ g_checksum_get_string (<em class="parameter"><code><a class="link" href="glib-Da
 updated with <a class="link" href="glib-Data-Checksums.html#g-checksum-update" title="g_checksum_update ()"><code class="function">g_checksum_update()</code></a>.</p>
 <p>The hexadecimal characters will be lower case.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.8.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-get-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -387,7 +387,7 @@ updated with <a class="link" href="glib-Data-Checksums.html#g-checksum-update" t
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.8.8"></a><h4>Returns</h4>
+<a name="g-checksum-get-string.returns"></a><h4>Returns</h4>
 <p> the hexadecimal representation of the checksum. The
 returned string is owned by the checksum and should not be modified
 or freed.</p>
@@ -409,8 +409,8 @@ into <em class="parameter"><code>buffer</code></em>
 no longer be updated with <a class="link" href="glib-Data-Checksums.html#g-checksum-update" title="g_checksum_update ()"><code class="function">g_checksum_update()</code></a>.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.5.6.7.9.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-checksum-get-digest.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -453,8 +453,8 @@ convenience wrapper for <a class="link" href="glib-Data-Checksums.html#g-checksu
 and <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_checksum_free ()"><code class="function">g_checksum_free()</code></a>.</p>
 <p>The hexadecimal string returned will be in lower case.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-compute-checksum-for-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -481,7 +481,7 @@ and <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_che
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.10.7"></a><h4>Returns</h4>
+<a name="g-compute-checksum-for-data.returns"></a><h4>Returns</h4>
 <p> the digest of the binary data as a string in hexadecimal.
 The returned string should be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a> when done using it.</p>
 </div>
@@ -497,8 +497,8 @@ g_compute_checksum_for_string (<em class="parameter"><code><a class="link" href=
 <p>Computes the checksum of a string.</p>
 <p>The hexadecimal string returned will be in lower case.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-compute-checksum-for-string.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -524,7 +524,7 @@ g_compute_checksum_for_string (<em class="parameter"><code><a class="link" href=
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.11.7"></a><h4>Returns</h4>
+<a name="g-compute-checksum-for-string.returns"></a><h4>Returns</h4>
 <p> the checksum as a hexadecimal string. The returned string
 should be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a> when done using it.</p>
 </div>
@@ -542,8 +542,8 @@ convenience wrapper for <a class="link" href="glib-Data-Checksums.html#g-checksu
 and <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_checksum_free ()"><code class="function">g_checksum_free()</code></a>.</p>
 <p>The hexadecimal string returned will be in lower case.</p>
 <div class="refsect3">
-<a name="id-1.5.6.7.12.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-compute-checksum-for-bytes.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -564,7 +564,7 @@ and <a class="link" href="glib-Data-Checksums.html#g-checksum-free" title="g_che
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.6.7.12.7"></a><h4>Returns</h4>
+<a name="g-compute-checksum-for-bytes.returns"></a><h4>Returns</h4>
 <p> the digest of the binary data as a string in hexadecimal.
 The returned string should be freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a> when done using it.</p>
 </div>
@@ -580,8 +580,8 @@ digest of some data.</p>
 <p>Note that the <a class="link" href="glib-Data-Checksums.html#GChecksumType" title="enum GChecksumType"><span class="type">GChecksumType</span></a> enumeration may be extended at a later
 date to include new hashing algorithm types.</p>
 <div class="refsect3">
-<a name="id-1.5.6.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GChecksumType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -612,7 +612,7 @@ date to include new hashing algorithm types.</p>
 <tr>
 <td class="enum_member_name"><p><a name="G-CHECKSUM-SHA512:CAPS"></a>G_CHECKSUM_SHA512</p></td>
 <td class="enum_member_description">
-<p>Use the SHA-512 hashing algorithm</p>
+<p>Use the SHA-512 hashing algorithm (Since: 2.36)</p>
 </td>
 <td class="enum_member_annotations"> </td>
 </tr>
@@ -633,6 +633,6 @@ a GChecksum, use <a class="link" href="glib-Data-Checksums.html#g-checksum-free"
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

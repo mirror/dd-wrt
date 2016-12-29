@@ -357,7 +357,7 @@ unix_open_file (const char  *filename,
 
       display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR, g_io_error_from_errno (saved_errno),
-                   _("Error opening file '%s': %s"), display_name,
+                   _("Error opening file “%s”: %s"), display_name,
                    g_strerror (saved_errno));
       g_free (display_name);
       /* fall through... */
@@ -849,6 +849,7 @@ g_subprocess_wait_async (GSubprocess         *subprocess,
   GTask *task;
 
   task = g_task_new (subprocess, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_subprocess_wait_async);
 
   g_mutex_lock (&subprocess->pending_waits_lock);
   if (subprocess->pid)
@@ -1518,6 +1519,8 @@ g_subprocess_communicate_internal (GSubprocess         *subprocess,
   GTask *task;
 
   task = g_task_new (subprocess, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_subprocess_communicate_internal);
+
   state = g_slice_new0 (CommunicateState);
   g_task_set_task_data (task, state, g_subprocess_communicate_state_free);
 

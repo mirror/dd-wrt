@@ -83,7 +83,7 @@ g_icon_default_init (GIconInterface *iface)
 
 /**
  * g_icon_hash:
- * @icon: #gconstpointer to an icon object.
+ * @icon: (not nullable): #gconstpointer to an icon object.
  * 
  * Gets a hash for an icon.
  *
@@ -458,7 +458,7 @@ g_icon_new_for_string (const gchar   *str,
     g_set_error_literal (error,
                          G_IO_ERROR,
                          G_IO_ERROR_INVALID_ARGUMENT,
-                         _("Can't handle the supplied version of the icon encoding"));
+                         _("Can’t handle the supplied version of the icon encoding"));
 
   return icon;
 }

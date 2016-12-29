@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Standard Macros: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Basic-Types.html" title="Basic Types">
 <link rel="next" href="glib-Type-Conversion-Macros.html" title="Type Conversion Macros">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Standard-Macros.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -44,10 +44,6 @@
 <td class="function_name">
 <a class="link" href="glib-Standard-Macros.html#G-IS-DIR-SEPARATOR:CAPS" title="G_IS_DIR_SEPARATOR()">G_IS_DIR_SEPARATOR</a><span class="c_punctuation">()</span>
 </td>
-</tr>
-<tr>
-<td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL">NULL</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
@@ -102,7 +98,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Standard-Macros.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -142,6 +138,10 @@
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL">NULL</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="glib-Standard-Macros.html#G-MEM-ALIGN:CAPS" title="G_MEM_ALIGN">G_MEM_ALIGN</a></td>
 </tr>
 <tr>
@@ -170,8 +170,8 @@
 separator. It returns <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> for '/' on UNIX
 machines and for '\' or '/' under Windows.</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-IS-DIR-SEPARATOR.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -188,13 +188,6 @@ machines and for '\' or '/' under Windows.</p>
 </div>
 <hr>
 <div class="refsect2">
-<a name="NULL:CAPS"></a><h3>NULL</h3>
-<pre class="programlisting">#  define NULL        (0L)
-</pre>
-<p>Defines the standard <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> pointer.</p>
-</div>
-<hr>
-<div class="refsect2">
 <a name="MIN:CAPS"></a><h3>MIN()</h3>
 <pre class="programlisting">#define MIN(a, b)  (((a) &lt; (b)) ? (a) : (b))
 </pre>
@@ -202,8 +195,8 @@ machines and for '\' or '/' under Windows.</p>
  and <em class="parameter"><code>b</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="MIN.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -224,7 +217,7 @@ machines and for '\' or '/' under Windows.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.4.6"></a><h4>Returns</h4>
+<a name="MIN.returns"></a><h4>Returns</h4>
 <p> the minimum of <em class="parameter"><code>a</code></em>
 and <em class="parameter"><code>b</code></em>
 .</p>
@@ -239,8 +232,8 @@ and <em class="parameter"><code>b</code></em>
  and <em class="parameter"><code>b</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="MAX.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -261,7 +254,7 @@ and <em class="parameter"><code>b</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.5.6"></a><h4>Returns</h4>
+<a name="MAX.returns"></a><h4>Returns</h4>
 <p> the maximum of <em class="parameter"><code>a</code></em>
 and <em class="parameter"><code>b</code></em>
 .</p>
@@ -281,8 +274,8 @@ The absolute value is simply the number with any negative sign taken away.</p>
 <li class="listitem"><p>ABS(10) is also 10.</p></li>
 </ul></div>
 <div class="refsect3">
-<a name="id-1.3.4.7.6.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="ABS.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -296,7 +289,7 @@ The absolute value is simply the number with any negative sign taken away.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.6.8"></a><h4>Returns</h4>
+<a name="ABS.returns"></a><h4>Returns</h4>
 <p> the absolute value of <em class="parameter"><code>a</code></em>
 .</p>
 </div>
@@ -320,8 +313,8 @@ greater than <em class="parameter"><code>high</code></em>
 <li class="listitem"><p>CLAMP(20, 15, 25) is 20.</p></li>
 </ul></div>
 <div class="refsect3">
-<a name="id-1.3.4.7.7.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="CLAMP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -347,7 +340,7 @@ greater than <em class="parameter"><code>high</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.7.8"></a><h4>Returns</h4>
+<a name="CLAMP.returns"></a><h4>Returns</h4>
 <p> the value of <em class="parameter"><code>x</code></em>
 clamped to the range between <em class="parameter"><code>low</code></em>
 and <em class="parameter"><code>high</code></em>
@@ -360,8 +353,8 @@ and <em class="parameter"><code>high</code></em>
 <pre class="programlisting">#define             G_STRUCT_MEMBER(member_type, struct_p, struct_offset)</pre>
 <p>Returns a member of a structure at a given offset, using the given type.</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-STRUCT-MEMBER.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -388,7 +381,7 @@ in bytes</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.8.6"></a><h4>Returns</h4>
+<a name="G-STRUCT-MEMBER.returns"></a><h4>Returns</h4>
 <p> the struct member</p>
 </div>
 </div>
@@ -398,8 +391,8 @@ in bytes</p></td>
 <pre class="programlisting">#define             G_STRUCT_MEMBER_P(struct_p, struct_offset)</pre>
 <p>Returns an untyped pointer to a given offset of a struct.</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-STRUCT-MEMBER-P.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -420,7 +413,7 @@ in bytes</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.9.6"></a><h4>Returns</h4>
+<a name="G-STRUCT-MEMBER-P.returns"></a><h4>Returns</h4>
 <p> an untyped pointer to <em class="parameter"><code>struct_p</code></em>
 plus <em class="parameter"><code>struct_offset</code></em>
 bytes</p>
@@ -432,8 +425,8 @@ bytes</p>
 <pre class="programlisting">#define             G_STRUCT_OFFSET(struct_type, member)</pre>
 <p>Returns the offset, in bytes, of a member of a struct.</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-STRUCT-OFFSET.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -442,7 +435,7 @@ bytes</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>struct_type</p></td>
-<td class="parameter_description"><p>a structure type, e.g. <a href="http://developer.gnome.org/gtk2/GtkWidget.html"><span class="type">GtkWidget</span></a></p></td>
+<td class="parameter_description"><p>a structure type, e.g. <a href="http://developer.gnome.org/gtk4/GtkWidget.html#GtkWidget-struct"><span class="type">GtkWidget</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -455,7 +448,7 @@ bytes</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.4.7.10.6"></a><h4>Returns</h4>
+<a name="G-STRUCT-OFFSET.returns"></a><h4>Returns</h4>
 <p> the offset of <em class="parameter"><code>member</code></em>
 from the start of <em class="parameter"><code>struct_type</code></em>
 </p>
@@ -471,8 +464,8 @@ declared so the compiler knows its size at compile-time; this
 macro will not work on an array allocated on the heap, only static
 arrays or arrays on the stack.</p>
 <div class="refsect3">
-<a name="id-1.3.4.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-N-ELEMENTS.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -552,6 +545,13 @@ This is ":" on UNIX machines and ";" under Windows.</p>
 </div>
 <hr>
 <div class="refsect2">
+<a name="NULL:CAPS"></a><h3>NULL</h3>
+<pre class="programlisting">#  define NULL        (0L)
+</pre>
+<p>Defines the standard <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> pointer.</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="G-MEM-ALIGN:CAPS"></a><h3>G_MEM_ALIGN</h3>
 <pre class="programlisting">#  define G_MEM_ALIGN GLIB_SIZEOF_VOID_P
 </pre>
@@ -580,6 +580,6 @@ doesn't make sense for "in" parameters.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -93,10 +93,10 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-TESTS = $(am__EXEEXT_7) $(am__EXEEXT_9)
-installed_test_PROGRAMS = $(am__EXEEXT_16)
-noinst_PROGRAMS = $(am__EXEEXT_17)
-check_PROGRAMS = $(am__EXEEXT_15)
+TESTS = $(am__EXEEXT_8) $(am__EXEEXT_10)
+installed_test_PROGRAMS = $(am__EXEEXT_17)
+noinst_PROGRAMS = $(am__EXEEXT_18)
+check_PROGRAMS = $(am__EXEEXT_16)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_1 = $(all_test_ltlibs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_2 = $(all_test_programs)
 @ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__append_3 = $(all_test_scripts)
@@ -111,7 +111,7 @@ check_PROGRAMS = $(am__EXEEXT_15)
 @ENABLE_INSTALLED_TESTS_TRUE@am__append_10 = $(test_scripts) \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(installed_test_scripts) \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(test_extra_scripts) \
-@ENABLE_INSTALLED_TESTS_TRUE@	$(test_installed_extra_scripts) \
+@ENABLE_INSTALLED_TESTS_TRUE@	$(installed_test_extra_scripts) \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(dist_test_scripts) \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(dist_test_extra_scripts) \
 @ENABLE_INSTALLED_TESTS_TRUE@	$(dist_installed_test_scripts) \
@@ -127,16 +127,16 @@ check_PROGRAMS = $(am__EXEEXT_15)
 #  Test programs buildable on UNIX only
 
 # This is peer to peer so it doesn't need a session bus (so we can run it normally)
-@OS_UNIX_TRUE@am__append_14 = contenttype file \
-@OS_UNIX_TRUE@	gdbus-peer-object-manager live-g-file \
-@OS_UNIX_TRUE@	socket-address stream-rw_all unix-fd \
-@OS_UNIX_TRUE@	unix-streams $(NULL) mimeapps \
-@OS_UNIX_TRUE@	gdbus-connection-flush gdbus-non-socket \
+@OS_UNIX_TRUE@am__append_14 = file gdbus-peer-object-manager \
+@OS_UNIX_TRUE@	gdbus-unix-addresses live-g-file socket-address \
+@OS_UNIX_TRUE@	stream-rw_all unix-fd unix-streams $(NULL) \
+@OS_UNIX_TRUE@	mimeapps gdbus-connection-flush gdbus-non-socket \
 @OS_UNIX_TRUE@	gdbus-peer
 
 # This test is currently unreliable
-@OS_UNIX_TRUE@am__append_15 = basic-application $(NULL) appinfo-test \
-@OS_UNIX_TRUE@	apps $(NULL) gsubprocess-testprog gdbus-overflow
+@OS_UNIX_TRUE@am__append_15 = basic-application dbus-launch $(NULL) \
+@OS_UNIX_TRUE@	appinfo-test apps $(NULL) gsubprocess-testprog \
+@OS_UNIX_TRUE@	gdbus-overflow
 
 # Uninstalled because of the check-for-executable logic in DesktopAppInfo unable to find the installed executable
 @OS_UNIX_TRUE@am__append_16 = appinfo desktop-app-info $(NULL) \
@@ -158,6 +158,7 @@ check_PROGRAMS = $(am__EXEEXT_15)
 # These three are manual-run tests because they need a session bus but don't bring one up themselves
 @OS_UNIX_TRUE@am__append_18 = gdbus-example-unix-fd-client $(NULL) \
 @OS_UNIX_TRUE@	gdbus-example-objectmanager-client \
+@OS_UNIX_TRUE@	gdbus-example-objectmanager-server \
 @OS_UNIX_TRUE@	gdbus-test-fixture
 @OS_UNIX_FALSE@gsettings_DEPENDENCIES =  \
 @OS_UNIX_FALSE@	$(top_builddir)/gio/libgio-2.0.la \
@@ -215,6 +216,19 @@ check_PROGRAMS = $(am__EXEEXT_15)
 @HAVE_GCC_TRUE@	$(NULL)
 
 
+# -----------------------------------------------------------------------------
+#  The resources test is a bit more complicated, and we cannot build it when
+#  cross-compiling GIO because it requires running a binary...
+@CROSS_COMPILING_FALSE@am__append_29 = resources
+@CROSS_COMPILING_TRUE@resources_DEPENDENCIES =  \
+@CROSS_COMPILING_TRUE@	$(top_builddir)/gio/libgio-2.0.la \
+@CROSS_COMPILING_TRUE@	$(top_builddir)/gobject/libgobject-2.0.la \
+@CROSS_COMPILING_TRUE@	$(top_builddir)/gmodule/libgmodule-2.0.la \
+@CROSS_COMPILING_TRUE@	$(top_builddir)/glib/libglib-2.0.la \
+@CROSS_COMPILING_TRUE@	$(am__DEPENDENCIES_1)
+@CROSS_COMPILING_FALSE@am__append_30 = libresourceplugin.la
+@CROSS_COMPILING_FALSE@am__append_31 = test.gresource
+
 # libtool contains a bug whereby the created .la file doesn't contain the correct dlname='' in the case that
 # you're building a library but not installing it.  This is apparently because the only considered use for an
 # uninstalled library is as a convenience library for linking (despite the fact that we give -module).  The lack
@@ -222,7 +236,9 @@ check_PROGRAMS = $(am__EXEEXT_15)
 # will install the module by giving it a bogus -rpath for the uninstalled cases.
 #
 # See http://lists.gnu.org/archive/html/bug-libtool/2013-05/msg00009.html
-@ENABLE_INSTALLED_TESTS_FALSE@am__append_29 = -rpath /
+@CROSS_COMPILING_FALSE@@ENABLE_INSTALLED_TESTS_FALSE@am__append_32 = -rpath /
+@CROSS_COMPILING_FALSE@am__append_33 = test.gresource.xml test1.txt test2.gresource.xml test2.txt test3.gresource.xml test3.txt test4.gresource.xml
+@CROSS_COMPILING_FALSE@am__append_34 = test-generated.txt test_resources.c test_resources2.[ch] plugin_resources.c test.gresource
 subdir = gio/tests
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4macros/attributes.m4 \
@@ -283,9 +299,12 @@ am__DEPENDENCIES_2 = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
-libresourceplugin_la_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_libresourceplugin_la_OBJECTS = resourceplugin.lo \
-	plugin_resources.lo
+@CROSS_COMPILING_FALSE@libresourceplugin_la_DEPENDENCIES =  \
+@CROSS_COMPILING_FALSE@	$(am__DEPENDENCIES_2)
+am__libresourceplugin_la_SOURCES_DIST = resourceplugin.c \
+	plugin_resources.c
+@CROSS_COMPILING_FALSE@am_libresourceplugin_la_OBJECTS =  \
+@CROSS_COMPILING_FALSE@	resourceplugin.lo plugin_resources.lo
 libresourceplugin_la_OBJECTS = $(am_libresourceplugin_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -295,13 +314,15 @@ libresourceplugin_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(libresourceplugin_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
-@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am_libresourceplugin_la_rpath =
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am_libresourceplugin_la_rpath =
-@ENABLE_INSTALLED_TESTS_TRUE@am_libresourceplugin_la_rpath = -rpath \
-@ENABLE_INSTALLED_TESTS_TRUE@	$(installed_testdir)
+@CROSS_COMPILING_FALSE@@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am_libresourceplugin_la_rpath =
+@CROSS_COMPILING_FALSE@@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am_libresourceplugin_la_rpath =
+@CROSS_COMPILING_FALSE@@ENABLE_INSTALLED_TESTS_TRUE@am_libresourceplugin_la_rpath =  \
+@CROSS_COMPILING_FALSE@@ENABLE_INSTALLED_TESTS_TRUE@	-rpath \
+@CROSS_COMPILING_FALSE@@ENABLE_INSTALLED_TESTS_TRUE@	$(installed_testdir)
 am__EXEEXT_1 =
-@OS_UNIX_TRUE@am__EXEEXT_2 = contenttype$(EXEEXT) file$(EXEEXT) \
+@OS_UNIX_TRUE@am__EXEEXT_2 = file$(EXEEXT) \
 @OS_UNIX_TRUE@	gdbus-peer-object-manager$(EXEEXT) \
+@OS_UNIX_TRUE@	gdbus-unix-addresses$(EXEEXT) \
 @OS_UNIX_TRUE@	live-g-file$(EXEEXT) socket-address$(EXEEXT) \
 @OS_UNIX_TRUE@	stream-rw_all$(EXEEXT) unix-fd$(EXEEXT) \
 @OS_UNIX_TRUE@	unix-streams$(EXEEXT) $(am__EXEEXT_1) \
@@ -334,10 +355,11 @@ am__EXEEXT_1 =
 @OS_WIN32_TRUE@am__EXEEXT_4 = win32-streams$(EXEEXT)
 @HAVE_DBUS1_TRUE@am__EXEEXT_5 = gdbus-serialization$(EXEEXT)
 @HAVE_GCC_TRUE@am__EXEEXT_6 = autoptr$(EXEEXT) $(am__EXEEXT_1)
-am__EXEEXT_7 = appmonitor$(EXEEXT) async-close-output-stream$(EXEEXT) \
+@CROSS_COMPILING_FALSE@am__EXEEXT_7 = resources$(EXEEXT)
+am__EXEEXT_8 = appmonitor$(EXEEXT) async-close-output-stream$(EXEEXT) \
 	async-splice-output-stream$(EXEEXT) \
 	buffered-input-stream$(EXEEXT) buffered-output-stream$(EXEEXT) \
-	cancellable$(EXEEXT) contexts$(EXEEXT) \
+	cancellable$(EXEEXT) contexts$(EXEEXT) contenttype$(EXEEXT) \
 	converter-stream$(EXEEXT) credentials$(EXEEXT) \
 	data-input-stream$(EXEEXT) data-output-stream$(EXEEXT) \
 	defaultvalue$(EXEEXT) fileattributematcher$(EXEEXT) \
@@ -351,28 +373,30 @@ am__EXEEXT_7 = appmonitor$(EXEEXT) async-close-output-stream$(EXEEXT) \
 	permission$(EXEEXT) pollable$(EXEEXT) proxy-test$(EXEEXT) \
 	readwrite$(EXEEXT) simple-async-result$(EXEEXT) \
 	simple-proxy$(EXEEXT) sleepy-stream$(EXEEXT) socket$(EXEEXT) \
-	socket-listener$(EXEEXT) srvtarget$(EXEEXT) task$(EXEEXT) \
-	tls-interaction$(EXEEXT) vfs$(EXEEXT) volumemonitor$(EXEEXT) \
-	glistmodel$(EXEEXT) $(am__EXEEXT_1) \
+	socket-listener$(EXEEXT) socket-service$(EXEEXT) \
+	srvtarget$(EXEEXT) task$(EXEEXT) tls-interaction$(EXEEXT) \
+	vfs$(EXEEXT) volumemonitor$(EXEEXT) glistmodel$(EXEEXT) \
+	testfilemonitor$(EXEEXT) $(am__EXEEXT_1) \
 	thumbnail-verification$(EXEEXT) tls-certificate$(EXEEXT) \
 	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
-	$(am__EXEEXT_5) $(am__EXEEXT_6) resources$(EXEEXT)
-@OS_UNIX_TRUE@am__EXEEXT_8 = appinfo$(EXEEXT) \
+	$(am__EXEEXT_5) $(am__EXEEXT_6) $(am__EXEEXT_7)
+@OS_UNIX_TRUE@am__EXEEXT_9 = appinfo$(EXEEXT) \
 @OS_UNIX_TRUE@	desktop-app-info$(EXEEXT) $(am__EXEEXT_1) \
 @OS_UNIX_TRUE@	gsettings$(EXEEXT) gschema-compile$(EXEEXT)
-am__EXEEXT_9 = $(am__EXEEXT_1) $(am__EXEEXT_8)
-@OS_UNIX_TRUE@am__EXEEXT_10 = basic-application$(EXEEXT) \
-@OS_UNIX_TRUE@	$(am__EXEEXT_1) appinfo-test$(EXEEXT) \
-@OS_UNIX_TRUE@	apps$(EXEEXT) $(am__EXEEXT_1) \
-@OS_UNIX_TRUE@	gsubprocess-testprog$(EXEEXT) \
+am__EXEEXT_10 = $(am__EXEEXT_1) $(am__EXEEXT_9)
+@OS_UNIX_TRUE@am__EXEEXT_11 = basic-application$(EXEEXT) \
+@OS_UNIX_TRUE@	dbus-launch$(EXEEXT) $(am__EXEEXT_1) \
+@OS_UNIX_TRUE@	appinfo-test$(EXEEXT) apps$(EXEEXT) \
+@OS_UNIX_TRUE@	$(am__EXEEXT_1) gsubprocess-testprog$(EXEEXT) \
 @OS_UNIX_TRUE@	gdbus-overflow$(EXEEXT)
-am__EXEEXT_11 = gdbus-connection-flush-helper$(EXEEXT) \
-	gdbus-testserver$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_10)
-@OS_UNIX_TRUE@am__EXEEXT_12 = gdbus-example-unix-fd-client$(EXEEXT) \
+am__EXEEXT_12 = gdbus-connection-flush-helper$(EXEEXT) \
+	gdbus-testserver$(EXEEXT) $(am__EXEEXT_1) $(am__EXEEXT_11)
+@OS_UNIX_TRUE@am__EXEEXT_13 = gdbus-example-unix-fd-client$(EXEEXT) \
 @OS_UNIX_TRUE@	$(am__EXEEXT_1) \
 @OS_UNIX_TRUE@	gdbus-example-objectmanager-client$(EXEEXT) \
+@OS_UNIX_TRUE@	gdbus-example-objectmanager-server$(EXEEXT) \
 @OS_UNIX_TRUE@	gdbus-test-fixture$(EXEEXT)
-am__EXEEXT_13 = gio-du$(EXEEXT) echo-server$(EXEEXT) \
+am__EXEEXT_14 = gio-du$(EXEEXT) echo-server$(EXEEXT) \
 	filter-cat$(EXEEXT) gapplication-example-actions$(EXEEXT) \
 	gapplication-example-cmdline$(EXEEXT) \
 	gapplication-example-cmdline2$(EXEEXT) \
@@ -388,13 +412,13 @@ am__EXEEXT_13 = gio-du$(EXEEXT) echo-server$(EXEEXT) \
 	gsubprocess-testprog$(EXEEXT) httpd$(EXEEXT) proxy$(EXEEXT) \
 	resolver$(EXEEXT) send-data$(EXEEXT) socket-server$(EXEEXT) \
 	$(am__EXEEXT_1) socket-client$(EXEEXT) gdbus-daemon$(EXEEXT) \
-	$(am__EXEEXT_12)
-am__EXEEXT_14 = $(am__EXEEXT_7) $(am__EXEEXT_9) $(am__EXEEXT_11) \
 	$(am__EXEEXT_13)
-@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_15 = $(am__EXEEXT_14)
-@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_16 = $(am__EXEEXT_7) \
-@ENABLE_INSTALLED_TESTS_TRUE@	$(am__EXEEXT_11)
-@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_17 = $(am__EXEEXT_14)
+am__EXEEXT_15 = $(am__EXEEXT_8) $(am__EXEEXT_10) $(am__EXEEXT_12) \
+	$(am__EXEEXT_14)
+@ENABLE_ALWAYS_BUILD_TESTS_FALSE@am__EXEEXT_16 = $(am__EXEEXT_15)
+@ENABLE_INSTALLED_TESTS_TRUE@am__EXEEXT_17 = $(am__EXEEXT_8) \
+@ENABLE_INSTALLED_TESTS_TRUE@	$(am__EXEEXT_12)
+@ENABLE_ALWAYS_BUILD_TESTS_TRUE@am__EXEEXT_18 = $(am__EXEEXT_15)
 PROGRAMS = $(installed_test_PROGRAMS) $(noinst_PROGRAMS)
 am__actions_SOURCES_DIST = gdbus-sessionbus.c gdbus-sessionbus.h \
 	gdbus-tests.h gdbus-tests.c actions.c
@@ -542,6 +566,13 @@ am__dbus_appinfo_SOURCES_DIST = gdbus-sessionbus.c gdbus-sessionbus.h \
 dbus_appinfo_OBJECTS = $(am_dbus_appinfo_OBJECTS)
 dbus_appinfo_LDADD = $(LDADD)
 dbus_appinfo_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
+	$(top_builddir)/gobject/libgobject-2.0.la \
+	$(top_builddir)/gmodule/libgmodule-2.0.la \
+	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
+dbus_launch_SOURCES = dbus-launch.c
+dbus_launch_OBJECTS = dbus-launch.$(OBJEXT)
+dbus_launch_LDADD = $(LDADD)
+dbus_launch_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
@@ -820,6 +851,12 @@ gdbus_example_objectmanager_client_OBJECTS =  \
 	gdbus-example-objectmanager-client.$(OBJEXT)
 @OS_UNIX_TRUE@gdbus_example_objectmanager_client_DEPENDENCIES = gdbus-object-manager-example/libgdbus-example-objectmanager.la \
 @OS_UNIX_TRUE@	$(am__DEPENDENCIES_2)
+gdbus_example_objectmanager_server_SOURCES =  \
+	gdbus-example-objectmanager-server.c
+gdbus_example_objectmanager_server_OBJECTS =  \
+	gdbus-example-objectmanager-server.$(OBJEXT)
+@OS_UNIX_TRUE@gdbus_example_objectmanager_server_DEPENDENCIES = gdbus-object-manager-example/libgdbus-example-objectmanager.la \
+@OS_UNIX_TRUE@	$(am__DEPENDENCIES_2)
 gdbus_example_own_name_SOURCES = gdbus-example-own-name.c
 gdbus_example_own_name_OBJECTS = gdbus-example-own-name.$(OBJEXT)
 gdbus_example_own_name_LDADD = $(LDADD)
@@ -1079,6 +1116,13 @@ gdbus_threading_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
+gdbus_unix_addresses_SOURCES = gdbus-unix-addresses.c
+gdbus_unix_addresses_OBJECTS = gdbus-unix-addresses.$(OBJEXT)
+gdbus_unix_addresses_LDADD = $(LDADD)
+gdbus_unix_addresses_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
+	$(top_builddir)/gobject/libgobject-2.0.la \
+	$(top_builddir)/gmodule/libgmodule-2.0.la \
+	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
 gio_du_SOURCES = gio-du.c
 gio_du_OBJECTS = gio-du.$(OBJEXT)
 gio_du_LDADD = $(LDADD)
@@ -1263,9 +1307,11 @@ resolver_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
-am_resources_OBJECTS = resources.$(OBJEXT)
-nodist_resources_OBJECTS = test_resources.$(OBJEXT) \
-	test_resources2.$(OBJEXT)
+am__resources_SOURCES_DIST = resources.c
+@CROSS_COMPILING_FALSE@am_resources_OBJECTS = resources.$(OBJEXT)
+@CROSS_COMPILING_FALSE@nodist_resources_OBJECTS =  \
+@CROSS_COMPILING_FALSE@	test_resources.$(OBJEXT) \
+@CROSS_COMPILING_FALSE@	test_resources2.$(OBJEXT)
 resources_OBJECTS = $(am_resources_OBJECTS) \
 	$(nodist_resources_OBJECTS)
 resources_LDADD = $(LDADD)
@@ -1333,6 +1379,13 @@ socket_server_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
+socket_service_SOURCES = socket-service.c
+socket_service_OBJECTS = socket-service.$(OBJEXT)
+socket_service_LDADD = $(LDADD)
+socket_service_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
+	$(top_builddir)/gobject/libgobject-2.0.la \
+	$(top_builddir)/gmodule/libgmodule-2.0.la \
+	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
 srvtarget_SOURCES = srvtarget.c
 srvtarget_OBJECTS = srvtarget.$(OBJEXT)
 srvtarget_LDADD = $(LDADD)
@@ -1351,6 +1404,13 @@ task_SOURCES = task.c
 task_OBJECTS = task.$(OBJEXT)
 task_LDADD = $(LDADD)
 task_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
+	$(top_builddir)/gobject/libgobject-2.0.la \
+	$(top_builddir)/gmodule/libgmodule-2.0.la \
+	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
+testfilemonitor_SOURCES = testfilemonitor.c
+testfilemonitor_OBJECTS = testfilemonitor.$(OBJEXT)
+testfilemonitor_LDADD = $(LDADD)
+testfilemonitor_DEPENDENCIES = $(top_builddir)/gio/libgio-2.0.la \
 	$(top_builddir)/gobject/libgobject-2.0.la \
 	$(top_builddir)/gmodule/libgmodule-2.0.la \
 	$(top_builddir)/glib/libglib-2.0.la $(am__DEPENDENCIES_1)
@@ -1454,9 +1514,9 @@ SOURCES = $(libresourceplugin_la_SOURCES) $(actions_SOURCES) appinfo.c \
 	buffered-input-stream.c buffered-output-stream.c cancellable.c \
 	contenttype.c contexts.c converter-stream.c credentials.c \
 	data-input-stream.c data-output-stream.c \
-	$(dbus_appinfo_SOURCES) defaultvalue.c desktop-app-info.c \
-	echo-server.c file.c fileattributematcher.c filter-cat.c \
-	filter-streams.c g-file.c g-file-info.c g-icon.c \
+	$(dbus_appinfo_SOURCES) dbus-launch.c defaultvalue.c \
+	desktop-app-info.c echo-server.c file.c fileattributematcher.c \
+	filter-cat.c filter-streams.c g-file.c g-file-info.c g-icon.c \
 	$(gapplication_SOURCES) gapplication-example-actions.c \
 	gapplication-example-cmdline.c gapplication-example-cmdline2.c \
 	gapplication-example-cmdline3.c \
@@ -1469,42 +1529,45 @@ SOURCES = $(libresourceplugin_la_SOURCES) $(actions_SOURCES) appinfo.c \
 	$(gdbus_connection_slow_SOURCES) $(gdbus_daemon_SOURCES) \
 	$(nodist_gdbus_daemon_SOURCES) $(gdbus_error_SOURCES) \
 	gdbus-example-export.c gdbus-example-objectmanager-client.c \
-	gdbus-example-own-name.c gdbus-example-peer.c \
-	gdbus-example-proxy-subclass.c gdbus-example-server.c \
-	gdbus-example-subtree.c gdbus-example-unix-fd-client.c \
-	gdbus-example-watch-name.c gdbus-example-watch-proxy.c \
-	$(gdbus_exit_on_close_SOURCES) $(gdbus_export_SOURCES) \
-	$(gdbus_introspection_SOURCES) gdbus-message.c \
-	$(gdbus_names_SOURCES) $(gdbus_non_socket_SOURCES) \
-	gdbus-overflow.c gdbus-peer.c gdbus-peer-object-manager.c \
-	$(gdbus_proxy_SOURCES) $(gdbus_proxy_threads_SOURCES) \
+	gdbus-example-objectmanager-server.c gdbus-example-own-name.c \
+	gdbus-example-peer.c gdbus-example-proxy-subclass.c \
+	gdbus-example-server.c gdbus-example-subtree.c \
+	gdbus-example-unix-fd-client.c gdbus-example-watch-name.c \
+	gdbus-example-watch-proxy.c $(gdbus_exit_on_close_SOURCES) \
+	$(gdbus_export_SOURCES) $(gdbus_introspection_SOURCES) \
+	gdbus-message.c $(gdbus_names_SOURCES) \
+	$(gdbus_non_socket_SOURCES) gdbus-overflow.c gdbus-peer.c \
+	gdbus-peer-object-manager.c $(gdbus_proxy_SOURCES) \
+	$(gdbus_proxy_threads_SOURCES) \
 	$(gdbus_proxy_well_known_name_SOURCES) \
 	$(gdbus_serialization_SOURCES) $(gdbus_test_codegen_SOURCES) \
 	$(nodist_gdbus_test_codegen_SOURCES) \
 	$(gdbus_test_codegen_old_SOURCES) \
 	$(nodist_gdbus_test_codegen_old_SOURCES) gdbus-test-fixture.c \
-	gdbus-testserver.c $(gdbus_threading_SOURCES) gio-du.c \
-	giomodule.c glistmodel.c $(gmenumodel_SOURCES) \
-	$(gnotification_SOURCES) gschema-compile.c gsettings.c \
-	gsubprocess.c gsubprocess-testprog.c httpd.c inet-address.c \
-	io-stream.c live-g-file.c memory-input-stream.c \
-	memory-output-stream.c mimeapps.c monitor.c network-address.c \
-	network-monitor.c permission.c pollable.c proxy.c proxy-test.c \
-	readwrite.c resolver.c $(resources_SOURCES) \
-	$(nodist_resources_SOURCES) send-data.c simple-async-result.c \
-	simple-proxy.c sleepy-stream.c socket.c socket-address.c \
+	gdbus-testserver.c $(gdbus_threading_SOURCES) \
+	gdbus-unix-addresses.c gio-du.c giomodule.c glistmodel.c \
+	$(gmenumodel_SOURCES) $(gnotification_SOURCES) \
+	gschema-compile.c gsettings.c gsubprocess.c \
+	gsubprocess-testprog.c httpd.c inet-address.c io-stream.c \
+	live-g-file.c memory-input-stream.c memory-output-stream.c \
+	mimeapps.c monitor.c network-address.c network-monitor.c \
+	permission.c pollable.c proxy.c proxy-test.c readwrite.c \
+	resolver.c $(resources_SOURCES) $(nodist_resources_SOURCES) \
+	send-data.c simple-async-result.c simple-proxy.c \
+	sleepy-stream.c socket.c socket-address.c \
 	$(socket_client_SOURCES) socket-listener.c socket-server.c \
-	srvtarget.c stream-rw_all.c task.c thumbnail-verification.c \
+	socket-service.c srvtarget.c stream-rw_all.c task.c \
+	testfilemonitor.c thumbnail-verification.c \
 	$(tls_certificate_SOURCES) $(tls_interaction_SOURCES) \
 	unix-fd.c unix-streams.c vfs.c volumemonitor.c win32-streams.c
-DIST_SOURCES = $(libresourceplugin_la_SOURCES) \
+DIST_SOURCES = $(am__libresourceplugin_la_SOURCES_DIST) \
 	$(am__actions_SOURCES_DIST) appinfo.c appinfo-test.c \
 	appmonitor.c apps.c async-close-output-stream.c \
 	async-splice-output-stream.c autoptr.c basic-application.c \
 	buffered-input-stream.c buffered-output-stream.c cancellable.c \
 	contenttype.c contexts.c converter-stream.c credentials.c \
 	data-input-stream.c data-output-stream.c \
-	$(am__dbus_appinfo_SOURCES_DIST) defaultvalue.c \
+	$(am__dbus_appinfo_SOURCES_DIST) dbus-launch.c defaultvalue.c \
 	desktop-app-info.c echo-server.c file.c fileattributematcher.c \
 	filter-cat.c filter-streams.c g-file.c g-file-info.c g-icon.c \
 	$(am__gapplication_SOURCES_DIST) \
@@ -1522,10 +1585,11 @@ DIST_SOURCES = $(libresourceplugin_la_SOURCES) \
 	$(am__gdbus_connection_slow_SOURCES_DIST) \
 	$(gdbus_daemon_SOURCES) $(am__gdbus_error_SOURCES_DIST) \
 	gdbus-example-export.c gdbus-example-objectmanager-client.c \
-	gdbus-example-own-name.c gdbus-example-peer.c \
-	gdbus-example-proxy-subclass.c gdbus-example-server.c \
-	gdbus-example-subtree.c gdbus-example-unix-fd-client.c \
-	gdbus-example-watch-name.c gdbus-example-watch-proxy.c \
+	gdbus-example-objectmanager-server.c gdbus-example-own-name.c \
+	gdbus-example-peer.c gdbus-example-proxy-subclass.c \
+	gdbus-example-server.c gdbus-example-subtree.c \
+	gdbus-example-unix-fd-client.c gdbus-example-watch-name.c \
+	gdbus-example-watch-proxy.c \
 	$(am__gdbus_exit_on_close_SOURCES_DIST) \
 	$(am__gdbus_export_SOURCES_DIST) \
 	$(am__gdbus_introspection_SOURCES_DIST) gdbus-message.c \
@@ -1539,20 +1603,22 @@ DIST_SOURCES = $(libresourceplugin_la_SOURCES) \
 	$(am__gdbus_test_codegen_SOURCES_DIST) \
 	$(am__gdbus_test_codegen_old_SOURCES_DIST) \
 	gdbus-test-fixture.c gdbus-testserver.c \
-	$(am__gdbus_threading_SOURCES_DIST) gio-du.c giomodule.c \
-	glistmodel.c $(am__gmenumodel_SOURCES_DIST) \
+	$(am__gdbus_threading_SOURCES_DIST) gdbus-unix-addresses.c \
+	gio-du.c giomodule.c glistmodel.c \
+	$(am__gmenumodel_SOURCES_DIST) \
 	$(am__gnotification_SOURCES_DIST) gschema-compile.c \
 	gsettings.c gsubprocess.c gsubprocess-testprog.c httpd.c \
 	inet-address.c io-stream.c live-g-file.c memory-input-stream.c \
 	memory-output-stream.c mimeapps.c monitor.c network-address.c \
 	network-monitor.c permission.c pollable.c proxy.c proxy-test.c \
-	readwrite.c resolver.c $(resources_SOURCES) send-data.c \
-	simple-async-result.c simple-proxy.c sleepy-stream.c socket.c \
-	socket-address.c $(socket_client_SOURCES) socket-listener.c \
-	socket-server.c srvtarget.c stream-rw_all.c task.c \
-	thumbnail-verification.c $(tls_certificate_SOURCES) \
-	$(tls_interaction_SOURCES) unix-fd.c unix-streams.c vfs.c \
-	volumemonitor.c win32-streams.c
+	readwrite.c resolver.c $(am__resources_SOURCES_DIST) \
+	send-data.c simple-async-result.c simple-proxy.c \
+	sleepy-stream.c socket.c socket-address.c \
+	$(socket_client_SOURCES) socket-listener.c socket-server.c \
+	socket-service.c srvtarget.c stream-rw_all.c task.c \
+	testfilemonitor.c thumbnail-verification.c \
+	$(tls_certificate_SOURCES) $(tls_interaction_SOURCES) \
+	unix-fd.c unix-streams.c vfs.c volumemonitor.c win32-streams.c
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
 	install-data-recursive install-dvi-recursive \
@@ -1799,7 +1865,6 @@ am__relativize = \
     dir1=`echo "$$dir1" | sed -e "$$sed_rest"`; \
   done; \
   reldir="$$dir2"
-ABS_GLIB_RUNTIME_LIBDIR = @ABS_GLIB_RUNTIME_LIBDIR@
 ABS_TAPSET_DIR = @ABS_TAPSET_DIR@
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
@@ -1848,11 +1913,8 @@ GIO = @GIO@
 GIO_MODULE_DIR = @GIO_MODULE_DIR@
 GLIBC21 = @GLIBC21@
 GLIB_BINARY_AGE = @GLIB_BINARY_AGE@
-GLIB_COMPILE_RESOURCES = @GLIB_COMPILE_RESOURCES@
-GLIB_COMPILE_SCHEMAS = @GLIB_COMPILE_SCHEMAS@
 GLIB_DEBUG_FLAGS = @GLIB_DEBUG_FLAGS@
 GLIB_EXTRA_CFLAGS = @GLIB_EXTRA_CFLAGS@
-GLIB_GENMARSHAL = @GLIB_GENMARSHAL@
 GLIB_HIDDEN_VISIBILITY_CFLAGS = @GLIB_HIDDEN_VISIBILITY_CFLAGS@
 GLIB_INTERFACE_AGE = @GLIB_INTERFACE_AGE@
 GLIB_LINK_FLAGS = @GLIB_LINK_FLAGS@
@@ -1865,7 +1927,6 @@ GLIB_WARN_CFLAGS = @GLIB_WARN_CFLAGS@
 GLIB_WIN32_STATIC_COMPILATION_DEFINE = @GLIB_WIN32_STATIC_COMPILATION_DEFINE@
 GMOFILES = @GMOFILES@
 GMSGFMT = @GMSGFMT@
-GOBJECT_LINK_FLAGS = @GOBJECT_LINK_FLAGS@
 GREP = @GREP@
 GSPAWN = @GSPAWN@
 GTHREAD_COMPILE_IMPL_DEFINES = @GTHREAD_COMPILE_IMPL_DEFINES@
@@ -1905,6 +1966,8 @@ LIBELF_CFLAGS = @LIBELF_CFLAGS@
 LIBELF_LIBS = @LIBELF_LIBS@
 LIBFFI_CFLAGS = @LIBFFI_CFLAGS@
 LIBFFI_LIBS = @LIBFFI_LIBS@
+LIBMOUNT_CFLAGS = @LIBMOUNT_CFLAGS@
+LIBMOUNT_LIBS = @LIBMOUNT_LIBS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
@@ -1919,6 +1982,7 @@ LT_CURRENT = @LT_CURRENT@
 LT_CURRENT_MINUS_AGE = @LT_CURRENT_MINUS_AGE@
 LT_RELEASE = @LT_RELEASE@
 LT_REVISION = @LT_REVISION@
+LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
@@ -2060,15 +2124,13 @@ NULL =
 BUILT_SOURCES = $(am__append_23) giotypefuncs.c
 BUILT_EXTRA_DIST = 
 CLEANFILES = *.log *.trs $(am__append_13) $(am__append_19) \
-	$(am__append_25) test_resources.c test_resources2.[ch] \
-	plugin_resources.c test.gresource xgen-giosrc.c xgen-gio \
+	$(am__append_25) $(am__append_34) xgen-giosrc.c xgen-gio \
 	giotypefuncs.c
 DISTCLEANFILES = 
 MAINTAINERCLEANFILES = 
 EXTRA_DIST = $(all_dist_test_scripts) $(all_dist_test_data) \
 	socket-common.c $(am__append_20) $(am__append_24) \
-	test.gresource.xml test1.txt test2.gresource.xml test2.txt \
-	test3.gresource.xml test3.txt test4.gresource.xml
+	$(am__append_33)
 installed_test_LTLIBRARIES = $(am__append_12)
 installed_test_SCRIPTS = $(am__append_10)
 nobase_installed_test_DATA = $(am__append_11)
@@ -2104,7 +2166,7 @@ all_test_ltlibs = $(test_ltlibraries) $(uninstalled_test_ltlibraries) $(installe
 @ENABLE_INSTALLED_TESTS_TRUE@installed_test_meta_DATA = $(installed_testcases:=.test)
 dist_uninstalled_test_data = $(addprefix \
 	schema-tests/,$(schema_tests)) $(am__append_21)
-test_ltlibraries = libresourceplugin.la
+test_ltlibraries = $(am__append_30)
 SUBDIRS = gdbus-object-manager-example services modules
 LDADD = \
 	$(top_builddir)/gio/libgio-2.0.la		\
@@ -2118,30 +2180,25 @@ AM_CFLAGS = $(GLIB_WARN_CFLAGS)
 
 # -----------------------------------------------------------------------------
 #  Test programs buildable on all platforms
-
-# -----------------------------------------------------------------------------
-#  The resources test is a bit more complicated...
 test_programs = appmonitor async-close-output-stream \
 	async-splice-output-stream buffered-input-stream \
-	buffered-output-stream cancellable contexts converter-stream \
-	credentials data-input-stream data-output-stream defaultvalue \
-	fileattributematcher filter-streams giomodule gsubprocess \
-	g-file g-file-info g-icon gdbus-addresses gdbus-message \
-	inet-address io-stream memory-input-stream \
-	memory-output-stream monitor network-address network-monitor \
-	permission pollable proxy-test readwrite simple-async-result \
-	simple-proxy sleepy-stream socket socket-listener srvtarget \
-	task tls-interaction vfs volumemonitor glistmodel $(NULL) \
-	thumbnail-verification tls-certificate $(am__append_14) \
-	$(am__append_22) $(am__append_26) $(am__append_27) \
-	$(am__append_28) resources
+	buffered-output-stream cancellable contexts contenttype \
+	converter-stream credentials data-input-stream \
+	data-output-stream defaultvalue fileattributematcher \
+	filter-streams giomodule gsubprocess g-file g-file-info g-icon \
+	gdbus-addresses gdbus-message inet-address io-stream \
+	memory-input-stream memory-output-stream monitor \
+	network-address network-monitor permission pollable proxy-test \
+	readwrite simple-async-result simple-proxy sleepy-stream \
+	socket socket-listener socket-service srvtarget task \
+	tls-interaction vfs volumemonitor glistmodel testfilemonitor \
+	$(NULL) thumbnail-verification tls-certificate \
+	$(am__append_14) $(am__append_22) $(am__append_26) \
+	$(am__append_27) $(am__append_28) $(am__append_29)
 uninstalled_test_programs = $(NULL) $(am__append_16)
 dist_test_data = contexts.c g-icon.c $(NULL) $(thumbnail_data_files) \
 	$(cert_data_files) $(am__append_17)
-test_data = \
-	test.gresource				\
-	$(NULL)
-
+test_data = $(NULL) $(am__append_31)
 uninstalled_test_extra_programs = gio-du echo-server filter-cat \
 	gapplication-example-actions gapplication-example-cmdline \
 	gapplication-example-cmdline2 gapplication-example-cmdline3 \
@@ -2329,6 +2386,7 @@ gdbus_daemon_SOURCES = \
 @OS_UNIX_TRUE@	test-pipe-unix.h
 
 @OS_UNIX_TRUE@gdbus_example_objectmanager_client_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
+@OS_UNIX_TRUE@gdbus_example_objectmanager_server_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 @OS_UNIX_TRUE@gdbus_test_fixture_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 @OS_UNIX_TRUE@gdbus_peer_LDADD = gdbus-object-manager-example/libgdbus-example-objectmanager.la $(LDADD)
 
@@ -2370,15 +2428,15 @@ tls_interaction_SOURCES = tls-interaction.c gtesttlsbackend.c gtesttlsbackend.h
 @HAVE_DBUS1_TRUE@	gdbus-tests.h				\
 @HAVE_DBUS1_TRUE@	gdbus-tests.c
 
-resources_SOURCES = resources.c
-nodist_resources_SOURCES = test_resources.c test_resources2.c test_resources2.h
-resources_DEPENDENCIES = test.gresource
-libresourceplugin_la_SOURCES = resourceplugin.c plugin_resources.c
-libresourceplugin_la_LDFLAGS = -avoid-version -module -export-dynamic \
-	$(no_undefined) $(am__append_29)
-libresourceplugin_la_LIBADD = $(LDADD)
+@CROSS_COMPILING_FALSE@resources_SOURCES = resources.c
+@CROSS_COMPILING_FALSE@nodist_resources_SOURCES = test_resources.c test_resources2.c test_resources2.h
+@CROSS_COMPILING_FALSE@resources_DEPENDENCIES = test.gresource
+@CROSS_COMPILING_FALSE@libresourceplugin_la_SOURCES = resourceplugin.c plugin_resources.c
+@CROSS_COMPILING_FALSE@libresourceplugin_la_LDFLAGS = -avoid-version \
+@CROSS_COMPILING_FALSE@	-module -export-dynamic $(no_undefined) \
+@CROSS_COMPILING_FALSE@	$(am__append_32)
+@CROSS_COMPILING_FALSE@libresourceplugin_la_LIBADD = $(LDADD)
 @CROSS_COMPILING_FALSE@glib_compile_resources = $(top_builddir)/gio/glib-compile-resources
-@CROSS_COMPILING_TRUE@glib_compile_resources = $(GLIB_COMPILE_RESOURCES)
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -2618,6 +2676,10 @@ dbus-appinfo$(EXEEXT): $(dbus_appinfo_OBJECTS) $(dbus_appinfo_DEPENDENCIES) $(EX
 	@rm -f dbus-appinfo$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(dbus_appinfo_OBJECTS) $(dbus_appinfo_LDADD) $(LIBS)
 
+dbus-launch$(EXEEXT): $(dbus_launch_OBJECTS) $(dbus_launch_DEPENDENCIES) $(EXTRA_dbus_launch_DEPENDENCIES) 
+	@rm -f dbus-launch$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(dbus_launch_OBJECTS) $(dbus_launch_LDADD) $(LIBS)
+
 defaultvalue$(EXEEXT): $(defaultvalue_OBJECTS) $(defaultvalue_DEPENDENCIES) $(EXTRA_defaultvalue_DEPENDENCIES) 
 	@rm -f defaultvalue$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(defaultvalue_OBJECTS) $(defaultvalue_LDADD) $(LIBS)
@@ -2738,6 +2800,10 @@ gdbus-example-objectmanager-client$(EXEEXT): $(gdbus_example_objectmanager_clien
 	@rm -f gdbus-example-objectmanager-client$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gdbus_example_objectmanager_client_OBJECTS) $(gdbus_example_objectmanager_client_LDADD) $(LIBS)
 
+gdbus-example-objectmanager-server$(EXEEXT): $(gdbus_example_objectmanager_server_OBJECTS) $(gdbus_example_objectmanager_server_DEPENDENCIES) $(EXTRA_gdbus_example_objectmanager_server_DEPENDENCIES) 
+	@rm -f gdbus-example-objectmanager-server$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gdbus_example_objectmanager_server_OBJECTS) $(gdbus_example_objectmanager_server_LDADD) $(LIBS)
+
 gdbus-example-own-name$(EXEEXT): $(gdbus_example_own_name_OBJECTS) $(gdbus_example_own_name_DEPENDENCIES) $(EXTRA_gdbus_example_own_name_DEPENDENCIES) 
 	@rm -f gdbus-example-own-name$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gdbus_example_own_name_OBJECTS) $(gdbus_example_own_name_LDADD) $(LIBS)
@@ -2841,6 +2907,10 @@ gdbus-testserver$(EXEEXT): $(gdbus_testserver_OBJECTS) $(gdbus_testserver_DEPEND
 gdbus-threading$(EXEEXT): $(gdbus_threading_OBJECTS) $(gdbus_threading_DEPENDENCIES) $(EXTRA_gdbus_threading_DEPENDENCIES) 
 	@rm -f gdbus-threading$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gdbus_threading_OBJECTS) $(gdbus_threading_LDADD) $(LIBS)
+
+gdbus-unix-addresses$(EXEEXT): $(gdbus_unix_addresses_OBJECTS) $(gdbus_unix_addresses_DEPENDENCIES) $(EXTRA_gdbus_unix_addresses_DEPENDENCIES) 
+	@rm -f gdbus-unix-addresses$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(gdbus_unix_addresses_OBJECTS) $(gdbus_unix_addresses_LDADD) $(LIBS)
 
 gio-du$(EXEEXT): $(gio_du_OBJECTS) $(gio_du_DEPENDENCIES) $(EXTRA_gio_du_DEPENDENCIES) 
 	@rm -f gio-du$(EXEEXT)
@@ -2982,6 +3052,10 @@ socket-server$(EXEEXT): $(socket_server_OBJECTS) $(socket_server_DEPENDENCIES) $
 	@rm -f socket-server$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(socket_server_OBJECTS) $(socket_server_LDADD) $(LIBS)
 
+socket-service$(EXEEXT): $(socket_service_OBJECTS) $(socket_service_DEPENDENCIES) $(EXTRA_socket_service_DEPENDENCIES) 
+	@rm -f socket-service$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(socket_service_OBJECTS) $(socket_service_LDADD) $(LIBS)
+
 srvtarget$(EXEEXT): $(srvtarget_OBJECTS) $(srvtarget_DEPENDENCIES) $(EXTRA_srvtarget_DEPENDENCIES) 
 	@rm -f srvtarget$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(srvtarget_OBJECTS) $(srvtarget_LDADD) $(LIBS)
@@ -2993,6 +3067,10 @@ stream-rw_all$(EXEEXT): $(stream_rw_all_OBJECTS) $(stream_rw_all_DEPENDENCIES) $
 task$(EXEEXT): $(task_OBJECTS) $(task_DEPENDENCIES) $(EXTRA_task_DEPENDENCIES) 
 	@rm -f task$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(task_OBJECTS) $(task_LDADD) $(LIBS)
+
+testfilemonitor$(EXEEXT): $(testfilemonitor_OBJECTS) $(testfilemonitor_DEPENDENCIES) $(EXTRA_testfilemonitor_DEPENDENCIES) 
+	@rm -f testfilemonitor$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(testfilemonitor_OBJECTS) $(testfilemonitor_LDADD) $(LIBS)
 
 thumbnail-verification$(EXEEXT): $(thumbnail_verification_OBJECTS) $(thumbnail_verification_DEPENDENCIES) $(EXTRA_thumbnail_verification_DEPENDENCIES) 
 	@rm -f thumbnail-verification$(EXEEXT)
@@ -3086,6 +3164,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data-input-stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/data-output-stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbus-appinfo.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbus-launch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/defaultvalue.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/desktop-app-info.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/echo-server.Po@am__quote@
@@ -3117,6 +3196,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-export.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-objectmanager-client.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-objectmanager-server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-own-name.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-peer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-example-proxy-subclass.Po@am__quote@
@@ -3143,6 +3223,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-testserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-threading.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus-unix-addresses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus_proxy_threads-gdbus-proxy-threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus_proxy_threads-gdbus-sessionbus.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gdbus_proxy_threads-gdbus-tests.Po@am__quote@
@@ -3192,6 +3273,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket-client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket-listener.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket-server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket-service.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/socket.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/srvtarget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stream-rw_all.Po@am__quote@
@@ -3200,6 +3282,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test-pipe-unix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_resources.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_resources2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testfilemonitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/thumbnail-verification.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls-certificate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls-interaction.Po@am__quote@
@@ -3738,6 +3821,13 @@ contexts.log: contexts$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+contenttype.log: contenttype$(EXEEXT)
+	@p='contenttype$(EXEEXT)'; \
+	b='contenttype'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 converter-stream.log: converter-stream$(EXEEXT)
 	@p='converter-stream$(EXEEXT)'; \
 	b='converter-stream'; \
@@ -3948,6 +4038,13 @@ socket-listener.log: socket-listener$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+socket-service.log: socket-service$(EXEEXT)
+	@p='socket-service$(EXEEXT)'; \
+	b='socket-service'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 srvtarget.log: srvtarget$(EXEEXT)
 	@p='srvtarget$(EXEEXT)'; \
 	b='srvtarget'; \
@@ -3990,6 +4087,13 @@ glistmodel.log: glistmodel$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+testfilemonitor.log: testfilemonitor$(EXEEXT)
+	@p='testfilemonitor$(EXEEXT)'; \
+	b='testfilemonitor'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 thumbnail-verification.log: thumbnail-verification$(EXEEXT)
 	@p='thumbnail-verification$(EXEEXT)'; \
 	b='thumbnail-verification'; \
@@ -4004,13 +4108,6 @@ tls-certificate.log: tls-certificate$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-contenttype.log: contenttype$(EXEEXT)
-	@p='contenttype$(EXEEXT)'; \
-	b='contenttype'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 file.log: file$(EXEEXT)
 	@p='file$(EXEEXT)'; \
 	b='file'; \
@@ -4021,6 +4118,13 @@ file.log: file$(EXEEXT)
 gdbus-peer-object-manager.log: gdbus-peer-object-manager$(EXEEXT)
 	@p='gdbus-peer-object-manager$(EXEEXT)'; \
 	b='gdbus-peer-object-manager'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+gdbus-unix-addresses.log: gdbus-unix-addresses$(EXEEXT)
+	@p='gdbus-unix-addresses$(EXEEXT)'; \
+	b='gdbus-unix-addresses'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
@@ -4570,18 +4674,22 @@ uninstall-am: uninstall-installed_testLTLIBRARIES \
 @HAVE_DBUS_DAEMON_TRUE@@OS_UNIX_TRUE@gdbus-test-codegen-generated.c: gdbus-test-codegen-generated.h
 @HAVE_DBUS_DAEMON_TRUE@@OS_UNIX_TRUE@	@: # Generated as side-effect of .h
 
-resources.o: test_resources2.h
-test_resources.c: test2.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test2.gresource.xml)
-	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate-source --c-name _g_test1 $<
+@CROSS_COMPILING_FALSE@test-generated.txt: test1.txt
+@CROSS_COMPILING_FALSE@	$(AM_V_GEN) echo "Generated" > $@ && \
+@CROSS_COMPILING_FALSE@	  cat $< >> $@
 
-test_resources2.h test_resources2.c: test3.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test3.gresource.xml)
-	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate --c-name _g_test2 --manual-register $<
+@CROSS_COMPILING_FALSE@resources.o: test_resources2.h
+@CROSS_COMPILING_FALSE@test_resources.c: test2.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test2.gresource.xml)
+@CROSS_COMPILING_FALSE@	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate-source --c-name _g_test1 $<
 
-plugin_resources.c: test4.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test4.gresource.xml)
-	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate-source --c-name _g_plugin $<
+@CROSS_COMPILING_FALSE@test_resources2.h test_resources2.c: test3.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test3.gresource.xml)
+@CROSS_COMPILING_FALSE@	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate --c-name _g_test2 --manual-register $<
 
-test.gresource: test.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test.gresource.xml)
-	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) $<
+@CROSS_COMPILING_FALSE@plugin_resources.c: test4.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test4.gresource.xml)
+@CROSS_COMPILING_FALSE@	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=$(srcdir) --generate-source --c-name _g_plugin $<
+
+@CROSS_COMPILING_FALSE@test.gresource: test.gresource.xml Makefile $(shell $(glib_compile_resources) --sourcedir=. --sourcedir=$(srcdir) --generate-dependencies $(srcdir)/test.gresource.xml)
+@CROSS_COMPILING_FALSE@	$(AM_V_GEN) $(glib_compile_resources) --target=$@ --sourcedir=. --sourcedir=$(srcdir) $<
 
 giotypefuncs.c: Makefile
 	$(AM_V_GEN) echo '#include <gio/gio.h>' > xgen-giosrc.c && \
@@ -4589,7 +4697,7 @@ giotypefuncs.c: Makefile
 	  ${CPP} $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) xgen-giosrc.c | \
 	  $(GREP) -o '\bg_[A-Za-z0-9_]*_get_type\b' | \
 	  $(GREP) -v 'g_io_extension_get_type\|g_variant_get_type' | \
-	  sort | uniq | \
+	  LC_ALL=C sort | uniq | \
 	  $(SED) -e 's/^/*tp++ = /' -e 's/$$/ ();/' >> xgen-gio && \
 	  cp xgen-gio $@ # && rm -f xgen-gio xgen-giosrc.c
 

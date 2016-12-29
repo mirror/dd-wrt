@@ -27,7 +27,8 @@
  */
 
 #include "config.h"
-#include "glibconfig.h"
+
+#include "gutils.h"
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -49,12 +50,6 @@
 #ifdef HAVE_CRT_EXTERNS_H 
 #include <crt_externs.h> /* for _NSGetEnviron */
 #endif
-
-/* implement gutils's inline functions
- */
-#define	G_IMPLEMENT_INLINES 1
-#define	__G_UTILS_C__
-#include "gutils.h"
 
 #include "glib-init.h"
 #include "glib-private.h"
@@ -303,7 +298,7 @@ g_find_program_in_path (const gchar *program)
 
 /**
  * g_find_program_in_path:
- * @program: a program name in the GLib file name encoding
+ * @program: (type filename): a program name in the GLib file name encoding
  * 
  * Locates the first executable named @program in the user's path, in the
  * same way that execvp() would locate it. Returns an allocated string
@@ -323,7 +318,8 @@ g_find_program_in_path (const gchar *program)
  * the program is found, the return value contains the full name
  * including the type suffix.
  *
- * Returns: a newly-allocated string with the absolute path, or %NULL
+ * Returns: (type filename): a newly-allocated string with the absolute path,
+ *     or %NULL
  **/
 #ifdef G_OS_WIN32
 static gchar *
@@ -483,6 +479,10 @@ g_find_program_in_path (const gchar *program)
   return NULL;
 }
 
+/* The functions below are defined this way for compatibility reasons.
+ * See the note in gutils.h.
+ */
+
 /**
  * g_bit_nth_lsf:
  * @mask: a #gulong containing flags
@@ -493,8 +493,15 @@ g_find_program_in_path (const gchar *program)
  * from 0 (least significant) to sizeof(#gulong) * 8 - 1 (31 or 63,
  * usually). To start searching from the 0th bit, set @nth_bit to -1.
  *
- * Returns: the index of the first bit set which is higher than @nth_bit
+ * Returns: the index of the first bit set which is higher than @nth_bit, or -1
+ *    if no higher bits are set
  */
+gint
+(g_bit_nth_lsf) (gulong mask,
+                 gint   nth_bit)
+{
+  return g_bit_nth_lsf_impl (mask, nth_bit);
+}
 
 /**
  * g_bit_nth_msf:
@@ -507,8 +514,16 @@ g_find_program_in_path (const gchar *program)
  * usually). To start searching from the last bit, set @nth_bit to
  * -1 or GLIB_SIZEOF_LONG * 8.
  *
- * Returns: the index of the first bit set which is lower than @nth_bit
+ * Returns: the index of the first bit set which is lower than @nth_bit, or -1
+ *    if no lower bits are set
  */
+gint
+(g_bit_nth_msf) (gulong mask,
+                 gint   nth_bit)
+{
+  return g_bit_nth_msf_impl (mask, nth_bit);
+}
+
 
 /**
  * g_bit_storage:
@@ -519,6 +534,11 @@ g_find_program_in_path (const gchar *program)
  *
  * Returns: the number of bits used to hold @number
  */
+guint
+(g_bit_storage) (gulong number)
+{
+  return g_bit_storage_impl (number);
+}
 
 G_LOCK_DEFINE_STATIC (g_utils_global);
 
@@ -607,7 +627,7 @@ g_get_user_database_entry (void)
         gint error;
         gchar *logname;
 
-#  if defined (HAVE_POSIX_GETPWUID_R) || defined (HAVE_NONPOSIX_GETPWUID_R)
+#  if defined (HAVE_GETPWUID_R)
         struct passwd pwd;
 #    ifdef _SC_GETPW_R_SIZE_MAX
         /* This reurns the maximum length */
@@ -630,7 +650,6 @@ g_get_user_database_entry (void)
             buffer = g_malloc (bufsize + 6);
             errno = 0;
 
-#    ifdef HAVE_POSIX_GETPWUID_R
             if (logname) {
               error = getpwnam_r (logname, &pwd, buffer, bufsize, &pw);
               if (!pw || (pw->pw_uid != getuid ())) {
@@ -641,23 +660,6 @@ g_get_user_database_entry (void)
               error = getpwuid_r (getuid (), &pwd, buffer, bufsize, &pw);
             }
             error = error < 0 ? errno : error;
-#    else /* HAVE_NONPOSIX_GETPWUID_R */
-#      if defined(_AIX)
-            error = getpwuid_r (getuid (), &pwd, buffer, bufsize);
-            pw = error == 0 ? &pwd : NULL;
-#      else /* !_AIX */
-            if (logname) {
-              pw = getpwnam_r (logname, &pwd, buffer, bufsize);
-              if (!pw || (pw->pw_uid != getuid ())) {
-                /* LOGNAME is lying, fall back to looking up the uid */
-                pw = getpwuid_r (getuid (), &pwd, buffer, bufsize);
-              }
-            } else {
-              pw = getpwuid_r (getuid (), &pwd, buffer, bufsize);
-            }
-            error = pw ? 0 : errno;
-#      endif /* !_AIX */
-#    endif /* HAVE_NONPOSIX_GETPWUID_R */
 
             if (!pw)
               {
@@ -683,7 +685,7 @@ g_get_user_database_entry (void)
               }
           }
         while (!pw);
-#  endif /* HAVE_POSIX_GETPWUID_R || HAVE_NONPOSIX_GETPWUID_R */
+#  endif /* HAVE_GETPWUID_R */
 
         if (!pw)
           {
@@ -749,7 +751,7 @@ g_get_user_database_entry (void)
  * encoding, or something else, and there is no guarantee that it is even
  * consistent on a machine. On Windows, it is always UTF-8.
  *
- * Returns: the user name of the current user.
+ * Returns: (type filename): the user name of the current user.
  */
 const gchar *
 g_get_user_name (void)
@@ -770,7 +772,7 @@ g_get_user_name (void)
  * real user name cannot be determined, the string "Unknown" is 
  * returned.
  *
- * Returns: the user's real name.
+ * Returns: (type filename): the user's real name.
  */
 const gchar *
 g_get_real_name (void)
@@ -806,7 +808,7 @@ g_get_real_name (void)
  * should either directly check the `HOME` environment variable yourself
  * or unset it before calling any functions in GLib.
  *
- * Returns: the current user's home directory
+ * Returns: (type filename): the current user's home directory
  */
 const gchar *
 g_get_home_dir (void)
@@ -902,7 +904,7 @@ g_get_home_dir (void)
  * it is always UTF-8. The return value is never %NULL or the empty
  * string.
  *
- * Returns: the directory to use for temporary files.
+ * Returns: (type filename): the directory to use for temporary files.
  */
 const gchar *
 g_get_tmp_dir (void)
@@ -1144,7 +1146,7 @@ g_set_application_name (const gchar *application_name)
  * CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
  * what g_get_user_config_dir() returns.
  *
- * Returns: a string owned by GLib that must not be modified 
+ * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
  * Since: 2.6
  **/
@@ -1230,7 +1232,7 @@ g_init_user_config_dir (void)
  * CSIDL_LOCAL_APPDATA. Note that on Windows it thus is the same as
  * what g_get_user_data_dir() returns.
  *
- * Returns: a string owned by GLib that must not be modified 
+ * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
  * Since: 2.6
  **/
@@ -1262,7 +1264,7 @@ g_get_user_config_dir (void)
  * C:\Documents and Settings\username\Local Settings\Temporary Internet Files.
  * See documentation for CSIDL_INTERNET_CACHE.
  *
- * Returns: a string owned by GLib that must not be modified 
+ * Returns: (type filename): a string owned by GLib that must not be modified
  *               or freed.
  * Since: 2.6
  **/
@@ -1313,15 +1315,16 @@ g_get_user_cache_dir (void)
  * [XDG Base Directory Specification](http://www.freedesktop.org/Standards/basedir-spec).
  * This is the directory
  * specified in the `XDG_RUNTIME_DIR` environment variable.
- * In the case that this variable is not set, GLib will issue a warning
- * message to stderr and return the value of g_get_user_cache_dir().
+ * In the case that this variable is not set, we return the value of
+ * g_get_user_cache_dir(), after verifying that it exists.
  *
  * On Windows this is the folder to use for local (as opposed to
  * roaming) application data. See documentation for
  * CSIDL_LOCAL_APPDATA.  Note that on Windows it thus is the same as
  * what g_get_user_config_dir() returns.
  *
- * Returns: a string owned by GLib that must not be modified or freed.
+ * Returns: (type filename): a string owned by GLib that must not be
+ *     modified or freed.
  *
  * Since: 2.28
  **/
@@ -1330,24 +1333,40 @@ g_get_user_runtime_dir (void)
 {
 #ifndef G_OS_WIN32
   static const gchar *runtime_dir;
-  static gsize initialised;
 
-  if (g_once_init_enter (&initialised))
+  if (g_once_init_enter (&runtime_dir))
     {
-      runtime_dir = g_strdup (getenv ("XDG_RUNTIME_DIR"));
-      
-      g_once_init_leave (&initialised, 1);
+      const gchar *dir;
+
+      dir = g_strdup (getenv ("XDG_RUNTIME_DIR"));
+
+      if (dir == NULL)
+        {
+          /* No need to strdup this one since it is valid forever. */
+          dir = g_get_user_cache_dir ();
+
+          /* The user should be able to rely on the directory existing
+           * when the function returns.  Probably it already does, but
+           * let's make sure.  Just do mkdir() directly since it will be
+           * no more expensive than a stat() in the case that the
+           * directory already exists and is a lot easier.
+           *
+           * $XDG_CACHE_HOME is probably ~/.cache/ so as long as $HOME
+           * exists this will work.  If the user changed $XDG_CACHE_HOME
+           * then they can make sure that it exists...
+           */
+          (void) mkdir (dir, 0700);
+        }
+
+      g_assert (dir != NULL);
+
+      g_once_init_leave (&runtime_dir, dir);
     }
 
-  if (runtime_dir)
-    return runtime_dir;
-
-  /* Both fallback for UNIX and the default
-   * in Windows: use the user cache directory.
-   */
-#endif
-
+  return runtime_dir;
+#else /* Windows */
   return g_get_user_cache_dir ();
+#endif
 }
 
 #ifdef HAVE_CARBON
@@ -1701,8 +1720,8 @@ g_reload_user_special_dirs_cache (void)
  * of the special directory without requiring the session to restart; GLib
  * will not reflect any change once the special directories are loaded.
  *
- * Returns: the path to the specified special directory, or %NULL
- *   if the logical id was not found. The returned string is owned by
+ * Returns: (type filename): the path to the specified special directory, or
+ *   %NULL if the logical id was not found. The returned string is owned by
  *   GLib and should not be modified or freed.
  *
  * Since: 2.14
@@ -1919,8 +1938,10 @@ g_win32_get_system_data_dirs_for_module (void (*address_of_function)(void))
  * Note that on Windows the returned list can vary depending on where
  * this function is called.
  *
- * Returns: (array zero-terminated=1) (transfer none): a %NULL-terminated array of strings owned by GLib that must 
- *               not be modified or freed.
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer none):
+ *     a %NULL-terminated array of strings owned by GLib that must not be
+ *     modified or freed.
+ * 
  * Since: 2.6
  **/
 const gchar * const * 
@@ -1971,8 +1992,10 @@ g_get_system_data_dirs (void)
  * of clip art, or a log file in the CSIDL_COMMON_APPDATA folder.
  * This information will not roam and is available to anyone using the computer.
  *
- * Returns: (array zero-terminated=1) (transfer none): a %NULL-terminated array of strings owned by GLib that must 
- *               not be modified or freed.
+ * Returns: (array zero-terminated=1) (element-type filename) (transfer none):
+ *     a %NULL-terminated array of strings owned by GLib that must not be
+ *     modified or freed.
+ * 
  * Since: 2.6
  **/
 const gchar * const *
@@ -2016,7 +2039,7 @@ g_get_system_config_dirs (void)
 
 /**
  * g_nullify_pointer:
- * @nullify_location: the memory address of the pointer.
+ * @nullify_location: (not nullable): the memory address of the pointer.
  *
  * Set the pointer at the specified location to %NULL.
  **/
@@ -2373,3 +2396,29 @@ g_check_setuid (void)
   return FALSE;
 #endif
 }
+
+#ifdef G_OS_WIN32
+/**
+ * g_abort:
+ *
+ * A wrapper for the POSIX abort() function.
+ *
+ * On Windows it is a function that makes extra effort (including a call
+ * to abort()) to ensure that a debugger-catchable exception is thrown
+ * before the program terminates.
+ *
+ * See your C library manual for more details about abort().
+ *
+ * Since: 2.50
+ */
+void
+g_abort (void)
+{
+  /* One call to break the debugger */
+  DebugBreak ();
+  /* One call in case CRT does get saner about abort() behaviour */
+  abort ();
+  /* And one call to bind them all and terminate the program for sure */
+  ExitProcess (127);
+}
+#endif

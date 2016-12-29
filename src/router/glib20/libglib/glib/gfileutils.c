@@ -194,7 +194,7 @@
 
 /**
  * g_mkdir_with_parents:
- * @pathname: a pathname in the GLib file name encoding
+ * @pathname: (type filename): a pathname in the GLib file name encoding
  * @mode: permissions to use for newly created directories
  *
  * Create a directory if it doesn't already exist. Create intermediate
@@ -266,7 +266,8 @@ g_mkdir_with_parents (const gchar *pathname,
 
 /**
  * g_file_test:
- * @filename: a filename to test in the GLib file name encoding
+ * @filename: (type filename): a filename to test in the
+ *     GLib file name encoding
  * @test: bitfield of #GFileTest flags
  * 
  * Returns %TRUE if any of the tests in the bitfield @test are
@@ -697,7 +698,7 @@ get_contents_stdio (const gchar  *filename,
               g_set_error (error,
                            G_FILE_ERROR,
                            G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file \"%s\"", "Could not allocate %lu bytes to read file \"%s\"", (gulong)total_allocated),
+                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file “%s”", "Could not allocate %lu bytes to read file “%s”", (gulong)total_allocated),
                            (gulong) total_allocated,
 			   display_filename);
               g_free (display_filename);
@@ -714,7 +715,7 @@ get_contents_stdio (const gchar  *filename,
           g_set_error (error,
                        G_FILE_ERROR,
                        g_file_error_from_errno (save_errno),
-                       _("Error reading file '%s': %s"),
+                       _("Error reading file “%s”: %s"),
                        display_filename,
 		       g_strerror (save_errno));
           g_free (display_filename);
@@ -750,7 +751,7 @@ get_contents_stdio (const gchar  *filename,
   g_set_error (error,
                G_FILE_ERROR,
                G_FILE_ERROR_FAILED,
-               _("File \"%s\" is too large"),
+               _("File “%s” is too large"),
                display_filename);
   g_free (display_filename);
 
@@ -789,7 +790,7 @@ get_contents_regfile (const gchar  *filename,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_NOMEM,
-                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file \"%s\"", "Could not allocate %lu bytes to read file \"%s\"", (gulong)alloc_size),
+                           g_dngettext (GETTEXT_PACKAGE, "Could not allocate %lu byte to read file “%s”", "Could not allocate %lu bytes to read file “%s”", (gulong)alloc_size),
                    (gulong) alloc_size, 
 		   display_filename);
       g_free (display_filename);
@@ -814,7 +815,7 @@ get_contents_regfile (const gchar  *filename,
               g_set_error (error,
                            G_FILE_ERROR,
                            g_file_error_from_errno (save_errno),
-                           _("Failed to read from file '%s': %s"),
+                           _("Failed to read from file “%s”: %s"),
                            display_filename, 
 			   g_strerror (save_errno));
               g_free (display_filename);
@@ -862,7 +863,7 @@ get_contents_posix (const gchar  *filename,
       int saved_errno = errno;
       set_file_error (error,
                       filename,
-                      _("Failed to open file '%s': %s"),
+                      _("Failed to open file “%s”: %s"),
                       saved_errno);
 
       return FALSE;
@@ -874,7 +875,7 @@ get_contents_posix (const gchar  *filename,
       int saved_errno = errno;
       set_file_error (error,
                       filename,
-                      _("Failed to get attributes of file '%s': fstat() failed: %s"),
+                      _("Failed to get attributes of file “%s”: fstat() failed: %s"),
                       saved_errno);
       close (fd);
 
@@ -904,7 +905,7 @@ get_contents_posix (const gchar  *filename,
           int saved_errno = errno;
           set_file_error (error,
                           filename,
-                          _("Failed to open file '%s': fdopen() failed: %s"),
+                          _("Failed to open file “%s”: fdopen() failed: %s"),
                           saved_errno);
 
           return FALSE;
@@ -934,7 +935,7 @@ get_contents_win32 (const gchar  *filename,
       int saved_errno = errno;
       set_file_error (error,
                       filename,
-                      _("Failed to open file '%s': %s"),
+                      _("Failed to open file “%s”: %s"),
                       saved_errno);
 
       return FALSE;
@@ -1003,7 +1004,7 @@ rename_file (const char  *old_name,
       g_set_error (err,
 		   G_FILE_ERROR,
 		   g_file_error_from_errno (save_errno),
-		   _("Failed to rename file '%s' to '%s': g_rename() failed: %s"),
+		   _("Failed to rename file “%s” to “%s”: g_rename() failed: %s"),
 		   display_old_name,
 		   display_new_name,
 		   g_strerror (save_errno));
@@ -1038,7 +1039,7 @@ write_to_temp_file (const gchar  *contents,
     {
       int saved_errno = errno;
       set_file_error (err,
-                      tmp_name, _("Failed to create file '%s': %s"),
+                      tmp_name, _("Failed to create file “%s”: %s"),
                       saved_errno);
       goto out;
     }
@@ -1065,7 +1066,7 @@ write_to_temp_file (const gchar  *contents,
             continue;
 
           set_file_error (err,
-                          tmp_name, _("Failed to write file '%s': write() failed: %s"),
+                          tmp_name, _("Failed to write file “%s”: write() failed: %s"),
                           saved_errno);
           close (fd);
           g_unlink (tmp_name);
@@ -1108,7 +1109,7 @@ write_to_temp_file (const gchar  *contents,
       {
         int saved_errno = errno;
         set_file_error (err,
-                        tmp_name, _("Failed to write file '%s': fsync() failed: %s"),
+                        tmp_name, _("Failed to write file “%s”: fsync() failed: %s"),
                         saved_errno);
         close (fd);
         g_unlink (tmp_name);
@@ -1232,7 +1233,7 @@ g_file_set_contents (const gchar  *filename,
           int saved_errno = errno;
           set_file_error (error,
                           filename,
-		          _("Existing file '%s' could not be removed: g_unlink() failed: %s"),
+		          _("Existing file “%s” could not be removed: g_unlink() failed: %s"),
                           saved_errno);
 	  g_unlink (tmp_filename);
 	  retval = FALSE;
@@ -1365,8 +1366,8 @@ wrap_g_open (const gchar *filename,
  * in the GLib file name encoding. Most importantly, on Windows it
  * should be in UTF-8.
  *
- * Returns: A pointer to @tmpl, which has been modified
- *     to hold the directory name. In case of errors, %NULL is
+ * Returns: (nullable) (type filename): A pointer to @tmpl, which has been
+ *     modified to hold the directory name. In case of errors, %NULL is
  *     returned, and %errno will be set.
  *
  * Since: 2.30
@@ -1397,8 +1398,8 @@ g_mkdtemp_full (gchar *tmpl,
  * The string should be in the GLib file name encoding. Most importantly,
  * on Windows it should be in UTF-8.
  *
- * Returns: A pointer to @tmpl, which has been modified
- *     to hold the directory name.  In case of errors, %NULL is
+ * Returns: (nullable) (type filename): A pointer to @tmpl, which has been
+ *     modified to hold the directory name.  In case of errors, %NULL is
  *     returned and %errno will be set.
  *
  * Since: 2.30
@@ -1503,7 +1504,7 @@ g_get_tmp_name (const gchar      *tmpl,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_FAILED,
-                   _("Template '%s' invalid, should not contain a '%s'"),
+                   _("Template “%s” invalid, should not contain a “%s”"),
                    display_tmpl, c);
       g_free (display_tmpl);
 
@@ -1516,7 +1517,7 @@ g_get_tmp_name (const gchar      *tmpl,
       g_set_error (error,
                    G_FILE_ERROR,
                    G_FILE_ERROR_FAILED,
-                   _("Template '%s' doesn't contain XXXXXX"),
+                   _("Template “%s” doesn’t contain XXXXXX"),
                    display_tmpl);
       g_free (display_tmpl);
       return -1;
@@ -1537,7 +1538,7 @@ g_get_tmp_name (const gchar      *tmpl,
       int saved_errno = errno;
       set_file_error (error,
                       fulltemplate,
-                      _("Failed to create file '%s': %s"),
+                      _("Failed to create file “%s”: %s"),
                       saved_errno);
       g_free (fulltemplate);
       return -1;
@@ -1745,13 +1746,15 @@ g_build_path_va (const gchar  *separator,
 /**
  * g_build_pathv:
  * @separator: a string used to separator the elements of the path.
- * @args: (array zero-terminated=1): %NULL-terminated array of strings containing the path elements.
+ * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
+ *     array of strings containing the path elements.
  * 
  * Behaves exactly like g_build_path(), but takes the path elements 
  * as a string array, instead of varargs. This function is mainly
  * meant for language bindings.
  *
- * Returns: a newly-allocated string that must be freed with g_free().
+ * Returns: (type filename): a newly-allocated string that must be freed
+ *     with g_free().
  *
  * Since: 2.8
  */
@@ -1768,8 +1771,8 @@ g_build_pathv (const gchar  *separator,
 
 /**
  * g_build_path:
- * @separator: a string used to separator the elements of the path.
- * @first_element: the first element in the path
+ * @separator: (type filename): a string used to separator the elements of the path.
+ * @first_element: (type filename): the first element in the path
  * @...: remaining elements in path, terminated by %NULL
  * 
  * Creates a path from a series of elements using @separator as the
@@ -1799,7 +1802,8 @@ g_build_pathv (const gchar  *separator,
  * copies of the separator, elements consisting only of copies
  * of the separator are ignored.
  * 
- * Returns: a newly-allocated string that must be freed with g_free().
+ * Returns: (type filename): a newly-allocated string that must be freed with
+ *     g_free().
  **/
 gchar *
 g_build_path (const gchar *separator,
@@ -1936,13 +1940,15 @@ g_build_pathname_va (const gchar  *first_element,
 
 /**
  * g_build_filenamev:
- * @args: (array zero-terminated=1): %NULL-terminated array of strings containing the path elements.
+ * @args: (array zero-terminated=1) (element-type filename): %NULL-terminated
+ *     array of strings containing the path elements.
  * 
  * Behaves exactly like g_build_filename(), but takes the path elements 
  * as a string array, instead of varargs. This function is mainly
  * meant for language bindings.
  *
- * Returns: a newly-allocated string that must be freed with g_free().
+ * Returns: (type filename): a newly-allocated string that must be freed
+ *     with g_free().
  * 
  * Since: 2.8
  */
@@ -1962,7 +1968,7 @@ g_build_filenamev (gchar **args)
 
 /**
  * g_build_filename:
- * @first_element: the first element in the path
+ * @first_element: (type filename): the first element in the path
  * @...: remaining elements in path, terminated by %NULL
  * 
  * Creates a filename from a series of elements using the correct
@@ -1981,7 +1987,8 @@ g_build_filenamev (gchar **args)
  * path. If the first element is a relative path, the result will
  * be a relative path. 
  * 
- * Returns: a newly-allocated string that must be freed with g_free().
+ * Returns: (type filename): a newly-allocated string that must be freed with
+ *     g_free().
  **/
 gchar *
 g_build_filename (const gchar *first_element, 
@@ -2003,15 +2010,15 @@ g_build_filename (const gchar *first_element,
 
 /**
  * g_file_read_link:
- * @filename: the symbolic link
+ * @filename: (type filename): the symbolic link
  * @error: return location for a #GError
  *
  * Reads the contents of the symbolic link @filename like the POSIX
  * readlink() function.  The returned string is in the encoding used
  * for filenames. Use g_filename_to_utf8() to convert it to UTF-8.
  *
- * Returns: A newly-allocated string with the contents of the symbolic link, 
- *          or %NULL if an error occurred.
+ * Returns: (type filename): A newly-allocated string with the contents of
+ *     the symbolic link, or %NULL if an error occurred.
  *
  * Since: 2.4
  */
@@ -2021,8 +2028,8 @@ g_file_read_link (const gchar  *filename,
 {
 #ifdef HAVE_READLINK
   gchar *buffer;
-  guint size;
-  gint read_size;    
+  size_t size;
+  ssize_t read_size;
   
   size = 256; 
   buffer = g_malloc (size);
@@ -2035,13 +2042,13 @@ g_file_read_link (const gchar  *filename,
           int saved_errno = errno;
           set_file_error (error,
                           filename,
-                          _("Failed to read the symbolic link '%s': %s"),
+                          _("Failed to read the symbolic link “%s”: %s"),
                           saved_errno);
           g_free (buffer);
           return NULL;
         }
     
-      if (read_size < size) 
+      if ((size_t) read_size < size)
         {
           buffer[read_size] = 0;
           return buffer;
@@ -2062,7 +2069,7 @@ g_file_read_link (const gchar  *filename,
 
 /**
  * g_path_is_absolute:
- * @file_name: a file name
+ * @file_name: (type filename): a file name
  *
  * Returns %TRUE if the given @file_name is an absolute file name.
  * Note that this is a somewhat vague concept on Windows.
@@ -2111,13 +2118,14 @@ g_path_is_absolute (const gchar *file_name)
 
 /**
  * g_path_skip_root:
- * @file_name: a file name
+ * @file_name: (type filename): a file name
  *
  * Returns a pointer into @file_name after the root component,
  * i.e. after the "/" in UNIX or "C:\" under Windows. If @file_name
  * is not an absolute path it returns %NULL.
  *
- * Returns: (nullable): a pointer into @file_name after the root component
+ * Returns: (type filename) (nullable): a pointer into @file_name after the
+ *     root component
  */
 const gchar *
 g_path_skip_root (const gchar *file_name)
@@ -2181,13 +2189,13 @@ g_path_skip_root (const gchar *file_name)
 
 /**
  * g_basename:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the name of the file without any leading directory
  * components. It returns a pointer into the given file name
  * string.
  *
- * Returns: the name of the file without any leading
+ * Returns: (type filename): the name of the file without any leading
  *     directory components
  *
  * Deprecated:2.2: Use g_path_get_basename() instead, but notice
@@ -2226,7 +2234,7 @@ g_basename (const gchar *file_name)
 
 /**
  * g_path_get_basename:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the last component of the filename.
  *
@@ -2235,7 +2243,7 @@ g_basename (const gchar *file_name)
  * separators (and on Windows, possibly a drive letter), a single
  * separator is returned. If @file_name is empty, it gets ".".
  *
- * Returns: a newly allocated string containing the last
+ * Returns: (type filename): a newly allocated string containing the last
  *    component of the filename
  */
 gchar *
@@ -2289,28 +2297,28 @@ g_path_get_basename (const gchar *file_name)
 
 /**
  * g_dirname:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the directory components of a file name.
  *
  * If the file name has no directory components "." is returned.
  * The returned string should be freed when no longer needed.
  *
- * Returns: the directory components of the file
+ * Returns: (type filename): the directory components of the file
  *
  * Deprecated: use g_path_get_dirname() instead
  */
 
 /**
  * g_path_get_dirname:
- * @file_name: the name of the file
+ * @file_name: (type filename): the name of the file
  *
  * Gets the directory components of a file name.
  *
  * If the file name has no directory components "." is returned.
  * The returned string should be freed when no longer needed.
  *
- * Returns: the directory components of the file
+ * Returns: (type filename): the directory components of the file
  */
 gchar *
 g_path_get_dirname (const gchar *file_name)
@@ -2430,7 +2438,7 @@ g_path_get_dirname (const gchar *file_name)
  * the current directory.  This can make a difference in the case that
  * the current directory is the target of a symbolic link.
  *
- * Returns: the current directory
+ * Returns: (type filename): the current directory
  */
 gchar *
 g_get_current_dir (void)

@@ -28,6 +28,7 @@
 #include <gfileattribute-priv.h>
 #include <gfileinfo-priv.h>
 #include "gfile.h"
+#include "gfilemonitor.h"
 #include "gseekable.h"
 #include "gfileinputstream.h"
 #include "gfileinfo.h"
@@ -449,7 +450,7 @@ g_resource_file_query_info (GFile                *file,
 	  if (g_error_matches (my_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND))
 	    {
 	      g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-			   _("The resource at '%s' does not exist"),
+			   _("The resource at “%s” does not exist"),
 			   resource->path);
 	    }
 	  else
@@ -517,6 +518,28 @@ g_resource_file_query_info (GFile                *file,
   return info;
 }
 
+static GFileInfo *
+g_resource_file_query_filesystem_info (GFile         *file,
+                                       const char    *attributes,
+                                       GCancellable  *cancellable,
+                                       GError       **error)
+{
+  GFileInfo *info;
+  GFileAttributeMatcher *matcher;
+
+  info = g_file_info_new ();
+
+  matcher = g_file_attribute_matcher_new (attributes);
+  if (g_file_attribute_matcher_matches (matcher, G_FILE_ATTRIBUTE_FILESYSTEM_TYPE))
+    g_file_info_set_attribute_string (info, G_FILE_ATTRIBUTE_FILESYSTEM_TYPE, "resource");
+
+  if (g_file_attribute_matcher_matches (matcher, G_FILE_ATTRIBUTE_FILESYSTEM_READONLY))    g_file_info_set_attribute_boolean (info, G_FILE_ATTRIBUTE_FILESYSTEM_READONLY, TRUE);
+
+  g_file_attribute_matcher_unref (matcher);
+
+  return info;
+}
+
 static GFileAttributeInfoList *
 g_resource_file_query_settable_attributes (GFile         *file,
 					   GCancellable  *cancellable,
@@ -550,7 +573,7 @@ g_resource_file_read (GFile         *file,
       if (g_error_matches (my_error, G_RESOURCE_ERROR, G_RESOURCE_ERROR_NOT_FOUND))
 	{
 	  g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-		       _("The resource at '%s' does not exist"),
+		       _("The resource at “%s” does not exist"),
 		       resource->path);
 	}
       else
@@ -563,6 +586,39 @@ g_resource_file_read (GFile         *file,
   res = _g_resource_file_input_stream_new (stream, file);
   g_object_unref (stream);
   return res;
+}
+
+typedef GFileMonitor GResourceFileMonitor;
+typedef GFileMonitorClass GResourceFileMonitorClass;
+
+GType g_resource_file_monitor_get_type (void);
+
+G_DEFINE_TYPE (GResourceFileMonitor, g_resource_file_monitor, G_TYPE_FILE_MONITOR)
+
+static gboolean
+g_resource_file_monitor_cancel (GFileMonitor *monitor)
+{
+  return TRUE;
+}
+
+static void
+g_resource_file_monitor_init (GResourceFileMonitor *monitor)
+{
+}
+
+static void
+g_resource_file_monitor_class_init (GResourceFileMonitorClass *class)
+{
+  class->cancel = g_resource_file_monitor_cancel;
+}
+
+static GFileMonitor *
+g_resource_file_monitor_file (GFile              *file,
+                              GFileMonitorFlags   flags,
+                              GCancellable       *cancellable,
+                              GError            **error)
+{
+  return g_object_new (g_resource_file_monitor_get_type (), NULL);
 }
 
 static void
@@ -585,9 +641,11 @@ g_resource_file_file_iface_init (GFileIface *iface)
   iface->get_child_for_display_name = g_resource_file_get_child_for_display_name;
   iface->enumerate_children = g_resource_file_enumerate_children;
   iface->query_info = g_resource_file_query_info;
+  iface->query_filesystem_info = g_resource_file_query_filesystem_info;
   iface->query_settable_attributes = g_resource_file_query_settable_attributes;
   iface->query_writable_namespaces = g_resource_file_query_writable_namespaces;
   iface->read_fn = g_resource_file_read;
+  iface->monitor_file = g_resource_file_monitor_file;
 
   iface->supports_thread_contexts = TRUE;
 }
@@ -648,11 +706,11 @@ _g_resource_file_enumerator_new (GResourceFile *file,
       res = g_resources_get_info (file->path, 0, NULL, NULL, NULL);
       if (res)
 	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_DIRECTORY,
-		     _("The resource at '%s' is not a directory"),
+		     _("The resource at “%s” is not a directory"),
 		     file->path);
       else
 	g_set_error (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND,
-		     _("The resource at '%s' does not exist"),
+		     _("The resource at “%s” does not exist"),
 		     file->path);
       return NULL;
     }
@@ -856,7 +914,7 @@ g_resource_file_input_stream_seek (GFileInputStream  *stream,
   if (!G_IS_SEEKABLE (file->stream))
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-			   _("Input stream doesn't implement seek"));
+			   _("Input stream doesn’t implement seek"));
       return FALSE;
     }
 

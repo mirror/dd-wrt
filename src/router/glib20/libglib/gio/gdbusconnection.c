@@ -219,10 +219,10 @@ static GWeakRef the_system_bus;
  * message, and we're being called from its thread, so no memory barrier is
  * required before accessing them.
  */
-#define SEND_MESSAGE_FLAGS_INITIALIZING (1<<31)
+#define SEND_MESSAGE_FLAGS_INITIALIZING (1u << 31)
 
 /* Same as SEND_MESSAGE_FLAGS_INITIALIZING, but in GDBusCallFlags */
-#define CALL_FLAGS_INITIALIZING (1<<31)
+#define CALL_FLAGS_INITIALIZING (1u << 31)
 
 /* ---------------------------------------------------------------------------------------------------- */
 
@@ -804,17 +804,6 @@ g_dbus_connection_real_closed (GDBusConnection *connection,
       (flags & FLAG_INITIALIZED) != 0 &&
       connection->initialization_error == NULL)
     {
-      if (error != NULL)
-        {
-          g_printerr ("%s: Remote peer vanished with error: %s (%s, %d). Exiting.\n",
-                      G_STRFUNC,
-                      error->message,
-                      g_quark_to_string (error->domain), error->code);
-        }
-      else
-        {
-          g_printerr ("%s: Remote peer vanished. Exiting.\n", G_STRFUNC);
-        }
       raise (SIGTERM);
     }
 }
@@ -1058,7 +1047,7 @@ g_dbus_connection_class_init (GDBusConnectionClass *klass)
    *
    * Since: 2.26
    */
-  signals[CLOSED_SIGNAL] = g_signal_new ("closed",
+  signals[CLOSED_SIGNAL] = g_signal_new (I_("closed"),
                                          G_TYPE_DBUS_CONNECTION,
                                          G_SIGNAL_RUN_LAST,
                                          G_STRUCT_OFFSET (GDBusConnectionClass, closed),
@@ -1261,6 +1250,7 @@ g_dbus_connection_flush (GDBusConnection     *connection,
   g_return_if_fail (G_IS_DBUS_CONNECTION (connection));
 
   task = g_task_new (connection, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_dbus_connection_flush);
   g_task_run_in_thread (task, flush_in_thread_func);
   g_object_unref (task);
 }
@@ -1457,6 +1447,7 @@ g_dbus_connection_close (GDBusConnection     *connection,
   g_assert (connection->worker != NULL);
 
   task = g_task_new (connection, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_dbus_connection_close);
   _g_dbus_worker_close (connection->worker, task);
   g_object_unref (task);
 }
@@ -1915,6 +1906,8 @@ g_dbus_connection_send_message_with_reply_unlocked (GDBusConnection     *connect
 
   data = g_slice_new0 (SendMessageData);
   task = g_task_new (connection, cancellable, callback, user_data);
+  g_task_set_source_tag (task,
+                         g_dbus_connection_send_message_with_reply_unlocked);
   g_task_set_task_data (task, data, (GDestroyNotify) send_message_data_free);
 
   if (g_task_return_error_if_cancelled (task))
@@ -2174,17 +2167,52 @@ g_dbus_connection_send_message_with_reply_sync (GDBusConnection        *connecti
 
 typedef struct
 {
-  GDBusMessageFilterFunction func;
-  gpointer user_data;
-} FilterCallback;
-
-typedef struct
-{
   guint                       id;
+  guint                       ref_count;
   GDBusMessageFilterFunction  filter_function;
   gpointer                    user_data;
   GDestroyNotify              user_data_free_func;
+  GMainContext               *context;
 } FilterData;
+
+/* requires CONNECTION_LOCK */
+static FilterData **
+copy_filter_list (GPtrArray *filters)
+{
+  FilterData **copy;
+  guint n;
+
+  copy = g_new (FilterData *, filters->len + 1);
+  for (n = 0; n < filters->len; n++)
+    {
+      copy[n] = filters->pdata[n];
+      copy[n]->ref_count++;
+    }
+  copy[n] = NULL;
+
+  return copy;
+}
+
+/* requires CONNECTION_LOCK */
+static void
+free_filter_list (FilterData **filters)
+{
+  guint n;
+
+  for (n = 0; filters[n]; n++)
+    {
+      filters[n]->ref_count--;
+      if (filters[n]->ref_count == 0)
+        {
+          call_destroy_notify (filters[n]->context,
+                               filters[n]->user_data_free_func,
+                               filters[n]->user_data);
+          g_main_context_unref (filters[n]->context);
+          g_free (filters[n]);
+        }
+    }
+  g_free (filters);
+}
 
 /* Called in GDBusWorker's thread - we must not block - with no lock held */
 static void
@@ -2193,8 +2221,7 @@ on_worker_message_received (GDBusWorker  *worker,
                             gpointer      user_data)
 {
   GDBusConnection *connection;
-  FilterCallback *filters;
-  guint num_filters;
+  FilterData **filters;
   guint n;
   gboolean alive;
 
@@ -2218,27 +2245,24 @@ on_worker_message_received (GDBusWorker  *worker,
 
   /* First collect the set of callback functions */
   CONNECTION_LOCK (connection);
-  num_filters = connection->filters->len;
-  filters = g_new0 (FilterCallback, num_filters);
-  for (n = 0; n < num_filters; n++)
-    {
-      FilterData *data = connection->filters->pdata[n];
-      filters[n].func = data->filter_function;
-      filters[n].user_data = data->user_data;
-    }
+  filters = copy_filter_list (connection->filters);
   CONNECTION_UNLOCK (connection);
 
   /* then call the filters in order (without holding the lock) */
-  for (n = 0; n < num_filters; n++)
+  for (n = 0; filters[n]; n++)
     {
-      message = filters[n].func (connection,
-                                 message,
-                                 TRUE,
-                                 filters[n].user_data);
+      message = filters[n]->filter_function (connection,
+                                             message,
+                                             TRUE,
+                                             filters[n]->user_data);
       if (message == NULL)
         break;
       g_dbus_message_lock (message);
     }
+
+  CONNECTION_LOCK (connection);
+  free_filter_list (filters);
+  CONNECTION_UNLOCK (connection);
 
   /* Standard dispatch unless the filter ate the message - no need to
    * do anything if the message was altered
@@ -2285,7 +2309,6 @@ on_worker_message_received (GDBusWorker  *worker,
   if (message != NULL)
     g_object_unref (message);
   g_object_unref (connection);
-  g_free (filters);
 }
 
 /* Called in GDBusWorker's thread, lock is not held */
@@ -2295,8 +2318,7 @@ on_worker_message_about_to_be_sent (GDBusWorker  *worker,
                                     gpointer      user_data)
 {
   GDBusConnection *connection;
-  FilterCallback *filters;
-  guint num_filters;
+  FilterData **filters;
   guint n;
   gboolean alive;
 
@@ -2315,30 +2337,26 @@ on_worker_message_about_to_be_sent (GDBusWorker  *worker,
 
   /* First collect the set of callback functions */
   CONNECTION_LOCK (connection);
-  num_filters = connection->filters->len;
-  filters = g_new0 (FilterCallback, num_filters);
-  for (n = 0; n < num_filters; n++)
-    {
-      FilterData *data = connection->filters->pdata[n];
-      filters[n].func = data->filter_function;
-      filters[n].user_data = data->user_data;
-    }
+  filters = copy_filter_list (connection->filters);
   CONNECTION_UNLOCK (connection);
 
   /* then call the filters in order (without holding the lock) */
-  for (n = 0; n < num_filters; n++)
+  for (n = 0; filters[n]; n++)
     {
       g_dbus_message_lock (message);
-      message = filters[n].func (connection,
-                                 message,
-                                 FALSE,
-                                 filters[n].user_data);
+      message = filters[n]->filter_function (connection,
+                                             message,
+                                             FALSE,
+                                             filters[n]->user_data);
       if (message == NULL)
         break;
     }
 
+  CONNECTION_LOCK (connection);
+  free_filter_list (filters);
+  CONNECTION_UNLOCK (connection);
+
   g_object_unref (connection);
-  g_free (filters);
 
   return message;
 }
@@ -3020,8 +3038,8 @@ g_dbus_connection_get_unique_name (GDBusConnection *connection)
  * each application is a client. So this method will always return
  * %NULL for message bus clients.
  *
- * Returns: (transfer none): a #GCredentials or %NULL if not available.
- *     Do not free this object, it is owned by @connection.
+ * Returns: (transfer none) (nullable): a #GCredentials or %NULL if not
+ *     available. Do not free this object, it is owned by @connection.
  *
  * Since: 2.26
  */
@@ -3070,6 +3088,13 @@ static guint _global_filter_id = 1;
  * message. Similary, if a filter consumes an outgoing message, the
  * message will not be sent to the other peer.
  *
+ * If @user_data_free_func is non-%NULL, it will be called (in the
+ * thread-default main context of the thread you are calling this
+ * method from) at some point after @user_data is no longer
+ * needed. (It is not guaranteed to be called synchronously when the
+ * filter is removed, and may be called after @connection has been
+ * destroyed.)
+ *
  * Returns: a filter identifier that can be used with
  *     g_dbus_connection_remove_filter()
  *
@@ -3090,9 +3115,11 @@ g_dbus_connection_add_filter (GDBusConnection            *connection,
   CONNECTION_LOCK (connection);
   data = g_new0 (FilterData, 1);
   data->id = _global_filter_id++; /* TODO: overflow etc. */
+  data->ref_count = 1;
   data->filter_function = filter_function;
   data->user_data = user_data;
   data->user_data_free_func = user_data_free_func;
+  data->context = g_main_context_ref_thread_default ();
   g_ptr_array_add (connection->filters, data);
   CONNECTION_UNLOCK (connection);
 
@@ -3107,8 +3134,11 @@ purge_all_filters (GDBusConnection *connection)
   for (n = 0; n < connection->filters->len; n++)
     {
       FilterData *data = connection->filters->pdata[n];
-      if (data->user_data_free_func != NULL)
-        data->user_data_free_func (data->user_data);
+
+      call_destroy_notify (data->context,
+                           data->user_data_free_func,
+                           data->user_data);
+      g_main_context_unref (data->context);
       g_free (data);
     }
 }
@@ -3119,6 +3149,13 @@ purge_all_filters (GDBusConnection *connection)
  * @filter_id: an identifier obtained from g_dbus_connection_add_filter()
  *
  * Removes a filter.
+ *
+ * Note that since filters run in a different thread, there is a race
+ * condition where it is possible that the filter will be running even
+ * after calling g_dbus_connection_remove_filter(), so you cannot just
+ * free data that the filter might be using. Instead, you should pass
+ * a #GDestroyNotify to g_dbus_connection_add_filter(), which will be
+ * called when it is guaranteed that the data is no longer needed.
  *
  * Since: 2.26
  */
@@ -3140,7 +3177,9 @@ g_dbus_connection_remove_filter (GDBusConnection *connection,
       if (data->id == filter_id)
         {
           g_ptr_array_remove_index (connection->filters, n);
-          to_destroy = data;
+          data->ref_count--;
+          if (data->ref_count == 0)
+            to_destroy = data;
           break;
         }
     }
@@ -3151,6 +3190,7 @@ g_dbus_connection_remove_filter (GDBusConnection *connection,
     {
       if (to_destroy->user_data_free_func != NULL)
         to_destroy->user_data_free_func (to_destroy->user_data);
+      g_main_context_unref (to_destroy->context);
       g_free (to_destroy);
     }
   else
@@ -3330,7 +3370,8 @@ is_signal_data_for_name_lost_or_acquired (SignalData *signal_data)
  *     all object paths
  * @arg0: (allow-none): contents of first string argument to match on or %NULL
  *     to match on all kinds of arguments
- * @flags: flags describing how to subscribe to the signal (currently unused)
+ * @flags: #GDBusSignalFlags describing how arg0 is used in subscribing to the
+ *     signal
  * @callback: callback to invoke when there is a signal matching the requested data
  * @user_data: user data to pass to @callback
  * @user_data_free_func: (allow-none): function to free @user_data with when
@@ -3355,6 +3396,13 @@ is_signal_data_for_name_lost_or_acquired (SignalData *signal_data)
  * %G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_PATH are given, @arg0 is
  * interpreted as part of a namespace or path.  The first argument
  * of a signal is matched against that part as specified by D-Bus.
+ *
+ * If @user_data_free_func is non-%NULL, it will be called (in the
+ * thread-default main context of the thread you are calling this
+ * method from) at some point after @user_data is no longer
+ * needed. (It is not guaranteed to be called synchronously when the
+ * signal is unsubscribed from, and may be called after @connection
+ * has been destroyed.)
  *
  * Returns: a subscription identifier that can be used with g_dbus_connection_signal_unsubscribe()
  *
@@ -5182,6 +5230,259 @@ g_dbus_connection_unregister_object (GDBusConnection *connection,
   return ret;
 }
 
+typedef struct {
+  GClosure *method_call_closure;
+  GClosure *get_property_closure;
+  GClosure *set_property_closure;
+} RegisterObjectData;
+
+static RegisterObjectData *
+register_object_data_new (GClosure *method_call_closure,
+                          GClosure *get_property_closure,
+                          GClosure *set_property_closure)
+{
+  RegisterObjectData *data;
+
+  data = g_new0 (RegisterObjectData, 1);
+
+  if (method_call_closure != NULL)
+    {
+      data->method_call_closure = g_closure_ref (method_call_closure);
+      g_closure_sink (method_call_closure);
+      if (G_CLOSURE_NEEDS_MARSHAL (method_call_closure))
+        g_closure_set_marshal (method_call_closure, g_cclosure_marshal_generic);
+    }
+
+  if (get_property_closure != NULL)
+    {
+      data->get_property_closure = g_closure_ref (get_property_closure);
+      g_closure_sink (get_property_closure);
+      if (G_CLOSURE_NEEDS_MARSHAL (get_property_closure))
+        g_closure_set_marshal (get_property_closure, g_cclosure_marshal_generic);
+    }
+
+  if (set_property_closure != NULL)
+    {
+      data->set_property_closure = g_closure_ref (set_property_closure);
+      g_closure_sink (set_property_closure);
+      if (G_CLOSURE_NEEDS_MARSHAL (set_property_closure))
+        g_closure_set_marshal (set_property_closure, g_cclosure_marshal_generic);
+    }
+
+  return data;
+}
+
+static void
+register_object_free_func (gpointer user_data)
+{
+  RegisterObjectData *data = user_data;
+
+  g_clear_pointer (&data->method_call_closure, g_closure_unref);
+  g_clear_pointer (&data->get_property_closure, g_closure_unref);
+  g_clear_pointer (&data->set_property_closure, g_closure_unref);
+
+  g_free (data);
+}
+
+static void
+register_with_closures_on_method_call (GDBusConnection       *connection,
+                                       const gchar           *sender,
+                                       const gchar           *object_path,
+                                       const gchar           *interface_name,
+                                       const gchar           *method_name,
+                                       GVariant              *parameters,
+                                       GDBusMethodInvocation *invocation,
+                                       gpointer               user_data)
+{
+  RegisterObjectData *data = user_data;
+  GValue params[] = { G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT };
+
+  g_value_init (&params[0], G_TYPE_DBUS_CONNECTION);
+  g_value_set_object (&params[0], connection);
+
+  g_value_init (&params[1], G_TYPE_STRING);
+  g_value_set_string (&params[1], sender);
+
+  g_value_init (&params[2], G_TYPE_STRING);
+  g_value_set_string (&params[2], object_path);
+
+  g_value_init (&params[3], G_TYPE_STRING);
+  g_value_set_string (&params[3], interface_name);
+
+  g_value_init (&params[4], G_TYPE_STRING);
+  g_value_set_string (&params[4], method_name);
+
+  g_value_init (&params[5], G_TYPE_VARIANT);
+  g_value_set_variant (&params[5], parameters);
+
+  g_value_init (&params[6], G_TYPE_DBUS_METHOD_INVOCATION);
+  g_value_set_object (&params[6], invocation);
+
+  g_closure_invoke (data->method_call_closure, NULL, G_N_ELEMENTS (params), params, NULL);
+
+  g_value_unset (params + 0);
+  g_value_unset (params + 1);
+  g_value_unset (params + 2);
+  g_value_unset (params + 3);
+  g_value_unset (params + 4);
+  g_value_unset (params + 5);
+  g_value_unset (params + 6);
+}
+
+static GVariant *
+register_with_closures_on_get_property (GDBusConnection *connection,
+                                        const gchar     *sender,
+                                        const gchar     *object_path,
+                                        const gchar     *interface_name,
+                                        const gchar     *property_name,
+                                        GError         **error,
+                                        gpointer         user_data)
+{
+  RegisterObjectData *data = user_data;
+  GValue params[] = { G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT };
+  GValue result_value = G_VALUE_INIT;
+  GVariant *result;
+
+  g_value_init (&params[0], G_TYPE_DBUS_CONNECTION);
+  g_value_set_object (&params[0], connection);
+
+  g_value_init (&params[1], G_TYPE_STRING);
+  g_value_set_string (&params[1], sender);
+
+  g_value_init (&params[2], G_TYPE_STRING);
+  g_value_set_string (&params[2], object_path);
+
+  g_value_init (&params[3], G_TYPE_STRING);
+  g_value_set_string (&params[3], interface_name);
+
+  g_value_init (&params[4], G_TYPE_STRING);
+  g_value_set_string (&params[4], property_name);
+
+  g_value_init (&result_value, G_TYPE_VARIANT);
+
+  g_closure_invoke (data->get_property_closure, &result_value, G_N_ELEMENTS (params), params, NULL);
+
+  result = g_value_get_variant (&result_value);
+  if (result)
+    g_variant_ref (result);
+
+  g_value_unset (params + 0);
+  g_value_unset (params + 1);
+  g_value_unset (params + 2);
+  g_value_unset (params + 3);
+  g_value_unset (params + 4);
+  g_value_unset (&result_value);
+
+  if (!result)
+    g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                 _("Unable to retrieve property %s.%s"),
+                 interface_name, property_name);
+
+  return result;
+}
+
+static gboolean
+register_with_closures_on_set_property (GDBusConnection *connection,
+                                        const gchar     *sender,
+                                        const gchar     *object_path,
+                                        const gchar     *interface_name,
+                                        const gchar     *property_name,
+                                        GVariant        *value,
+                                        GError         **error,
+                                        gpointer         user_data)
+{
+  RegisterObjectData *data = user_data;
+  GValue params[] = { G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT, G_VALUE_INIT };
+  GValue result_value = G_VALUE_INIT;
+  gboolean result;
+
+  g_value_init (&params[0], G_TYPE_DBUS_CONNECTION);
+  g_value_set_object (&params[0], connection);
+
+  g_value_init (&params[1], G_TYPE_STRING);
+  g_value_set_string (&params[1], sender);
+
+  g_value_init (&params[2], G_TYPE_STRING);
+  g_value_set_string (&params[2], object_path);
+
+  g_value_init (&params[3], G_TYPE_STRING);
+  g_value_set_string (&params[3], interface_name);
+
+  g_value_init (&params[4], G_TYPE_STRING);
+  g_value_set_string (&params[4], property_name);
+
+  g_value_init (&params[5], G_TYPE_VARIANT);
+  g_value_set_variant (&params[5], value);
+
+  g_value_init (&result_value, G_TYPE_BOOLEAN);
+
+  g_closure_invoke (data->set_property_closure, &result_value, G_N_ELEMENTS (params), params, NULL);
+
+  result = g_value_get_boolean (&result_value);
+
+  g_value_unset (params + 0);
+  g_value_unset (params + 1);
+  g_value_unset (params + 2);
+  g_value_unset (params + 3);
+  g_value_unset (params + 4);
+  g_value_unset (params + 5);
+  g_value_unset (&result_value);
+
+  if (!result)
+    g_set_error (error,
+                 G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                 _("Unable to set property %s.%s"),
+                 interface_name, property_name);
+
+  return result;
+}
+
+/**
+ * g_dbus_connection_register_object_with_closures: (rename-to g_dbus_connection_register_object)
+ * @connection: A #GDBusConnection.
+ * @object_path: The object path to register at.
+ * @interface_info: Introspection data for the interface.
+ * @method_call_closure: (nullable): #GClosure for handling incoming method calls.
+ * @get_property_closure: (nullable): #GClosure for getting a property.
+ * @set_property_closure: (nullable): #GClosure for setting a property.
+ * @error: Return location for error or %NULL.
+ *
+ * Version of g_dbus_connection_register_object() using closures instead of a
+ * #GDBusInterfaceVTable for easier binding in other languages.
+ *
+ * Returns: 0 if @error is set, otherwise a registration id (never 0)
+ * that can be used with g_dbus_connection_unregister_object() .
+ *
+ * Since: 2.46
+ */
+guint
+g_dbus_connection_register_object_with_closures (GDBusConnection     *connection,
+                                                 const gchar         *object_path,
+                                                 GDBusInterfaceInfo  *interface_info,
+                                                 GClosure            *method_call_closure,
+                                                 GClosure            *get_property_closure,
+                                                 GClosure            *set_property_closure,
+                                                 GError             **error)
+{
+  RegisterObjectData *data;
+  GDBusInterfaceVTable vtable =
+    {
+      method_call_closure != NULL  ? register_with_closures_on_method_call  : NULL,
+      get_property_closure != NULL ? register_with_closures_on_get_property : NULL,
+      set_property_closure != NULL ? register_with_closures_on_set_property : NULL
+    };
+
+  data = register_object_data_new (method_call_closure, get_property_closure, set_property_closure);
+
+  return g_dbus_connection_register_object (connection,
+                                            object_path,
+                                            interface_info,
+                                            &vtable,
+                                            data,
+                                            register_object_free_func,
+                                            error);
+}
+
 /* ---------------------------------------------------------------------------------------------------- */
 
 /**
@@ -5265,8 +5566,14 @@ static void
 add_call_flags (GDBusMessage           *message,
                          GDBusCallFlags  flags)
 {
+  GDBusMessageFlags msg_flags = 0;
+
   if (flags & G_DBUS_CALL_FLAGS_NO_AUTO_START)
-    g_dbus_message_set_flags (message, G_DBUS_MESSAGE_FLAGS_NO_AUTO_START);
+    msg_flags |= G_DBUS_MESSAGE_FLAGS_NO_AUTO_START;
+  if (flags & G_DBUS_CALL_FLAGS_ALLOW_INTERACTIVE_AUTHORIZATION)
+    msg_flags |= G_DBUS_MESSAGE_FLAGS_ALLOW_INTERACTIVE_AUTHORIZATION;
+  if (msg_flags)
+    g_dbus_message_set_flags (message, msg_flags);
 }
 
 static GVariant *
@@ -5469,6 +5776,7 @@ g_dbus_connection_call_internal (GDBusConnection        *connection,
       state->reply_type = g_variant_type_copy (reply_type);
 
       task = g_task_new (connection, cancellable, callback, user_data);
+      g_task_set_source_tag (task, g_dbus_connection_call_internal);
       g_task_set_task_data (task, state, (GDestroyNotify) call_state_free);
 
       g_dbus_connection_send_message_with_reply (connection,
@@ -7009,6 +7317,7 @@ g_bus_get (GBusType             bus_type,
   GError *error = NULL;
 
   task = g_task_new (NULL, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_bus_get);
 
   connection = get_uninitialized_connection (bus_type, cancellable, &error);
   if (connection == NULL)

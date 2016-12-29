@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Basic Types: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Version-Information.html" title="Version Information">
 <link rel="next" href="glib-Standard-Macros.html" title="Standard Macros">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,12 +34,28 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Basic-Types.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
 </colgroup>
 <tbody>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GLIB_AVAILABLE_IN_ALL</span>
+</td>
+<td class="function_name">
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()">gint</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">
+<span class="returnvalue">GLIB_AVAILABLE_IN_ALL</span>
+</td>
+<td class="function_name">
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()">guint</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
 <tr>
 <td class="define_keyword">#define</td>
 <td class="function_name">
@@ -63,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Basic-Types.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -90,20 +106,12 @@
 <td class="function_name"><a class="link" href="glib-Basic-Types.html#guchar" title="guchar">guchar</a></td>
 </tr>
 <tr>
-<td class="typedef_keyword">typedef</td>
-<td class="function_name"><a class="link" href="glib-Basic-Types.html#gint" title="gint">gint</a></td>
-</tr>
-<tr>
 <td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="glib-Basic-Types.html#G-MININT:CAPS" title="G_MININT">G_MININT</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
 <td class="function_name"><a class="link" href="glib-Basic-Types.html#G-MAXINT:CAPS" title="G_MAXINT">G_MAXINT</a></td>
-</tr>
-<tr>
-<td class="typedef_keyword">typedef</td>
-<td class="function_name"><a class="link" href="glib-Basic-Types.html#guint" title="guint">guint</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
@@ -385,9 +393,9 @@ various C standard library header files) - <a class="link" href="glib-Basic-Type
 all platforms - <a class="link" href="glib-Basic-Types.html#gint8" title="gint8"><span class="type">gint8</span></a>, <a class="link" href="glib-Basic-Types.html#guint8" title="guint8"><span class="type">guint8</span></a>, <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a>, <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a>, <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a>,
 <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a>, <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a>, <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a>.</p></li>
 <li class="listitem"><p>Types which are easier to use than their standard C counterparts -
-<a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a>, <a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a>, <a class="link" href="glib-Basic-Types.html#guchar" title="guchar"><span class="type">guchar</span></a>, <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a>, <a class="link" href="glib-Basic-Types.html#gushort" title="gushort"><span class="type">gushort</span></a>, <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a>.</p></li>
+<a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a>, <a class="link" href="glib-Basic-Types.html#gconstpointer" title="gconstpointer"><span class="type">gconstpointer</span></a>, <a class="link" href="glib-Basic-Types.html#guchar" title="guchar"><span class="type">guchar</span></a>, <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a>, <a class="link" href="glib-Basic-Types.html#gushort" title="gushort"><span class="type">gushort</span></a>, <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a>.</p></li>
 <li class="listitem"><p>Types which correspond exactly to standard C types, but are
-included for completeness - <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a>, <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a>, <a class="link" href="glib-Basic-Types.html#gshort" title="gshort"><span class="type">gshort</span></a>, <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a>,
+included for completeness - <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a>, <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>, <a class="link" href="glib-Basic-Types.html#gshort" title="gshort"><span class="type">gshort</span></a>, <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a>,
 <a class="link" href="glib-Basic-Types.html#gfloat" title="gfloat"><span class="type">gfloat</span></a>, <a class="link" href="glib-Basic-Types.html#gdouble" title="gdouble"><span class="type">gdouble</span></a>.</p></li>
 </ul></div>
 <p>GLib also defines macros for the limits of some of the standard
@@ -397,14 +405,30 @@ integer and floating point types, as well as macros for suitable
 <div class="refsect1">
 <a name="glib-Basic-Types.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
+<a name="gint"></a><h3>gint ()</h3>
+<pre class="programlisting"><span class="returnvalue">GLIB_AVAILABLE_IN_ALL</span>
+gint ();</pre>
+<p>Corresponds to the standard C int type.
+Values of this type can range from <a class="link" href="glib-Basic-Types.html#G-MININT:CAPS" title="G_MININT"><span class="type">G_MININT</span></a> to <a class="link" href="glib-Basic-Types.html#G-MAXINT:CAPS" title="G_MAXINT"><span class="type">G_MAXINT</span></a>.</p>
+</div>
+<hr>
+<div class="refsect2">
+<a name="guint"></a><h3>guint ()</h3>
+<pre class="programlisting"><span class="returnvalue">GLIB_AVAILABLE_IN_ALL</span>
+guint ();</pre>
+<p>Corresponds to the standard C unsigned int type.
+Values of this type can range from 0 to <a class="link" href="glib-Basic-Types.html#G-MAXUINT:CAPS" title="G_MAXUINT"><span class="type">G_MAXUINT</span></a>.</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="G-GINT64-CONSTANT:CAPS"></a><h3>G_GINT64_CONSTANT()</h3>
 <pre class="programlisting">#define G_GINT64_CONSTANT(val) (val##L)
 </pre>
 <p>This macro is used to insert 64-bit integer literals
 into the source code.</p>
 <div class="refsect3">
-<a name="id-1.3.3.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-GINT64-CONSTANT.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -426,8 +450,8 @@ into the source code.</p>
 <p>This macro is used to insert 64-bit unsigned integer
 literals into the source code.</p>
 <div class="refsect3">
-<a name="id-1.3.3.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-GUINT64-CONSTANT.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -451,8 +475,8 @@ literals into the source code.</p>
 into the source code.</p>
 <p>See also <a class="link" href="glib-Basic-Types.html#G-GINT64-CONSTANT:CAPS" title="G_GINT64_CONSTANT()"><span class="type">G_GINT64_CONSTANT</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.3.3.7.4.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-GOFFSET-CONSTANT.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -512,40 +536,24 @@ that the data pointed to will not be altered by the function.</p>
 </div>
 <hr>
 <div class="refsect2">
-<a name="gint"></a><h3>gint</h3>
-<pre class="programlisting">typedef int    gint;
-</pre>
-<p>Corresponds to the standard C int type.
-Values of this type can range from <a class="link" href="glib-Basic-Types.html#G-MININT:CAPS" title="G_MININT"><span class="type">G_MININT</span></a> to <a class="link" href="glib-Basic-Types.html#G-MAXINT:CAPS" title="G_MAXINT"><span class="type">G_MAXINT</span></a>.</p>
-</div>
-<hr>
-<div class="refsect2">
 <a name="G-MININT:CAPS"></a><h3>G_MININT</h3>
 <pre class="programlisting">#define G_MININT INT_MIN
 </pre>
-<p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a>.</p>
+<p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>.</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="G-MAXINT:CAPS"></a><h3>G_MAXINT</h3>
 <pre class="programlisting">#define G_MAXINT INT_MAX
 </pre>
-<p>The maximum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a>.</p>
-</div>
-<hr>
-<div class="refsect2">
-<a name="guint"></a><h3>guint</h3>
-<pre class="programlisting">typedef unsigned int    guint;
-</pre>
-<p>Corresponds to the standard C unsigned int type.
-Values of this type can range from 0 to <a class="link" href="glib-Basic-Types.html#G-MAXUINT:CAPS" title="G_MAXUINT"><span class="type">G_MAXUINT</span></a>.</p>
+<p>The maximum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a>.</p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="G-MAXUINT:CAPS"></a><h3>G_MAXUINT</h3>
 <pre class="programlisting">#define G_MAXUINT UINT_MAX
 </pre>
-<p>The maximum value which can be held in a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a>.</p>
+<p>The maximum value which can be held in a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a>.</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -633,7 +641,7 @@ Values of this type can range from <a class="link" href="glib-Basic-Types.html#G
 <hr>
 <div class="refsect2">
 <a name="G-MININT8:CAPS"></a><h3>G_MININT8</h3>
-<pre class="programlisting">#define G_MININT8 ((gint8)  0x80)
+<pre class="programlisting">#define G_MININT8 ((gint8) -0x80)
 </pre>
 <p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint8" title="gint8"><span class="type">gint8</span></a>.</p>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -676,7 +684,7 @@ Values of this type can range from <a class="link" href="glib-Basic-Types.html#G
 <hr>
 <div class="refsect2">
 <a name="G-MININT16:CAPS"></a><h3>G_MININT16</h3>
-<pre class="programlisting">#define G_MININT16 ((gint16)  0x8000)
+<pre class="programlisting">#define G_MININT16 ((gint16) -0x8000)
 </pre>
 <p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a>.</p>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -706,8 +714,8 @@ and conversion specifier and append a conversion specifier.</p>
       <tr>
         <td class="listing_lines" align="right"><pre>1
 2</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">gint16</span><span class="normal"> value </span><span class="symbol">=</span><span class="normal"> </span><span class="number">123</span><span class="symbol">;</span>
-<span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"%#"</span><span class="normal"> <a href="glib-Basic-Types.html#G-GINT16-MODIFIER:CAPS">G_GINT16_MODIFIER</a> </span><span class="string">"x"</span><span class="symbol">,</span><span class="normal"> value</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">gint16 value <span class="gtkdoc opt">=</span> <span class="number">123</span><span class="gtkdoc opt">;</span>
+<span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;%#&quot;</span> G_GINT16_MODIFIER <span class="string">&quot;x&quot;</span><span class="gtkdoc opt">,</span> value<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -734,11 +742,11 @@ modifiers between percent-sign and conversion specifier.</p>
 3
 4
 5</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">gint16</span><span class="normal"> in</span><span class="symbol">;</span>
-<span class="usertype">gint32</span><span class="normal"> out</span><span class="symbol">;</span>
-<span class="function">sscanf</span><span class="normal"> </span><span class="symbol">(</span><span class="string">"42"</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"%"</span><span class="normal"> <a href="glib-Basic-Types.html#G-GINT16-FORMAT:CAPS">G_GINT16_FORMAT</a></span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">in</span><span class="symbol">)</span>
-<span class="normal">out </span><span class="symbol">=</span><span class="normal"> in </span><span class="symbol">*</span><span class="normal"> </span><span class="number">1000</span><span class="symbol">;</span>
-<span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"%"</span><span class="normal"> <a href="glib-Basic-Types.html#G-GINT32-FORMAT:CAPS">G_GINT32_FORMAT</a></span><span class="symbol">,</span><span class="normal"> out</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">gint16 in<span class="gtkdoc opt">;</span>
+gint32 out<span class="gtkdoc opt">;</span>
+<span class="function">sscanf</span> <span class="gtkdoc opt">(</span><span class="string">&quot;42&quot;</span><span class="gtkdoc opt">,</span> <span class="string">&quot;%&quot;</span> G_GINT16_FORMAT<span class="gtkdoc opt">, &amp;</span>in<span class="gtkdoc opt">)</span>
+out <span class="gtkdoc opt">=</span> in <span class="gtkdoc opt">*</span> <span class="number">1000</span><span class="gtkdoc opt">;</span>
+<span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;%&quot;</span> G_GINT32_FORMAT<span class="gtkdoc opt">,</span> out<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -786,7 +794,7 @@ to <a class="link" href="glib-Basic-Types.html#G-MAXINT32:CAPS" title="G_MAXINT3
 <hr>
 <div class="refsect2">
 <a name="G-MININT32:CAPS"></a><h3>G_MININT32</h3>
-<pre class="programlisting">#define G_MININT32 ((gint32)  0x80000000)
+<pre class="programlisting">#define G_MININT32 ((gint32) -0x80000000)
 </pre>
 <p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a>.</p>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -858,7 +866,7 @@ Values of this type can range from <a class="link" href="glib-Basic-Types.html#G
 <hr>
 <div class="refsect2">
 <a name="G-MININT64:CAPS"></a><h3>G_MININT64</h3>
-<pre class="programlisting">#define G_MININT64 ((gint64) G_GINT64_CONSTANT(0x8000000000000000))
+<pre class="programlisting">#define G_MININT64 ((gint64) G_GINT64_CONSTANT(-0x8000000000000000))
 </pre>
 <p>The minimum value which can be held in a <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a>.</p>
 </div>
@@ -910,7 +918,7 @@ Values of this type can range from 0 to <a class="link" href="glib-Basic-Types.h
 <hr>
 <div class="refsect2">
 <a name="G-MAXUINT64:CAPS"></a><h3>G_MAXUINT64</h3>
-<pre class="programlisting">#define G_MAXUINT64 G_GINT64_CONSTANT(0xffffffffffffffffU)
+<pre class="programlisting">#define G_MAXUINT64 G_GUINT64_CONSTANT(0xffffffffffffffff)
 </pre>
 <p>The maximum value which can be held in a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a>.</p>
 </div>
@@ -1163,6 +1171,6 @@ for scanning and printing values of type <a class="link" href="glib-Basic-Types.
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

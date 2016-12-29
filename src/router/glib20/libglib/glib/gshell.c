@@ -93,7 +93,7 @@ unquote_string_inplace (gchar* str, gchar** end, GError** err)
       g_set_error_literal (err,
                            G_SHELL_ERROR,
                            G_SHELL_ERROR_BAD_QUOTING,
-                           _("Quoted text doesn't begin with a quotation mark"));
+                           _("Quoted text doesn’t begin with a quotation mark"));
       *end = str;
       return FALSE;
     }
@@ -579,15 +579,15 @@ tokenize_command_line (const gchar *command_line,
         g_set_error (error,
                      G_SHELL_ERROR,
                      G_SHELL_ERROR_BAD_QUOTING,
-                     _("Text ended just after a '\\' character."
-                       " (The text was '%s')"),
+                     _("Text ended just after a “\\” character."
+                       " (The text was “%s”)"),
                      command_line);
       else
         g_set_error (error,
                      G_SHELL_ERROR,
                      G_SHELL_ERROR_BAD_QUOTING,
                      _("Text ended before matching quote was found for %c."
-                       " (The text was '%s')"),
+                       " (The text was “%s”)"),
                      current_quote, command_line);
       
       goto error;
@@ -619,10 +619,10 @@ tokenize_command_line (const gchar *command_line,
 /**
  * g_shell_parse_argv:
  * @command_line: command line to parse
- * @argcp: (out) (optional): return location for number of args, or %NULL
+ * @argcp: (out) (optional): return location for number of args
  * @argvp: (out) (optional) (array length=argcp zero-terminated=1): return
- *   location for array of args, or %NULL
- * @error: (optional): return location for error, or %NULL
+ *   location for array of args
+ * @error: (optional): return location for error
  * 
  * Parses a command line into an argument vector, in much the same way
  * the shell would, but without many of the expansions the shell would

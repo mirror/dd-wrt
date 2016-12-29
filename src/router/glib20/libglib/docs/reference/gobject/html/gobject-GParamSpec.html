@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GParamSpec: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-Standard-Parameter-and-Value-Types.html" title="Parameters and Values">
 <link rel="next" href="gobject-Varargs-Value-Collection.html" title="Varargs Value Collection">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gobject-GParamSpec.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -94,10 +94,6 @@
 </td>
 </tr>
 <tr>
-<td class="define_keyword">#define</td>
-<td class="function_name"><a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS" title="G_PARAM_STATIC_STRINGS">G_PARAM_STATIC_STRINGS</a></td>
-</tr>
-<tr>
 <td class="function_type">
 <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="returnvalue">GParamSpec</span></a> *
 </td>
@@ -146,7 +142,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-value-defaults" title="g_param_value_defaults ()">g_param_value_defaults</a> <span class="c_punctuation">()</span>
@@ -154,7 +150,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-value-validate" title="g_param_value_validate ()">g_param_value_validate</a> <span class="c_punctuation">()</span>
@@ -162,7 +158,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-value-convert" title="g_param_value_convert ()">g_param_value_convert</a> <span class="c_punctuation">()</span>
@@ -170,28 +166,36 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-values-cmp" title="g_param_values_cmp ()">g_param_values_cmp</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
-<td class="function_type">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<td class="function_type">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-get-name" title="g_param_spec_get_name ()">g_param_spec_get_name</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
-<td class="function_type">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<td class="function_type">
+<a href="../glib-Quarks.html#GQuark"><span class="returnvalue">GQuark</span></a>
+</td>
+<td class="function_name">
+<a class="link" href="gobject-GParamSpec.html#g-param-spec-get-name-quark" title="g_param_spec_get_name_quark ()">g_param_spec_get_name_quark</a> <span class="c_punctuation">()</span>
+</td>
+</tr>
+<tr>
+<td class="function_type">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-get-nick" title="g_param_spec_get_nick ()">g_param_spec_get_nick</a> <span class="c_punctuation">()</span>
 </td>
 </tr>
 <tr>
-<td class="function_type">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<td class="function_type">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-get-blurb" title="g_param_spec_get_blurb ()">g_param_spec_get_blurb</a> <span class="c_punctuation">()</span>
@@ -199,7 +203,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-get-qdata" title="g_param_spec_get_qdata ()">g_param_spec_get_qdata</a> <span class="c_punctuation">()</span>
@@ -223,7 +227,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-steal-qdata" title="g_param_spec_steal_qdata ()">g_param_spec_steal_qdata</a> <span class="c_punctuation">()</span>
@@ -239,7 +243,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-internal" title="g_param_spec_internal ()">g_param_spec_internal</a> <span class="c_punctuation">()</span>
@@ -295,7 +299,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="gobject-GParamSpec.html#g-param-spec-pool-list-owned" title="g_param_spec_pool_list_owned ()">g_param_spec_pool_list_owned</a> <span class="c_punctuation">()</span>
@@ -306,7 +310,7 @@
 </div>
 <div class="refsect1">
 <a name="gobject-GParamSpec.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -323,6 +327,10 @@
 <tr>
 <td class="datatype_keyword">enum</td>
 <td class="function_name"><a class="link" href="gobject-GParamSpec.html#GParamFlags" title="enum GParamFlags">GParamFlags</a></td>
+</tr>
+<tr>
+<td class="define_keyword">#define</td>
+<td class="function_name"><a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS" title="G_PARAM_STATIC_STRINGS">G_PARAM_STATIC_STRINGS</a></td>
 </tr>
 <tr>
 <td class="define_keyword">#define</td>
@@ -370,8 +378,8 @@ the parameter.</p>
 <p>Checks whether <em class="parameter"><code>type</code></em>
  "is a" <a class="link" href="gobject-Type-Information.html#G-TYPE-PARAM:CAPS" title="G_TYPE_PARAM"><code class="literal">G_TYPE_PARAM</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-TYPE-IS-PARAM.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -393,8 +401,8 @@ the parameter.</p>
 <p>Casts a derived <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> object (e.g. of type <a class="link" href="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecInt" title="struct GParamSpecInt"><span class="type">GParamSpecInt</span></a>) into
 a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> object.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -417,8 +425,8 @@ a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParam
  "is a" valid <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> structure of type <a class="link" href="gobject-Type-Information.html#G-TYPE-PARAM:CAPS" title="G_TYPE_PARAM"><code class="literal">G_TYPE_PARAM</code></a>
 or derived.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-IS-PARAM-SPEC.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -439,8 +447,8 @@ or derived.</p>
 </pre>
 <p>Casts a derived <a class="link" href="gobject-GParamSpec.html#GParamSpecClass" title="struct GParamSpecClass"><span class="type">GParamSpecClass</span></a> structure into a <a class="link" href="gobject-GParamSpec.html#GParamSpecClass" title="struct GParamSpecClass"><span class="type">GParamSpecClass</span></a> structure.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC-CLASS.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -463,8 +471,8 @@ or derived.</p>
  "is a" valid <a class="link" href="gobject-GParamSpec.html#GParamSpecClass" title="struct GParamSpecClass"><span class="type">GParamSpecClass</span></a> structure of type 
 <a class="link" href="gobject-Type-Information.html#G-TYPE-PARAM:CAPS" title="G_TYPE_PARAM"><code class="literal">G_TYPE_PARAM</code></a> or derived.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-IS-PARAM-SPEC-CLASS.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -485,8 +493,8 @@ or derived.</p>
 </pre>
 <p>Retrieves the <a class="link" href="gobject-GParamSpec.html#GParamSpecClass" title="struct GParamSpecClass"><span class="type">GParamSpecClass</span></a> of a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC-GET-CLASS.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -508,8 +516,8 @@ or derived.</p>
 <p>Retrieves the <a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> of this <em class="parameter"><code>pspec</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC-TYPE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -531,8 +539,8 @@ or derived.</p>
 <p>Retrieves the <a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> name of this <em class="parameter"><code>pspec</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC-TYPE-NAME.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -553,8 +561,8 @@ or derived.</p>
 </pre>
 <p>Retrieves the <a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> to initialize a <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> for this parameter.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-PARAM-SPEC-VALUE-TYPE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -567,14 +575,6 @@ or derived.</p>
 </tr></tbody>
 </table></div>
 </div>
-</div>
-<hr>
-<div class="refsect2">
-<a name="G-PARAM-STATIC-STRINGS:CAPS"></a><h3>G_PARAM_STATIC_STRINGS</h3>
-<pre class="programlisting">#define G_PARAM_STATIC_STRINGS (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
-</pre>
-<p><a class="link" href="gobject-GParamSpec.html#GParamFlags" title="enum GParamFlags"><span class="type">GParamFlags</span></a> value alias for <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-NAME:CAPS"><code class="literal">G_PARAM_STATIC_NAME</code></a> | <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-NICK:CAPS"><code class="literal">G_PARAM_STATIC_NICK</code></a> | <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-BLURB:CAPS"><code class="literal">G_PARAM_STATIC_BLURB</code></a>.</p>
-<p>Since 2.13.0</p>
 </div>
 <hr>
 <div class="refsect2">
@@ -585,8 +585,8 @@ g_param_spec_ref (<em class="parameter"><code><a class="link" href="gobject-GPar
 .</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.10.7.12.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -600,7 +600,7 @@ g_param_spec_ref (<em class="parameter"><code><a class="link" href="gobject-GPar
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.12.7"></a><h4>Returns</h4>
+<a name="g-param-spec-ref.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> that was passed into this function</p>
 </div>
 </div>
@@ -613,8 +613,8 @@ g_param_spec_unref (<em class="parameter"><code><a class="link" href="gobject-GP
 .</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.10.7.13.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -642,8 +642,8 @@ reference count (thus ending up with a <em class="parameter"><code>pspec</code><
  that has a reference
 count of 1 still, but is not flagged "floating" anymore).</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-sink.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -665,8 +665,8 @@ g_param_spec_ref_sink (<em class="parameter"><code><a class="link" href="gobject
 <p>Convenience function to ref and sink a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.10.7.15.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-ref-sink.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -680,7 +680,7 @@ g_param_spec_ref_sink (<em class="parameter"><code><a class="link" href="gobject
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.15.7"></a><h4>Returns</h4>
+<a name="g-param-spec-ref-sink.returns"></a><h4>Returns</h4>
 <p> the <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> that was passed into this function</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-10.html#api-index-2.10">2.10</a></p>
@@ -689,28 +689,28 @@ g_param_spec_ref_sink (<em class="parameter"><code><a class="link" href="gobject
 <div class="refsect2">
 <a name="g-param-spec-get-default-value"></a><h3>g_param_spec_get_default_value ()</h3>
 <pre class="programlisting">const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="returnvalue">GValue</span></a> *
-g_param_spec_get_default_value (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *param</code></em>);</pre>
-<p>Gets the default value of <em class="parameter"><code>param</code></em>
+g_param_spec_get_default_value (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
+<p>Gets the default value of <em class="parameter"><code>pspec</code></em>
  as a pointer to a <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a>.</p>
-<p>The <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> will remain value for the life of <em class="parameter"><code>param</code></em>
+<p>The <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> will remain value for the life of <em class="parameter"><code>pspec</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.16.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-default-value.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
 <col width="200px" class="parameters_annotations">
 </colgroup>
 <tbody><tr>
-<td class="parameter_name"><p>param</p></td>
+<td class="parameter_name"><p>pspec</p></td>
 <td class="parameter_description"><p>a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.16.7"></a><h4>Returns</h4>
+<a name="g-param-spec-get-default-value.returns"></a><h4>Returns</h4>
 <p> a pointer to a <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> which must not be modified</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-38.html#api-index-2.38">2.38</a></p>
@@ -725,8 +725,8 @@ g_param_value_set_default (<em class="parameter"><code><a class="link" href="gob
  to its default value as specified in <em class="parameter"><code>pspec</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.17.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-value-set-default.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -751,15 +751,15 @@ g_param_value_set_default (<em class="parameter"><code><a class="link" href="gob
 <hr>
 <div class="refsect2">
 <a name="g-param-value-defaults"></a><h3>g_param_value_defaults ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_param_value_defaults (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
                         <em class="parameter"><code><a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *value</code></em>);</pre>
 <p>Checks whether <em class="parameter"><code>value</code></em>
  contains the default value as specified in <em class="parameter"><code>pspec</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.18.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-value-defaults.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -781,7 +781,7 @@ g_param_value_defaults (<em class="parameter"><code><a class="link" href="gobjec
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.18.6"></a><h4>Returns</h4>
+<a name="g-param-value-defaults.returns"></a><h4>Returns</h4>
 <p> whether <em class="parameter"><code>value</code></em>
 contains the canonical default for this <em class="parameter"><code>pspec</code></em>
 </p>
@@ -790,7 +790,7 @@ contains the canonical default for this <em class="parameter"><code>pspec</code>
 <hr>
 <div class="refsect2">
 <a name="g-param-value-validate"></a><h3>g_param_value_validate ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_param_value_validate (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
                         <em class="parameter"><code><a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *value</code></em>);</pre>
 <p>Ensures that the contents of <em class="parameter"><code>value</code></em>
@@ -804,8 +804,8 @@ greater than +42. If <em class="parameter"><code>value</code></em>
 it is modified accordingly, so the resulting value will fit into the
 range -42 .. +42.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.19.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-value-validate.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -827,7 +827,7 @@ range -42 .. +42.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.19.6"></a><h4>Returns</h4>
+<a name="g-param-value-validate.returns"></a><h4>Returns</h4>
 <p> whether modifying <em class="parameter"><code>value</code></em>
 was necessary to ensure validity</p>
 </div>
@@ -835,11 +835,11 @@ was necessary to ensure validity</p>
 <hr>
 <div class="refsect2">
 <a name="g-param-value-convert"></a><h3>g_param_value_convert ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_param_value_convert (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
                        <em class="parameter"><code>const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *src_value</code></em>,
                        <em class="parameter"><code><a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *dest_value</code></em>,
-                       <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> strict_validation</code></em>);</pre>
+                       <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> strict_validation</code></em>);</pre>
 <p>Transforms <em class="parameter"><code>src_value</code></em>
  into <em class="parameter"><code>dest_value</code></em>
  if possible, and then
@@ -847,15 +847,15 @@ validates <em class="parameter"><code>dest_value</code></em>
 , in order for it to conform to <em class="parameter"><code>pspec</code></em>
 .  If
 <em class="parameter"><code>strict_validation</code></em>
- is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> this function will only succeed if the
+ is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> this function will only succeed if the
 transformed <em class="parameter"><code>dest_value</code></em>
  complied to <em class="parameter"><code>pspec</code></em>
  without modifications.</p>
 <p>See also <a class="link" href="gobject-Generic-values.html#g-value-type-transformable" title="g_value_type_transformable ()"><code class="function">g_value_type_transformable()</code></a>, <a class="link" href="gobject-Generic-values.html#g-value-transform" title="g_value_transform ()"><code class="function">g_value_transform()</code></a> and
 <a class="link" href="gobject-GParamSpec.html#g-param-value-validate" title="g_param_value_validate ()"><code class="function">g_param_value_validate()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.20.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-value-convert.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -880,7 +880,7 @@ transformed <em class="parameter"><code>dest_value</code></em>
 </tr>
 <tr>
 <td class="parameter_name"><p>strict_validation</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> requires <em class="parameter"><code>dest_value</code></em>
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> requires <em class="parameter"><code>dest_value</code></em>
 to conform to <em class="parameter"><code>pspec</code></em>
 without modifications</p></td>
 <td class="parameter_annotations"> </td>
@@ -889,16 +889,16 @@ without modifications</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.20.7"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if transformation and validation were successful,
-<a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise and <em class="parameter"><code>dest_value</code></em>
+<a name="g-param-value-convert.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if transformation and validation were successful,
+<a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise and <em class="parameter"><code>dest_value</code></em>
 is left untouched.</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-param-values-cmp"></a><h3>g_param_values_cmp ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 g_param_values_cmp (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
                     <em class="parameter"><code>const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *value1</code></em>,
                     <em class="parameter"><code>const <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a> *value2</code></em>);</pre>
@@ -911,8 +911,8 @@ if <em class="parameter"><code>value1</code></em>
 ,
 respectively.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.21.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-values-cmp.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -940,21 +940,21 @@ respectively.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.21.6"></a><h4>Returns</h4>
+<a name="g-param-values-cmp.returns"></a><h4>Returns</h4>
 <p> -1, 0 or +1, for a less than, equal to or greater than result</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-get-name"></a><h3>g_param_spec_get_name ()</h3>
-<pre class="programlisting">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_param_spec_get_name (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
 <p>Get the name of a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>.</p>
-<p>The name is always an "interned" string (as per <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#g-intern-string"><code class="function">g_intern_string()</code></a>).
+<p>The name is always an "interned" string (as per <a href="../glib-Quarks.html#g-intern-string"><code class="function">g_intern_string()</code></a>).
 This allows for pointer-value comparisons.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.22.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-name.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -968,20 +968,48 @@ This allows for pointer-value comparisons.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.22.7"></a><h4>Returns</h4>
+<a name="g-param-spec-get-name.returns"></a><h4>Returns</h4>
 <p> the name of <em class="parameter"><code>pspec</code></em>
 .</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
+<a name="g-param-spec-get-name-quark"></a><h3>g_param_spec_get_name_quark ()</h3>
+<pre class="programlisting"><a href="../glib-Quarks.html#GQuark"><span class="returnvalue">GQuark</span></a>
+g_param_spec_get_name_quark (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
+<p>Gets the GQuark for the name.</p>
+<div class="refsect3">
+<a name="g-param-spec-get-name-quark.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
+<colgroup>
+<col width="150px" class="parameters_name">
+<col class="parameters_description">
+<col width="200px" class="parameters_annotations">
+</colgroup>
+<tbody><tr>
+<td class="parameter_name"><p>pspec</p></td>
+<td class="parameter_description"><p>a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a></p></td>
+<td class="parameter_annotations"> </td>
+</tr></tbody>
+</table></div>
+</div>
+<div class="refsect3">
+<a name="g-param-spec-get-name-quark.returns"></a><h4>Returns</h4>
+<p> the GQuark for <em class="parameter"><code>pspec-&gt;name</code></em>
+.</p>
+</div>
+<p class="since">Since: <a class="link" href="api-index-2-46.html#api-index-2.46">2.46</a></p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="g-param-spec-get-nick"></a><h3>g_param_spec_get_nick ()</h3>
-<pre class="programlisting">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_param_spec_get_nick (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
 <p>Get the nickname of a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.23.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-nick.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -995,7 +1023,7 @@ g_param_spec_get_nick (<em class="parameter"><code><a class="link" href="gobject
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.23.6"></a><h4>Returns</h4>
+<a name="g-param-spec-get-nick.returns"></a><h4>Returns</h4>
 <p> the nickname of <em class="parameter"><code>pspec</code></em>
 .</p>
 </div>
@@ -1003,12 +1031,12 @@ g_param_spec_get_nick (<em class="parameter"><code><a class="link" href="gobject
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-get-blurb"></a><h3>g_param_spec_get_blurb ()</h3>
-<pre class="programlisting">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_param_spec_get_blurb (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
 <p>Get the short description of a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.24.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-blurb.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1022,7 +1050,7 @@ g_param_spec_get_blurb (<em class="parameter"><code><a class="link" href="gobjec
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.24.6"></a><h4>Returns</h4>
+<a name="g-param-spec-get-blurb.returns"></a><h4>Returns</h4>
 <p> the short description of <em class="parameter"><code>pspec</code></em>
 .</p>
 </div>
@@ -1030,13 +1058,13 @@ g_param_spec_get_blurb (<em class="parameter"><code><a class="link" href="gobjec
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-get-qdata"></a><h3>g_param_spec_get_qdata ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 g_param_spec_get_qdata (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
-                        <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>);</pre>
+                        <em class="parameter"><code><a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>);</pre>
 <p>Gets back user data pointers stored via <a class="link" href="gobject-GParamSpec.html#g-param-spec-set-qdata" title="g_param_spec_set_qdata ()"><code class="function">g_param_spec_set_qdata()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.25.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-qdata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1050,15 +1078,15 @@ g_param_spec_get_qdata (<em class="parameter"><code><a class="link" href="gobjec
 </tr>
 <tr>
 <td class="parameter_name"><p>quark</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.25.6"></a><h4>Returns</h4>
-<p> the user data pointer set, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="g-param-spec-get-qdata.returns"></a><h4>Returns</h4>
+<p> the user data pointer set, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
@@ -1067,18 +1095,18 @@ g_param_spec_get_qdata (<em class="parameter"><code><a class="link" href="gobjec
 <a name="g-param-spec-set-qdata"></a><h3>g_param_spec_set_qdata ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_param_spec_set_qdata (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
-                        <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>,
-                        <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> data</code></em>);</pre>
+                        <em class="parameter"><code><a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>,
+                        <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> data</code></em>);</pre>
 <p>Sets an opaque, named pointer on a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>. The name is
-specified through a <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> (retrieved e.g. via
-<a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#g-quark-from-static-string"><code class="function">g_quark_from_static_string()</code></a>), and the pointer can be gotten back
+specified through a <a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> (retrieved e.g. via
+<a href="../glib-Quarks.html#g-quark-from-static-string"><code class="function">g_quark_from_static_string()</code></a>), and the pointer can be gotten back
 from the <em class="parameter"><code>pspec</code></em>
  with <a class="link" href="gobject-GParamSpec.html#g-param-spec-get-qdata" title="g_param_spec_get_qdata ()"><code class="function">g_param_spec_get_qdata()</code></a>.  Setting a
 previously set user data pointer, overrides (frees) the old pointer
-set, using <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> as pointer essentially removes the data stored.</p>
+set, using <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> as pointer essentially removes the data stored.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.26.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-set-qdata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1092,7 +1120,7 @@ set, using <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macr
 </tr>
 <tr>
 <td class="parameter_name"><p>quark</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1109,9 +1137,9 @@ set, using <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macr
 <a name="g-param-spec-set-qdata-full"></a><h3>g_param_spec_set_qdata_full ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_param_spec_set_qdata_full (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> data</code></em>,
-                             <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> destroy</code></em>);</pre>
+                             <em class="parameter"><code><a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>,
+                             <em class="parameter"><code><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> data</code></em>,
+                             <em class="parameter"><code><a href="../glib-Datasets.html#GDestroyNotify"><span class="type">GDestroyNotify</span></a> destroy</code></em>);</pre>
 <p>This function works like <a class="link" href="gobject-GParamSpec.html#g-param-spec-set-qdata" title="g_param_spec_set_qdata ()"><code class="function">g_param_spec_set_qdata()</code></a>, but in addition,
 a <code class="literal">void (*destroy) (gpointer)</code> function may be
 specified which is called with <em class="parameter"><code>data</code></em>
@@ -1122,8 +1150,8 @@ finalized, or the data is being overwritten by a call to
 .</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.10.7.27.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-set-qdata-full.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1137,7 +1165,7 @@ finalized, or the data is being overwritten by a call to
 </tr>
 <tr>
 <td class="parameter_name"><p>quark</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
@@ -1160,9 +1188,9 @@ be freed</p></td>
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-steal-qdata"></a><h3>g_param_spec_steal_qdata ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 g_param_spec_steal_qdata (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>,
-                          <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>);</pre>
+                          <em class="parameter"><code><a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a> quark</code></em>);</pre>
 <p>Gets back user data pointers stored via <a class="link" href="gobject-GParamSpec.html#g-param-spec-set-qdata" title="g_param_spec_set_qdata ()"><code class="function">g_param_spec_set_qdata()</code></a>
 and removes the <em class="parameter"><code>data</code></em>
  from <em class="parameter"><code>pspec</code></em>
@@ -1170,8 +1198,8 @@ and removes the <em class="parameter"><code>data</code></em>
 function (if any was set).  Usually, calling this function is only
 required to update user data pointers with a destroy notifier.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.28.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-steal-qdata.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1185,15 +1213,15 @@ required to update user data pointers with a destroy notifier.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>quark</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Quarks.html#GQuark"><span class="type">GQuark</span></a>, naming the user data pointer</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.28.6"></a><h4>Returns</h4>
-<p> the user data pointer set, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="g-param-spec-steal-qdata.returns"></a><h4>Returns</h4>
+<p> the user data pointer set, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
@@ -1210,8 +1238,8 @@ type. Redirection is established by creating a property
 of type <a class="link" href="gobject-Standard-Parameter-and-Value-Types.html#GParamSpecOverride" title="struct GParamSpecOverride"><span class="type">GParamSpecOverride</span></a>. See <a class="link" href="gobject-The-Base-Object-Type.html#g-object-class-override-property" title="g_object_class_override_property ()"><code class="function">g_object_class_override_property()</code></a>
 for an example of the use of this capability.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.29.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-get-redirect-target.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1225,9 +1253,9 @@ for an example of the use of this capability.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.29.6"></a><h4>Returns</h4>
+<a name="g-param-spec-get-redirect-target.returns"></a><h4>Returns</h4>
 <p> paramspec to which requests on this
-paramspec should be redirected, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none. </p>
+paramspec should be redirected, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if none. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-4.html#api-index-2.4">2.4</a></p>
@@ -1235,11 +1263,11 @@ paramspec should be redirected, or <a href="https://developer.gnome.org/glib/uns
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-internal"></a><h3>g_param_spec_internal ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gpointer"><span class="returnvalue">gpointer</span></a>
 g_param_spec_internal (<em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> param_type</code></em>,
-                       <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
-                       <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *nick</code></em>,
-                       <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *blurb</code></em>,
+                       <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+                       <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *nick</code></em>,
+                       <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *blurb</code></em>,
                        <em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamFlags" title="enum GParamFlags"><span class="type">GParamFlags</span></a> flags</code></em>);</pre>
 <p>Creates a new <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> instance.</p>
 <p>A property name consists of segments consisting of ASCII letters and
@@ -1261,8 +1289,8 @@ e.g. a tooltip. The <em class="parameter"><code>nick</code></em>
  should ideally be localized.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.10.7.30.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-internal.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1298,15 +1326,16 @@ e.g. a tooltip. The <em class="parameter"><code>nick</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.30.10"></a><h4>Returns</h4>
-<p> a newly allocated <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> instance</p>
+<a name="g-param-spec-internal.returns"></a><h4>Returns</h4>
+<p> a newly allocated <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> instance. </p>
+<p><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> GObject.ParamSpec]</span></p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-param-type-register-static"></a><h3>g_param_type_register_static ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="returnvalue">GType</span></a>
-g_param_type_register_static (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
+g_param_type_register_static (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *name</code></em>,
                               <em class="parameter"><code>const <a class="link" href="gobject-GParamSpec.html#GParamSpecTypeInfo" title="struct GParamSpecTypeInfo"><span class="type">GParamSpecTypeInfo</span></a> *pspec_info</code></em>);</pre>
 <p>Registers <em class="parameter"><code>name</code></em>
  as the name of a new static type derived from
@@ -1315,8 +1344,8 @@ the <a class="link" href="gobject-GParamSpec.html#GParamSpecTypeInfo" title="str
  to manage the
 <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> type and its instances.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.31.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-type-register-static.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1337,7 +1366,7 @@ the <a class="link" href="gobject-GParamSpec.html#GParamSpecTypeInfo" title="str
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.31.6"></a><h4>Returns</h4>
+<a name="g-param-type-register-static.returns"></a><h4>Returns</h4>
 <p> The new type identifier.</p>
 </div>
 </div>
@@ -1345,17 +1374,17 @@ the <a class="link" href="gobject-GParamSpec.html#GParamSpecTypeInfo" title="str
 <div class="refsect2">
 <a name="g-param-spec-pool-new"></a><h3>g_param_spec_pool_new ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="returnvalue">GParamSpecPool</span></a> *
-g_param_spec_pool_new (<em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> type_prefixing</code></em>);</pre>
+g_param_spec_pool_new (<em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> type_prefixing</code></em>);</pre>
 <p>Creates a new <a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="type">GParamSpecPool</span></a>.</p>
 <p>If <em class="parameter"><code>type_prefixing</code></em>
- is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, lookups in the newly created pool will
+ is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, lookups in the newly created pool will
 allow to specify the owner as a colon-separated prefix of the
 property name, like "GtkContainer:border-width". This feature is
 deprecated, so you should always set <em class="parameter"><code>type_prefixing</code></em>
- to <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>.</p>
+ to <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.32.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1369,7 +1398,7 @@ deprecated, so you should always set <em class="parameter"><code>type_prefixing<
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.32.7"></a><h4>Returns</h4>
+<a name="g-param-spec-pool-new.returns"></a><h4>Returns</h4>
 <p> a newly allocated <a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="type">GParamSpecPool</span></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -1383,8 +1412,8 @@ g_param_spec_pool_insert (<em class="parameter"><code><a class="link" href="gobj
                           <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> owner_type</code></em>);</pre>
 <p>Inserts a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> in the pool.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.33.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-insert.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1419,8 +1448,8 @@ g_param_spec_pool_remove (<em class="parameter"><code><a class="link" href="gobj
                           <em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> *pspec</code></em>);</pre>
 <p>Removes a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> from the pool.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.34.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-remove.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1446,13 +1475,13 @@ g_param_spec_pool_remove (<em class="parameter"><code><a class="link" href="gobj
 <a name="g-param-spec-pool-lookup"></a><h3>g_param_spec_pool_lookup ()</h3>
 <pre class="programlisting"><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="returnvalue">GParamSpec</span></a> *
 g_param_spec_pool_lookup (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="type">GParamSpecPool</span></a> *pool</code></em>,
-                          <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *param_name</code></em>,
+                          <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *param_name</code></em>,
                           <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> owner_type</code></em>,
-                          <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> walk_ancestors</code></em>);</pre>
+                          <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> walk_ancestors</code></em>);</pre>
 <p>Looks up a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> in the pool.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.35.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-lookup.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1476,7 +1505,7 @@ g_param_spec_pool_lookup (<em class="parameter"><code><a class="link" href="gobj
 </tr>
 <tr>
 <td class="parameter_name"><p>walk_ancestors</p></td>
-<td class="parameter_description"><p>If <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, also try to find a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> with <em class="parameter"><code>param_name</code></em>
+<td class="parameter_description"><p>If <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, also try to find a <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> with <em class="parameter"><code>param_name</code></em>
 owned by an ancestor of <em class="parameter"><code>owner_type</code></em>
 .</p></td>
 <td class="parameter_annotations"> </td>
@@ -1485,8 +1514,8 @@ owned by an ancestor of <em class="parameter"><code>owner_type</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.35.6"></a><h4>Returns</h4>
-<p> The found <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no
+<a name="g-param-spec-pool-lookup.returns"></a><h4>Returns</h4>
+<p> The found <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> if no
 matching <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="type">GParamSpec</span></a> was found. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
@@ -1497,13 +1526,13 @@ matching <a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct
 <pre class="programlisting"><a class="link" href="gobject-GParamSpec.html#GParamSpec" title="struct GParamSpec"><span class="returnvalue">GParamSpec</span></a> **
 g_param_spec_pool_list (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="type">GParamSpecPool</span></a> *pool</code></em>,
                         <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> owner_type</code></em>,
-                        <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint"><span class="type">guint</span></a> *n_pspecs_p</code></em>);</pre>
+                        <em class="parameter"><code><a href="../glib-Basic-Types.html#guint"><span class="type">guint</span></a> *n_pspecs_p</code></em>);</pre>
 <p>Gets an array of all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a> owned by <em class="parameter"><code>owner_type</code></em>
  in
 the pool.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.36.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-list.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1529,7 +1558,7 @@ the pool.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.36.6"></a><h4>Returns</h4>
+<a name="g-param-spec-pool-list.returns"></a><h4>Returns</h4>
 <p> a newly
 allocated array containing pointers to all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a>
 owned by <em class="parameter"><code>owner_type</code></em>
@@ -1540,15 +1569,15 @@ in the pool. </p>
 <hr>
 <div class="refsect2">
 <a name="g-param-spec-pool-list-owned"></a><h3>g_param_spec_pool_list_owned ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<pre class="programlisting"><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 g_param_spec_pool_list_owned (<em class="parameter"><code><a class="link" href="gobject-GParamSpec.html#GParamSpecPool" title="GParamSpecPool"><span class="type">GParamSpecPool</span></a> *pool</code></em>,
                               <em class="parameter"><code><a class="link" href="gobject-Type-Information.html#GType" title="GType"><span class="type">GType</span></a> owner_type</code></em>);</pre>
-<p>Gets an <a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a> owned by <em class="parameter"><code>owner_type</code></em>
+<p>Gets an <a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a> owned by <em class="parameter"><code>owner_type</code></em>
  in
 the pool.</p>
 <div class="refsect3">
-<a name="id-1.4.10.7.37.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-param-spec-pool-list-owned.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1569,9 +1598,9 @@ the pool.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.7.37.6"></a><h4>Returns</h4>
+<a name="g-param-spec-pool-list-owned.returns"></a><h4>Returns</h4>
 <p> a
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a> owned by <em class="parameter"><code>owner_type</code></em>
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of all <a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a> owned by <em class="parameter"><code>owner_type</code></em>
 in
 the pool<a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSpecs</span></a>. </p>
 <p><span class="annotation">[<acronym title="Free data container after the code is done."><span class="acronym">transfer container</span></acronym>][<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GObject.ParamSpec]</span></p>
@@ -1594,8 +1623,8 @@ the pool<a href="gobject-GParamSpec.html#GParamSpec"><span class="type">GParamSp
 <p>All other fields of the GParamSpec struct are private and
 should not be used directly.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GParamSpec.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1608,7 +1637,7 @@ should not be used directly.</p>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *<em class="structfield"><code><a name="GParamSpec.name"></a>name</code></em>;</p></td>
+<td class="struct_member_name"><p>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *<em class="structfield"><code><a name="GParamSpec.name"></a>name</code></em>;</p></td>
 <td class="struct_member_description"><p>name of this parameter: always an interned string</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -1655,8 +1684,8 @@ should not be used directly.</p>
 Normally, GParamSpec classes are filled by
 <a class="link" href="gobject-GParamSpec.html#g-param-type-register-static" title="g_param_type_register_static ()"><code class="function">g_param_type_register_static()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GParamSpecClass.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1713,8 +1742,8 @@ according to this type
 <p>Through the <a class="link" href="gobject-GParamSpec.html#GParamFlags" title="enum GParamFlags"><span class="type">GParamFlags</span></a> flag values, certain aspects of parameters
 can be configured. See also <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-STRINGS:CAPS" title="G_PARAM_STATIC_STRINGS"><span class="type">G_PARAM_STATIC_STRINGS</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GParamFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1827,6 +1856,14 @@ can be configured. See also <a class="link" href="gobject-GParamSpec.html#G-PARA
 </div>
 <hr>
 <div class="refsect2">
+<a name="G-PARAM-STATIC-STRINGS:CAPS"></a><h3>G_PARAM_STATIC_STRINGS</h3>
+<pre class="programlisting">#define G_PARAM_STATIC_STRINGS (G_PARAM_STATIC_NAME | G_PARAM_STATIC_NICK | G_PARAM_STATIC_BLURB)
+</pre>
+<p><a class="link" href="gobject-GParamSpec.html#GParamFlags" title="enum GParamFlags"><span class="type">GParamFlags</span></a> value alias for <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-NAME:CAPS"><code class="literal">G_PARAM_STATIC_NAME</code></a> | <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-NICK:CAPS"><code class="literal">G_PARAM_STATIC_NICK</code></a> | <a class="link" href="gobject-GParamSpec.html#G-PARAM-STATIC-BLURB:CAPS"><code class="literal">G_PARAM_STATIC_BLURB</code></a>.</p>
+<p>Since 2.13.0</p>
+</div>
+<hr>
+<div class="refsect2">
 <a name="G-PARAM-MASK:CAPS"></a><h3>G_PARAM_MASK</h3>
 <pre class="programlisting">#define G_PARAM_MASK		(0x000000ff)
 </pre>
@@ -1869,8 +1906,8 @@ The type system will perform a deep copy of this structure, so its memory
 does not need to be persistent across invocation of 
 <a class="link" href="gobject-GParamSpec.html#g-param-type-register-static" title="g_param_type_register_static ()"><code class="function">g_param_type_register_static()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.10.8.7.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GParamSpecTypeInfo.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1878,13 +1915,13 @@ does not need to be persistent across invocation of
 </colgroup>
 <tbody>
 <tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> <em class="structfield"><code><a name="GParamSpecTypeInfo.instance-size"></a>instance_size</code></em>;</p></td>
+<td class="struct_member_name"><p><a href="../glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> <em class="structfield"><code><a name="GParamSpecTypeInfo.instance-size"></a>instance_size</code></em>;</p></td>
 <td class="struct_member_description"><p>Size of the instance (object) structure.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> <em class="structfield"><code><a name="GParamSpecTypeInfo.n-preallocs"></a>n_preallocs</code></em>;</p></td>
-<td class="struct_member_description"><p>Prior to GLib 2.10, it specified the number of pre-allocated (cached) instances to reserve memory for (0 indicates no caching). Since GLib 2.10, it is ignored, since instances are allocated with the <a href="https://developer.gnome.org/glib/unstable/glib-Memory-Slices.html">slice allocator</a> now.</p></td>
+<td class="struct_member_name"><p><a href="../glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> <em class="structfield"><code><a name="GParamSpecTypeInfo.n-preallocs"></a>n_preallocs</code></em>;</p></td>
+<td class="struct_member_description"><p>Prior to GLib 2.10, it specified the number of pre-allocated (cached) instances to reserve memory for (0 indicates no caching). Since GLib 2.10, it is ignored, since instances are allocated with the slice allocator now.</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
@@ -1949,6 +1986,6 @@ types.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

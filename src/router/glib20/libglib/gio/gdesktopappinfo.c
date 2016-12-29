@@ -1794,7 +1794,7 @@ g_desktop_app_info_load_from_keyfile (GDesktopAppInfo *info,
         {
           *last_dot = '\0';
 
-          if (g_dbus_is_interface_name (basename))
+          if (g_dbus_is_name (basename) && basename[0] != ':')
             info->app_id = g_strdup (basename);
         }
 
@@ -1852,7 +1852,8 @@ g_desktop_app_info_new_from_keyfile (GKeyFile *key_file)
 
 /**
  * g_desktop_app_info_new_from_filename:
- * @filename: the path of a desktop file, in the GLib filename encoding
+ * @filename: (type filename): the path of a desktop file, in the GLib
+ *      filename encoding
  *
  * Creates a new #GDesktopAppInfo.
  *
@@ -2027,7 +2028,8 @@ g_desktop_app_info_get_is_hidden (GDesktopAppInfo *info)
  * situations such as the #GDesktopAppInfo returned from
  * g_desktop_app_info_new_from_keyfile(), this function will return %NULL.
  *
- * Returns: The full path to the file for @info, or %NULL if not known.
+ * Returns: (type filename): The full path to the file for @info,
+ *     or %NULL if not known.
  * Since: 2.24
  */
 const char *
@@ -2399,7 +2401,7 @@ expand_application_parameters (GDesktopAppInfo   *info,
   if (exec_line == NULL)
     {
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                           _("Desktop file didn't specify Exec field"));
+                           _("Desktop file didn’t specify Exec field"));
       return FALSE;
     }
 
@@ -2669,7 +2671,7 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
       GPid pid;
       GList *launched_uris;
       GList *iter;
-      char *display, *sn_id = NULL;
+      char *sn_id = NULL;
 
       old_uris = uris;
       if (!expand_application_parameters (info, exec_line, &uris, &argc, &argv, error))
@@ -2708,17 +2710,10 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
           data.pid_envvar = NULL;
         }
 
-      display = NULL;
       sn_id = NULL;
       if (launch_context)
         {
           GList *launched_files = create_files_for_uris (launched_uris);
-
-          display = g_app_launch_context_get_display (launch_context,
-                                                      G_APP_INFO (info),
-                                                      launched_files);
-          if (display)
-            envp = g_environ_setenv (envp, "DISPLAY", display, TRUE);
 
           if (info->startup_notify)
             {
@@ -2744,7 +2739,6 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
           if (sn_id)
             g_app_launch_context_launch_failed (launch_context, sn_id);
 
-          g_free (display);
           g_free (sn_id);
           g_list_free (launched_uris);
 
@@ -2771,11 +2765,10 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
       notify_desktop_launch (session_bus,
                              info,
                              pid,
-                             display,
+                             NULL,
                              sn_id,
                              launched_uris);
 
-      g_free (display);
       g_free (sn_id);
       g_list_free (launched_uris);
 
@@ -2794,25 +2787,21 @@ g_desktop_app_info_launch_uris_with_spawn (GDesktopAppInfo            *info,
 }
 
 static gchar *
-object_path_from_appid (const gchar *app_id)
+object_path_from_appid (const gchar *appid)
 {
-  gchar *path;
-  gint i, n;
+  gchar *appid_path, *iter;
 
-  n = strlen (app_id);
-  path = g_malloc (n + 2);
+  appid_path = g_strconcat ("/", appid, NULL);
+  for (iter = appid_path; *iter; iter++)
+    {
+      if (*iter == '.')
+        *iter = '/';
 
-  path[0] = '/';
+      if (*iter == '-')
+        *iter = '_';
+    }
 
-  for (i = 0; i < n; i++)
-    if (app_id[i] != '.')
-      path[i + 1] = app_id[i];
-    else
-      path[i + 1] = '/';
-
-  path[i + 1] = '\0';
-
-  return path;
+  return appid_path;
 }
 
 static GVariant *
@@ -3105,11 +3094,11 @@ ensure_dir (DirType   type,
   display_name = g_filename_display_name (path);
   if (type == APP_DIR)
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                 _("Can't create user application configuration folder %s: %s"),
+                 _("Can’t create user application configuration folder %s: %s"),
                  display_name, g_strerror (errsv));
   else
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errsv),
-                 _("Can't create user MIME configuration folder %s: %s"),
+                 _("Can’t create user MIME configuration folder %s: %s"),
                  display_name, g_strerror (errsv));
 
   g_free (display_name);
@@ -3428,6 +3417,7 @@ run_update_command (char *command,
              * chance of debugging it.
              */
             g_warning ("%s", error->message);
+            g_error_free (error);
           }
 
         g_free (argv[1]);
@@ -3606,7 +3596,7 @@ g_desktop_app_info_ensure_saved (GDesktopAppInfo  *info,
 
       display_name = g_filename_display_name (filename);
       g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED,
-                   _("Can't create user desktop file %s"), display_name);
+                   _("Can’t create user desktop file %s"), display_name);
       g_free (display_name);
       g_free (filename);
       g_free (data);

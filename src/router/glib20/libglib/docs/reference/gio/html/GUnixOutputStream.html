@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GUnixOutputStream: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="GUnixInputStream.html" title="GUnixInputStream">
 <link rel="next" href="gio-GWin32InputStream.html" title="GWin32InputStream">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GUnixOutputStream.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -60,7 +60,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GUnixOutputStream.html#g-unix-output-stream-get-close-fd" title="g_unix_output_stream_get_close_fd ()">g_unix_output_stream_get_close_fd</a> <span class="c_punctuation">()</span>
@@ -68,7 +68,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GUnixOutputStream.html#g-unix-output-stream-get-fd" title="g_unix_output_stream_get_fd ()">g_unix_output_stream_get_fd</a> <span class="c_punctuation">()</span>
@@ -79,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="GUnixOutputStream.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -87,12 +87,12 @@
 </colgroup>
 <tbody>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></td>
 <td class="property_name"><a class="link" href="GUnixOutputStream.html#GUnixOutputStream--close-fd" title="The “close-fd” property">close-fd</a></td>
 <td class="property_flags">Read / Write</td>
 </tr>
 <tr>
-<td class="property_type"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="type">gint</span></a></td>
+<td class="property_type"><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a></td>
 <td class="property_name"><a class="link" href="GUnixOutputStream.html#GUnixOutputStream--fd" title="The “fd” property">fd</a></td>
 <td class="property_flags">Read / Write / Construct Only</td>
 </tr>
@@ -101,7 +101,7 @@
 </div>
 <div class="refsect1">
 <a name="GUnixOutputStream.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -114,7 +114,7 @@
 </div>
 <div class="refsect1">
 <a name="GUnixOutputStream.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> <a class="link" href="GOutputStream.html" title="GOutputStream">GOutputStream</a>
         <span class="lineart">╰──</span> GUnixOutputStream
 </pre>
@@ -146,16 +146,16 @@ when using it.</p>
 <div class="refsect2">
 <a name="g-unix-output-stream-new"></a><h3>g_unix_output_stream_new ()</h3>
 <pre class="programlisting"><a class="link" href="GOutputStream.html" title="GOutputStream"><span class="returnvalue">GOutputStream</span></a> *
-g_unix_output_stream_new (<em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="type">gint</span></a> fd</code></em>,
-                          <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_fd</code></em>);</pre>
+g_unix_output_stream_new (<em class="parameter"><code><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a> fd</code></em>,
+                          <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_fd</code></em>);</pre>
 <p>Creates a new <a class="link" href="GUnixOutputStream.html" title="GUnixOutputStream"><span class="type">GUnixOutputStream</span></a> for the given <em class="parameter"><code>fd</code></em>
 . </p>
 <p>If <em class="parameter"><code>close_fd</code></em>
-, is <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, the file descriptor will be closed when 
+, is <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a>, the file descriptor will be closed when 
 the output stream is destroyed.</p>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-unix-output-stream-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -169,14 +169,14 @@ the output stream is destroyed.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>close_fd</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the file descriptor when done</p></td>
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the file descriptor when done</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.2.7"></a><h4>Returns</h4>
+<a name="g-unix-output-stream-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GOutputStream.html" title="GOutputStream"><span class="type">GOutputStream</span></a></p>
 </div>
 </div>
@@ -185,13 +185,13 @@ the output stream is destroyed.</p>
 <a name="g-unix-output-stream-set-close-fd"></a><h3>g_unix_output_stream_set_close_fd ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_unix_output_stream_set_close_fd (<em class="parameter"><code><a class="link" href="GUnixOutputStream.html" title="GUnixOutputStream"><span class="type">GUnixOutputStream</span></a> *stream</code></em>,
-                                   <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_fd</code></em>);</pre>
+                                   <em class="parameter"><code><a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a> close_fd</code></em>);</pre>
 <p>Sets whether the file descriptor of <em class="parameter"><code>stream</code></em>
  shall be closed
 when the stream is closed.</p>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-unix-output-stream-set-close-fd.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -205,7 +205,7 @@ when the stream is closed.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>close_fd</p></td>
-<td class="parameter_description"><p><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the file descriptor when done</p></td>
+<td class="parameter_description"><p><a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> to close the file descriptor when done</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 </tbody>
@@ -216,14 +216,14 @@ when the stream is closed.</p>
 <hr>
 <div class="refsect2">
 <a name="g-unix-output-stream-get-close-fd"></a><h3>g_unix_output_stream_get_close_fd ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_unix_output_stream_get_close_fd (<em class="parameter"><code><a class="link" href="GUnixOutputStream.html" title="GUnixOutputStream"><span class="type">GUnixOutputStream</span></a> *stream</code></em>);</pre>
 <p>Returns whether the file descriptor of <em class="parameter"><code>stream</code></em>
  will be
 closed when the stream is closed.</p>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-unix-output-stream-get-close-fd.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -237,20 +237,20 @@ closed when the stream is closed.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.4.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the file descriptor is closed when done</p>
+<a name="g-unix-output-stream-get-close-fd.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the file descriptor is closed when done</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-20.html#api-index-2.20">2.20</a></p>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-unix-output-stream-get-fd"></a><h3>g_unix_output_stream_get_fd ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gint"><span class="returnvalue">gint</span></a>
 g_unix_output_stream_get_fd (<em class="parameter"><code><a class="link" href="GUnixOutputStream.html" title="GUnixOutputStream"><span class="type">GUnixOutputStream</span></a> *stream</code></em>);</pre>
 <p>Return the UNIX file descriptor that the stream writes to.</p>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-unix-output-stream-get-fd.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -264,7 +264,7 @@ g_unix_output_stream_get_fd (<em class="parameter"><code><a class="link" href="G
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.20.10.5.6"></a><h4>Returns</h4>
+<a name="g-unix-output-stream-get-fd.returns"></a><h4>Returns</h4>
 <p> The file descriptor of <em class="parameter"><code>stream</code></em>
 </p>
 </div>
@@ -283,7 +283,7 @@ g_unix_output_stream_get_fd (<em class="parameter"><code><a class="link" href="G
 <a name="GUnixOutputStream.property-details"></a><h2>Property Details</h2>
 <div class="refsect2">
 <a name="GUnixOutputStream--close-fd"></a><h3>The <code class="literal">“close-fd”</code> property</h3>
-<pre class="programlisting">  “close-fd”                 <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
+<pre class="programlisting">  “close-fd”                 <a href="../glib-Basic-Types.html#gboolean"><span class="type">gboolean</span></a></pre>
 <p>Whether to close the file descriptor when the stream is closed.</p>
 <p>Flags: Read / Write</p>
 <p>Default value: TRUE</p>
@@ -292,7 +292,7 @@ g_unix_output_stream_get_fd (<em class="parameter"><code><a class="link" href="G
 <hr>
 <div class="refsect2">
 <a name="GUnixOutputStream--fd"></a><h3>The <code class="literal">“fd”</code> property</h3>
-<pre class="programlisting">  “fd”                       <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="type">gint</span></a></pre>
+<pre class="programlisting">  “fd”                       <a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a></pre>
 <p>The file descriptor that the stream writes to.</p>
 <p>Flags: Read / Write / Construct Only</p>
 <p>Default value: -1</p>
@@ -305,6 +305,6 @@ g_unix_output_stream_get_fd (<em class="parameter"><code><a class="link" href="G
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

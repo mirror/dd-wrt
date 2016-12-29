@@ -44,6 +44,7 @@
 #include <gio/gconverterinputstream.h>
 #include <gio/gconverteroutputstream.h>
 #include <gio/gcredentials.h>
+#include <gio/gdatagrambased.h>
 #include <gio/gdatainputstream.h>
 #include <gio/gdataoutputstream.h>
 #include <gio/gdbusaddress.h>
@@ -59,6 +60,9 @@
 #include <gio/gdbusserver.h>
 #include <gio/gdbusutils.h>
 #include <gio/gdrive.h>
+#include <gio/gdtlsclientconnection.h>
+#include <gio/gdtlsconnection.h>
+#include <gio/gdtlsserverconnection.h>
 #include <gio/gemblemedicon.h>
 #include <gio/gfileattribute.h>
 #include <gio/gfileenumerator.h>

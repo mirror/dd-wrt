@@ -21,7 +21,7 @@ all :				\
 	gnulib\gnulib.lib	\
 	pcre\pcre.lib		\
 	libglib-2.0-0.dll \
-	glib-2.45s.lib \
+	glib-2.51s.lib \
 	gspawn-win32-helper.exe	\
 	gspawn-win32-helper-console.exe	\
 
@@ -121,8 +121,8 @@ glib.res : glib.rc
 
 # create a static libary
 # static library can well have the real version number in the name
-glib-2.45s.lib : $(glib_OBJECTS) gnulib\gnulib.lib pcre\pcre.lib
-	lib /out:glib-2.45s.lib $(glib_OBJECTS) gnulib\gnulib.lib pcre\pcre.lib
+glib-2.51s.lib : $(glib_OBJECTS) gnulib\gnulib.lib pcre\pcre.lib
+	lib /out:glib-2.51s.lib $(glib_OBJECTS) gnulib\gnulib.lib pcre\pcre.lib
 
 libglib-2.0-0.dll : $(glib_OBJECTS) gnulib\gnulib.lib pcre\pcre.lib glib.def glib.res
 	$(CC) $(CFLAGS) -LD -Fe$@ $(glib_OBJECTS) glib.res $(INTL_LIBS) \
