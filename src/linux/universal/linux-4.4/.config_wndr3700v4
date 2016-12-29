@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.7 Kernel Configuration
+# Linux/mips 4.4.39 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -984,6 +984,7 @@ CONFIG_MTD_CFI_I2=y
 # Disk-On-Chip Device Drivers
 #
 # CONFIG_MTD_DOCG3 is not set
+CONFIG_COMFAST_WATCHDOG=y
 CONFIG_DIR825C1=y
  
  
@@ -992,7 +993,15 @@ CONFIG_DIR825C1=y
  
  
  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 # CONFIG_UBNTXW is not set
+ 
  
  
  
@@ -1948,6 +1957,7 @@ CONFIG_MSDOS_FS=m
 CONFIG_VFAT_FS=m
 CONFIG_FAT_DEFAULT_CODEPAGE=437
 CONFIG_FAT_DEFAULT_IOCHARSET="iso8859-1"
+ 
 # CONFIG_NTFS_FS is not set
 
 #
@@ -2203,6 +2213,7 @@ CONFIG_CRYPTO_RNG=y
 CONFIG_CRYPTO_RNG2=y
 CONFIG_CRYPTO_PCOMP2=y
 CONFIG_CRYPTO_AKCIPHER2=y
+CONFIG_CRYPTO_AKCIPHER=y
 # CONFIG_CRYPTO_RSA is not set
 CONFIG_CRYPTO_MANAGER=y
 CONFIG_CRYPTO_MANAGER2=y

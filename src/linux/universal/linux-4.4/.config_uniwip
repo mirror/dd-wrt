@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.7 Kernel Configuration
+# Linux/powerpc 4.4.39 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -2369,6 +2369,7 @@ CONFIG_FANOTIFY=y
 #
 # CONFIG_MSDOS_FS is not set
 # CONFIG_VFAT_FS is not set
+ 
 # CONFIG_NTFS_FS is not set
 
 #
