@@ -2,11 +2,13 @@ rm .config
 rm .config.old
 for i in .config*
 do 
+    echo COPY $i
+    cp $i .config
+    echo "# CONFIG_EXFAT_FS is not set" >> .config
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
 	    echo COPY $i
-	    cp $i .config
 	    grep "CONFIG_X86_64=y" $i
 	    if [ $? -eq 0 ] 
 		then 
@@ -14,42 +16,30 @@ do
 		else
 		    make oldconfig ARCH=i386
 		fi
-	    cp .config $i
     fi
 
     grep "CONFIG_ARM=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    make oldconfig ARCH=arm
-	    cp .config $i
     fi
 
     grep "CONFIG_ARCH_IXP4XX" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    sed -i 's/\# CONFIG_CPU_BIG_ENDIAN is not set/CONFIG_CPU_BIG_ENDIAN=y/g' .config	    
 	    make oldconfig ARCH=arm
-	    cp .config $i
     fi
 
     grep "CONFIG_PPC32=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    make oldconfig ARCH=powerpc
-	    cp .config $i
     fi
 
     grep "CONFIG_MIPS=y" $i
     if [ $? -eq 0 ] 
 	then 
-	    echo COPY $i
-	    cp $i .config
 	    echo CONFIG_DIR615I=y >> .config
 	    echo CONFIG_WPE72=y >> .config
 	    echo CONFIG_WA901=y >> .config
@@ -121,6 +111,7 @@ do
 	    sed -i 's/\CONFIG_E380AC=y/ /g' .config	    
 	    sed -i 's/\CONFIG_XD3200=y/ /g' .config	    
 	    sed -i 's/\CONFIG_AP120C=y/ /g' .config	    
-	    cp .config $i
     fi
+    sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
+    cp .config $i
 done
