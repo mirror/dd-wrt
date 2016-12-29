@@ -10,10 +10,12 @@
 				
 				<dt><% tran("privoxy.server"); %></dt>
 				<% tran("hprivoxy.page1"); %>
-				<dt><% tran("privoxy.transp"); %></dt>
+				<dt><% tran("privoxy.pac"); %></dt>
 				<% tran("hprivoxy.page2"); %>
-				<dt><% tran("privoxy.custom"); %></dt>
+				<dt><% tran("privoxy.transp"); %></dt>
 				<% tran("hprivoxy.page3"); %>
+				<dt><% tran("privoxy.custom"); %></dt>
+				<% tran("hprivoxy.page4"); %>
 				
 		</div>
 		<div class="also">
