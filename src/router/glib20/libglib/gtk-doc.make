@@ -282,7 +282,7 @@ uninstall-local:
 #
 # Require gtk-doc when making dist
 #
-if ENABLE_GTK_DOC
+if HAVE_GTK_DOC
 dist-check-gtkdoc: docs
 else
 dist-check-gtkdoc:
