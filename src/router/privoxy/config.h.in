@@ -255,6 +255,12 @@
 #undef PCREPOSIX_H_IN_SUBDIR
 
 
+/* Relevant for select(). Not honoured by all OS. */
+#undef FD_SETSIZE
+
+/* Define to enable support for client-specific tags. */
+#undef FEATURE_CLIENT_TAGS
+
 /* Define to 1 to use compression through the zlib library. */
 #undef FEATURE_COMPRESSION
 
@@ -492,6 +498,9 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #undef SIZEOF_SIZE_T
+
+/* The size of `time_t', as computed by sizeof. */
+#undef SIZEOF_TIME_T
 
 /* Define to statically link to internal outdated pcre on Windows. */
 #undef STATIC_PCRE

@@ -117,4 +117,6 @@ cdn1.smartadserver.com/diff/251/
 .sophosxl.net
 .mywot.com
 .ghostery.com
-
+{ +block{Kong-URLs} }
+.binlayer.com
+ww251.smartadserver.com

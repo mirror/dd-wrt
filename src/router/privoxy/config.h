@@ -53,12 +53,12 @@
 /*
  * Version number - Point (_._.X)
  */
-#define VERSION_POINT 24
+#define VERSION_POINT 26
 
 /*
  * Version number, as a string
  */
-#define VERSION "3.0.24"
+#define VERSION "3.0.26"
 
 /*
  * Status of the code: "alpha", "beta" or "stable".
@@ -255,6 +255,12 @@
  */
 /* #undef PCREPOSIX_H_IN_SUBDIR */
 
+
+/* Relevant for select(). Not honoured by all OS. */
+/* #undef FD_SETSIZE */
+
+/* Define to enable support for client-specific tags. */
+#define FEATURE_CLIENT_TAGS 1
 
 /* Define to 1 to use compression through the zlib library. */
 #define FEATURE_COMPRESSION 1
@@ -493,6 +499,9 @@
 
 /* The size of `size_t', as computed by sizeof. */
 #define SIZEOF_SIZE_T 4
+
+/* The size of `time_t', as computed by sizeof. */
+#define SIZEOF_TIME_T 4
 
 /* Define to statically link to internal outdated pcre on Windows. */
 /* #undef STATIC_PCRE */
