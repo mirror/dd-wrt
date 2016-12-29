@@ -755,15 +755,21 @@ nas.dlna_dir="DLNA Verzeichnis";
 nas.dlna_cleandb="Datenbank jetzt leeren";
 
 //** Privoxy.asp **//
-
 privoxy.titl="Werbefilter";
 privoxy.server="Privoxy";
 privoxy.legend="Proxy Server";
+privoxy.pac="Proxy Konfiguration bereitstellen";
 privoxy.transp="Transparenter Modus";
 privoxy.custom="Eigene Konfiguration";
 
+hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients.<br> Proxy IP = <b>Router IP</b> <br>Proxy Port = <b>8118</b>";
 
-hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients. Proxy IP = <b>Router IP</b> Proxy Port = <b>8118</b>";
+//help page
+hprivoxy.page1="<dd>Privoxy erm&ouml;glicht das Entfernen von Werbung. <br/><ul><br/></ul></dd>";
+hprivoxy.page2="<dd><br/><ul><br/><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es n&ouml;tig die Automatische Proxykonfiguratio zu aktivieren</li><li>Falls ihr Klient Mitglied einer Dom&auml;ne ist, m&uuml;ssen sie das Senden der lokalen Dom&auml;ne aktivieren</li></ul></dd>";
+hprivoxy.page3="<dd><br/><ul><li>Verbindungen ins Internet zu Port 80 werden über den Werbefilter geleitet</li><li>Dadurch kann das Filtern für jeden Klient erzwungen werden</li><li>Im Transparenten Modus können keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen über den Werbefilter zu leiten</li></ul></dd>";
+hprivoxy.page4="<dd><br/><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li></ul></dd>";
+
 
 //** Lighttpd.asp **//
 
