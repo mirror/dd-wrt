@@ -423,7 +423,7 @@ set_error (GMarkupParseContext  *context,
   /* Make sure that the GError message is valid UTF-8
    * even if it is complaining about invalid UTF-8 in the markup
    */
-  s_valid = _g_utf8_make_valid (s);
+  s_valid = g_utf8_make_valid (s);
   set_error_literal (context, error, code, s);
 
   g_free (s);
@@ -618,7 +618,6 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
                           GError              **error)
 {
   char mask, *to;
-  int line_num = 1;
   const char *from;
   gboolean normalize_attribute;
 
@@ -642,8 +641,6 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
       *to = *from;
 
       mask |= *to;
-      if (*to == '\n')
-        line_num++;
       if (normalize_attribute && (*to == '\t' || *to == '\n'))
         *to = ' ';
       if (*to == '\r')
@@ -657,7 +654,7 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
           from++;
           if (*from == '#')
             {
-              gboolean is_hex = FALSE;
+              gint base = 10;
               gulong l;
               gchar *end = NULL;
 
@@ -665,16 +662,12 @@ unescape_gstring_inplace (GMarkupParseContext  *context,
 
               if (*from == 'x')
                 {
-                  is_hex = TRUE;
+                  base = 16;
                   from++;
                 }
 
-              /* digit is between start and p */
               errno = 0;
-              if (is_hex)
-                l = strtoul (from, &end, 16);
-              else
-                l = strtoul (from, &end, 10);
+              l = strtoul (from, &end, base);
 
               if (end == from || errno != 0)
                 {

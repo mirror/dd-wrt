@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Conventions: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="chapter-gtype.html" title="The GLib Dynamic Type System">
 <link rel="prev" href="chapter-gtype.html" title="The GLib Dynamic Type System">
 <link rel="next" href="gtype-non-instantiable.html" title="Non-instantiable non-classed fundamental types">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -28,54 +28,64 @@
         </p>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>
+            Type names (including object names) must be at least three
+            characters long and start with ‘a–z’, ‘A–Z’ or ‘_’.
+          </p></li>
+<li class="listitem"><p>
             Use the <code class="function">object_method</code> pattern for function names: to invoke
-            the method named foo on an instance of object type bar, call 
-            <code class="function">bar_foo</code>.
+            the method named <code class="function">save</code> on an instance of object type <span class="type">file</span>, call 
+            <code class="function">file_save</code>.
           </p></li>
 <li class="listitem"><p>Use prefixing to avoid namespace conflicts with other projects.
-            If your library (or application) is named <span class="emphasis"><em>Maman</em></span>,
-            <a href="#ftn.id-1.3.3.7.2.1.2.1.2" class="footnote" name="id-1.3.3.7.2.1.2.1.2"><sup class="footnote">[3]</sup></a>
-            
-            prefix all your function names with <span class="emphasis"><em>maman_</em></span>.
-            For example: <code class="function">maman_object_method</code>.
+            If your library (or application) is named <span class="emphasis"><em>Viewer</em></span>,
+            prefix all your function names with <span class="emphasis"><em>viewer_</em></span>.
+            For example: <code class="function">viewer_object_method</code>.
           </p></li>
 <li class="listitem"><p>Create a macro named <code class="function">PREFIX_TYPE_OBJECT</code> which always 
             returns the GType for the associated object type. For an object of type 
-            <span class="emphasis"><em>Bar</em></span> in a library prefixed by <span class="emphasis"><em>maman</em></span>, 
-            use: <code class="function">MAMAN_TYPE_BAR</code>.
-            It is common although not a convention to implement this macro using either a global 
-            static variable or a function named <code class="function">prefix_object_get_type</code>.
-            We will follow the function pattern wherever possible in this document.
+            <span class="emphasis"><em>File</em></span> in the <span class="emphasis"><em>Viewer</em></span> namespace,
+            use: <code class="function">VIEWER_TYPE_FILE</code>.
+            This macro is implemented using a function named
+            <code class="function">prefix_object_get_type</code>; for example, <code class="function">viewer_file_get_type</code>.
           </p></li>
-<li class="listitem"><p>Create a macro named <code class="function">PREFIX_OBJECT (obj)</code> which 
-            returns a pointer of type <span class="type">PrefixObject</span>. This macro is used to enforce
-            static type safety by doing explicit casts wherever needed. It also enforces
-            dynamic type safety by doing runtime checks. It is possible to disable the dynamic
-            type checks in production builds (see <a href="https://developer.gnome.org/glib/unstable/glib-building.html">building glib</a>).
-            For example, we would create 
-            <code class="function">MAMAN_BAR (obj)</code> to keep the previous example.
-          </p></li>
-<li class="listitem"><p>If the type is classed, create a macro named 
-            <code class="function">PREFIX_OBJECT_CLASS (klass)</code>. This macro
-            is strictly equivalent to the previous casting macro: it does static casting with
-            dynamic type checking of class structures. It is expected to return a pointer
-            to a class structure of type <span class="type">PrefixObjectClass</span>. Again, an example is:
-            <code class="function">MAMAN_BAR_CLASS</code>.
-          </p></li>
-<li class="listitem"><p>Create a macro named <code class="function">PREFIX_IS_BAR (obj)</code>: this macro is expected
-            to return a <span class="type">gboolean</span> which indicates whether or not the input
-            object instance pointer of type BAR.
-          </p></li>
-<li class="listitem"><p>If the type is classed, create a macro named
-            <code class="function">PREFIX_IS_OBJECT_CLASS (klass)</code> which, as above, returns a boolean
-            if the input class pointer is a pointer to a class of type OBJECT.
-          </p></li>
-<li class="listitem"><p>If the type is classed, create a macro named 
-            <code class="function">PREFIX_OBJECT_GET_CLASS (obj)</code>
-            which returns the class pointer associated to an instance of a given type. This macro
-            is used for static and dynamic type safety purposes (just like the previous casting
-            macros).
-          </p></li>
+<li class="listitem">
+<p>
+              Use <a class="link" href="gobject-Type-Information.html#G-DECLARE-FINAL-TYPE:CAPS" title="G_DECLARE_FINAL_TYPE()"><code class="function">G_DECLARE_FINAL_TYPE</code></a>
+              or <a class="link" href="gobject-Type-Information.html#G-DECLARE-DERIVABLE-TYPE:CAPS" title="G_DECLARE_DERIVABLE_TYPE()"><code class="function">G_DECLARE_DERIVABLE_TYPE</code></a>
+              to define various other conventional macros for your object:
+            </p>
+<div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: circle; ">
+<li class="listitem"><p><code class="function">PREFIX_OBJECT (obj)</code>, which 
+                returns a pointer of type <span class="type">PrefixObject</span>. This macro is used to enforce
+                static type safety by doing explicit casts wherever needed. It also enforces
+                dynamic type safety by doing runtime checks. It is possible to disable the dynamic
+                type checks in production builds (see building GLib).
+                For example, we would create 
+                <code class="function">VIEWER_FILE (obj)</code> to keep the previous example.
+              </p></li>
+<li class="listitem"><p><code class="function">PREFIX_OBJECT_CLASS (klass)</code>, which
+                is strictly equivalent to the previous casting macro: it does static casting with
+                dynamic type checking of class structures. It is expected to return a pointer
+                to a class structure of type <span class="type">PrefixObjectClass</span>. An example is:
+                <code class="function">VIEWER_FILE_CLASS</code>.
+              </p></li>
+<li class="listitem"><p><code class="function">PREFIX_IS_OBJECT (obj)</code>, which
+                returns a <span class="type">gboolean</span> which indicates whether the input
+                object instance pointer is non-<span class="type">NULL</span> and of type <span class="type">OBJECT</span>.
+                For example, <code class="function">VIEWER_IS_FILE</code>.
+              </p></li>
+<li class="listitem"><p><code class="function">PREFIX_IS_OBJECT_CLASS (klass)</code>, which returns a boolean
+                if the input class pointer is a pointer to a class of type OBJECT.
+                For example, <code class="function">VIEWER_IS_FILE_CLASS</code>.
+              </p></li>
+<li class="listitem"><p><code class="function">PREFIX_OBJECT_GET_CLASS (obj)</code>,
+                which returns the class pointer associated to an instance of a given type. This macro
+                is used for static and dynamic type safety purposes (just like the previous casting
+                macros).
+                For example, <code class="function">VIEWER_FILE_GET_CLASS</code>.
+              </p></li>
+</ul></div>
+</li>
 </ul></div>
 <p>
         The implementation of these macros is pretty straightforward: a number of simple-to-use 
@@ -87,30 +97,37 @@
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1
-2
-3
-4
-5
-6</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_TYPE_BAR</span><span class="normal">                  </span><span class="symbol">(</span><span class="function">maman_bar_get_type</span><span class="normal"> </span><span class="symbol">())</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_BAR</span><span class="symbol">(</span><span class="normal">obj</span><span class="symbol">)</span><span class="normal">                  </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-INSTANCE-CAST:CAPS">G_TYPE_CHECK_INSTANCE_CAST</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">obj</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_BAR</span><span class="symbol">,</span><span class="normal"> MamanBar</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_BAR_CLASS</span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">)</span><span class="normal">          </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-CLASS-CAST:CAPS">G_TYPE_CHECK_CLASS_CAST</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">klass</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_BAR</span><span class="symbol">,</span><span class="normal"> MamanBarClass</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_IS_BAR</span><span class="symbol">(</span><span class="normal">obj</span><span class="symbol">)</span><span class="normal">          </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-INSTANCE-TYPE:CAPS">G_TYPE_CHECK_INSTANCE_TYPE</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">obj</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_BAR</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_IS_BAR_CLASS</span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-CHECK-CLASS-TYPE:CAPS">G_TYPE_CHECK_CLASS_TYPE</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">klass</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_BAR</span><span class="symbol">))</span>
-<span class="preproc">#define</span><span class="normal"> </span><span class="function">MAMAN_BAR_GET_CLASS</span><span class="symbol">(</span><span class="normal">obj</span><span class="symbol">)</span><span class="normal">  </span><span class="symbol">(</span><span class="function"><a href="gobject-Type-Information.html#G-TYPE-INSTANCE-GET-CLASS:CAPS">G_TYPE_INSTANCE_GET_CLASS</a></span><span class="normal"> </span><span class="symbol">((</span><span class="normal">obj</span><span class="symbol">),</span><span class="normal"> MAMAN_TYPE_BAR</span><span class="symbol">,</span><span class="normal"> MamanBarClass</span><span class="symbol">))</span></pre></td>
+2</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc">#define VIEWER_TYPE_FILE viewer_file_get_type ()</span>
+<span class="function"><a href="gobject-Type-Information.html#G-DECLARE-FINAL-TYPE:CAPS">G_DECLARE_FINAL_TYPE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> VIEWER<span class="gtkdoc opt">,</span> <span class="gtkdoc kwb">FILE</span><span class="gtkdoc opt">,</span> GObject<span class="gtkdoc opt">)</span></pre></td>
       </tr>
     </tbody>
   </table>
 </div>
 
 <p>
-        </p>
-<div class="note"><p>Stick to the naming <code class="varname">klass</code> as <code class="varname">class</code> is a registered c++ keyword.</p></div>
+      </p>
+<p>
+        Unless your code has special requirements, you can use the
+        <code class="function"><a class="link" href="gobject-Type-Information.html#G-DEFINE-TYPE:CAPS" title="G_DEFINE_TYPE()">G_DEFINE_TYPE</a></code>
+	macro to define a class:
+</p>
+<div class="informalexample">
+  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
+    <tbody>
+      <tr>
+        <td class="listing_lines" align="right"><pre>1</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">)</span></pre></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
 <p>
       </p>
 <p>
-        The following code shows how to implement the <code class="function">maman_bar_get_type</code>
-        function:
+        Otherwise, the <code class="function">viewer_file_get_type</code> function must be
+        implemented manually:
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -129,19 +146,19 @@
 11
 12
 13</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GType</span><span class="normal"> </span><span class="function">maman_bar_get_type</span><span class="normal"> </span><span class="symbol">(</span><span class="type">void</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">static</span><span class="normal"> </span><span class="usertype">GType</span><span class="normal"> type </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">type </span><span class="symbol">==</span><span class="normal"> </span><span class="number">0</span><span class="symbol">)</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">    </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GTypeInfo</span><span class="normal"> info </span><span class="symbol">=</span><span class="normal"> </span><span class="cbracket">{</span>
-<span class="normal">      </span><span class="comment">/* You fill this structure. */</span>
-<span class="normal">    </span><span class="cbracket">}</span><span class="symbol">;</span>
-<span class="normal">    type </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">,</span>
-<span class="normal">                                   </span><span class="string">"MamanBarType"</span><span class="symbol">,</span>
-<span class="normal">                                   </span><span class="symbol">&amp;</span><span class="normal">info</span><span class="symbol">,</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="cbracket">}</span>
-<span class="normal">  </span><span class="keyword">return</span><span class="normal"> type</span><span class="symbol">;</span>
-<span class="cbracket">}</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">GType <span class="function">viewer_file_get_type</span> <span class="gtkdoc opt">(</span><span class="gtkdoc kwb">void</span><span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwb">static</span> GType type <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span>type <span class="gtkdoc opt">==</span> <span class="number">0</span><span class="gtkdoc opt">) {</span>
+    <span class="gtkdoc kwb">const</span> GTypeInfo info <span class="gtkdoc opt">= {</span>
+      <span class="comment">/* You fill this structure. */</span>
+    <span class="gtkdoc opt">};</span>
+    type <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Type-Information.html#g-type-register-static">g_type_register_static</a></span> <span class="gtkdoc opt">(</span>G_TYPE_OBJECT<span class="gtkdoc opt">,</span>
+                                   <span class="string">&quot;ViewerFile&quot;</span><span class="gtkdoc opt">,</span>
+                                   <span class="gtkdoc opt">&amp;</span>info<span class="gtkdoc opt">,</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+  <span class="gtkdoc opt">}</span>
+  <span class="keyword">return</span> type<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -149,33 +166,8 @@
 
 <p>
       </p>
-<p>
-        If you have no special requirements you can use the
-        <code class="function"><a class="link" href="gobject-Type-Information.html#G-DEFINE-TYPE:CAPS" title="G_DEFINE_TYPE()">G_DEFINE_TYPE</a></code>
-	macro to define a class:
-</p>
-<div class="informalexample">
-  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-      <tr>
-        <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE:CAPS">G_DEFINE_TYPE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBar</span><span class="symbol">,</span><span class="normal"> maman_bar</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">)</span></pre></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<p>
-      </p>
-<div class="footnotes">
-<br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.id-1.3.3.7.2.1.2.1.2" class="footnote"><p><a href="#id-1.3.3.7.2.1.2.1.2" class="para"><sup class="para">[3] </sup></a>
-                <span class="emphasis"><em>Maman</em></span> is the French word for <span class="emphasis"><em>mum</em></span>
-                or <span class="emphasis"><em>mother</em></span> - nothing more and nothing less.
-              </p></div>
-</div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>glib-genmarshal: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn02.html" title="Tools Reference">
 <link rel="prev" href="glib-mkenums.html" title="glib-mkenums">
 <link rel="next" href="gobject-query.html" title="gobject-query">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -58,7 +58,7 @@ comment in the form of
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="preproc"># this</span><span class="normal"> is a comment</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc ppc"># this is a comment</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -316,6 +316,12 @@ Print brief help and exit.
 Print version and exit.
 </p></td>
 </tr>
+<tr>
+<td><p><span class="term"><code class="option">--output=FILE</code></span></p></td>
+<td><p>
+Write output to FILE instead of stdout.
+</p></td>
+</tr>
 </tbody>
 </table></div>
 </div>
@@ -337,15 +343,15 @@ To generate marshallers for the following callback functions:
 7
 8
 9</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="type">void</span><span class="normal">   </span><span class="function">foo</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal"> data1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">gpointer</span><span class="normal"> data2</span><span class="symbol">);</span>
-<span class="type">void</span><span class="normal">   </span><span class="function">bar</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal"> data1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">gint</span><span class="normal">     param1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">gpointer</span><span class="normal"> data2</span><span class="symbol">);</span>
-<span class="usertype">gfloat</span><span class="normal"> </span><span class="function">baz</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal"> data1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">gboolean</span><span class="normal"> param1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">guchar</span><span class="normal">   param2</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="usertype">gpointer</span><span class="normal"> data2</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">void</span>   <span class="function">foo</span> <span class="gtkdoc opt">(</span>gpointer data1<span class="gtkdoc opt">,</span>
+            gpointer data2<span class="gtkdoc opt">);</span>
+<span class="gtkdoc kwb">void</span>   <span class="function">bar</span> <span class="gtkdoc opt">(</span>gpointer data1<span class="gtkdoc opt">,</span>
+            gint     param1<span class="gtkdoc opt">,</span>
+            gpointer data2<span class="gtkdoc opt">);</span>
+gfloat <span class="function">baz</span> <span class="gtkdoc opt">(</span>gpointer data1<span class="gtkdoc opt">,</span>
+            gboolean param1<span class="gtkdoc opt">,</span>
+            guchar   param2<span class="gtkdoc opt">,</span>
+            gpointer data2<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -391,14 +397,14 @@ GSignalCMarshaller c_marshaller; argument upon creation of signals:
 6
 7
 8</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GClosure</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">cc_foo</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">cc_bar</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">cc_baz</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting">GClosure <span class="gtkdoc opt">*</span>cc_foo<span class="gtkdoc opt">, *</span>cc_bar<span class="gtkdoc opt">, *</span>cc_baz<span class="gtkdoc opt">;</span>
 
-<span class="normal">cc_foo </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> foo</span><span class="symbol">,</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">cc_foo</span><span class="symbol">,</span><span class="normal"> g_cclosure_user_marshal_VOID__VOID</span><span class="symbol">);</span>
-<span class="normal">cc_bar </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> bar</span><span class="symbol">,</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">cc_bar</span><span class="symbol">,</span><span class="normal"> g_cclosure_user_marshal_VOID__INT</span><span class="symbol">);</span>
-<span class="normal">cc_baz </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span><span class="normal"> baz</span><span class="symbol">,</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">cc_baz</span><span class="symbol">,</span><span class="normal"> g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR</span><span class="symbol">);</span></pre></td>
+cc_foo <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> foo<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span> <span class="gtkdoc opt">(</span>cc_foo<span class="gtkdoc opt">,</span> g_cclosure_user_marshal_VOID__VOID<span class="gtkdoc opt">);</span>
+cc_bar <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> bar<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span> <span class="gtkdoc opt">(</span>cc_bar<span class="gtkdoc opt">,</span> g_cclosure_user_marshal_VOID__INT<span class="gtkdoc opt">);</span>
+cc_baz <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span> <span class="gtkdoc opt">(</span>NULL<span class="gtkdoc opt">,</span> baz<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+<span class="function"><a href="gobject-Closures.html#g-closure-set-marshal">g_closure_set_marshal</a></span> <span class="gtkdoc opt">(</span>cc_baz<span class="gtkdoc opt">,</span> g_cclosure_user_marshal_FLOAT__BOOLEAN_UCHAR<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -413,6 +419,6 @@ GSignalCMarshaller c_marshaller; argument upon creation of signals:
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

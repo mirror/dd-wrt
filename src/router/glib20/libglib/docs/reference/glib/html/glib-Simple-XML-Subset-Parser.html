@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Simple XML Subset Parser: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-regex-syntax.html" title="Regular expression syntax">
 <link rel="next" href="glib-Key-value-file-parser.html" title="Key-value file parser">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Simple-XML-Subset-Parser.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -170,7 +170,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Simple-XML-Subset-Parser.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -238,7 +238,7 @@ are "passed through" but are not interpreted in any way</p></li>
 <div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; ">
 <li class="listitem"><p>Elements</p></li>
 <li class="listitem"><p>Attributes</p></li>
-<li class="listitem"><p>5 standard entities: &amp; &lt; &gt; " '</p></li>
+<li class="listitem"><p>5 standard entities: &amp;amp; &amp;lt; &amp;gt; &amp;quot; &amp;apos;</p></li>
 <li class="listitem"><p>Character references</p></li>
 <li class="listitem"><p>Sections marked as CDATA</p></li>
 </ul></div>
@@ -263,8 +263,8 @@ except for tabstop, newline and carriage return.  The character
 references in this range are not valid XML 1.0, but they are
 valid XML 1.1 and will be accepted by the GMarkup parser.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.2.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-escape-text.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -286,7 +286,7 @@ in bytes, or -1 if the text is nul-terminated</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.2.8"></a><h4>Returns</h4>
+<a name="g-markup-escape-text.returns"></a><h4>Returns</h4>
 <p> a newly allocated string with the escaped text</p>
 </div>
 </div>
@@ -316,15 +316,15 @@ might themselves contain markup.</p>
 7
 8
 9</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">store </span><span class="symbol">=</span><span class="normal"> </span><span class="string">"Fortnum &amp; Mason"</span><span class="symbol">;</span>
-<span class="keyword">const</span><span class="normal"> </span><span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">item </span><span class="symbol">=</span><span class="normal"> </span><span class="string">"Tea"</span><span class="symbol">;</span>
-<span class="type">char</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">output</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>store <span class="gtkdoc opt">=</span> <span class="string">&quot;Fortnum &amp; Mason&quot;</span><span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">const char</span> <span class="gtkdoc opt">*</span>item <span class="gtkdoc opt">=</span> <span class="string">&quot;Tea&quot;</span><span class="gtkdoc opt">;</span>
+<span class="gtkdoc kwb">char</span> <span class="gtkdoc opt">*</span>output<span class="gtkdoc opt">;</span>
 
-<span class="normal">output </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-printf-escaped">g_markup_printf_escaped</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"&lt;purchase&gt;"</span>
-<span class="normal">                                  </span><span class="string">"&lt;store&gt;%s&lt;/store&gt;"</span>
-<span class="normal">                                  </span><span class="string">"&lt;item&gt;%s&lt;/item&gt;"</span>
-<span class="normal">                                  </span><span class="string">"&lt;/purchase&gt;"</span><span class="symbol">,</span>
-<span class="normal">                                  store</span><span class="symbol">,</span><span class="normal"> item</span><span class="symbol">);</span></pre></td>
+output <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-printf-escaped">g_markup_printf_escaped</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;&lt;purchase&gt;&quot;</span>
+                                  <span class="string">&quot;&lt;store&gt;%s&lt;/store&gt;&quot;</span>
+                                  <span class="string">&quot;&lt;item&gt;%s&lt;/item&gt;&quot;</span>
+                                  <span class="string">&quot;&lt;/purchase&gt;&quot;</span><span class="gtkdoc opt">,</span>
+                                  store<span class="gtkdoc opt">,</span> item<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -332,8 +332,8 @@ might themselves contain markup.</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.5.26.7.3.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-printf-escaped.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -354,7 +354,7 @@ might themselves contain markup.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.3.8"></a><h4>Returns</h4>
+<a name="g-markup-printf-escaped.returns"></a><h4>Returns</h4>
 <p> newly allocated result from formatting
 operation. Free with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
 </div>
@@ -372,8 +372,8 @@ g_markup_vprintf_escaped (<em class="parameter"><code>const <span class="type">c
 all string and character arguments in the fashion
 of <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-escape-text" title="g_markup_escape_text ()"><code class="function">g_markup_escape_text()</code></a>. See <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-printf-escaped" title="g_markup_printf_escaped ()"><code class="function">g_markup_printf_escaped()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-vprintf-escaped.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -394,7 +394,7 @@ of <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-escape-text
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.4.6"></a><h4>Returns</h4>
+<a name="g-markup-vprintf-escaped.returns"></a><h4>Returns</h4>
 <p> newly allocated result from formatting
 operation. Free with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
 </div>
@@ -414,8 +414,8 @@ a context, as long as no errors occur; once an error occurs,
 the parse context can't continue to parse text (you have to
 free it and create a new parse context).</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -447,7 +447,7 @@ the parse context is freed</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.5.6"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="glib-Simple-XML-Subset-Parser.html#GMarkupParseContext" title="GMarkupParseContext"><span class="type">GMarkupParseContext</span></a></p>
 </div>
 </div>
@@ -469,8 +469,8 @@ function, aborting the process if an error occurs. Once an error
 is reported, no further data may be fed to the <a class="link" href="glib-Simple-XML-Subset-Parser.html#GMarkupParseContext" title="GMarkupParseContext"><span class="type">GMarkupParseContext</span></a>;
 all errors are fatal.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.6.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-parse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -502,7 +502,7 @@ in bytes</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.6.7"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-parse.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> if an error occurred, <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> on success</p>
 </div>
 </div>
@@ -517,8 +517,8 @@ fed into the parse context with <a class="link" href="glib-Simple-XML-Subset-Par
 <p>This function reports an error if the document isn't complete,
 for example if elements are still open.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-end-parse.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -539,7 +539,7 @@ for example if elements are still open.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.7.7"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-end-parse.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> on success, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> if an error was set</p>
 </div>
 </div>
@@ -552,8 +552,8 @@ g_markup_parse_context_free (<em class="parameter"><code><a class="link" href="g
 <p>This function can't be called from inside one of the
 <a class="link" href="glib-Simple-XML-Subset-Parser.html#GMarkupParser" title="struct GMarkupParser"><span class="type">GMarkupParser</span></a> functions or while a subparser is pushed.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.8.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -572,15 +572,15 @@ g_markup_parse_context_free (<em class="parameter"><code><a class="link" href="g
 <a name="g-markup-parse-context-get-position"></a><h3>g_markup_parse_context_get_position ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_markup_parse_context_get_position (<em class="parameter"><code><a class="link" href="glib-Simple-XML-Subset-Parser.html#GMarkupParseContext" title="GMarkupParseContext"><span class="type">GMarkupParseContext</span></a> *context</code></em>,
-                                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *line_number</code></em>,
-                                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> *char_number</code></em>);</pre>
+                                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *line_number</code></em>,
+                                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> *char_number</code></em>);</pre>
 <p>Retrieves the current line number and the number of the character on
 that line. Intended for use in error messages; there are no strict
 semantics for what constitutes the "current" line number other than
 "the best number we could come up with for error messages."</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-get-position.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -616,8 +616,8 @@ g_markup_parse_context_get_element (<em class="parameter"><code><a class="link" 
 give the element_name as passed to those functions. For the parent
 elements, see <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-get-element-stack" title="g_markup_parse_context_get_element_stack ()"><code class="function">g_markup_parse_context_get_element_stack()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-get-element.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -631,7 +631,7 @@ elements, see <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.10.7"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-get-element.returns"></a><h4>Returns</h4>
 <p> the name of the currently open element, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-2.html#api-index-2.2">2.2</a></p>
@@ -652,8 +652,8 @@ end_element handlers where <a class="link" href="glib-Simple-XML-Subset-Parser.h
 would merely return the name of the element that is being
 processed.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.11.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-get-element-stack.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -667,7 +667,7 @@ processed.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.11.8"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-get-element-stack.returns"></a><h4>Returns</h4>
 <p> the element stack, which must not be modified</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-16.html#api-index-2.16">2.16</a></p>
@@ -683,8 +683,8 @@ g_markup_parse_context_get_user_data (<em class="parameter"><code><a class="link
 <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-new" title="g_markup_parse_context_new ()"><code class="function">g_markup_parse_context_new()</code></a> or to the most recent call
 of <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-push" title="g_markup_parse_context_push ()"><code class="function">g_markup_parse_context_push()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.12.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-get-user-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -698,7 +698,7 @@ of <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-conte
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.12.7"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-get-user-data.returns"></a><h4>Returns</h4>
 <p> the provided user_data. The returned data belongs to
 the markup context and will be freed when
 <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-free" title="g_markup_parse_context_free ()"><code class="function">g_markup_parse_context_free()</code></a> is called.</p>
@@ -782,42 +782,42 @@ parser that counts the number of tags encountered.</p>
 34
 35
 36</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">typedef</span><span class="normal"> </span><span class="keyword">struct</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">gint</span><span class="normal"> tag_count</span><span class="symbol">;</span>
-<span class="cbracket">}</span><span class="normal"> CounterData</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">struct</span>
+<span class="gtkdoc opt">{</span>
+  gint tag_count<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span> CounterData<span class="gtkdoc opt">;</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">counter_start_element</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GMarkupParseContext</span><span class="normal">  </span><span class="symbol">*</span><span class="normal">context</span><span class="symbol">,</span>
-<span class="normal">                       </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">gchar</span><span class="normal">          </span><span class="symbol">*</span><span class="normal">element_name</span><span class="symbol">,</span>
-<span class="normal">                       </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">gchar</span><span class="normal">         </span><span class="symbol">**</span><span class="normal">attribute_names</span><span class="symbol">,</span>
-<span class="normal">                       </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">gchar</span><span class="normal">         </span><span class="symbol">**</span><span class="normal">attribute_values</span><span class="symbol">,</span>
-<span class="normal">                       </span><span class="usertype">gpointer</span><span class="normal">              user_data</span><span class="symbol">,</span>
-<span class="normal">                       </span><span class="usertype">GError</span><span class="normal">              </span><span class="symbol">**</span><span class="normal">error</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">CounterData</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">data </span><span class="symbol">=</span><span class="normal"> user_data</span><span class="symbol">;</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">counter_start_element</span> <span class="gtkdoc opt">(</span>GMarkupParseContext  <span class="gtkdoc opt">*</span>context<span class="gtkdoc opt">,</span>
+                       <span class="gtkdoc kwb">const</span> gchar          <span class="gtkdoc opt">*</span>element_name<span class="gtkdoc opt">,</span>
+                       <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">**</span>attribute_names<span class="gtkdoc opt">,</span>
+                       <span class="gtkdoc kwb">const</span> gchar         <span class="gtkdoc opt">**</span>attribute_values<span class="gtkdoc opt">,</span>
+                       gpointer              user_data<span class="gtkdoc opt">,</span>
+                       GError              <span class="gtkdoc opt">**</span>error<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  CounterData <span class="gtkdoc opt">*</span>data <span class="gtkdoc opt">=</span> user_data<span class="gtkdoc opt">;</span>
 
-<span class="normal">  data</span><span class="symbol">-&gt;</span><span class="normal">tag_count</span><span class="symbol">++;</span>
-<span class="cbracket">}</span>
+  data<span class="gtkdoc opt">-&gt;</span>tag_count<span class="gtkdoc opt">++;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">counter_error</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GMarkupParseContext</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">context</span><span class="symbol">,</span>
-<span class="normal">               </span><span class="usertype">GError</span><span class="normal">              </span><span class="symbol">*</span><span class="normal">error</span><span class="symbol">,</span>
-<span class="normal">               </span><span class="usertype">gpointer</span><span class="normal">             user_data</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">CounterData</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">data </span><span class="symbol">=</span><span class="normal"> user_data</span><span class="symbol">;</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">counter_error</span> <span class="gtkdoc opt">(</span>GMarkupParseContext <span class="gtkdoc opt">*</span>context<span class="gtkdoc opt">,</span>
+               GError              <span class="gtkdoc opt">*</span>error<span class="gtkdoc opt">,</span>
+               gpointer             user_data<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  CounterData <span class="gtkdoc opt">*</span>data <span class="gtkdoc opt">=</span> user_data<span class="gtkdoc opt">;</span>
 
-<span class="normal">  </span><span class="function"><a href="glib-Memory-Slices.html#g-slice-free">g_slice_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">CounterData</span><span class="symbol">,</span><span class="normal"> data</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+  <span class="function"><a href="glib-Memory-Slices.html#g-slice-free">g_slice_free</a></span> <span class="gtkdoc opt">(</span>CounterData<span class="gtkdoc opt">,</span> data<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="usertype">GMarkupParser</span><span class="normal"> counter_subparser </span><span class="symbol">=</span>
-<span class="cbracket">{</span>
-<span class="normal">  counter_start_element</span><span class="symbol">,</span>
-<span class="normal">  <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span>
-<span class="normal">  <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span>
-<span class="normal">  <a href="glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">,</span>
-<span class="normal">  counter_error</span>
-<span class="cbracket">}</span><span class="symbol">;</span></pre></td>
+<span class="gtkdoc kwb">static</span> GMarkupParser counter_subparser <span class="gtkdoc opt">=</span>
+<span class="gtkdoc opt">{</span>
+  counter_start_element<span class="gtkdoc opt">,</span>
+  NULL<span class="gtkdoc opt">,</span>
+  NULL<span class="gtkdoc opt">,</span>
+  NULL<span class="gtkdoc opt">,</span>
+  counter_error
+<span class="gtkdoc opt">};</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -850,26 +850,26 @@ following interface is provided:</p>
 18
 19
 20</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="type">void</span>
-<span class="function">start_counting</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GMarkupParseContext</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">context</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">CounterData</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">data </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Memory-Slices.html#g-slice-new">g_slice_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">CounterData</span><span class="symbol">);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">void</span>
+<span class="function">start_counting</span> <span class="gtkdoc opt">(</span>GMarkupParseContext <span class="gtkdoc opt">*</span>context<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  CounterData <span class="gtkdoc opt">*</span>data <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Memory-Slices.html#g-slice-new">g_slice_new</a></span> <span class="gtkdoc opt">(</span>CounterData<span class="gtkdoc opt">);</span>
 
-<span class="normal">  data</span><span class="symbol">-&gt;</span><span class="normal">tag_count </span><span class="symbol">=</span><span class="normal"> </span><span class="number">0</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-push">g_markup_parse_context_push</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">&amp;</span><span class="normal">counter_subparser</span><span class="symbol">,</span><span class="normal"> data</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+  data<span class="gtkdoc opt">-&gt;</span>tag_count <span class="gtkdoc opt">=</span> <span class="number">0</span><span class="gtkdoc opt">;</span>
+  <span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-push">g_markup_parse_context_push</a></span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">, &amp;</span>counter_subparser<span class="gtkdoc opt">,</span> data<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="normal"><a href="glib-Basic-Types.html#gint">gint</a></span>
-<span class="function">end_counting</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GMarkupParseContext</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">context</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">CounterData</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">data </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-pop">g_markup_parse_context_pop</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="type">int</span><span class="normal"> result</span><span class="symbol">;</span>
+gint
+<span class="function">end_counting</span> <span class="gtkdoc opt">(</span>GMarkupParseContext <span class="gtkdoc opt">*</span>context<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  CounterData <span class="gtkdoc opt">*</span>data <span class="gtkdoc opt">=</span> <span class="function"><a href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-pop">g_markup_parse_context_pop</a></span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc kwb">int</span> result<span class="gtkdoc opt">;</span>
 
-<span class="normal">  result </span><span class="symbol">=</span><span class="normal"> data</span><span class="symbol">-&gt;</span><span class="normal">tag_count</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="function"><a href="glib-Memory-Slices.html#g-slice-free">g_slice_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">CounterData</span><span class="symbol">,</span><span class="normal"> data</span><span class="symbol">);</span>
+  result <span class="gtkdoc opt">=</span> data<span class="gtkdoc opt">-&gt;</span>tag_count<span class="gtkdoc opt">;</span>
+  <span class="function"><a href="glib-Memory-Slices.html#g-slice-free">g_slice_free</a></span> <span class="gtkdoc opt">(</span>CounterData<span class="gtkdoc opt">,</span> data<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="keyword">return</span><span class="normal"> result</span><span class="symbol">;</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="keyword">return</span> result<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -896,21 +896,21 @@ following interface is provided:</p>
 13
 14
 15</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal"> </span><span class="function">start_element</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">,</span><span class="normal"> element_name</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">...)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="function">strcmp</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">element_name</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"count-these"</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">==</span><span class="normal"> </span><span class="number">0</span><span class="symbol">)</span>
-<span class="normal">    </span><span class="function">start_counting</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">);</span>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">static void</span> <span class="function">start_element</span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">,</span> element_name<span class="gtkdoc opt">, ...)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function">strcmp</span> <span class="gtkdoc opt">(</span>element_name<span class="gtkdoc opt">,</span> <span class="string">&quot;count-these&quot;</span><span class="gtkdoc opt">) ==</span> <span class="number">0</span><span class="gtkdoc opt">)</span>
+    <span class="function">start_counting</span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">// else, handle other tags...</span>
-<span class="cbracket">}</span>
+  <span class="gtkdoc slc">// else, handle other tags...</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span><span class="normal"> </span><span class="function">end_element</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">,</span><span class="normal"> element_name</span><span class="symbol">,</span><span class="normal"> </span><span class="symbol">...)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">if</span><span class="normal"> </span><span class="symbol">(</span><span class="function">strcmp</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">element_name</span><span class="symbol">,</span><span class="normal"> </span><span class="string">"count-these"</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">==</span><span class="normal"> </span><span class="number">0</span><span class="symbol">)</span>
-<span class="normal">    </span><span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Counted %d tags</span><span class="specialchar">\n</span><span class="string">"</span><span class="symbol">,</span><span class="normal"> </span><span class="function">end_counting</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">context</span><span class="symbol">));</span>
+<span class="gtkdoc kwb">static void</span> <span class="function">end_element</span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">,</span> element_name<span class="gtkdoc opt">, ...)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="keyword">if</span> <span class="gtkdoc opt">(</span><span class="function">strcmp</span> <span class="gtkdoc opt">(</span>element_name<span class="gtkdoc opt">,</span> <span class="string">&quot;count-these&quot;</span><span class="gtkdoc opt">) ==</span> <span class="number">0</span><span class="gtkdoc opt">)</span>
+    <span class="function"><a href="glib-Warnings-and-Assertions.html#g-print">g_print</a></span> <span class="gtkdoc opt">(</span><span class="string">&quot;Counted %d tags</span><span class="gtkdoc esc">\n</span><span class="string">&quot;</span><span class="gtkdoc opt">,</span> <span class="function">end_counting</span> <span class="gtkdoc opt">(</span>context<span class="gtkdoc opt">));</span>
 
-<span class="normal">  </span><span class="comment">// else, handle other tags...</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="gtkdoc slc">// else, handle other tags...</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -918,8 +918,8 @@ following interface is provided:</p>
 
 <p></p>
 <div class="refsect3">
-<a name="id-1.5.26.7.13.18"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-push.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -964,8 +964,8 @@ interested in invoking subparsers. Instead, it is intended to
 be used by the subparsers themselves to implement a higher-level
 interface.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.14.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-pop.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -979,7 +979,7 @@ interface.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.14.8"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-pop.returns"></a><h4>Returns</h4>
 <p> the user data passed to <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-push" title="g_markup_parse_context_push ()"><code class="function">g_markup_parse_context_push()</code></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-18.html#api-index-2.18">2.18</a></p>
@@ -992,8 +992,8 @@ g_markup_parse_context_ref (<em class="parameter"><code><a class="link" href="gl
 <p>Increases the reference count of <em class="parameter"><code>context</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.15.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-ref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1007,7 +1007,7 @@ g_markup_parse_context_ref (<em class="parameter"><code><a class="link" href="gl
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.15.6"></a><h4>Returns</h4>
+<a name="g-markup-parse-context-ref.returns"></a><h4>Returns</h4>
 <p> the same <em class="parameter"><code>context</code></em>
 </p>
 </div>
@@ -1022,8 +1022,8 @@ g_markup_parse_context_unref (<em class="parameter"><code><a class="link" href="
 .  When its reference count
 drops to 0, it is freed.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.16.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-parse-context-unref.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1081,8 +1081,8 @@ as parse errors for boolean-valued attributes (again of type
 will be returned and <em class="parameter"><code>error</code></em>
  will be set as appropriate.</p>
 <div class="refsect3">
-<a name="id-1.5.26.7.17.12"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-markup-collect-attributes.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1130,7 +1130,7 @@ with <a class="link" href="glib-Simple-XML-Subset-Parser.html#G-MARKUP-COLLECT-I
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.26.7.17.13"></a><h4>Returns</h4>
+<a name="g-markup-collect-attributes.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if successful</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-16.html#api-index-2.16">2.16</a></p>
@@ -1142,8 +1142,8 @@ with <a class="link" href="glib-Simple-XML-Subset-Parser.html#G-MARKUP-COLLECT-I
 <a name="GMarkupError"></a><h3>enum GMarkupError</h3>
 <p>Error codes returned by markup parsing.</p>
 <div class="refsect3">
-<a name="id-1.5.26.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GMarkupError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1221,8 +1221,8 @@ See <a class="link" href="glib-Error-Reporting.html#GError" title="struct GError
 <a name="GMarkupParseFlags"></a><h3>enum GMarkupParseFlags</h3>
 <p>Flags that affect the behaviour of the parser.</p>
 <div class="refsect3">
-<a name="id-1.5.26.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GMarkupParseFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1337,8 +1337,8 @@ errors are intended to be set from these callbacks. If you set an error
 from a callback, <a class="link" href="glib-Simple-XML-Subset-Parser.html#g-markup-parse-context-parse" title="g_markup_parse_context_parse ()"><code class="function">g_markup_parse_context_parse()</code></a> will report that error
 back to its caller.</p>
 <div class="refsect3">
-<a name="id-1.5.26.8.6.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GMarkupParser.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1397,8 +1397,8 @@ bitwise OR the type with the flag <a class="link" href="glib-Simple-XML-Subset-P
 <p>It is likely that this enum will be extended in the future to
 support other types.</p>
 <div class="refsect3">
-<a name="id-1.5.26.8.7.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GMarkupCollectType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1473,6 +1473,6 @@ support other types.</p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

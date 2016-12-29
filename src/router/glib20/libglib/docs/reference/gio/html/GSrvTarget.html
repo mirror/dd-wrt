@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSrvTarget: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="resolver.html" title="DNS resolution">
 <link rel="prev" href="GNetworkService.html" title="GNetworkService">
 <link rel="next" href="gdbus-lowlevel.html" title="Low-level D-Bus Support">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,7 +34,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GSrvTarget.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -65,7 +65,7 @@
 </td>
 </tr>
 <tr>
-<td class="function_type">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<td class="function_type">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GSrvTarget.html#g-srv-target-get-hostname" title="g_srv_target_get_hostname ()">g_srv_target_get_hostname</a> <span class="c_punctuation">()</span>
@@ -73,7 +73,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSrvTarget.html#g-srv-target-get-port" title="g_srv_target_get_port ()">g_srv_target_get_port</a> <span class="c_punctuation">()</span>
@@ -81,7 +81,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSrvTarget.html#g-srv-target-get-priority" title="g_srv_target_get_priority ()">g_srv_target_get_priority</a> <span class="c_punctuation">()</span>
@@ -89,7 +89,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSrvTarget.html#g-srv-target-get-weight" title="g_srv_target_get_weight ()">g_srv_target_get_weight</a> <span class="c_punctuation">()</span>
@@ -97,7 +97,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GSrvTarget.html#g-srv-target-list-sort" title="g_srv_target_list_sort ()">g_srv_target_list_sort</a> <span class="c_punctuation">()</span>
@@ -108,7 +108,7 @@
 </div>
 <div class="refsect1">
 <a name="GSrvTarget.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -140,7 +140,7 @@ specific server hostname like "xmpp.example.com", an XMPP client
 would look up the "xmpp-client" SRV record for "example.com", and
 then connect to whatever host was pointed to by that record.</p>
 <p>You can use <a class="link" href="GResolver.html#g-resolver-lookup-service" title="g_resolver_lookup_service ()"><code class="function">g_resolver_lookup_service()</code></a> or
-<a class="link" href="GResolver.html#g-resolver-lookup-service-async" title="g_resolver_lookup_service_async ()"><code class="function">g_resolver_lookup_service_async()</code></a> to find the <a href="GSrvTarget.html"><span class="type">GSrvTargets</span></a>
+<a class="link" href="GResolver.html#g-resolver-lookup-service-async" title="g_resolver_lookup_service_async ()"><code class="function">g_resolver_lookup_service_async()</code></a> to find the <a href="GSrvTarget.html#GSrvTarget-struct"><span class="type">GSrvTargets</span></a>
 for a given service. However, if you are simply planning to connect
 to the remote service, you can use <a class="link" href="GNetworkService.html" title="GNetworkService"><span class="type">GNetworkService</span></a>'s
 <a class="link" href="GSocketConnectable.html" title="GSocketConnectable"><span class="type">GSocketConnectable</span></a> interface and not need to worry about
@@ -151,16 +151,16 @@ to the remote service, you can use <a class="link" href="GNetworkService.html" t
 <div class="refsect2">
 <a name="g-srv-target-new"></a><h3>g_srv_target_new ()</h3>
 <pre class="programlisting"><a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="returnvalue">GSrvTarget</span></a> *
-g_srv_target_new (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *hostname</code></em>,
-                  <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> port</code></em>,
-                  <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> priority</code></em>,
-                  <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> weight</code></em>);</pre>
+g_srv_target_new (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *hostname</code></em>,
+                  <em class="parameter"><code><a href="../glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> port</code></em>,
+                  <em class="parameter"><code><a href="../glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> priority</code></em>,
+                  <em class="parameter"><code><a href="../glib-Basic-Types.html#guint16"><span class="type">guint16</span></a> weight</code></em>);</pre>
 <p>Creates a new <a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a> with the given parameters.</p>
-<p>You should not need to use this; normally <a href="GSrvTarget.html"><span class="type">GSrvTargets</span></a> are
+<p>You should not need to use this; normally <a href="GSrvTarget.html#GSrvTarget-struct"><span class="type">GSrvTargets</span></a> are
 created by <a class="link" href="GResolver.html" title="GResolver"><span class="type">GResolver</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -191,7 +191,7 @@ created by <a class="link" href="GResolver.html" title="GResolver"><span class="
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.2.7"></a><h4>Returns</h4>
+<a name="g-srv-target-new.returns"></a><h4>Returns</h4>
 <p> a new <a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a>.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-22.html#api-index-2.22">2.22</a></p>
@@ -204,8 +204,8 @@ g_srv_target_copy (<em class="parameter"><code><a class="link" href="GSrvTarget.
 <p>Copies <em class="parameter"><code>target</code></em>
 </p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-copy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -219,7 +219,7 @@ g_srv_target_copy (<em class="parameter"><code><a class="link" href="GSrvTarget.
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.3.6"></a><h4>Returns</h4>
+<a name="g-srv-target-copy.returns"></a><h4>Returns</h4>
 <p> a copy of <em class="parameter"><code>target</code></em>
 </p>
 </div>
@@ -233,8 +233,8 @@ g_srv_target_free (<em class="parameter"><code><a class="link" href="GSrvTarget.
 <p>Frees <em class="parameter"><code>target</code></em>
 </p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -252,16 +252,16 @@ g_srv_target_free (<em class="parameter"><code><a class="link" href="GSrvTarget.
 <hr>
 <div class="refsect2">
 <a name="g-srv-target-get-hostname"></a><h3>g_srv_target_get_hostname ()</h3>
-<pre class="programlisting">const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
+<pre class="programlisting">const <a href="../glib-Basic-Types.html#gchar"><span class="returnvalue">gchar</span></a> *
 g_srv_target_get_hostname (<em class="parameter"><code><a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a> *target</code></em>);</pre>
 <p>Gets <em class="parameter"><code>target</code></em>
 's hostname (in ASCII form; if you are going to present
-this to the user, you should use <a href="https://developer.gnome.org/glib/unstable/glib-Hostname-Utilities.html#g-hostname-is-ascii-encoded"><code class="function">g_hostname_is_ascii_encoded()</code></a> to
+this to the user, you should use <a href="../glib-Hostname-Utilities.html#g-hostname-is-ascii-encoded"><code class="function">g_hostname_is_ascii_encoded()</code></a> to
 check if it contains encoded Unicode segments, and use
-<a href="https://developer.gnome.org/glib/unstable/glib-Hostname-Utilities.html#g-hostname-to-unicode"><code class="function">g_hostname_to_unicode()</code></a> to convert it if it does.)</p>
+<a href="../glib-Hostname-Utilities.html#g-hostname-to-unicode"><code class="function">g_hostname_to_unicode()</code></a> to convert it if it does.)</p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-get-hostname.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -275,7 +275,7 @@ check if it contains encoded Unicode segments, and use
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.5.6"></a><h4>Returns</h4>
+<a name="g-srv-target-get-hostname.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>target</code></em>
 's hostname</p>
 </div>
@@ -284,13 +284,13 @@ check if it contains encoded Unicode segments, and use
 <hr>
 <div class="refsect2">
 <a name="g-srv-target-get-port"></a><h3>g_srv_target_get_port ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 g_srv_target_get_port (<em class="parameter"><code><a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a> *target</code></em>);</pre>
 <p>Gets <em class="parameter"><code>target</code></em>
 's port</p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-get-port.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -304,7 +304,7 @@ g_srv_target_get_port (<em class="parameter"><code><a class="link" href="GSrvTar
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.6.6"></a><h4>Returns</h4>
+<a name="g-srv-target-get-port.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>target</code></em>
 's port</p>
 </div>
@@ -313,15 +313,15 @@ g_srv_target_get_port (<em class="parameter"><code><a class="link" href="GSrvTar
 <hr>
 <div class="refsect2">
 <a name="g-srv-target-get-priority"></a><h3>g_srv_target_get_priority ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 g_srv_target_get_priority (<em class="parameter"><code><a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a> *target</code></em>);</pre>
 <p>Gets <em class="parameter"><code>target</code></em>
 's priority. You should not need to look at this;
 <a class="link" href="GResolver.html" title="GResolver"><span class="type">GResolver</span></a> already sorts the targets according to the algorithm in
 RFC 2782.</p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-get-priority.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -335,7 +335,7 @@ RFC 2782.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.7.6"></a><h4>Returns</h4>
+<a name="g-srv-target-get-priority.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>target</code></em>
 's priority</p>
 </div>
@@ -344,15 +344,15 @@ RFC 2782.</p>
 <hr>
 <div class="refsect2">
 <a name="g-srv-target-get-weight"></a><h3>g_srv_target_get_weight ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#guint16"><span class="returnvalue">guint16</span></a>
 g_srv_target_get_weight (<em class="parameter"><code><a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a> *target</code></em>);</pre>
 <p>Gets <em class="parameter"><code>target</code></em>
 's weight. You should not need to look at this;
 <a class="link" href="GResolver.html" title="GResolver"><span class="type">GResolver</span></a> already sorts the targets according to the algorithm in
 RFC 2782.</p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-get-weight.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -366,7 +366,7 @@ RFC 2782.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.8.6"></a><h4>Returns</h4>
+<a name="g-srv-target-get-weight.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>target</code></em>
 's weight</p>
 </div>
@@ -375,14 +375,14 @@ RFC 2782.</p>
 <hr>
 <div class="refsect2">
 <a name="g-srv-target-list-sort"></a><h3>g_srv_target_list_sort ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
-g_srv_target_list_sort (<em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> *targets</code></em>);</pre>
+<pre class="programlisting"><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+g_srv_target_list_sort (<em class="parameter"><code><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> *targets</code></em>);</pre>
 <p>Sorts <em class="parameter"><code>targets</code></em>
  in place according to the algorithm in RFC 2782.</p>
 <p><span class="annotation">[<acronym title="Exposed in C code, not necessarily available in other languages."><span class="acronym">skip</span></acronym>]</span></p>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.9.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-srv-target-list-sort.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -390,13 +390,13 @@ g_srv_target_list_sort (<em class="parameter"><code><a href="https://developer.g
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>targets</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of <a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a></p></td>
+<td class="parameter_description"><p>a <a href="../glib-Doubly-Linked-Lists.html#GList"><span class="type">GList</span></a> of <a class="link" href="GSrvTarget.html" title="GSrvTarget"><span class="type">GSrvTarget</span></a></p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.16.8.8.9.7"></a><h4>Returns</h4>
+<a name="g-srv-target-list-sort.returns"></a><h4>Returns</h4>
 <p> the head of the sorted list. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -413,6 +413,6 @@ g_srv_target_list_sort (<em class="parameter"><code><a href="https://developer.g
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

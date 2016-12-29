@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GSeekable: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="streaming.html" title="Streaming I/O">
 <link rel="prev" href="streaming.html" title="Streaming I/O">
 <link rel="next" href="GInputStream.html" title="GInputStream">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GSeekable.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -44,7 +44,7 @@
 <tbody>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="returnvalue">goffset</span></a>
+<a href="../glib-Basic-Types.html#goffset"><span class="returnvalue">goffset</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSeekable.html#g-seekable-tell" title="g_seekable_tell ()">g_seekable_tell</a> <span class="c_punctuation">()</span>
@@ -52,7 +52,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSeekable.html#g-seekable-can-seek" title="g_seekable_can_seek ()">g_seekable_can_seek</a> <span class="c_punctuation">()</span>
@@ -60,7 +60,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSeekable.html#g-seekable-seek" title="g_seekable_seek ()">g_seekable_seek</a> <span class="c_punctuation">()</span>
@@ -68,7 +68,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSeekable.html#g-seekable-can-truncate" title="g_seekable_can_truncate ()">g_seekable_can_truncate</a> <span class="c_punctuation">()</span>
@@ -76,7 +76,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="GSeekable.html#g-seekable-truncate" title="g_seekable_truncate ()">g_seekable_truncate</a> <span class="c_punctuation">()</span>
@@ -87,7 +87,7 @@
 </div>
 <div class="refsect1">
 <a name="GSeekable.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -114,7 +114,7 @@
 <a name="GSeekable.prerequisites"></a><h2>Prerequisites</h2>
 <p>
 GSeekable requires
- <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>.</p>
+ <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>.</p>
 </div>
 <div class="refsect1">
 <a name="GSeekable.implementations"></a><h2>Known Implementations</h2>
@@ -145,12 +145,12 @@ usually cause the stream to resize by introducing zero bytes.</p>
 <a name="GSeekable.functions_details"></a><h2>Functions</h2>
 <div class="refsect2">
 <a name="g-seekable-tell"></a><h3>g_seekable_tell ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="returnvalue">goffset</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#goffset"><span class="returnvalue">goffset</span></a>
 g_seekable_tell (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>);</pre>
 <p>Tells the current position within the stream.</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-seekable-tell.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -164,19 +164,19 @@ g_seekable_tell (<em class="parameter"><code><a class="link" href="GSeekable.htm
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.2.6"></a><h4>Returns</h4>
+<a name="g-seekable-tell.returns"></a><h4>Returns</h4>
 <p> the offset from the beginning of the buffer.</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-seekable-can-seek"></a><h3>g_seekable_can_seek ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_seekable_can_seek (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>);</pre>
 <p>Tests if the stream supports the <a class="link" href="GSeekable.html#GSeekableIface" title="struct GSeekableIface"><span class="type">GSeekableIface</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-seekable-can-seek.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -190,20 +190,20 @@ g_seekable_can_seek (<em class="parameter"><code><a class="link" href="GSeekable
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.3.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>seekable</code></em>
-can be seeked. <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
+<a name="g-seekable-can-seek.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if <em class="parameter"><code>seekable</code></em>
+can be seeked. <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-seekable-seek"></a><h3>g_seekable_seek ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_seekable_seek (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>,
-                 <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="type">goffset</span></a> offset</code></em>,
-                 <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-IO-Channels.html#GSeekType"><span class="type">GSeekType</span></a> type</code></em>,
+                 <em class="parameter"><code><a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a> offset</code></em>,
+                 <em class="parameter"><code><a href="../glib-IO-Channels.html#GSeekType"><span class="type">GSeekType</span></a> type</code></em>,
                  <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
-                 <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                 <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Seeks in the stream by the given <em class="parameter"><code>offset</code></em>
 , modified by <em class="parameter"><code>type</code></em>
 .</p>
@@ -215,12 +215,12 @@ of a resizable stream and reading will result in EOF.  Seeking past
 the end of a fixed-sized stream will fail.</p>
 <p>Any operation that would result in a negative offset will fail.</p>
 <p>If <em class="parameter"><code>cancellable</code></em>
- is not <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
+ is not <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
 triggering the cancellable object from another thread. If the operation
 was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANCELLED:CAPS"><code class="literal">G_IO_ERROR_CANCELLED</code></a> will be returned.</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.4.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-seekable-seek.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -234,22 +234,22 @@ was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANC
 </tr>
 <tr>
 <td class="parameter_name"><p>offset</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="type">goffset</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>type</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-IO-Channels.html#GSeekType"><span class="type">GSeekType</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-IO-Channels.html#GSeekType"><span class="type">GSeekType</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
+<td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
+<td class="parameter_description"><p>a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
 ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -257,21 +257,21 @@ ignore.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.4.9"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if successful. If an error
-has occurred, this function will return <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
+<a name="g-seekable-seek.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if successful. If an error
+has occurred, this function will return <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
 appropriately if present.</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-seekable-can-truncate"></a><h3>g_seekable_can_truncate ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_seekable_can_truncate (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>);</pre>
 <p>Tests if the stream can be truncated.</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-seekable-can-truncate.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -285,29 +285,29 @@ g_seekable_can_truncate (<em class="parameter"><code><a class="link" href="GSeek
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.5.6"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the stream can be truncated, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
+<a name="g-seekable-can-truncate.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if the stream can be truncated, <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> otherwise.</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-seekable-truncate"></a><h3>g_seekable_truncate ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
+<pre class="programlisting"><a href="../glib-Basic-Types.html#gboolean"><span class="returnvalue">gboolean</span></a>
 g_seekable_truncate (<em class="parameter"><code><a class="link" href="GSeekable.html" title="GSeekable"><span class="type">GSeekable</span></a> *seekable</code></em>,
-                     <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="type">goffset</span></a> offset</code></em>,
+                     <em class="parameter"><code><a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a> offset</code></em>,
                      <em class="parameter"><code><a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> *cancellable</code></em>,
-                     <em class="parameter"><code><a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
+                     <em class="parameter"><code><a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Truncates a stream with a given <span class="type">offset</span>. </p>
 <p>If <em class="parameter"><code>cancellable</code></em>
- is not <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
+ is not <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>, then the operation can be cancelled by
 triggering the cancellable object from another thread. If the operation
 was cancelled, the error <a class="link" href="gio-GIOError.html#G-IO-ERROR-CANCELLED:CAPS"><code class="literal">G_IO_ERROR_CANCELLED</code></a> will be returned. If an
 operation was partially finished when the operation was cancelled the
 partial result will be returned, without an error.</p>
 <p>Virtual: truncate_fn</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.6.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-seekable-truncate.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -321,17 +321,17 @@ partial result will be returned, without an error.</p>
 </tr>
 <tr>
 <td class="parameter_name"><p>offset</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#goffset"><span class="type">goffset</span></a>.</p></td>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#goffset"><span class="type">goffset</span></a>.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
 <tr>
 <td class="parameter_name"><p>cancellable</p></td>
-<td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
+<td class="parameter_description"><p> optional <a class="link" href="GCancellable.html" title="GCancellable"><span class="type">GCancellable</span></a> object, <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to ignore. </p></td>
 <td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
+<td class="parameter_description"><p>a <a href="../glib-Error-Reporting.html#GError"><span class="type">GError</span></a> location to store the error occurring, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> to
 ignore.</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -339,9 +339,9 @@ ignore.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.7.2.10.6.8"></a><h4>Returns</h4>
-<p> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if successful. If an error
-has occurred, this function will return <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
+<a name="g-seekable-truncate.returns"></a><h4>Returns</h4>
+<p> <a href="../glib-Standard-Macros.html#TRUE:CAPS"><code class="literal">TRUE</code></a> if successful. If an error
+has occurred, this function will return <a href="../glib-Standard-Macros.html#FALSE:CAPS"><code class="literal">FALSE</code></a> and set <em class="parameter"><code>error</code></em>
 appropriately if present. </p>
 </div>
 </div>
@@ -381,19 +381,14 @@ appropriately if present. </p>
 </pre>
 <p>Provides an interface for implementing seekable functionality on I/O Streams.</p>
 <div class="refsect3">
-<a name="id-1.4.7.2.11.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSeekableIface.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
 <col width="200px" class="struct_members_annotations">
 </colgroup>
 <tbody>
-<tr>
-<td class="struct_member_name"><p><a href="https://developer.gnome.org/gobject/unstable/gobject-Type-Information.html#GTypeInterface"><span class="type">GTypeInterface</span></a> <em class="structfield"><code><a name="GSeekableIface.g-iface"></a>g_iface</code></em>;</p></td>
-<td class="struct_member_description"><p>The parent interface.</p></td>
-<td class="struct_member_annotations"> </td>
-</tr>
 <tr>
 <td class="struct_member_name"><p><em class="structfield"><code><a name="GSeekableIface.tell"></a>tell</code></em> ()</p></td>
 <td class="struct_member_description"><p>Tells the current location within a stream.</p></td>
@@ -430,6 +425,6 @@ appropriately if present. </p>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

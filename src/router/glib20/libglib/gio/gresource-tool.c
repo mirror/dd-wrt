@@ -91,12 +91,15 @@ list_resource (GResource   *resource,
 
       len = MIN (strlen (child), strlen (prefix));
       if (strncmp (child, prefix, len) != 0)
-        continue;
+        {
+          g_free (child);
+          continue;
+        }
 
       if (g_resource_get_info (resource, child, 0, &size, &flags, NULL))
         {
           if (details)
-            g_print ("%s%s%6"G_GSIZE_FORMAT " %s %s\n", section, section[0] ? " " : "", size, flags & G_RESOURCE_FLAGS_COMPRESSED ? "c" : "u", child);
+            g_print ("%s%s%6"G_GSIZE_FORMAT " %s %s\n", section, section[0] ? " " : "", size, (flags & G_RESOURCE_FLAGS_COMPRESSED) ? "c" : "u", child);
           else
             g_print ("%s\n", child);
         }
@@ -529,7 +532,7 @@ cmd_help (gboolean     requested,
     {
       g_string_append (string,
       _("Usage:\n"
-        "  gresource [--section SECTION] COMMAND [ARGS...]\n"
+        "  gresource [--section SECTION] COMMAND [ARGS…]\n"
         "\n"
         "Commands:\n"
         "  help                      Show this information\n"
@@ -538,7 +541,7 @@ cmd_help (gboolean     requested,
         "  details                   List resources with details\n"
         "  extract                   Extract a resource\n"
         "\n"
-        "Use 'gresource help COMMAND' to get detailed help.\n\n"));
+        "Use “gresource help COMMAND” to get detailed help.\n\n"));
     }
   else
     {

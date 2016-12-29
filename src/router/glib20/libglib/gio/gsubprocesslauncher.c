@@ -225,7 +225,7 @@ g_subprocess_launcher_new (GSubprocessFlags flags)
 /**
  * g_subprocess_launcher_set_environ:
  * @self: a #GSubprocess
- * @env: the replacement environment
+ * @env: (array zero-terminated=1): the replacement environment
  *
  * Replace the entire environment of processes launched from this
  * launcher with the given 'environ' variable.
@@ -237,9 +237,8 @@ g_subprocess_launcher_new (GSubprocessFlags flags)
  * As an alternative, you can use g_subprocess_launcher_setenv(),
  * g_subprocess_launcher_unsetenv(), etc.
  *
- * All strings in this array are expected to be in the GLib file name
- * encoding.  On UNIX, this means that they can be arbitrary byte
- * strings.  On Windows, they should be in UTF-8.
+ * On UNIX, all strings in this array can be arbitrary byte strings.
+ * On Windows, they should be in UTF-8.
  *
  * Since: 2.40
  **/
@@ -261,10 +260,9 @@ g_subprocess_launcher_set_environ (GSubprocessLauncher  *self,
  * Sets the environment variable @variable in the environment of
  * processes launched from this launcher.
  *
- * Both the variable's name and value should be in the GLib file name
- * encoding. On UNIX, this means that they can be arbitrary byte
- * strings. On Windows, they should be in UTF-8.
- *
+ * On UNIX, both the variable's name and value can be arbitrary byte
+ * strings, except that the variable's name cannot contain '='.
+ * On Windows, they should be in UTF-8.
  *
  * Since: 2.40
  **/
@@ -285,9 +283,8 @@ g_subprocess_launcher_setenv (GSubprocessLauncher *self,
  * Removes the environment variable @variable from the environment of
  * processes launched from this launcher.
  *
- * The variable name should be in the GLib file name encoding.  On UNIX,
- * this means that they can be arbitrary byte strings.  On Windows, they
- * should be in UTF-8.
+ * On UNIX, the variable's name can be an arbitrary byte string not
+ * containing '='. On Windows, it should be in UTF-8.
  *
  * Since: 2.40
  **/
@@ -306,9 +303,8 @@ g_subprocess_launcher_unsetenv (GSubprocessLauncher *self,
  * Returns the value of the environment variable @variable in the
  * environment of processes launched from this launcher.
  *
- * The returned string is in the GLib file name encoding.  On UNIX, this
- * means that it can be an arbitrary byte string.  On Windows, it will
- * be UTF-8.
+ * On UNIX, the returned string can be an arbitrary byte string.
+ * On Windows, it will be UTF-8.
  *
  * Returns: the value of the environment variable, %NULL if unset
  *
@@ -324,7 +320,7 @@ g_subprocess_launcher_getenv (GSubprocessLauncher *self,
 /**
  * g_subprocess_launcher_set_cwd:
  * @self: a #GSubprocess
- * @cwd: the cwd for launched processes
+ * @cwd: (type filename): the cwd for launched processes
  *
  * Sets the current working directory that processes will be launched
  * with.
@@ -407,7 +403,7 @@ assign_fd (gint *fd_ptr, gint fd)
 /**
  * g_subprocess_launcher_set_stdin_file_path:
  * @self: a #GSubprocessLauncher
- * @path: a filename or %NULL
+ * @path: (type filename) (nullable: a filename or %NULL
  *
  * Sets the file path to use as the stdin for spawned processes.
  *
@@ -470,7 +466,7 @@ g_subprocess_launcher_take_stdin_fd (GSubprocessLauncher *self,
 /**
  * g_subprocess_launcher_set_stdout_file_path:
  * @self: a #GSubprocessLauncher
- * @path: a filename or %NULL
+ * @path: (type filename) (nullable): a filename or %NULL
  *
  * Sets the file path to use as the stdout for spawned processes.
  *
@@ -533,7 +529,7 @@ g_subprocess_launcher_take_stdout_fd (GSubprocessLauncher *self,
 /**
  * g_subprocess_launcher_set_stderr_file_path:
  * @self: a #GSubprocessLauncher
- * @path: a filename or %NULL
+ * @path: (type filename) (nullable): a filename or %NULL
  *
  * Sets the file path to use as the stderr for spawned processes.
  *

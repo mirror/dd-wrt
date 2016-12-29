@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GIOModule: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="extending.html" title="Extending GIO">
 <link rel="prev" href="GVfs.html" title="GVfs">
 <link rel="next" href="gio-Extension-Points.html" title="Extension Points">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -35,7 +35,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GIOModule.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -75,7 +75,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" title="g_io_modules_load_all_in_directory ()">g_io_modules_load_all_in_directory</a> <span class="c_punctuation">()</span>
@@ -83,7 +83,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 </td>
 <td class="function_name">
 <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory-with-scope" title="g_io_modules_load_all_in_directory_with_scope ()">g_io_modules_load_all_in_directory_with_scope</a> <span class="c_punctuation">()</span>
@@ -134,7 +134,7 @@
 </div>
 <div class="refsect1">
 <a name="GIOModule.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -157,8 +157,8 @@
 </div>
 <div class="refsect1">
 <a name="GIOModule.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
-    <span class="lineart">╰──</span> <a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html">GTypeModule</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
+    <span class="lineart">╰──</span> <a href="../GTypeModule.html#GTypeModule-struct">GTypeModule</a>
         <span class="lineart">╰──</span> GIOModule
 </pre>
 </div>
@@ -166,7 +166,7 @@
 <a name="GIOModule.implemented-interfaces"></a><h2>Implemented Interfaces</h2>
 <p>
 GIOModule implements
- <a href="https://developer.gnome.org/gobject/unstable/GTypePlugin.html">GTypePlugin</a>.</p>
+ <a href="../GTypePlugin.html#GTypePlugin-struct">GTypePlugin</a>.</p>
 </div>
 <div class="refsect1">
 <a name="GIOModule.includes"></a><h2>Includes</h2>
@@ -184,12 +184,12 @@ be used by others to implement module loading.</p>
 <div class="refsect2">
 <a name="g-io-module-new"></a><h3>g_io_module_new ()</h3>
 <pre class="programlisting"><a class="link" href="GIOModule.html" title="GIOModule"><span class="returnvalue">GIOModule</span></a> *
-g_io_module_new (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *filename</code></em>);</pre>
+g_io_module_new (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *filename</code></em>);</pre>
 <p>Creates a new GIOModule that will load the specific
 shared library when in use.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -197,16 +197,16 @@ shared library when in use.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>filename</p></td>
-<td class="parameter_description"><p>filename of the shared library module.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> filename of the shared library module. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.2.6"></a><h4>Returns</h4>
+<a name="g-io-module-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GIOModule.html" title="GIOModule"><span class="type">GIOModule</span></a> from given <em class="parameter"><code>filename</code></em>
 ,
-or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error.</p>
+or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error.</p>
 </div>
 </div>
 <hr>
@@ -214,14 +214,14 @@ or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#
 <a name="g-io-module-scope-block"></a><h3>g_io_module_scope_block ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_io_module_scope_block (<em class="parameter"><code><a class="link" href="GIOModule.html#GIOModuleScope" title="GIOModuleScope"><span class="type">GIOModuleScope</span></a> *scope</code></em>,
-                         <em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *basename</code></em>);</pre>
+                         <em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *basename</code></em>);</pre>
 <p>Block modules with the given <em class="parameter"><code>basename</code></em>
  from being loaded when
 this scope is used with <a class="link" href="GIOModule.html#g-io-modules-scan-all-in-directory-with-scope" title="g_io_modules_scan_all_in_directory_with_scope ()"><code class="function">g_io_modules_scan_all_in_directory_with_scope()</code></a>
 or <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory-with-scope" title="g_io_modules_load_all_in_directory_with_scope ()"><code class="function">g_io_modules_load_all_in_directory_with_scope()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-scope-block.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -250,8 +250,8 @@ or <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory-with-
 g_io_module_scope_free (<em class="parameter"><code><a class="link" href="GIOModule.html#GIOModuleScope" title="GIOModuleScope"><span class="type">GIOModuleScope</span></a> *scope</code></em>);</pre>
 <p>Free a module scope.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-scope-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -277,8 +277,8 @@ blocking duplicate modules, or blocking a module you don't want to load.</p>
 which have the same base name as a module that has already been seen
 in this scope.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.5.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-scope-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -292,7 +292,7 @@ in this scope.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.5.7"></a><h4>Returns</h4>
+<a name="g-io-module-scope-new.returns"></a><h4>Returns</h4>
 <p> the new module scope. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
@@ -301,15 +301,15 @@ in this scope.</p>
 <hr>
 <div class="refsect2">
 <a name="g-io-modules-load-all-in-directory"></a><h3>g_io_modules_load_all_in_directory ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
-g_io_modules_load_all_in_directory (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>);</pre>
+<pre class="programlisting"><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+g_io_modules_load_all_in_directory (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>);</pre>
 <p>Loads all the modules in the specified directory.</p>
 <p>If don't require all modules to be initialized (and thus registering
 all gtypes) then you can use <a class="link" href="GIOModule.html#g-io-modules-scan-all-in-directory" title="g_io_modules_scan_all_in_directory ()"><code class="function">g_io_modules_scan_all_in_directory()</code></a>
 which allows delayed/lazy loading of modules.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.6.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-modules-load-all-in-directory.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -317,36 +317,37 @@ which allows delayed/lazy loading of modules.</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>dirname</p></td>
-<td class="parameter_description"><p>pathname for a directory containing modules to load.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> pathname for a directory containing modules
+to load. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.6.7"></a><h4>Returns</h4>
-<p> a list of <a href="GIOModule.html"><span class="type">GIOModules</span></a> loaded
+<a name="g-io-modules-load-all-in-directory.returns"></a><h4>Returns</h4>
+<p> a list of <a href="GIOModule.html#GIOModule-struct"><span class="type">GIOModules</span></a> loaded
 from the directory,
 All the modules are loaded into memory, if you want to
 unload them (enabling on-demand loading) you must call
-<a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html#g-type-module-unuse"><code class="function">g_type_module_unuse()</code></a> on all the modules. Free the list
-with <a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#g-list-free"><code class="function">g_list_free()</code></a>. </p>
+<a href="../GTypeModule.html#g-type-module-unuse"><code class="function">g_type_module_unuse()</code></a> on all the modules. Free the list
+with <a href="../glib-Doubly-Linked-Lists.html#g-list-free"><code class="function">g_list_free()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GIOModule][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-io-modules-load-all-in-directory-with-scope"></a><h3>g_io_modules_load_all_in_directory_with_scope ()</h3>
-<pre class="programlisting"><a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
+<pre class="programlisting"><a href="../glib-Doubly-Linked-Lists.html#GList"><span class="returnvalue">GList</span></a> *
 g_io_modules_load_all_in_directory_with_scope
-                               (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>,
+                               (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>,
                                 <em class="parameter"><code><a class="link" href="GIOModule.html#GIOModuleScope" title="GIOModuleScope"><span class="type">GIOModuleScope</span></a> *scope</code></em>);</pre>
 <p>Loads all the modules in the specified directory.</p>
 <p>If don't require all modules to be initialized (and thus registering
 all gtypes) then you can use <a class="link" href="GIOModule.html#g-io-modules-scan-all-in-directory" title="g_io_modules_scan_all_in_directory ()"><code class="function">g_io_modules_scan_all_in_directory()</code></a>
 which allows delayed/lazy loading of modules.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-modules-load-all-in-directory-with-scope.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -355,8 +356,9 @@ which allows delayed/lazy loading of modules.</p>
 <tbody>
 <tr>
 <td class="parameter_name"><p>dirname</p></td>
-<td class="parameter_description"><p>pathname for a directory containing modules to load.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> pathname for a directory containing modules
+to load. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>scope</p></td>
@@ -367,13 +369,13 @@ which allows delayed/lazy loading of modules.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.7.7"></a><h4>Returns</h4>
-<p> a list of <a href="GIOModule.html"><span class="type">GIOModules</span></a> loaded
+<a name="g-io-modules-load-all-in-directory-with-scope.returns"></a><h4>Returns</h4>
+<p> a list of <a href="GIOModule.html#GIOModule-struct"><span class="type">GIOModules</span></a> loaded
 from the directory,
 All the modules are loaded into memory, if you want to
 unload them (enabling on-demand loading) you must call
-<a href="https://developer.gnome.org/gobject/unstable/GTypeModule.html#g-type-module-unuse"><code class="function">g_type_module_unuse()</code></a> on all the modules. Free the list
-with <a href="https://developer.gnome.org/glib/unstable/glib-Doubly-Linked-Lists.html#g-list-free"><code class="function">g_list_free()</code></a>. </p>
+<a href="../GTypeModule.html#g-type-module-unuse"><code class="function">g_type_module_unuse()</code></a> on all the modules. Free the list
+with <a href="../glib-Doubly-Linked-Lists.html#g-list-free"><code class="function">g_list_free()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Generics and defining elements of containers and arrays."><span class="acronym">element-type</span></acronym> GIOModule][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-30.html#api-index-2.30">2.30</a></p>
@@ -393,8 +395,8 @@ an extension point it implementes is used with e.g.
 <p>If you need to guarantee that all types are loaded in all the modules,
 use <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" title="g_io_modules_load_all_in_directory ()"><code class="function">g_io_modules_load_all_in_directory()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.8.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-modules-scan-all-in-directory.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -402,8 +404,9 @@ use <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" tit
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>dirname</p></td>
-<td class="parameter_description"><p>pathname for a directory containing modules to scan.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> pathname for a directory containing modules
+to scan. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr></tbody>
 </table></div>
 </div>
@@ -414,7 +417,7 @@ use <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" tit
 <a name="g-io-modules-scan-all-in-directory-with-scope"></a><h3>g_io_modules_scan_all_in_directory_with_scope ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_io_modules_scan_all_in_directory_with_scope
-                               (<em class="parameter"><code>const <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>,
+                               (<em class="parameter"><code>const <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a> *dirname</code></em>,
                                 <em class="parameter"><code><a class="link" href="GIOModule.html#GIOModuleScope" title="GIOModuleScope"><span class="type">GIOModuleScope</span></a> *scope</code></em>);</pre>
 <p>Scans all the modules in the specified directory, ensuring that
 any extension point implemented by a module is registered.</p>
@@ -426,8 +429,8 @@ an extension point it implementes is used with e.g.
 <p>If you need to guarantee that all types are loaded in all the modules,
 use <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" title="g_io_modules_load_all_in_directory ()"><code class="function">g_io_modules_load_all_in_directory()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.9.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-modules-scan-all-in-directory-with-scope.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -436,8 +439,9 @@ use <a class="link" href="GIOModule.html#g-io-modules-load-all-in-directory" tit
 <tbody>
 <tr>
 <td class="parameter_name"><p>dirname</p></td>
-<td class="parameter_description"><p>pathname for a directory containing modules to scan.</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> pathname for a directory containing modules
+to scan. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>scope</p></td>
@@ -459,8 +463,8 @@ g_io_module_load (<em class="parameter"><code><a class="link" href="GIOModule.ht
 to initialize the module. Typically, this function will call
 <a class="link" href="gio-Extension-Points.html#g-io-extension-point-implement" title="g_io_extension_point_implement ()"><code class="function">g_io_extension_point_implement()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-load.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -483,8 +487,8 @@ g_io_module_unload (<em class="parameter"><code><a class="link" href="GIOModule.
 <p>This function is run when the module is being unloaded from GIO,
 to finalize the module.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-io-module-unload.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -522,10 +526,10 @@ points actually implemented must be returned by <a class="link" href="GIOModule.
 run gio-querymodules in order to build the cache files required for
 lazy loading.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.9.12.10"></a><h4>Returns</h4>
-<p> A <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>-terminated array of strings,
+<a name="g-io-module-query.returns"></a><h4>Returns</h4>
+<p> A <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>-terminated array of strings,
 listing the supported extension points of the module. The array
-must be suitable for freeing with <a href="https://developer.gnome.org/glib/unstable/glib-String-Utility-Functions.html#g-strfreev"><code class="function">g_strfreev()</code></a>. </p>
+must be suitable for freeing with <a href="../glib-String-Utility-Functions.html#g-strfreev"><code class="function">g_strfreev()</code></a>. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-24.html#api-index-2.24">2.24</a></p>
@@ -553,8 +557,8 @@ or <a class="link" href="GIOModule.html#g-io-modules-scan-all-in-directory-with-
 <a name="GIOModuleScopeFlags"></a><h3>enum GIOModuleScopeFlags</h3>
 <p>Flags for use with <a class="link" href="GIOModule.html#g-io-module-scope-new" title="g_io_module_scope_new ()"><code class="function">g_io_module_scope_new()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.24.3.10.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GIOModuleScopeFlags.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -585,6 +589,6 @@ or <a class="link" href="GIOModule.html#g-io-modules-scan-all-in-directory-with-
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

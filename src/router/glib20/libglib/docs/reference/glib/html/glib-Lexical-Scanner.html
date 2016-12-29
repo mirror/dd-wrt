@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Lexical Scanner: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Miscellaneous-Utility-Functions.html" title="Miscellaneous Utility Functions">
 <link rel="next" href="glib-Timers.html" title="Timers">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Lexical-Scanner.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -105,7 +105,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-cur-line" title="g_scanner_cur_line ()">g_scanner_cur_line</a> <span class="c_punctuation">()</span>
@@ -113,7 +113,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-cur-position" title="g_scanner_cur_position ()">g_scanner_cur_position</a> <span class="c_punctuation">()</span>
@@ -137,7 +137,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-set-scope" title="g_scanner_set_scope ()">g_scanner_set_scope</a> <span class="c_punctuation">()</span>
@@ -250,7 +250,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Lexical-Scanner.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -323,8 +323,8 @@ of the scanner, which are copied into the <a class="link" href="glib-Lexical-Sca
  field. If you pass <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> then the default settings
 are used.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -338,7 +338,7 @@ are used.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.2.7"></a><h4>Returns</h4>
+<a name="g-scanner-new.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a></p>
 </div>
 </div>
@@ -349,8 +349,8 @@ are used.</p>
 g_scanner_destroy (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>);</pre>
 <p>Frees all memory used by the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-destroy.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -369,11 +369,11 @@ g_scanner_destroy (<em class="parameter"><code><a class="link" href="glib-Lexica
 <a name="g-scanner-input-file"></a><h3>g_scanner_input_file ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_scanner_input_file (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> input_fd</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> input_fd</code></em>);</pre>
 <p>Prepares to scan a file.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-input-file.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -404,8 +404,8 @@ and blows the file read ahead buffer. This is useful for
 third party uses of the scanners filedescriptor, which hooks
 onto the current scanning position.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-sync-file-offset.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -425,11 +425,11 @@ onto the current scanning position.</p>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_scanner_input_text (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
                       <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *text</code></em>,
-                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> text_len</code></em>);</pre>
+                      <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> text_len</code></em>);</pre>
 <p>Prepares to scan a text buffer.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-input-text.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -475,8 +475,8 @@ the next token. Getting the next token after switching the scope or
 configuration will return whatever was peeked before, regardless of
 any symbols that may have been added or removed in the new scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-peek-next-token.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -490,7 +490,7 @@ any symbols that may have been added or removed in the new scope.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.7.7"></a><h4>Returns</h4>
+<a name="g-scanner-peek-next-token.returns"></a><h4>Returns</h4>
 <p> the type of the token</p>
 </div>
 </div>
@@ -508,8 +508,8 @@ placed in the <em class="parameter"><code>token</code></em>
  fields of
 the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> structure.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-get-next-token.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -523,7 +523,7 @@ the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GSca
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.8.6"></a><h4>Returns</h4>
+<a name="g-scanner-get-next-token.returns"></a><h4>Returns</h4>
 <p> the type of the token</p>
 </div>
 </div>
@@ -535,8 +535,8 @@ g_scanner_eof (<em class="parameter"><code><a class="link" href="glib-Lexical-Sc
 <p>Returns <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the scanner has reached the end of
 the file or text buffer.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-eof.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -550,7 +550,7 @@ the file or text buffer.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.9.6"></a><h4>Returns</h4>
+<a name="g-scanner-eof.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the scanner has reached the end of
 the file or text buffer</p>
 </div>
@@ -558,14 +558,14 @@ the file or text buffer</p>
 <hr>
 <div class="refsect2">
 <a name="g-scanner-cur-line"></a><h3>g_scanner_cur_line ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_scanner_cur_line (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>);</pre>
 <p>Returns the current line in the input stream (counting
 from 1). This is the line of the last token parsed via
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token" title="g_scanner_get_next_token ()"><code class="function">g_scanner_get_next_token()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-cur-line.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -579,21 +579,21 @@ from 1). This is the line of the last token parsed via
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.10.6"></a><h4>Returns</h4>
+<a name="g-scanner-cur-line.returns"></a><h4>Returns</h4>
 <p> the current line</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-scanner-cur-position"></a><h3>g_scanner_cur_position ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_scanner_cur_position (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>);</pre>
 <p>Returns the current position in the current line (counting
 from 0). This is the position of the last token parsed via
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token" title="g_scanner_get_next_token ()"><code class="function">g_scanner_get_next_token()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-cur-position.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -607,7 +607,7 @@ from 0). This is the position of the last token parsed via
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.11.6"></a><h4>Returns</h4>
+<a name="g-scanner-cur-position.returns"></a><h4>Returns</h4>
 <p> the current position on the line</p>
 </div>
 </div>
@@ -620,8 +620,8 @@ g_scanner_cur_token (<em class="parameter"><code><a class="link" href="glib-Lexi
 
 field in the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> structure.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-cur-token.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -635,7 +635,7 @@ field in the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="st
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.12.6"></a><h4>Returns</h4>
+<a name="g-scanner-cur-token.returns"></a><h4>Returns</h4>
 <p> the current token type</p>
 </div>
 </div>
@@ -648,8 +648,8 @@ g_scanner_cur_value (<em class="parameter"><code><a class="link" href="glib-Lexi
 
 field in the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> structure.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-cur-value.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -663,20 +663,20 @@ field in the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="st
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.13.6"></a><h4>Returns</h4>
+<a name="g-scanner-cur-value.returns"></a><h4>Returns</h4>
 <p> the current token value</p>
 </div>
 </div>
 <hr>
 <div class="refsect2">
 <a name="g-scanner-set-scope"></a><h3>g_scanner_set_scope ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_scanner_set_scope (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> scope_id</code></em>);</pre>
+                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> scope_id</code></em>);</pre>
 <p>Sets the current scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-set-scope.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -697,7 +697,7 @@ g_scanner_set_scope (<em class="parameter"><code><a class="link" href="glib-Lexi
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.14.6"></a><h4>Returns</h4>
+<a name="g-scanner-set-scope.returns"></a><h4>Returns</h4>
 <p> the old scope id</p>
 </div>
 </div>
@@ -706,13 +706,13 @@ g_scanner_set_scope (<em class="parameter"><code><a class="link" href="glib-Lexi
 <a name="g-scanner-scope-add-symbol"></a><h3>g_scanner_scope_add_symbol ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_scanner_scope_add_symbol (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> scope_id</code></em>,
+                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> scope_id</code></em>,
                             <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *symbol</code></em>,
                             <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> value</code></em>);</pre>
 <p>Adds a symbol to the given scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.15.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-scope-add-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -748,7 +748,7 @@ g_scanner_scope_add_symbol (<em class="parameter"><code><a class="link" href="gl
 <a name="g-scanner-scope-foreach-symbol"></a><h3>g_scanner_scope_foreach_symbol ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_scanner_scope_foreach_symbol (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                                <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> scope_id</code></em>,
+                                <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> scope_id</code></em>,
                                 <em class="parameter"><code><a class="link" href="glib-Hash-Tables.html#GHFunc" title="GHFunc ()"><span class="type">GHFunc</span></a> func</code></em>,
                                 <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="type">gpointer</span></a> user_data</code></em>);</pre>
 <p>Calls the given function for each of the symbol/value pairs
@@ -757,8 +757,8 @@ the symbol and value of each pair, and the given <em class="parameter"><code>use
 
 parameter.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.16.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-scope-foreach-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -794,13 +794,13 @@ parameter.</p>
 <a name="g-scanner-scope-lookup-symbol"></a><h3>g_scanner_scope_lookup_symbol ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gpointer" title="gpointer"><span class="returnvalue">gpointer</span></a>
 g_scanner_scope_lookup_symbol (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> scope_id</code></em>,
+                               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> scope_id</code></em>,
                                <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *symbol</code></em>);</pre>
 <p>Looks up a symbol in a scope and return its value. If the
 symbol is not bound in the scope, <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is returned.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.17.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-scope-lookup-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -826,7 +826,7 @@ symbol is not bound in the scope, <a class="link" href="glib-Standard-Macros.htm
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.17.6"></a><h4>Returns</h4>
+<a name="g-scanner-scope-lookup-symbol.returns"></a><h4>Returns</h4>
 <p> the value of <em class="parameter"><code>symbol</code></em>
 in the given scope, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
 if <em class="parameter"><code>symbol</code></em>
@@ -838,12 +838,12 @@ is not bound in the given scope.</p>
 <a name="g-scanner-scope-remove-symbol"></a><h3>g_scanner_scope_remove_symbol ()</h3>
 <pre class="programlisting"><span class="returnvalue">void</span>
 g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> *scanner</code></em>,
-                               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> scope_id</code></em>,
+                               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> scope_id</code></em>,
                                <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *symbol</code></em>);</pre>
 <p>Removes a symbol from a scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.18.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-scope-remove-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -879,8 +879,8 @@ g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href=
 </div>
 <p>Adds a symbol to the default scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.19.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-add-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -916,8 +916,8 @@ g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href=
 </div>
 <p>Removes a symbol from the default scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.20.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-remove-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -948,8 +948,8 @@ g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href=
 </div>
 <p>Calls a function for each symbol in the default scope.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.21.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-foreach-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -985,8 +985,8 @@ g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href=
 </div>
 <p>There is no reason to use this macro, since it does nothing.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.22.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-freeze-symbol-table.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1010,8 +1010,8 @@ g_scanner_scope_remove_symbol (<em class="parameter"><code><a class="link" href=
 </div>
 <p>There is no reason to use this macro, since it does nothing.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.23.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-thaw-symbol-table.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1035,8 +1035,8 @@ g_scanner_lookup_symbol (<em class="parameter"><code><a class="link" href="glib-
 If the symbol is not bound in the current scope, <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is
 returned.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.24.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-lookup-symbol.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1057,7 +1057,7 @@ returned.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.15.7.24.6"></a><h4>Returns</h4>
+<a name="g-scanner-lookup-symbol.returns"></a><h4>Returns</h4>
 <p> the value of <em class="parameter"><code>symbol</code></em>
 in the current scope, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>
 if <em class="parameter"><code>symbol</code></em>
@@ -1073,8 +1073,8 @@ g_scanner_warn (<em class="parameter"><code><a class="link" href="glib-Lexical-S
                 <em class="parameter"><code>...</code></em>);</pre>
 <p>Outputs a warning message, via the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> message handler.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.25.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-warn.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1109,8 +1109,8 @@ g_scanner_error (<em class="parameter"><code><a class="link" href="glib-Lexical-
                  <em class="parameter"><code>...</code></em>);</pre>
 <p>Outputs an error message, via the <a class="link" href="glib-Lexical-Scanner.html#GScanner" title="struct GScanner"><span class="type">GScanner</span></a> message handler.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.26.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-error.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1146,7 +1146,7 @@ g_scanner_unexp_token (<em class="parameter"><code><a class="link" href="glib-Le
                        <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *symbol_spec</code></em>,
                        <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *symbol_name</code></em>,
                        <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *message</code></em>,
-                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> is_error</code></em>);</pre>
+                       <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> is_error</code></em>);</pre>
 <p>Outputs a message through the scanner's msg_handler,
 resulting from an unexpected token in the input stream.
 Note that you should not call <a class="link" href="glib-Lexical-Scanner.html#g-scanner-peek-next-token" title="g_scanner_peek_next_token ()"><code class="function">g_scanner_peek_next_token()</code></a>
@@ -1155,8 +1155,8 @@ call to <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token
 evaluates the scanner's current token (not the peeked token)
 to construct part of the message.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.27.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-scanner-unexp-token.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1222,8 +1222,8 @@ output as a warning.</p></td>
                     <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="type">gboolean</span></a> error</code></em>);</pre>
 <p>Specifies the type of the message handler function.</p>
 <div class="refsect3">
-<a name="id-1.5.15.7.28.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GScannerMsgFunc.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1304,8 +1304,8 @@ can place them here.</p>
  field. The type of the message handler function
 is declared by <a class="link" href="glib-Lexical-Scanner.html#GScannerMsgFunc" title="GScannerMsgFunc ()"><span class="type">GScannerMsgFunc</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.15.8.2.8"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GScanner.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1318,12 +1318,12 @@ is declared by <a class="link" href="glib-Lexical-Scanner.html#GScannerMsgFunc" 
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.max-parse-errors"></a>max_parse_errors</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.max-parse-errors"></a>max_parse_errors</code></em>;</p></td>
 <td class="struct_member_description"><p>unused</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.parse-errors"></a>parse_errors</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.parse-errors"></a>parse_errors</code></em>;</p></td>
 <td class="struct_member_description"><p>g_scanner_error() increments this field</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -1353,12 +1353,12 @@ is declared by <a class="link" href="glib-Lexical-Scanner.html#GScannerMsgFunc" 
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.line"></a>line</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.line"></a>line</code></em>;</p></td>
 <td class="struct_member_description"><p>line number of the last token from <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token" title="g_scanner_get_next_token ()"><code class="function">g_scanner_get_next_token()</code></a></p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.position"></a>position</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.position"></a>position</code></em>;</p></td>
 <td class="struct_member_description"><p>char number of the last token from <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token" title="g_scanner_get_next_token ()"><code class="function">g_scanner_get_next_token()</code></a></p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -1373,12 +1373,12 @@ is declared by <a class="link" href="glib-Lexical-Scanner.html#GScannerMsgFunc" 
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.next-line"></a>next_line</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.next-line"></a>next_line</code></em>;</p></td>
 <td class="struct_member_description"><p>line number of the last token from <a class="link" href="glib-Lexical-Scanner.html#g-scanner-peek-next-token" title="g_scanner_peek_next_token ()"><code class="function">g_scanner_peek_next_token()</code></a></p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.next-position"></a>next_position</code></em>;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScanner.next-position"></a>next_position</code></em>;</p></td>
 <td class="struct_member_description"><p>char number of the last token from <a class="link" href="glib-Lexical-Scanner.html#g-scanner-peek-next-token" title="g_scanner_peek_next_token ()"><code class="function">g_scanner_peek_next_token()</code></a></p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -1436,8 +1436,8 @@ is declared by <a class="link" href="glib-Lexical-Scanner.html#GScannerMsgFunc" 
 be changed during the parsing phase and will affect the lexical
 parsing of the next unpeeked token.</p>
 <div class="refsect3">
-<a name="id-1.5.15.8.3.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GScannerConfig.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -1474,133 +1474,133 @@ a '\n' (end of line).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.case-sensitive"></a>case_sensitive</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.case-sensitive"></a>case_sensitive</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if symbols are case sensitive (the
 default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.skip-comment-multi"></a>skip_comment_multi</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.skip-comment-multi"></a>skip_comment_multi</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if multi-line comments are skipped
 and not returned as tokens (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.skip-comment-single"></a>skip_comment_single</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.skip-comment-single"></a>skip_comment_single</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if single-line comments are skipped
 and not returned as tokens (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-comment-multi"></a>scan_comment_multi</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-comment-multi"></a>scan_comment_multi</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if multi-line comments are recognized
 (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier"></a>scan_identifier</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier"></a>scan_identifier</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if identifiers are recognized (the
 default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier-1char"></a>scan_identifier_1char</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier-1char"></a>scan_identifier_1char</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if single-character
 identifiers are recognized (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier-NULL"></a>scan_identifier_NULL</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-identifier-NULL"></a>scan_identifier_NULL</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> is reported as
 <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-IDENTIFIER-NULL:CAPS"><code class="literal">G_TOKEN_IDENTIFIER_NULL</code></a> (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-symbols"></a>scan_symbols</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-symbols"></a>scan_symbols</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if symbols are recognized (the default
 is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-binary"></a>scan_binary</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-binary"></a>scan_binary</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if binary numbers are recognized (the
 default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-octal"></a>scan_octal</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-octal"></a>scan_octal</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if octal numbers are recognized (the
 default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-float"></a>scan_float</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-float"></a>scan_float</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if floating point numbers are recognized
 (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-hex"></a>scan_hex</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-hex"></a>scan_hex</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if hexadecimal numbers are recognized (the
 default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-hex-dollar"></a>scan_hex_dollar</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-hex-dollar"></a>scan_hex_dollar</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if '$' is recognized as a prefix for
 hexadecimal numbers (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-string-sq"></a>scan_string_sq</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-string-sq"></a>scan_string_sq</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if strings can be enclosed in single
 quotes (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-string-dq"></a>scan_string_dq</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scan-string-dq"></a>scan_string_dq</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if strings can be enclosed in double
 quotes (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.numbers-2-int"></a>numbers_2_int</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.numbers-2-int"></a>numbers_2_int</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if binary, octal and hexadecimal numbers
 are reported as <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-INT:CAPS"><span class="type">G_TOKEN_INT</span></a> (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.int-2-float"></a>int_2_float</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.int-2-float"></a>int_2_float</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if all numbers are reported as <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-FLOAT:CAPS"><code class="literal">G_TOKEN_FLOAT</code></a>
 (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.identifier-2-string"></a>identifier_2_string</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.identifier-2-string"></a>identifier_2_string</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if identifiers are reported as strings
 (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.char-2-token"></a>char_2_token</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.char-2-token"></a>char_2_token</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if characters are reported by setting
 <code class="literal">token = ch</code> or as <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-CHAR:CAPS"><code class="literal">G_TOKEN_CHAR</code></a> (the default is <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.symbol-2-token"></a>symbol_2_token</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.symbol-2-token"></a>symbol_2_token</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if symbols are reported by setting
 <code class="literal">token = v_symbol</code> or as <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-SYMBOL:CAPS"><code class="literal">G_TOKEN_SYMBOL</code></a> (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scope-0-fallback"></a>scope_0_fallback</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.scope-0-fallback"></a>scope_0_fallback</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>specifies if a symbol is searched for in the
 default scope in addition to the current scope (the default is <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a>).</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
 <tr>
-<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.store-int64"></a>store_int64</code></em> : 1;</p></td>
+<td class="struct_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GScannerConfig.store-int64"></a>store_int64</code></em> : 1;</p></td>
 <td class="struct_member_description"><p>use value.v_int64 rather than v_int</p></td>
 <td class="struct_member_annotations"> </td>
 </tr>
@@ -1659,8 +1659,8 @@ in <a class="link" href="glib-Lexical-Scanner.html#GScannerConfig" title="struct
 <p>The possible types of token returned from each
 <a class="link" href="glib-Lexical-Scanner.html#g-scanner-get-next-token" title="g_scanner_get_next_token ()"><code class="function">g_scanner_get_next_token()</code></a> call.</p>
 <div class="refsect3">
-<a name="id-1.5.15.8.9.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTokenType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1837,8 +1837,8 @@ in <a class="link" href="glib-Lexical-Scanner.html#GScannerConfig" title="struct
 <a name="GTokenValue"></a><h3>union GTokenValue</h3>
 <p>A union holding the value of the token.</p>
 <div class="refsect3">
-<a name="id-1.5.15.8.10.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTokenValue.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="union_members_name">
 <col class="union_members_description">
@@ -1901,7 +1901,7 @@ in <a class="link" href="glib-Lexical-Scanner.html#GScannerConfig" title="struct
 <td class="union_member_annotations"> </td>
 </tr>
 <tr>
-<td class="union_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> <em class="structfield"><code><a name="GTokenValue.v-error"></a>v_error</code></em>;</p></td>
+<td class="union_member_name"><p><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> <em class="structfield"><code><a name="GTokenValue.v-error"></a>v_error</code></em>;</p></td>
 <td class="union_member_description"><p>error value</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
@@ -1916,8 +1916,8 @@ in <a class="link" href="glib-Lexical-Scanner.html#GScannerConfig" title="struct
  field
 of <a class="link" href="glib-Lexical-Scanner.html#GTokenValue" title="union GTokenValue"><span class="type">GTokenValue</span></a>, when the token is a <a class="link" href="glib-Lexical-Scanner.html#G-TOKEN-ERROR:CAPS"><code class="literal">G_TOKEN_ERROR</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.15.8.11.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GErrorType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -1987,6 +1987,6 @@ of <a class="link" href="glib-Lexical-Scanner.html#GTokenValue" title="union GTo
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

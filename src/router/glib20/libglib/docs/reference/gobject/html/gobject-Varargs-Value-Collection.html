@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Varargs Value Collection: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="rn01.html" title="API Reference">
 <link rel="prev" href="gobject-GParamSpec.html" title="GParamSpec">
 <link rel="next" href="gobject-Signals.html" title="Signals">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="gobject-Varargs-Value-Collection.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -68,7 +68,7 @@
 </div>
 <div class="refsect1">
 <a name="gobject-Varargs-Value-Collection.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -107,8 +107,8 @@ types and pointers.</p>
 implement the varargs collection as a macro, because on some systems
 va_list variables cannot be passed by reference.</p>
 <div class="refsect3">
-<a name="id-1.4.11.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-VALUE-COLLECT-INIT.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -141,7 +141,7 @@ the <a class="link" href="gobject-Type-Information.html#GTypeValueTable" title="
 </tr>
 <tr>
 <td class="parameter_name"><p>__error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="https://developer.gnome.org/glib/unstable/glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="../glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
 allocated error messages if something fails</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -162,8 +162,8 @@ va_list variables cannot be passed by reference.</p>
 you should use the <a class="link" href="gobject-Varargs-Value-Collection.html#G-VALUE-COLLECT-INIT:CAPS" title="G_VALUE_COLLECT_INIT()"><span class="type">G_VALUE_COLLECT_INIT</span></a> variant and pass the unitialized
 <a class="link" href="gobject-Generic-values.html#GValue" title="GValue"><span class="type">GValue</span></a>. That variant is faster than <a class="link" href="gobject-Varargs-Value-Collection.html#G-VALUE-COLLECT:CAPS" title="G_VALUE_COLLECT()"><span class="type">G_VALUE_COLLECT</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.11.7.3.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-VALUE-COLLECT.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -191,7 +191,7 @@ the <a class="link" href="gobject-Type-Information.html#GTypeValueTable" title="
 </tr>
 <tr>
 <td class="parameter_name"><p>__error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="https://developer.gnome.org/glib/unstable/glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="../glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
 allocated error messages if something fails</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -207,8 +207,8 @@ allocated error messages if something fails</p></td>
  from <em class="parameter"><code>var_args</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.11.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-VALUE-COLLECT-SKIP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -236,8 +236,8 @@ allocated error messages if something fails</p></td>
 <p>Collects a value's variable argument locations from a va_list. Usage is
 analogous to <a class="link" href="gobject-Varargs-Value-Collection.html#G-VALUE-COLLECT:CAPS" title="G_VALUE_COLLECT()"><code class="function">G_VALUE_COLLECT()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.4.11.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-VALUE-LCOPY.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -265,7 +265,7 @@ the <a class="link" href="gobject-Type-Information.html#GTypeValueTable" title="
 </tr>
 <tr>
 <td class="parameter_name"><p>__error</p></td>
-<td class="parameter_description"><p>a <a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="https://developer.gnome.org/glib/unstable/glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
+<td class="parameter_description"><p>a <a href="../glib-Basic-Types.html#gchar"><span class="type">gchar</span></a>** variable that will be modified to hold a <a href="../glib-Memory-Allocation.html#g-new"><code class="function">g_new()</code></a>
 allocated error messages if something fails</p></td>
 <td class="parameter_annotations"> </td>
 </tr>
@@ -280,8 +280,8 @@ allocated error messages if something fails</p></td>
 <a name="GTypeCValue"></a><h3>GTypeCValue</h3>
 <p>A union holding one collected value.</p>
 <div class="refsect3">
-<a name="id-1.4.11.8.2.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GTypeCValue.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="union_members_name">
 <col class="union_members_description">
@@ -289,27 +289,27 @@ allocated error messages if something fails</p></td>
 </colgroup>
 <tbody>
 <tr>
-<td class="union_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint"><span class="type">gint</span></a> <em class="structfield"><code><a name="GTypeCValue.v-int"></a>v_int</code></em>;</p></td>
+<td class="union_member_name"><p><a href="../glib-Basic-Types.html#gint"><span class="type">gint</span></a> <em class="structfield"><code><a name="GTypeCValue.v-int"></a>v_int</code></em>;</p></td>
 <td class="union_member_description"><p>the field for holding integer values</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
 <tr>
-<td class="union_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#glong"><span class="type">glong</span></a> <em class="structfield"><code><a name="GTypeCValue.v-long"></a>v_long</code></em>;</p></td>
+<td class="union_member_name"><p><a href="../glib-Basic-Types.html#glong"><span class="type">glong</span></a> <em class="structfield"><code><a name="GTypeCValue.v-long"></a>v_long</code></em>;</p></td>
 <td class="union_member_description"><p>the field for holding long integer values</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
 <tr>
-<td class="union_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gint64"><span class="type">gint64</span></a> <em class="structfield"><code><a name="GTypeCValue.v-int64"></a>v_int64</code></em>;</p></td>
+<td class="union_member_name"><p><a href="../glib-Basic-Types.html#gint64"><span class="type">gint64</span></a> <em class="structfield"><code><a name="GTypeCValue.v-int64"></a>v_int64</code></em>;</p></td>
 <td class="union_member_description"><p>the field for holding 64 bit integer values</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
 <tr>
-<td class="union_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gdouble"><span class="type">gdouble</span></a> <em class="structfield"><code><a name="GTypeCValue.v-double"></a>v_double</code></em>;</p></td>
+<td class="union_member_name"><p><a href="../glib-Basic-Types.html#gdouble"><span class="type">gdouble</span></a> <em class="structfield"><code><a name="GTypeCValue.v-double"></a>v_double</code></em>;</p></td>
 <td class="union_member_description"><p>the field for holding floating point values</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
 <tr>
-<td class="union_member_name"><p><a href="https://developer.gnome.org/glib/unstable/glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> <em class="structfield"><code><a name="GTypeCValue.v-pointer"></a>v_pointer</code></em>;</p></td>
+<td class="union_member_name"><p><a href="../glib-Basic-Types.html#gpointer"><span class="type">gpointer</span></a> <em class="structfield"><code><a name="GTypeCValue.v-pointer"></a>v_pointer</code></em>;</p></td>
 <td class="union_member_description"><p>the field for holding pointers</p></td>
 <td class="union_member_annotations"> </td>
 </tr>
@@ -328,6 +328,6 @@ single <a class="link" href="gobject-Generic-values.html#GValue" title="GValue">
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

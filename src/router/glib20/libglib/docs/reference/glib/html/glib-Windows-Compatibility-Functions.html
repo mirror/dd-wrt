@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Windows Compatibility Functions: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-UNIX-specific-utilities-and-integration.html" title="UNIX-specific utilities and integration">
 <link rel="next" href="glib-data-types.html" title="GLib Data Types">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Windows-Compatibility-Functions.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -97,7 +97,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Windows-Compatibility-Functions.html#g-win32-get-windows-version" title="g_win32_get_windows_version ()">g_win32_get_windows_version</a> <span class="c_punctuation">()</span>
@@ -130,7 +130,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Windows-Compatibility-Functions.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -163,9 +163,9 @@ APIs, we suggest you try the Cygwin project.</p>
 <div class="refsect2">
 <a name="g-win32-check-windows-version"></a><h3>g_win32_check_windows_version ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gboolean" title="gboolean"><span class="returnvalue">gboolean</span></a>
-g_win32_check_windows_version (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> major</code></em>,
-                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> minor</code></em>,
-                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> spver</code></em>,
+g_win32_check_windows_version (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> major</code></em>,
+                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> minor</code></em>,
+                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> spver</code></em>,
                                <em class="parameter"><code>const <a class="link" href="glib-Windows-Compatibility-Functions.html#GWin32OSType" title="enum GWin32OSType"><span class="type">GWin32OSType</span></a> os_type</code></em>);</pre>
 <p>Returns whether the version of the Windows operating system the
 code is running on is at least the specified major, minor and
@@ -177,8 +177,8 @@ directly.</p>
 disabling features at run-time for a range of Windows versions,
 as per the <code class="function">VerifyVersionInfo()</code> API documentation.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-check-windows-version.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -209,7 +209,7 @@ as per the <code class="function">VerifyVersionInfo()</code> API documentation.<
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.2.7"></a><h4>Returns</h4>
+<a name="g-win32-check-windows-version.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the Windows Version is the same or greater than
 the specified major, minor and service pack versions, and
 whether the running Windows is a workstation or server edition
@@ -239,7 +239,7 @@ This will get the "full Unicode" commandline arguments using
 <code class="function">GetCommandLineW()</code> and convert it to the GLib filename encoding (which
 is UTF-8 on Windows).</p>
 <p>The strings returned by this function are suitable for use with
-functions such as <a class="link" href="glib-File-Utilities.html#g-open" title="g_open ()"><code class="function">g_open()</code></a> and <a href="https://developer.gnome.org/gio/unstable/GFile.html#g-file-new-for-commandline-arg"><code class="function">g_file_new_for_commandline_arg()</code></a> but
+functions such as <a class="link" href="glib-File-Utilities.html#g-open" title="g_open ()"><code class="function">g_open()</code></a> and <a href="../GFile.html#g-file-new-for-commandline-arg"><code class="function">g_file_new_for_commandline_arg()</code></a> but
 are not suitable for use with <a class="link" href="glib-Commandline-option-parser.html#g-option-context-parse" title="g_option_context_parse ()"><code class="function">g_option_context_parse()</code></a>, which assumes
 that its input will be in the system codepage.  The return value is
 suitable for use with <a class="link" href="glib-Commandline-option-parser.html#g-option-context-parse-strv" title="g_option_context_parse_strv ()"><code class="function">g_option_context_parse_strv()</code></a>, however, which
@@ -247,7 +247,7 @@ is a better match anyway because it won't leak memory.</p>
 <p>Unlike argv, the returned value is a normal strv and can (and should)
 be freed with <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> when no longer needed.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.3.10"></a><h4>Returns</h4>
+<a name="g-win32-get-command-line.returns"></a><h4>Returns</h4>
 <p> the commandline arguments in the GLib
 filename encoding (ie: UTF-8). </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -258,7 +258,7 @@ filename encoding (ie: UTF-8). </p>
 <div class="refsect2">
 <a name="g-win32-error-message"></a><h3>g_win32_error_message ()</h3>
 <pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="returnvalue">gchar</span></a> *
-g_win32_error_message (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> error</code></em>);</pre>
+g_win32_error_message (<em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> error</code></em>);</pre>
 <p>Translate a Win32 error code (as returned by <code class="function">GetLastError()</code> or
 <code class="function">WSAGetLastError()</code>) into the corresponding message. The message is
 either language neutral, or in the thread's language, or the user's
@@ -266,8 +266,8 @@ language, the system's language, or US English (see docs for
 <code class="function">FormatMessage()</code>). The returned string is in UTF-8. It should be
 deallocated with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-error-message.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -281,7 +281,7 @@ deallocated with <a class="link" href="glib-Memory-Allocation.html#g-free" title
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.4.6"></a><h4>Returns</h4>
+<a name="g-win32-error-message.returns"></a><h4>Returns</h4>
 <p> newly-allocated error message</p>
 </div>
 </div>
@@ -298,7 +298,7 @@ and returns it as a string of the above form for use in forming
 file names etc. The returned string should be deallocated with
 <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.5.5"></a><h4>Returns</h4>
+<a name="g-win32-getlocale.returns"></a><h4>Returns</h4>
 <p> newly-allocated locale name.</p>
 </div>
 </div>
@@ -359,8 +359,8 @@ itself. If that DLL isn't loaded, the function proceeds as if
 the main executable of the process was loaded is used instead in
 the same way as above.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.6.13"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-get-package-installation-directory.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -381,7 +381,7 @@ the same way as above.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.6.14"></a><h4>Returns</h4>
+<a name="g-win32-get-package-installation-directory.returns"></a><h4>Returns</h4>
 <p> a string containing the installation directory for
 <em class="parameter"><code>package</code></em>
 . The string is in the GLib file name encoding,
@@ -418,8 +418,8 @@ saves the handle for the DLL. Then when code in the DLL needs to
 construct names of files in the installation tree it calls this
 function passing the DLL handle.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.7.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-get-package-installation-directory-of-module.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -433,7 +433,7 @@ function passing the DLL handle.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.7.9"></a><h4>Returns</h4>
+<a name="g-win32-get-package-installation-directory-of-module.returns"></a><h4>Returns</h4>
 <p> a string containing the guessed installation directory for
 the software package <em class="parameter"><code>hmodule</code></em>
 is from. The string is in the GLib
@@ -472,8 +472,8 @@ particular, note that it is deprecated to pass anything except NULL
 as <em class="parameter"><code>package</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.8.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-get-package-installation-subdirectory.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -499,7 +499,7 @@ as <em class="parameter"><code>package</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.8.8"></a><h4>Returns</h4>
+<a name="g-win32-get-package-installation-subdirectory.returns"></a><h4>Returns</h4>
 <p> a string containing the complete path to <em class="parameter"><code>subdir</code></em>
 inside
 the installation directory of <em class="parameter"><code>package</code></em>
@@ -512,7 +512,7 @@ freed with <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_fr
 <hr>
 <div class="refsect2">
 <a name="g-win32-get-windows-version"></a><h3>g_win32_get_windows_version ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="returnvalue">guint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="returnvalue">guint</span></a>
 g_win32_get_windows_version (<em class="parameter"><code><span class="type">void</span></code></em>);</pre>
 <div class="warning">
 <p><code class="literal">g_win32_get_windows_version</code> has been deprecated since version 2.44 and should not be used in newly-written code.</p>
@@ -534,7 +534,7 @@ Windows NT 4, and 5 on Windows XP. Software that needs really
 detailed version and feature information should use Win32 API like
 <code class="function">GetVersionEx()</code> and <code class="function">VerifyVersionInfo()</code>.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.9.7"></a><h4>Returns</h4>
+<a name="g-win32-get-windows-version.returns"></a><h4>Returns</h4>
 <p> The version information.</p>
 </div>
 </div>
@@ -560,8 +560,8 @@ possible, <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL
 <p>The return value is dynamically allocated and should be freed with
 <a class="link" href="glib-Memory-Allocation.html#g-free" title="g_free ()"><code class="function">g_free()</code></a> when no longer needed.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.10.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-win32-locale-filename-from-utf8.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -575,7 +575,7 @@ possible, <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.31.7.10.9"></a><h4>Returns</h4>
+<a name="g-win32-locale-filename-from-utf8.returns"></a><h4>Returns</h4>
 <p> The converted filename, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> on conversion
 failure and lack of short names.</p>
 </div>
@@ -591,8 +591,8 @@ failure and lack of short names.</p>
 the actual DLL name that the code being compiled will be included in.</p>
 <p>On non-Windows platforms, expands to nothing.</p>
 <div class="refsect3">
-<a name="id-1.5.31.7.11.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="G-WIN32-DLLMAIN-FOR-DLL-NAME.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -655,8 +655,8 @@ macro <a class="link" href="glib-Windows-Compatibility-Functions.html#MAXPATHLEN
 <a name="GWin32OSType"></a><h3>enum GWin32OSType</h3>
 <p>Type of Windows edition to check for at run-time.</p>
 <div class="refsect3">
-<a name="id-1.5.31.8.3.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GWin32OSType.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -694,6 +694,6 @@ macro <a class="link" href="glib-Windows-Compatibility-Functions.html#MAXPATHLEN
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

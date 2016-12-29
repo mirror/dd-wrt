@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>The GObject messaging system: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="pt01.html" title="Part I. Concepts">
 <link rel="prev" href="gobject-properties.html" title="Object properties">
 <link rel="next" href="signal.html" title="Signals">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -54,7 +54,7 @@
     <tbody>
       <tr>
         <td class="listing_lines" align="right"><pre>1</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">return_type</span><span class="normal"> </span><span class="function">function_callback</span><span class="normal"> </span><span class="symbol">(...</span><span class="normal"> </span><span class="symbol">,</span><span class="normal"> </span><span class="usertype">gpointer</span><span class="normal"> user_data</span><span class="symbol">);</span></pre></td>
+        <td class="listing_code"><pre class="programlisting">return_type <span class="function">function_callback</span> <span class="gtkdoc opt">(</span>… <span class="gtkdoc opt">,</span> gpointer user_data<span class="gtkdoc opt">);</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -64,7 +64,7 @@
         </p>
 </li>
 <li class="listitem"><p>
-           the user_data pointer which is passed to the callback upon invocation of the closure
+           the <em class="parameter"><code>user_data</code></em> pointer which is passed to the callback upon invocation of the closure
           </p></li>
 <li class="listitem"><p>
            a function pointer which represents the destructor of the closure: whenever the
@@ -76,9 +76,9 @@
     </p>
 <p>
       The <a class="link" href="gobject-Closures.html#GClosure" title="struct GClosure"><span class="type">GClosure</span></a> structure represents the common functionality of all
-      closure implementations: there exists a different Closure implementation for
+      closure implementations: there exists a different closure implementation for
       each separate runtime which wants to use the GObject type system.
-      <a href="#ftn.id-1.3.5.2.3.2" class="footnote" name="id-1.3.5.2.3.2"><sup class="footnote">[6]</sup></a>
+      <a href="#ftn.id-1.3.5.2.3.2" class="footnote" name="id-1.3.5.2.3.2"><sup class="footnote">[4]</sup></a>
       The GObject library provides a simple <a class="link" href="gobject-Closures.html#GCClosure" title="struct GCClosure"><span class="type">GCClosure</span></a> type which
       is a specific implementation of closures to be used with C/C++ callbacks.
     </p>
@@ -101,7 +101,7 @@
           events (<code class="function"><a class="link" href="gobject-Closures.html#g-closure-remove-finalize-notifier" title="g_closure_remove_finalize_notifier ()">g_closure_remove_finalize_notifier</a></code> and
           <code class="function"><a class="link" href="gobject-Closures.html#g-closure-remove-invalidate-notifier" title="g_closure_remove_invalidate_notifier ()">g_closure_remove_invalidate_notifier</a></code>) but not for the invocation 
           process.
-          <a href="#ftn.id-1.3.5.2.4.2.2.1.6" class="footnote" name="id-1.3.5.2.4.2.2.1.6"><sup class="footnote">[7]</sup></a></p></li>
+          <a href="#ftn.id-1.3.5.2.4.2.2.1.6" class="footnote" name="id-1.3.5.2.4.2.2.1.6"><sup class="footnote">[5]</sup></a></p></li>
 </ul></div>
 <p>
     </p>
@@ -112,47 +112,25 @@
         If you are using C or C++
         to connect a callback to a given event, you will either use simple <a class="link" href="gobject-Closures.html#GCClosure" title="struct GCClosure"><span class="type">GCClosure</span></a>s
         which have a pretty minimal API or the even simpler <code class="function"><a class="link" href="gobject-Signals.html#g-signal-connect" title="g_signal_connect()">g_signal_connect</a></code> 
-        functions (which will be presented a bit later :).
-</p>
-<div class="informalexample">
-  <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
-    <tbody>
-      <tr>
-        <td class="listing_lines" align="right"><pre>1
-2
-3
-4
-5
-6
-7
-8</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="usertype">GClosure</span><span class="normal"> </span><span class="symbol">*</span><span class="function"><a href="gobject-Closures.html#g-cclosure-new">g_cclosure_new</a></span><span class="normal">             </span><span class="symbol">(</span><span class="usertype">GCallback</span><span class="normal">      callback_func</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="usertype">gpointer</span><span class="normal">       user_data</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="usertype">GClosureNotify</span><span class="normal"> destroy_data</span><span class="symbol">);</span>
-<span class="usertype">GClosure</span><span class="normal"> </span><span class="symbol">*</span><span class="function"><a href="gobject-Closures.html#g-cclosure-new-swap">g_cclosure_new_swap</a></span><span class="normal">        </span><span class="symbol">(</span><span class="usertype">GCallback</span><span class="normal">      callback_func</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="usertype">gpointer</span><span class="normal">       user_data</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="usertype">GClosureNotify</span><span class="normal"> destroy_data</span><span class="symbol">);</span>
-<span class="usertype">GClosure</span><span class="normal"> </span><span class="symbol">*</span><span class="function"><a href="gobject-Signals.html#g-signal-type-cclosure-new">g_signal_type_cclosure_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GType</span><span class="normal">          itype</span><span class="symbol">,</span>
-<span class="normal">                                      </span><span class="usertype">guint</span><span class="normal">          struct_offset</span><span class="symbol">);</span></pre></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<p>
+        functions (which will be presented a bit later).
       </p>
 <p>
         <code class="function"><a class="link" href="gobject-Closures.html#g-cclosure-new" title="g_cclosure_new ()">g_cclosure_new</a></code> will create a new closure which can invoke the
-        user-provided callback_func with the user-provided user_data as last parameter. When the closure
-        is finalized (second stage of the destruction process), it will invoke the destroy_data function 
-        if the user has supplied one.
+        user-provided callback_func with the user-provided
+        <em class="parameter"><code>user_data</code></em> as its last parameter. When the closure
+        is finalized (second stage of the destruction process), it will invoke
+        the <em class="parameter"><code>destroy_data</code></em> function if the user has
+        supplied one.
       </p>
 <p>
         <code class="function"><a class="link" href="gobject-Closures.html#g-cclosure-new-swap" title="g_cclosure_new_swap ()">g_cclosure_new_swap</a></code> will create a new closure which can invoke the
-        user-provided callback_func with the user-provided user_data as first parameter (instead of being the 
+        user-provided <em class="parameter"><code>callback_func</code></em> with the
+        user-provided <em class="parameter"><code>user_data</code></em> as its first parameter
+        (instead of being the 
         last parameter as with <code class="function"><a class="link" href="gobject-Closures.html#g-cclosure-new" title="g_cclosure_new ()">g_cclosure_new</a></code>). When the closure
-        is finalized (second stage of the destruction process), it will invoke the destroy_data 
-        function if the user has supplied one.
+        is finalized (second stage of the destruction process), it will invoke
+        the <em class="parameter"><code>destroy_data</code></em> function if the user has
+        supplied one.
       </p>
 </div>
 <div class="sect2">
@@ -171,8 +149,17 @@
         function, transform it into a GValue and return this GValue to the marshaller caller.
       </p>
 <p>
-        The following code implements a simple marshaller in C for a C function which takes an
-        integer as first parameter and returns void.
+        A generic C closure marshaller is available as
+        <a class="link" href="gobject-Closures.html#g-cclosure-marshal-generic" title="g_cclosure_marshal_generic ()"><code class="function">g_cclosure_marshal_generic</code></a>
+        which implements marshalling for all function types using libffi. Custom
+        marshallers for different types are not needed apart from performance
+        critical code where the libffi-based marshaller may be too slow.
+      </p>
+<p>
+        An example of a custom marshaller is given below, illustrating how
+        <span class="type">GValue</span>s can be converted to a C function call. The
+        marshaller is for a C function which takes an integer as its first
+        parameter and returns void.
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -203,31 +190,31 @@
 23
 24
 25</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Closures.html#g-cclosure-marshal-VOID--INT">g_cclosure_marshal_VOID__INT</a></span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GClosure</span><span class="normal">     </span><span class="symbol">*</span><span class="normal">closure</span><span class="symbol">,</span>
-<span class="normal">                              </span><span class="usertype">GValue</span><span class="normal">       </span><span class="symbol">*</span><span class="normal">return_value</span><span class="symbol">,</span>
-<span class="normal">                              </span><span class="usertype">guint</span><span class="normal">         n_param_values</span><span class="symbol">,</span>
-<span class="normal">                              </span><span class="keyword">const</span><span class="normal"> </span><span class="usertype">GValue</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">param_values</span><span class="symbol">,</span>
-<span class="normal">                              </span><span class="usertype">gpointer</span><span class="normal">      invocation_hint</span><span class="symbol">,</span>
-<span class="normal">                              </span><span class="usertype">gpointer</span><span class="normal">      marshal_data</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="keyword">typedef</span><span class="normal"> </span><span class="type">void</span><span class="normal"> </span><span class="symbol">(*</span><span class="normal">GMarshalFunc_VOID__INT</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">gpointer</span><span class="normal">     data1</span><span class="symbol">,</span>
-<span class="normal">                                          </span><span class="usertype">gint</span><span class="normal">         arg_1</span><span class="symbol">,</span>
-<span class="normal">                                          </span><span class="usertype">gpointer</span><span class="normal">     data2</span><span class="symbol">);</span>
-<span class="normal">  </span><span class="keyword">register</span><span class="normal"> </span><span class="usertype">GMarshalFunc_VOID__INT</span><span class="normal"> callback</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">register</span><span class="normal"> </span><span class="usertype">GCClosure</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">cc </span><span class="symbol">=</span><span class="normal"> </span><span class="symbol">(</span><span class="normal"><a href="gobject-Closures.html#GCClosure">GCClosure</a></span><span class="symbol">*)</span><span class="normal"> closure</span><span class="symbol">;</span>
-<span class="normal">  </span><span class="keyword">register</span><span class="normal"> </span><span class="usertype">gpointer</span><span class="normal"> data1</span><span class="symbol">,</span><span class="normal"> data2</span><span class="symbol">;</span>
+        <td class="listing_code"><pre class="programlisting"><span class="function"><a href="gobject-Closures.html#g-cclosure-marshal-VOID--INT">g_cclosure_marshal_VOID__INT</a></span> <span class="gtkdoc opt">(</span>GClosure     <span class="gtkdoc opt">*</span>closure<span class="gtkdoc opt">,</span>
+                              GValue       <span class="gtkdoc opt">*</span>return_value<span class="gtkdoc opt">,</span>
+                              guint         n_param_values<span class="gtkdoc opt">,</span>
+                              <span class="gtkdoc kwb">const</span> GValue <span class="gtkdoc opt">*</span>param_values<span class="gtkdoc opt">,</span>
+                              gpointer      invocation_hint<span class="gtkdoc opt">,</span>
+                              gpointer      marshal_data<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  <span class="gtkdoc kwc">typedef</span> <span class="gtkdoc kwb">void</span> <span class="gtkdoc opt">(*</span>GMarshalFunc_VOID__INT<span class="gtkdoc opt">) (</span>gpointer     data1<span class="gtkdoc opt">,</span>
+                                          gint         arg_1<span class="gtkdoc opt">,</span>
+                                          gpointer     data2<span class="gtkdoc opt">);</span>
+  <span class="gtkdoc kwc">register</span> GMarshalFunc_VOID__INT callback<span class="gtkdoc opt">;</span>
+  <span class="gtkdoc kwc">register</span> GCClosure <span class="gtkdoc opt">*</span>cc <span class="gtkdoc opt">= (</span>GCClosure<span class="gtkdoc opt">*)</span> closure<span class="gtkdoc opt">;</span>
+  <span class="gtkdoc kwc">register</span> gpointer data1<span class="gtkdoc opt">,</span> data2<span class="gtkdoc opt">;</span>
 
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">n_param_values </span><span class="symbol">==</span><span class="normal"> </span><span class="number">2</span><span class="symbol">);</span>
+  <span class="function"><a href="../glib-Warnings-and-Assertions.html#g-return-if-fail">g_return_if_fail</a></span> <span class="gtkdoc opt">(</span>n_param_values <span class="gtkdoc opt">==</span> <span class="number">2</span><span class="gtkdoc opt">);</span>
 
-<span class="normal">  data1 </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-Generic-values.html#g-value-peek-pointer">g_value_peek_pointer</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">param_values </span><span class="symbol">+</span><span class="normal"> </span><span class="number">0</span><span class="symbol">);</span>
-<span class="normal">  data2 </span><span class="symbol">=</span><span class="normal"> closure</span><span class="symbol">-&gt;</span><span class="normal">data</span><span class="symbol">;</span>
+  data1 <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-Generic-values.html#g-value-peek-pointer">g_value_peek_pointer</a></span> <span class="gtkdoc opt">(</span>param_values <span class="gtkdoc opt">+</span> <span class="number">0</span><span class="gtkdoc opt">);</span>
+  data2 <span class="gtkdoc opt">=</span> closure<span class="gtkdoc opt">-&gt;</span>data<span class="gtkdoc opt">;</span>
 
-<span class="normal">  callback </span><span class="symbol">=</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">GMarshalFunc_VOID__INT</span><span class="symbol">)</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">marshal_data </span><span class="symbol">?</span><span class="normal"> marshal_data </span><span class="symbol">:</span><span class="normal"> cc</span><span class="symbol">-&gt;</span><span class="normal">callback</span><span class="symbol">);</span>
+  callback <span class="gtkdoc opt">= (</span>GMarshalFunc_VOID__INT<span class="gtkdoc opt">) (</span>marshal_data ? marshal_data <span class="gtkdoc opt">:</span> cc<span class="gtkdoc opt">-&gt;</span>callback<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="function">callback</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">data1</span><span class="symbol">,</span>
-<span class="normal">            </span><span class="function">g_marshal_value_peek_int</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">param_values </span><span class="symbol">+</span><span class="normal"> </span><span class="number">1</span><span class="symbol">),</span>
-<span class="normal">            data2</span><span class="symbol">);</span>
-<span class="cbracket">}</span></pre></td>
+  <span class="function">callback</span> <span class="gtkdoc opt">(</span>data1<span class="gtkdoc opt">,</span>
+            <span class="function">g_marshal_value_peek_int</span> <span class="gtkdoc opt">(</span>param_values <span class="gtkdoc opt">+</span> <span class="number">1</span><span class="gtkdoc opt">),</span>
+            data2<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -236,19 +223,17 @@
 <p>
       </p>
 <p>
-        Of course, there exist other kinds of marshallers. For example, James Henstridge 
-        wrote a generic Python marshaller which is used by all Python closures (a Python closure
-        is used to have Python-based callback be invoked by the closure invocation process).
-        This Python marshaller transforms the input GValue list representing the function 
-        parameters into a Python tuple which is the equivalent structure in Python (you can
-        look in <code class="function">pyg_closure_marshal</code> in <code class="filename">pygtype.c</code>
-        in the <span class="emphasis"><em>pygobject</em></span> module in the GNOME source code repository).
+        There exist other kinds of marshallers, for example there is a generic
+        Python marshaller which is used by all Python closures (a Python closure
+        is used to invoke a callback written in Python). This Python marshaller
+        transforms the input GValue list representing the function parameters
+        into a Python tuple which is the equivalent structure in Python.
       </p>
 </div>
 </div>
 <div class="footnotes">
 <br><hr style="width:100; text-align:left;margin-left: 0">
-<div id="ftn.id-1.3.5.2.3.2" class="footnote"><p><a href="#id-1.3.5.2.3.2" class="para"><sup class="para">[6] </sup></a>
+<div id="ftn.id-1.3.5.2.3.2" class="footnote"><p><a href="#id-1.3.5.2.3.2" class="para"><sup class="para">[4] </sup></a>
         In practice, closures sit at the boundary of language runtimes: if you are
         writing Python code and one of your Python callbacks receives a signal from
         a GTK+ widget, the C code in GTK+ needs to execute your Python
@@ -256,13 +241,13 @@
         it behaves as a normal C object for GTK+ and as a normal Python object for
         Python code.
       </p></div>
-<div id="ftn.id-1.3.5.2.4.2.2.1.6" class="footnote"><p><a href="#id-1.3.5.2.4.2.2.1.6" class="para"><sup class="para">[7] </sup></a>
+<div id="ftn.id-1.3.5.2.4.2.2.1.6" class="footnote"><p><a href="#id-1.3.5.2.4.2.2.1.6" class="para"><sup class="para">[5] </sup></a>
             Closures are reference counted and notify listeners of their destruction in a two-stage
             process: the invalidation notifiers are invoked before the finalization notifiers.
           </p></div>
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

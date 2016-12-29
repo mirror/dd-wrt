@@ -2,13 +2,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Object Destruction: GObject Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<title>Object destruction: GObject Reference Manual</title>
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GObject Reference Manual">
 <link rel="up" href="howto-gobject.html" title="How to define and implement a new GObject">
-<link rel="prev" href="howto-gobject-construction.html" title="Object Construction">
+<link rel="prev" href="howto-gobject-construction.html" title="Object construction">
 <link rel="next" href="howto-gobject-methods.html" title="Object methods">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -21,7 +21,7 @@
 </tr></table>
 <div class="sect1">
 <div class="titlepage"><div><div><h2 class="title" style="clear: both">
-<a name="howto-gobject-destruction"></a>Object Destruction</h2></div></div></div>
+<a name="howto-gobject-destruction"></a>Object destruction</h2></div></div></div>
 <p>
       Again, it is often difficult to figure out which mechanism to use to
       hook into the object's destruction process: when the last
@@ -30,11 +30,12 @@
       <a class="xref" href="gobject-memory.html#gobject-destruction-table" title="Table 5. g_object_unref">Table 5, “g_object_unref”</a>.
     </p>
 <p>
-      The destruction process of your object might be split in two different
-      phases: dispose and the finalize. This split is necessary to handle
+      The destruction process of your object is in two phases: dispose and
+      finalize. This split is necessary to handle
       potential cycles due to the nature of the reference counting mechanism
-      used by GObject, as well as dealing with temporary vivification of
+      used by GObject, as well as dealing with temporary revival of
       instances in case of signal emission during the destruction sequence.
+      See <a class="xref" href="gobject-memory.html#gobject-memory-cycles" title="Reference counts and cycles">the section called “Reference counts and cycles”</a> for more information.
 </p>
 <div class="informalexample">
   <table class="listing_frame" border="0" cellpadding="0" cellspacing="0">
@@ -102,70 +103,72 @@
 60
 61
 62
-63</pre></td>
-        <td class="listing_code"><pre class="programlisting"><span class="keyword">struct</span><span class="normal"> </span><span class="classname">_MamanBarPrivate</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">GObject</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">an_object</span><span class="symbol">;</span>
+63
+64</pre></td>
+        <td class="listing_code"><pre class="programlisting"><span class="gtkdoc kwb">struct</span> _ViewerFilePrivate
+<span class="gtkdoc opt">{</span>
+  gchar <span class="gtkdoc opt">*</span>filename<span class="gtkdoc opt">;</span>
+  guint zoom_level<span class="gtkdoc opt">;</span>
 
-<span class="normal">  </span><span class="usertype">gchar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">a_string</span><span class="symbol">;</span>
-<span class="cbracket">}</span><span class="symbol">;</span>
+  GInputStream <span class="gtkdoc opt">*</span>input_stream<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">};</span>
 
-<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-PRIVATE:CAPS">G_DEFINE_TYPE_WITH_PRIVATE</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MamanBar</span><span class="symbol">,</span><span class="normal"> maman_bar</span><span class="symbol">,</span><span class="normal"> <a href="gobject-Type-Information.html#G-TYPE-OBJECT:CAPS">G_TYPE_OBJECT</a></span><span class="symbol">)</span>
+<span class="function"><a href="gobject-Type-Information.html#G-DEFINE-TYPE-WITH-PRIVATE:CAPS">G_DEFINE_TYPE_WITH_PRIVATE</a></span> <span class="gtkdoc opt">(</span>ViewerFile<span class="gtkdoc opt">,</span> viewer_file<span class="gtkdoc opt">,</span> G_TYPE_OBJECT<span class="gtkdoc opt">)</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_dispose</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GObject</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">gobject</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self </span><span class="symbol">=</span><span class="normal"> </span><span class="function">MAMAN_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">gobject</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_dispose</span> <span class="gtkdoc opt">(</span>GObject <span class="gtkdoc opt">*</span>gobject<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFilePrivate <span class="gtkdoc opt">*</span>priv <span class="gtkdoc opt">=</span> <span class="function">viewer_file_get_instance_private</span> <span class="gtkdoc opt">(</span><span class="function">VIEWER_FILE</span> <span class="gtkdoc opt">(</span>gobject<span class="gtkdoc opt">));</span>
 
-<span class="normal">  </span><span class="comment">/* In dispose(), you are supposed to free all types referenced from this</span>
+  <span class="comment">/* In dispose(), you are supposed to free all types referenced from this</span>
 <span class="comment">   * object which might themselves hold a reference to self. Generally,</span>
 <span class="comment">   * the most simple solution is to unref all members on which you own a </span>
 <span class="comment">   * reference.</span>
 <span class="comment">   */</span>
 
-<span class="normal">  </span><span class="comment">/* dispose() might be called multiple times, so we must guard against</span>
+  <span class="comment">/* dispose() might be called multiple times, so we must guard against</span>
 <span class="comment">   * calling g_object_unref() on an invalid GObject by setting the member</span>
 <span class="comment">   * NULL; g_clear_object() does this for us.</span>
 <span class="comment">   */</span>
-<span class="normal">  </span><span class="function"><a href="gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span><span class="normal"> </span><span class="symbol">(&amp;</span><span class="normal">self</span><span class="symbol">-&gt;</span><span class="normal">priv</span><span class="symbol">-&gt;</span><span class="normal">an_object</span><span class="symbol">);</span>
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#g-clear-object">g_clear_object</a></span> <span class="gtkdoc opt">(&amp;</span>priv<span class="gtkdoc opt">-&gt;</span>input_stream<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">/* Always chain up to the parent class; there is no need to check if</span>
+  <span class="comment">/* Always chain up to the parent class; there is no need to check if</span>
 <span class="comment">   * the parent class implements the dispose() virtual function: it is</span>
 <span class="comment">   * always guaranteed to do so</span>
 <span class="comment">   */</span>
-<span class="normal">  </span><span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">maman_bar_parent_class</span><span class="symbol">)-&gt;</span><span class="function">dispose</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">gobject</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>viewer_file_parent_class<span class="gtkdoc opt">)-&gt;</span><span class="function">dispose</span> <span class="gtkdoc opt">(</span>gobject<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_finalize</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">GObject</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">gobject</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self </span><span class="symbol">=</span><span class="normal"> </span><span class="function">MAMAN_BAR</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">gobject</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_finalize</span> <span class="gtkdoc opt">(</span>GObject <span class="gtkdoc opt">*</span>gobject<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFilePrivate <span class="gtkdoc opt">*</span>priv <span class="gtkdoc opt">=</span> <span class="function">viewer_file_get_instance_private</span> <span class="gtkdoc opt">(</span><span class="function">VIEWER_FILE</span> <span class="gtkdoc opt">(</span>gobject<span class="gtkdoc opt">));</span>
 
-<span class="normal">  </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-Memory-Allocation.html#g-free">g_free</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">-&gt;</span><span class="normal">priv</span><span class="symbol">-&gt;</span><span class="normal">a_string</span><span class="symbol">);</span>
+  <span class="function"><a href="../glib-Memory-Allocation.html#g-free">g_free</a></span> <span class="gtkdoc opt">(</span>priv<span class="gtkdoc opt">-&gt;</span>filename<span class="gtkdoc opt">);</span>
 
-<span class="normal">  </span><span class="comment">/* Always chain up to the parent class; as with dispose(), finalize()</span>
-<span class="comment">   * is guaranteed to exist on the parent's class virtual function table</span>
+  <span class="comment">/* Always chain up to the parent class; as with dispose(), finalize()</span>
+<span class="comment">   * is guaranteed to exist on the parent&apos;s class virtual function table</span>
 <span class="comment">   */</span>
-<span class="normal">  </span><span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">maman_bar_parent_class</span><span class="symbol">)-&gt;</span><span class="function">finalize</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">gobject</span><span class="symbol">);</span>
-<span class="cbracket">}</span>
+  <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>viewer_file_parent_class<span class="gtkdoc opt">)-&gt;</span><span class="function">finalize</span> <span class="gtkdoc opt">(</span>gobject<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_class_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBarClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">klass</span><span class="symbol">)</span>
-<span class="cbracket">{</span>
-<span class="normal">  </span><span class="usertype">GObjectClass</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">gobject_class </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">klass</span><span class="symbol">);</span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_class_init</span> <span class="gtkdoc opt">(</span>ViewerFileClass <span class="gtkdoc opt">*</span>klass<span class="gtkdoc opt">)</span>
+<span class="gtkdoc opt">{</span>
+  GObjectClass <span class="gtkdoc opt">*</span>object_class <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-The-Base-Object-Type.html#G-OBJECT-CLASS:CAPS">G_OBJECT_CLASS</a></span> <span class="gtkdoc opt">(</span>klass<span class="gtkdoc opt">);</span>
 
-<span class="normal">  gobject_class</span><span class="symbol">-&gt;</span><span class="normal">dispose </span><span class="symbol">=</span><span class="normal"> maman_bar_dispose</span><span class="symbol">;</span>
-<span class="normal">  gobject_class</span><span class="symbol">-&gt;</span><span class="normal">finalize </span><span class="symbol">=</span><span class="normal"> maman_bar_finalize</span><span class="symbol">;</span>
-<span class="cbracket">}</span>
+  object_class<span class="gtkdoc opt">-&gt;</span>dispose <span class="gtkdoc opt">=</span> viewer_file_dispose<span class="gtkdoc opt">;</span>
+  object_class<span class="gtkdoc opt">-&gt;</span>finalize <span class="gtkdoc opt">=</span> viewer_file_finalize<span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span>
 
-<span class="keyword">static</span><span class="normal"> </span><span class="type">void</span>
-<span class="function">maman_bar_init</span><span class="normal"> </span><span class="symbol">(</span><span class="usertype">MamanBar</span><span class="normal"> </span><span class="symbol">*</span><span class="normal">self</span><span class="symbol">);</span>
-<span class="cbracket">{</span>
-<span class="normal">  self</span><span class="symbol">-&gt;</span><span class="normal">priv </span><span class="symbol">=</span><span class="normal"> </span><span class="function">maman_bar_get_instance_private</span><span class="normal"> </span><span class="symbol">(</span><span class="normal">self</span><span class="symbol">);</span><span class="normal"> </span>
+<span class="gtkdoc kwb">static void</span>
+<span class="function">viewer_file_init</span> <span class="gtkdoc opt">(</span>ViewerFile <span class="gtkdoc opt">*</span>self<span class="gtkdoc opt">);</span>
+<span class="gtkdoc opt">{</span>
+  ViewerFilePrivate <span class="gtkdoc opt">*</span>priv <span class="gtkdoc opt">=</span> <span class="function">viewer_file_get_instance_private</span> <span class="gtkdoc opt">(</span>self<span class="gtkdoc opt">);</span>
 
-<span class="normal">  self</span><span class="symbol">-&gt;</span><span class="normal">priv</span><span class="symbol">-&gt;</span><span class="normal">an_object </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span><span class="normal"> </span><span class="symbol">(</span><span class="normal">MAMAN_TYPE_BAZ</span><span class="symbol">,</span><span class="normal"> <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS">NULL</a></span><span class="symbol">);</span>
-<span class="normal">  self</span><span class="symbol">-&gt;</span><span class="normal">priv</span><span class="symbol">-&gt;</span><span class="normal">a_string </span><span class="symbol">=</span><span class="normal"> </span><span class="function"><a href="https://developer.gnome.org/glib/unstable/glib-String-Utility-Functions.html#g-strdup">g_strdup</a></span><span class="normal"> </span><span class="symbol">(</span><span class="string">"Maman"</span><span class="symbol">);</span>
-<span class="cbracket">}</span></pre></td>
+  priv<span class="gtkdoc opt">-&gt;</span>input_stream <span class="gtkdoc opt">=</span> <span class="function"><a href="gobject-The-Base-Object-Type.html#g-object-new">g_object_new</a></span> <span class="gtkdoc opt">(</span>VIEWER_TYPE_INPUT_STREAM<span class="gtkdoc opt">,</span> NULL<span class="gtkdoc opt">);</span>
+  priv<span class="gtkdoc opt">-&gt;</span>filename <span class="gtkdoc opt">=</span> <span class="comment">/* would be set as a property */</span><span class="gtkdoc opt">;</span>
+<span class="gtkdoc opt">}</span></pre></td>
       </tr>
     </tbody>
   </table>
@@ -177,10 +180,10 @@
       It is possible that object methods might be invoked after dispose is
       run and before finalize runs. GObject does not consider this to be a
       program error: you must gracefully detect this and neither crash nor
-      warn the user, by having a disposed instance revert to an inhert state.
+      warn the user, by having a disposed instance revert to an inert state.
     </p>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

@@ -89,17 +89,16 @@
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).pdb</ProgramDatabaseFile>
+      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
       <PreprocessorDefinitions>$(GObjectBuildDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -112,15 +111,13 @@
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).pdb</ProgramDatabaseFile>
+      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration>
-      </LinkTimeCodeGeneration>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
@@ -141,17 +138,16 @@
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).pdb</ProgramDatabaseFile>
+      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WholeProgramOptimization>false</WholeProgramOptimization>
       <PreprocessorDefinitions>$(GObjectBuildDefines);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -164,20 +160,18 @@
       <OutputFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)$(GlibDllPrefix)$(ProjectName)$(GlibDllSuffix).pdb</ProgramDatabaseFile>
+      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <LinkTimeCodeGeneration>
-      </LinkTimeCodeGeneration>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
-      <ImportLibrary>$(TargetDir)$(ProjectName)-$(ApiVersion).lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-#include "libgobject.vs10.sourcefiles"
+#include "gobject.vs10.sourcefiles"
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="..\..\..\gobject\glib-mkenums.in">

@@ -1,9 +1,20 @@
 include $(top_srcdir)/glib-tap.mk
 
+if USE_SYSTEM_PCRE
+pcre_lib = $(PCRE_LIBS)
+pcre_inc = $(PCRE_CFLAGS)
+else
+pcre_lib = $(top_builddir)/glib/pcre/libpcre.la
+pcre_inc = -DPCRE_STATIC
+endif
+
 LDADD = $(top_builddir)/glib/libglib-2.0.la -lm
 AM_CPPFLAGS = -g $(glib_INCLUDES) $(GLIB_DEBUG_FLAGS)
 DEFS = -DG_LOG_DOMAIN=\"GLib\" -DEXEEXT=\"$(EXEEXT)\"
-AM_CFLAGS = $(GLIB_WARN_CFLAGS)
+AM_CFLAGS = $(GLIB_WARN_CFLAGS) $(pcre_inc)
+
+# The regex test uses pcre_version()
+regex_LDADD = $(LDADD) $(pcre_lib)
 
 # These tests corrupt the gcov bookkeeping, so we
 # skip them. See bug 682133
@@ -57,7 +68,6 @@ test_programs = \
 	list				\
 	logging				\
 	mainloop			\
-	malloc				\
 	mappedfile			\
 	markup				\
 	markup-parse			\
@@ -70,6 +80,8 @@ test_programs = \
 	once				\
 	option-context			\
 	option-argv0			\
+	overflow			\
+	overflow-fallback		\
 	pattern				\
 	private				\
 	protocol			\
@@ -166,6 +178,9 @@ if HAVE_GCC
 atomic_CFLAGS += -Wstrict-aliasing=2
 endif
 
+overflow_fallback_SOURCES = overflow.c
+overflow_fallback_FALGS = $(AM_CFLAGS) -D_GLIB_TEST_OVERFLOW_FALLBACK
+
 test_programs += 642026-ec
 642026_ec_SOURCES = 642026.c
 642026_ec_CFLAGS = -DG_ERRORCHECK_MUTEXES
@@ -198,6 +213,7 @@ CLEANFILES += tmpsample.xml
 check-am: gtester-xmllint-check
 
 private_LDFLAGS = @G_THREAD_LIBS@
+thread_LDFLAGS = @G_THREAD_LIBS@
 endif
 
 if HAVE_GCC

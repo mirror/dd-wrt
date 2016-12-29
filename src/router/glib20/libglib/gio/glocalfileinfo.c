@@ -772,7 +772,7 @@ set_xattr (char                       *filename,
     {
       g_set_error (error, G_IO_ERROR,
 		   g_io_error_from_errno (errsv),
-		   _("Error setting extended attribute '%s': %s"),
+		   _("Error setting extended attribute “%s”: %s"),
 		   escaped_attribute, g_strerror (errsv));
       return FALSE;
     }
@@ -974,6 +974,18 @@ set_info_from_stat (GFileInfo             *info,
   _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CHANGED_USEC, statbuf->st_ctim.tv_nsec / 1000);
 #endif
 
+#if defined (HAVE_STRUCT_STAT_ST_BIRTHTIME) && defined (HAVE_STRUCT_STAT_ST_BIRTHTIMENSEC)
+  _g_file_info_set_attribute_uint64_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED, statbuf->st_birthtime);
+  _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED_USEC, statbuf->st_birthtimensec / 1000);
+#elif defined (HAVE_STRUCT_STAT_ST_BIRTHTIM) && defined (HAVE_STRUCT_STAT_ST_BIRTHTIM_TV_NSEC)
+  _g_file_info_set_attribute_uint64_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED, statbuf->st_birthtim.tv_sec);
+  _g_file_info_set_attribute_uint32_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED_USEC, statbuf->st_birthtim.tv_nsec / 1000);
+#elif defined (HAVE_STRUCT_STAT_ST_BIRTHTIME)
+  _g_file_info_set_attribute_uint64_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED, statbuf->st_birthtime);
+#elif defined (HAVE_STRUCT_STAT_ST_BIRTHTIM)
+  _g_file_info_set_attribute_uint64_by_id (info, G_FILE_ATTRIBUTE_ID_TIME_CREATED, statbuf->st_birthtim);
+#endif
+
   if (_g_file_attribute_matcher_matches_id (attribute_matcher,
 					    G_FILE_ATTRIBUTE_ID_ETAG_VALUE))
     {
@@ -1084,10 +1096,8 @@ lookup_uid_data (uid_t uid)
 
   data = g_new0 (UidData, 1);
 
-#if defined(HAVE_POSIX_GETPWUID_R)
+#if defined(HAVE_GETPWUID_R)
   getpwuid_r (uid, &pwbuf, buffer, sizeof(buffer), &pwbufp);
-#elif defined(HAVE_NONPOSIX_GETPWUID_R)
-  pwbufp = getpwuid_r (uid, &pwbuf, buffer, sizeof(buffer));
 #else
   pwbufp = getpwuid (uid);
 #endif
@@ -1172,10 +1182,8 @@ lookup_gid_name (gid_t gid)
   if (name)
     return name;
 
-#if defined (HAVE_POSIX_GETGRGID_R)
+#if defined (HAVE_GETGRGID_R)
   getgrgid_r (gid, &gbuf, buffer, sizeof(buffer), &gbufp);
-#elif defined (HAVE_NONPOSIX_GETGRGID_R)
-  gbufp = getgrgid_r (gid, &gbuf, buffer, sizeof(buffer));
 #else
   gbufp = getgrgid (gid);
 #endif
@@ -1228,6 +1236,17 @@ get_content_type (const char          *basename,
     return g_content_type_from_mime_type ("inode/blockdevice");
   else if (statbuf != NULL && S_ISFIFO(statbuf->st_mode))
     return g_content_type_from_mime_type ("inode/fifo");
+  else if (statbuf != NULL && S_ISREG(statbuf->st_mode) && statbuf->st_size == 0)
+    {
+      /* Don't sniff zero-length files in order to avoid reading files
+       * that appear normal but are not (eg: files in /proc and /sys)
+       *
+       * Note that we need to return text/plain here so that
+       * newly-created text files are opened by the text editor.
+       * See https://bugzilla.gnome.org/show_bug.cgi?id=755795
+       */
+      return g_content_type_from_mime_type ("text/plain");
+    }
 #endif
 #ifdef S_ISSOCK
   else if (statbuf != NULL && S_ISSOCK(statbuf->st_mode))
@@ -1237,7 +1256,7 @@ get_content_type (const char          *basename,
     {
       char *content_type;
       gboolean result_uncertain;
-      
+
       content_type = g_content_type_guess (basename, NULL, 0, &result_uncertain);
       
 #ifndef G_OS_WIN32
@@ -1744,7 +1763,7 @@ _g_local_file_info_get (const char             *basename,
           g_object_unref (info);
           g_set_error (error, G_IO_ERROR,
 		       g_io_error_from_errno (errsv),
-		       _("Error when getting information for file '%s': %s"),
+		       _("Error when getting information for file “%s”: %s"),
 		       display_name, g_strerror (errsv));
           g_free (display_name);
           return NULL;

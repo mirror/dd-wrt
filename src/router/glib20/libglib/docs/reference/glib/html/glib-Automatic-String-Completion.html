@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Automatic String Completion: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="deprecated.html" title="Deprecated APIs">
 <link rel="prev" href="glib-Relations-and-Tuples.html" title="Relations and Tuples">
 <link rel="next" href="tools.html" title="GLib Tools">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -34,7 +34,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Automatic-String-Completion.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -106,7 +106,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <span class="c_punctuation">(</span><a class="link" href="glib-Automatic-String-Completion.html#GCompletionStrncmpFunc" title="GCompletionStrncmpFunc ()">*GCompletionStrncmpFunc</a><span class="c_punctuation">)</span> <span class="c_punctuation">()</span>
@@ -125,7 +125,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Automatic-String-Completion.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -170,8 +170,8 @@ g_completion_new (<em class="parameter"><code><a class="link" href="glib-Automat
 <div class="warning"><p><code class="literal">g_completion_new</code> is deprecated and should not be used in newly-written code.</p></div>
 <p>Creates a new <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.2.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -187,7 +187,7 @@ be used as the <a class="link" href="glib-Automatic-String-Completion.html#GComp
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.7.5.7.2.7"></a><h4>Returns</h4>
+<a name="g-completion-new.returns"></a><h4>Returns</h4>
 <p> the new <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a>.</p>
 </div>
 </div>
@@ -200,8 +200,8 @@ be used as the <a class="link" href="glib-Automatic-String-Completion.html#GComp
 should return the string corresponding to the given target item.
 This is used when you use data structures as <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a> items.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GCompletionFunc.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -215,7 +215,7 @@ This is used when you use data structures as <a class="link" href="glib-Automati
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.7.5.7.3.6"></a><h4>Returns</h4>
+<a name="GCompletionFunc.returns"></a><h4>Returns</h4>
 <p> the string corresponding to the item.</p>
 </div>
 </div>
@@ -231,8 +231,8 @@ g_completion_add_items (<em class="parameter"><code><a class="link" href="glib-A
 </div>
 <p>Adds items to the <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.4.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-add-items.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -268,8 +268,8 @@ was dynamically allocated, free <em class="parameter"><code>items</code></em>
  with <a class="link" href="glib-Doubly-Linked-Lists.html#g-list-free-full" title="g_list_free_full ()"><code class="function">g_list_free_full()</code></a> after calling
 this function.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.5.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-remove-items.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -303,8 +303,8 @@ g_completion_clear_items (<em class="parameter"><code><a class="link" href="glib
 memory was dynamically allocated, it should be freed after calling this
 function.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.6.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-clear-items.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -333,8 +333,8 @@ g_completion_complete (<em class="parameter"><code><a class="link" href="glib-Au
  using the <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a>
 target items.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.7.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-complete.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -366,7 +366,7 @@ when no longer needed.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.7.5.7.7.7"></a><h4>Returns</h4>
+<a name="g-completion-complete.returns"></a><h4>Returns</h4>
 <p> the list of items whose strings begin with
 <em class="parameter"><code>prefix</code></em>
 . This should not be changed. </p>
@@ -392,8 +392,8 @@ character.</p>
 <p>You should use this function instead of <a class="link" href="glib-Automatic-String-Completion.html#g-completion-complete" title="g_completion_complete ()"><code class="function">g_completion_complete()</code></a> if your 
 items are UTF-8 strings.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.8.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-complete-utf8.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -424,7 +424,7 @@ This string should be freed when no longer needed.</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.7.5.7.8.9"></a><h4>Returns</h4>
+<a name="g-completion-complete-utf8.returns"></a><h4>Returns</h4>
 <p> the list of items whose strings begin with <em class="parameter"><code>prefix</code></em>
 . This should
 not be changed. </p>
@@ -445,8 +445,8 @@ g_completion_set_compare (<em class="parameter"><code><a class="link" href="glib
 <p>Sets the function to use for string comparisons. The default string
 comparison function is <code class="function">strncmp()</code>.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.9.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-set-compare.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -470,7 +470,7 @@ comparison function is <code class="function">strncmp()</code>.</p>
 <hr>
 <div class="refsect2">
 <a name="GCompletionStrncmpFunc"></a><h3>GCompletionStrncmpFunc ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 <span class="c_punctuation">(</span>*GCompletionStrncmpFunc<span class="c_punctuation">)</span> (<em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *s1</code></em>,
                            <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *s2</code></em>,
                            <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> n</code></em>);</pre>
@@ -478,8 +478,8 @@ comparison function is <code class="function">strncmp()</code>.</p>
 <a class="link" href="glib-Automatic-String-Completion.html#g-completion-set-compare" title="g_completion_set_compare ()"><code class="function">g_completion_set_compare()</code></a>. This is used when you use strings as
 <a class="link" href="glib-Automatic-String-Completion.html#GCompletion" title="struct GCompletion"><span class="type">GCompletion</span></a> items.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GCompletionStrncmpFunc.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -507,7 +507,7 @@ comparison function is <code class="function">strncmp()</code>.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.7.5.7.10.6"></a><h4>Returns</h4>
+<a name="GCompletionStrncmpFunc.returns"></a><h4>Returns</h4>
 <p> an integer less than, equal to, or greater than zero if
 the first <em class="parameter"><code>n</code></em>
 bytes of <em class="parameter"><code>s1</code></em>
@@ -530,8 +530,8 @@ g_completion_free (<em class="parameter"><code><a class="link" href="glib-Automa
 the memory was dynamically allocated, it should be freed after calling this
 function.</p>
 <div class="refsect3">
-<a name="id-1.7.5.7.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-completion-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -561,8 +561,8 @@ function.</p>
 </pre>
 <p>The data structure used for automatic completion.</p>
 <div class="refsect3">
-<a name="id-1.7.5.8.2.5"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GCompletion.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="struct_members_name">
 <col class="struct_members_description">
@@ -605,6 +605,6 @@ target item. It is <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" ti
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

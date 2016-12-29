@@ -45,7 +45,6 @@ endif
 
 libgobjectincludedir = $(includedir)/glib-2.0/gobject
 libgobject_2_0_la_LDFLAGS = $(GLIB_LINK_FLAGS) \
-  $(GOBJECT_LINK_FLAGS) \
   $(gobject_win32_res_ldflag) \
   -version-info $(LT_CURRENT):$(LT_REVISION):$(LT_AGE) \
   -export-dynamic $(no_undefined)
@@ -111,26 +110,35 @@ gobject_c_sources = \
 	gvaluetypes.c
 
 if ENABLE_DTRACE
-DTCOMPILE = $(patsubst -W%,,$(LTCOMPILE))
-DTCFLAGS = $(patsubst -W%,,$(CFLAGS))
 
 gobject_probes.h: gobject_probes.d
 	$(AM_V_GEN) $(DTRACE) -C -h -s $< -o $@.tmp
-	@$(SED) -e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," < $@.tmp > $@ && rm -f $@.tmp
+	@$(SED) \
+		-e "s,define STAP_HAS_SEMAPHORES 1,undef STAP_HAS_SEMAPHORES," \
+		-e "s,define _SDT_HAS_SEMAPHORES 1,undef _SDT_HAS_SEMAPHORES," \
+		< $@.tmp > $@ && rm -f $@.tmp
 
 gobject_probes.lo: gobject_probes.d
-	$(AM_V_GEN) env CC="$(DTCOMPILE)" CFLAGS="$(DTCFLAGS)" $(DTRACE) -G -s $< -o $@
+	$(AM_V_GEN) $(LIBTOOL) --mode=compile $(AM_V_lt) --tag=CC $(DTRACE) -G -s $< -o $@
 
 BUILT_SOURCES += gobject_probes.h gobject_probes.lo
 CLEANFILES += gobject_probes.h
 libgobject_2_0_la_LIBADD += gobject_probes.lo
 endif
 
-if ENABLE_SYSTEMTAP
-tapset_in_files = gobject.stp.in
 tapsetdir   = @ABS_TAPSET_DIR@
-tapset_DATA = $(tapset_in_files:.stp.in=.stp)
-EXTRA_DIST += $(tapset_in_files)
+EXTRA_DIST += gobject.stp.in
+
+if ENABLE_SYSTEMTAP
+tapset_DATA = libgobject-2.0.so.0.@LT_CURRENT@.@LT_REVISION@.stp
+CLEANFILES += $(tapset_DATA)
+
+$(tapset_DATA): gobject.stp.in Makefile
+	$(AM_V_GEN)$(SED) \
+		-e 's|[@]ABS_GLIB_RUNTIME_LIBDIR[@]|$(ABS_GLIB_RUNTIME_LIBDIR)|g' \
+		-e 's|[@]LT_CURRENT[@]|$(LT_CURRENT)|g' \
+		-e 's|[@]LT_REVISION[@]|$(LT_REVISION)|g' \
+		$< > $@
 endif
 
 # non-header sources (headers should be specified in the above variables)
@@ -224,41 +232,23 @@ gobject.def: libgobject-2.0.la
 gobject-2.0.lib: libgobject-2.0.la gobject.def
 	$(AM_V_GEN) lib.exe -machine:@LIB_EXE_MACHINE_FLAG@ -name:libgobject-2.0-$(LT_CURRENT_MINUS_AGE).dll -def:$(builddir)/gobject.def -out:$@
 
-dist-hook: $(BUILT_EXTRA_DIST) ../build/win32/vs9/gobject.vcproj ../build/win32/vs10/gobject.vcxproj ../build/win32/vs10/gobject.vcxproj.filters
+# ------ MSVC Project File Generation ------
+MSVCPROJS = gobject
+
+gobject_FILES = $(libgobject_2_0_la_SOURCES)
+gobject_EXCLUDES = dummy
+
+gobject_HEADERS_DIR = $(libgobjectincludedir)
+gobject_HEADERS_INST = $(gobject_public_h_sources)
+gobject_HEADERS_EXCLUDES = dummy
+
+include $(top_srcdir)/build/Makefile.msvcproj
+
+dist-hook: $(BUILT_EXTRA_DIST) $(top_builddir)/build/win32/vs9/gobject.vcproj $(top_builddir)/build/win32/vs9/gobject.headers
 	files='$(BUILT_EXTRA_DIST)'; \
 	for f in $$files; do \
 	  if test -f $$f; then d=.; else d=$(srcdir); fi; \
 	  cp $$d/$$f $(distdir) || exit 1; done
-
-../build/win32/vs9/gobject.vcproj: $(top_srcdir)/build/win32/vs9/gobject.vcprojin
-	for F in $(libgobject_2_0_la_SOURCES); do \
-		case $$F in \
-		*.c) echo '   <File RelativePath="..\..\..\gobject\'$$F'" />' \
-		     ;; \
-		esac; \
-	done >libgobject.sourcefiles
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs9/gobject.vcprojin >$@
-	rm libgobject.sourcefiles
-
-../build/win32/vs10/gobject.vcxproj: $(top_srcdir)/build/win32/vs10/gobject.vcxprojin
-	for F in $(libgobject_2_0_la_SOURCES); do \
-		case $$F in \
-		*.c) echo '    <ClCompile Include="..\..\..\gobject\'$$F'" />' \
-		     ;; \
-		esac; \
-	done >libgobject.vs10.sourcefiles
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gobject.vcxprojin >$@
-	rm libgobject.vs10.sourcefiles
-
-../build/win32/vs10/gobject.vcxproj.filters: $(top_srcdir)/build/win32/vs10/gobject.vcxproj.filtersin
-	for F in $(libgobject_2_0_la_SOURCES); do \
-		case $$F in \
-		*.c) echo '    <ClCompile Include="..\..\..\gobject\'$$F'"><Filter>Source Files</Filter></ClCompile>' \
-		     ;; \
-		esac; \
-	done >libgobject.vs10.sourcefiles.filters
-	$(CPP) -P - <$(top_srcdir)/build/win32/vs10/gobject.vcxproj.filtersin >$@
-	rm libgobject.vs10.sourcefiles.filters
 
 install-data-local: install-ms-lib
 
@@ -271,13 +261,19 @@ distclean-local:
 
 # install gdb scripts
 gdbdir = $(datadir)/glib-2.0/gdb
-dist_gdb_SCRIPTS = gobject.py
+dist_gdb_SCRIPTS = gobject_gdb.py
 
 libgobject-gdb.py: libgobject-gdb.py.in
 	$(AM_V_GEN) $(SED) -e "s|\@datadir\@|$(datadir)|" $(srcdir)/libgobject-gdb.py.in > $(builddir)/libgobject-gdb.py
 
 uninstall-gdb:
 	-rm -r $(DESTDIR)$(datadir)/gdb
+
+if HAVE_GLIB_RUNTIME_LIBDIR
+ABS_GLIB_RUNTIME_LIBDIR = $(realpath $(libdir)/$(GLIB_RUNTIME_LIBDIR))
+else
+ABS_GLIB_RUNTIME_LIBDIR = $(libdir)
+endif
 
 install-data-hook: libgobject-gdb.py
 	mkdir -p $(DESTDIR)$(datadir)/gdb/auto-load/$(ABS_GLIB_RUNTIME_LIBDIR)

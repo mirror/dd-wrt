@@ -492,9 +492,9 @@ g_file_get_uri_scheme (GFile *file)
  *
  * This call does no blocking I/O.
  *
- * Returns: (nullable): string containing the #GFile's base name, or
- *     %NULL if given #GFile is invalid. The returned string should be
- *     freed with g_free() when no longer needed.
+ * Returns: (type filename) (nullable): string containing the #GFile's
+ *     base name, or %NULL if given #GFile is invalid. The returned string
+ *     should be freed with g_free() when no longer needed.
  */
 char *
 g_file_get_basename (GFile *file)
@@ -512,12 +512,13 @@ g_file_get_basename (GFile *file)
  * g_file_get_path:
  * @file: input #GFile
  *
- * Gets the local pathname for #GFile, if one exists.
+ * Gets the local pathname for #GFile, if one exists. If non-%NULL, this is
+ * guaranteed to be an absolute, canonical path. It might contain symlinks.
  *
  * This call does no blocking I/O.
  *
- * Returns: (nullable): string containing the #GFile's path, or %NULL
- *     if no such path exists. The returned string should be freed
+ * Returns: (type filename) (nullable): string containing the #GFile's path,
+ *     or %NULL if no such path exists. The returned string should be freed
  *     with g_free() when no longer needed.
  */
 char *
@@ -713,10 +714,10 @@ g_file_get_parent (GFile *file)
  *
  * If @parent is %NULL then this function returns %TRUE if @file has any
  * parent at all.  If @parent is non-%NULL then %TRUE is only returned
- * if @file is a child of @parent.
+ * if @file is an immediate child of @parent.
  *
- * Returns: %TRUE if @file is a child of @parent (or any parent in the
- *          case that @parent is %NULL).
+ * Returns: %TRUE if @file is an immediate child of @parent (or any parent in
+ *          the case that @parent is %NULL).
  *
  * Since: 2.24
  */
@@ -750,7 +751,7 @@ g_file_has_parent (GFile *file,
 /**
  * g_file_get_child:
  * @file: input #GFile
- * @name: string containing the child's basename
+ * @name: (type filename): string containing the child's basename
  *
  * Gets a child of @file with basename equal to @name.
  *
@@ -860,8 +861,8 @@ g_file_has_prefix (GFile *file,
  *
  * This call does no blocking I/O.
  *
- * Returns: (nullable): string with the relative path from @descendant
- *     to @parent, or %NULL if @descendant doesn't have @parent as
+ * Returns: (type filename) (nullable): string with the relative path from
+ *     @descendant to @parent, or %NULL if @descendant doesn't have @parent as
  *     prefix. The returned string should be freed with g_free() when
  *     no longer needed.
  */
@@ -885,7 +886,7 @@ g_file_get_relative_path (GFile *parent,
 /**
  * g_file_resolve_relative_path:
  * @file: input #GFile
- * @relative_path: a given relative path string
+ * @relative_path: (type filename): a given relative path string
  *
  * Resolves a relative path for @file to an absolute path.
  *
@@ -2511,7 +2512,7 @@ copy_symlink (GFile           *destination,
               if (file_type == G_FILE_TYPE_DIRECTORY)
                 {
                   g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_IS_DIRECTORY,
-                                       _("Can't copy over directory"));
+                                       _("Can’t copy over directory"));
                   return FALSE;
                 }
             }
@@ -2571,7 +2572,7 @@ open_source_for_copy (GFile           *source,
               if (file_type == G_FILE_TYPE_DIRECTORY)
                 {
                   g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_WOULD_MERGE,
-                                       _("Can't copy directory over directory"));
+                                       _("Can’t copy directory over directory"));
                   return NULL;
                 }
               /* continue to would_recurse error */
@@ -2598,7 +2599,7 @@ open_source_for_copy (GFile           *source,
         }
 
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_WOULD_RECURSE,
-                           _("Can't recursively copy directory"));
+                           _("Can’t recursively copy directory"));
       return NULL;
     }
 
@@ -3024,7 +3025,7 @@ btrfs_reflink_with_progress (GInputStream           *in,
 	/* Most probably something odd happened; retry with fallback */
 	g_set_error_literal (error, G_IO_ERROR,
 			     G_IO_ERROR_NOT_SUPPORTED,
-			     _("Copy (reflink/clone) is not supported or didn't work"));
+			     _("Copy (reflink/clone) is not supported or didn’t work"));
       /* We retry with fallback for all error cases because Btrfs is currently
        * unstable, and so we can't trust it to do clone properly.
        * In addition, any hard errors here would cause the same failure in the
@@ -3087,7 +3088,7 @@ file_copy_fallback (GFile                  *source,
     {
       /* FIXME: could try to recreate device nodes and others? */
       g_set_error_literal (error, G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                           _("Can't copy special file"));
+                           _("Can’t copy special file"));
       goto out;
     }
 
@@ -3848,7 +3849,8 @@ g_file_make_directory_with_parents (GFile         *file,
 /**
  * g_file_make_symbolic_link:
  * @file: a #GFile with the name of the symlink to create
- * @symlink_value: a string with the path for the target of the new symlink
+ * @symlink_value: (type filename): a string with the path for the target
+ *     of the new symlink
  * @cancellable: (allow-none): optional #GCancellable object,
  *     %NULL to ignore
  * @error: a #GError
@@ -4153,7 +4155,7 @@ g_file_set_display_name (GFile         *file,
       g_set_error (error,
                    G_IO_ERROR,
                    G_IO_ERROR_INVALID_ARGUMENT,
-                   _("File names cannot contain '%c'"), G_DIR_SEPARATOR);
+                   _("File names cannot contain “%c”"), G_DIR_SEPARATOR);
       return NULL;
     }
 
@@ -4337,9 +4339,14 @@ g_file_query_writable_namespaces (GFile         *file,
 
   if (list == NULL)
     {
+      g_warn_if_reached();
+      list = g_file_attribute_info_list_new ();
+    }
+
+  if (my_error != NULL)
+    {
       if (my_error->domain == G_IO_ERROR && my_error->code == G_IO_ERROR_NOT_SUPPORTED)
         {
-          list = g_file_attribute_info_list_new ();
           g_error_free (my_error);
         }
       else
@@ -5413,6 +5420,7 @@ g_file_real_query_info_async (GFile               *file,
   data->flags = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_query_info_async);
   g_task_set_task_data (task, data, (GDestroyNotify)query_info_data_free);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, query_info_async_thread);
@@ -5457,6 +5465,7 @@ g_file_real_query_filesystem_info_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_query_filesystem_info_async);
   g_task_set_task_data (task, g_strdup (attributes), g_free);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, query_filesystem_info_async_thread);
@@ -5507,6 +5516,7 @@ g_file_real_enumerate_children_async (GFile               *file,
   data->flags = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_enumerate_children_async);
   g_task_set_task_data (task, data, (GDestroyNotify)query_info_data_free);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, enumerate_children_async_thread);
@@ -5549,6 +5559,7 @@ g_file_real_read_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_read_async);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, open_read_async_thread);
   g_object_unref (task);
@@ -5596,6 +5607,7 @@ g_file_real_append_to_async (GFile               *file,
   *data = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_append_to_async);
   g_task_set_task_data (task, data, g_free);
   g_task_set_priority (task, io_priority);
 
@@ -5645,6 +5657,7 @@ g_file_real_create_async (GFile               *file,
   *data = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_create_async);
   g_task_set_task_data (task, data, g_free);
   g_task_set_priority (task, io_priority);
 
@@ -5720,6 +5733,7 @@ g_file_real_replace_async (GFile               *file,
   data->flags = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_replace_async);
   g_task_set_task_data (task, data, (GDestroyNotify)replace_async_data_free);
   g_task_set_priority (task, io_priority);
 
@@ -5761,6 +5775,7 @@ g_file_real_delete_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_delete_async);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, delete_async_thread);
   g_object_unref (task);
@@ -5800,6 +5815,7 @@ g_file_real_trash_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_trash_async);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, trash_async_thread);
   g_object_unref (task);
@@ -5839,6 +5855,7 @@ g_file_real_make_directory_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_make_directory_async);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, make_directory_async_thread);
   g_object_unref (task);
@@ -5881,6 +5898,7 @@ g_file_real_open_readwrite_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_open_readwrite_async);
   g_task_set_priority (task, io_priority);
 
   g_task_run_in_thread (task, open_readwrite_async_thread);
@@ -5930,6 +5948,7 @@ g_file_real_create_readwrite_async (GFile               *file,
   *data = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_create_readwrite_async);
   g_task_set_task_data (task, data, g_free);
   g_task_set_priority (task, io_priority);
 
@@ -6002,6 +6021,7 @@ g_file_real_replace_readwrite_async (GFile               *file,
   data->flags = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_replace_readwrite_async);
   g_task_set_task_data (task, data, (GDestroyNotify)replace_rw_async_data_free);
   g_task_set_priority (task, io_priority);
 
@@ -6048,6 +6068,7 @@ g_file_real_set_display_name_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_set_display_name_async);
   g_task_set_task_data (task, g_strdup (display_name), g_free);
   g_task_set_priority (task, io_priority);
 
@@ -6115,6 +6136,7 @@ g_file_real_set_attributes_async (GFile               *file,
   data->flags = flags;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_set_attributes_async);
   g_task_set_task_data (task, data, (GDestroyNotify)set_info_data_free);
   g_task_set_priority (task, io_priority);
 
@@ -6170,6 +6192,7 @@ g_file_real_find_enclosing_mount_async (GFile               *file,
   GTask *task;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_find_enclosing_mount_async);
   g_task_set_priority (task, io_priority);
 
   g_task_run_in_thread (task, find_enclosing_mount_async_thread);
@@ -6288,6 +6311,7 @@ g_file_real_copy_async (GFile                  *source,
   data->progress_cb_data = progress_callback_data;
 
   task = g_task_new (source, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_copy_async);
   g_task_set_task_data (task, data, (GDestroyNotify)copy_async_data_free);
   g_task_set_priority (task, io_priority);
   g_task_run_in_thread (task, copy_async_thread);
@@ -6311,7 +6335,7 @@ g_file_real_copy_finish (GFile        *file,
 
 /**
  * g_file_new_for_path:
- * @path: a string containing a relative or absolute path.
+ * @path: (type filename): a string containing a relative or absolute path.
  *     The string must be encoded in the glib filename encoding.
  *
  * Constructs a #GFile for a given path. This operation never
@@ -6507,7 +6531,7 @@ g_file_new_for_commandline_arg (const char *arg)
 /**
  * g_file_new_for_commandline_arg_and_cwd:
  * @arg: a command line string
- * @cwd: the current working directory of the commandline
+ * @cwd: (type filename): the current working directory of the commandline
  *
  * Creates a #GFile with the given argument from the command line.
  *
@@ -6577,7 +6601,7 @@ g_file_mount_enclosing_volume (GFile               *location,
       g_task_report_new_error (location, callback, user_data,
                                g_file_mount_enclosing_volume,
                                G_IO_ERROR, G_IO_ERROR_NOT_SUPPORTED,
-                               _("volume doesn't implement mount"));
+                               _("volume doesn’t implement mount"));
       return;
     }
 
@@ -6968,6 +6992,7 @@ g_file_load_partial_contents_async (GFile                 *file,
   data->content = g_byte_array_new ();
 
   data->task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (data->task, g_file_load_partial_contents_async);
   g_task_set_task_data (data->task, data, (GDestroyNotify)load_contents_data_free);
 
   g_file_read_async (file,
@@ -7132,7 +7157,9 @@ g_file_load_contents_finish (GFile         *file,
  * or the error %G_IO_ERROR_WRONG_ETAG will be returned.
  *
  * If @make_backup is %TRUE, this function will attempt to make a backup
- * of @file.
+ * of @file. Internally, it uses g_file_replace(), so will try to replace the
+ * file contents in the safest way possible. For example, atomic renames are
+ * used when replacing local files’ contents.
  *
  * If @cancellable is not %NULL, then the operation can be cancelled by
  * triggering the cancellable object from another thread. If the operation
@@ -7409,6 +7436,7 @@ g_file_replace_contents_bytes_async  (GFile               *file,
   data->content = g_bytes_ref (contents);
 
   data->task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (data->task, g_file_replace_contents_bytes_async);
   g_task_set_task_data (data->task, data, (GDestroyNotify)replace_contents_data_free);
 
   g_file_replace_async (file,
@@ -7580,6 +7608,7 @@ g_file_real_measure_disk_usage_async (GFile                        *file,
   data.progress_data = progress_data;
 
   task = g_task_new (file, cancellable, callback, user_data);
+  g_task_set_source_tag (task, g_file_real_measure_disk_usage_async);
   g_task_set_task_data (task, g_memdup (&data, sizeof data), g_free);
   g_task_set_priority (task, io_priority);
 

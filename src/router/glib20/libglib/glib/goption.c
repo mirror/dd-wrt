@@ -854,11 +854,11 @@ g_option_context_get_help (GOptionContext *context,
         }
     }
 
-  g_string_append_printf (string, "%s\n  %s", _("Usage:"), g_get_prgname());
+  g_string_append_printf (string, "%s\n  %s", _("Usage:"), g_get_prgname ());
   if (context->help_enabled ||
-      context->main_group->n_entries > 0 ||
+      (context->main_group && context->main_group->n_entries > 0) ||
       context->groups != NULL)
-    g_string_append_printf (string, " %s", _("[OPTION...]"));
+    g_string_append_printf (string, " %s", _("[OPTION…]"));
 
   if (rest_description)
     {
@@ -1110,7 +1110,7 @@ parse_int (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Cannot parse integer value '%s' for %s"),
+                   _("Cannot parse integer value “%s” for %s"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1120,7 +1120,7 @@ parse_int (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Integer value '%s' for %s out of range"),
+                   _("Integer value “%s” for %s out of range"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1145,7 +1145,7 @@ parse_double (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Cannot parse double value '%s' for %s"),
+                   _("Cannot parse double value “%s” for %s"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1153,7 +1153,7 @@ parse_double (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Double value '%s' for %s out of range"),
+                   _("Double value “%s” for %s out of range"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1180,7 +1180,7 @@ parse_int64 (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Cannot parse integer value '%s' for %s"),
+                   _("Cannot parse integer value “%s” for %s"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1188,7 +1188,7 @@ parse_int64 (const gchar *arg_name,
     {
       g_set_error (error,
                    G_OPTION_ERROR, G_OPTION_ERROR_BAD_VALUE,
-                   _("Integer value '%s' for %s out of range"),
+                   _("Integer value “%s” for %s out of range"),
                    arg, arg_name);
       return FALSE;
     }
@@ -1281,9 +1281,12 @@ parse_arg (GOptionContext *context,
 
         change = get_change (context, G_OPTION_ARG_STRING,
                              entry->arg_data);
-        g_free (change->allocated.str);
 
-        change->prev.str = *(gchar **)entry->arg_data;
+        if (!change->allocated.str)
+          change->prev.str = *(gchar **)entry->arg_data;
+        else
+          g_free (change->allocated.str);
+
         change->allocated.str = data;
 
         *(gchar **)entry->arg_data = data;
@@ -1345,9 +1348,12 @@ parse_arg (GOptionContext *context,
 #endif
         change = get_change (context, G_OPTION_ARG_FILENAME,
                              entry->arg_data);
-        g_free (change->allocated.str);
 
-        change->prev.str = *(gchar **)entry->arg_data;
+        if (!change->allocated.str)
+          change->prev.str = *(gchar **)entry->arg_data;
+        else
+          g_free (change->allocated.str);
+
         change->allocated.str = data;
 
         *(gchar **)entry->arg_data = data;

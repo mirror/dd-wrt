@@ -125,7 +125,7 @@ g_parse_debug_string  (const gchar     *string,
       /* using stdio directly for the reason stated above */
       fprintf (stderr, "Supported debug values:");
       for (i = 0; i < nkeys; i++)
-       fprintf (stderr, " %s", keys[i].key);
+        fprintf (stderr, " %s", keys[i].key);
       fprintf (stderr, " all help\n");
     }
   else
@@ -228,11 +228,19 @@ g_debug_init (void)
   g_mem_gc_friendly = flags & 1;
 }
 
-static void
+void
 glib_init (void)
 {
+  static gboolean glib_inited;
+
+  if (glib_inited)
+    return;
+
+  glib_inited = TRUE;
+
   g_messages_prefixed_init ();
   g_debug_init ();
+  g_quark_init ();
 }
 
 #if defined (G_OS_WIN32)
@@ -262,6 +270,13 @@ DllMain (HINSTANCE hinstDLL,
     case DLL_THREAD_DETACH:
 #ifdef THREADS_WIN32
       g_thread_win32_thread_detach ();
+#endif
+      break;
+
+    case DLL_PROCESS_DETACH:
+#ifdef THREADS_WIN32
+      if (lpvReserved == NULL)
+        g_thread_win32_process_detach ();
 #endif
       break;
 

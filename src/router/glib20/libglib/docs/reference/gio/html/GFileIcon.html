@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>GFileIcon: GIO Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GIO Reference Manual">
 <link rel="up" href="icons.html" title="Icons">
 <link rel="prev" href="GIcon.html" title="GIcon">
 <link rel="next" href="GBytesIcon.html" title="GBytesIcon">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -36,7 +36,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="GFileIcon.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -63,7 +63,7 @@
 </div>
 <div class="refsect1">
 <a name="GFileIcon.properties"></a><h2>Properties</h2>
-<div class="informaltable"><table border="0">
+<div class="informaltable"><table class="informaltable" border="0">
 <colgroup>
 <col width="150px" class="properties_type">
 <col width="300px" class="properties_name">
@@ -79,7 +79,7 @@
 </div>
 <div class="refsect1">
 <a name="GFileIcon.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -92,7 +92,7 @@
 </div>
 <div class="refsect1">
 <a name="GFileIcon.object-hierarchy"></a><h2>Object Hierarchy</h2>
-<pre class="screen">    <a href="https://developer.gnome.org/gobject/unstable/gobject-The-Base-Object-Type.html#GObject">GObject</a>
+<pre class="screen">    <a href="../gobject-The-Base-Object-Type.html#GObject-struct">GObject</a>
     <span class="lineart">╰──</span> GFileIcon
 </pre>
 </div>
@@ -120,8 +120,8 @@ to be used as icon.</p>
 g_file_icon_new (<em class="parameter"><code><a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a> *file</code></em>);</pre>
 <p>Creates a new icon for a file.</p>
 <div class="refsect3">
-<a name="id-1.4.10.3.10.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-icon-new.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -135,10 +135,10 @@ g_file_icon_new (<em class="parameter"><code><a class="link" href="GFile.html" t
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.3.10.2.6"></a><h4>Returns</h4>
+<a name="g-file-icon-new.returns"></a><h4>Returns</h4>
 <p> a <a class="link" href="GIcon.html" title="GIcon"><span class="type">GIcon</span></a> for the given
 <em class="parameter"><code>file</code></em>
-, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
+, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a> on error. </p>
 <p><span class="annotation">[<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>][<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> GFileIcon]</span></p>
 </div>
 </div>
@@ -150,8 +150,8 @@ g_file_icon_get_file (<em class="parameter"><code><a class="link" href="GFileIco
 <p>Gets the <a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a> associated with the given <em class="parameter"><code>icon</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.4.10.3.10.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-file-icon-get-file.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -165,8 +165,8 @@ g_file_icon_get_file (<em class="parameter"><code><a class="link" href="GFileIco
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.4.10.3.10.3.6"></a><h4>Returns</h4>
-<p> a <a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a>, or <a href="https://developer.gnome.org/glib/unstable/glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
+<a name="g-file-icon-get-file.returns"></a><h4>Returns</h4>
+<p> a <a class="link" href="GFile.html" title="GFile"><span class="type">GFile</span></a>, or <a href="../glib-Standard-Macros.html#NULL:CAPS"><code class="literal">NULL</code></a>. </p>
 <p><span class="annotation">[<acronym title="Don't free data after the code is done."><span class="acronym">transfer none</span></acronym>]</span></p>
 </div>
 </div>
@@ -194,6 +194,6 @@ g_file_icon_get_file (<em class="parameter"><code><a class="link" href="GFileIco
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

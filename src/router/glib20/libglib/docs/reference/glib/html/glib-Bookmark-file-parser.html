@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Bookmark file parser: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-utilities.html" title="GLib Utilities">
 <link rel="prev" href="glib-Key-value-file-parser.html" title="Key-value file parser">
 <link rel="next" href="glib-Testing.html" title="Testing">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Bookmark-file-parser.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -121,7 +121,7 @@
 </tr>
 <tr>
 <td class="function_type">
-<a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 </td>
 <td class="function_name">
 <a class="link" href="glib-Bookmark-file-parser.html#g-bookmark-file-get-size" title="g_bookmark_file_get_size ()">g_bookmark_file_get_size</a> <span class="c_punctuation">()</span>
@@ -356,7 +356,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Bookmark-file-parser.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -429,7 +429,7 @@ g_bookmark_file_new (<em class="parameter"><code><span class="type">void</span><
 or <a class="link" href="glib-Bookmark-file-parser.html#g-bookmark-file-load-from-data-dirs" title="g_bookmark_file_load_from_data_dirs ()"><code class="function">g_bookmark_file_load_from_data_dirs()</code></a> to read an existing bookmark
 file.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.2.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-new.returns"></a><h4>Returns</h4>
 <p> an empty <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFile" title="GBookmarkFile"><span class="type">GBookmarkFile</span></a></p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -441,8 +441,8 @@ file.</p>
 g_bookmark_file_free (<em class="parameter"><code><a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFile" title="GBookmarkFile"><span class="type">GBookmarkFile</span></a> *bookmark</code></em>);</pre>
 <p>Frees a <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFile" title="GBookmarkFile"><span class="type">GBookmarkFile</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-free.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -469,8 +469,8 @@ If the file could not be loaded then <em class="parameter"><code>error</code></e
  is set to either a <a class="link" href="glib-File-Utilities.html#GFileError" title="enum GFileError"><span class="type">GFileError</span></a>
 or <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFileError" title="enum GBookmarkFileError"><span class="type">GBookmarkFileError</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-load-from-file.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -484,8 +484,9 @@ or <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFileError" titl
 </tr>
 <tr>
 <td class="parameter_name"><p>filename</p></td>
-<td class="parameter_description"><p>the path of a filename to load, in the GLib file name encoding</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> the path of a filename to load, in the
+GLib file name encoding. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -496,7 +497,7 @@ or <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFileError" titl
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.4.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-load-from-file.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if a desktop bookmark file could be loaded</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -514,8 +515,8 @@ structure.  If the object cannot be created then <em class="parameter"><code>err
  is set to a
 <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFileError" title="enum GBookmarkFileError"><span class="type">GBookmarkFileError</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-load-from-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -547,7 +548,7 @@ in bytes</p></td>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.5.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-load-from-data.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if a desktop bookmark could be loaded.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -569,8 +570,8 @@ loads the file into <em class="parameter"><code>bookmark</code></em>
 .  If the file could not be loaded then an <code class="literal">error</code> is
 set to either a <a class="link" href="glib-File-Utilities.html#GFileError" title="enum GFileError"><span class="type">GFileError</span></a> or <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFileError" title="enum GBookmarkFileError"><span class="type">GBookmarkFileError</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-load-from-data-dirs.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -584,14 +585,14 @@ set to either a <a class="link" href="glib-File-Utilities.html#GFileError" title
 </tr>
 <tr>
 <td class="parameter_name"><p>file</p></td>
-<td class="parameter_description"><p>a relative path to a filename to open and parse</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> a relative path to a filename to open and parse. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>full_path</p></td>
-<td class="parameter_description"><p> return location for a string containing the full path
-of the file, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
-<td class="parameter_annotations"><span class="annotation">[<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
+<td class="parameter_description"><p> return location for a string
+containing the full path of the file, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename][<acronym title="NULL is OK, both for passing and for returning."><span class="acronym">allow-none</span></acronym>]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -602,7 +603,7 @@ of the file, or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.6.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-load-from-data-dirs.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if a key file could be loaded, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -617,8 +618,8 @@ g_bookmark_file_to_data (<em class="parameter"><code><a class="link" href="glib-
 <p>This function outputs <em class="parameter"><code>bookmark</code></em>
  as a string.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-to-data.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -644,7 +645,7 @@ g_bookmark_file_to_data (<em class="parameter"><code><a class="link" href="glib-
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.7.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-to-data.returns"></a><h4>Returns</h4>
 <p> a newly allocated string holding
 the contents of the <a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFile" title="GBookmarkFile"><span class="type">GBookmarkFile</span></a></p>
 </div>
@@ -661,8 +662,8 @@ g_bookmark_file_to_file (<em class="parameter"><code><a class="link" href="glib-
  into a file.  The write process is
 guaranteed to be atomic by using <a class="link" href="glib-File-Utilities.html#g-file-set-contents" title="g_file_set_contents ()"><code class="function">g_file_set_contents()</code></a> internally.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-to-file.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -676,8 +677,8 @@ guaranteed to be atomic by using <a class="link" href="glib-File-Utilities.html#
 </tr>
 <tr>
 <td class="parameter_name"><p>filename</p></td>
-<td class="parameter_description"><p>path of the output file</p></td>
-<td class="parameter_annotations"> </td>
+<td class="parameter_description"><p> path of the output file. </p></td>
+<td class="parameter_annotations"><span class="annotation">[<acronym title="Override the parsed C type with given type."><span class="acronym">type</span></acronym> filename]</span></td>
 </tr>
 <tr>
 <td class="parameter_name"><p>error</p></td>
@@ -688,7 +689,7 @@ guaranteed to be atomic by using <a class="link" href="glib-File-Utilities.html#
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.8.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-to-file.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the file was successfully written.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -702,8 +703,8 @@ g_bookmark_file_has_item (<em class="parameter"><code><a class="link" href="glib
 <p>Looks whether the desktop bookmark has an item with its URI set to <em class="parameter"><code>uri</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-has-item.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -724,7 +725,7 @@ g_bookmark_file_has_item (<em class="parameter"><code><a class="link" href="glib
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.9.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-has-item.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>uri</code></em>
 is inside <em class="parameter"><code>bookmark</code></em>
 , <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise</p>
@@ -747,8 +748,8 @@ the bookmark for <em class="parameter"><code>uri</code></em>
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.10.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-has-group.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -779,7 +780,7 @@ the bookmark for <em class="parameter"><code>uri</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.10.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-has-group.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>group</code></em>
 was found.</p>
 </div>
@@ -802,8 +803,8 @@ registered by application <em class="parameter"><code>name</code></em>
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.11.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-has-application.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -834,7 +835,7 @@ registered by application <em class="parameter"><code>name</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.11.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-has-application.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the application <em class="parameter"><code>name</code></em>
 was found</p>
 </div>
@@ -843,13 +844,13 @@ was found</p>
 <hr>
 <div class="refsect2">
 <a name="g-bookmark-file-get-size"></a><h3>g_bookmark_file_get_size ()</h3>
-<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="returnvalue">gint</span></a>
+<pre class="programlisting"><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="returnvalue">gint</span></a>
 g_bookmark_file_get_size (<em class="parameter"><code><a class="link" href="glib-Bookmark-file-parser.html#GBookmarkFile" title="GBookmarkFile"><span class="type">GBookmarkFile</span></a> *bookmark</code></em>);</pre>
 <p>Gets the number of bookmarks inside <em class="parameter"><code>bookmark</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-size.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -863,7 +864,7 @@ g_bookmark_file_get_size (<em class="parameter"><code><a class="link" href="glib
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.12.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-size.returns"></a><h4>Returns</h4>
 <p> the number of bookmarks</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -880,8 +881,8 @@ The array of returned URIs will be <a class="link" href="glib-Standard-Macros.ht
  may
 optionally be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-uris.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -902,7 +903,7 @@ optionally be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.13.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-uris.returns"></a><h4>Returns</h4>
 <p> a newly allocated <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings.
 Use <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> to free it. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=length][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -925,8 +926,8 @@ g_bookmark_file_get_title (<em class="parameter"><code><a class="link" href="gli
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.14.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-title.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -952,7 +953,7 @@ g_bookmark_file_get_title (<em class="parameter"><code><a class="link" href="gli
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.14.8"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-title.returns"></a><h4>Returns</h4>
 <p> a newly allocated string or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the specified
 URI cannot be found.</p>
 </div>
@@ -971,8 +972,8 @@ g_bookmark_file_get_description (<em class="parameter"><code><a class="link" hre
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.15.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-description.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -998,7 +999,7 @@ g_bookmark_file_get_description (<em class="parameter"><code><a class="link" hre
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.15.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-description.returns"></a><h4>Returns</h4>
 <p> a newly allocated string or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the specified
 URI cannot be found.</p>
 </div>
@@ -1020,8 +1021,8 @@ event that the MIME type cannot be found, <a class="link" href="glib-Standard-Ma
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-INVALID-VALUE:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_INVALID_VALUE</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.16.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-mime-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1047,7 +1048,7 @@ event that the MIME type cannot be found, <a class="link" href="glib-Standard-Ma
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.16.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-mime-type.returns"></a><h4>Returns</h4>
 <p> a newly allocated string or <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a> if the specified
 URI cannot be found.</p>
 </div>
@@ -1069,8 +1070,8 @@ event that the private flag cannot be found, <a class="link" href="glib-Standard
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-INVALID-VALUE:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_INVALID_VALUE</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.17.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-is-private.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1096,7 +1097,7 @@ event that the private flag cannot be found, <a class="link" href="glib-Standard
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.17.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-is-private.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the private flag is set, <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> otherwise.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -1116,8 +1117,8 @@ g_bookmark_file_get_icon (<em class="parameter"><code><a class="link" href="glib
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.18.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-icon.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1153,7 +1154,7 @@ g_bookmark_file_get_icon (<em class="parameter"><code><a class="link" href="glib
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.18.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-icon.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the icon for the bookmark for the URI was found.
 You should free the returned strings.</p>
 </div>
@@ -1173,8 +1174,8 @@ g_bookmark_file_get_added (<em class="parameter"><code><a class="link" href="gli
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.19.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-added.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1200,7 +1201,7 @@ g_bookmark_file_get_added (<em class="parameter"><code><a class="link" href="gli
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.19.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-added.returns"></a><h4>Returns</h4>
 <p> a timestamp</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -1218,8 +1219,8 @@ g_bookmark_file_get_modified (<em class="parameter"><code><a class="link" href="
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.20.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-modified.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1245,7 +1246,7 @@ g_bookmark_file_get_modified (<em class="parameter"><code><a class="link" href="
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.20.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-modified.returns"></a><h4>Returns</h4>
 <p> a timestamp</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -1263,8 +1264,8 @@ g_bookmark_file_get_visited (<em class="parameter"><code><a class="link" href="g
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.21.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-visited.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1290,7 +1291,7 @@ g_bookmark_file_get_visited (<em class="parameter"><code><a class="link" href="g
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.21.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-visited.returns"></a><h4>Returns</h4>
 <p> a timestamp.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -1312,8 +1313,8 @@ g_bookmark_file_get_groups (<em class="parameter"><code><a class="link" href="gl
  may optionally
 be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.22.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-groups.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1344,7 +1345,7 @@ be <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.22.8"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-groups.returns"></a><h4>Returns</h4>
 <p> a newly allocated <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of group names.
 Use <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> to free it. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=length][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -1366,8 +1367,8 @@ bookmark for <em class="parameter"><code>uri</code></em>
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.23.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-applications.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1398,7 +1399,7 @@ bookmark for <em class="parameter"><code>uri</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.23.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-applications.returns"></a><h4>Returns</h4>
 <p> a newly allocated <a class="link" href="glib-Standard-Macros.html#NULL:CAPS" title="NULL"><code class="literal">NULL</code></a>-terminated array of strings.
 Use <a class="link" href="glib-String-Utility-Functions.html#g-strfreev" title="g_strfreev ()"><code class="function">g_strfreev()</code></a> to free it. </p>
 <p><span class="annotation">[<acronym title="Parameter points to an array of items."><span class="acronym">array</span></acronym> length=length][<acronym title="Free data after the code is done."><span class="acronym">transfer full</span></acronym>]</span></p>
@@ -1413,7 +1414,7 @@ g_bookmark_file_get_app_info (<em class="parameter"><code><a class="link" href="
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *uri</code></em>,
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *name</code></em>,
                               <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> **exec</code></em>,
-                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> *count</code></em>,
+                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> *count</code></em>,
                               <em class="parameter"><code><span class="type">time_t</span> *stamp</code></em>,
                               <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Gets the registration informations of <em class="parameter"><code>app_name</code></em>
@@ -1434,8 +1435,8 @@ for <em class="parameter"><code>uri</code></em>
 the command line fails, an error of the <a class="link" href="glib-Shell-related-Utilities.html#G-SHELL-ERROR:CAPS" title="G_SHELL_ERROR"><span class="type">G_SHELL_ERROR</span></a> domain is
 set and <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> is returned.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.24.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-get-app-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1481,7 +1482,7 @@ set and <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.24.8"></a><h4>Returns</h4>
+<a name="g-bookmark-file-get-app-info.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> on success.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -1504,8 +1505,8 @@ bookmark file <em class="parameter"><code>bookmark</code></em>
 <p>If a bookmark for <em class="parameter"><code>uri</code></em>
  cannot be found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.25.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-title.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1548,8 +1549,8 @@ g_bookmark_file_set_description (<em class="parameter"><code><a class="link" hre
 <p>If a bookmark for <em class="parameter"><code>uri</code></em>
  cannot be found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.26.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-description.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1589,8 +1590,8 @@ g_bookmark_file_set_mime_type (<em class="parameter"><code><a class="link" href=
 <p>If a bookmark for <em class="parameter"><code>uri</code></em>
  cannot be found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.27.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-mime-type.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1629,8 +1630,8 @@ g_bookmark_file_set_is_private (<em class="parameter"><code><a class="link" href
 <p>If a bookmark for <em class="parameter"><code>uri</code></em>
  cannot be found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.28.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-is-private.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1674,8 +1675,8 @@ file or the icon name following the Icon Naming specification.</p>
 <p>If no bookmark for <em class="parameter"><code>uri</code></em>
  is found one is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.29.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-icon.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1720,8 +1721,8 @@ g_bookmark_file_set_added (<em class="parameter"><code><a class="link" href="gli
 <p>If no bookmark for <em class="parameter"><code>uri</code></em>
  is found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.30.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-added.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1762,8 +1763,8 @@ set group name list is removed.</p>
 <p>If <em class="parameter"><code>uri</code></em>
  cannot be found then an item for it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.31.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-groups.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1812,8 +1813,8 @@ was actually changed.  Every function of <a class="link" href="glib-Bookmark-fil
 modifies a bookmark also changes the modification time, except for
 <a class="link" href="glib-Bookmark-file-parser.html#g-bookmark-file-set-visited" title="g_bookmark_file_set_visited ()"><code class="function">g_bookmark_file_set_visited()</code></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.32.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-modified.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1857,8 +1858,8 @@ or by the default application for the bookmark's MIME type, retrieved
 using <a class="link" href="glib-Bookmark-file-parser.html#g-bookmark-file-get-mime-type" title="g_bookmark_file_get_mime_type ()"><code class="function">g_bookmark_file_get_mime_type()</code></a>.  Changing the "visited" time
 does not affect the "modified" time.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.33.7"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-visited.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1893,7 +1894,7 @@ g_bookmark_file_set_app_info (<em class="parameter"><code><a class="link" href="
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *uri</code></em>,
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *name</code></em>,
                               <em class="parameter"><code>const <a class="link" href="glib-Basic-Types.html#gchar" title="gchar"><span class="type">gchar</span></a> *exec</code></em>,
-                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> count</code></em>,
+                              <em class="parameter"><code><a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> count</code></em>,
                               <em class="parameter"><code><span class="type">time_t</span> stamp</code></em>,
                               <em class="parameter"><code><a class="link" href="glib-Error-Reporting.html#GError" title="struct GError"><span class="type">GError</span></a> **error</code></em>);</pre>
 <p>Sets the meta-data of application <em class="parameter"><code>name</code></em>
@@ -1935,8 +1936,8 @@ for <em class="parameter"><code>uri</code></em>
 for <em class="parameter"><code>uri</code></em>
  is found, one is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.34.8"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-set-app-info.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1982,7 +1983,7 @@ for <em class="parameter"><code>uri</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.34.9"></a><h4>Returns</h4>
+<a name="g-bookmark-file-set-app-info.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the application's meta-data was successfully
 changed.</p>
 </div>
@@ -2002,8 +2003,8 @@ belongs to.</p>
 <p>If no bookmark for <em class="parameter"><code>uri</code></em>
  is found then it is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.35.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-add-group.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2067,8 +2068,8 @@ with the same <em class="parameter"><code>name</code></em>
 <p>If no bookmark for <em class="parameter"><code>uri</code></em>
  is found, one is created.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.36.9"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-add-application.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2120,8 +2121,8 @@ In the event no group was defined, <a class="link" href="glib-Standard-Macros.ht
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-INVALID-VALUE:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_INVALID_VALUE</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.37.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-remove-group.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2152,7 +2153,7 @@ In the event no group was defined, <a class="link" href="glib-Standard-Macros.ht
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.37.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-remove-group.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if <em class="parameter"><code>group</code></em>
 was successfully removed.</p>
 </div>
@@ -2180,8 +2181,8 @@ a bookmark for <em class="parameter"><code>uri</code></em>
 ,  <a class="link" href="glib-Standard-Macros.html#FALSE:CAPS" title="FALSE"><code class="literal">FALSE</code></a> is returned and error is set to
 <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-APP-NOT-REGISTERED:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_APP_NOT_REGISTERED</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.38.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-remove-application.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2212,7 +2213,7 @@ a bookmark for <em class="parameter"><code>uri</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.38.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-remove-application.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the application was successfully removed.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -2228,8 +2229,8 @@ g_bookmark_file_remove_item (<em class="parameter"><code><a class="link" href="g
  from the bookmark file <em class="parameter"><code>bookmark</code></em>
 .</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.39.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-remove-item.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2255,7 +2256,7 @@ g_bookmark_file_remove_item (<em class="parameter"><code><a class="link" href="g
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.39.6"></a><h4>Returns</h4>
+<a name="g-bookmark-file-remove-item.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the bookmark was removed successfully.</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -2279,8 +2280,8 @@ existing bookmark for <em class="parameter"><code>new_uri</code></em>
 <em class="parameter"><code>error</code></em>
  is set to <a class="link" href="glib-Bookmark-file-parser.html#G-BOOKMARK-FILE-ERROR-URI-NOT-FOUND:CAPS"><span class="type">G_BOOKMARK_FILE_ERROR_URI_NOT_FOUND</span></a>.</p>
 <div class="refsect3">
-<a name="id-1.5.28.7.40.6"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-bookmark-file-move-item.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2311,7 +2312,7 @@ existing bookmark for <em class="parameter"><code>new_uri</code></em>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.5.28.7.40.7"></a><h4>Returns</h4>
+<a name="g-bookmark-file-move-item.returns"></a><h4>Returns</h4>
 <p> <a class="link" href="glib-Standard-Macros.html#TRUE:CAPS" title="TRUE"><code class="literal">TRUE</code></a> if the URI was successfully changed</p>
 </div>
 <p class="since">Since: <a class="link" href="api-index-2-12.html#api-index-2.12">2.12</a></p>
@@ -2339,8 +2340,8 @@ enumeration. See <a class="link" href="glib-Error-Reporting.html#GError" title="
 <a name="GBookmarkFileError"></a><h3>enum GBookmarkFileError</h3>
 <p>Error codes returned by bookmark file parsing.</p>
 <div class="refsect3">
-<a name="id-1.5.28.8.4.4"></a><h4>Members</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GBookmarkFileError.members"></a><h4>Members</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="300px" class="enum_members_name">
 <col class="enum_members_description">
@@ -2412,6 +2413,6 @@ enumeration. See <a class="link" href="glib-Error-Reporting.html#GError" title="
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>

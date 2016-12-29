@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Byte Order Macros: GLib Reference Manual</title>
-<meta name="generator" content="DocBook XSL Stylesheets V1.78.1">
+<meta name="generator" content="DocBook XSL Stylesheets V1.79.1">
 <link rel="home" href="index.html" title="GLib Reference Manual">
 <link rel="up" href="glib-fundamentals.html" title="GLib Fundamentals">
 <link rel="prev" href="glib-Type-Conversion-Macros.html" title="Type Conversion Macros">
-<link rel="next" href="glib-Numerical-Definitions.html" title="Numerical Definitions">
-<meta name="generator" content="GTK-Doc V1.23 (XML mode)">
+<link rel="next" href="glib-Bounds-checked-integer-arithmetic.html" title="Bounds-checking integer arithmetic">
+<meta name="generator" content="GTK-Doc V1.25.1 (XML mode)">
 <link rel="stylesheet" href="style.css" type="text/css">
 </head>
 <body bgcolor="white" text="black" link="#0000FF" vlink="#840084" alink="#0000FF">
@@ -20,7 +20,7 @@
 <td><a accesskey="h" href="index.html"><img src="home.png" width="16" height="16" border="0" alt="Home"></a></td>
 <td><a accesskey="u" href="glib-fundamentals.html"><img src="up.png" width="16" height="16" border="0" alt="Up"></a></td>
 <td><a accesskey="p" href="glib-Type-Conversion-Macros.html"><img src="left.png" width="16" height="16" border="0" alt="Prev"></a></td>
-<td><a accesskey="n" href="glib-Numerical-Definitions.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
+<td><a accesskey="n" href="glib-Bounds-checked-integer-arithmetic.html"><img src="right.png" width="16" height="16" border="0" alt="Next"></a></td>
 </tr></table>
 <div class="refentry">
 <a name="glib-Byte-Order-Macros"></a><div class="titlepage"></div>
@@ -33,7 +33,7 @@
 </tr></table></div>
 <div class="refsect1">
 <a name="glib-Byte-Order-Macros.functions"></a><h2>Functions</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="functions_return">
 <col class="functions_name">
@@ -398,7 +398,7 @@
 </div>
 <div class="refsect1">
 <a name="glib-Byte-Order-Macros.other"></a><h2>Types and Values</h2>
-<div class="informaltable"><table width="100%" border="0">
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="name">
 <col class="description">
@@ -433,7 +433,7 @@
 <p>These macros provide a portable way to determine the host byte order
 and to convert values between different byte orders.</p>
 <p>The byte order is the order in which bytes are stored to create larger
-data types such as the <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> and <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> values.
+data types such as the <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> and <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> values.
 The host byte order is the byte order used on the current machine.</p>
 <p>Some processors store the most significant bytes (i.e. the bytes that
 hold the largest part of the value) first. These are known as big-endian
@@ -461,8 +461,8 @@ side-effects.</p>
 <pre class="programlisting">#define             g_htonl(val)</pre>
 <p>Converts a 32-bit integer value from host to network byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.2.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-htonl.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -476,7 +476,7 @@ side-effects.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.2.6"></a><h4>Returns</h4>
+<a name="g-htonl.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to network byte order</p>
 </div>
@@ -487,8 +487,8 @@ converted to network byte order</p>
 <pre class="programlisting">#define             g_htons(val)</pre>
 <p>Converts a 16-bit integer value from host to network byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.3.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-htons.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -502,7 +502,7 @@ converted to network byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.3.6"></a><h4>Returns</h4>
+<a name="g-htons.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to network byte order</p>
 </div>
@@ -513,8 +513,8 @@ converted to network byte order</p>
 <pre class="programlisting">#define             g_ntohl(val)</pre>
 <p>Converts a 32-bit integer value from network to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.4.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-ntohl.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -528,7 +528,7 @@ converted to network byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.4.6"></a><h4>Returns</h4>
+<a name="g-ntohl.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order.</p>
 </div>
@@ -539,8 +539,8 @@ converted to host byte order.</p>
 <pre class="programlisting">#define             g_ntohs(val)</pre>
 <p>Converts a 16-bit integer value from network to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.5.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="g-ntohs.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -554,7 +554,7 @@ converted to host byte order.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.5.6"></a><h4>Returns</h4>
+<a name="g-ntohs.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -564,10 +564,10 @@ converted to host byte order</p>
 <a name="GINT-FROM-BE:CAPS"></a><h3>GINT_FROM_BE()</h3>
 <pre class="programlisting">#define GINT_FROM_BE(val) (GINT_TO_BE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value from big-endian to host byte order.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.6.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -575,13 +575,13 @@ converted to host byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value in big-endian byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value in big-endian byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.6.6"></a><h4>Returns</h4>
+<a name="GINT-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -591,10 +591,10 @@ converted to host byte order</p>
 <a name="GINT-FROM-LE:CAPS"></a><h3>GINT_FROM_LE()</h3>
 <pre class="programlisting">#define GINT_FROM_LE(val) (GINT_TO_LE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value from little-endian to host byte order.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.7.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -602,13 +602,13 @@ converted to host byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value in little-endian byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value in little-endian byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.7.6"></a><h4>Returns</h4>
+<a name="GINT-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -618,10 +618,10 @@ converted to host byte order</p>
 <a name="GINT-TO-BE:CAPS"></a><h3>GINT_TO_BE()</h3>
 <pre class="programlisting">#define GINT_TO_BE(val)		((gint) GINT32_TO_BE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value from host byte order to big-endian.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.8.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -629,13 +629,13 @@ converted to host byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value in host byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value in host byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.8.6"></a><h4>Returns</h4>
+<a name="GINT-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian byte order</p>
 </div>
@@ -645,10 +645,10 @@ converted to big-endian byte order</p>
 <a name="GINT-TO-LE:CAPS"></a><h3>GINT_TO_LE()</h3>
 <pre class="programlisting">#define GINT_TO_LE(val)		((gint) GINT32_TO_LE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value from host byte order to little-endian.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.9.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -656,13 +656,13 @@ converted to big-endian byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint"><span class="type">gint</span></a> value in host byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#gint" title="gint ()"><span class="type">gint</span></a> value in host byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.9.6"></a><h4>Returns</h4>
+<a name="GINT-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian byte order</p>
 </div>
@@ -672,10 +672,10 @@ converted to little-endian byte order</p>
 <a name="GUINT-FROM-BE:CAPS"></a><h3>GUINT_FROM_BE()</h3>
 <pre class="programlisting">#define GUINT_FROM_BE(val) (GUINT_TO_BE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value from big-endian to host byte order.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.10.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -683,13 +683,13 @@ converted to little-endian byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value in big-endian byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value in big-endian byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.10.6"></a><h4>Returns</h4>
+<a name="GUINT-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -699,10 +699,10 @@ converted to host byte order</p>
 <a name="GUINT-FROM-LE:CAPS"></a><h3>GUINT_FROM_LE()</h3>
 <pre class="programlisting">#define GUINT_FROM_LE(val) (GUINT_TO_LE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value from little-endian to host byte order.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.11.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -710,13 +710,13 @@ converted to host byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value in little-endian byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value in little-endian byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.11.6"></a><h4>Returns</h4>
+<a name="GUINT-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -726,10 +726,10 @@ converted to host byte order</p>
 <a name="GUINT-TO-BE:CAPS"></a><h3>GUINT_TO_BE()</h3>
 <pre class="programlisting">#define GUINT_TO_BE(val) ((guint) GUINT32_TO_BE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value from host byte order to big-endian.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.12.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -737,13 +737,13 @@ converted to host byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value in host byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value in host byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.12.6"></a><h4>Returns</h4>
+<a name="GUINT-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian byte order</p>
 </div>
@@ -753,10 +753,10 @@ converted to big-endian byte order</p>
 <a name="GUINT-TO-LE:CAPS"></a><h3>GUINT_TO_LE()</h3>
 <pre class="programlisting">#define GUINT_TO_LE(val) ((guint) GUINT32_TO_LE (val))
 </pre>
-<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value from host byte order to little-endian.</p>
+<p>Converts a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.13.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -764,13 +764,13 @@ converted to big-endian byte order</p>
 </colgroup>
 <tbody><tr>
 <td class="parameter_name"><p>val</p></td>
-<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint"><span class="type">guint</span></a> value in host byte order</p></td>
+<td class="parameter_description"><p>a <a class="link" href="glib-Basic-Types.html#guint" title="guint ()"><span class="type">guint</span></a> value in host byte order</p></td>
 <td class="parameter_annotations"> </td>
 </tr></tbody>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.13.6"></a><h4>Returns</h4>
+<a name="GUINT-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian byte order.</p>
 </div>
@@ -782,8 +782,8 @@ converted to little-endian byte order.</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> value from big-endian to the host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.14.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GLONG-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -797,7 +797,7 @@ converted to little-endian byte order.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.14.6"></a><h4>Returns</h4>
+<a name="GLONG-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -809,8 +809,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.15.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GLONG-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -824,7 +824,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.15.6"></a><h4>Returns</h4>
+<a name="GLONG-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -836,8 +836,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.16.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GLONG-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -851,7 +851,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.16.6"></a><h4>Returns</h4>
+<a name="GLONG-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian byte order</p>
 </div>
@@ -863,8 +863,8 @@ converted to big-endian byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#glong" title="glong"><span class="type">glong</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.17.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GLONG-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -878,7 +878,7 @@ converted to big-endian byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.17.6"></a><h4>Returns</h4>
+<a name="GLONG-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -890,8 +890,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.18.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GULONG-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -905,7 +905,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.18.6"></a><h4>Returns</h4>
+<a name="GULONG-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -917,8 +917,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.19.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GULONG-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -932,7 +932,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.19.6"></a><h4>Returns</h4>
+<a name="GULONG-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -944,8 +944,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.20.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GULONG-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -959,7 +959,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.20.6"></a><h4>Returns</h4>
+<a name="GULONG-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -971,8 +971,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gulong" title="gulong"><span class="type">gulong</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.21.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GULONG-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -986,7 +986,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.21.6"></a><h4>Returns</h4>
+<a name="GULONG-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -998,8 +998,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> value from big-endian to the host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.22.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSIZE-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1013,7 +1013,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.22.6"></a><h4>Returns</h4>
+<a name="GSIZE-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1025,8 +1025,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.23.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSIZE-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1040,7 +1040,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.23.6"></a><h4>Returns</h4>
+<a name="GSIZE-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1052,8 +1052,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.24.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSIZE-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1067,7 +1067,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.24.6"></a><h4>Returns</h4>
+<a name="GSIZE-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian byte order</p>
 </div>
@@ -1079,8 +1079,8 @@ converted to big-endian byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gsize" title="gsize"><span class="type">gsize</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.25.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSIZE-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1094,7 +1094,7 @@ converted to big-endian byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.25.6"></a><h4>Returns</h4>
+<a name="GSIZE-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1106,8 +1106,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.26.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSSIZE-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1121,7 +1121,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.26.6"></a><h4>Returns</h4>
+<a name="GSSIZE-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1133,8 +1133,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.27.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSSIZE-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1148,7 +1148,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.27.6"></a><h4>Returns</h4>
+<a name="GSSIZE-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1160,8 +1160,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.28.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSSIZE-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1175,7 +1175,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.28.6"></a><h4>Returns</h4>
+<a name="GSSIZE-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1187,8 +1187,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gssize" title="gssize"><span class="type">gssize</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.29.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GSSIZE-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1202,7 +1202,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.29.6"></a><h4>Returns</h4>
+<a name="GSSIZE-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1214,8 +1214,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.30.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT16-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1229,7 +1229,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.30.6"></a><h4>Returns</h4>
+<a name="GINT16-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1241,8 +1241,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.31.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT16-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1256,7 +1256,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.31.6"></a><h4>Returns</h4>
+<a name="GINT16-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1268,8 +1268,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.32.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT16-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1283,7 +1283,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.32.6"></a><h4>Returns</h4>
+<a name="GINT16-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1295,8 +1295,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint16" title="gint16"><span class="type">gint16</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.33.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT16-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1310,7 +1310,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.33.6"></a><h4>Returns</h4>
+<a name="GINT16-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1322,8 +1322,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.34.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1337,7 +1337,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.34.6"></a><h4>Returns</h4>
+<a name="GUINT16-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1349,8 +1349,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.35.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1364,7 +1364,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.35.6"></a><h4>Returns</h4>
+<a name="GUINT16-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1376,8 +1376,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.36.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1391,7 +1391,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.36.6"></a><h4>Returns</h4>
+<a name="GUINT16-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1403,8 +1403,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.37.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1418,7 +1418,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.37.6"></a><h4>Returns</h4>
+<a name="GUINT16-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1430,8 +1430,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.38.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT32-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1445,7 +1445,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.38.6"></a><h4>Returns</h4>
+<a name="GINT32-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1457,8 +1457,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.39.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT32-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1472,7 +1472,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.39.6"></a><h4>Returns</h4>
+<a name="GINT32-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1484,8 +1484,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.40.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT32-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1499,7 +1499,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.40.6"></a><h4>Returns</h4>
+<a name="GINT32-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1511,8 +1511,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint32" title="gint32"><span class="type">gint32</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.41.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT32-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1526,7 +1526,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.41.6"></a><h4>Returns</h4>
+<a name="GINT32-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1538,8 +1538,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.42.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1553,7 +1553,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.42.6"></a><h4>Returns</h4>
+<a name="GUINT32-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1565,8 +1565,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.43.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1580,7 +1580,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.43.6"></a><h4>Returns</h4>
+<a name="GUINT32-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1592,8 +1592,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.44.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1607,7 +1607,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.44.6"></a><h4>Returns</h4>
+<a name="GUINT32-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1619,8 +1619,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.45.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1634,7 +1634,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.45.6"></a><h4>Returns</h4>
+<a name="GUINT32-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1646,8 +1646,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.46.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT64-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1661,7 +1661,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.46.6"></a><h4>Returns</h4>
+<a name="GINT64-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1673,8 +1673,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.47.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT64-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1688,7 +1688,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.47.6"></a><h4>Returns</h4>
+<a name="GINT64-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1700,8 +1700,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.48.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT64-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1715,7 +1715,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.48.6"></a><h4>Returns</h4>
+<a name="GINT64-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1727,8 +1727,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#gint64" title="gint64"><span class="type">gint64</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.49.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GINT64-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1742,7 +1742,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.49.6"></a><h4>Returns</h4>
+<a name="GINT64-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1754,8 +1754,8 @@ converted to little-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value from big-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.50.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT64-FROM-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1769,7 +1769,7 @@ converted to little-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.50.6"></a><h4>Returns</h4>
+<a name="GUINT64-FROM-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1781,8 +1781,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value from little-endian to host byte order.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.51.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT64-FROM-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1796,7 +1796,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.51.6"></a><h4>Returns</h4>
+<a name="GUINT64-FROM-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to host byte order</p>
 </div>
@@ -1808,8 +1808,8 @@ converted to host byte order</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value from host byte order to big-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.52.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT64-TO-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1823,7 +1823,7 @@ converted to host byte order</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.52.6"></a><h4>Returns</h4>
+<a name="GUINT64-TO-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to big-endian</p>
 </div>
@@ -1835,8 +1835,8 @@ converted to big-endian</p>
 </pre>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value from host byte order to little-endian.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.53.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT64-TO-LE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1850,7 +1850,7 @@ converted to big-endian</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.53.6"></a><h4>Returns</h4>
+<a name="GUINT64-TO-LE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to little-endian</p>
 </div>
@@ -1863,8 +1863,8 @@ converted to little-endian</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value between big-endian and pdp-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.54.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-SWAP-BE-PDP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1878,7 +1878,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.54.6"></a><h4>Returns</h4>
+<a name="GUINT16-SWAP-BE-PDP.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -1891,8 +1891,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value between little-endian and big-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.55.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-SWAP-LE-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1906,7 +1906,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.55.6"></a><h4>Returns</h4>
+<a name="GUINT16-SWAP-LE-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -1919,8 +1919,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint16" title="guint16"><span class="type">guint16</span></a> value between little-endian and pdp-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.56.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT16-SWAP-LE-PDP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1934,7 +1934,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.56.6"></a><h4>Returns</h4>
+<a name="GUINT16-SWAP-LE-PDP.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -1946,8 +1946,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value between big-endian and pdp-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.57.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-SWAP-BE-PDP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1961,7 +1961,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.57.6"></a><h4>Returns</h4>
+<a name="GUINT32-SWAP-BE-PDP.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -1974,8 +1974,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value between little-endian and big-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.58.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-SWAP-LE-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -1989,7 +1989,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.58.6"></a><h4>Returns</h4>
+<a name="GUINT32-SWAP-LE-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -2001,8 +2001,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint32" title="guint32"><span class="type">guint32</span></a> value between little-endian and pdp-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.59.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT32-SWAP-LE-PDP.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2016,7 +2016,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.59.6"></a><h4>Returns</h4>
+<a name="GUINT32-SWAP-LE-PDP.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -2029,8 +2029,8 @@ converted to the opposite byte order</p>
 <p>Converts a <a class="link" href="glib-Basic-Types.html#guint64" title="guint64"><span class="type">guint64</span></a> value between little-endian and big-endian byte order.
 The conversion is symmetric so it can be used both ways.</p>
 <div class="refsect3">
-<a name="id-1.3.6.7.60.5"></a><h4>Parameters</h4>
-<div class="informaltable"><table width="100%" border="0">
+<a name="GUINT64-SWAP-LE-BE.parameters"></a><h4>Parameters</h4>
+<div class="informaltable"><table class="informaltable" width="100%" border="0">
 <colgroup>
 <col width="150px" class="parameters_name">
 <col class="parameters_description">
@@ -2044,7 +2044,7 @@ The conversion is symmetric so it can be used both ways.</p>
 </table></div>
 </div>
 <div class="refsect3">
-<a name="id-1.3.6.7.60.6"></a><h4>Returns</h4>
+<a name="GUINT64-SWAP-LE-BE.returns"></a><h4>Returns</h4>
 <p> <em class="parameter"><code>val</code></em>
 converted to the opposite byte order</p>
 </div>
@@ -2087,6 +2087,6 @@ See <a class="link" href="glib-Byte-Order-Macros.html#G-BYTE-ORDER:CAPS" title="
 </div>
 </div>
 <div class="footer">
-<hr>Generated by GTK-Doc V1.23</div>
+<hr>Generated by GTK-Doc V1.25.1</div>
 </body>
 </html>
