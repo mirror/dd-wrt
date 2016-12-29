@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.7 Kernel Configuration
+# Linux/mips 4.4.39 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1406,6 +1406,7 @@ CONFIG_INOTIFY_USER=y
 #
 # CONFIG_MSDOS_FS is not set
 # CONFIG_VFAT_FS is not set
+ 
 # CONFIG_NTFS_FS is not set
 
 #

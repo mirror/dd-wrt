@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.7 Kernel Configuration
+# Linux/mips 4.4.39 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -941,6 +941,7 @@ CONFIG_MTD_FLASH_8MB=y
  
  
  
+ 
 # CONFIG_WZRG450NH is not set
 CONFIG_MTD_AR7240_SPI_FLASH=y
 # CONFIG_MTD_NAND is not set
@@ -1592,6 +1593,7 @@ CONFIG_INOTIFY_USER=y
 #
 # CONFIG_MSDOS_FS is not set
 # CONFIG_VFAT_FS is not set
+ 
 # CONFIG_NTFS_FS is not set
 
 #
