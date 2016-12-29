@@ -124,10 +124,6 @@ $(IMAGE_NAME): tool-checks $(IMAGE_STAGING_DIR)/$(PKG_NAME)
 	./check_test.sh $(README_FILE) $(COPYING_FILE) $(3RD_P_LIC_FILE) $(LICENSES_FILE)
 
 tool-checks: have-$(CC) have-jhbuild have-gtk-mac-bundler
-	# Check that we are not running under JHBUILD.
-	test -z "$(UNDER_JHBUILD)"
-	# Check that there's a graphical login for rearranging the .dmg
-	echo 'tell application "Finder" to say "Yes"' | osascript
 
 have-%:
 	which $*
