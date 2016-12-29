@@ -1679,6 +1679,34 @@ static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream,
 	unlink("/tmp/cfe.bin");
 }
 #endif
+
+#ifdef HAVE_PRIVOXY
+static void do_wpad(struct mime_handler *handler, char *url, webs_t stream, char *query)
+{
+	FILE *fp;
+	
+	fp = fopen("/tmp/wpad.dat", "wb");
+	
+	if(fp !=NULL){
+		fprintf(fp,
+		"function FindProxyForURL(url, host) {\n"
+		"var proxy = \"PROXY %s:8118; DIRECT\";\n"
+		"var direct = \"DIRECT\";\n"
+		"if(isPlainHostName(host)) return direct;\n"
+		"if (\n"
+		"url.substring(0, 4) == \"ftp:\" ||\n"
+		"url.substring(0, 6) == \"rsync:\"\n"
+		")\n"
+		"return direct;\n"
+		"return proxy;\n"
+		"}", nvram_safe_get("lan_ipaddr"));
+		fclose(fp);
+	}
+	
+	do_file_attach(handler, "/tmp/wpad.dat", stream, NULL, "wpad.dat");
+}
+#endif
+
 #ifdef HAVE_ROUTERSTYLE
 static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
@@ -2485,6 +2513,10 @@ struct mime_handler mime_handlers[] = {
 	{"**.wma", "audio/x-ms-wma", NULL, NULL, do_file, NULL, 0},
 	{"**.wmv", "video/x-ms-wmv", NULL, NULL, do_file, NULL, 0},
 	{"**.flv", "video/x-flv", NULL, NULL, do_file, NULL, 0},
+
+#ifdef HAVE_PRIVOXY
+	{"wpad.dat", "application/x-ns-proxy-autoconfig", no_cache, NULL, do_wpad, NULL, 0},
+#endif
 #ifdef HAVE_ATH9K
 	{"spectral_scan.json", "application/json", no_cache, NULL, do_spectral_scan, do_auth, 1},
 #endif
