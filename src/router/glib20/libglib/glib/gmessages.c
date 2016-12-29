@@ -2017,6 +2017,28 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
 }
 
 #ifdef __linux__
+
+static __mkostemp(char *template, int len, int flags)
+{
+	size_t l = strlen(template);
+	if (l<6 || len>l-6 || memcmp(template+l-len-6, "XXXXXX", 6)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	flags -= flags & O_ACCMODE;
+	int fd, retries = 100;
+	do {
+		__randname(template+l-len-6);
+		if ((fd = open(template, flags | O_RDWR | O_CREAT | O_EXCL, 0600))>=0)
+			return fd;
+	} while (--retries && errno == EEXIST);
+
+	memcpy(template+l-len-6, "XXXXXX", 6);
+	return -1;
+}
+
+
 static int
 journal_sendv (struct iovec *iov,
                gsize         iovlen)
@@ -2061,7 +2083,7 @@ retry:
   /* Message was too large, so dump to temporary file
    * and pass an FD to the journal
    */
-  if ((buf_fd = mkostemp (path, O_CLOEXEC|O_RDWR)) < 0)
+  if ((buf_fd = __mkostemp (path, 0, O_CLOEXEC|O_RDWR)) < 0)
     return -1;
 
   if (unlink (path) < 0)
