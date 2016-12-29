@@ -1,5 +1,6 @@
 MAKENSIS="/cygdrive/c/Program Files/NSIS/makensis.exe"
 VCEXPRESS := $(shell reg query "HKEY_CLASSES_ROOT\\Applications\\devenv.exe\\shell\\edit\\command" | egrep -i '[A-Z]:\\' | cut -d\" -f2 | sed 's%\\%/%g' | tr -d '\n')
+SIGNTOOL := $(shell reg query "HKEY_LOCAL_MACHINE\\SOFTWARE\\Wow6432Node\\Microsoft\\Microsoft SDKs\\Windows\\v8.1" /v "InstallationFolder" | egrep InstallationFolder | cut -d ' ' -f13- | sed 's%\\%/%g' | tr -d '\n' | sed 's%$$%bin/x86/signtool.exe%')
 export NMAP_VERSION := $(shell grep '^\#[ \t]*define[ \t]\+NMAP_VERSION' ../nmap.h | sed -e 's/.*"\(.*\)".*/\1/' -e 'q')
 export NMAP_NUM_VERSION := $(shell grep '^\#[ \t]*define[ \t]\+NMAP_NUM_VERSION' ../nmap.h | sed -e 's/.*"\(.*\)".*/\1/' -e 'q')
 export NPCAP_VERSION := $(shell ls npcap-*.exe | sed -e 's/npcap-\([-r0-9.]*\)\.exe/\1/' -e 'q')
@@ -7,6 +8,10 @@ COMMA_VERSION=$(shell echo $(NMAP_NUM_VERSION) | tr '.' ',')
 LOGLOC=c:nmapbuild.log
 NSE_FILES = scripts/script.db scripts/*.nse
 NMAP_MSWIN32_AUX = ../../nmap-mswin32-aux
+SIGNTOOL_ARGS = sign /a /n "Insecure.Com LLC" /tr http://timestamp.digicert.com /td sha256 /fd sha256
+# escape quotes for NSIS
+# escape for right side of sed regex replace
+SIGNTOOL_SUBST = $(shell echo '"$(SIGNTOOL)" $(SIGNTOOL_ARGS)' | sed -e 's/"/$$\\"/g' -e 's/[\/&]/\\&/g' )
 
 winbuild: nmap.rc nsis/Nmap.nsi LICENSE
 # VCExpress.exe is devenv.com with the commercial Visual Studio suite instead of VC++ Express
@@ -41,17 +46,20 @@ winbuild: nmap.rc nsis/Nmap.nsi LICENSE
 # Install the ndiff batch file wrapper in the zip distribution.
 	cp ../ndiff/ndiff.py nmap-$(NMAP_VERSION)/ndiff.py
 	cp python-wrap.bat nmap-$(NMAP_VERSION)/ndiff.bat
+	"$(SIGNTOOL)" $(SIGNTOOL_ARGS) nmap-$(NMAP_VERSION)/nmap.exe nmap-$(NMAP_VERSION)/ncat.exe nmap-$(NMAP_VERSION)/nping.exe nmap-$(NMAP_VERSION)/nmap-update.exe
 	zip -r nmap-$(NMAP_VERSION)-win32.zip nmap-$(NMAP_VERSION)
 # Remove ndiff.py and ndiff.bat for the installer because it has ndiff.exe.
 	rm -f nmap-$(NMAP_VERSION)/ndiff.py nmap-$(NMAP_VERSION)/ndiff.bat
 	cd ../zenmap && install_scripts/windows/copy_and_compile.bat
 	cp -R ../zenmap/dist/* nmap-$(NMAP_VERSION)/
+	"$(SIGNTOOL)" $(SIGNTOOL_ARGS) nmap-$(NMAP_VERSION)/ndiff.exe nmap-$(NMAP_VERSION)/zenmap.exe
 	cp ../zenmap/README nmap-$(NMAP_VERSION)/ZENMAP_README
 	cp ../zenmap/COPYING_HIGWIDGETS nmap-$(NMAP_VERSION)
 	cp ../ndiff/README nmap-$(NMAP_VERSION)/NDIFF_README
 	cp nsis/AddToPath.nsh nsis/Nmap.nsi nsis/shortcuts.ini nsis/final.ini nmap-$(NMAP_VERSION)
 	$(MAKENSIS) nmap-$(NMAP_VERSION)/Nmap.nsi
 	mv nmap-$(NMAP_VERSION)/NmapInstaller.exe nmap-$(NMAP_VERSION)-setup.exe
+	"$(SIGNTOOL)" $(SIGNTOOL_ARGS) nmap-$(NMAP_VERSION)-setup.exe
 
 nmap.rc: nmap.rc.in ../nmap.h
 	sed -e '1i// Automatically generated from $<.' \
@@ -65,6 +73,7 @@ nsis/Nmap.nsi: nsis/Nmap.nsi.in ../nmap.h
 	     -e 's/@@VIPRODUCTVERSION@@/"$(NMAP_NUM_VERSION)"/' \
 	     -e 's/@@VERSION@@/"$(NMAP_VERSION)"/' \
 	     -e 's/@@NPCAP_VERSION@@/$(NPCAP_VERSION)/' \
+	     -e 's/@@SIGNTOOL@@/$(SIGNTOOL_SUBST)/' \
 	     "$<" > "$@"
 
 LICENSE: ../COPYING

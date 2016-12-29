@@ -1,5 +1,5 @@
 # Nmap nmap payload database -*- mode: fundamental; -*-
-# $Id: nmap-payloads 36305 2016-09-23 05:18:16Z dmiller $
+# $Id: nmap-payloads 36429 2016-11-09 19:06:26Z dmiller $
 #
 # These payloads are sent with every host discovery or port scan probe
 # by default. This database should only include payloads that are
@@ -37,6 +37,9 @@
 udp 7 "\x0D\x0A\x0D\x0A"
 # DNSStatusRequest
 udp 53 "\x00\x00\x10\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+# QUIC packet with unsupported version Q999
+# Also found on 443, but need to check whether DTLS or QUIC is more prevalent
+udp 80 "\r12345678Q999\x00"
 # RPCCheck
 udp 111
   "\x72\xFE\x1D\x13\x00\x00\x00\x00\x00\x00\x00\x02\x00\x01\x86\xA0"

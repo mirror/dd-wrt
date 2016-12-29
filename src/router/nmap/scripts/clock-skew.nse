@@ -88,13 +88,19 @@ end
 hostaction = function(host)
   local mean, stddev = formulas.mean_stddev(host.registry.datetime_skew)
   local median = formulas.median(host.registry.datetime_skew)
+  -- truncate to integers; we don't care about fractional seconds)
+  mean = math.modf(mean)
+  stddev = math.modf(stddev)
+  median = math.modf(median)
   record_stats(host, mean, stddev, median)
-  local out = {mean = mean, stddev = stddev, median = median}
-  return out, ("mean: %s, deviation: %s, median: %s"):format(
-    stdnse.format_time(mean),
-    stdnse.format_time(stddev),
-    stdnse.format_time(median)
-    )
+  if mean ~= 0 or stddev ~= 0 or nmap.verbosity() > 1 then
+    local out = {mean = mean, stddev = stddev, median = median}
+    return out, ("mean: %s, deviation: %s, median: %s"):format(
+      stdnse.format_time(mean),
+      stdnse.format_time(stddev),
+      stdnse.format_time(median)
+      )
+  end
 end
 
 local function sorted_keys(t)
@@ -155,7 +161,7 @@ postaction = function()
   local out = {}
   for mean, group in pairs(groups) do
     -- Collapse the biggest group
-    if #group > host_count // 2 then
+    if #groups > 1 and #group > host_count // 2 then
       out[stdnse.format_time(mean)] = "Majority of systems scanned"
     elseif #group > 1 then
       -- Only record groups of more than one system together

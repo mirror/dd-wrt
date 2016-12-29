@@ -9,7 +9,7 @@ export applicationName="${title}.mpkg"
 RES="True"
 NB_FILES=7
 
-hdiutil attach ${finalDMGName} || exit 1
+hdiutil attach ${finalDMGName}
 
 # Try to list files in the Volume, if we can't, its because its not ready yet
 # so we should sleep while its mounted before trying to check if everything is ok
