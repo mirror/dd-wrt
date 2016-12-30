@@ -43,6 +43,12 @@ glib20: libffi zlib util-linux util-linux-install
 	touch glib20/libiconv/*
 	touch glib20/gettext/*
 	touch glib20/libglib/*
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	$(MAKE) -C glib20/libiconv all
 	$(MAKE) -C glib20/gettext all
 	$(MAKE) -C glib20/libglib all
