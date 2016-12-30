@@ -190,7 +190,7 @@ ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
-	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 endif
 endif
 endif
