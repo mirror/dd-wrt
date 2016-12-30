@@ -35,14 +35,13 @@ glib20-configure: libffi zlib util-linux
 	LIBMOUNT_CFLAGS="-I$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/include" \
 	LIBMOUNT_LIBS="-L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib -lmount" \
 	glib_cv_stack_grows=no glib_cv_uscore=no ac_cv_func_mmap_fixed_mapped=yes ac_cv_func_posix_getpwuid_r=yes ac_cv_func_posix_getgrgid_r=yes
-	cd glib20/libglib && touch *
+	touch glib20/libiconv/*
+	touch glib20/gettext/*
+	touch glib20/libglib/*
 
 	$(MAKE) -C glib20/libglib clean all
 
 glib20: libffi zlib util-linux util-linux-install
-	touch glib20/libiconv/*
-	touch glib20/gettext/*
-	touch glib20/libglib/*
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
