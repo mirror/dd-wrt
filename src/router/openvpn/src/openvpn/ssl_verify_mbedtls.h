@@ -5,8 +5,8 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
- *  Copyright (C) 2010 Fox Crypto B.V. <openvpn@fox-it.com>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2010-2017 Fox Crypto B.V. <openvpn@fox-it.com>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -70,8 +70,8 @@ typedef mbedtls_x509_crt openvpn_x509_cert_t;
  *
  * @return The return value is 0 unless a fatal error occurred.
  */
-int verify_callback (void *session_obj, mbedtls_x509_crt *cert, int cert_depth,
-    uint32_t *flags);
+int verify_callback(void *session_obj, mbedtls_x509_crt *cert, int cert_depth,
+                    uint32_t *flags);
 
 /** @} name Function for authenticating a new connection from a remote OpenVPN peer */
 

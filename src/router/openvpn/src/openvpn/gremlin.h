@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -60,13 +60,15 @@
 
 struct packet_flood_parms
 {
-  int n_packets;
-  int packet_size;
+    int n_packets;
+    int packet_size;
 };
 
-bool ask_gremlin (int flags);
-void corrupt_gremlin (struct buffer* buf, int flags);
-struct packet_flood_parms get_packet_flood_parms (int level);
+bool ask_gremlin(int flags);
 
-#endif
-#endif
+void corrupt_gremlin(struct buffer *buf, int flags);
+
+struct packet_flood_parms get_packet_flood_parms(int level);
+
+#endif /* ifdef ENABLE_DEBUG */
+#endif /* ifndef GREMLIN_H */
