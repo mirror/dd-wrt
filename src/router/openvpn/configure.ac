@@ -4,7 +4,7 @@ dnl             session authentication and key exchange,
 dnl             packet encryption, packet authentication, and
 dnl             packet compression.
 dnl
-dnl  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+dnl  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
 dnl  Copyright (C) 2006-2012 Alon Bar-Lev <alon.barlev@gmail.com>
 dnl
 dnl  This program is free software; you can redistribute it and/or modify
@@ -266,8 +266,8 @@ AC_ARG_ENABLE(
 
 AC_ARG_ENABLE(
 	[async-push],
-	[AS_HELP_STRING([--enable-async-push], [enable async-push support @<:@default=no@:>@])],
-	[enable_async_push="yes"],
+	[AS_HELP_STRING([--enable-async-push], [enable async-push support for plugins providing deferred authentication @<:@default=no@:>@])],
+	,
 	[enable_async_push="no"]
 )
 
@@ -1014,14 +1014,37 @@ dnl
 AC_ARG_VAR([LZ4_CFLAGS], [C compiler flags for lz4])
 AC_ARG_VAR([LZ4_LIBS], [linker flags for lz4])
 if test "$enable_lz4" = "yes" && test "$enable_comp_stub" = "no"; then
+    AC_CHECKING([for LZ4 Library and Header files])
+    havelz4lib=1
 
-    AC_MSG_RESULT([Using LZ4 library in src/compat/compat-lz4.*])
-    AC_DEFINE([NEED_COMPAT_LZ4], [1], [use copy of LZ4 source in compat/])
-    LZ4_LIBS=""
+    # if LZ4_LIBS is set, we assume it will work, otherwise test
+    if test -z "${LZ4_LIBS}"; then
+	AC_CHECK_LIB(lz4, LZ4_compress,
+	    [ LZ4_LIBS="-llz4" ],
+	    [
+	        AC_MSG_RESULT([LZ4 library not found.])
+	        havelz4lib=0
+	    ])
+    fi
 
+    saved_CFLAGS="${CFLAGS}"
+    CFLAGS="${CFLAGS} ${LZ4_CFLAGS}"
+    AC_CHECK_HEADERS(lz4.h,
+       ,
+       [
+	   AC_MSG_RESULT([LZ4 headers not found.])
+	   havelz4lib=0
+       ])
+
+    if test $havelz4lib = 0 ; then
+	AC_MSG_RESULT([LZ4 library or header not found, using version in src/compat/compat-lz4.*])
+	AC_DEFINE([NEED_COMPAT_LZ4], [1], [use copy of LZ4 source in compat/])
+	LZ4_LIBS=""
+    fi
     OPTIONAL_LZ4_CFLAGS="${LZ4_CFLAGS}"
     OPTIONAL_LZ4_LIBS="${LZ4_LIBS}"
     AC_DEFINE(ENABLE_LZ4, 1, [Enable LZ4 compression library])
+    CFLAGS="${saved_CFLAGS}"
 fi
 
 
