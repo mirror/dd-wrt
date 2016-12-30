@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -67,16 +67,24 @@
  */
 #define STACK_N               64
 
-void perf_push (int type);
-void perf_pop (void);
-void perf_output_results (void);
+void perf_push(int type);
 
-#else
+void perf_pop(void);
 
-static inline void perf_push (int type) {}
-static inline void perf_pop (void) {}
-static inline void perf_output_results (void) {}
+void perf_output_results(void);
 
-#endif
+#else  /* ifdef ENABLE_PERFORMANCE_METRICS */
 
-#endif
+static inline void
+perf_push(int type) {
+}
+static inline void
+perf_pop(void) {
+}
+static inline void
+perf_output_results(void) {
+}
+
+#endif /* ifdef ENABLE_PERFORMANCE_METRICS */
+
+#endif /* ifndef PERF_H */
