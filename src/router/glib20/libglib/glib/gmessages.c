@@ -2017,9 +2017,25 @@ g_log_writer_format_fields (GLogLevelFlags   log_level,
 }
 
 #ifdef __linux__
+/* This assumes that a check for the
+   template size has already been made */
+static char *__randn(char *template)
+{
+	int i;
+	struct timespec ts;
+	unsigned long r;
+
+	clock_gettime(CLOCK_REALTIME, &ts);
+	r = ts.tv_nsec*65537 ^ (unsigned long)&ts / 16 + (unsigned long)template;
+	for (i=0; i<6; i++, r>>=5)
+		template[i] = 'A'+(r&15)+(r&16)*2;
+
+	return template;
+}
 
 static __mkostemp(char *template, int len, int flags)
 {
+	int fd, retries = 100;
 	size_t l = strlen(template);
 	if (l<6 || len>l-6 || memcmp(template+l-len-6, "XXXXXX", 6)) {
 		errno = EINVAL;
@@ -2027,9 +2043,8 @@ static __mkostemp(char *template, int len, int flags)
 	}
 
 	flags -= flags & O_ACCMODE;
-	int fd, retries = 100;
 	do {
-		__randname(template+l-len-6);
+		__randn(template+l-len-6);
 		if ((fd = open(template, flags | O_RDWR | O_CREAT | O_EXCL, 0600))>=0)
 			return fd;
 	} while (--retries && errno == EEXIST);
