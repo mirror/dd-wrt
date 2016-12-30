@@ -21,7 +21,7 @@
 #             packet encryption, packet authentication, and
 #             packet compression.
 #
-#  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+#  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
 #  Copyright (C) 2006-2012 Alon Bar-Lev <alon.barlev@gmail.com>
 #
 
@@ -392,8 +392,8 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 $(am__aclocal_m4_deps):
 
 openvpn-plugin.h: stamp-h2
-	@test -f $@ || rm -f stamp-h2
-	@test -f $@ || $(MAKE) $(AM_MAKEFLAGS) stamp-h2
+	@if test ! -f $@; then rm -f stamp-h2; else :; fi
+	@if test ! -f $@; then $(MAKE) $(AM_MAKEFLAGS) stamp-h2; else :; fi
 
 stamp-h2: $(srcdir)/openvpn-plugin.h.in $(top_builddir)/config.status
 	@rm -f stamp-h2

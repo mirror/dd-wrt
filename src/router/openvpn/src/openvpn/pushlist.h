@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -28,14 +28,14 @@
 /* parameters to be pushed to peer */
 
 struct push_entry {
-  struct push_entry *next;
-  bool enable;
-  const char *option;
+    struct push_entry *next;
+    bool enable;
+    const char *option;
 };
 
 struct push_list {
-  struct push_entry *head;
-  struct push_entry *tail;
+    struct push_entry *head;
+    struct push_entry *tail;
 };
 
 

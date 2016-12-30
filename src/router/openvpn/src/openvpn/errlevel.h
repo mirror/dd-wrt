@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -176,4 +176,4 @@
 
 /*#define D_THREAD_DEBUG       LOGLEV(4, 70, M_DEBUG)*/  /* show pthread debug information */
 
-#endif
+#endif /* ifndef ERRLEVEL_H */

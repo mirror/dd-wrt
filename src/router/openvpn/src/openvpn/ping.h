@@ -5,7 +5,7 @@
  *             packet encryption, packet authentication, and
  *             packet compression.
  *
- *  Copyright (C) 2002-2010 OpenVPN Technologies, Inc. <sales@openvpn.net>
+ *  Copyright (C) 2002-2017 OpenVPN Technologies, Inc. <sales@openvpn.net>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2
@@ -39,9 +39,9 @@ extern const uint8_t ping_string[];
 #define PING_STRING_SIZE 16
 
 static inline bool
-is_ping_msg (const struct buffer* buf)
+is_ping_msg(const struct buffer *buf)
 {
-  return buf_string_match (buf, ping_string, PING_STRING_SIZE);
+    return buf_string_match(buf, ping_string, PING_STRING_SIZE);
 }
 
 #endif
