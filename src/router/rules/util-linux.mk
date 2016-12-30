@@ -14,12 +14,9 @@ util-linux-clean:
 	make -C util-linux clean
 
 util-linux:
-	make -C util-linux clean
 	make -C util-linux
 
 util-linux-install:
-	make -C util-linux clean
-	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
