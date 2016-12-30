@@ -37,7 +37,6 @@ ifneq ($(CONFIG_ASTERISK),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
@@ -48,7 +47,8 @@ ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
-	rm -f $(INSTALLDIR)/util-linux/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
 endif
 endif
 endif
