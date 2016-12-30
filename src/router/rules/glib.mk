@@ -10,7 +10,6 @@ endif
 
 
 glib20-configure: libffi zlib util-linux
-	make -C util-linux clean
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
@@ -18,9 +17,6 @@ glib20-configure: libffi zlib util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
-	rm -f $(TOP)/util-linux/.libs/libuuid.a
-	rm -f $(TOP)/util-linux/.libs/libmount.la
-	rm -f $(TOP)/util-linux/.libs/libblkid.a
 
 	cd glib20/libiconv && ./configure --enable-shared --enable-static --host=$(ARCH)-linux CC="ccache $(CC)" CFLAGS="$(COPTS) -std=gnu89 $(MIPS16_OPT)  -D_GNU_SOURCE -fPIC -Drpl_malloc=malloc"
 	cd glib20/libiconv && touch *
