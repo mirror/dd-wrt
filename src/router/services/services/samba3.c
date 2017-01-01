@@ -85,7 +85,7 @@ void start_samba3(void)
 			}
 			cunext = cu->next;
 			free(cu);
-		}
+	
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp,
 			"[global]\n"
@@ -95,6 +95,10 @@ void start_samba3(void)
 			"syslog = 10\n"
 			"encrypt passwords = true\n"
 			"preferred master = yes\n"
+			"use sendfile = yes\n"
+			"aio read size = 2048\n"
+			"aio write size = 2048\n"
+			"large readwrite = yes\n"
 			"security = user\n"
 			"mangled names = no\n"
 			"max stat cache size = 64\n"
@@ -107,7 +111,7 @@ void start_samba3(void)
 			"passdb backend = smbpasswd\n"
 			"log file = /var/smbd.log\n"
 			"max log size = 1000\n"
-			"socket options = TCP_NODELAY IPTOS_LOWDELAY\n"
+			"socket options = TCP_NODELAY IPTOS_LOWDELAY SO_SNDBUF=262144 SO_RCVBUF=262144\n"
 			"read raw = yes\n"
 			"write raw = yes\n"
 			"oplocks = yes\n"
