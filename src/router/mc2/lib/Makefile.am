@@ -41,6 +41,7 @@ libmc_la_SOURCES = \
 	lock.c lock.h \
 	serialize.c serialize.h \
 	shell.c shell.h \
+	stat-size.h \
 	timefmt.c timefmt.h \
 	timer.c timer.h
 
@@ -73,4 +74,4 @@ else
     libmc_la_LIBADD += $(GLIB_LIBS)
 endif
 
-libmc_la_LIBADD += $(PCRE_LIBS) $(LIBICONV) $(INTLLIBS)
+libmc_la_LIBADD += $(PCRE_LIBS) $(LIBICONV) $(LIBINTL)

@@ -62,16 +62,13 @@ groupbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     case MSG_INIT:
         return MSG_HANDLED;
 
-    case MSG_FOCUS:
-        return MSG_NOT_HANDLED;
-
     case MSG_DRAW:
         {
             WDialog *h = w->owner;
 
             gboolean disabled;
 
-            disabled = (w->options & W_DISABLED) != 0;
+            disabled = widget_get_state (w, WST_DISABLED);
             tty_setcolor (disabled ? DISABLED_COLOR : h->color[DLG_COLOR_NORMAL]);
             tty_draw_box (w->y, w->x, w->lines, w->cols, TRUE);
 
@@ -106,9 +103,6 @@ groupbox_new (int y, int x, int height, int width, const char *title)
     g = g_new (WGroupbox, 1);
     w = WIDGET (g);
     widget_init (w, y, x, height, width, groupbox_callback, NULL);
-
-    widget_want_cursor (w, FALSE);
-    widget_want_hotkey (w, FALSE);
 
     g->title = NULL;
     groupbox_set_title (g, title);

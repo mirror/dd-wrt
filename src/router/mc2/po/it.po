@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Marco Ciampa <ciampix@libero.it>, 1999-2014
+# Marco Ciampa <ciampix@libero.it>, 1999-2016
 # Andreas Troschka <signupbox001@om.it.eu.org>, 2012.
 # Giuliano Natali <diaolin@diaolin.com>, 1998.
 # Slava Zanko <slavazanko@gmail.com>, 2011.
@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-01-08 21:48+0100\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 19:38+0200\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
 "it/)\n"
@@ -453,9 +453,6 @@ msgstr ""
 msgid "Cannot create pipe descriptor"
 msgstr "Impossibile creare il descrittore pipe"
 
-msgid "Cannot parse command for pipe"
-msgstr "Impossibile analizzare il comando per la pipe"
-
 msgid "Cannot create pipe streams"
 msgstr "Impossibile creare flussi pipe"
 
@@ -579,9 +576,9 @@ msgstr "Processo in background:"
 msgid "Error"
 msgstr "Errore"
 
-#, fuzzy, c-format
+#, c-format
 msgid "%s (%d)"
-msgstr "Tempo: %s (%s)"
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "&Annulla"
@@ -1470,7 +1467,7 @@ msgid "Save &mode..."
 msgstr "&Modalità salvataggio..."
 
 msgid "Learn &keys..."
-msgstr "Impara &tasti..."
+msgstr "&Impara tasti..."
 
 msgid "Syntax &highlighting..."
 msgstr "Sintassi &evidenziata..."
@@ -1776,10 +1773,10 @@ msgstr ""
 "%s"
 
 msgid "< Default >"
-msgstr "< predefinito >"
+msgstr "< Predefinito >"
 
 msgid "Skins"
-msgstr "Skin"
+msgstr "Temi"
 
 msgid "Other 8 bit"
 msgstr "Altre a 8 bit"
@@ -1866,7 +1863,7 @@ msgid "Configure options"
 msgstr "Configura opzioni"
 
 msgid "Skin:"
-msgstr "Skin:"
+msgstr "Tema:"
 
 msgid "Appearance"
 msgstr "Aspetto"
@@ -1915,6 +1912,9 @@ msgstr "Navigazione stile Lyn&x"
 
 msgid "Pa&ge scrolling"
 msgstr "Scorrimento pa&gine"
+
+msgid "Center &scrolling"
+msgstr "Centra &scorrimento"
 
 msgid "&Mouse page scrolling"
 msgstr "Scorrimento pagine &mouse"
@@ -2464,7 +2464,7 @@ msgstr ""
 "%s"
 
 msgid "Ski&p all"
-msgstr "Salta tutti"
+msgstr "Sa&lta tutti"
 
 msgid "&Retry"
 msgstr "&Riprova"
@@ -2629,7 +2629,7 @@ msgstr ""
 "Impossibile preallocare lo spazio per il file obiettivo \"%s\"\n"
 "%s"
 
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Cannot read source file \"%s\"\n"
 "%s"
@@ -3170,7 +3170,7 @@ msgid "Output lines:"
 msgstr "Righe d'uscita:"
 
 msgid "Layout"
-msgstr "Aspetto"
+msgstr "Disposizione"
 
 msgid "File listin&g"
 msgstr "&Elenco file"
@@ -3326,7 +3326,7 @@ msgid "&Configuration..."
 msgstr "&Configurazione..."
 
 msgid "&Layout..."
-msgstr "&Aspetto..."
+msgstr "&Disposizione..."
 
 msgid "&Panel options..."
 msgstr "Opzioni &pannello..."
@@ -4162,9 +4162,8 @@ msgstr "sftp: inserire password per %s "
 msgid "sftp: Password is empty."
 msgstr "sftp: la password è vuota."
 
-#, fuzzy
 msgid "sftp: Failure establishing SSH session"
-msgstr "sftp: fallito inizio sessione SSH: (%d)"
+msgstr "sftp: fallita avvio sessione SSH"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: nessun file handler dati per la lettura del file"
@@ -4417,5 +4416,5 @@ msgstr "Continuare dall'inizio?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Impossibile ricevere copia locale di /ftp://un.host/modificami.txt"
 
-#~ msgid "%d: %s"
-#~ msgstr "%d: %s"
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Impossibile analizzare il comando per la pipe"

@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Library General Public
    License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
    USA.  */
 
 #ifndef _WPRINTF_PARSE_H
@@ -23,15 +23,15 @@
 
 
 /* Flags */
-#define FLAG_GROUP	 1	/* ' flag */
-#define FLAG_LEFT	 2	/* - flag */
-#define FLAG_SHOWSIGN	 4	/* + flag */
-#define FLAG_SPACE	 8	/* space flag */
-#define FLAG_ALT	16	/* # flag */
-#define FLAG_ZERO	32
+#define FLAG_GROUP       1      /* ' flag */
+#define FLAG_LEFT        2      /* - flag */
+#define FLAG_SHOWSIGN    4      /* + flag */
+#define FLAG_SPACE       8      /* space flag */
+#define FLAG_ALT        16      /* # flag */
+#define FLAG_ZERO       32
 
 /* arg_index value indicating that no argument is consumed.  */
-#define ARG_NONE	(~(size_t)0)
+#define ARG_NONE        (~(size_t)0)
 
 /* A parsed directive.  */
 typedef struct

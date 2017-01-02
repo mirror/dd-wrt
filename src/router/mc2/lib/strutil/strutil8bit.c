@@ -231,7 +231,7 @@ str_8bit_length (const char *text)
 static int
 str_8bit_length2 (const char *text, int size)
 {
-    return (size >= 0) ? min (strlen (text), (gsize) size) : strlen (text);
+    return (size >= 0) ? MIN (strlen (text), (gsize) size) : strlen (text);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -277,7 +277,7 @@ str_8bit_vfs_convert_to (GIConv coder, const char *string, int size, GString * b
     if (coder == str_cnv_not_convert)
         g_string_append_len (buffer, string, size);
     else
-        result = str_nconvert (coder, (char *) string, size, buffer);
+        result = str_nconvert (coder, string, size, buffer);
 
     return result;
 }
@@ -441,7 +441,7 @@ str_8bit_term_trim (const char *text, int width)
 static int
 str_8bit_term_width2 (const char *text, size_t length)
 {
-    return (length != (size_t) (-1)) ? min (strlen (text), length) : strlen (text);
+    return (length != (size_t) (-1)) ? MIN (strlen (text), length) : strlen (text);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -659,7 +659,7 @@ str_8bit_compare (const char *t1, const char *t2)
 static int
 str_8bit_ncompare (const char *t1, const char *t2)
 {
-    return strncmp (t1, t2, min (strlen (t1), strlen (t2)));
+    return strncmp (t1, t2, MIN (strlen (t1), strlen (t2)));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -707,7 +707,7 @@ str_8bit_ncasecmp (const char *s1, const char *s2)
     g_return_val_if_fail (s1 != NULL, 0);
     g_return_val_if_fail (s2 != NULL, 0);
 
-    n = min (strlen (s1), strlen (s2));
+    n = MIN (strlen (s1), strlen (s2));
 
     /* code from GLib */
 

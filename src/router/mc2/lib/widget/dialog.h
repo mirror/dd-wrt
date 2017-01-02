@@ -14,7 +14,6 @@
 #include "lib/global.h"
 #include "lib/hook.h"           /* hook_t */
 #include "lib/keybind.h"        /* global_keymap_t */
-#include "lib/tty/mouse.h"      /* mouse_h */
 
 /*** typedefs(not structures) and defined constants **********************************************/
 
@@ -29,25 +28,6 @@
 #define B_USER          100
 
 /*** enums ***************************************************************************************/
-
-/* Flags for dlg_create */
-typedef enum
-{
-    DLG_NONE = 0,               /* No options */
-    DLG_CENTER = (1 << 0),      /* Center the dialog */
-    DLG_TRYUP = (1 << 1),       /* Try to move two lines up the dialog */
-    DLG_COMPACT = (1 << 2),     /* Suppress spaces around the frame */
-    DLG_WANT_TAB = (1 << 3)     /* Should the tab key be sent to the dialog? */
-} dlg_flags_t;
-
-/* Dialog state */
-typedef enum
-{
-    DLG_CONSTRUCT = 0,          /* Dialog has been constructed but not run yet */
-    DLG_ACTIVE = 1,             /* Dialog is visible and active */
-    DLG_SUSPENDED = 2,          /* Dialog is suspended */
-    DLG_CLOSED = 3              /* Dialog is closed */
-} dlg_state_t;
 
 /* Dialog color constants */
 typedef enum
@@ -81,8 +61,7 @@ struct WDialog
     Widget widget;
 
     /* Set by the user */
-    gboolean modal;             /* type of dialog: modal or not */
-    dlg_flags_t flags;          /* User flags */
+    gboolean compact;           /* Suppress spaces around the frame */
     const char *help_ctx;       /* Name of the help entry */
     const int *color;           /* Color set. Unused in viewer and editor */
     char *title;                /* Title of the dialog */
@@ -91,8 +70,6 @@ struct WDialog
     int ret_value;              /* Result of dlg_run() */
 
     /* Internal flags */
-    dlg_state_t state;
-    gboolean fullscreen;        /* Parents dialogs don't need refresh */
     gboolean winch_pending;     /* SIGWINCH signal has been got. Resize dialog after rise */
     int mouse_status;           /* For the autorepeat status of the mouse */
 
@@ -128,8 +105,9 @@ extern const global_keymap_t *dialog_map;
 
 /* Creates a dialog head  */
 WDialog *dlg_create (gboolean modal, int y1, int x1, int lines, int cols,
-                     const int *colors, widget_cb_fn callback, mouse_h mouse_handler,
-                     const char *help_ctx, const char *title, dlg_flags_t flags);
+                     widget_pos_flags_t pos_flags, gboolean compact,
+                     const int *colors, widget_cb_fn callback, widget_mouse_cb_fn mouse_callback,
+                     const char *help_ctx, const char *title);
 
 void dlg_set_default_colors (void);
 
@@ -143,7 +121,7 @@ void del_widget (void *w);
    according to dialog flags */
 void dlg_set_size (WDialog * h, int lines, int cols);
 /* this function allows to set dialog position */
-void dlg_set_position (WDialog * h, int y1, int x1, int y2, int x2);
+void dlg_set_position (WDialog * h, int y, int x, int lines, int cols);
 
 void dlg_init (WDialog * h);
 int dlg_run (WDialog * d);
@@ -169,12 +147,10 @@ void dlg_erase (WDialog * h);
 void dlg_stop (WDialog * h);
 
 /* Widget selection */
-void dlg_select_widget (void *w);
-void dlg_set_top_widget (void *w);
-void dlg_one_up (WDialog * h);
-void dlg_one_down (WDialog * h);
-gboolean dlg_focus (WDialog * h);
+void dlg_select_prev_widget (WDialog * h);
+void dlg_select_next_widget (WDialog * h);
 Widget *find_widget_type (const WDialog * h, widget_cb_fn callback);
+GList *dlg_find (const WDialog * h, const Widget * w);
 Widget *dlg_find_by_id (const WDialog * h, unsigned long id);
 void dlg_select_by_id (const WDialog * h, unsigned long id);
 
@@ -184,6 +160,12 @@ void do_refresh (void);
 /* Used in load_prompt() */
 void update_cursor (WDialog * h);
 
+void dlg_set_current_widget_next (WDialog * h);
+void dlg_set_current_widget_prev (WDialog * h);
+
+GList *dlg_get_widget_next_of (GList * w);
+GList *dlg_get_widget_prev_of (GList * w);
+
 /* --------------------------------------------------------------------------------------------- */
 /*** inline functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
@@ -192,6 +174,21 @@ static inline unsigned long
 dlg_get_current_widget_id (const WDialog * h)
 {
     return WIDGET (h->current->data)->id;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Select current widget in the Dialog.
+ *
+ * @param h WDialog object
+ */
+
+static inline void
+dlg_select_current_widget (WDialog * h)
+{
+    if (h->current != NULL)
+        widget_select (WIDGET (h->current->data));
 }
 
 /* --------------------------------------------------------------------------------------------- */

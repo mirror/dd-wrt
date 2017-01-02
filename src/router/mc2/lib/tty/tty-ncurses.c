@@ -80,7 +80,7 @@
 /*** file scope variables ************************************************************************/
 
 /* ncurses supports cursor positions only within window */
-/* We use our own cursor coordibates to support partially visible widgets */
+/* We use our own cursor coordinates to support partially visible widgets */
 static int mc_curs_row, mc_curs_col;
 
 /*** file scope functions ************************************************************************/
@@ -179,6 +179,7 @@ mc_tty_normalize_lines_char (const char *ch)
 void
 tty_init (gboolean mouse_enable, gboolean is_xterm)
 {
+    struct termios mode;
     initscr ();
 
 #ifdef HAVE_ESCDELAY
@@ -194,18 +195,19 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
     ESCDELAY = 200;
 #endif /* HAVE_ESCDELAY */
 
+    tcgetattr (STDIN_FILENO, &mode);
     /* use Ctrl-g to generate SIGINT */
-    cur_term->Nttyb.c_cc[VINTR] = CTRL ('g');   /* ^g */
+    mode.c_cc[VINTR] = CTRL ('g');      /* ^g */
     /* disable SIGQUIT to allow use Ctrl-\ key */
-    cur_term->Nttyb.c_cc[VQUIT] = NULL_VALUE;
-    tcsetattr (cur_term->Filedes, TCSANOW, &cur_term->Nttyb);
+    mode.c_cc[VQUIT] = NULL_VALUE;
+    tcsetattr (STDIN_FILENO, TCSANOW, &mode);
 
     tty_start_interrupt_key ();
 
     if (!mouse_enable)
         use_mouse_p = MOUSE_DISABLED;
-    tty_init_xterm_support (is_xterm);  /* do it before do_enter_ca_mode() call */
-    do_enter_ca_mode ();
+    tty_init_xterm_support (is_xterm);  /* do it before tty_enter_ca_mode() call */
+    tty_enter_ca_mode ();
     tty_raw_mode ();
     noecho ();
     keypad (stdscr, TRUE);
@@ -219,13 +221,35 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
 void
 tty_shutdown (void)
 {
-    disable_mouse ();
-    disable_bracketed_paste ();
     tty_reset_shell_mode ();
     tty_noraw_mode ();
     tty_keypad (FALSE);
     tty_reset_screen ();
-    do_exit_ca_mode ();
+    tty_exit_ca_mode ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_enter_ca_mode (void)
+{
+    if (mc_global.tty.xterm_flag && smcup != NULL)
+    {
+        fprintf (stdout, /* ESC_STR ")0" */ ESC_STR "7" ESC_STR "[?47h");
+        fflush (stdout);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_exit_ca_mode (void)
+{
+    if (mc_global.tty.xterm_flag && rmcup != NULL)
+    {
+        fprintf (stdout, ESC_STR "[?47l" ESC_STR "8" ESC_STR "[m");
+        fflush (stdout);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -607,7 +631,7 @@ tty_print_string (const char *s)
     s = str_term_form (s);
     len = str_term_width1 (s);
 
-    /* line is upper or below the screen or entire line is before or after scrren */
+    /* line is upper or below the screen or entire line is before or after screen */
     if (mc_curs_row < 0 || mc_curs_row >= LINES || mc_curs_col + len <= 0 || mc_curs_col >= COLS)
     {
         mc_curs_col += len;
@@ -649,7 +673,8 @@ char *
 tty_tgetstr (const char *cap)
 {
     char *unused = NULL;
-    return tgetstr ((char *) cap, &unused);
+
+    return tgetstr ((NCURSES_CONST char *) cap, &unused);
 }
 
 /* --------------------------------------------------------------------------------------------- */

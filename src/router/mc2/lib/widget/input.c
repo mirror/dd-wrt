@@ -41,7 +41,6 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"
-#include "lib/tty/mouse.h"
 #include "lib/tty/key.h"        /* XCTRL and ALT macros  */
 #include "lib/fileloc.h"
 #include "lib/skin.h"
@@ -92,7 +91,7 @@ get_history_length (const GList * history)
 {
     size_t len = 0;
 
-    for (; history != NULL; history = g_list_previous (history))
+    for (; history != NULL; history = (const GList *) g_list_previous (history))
         len++;
 
     return len;
@@ -104,7 +103,7 @@ static void
 draw_history_button (WInput * in)
 {
     char c;
-    gboolean disabled = (WIDGET (in)->options & W_DISABLED) != 0;
+    gboolean disabled;
 
     if (g_list_next (in->history.current) == NULL)
         c = '^';
@@ -114,6 +113,7 @@ draw_history_button (WInput * in)
         c = '|';
 
     widget_move (in, 0, WIDGET (in)->cols - HISTORY_BUTTON_WIDTH);
+    disabled = widget_get_state (WIDGET (in), WST_DISABLED);
     tty_setcolor (disabled ? DISABLED_COLOR : in->color[WINPUTC_HISTORY]);
 
 #ifdef LARGE_HISTORY_BUTTON
@@ -139,8 +139,8 @@ input_eval_marks (WInput * in, long *start_mark, long *end_mark)
 {
     if (in->mark >= 0)
     {
-        *start_mark = min (in->mark, in->point);
-        *end_mark = max (in->mark, in->point);
+        *start_mark = MIN (in->mark, in->point);
+        *end_mark = MAX (in->mark, in->point);
         return TRUE;
     }
 
@@ -153,8 +153,8 @@ input_eval_marks (WInput * in, long *start_mark, long *end_mark)
 static void
 delete_region (WInput * in, int x_first, int x_last)
 {
-    int first = min (x_first, x_last);
-    int last = max (x_first, x_last);
+    int first = MIN (x_first, x_last);
+    int last = MAX (x_first, x_last);
     size_t len;
 
     input_mark_cmd (in, FALSE);
@@ -224,7 +224,7 @@ input_history_strip_password (char *url)
         return g_strdup (url);
     *colon = '\0';
 
-    return g_strconcat (url, at, NULL);
+    return g_strconcat (url, at, (char *) NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -487,8 +487,8 @@ delete_char (WInput * in)
 static void
 copy_region (WInput * in, int x_first, int x_last)
 {
-    int first = min (x_first, x_last);
-    int last = max (x_first, x_last);
+    int first = MIN (x_first, x_last);
+    int last = MAX (x_first, x_last);
 
     if (last == first)
     {
@@ -768,7 +768,7 @@ input_execute_cmd (WInput * in, long command)
         input_mark_cmd (in, TRUE);
         break;
     case CK_Remove:
-        delete_region (in, in->point, max (in->mark, 0));
+        delete_region (in, in->point, MAX (in->mark, 0));
         break;
     case CK_DeleteToEnd:
         kill_line (in);
@@ -777,13 +777,13 @@ input_execute_cmd (WInput * in, long command)
         clear_line (in);
         break;
     case CK_Store:
-        copy_region (in, max (in->mark, 0), in->point);
+        copy_region (in, MAX (in->mark, 0), in->point);
         break;
     case CK_Cut:
         {
             long m;
 
-            m = max (in->mark, 0);
+            m = MAX (in->mark, 0);
             copy_region (in, m, in->point);
             delete_region (in, in->point, m);
         }
@@ -909,78 +909,63 @@ input_destroy (WInput * in)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/**
+ * Calculates the buffer index (aka "point") corresponding to some screen coordinate.
+ */
 static int
-input_event (Gpm_Event * event, void *data)
+input_screen_to_point (const WInput * in, int x)
 {
-    /* save point between GPM_DOWN and GPM_DRAG */
-    static int prev_point = 0;
+    x += in->term_first_shown;
 
-    WInput *in = INPUT (data);
-    Widget *w = WIDGET (data);
+    if (x < 0)
+        return 0;
 
-    if (!mouse_global_in_widget (event, w))
-        return MOU_UNHANDLED;
+    if (x < str_term_width1 (in->buffer))
+        return str_column_to_pos (in->buffer, x);
 
-    if ((event->type & GPM_DOWN) != 0)
-    {
-        in->first = FALSE;
-        input_mark_cmd (in, FALSE);
-    }
-
-    if ((event->type & (GPM_DOWN | GPM_DRAG)) != 0)
-    {
-        Gpm_Event local;
-
-        local = mouse_get_local (event, w);
-
-        dlg_select_widget (w);
-
-        if (local.x >= w->cols - HISTORY_BUTTON_WIDTH + 1 && should_show_history_button (in))
-            do_show_hist (in);
-        else
-        {
-            if (local.x + in->term_first_shown - 1 < str_term_width1 (in->buffer))
-                in->point = str_column_to_pos (in->buffer, local.x + in->term_first_shown - 1);
-            else
-                in->point = str_length (in->buffer);
-
-            /* save point for the possible following GPM_DRAG action */
-            if ((event->type & GPM_DOWN) != 0)
-                prev_point = in->point;
-        }
-    }
-
-    /* start point: set marker using point before first GPM_DRAG action */
-    if (in->mark < 0 && (event->type & GPM_DRAG) != 0)
-        in->mark = prev_point;
-
-    /* don't create highlight region of 0 length */
-    if (in->mark == in->point)
-        input_mark_cmd (in, FALSE);
-
-    if ((event->type & (GPM_DOWN | GPM_DRAG)) != 0)
-        input_update (in, TRUE);
-
-    return MOU_NORMAL;
+    return str_length (in->buffer);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 
-/**
- * Callback for applying new options to input widget.
- *
- * @param w       widget
- * @param options options set
- * @param enable  TRUE if specified options should be added, FALSE if options should be removed
- */
 static void
-input_set_options_callback (Widget * w, widget_options_t options, gboolean enable)
+input_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 {
+    /* save point between MSG_MOUSE_DOWN and MSG_MOUSE_DRAG */
+    static int prev_point = 0;
     WInput *in = INPUT (w);
 
-    widget_default_set_options_callback (w, options, enable);
-    if (in->label != NULL)
-        widget_set_options (WIDGET (in->label), options, enable);
+    switch (msg)
+    {
+    case MSG_MOUSE_DOWN:
+        widget_select (w);
+        in->first = FALSE;
+
+        if (event->x >= w->cols - HISTORY_BUTTON_WIDTH && should_show_history_button (in))
+            do_show_hist (in);
+        else
+        {
+            input_mark_cmd (in, FALSE);
+            input_set_point (in, input_screen_to_point (in, event->x));
+            /* save point for the possible following MSG_MOUSE_DRAG action */
+            prev_point = in->point;
+        }
+        break;
+
+    case MSG_MOUSE_DRAG:
+        /* start point: set marker using point before first MSG_MOUSE_DRAG action */
+        if (in->mark < 0)
+            in->mark = prev_point;
+
+        input_set_point (in, input_screen_to_point (in, event->x));
+        break;
+
+    default:
+        /* don't create highlight region of 0 length */
+        if (in->mark == in->point)
+            input_mark_cmd (in, FALSE);
+        break;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1006,9 +991,8 @@ input_new (int y, int x, const int *colors, int width, const char *def_text,
 
     in = g_new (WInput, 1);
     w = WIDGET (in);
-    widget_init (w, y, x, 1, width, input_callback, input_event);
-    w->options |= W_IS_INPUT;
-    w->set_options = input_set_options_callback;
+    widget_init (w, y, x, 1, width, input_callback, input_mouse_callback);
+    w->options |= WOP_SELECTABLE | WOP_IS_INPUT | WOP_WANT_CURSOR;
 
     in->color = colors;
     in->first = TRUE;
@@ -1062,6 +1046,8 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         mc_event_add (w->owner->event_group, MCEVENT_HISTORY_LOAD, input_load_history, w, NULL);
         /* subscribe to "history_save" event */
         mc_event_add (w->owner->event_group, MCEVENT_HISTORY_SAVE, input_save_history, w, NULL);
+        if (in->label != NULL)
+            widget_set_state (WIDGET (in->label), WST_DISABLED, widget_get_state (w, WST_DISABLED));
         return MSG_HANDLED;
 
     case MSG_KEY:
@@ -1092,11 +1078,14 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     case MSG_ACTION:
         return input_execute_cmd (in, parm);
 
-    case MSG_RESIZE:
-    case MSG_FOCUS:
-    case MSG_UNFOCUS:
     case MSG_DRAW:
         input_update (in, FALSE);
+        return MSG_HANDLED;
+
+    case MSG_ENABLE:
+    case MSG_DISABLE:
+        if (in->label != NULL)
+            widget_set_state (WIDGET (in->label), WST_DISABLED, msg == MSG_DISABLE);
         return MSG_HANDLED;
 
     case MSG_CURSOR:
@@ -1205,13 +1194,21 @@ input_assign_text (WInput * in, const char *text)
     in->charpoint = 0;
 
     text_len = strlen (text);
-    buffer_len = 1 + max ((size_t) w->cols, text_len);
+    buffer_len = 1 + MAX ((size_t) w->cols, text_len);
     in->current_max_size = buffer_len;
     if (buffer_len > (size_t) w->cols)
         in->buffer = g_realloc (in->buffer, buffer_len);
     memmove (in->buffer, text, text_len + 1);
     in->point = str_length (in->buffer);
     input_update (in, TRUE);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+input_is_empty (const WInput * in)
+{
+    return (in == NULL || in->buffer == NULL || in->buffer[0] == '\0');
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1237,7 +1234,7 @@ input_set_point (WInput * in, int pos)
     int max_pos;
 
     max_pos = str_length (in->buffer);
-    pos = min (pos, max_pos);
+    pos = MIN (pos, max_pos);
     if (pos != in->point)
         input_free_completions (in);
     in->point = pos;
@@ -1260,7 +1257,7 @@ input_update (WInput * in, gboolean clear_first)
         return;
 
     /* don't draw widget not put into dialog */
-    if (w->owner == NULL || w->owner->state != DLG_ACTIVE)
+    if (w->owner == NULL || !widget_get_state (WIDGET (w->owner), WST_ACTIVE))
         return;
 
     if (should_show_history_button (in))
@@ -1269,7 +1266,7 @@ input_update (WInput * in, gboolean clear_first)
     buf_len = str_length (in->buffer);
 
     /* Adjust the mark */
-    in->mark = min (in->mark, buf_len);
+    in->mark = MIN (in->mark, buf_len);
 
     pw = str_term_width2 (in->buffer, in->point);
 
@@ -1284,7 +1281,7 @@ input_update (WInput * in, gboolean clear_first)
     if (has_history != 0)
         draw_history_button (in);
 
-    if ((w->options & W_DISABLED) != 0)
+    if (widget_get_state (w, WST_DISABLED))
         tty_setcolor (DISABLED_COLOR);
     else if (in->first)
         tty_setcolor (in->color[WINPUTC_UNCHANGED]);
@@ -1322,7 +1319,7 @@ input_update (WInput * in, gboolean clear_first)
                     widget_move (in, 0, m1 - in->term_first_shown);
                     buf_width = str_term_width2 (in->buffer, m1);
                     sel_width =
-                        min (m2 - m1, (w->cols - has_history) - (buf_width - in->term_first_shown));
+                        MIN (m2 - m1, (w->cols - has_history) - (buf_width - in->term_first_shown));
                     tty_print_string (str_term_substring (in->buffer, m1, sel_width));
                 }
             }

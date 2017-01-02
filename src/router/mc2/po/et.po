@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-30 12:14+0000\n"
+"Last-Translator: Kristjan Räts <kristjanrats@gmail.com>\n"
 "Language-Team: Estonian (http://www.transifex.com/mc/mc/language/et/)\n"
 "Language: et\n"
 "MIME-Version: 1.0\n"
@@ -33,7 +33,7 @@ msgid "Event system already initialized"
 msgstr "Sündmuste süsteem on juba lähtestatud"
 
 msgid "Failed to initialize event system"
-msgstr "Sündmuste süsteemi lähtestamine ebaõnnestus"
+msgstr "Sündmuste süsteemi lähtestamine nurjus"
 
 msgid "Event system not initialized"
 msgstr "Sündmuste süsteem ei ole lähtestatud"
@@ -43,7 +43,7 @@ msgstr "Kontrolli sisendandmeid! Mõned parameetrid on NULLid!"
 
 #, c-format
 msgid "Unable to create group '%s' for events!"
-msgstr "Grupi \"%s\" loomine sündmustele ebaõnnestus!"
+msgstr "Nurjus grupi \"%s\" loomine sündmustele!"
 
 #, c-format
 msgid "Unable to create event '%s'!"
@@ -96,7 +96,7 @@ msgid ""
 "Your old settings were migrated from %s\n"
 "to %s\n"
 msgstr ""
-"Su vanad seaded kanti failist %s\n"
+"Su vanad seaded toodi failist %s\n"
 "üle faili %s\n"
 
 msgid "Search string not found"
@@ -132,7 +132,7 @@ msgid ""
 "Unable to load '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
-"Naha '%s' laadimine ebaõnnestus.\n"
+"Naha '%s' laadimine nurjus.\n"
 "Laeti vaikimisi nahk"
 
 #, c-format
@@ -140,7 +140,7 @@ msgid ""
 "Unable to parse '%s' skin.\n"
 "Default skin has been loaded"
 msgstr ""
-"Naha '%s' parsimine ebaõnnestus.\n"
+"Naha '%s' parsimine nurjus.\n"
 "Laeti vaikimisi nahk"
 
 #, c-format
@@ -226,79 +226,79 @@ msgid "Backspace"
 msgstr "Tagasisamm"
 
 msgid "Up arrow"
-msgstr "Nool üles"
+msgstr "Klahv nool üles"
 
 msgid "Down arrow"
-msgstr "Nool alla"
+msgstr "Klahv nool alla"
 
 msgid "Left arrow"
-msgstr "Nool vasakule"
+msgstr "Klahv nool vasakule"
 
 msgid "Right arrow"
-msgstr "Nool paremale"
+msgstr "Klahv nool paremale"
 
 msgid "Insert"
-msgstr "Lisamine"
+msgstr "Klahv Insert"
 
 msgid "Delete"
-msgstr "Kustuta"
+msgstr "Klahv Delete"
 
 msgid "Home"
-msgstr "Algus"
+msgstr "Klahv Home"
 
 msgid "End key"
 msgstr "Klahv End"
 
 msgid "Page Up"
-msgstr "Lk üles"
+msgstr "Klahv Page Up"
 
 msgid "Page Down"
-msgstr "Lk alla"
+msgstr "Klahv Page Down"
 
 msgid "/ on keypad"
-msgstr "/ numbristikul"
+msgstr "Numbristiku /"
 
 msgid "* on keypad"
-msgstr "numbristiku *"
+msgstr "Numbristiku *"
 
 msgid "- on keypad"
-msgstr "numbristiku -"
+msgstr "Numbristiku -"
 
 msgid "+ on keypad"
-msgstr "numbristiku +"
+msgstr "Numbristiku +"
 
 msgid "Left arrow keypad"
-msgstr "numbristiku nool vasakule"
+msgstr "Numbristiku nool vasakule"
 
 msgid "Right arrow keypad"
-msgstr "numbristiku nool paremale"
+msgstr "Numbristiku nool paremale"
 
 msgid "Up arrow keypad"
-msgstr "numbristiku nool ülesse"
+msgstr "Numbristiku nool üles"
 
 msgid "Down arrow keypad"
-msgstr "numbristiku nool alla"
+msgstr "Numbristiku nool alla"
 
 msgid "Home on keypad"
-msgstr "numbristiku Home"
+msgstr "Numbristiku Home"
 
 msgid "End on keypad"
-msgstr "numbristiku End"
+msgstr "Numbristiku End"
 
 msgid "Page Down keypad"
-msgstr "numbristiku PgDn"
+msgstr "Numbristiku PgDn"
 
 msgid "Page Up keypad"
-msgstr "numbristiku PgUp"
+msgstr "Numbristiku PgUp"
 
 msgid "Insert on keypad"
-msgstr "numbristiku Ins"
+msgstr "Numbristiku Ins"
 
 msgid "Delete on keypad"
-msgstr "numbristiku Del"
+msgstr "Numbristiku Del"
 
 msgid "Enter on keypad"
-msgstr "numbristiku Enter"
+msgstr "Numbristiku Enter"
 
 msgid "Function key 21"
 msgstr "Klahv F21"
@@ -431,7 +431,7 @@ msgid "Ctrl"
 msgstr "Klahv Ctrl"
 
 msgid "Alt"
-msgstr "AltKlahv Alt"
+msgstr "Klahv Alt"
 
 msgid "Shift"
 msgstr "Klahv Shift"
@@ -449,9 +449,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Nurjus torupideme loomine"
-
-msgid "Cannot parse command for pipe"
-msgstr "Nurjus toru käsu parsimine"
 
 msgid "Cannot create pipe streams"
 msgstr "Nurjus toru voogude loomine"
@@ -476,10 +473,10 @@ msgid "Warning"
 msgstr "Hoiatus"
 
 msgid "Pipe failed"
-msgstr "Funktsioon pipe ebaõnnestus"
+msgstr "Funktsioon pipe nurjus"
 
 msgid "Dup failed"
-msgstr "Funktsioon dup ebaõnnestus"
+msgstr "Funktsioon dup nurjus"
 
 msgid "Error dup'ing old error pipe"
 msgstr "Tõrge vana veatoru paljundamisel"
@@ -494,7 +491,7 @@ msgstr "%s: %s: %s %3d%% (%lld) baiti edastatud"
 
 #, c-format
 msgid "%s: %s: %s %lld bytes transferred"
-msgstr ""
+msgstr "%s: %s: %s %lld baiti teisaldatud"
 
 msgid "Starting linear transfer..."
 msgstr "Alustatakse lineaarset saatmist..."
@@ -578,7 +575,7 @@ msgstr "Viga"
 
 #, c-format
 msgid "%s (%d)"
-msgstr ""
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "&Katkesta"
@@ -767,7 +764,7 @@ msgid "Background protocol error"
 msgstr "Tausta protokolli viga"
 
 msgid "Reading failed"
-msgstr "Lugemine ebaõnnestus"
+msgstr "Lugemine nurjus"
 
 msgid "Background process error"
 msgstr "Taustaprotsessi viga"
@@ -1040,7 +1037,7 @@ msgid "Save As"
 msgstr "Salvesta kui"
 
 msgid "Block is large, you may not be able to undo this action"
-msgstr "Plokk on suur, selle muudatuse tagasi võtmine võib ebaõnnestuda."
+msgstr "Plokk on suur, selle muudatuse tagasi võtmine võib nurjuda."
 
 msgid "Collect completions"
 msgstr "Koonda lõpetamised"
@@ -1888,7 +1885,7 @@ msgid "Show &hidden files"
 msgstr "Kuva &peidetud failid"
 
 msgid "&Fast dir reload"
-msgstr "&Kiire kataloogide taaslaadimine"
+msgstr "&Kataloogide kiire värsendus"
 
 msgid "Ma&rk moves down"
 msgstr "Mä&rkimine liigutab alla"
@@ -1900,7 +1897,7 @@ msgid "Simple s&wap"
 msgstr "&Lihtne vahetus"
 
 msgid "A&uto save panels setup"
-msgstr "Paneelide seadete a&utomaatsalvestus"
+msgstr "Paneeliseadete a&utomaatsalvestus"
 
 msgid "Navigation"
 msgstr "Navigeerimine"
@@ -1910,6 +1907,9 @@ msgstr "L&ynxilik liikumine"
 
 msgid "Pa&ge scrolling"
 msgstr "&Lehekülje kerimine"
+
+msgid "Center &scrolling"
+msgstr "Tsentreeri &kerimine"
 
 msgid "&Mouse page scrolling"
 msgstr "&Hiirega lehekülje kerimine"
@@ -1940,7 +1940,7 @@ msgid ""
 msgstr ""
 "Kiirlaadimine ei pruugi kajastada kataloogi täpset sisu.\n"
 "Sellisel juhul pead kataloogi sisu käsitsi uuendama.\n"
-"Lisainfor leiad manuaalist."
+"Lisainfot leiad manuaalist."
 
 msgid "&Full file list"
 msgstr "&Täielik failide loend"
@@ -2290,7 +2290,7 @@ msgstr "Muuda nimeviita"
 
 #, c-format
 msgid "edit symlink, unable to remove %s: %s"
-msgstr "nimeviida muutmine: %s eemaldamine ebaõnnestus: %s"
+msgstr "nimeviida muutmine: %s eemaldamine nurjus: %s"
 
 #, c-format
 msgid "edit symlink: %s"
@@ -2330,7 +2330,7 @@ msgstr "Seaded salvestati faili %s"
 
 #, c-format
 msgid "Unable to save setup to %s"
-msgstr "Seadete salvestamine faili %s ebaõnnestus"
+msgstr "Nurjus seadete salvestamine faili %s"
 
 msgid "Cannot execute commands on non-local filesystems"
 msgstr "Käske ei saa käivitada kaugfailisüsteemidel"
@@ -2452,7 +2452,7 @@ msgid ""
 "Cannot create target symlink \"%s\"\n"
 "%s"
 msgstr ""
-"Siht nimeviida \"%s\" loomine nurjus\n"
+"Nimeviida \"%s\" loomine nurjus sihtkohas\n"
 "%s"
 
 msgid "Ski&p all"
@@ -2587,7 +2587,7 @@ msgstr ""
 "%s"
 
 msgid "Reget failed, about to overwrite file"
-msgstr "Kordushankimine ebaõnnestus, fail kirjutatakse üle"
+msgstr "Kordushankimine nurjus, fail kirjutatakse üle"
 
 #, c-format
 msgid ""
@@ -2626,6 +2626,8 @@ msgid ""
 "Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
+"Ei saa lugeda lähtefaili \"%s\"\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -2673,7 +2675,7 @@ msgid ""
 "Source \"%s\" is not a directory\n"
 "%s"
 msgstr ""
-"Lähe \"%s\" ei ole kataloog\n"
+"Lähtekoht \"%s\" ei ole kataloog\n"
 "%s"
 
 #, c-format
@@ -2744,7 +2746,7 @@ msgid "Cannot operate on \"..\"!"
 msgstr "Kataloogi \"..\" kasutamine on keelatud!"
 
 msgid "Sorry, I could not put the job in background"
-msgstr "Vabandust, töö saatmine taustale ebaõnnestus"
+msgstr "Vabandust, töö saatmine taustale nurjus"
 
 msgid "S&uspend"
 msgstr "Se&iska"
@@ -2784,7 +2786,7 @@ msgid "Existing: %s, size %s"
 msgstr "Olemasolev: %s, suurus %s"
 
 msgid "Overwrite this target?"
-msgstr "Kas kirjutada see siht üle?"
+msgstr "Kas kirjutada see sihtkoht üle?"
 
 msgid "A&ppend"
 msgstr "&Lisa"
@@ -2793,7 +2795,7 @@ msgid "&Reget"
 msgstr "&Uuesti"
 
 msgid "Overwrite all targets?"
-msgstr "Kas kirjutada kõik siht üle?"
+msgstr "Kas kirjutada kõik sihtkohad üle?"
 
 msgid "&Update"
 msgstr "&Uuenda"
@@ -2840,10 +2842,10 @@ msgid " Total: %s/%s "
 msgstr "Kokku: %s/%s"
 
 msgid "Source"
-msgstr "Lähe"
+msgstr "Lähtekoht"
 
 msgid "Target"
-msgstr "Siht"
+msgstr "Sihtkoht"
 
 msgid "Deleting"
 msgstr "Kustutatakse"
@@ -3127,13 +3129,13 @@ msgid "&Equal split"
 msgstr "&Võrdne poolitus"
 
 msgid "&Menubar visible"
-msgstr "&Menüüriba nähtav"
+msgstr "&Menüüriba nähtaval"
 
 msgid "Command &prompt"
 msgstr "Käsuvii&p"
 
 msgid "&Keybar visible"
-msgstr "&Klahviriba nähtav"
+msgstr "&Klahviriba nähtaval"
 
 msgid "H&intbar visible"
 msgstr "V&ihjed nähtaval"
@@ -3181,7 +3183,7 @@ msgid "&Filter..."
 msgstr "Filtreeri&mine..."
 
 msgid "&Encoding..."
-msgstr "Ko&deerimine..."
+msgstr "Ko&deering..."
 
 msgid "FT&P link..."
 msgstr "F&TP ühendus..."
@@ -3229,10 +3231,10 @@ msgid "Edit s&ymlink"
 msgstr "Muuda &nimeviita"
 
 msgid "Ch&own"
-msgstr "Muuda &omanik"
+msgstr "Vaheta &omanik"
 
 msgid "&Advanced chown"
-msgstr "Täpsem omani&ku muutmine"
+msgstr "Täpsem omani&ku vahetus"
 
 msgid "&Rename/Move"
 msgstr "Teisal&da/nimeta"
@@ -3241,7 +3243,7 @@ msgid "&Mkdir"
 msgstr "&Loo kataloog"
 
 msgid "&Quick cd"
-msgstr "K&iire kataloogi vahetus"
+msgstr "Kataloogi k&iirvahetus"
 
 msgid "Select &group"
 msgstr "Vali g&rupp"
@@ -3381,7 +3383,7 @@ msgid "sort|u"
 msgstr "sort|m"
 
 msgid "&Unsorted"
-msgstr "Sorteeri&mata"
+msgstr "Sorti&mata"
 
 #. TRANSLATORS: one single character to represent 'name' sort mode
 #. TRANSLATORS: no need to translate 'sort', it's just a context prefix
@@ -3541,7 +3543,7 @@ msgid "Cannot invoke command."
 msgstr "Käsu käivitamine nurjus."
 
 msgid "Pipe close failed"
-msgstr "Toru sulgemine ebaõnnestus"
+msgstr "Toru sulgemine nurjus"
 
 msgid "Cannot run external panelize in a non-local directory"
 msgstr "Väliskäsu paneelile saatmine töötab ainult kohalike kataloogidega"
@@ -3707,7 +3709,7 @@ msgstr "Oled sisestanud \"%s\""
 
 #. TRANSLATORS: This label appears near learned keys.  Keep it short.
 msgid "OK"
-msgstr "OK"
+msgstr "Olgu"
 
 msgid ""
 "It seems that all your keys already\n"
@@ -3740,7 +3742,7 @@ msgid ""
 "Failed to run:\n"
 "%s\n"
 msgstr ""
-"Käivitamine ebaõnnestus:\n"
+"Käivitamine nurjus:\n"
 "%s\n"
 
 msgid "Home directory path is not absolute"
@@ -3753,7 +3755,7 @@ msgid ""
 "%s\n"
 msgstr ""
 "\n"
-"Sulgemine ebaõnnestus:\n"
+"Sulgemine nurjus:\n"
 "%s\n"
 
 msgid "Choose codepage"
@@ -3967,14 +3969,14 @@ msgstr "%s: valmis."
 
 #, c-format
 msgid "%s: failure"
-msgstr "%s: ebaõnnestus"
+msgstr "%s: nurjumine"
 
 #, c-format
 msgid "fish: store %s: sending command..."
 msgstr "fish: salvesta %s: saadetakse käsku..."
 
 msgid "fish: Local read failed, sending zeros"
-msgstr "fish: kohalik lugemine ebaõnnestus, saadetakse nullid"
+msgstr "fish: kohalik lugemine nurjus, saadetakse nullid"
 
 msgid "fish: storing file"
 msgstr "fish: salvestatakse fail"
@@ -4035,7 +4037,7 @@ msgstr "ftpfs: kasutaja katkestas ühenduse"
 
 #, c-format
 msgid "ftpfs: connection to server failed: %s"
-msgstr "ftpfs: ühendus serveriga ebaõnnestus: %s"
+msgstr "ftpfs: ühendus serveriga nurjus: %s"
 
 #, c-format
 msgid "Waiting to retry... %d (Control-G to cancel)"
@@ -4046,7 +4048,7 @@ msgstr "ftpfs: vigane aadressi perekond"
 
 #, c-format
 msgid "ftpfs: could not create socket: %s"
-msgstr "ftpfs: sokli loomine ebaõnnestus: %s"
+msgstr "ftpfs: sokli loomine nurjus: %s"
 
 msgid "ftpfs: could not setup passive mode"
 msgstr "ftpfs: passiivse režiimi seadistamine nurjus"
@@ -4059,13 +4061,13 @@ msgid "ftpfs: abort error: %s"
 msgstr "ftpfs: katkestamise viga: %s"
 
 msgid "ftpfs: abort failed"
-msgstr "ftpfs: katkestamine ebaõnnestus"
+msgstr "ftpfs: katkestamine nurjus"
 
 msgid "ftpfs: CWD failed."
-msgstr "ftpfs: CWD ebaõnnestus"
+msgstr "ftpfs: CWD nurjus"
 
 msgid "ftpfs: couldn't resolve symlink"
-msgstr "ftpfs: nimeviida lahendamine ebaõnnestus"
+msgstr "ftpfs: nimeviida lahendamine nurjus"
 
 msgid "Resolving symlink..."
 msgstr "Lahendatakse nimeviita..."
@@ -4081,7 +4083,7 @@ msgid "(chdir first)"
 msgstr "(esmalt chdir)"
 
 msgid "ftpfs: failed; nowhere to fallback to"
-msgstr "ftpfs: ebaõnnestus; täiendavaid alternatiive ei ole"
+msgstr "ftpfs: nurjumine; täiendavaid alternatiive ei ole"
 
 msgid "ftpfs: storing file"
 msgstr "ftpfs: salvestatakse faili"
@@ -4153,7 +4155,7 @@ msgid "sftp: Password is empty."
 msgstr "sftp: parool on tühi."
 
 msgid "sftp: Failure establishing SSH session"
-msgstr ""
+msgstr "sftp: nurjus SSH ühenduse loomine"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: faili lugemiseks puuduvad faili käsitleja andmed"
@@ -4167,7 +4169,7 @@ msgstr "sftp: Loendamine lõpetatud."
 
 #, c-format
 msgid "reconnect to %s failed"
-msgstr "Ühenduse taastamine serveriga %s ebaõnnestus"
+msgstr "Ühenduse taastamine serveriga %s nurjus"
 
 msgid "Authentication failed"
 msgstr "Autentimine ebaõnnestus"
@@ -4341,7 +4343,7 @@ msgid "ButtonBar|Raw"
 msgstr "ButtonBar|Toores"
 
 msgid "ButtonBar|Parse"
-msgstr "ButtonBar|Parsi"
+msgstr "ButtonBar|Töötle"
 
 msgid "ButtonBar|Unform"
 msgstr "ButtonBar|Vormita"
@@ -4405,3 +4407,6 @@ msgstr "Kas jätkata algusest?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kohaliku koopia hankimine failist /ftp://some.host/editme.txt nurjus"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Nurjus toru käsu parsimine"

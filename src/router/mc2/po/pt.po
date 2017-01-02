@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 13:14+0000\n"
+"Last-Translator: Gilberto Jorge <gmj125@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/mc/mc/language/pt/)\n"
 "Language: pt\n"
 "MIME-Version: 1.0\n"
@@ -453,9 +453,6 @@ msgstr ""
 msgid "Cannot create pipe descriptor"
 msgstr "Não é possível criar o descriptor do pipe"
 
-msgid "Cannot parse command for pipe"
-msgstr "Não é possível interpretar o comando para o pipe"
-
 msgid "Cannot create pipe streams"
 msgstr "Não é possível criar streams de pipes"
 
@@ -581,7 +578,7 @@ msgstr "Erro"
 
 #, c-format
 msgid "%s (%d)"
-msgstr ""
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "&Abortar"
@@ -1919,6 +1916,9 @@ msgstr "Movimento tipo l&ynx"
 msgid "Pa&ge scrolling"
 msgstr "Deslocamento de pá&gina"
 
+msgid "Center &scrolling"
+msgstr "Centrar &scrolling"
+
 msgid "&Mouse page scrolling"
 msgstr "Desloca&mento de página com rato"
 
@@ -2637,6 +2637,8 @@ msgid ""
 "Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
+"Não é possível ler o ficheiro fonte \"%s\"\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4417,3 +4419,6 @@ msgstr "Continuar do início?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Não é possível obter uma cópia local de /ftp://some.host/editme.txt"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Não é possível interpretar o comando para o pipe"

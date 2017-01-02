@@ -78,7 +78,7 @@ char *execute_get_external_cmd_opts_from_config (const char *command,
 static void
 edition_post_exec (void)
 {
-    do_enter_ca_mode ();
+    tty_enter_ca_mode ();
 
     /* FIXME: Missing on slang endwin? */
     tty_reset_prog_mode ();
@@ -122,7 +122,7 @@ edition_pre_exec (void)
      * Do not move this before endwin: in some systems rmcup includes
      * a call to clear screen, so it will end up clearing the shell screen.
      */
-    do_exit_ca_mode ();
+    tty_exit_ca_mode ();
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -233,7 +233,8 @@ execute_get_opts_from_cfg (const char *command, const char *default_str)
     char *str_from_config;
 
     str_from_config =
-        mc_config_get_string_raw (mc_main_config, CONFIG_EXT_EDITOR_VIEWER_SECTION, command, NULL);
+        mc_config_get_string_raw (mc_global.main_config, CONFIG_EXT_EDITOR_VIEWER_SECTION, command,
+                                  NULL);
 
     if (str_from_config == NULL)
     {
@@ -467,7 +468,7 @@ toggle_panels (void)
     tty_noecho ();
     tty_keypad (FALSE);
     tty_reset_screen ();
-    do_exit_ca_mode ();
+    tty_exit_ca_mode ();
     tty_raw_mode ();
     if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_RESTORE);
@@ -497,7 +498,7 @@ toggle_panels (void)
     if (mc_global.tty.console_flag != '\0')
         handle_console (CONSOLE_SAVE);
 
-    do_enter_ca_mode ();
+    tty_enter_ca_mode ();
 
     tty_reset_prog_mode ();
     tty_keypad (TRUE);

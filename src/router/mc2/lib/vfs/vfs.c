@@ -79,8 +79,6 @@ vfs_class *current_vfs = NULL;
 
 #define VFS_FIRST_HANDLE 100
 
-#define ISSLASH(a) (a == '\0' || IS_PATH_SEP (a))
-
 /*** file scope type declarations ****************************************************************/
 
 struct vfs_openfile
@@ -147,7 +145,7 @@ _vfs_translate_path (const char *path, int size, GIConv defcnv, GString * buffer
             slash = NULL;
 
         ms = (slash != NULL) ? slash - semi : (int) strlen (semi);
-        ms = min ((unsigned int) ms, sizeof (encoding) - 1);
+        ms = MIN ((unsigned int) ms, sizeof (encoding) - 1);
         /* limit encoding size (ms) to path size (size) */
         if (semi + ms > path + size)
             ms = path + size - semi;
@@ -203,6 +201,19 @@ vfs_get_openfile (int handle)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static gboolean
+vfs_test_current_dir (const vfs_path_t * vpath)
+{
+    struct stat my_stat, my_stat2;
+
+    return (mc_global.vfs.cd_symlinks && mc_stat (vpath, &my_stat) == 0
+            && mc_stat (vfs_get_raw_current_dir (), &my_stat2) == 0
+            && my_stat.st_ino == my_stat2.st_ino && my_stat.st_dev == my_stat2.st_dev);
+}
+
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 /** Free open file data for given file handle */
@@ -225,29 +236,22 @@ vfs_free_handle (int handle)
 
 
 /* --------------------------------------------------------------------------------------------- */
-/** Find private file data by file handle */
-
-void *
-vfs_class_data_find_by_handle (int handle)
-{
-    struct vfs_openfile *h;
-
-    h = vfs_get_openfile (handle);
-
-    return h == NULL ? NULL : h->fsinfo;
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /** Find VFS class by file handle */
 
 struct vfs_class *
-vfs_class_find_by_handle (int handle)
+vfs_class_find_by_handle (int handle, void **fsinfo)
 {
     struct vfs_openfile *h;
 
     h = vfs_get_openfile (handle);
 
-    return h == NULL ? NULL : h->vclass;
+    if (h == NULL)
+        return NULL;
+
+    if (fsinfo != NULL)
+        *fsinfo = h->fsinfo;
+
+    return h->vclass;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -315,24 +319,24 @@ vfs_register_class (struct vfs_class * vfs)
 char *
 vfs_strip_suffix_from_filename (const char *filename)
 {
-    char *semi, *p, *vfs_prefix;
+    char *semi, *p;
 
     if (filename == NULL)
         vfs_die ("vfs_strip_suffix_from_path got NULL: impossible");
 
     p = g_strdup (filename);
     semi = g_strrstr (p, VFS_PATH_URL_DELIMITER);
-    if (semi == NULL)
-        return p;
-
-    *semi = '\0';
-    vfs_prefix = strrchr (p, PATH_SEP);
-    if (vfs_prefix == NULL)
+    if (semi != NULL)
     {
-        *semi = *VFS_PATH_URL_DELIMITER;
-        return p;
+        char *vfs_prefix;
+
+        *semi = '\0';
+        vfs_prefix = strrchr (p, PATH_SEP);
+        if (vfs_prefix == NULL)
+            *semi = *VFS_PATH_URL_DELIMITER;
+        else
+            *vfs_prefix = '\0';
     }
-    *vfs_prefix = '\0';
 
     return p;
 }
@@ -561,12 +565,7 @@ vfs_setup_cwd (void)
 
         if (tmp_vpath != NULL)
         {
-            struct stat my_stat, my_stat2;
-
-            if (mc_global.vfs.cd_symlinks
-                && mc_stat (tmp_vpath, &my_stat) == 0
-                && mc_stat (vfs_get_raw_current_dir (), &my_stat2) == 0
-                && my_stat.st_ino == my_stat2.st_ino && my_stat.st_dev == my_stat2.st_dev)
+            if (vfs_test_current_dir (tmp_vpath))
                 vfs_set_raw_current_dir (tmp_vpath);
             else
                 vfs_path_free (tmp_vpath);
@@ -582,14 +581,11 @@ vfs_setup_cwd (void)
         g_free (current_dir);
 
         if (tmp_vpath != NULL)
-        {                       /* One of the directories in the path is not readable */
-            struct stat my_stat, my_stat2;
+        {
+            /* One of directories in the path is not readable */
 
             /* Check if it is O.K. to use the current_dir */
-            if (!(mc_global.vfs.cd_symlinks
-                  && mc_stat (tmp_vpath, &my_stat) == 0
-                  && mc_stat (vfs_get_raw_current_dir (), &my_stat2) == 0
-                  && my_stat.st_ino == my_stat2.st_ino && my_stat.st_dev == my_stat2.st_dev))
+            if (!vfs_test_current_dir (tmp_vpath))
                 vfs_set_raw_current_dir (tmp_vpath);
             else
                 vfs_path_free (tmp_vpath);
@@ -636,24 +632,20 @@ vfs_preallocate (int dest_vfs_fd, off_t src_fsize, off_t dest_fsize)
     return 0;
 
 #else /* HAVE_POSIX_FALLOCATE */
-    int *dest_fd;
+    void *dest_fd = NULL;
     struct vfs_class *dest_class;
 
     if (!mc_global.vfs.preallocate_space)
         return 0;
 
-    dest_class = vfs_class_find_by_handle (dest_vfs_fd);
-    if ((dest_class->flags & VFSF_LOCAL) == 0)
-        return 0;
-
-    dest_fd = (int *) vfs_class_data_find_by_handle (dest_vfs_fd);
-    if (dest_fd == NULL)
-        return 0;
-
     if (src_fsize == 0)
         return 0;
 
-    return posix_fallocate (*dest_fd, dest_fsize, src_fsize - dest_fsize);
+    dest_class = vfs_class_find_by_handle (dest_vfs_fd, &dest_fd);
+    if ((dest_class->flags & VFSF_LOCAL) == 0 || dest_fd == NULL)
+        return 0;
+
+    return posix_fallocate (*(int *) dest_fd, dest_fsize, src_fsize - dest_fsize);
 
 #endif /* HAVE_POSIX_FALLOCATE */
 }

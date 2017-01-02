@@ -3,13 +3,14 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
+# JinYeong Bak <dongdm@gmail.com>, 2016
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Korean (http://www.transifex.com/mc/mc/language/ko/)\n"
 "Language: ko\n"
@@ -55,6 +56,9 @@ msgid ""
 "User: %s\n"
 "Process ID: %d"
 msgstr ""
+"파일 \"%s\"는 이미 수정되었습니다.\n"
+"사용자: %s\n"
+"프로세스 아이디: %d"
 
 msgid "File locked"
 msgstr "파일 잠금"
@@ -436,9 +440,6 @@ msgstr ""
 "TERM 환경변수를 확인해 보세요.\n"
 
 msgid "Cannot create pipe descriptor"
-msgstr ""
-
-msgid "Cannot parse command for pipe"
 msgstr ""
 
 msgid "Cannot create pipe streams"
@@ -1827,6 +1828,9 @@ msgid "L&ynx-like motion"
 msgstr "Lynx같은 동작(&Y)"
 
 msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "Center &scrolling"
 msgstr ""
 
 msgid "&Mouse page scrolling"
@@ -3376,7 +3380,7 @@ msgid "Find *.orig after patching"
 msgstr "*.orig 파일이 있습니다"
 
 msgid "Find SUID and SGID programs"
-msgstr "SUID와 SGID 풀그림이 있어요"
+msgstr "SUID와 SGID 프로그램 찾기"
 
 #, c-format
 msgid ""
@@ -3928,7 +3932,7 @@ msgid "sftp: Unable to get current user name."
 msgstr ""
 
 msgid "sftp: Invalid host name."
-msgstr ""
+msgstr "sftp: 잘못된 호스트 이름"
 
 #, c-format
 msgid "sftp: %s"

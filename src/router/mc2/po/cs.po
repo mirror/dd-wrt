@@ -5,14 +5,15 @@
 # Translators:
 # Jiří Vírava <appukonrad@gmail.com>, 2015
 # Radek Valášek <valin@buchlovice.org>, 2014
+# Robin Kriebel <kriebel.robin@gmail.com>, 2016
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-06-21 07:03+0000\n"
+"Last-Translator: Robin Kriebel <kriebel.robin@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/mc/mc/language/cs/)\n"
 "Language: cs\n"
 "MIME-Version: 1.0\n"
@@ -75,7 +76,7 @@ msgid "Cannot create %s directory"
 msgstr "Není možné vytvořit adresář %s"
 
 msgid "FATAL: not a directory:"
-msgstr ""
+msgstr "FATAL: není sloužkou"
 
 #, c-format
 msgid "An error occurred while migrating user settings: %s"
@@ -113,7 +114,7 @@ msgid "Invalid token number %d"
 msgstr "Chybné číslo tokenu %d"
 
 msgid "Regular expression error"
-msgstr ""
+msgstr "Chyba regulárního výrazu"
 
 msgid "No&rmal"
 msgstr ""
@@ -223,7 +224,7 @@ msgid "BackTab/S-tab"
 msgstr ""
 
 msgid "Backspace"
-msgstr ""
+msgstr "Backspace"
 
 msgid "Up arrow"
 msgstr "Šipka nahoru"
@@ -449,9 +450,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Nelze vytvořit pipe deskriptor"
-
-msgid "Cannot parse command for pipe"
-msgstr "Nelze analyzovat příkaz za pipe"
 
 msgid "Cannot create pipe streams"
 msgstr ""
@@ -719,7 +717,7 @@ msgid "Terminal options"
 msgstr "Nastavení terminálu"
 
 msgid "Arguments parse error!"
-msgstr ""
+msgstr "Chyba parsovaní argumentů!"
 
 msgid "No arguments given to the viewer."
 msgstr "Prohlížeči nebyly zadány žádné parametry"
@@ -883,7 +881,7 @@ msgstr "Diff:"
 
 #, c-format
 msgid "\"%s\" is a directory"
-msgstr ""
+msgstr "\"%s\" je adresářem"
 
 #, c-format
 msgid ""
@@ -1731,7 +1729,7 @@ msgid "< Default >"
 msgstr ""
 
 msgid "Skins"
-msgstr ""
+msgstr "Vzhledy"
 
 msgid "Other 8 bit"
 msgstr "Ostatní 8 bitů"
@@ -1818,7 +1816,7 @@ msgid "Configure options"
 msgstr "Změna nastavení"
 
 msgid "Skin:"
-msgstr ""
+msgstr "Vzhled:"
 
 msgid "Appearance"
 msgstr "Vzhled"
@@ -1867,6 +1865,9 @@ msgstr "Pohyb jako v lyn&xu"
 
 msgid "Pa&ge scrolling"
 msgstr "Posun stránky"
+
+msgid "Center &scrolling"
+msgstr ""
 
 msgid "&Mouse page scrolling"
 msgstr "Posun stránky myší"
@@ -2077,7 +2078,7 @@ msgid "execute/searc&h by others"
 msgstr ""
 
 msgid "Name:"
-msgstr ""
+msgstr "Název:"
 
 msgid "Permissions (octal):"
 msgstr ""
@@ -3806,7 +3807,7 @@ msgid "VFS plugins and scripts:"
 msgstr ""
 
 msgid "User data"
-msgstr ""
+msgstr "Uživatelská data"
 
 msgid "Cache directory:"
 msgstr ""
@@ -4340,7 +4341,10 @@ msgid "Search done"
 msgstr "Hledání dokončeno"
 
 msgid "Continue from beginning?"
-msgstr ""
+msgstr "Pokračovat od začátku?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Nelze analyzovat příkaz za pipe"

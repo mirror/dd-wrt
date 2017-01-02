@@ -124,7 +124,7 @@ include properties.syntax
 file ..\*\\.(cs|CS)$ C\#\sProgram
 include cs.syntax
 
-file ..\*\\.(js|JS)$ JavaScript\sProgram
+file ..\*\\.(js|JS)$ JavaScript\sProgram ^#!.\*[\s/](node|nodejs)\\b
 include js.syntax
 
 file ..\*\\.(as|AS)$ ActionScript\sProgram
@@ -261,6 +261,12 @@ include lkr.syntax
 
 file .\*\\.pp$ Puppet\smanifest\sfile
 include puppet.syntax
+
+file .\*\\.(glsl|vert|frag|geom)$ GLSL\sProgram
+include glsl.syntax
+
+file .\*\\.(cu|cuh)$ CUDA\sProgram
+include cuda.syntax
 
 file .\* unknown
 include unknown.syntax
