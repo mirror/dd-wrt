@@ -3,15 +3,16 @@
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Translators:
-# Henry Jensen <henry@madsen-jensen.dk>, 2016
+# Henry Madsen Jensen <henry@madsen-jensen.dk>, 2016
+# Henry Madsen Jensen <henry@madsen-jensen.dk>, 2016
 # Joe Hansen <joedalton2@yahoo.dk>, 2014
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/mc/mc/language/da/)\n"
 "Language: da\n"
@@ -446,9 +447,6 @@ msgstr ""
 msgid "Cannot create pipe descriptor"
 msgstr "Kan ikke oprette datakanalbeskriver"
 
-msgid "Cannot parse command for pipe"
-msgstr "Kan ikke fortolke kommando for datakanal"
-
 msgid "Cannot create pipe streams"
 msgstr "Kan ikke oprette datakanalstrømme"
 
@@ -574,7 +572,7 @@ msgstr "Fejl"
 
 #, c-format
 msgid "%s (%d)"
-msgstr ""
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "&Afbryd"
@@ -1874,6 +1872,9 @@ msgstr "L&ynx-lignende navigation"
 msgid "Pa&ge scrolling"
 msgstr "&Siderulning"
 
+msgid "Center &scrolling"
+msgstr ""
+
 msgid "&Mouse page scrolling"
 msgstr "Siderulning med &mus"
 
@@ -2084,16 +2085,16 @@ msgid "execute/searc&h by others"
 msgstr ""
 
 msgid "Name:"
-msgstr ""
+msgstr "Navn:"
 
 msgid "Permissions (octal):"
 msgstr ""
 
 msgid "Owner name:"
-msgstr ""
+msgstr "Ejerens navn:"
 
 msgid "Group name:"
-msgstr ""
+msgstr "Gruppe navn:"
 
 msgid "&Marked all"
 msgstr "&Marker alle"
@@ -2190,7 +2191,7 @@ msgid "Filter command and arguments:"
 msgstr "Filterkommando og argumenter:"
 
 msgid "Edit file"
-msgstr ""
+msgstr "Rediger fil"
 
 msgid "Create a new Directory"
 msgstr "Opret en ny mappe"
@@ -2803,7 +2804,7 @@ msgid "Target"
 msgstr "Mål"
 
 msgid "Deleting"
-msgstr ""
+msgstr "Sletter"
 
 msgid "&Using shell patterns"
 msgstr "Br&uger skalmønstre"
@@ -3016,7 +3017,7 @@ msgstr "Ingen pladsinformation"
 
 #, c-format
 msgid "Free space: %s/%s (%d%%)"
-msgstr ""
+msgstr "Ledig plads: %s/%s (%d%%)"
 
 #, c-format
 msgid "Type:       %s"
@@ -3039,12 +3040,12 @@ msgstr ""
 
 #, c-format
 msgid "Modified:   %s"
-msgstr ""
+msgstr "Redigeret: %s"
 
 #. TRANSLATORS: Time of last status change as in stat(2) man.
 #, c-format
 msgid "Changed:    %s"
-msgstr ""
+msgstr "Ændret: %s"
 
 #, c-format
 msgid "Dev. type: major %lu, minor %lu"
@@ -3052,7 +3053,7 @@ msgstr "Enhedstype: Stor %lu, lille %lu"
 
 #, c-format
 msgid "Size:       %s"
-msgstr ""
+msgstr "Størrelse: %s"
 
 #, c-format
 msgid " (%ld block)"
@@ -3062,7 +3063,7 @@ msgstr[1] " (%ld blokke)"
 
 #, c-format
 msgid "Owner:      %s/%s"
-msgstr ""
+msgstr "Ejer: %s/%s"
 
 #, c-format
 msgid "Links:      %d"
@@ -4066,7 +4067,7 @@ msgid "sftp: Unable to get current user name."
 msgstr ""
 
 msgid "sftp: Invalid host name."
-msgstr ""
+msgstr "sftp: ugyldigt værtsnavn."
 
 #, c-format
 msgid "sftp: %s"
@@ -4346,3 +4347,6 @@ msgstr "Fortsæt fra begyndelsen?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Kan ikke fortolke kommando for datakanal"

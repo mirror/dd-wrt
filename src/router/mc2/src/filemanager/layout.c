@@ -228,7 +228,7 @@ update_split (const WDialog * h)
         check_options[0].widget->state = panels_layout.vertical_equal ? 1 : 0;
     widget_redraw (WIDGET (check_options[0].widget));
 
-    tty_setcolor (check_options[0].widget->state & C_BOOL ? DISABLED_COLOR : COLOR_NORMAL);
+    tty_setcolor ((check_options[0].widget->state & C_BOOL) ? DISABLED_COLOR : COLOR_NORMAL);
 
     widget_move (h, 6, 5);
     if (panels_layout.horizontal_split)
@@ -370,7 +370,7 @@ layout_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *
         return MSG_HANDLED;
 
     case MSG_NOTIFY:
-        if (sender == WIDGET (radio_widget))
+        if (sender == WIDGET (radio_widget) && parm == (int) MSG_FOCUS)
         {
             if (panels_layout.horizontal_split != radio_widget->sel)
             {
@@ -404,7 +404,7 @@ layout_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *
             return MSG_HANDLED;
         }
 
-        if (sender == WIDGET (check_options[0].widget))
+        if (sender == WIDGET (check_options[0].widget) && parm == (int) MSG_FOCUS)
         {
             int eq;
 
@@ -510,8 +510,8 @@ init_layout (void)
     width = max (l1 * 2 + 7, b);
 
     layout_dlg =
-        dlg_create (TRUE, 0, 0, 15, width, dialog_colors, layout_callback, NULL, "[Layout]",
-                    _("Layout"), DLG_CENTER);
+        dlg_create (TRUE, 0, 0, 15, width, WPOS_CENTER, FALSE, dialog_colors, layout_callback, NULL,
+                    "[Layout]", _("Layout"));
 
 #define XTRACT(i) *check_options[i].variable, check_options[i].text
 
@@ -538,21 +538,23 @@ init_layout (void)
 
     /* "Console output" groupbox */
     {
-        const int disabled = mc_global.tty.console_flag != '\0' ? 0 : W_DISABLED;
+        widget_state_t disabled;
         Widget *w;
 
+        disabled = mc_global.tty.console_flag != '\0' ? 0 : WST_DISABLED;
+
         w = WIDGET (groupbox_new (8, 3, 3, l1, title2));
-        w->options |= disabled;
+        w->state |= disabled;
         add_widget (layout_dlg, w);
 
         w = WIDGET (button_new (9, output_lines_label_len + 5, B_PLUS,
                                 NARROW_BUTTON, "&+", bplus_cback));
-        w->options |= disabled;
+        w->state |= disabled;
         add_widget (layout_dlg, w);
 
         w = WIDGET (button_new (9, output_lines_label_len + 5 + 5, B_MINUS,
                                 NARROW_BUTTON, "&-", bminus_cback));
-        w->options |= disabled;
+        w->state |= disabled;
         add_widget (layout_dlg, w);
     }
 
@@ -575,7 +577,7 @@ init_layout (void)
                 button_new (12, (width - b) / 2 + b1 + 1, B_CANCEL, NORMAL_BUTTON,
                             cancel_button, 0));
 
-    dlg_select_widget (radio_widget);
+    widget_select (WIDGET (radio_widget));
 
     return layout_dlg;
 }
@@ -649,18 +651,59 @@ layout_box (void)
         for (i = 0; i < (size_t) LAYOUT_OPTIONS_COUNT; i++)
             if (check_options[i].widget != NULL)
                 *check_options[i].variable = check_options[i].widget->state & C_BOOL;
+
+        output_lines = _output_lines;
     }
     else
     {
         /* restore layout */
         panels_layout = old_layout;
         output_lines = old_output_lines;
-        update_split (layout_dlg);
+        check_split (&panels_layout);   /* FIXME: is it really needed? */
     }
 
     dlg_destroy (layout_dlg);
     layout_change ();
     do_refresh ();
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+panel_update_cols (Widget * widget, panel_display_t frame_size)
+{
+    int cols, origin;
+
+    /* don't touch panel if it is not in dialog yet */
+    /* if panel is not in dialog it is not in widgets list
+       and cannot be compared with get_panel_widget() result */
+    if (widget->owner == NULL)
+        return;
+
+    if (panels_layout.horizontal_split)
+    {
+        widget->cols = COLS;
+        return;
+    }
+
+    if (frame_size == frame_full)
+    {
+        cols = COLS;
+        origin = 0;
+    }
+    else if (widget == get_panel_widget (0))
+    {
+        cols = panels_layout.left_panel_size;
+        origin = 0;
+    }
+    else
+    {
+        cols = COLS - panels_layout.left_panel_size;
+        origin = panels_layout.left_panel_size;
+    }
+
+    widget->cols = cols;
+    widget->x = origin;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -696,21 +739,25 @@ setup_panels (void)
     check_split (&panels_layout);
     start_y = menubar_visible;
 
-    /* The column computing is deferred until panel_do_cols */
+    /* update columns first... */
+    panel_do_cols (0);
+    panel_do_cols (1);
+
+    /* ...then rows and origin */
     if (panels_layout.horizontal_split)
     {
-        widget_set_size (panels[0].widget, start_y, 0, panels_layout.top_panel_size, 0);
+        widget_set_size (panels[0].widget, start_y, 0, panels_layout.top_panel_size,
+                         panels[0].widget->cols);
         widget_set_size (panels[1].widget, start_y + panels_layout.top_panel_size, 0,
-                         height - panels_layout.top_panel_size, 0);
+                         height - panels_layout.top_panel_size, panels[1].widget->cols);
     }
     else
     {
-        widget_set_size (panels[0].widget, start_y, 0, height, 0);
-        widget_set_size (panels[1].widget, start_y, panels_layout.left_panel_size, height, 0);
+        widget_set_size (panels[0].widget, start_y, 0, height, panels[0].widget->cols);
+        widget_set_size (panels[1].widget, start_y, panels_layout.left_panel_size, height,
+                         panels[1].widget->cols);
     }
 
-    panel_do_cols (0);
-    panel_do_cols (1);
 
     widget_set_size (WIDGET (the_menubar), 0, 0, 1, COLS);
 
@@ -1088,15 +1135,11 @@ swap_panels (void)
     panel2 = PANEL (panels[1].widget);
 
     if (panels[0].type == view_listing && panels[1].type == view_listing &&
-        !mc_config_get_bool (mc_main_config, CONFIG_PANELS_SECTION, "simple_swap", FALSE))
+        !mc_config_get_bool (mc_global.main_config, CONFIG_PANELS_SECTION, "simple_swap", FALSE))
     {
         WPanel panel;
 
 #define panelswap(x) panel.x = panel1->x; panel1->x = panel2->x; panel2->x = panel.x;
-
-#define panelswapstr(e) strcpy (panel.e, panel1->e); \
-                        strcpy (panel1->e, panel2->e); \
-                        strcpy (panel2->e, panel.e);
         /* Change content and related stuff */
         panelswap (dir);
         panelswap (active);
@@ -1109,7 +1152,6 @@ swap_panels (void)
         panelswap (selected);
         panelswap (is_panelized);
         panelswap (dir_stat);
-#undef panelswapstr
 #undef panelswap
 
         panel1->searching = FALSE;
@@ -1128,9 +1170,9 @@ swap_panels (void)
         }
 
         if (widget_is_active (panels[0].widget))
-            dlg_select_widget (panels[1].widget);
+            widget_select (panels[1].widget);
         else if (widget_is_active (panels[1].widget))
-            dlg_select_widget (panels[0].widget);
+            widget_select (panels[0].widget);
     }
     else
     {

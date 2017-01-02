@@ -57,6 +57,11 @@
 
 /*** global variables ****************************************************************************/
 
+/* If true program softkeys (HP terminals only) on startup and after every
+   command ran in the subshell to the description found in the termcap/terminfo
+   database */
+int reset_hp_softkeys = 0;
+
 /*** file scope macro definitions ****************************************************************/
 
 #ifndef SLTT_MAX_SCREEN_COLS
@@ -77,6 +82,8 @@ static struct termios new_mode;
 
 /* Controls whether we should wait for input in tty_lowlevel_getch */
 static gboolean no_slang_delay;
+
+static gboolean slsmg_active = FALSE;
 
 /* This table describes which capabilities we want and which values we
  * assign to them.
@@ -174,7 +181,7 @@ slang_reset_softkeys (void)
         char *send;
 
         g_snprintf (tmp, sizeof (tmp), "k%d", key);
-        send = (char *) SLtt_tgetstr (tmp);
+        send = SLtt_tgetstr (tmp);
         if (send != NULL)
         {
             g_snprintf (tmp, sizeof (tmp), ESC_STR "&f%dk%dd%dL%s%s", key,
@@ -191,7 +198,7 @@ do_define_key (int code, const char *strcap)
 {
     char *seq;
 
-    seq = (char *) SLtt_tgetstr ((char *) strcap);
+    seq = SLtt_tgetstr ((SLFUTURE_CONST char *) strcap);
     if (seq != NULL)
         define_sequence (code, seq, MCKEY_NOACTION);
 }
@@ -324,10 +331,11 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
     tty_display_8bit (FALSE);
 
     SLsmg_init_smg ();
+    slsmg_active = TRUE;
     if (!mouse_enable)
         use_mouse_p = MOUSE_DISABLED;
-    tty_init_xterm_support (is_xterm);  /* do it before do_enter_ca_mode() call */
-    do_enter_ca_mode ();
+    tty_init_xterm_support (is_xterm);  /* do it before tty_enter_ca_mode() call */
+    tty_enter_ca_mode ();
     tty_keypad (TRUE);
     tty_nodelay (FALSE);
 
@@ -341,19 +349,18 @@ tty_shutdown (void)
 {
     char *op_cap;
 
-    disable_mouse ();
-    disable_bracketed_paste ();
     tty_reset_shell_mode ();
     tty_noraw_mode ();
     tty_keypad (FALSE);
     tty_reset_screen ();
-    do_exit_ca_mode ();
+    tty_exit_ca_mode ();
     SLang_reset_tty ();
+    slsmg_active = FALSE;
 
     /* Load the op capability to reset the colors to those that were 
      * active when the program was started up 
      */
-    op_cap = SLtt_tgetstr ((char *) "op");
+    op_cap = SLtt_tgetstr ((SLFUTURE_CONST char *) "op");
     if (op_cap != NULL)
     {
         fputs (op_cap, stdout);
@@ -364,10 +371,27 @@ tty_shutdown (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
+tty_enter_ca_mode (void)
+{
+    /* S-Lang handles alternate screen switching and cursor position saving */
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
+tty_exit_ca_mode (void)
+{
+    /* S-Lang handles alternate screen switching and cursor position restoring */
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+void
 tty_change_screen_size (void)
 {
     SLtt_get_screen_size ();
-    SLsmg_reinit_smg ();
+    if (slsmg_active)
+        SLsmg_reinit_smg ();
 
 #ifdef ENABLE_SUBSHELL
     if (mc_global.tty.use_subshell)
@@ -383,6 +407,7 @@ tty_reset_prog_mode (void)
 {
     tcsetattr (SLang_TT_Read_FD, TCSANOW, &new_mode);
     SLsmg_init_smg ();
+    slsmg_active = TRUE;
     SLsmg_touch_lines (0, LINES);
 }
 
@@ -432,7 +457,7 @@ tty_keypad (gboolean set)
 {
     char *keypad_string;
 
-    keypad_string = (char *) SLtt_tgetstr ((char *) (set ? "ks" : "ke"));
+    keypad_string = SLtt_tgetstr ((SLFUTURE_CONST char *) (set ? "ks" : "ke"));
     if (keypad_string != NULL)
         SLtt_write_string (keypad_string);
     if (set && reset_hp_softkeys)
@@ -483,6 +508,7 @@ int
 tty_reset_screen (void)
 {
     SLsmg_reset_smg ();
+    slsmg_active = FALSE;
     return 0;                   /* OK */
 }
 
@@ -727,7 +753,7 @@ tty_printf (const char *fmt, ...)
 char *
 tty_tgetstr (const char *cap)
 {
-    return SLtt_tgetstr ((char *) cap);
+    return SLtt_tgetstr ((SLFUTURE_CONST char *) cap);
 }
 
 /* --------------------------------------------------------------------------------------------- */

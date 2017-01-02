@@ -13,7 +13,7 @@
 
    You should have received a copy of the GNU Library General Public
    License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
    USA.  */
 
 #ifndef _VASNPRINTF_H
@@ -38,7 +38,7 @@
 # endif
 #endif
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -71,7 +71,7 @@ extern char * asnprintf (char *resultbuf, size_t *lengthp, const char *format, .
 extern char * vasnprintf (char *resultbuf, size_t *lengthp, const char *format, va_list args)
        __attribute__ ((__format__ (__printf__, 3, 0)));
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 

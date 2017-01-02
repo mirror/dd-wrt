@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-15 16:18+0000\n"
+"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -450,9 +450,6 @@ msgstr ""
 msgid "Cannot create pipe descriptor"
 msgstr "Ne eblas krei duktan priskribilon"
 
-msgid "Cannot parse command for pipe"
-msgstr "Ne eblas analizi komandon por dukto"
-
 msgid "Cannot create pipe streams"
 msgstr "Ne eblas krei duktajn fluojn"
 
@@ -578,7 +575,7 @@ msgstr "Eraro"
 
 #, c-format
 msgid "%s (%d)"
-msgstr ""
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "Ĉ&esigi"
@@ -1916,6 +1913,9 @@ msgstr "&Linko-simila movo"
 msgid "Pa&ge scrolling"
 msgstr "Paĝa &rulumado"
 
+msgid "Center &scrolling"
+msgstr "&Centra rulumado"
+
 msgid "&Mouse page scrolling"
 msgstr "Per&musa paĝa rulumado"
 
@@ -2633,6 +2633,8 @@ msgid ""
 "Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
+"Ne eblas legi fontan dosieron \"%s\"\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4413,3 +4415,6 @@ msgstr "Ĉu deiri de la komenco?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Ne eblas analizi komandon por dukto"

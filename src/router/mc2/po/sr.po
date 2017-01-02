@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
@@ -451,9 +451,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Не могу да направим описника спојке"
-
-msgid "Cannot parse command for pipe"
-msgstr "Не могу да обрадим наредбу за спојку"
 
 msgid "Cannot create pipe streams"
 msgstr "Не могу да направим токове спојке"
@@ -1912,6 +1909,9 @@ msgstr "Кретање &налик Линксу"
 
 msgid "Pa&ge scrolling"
 msgstr "Премицање &странице"
+
+msgid "Center &scrolling"
+msgstr ""
 
 msgid "&Mouse page scrolling"
 msgstr "Премицање странице &мишем"
@@ -4415,3 +4415,6 @@ msgstr "Да наставим са почетка?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Не могу да довучем месни примерак „/ftp://some.host/editme.txt“"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Не могу да обрадим наредбу за спојку"

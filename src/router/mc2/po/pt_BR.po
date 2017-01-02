@@ -11,8 +11,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/mc/mc/language/"
 "pt_BR/)\n"
@@ -443,9 +443,6 @@ msgstr ""
 "Verifique a variável de ambiente TERM.\n"
 
 msgid "Cannot create pipe descriptor"
-msgstr ""
-
-msgid "Cannot parse command for pipe"
 msgstr ""
 
 msgid "Cannot create pipe streams"
@@ -1856,6 +1853,9 @@ msgid "L&ynx-like motion"
 msgstr "Movimentação similar ao L&ynx"
 
 msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "Center &scrolling"
 msgstr ""
 
 msgid "&Mouse page scrolling"

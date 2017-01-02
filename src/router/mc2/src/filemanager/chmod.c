@@ -157,7 +157,7 @@ chmod_i18n (void)
     for (i = 0; i < check_perm_num; i++)
     {
         len = str_term_width1 (check_perm[i].text);
-        check_perm_len = max (check_perm_len, len);
+        check_perm_len = MAX (check_perm_len, len);
     }
 
     check_perm_len += 1 + 3 + 1;        /* mark, [x] and space */
@@ -165,7 +165,7 @@ chmod_i18n (void)
     for (i = 0; i < file_info_labels_num; i++)
     {
         len = str_term_width1 (file_info_labels[i]) + 2;        /* spaces around */
-        file_info_labels_len = max (file_info_labels_len, len);
+        file_info_labels_len = MAX (file_info_labels_len, len);
     }
 
     for (i = 0; i < chmod_but_num; i++)
@@ -230,7 +230,7 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
                 if (sender == WIDGET (check_perm[i].check))
                     break;
 
-            if (i < check_perm_num)
+            if (i < check_perm_num && parm == (int) MSG_KEY)
             {
                 char buffer[BUF_TINY];
 
@@ -260,7 +260,7 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             {
                 chmod_toggle_select (h, i);
                 if (parm == KEY_IC)
-                    dlg_one_down (h);
+                    dlg_select_next_widget (h);
                 return MSG_HANDLED;
             }
         }
@@ -292,7 +292,7 @@ init_chmod (const char *fname, const struct stat *sf_stat)
     perm_gb_len = check_perm_len + 2;
     file_gb_len = file_info_labels_len + 2;
     cols = str_term_width1 (fname) + 2 + 1;
-    file_gb_len = max (file_gb_len, cols);
+    file_gb_len = MAX (file_gb_len, cols);
 
     lines = single_set ? 20 : 23;
     cols = perm_gb_len + file_gb_len + 1 + 6;
@@ -305,8 +305,8 @@ init_chmod (const char *fname, const struct stat *sf_stat)
     }
 
     ch_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors,
-                    chmod_callback, NULL, "[Chmod]", _("Chmod command"), DLG_CENTER);
+        dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors,
+                    chmod_callback, NULL, "[Chmod]", _("Chmod command"));
 
     add_widget (ch_dlg, groupbox_new (PY, PX, check_perm_num + 2, perm_gb_len, _("Permission")));
 
@@ -365,7 +365,7 @@ init_chmod (const char *fname, const struct stat *sf_stat)
                             chmod_but[i].flags, chmod_but[i].text, NULL));
 
     /* select first checkbox */
-    dlg_select_widget (check_perm[0].check);
+    widget_select (WIDGET (check_perm[0].check));
 
     return ch_dlg;
 }

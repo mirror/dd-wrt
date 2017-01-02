@@ -87,13 +87,13 @@ history_dlg_reposition (WDialog * dlg_head)
 
     if (he <= y || y > (LINES - 6))
     {
-        he = min (he, y - 1);
+        he = MIN (he, y - 1);
         y -= he;
     }
     else
     {
         y++;
-        he = min (he, LINES - y);
+        he = MIN (he, LINES - y);
     }
 
     if (data->widget->x > 2)
@@ -103,11 +103,11 @@ history_dlg_reposition (WDialog * dlg_head)
 
     if ((wi + x) > COLS)
     {
-        wi = min (wi, COLS);
+        wi = MIN (wi, COLS);
         x = COLS - wi;
     }
 
-    dlg_set_position (dlg_head, y, x, y + he, x + wi);
+    dlg_set_position (dlg_head, y, x, he, wi);
 
     return MSG_HANDLED;
 }
@@ -305,7 +305,7 @@ history_show (GList ** history, Widget * widget, int current)
         size_t i;
 
         i = str_term_width1 ((char *) z->data);
-        maxlen = max (maxlen, i);
+        maxlen = MAX (maxlen, i);
         count++;
 
         entry = g_new0 (WLEntry, 1);
@@ -319,8 +319,8 @@ history_show (GList ** history, Widget * widget, int current)
     hist_data.maxlen = maxlen;
 
     query_dlg =
-        dlg_create (TRUE, 0, 0, 4, 4, dialog_colors, history_dlg_callback, NULL,
-                    "[History-query]", _("History"), DLG_COMPACT);
+        dlg_create (TRUE, 0, 0, 4, 4, WPOS_KEEP_DEFAULT, TRUE, dialog_colors, history_dlg_callback,
+                    NULL, "[History-query]", _("History"));
     query_dlg->data = &hist_data;
 
     query_list = listbox_new (1, 1, 2, 2, TRUE, NULL);

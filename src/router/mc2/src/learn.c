@@ -124,7 +124,7 @@ learn_button (WButton * button, int action)
     dlg_run_done (d);
     dlg_destroy (d);
 
-    dlg_select_widget (learnkeys[action - B_USER].button);
+    widget_select (learnkeys[action - B_USER].button);
 
     return 0;                   /* Do not kill learn_dlg */
 }
@@ -156,7 +156,7 @@ learn_move (gboolean right)
                 else
                     i += (totalcols - 1) * ROWS;
             }
-            dlg_select_widget (learnkeys[i].button);
+            widget_select (learnkeys[i].button);
             return TRUE;
         }
 
@@ -175,7 +175,7 @@ learn_check_key (int c)
         if (key_name_conv_tab[i].code != c || learnkeys[i].ok)
             continue;
 
-        dlg_select_widget (learnkeys[i].button);
+        widget_select (learnkeys[i].button);
         /* TRANSLATORS: This label appears near learned keys.  Keep it short.  */
         label_set_text (LABEL (learnkeys[i].label), _("OK"));
         learnkeys[i].ok = TRUE;
@@ -213,10 +213,10 @@ learn_check_key (int c)
     case 'l':
         return learn_move (TRUE);
     case 'j':
-        dlg_one_down (learn_dlg);
+        dlg_select_next_widget (learn_dlg);
         return TRUE;
     case 'k':
-        dlg_one_up (learn_dlg);
+        dlg_select_prev_widget (learn_dlg);
         return TRUE;
     default:
         break;
@@ -274,8 +274,8 @@ init_learn (void)
     do_refresh ();
 
     learn_dlg =
-        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, dialog_colors, learn_callback, NULL,
-                    "[Learn keys]", learn_title, DLG_CENTER);
+        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, dialog_colors,
+                    learn_callback, NULL, "[Learn keys]", learn_title);
 
     /* find first unshown button */
     for (key = key_name_conv_tab, learn_total = 0;
@@ -302,7 +302,7 @@ init_learn (void)
 
         label = _(key_name_conv_tab[i].longname);
         padding = 16 - str_term_width1 (label);
-        padding = max (0, padding);
+        padding = MAX (0, padding);
         g_snprintf (buffer, sizeof (buffer), "%s%*s", label, padding, "");
 
         learnkeys[i].button =
@@ -361,8 +361,8 @@ learn_save (void)
             char *esc_str;
 
             esc_str = strutils_escape (learnkeys[i].sequence, -1, ";\\", TRUE);
-            mc_config_set_string_raw_value (mc_main_config, section, key_name_conv_tab[i].name,
-                                            esc_str);
+            mc_config_set_string_raw_value (mc_global.main_config, section,
+                                            key_name_conv_tab[i].name, esc_str);
             g_free (esc_str);
 
             profile_changed = TRUE;
@@ -375,7 +375,7 @@ learn_save (void)
      * disk is much worse.
      */
     if (profile_changed)
-        mc_config_save_file (mc_main_config, NULL);
+        mc_config_save_file (mc_global.main_config, NULL);
 
     g_free (section);
 }

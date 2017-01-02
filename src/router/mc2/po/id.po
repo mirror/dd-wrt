@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Indonesian (http://www.transifex.com/mc/mc/language/id/)\n"
 "Language: id\n"
@@ -451,9 +451,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Gagal membuat pipe descriptor"
-
-msgid "Cannot parse command for pipe"
-msgstr "Gagal mengurai perintah untuk pipe"
 
 msgid "Cannot create pipe streams"
 msgstr "Gagal membuat pipe streams"
@@ -1864,6 +1861,9 @@ msgid "L&ynx-like motion"
 msgstr ""
 
 msgid "Pa&ge scrolling"
+msgstr ""
+
+msgid "Center &scrolling"
 msgstr ""
 
 msgid "&Mouse page scrolling"
@@ -4192,3 +4192,6 @@ msgstr ""
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Gagal mengurai perintah untuk pipe"

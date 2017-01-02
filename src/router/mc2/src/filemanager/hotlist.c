@@ -71,10 +71,6 @@
 #define UX 3
 #define UY 2
 
-#define BX UX
-#define BY (LINES - 6)
-
-#define LABELS          3
 #define B_ADD_CURRENT   B_USER
 #define B_REMOVE        (B_USER + 1)
 #define B_NEW_GROUP     (B_USER + 2)
@@ -586,7 +582,7 @@ hotlist_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
 
     case MSG_POST_KEY:
         /* always stay on hotlist */
-        dlg_select_widget (h == hotlist_dlg ? l_hotlist : l_movelist);
+        widget_select (h == hotlist_dlg ? WIDGET (l_hotlist) : WIDGET (l_movelist));
         return MSG_HANDLED;
 
     case MSG_RESIZE:
@@ -697,7 +693,7 @@ init_i18n_stuff (int list_type, int cols)
         (len[0])--;
         (len[1])--;
 
-        cols = max (cols, max (len[0], len[1]));
+        cols = MAX (cols, MAX (len[0], len[1]));
 
         /* arrange buttons */
         for (i = 0; i < hotlist_but_num; i++)
@@ -742,7 +738,7 @@ init_hotlist (hotlist_t list_type)
     cols = init_i18n_stuff (list_type, COLS - 6);
 
     hotlist_state.expanded =
-        mc_config_get_int (mc_main_config, "HotlistConfig", "expanded_view_of_groups", 0);
+        mc_config_get_int (mc_global.main_config, "HotlistConfig", "expanded_view_of_groups", 0);
 
 #ifdef ENABLE_VFS
     if (list_type == LIST_VFSLIST)
@@ -759,8 +755,8 @@ init_hotlist (hotlist_t list_type)
     }
 
     hotlist_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, help_node,
-                    title, DLG_CENTER);
+        dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors, hotlist_callback,
+                    NULL, help_node, title);
 
     y = UY;
     hotlist_group = groupbox_new (y, UX, lines - 10 + dh, cols - 2 * UX, _("Top level group"));
@@ -805,7 +801,7 @@ init_hotlist (hotlist_t list_type)
                                             hotlist_but[i].text, hotlist_button_callback),
                                 hotlist_but[i].pos_flags, NULL);
 
-    dlg_select_widget (l_hotlist);
+    widget_select (WIDGET (l_hotlist));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -827,8 +823,8 @@ init_movelist (struct hotlist *item)
     hdr = g_strdup_printf (_("Moving %s"), item->label);
 
     movelist_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, hotlist_callback, NULL, "[Hotlist]",
-                    hdr, DLG_CENTER);
+        dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors, hotlist_callback,
+                    NULL, "[Hotlist]", hdr);
 
     g_free (hdr);
 
@@ -856,7 +852,7 @@ init_movelist (struct hotlist *item)
                                             hotlist_but[i].text, hotlist_button_callback),
                                 hotlist_but[i].pos_flags, NULL);
 
-    dlg_select_widget (l_movelist);
+    widget_select (WIDGET (l_movelist));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1179,21 +1175,21 @@ load_group (struct hotlist *grp)
 
     group_section = find_group_section (grp);
 
-    keys = mc_config_get_keys (mc_main_config, group_section, NULL);
+    keys = mc_config_get_keys (mc_global.main_config, group_section, NULL);
 
     current_group = grp;
 
     for (profile_keys = keys; *profile_keys != NULL; profile_keys++)
-        add2hotlist (mc_config_get_string (mc_main_config, group_section, *profile_keys, ""),
+        add2hotlist (mc_config_get_string (mc_global.main_config, group_section, *profile_keys, ""),
                      g_strdup (*profile_keys), HL_TYPE_GROUP, LISTBOX_APPEND_AT_END);
 
     g_free (group_section);
     g_strfreev (keys);
 
-    keys = mc_config_get_keys (mc_main_config, grp->directory, NULL);
+    keys = mc_config_get_keys (mc_global.main_config, grp->directory, NULL);
 
     for (profile_keys = keys; *profile_keys != NULL; profile_keys++)
-        add2hotlist (mc_config_get_string (mc_main_config, group_section, *profile_keys, ""),
+        add2hotlist (mc_config_get_string (mc_global.main_config, group_section, *profile_keys, ""),
                      g_strdup (*profile_keys), HL_TYPE_ENTRY, LISTBOX_APPEND_AT_END);
 
     g_strfreev (keys);
@@ -1404,20 +1400,20 @@ clean_up_hotlist_groups (const char *section)
     char *grp_section;
 
     grp_section = g_strconcat (section, ".Group", (char *) NULL);
-    if (mc_config_has_group (mc_main_config, section))
-        mc_config_del_group (mc_main_config, section);
+    if (mc_config_has_group (mc_global.main_config, section))
+        mc_config_del_group (mc_global.main_config, section);
 
-    if (mc_config_has_group (mc_main_config, grp_section))
+    if (mc_config_has_group (mc_global.main_config, grp_section))
     {
         char **profile_keys, **keys;
 
-        keys = mc_config_get_keys (mc_main_config, grp_section, NULL);
+        keys = mc_config_get_keys (mc_global.main_config, grp_section, NULL);
 
         for (profile_keys = keys; *profile_keys != NULL; profile_keys++)
             clean_up_hotlist_groups (*profile_keys);
 
         g_strfreev (keys);
-        mc_config_del_group (mc_main_config, grp_section);
+        mc_config_del_group (mc_global.main_config, grp_section);
     }
     g_free (grp_section);
 }
@@ -1484,8 +1480,8 @@ load_hotlist (void)
         GError *mcerror = NULL;
 
         clean_up_hotlist_groups ("Hotlist");
-        if (!mc_config_save_file (mc_main_config, &mcerror))
-            setup_save_config_show_error (mc_main_config->ini_path, &mcerror);
+        if (!mc_config_save_file (mc_global.main_config, &mcerror))
+            setup_save_config_show_error (mc_global.main_config->ini_path, &mcerror);
 
         mc_error_message (&mcerror, NULL);
     }

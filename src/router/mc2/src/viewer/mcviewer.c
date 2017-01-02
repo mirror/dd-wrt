@@ -38,7 +38,6 @@
 
 #include "lib/global.h"
 #include "lib/tty/tty.h"
-#include "lib/tty/mouse.h"
 #include "lib/vfs/vfs.h"
 #include "lib/strutil.h"
 #include "lib/util.h"           /* load_file_position() */
@@ -77,117 +76,110 @@ char *mcview_show_eof = NULL;
 
 /*** file scope variables ************************************************************************/
 
-
+/* --------------------------------------------------------------------------------------------- */
 /*** file scope functions ************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
-/** Both views */
-static gboolean
-do_mcview_event (WView * view, Gpm_Event * event, int *result)
+static void
+mcview_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 {
-    screen_dimen y, x;
-    Gpm_Event local;
-    Widget *w = WIDGET (view);
+    WView *view = (WView *) w;
+    gboolean ok = TRUE;
 
-    /* rest of the upper frame - call menu */
-    if (mcview_is_in_panel (view) && (event->type & GPM_DOWN) != 0 &&
-        event->y == WIDGET (w->owner)->y + 1)
+    switch (msg)
     {
-        *result = MOU_UNHANDLED;
-        return FALSE;           /* don't draw viewer over menu */
-    }
+    case MSG_MOUSE_DOWN:
+        if (mcview_is_in_panel (view))
+        {
+            if (event->y == WIDGET (w->owner)->y)
+            {
+                /* return MOU_UNHANDLED */
+                event->result.abort = TRUE;
+                /* don't draw viewer over menu */
+                ok = FALSE;
+                break;
+            }
 
-    *result = MOU_NORMAL;
+            if (!widget_get_state (w, WST_FOCUSED))
+            {
+                /* Grab focus */
+                change_panel ();
+            }
+        }
+        /* fall throught */
 
-    local = mouse_get_local (event, w);
+    case MSG_MOUSE_CLICK:
+        if (!view->text_wrap_mode)
+        {
+            /* Scrolling left and right */
+            screen_dimen x;
 
-    /* We are not interested in the release events */
-    if ((local.type & (GPM_DOWN | GPM_DRAG)) == 0)
-        return FALSE;
+            x = event->x + 1;   /* FIXME */
 
-    /* Wheel events. Allow them in the inactive panel */
-    if ((local.buttons & GPM_B_UP) != 0 && (local.type & GPM_DOWN) != 0)
-    {
+            if (x < view->data_area.width * 1 / 4)
+            {
+                mcview_move_left (view, 1);
+                event->result.repeat = msg == MSG_MOUSE_DOWN;
+            }
+            else if (x < view->data_area.width * 3 / 4)
+            {
+                /* ignore the click */
+                ok = FALSE;
+            }
+            else
+            {
+                mcview_move_right (view, 1);
+                event->result.repeat = msg == MSG_MOUSE_DOWN;
+            }
+        }
+        else
+        {
+            /* Scrolling up and down */
+            screen_dimen y;
+
+            y = event->y + 1;   /* FIXME */
+
+            if (y < view->data_area.top + view->data_area.height * 1 / 3)
+            {
+                if (mcview_mouse_move_pages)
+                    mcview_move_up (view, view->data_area.height / 2);
+                else
+                    mcview_move_up (view, 1);
+
+                event->result.repeat = msg == MSG_MOUSE_DOWN;
+            }
+            else if (y < view->data_area.top + view->data_area.height * 2 / 3)
+            {
+                /* ignore the click */
+                ok = FALSE;
+            }
+            else
+            {
+                if (mcview_mouse_move_pages)
+                    mcview_move_down (view, view->data_area.height / 2);
+                else
+                    mcview_move_down (view, 1);
+
+                event->result.repeat = msg == MSG_MOUSE_DOWN;
+            }
+        }
+        break;
+
+    case MSG_MOUSE_SCROLL_UP:
         mcview_move_up (view, 2);
-        return TRUE;
-    }
-    if ((local.buttons & GPM_B_DOWN) != 0 && (local.type & GPM_DOWN) != 0)
-    {
+        break;
+
+    case MSG_MOUSE_SCROLL_DOWN:
         mcview_move_down (view, 2);
-        return TRUE;
+        break;
+
+    default:
+        ok = FALSE;
+        break;
     }
 
-    /* Grab focus */
-    if (mcview_is_in_panel (view) && !view->active)
-        change_panel ();
-
-    x = local.x;
-    y = local.y;
-
-    /* Scrolling left and right */
-    if (!view->text_wrap_mode)
-    {
-        if (x < view->data_area.width * 1 / 4)
-        {
-            mcview_move_left (view, 1);
-            goto processed;
-        }
-
-        if (x < view->data_area.width * 3 / 4)
-        {
-            /* ignore the click */
-        }
-        else
-        {
-            mcview_move_right (view, 1);
-            goto processed;
-        }
-    }
-
-    /* Scrolling up and down */
-    if (y < view->data_area.top + view->data_area.height * 1 / 3)
-    {
-        if (mcview_mouse_move_pages)
-            mcview_move_up (view, view->data_area.height / 2);
-        else
-            mcview_move_up (view, 1);
-        goto processed;
-    }
-    else if (y < view->data_area.top + view->data_area.height * 2 / 3)
-    {
-        /* ignore the click */
-    }
-    else
-    {
-        if (mcview_mouse_move_pages)
-            mcview_move_down (view, view->data_area.height / 2);
-        else
-            mcview_move_down (view, 1);
-        goto processed;
-    }
-
-    return FALSE;
-
-  processed:
-    *result = MOU_REPEAT;
-    return TRUE;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-/** Real view only */
-static int
-mcview_event (Gpm_Event * event, void *data)
-{
-    WView *view = (WView *) data;
-    int result;
-
-    if (!mouse_global_in_widget (event, WIDGET (data)))
-        return MOU_UNHANDLED;
-
-    if (do_mcview_event (view, event, &result))
+    if (ok)
         mcview_update (view);
-    return result;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -198,9 +190,12 @@ WView *
 mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
 {
     WView *view;
+    Widget *w;
 
     view = g_new0 (WView, 1);
-    widget_init (WIDGET (view), y, x, lines, cols, mcview_callback, mcview_event);
+    w = WIDGET (view);
+    widget_init (w, y, x, lines, cols, mcview_callback, mcview_mouse_callback);
+    w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
 
     view->hex_mode = FALSE;
     view->hexedit_mode = FALSE;
@@ -210,7 +205,6 @@ mcview_new (int y, int x, int lines, int cols, gboolean is_panel)
     view->text_wrap_mode = FALSE;
     view->magic_mode = FALSE;
 
-    view->active = FALSE;
     view->dpy_frame_size = is_panel ? 1 : 0;
     view->converter = str_cnv_from_term;
 
@@ -240,8 +234,9 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
     WDialog *view_dlg;
 
     /* Create dialog and widgets, put them on the dialog */
-    view_dlg = dlg_create (FALSE, 0, 0, LINES, COLS, NULL, mcview_dialog_callback, NULL,
-                           "[Internal File Viewer]", NULL, DLG_WANT_TAB);
+    view_dlg = dlg_create (FALSE, 0, 0, 1, 1, WPOS_FULLSCREEN, FALSE, NULL, mcview_dialog_callback,
+                           NULL, "[Internal File Viewer]", NULL);
+    widget_want_tab (WIDGET (view_dlg), TRUE);
 
     lc_mcview = mcview_new (0, 0, LINES - 1, COLS, FALSE);
     add_widget (view_dlg, lc_mcview);
@@ -257,9 +252,9 @@ mcview_viewer (const char *command, const vfs_path_t * file_vpath, int start_lin
     if (succeeded)
         dlg_run (view_dlg);
     else
-        view_dlg->state = DLG_CLOSED;
+        dlg_stop (view_dlg);
 
-    if (view_dlg->state == DLG_CLOSED)
+    if (widget_get_state (WIDGET (view_dlg), WST_CLOSED))
         dlg_destroy (view_dlg);
 
     return succeeded;
@@ -432,7 +427,7 @@ mcview_load (WView * view, const char *command, const char *file, int start_line
         if (max_offset < 0)
             new_offset = 0;
         else
-            new_offset = min (new_offset, max_offset);
+            new_offset = MIN (new_offset, max_offset);
         if (!view->hex_mode)
         {
             view->dpy_start = mcview_bol (view, new_offset, 0);
