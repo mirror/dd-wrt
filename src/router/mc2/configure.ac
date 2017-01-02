@@ -177,11 +177,13 @@ AC_CHECK_SIZEOF(uintmax_t)
 AC_TYPE_OFF_T
 AC_CHECK_SIZEOF(off_t)
 AC_TYPE_MODE_T
+gl_PROMOTED_TYPE_MODE_T
 AC_TYPE_PID_T
 AC_TYPE_UID_T
 
 AC_STRUCT_ST_BLOCKS
 AC_CHECK_MEMBERS([struct stat.st_blksize, struct stat.st_rdev])
+gl_STAT_SIZE
 
 AH_TEMPLATE([sig_atomic_t],
             [/* Define to `int' if <signal.h> doesn't define.])
@@ -263,8 +265,8 @@ dnl ############################################################################
 dnl Internationalization
 dnl ############################################################################
 
-AM_GNU_GETTEXT(no-libtool, need-ngettext)
-AM_GNU_GETTEXT_VERSION(0.14.3)
+AM_GNU_GETTEXT([no-libtool], [need-ngettext])
+AM_GNU_GETTEXT_VERSION([0.18.1])
 
 mc_I18N
 
@@ -375,7 +377,7 @@ AC_ARG_WITH([homedir],
 if test x$with_homedir = xXDG; then
     AC_DEFINE(MC_HOMEDIR_XDG, 1, [Define to enable XDG standard support])
 else
-    AC_DEFINE(MC_HOMEDIR_XDG, 0, [Define to disble XDG standard support])
+    AC_DEFINE(MC_HOMEDIR_XDG, 0, [Define to disable XDG standard support])
     AC_DEFINE_UNQUOTED([MC_USERCONF_DIR], ["$with_homedir"], [Where configs will be placed relative to $HOME])
 fi
 

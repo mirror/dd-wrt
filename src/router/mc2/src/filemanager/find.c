@@ -284,27 +284,29 @@ find_load_options (void)
     loaded = TRUE;
 
     options.file_case_sens =
-        mc_config_get_bool (mc_main_config, "FindFile", "file_case_sens", TRUE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "file_case_sens", TRUE);
     options.file_pattern =
-        mc_config_get_bool (mc_main_config, "FindFile", "file_shell_pattern", TRUE);
-    options.find_recurs = mc_config_get_bool (mc_main_config, "FindFile", "file_find_recurs", TRUE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "file_shell_pattern", TRUE);
+    options.find_recurs =
+        mc_config_get_bool (mc_global.main_config, "FindFile", "file_find_recurs", TRUE);
     options.skip_hidden =
-        mc_config_get_bool (mc_main_config, "FindFile", "file_skip_hidden", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "file_skip_hidden", FALSE);
     options.file_all_charsets =
-        mc_config_get_bool (mc_main_config, "FindFile", "file_all_charsets", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "file_all_charsets", FALSE);
     options.content_case_sens =
-        mc_config_get_bool (mc_main_config, "FindFile", "content_case_sens", TRUE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "content_case_sens", TRUE);
     options.content_regexp =
-        mc_config_get_bool (mc_main_config, "FindFile", "content_regexp", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "content_regexp", FALSE);
     options.content_first_hit =
-        mc_config_get_bool (mc_main_config, "FindFile", "content_first_hit", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "content_first_hit", FALSE);
     options.content_whole_words =
-        mc_config_get_bool (mc_main_config, "FindFile", "content_whole_words", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "content_whole_words", FALSE);
     options.content_all_charsets =
-        mc_config_get_bool (mc_main_config, "FindFile", "content_all_charsets", FALSE);
+        mc_config_get_bool (mc_global.main_config, "FindFile", "content_all_charsets", FALSE);
     options.ignore_dirs_enable =
-        mc_config_get_bool (mc_main_config, "FindFile", "ignore_dirs_enable", TRUE);
-    options.ignore_dirs = mc_config_get_string (mc_main_config, "FindFile", "ignore_dirs", "");
+        mc_config_get_bool (mc_global.main_config, "FindFile", "ignore_dirs_enable", TRUE);
+    options.ignore_dirs =
+        mc_config_get_string (mc_global.main_config, "FindFile", "ignore_dirs", "");
 
     if (options.ignore_dirs[0] == '\0')
         MC_PTR_FREE (options.ignore_dirs);
@@ -315,21 +317,27 @@ find_load_options (void)
 static void
 find_save_options (void)
 {
-    mc_config_set_bool (mc_main_config, "FindFile", "file_case_sens", options.file_case_sens);
-    mc_config_set_bool (mc_main_config, "FindFile", "file_shell_pattern", options.file_pattern);
-    mc_config_set_bool (mc_main_config, "FindFile", "file_find_recurs", options.find_recurs);
-    mc_config_set_bool (mc_main_config, "FindFile", "file_skip_hidden", options.skip_hidden);
-    mc_config_set_bool (mc_main_config, "FindFile", "file_all_charsets", options.file_all_charsets);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_case_sens", options.content_case_sens);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_regexp", options.content_regexp);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_first_hit", options.content_first_hit);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_whole_words",
+    mc_config_set_bool (mc_global.main_config, "FindFile", "file_case_sens",
+                        options.file_case_sens);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "file_shell_pattern",
+                        options.file_pattern);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "file_find_recurs", options.find_recurs);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "file_skip_hidden", options.skip_hidden);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "file_all_charsets",
+                        options.file_all_charsets);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "content_case_sens",
+                        options.content_case_sens);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "content_regexp",
+                        options.content_regexp);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "content_first_hit",
+                        options.content_first_hit);
+    mc_config_set_bool (mc_global.main_config, "FindFile", "content_whole_words",
                         options.content_whole_words);
-    mc_config_set_bool (mc_main_config, "FindFile", "content_all_charsets",
+    mc_config_set_bool (mc_global.main_config, "FindFile", "content_all_charsets",
                         options.content_all_charsets);
-    mc_config_set_bool (mc_main_config, "FindFile", "ignore_dirs_enable",
+    mc_config_set_bool (mc_global.main_config, "FindFile", "ignore_dirs_enable",
                         options.ignore_dirs_enable);
-    mc_config_set_string (mc_main_config, "FindFile", "ignore_dirs", options.ignore_dirs);
+    mc_config_set_string (mc_global.main_config, "FindFile", "ignore_dirs", options.ignore_dirs);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -345,7 +353,7 @@ add_to_list (const char *text, void *data)
 static inline void
 stop_idle (void *data)
 {
-    widget_want_idle (WIDGET (data), FALSE);
+    widget_idle (WIDGET (data), FALSE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -471,7 +479,7 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         return MSG_HANDLED;
 
     case MSG_NOTIFY:
-        if (sender == WIDGET (ignore_dirs_cbox))
+        if (sender == WIDGET (ignore_dirs_cbox) && parm == (int) MSG_FOCUS)
         {
             gboolean disable = !(ignore_dirs_cbox->state & C_BOOL);
 
@@ -490,9 +498,10 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         if (!(file_pattern_cbox->state & C_BOOL)
             && (in_name->buffer[0] != '\0') && !find_check_regexp (in_name->buffer))
         {
-            h->state = DLG_ACTIVE;      /* Don't stop the dialog */
+            /* Don't stop the dialog */
+            widget_set_state (WIDGET (h), WST_ACTIVE, TRUE);
             message (D_ERROR, MSG_ERROR, _("Malformed regular expression"));
-            dlg_select_widget (in_name);
+            widget_select (WIDGET (in_name));
             return MSG_HANDLED;
         }
 
@@ -500,9 +509,10 @@ find_parm_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, voi
         if ((content_regexp_cbox->state & C_BOOL) && (in_with->buffer[0] != '\0')
             && !find_check_regexp (in_with->buffer))
         {
-            h->state = DLG_ACTIVE;      /* Don't stop the dialog */
+            /* Don't stop the dialog */
+            widget_set_state (WIDGET (h), WST_ACTIVE, TRUE);
             message (D_ERROR, MSG_ERROR, _("Malformed regular expression"));
-            dlg_select_widget (in_with);
+            widget_select (WIDGET (in_with));
             return MSG_HANDLED;
         }
 
@@ -651,8 +661,8 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
         in_start_dir = g_strdup (".");
 
     find_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, find_parm_callback, NULL, "[Find File]",
-                    _("Find File"), DLG_CENTER);
+        dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors, find_parm_callback,
+                    NULL, "[Find File]", _("Find File"));
 
     x1 = 3;
     x2 = cols / 2 + 1;
@@ -745,7 +755,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
     add_widget (find_dlg, button_new (y1, x1 + b1 + 1, B_CANCEL, NORMAL_BUTTON, buts[2], NULL));
 
   find_par_start:
-    dlg_select_widget (in_name);
+    widget_select (WIDGET (in_name));
 
     switch (dlg_run (find_dlg))
     {
@@ -802,7 +812,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
                 *pattern = g_strdup (in_name->buffer);
             else
                 *pattern = g_strdup (options.file_pattern ? "*" : ".*");
-            *start_dir = in_start->buffer[0] != '\0' ? in_start->buffer : (char *) ".";
+            *start_dir = !input_is_empty (in_start) ? in_start->buffer : (char *) ".";
             if (in_start_dir != INPUT_LAST_TEXT)
                 g_free (in_start_dir);
             in_start_dir = g_strdup (*start_dir);
@@ -853,7 +863,7 @@ find_parameters (char **start_dir, ssize_t * start_dir_len,
 /* --------------------------------------------------------------------------------------------- */
 
 static inline void
-push_directory (const vfs_path_t * dir)
+push_directory (vfs_path_t * dir)
 {
     g_queue_push_head (&dir_queue, (void *) dir);
 }
@@ -863,7 +873,7 @@ push_directory (const vfs_path_t * dir)
 static inline vfs_path_t *
 pop_directory (void)
 {
-    return (vfs_path_t *) g_queue_pop_tail (&dir_queue);
+    return (vfs_path_t *) g_queue_pop_head (&dir_queue);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -947,7 +957,7 @@ check_find_events (WDialog * h)
             /* dialog terminated */
             return FIND_ABORT;
         }
-        if ((WIDGET (h)->options & W_WANT_IDLE) == 0)
+        if (!widget_get_state (WIDGET (h), WST_IDLE))
         {
             /* searching suspended */
             return FIND_SUSPEND;
@@ -1228,7 +1238,7 @@ find_rotate_dash (const WDialog * h, gboolean show)
 {
     static size_t pos = 0;
     static const char rotating_dash[4] = "|/-\\";
-    const Widget *w = WIDGET (h);
+    const Widget *w = CONST_WIDGET (h);
 
     if (!verbose)
         return;
@@ -1458,7 +1468,7 @@ view_edit_currently_selected_file (gboolean unparsed_view, gboolean edit)
 static void
 find_calc_button_locations (const WDialog * h, gboolean all_buttons)
 {
-    const int cols = WIDGET (h)->cols;
+    const int cols = CONST_WIDGET (h)->cols;
 
     int l1, l2;
 
@@ -1489,7 +1499,7 @@ find_relocate_buttons (const WDialog * h, gboolean all_buttons)
     find_calc_button_locations (h, all_buttons);
 
     for (i = 0; i < fbuts_num; i++)
-        fbuts[i].button->x = WIDGET (h)->x + fbuts[i].x;
+        fbuts[i].button->x = CONST_WIDGET (h)->x + fbuts[i].x;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1537,7 +1547,7 @@ start_stop (WButton * button, int action)
     (void) action;
 
     running = is_start;
-    widget_want_idle (WIDGET (find_dlg), running);
+    widget_idle (WIDGET (find_dlg), running);
     is_start = !is_start;
 
     status_update (is_start ? _("Stopped") : _("Searching"));
@@ -1605,8 +1615,8 @@ setup_gui (void)
     cols = COLS - 16;
 
     find_dlg =
-        dlg_create (TRUE, 0, 0, lines, cols, dialog_colors, find_callback, NULL, "[Find File]",
-                    _("Find File"), DLG_CENTER);
+        dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors, find_callback, NULL,
+                    "[Find File]", _("Find File"));
 
     find_calc_button_locations (find_dlg, TRUE);
 
@@ -1642,7 +1652,7 @@ setup_gui (void)
             y++;
     }
 
-    dlg_select_widget (find_list);
+    widget_select (WIDGET (find_list));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1673,7 +1683,7 @@ run_process (void)
 
     resuming = FALSE;
 
-    widget_want_idle (WIDGET (find_dlg), TRUE);
+    widget_idle (WIDGET (find_dlg), TRUE);
     ret = dlg_run (find_dlg);
 
     mc_search_free (search_file_handle);
@@ -1689,7 +1699,7 @@ run_process (void)
 static void
 kill_gui (void)
 {
-    widget_want_idle (WIDGET (find_dlg), FALSE);
+    widget_idle (WIDGET (find_dlg), FALSE);
     dlg_destroy (find_dlg);
 }
 

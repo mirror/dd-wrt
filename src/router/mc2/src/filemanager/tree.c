@@ -14,7 +14,7 @@
    Norbert Warmuth, 1997
    Miguel de Icaza, 1996, 1999
    Slava Zanko <slavazanko@gmail.com>, 2013
-   Andrew Borodin <aborodin@vmail.ru>, 2013, 2014
+   Andrew Borodin <aborodin@vmail.ru>, 2013, 2014, 2016
 
    This file is part of the Midnight Commander.
 
@@ -46,7 +46,6 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"
-#include "lib/tty/mouse.h"
 #include "lib/tty/key.h"
 #include "lib/skin.h"
 #include "lib/vfs/vfs.h"
@@ -100,7 +99,6 @@ struct WTree
     char search_buffer[MC_MAXFILENAMELEN];      /* Current search string */
     tree_entry **tree_shown;    /* Entries currently on screen */
     int is_panel;               /* panel or plain widget flag */
-    int active;                 /* if it's currently selected */
     int searching;              /* Are we on searching mode? */
     int topdiff;                /* The difference between the topmost
                                    shown and the selected */
@@ -349,7 +347,7 @@ show_tree (WTree * tree)
             continue;
 
         if (tree->is_panel)
-            tty_setcolor (tree->active && current == tree->selected_ptr
+            tty_setcolor (widget_get_state (w, WST_FOCUSED) && current == tree->selected_ptr
                           ? SELECTED_COLOR : NORMAL_COLOR);
         else
             tty_setcolor (current == tree->selected_ptr ? TREE_CURRENTC (h) : TREE_NORMALC (h));
@@ -613,59 +611,6 @@ maybe_chdir (WTree * tree)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-/** Mouse callback */
-
-static int
-tree_event (Gpm_Event * event, void *data)
-{
-    WTree *tree = (WTree *) data;
-    Widget *w = WIDGET (data);
-    Gpm_Event local;
-
-    if (!mouse_global_in_widget (event, w))
-        return MOU_UNHANDLED;
-
-    /* rest of the upper frame - call menu */
-    if (tree->is_panel && (event->type & GPM_DOWN) != 0 && event->y == WIDGET (w->owner)->y + 1)
-        return MOU_UNHANDLED;
-
-    local = mouse_get_local (event, w);
-
-    if ((local.type & GPM_UP) == 0)
-        return MOU_NORMAL;
-
-    if (tree->is_panel)
-        local.y--;
-
-    local.y--;
-
-    if (!tree->active)
-        change_panel ();
-
-    if (local.y < 0)
-    {
-        tree_move_backward (tree, tlines (tree) - 1);
-        show_tree (tree);
-    }
-    else if (local.y >= tlines (tree))
-    {
-        tree_move_forward (tree, tlines (tree) - 1);
-        show_tree (tree);
-    }
-    else if ((local.type & (GPM_UP | GPM_DOUBLE)) == (GPM_UP | GPM_DOUBLE))
-    {
-        if (tree->tree_shown[local.y] != NULL)
-        {
-            tree->selected_ptr = tree->tree_shown[local.y];
-            tree->topdiff = local.y;
-        }
-        tree_chdir_sel (tree);
-    }
-
-    return MOU_NORMAL;
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /** Search tree for text */
 
 static int
@@ -800,6 +745,7 @@ tree_move (WTree * tree, const char *default_dest)
     struct stat buf;
     file_op_context_t *ctx;
     file_op_total_context_t *tctx;
+    vfs_path_t *dest_vpath = NULL;
 
     if (tree->selected_ptr == NULL)
         return;
@@ -813,7 +759,9 @@ tree_move (WTree * tree, const char *default_dest)
     if (dest == NULL || *dest == '\0')
         goto ret;
 
-    if (stat (dest, &buf))
+    dest_vpath = vfs_path_from_str (dest);
+
+    if (mc_stat (dest_vpath, &buf))
     {
         message (D_ERROR, MSG_ERROR, _("Cannot stat the destination\n%s"),
                  unix_error_string (errno));
@@ -834,6 +782,7 @@ tree_move (WTree * tree, const char *default_dest)
     file_op_context_destroy (ctx);
 
   ret:
+    vfs_path_free (dest_vpath);
     g_free (dest);
 }
 
@@ -1024,10 +973,15 @@ tree_start_search (WTree * tree)
 static void
 tree_toggle_navig (WTree * tree)
 {
+    WButtonBar *b;
+
     tree_navigation_flag = !tree_navigation_flag;
-    buttonbar_set_label (find_buttonbar (WIDGET (tree)->owner), 4,
-                         tree_navigation_flag ? Q_ ("ButtonBar|Static")
-                         : Q_ ("ButtonBar|Dynamc"), tree_map, WIDGET (tree));
+
+    b = find_buttonbar (WIDGET (tree)->owner);
+    buttonbar_set_label (b, 4,
+                         tree_navigation_flag ? Q_ ("ButtonBar|Static") : Q_ ("ButtonBar|Dynamc"),
+                         tree_map, WIDGET (tree));
+    widget_redraw (WIDGET (b));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1196,17 +1150,22 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
 {
     WTree *tree = (WTree *) w;
     WDialog *h = w->owner;
-    WButtonBar *b = find_buttonbar (h);
+    WButtonBar *b;
 
     switch (msg)
     {
     case MSG_DRAW:
         tree_frame (h, tree);
         show_tree (tree);
+        if (widget_get_state (w, WST_FOCUSED))
+        {
+            b = find_buttonbar (h);
+            widget_redraw (WIDGET (b));
+        }
         return MSG_HANDLED;
 
     case MSG_FOCUS:
-        tree->active = 1;
+        b = find_buttonbar (h);
         buttonbar_set_label (b, 1, Q_ ("ButtonBar|Help"), tree_map, w);
         buttonbar_set_label (b, 2, Q_ ("ButtonBar|Rescan"), tree_map, w);
         buttonbar_set_label (b, 3, Q_ ("ButtonBar|Forget"), tree_map, w);
@@ -1218,23 +1177,14 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
         /* FIXME: mkdir is currently defunct */
         buttonbar_set_label (b, 7, Q_ ("ButtonBar|Mkdir"), tree_map, w);
 #else
-        buttonbar_clear_label (b, 7, WIDGET (tree));
+        buttonbar_clear_label (b, 7, w);
 #endif
         buttonbar_set_label (b, 8, Q_ ("ButtonBar|Rmdir"), tree_map, w);
-        widget_redraw (WIDGET (b));
 
-        /* FIXME: Should find a better way of only displaying the
-           currently selected item */
-        show_tree (tree);
         return MSG_HANDLED;
 
-        /* FIXME: Should find a better way of changing the color of the
-           selected item */
-
     case MSG_UNFOCUS:
-        tree->active = 0;
         tree->searching = 0;
-        show_tree (tree);
         return MSG_HANDLED;
 
     case MSG_KEY:
@@ -1254,6 +1204,73 @@ tree_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+/**
+  * Mouse callback
+  */
+static void
+tree_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
+{
+    WTree *tree = (WTree *) w;
+    int y;
+
+    y = event->y;
+    if (tree->is_panel)
+        y--;
+
+    switch (msg)
+    {
+    case MSG_MOUSE_DOWN:
+        /* rest of the upper frame - call menu */
+        if (tree->is_panel && event->y == WIDGET (w->owner)->y)
+        {
+            /* return MOU_UNHANDLED */
+            event->result.abort = TRUE;
+        }
+        else if (!widget_get_state (w, WST_FOCUSED))
+            change_panel ();
+        break;
+
+    case MSG_MOUSE_CLICK:
+        {
+            int lines;
+
+            lines = tlines (tree);
+
+            if (y < 0)
+            {
+                tree_move_backward (tree, lines - 1);
+                show_tree (tree);
+            }
+            else if (y >= lines)
+            {
+                tree_move_forward (tree, lines - 1);
+                show_tree (tree);
+            }
+            else if ((event->count & GPM_DOUBLE) != 0)
+            {
+                if (tree->tree_shown[y] != NULL)
+                {
+                    tree->selected_ptr = tree->tree_shown[y];
+                    tree->topdiff = y;
+                }
+
+                tree_chdir_sel (tree);
+            }
+        }
+        break;
+
+    case MSG_MOUSE_SCROLL_UP:
+    case MSG_MOUSE_SCROLL_DOWN:
+        /* TODO: Ticket #2218 */
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -1266,7 +1283,8 @@ tree_new (int y, int x, int lines, int cols, gboolean is_panel)
     tree = g_new (WTree, 1);
     w = WIDGET (tree);
 
-    widget_init (w, y, x, lines, cols, tree_callback, tree_event);
+    widget_init (w, y, x, lines, cols, tree_callback, tree_mouse_callback);
+    w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
     tree->is_panel = is_panel;
     tree->selected_ptr = 0;
 
@@ -1276,10 +1294,7 @@ tree_new (int y, int x, int lines, int cols, gboolean is_panel)
     tree->search_buffer[0] = 0;
     tree->topdiff = w->lines / 2;
     tree->searching = 0;
-    tree->active = 0;
 
-    /* We do not want to keep the cursor */
-    widget_want_cursor (w, FALSE);
     load_tree (tree);
     return tree;
 }

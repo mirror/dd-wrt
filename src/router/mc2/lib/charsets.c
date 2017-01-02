@@ -54,12 +54,6 @@ const char *cp_source = NULL;
 
 #define OTHER_8BIT "Other_8_bit"
 
-/*
- * FIXME: This assumes that ASCII is always the first encoding
- * in mc.charsets
- */
-#define CP_ASCII 0
-
 /*** file scope type declarations ****************************************************************/
 
 /*** file scope variables ************************************************************************/
@@ -354,7 +348,7 @@ convert_to_display (char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 GString *
-str_convert_to_display (char *str)
+str_convert_to_display (const char *str)
 {
     return str_nconvert_to_display (str, -1);
 
@@ -363,7 +357,7 @@ str_convert_to_display (char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 GString *
-str_nconvert_to_display (char *str, int len)
+str_nconvert_to_display (const char *str, int len)
 {
     GString *buff;
     GIConv conv;
@@ -400,7 +394,7 @@ convert_from_input (char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 GString *
-str_convert_to_input (char *str)
+str_convert_to_input (const char *str)
 {
     return str_nconvert_to_input (str, -1);
 }
@@ -408,7 +402,7 @@ str_convert_to_input (char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 GString *
-str_nconvert_to_input (char *str, int len)
+str_nconvert_to_input (const char *str, int len)
 {
     GString *buff;
     GIConv conv;
@@ -466,7 +460,7 @@ convert_from_utf_to_current (const char *str)
 /* --------------------------------------------------------------------------------------------- */
 
 unsigned char
-convert_from_utf_to_current_c (const int input_char, GIConv conv)
+convert_from_utf_to_current_c (int input_char, GIConv conv)
 {
     unsigned char str[UTF8_CHAR_LEN + 1];
     unsigned char buf_ch[UTF8_CHAR_LEN + 1];
@@ -498,7 +492,7 @@ convert_from_utf_to_current_c (const int input_char, GIConv conv)
 /* --------------------------------------------------------------------------------------------- */
 
 int
-convert_from_8bit_to_utf_c (const char input_char, GIConv conv)
+convert_from_8bit_to_utf_c (char input_char, GIConv conv)
 {
     unsigned char str[2];
     unsigned char buf_ch[UTF8_CHAR_LEN + 1];
@@ -530,7 +524,7 @@ convert_from_8bit_to_utf_c (const char input_char, GIConv conv)
 /* --------------------------------------------------------------------------------------------- */
 
 int
-convert_from_8bit_to_utf_c2 (const char input_char)
+convert_from_8bit_to_utf_c2 (char input_char)
 {
     unsigned char str[2];
     int ch = '.';

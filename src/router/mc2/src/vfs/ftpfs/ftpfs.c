@@ -64,7 +64,7 @@ What to do with this?
         int f = !strcmp( remote_path, "/~" );
         if (f || !strncmp( remote_path, "/~/", 3 )) {
             char *s;
-            s = mc_build_filename ( qhome (*bucket), remote_path +3-f, NULL );
+            s = mc_build_filename ( qhome (*bucket), remote_path +3-f, (char *) NULL );
             g_free (remote_path);
             remote_path = s;
         }
@@ -152,7 +152,6 @@ int ftpfs_ignore_chattr_errors = 1;
 #define MAXHOSTNAMELEN 64
 #endif
 
-#define UPLOAD_ZERO_LENGTH_FILE
 #define SUP ((ftp_super_data_t *) super->data)
 #define FH_SOCK ((ftp_fh_data_t *) fh->data)->sock
 
@@ -1371,13 +1370,21 @@ ftpfs_open_data_connection (struct vfs_class *me, struct vfs_s_super *super, con
         return -1;
 
     if (ftpfs_changetype (me, super, isbinary) == -1)
+    {
+        close (s);
         return -1;
+    }
+
     if (reget > 0)
     {
         j = ftpfs_command (me, super, WAIT_REPLY, "REST %d", reget);
         if (j != CONTINUE)
+        {
+            close (s);
             return -1;
+        }
     }
+
     if (remote)
     {
         char *remote_path = ftpfs_translate_path (me, super, remote);
@@ -1390,22 +1397,24 @@ ftpfs_open_data_connection (struct vfs_class *me, struct vfs_s_super *super, con
         j = ftpfs_command (me, super, WAIT_REPLY, "%s", cmd);
 
     if (j != PRELIM)
+    {
+        close (s);
         ERRNOR (EPERM, -1);
-    tty_enable_interrupt_key ();
+    }
+
     if (SUP->use_passive_connection)
         data = s;
     else
     {
+        tty_enable_interrupt_key ();
         data = accept (s, (struct sockaddr *) &from, &fromlen);
         if (data < 0)
-        {
             ftpfs_errno = errno;
-            close (s);
-            return -1;
-        }
+        tty_disable_interrupt_key ();
         close (s);
+        if (data < 0)
+            return -1;
     }
-    tty_disable_interrupt_key ();
     SUP->ctl_connection_busy = 1;
     return data;
 }
@@ -1695,7 +1704,7 @@ ftpfs_dir_load (struct vfs_class *me, struct vfs_s_inode *dir, char *remote_path
         char *path;
 
         /* Trailing "/." is necessary if remote_path is a symlink */
-        path = mc_build_filename (remote_path, ".", NULL);
+        path = mc_build_filename (remote_path, ".", (char *) NULL);
         sock = ftpfs_open_data_connection (me, super, "LIST -la", path, TYPE_ASCII, 0);
         g_free (path);
     }

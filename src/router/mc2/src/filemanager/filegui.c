@@ -175,9 +175,6 @@ int classic_progressbar = 1;
 
 /*** file scope macro definitions ****************************************************************/
 
-/* Hack: the vfs code should not rely on this */
-#define WITH_FULL_PATHS 1
-
 #define truncFileString(dlg, s)       str_trunc (s, WIDGET (dlg)->cols - 10)
 #define truncFileStringSecure(dlg, s) path_trunc (s, WIDGET (dlg)->cols - 10)
 
@@ -503,7 +500,7 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
          * longest of "Overwrite..." labels
          * (assume "Target date..." are short enough)
          */
-        l1 = max (widgets_len[9], widgets_len[4]);
+        l1 = MAX (widgets_len[9], widgets_len[4]);
 
         /* longest of button rows */
         l = l2 = 0;
@@ -514,17 +511,17 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
                 if (row != rd_widgets[i].ypos)
                 {
                     row = rd_widgets[i].ypos;
-                    l2 = max (l2, l);
+                    l2 = MAX (l2, l);
                     l = 0;
                 }
                 l += widgets_len[i] + 4;
             }
 
-        l2 = max (l2, l);       /* last row */
-        rd_xlen = max (rd_xlen, l1 + l2 + 8);
-        /* rd_xlen = max (rd_xlen, str_term_width1 (title) + 2); */
+        l2 = MAX (l2, l);       /* last row */
+        rd_xlen = MAX (rd_xlen, l1 + l2 + 8);
+        /* rd_xlen = MAX (rd_xlen, str_term_width1 (title) + 2); */
         stripped_name_len = str_term_width1 (stripped_name);
-        rd_xlen = max (rd_xlen, min (COLS, stripped_name_len + 8));
+        rd_xlen = MAX (rd_xlen, MIN (COLS, stripped_name_len + 8));
 
         /* Now place widgets */
         l1 += 5;                /* start of first button in the row */
@@ -545,8 +542,8 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
 
     /* FIXME - missing help node */
     ui->replace_dlg =
-        dlg_create (TRUE, 0, 0, rd_ylen, rd_xlen, alarm_colors, NULL, NULL, "[Replace]", title,
-                    DLG_CENTER);
+        dlg_create (TRUE, 0, 0, rd_ylen, rd_xlen, WPOS_CENTER, FALSE, alarm_colors, NULL, NULL,
+                    "[Replace]", title);
 
     /* prompt */
     ADD_RD_LABEL (0, "", "", y++);
@@ -560,12 +557,12 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
     size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->s_stat->st_size, 0,
                     panels_options.kilobyte_si);
     ADD_RD_LABEL (2, file_date (ui->s_stat->st_mtime), fsize_buffer, y++);
-    rd_xlen = max (rd_xlen, label2->cols + 8);
+    rd_xlen = MAX (rd_xlen, label2->cols + 8);
     /* destination date and size */
     size_trunc_len (fsize_buffer, sizeof (fsize_buffer), ui->d_stat->st_size, 0,
                     panels_options.kilobyte_si);
     ADD_RD_LABEL (3, file_date (ui->d_stat->st_mtime), fsize_buffer, y++);
-    rd_xlen = max (rd_xlen, label2->cols + 8);
+    rd_xlen = MAX (rd_xlen, label2->cols + 8);
 
     add_widget (ui->replace_dlg, hline_new (y++, -1, -1));
 
@@ -749,8 +746,8 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     ui->replace_result = REPLACE_YES;
 
     ui->op_dlg =
-        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, dialog_colors, NULL, NULL, NULL,
-                    op_names[ctx->operation], DLG_CENTER);
+        dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, dialog_colors, NULL,
+                    NULL, NULL, op_names[ctx->operation]);
 
     if (dialog_type != FILEGUI_DIALOG_DELETE_ITEM)
     {
@@ -847,15 +844,15 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     add_widget (ui->op_dlg, progress_buttons[3].w);
 
     buttons_width = 2 +
-        progress_buttons[0].len + max (progress_buttons[1].len, progress_buttons[2].len) +
+        progress_buttons[0].len + MAX (progress_buttons[1].len, progress_buttons[2].len) +
         progress_buttons[3].len;
 
     /* adjust dialog sizes  */
-    dlg_set_size (ui->op_dlg, y + 3, max (COLS * 2 / 3, buttons_width + 6));
+    dlg_set_size (ui->op_dlg, y + 3, MAX (COLS * 2 / 3, buttons_width + 6));
 
     place_progress_buttons (ui->op_dlg, FALSE);
 
-    dlg_select_widget (progress_buttons[0].w);
+    widget_select (progress_buttons[0].w);
 
     /* We will manage the dialog without any help, that's why
        we have to call dlg_init */
@@ -1212,7 +1209,7 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation,
         if (format_len + text_len <= max_len)
         {
             fmd_xlen = format_len + text_len + 6;
-            fmd_xlen = max (fmd_xlen, 68);
+            fmd_xlen = MAX (fmd_xlen, 68);
         }
         else
         {
@@ -1225,7 +1222,7 @@ file_mask_dialog (file_op_context_t * ctx, FileOperation operation,
     else
     {
         fmd_xlen = COLS * 2 / 3;
-        fmd_xlen = max (fmd_xlen, 68);
+        fmd_xlen = MAX (fmd_xlen, 68);
         g_snprintf (fmd_buf, sizeof (fmd_buf), format, *(const int *) text);
     }
 

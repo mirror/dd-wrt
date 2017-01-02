@@ -14,22 +14,22 @@
 
    You should have received a copy of the GNU Library General Public
    License along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307,
+   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301,
    USA.  */
 
 /* When included from os2compat.h we need all the original definitions */
 #ifndef OS2_AWARE
 
 #undef LIBDIR
-#define LIBDIR			_nlos2_libdir
+#define LIBDIR _nlos2_libdir
 extern char *_nlos2_libdir;
 
 #undef LOCALEDIR
-#define LOCALEDIR		_nlos2_localedir
+#define LOCALEDIR _nlos2_localedir
 extern char *_nlos2_localedir;
 
 #undef LOCALE_ALIAS_PATH
-#define LOCALE_ALIAS_PATH	_nlos2_localealiaspath
+#define LOCALE_ALIAS_PATH _nlos2_localealiaspath
 extern char *_nlos2_localealiaspath;
 
 #endif

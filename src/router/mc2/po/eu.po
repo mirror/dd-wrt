@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-05-08 08:14+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
@@ -450,9 +450,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Ezin da sortu hodi deskriptorea"
-
-msgid "Cannot parse command for pipe"
-msgstr "Ezin da sintaktikoki ulertu hodirako komandoa"
 
 msgid "Cannot create pipe streams"
 msgstr "Ezin dira sortu hodiko isuriak"
@@ -1915,6 +1912,9 @@ msgstr "L&ynx-en moduko mugimendua"
 
 msgid "Pa&ge scrolling"
 msgstr "Orri &labainketa"
+
+msgid "Center &scrolling"
+msgstr ""
 
 msgid "&Mouse page scrolling"
 msgstr "&Saguarekin orri labainketa"
@@ -4420,3 +4420,6 @@ msgstr "Hasieratik jarraitu?"
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr ""
 "Ezin eskuratu ondokoaren bertako kopia bat: /ftp://some.host/editme.txt"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Ezin da sintaktikoki ulertu hodirako komandoa"

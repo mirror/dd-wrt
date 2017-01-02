@@ -55,9 +55,9 @@
 /*** file scope macro definitions ****************************************************************/
 
 #define MY_ISDIR(x) (\
-    (is_exe (x->st.st_mode) && !(S_ISDIR (x->st.st_mode) || x->f.link_to_dir) && exec_first) \
+    (is_exe (x->st.st_mode) && !(S_ISDIR (x->st.st_mode) || link_isdir (x)) && exec_first) \
         ? 1 \
-        : ( (S_ISDIR (x->st.st_mode) || x->f.link_to_dir) ? 2 : 0) )
+        : ( (S_ISDIR (x->st.st_mode) || link_isdir (x)) ? 2 : 0) )
 
 /*** file scope type declarations ****************************************************************/
 
@@ -208,7 +208,7 @@ dir_get_dotdot_stat (const vfs_path_t * vpath, struct stat *st)
         {
             vfs_path_t *tmp_vpath;
 
-            tmp_vpath = vfs_path_append_new (vpath, "..", NULL);
+            tmp_vpath = vfs_path_append_new (vpath, "..", (char *) NULL);
             ret = mc_stat (tmp_vpath, st) == 0;
             vfs_path_free (tmp_vpath);
         }
@@ -287,7 +287,7 @@ dir_list_grow (dir_list * list, int delta)
         list->size = size;
     }
 
-    list->len = clear_flag ? 0 : min (list->len, size);
+    list->len = clear_flag ? 0 : MIN (list->len, size);
 
     return TRUE;
 }

@@ -14,17 +14,19 @@
 # Evgeny Bulgakov <bgav@netvision.net.il>, 1999
 # Ilia Maslakov <il.smind@gmail.com>, 2009
 # Mr GreyWolf, 2016
-# Mr GreyWolf, 2016
+# Mr.GreyWolf, 2016
 # NaiLi (aka jamesjames) Rootaerc <theism@mail.ru>, 2012
 # Sergey Panov <sipan@mit.edu>, 1999
+# Simple88, 2016
+# Simple88, 2016
 # Slava Zanko <slavazanko@gmail.com>, 2009,2011
 # Valek Filippov <frob@df.ru>, 2000
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-11 10:15+0000\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-06-28 07:48+0000\n"
 "Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/mc/mc/language/ru/)\n"
 "Language: ru\n"
@@ -467,9 +469,6 @@ msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Не удалось создать дескриптор канала"
-
-msgid "Cannot parse command for pipe"
-msgstr "Не удалось разобрать команду для канала"
 
 msgid "Cannot create pipe streams"
 msgstr "Не удалось создать потоки канала"
@@ -1900,7 +1899,7 @@ msgid "Show mi&ni-status"
 msgstr "Показывать &мини-статус"
 
 msgid "Use SI si&ze units"
-msgstr "Вывод в едини&цах СИ"
+msgstr "Вывод в единицах &СИ"
 
 msgid "Mi&x all files"
 msgstr "Сме&шивать файлы/каталоги"
@@ -1933,7 +1932,10 @@ msgid "L&ynx-like motion"
 msgstr "Навигация в стиле l&ynx"
 
 msgid "Pa&ge scrolling"
-msgstr "Страни&чное листание"
+msgstr "Страничное &листание"
+
+msgid "Center &scrolling"
+msgstr "&Центрированное листание"
 
 msgid "&Mouse page scrolling"
 msgstr "Страничное листание мышь&ю"
@@ -4443,3 +4445,6 @@ msgstr "Продолжить с начала?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Невозможно получить локальную копию /ftp://some.host/editme.txt"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Не удалось разобрать команду для канала"

@@ -152,14 +152,14 @@ vfs_canon (const char *path)
                encoding prefix placed at start of string without the leading slash
                should be autofixed by adding the leading slash
              */
-            local = mc_build_filename (PATH_SEP_STR, path, NULL);
+            local = mc_build_filename (PATH_SEP_STR, path, (char *) NULL);
         }
         else
         {
             const char *curr_dir;
 
             curr_dir = vfs_get_current_dir ();
-            local = mc_build_filename (curr_dir, path, NULL);
+            local = mc_build_filename (curr_dir, path, (char *) NULL);
         }
         result = vfs_canon (local);
         g_free (local);
@@ -805,11 +805,11 @@ vfs_path_elements_count (const vfs_path_t * vpath)
  */
 
 void
-vfs_path_add_element (const vfs_path_t * vpath, const vfs_path_element_t * path_element)
+vfs_path_add_element (vfs_path_t * vpath, const vfs_path_element_t * path_element)
 {
     g_array_append_val (vpath->path, path_element);
     g_free (vpath->str);
-    ((vfs_path_t *) vpath)->str = vfs_path_to_str_flags (vpath, 0, VPF_NONE);
+    vpath->str = vfs_path_to_str_flags (vpath, 0, VPF_NONE);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1272,7 +1272,7 @@ vfs_path_append_new (const vfs_path_t * vpath, const char *first_element, ...)
     va_end (args);
 
     result_str = vfs_path_as_str (vpath);
-    ret_vpath = vfs_path_build_filename (result_str, str_path, NULL);
+    ret_vpath = vfs_path_build_filename (result_str, str_path, (char *) NULL);
     g_free (str_path);
 
     return ret_vpath;
