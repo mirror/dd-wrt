@@ -85,7 +85,8 @@ void start_samba3(void)
 			}
 			cunext = cu->next;
 			free(cu);
-	
+		}
+
 		fp = fopen("/tmp/smb.conf", "wb");
 		fprintf(fp,
 			"[global]\n"
