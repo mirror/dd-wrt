@@ -91,28 +91,31 @@ host_triplet = @host@
 subdir = doc/hlp/es
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
-	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/glibc2.m4 \
-	$(top_srcdir)/m4/glibc21.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/intdiv0.m4 $(top_srcdir)/m4/intmax.m4 \
-	$(top_srcdir)/m4/inttypes-pri.m4 $(top_srcdir)/m4/inttypes.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/isc-posix.m4 \
-	$(top_srcdir)/m4/lcmessage.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/longdouble.m4 \
-	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/printf-posix.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/signed.m4 \
+	$(top_srcdir)/m4/fcntl-o.m4 $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/glibc2.m4 $(top_srcdir)/m4/glibc21.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intdiv0.m4 \
+	$(top_srcdir)/m4/intl.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/intmax.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
+	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/lcmessage.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/longlong.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/printf-posix.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/uintmax_t.m4 $(top_srcdir)/m4/ulonglong.m4 \
-	$(top_srcdir)/m4/wchar_t.m4 $(top_srcdir)/m4/wint_t.m4 \
-	$(top_srcdir)/m4/xsize.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/uintmax_t.m4 \
+	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
+	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
+	$(top_srcdir)/m4.include/mode_t.m4 \
+	$(top_srcdir)/m4.include/stat-size.m4 \
 	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/fstypename.m4 \
 	$(top_srcdir)/m4.include/fsusage.m4 \
@@ -145,7 +148,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
-mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
@@ -199,7 +202,7 @@ am__installdirs = "$(DESTDIR)$(hlpdir)"
 DATA = $(hlp_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
 am__DIST_COMMON = $(srcdir)/../hlp-lang-include.am \
-	$(srcdir)/Makefile.in $(top_srcdir)/config/mkinstalldirs
+	$(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
@@ -215,6 +218,7 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
@@ -261,6 +265,7 @@ EXEEXT = @EXEEXT@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 GENCAT = @GENCAT@
+GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIBC2 = @GLIBC2@
 GLIBC21 = @GLIBC21@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -268,11 +273,14 @@ GLIB_LIBS = @GLIB_LIBS@
 GMODULE_CFLAGS = @GMODULE_CFLAGS@
 GMODULE_LIBS = @GMODULE_LIBS@
 GMSGFMT = @GMSGFMT@
+GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
 HAVE_ASPRINTF = @HAVE_ASPRINTF@
 HAVE_FILECMD = @HAVE_FILECMD@
+HAVE_NEWLOCALE = @HAVE_NEWLOCALE@
 HAVE_POSIX_PRINTF = @HAVE_POSIX_PRINTF@
 HAVE_SNPRINTF = @HAVE_SNPRINTF@
+HAVE_VISIBILITY = @HAVE_VISIBILITY@
 HAVE_WPRINTF = @HAVE_WPRINTF@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
@@ -285,6 +293,7 @@ INSTOBJEXT = @INSTOBJEXT@
 INTLBISON = @INTLBISON@
 INTLLIBS = @INTLLIBS@
 INTLOBJS = @INTLOBJS@
+INTL_DEFAULT_VERBOSITY = @INTL_DEFAULT_VERBOSITY@
 INTL_LIBTOOL_SUFFIX_PREFIX = @INTL_LIBTOOL_SUFFIX_PREFIX@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LD = @LD@
@@ -293,16 +302,24 @@ LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBMC_RELEASE = @LIBMC_RELEASE@
 LIBMC_VERSION = @LIBMC_VERSION@
+LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
+LIBPTH = @LIBPTH@
+LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBS = @LIBS@
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
+LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
+LTLIBC = @LTLIBC@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
+LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
+LTLIBPTH = @LTLIBPTH@
+LTLIBTHREAD = @LTLIBTHREAD@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -312,8 +329,8 @@ MAN_DATE = @MAN_DATE@
 MAN_FLAGS = @MAN_FLAGS@
 MCLIBS = @MCLIBS@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MSGFMT = @MSGFMT@
+MSGFMT_015 = @MSGFMT_015@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -336,6 +353,7 @@ PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 POSUB = @POSUB@
+PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PYTHON = @PYTHON@
 RANLIB = @RANLIB@
 RUBY = @RUBY@
@@ -350,8 +368,13 @@ UNZIP = @UNZIP@
 USE_INCLUDED_LIBINTL = @USE_INCLUDED_LIBINTL@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
+WINDRES = @WINDRES@
+WOE32 = @WOE32@
+WOE32DLL = @WOE32DLL@
 X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
+XGETTEXT_015 = @XGETTEXT_015@
+XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@

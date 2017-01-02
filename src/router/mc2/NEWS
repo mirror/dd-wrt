@@ -1,3 +1,70 @@
+Version 4.8.18
+
+- Core
+  * Alt-Enter, Ctrl-Enter and Ctrl-Shift-Enter shortcuts are bindable in file manager (#3075)
+  * Internals:
+    * Refactoring of widget subsystem (#2919, #3632)
+
+- Editor
+  * Add syntax highlighting:
+    * GLSL (#3683)
+    * CUDA (#3686)
+
+- Misc
+  * Code cleanup (#3641, #3652)
+
+- Fixes
+  * Build failure on FreeBSD (#3643)
+  * Incompatibility with NetBSD curses (#3665)
+  * Memory leaks (#3637)
+  * Subshell output lost on window resize under tmux, GNU screen (#3639)
+  * --with-subshell=optional does not work (#3642)
+  * Backward search is not interruptible (#3648)
+  * "Output lines" has no effect (#3655)
+  * Wrong handling of mouse clicks in long listing mode (#3661)
+  * Panelize resets marks on marked files in many cases (#3663)
+  * Cannot change directory in the active panel in some cases (#3669)
+  * Filtered View doesn't work (#3646, #3660)
+  * mcedit: don't kill bookmarks when open file from "Find File" dialog (#3668)
+  * man pages use "the MC" instead of "MC" (#3644)
+
+
+Version 4.8.17
+
+- Core
+  * Minimal version of Gettext is 0.18.1 (#1885)
+  * Optimization of copy/move operations (use adaptive buffer as in coreutils) (#2193)
+  * Recognize csh as tcsh (#2742)
+  * Сentered scrolling of file panel (#3130)
+  * Internals:
+    * Switch to new high-level mouse API (#3571)
+
+- VFS
+  * FISH helpers: remove executable bit (#3610)
+
+- Editor
+  * Improvements of syntax highlighting:
+    * F90 (#3618)
+    * Java (MidnightCommander/mc#95)
+
+- Misc
+  * Code cleanup (#3598, #3607)
+  * Install mc.keymap as a symlink to mc.default.keymap (#3609)
+  * File highlight: add more common file formats
+
+- Fixes
+  * Segfault due to incorrect value of SHELL environment variable (#3606)
+  * Segfault when copying files under FreeBSD 9.3 (#3617)
+  * Segfault when entering into some cpio archives (#3621)
+  * Subshell output lost on window resize under tmux, GNU screen (#3639)
+  * Subshell cursor position lost after window resizing (#3640)
+  * Listbox no longer scrolls when dragging outside widget (#3559)
+  * VFS: extfs: incorrect date parsing in unzip (#3622)
+  * VFS: extfs: buffer overflow (#3605)
+  * VFS: patchfs: syntax error (#3620)
+  * VFS: fish: mistakes in ls Perl helper (#3611)
+
+
 Version 4.8.16
 
 - Core

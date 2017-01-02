@@ -153,7 +153,6 @@ struct WView
     coord_cache_t *coord_cache; /* Cache for mapping offsets to cursor positions */
 
     /* Display information */
-    gboolean active;            /* Active or not in QuickView mode */
     screen_dimen dpy_frame_size;        /* Size of the frame surrounding the real viewer */
     off_t dpy_start;            /* Offset of the displayed data (start of the paragraph in non-hex mode) */
     off_t dpy_end;              /* Offset after the displayed data */
@@ -264,7 +263,7 @@ off_t mcview_get_filesize (WView *);
 void mcview_update_filesize (WView * view);
 char *mcview_get_ptr_file (WView *, off_t);
 char *mcview_get_ptr_string (WView *, off_t);
-int mcview_get_utf (WView *, off_t, int *, gboolean *);
+gboolean mcview_get_utf (WView * view, off_t byte_index, int *ch, int *ch_len);
 gboolean mcview_get_byte_string (WView *, off_t, int *);
 gboolean mcview_get_byte_none (WView *, off_t, int *);
 void mcview_set_byte (WView *, off_t, byte);

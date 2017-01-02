@@ -65,12 +65,6 @@ extern int mc_tty_frm[];
 
 extern char *tty_tgetstr (const char *name);
 
-/* {{{ Input }}} */
-
-#ifdef HAVE_SLANG
-extern int reset_hp_softkeys;
-#endif
-
 /*** declarations of public functions ************************************************************/
 
 extern void tty_beep (void);
@@ -136,6 +130,9 @@ extern void tty_refresh (void);
 extern void tty_change_screen_size (void);
 
 extern int mc_tty_normalize_lines_char (const char *);
+
+extern void tty_enter_ca_mode (void);
+extern void tty_exit_ca_mode (void);
 
 /*** inline functions ****************************************************************************/
 #endif /* MC_TTY_H */

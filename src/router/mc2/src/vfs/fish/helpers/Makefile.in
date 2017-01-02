@@ -14,7 +14,6 @@
 
 @SET_MAKE@
 
-
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -92,28 +91,31 @@ host_triplet = @host@
 subdir = src/vfs/fish/helpers
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
-	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/glibc2.m4 \
-	$(top_srcdir)/m4/glibc21.m4 $(top_srcdir)/m4/iconv.m4 \
-	$(top_srcdir)/m4/intdiv0.m4 $(top_srcdir)/m4/intmax.m4 \
-	$(top_srcdir)/m4/inttypes-pri.m4 $(top_srcdir)/m4/inttypes.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/isc-posix.m4 \
-	$(top_srcdir)/m4/lcmessage.m4 $(top_srcdir)/m4/lib-ld.m4 \
-	$(top_srcdir)/m4/lib-link.m4 $(top_srcdir)/m4/lib-prefix.m4 \
-	$(top_srcdir)/m4/libtool.m4 $(top_srcdir)/m4/longdouble.m4 \
-	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
-	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/printf-posix.m4 \
-	$(top_srcdir)/m4/progtest.m4 $(top_srcdir)/m4/signed.m4 \
+	$(top_srcdir)/m4/fcntl-o.m4 $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/glibc2.m4 $(top_srcdir)/m4/glibc21.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intdiv0.m4 \
+	$(top_srcdir)/m4/intl.m4 $(top_srcdir)/m4/intlmacosx.m4 \
+	$(top_srcdir)/m4/intmax.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
+	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/lcmessage.m4 \
+	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
+	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
+	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/longlong.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
+	$(top_srcdir)/m4/printf-posix.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/uintmax_t.m4 $(top_srcdir)/m4/ulonglong.m4 \
-	$(top_srcdir)/m4/wchar_t.m4 $(top_srcdir)/m4/wint_t.m4 \
-	$(top_srcdir)/m4/xsize.m4 $(top_srcdir)/acinclude.m4 \
+	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/uintmax_t.m4 \
+	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
+	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/m4.include/ac_onceonly.m4 \
 	$(top_srcdir)/m4.include/ax_path_lib_pcre.m4 \
 	$(top_srcdir)/m4.include/dx_doxygen.m4 \
 	$(top_srcdir)/m4.include/mc-cflags.m4 \
 	$(top_srcdir)/m4.include/mc-check-search-type.m4 \
+	$(top_srcdir)/m4.include/mode_t.m4 \
+	$(top_srcdir)/m4.include/stat-size.m4 \
 	$(top_srcdir)/m4.include/ls-mntd-fs.m4 \
 	$(top_srcdir)/m4.include/fstypename.m4 \
 	$(top_srcdir)/m4.include/fsusage.m4 \
@@ -146,10 +148,29 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
-mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+AM_V_P = $(am__v_P_@AM_V@)
+am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
+am__v_P_0 = false
+am__v_P_1 = :
+AM_V_GEN = $(am__v_GEN_@AM_V@)
+am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
+am__v_GEN_0 = @echo "  GEN     " $@;
+am__v_GEN_1 = 
+AM_V_at = $(am__v_at_@AM_V@)
+am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
+am__v_at_0 = @
+am__v_at_1 = 
+SOURCES =
+DIST_SOURCES =
+am__can_run_installinfo = \
+  case $$AM_UPDATE_INFO_DIR in \
+    n|no|NO) false;; \
+    *) (install-info --version) >/dev/null 2>&1;; \
+  esac
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -177,31 +198,10 @@ am__uninstall_files_from_dir = { \
     || { echo " ( cd '$$dir' && rm -f" $$files ")"; \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
-am__installdirs = "$(DESTDIR)$(fishdir)" "$(DESTDIR)$(fishdir)"
-SCRIPTS = $(fish_SCRIPTS)
-AM_V_P = $(am__v_P_@AM_V@)
-am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
-am__v_P_0 = false
-am__v_P_1 = :
-AM_V_GEN = $(am__v_GEN_@AM_V@)
-am__v_GEN_ = $(am__v_GEN_@AM_DEFAULT_V@)
-am__v_GEN_0 = @echo "  GEN     " $@;
-am__v_GEN_1 = 
-AM_V_at = $(am__v_at_@AM_V@)
-am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
-am__v_at_0 = @
-am__v_at_1 = 
-SOURCES =
-DIST_SOURCES =
-am__can_run_installinfo = \
-  case $$AM_UPDATE_INFO_DIR in \
-    n|no|NO) false;; \
-    *) (install-info --version) >/dev/null 2>&1;; \
-  esac
+am__installdirs = "$(DESTDIR)$(fishdir)"
 DATA = $(fish_DATA)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-am__DIST_COMMON = $(srcdir)/Makefile.in \
-	$(top_srcdir)/config/mkinstalldirs
+am__DIST_COMMON = $(srcdir)/Makefile.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALLOCA = @ALLOCA@
@@ -217,6 +217,7 @@ CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
 CPP = @CPP@
@@ -263,6 +264,7 @@ EXEEXT = @EXEEXT@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 GENCAT = @GENCAT@
+GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
 GLIBC2 = @GLIBC2@
 GLIBC21 = @GLIBC21@
 GLIB_CFLAGS = @GLIB_CFLAGS@
@@ -270,11 +272,14 @@ GLIB_LIBS = @GLIB_LIBS@
 GMODULE_CFLAGS = @GMODULE_CFLAGS@
 GMODULE_LIBS = @GMODULE_LIBS@
 GMSGFMT = @GMSGFMT@
+GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
 HAVE_ASPRINTF = @HAVE_ASPRINTF@
 HAVE_FILECMD = @HAVE_FILECMD@
+HAVE_NEWLOCALE = @HAVE_NEWLOCALE@
 HAVE_POSIX_PRINTF = @HAVE_POSIX_PRINTF@
 HAVE_SNPRINTF = @HAVE_SNPRINTF@
+HAVE_VISIBILITY = @HAVE_VISIBILITY@
 HAVE_WPRINTF = @HAVE_WPRINTF@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
@@ -287,6 +292,7 @@ INSTOBJEXT = @INSTOBJEXT@
 INTLBISON = @INTLBISON@
 INTLLIBS = @INTLLIBS@
 INTLOBJS = @INTLOBJS@
+INTL_DEFAULT_VERBOSITY = @INTL_DEFAULT_VERBOSITY@
 INTL_LIBTOOL_SUFFIX_PREFIX = @INTL_LIBTOOL_SUFFIX_PREFIX@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LD = @LD@
@@ -295,16 +301,24 @@ LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBMC_RELEASE = @LIBMC_RELEASE@
 LIBMC_VERSION = @LIBMC_VERSION@
+LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
+LIBPTH = @LIBPTH@
+LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBS = @LIBS@
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
+LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
+LTLIBC = @LTLIBC@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
+LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
+LTLIBPTH = @LTLIBPTH@
+LTLIBTHREAD = @LTLIBTHREAD@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -314,8 +328,8 @@ MAN_DATE = @MAN_DATE@
 MAN_FLAGS = @MAN_FLAGS@
 MCLIBS = @MCLIBS@
 MKDIR_P = @MKDIR_P@
-MKINSTALLDIRS = @MKINSTALLDIRS@
 MSGFMT = @MSGFMT@
+MSGFMT_015 = @MSGFMT_015@
 MSGMERGE = @MSGMERGE@
 NM = @NM@
 NMEDIT = @NMEDIT@
@@ -338,6 +352,7 @@ PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 POSUB = @POSUB@
+PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PYTHON = @PYTHON@
 RANLIB = @RANLIB@
 RUBY = @RUBY@
@@ -352,8 +367,13 @@ UNZIP = @UNZIP@
 USE_INCLUDED_LIBINTL = @USE_INCLUDED_LIBINTL@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
+WINDRES = @WINDRES@
+WOE32 = @WOE32@
+WOE32DLL = @WOE32DLL@
 X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
+XGETTEXT_015 = @XGETTEXT_015@
+XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 XMKMF = @XMKMF@
 X_CFLAGS = @X_CFLAGS@
 X_EXTRA_LIBS = @X_EXTRA_LIBS@
@@ -418,10 +438,11 @@ fishdir = $(libexecdir)/@PACKAGE@/fish
 
 # Files to install and distribute other than fish scripts
 FISH_MISC = README.fish
-fish_DATA = $(FISH_MISC)
-fish_SCRIPTS = ls mkdir fexists unlink chown chmod rmdir ln mv hardlink get send append info utime
+
+# Install and distribute FISH helper scripts w/o shebang & executable bit as data
+fish_DATA = $(FISH_MISC) ls mkdir fexists unlink chown chmod rmdir ln mv hardlink get send append info utime
 fishconfdir = $(sysconfdir)/@PACKAGE@
-EXTRA_DIST = $(FISH_MISC) $(fish_SCRIPTS)
+EXTRA_DIST = $(fish_DATA)
 all: all-am
 
 .SUFFIXES:
@@ -454,41 +475,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-install-fishSCRIPTS: $(fish_SCRIPTS)
-	@$(NORMAL_INSTALL)
-	@list='$(fish_SCRIPTS)'; test -n "$(fishdir)" || list=; \
-	if test -n "$$list"; then \
-	  echo " $(MKDIR_P) '$(DESTDIR)$(fishdir)'"; \
-	  $(MKDIR_P) "$(DESTDIR)$(fishdir)" || exit 1; \
-	fi; \
-	for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  if test -f "$$d$$p"; then echo "$$d$$p"; echo "$$p"; else :; fi; \
-	done | \
-	sed -e 'p;s,.*/,,;n' \
-	    -e 'h;s|.*|.|' \
-	    -e 'p;x;s,.*/,,;$(transform)' | sed 'N;N;N;s,\n, ,g' | \
-	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1; } \
-	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
-	    if ($$2 == $$4) { files[d] = files[d] " " $$1; \
-	      if (++n[d] == $(am__install_max)) { \
-		print "f", d, files[d]; n[d] = 0; files[d] = "" } } \
-	    else { print "f", d "/" $$4, $$1 } } \
-	  END { for (d in files) print "f", d, files[d] }' | \
-	while read type dir files; do \
-	     if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
-	     test -z "$$files" || { \
-	       echo " $(INSTALL_SCRIPT) $$files '$(DESTDIR)$(fishdir)$$dir'"; \
-	       $(INSTALL_SCRIPT) $$files "$(DESTDIR)$(fishdir)$$dir" || exit $$?; \
-	     } \
-	; done
-
-uninstall-fishSCRIPTS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(fish_SCRIPTS)'; test -n "$(fishdir)" || exit 0; \
-	files=`for p in $$list; do echo "$$p"; done | \
-	       sed -e 's,.*/,,;$(transform)'`; \
-	dir='$(DESTDIR)$(fishdir)'; $(am__uninstall_files_from_dir)
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -555,9 +541,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(SCRIPTS) $(DATA)
+all-am: Makefile $(DATA)
 installdirs:
-	for dir in "$(DESTDIR)$(fishdir)" "$(DESTDIR)$(fishdir)"; do \
+	for dir in "$(DESTDIR)$(fishdir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-am
@@ -610,7 +596,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-fishDATA install-fishSCRIPTS
+install-data-am: install-fishDATA
 
 install-dvi: install-dvi-am
 
@@ -654,7 +640,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-fishDATA uninstall-fishSCRIPTS
+uninstall-am: uninstall-fishDATA
 
 .MAKE: install-am install-strip
 
@@ -663,13 +649,12 @@ uninstall-am: uninstall-fishDATA uninstall-fishSCRIPTS
 	distclean-libtool distdir dvi dvi-am html html-am info info-am \
 	install install-am install-data install-data-am install-dvi \
 	install-dvi-am install-exec install-exec-am install-fishDATA \
-	install-fishSCRIPTS install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags-am uninstall \
-	uninstall-am uninstall-fishDATA uninstall-fishSCRIPTS
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am tags-am uninstall uninstall-am uninstall-fishDATA
 
 .PRECIOUS: Makefile
 

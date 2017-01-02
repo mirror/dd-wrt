@@ -683,13 +683,9 @@ mcview_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *
         return i;
 
     case MSG_FOCUS:
-        view->active = TRUE;
         view->dpy_bbar_dirty = TRUE;
+        /* TODO: get rid of draw here before MSG_DRAW */
         mcview_update (view);
-        return MSG_HANDLED;
-
-    case MSG_UNFOCUS:
-        view->active = FALSE;
         return MSG_HANDLED;
 
     case MSG_DESTROY:
@@ -732,9 +728,10 @@ mcview_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm,
 
     case MSG_VALIDATE:
         view = (WView *) find_widget_type (h, mcview_callback);
-        h->state = DLG_ACTIVE;  /* don't stop the dialog before final decision */
+        /* don't stop the dialog before final decision */
+        widget_set_state (WIDGET (h), WST_ACTIVE, TRUE);
         if (mcview_ok_to_quit (view))
-            h->state = DLG_CLOSED;
+            dlg_stop (h);
         else
             mcview_update (view);
         return MSG_HANDLED;

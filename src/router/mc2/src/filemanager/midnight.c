@@ -138,10 +138,10 @@ static gboolean ctl_x_map_enabled = FALSE;
 static void
 stop_dialogs (void)
 {
-    midnight_dlg->state = DLG_CLOSED;
+    dlg_stop (midnight_dlg);
 
     if ((top_dlg != NULL) && (top_dlg->data != NULL))
-        DIALOG (top_dlg->data)->state = DLG_CLOSED;
+        dlg_stop (DIALOG (top_dlg->data));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -368,10 +368,7 @@ init_menu (void)
 static void
 menu_last_selected_cmd (void)
 {
-    the_menubar->is_active = TRUE;
-    the_menubar->is_dropped = (drop_menus != 0);
-    the_menubar->previous_widget = dlg_get_current_widget_id (midnight_dlg);
-    dlg_select_widget (the_menubar);
+    menubar_activate (the_menubar, drop_menus != 0, -1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -379,14 +376,14 @@ menu_last_selected_cmd (void)
 static void
 menu_cmd (void)
 {
-    if (the_menubar->is_active)
-        return;
+    int selected;
 
     if ((get_current_index () == 0) == (current_panel->active != 0))
-        the_menubar->selected = 0;
+        selected = 0;
     else
-        the_menubar->selected = g_list_length (the_menubar->menu) - 1;
-    menu_last_selected_cmd ();
+        selected = g_list_length (the_menubar->menu) - 1;
+
+    menubar_activate (the_menubar, drop_menus != 0, selected);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -751,7 +748,7 @@ put_link (WPanel * panel)
         vfs_path_t *vpath;
         int i;
 
-        vpath = vfs_path_append_new (panel->cwd_vpath, selection (panel)->fname, NULL);
+        vpath = vfs_path_append_new (panel->cwd_vpath, selection (panel)->fname, (char *) NULL);
         i = mc_readlink (vpath, buffer, sizeof (buffer) - 1);
         vfs_path_free (vpath);
 
@@ -784,7 +781,7 @@ put_other_link (void)
 
 /** Insert the selected file name into the input line */
 static void
-put_prog_name (void)
+put_current_selected (void)
 {
     const char *tmp;
 
@@ -969,7 +966,7 @@ prepend_cwd_on_local (const char *filename)
 
     vfs_path_free (vpath);
 
-    return vfs_path_append_new (vfs_get_raw_current_dir (), filename, NULL);
+    return vfs_path_append_new (vfs_get_raw_current_dir (), filename, (char *) NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1141,6 +1138,13 @@ midnight_execute_cmd (Widget * sender, long command)
         break;
     case CK_PutCurrentPath:
         midnight_put_panel_path (current_panel);
+        break;
+    case CK_PutCurrentSelected:
+        put_current_selected ();
+        break;
+    case CK_PutCurrentFullSelected:
+        midnight_put_panel_path (current_panel);
+        put_current_selected ();
         break;
     case CK_PutCurrentLink:
         put_current_link ();
@@ -1424,12 +1428,12 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
     case MSG_IDLE:
         /* We only need the first idle event to show user menu after start */
-        widget_want_idle (w, FALSE);
+        widget_idle (w, FALSE);
 
         if (boot_current_is_left)
-            dlg_select_widget (get_panel_widget (0));
+            widget_select (get_panel_widget (0));
         else
-            dlg_select_widget (get_panel_widget (1));
+            widget_select (get_panel_widget (1));
 
         if (auto_menu)
             midnight_execute_cmd (NULL, CK_UserMenu);
@@ -1445,7 +1449,7 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         }
 
         /* FIXME: should handle all menu shortcuts before this point */
-        if (the_menubar->is_active)
+        if (widget_get_state (WIDGET (the_menubar), WST_FOCUSED))
             return MSG_NOT_HANDLED;
 
         if (parm == '\t')
@@ -1477,21 +1481,6 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
             input_insert (cmdline, "", FALSE);
             cmdline->point = 0;
-        }
-
-        /* Ctrl-Enter and Alt-Enter */
-        if (((parm & ~(KEY_M_CTRL | KEY_M_ALT)) == '\n') && (parm & (KEY_M_CTRL | KEY_M_ALT)))
-        {
-            put_prog_name ();
-            return MSG_HANDLED;
-        }
-
-        /* Ctrl-Shift-Enter */
-        if (parm == (KEY_M_CTRL | KEY_M_SHIFT | '\n'))
-        {
-            midnight_put_panel_path (current_panel);
-            put_prog_name ();
-            return MSG_HANDLED;
         }
 
         if ((!mc_global.tty.alternate_plus_minus
@@ -1561,7 +1550,7 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         }
 
     case MSG_POST_KEY:
-        if (!the_menubar->is_active)
+        if (!widget_get_state (WIDGET (the_menubar), WST_FOCUSED))
             update_dirty_panels ();
         return MSG_HANDLED;
 
@@ -1576,42 +1565,6 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     default:
         return dlg_default_callback (w, sender, msg, parm, data);
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-static int
-midnight_event (Gpm_Event * event, void *data)
-{
-    Widget *wh = WIDGET (data);
-    int ret = MOU_UNHANDLED;
-
-    if (event->y == wh->y + 1)
-    {
-        /* menubar */
-        if (menubar_visible || the_menubar->is_active)
-            ret = WIDGET (the_menubar)->mouse (event, the_menubar);
-        else
-        {
-            Widget *w;
-
-            w = get_panel_widget (0);
-            if (w->mouse != NULL)
-                ret = w->mouse (event, w);
-
-            if (ret == MOU_UNHANDLED)
-            {
-                w = get_panel_widget (1);
-                if (w->mouse != NULL)
-                    ret = w->mouse (event, w);
-            }
-
-            if (ret == MOU_UNHANDLED)
-                ret = WIDGET (the_menubar)->mouse (event, the_menubar);
-        }
-    }
-
-    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1756,7 +1709,7 @@ void
 change_panel (void)
 {
     input_free_completions (cmdline);
-    dlg_one_down (midnight_dlg);
+    dlg_select_next_widget (midnight_dlg);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1796,8 +1749,8 @@ do_nc (void)
     edit_stack_init ();
 #endif
 
-    midnight_dlg = dlg_create (FALSE, 0, 0, LINES, COLS, dialog_colors, midnight_callback,
-                               midnight_event, "[main]", NULL, DLG_NONE);
+    midnight_dlg = dlg_create (FALSE, 0, 0, 1, 1, WPOS_FULLSCREEN, FALSE, dialog_colors,
+                               midnight_callback, NULL, "[main]", NULL);
 
     /* Check if we were invoked as an editor or file viewer */
     if (mc_global.mc_run_mode != MC_RUN_FULL)
@@ -1808,7 +1761,7 @@ do_nc (void)
     else
     {
         /* We only need the first idle event to show user menu after start */
-        widget_want_idle (WIDGET (midnight_dlg), TRUE);
+        widget_idle (WIDGET (midnight_dlg), TRUE);
 
         setup_mc ();
         mc_filehighlight = mc_fhl_new (TRUE);

@@ -313,9 +313,6 @@ info_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
         info_hook (info);
         return MSG_HANDLED;
 
-    case MSG_FOCUS:
-        return MSG_NOT_HANDLED;
-
     case MSG_DESTROY:
         delete_hook (&select_file_hook, info_hook);
         free_my_statfs ();
@@ -339,8 +336,6 @@ info_new (int y, int x, int lines, int cols)
     info = g_new (struct WInfo, 1);
     w = WIDGET (info);
     widget_init (w, y, x, lines, cols, info_callback, NULL);
-    /* We do not want the cursor */
-    widget_want_cursor (w, FALSE);
 
     return info;
 }

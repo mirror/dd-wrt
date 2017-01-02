@@ -10,7 +10,7 @@
    Jakub Jelinek, 1995
    Andrej Borsenkow, 1996
    Norbert Warmuth, 1997
-   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2013
+   Andrew Borodin <aborodin@vmail.ru>, 2009, 2010, 2013, 2016
 
    This file is part of the Midnight Commander.
 
@@ -39,7 +39,6 @@
 #include "lib/global.h"
 
 #include "lib/tty/tty.h"
-#include "lib/tty/mouse.h"
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/
@@ -76,22 +75,25 @@ check_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             return MSG_NOT_HANDLED;
         c->state ^= C_BOOL;
         c->state ^= C_CHANGE;
-        send_message (w, sender, MSG_FOCUS, ' ', data);
-        send_message (WIDGET (w)->owner, w, MSG_NOTIFY, 0, NULL);
+        widget_redraw (w);
+        send_message (w->owner, w, MSG_NOTIFY, (int) MSG_KEY, NULL);
         return MSG_HANDLED;
 
     case MSG_CURSOR:
-        widget_move (c, 0, 1);
+        widget_move (w, 0, 1);
         return MSG_HANDLED;
 
-    case MSG_FOCUS:
-    case MSG_UNFOCUS:
     case MSG_DRAW:
-        widget_selectcolor (w, msg == MSG_FOCUS, FALSE);
-        widget_move (c, 0, 0);
-        tty_print_string ((c->state & C_BOOL) ? "[x] " : "[ ] ");
-        hotkey_draw (w, c->text, msg == MSG_FOCUS);
-        return MSG_HANDLED;
+        {
+            gboolean focused;
+
+            focused = widget_get_state (w, WST_FOCUSED);
+            widget_selectcolor (w, focused, FALSE);
+            widget_move (w, 0, 0);
+            tty_print_string ((c->state & C_BOOL) ? "[x] " : "[ ] ");
+            hotkey_draw (w, c->text, focused);
+            return MSG_HANDLED;
+        }
 
     case MSG_DESTROY:
         release_hotkey (c->text);
@@ -104,26 +106,25 @@ check_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
 /* --------------------------------------------------------------------------------------------- */
 
-static int
-check_event (Gpm_Event * event, void *data)
+static void
+check_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 {
-    Widget *w = WIDGET (data);
+    (void) event;
 
-    if (!mouse_global_in_widget (event, w))
-        return MOU_UNHANDLED;
-
-    if ((event->type & (GPM_DOWN | GPM_UP)) != 0)
+    switch (msg)
     {
-        dlg_select_widget (w);
-        if ((event->type & GPM_UP) != 0)
-        {
-            send_message (w, NULL, MSG_KEY, ' ', NULL);
-            send_message (w, NULL, MSG_FOCUS, 0, NULL);
-            send_message (w->owner, w, MSG_POST_KEY, ' ', NULL);
-        }
-    }
+    case MSG_MOUSE_DOWN:
+        widget_select (w);
+        break;
 
-    return MOU_NORMAL;
+    case MSG_MOUSE_CLICK:
+        send_message (w, NULL, MSG_KEY, ' ', NULL);
+        send_message (w->owner, w, MSG_POST_KEY, ' ', NULL);
+        break;
+
+    default:
+        break;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -139,10 +140,10 @@ check_new (int y, int x, int state, const char *text)
     c = g_new (WCheck, 1);
     w = WIDGET (c);
     c->text = parse_hotkey (text);
-    widget_init (w, y, x, 1, 4 + hotkey_width (c->text), check_callback, check_event);
     /* 4 is width of "[X] " */
+    widget_init (w, y, x, 1, 4 + hotkey_width (c->text), check_callback, check_mouse_callback);
+    w->options |= WOP_SELECTABLE | WOP_WANT_CURSOR | WOP_WANT_HOTKEY;
     c->state = state ? C_BOOL : 0;
-    widget_want_hotkey (w, TRUE);
 
     return c;
 }

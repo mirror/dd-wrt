@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-03-12 17:34+0100\n"
-"PO-Revision-Date: 2016-03-06 21:29+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"PO-Revision-Date: 2016-08-02 08:14+0000\n"
+"Last-Translator: Myselus\n"
 "Language-Team: Bulgarian (http://www.transifex.com/mc/mc/language/bg/)\n"
 "Language: bg\n"
 "MIME-Version: 1.0\n"
@@ -454,9 +454,6 @@ msgstr ""
 msgid "Cannot create pipe descriptor"
 msgstr "Не може да се създаде дескриптор на канала"
 
-msgid "Cannot parse command for pipe"
-msgstr "Не може да се обработи командата за канала"
-
 msgid "Cannot create pipe streams"
 msgstr "Не могат да се създадат потоци на канала"
 
@@ -582,7 +579,7 @@ msgstr "Грешка"
 
 #, c-format
 msgid "%s (%d)"
-msgstr ""
+msgstr "%s (%d)"
 
 msgid "&Abort"
 msgstr "Отказ"
@@ -1902,6 +1899,9 @@ msgstr "Движение като lynx"
 msgid "Pa&ge scrolling"
 msgstr "Прелистване на стра&ница"
 
+msgid "Center &scrolling"
+msgstr ""
+
 msgid "&Mouse page scrolling"
 msgstr "Прелистване на страница с &мишка"
 
@@ -2621,6 +2621,8 @@ msgid ""
 "Cannot read source file \"%s\"\n"
 "%s"
 msgstr ""
+"Не може да се прочете изходния файл \"%s\"\n"
+"%s"
 
 #, c-format
 msgid ""
@@ -4150,7 +4152,7 @@ msgid "sftp: Password is empty."
 msgstr "sftp: Паролата е празна."
 
 msgid "sftp: Failure establishing SSH session"
-msgstr ""
+msgstr "sftp: Неуспешно установяване на SSH сесия"
 
 msgid "sftp: No file handler data present for reading file"
 msgstr "sftp: Няма съществуващ обработчик за четене на файл"
@@ -4402,3 +4404,6 @@ msgstr "Да се продължи ли от началото?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Не може да се изтегли локално копие на /ftp://some.host/editme.txt"
+
+#~ msgid "Cannot parse command for pipe"
+#~ msgstr "Не може да се обработи командата за канала"

@@ -82,6 +82,7 @@
 #include "tree.h"
 #include "midnight.h"           /* current_panel */
 #include "layout.h"             /* rotate_dash() */
+#include "ioblksize.h"          /* io_blksize() */
 
 #include "file.h"
 
@@ -228,7 +229,7 @@ static char *
 transform_source (file_op_context_t * ctx, const vfs_path_t * source_vpath)
 {
     char *s, *q;
-    char *fnsource;
+    const char *fnsource;
 
     s = g_strdup (vfs_path_as_str (source_vpath));
 
@@ -238,14 +239,16 @@ transform_source (file_op_context_t * ctx, const vfs_path_t * source_vpath)
         if (*q == '\n')
             *q = ' ';
 
-    fnsource = (char *) x_basename (s);
+    fnsource = x_basename (s);
 
     if (mc_search_run (ctx->search_handle, fnsource, 0, strlen (fnsource), NULL))
     {
         q = mc_search_prepare_replace_str2 (ctx->search_handle, ctx->dest_mask);
         if (ctx->search_handle->error != MC_SEARCH_E_OK)
         {
-            message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+            if (ctx->search_handle->error_str != NULL)
+                message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+
             q = NULL;
             transform_error = FILE_ABORT;
         }
@@ -293,7 +296,7 @@ is_in_linklist (const GSList * lp, const vfs_path_t * vpath, const struct stat *
 
     class = vfs_path_get_last_path_vfs (vpath);
 
-    for (; lp != NULL; lp = g_slist_next (lp))
+    for (; lp != NULL; lp = (const GSList *) g_slist_next (lp))
     {
         const struct link *lnk = (const struct link *) lp->data;
 
@@ -358,7 +361,7 @@ check_hardlinks (const vfs_path_t * src_vpath, const vfs_path_t * dst_vpath, str
         }
     }
 
-    lnk = g_new0 (struct link, 1);
+    lnk = g_try_new0 (struct link, 1);
     if (lnk != NULL)
     {
         lnk->vfs = my_vfs;
@@ -398,7 +401,7 @@ make_symlink (file_op_context_t * ctx, const char *src_path, const char *dst_pat
     dst_is_symlink = (mc_lstat (dst_vpath, &sb) == 0) && S_ISLNK (sb.st_mode);
 
   retry_src_readlink:
-    len = mc_readlink (src_vpath, link_target, MC_MAXPATHLEN - 1);
+    len = mc_readlink (src_vpath, link_target, sizeof (link_target) - 1);
     if (len < 0)
     {
         if (ctx->skip_all)
@@ -413,25 +416,23 @@ make_symlink (file_op_context_t * ctx, const char *src_path, const char *dst_pat
         }
         goto ret;
     }
-    link_target[len] = 0;
 
-    if (ctx->stable_symlinks)
+    link_target[len] = '\0';
+
+    if (ctx->stable_symlinks && !(vfs_file_is_local (src_vpath) && vfs_file_is_local (dst_vpath)))
     {
-
-        if (!vfs_file_is_local (src_vpath) || !vfs_file_is_local (dst_vpath))
-        {
-            message (D_ERROR, MSG_ERROR,
-                     _("Cannot make stable symlinks across"
-                       "non-local filesystems:\n\nOption Stable Symlinks will be disabled"));
-            ctx->stable_symlinks = FALSE;
-        }
+        message (D_ERROR, MSG_ERROR,
+                 _("Cannot make stable symlinks across"
+                   "non-local filesystems:\n\nOption Stable Symlinks will be disabled"));
+        ctx->stable_symlinks = FALSE;
     }
 
     if (ctx->stable_symlinks && !g_path_is_absolute (link_target))
     {
-        const char *r = strrchr (src_path, PATH_SEP);
+        const char *r;
 
-        if (r)
+        r = strrchr (src_path, PATH_SEP);
+        if (r != NULL)
         {
             char *p;
             vfs_path_t *q;
@@ -449,21 +450,19 @@ make_symlink (file_op_context_t * ctx, const char *src_path, const char *dst_pat
 
                 tmp_vpath1 = vfs_path_vtokens_get (q, -1, 1);
                 s = g_strconcat (p, link_target, (char *) NULL);
-                g_free (p);
                 g_strlcpy (link_target, s, sizeof (link_target));
                 g_free (s);
                 tmp_vpath2 = vfs_path_from_str (link_target);
                 s = diff_two_paths (tmp_vpath1, tmp_vpath2);
                 vfs_path_free (tmp_vpath1);
                 vfs_path_free (tmp_vpath2);
-                if (s)
+                if (s != NULL)
                 {
                     g_strlcpy (link_target, s, sizeof (link_target));
                     g_free (s);
                 }
             }
-            else
-                g_free (p);
+            g_free (p);
             vfs_path_free (q);
         }
     }
@@ -480,16 +479,14 @@ make_symlink (file_op_context_t * ctx, const char *src_path, const char *dst_pat
      * if dst_exists, it is obvious that this had failed.
      * We can delete the old symlink and try again...
      */
-    if (dst_is_symlink)
+    if (dst_is_symlink && mc_unlink (dst_vpath) == 0
+        && mc_symlink (link_target_vpath, dst_vpath) == 0)
     {
-        if (mc_unlink (dst_vpath) == 0)
-            if (mc_symlink (link_target_vpath, dst_vpath) == 0)
-            {
-                /* Success */
-                return_status = FILE_CONT;
-                goto ret;
-            }
+        /* Success */
+        return_status = FILE_CONT;
+        goto ret;
     }
+
     if (ctx->skip_all)
         return_status = FILE_SKIPALL;
     else
@@ -559,7 +556,7 @@ do_compute_dir_size (const vfs_path_t * dirname_vpath, dirsize_status_msg_t * ds
         if (DIR_IS_DOT (dirent->d_name) || DIR_IS_DOTDOT (dirent->d_name))
             continue;
 
-        tmp_vpath = vfs_path_append_new (dirname_vpath, dirent->d_name, NULL);
+        tmp_vpath = vfs_path_append_new (dirname_vpath, dirent->d_name, (char *) NULL);
 
         res = mc_lstat (tmp_vpath, &s);
         if (res == 0)
@@ -1127,7 +1124,7 @@ recursive_erase (file_op_total_context_t * tctx, file_op_context_t * ctx, const 
         if (DIR_IS_DOT (next->d_name) || DIR_IS_DOTDOT (next->d_name))
             continue;
 
-        tmp_vpath = vfs_path_append_new (vpath, next->d_name, NULL);
+        tmp_vpath = vfs_path_append_new (vpath, next->d_name, (char *) NULL);
         if (mc_lstat (tmp_vpath, &buf) != 0)
         {
             mc_closedir (reading);
@@ -1293,7 +1290,7 @@ panel_compute_totals (const WPanel * panel, dirsize_status_msg_t * sm, size_t * 
             vfs_path_t *p;
             FileProgressStatus status;
 
-            p = vfs_path_append_new (panel->cwd_vpath, panel->dir.list[i].fname, NULL);
+            p = vfs_path_append_new (panel->cwd_vpath, panel->dir.list[i].fname, (char *) NULL);
             status = compute_dir_size (p, sm, &dir_count, ret_count, ret_total, compute_symlinks);
             vfs_path_free (p);
 
@@ -1423,10 +1420,10 @@ panel_operate_generate_prompt (const WPanel * panel, FileOperation operation,
      *       "Delete %d files/directories?"
      */
 
-    sp = (char *) (src_stat != NULL ? one_format : many_format);
+    cp = (src_stat != NULL ? one_format : many_format);
 
     /* 1. Substitute %o */
-    format_string = str_replace_all (sp, "%o", op_names1[(int) operation]);
+    format_string = str_replace_all (cp, "%o", op_names1[(int) operation]);
 
     /* 2. Substitute %n */
     cp = operation == OP_DELETE ? "\n" : " ";
@@ -1485,9 +1482,8 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     gid_t src_gid = (gid_t) (-1);
 
     int src_desc, dest_desc = -1;
-    int n_read, n_written;
     mode_t src_mode = 0;        /* The mode of the source file */
-    struct stat sb, sb2;
+    struct stat src_stat, dst_stat;
     struct utimbuf utb;
     gboolean dst_exists = FALSE, appending = FALSE;
     off_t file_size = -1;
@@ -1495,8 +1491,8 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     struct timeval tv_transfer_start;
     dest_status_t dst_status = DEST_NONE;
     int open_flags;
-    gboolean is_first_time = TRUE;
     vfs_path_t *src_vpath = NULL, *dst_vpath = NULL;
+    char *buf = NULL;
 
     /* FIXME: We should not be using global variables! */
     ctx->do_reget = 0;
@@ -1516,9 +1512,9 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
 
     mc_refresh ();
 
-    while (mc_stat (dst_vpath, &sb2) == 0)
+    while (mc_stat (dst_vpath, &dst_stat) == 0)
     {
-        if (S_ISDIR (sb2.st_mode))
+        if (S_ISDIR (dst_stat.st_mode))
         {
             if (ctx->skip_all)
                 return_status = FILE_SKIPALL;
@@ -1537,7 +1533,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         break;
     }
 
-    while ((*ctx->stat_func) (src_vpath, &sb) != 0)
+    while ((*ctx->stat_func) (src_vpath, &src_stat) != 0)
     {
         if (ctx->skip_all)
             return_status = FILE_SKIPALL;
@@ -1555,7 +1551,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     if (dst_exists)
     {
         /* Destination already exists */
-        if (sb.st_dev == sb2.st_dev && sb.st_ino == sb2.st_ino)
+        if (src_stat.st_dev == dst_stat.st_dev && src_stat.st_ino == dst_stat.st_ino)
         {
             return_status = warn_same_file (_("\"%s\"\nand\n\"%s\"\nare the same file"),
                                             src_path, dst_path);
@@ -1566,7 +1562,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         if (tctx->ask_overwrite)
         {
             ctx->do_reget = 0;
-            return_status = query_replace (ctx, dst_path, &sb, &sb2);
+            return_status = query_replace (ctx, dst_path, &src_stat, &dst_stat);
             if (return_status != FILE_CONT)
                 goto ret_fast;
         }
@@ -1575,23 +1571,24 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     if (!ctx->do_append)
     {
         /* Check the hardlinks */
-        if (!ctx->follow_links && sb.st_nlink > 1 && check_hardlinks (src_vpath, dst_vpath, &sb))
+        if (!ctx->follow_links && src_stat.st_nlink > 1
+            && check_hardlinks (src_vpath, dst_vpath, &src_stat))
         {
             /* We have made a hardlink - no more processing is necessary */
             return_status = FILE_CONT;
             goto ret_fast;
         }
 
-        if (S_ISLNK (sb.st_mode))
+        if (S_ISLNK (src_stat.st_mode))
         {
             return_status = make_symlink (ctx, src_path, dst_path);
             goto ret_fast;
         }
 
-        if (S_ISCHR (sb.st_mode) || S_ISBLK (sb.st_mode) ||
-            S_ISFIFO (sb.st_mode) || S_ISNAM (sb.st_mode) || S_ISSOCK (sb.st_mode))
+        if (S_ISCHR (src_stat.st_mode) || S_ISBLK (src_stat.st_mode) || S_ISFIFO (src_stat.st_mode)
+            || S_ISNAM (src_stat.st_mode) || S_ISSOCK (src_stat.st_mode))
         {
-            while (mc_mknod (dst_vpath, sb.st_mode & ctx->umask_kill, sb.st_rdev) < 0
+            while (mc_mknod (dst_vpath, src_stat.st_mode & ctx->umask_kill, src_stat.st_rdev) < 0
                    && !ctx->skip_all)
             {
                 return_status = file_error (_("Cannot create special file \"%s\"\n%s"), dst_path);
@@ -1603,8 +1600,8 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
             }
             /* Success */
 
-            while (ctx->preserve_uidgid && mc_chown (dst_vpath, sb.st_uid, sb.st_gid) != 0
-                   && !ctx->skip_all)
+            while (ctx->preserve_uidgid
+                   && mc_chown (dst_vpath, src_stat.st_uid, src_stat.st_gid) != 0 && !ctx->skip_all)
             {
                 temp_status = file_error (_("Cannot chown target file \"%s\"\n%s"), dst_path);
                 if (temp_status == FILE_SKIP)
@@ -1618,7 +1615,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                 }
             }
 
-            while (ctx->preserve && mc_chmod (dst_vpath, sb.st_mode & ctx->umask_kill) != 0
+            while (ctx->preserve && mc_chmod (dst_vpath, src_stat.st_mode & ctx->umask_kill) != 0
                    && !ctx->skip_all)
             {
                 temp_status = file_error (_("Cannot chmod target file \"%s\"\n%s"), dst_path);
@@ -1663,7 +1660,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         }
     }
 
-    while (mc_fstat (src_desc, &sb) != 0)
+    while (mc_fstat (src_desc, &src_stat) != 0)
     {
         if (ctx->skip_all)
             return_status = FILE_SKIPALL;
@@ -1679,12 +1676,12 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         goto ret;
     }
 
-    src_mode = sb.st_mode;
-    src_uid = sb.st_uid;
-    src_gid = sb.st_gid;
-    utb.actime = sb.st_atime;
-    utb.modtime = sb.st_mtime;
-    file_size = sb.st_size;
+    src_mode = src_stat.st_mode;
+    src_uid = src_stat.st_uid;
+    src_gid = src_stat.st_gid;
+    utb.actime = src_stat.st_atime;
+    utb.modtime = src_stat.st_mtime;
+    file_size = src_stat.st_size;
 
     open_flags = O_WRONLY;
     if (dst_exists)
@@ -1723,7 +1720,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     ctx->do_append = FALSE;
 
     /* Find out the optimal buffer size.  */
-    while (mc_fstat (dest_desc, &sb) != 0)
+    while (mc_fstat (dest_desc, &dst_stat) != 0)
     {
         if (ctx->skip_all)
             return_status = FILE_SKIPALL;
@@ -1739,7 +1736,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     }
 
     /* try preallocate space; if fail, try copy anyway */
-    while (vfs_preallocate (dest_desc, file_size, appending ? sb.st_size : 0) != 0)
+    while (vfs_preallocate (dest_desc, file_size, appending ? dst_stat.st_size : 0) != 0)
     {
         if (ctx->skip_all)
         {
@@ -1783,26 +1780,27 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     return_status = check_progress_buttons (ctx);
     mc_refresh ();
 
-    if (return_status != FILE_CONT)
-        goto ret;
-
+    if (return_status == FILE_CONT)
     {
+        size_t bufsize;
         off_t n_read_total = 0;
         struct timeval tv_current, tv_last_update, tv_last_input;
         int secs, update_secs;
         const char *stalled_msg = "";
+        gboolean is_first_time = TRUE;
 
         tv_last_update = tv_transfer_start;
 
+        bufsize = io_blksize (dst_stat);
+        buf = g_malloc (bufsize);
+
         while (TRUE)
         {
-            char buf[BUF_8K];
+            ssize_t n_read = -1, n_written;
 
             /* src_read */
-            if (mc_ctl (src_desc, VFS_CTL_IS_NOTREADY, 0))
-                n_read = -1;
-            else
-                while ((n_read = mc_read (src_desc, buf, sizeof (buf))) < 0 && !ctx->skip_all)
+            if (mc_ctl (src_desc, VFS_CTL_IS_NOTREADY, 0) == 0)
+                while ((n_read = mc_read (src_desc, buf, bufsize)) < 0 && !ctx->skip_all)
                 {
                     return_status = file_error (_("Cannot read source file \"%s\"\n%s"), src_path);
                     if (return_status == FILE_RETRY)
@@ -1811,6 +1809,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                         ctx->skip_all = TRUE;
                     goto ret;
                 }
+
             if (n_read == 0)
                 break;
 
@@ -1819,6 +1818,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
             if (n_read > 0)
             {
                 char *t = buf;
+
                 n_read_total += n_read;
 
                 /* Windows NT ftp servers report that files have no
@@ -1830,7 +1830,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                 gettimeofday (&tv_last_input, NULL);
 
                 /* dst_write */
-                while ((n_written = mc_write (dest_desc, t, n_read)) < n_read)
+                while ((n_written = mc_write (dest_desc, t, (size_t) n_read)) < n_read)
                 {
                     gboolean write_errno_nospace;
 
@@ -1910,11 +1910,13 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                 goto ret;
             }
         }
+
+        dst_status = DEST_FULL; /* copy successful, don't remove target file */
     }
 
-    dst_status = DEST_FULL;     /* copy successful, don't remove target file */
-
   ret:
+    g_free (buf);
+
     rotate_dash (FALSE);
     while (src_desc != -1 && mc_close (src_desc) < 0 && !ctx->skip_all)
     {
@@ -2136,7 +2138,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
             vfs_path_t *tmp;
 
             tmp = dst_vpath;
-            dst_vpath = vfs_path_append_new (dst_vpath, x_basename (s), NULL);
+            dst_vpath = vfs_path_append_new (dst_vpath, x_basename (s), (char *) NULL);
             vfs_path_free (tmp);
 
         }
@@ -2204,7 +2206,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
             continue;
 
         /* get the filename and add it to the src directory */
-        path = mc_build_filename (s, next->d_name, NULL);
+        path = mc_build_filename (s, next->d_name, (char *) NULL);
         tmp_vpath = vfs_path_from_str (path);
 
         (*ctx->stat_func) (tmp_vpath, &buf);
@@ -2212,7 +2214,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
         {
             char *mdpath;
 
-            mdpath = mc_build_filename (d, next->d_name, NULL);
+            mdpath = mc_build_filename (d, next->d_name, (char *) NULL);
             /*
              * From here, we just intend to recursively copy subdirs, not
              * the double functionality of copying different when the target
@@ -2227,7 +2229,7 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
         {
             char *dest_file;
 
-            dest_file = mc_build_filename (d, x_basename (path), NULL);
+            dest_file = mc_build_filename (d, x_basename (path), (char *) NULL);
             return_status = copy_file_file (tctx, ctx, path, dest_file);
             g_free (dest_file);
         }
@@ -2325,7 +2327,7 @@ move_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
         vfs_path_t *tmp;
 
         tmp = dst_vpath;
-        dst_vpath = vfs_path_append_new (dst_vpath, x_basename (s), NULL);
+        dst_vpath = vfs_path_append_new (dst_vpath, x_basename (s), (char *) NULL);
         vfs_path_free (tmp);
     }
 
@@ -2492,7 +2494,7 @@ dirsize_status_init_cb (status_msg_t * sm)
     if (dsm->allow_skip)
         b_width += str_term_width1 (b2_name) + 4 + 1;
 
-    ui_width = max (COLS / 2, b_width + 6);
+    ui_width = MAX (COLS / 2, b_width + 6);
     dsm->dirname = label_new (2, 3, "");
     add_widget (sm->dlg, dsm->dirname);
     dsm->count_size = label_new (3, 3, "");
@@ -2505,7 +2507,7 @@ dirsize_status_init_cb (status_msg_t * sm)
     {
         dsm->skip_button = WIDGET (button_new (5, 3, FILE_SKIP, NORMAL_BUTTON, b2_name, NULL));
         add_widget (sm->dlg, dsm->skip_button);
-        dlg_select_widget (dsm->skip_button);
+        widget_select (dsm->skip_button);
     }
 
     widget_set_size (wd, wd->y, wd->x, 8, ui_width);
@@ -2866,12 +2868,14 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
                     repl_dest = mc_search_prepare_replace_str2 (ctx->search_handle, dest);
                     if (ctx->search_handle->error != MC_SEARCH_E_OK)
                     {
-                        message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+                        if (ctx->search_handle->error_str != NULL)
+                            message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+
                         g_free (repl_dest);
                         goto clean_up;
                     }
 
-                    temp2 = mc_build_filename (repl_dest, temp, NULL);
+                    temp2 = mc_build_filename (repl_dest, temp, (char *) NULL);
                     g_free (temp);
                     g_free (repl_dest);
                     g_free (dest);
@@ -2977,12 +2981,14 @@ panel_operate (void *source_panel, FileOperation operation, gboolean force_singl
                         repl_dest = mc_search_prepare_replace_str2 (ctx->search_handle, dest);
                         if (ctx->search_handle->error != MC_SEARCH_E_OK)
                         {
-                            message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+                            if (ctx->search_handle->error_str != NULL)
+                                message (D_ERROR, MSG_ERROR, "%s", ctx->search_handle->error_str);
+
                             g_free (repl_dest);
                             goto clean_up;
                         }
 
-                        temp2 = mc_build_filename (repl_dest, temp, NULL);
+                        temp2 = mc_build_filename (repl_dest, temp, (char *) NULL);
                         g_free (temp);
                         g_free (repl_dest);
                         source_with_path_str =

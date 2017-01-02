@@ -108,7 +108,7 @@ check_codeset (void)
             if (mc_global.display_codepage == -1)
                 mc_global.display_codepage = 0;
 
-            mc_config_set_string (mc_main_config, CONFIG_MISC_SECTION, "display_codepage",
+            mc_config_set_string (mc_global.main_config, CONFIG_MISC_SECTION, "display_codepage",
                                   cp_display);
         }
     }
@@ -287,7 +287,7 @@ main (int argc, char *argv[])
         char *buffer;
         vfs_path_t *vpath;
 
-        buffer = mc_config_get_string (mc_panels_config, "Dirs", "other_dir", ".");
+        buffer = mc_config_get_string (mc_global.panels_config, "Dirs", "other_dir", ".");
         vpath = vfs_path_from_str (buffer);
         if (vfs_file_is_local (vpath))
             saved_other_dir = buffer;
@@ -383,7 +383,7 @@ main (int argc, char *argv[])
        w/o Shift button in subshell in the native console */
     init_mouse ();
 
-    /* Done after do_enter_ca_mode (tty_init) because in VTE bracketed mode is
+    /* Done after tty_enter_ca_mode (tty_init) because in VTE bracketed mode is
        separate for the normal and alternate screens */
     enable_bracketed_paste ();
 
@@ -401,6 +401,10 @@ main (int argc, char *argv[])
         exit_code = EXIT_SUCCESS;
     else
         exit_code = do_nc ()? EXIT_SUCCESS : EXIT_FAILURE;
+
+    disable_bracketed_paste ();
+
+    disable_mouse ();
 
     /* Save the tree store */
     (void) tree_store_save ();

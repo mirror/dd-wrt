@@ -51,7 +51,6 @@ static char *mc_config_str = NULL;
 static char *mc_cache_str = NULL;
 static char *mc_data_str = NULL;
 
-static const char *homedir = NULL;
 /* value of $MC_HOME */
 static const char *mc_home = NULL;
 
@@ -153,7 +152,7 @@ mc_config_init_one_config_path (const char *path_base, const char *subdir, GErro
 
     mc_return_val_if_error (mcerror, FALSE);
 
-    full_path = g_build_filename (path_base, subdir, NULL);
+    full_path = g_build_filename (path_base, subdir, (char *) NULL);
     if (g_file_test (full_path, G_FILE_TEST_EXISTS))
     {
         if (g_file_test (full_path, G_FILE_TEST_IS_DIR))
@@ -179,7 +178,7 @@ mc_config_init_one_config_path (const char *path_base, const char *subdir, GErro
 static char *
 mc_config_get_deprecated_path (void)
 {
-    return g_build_filename (mc_config_get_home_dir (), MC_OLD_USERCONF_DIR, NULL);
+    return g_build_filename (mc_config_get_home_dir (), MC_OLD_USERCONF_DIR, (char *) NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -224,8 +223,8 @@ mc_config_copy (const char *old_name, const char *new_name, GError ** mcerror)
         {
             char *old_name2, *new_name2;
 
-            old_name2 = g_build_filename (old_name, dir_name, NULL);
-            new_name2 = g_build_filename (new_name, dir_name, NULL);
+            old_name2 = g_build_filename (old_name, dir_name, (char *) NULL);
+            new_name2 = g_build_filename (new_name, dir_name, (char *) NULL);
             mc_config_copy (old_name2, new_name2, mcerror);
             g_free (new_name2);
             g_free (old_name2);
@@ -247,7 +246,7 @@ mc_config_fix_migrated_rules (void)
 
         old_name =
             g_build_filename (*mc_config_migrate_rules_fix[rule_index].old_basedir,
-                              mc_config_migrate_rules_fix[rule_index].filename, NULL);
+                              mc_config_migrate_rules_fix[rule_index].filename, (char *) NULL);
 
         if (g_file_test (old_name, G_FILE_TEST_EXISTS))
         {
@@ -255,7 +254,7 @@ mc_config_fix_migrated_rules (void)
             const char *basedir = *mc_config_migrate_rules_fix[rule_index].new_basedir;
             const char *filename = mc_config_migrate_rules_fix[rule_index].filename;
 
-            new_name = g_build_filename (basedir, filename, NULL);
+            new_name = g_build_filename (basedir, filename, (char *) NULL);
             rename (old_name, new_name);
             g_free (new_name);
         }
@@ -296,7 +295,7 @@ mc_config_init_config_paths (GError ** mcerror)
     if (xdg_vars_initialized)
         return;
 
-    /* init mc_home and homedir if not yet */
+    /* init mc_home if not yet */
     (void) mc_config_get_home_dir ();
 
 #if MC_HOMEDIR_XDG
@@ -316,35 +315,12 @@ mc_config_init_config_paths (GError ** mcerror)
     }
     else
     {
-        dir = (char *) g_get_user_config_dir ();
-        if (dir != NULL && *dir != '\0')
-            mc_config_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-        else
-        {
-            dir = g_build_filename (homedir, ".config", (char *) NULL);
-            mc_config_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-            g_free (dir);
-        }
-
-        dir = (char *) g_get_user_cache_dir ();
-        if (dir != NULL && *dir != '\0')
-            mc_cache_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-        else
-        {
-            dir = g_build_filename (homedir, ".cache", (char *) NULL);
-            mc_cache_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-            g_free (dir);
-        }
-
-        dir = (char *) g_get_user_data_dir ();
-        if (dir != NULL && *dir != '\0')
-            mc_data_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-        else
-        {
-            dir = g_build_filename (homedir, ".local", "share", (char *) NULL);
-            mc_data_str = mc_config_init_one_config_path (dir, MC_USERCONF_DIR, mcerror);
-            g_free (dir);
-        }
+        mc_config_str =
+            mc_config_init_one_config_path (g_get_user_config_dir (), MC_USERCONF_DIR, mcerror);
+        mc_cache_str =
+            mc_config_init_one_config_path (g_get_user_cache_dir (), MC_USERCONF_DIR, mcerror);
+        mc_data_str =
+            mc_config_init_one_config_path (g_get_user_data_dir (), MC_USERCONF_DIR, mcerror);
     }
 
     mc_config_fix_migrated_rules ();
@@ -413,9 +389,15 @@ mc_config_get_cache_path (void)
 const char *
 mc_config_get_home_dir (void)
 {
+    static const char *homedir = NULL;
+
     if (homedir == NULL)
     {
         homedir = g_getenv ("MC_HOME");
+        /* Prior to GLib 2.36, g_get_home_dir() ignores $HOME, which is why
+         * we read it ourselves. As that function's documentation explains,
+         * using $HOME is good for compatibility with other programs and
+         * for running from test frameworks. */
         if (homedir == NULL || *homedir == '\0')
             homedir = g_getenv ("HOME");
         else
@@ -467,7 +449,8 @@ mc_config_migrate_from_old_place (GError ** mcerror, char **msg)
             continue;
 
         old_name =
-            g_build_filename (old_dir, mc_config_files_reference[rule_index].old_filename, NULL);
+            g_build_filename (old_dir, mc_config_files_reference[rule_index].old_filename,
+                              (char *) NULL);
 
         if (g_file_test (old_name, G_FILE_TEST_EXISTS))
         {
@@ -475,7 +458,7 @@ mc_config_migrate_from_old_place (GError ** mcerror, char **msg)
             const char *basedir = *mc_config_files_reference[rule_index].new_basedir;
             const char *filename = mc_config_files_reference[rule_index].new_filename;
 
-            new_name = g_build_filename (basedir, filename, NULL);
+            new_name = g_build_filename (basedir, filename, (char *) NULL);
             mc_config_copy (old_name, new_name, mcerror);
             g_free (new_name);
         }
@@ -522,7 +505,8 @@ mc_config_get_full_path (const char *config_name)
         if (strcmp (config_name, mc_config_files_reference[rule_index].new_filename) == 0)
         {
             return g_build_filename (*mc_config_files_reference[rule_index].new_basedir,
-                                     mc_config_files_reference[rule_index].new_filename, NULL);
+                                     mc_config_files_reference[rule_index].new_filename,
+                                     (char *) NULL);
         }
     }
     return NULL;

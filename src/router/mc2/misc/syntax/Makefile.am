@@ -15,6 +15,7 @@ SYNTAXFILES =			\
 	cmake.syntax		\
 	cs.syntax		\
 	css.syntax		\
+	cuda.syntax		\
 	cxx.syntax		\
 	d.syntax		\
 	dlink.syntax		\
@@ -30,6 +31,7 @@ SYNTAXFILES =			\
 	f90.syntax		\
 	filehighlight.syntax	\
 	fortran.syntax		\
+	glsl.syntax		\
 	go.syntax		\
 	haskell.syntax		\
 	html.syntax		\
