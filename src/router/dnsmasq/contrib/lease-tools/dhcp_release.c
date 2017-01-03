@@ -328,5 +328,7 @@ int main(int argc, char **argv)
       exit(1);
     }
 
+  close(fd);
+  close(nl);
   return 0;
 }
