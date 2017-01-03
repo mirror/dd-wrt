@@ -2,15 +2,34 @@
 extern "C" {
 #endif
 
+#include <stdlib.h>
+
 #ifndef GD_H
 #define GD_H 1
 
-#define GD_MAJOR_VERSION 2
-#define GD_MINOR_VERSION 1
-#define GD_RELEASE_VERSION 0
-#define GD_EXTRA_VERSION "alpha"
-#define GD_VERSION_STRING "2.1.0-alpha"
+/* Version information.  This gets parsed by build scripts as well as
+ * gcc so each #define line in this group must also be splittable on
+ * whitespace, take the form GD_*_VERSION and contain the magical
+ * trailing comment. */
+#define GD_MAJOR_VERSION    2           /*version605b5d1778*/
+#define GD_MINOR_VERSION    2           /*version605b5d1778*/
+#define GD_RELEASE_VERSION  3           /*version605b5d1778*/
+#define GD_EXTRA_VERSION    ""          /*version605b5d1778*/
+/* End parsable section. */
 
+/* The version string.  This is constructed from the version number
+ * parts above via macro abuse^Wtrickery. */
+#define GDXXX_VERSION_STR(mjr, mnr, rev, ext) mjr "." mnr "." rev ext
+#define GDXXX_STR(s) GDXXX_SSTR(s)  /* Two levels needed to expand args. */
+#define GDXXX_SSTR(s) #s
+
+#define GD_VERSION_STRING                                               \
+    GDXXX_VERSION_STR(GDXXX_STR(GD_MAJOR_VERSION),                      \
+                      GDXXX_STR(GD_MINOR_VERSION),                      \
+                      GDXXX_STR(GD_RELEASE_VERSION),                    \
+                      GD_EXTRA_VERSION)
+
+    
 /* Do the DLL dance: dllexport when building the DLL,
    dllimport when importing from it, nothing when
    not on Silly Silly Windows (tm Aardman Productions). */
@@ -47,7 +66,7 @@ extern "C" {
 # define BGD_STDCALL __stdcall
 # define BGD_EXPORT_DATA_IMPL
 #else
-# ifdef HAVE_VISIBILITY
+# if defined(HAVE_VISIBILITY) && HAVE_VISIBILITY==1
 #  define BGD_EXPORT_DATA_PROT __attribute__ ((visibility ("default")))
 #  define BGD_EXPORT_DATA_IMPL __attribute__ ((visibility ("hidden")))
 # else
@@ -58,6 +77,22 @@ extern "C" {
 #endif
 
 #define BGD_DECLARE(rt) BGD_EXPORT_DATA_PROT rt BGD_STDCALL
+
+/* VS2012+ disable keyword macroizing unless _ALLOW_KEYWORD_MACROS is set
+   We define inline, snprintf, and strcasecmp if they're missing 
+*/
+#ifdef _MSC_VER
+#  define _ALLOW_KEYWORD_MACROS
+#  ifndef inline
+#    define inline __inline
+#  endif 
+#  ifndef strcasecmp
+#    define strcasecmp _stricmp
+#  endif 
+#if _MSC_VER < 1900
+     extern int snprintf(char*, size_t, const char*, ...);
+#endif
+#endif 
 
 #ifdef __cplusplus
 	extern "C"
@@ -121,6 +156,7 @@ extern "C" {
 #define gdEffectAlphaBlend 1
 #define gdEffectNormal 2
 #define gdEffectOverlay 3
+#define gdEffectMultiply 4
 
 #define GD_TRUE 1
 #define GD_FALSE 0
@@ -136,7 +172,9 @@ extern "C" {
    The resulting color is opaque. */
 
 BGD_DECLARE(int) gdAlphaBlend (int dest, int src);
-
+BGD_DECLARE(int) gdLayerOverlay (int dest, int src);
+BGD_DECLARE(int) gdLayerMultiply (int dest, int src);
+	
 enum gdPaletteQuantizationMethod {
 	GD_QUANT_DEFAULT = 0,
 	GD_QUANT_JQUANT = 1,  /* libjpeg's old median cut. Fast, but only uses 16-bit color. */
@@ -148,7 +186,7 @@ enum gdPaletteQuantizationMethod {
  * Group: Transform
  *
  * Constants: gdInterpolationMethod
-
+ *
  *  GD_BELL				 - Bell
  *  GD_BESSEL			 - Bessel
  *  GD_BILINEAR_FIXED 	 - fixed point bilinear 
@@ -170,6 +208,7 @@ enum gdPaletteQuantizationMethod {
  *  GD_SINC				 - Sinc
  *  GD_TRIANGLE			 - Triangle
  *  GD_WEIGHTED4		 - 4 pixels weighted bilinear interpolation
+ *  GD_LINEAR            - bilinear interpolation
  *
  * See also:
  *  <gdSetInterpolationMethod>
@@ -197,7 +236,8 @@ typedef enum {
 	GD_SINC,
 	GD_TRIANGLE,
 	GD_WEIGHTED4,
-	GD_METHOD_COUNT = 21
+	GD_LINEAR,
+	GD_METHOD_COUNT = 23
 } gdInterpolationMethod;
 
 /* define struct with name and func ptr and add it to gdImageStruct gdInterpolationMethod interpolation; */
@@ -205,6 +245,27 @@ typedef enum {
 /* Interpolation function ptr */
 typedef double (* interpolation_method )(double);
 
+
+/*
+   Group: Types
+ 
+   typedef: gdImage
+
+   typedef: gdImagePtr
+
+   The data structure in which gd stores images. <gdImageCreate>,
+   <gdImageCreateTrueColor> and the various image file-loading functions
+   return a pointer to this type, and the other functions expect to
+   receive a pointer to this type as their first argument.
+
+   *gdImagePtr* is a pointer to *gdImage*.
+
+   (Previous versions of this library encouraged directly manipulating
+   the contents ofthe struct but we are attempting to move away from
+   this practice so the fields are no longer documented here.  If you
+   need to poke at the internals of this struct, feel free to look at
+   *gd.h*.)
+*/
 typedef struct gdImageStruct {
 	/* Palette-based image pixels */
 	unsigned char **pixels;
@@ -329,6 +390,47 @@ typedef struct
 }
 gdPointF, *gdPointFPtr;
 
+
+/*
+  Group: Types
+
+  typedef: gdFont
+
+  typedef: gdFontPtr
+
+  A font structure, containing the bitmaps of all characters in a
+  font.  Used to declare the characteristics of a font. Text-output
+  functions expect these as their second argument, following the
+  <gdImagePtr> argument.  <gdFontSmall> and <gdFontGetLarge> both
+  return one.
+
+  You can provide your own font data by providing such a structure and
+  the associated pixel array. You can determine the width and height
+  of a single character in a font by examining the w and h members of
+  the structure. If you will not be creating your own fonts, you will
+  not need to concern yourself with the rest of the components of this
+  structure.
+
+  Please see the files gdfontl.c and gdfontl.h for an example of
+  the proper declaration of this structure. 
+
+  > typedef struct {
+  >   // # of characters in font
+  >   int nchars;
+  >   // First character is numbered... (usually 32 = space)
+  >   int offset;
+  >   // Character width and height
+  >   int w;
+  >   int h;
+  >   // Font data; array of characters, one row after another.
+  >   // Easily included in code, also easily loaded from
+  >   // data files.
+  >   char *data;
+  > } gdFont;
+
+  gdFontPtr is a pointer to gdFont.
+
+*/
 typedef struct {
 	/* # of characters in font */
 	int nchars;
@@ -418,12 +520,36 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromTgaPtr(int size, void *data);
 BGD_DECLARE(gdImagePtr) gdImageCreateFromBmp (FILE * inFile);
 BGD_DECLARE(gdImagePtr) gdImageCreateFromBmpPtr (int size, void *data);
 BGD_DECLARE(gdImagePtr) gdImageCreateFromBmpCtx (gdIOCtxPtr infile);
+BGD_DECLARE(gdImagePtr) gdImageCreateFromFile(const char *filename);
 
-/* A custom data source. */
-/* The source function must return -1 on error, otherwise the number
-   of bytes fetched. 0 is EOF, not an error! */
-/* context will be passed to your source function. */
 
+/*
+  Group: Types
+
+  typedef: gdSource
+
+  typedef: gdSourcePtr
+
+    *Note:* This interface is *obsolete* and kept only for
+    *compatibility.  Use <gdIOCtx> instead.
+
+    Represents a source from which a PNG can be read. Programmers who
+    do not wish to read PNGs from a file can provide their own
+    alternate input mechanism, using the <gdImageCreateFromPngSource>
+    function. See the documentation of that function for an example of
+    the proper use of this type.
+
+    > typedef struct {
+    >         int (*source) (void *context, char *buffer, int len);
+    >         void *context;
+    > } gdSource, *gdSourcePtr;
+
+    The source function must return -1 on error, otherwise the number
+    of bytes fetched. 0 is EOF, not an error!
+
+   'context' will be passed to your source function.
+
+*/
 typedef struct {
 	int (*source) (void *context, char *buffer, int len);
 	void *context;
@@ -461,7 +587,9 @@ BGD_DECLARE(void) gdImageDestroy (gdImagePtr im);
    alpha channel value of 'color'; default is to overwrite.
    Tiling and line styling are also implemented
    here. All other gd drawing functions pass through this call,
-   allowing for many useful effects. */
+   allowing for many useful effects. 
+   Overlay and multiply effects are used when gdImageAlphaBlending
+   is passed gdEffectOverlay and gdEffectMultiply */
 
 BGD_DECLARE(void) gdImageSetPixel (gdImagePtr im, int x, int y, int color);
 /* FreeType 2 text output with hook to extra flags */
@@ -526,9 +654,23 @@ BGD_DECLARE(char *) gdImageStringFT (gdImage * im, int *brect, int fg, char *fon
                                      double ptsize, double angle, int x, int y,
                                      char *string);
 
+
+/*
+  Group: Types
+
+  typedef: gdFTStringExtra
+
+  typedef: gdFTStringExtraPtr
+
+  A structure and associated pointer type used to pass additional
+  parameters to the <gdImageStringFTEx> function. See
+  <gdImageStringFTEx> for the structure definition.
+
+  Thanks to Wez Furlong.
+*/
+
 /* 2.0.5: provides an extensible way to pass additional parameters.
    Thanks to Wez Furlong, sorry for the delay. */
-
 typedef struct {
 	int flags;		/* Logical OR of gdFTEX_ values */
 	double linespacing;	/* fine tune line spacing for '\n' */
@@ -596,7 +738,23 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, char *f
                                        double ptsize, double angle, int x, int y,
                                        char *string, gdFTStringExtraPtr strex);
 
-/* Point type for use in polygon drawing. */
+
+/*
+  Group: Types
+
+  typedef: gdPoint
+
+  typedef: gdPointPtr
+
+  Represents a point in the coordinate space of the image; used by
+  <gdImagePolygon>, <gdImageOpenPolygon> and <gdImageFilledPolygon>
+  for polygon drawing.
+
+  > typedef struct {
+  >     int x, y;
+  > } gdPoint, *gdPointPtr;
+
+*/
 typedef struct {
 	int x, y;
 }
@@ -751,6 +909,10 @@ BGD_DECLARE(void) gdImagePngCtxEx (gdImagePtr im, gdIOCtx * out, int level);
 BGD_DECLARE(void) gdImageWBMP (gdImagePtr image, int fg, FILE * out);
 BGD_DECLARE(void) gdImageWBMPCtx (gdImagePtr image, int fg, gdIOCtx * out);
 
+BGD_DECLARE(int) gdImageFile(gdImagePtr im, const char *filename);
+BGD_DECLARE(int) gdSupportsFileType(const char *filename, int writing);
+
+
 /* Guaranteed to correctly free memory returned by the gdImage*Ptr
    functions */
 BGD_DECLARE(void) gdFree (void *m);
@@ -772,9 +934,22 @@ BGD_DECLARE(void *) gdImageWebpPtr (gdImagePtr im, int *size);
 BGD_DECLARE(void *) gdImageWebpPtrEx (gdImagePtr im, int *size, int quantization);
 BGD_DECLARE(void) gdImageWebpCtx (gdImagePtr im, gdIOCtx * outfile, int quantization);
 
-/* Legal values for Disposal. gdDisposalNone is always used by
-   the built-in optimizer if previm is passed. */
 
+/**
+ * Group: GifAnim
+ * 
+ *   Legal values for Disposal. gdDisposalNone is always used by
+ *   the built-in optimizer if previm is passed.
+ *
+ * Constants: gdImageGifAnim
+ *
+ *   gdDisposalUnknown              - Not recommended
+ *   gdDisposalNone                 - Preserve previous frame
+ *   gdDisposalRestoreBackground    - First allocated color of palette
+ *   gdDisposalRestorePrevious      - Restore to before start of frame
+ *
+ * See also: <gdImageGifAnimAdd>
+ */
 enum {
 	gdDisposalUnknown,
 	gdDisposalNone,
@@ -792,11 +967,36 @@ BGD_DECLARE(void *) gdImageGifAnimBeginPtr(gdImagePtr im, int *size, int GlobalC
 BGD_DECLARE(void *) gdImageGifAnimAddPtr(gdImagePtr im, int *size, int LocalCM, int LeftOfs, int TopOfs, int Delay, int Disposal, gdImagePtr previm);
 BGD_DECLARE(void *) gdImageGifAnimEndPtr(int *size);
 
-/* A custom data sink. For backwards compatibility. Use gdIOCtx
-   instead. The sink function must return -1 on error, otherwise the
-   number of bytes written, which must be equal to len.  Context will
-   be passed to your sink function.
+
+
+/*
+  Group: Types
+
+  typedef: gdSink
+
+  typedef: gdSinkPtr
+
+    *Note:* This interface is *obsolete* and kept only for
+    *compatibility.  Use <gdIOCtx> instead.
+
+    Represents a "sink" (destination) to which a PNG can be
+    written. Programmers who do not wish to write PNGs to a file can
+    provide their own alternate output mechanism, using the
+    <gdImagePngToSink> function. See the documentation of that
+    function for an example of the proper use of this type.
+
+    > typedef struct {
+    >     int (*sink) (void *context, char *buffer, int len);
+    >     void *context;
+    > } gdSink, *gdSinkPtr;
+
+    The _sink_ function must return -1 on error, otherwise the number of
+    bytes written, which must be equal to len.
+
+    _context_ will be passed to your sink function.
+
 */
+
 typedef struct {
 	int (*sink) (void *context, const char *buffer, int len);
 	void *context;
@@ -937,6 +1137,10 @@ BGD_DECLARE(int) gdImageBrightness(gdImagePtr src, int brightness);
 BGD_DECLARE(int) gdImageGrayScale(gdImagePtr src);
 BGD_DECLARE(int) gdImageNegate(gdImagePtr src);
 
+BGD_DECLARE(gdImagePtr) gdImageCopyGaussianBlurred(gdImagePtr src, int radius,
+                                                   double sigma);
+
+
 /* Macros to access information about images. */
 
 /* Returns nonzero if the image is a truecolor image,
@@ -1038,21 +1242,10 @@ BGD_DECLARE(gdImagePtr) gdImageCropAuto(gdImagePtr im, const unsigned int mode);
 BGD_DECLARE(gdImagePtr) gdImageCropThreshold(gdImagePtr im, const unsigned int color, const float threshold);
 
 BGD_DECLARE(int) gdImageSetInterpolationMethod(gdImagePtr im, gdInterpolationMethod id);
+BGD_DECLARE(gdInterpolationMethod) gdImageGetInterpolationMethod(gdImagePtr im);
 
-gdImagePtr gdImageScaleBilinear(gdImagePtr im, const unsigned int new_width, const unsigned int new_height);
-gdImagePtr gdImageScaleBicubic(gdImagePtr src_img, const unsigned int new_width, const unsigned int new_height);
-gdImagePtr gdImageScaleBicubicFixed(gdImagePtr src, const unsigned int width, const unsigned int height);
-gdImagePtr gdImageScaleNearestNeighbour(gdImagePtr im, const unsigned int width, const unsigned int height);
-gdImagePtr gdImageScaleTwoPass(const gdImagePtr pOrigImage, const unsigned int uOrigWidth, const unsigned int uOrigHeight, const unsigned int uNewWidth, const unsigned int uNewHeight);
 BGD_DECLARE(gdImagePtr) gdImageScale(const gdImagePtr src, const unsigned int new_width, const unsigned int new_height);
 
-gdImagePtr gdImageRotate90(gdImagePtr src, int ignoretransparent);
-gdImagePtr gdImageRotate180(gdImagePtr src, int ignoretransparent);
-gdImagePtr gdImageRotate270(gdImagePtr src, int ignoretransparent);
-gdImagePtr gdImageRotateNearestNeighbour(gdImagePtr src, const float degrees, const int bgColor);
-gdImagePtr gdImageRotateBilinear(gdImagePtr src, const float degrees, const int bgColor);
-gdImagePtr gdImageRotateBicubicFixed(gdImagePtr src, const float degrees, const int bgColor);
-gdImagePtr gdImageRotateGeneric(gdImagePtr src, const float degrees, const int bgColor);
 BGD_DECLARE(gdImagePtr) gdImageRotateInterpolated(const gdImagePtr src, const float angle, int bgcolor);
 
 typedef enum {
@@ -1098,6 +1291,15 @@ BGD_DECLARE(int) gdTransformAffineBoundingBox(gdRectPtr src, const double affine
 
 /* resolution affects ttf font rendering, particularly hinting */
 #define GD_RESOLUTION           96      /* pixels per inch */
+
+
+/* Version information functions */
+BGD_DECLARE(int) gdMajorVersion(void);
+BGD_DECLARE(int) gdMinorVersion(void);
+BGD_DECLARE(int) gdReleaseVersion(void);
+BGD_DECLARE(const char *) gdExtraVersion(void);
+BGD_DECLARE(const char *) gdVersionString(void);
+
 
 #ifdef __cplusplus
 }

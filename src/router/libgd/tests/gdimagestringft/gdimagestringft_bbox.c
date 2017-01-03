@@ -28,7 +28,7 @@ static int EXPECT[16][8] = {
 
 int main()
 {
-	char path[2048];
+	char *path;
 	gdImagePtr im;
 	int black;
 	double cos_t, sin_t;
@@ -38,7 +38,7 @@ int main()
 	int error = 0;
 	FILE *fp;
 
-	sprintf(path, "%s/freetype/DejaVuSans.ttf", GDTEST_TOP_DIR);
+	path = gdTestFilePath("freetype/DejaVuSans.ttf");
 	im = gdImageCreate(800, 800);
 	gdImageColorAllocate(im, 0xFF, 0xFF, 0xFF); /* allocate white for background color */
 	black = gdImageColorAllocate(im, 0, 0, 0);
@@ -53,7 +53,7 @@ int main()
 		}
 		for (j = 0; j < 8; j++) {
 			if (brect[j] != EXPECT[i][j]) {
-				printf("(%d, %d) (%d, %d) (%d, %d) (%d, %d) expected, but (%d, %d) (%d, %d) (%d, %d) (%d, %d)\n",
+				gdTestErrorMsg("(%d, %d) (%d, %d) (%d, %d) (%d, %d) expected, but (%d, %d) (%d, %d) (%d, %d) (%d, %d)\n",
 				       EXPECT[i][0], EXPECT[i][1], EXPECT[i][2], EXPECT[i][3],
 				       EXPECT[i][4], EXPECT[i][5], EXPECT[i][6], EXPECT[i][7],
 				       brect[0], brect[1], brect[2], brect[3],
@@ -68,14 +68,11 @@ int main()
 		y = (int)(cos_t * y - sin_t * x);
 		x = temp;
 	}
-	fp = fopen("gdimagestringft_bbox.png", "wb");
-	if (!fp) {
-		error = 1;
-		goto done;
-	}
+	fp = gdTestTempFp();
 	gdImagePng(im, fp);
 	fclose(fp);
 done:
 	gdImageDestroy(im);
+	free(path);
 	return error;
 }

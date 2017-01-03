@@ -1,4 +1,3 @@
-/* $Id$ */
 #include "gd.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,11 +7,12 @@ int
 main(void)
 {
 	gdImagePtr im;
-	char path[1024];
+	char *path;
 	int c, result;
 
-	sprintf(path, "%s/xpm/color_name.xpm", GDTEST_TOP_DIR);
+	path = gdTestFilePath("xpm/color_name.xpm");
 	im = gdImageCreateFromXpm(path);
+	free(path);
 	if (!im) {
 		return 2;
 	}

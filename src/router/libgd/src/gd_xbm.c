@@ -18,7 +18,40 @@
 
 #define MAX_XBM_LINE_SIZE 255
 
-/* {{{ gdImagePtr gdImageCreateFromXbm */
+
+/*
+  Function: gdImageCreateFromXbm
+
+    <gdImageCreateFromXbm> is called to load images from X bitmap
+    format files. Invoke <gdImageCreateFromXbm> with an already opened
+    pointer to a file containing the desired
+    image. <gdImageCreateFromXbm> returns a <gdImagePtr> to the new
+    image, or NULL if unable to load the image (most often because the
+    file is corrupt or does not contain an X bitmap format
+    image). <gdImageCreateFromXbm> does not close the file.
+
+    You can inspect the sx and sy members of the image to determine
+    its size. The image must eventually be destroyed using
+    <gdImageDestroy>.
+
+  Parameters:
+
+    fd - The input FILE pointer
+
+  Returns:
+
+    A pointer to the new image or NULL if an error occurred.
+
+  Example:
+
+    > gdImagePtr im;
+    > FILE *in;
+    > in = fopen("myxbm.xbm", "rb");
+    > im = gdImageCreateFromXbm(in);
+    > fclose(in);
+    > // ... Use the image ...
+    > gdImageDestroy(im);
+*/
 BGD_DECLARE(gdImagePtr) gdImageCreateFromXbm(FILE * fd)
 {
 	char fline[MAX_XBM_LINE_SIZE];
@@ -142,12 +175,12 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromXbm(FILE * fd)
 	gdImageDestroy(im);
 	return 0;
 }
-/* }}} */
+
 
 /* {{{ gdCtxPrintf */
 static void gdCtxPrintf(gdIOCtx * out, const char *format, ...)
 {
-	char buf[4096];
+	char buf[1024];
 	int len;
 	va_list args;
 
@@ -158,7 +191,13 @@ static void gdCtxPrintf(gdIOCtx * out, const char *format, ...)
 }
 /* }}} */
 
+/* The compiler will optimize strlen(constant) to a constant number. */
+#define gdCtxPuts(out, s) out->putBuf(out, s, strlen(s))
+
 /* {{{ gdImageXbmCtx */
+/*
+    Function: gdImageXbmCtx
+*/
 BGD_DECLARE(void) gdImageXbmCtx(gdImagePtr image, char* file_name, int fg, gdIOCtx * out)
 {
 	int x, y, c, b, sx, sy, p;
@@ -182,9 +221,26 @@ BGD_DECLARE(void) gdImageXbmCtx(gdImagePtr image, char* file_name, int fg, gdIOC
 		}
 	}
 
-	gdCtxPrintf(out, "#define %s_width %d\n", name, gdImageSX(image));
-	gdCtxPrintf(out, "#define %s_height %d\n", name, gdImageSY(image));
-	gdCtxPrintf(out, "static unsigned char %s_bits[] = {\n  ", name);
+	/* Since "name" comes from the user, run it through a direct puts.
+	 * Trying to printf it into a local buffer means we'd need a large
+	 * or dynamic buffer to hold it all. */
+
+	/* #define <name>_width 1234 */
+	gdCtxPuts(out, "#define ");
+	gdCtxPuts(out, name);
+	gdCtxPuts(out, "_width ");
+	gdCtxPrintf(out, "%d\n", gdImageSX(image));
+
+	/* #define <name>_height 1234 */
+	gdCtxPuts(out, "#define ");
+	gdCtxPuts(out, name);
+	gdCtxPuts(out, "_height ");
+	gdCtxPrintf(out, "%d\n", gdImageSY(image));
+
+	/* static unsigned char <name>_bits[] = {\n */
+	gdCtxPuts(out, "static unsigned char ");
+	gdCtxPuts(out, name);
+	gdCtxPuts(out, "_bits[] = {\n  ");
 
 	free(name);
 
@@ -198,12 +254,12 @@ BGD_DECLARE(void) gdImageXbmCtx(gdImagePtr image, char* file_name, int fg, gdIOC
 			if (gdImageGetPixel(image, x, y) == fg) {
 				c |= b;
 			}
-			if ((b == 128) || (x == sx && y == sy)) {
+			if ((b == 128) || (x == sx - 1)) {
 				b = 1;
 				if (p) {
-					gdCtxPrintf(out, ", ");
+					gdCtxPuts(out, ", ");
 					if (!(p%12)) {
-						gdCtxPrintf(out, "\n  ");
+						gdCtxPuts(out, "\n  ");
 						p = 12;
 					}
 				}
@@ -215,6 +271,6 @@ BGD_DECLARE(void) gdImageXbmCtx(gdImagePtr image, char* file_name, int fg, gdIOC
 			}
 		}
 	}
-	gdCtxPrintf(out, "};\n");
+	gdCtxPuts(out, "};\n");
 }
 /* }}} */
