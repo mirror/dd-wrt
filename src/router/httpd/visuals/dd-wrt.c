@@ -558,10 +558,10 @@ void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>\n");
 		if (userlist)
 			sep = strsep(&userlist, " ");
-		
+
 		long t = 0;
-		
-		if(sep != NULL)
+
+		if (sep != NULL)
 			t = atol(sep);
 
 		if (t != -1) {
