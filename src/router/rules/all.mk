@@ -179,6 +179,8 @@ include rules/tcpdump.mk
 include rules/nvram.mk
 include rules/fdisk.mk
 include rules/moxa.mk
+include rules/btrfsprogs.mk
+include rules/xfsprogs.mk
 include rules/e2fsprogs.mk
 include rules/ncurses.mk
 include rules/iftop.mk
