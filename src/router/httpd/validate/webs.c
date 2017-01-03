@@ -1454,7 +1454,7 @@ void qos_save(webs_t wp)
 	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", "0"));
 	nvram_set("qos_type", websGetVar(wp, "qos_type", "0"));
 
-#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL)
+#if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE)
 	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "0"));
 #endif
 
@@ -3923,6 +3923,7 @@ char *request_freedns(char *user, char *password)
 
 	if (feof(in)) {
 		free(hash);
+		fclose(in);
 		return NULL;
 	}
 	for (i = 0; i < 63 && feof(in) == 0; i++) {
