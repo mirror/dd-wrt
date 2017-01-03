@@ -15,3 +15,7 @@ libpng-clean:
 libpng-configure:
 	cd libpng &&   ./configure --host=$(ARCH)-linux-uclibc  --disable-shared --enable-static CC="ccache $(ARCH)-linux-uclibc-gcc" CFLAGS="-fPIC $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" CPPFLAGS="-fPIC $(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib/include" 'LDFLAGS=-L$(TOP)/zlib'
 	$(MAKE) -C libpng
+	-mkdir -p $(TOP)/libpng/.libs/include
+	-cp $(TOP)/libpng/*.h $(TOP)/libpng/.libs/include
+	-cp $(TOP)/libpng/.libs/libpng16.a $(TOP)/libpng/.libs/libpng.a
+
