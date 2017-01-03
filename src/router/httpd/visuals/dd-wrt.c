@@ -322,7 +322,7 @@ void ej_show_wds_subnet(webs_t wp, int argc, char_t ** argv)
 	sprintf(br1, "%s_br1_enable", interface);
 	if (nvram_invmatchi(br1, 1))
 		return;
-	char buf[16];
+	char buf[18];
 
 	sprintf(buf, "%s_wds%d_enable", interface, index);
 	websWrite(wp,
