@@ -73,10 +73,10 @@ void set_cgi(char *name, char *value)
 
 #if defined(__UCLIBC__) || defined(__GLIBC__)
 	if (!htab.table)
-		return NULL;
+		return;
 #else
 	if (!htab.__tab)
-		return NULL;
+		return;
 #endif
 
 	e.key = name;
