@@ -1,0 +1,7 @@
+if HAVE_LIBWEBP
+libgd_test_programs += \
+	webp/bug00111
+endif
+
+EXTRA_DIST += \
+	webp/CMakeLists.txt

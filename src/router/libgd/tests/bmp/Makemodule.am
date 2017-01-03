@@ -1,0 +1,10 @@
+libgd_test_programs += \
+	bmp/bmp_null
+
+if HAVE_LIBPNG
+libgd_test_programs += \
+	bmp/bmp_im2im
+endif
+
+EXTRA_DIST += \
+	bmp/CMakeLists.txt

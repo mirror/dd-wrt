@@ -1,0 +1,13 @@
+libgd_test_programs += \
+	gd/gd_null \
+	gd/gd_num_colors \
+	gd/gd_versiontest
+
+if HAVE_LIBPNG
+libgd_test_programs += \
+	gd/gd_im2im
+endif
+
+EXTRA_DIST += \
+	gd/crafted_num_colors.gd \
+	gd/CMakeLists.txt
