@@ -1,0 +1,5 @@
+libgd_test_programs += \
+	gdnewfilectx/gdnewfilectx_null
+
+EXTRA_DIST += \
+	gdnewfilectx/CMakeLists.txt

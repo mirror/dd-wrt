@@ -1,0 +1,8 @@
+libgd_test_programs += \
+	gdimagefile/gdnametest
+
+EXTRA_DIST += \
+	gdimagefile/CMakeLists.txt \
+	gdimagefile/img-ref.tga \
+	gdimagefile/img-ref.xbm \
+	gdimagefile/img-ref.xpm
