@@ -1,5 +1,3 @@
-/* $Id$ */
-
 #include "gd.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,12 +7,10 @@ int main()
 {
 	gdImagePtr im;
 	int error = 0;
-	char path[2048];
-	const char *file_exp = "bug00111_exp.png";
 
 	im = gdImageCreateTrueColor(10, 10);
 	if (!im) {
-		printf("can't get truecolor image\n");
+		gdTestErrorMsg("can't get truecolor image\n");
 		return 1;
 	}
 
@@ -23,10 +19,9 @@ int main()
 
 	gdImageLine(im, 0, 0, 0, 0, 0xFFFFFF);
 
-	sprintf(path, "%s/gdimageline/%s", GDTEST_TOP_DIR, file_exp);
-	if (!gdAssertImageEqualsToFile(path, im)) {
+	if (!gdAssertImageEqualsToFile("gdimageline/bug00111_exp.png", im)) {
 		error = 1;
-		printf("Reference image and destination differ\n");
+		gdTestErrorMsg("Reference image and destination differ\n");
 	}
 
 	gdImageDestroy(im);

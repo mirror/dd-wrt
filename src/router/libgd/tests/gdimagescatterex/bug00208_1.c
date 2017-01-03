@@ -8,15 +8,11 @@ int main()
 	gdScatter s;
 	CuTestImageResult r;
 
-	fp = fopen(GDTEST_TOP_DIR "/gdimagescatterex/bug00208.png", "rb");
-	if (!fp) {
-		fprintf(stderr, "could not open file\n");
-		return 1;
-	}
+	fp = gdTestFileOpen("gdimagescatterex/bug00208.png");
 	im = gdImageCreateFromPng(fp);
 	fclose(fp);
 	if (!im) {
-		fprintf(stderr, "could not create image\n");
+		gdTestErrorMsg("could not create image\n");
 		return 1;
 	}
 
@@ -26,20 +22,15 @@ int main()
 	s.num_colors = 0;
 	if (!gdImageScatterEx(im, &s)) {
 		gdImageDestroy(im);
-		fprintf(stderr, "could not scatter\n");
+		gdTestErrorMsg("could not scatter\n");
 		return 1;
 	}
 
-	fp = fopen(GDTEST_TOP_DIR "/gdimagescatterex/bug00208_1.png", "rb");
-	if (!fp) {
-		fprintf(stderr, "could not open file\n");
-		gdImageDestroy(im);
-		return 1;
-	}
+	fp = gdTestFileOpen("gdimagescatterex/bug00208_1.png");
 	ex = gdImageCreateFromPng(fp);
 	fclose(fp);
 	if (!ex) {
-		fprintf(stderr, "could not create image\n");
+		gdTestErrorMsg("could not create image\n");
 		gdImageDestroy(im);
 		return 1;
 	}
@@ -48,7 +39,7 @@ int main()
 	gdImageDestroy(ex);
 	gdImageDestroy(im);
 	if (r.pixels_changed > 10000) {
-		fprintf(stderr, "too much diff: %d\n", r.pixels_changed);
+		gdTestErrorMsg("too much diff: %d\n", r.pixels_changed);
 		return 1;
 	}
 	return 0;
