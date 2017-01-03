@@ -502,7 +502,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 	char *temp2 = &path[idx + 1];
 	char number[32];
 	webs_t wp = stream;
-	strncpy(number, temp2, sizeof(number));
+	strncpy(number, temp2, sizeof(number)-1);
 	idx = indexof(number, '.');
 	if (idx < 0)
 		return;
