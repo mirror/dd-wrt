@@ -709,7 +709,7 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 	int idx = indexof(path, '-');
 	if (idx > 0) {
 		char *temp2 = &path[idx + 1];
-		strncpy(ifname, temp2, sizeof(ifname));
+		strncpy(ifname, temp2, sizeof(ifname) - 1);
 	}
 
 	char *temp3 = websGetVar(stream, "ifname", NULL);
