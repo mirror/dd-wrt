@@ -24,6 +24,10 @@
 #ifndef _gdpp_h
 #define _gdpp_h
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "gd_io_stream.h"
 #include <string>
 
@@ -43,7 +47,7 @@ namespace GD
 /**	This class GD::Point stores a point in two dimensions, somewhere
 	on the plane of an image.
 */
-class Point
+class BGD_EXPORT_DATA_PROT Point
 {
 public:
 	// Constructors
@@ -93,7 +97,7 @@ typedef Point * PointPtr;
 /**	This class GD::Size stores length in two dimensions.
 	Giving the size of an area as width and height.
 */
-class Size
+class BGD_EXPORT_DATA_PROT Size
 {
 public:
 	// Constructors
@@ -140,7 +144,7 @@ typedef Size * SizePtr;
 /**	This class GD::TrueColor stores a colour as an RGBA quadruplet.
 	It can also be read as an integer, and in other colour formats.
 */
-class TrueColor
+class BGD_EXPORT_DATA_PROT TrueColor
 {
 public:
 	union as_types {
@@ -206,19 +210,19 @@ protected:
 	to tell the compiler which constructor we want when we know
 	the image file format.
 */
-struct Png_tag {};
-struct Gif_tag {};
-struct WBMP_tag {};
-struct Jpeg_tag {};
-struct Gd_tag {};
-struct Gd2_tag {};
-struct Xbm_tag {};
+struct BGD_EXPORT_DATA_PROT Png_tag {};
+struct BGD_EXPORT_DATA_PROT Gif_tag {};
+struct BGD_EXPORT_DATA_PROT WBMP_tag {};
+struct BGD_EXPORT_DATA_PROT Jpeg_tag {};
+struct BGD_EXPORT_DATA_PROT Gd_tag {};
+struct BGD_EXPORT_DATA_PROT Gd2_tag {};
+struct BGD_EXPORT_DATA_PROT Xbm_tag {};
 
 /**	This class GD::Image wraps all of the 'C' libgd functionality
 	for the convenience of C++ users.  An instance of this class
 	corresponds to a single image.
 */
-class BGD_EXPORT_DATA_IMPL Image
+class BGD_EXPORT_DATA_PROT Image
 {
 public:
 	/**	Construct a null image
@@ -288,7 +292,7 @@ public:
 		:im(0) {
 		CreateFrom(size, data);
 	}
-#if HAVE_PNG
+#ifdef HAVE_LIBPNG
 	/** Construct an image by reading from \p in.
 		The tag is an empty struct which simply tells the compiler which image read function to use.
 		e.g. GD::Image img(input, GD::Png_tag()); // read a png file from input
@@ -404,7 +408,7 @@ public:
 		CreateFromWBMP(size, data);
 	}
 
-#if HAVE_JPEG
+#ifdef HAVE_LIBJPEG
 	/** Construct an image by reading from \p in.
 		The tag is an empty struct which simply tells the compiler which image read function to use.
 		e.g. GD::Image img(input, GD::Jpeg_tag()); // read a jpeg file from input
@@ -604,7 +608,7 @@ public:
 	/// Read an image from a memory block, after determining the image format
 	bool CreateFrom(int size, void * data);
 
-#if HAVE_PNG
+#ifdef HAVE_LIBPNG
 	// Png
 	bool CreateFromPng(FILE * in) {
 		clear();
@@ -662,7 +666,7 @@ public:
 		return ((im = gdImageCreateFromWBMPCtx( & _in_ctx)) != 0);
 	}
 
-#if HAVE_JPEG
+#ifdef HAVE_LIBJPEG
 	// Jpeg
 	/**
 		Load a truecolor image from a JPEG format file.
@@ -1085,7 +1089,7 @@ public:
 		gdImageGifCtx(im, & _out_ctx);
 	}
 
-#if HAVE_PNG
+#ifdef HAVE_LIBPNG
 	/**
 		Write out this image in PNG file format to \p out.
 		\param out A FILE * handle
@@ -1187,7 +1191,7 @@ public:
 		gdImageWBMPCtx(im, fg, & _out_ctx);
 	}
 
-#if HAVE_JPEG
+#ifdef HAVE_LIBJPEG
 	/**
 		Write out this image in JPEG file format to \p out.
 		\param out A FILE * handle
@@ -1264,14 +1268,14 @@ public:
 	void Gd(FILE * out) const {
 		gdImageGd(im, out);
 	}
-	void Gd(int * size) const {
-		gdImageGdPtr(im, size);
+	void* Gd(int * size) const {
+		return gdImageGdPtr(im, size);
 	}
 	void Gd2(FILE * out, int cs, int fmt) const {
 		gdImageGd2(im, out, cs, fmt);
 	}
-	void Gd2(int cs, int fmt, int * size) const {
-		gdImageGd2Ptr(im, cs, fmt, size);
+	void* Gd2(int cs, int fmt, int * size) const {
+		return gdImageGd2Ptr(im, cs, fmt, size);
 	}
 
 	void Ellipse(int cx, int cy, int w, int h, int color) {
@@ -1335,6 +1339,10 @@ public:
 		gdImageCopyRotated(im, src, dstX, dstY, srcX, srcY, srcWidth, srcHeight, angle);
 	}
 
+	Image * CopyGaussianBlurred(int radius, double sigma) {
+		return new Image(gdImageCopyGaussianBlurred(im, radius, sigma));
+	}
+
 	void Copy(const gdImagePtr src, const Point & dstP, const Point & srcP, const Size & s) {
 		Copy(src, dstP.X(), dstP.Y(), srcP.X(), srcP.Y(), s.W(), s.H());
 	}
@@ -1395,6 +1403,10 @@ public:
 		CopyRotated(src.im, dstX, dstY, srcP.X(), srcP.Y(), srcS.W(), srcS.H(), angle);
 	}
 
+	Image * Clone() {
+		return new Image(gdImageClone(im));
+	}
+
 	void SetBrush(gdImagePtr brush) {
 		gdImageSetBrush(im, brush);
 	}
@@ -1419,6 +1431,16 @@ public:
 	void SetThickness(int thickness) {
 		gdImageSetThickness(im, thickness);
 	}
+	void SetResolution(int res_x, int res_y) {
+		gdImageSetResolution(im, res_x, res_y);
+	}
+	void SetInterpolationMethod(gdInterpolationMethod interpolation_method) {
+		gdImageSetInterpolationMethod(im, interpolation_method);
+	}
+
+	Image * RotateInterpolated(const float angle, int bgcolor) {
+		return new Image(gdImageRotateInterpolated(im, angle, bgcolor));
+	}
 
 	void Interlace(bool interlaceArg) {
 		gdImageInterlace(im, interlaceArg?1:0);
@@ -1428,6 +1450,27 @@ public:
 	}
 	void SaveAlpha(bool saveAlphaArg) {
 		gdImageSaveAlpha(im, saveAlphaArg?1:0);
+	}
+
+	int ColorReplace(int src, int dst) {
+		return gdImageColorReplace(im, src, dst);
+	}
+	int ColorReplaceArray(int len, int * src, int * dst) {
+		return gdImageColorReplaceArray(im, len, src, dst);
+	}
+	int ColorReplaceCallback(gdCallbackImageColor callback) {
+		return gdImageColorReplaceCallback(im, callback);
+	}
+	int ColorReplaceThreshold(int src, int dst, float threshold) {
+		return gdImageColorReplaceThreshold(im, src, dst, threshold);
+	}
+
+	bool Pixelate(int block_size, gdPixelateMode mode) {
+		return gdImagePixelate(im, block_size, mode) == 0 ? false : true;
+	}
+
+	Image * Scale(int new_width, int new_height) {
+		return new Image(gdImageScale(im, new_width, new_height));
 	}
 
 	bool IsTrueColor() const {
@@ -1444,6 +1487,12 @@ public:
 	}
 	int Height() const {
 		return SY();
+	}
+	int ResX() const {
+		return gdImageResolutionX(im);
+	}
+	int ResY() const {
+		return gdImageResolutionY(im);
 	}
 	void GetSize(Size & s) const {
 		s.set(SX(), SY());

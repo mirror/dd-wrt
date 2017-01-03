@@ -18,8 +18,8 @@ if (BUILD_TEST)
 	include_directories (BEFORE ${GD_INCLUDE_DIR} "${GDTEST_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" "${CMAKE_BINARY_DIR}/tests/gdtest")
 
 	SET(TESTS_DIRS
-		gdtest
 		bmp
+		freetype
 		gd
 		gd2
 		gdimagearc
@@ -30,46 +30,44 @@ if (BUILD_TEST)
 		gdimagecolorresolve
 		gdimagecolortransparent
 		gdimagecopy
+		gdimagecopyresampled
 		gdimagecopyrotated
+		gdimagecrop
+		gdimagefile
 		gdimagefill
+		gdimagefilledarc
 		gdimagefilledellipse
 		gdimagefilledpolygon
 		gdimagefilledrectangle
 		gdimagefilltoborder
+		gdimagefilter
 		gdimageline
 		gdimageopenpolygon
 		gdimagepixelate
 		gdimagepolygon
 		gdimagerectangle
 		gdimagerotate
+		gdimagescale
 		gdimagescatterex
 		gdimagesetpixel
+		gdimagestringft
+		gdimagestringftex
+		gdimagetruecolortopalette
+		gdinterpolatedscale
 		gdnewfilectx
+		gdtest
 		gdtiled
+		gdtransformaffineboundingbox
 		gif
+		jpeg
+		png
 		tga
+		tiff
 		wbmp
+		webp
+		xbm
+		xpm
 	)
-
-	IF(FREETYPE_FOUND)
-		LIST(APPEND TESTS_DIRS freetype gdimagestringft gdimagestringftex)
-	ENDIF(FREETYPE_FOUND)
-
-	IF(JPEG_FOUND)
-		LIST(APPEND TESTS_DIRS jpeg)
-	ENDIF(JPEG_FOUND)
-
-	IF(PNG_FOUND)
-		LIST(APPEND TESTS_DIRS png)
-	ENDIF(PNG_FOUND)
-
-	IF(TIFF_FOUND)
-		LIST(APPEND TESTS_DIRS tiff)
-	ENDIF(TIFF_FOUND)
-
-	IF(XPM_FOUND)
-		LIST(APPEND TESTS_DIRS xpm)
-	ENDIF(XPM_FOUND)
 
 	FOREACH(test_dir ${TESTS_DIRS})
 		add_subdirectory (${test_dir})

@@ -1,4 +1,3 @@
-/* $Id$ */
 #include "gd.h"
 #include <stdio.h>
 #include "gdtest.h"
@@ -8,7 +7,6 @@ int main()
 	gdImagePtr im, tile;
 	int im_black, tile_white, tile_black;
 	int x,y, error = 0;
-	char path[1024];
 
 /*	fputs("flag 0\n", stdout); */
 	im = gdImageCreate(150, 150);
@@ -44,13 +42,13 @@ int main()
 	gdImageFill(im, 0, 0, 0xffffff);
 /*	fputs("flag 3\n", stdout); */
 
-	sprintf(path, "%s/gdimagefill/bug00002_3_exp.png", GDTEST_TOP_DIR);
-	if (!gdAssertImageEqualsToFile(path, im)) {
+	if (!gdAssertImageEqualsToFile("gdimagefill/bug00002_3_exp.png", im)) {
 		error = 1;
 	}
 
 	/* Destroy it */
 	gdImageDestroy(im);
+	gdImageDestroy(tile);
 	return error;
 }
 
