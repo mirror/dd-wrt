@@ -22,7 +22,17 @@ btrfsprogs: lzo util-linux
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
 	make -C btrfsprogs 
 
 btrfsprogs-clean:
@@ -30,7 +40,17 @@ btrfsprogs-clean:
 
 btrfsprogs-install:	
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
 	-rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs*
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
