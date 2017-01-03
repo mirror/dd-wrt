@@ -558,7 +558,11 @@ void ej_show_iradius(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>\n");
 		if (userlist)
 			sep = strsep(&userlist, " ");
-		long t = atol(sep);
+		
+		long t = 0;
+		
+		if(sep != NULL)
+			t = atol(sep);
 
 		if (t != -1) {
 			t -= now.tv_sec;
@@ -836,7 +840,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 	char *next;
 	char var[80];
 	char ssid[80];
-	char mac[16];
+	char mac[18];
 
 #ifdef HAVE_GUESTPORT
 	char guestport[16];
