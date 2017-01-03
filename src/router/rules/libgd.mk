@@ -2,7 +2,7 @@ libgd: libpng minidlna
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C libgd
 	
 libgd-clean:
@@ -18,20 +18,26 @@ libgd-configure:
 	--without-fontconfig \
 	--without-x \
 	--disable-shared \
+	--disable-werror \
 	--enable-static \
 	--with-zlib \
+	enable_werror=no \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="-fPIC -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/zlib" \
-	LDFLAGS="-L$(TOP)/minidlna/lib -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12" \
-	LIBPNG_CFLAGS="-I$(TOP)/libgd/libpng" \
-	LIBPNG_LIBS="-L$(TOP)/libgd/libpng/.libs -lpng12"
+	LDFLAGS="-L$(TOP)/minidlna/lib -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16" \
+	LIBZ_CFLAGS="-I$(TOP)/zlib" \
+	LIBZ_LIBS="-L$(TOP)/zlib -lz" \
+	LIBPNG_CFLAGS="-I$(TOP)/libpng" \
+	LIBPNG_LIBS="-L$(TOP)/libpng/.libs -lpng16"
 
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng12 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
-	LIBPNG_CFLAGS="-I$(TOP)/libgd/libpng" \
-	LIBPNG_LIBS="-L$(TOP)/libgd/libpng/.libs -lpng12" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT)  -lm -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/minidlna/lib -ljpeg -fPIC -v -Wl,--verbose" \
+	LIBZ_CFLAGS="-I$(TOP)/zlib" \
+	LIBZ_LIBS="-L$(TOP)/zlib -lz" \
+	LIBPNG_CFLAGS="-I$(TOP)/libpng" \
+	LIBPNG_LIBS="-L$(TOP)/libpng/.libs -lpng16" \
 	$(MAKE) -C libgd
 
 libgd-install:
