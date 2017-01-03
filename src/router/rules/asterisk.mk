@@ -175,7 +175,8 @@ asterisk-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
