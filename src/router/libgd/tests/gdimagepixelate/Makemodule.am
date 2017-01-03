@@ -1,0 +1,5 @@
+libgd_test_programs += \
+	gdimagepixelate/gdimagepixelate
+
+EXTRA_DIST += \
+	gdimagepixelate/CMakeLists.txt
