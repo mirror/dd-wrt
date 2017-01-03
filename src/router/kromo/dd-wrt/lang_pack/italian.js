@@ -1511,13 +1511,6 @@ hroute.right6="Inserisci il nome che vorresti assegnare a questo instradamento."
 hroute.right8="Questo &egrave; l&apos;host remoto al quale vorresti assegnare la route statica.";
 hroute.right10="Determina l&apos;host e la porzione di rete.";
 
-//help page
-hroute.page1="<dd>On the Routing screen, you can set the routing mode and settings of the router. <i>Gateway</i> mode is recommended for most users.</dd>";
-hroute.page2="<dd>Choose the correct working mode. Keep the default setting, Gateway, if the router is hosting your network&apos;s connection to the Internet. Select router if the router exists on a network with other routers. In Gateway mode the router performs NAT, while in other modes it doesn&apos;t.</dd>";
-hroute.page3="<dd>Dynamic Routing enables the router to automatically adjust to physical changes in the network&apos;s layout and exchange routing tables with other routers. The router determines the network packets&amp;#8217; route based on the fewest number of hops between the source and destination.<br /><br />To enable the Dynamic Routing feature for the WAN side, select <i>WAN</i>. To enable this feature for the LAN and wireless side, select <i>LAN &amp; WLAN</i>. To enable the feature for both the WAN and LAN, select <i>Both</i>. To disable the Dynamic Routing feature for all data transmissions, keep the default setting, <i>Disable</i>.<br /><br /><div class=\"note\"><b>Note:</b><br />Dynamic Routing is not available in Gateway mode.</div></dd>";
-hroute.page4="<dd>A static route is a pre-determined pathway that network information must travel to reach a specific host or network.<br /><br />To set up a static route between the router and another network:<ol class=\"wide\"><li>Select a number from the Static Routing drop-down list.</li><li>Enter the following data:<ul><li>Destination IP Address &ndash; The Destination IP Address is the address of the network or host to which you want to assign a static route.</li><li>Subnet Mask &ndash; The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway &ndash; This is the IP address of the gateway device that allows for contact between the router and the network or host.</li></ul></li><li>Depending on where the Destination IP Address is located, select <i>LAN &amp; WLAN</i> or <i>WAN</i> from the Interface drop-down menu. </li><li>Click the <i>Apply</i> button to save your changes. To cancel your unsaved changes, click the <i>Cancel</i> button. For additional static routes, repeat steps 1-4.</li></ol><br />To delete a static route entry:<ol class=\"wide\"><li>From the Static Routing drop-down list, select the entry number of the static route.</li><li>Click the <i>Delete This Entry</i> button.</li><li>To save a deletion, click the <i>Apply</i> button. To cancel a deletion, click the <i>Cancel</i> button.</li></ol></dd>";
-hroute.page5="<dd>Click the <i>Show Routing Table</i> button to view all of the valid route entries in use. The following data will be displayed for each entry.<ul class=\"wide\"><li>Destination IP Address &ndash; The Destination IP Address is the address of the network or host to which the static route is assigned.</li><li>Subnet Mask &ndash; The Subnet Mask determines which portion of an IP address is the network portion, and which portion is the host portion.</li><li>Gateway &ndash; This is the IP address of the gateway device that allows for contact between the router and the network or host.</li><li>Interface &ndash; This interface tells you whether the Destination IP Address is on the LAN &amp; WLAN (internal wired and wireless networks), the WAN (Internet), or Loopback (a dummy network in which one PC acts like a network, necessary for certain software programs).</li></ul><br />Click the <i>Refresh</i> button to refresh the data displayed. Click the <i>Close</i> button to return to the Routing screen.</dd>";
-
 // ** Site_Survey.asp **//
 //var survey=new Object();
 survey.titl="Ricerca Sito";
@@ -1619,9 +1612,6 @@ service.pppoesrv_chaps="Local User Management (CHAP Secrets)";
 hpppoesrv.right2="IP: 0.0.0.0 -> You&apos;ll serve IP&apos;s from the pool";
 hpppoesrv.right3="You MUST set the correct amount of associated clients according your IP range";
 
-//help page
-hpppoesrv.page1="<dd>PPPoE Server.....<br /><br /><div class=\"note\"><h4>Note</h4><div>Please note....</div></div></dd>";
-hpppoesrv.page2="<dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 //snmp.webservices
 service.snmp_legend="SNMP";
@@ -1689,28 +1679,6 @@ service.vpnd_lzoyes="Si";
 service.vpnd_lzono="No";
 service.vpnd_lzooff="OFF";
 service.vpnd_lzoadaptive="Adaptive";
-
-//help page
-//var hservice=new Object();
-hservice.page1="<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.<ul class=\"wide\"><li>Used domain &ndash; You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li><li>LAN Domain &ndash; You can define here your local LAN domain which is used as local domain for DNSmasq and DHCP service if chosen above.</li><li>Static Leases &ndash; If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router&apos;s local DNS service (DNSmasq).</li></ul><br/>There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.</dd>";
-hservice.page2="<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <em>Local DNS</em> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.<br/>There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example : <br/><ul><li>static allocation : dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li><li>max lease number : dhcp-lease-max=2</li><li>DHCP server IP range : dhcp-range=192.168.0.110,192.168.0.111,12h</li></ul><br/><br/><div class=\"note\"><h4>Note</h4><div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br/>The complete list of available options : <a href=\"http:\/\/thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html\" target=\"_new\">DNSMasq man</a>.</div></div></dd>";
-hservice.page3="<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with \";\".<ul class=\"wide\"><li>";
-hservice.page4=" &ndash; How many consoles to detect before the engine locks the pcap filter. Setting this to 0, means the engine will never lock - which means you can use any number of consoles, but you will notice a performance hit, if your network is busy with other traffic. The best thing to do here is to set the number to the number of consoles you own - that&apos;s why it defaults to 1 - because most people have just 1 console.</li><li>";
-hservice.page5=" &ndash; Specifies which ip/port kaid will use to listen for controller UIs.</li></ul><br/><div class=\"note\"><h4>Note</h4><div>Xbox must be connected directly via one of the Ethernet ports of the router.</div></div></dd>";
-hservice.page6="<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br/><ul class=\"wide\"><li>RFlow Default port is 2055</li><li>MACupd Default port is 2056</li><li>Interval = 10 seems messages will be sent to server each 10 seconds</li><li>Interface : choose which interface to monitor</li></ul><br/><div class=\"note\"><h4>Note</h4><div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div></div></dd>";
-hservice.page7="<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).<ul class=\"wide\"><li>Password login &ndash; allow login with the router password (username is <tt>root</tt>)</li><li>SSHd Port &ndash; the port number for SSHd (default is 22)</li><li>Authorized Keys &ndash; here you paste your public keys to enable key-based login (more secure than a simple password)</li></ul></dd>";
-hservice.page8="<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file \/var\/log\/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>";
-hservice.page9="<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/><div class=\"note\"><h4>Note</h4><div>If you using the router in an untrusted environment (for example as a public hotspot), it is strongly recommended to use SSHd and deactivate telnet.</div></div></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>";
-
-//help container
-//var hstatus_vpn=new Object();
-hstatus_vpn.right1="Policy based Routing:<br><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
-hstatus_vpn.right2="Additional Config:<br><i>To push routes to clients add \&apos;push \"route IP mask gateway\"\&apos;, to push DNS/WINS add \&apos;push \"dhcp-option DNS (or WINS) IP\"\&apos; to the config.</i><br>client connect directory:<br><i>When USB or JFFS is mounted to /jffs, scripts will be called from /jffs/etc/openvpn/ccd/</i>";
-hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs. Enable MSS only on one side of the link, fragment on both.</i>";
-
-//help page
-hstatus_vpn.page1="<dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP &ndash; The IP address of your router</li><li>Client IP &ndash; A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (for example 192.168.0.1-254 or 192.168.0-255.2) or some combination (for example 192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd man page.</li></ul></dd>";
-hstatus_vpn.page2="<dd>A VPN Client that enable you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU &ndash; Default Maximum Transmission Unit (Default: 1450) </li><li>MRU &ndash; Default Maximum Receiving Unit (Default: 1450) </li><li>User Name &ndash; Enter the UserName that you will use to connect to the VPN server. If you are connecting to another Linux base PPTP server you just need to enter the UserName (Example: root). But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\\\UserName). </li><li>Password &ndash; Enter the password of the for the username </li></ul></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1820,10 +1788,6 @@ service.hmilkfish_right24="not implemented yet - leave empty";
 service.hmilkfish_right26="not implemented yet - leave empty";
 //service.hmilkfish_="";//
 
-//help page
-service.hmilkfish_page1="<dt>Milkfish-dd - Professional VoIP/IM Router - v1.0</dt><ul class=\"wide\"> <br><b>Welcome to the Milkfish on DD-WRT...</b><br>The Milkfish enables the operation and management of several SIP phones in spite of NAT.<br><br><u>Provider Phone Configuration</u>: The IP address of this router is the <b>Outbound Proxy</b> or <b>Outbound Server</b> and <b>STUN is deactivated</b>.<br>All other settings should be set according to the providers recommendation.<br><br><u>Local Phone Configuration</u>: The IP address of this router is the <b>SIP Server</b> or <b>Registrar Server</b> and <b>a local subscriber account was added</b>.<br><br>Dynamic SIP needs a valid User Account set to work. Homesip Users need to be registered at the Milkfish Forum.<br></ul><br /><div class=\"note\"><h4>Get support...</h4><div><br />Find the documentation of this embedded software at <a href=\"http:\/\/wiki.milkfish.org\" target=\"new\">wiki.milkfish.org</a>.<br>Any questions can go to the user forum being available at <a href=\"http:\/\/forum.milkfish.org\" target=\"new\">forum.milkfish.org</a>.</div></div><br /><div class=\"note\"><h4>Give support...</h4><div><br />You like the Milkfish? - Then support us through <b>donations@milkfish.org</b>:&amp;nbsp;&amp;nbsp;<br />";
-service.hmilkfish_page2="<div class=\"note\"><h4>Legal</h4><div>Copyright &copy; 2005-2008 by <a href=\"http:\/\/www.milkfish.org\" target=\"new\">The Milkfish Project</a>. All rights reserved.<br />Logos and trademarks are the property of their respective owners.<br />The Milkfish software is licensed under the <a href=\"http:\/\/www.gnu.org/licenses/gpl.html\" target=\"new\">GNU General Public License</a>.<br />Please note that this software is under development and comes with absolutely no warranty, to the extend permitted by applicable law.</div></div><br /><div class=\"note\"><div class=\"center\">Milkfish is developed by...<br><a target=\"_blank\" href=\"http:\/\/www.sipwerk.com\"><img border=\"1\" src=\"../images/sipwerk.png\" alt=\"sipwerk logo\" /></a><br></div><br /></div><br /></dd><dd>Click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
-
 service.samba3_srv="Samba";
 service.samba3_srvstr="Nome Server";
 service.samba3_pub="Public Share";
@@ -1877,10 +1841,6 @@ eoip.mssfix="mssfix";
 eoip.shaper="shaper";
 eoip.bridging="Bridging";
 
-// help page
-//var heoip=new Object();
-heoip.page1="<dd>Ethernet over IP (EoIP) Tunneling enable you to create an Ethernet tunnel between two routers on top of an IP connection. The EoIP interface appears as an Ethernet interface. When the bridging function of the router is enabled, all Ethernet traffic (all Ethernet protocols) will be bridged just as if there where a physical Ethernet interface and cable between the two routers (with bridging enabled).<br/>Network setups with EoIP interfaces : <br/><ul><li>Possibility to bridge LANs over the Internet</li><li>Possibility to bridge LANs over encrypted tunnels</li><li>Possibility to bridge LANs over 802.11b &apos;ad-hoc&apos; wireless networks</li></ul></dd>";
-
 // ** Sipath.asp + cgi **//
 //var sipath=new Object();
 sipath.titl="Anteprima SiPath";
@@ -1909,9 +1869,6 @@ hstatus_lan.right4="Mostra l&apos;indirizzo IP del router, come appare sulla tua
 hstatus_lan.right6="Quando il router sta usando una Subnet Mask, &egrave; visualizzata qui.";
 hstatus_lan.right8="Se astai usando il server DHCP del router, sar&agrave; visualizzato qui.";
 hstatus_lan.right10="Cliccando su un qualsiasi indirizzo MAC, otterrai l&apos; Organizationally Unique Identifier dell&apos;interfaccia di rete (effettua la ricerca nel database standard IEEE).";
-
-//help page
-hstatus_lan.page1="<dd>This status screen displays the LAN status and configuration. All information is read-only.</dd><dt>MAC Address</dt><dd>The MAC Address of the LAN interface is displayed here.</dd><dt>IP Address and Subnet Mask</dt><dd>The current IP Address and Subnet Mask of the router, as seen by users on your local area network (LAN), are displayed here.</dd><dt>DHCP Server</dt><dd>The status of the router&apos;s DHCP server function is displayed here.</dd><dt>Start/End IP Address</dt><dd>The first and the last IP address the DHCP server can hand out to clients.</dd><dt>DHCP Client List</dt><dd>To show the current IP address leases by the DHCP server, click the <i>DHCP Clients Table</i> button.</dd>";
 
 // ** Status_Bandwidth.asp **//
 //var status_band=new Object();
@@ -1972,9 +1929,6 @@ hstatus_router.right6="E&apos; il firmware corrente del router.";
 hstatus_router.right8="E&apos; l&apos;ora ricevuta dal server NTP specificato nella finestra <em>" + bmenu.setup + " | " + bmenu.setupbasic + "</em>.";
 hstatus_router.right10="Misura da quanto tempo il router &egrave; stato avviato.";
 hstatus_router.right12="Composto da tre numeri che rappresentano il carico del sistema durante l&apos;ultimo minuto, ultimi 5 min e ultimi 15 min.";
-
-//help page
-hstatus_router.page1="<dd>This status screen displays the router&apos;s current status and configuration. All information is read-only.</dd><dt>Firmware Version </dt><dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the System screen if you experience problems with the router. Visit <a href=\"http:\/\/www.dd-wrt.com\" target=\"_new\">www.dd-wrt.com</a> to find out if there is updated firmware.</dd><dt>Current Time</dt><dd>The current date and time are displayed here.</dd><dt>MAC Address </dt><dd>The MAC Address of the Internet interface is displayed here.</dd><dt>Router Name</dt><dd>Shows the configured name of the router</dd><dt>Router Model</dt><dd>Shows the router vendor and the model</dd><dt>CPU</dt><dd>Shows the CPU type and revision</dd><dt>CPU Clock</dt><dd>Shows the current CPU clock</dd><dt>Host Name</dt><dd>The Host Name is the name of the router. This entry is necessary for some ISPs.</dd><dt>Configuration Type</dt><dt>IP Address, Subnet Mask, and Default Gateway</dt><dd>The Internet IP Address, Subnet Mask, and Default Gateway IP Address of the router, as seen by external users on the Internet, are displayed here.</dd><dt>DNS</dt><dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd><dt>Traffic</dt><dd>This shows your router&apos;s Internet traffic (total since last reboot or by month).</dd>";
 
 // ** Status_Internet.asp **//
 //var status_inet=new Object();
@@ -2053,16 +2007,6 @@ status_gpsi.sat="Satelliti Visibili";
 hstatus_wireless.right2="E&apos; l&apos;indirizzo MAC del router, com&apos;&egrave; visto sulla tua rete locale wireless.";
 hstatus_wireless.right4="Come selezionato dalla finestra del Wireless, mostrer&agrave; la modalit&agrave; wireless usata dalla rete (Mista, Solo-G, Solo-B o Disabilitato).";
 
-//help page
-hstatus_wireless.page1="<dd>This status screen displays the router&apos;s wireless status and configuration. All information is read-only.</dd>";
-hstatus_wireless.page2="<dd>The MAC Address of the wireless interface is displayed here.</dd>";
-hstatus_wireless.page3="<dd>The Mode of the wireless network is displayed here.</dd>";
-hstatus_wireless.page4="<dd>The SSID of the wireless network is displayed here.</dd>";
-hstatus_wireless.page5="<dd>The channel of the wireless network is displayed here.</dd>";
-hstatus_wireless.page6="<dd>The transfer power of the wireless device is displayed here.</dd>";
-hstatus_wireless.page7="<dd>The current wireless transfer rate is displayed here.</dd>";
-hstatus_wireless.page8="<dd>The status of the encryption is displayed here.</dd><dd>Click the <i>Survey</i> button to show all wireless networks in your neighbourhood reachable by your router.</dd>";
-
 // ** Status_OpenVPN.asp **//
 //var status_openvpn=new Object();
 status_openvpn.titl="Stato OpenVPN";
@@ -2088,10 +2032,6 @@ htrforward.right6="Per ogni applicazione, elenca l&apos;intervallo delle porte c
 htrforward.right8="Inserisci il numero di porta iniziale per l&apos;intervallo Trigger e Forward.";
 htrforward.right10="Inserisci il numero di porta finale per l&apos;intervallo Trigger e Forward.";
 
-//help page
-htrforward.page1="<dd>Port Triggering allows you to do port forwarding without setting a fixed PC. By setting Port Triggering rules, you can allow inbound traffic to arrive at a specific LAN host, using ports different than those used for the outbound traffic. This is called port triggering since the outbound traffic triggers to which ports inbound traffic is directed.<br /><br />If you want to forward ports to a PC with a static IP address, see <a href=\"HForwardSpec.asp\">";
-htrforward.page2="</a> or <a href=\"Forward_range.asp\">Port Range Forwarding</a>.</dd><dd>To add a new Port Triggering rule, click <i>Add</i> and fill in the fields below. To remove the last rule, click <i>Delete</i>.</dd><dt>Application</dt><dd>Enter the name of the application in the field provided.</dd><dt>Triggered Range</dt><dd>Enter the number of the first and the last port of the range, which should be triggered. If a PC sends outbound traffic from those ports, incoming traffic on the <i>Forwarded Range</i> will be forwarded to that PC.</dd><dt>Forwarded Range</dt><dd>Enter the number of the first and the last port of the range, which should be forwareded from the Internet to the PC, which has triggered the <i>Triggered Range</i>.</dd><dt>Enable</td><dd>Click the <i>Enable</i> checkbox to enable port triggering for the application.</dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click the <i>Cancel Changes</i> button to cancel your unsaved changes.<br /><br /><div class=\"note\"><h4>Note</h4><div>Remember to save your changes before adding another triggering rule.</div></div></dd>";
-
 // ** Upgrade.asp **//
 //var upgrad=new Object();
 upgrad.titl="Aggiornamento Firmware";
@@ -2107,9 +2047,6 @@ upgrad.mess1="L&apos;aggiornamento del firmware pu&ograve; durare alcuni minuti.
 //help container
 //var hupgrad=new Object();
 hupgrad.right2="Clicca sul pulsante <em>Sfoglia...</em> per selezionare il file da caricare nel router.<br /><br /> Clicca sul pulsante <em>Aggiorna</em> per avviare il processo di aggiornamento. L&apos;aggiornamento non deve essere interrotto.";
-
-//help page
-hupgrad.page1="<dd>New firmware versions are posted at <a href=\"http:\/\/www.dd-wrt.com\" target=\"_new\">www.dd-wrt.com</a> and can be downloaded for free. If the Router is not experiencing difficulties, then there is no need to download a more recent firmware version, unless that version has a new feature that you want to use.<br/><br/><div class=\"note\"><h4>Note</h4><div>When you upgrade the Router&apos;s firmware, you lose its configuration settings, so make sure you write down the Router settings before you upgrade its firmware.</div></div></dd><dd>To upgrade the Router&apos;s firmware:<ol class=\"wide\"><li>Download the firmware upgrade file from the website.</li><li>Click the <i>Browse...</i> button and chose the firmware upgrade file.</li><li>Click the <i>Upgrade</i> button and wait until the upgrade is finished.</li></ol><br /><div class=\"note\"><h4>Note</h4><div>DO NOT POWER OFF THE ROUTER OR PRESS THE RESET BUTTON WHILE THE FIRMWARE IS BEING UPGRADED.</div></div></dd><dt>Reset Options</dt><dd>If you want to reset the router to the default settings for the firmware version you are upgrading to, click the <i>Firmware Defaults</i> option.<br /><br /></dd>";
 
 // ** UPnP.asp **//
 //var upnp=new Object();
@@ -2128,12 +2065,6 @@ upnp.msg2="Cancella tutte le righe?";
 hupnp.right2="Click su cestino pu&ograve; cancellare una sola riga.";
 hupnp.right4="Permette alle applicazioni di abilitare automaticamente il forwarding delle porte.";
 
-//help page
-hupnp.page1="<dd>Universal Plug and Play (UPnP) is a set of computer network protocols. This Microsoft technology is for automatic configuration of devices. The goals of UPnP are to allow devices to connect seamlessly and to simplify the implementation of networks in the home and corporate environments. UPnP achieves this by defining and publishing UPnP device control protocols built upon open, Internet-based communication standards.</dd>";
-hupnp.page2="<dd>The UPnP forwards table shows all open ports forwarded automatically by the UPnP process. You can delete forwards by clicking the trash can or click the <em>Delete All</em> button to clear all forwards.</dd>";
-hupnp.page3="<dd>Allows applications to automatically setup port forwardings.</dd>";
-hupnp.page4="<dd>If enabled, all UPnP port forwardings are deleted when the router starts up.</dd>";
-hupnp.page5="<dd>If enabled, a presentation url tag is sent with the device description. This allows the router to show up in <em>Windows&apos;s My Network Places</em>. <br/><br/>div class=\"note\"><h4>Note</h4><div>When enabling this option you may need to reboot your PC.</div></div></dd><dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** VPN.asp **//
 //var vpn=new Object();
@@ -2147,12 +2078,6 @@ vpn.l2tp="L2TP Passthrough";
 //help container
 //var hvpn=new Object();
 hvpn.right1="Puoi scegliere di abilitare IPSec, PPTP e/o L2TP passthrough per permettere ai tuoi dispositivi di rete di comunicare via VPN.";
-
-//help page
-hvpn.page1="<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec Passthrough, PPTP Passthrough and L2TP Passthrough.</dd>";
-hvpn.page2="<dd>Internet Protocol Security (IPSec) is a suite of protocols used to implement secure exchange of packets at the IP layer. To allow IPSec tunnels to pass through the router, IPSec Passthrough is enabled by default. To disable IPSec Passthrough, select <i>Disable</i>.</dd>";
-hvpn.page3="<dd>Point-to-Point Tunneling Protocol is the method used to enable VPN sessions to a Windows NT 4.0 or 2000 server. To allow PPTP tunnels to pass through the router, PPTP Passthrough is enabled by default. To disable PPTP Passthrough, select <i>Disable</i>.</dd>";
-hvpn.page4="<dd>Layer Two (2) Tunneling Protocol, an extension to the PPP protocol that enables ISPs to operate Virtual Private Networks (VPNs). L2TP merges the best features of two other tunneling protocols: PPTP from Microsoft and L2F from Cisco Systems. To allow L2TP tunnels to pass through the router, L2TP Passthrough is enabled by default. To disable L2TP Passthrough, select <i>Disable</i>.</dd><dd>Check all the values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** Vlan.asp **//
 //var vlan=new Object();
@@ -2201,15 +2126,6 @@ hwol.right2="Questa pagina permette di fare il <em>Wake Up</em> degli host sulla
 hwol.right4="Gli indirizzi MAC sono inseriti nel formato xx:xx:xx:xx:xx:xx (cio&egrave; 01:23:45:67:89:AB)";
 hwol.right6="E&apos; l&apos;indirizzo IP di broadcast tipico per la rete locale, ma potrebbe essere un indirizzo remoto se host obiettivo non &egrave; connesso alla rete locale del router.";
 
-//help page
-hwol.page1="<dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd><dt class=\"term\">Available Hosts:</dt><dd class=\"definition\">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is a combination of any defined static hosts or automatically discovered DHCP clients.<div class=\"note\"><h4>Note</h4><div>This table uses the MAC address, &amp;quot;guesses&amp;quot; the network broadcast address by assuming the host&apos;s IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section -- default is 7 if nothing is specified).</div></div></dd>";
-hwol.page2="<dd class=\"definition\">The WOL Addresses section allows individual hosts in the WOL list (stored in the <b>wol_hosts</b> nvram variable) to be <em>Woken Up</em>.  The list is a combination of selected (enabled) Available Hosts and manually added WOL hosts.</dd>";
-hwol.page3="<dd class=\"definition\">The Manual WOL section allows individual or a list of hosts to be woken up by clicking <em>Wake Up</em> to send it the WOL <i>magic packet</i>.</dd>";
-hwol.page4="<dd class=\"definition\">Fill the MAC address(es) (either separated by spaces or one per line) of the computer(s) you would like to wake up.<div class=\"note\"><h4>Note</h4><div>Each MAC-ADDRESS is written as xx:xx:xx:xx:xx:xx, where xx is a hexadecimal number between 00 and ff which represents one byte of the address, which is in network byte order (big endian).</div></div></dd>";
-hwol.page5="<dd class=\"definition\">Broadcast to this IP address or hostname (typically you would want to make this your network&apos;s broadcast IP for locally waking up hosts.</dd>";
-hwol.page6="<dd class=\"definition\">Broadcast to this UDP port.</dd>";
-hwol.page7="<dd class=\"definition\">Besides attempting to <i>Wake Up</i> the manually specified host(s), clicking on the &amp;quot;Wake Up&amp;quot; button will save the MAC Address(es), Network Broadcast, and UDP Port values into the <b>manual_wol_mac</b>, <b>manual_wol_network</b>, and <b>manual_wol_port</b> nvram variables and commits them to memory.</dd>";
-
 // ** WanMAC.asp **//
 //var wanmac=new Object();
 wanmac.titl="Indirizzo MAC Clonato";
@@ -2221,10 +2137,6 @@ wanmac.wlan="Clona MAC della Wireless";
 //help container
 //var hwanmac=new Object();
 hwanmac.right2="Alcuni ISP potrebbero richiedere la registrazione del tuo MAC. Se non vuoi registrare nuovamente il MAC, puoi far clonare al router il MAC gi&agrave; registrato col tuo ISP.";
-
-//help page
-hwanmac.page1="<dd>The router&apos;s MAC address is a 12-digit code assigned to a unique piece of hardware for identification. Some ISPs require that you register the MAC address of your network card/adapter, which was connected to your cable or DSL modem during installation.</dd>";
-hwanmac.page2="<dd>To clone your network adapter&apos;s MAC address onto the router, select <i>Enable</i> and enter your adapter&apos;s MAC address in the <i>Clone WAN MAC</i> field or click <i>Get Current PC MAC Address</i> to fill in the MAC address of your PC you are using. Then save your changes by clicking on the <i>Save Settings</i> button.<br/><br/>To disable MAC address cloning, keep the default setting, <i>Disable</i>.</dd><dd>Find your adapter&apos;s MAC address by following the instructions for your PC&apos;s operating system.<br/><br/><b>Windows 98 and Millennium:</b><ol class=\"wide\"><li>Click the Start button, and select <i>Run</i>.</li><li>Type <tt>winipcfg</tt> in the field provided, and press the OK key.</li><li>Select the Ethernet adapter you are using.</li><li>Click More Info.</li><li>Write down your adapter&apos;s MAC address.</li></ol><br /><b>Windows 2000 and XP:</b><ol class=\"wide\"><li>Click the Start button, and select Run.</li><li>Type <tt>cmd</tt> in the field provided, and press the OK key.</li><li>At the command prompt, run <tt>ipconfig /all</tt>, and look at your adapter&apos;s physical address.</li><li>Write down your adapter&apos;s MAC address.</li></ol></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click </i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 // ** WL_WPATable.asp / WPA.asp / Radius.asp **//
 //var wpa=new Object();
@@ -2303,15 +2215,6 @@ sec80211x.options="Opzioni Di Rete Addizionali";
 //var hwpa=new Object();
 hwpa.right2="Puoi scegliere tra Disabilitato, WEP, WPA a Chiave Pre-Condivisa, WPA Enterprise, o RADIUS. Tutti i dispositivi sulla tua rete devono adottare le stesse modalit&agrave; di sicurezza.";
 
-//help page
-hwpa.page1="<dd>The router supports different types of security settings for your network. Wi-Fi Protected Access (WPA) Personal, WPA Remote Access Dial In User Service (RADIUS), RADIUS, and Wire Equivalence Protection (WEP), which can be selected from the list next to Security Mode. To disable security settings, keep the default setting, <i>Disable</i>.</dd>";
-hwpa.page2="<dd>TKIP stands for Temporal Key Integrity Protocol, which utilizes a stronger encryption method than WEP, and incorporates Message Integrity Code (MIC) to provide protection against packet tampering. AES stands for Advanced Encryption System, which utilizes a symmetric 128-Bit block data encryption and MIC. You should choose AES if your wireless clients supports it.<br /><br />To use WPA Personal, enter a password in the <i>WPA Shared Key</i> field between 8 and 63 characters long. You may also enter a <i>Group Key Renewal Interval</i> time between 0 and 99,999 seconds.</dd>";
-hwpa.page3="<dd>WPA Enterprise uses an external RADIUS server to perform user authentication. To use WPA RADIUS, enter the IP address of the RADIUS server, the RADIUS Port (default is 1812) and the shared secret from the RADIUS server.</dd>";
-hwpa.page4="<dd>WPA2 uses 802.11i to provide additional security beyond what is provided in WPA. AES is required under WPA2, and you may need additional updates to your OS and/or wireless drivers for WPA2 support. Please note WPA2/TKIP is not a supported configuration. Aditionally the WPA2 security mode is not supported under WDS.</dd>";
-hwpa.page5="<dd>This mode allows for mixing WPA2 and WPA clients. If only some of your clients support WPA2 mode, then you should choose WPA2 Mixed. For maximum interoperability, you should choose WPA2 Mixed/TKIP+AES.</dd>";
-hwpa.page6="<dd>RADIUS utilizes either a RADIUS server for authentication or WEP for data encryption. To utilize RADIUS, enter the IP address of the RADIUS server and its shared secret. Select the desired encryption bit (64 or 128) for WEP and enter either a passphrase or a manual WEP key.</dd>";
-hwpa.page7="<dd>There are two levels of WEP encryption, 64-bit (40-bit) and 128-bit. To utilize WEP, select the desired encryption bit, and enter a passphrase or up to four WEP key in hexadecimal format. If you are using 64-bit (40-bit), then each key must consist of exactly 10 hexadecimal characters. For 128-bit, each key must consist of exactly 26 hexadecimal characters. Valid hexadecimal characters are \"0\"-\"9\" and \"A\"-\"F\". Check your wireless clients to see which encryption level it supports.<br /><br />Use of WEP is discouraged due to security weaknesses, and one of the WPA modes should be used whenever possible. Only use WEP if you have clients that can only support WEP (usually older, 802.11b-only clients).</dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click </i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
-
 // ** WL_FilterTable.asp **//
 //var wl_filter=new Object();
 wl_filter.titl="Elenco Filtri Degli Indirizzi MAC";
@@ -2341,10 +2244,6 @@ wds.nat2="WDS->wLAN";
 wds.subnet="Subnet";
 wds.legend2="Opzioni Extra";
 
-//help page
-//var hwds=new Object();
-hwds.page1="<dd>WDS (Wireless Distribution System) is a Wireless Access Point mode that enables wireless bridging in which WDS APs communicate only with each other only (without allowing for wireless clients or stations to access them), and/or wireless repeating in which APs communicate both with each other and with wireless stations (at the expense of half the throughput). This firmware currently supports two types of WDS, LAN and Point to Point.</dd><dt>LAN-type WDS</dt><dd>This is the easiest, and currently most common, type of WDS used for linking LANs. It is very simple to setup and requires no extra routing protocols or knowledge of networking. Simply put, it is pure bridging. A simple example would be extending the range of an existing AP by setting up a 2nd AP and connecting it to the first using LAN-type WDS.<ol class=\"wide\"><li>Make sure you are using the same <a href=\"HWireless.asp\">Wireless Settings</a> on both routers and not any type of <a href=\"HWPA.asp\">Wireless Security</a>.</li><li>Find a drop-down selection that has <i>Disabled</i> displayed. Click this and select <i>LAN</i>, do the same on the other router.</li><li>On the first router, take the numbers next to <i>Wireless MAC</i> and enter them in to the second router on the same line that you set to \"LAN\".</li><li>Take the Wireless MAC from the second router and enter them on the first router.</li><li>Check for any typing errors and then click <i>Save Settings</i>.</li><li>Go to the <a href=\"HStatusWireless.asp\">Wireless Status</a> page. You should see <i>WDS Link</i> and the Wireless MAC of the other router listed, with a signal reading. If the signal is \"0dBm\" then there may be something wrong. Check your antenna connections and configuration settings, and try again.</li><li>Once you have a good signal (-70dBm to -30dBm, -70dBm being lowest), you can change the <i>Internet Connection Type</i> on the <a href=\"HSetup.asp\">Basic Setup</a> page of the second router to <i>Disabled</i> and set the <em>Gateway</em> to the LAN IP Address of the first router. You can now run normal tests to check if you are connected (like <tt>ping</tt>).</li></ol><br /><br /><div class=\"note\"><h4>Note</h4><div>WDS is only available in <em>AP</em> mode. Also Wireless encryption <em>WPA2</em> and Wireless network mode <em>B-Only</em> are not supported under WDS.</div></div></dd>";
-
 // ** Wireless_radauth.asp **//
 //var radius=new Object();
 radius.titl="Radius";
@@ -2368,16 +2267,6 @@ radius.label14="Radius Acct Server Port";
 radius.label17="Radius Acct Shared Secret";
 radius.label18="Radius Accounting";
 
-// help page
-//var hradauth=new Object();
-hradauth.page1="<dd>RADIUS (Remote Authentication Dial-In User Service) is a security service for authenticating and authorizing dial-up users. A typical enterprise network may have an access server attached to a modem pool, along with a RADIUS server to provide authentication services. Remote users dial into the access server, and the access server sends authentication requests to the RADIUS server. The RADIUS server authenticates users and authorizes access to internal network resources. Remote users are clients to the access server and the access server is a client to the RADIUS server.<br /><br /><div class=\"note\"><h4>Note</h4><div>RADIUS is only available in <em>AP</em> mode.</div></div></dd>";
-hradauth.page2="<dd>When sending the authentication request to the RADIUS server, the wireless client use the MAC address as the username. This would be received by the RADIUS server in the following format :<ul class=\"wide\"><li>aabbcc-ddeeff</li><li>aabbccddeeff</li><li>aa-bb-cc-dd-ee-ff</li></ul></dd> ";
-hradauth.page3="<dd>The radius server IP address and TCP port.</dd>";
-hradauth.page4="<dd>Sets a amount of users which ran access without any valid radius authentifaction</dd>";
-hradauth.page5="<dd>Sets the property which radius password should be used, the shared key or the mac adress itself</dd>";
-hradauth.page6="<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>";
-hradauth.page7="<dd>If the Radius server becomes unavailable, the radius authentication will be disabled until it becoms reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>";
-
 // ** Wireless_MAC.asp **//
 //var wl_mac=new Object();
 wl_mac.titl="Filtro MAC";
@@ -2387,10 +2276,6 @@ wl_mac.label="Usa il Filtro";
 wl_mac.label2="Modalit&agrave; Filtro";
 wl_mac.deny="Impedisci ai PC in elenco l&apos;accesso alla rete wireless";
 wl_mac.allow="Permetti ai soli PC in elenco l&apos;accesso alla rete wireless";
-
-//help page
-//var hwl_mac=new Object();
-hwl_mac.page1="<dd>The Wireless MAC Filter allows you to control which wireless-equipped PCs may or may not communicate with the router depending on their MAC addresses. For information how to get MAC addresses from Windows-PCs, see <a href=\"HWanMAC.asp\">MAC Address Cloning</a> for detailed instructions.</dd><dd>To set up a filter, click <i>Enable</i>, and follow these instructions:<ol class=\"wide\"><li>If you want to block specific wireless-equipped PCs from communicating with the router, then keep the default setting, <i>Prevent PCs listed from accessing the wireless network</i>. If you want to allow specific wireless-equipped PCs to communicate with the router, then click the radio button next to <i>Permit only PCs listed to access the wireless network</i>.</li><li>Click the <i>Edit MAC Filter List</i> button. Enter the appropriate MAC addresses into the MAC fields.<br /><br /><div class=\"note\"><b>Note:</b><br />The MAC address should be entered in this format: xxxxxxxxxxxx (the x&apos;s represent the actual characters of the MAC address).</div></li><li>Click the <i>Save Settings</i> button to save your changes. Click the <i>Cancel Changes</i> button to cancel your unsaved changes. Click the <i>Close</i> button to return to the previous screen without saving changes.</li></ol><br />To disable the Wireless MAC Filter, keep the default setting, <i>Disable</i>./dd>";
 
 // ** WiMAX
 //var wl_wimax=new Object();
@@ -2512,36 +2397,6 @@ wl_adv.mpbs="Mbps";
 //var hwl_adv=new Object();
 hwl_adv.right2="Puoi scegliere tra Auto o Chiave Condivisa. L&apos;autenticazione via chiave condivisa &egrave; pi&ugrave; sicura, ma tutti i dispositivi sulla tua rete devono supportare l&apos;autenticazione a Chiave Condivisa.";
 
-//help page
-hwl_adv.page1="<dd>The Wireless Advanced Settings screen allows you to customize data transmission settings. In most cases, the advanced settings on this screen should remain at their default values.</dd>";
-hwl_adv.page2="<dd>The default is set to <i>Auto</i>, which allows either Open System or Shared Key authentication to be used. For Open System authentication, the sender and the recipient do NOT use a WEP key for authentication. For Shared Key authentication, the sender and recipient use a WEP key for authentication. If you want to use only Shared Key authentication, then select <i>Shared Key</i>.</dd>";
-hwl_adv.page3="<dd>The default value is set to <i>Default</i>. Depending on the wireless mode you have selected, a default set of supported data rates will be selected. The default setting will ensure maximum compatibility with all devices. You may also choose to enable all data rates by selecting <i>ALL</i>. For compatibility with older Wireless-B devices, select <i>1-2Mbps</i>.</dd>";
-hwl_adv.page4="<dd>The default setting is <i>Auto</i>. The range is from 1 to 54Mbps. The rate of data transmission should be set depending on the speed of your wireless network. You can select from a range of transmission speeds, or keep the default setting, <i>Auto</i>, to have the router automatically use the fastest possible data rate and enable the Auto-Fallback feature. Auto-Fallback will negotiate the best possible connection speed between the router and a wireless client.</dd>";
-hwl_adv.page5="<dd>The default value is <i>Disabled</i>. When set to <i>Auto</i>, a protection mechanism will ensure that your Wireless-B devices will connect to the Wireless-G router when many Wireless-G devices are present. However, performance of your Wireless-G devices may be decreased.</dd>";
-hwl_adv.page6="<dd>The default value is <i>Disabled</i>. Frame burst allows packet bursting which will increase overall network speed though this is only recommended for approx 1-3 wireless clients, Anymore clients and there can be a negative result and throughput will be affected.</dd>";
-hwl_adv.page7="<dd>The default value is 100. Enter a value between 1 and 65,535 milliseconds. The Beacon Interval value indicates the frequency interval of the beacon. A beacon is a packet broadcast by the router to synchronize the wireless network. 50 is recommended in poor reception.</dd>";
-hwl_adv.page8="<dd>The default value is 1. This value, between 1 and 255, indicates the interval of the Delivery Traffic Indication Message (DTIM). A DTIM field is a countdown field informing clients of the next window for listening to broadcast and multicast messages. When the router has buffered broadcast or multicast messages for associated clients, it sends the next DTIM with a DTIM Interval value. Its clients hear the beacons and awaken to receive the broadcast and multicast messages.</dd>";
-hwl_adv.page9="<dd>This value should remain at its default setting of 2346. The range is 256-2346 bytes. It specifies the maximum size for a packet before data is fragmented into multiple packets. If you experience a high packet error rate, you may slightly increase the Fragmentation Threshold. Setting the Fragmentation Threshold too low may result in poor network performance. Only minor modifications of this value are recommended.</dd>";
-hwl_adv.page10="<dd>This value should remain at its default setting of 2347. The range is 0-2347 bytes. Should you encounter inconsistent data flow, only minor modifications are recommended. If a network packet is smaller than the preset RTS threshold size, the RTS/CTS mechanism will not be enabled. The router sends Request to Send (RTS) frames to a particular receiving station and negotiates the sending of a data frame. After receiving an RTS, the wireless station responds with a Clear to Send (CTS) frame to acknowledge the right to begin transmission.</dd>";
-hwl_adv.page11="<dd>The default value is <i>Off</i>. This setting isolates wireless clients so access to and from other wireless clients are stopped.</dd>";
-hwl_adv.page12="<dd>Values are <i>Auto</i>, <i>Left</i>, <i>Right</i>, default value is <i>Auto</i>. This is used in conjunction with external antennas to give them optimum performance. On some router models left and right antennas may be reversed depending on you point of view.</dd>";
-hwl_adv.page13="<dd>Values are <i>Long</i> and <i>Short</i>, default value is <i>Long</i>. If your wireless device supports the short preamble and you are having trouble getting it to communicate with other 802.11b devices, make sure that it is set to use the long preamble.</dd>";
-hwl_adv.page14="<dd>This value ranges from 1 - 1000 mw. Default txpwr is choosen in order to comply with regulation domains as well as wireless stability. Higher power settings are not recommended for users due to excess heat generated by the radio chipset, which can affect the life of the router.</dd>";
-hwl_adv.page15="<dd>The default value is <i>Off</i>. This should only be used with WRT54GS Models and only in conjunction with other Linksys \"GS\" wireless clients that also support Linksys \"Speedbooster\" technology.</dd>";
-hwl_adv.page16="<dd>The default value is <i>Enabled</i>. The setting allows access to the routers setup (GUI) from wireless clients. Disable this if you wish to block all wireless clients from accessing the setup pages.</dd>";
-hwl_adv.page17="<dd>The <em>Radio Times Restriction</em> facility constitutes a time switch for the radio. By default, the time switch is not active and the WLAN is permanently on. Enable the time switch, if you want to turn off the WLAN during some hours of the day. Hours during which the WLAN is on are marked in green, while red indicates that the radio is off. Clicking on the respective hour toggles between on and off.</dd>";
-hwl_adv.page18="<dd>Enable support of Wi-Fi Multimedia feature. Configuring QoS options consists of setting parameters on existing queues for different types of wireless traffic. You can configure different minimum and maximum wait times for the transmission of packets in each queue based on the requirements of the media being sent. Queues automatically provide minimum transmission delay for Voice, Video, multimedia, and mission critical applications, and rely on best-effort parameters for traditional IP data.<br /><br /><div class=\"note\"><h4>Note</h4><div>As an Example, time-sensitive Voice &amp; Video, and multimedia are given effectively higher priority for transmission (lower wait times for channel access), while other applications and traditional IP data which are less time-sensitive but often more data-intensive are expected to tolerate longer wait times.</div></div></dd>";
-hwl_adv.page19="<dd>This refers to the acknowledge policy used at the MAC level. Enabling no-acknowledgement can result in more efficient throughput but higher error rates in a noisy Radio Frequency (RF) environment.</dd>";
-hwl_adv.page20="<dd>This affects traffic flowing from the access point to the client station.</dd>";
-hwl_adv.page21="<dd>This affects traffic flowing from the client station to the access point.</dd>";
-hwl_adv.page22="<dd>Priority is low.<BR />High throughput. Bulk data that requires maximum throughput and is not time-sensitive is sent to this queue (FTP data, for example).</dd>";
-hwl_adv.page23="<dd>Priority is Medium.<BR />Medium throughput and delay. Most traditional IP data is sent to this queue.</dd>";
-hwl_adv.page24="<dd>Priority is High.<BR />Minimum delay. Time-sensitive video data is automatically sent to this queue.</dd>";
-hwl_adv.page25="<dd>Minimum Contention Window. This parameter is input to the algorithm that determines the initial random backoff wait time (\"window\") for retry of a transmission. The value specified here in the Minimum Contention Window is the upper limit (in milliseconds) of a range from which the initial random backoff wait time is determined.<BR />The first random number generated will be a number between 0 and the number specified here. If the first random backoff wait time expires before the data frame is sent, a retry counter is incremented and the random backoff value (window) is doubled. Doubling will continue until the size of the random backoff value reaches the number defined in the Maximum Contention Window. Valid values for the \"cwmin\" are 1, 3, 7, 15, 31, 63, 127, 255, 511, or 1024. The value for \"cwmin\" must be lower than the value for \"CWmax\".</dd>";
-hwl_adv.page26="<dd>Maximum Contention Window. The value specified here in the Maximum Contention Window is the upper limit (in milliseconds) for the doubling of the random backoff value. This doubling continues until either the data frame is sent or the Maximum Contention Window size is reached. Once the Maximum Contention Window size is reached, retries will continue until a maximum number of retries allowed is reached. Valid values for the \"cwmax\" are 1, 3, 7, 15, 31, 63, 127, 255, 511, or 1024. The value for \"cwmax\" must be higher than the value for \"CWmin\".</dd>";
-hwl_adv.page27="<dd>The Arbitration Inter-Frame Spacing Number specifies a wait time (in milliseconds) for data frames.</dd>";
-hwl_adv.page28="<dd>Transmission Opportunity for \"a\" \"b\" and \"g\" modes is an interval of time when a WME AP has the right to initiate transmissions onto the wireless medium (WM). This value specifies (in milliseconds) the Transmission Opportunity (TXOP) for AP; that is, the interval of time when the WMM AP has the right to initiate transmissions on the wireless network.</dd><dd>Check all values and click <i>Save Settings</i> to save your changes. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
-
 // ** Wireless_Basic.asp **//
 //var wl_basic=new Object();
 wl_basic.titl="Wireless";
@@ -2659,15 +2514,6 @@ hwl_basic.right3="Intervallo Di Sensibilit&agrave;: ";
 hwl_basic.right4="Modifica la teporizzazione dell ACK. 0 lo disabilita completamente.";
 hwl_basic.right6="Clicca su qualsiasi ora per abilitare/disabilitare il wireless (<em>verde</em> indica che il wiriless si accender&agrave;, e <em>rosso</em> indica che il wiriless si spegner&agrave;)";
 
-//help page
-hwl_basic.page1="<dd>The wireless part of your router can run in different modes:<ul class=\"wide\"><li>AP mode &ndash; This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li><li>Client mode &ndash; The radio interface is used to connect the internet-facing side of the router (i.e., the WAN) as a client to a remote accesspoint. NAT or routing are performed between WAN and LAN, like in \"normal\" gateway or router mode. Use this mode, e.g., if your internet connection is provided by a remote accesspoint, and you want to connect a subnet of your own to it. </li><li>Client Bridged mode &ndash; The radio interface is used to connect the LAN side of the router to a remote accesspoint. The LAN and the remote AP will be in the same subnet (This is called a \"bridge\" between two network segments). The WAN side of the router is unused and can be disabled. Use this mode, e.g., to make the router act as a \"WLAN adapter\" for a device connected to one of its LAN ethernet ports.</li><li>Ad-Hoc mode &ndash; This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li></ul><br /><br /><div class=\"note\"><h4>Note</h4><div>Note that <a href=\"HWDS.asp\">WDS</a> is only available in AP mode.</div></div></dd>";
-hwl_basic.page2="<dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS.</dd>";
-hwl_basic.page3="<dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br /><div class=\"note\"><h4>Note</h4><div>For added security, it is recommended to change the default SSID <tt>dd-wrt</tt> to a unique name of your choice.</div></div></dd>";
-hwl_basic.page4="<dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd>";
-hwl_basic.page5="<dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <i>Disable</i>.</dd>";
-hwl_basic.page6="<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters<div class=\"note\"><h4>Note</h4><div>On Atheros based DD-WRT firmwares 0 will not disable ack timing but will turn into auto ACK timing mode</div></div><ul class=\"wide\"><li> 0 disables ack timing completely</li><li> 1 - 999999 adjusts ack timing</li></ul></dd>";
-hwl_basic.page7="<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
-
 // ** Fail_s.asp / Fail_u_s.asp / Fail.asp **//
 //var fail=new Object();
 fail.mess1="Valore inserito non valido. Riprova.";
@@ -2699,45 +2545,6 @@ sas.network_settings="Impostazioni di Rete";
 sas.wireless_settings="Impostazioni Wireless";
 sas.other_settings="Altre Impostazioni";
 sas.hwan="Internet (WAN) Setup";
-
-//var hsas=new Object();
-hsas.wan="The WAN interface connects your router to the Internet or other networks. If your network is connected to the internet and you only need an access point then set the WAN mode to \"Disabled\".";
-hsas.h_routerip="Router IP";
-hsas.routerip="This is the IP-address assigned to the router in your internal network. If you change this address you also have to use it to access the Router Management after applying the changes.";
-hsas.h_dhcp="DHCP";
-hsas.dhcp="Computers and other networking devices can automatically obtain IP-adresses via DHCP in your local network without requiring manual configuration. In case there is a DHCP-server running in your local network, please disable this option to avoid conflicts.";
-hsas.h_wireless_physical="Wireless Radio Interface";
-hsas.wireless_physical="The interface settings allow you to define the radio behavior of the router. You can define the main operation mode (Access Point, Client or Repeater), change the wireless network name and change advanced settings like the channel width. In case you did change the wireless channel width from the 20 MHz standard please take care that your wireless clients do support the channel width and are configured properly.";
-hsas.h_wireless_security="Wireless Security";
-hsas.wireless_security="To make it easier for you to configure client devices you can change the wireless network password. Disabling encryption or changing it to WEP is not recommended for security reasons.";
-hsas.h_routername="Router name";
-hsas.routername="This name is communicated to other devices in your network and allows easier identification.";
-hsas.networking="Networking help text";
-hsas.wireless="Wireless help text";
-hsas.other="Other Settings help text";
-
-// ** AOSS **//
-//var haoss=new Object();
-haoss.basic="The \"AirStation One-Touch Secure System\" (AOSS) allows you to connect AOSS-capable clients to your access point without requiring manual configuration.";
-haoss.securitymodes="AOSS security modes define what client security modes are accepted for AOSS negotiation. If a client only supports security modes that are not enabled, it cannot connect.";
-haoss.wps="WPS enables support for Wi-Fi Protected Setup using the button on your router or the PIN that came with your client device.";
-
-//var ias=new Object();
-ias.title="Setup";
-ias.card_info="Setup Card";
-ias.edit_note="Click on any information in the Setup Card to edit it.";
-ias.assistant="Run Setup Assistant";
-ias.assistant_iptv="Run IPTV Setup";
-ias.print_setup_card="Print Setup Card";
-ias.print_guest_card="Print Guest Card";
-ias.apply_changes="Apply Changes";
-ias.wlnetwork="Wireless Network";
-ias.wlinfo_2_4_GHz="(2.4 Ghz) - Compatible with 802.11n/g/b";
-ias.wlinfo_5_GHz="(5 Ghz) - Compatible with 802.11n/a";
-ias.hl_setup_card="Setup Card";
-ias.hl_client_access="For Client Access";
-ias.hl_for_conf="For Configuration";
-ias.hl_guest_card="Guest Card";
 
 
 // ************		OLD PAGES 		*******************************//
