@@ -502,7 +502,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 	char *temp2 = &path[idx + 1];
 	char number[32];
 	webs_t wp = stream;
-	strncpy(number, temp2, sizeof(number)-1);
+	strncpy(number, temp2, sizeof(number) - 1);
 	idx = indexof(number, '.');
 	if (idx < 0)
 		return;
@@ -1684,25 +1684,19 @@ static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream,
 static void do_wpad(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	FILE *fp;
-	
+
 	fp = fopen("/tmp/wpad.dat", "wb");
-	
-	if(fp !=NULL){
+
+	if (fp != NULL) {
 		fprintf(fp,
-		"function FindProxyForURL(url, host) {\n"
-		"var proxy = \"PROXY %s:8118; DIRECT\";\n"
-		"var direct = \"DIRECT\";\n"
-		"if(isPlainHostName(host)) return direct;\n"
-		"if (\n"
-		"url.substring(0, 4) == \"ftp:\" ||\n"
-		"url.substring(0, 6) == \"rsync:\"\n"
-		")\n"
-		"return direct;\n"
-		"return proxy;\n"
-		"}", nvram_safe_get("lan_ipaddr"));
+			"function FindProxyForURL(url, host) {\n"
+			"var proxy = \"PROXY %s:8118; DIRECT\";\n"
+			"var direct = \"DIRECT\";\n"
+			"if(isPlainHostName(host)) return direct;\n"
+			"if (\n" "url.substring(0, 4) == \"ftp:\" ||\n" "url.substring(0, 6) == \"rsync:\"\n" ")\n" "return direct;\n" "return proxy;\n" "}", nvram_safe_get("lan_ipaddr"));
 		fclose(fp);
 	}
-	
+
 	do_file_attach(handler, "/tmp/wpad.dat", stream, NULL, "wpad.dat");
 }
 #endif
