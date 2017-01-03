@@ -18,22 +18,20 @@ util-linux:
 
 util-linux-install:
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
 ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -rf $(INSTALLDIR)/util-linux/bin
 	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
