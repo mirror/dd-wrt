@@ -1,8 +1,8 @@
 php7: libxml2 libmcrypt
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
-	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libgd/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -ldl -fPIC -v -Wl,--verbose" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/curl/include -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/libpng/.libs -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/zlib -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -ldl -fPIC -v -Wl,--verbose" \
 	$(MAKE) -C php7
 	
 	
@@ -56,7 +56,7 @@ PHP_CONFIGURE_ARGS= \
 	--with-gd \
 	--with-zlib \
 	--with-zlib-dir="$(TOP)/zlib" \
-	--with-png-dir="$(TOP)/libgd/libpng/.libs" \
+	--with-png-dir="$(TOP)/libpng/.libs" \
 	--with-jpeg-dir="$(TOP)/minidlna/jpeg-8" \
 	--with-mcrypt="$(TOP)/libmcrypt" \
 	--with-curl="$(TOP)/curl" \
@@ -79,10 +79,10 @@ PHP_CONFIGURE_ARGS= \
 	PHP_OPENSSL_DIR="$(TOP)/openssl" \
 	PHP_CURL="$(TOP)/curl" \
 	PHP_ICONV="$(TOP)/glib20/libiconv" \
-	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libgd/libpng -lcrypt -L$(TOP)/openssl -I$(TOP)/curl/include -lcrypto -lssl" \
+	EXTRA_CFLAGS="-L$(TOP)/glib20/libiconv/lib/.libs -liconv -I$(TOP)/libmcrypt -I$(TOP)/zlib -I$(TOP)/libpng -lcrypt -L$(TOP)/openssl -I$(TOP)/curl/include -lcrypto -lssl" \
 	EXTRA_LIBS="-liconv " \
-	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl" \
-	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl"
+	EXTRA_LDFLAGS="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl" \
+	EXTRA_LDFLAGS_PROGRAM="-L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/libxml2/.libs -lxml2 -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl"
 
 ifeq ($(ARCH),mips64)
 PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
@@ -98,13 +98,13 @@ PHP_ENDIAN=ac_cv_c_bigendian_php="yes"
 endif
 
 	
-php7-configure: minidlna-configure libpng-configure libgd-configure libxml2-configure libpng libgd libxml2 zlib curl
+php7-configure: libpng libgd libxml2 zlib curl
 	rm -f php7/config.cache
 	rm -rf php7/autom4te.cache
 	cd php7 && autoconf
 	cd php7 && './configure'  '--host=$(ARCH)-linux-uclibc' $(PHP_ENDIAN) $(PHP_CONFIGURE_ARGS) \
-	'CFLAGS=$(COPTS) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libgd/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -liconv' \
-	'LDFLAGS=-L$(TOP)/minidlna/lib -ljpeg -L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libgd/libpng/.libs -lpng -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl'
+	'CFLAGS=$(COPTS) -I$(TOP)/minidlna/jpeg-8 -I$(TOP)/libmcrypt -I$(TOP)/libpng -I$(TOP)/libxml2/include -I$(TOP)/glib20/libiconv/include -I$(TOP)/curl/include -DNEED_PRINTF -L$(TOP)/glib20/libiconv/lib/.libs -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -liconv' \
+	'LDFLAGS=-L$(TOP)/minidlna/lib -ljpeg -L$(TOP)/libmcrypt/lib/.libs -lmcrypt -L$(TOP)/libxml2/.libs -L$(TOP)/zlib -L$(TOP)/libpng/.libs -lpng16 -L$(TOP)/libgd/src/.libs -lgd -L$(TOP)/glib20/libiconv/lib/.libs -liconv -L$(TOP)/openssl -L$(TOP)/zlib -lz -L$(TOP)/curl/lib/.libs -lcurl -lcrypto -lssl -lcrypt -ldl'
 	printf "#define HAVE_GLOB 1\n" >>$(TOP)/php7/main/php_config.h
 
 php7-clean:
