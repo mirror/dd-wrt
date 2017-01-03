@@ -694,6 +694,7 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%c'%s'", count ? ',' : ' ', list[1]);
 			count++;
 		}
+		fclose(fp);
 	}
 
 	return;
