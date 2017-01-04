@@ -19,7 +19,7 @@ util-linux:
 util-linux-install:
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
-	cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
 	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
