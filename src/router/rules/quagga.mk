@@ -6,7 +6,7 @@ ifeq ($(CONFIG_QUAGGA_STABLE),y)
 else
 	cd quagga/readline && ./configure --host=$(ARCH)-uclibc-linux --prefix=/usr  CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -fno-strict-aliasing"
 	$(MAKE) -C quagga/readline clean all
-	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/var/run  --libdir=/usr/lib --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --enable-pie=no --with-libreadline=$(TOP)/quagga/readline CFLAGS="-fno-strict-aliasing -I$(TOP)/quagga -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)  $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/quagga/readline -L$(TOP)/ncurses/lib -lncurses" 
+	cd quagga && ./configure --host=$(ARCH)-uclibc-linux $(CONFIG_QUAGGA_EXTRA) --localstatedir=/var/run  --libdir=/usr/tmp --enable-opaque-lsa --enable-ospf-te --disable-ospfclient --enable-multipath=32  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --enable-pie=no --with-libreadline=$(TOP)/quagga/readline CFLAGS="-fno-strict-aliasing -I$(TOP)/quagga -Drpl_malloc=malloc -Drpl_realloc=realloc $(COPTS)  $(MIPS16_OPT)" LDFLAGS="-L$(TOP)/quagga/readline -L$(TOP)/ncurses/lib -lncurses" 
 	cd quagga && touch *
 endif
 
@@ -23,6 +23,10 @@ ifeq ($(CONFIG_QUAGGA_STABLE),y)
 else
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install
 endif
+	mkdir -p $(INSTALLDIR)/quagga/usr/lib
+	cp -urv $(INSTALLDIR)/quagga/usr/tmp/* $(INSTALLDIR)/quagga/usr/lib
+	rm -rf $(INSTALLDIR)/quagga/usr/tmp 
+
 	rm -rf $(INSTALLDIR)/quagga/tmp
 	rm -rf $(INSTALLDIR)/quagga/usr/info
 	rm -rf $(INSTALLDIR)/quagga/usr/share
