@@ -6,8 +6,8 @@ btrfsprogs: lzo util-linux
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
-	mv $(INSTALLDIR)/util-linux/tmp/* $(INSTALLDIR)/util-linux/usr/lib
-	rm -rf $(INSTALLDIR)/util-linux/tmp 
+	cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
