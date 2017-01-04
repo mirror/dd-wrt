@@ -1,6 +1,6 @@
 util-linux-configure:
 	make -C util-linux clean
-	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" PKG_CONFIG="/tmp" NCURSES_CFLAGS="-I$(TOP)/ncurses/include" NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
+	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" PKG_CONFIG="/tmp" NCURSES_CFLAGS="-I$(TOP)/ncurses/include" NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
 	--disable-rpath \
 	--enable-new-mount	\
 	--disable-tls		\
@@ -18,6 +18,9 @@ util-linux:
 
 util-linux-install:
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	mv $(INSTALLDIR)/util-linux/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/tmp 
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
