@@ -27,6 +27,7 @@ util-linux-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
@@ -45,7 +46,6 @@ ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
 endif
 endif
