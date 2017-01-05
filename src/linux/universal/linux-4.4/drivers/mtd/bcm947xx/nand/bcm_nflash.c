@@ -42,6 +42,7 @@
 #include <linux/errno.h>
 #include <linux/pci.h>
 #include <linux/delay.h>
+#include <linux/vmalloc.h>
 #include <asm/io.h>
 
 #include <typedefs.h>
@@ -161,7 +162,7 @@ _nflash_mtd_read(struct mtd_info *mtd, struct mtd_partition *part,
 	if (!need_copy) {
 		ptr = buf;
 	} else {
-		tmpbuf = (uchar *)kmalloc(size, GFP_KERNEL);
+		tmpbuf = (uchar *)vmalloc(size);
 		ptr = tmpbuf;
 	}
 
@@ -222,7 +223,7 @@ done:
 	if (tmpbuf) {
 		*retlen -= extra;
 		memcpy(buf, tmpbuf+extra, *retlen);
-		kfree(tmpbuf);
+		vfree(tmpbuf);
 	}
 	return ret;
 }
@@ -277,7 +278,7 @@ nflash_mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen, co
 	blocksize = mtd->erasesize;
 	r_blocksize = reciprocal_value(blocksize);
 
-	if (!(block = kmalloc(blocksize, GFP_KERNEL)))
+	if (!(block = vmalloc(blocksize)))
 		return -ENOMEM;
 
 	NFLASH_LOCK(nflash);
@@ -378,7 +379,7 @@ done:
 	NFLASH_UNLOCK(nflash);
 
 	if (block)
-		kfree(block);
+		vfree(block);
 	return ret;
 }
 
