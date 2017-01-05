@@ -176,6 +176,7 @@ asterisk-install:
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
@@ -191,7 +192,6 @@ ifneq ($(CONFIG_MC),y)
 ifneq ($(CONFIG_LIBQMI),y)
 ifneq ($(CONFIG_WEBSERVER),y)
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
-	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
 endif
 endif
 endif
