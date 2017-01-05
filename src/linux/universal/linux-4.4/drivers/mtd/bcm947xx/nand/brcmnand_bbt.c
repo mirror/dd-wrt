@@ -1083,7 +1083,7 @@ int brcmnand_update_bbt(struct mtd_info *mtd, loff_t offs)
 	/* Allocate a temporary buffer for one eraseblock incl. oob */
 	len = (1 << this->bbt_erase_shift);
 	len += (len >> this->page_shift) * mtd->oobsize;
-	buf = kmalloc(len, GFP_KERNEL);
+	buf = vmalloc(len);
 	if (!buf) {
 		printk(KERN_ERR "nand_update_bbt: Out of memory\n");
 		return -ENOMEM;
@@ -1116,7 +1116,7 @@ int brcmnand_update_bbt(struct mtd_info *mtd, loff_t offs)
 	}
 
 out:
-	kfree(buf);
+	vfree(buf);
 	return res;
 }
 
