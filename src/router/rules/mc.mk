@@ -8,7 +8,18 @@ export ac_cv_func_posix_getgrgid_r=no
 export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 
 mc-configure: ncurses
-	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib -L$(INSTALLDIR)/util-linux/usr/lib" --enable-shared \
 		--enable-static \
 		--without-png \
 		--libdir=/usr/lib \
@@ -19,7 +30,7 @@ mc-configure: ncurses
 	cd mc2 && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" CC="ccache $(CC)" \
 		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/mc2/slang/src" \
 		LDFLAGS="-L$(TOP)/ncurses/lib -L$(TOP)/mc2/slang/src/elf$(ARCH)objs -lncurses" \
-		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
+		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
 		GMODULE_CFLAGS="-pthread -I$(TOP)/glib20/libglib/gmodule -I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib" \
 		GMODULE_LIBS="-pthread -L$(TOP)/glib20/libglib/gmodule/.libs -L$(TOP)/glib20/libglib/glib/.libs -lrt -lglib-2.0" \
@@ -57,6 +68,17 @@ mc-configure: ncurses
 
 
 mc: ncurses
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	$(MAKE) -j 4 -C mc2/slang
 	$(MAKE) -j 4 -C mc2
 
