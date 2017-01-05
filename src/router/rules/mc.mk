@@ -10,6 +10,7 @@ export GLIB_CFLAGS=-I$(TOP)/glib20/libglib/glib
 mc-configure: ncurses
 	cd mc2/slang && ./configure --host=$(ARCH)-uclibc-linux CC="ccache $(CC)" CFLAGS="$(COPTS)  $(MIPS16_OPT) -I$(TOP)/zlib -L$(TOP)/zlib" --enable-shared \
 		--enable-static \
+		--without-png \
 		--libdir=/usr/lib \
 		--enable-debug=no 
 	make -C mc2/slang clean
