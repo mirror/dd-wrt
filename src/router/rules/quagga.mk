@@ -24,7 +24,7 @@ else
 	make -C quagga DESTDIR=$(INSTALLDIR)/quagga install
 endif
 	mkdir -p $(INSTALLDIR)/quagga/usr/lib
-	cp -urv $(INSTALLDIR)/quagga/usr/tmp/* $(INSTALLDIR)/quagga/usr/lib
+	-cp -urv $(INSTALLDIR)/quagga/usr/tmp/* $(INSTALLDIR)/quagga/usr/lib
 	rm -rf $(INSTALLDIR)/quagga/usr/tmp 
 
 	rm -rf $(INSTALLDIR)/quagga/tmp
