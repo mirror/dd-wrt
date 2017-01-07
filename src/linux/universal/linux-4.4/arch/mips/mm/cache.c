@@ -112,6 +112,13 @@ void __flush_anon_page(struct page *page, unsigned long vmaddr)
 {
 	unsigned long addr = (unsigned long) page_address(page);
 
+	if (PageHighMem(page)) {
+		addr = (unsigned long)kmap_atomic(page);
+		flush_data_cache_page(addr);
+		__kunmap_atomic((void *)addr);
+		return;
+	}
+
 	if (pages_do_alias(addr, vmaddr)) {
 		if (page_mapped(page) && !Page_dcache_dirty(page)) {
 			void *kaddr;
