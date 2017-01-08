@@ -13013,20 +13013,28 @@ bool StartSSLEx(SOCK *sock, X *x, K *priv, bool client_tls, UINT ssl_timeout, ch
 		}
 		else
 		{
+#ifndef	SSL_OP_NO_SSLv3
 			if (client_tls == false)
 			{
 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv3_method());
 			}
 			else
 			{
+#endif	// SSL_OP_NO_SSLv3
 				SSL_CTX_set_ssl_version(ssl_ctx, SSLv23_client_method());
+#ifndef	SSL_OP_NO_SSLv3
 			}
+#endif	// SSL_OP_NO_SSLv3
 		}
 		sock->ssl = SSL_new(ssl_ctx);
 		SSL_set_fd(sock->ssl, (int)sock->socket);
 
 #ifdef	SSL_CTRL_SET_TLSEXT_HOSTNAME
+#ifndef	SSL_OP_NO_SSLv3
 		if (sock->ServerMode == false && client_tls)
+#else
+		if (sock->ServerMode == false)
+#endif	// SSL_OP_NO_SSLv3
 		{
 			if (IsEmptyStr(sni_hostname) == false)
 			{
