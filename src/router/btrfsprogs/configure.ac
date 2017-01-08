@@ -161,13 +161,13 @@ dnl The default PKG_CHECK_MODULES() action-if-not-found is end the
 dnl execution with error. The static libs are optional.
 
 PKG_CHECK_MODULES(BLKID, [blkid])
-PKG_STATIC(BLKID_LIBS_STATIC, [blkid])
+#PKG_STATIC(BLKID_LIBS_STATIC, [blkid])
 
 PKG_CHECK_MODULES(UUID, [uuid])
-PKG_STATIC(UUID_LIBS_STATIC, [uuid])
+#PKG_STATIC(UUID_LIBS_STATIC, [uuid])
 
 PKG_CHECK_MODULES(ZLIB, [zlib])
-PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
+#PKG_STATIC(ZLIB_LIBS_STATIC, [zlib])
 
 # udev v190 introduced the btrfs builtin and a udev rule to use it.
 # Our udev rule gives us the friendly dm names but isn't required (or valid)
