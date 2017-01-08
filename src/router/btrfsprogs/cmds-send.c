@@ -44,7 +44,13 @@
 #include "send.h"
 #include "send-utils.h"
 
-static int g_verbose = 0;
+#define SEND_BUFFER_SIZE	(64 * 1024)
+
+/*
+ * Default is 1 for historical reasons, changing may break scripts that expect
+ * the 'At subvol' message.
+ */
+static int g_verbose = 1;
 
 struct btrfs_send {
 	int send_fd;
@@ -58,64 +64,72 @@ struct btrfs_send {
 	struct subvol_uuid_search sus;
 };
 
-static int get_root_id(struct btrfs_send *s, const char *path, u64 *root_id)
+static int get_root_id(struct btrfs_send *sctx, const char *path, u64 *root_id)
 {
 	struct subvol_info *si;
 
-	si = subvol_uuid_search(&s->sus, 0, NULL, 0, path,
+	si = subvol_uuid_search(&sctx->sus, 0, NULL, 0, path,
 			subvol_search_by_path);
-	if (!si)
-		return -ENOENT;
+	if (IS_ERR_OR_NULL(si)) {
+		if (!si)
+			return -ENOENT;
+		else
+			return PTR_ERR(si);
+	}
 	*root_id = si->root_id;
 	free(si->path);
 	free(si);
 	return 0;
 }
 
-static struct subvol_info *get_parent(struct btrfs_send *s, u64 root_id)
+static struct subvol_info *get_parent(struct btrfs_send *sctx, u64 root_id)
 {
 	struct subvol_info *si_tmp;
 	struct subvol_info *si;
 
-	si_tmp = subvol_uuid_search(&s->sus, root_id, NULL, 0, NULL,
+	si_tmp = subvol_uuid_search(&sctx->sus, root_id, NULL, 0, NULL,
 			subvol_search_by_root_id);
-	if (!si_tmp)
-		return NULL;
+	if (IS_ERR_OR_NULL(si_tmp))
+		return si_tmp;
 
-	si = subvol_uuid_search(&s->sus, 0, si_tmp->parent_uuid, 0, NULL,
+	si = subvol_uuid_search(&sctx->sus, 0, si_tmp->parent_uuid, 0, NULL,
 			subvol_search_by_uuid);
 	free(si_tmp->path);
 	free(si_tmp);
 	return si;
 }
 
-static int find_good_parent(struct btrfs_send *s, u64 root_id, u64 *found)
+static int find_good_parent(struct btrfs_send *sctx, u64 root_id, u64 *found)
 {
 	int ret;
 	struct subvol_info *parent = NULL;
 	struct subvol_info *parent2 = NULL;
 	struct subvol_info *best_parent = NULL;
-	__s64 tmp;
 	u64 best_diff = (u64)-1;
 	int i;
 
-	parent = get_parent(s, root_id);
-	if (!parent) {
-		ret = -ENOENT;
+	parent = get_parent(sctx, root_id);
+	if (IS_ERR_OR_NULL(parent)) {
+		if (!parent)
+			ret = -ENOENT;
+		else
+			ret = PTR_ERR(parent);
 		goto out;
 	}
 
-	for (i = 0; i < s->clone_sources_count; i++) {
-		if (s->clone_sources[i] == parent->root_id) {
+	for (i = 0; i < sctx->clone_sources_count; i++) {
+		if (sctx->clone_sources[i] == parent->root_id) {
 			best_parent = parent;
 			parent = NULL;
 			goto out_found;
 		}
 	}
 
-	for (i = 0; i < s->clone_sources_count; i++) {
-		parent2 = get_parent(s, s->clone_sources[i]);
-		if (!parent2)
+	for (i = 0; i < sctx->clone_sources_count; i++) {
+		s64 tmp;
+
+		parent2 = get_parent(sctx, sctx->clone_sources[i]);
+		if (IS_ERR_OR_NULL(parent2))
 			continue;
 		if (parent2->root_id != parent->root_id) {
 			free(parent2->path);
@@ -126,16 +140,19 @@ static int find_good_parent(struct btrfs_send *s, u64 root_id, u64 *found)
 
 		free(parent2->path);
 		free(parent2);
-		parent2 = subvol_uuid_search(&s->sus, s->clone_sources[i], NULL,
-				0, NULL, subvol_search_by_root_id);
-
-		if (!parent2) {
-			ret = -ENOENT;
+		parent2 = subvol_uuid_search(&sctx->sus,
+				sctx->clone_sources[i], NULL, 0, NULL,
+				subvol_search_by_root_id);
+		if (IS_ERR_OR_NULL(parent2)) {
+			if (!parent2)
+				ret = -ENOENT;
+			else
+				ret = PTR_ERR(parent2);
 			goto out;
 		}
 		tmp = parent2->ctransid - parent->ctransid;
 		if (tmp < 0)
-			tmp *= -1;
+			tmp = -tmp;
 		if (tmp < best_diff) {
 			if (best_parent) {
 				free(best_parent->path);
@@ -172,41 +189,44 @@ out:
 	return ret;
 }
 
-static int add_clone_source(struct btrfs_send *s, u64 root_id)
+static int add_clone_source(struct btrfs_send *sctx, u64 root_id)
 {
 	void *tmp;
 
-	tmp = s->clone_sources;
-	s->clone_sources = realloc(s->clone_sources,
-		sizeof(*s->clone_sources) * (s->clone_sources_count + 1));
+	tmp = sctx->clone_sources;
+	sctx->clone_sources = realloc(sctx->clone_sources,
+		sizeof(*sctx->clone_sources) * (sctx->clone_sources_count + 1));
 
-	if (!s->clone_sources) {
+	if (!sctx->clone_sources) {
 		free(tmp);
 		return -ENOMEM;
 	}
-	s->clone_sources[s->clone_sources_count++] = root_id;
+	sctx->clone_sources[sctx->clone_sources_count++] = root_id;
 
 	return 0;
 }
 
-static int write_buf(int fd, const void *buf, int size)
+#if 0
+static int write_buf(int fd, const char *buf, size_t size)
 {
 	int ret;
-	int pos = 0;
+	size_t pos = 0;
 
 	while (pos < size) {
-		ret = write(fd, (char*)buf + pos, size - pos);
-		if (ret < 0) {
+		ssize_t wbytes;
+
+		wbytes = write(fd, buf + pos, size - pos);
+		if (wbytes < 0) {
 			ret = -errno;
 			error("failed to dump stream: %s", strerror(-ret));
 			goto out;
 		}
-		if (!ret) {
+		if (!wbytes) {
 			ret = -EIO;
 			error("failed to dump stream: %s", strerror(-ret));
 			goto out;
 		}
-		pos += ret;
+		pos += wbytes;
 	}
 	ret = 0;
 
@@ -214,40 +234,71 @@ out:
 	return ret;
 }
 
-static void *dump_thread(void *arg_)
+static void* read_sent_data_copy(void *arg)
 {
 	int ret;
-	struct btrfs_send *s = (struct btrfs_send*)arg_;
-	char buf[4096];
-	int readed;
+	struct btrfs_send *sctx = (struct btrfs_send*)arg;
+	char buf[SEND_BUFFER_SIZE];
 
 	while (1) {
-		readed = read(s->send_fd, buf, sizeof(buf));
-		if (readed < 0) {
+		ssize_t rbytes;
+
+		rbytes = read(sctx->send_fd, buf, sizeof(buf));
+		if (rbytes < 0) {
 			ret = -errno;
-			error("failed to read stream from kernel: %s\n",
+			error("failed to read stream from kernel: %s",
 				strerror(-ret));
 			goto out;
 		}
-		if (!readed) {
+		if (!rbytes) {
 			ret = 0;
 			goto out;
 		}
-		ret = write_buf(s->dump_fd, buf, readed);
+		ret = write_buf(sctx->dump_fd, buf, rbytes);
 		if (ret < 0)
 			goto out;
 	}
 
 out:
-	if (ret < 0) {
+	if (ret < 0)
 		exit(-ret);
+
+	return ERR_PTR(ret);
+}
+#endif
+
+static void *read_sent_data(void *arg)
+{
+	int ret;
+	struct btrfs_send *sctx = (struct btrfs_send*)arg;
+
+	while (1) {
+		ssize_t sbytes;
+
+		/* Source is a pipe, output is either file or stdout */
+		sbytes = splice(sctx->send_fd, NULL, sctx->dump_fd,
+				NULL, SEND_BUFFER_SIZE, SPLICE_F_MORE);
+		if (sbytes < 0) {
+			ret = -errno;
+			error("failed to read stream from kernel: %s",
+				strerror(-ret));
+			goto out;
+		}
+		if (!sbytes) {
+			ret = 0;
+			goto out;
+		}
 	}
+
+out:
+	if (ret < 0)
+		exit(-ret);
 
 	return ERR_PTR(ret);
 }
 
 static int do_send(struct btrfs_send *send, u64 parent_root_id,
-		   int is_first_subvol, int is_last_subvol, char *subvol,
+		   int is_first_subvol, int is_last_subvol, const char *subvol,
 		   u64 flags)
 {
 	int ret;
@@ -276,8 +327,7 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
 	send->send_fd = pipefd[0];
 
 	if (!ret)
-		ret = pthread_create(&t_read, NULL, dump_thread,
-					send);
+		ret = pthread_create(&t_read, NULL, read_sent_data, send);
 	if (ret) {
 		ret = -ret;
 		error("thread setup failed: %s", strerror(-ret));
@@ -301,10 +351,10 @@ static int do_send(struct btrfs_send *send, u64 parent_root_id,
 				"Try upgrading your kernel or don't use -e.\n");
 		goto out;
 	}
-	if (g_verbose > 0)
+	if (g_verbose > 1)
 		fprintf(stderr, "BTRFS_IOC_SEND returned %d\n", ret);
 
-	if (g_verbose > 0)
+	if (g_verbose > 1)
 		fprintf(stderr, "joining genl thread\n");
 
 	close(pipefd[1]);
@@ -335,25 +385,14 @@ out:
 	return ret;
 }
 
-char *get_subvol_name(char *mnt, char *full_path)
-{
-	int len = strlen(mnt);
-	if (!len)
-		return full_path;
-	if (mnt[len - 1] != '/')
-		len += 1;
-
-	return full_path + len;
-}
-
-static int init_root_path(struct btrfs_send *s, const char *subvol)
+static int init_root_path(struct btrfs_send *sctx, const char *subvol)
 {
 	int ret = 0;
 
-	if (s->root_path)
+	if (sctx->root_path)
 		goto out;
 
-	ret = find_mount_root(subvol, &s->root_path);
+	ret = find_mount_root(subvol, &sctx->root_path);
 	if (ret < 0) {
 		error("failed to determine mount point for %s: %s",
 			subvol, strerror(-ret));
@@ -366,14 +405,14 @@ static int init_root_path(struct btrfs_send *s, const char *subvol)
 		goto out;
 	}
 
-	s->mnt_fd = open(s->root_path, O_RDONLY | O_NOATIME);
-	if (s->mnt_fd < 0) {
+	sctx->mnt_fd = open(sctx->root_path, O_RDONLY | O_NOATIME);
+	if (sctx->mnt_fd < 0) {
 		ret = -errno;
-		error("cannot open '%s': %s", s->root_path, strerror(-ret));
+		error("cannot open '%s': %s", sctx->root_path, strerror(-ret));
 		goto out;
 	}
 
-	ret = subvol_uuid_search_init(s->mnt_fd, &s->sus);
+	ret = subvol_uuid_search_init(sctx->mnt_fd, &sctx->sus);
 	if (ret < 0) {
 		error("failed to initialize subvol search: %s",
 			strerror(-ret));
@@ -385,13 +424,13 @@ out:
 
 }
 
-static int is_subvol_ro(struct btrfs_send *s, char *subvol)
+static int is_subvol_ro(struct btrfs_send *sctx, const char *subvol)
 {
 	int ret;
 	u64 flags;
 	int fd = -1;
 
-	fd = openat(s->mnt_fd, subvol, O_RDONLY | O_NOATIME);
+	fd = openat(sctx->mnt_fd, subvol, O_RDONLY | O_NOATIME);
 	if (fd < 0) {
 		ret = -errno;
 		error("cannot open %s: %s", subvol, strerror(-ret));
@@ -418,6 +457,37 @@ out:
 	return ret;
 }
 
+static int set_root_info(struct btrfs_send *sctx, const char *subvol,
+		u64 *root_id)
+{
+	int ret;
+
+	ret = init_root_path(sctx, subvol);
+	if (ret < 0)
+		goto out;
+
+	ret = get_root_id(sctx, subvol_strip_mountpoint(sctx->root_path, subvol),
+		root_id);
+	if (ret < 0) {
+		error("cannot resolve rootid for %s", subvol);
+		goto out;
+	}
+
+out:
+	return ret;
+}
+
+static void free_send_info(struct btrfs_send *sctx)
+{
+	if (sctx->mnt_fd >= 0) {
+		close(sctx->mnt_fd);
+		sctx->mnt_fd = -1;
+	}
+	free(sctx->root_path);
+	sctx->root_path = NULL;
+	subvol_uuid_search_finit(&sctx->sus);
+}
+
 int cmd_send(int argc, char **argv)
 {
 	char *subvol = NULL;
@@ -440,9 +510,11 @@ int cmd_send(int argc, char **argv)
 	while (1) {
 		enum { GETOPT_VAL_SEND_NO_DATA = 256 };
 		static const struct option long_options[] = {
+			{ "verbose", no_argument, NULL, 'v' },
+			{ "quiet", no_argument, NULL, 'q' },
 			{ "no-data", no_argument, NULL, GETOPT_VAL_SEND_NO_DATA }
 		};
-		int c = getopt_long(argc, argv, "vec:f:i:p:", long_options, NULL);
+		int c = getopt_long(argc, argv, "vqec:f:i:p:", long_options, NULL);
 
 		if (c < 0)
 			break;
@@ -450,6 +522,9 @@ int cmd_send(int argc, char **argv)
 		switch (c) {
 		case 'v':
 			g_verbose++;
+			break;
+		case 'q':
+			g_verbose = 0;
 			break;
 		case 'e':
 			new_end_cmd_semantic = 1;
@@ -462,16 +537,9 @@ int cmd_send(int argc, char **argv)
 				goto out;
 			}
 
-			ret = init_root_path(&send, subvol);
+			ret = set_root_info(&send, subvol, &root_id);
 			if (ret < 0)
 				goto out;
-
-			ret = get_root_id(&send, get_subvol_name(send.root_path, subvol),
-					&root_id);
-			if (ret < 0) {
-				error("cannot resolve rootid for %s", subvol);
-				goto out;
-			}
 
 			ret = is_subvol_ro(&send, subvol);
 			if (ret < 0)
@@ -484,18 +552,12 @@ int cmd_send(int argc, char **argv)
 
 			ret = add_clone_source(&send, root_id);
 			if (ret < 0) {
-				error("not enough memory");
+				error("cannot add clone source: %s", strerror(-ret));
 				goto out;
 			}
-			subvol_uuid_search_finit(&send.sus);
 			free(subvol);
 			subvol = NULL;
-			if (send.mnt_fd >= 0) {
-				close(send.mnt_fd);
-				send.mnt_fd = -1;
-			}
-			free(send.root_path);
-			send.root_path = NULL;
+			free_send_info(&send);
 			full_send = 0;
 			break;
 		case 'f':
@@ -549,7 +611,20 @@ int cmd_send(int argc, char **argv)
 		usage(cmd_send_usage);
 
 	if (outname[0]) {
-		send.dump_fd = creat(outname, 0600);
+		int tmpfd;
+
+		/*
+		 * Try to use an existing file first. Even if send runs as
+		 * root, it might not have permissions to create file (eg. on a
+		 * NFS) but it should still be able to use a pre-created file.
+		 */
+		tmpfd = open(outname, O_WRONLY | O_TRUNC);
+		if (tmpfd < 0) {
+			if (errno == ENOENT)
+				tmpfd = open(outname,
+					O_CREAT | O_WRONLY | O_TRUNC, 0600);
+		}
+		send.dump_fd = tmpfd;
 		if (send.dump_fd == -1) {
 			ret = -errno;
 			error("cannot create '%s': %s", outname, strerror(-ret));
@@ -565,8 +640,6 @@ int cmd_send(int argc, char **argv)
 	}
 
 	/* use first send subvol to determine mount_root */
-	subvol = argv[optind];
-
 	subvol = realpath(argv[optind], NULL);
 	if (!subvol) {
 		ret = -errno;
@@ -580,8 +653,8 @@ int cmd_send(int argc, char **argv)
 
 	if (snapshot_parent != NULL) {
 		ret = get_root_id(&send,
-				get_subvol_name(send.root_path, snapshot_parent),
-				&parent_root_id);
+			subvol_strip_mountpoint(send.root_path, snapshot_parent),
+			&parent_root_id);
 		if (ret < 0) {
 			error("could not resolve rootid for %s", snapshot_parent);
 			goto out;
@@ -589,7 +662,7 @@ int cmd_send(int argc, char **argv)
 
 		ret = add_clone_source(&send, parent_root_id);
 		if (ret < 0) {
-			error("not enough memory");
+			error("cannot add clone source: %s", strerror(-ret));
 			goto out;
 		}
 	}
@@ -627,13 +700,14 @@ int cmd_send(int argc, char **argv)
 			goto out;
 		if (!ret) {
 			ret = -EINVAL;
-			error("subvolum %s is not read-only", subvol);
+			error("subvolume %s is not read-only", subvol);
 			goto out;
 		}
 	}
 
-	if (send_flags & BTRFS_SEND_FLAG_NO_FILE_DATA)
-		printf("Mode NO_FILE_DATA enabled\n");
+	if ((send_flags & BTRFS_SEND_FLAG_NO_FILE_DATA) && g_verbose > 1)
+		if (g_verbose > 1)
+			fprintf(stderr, "Mode NO_FILE_DATA enabled\n");
 
 	for (i = optind; i < argc; i++) {
 		int is_first_subvol;
@@ -642,7 +716,8 @@ int cmd_send(int argc, char **argv)
 		free(subvol);
 		subvol = argv[i];
 
-		fprintf(stderr, "At subvol %s\n", subvol);
+		if (g_verbose > 0)
+			fprintf(stderr, "At subvol %s\n", subvol);
 
 		subvol = realpath(subvol, NULL);
 		if (!subvol) {
@@ -651,22 +726,17 @@ int cmd_send(int argc, char **argv)
 			goto out;
 		}
 
-		if (!full_send && !parent_root_id) {
+		if (!full_send && !snapshot_parent) {
+			ret = set_root_info(&send, subvol, &root_id);
+			if (ret < 0)
+				goto out;
+
 			ret = find_good_parent(&send, root_id, &parent_root_id);
 			if (ret < 0) {
 				error("parent determination failed for %lld",
 					root_id);
 				goto out;
 			}
-		}
-
-		ret = is_subvol_ro(&send, subvol);
-		if (ret < 0)
-			goto out;
-		if (!ret) {
-			ret = -EINVAL;
-			error("subvolume %s is not read-only", subvol);
-			goto out;
 		}
 
 		if (new_end_cmd_semantic) {
@@ -683,15 +753,15 @@ int cmd_send(int argc, char **argv)
 		if (ret < 0)
 			goto out;
 
-		/* done with this subvol, so add it to the clone sources */
-		ret = add_clone_source(&send, root_id);
-		if (ret < 0) {
-			error("not enough memory");
-			goto out;
+		if (!full_send && !snapshot_parent) {
+			/* done with this subvol, so add it to the clone sources */
+			ret = add_clone_source(&send, root_id);
+			if (ret < 0) {
+				error("cannot add clone source: %s", strerror(-ret));
+				goto out;
+			}
+			free_send_info(&send);
 		}
-
-		parent_root_id = 0;
-		full_send = 0;
 	}
 
 	ret = 0;
@@ -700,10 +770,7 @@ out:
 	free(subvol);
 	free(snapshot_parent);
 	free(send.clone_sources);
-	if (send.mnt_fd >= 0)
-		close(send.mnt_fd);
-	free(send.root_path);
-	subvol_uuid_search_finit(&send.sus);
+	free_send_info(&send);
 	return !!ret;
 }
 
@@ -711,6 +778,7 @@ const char * const cmd_send_usage[] = {
 	"btrfs send [-ve] [-p <parent>] [-c <clone-src>] [-f <outfile>] <subvol> [<subvol>...]",
 	"Send the subvolume(s) to stdout.",
 	"Sends the subvolume(s) specified by <subvol> to stdout.",
+	"<subvol> should be read-only here.",
 	"By default, this will send the whole subvolume. To do an incremental",
 	"send, use '-p <parent>'. If you want to allow btrfs to clone from",
 	"any additional local snapshots, use '-c <clone-src>' (multiple times",
@@ -721,8 +789,6 @@ const char * const cmd_send_usage[] = {
 	"which case 'btrfs send' will determine a suitable parent among the",
 	"clone sources itself.",
 	"\n",
-	"-v               Enable verbose debug output. Each occurrence of",
-	"                 this option increases the verbose level more.",
 	"-e               If sending multiple subvols at once, use the new",
 	"                 format and omit the end-cmd between the subvols.",
 	"-p <parent>      Send an incremental stream from <parent> to",
@@ -736,5 +802,8 @@ const char * const cmd_send_usage[] = {
 	"                 does not contain any file data and thus cannot be used",
 	"                 to transfer changes. This mode is faster and useful to",
 	"                 show the differences in metadata.",
+	"-v|--verbose     enable verbose output to stderr, each occurrence of",
+	"                 this option increases verbosity",
+	"-q|--quiet       suppress all messages, except errors",
 	NULL
 };

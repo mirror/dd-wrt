@@ -199,12 +199,6 @@ out:
 	return ret;
 }
 
-static int print_prop_help(const struct prop_handler *prop)
-{
-	fprintf(stdout, "%-20s%s\n", prop->name, prop->desc);
-	return 0;
-}
-
 static int dump_prop(const struct prop_handler *prop,
 		     const char *object,
 		     int types,
@@ -217,7 +211,7 @@ static int dump_prop(const struct prop_handler *prop,
 		if (!name_and_help)
 			ret = prop->handler(type, object, prop->name, NULL);
 		else
-			ret = print_prop_help(prop);
+			printf("%-20s%s\n", prop->name, prop->desc);
 	}
 	return ret;
 }
@@ -294,10 +288,11 @@ out:
 static void parse_args(int argc, char **argv,
 		       const char * const *usage_str,
 		       int *types, char **object,
-		       char **name, char **value)
+		       char **name, char **value, int min_nonopt_args)
 {
 	int ret;
 	char *type_str = NULL;
+	int max_nonopt_args = 1;
 
 	optind = 1;
 	while (1) {
@@ -313,6 +308,15 @@ static void parse_args(int argc, char **argv,
 			usage(usage_str);
 		}
 	}
+
+	if (name)
+		max_nonopt_args++;
+	if (value)
+		max_nonopt_args++;
+
+	if (check_argc_min(argc - optind, min_nonopt_args) ||
+	    check_argc_max(argc - optind, max_nonopt_args))
+		usage(usage_str);
 
 	*types = 0;
 	if (type_str) {
@@ -333,19 +337,13 @@ static void parse_args(int argc, char **argv,
 		}
 	}
 
-	if (object && optind < argc)
-		*object = argv[optind++];
-	if (name && optind < argc)
+	*object = argv[optind++];
+	if (optind < argc)
 		*name = argv[optind++];
-	if (value && optind < argc)
+	if (optind < argc)
 		*value = argv[optind++];
 
-	if (optind != argc) {
-		error("unexpected agruments found");
-		usage(usage_str);
-	}
-
-	if (!*types && object && *object) {
+	if (!*types) {
 		ret = autodetect_object_types(*object, types);
 		if (ret < 0) {
 			error("failed to detect object type: %s",
@@ -379,15 +377,8 @@ static int cmd_property_get(int argc, char **argv)
 	char *name = NULL;
 	int types = 0;
 
-	if (check_argc_min(argc, 2) || check_argc_max(argc, 5))
-		usage(cmd_property_get_usage);
-
 	parse_args(argc, argv, cmd_property_get_usage, &types, &object, &name,
-			NULL);
-	if (!object) {
-		error("invalid arguments");
-		usage(cmd_property_get_usage);
-	}
+		   NULL, 1);
 
 	if (name)
 		ret = setget_prop(types, object, name, NULL);
@@ -413,15 +404,8 @@ static int cmd_property_set(int argc, char **argv)
 	char *value = NULL;
 	int types = 0;
 
-	if (check_argc_min(argc, 4) || check_argc_max(argc, 6))
-		usage(cmd_property_set_usage);
-
 	parse_args(argc, argv, cmd_property_set_usage, &types,
-			&object, &name, &value);
-	if (!object || !name || !value) {
-		error("invalid arguments");
-		usage(cmd_property_set_usage);
-	}
+		   &object, &name, &value, 3);
 
 	ret = setget_prop(types, object, name, value);
 
@@ -442,15 +426,8 @@ static int cmd_property_list(int argc, char **argv)
 	char *object = NULL;
 	int types = 0;
 
-	if (check_argc_min(argc, 2) || check_argc_max(argc, 4))
-		usage(cmd_property_list_usage);
-
 	parse_args(argc, argv, cmd_property_list_usage,
-			&types, &object, NULL, NULL);
-	if (!object) {
-		error("invalid arguments");
-		usage(cmd_property_list_usage);
-	}
+		   &types, &object, NULL, NULL, 1);
 
 	ret = dump_props(types, object, 1);
 

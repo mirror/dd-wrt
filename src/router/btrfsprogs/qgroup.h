@@ -77,19 +77,16 @@ enum btrfs_qgroup_filter_enum {
 	BTRFS_QGROUP_FILTER_MAX,
 };
 
-int btrfs_qgroup_parse_sort_string(char *opt_arg,
+int btrfs_qgroup_parse_sort_string(const char *opt_arg,
 				struct btrfs_qgroup_comparer_set **comps);
-u64 btrfs_get_path_rootid(int fd);
 int btrfs_show_qgroups(int fd, struct btrfs_qgroup_filter_set *,
 		       struct btrfs_qgroup_comparer_set *);
 void btrfs_qgroup_setup_print_column(enum btrfs_qgroup_column_enum column);
 void btrfs_qgroup_setup_units(unsigned unit_mode);
 struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void);
-void btrfs_qgroup_free_filter_set(struct btrfs_qgroup_filter_set *filter_set);
 int btrfs_qgroup_setup_filter(struct btrfs_qgroup_filter_set **filter_set,
 			      enum btrfs_qgroup_filter_enum, u64 data);
 struct btrfs_qgroup_comparer_set *btrfs_qgroup_alloc_comparer_set(void);
-void btrfs_qgroup_free_comparer_set(struct btrfs_qgroup_comparer_set *comp_set);
 int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set **comp_set,
 				enum btrfs_qgroup_comp_enum comparer,
 				int is_descending);

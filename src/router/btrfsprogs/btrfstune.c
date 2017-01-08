@@ -50,18 +50,18 @@ static int update_seeding_flag(struct btrfs_root *root, int set_flag)
 			if (force)
 				return 0;
 			else
-				fprintf(stderr, "seeding flag is already set on %s\n", device);
+				warning("seeding flag is already set on %s",
+						device);
 			return 1;
 		}
 		super_flags |= BTRFS_SUPER_FLAG_SEEDING;
 	} else {
 		if (!(super_flags & BTRFS_SUPER_FLAG_SEEDING)) {
-			fprintf(stderr, "seeding flag is not set on %s\n",
-				device);
+			warning("seeding flag is not set on %s", device);
 			return 1;
 		}
 		super_flags &= ~BTRFS_SUPER_FLAG_SEEDING;
-		fprintf(stderr, "Warning: Seeding flag cleared.\n");
+		warning("seeding flag cleared on %s", device);
 	}
 
 	trans = btrfs_start_transaction(root, 1);
@@ -118,19 +118,16 @@ static int change_header_uuid(struct btrfs_root *root, struct extent_buffer *eb)
 static int change_extents_uuid(struct btrfs_fs_info *fs_info)
 {
 	struct btrfs_root *root = fs_info->extent_root;
-	struct btrfs_path *path;
+	struct btrfs_path path;
 	struct btrfs_key key = {0, 0, 0};
 	int ret = 0;
 
-	path = btrfs_alloc_path();
-	if (!path)
-		return -ENOMEM;
-
+	btrfs_init_path(&path);
 	/*
 	 * Here we don't use transaction as it will takes a lot of reserve
 	 * space, and that will make a near-full btrfs unable to change uuid
 	 */
-	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
 	if (ret < 0)
 		goto out;
 
@@ -140,33 +137,32 @@ static int change_extents_uuid(struct btrfs_fs_info *fs_info)
 		u64 flags;
 		u64 bytenr;
 
-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
 		if (key.type != BTRFS_EXTENT_ITEM_KEY &&
 		    key.type != BTRFS_METADATA_ITEM_KEY)
 			goto next;
-		ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
+		ei = btrfs_item_ptr(path.nodes[0], path.slots[0],
 				    struct btrfs_extent_item);
-		flags = btrfs_extent_flags(path->nodes[0], ei);
+		flags = btrfs_extent_flags(path.nodes[0], ei);
 		if (!(flags & BTRFS_EXTENT_FLAG_TREE_BLOCK))
 			goto next;
 
 		bytenr = key.objectid;
 		eb = read_tree_block(root, bytenr, root->nodesize, 0);
 		if (IS_ERR(eb)) {
-			fprintf(stderr, "Failed to read tree block: %llu\n",
-				bytenr);
+			error("failed to read tree block: %llu", bytenr);
 			ret = PTR_ERR(eb);
 			goto out;
 		}
 		ret = change_header_uuid(root, eb);
 		free_extent_buffer(eb);
 		if (ret < 0) {
-			fprintf(stderr, "Failed to change uuid of tree block: %llu\n",
+			error("failed to change uuid of tree block: %llu",
 				bytenr);
 			goto out;
 		}
 next:
-		ret = btrfs_next_item(root, path);
+		ret = btrfs_next_item(root, &path);
 		if (ret < 0)
 			goto out;
 		if (ret > 0) {
@@ -176,7 +172,7 @@ next:
 	}
 
 out:
-	btrfs_free_path(path);
+	btrfs_release_path(&path);
 	return ret;
 }
 
@@ -204,28 +200,26 @@ static int change_device_uuid(struct btrfs_root *root, struct extent_buffer *eb,
 static int change_devices_uuid(struct btrfs_fs_info *fs_info)
 {
 	struct btrfs_root *root = fs_info->chunk_root;
-	struct btrfs_path *path;
+	struct btrfs_path path;
 	struct btrfs_key key = {0, 0, 0};
 	int ret = 0;
 
-	path = btrfs_alloc_path();
-	if (!path)
-		return -ENOMEM;
+	btrfs_init_path(&path);
 	/* No transaction again */
-	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+	ret = btrfs_search_slot(NULL, root, &key, &path, 0, 0);
 	if (ret < 0)
 		goto out;
 
 	while (1) {
-		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
+		btrfs_item_key_to_cpu(path.nodes[0], &key, path.slots[0]);
 		if (key.type != BTRFS_DEV_ITEM_KEY ||
 		    key.objectid != BTRFS_DEV_ITEMS_OBJECTID)
 			goto next;
-		ret = change_device_uuid(root, path->nodes[0], path->slots[0]);
+		ret = change_device_uuid(root, path.nodes[0], path.slots[0]);
 		if (ret < 0)
 			goto out;
 next:
-		ret = btrfs_next_item(root, path);
+		ret = btrfs_next_item(root, &path);
 		if (ret < 0)
 			goto out;
 		if (ret > 0) {
@@ -234,7 +228,7 @@ next:
 		}
 	}
 out:
-	btrfs_free_path(path);
+	btrfs_release_path(&path);
 	return ret;
 }
 
@@ -310,8 +304,8 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
 
 			uuid_parse(new_fsid_str, tmp);
 			if (memcmp(tmp, new_fsid, BTRFS_FSID_SIZE)) {
-				fprintf(stderr,
-		"ERROR: New fsid %s is not the same with unfinished fsid change\n",
+				error(
+		"new fsid %s is not the same with unfinished fsid change",
 					new_fsid_str);
 				return -EINVAL;
 			}
@@ -343,7 +337,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
 	printf("Change fsid in extents\n");
 	ret = change_extents_uuid(fs_info);
 	if (ret < 0) {
-		fprintf(stderr, "Failed to change UUID of metadata\n");
+		error("failed to change UUID of metadata: %d", ret);
 		goto out;
 	}
 
@@ -351,7 +345,7 @@ static int change_uuid(struct btrfs_fs_info *fs_info, const char *new_fsid_str)
 	printf("Change fsid on devices\n");
 	ret = change_devices_uuid(fs_info);
 	if (ret < 0) {
-		fprintf(stderr, "Failed to change UUID of devices\n");
+		error("failed to change UUID of devices: %d", ret);
 		goto out;
 	}
 
@@ -376,20 +370,20 @@ out:
 
 static void print_usage(void)
 {
-	fprintf(stderr, "usage: btrfstune [options] device\n");
-	fprintf(stderr, "\t-S value\tpositive value will enable seeding, zero to disable, negative is not allowed\n");
-	fprintf(stderr, "\t-r \t\tenable extended inode refs\n");
-	fprintf(stderr, "\t-x \t\tenable skinny metadata extent refs\n");
-	fprintf(stderr, "\t-n \t\tenable no-holes feature (more efficient sparse file representation)\n");
-	fprintf(stderr, "\t-f \t\tforce to do dangerous operation, make sure that you are aware of the dangers\n");
-	fprintf(stderr, "\t-u \t\tchange fsid, use a random one\n");
-	fprintf(stderr, "\t-U UUID\t\tchange fsid to UUID\n");
+	printf("usage: btrfstune [options] device\n");
+	printf("\t-S value\tpositive value will enable seeding, zero to disable, negative is not allowed\n");
+	printf("\t-r \t\tenable extended inode refs\n");
+	printf("\t-x \t\tenable skinny metadata extent refs\n");
+	printf("\t-n \t\tenable no-holes feature (more efficient sparse file representation)\n");
+	printf("\t-f \t\tforce to do dangerous operation, make sure that you are aware of the dangers\n");
+	printf("\t-u \t\tchange fsid, use a random one\n");
+	printf("\t-U UUID\t\tchange fsid to UUID\n");
 }
 
 int main(int argc, char *argv[])
 {
 	struct btrfs_root *root;
-	enum btrfs_open_ctree_flags ctree_flags = OPEN_CTREE_WRITES;
+	unsigned ctree_flags = OPEN_CTREE_WRITES;
 	int success = 0;
 	int total = 0;
 	int seeding_flag = 0;
@@ -399,7 +393,6 @@ int main(int argc, char *argv[])
 	int ret;
 	u64 super_flags = 0;
 
-	optind = 1;
 	while(1) {
 		static const struct option long_options[] = {
 			{ "help", no_argument, NULL, GETOPT_VAL_HELP},
@@ -442,21 +435,18 @@ int main(int argc, char *argv[])
 	}
 
 	set_argv0(argv);
-	argc = argc - optind;
 	device = argv[optind];
-	if (check_argc_exact(argc, 1)) {
+	if (check_argc_exact(argc - optind, 1)) {
 		print_usage();
 		return 1;
 	}
 
 	if (random_fsid && new_fsid_str) {
-		fprintf(stderr,
-			"ERROR: Random fsid can't be used with specified fsid\n");
+		error("random fsid can't be used with specified fsid");
 		return 1;
 	}
 	if (!super_flags && !seeding_flag && !(random_fsid || new_fsid_str)) {
-		fprintf(stderr,
-			"ERROR: At least one option should be assigned.\n");
+		error("at least one option should be specified");
 		print_usage();
 		return 1;
 	}
@@ -466,39 +456,36 @@ int main(int argc, char *argv[])
 
 		ret = uuid_parse(new_fsid_str, tmp);
 		if (ret < 0) {
-			fprintf(stderr,
-				"ERROR: Could not parse UUID: %s\n",
-				new_fsid_str);
+			error("could not parse UUID: %s", new_fsid_str);
 			return 1;
 		}
 		if (!test_uuid_unique(new_fsid_str)) {
-			fprintf(stderr,
-				"ERROR: Fsid %s is not unique\n",
-				new_fsid_str);
+			error("fsid %s is not unique", new_fsid_str);
 			return 1;
 		}
 	}
 
 	ret = check_mounted(device);
 	if (ret < 0) {
-		fprintf(stderr, "Could not check mount status: %s\n",
+		error("could not check mount status of %s: %s", device,
 			strerror(-ret));
 		return 1;
 	} else if (ret) {
-		fprintf(stderr, "%s is mounted\n", device);
+		error("%s is mounted", device);
 		return 1;
 	}
 
 	root = open_ctree(device, 0, ctree_flags);
 
 	if (!root) {
-		fprintf(stderr, "Open ctree failed\n");
+		error("open ctree failed");
 		return 1;
 	}
 
 	if (seeding_flag) {
 		if (!seeding_value && !force) {
-			fprintf(stderr, "Warning: This is dangerous, clearing the seeding flag may cause the derived device not to be mountable!\n");
+			warning(
+"this is dangerous, clearing the seeding flag may cause the derived device not to be mountable!");
 			ret = ask_user("We are going to clear the seeding flag, are you sure?");
 			if (!ret) {
 				fprintf(stderr, "Clear seeding flag canceled\n");
@@ -522,10 +509,10 @@ int main(int argc, char *argv[])
 
 	if (random_fsid || new_fsid_str) {
 		if (!force) {
-			fprintf(stderr,
-				"Warning: It's highly recommended to run 'btrfs check' before this operation\n");
-			fprintf(stderr,
-				"Also canceling running UUID change progress may cause corruption\n");
+			warning(
+	"it's highly recommended to run 'btrfs check' before this operation");
+			warning(
+	"also canceling running UUID change progress may cause corruption");
 			ret = ask_user("We are going to change UUID, are your sure?");
 			if (!ret) {
 				fprintf(stderr, "UUID change canceled\n");
@@ -544,7 +531,7 @@ int main(int argc, char *argv[])
 	} else {
 		root->fs_info->readonly = 1;
 		ret = 1;
-		fprintf(stderr, "btrfstune failed\n");
+		error("btrfstune failed");
 	}
 out:
 	close_ctree(root);

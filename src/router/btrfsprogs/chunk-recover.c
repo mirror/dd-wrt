@@ -47,7 +47,7 @@ struct recover_control {
 
 	u16 csum_size;
 	u32 sectorsize;
-	u32 leafsize;
+	u32 nodesize;
 	u64 generation;
 	u64 chunk_root_generation;
 
@@ -247,7 +247,7 @@ again:
 					      generation);
 			/*
 			 * According to the current kernel code, the following
-			 * case is impossble, or there is something wrong in
+			 * case is impossible, or there is something wrong in
 			 * the kernel code.
 			 */
 			if (memcmp(((void *)exist) + offset,
@@ -477,7 +477,7 @@ static void print_scan_result(struct recover_control *rc)
 	printf("DEVICE SCAN RESULT:\n");
 	printf("Filesystem Information:\n");
 	printf("\tsectorsize: %d\n", rc->sectorsize);
-	printf("\tleafsize: %d\n", rc->leafsize);
+	printf("\tnodesize: %d\n", rc->nodesize);
 	printf("\ttree root generation: %llu\n", rc->generation);
 	printf("\tchunk root generation: %llu\n", rc->chunk_root_generation);
 	printf("\n");
@@ -618,7 +618,7 @@ static int check_chunk_by_metadata(struct recover_control *rc,
 		    btrfs_dev_extent_chunk_offset(l, dev_extent)) {
 			if (rc->verbose)
 				fprintf(stderr,
-					"Device tree unmatch with chunks dev_extent[%llu, %llu], chunk[%llu, %llu]\n",
+					"Device tree mismatch with chunks dev_extent[%llu, %llu], chunk[%llu, %llu]\n",
 					btrfs_dev_extent_chunk_offset(l,
 								dev_extent),
 					btrfs_dev_extent_length(l, dev_extent),
@@ -654,7 +654,7 @@ bg_check:
 	if (chunk->type_flags != btrfs_disk_block_group_flags(l, bg_ptr)) {
 		if (rc->verbose)
 			fprintf(stderr,
-				"Chunk[%llu, %llu]'s type(%llu) is differemt with Block Group's type(%llu)\n",
+				"Chunk[%llu, %llu]'s type(%llu) is different with Block Group's type(%llu)\n",
 				chunk->offset, chunk->length, chunk->type_flags,
 				btrfs_disk_block_group_flags(l, bg_ptr));
 		btrfs_release_path(&path);
@@ -761,10 +761,10 @@ static int scan_one_device(void *dev_scan_struct)
 	if (ret)
 		return 1;
 
-	buf = malloc(sizeof(*buf) + rc->leafsize);
+	buf = malloc(sizeof(*buf) + rc->nodesize);
 	if (!buf)
 		return -ENOMEM;
-	buf->len = rc->leafsize;
+	buf->len = rc->nodesize;
 
 	bytenr = 0;
 	while (1) {
@@ -773,8 +773,8 @@ static int scan_one_device(void *dev_scan_struct)
 		if (is_super_block_address(bytenr))
 			bytenr += rc->sectorsize;
 
-		if (pread64(fd, buf->data, rc->leafsize, bytenr) <
-		    rc->leafsize)
+		if (pread64(fd, buf->data, rc->nodesize, bytenr) <
+		    rc->nodesize)
 			break;
 
 		if (memcmp_extent_buffer(buf, rc->fs_devices->fsid,
@@ -818,7 +818,7 @@ static int scan_one_device(void *dev_scan_struct)
 			break;
 		}
 next_node:
-		bytenr += rc->leafsize;
+		bytenr += rc->nodesize;
 	}
 out:
 	close(fd);
@@ -887,7 +887,7 @@ static int scan_devices(struct recover_control *rc)
 		for (i = 0; i < devidx; i++) {
 			if (dev_scans[i].bytenr == -1)
 				continue;
-			ret = pthread_join(t_scans[i],
+			ret = pthread_tryjoin_np(t_scans[i],
 						 (void **)&t_rets[i]);
 			if (ret == EBUSY) {
 				all_done = 0;
@@ -968,7 +968,7 @@ static int build_device_map_by_chunk_record(struct btrfs_root *root,
 		map->stripes[i].dev = btrfs_find_device(root, devid,
 							uuid, NULL);
 		if (!map->stripes[i].dev) {
-			kfree(map);
+			free(map);
 			return -EIO;
 		}
 	}
@@ -1070,7 +1070,7 @@ again:
 		    key.type == BTRFS_METADATA_ITEM_KEY) {
 			old_val = btrfs_super_bytes_used(fs_info->super_copy);
 			if (key.type == BTRFS_METADATA_ITEM_KEY)
-				old_val += root->leafsize;
+				old_val += root->nodesize;
 			else
 				old_val += key.offset;
 			btrfs_set_super_bytes_used(fs_info->super_copy,
@@ -1398,26 +1398,24 @@ static int rebuild_block_group(struct btrfs_trans_handle *trans,
 {
 	struct chunk_record *chunk_rec;
 	struct btrfs_key search_key;
-	struct btrfs_path *path;
+	struct btrfs_path path;
 	u64 used = 0;
 	int ret = 0;
 
 	if (list_empty(&rc->rebuild_chunks))
 		return 0;
 
-	path = btrfs_alloc_path();
-	if (!path)
-		return -ENOMEM;
+	btrfs_init_path(&path);
 	list_for_each_entry(chunk_rec, &rc->rebuild_chunks, list) {
 		search_key.objectid = chunk_rec->offset;
 		search_key.type = BTRFS_EXTENT_ITEM_KEY;
 		search_key.offset = 0;
 		ret = btrfs_search_slot(NULL, root->fs_info->extent_root,
-					&search_key, path, 0, 0);
+					&search_key, &path, 0, 0);
 		if (ret < 0)
 			goto out;
 		ret = calculate_bg_used(root->fs_info->extent_root,
-					chunk_rec, path, &used);
+					chunk_rec, &path, &used);
 		/*
 		 * Extent tree is damaged, better to rebuild the whole extent
 		 * tree. Currently, change the used to chunk's len to prevent
@@ -1432,7 +1430,7 @@ static int rebuild_block_group(struct btrfs_trans_handle *trans,
 				"Mark the block group full to prevent block rsv problems\n");
 			used = chunk_rec->length;
 		}
-		btrfs_release_path(path);
+		btrfs_release_path(&path);
 		ret = __insert_block_group(trans, chunk_rec,
 					   root->fs_info->extent_root,
 					   used);
@@ -1440,7 +1438,7 @@ static int rebuild_block_group(struct btrfs_trans_handle *trans,
 			goto out;
 	}
 out:
-	btrfs_free_path(path);
+	btrfs_release_path(&path);
 	return ret;
 }
 
@@ -1470,7 +1468,8 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 
 	disk_super = fs_info->super_copy;
 	ret = btrfs_read_dev_super(fs_info->fs_devices->latest_bdev,
-				   disk_super, fs_info->super_bytenr, 1);
+				   disk_super, fs_info->super_bytenr,
+				   SBREAD_RECOVER);
 	if (ret) {
 		fprintf(stderr, "No valid btrfs found\n");
 		goto out_devices;
@@ -1478,7 +1477,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 
 	memcpy(fs_info->fsid, &disk_super->fsid, BTRFS_FSID_SIZE);
 
-	ret = btrfs_check_fs_compatibility(disk_super, 1);
+	ret = btrfs_check_fs_compatibility(disk_super, OPEN_CTREE_WRITES);
 	if (ret)
 		goto out_devices;
 
@@ -1487,7 +1486,7 @@ open_ctree_with_broken_chunk(struct recover_control *rc)
 	sectorsize = btrfs_super_sectorsize(disk_super);
 	stripesize = btrfs_super_stripesize(disk_super);
 
-	__setup_root(nodesize, leafsize, sectorsize, stripesize,
+	btrfs_setup_root(nodesize, leafsize, sectorsize, stripesize,
 		     fs_info->chunk_root, fs_info, BTRFS_CHUNK_TREE_OBJECTID);
 
 	ret = build_device_maps_by_chunk_records(rc, fs_info->chunk_root);
@@ -1531,14 +1530,15 @@ static int recover_prepare(struct recover_control *rc, char *path)
 	}
 
 	sb = (struct btrfs_super_block*)buf;
-	ret = btrfs_read_dev_super(fd, sb, BTRFS_SUPER_INFO_OFFSET, 1);
+	ret = btrfs_read_dev_super(fd, sb, BTRFS_SUPER_INFO_OFFSET,
+			SBREAD_RECOVER);
 	if (ret) {
 		fprintf(stderr, "read super block error\n");
 		goto out_close_fd;
 	}
 
 	rc->sectorsize = btrfs_super_sectorsize(sb);
-	rc->leafsize = btrfs_super_leafsize(sb);
+	rc->nodesize = btrfs_super_nodesize(sb);
 	rc->generation = btrfs_super_generation(sb);
 	rc->chunk_root_generation = btrfs_super_chunk_root_generation(sb);
 	rc->csum_size = btrfs_super_csum_size(sb);
@@ -1550,7 +1550,7 @@ static int recover_prepare(struct recover_control *rc, char *path)
 		goto out_close_fd;
 	}
 
-	ret = btrfs_scan_fs_devices(fd, path, &fs_devices, 0, 1, 0);
+	ret = btrfs_scan_fs_devices(fd, path, &fs_devices, 0, SBREAD_RECOVER, 0);
 	if (ret)
 		goto out_close_fd;
 
@@ -1912,7 +1912,7 @@ static int check_one_csum(int fd, u64 start, u32 len, u32 tree_csum)
 	}
 	ret = 0;
 	csum_result = btrfs_csum_data(NULL, data, csum_result, len);
-	btrfs_csum_final(csum_result, (char *)&csum_result);
+	btrfs_csum_final(csum_result, (u8 *)&csum_result);
 	if (csum_result != tree_csum)
 		ret = 1;
 out:
@@ -1945,9 +1945,12 @@ static int insert_stripe(struct list_head *devexts,
 	dev = btrfs_find_device_by_devid(rc->fs_devices, devext->objectid,
 					0);
 	if (!dev)
-		return 1;
-	BUG_ON(btrfs_find_device_by_devid(rc->fs_devices, devext->objectid,
-					1));
+		return -ENOENT;
+	if (btrfs_find_device_by_devid(rc->fs_devices, devext->objectid, 1)) {
+		error("unexpected: found another device with id %llu",
+				(unsigned long long)devext->objectid);
+		return -EINVAL;
+	}
 
 	chunk->stripes[index].devid = devext->objectid;
 	chunk->stripes[index].offset = devext->offset;
@@ -2245,6 +2248,13 @@ static int btrfs_recover_chunks(struct recover_control *rc)
 		chunk->sub_stripes = calc_sub_nstripes(bg->flags);
 
 		ret = insert_cache_extent(&rc->chunk, &chunk->cache);
+		if (ret == -EEXIST) {
+			error("duplicate entry in cache start %llu size %llu",
+					(unsigned long long)chunk->cache.start,
+					(unsigned long long)chunk->cache.size);
+			free(chunk);
+			return ret;
+		}
 		BUG_ON(ret);
 
 		list_del_init(&bg->list);
