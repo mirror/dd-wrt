@@ -25,6 +25,7 @@
 #include "transaction.h"
 #include "print-tree.h"
 #include "crc32c.h"
+#include "internal.h"
 
 #define MAX_CSUM_ITEMS(r,size) ((((BTRFS_LEAF_DATA_SIZE(r) - \
 			       sizeof(struct btrfs_item) * 2) / \
@@ -35,16 +36,29 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
 			     u64 disk_num_bytes, u64 num_bytes)
 {
 	int ret = 0;
+	int is_hole = 0;
 	struct btrfs_file_extent_item *item;
 	struct btrfs_key file_key;
 	struct btrfs_path *path;
 	struct extent_buffer *leaf;
 
+	if (offset == 0)
+		is_hole = 1;
+	/* For NO_HOLES, we don't insert hole file extent */
+	if (btrfs_fs_incompat(root->fs_info, NO_HOLES) && is_hole)
+		return 0;
+
+	/* For hole, its disk_bytenr and disk_num_bytes must be 0 */
+	if (is_hole)
+		disk_num_bytes = 0;
+
 	path = btrfs_alloc_path();
-	BUG_ON(!path);
+	if (!path)
+		return -ENOMEM;
+
 	file_key.objectid = objectid;
 	file_key.offset = pos;
-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_DATA_KEY);
+	file_key.type = BTRFS_EXTENT_DATA_KEY;
 
 	ret = btrfs_insert_empty_item(trans, root, path, &file_key,
 				      sizeof(*item));
@@ -89,7 +103,7 @@ int btrfs_insert_inline_extent(struct btrfs_trans_handle *trans,
 
 	key.objectid = objectid;
 	key.offset = offset;
-	btrfs_set_key_type(&key, BTRFS_EXTENT_DATA_KEY);
+	key.type = BTRFS_EXTENT_DATA_KEY;
 
 	datasize = btrfs_file_extent_calc_inline_size(size);
 	ret = btrfs_insert_empty_item(trans, root, path, &key, datasize);
@@ -134,7 +148,7 @@ btrfs_lookup_csum(struct btrfs_trans_handle *trans,
 
 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
 	file_key.offset = bytenr;
-	btrfs_set_key_type(&file_key, BTRFS_EXTENT_CSUM_KEY);
+	file_key.type = BTRFS_EXTENT_CSUM_KEY;
 	ret = btrfs_search_slot(trans, root, &file_key, path, 0, cow);
 	if (ret < 0)
 		goto fail;
@@ -145,7 +159,7 @@ btrfs_lookup_csum(struct btrfs_trans_handle *trans,
 			goto fail;
 		path->slots[0]--;
 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
-		if (btrfs_key_type(&found_key) != BTRFS_EXTENT_CSUM_KEY)
+		if (found_key.type != BTRFS_EXTENT_CSUM_KEY)
 			goto fail;
 
 		csum_offset = (bytenr - found_key.offset) / root->sectorsize;
@@ -187,7 +201,8 @@ int btrfs_csum_file_block(struct btrfs_trans_handle *trans,
 		btrfs_super_csum_size(root->fs_info->super_copy);
 
 	path = btrfs_alloc_path();
-	BUG_ON(!path);
+	if (!path)
+		return -ENOMEM;
 
 	file_key.objectid = BTRFS_EXTENT_CSUM_OBJECTID;
 	file_key.offset = bytenr;
@@ -296,7 +311,7 @@ csum:
 					  csum_offset * csum_size);
 found:
 	csum_result = btrfs_csum_data(root, data, csum_result, len);
-	btrfs_csum_final(csum_result, (char *)&csum_result);
+	btrfs_csum_final(csum_result, (u8 *)&csum_result);
 	if (csum_result == 0) {
 		printk("csum result is 0 for block %llu\n",
 		       (unsigned long long)bytenr);

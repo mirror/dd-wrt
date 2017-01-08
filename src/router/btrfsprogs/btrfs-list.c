@@ -113,7 +113,7 @@ void btrfs_list_setup_print_column(enum btrfs_list_column_enum column)
 {
 	int i;
 
-	BUG_ON(column < 0 || column > BTRFS_LIST_ALL);
+	ASSERT(0 <= column && column <= BTRFS_LIST_ALL);
 
 	if (column < BTRFS_LIST_ALL) {
 		btrfs_list_columns[column].need_print = 1;
@@ -122,11 +122,6 @@ void btrfs_list_setup_print_column(enum btrfs_list_column_enum column)
 
 	for (i = 0; i < BTRFS_LIST_ALL; i++)
 		btrfs_list_columns[i].need_print = 1;
-}
-
-static void root_lookup_init(struct root_lookup *tree)
-{
-	tree->root.rb_node = NULL;
 }
 
 static int comp_entry_with_rootid(struct root_info *entry1,
@@ -237,20 +232,15 @@ struct btrfs_list_comparer_set *btrfs_list_alloc_comparer_set(void)
 	return set;
 }
 
-void btrfs_list_free_comparer_set(struct btrfs_list_comparer_set *comp_set)
-{
-	free(comp_set);
-}
-
 static int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
 		enum btrfs_list_comp_enum comparer, int is_descending)
 {
 	struct btrfs_list_comparer_set *set = *comp_set;
 	int size;
 
-	BUG_ON(!set);
-	BUG_ON(comparer >= BTRFS_LIST_COMP_MAX);
-	BUG_ON(set->ncomps > set->total);
+	ASSERT(set != NULL);
+	ASSERT(comparer < BTRFS_LIST_COMP_MAX);
+	ASSERT(set->ncomps <= set->total);
 
 	if (set->ncomps == set->total) {
 		void *tmp;
@@ -272,7 +262,7 @@ static int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
 		*comp_set = set;
 	}
 
-	BUG_ON(set->comps[set->ncomps].comp_func);
+	ASSERT(set->comps[set->ncomps].comp_func == NULL);
 
 	set->comps[set->ncomps].comp_func = all_comp_funcs[comparer];
 	set->comps[set->ncomps].is_descending = is_descending;
@@ -287,7 +277,7 @@ static int sort_comp(struct root_info *entry1, struct root_info *entry2,
 	int i, ret = 0;
 
 	if (!set || !set->ncomps)
-		goto comp_rootid;
+		return comp_entry_with_rootid(entry1, entry2, 0);
 
 	for (i = 0; i < set->ncomps; i++) {
 		if (!set->comps[i].comp_func)
@@ -302,10 +292,8 @@ static int sort_comp(struct root_info *entry1, struct root_info *entry2,
 			rootid_compared = 1;
 	}
 
-	if (!rootid_compared) {
-comp_rootid:
+	if (!rootid_compared)
 		ret = comp_entry_with_rootid(entry1, entry2, 0);
-	}
 
 	return ret;
 }
@@ -399,7 +387,7 @@ static struct root_info *root_tree_search(struct root_lookup *root_tree,
 static int update_root(struct root_lookup *root_lookup,
 		       u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
 		       u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
-		       time_t ot, void *uuid, void *puuid, void *ruuid)
+		       time_t otime, u8 *uuid, u8 *puuid, u8 *ruuid)
 {
 	struct root_info *ri;
 
@@ -431,8 +419,8 @@ static int update_root(struct root_lookup *root_lookup,
 		ri->ogen = ogen;
 	if (!ri->ogen && root_offset)
 		ri->ogen = root_offset;
-	if (ot)
-		ri->otime = ot;
+	if (otime)
+		ri->otime = otime;
 	if (uuid)
 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
 	if (puuid)
@@ -454,7 +442,7 @@ static int update_root(struct root_lookup *root_lookup,
  * name_len: the length of name
  * ogen: the original generation of the root
  * gen: the current generation of the root
- * ot: the original time(create time) of the root
+ * otime: the original time (creation time) of the root
  * uuid: uuid of the root
  * puuid: uuid of the root parent if any
  * ruuid: uuid of the received subvol, if any
@@ -462,13 +450,13 @@ static int update_root(struct root_lookup *root_lookup,
 static int add_root(struct root_lookup *root_lookup,
 		    u64 root_id, u64 ref_tree, u64 root_offset, u64 flags,
 		    u64 dir_id, char *name, int name_len, u64 ogen, u64 gen,
-		    time_t ot, void *uuid, void *puuid, void *ruuid)
+		    time_t otime, u8 *uuid, u8 *puuid, u8 *ruuid)
 {
 	struct root_info *ri;
 	int ret;
 
 	ret = update_root(root_lookup, root_id, ref_tree, root_offset, flags,
-			  dir_id, name, name_len, ogen, gen, ot,
+			  dir_id, name, name_len, ogen, gen, otime,
 			  uuid, puuid, ruuid);
 	if (!ret)
 		return 0;
@@ -503,8 +491,8 @@ static int add_root(struct root_lookup *root_lookup,
 		ri->ogen = ogen;
 	if (!ri->ogen && root_offset)
 		ri->ogen = root_offset;
-	if (ot)
-		ri->otime = ot;
+	if (otime)
+		ri->otime = otime;
 
 	if (uuid)
 		memcpy(&ri->uuid, uuid, BTRFS_UUID_SIZE);
@@ -516,14 +504,27 @@ static int add_root(struct root_lookup *root_lookup,
 		memcpy(&ri->ruuid, ruuid, BTRFS_UUID_SIZE);
 
 	ret = root_tree_insert(root_lookup, ri);
-	if (ret) {
-		printf("failed to insert tree %llu\n", (unsigned long long)root_id);
+	if (ret < 0) {
+		error("failed to insert subvolume %llu to tree: %s",
+				(unsigned long long)root_id, strerror(-ret));
 		exit(1);
 	}
 	return 0;
 }
 
-static void __free_root_info(struct rb_node *node)
+/*
+ * Simplified add_root for back references, omits the uuid and original info
+ * parameters, root offset and flags.
+ */
+static int add_root_backref(struct root_lookup *root_lookup, u64 root_id,
+		u64 ref_tree, u64 dir_id, char *name, int name_len)
+{
+	return add_root(root_lookup, root_id, ref_tree, 0, 0, dir_id, name,
+			name_len, 0, 0, 0, NULL, NULL, NULL);
+}
+
+
+static void free_root_info(struct rb_node *node)
 {
 	struct root_info *ri;
 
@@ -532,11 +533,6 @@ static void __free_root_info(struct rb_node *node)
 	free(ri->path);
 	free(ri->full_path);
 	free(ri);
-}
-
-static inline void __free_all_subvolumn(struct root_lookup *root_tree)
-{
-	rb_free_nodes(&root_tree->root, __free_root_info);
 }
 
 /*
@@ -564,7 +560,7 @@ static int resolve_root(struct root_lookup *rl, struct root_info *ri,
 		int add_len;
 
 		/*
-		 * ref_tree = 0 indicates the subvolumes
+		 * ref_tree = 0 indicates the subvolume
 		 * has been deleted.
 		 */
 		if (!found->ref_tree) {
@@ -648,9 +644,8 @@ static int lookup_ino_path(int fd, struct root_info *ri)
 			ri->ref_tree = 0;
 			return -ENOENT;
 		}
-		fprintf(stderr, "ERROR: Failed to lookup path for root %llu - %s\n",
-			(unsigned long long)ri->ref_tree,
-			strerror(errno));
+		error("failed to lookup path for root %llu: %s",
+			(unsigned long long)ri->ref_tree, strerror(errno));
 		return ret;
 	}
 
@@ -678,7 +673,7 @@ static int lookup_ino_path(int fd, struct root_info *ri)
 }
 
 /* finding the generation for a given path is a two step process.
- * First we use the inode loookup routine to find out the root id
+ * First we use the inode lookup routine to find out the root id
  *
  * Then we use the tree search ioctl to scan all the root items for a
  * given root id and spit out the latest generation we can find
@@ -700,7 +695,7 @@ static u64 find_root_gen(int fd)
 	/* this ioctl fills in ino_args->treeid */
 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &ino_args);
 	if (ret < 0) {
-		fprintf(stderr, "ERROR: Failed to lookup path for dirid %llu - %s\n",
+		error("failed to lookup path for dirid %llu: %s",
 			(unsigned long long)BTRFS_FIRST_FREE_OBJECTID,
 			strerror(errno));
 		return 0;
@@ -708,7 +703,7 @@ static u64 find_root_gen(int fd)
 
 	memset(&args, 0, sizeof(args));
 
-	sk->tree_id = 1;
+	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
 
 	/*
 	 * there may be more than one ROOT_ITEM key if there are
@@ -726,8 +721,7 @@ static u64 find_root_gen(int fd)
 	while (1) {
 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 		if (ret < 0) {
-			fprintf(stderr, "ERROR: can't perform the search - %s\n",
-				strerror(errno));
+			error("can't perform the search: %s", strerror(errno));
 			return 0;
 		}
 		/* the ioctl returns the number of item it found in nr_items */
@@ -787,7 +781,7 @@ static char *__ino_resolve(int fd, u64 dirid)
 
 	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
 	if (ret < 0) {
-		fprintf(stderr, "ERROR: Failed to lookup path for dirid %llu - %s\n",
+		error("failed to lookup path for dirid %llu: %s",
 			(unsigned long long)dirid, strerror(errno));
 		return ERR_PTR(ret);
 	}
@@ -813,9 +807,10 @@ static char *__ino_resolve(int fd, u64 dirid)
  * simple string builder, returning a new string with both
  * dirid and name
  */
-static char *build_name(char *dirid, char *name)
+static char *build_name(const char *dirid, const char *name)
 {
 	char *full;
+
 	if (!dirid)
 		return strdup(name);
 
@@ -865,8 +860,7 @@ static char *ino_resolve(int fd, u64 ino, u64 *cache_dirid, char **cache_name)
 
 	ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 	if (ret < 0) {
-		fprintf(stderr, "ERROR: can't perform the search - %s\n",
-			strerror(errno));
+		error("can't perform the search: %s", strerror(errno));
 		return NULL;
 	}
 	/* the ioctl returns the number of item it found in nr_items */
@@ -876,9 +870,9 @@ static char *ino_resolve(int fd, u64 ino, u64 *cache_dirid, char **cache_name)
 	off = 0;
 	sh = (struct btrfs_ioctl_search_header *)(args.buf + off);
 
-	if (sh->type == BTRFS_INODE_REF_KEY) {
+	if (btrfs_search_header_type(sh) == BTRFS_INODE_REF_KEY) {
 		struct btrfs_inode_ref *ref;
-		dirid = sh->offset;
+		dirid = btrfs_search_header_offset(sh);
 
 		ref = (struct btrfs_inode_ref *)(sh + 1);
 		namelen = btrfs_stack_inode_ref_name_len(ref);
@@ -925,7 +919,7 @@ int btrfs_list_get_default_subvolume(int fd, u64 *default_id)
 	 * search for a dir item with a name 'default' in the tree of
 	 * tree roots, it should point us to a default root
 	 */
-	sk->tree_id = 1;
+	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
 
 	/* don't worry about ancient format and request only one item */
 	sk->nr_items = 1;
@@ -947,7 +941,7 @@ int btrfs_list_get_default_subvolume(int fd, u64 *default_id)
 
 	sh = (struct btrfs_ioctl_search_header *)args.buf;
 
-	if (sh->type == BTRFS_DIR_ITEM_KEY) {
+	if (btrfs_search_header_type(sh) == BTRFS_DIR_ITEM_KEY) {
 		struct btrfs_dir_item *di;
 		int name_len;
 		char *name;
@@ -965,7 +959,7 @@ out:
 	return 0;
 }
 
-static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
+static int list_subvol_search(int fd, struct root_lookup *root_lookup)
 {
 	int ret;
 	struct btrfs_ioctl_search_args args;
@@ -973,7 +967,7 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
 	struct btrfs_ioctl_search_header sh;
 	struct btrfs_root_ref *ref;
 	struct btrfs_root_item *ri;
-	unsigned long off = 0;
+	unsigned long off;
 	int name_len;
 	char *name;
 	u64 dir_id;
@@ -981,42 +975,24 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
 	u64 ogen;
 	u64 flags;
 	int i;
-	time_t t;
-	u8 uuid[BTRFS_UUID_SIZE];
-	u8 puuid[BTRFS_UUID_SIZE];
-	u8 ruuid[BTRFS_UUID_SIZE];
 
-	root_lookup_init(root_lookup);
+	root_lookup->root.rb_node = NULL;
 	memset(&args, 0, sizeof(args));
 
-	/* search in the tree of tree roots */
-	sk->tree_id = 1;
-
-	/*
-	 * set the min and max to backref keys.  The search will
-	 * only send back this type of key now.
-	 */
-	sk->max_type = BTRFS_ROOT_BACKREF_KEY;
+	sk->tree_id = BTRFS_ROOT_TREE_OBJECTID;
+	/* Search both live and deleted subvolumes */
 	sk->min_type = BTRFS_ROOT_ITEM_KEY;
-
-	sk->min_objectid = BTRFS_FIRST_FREE_OBJECTID;
-
-	/*
-	 * set all the other params to the max, we'll take any objectid
-	 * and any trans
-	 */
+	sk->max_type = BTRFS_ROOT_BACKREF_KEY;
+	sk->min_objectid = BTRFS_FS_TREE_OBJECTID;
 	sk->max_objectid = BTRFS_LAST_FREE_OBJECTID;
 	sk->max_offset = (u64)-1;
 	sk->max_transid = (u64)-1;
 
-	/* just a big number, doesn't matter much */
-	sk->nr_items = 4096;
-
 	while(1) {
+		sk->nr_items = 4096;
 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 		if (ret < 0)
 			return ret;
-		/* the ioctl returns the number of item it found in nr_items */
 		if (sk->nr_items == 0)
 			break;
 
@@ -1035,22 +1011,29 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
 				name = (char *)(ref + 1);
 				dir_id = btrfs_stack_root_ref_dirid(ref);
 
-				add_root(root_lookup, sh.objectid, sh.offset,
-					 0, 0, dir_id, name, name_len, 0, 0, 0,
-					 NULL, NULL, NULL);
-			} else if (sh.type == BTRFS_ROOT_ITEM_KEY) {
+				add_root_backref(root_lookup, sh.objectid,
+						sh.offset, dir_id, name,
+						name_len);
+			} else if (sh.type == BTRFS_ROOT_ITEM_KEY &&
+				   (sh.objectid >= BTRFS_FIRST_FREE_OBJECTID ||
+				    sh.objectid == BTRFS_FS_TREE_OBJECTID)) {
+				time_t otime;
+				u8 uuid[BTRFS_UUID_SIZE];
+				u8 puuid[BTRFS_UUID_SIZE];
+				u8 ruuid[BTRFS_UUID_SIZE];
+
 				ri = (struct btrfs_root_item *)(args.buf + off);
 				gen = btrfs_root_generation(ri);
 				flags = btrfs_root_flags(ri);
 				if(sh.len >
 				   sizeof(struct btrfs_root_item_v0)) {
-					t = btrfs_stack_timespec_sec(&ri->otime);
+					otime = btrfs_stack_timespec_sec(&ri->otime);
 					ogen = btrfs_root_otransid(ri);
 					memcpy(uuid, ri->uuid, BTRFS_UUID_SIZE);
 					memcpy(puuid, ri->parent_uuid, BTRFS_UUID_SIZE);
 					memcpy(ruuid, ri->received_uuid, BTRFS_UUID_SIZE);
 				} else {
-					t = 0;
+					otime = 0;
 					ogen = 0;
 					memset(uuid, 0, BTRFS_UUID_SIZE);
 					memset(puuid, 0, BTRFS_UUID_SIZE);
@@ -1059,22 +1042,17 @@ static int __list_subvol_search(int fd, struct root_lookup *root_lookup)
 
 				add_root(root_lookup, sh.objectid, 0,
 					 sh.offset, flags, 0, NULL, 0, ogen,
-					 gen, t, uuid, puuid, ruuid);
+					 gen, otime, uuid, puuid, ruuid);
 			}
 
 			off += sh.len;
 
-			/*
-			 * record the mins in sk so we can make sure the
-			 * next search doesn't repeat this root
-			 */
 			sk->min_objectid = sh.objectid;
 			sk->min_type = sh.type;
 			sk->min_offset = sh.offset;
 		}
-		sk->nr_items = 4096;
 		sk->min_offset++;
-		if (!sk->min_offset)	/* overflow */
+		if (!sk->min_offset)
 			sk->min_type++;
 		else
 			continue;
@@ -1209,20 +1187,19 @@ struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
 	return set;
 }
 
-void btrfs_list_free_filter_set(struct btrfs_list_filter_set *filter_set)
-{
-	free(filter_set);
-}
-
-int btrfs_list_setup_filter(struct btrfs_list_filter_set **filter_set,
+/*
+ * Setup list filters. Exit if there's not enough memory, as we can't continue
+ * without the structures set up properly.
+ */
+void btrfs_list_setup_filter(struct btrfs_list_filter_set **filter_set,
 			    enum btrfs_list_filter_enum filter, u64 data)
 {
 	struct btrfs_list_filter_set *set = *filter_set;
 	int size;
 
-	BUG_ON(!set);
-	BUG_ON(filter >= BTRFS_LIST_FILTER_MAX);
-	BUG_ON(set->nfilters > set->total);
+	ASSERT(set != NULL);
+	ASSERT(filter < BTRFS_LIST_FILTER_MAX);
+	ASSERT(set->nfilters <= set->total);
 
 	if (set->nfilters == set->total) {
 		void *tmp;
@@ -1244,7 +1221,7 @@ int btrfs_list_setup_filter(struct btrfs_list_filter_set **filter_set,
 		*filter_set = set;
 	}
 
-	BUG_ON(set->filters[set->nfilters].filter_func);
+	ASSERT(set->filters[set->nfilters].filter_func == NULL);
 
 	if (filter == BTRFS_LIST_FILTER_DELETED)
 		set->only_deleted = 1;
@@ -1252,7 +1229,6 @@ int btrfs_list_setup_filter(struct btrfs_list_filter_set **filter_set,
 	set->filters[set->nfilters].filter_func = all_filter_funcs[filter];
 	set->filters[set->nfilters].data = data;
 	set->nfilters++;
-	return 0;
 }
 
 static int filter_root(struct root_info *ri,
@@ -1279,7 +1255,7 @@ static int filter_root(struct root_info *ri,
 	return 1;
 }
 
-static void __filter_and_sort_subvol(struct root_lookup *all_subvols,
+static void filter_and_sort_subvol(struct root_lookup *all_subvols,
 				    struct root_lookup *sort_tree,
 				    struct btrfs_list_filter_set *filter_set,
 				    struct btrfs_list_comparer_set *comp_set,
@@ -1289,7 +1265,7 @@ static void __filter_and_sort_subvol(struct root_lookup *all_subvols,
 	struct root_info *entry;
 	int ret;
 
-	root_lookup_init(sort_tree);
+	sort_tree->root.rb_node = NULL;
 
 	n = rb_last(&all_subvols->root);
 	while (n) {
@@ -1307,7 +1283,7 @@ static void __filter_and_sort_subvol(struct root_lookup *all_subvols,
 	}
 }
 
-static int __list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
+static int list_subvol_fill_paths(int fd, struct root_lookup *root_lookup)
 {
 	struct rb_node *n;
 
@@ -1331,7 +1307,7 @@ static void print_subvolume_column(struct root_info *subv,
 	char tstr[256];
 	char uuidparse[BTRFS_UUID_UNPARSED_SIZE];
 
-	BUG_ON(column >= BTRFS_LIST_ALL || column < 0);
+	ASSERT(0 <= column && column < BTRFS_LIST_ALL);
 
 	switch (column) {
 	case BTRFS_LIST_OBJECTID:
@@ -1389,7 +1365,8 @@ static void print_subvolume_column(struct root_info *subv,
 	}
 }
 
-static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefix)
+static void print_one_subvol_info_raw(struct root_info *subv,
+		const char *raw_prefix)
 {
 	int i;
 
@@ -1405,7 +1382,7 @@ static void print_single_volume_info_raw(struct root_info *subv, char *raw_prefi
 	printf("\n");
 }
 
-static void print_single_volume_info_table(struct root_info *subv)
+static void print_one_subvol_info_table(struct root_info *subv)
 {
 	int i;
 
@@ -1424,7 +1401,7 @@ static void print_single_volume_info_table(struct root_info *subv)
 	printf("\n");
 }
 
-static void print_single_volume_info_default(struct root_info *subv)
+static void print_one_subvol_info_default(struct root_info *subv)
 {
 	int i;
 
@@ -1441,7 +1418,7 @@ static void print_single_volume_info_default(struct root_info *subv)
 	printf("\n");
 }
 
-static void print_all_volume_info_tab_head(void)
+static void print_all_subvol_info_tab_head(void)
 {
 	int i;
 	int len;
@@ -1470,27 +1447,27 @@ static void print_all_volume_info_tab_head(void)
 	}
 }
 
-static void print_all_volume_info(struct root_lookup *sorted_tree,
-				  int layout, char *raw_prefix)
+static void print_all_subvol_info(struct root_lookup *sorted_tree,
+		  enum btrfs_list_layout layout, const char *raw_prefix)
 {
 	struct rb_node *n;
 	struct root_info *entry;
 
 	if (layout == BTRFS_LIST_LAYOUT_TABLE)
-		print_all_volume_info_tab_head();
+		print_all_subvol_info_tab_head();
 
 	n = rb_first(&sorted_tree->root);
 	while (n) {
 		entry = rb_entry(n, struct root_info, sort_node);
 		switch (layout) {
 		case BTRFS_LIST_LAYOUT_DEFAULT:
-			print_single_volume_info_default(entry);
+			print_one_subvol_info_default(entry);
 			break;
 		case BTRFS_LIST_LAYOUT_TABLE:
-			print_single_volume_info_table(entry);
+			print_one_subvol_info_table(entry);
 			break;
 		case BTRFS_LIST_LAYOUT_RAW:
-			print_single_volume_info_raw(entry, raw_prefix);
+			print_one_subvol_info_raw(entry, raw_prefix);
 			break;
 		}
 		n = rb_next(n);
@@ -1501,10 +1478,9 @@ static int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
 {
 	int ret;
 
-	ret = __list_subvol_search(fd, root_lookup);
+	ret = list_subvol_search(fd, root_lookup);
 	if (ret) {
-		fprintf(stderr, "ERROR: can't perform the search - %s\n",
-				strerror(errno));
+		error("can't perform the search: %s", strerror(errno));
 		return ret;
 	}
 
@@ -1512,13 +1488,14 @@ static int btrfs_list_subvols(int fd, struct root_lookup *root_lookup)
 	 * now we have an rbtree full of root_info objects, but we need to fill
 	 * in their path names within the subvol that is referencing each one.
 	 */
-	ret = __list_subvol_fill_paths(fd, root_lookup);
+	ret = list_subvol_fill_paths(fd, root_lookup);
 	return ret;
 }
 
 int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
 		       struct btrfs_list_comparer_set *comp_set,
-		       int layout, int full_path, char *raw_prefix)
+		       enum btrfs_list_layout layout, int full_path,
+		       const char *raw_prefix)
 {
 	struct root_lookup root_lookup;
 	struct root_lookup root_sort;
@@ -1533,11 +1510,11 @@ int btrfs_list_subvols_print(int fd, struct btrfs_list_filter_set *filter_set,
 	ret = btrfs_list_subvols(fd, &root_lookup);
 	if (ret)
 		return ret;
-	__filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
+	filter_and_sort_subvol(&root_lookup, &root_sort, filter_set,
 				 comp_set, top_id);
 
-	print_all_volume_info(&root_sort, layout, raw_prefix);
-	__free_all_subvolumn(&root_lookup);
+	print_all_subvol_info(&root_sort, layout, raw_prefix);
+	rb_free_nodes(&root_lookup.root, free_root_info);
 
 	return 0;
 }
@@ -1547,6 +1524,37 @@ static char *strdup_or_null(const char *s)
 	if (!s)
 		return NULL;
 	return strdup(s);
+}
+
+int btrfs_get_toplevel_subvol(int fd, struct root_info *the_ri)
+{
+	int ret;
+	struct root_lookup rl;
+	struct rb_node *rbn;
+	struct root_info *ri;
+	u64 root_id;
+
+	ret = btrfs_list_get_path_rootid(fd, &root_id);
+	if (ret)
+		return ret;
+
+	ret = btrfs_list_subvols(fd, &rl);
+	if (ret)
+		return ret;
+
+	rbn = rb_first(&rl.root);
+	ri = rb_entry(rbn, struct root_info, rb_node);
+
+	if (ri->root_id != BTRFS_FS_TREE_OBJECTID)
+		return -ENOENT;
+
+	memcpy(the_ri, ri, offsetof(struct root_info, path));
+	the_ri->path = strdup_or_null("/");
+	the_ri->name = strdup_or_null("<FS_TREE>");
+	the_ri->full_path = strdup_or_null("/");
+	rb_free_nodes(&rl.root, free_root_info);
+
+	return ret;
 }
 
 int btrfs_get_subvol(int fd, struct root_info *the_ri)
@@ -1584,7 +1592,7 @@ int btrfs_get_subvol(int fd, struct root_info *the_ri)
 		}
 		rbn = rb_next(rbn);
 	}
-	__free_all_subvolumn(&rl);
+	rb_free_nodes(&rl.root, free_root_info);
 	return ret;
 }
 
@@ -1602,17 +1610,18 @@ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
 	int flags = 0;
 	char *name = NULL;
 
-	if (sh->objectid == *cache_ino) {
+	if (btrfs_search_header_objectid(sh) == *cache_ino) {
 		name = *cache_full_name;
 	} else if (*cache_full_name) {
 		free(*cache_full_name);
 		*cache_full_name = NULL;
 	}
 	if (!name) {
-		name = ino_resolve(fd, sh->objectid, cache_dirid,
+		name = ino_resolve(fd, btrfs_search_header_objectid(sh),
+				   cache_dirid,
 				   cache_dir_name);
 		*cache_full_name = name;
-		*cache_ino = sh->objectid;
+		*cache_ino = btrfs_search_header_objectid(sh);
 	}
 	if (!name)
 		return -EIO;
@@ -1630,19 +1639,19 @@ static int print_one_extent(int fd, struct btrfs_ioctl_search_header *sh,
 		disk_offset = 0;
 		len = btrfs_stack_file_extent_ram_bytes(item);
 	} else {
-		printf("unhandled extent type %d for inode %llu "
-		       "file offset %llu gen %llu\n",
+		error(
+	"unhandled extent type %d for inode %llu file offset %llu gen %llu",
 			type,
-			(unsigned long long)sh->objectid,
-			(unsigned long long)sh->offset,
+			(unsigned long long)btrfs_search_header_objectid(sh),
+			(unsigned long long)btrfs_search_header_offset(sh),
 			(unsigned long long)found_gen);
 
 		return -EIO;
 	}
 	printf("inode %llu file offset %llu len %llu disk start %llu "
 	       "offset %llu gen %llu flags ",
-	       (unsigned long long)sh->objectid,
-	       (unsigned long long)sh->offset,
+	       (unsigned long long)btrfs_search_header_objectid(sh),
+	       (unsigned long long)btrfs_search_header_offset(sh),
 	       (unsigned long long)len,
 	       (unsigned long long)disk_start,
 	       (unsigned long long)disk_offset,
@@ -1705,8 +1714,7 @@ int btrfs_list_find_updated_files(int fd, u64 root_id, u64 oldest_gen)
 	while(1) {
 		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH, &args);
 		if (ret < 0) {
-			fprintf(stderr, "ERROR: can't perform the search - %s\n",
-				strerror(errno));
+			error("can't perform the search: %s", strerror(errno));
 			break;
 		}
 		/* the ioctl returns the number of item it found in nr_items */
@@ -1777,11 +1785,11 @@ char *btrfs_list_path_for_root(int fd, u64 root)
 	if (ret)
 		return ERR_PTR(ret);
 
-	ret = __list_subvol_search(fd, &root_lookup);
+	ret = list_subvol_search(fd, &root_lookup);
 	if (ret < 0)
 		return ERR_PTR(ret);
 
-	ret = __list_subvol_fill_paths(fd, &root_lookup);
+	ret = list_subvol_fill_paths(fd, &root_lookup);
 	if (ret < 0)
 		return ERR_PTR(ret);
 
@@ -1802,7 +1810,7 @@ char *btrfs_list_path_for_root(int fd, u64 root)
 
 		n = rb_prev(n);
 	}
-	__free_all_subvolumn(&root_lookup);
+	rb_free_nodes(&root_lookup.root, free_root_info);
 
 	return ret_path;
 }
@@ -1896,19 +1904,12 @@ int btrfs_list_parse_filter_string(char *opt_arg,
 
 int btrfs_list_get_path_rootid(int fd, u64 *treeid)
 {
-	int  ret;
-	struct btrfs_ioctl_ino_lookup_args args;
+	int ret;
 
-	memset(&args, 0, sizeof(args));
-	args.objectid = BTRFS_FIRST_FREE_OBJECTID;
-
-	ret = ioctl(fd, BTRFS_IOC_INO_LOOKUP, &args);
-	if (ret < 0) {
-		fprintf(stderr,
-			"ERROR: can't perform the search - %s\n",
+	ret = lookup_path_rootid(fd, treeid);
+	if (ret < 0)
+		error("cannot resolve rootid for path: %s",
 			strerror(errno));
-		return ret;
-	}
-	*treeid = args.treeid;
-	return 0;
+
+	return ret;
 }

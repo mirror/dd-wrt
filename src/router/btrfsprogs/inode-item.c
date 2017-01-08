@@ -19,7 +19,7 @@
 #include "ctree.h"
 #include "disk-io.h"
 #include "transaction.h"
-#include "crc32c.h"
+#include "hash.h"
 
 static int find_name_in_backref(struct btrfs_path *path, const char * name,
 			 int name_len, struct btrfs_inode_ref **ref_ret)
@@ -64,7 +64,7 @@ int btrfs_insert_inode_ref(struct btrfs_trans_handle *trans,
 
 	key.objectid = inode_objectid;
 	key.offset = ref_objectid;
-	btrfs_set_key_type(&key, BTRFS_INODE_REF_KEY);
+	key.type = BTRFS_INODE_REF_KEY;
 
 	path = btrfs_alloc_path();
 	if (!path)
@@ -106,8 +106,7 @@ out:
 	btrfs_free_path(path);
 
 	if (ret == -EMLINK) {
-		if (btrfs_fs_incompat(root->fs_info,
-				      BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF))
+		if (btrfs_fs_incompat(root->fs_info, EXTENDED_IREF))
 			ret = btrfs_insert_inode_extref(trans, root, name,
 							name_len,
 							inode_objectid,
@@ -128,13 +127,13 @@ int btrfs_lookup_inode(struct btrfs_trans_handle *trans, struct btrfs_root
 	struct btrfs_key found_key;
 
 	ret = btrfs_search_slot(trans, root, location, path, ins_len, cow);
-	if (ret > 0 && btrfs_key_type(location) == BTRFS_ROOT_ITEM_KEY &&
+	if (ret > 0 && location->type == BTRFS_ROOT_ITEM_KEY &&
 	    location->offset == (u64)-1 && path->slots[0] != 0) {
 		slot = path->slots[0] - 1;
 		leaf = path->nodes[0];
 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
 		if (found_key.objectid == location->objectid &&
-		    btrfs_key_type(&found_key) == btrfs_key_type(location)) {
+		    found_key.type == location->type) {
 			path->slots[0]--;
 			return 0;
 		}
@@ -182,12 +181,6 @@ out:
 		return ERR_PTR(ret);
 	else
 		return ret_inode_ref;
-}
-
-static inline u64 btrfs_extref_hash(u64 parent_ino, const char *name,
-				    int namelen)
-{
-	return (u64)btrfs_crc32c(parent_ino, name, namelen);
 }
 
 static int btrfs_find_name_in_ext_backref(struct btrfs_path *path,
@@ -446,8 +439,7 @@ out:
 	btrfs_free_path(path);
 
 	if (search_ext_refs &&
-	    btrfs_fs_incompat(root->fs_info,
-		    BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)) {
+	    btrfs_fs_incompat(root->fs_info, EXTENDED_IREF)) {
 		/*
 		 * No refs were found, or we could not find the name in our ref
 		 * array. Find and remove the extended inode ref then.
