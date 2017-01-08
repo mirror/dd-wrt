@@ -155,11 +155,28 @@ struct map_lookup {
  * Check if the given range cross stripes.
  * To ensure kernel scrub won't causing bug on with METADATA in mixed
  * block group
+ *
+ * Return 1 if the range crosses STRIPE boundary
+ * Return 0 if the range doesn't cross STRIPE boundary or it
+ * doesn't belong to any block group (no boundary to cross)
  */
-static inline int check_crossing_stripes(u64 start, u64 len)
+static inline int check_crossing_stripes(struct btrfs_fs_info *fs_info,
+					 u64 start, u64 len)
 {
-	return (start / BTRFS_STRIPE_LEN) !=
-	       ((start + len - 1) / BTRFS_STRIPE_LEN);
+	struct btrfs_block_group_cache *bg_cache;
+	u64 bg_offset;
+
+	bg_cache = btrfs_lookup_block_group(fs_info, start);
+	/*
+	 * Does not belong to block group, no boundary to cross
+	 * although it's a bigger problem, but here we don't care.
+	 */
+	if (!bg_cache)
+		return 0;
+	bg_offset = start - bg_cache->key.objectid;
+
+	return (bg_offset / BTRFS_STRIPE_LEN !=
+		(bg_offset + len - 1) / BTRFS_STRIPE_LEN);
 }
 
 int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
@@ -194,7 +211,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
 		      u64 *num_bytes, u64 type);
 int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
 			   struct btrfs_root *extent_root, u64 *start,
-			   u64 num_bytes, u64 type);
+			   u64 num_bytes, u64 type, int convert);
 int btrfs_read_super_device(struct btrfs_root *root, struct extent_buffer *buf);
 int btrfs_add_device(struct btrfs_trans_handle *trans,
 		     struct btrfs_root *root,
@@ -210,7 +227,7 @@ int btrfs_update_device(struct btrfs_trans_handle *trans,
 			struct btrfs_device *device);
 int btrfs_scan_one_device(int fd, const char *path,
 			  struct btrfs_fs_devices **fs_devices_ret,
-			  u64 *total_devs, u64 super_offset, int super_recover);
+			  u64 *total_devs, u64 super_offset, unsigned sbflags);
 int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len);
 struct list_head *btrfs_scanned_uuids(void);
 int btrfs_add_system_chunk(struct btrfs_trans_handle *trans,
@@ -226,4 +243,8 @@ int write_raid56_with_parity(struct btrfs_fs_info *info,
 			     struct extent_buffer *eb,
 			     struct btrfs_multi_bio *multi,
 			     u64 stripe_len, u64 *raid_map);
+int btrfs_check_chunk_valid(struct btrfs_root *root,
+			    struct extent_buffer *leaf,
+			    struct btrfs_chunk *chunk,
+			    int slot, u64 logical);
 #endif

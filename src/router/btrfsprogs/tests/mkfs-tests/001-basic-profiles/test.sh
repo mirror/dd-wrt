@@ -4,7 +4,6 @@
 
 source $TOP/tests/common
 
-check_prereq btrfs-show-super
 check_prereq mkfs.btrfs
 check_prereq btrfs
 
@@ -33,12 +32,12 @@ cleanup_devices()
 	for i in `seq $ndevs`; do
 		truncate -s0 img$i
 	done
-	run_check $SUDO_HELPER losetup --list
+	run_check $SUDO_HELPER losetup --all
 }
 
 test_get_info()
 {
-	run_check $TOP/btrfs-show-super $dev1
+	run_check $SUDO_HELPER $TOP/btrfs inspect-internal dump-super $dev1
 	run_check $SUDO_HELPER $TOP/btrfs check $dev1
 	run_check $SUDO_HELPER mount $dev1 $TEST_MNT
 	run_check $TOP/btrfs filesystem df $TEST_MNT
@@ -87,5 +86,7 @@ test_mkfs_multi   -d  raid5   -m  raid5
 test_mkfs_multi   -d  raid5   -m  raid5   --mixed
 test_mkfs_multi   -d  raid6   -m  raid6
 test_mkfs_multi   -d  raid6   -m  raid6   --mixed
+test_mkfs_multi   -d  dup     -m  dup
+test_mkfs_multi   -d  dup     -m  dup     --mixed
 
 cleanup_devices
