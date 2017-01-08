@@ -55,7 +55,8 @@
 #define gfp_t int
 #define get_cpu_var(p) (p)
 #define __get_cpu_var(p) (p)
-#define BITS_PER_LONG (__SIZEOF_LONG__ * 8)
+#define BITS_PER_BYTE 8
+#define BITS_PER_LONG (__SIZEOF_LONG__ * BITS_PER_BYTE)
 #define __GFP_BITS_SHIFT 20
 #define __GFP_BITS_MASK ((int)((1 << __GFP_BITS_SHIFT) - 1))
 #define GFP_KERNEL 0
@@ -67,36 +68,44 @@
 #define ULONG_MAX       (~0UL)
 #endif
 
+#define __token_glue(a,b,c)	___token_glue(a,b,c)
+#define ___token_glue(a,b,c)	a ## b ## c
+#ifdef DEBUG_BUILD_CHECKS
+#define BUILD_ASSERT(x)		extern int __token_glue(compile_time_assert_,__LINE__,__COUNTER__)[1-2*!(x)] __attribute__((unused))
+#else
+#define BUILD_ASSERT(x)
+#endif
+
 #ifndef BTRFS_DISABLE_BACKTRACE
 #define MAX_BACKTRACE	16
 static inline void print_trace(void)
 {
 	void *array[MAX_BACKTRACE];
-	size_t size;
+	int size;
 
 	size = backtrace(array, MAX_BACKTRACE);
 	backtrace_symbols_fd(array, size, 2);
 }
+#endif
 
-static inline void assert_trace(const char *assertion, const char *filename,
-			      const char *func, unsigned line, int val)
+static inline void warning_trace(const char *assertion, const char *filename,
+			      const char *func, unsigned line, long val)
 {
-	if (val)
+	if (!val)
 		return;
 	if (assertion)
-		fprintf(stderr, "%s:%d: %s: Assertion `%s` failed.\n",
-			filename, line, func, assertion);
+		fprintf(stderr,
+			"%s:%d: %s: Warning: assertion `%s` failed, value %ld\n",
+			filename, line, func, assertion, val);
 	else
-		fprintf(stderr, "%s:%d: %s: Assertion failed.\n", filename,
-			line, func);
+		fprintf(stderr,
+			"%s:%d: %s: Warning: assertion failed, value %ld.\n",
+			filename, line, func, val);
+#ifndef BTRFS_DISABLE_BACKTRACE
 	print_trace();
-	exit(1);
+#endif
 }
 
-#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 0)
-#else
-#define BUG() assert(0)
-#endif
 
 #ifdef __CHECKER__
 #define __force    __attribute__((force))
@@ -235,30 +244,15 @@ static inline long PTR_ERR(const void *ptr)
 	return (long) ptr;
 }
 
-static inline long IS_ERR(const void *ptr)
+static inline int IS_ERR(const void *ptr)
 {
 	return IS_ERR_VALUE((unsigned long)ptr);
 }
 
-/*
- * max/min macro
- */
-#define min(x,y) ({ \
-	typeof(x) _x = (x);	\
-	typeof(y) _y = (y);	\
-	(void) (&_x == &_y);		\
-	_x < _y ? _x : _y; })
-
-#define max(x,y) ({ \
-	typeof(x) _x = (x);	\
-	typeof(y) _y = (y);	\
-	(void) (&_x == &_y);		\
-	_x > _y ? _x : _y; })
-
-#define min_t(type,x,y) \
-	({ type __x = (x); type __y = (y); __x < __y ? __x: __y; })
-#define max_t(type,x,y) \
-	({ type __x = (x); type __y = (y); __x > __y ? __x: __y; })
+static inline int IS_ERR_OR_NULL(const void *ptr)
+{
+	return !ptr || IS_ERR(ptr);
+}
 
 /*
  * This looks more complex than it should be. But we need to
@@ -288,17 +282,25 @@ static inline long IS_ERR(const void *ptr)
 #define vfree(x) free(x)
 
 #ifndef BTRFS_DISABLE_BACKTRACE
-#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, !(c))
+static inline void assert_trace(const char *assertion, const char *filename,
+			      const char *func, unsigned line, long val)
+{
+	if (!val)
+		return;
+	warning_trace(assertion, filename, func, line, val);
+	abort();
+	exit(1);
+}
+
+#define BUG_ON(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (long)!(c))
+#define BUG() assert_trace(NULL, __FILE__, __func__, __LINE__, 1)
 #else
 #define BUG_ON(c) assert(!(c))
-#endif
-
-#define WARN_ON(c) BUG_ON(c)
-
-#ifndef BTRFS_DISABLE_BACKTRACE
-#define	ASSERT(c) assert_trace(#c, __FILE__, __func__, __LINE__, (c))
-#else
-#define ASSERT(c) assert(c)
+#define WARN_ON(c) warning_trace(#c, __FILE__, __func__, __LINE__, (long)(c))
+#define ASSERT(c) assert(!(c))
+#define BUG() assert(0)
 #endif
 
 #define container_of(ptr, type, member) ({                      \
@@ -354,13 +356,21 @@ struct __una_u32 { __le32 x; } __attribute__((__packed__));
 struct __una_u64 { __le64 x; } __attribute__((__packed__));
 
 #define get_unaligned_le8(p) (*((u8 *)(p)))
+#define get_unaligned_8(p) (*((u8 *)(p)))
 #define put_unaligned_le8(val,p) ((*((u8 *)(p))) = (val))
+#define put_unaligned_8(val,p) ((*((u8 *)(p))) = (val))
 #define get_unaligned_le16(p) le16_to_cpu(((const struct __una_u16 *)(p))->x)
+#define get_unaligned_16(p) (((const struct __una_u16 *)(p))->x)
 #define put_unaligned_le16(val,p) (((struct __una_u16 *)(p))->x = cpu_to_le16(val))
+#define put_unaligned_16(val,p) (((struct __una_u16 *)(p))->x = (val))
 #define get_unaligned_le32(p) le32_to_cpu(((const struct __una_u32 *)(p))->x)
+#define get_unaligned_32(p) (((const struct __una_u32 *)(p))->x)
 #define put_unaligned_le32(val,p) (((struct __una_u32 *)(p))->x = cpu_to_le32(val))
+#define put_unaligned_32(val,p) (((struct __una_u32 *)(p))->x = (val))
 #define get_unaligned_le64(p) le64_to_cpu(((const struct __una_u64 *)(p))->x)
+#define get_unaligned_64(p) (((const struct __una_u64 *)(p))->x)
 #define put_unaligned_le64(val,p) (((struct __una_u64 *)(p))->x = cpu_to_le64(val))
+#define put_unaligned_64(val,p) (((struct __una_u64 *)(p))->x = (val))
 
 #ifndef true
 #define true 1

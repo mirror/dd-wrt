@@ -3,16 +3,34 @@
 # Common routines for all tests
 #
 
+# assert that argument is not empty and is an existing path (file or directory)
+_assert_path()
+{
+	local path
+
+	path="$1"
+	if [ -z "$path" ]; then
+		echo "ASSERTION FAIL: $path is not valid"
+		exit 1
+	fi
+
+	if [ -f "$path" -o -d "$path" -o -b "$path" ]; then
+		return 0
+	fi
+	echo "ASSERTION FAIL: $path is not valid"
+	exit 1
+}
+
 _fail()
 {
-	echo "$*" | tee -a $RESULTS
+	echo "$*" | tee -a "$RESULTS"
 	exit 1
 }
 
 # log a message to the results file
 _log()
 {
-	echo "$*" | tee -a $RESULTS
+	echo "$*" | tee -a "$RESULTS"
 }
 
 _not_run()
@@ -21,14 +39,81 @@ _not_run()
 	exit 0
 }
 
+# debugging helper
+_dump_args()
+{
+	local i
+
+	i=1
+	echo "DUMP args for ${FUNCNAME[1]}:"
+	while [ $# -gt 0 ]; do
+		echo "ARG[$i]: $1"
+		i=$(($i+1))
+		shift
+	done
+}
+
+# read arguments, look if we're calling btrfs and if there's a known
+# subcommand, return argument index to insert, taking root helper into
+# consideration, returns 2 for unknown subcommand
+_get_spec_ins()
+{
+	if [ "$1" = 'root_helper' ]; then
+		if [[ $2 =~ /btrfs$ ]]; then
+			echo -n 4
+			return
+		fi
+	else
+		if [[ $1 =~ /btrfs$ ]]; then
+			echo -n 3
+			return
+		fi
+	fi
+	echo -n 2
+}
+
+# return command-specific arguments if enabled
+_cmd_spec()
+{
+	if [ "$TEST_ENABLE_OVERRIDE" = 'true' ]; then
+		# if defined via common.local, use it, otherwise pass make
+		# arguments
+		if [ "$(type -t _skip_spec)" = 'function' ]; then
+			if _skip_spec "$@"; then
+				return
+			fi
+		fi
+		case "$1" in
+	  		check) echo -n "$TEST_ARGS_CHECK" ;;
+		esac
+	fi
+}
+
+# Argument passing magic:
+# the command passed to run_* helpers is inspected, if there's 'btrfs command'
+# found and there are defined additional arguments, they're inserted just after
+# the command name, ie. any arguments in the test could override them.
+#
+# The root helper is recognized.  Unrecognized subcommands or external tools
+# are not affected.
+
 run_check()
 {
-	echo "############### $@" >> $RESULTS 2>&1
-	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD: $@" > /dev/tty; fi
+	local spec
+	local ins
+	local cmd
+
+	ins=$(_get_spec_ins "$@")
+	spec=$(($ins-1))
+	cmd=$(eval echo "\${$spec}")
+	spec=$(_cmd_spec "$cmd")
+	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+	echo "############### $@" >> "$RESULTS" 2>&1
+	if [[ $TEST_LOG =~ tty ]]; then echo "CMD: $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
-		"$@" >> $RESULTS 2>&1 || _fail "failed: $@"
+		"$@" >> "$RESULTS" 2>&1 || _fail "failed: $@"
 	else
-		$INSTRUMENT "$@" >> $RESULTS 2>&1 || _fail "failed: $@"
+		$INSTRUMENT "$@" >> "$RESULTS" 2>&1 || _fail "failed: $@"
 	fi
 }
 
@@ -36,35 +121,104 @@ run_check()
 # can be processed further
 run_check_stdout()
 {
-	echo "############### $@" >> $RESULTS 2>&1
-	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD(stdout): $@" > /dev/tty; fi
+	local spec
+	local ins
+	local cmd
+
+	ins=$(_get_spec_ins "$@")
+	spec=$(($ins-1))
+	cmd=$(eval echo "\${$spec}")
+	spec=$(_cmd_spec "$cmd")
+	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+	echo "############### $@" >> "$RESULTS" 2>&1
+	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(stdout): $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
-		"$@" 2>&1 | tee -a $RESULTS || _fail "failed: $@"
+		"$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
 	else
-		$INSTRUMENT "$@" 2>&1 | tee -a $RESULTS || _fail "failed: $@"
+		$INSTRUMENT "$@" 2>&1 | tee -a "$RESULTS" || _fail "failed: $@"
 	fi
 }
 
-# same as run_check but does not fail the test, output is logged
+# same as run_check but does not fail the test if it's handled gracefully by
+# the tool, unexpected failure like segfault or abor will exit forcibly
+# output is logged
 run_mayfail()
 {
-	echo "############### $@" >> $RESULTS 2>&1
-	if [ "$TEST_LOG" = 'tty' ]; then echo "CMD(mayfail): $@" > /dev/tty; fi
+	local spec
+	local ins
+	local cmd
+	local ret
+
+	ins=$(_get_spec_ins "$@")
+	spec=$(($ins-1))
+	cmd=$(eval echo "\${$spec}")
+	spec=$(_cmd_spec "$cmd")
+	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+	echo "############### $@" >> "$RESULTS" 2>&1
+	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mayfail): $@" > /dev/tty; fi
 	if [ "$1" = 'root_helper' ]; then
-		"$@" >> $RESULTS 2>&1
+		"$@" >> "$RESULTS" 2>&1
 	else
-		$INSTRUMENT "$@" >> $RESULTS 2>&1
+		$INSTRUMENT "$@" >> "$RESULTS" 2>&1
+	fi
+	ret=$?
+	if [ $ret != 0 ]; then
+		echo "failed (ignored, ret=$ret): $@" >> "$RESULTS"
+		if [ $ret == 139 ]; then
+			_fail "mayfail: returned code 139 (SEGFAULT), not ignored"
+		elif [ $ret == 134 ]; then
+			_fail "mayfail: returned code 134 (SIGABRT), not ignored"
+		fi
+		return $ret
+	fi
+}
+
+# first argument is error message to print if it fails, otherwise
+# same as run_check but expects the command to fail, output is logged
+run_mustfail()
+{
+	local spec
+	local ins
+	local cmd
+	local msg
+
+	msg="$1"
+	shift
+
+	ins=$(_get_spec_ins "$@")
+	spec=$(($ins-1))
+	cmd=$(eval echo "\${$spec}")
+	spec=$(_cmd_spec "$cmd")
+	set -- "${@:1:$(($ins-1))}" $spec "${@: $ins}"
+	echo "############### $@" >> "$RESULTS" 2>&1
+	if [[ $TEST_LOG =~ tty ]]; then echo "CMD(mustfail): $@" > /dev/tty; fi
+	if [ "$1" = 'root_helper' ]; then
+		"$@" >> "$RESULTS" 2>&1
+	else
+		$INSTRUMENT "$@" >> "$RESULTS" 2>&1
 	fi
 	if [ $? != 0 ]; then
-		echo "failed (ignored): $@" >> $RESULTS
+		echo "failed (expected): $@" >> "$RESULTS"
+		return 0
+	else
+		echo "succeeded (unexpected!): $@" >> "$RESULTS"
+		_fail "unexpected success: $msg"
 		return 1
 	fi
 }
 
 check_prereq()
 {
-	if ! [ -f $TOP/$1 ]; then
-		_fail "Failed prerequisities: $1";
+	if ! [ -f "$TOP/$1" ]; then
+		_fail "Failed prerequisites: $1";
+	fi
+}
+
+check_global_prereq()
+{
+	which $1 &> /dev/null
+	if [ $? -ne 0 ]; then
+		_fail "Failed system wide prerequisities: $1";
 	fi
 }
 
@@ -73,12 +227,12 @@ check_image()
 	local image
 
 	image=$1
-	echo "testing image $(basename $image)" >> $RESULTS
-	$TOP/btrfs check $image >> $RESULTS 2>&1
+	echo "testing image $(basename $image)" >> "$RESULTS"
+	"$TOP/btrfs" check "$image" >> "$RESULTS" 2>&1
 	[ $? -eq 0 ] && _fail "btrfs check should have detected corruption"
 
-	run_check $TOP/btrfs check --repair $image
-	run_check $TOP/btrfs check $image
+	run_check "$TOP/btrfs" check --repair "$image"
+	run_check "$TOP/btrfs" check "$image"
 }
 
 # Extract a usable image from packed formats
@@ -86,6 +240,7 @@ check_image()
 # - dtto compressed by XZ, suffix .raw.xz
 # - meta-dump images with suffix .img
 # - dtto compressed by XZ, suffix .img.xz
+# - compressed send stream, .stream.xz
 extract_image()
 {
 	local image
@@ -94,30 +249,36 @@ extract_image()
 	image="$1"
 	case "$image" in
 	*.img)
-		rm -f $image.restored
+		rm -f "$image.restored"
 		: ;;
 	*.img.xz)
 		xz --decompress --keep "$image" || \
 			_fail "failed to decompress image $image" >&2
 		image=${image%%.xz}
-		rm -f $image.restored
+		rm -f "$image.restored"
 		cleanme=$image
 		;;
 	*.raw)
-		cp --sparse=auto $image $image.restored
+		cp --sparse=auto "$image" "$image.restored"
 		;;
 	*.raw.xz)
 		xz --decompress --keep "$image" || \
 			_fail "failed to decompress image $image" >&2
 		image=${image%%.xz}
-		mv "$image" "$image".restored
+		mv "$image" "$image.restored"
+		;;
+	*.stream.xz)
+		xz --decompress --keep "$image" || \
+			_fail "failed to decompress file $image" >&2
+		image=${image%%.xz}
+		mv "$image" "$image.restored"
 		;;
 	esac
 
-	if ! [ -f $image.restored ]; then
-		echo "restoring image $(basename $image)" >> $RESULTS
-		$TOP/btrfs-image -r $image $image.restored \
-			&>> $RESULTS \
+	if ! [ -f "$image.restored" ]; then
+		echo "restoring image $(basename $image)" >> "$RESULTS"
+		"$TOP/btrfs-image" -r "$image" "$image.restored" \
+			&>> "$RESULTS" \
 			|| _fail "failed to restore image $image" >&2
 	fi
 
@@ -133,7 +294,11 @@ check_all_images()
 	local extracted
 
 	dir="$1"
-	for image in $(find $dir \( -iname '*.img' -o	\
+	if [ -z "$dir" ]; then
+		dir=.
+	fi
+	_assert_path "$dir"
+	for image in $(find "$dir" \( -iname '*.img' -o	\
 				-iname '*.img.xz' -o 	\
 				-iname '*.raw' -o 	\
 				-iname '*.raw.xz' \) | sort)
@@ -199,7 +364,7 @@ prepare_test_dev()
 	[[ "$size" ]] || size='2G'
 
 	echo "\$TEST_DEV not given, use $TOP/test/test.img as fallback" >> \
-		$RESULTS
+		"$RESULTS"
 	TEST_DEV="$TOP/tests/test.img"
 
 	truncate -s "$size" "$TEST_DEV" || _not_run "create file for loop device failed"
@@ -231,10 +396,114 @@ run_check_umount_test_dev()
 	run_check $SUDO_HELPER umount "$@" "$TEST_DEV"
 }
 
+check_kernel_support()
+{
+	if ! grep -iq 'btrfs' /proc/filesystems; then
+		echo "WARNING: btrfs filesystem not listed in /proc/filesystems, some tests might fail"
+		return 1
+	fi
+	return 0
+}
+
+# how many files to create.
+DATASET_SIZE=50
+
+generate_dataset() {
+
+	dataset_type="$1"
+	dirpath=$TEST_MNT/$dataset_type
+	run_check $SUDO_HELPER mkdir -p "$dirpath"
+
+	case "$dataset_type" in
+		small)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER dd if=/dev/urandom of="$dirpath/$dataset_type.$num" bs=10K \
+				count=1 >/dev/null 2>&1
+			done
+			;;
+
+		hardlink)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER touch "$dirpath/$dataset_type.$num"
+				run_check $SUDO_HELPER ln "$dirpath/$dataset_type.$num" "$dirpath/hlink.$num"
+			done
+			;;
+
+		fast_symlink)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER touch "$dirpath/$dataset_type.$num"
+				run_check cd "$dirpath" && \
+					$SUDO_HELPER ln -s "$dataset_type.$num" "$dirpath/slink.$num" && \
+					cd /
+			done
+			;;
+
+		brokenlink)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER ln -s "$dirpath/$dataset_type.$num" "$dirpath/blink.$num"
+			done
+			;;
+
+		perm)
+			for modes in 777 775 755 750 700 666 664 644 640 600 444 440 400 000		\
+				1777 1775 1755 1750 1700 1666 1664 1644 1640 1600 1444 1440 1400 1000	\
+				2777 2775 2755 2750 2700 2666 2664 2644 2640 2600 2444 2440 2400 2000	\
+				4777 4775 4755 4750 4700 4666 4664 4644 4640 4600 4444 4440 4400 4000; do
+				run_check $SUDO_HELPER touch "$dirpath/$dataset_type.$modes"
+				run_check $SUDO_HELPER chmod "$modes" "$dirpath/$dataset_type.$modes"
+			done
+			;;
+
+		sparse)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER dd if=/dev/urandom of="$dirpath/$dataset_type.$num" bs=10K \
+				count=1 >/dev/null 2>&1
+				run_check $SUDO_HELPER truncate -s 500K "$dirpath/$dataset_type.$num"
+				run_check $SUDO_HELPER dd if=/dev/urandom of="$dirpath/$dataset_type.$num" bs=10K \
+				oflag=append conv=notrunc count=1 >/dev/null 2>&1
+				run_check $SUDO_HELPER truncate -s 800K "$dirpath/$dataset_type.$num"
+			done
+			;;
+
+		acls)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER touch "$dirpath/$dataset_type.$num"
+				run_check $SUDO_HELPER setfacl -m "u:root:x" "$dirpath/$dataset_type.$num"
+				run_check $SUDO_HELPER setfattr -n user.foo -v "bar$num" "$dirpath/$dataset_type.$num"
+			done
+			;;
+
+		fifo)
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER mkfifo "$dirpath/$dataset_type.$num"
+			done
+			;;
+
+		slow_symlink)
+			long_filename=`date +%s | sha256sum | cut -f1 -d'-'`
+			run_check $SUDO_HELPER touch "$dirpath/$long_filename"
+			for num in $(seq 1 "$DATASET_SIZE"); do
+				run_check $SUDO_HELPER ln -s "$dirpath/$long_filename" "$dirpath/slow_slink.$num"
+			done
+			;;
+		large)
+			run_check $SUDO_HELPER dd if=/dev/urandom bs=32M count=1 \
+				of="$dirpath/$dataset_type" >/dev/null 2>&1
+			;;
+	esac
+}
+
 init_env()
 {
 	TEST_MNT="${TEST_MNT:-$TOP/tests/mnt}"
 	export TEST_MNT
 	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
+
+	source $TOP/tests/common.local
+
+	if [ "$TEST_ENABLE_OVERRIDE" = 'true' -a -n "$RESULTS" ]; then
+		echo "INCLUDE common.local" >> "$RESULTS"
+		echo "  check: $TEST_ARGS_CHECK" >> "$RESULTS"
+	fi
 }
 init_env

@@ -107,8 +107,9 @@ static int cmd_device_add(int argc, char **argv)
 			continue;
 		}
 
-		res = btrfs_prepare_device(devfd, argv[i], 1, &dev_block_count,
-					   0, discard);
+		res = btrfs_prepare_device(devfd, argv[i], &dev_block_count, 0,
+				PREP_DEVICE_ZERO_END | PREP_DEVICE_VERBOSE |
+				(discard ? PREP_DEVICE_DISCARD : 0));
 		close(devfd);
 		if (res) {
 			ret++;
@@ -146,7 +147,9 @@ static int _cmd_device_remove(int argc, char **argv,
 	int i, fdmnt, ret = 0;
 	DIR	*dirstream = NULL;
 
-	if (check_argc_min(argc, 3))
+	clean_args_no_options(argc, argv, usagestr);
+
+	if (check_argc_min(argc - optind, 2))
 		usage(usagestr);
 
 	mntpnt = argv[argc - 1];
@@ -155,22 +158,48 @@ static int _cmd_device_remove(int argc, char **argv,
 	if (fdmnt < 0)
 		return 1;
 
-	for(i=1 ; i < argc - 1; i++ ){
+	for(i = optind; i < argc - 1; i++) {
 		struct	btrfs_ioctl_vol_args arg;
+		struct btrfs_ioctl_vol_args_v2 argv2 = {0};
+		int is_devid = 0;
 		int	res;
 
-		if (is_block_device(argv[i]) != 1 && strcmp(argv[i], "missing")) {
+		if (string_is_numerical(argv[i])) {
+			argv2.devid = arg_strtou64(argv[i]);
+			argv2.flags = BTRFS_DEVICE_SPEC_BY_ID;
+			is_devid = 1;
+		} else if (is_block_device(argv[i]) == 1 ||
+				strcmp(argv[i], "missing") == 0) {
+			strncpy_null(argv2.name, argv[i]);
+		} else {
 			error("not a block device: %s", argv[i]);
 			ret++;
 			continue;
 		}
-		memset(&arg, 0, sizeof(arg));
-		strncpy_null(arg.name, argv[i]);
+
 		/*
 		 * Positive values are from BTRFS_ERROR_DEV_*,
 		 * otherwise it's a generic error, one of errnos
 		 */
-		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV_V2, &argv2);
+
+		/*
+		 * If BTRFS_IOC_RM_DEV_V2 is not supported we get ENOTTY and if
+		 * argv2.flags includes a flag which kernel doesn't understand then
+		 * we shall get EOPNOTSUPP
+		 */
+		if (res < 0 && (errno == ENOTTY || errno == EOPNOTSUPP)) {
+			if (is_devid) {
+				error("device delete by id failed: %s",
+							strerror(errno));
+				ret++;
+				continue;
+			}
+			memset(&arg, 0, sizeof(arg));
+			strncpy_null(arg.name, argv[i]);
+			res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
+		}
+
 		if (res) {
 			const char *msg;
 
@@ -178,8 +207,13 @@ static int _cmd_device_remove(int argc, char **argv,
 				msg = btrfs_err_str(res);
 			else
 				msg = strerror(errno);
-			error("error removing device '%s': %s",
-				argv[i], msg);
+			if (is_devid) {
+				error("error removing devid %llu: %s",
+					(unsigned long long)argv2.devid, msg);
+			} else {
+				error("error removing device '%s': %s",
+					argv[i], msg);
+			}
 			ret++;
 		}
 	}
@@ -189,7 +223,7 @@ static int _cmd_device_remove(int argc, char **argv,
 }
 
 static const char * const cmd_device_remove_usage[] = {
-	"btrfs device remove <device> [<device>...] <path>",
+	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
 	"Remove a device from a filesystem",
 	NULL
 };
@@ -200,7 +234,7 @@ static int cmd_device_remove(int argc, char **argv)
 }
 
 static const char * const cmd_device_delete_usage[] = {
-	"btrfs device delete <device> [<device>...] <path>",
+	"btrfs device delete <device>|<devid> [<device>|<devid>...] <path>",
 	"Remove a device from a filesystem",
 	NULL
 };
@@ -220,11 +254,10 @@ static const char * const cmd_device_scan_usage[] = {
 static int cmd_device_scan(int argc, char **argv)
 {
 	int i;
-	int devstart = 1;
+	int devstart;
 	int all = 0;
 	int ret = 0;
 
-	optind = 1;
 	while (1) {
 		int c;
 		static const struct option long_options[] = {
@@ -243,16 +276,17 @@ static int cmd_device_scan(int argc, char **argv)
 			usage(cmd_device_scan_usage);
 		}
 	}
+	devstart = optind;
 
-	if (all && check_argc_max(argc, 2))
+	if (all && check_argc_max(argc - optind, 1))
 		usage(cmd_device_scan_usage);
 
-	if (all || argc == 1) {
+	if (all || argc - optind == 0) {
 		printf("Scanning for Btrfs filesystems\n");
-		ret = btrfs_scan_lblkid();
+		ret = btrfs_scan_devices();
 		error_on(ret, "error %d while scanning", ret);
 		ret = btrfs_register_all_devices();
-		error_on(ret, "error %d while registering devices", ret);
+		error_on(ret, "there are %d errors while registering devices", ret);
 		goto out;
 	}
 
@@ -297,7 +331,9 @@ static int cmd_device_ready(int argc, char **argv)
 	int	ret;
 	char	*path;
 
-	if (check_argc_min(argc, 2))
+	clean_args_no_options(argc, argv, cmd_device_ready_usage);
+
+	if (check_argc_exact(argc - optind, 1))
 		usage(cmd_device_ready_usage);
 
 	fd = open("/dev/btrfs-control", O_RDWR);
@@ -306,10 +342,10 @@ static int cmd_device_ready(int argc, char **argv)
 		return 1;
 	}
 
-	path = canonicalize_path(argv[argc - 1]);
+	path = canonicalize_path(argv[optind]);
 	if (!path) {
 		error("could not canonicalize pathname '%s': %s",
-			argv[argc - 1], strerror(errno));
+			argv[optind], strerror(errno));
 		ret = 1;
 		goto out;
 	}
@@ -336,10 +372,13 @@ out:
 }
 
 static const char * const cmd_device_stats_usage[] = {
-	"btrfs device stats [-z] <path>|<device>",
-	"Show current device IO stats.",
+	"btrfs device stats [options] <path>|<device>",
+	"Show device IO error statistics",
+	"Show device IO error statistics for all devices of the given filesystem",
+	"identified by PATH or DEVICE. The filesystem must be mounted.",
 	"",
-	"-z                     show current stats and reset values to zero",
+	"-c|--check             return non-zero if any stat counter is not zero",
+	"-z|--reset             show current stats and reset values to zero",
 	NULL
 };
 
@@ -351,14 +390,26 @@ static int cmd_device_stats(int argc, char **argv)
 	int ret;
 	int fdmnt;
 	int i;
-	int c;
 	int err = 0;
+	int check = 0;
 	__u64 flags = 0;
 	DIR *dirstream = NULL;
 
-	optind = 1;
-	while ((c = getopt(argc, argv, "z")) != -1) {
+	while (1) {
+		int c;
+		static const struct option long_options[] = {
+			{"reset", no_argument, NULL, 'z'},
+			{NULL, 0, NULL, 0}
+		};
+
+		c = getopt_long(argc, argv, "cz", long_options, NULL);
+		if (c < 0)
+			break;
+
 		switch (c) {
+		case 'c':
+			check = 1;
+			break;
 		case 'z':
 			flags = BTRFS_DEV_STATS_RESET;
 			break;
@@ -368,8 +419,7 @@ static int cmd_device_stats(int argc, char **argv)
 		}
 	}
 
-	argc = argc - optind;
-	if (check_argc_exact(argc, 1))
+	if (check_argc_exact(argc - optind, 1))
 		usage(cmd_device_stats_usage);
 
 	dev_path = argv[optind];
@@ -380,7 +430,7 @@ static int cmd_device_stats(int argc, char **argv)
 
 	ret = get_fs_info(dev_path, &fi_args, &di_args);
 	if (ret) {
-		error("getting dev info for devstats failed: %s",
+		error("getting device info for %s failed: %s", dev_path,
 			strerror(-ret));
 		err = 1;
 		goto out;
@@ -393,50 +443,61 @@ static int cmd_device_stats(int argc, char **argv)
 
 	for (i = 0; i < fi_args.num_devices; i++) {
 		struct btrfs_ioctl_get_dev_stats args = {0};
-		__u8 path[BTRFS_DEVICE_PATH_NAME_MAX + 1];
+		char path[BTRFS_DEVICE_PATH_NAME_MAX + 1];
 
-		strncpy((char *)path, (char *)di_args[i].path,
+		strncpy(path, (char *)di_args[i].path,
 			BTRFS_DEVICE_PATH_NAME_MAX);
-		path[BTRFS_DEVICE_PATH_NAME_MAX] = '\0';
+		path[BTRFS_DEVICE_PATH_NAME_MAX] = 0;
 
 		args.devid = di_args[i].devid;
 		args.nr_items = BTRFS_DEV_STAT_VALUES_MAX;
 		args.flags = flags;
 
 		if (ioctl(fdmnt, BTRFS_IOC_GET_DEV_STATS, &args) < 0) {
-			error("DEV_STATS ioctl failed on %s: %s",
+			error("device stats ioctl failed on %s: %s",
 			      path, strerror(errno));
-			err = 1;
+			err |= 1;
 		} else {
 			char *canonical_path;
+			int j;
+			static const struct {
+				const char name[32];
+				u64 num;
+			} dev_stats[] = {
+				{ "write_io_errs", BTRFS_DEV_STAT_WRITE_ERRS },
+				{ "read_io_errs", BTRFS_DEV_STAT_READ_ERRS },
+				{ "flush_io_errs", BTRFS_DEV_STAT_FLUSH_ERRS },
+				{ "corruption_errs",
+					BTRFS_DEV_STAT_CORRUPTION_ERRS },
+				{ "generation_errs",
+					BTRFS_DEV_STAT_GENERATION_ERRS },
+			};
 
-			canonical_path = canonicalize_path((char *)path);
+			canonical_path = canonicalize_path(path);
 
-			if (args.nr_items >= BTRFS_DEV_STAT_WRITE_ERRS + 1)
-				printf("[%s].write_io_errs   %llu\n",
-				       canonical_path,
-				       (unsigned long long) args.values[
-					BTRFS_DEV_STAT_WRITE_ERRS]);
-			if (args.nr_items >= BTRFS_DEV_STAT_READ_ERRS + 1)
-				printf("[%s].read_io_errs    %llu\n",
-				       canonical_path,
-				       (unsigned long long) args.values[
-					BTRFS_DEV_STAT_READ_ERRS]);
-			if (args.nr_items >= BTRFS_DEV_STAT_FLUSH_ERRS + 1)
-				printf("[%s].flush_io_errs   %llu\n",
-				       canonical_path,
-				       (unsigned long long) args.values[
-					BTRFS_DEV_STAT_FLUSH_ERRS]);
-			if (args.nr_items >= BTRFS_DEV_STAT_CORRUPTION_ERRS + 1)
-				printf("[%s].corruption_errs %llu\n",
-				       canonical_path,
-				       (unsigned long long) args.values[
-					BTRFS_DEV_STAT_CORRUPTION_ERRS]);
-			if (args.nr_items >= BTRFS_DEV_STAT_GENERATION_ERRS + 1)
-				printf("[%s].generation_errs %llu\n",
-				       canonical_path,
-				       (unsigned long long) args.values[
-					BTRFS_DEV_STAT_GENERATION_ERRS]);
+			/* No path when device is missing. */
+			if (!canonical_path) {
+				canonical_path = malloc(32);
+				if (!canonical_path) {
+					error("not enough memory for path buffer");
+					goto out;
+				}
+				snprintf(canonical_path, 32,
+					 "devid:%llu", args.devid);
+			}
+
+			for (j = 0; j < ARRAY_SIZE(dev_stats); j++) {
+				/* We got fewer items than we know */
+				if (args.nr_items < dev_stats[j].num + 1)
+					continue;
+				printf("[%s].%-16s %llu\n", canonical_path,
+					dev_stats[j].name,
+					(unsigned long long)
+					 args.values[dev_stats[j].num]);
+				if ((check == 1)
+				    && (args.values[dev_stats[j].num] > 0))
+					err |= 64;
+			}
 
 			free(canonical_path);
 		}
@@ -493,10 +554,12 @@ static int cmd_device_usage(int argc, char **argv)
 
 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
 
-	if (check_argc_min(argc, 2) || argv[1][0] == '-')
+	clean_args_no_options(argc, argv, cmd_device_usage_usage);
+
+	if (check_argc_min(argc - optind, 1))
 		usage(cmd_device_usage_usage);
 
-	for (i = 1; i < argc; i++) {
+	for (i = optind; i < argc; i++) {
 		int fd;
 		DIR *dirstream = NULL;
 

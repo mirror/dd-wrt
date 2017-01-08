@@ -32,7 +32,8 @@ static const char * const qgroup_cmd_group_usage[] = {
 	NULL
 };
 
-static int qgroup_assign(int assign, int argc, char **argv)
+static int _cmd_qgroup_assign(int assign, int argc, char **argv,
+		const char * const *usage_str)
 {
 	int ret = 0;
 	int fd;
@@ -41,28 +42,38 @@ static int qgroup_assign(int assign, int argc, char **argv)
 	struct btrfs_ioctl_qgroup_assign_args args;
 	DIR *dirstream = NULL;
 
-	while (1) {
-		enum { GETOPT_VAL_RESCAN = 256 };
-		static const struct option long_options[] = {
-			{ "rescan", no_argument, NULL, GETOPT_VAL_RESCAN },
-			{ NULL, 0, NULL, 0 }
-		};
-		int c = getopt_long(argc, argv, "", long_options, NULL);
+	if (assign) {
+		while (1) {
+			enum { GETOPT_VAL_RESCAN = 256, GETOPT_VAL_NO_RESCAN };
+			static const struct option long_options[] = {
+				{ "rescan", no_argument, NULL,
+					GETOPT_VAL_RESCAN },
+				{ "no-rescan", no_argument, NULL,
+					GETOPT_VAL_NO_RESCAN },
+				{ NULL, 0, NULL, 0 }
+			};
+			int c = getopt_long(argc, argv, "", long_options, NULL);
 
-		if (c < 0)
-			break;
-		switch (c) {
-		case GETOPT_VAL_RESCAN:
-			rescan = 1;
-			break;
-		default:
-			/* Usage printed by the caller */
-			return -1;
+			if (c < 0)
+				break;
+			switch (c) {
+			case GETOPT_VAL_RESCAN:
+				rescan = 1;
+				break;
+			case GETOPT_VAL_NO_RESCAN:
+				rescan = 0;
+				break;
+			default:
+				/* Usage printed by the caller */
+				return -1;
+			}
 		}
+	} else {
+		clean_args_no_options(argc, argv, usage_str);
 	}
 
 	if (check_argc_exact(argc - optind, 3))
-		return -1;
+		usage(usage_str);
 
 	memset(&args, 0, sizeof(args));
 	args.assign = assign;
@@ -115,21 +126,22 @@ static int qgroup_assign(int assign, int argc, char **argv)
 	return ret;
 }
 
-static int qgroup_create(int create, int argc, char **argv)
+static int _cmd_qgroup_create(int create, int argc, char **argv)
 {
 	int ret = 0;
 	int fd;
 	int e;
-	char *path = argv[2];
+	char *path;
 	struct btrfs_ioctl_qgroup_create_args args;
 	DIR *dirstream = NULL;
 
-	if (check_argc_exact(argc, 3))
+	if (check_argc_exact(argc - optind, 2))
 		return -1;
 
 	memset(&args, 0, sizeof(args));
 	args.create = create;
-	args.qgroupid = parse_qgroupid(argv[1]);
+	args.qgroupid = parse_qgroupid(argv[optind]);
+	path = argv[optind + 1];
 
 	fd = btrfs_open_dir(path, &dirstream, 1);
 	if (fd < 0)
@@ -201,16 +213,13 @@ static const char * const cmd_qgroup_assign_usage[] = {
 	"Assign SRC as the child qgroup of DST",
 	"",
 	"--rescan       schedule qutoa rescan if needed",
-	"--no-rescan    ",
+	"--no-rescan    don't schedule quota rescan",
 	NULL
 };
 
 static int cmd_qgroup_assign(int argc, char **argv)
 {
-	int ret = qgroup_assign(1, argc, argv);
-	if (ret < 0)
-		usage(cmd_qgroup_assign_usage);
-	return ret;
+	return _cmd_qgroup_assign(1, argc, argv, cmd_qgroup_assign_usage);
 }
 
 static const char * const cmd_qgroup_remove_usage[] = {
@@ -221,10 +230,7 @@ static const char * const cmd_qgroup_remove_usage[] = {
 
 static int cmd_qgroup_remove(int argc, char **argv)
 {
-	int ret = qgroup_assign(0, argc, argv);
-	if (ret < 0)
-		usage(cmd_qgroup_remove_usage);
-	return ret;
+	return _cmd_qgroup_assign(0, argc, argv, cmd_qgroup_remove_usage);
 }
 
 static const char * const cmd_qgroup_create_usage[] = {
@@ -235,7 +241,12 @@ static const char * const cmd_qgroup_create_usage[] = {
 
 static int cmd_qgroup_create(int argc, char **argv)
 {
-	int ret = qgroup_create(1, argc, argv);
+	int ret;
+
+	clean_args_no_options(argc, argv, cmd_qgroup_create_usage);
+
+	ret = _cmd_qgroup_create(1, argc, argv);
+
 	if (ret < 0)
 		usage(cmd_qgroup_create_usage);
 	return ret;
@@ -249,7 +260,12 @@ static const char * const cmd_qgroup_destroy_usage[] = {
 
 static int cmd_qgroup_destroy(int argc, char **argv)
 {
-	int ret = qgroup_create(0, argc, argv);
+	int ret;
+
+	clean_args_no_options(argc, argv, cmd_qgroup_destroy_usage);
+
+	ret = _cmd_qgroup_create(0, argc, argv);
+
 	if (ret < 0)
 		usage(cmd_qgroup_destroy_usage);
 	return ret;
@@ -293,7 +309,6 @@ static int cmd_qgroup_show(int argc, char **argv)
 
 	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
 
-	optind = 1;
 	while (1) {
 		int c;
 		static const struct option long_options[] = {
@@ -345,13 +360,19 @@ static int cmd_qgroup_show(int argc, char **argv)
 	path = argv[optind];
 	fd = btrfs_open_dir(path, &dirstream, 1);
 	if (fd < 0) {
-		btrfs_qgroup_free_filter_set(filter_set);
-		btrfs_qgroup_free_comparer_set(comparer_set);
+		free(filter_set);
+		free(comparer_set);
 		return 1;
 	}
 
 	if (filter_flag) {
-		qgroupid = btrfs_get_path_rootid(fd);
+		ret = lookup_path_rootid(fd, &qgroupid);
+		if (ret < 0) {
+			error("cannot resolve rootid for %s: %s",
+					path, strerror(-ret));
+			close_file_or_dir(fd, dirstream);
+			goto out;
+		}
 		if (filter_flag & 0x1)
 			btrfs_qgroup_setup_filter(&filter_set,
 					BTRFS_QGROUP_FILTER_ALL_PARENT,
@@ -367,6 +388,7 @@ static int cmd_qgroup_show(int argc, char **argv)
 	if (ret < 0)
 		error("can't list qgroups: %s", strerror(e));
 
+out:
 	return !!ret;
 }
 
@@ -392,7 +414,6 @@ static int cmd_qgroup_limit(int argc, char **argv)
 	int exclusive = 0;
 	DIR *dirstream = NULL;
 
-	optind = 1;
 	while (1) {
 		int c = getopt(argc, argv, "ce");
 		if (c < 0)
