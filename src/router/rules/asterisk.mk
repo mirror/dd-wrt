@@ -172,6 +172,8 @@ asterisk-install:
 #	make -C chan_dongle install
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
@@ -184,8 +186,6 @@ asterisk-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
-	rm -rf $(INSTALLDIR)/util-linux/bin
-	rm -rf $(INSTALLDIR)/util-linux/sbin
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
 ifneq ($(CONFIG_MC),y)
