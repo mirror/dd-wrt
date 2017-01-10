@@ -13,6 +13,10 @@ mc-configure: ncurses
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
 	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
 	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
@@ -73,6 +77,10 @@ mc: ncurses
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
 	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
 	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
@@ -81,6 +89,37 @@ mc: ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	$(MAKE) -j 4 -C mc2/slang
 	$(MAKE) -j 4 -C mc2
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+
+
 
 mc-install:
 	install -D mc2/slang/src/elf$(ARCH)objs/libslang.so.2 $(INSTALLDIR)/mc/usr/lib/libslang.so.2

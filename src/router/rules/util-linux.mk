@@ -28,16 +28,16 @@ util-linux-install:
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
-ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
 	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+ifneq ($(CONFIG_ASTERISK),y)
 	rm -rf $(INSTALLDIR)/util-linux/usr/share
 	rm -rf $(INSTALLDIR)/util-linux/usr/include
 	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
-	rm -rf $(INSTALLDIR)/util-linux/bin
-	rm -rf $(INSTALLDIR)/util-linux/sbin
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
 endif
