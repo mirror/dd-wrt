@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3239 | brainslayer | 2017-01-11 01:36:39 +0100 (Wed, 11 Jan 2017) | 1 line
+
+update mwlwifi driver
+------------------------------------------------------------------------
 r3238 | brainslayer | 2017-01-11 01:28:53 +0100 (Wed, 11 Jan 2017) | 1 line
 
 fixes for athk like connectivity problems on channel 169
