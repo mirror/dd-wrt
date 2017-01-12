@@ -51,7 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600)
 
 static char *getdisc(void)	// works only for squashfs 
 {
@@ -148,7 +148,7 @@ void start_devinit(void)
 	mkdir("/dev/misc", 0700);
 	mknod("/dev/misc/gpio", S_IFCHR | 0644, makedev(125, 0));
 #endif
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 	fprintf(stderr, "waiting for hotplug\n");
 	char dev[64];
 	char *disc = getdisc();

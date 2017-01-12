@@ -26,7 +26,7 @@ static int usb_add_ufd(char *dev);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 #define DUMPFILE_PART	"/tmp/parttype.dump"
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 static char *getdisc(void)	// works only for squashfs 
 {
 	int i;
@@ -426,7 +426,7 @@ static int usb_add_ufd(char *devpath)
 			if (mounted[i])
 				continue;
 
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 			char check[32];
 			strcpy(check, getdisc());
 			if (!strncmp(entry->d_name, check, 5)) {
