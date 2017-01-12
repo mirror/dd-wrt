@@ -6,6 +6,8 @@
 #include <mm/mmu_decl.h>
 #include <asm/machdep.h>
 #include <linux/of_platform.h>
+#include <linux/of_address.h>
+#include <linux/of_irq.h>
 #include <asm/mpic.h>
 #include <asm/mtvic.h>
 

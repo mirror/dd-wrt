@@ -12,20 +12,24 @@ static int rb_exclude_device(struct pci_controller *hose,
 }
 #endif /* CONFIG_PCI */
 
+
+int __init fsl_pci_init(void);
+
 void __init rb_init_pci(void)
 {
-	struct device_node *np;
+/*	struct device_node *np;
 
 	for_each_compatible_node(np, "pci", "fsl,mpc8540-pci")
 	    fsl_add_bridge(np, 1);
 
 	for_each_compatible_node(np, "pci", "fsl,mpc8540-pcie")
 	    fsl_add_bridge(np, 0);
-
+*/
+	fsl_pci_init();
 	ppc_md.pci_exclude_device = rb_exclude_device;
 }
 
-static void __init rb_secondary_bridge_fixup(struct pci_dev *dev) {
+static void rb_secondary_bridge_fixup(struct pci_dev *dev) {
 	/* enable i/o space & memory space and bus master control */
 	pci_write_config_word(dev, PCI_COMMAND, 7);
 
