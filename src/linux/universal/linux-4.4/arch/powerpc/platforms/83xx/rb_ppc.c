@@ -169,7 +169,7 @@ void __init rbppc_init_irq(void)
 
 static int __init rbppc_probe(void)
 {
-	char *model;
+	const char *model;
 
 	model = of_get_flat_dt_prop(of_get_flat_dt_root(), "model", NULL);
 

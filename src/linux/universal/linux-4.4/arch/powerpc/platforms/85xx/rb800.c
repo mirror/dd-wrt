@@ -3,6 +3,7 @@
 #include <asm/mpic.h>
 #include <asm/mtvic.h>
 #include <linux/of_platform.h>
+#include <linux/of_fdt.h>
 #include <sysdev/fsl_pci.h>
 #include <asm/rb_aux.h>
 
@@ -18,7 +19,7 @@ static void __init rb800_setup_arch(void)
 
 static int __init rb800_probe(void)
 {
-	char *model;
+	const char *model;
 
 	model = of_get_flat_dt_prop(of_get_flat_dt_root(), "model", NULL);
 

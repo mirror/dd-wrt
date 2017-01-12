@@ -3976,6 +3976,32 @@ static int nand_dt_init(struct mtd_info *mtd, struct nand_chip *chip,
 	return 0;
 }
 
+int nand_lock_and_callback(struct mtd_info *mtd,
+			   int (*callback)(struct mtd_info *, void *),
+			   void *priv)
+{
+	int ret;
+	struct nand_chip *chip = mtd->priv;
+	if (chip == NULL) {
+		/* this is partition - get a master */
+		mtd = *(struct mtd_info **)(mtd + 1);
+		chip = mtd->priv;
+	}
+
+	/* Grab the lock and see if the device is available */
+	nand_get_device(mtd , FL_READING);
+
+	chip->select_chip(mtd, 0);
+
+	ret = (*callback)(mtd, priv);
+
+	chip->select_chip(mtd, -1);
+
+	/* Deselect and wake up anyone waiting on the device */
+	nand_release_device(mtd);
+	return ret;
+}
+
 /**
  * nand_scan_ident - [NAND Interface] Scan for the NAND device
  * @mtd: MTD device structure
