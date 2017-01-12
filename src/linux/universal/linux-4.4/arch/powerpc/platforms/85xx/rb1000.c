@@ -4,6 +4,8 @@
 #include <asm/mtvic.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
+#include <linux/of_address.h>
+#include <linux/of_fdt.h>
 #include <sysdev/fsl_pci.h>
 #include <asm/rb_aux.h>
 #include <asm/vm.h>
@@ -76,7 +78,7 @@ static void add_of_property(struct device_node *np, struct property *pp,
 	pp->length = size;
 	pp->value = value;
 
-	prom_add_property(np, pp);
+	of_add_property(np, pp);
 }
 
 static void add_crypto_of_node(void)
@@ -95,7 +97,7 @@ static void add_crypto_of_node(void)
 	np = &crypto_node;
 	memset(np, 0, sizeof(struct device_node));
 	np->full_name = "crypto@30000";
-	kref_init(&np->kref);
+	kref_init(&np->kobj.kref);
 	
 	add_of_property(np, &comp_prop, "compatible", 11, "fsl,sec2.0");
 
@@ -176,7 +178,7 @@ static void __init rb1000_setup_arch(void)
 
 static int __init rb1000_probe(void)
 {
-	char *model;
+	const char *model;
 
 	model = of_get_flat_dt_prop(of_get_flat_dt_root(), "model", NULL);
 
