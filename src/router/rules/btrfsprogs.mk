@@ -61,6 +61,7 @@ btrfsprogs-clean:
 	make -C btrfsprogs clean
 
 btrfsprogs-install:	
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_ZABBIX),y)
@@ -79,3 +80,32 @@ endif
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib64
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
