@@ -959,6 +959,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 	if (nvram_matchi("dhcpfwd_enable", 1)) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div>\n");
+		websWrite(wp, "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" />\n");
 		show_ip(wp, NULL, "dhcpfwd_ip", 0, "idx.dhcp_srv");
 		websWrite(wp, "</div>\n");
 	} else {
