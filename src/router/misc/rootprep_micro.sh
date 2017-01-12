@@ -129,7 +129,6 @@ echo "/opt/usr/lib" >> etc/ld.so.conf
 echo "/opt/usr/local/lib" >> etc/ld.so.conf
 echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
-echo "" > tmp/TZ
 /sbin/ldconfig -r $ROOTDIR
 
 # miscellaneous
