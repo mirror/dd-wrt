@@ -55,19 +55,41 @@
 #include <cymac.h>
 #include "devices/wireless.c"
 
+static char *getdisc(void)	// works only for squashfs 
+{
+	int i;
+	static char ret[4];
+	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+		"sdi2"
+	};
+	for (i = 0; i < 9; i++) {
+		char dev[64];
+
+		sprintf(dev, "/dev/%s", disks[i]);
+		FILE *in = fopen(dev, "rb");
+
+		if (in == NULL)
+			continue;	// no second partition or disc does not
+		// exist, skipping
+		char buf[4];
+
+		fread(buf, 4, 1, in);
+		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
+			fclose(in);
+			// filesystem detected
+			strncpy(ret, disks[i], 3);
+			return ret;
+		}
+		fclose(in);
+	}
+	return NULL;
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
 	struct stat tmp_stat;
 	time_t tm = 0;
-
-#ifndef HAVE_WDR4900
-	eval("mount", "-o", "remount,rw", "/dev/root");
-	eval("mount", "-o", "remount,rw", "/dev/sda1", "/");
-	sleep(1);		//give some time for remount
-	mkdir("/usr/local", 0700);
-	mkdir("/usr/local/nvram", 0700);
-#endif
 	/*
 	 * Setup console 
 	 */
