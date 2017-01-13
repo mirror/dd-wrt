@@ -197,6 +197,7 @@ endif
 endif
 endif
 endif
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
 	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
 
