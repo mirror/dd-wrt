@@ -152,7 +152,7 @@ ep_found:
 
 	if (g->speed == USB_SPEED_HIGH && (usb_endpoint_xfer_isoc(_ep->desc) ||
 				usb_endpoint_xfer_int(_ep->desc)))
-		_ep->mult = usb_endpoint_maxp(_ep->desc) & 0x7ff;
+		_ep->mult = ((usb_endpoint_maxp(_ep->desc) & 0x1800) >> 11) + 1;
 
 	if (!want_comp_desc)
 		return 0;
