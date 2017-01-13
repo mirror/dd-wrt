@@ -10,6 +10,8 @@ xfsprogs-clean:
 
 xfsprogs-install:
 	-make -C xfsprogs install DESTDIR=$(INSTALLDIR)/e2fsprogs PKG_SBIN_DIR=$(INSTALLDIR)/e2fsprogs/usr/sbin PKG_ROOT_SBIN_DIR=$(INSTALLDIR)/e2fsprogs/sbin PKG_ROOT_LIB_DIR=$(INSTALLDIR)/e2fsprogs/lib PKG_LIB_DIR=$(INSTALLDIR)/e2fsprogs/usr/lib	\
-		PKG_MAN_DIR=$(INSTALLDIR)/e2fsprogs/usr/man \
-		PKG_LOCALE_DIR=$(INSTALLDIR)/e2fsprogs/usr/share/locale \
-		PKG_DOC_DIR=$(INSTALLDIR)/e2fsprogs/usr/share/doc/xfsprogs
+		PKG_MAN_DIR=$(INSTALLDIR)/xfsprogs/usr/man \
+		PKG_LOCALE_DIR=$(INSTALLDIR)/xfsprogs/usr/share/locale \
+		PKG_DOC_DIR=$(INSTALLDIR)/xfsprogs/usr/share/doc/xfsprogs
+	rm -rf $(INSTALLDIR)/xfsprogs/usr/share
+	rm -rf $(INSTALLDIR)/xfsprogs/usr/man

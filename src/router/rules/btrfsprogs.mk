@@ -75,6 +75,7 @@ endif
 endif
 endif
 	-make -C btrfsprogs install DESTDIR=$(INSTALLDIR)/btrfsprogs prefix=/usr
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	-rm -f $(INSTALLDIR)/btrfsprogs/usr/bin/btrfs*
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/include
 	-rm -rf $(INSTALLDIR)/btrfsprogs/usr/lib
