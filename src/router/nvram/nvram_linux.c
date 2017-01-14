@@ -103,7 +103,7 @@ char *nvram_get(const char *name)
 	unsigned long *off;
 
 	if (nvram_fd < 0) {
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600)
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 		if (in == NULL) {
 			unlock();
@@ -148,7 +148,7 @@ int nvram_getall(char *buf, int count)
 	int ret;
 
 	if (nvram_fd < 0) {
-#ifdef HAVE_X86
+#if defined(HAVE_X86) || defined(HAVE_RB600)
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 		if (in == NULL)
 			return 0;
