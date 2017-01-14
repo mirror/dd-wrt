@@ -31,7 +31,7 @@ static char *getdisc(void)	// works only for squashfs
 {
 	int i;
 	static char ret[4];
-	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
+	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2"
 	};
 	for (i = 0; i < 9; i++) {
@@ -47,6 +47,12 @@ static char *getdisc(void)	// works only for squashfs
 
 		fread(buf, 4, 1, in);
 		if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
+			fclose(in);
+			// filesystem detected
+			strncpy(ret, disks[i], 3);
+			return ret;
+		}
+		if (buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h') {
 			fclose(in);
 			// filesystem detected
 			strncpy(ret, disks[i], 3);
