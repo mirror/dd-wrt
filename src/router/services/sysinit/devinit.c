@@ -82,6 +82,13 @@ static char *getdisc(void)	// works only for squashfs
 				strncpy(ret, disks[i], 3);
 				return ret;
 			}
+			if (buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h') {
+				fclose(in);
+				// filesystem detected
+				fprintf(stderr, "file system detected at %s\n", disks[i]);
+				strncpy(ret, disks[i], 3);
+				return ret;
+			}
 			fclose(in);
 		      skip:;
 		}
@@ -162,6 +169,7 @@ void start_devinit(void)
 	sprintf(dev, "/dev/%s3", disc);
 	insmod("jbd2");
 	insmod("mbcache");
+	insmod("crc16");
 	insmod("ext4");
 	if (mount(dev, "/usr/local", "ext4", MS_MGC_VAL, NULL)) {
 		eval("mkfs.ext4", "-F", "-b", " 1024", dev);

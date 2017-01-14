@@ -228,7 +228,7 @@ static void softcontrol_wlan_led(void)	// done in watchdog.c for non-micro build
  */
 static void checkupgrade(void)
 {
-#ifndef HAVE_X86
+#if !defined(HAVE_X86) && !defined(HAVE_RB600)
 	FILE *in = fopen("/tmp/firmware.bin", "rb");
 
 	if (in != NULL) {

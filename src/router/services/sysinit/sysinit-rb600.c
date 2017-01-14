@@ -80,6 +80,12 @@ static char *getdisc(void)	// works only for squashfs
 			strncpy(ret, disks[i], 3);
 			return ret;
 		}
+		if (buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h') {
+			fclose(in);
+			// filesystem detected
+			strncpy(ret, disks[i], 3);
+			return ret;
+		}
 		fclose(in);
 	}
 	return NULL;
@@ -93,7 +99,37 @@ void start_sysinit(void)
 	/*
 	 * Setup console 
 	 */
-
+#ifndef HAVE_WDR4900
+	//recover nvram if available
+	char dev[64];
+	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
+	if (in == NULL) {
+		fprintf(stderr, "recover broken nvram\n");
+		sprintf(dev, "/dev/sda");
+		in = fopen(dev, "rb");
+		fseeko(in, 0, SEEK_END);
+		off_t mtdlen = ftello(in);
+		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
+		unsigned char *mem = malloc(65536);
+		fread(mem, 65536, 1, in);
+		fclose(in);
+		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
+			fprintf(stderr, "found recovery\n");
+			in = fopen("/usr/local/nvram/nvram.bin", "wb");
+			if (in != NULL) {
+				fwrite(mem, 65536, 1, in);
+				fclose(in);
+				free(mem);
+				eval("sync");
+				sleep(5);
+				eval("event", "5", "1", "15");
+			}
+		}
+		free(mem);
+	} else {
+		fclose(in);
+	}
+#endif
 	cprintf("sysinit() klogctl\n");
 	klogctl(8, NULL, nvram_geti("console_loglevel"));
 	cprintf("sysinit() get router\n");
@@ -217,35 +253,6 @@ void start_sysinit(void)
 		close(s);
 	}
 #ifndef HAVE_WDR4900
-	//recover nvram if available
-	char dev[64];
-	FILE *in = fopen64("/usr/local/nvram/nvram.bin", "rb");
-	if (in == NULL) {
-		fprintf(stderr, "recover broken nvram\n");
-		sprintf(dev, "/dev/sda");
-		in = fopen(dev, "rb");
-		fseeko(in, 0, SEEK_END);
-		off_t mtdlen = ftello(in);
-		fseeko(in, mtdlen - (65536 * 2), SEEK_SET);
-		unsigned char *mem = malloc(65536);
-		fread(mem, 65536, 1, in);
-		fclose(in);
-		if (mem[0] == 0x46 && mem[1] == 0x4c && mem[2] == 0x53 && mem[3] == 0x48) {
-			fprintf(stderr, "found recovery\n");
-			in = fopen("/usr/local/nvram/nvram.bin", "wb");
-			if (in != NULL) {
-				fwrite(mem, 65536, 1, in);
-				fclose(in);
-				free(mem);
-				eval("sync");
-				sleep(5);
-				eval("event", "5", "1", "15");
-			}
-		}
-		free(mem);
-	} else {
-		fclose(in);
-	}
 #elif !defined(HAVE_UNIWIP)
 	eval("swconfig", "dev", "switch0", "set", "reset", "1");
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
