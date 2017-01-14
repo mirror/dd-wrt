@@ -1330,6 +1330,9 @@ int isSR71E(char *ifname)
 	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4005")) {	// SR71-15
 		return 1;
 	}
+	if (!strcmp(cvendor, "0x0777") && !strcmp(cproduct, "0x4002")) {	// SR71-12
+		return 1;
+	}
 	return 0;
 
 }
