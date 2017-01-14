@@ -509,7 +509,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 #ifndef HAVE_RB500
-#ifndef HAVE_X86
+#if !defined(HAVE_X86) && !defined(HAVE_RB600)
 	/* 
 	 * erase [device] 
 	 */

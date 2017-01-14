@@ -30,7 +30,7 @@ cc-option = $(shell if $(CC) $(CFLAGS) $(1) -S -o /dev/null -xc /dev/null \
 
 
 
-INITCFLAGS = $(call cc-option,-Os -ffunction-sections -fdata-sections,)
+INITCFLAGS = $(call cc-option,-ffunction-sections -fdata-sections,)
 # -fno-guess-branch-probability: prohibit pseudo-random guessing
 # of branch probabilities (hopefully makes bloatcheck more stable):
 #INITCFLAGS += $(call cc-option,-fno-guess-branch-probability,)
