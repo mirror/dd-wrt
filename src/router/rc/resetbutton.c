@@ -754,6 +754,14 @@ static void handle_reset(void)
 		// database
 		eval("rm", "-f", "/etc/nvram/*");	// delete nvram
 		// database
+#elif HAVE_RB600
+		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
+		// database
+		unlink("/tmp/nvram/.lock");	// delete
+		// nvram
+		// database
+		eval("rm", "-f", "/etc/nvram/*");	// delete nvram
+		// database
 #elif HAVE_MAGICBOX
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 		// database
