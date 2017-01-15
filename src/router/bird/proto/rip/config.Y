@@ -38,6 +38,7 @@ CF_KEYWORDS(RIP, ECMP, LIMIT, WEIGHT, INFINITY, METRIC, UPDATE, TIMEOUT,
 	    AUTHENTICATION, NONE, PLAINTEXT, CRYPTOGRAPHIC, MD5, TTL, SECURITY,
 	    RX, TX, BUFFER, LENGTH, PRIORITY, ONLY, LINK, RIP_METRIC, RIP_TAG)
 
+%type <t> opttext2
 %type <i> rip_auth
 
 CF_GRAMMAR
@@ -174,6 +175,11 @@ rip_iface_opt_list:
  | '{' rip_iface_opts '}'
  ;
 
+opttext2:
+    TEXT
+ | /* empty */ { $$ = NULL; }
+ ;
+
 rip_iface:
   rip_iface_start iface_patt_list_nopx rip_iface_opt_list rip_iface_finish;
 
@@ -183,10 +189,10 @@ CF_ADDTO(dynamic_attr, RIP_TAG { $$ = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP
 
 CF_CLI_HELP(SHOW RIP, ..., [[Show information about RIP protocol]]);
 
-CF_CLI(SHOW RIP INTERFACES, optsym opttext, [<name>] [\"<interface>\"], [[Show information about RIP interfaces]])
+CF_CLI(SHOW RIP INTERFACES, optsym opttext2, [<name>] [\"<interface>\"], [[Show information about RIP interfaces]])
 { rip_show_interfaces(proto_get_named($4, &proto_rip), $5); };
 
-CF_CLI(SHOW RIP NEIGHBORS, optsym opttext, [<name>] [\"<interface>\"], [[Show information about RIP neighbors]])
+CF_CLI(SHOW RIP NEIGHBORS, optsym opttext2, [<name>] [\"<interface>\"], [[Show information about RIP neighbors]])
 { rip_show_neighbors(proto_get_named($4, &proto_rip), $5); };
 
 
