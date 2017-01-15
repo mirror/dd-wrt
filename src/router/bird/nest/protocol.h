@@ -40,7 +40,8 @@ struct protocol {
   int name_counter;			/* Counter for automatic name generation */
   int attr_class;			/* Attribute class known to this protocol */
   int multitable;			/* Protocol handles all announce hooks itself */
-  unsigned preference;			/* Default protocol preference */
+  uint preference;			/* Default protocol preference */
+  uint config_size;			/* Size of protocol config */
 
   void (*preconfig)(struct protocol *, struct config *);	/* Just before configuring */
   void (*postconfig)(struct proto_config *);			/* After configuring each instance */
@@ -75,7 +76,7 @@ void protos_dump_all(void);
 
 extern struct protocol
   proto_device, proto_radv, proto_rip, proto_static,
-  proto_ospf, proto_pipe, proto_bgp, proto_bfd;
+  proto_ospf, proto_pipe, proto_bgp, proto_bfd, proto_babel;
 
 /*
  *	Routing Protocol Instance
@@ -126,7 +127,7 @@ struct proto_stats {
   u32 exp_updates_received;	/* Number of route updates received */
   u32 exp_updates_rejected;	/* Number of route updates rejected by protocol */
   u32 exp_updates_filtered;	/* Number of route updates rejected by filters */
-  u32 exp_updates_accepted;	/* Number of route updates accepted and exported */ 
+  u32 exp_updates_accepted;	/* Number of route updates accepted and exported */
   u32 exp_withdraws_received;	/* Number of route withdraws received */
   u32 exp_withdraws_accepted;	/* Number of route withdraws accepted and processed */
 };
@@ -148,7 +149,7 @@ struct proto {
   byte disabled;			/* Manually disabled */
   byte proto_state;			/* Protocol state machine (PS_*, see below) */
   byte core_state;			/* Core state machine (FS_*, see below) */
-  byte export_state;			/* Route export state (ES_*, see below) */	
+  byte export_state;			/* Route export state (ES_*, see below) */
   byte reconfiguring;			/* We're shutting down due to reconfiguration */
   byte refeeding;			/* We are refeeding (valid only if export_state == ES_FEEDING) */
   byte flushing;			/* Protocol is flushed in current flush loop round */
@@ -157,6 +158,7 @@ struct proto {
   byte gr_wait;				/* Route export to protocol is postponed until graceful restart */
   byte down_sched;			/* Shutdown is scheduled for later (PDS_*) */
   byte down_code;			/* Reason for shutdown (PDC_* codes) */
+  byte merge_limit;			/* Maximal number of nexthops for RA_MERGED */
   u32 hash_key;				/* Random key used for hashing of neighbors */
   bird_clock_t last_state_change;	/* Time of last state transition */
   char *last_state_name_announced;	/* Last state name we've announced to the user */
@@ -178,7 +180,8 @@ struct proto {
    *	   reload_routes   Request protocol to reload all its routes to the core
    *			(using rte_update()). Returns: 0=reload cannot be done,
    *			1= reload is scheduled and will happen (asynchronously).
-   *	   feed_done	Notify protocol about finish of route feeding.
+   *	   feed_begin	Notify protocol about beginning of route feeding.
+   *	   feed_end	Notify protocol about finish of route feeding.
    */
 
   void (*if_notify)(struct proto *, unsigned flags, struct iface *i);
@@ -189,14 +192,16 @@ struct proto {
   void (*store_tmp_attrs)(struct rte *rt, struct ea_list *attrs);
   int (*import_control)(struct proto *, struct rte **rt, struct ea_list **attrs, struct linpool *pool);
   int (*reload_routes)(struct proto *);
-  void (*feed_done)(struct proto *);
+  void (*feed_begin)(struct proto *, int initial);
+  void (*feed_end)(struct proto *);
 
   /*
    *	Routing entry hooks (called only for routes belonging to this protocol):
    *
-   *	   rte_recalculate Called at the beginning of the best route selection  
+   *	   rte_recalculate Called at the beginning of the best route selection
    *	   rte_better	Compare two rte's and decide which one is better (1=first, 0=second).
    *       rte_same	Compare two rte's and decide whether they are identical (1=yes, 0=no).
+   *       rte_mergable	Compare two rte's and decide whether they could be merged (1=yes, 0=no).
    *	   rte_insert	Called whenever a rte is inserted to a routing table.
    *	   rte_remove	Called whenever a rte is removed from the routing table.
    */
@@ -204,6 +209,7 @@ struct proto {
   int (*rte_recalculate)(struct rtable *, struct network *, struct rte *, struct rte *, struct rte *);
   int (*rte_better)(struct rte *, struct rte *);
   int (*rte_same)(struct rte *, struct rte *);
+  int (*rte_mergable)(struct rte *, struct rte *);
   void (*rte_insert)(struct network *, struct rte *);
   void (*rte_remove)(struct network *, struct rte *);
 
@@ -239,7 +245,7 @@ struct proto_spec {
 
 
 void *proto_new(struct proto_config *, unsigned size);
-void *proto_config_new(struct protocol *, unsigned size, int class);
+void *proto_config_new(struct protocol *, int class);
 void proto_copy_config(struct proto_config *dest, struct proto_config *src);
 void proto_request_feeding(struct proto *p);
 
@@ -258,15 +264,15 @@ void proto_graceful_restart_unlock(struct proto *p);
 void proto_show_limit(struct proto_limit *l, const char *dsc);
 void proto_show_basic_info(struct proto *p);
 
-void proto_cmd_show(struct proto *, unsigned int, int);
-void proto_cmd_disable(struct proto *, unsigned int, int);
-void proto_cmd_enable(struct proto *, unsigned int, int);
-void proto_cmd_restart(struct proto *, unsigned int, int);
-void proto_cmd_reload(struct proto *, unsigned int, int);
-void proto_cmd_debug(struct proto *, unsigned int, int);
-void proto_cmd_mrtdump(struct proto *, unsigned int, int);
+void proto_cmd_show(struct proto *, uint, int);
+void proto_cmd_disable(struct proto *, uint, int);
+void proto_cmd_enable(struct proto *, uint, int);
+void proto_cmd_restart(struct proto *, uint, int);
+void proto_cmd_reload(struct proto *, uint, int);
+void proto_cmd_debug(struct proto *, uint, int);
+void proto_cmd_mrtdump(struct proto *, uint, int);
 
-void proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, unsigned int, int), int restricted, unsigned int arg);
+void proto_apply_cmd(struct proto_spec ps, void (* cmd)(struct proto *, uint, int), int restricted, uint arg);
 struct proto *proto_get_named(struct symbol *, struct protocol *);
 
 #define CMD_RELOAD	0
@@ -350,7 +356,7 @@ void proto_notify_state(struct proto *p, unsigned state);
  *		FEEDING/UP --> HAPPY/UP --> FLUSHING/STOP|DOWN -->
  *		HUNGRY/STOP|DOWN --> HUNGRY/DOWN
  *
- *	Sometimes, protocol might switch from HAPPY/UP to FEEDING/UP 
+ *	Sometimes, protocol might switch from HAPPY/UP to FEEDING/UP
  *	if it wants to refeed the routes (for example BGP does so
  *	as a result of received ROUTE-REFRESH request).
  */
@@ -432,7 +438,7 @@ proto_reset_limit(struct proto_limit *l)
     l->state = PLS_INITIAL;
 }
 
- 
+
 /*
  *	Route Announcement Hook
  */

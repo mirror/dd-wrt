@@ -10,6 +10,7 @@
 #include "nest/bird.h"
 #include "nest/password.h"
 #include "lib/string.h"
+#include "lib/mac.h"
 
 struct password_item *last_password_item = NULL;
 
@@ -36,9 +37,47 @@ password_find(list *l, int first_fit)
   return pf;
 }
 
-void password_cpy(char *dst, char *src, int size)
+struct password_item *
+password_find_by_id(list *l, uint id)
 {
-  bzero(dst, size);
-  memcpy(dst, src, (strlen(src) < (unsigned) size ? strlen(src) : (unsigned) size));
+  struct password_item *pi;
+
+  if (!l)
+    return NULL;
+
+  WALK_LIST(pi, *l)
+    if ((pi->id == id) && (pi->accfrom <= now_real) && (now_real < pi->accto))
+      return pi;
+
+  return NULL;
 }
 
+struct password_item *
+password_find_by_value(list *l, char *pass, uint size)
+{
+  struct password_item *pi;
+
+  if (!l)
+    return NULL;
+
+  WALK_LIST(pi, *l)
+    if (password_verify(pi, pass, size) && (pi->accfrom <= now_real) && (now_real < pi->accto))
+      return pi;
+
+  return NULL;
+}
+
+uint
+max_mac_length(list *l)
+{
+  struct password_item *pi;
+  uint val = 0;
+
+  if (!l)
+    return 0;
+
+  WALK_LIST(pi, *l)
+    val = MAX(val, mac_type_length(pi->alg));
+
+  return val;
+}

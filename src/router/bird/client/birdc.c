@@ -153,7 +153,7 @@ input_init(void)
 
   // readline library does strange things when stdin is nonblocking.
   // if (fcntl(0, F_SETFL, O_NONBLOCK) < 0)
-  //   die("fcntl: %m");
+  //   DIE("fcntl");
 }
 
 static void

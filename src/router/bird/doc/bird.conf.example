@@ -33,6 +33,10 @@
 # Turn on global debugging of all protocols
 #debug protocols all;
 
+# Turn on internal watchdog
+#watchdog warning 5 s;
+#watchdog timeout 30 s;
+
 # The direct protocol automatically generates device routes to
 # all network interfaces. Can exist in as many instances as you wish
 # if you want to populate multiple routing tables with device routes.
@@ -162,7 +166,7 @@ protocol static {
 #               };
 #	};
 #}
-		
+
 
 #protocol bgp {
 #	disabled;
@@ -186,7 +190,7 @@ protocol static {
 #	source address 198.51.100.14;	# What local address we use for the TCP connection
 #	password "secret";	# Password used for MD5 authentication
 #	rr client;		# I am a route reflector and the neighor is my client
-#	rr cluster id 1.0.0.1;	# Use this value for cluster id instead of my router id 
+#	rr cluster id 1.0.0.1;	# Use this value for cluster id instead of my router id
 #	export where source=RTS_STATIC;
 #	export filter {
 #		if source = RTS_STATIC then {
@@ -202,7 +206,7 @@ protocol static {
 #		reject;
 #	};
 #}
-# 
+#
 # Template usage example
 #template bgp rr_client {
 #	disabled;

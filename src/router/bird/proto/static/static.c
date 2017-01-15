@@ -42,10 +42,13 @@
 #include "nest/route.h"
 #include "nest/cli.h"
 #include "conf/conf.h"
+#include "filter/filter.h"
 #include "lib/string.h"
 #include "lib/alloca.h"
 
 #include "static.h"
+
+static linpool *static_lp;
 
 static inline rtable *
 p_igp_table(struct proto *p)
@@ -54,12 +57,11 @@ p_igp_table(struct proto *p)
   return cf->igp_table ? cf->igp_table->table : p->table;
 }
 
-
 static void
 static_install(struct proto *p, struct static_route *r, struct iface *ifa)
 {
   net *n;
-  rta a, *aa;
+  rta a;
   rte *e;
 
   if (r->installed > 0)
@@ -79,7 +81,6 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
     {
       struct static_route *r2;
       struct mpnh *nhs = NULL;
-      struct mpnh **nhp = &nhs;
 
       for (r2 = r->mp_next; r2; r2 = r2->mp_next)
 	if (r2->installed)
@@ -88,9 +89,7 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
 	    nh->gw = r2->via;
 	    nh->iface = r2->neigh->iface;
 	    nh->weight = r2->masklen; /* really */
-	    nh->next = NULL;
-	    *nhp = nh;
-	    nhp = &(nh->next);
+	    mpnh_insert(&nhs, nh);
 	  }
 
       /* There is at least one nexthop */
@@ -108,13 +107,21 @@ static_install(struct proto *p, struct static_route *r, struct iface *ifa)
   if (r->dest == RTDX_RECURSIVE)
     rta_set_recursive_next_hop(p->table, &a, p_igp_table(p), &r->via, &r->via);
 
-  aa = rta_lookup(&a);
+  /* We skip rta_lookup() here */
+
   n = net_get(p->table, r->net, r->masklen);
-  e = rte_get_temp(aa);
+  e = rte_get_temp(&a);
   e->net = n;
   e->pflags = 0;
+
+  if (r->cmds)
+    f_eval_rte(r->cmds, &e, static_lp);
+
   rte_update(p, n, e);
   r->installed = 1;
+
+  if (r->cmds)
+    lp_flush(static_lp);
 }
 
 static void
@@ -131,6 +138,29 @@ static_remove(struct proto *p, struct static_route *r)
   r->installed = 0;
 }
 
+static void
+static_bfd_notify(struct bfd_request *req);
+
+static void
+static_update_bfd(struct proto *p, struct static_route *r)
+{
+  struct neighbor *nb = r->neigh;
+  int bfd_up = (nb->scope > 0) && r->use_bfd;
+
+  if (bfd_up && !r->bfd_req)
+  {
+    // ip_addr local = ipa_nonzero(r->local) ? r->local : nb->ifa->ip;
+    r->bfd_req = bfd_request_session(p->pool, r->via, nb->ifa->ip, nb->iface,
+				     static_bfd_notify, r);
+  }
+
+  if (!bfd_up && r->bfd_req)
+  {
+    rfree(r->bfd_req);
+    r->bfd_req = NULL;
+  }
+}
+
 static int
 static_decide(struct static_config *cf, struct static_route *r)
 {
@@ -141,6 +171,9 @@ static_decide(struct static_config *cf, struct static_route *r)
     return 0;
 
   if (cf->check_link && !(r->neigh->iface->flags & IF_LINK_UP))
+    return 0;
+
+  if (r->bfd_req && r->bfd_req->state != BFD_STATE_UP)
     return 0;
 
   return 1;
@@ -161,6 +194,8 @@ static_add(struct proto *p, struct static_config *cf, struct static_route *r)
 	    r->chain = n->data;
 	    n->data = r;
 	    r->neigh = n;
+
+	    static_update_bfd(p, r);
 	    if (static_decide(cf, r))
 	      static_install(p, r, n->iface);
 	    else
@@ -190,6 +225,8 @@ static_add(struct proto *p, struct static_config *cf, struct static_route *r)
 		r2->chain = n->data;
 		n->data = r2;
 		r2->neigh = n;
+
+		static_update_bfd(p, r2);
 		r2->installed = static_decide(cf, r2);
 		count += r2->installed;
 	      }
@@ -212,6 +249,26 @@ static_add(struct proto *p, struct static_config *cf, struct static_route *r)
     }
 }
 
+static void
+static_rte_cleanup(struct proto *p UNUSED, struct static_route *r)
+{
+  struct static_route *r2;
+
+  if (r->bfd_req)
+  {
+    rfree(r->bfd_req);
+    r->bfd_req = NULL;
+  }
+
+  if (r->dest == RTD_MULTIPATH)
+    for (r2 = r->mp_next; r2; r2 = r2->mp_next)
+      if (r2->bfd_req)
+      {
+	rfree(r2->bfd_req);
+	r2->bfd_req = NULL;
+      }
+}
+
 static int
 static_start(struct proto *p)
 {
@@ -219,6 +276,9 @@ static_start(struct proto *p)
   struct static_route *r;
 
   DBG("Static: take off!\n");
+
+  if (!static_lp)
+    static_lp = lp_new(&root_pool, 1008);
 
   if (cf->igp_table)
     rt_lock_table(cf->igp_table->table);
@@ -241,7 +301,10 @@ static_shutdown(struct proto *p)
   WALK_LIST(r, cf->iface_routes)
     r->installed = 0;
   WALK_LIST(r, cf->other_routes)
+  {
+    static_rte_cleanup(p, r);
     r->installed = 0;
+  }
 
   return PS_DOWN;
 }
@@ -255,6 +318,44 @@ static_cleanup(struct proto *p)
     rt_unlock_table(cf->igp_table->table);
 }
 
+static void
+static_update_rte(struct proto *p, struct static_route *r)
+{
+  switch (r->dest)
+  {
+  case RTD_ROUTER:
+    if (static_decide((struct static_config *) p->cf, r))
+      static_install(p, r, r->neigh->iface);
+    else
+      static_remove(p, r);
+    break;
+
+  case RTD_NONE: /* a part of multipath route */
+  {
+    int decision = static_decide((struct static_config *) p->cf, r);
+    if (decision == r->installed)
+      break; /* no change */
+    r->installed = decision;
+
+    struct static_route *r1, *r2;
+    int count = 0;
+    r1 = (void *) r->if_name; /* really */
+    for (r2 = r1->mp_next; r2; r2 = r2->mp_next)
+      count += r2->installed;
+
+    if (count)
+    {
+      /* Set of nexthops changed - force reinstall */
+      r1->installed = 0;
+      static_install(p, r1, NULL);
+    }
+    else
+      static_remove(p, r1);
+
+    break;
+  }
+  }
+}
 
 static void
 static_neigh_notify(struct neighbor *n)
@@ -264,40 +365,21 @@ static_neigh_notify(struct neighbor *n)
 
   DBG("Static: neighbor notify for %I: iface %p\n", n->addr, n->iface);
   for(r=n->data; r; r=r->chain)
-    switch (r->dest)
-      {
-      case RTD_ROUTER:
-	if (static_decide((struct static_config *) p->cf, r))
-	  static_install(p, r, n->iface);
-	else
-	  static_remove(p, r);
-	break;
+  {
+    static_update_bfd(p, r);
+    static_update_rte(p, r);
+  }
+}
 
-      case RTD_NONE: /* a part of multipath route */
-	{
-	  int decision = static_decide((struct static_config *) p->cf, r);
-	  if (decision == r->installed)
-	    break; /* no change */
-	  r->installed = decision;
+static void
+static_bfd_notify(struct bfd_request *req)
+{
+  struct static_route *r = req->data;
+  struct proto *p = r->neigh->proto;
 
-	  struct static_route *r1, *r2;
-	  int count = 0;
-	  r1 = (void *) r->if_name; /* really */
-	  for (r2 = r1->mp_next; r2; r2 = r2->mp_next)
-	    count += r2->installed;
+  // if (req->down) TRACE(D_EVENTS, "BFD session down for nbr %I on %s", XXXX);
 
-	  if (count)
-	    {
-	      /* Set of nexthops changed - force reinstall */
-	      r1->installed = 0;
-	      static_install(p, r1, NULL);
-	    }
-	  else
-	    static_remove(p, r1);
-
-	  break;
-	}
-      }
+  static_update_rte(p, r);
 }
 
 static void
@@ -352,6 +434,12 @@ static_if_notify(struct proto *p, unsigned flags, struct iface *i)
     }
 }
 
+int
+static_rte_mergable(rte *pri UNUSED, rte *sec UNUSED)
+{
+  return 1;
+}
+
 void
 static_init_config(struct static_config *c)
 {
@@ -366,6 +454,7 @@ static_init(struct proto_config *c)
 
   p->neigh_notify = static_neigh_notify;
   p->if_notify = static_if_notify;
+  p->rte_mergable = static_rte_mergable;
 
   return p;
 }
@@ -394,7 +483,7 @@ static_same_dest(struct static_route *x, struct static_route *y)
       for (x = x->mp_next, y = y->mp_next;
 	   x && y;
 	   x = x->mp_next, y = y->mp_next)
-	if (!ipa_equal(x->via, y->via) || (x->via_if != y->via_if))
+	if (!ipa_equal(x->via, y->via) || (x->via_if != y->via_if) || (x->use_bfd != y->use_bfd))
 	  return 0;
       return !x && !y;
 
@@ -405,6 +494,13 @@ static_same_dest(struct static_route *x, struct static_route *y)
       return 1;
     }
 }
+
+static inline int
+static_same_rte(struct static_route *x, struct static_route *y)
+{
+  return static_same_dest(x, y) && i_same(x->cmds, y->cmds);
+}
+
 
 static void
 static_match(struct proto *p, struct static_route *r, struct static_config *n)
@@ -434,7 +530,7 @@ static_match(struct proto *p, struct static_route *r, struct static_config *n)
 
  found:
   /* If destination is different, force reinstall */
-  if ((r->installed > 0) && !static_same_dest(r, t))
+  if ((r->installed > 0) && !static_same_rte(r, t))
     t->installed = -1;
   else
     t->installed = r->installed;
@@ -471,6 +567,9 @@ static_reconfigure(struct proto *p, struct proto_config *new)
     }
   WALK_LIST(r, n->other_routes)
     static_add(p, n, r);
+
+  WALK_LIST(r, o->other_routes)
+    static_rte_cleanup(p, r);
 
   return 1;
 }
@@ -528,16 +627,17 @@ static_copy_config(struct proto_config *dest, struct proto_config *src)
 
 
 struct protocol proto_static = {
-  name:		"Static",
-  template:	"static%d",
-  preference:	DEF_PREF_STATIC,
-  init:		static_init,
-  dump:		static_dump,
-  start:	static_start,
-  shutdown:	static_shutdown,
-  cleanup:	static_cleanup,
-  reconfigure:	static_reconfigure,
-  copy_config:	static_copy_config
+  .name =		"Static",
+  .template =		"static%d",
+  .preference =		DEF_PREF_STATIC,
+  .config_size =	sizeof(struct static_config),
+  .init =		static_init,
+  .dump =		static_dump,
+  .start =		static_start,
+  .shutdown =		static_shutdown,
+  .cleanup =		static_cleanup,
+  .reconfigure =	static_reconfigure,
+  .copy_config =	static_copy_config
 };
 
 static void
@@ -556,13 +656,14 @@ static_show_rt(struct static_route *r)
     case RTDX_RECURSIVE: bsprintf(via, "recursive %I", r->via); break;
     default:		bsprintf(via, "???");
     }
-  cli_msg(-1009, "%I/%d %s%s", r->net, r->masklen, via, r->installed ? "" : " (dormant)");
+  cli_msg(-1009, "%I/%d %s%s%s", r->net, r->masklen, via,
+	  r->bfd_req ? " (bfd)" : "", r->installed ? "" : " (dormant)");
 
   struct static_route *r2;
   if (r->dest == RTD_MULTIPATH)
     for (r2 = r->mp_next; r2; r2 = r2->mp_next)
-      cli_msg(-1009, "\tvia %I%J weight %d%s", r2->via, r2->via_if, r2->masklen + 1, /* really */
-	      r2->installed ? "" : " (dormant)");
+      cli_msg(-1009, "\tvia %I%J weight %d%s%s", r2->via, r2->via_if, r2->masklen + 1, /* really */
+	      r2->bfd_req ? " (bfd)" : "", r2->installed ? "" : " (dormant)");
 }
 
 void

@@ -35,8 +35,19 @@ struct f_inst {		/* Instruction */
 /* Not enough fields in f_inst for three args used by roa_check() */
 struct f_inst_roa_check {
   struct f_inst i;
-  struct roa_table_config *rtc;	
+  struct roa_table_config *rtc;
 };
+
+struct f_inst3 {
+  struct f_inst i;
+  union {
+    int i;
+    void *p;
+  } a3;
+};
+
+#define INST3(x) (((struct f_inst3 *) x)->a3)
+
 
 struct f_prefix {
   ip_addr ip;
@@ -53,7 +64,8 @@ struct f_val {
   union {
     uint i;
     u64 ec;
-    /*    ip_addr ip; Folded into prefix */	
+    lcomm lc;
+    /*    ip_addr ip; Folded into prefix */
     struct f_prefix px;
     char *s;
     struct f_tree *t;
@@ -80,8 +92,8 @@ struct f_tree *find_tree(struct f_tree *t, struct f_val val);
 int same_tree(struct f_tree *t1, struct f_tree *t2);
 void tree_format(struct f_tree *t, buffer *buf);
 
-struct f_trie *f_new_trie(linpool *lp);
-void trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h);
+struct f_trie *f_new_trie(linpool *lp, uint node_size);
+void *trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h);
 int trie_match_prefix(struct f_trie *t, ip_addr px, int plen);
 int trie_same(struct f_trie *t1, struct f_trie *t2);
 void trie_format(struct f_trie *t, buffer *buf);
@@ -107,6 +119,7 @@ struct ea_list;
 struct rte;
 
 int f_run(struct filter *filter, struct rte **rte, struct ea_list **tmp_attrs, struct linpool *tmp_pool, int flags);
+struct f_val f_eval_rte(struct f_inst *expr, struct rte **rte, struct linpool *tmp_pool);
 struct f_val f_eval(struct f_inst *expr, struct linpool *tmp_pool);
 uint f_eval_int(struct f_inst *expr);
 u32 f_eval_asn(struct f_inst *expr);
@@ -167,24 +180,26 @@ void val_format(struct f_val v, buffer *buf);
 #define T_PATH_MASK 0x23	/* mask for BGP path */
 #define T_PATH 0x24		/* BGP path */
 #define T_CLIST 0x25		/* Community list */
-#define T_ECLIST 0x26		/* Extended community list */
-#define T_EC 0x27		/* Extended community value, u64 */
+#define T_EC 0x26		/* Extended community value, u64 */
+#define T_ECLIST 0x27		/* Extended community list */
+#define T_LC 0x28		/* Large community value, lcomm */
+#define T_LCLIST 0x29		/* Large community list */
 
 #define T_RETURN 0x40
 #define T_SET 0x80
 #define T_PREFIX_SET 0x81
 
 
-#define SA_FROM		 1    
-#define SA_GW		 2      
-#define SA_NET		 3     
-#define SA_PROTO	 4   
-#define SA_SOURCE	 5  
-#define SA_SCOPE	 6   
-#define SA_CAST    	 7
-#define SA_DEST    	 8
-#define SA_IFNAME  	 9
-#define SA_IFINDEX    	10
+#define SA_FROM		 1
+#define SA_GW		 2
+#define SA_NET		 3
+#define SA_PROTO	 4
+#define SA_SOURCE	 5
+#define SA_SCOPE	 6
+#define SA_CAST		 7
+#define SA_DEST		 8
+#define SA_IFNAME	 9
+#define SA_IFINDEX	10
 
 
 struct f_tree {
@@ -204,7 +219,8 @@ struct f_trie
 {
   linpool *lp;
   int zero;
-  struct f_trie_node root;
+  uint node_size;
+  struct f_trie_node root[0];		/* Root trie node follows */
 };
 
 #define NEW_F_VAL struct f_val * val; val = cfg_alloc(sizeof(struct f_val));

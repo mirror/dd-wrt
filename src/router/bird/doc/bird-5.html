@@ -12,9 +12,9 @@
 <A HREF="bird-4.html">Previous</A>
 <A HREF="bird.html#toc5">Contents</A>
 <HR>
-<H2><A NAME="s5">5.</A> <A HREF="bird.html#toc5">Filters</A></H2>
+<H2><A NAME="filters"></A> <A NAME="s5">5.</A> <A HREF="bird.html#toc5">Filters</A></H2>
 
-<H2><A NAME="ss5.1">5.1</A> <A HREF="bird.html#toc5.1">Introduction</A>
+<H2><A NAME="filters-intro"></A> <A NAME="ss5.1">5.1</A> <A HREF="bird.html#toc5.1">Introduction</A>
 </H2>
 
 <P>BIRD contains a simple programming language. (No, it can't yet read mail :-).
@@ -22,7 +22,7 @@ There are two objects in this language: filters and functions. Filters are
 interpreted by BIRD core when a route is being passed between protocols and
 routing tables. The filter language contains control structures such as if's and
 switches, but it allows no loops. An example of a filter using many features can
-be found in filter/test.conf.
+be found in <CODE>filter/test.conf</CODE>.
 <P>
 <P>Filter gets the route, looks at its attributes and modifies some of them if
 it wishes. At the end, it decides whether to pass the changed route through
@@ -107,7 +107,7 @@ bird>
 <HR>
 <P>
 <P>
-<H2><A NAME="ss5.2">5.2</A> <A HREF="bird.html#toc5.2">Data types</A>
+<H2><A NAME="data-types"></A> <A NAME="ss5.2">5.2</A> <A HREF="bird.html#toc5.2">Data types</A>
 </H2>
 
 <P>Each variable and each value has certain type. Booleans, integers and enums
@@ -115,32 +115,38 @@ are incompatible with each other (that is to prevent you from shooting in the
 foot).
 <P>
 <DL>
-<DT><CODE>bool</CODE><DD><P>This is a boolean type, it can have only two values, <CODE>true</CODE> and
+<DT><CODE>
+<A NAME="type-bool"></A> bool</CODE><DD><P>This is a boolean type, it can have only two values, <CODE>true</CODE> and
 <CODE>false</CODE>. Boolean is the only type you can use in <CODE>if</CODE> statements.
 <P>
-<DT><CODE>int</CODE><DD><P>This is a general integer type. It is an unsigned 32bit type; i.e., you
+<DT><CODE>
+<A NAME="type-int"></A> int</CODE><DD><P>This is a general integer type. It is an unsigned 32bit type; i.e., you
 can expect it to store values from 0 to 4294967295. Overflows are not
 checked. You can use <CODE>0x1234</CODE> syntax to write hexadecimal values.
 <P>
-<DT><CODE>pair</CODE><DD><P>This is a pair of two short integers. Each component can have values
+<DT><CODE>
+<A NAME="type-pair"></A> pair</CODE><DD><P>This is a pair of two short integers. Each component can have values
 from 0 to 65535. Literals of this type are written as <CODE>(1234,5678)</CODE>.
 The same syntax can also be used to construct a pair from two arbitrary
 integer expressions (for example <CODE>(1+2,a)</CODE>).
 <P>
-<DT><CODE>quad</CODE><DD><P>This is a dotted quad of numbers used to represent router IDs (and
+<DT><CODE>
+<A NAME="type-quad"></A> quad</CODE><DD><P>This is a dotted quad of numbers used to represent router IDs (and
 others). Each component can have a value from 0 to 255. Literals of
 this type are written like IPv4 addresses.
 <P>
-<DT><CODE>string</CODE><DD><P>This is a string of characters. There are no ways to modify strings in
+<DT><CODE>
+<A NAME="type-string"></A> string</CODE><DD><P>This is a string of characters. There are no ways to modify strings in
 filters. You can pass them between functions, assign them to variables
 of type <CODE>string</CODE>, print such variables, use standard string
 comparison operations (e.g. <CODE>=, !=, &lt;, &gt;, &lt;=, &gt;=</CODE>), but
 you can't concatenate two strings. String literals are written as
-<CODE>"This is a string constant"</CODE>. Additionaly matching <CODE>~</CODE>
-operator could be used to match a string value against a shell pattern
-(represented also as a string).
+<CODE>"This is a string constant"</CODE>. Additionally matching (<CODE>~,
+!~</CODE>) operators could be used to match a string value against
+a shell pattern (represented also as a string).
 <P>
-<DT><CODE>ip</CODE><DD><P>This type can hold a single IP address. Depending on the compile-time
+<DT><CODE>
+<A NAME="type-ip"></A> ip</CODE><DD><P>This type can hold a single IP address. Depending on the compile-time
 configuration of BIRD you are using, it is either an IPv4 or IPv6
 address. IP addresses are written in the standard notation
 (<CODE>10.20.30.40</CODE> or <CODE>fec0:3:4::1</CODE>). You can apply special operator
@@ -148,14 +154,16 @@ address. IP addresses are written in the standard notation
 first <CODE><I>num</I></CODE> bits from the IP address. So
 <CODE>1.2.3.4.mask(8) = 1.0.0.0</CODE> is true.
 <P>
-<DT><CODE>prefix</CODE><DD><P>This type can hold a network prefix consisting of IP address and prefix
+<DT><CODE>
+<A NAME="type-prefix"></A> prefix</CODE><DD><P>This type can hold a network prefix consisting of IP address and prefix
 length. Prefix literals are written as <CODE><I>ipaddress</I>/<I>pxlen</I></CODE>,
 or <CODE><I>ipaddress</I>/<I>netmask</I></CODE>. There are two special
 operators on prefixes: <CODE>.ip</CODE> which extracts the IP address from the
 pair, and <CODE>.len</CODE>, which separates prefix length from the pair.
-So <CODE>1.2.0.0/16.pxlen = 16</CODE> is true.
+So <CODE>1.2.0.0/16.len = 16</CODE> is true.
 <P>
-<DT><CODE>ec</CODE><DD><P>This is a specialized type used to represent BGP extended community
+<DT><CODE>
+<A NAME="type-ec"></A> ec</CODE><DD><P>This is a specialized type used to represent BGP extended community
 values. It is essentially a 64bit value, literals of this type are
 usually written as <CODE>(<I>kind</I>, <I>key</I>, <I>value</I>)</CODE>, where
 <CODE>kind</CODE> is a kind of extended community (e.g. <CODE>rt</CODE> / <CODE>ro</CODE> for a
@@ -165,7 +173,17 @@ used kind. Similarly to pairs, ECs can be constructed using expressions
 for <CODE>key</CODE> and <CODE>value</CODE> parts, (e.g. <CODE>(ro, myas, 3*10)</CODE>, where
 <CODE>myas</CODE> is an integer variable).
 <P>
-<DT><CODE>int|pair|quad|ip|prefix|ec|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you
+<DT><CODE>
+<A NAME="type-lc"></A> lc</CODE><DD><P>This is a specialized type used to represent BGP large community
+values. It is essentially a triplet of 32bit values, where the first
+value is reserved for the AS number of the issuer, while meaning of
+remaining parts is defined by the issuer. Literals of this type are
+written as <CODE>(123, 456, 789)</CODE>, with any integer values. Similarly to
+pairs, LCs can be constructed using expressions for its parts, (e.g.
+<CODE>(myas, 10+20, 3*10)</CODE>, where <CODE>myas</CODE> is an integer variable).
+<P>
+<DT><CODE>
+<A NAME="type-set"></A> int|pair|quad|ip|prefix|ec|lc|enum set</CODE><DD><P>Filters recognize four types of sets. Sets are similar to strings: you
 can pass them around but you can't modify them. Literals of type <CODE>int
 set</CODE> look like <CODE> [ 1, 2, 5..7 ]</CODE>. As you can see, both simple
 values and ranges are permitted in sets.
@@ -180,9 +198,14 @@ memory intensive. E.g. <CODE>(*,4..20)</CODE> is translated to <CODE>(0,4..20),
 10..20)</CODE> or <CODE>(ro, 123, *)</CODE>. Expressions requiring the translation
 (like <CODE>(rt, *, 3)</CODE>) are not allowed (as they usually have 4B range
 for ASNs).
-<P>You can also use expressions for int, pair and EC set values. However it
-must be possible to evaluate these expressions before daemon boots. So
-you can use only constants inside them. E.g.
+<P>Also LC sets use similar expressions like pair sets. You can use ranges
+and wildcards, but if one field uses that, more specific (later) fields
+must be wildcards. E.g., <CODE>(10, 20..30, *)</CODE> or <CODE>(10, 20, 30..40)</CODE>
+is valid, while <CODE>(10, *, 20..30)</CODE> or <CODE>(10, 20..30, 40)</CODE> is not
+valid.
+<P>You can also use expressions for int, pair, EC and LC set values.
+However, it must be possible to evaluate these expressions before daemon
+boots. So you can use only constants inside them. E.g.
 <P>
 <HR>
 <PRE>
@@ -226,21 +249,25 @@ matches all prefixes (regardless of IP address) whose prefix length is
 address <CODE>1.2.3.4</CODE>. <CODE>1.2.0.0/16 ~ [ 1.0.0.0/8{15,17} ]</CODE>
 is true, but <CODE>1.0.0.0/16 ~ [ 1.0.0.0/8- ]</CODE> is false.
 <P>Cisco-style patterns like <CODE>10.0.0.0/8 ge 16 le 24</CODE> can be expressed
-in BIRD as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as 
+in BIRD as <CODE>10.0.0.0/8{16,24}</CODE>, <CODE>192.168.0.0/16 le 24</CODE> as
 <CODE>192.168.0.0/16{16,24}</CODE> and <CODE>192.168.0.0/16 ge 24</CODE> as
 <CODE>192.168.0.0/16{24,32}</CODE>.
 <P>
-<DT><CODE>enum</CODE><DD><P>Enumeration types are fixed sets of possibilities. You can't define your
+<DT><CODE>
+<A NAME="type-enum"></A> enum</CODE><DD><P>Enumeration types are fixed sets of possibilities. You can't define your
 own variables of such type, but some route attributes are of enumeration
 type. Enumeration types are incompatible with each other.
 <P>
-<DT><CODE>bgppath</CODE><DD><P>BGP path is a list of autonomous system numbers. You can't write
+<DT><CODE>
+<A NAME="type-bgppath"></A> bgppath</CODE><DD><P>BGP path is a list of autonomous system numbers. You can't write
 literals of this type. There are several special operators on bgppaths:
 <P><CODE><I>P</I>.first</CODE> returns the first ASN (the neighbor ASN) in path <I>P</I>.
 <P><CODE><I>P</I>.last</CODE> returns the last ASN (the source ASN) in path <I>P</I>.
+<P><CODE><I>P</I>.last_nonaggregated</CODE> returns the last ASN in the non-aggregated part of the path <I>P</I>.
 <P>Both <CODE>first</CODE> and <CODE>last</CODE> return zero if there is no appropriate
 ASN, for example if the path contains an AS set element as the first (or
-the last) part.
+the last) part. If the path ends with an AS set, <CODE>last_nonaggregated</CODE>
+may be used to get last ASN before any AS set.
 <P><CODE><I>P</I>.len</CODE> returns the length of path <I>P</I>.
 <P><CODE>prepend(<I>P</I>,<I>A</I>)</CODE> prepends ASN <I>A</I> to path <I>P</I> and
 returns the result.
@@ -255,18 +282,22 @@ not members of integer set <I>A</I>. I.e., <CODE>filter</CODE> do the same as
 <CODE><I>P</I>.prepend(<I>A</I>);</CODE> if <I>P</I> is appropriate route attribute
 (for example <CODE>bgp_path</CODE>). Similarly for <CODE>delete</CODE> and <CODE>filter</CODE>.
 <P>
-<DT><CODE>bgpmask</CODE><DD><P>BGP masks are patterns used for BGP path matching (using <CODE>path
+<DT><CODE>
+<A NAME="type-bgpmask"></A> bgpmask</CODE><DD><P>BGP masks are patterns used for BGP path matching (using <CODE>path
 ~ [= 2 3 5 * =]</CODE> syntax). The masks resemble wildcard patterns
 as used by UNIX shells. Autonomous system numbers match themselves,
 <CODE>*</CODE> matches any (even empty) sequence of arbitrary AS numbers and
-<CODE>?</CODE> matches one arbitrary AS number. For example, if <CODE>bgp_path</CODE> 
+<CODE>?</CODE> matches one arbitrary AS number. For example, if <CODE>bgp_path</CODE>
 is 4 3 2 1, then: <CODE>bgp_path ~ [= * 4 3 * =]</CODE> is true,
 but <CODE>bgp_path ~ [= * 4 5 * =]</CODE> is false. BGP mask
 expressions can also contain integer expressions enclosed in parenthesis
-and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>. There is
-also old syntax that uses / .. / instead of [= .. =] and ? instead of *.
+and integer variables, for example <CODE>[= * 4 (1+2) a =]</CODE>. You can
+also use ranges, for example <CODE>[= * 3..5 2 100..200 * =]</CODE>.
+There is also old (deprecated) syntax that uses / .. / instead of [= .. =]
+and ? instead of *.
 <P>
-<DT><CODE>clist</CODE><DD><P>Clist is similar to a set, except that unlike other sets, it can be
+<DT><CODE>
+<A NAME="type-clist"></A> clist</CODE><DD><P>Clist is similar to a set, except that unlike other sets, it can be
 modified. The type is used for community list (a set of pairs) and for
 cluster list (a set of quads). There exist no literals of this type.
 There are three special operators on clists:
@@ -289,38 +320,45 @@ works analogously; i.e., it works as clist intersection.
 <CODE><I>C</I>.add(<I>P</I>);</CODE> if <I>C</I> is appropriate route attribute (for
 example <CODE>bgp_community</CODE>). Similarly for <CODE>delete</CODE> and <CODE>filter</CODE>.
 <P>
-<DT><CODE>eclist</CODE><DD><P>Eclist is a data type used for BGP extended community lists. Eclists
+<DT><CODE>
+<A NAME="type-eclist"></A> eclist</CODE><DD><P>Eclist is a data type used for BGP extended community lists. Eclists
 are very similar to clists, but they are sets of ECs instead of pairs.
-The same operations (like <CODE>add</CODE>, <CODE>delete</CODE>, or <CODE>~</CODE>
-membership operator) can be used to modify or test eclists, with ECs
-instead of pairs as arguments.
+The same operations (like <CODE>add</CODE>, <CODE>delete</CODE> or <CODE>~</CODE> and
+<CODE>!~</CODE> membership operators) can be used to modify or test
+eclists, with ECs instead of pairs as arguments.
+<P>
+<DT><CODE>lclist</CODE><DD><P>Lclist is a data type used for BGP large community lists. Like eclists,
+lclists are very similar to clists, but they are sets of LCs instead of
+pairs. The same operations (like <CODE>add</CODE>, <CODE>delete</CODE> or <CODE>~</CODE>
+and <CODE>!~</CODE> membership operators) can be used to modify or test
+lclists, with LCs instead of pairs as arguments.
 </DL>
 <P>
 <P>
-<H2><A NAME="ss5.3">5.3</A> <A HREF="bird.html#toc5.3">Operators</A>
+<H2><A NAME="operators"></A> <A NAME="ss5.3">5.3</A> <A HREF="bird.html#toc5.3">Operators</A>
 </H2>
 
 <P>The filter language supports common integer operators <CODE>(+,-,*,/)</CODE>,
 parentheses <CODE>(a*(b+c))</CODE>, comparison <CODE>(a=b, a!=b, a&lt;b, a&gt;=b)</CODE>.
 Logical operations include unary not (<CODE>!</CODE>), and (<CODE>&amp;&amp;</CODE>) and or
-(<CODE>||</CODE>). Special operators include <CODE>~</CODE> for "is element
-of a set" operation - it can be used on element and set of elements of the same
-type (returning true if element is contained in the given set), or on two
-strings (returning true if first string matches a shell-like pattern stored in
-second string) or on IP and prefix (returning true if IP is within the range
-defined by that prefix), or on prefix and prefix (returning true if first prefix
-is more specific than second one) or on bgppath and bgpmask (returning true if
-the path matches the mask) or on number and bgppath (returning true if the
-number is in the path) or on bgppath and int (number) set (returning true if any
-ASN from the path is in the set) or on pair/quad and clist (returning true if
-the pair/quad is element of the clist) or on clist and pair/quad set (returning
-true if there is an element of the clist that is also a member of the pair/quad
-set).
+(<CODE>||</CODE>). Special operators include (<CODE>~</CODE>,
+<CODE>!~</CODE>) for "is (not) element of a set" operation - it can be used on
+element and set of elements of the same type (returning true if element is
+contained in the given set), or on two strings (returning true if first string
+matches a shell-like pattern stored in second string) or on IP and prefix
+(returning true if IP is within the range defined by that prefix), or on prefix
+and prefix (returning true if first prefix is more specific than second one) or
+on bgppath and bgpmask (returning true if the path matches the mask) or on
+number and bgppath (returning true if the number is in the path) or on bgppath
+and int (number) set (returning true if any ASN from the path is in the set) or
+on pair/quad and clist (returning true if the pair/quad is element of the
+clist) or on clist and pair/quad set (returning true if there is an element of
+the clist that is also a member of the pair/quad set).
 <P>
 <P>There is one operator related to ROA infrastructure - <CODE>roa_check()</CODE>. It
-examines a ROA table and does RFC 6483 route origin validation for a given
-network prefix. The basic usage is <CODE>roa_check(<I>table</I>)</CODE>, which checks
-current route (which should be from BGP to have AS_PATH argument) in the
+examines a ROA table and does <A HREF="http://www.rfc-editor.org/info/rfc6483">RFC 6483</A> route origin validation for a
+given network prefix. The basic usage is <CODE>roa_check(<I>table</I>)</CODE>, which
+checks current route (which should be from BGP to have AS_PATH argument) in the
 specified ROA table and returns ROA_UNKNOWN if there is no relevant ROA,
 ROA_VALID if there is a matching ROA, or ROA_INVALID if there are some relevant
 ROAs but none of them match. There is also an extended variant
@@ -328,10 +366,10 @@ ROAs but none of them match. There is also an extended variant
 prefix and an ASN as arguments.
 <P>
 <P>
-<H2><A NAME="ss5.4">5.4</A> <A HREF="bird.html#toc5.4">Control structures</A>
+<H2><A NAME="control-structures"></A> <A NAME="ss5.4">5.4</A> <A HREF="bird.html#toc5.4">Control structures</A>
 </H2>
 
-<P>Filters support two control structures: conditions and case switches. 
+<P>Filters support two control structures: conditions and case switches.
 <P>
 <P>Syntax of a condition is: <CODE>if <I>boolean expression</I> then <I>command1</I>;
 else <I>command2</I>;</CODE> and you can use <CODE>{ <I>command_1</I>; <I>command_2</I>;
@@ -358,15 +396,15 @@ case arg1 {
         else: print "something else";
 }
 
-if 1234 = i then printn "."; else { 
-  print "not 1234"; 
-  print "You need {} around multiple commands"; 
+if 1234 = i then printn "."; else {
+  print "not 1234";
+  print "You need {} around multiple commands";
 }
 </PRE>
 <HR>
 <P>
 <P>
-<H2><A NAME="ss5.5">5.5</A> <A HREF="bird.html#toc5.5">Route attributes</A>
+<H2><A NAME="route-attributes"></A> <A NAME="ss5.5">5.5</A> <A HREF="bird.html#toc5.5">Route attributes</A>
 </H2>
 
 <P>A filter is implicitly passed a route, and it can access its attributes just
@@ -377,37 +415,46 @@ rule are attributes of clist type, where undefined value is regarded as empty
 clist for most purposes.
 <P>
 <DL>
-<DT><CODE><I>prefix</I> net</CODE><DD><P>Network the route is talking about. Read-only. (See the chapter about
+<DT><CODE>
+<A NAME="rta-net"></A> <I>prefix</I> net</CODE><DD><P>Network the route is talking about. Read-only. (See the chapter about
 routing tables.)
 <P>
-<DT><CODE><I>enum</I> scope</CODE><DD><P>The scope of the route. Possible values: <CODE>SCOPE_HOST</CODE> for routes
+<DT><CODE>
+<A NAME="rta-scope"></A> <I>enum</I> scope</CODE><DD><P>The scope of the route. Possible values: <CODE>SCOPE_HOST</CODE> for routes
 local to this host, <CODE>SCOPE_LINK</CODE> for those specific for a physical
 link, <CODE>SCOPE_SITE</CODE> and <CODE>SCOPE_ORGANIZATION</CODE> for private routes and
 <CODE>SCOPE_UNIVERSE</CODE> for globally visible routes. This attribute is not
 interpreted by BIRD and can be used to mark routes in filters. The
 default value for new routes is <CODE>SCOPE_UNIVERSE</CODE>.
 <P>
-<DT><CODE><I>int</I> preference</CODE><DD><P>Preference of the route. Valid values are 0-65535. (See the chapter
+<DT><CODE>
+<A NAME="rta-preference"></A> <I>int</I> preference</CODE><DD><P>Preference of the route. Valid values are 0-65535. (See the chapter
 about routing tables.)
 <P>
-<DT><CODE><I>ip</I> from</CODE><DD><P>The router which the route has originated from.
+<DT><CODE>
+<A NAME="rta-from"></A> <I>ip</I> from</CODE><DD><P>The router which the route has originated from.
 <P>
-<DT><CODE><I>ip</I> gw</CODE><DD><P>Next hop packets routed using this route should be forwarded to.
+<DT><CODE>
+<A NAME="rta-gw"></A> <I>ip</I> gw</CODE><DD><P>Next hop packets routed using this route should be forwarded to.
 <P>
-<DT><CODE><I>string</I> proto</CODE><DD><P>The name of the protocol which the route has been imported from.
+<DT><CODE>
+<A NAME="rta-proto"></A> <I>string</I> proto</CODE><DD><P>The name of the protocol which the route has been imported from.
 Read-only.
 <P>
-<DT><CODE><I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values:
+<DT><CODE>
+<A NAME="rta-source"></A> <I>enum</I> source</CODE><DD><P>what protocol has told me about this route. Possible values:
 <CODE>RTS_DUMMY</CODE>, <CODE>RTS_STATIC</CODE>, <CODE>RTS_INHERIT</CODE>, <CODE>RTS_DEVICE</CODE>,
 <CODE>RTS_STATIC_DEVICE</CODE>, <CODE>RTS_REDIRECT</CODE>, <CODE>RTS_RIP</CODE>, <CODE>RTS_OSPF</CODE>,
 <CODE>RTS_OSPF_IA</CODE>, <CODE>RTS_OSPF_EXT1</CODE>, <CODE>RTS_OSPF_EXT2</CODE>, <CODE>RTS_BGP</CODE>,
-<CODE>RTS_PIPE</CODE>.
+<CODE>RTS_PIPE</CODE>, <CODE>RTS_BABEL</CODE>.
 <P>
-<DT><CODE><I>enum</I> cast</CODE><DD><P>Route type (Currently <CODE>RTC_UNICAST</CODE> for normal routes,
+<DT><CODE>
+<A NAME="rta-cast"></A> <I>enum</I> cast</CODE><DD><P>Route type (Currently <CODE>RTC_UNICAST</CODE> for normal routes,
 <CODE>RTC_BROADCAST</CODE>, <CODE>RTC_MULTICAST</CODE>, <CODE>RTC_ANYCAST</CODE> will be used in
 the future for broadcast, multicast and anycast routes). Read-only.
 <P>
-<DT><CODE><I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to
+<DT><CODE>
+<A NAME="rta-dest"></A> <I>enum</I> dest</CODE><DD><P>Type of destination the packets should be sent to
 (<CODE>RTD_ROUTER</CODE> for forwarding to a neighboring router,
 <CODE>RTD_DEVICE</CODE> for routing to a directly-connected network,
 <CODE>RTD_MULTIPATH</CODE> for multipath destinations,
@@ -417,16 +464,19 @@ returned with ICMP host unreachable / ICMP administratively prohibited
 messages). Can be changed, but only to <CODE>RTD_BLACKHOLE</CODE>,
 <CODE>RTD_UNREACHABLE</CODE> or <CODE>RTD_PROHIBIT</CODE>.
 <P>
-<DT><CODE><I>string</I> ifname</CODE><DD><P>Name of the outgoing interface. Sink routes (like blackhole, unreachable
+<DT><CODE>
+<A NAME="rta-ifname"></A> <I>string</I> ifname</CODE><DD><P>Name of the outgoing interface. Sink routes (like blackhole, unreachable
 or prohibit) and multipath routes have no interface associated with
 them, so <CODE>ifname</CODE> returns an empty string for such routes. Read-only.
 <P>
-<DT><CODE><I>int</I> ifindex</CODE><DD><P>Index of the outgoing interface. System wide index of the interface. May
+<DT><CODE>
+<A NAME="rta-ifindex"></A> <I>int</I> ifindex</CODE><DD><P>Index of the outgoing interface. System wide index of the interface. May
 be used for interface matching, however indexes might change on interface
 creation/removal. Zero is returned for routes with undefined outgoing
 interfaces. Read-only.
 <P>
-<DT><CODE><I>int</I> igp_metric</CODE><DD><P>The optional attribute that can be used to specify a distance to the
+<DT><CODE>
+<A NAME="rta-igp-metric"></A> <I>int</I> igp_metric</CODE><DD><P>The optional attribute that can be used to specify a distance to the
 network for routes that do not have a native protocol metric attribute
 (like <CODE>ospf_metric1</CODE> for OSPF routes). It is used mainly by BGP to
 compare internal distances to boundary routers (see below). It is also
@@ -438,23 +488,28 @@ used when the route is exported to OSPF as a default value for OSPF type
 corresponding protocol sections.
 <P>
 <P>
-<H2><A NAME="ss5.6">5.6</A> <A HREF="bird.html#toc5.6">Other statements</A>
+<H2><A NAME="other-statements"></A> <A NAME="ss5.6">5.6</A> <A HREF="bird.html#toc5.6">Other statements</A>
 </H2>
 
 <P>The following statements are available:
 <P>
 <DL>
-<DT><CODE><I>variable</I> = <I>expr</I></CODE><DD><P>Set variable to a given value.
+<DT><CODE>
+<A NAME="assignment"></A> <I>variable</I> = <I>expr</I></CODE><DD><P>Set variable to a given value.
 <P>
-<DT><CODE>accept|reject [ <I>expr</I> ]</CODE><DD><P>Accept or reject the route, possibly printing <CODE><I>expr</I></CODE>.
+<DT><CODE>
+<A NAME="filter-accept-reject"></A> accept|reject [ <I>expr</I> ]</CODE><DD><P>Accept or reject the route, possibly printing <CODE><I>expr</I></CODE>.
 <P>
-<DT><CODE>return <I>expr</I></CODE><DD><P>Return <CODE><I>expr</I></CODE> from the current function, the function ends
+<DT><CODE>
+<A NAME="return"></A> return <I>expr</I></CODE><DD><P>Return <CODE><I>expr</I></CODE> from the current function, the function ends
 at this point.
 <P>
-<DT><CODE>print|printn <I>expr</I> [<I>, expr...</I>]</CODE><DD><P>Prints given expressions; useful mainly while debugging filters. The
+<DT><CODE>
+<A NAME="print"></A> print|printn <I>expr</I> [<I>, expr...</I>]</CODE><DD><P>Prints given expressions; useful mainly while debugging filters. The
 <CODE>printn</CODE> variant does not terminate the line.
 <P>
-<DT><CODE>quitbird</CODE><DD><P>Terminates BIRD. Useful when debugging the filter interpreter.
+<DT><CODE>
+<A NAME="quitbird"></A> quitbird</CODE><DD><P>Terminates BIRD. Useful when debugging the filter interpreter.
 </DL>
 <P>
 <P>

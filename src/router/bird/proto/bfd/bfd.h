@@ -14,6 +14,7 @@
 #include "nest/iface.h"
 #include "nest/protocol.h"
 #include "nest/route.h"
+#include "nest/password.h"
 #include "conf/conf.h"
 #include "lib/hash.h"
 #include "lib/resource.h"
@@ -52,6 +53,8 @@ struct bfd_iface_config
   u32 idle_tx_int;
   u8 multiplier;
   u8 passive;
+  u8 auth_type;				/* Authentication type (BFD_AUTH_*) */
+  list *passwords;			/* Passwords for authentication */
 };
 
 struct bfd_neighbor
@@ -114,7 +117,7 @@ struct bfd_session
   u8 passive;
   u8 poll_active;
   u8 poll_scheduled;
-  
+
   u8 loc_state;
   u8 rem_state;
   u8 loc_diag;
@@ -141,6 +144,11 @@ struct bfd_session
   list request_list;			/* List of client requests (struct bfd_request) */
   bird_clock_t last_state_change;	/* Time of last state change */
   u8 notify_running;			/* 1 if notify hooks are running */
+
+  u8 rx_csn_known;			/* Received crypto sequence number is known */
+  u32 rx_csn;				/* Last received crypto sequence number */
+  u32 tx_csn;				/* Last transmitted crypto sequence number */
+  u32 tx_csn_time;			/* Timestamp of last tx_csn change */
 };
 
 
@@ -171,6 +179,15 @@ extern const char *bfd_state_names[];
 #define BFD_FLAG_AP		(1 << 2)
 #define BFD_FLAG_DEMAND		(1 << 1)
 #define BFD_FLAG_MULTIPOINT	(1 << 0)
+
+#define BFD_AUTH_NONE			0
+#define BFD_AUTH_SIMPLE			1
+#define BFD_AUTH_KEYED_MD5		2
+#define BFD_AUTH_METICULOUS_KEYED_MD5	3
+#define BFD_AUTH_KEYED_SHA1		4
+#define BFD_AUTH_METICULOUS_KEYED_SHA1	5
+
+extern const u8 bfd_auth_type_to_hash_alg[];
 
 
 static inline void bfd_lock_sessions(struct bfd_proto *p) { pthread_spin_lock(&p->lock); }

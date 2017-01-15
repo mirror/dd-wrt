@@ -34,3 +34,6 @@ char *cmd_expand(char *cmd);
 /* client.c */
 
 void submit_command(char *cmd_raw);
+
+/* die() with system error messages */
+#define DIE(x, y...) die(x ": %s", ##y, strerror(errno))

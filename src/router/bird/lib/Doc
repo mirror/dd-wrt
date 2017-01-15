@@ -1,7 +1,8 @@
 H Library functions
-S ip.c ipv4.c ipv6.c
+S ip.c
 S lists.c
 S checksum.c bitops.c patmatch.c printf.c xmalloc.c tbf.c
+S mac.c
 D resource.sgml
 S resource.c
 S mempool.c

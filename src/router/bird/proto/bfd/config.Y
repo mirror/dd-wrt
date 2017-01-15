@@ -22,11 +22,12 @@ extern struct bfd_config *bfd_cf;
 CF_DECLS
 
 CF_KEYWORDS(BFD, MIN, IDLE, RX, TX, INTERVAL, MULTIPLIER, PASSIVE,
-	INTERFACE, MULTIHOP, NEIGHBOR, DEV, LOCAL)
+	INTERFACE, MULTIHOP, NEIGHBOR, DEV, LOCAL, AUTHENTICATION,
+	NONE, SIMPLE, METICULOUS, KEYED, MD5, SHA1)
 
 %type <iface> bfd_neigh_iface
 %type <a> bfd_neigh_local
-%type <i> bfd_neigh_multihop
+%type <i> bfd_neigh_multihop bfd_auth_type
 
 CF_GRAMMAR
 
@@ -34,7 +35,7 @@ CF_ADDTO(proto, bfd_proto)
 
 bfd_proto_start: proto_start BFD
 {
-  this_proto = proto_config_new(&proto_bfd, sizeof(struct bfd_config), $1);
+  this_proto = proto_config_new(&proto_bfd, $1);
   init_list(&BFD_CFG->patt_list);
   init_list(&BFD_CFG->neigh_list);
 
@@ -62,12 +63,35 @@ bfd_proto:
 bfd_iface_start:
 {
   this_ipatt = cfg_allocz(sizeof(struct bfd_iface_config));
+  add_tail(&BFD_CFG->patt_list, NODE this_ipatt);
   init_list(&this_ipatt->ipn_list);
 
   BFD_IFACE->min_rx_int = BFD_DEFAULT_MIN_RX_INT;
   BFD_IFACE->min_tx_int = BFD_DEFAULT_MIN_TX_INT;
   BFD_IFACE->idle_tx_int = BFD_DEFAULT_IDLE_TX_INT;
   BFD_IFACE->multiplier = BFD_DEFAULT_MULTIPLIER;
+
+  reset_passwords();
+};
+
+bfd_iface_finish:
+{
+  BFD_IFACE->passwords = get_passwords();
+
+  if (!BFD_IFACE->auth_type != !BFD_IFACE->passwords)
+    log(L_WARN "Authentication and password options should be used together");
+
+  if (BFD_IFACE->passwords)
+  {
+    struct password_item *pass;
+    WALK_LIST(pass, *BFD_IFACE->passwords)
+    {
+      if (pass->alg)
+        cf_error("Password algorithm option not available in BFD protocol");
+
+      pass->alg = bfd_auth_type_to_hash_alg[BFD_IFACE->auth_type];
+    }
+  }
 };
 
 bfd_iface_item:
@@ -77,6 +101,17 @@ bfd_iface_item:
  | IDLE TX INTERVAL expr_us { BFD_IFACE->idle_tx_int = $4; }
  | MULTIPLIER expr { BFD_IFACE->multiplier = $2; }
  | PASSIVE bool { BFD_IFACE->passive = $2; }
+ | AUTHENTICATION bfd_auth_type { BFD_IFACE->auth_type = $2; }
+ | password_list {}
+ ;
+
+bfd_auth_type:
+   NONE			 { $$ = BFD_AUTH_NONE; }
+ | SIMPLE 		 { $$ = BFD_AUTH_SIMPLE; }
+ | KEYED MD5		 { $$ = BFD_AUTH_KEYED_MD5; }
+ | KEYED SHA1   	 { $$ = BFD_AUTH_KEYED_SHA1; }
+ | METICULOUS KEYED MD5	 { $$ = BFD_AUTH_METICULOUS_KEYED_MD5; }
+ | METICULOUS KEYED SHA1 { $$ = BFD_AUTH_METICULOUS_KEYED_SHA1; }
  ;
 
 bfd_iface_opts:
@@ -89,10 +124,11 @@ bfd_iface_opt_list:
  | '{' bfd_iface_opts '}'
  ;
 
-bfd_iface: bfd_iface_start iface_patt_list_nopx bfd_iface_opt_list
-{ add_tail(&BFD_CFG->patt_list, NODE this_ipatt); };
+bfd_iface:
+  bfd_iface_start iface_patt_list_nopx bfd_iface_opt_list bfd_iface_finish;
 
-bfd_multihop: bfd_iface_start bfd_iface_opt_list
+bfd_multihop:
+  bfd_iface_start bfd_iface_opt_list bfd_iface_finish
 { BFD_CFG->multihop = BFD_IFACE; };
 
 

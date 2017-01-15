@@ -27,7 +27,7 @@
 
 struct lp_chunk {
   struct lp_chunk *next;
-  unsigned int size;
+  uint size;
   uintptr_t data_align[0];
   byte data[0];
 };
@@ -37,7 +37,7 @@ struct linpool {
   byte *ptr, *end;
   struct lp_chunk *first, *current, **plast;	/* Normal (reusable) chunks */
   struct lp_chunk *first_large;			/* Large chunks */
-  unsigned chunk_size, threshold, total, total_large;
+  uint chunk_size, threshold, total, total_large;
 };
 
 static void lp_free(resource *);
@@ -64,7 +64,7 @@ static struct resclass lp_class = {
  * @blk.
  */
 linpool
-*lp_new(pool *p, unsigned blk)
+*lp_new(pool *p, uint blk)
 {
   linpool *m = ralloc(p, &lp_class);
   m->plast = &m->first;
@@ -88,7 +88,7 @@ linpool
  * size chunk, an "overflow" chunk is created for it instead.
  */
 void *
-lp_alloc(linpool *m, unsigned size)
+lp_alloc(linpool *m, uint size)
 {
   byte *a = (byte *) BIRD_ALIGN((unsigned long) m->ptr, CPU_STRUCT_ALIGN);
   byte *e = a + size;
@@ -146,7 +146,7 @@ lp_alloc(linpool *m, unsigned size)
  * how to allocate strings without any space overhead.
  */
 void *
-lp_allocu(linpool *m, unsigned size)
+lp_allocu(linpool *m, uint size)
 {
   byte *a = m->ptr;
   byte *e = a + size;
@@ -168,7 +168,7 @@ lp_allocu(linpool *m, unsigned size)
  * clears the allocated memory block.
  */
 void *
-lp_allocz(linpool *m, unsigned size)
+lp_allocz(linpool *m, uint size)
 {
   void *z = lp_alloc(m, size);
 

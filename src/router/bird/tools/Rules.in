@@ -68,12 +68,14 @@ subdir: all.o
 all.o: $(objs)
 #       $(LD) -r -o $@ $^
 #	Changed to $(CC) because $(LD) has problems with crosscompiling
-	$(CC) -nostdlib -r -o $@ $^
+	@echo LD -r -o $@ $^
+	@$(CC) -nostdlib -r -o $@ $^
 
 endif
 
 %.o: $(src-path)%.c
-	$(CC) $(CFLAGS) -o $@ -c $<
+	@echo CC -o $@ -c $<
+	@$(CC) $(CFLAGS) -o $@ -c $<
 
 ifndef source-dep
 source-dep := $(source)

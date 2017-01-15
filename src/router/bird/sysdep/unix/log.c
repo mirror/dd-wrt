@@ -19,6 +19,7 @@
 #include <stdarg.h>
 #include <time.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "nest/bird.h"
 #include "nest/cli.h"
@@ -89,6 +90,7 @@ static char *class_names[] = {
 /**
  * log_commit - commit a log message
  * @class: message class information (%L_DEBUG to %L_BUG, see |lib/birdlib.h|)
+ * @buf: message to write
  *
  * This function writes a message prepared in the log buffer to the
  * log file (as specified in the configuration). The log buffer is
@@ -163,7 +165,7 @@ vlog(int class, const char *msg, va_list args)
  * It is essentially a sequence of log_reset(), logn() and log_commit().
  */
 void
-log_msg(char *msg, ...)
+log_msg(const char *msg, ...)
 {
   int class = 1;
   va_list args;
@@ -176,7 +178,7 @@ log_msg(char *msg, ...)
 }
 
 void
-log_rl(struct tbf *f, char *msg, ...)
+log_rl(struct tbf *f, const char *msg, ...)
 {
   int last_hit = f->mark;
   int class = 1;
@@ -202,12 +204,13 @@ log_rl(struct tbf *f, char *msg, ...)
  * of the program.
  */
 void
-bug(char *msg, ...)
+bug(const char *msg, ...)
 {
   va_list args;
 
   va_start(args, msg);
   vlog(L_BUG[0], msg, args);
+  va_end(args);
   abort();
 }
 
@@ -219,12 +222,13 @@ bug(char *msg, ...)
  * of the program.
  */
 void
-die(char *msg, ...)
+die(const char *msg, ...)
 {
   va_list args;
 
   va_start(args, msg);
   vlog(L_FATAL[0], msg, args);
+  va_end(args);
   exit(1);
 }
 
@@ -236,7 +240,7 @@ die(char *msg, ...)
  * to the debugging output. No newline character is appended.
  */
 void
-debug(char *msg, ...)
+debug(const char *msg, ...)
 {
   va_list args;
   char buf[1024];
@@ -261,7 +265,7 @@ default_log_list(int debug, int init, char **syslog_name)
 #ifdef HAVE_SYSLOG
   if (!debug)
     {
-      static struct log_config lc_syslog = { mask: ~0 };
+      static struct log_config lc_syslog = { .mask = ~0 };
       add_tail(&init_log_list, &lc_syslog.n);
       *syslog_name = bird_name;
       if (!init)
@@ -269,7 +273,7 @@ default_log_list(int debug, int init, char **syslog_name)
     }
 #endif
 
-  static struct log_config lc_stderr = { mask: ~0, terminal_flag: 1 };
+  static struct log_config lc_stderr = { .mask = ~0, .terminal_flag = 1 };
   lc_stderr.fh = stderr;
   add_tail(&init_log_list, &lc_stderr.n);
   return &init_log_list;
@@ -289,12 +293,17 @@ log_switch(int debug, list *l, char *new_syslog_name)
     return;
 
   if (current_syslog_name)
+  {
     closelog();
+    xfree(current_syslog_name);
+    current_syslog_name = NULL;
+  }
 
   if (new_syslog_name)
-    openlog(new_syslog_name, LOG_CONS | LOG_NDELAY, LOG_DAEMON);
-
-  current_syslog_name = new_syslog_name;
+  {
+    current_syslog_name = xstrdup(new_syslog_name);
+    openlog(current_syslog_name, LOG_CONS | LOG_NDELAY, LOG_DAEMON);
+  }
 #endif
 }
 
@@ -310,7 +319,11 @@ log_init_debug(char *f)
   else if (!*f)
     dbgf = stderr;
   else if (!(dbgf = fopen(f, "a")))
-    log(L_ERR "Error opening debug file `%s': %m", f);
+  {
+    /* Cannot use die() nor log() here, logging is not yet initialized */
+    fprintf(stderr, "bird: Unable to open debug file %s: %s\n", f, strerror(errno));
+    exit(1);
+  }
   if (dbgf)
     setvbuf(dbgf, NULL, _IONBF, 0);
 }

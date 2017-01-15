@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <termios.h>
+#include <errno.h>
 
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -109,7 +110,7 @@ more_begin(void)
   tty.c_lflag &= (~ICANON);
 
   if (tcsetattr (0, TCSANOW, &tty) < 0)
-    die("tcsetattr: %m");
+    DIE("tcsetattr");
 
   more_active = 1;
 }
@@ -120,11 +121,11 @@ more_end(void)
   more_active = 0;
 
   if (tcsetattr (0, TCSANOW, &stored_tty) < 0)
-    die("tcsetattr: %m");
+    DIE("tcsetattr");
 }
 
 static void
-sig_handler(int signal)
+sig_handler(int signal UNUSED)
 {
   cleanup();
   exit(0);
@@ -137,7 +138,7 @@ input_init(void)
     return;
 
   if (tcgetattr(0, &stored_tty) < 0)
-    die("tcgetattr: %m");
+    DIE("tcgetattr");
 
   if (signal(SIGINT, sig_handler) == SIG_IGN)
     signal(SIGINT, SIG_IGN);

@@ -1,3 +1,73 @@
+Version 1.6.3 (2016-12-21)
+  o Large BGP communities
+  o BFD authentication (MD5, SHA1)
+  o SHA1 and SHA2 authentication for RIP and OSPF
+  o Improved documentation
+  o Several bug fixes
+
+Version 1.6.2 (2016-09-29)
+  o Fixes serious bug introduced in the previous version
+
+Version 1.6.1 (2016-09-22)
+  o Support for IPv6 ECMP
+  o Better handling of IPv6 tentative addresses
+  o Several updates and fixes in Babel protocol
+  o Filter: New !~ operator
+  o Filter: ASN ranges in bgpmask
+  o KRT: New kernel protocol option 'metric'
+  o KRT: New route attribute 'krt_scope'
+  o Improved BIRD help messages
+  o Fixes memory leak in BGP multipath
+  o Fixes handling of empty path segments in BGP AS_PATH
+  o Several bug fixes
+
+Version 1.6.0 (2016-04-29)
+  o Major RIP protocol redesign
+  o New Babel routing protocol
+  o BGP multipath support
+  o KRT: Add support for plenty of kernel route metrics
+  o KRT: Allow more than 256 routing tables
+  o Static: Allow to specify attributes for static routes
+  o Static: Support for BFD controlled static routes
+  o FreeBSD: Setup password for BGP MD5 authentication
+  o IO: Remove socket number limit
+  o Plenty of bug fixes
+
+  Upgrade notes:
+
+  For RIP, most protocol options were moved to interface blocks.
+
+
+Version 1.5.0 (2015-04-20)
+  o Major OSPF protocol redesign.
+  o OSPFv2 multi-instance extension (RFC 6549).
+  o BGP AS-wide unique router ID (RFC 6286).
+  o BGP enhanced route refresh (RFC 7313).
+  o Link state support in BGP.
+  o Latency tracking and internal watchdog.
+  o Uses high port range for BFD on BSD.
+  o Increase max symbol length to 64.
+  o Allows to define unnamed protocols from templates.
+  o Fixes two serious bugs in BGP.
+  o Several bugfixes and minor improvements.
+  o Several minor option changes:
+     - OSPF: Protocol-wide 'instance id' option added.
+     - BGP: Parameters to option 'neighbor' extended.
+     - BGP: Separate option 'interface' added.
+     - BGP: Option 'start delay time' renamed to 'connect delay time'.
+     - BGP: Option 'route limit' deprecated.
+
+  Upgrade notes:
+
+  For OSPF, there are deep internal changes, but user-visible changes
+  are limited to log messages and minor changes in formatting of command
+  output.
+
+  For BGP, version 1.5.0 is essentially a minor release. There are two
+  deprecated options ('start delay time' and 'route limit') and some
+  minor formatting changes.
+
+
 Version 1.4.5 (2014-10-06)
   o New 'show route noexport' command option.
   o Port option for BGP sessions.

@@ -150,7 +150,7 @@ ifa_send_notify(struct proto *p, unsigned c, struct ifa *a)
 }
 
 static void
-ifa_notify_change_dep(unsigned c, struct ifa *a)
+ifa_notify_change_(unsigned c, struct ifa *a)
 {
   struct proto *p;
 
@@ -163,8 +163,13 @@ ifa_notify_change_dep(unsigned c, struct ifa *a)
 static inline void
 ifa_notify_change(unsigned c, struct ifa *a)
 {
-  neigh_ifa_update(a);
-  ifa_notify_change_dep(c, a);
+  if (c & IF_CHANGE_DOWN)
+    neigh_ifa_update(a);
+
+  ifa_notify_change_(c, a);
+
+  if (c & IF_CHANGE_UP)
+    neigh_ifa_update(a);
 }
 
 static inline void
@@ -201,14 +206,14 @@ if_notify_change(unsigned c, struct iface *i)
   if_dump(i);
 #endif
 
-  if (c & IF_CHANGE_UP)
-    neigh_if_up(i);
+  if (c & IF_CHANGE_DOWN)
+    neigh_if_down(i);
 
   if (c & IF_CHANGE_DOWN)
     WALK_LIST(a, i->addrs)
       {
 	a->flags = (i->flags & ~IA_FLAGS) | (a->flags & IA_FLAGS);
-	ifa_notify_change_dep(IF_CHANGE_DOWN, a);
+	ifa_notify_change_(IF_CHANGE_DOWN, a);
       }
 
   WALK_LIST(p, active_proto_list)
@@ -218,14 +223,14 @@ if_notify_change(unsigned c, struct iface *i)
     WALK_LIST(a, i->addrs)
       {
 	a->flags = (i->flags & ~IA_FLAGS) | (a->flags & IA_FLAGS);
-	ifa_notify_change_dep(IF_CHANGE_UP, a);
+	ifa_notify_change_(IF_CHANGE_UP, a);
       }
+
+  if (c & IF_CHANGE_UP)
+    neigh_if_up(i);
 
   if ((c & (IF_CHANGE_UP | IF_CHANGE_DOWN | IF_CHANGE_LINK)) == IF_CHANGE_LINK)
     neigh_if_link(i);
-
-  if (c & IF_CHANGE_DOWN)
-    neigh_if_down(i);
 }
 
 static unsigned
@@ -251,8 +256,8 @@ if_change_flags(struct iface *i, unsigned flags)
 }
 
 /**
- * if_delete - remove interface 
- * @old: interface 
+ * if_delete - remove interface
+ * @old: interface
  *
  * This function is called by the low-level platform dependent code
  * whenever it notices an interface disappears. It is just a shorthand
@@ -579,7 +584,7 @@ ifa_delete(struct ifa *a)
 }
 
 u32
-if_choose_router_id(struct iface_patt *mask, u32 old_id)
+if_choose_router_id(struct iface_patt *mask UNUSED6, u32 old_id UNUSED6)
 {
 #ifndef IPV6
   struct iface *i;
@@ -676,7 +681,7 @@ iface_patt_match(struct iface_patt *ifp, struct iface *i, struct ifa *a)
       if ((a->flags & IA_PEER) &&
 	  ipa_in_net(a->opposite, p->prefix, p->pxlen))
 	return pos;
-	  
+
       continue;
     }
 

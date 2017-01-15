@@ -43,7 +43,7 @@
  * the needs of BFD sessions. When a new session is created, it requests a
  * proper BFD interface by function bfd_get_iface(), which either finds an
  * existing one in &iface_list (from &bfd_proto) or allocates a new one. When a
- * session is removed, an associated iface is dicharged by bfd_free_iface().
+ * session is removed, an associated iface is discharged by bfd_free_iface().
  *
  * BFD requests are the external API for the other protocols. When a protocol
  * wants a BFD session, it calls bfd_request_session(), which creates a
@@ -62,7 +62,7 @@
  * configuration (like static routes in the static protocol). BFD neighbors are
  * handled by BFD protocol like it is a BFD client -- when a BFD neighbor is
  * ready, the protocol just creates a BFD request like any other protocol.
- * 
+ *
  * The protocol uses a new generic event loop (structure &birdloop) from |io.c|,
  * which supports sockets, timers and events like the main loop. Timers
  * (structure &timer2) are new microsecond based timers, while sockets and
@@ -129,11 +129,11 @@ static inline void bfd_notify_kick(struct bfd_proto *p);
  *	BFD sessions
  */
 
-static void 
+static void
 bfd_session_update_state(struct bfd_session *s, uint state, uint diag)
 {
   struct bfd_proto *p = s->ifa->bfd;
-  uint old_state = s->loc_state; 
+  uint old_state = s->loc_state;
   int notify;
 
   if (state == old_state)
@@ -201,8 +201,8 @@ bfd_session_control_tx_timer(struct bfd_session *s, int reset)
   if (s->passive && (s->rem_id == 0))
     goto stop;
 
-  if (s->rem_demand_mode && 
-      !s->poll_active && 
+  if (s->rem_demand_mode &&
+      !s->poll_active &&
       (s->loc_state == BFD_STATE_UP) &&
       (s->rem_state == BFD_STATE_UP))
     goto stop;
@@ -303,7 +303,7 @@ bfd_session_process_ctl(struct bfd_session *s, u8 flags, u32 old_tx_int, u32 old
     bfd_send_ctl(s->ifa->bfd, s, 1);
 }
 
-static void 
+static void
 bfd_session_timeout(struct bfd_session *s)
 {
   struct bfd_proto *p = s->ifa->bfd;
@@ -316,6 +316,7 @@ bfd_session_timeout(struct bfd_session *s)
   s->rem_min_rx_int = 1;
   s->rem_demand_mode = 0;
   s->rem_detect_mult = 0;
+  s->rx_csn_known = 0;
 
   s->poll_active = 0;
   s->poll_scheduled = 0;
@@ -353,7 +354,7 @@ bfd_session_set_min_rx(struct bfd_session *s, u32 val)
   if (val == s->req_min_rx_new)
     return;
 
-  s->req_min_rx_new = val; 
+  s->req_min_rx_new = val;
 
   /* Postpone timer update if req_min_rx_int decreases and the session is up */
   if ((s->loc_state != BFD_STATE_UP) || (val > s->req_min_rx_int))
@@ -429,6 +430,7 @@ bfd_add_session(struct bfd_proto *p, ip_addr addr, ip_addr local, struct iface *
   s->rem_min_rx_int = 1;
   s->detect_mult = ifa->cf->multiplier;
   s->passive = ifa->cf->passive;
+  s->tx_csn = random_u32();
 
   s->tx_timer = tm2_new_init(p->tpool, bfd_tx_timer_hook, s, 0, 0);
   s->hold_timer = tm2_new_init(p->tpool, bfd_hold_timer_hook, s, 0, 0);
@@ -575,9 +577,13 @@ bfd_free_iface(struct bfd_iface *ifa)
   if (!ifa || --ifa->uc)
     return;
 
+  if (ifa->sk)
+  {
+    sk_stop(ifa->sk);
+    rfree(ifa->sk);
+  }
+
   rem_node(&ifa->n);
-  sk_stop(ifa->sk);
-  rfree(ifa->sk);
   mb_free(ifa);
 }
 
@@ -792,7 +798,7 @@ bfd_start_neighbor(struct bfd_proto *p, struct bfd_neighbor *n)
 }
 
 static void
-bfd_stop_neighbor(struct bfd_proto *p, struct bfd_neighbor *n)
+bfd_stop_neighbor(struct bfd_proto *p UNUSED, struct bfd_neighbor *n)
 {
   if (n->neigh)
     n->neigh->data = NULL;
@@ -849,7 +855,7 @@ void pipe_drain(int fd);
 void pipe_kick(int fd);
 
 static int
-bfd_notify_hook(sock *sk, int len)
+bfd_notify_hook(sock *sk, uint len UNUSED)
 {
   struct bfd_proto *p = sk->data;
   struct bfd_session *s;
@@ -868,12 +874,12 @@ bfd_notify_hook(sock *sk, int len)
   WALK_LIST_FIRST(s, tmp_list)
   {
     bfd_lock_sessions(p);
-    rem2_node(&s->n);
+    rem_node(&s->n);
     state = s->loc_state;
     diag = s->loc_diag;
     bfd_unlock_sessions(p);
 
-    /* FIXME: convert to btime and move to bfd_session_update_state() */ 
+    /* FIXME: convert to btime and move to bfd_session_update_state() */
     s->last_state_change = now;
 
     s->notify_running = 1;
@@ -1056,7 +1062,7 @@ bfd_preconfig(struct protocol *P UNUSED, struct config *c UNUSED)
 }
 
 static void
-bfd_copy_config(struct proto_config *dest, struct proto_config *src)
+bfd_copy_config(struct proto_config *dest, struct proto_config *src UNUSED)
 {
   struct bfd_config *d = (struct bfd_config *) dest;
   // struct bfd_config *s = (struct bfd_config *) src;
@@ -1092,7 +1098,7 @@ bfd_show_sessions(struct proto *P)
     /* FIXME: this is thread-unsafe, but perhaps harmless */
     state = s->loc_state;
     diag = s->loc_diag;
-    ifname = (s->ifa && s->ifa->sk->iface) ? s->ifa->sk->iface->name : "---";
+    ifname = (s->ifa && s->ifa->iface) ? s->ifa->iface->name : "---";
     tx_int = s->last_tx ? (MAX(s->des_min_tx_int, s->rem_min_rx_int) TO_MS) : 0;
     timeout = (MAX(s->req_min_rx_int, s->rem_min_tx_int) TO_MS) * s->rem_detect_mult;
 
@@ -1112,6 +1118,7 @@ bfd_show_sessions(struct proto *P)
 struct protocol proto_bfd = {
   .name =		"BFD",
   .template =		"bfd%d",
+  .config_size =	sizeof(struct bfd_config),
   .init =		bfd_init,
   .start =		bfd_start,
   .shutdown =		bfd_shutdown,

@@ -16,7 +16,7 @@
 #endif
 
 int
-MATCH_FUNC_NAME(byte *p, byte *s)
+MATCH_FUNC_NAME(const byte *p, const byte *s)
 {
   while (*p)
     {

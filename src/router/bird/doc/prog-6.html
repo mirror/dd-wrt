@@ -52,7 +52,7 @@ user's manual.
 <P>
 <DL>
 <DT><I>int</I> <B>class</B><DD><P>message class information (<I>L_DEBUG</I> to <I>L_BUG</I>, see <CODE>lib/birdlib.h</CODE>)
-<DT><I>buffer *</I> <B>buf</B><DD><P>-- undescribed --
+<DT><I>buffer *</I> <B>buf</B><DD><P>message to write
 </DL>
 <H3>Description</H3>
 <P>This function writes a message prepared in the log buffer to the
@@ -66,12 +66,12 @@ in <B>log()</B>, so it should be written like *L_INFO.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>log_msg</B>
-(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     log a message
+(<I>const char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     log a message
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>char *</I> <B>msg</B><DD><P>printf-like formatting string with message class information
+<DT><I>const char *</I> <B>msg</B><DD><P>printf-like formatting string with message class information
 prepended (<I>L_DEBUG</I> to <I>L_BUG</I>, see <CODE>lib/birdlib.h</CODE>)
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
@@ -86,12 +86,12 @@ It is essentially a sequence of <B>log_reset()</B>, <B>logn()</B> and <B>log_com
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>bug</B>
-(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report an internal error
+(<I>const char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report an internal error
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>char *</I> <B>msg</B><DD><P>a printf-like error message
+<DT><I>const char *</I> <B>msg</B><DD><P>a printf-like error message
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
 <H3>Description</H3>
@@ -102,12 +102,12 @@ of the program.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>die</B>
-(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report a fatal error
+(<I>const char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     report a fatal error
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>char *</I> <B>msg</B><DD><P>a printf-like error message
+<DT><I>const char *</I> <B>msg</B><DD><P>a printf-like error message
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
 <H3>Description</H3>
@@ -118,12 +118,12 @@ of the program.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>debug</B>
-(<I>char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     write to debug output
+(<I>const char *</I> <B>msg</B>, <I>...</I> <B>...</B>) --     write to debug output
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>char *</I> <B>msg</B><DD><P>a printf-like message
+<DT><I>const char *</I> <B>msg</B><DD><P>a printf-like message
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
 <H3>Description</H3>

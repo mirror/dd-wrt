@@ -284,11 +284,11 @@ $latex2e->{postASP} = sub
 	# for nameurl
 	   if ( /\\nameurl/ )
 	     {
-		($urlid, $urlnam) = ($_ =~ /\\nameurl{(.*)}{(.*)}/);
+		($urlid, $urlnam) = ($_ =~ /\\nameurl\{(.*)\}\{(.*)\}/);
 		print $urlnum . ": " . $urlid . "\n" if ( $global->{debug} );
 
 		$urldef = latex2e_defnam($urlnum) . "url";
-		s/\\nameurl{.*}{.*}/{\\em $urlnam} {\\tt \\$urldef}/;
+		s/\\nameurl\{.*\}\{.*\}/{\\em $urlnam} {\\tt \\$urldef}/;
 		push @urlnames, $_;
 		push @urldefines, "\\urldef{\\$urldef} \\url{$urlid}\n";
 		$urlnum++;

@@ -27,7 +27,7 @@ event_list global_event_list;
 inline void
 ev_postpone(event *e)
 {
-  if (e->n.next)
+  if (ev_active(e))
     {
       rem_node(&e->n);
       e->n.next = NULL;
@@ -114,6 +114,8 @@ ev_schedule(event *e)
   ev_enqueue(&global_event_list, e);
 }
 
+void io_log_event(void *hook, void *data);
+
 /**
  * ev_run_list - run an event list
  * @l: an event list
@@ -132,6 +134,11 @@ ev_run_list(event_list *l)
   WALK_LIST_FIRST(n, tmp_list)
     {
       event *e = SKIP_BACK(event, n, n);
+
+      /* This is ugly hack, we want to log just events executed from the main I/O loop */
+      if (l == &global_event_list)
+	io_log_event(e->hook, e->data);
+
       ev_run(e);
     }
   return !EMPTY_LIST(*l);

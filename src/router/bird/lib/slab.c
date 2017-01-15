@@ -51,7 +51,7 @@ static size_t slab_memsize(resource *r);
 
 struct slab {
   resource r;
-  unsigned size;
+  uint size;
   list objs;
 };
 
@@ -71,7 +71,7 @@ struct sl_obj {
 };
 
 slab *
-sl_new(pool *p, unsigned size)
+sl_new(pool *p, uint size)
 {
   slab *s = ralloc(p, &sl_class);
   s->size = size;
@@ -144,7 +144,7 @@ slab_memsize(resource *r)
 
 struct slab {
   resource r;
-  unsigned obj_size, head_size, objs_per_slab, num_empty_heads, data_size;
+  uint obj_size, head_size, objs_per_slab, num_empty_heads, data_size;
   list empty_heads, partial_heads, full_heads;
 };
 
@@ -185,10 +185,10 @@ struct sl_alignment {			/* Magic structure for testing of alignment */
  * objects of size @size can be allocated.
  */
 slab *
-sl_new(pool *p, unsigned size)
+sl_new(pool *p, uint size)
 {
   slab *s = ralloc(p, &sl_class);
-  unsigned int align = sizeof(struct sl_alignment);
+  uint align = sizeof(struct sl_alignment);
   if (align < sizeof(int))
     align = sizeof(int);
   s->data_size = size;
@@ -214,7 +214,7 @@ sl_new_head(slab *s)
   struct sl_head *h = xmalloc(SLAB_SIZE);
   struct sl_obj *o = (struct sl_obj *)((byte *)h+s->head_size);
   struct sl_obj *no;
-  unsigned int n = s->objs_per_slab;
+  uint n = s->objs_per_slab;
 
   h->first_free = o;
   h->num_full = 0;

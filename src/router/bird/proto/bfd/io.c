@@ -576,7 +576,7 @@ sockets_close_fds(struct birdloop *loop)
   loop->close_scheduled = 0;
 }
 
-int sk_read(sock *s);
+int sk_read(sock *s, int revents);
 int sk_write(sock *s);
 
 static void
@@ -589,7 +589,7 @@ sockets_fire(struct birdloop *loop)
   times_update(loop);
 
   /* Last fd is internal wakeup fd */
-  if (pfd[loop->sock_num].revents & POLLIN)
+  if (pfd[poll_num].revents & POLLIN)
     wakeup_drain(loop);
 
   int i;
@@ -605,7 +605,7 @@ sockets_fire(struct birdloop *loop)
 
     if (pfd->revents & POLLIN)
       while (e && *psk && (*psk)->rx_hook)
-	e = sk_read(*psk);
+	e = sk_read(*psk, 0);
 
     e = 1;
     if (pfd->revents & POLLOUT)

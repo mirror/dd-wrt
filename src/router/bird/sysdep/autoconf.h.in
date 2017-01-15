@@ -43,6 +43,7 @@
 #undef CONFIG_BGP
 #undef CONFIG_OSPF
 #undef CONFIG_PIPE
+#undef CONFIG_BABEL
 
 /* We use multithreading */
 #undef USE_PTHREADS

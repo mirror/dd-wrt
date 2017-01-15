@@ -21,7 +21,7 @@
  *
  * We use a bitmask (&accept) to represent accepted prefix lengths
  * at a node. As there are 33 prefix lengths (0..32 for IPv4), but
- * there is just one prefix of zero length in the whole trie so we 
+ * there is just one prefix of zero length in the whole trie so we
  * have &zero flag in &f_trie (indicating whether the trie accepts
  * prefix 0.0.0.0/0) as a special case, and &accept bitmask
  * represents accepted prefix lengths from 1 to 32.
@@ -75,23 +75,24 @@
 #include "filter/filter.h"
 
 /**
- * f_new_trie
- *
- * Allocates and returns a new empty trie.
+ * f_new_trie - allocates and returns a new empty trie
+ * @lp: linear pool to allocate items from
+ * @node_size: node size to be used (&f_trie_node and user data)
  */
 struct f_trie *
-f_new_trie(linpool *lp)
+f_new_trie(linpool *lp, uint node_size)
 {
   struct f_trie * ret;
-  ret = lp_allocz(lp, sizeof(struct f_trie));
+  ret = lp_allocz(lp, sizeof(struct f_trie) + node_size);
   ret->lp = lp;
+  ret->node_size = node_size;
   return ret;
 }
 
 static inline struct f_trie_node *
 new_node(struct f_trie *t, int plen, ip_addr paddr, ip_addr pmask, ip_addr amask)
 {
-  struct f_trie_node *n = lp_allocz(t->lp, sizeof(struct f_trie_node));
+  struct f_trie_node *n = lp_allocz(t->lp, t->node_size);
   n->plen = plen;
   n->addr = paddr;
   n->mask = pmask;
@@ -110,15 +111,19 @@ attach_node(struct f_trie_node *parent, struct f_trie_node *child)
  * @t: trie to add to
  * @px: prefix address
  * @plen: prefix length
- * @l: prefix lower bound 
+ * @l: prefix lower bound
  * @h: prefix upper bound
  *
  * Adds prefix (prefix pattern) @px/@plen to trie @t.  @l and @h are lower
  * and upper bounds on accepted prefix lengths, both inclusive.
  * 0 <= l, h <= 32 (128 for IPv6).
+ *
+ * Returns a pointer to the allocated node. The function can return a pointer to
+ * an existing node if @px and @plen are the same. If px/plen == 0/0 (or ::/0),
+ * a pointer to the root node is returned.
  */
 
-void
+void *
 trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
 {
   if (l == 0)
@@ -133,7 +138,7 @@ trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
   ip_addr pmask = ipa_mkmask(plen);
   ip_addr paddr = ipa_and(px, pmask);
   struct f_trie_node *o = NULL;
-  struct f_trie_node *n = &t->root;
+  struct f_trie_node *n = t->root;
 
   while(n)
     {
@@ -156,7 +161,7 @@ trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
 	  attach_node(o, b);
 	  attach_node(b, n);
 	  attach_node(b, a);
-	  return;
+	  return a;
 	}
 
       if (plen < n->plen)
@@ -166,14 +171,14 @@ trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
 	  struct f_trie_node *a = new_node(t, plen, paddr, pmask, amask);
 	  attach_node(o, a);
 	  attach_node(a, n);
-	  return;
+	  return a;
 	}
-	
+
       if (plen == n->plen)
 	{
 	  /* We already found added node in trie. Just update accept mask */
 	  n->accept = ipa_or(n->accept, amask);
-	  return;
+	  return n;
 	}
 
       /* Update accept mask part M2 and go deeper */
@@ -187,10 +192,12 @@ trie_add_prefix(struct f_trie *t, ip_addr px, int plen, int l, int h)
   /* We add new tail node 'a' after node 'o' */
   struct f_trie_node *a = new_node(t, plen, paddr, pmask, amask);
   attach_node(o, a);
+
+  return a;
 }
 
 /**
- * trie_match
+ * trie_match_prefix
  * @t: trie
  * @px: prefix address
  * @plen: prefix length
@@ -209,7 +216,7 @@ trie_match_prefix(struct f_trie *t, ip_addr px, int plen)
     return t->zero;
 
   int plentest = plen - 1;
-  struct f_trie_node *n = &t->root;
+  struct f_trie_node *n = t->root;
 
   while(n)
     {
@@ -261,7 +268,7 @@ trie_node_same(struct f_trie_node *t1, struct f_trie_node *t2)
 int
 trie_same(struct f_trie *t1, struct f_trie *t2)
 {
-  return (t1->zero == t2->zero) && trie_node_same(&t1->root, &t2->root);
+  return (t1->zero == t2->zero) && trie_node_same(t1->root, t2->root);
 }
 
 static void
@@ -290,8 +297,11 @@ trie_format(struct f_trie *t, buffer *buf)
   buffer_puts(buf, "[");
 
   if (t->zero)
-    buffer_print(buf, "%I/%d", IPA_NONE, 0);
-  trie_node_format(&t->root, buf);
+    buffer_print(buf, "%I/%d, ", IPA_NONE, 0);
+  trie_node_format(t->root, buf);
+
+  if (buf->pos == buf->end)
+    return;
 
   /* Undo last separator */
   if (buf->pos[-1] != '[')
