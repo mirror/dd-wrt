@@ -125,7 +125,7 @@ typedef struct buffer {
 #ifdef NEED_PRINTF
 void log_commit(int class, buffer *buf);
 void log_msg(char *msg, ...);
-void log_rl(struct rate_limit *rl, char *msg, ...);
+void log_rl(struct tbf *rl, char *msg, ...);
 void die(char *msg, ...) NORET;
 void bug(char *msg, ...) NORET;
 void debug(char *msg, ...);		/* Printf to debug output */
