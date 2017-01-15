@@ -131,13 +131,13 @@ extern const char gfar_driver_version[];
 #define GFAR_10_TIME    25600
 
 #define DEFAULT_TX_COALESCE 1
-#define DEFAULT_TXCOUNT	16
-#define DEFAULT_TXTIME	21
+#define DEFAULT_TXCOUNT	64
+#define DEFAULT_TXTIME	0x1000
 
-#define DEFAULT_RXTIME	21
+#define DEFAULT_RXTIME	0x1000
 
 #define DEFAULT_RX_COALESCE 0
-#define DEFAULT_RXCOUNT	0
+#define DEFAULT_RXCOUNT	64
 
 #define GFAR_SUPPORTED (SUPPORTED_10baseT_Half \
 		| SUPPORTED_10baseT_Full \
@@ -1182,8 +1182,8 @@ extern void lock_tx_qs(struct gfar_private *priv);
 extern void unlock_rx_qs(struct gfar_private *priv);
 extern void unlock_tx_qs(struct gfar_private *priv);
 extern irqreturn_t gfar_receive(int irq, void *dev_id);
-extern int startup_gfar(struct net_device *dev);
-extern void stop_gfar(struct net_device *dev);
+extern int startup_gfar(struct net_device *dev, int irq);
+extern void stop_gfar(struct net_device *dev, int irq);
 extern void gfar_halt(struct net_device *dev);
 extern void gfar_phy_test(struct mii_bus *bus, struct phy_device *phydev,
 		int enable, u32 regnum, u32 read);

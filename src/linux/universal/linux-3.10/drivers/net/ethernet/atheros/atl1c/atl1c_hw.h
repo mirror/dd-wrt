@@ -353,6 +353,9 @@ void atl1c_post_phy_linkchg(struct atl1c_hw *hw, u16 link_speed);
 #define SERDES_LOCK_DETECT_EN		BIT(1)
 #define SERDES_LOCK_DETECT		BIT(0)
 
+#define REG_LED_CONFIG            	0x142c
+
+
 #define REG_LPI_DECISN_TIMER            0x143C
 #define L2CB_LPI_DESISN_TIMER		0x7D00
 
@@ -716,6 +719,18 @@ void atl1c_post_phy_linkchg(struct atl1c_hw *hw, u16 link_speed);
 /* Interrupt Mask Register */
 #define REG_IMR				0x1604
 
+#ifdef CONFIG_RB800
+#define IMR_NORMAL_MASK		(\
+		ISR_MANUAL	|\
+		ISR_DMAR_TO_RST	|\
+		ISR_TXQ_TO_RST  |\
+		ISR_DMAW_TO_RST	|\
+		ISR_GPHY	|\
+		ISR_TX_PKT	|\
+		ISR_RX_PKT_0	|\
+		ISR_GPHY_LPW    |\
+		ISR_PHY_LINKDOWN)
+#else
 #define IMR_NORMAL_MASK		(\
 		ISR_MANUAL	|\
 		ISR_HW_RXF_OV	|\
@@ -730,6 +745,7 @@ void atl1c_post_phy_linkchg(struct atl1c_hw *hw, u16 link_speed);
 		ISR_GPHY_LPW    |\
 		ISR_PHY_LINKDOWN)
 
+#endif
 #define ISR_RX_PKT 	(\
 	ISR_RX_PKT_0    |\
 	ISR_RX_PKT_1    |\
