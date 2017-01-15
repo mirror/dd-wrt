@@ -277,6 +277,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	fflush(out);
 	fsync(fileno(out));
 	fclose(out);
+	killall("watchdog", SIGKILL);
 	/*
 	 * Wait for write to terminate 
 	 */
