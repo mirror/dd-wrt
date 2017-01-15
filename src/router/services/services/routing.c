@@ -605,6 +605,7 @@ static int bird_init(void)
 	if (nvram_match("routing_rip2", "on") || nvram_match("routing_ospf", "on")
 	    || nvram_match("routing_bgp", "on")) {
 		mkdir("/tmp/bird", 0744);
+		mkdir("/tmp/bird/run", 0744);
 		if (!(fp = fopen("/tmp/bird/bird.conf", "w"))) {
 			perror("/tmp/bird/bird.conf");
 			return errno;
