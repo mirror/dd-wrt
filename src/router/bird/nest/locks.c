@@ -22,10 +22,11 @@
  * or some other non-shareable resource, it asks the core to lock it and it doesn't
  * use the resource until it's notified that it has acquired the lock.
  *
- * Object locks are represented by &object_lock structures which are in turn a kind of
- * resource. Lockable resources are uniquely determined by resource type
+ * Object locks are represented by &object_lock structures which are in turn a
+ * kind of resource. Lockable resources are uniquely determined by resource type
  * (%OBJLOCK_UDP for a UDP port etc.), IP address (usually a broadcast or
- * multicast address the port is bound to), port number and interface.
+ * multicast address the port is bound to), port number, interface and optional
+ * instance ID.
  */
 
 #undef LOCAL_DEBUG
@@ -45,6 +46,7 @@ olock_same(struct object_lock *x, struct object_lock *y)
     x->type == y->type &&
     x->iface == y->iface &&
     x->port == y->port &&
+    x->inst == y->inst &&
     ipa_equal(x->addr, y->addr);
 }
 
@@ -68,7 +70,7 @@ olock_free(resource *r)
 	  DBG("olock: -> %p becomes locked\n", n);
 	  q = SKIP_BACK(struct object_lock, n, n);
 	  rem_node(n);
-	  add_tail_list(&l->waiters, &q->waiters);
+	  add_tail_list(&q->waiters, &l->waiters);
 	  q->state = OLOCK_STATE_EVENT;
 	  add_head(&olock_list, n);
 	  ev_schedule(olock_event);
@@ -88,7 +90,7 @@ olock_dump(resource *r)
   struct object_lock *l = (struct object_lock *) r;
   static char *olock_states[] = { "free", "locked", "waiting", "event" };
 
-  debug("(%d:%s:%I:%d) [%s]\n", l->type, (l->iface ? l->iface->name : "?"), l->addr, l->port, olock_states[l->state]);
+  debug("(%d:%s:%I:%d:%d) [%s]\n", l->type, (l->iface ? l->iface->name : "?"), l->addr, l->port, l->inst, olock_states[l->state]);
   if (!EMPTY_LIST(l->waiters))
     debug(" [wanted]\n");
 }
@@ -98,7 +100,8 @@ static struct resclass olock_class = {
   sizeof(struct object_lock),
   olock_free,
   olock_dump,
-  NULL
+  NULL,
+  NULL,
 };
 
 /**

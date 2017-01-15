@@ -28,7 +28,7 @@ add32(u32 sum, u32 x)
 }
 
 static u16
-ipsum_calc_block(u32 *buf, unsigned len, u16 isum)
+ipsum_calc_block(u32 *buf, uint len, u16 isum)
 {
   /*
    *  A few simple facts about the IP checksum (see RFC 1071 for detailed
@@ -57,7 +57,7 @@ ipsum_calc_block(u32 *buf, unsigned len, u16 isum)
 }
 
 static u16
-ipsum_calc(void *frag, unsigned len, va_list args)
+ipsum_calc(void *frag, uint len, va_list args)
 {
   u16 sum = 0;
 
@@ -67,7 +67,7 @@ ipsum_calc(void *frag, unsigned len, va_list args)
       frag = va_arg(args, void *);
       if (!frag)
 	break;
-      len = va_arg(args, unsigned);
+      len = va_arg(args, uint);
     }
   return sum;
 }
@@ -87,7 +87,7 @@ ipsum_calc(void *frag, unsigned len, va_list args)
  * Result: 1 if the checksum is correct, 0 else.
  */
 int
-ipsum_verify(void *frag, unsigned len, ...)
+ipsum_verify(void *frag, uint len, ...)
 {
   va_list args;
   u16 sum;
@@ -110,7 +110,7 @@ ipsum_verify(void *frag, unsigned len, ...)
  * up checksum calculation as much as possible.
  */
 u16
-ipsum_calculate(void *frag, unsigned len, ...)
+ipsum_calculate(void *frag, uint len, ...)
 {
   va_list args;
   u16 sum;

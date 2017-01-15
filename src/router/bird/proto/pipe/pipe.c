@@ -247,7 +247,7 @@ pipe_reconfigure(struct proto *P, struct proto_config *new)
 
   if ((P->proto_state != PS_UP) || (proto_reconfig_type == RECONFIG_SOFT))
     return 1;
-  
+
   if ((new->preference != old->preference)
       || ! filter_same(new->in_filter, old->in_filter)
       || ! filter_same(new->out_filter, old->out_filter))
@@ -298,7 +298,7 @@ pipe_show_stats(struct pipe_proto *p)
    * (imp/exp), while stats s2 have switched 'polarity'.
    */
 
-  cli_msg(-1006, "  Routes:         %u imported, %u exported", 
+  cli_msg(-1006, "  Routes:         %u imported, %u exported",
 	  s1->imp_routes, s2->imp_routes);
   cli_msg(-1006, "  Route change stats:     received   rejected   filtered    ignored   accepted");
   cli_msg(-1006, "    Import updates:     %10u %10u %10u %10u %10u",
@@ -336,16 +336,17 @@ pipe_show_proto_info(struct proto *P)
 
 
 struct protocol proto_pipe = {
-  name:			"Pipe",
-  template:		"pipe%d",
-  multitable:		1,
-  preference:		DEF_PREF_PIPE,
-  postconfig:		pipe_postconfig,
-  init:			pipe_init,
-  start:		pipe_start,
-  cleanup:		pipe_cleanup,
-  reconfigure:		pipe_reconfigure,
-  copy_config:  	pipe_copy_config,
-  get_status:		pipe_get_status,
-  show_proto_info:	pipe_show_proto_info
+  .name =		"Pipe",
+  .template =		"pipe%d",
+  .multitable =		1,
+  .preference =		DEF_PREF_PIPE,
+  .config_size =	sizeof(struct pipe_config),
+  .postconfig =		pipe_postconfig,
+  .init =		pipe_init,
+  .start =		pipe_start,
+  .cleanup =		pipe_cleanup,
+  .reconfigure =	pipe_reconfigure,
+  .copy_config = 	pipe_copy_config,
+  .get_status = 	pipe_get_status,
+  .show_proto_info = 	pipe_show_proto_info
 };

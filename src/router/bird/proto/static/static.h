@@ -9,6 +9,9 @@
 #ifndef _BIRD_STATIC_H_
 #define _BIRD_STATIC_H_
 
+#include "nest/route.h"
+#include "nest/bfd.h"
+
 struct static_config {
   struct proto_config c;
   list iface_routes;		/* Routes to search on interface events */
@@ -31,7 +34,10 @@ struct static_route {
   struct neighbor *neigh;
   byte *if_name;			/* Name for RTD_DEVICE routes */
   struct static_route *mp_next;		/* Nexthops for RTD_MULTIPATH routes */
+  struct f_inst *cmds;			/* List of commands for setting attributes */
   int installed;			/* Installed in rt table, -1 for reinstall */
+  int use_bfd;				/* Configured to use BFD */
+  struct bfd_request *bfd_req;		/* BFD request, if BFD is used */
 };
 
 /* Dummy nodes (parts of multipath route) abuses masklen field for weight

@@ -22,6 +22,12 @@
 
 #include "bgp.h"
 
+
+#define BGP_RR_REQUEST		0
+#define BGP_RR_BEGIN		1
+#define BGP_RR_END		2
+
+
 static struct tbf rl_rcv_update = TBF_DEFAULT_LOG_LIMITS;
 static struct tbf rl_snd_update = TBF_DEFAULT_LOG_LIMITS;
 
@@ -69,8 +75,8 @@ mrt_put_bgp4_hdr(byte *buf, struct bgp_conn *conn, int as4)
   put_u16(buf+0, (p->neigh && p->neigh->iface) ? p->neigh->iface->index : 0);
   put_u16(buf+2, BGP_AF);
   buf+=4;
-  buf = ipa_put_addr(buf, conn->sk ? conn->sk->daddr : IPA_NONE);
-  buf = ipa_put_addr(buf, conn->sk ? conn->sk->saddr : IPA_NONE);
+  buf = put_ipa(buf, conn->sk ? conn->sk->daddr : IPA_NONE);
+  buf = put_ipa(buf, conn->sk ? conn->sk->saddr : IPA_NONE);
 
   return buf;
 }
@@ -78,7 +84,7 @@ mrt_put_bgp4_hdr(byte *buf, struct bgp_conn *conn, int as4)
 static void
 mrt_dump_bgp_packet(struct bgp_conn *conn, byte *pkt, unsigned len)
 {
-  byte buf[BGP_MAX_PACKET_LENGTH + 128];
+  byte *buf = alloca(128+len);	/* 128 is enough for MRT headers */
   byte *bp = buf + MRTDUMP_HDR_LENGTH;
   int as4 = conn->bgp->as4_session;
 
@@ -158,6 +164,14 @@ bgp_put_cap_rr(struct bgp_proto *p UNUSED, byte *buf)
 }
 
 static byte *
+bgp_put_cap_ext_msg(struct bgp_proto *p UNUSED, byte *buf)
+{
+  *buf++ = 6;		/* Capability 6: Support for extended messages */
+  *buf++ = 0;		/* Capability data length */
+  return buf;
+}
+
+static byte *
 bgp_put_cap_gr1(struct bgp_proto *p, byte *buf)
 {
   *buf++ = 64;		/* Capability 64: Support for graceful restart */
@@ -177,7 +191,7 @@ bgp_put_cap_gr1(struct bgp_proto *p, byte *buf)
 }
 
 static byte *
-bgp_put_cap_gr2(struct bgp_proto *p, byte *buf)
+bgp_put_cap_gr2(struct bgp_proto *p UNUSED, byte *buf)
 {
   *buf++ = 64;		/* Capability 64: Support for graceful restart */
   *buf++ = 2;		/* Capability data length */
@@ -208,6 +222,15 @@ bgp_put_cap_add_path(struct bgp_proto *p, byte *buf)
 
   return buf;
 }
+
+static byte *
+bgp_put_cap_err(struct bgp_proto *p UNUSED, byte *buf)
+{
+  *buf++ = 70;		/* Capability 70: Support for enhanced route refresh */
+  *buf++ = 0;		/* Capability data length */
+  return buf;
+}
+
 
 static byte *
 bgp_create_open(struct bgp_conn *conn, byte *buf)
@@ -256,6 +279,12 @@ bgp_create_open(struct bgp_conn *conn, byte *buf)
   if (p->cf->add_path)
     cap = bgp_put_cap_add_path(p, cap);
 
+  if (p->cf->enable_refresh)
+    cap = bgp_put_cap_err(p, cap);
+
+  if (p->cf->enable_extended_messages)
+    cap = bgp_put_cap_ext_msg(p, cap);
+
   cap_len = cap - buf - 12;
   if (cap_len > 0)
     {
@@ -271,8 +300,8 @@ bgp_create_open(struct bgp_conn *conn, byte *buf)
     }
 }
 
-static unsigned int
-bgp_encode_prefixes(struct bgp_proto *p, byte *w, struct bgp_bucket *buck, unsigned int remains)
+static uint
+bgp_encode_prefixes(struct bgp_proto *p, byte *w, struct bgp_bucket *buck, uint remains)
 {
   byte *start = w;
   ip_addr a;
@@ -324,7 +353,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
   struct bgp_bucket *buck;
-  int remains = BGP_MAX_PACKET_LENGTH - BGP_HEADER_LENGTH - 4;
+  int remains = bgp_max_packet_length(p) - BGP_HEADER_LENGTH - 4;
   byte *w;
   int wd_size = 0;
   int r_size = 0;
@@ -340,7 +369,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
     }
   put_u16(buf, wd_size);
 
-  if (remains >= 3072)
+  if (!wd_size)
     {
       while ((buck = (struct bgp_bucket *) HEAD(p->bucket_queue))->send_node.next)
 	{
@@ -353,7 +382,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	    }
 
 	  DBG("Processing bucket %p\n", buck);
-	  a_size = bgp_encode_attrs(p, w+2, buck->eattrs, 2048);
+	  a_size = bgp_encode_attrs(p, w+2, buck->eattrs, remains - 1024);
 
 	  if (a_size < 0)
 	    {
@@ -389,7 +418,7 @@ static byte *
 bgp_create_end_mark(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
-  BGP_TRACE(D_PACKETS, "Sending End-of-RIB");
+  BGP_TRACE(D_PACKETS, "Sending END-OF-RIB");
 
   put_u32(buf, 0);
   return buf+4;
@@ -410,7 +439,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
   struct bgp_proto *p = conn->bgp;
   struct bgp_bucket *buck;
   int size, second, rem_stored;
-  int remains = BGP_MAX_PACKET_LENGTH - BGP_HEADER_LENGTH - 4;
+  int remains = bgp_max_packet_length(p) - BGP_HEADER_LENGTH - 4;
   byte *w, *w_stored, *tmp, *tstart;
   ip_addr *ipp, ip, ip_ll;
   ea_list *ea;
@@ -432,8 +461,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
       w += size;
       remains -= size;
     }
-
-  if (remains >= 3072)
+  else
     {
       while ((buck = (struct bgp_bucket *) HEAD(p->bucket_queue))->send_node.next)
 	{
@@ -449,7 +477,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	  rem_stored = remains;
 	  w_stored = w;
 
-	  size = bgp_encode_attrs(p, w, buck->eattrs, 2048);
+	  size = bgp_encode_attrs(p, w, buck->eattrs, remains - 1024);
 	  if (size < 0)
 	    {
 	      log(L_ERR "%s: Attribute list too long, skipping corresponding routes", p->p.name);
@@ -522,7 +550,7 @@ bgp_create_update(struct bgp_conn *conn, byte *buf)
 	  *tmp++ = BGP_AF_IPV6;
 	  *tmp++ = 1;
 
-	  if (ipa_has_link_scope(ip))
+	  if (ipa_is_link_local(ip))
 	    ip = IPA_NONE;
 
 	  if (ipa_nonzero(ip_ll))
@@ -568,7 +596,7 @@ static byte *
 bgp_create_end_mark(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
-  BGP_TRACE(D_PACKETS, "Sending End-of-RIB");
+  BGP_TRACE(D_PACKETS, "Sending END-OF-RIB");
 
   put_u16(buf+0, 0);
   put_u16(buf+2, 6);	/* length 4-9 */
@@ -586,21 +614,51 @@ bgp_create_end_mark(struct bgp_conn *conn, byte *buf)
 
 #endif
 
-static byte *
+static inline byte *
 bgp_create_route_refresh(struct bgp_conn *conn, byte *buf)
 {
   struct bgp_proto *p = conn->bgp;
   BGP_TRACE(D_PACKETS, "Sending ROUTE-REFRESH");
 
+  /* Original original route refresh request, RFC 2918 */
   *buf++ = 0;
   *buf++ = BGP_AF;
-  *buf++ = 0;		/* RFU */
-  *buf++ = 1;		/* and SAFI 1 */
+  *buf++ = BGP_RR_REQUEST;
+  *buf++ = 1;		/* SAFI */
   return buf;
 }
 
+static inline byte *
+bgp_create_begin_refresh(struct bgp_conn *conn, byte *buf)
+{
+  struct bgp_proto *p = conn->bgp;
+  BGP_TRACE(D_PACKETS, "Sending BEGIN-OF-RR");
+
+  /* Demarcation of beginning of route refresh (BoRR), RFC 7313 */
+  *buf++ = 0;
+  *buf++ = BGP_AF;
+  *buf++ = BGP_RR_BEGIN;
+  *buf++ = 1;		/* SAFI */
+  return buf;
+}
+
+static inline byte *
+bgp_create_end_refresh(struct bgp_conn *conn, byte *buf)
+{
+  struct bgp_proto *p = conn->bgp;
+  BGP_TRACE(D_PACKETS, "Sending END-OF-RR");
+
+  /* Demarcation of ending of route refresh (EoRR), RFC 7313 */
+  *buf++ = 0;
+  *buf++ = BGP_AF;
+  *buf++ = BGP_RR_END;
+  *buf++ = 1;		/* SAFI */
+  return buf;
+}
+
+
 static void
-bgp_create_header(byte *buf, unsigned int len, unsigned int type)
+bgp_create_header(byte *buf, uint len, uint type)
 {
   memset(buf, 0xff, 16);		/* Marker */
   put_u16(buf+16, len);
@@ -621,7 +679,7 @@ static int
 bgp_fire_tx(struct bgp_conn *conn)
 {
   struct bgp_proto *p = conn->bgp;
-  unsigned int s = conn->packets_to_send;
+  uint s = conn->packets_to_send;
   sock *sk = conn->sk;
   byte *buf, *pkt, *end;
   int type;
@@ -666,24 +724,44 @@ bgp_fire_tx(struct bgp_conn *conn)
       type = PKT_ROUTE_REFRESH;
       end = bgp_create_route_refresh(conn, pkt);
     }
+  else if (s & (1 << PKT_BEGIN_REFRESH))
+    {
+      s &= ~(1 << PKT_BEGIN_REFRESH);
+      type = PKT_ROUTE_REFRESH;	/* BoRR is a subtype of RR */
+      end = bgp_create_begin_refresh(conn, pkt);
+    }
   else if (s & (1 << PKT_UPDATE))
     {
-      end = bgp_create_update(conn, pkt);
       type = PKT_UPDATE;
+      end = bgp_create_update(conn, pkt);
 
       if (!end)
-	{
+        {
+	  /* No update to send, perhaps we need to send End-of-RIB or EoRR */
+
 	  conn->packets_to_send = 0;
 
-	  if (!p->send_end_mark)
+	  if (p->feed_state == BFS_LOADED)
+	  {
+	    type = PKT_UPDATE;
+	    end = bgp_create_end_mark(conn, pkt);
+	  }
+
+	  else if (p->feed_state == BFS_REFRESHED)
+	  {
+	    type = PKT_ROUTE_REFRESH;
+	    end = bgp_create_end_refresh(conn, pkt);
+	  }
+
+	  else /* Really nothing to send */
 	    return 0;
 
-	  p->send_end_mark = 0;
-	  end = bgp_create_end_mark(conn, pkt);
+	  p->feed_state = BFS_NONE;
 	}
     }
   else
     return 0;
+
   conn->packets_to_send = s;
   bgp_create_header(buf, end - buf, type);
   return sk_send(sk, end - buf);
@@ -701,7 +779,7 @@ bgp_schedule_packet(struct bgp_conn *conn, int type)
 {
   DBG("BGP: Scheduling packet type %d\n", type);
   conn->packets_to_send |= 1 << type;
-  if (conn->sk && conn->sk->tpos == conn->sk->tbuf)
+  if (conn->sk && conn->sk->tpos == conn->sk->tbuf && !ev_active(conn->tx_ev))
     ev_schedule(conn->tx_ev);
 }
 
@@ -737,7 +815,7 @@ bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
     {
       if (len < 2 || len < 2 + opt[1])
 	goto err;
-      
+
       cl = opt[1];
 
       switch (opt[0])
@@ -746,6 +824,12 @@ bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
 	  if (cl != 0)
 	    goto err;
 	  conn->peer_refresh_support = 1;
+	  break;
+
+	case 6: /* Extended message length capability, draft */
+	  if (cl != 0)
+	    goto err;
+	  conn->peer_ext_messages_support = 1;
 	  break;
 
 	case 64: /* Graceful restart capability, RFC 4724 */
@@ -780,7 +864,12 @@ bgp_parse_capabilities(struct bgp_conn *conn, byte *opt, int len)
 	      conn->peer_add_path = opt[2+i+3];
 	  if (conn->peer_add_path > ADD_PATH_FULL)
 	    goto err;
+	  break;
 
+	case 70: /* Enhanced route refresh capability, RFC 7313 */
+	  if (cl != 0)
+	    goto err;
+	  conn->peer_enhanced_refresh_support = 1;
 	  break;
 
 	  /* We can safely ignore all other capabilities */
@@ -842,7 +931,7 @@ bgp_parse_options(struct bgp_conn *conn, byte *opt, int len)
 }
 
 static void
-bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
+bgp_rx_open(struct bgp_conn *conn, byte *pkt, uint len)
 {
   struct bgp_conn *other;
   struct bgp_proto *p = conn->bgp;
@@ -855,7 +944,7 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
     { bgp_error(conn, 5, fsm_err_subcode[conn->state], NULL, 0); return; }
 
   /* Check message contents */
-  if (len < 29 || len != 29 + pkt[28])
+  if (len < 29 || len != 29U + pkt[28])
     { bgp_error(conn, 1, 2, pkt+16, 2); return; }
   if (pkt[19] != BGP_VERSION)
     { bgp_error(conn, 2, 1, pkt+19, 1); return; } /* RFC 1771 says 16 bits, draft-09 tells to use 8 */
@@ -870,7 +959,8 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
   if (hold > 0 && hold < 3)
     { bgp_error(conn, 2, 6, pkt+22, 2); return; }
 
-  if (!id || id == 0xffffffff || id == p->local_id)
+  /* RFC 6286 2.2 - router ID is nonzero and AS-wide unique */
+  if (!id || (p->is_internal && id == p->local_id))
     { bgp_error(conn, 2, 3, pkt+24, -4); return; }
 
   if ((conn->advertised_as != base_as) && (base_as != AS_TRANS))
@@ -905,8 +995,23 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
       break;
 
     case BS_OPENCONFIRM:
-      if ((p->local_id < id) == (conn == &p->incoming_conn))
-	{
+      /*
+       * Description of collision detection rules in RFC 4271 is confusing and
+       * contradictory, but it is essentially:
+       *
+       * 1. Router with higher ID is dominant
+       * 2. If both have the same ID, router with higher ASN is dominant [RFC6286]
+       * 3. When both connections are in OpenConfirm state, one initiated by
+       *    the dominant router is kept.
+       *
+       * The first line in the expression below evaluates whether the neighbor
+       * is dominant, the second line whether the new connection was initiated
+       * by the neighbor. If both are true (or both are false), we keep the new
+       * connection, otherwise we keep the old one.
+       */
+      if (((p->local_id < id) || ((p->local_id == id) && (p->local_as < p->remote_as)))
+	  == (conn == &p->incoming_conn))
+        {
 	  /* Should close the other connection */
 	  BGP_TRACE(D_EVENTS, "Connection collision, giving up the other connection");
 	  bgp_error(other, 6, 7, NULL, 0);
@@ -930,6 +1035,7 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
   p->add_path_rx = (p->cf->add_path & ADD_PATH_RX) && (conn->peer_add_path & ADD_PATH_TX);
   p->add_path_tx = (p->cf->add_path & ADD_PATH_TX) && (conn->peer_add_path & ADD_PATH_RX);
   p->gr_ready = p->cf->gr_mode && conn->peer_gr_able;
+  p->ext_messages = p->cf->enable_extended_messages && conn->peer_ext_messages_support;
 
   if (p->add_path_tx)
     p->p.accept_ra_types = RA_ANY;
@@ -945,7 +1051,10 @@ bgp_rx_open(struct bgp_conn *conn, byte *pkt, int len)
 static inline void
 bgp_rx_end_mark(struct bgp_proto *p)
 {
-  BGP_TRACE(D_PACKETS, "Got End-of-RIB");
+  BGP_TRACE(D_PACKETS, "Got END-OF-RIB");
+
+  if (p->load_state == BFS_LOADING)
+    p->load_state = BFS_NONE;
 
   if (p->p.gr_recovery)
     proto_graceful_restart_unlock(&p->p);
@@ -999,7 +1108,11 @@ bgp_rte_update(struct bgp_proto *p, ip_addr prefix, int pxlen,
   if (!*a)
     {
       a0->src = *src;
+
+      /* Workaround for rta_lookup() breaking eattrs */
+      ea_list *ea = a0->eattrs;
       *a = rta_lookup(a0);
+      a0->eattrs = ea;
     }
 
   net *n = net_get(p->p.table, prefix, pxlen);
@@ -1034,7 +1147,7 @@ bgp_set_next_hop(struct bgp_proto *p, rta *a)
   int second = (nh->u.ptr->length == NEXT_HOP_LENGTH) && ipa_nonzero(nexthop[1]);
 
   /* First address should not be link-local, but may be zero in direct mode */
-  if (ipa_has_link_scope(*nexthop))
+  if (ipa_is_link_local(*nexthop))
     *nexthop = IPA_NONE;
 #else
   int second = 0;
@@ -1143,16 +1256,15 @@ bgp_do_rx_update(struct bgp_conn *conn,
 #else			/* IPv6 version */
 
 #define DO_NLRI(name)					\
-  start = x = p->name##_start;				\
+  x = p->name##_start;				\
   len = len0 = p->name##_len;				\
   if (len)						\
     {							\
       if (len < 3) { err=9; goto done; }		\
       af = get_u16(x);					\
-      sub = x[2];					\
       x += 3;						\
       len -= 3;						\
-      DBG("\tNLRI AF=%d sub=%d len=%d\n", af, sub, len);\
+      DBG("\tNLRI AF=%d sub=%d len=%d\n", af, x[-1], len);\
     }							\
   else							\
     af = 0;						\
@@ -1178,15 +1290,15 @@ bgp_attach_next_hop(rta *a0, byte *x)
 
 static void
 bgp_do_rx_update(struct bgp_conn *conn,
-		 byte *withdrawn, int withdrawn_len,
-		 byte *nlri, int nlri_len,
+		 byte *withdrawn UNUSED, int withdrawn_len,
+		 byte *nlri UNUSED, int nlri_len,
 		 byte *attrs, int attr_len)
 {
   struct bgp_proto *p = conn->bgp;
   struct rte_src *src = p->p.main_source;
-  byte *start, *x;
+  byte *x;
   int len, len0;
-  unsigned af, sub;
+  unsigned af;
   rta *a0, *a = NULL;
   ip_addr prefix;
   int pxlen, err = 0;
@@ -1262,11 +1374,11 @@ bgp_do_rx_update(struct bgp_conn *conn,
 #endif
 
 static void
-bgp_rx_update(struct bgp_conn *conn, byte *pkt, int len)
+bgp_rx_update(struct bgp_conn *conn, byte *pkt, uint len)
 {
   struct bgp_proto *p = conn->bgp;
   byte *withdrawn, *attrs, *nlri;
-  int withdrawn_len, attr_len, nlri_len;
+  uint withdrawn_len, attr_len, nlri_len;
 
   BGP_TRACE_RL(&rl_rcv_update, D_PACKETS, "Got UPDATE");
 
@@ -1322,7 +1434,7 @@ static struct {
   { 2, 4, "Unsupported optional parameter" },
   { 2, 5, "Authentication failure" },
   { 2, 6, "Unacceptable hold time" },
-  { 2, 7, "Required capability missing" }, /* [RFC3392] */
+  { 2, 7, "Required capability missing" }, /* [RFC5492] */
   { 2, 8, "No supported AFI/SAFI" }, /* This error msg is nonstandard */
   { 3, 0, "Invalid UPDATE message" },
   { 3, 1, "Malformed attribute list" },
@@ -1349,7 +1461,9 @@ static struct {
   { 6, 5, "Connection rejected" },
   { 6, 6, "Other configuration change" },
   { 6, 7, "Connection collision resolution" },
-  { 6, 8, "Out of Resources" }
+  { 6, 8, "Out of Resources" },
+  { 7, 0, "Invalid ROUTE-REFRESH message" }, /* [RFC7313] */
+  { 7, 1, "Invalid ROUTE-REFRESH message length" } /* [RFC7313] */
 };
 
 /**
@@ -1410,7 +1524,7 @@ bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned 
 }
 
 static void
-bgp_rx_notification(struct bgp_conn *conn, byte *pkt, int len)
+bgp_rx_notification(struct bgp_conn *conn, byte *pkt, uint len)
 {
   struct bgp_proto *p = conn->bgp;
   if (len < 21)
@@ -1476,11 +1590,9 @@ bgp_rx_keepalive(struct bgp_conn *conn)
 }
 
 static void
-bgp_rx_route_refresh(struct bgp_conn *conn, byte *pkt, int len)
+bgp_rx_route_refresh(struct bgp_conn *conn, byte *pkt, uint len)
 {
   struct bgp_proto *p = conn->bgp;
-
-  BGP_TRACE(D_PACKETS, "Got ROUTE-REFRESH");
 
   if (conn->state != BS_ESTABLISHED)
     { bgp_error(conn, 5, fsm_err_subcode[conn->state], NULL, 0); return; }
@@ -1488,14 +1600,41 @@ bgp_rx_route_refresh(struct bgp_conn *conn, byte *pkt, int len)
   if (!p->cf->enable_refresh)
     { bgp_error(conn, 1, 3, pkt+18, 1); return; }
 
-  if (len != (BGP_HEADER_LENGTH + 4))
+  if (len < (BGP_HEADER_LENGTH + 4))
     { bgp_error(conn, 1, 2, pkt+16, 2); return; }
+
+  if (len > (BGP_HEADER_LENGTH + 4))
+    { bgp_error(conn, 7, 1, pkt, MIN(len, 2048)); return; }
 
   /* FIXME - we ignore AFI/SAFI values, as we support
      just one value and even an error code for an invalid
      request is not defined */
 
-  proto_request_feeding(&p->p);
+  /* RFC 7313 redefined reserved field as RR message subtype */
+  uint subtype = conn->peer_enhanced_refresh_support ? pkt[21] : BGP_RR_REQUEST;
+
+  switch (subtype)
+  {
+  case BGP_RR_REQUEST:
+    BGP_TRACE(D_PACKETS, "Got ROUTE-REFRESH");
+    proto_request_feeding(&p->p);
+    break;
+
+  case BGP_RR_BEGIN:
+    BGP_TRACE(D_PACKETS, "Got BEGIN-OF-RR");
+    bgp_refresh_begin(p);
+    break;
+
+  case BGP_RR_END:
+    BGP_TRACE(D_PACKETS, "Got END-OF-RR");
+    bgp_refresh_end(p);
+    break;
+
+  default:
+    log(L_WARN "%s: Got ROUTE-REFRESH message with unknown subtype %u, ignoring",
+	p->p.name, subtype);
+    break;
+  }
 }
 
 
@@ -1540,9 +1679,10 @@ bgp_rx_packet(struct bgp_conn *conn, byte *pkt, unsigned len)
  * bgp_rx_packet().
  */
 int
-bgp_rx(sock *sk, int size)
+bgp_rx(sock *sk, uint size)
 {
   struct bgp_conn *conn = sk->data;
+  struct bgp_proto *p = conn->bgp;
   byte *pkt_start = sk->rbuf;
   byte *end = pkt_start + size;
   unsigned i, len;
@@ -1559,7 +1699,7 @@ bgp_rx(sock *sk, int size)
 	    break;
 	  }
       len = get_u16(pkt_start+16);
-      if (len < BGP_HEADER_LENGTH || len > BGP_MAX_PACKET_LENGTH)
+      if (len < BGP_HEADER_LENGTH || len > bgp_max_packet_length(p))
 	{
 	  bgp_error(conn, 1, 2, pkt_start+16, 2);
 	  break;

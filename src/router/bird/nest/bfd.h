@@ -32,11 +32,17 @@ struct bfd_request {
 };
 
 
+#define BFD_STATE_ADMIN_DOWN	0
+#define BFD_STATE_DOWN		1
+#define BFD_STATE_INIT		2
+#define BFD_STATE_UP		3
+
+
 #ifdef CONFIG_BFD
 
 struct bfd_request * bfd_request_session(pool *p, ip_addr addr, ip_addr local, struct iface *iface, void (*hook)(struct bfd_request *), void *data);
 
-static inline void cf_check_bfd(int use) { }
+static inline void cf_check_bfd(int use UNUSED) { }
 
 #else
 

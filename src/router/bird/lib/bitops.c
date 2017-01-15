@@ -17,7 +17,7 @@
  * representation consists of @n ones followed by zeroes.
  */
 u32
-u32_mkmask(unsigned n)
+u32_mkmask(uint n)
 {
   return n ? ~((1 << (32 - n)) - 1) : 0;
 }

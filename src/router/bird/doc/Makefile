@@ -13,7 +13,7 @@ endif
 
 docs: progdocs userdocs
 progdocs: prog.html prog.ps
-userdocs: bird.html bird.ps
+userdocs: bird.html bird.pdf
 
 prog.sgml:
 	$(srcdir)/tools/progdoc $(srcdir_abs)
@@ -27,6 +27,10 @@ prog.sgml:
 
 %.ps: %.dvi
 	dvips -D600 -ta4 -o $@ $<
+
+%.pdf: %.tex
+	pdflatex $<
+	pdflatex $<
 
 %.tex: %.sgml
 	./sgml2latex --output=tex $<

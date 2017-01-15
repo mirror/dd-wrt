@@ -8,7 +8,9 @@
 
 #undef LOCAL_DEBUG
 
-#define _GNU_SOURCE 1
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,7 +75,7 @@ async_dump(void)
 #else
 
 static inline void
-drop_uid(uid_t uid)
+drop_uid(uid_t uid UNUSED)
 {
   die("Cannot change user on this platform");
 }
@@ -96,7 +98,7 @@ drop_gid(gid_t gid)
 static inline void
 add_num_const(char *name, int val)
 {
-  struct symbol *s = cf_find_symbol(name);
+  struct symbol *s = cf_get_symbol(name);
   s->class = SYM_CONSTANT | T_INT;
   s->def = cfg_allocz(sizeof(struct f_val));
   SYM_TYPE(s) = T_INT;
@@ -155,7 +157,7 @@ read_iproute_table(char *file, char *prefix, int max)
 static char *config_name = PATH_CONFIG_FILE;
 
 static int
-cf_read(byte *dest, unsigned int len, int fd)
+cf_read(byte *dest, uint len, int fd)
 {
   int l = read(fd, dest, len);
   if (l < 0)
@@ -167,6 +169,9 @@ void
 sysdep_preconfig(struct config *c)
 {
   init_list(&c->logfiles);
+
+  c->latency_limit = UNIX_DEFAULT_LATENCY_LIMIT;
+  c->watchdog_warning = UNIX_DEFAULT_WATCHDOG_WARNING;
 
 #ifdef PATH_IPROUTE_DIR
   read_iproute_table(PATH_IPROUTE_DIR "/rt_protos", "ipp_", 256);
@@ -416,7 +421,7 @@ cli_get_command(cli *c)
 }
 
 static int
-cli_rx(sock *s, int size UNUSED)
+cli_rx(sock *s, uint size UNUSED)
 {
   cli_kick(s->data);
   return 0;
@@ -436,7 +441,7 @@ cli_err(sock *s, int err)
 }
 
 static int
-cli_connect(sock *s, int size UNUSED)
+cli_connect(sock *s, uint size UNUSED)
 {
   cli *c;
 
@@ -447,6 +452,7 @@ cli_connect(sock *s, int size UNUSED)
   s->err_hook = cli_err;
   s->data = c = cli_new(s);
   s->pool = c->pool;		/* We need to have all the socket buffers allocated in the cli pool */
+  s->fast_rx = 1;
   c->rx_pos = c->rx_buf;
   c->rx_aux = NULL;
   rmove(s, c->pool);
@@ -463,6 +469,7 @@ cli_init_unix(uid_t use_uid, gid_t use_gid)
   s->type = SK_UNIX_PASSIVE;
   s->rx_hook = cli_connect;
   s->rbsize = 1024;
+  s->fast_rx = 1;
 
   /* Return value intentionally ignored */
   unlink(path_control_socket);
@@ -585,6 +592,8 @@ handle_sigterm(int sig UNUSED)
   async_shutdown_flag = 1;
 }
 
+void watchdog_sigalrm(int sig UNUSED);
+
 static void
 signal_init(void)
 {
@@ -600,6 +609,9 @@ signal_init(void)
   sa.sa_handler = handle_sigterm;
   sa.sa_flags = SA_RESTART;
   sigaction(SIGTERM, &sa, NULL);
+  sa.sa_handler = watchdog_sigalrm;
+  sa.sa_flags = 0;
+  sigaction(SIGALRM, &sa, NULL);
   signal(SIGPIPE, SIG_IGN);
 }
 
@@ -607,7 +619,7 @@ signal_init(void)
  *	Parsing of command-line arguments
  */
 
-static char *opt_list = "c:dD:ps:P:u:g:fR";
+static char *opt_list = "c:dD:ps:P:u:g:flRh";
 static int parse_and_exit;
 char *bird_name;
 static char *use_user;
@@ -615,10 +627,43 @@ static char *use_group;
 static int run_in_foreground = 0;
 
 static void
-usage(void)
+display_usage(void)
 {
-  fprintf(stderr, "Usage: %s [-c <config-file>] [-d] [-D <debug-file>] [-p] [-s <control-socket>] [-P <pid-file>] [-u <user>] [-g <group>] [-f] [-R]\n", bird_name);
-  exit(1);
+  fprintf(stderr, "Usage: %s [--version] [--help] [-c <config-file>] [OPTIONS]\n", bird_name);
+}
+
+static void
+display_help(void)
+{
+  display_usage();
+
+  fprintf(stderr,
+    "\n"
+    "Options: \n"
+    "  -c <config-file>     Use given configuration file instead\n"
+    "                       of prefix/etc/bird.conf\n"
+    "  -d                   Enable debug messages and run bird in foreground\n"
+    "  -D <debug-file>      Log debug messages to given file instead of stderr\n"
+    "  -f                   Run bird in foreground\n"
+    "  -g <group>           Use given group ID\n"
+    "  -h, --help           Display this information\n"
+    "  -l                   Look for a configuration file and a communication socket\n"
+    "                       file in the current working directory\n"
+    "  -p                   Test configuration file and exit without start\n"
+    "  -P <pid-file>        Create a PID file with given filename\n"
+    "  -R                   Apply graceful restart recovery after start\n"
+    "  -s <control-socket>  Use given filename for a control socket\n"
+    "  -u <user>            Drop privileges and use given user ID\n"
+    "  --version            Display version of BIRD\n");
+
+  exit(0);
+}
+
+static void
+display_version(void)
+{
+  fprintf(stderr, "BIRD version " BIRD_VERSION "\n");
+  exit(0);
 }
 
 static inline char *
@@ -667,7 +712,7 @@ get_gid(const char *s)
 
   if (!s)
     return 0;
-  
+
   errno = 0;
   rv = strtol(s, &endptr, 10);
 
@@ -684,24 +729,24 @@ get_gid(const char *s)
 static void
 parse_args(int argc, char **argv)
 {
+  int config_changed = 0;
+  int socket_changed = 0;
   int c;
 
   bird_name = get_bird_name(argv[0], "bird");
   if (argc == 2)
     {
       if (!strcmp(argv[1], "--version"))
-	{
-	  fprintf(stderr, "BIRD version " BIRD_VERSION "\n");
-	  exit(0);
-	}
+	display_version();
       if (!strcmp(argv[1], "--help"))
-	usage();
+	display_help();
     }
   while ((c = getopt(argc, argv, opt_list)) >= 0)
     switch (c)
       {
       case 'c':
 	config_name = optarg;
+	config_changed = 1;
 	break;
       case 'd':
 	debug_flag |= 1;
@@ -715,6 +760,7 @@ parse_args(int argc, char **argv)
 	break;
       case 's':
 	path_control_socket = optarg;
+	socket_changed = 1;
 	break;
       case 'P':
 	pid_file = optarg;
@@ -728,14 +774,28 @@ parse_args(int argc, char **argv)
       case 'f':
 	run_in_foreground = 1;
 	break;
+      case 'l':
+	if (!config_changed)
+	  config_name = xbasename(config_name);
+	if (!socket_changed)
+	  path_control_socket = xbasename(path_control_socket);
+	break;
       case 'R':
 	graceful_restart_recovery();
 	break;
+      case 'h':
+	display_help();
+	break;
       default:
-	usage();
+	fputc('\n', stderr);
+	display_usage();
+	exit(1);
       }
   if (optind < argc)
-    usage();
+   {
+     display_usage();
+     exit(1);
+   }
 }
 
 /*

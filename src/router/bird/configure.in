@@ -85,12 +85,12 @@ if test -z "$GCC" ; then
 fi
 
 # Enable threads by default just in Linux and FreeBSD
-if test "$enable_pthreads" = try ; then
-	case "$host_os" in
-		(linux* | freebsd*)	enable_pthreads=try ;;
-		(*)			enable_pthreads=no ;;
-	esac
-fi
+#if test "$enable_pthreads" = try ; then
+#	case "$host_os" in
+#		(linux* | freebsd* | openbsd* | netbsd* )	enable_pthreads=try ;;
+#		(*)				enable_pthreads=no ;;
+#	esac
+#fi
 
 if test "$enable_pthreads" != no ; then
 	BIRD_CHECK_PTHREADS
@@ -111,11 +111,13 @@ fi
 
 if test "$bird_cflags_default" = yes ; then
 	BIRD_CHECK_GCC_OPTION(bird_cv_c_option_wno_pointer_sign, -Wno-pointer-sign, -Wall)
+	BIRD_CHECK_GCC_OPTION(bird_cv_c_option_wno_missing_init, -Wno-missing-field-initializers, -Wall -Wextra)
 	BIRD_CHECK_GCC_OPTION(bird_cv_c_option_fno_strict_aliasing, -fno-strict-aliasing)
 	BIRD_CHECK_GCC_OPTION(bird_cv_c_option_fno_strict_overflow, -fno-strict-overflow)
 
-	CFLAGS="$CFLAGS -Wall -Wstrict-prototypes -Wno-parentheses"
+	CFLAGS="$CFLAGS -Wall -Wextra -Wstrict-prototypes -Wno-parentheses"
 	BIRD_ADD_GCC_OPTION(bird_cv_c_option_wno_pointer_sign, -Wno-pointer-sign)
+	BIRD_ADD_GCC_OPTION(bird_cv_c_option_wno_missing_init, -Wno-missing-field-initializers)
 	BIRD_ADD_GCC_OPTION(bird_cv_c_option_fno_strict_aliasing, -fno-strict-aliasing)
 	BIRD_ADD_GCC_OPTION(bird_cv_c_option_fno_strict_overflow, -fno-strict-overflow)
 fi
@@ -206,6 +208,9 @@ fi
 AC_SUBST(iproutedir)
 
 all_protocols="$proto_bfd bgp ospf pipe $proto_radv rip static"
+if test "$ip" = ipv6 ; then
+   all_protocols="$all_protocols babel"
+fi
 all_protocols=`echo $all_protocols | sed 's/ /,/g'`
 
 if test "$with_protocols" = all ; then

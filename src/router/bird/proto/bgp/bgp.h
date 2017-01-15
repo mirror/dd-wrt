@@ -40,6 +40,7 @@ struct bgp_config {
   int capabilities;			/* Enable capability handshake [RFC3392] */
   int enable_refresh;			/* Enable local support for route refresh [RFC2918] */
   int enable_as4;			/* Enable local support for 4B AS numbers [RFC4893] */
+  int enable_extended_messages;		/* Enable local support for extended messages [draft] */
   u32 rr_cluster_id;			/* Route reflector cluster ID, if different from local ID */
   int rr_client;			/* Whether neighbor is RR client of me */
   int rs_client;			/* Whether neighbor is RS client of me */
@@ -50,11 +51,12 @@ struct bgp_config {
   int add_path;				/* Use ADD-PATH extension [draft] */
   int allow_local_as;			/* Allow that number of local ASNs in incoming AS_PATHs */
   int gr_mode;				/* Graceful restart mode (BGP_GR_*) */
+  int setkey;				/* Set MD5 password to system SA/SP database */
   unsigned gr_time;			/* Graceful restart timeout */
-  unsigned connect_retry_time;
+  unsigned connect_delay_time;		/* Minimum delay between connect attempts */
+  unsigned connect_retry_time;		/* Timeout for connect attempts */
   unsigned hold_time, initial_hold_time;
   unsigned keepalive_time;
-  unsigned start_delay_time;		/* Minimum delay between connects */
   unsigned error_amnesia_time;		/* Errors are forgotten after */
   unsigned error_delay_time_min;	/* Time to wait after an error is detected */
   unsigned error_delay_time_max;
@@ -62,6 +64,7 @@ struct bgp_config {
 
   char *password;			/* Password used for MD5 authentication */
   struct rtable_config *igp_table;	/* Table used for recursive next hop lookups */
+  int check_link;			/* Use iface link state for liveness detection */
   int bfd;				/* Use BFD for liveness detection */
 };
 
@@ -89,7 +92,7 @@ struct bgp_config {
 struct bgp_conn {
   struct bgp_proto *bgp;
   struct birdsock *sk;
-  unsigned int state;			/* State of connection state machine */
+  uint state;				/* State of connection state machine */
   struct timer *connect_retry_timer;
   struct timer *hold_timer;
   struct timer *keepalive_timer;
@@ -102,11 +105,13 @@ struct bgp_conn {
   u8 peer_refresh_support;		/* Peer supports route refresh [RFC2918] */
   u8 peer_as4_support;			/* Peer supports 4B AS numbers [RFC4893] */
   u8 peer_add_path;			/* Peer supports ADD-PATH [draft] */
+  u8 peer_enhanced_refresh_support;	/* Peer supports enhanced refresh [RFC7313] */
   u8 peer_gr_aware;
   u8 peer_gr_able;
   u16 peer_gr_time;
   u8 peer_gr_flags;
   u8 peer_gr_aflags;
+  u8 peer_ext_messages_support;		/* Peer supports extended message length [draft] */
   unsigned hold_time, keepalive_time;	/* Times calculated from my and neighbor's requirements */
 };
 
@@ -119,6 +124,7 @@ struct bgp_proto {
   u8 as4_session;			/* Session uses 4B AS numbers in AS_PATH (both sides support it) */
   u8 add_path_rx;			/* Session expects receive of ADD-PATH extended NLRI */
   u8 add_path_tx;			/* Session expects transmit of ADD-PATH extended NLRI */
+  u8 ext_messages;			/* Session allows to use extended messages (both sides support it) */
   u32 local_id;				/* BGP identifier of this router */
   u32 remote_id;			/* BGP identifier of the neighbor */
   u32 rr_cluster_id;			/* Route reflector cluster ID */
@@ -126,6 +132,8 @@ struct bgp_proto {
   int rs_client;			/* Whether neighbor is RS client of me */
   u8 gr_ready;				/* Neighbor could do graceful restart */
   u8 gr_active;				/* Neighbor is doing graceful restart */
+  u8 feed_state;			/* Feed state (TX) for EoR, RR packets, see BFS_* */
+  u8 load_state;			/* Load state (RX) for EoR, RR packets, see BFS_* */
   struct bgp_conn *conn;		/* Connection we have established */
   struct bgp_conn outgoing_conn;	/* Outgoing connection we're working with */
   struct bgp_conn incoming_conn;	/* Incoming connection we have neither accepted nor rejected yet */
@@ -138,12 +146,11 @@ struct bgp_proto {
   struct timer *startup_timer;		/* Timer used to delay protocol startup due to previous errors (startup_delay) */
   struct timer *gr_timer;		/* Timer waiting for reestablishment after graceful restart */
   struct bgp_bucket **bucket_hash;	/* Hash table of attribute buckets */
-  unsigned int hash_size, hash_count, hash_limit;
+  uint hash_size, hash_count, hash_limit;
   HASH(struct bgp_prefix) prefix_hash;	/* Prefixes to be sent */
   slab *prefix_slab;			/* Slab holding prefix nodes */
   list bucket_queue;			/* Queue of buckets to send */
   struct bgp_bucket *withdraw_bucket;	/* Withdrawn routes */
-  unsigned send_end_mark;		/* End-of-RIB mark scheduled for transmit */
   unsigned startup_delay;		/* Time to delay protocol startup by due to errors */
   bird_clock_t last_proto_error;	/* Time of last error that leads to protocol stop */
   u8 last_error_class; 			/* Error class of last error */
@@ -177,9 +184,15 @@ struct bgp_bucket {
 #define BGP_PORT		179
 #define BGP_VERSION		4
 #define BGP_HEADER_LENGTH	19
-#define BGP_MAX_PACKET_LENGTH	4096
+#define BGP_MAX_MESSAGE_LENGTH	4096
+#define BGP_MAX_EXT_MSG_LENGTH	65535
 #define BGP_RX_BUFFER_SIZE	4096
-#define BGP_TX_BUFFER_SIZE	BGP_MAX_PACKET_LENGTH
+#define BGP_TX_BUFFER_SIZE	4096
+#define BGP_RX_BUFFER_EXT_SIZE	65535
+#define BGP_TX_BUFFER_EXT_SIZE	65535
+
+static inline uint bgp_max_packet_length(struct bgp_proto *p)
+{ return p->ext_messages ? BGP_MAX_EXT_MSG_LENGTH : BGP_MAX_MESSAGE_LENGTH; }
 
 extern struct linpool *bgp_linpool;
 
@@ -195,6 +208,8 @@ void bgp_conn_enter_close_state(struct bgp_conn *conn);
 void bgp_conn_enter_idle_state(struct bgp_conn *conn);
 void bgp_handle_graceful_restart(struct bgp_proto *p);
 void bgp_graceful_restart_done(struct bgp_proto *p);
+void bgp_refresh_begin(struct bgp_proto *p);
+void bgp_refresh_end(struct bgp_proto *p);
 void bgp_store_error(struct bgp_proto *p, struct bgp_conn *c, u8 class, u32 code);
 void bgp_stop(struct bgp_proto *p, unsigned subcode);
 
@@ -230,17 +245,20 @@ static inline void set_next_hop(byte *b, ip_addr addr) { ((ip_addr *) b)[0] = ad
 
 void bgp_attach_attr(struct ea_list **to, struct linpool *pool, unsigned attr, uintptr_t val);
 byte *bgp_attach_attr_wa(struct ea_list **to, struct linpool *pool, unsigned attr, unsigned len);
-struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, unsigned int len, struct linpool *pool, int mandatory);
+struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, uint len, struct linpool *pool, int mandatory);
 int bgp_get_attr(struct eattr *e, byte *buf, int buflen);
 int bgp_rte_better(struct rte *, struct rte *);
+int bgp_rte_mergable(rte *pri, rte *sec);
 int bgp_rte_recalculate(rtable *table, net *net, rte *new, rte *old, rte *old_best);
 void bgp_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *attrs);
 int bgp_import_control(struct proto *, struct rte **, struct ea_list **, struct linpool *);
 void bgp_init_bucket_table(struct bgp_proto *);
+void bgp_free_bucket_table(struct bgp_proto *p);
 void bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck);
 void bgp_init_prefix_table(struct bgp_proto *p, u32 order);
+void bgp_free_prefix_table(struct bgp_proto *p);
 void bgp_free_prefix(struct bgp_proto *p, struct bgp_prefix *bp);
-unsigned int bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains);
+uint bgp_encode_attrs(struct bgp_proto *p, byte *w, ea_list *attrs, int remains);
 void bgp_get_route_info(struct rte *, byte *buf, struct ea_list *attrs);
 
 inline static void bgp_attach_attr_ip(struct ea_list **to, struct linpool *pool, unsigned attr, ip_addr a)
@@ -252,7 +270,7 @@ void mrt_dump_bgp_state_change(struct bgp_conn *conn, unsigned old, unsigned new
 void bgp_schedule_packet(struct bgp_conn *conn, int type);
 void bgp_kick_tx(void *vconn);
 void bgp_tx(struct birdsock *sk);
-int bgp_rx(struct birdsock *sk, int size);
+int bgp_rx(struct birdsock *sk, uint size);
 const char * bgp_error_dsc(unsigned code, unsigned subcode);
 void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len);
 
@@ -262,7 +280,8 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define PKT_UPDATE		0x02
 #define PKT_NOTIFICATION	0x03
 #define PKT_KEEPALIVE		0x04
-#define PKT_ROUTE_REFRESH	0x05
+#define PKT_ROUTE_REFRESH	0x05	/* [RFC2918] */
+#define PKT_BEGIN_REFRESH	0x1e	/* Dummy type for BoRR packet [RFC7313] */
 #define PKT_SCHEDULE_CLOSE	0x1f	/* Used internally to schedule socket close */
 
 /* Attributes */
@@ -291,6 +310,7 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define BA_EXT_COMMUNITY	0x10	/* [RFC4360] */
 #define BA_AS4_PATH             0x11    /* [RFC4893] */
 #define BA_AS4_AGGREGATOR       0x12
+#define BA_LARGE_COMMUNITY	0x20	/* [draft-ietf-idr-large-community] */
 
 /* BGP connection states */
 
@@ -305,19 +325,46 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define BS_MAX			7
 
 /* BGP start states
- * 
+ *
  * Used in PS_START for fine-grained specification of starting state.
  *
- * When BGP protocol is started by core, it goes to BSS_PREPARE. When BGP protocol
- * done what is neccessary to start itself (like acquiring the lock), it goes to BSS_CONNECT.
- * When some connection attempt failed because of option or capability error, it goes to
- * BSS_CONNECT_NOCAP.
+ * When BGP protocol is started by core, it goes to BSS_PREPARE. When BGP
+ * protocol done what is neccessary to start itself (like acquiring the lock),
+ * it goes to BSS_CONNECT.  When some connection attempt failed because of
+ * option or capability error, it goes to BSS_CONNECT_NOCAP.
  */
 
 #define BSS_PREPARE		0	/* Used before ordinary BGP started, i. e. waiting for lock */
 #define BSS_DELAY		1	/* Startup delay due to previous errors */
 #define BSS_CONNECT		2	/* Ordinary BGP connecting */
 #define BSS_CONNECT_NOCAP	3	/* Legacy BGP connecting (without capabilities) */
+
+
+/* BGP feed states (TX)
+ *
+ * RFC 4724 specifies that an initial feed should end with End-of-RIB mark.
+ *
+ * RFC 7313 specifies that a route refresh should be demarcated by BoRR and EoRR packets.
+ *
+ * These states (stored in p->feed_state) are used to keep track of these
+ * requirements. When such feed is started, BFS_LOADING / BFS_REFRESHING is
+ * set. When it ended, BFS_LOADED / BFS_REFRESHED is set to schedule End-of-RIB
+ * or EoRR packet. When the packet is sent, the state returned to BFS_NONE.
+ *
+ * Note that when a non-demarcated feed (e.g. plain RFC 4271 initial load
+ * without End-of-RIB or plain RFC 2918 route refresh without BoRR/EoRR
+ * demarcation) is active, BFS_NONE is set.
+ *
+ * BFS_NONE, BFS_LOADING and BFS_REFRESHING are also used as load states (RX)
+ * with correspondent semantics (-, expecting End-of-RIB, expecting EoRR).
+ */
+
+#define BFS_NONE		0	/* No feed or original non-demarcated feed */
+#define BFS_LOADING		1	/* Initial feed active, End-of-RIB planned */
+#define BFS_LOADED		2	/* Loading done, End-of-RIB marker scheduled */
+#define BFS_REFRESHING		3	/* Route refresh (introduced by BoRR) active */
+#define BFS_REFRESHED		4	/* Refresh done, EoRR packet scheduled */
+
 
 /* Error classes */
 
@@ -335,8 +382,9 @@ void bgp_log_error(struct bgp_proto *p, u8 class, char *msg, unsigned code, unsi
 #define BEM_INVALID_NEXT_HOP	2
 #define BEM_INVALID_MD5		3	/* MD5 authentication kernel request failed (possibly not supported) */
 #define BEM_NO_SOCKET		4
-#define BEM_BFD_DOWN		5
-#define BEM_GRACEFUL_RESTART	6
+#define BEM_LINK_DOWN		5
+#define BEM_BFD_DOWN		6
+#define BEM_GRACEFUL_RESTART	7
 
 /* Automatic shutdown error codes */
 

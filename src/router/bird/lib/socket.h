@@ -20,7 +20,7 @@ typedef struct birdsock {
   int type;				/* Socket type */
   void *data;				/* User data */
   ip_addr saddr, daddr;			/* IPA_NONE = unspecified */
-  unsigned sport, dport;		/* 0 = unspecified (for IP: protocol type) */
+  uint sport, dport;			/* 0 = unspecified (for IP: protocol type) */
   int tos;				/* TOS / traffic class, -1 = default */
   int priority;				/* Local socket priority, -1 = default */
   int ttl;				/* Time To Live, -1 = default */
@@ -28,20 +28,21 @@ typedef struct birdsock {
   struct iface *iface;			/* Interface; specify this for broad/multicast sockets */
 
   byte *rbuf, *rpos;			/* NULL=allocate automatically */
-  unsigned rbsize;
-  int (*rx_hook)(struct birdsock *, int size); /* NULL=receiving turned off, returns 1 to clear rx buffer */
+  uint fast_rx;				/* RX has higher priority in event loop */
+  uint rbsize;
+  int (*rx_hook)(struct birdsock *, uint size); /* NULL=receiving turned off, returns 1 to clear rx buffer */
 
   byte *tbuf, *tpos;			/* NULL=allocate automatically */
   byte *ttx;				/* Internal */
-  unsigned tbsize;
+  uint tbsize;
   void (*tx_hook)(struct birdsock *);
 
   void (*err_hook)(struct birdsock *, int); /* errno or zero if EOF */
 
   /* Information about received datagrams (UDP, RAW), valid in rx_hook */
   ip_addr faddr, laddr;			/* src (From) and dst (Local) address of the datagram */
-  unsigned fport;			/* src port of the datagram */
-  unsigned lifindex;			/* local interface that received the datagram */
+  uint fport;				/* src port of the datagram */
+  uint lifindex;			/* local interface that received the datagram */
   /* laddr and lifindex are valid only if SKF_LADDR_RX flag is set to request it */
 
   int af;				/* Address family (AF_INET, AF_INET6 or 0 for non-IP) of fd */
@@ -59,8 +60,8 @@ sock *sock_new(pool *);			/* Allocate new socket */
 
 int sk_open(sock *);			/* Open socket */
 int sk_rx_ready(sock *s);
-int sk_send(sock *, unsigned len);	/* Send data, <0=err, >0=ok, 0=sleep */
-int sk_send_to(sock *, unsigned len, ip_addr to, unsigned port); /* sk_send to given destination */
+int sk_send(sock *, uint len);		/* Send data, <0=err, >0=ok, 0=sleep */
+int sk_send_to(sock *, uint len, ip_addr to, uint port); /* sk_send to given destination */
 void sk_reallocate(sock *);		/* Free and allocate tbuf & rbuf */
 void sk_set_rbsize(sock *s, uint val);	/* Resize RX buffer */
 void sk_set_tbsize(sock *s, uint val);	/* Resize TX buffer, keeping content */
@@ -86,10 +87,12 @@ int sk_leave_group(sock *s, ip_addr maddr);	/* Leave multicast group on sk iface
 int sk_setup_broadcast(sock *s);
 int sk_set_ttl(sock *s, int ttl);	/* Set transmit TTL for given socket */
 int sk_set_min_ttl(sock *s, int ttl);	/* Set minimal accepted TTL for given socket */
-int sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd);
+int sk_set_md5_auth(sock *s, ip_addr local, ip_addr remote, struct iface *ifa, char *passwd, int setkey);
 int sk_set_ipv6_checksum(sock *s, int offset);
 int sk_set_icmp6_filter(sock *s, int p1, int p2);
 void sk_log_error(sock *s, const char *p);
+
+byte * sk_rx_buffer(sock *s, int *len);	/* Temporary */
 
 extern int sk_priority_control;		/* Suggested priority for control traffic, should be sysdep define */
 
@@ -101,6 +104,7 @@ extern int sk_priority_control;		/* Suggested priority for control traffic, shou
 #define SKF_LADDR_RX	0x04	/* Report local address for RX packets */
 #define SKF_TTL_RX	0x08	/* Report TTL / Hop Limit for RX packets */
 #define SKF_BIND	0x10	/* Bind datagram socket to given source address */
+#define SKF_HIGH_PORT	0x20	/* Choose port from high range if possible */
 
 #define SKF_THREAD	0x100	/* Socked used in thread, Do not add to main loop */
 #define SKF_TRUNCATED	0x200	/* Received packet was truncated, set by IO layer */

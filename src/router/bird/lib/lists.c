@@ -41,7 +41,7 @@ add_tail(list *l, node *n)
 {
   node *z = l->tail;
 
-  n->next = (node *) &l->null;
+  n->next = &l->tail_node;
   n->prev = z;
   z->next = n;
   l->tail = n;
@@ -60,7 +60,7 @@ add_head(list *l, node *n)
   node *z = l->head;
 
   n->next = z;
-  n->prev = (node *) &l->head;
+  n->prev = &l->head_node;
   z->prev = n;
   l->head = n;
 }
@@ -88,27 +88,10 @@ insert_node(node *n, node *after)
  * rem_node - remove a node from a list
  * @n: node to be removed
  *
- * Removes a node @n from the list it's linked in.
+ * Removes a node @n from the list it's linked in. Afterwards, node @n is cleared.
  */
 LIST_INLINE void
 rem_node(node *n)
-{
-  node *z = n->prev;
-  node *x = n->next;
-
-  z->next = x;
-  x->prev = z;
-}
-
-/**
- * rem2_node - remove a node from a list, with cleanup
- * @n: node to be removed
- *
- * Removes a node @n from the list it's linked in and resets its pointers to NULL.
- * Useful if you want to distinguish between linked and unlinked nodes.
- */
-LIST_INLINE void
-rem2_node(node *n)
 {
   node *z = n->prev;
   node *x = n->next;
@@ -150,9 +133,9 @@ replace_node(node *old, node *new)
 LIST_INLINE void
 init_list(list *l)
 {
-  l->head = (node *) &l->null;
+  l->head = &l->tail_node;
   l->null = NULL;
-  l->tail = (node *) &l->head;
+  l->tail = &l->head_node;
 }
 
 /**
@@ -172,6 +155,6 @@ add_tail_list(list *to, list *l)
   p->next = q;
   q->prev = p;
   q = l->tail;
-  q->next = (node *) &to->null;
+  q->next = &to->tail_node;
   to->tail = q;
 }

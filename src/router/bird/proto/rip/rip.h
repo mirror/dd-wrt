@@ -1,185 +1,227 @@
 /*
- * Structures for RIP protocol
+ *	BIRD -- Routing Information Protocol (RIP)
  *
-   FIXME: in V6, they insert additional entry whenever next hop differs. Such entry is identified by 0xff in metric.
+ *	(c) 1998--1999 Pavel Machek <pavel@ucw.cz>
+ *	(c) 2004--2013 Ondrej Filip <feela@network.cz>
+ *	(c) 2009--2015 Ondrej Zajicek <santiago@crfreenet.org>
+ *	(c) 2009--2015 CZ.NIC z.s.p.o.
+ *
+ *	Can be freely distributed and used under the terms of the GNU GPL.
  */
 
+#ifndef _BIRD_RIP_H_
+#define _BIRD_RIP_H_
+
+#include "nest/bird.h"
+#include "nest/cli.h"
+#include "nest/iface.h"
+#include "nest/protocol.h"
 #include "nest/route.h"
 #include "nest/password.h"
 #include "nest/locks.h"
+#include "nest/bfd.h"
+#include "lib/lists.h"
+#include "lib/resource.h"
+#include "lib/socket.h"
+#include "lib/string.h"
+#include "lib/timer.h"
 
-#define EA_RIP_TAG	EA_CODE(EAP_RIP, 0)
-#define EA_RIP_METRIC	EA_CODE(EAP_RIP, 1)
 
-#define PACKET_MAX	25
-#define PACKET_MD5_MAX	18	/* FIXME */
-
-
-#define RIP_V1		1
-#define RIP_V2		2
-#define RIP_NG		1	/* A new version numbering */
-
-#ifndef IPV6
-#define RIP_PORT	520	/* RIP for IPv4 */
+#ifdef IPV6
+#define RIP_IS_V2 0
 #else
-#define RIP_PORT	521	/* RIPng */
+#define RIP_IS_V2 1
 #endif
 
-struct rip_connection {
-  node n;
-
-  int num;
-  struct proto *proto;
-  ip_addr addr;
-  sock *send;
-  struct rip_interface *rif;
-  struct fib_iterator iter;
-
-  ip_addr daddr;
-  int dport;
-  int done;
-};
-
-struct rip_packet_heading {		/* 4 bytes */
-  u8 command;
-#define RIPCMD_REQUEST          1       /* want info */
-#define RIPCMD_RESPONSE         2       /* responding to request */
-#define RIPCMD_TRACEON          3       /* turn tracing on */
-#define RIPCMD_TRACEOFF         4       /* turn it off */
-#define RIPCMD_MAX              5
-  u8 version;
 #define RIP_V1			1
 #define RIP_V2			2
-#define RIP_NG 			1	/* this is verion 1 of RIPng */
-  u16 unused;
+
+#define RIP_PORT		520	/* RIP for IPv4 */
+#define RIP_NG_PORT		521	/* RIPng */
+
+#define RIP_MAX_PKT_LENGTH	532	/* 512 + IP4_HEADER_LENGTH */
+#define RIP_AUTH_TAIL_LENGTH	4	/* Without auth_data */
+
+#define RIP_DEFAULT_ECMP_LIMIT	16
+#define RIP_DEFAULT_INFINITY	16
+#define RIP_DEFAULT_UPDATE_TIME	30
+#define RIP_DEFAULT_TIMEOUT_TIME 180
+#define RIP_DEFAULT_GARBAGE_TIME 120
+
+
+struct rip_config
+{
+  struct proto_config c;
+  list patt_list;			/* List of iface configs (struct rip_iface_config) */
+
+  u8 rip2;				/* RIPv2 (IPv4) or RIPng (IPv6) */
+  u8 ecmp;				/* Maximum number of nexthops in ECMP route, or 0 */
+  u8 infinity;				/* Maximum metric value, representing infinity */
+
+  u32 min_timeout_time;			/* Minimum of interface timeout_time */
+  u32 max_garbage_time;			/* Maximum of interface garbage_time */
 };
 
-#ifndef IPV6
-struct rip_block {	/* 20 bytes */
-  u16 family;	/* 0xffff on first message means this is authentication */
-  u16 tag;
-  ip_addr network;
-  ip_addr netmask;
-  ip_addr nexthop;
-  u32 metric;
-};
-#else
-struct rip_block { /* IPv6 version!, 20 bytes, too */
-  ip_addr network;
-  u16 tag;
-  u8 pxlen;
-  u8 metric;
-};
-#endif
-
-struct rip_block_auth { /* 20 bytes */
-  u16 mustbeFFFF;
-  u16 authtype;
-  u16 packetlen;
-  u8 keyid;
-  u8 authlen;
-  u32 seq;
-  u32 zero0;
-  u32 zero1;
-};
-
-struct rip_md5_tail {	/* 20 bytes */
-  u16 mustbeFFFF;
-  u16 mustbe0001;
-  char md5[16];
-};
-
-struct rip_entry {
-  struct fib_node n;
-
-  ip_addr whotoldme;
-  ip_addr nexthop;
-  int metric;
-  u16 tag;
-
-  bird_clock_t updated, changed;
-  int flags;
-};
-
-struct rip_packet {
-  struct rip_packet_heading heading;
-  struct rip_block block[PACKET_MAX];
-};
-
-struct rip_interface {
-  node n;
-  struct proto *proto;
-  struct iface *iface;
-  sock *sock;
-  struct rip_connection *busy;
-  int metric;			/* You don't want to put struct rip_patt *patt here -- think about reconfigure */
-  int mode;
-  int check_ttl;		/* Check incoming packets for TTL 255 */
-  int triggered;
-  struct object_lock *lock;
-  int multicast;
-};
-
-struct rip_patt {
+struct rip_iface_config
+{
   struct iface_patt i;
-
-  int metric;		/* If you add entries here, don't forget to modify patt_compare! */
-  int mode;
-#define IM_BROADCAST 2
-#define IM_QUIET 4
-#define IM_NOLISTEN 8
-#define IM_VERSION1 16
+  ip_addr address;			/* Configured dst address */
+  u16 port;				/* Src+dst port */
+  u8 metric;				/* Incoming metric */
+  u8 mode;				/* Interface mode (RIP_IM_*) */
+  u8 passive;				/* Passive iface - no packets are sent */
+  u8 version;				/* RIP version used for outgoing packets */
+  u8 version_only;	/* FIXXX */
+  u8 split_horizon;			/* Split horizon is used in route updates */
+  u8 poison_reverse;			/* Poisoned reverse is used in route updates */
+  u8 check_zero;			/* Validation of RIPv1 reserved fields */
+  u8 ecmp_weight;			/* Weight for ECMP routes*/
+  u8 auth_type;				/* Authentication type (RIP_AUTH_*) */
+  u8 ttl_security;			/* bool + 2 for TX only (send, but do not check on RX) */
+  u8 check_link;			/* Whether iface link change is used */
+  u8 bfd;				/* Use BFD on iface */
+  u16 rx_buffer;			/* RX buffer size, 0 for MTU */
+  u16 tx_length;			/* TX packet length limit (including headers), 0 for MTU */
   int tx_tos;
   int tx_priority;
-  int ttl_security;	/* bool + 2 for TX only (send, but do not check on RX) */
+  u32 update_time;			/* Periodic update interval */
+  u32 timeout_time;			/* Route expiration timeout */
+  u32 garbage_time;			/* Unreachable entry GC timeout */
+  list *passwords;			/* Passwords for authentication */
 };
 
-struct rip_proto_config {
-  struct proto_config c;
-  list iface_list;	/* Patterns configured -- keep it first; see rip_reconfigure why */
-  list *passwords;	/* Passwords, keep second */
+struct rip_proto
+{
+  struct proto p;
+  struct fib rtable;			/* Internal routing table */
+  list iface_list;			/* List of interfaces (struct rip_iface) */
+  slab *rte_slab;			/* Slab for internal routes (struct rip_rte) */
+  timer *timer;				/* Main protocol timer */
 
-  int infinity;		/* User configurable data; must be comparable with memcmp */
-  int port;
-  int period;
-  int garbage_time;
-  int timeout_time;
+  u8 ecmp;				/* Maximum number of nexthops in ECMP route, or 0 */
+  u8 infinity;				/* Maximum metric value, representing infinity */
+  u8 triggered;				/* Logical AND of interface want_triggered values */
+  u8 rt_reload;				/* Route reload is scheduled */
 
-  int authtype;
-#define AT_NONE 0
-#define AT_PLAINTEXT 2
-#define AT_MD5 3
-  int honor;
-#define HO_NEVER 0
-#define HO_NEIGHBOR 1
-#define HO_ALWAYS 2
+  struct tbf log_pkt_tbf;		/* TBF for packet messages */
+  struct tbf log_rte_tbf;		/* TBF for RTE messages */
 };
 
-struct rip_proto {
-  struct proto inherited;
-  timer *timer;
-  list connections;
-  struct fib rtable;
-  list garbage;
-  list interfaces;	/* Interfaces we really know about */
-#ifdef LOCAL_DEBUG
-  int magic;
+struct rip_iface
+{
+  node n;
+  struct rip_proto *rip;
+  struct iface *iface;			/* Underyling core interface */
+  struct rip_iface_config *cf;		/* Related config, must be updated in reconfigure */
+  struct object_lock *lock;		/* Interface lock */
+  timer *timer;				/* Interface timer */
+  sock *sk;				/* UDP socket */
+
+  u8 up;				/* Interface is active */
+  u8 csn_ready;				/* Nonzero CSN can be used */
+  u16 tx_plen;				/* Max TX packet data length */
+  u32 csn;				/* Last used crypto sequence number */
+  ip_addr addr;				/* Destination multicast/broadcast address */
+  list neigh_list;			/* List of iface neighbors (struct rip_neighbor) */
+
+  /* Update scheduling */
+  bird_clock_t next_regular;		/* Next time when regular update should be called */
+  bird_clock_t next_triggered;		/* Next time when triggerd update may be called */
+  bird_clock_t want_triggered;		/* Nonzero if triggered update is scheduled */
+
+  /* Active update */
+  int tx_active;			/* Update session is active */
+  ip_addr tx_addr;			/* Update session destination address */
+  bird_clock_t tx_changed;		/* Minimal changed time for triggered update */
+  struct fib_iterator tx_fit;		/* FIB iterator in RIP routing table (p.rtable) */
+};
+
+struct rip_neighbor
+{
+  node n;
+  struct rip_iface *ifa;		/* Associated interface, may be NULL if stale */
+  struct neighbor *nbr;			/* Associaded core neighbor, may be NULL if stale */
+  struct bfd_request *bfd_req;		/* BFD request, if BFD is used */
+  bird_clock_t last_seen;		/* Time of last received and accepted message */
+  u32 uc;				/* Use count, number of routes linking the neighbor */
+  u32 csn;				/* Last received crypto sequence number */
+};
+
+struct rip_entry
+{
+  struct fib_node n;
+  struct rip_rte *routes;		/* List of incoming routes */
+
+  u8 valid;				/* Entry validity state (RIP_ENTRY_*) */
+  u8 metric;				/* Outgoing route metric */
+  u16 tag;				/* Outgoing route tag */
+  struct iface *from;			/* Outgoing route from, NULL if from  proto */
+  struct iface *iface;			/* Outgoing route iface (for next hop) */
+  ip_addr next_hop;			/* Outgoing route next hop */
+
+  bird_clock_t changed;			/* Last time when the outgoing route metric changed */
+};
+
+struct rip_rte
+{
+  struct rip_rte *next;
+
+  struct rip_neighbor *from;		/* Advertising router */
+  ip_addr next_hop;			/* Route next hop (iface is from->nbr->iface) */
+  u16 metric;				/* Route metric (after increase) */
+  u16 tag;				/* Route tag */
+
+  bird_clock_t expires;			/* Time of route expiration */
+};
+
+
+#define RIP_AUTH_NONE		0
+#define RIP_AUTH_PLAIN		2
+#define RIP_AUTH_CRYPTO		3
+
+#define RIP_IM_MULTICAST	1
+#define RIP_IM_BROADCAST	2
+
+#define RIP_ENTRY_DUMMY		0	/* Only used to store list of incoming routes */
+#define RIP_ENTRY_VALID		1	/* Valid outgoing route */
+#define RIP_ENTRY_STALE		2	/* Stale outgoing route, waiting for GC */
+
+#define EA_RIP_METRIC		EA_CODE(EAP_RIP, 0)
+#define EA_RIP_TAG		EA_CODE(EAP_RIP, 1)
+
+#define rip_is_v2(X) RIP_IS_V2
+#define rip_is_ng(X) (!RIP_IS_V2)
+
+/*
+static inline int rip_is_v2(struct rip_proto *p)
+{ return p->rip2; }
+
+static inline int rip_is_ng(struct rip_proto *p)
+{ return ! p->rip2; }
+*/
+
+static inline void
+rip_reset_tx_session(struct rip_proto *p, struct rip_iface *ifa)
+{
+  if (ifa->tx_active)
+  {
+    FIB_ITERATE_UNLINK(&ifa->tx_fit, &p->rtable);
+    ifa->tx_active = 0;
+  }
+}
+
+/* rip.c */
+void rip_update_rte(struct rip_proto *p, ip_addr *prefix, int pxlen, struct rip_rte *new);
+void rip_withdraw_rte(struct rip_proto *p, ip_addr *prefix, int pxlen, struct rip_neighbor *from);
+struct rip_neighbor * rip_get_neighbor(struct rip_proto *p, ip_addr *a, struct rip_iface *ifa);
+void rip_update_bfd(struct rip_proto *p, struct rip_neighbor *n);
+void rip_show_interfaces(struct proto *P, char *iff);
+void rip_show_neighbors(struct proto *P, char *iff);
+
+/* packets.c */
+void rip_send_request(struct rip_proto *p, struct rip_iface *ifa);
+void rip_send_table(struct rip_proto *p, struct rip_iface *ifa, ip_addr addr, bird_clock_t changed);
+int rip_open_socket(struct rip_iface *ifa);
+
+
 #endif
-  int tx_count;		/* Do one regular update once in a while */
-  int rnd_count;	/* Randomize sending time */
-};
-
-#ifdef LOCAL_DEBUG
-#define RIP_MAGIC 81861253
-#define CHK_MAGIC do { if (P->magic != RIP_MAGIC) bug( "Not enough magic" ); } while (0)
-#else
-#define CHK_MAGIC do { } while (0)
-#endif
-
-
-void rip_init_config(struct rip_proto_config *c);
-
-/* Authentication functions */
-
-int rip_incoming_authentication( struct proto *p, struct rip_block_auth *block, struct rip_packet *packet, int num, ip_addr whotoldme );
-int rip_outgoing_authentication( struct proto *p, struct rip_block_auth *block, struct rip_packet *packet, int num );

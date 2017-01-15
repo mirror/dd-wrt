@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
 
 #include "nest/bird.h"
 #include "lib/resource.h"
@@ -38,7 +39,7 @@ static struct cmd_node cmd_root;
 void
 cmd_build_tree(void)
 {
-  unsigned int i;
+  uint i;
 
   cmd_root.plastson = &cmd_root.son;
 
@@ -60,14 +61,14 @@ cmd_build_tree(void)
 	  if (!new)
 	    {
 	      int size = sizeof(struct cmd_node) + c-d;
-	      new = xmalloc(size);
+	      new = malloc(size);
 	      bzero(new, size);
 	      *old->plastson = new;
 	      old->plastson = &new->sibling;
 	      new->plastson = &new->son;
 	      new->len = c-d;
 	      memcpy(new->token, d, c-d);
-	      new->prio = (new->len == 3 && !memcmp(new->token, "roa", 3)) ? 0 : 1; /* Hack */
+	      new->prio = (new->len == 3 && (!memcmp(new->token, "roa", 3) || !memcmp(new->token, "rip", 3))) ? 0 : 1; /* Hack */
 	    }
 	  old = new;
 	  while (isspace(*c))
@@ -314,7 +315,7 @@ cmd_expand(char *cmd)
       puts("No such command. Press `?' for help.");
       return NULL;
     }
-  b = xmalloc(strlen(n->cmd->command) + strlen(args) + 1);
+  b = malloc(strlen(n->cmd->command) + strlen(args) + 1);
   sprintf(b, "%s%s", n->cmd->command, args);
   return b;
 }

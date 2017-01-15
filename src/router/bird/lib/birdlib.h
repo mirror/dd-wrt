@@ -30,8 +30,20 @@
 #define MAX(a,b) MAX_(a,b)
 #endif
 
+#define U64(c) UINT64_C(c)
 #define ABS(a)   ((a)>=0 ? (a) : -(a))
+#define DELTA(a,b) (((a)>=(b))?(a)-(b):(b)-(a))
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof(*(a)))
+
+
+/* Bitfield macros */
+
+/* b is u32 array (or ptr), l is size of it in bits (multiple of 32), p is 0..(l-1) */
+#define BIT32_VAL(p)		(((u32) 1) << ((p) % 32))
+#define BIT32_TEST(b,p)		((b)[(p)/32] & BIT32_VAL(p))
+#define BIT32_SET(b,p)		((b)[(p)/32] |= BIT32_VAL(p))
+#define BIT32_CLR(b,p)		((b)[(p)/32] &= ~BIT32_VAL(p))
+#define BIT32_ZERO(b,l)		memset((b), 0, (l)/8)
 
 #ifndef NULL
 #define NULL ((void *) 0)
@@ -48,7 +60,15 @@
 
 #define NORET __attribute__((noreturn))
 #define UNUSED __attribute__((unused))
+#define PACKED __attribute__((packed))
 
+#ifdef IPV6
+#define UNUSED4
+#define UNUSED6 UNUSED
+#else
+#define UNUSED4 UNUSED
+#define UNUSED6
+#endif
 
 /* Microsecond time */
 
@@ -124,11 +144,11 @@ typedef struct buffer {
 
 #ifdef NEED_PRINTF
 void log_commit(int class, buffer *buf);
-void log_msg(char *msg, ...);
-void log_rl(struct tbf *rl, char *msg, ...);
-void die(char *msg, ...) NORET;
-void bug(char *msg, ...) NORET;
-void debug(char *msg, ...);		/* Printf to debug output */
+void log_msg(const char *msg, ...);
+void log_rl(struct tbf *rl, const char *msg, ...);
+void die(const char *msg, ...) NORET;
+void bug(const char *msg, ...) NORET;
+void debug(const char *msg, ...);		/* Printf to debug output */
 #else
 #define log_commit(class, buf) do { } while(0)
 #define log_msg(msg, ...) do { } while(0)

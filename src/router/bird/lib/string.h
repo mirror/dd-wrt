@@ -22,6 +22,33 @@ int buffer_vprint(buffer *buf, const char *fmt, va_list args);
 int buffer_print(buffer *buf, const char *fmt, ...);
 void buffer_puts(buffer *buf, const char *str);
 
-int patmatch(byte *pat, byte *str);
+int patmatch(const byte *pat, const byte *str);
+
+static inline char *xbasename(const char *str)
+{
+  char *s = strrchr(str, '/');
+  return s ? s+1 : (char *) str;
+}
+
+static inline char *
+xstrdup(const char *c)
+{
+  size_t l = strlen(c) + 1;
+  char *z = xmalloc(l);
+  memcpy(z, c, l);
+  return z;
+}
+
+static inline void
+memset32(void *D, u32 val, uint n)
+{
+  u32 *dst = D;
+  uint i;
+
+  for (i = 0; i < n; i++)
+    dst[i] = val;
+}
+
+#define ROUTER_ID_64_LENGTH 23
 
 #endif

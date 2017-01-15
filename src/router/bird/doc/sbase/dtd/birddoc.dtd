@@ -1,6 +1,6 @@
 <!-- This is a DTD, but will be read as -*- sgml -*-   -->
 <!-- ================================================= -->
-<!-- $Id$ 
+<!-- $Id$
 
 This was heavilly modified for use with bird! Don't you dare to use it
 anywhere else. <pavel@ucw.cz>
@@ -79,7 +79,7 @@ anywhere else. <pavel@ucw.cz>
      weren't in the original linuxdoc 1.3 DTD, and are
      superseded by the new if/unless facility.         -->
 <!-- BK/97/05/09: this is the original Linuxdoc DTD,
-     as of SGML Tools 0.99.0. It is not longer 
+     as of SGML Tools 0.99.0. It is not longer
      supported. Use only if in dire need, for backwards
      compabitlity. Backend support for undocumented
      QWERTZ leftovers not in the strict Linuxdoc DTD's
@@ -92,36 +92,36 @@ anywhere else. <pavel@ucw.cz>
      any changes to this, just replacing.              -->
 <!-- ================================================= -->
 
-<!entity % emph 
+<!entity % emph
 	" em|it|bf|sf|sl|tt|cf|m|cparam|const|func|struct|param|type|funcdef " >
 
 <!entity % index "idx|cdx|nidx|ncdx" >
 
 <!-- url added by HG; htmlurl added by esr -->
 <!entity % xref
-	" label|ref|pageref|cite|url|htmlurl|ncite " >
+	" label|ref|pageref|cite|url|htmlurl|rfc|ncite " >
 
-<!entity % inline 
+<!entity % inline
 	" (#pcdata | f| x| %emph; |sq| %xref | %index | file )* " >
 
-<!entity % list 
+<!entity % list
         " list | itemize | enum | descrip " >
 
-<!entity % par 	
+<!entity % par
 	"  %list; | comment | lq | quote | tscreen | hrule " >
 
 <!entity % mathpar " dm | eq " >
 
-<!entity % thrm 
+<!entity % thrm
         " def | prop | lemma | coroll | proof | theorem " >
 
 <!entity % litprog " code | verb " >
 
-<!entity % sectpar 
-        " %par; | figure | tabular | table | %mathpar; | 
+<!entity % sectpar
+        " %par; | figure | tabular | table | %mathpar; |
 	  %thrm; | %litprog; | function ">
-<!element birddoc o o 
-        (sect | chapt | article | report | 
+<!element birddoc o o
+        (sect | chapt | article | report |
 	 book | letter | telefax | slides | notes | manpage ) >
 
 <!-- `general' entity replaced with ISO entities - kwm -->
@@ -150,7 +150,7 @@ anywhere else. <pavel@ucw.cz>
 <!element hrule - - EMPTY>
 
 <!shortref pmap
-	"&#RS;B" null 
+	"&#RS;B" null
 	"&#RS;B&#RE;" psplit
 	"&#RS;&#RE;" psplit
 --	'"' qtag  --
@@ -189,7 +189,7 @@ anywhere else. <pavel@ucw.cz>
 <!entity   ftag     '<f>'    -- formula begin -- >
 <!entity   qendtag  '</sq>'>
 
-<!shortref sqmap 
+<!shortref sqmap
       "&#RS;B" null
 --      '"' qendtag  --
       "[" lsqb
@@ -249,7 +249,7 @@ anywhere else. <pavel@ucw.cz>
 <!shortref bodymap
      "&#RS;B&#RE;" ptag
      "&#RS;&#RE;" ptag
-      '"' qtag 
+      '"' qtag
       "[" lsqb
       "~" nbsp
       "_" lowbar
@@ -285,7 +285,7 @@ anywhere else. <pavel@ucw.cz>
 
 <!shortref oneline
      "B&#RE;" space
-     "&#RS;&#RE;" null 
+     "&#RS;&#RE;" null
      "&#RS;B&#RE;" null
 --      '"' qtag  --
       "[" ftag
@@ -302,7 +302,7 @@ anywhere else. <pavel@ucw.cz>
 <!usemap oneline caption>
 
 <!entity % tabrow "(%inline, (colsep, %inline)*)" >
-<!element tabular - - 
+<!element tabular - -
        (hline?, %tabrow, (rowsep, hline?, %tabrow)*, caption?) >
 
 <!attlist tabular
@@ -323,7 +323,7 @@ anywhere else. <pavel@ucw.cz>
       "B&#RE;" null
       "BB"  space
       "@" rowsep
-      "|" colsep 
+      "|" colsep
       "[" ftag
 --      '"' qtag --
       "_" thinsp
@@ -344,7 +344,7 @@ anywhere else. <pavel@ucw.cz>
 
 <!shortref ttmap     -- also on one-line --
         "B&#RE;" space
-        "&#RS;&#RE;" null 
+        "&#RS;&#RE;" null
         "&#RS;B&#RE;" null
 	"&#RS;B" null
         '#'     num
@@ -365,14 +365,14 @@ anywhere else. <pavel@ucw.cz>
 <!entity % limits    "pr|in|sum" >
 <!entity % fbu       "fr|lim|ar|root" >
 <!entity % fph       "unl|ovl|sup|inf" >
-<!entity % fbutxt    "(%fbu;) | (%limits;) | 
+<!entity % fbutxt    "(%fbu;) | (%limits;) |
                       (%fcstxt;)|(%fscs;)|(%fph;)" >
 <!entity % fphtxt    "p|#pcdata" >
 <!element  f        - - ((%fbutxt;)*) >
 
 <!entity   fendtag  '</f>'   -- formula end -- >
 
-<!shortref fmap 
+<!shortref fmap
       "&#RS;B" null
       "&#RS;B&#RE;" null
       "&#RS;&#RE;" null
@@ -432,7 +432,7 @@ anywhere else. <pavel@ucw.cz>
 <!shortref arrmap
      "&#RE;" space
       "@" arr
-      "|" arc 
+      "|" arc
       "_" thinsp
       "~" nbsp
       "#" num
@@ -448,7 +448,7 @@ anywhere else. <pavel@ucw.cz>
 <!element  ovl - - ((%fbutxt;)*) >
 <!element  rf  - o (#pcdata) >
 <!element  phr - o ((%fphtxt;)*) >
-<!element  v   - o ((%fcstxt;)*) 
+<!element  v   - o ((%fcstxt;)*)
 	-(tu|%limits;|%fbu;|%fph;) >
 <!element  fi  - o (#pcdata) >
 <!element  tu  - o empty >
@@ -468,7 +468,7 @@ anywhere else. <pavel@ucw.cz>
 
 <!shortref global
       "&#RS;B" null  -- delete leading blanks --
-  --    '"' qtag -- 
+  --    '"' qtag --
       "[" ftag
       "~" nbsp
       "_" lowbar
@@ -485,21 +485,25 @@ anywhere else. <pavel@ucw.cz>
 
 <!-- ref modified to have an optional name field HG -->
 <!element ref - o empty>
-<!attlist ref   
+<!attlist ref
         id cdata #required
         name cdata "&refnam">
 
 <!-- url entity added to have direct url references HG -->
 <!element url - o empty>
-<!attlist url   
+<!attlist url
         url cdata #required
         name cdata "&urlnam" >
 
 <!-- htmlurl entity added to have quieter url references esr -->
 <!element htmlurl - o empty>
-<!attlist htmlurl   
+<!attlist htmlurl
         url cdata #required
         name cdata "&urlnam" >
+
+<!element rfc - o empty>
+<!attlist rfc
+        id cdata #required>
 
 <!element pageref - o empty>
 <!attlist pageref
@@ -510,22 +514,22 @@ anywhere else. <pavel@ucw.cz>
 
 <!-- Hacked by mdw to exclude abstract; abstract now part of titlepag -->
 <!element article - -
-        (titlepag, header?, 
-         toc?, lof?, lot?, p*, sect*, 
+        (titlepag, header?,
+         toc?, lof?, lot?, p*, sect*,
          (appendix, sect+)?, biblio?) +(footnote)>
 
 <!attlist article
         opts cdata "null">
 
 <!-- Hacked by mdw to exclude abstract; abstract now part of titlepag -->
-<!element report - - 
+<!element report - -
         (titlepag, header?, toc?, lof?, lot?, p*,
          chapt*, (appendix, chapt+)?, biblio?) +(footnote)>
 
 <!attlist report
         opts cdata "null">
-<!element book  - - 
-        (titlepag, header?, toc?, lof?, lot?, p*, chapt*, 
+<!element book  - -
+        (titlepag, header?, toc?, lof?, lot?, p*, chapt*,
          (appendix, chapt+)?, biblio?) +(footnote) >
 
 <!attlist book
@@ -536,7 +540,7 @@ anywhere else. <pavel@ucw.cz>
 <!element title - o (%inline, subtitle?) +(newline)>
 <!element subtitle - o (%inline)>
 <!usemap oneline titlepag>
-<!element author - o (name, thanks?, inst?, 
+<!element author - o (name, thanks?, inst?,
                         (and, name, thanks?, inst?)*)>
 <!element name o o (%inline) +(newline)>
 <!element and - o empty>
@@ -545,9 +549,9 @@ anywhere else. <pavel@ucw.cz>
 <!element date - o (#pcdata) >
 
 <!usemap global thanks>
- 
+
 <!element newline - o empty >
-<!entity nl "<newline>"> 
+<!entity nl "<newline>">
 
 <!element progdoc - o empty>
 
@@ -564,9 +568,9 @@ anywhere else. <pavel@ucw.cz>
 <!element rhead - o (%inline)>
 <!entity % sect "heading, header?, p* " >
 <!element heading o o (%inline)>
-<!element chapt - o (%sect, sect*) +(footnote)> 
+<!element chapt - o (%sect, sect*) +(footnote)>
 <!element sect  - o (%sect, sect1*) +(footnote)>
-<!element sect1 - o (%sect, sect2*)>
+<!element sect1 - o (%sect, sect2*) +(footnote)>
 <!element sect2 - o (%sect, sect3*)>
 <!element sect3 - o (%sect, sect4*)>
 <!element sect4 - o (%sect)>
@@ -575,11 +579,11 @@ anywhere else. <pavel@ucw.cz>
 <!element footnote - - (%inline)>
 <!usemap global footnote>
 <!element cite - o empty>
-<!attlist cite 
+<!attlist cite
         id cdata #required>
 
 <!element ncite - o empty>
-<!attlist ncite 
+<!attlist ncite
         id cdata #required
 	note cdata #required>
 
@@ -599,41 +603,41 @@ anywhere else. <pavel@ucw.cz>
 <!attlist slides
 	opts cdata "null">
 <!element slide - o (title?, p+) >
-<!entity  % addr "(address?, email?, phone?, fax?)" >  
-	
-<!element letter - - 
+<!entity  % addr "(address?, email?, phone?, fax?)" >
+
+<!element letter - -
 	(from, %addr, to, %addr, cc?, subject?, sref?, rref?,
          rdate?, opening, p+, closing, encl?, ps?)>
 
 <!attlist letter
 	opts cdata "null">
-	
+
 <!element from		- o (#pcdata) >
 <!element to		- o (#pcdata) >
-	
+
 <!usemap oneline (from,to)>
-	
+
 <!element address 	- o (#pcdata) +(newline) >
 <!element email		- o (#pcdata) >
 <!element phone		- o (#pcdata) >
 <!element fax 		- o (#pcdata) >
-	
+
 <!element subject 	- o (%inline;) >
 <!element sref		- o (#pcdata) >
 <!element rref          - o (#pcdata) >
 <!element rdate         - o (#pcdata) >
-	
+
 <!element opening 	- o (%inline;) >
 <!usemap oneline opening>
-	
+
 <!element closing - o (%inline;) >
 <!element cc - o (%inline;) +(newline) >
 <!element encl - o (%inline;) +(newline) >
-	
+
 <!element ps - o (p+) >
 
-<!element telefax - - 
-	(from, %addr, to, address, email?, 
+<!element telefax - -
+	(from, %addr, to, address, email?,
          phone?, fax, cc?, subject?,
          opening, p+, closing, ps?)>
 
@@ -644,8 +648,8 @@ anywhere else. <pavel@ucw.cz>
 <!element notes - - (title?, p+) >
 <!attlist notes
 	opts cdata "null" >
-<!element manpage - - (sect1*) 
-	-(sect2 | f | %mathpar | figure | tabular | 
+<!element manpage - - (sect1*)
+	-(sect2 | f | %mathpar | figure | tabular |
           table | %xref | %thrm )>
 
 
@@ -673,5 +677,5 @@ anywhere else. <pavel@ucw.cz>
 <!--
      Local Variables:
      mode: sgml
-     End:                                              -->                 
+     End:                                              -->
 <!-- ================================================= -->

@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <unistd.h>
 #include <libgen.h>
 #include <glob.h>
@@ -61,7 +62,6 @@ static struct keyword *kw_hash[KW_HASH_SIZE];
 static int kw_hash_inited;
 
 #define SYM_HASH_SIZE 128
-#define SYM_MAX_LEN 32
 
 struct sym_scope {
   struct sym_scope *next;		/* Next on scope stack */
@@ -71,7 +71,7 @@ struct sym_scope {
 static struct sym_scope *conf_this_scope;
 
 static int cf_hash(byte *c);
-static struct symbol *cf_find_sym(byte *c, unsigned int h0);
+static inline struct symbol * cf_get_sym(byte *c, uint h0);
 
 linpool *cfg_mem;
 
@@ -124,22 +124,24 @@ include   ^{WHITE}*include{WHITE}*\".*\"{WHITE}*;
 }
 
 {DIGIT}+\.{DIGIT}+\.{DIGIT}+\.{DIGIT}+ {
+  ip4_addr a;
+  if (!ip4_pton(yytext, &a))
+    cf_error("Invalid IPv4 address %s", yytext);
+
 #ifdef IPV6
-  if (ipv4_pton_u32(yytext, &cf_lval.i32))
-    return RTRID;
-  cf_error("Invalid IPv4 address %s", yytext);
+  cf_lval.i32 = ip4_to_u32(a);
+  return RTRID;
 #else
-  if (ip_pton(yytext, &cf_lval.a))
-    return IPA;
-  cf_error("Invalid IP address %s", yytext);
+  cf_lval.a = ipa_from_ip4(a);
+  return IPA;
 #endif
 }
 
 ({XIGIT}*::|({XIGIT}*:){3,})({XIGIT}*|{DIGIT}+\.{DIGIT}+\.{DIGIT}+\.{DIGIT}+) {
 #ifdef IPV6
-  if (ip_pton(yytext, &cf_lval.a))
+  if (ipa_pton(yytext, &cf_lval.a))
     return IPA;
-  cf_error("Invalid IP address %s", yytext);
+  cf_error("Invalid IPv6 address %s", yytext);
 #else
   cf_error("This is an IPv4 router, therefore IPv6 addresses are not supported");
 #endif
@@ -193,7 +195,7 @@ else: {
 	}
       k=k->next;
     }
-  cf_lval.s = cf_find_sym(yytext, h);
+  cf_lval.s = cf_get_sym(yytext, h);
   return SYM;
 }
 
@@ -244,6 +246,7 @@ else: {
 <CCOMM>.
 
 \!\= return NEQ;
+\!\~ return NMA;
 \<\= return LEQ;
 \>\= return GEQ;
 \&\& return AND;
@@ -425,8 +428,9 @@ check_eof(void)
 }
 
 static struct symbol *
-cf_new_sym(byte *c, unsigned int h)
+cf_new_sym(byte *c, uint h0)
 {
+  uint h = h0 & (SYM_HASH_SIZE-1);
   struct symbol *s, **ht;
   int l;
 
@@ -448,56 +452,77 @@ cf_new_sym(byte *c, unsigned int h)
 }
 
 static struct symbol *
-cf_find_sym(byte *c, unsigned int h0)
+cf_find_sym(struct config *cfg, byte *c, uint h0)
 {
-  unsigned int h = h0 & (SYM_HASH_SIZE-1);
+  uint h = h0 & (SYM_HASH_SIZE-1);
   struct symbol *s, **ht;
 
-  if (ht = new_config->sym_hash)
+  if (ht = cfg->sym_hash)
     {
       for(s = ht[h]; s; s=s->next)
 	if (!strcmp(s->name, c) && s->scope->active)
 	  return s;
     }
-  if (new_config->sym_fallback)
+  if (ht = cfg->sym_fallback)
     {
       /* We know only top-level scope is active */
-      for(s = new_config->sym_fallback[h]; s; s=s->next)
+      for(s = ht[h]; s; s=s->next)
 	if (!strcmp(s->name, c) && s->scope->active)
 	  return s;
     }
-  return cf_new_sym(c, h);
+
+  return NULL;
+}
+
+static inline struct symbol *
+cf_get_sym(byte *c, uint h0)
+{
+  return cf_find_sym(new_config, c, h0) ?: cf_new_sym(c, h0);
 }
 
 /**
  * cf_find_symbol - find a symbol by name
+ * @cfg: specificed config
  * @c: symbol name
  *
- * This functions searches the symbol table for a symbol of given
- * name. First it examines the current scope, then the second recent
- * one and so on until it either finds the symbol and returns a pointer
- * to its &symbol structure or reaches the end of the scope chain
- * and returns %NULL to signify no match.
+ * This functions searches the symbol table in the config @cfg for a symbol of
+ * given name. First it examines the current scope, then the second recent one
+ * and so on until it either finds the symbol and returns a pointer to its
+ * &symbol structure or reaches the end of the scope chain and returns %NULL to
+ * signify no match.
  */
 struct symbol *
-cf_find_symbol(byte *c)
+cf_find_symbol(struct config *cfg, byte *c)
 {
-  return cf_find_sym(c, cf_hash(c));
+  return cf_find_sym(cfg, c, cf_hash(c));
+}
+
+/**
+ * cf_get_symbol - get a symbol by name
+ * @c: symbol name
+ *
+ * This functions searches the symbol table of the currently parsed config
+ * (@new_config) for a symbol of given name. It returns either the already
+ * existing symbol or a newly allocated undefined (%SYM_VOID) symbol if no
+ * existing symbol is found.
+ */
+struct symbol *
+cf_get_symbol(byte *c)
+{
+  return cf_get_sym(c, cf_hash(c));
 }
 
 struct symbol *
 cf_default_name(char *template, int *counter)
 {
-  char buf[32];
+  char buf[SYM_MAX_LEN];
   struct symbol *s;
   char *perc = strchr(template, '%');
 
   for(;;)
     {
       bsprintf(buf, template, ++(*counter));
-      s = cf_find_sym(buf, cf_hash(buf));
-      if (!s)
-	break;
+      s = cf_get_sym(buf, cf_hash(buf));
       if (s->class == SYM_VOID)
 	return s;
       if (!perc)
@@ -528,7 +553,7 @@ cf_define_symbol(struct symbol *sym, int type, void *def)
     {
       if (sym->scope == conf_this_scope)
 	cf_error("Symbol already defined");
-      sym = cf_new_sym(sym->name, cf_hash(sym->name) & (SYM_HASH_SIZE-1));
+      sym = cf_new_sym(sym->name, cf_hash(sym->name));
     }
   sym->class = type;
   sym->def = def;
@@ -552,6 +577,7 @@ cf_lex_init_kh(void)
 /**
  * cf_lex_init - initialize the lexer
  * @is_cli: true if we're going to parse CLI command, false for configuration
+ * @c: configuration structure
  *
  * cf_lex_init() initializes the lexical analyzer and prepares it for
  * parsing of a new input.
@@ -563,7 +589,7 @@ cf_lex_init(int is_cli, struct config *c)
     cf_lex_init_kh();
 
   ifs_head = ifs = push_ifs(NULL);
-  if (!is_cli) 
+  if (!is_cli)
     {
       ifs->file_name = c->file_name;
       ifs->fd = c->file_fd;

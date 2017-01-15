@@ -9,7 +9,9 @@
 
 /* Unfortunately, some glibc versions hide parts of RFC 3542 API
    if _GNU_SOURCE is not defined. */
-#define _GNU_SOURCE 1
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +21,7 @@
 #include <sys/socket.h>
 #include <sys/uio.h>
 #include <sys/un.h>
+#include <poll.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -41,12 +44,12 @@
 #include "lib/sysio.h"
 
 /* Maximum number of calls of tx handler for one socket in one
- * select iteration. Should be small enough to not monopolize CPU by
+ * poll iteration. Should be small enough to not monopolize CPU by
  * one protocol instance.
  */
 #define MAX_STEPS 4
 
-/* Maximum number of calls of rx handler for all sockets in one select
+/* Maximum number of calls of rx handler for all sockets in one poll
    iteration. RX callbacks are often much more costly so we limit
    this to gen small latencies */
 #define MAX_RX_STEPS 4
@@ -332,6 +335,8 @@ tm_first_shot(void)
   return x;
 }
 
+void io_log_event(void *hook, void *data);
+
 static void
 tm_shot(void)
 {
@@ -372,6 +377,7 @@ tm_shot(void)
 	    i = 0;
 	  tm_start(t, i);
 	}
+      io_log_event(t->hook, t->data);
       t->hook(t);
     }
 }
@@ -444,6 +450,7 @@ tm_format_reltime(char *x, struct tm *tm, bird_clock_t delta)
 /**
  * tm_format_datetime - convert date and time to textual representation
  * @x: destination buffer of size %TM_DATETIME_BUFFER_SIZE
+ * @fmt_spec: specification of resulting textual representation of the time
  * @t: time
  *
  * This function formats the given relative time value @t to a textual
@@ -502,11 +509,11 @@ tm_format_datetime(char *x, struct timeformat *fmt_spec, bird_clock_t t)
  *	Sockaddr helper functions
  */
 
-static inline int sockaddr_length(int af)
+static inline int UNUSED sockaddr_length(int af)
 { return (af == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6); }
 
 static inline void
-sockaddr_fill4(struct sockaddr_in *sa, ip_addr a, struct iface *ifa, uint port)
+sockaddr_fill4(struct sockaddr_in *sa, ip_addr a, uint port)
 {
   memset(sa, 0, sizeof(struct sockaddr_in));
 #ifdef HAVE_SIN_LEN
@@ -537,7 +544,7 @@ void
 sockaddr_fill(sockaddr *sa, int af, ip_addr a, struct iface *ifa, uint port)
 {
   if (af == AF_INET)
-    sockaddr_fill4((struct sockaddr_in *) sa, a, ifa, port);
+    sockaddr_fill4((struct sockaddr_in *) sa, a, port);
   else if (af == AF_INET6)
     sockaddr_fill6((struct sockaddr_in6 *) sa, a, ifa, port);
   else
@@ -545,7 +552,7 @@ sockaddr_fill(sockaddr *sa, int af, ip_addr a, struct iface *ifa, uint port)
 }
 
 static inline void
-sockaddr_read4(struct sockaddr_in *sa, ip_addr *a, struct iface **ifa, uint *port)
+sockaddr_read4(struct sockaddr_in *sa, ip_addr *a, uint *port)
 {
   *port = ntohs(sa->sin_port);
   *a = ipa_from_in4(sa->sin_addr);
@@ -568,7 +575,7 @@ sockaddr_read(sockaddr *sa, int af, ip_addr *a, struct iface **ifa, uint *port)
     goto fail;
 
   if (af == AF_INET)
-    sockaddr_read4((struct sockaddr_in *) sa, a, ifa, port);
+    sockaddr_read4((struct sockaddr_in *) sa, a, port);
   else if (af == AF_INET6)
     sockaddr_read6((struct sockaddr_in6 *) sa, a, ifa, port);
   else
@@ -764,6 +771,55 @@ sk_set_tos6(sock *s, int tos)
   return 0;
 }
 
+static inline int
+sk_set_high_port(sock *s UNUSED)
+{
+  /* Port range setting is optional, ignore it if not supported */
+
+#ifdef IP_PORTRANGE
+  if (sk_is_ipv4(s))
+  {
+    int range = IP_PORTRANGE_HIGH;
+    if (setsockopt(s->fd, SOL_IP, IP_PORTRANGE, &range, sizeof(range)) < 0)
+      ERR("IP_PORTRANGE");
+  }
+#endif
+
+#ifdef IPV6_PORTRANGE
+  if (sk_is_ipv6(s))
+  {
+    int range = IPV6_PORTRANGE_HIGH;
+    if (setsockopt(s->fd, SOL_IPV6, IPV6_PORTRANGE, &range, sizeof(range)) < 0)
+      ERR("IPV6_PORTRANGE");
+  }
+#endif
+
+  return 0;
+}
+
+static inline byte *
+sk_skip_ip_header(byte *pkt, int *len)
+{
+  if ((*len < 20) || ((*pkt & 0xf0) != 0x40))
+    return NULL;
+
+  int hlen = (*pkt & 0x0f) * 4;
+  if ((hlen < 20) || (hlen > *len))
+    return NULL;
+
+  *len -= hlen;
+  return pkt + hlen;
+}
+
+byte *
+sk_rx_buffer(sock *s, int *len)
+{
+  if (sk_is_ipv4(s) && (s->type == SK_IP))
+    return sk_skip_ip_header(s->rbuf, len);
+  else
+    return s->rbuf;
+}
+
 
 /*
  *	Public socket functions
@@ -898,23 +954,32 @@ sk_set_min_ttl(sock *s, int ttl)
 /**
  * sk_set_md5_auth - add / remove MD5 security association for given socket
  * @s: socket
- * @a: IP address of the other side
+ * @local: IP address of local side
+ * @remote: IP address of remote side
  * @ifa: Interface for link-local IP address
- * @passwd: password used for MD5 authentication
+ * @passwd: Password used for MD5 authentication
+ * @setkey: Update also system SA/SP database
  *
- * In TCP MD5 handling code in kernel, there is a set of pairs (address,
- * password) used to choose password according to address of the other side.
- * This function is useful for listening socket, for active sockets it is enough
- * to set s->password field.
+ * In TCP MD5 handling code in kernel, there is a set of security associations
+ * used for choosing password and other authentication parameters according to
+ * the local and remote address. This function is useful for listening socket,
+ * for active sockets it may be enough to set s->password field.
  *
  * When called with passwd != NULL, the new pair is added,
  * When called with passwd == NULL, the existing pair is removed.
+ *
+ * Note that while in Linux, the MD5 SAs are specific to socket, in BSD they are
+ * stored in global SA/SP database (but the behavior also must be enabled on
+ * per-socket basis). In case of multiple sockets to the same neighbor, the
+ * socket-specific state must be configured for each socket while global state
+ * just once per src-dst pair. The @setkey argument controls whether the global
+ * state (SA/SP database) is also updated.
  *
  * Result: 0 for success, -1 for an error.
  */
 
 int
-sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
+sk_set_md5_auth(sock *s, ip_addr local, ip_addr remote, struct iface *ifa, char *passwd, int setkey)
 { DUMMY; }
 #endif
 
@@ -970,7 +1035,6 @@ sk_log_error(sock *s, const char *p)
 static list sock_list;
 static struct birdsock *current_sock;
 static struct birdsock *stored_sock;
-static int sock_recalc_fdsets_p;
 
 static inline sock *
 sk_next(sock *s)
@@ -1026,7 +1090,6 @@ sk_free(resource *r)
     if (s == stored_sock)
       stored_sock = sk_next(s);
     rem_node(&s->n);
-    sock_recalc_fdsets_p = 1;
   }
 }
 
@@ -1080,7 +1143,7 @@ sk_dump(resource *r)
   sock *s = (sock *) r;
   static char *sk_type_names[] = { "TCP<", "TCP>", "TCP", "UDP", NULL, "IP", NULL, "MAGIC", "UNIX<", "UNIX", "DEL!" };
 
-  debug("(%s, ud=%p, sa=%08x, sp=%d, da=%08x, dp=%d, tos=%d, ttl=%d, if=%s)\n",
+  debug("(%s, ud=%p, sa=%I, sp=%d, da=%I, dp=%d, tos=%d, ttl=%d, if=%s)\n",
 	sk_type_names[s->type],
 	s->data,
 	s->saddr,
@@ -1151,7 +1214,7 @@ sk_setup(sock *s)
   if (s->iface)
   {
 #ifdef SO_BINDTODEVICE
-    struct ifreq ifr;
+    struct ifreq ifr = {};
     strcpy(ifr.ifr_name, s->iface->name);
     if (setsockopt(s->fd, SOL_SOCKET, SO_BINDTODEVICE, &ifr, sizeof(ifr)) < 0)
       ERR("SO_BINDTODEVICE");
@@ -1224,7 +1287,6 @@ static void
 sk_insert(sock *s)
 {
   add_tail(&sock_list, &s->n);
-  sock_recalc_fdsets_p = 1;
 }
 
 static void
@@ -1282,7 +1344,7 @@ sk_passive_connected(sock *s, int type)
     log(L_ERR "SOCK: Incoming connection: %s%#m", t->err);
 
     /* FIXME: handle it better in rfree() */
-    close(t->fd);	
+    close(t->fd);
     t->fd = -1;
     rfree(t);
     return 1;
@@ -1325,7 +1387,7 @@ sk_open(sock *s)
     bind_addr = s->saddr;
     do_bind = bind_port || ipa_nonzero(bind_addr);
     break;
-  
+
   case SK_UDP:
     fd = socket(af, SOCK_DGRAM, IPPROTO_UDP);
     bind_port = s->sport;
@@ -1376,6 +1438,10 @@ sk_open(sock *s)
       }
 #endif
     }
+    else
+      if (s->flags & SKF_HIGH_PORT)
+	if (sk_set_high_port(s) < 0)
+	  log(L_WARN "Socket error: %s%#m", s->err);
 
     sockaddr_fill(&sa, af, bind_addr, s->iface, bind_port);
     if (bind(fd, &sa.sa, SA_LEN(sa)) < 0)
@@ -1383,7 +1449,7 @@ sk_open(sock *s)
   }
 
   if (s->password)
-    if (sk_set_md5_auth(s, s->daddr, s->iface, s->password) < 0)
+    if (sk_set_md5_auth(s, s->saddr, s->daddr, s->iface, s->password, 0) < 0)
       goto err;
 
   switch (s->type)
@@ -1625,20 +1691,13 @@ sk_maybe_write(sock *s)
 int
 sk_rx_ready(sock *s)
 {
-  fd_set rd, wr;
-  struct timeval timo;
   int rv;
-
-  FD_ZERO(&rd);
-  FD_ZERO(&wr);
-  FD_SET(s->fd, &rd);
-
-  timo.tv_sec = 0;
-  timo.tv_usec = 0;
+  struct pollfd pfd = { .fd = s->fd };
+  pfd.events |= POLLIN;
 
  redo:
-  rv = select(s->fd+1, &rd, &wr, NULL, &timo);
-  
+  rv = poll(&pfd, 1, 0);
+
   if ((rv < 0) && (errno == EINTR || errno == EAGAIN))
     goto redo;
 
@@ -1706,7 +1765,7 @@ sk_send_full(sock *s, unsigned len, struct iface *ifa,
  /* sk_read() and sk_write() are called from BFD's event loop */
 
 int
-sk_read(sock *s)
+sk_read(sock *s, int revents)
 {
   switch (s->type)
   {
@@ -1725,6 +1784,11 @@ sk_read(sock *s)
       {
 	if (errno != EINTR && errno != EAGAIN)
 	  s->err_hook(s, errno);
+	else if (errno == EAGAIN && !(revents & POLLIN))
+	{
+	  log(L_ERR "Got EAGAIN from read when revents=%x (without POLLIN)", revents);
+	  s->err_hook(s, 0);
+	}
       }
       else if (!c)
 	s->err_hook(s, 0);
@@ -1792,6 +1856,20 @@ sk_write(sock *s)
 }
 
 void
+sk_err(sock *s, int revents)
+{
+  int se = 0, sse = sizeof(se);
+  if ((s->type != SK_MAGIC) && (revents & POLLERR))
+    if (getsockopt(s->fd, SOL_SOCKET, SO_ERROR, &se, &sse) < 0)
+    {
+      log(L_ERR "IO: Socket error: SO_ERROR: %m");
+      se = 0;
+    }
+
+  s->err_hook(s, se);
+}
+
+void
 sk_dump_all(void)
 {
   node *n;
@@ -1809,11 +1887,168 @@ sk_dump_all(void)
 
 
 /*
+ *	Internal event log and watchdog
+ */
+
+#define EVENT_LOG_LENGTH 32
+
+struct event_log_entry
+{
+  void *hook;
+  void *data;
+  btime timestamp;
+  btime duration;
+};
+
+static struct event_log_entry event_log[EVENT_LOG_LENGTH];
+static struct event_log_entry *event_open;
+static int event_log_pos, event_log_num, watchdog_active;
+static btime last_time;
+static btime loop_time;
+
+static void
+io_update_time(void)
+{
+  struct timespec ts;
+  int rv;
+
+  if (!clock_monotonic_available)
+    return;
+
+  /*
+   * This is third time-tracking procedure (after update_times() above and
+   * times_update() in BFD), dedicated to internal event log and latency
+   * tracking. Hopefully, we consolidate these sometimes.
+   */
+
+  rv = clock_gettime(CLOCK_MONOTONIC, &ts);
+  if (rv < 0)
+    die("clock_gettime: %m");
+
+  last_time = ((s64) ts.tv_sec S) + (ts.tv_nsec / 1000);
+
+  if (event_open)
+  {
+    event_open->duration = last_time - event_open->timestamp;
+
+    if (event_open->duration > config->latency_limit)
+      log(L_WARN "Event 0x%p 0x%p took %d ms",
+	  event_open->hook, event_open->data, (int) (event_open->duration TO_MS));
+
+    event_open = NULL;
+  }
+}
+
+/**
+ * io_log_event - mark approaching event into event log
+ * @hook: event hook address
+ * @data: event data address
+ *
+ * Store info (hook, data, timestamp) about the following internal event into
+ * a circular event log (@event_log). When latency tracking is enabled, the log
+ * entry is kept open (in @event_open) so the duration can be filled later.
+ */
+void
+io_log_event(void *hook, void *data)
+{
+  if (config->latency_debug)
+    io_update_time();
+
+  struct event_log_entry *en = event_log + event_log_pos;
+
+  en->hook = hook;
+  en->data = data;
+  en->timestamp = last_time;
+  en->duration = 0;
+
+  event_log_num++;
+  event_log_pos++;
+  event_log_pos %= EVENT_LOG_LENGTH;
+
+  event_open = config->latency_debug ? en : NULL;
+}
+
+static inline void
+io_close_event(void)
+{
+  if (event_open)
+    io_update_time();
+}
+
+void
+io_log_dump(void)
+{
+  int i;
+
+  log(L_DEBUG "Event log:");
+  for (i = 0; i < EVENT_LOG_LENGTH; i++)
+  {
+    struct event_log_entry *en = event_log + (event_log_pos + i) % EVENT_LOG_LENGTH;
+    if (en->hook)
+      log(L_DEBUG "  Event 0x%p 0x%p at %8d for %d ms", en->hook, en->data,
+	  (int) ((last_time - en->timestamp) TO_MS), (int) (en->duration TO_MS));
+  }
+}
+
+void
+watchdog_sigalrm(int sig UNUSED)
+{
+  /* Update last_time and duration, but skip latency check */
+  config->latency_limit = 0xffffffff;
+  io_update_time();
+
+  /* We want core dump */
+  abort();
+}
+
+static inline void
+watchdog_start1(void)
+{
+  io_update_time();
+
+  loop_time = last_time;
+}
+
+static inline void
+watchdog_start(void)
+{
+  io_update_time();
+
+  loop_time = last_time;
+  event_log_num = 0;
+
+  if (config->watchdog_timeout)
+  {
+    alarm(config->watchdog_timeout);
+    watchdog_active = 1;
+  }
+}
+
+static inline void
+watchdog_stop(void)
+{
+  io_update_time();
+
+  if (watchdog_active)
+  {
+    alarm(0);
+    watchdog_active = 0;
+  }
+
+  btime duration = last_time - loop_time;
+  if (duration > config->watchdog_warning)
+    log(L_WARN "I/O loop cycle took %d ms for %d events",
+	(int) (duration TO_MS), event_log_num);
+}
+
+
+/*
  *	Main I/O Loop
  */
 
 volatile int async_config_flag;		/* Asynchronous reconfiguration/dump scheduled */
 volatile int async_dump_flag;
+volatile int async_shutdown_flag;
 
 void
 io_init(void)
@@ -1835,90 +2070,99 @@ static int short_loops = 0;
 void
 io_loop(void)
 {
-  fd_set rd, wr;
-  struct timeval timo;
+  int poll_tout;
   time_t tout;
-  int hi, events;
+  int nfds, events, pout;
   sock *s;
   node *n;
+  int fdmax = 256;
+  struct pollfd *pfd = xmalloc(fdmax * sizeof(struct pollfd));
 
-  sock_recalc_fdsets_p = 1;
+  watchdog_start1();
   for(;;)
     {
       events = ev_run_list(&global_event_list);
+    timers:
       update_times();
       tout = tm_first_shot();
       if (tout <= now)
 	{
 	  tm_shot();
-	  continue;
+	  goto timers;
 	}
-      timo.tv_sec = events ? 0 : MIN(tout - now, 3);
-      timo.tv_usec = 0;
+      poll_tout = (events ? 0 : MIN(tout - now, 3)) * 1000; /* Time in milliseconds */
 
-      if (sock_recalc_fdsets_p)
-	{
-	  sock_recalc_fdsets_p = 0;
-	  FD_ZERO(&rd);
-	  FD_ZERO(&wr);
-	}
+      io_close_event();
 
-      hi = 0;
+      nfds = 0;
       WALK_LIST(n, sock_list)
 	{
+	  pfd[nfds] = (struct pollfd) { .fd = -1 }; /* everything other set to 0 by this */
 	  s = SKIP_BACK(sock, n, n);
 	  if (s->rx_hook)
 	    {
-	      FD_SET(s->fd, &rd);
-	      if (s->fd > hi)
-		hi = s->fd;
+	      pfd[nfds].fd = s->fd;
+	      pfd[nfds].events |= POLLIN;
 	    }
-	  else
-	    FD_CLR(s->fd, &rd);
 	  if (s->tx_hook && s->ttx != s->tpos)
 	    {
-	      FD_SET(s->fd, &wr);
-	      if (s->fd > hi)
-		hi = s->fd;
+	      pfd[nfds].fd = s->fd;
+	      pfd[nfds].events |= POLLOUT;
+	    }
+	  if (pfd[nfds].fd != -1)
+	    {
+	      s->index = nfds;
+	      nfds++;
 	    }
 	  else
-	    FD_CLR(s->fd, &wr);
+	    s->index = -1;
+
+	  if (nfds >= fdmax)
+	    {
+	      fdmax *= 2;
+	      pfd = xrealloc(pfd, fdmax * sizeof(struct pollfd));
+	    }
 	}
 
       /*
        * Yes, this is racy. But even if the signal comes before this test
-       * and entering select(), it gets caught on the next timer tick.
+       * and entering poll(), it gets caught on the next timer tick.
        */
 
       if (async_config_flag)
 	{
+	  io_log_event(async_config, NULL);
 	  async_config();
 	  async_config_flag = 0;
 	  continue;
 	}
       if (async_dump_flag)
 	{
+	  io_log_event(async_dump, NULL);
 	  async_dump();
 	  async_dump_flag = 0;
 	  continue;
 	}
       if (async_shutdown_flag)
 	{
+	  io_log_event(async_shutdown, NULL);
 	  async_shutdown();
 	  async_shutdown_flag = 0;
 	  continue;
 	}
 
-      /* And finally enter select() to find active sockets */
-      hi = select(hi+1, &rd, &wr, NULL, &timo);
+      /* And finally enter poll() to find active sockets */
+      watchdog_stop();
+      pout = poll(pfd, nfds, poll_tout);
+      watchdog_start();
 
-      if (hi < 0)
+      if (pout < 0)
 	{
 	  if (errno == EINTR || errno == EAGAIN)
 	    continue;
-	  die("select: %m");
+	  die("poll: %m");
 	}
-      if (hi)
+      if (pout)
 	{
 	  /* guaranteed to be non-empty */
 	  current_sock = SKIP_BACK(sock, n, HEAD(sock_list));
@@ -1926,30 +2170,39 @@ io_loop(void)
 	  while (current_sock)
 	    {
 	      sock *s = current_sock;
+	      if (s->index == -1)
+		{
+		  current_sock = sk_next(s);
+		  goto next;
+		}
+
 	      int e;
 	      int steps;
 
 	      steps = MAX_STEPS;
-	      if ((s->type >= SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
+	      if (s->fast_rx && (pfd[s->index].revents & POLLIN) && s->rx_hook)
 		do
 		  {
 		    steps--;
-		    e = sk_read(s);
+		    io_log_event(s->rx_hook, s->data);
+		    e = sk_read(s, pfd[s->index].revents);
 		    if (s != current_sock)
 		      goto next;
 		  }
 		while (e && s->rx_hook && steps);
 
 	      steps = MAX_STEPS;
-	      if (FD_ISSET(s->fd, &wr))
+	      if (pfd[s->index].revents & POLLOUT)
 		do
 		  {
 		    steps--;
+		    io_log_event(s->tx_hook, s->data);
 		    e = sk_write(s);
 		    if (s != current_sock)
 		      goto next;
 		  }
 		while (e && steps);
+
 	      current_sock = sk_next(s);
 	    next: ;
 	    }
@@ -1967,18 +2220,32 @@ io_loop(void)
 	  while (current_sock && count < MAX_RX_STEPS)
 	    {
 	      sock *s = current_sock;
-	      int e UNUSED;
+	      if (s->index == -1)
+		{
+		  current_sock = sk_next(s);
+		  goto next2;
+		}
 
-	      if ((s->type < SK_MAGIC) && FD_ISSET(s->fd, &rd) && s->rx_hook)
+	      if (!s->fast_rx && (pfd[s->index].revents & POLLIN) && s->rx_hook)
 		{
 		  count++;
-		  e = sk_read(s);
+		  io_log_event(s->rx_hook, s->data);
+		  sk_read(s, pfd[s->index].revents);
 		  if (s != current_sock)
-		      goto next2;
+		    goto next2;
 		}
+
+	      if (pfd[s->index].revents & (POLLHUP | POLLERR))
+		{
+		  sk_err(s, pfd[s->index].revents);
+		  if (s != current_sock)
+		    goto next2;
+		}
+
 	      current_sock = sk_next(s);
 	    next2: ;
 	    }
+
 
 	  stored_sock = current_sock;
 	}
@@ -2003,5 +2270,3 @@ test_old_bird(char *path)
     die("I found another BIRD running.");
   close(fd);
 }
-
-
