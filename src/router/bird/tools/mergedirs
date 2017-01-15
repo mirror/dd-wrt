@@ -4,7 +4,7 @@ if [ -z "$4" ] ; then
 	echo "Usage: mergedirs <src-dir> <src-dir-rel> <obj-dir> <list-of-dirs>"
 	exit 1
 	fi
-cpp=${CPP:-gcc -E}
+cpp=${CPP:-cc -E}
 SRCDIR=$1
 shift
 SRCREL=$1

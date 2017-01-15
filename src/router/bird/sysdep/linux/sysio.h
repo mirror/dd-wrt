@@ -179,19 +179,19 @@ sk_prepare_cmsgs4(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
  */
 
 int
-sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
+sk_set_md5_auth(sock *s, ip_addr local UNUSED, ip_addr remote, struct iface *ifa, char *passwd, int setkey UNUSED)
 {
   struct tcp_md5sig md5;
 
   memset(&md5, 0, sizeof(md5));
-  sockaddr_fill((sockaddr *) &md5.tcpm_addr, s->af, a, ifa, 0);
+  sockaddr_fill((sockaddr *) &md5.tcpm_addr, s->af, remote, ifa, 0);
 
   if (passwd)
   {
     int len = strlen(passwd);
 
     if (len > TCP_MD5SIG_MAXKEYLEN)
-      ERR_MSG("MD5 password too long");
+      ERR_MSG("The password for TCP MD5 Signature is too long");
 
     md5.tcpm_keylen = len;
     memcpy(&md5.tcpm_key, passwd, len);

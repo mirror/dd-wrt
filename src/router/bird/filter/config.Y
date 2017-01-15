@@ -36,6 +36,7 @@ f_valid_set_type(int type)
   case T_ENUM:
   case T_IP:
   case T_EC:
+  case T_LC:
     return 1;
 
   default:
@@ -66,6 +67,14 @@ f_merge_items(struct f_tree *a, struct f_tree *b)
 static inline struct f_tree *
 f_new_pair_item(int fa, int ta, int fb, int tb)
 {
+  check_u16(fa);
+  check_u16(ta);
+  check_u16(fb);
+  check_u16(tb);
+
+  if ((ta < fa) || (tb < fb))
+    cf_error( "From value cannot be higher that To value in pair sets");
+
   struct f_tree *t = f_new_tree();
   t->right = t;
   t->from.type = t->to.type = T_PAIR;
@@ -77,14 +86,16 @@ f_new_pair_item(int fa, int ta, int fb, int tb)
 static inline struct f_tree *
 f_new_pair_set(int fa, int ta, int fb, int tb)
 {
-  struct f_tree *lst = NULL;
-  int i;
+  check_u16(fa);
+  check_u16(ta);
+  check_u16(fb);
+  check_u16(tb);
 
-  if ((fa == ta) || ((fb == 0) && (tb == 0xFFFF)))
-    return f_new_pair_item(fa, ta, fb, tb);
-  
   if ((ta < fa) || (tb < fb))
     cf_error( "From value cannot be higher that To value in pair sets");
+
+  struct f_tree *lst = NULL;
+  int i;
 
   for (i = fa; i <= ta; i++)
     lst = f_merge_items(lst, f_new_pair_item(i, i, fb, tb));
@@ -92,7 +103,9 @@ f_new_pair_set(int fa, int ta, int fb, int tb)
   return lst;
 }
 
+#define CC_ALL 0xFFFF
 #define EC_ALL 0xFFFFFFFF
+#define LC_ALL 0xFFFFFFFF
 
 static struct f_tree *
 f_new_ec_item(u32 kind, u32 ipv4_used, u32 key, u32 vf, u32 vt)
@@ -132,9 +145,20 @@ f_new_ec_item(u32 kind, u32 ipv4_used, u32 key, u32 vf, u32 vt)
   return t;
 }
 
+static struct f_tree *
+f_new_lc_item(u32 f1, u32 t1, u32 f2, u32 t2, u32 f3, u32 t3)
+{
+  struct f_tree *t = f_new_tree();
+  t->right = t;
+  t->from.type = t->to.type = T_LC;
+  t->from.val.lc = (lcomm) {f1, f2, f3};
+  t->to.val.lc = (lcomm) {t1, t2, t3};
+  return t;
+}
+
 static inline struct f_inst *
 f_generate_empty(struct f_inst *dyn)
-{ 
+{
   struct f_inst *e = f_new_inst();
   e->code = 'E';
 
@@ -147,6 +171,9 @@ f_generate_empty(struct f_inst *dyn)
       break;
     case EAF_TYPE_EC_SET:
       e->aux = T_ECLIST;
+      break;
+    case EAF_TYPE_LC_SET:
+      e->aux = T_LCLIST;
       break;
     default:
       cf_error("Can't empty that attribute");
@@ -234,7 +261,7 @@ f_generate_ec(u16 kind, struct f_inst *tk, struct f_inst *tv)
 
   if (c1 && c2) {
     u64 ec;
-  
+
     if (kind == EC_GENERIC) {
       ec = ec_generic(key, val2);
     }
@@ -253,7 +280,7 @@ f_generate_ec(u16 kind, struct f_inst *tk, struct f_inst *tv)
     NEW_F_VAL;
     rv = f_new_inst();
     rv->code = 'C';
-    rv->a1.p = val;    
+    rv->a1.p = val;
     val->type = T_EC;
     val->val.ec = ec;
   }
@@ -268,14 +295,44 @@ f_generate_ec(u16 kind, struct f_inst *tk, struct f_inst *tv)
   return rv;
 }
 
+static inline struct f_inst *
+f_generate_lc(struct f_inst *t1, struct f_inst *t2, struct f_inst *t3)
+{
+  struct f_inst *rv;
+
+  if ((t1->code == 'c') && (t2->code == 'c') && (t3->code == 'c')) {
+    if ((t1->aux != T_INT) || (t2->aux != T_INT) || (t3->aux != T_INT))
+      cf_error( "LC - Can't operate with value of non-integer type in tuple constructor");
+
+    rv = f_new_inst();
+    rv->code = 'C';
+
+    NEW_F_VAL;
+    rv->a1.p = val;
+    val->type = T_LC;
+    val->val.lc = (lcomm) { t1->a2.i, t2->a2.i, t3->a2.i };
+  }
+  else
+  {
+    rv = cfg_allocz(sizeof(struct f_inst3));
+    rv->lineno = ifs->lino;
+    rv->code = P('m','l');
+    rv->a1.p = t1;
+    rv->a2.p = t2;
+    INST3(rv).p = t3;
+  }
+
+  return rv;
+}
+
 
 
 CF_DECLS
 
 CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 	ACCEPT, REJECT, ERROR, QUITBIRD,
-	INT, BOOL, IP, PREFIX, PAIR, QUAD, EC,
-	SET, STRING, BGPMASK, BGPPATH, CLIST, ECLIST,
+	INT, BOOL, IP, PREFIX, PAIR, QUAD, EC, LC,
+	SET, STRING, BGPMASK, BGPPATH, CLIST, ECLIST, LCLIST,
 	IF, THEN, ELSE, CASE,
 	TRUE, FALSE, RT, RO, UNKNOWN, GENERIC,
 	FROM, GW, NET, MASK, PROTO, SOURCE, SCOPE, CAST, DEST, IFNAME, IFINDEX,
@@ -283,7 +340,7 @@ CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 	LEN,
 	DEFINED,
 	ADD, DELETE, CONTAINS, RESET,
-	PREPEND, FIRST, LAST, MATCH,
+	PREPEND, FIRST, LAST, LAST_NONAGGREGATED, MATCH,
 	ROA_CHECK,
 	EMPTY,
 	FILTER, WHERE, EVAL)
@@ -293,12 +350,12 @@ CF_KEYWORDS(FUNCTION, PRINT, PRINTN, UNSET, RETURN,
 
 %type <x> term block cmds cmds_int cmd function_body constant constructor print_one print_list var_list var_listn dynamic_attr static_attr function_call symbol bgp_path_expr
 %type <f> filter filter_body where_filter
-%type <i> type break_command pair_expr ec_kind
-%type <i32> pair_atom ec_expr
-%type <e> pair_item ec_item set_item switch_item set_items switch_items switch_body
+%type <i> type break_command ec_kind
+%type <i32> cnum
+%type <e> pair_item ec_item lc_item set_item switch_item set_items switch_items switch_body
 %type <trie> fprefix_set
 %type <v> set_atom switch_atom fprefix fprefix_s fipa
-%type <s> decls declsn one_decl function_params 
+%type <s> decls declsn one_decl function_params
 %type <h> bgp_path bgp_path_tail1 bgp_path_tail2
 
 CF_GRAMMAR
@@ -327,17 +384,20 @@ type:
  | PAIR { $$ = T_PAIR; }
  | QUAD { $$ = T_QUAD; }
  | EC { $$ = T_EC; }
+ | LC { $$ = T_LC; }
  | STRING { $$ = T_STRING; }
  | BGPMASK { $$ = T_PATH_MASK; }
  | BGPPATH { $$ = T_PATH; }
  | CLIST { $$ = T_CLIST; }
  | ECLIST { $$ = T_ECLIST; }
- | type SET { 
+ | LCLIST { $$ = T_LCLIST; }
+ | type SET {
 	switch ($1) {
 	  case T_INT:
 	  case T_PAIR:
 	  case T_QUAD:
 	  case T_EC:
+	  case T_LC:
 	  case T_IP:
 	       $$ = T_SET;
 	       break;
@@ -446,7 +506,7 @@ function_def:
    } function_params function_body {
      $2->def = $5;
      $2->aux2 = $4;
-     DBG("Hmm, we've got one function here - %s\n", $2->name); 
+     DBG("Hmm, we've got one function here - %s\n", $2->name);
      cf_pop_scope();
    }
  ;
@@ -513,29 +573,22 @@ switch_atom:
  | ENUM  { $$.type = pair_a($1); $$.val.i = pair_b($1); }
  ;
 
-pair_expr:
-   term { $$ = f_eval_int($1); check_u16($$); }
-
-pair_atom:
-   pair_expr { $$ = pair($1, $1); }
- | pair_expr DDOT pair_expr { $$ = pair($1, $3); }
- | '*' { $$ = 0xFFFF; }
- ;
+cnum:
+   term { $$ = f_eval_int($1); }
 
 pair_item:
-   '(' pair_atom ',' pair_atom ')' {
-     $$ = f_new_pair_set(pair_a($2), pair_b($2), pair_a($4), pair_b($4));
-   }
- | '(' pair_atom ',' pair_atom ')' DDOT '(' pair_expr ',' pair_expr ')' {
-     /* Hack: $2 and $4 should be pair_expr, but that would cause shift/reduce conflict */
-     if ((pair_a($2) != pair_b($2)) || (pair_a($4) != pair_b($4)))
-       cf_error("syntax error");
-     $$ = f_new_pair_item(pair_b($2), $8, pair_b($4), $10); 
-   }
+   '(' cnum ',' cnum ')'		{ $$ = f_new_pair_item($2, $2, $4, $4); }
+ | '(' cnum ',' cnum DDOT cnum ')'	{ $$ = f_new_pair_item($2, $2, $4, $6); }
+ | '(' cnum ',' '*' ')'			{ $$ = f_new_pair_item($2, $2, 0, CC_ALL); }
+ | '(' cnum DDOT cnum ',' cnum ')'	{ $$ = f_new_pair_set($2, $4, $6, $6); }
+ | '(' cnum DDOT cnum ',' cnum DDOT cnum ')' { $$ = f_new_pair_set($2, $4, $6, $8); }
+ | '(' cnum DDOT cnum ',' '*' ')'	{ $$ = f_new_pair_item($2, $4, 0, CC_ALL); }
+ | '(' '*' ',' cnum ')'			{ $$ = f_new_pair_set(0, CC_ALL, $4, $4); }
+ | '(' '*' ',' cnum DDOT cnum ')'	{ $$ = f_new_pair_set(0, CC_ALL, $4, $6); }
+ | '(' '*' ',' '*' ')'			{ $$ = f_new_pair_item(0, CC_ALL, 0, CC_ALL); }
+ | '(' cnum ',' cnum ')' DDOT '(' cnum ',' cnum ')'
+   { $$ = f_new_pair_item($2, $8, $4, $10); }
  ;
-
-ec_expr:
-   term { $$ = f_eval_int($1); }
 
 ec_kind:
    RT { $$ = EC_RT; }
@@ -545,14 +598,27 @@ ec_kind:
  ;
 
 ec_item:
-   '(' ec_kind ',' ec_expr ',' ec_expr ')' { $$ = f_new_ec_item($2, 0, $4, $6, $6); }
- | '(' ec_kind ',' ec_expr ',' ec_expr DDOT ec_expr ')' { $$ = f_new_ec_item($2, 0, $4, $6, $8); }
- | '(' ec_kind ',' ec_expr ',' '*' ')' {  $$ = f_new_ec_item($2, 0, $4, 0, EC_ALL); }
+   '(' ec_kind ',' cnum ',' cnum ')'		{ $$ = f_new_ec_item($2, 0, $4, $6, $6); }
+ | '(' ec_kind ',' cnum ',' cnum DDOT cnum ')'	{ $$ = f_new_ec_item($2, 0, $4, $6, $8); }
+ | '(' ec_kind ',' cnum ',' '*' ')'		{ $$ = f_new_ec_item($2, 0, $4, 0, EC_ALL); }
  ;
+
+lc_item:
+   '(' cnum ',' cnum ',' cnum ')'	    { $$ = f_new_lc_item($2, $2, $4, $4, $6, $6); }
+ | '(' cnum ',' cnum ',' cnum DDOT cnum ')' { $$ = f_new_lc_item($2, $2, $4, $4, $6, $8); }
+ | '(' cnum ',' cnum ',' '*' ')'	    { $$ = f_new_lc_item($2, $2, $4, $4, 0, LC_ALL); }
+ | '(' cnum ',' cnum DDOT cnum ',' '*' ')'  { $$ = f_new_lc_item($2, $2, $4, $6, 0, LC_ALL); }
+ | '(' cnum ',' '*' ',' '*' ')'		    { $$ = f_new_lc_item($2, $2, 0, LC_ALL, 0, LC_ALL); }
+ | '(' cnum DDOT cnum ',' '*' ',' '*' ')'   { $$ = f_new_lc_item($2, $4, 0, LC_ALL, 0, LC_ALL); }
+ | '(' '*' ',' '*' ',' '*' ')'		    { $$ = f_new_lc_item(0, LC_ALL, 0, LC_ALL, 0, LC_ALL); }
+ | '(' cnum ',' cnum ',' cnum ')' DDOT '(' cnum ',' cnum ',' cnum ')'
+   { $$ = f_new_lc_item($2, $10, $4, $12, $6, $14); }
+;
 
 set_item:
    pair_item
  | ec_item
+ | lc_item
  | set_atom { $$ = f_new_item($1, $1); }
  | set_atom DDOT set_atom { $$ = f_new_item($1, $3); }
  ;
@@ -560,6 +626,7 @@ set_item:
 switch_item:
    pair_item
  | ec_item
+ | lc_item
  | switch_atom { $$ = f_new_item($1, $1); }
  | switch_atom DDOT switch_atom { $$ = f_new_item($1, $3); }
  ;
@@ -585,14 +652,14 @@ fprefix:
    fprefix_s { $$ = $1; }
  | fprefix_s '+' { $$ = $1; $$.val.px.len |= LEN_PLUS; }
  | fprefix_s '-' { $$ = $1; $$.val.px.len |= LEN_MINUS; }
- | fprefix_s '{' NUM ',' NUM '}' { 
+ | fprefix_s '{' NUM ',' NUM '}' {
      if (! ((0 <= $3) && ($3 <= $5) && ($5 <= MAX_PREFIX_LENGTH))) cf_error("Invalid prefix pattern range: {%d, %d}.", $3, $5);
      $$ = $1; $$.val.px.len |= LEN_RANGE | ($3 << 16) | ($5 << 8);
    }
  ;
 
 fprefix_set:
-   fprefix { $$ = f_new_trie(cfg_mem); trie_add_fprefix($$, &($1.val.px)); }
+   fprefix { $$ = f_new_trie(cfg_mem, sizeof(struct f_trie_node)); trie_add_fprefix($$, &($1.val.px)); }
  | fprefix_set ',' fprefix { $$ = $1; trie_add_fprefix($$, &($3.val.px)); }
  ;
 
@@ -604,7 +671,7 @@ switch_body: /* EMPTY */ { $$ = NULL; }
        t->data = $4;
      $$ = f_merge_items($1, $2);
    }
- | switch_body ELSECOL cmds { 
+ | switch_body ELSECOL cmds {
      struct f_tree *t = f_new_tree();
      t->from.type = t->to.type = T_VOID;
      t->right = t;
@@ -616,7 +683,7 @@ switch_body: /* EMPTY */ { $$ = NULL; }
 /* CONST '(' expr ')' { $$ = f_new_inst(); $$->code = 'c'; $$->aux = T_INT; $$->a2.i = $3; } */
 
 bgp_path_expr:
-   symbol       { $$ = $1; }   
+   symbol       { $$ = $1; }
  | '(' term ')' { $$ = $2; }
  ;
 
@@ -626,16 +693,17 @@ bgp_path:
  ;
 
 bgp_path_tail1:
-   NUM bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN;      $$->val = $1; }
- | '*' bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; $$->val  = 0; }
- | '?' bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_QUESTION; $$->val  = 0; }
- | bgp_path_expr bgp_path_tail1 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN_EXPR; $$->val = (uintptr_t) $1; }
- |  		      { $$ = NULL; }
+   NUM bgp_path_tail1		{ $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN; $$->val = $1; }
+ | NUM DDOT NUM bgp_path_tail1	{ $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $4; $$->kind = PM_ASN_RANGE; $$->val = $1; $$->val2 = $3; }
+ | '*' bgp_path_tail1		{ $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; }
+ | '?' bgp_path_tail1		{ $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_QUESTION; }
+ | bgp_path_expr bgp_path_tail1	{ $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN_EXPR; $$->val = (uintptr_t) $1; }
+ | 				{ $$ = NULL; }
  ;
 
 bgp_path_tail2:
-   NUM bgp_path_tail2 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN;      $$->val = $1; }
- | '?' bgp_path_tail2 { $$ = cfg_alloc(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; $$->val  = 0; }
+   NUM bgp_path_tail2 { $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASN; $$->val = $1; }
+ | '?' bgp_path_tail2 { $$ = cfg_allocz(sizeof(struct f_path_mask)); $$->next = $2; $$->kind = PM_ASTERISK; }
  | 		      { $$ = NULL; }
  ;
 
@@ -656,6 +724,7 @@ constant:
 constructor:
    '(' term ',' term ')' { $$ = f_generate_dpair($2, $4); }
  | '(' ec_kind ',' term ',' term ')' { $$ = f_generate_ec($2, $4, $6); }
+ | '(' term ',' term ',' term ')' { $$ = f_generate_lc($2, $4, $6); }
  ;
 
 
@@ -734,6 +803,7 @@ term:
  | term '>' term     { $$ = f_new_inst(); $$->code = '<';        $$->a1.p = $3; $$->a2.p = $1; }
  | term GEQ term { $$ = f_new_inst(); $$->code = P('<','=');     $$->a1.p = $3; $$->a2.p = $1; }
  | term '~' term     { $$ = f_new_inst(); $$->code = '~';        $$->a1.p = $1; $$->a2.p = $3; }
+ | term NMA term { $$ = f_new_inst(); $$->code = P('!','~');     $$->a1.p = $1; $$->a2.p = $3; }
  | '!' term { $$ = f_new_inst(); $$->code = '!'; $$->a1.p = $2; }
  | DEFINED '(' term ')' { $$ = f_new_inst(); $$->code = P('d','e');  $$->a1.p = $3; }
 
@@ -752,6 +822,7 @@ term:
  | term '.' MASK '(' term ')' { $$ = f_new_inst(); $$->code = P('i','M'); $$->a1.p = $1; $$->a2.p = $5; }
  | term '.' FIRST { $$ = f_new_inst(); $$->code = P('a','f'); $$->a1.p = $1; }
  | term '.' LAST  { $$ = f_new_inst(); $$->code = P('a','l'); $$->a1.p = $1; }
+ | term '.' LAST_NONAGGREGATED  { $$ = f_new_inst(); $$->code = P('a','L'); $$->a1.p = $1; }
 
 /* Communities */
 /* This causes one shift/reduce conflict
@@ -764,8 +835,9 @@ term:
  | '+' EMPTY '+' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_PATH; }
  | '-' EMPTY '-' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_CLIST; }
  | '-' '-' EMPTY '-' '-' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_ECLIST; }
- | PREPEND '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('A','p'); $$->a1.p = $3; $$->a2.p = $5; } 
- | ADD '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'a'; } 
+ | '-' '-' '-' EMPTY '-' '-' '-' { $$ = f_new_inst(); $$->code = 'E'; $$->aux = T_LCLIST; }
+ | PREPEND '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('A','p'); $$->a1.p = $3; $$->a2.p = $5; }
+ | ADD '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'a'; }
  | DELETE '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'd'; }
  | FILTER '(' term ',' term ')' { $$ = f_new_inst(); $$->code = P('C','a'); $$->a1.p = $3; $$->a2.p = $5; $$->aux = 'f'; }
 
@@ -820,7 +892,7 @@ print_list: /* EMPTY */ { $$ = NULL; }
    }
  ;
 
-var_listn: term { 
+var_listn: term {
      $$ = f_new_inst();
      $$->code = 's';
      $$->a1.p = NULL;
@@ -888,7 +960,7 @@ cmd:
      $$ = f_new_inst();
      $$->code = P('P','S');
      $$->a1.p = $3;
-   } 
+   }
  | UNSET '(' rtadot dynamic_attr ')' ';' {
      $$ = $4;
      $$->aux = EAF_TYPE_UNDEF | EAF_TEMP;

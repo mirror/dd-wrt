@@ -98,12 +98,12 @@ rte_src_init(void)
   HASH_INIT(src_hash, rta_pool, RSH_INIT_ORDER);
 }
 
-static inline int u32_cto(unsigned int x) { return ffs(~x) - 1; }
+static inline int u32_cto(uint x) { return ffs(~x) - 1; }
 
 static inline u32
 rte_src_alloc_id(void)
 {
-  int i, j;
+  uint i, j;
   for (i = src_id_pos; i < src_id_size; i++)
     if (src_ids[i] != 0xffffffff)
       goto found;
@@ -167,7 +167,7 @@ rt_get_source(struct proto *p, u32 id)
   src->private_id = id;
   src->global_id = rte_src_alloc_id();
   src->uc = 0;
-  
+
   HASH_INSERT2(src_hash, RSH, rta_pool, src);
 
   return src;
@@ -195,10 +195,10 @@ rt_prune_sources(void)
  *	Multipath Next Hop
  */
 
-static inline unsigned int
+static inline uint
 mpnh_hash(struct mpnh *x)
 {
-  unsigned int h = 0;
+  uint h = 0;
   for (; x; x = x->next)
     h ^= ipa_hash(x->gw);
 
@@ -213,6 +213,122 @@ mpnh__same(struct mpnh *x, struct mpnh *y)
       return 0;
 
   return x == y;
+}
+
+static int
+mpnh_compare_node(struct mpnh *x, struct mpnh *y)
+{
+  int r;
+
+  if (!x)
+    return 1;
+
+  if (!y)
+    return -1;
+
+  r = ((int) y->weight) - ((int) x->weight);
+  if (r)
+    return r;
+
+  r = ipa_compare(x->gw, y->gw);
+  if (r)
+    return r;
+
+  return ((int) x->iface->index) - ((int) y->iface->index);
+}
+
+static inline struct mpnh *
+mpnh_copy_node(const struct mpnh *src, linpool *lp)
+{
+  struct mpnh *n = lp_alloc(lp, sizeof(struct mpnh));
+  n->gw = src->gw;
+  n->iface = src->iface;
+  n->next = NULL;
+  n->weight = src->weight;
+  return n;
+}
+
+/**
+ * mpnh_merge - merge nexthop lists
+ * @x: list 1
+ * @y: list 2
+ * @rx: reusability of list @x
+ * @ry: reusability of list @y
+ * @max: max number of nexthops
+ * @lp: linpool for allocating nexthops
+ *
+ * The mpnh_merge() function takes two nexthop lists @x and @y and merges them,
+ * eliminating possible duplicates. The input lists must be sorted and the
+ * result is sorted too. The number of nexthops in result is limited by @max.
+ * New nodes are allocated from linpool @lp.
+ *
+ * The arguments @rx and @ry specify whether corresponding input lists may be
+ * consumed by the function (i.e. their nodes reused in the resulting list), in
+ * that case the caller should not access these lists after that. To eliminate
+ * issues with deallocation of these lists, the caller should use some form of
+ * bulk deallocation (e.g. stack or linpool) to free these nodes when the
+ * resulting list is no longer needed. When reusability is not set, the
+ * corresponding lists are not modified nor linked from the resulting list.
+ */
+struct mpnh *
+mpnh_merge(struct mpnh *x, struct mpnh *y, int rx, int ry, int max, linpool *lp)
+{
+  struct mpnh *root = NULL;
+  struct mpnh **n = &root;
+
+  while ((x || y) && max--)
+  {
+    int cmp = mpnh_compare_node(x, y);
+    if (cmp < 0)
+    {
+      *n = rx ? x : mpnh_copy_node(x, lp);
+      x = x->next;
+    }
+    else if (cmp > 0)
+    {
+      *n = ry ? y : mpnh_copy_node(y, lp);
+      y = y->next;
+    }
+    else
+    {
+      *n = rx ? x : (ry ? y : mpnh_copy_node(x, lp));
+      x = x->next;
+      y = y->next;
+    }
+    n = &((*n)->next);
+  }
+  *n = NULL;
+
+  return root;
+}
+
+void
+mpnh_insert(struct mpnh **n, struct mpnh *x)
+{
+  for (; *n; n = &((*n)->next))
+  {
+    int cmp = mpnh_compare_node(*n, x);
+
+    if (cmp < 0)
+      continue;
+    else if (cmp > 0)
+      break;
+    else
+      return;
+  }
+
+  x->next = *n;
+  *n = x;
+}
+
+int
+mpnh_is_sorted(struct mpnh *x)
+{
+  for (; x && x->next; x = x->next)
+    if (mpnh_compare_node(x, x->next) >= 0)
+      return 0;
+
+  return 1;
 }
 
 static struct mpnh *
@@ -305,6 +421,82 @@ ea_find(ea_list *e, unsigned id)
       !(id & EA_ALLOW_UNDEF))
     return NULL;
   return a;
+}
+
+/**
+ * ea_walk - walk through extended attributes
+ * @s: walk state structure
+ * @id: start of attribute ID interval
+ * @max: length of attribute ID interval
+ *
+ * Given an extended attribute list, ea_walk() walks through the list looking
+ * for first occurrences of attributes with ID in specified interval from @id to
+ * (@id + @max - 1), returning pointers to found &eattr structures, storing its
+ * walk state in @s for subsequent calls.
+ *
+ * The function ea_walk() is supposed to be called in a loop, with initially
+ * zeroed walk state structure @s with filled the initial extended attribute
+ * list, returning one found attribute in each call or %NULL when no other
+ * attribute exists. The extended attribute list or the arguments should not be
+ * modified between calls. The maximum value of @max is 128.
+ */
+eattr *
+ea_walk(struct ea_walk_state *s, uint id, uint max)
+{
+  ea_list *e = s->eattrs;
+  eattr *a = s->ea;
+  eattr *a_max;
+
+  max = id + max;
+
+  if (a)
+    goto step;
+
+  for (; e; e = e->next)
+  {
+    if (e->flags & EALF_BISECT)
+    {
+      int l, r, m;
+
+      l = 0;
+      r = e->count - 1;
+      while (l < r)
+      {
+	m = (l+r) / 2;
+	if (e->attrs[m].id < id)
+	  l = m + 1;
+	else
+	  r = m;
+      }
+      a = e->attrs + l;
+    }
+    else
+      a = e->attrs;
+
+  step:
+    a_max = e->attrs + e->count;
+    for (; a < a_max; a++)
+      if ((a->id >= id) && (a->id < max))
+      {
+	int n = a->id - id;
+
+	if (BIT32_TEST(s->visited, n))
+	  continue;
+
+	BIT32_SET(s->visited, n);
+
+	if ((a->type & EAF_TYPE_MASK) == EAF_TYPE_UNDEF)
+	  continue;
+
+	s->eattrs = e;
+	s->ea = a;
+	return a;
+      }
+      else if (e->flags & EALF_BISECT)
+	break;
+  }
+
+  return NULL;
 }
 
 /**
@@ -559,15 +751,41 @@ get_generic_attr(eattr *a, byte **buf, int buflen UNUSED)
       *buf += bsprintf(*buf, "igp_metric");
       return GA_NAME;
     }
- 
+
   return GA_UNKNOWN;
 }
 
+void
+ea_format_bitfield(struct eattr *a, byte *buf, int bufsize, const char **names, int min, int max)
+{
+  byte *bound = buf + bufsize - 32;
+  u32 data = a->u.data;
+  int i;
+
+  for (i = min; i < max; i++)
+    if ((data & (1u << i)) && names[i])
+    {
+      if (buf > bound)
+      {
+	strcpy(buf, " ...");
+	return;
+      }
+
+      buf += bsprintf(buf, " %s", names[i]);
+      data &= ~(1u << i);
+    }
+
+  if (data)
+    bsprintf(buf, " %08x", data);
+
+  return;
+}
+
 static inline void
-opaque_format(struct adata *ad, byte *buf, unsigned int size)
+opaque_format(struct adata *ad, byte *buf, uint size)
 {
   byte *bound = buf + size - 10;
-  int i;
+  uint i;
 
   for(i = 0; i < ad->length; i++)
     {
@@ -610,6 +828,18 @@ ea_show_ec_set(struct cli *c, struct adata *ad, byte *pos, byte *buf, byte *end)
     }
 }
 
+static inline void
+ea_show_lc_set(struct cli *c, struct adata *ad, byte *pos, byte *buf, byte *end)
+{
+  int i = lc_set_format(ad, 0, pos, end - pos);
+  cli_printf(c, -1012, "\t%s", buf);
+  while (i)
+    {
+      i = lc_set_format(ad, i, buf, end - buf - 1);
+      cli_printf(c, -1012, "\t\t%s", buf);
+    }
+}
+
 /**
  * ea_show - print an &eattr to CLI
  * @c: destination CLI
@@ -639,7 +869,7 @@ ea_show(struct cli *c, eattr *e)
     }
   else if (EA_PROTO(e->id))
     pos += bsprintf(pos, "%02x.", EA_PROTO(e->id));
-  else 
+  else
     status = get_generic_attr(e, &pos, end - pos);
 
   if (status < GA_NAME)
@@ -665,11 +895,17 @@ ea_show(struct cli *c, eattr *e)
 	case EAF_TYPE_AS_PATH:
 	  as_path_format(ad, pos, end - pos);
 	  break;
+	case EAF_TYPE_BITFIELD:
+	  bsprintf(pos, "%08x", e->u.data);
+	  break;
 	case EAF_TYPE_INT_SET:
 	  ea_show_int_set(c, ad, 1, pos, buf, end);
 	  return;
 	case EAF_TYPE_EC_SET:
 	  ea_show_ec_set(c, ad, pos, buf, end);
+	  return;
+	case EAF_TYPE_LC_SET:
+	  ea_show_lc_set(c, ad, pos, buf, end);
 	  return;
 	case EAF_TYPE_UNDEF:
 	default:
@@ -733,7 +969,7 @@ ea_dump(ea_list *e)
  * ea_hash() takes an extended attribute list and calculated a hopefully
  * uniformly distributed hash value from its contents.
  */
-inline unsigned int
+inline uint
 ea_hash(ea_list *e)
 {
   u32 h = 0;
@@ -795,10 +1031,10 @@ ea_append(ea_list *to, ea_list *what)
  *	rta's
  */
 
-static unsigned int rta_cache_count;
-static unsigned int rta_cache_size = 32;
-static unsigned int rta_cache_limit;
-static unsigned int rta_cache_mask;
+static uint rta_cache_count;
+static uint rta_cache_size = 32;
+static uint rta_cache_limit;
+static uint rta_cache_mask;
 static rta **rta_hash_table;
 
 static void
@@ -812,7 +1048,7 @@ rta_alloc_hash(void)
   rta_cache_mask = rta_cache_size - 1;
 }
 
-static inline unsigned int
+static inline uint
 rta_hash(rta *a)
 {
   return (((uint) (uintptr_t) a->src) ^ ipa_hash(a->gw) ^
@@ -852,7 +1088,7 @@ rta_copy(rta *o)
 static inline void
 rta_insert(rta *r)
 {
-  unsigned int h = r->hash_key & rta_cache_mask;
+  uint h = r->hash_key & rta_cache_mask;
   r->next = rta_hash_table[h];
   if (r->next)
     r->next->pprev = &r->next;
@@ -863,8 +1099,8 @@ rta_insert(rta *r)
 static void
 rta_rehash(void)
 {
-  unsigned int ohs = rta_cache_size;
-  unsigned int h;
+  uint ohs = rta_cache_size;
+  uint h;
   rta *r, *n;
   rta **oht = rta_hash_table;
 
@@ -897,7 +1133,7 @@ rta *
 rta_lookup(rta *o)
 {
   rta *r;
-  unsigned int h;
+  uint h;
 
   ASSERT(!(o->aflags & RTAF_CACHED));
   if (o->eattrs)
@@ -945,6 +1181,16 @@ rta__free(rta *a)
   sl_free(rta_slab, a);
 }
 
+rta *
+rta_do_cow(rta *o, linpool *lp)
+{
+  rta *r = lp_alloc(lp, sizeof(rta));
+  memcpy(r, o, sizeof(rta));
+  r->aflags = 0;
+  r->uc = 0;
+  return r;
+}
+
 /**
  * rta_dump - dump route attributes
  * @a: attribute structure to dump
@@ -957,7 +1203,7 @@ rta_dump(rta *a)
   static char *rts[] = { "RTS_DUMMY", "RTS_STATIC", "RTS_INHERIT", "RTS_DEVICE",
 			 "RTS_STAT_DEV", "RTS_REDIR", "RTS_RIP",
 			 "RTS_OSPF", "RTS_OSPF_IA", "RTS_OSPF_EXT1",
-                         "RTS_OSPF_EXT2", "RTS_BGP" };
+                         "RTS_OSPF_EXT2", "RTS_BGP", "RTS_PIPE", "RTS_BABEL" };
   static char *rtc[] = { "", " BC", " MC", " AC" };
   static char *rtd[] = { "", " DEV", " HOLE", " UNREACH", " PROHIBIT" };
 
@@ -988,7 +1234,7 @@ void
 rta_dump_all(void)
 {
   rta *a;
-  unsigned int h;
+  uint h;
 
   debug("Route attribute cache (%d entries, rehash at %d):\n", rta_cache_count, rta_cache_limit);
   for(h=0; h<rta_cache_size; h++)

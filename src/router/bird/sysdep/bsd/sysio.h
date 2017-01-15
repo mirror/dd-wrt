@@ -28,6 +28,7 @@
 #endif
 
 
+#undef  SA_LEN
 #define SA_LEN(x) (x).sa.sa_len
 
 
@@ -130,15 +131,15 @@ static inline void
 sk_process_cmsg4_ttl(sock *s, struct cmsghdr *cm)
 {
   if (cm->cmsg_type == IP_RECVTTL)
-    s->rcv_ttl = * (unsigned char *) CMSG_DATA(cm);
+    s->rcv_ttl = * (byte *) CMSG_DATA(cm);
 }
 
+#ifdef IP_SENDSRCADDR
 static inline void
 sk_prepare_cmsgs4(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
 {
   /* Unfortunately, IP_SENDSRCADDR does not work for raw IP sockets on BSD kernels */
 
-#ifdef IP_SENDSRCADDR
   struct cmsghdr *cm;
   struct in_addr *sa;
   int controllen = 0;
@@ -156,10 +157,13 @@ sk_prepare_cmsgs4(sock *s, struct msghdr *msg, void *cbuf, size_t cbuflen)
   *sa = ipa_to_in4(s->saddr);
 
   msg->msg_controllen = controllen;
-#endif
 }
+#else
+static inline void
+sk_prepare_cmsgs4(sock *s UNUSED, struct msghdr *msg UNUSED, void *cbuf UNUSED, size_t cbuflen UNUSED) { }
+#endif
 
-static void
+static void UNUSED
 sk_prepare_ip_header(sock *s, void *hdr, int dlen)
 {
   struct ip *ip = hdr;
@@ -189,30 +193,26 @@ sk_prepare_ip_header(sock *s, void *hdr, int dlen)
 #ifndef TCP_KEYLEN_MAX
 #define TCP_KEYLEN_MAX 80
 #endif
+
 #ifndef TCP_SIG_SPI
 #define TCP_SIG_SPI 0x1000
 #endif
 
-/* 
- * FIXME: Passwords has to be set by setkey(8) command. This is the same
- * behaviour like Quagga. We need to add code for SA/SP entries
- * management.
- */
+#if defined(__FreeBSD__)
+#define USE_MD5SIG_SETKEY
+#include "lib/setkey.h"
+#endif
 
 int
-sk_set_md5_auth(sock *s, ip_addr a, struct iface *ifa, char *passwd)
+sk_set_md5_auth(sock *s, ip_addr local UNUSED, ip_addr remote UNUSED, struct iface *ifa UNUSED, char *passwd, int setkey UNUSED)
 {
-  int enable = 0;
+#ifdef USE_MD5SIG_SETKEY
+  if (setkey)
+    if (sk_set_md5_in_sasp_db(s, local, remote, ifa, passwd) < 0)
+      return -1;
+#endif
 
-  if (passwd && *passwd)
-  {
-    int len = strlen(passwd);
-    enable = TCP_SIG_SPI;
-
-    if (len > TCP_KEYLEN_MAX)
-      ERR_MSG("MD5 password too long");
-  }
-
+  int enable = (passwd && *passwd) ? TCP_SIG_SPI : 0;
   if (setsockopt(s->fd, IPPROTO_TCP, TCP_MD5SIG, &enable, sizeof(enable)) < 0)
   {
     if (errno == ENOPROTOOPT)
@@ -239,20 +239,20 @@ sk_set_min_ttl4(sock *s, int ttl)
 }
 
 static inline int
-sk_set_min_ttl6(sock *s, int ttl)
+sk_set_min_ttl6(sock *s, int ttl UNUSED)
 {
   ERR_MSG("Kernel does not support IPv6 TTL security");
 }
 
 static inline int
-sk_disable_mtu_disc4(sock *s)
+sk_disable_mtu_disc4(sock *s UNUSED)
 {
   /* TODO: Set IP_DONTFRAG to 0 ? */
   return 0;
 }
 
 static inline int
-sk_disable_mtu_disc6(sock *s)
+sk_disable_mtu_disc6(sock *s UNUSED)
 {
   /* TODO: Set IPV6_DONTFRAG to 0 ? */
   return 0;

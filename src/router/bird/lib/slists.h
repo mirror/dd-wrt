@@ -68,10 +68,12 @@ typedef struct siterator {
 #define SNODE (snode *)
 #define SHEAD(list) ((void *)((list).head))
 #define STAIL(list) ((void *)((list).tail))
-#define WALK_SLIST(n,list) for(n=SHEAD(list);(SNODE (n))->next; \
-				n=(void *)((SNODE (n))->next))
+#define SNODE_NEXT(n) ((void *)((SNODE (n))->next))
+#define SNODE_VALID(n) ((SNODE (n))->next)
+
+#define WALK_SLIST(n,list) for(n=SHEAD(list); SNODE_VALID(n); n=SNODE_NEXT(n))
 #define WALK_SLIST_DELSAFE(n,nxt,list) \
-     for(n=SHEAD(list); nxt=(void *)((SNODE (n))->next); n=(void *) nxt)
+     for(n=SHEAD(list); nxt=SNODE_NEXT(n); n=(void *) nxt)
 #define EMPTY_SLIST(list) (!(list).head->next)
 
 void s_add_tail(slist *, snode *);

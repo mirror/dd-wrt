@@ -311,7 +311,7 @@ roa_commit(struct config *new, struct config *old)
   if (old)
     WALK_LIST(t, roa_table_list)
       {
-	struct symbol *sym = cf_find_symbol(t->name);
+	struct symbol *sym = cf_find_symbol(new, t->name);
 	if (sym && sym->class == SYM_ROA)
 	  {
 	    /* Found old table in new config */

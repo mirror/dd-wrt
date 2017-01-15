@@ -29,3 +29,5 @@ cf-lex.c: cf-lex.l
 	$(FLEX) $(FLEX_DEBUG) -s -B -8 -ocf-lex.c -Pcf_ cf-lex.l
 
 depend: keywords.h commands.h cf-parse.tab.c cf-lex.c
+
+cf-lex.o: CFLAGS+=-Wno-sign-compare -Wno-unused-function

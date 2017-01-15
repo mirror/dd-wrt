@@ -26,9 +26,10 @@
 struct object_lock {
   resource r;
   ip_addr addr;		/* Identification of a object: IP address */
-  unsigned int type;	/* ... object type (OBJLOCK_xxx) */
+  uint type;		/* ... object type (OBJLOCK_xxx) */
+  uint port;		/* ... port number */
+  uint inst;		/* ... instance ID */
   struct iface *iface;	/* ... interface */
-  unsigned int port;	/* ... port number */
   void (*hook)(struct object_lock *);	/* Called when the lock succeeds */
   void *data;		/* User data */
   /* ... internal to lock manager, don't touch ... */

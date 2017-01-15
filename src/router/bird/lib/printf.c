@@ -124,6 +124,7 @@ static char * number(char * str, long num, int base, int size, int precision,
  * width is automatically replaced by standard IP address width which
  * depends on whether we use IPv4 or IPv6; |%#I| gives hexadecimal format),
  * |%R| for Router / Network ID (u32 value printed as IPv4 address)
+ * |%lR| for 64bit Router / Network ID (u64 value printed as eight :-separated octets)
  * and |%m| resp. |%M| for error messages (uses strerror() to translate @errno code to
  * message text). On the other hand, it doesn't support floating
  * point numbers.
@@ -137,9 +138,10 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 	unsigned long num;
 	int i, base;
 	u32 x;
+	u64 X;
 	char *str, *start;
 	const char *s;
-	char ipbuf[STD_ADDRESS_P_LENGTH+1];
+	char ipbuf[MAX(STD_ADDRESS_P_LENGTH,ROUTER_ID_64_LENGTH)+1];
 	struct iface *iface;
 
 	int flags;		/* flags to number() */
@@ -167,7 +169,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 				case ' ': flags |= SPACE; goto repeat;
 				case '#': flags |= SPECIAL; goto repeat;
 				case '0': flags |= ZEROPAD; goto repeat;
-				}
+			}
 		
 		/* get field width */
 		field_width = -1;
@@ -215,7 +217,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 			if (!(flags & LEFT))
 				while (--field_width > 0)
 					*str++ = ' ';
-			*str++ = (unsigned char) va_arg(args, int);
+			*str++ = (byte) va_arg(args, int);
 			while (--field_width > 0)
 				*str++ = ' ';
 			continue;
@@ -283,9 +285,9 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 		/* IP address */
 		case 'I':
 			if (flags & SPECIAL)
-				ip_ntox(va_arg(args, ip_addr), ipbuf);
+				ipa_ntox(va_arg(args, ip_addr), ipbuf);
 			else {
-				ip_ntop(va_arg(args, ip_addr), ipbuf);
+				ipa_ntop(va_arg(args, ip_addr), ipbuf);
 				if (field_width == 1)
 					field_width = STD_ADDRESS_P_LENGTH;
 			}
@@ -309,12 +311,27 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 
 		/* Router/Network ID - essentially IPv4 address in u32 value */
 		case 'R':
-			x = va_arg(args, u32);
-			bsprintf(ipbuf, "%d.%d.%d.%d",
-				 ((x >> 24) & 0xff),
-				 ((x >> 16) & 0xff),
-				 ((x >> 8) & 0xff),
-				 (x & 0xff));
+			if(qualifier == 'l') {
+				X = va_arg(args, u64);
+				bsprintf(ipbuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+					((X >> 56) & 0xff),
+					((X >> 48) & 0xff),
+					((X >> 40) & 0xff),
+					((X >> 32) & 0xff),
+					((X >> 24) & 0xff),
+					((X >> 16) & 0xff),
+					((X >> 8) & 0xff),
+					(X & 0xff));
+			}
+			else
+			{
+				x = va_arg(args, u32);
+				bsprintf(ipbuf, "%d.%d.%d.%d",
+					((x >> 24) & 0xff),
+					((x >> 16) & 0xff),
+					((x >> 8) & 0xff),
+					(x & 0xff));
+			}
 			s = ipbuf;
 			goto str;
 
@@ -355,7 +372,7 @@ int bvsnprintf(char *buf, int size, const char *fmt, va_list args)
 		} else if (flags & SIGN)
 			num = va_arg(args, int);
 		else
-			num = va_arg(args, unsigned int);
+			num = va_arg(args, uint);
 		str = number(str, num, base, field_width, precision, flags, size);
 		if (!str)
 			return -1;

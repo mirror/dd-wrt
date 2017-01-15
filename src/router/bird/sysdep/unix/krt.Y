@@ -17,7 +17,9 @@ CF_DEFINES
 
 CF_DECLS
 
-CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE, ROUTES, GRACEFUL, RESTART, KRT_SOURCE, KRT_METRIC)
+CF_KEYWORDS(KERNEL, PERSIST, SCAN, TIME, LEARN, DEVICE, ROUTES, GRACEFUL, RESTART, KRT_SOURCE, KRT_METRIC, MERGE, PATHS)
+
+%type <i> kern_mp_limit
 
 CF_GRAMMAR
 
@@ -32,6 +34,11 @@ CF_ADDTO(kern_proto, kern_proto_start proto_name '{')
 CF_ADDTO(kern_proto, kern_proto proto_item ';')
 CF_ADDTO(kern_proto, kern_proto kern_item ';')
 
+kern_mp_limit:
+   /* empty */ { $$ = KRT_DEFAULT_ECMP_LIMIT; }
+ | LIMIT expr  { $$ = $2; if (($2 <= 0) || ($2 > 255)) cf_error("Merge paths limit must be in range 1-255"); }
+ ;
+
 kern_item:
    PERSIST bool { THIS_KRT->persist = $2; }
  | SCAN TIME expr {
@@ -42,11 +49,18 @@ kern_item:
       THIS_KRT->learn = $2;
 #ifndef KRT_ALLOW_LEARN
       if ($2)
-	cf_error("Learning of kernel routes not supported in this configuration");
+	cf_error("Learning of kernel routes not supported on this platform");
 #endif
    }
  | DEVICE ROUTES bool { THIS_KRT->devroutes = $3; }
  | GRACEFUL RESTART bool { THIS_KRT->graceful_restart = $3; }
+ | MERGE PATHS bool kern_mp_limit {
+      THIS_KRT->merge_paths = $3 ? $4 : 0;
+#ifndef KRT_ALLOW_MERGE_PATHS
+      if ($3)
+	cf_error("Path merging not supported on this platform");
+#endif
+   }
  ;
 
 /* Kernel interface protocol */

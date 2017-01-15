@@ -273,13 +273,13 @@ pool, thus they can be freed at once when the configuration is no longer used.
 <P><HR><H3>Function</H3>
 <P><I>linpool *</I>
 <B>lp_new</B>
-(<I>pool *</I> <B>p</B>, <I>unsigned</I> <B>blk</B>) --     create a new linear memory pool
+(<I>pool *</I> <B>p</B>, <I>uint</I> <B>blk</B>) --     create a new linear memory pool
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>pool *</I> <B>p</B><DD><P>pool
-<DT><I>unsigned</I> <B>blk</B><DD><P>block size
+<DT><I>uint</I> <B>blk</B><DD><P>block size
 </DL>
 <H3>Description</H3>
 <P><B>lp_new()</B> creates a new linear memory pool resource inside the pool <B>p</B>.
@@ -290,13 +290,13 @@ The linear pool consists of a list of memory chunks of size at least
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>lp_alloc</B>
-(<I>linpool *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     allocate memory from a <I>linpool</I>
+(<I>linpool *</I> <B>m</B>, <I>uint</I> <B>size</B>) --     allocate memory from a <I>linpool</I>
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>linpool *</I> <B>m</B><DD><P>linear memory pool
-<DT><I>unsigned</I> <B>size</B><DD><P>amount of memory
+<DT><I>uint</I> <B>size</B><DD><P>amount of memory
 </DL>
 <H3>Description</H3>
 <P><B>lp_alloc()</B> allocates <B>size</B> bytes of memory from a <I>linpool</I> <B>m</B>
@@ -311,13 +311,13 @@ size chunk, an "overflow" chunk is created for it instead.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>lp_allocu</B>
-(<I>linpool *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     allocate unaligned memory from a <I>linpool</I>
+(<I>linpool *</I> <B>m</B>, <I>uint</I> <B>size</B>) --     allocate unaligned memory from a <I>linpool</I>
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>linpool *</I> <B>m</B><DD><P>linear memory pool
-<DT><I>unsigned</I> <B>size</B><DD><P>amount of memory
+<DT><I>uint</I> <B>size</B><DD><P>amount of memory
 </DL>
 <H3>Description</H3>
 <P><B>lp_allocu()</B> allocates <B>size</B> bytes of memory from a <I>linpool</I> <B>m</B>
@@ -329,13 +329,13 @@ how to allocate strings without any space overhead.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>lp_allocz</B>
-(<I>linpool *</I> <B>m</B>, <I>unsigned</I> <B>size</B>) --     allocate cleared memory from a <I>linpool</I>
+(<I>linpool *</I> <B>m</B>, <I>uint</I> <B>size</B>) --     allocate cleared memory from a <I>linpool</I>
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>linpool *</I> <B>m</B><DD><P>linear memory pool
-<DT><I>unsigned</I> <B>size</B><DD><P>amount of memory
+<DT><I>uint</I> <B>size</B><DD><P>amount of memory
 </DL>
 <H3>Description</H3>
 <P>This function is identical to <B>lp_alloc()</B> except that it
@@ -374,13 +374,13 @@ of use of uninitialized or already freed memory easier.
 <P><HR><H3>Function</H3>
 <P><I>slab *</I>
 <B>sl_new</B>
-(<I>pool *</I> <B>p</B>, <I>unsigned</I> <B>size</B>) --     create a new Slab
+(<I>pool *</I> <B>p</B>, <I>uint</I> <B>size</B>) --     create a new Slab
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>pool *</I> <B>p</B><DD><P>resource pool
-<DT><I>unsigned</I> <B>size</B><DD><P>block size
+<DT><I>uint</I> <B>size</B><DD><P>block size
 </DL>
 <H3>Description</H3>
 <P>This function creates a new Slab resource from which
@@ -618,7 +618,7 @@ and converts it to the corresponding value of type <I>bird_clock_t</I>.
 <P>
 <DL>
 <DT><I>char *</I> <B>x</B><DD><P>destination buffer of size <I>TM_DATETIME_BUFFER_SIZE</I>
-<DT><I>struct timeformat *</I> <B>fmt_spec</B><DD><P>-- undescribed --
+<DT><I>struct timeformat *</I> <B>fmt_spec</B><DD><P>specification of resulting textual representation of the time
 <DT><I>bird_clock_t</I> <B>t</B><DD><P>time
 </DL>
 <H3>Description</H3>
@@ -747,23 +747,31 @@ implementations.
 <HR><H3>Function</H3>
 <P><I>int</I>
 <B>sk_set_md5_auth</B>
-(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>a</B>, <I>struct iface *</I> <B>ifa</B>, <I>char *</I> <B>passwd</B>) --     add / remove MD5 security association for given socket
+(<I>sock *</I> <B>s</B>, <I>ip_addr</I> <B>local</B>, <I>ip_addr</I> <B>remote</B>, <I>struct iface *</I> <B>ifa</B>, <I>char *</I> <B>passwd</B>, <I>int</I> <B>setkey</B>) --     add / remove MD5 security association for given socket
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>sock *</I> <B>s</B><DD><P>socket
-<DT><I>ip_addr</I> <B>a</B><DD><P>IP address of the other side
+<DT><I>ip_addr</I> <B>local</B><DD><P>IP address of local side
+<DT><I>ip_addr</I> <B>remote</B><DD><P>IP address of remote side
 <DT><I>struct iface *</I> <B>ifa</B><DD><P>Interface for link-local IP address
-<DT><I>char *</I> <B>passwd</B><DD><P>password used for MD5 authentication
+<DT><I>char *</I> <B>passwd</B><DD><P>Password used for MD5 authentication
+<DT><I>int</I> <B>setkey</B><DD><P>Update also system SA/SP database
 </DL>
 <H3>Description</H3>
-<P>In TCP MD5 handling code in kernel, there is a set of pairs (address,
-password) used to choose password according to address of the other side.
-This function is useful for listening socket, for active sockets it is enough
-to set s-&gt;password field.
+<P>In TCP MD5 handling code in kernel, there is a set of security associations
+used for choosing password and other authentication parameters according to
+the local and remote address. This function is useful for listening socket,
+for active sockets it may be enough to set s-&gt;password field.
 <P>When called with passwd != NULL, the new pair is added,
 When called with passwd == NULL, the existing pair is removed.
+<P>Note that while in Linux, the MD5 SAs are specific to socket, in BSD they are
+stored in global SA/SP database (but the behavior also must be enabled on
+per-socket basis). In case of multiple sockets to the same neighbor, the
+socket-specific state must be configured for each socket while global state
+just once per src-dst pair. The <B>setkey</B> argument controls whether the global
+state (SA/SP database) is also updated.
 <H3>Result</H3>
 <P>0 for success, -1 for an error.
 
@@ -861,6 +869,23 @@ takes place.
 <P>This is a <B>sk_send()</B> replacement for connection-less packet sockets
 which allows destination of the packet to be chosen dynamically.
 Raw IP sockets should use 0 for <B>port</B>.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>io_log_event</B>
+(<I>void *</I> <B>hook</B>, <I>void *</I> <B>data</B>) --     mark approaching event into event log
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>void *</I> <B>hook</B><DD><P>event hook address
+<DT><I>void *</I> <B>data</B><DD><P>event data address
+</DL>
+<H3>Description</H3>
+<P>Store info (hook, data, timestamp) about the following internal event into
+a circular event log (<B>event_log</B>). When latency tracking is enabled, the log
+entry is kept open (in <B>event_open</B>) so the duration can be filled later.
 
 <P>
 <HR>

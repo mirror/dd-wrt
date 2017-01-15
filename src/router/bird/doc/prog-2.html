@@ -211,9 +211,35 @@ the protocol.
 
 
 <HR><H3>Function</H3>
+<P><I>rte *</I>
+<B>rte_cow_rta</B>
+(<I>rte *</I> <B>r</B>, <I>linpool *</I> <B>lp</B>) --     get a private writable copy of <I>rte</I> with writable <I>rta</I>
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>rte *</I> <B>r</B><DD><P>a route entry to be copied
+<DT><I>linpool *</I> <B>lp</B><DD><P>a linpool from which to allocate <I>rta</I>
+</DL>
+<H3>Description</H3>
+<P><B>rte_cow_rta()</B> takes a <I>rte</I> and prepares it and associated <I>rta</I> for
+modification. There are three possibilities: First, both <I>rte</I> and <I>rta</I> are
+private copies, in that case they are returned unchanged.  Second, <I>rte</I> is
+private copy, but <I>rta</I> is cached, in that case <I>rta</I> is duplicated using
+<B>rta_do_cow()</B>. Third, both <I>rte</I> is shared and <I>rta</I> is cached, in that case
+both structures are duplicated by <B>rte_do_cow()</B> and <B>rta_do_cow()</B>.
+<P>Note that in the second case, cached <I>rta</I> loses one reference, while private
+copy created by <B>rta_do_cow()</B> is a shallow copy sharing indirect data (eattrs,
+nexthops, ...) with it. To work properly, original shared <I>rta</I> should have
+another reference during the life of created private copy.
+<H3>Result</H3>
+<P>a pointer to the new writable <I>rte</I> with writable <I>rta</I>.
+
+
+<HR><H3>Function</H3>
 <P><I>void</I>
 <B>rte_announce</B>
-(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>rte *</I> <B>before_old</B>, <I>ea_list *</I> <B>tmpa</B>) --     announce a routing table change
+(<I>rtable *</I> <B>tab</B>, <I>unsigned</I> <B>type</B>, <I>net *</I> <B>net</B>, <I>rte *</I> <B>new</B>, <I>rte *</I> <B>old</B>, <I>rte *</I> <B>new_best</B>, <I>rte *</I> <B>old_best</B>, <I>rte *</I> <B>before_old</B>) --     announce a routing table change
 <P>
 <H3>Arguments</H3>
 <P>
@@ -223,17 +249,19 @@ the protocol.
 <DT><I>net *</I> <B>net</B><DD><P>network in question
 <DT><I>rte *</I> <B>new</B><DD><P>the new route to be announced
 <DT><I>rte *</I> <B>old</B><DD><P>the previous route for the same network
-<DT><I>rte *</I> <B>before_old</B><DD><P>-- undescribed --
-<DT><I>ea_list *</I> <B>tmpa</B><DD><P>a list of temporary attributes belonging to the new route
+<DT><I>rte *</I> <B>new_best</B><DD><P>the new best route for the same network
+<DT><I>rte *</I> <B>old_best</B><DD><P>the previous best route for the same network
+<DT><I>rte *</I> <B>before_old</B><DD><P>The previous route before <B>old</B> for the same network.
+If <B>before_old</B> is NULL <B>old</B> was the first.
 </DL>
 <H3>Description</H3>
 <P>This function gets a routing table update and announces it
 to all protocols that acccepts given type of route announcement
 and are connected to the same table by their announcement hooks.
-<P>Route announcement of type RA_OPTIMAL si generated when optimal
+<P>Route announcement of type <I>RA_OPTIMAL</I> si generated when optimal
 route (in routing table <B>tab</B>) changes. In that case <B>old</B> stores the
 old optimal route.
-<P>Route announcement of type RA_ANY si generated when any route (in
+<P>Route announcement of type <I>RA_ANY</I> si generated when any route (in
 routing table <B>tab</B>) changes In that case <B>old</B> stores the old route
 from the same protocol.
 <P>For each appropriate protocol, we first call its <B>import_control()</B>
@@ -397,10 +425,9 @@ routing table module.
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>rtable *</I> <B>tab</B><DD><P>-- undescribed --
+<DT><I>rtable *</I> <B>tab</B><DD><P>a routing table for pruning
 </DL>
 <H3>Description</H3>
-<P>
 <P>This function scans the routing table <B>tab</B> and removes routes belonging to
 flushing protocols, discarded routes and also stale network entries, in a
 similar fashion like <B>rt_prune_loop()</B>. Returns 1 when all such routes are
@@ -421,11 +448,6 @@ prune state (<B>prune_state</B>) and also the pruning iterator (<B>prune_fit</B>
 <P>The prune loop scans routing tables and removes routes belonging to flushing
 protocols, discarded routes and also stale network entries. Returns 1 when
 all such routes are pruned. It is a part of the protocol flushing loop.
-<P>The prune loop runs in two steps. In the first step it prunes just the routes
-with flushing senders (in explicitly marked tables) so the route removal is
-propagated as usual. In the second step, all remaining relevant routes are
-removed. Ideally, there shouldn't be any, but it happens when pipe filters
-are changed.
 
 
 <HR><H3>Function</H3>
@@ -607,6 +629,35 @@ and they are provided with a use count to allow sharing.
 <P>Routing tables always contain only cached <I>rta</I>'s.
 <P>
 <P><HR><H3>Function</H3>
+<P><I>struct mpnh *</I>
+<B>mpnh_merge</B>
+(<I>struct mpnh *</I> <B>x</B>, <I>struct mpnh *</I> <B>y</B>, <I>int</I> <B>rx</B>, <I>int</I> <B>ry</B>, <I>int</I> <B>max</B>, <I>linpool *</I> <B>lp</B>) --     merge nexthop lists
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct mpnh *</I> <B>x</B><DD><P>list 1
+<DT><I>struct mpnh *</I> <B>y</B><DD><P>list 2
+<DT><I>int</I> <B>rx</B><DD><P>reusability of list <B>x</B>
+<DT><I>int</I> <B>ry</B><DD><P>reusability of list <B>y</B>
+<DT><I>int</I> <B>max</B><DD><P>max number of nexthops
+<DT><I>linpool *</I> <B>lp</B><DD><P>linpool for allocating nexthops
+</DL>
+<H3>Description</H3>
+<P>The <B>mpnh_merge()</B> function takes two nexthop lists <B>x</B> and <B>y</B> and merges them,
+eliminating possible duplicates. The input lists must be sorted and the
+result is sorted too. The number of nexthops in result is limited by <B>max</B>.
+New nodes are allocated from linpool <B>lp</B>.
+<P>The arguments <B>rx</B> and <B>ry</B> specify whether corresponding input lists may be
+consumed by the function (i.e. their nodes reused in the resulting list), in
+that case the caller should not access these lists after that. To eliminate
+issues with deallocation of these lists, the caller should use some form of
+bulk deallocation (e.g. stack or linpool) to free these nodes when the
+resulting list is no longer needed. When reusability is not set, the
+corresponding lists are not modified nor linked from the resulting list.
+
+
+<HR><H3>Function</H3>
 <P><I>eattr *</I>
 <B>ea_find</B>
 (<I>ea_list *</I> <B>e</B>, <I>unsigned</I> <B>id</B>) --     find an extended attribute
@@ -621,6 +672,30 @@ and they are provided with a use count to allow sharing.
 <P>Given an extended attribute list, <B>ea_find()</B> searches for a first
 occurrence of an attribute with specified ID, returning either a pointer
 to its <I>eattr</I> structure or <I>NULL</I> if no such attribute exists.
+
+
+<HR><H3>Function</H3>
+<P><I>eattr *</I>
+<B>ea_walk</B>
+(<I>struct ea_walk_state *</I> <B>s</B>, <I>uint</I> <B>id</B>, <I>uint</I> <B>max</B>) --     walk through extended attributes
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct ea_walk_state *</I> <B>s</B><DD><P>walk state structure
+<DT><I>uint</I> <B>id</B><DD><P>start of attribute ID interval
+<DT><I>uint</I> <B>max</B><DD><P>length of attribute ID interval
+</DL>
+<H3>Description</H3>
+<P>Given an extended attribute list, <B>ea_walk()</B> walks through the list looking
+for first occurrences of attributes with ID in specified interval from <B>id</B> to
+(<B>id</B> + <B>max</B> - 1), returning pointers to found <I>eattr</I> structures, storing its
+walk state in <B>s</B> for subsequent calls.
+<P>The function <B>ea_walk()</B> is supposed to be called in a loop, with initially
+zeroed walk state structure <B>s</B> with filled the initial extended attribute
+list, returning one found attribute in each call or <I>NULL</I> when no other
+attribute exists. The extended attribute list or the arguments should not be
+modified between calls. The maximum value of <B>max</B> is 128.
 
 
 <HR><H3>Function</H3>
@@ -744,7 +819,7 @@ the debug output.
 
 
 <HR><H3>Function</H3>
-<P><I>unsigned int</I>
+<P><I>uint</I>
 <B>ea_hash</B>
 (<I>ea_list *</I> <B>e</B>) --     calculate an <I>ea_list</I> hash key
 <P>
@@ -1016,13 +1091,12 @@ code.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>proto_config_new</B>
-(<I>struct protocol *</I> <B>pr</B>, <I>unsigned</I> <B>size</B>, <I>int</I> <B>class</B>) --  create a new protocol configuration
+(<I>struct protocol *</I> <B>pr</B>, <I>int</I> <B>class</B>) --  create a new protocol configuration
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>struct protocol *</I> <B>pr</B><DD><P>protocol the configuration will belong to
-<DT><I>unsigned</I> <B>size</B><DD><P>size of the structure including generic data
 <DT><I>int</I> <B>class</B><DD><P>SYM_PROTO or SYM_TEMPLATE
 </DL>
 <H3>Description</H3>
@@ -1184,7 +1258,6 @@ function have to be called after <B>protos_commit()</B>.
 <DT><I>struct timer *t</I> <B>UNUSED</B><DD><P>-- undescribed --
 </DL>
 <H3>Description</H3>
-<P>
 <P>When there are no locks on graceful restart, the functions finalizes the
 graceful restart recovery. Protocols postponing route export until the end of
 the recovery are awakened and the export to them is enabled. All other
@@ -1531,7 +1604,7 @@ representation of metrics of a route belonging to this protocol.
 <DL>
 <DT><I>eattr *</I> <B>a</B><DD><P>an extended attribute
 <DT><I>byte *</I> <B>buf</B><DD><P>buffer to be filled with attribute information
-<DT><I>int</I> <B>buflen</B><DD><P>-- undescribed --
+<DT><I>int</I> <B>buflen</B><DD><P>a length of the <B>buf</B> parameter
 </DL>
 <H3>Description</H3>
 <P>The <B>get_attr()</B> hook is called by the core to obtain a user friendly
@@ -1846,12 +1919,12 @@ interfaces to the debug output.
 <HR><H3>Function</H3>
 <P><I>void</I>
 <B>if_delete</B>
-(<I>struct iface *</I> <B>old</B>) --     remove interface 
+(<I>struct iface *</I> <B>old</B>) --     remove interface
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>struct iface *</I> <B>old</B><DD><P>interface 
+<DT><I>struct iface *</I> <B>old</B><DD><P>interface
 </DL>
 <H3>Description</H3>
 <P>This function is called by the low-level platform dependent code
@@ -2100,7 +2173,7 @@ notified.
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>struct ifa *</I> <B>a</B><DD><P>-- undescribed --
+<DT><I>struct ifa *</I> <B>a</B><DD><P>interface address in question
 </DL>
 <H3>Description</H3>
 <P>Tell the neighbor cache that an address was added or removed.
@@ -2235,10 +2308,11 @@ willing to start up on the same interface.
 <P>The solution is very simple: when any protocol wishes to use a network port
 or some other non-shareable resource, it asks the core to lock it and it doesn't
 use the resource until it's notified that it has acquired the lock.
-<P>Object locks are represented by <I>object_lock</I> structures which are in turn a kind of
-resource. Lockable resources are uniquely determined by resource type
+<P>Object locks are represented by <I>object_lock</I> structures which are in turn a
+kind of resource. Lockable resources are uniquely determined by resource type
 (<I>OBJLOCK_UDP</I> for a UDP port etc.), IP address (usually a broadcast or
-multicast address the port is bound to), port number and interface.
+multicast address the port is bound to), port number, interface and optional
+instance ID.
 <P>
 <P><HR><H3>Function</H3>
 <P><I>struct object_lock *</I>

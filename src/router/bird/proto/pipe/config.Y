@@ -23,7 +23,7 @@ CF_GRAMMAR
 CF_ADDTO(proto, pipe_proto '}')
 
 pipe_proto_start: proto_start PIPE {
-     this_proto = proto_config_new(&proto_pipe, sizeof(struct pipe_config), $1);
+     this_proto = proto_config_new(&proto_pipe, $1);
      PIPE_CFG->mode = PIPE_TRANSPARENT;
   }
  ;

@@ -30,11 +30,12 @@ struct f_tree;
 struct adata *as_path_prepend(struct linpool *pool, struct adata *olda, u32 as);
 int as_path_convert_to_old(struct adata *path, byte *dst, int *new_used);
 int as_path_convert_to_new(struct adata *path, byte *dst, int req_as);
-void as_path_format(struct adata *path, byte *buf, unsigned int size);
+void as_path_format(struct adata *path, byte *buf, uint size);
 int as_path_getlen(struct adata *path);
 int as_path_getlen_int(struct adata *path, int bs);
 int as_path_get_first(struct adata *path, u32 *orig_as);
 int as_path_get_last(struct adata *path, u32 *last_as);
+u32 as_path_get_last_nonaggregated(struct adata *path);
 int as_path_contains(struct adata *path, u32 as, int min);
 int as_path_match_set(struct adata *path, struct f_tree *set);
 struct adata *as_path_filter(struct linpool *pool, struct adata *path, struct f_tree *set, u32 key, int pos);
@@ -44,11 +45,13 @@ struct adata *as_path_filter(struct linpool *pool, struct adata *path, struct f_
 #define PM_QUESTION	1
 #define PM_ASTERISK	2
 #define PM_ASN_EXPR	3
+#define PM_ASN_RANGE	4
 
 struct f_path_mask {
   struct f_path_mask *next;
   int kind;
   uintptr_t val;
+  uintptr_t val2;
 };
 
 int as_path_match(struct adata *path, struct f_path_mask *mask);
@@ -65,12 +68,16 @@ int as_path_match(struct adata *path, struct f_path_mask *mask);
 /* Transitive bit (for first u32 half of EC) */
 #define EC_TBIT 0x40000000
 
+#define ECOMM_LENGTH 8
 
 static inline int int_set_get_size(struct adata *list)
 { return list->length / 4; }
 
 static inline int ec_set_get_size(struct adata *list)
 { return list->length / 8; }
+
+static inline int lc_set_get_size(struct adata *list)
+{ return list->length / 12; }
 
 static inline u32 *int_set_get_data(struct adata *list)
 { return (u32 *) list->data; }
@@ -95,17 +102,46 @@ static inline u64 ec_ip4(u64 kind, u64 key, u64 val)
 static inline u64 ec_generic(u64 key, u64 val)
 { return (key << 32) | val; }
 
-int int_set_format(struct adata *set, int way, int from, byte *buf, unsigned int size);
+/* Large community value */
+typedef struct lcomm {
+  u32 asn;
+  u32 ldp1;
+  u32 ldp2;
+} lcomm;
+
+#define LCOMM_LENGTH 12
+
+static inline lcomm lc_get(const u32 *l, int i)
+{ return (lcomm) { l[i], l[i+1], l[i+2] }; }
+
+static inline void lc_put(u32 *l, lcomm v)
+{ l[0] = v.asn; l[1] = v.ldp1; l[2] = v.ldp2; }
+
+static inline int lc_match(const u32 *l, int i, lcomm v)
+{ return (l[i] == v.asn && l[i+1] == v.ldp1 && l[i+2] == v.ldp2); }
+
+static inline u32 *lc_copy(u32 *dst, const u32 *src)
+{ memcpy(dst, src, LCOMM_LENGTH); return dst + 3; }
+
+
+int int_set_format(struct adata *set, int way, int from, byte *buf, uint size);
 int ec_format(byte *buf, u64 ec);
-int ec_set_format(struct adata *set, int from, byte *buf, unsigned int size);
+int ec_set_format(struct adata *set, int from, byte *buf, uint size);
+int lc_format(byte *buf, lcomm lc);
+int lc_set_format(struct adata *set, int from, byte *buf, uint size);
 int int_set_contains(struct adata *list, u32 val);
 int ec_set_contains(struct adata *list, u64 val);
+int lc_set_contains(struct adata *list, lcomm val);
+struct adata *int_set_prepend(struct linpool *pool, struct adata *list, u32 val);
 struct adata *int_set_add(struct linpool *pool, struct adata *list, u32 val);
 struct adata *ec_set_add(struct linpool *pool, struct adata *list, u64 val);
+struct adata *lc_set_add(struct linpool *pool, struct adata *list, lcomm val);
 struct adata *int_set_del(struct linpool *pool, struct adata *list, u32 val);
 struct adata *ec_set_del(struct linpool *pool, struct adata *list, u64 val);
+struct adata *lc_set_del(struct linpool *pool, struct adata *list, lcomm val);
 struct adata *int_set_union(struct linpool *pool, struct adata *l1, struct adata *l2);
 struct adata *ec_set_union(struct linpool *pool, struct adata *l1, struct adata *l2);
+struct adata *lc_set_union(struct linpool *pool, struct adata *l1, struct adata *l2);
 
 
 #endif

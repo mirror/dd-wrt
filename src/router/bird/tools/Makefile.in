@@ -37,13 +37,16 @@ subdir: sysdep/paths.h .dir-stamp .dep-stamp
 	set -e ; for a in $(static-dirs) $(client-dirs) ; do $(MAKE) -C $$a -f $(srcdir_abs)/$$a/Makefile $@ ; done
 
 $(exedir)/bird: $(bird-dep)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	@echo LD $(LDFLAGS) -o $@ $^ $(LIBS)
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 $(exedir)/birdc: $(birdc-dep)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) $(CLIENT_LIBS)
+	@echo LD $(LDFLAGS) -o $@ $^ $(LIBS) $(CLIENT_LIBS)
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS) $(CLIENT_LIBS)
 
 $(exedir)/birdcl: $(birdcl-dep)
-	$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
+	@echo LD $(LDFLAGS) -o $@ $^ $(LIBS)
+	@$(CC) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 .dir-stamp: sysdep/paths.h
 	mkdir -p $(static-dirs) $(client-dirs) $(doc-dirs)

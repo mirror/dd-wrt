@@ -40,7 +40,7 @@ CF_ADDTO(proto, radv_proto)
 
 radv_proto_start: proto_start RADV
 {
-  this_proto = proto_config_new(&proto_radv, sizeof(struct radv_config), $1);
+  this_proto = proto_config_new(&proto_radv, $1);
   init_list(&RADV_CFG->patt_list);
   init_list(&RADV_CFG->pref_list);
   init_list(&RADV_CFG->rdnss_list);

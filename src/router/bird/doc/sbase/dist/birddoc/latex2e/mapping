@@ -2,7 +2,9 @@
 % birddoc to LaTeX replacement file
 
 % The \relax is there to avoid sgml2latex rewriting the class
-<book>		+ "\\relax\\documentclass\[a4paper,10pt,openany\]{book}\n"
+<book>		+ "\\relax\\documentclass\[a4paper,10pt,openany,oneside\]{book}\n"
+			"\\usepackage\[colorlinks=true,linkcolor=blue,pdftitle={BIRD User's Guide}\]{hyperref}\n"
+			"\\usepackage{enumitem}\n"
 			"\\usepackage{birddoc}\n"
 			"\\usepackage{qwertz}\n"
 			"\\usepackage{url}\n"
@@ -14,7 +16,7 @@
 </book>		+	"\\end{document}"	+
 
 % Manual Pages are expected to be formatted using nroff (or groff), unless
-% they are included  as sections of other qwertz documents.  
+% they are included  as sections of other qwertz documents.
 
 <manpage>
 </manpage>
@@ -26,17 +28,17 @@
 </titlepag>	+	"\n\n\\begin{document}\n"
 			"\\maketitle\n"		+
 
-<title>		+	"\\title{"	
+<title>		+	"\\title{"
 </title>		"}"		+
 
 <subtitle>		"\\\\\n"
 			"{\\large "
 </subtitle>		"}" +
 
-<author>	+	"\\author{"	
+<author>	+	"\\author{"
 </author>		"}"	+
 
-<name>		
+<name>
 </name>
 
 <and>			"\\and "	+
@@ -51,14 +53,14 @@
 <date>		+	"\\date{"
 </date>			"}"		  +
 
-<newline>		"\\\\ "		  
+<newline>		"\\\\ "
 </newline>
 
 <label>			"\\label{[ID]}"
-</label>	
+</label>
 
 <header>	+	"\\markboth"
-</header>	
+</header>
 
 <lhead>			"{"
 </lhead>		"}"
@@ -73,7 +75,7 @@
 </comment>		"}"
 
 % Hacked by mdw to use linuxdoc-sgml \abstract{...}
-<abstract>	+	"\\abstract{"	
+<abstract>	+	"\\abstract{"
 </abstract>	 	"}"	+
 
 <appendix>	+	"\n \\appendix \n"	+
@@ -101,15 +103,15 @@
 </sect2>
 
 <sect3>		+	"\n\\paragraph"
-</sect3>	
+</sect3>
 
 <sect4>		+	"\n\\subparagraph"
 </sect4>
 
 <heading>		"{"
-</heading>		"}\n\n" 
+</heading>		"}\n\n"
 
-<p>		
+<p>			"\\phantomsection{}"
 </p>			"\n\n"
 
 <itemize>	+	"\\begin{itemize}"	+
@@ -121,13 +123,13 @@
 <list>		+	"\\begin{list}{}{}\n"     +
 </list>		+	"\\end{list}"		+
 
-<descrip>	+	"\\begin{description}"	+
+<descrip>	+	"\\begin{description}\[style=unboxed\]"	+
 </descrip>	+	"\\end{description}"	+
 
 <item>		+	"\\item "
 </item>
 
-<tag>		+	"\\item\[{\\ttfamily "
+<tag>		+	"\\phantomsection\\item\[{\\ttfamily "
 </tag>			"}\] \\hfil\\break\n"	+
 
 <tagp>		+	"\\item\[ "
@@ -154,7 +156,7 @@
 % The idea here is to automatically insert soft hyphens after every slash in
 % the filename, so long filenames will break naturally.  The url{} macro is
 % a kluge but it works,
-<file>			"\\url{"
+<file>			"{\\tt "
 </file>			"}"
 
 <footnote>		"\\footnote{"
@@ -223,29 +225,32 @@
 <cparam>		"\\cparam{"
 </cparam>		"}"
 
-<ref>			"\\ref{[ID]} {([NAME])}"
+<ref>			"\\hyperref\[[ID]\]{[NAME]} (p.\\,\\getpagerefnumber{[ID]})"
 </ref>
 
 <pageref>		"\\pageref{[ID]}"
 </pageref>
 
 %url added by HG
-<url>			"\\nameurl{[URL]}{[NAME]}"
+<url>			"\\href{[URL]}{[NAME]}"
 </url>
 
-<htmlurl>		"\\onlynameurl{[NAME]}"
+<htmlurl>		"\\href{[URL]}{[NAME]}"
 </htmlurl>
 
-<x>	
+<rfc>			"\\href{http://www.rfc-editor.org/info/rfc[ID]}{RFC [ID]}"
+</rfc>
+
+<x>
 </x>
 
-<mc>			
+<mc>
 </mc>
 
 <biblio>	+	"\\bibliographystyle{[STYLE]}\n"
 			"\\bibliography{[FILES]}\n"
 			"\\addbibtoc{}"	+
-</biblio>	
+</biblio>
 
 % <macro>		+	"\\macro{[ID]}{\\qw[ID]}"
 % </macro>
@@ -300,19 +305,19 @@
 <thtag>			"\["
 </thtag>		"\]"			+
 
-% mathematics 
+% mathematics
 
 <f>			"$"
 </f>			"$"
 
-<dm>		+	"\\\["	
+<dm>		+	"\\\["
 </dm>			"\\\]"  +
 
 <eq>		+	"\\begin{equation}"	+
 </eq>		+	"\\end{equation}\n"	+
 
 <fr>			"\\frac"
-</fr>		
+</fr>
 
 <nu>			"{"
 </nu>			"}"
@@ -320,7 +325,7 @@
 <de>			"{"
 </de>			"}"
 
-<lim>			
+<lim>
 </lim>
 
 <op>
@@ -342,7 +347,7 @@
 </in>
 
 <sum>			"\\sum"
-</sum>		
+</sum>
 
 <root>			"\\sqrt\[[n]\]{"
 </root>			"}"
@@ -390,11 +395,11 @@
 </figure>	+	"\\end{figure}\n"		+
 
 <eps>		+   	"\\centerline{\\epsfig{file=[FILE],height=[HEIGHT],angle=[ANGLE]}}"  +
-</eps>                	
-            	
+</eps>
+
 
 <ph>		+	"\\vspace{[VSPACE]}\n\\par"	+
-</ph>	
+</ph>
 
 <caption>	+	"\\caption{"
 </caption>		"}" 	+

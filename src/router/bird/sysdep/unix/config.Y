@@ -15,6 +15,7 @@ CF_DECLS
 
 CF_KEYWORDS(LOG, SYSLOG, ALL, DEBUG, TRACE, INFO, REMOTE, WARNING, ERROR, AUTH, FATAL, BUG, STDERR, SOFT)
 CF_KEYWORDS(TIMEFORMAT, ISO, OLD, SHORT, LONG, BASE, NAME, CONFIRM, UNDO, CHECK, TIMEOUT)
+CF_KEYWORDS(DEBUG, LATENCY, LIMIT, WATCHDOG, WARNING, TIMEOUT)
 
 %type <i> log_mask log_mask_list log_cat cfg_timeout
 %type <g> log_file
@@ -83,6 +84,7 @@ mrtdump_base:
    }
  ;
 
+
 CF_ADDTO(conf, timeformat_base)
 
 timeformat_which:
@@ -103,6 +105,17 @@ timeformat_spec:
 timeformat_base:
    TIMEFORMAT timeformat_spec ';'
  ;
+
+
+CF_ADDTO(conf, debug_unix)
+
+debug_unix:
+   DEBUG LATENCY bool { new_config->latency_debug = $3; }
+ | DEBUG LATENCY LIMIT expr_us { new_config->latency_limit = $4; }
+ | WATCHDOG WARNING expr_us { new_config->watchdog_warning = $3; }
+ | WATCHDOG TIMEOUT expr_us { new_config->watchdog_timeout = ($3 + 999999) TO_S; }
+ ;
+
 
 /* Unix specific commands */
 

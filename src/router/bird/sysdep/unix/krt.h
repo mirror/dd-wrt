@@ -26,10 +26,10 @@ struct kif_proto;
 #define KRF_DELETE 3			/* Should be deleted */
 #define KRF_IGNORE 4			/* To be ignored */
 
+#define KRT_DEFAULT_ECMP_LIMIT	16
+
 #define EA_KRT_SOURCE	EA_CODE(EAP_KRT, 0)
 #define EA_KRT_METRIC	EA_CODE(EAP_KRT, 1)
-#define EA_KRT_PREFSRC	EA_CODE(EAP_KRT, 2)
-#define EA_KRT_REALM	EA_CODE(EAP_KRT, 3)
 
 /* Whenever we recognize our own routes, we allow learing of foreign routes */
 
@@ -49,6 +49,7 @@ struct krt_config {
   int learn;			/* Learn routes from other sources */
   int devroutes;		/* Allow export of device routes */
   int graceful_restart;		/* Regard graceful restart recovery */
+  int merge_paths;		/* Exported routes are merged for ECMP */
 };
 
 struct krt_proto {
@@ -66,6 +67,7 @@ struct krt_proto {
   node krt_node;		/* Node in krt_proto_list */
   byte ready;			/* Initial feed has been finished */
   byte initialized;		/* First scan has been finished */
+  byte reload;			/* Next scan is doing reload */
 };
 
 extern pool *krt_pool;
@@ -110,6 +112,8 @@ struct kif_proto {
   struct kif_state sys;		/* Sysdep state */
 };
 
+struct kif_proto *kif_proto;
+
 #define KIF_CF ((struct kif_config *)p->p.cf)
 
 struct proto_config * krt_init_config(int class);
@@ -117,8 +121,9 @@ struct proto_config * krt_init_config(int class);
 
 /* krt sysdep */
 
+void krt_sys_io_init(void);
 void krt_sys_init(struct krt_proto *);
-void krt_sys_start(struct krt_proto *);
+int krt_sys_start(struct krt_proto *);
 void krt_sys_shutdown(struct krt_proto *);
 int krt_sys_reconfigure(struct krt_proto *p UNUSED, struct krt_config *n, struct krt_config *o);
 
@@ -130,6 +135,7 @@ void krt_sys_copy_config(struct krt_config *, struct krt_config *);
 int  krt_capable(rte *e);
 void krt_do_scan(struct krt_proto *);
 void krt_replace_rte(struct krt_proto *p, net *n, rte *new, rte *old, struct ea_list *eattrs);
+int krt_sys_get_attr(eattr *a, byte *buf, int buflen);
 
 
 /* kif sysdep */

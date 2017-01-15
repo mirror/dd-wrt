@@ -2,3 +2,4 @@ krt-sock.c
 krt-sock.Y
 krt-sys.h
 sysio.h
+setkey.h

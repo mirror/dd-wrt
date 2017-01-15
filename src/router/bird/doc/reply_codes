@@ -55,6 +55,11 @@ Reply codes of BIRD command-line interface
 1018	Show memory
 1019	Show ROA list
 1020	Show BFD sessions
+1021	Show RIP interface
+1022	Show RIP neighbors
+1023	Show Babel interfaces
+1024	Show Babel neighbors
+1025	Show Babel entries
 
 8000	Reply too long
 8001	Route not found

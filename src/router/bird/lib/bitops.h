@@ -18,12 +18,13 @@
  *	u32_masklen	Inverse operation to u32_mkmask, -1 if not a bitmask.
  */
 
-u32 u32_mkmask(unsigned n);
+u32 u32_mkmask(uint n);
 int u32_masklen(u32 x);
 
 u32 u32_log2(u32 v);
 
 static inline u32 u32_hash(u32 v) { return v * 2902958171u; }
 
-#endif
+static inline u8 u32_popcount(u32 v) { return __builtin_popcount(v); }
 
+#endif

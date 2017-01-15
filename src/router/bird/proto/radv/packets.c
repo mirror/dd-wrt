@@ -157,12 +157,12 @@ radv_process_domain(struct radv_dnssl_config *cf)
   char *dom = cf->domain;
   char *dom_end = dom; /* Just to  */
   u8 *dlen_save = &cf->dlen_first;
-  int len;
+  uint len;
 
   while (dom_end)
   {
     dom_end = strchr(dom, '.');
-    len = dom_end ? (dom_end - dom) : strlen(dom);
+    len = dom_end ? (uint)(dom_end - dom) : strlen(dom);
 
     if (len < 1 || len > 63)
       return -1;
@@ -343,12 +343,12 @@ radv_send_ra(struct radv_iface *ifa, int shutdown)
   }
 
   RADV_TRACE(D_PACKETS, "Sending RA via %s", ifa->iface->name);
-  sk_send_to(ifa->sk, ifa->plen, AllNodes, 0);
+  sk_send_to(ifa->sk, ifa->plen, IP6_ALL_NODES, 0);
 }
 
 
 static int
-radv_rx_hook(sock *sk, int size)
+radv_rx_hook(sock *sk, uint size)
 {
   struct radv_iface *ifa = sk->data;
   struct proto_radv *ra = ifa->ra;
@@ -432,7 +432,7 @@ radv_sk_open(struct radv_iface *ifa)
   if (sk_setup_multicast(sk) < 0)
     goto err;
 
-  if (sk_join_group(sk, AllRouters) < 0)
+  if (sk_join_group(sk, IP6_ALL_ROUTERS) < 0)
     goto err;
 
   ifa->sk = sk;
