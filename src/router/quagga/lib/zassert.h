@@ -22,10 +22,14 @@
 #ifndef _QUAGGA_ASSERT_H
 #define _QUAGGA_ASSERT_H
 
+#ifdef NEED_PRINTF
 extern void _zlog_assert_failed (const char *assertion, const char *file,
 				 unsigned int line, const char *function)
 				 __attribute__ ((noreturn));
+#else
+#define _zlog_assert_failed(assertion, file, line, function) do { } while(0)
 
+#endif
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 #define __ASSERT_FUNCTION    __func__
 #elif defined(__GNUC__)
@@ -34,10 +38,15 @@ extern void _zlog_assert_failed (const char *assertion, const char *file,
 #define __ASSERT_FUNCTION    NULL
 #endif
 
+
+#ifdef NEED_PRINTF
+
 #define zassert(EX) ((void)((EX) ?  0 :	\
 			    (_zlog_assert_failed(#EX, __FILE__, __LINE__, \
 						 __ASSERT_FUNCTION), 0)))
-
+#else
+#define zassert(EX)do { } while(0)
+#endif
 #undef assert
 #define assert(EX) zassert(EX)
 
