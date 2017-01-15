@@ -12,16 +12,19 @@ static int rb_exclude_device(struct pci_controller *hose,
 }
 #endif /* CONFIG_PCI */
 
+int __init fsl_pci_init(void);
+
 void __init rb_init_pci(void)
 {
 	struct device_node *np;
 
 	for_each_compatible_node(np, "pci", "fsl,mpc8540-pci")
-	    fsl_add_bridge(np, 1);
+	    mp_add_bridge(np,1);
 
 	for_each_compatible_node(np, "pci", "fsl,mpc8540-pcie")
-	    fsl_add_bridge(np, 0);
+	    mp_add_bridge(np,1);
 
+//	fsl_pci_init();
 	ppc_md.pci_exclude_device = rb_exclude_device;
 }
 

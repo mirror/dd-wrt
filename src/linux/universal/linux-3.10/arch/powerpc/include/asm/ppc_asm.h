@@ -456,7 +456,7 @@ BEGIN_FTR_SECTION_NESTED(96);		\
 	beq-  90b;			\
 END_FTR_SECTION_NESTED(CPU_FTR_CELL_TB_BUG, CPU_FTR_CELL_TB_BUG, 96)
 #else
-#define MFTB(dest)			mftb dest
+#define MFTB(dest)			mfspr dest, SPRN_TBRL
 #endif
 
 #ifndef CONFIG_SMP
