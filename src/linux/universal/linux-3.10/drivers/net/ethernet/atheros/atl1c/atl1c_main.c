@@ -583,6 +583,11 @@ static void atl1c_mdio_write(struct net_device *netdev, int phy_id,
 static int atl1c_mii_ioctl(struct net_device *netdev,
 			   struct ifreq *ifr, int cmd)
 {
+#ifdef CONFIG_RB800
+	struct atl1c_adapter *adapter = netdev_priv(netdev);
+	if (!netif_running(netdev)) return -EINVAL;
+	return generic_mii_ioctl(&adapter->mii, if_mii(ifr), cmd, NULL);
+#else
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
 	struct pci_dev *pdev = adapter->pdev;
 	struct mii_ioctl_data *data = if_mii(ifr);
@@ -628,6 +633,7 @@ static int atl1c_mii_ioctl(struct net_device *netdev,
 out:
 	spin_unlock_irqrestore(&adapter->mdio_lock, flags);
 	return retval;
+#endif
 }
 
 static int atl1c_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
@@ -1435,6 +1441,9 @@ static int atl1c_configure_mac(struct atl1c_adapter *adapter)
 	atl1c_configure_rx(adapter);
 	atl1c_configure_dma(adapter);
 
+#ifdef CONFIG_RB800
+	AT_WRITE_REG(hw, REG_LED_CONFIG, 0xcf01cf31);
+#endif
 	return 0;
 }
 
@@ -1754,7 +1763,7 @@ static void atl1c_clean_rrd(struct atl1c_rrd_ring *rrd_ring,
 	/* the relationship between rrd and rfd is one map one */
 	for (i = 0; i < num; i++, rrs = ATL1C_RRD_DESC(rrd_ring,
 					rrd_ring->next_to_clean)) {
-		rrs->word3 &= ~RRS_RXD_UPDATED;
+		rrs->word3 &= cpu_to_le32(~RRS_RXD_UPDATED);
 		if (++rrd_ring->next_to_clean == rrd_ring->count)
 			rrd_ring->next_to_clean = 0;
 	}
@@ -1767,7 +1776,7 @@ static void atl1c_clean_rfd(struct atl1c_rfd_ring *rfd_ring,
 	u16 rfd_index;
 	struct atl1c_buffer *buffer_info = rfd_ring->buffer_info;
 
-	rfd_index = (rrs->word0 >> RRS_RX_RFD_INDEX_SHIFT) &
+	rfd_index = (le32_to_cpu(rrs->word0) >> RRS_RX_RFD_INDEX_SHIFT) &
 			RRS_RX_RFD_INDEX_MASK;
 	for (i = 0; i < num; i++) {
 		buffer_info[rfd_index].skb = NULL;
@@ -1798,7 +1807,7 @@ static void atl1c_clean_rx_irq(struct atl1c_adapter *adapter,
 			break;
 		rrs = ATL1C_RRD_DESC(rrd_ring, rrd_ring->next_to_clean);
 		if (likely(RRS_RXD_IS_VALID(rrs->word3))) {
-			rfd_num = (rrs->word0 >> RRS_RX_RFD_CNT_SHIFT) &
+			rfd_num = (le32_to_cpu(rrs->word0) >> RRS_RX_RFD_CNT_SHIFT) &
 				RRS_RX_RFD_CNT_MASK;
 			if (unlikely(rfd_num != 1))
 				/* TODO support mul rfd*/
@@ -1811,21 +1820,22 @@ static void atl1c_clean_rx_irq(struct atl1c_adapter *adapter,
 		}
 rrs_checked:
 		atl1c_clean_rrd(rrd_ring, rrs, rfd_num);
-		if (rrs->word3 & (RRS_RX_ERR_SUM | RRS_802_3_LEN_ERR)) {
+		if (le32_to_cpu(rrs->word3) & (RRS_RX_ERR_SUM | RRS_802_3_LEN_ERR)) {
 			atl1c_clean_rfd(rfd_ring, rrs, rfd_num);
 				if (netif_msg_rx_err(adapter))
 					dev_warn(&pdev->dev,
 						"wrong packet! rrs word3 is %x\n",
-						rrs->word3);
+						le32_to_cpu(rrs->word3));
 			continue;
 		}
 
-		length = le16_to_cpu((rrs->word3 >> RRS_PKT_SIZE_SHIFT) &
-				RRS_PKT_SIZE_MASK);
+		length = (le32_to_cpu(rrs->word3) >> RRS_PKT_SIZE_SHIFT) &
+			RRS_PKT_SIZE_MASK;
 		/* Good Receive */
 		if (likely(rfd_num == 1)) {
-			rfd_index = (rrs->word0 >> RRS_RX_RFD_INDEX_SHIFT) &
-					RRS_RX_RFD_INDEX_MASK;
+			rfd_index = (le32_to_cpu(rrs->word0) >>
+				     RRS_RX_RFD_INDEX_SHIFT) &
+				RRS_RX_RFD_INDEX_MASK;
 			buffer_info = &rfd_ring->buffer_info[rfd_index];
 			pci_unmap_single(pdev, buffer_info->dma,
 				buffer_info->length, PCI_DMA_FROMDEVICE);
@@ -1841,7 +1851,7 @@ rrs_checked:
 		skb_put(skb, length - ETH_FCS_LEN);
 		skb->protocol = eth_type_trans(skb, netdev);
 		atl1c_rx_checksum(adapter, skb, rrs);
-		if (rrs->word3 & RRS_VLAN_INS) {
+		if (le32_to_cpu(rrs->word3) & RRS_VLAN_INS) {
 			u16 vlan;
 
 			AT_TAG_TO_VLAN(rrs->vlan_tag, vlan);
@@ -1998,7 +2008,8 @@ static int atl1c_tso_csum(struct atl1c_adapter *adapter,
 							ip_hdr(skb)->saddr,
 							ip_hdr(skb)->daddr,
 							0, IPPROTO_TCP, 0);
-				(*tpd)->word1 |= 1 << TPD_IPV4_PACKET_SHIFT;
+				(*tpd)->word1 |=
+					cpu_to_le32(1 << TPD_IPV4_PACKET_SHIFT);
 			}
 		}
 
@@ -2022,17 +2033,21 @@ static int atl1c_tso_csum(struct atl1c_adapter *adapter,
 						&ipv6_hdr(skb)->saddr,
 						&ipv6_hdr(skb)->daddr,
 						0, IPPROTO_TCP, 0);
-			etpd->word1 |= 1 << TPD_LSO_EN_SHIFT;
-			etpd->word1 |= 1 << TPD_LSO_VER_SHIFT;
+			etpd->word1 |= cpu_to_le32(1 << TPD_LSO_EN_SHIFT);
+			etpd->word1 |= cpu_to_le32(1 << TPD_LSO_VER_SHIFT);
 			etpd->pkt_len = cpu_to_le32(skb->len);
-			(*tpd)->word1 |= 1 << TPD_LSO_VER_SHIFT;
+			(*tpd)->word1 |= cpu_to_le32(
+			(skb_shinfo(skb)->gso_size & TPD_MSS_MASK) <<
+			TPD_MSS_SHIFT);
 		}
 
-		(*tpd)->word1 |= 1 << TPD_LSO_EN_SHIFT;
-		(*tpd)->word1 |= (skb_transport_offset(skb) & TPD_TCPHDR_OFFSET_MASK) <<
-				TPD_TCPHDR_OFFSET_SHIFT;
-		(*tpd)->word1 |= (skb_shinfo(skb)->gso_size & TPD_MSS_MASK) <<
-				TPD_MSS_SHIFT;
+		(*tpd)->word1 |= cpu_to_le32(1 << TPD_LSO_EN_SHIFT);
+		(*tpd)->word1 |= cpu_to_le32(
+			(skb_transport_offset(skb) & TPD_TCPHDR_OFFSET_MASK) <<
+			TPD_TCPHDR_OFFSET_SHIFT);
+		(*tpd)->word1 |= cpu_to_le32(
+			(skb_shinfo(skb)->gso_size & TPD_MSS_MASK) <<
+			TPD_MSS_SHIFT);
 		return 0;
 	}
 
@@ -2049,11 +2064,13 @@ check_sum:
 		} else {
 			css = cso + skb->csum_offset;
 
-			(*tpd)->word1 |= ((cso >> 1) & TPD_PLOADOFFSET_MASK) <<
-					TPD_PLOADOFFSET_SHIFT;
-			(*tpd)->word1 |= ((css >> 1) & TPD_CCSUM_OFFSET_MASK) <<
-					TPD_CCSUM_OFFSET_SHIFT;
-			(*tpd)->word1 |= 1 << TPD_CCSUM_EN_SHIFT;
+			(*tpd)->word1 |= cpu_to_le32(
+				((cso >> 1) & TPD_PLOADOFFSET_MASK) <<
+				TPD_PLOADOFFSET_SHIFT);
+			(*tpd)->word1 |= cpu_to_le32(
+				((css >> 1) & TPD_CCSUM_OFFSET_MASK) <<
+				TPD_CCSUM_OFFSET_SHIFT);
+			(*tpd)->word1 |= cpu_to_le32(1 << TPD_CCSUM_EN_SHIFT);
 		}
 	}
 	return 0;
@@ -2096,7 +2113,7 @@ static int atl1c_tx_map(struct atl1c_adapter *adapter,
 	int tso;
 
 	nr_frags = skb_shinfo(skb)->nr_frags;
-	tso = (tpd->word1 >> TPD_LSO_EN_SHIFT) & TPD_LSO_EN_MASK;
+	tso = (le32_to_cpu(tpd->word1) >> TPD_LSO_EN_SHIFT) & TPD_LSO_EN_MASK;
 	if (tso) {
 		/* TSO */
 		map_len = hdr_len = skb_transport_offset(skb) + tcp_hdrlen(skb);
@@ -2167,7 +2184,7 @@ static int atl1c_tx_map(struct atl1c_adapter *adapter,
 	}
 
 	/* The last tpd */
-	use_tpd->word1 |= 1 << TPD_EOP_SHIFT;
+	use_tpd->word1 |= cpu_to_le32(1 << TPD_EOP_SHIFT);
 	/* The last buffer info contain the skb address,
 	   so it will be free after unmap */
 	buffer_info->skb = skb;
@@ -2233,12 +2250,12 @@ static netdev_tx_t atl1c_xmit_frame(struct sk_buff *skb,
 
 		vlan = cpu_to_le16(vlan);
 		AT_VLAN_TO_TAG(vlan, tag);
-		tpd->word1 |= 1 << TPD_INS_VTAG_SHIFT;
+		tpd->word1 |= cpu_to_le32(1 << TPD_INS_VTAG_SHIFT);
 		tpd->vlan_tag = tag;
 	}
 
 	if (skb_network_offset(skb) != ETH_HLEN)
-		tpd->word1 |= 1 << TPD_ETH_TYPE_SHIFT; /* Ethernet frame */
+		tpd->word1 |= cpu_to_le32(1 << TPD_ETH_TYPE_SHIFT); /* Ethernet frame */
 
 	if (atl1c_tx_map(adapter, skb, tpd, type) < 0) {
 		netif_info(adapter, tx_done, adapter->netdev,
@@ -2377,6 +2394,10 @@ static int atl1c_open(struct net_device *netdev)
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
 	int err;
 
+#ifdef CONFIG_RB800
+	atl1c_phy_reset(&adapter->hw);
+	atl1c_phy_init(&adapter->hw);
+#endif
 	/* disallow open during test */
 	if (test_bit(__AT_TESTING, &adapter->flags))
 		return -EBUSY;
@@ -2602,6 +2623,10 @@ static int atl1c_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	adapter->mii.mdio_write = atl1c_mdio_write;
 	adapter->mii.phy_id_mask = 0x1f;
 	adapter->mii.reg_num_mask = MDIO_CTRL_REG_MASK;
+
+#ifdef CONFIG_RB800
+	adapter->mii.supports_gmii = 1;
+#endif
 	netif_napi_add(netdev, &adapter->napi, atl1c_clean, 64);
 	setup_timer(&adapter->phy_config_timer, atl1c_phy_config,
 			(unsigned long)adapter);
@@ -2613,15 +2638,17 @@ static int atl1c_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	}
 	atl1c_reset_pcie(&adapter->hw, ATL1C_PCIE_L0S_L1_DISABLE);
 
+#ifndef CONFIG_RB800
 	/* Init GPHY as early as possible due to power saving issue  */
 	atl1c_phy_reset(&adapter->hw);
-
+#endif
 	err = atl1c_reset_mac(&adapter->hw);
 	if (err) {
 		err = -EIO;
 		goto err_reset;
 	}
 
+#ifndef CONFIG_RB800
 	/* reset the controller to
 	 * put the device in a known good starting state */
 	err = atl1c_phy_init(&adapter->hw);
@@ -2629,6 +2656,7 @@ static int atl1c_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		err = -EIO;
 		goto err_reset;
 	}
+#endif
 	if (atl1c_read_mac_addr(&adapter->hw)) {
 		/* got a random MAC address, set NET_ADDR_RANDOM to netdev */
 		netdev->addr_assign_type = NET_ADDR_RANDOM;

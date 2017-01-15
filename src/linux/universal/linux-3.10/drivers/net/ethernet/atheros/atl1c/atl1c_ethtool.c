@@ -30,6 +30,10 @@ static int atl1c_get_settings(struct net_device *netdev,
 			      struct ethtool_cmd *ecmd)
 {
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
+#ifdef CONFIG_RB800
+	if (!(netdev->flags & IFF_UP)) return -EINVAL;
+	return mii_ethtool_gset(&adapter->mii, ecmd);
+#else
 	struct atl1c_hw *hw = &adapter->hw;
 
 	ecmd->supported = (SUPPORTED_10baseT_Half  |
@@ -62,12 +66,17 @@ static int atl1c_get_settings(struct net_device *netdev,
 
 	ecmd->autoneg = AUTONEG_ENABLE;
 	return 0;
+#endif
 }
 
 static int atl1c_set_settings(struct net_device *netdev,
 			      struct ethtool_cmd *ecmd)
 {
 	struct atl1c_adapter *adapter = netdev_priv(netdev);
+#ifdef CONFIG_RB800
+	if (!(netdev->flags & IFF_UP)) return -EINVAL;
+	return mii_ethtool_sset(&adapter->mii, ecmd);
+#else
 	struct atl1c_hw *hw = &adapter->hw;
 	u16  autoneg_advertised;
 
@@ -112,6 +121,7 @@ static int atl1c_set_settings(struct net_device *netdev,
 	}
 	clear_bit(__AT_RESETTING, &adapter->flags);
 	return 0;
+#endif
 }
 
 static u32 atl1c_get_msglevel(struct net_device *netdev)

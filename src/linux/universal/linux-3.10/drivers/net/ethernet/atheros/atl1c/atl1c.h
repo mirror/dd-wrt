@@ -244,16 +244,17 @@ struct atl1c_tpd_ext_desc {
 
 #define RRS_PACKET_TYPE_802_3  	1
 #define RRS_PACKET_TYPE_ETH	0
-#define RRS_PACKET_IS_ETH(word) \
-	((((word) >> RRS_PACKET_TYPE_SHIFT) & RRS_PACKET_TYPE_MASK) == \
-			RRS_PACKET_TYPE_ETH)
-#define RRS_RXD_IS_VALID(word) \
-	((((word) >> RRS_RXD_UPDATED_SHIFT) & RRS_RXD_UPDATED_MASK) == 1)
 
+#define RRS_PACKET_IS_ETH(word) \
+    (((le32_to_cpu(word)) >> RRS_PACKET_TYPE_SHIFT) & RRS_PACKET_TYPE_MASK == \
+ 			RRS_PACKET_TYPE_ETH)
+#define RRS_RXD_IS_VALID(word) \
+    ((((le32_to_cpu(word)) >> RRS_RXD_UPDATED_SHIFT) & RRS_RXD_UPDATED_MASK) == 1)
+ 
 #define RRS_PACKET_PROT_IS_IPV4_ONLY(word) \
-	((((word) >> RRS_PROT_ID_SHIFT) & RRS_PROT_ID_MASK) == 1)
+    ((((le32_to_cpu(word)) >> RRS_PROT_ID_SHIFT) & RRS_PROT_ID_MASK) == 1)
 #define RRS_PACKET_PROT_IS_IPV6_ONLY(word) \
-	((((word) >> RRS_PROT_ID_SHIFT) & RRS_PROT_ID_MASK) == 6)
+    ((((le32_to_cpu(word)) >> RRS_PROT_ID_SHIFT) & RRS_PROT_ID_MASK) == 6)
 
 struct atl1c_recv_ret_status {
 	__le32  word0;
