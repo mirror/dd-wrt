@@ -14,7 +14,7 @@
  *	fragments finished by NULL pointer.
  */
 
-int ipsum_verify(void *frag, unsigned len, ...);
-u16 ipsum_calculate(void *frag, unsigned len, ...);
+int ipsum_verify(void *frag, uint len, ...);
+u16 ipsum_calculate(void *frag, uint len, ...);
 
 #endif

@@ -181,7 +181,7 @@ struct ks_msg
 #define GETADDR(p, F) \
   bzero(p, sizeof(*p));\
   if ((addrs & (F)) && ((struct sockaddr *)body)->sa_len) {\
-    unsigned int l = ROUNDUP(((struct sockaddr *)body)->sa_len);\
+    uint l = ROUNDUP(((struct sockaddr *)body)->sa_len);\
     memcpy(p, body, (l > sizeof(*p) ? sizeof(*p) : l));\
     body += l;}
 
@@ -247,7 +247,7 @@ krt_send_route(struct krt_proto *p, int cmd, rte *e)
 
 #ifdef IPV6
   /* Embed interface ID to link-local address */
-  if (ipa_has_link_scope(gw))
+  if (ipa_is_link_local(gw))
     _I0(gw) = 0xfe800000 | (i->index & 0x0000ffff);
 #endif
 
@@ -336,7 +336,7 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
   sockaddr dst, gate, mask;
   ip_addr idst, igate, imask;
   void *body = (char *)msg->buf;
-  int new = (msg->rtm.rtm_type == RTM_ADD);
+  int new = (msg->rtm.rtm_type != RTM_DELETE);
   char *errmsg = "KRT: Invalid route received";
   int flags = msg->rtm.rtm_flags;
   int addrs = msg->rtm.rtm_addrs;
@@ -382,7 +382,7 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
   if ((c < 0) || !(c & IADDR_HOST) || ((c & IADDR_SCOPE_MASK) <= SCOPE_LINK))
     SKIP("strange class/scope\n");
 
-  int pxlen = (flags & RTF_HOST) ? MAX_PREFIX_LENGTH : ipa_mklen(imask);
+  int pxlen = (flags & RTF_HOST) ? MAX_PREFIX_LENGTH : ipa_masklen(imask);
   if (pxlen < 0)
     { log(L_ERR "%s (%I) - netmask %I", errmsg, idst, imask); return; }
 
@@ -468,7 +468,7 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
 
 #ifdef IPV6
     /* Clean up embedded interface ID returned in link-local address */
-    if (ipa_has_link_scope(a.gw))
+    if (ipa_is_link_local(a.gw))
       _I0(a.gw) = 0xfe800000;
 #endif
 
@@ -493,9 +493,8 @@ krt_read_route(struct ks_msg *msg, struct krt_proto *p, int scan)
   e->net = net;
   e->u.krt.src = src;
   e->u.krt.proto = src2;
-
-  /* These are probably too Linux-specific */
-  e->u.krt.type = 0;
+  e->u.krt.seen = 0;
+  e->u.krt.best = 0;
   e->u.krt.metric = 0;
 
   if (scan)
@@ -537,7 +536,7 @@ krt_read_ifinfo(struct ks_msg *msg, int scan)
   struct if_msghdr *ifm = (struct if_msghdr *)&msg->rtm;
   void *body = (void *)(ifm + 1);
   struct sockaddr_dl *dl = NULL;
-  unsigned int i;
+  uint i;
   struct iface *iface = NULL, f = {};
   int fl = ifm->ifm_flags;
   int nlen = 0;
@@ -653,7 +652,7 @@ krt_read_addr(struct ks_msg *msg, int scan)
   ibrd  = ipa_from_sa(&brd);
 
 
-  if ((masklen = ipa_mklen(imask)) < 0)
+  if ((masklen = ipa_masklen(imask)) < 0)
   {
     log(L_ERR "KIF: Invalid masklen %I for %s", imask, iface->name);
     return;
@@ -662,10 +661,10 @@ krt_read_addr(struct ks_msg *msg, int scan)
 #ifdef IPV6
   /* Clean up embedded interface ID returned in link-local address */
 
-  if (ipa_has_link_scope(iaddr))
+  if (ipa_is_link_local(iaddr))
     _I0(iaddr) = 0xfe800000;
 
-  if (ipa_has_link_scope(ibrd))
+  if (ipa_is_link_local(ibrd))
     _I0(ibrd) = 0xfe800000;
 #endif
 
@@ -732,6 +731,7 @@ krt_read_msg(struct proto *p, struct ks_msg *msg, int scan)
       if(!scan) return;
     case RTM_ADD:
     case RTM_DELETE:
+    case RTM_CHANGE:
       krt_read_route(msg, (struct krt_proto *)p, scan);
       break;
     case RTM_IFANNOUNCE:
@@ -898,7 +898,7 @@ kif_do_scan(struct kif_proto *p)
 /* Kernel sockets */
 
 static int
-krt_sock_hook(sock *sk, int size UNUSED)
+krt_sock_hook(sock *sk, uint size UNUSED)
 {
   struct ks_msg msg;
   int l = read(sk->fd, (char *)&msg, sizeof(msg));
@@ -911,8 +911,14 @@ krt_sock_hook(sock *sk, int size UNUSED)
   return 0;
 }
 
+static void
+krt_sock_err_hook(sock *sk, int e UNUSED)
+{
+  krt_sock_hook(sk, 0);
+}
+
 static sock *
-krt_sock_open(pool *pool, void *data, int table_id)
+krt_sock_open(pool *pool, void *data, int table_id UNUSED)
 {
   sock *sk;
   int fd;
@@ -932,6 +938,7 @@ krt_sock_open(pool *pool, void *data, int table_id)
   sk = sk_new(pool);
   sk->type = SK_MAGIC;
   sk->rx_hook = krt_sock_hook;
+  sk->err_hook = krt_sock_err_hook;
   sk->fd = fd;
   sk->data = data;
 
@@ -969,13 +976,15 @@ krt_sock_close_shared(void)
   }
 }
 
-void
+int
 krt_sys_start(struct krt_proto *p)
 {
   krt_table_map[KRT_CF->sys.table_id] = p;
 
   krt_sock_open_shared();
   p->sys.sk = krt_sock;
+
+  return 1;
 }
 
 void
@@ -991,10 +1000,11 @@ krt_sys_shutdown(struct krt_proto *p)
 
 #else
 
-void
+int
 krt_sys_start(struct krt_proto *p)
 {
   p->sys.sk = krt_sock_open(p->p.pool, p, KRT_CF->sys.table_id);
+  return 1;
 }
 
 void
@@ -1064,7 +1074,7 @@ kif_sys_shutdown(struct kif_proto *p)
 
 
 struct ifa *
-kif_get_primary_ip(struct iface *i)
+kif_get_primary_ip(struct iface *i UNUSED6)
 {
 #ifndef IPV6
   static int fd = -1;

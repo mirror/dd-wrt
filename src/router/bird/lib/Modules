@@ -1,17 +1,18 @@
+sha256.c
+sha256.h
+sha512.c
+sha512.h
+sha1.c
+sha1.h
 birdlib.h
 bitops.c
 bitops.h
 ip.h
 ip.c
-#ifdef IPV6
-ipv6.c
-ipv6.h
-#else
-ipv4.c
-ipv4.h
-#endif
 lists.c
 lists.h
+mac.c
+mac.h
 md5.c
 md5.h
 mempool.c

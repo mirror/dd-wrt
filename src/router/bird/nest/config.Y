@@ -13,6 +13,7 @@ CF_HDR
 #include "nest/password.h"
 #include "nest/cmds.h"
 #include "lib/lists.h"
+#include "lib/mac.h"
 
 CF_DEFINES
 
@@ -57,13 +58,14 @@ CF_KEYWORDS(ROUTER, ID, PROTOCOL, TEMPLATE, PREFERENCE, DISABLED, DEBUG, ALL, OF
 CF_KEYWORDS(INTERFACE, IMPORT, EXPORT, FILTER, NONE, TABLE, STATES, ROUTES, FILTERS)
 CF_KEYWORDS(RECEIVE, LIMIT, ACTION, WARN, BLOCK, RESTART, DISABLE, KEEP, FILTERED)
 CF_KEYWORDS(PASSWORD, FROM, PASSIVE, TO, ID, EVENTS, PACKETS, PROTOCOLS, INTERFACES)
+CF_KEYWORDS(ALGORITHM, KEYED, HMAC, MD5, SHA1, SHA256, SHA384, SHA512)
 CF_KEYWORDS(PRIMARY, STATS, COUNT, FOR, COMMANDS, PREEXPORT, NOEXPORT, GENERATE, ROA)
 CF_KEYWORDS(LISTEN, BGP, V6ONLY, DUAL, ADDRESS, PORT, PASSWORDS, DESCRIPTION, SORTED)
 CF_KEYWORDS(RELOAD, IN, OUT, MRTDUMP, MESSAGES, RESTRICT, MEMORY, IGP_METRIC, CLASS, DSCP)
 CF_KEYWORDS(GRACEFUL, RESTART, WAIT, MAX, FLUSH, AS)
 
 CF_ENUM(T_ENUM_RTS, RTS_, DUMMY, STATIC, INHERIT, DEVICE, STATIC_DEVICE, REDIRECT,
-	RIP, OSPF, OSPF_IA, OSPF_EXT1, OSPF_EXT2, BGP, PIPE)
+	RIP, OSPF, OSPF_IA, OSPF_EXT1, OSPF_EXT2, BGP, PIPE, BABEL)
 CF_ENUM(T_ENUM_SCOPE, SCOPE_, HOST, LINK, SITE, ORGANIZATION, UNIVERSE, UNDEFINED)
 CF_ENUM(T_ENUM_RTC, RTC_, UNICAST, BROADCAST, MULTICAST, ANYCAST)
 CF_ENUM(T_ENUM_RTD, RTD_, ROUTER, DEVICE, BLACKHOLE, UNREACHABLE, PROHIBIT, MULTIPATH)
@@ -77,7 +79,7 @@ CF_ENUM(T_ENUM_ROA, ROA_, UNKNOWN, VALID, INVALID)
 %type <ro> roa_args
 %type <rot> roa_table_arg
 %type <sd> sym_args
-%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_mode roa_mode limit_action tab_sorted tos
+%type <i> proto_start echo_mask echo_size debug_mask debug_list debug_flag mrtdump_mask mrtdump_list mrtdump_flag export_mode roa_mode limit_action tab_sorted tos password_algorithm
 %type <ps> proto_patt proto_patt2
 %type <g> limit_spec
 
@@ -87,13 +89,14 @@ CF_GRAMMAR
 
 CF_ADDTO(conf, rtrid)
 
-rtrid: 
+rtrid:
    ROUTER ID idval ';' { new_config->router_id = $3; }
  | ROUTER ID FROM iface_patt ';' { new_config->router_id_from = this_ipatt; }
  ;
 
 idval:
    NUM { $$ = $1; }
+ | '(' term ')' { $$ = f_eval_int($2); }
  | RTRID
  | IPA {
 #ifndef IPV6
@@ -101,6 +104,16 @@ idval:
 #else
      cf_error("Router IDs must be entered as hexadecimal numbers or IPv4 addresses in IPv6 version");
 #endif
+   }
+ | SYM {
+     if ($1->class == (SYM_CONSTANT | T_INT) || $1->class == (SYM_CONSTANT | T_QUAD))
+       $$ = SYM_VAL($1).i;
+#ifndef IPV6
+     else if ($1->class == (SYM_CONSTANT | T_IP))
+       $$ = ipa_to_u32(SYM_VAL($1).px.ip);
+#endif
+     else
+       cf_error("Number or IPv4 address constant expected");
    }
  ;
 
@@ -114,7 +127,7 @@ listen_opts:
  | listen_opts listen_opt
  ;
 
-listen_opt: 
+listen_opt:
    ADDRESS ipa { new_config->listen_bgp_addr = $2; }
  | PORT expr { new_config->listen_bgp_port = $2; }
  | V6ONLY { new_config->listen_bgp_flags = 0; }
@@ -181,12 +194,20 @@ proto_name:
      cf_define_symbol($1, this_proto->class, this_proto);
      this_proto->name = $1->name;
    }
- | SYM FROM SYM {
-     if (($3->class != SYM_TEMPLATE) && ($3->class != SYM_PROTO)) cf_error("Template or protocol name expected");
+ | FROM SYM {
+     struct symbol *s = cf_default_name(this_proto->protocol->template, &this_proto->protocol->name_counter);
+     s->class = this_proto->class;
+     s->def = this_proto;
+     this_proto->name = s->name;
 
+     if (($2->class != SYM_TEMPLATE) && ($2->class != SYM_PROTO)) cf_error("Template or protocol name expected");
+     proto_copy_config(this_proto, $2->def);
+   }
+ | SYM FROM SYM {
      cf_define_symbol($1, this_proto->class, this_proto);
      this_proto->name = $1->name;
 
+     if (($3->class != SYM_TEMPLATE) && ($3->class != SYM_PROTO)) cf_error("Template or protocol name expected");
      proto_copy_config(this_proto, $3->def);
    }
  ;
@@ -274,7 +295,7 @@ iface_negate:
  ;
 
 iface_patt_node:
-   iface_patt_node_init iface_negate iface_patt_node_body 
+   iface_patt_node_init iface_negate iface_patt_node_body
  ;
 
 
@@ -307,7 +328,7 @@ tos:
 CF_ADDTO(proto, dev_proto '}')
 
 dev_proto_start: proto_start DIRECT {
-     this_proto = proto_config_new(&proto_device, sizeof(struct rt_dev_config), $1);
+     this_proto = proto_config_new(&proto_device, $1);
      init_list(&DIRECT_CFG->iface_list);
    }
  ;
@@ -316,6 +337,7 @@ dev_proto:
    dev_proto_start proto_name '{'
  | dev_proto proto_item ';'
  | dev_proto dev_iface_patt ';'
+ | dev_proto CHECK LINK bool ';' { DIRECT_CFG->check_link = $4; }
  ;
 
 dev_iface_init:
@@ -377,7 +399,7 @@ password_list:
  | password_item
 ;
 
-password_items: 
+password_items:
     /* empty */
   | password_item ';' password_items
 ;
@@ -396,25 +418,41 @@ password_item_begin:
      }
      this_p_item = cfg_alloc(sizeof (struct password_item));
      this_p_item->password = $2;
+     this_p_item->length = strlen($2);
      this_p_item->genfrom = 0;
      this_p_item->gento = TIME_INFINITY;
      this_p_item->accfrom = 0;
      this_p_item->accto = TIME_INFINITY;
      this_p_item->id = password_id++;
+     this_p_item->alg = ALG_UNDEFINED;
      add_tail(this_p_list, &this_p_item->n);
    }
 ;
 
 password_item_params:
-   /* empty */ { } 
+   /* empty */ { }
  | GENERATE FROM datetime ';' password_item_params { this_p_item->genfrom = $3; }
  | GENERATE TO datetime ';' password_item_params { this_p_item->gento = $3; }
  | ACCEPT FROM datetime ';' password_item_params { this_p_item->accfrom = $3; }
  | ACCEPT TO datetime ';' password_item_params { this_p_item->accto = $3; }
+ | FROM datetime ';' password_item_params { this_p_item->genfrom = this_p_item->accfrom = $2; }
+ | TO datetime ';' password_item_params { this_p_item->gento = this_p_item->accto = $2; }
  | ID expr ';' password_item_params { this_p_item->id = $2; if ($2 <= 0) cf_error("Password ID has to be greated than zero."); }
+ | ALGORITHM password_algorithm ';' password_item_params { this_p_item->alg = $2; }
  ;
 
-
+password_algorithm:
+   KEYED MD5	{ $$ = ALG_MD5; }
+ | KEYED SHA1	{ $$ = ALG_SHA1; }
+ | KEYED SHA256	{ $$ = ALG_SHA256; }
+ | KEYED SHA384	{ $$ = ALG_SHA384; }
+ | KEYED SHA512	{ $$ = ALG_SHA512; }
+ | HMAC MD5	{ $$ = ALG_HMAC_MD5; }
+ | HMAC SHA1	{ $$ = ALG_HMAC_SHA1; }
+ | HMAC SHA256	{ $$ = ALG_HMAC_SHA256; }
+ | HMAC SHA384	{ $$ = ALG_HMAC_SHA384; }
+ | HMAC SHA512	{ $$ = ALG_HMAC_SHA512; }
+ ;
 
 /* Core commands */
 CF_CLI_HELP(SHOW, ..., [[Show status information]])
@@ -582,7 +620,7 @@ sym_args:
 
 
 roa_table_arg:
-   /* empty */ { 
+   /* empty */ {
      if (roa_table_default == NULL)
        cf_error("No ROA table defined");
      $$ = roa_table_default;
@@ -621,6 +659,8 @@ CF_CLI(DUMP RESOURCES,,, [[Dump all allocated resource]])
 { rdump(&root_pool); cli_msg(0, ""); } ;
 CF_CLI(DUMP SOCKETS,,, [[Dump open sockets]])
 { sk_dump_all(); cli_msg(0, ""); } ;
+CF_CLI(DUMP EVENTS,,, [[Dump event log]])
+{ io_log_dump(); cli_msg(0, ""); } ;
 CF_CLI(DUMP INTERFACES,,, [[Dump interface information]])
 { if_dump_all(); cli_msg(0, ""); } ;
 CF_CLI(DUMP NEIGHBORS,,, [[Dump neighbor cache]])
@@ -636,7 +676,7 @@ CF_CLI(EVAL, term, <expr>, [[Evaluate an expression]])
 { cmd_eval($2); } ;
 
 CF_CLI_HELP(ECHO, ..., [[Control echoing of log messages]])
-CF_CLI(ECHO, echo_mask echo_size, (all | off | { debug | trace | info | remote | warning | error | auth }) [<buffer-size>], [[Control echoing of log messages]]) {
+CF_CLI(ECHO, echo_mask echo_size, (all | off | { debug|trace|info|remote|warning|error|auth [, ...] }) [<buffer-size>], [[Control echoing of log messages]]) {
   cli_set_log_echo(this_cli, $2, $3);
   cli_msg(0, "");
 } ;
@@ -669,11 +709,11 @@ CF_CLI(RELOAD OUT, proto_patt, <protocol> | \"<pattern>\" | all, [[Reload protoc
 { proto_apply_cmd($3, proto_cmd_reload, 1, CMD_RELOAD_OUT); } ;
 
 CF_CLI_HELP(DEBUG, ..., [[Control protocol debugging via BIRD logs]])
-CF_CLI(DEBUG, proto_patt debug_mask, (<protocol> | <pattern> | all) (all | off | { states | routes | filters | interfaces | events | packets }), [[Control protocol debugging via BIRD logs]])
+CF_CLI(DEBUG, proto_patt debug_mask, (<protocol> | \"<pattern>\" | all) (all | off | { states|routes|filters|interfaces|events|packets [, ...] }), [[Control protocol debugging via BIRD logs]])
 { proto_apply_cmd($2, proto_cmd_debug, 1, $3); } ;
 
 CF_CLI_HELP(MRTDUMP, ..., [[Control protocol debugging via MRTdump files]])
-CF_CLI(MRTDUMP, proto_patt mrtdump_mask, (<protocol> | <pattern> | all) (all | off | { states | messages }), [[Control protocol debugging via MRTdump format]])
+CF_CLI(MRTDUMP, proto_patt mrtdump_mask, (<protocol> | \"<pattern>\" | all) (all | off | { states|messages [, ...] }), [[Control protocol debugging via MRTdump format]])
 { proto_apply_cmd($2, proto_cmd_mrtdump, 1, $3); } ;
 
 CF_CLI(RESTRICT,,,[[Restrict current CLI session to safe commands]])

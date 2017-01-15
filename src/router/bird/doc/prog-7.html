@@ -26,12 +26,12 @@ they must be manipulated using the following functions and macros.
 <P><HR><H3>Function</H3>
 <P><I>char *</I>
 <B>ip_scope_text</B>
-(<I>unsigned</I> <B>scope</B>) --     get textual representation of address scope
+(<I>uint</I> <B>scope</B>) --     get textual representation of address scope
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>unsigned</I> <B>scope</B><DD><P>scope (<I>SCOPE_xxx</I>)
+<DT><I>uint</I> <B>scope</B><DD><P>scope (<I>SCOPE_xxx</I>)
 </DL>
 <H3>Description</H3>
 <P>Returns a pointer to a textual name of the scope given.
@@ -145,7 +145,7 @@ of an address prefix of size <B>x</B>.
 
 <HR><H3>Function</H3>
 <P><I>int</I>
-<B>ipa_mklen</B>
+<B>ipa_masklen</B>
 (<I>ip_addr</I> <B>x</B>) --     calculate netmask length
 <P>
 <H3>Arguments</H3>
@@ -221,14 +221,14 @@ for an invalid address.
 
 
 <HR><H3>Function</H3>
-<P><I>ip_addr</I>
-<B>ipa_class_mask</B>
-(<I>ip_addr</I> <B>x</B>) --     guess netmask according to address class
+<P><I>ip4_addr</I>
+<B>ip4_class_mask</B>
+(<I>ip4_addr</I> <B>x</B>) --     guess netmask according to address class
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>ip_addr</I> <B>x</B><DD><P>IP address
+<DT><I>ip4_addr</I> <B>x</B><DD><P>IPv4 address
 </DL>
 <H3>Description</H3>
 <P>This function (available in IPv4 version only) returns a
@@ -288,7 +288,7 @@ if they are the same.
 
 <HR><H3>Function</H3>
 <P><I>ip_addr</I>
-<B>ipa_build</B>
+<B>ipa_build6</B>
 (<I>u32</I> <B>a1</B>, <I>u32</I> <B>a2</B>, <I>u32</I> <B>a3</B>, <I>u32</I> <B>a4</B>) --     build an IPv6 address from parts
 <P>
 <H3>Arguments</H3>
@@ -303,23 +303,6 @@ if they are the same.
 <P><B>ipa_build()</B> takes <B>a1</B> to <B>a4</B> and assembles them to a single IPv6
 address. It's used for example when a protocol wants to bind its
 socket to a hard-wired multicast address.
-
-
-<HR><H3>Function</H3>
-<P><I>ip_addr</I>
-<B>ipa_absolutize</B>
-(<I>ip_addr</I> <B>x</B>, <I>ip_addr</I> <B>y</B>) --     convert link scope IPv6 address to universe scope
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>ip_addr</I> <B>x</B><DD><P>link scope IPv6 address
-<DT><I>ip_addr</I> <B>y</B><DD><P>universe scope IPv6 prefix of the interface
-</DL>
-<H3>Description</H3>
-<P>This function combines a link-scope IPv6 address <B>x</B> with the universe
-scope prefix <B>x</B> of the network assigned to an interface to get a
-universe scope form of <B>x</B>.
 
 
 <HR><H3>Function</H3>
@@ -444,22 +427,7 @@ node <B>after</B>.
 <DT><I>node *</I> <B>n</B><DD><P>node to be removed
 </DL>
 <H3>Description</H3>
-<P>Removes a node <B>n</B> from the list it's linked in.
-
-
-<HR><H3>Function</H3>
-<P><I>LIST_INLINE void</I>
-<B>rem2_node</B>
-(<I>node *</I> <B>n</B>) --     remove a node from a list, with cleanup
-<P>
-<H3>Arguments</H3>
-<P>
-<DL>
-<DT><I>node *</I> <B>n</B><DD><P>node to be removed
-</DL>
-<H3>Description</H3>
-<P>Removes a node <B>n</B> from the list it's linked in and resets its pointers to NULL.
-Useful if you want to distinguish between linked and unlinked nodes.
+<P>Removes a node <B>n</B> from the list it's linked in. Afterwards, node <B>n</B> is cleared.
 
 
 <HR><H3>Function</H3>
@@ -519,13 +487,13 @@ the list <B>to</B> in constant time.
 <P><HR><H3>Function</H3>
 <P><I>int</I>
 <B>ipsum_verify</B>
-(<I>void *</I> <B>frag</B>, <I>unsigned</I> <B>len</B>, <I>...</I> <B>...</B>) --     verify an IP checksum
+(<I>void *</I> <B>frag</B>, <I>uint</I> <B>len</B>, <I>...</I> <B>...</B>) --     verify an IP checksum
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>void *</I> <B>frag</B><DD><P>first packet fragment
-<DT><I>unsigned</I> <B>len</B><DD><P>length in bytes
+<DT><I>uint</I> <B>len</B><DD><P>length in bytes
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
 <H3>Description</H3>
@@ -541,13 +509,13 @@ up checksum calculation as much as possible.
 <HR><H3>Function</H3>
 <P><I>u16</I>
 <B>ipsum_calculate</B>
-(<I>void *</I> <B>frag</B>, <I>unsigned</I> <B>len</B>, <I>...</I> <B>...</B>) --     compute an IP checksum
+(<I>void *</I> <B>frag</B>, <I>uint</I> <B>len</B>, <I>...</I> <B>...</B>) --     compute an IP checksum
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>void *</I> <B>frag</B><DD><P>first packet fragment
-<DT><I>unsigned</I> <B>len</B><DD><P>length in bytes
+<DT><I>uint</I> <B>len</B><DD><P>length in bytes
 <DT><I>...</I> <B>...</B><DD><P>variable arguments
 </DL>
 <H3>Description</H3>
@@ -560,12 +528,12 @@ up checksum calculation as much as possible.
 <HR><H3>Function</H3>
 <P><I>u32</I>
 <B>u32_mkmask</B>
-(<I>unsigned</I> <B>n</B>) --     create a bit mask
+(<I>uint</I> <B>n</B>) --     create a bit mask
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>unsigned</I> <B>n</B><DD><P>number of bits
+<DT><I>uint</I> <B>n</B><DD><P>number of bits
 </DL>
 <H3>Description</H3>
 <P><B>u32_mkmask()</B> returns an unsigned 32-bit integer which binary
@@ -646,6 +614,7 @@ available space to avoid buffer overflows and it allows some more
 width is automatically replaced by standard IP address width which
 depends on whether we use IPv4 or IPv6; <CODE>%#I</CODE> gives hexadecimal format),
 <CODE><I>R</I></CODE> for Router / Network ID (u32 value printed as IPv4 address)
+<CODE><I>lR</I></CODE> for 64bit Router / Network ID (u64 value printed as eight :-separated octets)
 and <CODE><I>m</I></CODE> resp. <CODE><I>M</I></CODE> for error messages (uses <B>strerror()</B> to translate <B>errno</B> code to
 message text). On the other hand, it doesn't support floating
 point numbers.
@@ -711,12 +680,12 @@ sure the buffer won't overflow.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>xmalloc</B>
-(<I>unsigned</I> <B>size</B>) --     malloc with checking
+(<I>uint</I> <B>size</B>) --     malloc with checking
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>unsigned</I> <B>size</B><DD><P>block size
+<DT><I>uint</I> <B>size</B><DD><P>block size
 </DL>
 <H3>Description</H3>
 <P>This function is equivalent to <B>malloc()</B> except that in case of
@@ -728,19 +697,150 @@ a <I>NULL</I> pointer.
 <HR><H3>Function</H3>
 <P><I>void *</I>
 <B>xrealloc</B>
-(<I>void *</I> <B>ptr</B>, <I>unsigned</I> <B>size</B>) --     realloc with checking
+(<I>void *</I> <B>ptr</B>, <I>uint</I> <B>size</B>) --     realloc with checking
 <P>
 <H3>Arguments</H3>
 <P>
 <DL>
 <DT><I>void *</I> <B>ptr</B><DD><P>original memory block
-<DT><I>unsigned</I> <B>size</B><DD><P>block size
+<DT><I>uint</I> <B>size</B><DD><P>block size
 </DL>
 <H3>Description</H3>
 <P>This function is equivalent to <B>realloc()</B> except that in case of
 failure it calls <B>die()</B> to quit the program instead of returning
 a <I>NULL</I> pointer.
 <P>Wherever possible, please use the memory resources instead.
+
+<H2><A NAME="ss7.4">7.4</A> <A HREF="prog.html#toc7.4">Message authentication codes</A>
+</H2>
+
+<P>
+<P>MAC algorithms are simple cryptographic tools for message authentication.
+They use shared a secret key a and message text to generate authentication
+code, which is then passed with the message to the other side, where the code
+is verified. There are multiple families of MAC algorithms based on different
+cryptographic primitives, BIRD implements two MAC families which use hash
+functions.
+<P>The first family is simply a cryptographic hash camouflaged as MAC algorithm.
+Originally supposed to be (m|k)-hash (message is concatenated with key, and
+that is hashed), but later it turned out that a raw hash is more practical.
+This is used for cryptographic authentication in OSPFv2, RIP and BFD.
+<P>The second family is the standard HMAC (RFC 2104), using inner and outer hash
+to process key and message. HMAC (with SHA) is used in advanced OSPF and RIP
+authentication (RFC 5709, RFC 4822).
+<P>
+<P><HR><H3>Function</H3>
+<P><I>void</I>
+<B>mac_init</B>
+(<I>struct mac_context *</I> <B>ctx</B>, <I>uint</I> <B>id</B>, <I>const byte *</I> <B>key</B>, <I>uint</I> <B>keylen</B>) --     initialize MAC algorithm
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct mac_context *</I> <B>ctx</B><DD><P>context to initialize
+<DT><I>uint</I> <B>id</B><DD><P>MAC algorithm ID
+<DT><I>const byte *</I> <B>key</B><DD><P>MAC key
+<DT><I>uint</I> <B>keylen</B><DD><P>MAC key length
+</DL>
+<H3>Description</H3>
+<P>Initialize MAC context <B>ctx</B> for algorithm <B>id</B> (e.g., <I>ALG_HMAC_SHA1</I>), with
+key <B>key</B> of length <B>keylen</B>. After that, message data could be added using
+<B>mac_update()</B> function.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>mac_update</B>
+(<I>struct mac_context *</I> <B>ctx</B>, <I>const byte *</I> <B>data</B>, <I>uint</I> <B>datalen</B>) --     add more data to MAC algorithm
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct mac_context *</I> <B>ctx</B><DD><P>MAC context
+<DT><I>const byte *</I> <B>data</B><DD><P>data to add
+<DT><I>uint</I> <B>datalen</B><DD><P>length of data
+</DL>
+<H3>Description</H3>
+<P>Push another <B>datalen</B> bytes of data pointed to by <B>data</B> into the MAC
+algorithm currently in <B>ctx</B>. Can be called multiple times for the same MAC
+context. It has the same effect as concatenating all the data together and
+passing them at once.
+
+
+<HR><H3>Function</H3>
+<P><I>byte *</I>
+<B>mac_final</B>
+(<I>struct mac_context *</I> <B>ctx</B>) --     finalize MAC algorithm
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct mac_context *</I> <B>ctx</B><DD><P>MAC context
+</DL>
+<H3>Description</H3>
+<P>Finish MAC computation and return a pointer to the result. No more
+<B>mac_update</B>() calls could be done, but the context may be reinitialized
+later.
+<P>Note that the returned pointer points into data in the <B>ctx</B> context. If it
+ceases to exist, the pointer becomes invalid.
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>mac_cleanup</B>
+(<I>struct mac_context *</I> <B>ctx</B>) --     cleanup MAC context
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct mac_context *</I> <B>ctx</B><DD><P>MAC context
+</DL>
+<H3>Description</H3>
+<P>Cleanup MAC context after computation (by filling with zeros). Not strictly
+necessary, just to erase sensitive data from stack. This also invalidates the
+pointer returned by <B>mac_final</B>().
+
+
+<HR><H3>Function</H3>
+<P><I>void</I>
+<B>mac_fill</B>
+(<I>uint</I> <B>id</B>, <I>const byte *</I> <B>key</B>, <I>uint</I> <B>keylen</B>, <I>const byte *</I> <B>data</B>, <I>uint</I> <B>datalen</B>, <I>byte *</I> <B>mac</B>) --     compute and fill MAC
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>uint</I> <B>id</B><DD><P>MAC algorithm ID
+<DT><I>const byte *</I> <B>key</B><DD><P>secret key
+<DT><I>uint</I> <B>keylen</B><DD><P>key length
+<DT><I>const byte *</I> <B>data</B><DD><P>message data
+<DT><I>uint</I> <B>datalen</B><DD><P>message length
+<DT><I>byte *</I> <B>mac</B><DD><P>place to fill MAC
+</DL>
+<H3>Description</H3>
+<P>Compute MAC for specified key <B>key</B> and message <B>data</B> using algorithm <B>id</B> and
+copy it to buffer <B>mac</B>. <B>mac_fill()</B> is a shortcut function doing all usual
+steps for transmitted messages.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>mac_verify</B>
+(<I>uint</I> <B>id</B>, <I>const byte *</I> <B>key</B>, <I>uint</I> <B>keylen</B>, <I>const byte *</I> <B>data</B>, <I>uint</I> <B>datalen</B>, <I>const byte *</I> <B>mac</B>) --     compute and verify MAC
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>uint</I> <B>id</B><DD><P>MAC algorithm ID
+<DT><I>const byte *</I> <B>key</B><DD><P>secret key
+<DT><I>uint</I> <B>keylen</B><DD><P>key length
+<DT><I>const byte *</I> <B>data</B><DD><P>message data
+<DT><I>uint</I> <B>datalen</B><DD><P>message length
+<DT><I>const byte *</I> <B>mac</B><DD><P>received MAC
+</DL>
+<H3>Description</H3>
+<P>Compute MAC for specified key <B>key</B> and message <B>data</B> using algorithm <B>id</B> and
+compare it with received <B>mac</B>, return whether they are the same. <B>mac_verify()</B>
+is a shortcut function doing all usual steps for received messages.
 
 <P>
 <HR>

@@ -100,7 +100,7 @@ of filter system and does all the hard work.
 <P>code (which is instruction code),
 aux (which is extension to instruction code, typically type),
 arg1 and arg2 - arguments. Depending on instruction, arguments
-are either integers, or pointers to instruction trees. Common 
+are either integers, or pointers to instruction trees. Common
 instructions like +, that have two expressions as arguments use
 TWOARGS macro to get both of them evaluated.
 <P><I>f_val</I> structures are copied around, so there are no problems with
@@ -184,7 +184,7 @@ thus both are as fast as they can be.
 <DT><I>struct f_tree *</I> <B>from</B><DD><P>degenerated tree (linked by <B>tree</B>-&gt;left) to be transformed into form suitable for <B>find_tree()</B>
 </DL>
 <H3>Description</H3>
-<P>Transforms denerated tree into balanced tree.
+<P>Transforms degenerated tree into balanced tree.
 
 
 <HR><H3>Function</H3>
@@ -215,7 +215,7 @@ set of prefix patterns. Each prefix pattern consists of
 bits of <I>paddr</I> and <I>ppaddr</I> are the same and <I>low</I> &lt;= <I>plen</I> &lt;= <I>high</I>.
 <P>We use a bitmask (<I>accept</I>) to represent accepted prefix lengths
 at a node. As there are 33 prefix lengths (0..32 for IPv4), but
-there is just one prefix of zero length in the whole trie so we 
+there is just one prefix of zero length in the whole trie so we
 have <I>zero</I> flag in <I>f_trie</I> (indicating whether the trie accepts
 prefix 0.0.0.0/0) as a special case, and <I>accept</I> bitmask
 represents accepted prefix lengths from 1 to 32.
@@ -258,19 +258,18 @@ these cases.
 <P><HR><H3>Function</H3>
 <P><I>struct f_trie *</I>
 <B>f_new_trie</B>
-(<I>linpool *</I> <B>lp</B>)
+(<I>linpool *</I> <B>lp</B>, <I>uint</I> <B>node_size</B>) --     allocates and returns a new empty trie
+<P>
 <H3>Arguments</H3>
 <P>
 <DL>
-<DT><I>linpool *</I> <B>lp</B><DD><P>-- undescribed --
+<DT><I>linpool *</I> <B>lp</B><DD><P>linear pool to allocate items from
+<DT><I>uint</I> <B>node_size</B><DD><P>node size to be used (<I>f_trie_node</I> and user data)
 </DL>
-<H3>Trie for prefix sets</H3>
-<P>
-<P>Allocates and returns a new empty trie.
 
 
 <HR><H3>Function</H3>
-<P><I>void</I>
+<P><I>void *</I>
 <B>trie_add_prefix</B>
 (<I>struct f_trie *</I> <B>t</B>, <I>ip_addr</I> <B>px</B>, <I>int</I> <B>plen</B>, <I>int</I> <B>l</B>, <I>int</I> <B>h</B>)
 <H3>Arguments</H3>
@@ -279,13 +278,16 @@ these cases.
 <DT><I>struct f_trie *</I> <B>t</B><DD><P>trie to add to
 <DT><I>ip_addr</I> <B>px</B><DD><P>prefix address
 <DT><I>int</I> <B>plen</B><DD><P>prefix length
-<DT><I>int</I> <B>l</B><DD><P>prefix lower bound 
+<DT><I>int</I> <B>l</B><DD><P>prefix lower bound
 <DT><I>int</I> <B>h</B><DD><P>prefix upper bound
 </DL>
 <H3>Description</H3>
 <P>Adds prefix (prefix pattern) <B>px</B>/<B>plen</B> to trie <B>t</B>.  <B>l</B> and <B>h</B> are lower
 and upper bounds on accepted prefix lengths, both inclusive.
 0 &lt;= l, h &lt;= 32 (128 for IPv6).
+<P>Returns a pointer to the allocated node. The function can return a pointer to
+an existing node if <B>px</B> and <B>plen</B> are the same. If px/plen == 0/0 (or ::/0),
+a pointer to the root node is returned.
 
 
 <HR><H3>Function</H3>

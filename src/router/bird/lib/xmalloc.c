@@ -24,7 +24,7 @@
  * Wherever possible, please use the memory resources instead.
  */
 void *
-xmalloc(unsigned size)
+xmalloc(uint size)
 {
   void *p = malloc(size);
   if (p)
@@ -44,7 +44,7 @@ xmalloc(unsigned size)
  * Wherever possible, please use the memory resources instead.
  */
 void *
-xrealloc(void *ptr, unsigned size)
+xrealloc(void *ptr, uint size)
 {
   void *p = realloc(ptr, size);
   if (p)

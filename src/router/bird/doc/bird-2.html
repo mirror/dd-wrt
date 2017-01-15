@@ -12,7 +12,7 @@
 <A HREF="bird-1.html">Previous</A>
 <A HREF="bird.html#toc2">Contents</A>
 <HR>
-<H2><A NAME="s2">2.</A> <A HREF="bird.html#toc2">About routing tables</A></H2>
+<H2><A NAME="routing-tables"></A> <A NAME="s2">2.</A> <A HREF="bird.html#toc2">About routing tables</A></H2>
 
 <P>BIRD has one or more routing tables which may or may not be synchronized with
 OS kernel and which may or may not be synchronized with each other (see the Pipe
@@ -50,7 +50,7 @@ selected routes, some protocols (e.g. the <CODE>Pipe</CODE> protocol) receive an
 process all entries in routing tables (accepted by filters).
 <P>
 <P>
-<A NAME="dsc-sorted"></A> Usually, a routing table just chooses a selected route
+<A NAME="dsc-table-sorted"></A> Usually, a routing table just chooses a selected route
 from a list of entries for one network. But if the <CODE>sorted</CODE> option is
 activated, these lists of entries are kept completely sorted (according to
 preference or some protocol-dependent metric). This is needed for some features
@@ -63,7 +63,7 @@ advantage is that routes are shown sorted in <CODE>show route</CODE>, minor disa
 is that it is slightly more computationally expensive.
 <P>
 <P>
-<H2><A NAME="ss2.1">2.1</A> <A HREF="bird.html#toc2.1">Graceful restart</A>
+<H2><A NAME="graceful-restart"></A> <A NAME="ss2.1">2.1</A> <A HREF="bird.html#toc2.1">Graceful restart</A>
 </H2>
 
 <P>When BIRD is started after restart or crash, it repopulates routing tables in

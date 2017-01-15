@@ -30,4 +30,11 @@ void ev_schedule(event *);
 void ev_postpone(event *);
 int ev_run_list(event_list *);
 
+static inline int
+ev_active(event *e)
+{
+  return e->n.next != NULL;
+}
+
+
 #endif

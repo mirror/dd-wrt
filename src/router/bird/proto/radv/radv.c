@@ -207,7 +207,7 @@ radv_iface_remove(struct radv_iface *ifa)
 
 static void
 radv_if_notify(struct proto *p, unsigned flags, struct iface *iface)
-{ 
+{
   struct proto_radv *ra = (struct proto_radv *) p;
   struct radv_config *cf = (struct radv_config *) (p->cf);
 
@@ -240,7 +240,7 @@ radv_if_notify(struct proto *p, unsigned flags, struct iface *iface)
 }
 
 static void
-radv_ifa_notify(struct proto *p, unsigned flags, struct ifa *a)
+radv_ifa_notify(struct proto *p, unsigned flags UNUSED, struct ifa *a)
 {
   struct proto_radv *ra = (struct proto_radv *) p;
 
@@ -361,7 +361,7 @@ radv_reconfigure(struct proto *p, struct proto_config *c)
   // struct radv_config *old = (struct radv_config *) (p->cf);
   struct radv_config *new = (struct radv_config *) c;
 
-  /* 
+  /*
    * The question is why there is a reconfigure function for RAdv if
    * it has almost none internal state so restarting the protocol
    * would probably suffice. One small reason is that restarting the
@@ -426,6 +426,7 @@ radv_get_status(struct proto *p, byte *buf)
 struct protocol proto_radv = {
   .name =		"RAdv",
   .template =		"radv%d",
+  .config_size =	sizeof(struct radv_config),
   .init =		radv_init,
   .start =		radv_start,
   .shutdown =		radv_shutdown,

@@ -20,19 +20,19 @@
  *
  * There can exist up to four different configurations at one time: an active
  * one (pointed to by @config), configuration we are just switching from
- * (@old_config), one queued for the next reconfiguration (@future_config;
- * if there is one and the user wants to reconfigure once again, we just
- * free the previous queued config and replace it with the new one) and
- * finally a config being parsed (@new_config). The stored @old_config 
- * is also used for undo reconfiguration, which works in a similar way.
- * Reconfiguration could also have timeout (using @config_timer) and undo
- * is automatically called if the new configuration is not confirmed later.
+ * (@old_config), one queued for the next reconfiguration (@future_config; if
+ * there is one and the user wants to reconfigure once again, we just free the
+ * previous queued config and replace it with the new one) and finally a config
+ * being parsed (@new_config). The stored @old_config is also used for undo
+ * reconfiguration, which works in a similar way. Reconfiguration could also
+ * have timeout (using @config_timer) and undo is automatically called if the
+ * new configuration is not confirmed later. The new config (@new_config) and
+ * associated linear pool (@cfg_mem) is non-NULL only during parsing.
  *
- * Loading of new configuration is very simple: just call config_alloc()
- * to get a new &config structure, then use config_parse() to parse a
- * configuration file and fill all fields of the structure
- * and finally ask the config manager to switch to the new
- * config by calling config_commit().
+ * Loading of new configuration is very simple: just call config_alloc() to get
+ * a new &config structure, then use config_parse() to parse a configuration
+ * file and fill all fields of the structure and finally ask the config manager
+ * to switch to the new config by calling config_commit().
  *
  * CLI commands are parsed in a very similar way -- there is also a stripped-down
  * &config structure associated with them and they are lex-ed and parsed by the
@@ -85,16 +85,21 @@ int undo_available;			/* Undo was not requested from last reconfiguration */
  * further use. Returns a pointer to the structure.
  */
 struct config *
-config_alloc(byte *name)
+config_alloc(const byte *name)
 {
   pool *p = rp_new(&root_pool, "Config");
   linpool *l = lp_new(p, 4080);
   struct config *c = lp_allocz(l, sizeof(struct config));
 
+  /* Duplication of name string in local linear pool */
+  uint nlen = strlen(name) + 1;
+  char *ndup = lp_allocu(l, nlen);
+  memcpy(ndup, name, nlen);
+
   c->mrtdump_file = -1; /* Hack, this should be sysdep-specific */
   c->pool = p;
-  cfg_mem = c->mem = l;
-  c->file_name = cfg_strdup(name);
+  c->mem = l;
+  c->file_name = ndup;
   c->load_time = now;
   c->tf_route = c->tf_proto = (struct timeformat){"%T", "%F", 20*3600};
   c->tf_base = c->tf_log = (struct timeformat){"%F %T", NULL, 0};
@@ -119,11 +124,13 @@ config_alloc(byte *name)
 int
 config_parse(struct config *c)
 {
+  int done = 0;
   DBG("Parsing configuration file `%s'\n", c->file_name);
   new_config = c;
   cfg_mem = c->mem;
   if (setjmp(conf_jmpbuf))
-    return 0;
+    goto cleanup;
+
   cf_lex_init(0, c);
   sysdep_preconfig(c);
   protos_preconfig(c);
@@ -137,7 +144,12 @@ config_parse(struct config *c)
   if (!c->router_id)
     cf_error("Router ID must be configured manually on IPv6 routers");
 #endif
-  return 1;
+  done = 1;
+
+cleanup:
+  new_config = NULL;
+  cfg_mem = NULL;
+  return done;
 }
 
 /**
@@ -150,14 +162,22 @@ config_parse(struct config *c)
 int
 cli_parse(struct config *c)
 {
-  new_config = c;
+  int done = 0;
   c->sym_fallback = config->sym_hash;
+  new_config = c;
   cfg_mem = c->mem;
   if (setjmp(conf_jmpbuf))
-    return 0;
+    goto cleanup;
+
   cf_lex_init(1, c);
   cf_parse();
-  return 1;
+  done = 1;
+
+cleanup:
+  c->sym_fallback = NULL;
+  new_config = NULL;
+  cfg_mem = NULL;
+  return done;
 }
 
 /**
@@ -237,10 +257,6 @@ config_do_commit(struct config *c, int type)
   if (old_config && !config->shutdown)
     log(L_INFO "Reconfiguring");
 
-  /* This should not be necessary, but it seems there are some
-     functions that access new_config instead of config */
-  new_config = config;
-
   if (old_config)
     old_config->obstacle_count++;
 
@@ -253,9 +269,6 @@ config_do_commit(struct config *c, int type)
   roa_commit(c, old_config);
   DBG("protos_commit\n");
   protos_commit(c, old_config, force_restart, type);
-
-  /* Just to be sure nobody uses that now */
-  new_config = NULL;
 
   int obs = 0;
   if (old_config)
@@ -392,7 +405,7 @@ config_confirm(void)
  * if it's been queued due to another reconfiguration being in progress now,
  * %CONF_UNQUEUED if a scheduled reconfiguration is removed, %CONF_NOTHING
  * if there is no relevant configuration to undo (the previous config request
- * was config_undo() too)  or %CONF_SHUTDOWN if BIRD is in shutdown mode and 
+ * was config_undo() too)  or %CONF_SHUTDOWN if BIRD is in shutdown mode and
  * no new configuration changes  are accepted.
  */
 int
@@ -437,7 +450,7 @@ config_undo(void)
 extern void cmd_reconfig_undo_notify(void);
 
 static void
-config_timeout(struct timer *t)
+config_timeout(struct timer *t UNUSED)
 {
   log(L_INFO "Config timeout expired, starting undo");
   cmd_reconfig_undo_notify();
@@ -499,6 +512,7 @@ cf_error(char *msg, ...)
   va_start(args, msg);
   if (bvsnprintf(buf, sizeof(buf), msg, args) < 0)
     strcpy(buf, "<bug: error message too long>");
+  va_end(args);
   new_config->err_msg = cfg_strdup(buf);
   new_config->err_lino = ifs->lino;
   new_config->err_file_name = ifs->file_name;
@@ -516,7 +530,7 @@ cf_error(char *msg, ...)
  * and we want to preserve it for further use.
  */
 char *
-cfg_strdup(char *c)
+cfg_strdup(const char *c)
 {
   int l = strlen(c) + 1;
   char *z = cfg_allocu(l);

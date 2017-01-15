@@ -12,13 +12,13 @@
 <A HREF="bird-2.html">Previous</A>
 <A HREF="bird.html#toc3">Contents</A>
 <HR>
-<H2><A NAME="s3">3.</A> <A HREF="bird.html#toc3">Configuration</A></H2>
+<H2><A NAME="config"></A> <A NAME="s3">3.</A> <A HREF="bird.html#toc3">Configuration</A></H2>
 
-<H2><A NAME="ss3.1">3.1</A> <A HREF="bird.html#toc3.1">Introduction</A>
+<H2><A NAME="config-intro"></A> <A NAME="ss3.1">3.1</A> <A HREF="bird.html#toc3.1">Introduction</A>
 </H2>
 
 <P>BIRD is configured using a text configuration file. Upon startup, BIRD reads
-<I>prefix</I>/etc/bird.conf (unless the <CODE>-c</CODE> command line option
+<I>prefix</I><CODE>/etc/bird.conf</CODE> (unless the <CODE>-c</CODE> command line option
 is given). Configuration may be changed at user's request: if you modify the
 config file and then signal BIRD with <CODE>SIGHUP</CODE>, it will adjust to the new
 config. Then there's the client which allows you to talk with BIRD in an
@@ -28,7 +28,7 @@ extensive way.
 a comment, whitespace characters are treated as a single space. If there's a
 variable number of options, they are grouped using the <CODE>{ }</CODE> brackets. Each
 option is terminated by a <CODE>;</CODE>. Configuration is case sensitive. There are two
-ways how to name symbols (like protocol names, filter names, constats etc.). You
+ways how to name symbols (like protocol names, filter names, constants etc.). You
 can either use a simple string starting with a letter followed by any
 combination of letters and numbers (e.g. "R123", "myfilter", "bgp5") or you can
 enclose the name into apostrophes (<CODE>'</CODE>) and than you can use any combination
@@ -60,48 +60,74 @@ protocol rip {
 <HR>
 <P>
 <P>
-<H2><A NAME="ss3.2">3.2</A> <A HREF="bird.html#toc3.2">Global options</A>
+<H2><A NAME="global-opts"></A> <A NAME="ss3.2">3.2</A> <A HREF="bird.html#toc3.2">Global options</A>
 </H2>
 
 <P>
 <DL>
-<DT><CODE>include "<I>filename</I>"</CODE><DD><P>This statement causes inclusion of a new file. <I>Filename</I> could also
-be a wildcard. The maximal depth is 8. Note that this statement could be
-used anywhere in the config file, not just as a top-level option.
+<DT><CODE>
+<A NAME="opt-include"></A> include "<I>filename</I>"</CODE><DD><P>This statement causes inclusion of a new file. <I>Filename</I> could also
+be a wildcard, in that case matching files are included in alphabetic
+order. The maximal depth is 8. Note that this statement could be used
+anywhere in the config file, not just as a top-level option.
 <P>
 <DT><CODE>
-<A NAME="dsc-log"></A> log "<I>filename</I>"|syslog [name <I>name</I>]|stderr all|{ <I>list of classes</I> }</CODE><DD><P>Set logging of messages having the given class (either <CODE>all</CODE> or
-<CODE>{ error, trace }</CODE> etc.) into selected destination (a file specified
+<A NAME="opt-log"></A> log "<I>filename</I>"|syslog [name <I>name</I>]|stderr all|{ <I>list of classes</I> }</CODE><DD><P>Set logging of messages having the given class (either <CODE>all</CODE> or
+<CODE>{ error|trace [, <I>...</I>] }</CODE> etc.) into selected destination (a file specified
 as a filename string, syslog with optional name argument, or the stderr
 output). Classes are:
 <CODE>info</CODE>, <CODE>warning</CODE>, <CODE>error</CODE> and <CODE>fatal</CODE> for messages about local problems,
-<CODE>debug</CODE> for debugging messages, 
-<CODE>trace</CODE> when you want to know what happens in the network, 
-<CODE>remote</CODE> for messages about misbehavior of remote machines, 
+<CODE>debug</CODE> for debugging messages,
+<CODE>trace</CODE> when you want to know what happens in the network,
+<CODE>remote</CODE> for messages about misbehavior of remote machines,
 <CODE>auth</CODE> about authentication failures,
 <CODE>bug</CODE> for internal BIRD bugs.
 You may specify more than one <CODE>log</CODE> line to establish logging to
 multiple destinations. Default: log everything to the system log.
 <P>
-<DT><CODE>debug protocols all|off|{ states, routes, filters, interfaces, events, packets }</CODE><DD><P>Set global defaults of protocol debugging options. See <CODE>debug</CODE> in the
+<DT><CODE>
+<A NAME="opt-debug-protocols"></A> debug protocols all|off|{ states|routes|filters|interfaces|events|packets [, <I>...</I>] }</CODE><DD><P>Set global defaults of protocol debugging options. See <CODE>debug</CODE> in the
 following section. Default: off.
 <P>
-<DT><CODE>debug commands <I>number</I></CODE><DD><P>Control logging of client connections (0 for no logging, 1 for logging
+<DT><CODE>
+<A NAME="opt-debug-commands"></A> debug commands <I>number</I></CODE><DD><P>Control logging of client connections (0 for no logging, 1 for logging
 of connects and disconnects, 2 and higher for logging of all client
 commands). Default: 0.
 <P>
-<DT><CODE>mrtdump "<I>filename</I>"</CODE><DD><P>Set MRTdump file name. This option must be specified to allow MRTdump
+<DT><CODE>
+<A NAME="opt-debug-latency"></A> debug latency <I>switch</I></CODE><DD><P>Activate tracking of elapsed time for internal events. Recent events
+could be examined using <CODE>dump events</CODE> command. Default: off.
+<P>
+<DT><CODE>
+<A NAME="opt-debug-latency-limit"></A> debug latency limit <I>time</I></CODE><DD><P>If <CODE>debug latency</CODE> is enabled, this option allows to specify a limit
+for elapsed time. Events exceeding the limit are logged. Default: 1 s.
+<P>
+<DT><CODE>
+<A NAME="opt-watchdog-warn"></A> watchdog warning <I>time</I></CODE><DD><P>Set time limit for I/O loop cycle. If one iteration took more time to
+complete, a warning is logged. Default: 5 s.
+<P>
+<DT><CODE>
+<A NAME="opt-watchdog-timeout"></A> watchdog timeout <I>time</I></CODE><DD><P>Set time limit for I/O loop cycle. If the limit is breached, BIRD is
+killed by abort signal. The timeout has effective granularity of
+seconds, zero means disabled. Default: disabled (0).
+<P>
+<DT><CODE>
+<A NAME="opt-mrtdump"></A> mrtdump "<I>filename</I>"</CODE><DD><P>Set MRTdump file name. This option must be specified to allow MRTdump
 feature. Default: no dump file.
 <P>
-<DT><CODE>mrtdump protocols all|off|{ states, messages }</CODE><DD><P>Set global defaults of MRTdump options. See <CODE>mrtdump</CODE> in the
+<DT><CODE>
+<A NAME="opt-mrtdump-protocols"></A> mrtdump protocols all|off|{ states|messages [, <I>...</I>] }</CODE><DD><P>Set global defaults of MRTdump options. See <CODE>mrtdump</CODE> in the
 following section. Default: off.
 <P>
-<DT><CODE>filter <I>name local variables</I>{ <I>commands</I> }</CODE><DD><P>Define a filter. You can learn more about filters in the following
+<DT><CODE>
+<A NAME="opt-filter"></A> filter <I>name local variables</I>{ <I>commands</I> }</CODE><DD><P>Define a filter. You can learn more about filters in the following
 chapter.
 <P>
-<DT><CODE>function <I>name</I> (<I>parameters</I>) <I>local variables</I> { <I>commands</I> }</CODE><DD><P>Define a function. You can learn more about functions in the following chapter.
+<DT><CODE>
+<A NAME="opt-function"></A> function <I>name</I> (<I>parameters</I>) <I>local variables</I> { <I>commands</I> }</CODE><DD><P>Define a function. You can learn more about functions in the following chapter.
 <P>
-<DT><CODE>protocol rip|ospf|bgp|... [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol instance called <CODE><I>name</I></CODE> (or with a name like
+<DT><CODE>
+<A NAME="opt-protocol"></A> protocol rip|ospf|bgp|<I>...</I> [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol instance called <CODE><I>name</I></CODE> (or with a name like
 "rip5" generated automatically if you don't specify any
 <CODE><I>name</I></CODE>). You can learn more about configuring protocols in
 their own chapters. When <CODE>from <I>name2</I></CODE> expression is used,
@@ -109,7 +135,8 @@ initial protocol options are taken from protocol or template
 <CODE><I>name2</I></CODE> You can run more than one instance of most protocols
 (like RIP or BGP). By default, no instances are configured.
 <P>
-<DT><CODE>template rip|bgp|... [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol template instance called <I>name</I> (or with a name like
+<DT><CODE>
+<A NAME="opt-template"></A> template rip|bgp|<I>...</I> [<I>name</I> [from <I>name2</I>]] { <I>protocol options</I> }</CODE><DD><P>Define a protocol template instance called <I>name</I> (or with a name like
 "bgp1" generated automatically if you don't specify any <I>name</I>).
 Protocol templates can be used to group common options when many
 similarly configured protocol instances are to be defined. Protocol
@@ -117,23 +144,27 @@ instances (and other templates) can use templates by using <CODE>from</CODE>
 expression and the name of the template. At the moment templates (and
 <CODE>from</CODE> expression) are not implemented for OSPF protocol.
 <P>
-<DT><CODE>define <I>constant</I> = <I>expression</I></CODE><DD><P>Define a constant. You can use it later in every place you could use a
+<DT><CODE>
+<A NAME="opt-define"></A> define <I>constant</I> = <I>expression</I></CODE><DD><P>Define a constant. You can use it later in every place you could use a
 value of the same type. Besides, there are some predefined numeric
 constants based on /etc/iproute2/rt_* files. A list of defined constants
 can be seen (together with other symbols) using 'show symbols' command.
 <P>
-<DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your
+<DT><CODE>
+<A NAME="opt-router-id"></A> router id <I>IPv4 address</I></CODE><DD><P>Set BIRD's router ID. It's a world-wide unique identification of your
 router, usually one of router's IPv4 addresses. Default: in IPv4
 version, the lowest IP address of a non-loopback interface. In IPv6
 version, this option is mandatory.
 <P>
-<DT><CODE>router id from [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, ...]</CODE><DD><P>Set BIRD's router ID based on an IP address of an interface specified by
+<DT><CODE>
+<A NAME="opt-router-id-from"></A> router id from [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, <I>...</I>]</CODE><DD><P>Set BIRD's router ID based on an IP address of an interface specified by
 an interface pattern. The option is applicable for IPv4 version only.
 See 
-<A HREF="#dsc-iface">interface</A> section for detailed
+<A HREF="#proto-iface">interface</A> section for detailed
 description of interface patterns with extended clauses.
 <P>
-<DT><CODE>listen bgp [address <I>address</I>] [port <I>port</I>] [dual]</CODE><DD><P>This option allows to specify address and port where BGP protocol should
+<DT><CODE>
+<A NAME="opt-listen-bgp"></A> listen bgp [address <I>address</I>] [port <I>port</I>] [dual]</CODE><DD><P>This option allows to specify address and port where BGP protocol should
 listen. It is global option as listening socket is common to all BGP
 instances. Default is to listen on all addresses (0.0.0.0) and port 179.
 In IPv6 mode, option <CODE>dual</CODE> can be used to specify that BGP socket
@@ -141,12 +172,14 @@ should accept both IPv4 and IPv6 connections (but even in that case,
 BIRD would accept IPv6 routes only). Such behavior was default in older
 versions of BIRD.
 <P>
-<DT><CODE>graceful restart wait <I>number</I></CODE><DD><P>During graceful restart recovery, BIRD waits for convergence of routing
+<DT><CODE>
+<A NAME="opt-graceful-restart"></A> graceful restart wait <I>number</I></CODE><DD><P>During graceful restart recovery, BIRD waits for convergence of routing
 protocols. This option allows to specify a timeout for the recovery to
 prevent waiting indefinitely if some protocols cannot converge. Default:
 240 seconds.
 <P>
-<DT><CODE>timeformat route|protocol|base|log "<I>format1</I>" [<I>limit</I> "<I>format2</I>"]</CODE><DD><P>This option allows to specify a format of date/time used by BIRD. The
+<DT><CODE>
+<A NAME="opt-timeformat"></A> timeformat route|protocol|base|log "<I>format1</I>" [<I>limit</I> "<I>format2</I>"]</CODE><DD><P>This option allows to specify a format of date/time used by BIRD. The
 first argument specifies for which purpose such format is used.
 <CODE>route</CODE> is a format used in 'show route' command output,
 <CODE>protocol</CODE> is used in 'show protocols' command output, <CODE>base</CODE> is
@@ -168,28 +201,30 @@ and <CODE>protocol</CODE> times, and a <CODE>iso long</CODE> similar format (DD-
 hh:mm:ss) for <CODE>base</CODE> and <CODE>log</CODE>. These timeformats could be set by
 <CODE>old short</CODE> and <CODE>old long</CODE> compatibility shorthands.
 <P>
-<DT><CODE>table <I>name</I> [sorted]</CODE><DD><P>Create a new routing table. The default routing table is created
+<DT><CODE>
+<A NAME="opt-table"></A> table <I>name</I> [sorted]</CODE><DD><P>Create a new routing table. The default routing table is created
 implicitly, other routing tables have to be added by this command.
 Option <CODE>sorted</CODE> can be used to enable sorting of routes, see
-<A HREF="bird-2.html#dsc-sorted">sorted table</A> description for details.
+<A HREF="bird-2.html#dsc-table-sorted">sorted table</A> description for details.
 <P>
-<DT><CODE>roa table <I>name</I> [ { roa table options ... } ]</CODE><DD><P>Create a new ROA (Route Origin Authorization) table. ROA tables can be
+<DT><CODE>
+<A NAME="opt-roa-table"></A> roa table <I>name</I> [ { <I>roa table options ...</I> } ]</CODE><DD><P>Create a new ROA (Route Origin Authorization) table. ROA tables can be
 used to validate route origination of BGP routes. A ROA table contains
 ROA entries, each consist of a network prefix, a max prefix length and
 an AS number. A ROA entry specifies prefixes which could be originated
-by that AS number. ROA tables could be filled with data from RPKI (RFC
-6480) or from public databases like Whois. ROA tables are examined by
-<CODE>roa_check()</CODE> operator in filters.
+by that AS number. ROA tables could be filled with data from RPKI (<A HREF="http://www.rfc-editor.org/info/rfc6480">RFC 6480</A>) or from public databases like Whois. ROA tables are
+examined by <CODE>roa_check()</CODE> operator in filters.
 <P>Currently, there is just one option, <CODE>roa <I>prefix</I> max <I>num</I> as
 <I>num</I></CODE>, which can be used to populate the ROA table with static
 ROA entries. The option may be used multiple times. Other entries can be
 added dynamically by <CODE>add roa</CODE> command.
 <P>
-<DT><CODE>eval <I>expr</I></CODE><DD><P>Evaluates given filter expression. It is used by us for testing of filters.
+<DT><CODE>
+<A NAME="opt-eval"></A> eval <I>expr</I></CODE><DD><P>Evaluates given filter expression. It is used by us for   testing of filters.
 </DL>
 <P>
 <P>
-<H2><A NAME="ss3.3">3.3</A> <A HREF="bird.html#toc3.3">Protocol options</A>
+<H2><A NAME="protocol-opts"></A> <A NAME="ss3.3">3.3</A> <A HREF="bird.html#toc3.3">Protocol options</A>
 </H2>
 
 <P>For each protocol instance, you can configure a bunch of options. Some of
@@ -203,14 +238,17 @@ disable it. An empty <I>switch</I> is equivalent to <CODE>on</CODE> ("silence me
 agreement").
 <P>
 <DL>
-<DT><CODE>preference <I>expr</I></CODE><DD><P>Sets the preference of routes generated by this protocol. Default:
+<DT><CODE>
+<A NAME="proto-preference"></A> preference <I>expr</I></CODE><DD><P>Sets the preference of routes generated by this protocol. Default:
 protocol dependent.
 <P>
-<DT><CODE>disabled <I>switch</I></CODE><DD><P>Disables the protocol. You can change the disable/enable status from the
+<DT><CODE>
+<A NAME="proto-disabled"></A> disabled <I>switch</I></CODE><DD><P>Disables the protocol. You can change the disable/enable status from the
 command line interface without needing to touch the configuration.
 Disabled protocols are not activated. Default: protocol is enabled.
 <P>
-<DT><CODE>debug all|off|{ states, routes, filters, interfaces, events, packets }</CODE><DD><P>Set protocol debugging options. If asked, each protocol is capable of
+<DT><CODE>
+<A NAME="proto-debug"></A> debug all|off|{ states|routes|filters|interfaces|events|packets [, <I>...</I>] }</CODE><DD><P>Set protocol debugging options. If asked, each protocol is capable of
 writing trace messages about its work to the log (with category
 <CODE>trace</CODE>). You can either request printing of <CODE>all</CODE> trace messages
 or only of the types selected: <CODE>states</CODE> for protocol state changes
@@ -220,7 +258,8 @@ route filtering, <CODE>interfaces</CODE> for interface change events sent to the
 protocol, <CODE>events</CODE> for events internal to the protocol and <CODE>packets</CODE>
 for packets sent and received by the protocol. Default: off.
 <P>
-<DT><CODE>mrtdump all|off|{ states, messages }</CODE><DD><P>Set protocol MRTdump flags. MRTdump is a standard binary format for
+<DT><CODE>
+<A NAME="proto-mrtdump"></A> mrtdump all|off|{ states|messages [, <I>...</I>] }</CODE><DD><P>Set protocol MRTdump flags. MRTdump is a standard binary format for
 logging information from routing protocols and daemons. These flags
 control what kind of information is logged from the protocol to the
 MRTdump file (which must be specified by global <CODE>mrtdump</CODE> option, see
@@ -229,24 +268,28 @@ the previous section). Although these flags are similar to flags of
 BGP protocol, <CODE>states</CODE> logs BGP state changes and <CODE>messages</CODE> logs
 received BGP messages. Other protocols does not support MRTdump yet.
 <P>
-<DT><CODE>router id <I>IPv4 address</I></CODE><DD><P>This option can be used to override global router id for a given
+<DT><CODE>
+<A NAME="proto-router-id"></A> router id <I>IPv4 address</I></CODE><DD><P>This option can be used to override global router id for a given
 protocol. Default: uses global router id.
 <P>
-<DT><CODE>import all | none | filter <I>name</I> | filter { <I>filter commands</I> } | where <I>filter expression</I></CODE><DD><P>Specify a filter to be used for filtering routes coming from the
+<DT><CODE>
+<A NAME="proto-import"></A> import all | none | filter <I>name</I> | filter { <I>filter commands</I> } | where <I>filter expression</I></CODE><DD><P>Specify a filter to be used for filtering routes coming from the
 protocol to the routing table. <CODE>all</CODE> is shorthand for <CODE>where true</CODE>
 and <CODE>none</CODE> is shorthand for <CODE>where false</CODE>. Default: <CODE>all</CODE>.
 <P>
-<DT><CODE>export <I>filter</I></CODE><DD><P>This is similar to the <CODE>import</CODE> keyword, except that it works in
+<DT><CODE>
+<A NAME="proto-export"></A> export <I>filter</I></CODE><DD><P>This is similar to the <CODE>import</CODE> keyword, except that it works in
 the direction from the routing table to the protocol. Default: <CODE>none</CODE>.
 <P>
-<DT><CODE>import keep filtered <I>switch</I></CODE><DD><P>Usually, if an import filter rejects a route, the route is forgotten.
+<DT><CODE>
+<A NAME="proto-import-keep-filtered"></A> import keep filtered <I>switch</I></CODE><DD><P>Usually, if an import filter rejects a route, the route is forgotten.
 When this option is active, these routes are kept in the routing table,
 but they are hidden and not propagated to other protocols. But it is
 possible to show them using <CODE>show route filtered</CODE>. Note that this
 option does not work for the pipe protocol. Default: off.
 <P>
 <DT><CODE>
-<A NAME="import-limit"></A> import limit [<I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an import route limit (a maximum number of routes imported from
+<A NAME="proto-import-limit"></A> import limit [<I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an import route limit (a maximum number of routes imported from
 the protocol) and optionally the action to be taken when the limit is
 hit. Warn action just prints warning log message. Block action discards
 new routes coming from the protocol. Restart and disable actions shut
@@ -254,7 +297,8 @@ the protocol down like appropriate commands. Disable is the default
 action if an action is not explicitly specified. Note that limits are
 reset during protocol reconfigure, reload or restart. Default: <CODE>off</CODE>.
 <P>
-<DT><CODE>receive limit [<I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an receive route limit (a maximum number of routes received from
+<DT><CODE>
+<A NAME="proto-receive-limit"></A> receive limit [<I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an receive route limit (a maximum number of routes received from
 the protocol and remembered). It works almost identically to <CODE>import
 limit</CODE> option, the only difference is that if <CODE>import keep
 filtered</CODE> option is active, filtered routes are counted towards the
@@ -263,7 +307,8 @@ receive limit is to protect routing tables from overflow. Import limit,
 on the contrary, counts accepted routes only and routes blocked by the
 limit are handled like filtered routes. Default: <CODE>off</CODE>.
 <P>
-<DT><CODE>export limit [ <I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an export route limit, works similarly to the <CODE>import
+<DT><CODE>
+<A NAME="proto-export-limit"></A> export limit [ <I>number</I> | off ] [action warn | block | restart | disable]</CODE><DD><P>Specify an export route limit, works similarly to the <CODE>import
 limit</CODE> option, but for the routes exported to the protocol. This
 option is experimental, there are some problems in details of its
 behavior -- the number of exported routes can temporarily exceed the
@@ -272,17 +317,19 @@ counter ignores route blocking and block action also blocks route
 updates of already accepted routes -- and these details will probably
 change in the future. Default: <CODE>off</CODE>.
 <P>
-<DT><CODE>description "<I>text</I>"</CODE><DD><P>This is an optional description of the protocol. It is displayed as a
+<DT><CODE>
+<A NAME="proto-description"></A> description "<I>text</I>"</CODE><DD><P>This is an optional description of the protocol. It is displayed as a
 part of the output of 'show route all' command.
 <P>
-<DT><CODE>table <I>name</I></CODE><DD><P>Connect this protocol to a non-default routing table.
+<DT><CODE>
+<A NAME="proto-table"></A> table <I>name</I></CODE><DD><P>Connect this protocol to a non-default routing table.
 </DL>
 <P>
 <P>There are several options that give sense only with certain protocols:
 <P>
 <DL>
 <DT><CODE>
-<A NAME="dsc-iface"></A> interface [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, ...] [ { <I>option</I> ; [...] } ]</CODE><DD><P>Specifies a set of interfaces on which the protocol is activated with
+<A NAME="proto-iface"></A> interface [-] [ "<I>mask</I>" ] [ <I>prefix</I> ] [, <I>...</I>] [ { <I>option</I>; [<I>...</I>] } ]</CODE><DD><P>Specifies a set of interfaces on which the protocol is activated with
 given interface-specific options. A set of interfaces specified by one
 interface option is described using an interface pattern. The interface
 pattern consists of a sequence of clauses (separated by commas), each
@@ -300,8 +347,8 @@ protocol handles multiple addresses on an interface independently.
 <P>An interface option can be used more times with different interface-specific
 options, in that case for given interface the first matching interface
 option is used.
-<P>This option is allowed in BFD, Direct, OSPF, RAdv and RIP protocols, but
-in OSPF protocol it is used in the <CODE>area</CODE> subsection.
+<P>This option is allowed in Babel, BFD, Direct, OSPF, RAdv and RIP
+protocols, but in OSPF protocol it is used in the <CODE>area</CODE> subsection.
 <P>Default: none.
 <P>Examples:
 <P><CODE>interface "*" { type broadcast; };</CODE> - start the protocol on all
@@ -318,7 +365,7 @@ on all interfaces that have address from 192.168.0.0/16, but not from
 ethernet interfaces that have address from 192.168.1.0/24.
 <P>
 <DT><CODE>
-<A NAME="dsc-prio"></A> tx class|dscp <I>num</I></CODE><DD><P>This option specifies the value of ToS/DS/Class field in IP headers of
+<A NAME="proto-tx-class"></A> tx class|dscp <I>num</I></CODE><DD><P>This option specifies the value of ToS/DS/Class field in IP headers of
 the outgoing protocol packets. This may affect how the protocol packets
 are processed by the network relative to the other network traffic. With
 <CODE>class</CODE> keyword, the value (0-255) is used for the whole ToS/Class
@@ -326,40 +373,59 @@ octet (but two bits reserved for ECN are ignored). With <CODE>dscp</CODE>
 keyword, the value (0-63) is used just for the DS field in the octet.
 Default value is 0xc0 (DSCP 0x30 - CS6).
 <P>
-<DT><CODE>tx priority <I>num</I></CODE><DD><P>This option specifies the local packet priority. This may affect how the
+<DT><CODE>
+<A NAME="proto-tx-priority"></A> tx priority <I>num</I></CODE><DD><P>This option specifies the local packet priority. This may affect how the
 protocol packets are processed in the local TX queues. This option is
 Linux specific. Default value is 7 (highest priority, privileged traffic).
 <P>
 <DT><CODE>
-<A NAME="dsc-pass"></A> password "<I>password</I>" [ { id <I>num</I>; generate from <I>time</I>; generate to <I>time</I>; accept from <I>time</I>; accept to <I>time</I>; } ]</CODE><DD><P>Specifies a password that can be used by the protocol. Password option
-can be used more times to specify more passwords. If more passwords are
-specified, it is a protocol-dependent decision which one is really
-used. Specifying passwords does not mean that authentication is enabled,
-authentication can be enabled by separate, protocol-dependent
-<CODE>authentication</CODE> option.
-<P>This option is allowed in OSPF and RIP protocols. BGP has also
+<A NAME="proto-pass"></A> password "<I>password</I>" [ { <I>password options</I> } ]</CODE><DD><P>Specifies a password that can be used by the protocol as a shared secret
+key. Password option can be used more times to specify more passwords.
+If more passwords are specified, it is a protocol-dependent decision
+which one is really used. Specifying passwords does not mean that
+authentication is enabled, authentication can be enabled by separate,
+protocol-dependent <CODE>authentication</CODE> option.
+<P>This option is allowed in BFD, OSPF and RIP protocols. BGP has also
 <CODE>password</CODE> option, but it is slightly different and described
 separately.
-<P>Default: none.
+Default: none.
 </DL>
 <P>
 <P>Password option can contain section with some (not necessary all) password sub-options:
 <P>
 <DL>
-<DT><CODE>id <I>num</I></CODE><DD><P>ID of the password, (0-255). If it's not used, BIRD will choose ID based
+<DT><CODE>
+<A NAME="proto-pass-id"></A> id <I>num</I></CODE><DD><P>ID of the password, (1-255). If it is not used, BIRD will choose ID based
 on an order of the password item in the interface. For example, second
 password item in one interface will have default ID 2. ID is used by
 some routing protocols to identify which password was used to
 authenticate protocol packets.
 <P>
-<DT><CODE>generate from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet signing.
+<DT><CODE>
+<A NAME="proto-pass-gen-from"></A> generate from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet signing.
 The format of <CODE><I>time</I></CODE> is <CODE>dd-mm-yyyy HH:MM:SS</CODE>.
 <P>
-<DT><CODE>generate to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet signing.
+<DT><CODE>
+<A NAME="proto-pass-gen-to"></A> generate to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet signing.
 <P>
-<DT><CODE>accept from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet verification.
+<DT><CODE>
+<A NAME="proto-pass-accept-from"></A> accept from "<I>time</I>"</CODE><DD><P>The start time of the usage of the password for packet verification.
 <P>
-<DT><CODE>accept to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet verification.
+<DT><CODE>
+<A NAME="proto-pass-accept-to"></A> accept to "<I>time</I>"</CODE><DD><P>The last time of the usage of the password for packet verification.
+<P>
+<DT><CODE>
+<A NAME="proto-pass-from"></A> from "<I>time</I>"</CODE><DD><P>Shorthand for setting both <CODE>generate from</CODE> and <CODE>accept from</CODE>.
+<P>
+<DT><CODE>
+<A NAME="proto-pass-to"></A> to "<I>time</I>"</CODE><DD><P>Shorthand for setting both <CODE>generate to</CODE> and <CODE>accept to</CODE>.
+<P>
+<DT><CODE>
+<A NAME="proto-pass-algorithm"></A> algorithm ( keyed md5 | keyed sha1 | hmac sha1 | hmac sha256 | hmac sha384 | hmac sha512 )</CODE><DD><P>The message authentication algorithm for the password when cryptographic
+authentication is enabled. The default value depends on the protocol.
+For RIP and OSPFv2 it is Keyed-MD5 (for compatibility), for OSPFv3
+protocol it is HMAC-SHA-256.
+<P>
 </DL>
 <P>
 <HR>

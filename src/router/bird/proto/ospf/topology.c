@@ -3,6 +3,8 @@
  *
  *	(c) 1999       Martin Mares <mj@ucw.cz>
  *	(c) 1999--2004 Ondrej Filip <feela@network.cz>
+ *	(c) 2009--2014 Ondrej Zajicek <santiago@crfreenet.org>
+ *	(c) 2009--2014 CZ.NIC z.s.p.o.
  *
  *	Can be freely distributed and used under the terms of the GNU GPL.
  */
@@ -12,6 +14,7 @@
 
 #include "ospf.h"
 
+
 #define HASH_DEF_ORDER 6
 #define HASH_HI_MARK *4
 #define HASH_HI_STEP 2
@@ -20,166 +23,625 @@
 #define HASH_LO_STEP 2
 #define HASH_LO_MIN 8
 
-void originate_prefix_rt_lsa(struct ospf_area *oa);
-void originate_prefix_net_lsa(struct ospf_iface *ifa);
-void flush_prefix_net_lsa(struct ospf_iface *ifa);
-
-#ifdef OSPFv2
-#define ipa_to_rid(x) _I(x)
-#else /* OSPFv3 */
-#define ipa_to_rid(x) _I3(x)
-#endif
+static inline void * lsab_flush(struct ospf_proto *p);
+static inline void lsab_reset(struct ospf_proto *p);
 
 
-#ifdef OSPFv2
-static inline u32
-fibnode_to_lsaid(struct proto_ospf *po, struct fib_node *fn)
+/**
+ * ospf_install_lsa - install new LSA into database
+ * @p: OSPF protocol instance
+ * @lsa: LSA header
+ * @type: type of LSA
+ * @domain: domain of LSA
+ * @body: pointer to LSA body
+ *
+ * This function ensures installing new LSA received in LS update into LSA
+ * database. Old instance is replaced. Several actions are taken to detect if
+ * new routing table calculation is necessary. This is described in 13.2 of RFC
+ * 2328. This function is for received LSA only, locally originated LSAs are
+ * installed by ospf_originate_lsa().
+ *
+ * The LSA body in @body is expected to be mb_allocated by the caller and its
+ * ownership is transferred to the LSA entry structure.
+ */
+struct top_hash_entry *
+ospf_install_lsa(struct ospf_proto *p, struct ospf_lsa_header *lsa, u32 type, u32 domain, void *body)
 {
-  /* We have to map IP prefixes to u32 in such manner that resulting
-     u32 interpreted as IP address is a member of given
-     prefix. Therefore, /32 prefix have to be mapped on itself.
-     All received prefixes have to be mapped on different u32s.
+  struct top_hash_entry *en;
+  int change = 0;
 
-     We have an assumption that if there is nontrivial (non-/32)
-     network prefix, then there is not /32 prefix for the first
-     and the last IP address of the network (these are usually
-     reserved, therefore it is not an important restriction).
-     The network prefix is mapped to the first or the last
-     IP address in the manner that disallow collisions - we
-     use IP address that cannot be used by parent prefix.
+  en = ospf_hash_get(p->gr, domain, lsa->id, lsa->rt, type);
 
-     For example:
-     192.168.0.0/24 maps to 192.168.0.255
-     192.168.1.0/24 maps to 192.168.1.0
-     because 192.168.0.0 and 192.168.1.255 might be used by
-     192.168.0.0/23 .
+  if (!SNODE_VALID(en))
+    s_add_tail(&p->lsal, SNODE en);
 
-     This is not compatible with older RFC 1583, so we have an option
-     to the RFC 1583 compatible assignment (that always uses the first
-     address) which disallows subnetting.
+  if ((en->lsa_body == NULL) ||			/* No old LSA */
+      (en->lsa.length != lsa->length) ||
+      (en->lsa.type_raw != lsa->type_raw) ||	/* Check for OSPFv2 options */
+      (en->lsa.age == LSA_MAXAGE) ||
+      (lsa->age == LSA_MAXAGE) ||
+      memcmp(en->lsa_body, body, lsa->length - sizeof(struct ospf_lsa_header)))
+    change = 1;
 
-     Appendig E of RFC 2328 suggests different algorithm, that tries
-     to maximize both compatibility and subnetting. But as it is not
-     possible to have both reliably and the suggested algorithm was
-     unnecessary complicated and it does crazy things like changing
-     LSA ID for a network because different network appeared, we
-     choose a different way. */
+  if ((en->lsa.age == LSA_MAXAGE) && (lsa->age == LSA_MAXAGE))
+    change = 0;
 
-  u32 id = _I(fn->prefix);
+  mb_free(en->lsa_body);
+  en->lsa_body = body;
+  en->lsa = *lsa;
+  en->init_age = en->lsa.age;
+  en->inst_time = now;
 
-  if ((po->rfc1583) || (fn->pxlen == 0) || (fn->pxlen == 32))
-    return id;
+  /*
+   * We do not set en->mode. It is either default LSA_M_BASIC, or in a special
+   * case when en is local but flushed, there is postponed LSA, self-originated
+   * LSA is received and ospf_install_lsa() is called from ospf_advance_lse(),
+   * then we have en->mode from the postponed LSA origination.
+   */
 
-  if (id & (1 << (32 - fn->pxlen)))
-    return id;
-  else
-    return id | ~u32_mkmask(fn->pxlen);
+  OSPF_TRACE(D_EVENTS, "Installing LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x, Age: %u",
+	     en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn, en->lsa.age);
+
+  if (change)
+    ospf_schedule_rtcalc(p);
+
+  return en;
 }
 
-#else /* OSPFv3 */
+/**
+ * ospf_advance_lsa - handle received unexpected self-originated LSA
+ * @p: OSPF protocol instance
+ * @en: current LSA entry or NULL
+ * @lsa: new LSA header
+ * @type: type of LSA
+ * @domain: domain of LSA
+ * @body: pointer to LSA body
+ *
+ * This function handles received unexpected self-originated LSA (@lsa, @body)
+ * by either advancing sequence number of the local LSA instance (@en) and
+ * propagating it, or installing the received LSA and immediately flushing it
+ * (if there is no local LSA; i.e., @en is NULL or MaxAge).
+ *
+ * The LSA body in @body is expected to be mb_allocated by the caller and its
+ * ownership is transferred to the LSA entry structure or it is freed.
+ */
+void
+ospf_advance_lsa(struct ospf_proto *p, struct top_hash_entry *en, struct ospf_lsa_header *lsa, u32 type, u32 domain, void *body)
+{
+  /* RFC 2328 13.4 */
 
-static inline u32
-fibnode_to_lsaid(struct proto_ospf *po, struct fib_node *fn)
+  if (en && (en->lsa.age < LSA_MAXAGE))
+  {
+    if (lsa->sn != LSA_MAXSEQNO)
+    {
+      /*
+       * We simply advance current LSA to have higher seqnum than received LSA.
+       * The received LSA is ignored and the advanced LSA is propagated instead.
+       *
+       * Although this is an origination of distinct LSA instance and therefore
+       * should be limited by MinLSInterval, we do not enforce it here. Fast
+       * reaction is needed and we are already limited by MinLSArrival.
+       */
+
+      mb_free(body);
+
+      en->lsa.sn = lsa->sn + 1;
+      en->lsa.age = 0;
+      en->init_age = 0;
+      en->inst_time = now;
+      lsa_generate_checksum(&en->lsa, en->lsa_body);
+
+      OSPF_TRACE(D_EVENTS, "Advancing LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+		 en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+    }
+    else
+    {
+      /*
+       * Received LSA has maximal sequence number, so we cannot simply override
+       * it. We have to install it to the database, immediately flush it to
+       * implement sequence number wrapping, and schedule our current LSA to be
+       * originated after the received instance is flushed.
+       */
+
+      if (en->next_lsa_body == NULL)
+      {
+	/* Schedule current LSA */
+	en->next_lsa_blen = en->lsa.length - sizeof(struct ospf_lsa_header);
+	en->next_lsa_body = en->lsa_body;
+	en->next_lsa_opts = ospf_is_v2(p) ? lsa_get_options(&en->lsa) : 0;
+      }
+      else
+      {
+	/* There is already scheduled LSA, so we just free current one */
+	mb_free(en->lsa_body);
+      }
+
+      en->lsa_body = body;
+      en->lsa = *lsa;
+      en->lsa.age = LSA_MAXAGE;
+      en->init_age = lsa->age;
+      en->inst_time = now;
+
+      OSPF_TRACE(D_EVENTS, "Resetting LSA:  Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+		 en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+      OSPF_TRACE(D_EVENTS, "Postponing LSA: Type: %04x, Id: %R, Rt: %R",
+		 en->lsa_type, en->lsa.id, en->lsa.rt);
+    }
+  }
+  else
+  {
+    /*
+     * We do not have received LSA in the database. We have to flush the
+     * received LSA. It has to be installed in the database to secure
+     * retransmissions. Note that the received LSA may already be MaxAge.
+     * Also note that en->next_lsa_* may be defined.
+     */
+
+    lsa->age = LSA_MAXAGE;
+    en = ospf_install_lsa(p, lsa, type, domain, body);
+  }
+
+  /*
+   * We flood the updated LSA. Although in some cases the to-be-flooded LSA is
+   * the same as the received LSA, and therefore we should propagate it as
+   * regular received LSA (send the acknowledgement instead of the update to
+   * the neighbor we received it from), we cheat a bit here.
+   */
+
+  ospf_flood_lsa(p, en, NULL);
+}
+
+
+static int
+ospf_do_originate_lsa(struct ospf_proto *p, struct top_hash_entry *en, void *lsa_body, u16 lsa_blen, u16 lsa_opts)
+{
+  /* Enforce MinLSInterval */
+  if ((en->init_age == 0) && en->inst_time && ((en->inst_time + MINLSINTERVAL) > now))
+    return 0;
+
+  /* Handle wrapping sequence number */
+  if (en->lsa.sn == LSA_MAXSEQNO)
+  {
+    /* Prepare to flush old LSA */
+    if (en->lsa.age != LSA_MAXAGE)
+    {
+      OSPF_TRACE(D_EVENTS, "Resetting LSA:  Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+		 en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+
+      en->lsa.age = LSA_MAXAGE;
+      ospf_flood_lsa(p, en, NULL);
+      return 0;
+    }
+
+    /* Already flushing */
+    if ((p->padj != 0) || (en->ret_count != 0))
+      return 0;
+
+    /* Flush done, just clean up seqnum, lsa_body is freed below */
+    en->lsa.sn = LSA_ZEROSEQNO;
+  }
+
+  /*
+   * lsa.type_raw is initialized by ospf_hash_get() to OSPFv3 LSA type.
+   * lsa_set_options() implicitly converts it to OSPFv2 LSA type, assuming that
+   * old type is just new type masked by 0xff.  That is not universally true,
+   * but it holds for all OSPFv2 types currently supported by BIRD.
+   */
+
+  if (ospf_is_v2(p))
+    lsa_set_options(&en->lsa, lsa_opts);
+
+  mb_free(en->lsa_body);
+  en->lsa_body = lsa_body;
+  en->lsa.length = sizeof(struct ospf_lsa_header) + lsa_blen;
+  en->lsa.sn++;
+  en->lsa.age = 0;
+  en->init_age = 0;
+  en->inst_time = now;
+  lsa_generate_checksum(&en->lsa, en->lsa_body);
+
+  OSPF_TRACE(D_EVENTS, "Originating LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+	     en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+
+  ospf_flood_lsa(p, en, NULL);
+
+  if (en->mode == LSA_M_BASIC)
+    ospf_schedule_rtcalc(p);
+
+  return 1;
+}
+
+/**
+ * ospf_originate_lsa - originate new LSA
+ * @p: OSPF protocol instance
+ * @lsa: New LSA specification
+ *
+ * This function prepares a new LSA, installs it into the LSA database and
+ * floods it. If the new LSA cannot be originated now (because the old instance
+ * was originated within MinLSInterval, or because the LSA seqnum is currently
+ * wrapping), the origination is instead scheduled for later. If the new LSA is
+ * equivalent to the current LSA, the origination is skipped. In all cases, the
+ * corresponding LSA entry is returned. The new LSA is based on the LSA
+ * specification (@lsa) and the LSA body from lsab buffer of @p, which is
+ * emptied after the call. The opposite of this function is ospf_flush_lsa().
+ */
+struct top_hash_entry *
+ospf_originate_lsa(struct ospf_proto *p, struct ospf_new_lsa *lsa)
+{
+  struct top_hash_entry *en;
+  void *lsa_body = p->lsab;
+  u16 lsa_blen = p->lsab_used;
+  u16 lsa_length = sizeof(struct ospf_lsa_header) + lsa_blen;
+
+  en = ospf_hash_get(p->gr, lsa->dom, lsa->id, p->router_id, lsa->type);
+
+  if (!SNODE_VALID(en))
+    s_add_tail(&p->lsal, SNODE en);
+
+  if (!en->nf || !en->lsa_body)
+    en->nf = lsa->nf;
+
+  if (en->nf != lsa->nf)
+  {
+    log(L_ERR "%s: LSA ID collision for %I/%d",
+	p->p.name, lsa->nf->fn.prefix, lsa->nf->fn.pxlen);
+
+    en = NULL;
+    goto drop;
+  }
+
+  if (en->mode != lsa->mode)
+    en->mode = lsa->mode;
+
+  if (en->next_lsa_body)
+  {
+    /* Ignore the new LSA if it is the same as the scheduled one */
+    if ((lsa_blen == en->next_lsa_blen) &&
+	!memcmp(lsa_body, en->next_lsa_body, lsa_blen) &&
+	(!ospf_is_v2(p) || (lsa->opts == en->next_lsa_opts)))
+      goto drop;
+
+    /* Free scheduled LSA */
+    mb_free(en->next_lsa_body);
+    en->next_lsa_body = NULL;
+    en->next_lsa_blen = 0;
+    en->next_lsa_opts = 0;
+  }
+
+  /* Ignore the the new LSA if is the same as the current one */
+  if ((en->lsa.age < LSA_MAXAGE) &&
+      (lsa_length == en->lsa.length) &&
+      !memcmp(lsa_body, en->lsa_body, lsa_blen) &&
+      (!ospf_is_v2(p) || (lsa->opts == lsa_get_options(&en->lsa))))
+    goto drop;
+
+  lsa_body = lsab_flush(p);
+
+  if (! ospf_do_originate_lsa(p, en, lsa_body, lsa_blen, lsa->opts))
+  {
+    OSPF_TRACE(D_EVENTS, "Postponing LSA: Type: %04x, Id: %R, Rt: %R",
+	       en->lsa_type, en->lsa.id, en->lsa.rt);
+
+    en->next_lsa_body = lsa_body;
+    en->next_lsa_blen = lsa_blen;
+    en->next_lsa_opts = lsa->opts;
+  }
+
+  return en;
+
+ drop:
+  lsab_reset(p);
+  return en;
+}
+
+static void
+ospf_originate_next_lsa(struct ospf_proto *p, struct top_hash_entry *en)
+{
+  /* Called by ospf_update_lsadb() to handle scheduled origination */
+
+  if (! ospf_do_originate_lsa(p, en, en->next_lsa_body, en->next_lsa_blen, en->next_lsa_opts))
+    return;
+
+  en->next_lsa_body = NULL;
+  en->next_lsa_blen = 0;
+  en->next_lsa_opts = 0;
+}
+
+static void
+ospf_refresh_lsa(struct ospf_proto *p, struct top_hash_entry *en)
 {
   /*
-   * In OSPFv3, it is simpler. There is not a requirement for
-   * membership of the result in the input network, so we just use a
-   * hash-based unique ID of a routing table entry for a route that
-   * originated given LSA. For ext-LSA, it is an imported route in the
-   * nest's routing table (p->table). For summary-LSA, it is a
-   * 'source' route in the protocol internal routing table (po->rtf).
+   * Called by ospf_update_lsadb() for periodic LSA refresh.
+   *
+   * We know that lsa.age < LSA_MAXAGE and lsa.rt is our router ID. We can also
+   * assume that there is no scheduled LSA, because inst_time is deep in past,
+   * therefore ospf_originate_next_lsa() called before would either succeed or
+   * switched lsa.age to LSA_MAXAGE.
    */
-  return fn->uid;
+
+  OSPF_TRACE(D_EVENTS, "Refreshing LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+	     en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+
+  ASSERT(en->next_lsa_body == NULL);
+
+  /* Handle wrapping sequence number */
+  if (en->lsa.sn == LSA_MAXSEQNO)
+  {
+    /* Copy LSA body as next LSA to get automatic origination after flush is finished */
+    en->next_lsa_blen = en->lsa.length - sizeof(struct ospf_lsa_header);
+    en->next_lsa_body = mb_alloc(p->p.pool, en->next_lsa_blen);
+    memcpy(en->next_lsa_body, en->lsa_body, en->next_lsa_blen);
+    en->next_lsa_opts = ospf_is_v2(p) ? lsa_get_options(&en->lsa) : 0;
+
+    en->lsa.age = LSA_MAXAGE;
+    ospf_flood_lsa(p, en, NULL);
+    return;
+  }
+
+  en->lsa.sn++;
+  en->lsa.age = 0;
+  en->init_age = 0;
+  en->inst_time = now;
+  lsa_generate_checksum(&en->lsa, en->lsa_body);
+  ospf_flood_lsa(p, en, NULL);
 }
 
-#endif
+/**
+ * ospf_flush_lsa - flush LSA from OSPF domain
+ * @p: OSPF protocol instance
+ * @en: LSA entry to flush
+ *
+ * This function flushes @en from the OSPF domain by setting its age to
+ * %LSA_MAXAGE and flooding it. That also triggers subsequent events in LSA
+ * lifecycle leading to removal of the LSA from the LSA database (e.g. the LSA
+ * content is freed when flushing is acknowledged by neighbors). The function
+ * does nothing if the LSA is already being flushed. LSA entries are not
+ * immediately removed when being flushed, the caller may assume that @en still
+ * exists after the call. The function is the opposite of ospf_originate_lsa()
+ * and is supposed to do the right thing even in cases of postponed
+ * origination.
+ */
+void
+ospf_flush_lsa(struct ospf_proto *p, struct top_hash_entry *en)
+{
+  if (en->next_lsa_body)
+  {
+    mb_free(en->next_lsa_body);
+    en->next_lsa_body = NULL;
+    en->next_lsa_blen = 0;
+    en->next_lsa_opts = 0;
+  }
+
+  if (en->lsa.age == LSA_MAXAGE)
+    return;
+
+  OSPF_TRACE(D_EVENTS, "Flushing LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+	     en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+
+  en->lsa.age = LSA_MAXAGE;
+  ospf_flood_lsa(p, en, NULL);
+
+  if (en->mode == LSA_M_BASIC)
+    ospf_schedule_rtcalc(p);
+
+  en->mode = LSA_M_BASIC;
+}
+
+static void
+ospf_clear_lsa(struct ospf_proto *p, struct top_hash_entry *en)
+{
+  /*
+   * Called by ospf_update_lsadb() as part of LSA flushing process.
+   * Flushed LSA was acknowledged by neighbors and we can free its content.
+   * The log message is for 'remove' - we hide empty LSAs from users.
+   */
+
+  OSPF_TRACE(D_EVENTS, "Removing LSA: Type: %04x, Id: %R, Rt: %R, Seq: %08x",
+	     en->lsa_type, en->lsa.id, en->lsa.rt, en->lsa.sn);
+
+  if (en->lsa.sn == LSA_MAXSEQNO)
+    en->lsa.sn = LSA_ZEROSEQNO;
+
+  mb_free(en->lsa_body);
+  en->lsa_body = NULL;
+}
+
+static void
+ospf_remove_lsa(struct ospf_proto *p, struct top_hash_entry *en)
+{
+  /*
+   * Called by ospf_update_lsadb() as part of LSA flushing process.
+   * Both lsa_body and next_lsa_body are NULL.
+   */
+
+  s_rem_node(SNODE en);
+  ospf_hash_delete(p->gr, en);
+}
+
+/**
+ * ospf_update_lsadb - update LSA database
+ * @p: OSPF protocol instance
+ *
+ * This function is periodicaly invoked from ospf_disp(). It does some periodic
+ * or postponed processing related to LSA entries. It originates postponed LSAs
+ * scheduled by ospf_originate_lsa(), It continues in flushing processes started
+ * by ospf_flush_lsa(). It also periodically refreshs locally originated LSAs --
+ * when the current instance is older %LSREFRESHTIME, a new instance is originated.
+ * Finally, it also ages stored LSAs and flushes ones that reached %LSA_MAXAGE.
+ *
+ * The RFC 2328 says that a router should periodically check checksums of all
+ * stored LSAs to detect hardware problems. This is not implemented.
+ */
+void
+ospf_update_lsadb(struct ospf_proto *p)
+{
+  struct top_hash_entry *en, *nxt;
+  bird_clock_t real_age;
+
+  WALK_SLIST_DELSAFE(en, nxt, p->lsal)
+  {
+    if (en->next_lsa_body)
+      ospf_originate_next_lsa(p, en);
+
+    real_age = en->init_age + (now - en->inst_time);
+
+    if (en->lsa.age == LSA_MAXAGE)
+    {
+      if (en->lsa_body && (p->padj == 0) && (en->ret_count == 0))
+	ospf_clear_lsa(p, en);
+
+      if ((en->lsa_body == NULL) && (en->next_lsa_body == NULL) &&
+	  ((en->lsa.rt != p->router_id) || (real_age >= LSA_MAXAGE)))
+	ospf_remove_lsa(p, en);
+
+      continue;
+    }
+
+    if ((en->lsa.rt == p->router_id) && (real_age >= LSREFRESHTIME))
+    {
+      ospf_refresh_lsa(p, en);
+      continue;
+    }
+
+    if (real_age >= LSA_MAXAGE)
+    {
+      ospf_flush_lsa(p, en);
+      continue;
+    }
+
+    en->lsa.age = real_age;
+  }
+}
+
+
+static inline u32
+ort_to_lsaid(struct ospf_proto *p UNUSED4 UNUSED6, ort *nf)
+{
+  /*
+   * In OSPFv2, We have to map IP prefixes to u32 in such manner that resulting
+   * u32 interpreted as IP address is a member of given prefix. Therefore, /32
+   * prefix have to be mapped on itself.  All received prefixes have to be
+   * mapped on different u32s.
+   *
+   * We have an assumption that if there is nontrivial (non-/32) network prefix,
+   * then there is not /32 prefix for the first and the last IP address of the
+   * network (these are usually reserved, therefore it is not an important
+   * restriction).  The network prefix is mapped to the first or the last IP
+   * address in the manner that disallow collisions - we use the IP address that
+   * cannot be used by the parent prefix.
+   *
+   * For example:
+   * 192.168.0.0/24 maps to 192.168.0.255
+   * 192.168.1.0/24 maps to 192.168.1.0
+   * because 192.168.0.0 and 192.168.1.255 might be used by 192.168.0.0/23 .
+   *
+   * Appendig E of RFC 2328 suggests different algorithm, that tries to maximize
+   * both compatibility and subnetting. But as it is not possible to have both
+   * reliably and the suggested algorithm was unnecessary complicated and it
+   * does crazy things like changing LSA ID for a network because different
+   * network appeared, we choose a different way.
+   *
+   * In OSPFv3, it is simpler. There is not a requirement for membership of the
+   * result in the input network, so we just use a hash-based unique ID of a
+   * routing table entry for a route that originated given LSA. For ext-LSA, it
+   * is an imported route in the nest's routing table (p->table). For summary-LSA,
+   * it is a 'source' route in the protocol internal routing table (p->rtf).
+   */
+
+  if (ospf_is_v3(p))
+    return nf->fn.uid;
+
+  u32 id = ipa_to_u32(nf->fn.prefix);
+  int pxlen = nf->fn.pxlen;
+
+  if ((pxlen == 0) || (pxlen == 32))
+    return id;
+
+  if (id & (1 << (32 - pxlen)))
+    return id;
+  else
+    return id | ~u32_mkmask(pxlen);
+}
 
 
 static void *
-lsab_alloc(struct proto_ospf *po, unsigned size)
+lsab_alloc(struct ospf_proto *p, uint size)
 {
-  unsigned offset = po->lsab_used;
-  po->lsab_used += size;
-  if (po->lsab_used > po->lsab_size)
-    {
-      po->lsab_size = MAX(po->lsab_used, 2 * po->lsab_size);
-      po->lsab = po->lsab ? mb_realloc(po->lsab, po->lsab_size):
-	mb_alloc(po->proto.pool, po->lsab_size);
-    }
-  return ((byte *) po->lsab) + offset;
+  uint offset = p->lsab_used;
+  p->lsab_used += size;
+  if (p->lsab_used > p->lsab_size)
+  {
+    p->lsab_size = MAX(p->lsab_used, 2 * p->lsab_size);
+    p->lsab = p->lsab ? mb_realloc(p->lsab, p->lsab_size):
+      mb_alloc(p->p.pool, p->lsab_size);
+  }
+  return ((byte *) p->lsab) + offset;
 }
 
 static inline void *
-lsab_allocz(struct proto_ospf *po, unsigned size)
+lsab_allocz(struct ospf_proto *p, uint size)
 {
-  void *r = lsab_alloc(po, size);
+  void *r = lsab_alloc(p, size);
   bzero(r, size);
   return r;
 }
 
 static inline void *
-lsab_flush(struct proto_ospf *po)
+lsab_flush(struct ospf_proto *p)
 {
-  void *r = mb_alloc(po->proto.pool, po->lsab_used);
-  memcpy(r, po->lsab, po->lsab_used);
-  po->lsab_used = 0;
+  void *r = mb_alloc(p->p.pool, p->lsab_used);
+  memcpy(r, p->lsab, p->lsab_used);
+  p->lsab_used = 0;
   return r;
 }
 
-static inline void *
-lsab_offset(struct proto_ospf *po, unsigned offset)
+static inline void
+lsab_reset(struct ospf_proto *p)
 {
-  return ((byte *) po->lsab) + offset;
+  p->lsab_used = 0;
 }
 
 static inline void *
-lsab_end(struct proto_ospf *po)
+lsab_offset(struct ospf_proto *p, uint offset)
 {
-  return ((byte *) po->lsab) + po->lsab_used;
+  return ((byte *) p->lsab) + offset;
 }
 
-static s32
-get_seqnum(struct top_hash_entry *en)
+static inline void * UNUSED
+lsab_end(struct ospf_proto *p)
 {
-  if (!en)
-    return LSA_INITSEQNO;
-
-  if (en->lsa.sn == LSA_MAXSEQNO)
-  {
-    log(L_WARN "OSPF: Premature origination of LSA (Type: %04x, Id: %R, Rt: %R)",
-	en->lsa.type, en->lsa.id, en->lsa.rt);
-    return LSA_INITSEQNO;
-  }
-
-  return en->lsa.sn + 1;
+  return ((byte *) p->lsab) + p->lsab_used;
 }
 
+
+/*
+ *	Router-LSA handling
+ *	Type = LSA_T_RT
+ */
 
 static int
 configured_stubnet(struct ospf_area *oa, struct ifa *a)
 {
-  if (!oa->ac)
-    return 0;
-
   /* Does not work for IA_PEER addresses, but it is not called on these */
   struct ospf_stubnet_config *sn;
   WALK_LIST(sn, oa->ac->stubnet_list)
+  {
+    if (sn->summary)
     {
-      if (sn->summary)
-	{
-	  if (ipa_in_net(a->prefix, sn->px.addr, sn->px.len) && (a->pxlen >= sn->px.len))
-	    return 1;
-	}
-      else
-	{
-	  if (ipa_equal(a->prefix, sn->px.addr) && (a->pxlen == sn->px.len))
-	    return 1;
-	}
+      if (ipa_in_net(a->prefix, sn->px.addr, sn->px.len) && (a->pxlen >= sn->px.len))
+	return 1;
     }
+    else
+    {
+      if (ipa_equal(a->prefix, sn->px.addr) && (a->pxlen == sn->px.len))
+	return 1;
+    }
+  }
+
   return 0;
 }
 
-int
+static int
 bcast_net_active(struct ospf_iface *ifa)
 {
   struct ospf_neighbor *neigh;
@@ -188,53 +650,66 @@ bcast_net_active(struct ospf_iface *ifa)
     return 0;
 
   WALK_LIST(neigh, ifa->neigh_list)
+  {
+    if (neigh->state == NEIGHBOR_FULL)
     {
-      if (neigh->state == NEIGHBOR_FULL)
-	{
-	  if (neigh->rid == ifa->drid)
-	    return 1;
+      if (neigh->rid == ifa->drid)
+	return 1;
 
-	  if (ifa->state == OSPF_IS_DR)
-	    return 1;
-	}
+      if (ifa->state == OSPF_IS_DR)
+	return 1;
     }
+  }
 
   return 0;
 }
 
-
-#ifdef OSPFv2
-
-static void *
-originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
+static inline u32
+get_rt_options(struct ospf_proto *p, struct ospf_area *oa, int bitv)
 {
-  struct proto_ospf *po = oa->po;
+  u32 opts = 0;
+
+  if (p->areano > 1)
+    opts |= OPT_RT_B;
+
+  if ((p->areano > 1) && oa_is_nssa(oa) && oa->ac->translator)
+    opts |= OPT_RT_NT;
+
+  if (p->asbr && !oa_is_stub(oa))
+    opts |= OPT_RT_E;
+
+  if (bitv)
+    opts |= OPT_RT_V;
+
+  return opts;
+}
+
+static inline void
+add_rt2_lsa_link(struct ospf_proto *p, u8 type, u32 id, u32 data, u16 metric)
+{
+  struct ospf_lsa_rt2_link *ln = lsab_alloc(p, sizeof(struct ospf_lsa_rt2_link));
+  ln->type = type;
+  ln->id = id;
+  ln->data = data;
+  ln->metric = metric;
+  ln->no_tos = 0;
+}
+
+static void
+prepare_rt2_lsa_body(struct ospf_proto *p, struct ospf_area *oa)
+{
   struct ospf_iface *ifa;
   int i = 0, bitv = 0;
-  struct ospf_lsa_rt *rt;
-  struct ospf_lsa_rt_link *ln;
   struct ospf_neighbor *neigh;
 
-  ASSERT(po->lsab_used == 0);
-  rt = lsab_allocz(po, sizeof(struct ospf_lsa_rt));
+  ASSERT(p->lsab_used == 0);
+  lsab_allocz(p, sizeof(struct ospf_lsa_rt));
+  /* ospf_lsa_rt header will be filled later */
 
-  rt->options = 0;
-
-  if (po->areano > 1)
-    rt->options |= OPT_RT_B;
-
-  if ((po->areano > 1) && oa_is_nssa(oa) && oa->ac->translator)
-    rt->options |= OPT_RT_NT;
-
-  if (po->ebit && !oa_is_stub(oa))
-    rt->options |= OPT_RT_E;
-
-  rt = NULL; /* buffer might be reallocated later */
-
-  WALK_LIST(ifa, po->iface_list)
+  WALK_LIST(ifa, p->iface_list)
   {
     int net_lsa = 0;
-    u32 link_cost = po->stub_router ? 0xffff : ifa->cost;
+    u32 link_cost = p->stub_router ? 0xffff : ifa->cost;
 
     if ((ifa->type == OSPF_IT_VLINK) && (ifa->voa == oa) &&
 	(!EMPTY_LIST(ifa->neigh_list)))
@@ -249,66 +724,47 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
 
     ifa->rt_pos_beg = i;
 
-    /* RFC2328 - 12.4.1.1-4 */
+    /* RFC 2328 - 12.4.1.1-4 */
     switch (ifa->type)
-      {
-      case OSPF_IT_PTP:
-      case OSPF_IT_PTMP:
-	WALK_LIST(neigh, ifa->neigh_list)
-	  if (neigh->state == NEIGHBOR_FULL)
-	  {
-	    ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-	    ln->type = LSART_PTP;
-	    ln->id = neigh->rid;
-
-	    /*
-	     * ln->data should be ifa->iface_id in case of no/ptp
-	     * address (ifa->addr->flags & IA_PEER) on PTP link (see
-	     * RFC 2328 12.4.1.1.), but the iface ID value has no use,
-	     * while using IP address even in this case is here for
-	     * compatibility with some broken implementations that use
-	     * this address as a next-hop.
-	     */
-	    ln->data = ipa_to_u32(ifa->addr->ip);
-	    ln->metric = link_cost;
-	    ln->padding = 0;
-	    i++;
-	  }
-	break;
-
-      case OSPF_IT_BCAST:
-      case OSPF_IT_NBMA:
-	if (bcast_net_active(ifa))
-	  {
-	    ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-	    ln->type = LSART_NET;
-	    ln->id = ipa_to_u32(ifa->drip);
-	    ln->data = ipa_to_u32(ifa->addr->ip);
-	    ln->metric = link_cost;
-	    ln->padding = 0;
-	    i++;
-	    net_lsa = 1;
-	  }
-	break;
-
-      case OSPF_IT_VLINK:
-	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
-	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
+    {
+    case OSPF_IT_PTP:
+    case OSPF_IT_PTMP:
+      WALK_LIST(neigh, ifa->neigh_list)
+	if (neigh->state == NEIGHBOR_FULL)
 	{
-	  ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-	  ln->type = LSART_VLNK;
-	  ln->id = neigh->rid;
-	  ln->data = ipa_to_u32(ifa->addr->ip);
-	  ln->metric = link_cost;
-	  ln->padding = 0;
+	  /*
+	   * ln->data should be ifa->iface_id in case of no/ptp
+	   * address (ifa->addr->flags & IA_PEER) on PTP link (see
+	   * RFC 2328 12.4.1.1.), but the iface ID value has no use,
+	   * while using IP address even in this case is here for
+	   * compatibility with some broken implementations that use
+	   * this address as a next-hop.
+	   */
+	  add_rt2_lsa_link(p, LSART_PTP, neigh->rid, ipa_to_u32(ifa->addr->ip), link_cost);
 	  i++;
-        }
-        break;
+	}
+      break;
 
-      default:
-        log("Unknown interface type %s", ifa->ifname);
-        break;
+    case OSPF_IT_BCAST:
+    case OSPF_IT_NBMA:
+      if (bcast_net_active(ifa))
+      {
+	add_rt2_lsa_link(p, LSART_NET, ipa_to_u32(ifa->drip), ipa_to_u32(ifa->addr->ip), link_cost);
+	i++;
+	net_lsa = 1;
       }
+      break;
+
+    case OSPF_IT_VLINK:
+      neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
+      if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
+	add_rt2_lsa_link(p, LSART_VLNK, neigh->rid, ipa_to_u32(ifa->addr->ip), link_cost), i++;
+      break;
+
+    default:
+      log(L_BUG "OSPF: Unknown interface type");
+      break;
+    }
 
     ifa->rt_pos_end = i;
 
@@ -319,62 +775,32 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
 	configured_stubnet(oa, ifa->addr))
       continue;
 
-    ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
+      /* Host or network stub entry */
     if ((ifa->addr->flags & IA_HOST) ||
 	(ifa->state == OSPF_IS_LOOP) ||
 	(ifa->type == OSPF_IT_PTMP))
-    {
-      /* Host stub entry */
-      ln->type = LSART_STUB;
-      ln->id = ipa_to_u32(ifa->addr->ip);
-      ln->data = 0xffffffff;
-      ln->metric = 0;
-      ln->padding = 0;
-    }
-    else 
-    {
-      /* Network stub entry */
-      ln->type = LSART_STUB;
-      ln->id = ipa_to_u32(ifa->addr->prefix);
-      ln->data = ipa_to_u32(ipa_mkmask(ifa->addr->pxlen));
-      ln->metric = ifa->cost;
-      ln->padding = 0;
-    }
+      add_rt2_lsa_link(p, LSART_STUB, ipa_to_u32(ifa->addr->ip), 0xffffffff, 0);
+    else
+      add_rt2_lsa_link(p, LSART_STUB, ipa_to_u32(ifa->addr->prefix), u32_mkmask(ifa->addr->pxlen), ifa->cost);
     i++;
 
     ifa->rt_pos_end = i;
   }
 
   struct ospf_stubnet_config *sn;
-  if (oa->ac)
-    WALK_LIST(sn, oa->ac->stubnet_list)
-      if (!sn->hidden)
-      {
-	ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
-	ln->type = LSART_STUB;
-	ln->id = ipa_to_u32(sn->px.addr);
-	ln->data = ipa_to_u32(ipa_mkmask(sn->px.len));
-	ln->metric = sn->cost;
-	ln->padding = 0;
-	i++;
-      }
+  WALK_LIST(sn, oa->ac->stubnet_list)
+    if (!sn->hidden)
+      add_rt2_lsa_link(p, LSART_STUB, ipa_to_u32(sn->px.addr), u32_mkmask(sn->px.len), sn->cost), i++;
 
-  rt = po->lsab;
-  rt->links = i;
-
-  if (bitv) 
-    rt->options |= OPT_RT_V;
-
-  *length = po->lsab_used + sizeof(struct ospf_lsa_header);
-  return lsab_flush(po);
+  struct ospf_lsa_rt *rt = p->lsab;
+  /* Store number of links in lower half of options */
+  rt->options = get_rt_options(p, oa, bitv) | (u16) i;
 }
 
-#else /* OSPFv3 */
-
-static void
-add_lsa_rt_link(struct proto_ospf *po, struct ospf_iface *ifa, u8 type, u32 nif, u32 id)
+static inline void
+add_rt3_lsa_link(struct ospf_proto *p, u8 type, struct ospf_iface *ifa, u32 nif, u32 id)
 {
-  struct ospf_lsa_rt_link *ln = lsab_alloc(po, sizeof(struct ospf_lsa_rt_link));
+  struct ospf_lsa_rt3_link *ln = lsab_alloc(p, sizeof(struct ospf_lsa_rt3_link));
   ln->type = type;
   ln->padding = 0;
   ln->metric = ifa->cost;
@@ -383,33 +809,19 @@ add_lsa_rt_link(struct proto_ospf *po, struct ospf_iface *ifa, u8 type, u32 nif,
   ln->id = id;
 }
 
-static void *
-originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
+static void
+prepare_rt3_lsa_body(struct ospf_proto *p, struct ospf_area *oa)
 {
-  struct proto_ospf *po = oa->po;
   struct ospf_iface *ifa;
+  struct ospf_neighbor *neigh;
   int bitv = 0;
   int i = 0;
-  struct ospf_lsa_rt *rt;
-  struct ospf_neighbor *neigh;
 
-  ASSERT(po->lsab_used == 0);
-  rt = lsab_allocz(po, sizeof(struct ospf_lsa_rt));
+  ASSERT(p->lsab_used == 0);
+  lsab_allocz(p, sizeof(struct ospf_lsa_rt));
+  /* ospf_lsa_rt header will be filled later */
 
-  rt->options = oa->options & OPTIONS_MASK;
-
-  if (po->areano > 1)
-    rt->options |= OPT_RT_B;
-
-  if ((po->areano > 1) && oa_is_nssa(oa) && oa->ac->translator)
-    rt->options |= OPT_RT_NT;
-
-  if (po->ebit && !oa_is_stub(oa))
-    rt->options |= OPT_RT_E;
-
-  rt = NULL; /* buffer might be reallocated later */
-
-  WALK_LIST(ifa, po->iface_list)
+  WALK_LIST(ifa, p->iface_list)
   {
     if ((ifa->type == OSPF_IT_VLINK) && (ifa->voa == oa) &&
 	(!EMPTY_LIST(ifa->neigh_list)))
@@ -424,142 +836,116 @@ originate_rt_lsa_body(struct ospf_area *oa, u16 *length)
 
     ifa->rt_pos_beg = i;
 
-    /* RFC5340 - 4.4.3.2 */
+    /* RFC 5340 - 4.4.3.2 */
     switch (ifa->type)
-      {
-      case OSPF_IT_PTP:
-      case OSPF_IT_PTMP:
-	WALK_LIST(neigh, ifa->neigh_list)
-	  if (neigh->state == NEIGHBOR_FULL)
-	    add_lsa_rt_link(po, ifa, LSART_PTP, neigh->iface_id, neigh->rid), i++;
-	break;
+    {
+    case OSPF_IT_PTP:
+    case OSPF_IT_PTMP:
+      WALK_LIST(neigh, ifa->neigh_list)
+	if (neigh->state == NEIGHBOR_FULL)
+	  add_rt3_lsa_link(p, LSART_PTP, ifa, neigh->iface_id, neigh->rid), i++;
+      break;
 
-      case OSPF_IT_BCAST:
-      case OSPF_IT_NBMA:
-	if (bcast_net_active(ifa))
-	  add_lsa_rt_link(po, ifa, LSART_NET, ifa->dr_iface_id, ifa->drid), i++;
-	break;
+    case OSPF_IT_BCAST:
+    case OSPF_IT_NBMA:
+      if (bcast_net_active(ifa))
+	add_rt3_lsa_link(p, LSART_NET, ifa, ifa->dr_iface_id, ifa->drid), i++;
+      break;
 
-      case OSPF_IT_VLINK:
-	neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
-	if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
-	  add_lsa_rt_link(po, ifa, LSART_VLNK, neigh->iface_id, neigh->rid), i++;
-        break;
+    case OSPF_IT_VLINK:
+      neigh = (struct ospf_neighbor *) HEAD(ifa->neigh_list);
+      if ((!EMPTY_LIST(ifa->neigh_list)) && (neigh->state == NEIGHBOR_FULL) && (ifa->cost <= 0xffff))
+	add_rt3_lsa_link(p, LSART_VLNK, ifa, neigh->iface_id, neigh->rid), i++;
+      break;
 
-      default:
-        log("Unknown interface type %s", ifa->ifname);
-        break;
-      }
+    default:
+      log(L_BUG "OSPF: Unknown interface type");
+      break;
+    }
 
     ifa->rt_pos_end = i;
   }
 
-  if (bitv)
-    {
-      rt = po->lsab;
-      rt->options |= OPT_RT_V;
-    }
-
-  *length = po->lsab_used + sizeof(struct ospf_lsa_header);
-  return lsab_flush(po);
+  struct ospf_lsa_rt *rt = p->lsab;
+  rt->options = get_rt_options(p, oa, bitv) | (oa->options & LSA_OPTIONS_MASK);
 }
 
-#endif
+static void
+ospf_originate_rt_lsa(struct ospf_proto *p, struct ospf_area *oa)
+{
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_RT,
+    .dom  = oa->areaid,
+    .id   = ospf_is_v2(p) ? p->router_id : 0,
+    .opts = oa->options
+  };
 
-/**
- * originate_rt_lsa - build new instance of router LSA
- * @oa: ospf_area which is LSA built to
- *
- * It builds router LSA walking through all OSPF interfaces in
- * specified OSPF area. This function is mostly called from
- * area_disp(). Builds new LSA, increases sequence number (if old
- * instance exists) and sets age of LSA to zero.
+  OSPF_TRACE(D_EVENTS, "Updating router state for area %R", oa->areaid);
+
+  if (ospf_is_v2(p))
+    prepare_rt2_lsa_body(p, oa);
+  else
+    prepare_rt3_lsa_body(p, oa);
+
+  oa->rt = ospf_originate_lsa(p, &lsa);
+}
+
+
+/*
+ *	Net-LSA handling
+ *	Type = LSA_T_NET
  */
-void
-originate_rt_lsa(struct ospf_area *oa)
+
+static void
+prepare_net2_lsa_body(struct ospf_proto *p, struct ospf_iface *ifa)
 {
-  struct ospf_lsa_header lsa;
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  void *body;
-
-  OSPF_TRACE(D_EVENTS, "Originating router-LSA for area %R", oa->areaid);
-
-  lsa.age = 0;
-  lsa.type = LSA_T_RT;
-  
-#ifdef OSPFv2
-  lsa.options = oa->options;
-  lsa.id = po->router_id;
-#else /* OSPFv3 */
-  lsa.id = 0;
-#endif
-
-  lsa.rt = po->router_id;
-  lsa.sn = get_seqnum(oa->rt);
-  u32 dom = oa->areaid;
-
-  body = originate_rt_lsa_body(oa, &lsa.length);
-  lsasum_calculate(&lsa, body);
-  oa->rt = lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
-}
-
-void
-update_rt_lsa(struct ospf_area *oa)
-{
-  struct proto_ospf *po = oa->po;
-
-  if ((oa->rt) && ((oa->rt->inst_t + MINLSINTERVAL)) > now)
-    return;
-  /*
-   * Tick is probably set to very low value. We cannot
-   * originate new LSA before MINLSINTERVAL. We will
-   * try to do it next tick.
-   */
-
-  originate_rt_lsa(oa);
-#ifdef OSPFv3
-  originate_prefix_rt_lsa(oa);
-#endif
-
-  schedule_rtcalc(po);
-  oa->origrt = 0;
-}
-
-static void *
-originate_net_lsa_body(struct ospf_iface *ifa, u16 *length,
-		       struct proto_ospf *po)
-{
-  u16 i = 1;
-  struct ospf_neighbor *n;
   struct ospf_lsa_net *net;
+  struct ospf_neighbor *n;
   int nodes = ifa->fadj + 1;
+  u16 i = 1;
 
-  net = mb_alloc(po->proto.pool, sizeof(struct ospf_lsa_net)
-		 + nodes * sizeof(u32));
+  ASSERT(p->lsab_used == 0);
+  net = lsab_alloc(p, sizeof(struct ospf_lsa_net) + 4 * nodes);
 
-#ifdef OSPFv2
-  net->netmask = ipa_mkmask(ifa->addr->pxlen);
-#endif
-
-#ifdef OSPFv3
-  /* In OSPFv3, we would like to merge options from Link LSAs of added neighbors */
-  struct top_hash_entry *en;
-  u32 options = 0;
-#endif
-
-  net->routers[0] = po->router_id;
+  net->optx = u32_mkmask(ifa->addr->pxlen);
+  net->routers[0] = p->router_id;
 
   WALK_LIST(n, ifa->neigh_list)
   {
     if (n->state == NEIGHBOR_FULL)
     {
-#ifdef OSPFv3
-      en = ospf_hash_find(po->gr, ifa->iface_id, n->iface_id, n->rid, LSA_T_LINK);
+      net->routers[i] = n->rid;
+      i++;
+    }
+  }
+  ASSERT(i == nodes);
+}
+
+static void
+prepare_net3_lsa_body(struct ospf_proto *p, struct ospf_iface *ifa)
+{
+  struct ospf_lsa_net *net;
+  int nodes = ifa->fadj + 1;
+  u32 options = 0;
+  u16 i = 1;
+
+  ASSERT(p->lsab_used == 0);
+  net = lsab_alloc(p, sizeof(struct ospf_lsa_net) + 4 * nodes);
+
+  net->routers[0] = p->router_id;
+
+  struct ospf_neighbor *n;
+  WALK_LIST(n, ifa->neigh_list)
+  {
+    if (n->state == NEIGHBOR_FULL)
+    {
+      /* In OSPFv3, we would like to merge options from Link LSAs of added neighbors */
+
+      struct top_hash_entry *en =
+	ospf_hash_find(p->gr, ifa->iface_id, n->iface_id, n->rid, LSA_T_LINK);
+
       if (en)
 	options |= ((struct ospf_lsa_link *) en->lsa_body)->options;
-#endif
 
       net->routers[i] = n->rid;
       i++;
@@ -567,711 +953,439 @@ originate_net_lsa_body(struct ospf_iface *ifa, u16 *length,
   }
   ASSERT(i == nodes);
 
-#ifdef OSPFv3
-  net->options = options & OPTIONS_MASK;
-#endif
-  
-  *length = sizeof(struct ospf_lsa_header) + sizeof(struct ospf_lsa_net)
-    + nodes * sizeof(u32);
-  return net;
+  net->optx = options & LSA_OPTIONS_MASK;
 }
 
-
-/**
- * originate_net_lsa - originates of deletes network LSA
- * @ifa: interface which is LSA originated for
- *
- * Interface counts number of adjacent neighbors. If this number is
- * lower than one or interface is not in state %OSPF_IS_DR it deletes
- * and premature ages instance of network LSA for specified interface.
- * In other case, new instance of network LSA is originated.
- */
-void
-originate_net_lsa(struct ospf_iface *ifa)
+static void
+ospf_originate_net_lsa(struct ospf_proto *p, struct ospf_iface *ifa)
 {
-  struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  struct ospf_lsa_header lsa;
-  u32 dom = ifa->oa->areaid;
-  
-  void *body;
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_NET,
+    .dom  = ifa->oa->areaid,
+    .id   = ospf_is_v2(p) ? ipa_to_u32(ifa->addr->ip) : ifa->iface_id,
+    .opts = ifa->oa->options,
+    .ifa  = ifa
+  };
 
-  OSPF_TRACE(D_EVENTS, "Originating network-LSA for iface %s", ifa->ifname);
+  OSPF_TRACE(D_EVENTS, "Updating network state for %s (Id: %R)", ifa->ifname, lsa.id);
 
-  lsa.age = 0;
-  lsa.type = LSA_T_NET;
-
-#ifdef OSPFv2
-  lsa.options = ifa->oa->options;
-  lsa.id = ipa_to_u32(ifa->addr->ip);
-#else /* OSPFv3 */
-  lsa.id = ifa->iface_id;
-#endif
-
-  lsa.rt = po->router_id;
-  lsa.sn = get_seqnum(ifa->net_lsa);
-
-  body = originate_net_lsa_body(ifa, &lsa.length, po);
-  lsasum_calculate(&lsa, body);
-  ifa->net_lsa = lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
-}
-
-void
-flush_net_lsa(struct ospf_iface *ifa)
-{
-  struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  u32 dom = ifa->oa->areaid;
-
-  if (ifa->net_lsa == NULL)
-    return;
-
-  OSPF_TRACE(D_EVENTS, "Flushing network-LSA for iface %s", ifa->ifname);
-  ifa->net_lsa->lsa.sn += 1;
-  ifa->net_lsa->lsa.age = LSA_MAXAGE;
-  lsasum_calculate(&ifa->net_lsa->lsa, ifa->net_lsa->lsa_body);
-  ospf_lsupd_flood(po, NULL, NULL, &ifa->net_lsa->lsa, dom, 0);
-  flush_lsa(ifa->net_lsa, po);
-  ifa->net_lsa = NULL;
-}
-
-void
-update_net_lsa(struct ospf_iface *ifa)
-{
-  struct proto_ospf *po = ifa->oa->po;
- 
-  if (ifa->net_lsa && ((ifa->net_lsa->inst_t + MINLSINTERVAL) > now))
-    return;
-  /*
-   * It's too early to originate new network LSA. We will
-   * try to do it next tick
-   */
-
-  if ((ifa->state != OSPF_IS_DR) || (ifa->fadj == 0))
-    {
-      flush_net_lsa(ifa);
-#ifdef OSPFv3
-      flush_prefix_net_lsa(ifa);
-#endif
-    }
+  if (ospf_is_v2(p))
+    prepare_net2_lsa_body(p, ifa);
   else
-    {
-      originate_net_lsa(ifa);
-#ifdef OSPFv3
-      originate_prefix_net_lsa(ifa);
-#endif
-    }
+    prepare_net3_lsa_body(p, ifa);
 
-  schedule_rtcalc(po);
-  ifa->orignet = 0;
+  ifa->net_lsa = ospf_originate_lsa(p, &lsa);
 }
 
-#ifdef OSPFv2
 
-static inline void *
-originate_sum_lsa_body(struct proto_ospf *po, u16 *length, u32 mlen, u32 metric)
+/*
+ *	(Net|Rt)-summary-LSA handling
+ *	(a.k.a. Inter-Area-(Prefix|Router)-LSA)
+ *	Type = LSA_T_SUM_NET, LSA_T_SUM_RT
+ */
+
+static inline void
+prepare_sum2_lsa_body(struct ospf_proto *p, uint pxlen, u32 metric)
 {
-  struct ospf_lsa_sum *sum = mb_alloc(po->proto.pool, sizeof(struct ospf_lsa_sum));
-  *length = sizeof(struct ospf_lsa_header) + sizeof(struct ospf_lsa_sum);
+  struct ospf_lsa_sum2 *sum;
 
-  sum->netmask = ipa_mkmask(mlen);
+  sum = lsab_allocz(p, sizeof(struct ospf_lsa_sum2));
+  sum->netmask = u32_mkmask(pxlen);
   sum->metric = metric;
-
-  return sum;
 }
 
-#define originate_sum_net_lsa_body(po,length,fn,metric) \
-  originate_sum_lsa_body(po, length, (fn)->pxlen, metric)
-
-#define originate_sum_rt_lsa_body(po,length,drid,metric,options) \
-  originate_sum_lsa_body(po, length, 0, metric)
-
-static inline int
-check_sum_net_lsaid_collision(struct fib_node *fn, struct top_hash_entry *en)
+static inline void
+prepare_sum3_net_lsa_body(struct ospf_proto *p, ort *nf, u32 metric)
 {
-  struct ospf_lsa_sum *sum = en->lsa_body;
-  return fn->pxlen != ipa_mklen(sum->netmask);
-}
+  struct ospf_lsa_sum3_net *sum;
 
-static inline int
-check_sum_lsa_same(struct top_hash_entry *en, u32 metric)
-{
-  /* Netmask already checked in check_sum_net_lsaid_collision() */
-  struct ospf_lsa_sum *sum = en->lsa_body;
-  return (en->lsa.sn != LSA_MAXSEQNO) && (sum->metric == metric);
-}
-
-#define check_sum_net_lsa_same(en,metric) \
-  check_sum_lsa_same(en, metric)
-
-#define check_sum_rt_lsa_same(en,drid,metric,options) \
-  check_sum_lsa_same(en, metric)
-
-
-#else /* OSPFv3 */
-
-static inline void *
-originate_sum_net_lsa_body(struct proto_ospf *po, u16 *length, struct fib_node *fn, u32 metric)
-{
-  int size = sizeof(struct ospf_lsa_sum_net) + IPV6_PREFIX_SPACE(fn->pxlen);
-  struct ospf_lsa_sum_net *sum = mb_alloc(po->proto.pool, size);
-  *length = sizeof(struct ospf_lsa_header) + size;
-
+  sum = lsab_allocz(p, sizeof(struct ospf_lsa_sum3_net) + IPV6_PREFIX_SPACE(nf->fn.pxlen));
   sum->metric = metric;
-  put_ipv6_prefix(sum->prefix, fn->prefix, fn->pxlen, 0, 0);
-
-  return sum;
+  put_ipv6_prefix(sum->prefix, nf->fn.prefix, nf->fn.pxlen, 0, 0);
 }
 
-static inline int
-check_sum_net_lsaid_collision(struct fib_node *fn, struct top_hash_entry *en)
+static inline void
+prepare_sum3_rt_lsa_body(struct ospf_proto *p, u32 drid, u32 metric, u32 options)
 {
-  struct ospf_lsa_sum_net *sum = en->lsa_body;
-  ip_addr prefix;
-  int pxlen;
-  u8 pxopts;
-  u16 rest;
+  struct ospf_lsa_sum3_rt *sum;
 
-  lsa_get_ipv6_prefix(sum->prefix, &prefix, &pxlen, &pxopts, &rest);
-  return (fn->pxlen != pxlen) || !ipa_equal(fn->prefix, prefix);
-}
-
-static inline int
-check_sum_net_lsa_same(struct top_hash_entry *en, u32 metric)
-{
-  /* Prefix already checked in check_sum_net_lsaid_collision() */
-  struct ospf_lsa_sum_net *sum = en->lsa_body;
-  return (en->lsa.sn != LSA_MAXSEQNO) && (sum->metric == metric);
-}
-
-static inline void *
-originate_sum_rt_lsa_body(struct proto_ospf *po, u16 *length, u32 drid, u32 metric, u32 options)
-{
-  struct ospf_lsa_sum_rt *sum = mb_alloc(po->proto.pool, sizeof(struct ospf_lsa_sum_rt));
-  *length = sizeof(struct ospf_lsa_header) + sizeof(struct ospf_lsa_sum_rt);
-
+  sum = lsab_allocz(p, sizeof(struct ospf_lsa_sum3_rt));
   sum->options = options;
   sum->metric = metric;
   sum->drid = drid;
-
-  return sum;
-}
-
-static inline int
-check_sum_rt_lsa_same(struct top_hash_entry *en, u32 drid, u32 metric, u32 options)
-{
-  struct ospf_lsa_sum_rt *sum = en->lsa_body;
-  return (en->lsa.sn != LSA_MAXSEQNO) && (sum->options == options) &&
-    (sum->metric == metric) && (sum->drid == drid);
-}
-
-#endif
-
-void
-originate_sum_net_lsa(struct ospf_area *oa, struct fib_node *fn, int metric)
-{
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  struct top_hash_entry *en;
-  u32 dom = oa->areaid;
-  struct ospf_lsa_header lsa;
-  void *body;
-
-  OSPF_TRACE(D_EVENTS, "Originating net-summary-LSA for %I/%d (metric %d)",
-	     fn->prefix, fn->pxlen, metric);
-
-  /* options argument is used in ORT_NET and OSPFv3 only */
-  lsa.age = 0;
-#ifdef OSPFv2
-  lsa.options = oa->options;
-#endif
-  lsa.type = LSA_T_SUM_NET;
-  lsa.id = fibnode_to_lsaid(po, fn);
-  lsa.rt = po->router_id;
-
-  if ((en = ospf_hash_find_header(po->gr, dom, &lsa)) != NULL)
-  {
-    if (check_sum_net_lsaid_collision(fn, en))
-    {
-      log(L_ERR "%s: LSAID collision for %I/%d",
-	  p->name, fn->prefix, fn->pxlen);
-      return;
-    }
-
-    if (check_sum_net_lsa_same(en, metric))
-      return;
-  }
-  lsa.sn = get_seqnum(en);
-
-  body = originate_sum_net_lsa_body(po, &lsa.length, fn, metric);
-  lsasum_calculate(&lsa, body);
-  lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
 }
 
 void
-originate_sum_rt_lsa(struct ospf_area *oa, struct fib_node *fn, int metric, u32 options UNUSED)
+ospf_originate_sum_net_lsa(struct ospf_proto *p, struct ospf_area *oa, ort *nf, int metric)
 {
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  struct top_hash_entry *en;
-  u32 dom = oa->areaid;
-  u32 rid = ipa_to_rid(fn->prefix);
-  struct ospf_lsa_header lsa;
-  void *body;
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_SUM_NET,
+    .mode = LSA_M_RTCALC,
+    .dom  = oa->areaid,
+    .id   = ort_to_lsaid(p, nf),
+    .opts = oa->options,
+    .nf   = nf
+  };
 
-  OSPF_TRACE(D_EVENTS, "Originating rt-summary-LSA for %R (metric %d)",
-	     rid, metric);
-
-  lsa.age = 0;
-#ifdef OSPFv2
-  lsa.options = oa->options;
-#endif
-  lsa.type = LSA_T_SUM_RT;
-  /* In OSPFv3, LSA ID is meaningless, but we still use Router ID of ASBR */
-  lsa.id = rid;
-  lsa.rt = po->router_id;
-
-  options &= OPTIONS_MASK;
-  if ((en = ospf_hash_find_header(po->gr, dom, &lsa)) != NULL)
-  {
-    if (check_sum_rt_lsa_same(en, lsa.id, metric, options))
-      return;
-  }
-  lsa.sn = get_seqnum(en);
-
-  body = originate_sum_rt_lsa_body(po, &lsa.length, lsa.id, metric, options);
-  lsasum_calculate(&lsa, body);
-  lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
-}
-
-void
-flush_sum_lsa(struct ospf_area *oa, struct fib_node *fn, int type)
-{
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  struct top_hash_entry *en;
-  struct ospf_lsa_header lsa;
-
-  lsa.rt = po->router_id;
-  if (type == ORT_NET)
-    {
-      lsa.id = fibnode_to_lsaid(po, fn);
-      lsa.type = LSA_T_SUM_NET;
-    }
+  if (ospf_is_v2(p))
+    prepare_sum2_lsa_body(p, nf->fn.pxlen, metric);
   else
-    {
-      /* In OSPFv3, LSA ID is meaningless, but we still use Router ID of ASBR */
-      lsa.id = ipa_to_rid(fn->prefix);
-      lsa.type = LSA_T_SUM_RT;
-    }
+    prepare_sum3_net_lsa_body(p, nf, metric);
 
-  if ((en = ospf_hash_find_header(po->gr, oa->areaid, &lsa)) != NULL)
-    {
-      OSPF_TRACE(D_EVENTS, "Flushing summary-LSA (id=%R, type=%d)",
-		 en->lsa.id, en->lsa.type);
-
-      if ((type == ORT_NET) && check_sum_net_lsaid_collision(fn, en))
-	{
-	  log(L_ERR "%s: LSAID collision for %I/%d",
-	      p->name, fn->prefix, fn->pxlen);
-	  return;
-	}
-
-      struct ospf_lsa_sum *sum = en->lsa_body;
-      en->lsa.age = LSA_MAXAGE;
-      en->lsa.sn = LSA_MAXSEQNO;
-      lsasum_calculate(&en->lsa, sum);
-      ospf_lsupd_flood(po, NULL, NULL, &en->lsa, oa->areaid, 1);
-      if (can_flush_lsa(po)) flush_lsa(en, po);
-    }
+  ospf_originate_lsa(p, &lsa);
 }
 
-#ifdef OSPFv2
-
-static inline void *
-originate_ext_lsa_body(struct proto_ospf *po, u16 *length, struct fib_node *fn,
-		       u32 metric, ip_addr fwaddr, u32 tag, int pbit UNUSED)
+void
+ospf_originate_sum_rt_lsa(struct ospf_proto *p, struct ospf_area *oa, ort *nf, int metric, u32 options)
 {
-  struct ospf_lsa_ext *ext = mb_alloc(po->proto.pool, sizeof(struct ospf_lsa_ext));
-  *length = sizeof(struct ospf_lsa_header) + sizeof(struct ospf_lsa_ext);
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_SUM_RT,
+    .mode = LSA_M_RTCALC,
+    .dom  = oa->areaid,
+    .id   = ipa_to_rid(nf->fn.prefix),	/* Router ID of ASBR, irrelevant for OSPFv3 */
+    .opts = oa->options
+  };
 
-  ext->metric = metric; 
-  ext->netmask = ipa_mkmask(fn->pxlen);
-  ext->fwaddr = fwaddr;
-  ext->tag = tag;
+  if (ospf_is_v2(p))
+    prepare_sum2_lsa_body(p, 0, metric);
+  else
+    prepare_sum3_rt_lsa_body(p, lsa.id, metric, options & LSA_OPTIONS_MASK);
 
-  return ext;
+  ospf_originate_lsa(p, &lsa);
 }
+
 
 /*
- * check_ext_lsa() combines functions of check_*_lsaid_collision() and
- * check_*_lsa_same(). 'en' is existing ext LSA, and rest parameters
- * are parameters of new ext route.  Function returns -1 if there is
- * LSAID collision, returns 1 if the existing LSA is the same and
- * returns 0 otherwise (in that case, we need to originate a new LSA).
- *
- * Really, checking for the same parameters is not as important as in
- * summary LSA origination, because in most cases the duplicate
- * external route propagation would be stopped by the nest. But there
- * are still some cases (route reload, the same route propagated through
- * different protocol) so it is also done here.
+ *	AS-external-LSA and NSSA-LSA handling
+ *	Type = LSA_T_EXT, LSA_T_NSSA
  */
 
-static inline int
-check_ext_lsa(struct top_hash_entry *en, struct fib_node *fn, u32 metric, ip_addr fwaddr, u32 tag)
+static inline void
+prepare_ext2_lsa_body(struct ospf_proto *p, uint pxlen,
+		      u32 metric, u32 ebit, ip_addr fwaddr, u32 tag)
 {
-  struct ospf_lsa_ext *ext = en->lsa_body;
+  struct ospf_lsa_ext2 *ext;
 
-  /* LSAID collision */
-  if  (fn->pxlen != ipa_mklen(ext->netmask))
-    return -1;
+  ext = lsab_allocz(p, sizeof(struct ospf_lsa_ext2));
+  ext->metric = metric & LSA_METRIC_MASK;
+  ext->netmask = u32_mkmask(pxlen);
+  ext->fwaddr = ipa_to_u32(fwaddr);
+  ext->tag = tag;
 
-  return (en->lsa.sn != LSA_MAXSEQNO) && (ext->metric == metric) &&
-    (ext->tag == tag) && ipa_equal(ext->fwaddr,fwaddr);
+  if (ebit)
+    ext->metric |= LSA_EXT2_EBIT;
 }
 
-#else /* OSPFv3 */
-
-static inline void *
-originate_ext_lsa_body(struct proto_ospf *po, u16 *length, struct fib_node *fn,
-		       u32 metric, ip_addr fwaddr, u32 tag, int pbit)
+static inline void
+prepare_ext3_lsa_body(struct ospf_proto *p, ort *nf,
+		      u32 metric, u32 ebit, ip_addr fwaddr, u32 tag, int pbit)
 {
-  int size = sizeof(struct ospf_lsa_ext)
-    + IPV6_PREFIX_SPACE(fn->pxlen)
+  struct ospf_lsa_ext3 *ext;
+  int bsize = sizeof(struct ospf_lsa_ext3)
+    + IPV6_PREFIX_SPACE(nf->fn.pxlen)
     + (ipa_nonzero(fwaddr) ? 16 : 0)
     + (tag ? 4 : 0);
 
-  struct ospf_lsa_ext *ext = mb_alloc(po->proto.pool, size);
-  *length = sizeof(struct ospf_lsa_header) + size;
-
-  ext->metric = metric;
-
+  ext = lsab_allocz(p, bsize);
+  ext->metric = metric & LSA_METRIC_MASK;
   u32 *buf = ext->rest;
-  buf = put_ipv6_prefix(buf, fn->prefix, fn->pxlen, pbit ? OPT_PX_P : 0, 0);
+
+  buf = put_ipv6_prefix(buf, nf->fn.prefix, nf->fn.pxlen, pbit ? OPT_PX_P : 0, 0);
+
+  if (ebit)
+    ext->metric |= LSA_EXT3_EBIT;
 
   if (ipa_nonzero(fwaddr))
   {
-    ext->metric |= LSA_EXT_FBIT;
+    ext->metric |= LSA_EXT3_FBIT;
     buf = put_ipv6_addr(buf, fwaddr);
   }
 
   if (tag)
   {
-    ext->metric |= LSA_EXT_TBIT;
+    ext->metric |= LSA_EXT3_TBIT;
     *buf++ = tag;
   }
+}
 
-  return ext;
+/**
+ * originate_ext_lsa - new route received from nest and filters
+ * @p: OSPF protocol instance
+ * @oa: ospf_area for which LSA is originated
+ * @nf: network prefix and mask
+ * @mode: the mode of the LSA (LSA_M_EXPORT or LSA_M_RTCALC)
+ * @metric: the metric of a route
+ * @ebit: E-bit for route metric (bool)
+ * @fwaddr: the forwarding address
+ * @tag: the route tag
+ * @pbit: P-bit for NSSA LSAs (bool), ignored for external LSAs
+ *
+ * If I receive a message that new route is installed, I try to originate an
+ * external LSA. If @oa is an NSSA area, NSSA-LSA is originated instead.
+ * @oa should not be a stub area. @src does not specify whether the LSA
+ * is external or NSSA, but it specifies the source of origination -
+ * the export from ospf_rt_notify(), or the NSSA-EXT translation.
+ */
+void
+ospf_originate_ext_lsa(struct ospf_proto *p, struct ospf_area *oa, ort *nf, u8 mode,
+		       u32 metric, u32 ebit, ip_addr fwaddr, u32 tag, int pbit)
+{
+  struct ospf_new_lsa lsa = {
+    .type = oa ? LSA_T_NSSA : LSA_T_EXT,
+    .mode = mode, /* LSA_M_EXPORT or LSA_M_RTCALC */
+    .dom  = oa ? oa->areaid : 0,
+    .id   = ort_to_lsaid(p, nf),
+    .opts = oa ? (pbit ? OPT_P : 0) : OPT_E,
+    .nf   = nf
+  };
+
+  if (ospf_is_v2(p))
+    prepare_ext2_lsa_body(p, nf->fn.pxlen, metric, ebit, fwaddr, tag);
+  else
+    prepare_ext3_lsa_body(p, nf, metric, ebit, fwaddr, tag, oa && pbit);
+
+  ospf_originate_lsa(p, &lsa);
+}
+
+static struct top_hash_entry *
+ospf_hash_find_(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type);
+
+static void
+ospf_flush_ext_lsa(struct ospf_proto *p, struct ospf_area *oa, ort *nf)
+{
+  struct top_hash_entry *en;
+
+  u32 type = oa ? LSA_T_NSSA : LSA_T_EXT;
+  u32 dom = oa ? oa->areaid : 0;
+  u32 id = ort_to_lsaid(p, nf);
+
+  en = ospf_hash_find_(p->gr, dom, id, p->router_id, type);
+
+  if (!en || (en->nf != nf))
+    return;
+
+  ospf_flush_lsa(p, en);
 }
 
 static inline int
-check_ext_lsa(struct top_hash_entry *en, struct fib_node *fn, u32 metric, ip_addr fwaddr, u32 tag)
+use_gw_for_fwaddr(struct ospf_proto *p, ip_addr gw, struct iface *iface)
 {
-  struct ospf_lsa_ext *ext = en->lsa_body;
-  ip_addr prefix;
-  int pxlen;
-  u8 pxopts;
-  u16 rest;
+  struct ospf_iface *ifa;
 
-  u32 *buf = lsa_get_ipv6_prefix(ext->rest, &prefix, &pxlen, &pxopts, &rest);
-
-  /* LSAID collision */
-  if ((fn->pxlen != pxlen) || !ipa_equal(fn->prefix, prefix))
-    return -1;
-
-  if (en->lsa.sn == LSA_MAXSEQNO)
+  if (ipa_zero(gw) || ipa_is_link_local(gw))
     return 0;
 
-  u32 rt_metric = ext->metric & METRIC_MASK;
-  ip_addr rt_fwaddr = IPA_NONE;
-  u32 rt_tag = 0;
+  WALK_LIST(ifa, p->iface_list)
+    if ((ifa->iface == iface) &&
+	(!ospf_is_v2(p) || ipa_in_net(gw, ifa->addr->prefix, ifa->addr->pxlen)))
+      return 1;
 
-  if (ext->metric & LSA_EXT_FBIT)
-    buf = lsa_get_ipv6_addr(buf, &rt_fwaddr);
-
-  if (ext->metric & LSA_EXT_TBIT)
-    rt_tag = *buf++;
-
-  return (rt_metric == metric) && ipa_equal(rt_fwaddr, fwaddr) && (rt_tag == tag);
+  return 0;
 }
 
-
-#endif
-
 static inline ip_addr
-find_surrogate_fwaddr(struct ospf_area *oa)
+find_surrogate_fwaddr(struct ospf_proto *p, struct ospf_area *oa)
 {
-  struct proto_ospf *po = oa->po;
   struct ospf_iface *ifa;
   struct ifa *a, *cur_addr = NULL;
   int np, cur_np = 0;
 
-  WALK_LIST(ifa, po->iface_list)
+  /* RFC 3101 2.3 - surrogate forwarding address selection */
+
+  WALK_LIST(ifa, p->iface_list)
   {
     if ((ifa->oa != oa) ||
 	(ifa->type == OSPF_IT_VLINK))
       continue;
 
-#ifdef OSPFv2
-    a = ifa->addr;
-    if (a->flags & IA_PEER)
-      continue;
-
-    np = ((a->flags & IA_HOST) || ifa->stub) ? 2 : 1;
-    if (np > cur_np)
+    if (ospf_is_v2(p))
     {
-      cur_addr = a;
-      cur_np = np;
-    }
-
-#else /* OSPFv3 */
-    WALK_LIST(a, ifa->iface->addrs)
-    {
-      if ((a->flags & IA_SECONDARY) ||
-	  (a->flags & IA_PEER) ||
-	  (a->scope <= SCOPE_LINK))
+      a = ifa->addr;
+      if (a->flags & IA_PEER)
 	continue;
 
-      np = ((a->flags & IA_HOST) || ifa->stub) ? 2 : 1;
+      np = (a->flags & IA_HOST) ? 3 : (ifa->stub ? 2 : 1);
       if (np > cur_np)
       {
 	cur_addr = a;
 	cur_np = np;
       }
     }
-#endif
+    else /* OSPFv3 */
+    {
+      WALK_LIST(a, ifa->iface->addrs)
+      {
+	if ((a->flags & IA_SECONDARY) ||
+	    (a->flags & IA_PEER) ||
+	    (a->scope <= SCOPE_LINK))
+	  continue;
+
+	np = (a->flags & IA_HOST) ? 3 : (ifa->stub ? 2 : 1);
+	if (np > cur_np)
+	{
+	  cur_addr = a;
+	  cur_np = np;
+	}
+      }
+    }
   }
 
   return cur_addr ? cur_addr->ip : IPA_NONE;
 }
 
-
-/**
- * originate_ext_lsa - new route received from nest and filters
- * @oa: ospf_area for which LSA is originated
- * @fn: network prefix and mask
- * @src: the source of origination of the LSA (EXT_EXPORT/EXT_NSSA)
- * @metric: the metric of a route
- * @fwaddr: the forwarding address
- * @tag: the route tag
- * @pbit: P-bit for NSSA LSAs, ignored for external LSAs
- *
- * If I receive a message that new route is installed, I try to originate an
- * external LSA. If @oa is an NSSA area, NSSA-LSA is originated instead.
- * @oa should not be a stub area. @src does not specify whether the LSA
- * is external or NSSA, but it specifies the source of origination - 
- * the export from ospf_rt_notify(), or the NSSA-EXT translation.
- *
- * The function also sets flag ebit. If it's the first time, the new router lsa
- * origination is necessary.
- */
 void
-originate_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int src,
-		  u32 metric, ip_addr fwaddr, u32 tag, int pbit)
+ospf_rt_notify(struct proto *P, rtable *tbl UNUSED, net *n, rte *new, rte *old UNUSED, ea_list *ea)
 {
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  struct ospf_lsa_header lsa;
-  struct top_hash_entry *en = NULL;
-  void *body;
-  int nssa = oa_is_nssa(oa);
-  u32 dom = nssa ? oa->areaid : 0;
+  struct ospf_proto *p = (struct ospf_proto *) P;
+  struct ospf_area *oa = NULL;	/* non-NULL for NSSA-LSA */
+  ort *nf;
 
-  OSPF_TRACE(D_EVENTS, "Originating %s-LSA for %I/%d",
-	     nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
+  /*
+   * There are several posibilities:
+   * 1) router in regular area - originate external LSA with global scope
+   * 2) router in NSSA area - originate area-specific NSSA-LSA
+   * 3) router in stub area - cannot export routes
+   * 4) area border router - same as (1), it is attached to backbone
+   */
 
-  lsa.age = 0;
-#ifdef OSPFv2
-  lsa.options = nssa ? (pbit ? OPT_P : 0) : OPT_E;
-#endif
-  lsa.type = nssa ? LSA_T_NSSA : LSA_T_EXT;
-  lsa.id = fibnode_to_lsaid(po, fn);
-  lsa.rt = po->router_id;
+  if ((p->areano == 1) && oa_is_nssa(HEAD(p->area_list)))
+    oa = HEAD(p->area_list);
 
-  if (nssa && pbit && ipa_zero(fwaddr))
+  if (!new)
   {
-    /* NSSA-LSA with P-bit set must have non-zero forwarding address */
+    nf = (ort *) fib_find(&p->rtf, &n->n.prefix, n->n.pxlen);
 
-    fwaddr = find_surrogate_fwaddr(oa);
-    if (ipa_zero(fwaddr))
+    if (!nf || !nf->external_rte)
+      return;
+
+    ospf_flush_ext_lsa(p, oa, nf);
+    nf->external_rte = 0;
+
+    /* Old external route might blocked some NSSA translation */
+    if ((p->areano > 1) && rt_is_nssa(nf) && nf->n.oa->translate)
+      ospf_schedule_rtcalc(p);
+
+    return;
+  }
+
+  ASSERT(p->asbr);
+
+  /* Get route attributes */
+  rta *a = new->attrs;
+  u32 m1 = ea_get_int(ea, EA_OSPF_METRIC1, LSINFINITY);
+  u32 m2 = ea_get_int(ea, EA_OSPF_METRIC2, 10000);
+  int ebit = (m1 == LSINFINITY);
+  u32 metric = ebit ? m2 : m1;
+  u32 tag = ea_get_int(ea, EA_OSPF_TAG, 0);
+  ip_addr fwd = IPA_NONE;
+
+
+  if ((a->dest == RTD_ROUTER) && use_gw_for_fwaddr(p, a->gw, a->iface))
+    fwd = a->gw;
+
+  /* NSSA-LSA with P-bit set must have non-zero forwarding address */
+  if (oa && ipa_zero(fwd))
+  {
+    fwd = find_surrogate_fwaddr(p, oa);
+
+    if (ipa_zero(fwd))
     {
       log(L_ERR "%s: Cannot find forwarding address for NSSA-LSA %I/%d",
-	  p->name, fn->prefix, fn->pxlen);
+	  p->p.name, n->n.prefix, n->n.pxlen);
       return;
     }
   }
 
-  if ((en = ospf_hash_find_header(po->gr, dom, &lsa)) != NULL)
-  {
-    int rv = check_ext_lsa(en, fn, metric, fwaddr, tag);
-    if (rv < 0)
-    {
-      log(L_ERR "%s: LSAID collision for %I/%d",
-	  p->name, fn->prefix, fn->pxlen);
-      return;
-    }
-
-    if (rv > 0)
-      return;
-  }
-  lsa.sn = get_seqnum(en);
-
-  body = originate_ext_lsa_body(po, &lsa.length, fn, metric, fwaddr, tag, pbit);
-  lsasum_calculate(&lsa, body);
-
-  if (src) 
-    fn->x1 = src;
-
-  lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
-
-  if (po->ebit == 0)
-  {
-    po->ebit = 1;
-    WALK_LIST(oa, po->area_list)
-    {
-      schedule_rt_lsa(oa);
-    }
-  }
-}
-
-void
-flush_ext_lsa(struct ospf_area *oa, struct fib_node *fn, int nssa)
-{
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;
-  struct top_hash_entry *en;
-
-  u32 dom = nssa ? oa->areaid : 0;
-  u32 type = nssa ? LSA_T_NSSA : LSA_T_EXT;
-  u32 lsaid = fibnode_to_lsaid(po, fn);
-
-  if (en = ospf_hash_find(po->gr, dom, lsaid, po->router_id, type))
-    {
-      OSPF_TRACE(D_EVENTS, "Flushing %s-LSA for %I/%d",
-		 nssa ? "NSSA" : "AS-external", fn->prefix, fn->pxlen);
-
-      if (check_ext_lsa(en, fn, 0, IPA_NONE, 0) < 0)
-	{
-	  log(L_ERR "%s: LSAID collision for %I/%d",
-	      p->name, fn->prefix, fn->pxlen);
-	  return;
-	}
-
-      fn->x1 = 0;
-      ospf_lsupd_flush_nlsa(po, en);
-    }
+  nf = (ort *) fib_get(&p->rtf, &n->n.prefix, n->n.pxlen);
+  ospf_originate_ext_lsa(p, oa, nf, LSA_M_EXPORT, metric, ebit, fwd, tag, 1);
+  nf->external_rte = 1;
 }
 
 
-#ifdef OSPFv3
+/*
+ *	Link-LSA handling (assume OSPFv3)
+ *	Type = LSA_T_LINK
+ */
 
-static void *
-originate_link_lsa_body(struct ospf_iface *ifa, u16 *length)
+static inline void
+lsab_put_prefix(struct ospf_proto *p, ip_addr prefix, u32 pxlen, u32 cost)
 {
-  struct proto_ospf *po = ifa->oa->po;
+  void *buf = lsab_alloc(p, IPV6_PREFIX_SPACE(pxlen));
+  u8 flags = (pxlen < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA;
+  put_ipv6_prefix(buf, prefix, pxlen, flags, cost);
+}
+
+static void
+prepare_link_lsa_body(struct ospf_proto *p, struct ospf_iface *ifa)
+{
   struct ospf_lsa_link *ll;
   int i = 0;
-  u8 flags;
 
-  ASSERT(po->lsab_used == 0);
-  ll = lsab_allocz(po, sizeof(struct ospf_lsa_link));
+  ASSERT(p->lsab_used == 0);
+  ll = lsab_allocz(p, sizeof(struct ospf_lsa_link));
   ll->options = ifa->oa->options | (ifa->priority << 24);
-  ll->lladdr = ifa->addr->ip;
+  ll->lladdr = ipa_to_ip6(ifa->addr->ip);
   ll = NULL; /* buffer might be reallocated later */
 
   struct ifa *a;
   WALK_LIST(a, ifa->iface->addrs)
-    {
-      if ((a->flags & IA_SECONDARY) ||
-	  (a->scope < SCOPE_SITE))
-	continue;
+  {
+    if ((a->flags & IA_SECONDARY) ||
+	(a->scope < SCOPE_SITE))
+      continue;
 
-      flags = (a->pxlen < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA;
-      put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(a->pxlen)),
-		      a->ip, a->pxlen, flags, 0);
-      i++;
-    }
+    lsab_put_prefix(p, a->prefix, a->pxlen, 0);
+    i++;
+  }
 
-  ll = po->lsab;
+  ll = p->lsab;
   ll->pxcount = i;
-  *length = po->lsab_used + sizeof(struct ospf_lsa_header);
-  return lsab_flush(po);
 }
 
-void
-originate_link_lsa(struct ospf_iface *ifa)
+static void
+ospf_originate_link_lsa(struct ospf_proto *p, struct ospf_iface *ifa)
 {
-  struct ospf_lsa_header lsa;
-  struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  void *body;
-
-  /* Vlinks do not have link-LSAs */
-  if (ifa->type == OSPF_IT_VLINK)
+  if (ospf_is_v2(p))
     return;
 
-  OSPF_TRACE(D_EVENTS, "Originating link-LSA for iface %s", ifa->ifname);
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_LINK,
+    .dom  = ifa->iface_id,
+    .id   = ifa->iface_id,
+    .ifa  = ifa
+  };
 
-  lsa.age = 0;
-  lsa.type = LSA_T_LINK;
-  lsa.id = ifa->iface_id;
-  lsa.rt = po->router_id;
-  lsa.sn = get_seqnum(ifa->link_lsa);
-  u32 dom = ifa->iface_id;
+  OSPF_TRACE(D_EVENTS, "Updating link state for %s (Id: %R)", ifa->ifname, lsa.id);
 
-  body = originate_link_lsa_body(ifa, &lsa.length);
-  lsasum_calculate(&lsa, body);
-  ifa->link_lsa = lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
+  prepare_link_lsa_body(p, ifa);
 
-  /* Just to be sure to not forget on our link LSA */
-  if (ifa->state == OSPF_IS_DR)
-    schedule_net_lsa(ifa);
+  ifa->link_lsa = ospf_originate_lsa(p, &lsa);
 }
 
-void
-update_link_lsa(struct ospf_iface *ifa)
-{
-  if (ifa->link_lsa && ((ifa->link_lsa->inst_t + MINLSINTERVAL) > now))
-    return;
-  /*
-   * It's too early to originate new link LSA. We will
-   * try to do it next tick
-   */
-  originate_link_lsa(ifa);
-  ifa->origlink = 0;
-}
 
-static inline void
-lsa_put_prefix(struct proto_ospf *po, ip_addr prefix, u32 pxlen, u32 cost)
-{
-  put_ipv6_prefix(lsab_alloc(po, IPV6_PREFIX_SPACE(pxlen)), prefix, pxlen,
-		  (pxlen < MAX_PREFIX_LENGTH) ? 0 : OPT_PX_LA, cost);
-}
+/*
+ *	Prefix-Rt-LSA handling (assume OSPFv3)
+ *	Type = LSA_T_PREFIX, referred type = LSA_T_RT
+ */
 
-static void *
-originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
+static void
+prepare_prefix_rt_lsa_body(struct ospf_proto *p, struct ospf_area *oa)
 {
-  struct proto_ospf *po = oa->po;
-  struct ospf_config *cf = (struct ospf_config *) (po->proto.cf);
+  struct ospf_config *cf = (struct ospf_config *) (p->p.cf);
   struct ospf_iface *ifa;
   struct ospf_lsa_prefix *lp;
   int host_addr = 0;
   int net_lsa;
   int i = 0;
 
-  ASSERT(po->lsab_used == 0);
-  lp = lsab_allocz(po, sizeof(struct ospf_lsa_prefix));
+  ASSERT(p->lsab_used == 0);
+  lp = lsab_allocz(p, sizeof(struct ospf_lsa_prefix));
   lp->ref_type = LSA_T_RT;
   lp->ref_id = 0;
-  lp->ref_rt = po->router_id;
+  lp->ref_rt = p->router_id;
   lp = NULL; /* buffer might be reallocated later */
 
-  WALK_LIST(ifa, po->iface_list)
+  WALK_LIST(ifa, p->iface_list)
   {
     if ((ifa->oa != oa) || (ifa->type == OSPF_IT_VLINK) || (ifa->state == OSPF_IS_DOWN))
       continue;
@@ -1286,47 +1400,46 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
 
     struct ifa *a;
     WALK_LIST(a, ifa->iface->addrs)
+    {
+      if ((a->flags & IA_SECONDARY) ||
+	  (a->flags & IA_PEER) ||
+	  (a->scope <= SCOPE_LINK))
+	continue;
+
+      if (((a->pxlen < MAX_PREFIX_LENGTH) && net_lsa) ||
+	  configured_stubnet(oa, a))
+	continue;
+
+      if ((a->flags & IA_HOST) ||
+	  (ifa->state == OSPF_IS_LOOP) ||
+	  (ifa->type == OSPF_IT_PTMP))
       {
-	if ((a->flags & IA_SECONDARY) ||
-	    (a->flags & IA_PEER) ||
-	    (a->scope <= SCOPE_LINK))
-	  continue;
-
-	if (((a->pxlen < MAX_PREFIX_LENGTH) && net_lsa) ||
-	    configured_stubnet(oa, a))
-	  continue;
-
-	if ((a->flags & IA_HOST) ||
-	    (ifa->state == OSPF_IS_LOOP) ||
-	    (ifa->type == OSPF_IT_PTMP))
-	{
-	  lsa_put_prefix(po, a->ip, MAX_PREFIX_LENGTH, 0);
-	  host_addr = 1;
-	}
-	else
-	  lsa_put_prefix(po, a->prefix, a->pxlen, ifa->cost);
-	i++;
+	lsab_put_prefix(p, a->ip, MAX_PREFIX_LENGTH, 0);
+	host_addr = 1;
       }
+      else
+	lsab_put_prefix(p, a->prefix, a->pxlen, ifa->cost);
+      i++;
+    }
 
     ifa->px_pos_end = i;
   }
 
   struct ospf_stubnet_config *sn;
-  if (oa->ac)
-    WALK_LIST(sn, oa->ac->stubnet_list)
-      if (!sn->hidden)
-      {
-	lsa_put_prefix(po, sn->px.addr, sn->px.len, sn->cost);
-	if (sn->px.len == MAX_PREFIX_LENGTH)
-	  host_addr = 1;
-	i++;
-      }
+  WALK_LIST(sn, oa->ac->stubnet_list)
+    if (!sn->hidden)
+    {
+      lsab_put_prefix(p, sn->px.addr, sn->px.len, sn->cost);
+      if (sn->px.len == MAX_PREFIX_LENGTH)
+	host_addr = 1;
+      i++;
+    }
 
   /* If there are some configured vlinks, find some global address
      (even from another area), which will be used as a vlink endpoint. */
   if (!EMPTY_LIST(cf->vlink_list) && !host_addr)
   {
-    WALK_LIST(ifa, po->iface_list)
+    WALK_LIST(ifa, p->iface_list)
     {
       if ((ifa->type == OSPF_IT_VLINK) || (ifa->state == OSPF_IS_DOWN))
 	continue;
@@ -1338,7 +1451,7 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
 	  continue;
 
 	/* Found some IP */
-	lsa_put_prefix(po, a->ip, MAX_PREFIX_LENGTH, 0);
+	lsab_put_prefix(p, a->ip, MAX_PREFIX_LENGTH, 0);
 	i++;
 	goto done;
       }
@@ -1346,35 +1459,32 @@ originate_prefix_rt_lsa_body(struct ospf_area *oa, u16 *length)
   }
 
  done:
-  lp = po->lsab;
+  lp = p->lsab;
   lp->pxcount = i;
-  *length = po->lsab_used + sizeof(struct ospf_lsa_header);
-  return lsab_flush(po);
 }
 
-void
-originate_prefix_rt_lsa(struct ospf_area *oa)
+static void
+ospf_originate_prefix_rt_lsa(struct ospf_proto *p, struct ospf_area *oa)
 {
-  struct proto_ospf *po = oa->po;
-  struct proto *p = &po->proto;  
-  struct ospf_lsa_header lsa;
-  void *body;
+  if (ospf_is_v2(p))
+    return;
 
-  OSPF_TRACE(D_EVENTS, "Originating router prefix-LSA for area %R", oa->areaid);
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_PREFIX,
+    .dom  = oa->areaid,
+    .id   = 0
+  };
 
-  lsa.age = 0;
-  lsa.type = LSA_T_PREFIX;
-  lsa.id = 0;
-  lsa.rt = po->router_id;
-  lsa.sn = get_seqnum(oa->pxr_lsa);
-  u32 dom = oa->areaid;
+  prepare_prefix_rt_lsa_body(p, oa);
 
-  body = originate_prefix_rt_lsa_body(oa, &lsa.length);
-  lsasum_calculate(&lsa, body);
-  oa->pxr_lsa = lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
+  ospf_originate_lsa(p, &lsa);
 }
 
+
+/*
+ *	Prefix-Net-LSA handling (assume OSPFv3)
+ *	Type = LSA_T_PREFIX, referred type = LSA_T_NET
+ */
 
 static inline int
 prefix_space(u32 *buf)
@@ -1389,7 +1499,7 @@ prefix_same(u32 *b1, u32 *b2)
   int pxl1 = *b1 >> 24;
   int pxl2 = *b2 >> 24;
   int pxs, i;
-  
+
   if (pxl1 != pxl2)
     return 0;
 
@@ -1410,9 +1520,9 @@ prefix_advance(u32 *buf)
 
 /* FIXME eliminate items with LA bit set? see 4.4.3.9 */
 static void
-add_prefix(struct proto_ospf *po, u32 *px, int offset, int *pxc)
+add_prefix(struct ospf_proto *p, u32 *px, int offset, int *pxc)
 {
-  u32 *pxl = lsab_offset(po, offset);
+  u32 *pxl = lsab_offset(p, offset);
   int i;
   for (i = 0; i < *pxc; pxl = prefix_advance(pxl), i++)
     if (prefix_same(px, pxl))
@@ -1422,21 +1532,20 @@ add_prefix(struct proto_ospf *po, u32 *px, int offset, int *pxc)
       return;
     }
 
-  ASSERT(pxl == lsab_end(po));
+  ASSERT(pxl == lsab_end(p));
 
   int pxspace = prefix_space(px);
-  pxl = lsab_alloc(po, pxspace);
+  pxl = lsab_alloc(p, pxspace);
   memcpy(pxl, px, pxspace);
   *pxl &= 0xFFFF0000;	/* Set metric to zero */
   (*pxc)++;
 }
 
 static void
-add_link_lsa(struct proto_ospf *po, struct top_hash_entry *en, int offset, int *pxc)
+add_link_lsa(struct ospf_proto *p, struct ospf_lsa_link *ll, int offset, int *pxc)
 {
-  struct ospf_lsa_link *ll = en->lsa_body;
   u32 *pxb = ll->rest;
-  int j;
+  uint j;
 
   for (j = 0; j < ll->pxcount; pxb = prefix_advance(pxb), j++)
   {
@@ -1451,92 +1560,129 @@ add_link_lsa(struct proto_ospf *po, struct top_hash_entry *en, int offset, int *
     if ((pxlen >= 10) && ((pxb[1] & 0xffc00000) == 0xfe800000))
       continue;
 
-    add_prefix(po, pxb, offset, pxc);
+    add_prefix(p, pxb, offset, pxc);
   }
 }
 
-
-
-static void *
-originate_prefix_net_lsa_body(struct ospf_iface *ifa, u16 *length)
+static void
+prepare_prefix_net_lsa_body(struct ospf_proto *p, struct ospf_iface *ifa)
 {
-  struct proto_ospf *po = ifa->oa->po;
   struct ospf_lsa_prefix *lp;
   struct ospf_neighbor *n;
   struct top_hash_entry *en;
   int pxc, offset;
 
-  ASSERT(po->lsab_used == 0);
-  lp = lsab_allocz(po, sizeof(struct ospf_lsa_prefix));
+  ASSERT(p->lsab_used == 0);
+  lp = lsab_allocz(p, sizeof(struct ospf_lsa_prefix));
   lp->ref_type = LSA_T_NET;
   lp->ref_id = ifa->net_lsa->lsa.id;
-  lp->ref_rt = po->router_id;
+  lp->ref_rt = p->router_id;
   lp = NULL; /* buffer might be reallocated later */
 
   pxc = 0;
-  offset = po->lsab_used;
+  offset = p->lsab_used;
 
   /* Find all Link LSAs associated with the link and merge their prefixes */
-  if (ifa->link_lsa)
-    add_link_lsa(po, ifa->link_lsa, offset, &pxc);
+  if (en = ifa->link_lsa)
+    add_link_lsa(p, en->next_lsa_body ?: en->lsa_body, offset, &pxc);
 
   WALK_LIST(n, ifa->neigh_list)
     if ((n->state == NEIGHBOR_FULL) &&
-      	(en = ospf_hash_find(po->gr, ifa->iface_id, n->iface_id, n->rid, LSA_T_LINK)))
-      add_link_lsa(po, en, offset, &pxc);
+	(en = ospf_hash_find(p->gr, ifa->iface_id, n->iface_id, n->rid, LSA_T_LINK)))
+      add_link_lsa(p, en->lsa_body, offset, &pxc);
 
-  lp = po->lsab;
+  lp = p->lsab;
   lp->pxcount = pxc;
-  *length = po->lsab_used + sizeof(struct ospf_lsa_header);
-  return lsab_flush(po);
 }
 
-void
-originate_prefix_net_lsa(struct ospf_iface *ifa)
+static void
+ospf_originate_prefix_net_lsa(struct ospf_proto *p, struct ospf_iface *ifa)
 {
-  struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  struct ospf_lsa_header lsa;
-  void *body;
-
-  OSPF_TRACE(D_EVENTS, "Originating network prefix-LSA for iface %s", ifa->ifname);
-
-  lsa.age = 0;
-  lsa.type = LSA_T_PREFIX;
-  lsa.id = ifa->iface_id;
-  lsa.rt = po->router_id;
-  lsa.sn = get_seqnum(ifa->pxn_lsa);
-  u32 dom = ifa->oa->areaid;
-
-  body = originate_prefix_net_lsa_body(ifa, &lsa.length);
-  lsasum_calculate(&lsa, body);
-  ifa->pxn_lsa = lsa_install_new(po, &lsa, dom, body);
-  ospf_lsupd_flood(po, NULL, NULL, &lsa, dom, 1);
-}
-
-void
-flush_prefix_net_lsa(struct ospf_iface *ifa)
-{
-  struct proto_ospf *po = ifa->oa->po;
-  struct proto *p = &po->proto;
-  struct top_hash_entry *en = ifa->pxn_lsa;
-  u32 dom = ifa->oa->areaid;
-
-  if (en == NULL)
+  if (ospf_is_v2(p))
     return;
 
-  OSPF_TRACE(D_EVENTS, "Flushing network prefix-LSA for iface %s", ifa->ifname);
+  struct ospf_new_lsa lsa = {
+    .type = LSA_T_PREFIX,
+    .dom  = ifa->oa->areaid,
+    .id   = ifa->iface_id,
+    .ifa  = ifa
+  };
 
-  en->lsa.sn += 1;
-  en->lsa.age = LSA_MAXAGE;
-  lsasum_calculate(&en->lsa, en->lsa_body);
-  ospf_lsupd_flood(po, NULL, NULL, &en->lsa, dom, 0);
-  flush_lsa(en, po);
-  ifa->pxn_lsa = NULL;
+  prepare_prefix_net_lsa_body(p, ifa);
+
+  ifa->pxn_lsa = ospf_originate_lsa(p, &lsa);
 }
 
+static inline int breaks_minlsinterval(struct top_hash_entry *en)
+{ return en && (en->lsa.age < LSA_MAXAGE) && ((en->inst_time + MINLSINTERVAL) > now); }
 
-#endif
+void
+ospf_update_topology(struct ospf_proto *p)
+{
+  struct ospf_area *oa;
+  struct ospf_iface *ifa;
+
+  WALK_LIST(oa, p->area_list)
+  {
+    if (oa->update_rt_lsa)
+    {
+      /*
+       * Generally, MinLSInterval is enforced in ospf_do_originate_lsa(), but
+       * origination of (prefix) router LSA is a special case. We do not want to
+       * prepare a new router LSA body and then postpone it in en->next_lsa_body
+       * for later origination, because there are side effects (updates of
+       * rt_pos_* and px_pos_* in ospf_iface structures) during that, which may
+       * confuse routing table calculation if executed after LSA body
+       * preparation but before final LSA origination (as rtcalc would use
+       * current rt_pos_* indexes but the old router LSA body).
+       *
+       * Here, we ensure that MinLSInterval is observed and we do not even try
+       * to originate these LSAs if it is not. Therefore, origination, when
+       * requested, will succeed unless there is also a seqnum wrapping, which
+       * is not a problem because in that case rtcalc is blocked by MaxAge.
+       */
+
+      if (breaks_minlsinterval(oa->rt) || breaks_minlsinterval(oa->pxr_lsa))
+	continue;
+
+      ospf_originate_rt_lsa(p, oa);
+      ospf_originate_prefix_rt_lsa(p, oa);
+      oa->update_rt_lsa = 0;
+    }
+  }
+
+  WALK_LIST(ifa, p->iface_list)
+  {
+    if (ifa->type == OSPF_IT_VLINK)
+      continue;
+
+    if (ifa->update_link_lsa)
+    {
+      if ((ifa->state > OSPF_IS_LOOP) && !ifa->link_lsa_suppression)
+	ospf_originate_link_lsa(p, ifa);
+      else
+	ospf_flush2_lsa(p, &ifa->link_lsa);
+
+      ifa->update_link_lsa = 0;
+    }
+
+    if (ifa->update_net_lsa)
+    {
+      if ((ifa->state == OSPF_IS_DR) && (ifa->fadj > 0))
+      {
+	ospf_originate_net_lsa(p, ifa);
+	ospf_originate_prefix_net_lsa(p, ifa);
+      }
+      else
+      {
+	ospf_flush2_lsa(p, &ifa->net_lsa);
+	ospf_flush2_lsa(p, &ifa->pxn_lsa);
+      }
+
+      ifa->update_net_lsa = 0;
+    }
+  }
+}
 
 
 static void
@@ -1574,7 +1720,7 @@ ospf_top_hash_u32(u32 a)
   return a;
 }
 
-static inline unsigned
+static uint
 ospf_top_hash(struct top_graph *f, u32 domain, u32 lsaid, u32 rtrid, u32 type)
 {
   /* In OSPFv2, we don't know Router ID when looking for network LSAs.
@@ -1582,14 +1728,8 @@ ospf_top_hash(struct top_graph *f, u32 domain, u32 lsaid, u32 rtrid, u32 type)
      In both cases, there is (usually) just one (or small number)
      appropriate LSA, so we just clear unknown part of key. */
 
-  return (
-#ifdef OSPFv2
-	  ((type == LSA_T_NET) ? 0 : ospf_top_hash_u32(rtrid)) +
-	  ospf_top_hash_u32(lsaid) + 
-#else /* OSPFv3 */
-	  ospf_top_hash_u32(rtrid) +
-	  ((type == LSA_T_RT) ? 0 : ospf_top_hash_u32(lsaid)) +
-#endif
+  return (((f->ospf2 && (type == LSA_T_NET)) ? 0 : ospf_top_hash_u32(rtrid)) +
+	  ((!f->ospf2 && (type == LSA_T_RT)) ? 0 : ospf_top_hash_u32(lsaid)) +
 	  type + domain) & f->hash_mask;
 
   /*
@@ -1600,13 +1740,15 @@ ospf_top_hash(struct top_graph *f, u32 domain, u32 lsaid, u32 rtrid, u32 type)
 
 /**
  * ospf_top_new - allocated new topology database
- * @p: current instance of ospf
+ * @p: OSPF protocol instance
+ * @pool: pool for allocation
  *
- * this dynamically hashed structure is often used for keeping lsas. mainly
- * its used in @ospf_area structure.
+ * This dynamically hashed structure is used for keeping LSAs. Mainly it is used
+ * for the LSA database of the OSPF protocol, but also for LSA retransmission
+ * and request lists of OSPF neighbors.
  */
 struct top_graph *
-ospf_top_new(pool *pool)
+ospf_top_new(struct ospf_proto *p UNUSED4 UNUSED6, pool *pool)
 {
   struct top_graph *f;
 
@@ -1617,6 +1759,7 @@ ospf_top_new(pool *pool)
   ospf_top_ht_alloc(f);
   f->hash_entries = 0;
   f->hash_entries_min = 0;
+  f->ospf2 = ospf_is_v2(p);
   return f;
 }
 
@@ -1631,8 +1774,8 @@ ospf_top_free(struct top_graph *f)
 static void
 ospf_top_rehash(struct top_graph *f, int step)
 {
-  unsigned int oldn, oldh;
   struct top_hash_entry **n, **oldt, **newt, *e, *x;
+  uint oldn, oldh;
 
   oldn = f->hash_size;
   oldt = f->hash_table;
@@ -1648,7 +1791,7 @@ ospf_top_rehash(struct top_graph *f, int step)
     while (e)
     {
       x = e->next;
-      n = newt + ospf_top_hash(f, e->domain, e->lsa.id, e->lsa.rt, e->lsa.type);
+      n = newt + ospf_top_hash(f, e->domain, e->lsa.id, e->lsa.rt, e->lsa_type);
       e->next = *n;
       *n = e;
       e = x;
@@ -1657,124 +1800,94 @@ ospf_top_rehash(struct top_graph *f, int step)
   ospf_top_ht_free(oldt);
 }
 
-#ifdef OSPFv2
-
-u32
-ospf_lsa_domain(u32 type, struct ospf_iface *ifa)
+static struct top_hash_entry *
+ospf_hash_find_(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type)
 {
-  return (type == LSA_T_EXT) ? 0 : ifa->oa->areaid;
-}
+  struct top_hash_entry *e;
+  e = f->hash_table[ospf_top_hash(f, domain, lsa, rtr, type)];
 
-#else /* OSPFv3 */
+  while (e && (e->lsa.id != lsa || e->lsa.rt != rtr ||
+	       e->lsa_type != type || e->domain != domain))
+    e = e->next;
 
-u32
-ospf_lsa_domain(u32 type, struct ospf_iface *ifa)
-{
-  switch (type & LSA_SCOPE_MASK)
-    {
-    case LSA_SCOPE_LINK:
-      return ifa->iface_id;
-
-    case LSA_SCOPE_AREA:
-      return ifa->oa->areaid;
-
-    case LSA_SCOPE_AS:
-    default:
-      return 0;
-    }
-}
-
-#endif
-
-struct top_hash_entry *
-ospf_hash_find_header(struct top_graph *f, u32 domain, struct ospf_lsa_header *h)
-{
-  return ospf_hash_find(f, domain, h->id, h->rt, h->type);
-}
-
-struct top_hash_entry *
-ospf_hash_get_header(struct top_graph *f, u32 domain, struct ospf_lsa_header *h)
-{
-  return ospf_hash_get(f, domain, h->id, h->rt, h->type);
+  return e;
 }
 
 struct top_hash_entry *
 ospf_hash_find(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type)
 {
-  struct top_hash_entry *e;
-  e = f->hash_table[ospf_top_hash(f, domain, lsa, rtr, type)];
+  struct top_hash_entry *e = ospf_hash_find_(f, domain, lsa, rtr, type);
 
-  while (e && (e->lsa.id != lsa || e->lsa.type != type || e->lsa.rt != rtr || e->domain != domain))
-    e = e->next;
-
-  return e;
+  /* Hide hash entry with empty lsa_body */
+  return (e && e->lsa_body) ? e : NULL;
 }
 
-
-#ifdef OSPFv2
-
-/* In OSPFv2, sometimes we don't know Router ID when looking for network LSAs.
-   There should be just one, so we find any match. */
-struct top_hash_entry *
-ospf_hash_find_net(struct top_graph *f, u32 domain, u32 lsa)
-{
-  struct top_hash_entry *e;
-  e = f->hash_table[ospf_top_hash(f, domain, lsa, 0, LSA_T_NET)];
-
-  while (e && (e->lsa.id != lsa || e->lsa.type != LSA_T_NET || e->domain != domain))
-    e = e->next;
-
-  return e;
-}
-
-#endif
-
-
-#ifdef OSPFv3
-
-/* In OSPFv3, usually we don't know LSA ID when looking for router
-   LSAs. We return matching LSA with smallest LSA ID. */
+/* In OSPFv2, lsa.id is the same as lsa.rt for router LSA. In OSPFv3, we don't know
+   lsa.id when looking for router LSAs. We return matching LSA with smallest lsa.id. */
 struct top_hash_entry *
 ospf_hash_find_rt(struct top_graph *f, u32 domain, u32 rtr)
 {
   struct top_hash_entry *rv = NULL;
   struct top_hash_entry *e;
-  e = f->hash_table[ospf_top_hash(f, domain, 0, rtr, LSA_T_RT)];
-  
+  /* We can put rtr for lsa.id to hash fn, it is ignored in OSPFv3 */
+  e = f->hash_table[ospf_top_hash(f, domain, rtr, rtr, LSA_T_RT)];
+
   while (e)
+  {
+    if (e->lsa.rt == rtr && e->lsa_type == LSA_T_RT && e->domain == domain && e->lsa_body)
     {
-      if (e->lsa.rt == rtr && e->lsa.type == LSA_T_RT && e->domain == domain)
-	if (!rv || e->lsa.id < rv->lsa.id)
-	  rv = e;
-      e = e->next;
+      if (f->ospf2 && (e->lsa.id == rtr))
+	return e;
+      if (!f->ospf2 && (!rv || e->lsa.id < rv->lsa.id))
+	rv = e;
     }
+    e = e->next;
+  }
 
   return rv;
 }
 
+/*
+ * ospf_hash_find_rt3_first() and ospf_hash_find_rt3_next() are used exclusively
+ * for lsa_walk_rt_init(), lsa_walk_rt(), therefore they skip MaxAge entries.
+ */
 static inline struct top_hash_entry *
-find_matching_rt(struct top_hash_entry *e, u32 domain, u32 rtr)
+find_matching_rt3(struct top_hash_entry *e, u32 domain, u32 rtr)
 {
-  while (e && (e->lsa.rt != rtr || e->lsa.type != LSA_T_RT || e->domain != domain))
+  while (e && (e->lsa.rt != rtr || e->lsa_type != LSA_T_RT ||
+	       e->domain != domain || e->lsa.age == LSA_MAXAGE))
     e = e->next;
   return e;
 }
 
 struct top_hash_entry *
-ospf_hash_find_rt_first(struct top_graph *f, u32 domain, u32 rtr)
+ospf_hash_find_rt3_first(struct top_graph *f, u32 domain, u32 rtr)
 {
   struct top_hash_entry *e;
   e = f->hash_table[ospf_top_hash(f, domain, 0, rtr, LSA_T_RT)];
-  return find_matching_rt(e, domain, rtr);
+  return find_matching_rt3(e, domain, rtr);
 }
 
 struct top_hash_entry *
-ospf_hash_find_rt_next(struct top_hash_entry *e)
+ospf_hash_find_rt3_next(struct top_hash_entry *e)
 {
-  return find_matching_rt(e->next, e->domain, e->lsa.rt);
+  return find_matching_rt3(e->next, e->domain, e->lsa.rt);
 }
 
-#endif
+/* In OSPFv2, we don't know Router ID when looking for network LSAs.
+   There should be just one, so we find any match. */
+struct top_hash_entry *
+ospf_hash_find_net2(struct top_graph *f, u32 domain, u32 id)
+{
+  struct top_hash_entry *e;
+  e = f->hash_table[ospf_top_hash(f, domain, id, 0, LSA_T_NET)];
+
+  while (e && (e->lsa.id != id || e->lsa_type != LSA_T_NET ||
+	       e->domain != domain || e->lsa_body == NULL))
+    e = e->next;
+
+  return e;
+}
 
 
 struct top_hash_entry *
@@ -1786,21 +1899,23 @@ ospf_hash_get(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type)
   ee = f->hash_table + ospf_top_hash(f, domain, lsa, rtr, type);
   e = *ee;
 
-  while (e && (e->lsa.id != lsa || e->lsa.rt != rtr || e->lsa.type != type || e->domain != domain))
+  while (e && (e->lsa.id != lsa || e->lsa.rt != rtr ||
+	       e->lsa_type != type || e->domain != domain))
     e = e->next;
 
   if (e)
     return e;
 
   e = sl_alloc(f->hash_slab);
+  bzero(e, sizeof(struct top_hash_entry));
+
   e->color = OUTSPF;
   e->dist = LSINFINITY;
-  e->nhs = NULL;
-  e->lb = IPA_NONE;
+  e->lsa.type_raw = type;
   e->lsa.id = lsa;
   e->lsa.rt = rtr;
-  e->lsa.type = type;
-  e->lsa_body = NULL;
+  e->lsa.sn = LSA_ZEROSEQNO;
+  e->lsa_type = type;
   e->domain = domain;
   e->next = *ee;
   *ee = e;
@@ -1812,8 +1927,8 @@ ospf_hash_get(struct top_graph *f, u32 domain, u32 lsa, u32 rtr, u32 type)
 void
 ospf_hash_delete(struct top_graph *f, struct top_hash_entry *e)
 {
-  struct top_hash_entry **ee = f->hash_table + 
-    ospf_top_hash(f, e->domain, e->lsa.id, e->lsa.rt, e->lsa.type);
+  struct top_hash_entry **ee = f->hash_table +
+    ospf_top_hash(f, e->domain, e->lsa.id, e->lsa.rt, e->lsa_type);
 
   while (*ee)
   {
@@ -1853,7 +1968,7 @@ ospf_dump_lsa(struct top_hash_entry *he, struct proto *p)
       rr = (struct ospf_lsa_rt_link *) (rt + 1);
 
       for (i = 0; i < lsa_rt_items(&he->lsa); i++)
-        OSPF_TRACE(D_EVENTS, "  - %1x %-1R %-1R %5u",
+	OSPF_TRACE(D_EVENTS, "  - %1x %-1R %-1R %5u",
 		   rr[i].type, rr[i].id, rr[i].data, rr[i].metric);
       break;
 
@@ -1862,7 +1977,7 @@ ospf_dump_lsa(struct top_hash_entry *he, struct proto *p)
       rts = (u32 *) (ln + 1);
 
       for (i = 0; i < lsa_net_items(&he->lsa); i++)
-        OSPF_TRACE(D_EVENTS, "  - %-1R", rts[i]);
+	OSPF_TRACE(D_EVENTS, "  - %-1R", rts[i]);
       break;
 
     default:
@@ -1873,7 +1988,7 @@ ospf_dump_lsa(struct top_hash_entry *he, struct proto *p)
 void
 ospf_top_dump(struct top_graph *f, struct proto *p)
 {
-  unsigned int i;
+  uint i;
   OSPF_TRACE(D_EVENTS, "Hash entries: %d", f->hash_entries);
 
   for (i = 0; i < f->hash_size; i++)
@@ -1884,30 +1999,3 @@ ospf_top_dump(struct top_graph *f, struct proto *p)
   }
 }
 */
-
-/* This is very inefficient, please don't call it often */
-
-/* I should also test for every LSA if it's in some link state
- * retransmission list for every neighbor. I will not test it.
- * It could happen that I'll receive some strange ls ack's.
- */
-
-int
-can_flush_lsa(struct proto_ospf *po)
-{
-  struct ospf_iface *ifa;
-  struct ospf_neighbor *n;
-
-  WALK_LIST(ifa, po->iface_list)
-  {
-    WALK_LIST(n, ifa->neigh_list)
-    {
-      if ((n->state == NEIGHBOR_EXCHANGE) || (n->state == NEIGHBOR_LOADING))
-        return 0;
-
-      break;
-    }
-  }
-
-  return 1;
-}

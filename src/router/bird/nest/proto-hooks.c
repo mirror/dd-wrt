@@ -148,6 +148,7 @@ void get_route_info(rte *e, byte *buf, ea_list *attrs)
  * get_attr - get attribute information
  * @a: an extended attribute
  * @buf: buffer to be filled with attribute information
+ * @buflen: a length of the @buf parameter
  *
  * The get_attr() hook is called by the core to obtain a user friendly
  * representation of an extended route attribute. It can either leave

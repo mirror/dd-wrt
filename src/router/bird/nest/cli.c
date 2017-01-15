@@ -161,7 +161,7 @@ static void
 cli_copy_message(cli *c)
 {
   byte *p, *q;
-  unsigned int cnt = 2;
+  uint cnt = 2;
 
   if (c->ring_overflow)
     {
@@ -228,12 +228,12 @@ cli_written(cli *c)
 
 
 static byte *cli_rh_pos;
-static unsigned int cli_rh_len;
+static uint cli_rh_len;
 static int cli_rh_trick_flag;
 struct cli *this_cli;
 
 static int
-cli_cmd_read_hook(byte *buf, unsigned int max, UNUSED int fd)
+cli_cmd_read_hook(byte *buf, uint max, UNUSED int fd)
 {
   if (!cli_rh_trick_flag)
     {
@@ -328,7 +328,7 @@ static list cli_log_hooks;
 static int cli_log_inited;
 
 void
-cli_set_log_echo(cli *c, unsigned int mask, unsigned int size)
+cli_set_log_echo(cli *c, uint mask, uint size)
 {
   if (c->ring_buf)
     {
@@ -349,7 +349,7 @@ cli_set_log_echo(cli *c, unsigned int mask, unsigned int size)
 }
 
 void
-cli_echo(unsigned int class, byte *msg)
+cli_echo(uint class, byte *msg)
 {
   unsigned len, free, i, l;
   cli *c;

@@ -12,14 +12,12 @@
 Previous
 <A HREF="bird.html#toc1">Contents</A>
 <HR>
-<H2><A NAME="s1">1.</A> <A HREF="bird.html#toc1">Introduction</A></H2>
+<H2><A NAME="intro"></A> <A NAME="s1">1.</A> <A HREF="bird.html#toc1">Introduction</A></H2>
 
-<H2><A NAME="ss1.1">1.1</A> <A HREF="bird.html#toc1.1">What is BIRD</A>
+<H2><A NAME="what-is-bird"></A> <A NAME="ss1.1">1.1</A> <A HREF="bird.html#toc1.1">What is BIRD</A>
 </H2>
 
-<P>
-<A NAME="intro"></A> 
-The name `BIRD' is actually an acronym standing for `BIRD Internet Routing
+<P>The name `BIRD' is actually an acronym standing for `BIRD Internet Routing
 Daemon'. Let's take a closer look at the meaning of the name:
 <P>
 <P><EM>BIRD</EM>: Well, we think we have already explained that. It's an acronym
@@ -48,10 +46,8 @@ running on background which does the dynamic part of Internet routing, that is
 it communicates with the other routers, calculates routing tables and sends them
 to the OS kernel which does the actual packet forwarding. There already exist
 other such routing daemons: routed (RIP only), GateD (non-free),
-Zebra 
-<A HREF="http://www.zebra.org">http://www.zebra.org</A> and
-MRTD 
-<A HREF="http://sourceforge.net/projects/mrt">http://sourceforge.net/projects/mrt</A>,
+<A HREF="http://www.zebra.org">Zebra</A> and
+<A HREF="http://sourceforge.net/projects/mrt">MRTD</A>,
 but their capabilities are limited and they are relatively hard to configure
 and maintain.
 <P>
@@ -95,7 +91,7 @@ for IPv4 and one for IPv6), with completely separate setups (configuration
 files, tools ...).
 <P>
 <P>
-<H2><A NAME="ss1.2">1.2</A> <A HREF="bird.html#toc1.2">Installing BIRD</A>
+<H2><A NAME="install"></A> <A NAME="ss1.2">1.2</A> <A HREF="bird.html#toc1.2">Installing BIRD</A>
 </H2>
 
 <P>On a recent UNIX system with GNU development tools (GCC, binutils, m4, make)
@@ -115,42 +111,63 @@ and Perl, installing BIRD should be as easy as:
 options. The most important ones are: <CODE>--enable-ipv6</CODE> which enables building
 of an IPv6 version of BIRD, <CODE>--with-protocols=</CODE> to produce a slightly smaller
 BIRD executable by configuring out routing protocols you don't use, and
-<CODE>--prefix=</CODE> to install BIRD to a place different from /usr/local.
+<CODE>--prefix=</CODE> to install BIRD to a place different from <CODE>/usr/local</CODE>.
 <P>
 <P>
-<H2><A NAME="ss1.3">1.3</A> <A HREF="bird.html#toc1.3">Running BIRD</A>
+<H2><A NAME="argv"></A> <A NAME="ss1.3">1.3</A> <A HREF="bird.html#toc1.3">Running BIRD</A>
 </H2>
 
 <P>You can pass several command-line options to bird:
 <P>
 <DL>
-<DT><CODE>-c <I>config name</I></CODE><DD><P>use given configuration file instead of <I>prefix</I>/etc/bird.conf.
+<DT><CODE>
+<A NAME="argv-config"></A> -c <I>config name</I></CODE><DD><P>use given configuration file instead of <I>prefix</I><CODE>/etc/bird.conf</CODE>.
 <P>
-<DT><CODE>-d</CODE><DD><P>enable debug messages and run bird in foreground.
+<DT><CODE>
+<A NAME="argv-debug"></A> -d</CODE><DD><P>enable debug messages and run bird in foreground.
 <P>
-<DT><CODE>-D <I>filename of debug log</I></CODE><DD><P>log debugging information to given file instead of stderr.
+<DT><CODE>
+<A NAME="argv-log-file"></A> -D <I>filename of debug log</I></CODE><DD><P>log debugging information to given file instead of stderr.
 <P>
-<DT><CODE>-p</CODE><DD><P>just parse the config file and exit. Return value is zero if the config
+<DT><CODE>
+<A NAME="argv-foreground"></A> -f</CODE><DD><P>run bird in foreground.
+<P>
+<DT><CODE>
+<A NAME="argv-group"></A> -g <I>group</I></CODE><DD><P>use that group ID, see the next section for details.
+<P>
+<DT><CODE>
+<A NAME="argv-help"></A> -h, --help</CODE><DD><P>display command-line options to bird.
+<P>
+<DT><CODE>
+<A NAME="argv-local"></A> -l</CODE><DD><P>look for a configuration file and a communication socket in the current
+working directory instead of in default system locations. However, paths
+specified by options <CODE>-c</CODE>, <CODE>-s</CODE> have higher priority.
+<P>
+<DT><CODE>
+<A NAME="argv-parse"></A> -p</CODE><DD><P>just parse the config file and exit. Return value is zero if the config
 file is valid, nonzero if there are some errors.
 <P>
-<DT><CODE>-s <I>name of communication socket</I></CODE><DD><P>use given filename for a socket for communications with the client,
-default is <I>prefix</I>/var/run/bird.ctl.
+<DT><CODE>
+<A NAME="argv-pid"></A> -P <I>name of PID file</I></CODE><DD><P>create a PID file with given filename.
 <P>
-<DT><CODE>-P <I>name of PID file</I></CODE><DD><P>create a PID file with given filename.
+<DT><CODE>
+<A NAME="argv-recovery"></A> -R</CODE><DD><P>apply graceful restart recovery after start.
 <P>
-<DT><CODE>-u <I>user</I></CODE><DD><P>drop privileges and use that user ID, see the next section for details.
+<DT><CODE>
+<A NAME="argv-socket"></A> -s <I>name of communication socket</I></CODE><DD><P>use given filename for a socket for communications with the client,
+default is <I>prefix</I><CODE>/var/run/bird.ctl</CODE>.
 <P>
-<DT><CODE>-g <I>group</I></CODE><DD><P>use that group ID, see the next section for details.
+<DT><CODE>
+<A NAME="argv-user"></A> -u <I>user</I></CODE><DD><P>drop privileges and use that user ID, see the next section for details.
 <P>
-<DT><CODE>-f</CODE><DD><P>run bird in foreground.
-<P>
-<DT><CODE>-R</CODE><DD><P>apply graceful restart recovery after start.
+<DT><CODE>
+<A NAME="argv-version"></A> --version</CODE><DD><P>display bird version.
 </DL>
 <P>
 <P>BIRD writes messages about its work to log files or syslog (according to config).
 <P>
 <P>
-<H2><A NAME="ss1.4">1.4</A> <A HREF="bird.html#toc1.4">Privileges</A>
+<H2><A NAME="privileges"></A> <A NAME="ss1.4">1.4</A> <A HREF="bird.html#toc1.4">Privileges</A>
 </H2>
 
 <P>BIRD, as a routing daemon, uses several privileged operations (like setting
@@ -163,10 +180,10 @@ privileges (capabilities CAP_NET_*). Note that the control socket is created
 before the privileges are dropped, but the config file is read after that. The
 privilege restriction is not implemented in BSD port of BIRD.
 <P>
-<P>A nonprivileged user (as an argument to <CODE>-u</CODE> options) may be the user
+<P>An unprivileged user (as an argument to <CODE>-u</CODE> options) may be the user
 <CODE>nobody</CODE>, but it is suggested to use a new dedicated user account (like
 <CODE>bird</CODE>). The similar considerations apply for the group option, but there is
-one more condition -- the users in the same group can use birdc to
+one more condition -- the users in the same group can use <CODE>birdc</CODE> to
 control BIRD.
 <P>
 <P>Finally, there is a possibility to use external tools to run BIRD in an

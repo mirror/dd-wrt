@@ -163,6 +163,7 @@ rfree(void *res)
   if (r->n.next)
     rem_node(&r->n);
   r->class->free(r);
+  r->class = NULL;
   xfree(r);
 }
 
@@ -383,16 +384,9 @@ mb_allocz(pool *p, unsigned size)
 void *
 mb_realloc(void *m, unsigned size)
 {
-  struct mblock *ob = NULL;
+  struct mblock *b = SKIP_BACK(struct mblock, data, m);
 
-  if (m)
-    {
-      ob = SKIP_BACK(struct mblock, data, m);
-      if (ob->r.n.next)
-	rem_node(&ob->r.n);
-    }
-
-  struct mblock *b = xrealloc(ob, sizeof(struct mblock) + size);
+  b = xrealloc(b, sizeof(struct mblock) + size);
   replace_node(&b->r.n, &b->r.n);
   b->size = size;
   return b->data;
