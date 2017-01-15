@@ -604,8 +604,9 @@ void arch_suspend_enable_irqs(void)
  */
 unsigned long long sched_clock(void)
 {
-	if (__USE_RTC())
+	if (__USE_RTC()) {
 		return get_rtc();
+	}
 	return mulhdu(get_tb() - boot_tb, tb_to_ns_scale) << tb_to_ns_shift;
 }
 

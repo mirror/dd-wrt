@@ -516,7 +516,7 @@ static int gfar_sringparam(struct net_device *dev,
 					   priv->rx_queue[i]->rx_ring_size);
 
 		/* Now we take down the rings to rebuild them */
-		stop_gfar(dev);
+		stop_gfar(dev, 1);
 	}
 
 	/* Change the size */
@@ -529,7 +529,7 @@ static int gfar_sringparam(struct net_device *dev,
 
 	/* Rebuild the rings with the new size */
 	if (dev->flags & IFF_UP) {
-		err = startup_gfar(dev);
+		err = startup_gfar(dev, 1);
 		netif_tx_wake_all_queues(dev);
 	}
 	return err;
@@ -639,11 +639,11 @@ int gfar_set_features(struct net_device *dev, netdev_features_t features)
 					   priv->rx_queue[i]->rx_ring_size);
 
 		/* Now we take down the rings to rebuild them */
-		stop_gfar(dev);
+		stop_gfar(dev, 1);
 
 		dev->features = features;
 
-		err = startup_gfar(dev);
+		err = startup_gfar(dev, 1);
 		netif_tx_wake_all_queues(dev);
 	}
 	return err;

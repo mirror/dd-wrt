@@ -101,6 +101,15 @@
 #include <linux/of_net.h>
 
 #include "gianfar.h"
+#ifdef CONFIG_RB_PCI
+#include <sysdev/fsl_soc.h>
+static int is_mpc83xx(void) {
+	unsigned version = mfspr(SPRN_PVR);
+
+	if ((version & 0xFFF00000) == 0x80300000) return 1;
+	return 0;
+}
+#endif
 
 #define TX_TIMEOUT      (1*HZ)
 
@@ -331,6 +340,22 @@ static void gfar_init_tx_rx_base(struct gfar_private *priv)
 	}
 }
 
+
+void alter_atheros_debug_register(struct phy_device *phydev,
+				  unsigned reg, unsigned nand, unsigned or) {
+    phy_write(phydev, 0x1d, reg);
+    phy_write(phydev, 0x1e, (phy_read(phydev, 0x1e) & (~nand)) | or);
+}
+
+void setup_atheros_phy(struct phy_device *phydev) {
+int phyid = ((phy_read(phydev, 2) << 16) | phy_read(phydev, 3));
+    if (phyid == 0x004DD04E) {
+	printk("Hello AR8021\n");
+	alter_atheros_debug_register(phydev, 0, 0, (1 << 8)); // RX_delay
+	alter_atheros_debug_register(phydev, 5, 0, (1 << 8)); // TX_delay
+    }
+ }
+
 static void gfar_init_mac(struct net_device *ndev)
 {
 	struct gfar_private *priv = netdev_priv(ndev);
@@ -354,6 +379,9 @@ static void gfar_init_mac(struct net_device *ndev)
 		gfar_write(&regs->rir0, DEFAULT_RIR0);
 	}
 
+#ifdef CONFIG_RB_PCI
+	rctrl |= RCTRL_PROM;
+#endif
 	/* Restore PROMISC mode */
 	if (ndev->flags & IFF_PROMISC)
 		rctrl |= RCTRL_PROM;
@@ -431,6 +459,8 @@ static void gfar_init_mac(struct net_device *ndev)
 	gfar_write(&regs->fifo_tx_thr, priv->fifo_threshold);
 	gfar_write(&regs->fifo_tx_starve, priv->fifo_starve);
 	gfar_write(&regs->fifo_tx_starve_shutoff, priv->fifo_starve_off);
+
+
 }
 
 static struct net_device_stats *gfar_get_stats(struct net_device *dev)
@@ -822,18 +852,18 @@ static int gfar_hwtstamp_ioctl(struct net_device *netdev,
 	switch (config.rx_filter) {
 	case HWTSTAMP_FILTER_NONE:
 		if (priv->hwts_rx_en) {
-			stop_gfar(netdev);
+			stop_gfar(netdev, 1);
 			priv->hwts_rx_en = 0;
-			startup_gfar(netdev);
+			startup_gfar(netdev, 1);
 		}
 		break;
 	default:
 		if (!(priv->device_flags & FSL_GIANFAR_DEV_HAS_TIMER))
 			return -ERANGE;
 		if (!priv->hwts_rx_en) {
-			stop_gfar(netdev);
+			stop_gfar(netdev, 1);
 			priv->hwts_rx_en = 1;
-			startup_gfar(netdev);
+			startup_gfar(netdev, 1);
 		}
 		config.rx_filter = HWTSTAMP_FILTER_ALL;
 		break;
@@ -1004,6 +1034,12 @@ static int gfar_probe(struct platform_device *ofdev)
 	u32 rstat = 0, tstat = 0, rqueue = 0, tqueue = 0;
 	u32 isrg = 0;
 	u32 __iomem *baddr;
+	if (is_mpc83xx()) {
+		volatile unsigned *xxx = ioremap(0xe0000000, 0x1000);
+		gfar_write(xxx + 0x110, (gfar_read(xxx + 0x110) & 0xFFFF0000) | 0x0707);
+		gfar_write(xxx + 0xa08, (gfar_read(xxx + 0xa08) & 0x0FFFFFFF) | 0x50000000);
+		gfar_write(xxx + 0x800, gfar_read(xxx + 0x800) | 0x30000);
+	}
 
 	err = gfar_of_init(ofdev, &dev);
 
@@ -1035,16 +1071,26 @@ static int gfar_probe(struct platform_device *ofdev)
 	/* We need to delay at least 3 TX clocks */
 	udelay(2);
 
+#ifdef CONFIG_RB_PCI
+	if (is_mpc83xx()) {
+		gfar_write(&regs->maccfg1,
+			   MACCFG1_RX_FLOW | MACCFG1_TX_FLOW);
+	}
+	else {
+		gfar_write(&regs->maccfg1, 0);
+	}
+#else
 	tempval = 0;
 	if (!priv->pause_aneg_en && priv->tx_pause_en)
 		tempval |= MACCFG1_TX_FLOW;
 	if (!priv->pause_aneg_en && priv->rx_pause_en)
 		tempval |= MACCFG1_RX_FLOW;
+
 	/* the soft reset bit is not self-resetting, so we need to
 	 * clear it before resuming normal operation
 	 */
 	gfar_write(&regs->maccfg1, tempval);
-
+#endif
 	/* Initialize MACCFG2. */
 	tempval = MACCFG2_INIT_SETTINGS;
 	if (gfar_has_errata(priv, GFAR_ERRATA_74))
@@ -1072,13 +1118,15 @@ static int gfar_probe(struct platform_device *ofdev)
 			netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
 				       GFAR_DEV_WEIGHT);
 
+#ifndef CONFIG_RB_PCI
+
 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_CSUM) {
 		dev->hw_features = NETIF_F_IP_CSUM | NETIF_F_SG |
 				   NETIF_F_RXCSUM;
 		dev->features |= NETIF_F_IP_CSUM | NETIF_F_SG |
 				 NETIF_F_RXCSUM | NETIF_F_HIGHDMA;
 	}
-
+#endif
 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_VLAN) {
 		dev->hw_features |= NETIF_F_HW_VLAN_CTAG_TX |
 				    NETIF_F_HW_VLAN_CTAG_RX;
@@ -1188,13 +1236,21 @@ static int gfar_probe(struct platform_device *ofdev)
 	for (i = 0; i < priv->num_tx_queues; i++) {
 		priv->tx_queue[i]->tx_ring_size = DEFAULT_TX_RING_SIZE;
 		priv->tx_queue[i]->num_txbdfree = DEFAULT_TX_RING_SIZE;
+#ifdef CONFIG_RB_PCI
+		priv->tx_queue[i]->txcoalescing = is_mpc83xx() ? DEFAULT_TX_COALESCE : 0;
+#else
 		priv->tx_queue[i]->txcoalescing = DEFAULT_TX_COALESCE;
+#endif
 		priv->tx_queue[i]->txic = DEFAULT_TXIC;
 	}
 
 	for (i = 0; i < priv->num_rx_queues; i++) {
 		priv->rx_queue[i]->rx_ring_size = DEFAULT_RX_RING_SIZE;
+#ifdef CONFIG_RB_PCI
+		priv->rx_queue[i]->rxcoalescing = is_mpc83xx() ? DEFAULT_RX_COALESCE : 0;
+#else
 		priv->rx_queue[i]->rxcoalescing = DEFAULT_RX_COALESCE;
+#endif
 		priv->rx_queue[i]->rxic = DEFAULT_RXIC;
 	}
 
@@ -1507,7 +1563,9 @@ static int init_phy(struct net_device *dev)
 
 	if (interface == PHY_INTERFACE_MODE_SGMII)
 		gfar_configure_serdes(dev);
-
+#ifdef CONFIG_RB_PCI
+	priv->phydev->drv->flags |= PHY_HAS_MAGICANEG;
+#endif
 	/* Remove any features not supported by the controller */
 	priv->phydev->supported &= (GFAR_SUPPORTED | gigabit_support);
 	priv->phydev->advertising = priv->phydev->supported;
@@ -1692,7 +1750,7 @@ static void free_grp_irqs(struct gfar_priv_grp *grp)
 	free_irq(gfar_irq(grp, ER)->irq, grp);
 }
 
-void stop_gfar(struct net_device *dev)
+void stop_gfar(struct net_device *dev, int irq)
 {
 	struct gfar_private *priv = netdev_priv(dev);
 	unsigned long flags;
@@ -1712,6 +1770,7 @@ void stop_gfar(struct net_device *dev)
 	unlock_tx_qs(priv);
 	local_irq_restore(flags);
 
+	if (irq) {
 	/* Free the IRQs */
 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_MULTI_INTR) {
 		for (i = 0; i < priv->num_grps; i++)
@@ -1721,7 +1780,7 @@ void stop_gfar(struct net_device *dev)
 			free_irq(gfar_irq(&priv->gfargrp[i], TX)->irq,
 				 &priv->gfargrp[i]);
 	}
-
+	}
 	free_skb_resources(priv);
 }
 
@@ -1818,11 +1877,12 @@ void gfar_start(struct net_device *dev)
 	u32 tempval;
 	int i = 0;
 
+#ifndef CONFIG_RB_PCI
 	/* Enable Rx and Tx in MACCFG1 */
 	tempval = gfar_read(&regs->maccfg1);
 	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
 	gfar_write(&regs->maccfg1, tempval);
-
+#endif
 	/* Initialize DMACTRL to have WWR and WOP */
 	tempval = gfar_read(&regs->dmactrl);
 	tempval |= DMACTRL_INIT_SETTINGS;
@@ -1842,6 +1902,21 @@ void gfar_start(struct net_device *dev)
 		gfar_write(&regs->imask, IMASK_DEFAULT);
 	}
 
+#ifdef CONFIG_RB_PCI
+	if (is_mpc83xx()) {
+		// magic to prevent rx hang
+
+		gfar_write(&regs->fifo_rx_pause, 0x80);
+		gfar_write(&regs->fifo_rx_pause_shutoff, 0x40);
+		gfar_write(&regs->fifo_rx_alarm, 0x100);
+		gfar_write(&regs->fifo_rx_alarm_shutoff, 0x80);
+	}
+
+	/* Enable Rx and Tx in MACCFG1 */
+	tempval = gfar_read(&regs->maccfg1);
+	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
+	gfar_write(&regs->maccfg1, tempval);
+#endif
 	dev->trans_start = jiffies; /* prevent tx timeout */
 }
 
@@ -1943,7 +2018,7 @@ err_irq_fail:
 }
 
 /* Bring the controller up and running */
-int startup_gfar(struct net_device *ndev)
+int startup_gfar(struct net_device *ndev,int irq)
 {
 	struct gfar_private *priv = netdev_priv(ndev);
 	struct gfar __iomem *regs = NULL;
@@ -1961,6 +2036,7 @@ int startup_gfar(struct net_device *ndev)
 
 	gfar_init_mac(ndev);
 
+	if (irq){
 	for (i = 0; i < priv->num_grps; i++) {
 		err = register_grp_irqs(&priv->gfargrp[i]);
 		if (err) {
@@ -1969,7 +2045,10 @@ int startup_gfar(struct net_device *ndev)
 			goto irq_fail;
 		}
 	}
+	}
 
+ 	/* Temporary mumbo jumbo */
+	setup_atheros_phy(priv->phydev);
 	/* Start the controller */
 	gfar_start(ndev);
 
@@ -2006,7 +2085,7 @@ static int gfar_enet_open(struct net_device *dev)
 		return err;
 	}
 
-	err = startup_gfar(dev);
+	err = startup_gfar(dev, 1);
 	if (err) {
 		disable_napi(priv);
 		return err;
@@ -2340,7 +2419,7 @@ static int gfar_close(struct net_device *dev)
 	disable_napi(priv);
 
 	cancel_work_sync(&priv->reset_task);
-	stop_gfar(dev);
+	stop_gfar(dev, 1);
 
 	/* Disconnect from the PHY */
 	phy_disconnect(priv->phydev);
@@ -2449,7 +2528,7 @@ static int gfar_change_mtu(struct net_device *dev, int new_mtu)
 	 * stopped, and we changed something
 	 */
 	if ((oldsize != tempsize) && (dev->flags & IFF_UP))
-		stop_gfar(dev);
+		stop_gfar(dev, 1);
 
 	priv->rx_buffer_size = tempsize;
 
@@ -2473,7 +2552,7 @@ static int gfar_change_mtu(struct net_device *dev, int new_mtu)
 	gfar_write(&regs->maccfg2, tempval);
 
 	if ((oldsize != tempsize) && (dev->flags & IFF_UP))
-		startup_gfar(dev);
+		startup_gfar(dev, 1);
 
 	return 0;
 }
@@ -2491,8 +2570,14 @@ static void gfar_reset_task(struct work_struct *work)
 
 	if (dev->flags & IFF_UP) {
 		netif_tx_stop_all_queues(dev);
-		stop_gfar(dev);
-		startup_gfar(dev);
+		stop_gfar(dev, 0);
+		phy_disconnect(priv->phydev);
+		priv->phydev = NULL;
+
+		init_registers(dev);
+		gfar_set_mac_address(dev);
+		init_phy(dev);
+		startup_gfar(dev, 0);
 		netif_tx_start_all_queues(dev);
 	}
 

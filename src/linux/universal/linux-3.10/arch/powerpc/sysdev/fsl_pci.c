@@ -554,6 +554,113 @@ no_bridge:
 	pcibios_free_controller(hose);
 	return -ENODEV;
 }
+
+int __init mp_add_bridge(struct device_node *dev, int is_primary)
+{
+	int len;
+	struct pci_controller *hose;
+	struct resource rsrc;
+	const int *bus_range;
+	u8 hdr_type, progif;
+	struct ccsr_pci __iomem *pci;
+
+
+	if (!of_device_is_available(dev)) {
+		pr_warning("%s: disabled\n", dev->full_name);
+		return -ENODEV;
+	}
+
+	pr_debug("Adding PCI host bridge %s\n", dev->full_name);
+
+	/* Fetch host bridge registers address */
+	if (of_address_to_resource(dev, 0, &rsrc)) {
+		printk(KERN_WARNING "Can't get pci register base!");
+		return -ENOMEM;
+	}
+
+	/* Get bus range if any */
+	bus_range = of_get_property(dev, "bus-range", &len);
+	if (bus_range == NULL || len < 2 * sizeof(int))
+		printk(KERN_WARNING "Can't get bus-range for %s, assume"
+			" bus 0\n", dev->full_name);
+
+	pci_add_flags(PCI_REASSIGN_ALL_BUS);
+	hose = pcibios_alloc_controller(dev);
+	if (!hose)
+		return -ENOMEM;
+
+	/* set platform device as the parent */
+//	hose->parent = &pdev->dev;
+	hose->first_busno = bus_range ? bus_range[0] : 0x0;
+	hose->last_busno = bus_range ? bus_range[1] : 0xff;
+
+	pr_debug("PCI memory map start 0x%016llx, size 0x%016llx\n",
+		 (u64)rsrc.start, (u64)resource_size(&rsrc));
+
+	pci = hose->private_data = ioremap(rsrc.start, resource_size(&rsrc));
+	if (!hose->private_data)
+		goto no_bridge;
+
+	setup_indirect_pci(hose, rsrc.start, rsrc.start + 0x4,
+			   PPC_INDIRECT_TYPE_BIG_ENDIAN);
+
+	if (in_be32(&pci->block_rev1) < PCIE_IP_REV_3_0)
+		hose->indirect_type |= PPC_INDIRECT_TYPE_FSL_CFG_REG_LINK;
+
+	if (early_find_capability(hose, 0, 0, PCI_CAP_ID_EXP)) {
+		/* use fsl_indirect_read_config for PCIe */
+		hose->ops = &fsl_indirect_pcie_ops;
+		/* For PCIE read HEADER_TYPE to identify controler mode */
+		early_read_config_byte(hose, 0, 0, PCI_HEADER_TYPE, &hdr_type);
+		if ((hdr_type & 0x7f) != PCI_HEADER_TYPE_BRIDGE)
+			goto no_bridge;
+
+	} else {
+		/* For PCI read PROG to identify controller mode */
+		early_read_config_byte(hose, 0, 0, PCI_CLASS_PROG, &progif);
+		if ((progif & 1) == 1)
+			goto no_bridge;
+	}
+
+	setup_pci_cmd(hose);
+
+	/* check PCI express link status */
+	if (early_find_capability(hose, 0, 0, PCI_CAP_ID_EXP)) {
+		hose->indirect_type |= PPC_INDIRECT_TYPE_EXT_REG |
+			PPC_INDIRECT_TYPE_SURPRESS_PRIMARY_BUS;
+		if (fsl_pcie_check_link(hose))
+			hose->indirect_type |= PPC_INDIRECT_TYPE_NO_PCIE_LINK;
+	}
+
+	printk(KERN_INFO "Found FSL PCI host bridge at 0x%016llx. "
+		"Firmware bus number: %d->%d\n",
+		(unsigned long long)rsrc.start, hose->first_busno,
+		hose->last_busno);
+
+	pr_debug(" ->Hose at 0x%p, cfg_addr=0x%p,cfg_data=0x%p\n",
+		hose, hose->cfg_addr, hose->cfg_data);
+
+	/* Interpret the "ranges" property */
+	/* This also maps the I/O region and sets isa_io/mem_base */
+	pci_process_bridge_OF_ranges(hose, dev, is_primary);
+
+	/* Setup PEX window registers */
+	setup_pci_atmu(hose);
+
+	return 0;
+
+no_bridge:
+	iounmap(hose->private_data);
+	/* unmap cfg_data & cfg_addr separately if not on same page */
+	if (((unsigned long)hose->cfg_data & PAGE_MASK) !=
+	    ((unsigned long)hose->cfg_addr & PAGE_MASK))
+		iounmap(hose->cfg_data);
+	iounmap(hose->cfg_addr);
+	pcibios_free_controller(hose);
+	return -ENODEV;
+}
+
+
 #endif /* CONFIG_FSL_SOC_BOOKE || CONFIG_PPC_86xx */
 
 DECLARE_PCI_FIXUP_HEADER(PCI_VENDOR_ID_FREESCALE, PCI_ANY_ID, quirk_fsl_pcie_header);
@@ -752,11 +859,11 @@ int __init mpc83xx_add_bridge(struct device_node *dev)
 	is_mpc83xx_pci = 1;
 
 	if (!of_device_is_available(dev)) {
-		pr_warning("%s: disabled by the firmware.\n",
+		printk("%s: disabled by the firmware.\n",
 			   dev->full_name);
 		return -ENODEV;
 	}
-	pr_debug("Adding PCI host bridge %s\n", dev->full_name);
+	printk("Adding PCI host bridge %s\n", dev->full_name);
 
 	/* Fetch host bridge registers address */
 	if (of_address_to_resource(dev, 0, &rsrc_reg)) {
@@ -871,6 +978,8 @@ u64 fsl_pci_immrbar_base(struct pci_controller *hose)
 #if defined(CONFIG_FSL_SOC_BOOKE) || defined(CONFIG_PPC_86xx)
 static const struct of_device_id pci_ids[] = {
 	{ .compatible = "fsl,mpc8540-pci", },
+	{ .compatible = "fsl,mpc8540-pcie", },
+	{ .compatible = "fsl,mpc8549-pci", },
 	{ .compatible = "fsl,mpc8548-pcie", },
 	{ .compatible = "fsl,mpc8610-pci", },
 	{ .compatible = "fsl,mpc8641-pcie", },
@@ -996,9 +1105,17 @@ static struct platform_driver fsl_pci_driver = {
 	.probe = fsl_pci_probe,
 };
 
+//#if !defined(CONFIG_RB_PPC) && !defined(CONFIG_RB800) && !defined(CONFIG_RB1000)
 static int __init fsl_pci_init(void)
 {
+	printk("Probe PCI Hardware\n");
 	return platform_driver_register(&fsl_pci_driver);
 }
 arch_initcall(fsl_pci_init);
+/*#else
+int __init fsl_pci_init(void)
+{
+	return platform_driver_register(&fsl_pci_driver);
+}
+#endif*/
 #endif
