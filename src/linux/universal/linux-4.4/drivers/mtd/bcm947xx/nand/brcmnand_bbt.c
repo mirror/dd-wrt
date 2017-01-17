@@ -1031,7 +1031,7 @@ int brcmnand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd)
 	/* Allocate a temporary buffer for one eraseblock incl. oob */
 	len = (1 << this->bbt_erase_shift);
 	len += (len >> this->page_shift) * mtd->oobsize;
-	buf = vmalloc(len);
+	buf = kmalloc(len, GFP_KERNEL);
 	if (!buf) {
 		printk(KERN_ERR "nand_bbt: Out of memory\n");
 		kfree(this->bbt);
@@ -1055,7 +1055,7 @@ int brcmnand_scan_bbt(struct mtd_info *mtd, struct nand_bbt_descr *bd)
 	if (md)
 		mark_bbt_region(mtd, md);
 
-	vfree(buf);
+	kfree(buf);
 	return res;
 }
 
