@@ -27,7 +27,7 @@
 #endif
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <net/ethernet.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -35,13 +35,16 @@
 #include <netinet/ether.h>
 #endif
 #include <time.h>
-#if defined(__FreeBSD__)
+#if defined(__APPLE__)
+# include <libkern/OSByteOrder.h>
+# define le32toh OSSwapLittleToHostInt32
+#elif defined(__FreeBSD__)
 #include <sys/endian.h>
 #else
 #include <endian.h>
 #endif
-#include "protocol.h"
 #include "config.h"
+#include "protocol.h"
 
 #define _(String) String
 
@@ -60,21 +63,12 @@ int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *sr
 	/* dst ethernet address */
 	memcpy(data + 8, dstmac, ETH_ALEN);
 
-	if (mt_direction_fromserver) {
-		/* Session key */
-		sessionkey = htons(sessionkey);
-		memcpy(data + 16, &sessionkey, sizeof(sessionkey));
+	/* Session key */
+	sessionkey = htons(sessionkey);
+	memcpy(data + (mt_direction_fromserver ? 16 : 14), &sessionkey, sizeof(sessionkey));
 
-		/* Client type: Mac Telnet */
-		memcpy(data + 14, &mt_mactelnet_clienttype, sizeof(mt_mactelnet_clienttype));
-	} else {
-		/* Session key */
-		sessionkey = htons(sessionkey);
-		memcpy(data + 14, &sessionkey, sizeof(sessionkey));
-
-		/* Client type: Mac Telnet */
-		memcpy(data + 16, &mt_mactelnet_clienttype, sizeof(mt_mactelnet_clienttype));
-	}
+	/* Client type: Mac Telnet */
+	memcpy(data + (mt_direction_fromserver ? 14 : 16), &mt_mactelnet_clienttype, sizeof(mt_mactelnet_clienttype));
 
 	/* Received/sent data counter */
 	counter = htonl(counter);
@@ -85,11 +79,13 @@ int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *sr
 	return 22;
 }
 
-int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int data_len) {
+int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, unsigned short data_len) {
 	unsigned char *data = packet->data + packet->size;
+	unsigned int act_size = data_len + (cptype == MT_CPTYPE_PLAINDATA ? 0 : MT_CPHEADER_LEN);
 
-	/* Something is really wrong. Packets should never become over 1500 bytes */
-	if (packet->size + MT_CPHEADER_LEN + data_len > MT_PACKET_LEN) {
+	/* Something is really wrong. Packets should never become over 1500 bytes,
+       perform an Integer-Overflow safe check */
+	if (act_size > MT_PACKET_LEN - packet->size) {
 		fprintf(stderr, _("add_control_packet: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
 		//exit(1);
@@ -104,7 +100,7 @@ int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cp
 	}
 
 	/* Control Packet Magic id */
-	memcpy(data,  mt_mactelnet_cpmagic, sizeof(mt_mactelnet_cpmagic));
+	memcpy(data, mt_mactelnet_cpmagic, sizeof(mt_mactelnet_cpmagic));
 
 	/* Control packet type */
 	data[4] = cptype;
@@ -125,9 +121,9 @@ int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cp
 		memcpy(data + MT_CPHEADER_LEN, cpdata, data_len);
 	}
 
-	packet->size += MT_CPHEADER_LEN + data_len;
+	packet->size += act_size;
 	/* Control packet header length + data length */
-	return MT_CPHEADER_LEN + data_len;
+	return act_size;
 }
 
 int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac) {
@@ -153,7 +149,8 @@ int init_pongpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned ch
 }
 
 int add_packetdata(struct mt_packet *packet, unsigned char *data, unsigned short length) {
-	if (packet->size + length > MT_PACKET_LEN) {
+	/* Integer-Overflow safe check */
+	if (length > MT_PACKET_LEN - packet->size) {
 		fprintf(stderr, _("add_control_packet: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
 	}
@@ -177,21 +174,12 @@ void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr) {
 	/* dst ethernet addr */
 	memcpy(pkthdr->dstaddr, data + 8, ETH_ALEN);
 
-	if (mt_direction_fromserver) {
-		/* Session key */
-		memcpy(&(pkthdr->seskey), data + 14, sizeof(pkthdr->seskey));
-		pkthdr->seskey = ntohs(pkthdr->seskey);
+	/* Session key */
+	memcpy(&(pkthdr->seskey), data + (mt_direction_fromserver ? 14 : 16), sizeof(pkthdr->seskey));
+	pkthdr->seskey = ntohs(pkthdr->seskey);
 
-		/* server type */
-		memcpy(&(pkthdr->clienttype), data + 16, 2);
-	} else {
-		/* server type */
-		memcpy(&(pkthdr->clienttype), data + 14, 2);
-
-		/* Session key */
-		memcpy(&(pkthdr->seskey), data + 16, sizeof(pkthdr->seskey));
-		pkthdr->seskey = ntohs(pkthdr->seskey);
-	}
+	/* server type */
+	memcpy(&(pkthdr->clienttype), data + (mt_direction_fromserver ? 16 : 14), 2);
 
 	/* Received/sent data counter */
 	memcpy(&(pkthdr->counter), data + 18, sizeof(pkthdr->counter));
@@ -202,7 +190,7 @@ void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr) {
 }
 
 
-int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
+int parse_control_packet(unsigned char *packetdata, unsigned short data_len, struct mt_mactelnet_control_hdr *cpkthdr) {
 	static unsigned char *int_data;
 	static unsigned int int_data_len;
 	static unsigned int int_pos;
@@ -212,7 +200,7 @@ int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mact
 	   and then several times for each control packets. Letting this function
 	   control the data position. */
 	if (packetdata != NULL) {
-		if (data_len <= 0) {
+		if (data_len == 0) {
 			return 0;
 		}
 
@@ -230,7 +218,7 @@ int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mact
 	data = int_data + int_pos;
 
 	/* Check for valid minimum packet length & magic header */
-	if (int_data_len >= 9 && memcmp(data, &mt_mactelnet_cpmagic, 4) == 0) {
+	if ((int_data_len - int_pos) >= MT_CPHEADER_LEN && memcmp(data, &mt_mactelnet_cpmagic, 4) == 0) {
 
 		/* Control packet type */
 		cpkthdr->cptype = data[4];
@@ -240,15 +228,15 @@ int parse_control_packet(unsigned char *packetdata, int data_len, struct mt_mact
 		cpkthdr->length = ntohl(cpkthdr->length);
 
 		/* We want no buffer overflows */
-		if (cpkthdr->length >= MT_PACKET_LEN - 22 - int_pos) {
-			cpkthdr->length = MT_PACKET_LEN - 1 - 22 - int_pos;
+		if (cpkthdr->length > int_data_len - MT_CPHEADER_LEN - int_pos) {
+			cpkthdr->length = int_data_len - MT_CPHEADER_LEN - int_pos;
 		}
 
 		/* Set pointer to actual data */
-		cpkthdr->data = data + 9;
+		cpkthdr->data = data + MT_CPHEADER_LEN;
 
 		/* Remember old position, for next call */
-		int_pos += cpkthdr->length + 9;
+		int_pos += cpkthdr->length + MT_CPHEADER_LEN;
 
 		/* Read data successfully */
 		return 1;
@@ -285,7 +273,7 @@ int mndp_add_attribute(struct mt_packet *packet, enum mt_mndp_attrtype attrtype,
 	unsigned short len = data_len;
 
 	/* Something is really wrong. Packets should never become over 1500 bytes */
-	if (packet->size + 4 + data_len > MT_PACKET_LEN) {
+	if (data_len > MT_PACKET_LEN - 4 - packet->size) {
 		fprintf(stderr, _("mndp_add_attribute: ERROR, too large packet. Exceeds %d bytes\n"), MT_PACKET_LEN);
 		return -1;
 	}
@@ -323,7 +311,7 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 
 	p = data + sizeof(struct mt_mndp_hdr);
 
-	while(p < data + packet_len) {
+	while(p + 4 < data + packet_len) {
 		unsigned short type, len;
 
 		memcpy(&type, p, 2);
@@ -350,8 +338,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_IDENTITY:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->identity, p, len);
@@ -359,8 +347,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_PLATFORM:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->platform, p, len);
@@ -368,8 +356,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_VERSION:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->version, p, len);
@@ -377,14 +365,16 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_TIMESTAMP:
-				memcpy(&packetp->uptime, p, 4);
-				/* Seems like ping uptime is transmitted as little endian? */
-				packetp->uptime = le32toh(packetp->uptime);
+				if (len >= 4) {
+					memcpy(&packetp->uptime, p, 4);
+					/* Seems like ping uptime is transmitted as little endian? */
+					packetp->uptime = le32toh(packetp->uptime);
+				}
 				break;
 
 			case MT_MNDPTYPE_HARDWARE:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->hardware, p, len);
@@ -392,8 +382,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_SOFTID:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->softid, p, len);
@@ -401,8 +391,8 @@ struct mt_mndp_info *parse_mndp(const unsigned char *data, const int packet_len)
 				break;
 
 			case MT_MNDPTYPE_IFNAME:
-				if (len > MT_MNDP_MAX_STRING_LENGTH) {
-					len = MT_MNDP_MAX_STRING_LENGTH;
+				if (len >= MT_MNDP_MAX_STRING_SIZE) {
+					len = MT_MNDP_MAX_STRING_SIZE - 1;
 				}
 
 				memcpy(packetp->ifname, p, len);
@@ -487,7 +477,7 @@ int query_mndp(const char *identity, unsigned char *mac) {
 		}
 
 		/* Read UDP packet */
-		length = recvfrom(sock, buff, MT_PACKET_LEN, 0, 0, 0);
+		length = recvfrom(sock, buff, sizeof(buff), 0, 0, 0);
 		if (length < 0) {
 			goto done;
 		}
@@ -561,7 +551,12 @@ int query_mndp_or_mac(char *address, unsigned char *dstmac, int verbose) {
 		}
 	} else {
 		/* Convert mac address string to ether_addr struct */
+#if defined(__APPLE__)
+		struct ether_addr* dstmac_buf = ether_aton(address);
+		memcpy(dstmac, dstmac_buf, sizeof(struct ether_addr));
+#else
 		ether_aton_r(address, (struct ether_addr *)dstmac);
+#endif
 	}
 
 	return 1;
