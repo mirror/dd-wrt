@@ -28,12 +28,12 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <ifaddrs.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <netinet/in.h>
 #endif
 #include <netinet/ip.h>
 #include <netinet/udp.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <net/ethernet.h>
 #define ETH_FRAME_LEN (ETHER_MAX_LEN - ETHER_CRC_LEN)
 #define ETH_ALEN ETHER_ADDR_LEN
@@ -297,7 +297,7 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 	*/
 	static unsigned char stackbuf[ETH_FRAME_LEN];
 	void* buffer = (void*)&stackbuf;
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	struct ether_header *eh = (struct ether_header *)buffer;
 	struct ip *ip = (struct ip *)(buffer + 14);
 #else
@@ -308,7 +308,8 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 	unsigned char *rest =
 	  (unsigned char *)(buffer + 20 + 14 + sizeof(struct udphdr));
 
-	if (((void *)rest - (void*)buffer) + datalen  > ETH_FRAME_LEN) {
+	/* Avoid integer overflow in check */
+	if (datalen > ETH_FRAME_LEN - ((void *)rest - (void*)buffer)) {
 		fprintf(stderr, _("packet size too large\n"));
 		return 0;
 	}
@@ -323,7 +324,7 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 	}
 
 	/* Init ethernet header */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	memcpy(eh->ether_shost, sourcemac, ETH_ALEN);
 	memcpy(eh->ether_dhost, destmac, ETH_ALEN);
 	eh->ether_type = htons(ETHERTYPE_IP);
@@ -348,7 +349,7 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 #endif
 
 	/* Init IP Header */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	ip->ip_v = 4;
 	ip->ip_hl = 5;
 	ip->ip_tos = 0x10;
@@ -375,14 +376,14 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 #endif
 
 	/* Calculate checksum for IP header */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	ip->ip_sum = in_cksum((unsigned short *)ip, sizeof(struct ip));
 #else
 	ip->check = in_cksum((unsigned short *)ip, sizeof(struct iphdr));
 #endif
 
 	/* Init UDP Header */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	udp->uh_sport = htons(sourceport);
 	udp->uh_dport = htons(destport);
 	udp->uh_ulen = htons(sizeof(struct udphdr) + datalen);
@@ -398,7 +399,7 @@ int net_send_udp(const int fd, struct net_interface *interface, const unsigned c
 	memcpy(rest, data, datalen);
 
 	/* Add UDP checksum */
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 	udp->uh_sum = udp_sum_calc((unsigned char *)&(ip->ip_src.s_addr),
 	  (unsigned char *)&(ip->ip_dst.s_addr),
 	  (unsigned char *)udp,
