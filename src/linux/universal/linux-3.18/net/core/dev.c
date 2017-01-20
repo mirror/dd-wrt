@@ -4041,7 +4041,7 @@ static enum gro_result BCMFASTPATH_HOST dev_gro_receive(struct napi_struct *napi
 		NAPI_GRO_CB(skb)->same_flow = 0;
 		NAPI_GRO_CB(skb)->flush = 0;
 		NAPI_GRO_CB(skb)->free = 0;
-		NAPI_GRO_CB(skb)->udp_mark = 0;
+		NAPI_GRO_CB(skb)->encap_mark = 0;
 
 		/* Setup for GRO checksum validation */
 		switch (skb->ip_summed) {
