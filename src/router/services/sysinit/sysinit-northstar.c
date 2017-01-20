@@ -471,9 +471,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_set("pci/1/1/venid", "0x14E4");
+			setcaldata();
 			nvram_commit();
 		}
-		setcaldata();
 		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
@@ -921,9 +921,9 @@ void start_sysinit(void)
 				extra_params++;
 			}
 			nvram_seti("pci/1/1/ddwrt", 1);
+			setcaldata();
 			nvram_commit();
 		}
-		setcaldata();
 		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
 		set_gpio(2, 0);	//power led
@@ -1131,9 +1131,9 @@ void start_sysinit(void)
 			nvram_seti("wl0_pcie_mrrs", 128);
 			nvram_seti("wl1_pcie_mrrs", 128);
 			nvram_seti("pci/1/1/ddwrt", 1);
+			setcaldata();
 			nvram_commit();
 		}
-		setcaldata();
 		nvram_unset("et1macaddr");
 		set_gpio(11, 1);
 		set_gpio(6, 1);
@@ -1385,7 +1385,6 @@ void start_sysinit(void)
 			setcaldata();
 			nvram_commit();
 		}
-		setcaldata(); //remove a few builds later in order to have this applied to everyone
 		nvram_unset("et1macaddr");
 		set_gpio(15, 1);	//wlan button led on
 		set_gpio(4, 1);
@@ -1925,9 +1924,9 @@ void start_sysinit(void)
 				nvram_nset(extra_params->value, "2:%s", extra_params->name);
 				extra_params++;
 			}
+			setcaldata();
 			nvram_commit();
 		}
-		setcaldata();
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
@@ -2663,9 +2662,9 @@ void start_sysinit(void)
 			}
 
 			nvram_seti("et_txq_thresh", 3300);
+			setcaldata();
 			nvram_commit();
 		}
-		setcaldata();
 		nvram_unset("et0macaddr");
 		nvram_unset("et1macaddr");
 		set_gpio(6, 1);	//reset button
