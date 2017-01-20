@@ -22,7 +22,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <errno.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <net/ethernet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -31,8 +31,8 @@
 #endif
 #include <arpa/inet.h>
 #include <string.h>
-#include "protocol.h"
 #include "config.h"
+#include "protocol.h"
 
 #define _(String) String
 
@@ -65,8 +65,6 @@ int mndp(int timeout, int batch_mode)  {
 #endif
 
 	setlocale(LC_ALL, "");
-//	bindtextdomain("mactelnet","/usr/share/locale");
-//	textdomain("mactelnet");
 
 	/* Open a UDP socket handle */
 	sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -105,7 +103,7 @@ int mndp(int timeout, int batch_mode)  {
 	}
 
 	if (batch_mode) {
-		printf("%s\n", _("MAC-Address,Identity,Platform,Version,Hardware,Uptime,Softid,Ifname,IP"));
+		printf("%s\n", "MAC-Address,Identity,Platform,Version,Hardware,Uptime,Softid,Ifname,IP");
 	} else {
 		printf("\n\E[1m%-15s %-17s %s\E[m\n", _("IP"), _("MAC-Address"), _("Identity (platform version hardware) uptime"));
 	}
@@ -124,9 +122,9 @@ int mndp(int timeout, int batch_mode)  {
 		memset(&addr, 0, addrlen);
 
 		/* Wait for a UDP packet */
-		result = recvfrom(sock, buff, MT_PACKET_LEN, 0, (struct sockaddr *)&addr, &addrlen);
+		result = recvfrom(sock, buff, sizeof(buff), 0, (struct sockaddr *)&addr, &addrlen);
 		if (result < 0) {
-			fprintf(stderr, _("An error occured. aborting\n"));
+			fprintf(stderr, _("An error occurred. aborting\n"));
 			exit(1);
 		}
 
@@ -138,16 +136,16 @@ int mndp(int timeout, int batch_mode)  {
 			/* Print it */
 			printf("%-15s ", inet_ntop(addr.sin_family, &addr.sin_addr, ipstr, sizeof ipstr));
 			printf("%-17s %s", ether_ntoa((struct ether_addr *)packet->address), packet->identity);
-			if (packet->platform != NULL) {
+			if (packet->platform[0] != 0) {
 				printf(" (%s %s %s)", packet->platform, packet->version, packet->hardware);
 			}
 			if (packet->uptime > 0) {
 				printf(_("  up %d days %d hours"), packet->uptime / 86400, packet->uptime % 86400 / 3600);
 			}
-			if (packet->softid != NULL) {
+			if (packet->softid[0] != 0) {
 				printf("  %s", packet->softid);
 			}
-			if (packet->ifname != NULL) {
+			if (packet->ifname[0] != 0) {
 				printf(" %s", packet->ifname);
 			}
 			putchar('\n');

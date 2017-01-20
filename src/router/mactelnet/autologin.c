@@ -22,8 +22,8 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include "autologin.h"
 #include "config.h"
+#include "autologin.h"
 
 #define _(String) String
 
@@ -51,8 +51,9 @@ static char *tilde_to_path(char *path) {
 	if (*path == '~' && (homepath = getenv("HOME"))) {
 		static char newpath[256];
 		memset(newpath, 0, sizeof(newpath));
-		strncpy(newpath, homepath, 255);
-		strncat(newpath, path+1, 255);
+		strncpy(newpath, homepath, sizeof(newpath) - 1);
+		/* strncat is confusing, try not to overflow */
+		strncat(newpath, path+1, sizeof(newpath) - strlen(newpath) - 1);
 		return newpath;
 	}
 	return path;
@@ -62,9 +63,9 @@ int autologin_readfile(char *configfile) {
 	FILE *fp;
 	char c;
 	int i = -1;
-	char *p = NULL;
 	char *file_to_read;
 	char key[AUTOLOGIN_MAXSTR];
+	char *p=key;
 	char value[AUTOLOGIN_MAXSTR];
 	int line_counter=1;
 	enum autologin_state state = ALS_NONE;
@@ -75,7 +76,7 @@ int autologin_readfile(char *configfile) {
 	file_to_read = tilde_to_path(configfile);
 
 	fp = fopen(file_to_read, "r");
-	if (fp <= 0) {
+	if (!fp) {
 		if (strcmp(configfile, AUTOLOGIN_PATH) == 0) {
 			/* Silent ignore? */
 		} else {

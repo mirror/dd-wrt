@@ -27,7 +27,7 @@
 #define MT_MACTELNET_PORT 20561
 
 #define MT_MNDP_PORT 5678
-#define MT_MNDP_MAX_STRING_LENGTH 128
+#define MT_MNDP_MAX_STRING_SIZE 128
 #define MT_MNDP_BROADCAST_INTERVAL 30
 
 #define MT_MNDP_TIMEOUT 5
@@ -55,7 +55,7 @@ enum mt_ptype {
 /* Control packet type */
 enum mt_cptype {
 	MT_CPTYPE_BEGINAUTH,
-	MT_CPTYPE_ENCRYPTIONKEY,
+	MT_CPTYPE_PASSSALT,
 	MT_CPTYPE_PASSWORD,
 	MT_CPTYPE_USERNAME,
 	MT_CPTYPE_TERM_TYPE,
@@ -107,12 +107,12 @@ struct mt_mactelnet_control_hdr {
 struct mt_mndp_info {
 	struct mt_mndp_hdr header;
 	unsigned char address[ETH_ALEN];
-	char identity[MT_MNDP_MAX_STRING_LENGTH];
-	char version[MT_MNDP_MAX_STRING_LENGTH];
-	char platform[MT_MNDP_MAX_STRING_LENGTH];
-	char hardware[MT_MNDP_MAX_STRING_LENGTH];
-	char softid[MT_MNDP_MAX_STRING_LENGTH];
-	char ifname[MT_MNDP_MAX_STRING_LENGTH];
+	char identity[MT_MNDP_MAX_STRING_SIZE];
+	char version[MT_MNDP_MAX_STRING_SIZE];
+	char platform[MT_MNDP_MAX_STRING_SIZE];
+	char hardware[MT_MNDP_MAX_STRING_SIZE];
+	char softid[MT_MNDP_MAX_STRING_SIZE];
+	char ifname[MT_MNDP_MAX_STRING_SIZE];
 	unsigned int uptime;
 };
 
@@ -123,9 +123,9 @@ struct mt_packet {
 
 /* MacTelnet/Winbox packets */
 extern int init_packet(struct mt_packet *packet, enum mt_ptype ptype, unsigned char *srcmac, unsigned char *dstmac, unsigned short sessionkey, unsigned int counter);
-extern int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, int data_len);
+extern int add_control_packet(struct mt_packet *packet, enum mt_cptype cptype, void *cpdata, unsigned short data_len);
 extern void parse_packet(unsigned char *data, struct mt_mactelnet_hdr *pkthdr);
-extern int parse_control_packet(unsigned char *data, int data_len, struct mt_mactelnet_control_hdr *cpkthdr);
+extern int parse_control_packet(unsigned char *data, unsigned short data_len, struct mt_mactelnet_control_hdr *cpkthdr);
 
 /* MAC-Ping packets */
 int init_pingpacket(struct mt_packet *packet, unsigned char *srcmac, unsigned char *dstmac);
@@ -154,7 +154,7 @@ extern unsigned char mt_direction_fromserver;
 /* Debugging stuff */
 #if defined(DEBUG_PROTO)
 #ifndef hexdump_defined
-void hexdump(const char *title, const void *buf, int len)
+void hexdump(const char *title, const void *buf, unsigned short len)
 {
     int i;
     unsigned char *data = (unsigned char *)buf;
