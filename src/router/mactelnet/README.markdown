@@ -1,21 +1,43 @@
-MAC-Telnet for Linux
-====================
+MAC-Telnet for Posix systems
+============================
 
 Console tools for connecting to, and serving, devices using MikroTik RouterOS MAC-Telnet protocol.
 
 Installation
 ------------
 
-Then download source tarball, extract, compile and install:
+### Linux / kfreebsd ###
+
+Download source tarball, extract, compile and install:
 
     wget http://github.com/haakonnessjoen/MAC-Telnet/tarball/master
     tar zxvf haakonness*.tar.gz
     cd haakonness*/
+    ./autogen.sh
+    ./configure
     make all install
 
 Now you're ready.
 
-TIP: You can use the well known "expect" tool to automate/script dialogues via mactelnet!
+### Mac OS X ###
+
+Install dependencies, download source tarball, extract, compile and install:
+
+    wget http://github.com/haakonnessjoen/MAC-Telnet/tarball/master
+    tar zxvf haakonness*.tar.gz
+    cd haakonness*/
+    
+    # Install dependencies
+    brew install gettext
+    
+    # Check what paths it tells you to use, for a standard install, the following should suffice:
+    export PATH=/usr/local/opt/gettext/bin:$PATH
+    
+    ./autogen.sh
+    ./configure
+    make all install
+
+And you are ready..
 
 Usage
 -----
@@ -57,6 +79,14 @@ Example:
      
      
      [admin@HMG] >
+
+### Tips
+
+You can use the well known "expect" tool to automate/script dialogues via mactelnet!
+
+### List available hosts ###
+
+    # mactelnet -l
 
 MAC-Ping usage
 --------------

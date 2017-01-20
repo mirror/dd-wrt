@@ -21,7 +21,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <arpa/inet.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__APPLE__)
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <net/ethernet.h>
@@ -37,9 +37,9 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <float.h>
+#include "config.h"
 #include "protocol.h"
 #include "interfaces.h"
-#include "config.h"
 #include "utlist.h"
 
 #define MAX_DEVICES 128
@@ -47,7 +47,7 @@
 
 #define PROGRAM_NAME "MAC-Ping"
 
-#define _(String) (String)
+#define _(String) String
 
 static int sockfd, insockfd;
 
@@ -69,7 +69,7 @@ static float max_ms = 0;
 unsigned char mt_direction_fromserver = 0;
 
 static void print_version() {
-	fprintf(stderr, PROGRAM_NAME " " PROGRAM_VERSION "\n");
+	fprintf(stderr, PROGRAM_NAME " " PACKAGE_VERSION "\n");
 }
 
 static long long int toddiff(struct timeval *tod1, struct timeval *tod2)
@@ -117,8 +117,6 @@ int main(int argc, char **argv)  {
 	int i;
 
 	setlocale(LC_ALL, "");
-//	bindtextdomain("mactelnet","/usr/share/locale");
-//	textdomain("mactelnet");
 
 	while (1) {
 		c = getopt(argc, argv, "fs:c:hv?");
@@ -154,8 +152,8 @@ int main(int argc, char **argv)  {
 	}
 
 	/* We don't want people to use this for the wrong reasons */
-	if (fastmode && (send_packets == 0 || send_packets > 100)) {
-		fprintf(stderr, _("Number of packets to send must be more than 0 and less than 100 in fast mode.\n"));
+	if (fastmode && (send_packets <= 0 || send_packets > 100)) {
+		fprintf(stderr, _("Number of packets to send must be more than 0 and up to 100 in fast mode.\n"));
 		return 1;
 	}
 
@@ -234,7 +232,7 @@ int main(int argc, char **argv)  {
 
 	signal(SIGINT, display_results);
 
-	for (i = 0; i < send_packets || send_packets == 0; ++i) {
+	for (i = 0; i < send_packets || send_packets <= 0; ++i) {
 		fd_set read_fds;
 		static struct timeval lasttimestamp;
 		int reads, result;
@@ -243,7 +241,7 @@ int main(int argc, char **argv)  {
 		int sent = 0;
 		int waitforpacket;
 		struct timeval timestamp;
-		unsigned char pingdata[1500];
+		unsigned char pingdata[MT_PACKET_LEN];
 		struct net_interface *interface;
 
 		gettimeofday(&timestamp, NULL);
@@ -289,12 +287,16 @@ int main(int argc, char **argv)  {
 				break;
 			}
 
-			unsigned char buff[1500];
+			unsigned char buff[MT_PACKET_LEN];
 			struct sockaddr_in saddress;
 			unsigned int slen = sizeof(saddress);
 			struct mt_mactelnet_hdr pkthdr;
 
-			result = recvfrom(insockfd, buff, 1500, 0, (struct sockaddr *)&saddress, &slen);
+			result = recvfrom(insockfd, buff, sizeof(buff), 0, (struct sockaddr *)&saddress, &slen);
+			/* Check for exact size */
+			if (result != 18 + ping_size) {
+				continue;
+			}
 			parse_packet(buff, &pkthdr);
 
 			/* TODO: Check that we are the receiving host */
