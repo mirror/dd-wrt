@@ -94,24 +94,18 @@ static void setcaldata()
 {
 	int mtd = getMTD("board_data");
 	char cmd[64];
-	sprintf(cmd, "strings /dev/mtdblock/%d | grep rpcal", mtd);
-	
 	char line[256];
-	
+	sprintf(cmd, "strings /dev/mtdblock/%d | grep rpcal", mtd);
 	FILE *fp = popen(cmd, "r");
-	
-	if(fp != NULL){
-		
-		while (fgets(line, sizeof(line)-1, fp) != NULL) {
-
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line) - 1, fp) != NULL) {
 			if (strstr(line, "rpcal")) {
-				char *var,*val;
+				char *var, *val;
 				var = strtok(line, "=");
-				val = strtok(NULL,"="); 
-				nvram_set(var,val);
+				val = strtok(NULL, "=");
+				nvram_set(var, val);
 			}
 		}
-	
 		fclose(fp);
 	}
 }
