@@ -3270,7 +3270,8 @@ cprintf("set auto channel selection %s\n",name);
 cprintf("set security settings %s\n",name);
 	for (i = 0; i < bclist->count; i++) {
 		bsscfg = &bclist->bsscfgs[i];
-		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet,is_dhd);
+		if(rev.chipnum != BCM43602_CHIP_ID)//workaround crash seen with R8000 in client bridge mode
+			wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet,is_dhd);
 	}
 cprintf("set enable bss %s\n",name);
 
