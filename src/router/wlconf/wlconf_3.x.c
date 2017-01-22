@@ -934,7 +934,7 @@ wlconf_get_bsscfgs(char* ifname, char* prefix)
 }
 
 static void
-wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet, bool is_dhd)
+wlconf_security_options(char *name, char *prefix, int bsscfg_idx, bool wet, bool supplicant)
 {
 	int i;
 	int val;
@@ -961,11 +961,10 @@ cprintf("akm\n");
 	val = wlconf_akm_options(prefix);
 	/* In wet mode enable in driver wpa supplicant */
 
-	if (wet && (CHECK_PSK(val))) {
+	if (supplicant && wet && (CHECK_PSK(val))) {
 		wsec_pmk_t psk;
 		char *key;
 
-cprintf("psk\n");
 		if (((key = nvram_get(strcat_r(prefix, "wpa_psk", tmp))) != NULL) &&
 		    (strlen(key) < WSEC_MAX_PSK_LEN)) {
 			psk.key_len = (ushort) strlen(key);
@@ -973,7 +972,6 @@ cprintf("psk\n");
 			strcpy((char *)psk.key, key);
 			WL_IOCTL(name, WLC_SET_WSEC_PMK, &psk, sizeof(psk));
 		}
-cprintf("sup_wpa\n");
 		wl_iovar_setint(name, "sup_wpa", 1);
 	}
 cprintf("wpa_auth\n");
@@ -3270,7 +3268,7 @@ cprintf("set auto channel selection %s\n",name);
 cprintf("set security settings %s\n",name);
 	for (i = 0; i < bclist->count; i++) {
 		bsscfg = &bclist->bsscfgs[i];
-		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet,is_dhd);
+		wlconf_security_options(name, bsscfg->prefix, bsscfg->idx, wet, rev.chipnum != BCM43602_CHIP_ID);
 	}
 cprintf("set enable bss %s\n",name);
 
