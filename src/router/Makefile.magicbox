@@ -17,6 +17,10 @@ ifneq ($(wildcard ../cy_conf.mak),)
   include ../cy_conf.mak
 endif
 
+
+CONFIG_MUSL=y
+CONFIG_NOOPT=y
+
 #
 # Paths
 #
@@ -148,11 +152,12 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 #
 
 
-all: build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
+all: install_headers  build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
 
@@ -171,18 +176,71 @@ ifeq ($(CONFIG_RB800),y)
 endif
 
 	$(kernelfeatures)
+
+	rm -f $(LINUXDIR)/symtab.h
+	touch $(LINUXDIR)/symtab.h
 	$(MAKE) -C $(LINUXDIR) oldconfig	
 	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux uImage CROSS_COMPILE=$(ARCH)-linux-uclibc- ARCH=powerpc; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc; \
 	fi
+
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE=$(ARCH)-linux-uclibc- ARCH=powerpc ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc ; \
+	fi
+	
+	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
+	-$(MAKE) -f Makefile.mpc85xx ath9k
+	-$(MAKE) -f Makefile.mpc85xx ath9k-install
+	-$(MAKE) -f Makefile.mpc85xx libutils
+	-$(MAKE) -f Makefile.mpc85xx madwifi
+	-$(MAKE) -f Makefile.mpc85xx madwifi-install
+	-$(MAKE) -f Makefile.mpc85xx batman-adv
+	-$(MAKE) -f Makefile.mpc85xx batman-adv-install
+	-$(MAKE) -f Makefile.mpc85xx opendpi
+	-$(MAKE) -f Makefile.mpc85xx opendpi-install
+
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/build
+	rm -f $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/source
+
+	find $(ARCH)-uclibc/install $(ARCH)-uclibc/target  -name \*.ko | \
+		xargs $(ARCH)-linux-nm | \
+		awk '$$1 == "U" { print $$2 } ' | \
+		sort -u > $(LINUXDIR)/mod_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' r __ksymtab' | sed -e 's,........ r __ksymtab_,,' > $(LINUXDIR)/kernel_symtab.txt
+	$(ARCH)-linux-nm -n $(LINUXDIR)/vmlinux.o | grep ' R __ksymtab' | sed -e 's,........ R __ksymtab_,,' >> $(LINUXDIR)/kernel_symtab.txt
+	grep -f $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_include.txt
+	grep -vf $(LINUXDIR)/mod_symtab.txt $(LINUXDIR)/kernel_symtab.txt -F > $(LINUXDIR)/sym_exclude.txt
+	( \
+		echo '#define SYMTAB_KEEP \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_KEEP_GPL \'; \
+		cat $(LINUXDIR)/sym_include.txt | \
+			awk '{print "KEEP(*(___ksymtab_gpl+" $$$$1 ")) \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab+" $$$$1 ") \\" }'; \
+		echo; \
+		echo '#define SYMTAB_DISCARD_GPL \'; \
+		cat $(LINUXDIR)/sym_exclude.txt | \
+			awk '{print "*(___ksymtab_gpl+" $$$$1 ") \\" }'; \
+		echo; \
+	) > $(LINUXDIR)/symtab.h
+
+	if ! grep -q "CONFIG_EMBEDDED_RAMDISK=y" $(LINUXDIR)/.config ; then \
+	    $(MAKE) -j 4 -C $(LINUXDIR) vmlinux zImage EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h"  CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ARCH=powerpc; \
 	fi
 	
 #	cat $(LINUXDIR)/vmlinus | lzma e -si -so -eos -lc1 -lp2 -pb2 > lzma-loader/rb500/vmlinux.lzma
 #	make -C lzma-loader/rb500 clean
 #	make -C lzma-loader/rb500 
 #	cp lzma-loader/rb500/lzma.elf $(ARCH)-uclibc/vmlinux
+install_headers:
+# important step, required for new kernels
+	-mkdir -p $(TOP)/kernel_headers/$(KERNELRELEASE)
+	$(MAKE) -C $(LINUXDIR) headers_install ARCH=arm INSTALL_HDR_PATH=$(TOP)/kernel_headers/$(KERNELRELEASE)
 
 	
 realclean: $(obj-clean)
@@ -219,14 +277,93 @@ distclean mrproper: $(obj-distclean) clean_target
 	rm -f .config.old .config.cmd
 
 optimize-lib:
-	make -f Makefile.magicbox lib.$(ARCH)-install
-	relink-lib.sh \
-		"$(ARCH)-linux-" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
-		"$(ARCH)-uclibc/target/lib/libc.so.0" \
-		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
-		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+else
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so} $(ARCH)-uclibc/target/lib/libc.so 
+endif
+ifneq ($(CONFIG_MUSL),y)
+	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld-uClibc.so.0 
+else
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-powerpc-sf.so.1
+endif
+ifeq ($(CONFIG_LIBDL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
+endif
+ifeq ($(CONFIG_LIBRT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=librt.so.0} $(ARCH)-uclibc/target/lib/librt.so.0 
+endif
+ifeq ($(CONFIG_LIBNSL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnsl.so.0} $(ARCH)-uclibc/target/lib/libnsl.so.0 
+endif
+ifeq ($(CONFIG_LIBUTIL),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libutil.so.0} $(ARCH)-uclibc/target/lib/libutil.so.0 
+endif
+ifeq ($(CONFIG_LIBCPP),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libstdc++.so.6} $(ARCH)-uclibc/target/lib/libstdc++.so.6 
+endif
+ifeq ($(CONFIG_LIBCRYPT),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libcrypt.so.0} $(ARCH)-uclibc/target/lib/libcrypt.so.0 
+endif
+ifeq ($(CONFIG_LIBM),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libm.so.0} $(ARCH)-uclibc/target/lib/libm.so.0 
+endif
+ifeq ($(CONFIG_LIBRESOLV),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libresolv.so.0} $(ARCH)-uclibc/target/lib/libresolv.so.0 
+endif
+ifeq ($(CONFIG_LIBPTHREAD),y)
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libpthread.so.0} $(ARCH)-uclibc/target/lib/libpthread.so.0 
+endif
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
+
+ifneq ($(CONFIG_NOOPT),y)
+	rm -rf /tmp/$(ARCHITECTURE)/mklibs-out
+	rm -f /tmp/$(ARCHITECTURE)/mklibs-progs
+	-mkdir -p /tmp/$(ARCHITECTURE)/
+	find $(TARGETDIR) -type f -perm /100 -exec \
+		file -r -N -F '' {} + | \
+		awk ' /executable.*dynamically/ { print $$1 }' > /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	find $(TARGETDIR) -type f -name \*.so\* -exec \
+		file -r -N -F '' {} + | \
+		awk ' /shared object/ { print $$1 }' >> /tmp/$(ARCHITECTURE)/mklibs-progs
+
+	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
+ifneq ($(CONFIG_MUSL),y)
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-uClibc.so.0 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+else
+	mklibs.py -D \
+		-d /tmp/$(ARCHITECTURE)/mklibs-out \
+		--sysroot $(TARGETDIR) \
+		-L /lib \
+		-L /usr/lib \
+		--ldlib /lib/ld-musl-powerpc-sf.so.1 \
+		--target $(ARCH)-linux-uclibc \
+		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
+
+endif
+
+	cp /tmp/$(ARCHITECTURE)/mklibs-out/* $(TARGETDIR)/lib
+else
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libc.so.0} $(ARCH)-uclibc/target/lib/libc.so.0 
+#	cp ${shell $(ARCH)-linux-gcc -print-file-name=libuClibc-0.99.33.2.so}  $(ARCH)-uclibc/target/lib/libc.so.0
+#	relink-lib.sh \
+#		"$(ARCH)-linux-" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"${shell $(ARCH)-linux-gcc -print-file-name=libc_so.a}" \
+#		"$(ARCH)-uclibc/target/lib/libc.so.0" \
+#		-Wl,-init,__uClibc_init -Wl,-soname=libc.so.0 \
+#		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1}
+
+ifneq ($(CONFIG_MUSL),y)
 
 	relink-lib.sh \
 		"$(ARCH)-linux-" \
@@ -252,36 +389,11 @@ optimize-lib:
 		-Wl,-z,nodelete,-z,initfirst,-init=__pthread_initialize_minimal_internal \
 		${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} \
 		-Wl,-soname=libpthread.so.0
-
-	cp ${shell $(ARCH)-linux-gcc -print-file-name=libgcc_s.so.1} $(ARCH)-uclibc/target/lib/libgcc_s.so.1 
-ifneq ($(CONFIG_NOOPT),y)
-
-	rm -rf $(ARCH)-uclibc/mklibs-out
-	rm -f $(ARCH)-uclibc/mklibs-progs
-	find $(TARGETDIR) -type f -perm /100 -exec \
-		file -r -N -F '' {} + | \
-		awk ' /executable.*dynamically/ { print $$1 }' > $(ARCH)-uclibc/mklibs-progs
-
-	find $(TARGETDIR) -type f -name \*.so\* -exec \
-		file -r -N -F '' {} + | \
-		awk ' /shared object/ { print $$1 }' >> $(ARCH)-uclibc/mklibs-progs
-
-	mkdir -p $(ARCH)-uclibc/mklibs-out
-	mklibs.py -D \
-		-d $(ARCH)-uclibc/mklibs-out \
-		--sysroot $(TARGETDIR) \
-		-L /lib \
-		-L /usr/lib \
-		--ldlib /lib/ld-uClibc.so.0 \
-		--target $(ARCH)-linux-uclibc \
-		`cat $(ARCH)-uclibc/mklibs-progs` 2>&1
-	cp $(ARCH)-uclibc/mklibs-out/* $(TARGETDIR)/lib
 endif
+endif
+
 	rm -f $(TARGETDIR)/lib/*.a
 	rm -f $(TARGETDIR)/lib/*.map
-#	cp lib.$(ARCH)/libresolv.so.0 $(TARGETDIR)/lib
-#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
-
 makeimage:
 	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -b 64000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
 	cp $(LINUXDIR)/vmlinux rb600.img.kernel
@@ -324,7 +436,7 @@ install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) -f Makefile.magicbox lib.$(ARCH)-install
+#	$(MAKE) -f Makefile.magicbox lib.$(ARCH)-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) -f Makefile.magicbox optimize-lib
 	# Install modules into filesystem
@@ -344,7 +456,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+#	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
@@ -381,6 +493,11 @@ endif
 #	$(MAKE) -C $(LINUXDIR)/scripts/squashfs mksquashfs
 	cd $(TARGETDIR)  &&  find . -iname "CVS" | xargs rm -rf
 	cd $(TARGETDIR)  &&  find . -iname ".svn" | xargs rm -rf
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+	-find $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net -name *.ko -exec mv {} $(TARGETDIR)/lib/modules/$(KERNELRELEASE) \;
+
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/net
 #	cp viarhine/pci-scan.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/pci-scan.o
 #	cp -f test/* $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/drivers/net
 	
@@ -393,8 +510,12 @@ endif
 #find $(TARGETDIR)/lib/modules -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +		
 	#e2fsck -y -f $(ARCH)-uclibc/root.fs
 #	./busybox/examples/depmod.pl -F $(LINUXDIR)/System.map -b $(ARCH)-uclibc/target/lib/modules
+
+	export STRIP_KMOD="$(LINUXDIR)/scripts/strip-kmod.sh" && \
+	export STRIP="sstrip" && \
+	$(LINUXDIR)/scripts/rstrip.sh $(TARGETDIR)
 	
-	-./strip_libs.sh $(ARCH)
+#	-./strip_libs.sh $(ARCH)
 	#cd $(TARGETDIR)
 #	tar --directory=$(TARGETDIR) --remove-files -cvvjf $(TARGETDIR)/etc/local.tar.bz2 usr/local
 	rm -rf $(TARGETDIR)/usr/local
@@ -414,9 +535,10 @@ ifneq ($(CONFIG_RB600),y)
 endif	
 
 ifeq ($(CONFIG_RB600),y)
-	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -U -f -b 64000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
+	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
+#	./tools/ext2/genext2fs -d $(ARCH)-uclibc/target -U -f -b 256000 -i 65536 -N 65536 -q $(ARCH)-uclibc/root.ext2
 	cp $(LINUXDIR)/vmlinux rb600.img.kernel
-	./gen_image_rb.sh rb600.img 6 1 80 $(ARCH)-uclibc/root.ext2
+	./gen_image_rb.sh rb600.img 10 1 64 $(ARCH)-uclibc/root.fs 32
 	./tools/wrap rb600.img rb600.bin
 endif
 
