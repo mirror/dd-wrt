@@ -89,9 +89,7 @@ int MAIN(int, char **);
 int MAIN(int argc, char **argv)
 	{
 	BN_GENCB cb;
-#ifndef OPENSSL_NO_ENGINE
 	ENGINE *e = NULL;
-#endif
 	int ret=1;
 	int i,num=DEFBITS;
 	long l;
@@ -99,9 +97,7 @@ int MAIN(int argc, char **argv)
 	unsigned long f4=RSA_F4;
 	char *outfile=NULL;
 	char *passargout = NULL, *passout = NULL;
-#ifndef OPENSSL_NO_ENGINE
 	char *engine=NULL;
-#endif
 	char *inrand=NULL;
 	BIO *out=NULL;
 	BIGNUM *bn = BN_new();
@@ -233,9 +229,7 @@ bad:
 		goto err;
 	}
 
-#ifndef OPENSSL_NO_ENGINE
         e = setup_engine(bio_err, engine, 0);
-#endif
 
 	if (outfile == NULL)
 		{
@@ -306,6 +300,7 @@ err:
 	if (bn) BN_free(bn);
 	if (rsa) RSA_free(rsa);
 	if (out) BIO_free_all(out);
+	release_engine(e);
 	if(passout) OPENSSL_free(passout);
 	if (ret != 0)
 		ERR_print_errors(bio_err);
