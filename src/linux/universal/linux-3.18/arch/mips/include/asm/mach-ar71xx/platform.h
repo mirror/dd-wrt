@@ -45,6 +45,7 @@ struct ag71xx_platform_data {
 
 	void		(*ddr_flush)(void);
 	void		(*set_speed)(int speed);
+	void		(*update_pll)(u32 pll_10, u32 pll_100, u32 pll_1000);
 
 	u32		fifo_cfg1;
 	u32		fifo_cfg2;
