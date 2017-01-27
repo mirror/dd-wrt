@@ -62,7 +62,28 @@ asterisk-clean:
 	$(MAKE) -C asterisk clean
 #	$(MAKE) -C chan_dongle clean
 
-asterisk: util-linux util-linux-install jansson
+asterisk: jansson
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
 	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
@@ -90,8 +111,38 @@ asterisk: util-linux util-linux-install jansson
 		OPTIMIZE="" \
 		all
 	-make -C asterisk
-
 #	make -C chan_dongle
+	rm -rf $(INSTALLDIR)/util-linux/usr/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/bin
+	rm -rf $(INSTALLDIR)/util-linux/bin
+	rm -rf $(INSTALLDIR)/util-linux/sbin
+	rm -rf $(INSTALLDIR)/util-linux/usr/share
+	rm -rf $(INSTALLDIR)/util-linux/usr/include
+	rm -rf $(INSTALLDIR)/util-linux/usr/lib/pkgconfig
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.so*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libfdisk*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libsmartcols*
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.a
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libuuid.la
+ifneq ($(CONFIG_ASTERISK),y)
+ifneq ($(CONFIG_ZABBIX),y)
+ifneq ($(CONFIG_MC),y)
+ifneq ($(CONFIG_LIBQMI),y)
+ifneq ($(CONFIG_WEBSERVER),y)
+	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.so*
+endif
+endif
+endif
+endif
+endif
+	rm -f $(INSTALLDIR)/util-linux/lib/libfdisk.so*
+	rm -f $(INSTALLDIR)/util-linux/lib/libsmartcols.so*
+
+
 
 asterisk-install:
 	chmod 700 asterisk/build_tools/install_subst
