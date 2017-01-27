@@ -1,7 +1,7 @@
 /*
  * rtl8306.c: RTL8306S switch driver
  *
- * Copyright (C) 2009 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2009 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -126,6 +126,7 @@ enum rtl_regidx {
 	RTL_REG_EN_TAG_CLR,
 	RTL_REG_EN_TAG_IN,
 	RTL_REG_TRAP_CPU,
+	RTL_REG_CPU_LINKUP,
 	RTL_REG_TRUNK_PORTSEL,
 	RTL_REG_EN_TRUNK,
 	RTL_REG_RESET,
@@ -194,6 +195,7 @@ static const struct rtl_reg rtl_regs[] = {
 	[RTL_REG_RESET]          = { 0, 0, 16,  1, 12, 0 },
 
 	[RTL_REG_TRAP_CPU]       = { 3, 2, 22,  1,  6, 0 },
+	[RTL_REG_CPU_LINKUP]     = { 0, 6, 22,  1, 15, 0 },
 
 	[RTL_REG_VLAN_TAG_ONLY]  = { 0, 0, 16,  1,  8, 1 },
 	[RTL_REG_VLAN_FILTER]    = { 0, 0, 16,  1,  9, 1 },
@@ -433,6 +435,8 @@ rtl_hw_apply(struct switch_dev *dev)
 	rtl_set(dev, RTL_REG_TRUNK_PORTSEL, trunk_psel);
 	rtl_phy_restore(dev, 5, &port5);
 
+	rtl_set(dev, RTL_REG_CPU_LINKUP, 1);
+
 	return 0;
 }
 
@@ -519,7 +523,7 @@ rtl_get_cpuport(struct switch_dev *dev, const struct switch_attr *attr, struct s
 #endif
 
 static int
-rtl_reset(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
+rtl_reset(struct switch_dev *dev)
 {
 	rtl_hw_init(dev);
 	return 0;
@@ -582,6 +586,27 @@ rtl_attr_get_port_int(struct switch_dev *dev, const struct switch_attr *attr, st
 	return rtl_attr_get_int(dev, attr, val);
 }
 
+static int 
+rtl_get_port_link(struct switch_dev *dev, int port, struct switch_port_link *link)
+{
+	if (port >= RTL8306_NUM_PORTS)
+		return -EINVAL;
+
+	link->link = rtl_get(dev, RTL_PORT_REG(port, LINK));
+	if (!link->link)
+		return 0;
+
+	link->duplex = rtl_get(dev, RTL_PORT_REG(port, DUPLEX));
+	link->aneg = rtl_get(dev, RTL_PORT_REG(port, NWAY));
+
+	if (rtl_get(dev, RTL_PORT_REG(port, SPEED)))
+		link->speed = SWITCH_PORT_SPEED_100;
+	else
+		link->speed = SWITCH_PORT_SPEED_10;
+
+	return 0;
+}
+
 static int
 rtl_attr_set_vlan_int(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
@@ -614,7 +639,8 @@ rtl_get_ports(struct switch_dev *dev, struct switch_val *val)
 
 		port = &val->value.ports[val->len];
 		port->id = i;
-		port->flags = 0;
+		if (rtl_get(dev, RTL_PORT_REG(i, TAG_INSERT)) == 2 || i == dev->cpu_port)
+			port->flags = (1 << SWITCH_PORT_FLAG_TAGGED);
 		val->len++;
 	}
 
@@ -653,7 +679,8 @@ rtl_set_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct swit
 static int
 rtl_get_vlan(struct switch_dev *dev, const struct switch_attr *attr, struct switch_val *val)
 {
-	return rtl_get(dev, RTL_REG_VLAN_ENABLE);
+	val->value.i = rtl_get(dev, RTL_REG_VLAN_ENABLE);
+	return 0;
 }
 
 static int
@@ -706,12 +733,6 @@ rtl_set_ports(struct switch_dev *dev, struct switch_val *val)
 }
 
 static struct switch_attr rtl_globals[] = {
-	{
-		.type = SWITCH_TYPE_INT,
-		.name = "reset",
-		.description = "Reset the switch",
-		.set = rtl_reset,
-	},
 	{
 		.type = SWITCH_TYPE_INT,
 		.name = "enable_vlan",
@@ -782,13 +803,6 @@ static struct switch_attr rtl_port[] = {
 		.description = "Port VLAN ID",
 		.max = RTL8306_NUM_VLANS - 1,
 	},
-	{
-		RTL_PORT_REGATTR(LINK),
-		.name = "link",
-		.description = "get the current link state",
-		.max = 1,
-		.set = NULL,
-	},
 #ifdef DEBUG
 	{
 		RTL_PORT_REGATTR(NULL_VID_REPLACE),
@@ -815,18 +829,6 @@ static struct switch_attr rtl_port[] = {
 		.max = 3,
 	},
 #endif
-	{
-		RTL_PORT_REGATTR(SPEED),
-		.name = "speed",
-		.description = "current link speed",
-		.max = 1,
-	},
-	{
-		RTL_PORT_REGATTR(NWAY),
-		.name = "nway",
-		.description = "enable autonegotiation",
-		.max = 1,
-	},
 };
 
 static struct switch_attr rtl_vlan[] = {
@@ -855,6 +857,8 @@ static const struct switch_dev_ops rtl8306_ops = {
 	.get_vlan_ports = rtl_get_ports,
 	.set_vlan_ports = rtl_set_ports,
 	.apply_config = rtl_hw_apply,
+	.reset_switch = rtl_reset,
+	.get_port_link = rtl_get_port_link,
 };
 
 static int
