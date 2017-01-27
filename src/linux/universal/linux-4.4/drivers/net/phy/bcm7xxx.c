@@ -24,7 +24,7 @@
 #define MII_BCM7XXX_100TX_FALSE_CAR	0x13
 #define MII_BCM7XXX_100TX_DISC		0x14
 #define MII_BCM7XXX_AUX_MODE		0x1d
-#define  MII_BCM7XX_64CLK_MDIO		BIT(12)
+#define  MII_BCM7XXX_64CLK_MDIO		BIT(12)
 #define MII_BCM7XXX_TEST		0x1f
 #define  MII_BCM7XXX_SHD_MODE_2		BIT(2)
 
@@ -44,6 +44,10 @@
 #define AFE_VDCA_ICTRL_0		MISC_ADDR(0x39, 1)
 #define AFE_VDAC_OTHERS_0		MISC_ADDR(0x39, 3)
 #define AFE_HPF_TRIM_OTHERS		MISC_ADDR(0x3a, 0)
+
+struct bcm7xxx_phy_priv {
+	u64	*stats;
+};
 
 static void r_rc_cal_reset(struct phy_device *phydev)
 {
@@ -163,14 +167,46 @@ static int bcm7xxx_28nm_e0_plus_afe_config_init(struct phy_device *phydev)
 	return 0;
 }
 
+static int bcm7xxx_28nm_a0_patch_afe_config_init(struct phy_device *phydev)
+{
+	/* +1 RC_CAL codes for RL centering for both LT and HT conditions */
+	bcm_phy_write_misc(phydev, AFE_RXCONFIG_2, 0xd003);
+
+	/* Cut master bias current by 2% to compensate for RC_CAL offset */
+	bcm_phy_write_misc(phydev, DSP_TAP10, 0x791b);
+
+	/* Improve hybrid leakage */
+	bcm_phy_write_misc(phydev, AFE_HPF_TRIM_OTHERS, 0x10e3);
+
+	/* Change rx_on_tune 8 to 0xf */
+	bcm_phy_write_misc(phydev, 0x21, 0x2, 0x87f6);
+
+	/* Change 100Tx EEE bandwidth */
+	bcm_phy_write_misc(phydev, 0x22, 0x2, 0x017d);
+
+	/* Enable ffe zero detection for Vitesse interoperability */
+	bcm_phy_write_misc(phydev, 0x26, 0x2, 0x0015);
+
+	r_rc_cal_reset(phydev);
+
+	return 0;
+}
+
 static int bcm7xxx_28nm_config_init(struct phy_device *phydev)
 {
 	u8 rev = PHY_BRCM_7XXX_REV(phydev->dev_flags);
 	u8 patch = PHY_BRCM_7XXX_PATCH(phydev->dev_flags);
+	u8 count;
 	int ret = 0;
 
+	/* Newer devices have moved the revision information back into a
+	 * standard location in MII_PHYS_ID[23]
+	 */
+	if (rev == 0)
+		rev = phydev->phy_id & ~phydev->drv->phy_id_mask;
+
 	pr_info_once("%s: %s PHY revision: 0x%02x, patch: %d\n",
-		     dev_name(&phydev->dev), phydev->drv->name, rev, patch);
+		     phydev_name(phydev), phydev->drv->name, rev, patch);
 
 	/* Dummy read to a register to workaround an issue upon reset where the
 	 * internal inverter may not allow the first MDIO transaction to pass
@@ -192,6 +228,9 @@ static int bcm7xxx_28nm_config_init(struct phy_device *phydev)
 	case 0x10:
 		ret = bcm7xxx_28nm_e0_plus_afe_config_init(phydev);
 		break;
+	case 0x01:
+		ret = bcm7xxx_28nm_a0_patch_afe_config_init(phydev);
+		break;
 	default:
 		break;
 	}
@@ -199,7 +238,12 @@ static int bcm7xxx_28nm_config_init(struct phy_device *phydev)
 	if (ret)
 		return ret;
 
-	ret = bcm_phy_enable_eee(phydev);
+	ret = bcm_phy_downshift_get(phydev, &count);
+	if (ret)
+		return ret;
+
+	/* Only enable EEE if Wirespeed/downshift is disabled */
+	ret = bcm_phy_set_eee(phydev, count == DOWNSHIFT_DEV_DISABLE);
 	if (ret)
 		return ret;
 
@@ -247,12 +291,8 @@ static int bcm7xxx_config_init(struct phy_device *phydev)
 	int ret;
 
 	/* Enable 64 clock MDIO */
-	phy_write(phydev, MII_BCM7XXX_AUX_MODE, MII_BCM7XX_64CLK_MDIO);
+	phy_write(phydev, MII_BCM7XXX_AUX_MODE, MII_BCM7XXX_64CLK_MDIO);
 	phy_read(phydev, MII_BCM7XXX_AUX_MODE);
-
-	/* Workaround only required for 100Mbits/sec capable PHYs */
-	if (phydev->supported & PHY_GBIT_FEATURES)
-		return 0;
 
 	/* set shadow mode 2 */
 	ret = phy_set_clr_bits(phydev, MII_BCM7XXX_TEST,
@@ -270,7 +310,7 @@ static int bcm7xxx_config_init(struct phy_device *phydev)
 	phy_write(phydev, MII_BCM7XXX_100TX_FALSE_CAR, 0x7555);
 
 	/* reset shadow mode 2 */
-	ret = phy_set_clr_bits(phydev, MII_BCM7XXX_TEST, MII_BCM7XXX_SHD_MODE_2, 0);
+	ret = phy_set_clr_bits(phydev, MII_BCM7XXX_TEST, 0, MII_BCM7XXX_SHD_MODE_2);
 	if (ret < 0)
 		return ret;
 
@@ -307,8 +347,71 @@ static int bcm7xxx_suspend(struct phy_device *phydev)
 	return 0;
 }
 
-static int bcm7xxx_dummy_config_init(struct phy_device *phydev)
+static int bcm7xxx_28nm_get_tunable(struct phy_device *phydev,
+				    struct ethtool_tunable *tuna,
+				    void *data)
 {
+	switch (tuna->id) {
+	case ETHTOOL_PHY_DOWNSHIFT:
+		return bcm_phy_downshift_get(phydev, (u8 *)data);
+	default:
+		return -EOPNOTSUPP;
+	}
+}
+
+static int bcm7xxx_28nm_set_tunable(struct phy_device *phydev,
+				    struct ethtool_tunable *tuna,
+				    const void *data)
+{
+	u8 count = *(u8 *)data;
+	int ret;
+
+	switch (tuna->id) {
+	case ETHTOOL_PHY_DOWNSHIFT:
+		ret = bcm_phy_downshift_set(phydev, count);
+		break;
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	if (ret)
+		return ret;
+
+	/* Disable EEE advertisment since this prevents the PHY
+	 * from successfully linking up, trigger auto-negotiation restart
+	 * to let the MAC decide what to do.
+	 */
+	ret = bcm_phy_set_eee(phydev, count == DOWNSHIFT_DEV_DISABLE);
+	if (ret)
+		return ret;
+
+	return genphy_restart_aneg(phydev);
+}
+
+static void bcm7xxx_28nm_get_phy_stats(struct phy_device *phydev,
+				       struct ethtool_stats *stats, u64 *data)
+{
+	struct bcm7xxx_phy_priv *priv = phydev->priv;
+
+	bcm_phy_get_stats(phydev, priv->stats, stats, data);
+}
+
+static int bcm7xxx_28nm_probe(struct phy_device *phydev)
+{
+	struct bcm7xxx_phy_priv *priv;
+
+	priv = devm_kzalloc(&phydev->mdio.dev, sizeof(*priv), GFP_KERNEL);
+	if (!priv)
+		return -ENOMEM;
+
+	phydev->priv = priv;
+
+	priv->stats = devm_kcalloc(&phydev->mdio.dev,
+				   bcm_phy_get_sset_count(phydev), sizeof(u64),
+				   GFP_KERNEL);
+	if (!priv->stats)
+		return -ENOMEM;
+
 	return 0;
 }
 
@@ -317,87 +420,61 @@ static int bcm7xxx_dummy_config_init(struct phy_device *phydev)
 	.phy_id		= (_oui),					\
 	.phy_id_mask	= 0xfffffff0,					\
 	.name		= _name,					\
-	.features	= PHY_GBIT_FEATURES |				\
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,	\
+	.features	= PHY_GBIT_FEATURES,				\
 	.flags		= PHY_IS_INTERNAL,				\
 	.config_init	= bcm7xxx_28nm_config_init,			\
 	.config_aneg	= genphy_config_aneg,				\
 	.read_status	= genphy_read_status,				\
 	.resume		= bcm7xxx_28nm_resume,				\
-	.driver		= { .owner = THIS_MODULE },			\
+	.get_tunable	= bcm7xxx_28nm_get_tunable,			\
+	.set_tunable	= bcm7xxx_28nm_set_tunable,			\
+	.get_sset_count	= bcm_phy_get_sset_count,			\
+	.get_strings	= bcm_phy_get_strings,				\
+	.get_stats	= bcm7xxx_28nm_get_phy_stats,			\
+	.probe		= bcm7xxx_28nm_probe,				\
+}
+
+#define BCM7XXX_40NM_EPHY(_oui, _name)					\
+{									\
+	.phy_id         = (_oui),					\
+	.phy_id_mask    = 0xfffffff0,					\
+	.name           = _name,					\
+	.features       = PHY_BASIC_FEATURES,				\
+	.flags          = PHY_IS_INTERNAL,				\
+	.config_init    = bcm7xxx_config_init,				\
+	.config_aneg    = genphy_config_aneg,				\
+	.read_status    = genphy_read_status,				\
+	.suspend        = bcm7xxx_suspend,				\
+	.resume         = bcm7xxx_config_init,				\
 }
 
 static struct phy_driver bcm7xxx_driver[] = {
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7250, "Broadcom BCM7250"),
+	BCM7XXX_28NM_GPHY(PHY_ID_BCM7278, "Broadcom BCM7278"),
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7364, "Broadcom BCM7364"),
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7366, "Broadcom BCM7366"),
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7439, "Broadcom BCM7439"),
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7439_2, "Broadcom BCM7439 (2)"),
 	BCM7XXX_28NM_GPHY(PHY_ID_BCM7445, "Broadcom BCM7445"),
-{
-	.phy_id         = PHY_ID_BCM7425,
-	.phy_id_mask    = 0xfffffff0,
-	.name           = "Broadcom BCM7425",
-	.features       = PHY_GBIT_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags          = PHY_IS_INTERNAL,
-	.config_init    = bcm7xxx_config_init,
-	.config_aneg    = genphy_config_aneg,
-	.read_status    = genphy_read_status,
-	.suspend        = bcm7xxx_suspend,
-	.resume         = bcm7xxx_config_init,
-	.driver         = { .owner = THIS_MODULE },
-}, {
-	.phy_id         = PHY_ID_BCM7429,
-	.phy_id_mask    = 0xfffffff0,
-	.name           = "Broadcom BCM7429",
-	.features       = PHY_GBIT_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags          = PHY_IS_INTERNAL,
-	.config_init    = bcm7xxx_config_init,
-	.config_aneg    = genphy_config_aneg,
-	.read_status    = genphy_read_status,
-	.suspend        = bcm7xxx_suspend,
-	.resume         = bcm7xxx_config_init,
-	.driver         = { .owner = THIS_MODULE },
-}, {
-	.phy_id		= PHY_BCM_OUI_4,
-	.phy_id_mask	= 0xffff0000,
-	.name		= "Broadcom BCM7XXX 40nm",
-	.features	= PHY_GBIT_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags		= PHY_IS_INTERNAL,
-	.config_init	= bcm7xxx_config_init,
-	.config_aneg	= genphy_config_aneg,
-	.read_status	= genphy_read_status,
-	.suspend	= bcm7xxx_suspend,
-	.resume		= bcm7xxx_config_init,
-	.driver		= { .owner = THIS_MODULE },
-}, {
-	.phy_id		= PHY_BCM_OUI_5,
-	.phy_id_mask	= 0xffffff00,
-	.name		= "Broadcom BCM7XXX 65nm",
-	.features	= PHY_BASIC_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
-	.flags		= PHY_IS_INTERNAL,
-	.config_init	= bcm7xxx_dummy_config_init,
-	.config_aneg	= genphy_config_aneg,
-	.read_status	= genphy_read_status,
-	.suspend	= bcm7xxx_suspend,
-	.resume		= bcm7xxx_config_init,
-	.driver		= { .owner = THIS_MODULE },
-} };
+	BCM7XXX_40NM_EPHY(PHY_ID_BCM7346, "Broadcom BCM7346"),
+	BCM7XXX_40NM_EPHY(PHY_ID_BCM7362, "Broadcom BCM7362"),
+	BCM7XXX_40NM_EPHY(PHY_ID_BCM7425, "Broadcom BCM7425"),
+	BCM7XXX_40NM_EPHY(PHY_ID_BCM7429, "Broadcom BCM7429"),
+	BCM7XXX_40NM_EPHY(PHY_ID_BCM7435, "Broadcom BCM7435"),
+};
 
 static struct mdio_device_id __maybe_unused bcm7xxx_tbl[] = {
 	{ PHY_ID_BCM7250, 0xfffffff0, },
+	{ PHY_ID_BCM7278, 0xfffffff0, },
 	{ PHY_ID_BCM7364, 0xfffffff0, },
 	{ PHY_ID_BCM7366, 0xfffffff0, },
+	{ PHY_ID_BCM7346, 0xfffffff0, },
+	{ PHY_ID_BCM7362, 0xfffffff0, },
 	{ PHY_ID_BCM7425, 0xfffffff0, },
 	{ PHY_ID_BCM7429, 0xfffffff0, },
 	{ PHY_ID_BCM7439, 0xfffffff0, },
+	{ PHY_ID_BCM7435, 0xfffffff0, },
 	{ PHY_ID_BCM7445, 0xfffffff0, },
-	{ PHY_BCM_OUI_4, 0xffff0000 },
-	{ PHY_BCM_OUI_5, 0xffffff00 },
 	{ }
 };
 
