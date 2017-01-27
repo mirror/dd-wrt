@@ -830,7 +830,6 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR7241:
 		case AR71XX_SOC_AR9330:
 		case AR71XX_SOC_AR9331:
-		case AR71XX_SOC_QCA9563:
 		case AR71XX_SOC_TP9343:
 			pdata->phy_if_mode = PHY_INTERFACE_MODE_GMII;
 			break;
@@ -842,6 +841,7 @@ static int __init ar71xx_setup_phy_if_mode(unsigned int id, struct ag71xx_platfo
 		case AR71XX_SOC_AR9342:
 		case AR71XX_SOC_AR9344:
 		case AR71XX_SOC_QCA9533:
+		case AR71XX_SOC_QCA9563:
 			switch (pdata->phy_if_mode) {
 			case PHY_INTERFACE_MODE_MII:
 			case PHY_INTERFACE_MODE_GMII:
