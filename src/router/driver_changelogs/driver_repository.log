@@ -1,4 +1,80 @@
 ------------------------------------------------------------------------
+r3255 | brainslayer | 2017-01-27 23:13:14 +0100 (Fri, 27 Jan 2017) | 5 lines
+
+Most mac80211 drivers leave the SMPS field in the HT capabilities
+uninitialized (unfortunately defaults to static SMPS), which leads to
+some devices limiting themselves to single-stream rates in some modes
+(mostly mesh and IBSS).
+
+------------------------------------------------------------------------
+r3254 | brainslayer | 2017-01-27 23:11:09 +0100 (Fri, 27 Jan 2017) | 54 lines
+
+From: Michal Kazior <michal.kazior@tieto.com>
+Date: Fri, 13 Jan 2017 13:32:51 +0100
+Subject: [PATCH] mac80211: prevent skb/txq mismatch
+
+Station structure is considered as not uploaded
+(to driver) until drv_sta_state() finishes. This
+call is however done after the structure is
+attached to mac80211 internal lists and hashes.
+This means mac80211 can lookup (and use) station
+structure before it is uploaded to a driver.
+
+If this happens (structure exists, but
+sta->uploaded is false) fast_tx path can still be
+taken. Deep in the fastpath call the sta->uploaded
+is checked against to derive "pubsta" argument for
+ieee80211_get_txq(). If sta->uploaded is false
+(and sta is actually non-NULL) ieee80211_get_txq()
+effectively downgraded to vif->txq.
+
+At first glance this may look innocent but coerces
+mac80211 into a state that is almost guaranteed
+(codel may drop offending skb) to crash because a
+station-oriented skb gets queued up on
+vif-oriented txq. The ieee80211_tx_dequeue() ends
+up looking at info->control.flags and tries to use
+txq->sta which in the fail case is NULL.
+
+It's probably pointless to pretend one can
+downgrade skb from sta-txq to vif-txq.
+
+Since downgrading unicast traffic to vif->txq must
+not be done there's no txq to put a frame on if
+sta->uploaded is false. Therefore the code is made
+to fall back to regular tx() op path if the
+described condition is hit.
+
+Only drivers using wake_tx_queue were affected.
+
+Example crash dump before fix:
+
+ Unable to handle kernel paging request at virtual address ffffe26c
+ PC is at ieee80211_tx_dequeue+0x204/0x690 [mac80211]
+ [<bf4252a4>] (ieee80211_tx_dequeue [mac80211]) from
+ [<bf4b1388>] (ath10k_mac_tx_push_txq+0x54/0x1c0 [ath10k_core])
+ [<bf4b1388>] (ath10k_mac_tx_push_txq [ath10k_core]) from
+ [<bf4bdfbc>] (ath10k_htt_txrx_compl_task+0xd78/0x11d0 [ath10k_core])
+ [<bf4bdfbc>] (ath10k_htt_txrx_compl_task [ath10k_core])
+ [<bf51c5a4>] (ath10k_pci_napi_poll+0x54/0xe8 [ath10k_pci])
+ [<bf51c5a4>] (ath10k_pci_napi_poll [ath10k_pci]) from
+ [<c0572e90>] (net_rx_action+0xac/0x160)
+
+Reported-by: Mohammed Shafi Shajakhan <mohammed@qti.qualcomm.com>
+Signed-off-by: Michal Kazior <michal.kazior@tieto.com>
+
+------------------------------------------------------------------------
+r3253 | brainslayer | 2017-01-27 23:09:11 +0100 (Fri, 27 Jan 2017) | 8 lines
+
+ath9k: add stability fixes for long standing hang issues
+The radio would stop communicating completely. This issue was easiest to
+trigger on AR913x devices, e.g. the TP-Link TL-WR1043ND, but other
+hardware was occasionally affected as well.
+
+The most critical issue was a race condition in disabling/enabling IRQs
+between the IRQ handler and the IRQ processing tasklet
+
+------------------------------------------------------------------------
 r3252 | brainslayer | 2017-01-26 14:58:38 +0100 (Thu, 26 Jan 2017) | 1 line
 
 fix for older kernels
