@@ -1311,6 +1311,24 @@ size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
 		      add_extradata_opt(lease, NULL);
 		    }
 
+		  /* DNSMASQ_REQUESTED_OPTIONS */
+		  if ((opt = option_find(mess, sz, OPTION_REQUESTED_OPTIONS, 1)))
+		    {
+		      int len = option_len(opt);
+		      unsigned char *rop = option_ptr(opt, 0);
+		      char *q = daemon->namebuff;
+		      int i;
+		      for (i = 0; i < len; i++)
+		        {
+		          q += snprintf(q, MAXDNAME - (q - daemon->namebuff), "%d%s", rop[i], i + 1 == len ? "" : ",");
+		        }
+		      lease_add_extradata(lease, (unsigned char *)daemon->namebuff, (q - daemon->namebuff), 0); 
+		    }
+		  else
+		    {
+		      add_extradata_opt(lease, NULL);
+		    }
+
 		  /* space-concat tag set */
 		  if (!tagif_netid)
 		    add_extradata_opt(lease, NULL);

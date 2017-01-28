@@ -18,6 +18,7 @@
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define TCP_MAX_QUERIES 100 /* Maximum number of queries per incoming TCP connection */
+#define TCP_BACKLOG 32  /* kernel backlog limit for TCP connections */
 #define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
 #define SAFE_PKTSZ 1280 /* "go anywhere" UDP packet size */
 #define KEYBLOCK_LEN 40 /* choose to mininise fragmentation when storing DNSSEC keys */
@@ -120,6 +121,8 @@ HAVE_LOOP
 HAVE_INOTIFY
    use the Linux inotify facility to efficiently re-read configuration files.
 
+NO_ID
+   Don't report *.bind CHAOS info to clients, forward such requests upstream instead.
 NO_IPV6
 NO_TFTP
 NO_DHCP
@@ -438,6 +441,9 @@ static char *compile_opts =
 "no-"
 #endif
 "DNSSEC "
+#ifdef NO_ID
+"no-ID "
+#endif
 #ifndef HAVE_LOOP
 "no-"
 #endif

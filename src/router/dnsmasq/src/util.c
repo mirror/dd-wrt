@@ -323,7 +323,7 @@ int hostname_isequal(const char *a, const char *b)
   
   return 1;
 }
-    
+
 time_t dnsmasq_time(void)
 {
 #ifdef HAVE_BROKEN_RTC
@@ -497,6 +497,10 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
 			  sav = in[(j+1)*2];
 			  in[(j+1)*2] = 0;
 			}
+		      /* checks above allow mix of hexdigit and *, which
+			 is illegal. */
+		      if (strchr(&in[j*2], '*'))
+			return -1;
 		      out[i] = strtol(&in[j*2], NULL, 16);
 		      mask = mask << 1;
 		      i++;

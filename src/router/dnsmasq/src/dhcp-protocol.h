@@ -19,6 +19,10 @@
 #define DHCP_CLIENT_ALTPORT 1068
 #define PXE_PORT 4011
 
+/* These each hold a DHCP option max size 255
+   and get a terminating zero added */
+#define DHCP_BUFF_SZ 256
+
 #define BOOTREQUEST              1
 #define BOOTREPLY                2
 #define DHCP_COOKIE              0x63825363
