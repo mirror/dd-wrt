@@ -109,27 +109,18 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (ht == 5 && vht)
 			ht = 0;
 
-		if (vht)
-			sprintf(info, "VHT");
-		else
-			sprintf(info, "HT");
-
 		if (ht == 0)
-			sprintf(info, "%s20", info);
+			sprintf(info, "%s20%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 1)
-			sprintf(info, "%s40", info);
+			sprintf(info, "%s40%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 2)
-			sprintf(info, "%s80", info);
+			sprintf(info, "%s80%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 3)
-			sprintf(info, "%s160", info);
+			sprintf(info, "%s160%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 4)
-			sprintf(info, "%s80+80", info);
+			sprintf(info, "%s80+80%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 5)
-			sprintf(info, "LEGACY");
-		if (wc->ht40intol)
-			sprintf(info, "%si", info);	//ht40 intolerant
-		if (sgi)
-			sprintf(info, "%sSGI", info);
+			sprintf(info, "LEGACY%s", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 
 		websWrite(wp, "'%s','%s','%s','%dM','%dM','%s','%d','%d','%d','%d'", mac, wc->ifname, UPTIME(wc->uptime), wc->txrate / 10, wc->rxrate / 10, info, wc->signal + bias, wc->noise + bias,
 			  wc->signal - wc->noise, qual);

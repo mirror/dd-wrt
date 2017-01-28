@@ -314,7 +314,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 					if (sta3->flags & WL_STA_N_CAP)
 						sprintf(info, "HT20");
 					if (sta3->flags & WL_STA_PS)
-						sprintf(info, "%sPS", info);	//sta is in powersave mode.
+						strcat(info, "PS");
 					break;
 #ifdef WL_STA_ANT_MAX
 				case 4:
@@ -376,22 +376,22 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						sprintf(info, "LEGACY");
 						break;
 					case 1:
-						sprintf(info, "%s20", info);
+						strcat(info, "20");
 						break;
 					case 2:
-						sprintf(info, "%s40", info);
+						strcat(info, "40");
 						break;
 					case 3:
-						sprintf(info, "%s80", info);
+						strcat(info, "80");
 						break;
 					case 4:
-						sprintf(info, "%s160", info);
+						strcat(info, "160");
 						break;
 					}
 					if (i40)
-						sprintf(info, "%si", info);	//ht40 intolerant. EVIL Device!!!!
+						strcat(info, "i");
 					if (sta4->flags & WL_STA_PS)
-						sprintf(info, "%sPS", info);	//sta is in powersave mode.
+						strcat(info, "PS");
 					break;
 #endif
 				}
