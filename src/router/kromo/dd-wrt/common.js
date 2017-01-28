@@ -589,6 +589,7 @@ function fix_cr(F) {
 	var re7 = new RegExp( '&#60;', 'gi' );
 	var re8 = new RegExp( '&#92;', 'gi' );
 	var re9 = new RegExp( '&#39;', 'gi' );
+	var re10 = new RegExp( '&#9;', 'gi' );
 	var a = F.replace(re1, '\n');
 	var b = a.replace(re2, '\n');
 	var c = b.replace(re3, '\n');
@@ -597,8 +598,9 @@ function fix_cr(F) {
 	var f = e.replace(re6, '>');
 	var g = f.replace(re7, '<');
 	var h = g.replace(re8, '\'');
-	var i = h.replace(re9, '\\');	
-return i;
+	var i = h.replace(re9, '\\');
+	var j = i.replace(re10,'');
+return j;
 }
 
 // 03/03/06 : Botho - New progress bar implementation
