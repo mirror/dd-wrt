@@ -286,6 +286,7 @@ struct naptr {
   struct naptr *next;
 };
 
+#ifndef NO_ID
 #define TXT_STAT_CACHESIZE     1
 #define TXT_STAT_INSERTS       2
 #define TXT_STAT_EVICTIONS     3
@@ -293,6 +294,7 @@ struct naptr {
 #define TXT_STAT_HITS          5
 #define TXT_STAT_AUTH          6
 #define TXT_STAT_SERVERS       7
+#endif
 
 struct txt_record {
   char *name;
@@ -308,9 +310,9 @@ struct ptr_record {
 };
 
 struct cname {
-  int ttl;
+  int ttl, flag;
   char *alias, *target;
-  struct cname *next;
+  struct cname *next, *targetp;
 }; 
 
 struct ds_config {
@@ -340,6 +342,7 @@ struct auth_zone {
     struct auth_name_list *next;
   } *interface_names;
   struct addrlist *subnet;
+  struct addrlist *exclude;
   struct auth_zone *next;
 };
 
@@ -487,6 +490,7 @@ struct serverfd {
   int fd;
   union mysockaddr source_addr;
   char interface[IF_NAMESIZE+1];
+  unsigned int ifindex, used;
   struct serverfd *next;
 };
 
@@ -1079,7 +1083,9 @@ void cache_add_dhcp_entry(char *host_name, int prot, struct all_addr *host_addre
 struct in_addr a_record_from_hosts(char *name, time_t now);
 void cache_unhash_dhcp(void);
 void dump_cache(time_t now);
+#ifndef NO_ID
 int cache_make_stat(struct txt_record *t);
+#endif
 char *cache_get_name(struct crec *crecp);
 char *cache_get_cname_target(struct crec *crecp);
 struct crec *cache_enumerate(int init);
@@ -1482,6 +1488,7 @@ void log_relay(int family, struct dhcp_relay *relay);
 /* outpacket.c */
 #ifdef HAVE_DHCP6
 void end_opt6(int container);
+void reset_counter(void);
 int save_counter(int newval);
 void *expand(size_t headroom);
 int new_opt6(int opt);

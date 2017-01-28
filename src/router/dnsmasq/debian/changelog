@@ -2,7 +2,52 @@ dnsmasq (2.77-1) unstable; urgency=low
 
    * New upstream.
 
- -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 6 Jul 2016 22:22:10 +0000
+ -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 14 Dec 2016 18:01:40 +0000
+
+dnsmasq (2.76-5) unstable; urgency=medium
+
+  * Nail libnettle dependency to avoid ABI incompatibility.
+    (closes: #846642)
+
+ -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 14 Dec 2016 17:58:10 +0000
+
+dnsmasq (2.76-4.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Add two upstream patches to fix binding to an interface being
+    destroyed and recreated. Closes: #834722.
+      + 2675f2061525bc954be14988d64384b74aa7bf8b
+      + 16800ea072dd0cdf14d951c4bb8d2808b3dfe53d
+
+ -- Vincent Bernat <bernat@debian.org>  Sat, 26 Nov 2016 20:15:34 +0100
+
+dnsmasq (2.76-4) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * Fix FTCBFS: Use triplet-prefixed tools. (closes: #836072)
+
+ -- Helmut Grohne <helmut@subdivi.de>  Tue, 30 Aug 2016 13:59:12 +0200
+
+dnsmasq (2.76-3) unstable; urgency=medium
+
+   * Bump auth zone serial on SIGHUP. (closes: #833733)
+
+ -- Simon Kelley <simon@thekelleys.org.uk>  Sat, 13 Aug 2016 21:43:10 +0000
+
+dnsmasq (2.76-2) unstable; urgency=medium
+
+   * Fix to systemd to fix failure to start with bridge interface.
+     (Closes: #831372)
+
+ -- Simon Kelley <simon@thekelleys.org.uk>  Sat, 16 Jul 2016 22:09:10 +0000
+
+dnsmasq (2.76-1.2) unstable; urgency=medium
+
+  * Non-maintainer upload.
+  * dnsmasq: Install marker file to determine package installed state,
+    for the benefit of the init script. (Closes: #819856)
+
+ -- Christian Hofstaedtler <zeha@debian.org>  Sat, 16 Jul 2016 00:17:57 +0000
 
 dnsmasq (2.76-1.1) unstable; urgency=medium
 

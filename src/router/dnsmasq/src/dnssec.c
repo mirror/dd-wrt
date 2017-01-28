@@ -462,24 +462,17 @@ static time_t timestamp_time;
 int setup_timestamp(void)
 {
   struct stat statbuf;
-  time_t now;
-  time_t base = 1420070400; /* 1-1-2015 */
-
+  
   daemon->back_to_the_future = 0;
   
   if (!daemon->timestamp_file)
     return 0;
-
-  now = time(NULL);
-
-  if (!stat("/proc/self/exe", &statbuf) && difftime(statbuf.st_mtime, base) > 0)
-    base = statbuf.st_mtime;
-
+  
   if (stat(daemon->timestamp_file, &statbuf) != -1)
     {
       timestamp_time = statbuf.st_mtime;
     check_and_exit:
-      if (difftime(now, base) >= 0 && difftime(timestamp_time, now) <=  0)
+      if (difftime(timestamp_time, time(0)) <=  0)
 	{
 	  /* time already OK, update timestamp, and do key checking from the start. */
 	  if (utime(daemon->timestamp_file, NULL) == -1)
@@ -500,7 +493,7 @@ int setup_timestamp(void)
 
 	  close(fd);
 	  
-	  timestamp_time = timbuf.actime = timbuf.modtime = base;
+	  timestamp_time = timbuf.actime = timbuf.modtime = 1420070400; /* 1-1-2015 */
 	  if (utime(daemon->timestamp_file, &timbuf) == 0)
 	    goto check_and_exit;
 	}

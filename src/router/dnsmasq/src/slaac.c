@@ -146,7 +146,7 @@ time_t periodic_slaac(time_t now, struct dhcp_lease *leases)
 	    struct ping_packet *ping;
 	    struct sockaddr_in6 addr;
  
-	    save_counter(0);
+	    reset_counter();
 
 	    if (!(ping = expand(sizeof(struct ping_packet))))
 	      continue;
@@ -164,7 +164,7 @@ time_t periodic_slaac(time_t now, struct dhcp_lease *leases)
 	    addr.sin6_port = htons(IPPROTO_ICMPV6);
 	    addr.sin6_addr = slaac->addr;
 	    
-	    if (sendto(daemon->icmp6fd, daemon->outpacket.iov_base, save_counter(0), 0,
+	    if (sendto(daemon->icmp6fd, daemon->outpacket.iov_base, save_counter(-1), 0,
 		       (struct sockaddr *)&addr,  sizeof(addr)) == -1 &&
 		errno == EHOSTUNREACH)
 	      slaac->ping_time = 0; /* Give up */ 

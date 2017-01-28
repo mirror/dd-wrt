@@ -662,8 +662,9 @@ static ssize_t tftp_err(int err, char *packet, char *message, char *file)
   ssize_t len, ret = 4;
   char *errstr = strerror(errno);
   
+  memset(packet, 0, daemon->packet_buff_sz);
   sanitise(file);
-
+  
   mess->op = htons(OP_ERR);
   mess->err = htons(err);
   len = snprintf(mess->message, MAXMESSAGE,  message, file, errstr);
@@ -684,6 +685,8 @@ static ssize_t tftp_err_oops(char *packet, char *file)
 /* return -1 for error, zero for done. */
 static ssize_t get_block(char *packet, struct tftp_transfer *transfer)
 {
+  memset(packet, 0, daemon->packet_buff_sz);
+  
   if (transfer->block == 0)
     {
       /* send OACK */

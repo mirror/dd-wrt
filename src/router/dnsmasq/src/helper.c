@@ -556,6 +556,7 @@ int create_helper(int event_fd, int err_fd, uid_t uid, gid_t gid, long max_fd)
 	      buf = grab_extradata(buf, end, "DNSMASQ_CIRCUIT_ID", &err);
 	      buf = grab_extradata(buf, end, "DNSMASQ_SUBSCRIBER_ID", &err);
 	      buf = grab_extradata(buf, end, "DNSMASQ_REMOTE_ID", &err);
+	      buf = grab_extradata(buf, end, "DNSMASQ_REQUESTED_OPTIONS", &err);
 	    }
 	  
 	  buf = grab_extradata(buf, end, "DNSMASQ_TAGS", &err);

@@ -73,7 +73,7 @@ void netlink_init(void)
     }
   
   if (daemon->netlinkfd == -1 || 
-      getsockname(daemon->netlinkfd, (struct sockaddr *)&addr, &slen) == 1)
+      getsockname(daemon->netlinkfd, (struct sockaddr *)&addr, &slen) == -1)
     die(_("cannot create netlink socket: %s"), NULL, EC_MISC);
    
   /* save pid assigned by bind() and retrieved by getsockname() */ 
@@ -260,10 +260,6 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 		    
 		    if (ifa->ifa_flags & IFA_F_DEPRECATED)
 		      flags |= IFACE_DEPRECATED;
-
-#ifndef IFA_F_TEMPORARY
-#define IFA_F_TEMPORARY		IFA_F_SECONDARY
-#endif
 		    
 		    if (!(ifa->ifa_flags & IFA_F_TEMPORARY))
 		      flags |= IFACE_PERMANENT;

@@ -29,9 +29,19 @@ void end_opt6(int container)
    PUTSHORT(len, p);
 }
 
+void reset_counter(void)
+{
+  /* Clear out buffer when starting from begining */
+  if (daemon->outpacket.iov_base)
+    memset(daemon->outpacket.iov_base, 0, daemon->outpacket.iov_len);
+ 
+  save_counter(0);
+}
+
 int save_counter(int newval)
 {
   int ret = outpacket_counter;
+  
   if (newval != -1)
     outpacket_counter = newval;
 
