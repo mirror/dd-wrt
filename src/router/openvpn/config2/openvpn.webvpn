@@ -121,7 +121,6 @@
 				<option value="TLS-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-RSA-WITH-AES-256-GCM-SHA384</option>
 				<option value="TLS-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-256-CBC-SHA256"); %>>TLS-RSA-WITH-AES-256-CBC-SHA256</option>
 				<option value="TLS-RSA-WITH-AES-128-CBC-SHA" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-AES-128-CBC-SHA"); %>>TLS-RSA-WITH-AES-128-CBC-SHA</option>
-				<option value="TLS-RSA-WITH-RC4-128-MD5" <% nvram_selected("openvpn_tlscip","TLS-RSA-WITH-RC4-128-MD5"); %>>TLS-RSA-WITH-RC4-128-MD5</option>			
 				<option value="0" <% nvram_selected("openvpn_tlscip","0"); %>>None</option>
 				</select>
 			</div>
