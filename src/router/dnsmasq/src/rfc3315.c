@@ -89,7 +89,7 @@ unsigned short dhcp6_reply(struct dhcp_context *context, int interface, char *if
   for (vendor = daemon->dhcp_vendors; vendor; vendor = vendor->next)
     vendor->netid.next = &vendor->netid;
   
-  save_counter(0);
+  reset_counter();
   state.context = context;
   state.interface = interface;
   state.iface_name = iface_name;
@@ -1975,7 +1975,7 @@ static void log6_packet(struct state *state, char *type, struct in6_addr *addr, 
 
   if (addr)
     {
-      inet_ntop(AF_INET6, addr, daemon->dhcp_buff2, 255);
+      inet_ntop(AF_INET6, addr, daemon->dhcp_buff2, DHCP_BUFF_SZ - 1);
       strcat(daemon->dhcp_buff2, " ");
     }
   else
@@ -2084,7 +2084,7 @@ void relay_upstream6(struct dhcp_relay *relay, ssize_t sz,
   if (hopcount > 32)
     return;
 
-  save_counter(0);
+  reset_counter();
 
   if ((header = put_opt6(NULL, 34)))
     {
@@ -2127,7 +2127,7 @@ void relay_upstream6(struct dhcp_relay *relay, ssize_t sz,
 		my_syslog(MS_DHCP | LOG_ERR, _("Cannot multicast to DHCPv6 server without correct interface"));
 	    }
 		
-	  send_from(daemon->dhcp6fd, 0, daemon->outpacket.iov_base, save_counter(0), &to, &from, 0);
+	  send_from(daemon->dhcp6fd, 0, daemon->outpacket.iov_base, save_counter(-1), &to, &from, 0);
 	  
 	  if (option_bool(OPT_LOG_OPTS))
 	    {
@@ -2161,7 +2161,7 @@ unsigned short relay_reply6(struct sockaddr_in6 *peer, ssize_t sz, char *arrival
 	(!relay->interface || wildcard_match(relay->interface, arrival_interface)))
       break;
       
-  save_counter(0);
+  reset_counter();
 
   if (relay)
     {

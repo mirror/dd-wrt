@@ -65,7 +65,14 @@ void lease_init(time_t now)
     }
   
   /* client-id max length is 255 which is 255*2 digits + 254 colons 
-     borrow DNS packet buffer which is always larger than 1000 bytes */
+     borrow DNS packet buffer which is always larger than 1000 bytes 
+  
+     Check various buffers are big enough for the code below */
+
+#if (DHCP_BUFF_SZ < 255) || (MAXDNAME < 64) || (PACKETSZ+MAXDNAME+RRFIXEDSZ  < 764)
+# error Buffer size breakage in leasfile parsing. 
+#endif
+
   if (leasestream)
     while (fscanf(leasestream, "%255s %255s", daemon->dhcp_buff3, daemon->dhcp_buff2) == 2)
       {
