@@ -1,4 +1,8 @@
 version 2.77
+	    Generate an error when configured with a CNAME loop,
+	    rather than a crash. Thanks to George Metz for
+	    spotting this problem.
+
 	    Calculate the length of TFTP error reply packet 
 	    correctly. This fixes a problem when the error 
 	    message in a TFTP packet exceeds the arbitrary 
@@ -20,8 +24,41 @@ version 2.77
  	    Fix problem with --dnssec-timestamp whereby receipt
             of SIGHUP would erroneously engage timestamp checking.
 	    Thanks to Kevin Darbyshire-Bryant for this work.
-	
 
+	    Bump zone serial on reloading /etc/hosts and friends
+	    when providing authoritative DNS. Thanks to Harrald
+	    Dunkel for spotting this.
+
+	    Handle v4-mapped IPv6 addresses sanely in --synth-domain.
+	    These have standard representation like ::ffff:1.2.3.4
+	    and are now converted to names like
+	    <prefix>--ffff-1-2-3-4.<domain>
+
+	    Handle binding upstream servers to an interface 
+	    (--server=1.2.3.4@eth0) when the named interface
+	    is destroyed and recreated in the kernel. Thanks to 
+	    Beniamino Galvani for the patch.
+
+	    Allow wildcard CNAME records in authoritative zones.
+	    For example --cname=*.example.com,default.example.com
+	    Thanks to Pro Backup for sponsoring this development.
+
+	    Bump the allowed backlog of TCP connections from 5 to 32,
+	    and make this a compile-time configurable option. Thanks
+	    to Donatas Abraitis for diagnosing this as a potential
+	    problem.
+
+	    Add DNSMASQ_REQUESTED_OPTIONS environment variable to the 
+	    lease-change script. Thanks to ZHAO Yu for the patch.
+
+	    Fix foobar in rrfilter code, that could cause misformed 
+	    replies, especially when DNSSEC validation on, and 
+	    the upstream server returns answer with the RRs in a 
+	    particular order. The only DNS server known to tickle
+	    this is Nominum's. Thanks to Dave Täht for spotting the
+	    bug and assisting in the fix.
+
+	
 version 2.76
             Include 0.0.0.0/8 in DNS rebind checks. This range 
 	    translates to hosts on  the local network, or, at 

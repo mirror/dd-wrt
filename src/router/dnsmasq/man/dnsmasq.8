@@ -480,28 +480,36 @@ but provides some syntactic sugar to make specifying address-to-name queries eas
 is exactly equivalent to 
 .B --server=/3.2.1.in-addr.arpa/192.168.0.1
 .TP
-.B \-A, --address=/<domain>/[domain/][<ipaddr>]
+.B \-A, --address=/<domain>[/<domain>...]/[<ipaddr>]
 Specify an IP address to return for any host in the given domains.
 Queries in the domains are never forwarded and always replied to
 with the specified IP address which may be IPv4 or IPv6. To give
-both IPv4 and IPv6 addresses for a domain, use repeated -A flags.
+both IPv4 and IPv6 addresses for a domain, use repeated \fB-A\fP flags.
+To include multiple IP addresses for a single query, use
+\fB--addn-hosts=<path>\fP instead.
 Note that /etc/hosts and DHCP leases override this for individual
 names. A common use of this is to redirect the entire doubleclick.net
 domain to some friendly local web server to avoid banner ads. The
-domain specification works in the same was as for --server, with the
-additional facility that /#/ matches any domain. Thus
---address=/#/1.2.3.4 will always return 1.2.3.4 for any query not
-answered from /etc/hosts or DHCP and not sent to an upstream
-nameserver by a more specific --server directive. As for --server,
-one or more domains with no address returns a no-such-domain answer, so
---address=/example.com/ is equivalent to --server=/example.com/ and returns 
-NXDOMAIN for example.com and all its subdomains.
+domain specification works in the same was as for \fB--server\fP, with
+the additional facility that \fB/#/\fP matches any domain. Thus
+\fB--address=/#/1.2.3.4\fP will always return \fB1.2.3.4\fP for any
+query not answered from \fB/etc/hosts\fP or DHCP and not sent to an
+upstream nameserver by a more specific \fB--server\fP directive. As for
+\fB--server\fP, one or more domains with no address returns a
+no-such-domain answer, so \fB--address=/example.com/\fP is equivalent to
+\fB--server=/example.com/\fP and returns NXDOMAIN for example.com and
+all its subdomains.
 .TP
-.B --ipset=/<domain>/[domain/]<ipset>[,<ipset>]
-Places the resolved IP addresses of queries for the specified domains
-in the specified netfilter ip sets. Domains and subdomains are matched
-in the same way as --address. These ip sets must already exist. See
-ipset(8) for more details.
+.B --ipset=/<domain>[/<domain>...]/<ipset>[,<ipset>...]
+Places the resolved IP addresses of queries for one or more domains in
+the specified Netfilter IP set. If multiple setnames are given, then the
+addresses are placed in each of them, subject to the limitations of an
+IP set (IPv4 addresses cannot be stored in an IPv6 IP set and vice
+versa).  Domains and subdomains are matched in the same way as
+\fB--address\fP.
+These IP sets must already exist. See
+.BR ipset (8)
+for more details.
 .TP
 .B \-m, --mx-host=<mx name>[[,<hostname>],<preference>]
 Return an MX record named <mx name> pointing to the given hostname (if
@@ -573,7 +581,7 @@ Return a PTR DNS record.
 .B --naptr-record=<name>,<order>,<preference>,<flags>,<service>,<regexp>[,<replacement>]
 Return an NAPTR DNS record, as specified in RFC3403.
 .TP
-.B --cname=<cname>,<target>[,<TTL>]
+.B --cname=<cname>,[<cname>,]<target>[,<TTL>]
 Return a CNAME record which indicates that <cname> is really
 <target>. There are significant limitations on the target; it must be a
 DNS name which is known to dnsmasq from /etc/hosts (or additional
@@ -581,7 +589,9 @@ hosts files), from DHCP, from --interface-name or from another
 .B --cname.
 If the target does not satisfy this
 criteria, the whole cname is ignored. The cname must be unique, but it
-is permissable to have more than one cname pointing to the same target.
+is permissable to have more than one cname pointing to the same target. Indeed
+it's possible to declare multiple cnames to a target in a single line, like so:
+.B --cname=cname1,cname2,target
 
 If the time-to-live is given, it overrides the default, which is zero
 or the value of -local-ttl. The value is a positive integer and gives 
@@ -618,6 +628,8 @@ will result in a query for internal-192-168-0-56.thekelleys.org.uk returning
 but IPv6 addresses may start with '::'
 but DNS labels may not start with '-' so in this case if no prefix is
 configured a zero is added in front of the label. ::1 becomes 0--1.
+
+V4 mapped IPv6 addresses, which have a representation like ::ffff:1.2.3.4 are handled specially, and become like 0--ffff-1-2-3-4
 
 The address range can be of the form
 <ip address>,<ip address> or <ip address>/<netmask>
@@ -739,7 +751,7 @@ a return code of SERVFAIL. Note that
 setting this may affect DNS behaviour in bad ways, it is not an
 extra-logging flag and should not be set in production.
 .TP
-.B --auth-zone=<domain>[,<subnet>[/<prefix length>][,<subnet>[/<prefix length>].....]]
+.B --auth-zone=<domain>[,<subnet>[/<prefix length>][,<subnet>[/<prefix length>].....][,exclude:<subnet>[/<prefix length>]].....]
 Define a DNS zone for which dnsmasq acts as authoritative server. Locally defined DNS records which are in the domain
 will be served. If subnet(s) are given, A and AAAA records must be in one of the
 specified subnets.
@@ -755,6 +767,10 @@ an interface has dynamically determined global IPv6 addresses which should
 appear in the zone, but RFC1918 IPv4 addresses which should not.
 Interface-name and address-literal subnet specifications may be used
 freely in the same --auth-zone declaration.
+
+It's possible to exclude certain IP addresses from responses. It can be
+used, to make sure that answers contain only global routeable IP
+addresses (by excluding loopback, RFC1918 and ULA addresses).
 
 The subnet(s) are also used to define in-addr.arpa and
 ip6.arpa domains which are served for reverse-DNS queries. If not
@@ -1527,6 +1543,8 @@ DHCP relay-agent added any of these options.
  
 If the client provides vendor-class, DNSMASQ_VENDOR_CLASS.
 
+DNSMASQ_REQUESTED_OPTIONS a string containing the decimal values in the Parameter Request List option, comma separated, if the parameter request list option is provided by the client.
+
 For IPv6 only:
 
 If the client provides vendor-class, DNSMASQ_VENDOR_CLASS_ID,
@@ -2192,7 +2210,12 @@ following data is used to populate the authoritative zone.
 .B --cname
 as long as the record name is in  the authoritative domain. If the
 target of the CNAME is unqualified, then it  is qualified with the
-authoritative zone name.
+authoritative zone name. CNAME used in this way (only) may be wildcards, as in
+
+.nf
+.B cname=*.example.com,default.example.com
+.fi
+
 .PP
 IPv4 and IPv6 addresses from /etc/hosts (and 
 .B --addn-hosts

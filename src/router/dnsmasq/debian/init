@@ -33,7 +33,7 @@ fi
 # The following test ensures the dnsmasq service is not started, when the
 # package 'dnsmasq' is removed but not purged, even if the dnsmasq-base 
 # package is still in place.
-test -d /usr/share/doc/dnsmasq || exit 0
+test -e /usr/share/dnsmasq/installed-marker || exit 0
  
 test -x $DAEMON || exit 0
 

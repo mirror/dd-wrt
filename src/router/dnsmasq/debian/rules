@@ -24,7 +24,20 @@ DEB_COPTS = $(COPTS)
 TARGET = install-i18n
 
 DEB_HOST_ARCH_OS := $(shell dpkg-architecture -qDEB_HOST_ARCH_OS)
+DEB_HOST_GNU_TYPE := $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
+DEB_BUILD_GNU_TYPE := $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
 BUILD_DATE := $(shell dpkg-parsechangelog --show-field Date)
+
+ifeq ($(origin CC),default)
+     CC = $(DEB_HOST_GNU_TYPE)-gcc
+endif
+
+# Support non-cross-builds on systems without gnu-triplet-binaries for pkg-config.
+ifeq ($(DEB_BUILD_GNU_TYPE),$(DEB_HOST_GNU_TYPE))
+     PKG_CONFIG=pkg-config
+else
+     PKG_CONFIG=$(DEB_HOST_GNU_TYPE)-pkg-config	
+endif
 
 # Force package version based on git tags.
 ifneq (,$(filter gitversion,$(DEB_BUILD_OPTIONS)))
@@ -105,6 +118,7 @@ binary-indep:	checkroot
 		-d debian/daemon/etc/dnsmasq.d \
 	        -d debian/daemon/etc/resolvconf/update.d \
 		-d debian/daemon/usr/lib/resolvconf/dpkg-event.d \
+		-d debian/daemon/usr/share/dnsmasq \
 	        -d debian/daemon/etc/default \
 		-d debian/daemon/lib/systemd/system \
                 -d debian/daemon/etc/insserv.conf.d
@@ -113,6 +127,7 @@ binary-indep:	checkroot
 	install -m 755 debian/init debian/daemon/etc/init.d/dnsmasq
 	install -m 755 debian/resolvconf debian/daemon/etc/resolvconf/update.d/dnsmasq
 	install -m 755 debian/resolvconf-package debian/daemon/usr/lib/resolvconf/dpkg-event.d/dnsmasq
+	install -m 644 debian/installed-marker debian/daemon/usr/share/dnsmasq
 	install -m 644 debian/default debian/daemon/etc/default/dnsmasq
 	install -m 644 dnsmasq.conf.example debian/daemon/etc/dnsmasq.conf
 	install -m 644 debian/readme.dnsmasq.d debian/daemon/etc/dnsmasq.d/README
@@ -136,7 +151,7 @@ binary-arch:	checkroot
 		-d debian/base/usr/share/doc/$(package)/examples \
 		-d debian/base/usr/share/$(package) \
 	        -d debian/base/var/lib/misc
-	make $(TARGET) PREFIX=/usr DESTDIR=`pwd`/debian/base CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=gcc
+	make $(TARGET) PREFIX=/usr DESTDIR=`pwd`/debian/base CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=$(CC) PKG_CONFIG=$(PKG_CONFIG)
 ifeq (,$(findstring nodocs,$(DEB_BUILD_OPTIONS)))
 # Need to remove paypal links in Debian Package for policy reasons.
 	sed -e /\<H2\>Donations/Q -e /icon.png/d doc.html -e /favicon.ico/d >debian/base/usr/share/doc/$(package)/doc.html
@@ -168,7 +183,7 @@ endif
                 fi \
 	done
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-	strip -R .note -R .comment debian/base/usr/sbin/dnsmasq
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/base/usr/sbin/dnsmasq
 endif
 	cd debian/base && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
 	dpkg-shlibdeps --warnings=1 debian/base/usr/sbin/dnsmasq
@@ -184,7 +199,7 @@ ifeq ($(DEB_HOST_ARCH_OS),linux)
                        -d debian/utils/usr/share/man/man1 \
 	               -d debian/utils/usr/bin \
                        -d debian/utils/usr/share/doc/dnsmasq-utils
-	make -C contrib/lease-tools PREFIX=/usr DESTDIR=`pwd`/debian/utils CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=gcc
+	make -C contrib/lease-tools PREFIX=/usr DESTDIR=`pwd`/debian/utils CFLAGS="$(CFLAGS)" LDFLAGS="$(LDFLAGS)" COPTS="$(DEB_COPTS)" CC=$(CC) PKG_CONFIG=$(PKG_CONFIG)
 	install -m 755 contrib/lease-tools/dhcp_release debian/utils/usr/bin/dhcp_release
 	install -m 644 contrib/lease-tools/dhcp_release.1 debian/utils/usr/share/man/man1/dhcp_release.1
 	gzip -9n debian/utils/usr/share/man/man1/dhcp_release.1
@@ -198,8 +213,8 @@ ifeq ($(DEB_HOST_ARCH_OS),linux)
 	gzip -9n debian/utils/usr/share/doc/dnsmasq-utils/changelog.Debian
 	gzip -9n debian/utils/usr/share/man/man1/dhcp_lease_time.1
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
-	strip -R .note -R .comment debian/utils/usr/bin/dhcp_release
-	strip -R .note -R .comment debian/utils/usr/bin/dhcp_lease_time
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/utils/usr/bin/dhcp_release
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/utils/usr/bin/dhcp_lease_time
 endif	
 	cd debian/utils && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums
 	dpkg-shlibdeps -Tdebian/utils-substvars debian/utils/usr/bin/dhcp_release debian/utils/usr/bin/dhcp_lease_time

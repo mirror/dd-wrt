@@ -239,7 +239,15 @@ size_t rrfilter(struct dns_header *header, size_t plen, int mode)
   if (!check_rrs(p, header, plen, 0, rrs, rr_found))
     return plen;
   
-  /* Third pass, elide records */
+  /* Third pass, actually fix up pointers in the records */
+  p = (unsigned char *)(header+1);
+  
+  check_name(&p, header, plen, 1, rrs, rr_found);
+  p += 4; /* qclass, qtype */
+  
+  check_rrs(p, header, plen, 1, rrs, rr_found);
+
+  /*  Fouth pass, elide records */
   for (p = rrs[0], i = 1; i < rr_found; i += 2)
     {
       unsigned char *start = rrs[i];
@@ -254,14 +262,6 @@ size_t rrfilter(struct dns_header *header, size_t plen, int mode)
   header->nscount = htons(ntohs(header->nscount) - chop_ns);
   header->arcount = htons(ntohs(header->arcount) - chop_ar);
 
-  /* Fourth pass, fix up pointers in the remaining records */
-  p = (unsigned char *)(header+1);
-  
-  check_name(&p, header, plen, 1, rrs, rr_found);
-  p += 4; /* qclass, qtype */
-  
-  check_rrs(p, header, plen, 1, rrs, rr_found);
-  
   return plen;
 }
 

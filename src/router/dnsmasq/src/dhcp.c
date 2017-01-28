@@ -147,7 +147,7 @@ void dhcp_packet(time_t now, int pxe_fd)
   ssize_t sz; 
   int iface_index = 0, unicast_dest = 0, is_inform = 0;
   int rcvd_iface_index;
-  struct in_addr iface_addr, *addrp = NULL;
+  struct in_addr iface_addr;
   struct iface_param parm;
 #ifdef HAVE_LINUX_NETWORK
   struct arpreq arp_req;
@@ -277,9 +277,12 @@ void dhcp_packet(time_t now, int pxe_fd)
     {
       ifr.ifr_addr.sa_family = AF_INET;
       if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) != -1 )
+	iface_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+      else
 	{
-	  addrp = &iface_addr;
-	  iface_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
+	  if (iface_check(AF_INET, NULL, ifr.ifr_name, NULL))
+	    my_syslog(MS_DHCP | LOG_WARNING, _("DHCP packet received on %s which has no address"), ifr.ifr_name);
+	  return;
 	}
       
       for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
@@ -298,7 +301,7 @@ void dhcp_packet(time_t now, int pxe_fd)
       parm.relay_local.s_addr = 0;
       parm.ind = iface_index;
       
-      if (!iface_check(AF_INET, (struct all_addr *)addrp, ifr.ifr_name, NULL))
+      if (!iface_check(AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name, NULL))
 	{
 	  /* If we failed to match the primary address of the interface, see if we've got a --listen-address
 	     for a secondary */
@@ -318,12 +321,6 @@ void dhcp_packet(time_t now, int pxe_fd)
 	  complete_context(match.addr, iface_index, NULL, match.netmask, match.broadcast, &parm);
 	}    
       
-      if (!addrp)
-        {
-          my_syslog(MS_DHCP | LOG_WARNING, _("DHCP packet received on %s which has no address"), ifr.ifr_name);
-          return;
-        }
-
       if (!iface_enumerate(AF_INET, &parm, complete_context))
 	return;
 
