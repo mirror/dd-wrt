@@ -114,11 +114,11 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		if (ht == 1)
 			sprintf(info, "%s40%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 2)
-			sprintf(info, "%s80%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
+			sprintf(info, "%s80%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 3)
-			sprintf(info, "%s160%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
+			sprintf(info, "%s160%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 4)
-			sprintf(info, "%s80+80%s%s", vht ? "VHT" : "HT",, wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
+			sprintf(info, "%s80+80%s%s", vht ? "VHT" : "HT", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 		if (ht == 5)
 			sprintf(info, "LEGACY%s", wc->ht40intol ? "i" : "", sgi ? "SGI" : "");
 
