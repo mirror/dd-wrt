@@ -1049,7 +1049,8 @@ static int checkandadd(char *name)
 			}
 		}
 		list = realloc(list, strlen(list) + 1 + strlen(name) + 1);
-		sprintf(list, "%s %s", list, name);
+		strcat(list, " ");
+		strcat(list, name);
 	}
 	return 0;
 
@@ -1308,12 +1309,13 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	//add ppp interfacs
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "ppp");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	//add tun interfaces
 	memset(eths2, 0, sizeof(eths2));
 	getIfList(eths2, "tun");
-	sprintf(eths, "%s %s", eths, eths2);
-
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(bufferif, 0, 256);
 	getIfListB(bufferif, NULL, 1);
 
