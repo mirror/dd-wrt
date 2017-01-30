@@ -1525,9 +1525,12 @@ void qos_save(webs_t wp)
 				name[j] = tolower(name[j]);
 		}
 #endif
-		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
-		else
+		if (strlen(svqos_var) > 0) {
+			char *tmp;
+			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
+			strcpy(svqos_var,tmp);
+			free(tmp);
+		} else
 			sprintf(svqos_var, "%s %s %s %s |", name, protocol, ports, level);
 
 	}
@@ -1586,9 +1589,12 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
-		else
+		if (strlen(svqos_var) > 0) {
+			char *tmp;
+			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
+			strcpy(svqos_var,tmp);
+			free(tmp);
+		}else
 			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
 #endif
@@ -1643,9 +1649,12 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
-		else
+		if (strlen(svqos_var) > 0) {
+			char *tmp;
+			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
+			strcpy(svqos_var,tmp);
+			free(tmp);
+		}else
 			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 
 #endif
@@ -1701,9 +1710,12 @@ void qos_save(webs_t wp)
 		if (!lanlevel)
 			continue;
 
-		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
-		else
+		if (strlen(svqos_var) > 0) {
+			char *tmp;
+			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
+			strcpy(svqos_var,tmp);
+			free(tmp);
+		} else
 			sprintf(svqos_var, "%s %s %s user %s %s |", data, level, level2, lanlevel, prio);
 
 #endif
@@ -2523,8 +2535,10 @@ void save_olsrd(webs_t wp)
 
 		sprintf(valuename, "%s_hnavaliditytime", interface);
 		char *hnavaliditytime = websGetVar(wp, valuename, "0");
-
-		sprintf(newlist, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime);
+		char *tmp;
+		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime);
+		strcpy(newlist,tmp);
+		free(tmp);
 	}
 	nvram_set("olsrd_interfaces", newlist);
 	nvram_commit();
