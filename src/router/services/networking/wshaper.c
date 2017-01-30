@@ -272,7 +272,8 @@ static void s_addIF(char **list, char *ifname)
 		*list = strdup(ifname);
 	} else {
 		*list = realloc(*list, strlen(*list) + strlen(ifname) + 2);
-		sprintf(*list, "%s %s", *list, ifname);
+		strcat(*list, " ");
+		strcat(*list, ifname);
 	}
 }
 
@@ -1130,34 +1131,45 @@ void stop_wshaper(void)
 	getIfList(eths, "ixp");
 	memset(eths2, 0, 512);
 	getIfList(eths2, "eth");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "imq");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "ppp");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "tun");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "tap");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "vlan");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "ath");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "wl");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "ra");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 512);
 	getIfList(eths2, "rb");
-	snprintf(eths, 512, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 
 	char *next;
 	char var[80];
