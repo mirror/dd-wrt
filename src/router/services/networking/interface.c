@@ -378,15 +378,25 @@ void start_setup_vlans(void)
 		memset(&portsettings[i][0], 0, 64);
 		foreach(vlan, port, next) {
 			if (atoi(vlan) < 5 && atoi(vlan) >= 0 && tagged[atoi(vlan)])
-				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
+			{
+				strcat(&portsettings[i][0]," ");
+				strcat(&portsettings[i][0],vlan);
+				strcat(&portsettings[i][0],"t");
+			}
 			else if ((atoi(vlan) == 5 || atoi(vlan) == 8 || atoi(vlan) == 7)
-				 && tagged[atoi(vlan)] && !ast)
-				sprintf(&portsettings[i][0], "%s %st", &portsettings[i][0], vlan);
-			else if ((atoi(vlan) == 5 || atoi(vlan) == 8 || atoi(vlan) == 7)
-				 && tagged[atoi(vlan)] && ast)
-				sprintf(&portsettings[i][0], "%s %s*", &portsettings[i][0], vlan);
-			else
-				sprintf(&portsettings[i][0], "%s %s", &portsettings[i][0], vlan);
+				 && tagged[atoi(vlan)] && !ast) {
+				strcat(&portsettings[i][0]," ");
+				strcat(&portsettings[i][0],vlan);
+				strcat(&portsettings[i][0],"t");
+			} else if ((atoi(vlan) == 5 || atoi(vlan) == 8 || atoi(vlan) == 7)
+				 && tagged[atoi(vlan)] && ast) {
+				strcat(&portsettings[i][0]," ");
+				strcat(&portsettings[i][0],vlan);
+				strcat(&portsettings[i][0],"*");
+			}else {
+				strcat(&portsettings[i][0]," ");
+				strcat(&portsettings[i][0],vlan);
+			}
 		}
 	}
 	for (i = 0; i < 16; i++) {

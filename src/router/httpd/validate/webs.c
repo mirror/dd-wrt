@@ -2473,8 +2473,10 @@ void del_olsrd(webs_t wp)
 	int count = 0;
 
 	foreach(word, wordlist, next) {
-		if (count != d)
-			sprintf(newlist, "%s %s", newlist, word);
+		if (count != d) {
+			strcat(newlist, " ");
+			strcat(newlist, word);
+			}
 		count++;
 	}
 	nvram_set("olsrd_interfaces", newlist);
