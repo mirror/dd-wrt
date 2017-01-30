@@ -242,8 +242,10 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	memset(finalbuffer, 0, 512);
 	getIfList(bufferif, NULL);
 	foreach(word, bufferif, next) {
-		if (!isbridge(word) && strcmp(word, "lo") && !contains(word, ':'))
-			sprintf(finalbuffer, "%s %s", finalbuffer, word);
+		if (!isbridge(word) && strcmp(word, "lo") && !contains(word, ':')) {
+			strcat(finalbuffer," ");
+			strcat(finalbuffer,word);
+			}
 	}
 	strcpy(bufferif, finalbuffer);
 	int i;

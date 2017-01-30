@@ -478,16 +478,19 @@ struct dns_lists *get_dns_list(void)
 	if (strlen(sv_localdns))
 		snprintf(list, 256, "%s", sv_localdns);
 	if (strlen(wan_dns)) {
-		if (strlen(list))
-			snprintf(list, 256, "%s %s", list, wan_dns);
+		if (strlen(list)) {
+			strcat(list," ");
+			strcat(list,wan_dns);
+		}
 		else
 			snprintf(list, 256, "%s", wan_dns);
 	}
 
 	if (strlen(wan_get_dns)) {
-		if (strlen(list))
-			snprintf(list, 256, "%s %s", list, wan_get_dns);
-		else
+		if (strlen(list)) {
+			strcat(list," ");
+			strcat(list,wan_get_dns);
+		} else
 			snprintf(list, 256, "%s", wan_get_dns);
 	}
 
@@ -1505,45 +1508,54 @@ void getIfLists(char *eths, int size)
 #ifdef HAVE_XSCALE
 	getIfList(eths, "ixp");
 	getIfList(eths2, "eth");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #else
 	getIfList(eths, "eth");
 #endif
 	memset(eths2, 0, 256);
 	getIfList(eths2, "vlan");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #ifdef HAVE_MADWIFI
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ath");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ra");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 
 	memset(eths2, 0, 256);
 	getIfList(eths2, "apcli");
-	sprintf(eths, "%s %s", eths, eths2);
-
+	strcat(eths, " ");
+	strcat(eths, eths2);
 	memset(eths2, 0, 256);
 	getIfList(eths2, "wds");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #else
 	memset(eths2, 0, 256);
 	getIfList(eths2, "wl");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #endif
 	memset(eths2, 0, 256);
 	getIfList(eths2, "br");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 
 	memset(eths2, 0, 256);
 	getIfList(eths2, "oet");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #ifdef HAVE_WAVESAT
 	memset(eths2, 0, 256);
 	getIfList(eths2, "ofdm");
-	sprintf(eths, "%s %s", eths, eths2);
+	strcat(eths, " ");
+	strcat(eths, eths2);
 #endif
 
 }

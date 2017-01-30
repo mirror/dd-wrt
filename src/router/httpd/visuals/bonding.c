@@ -47,15 +47,20 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_XSCALE
 	memset(buffer, 0, 256);
 	getIfList(buffer, "ixp");
-	sprintf(bufferif, "%s %s", bufferif, buffer);
+	strcat(bufferif, " ");
+	strcat(bufferif, buffer);
 #endif
 	memset(buffer, 0, 256);
 	getIfListB(buffer, NULL, 1);
-	sprintf(bufferif, "%s %s", bufferif, buffer);
+	strcat(bufferif, " ");
+	strcat(bufferif, buffer);
 
 	memset(buffer, 0, 256);
 	getIfList(buffer, "vlan");
-	sprintf(bufferif, "%s %s", bufferif, buffer);
+
+	strcat(bufferif, " ");
+	strcat(bufferif, buffer);
+
 #ifdef HAVE_MADWIFI
 	int c = getdevicecount();
 
@@ -68,7 +73,8 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 			char vifs[32];
 
 			sprintf(vifs, "ath%d_vifs", i);
-			sprintf(bufferif, "%s %s", bufferif, nvram_safe_get(vifs));
+			strcat(bufferif, " ");
+			strcat(bufferif, nvram_safe_get(vifs));
 		}
 	}
 #endif
