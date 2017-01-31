@@ -94,9 +94,6 @@ static const char *compile_options = "Compiled with "
 #ifdef ENABLE_DHCPOPT
     "ENABLE_DHCPOPT "
 #endif
-#ifdef ENABLE_DNSLOG
-    "ENABLE_DNSLOG "
-#endif
 #ifdef ENABLE_UAMDOMAINFILE
     "ENABLE_UAMDOMAINFILE "
 #endif
@@ -745,7 +742,7 @@ int mopt_main(int argc, char **argv) {
   }
 
   if (!args_info.uamserver_arg) {
-    syslog(LOG_ERR, "WARNING: No uamserver defiend!");
+    syslog(LOG_ERR, "WARNING: No uamserver defined!");
   }
 
   if (args_info.uamserver_arg) {
@@ -1274,13 +1271,6 @@ int mopt_main(int argc, char **argv) {
 
 #ifdef HAVE_NETFILTER_COOVA
   _options.kname = STRDUP(args_info.kname_arg);
-#endif
-
-#ifdef ENABLE_DNSLOG
-  _options.dnslog = STRDUP(args_info.dnslog_arg);
-#else
-  if (args_info.dnslog_arg)
-    syslog(LOG_ERR, "option dnslog given when no support built-in");
 #endif
 
 #ifdef ENABLE_IPWHITELIST

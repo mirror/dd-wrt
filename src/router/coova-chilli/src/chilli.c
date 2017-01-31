@@ -136,7 +136,7 @@ int child_remove_pid(pid_t pid) {
       list->next = node->next;
 #if(_debug_)
       if (_options.debug)
-        syslog(LOG_DEBUG, "Freed child process %d [%s]", node->pid, node->name);
+        syslog(LOG_DEBUG, "%s(%d): Freed child process %d [%s]", __FUNCTION__, __LINE__, node->pid, node->name);
 #endif
       free(node);
       return 0;
@@ -284,7 +284,7 @@ void child_killall(int sig) {
   while (node) {
     kill(node->pid, sig);
     if (_options.debug)
-      syslog(LOG_DEBUG, "pid %d killed %d", getpid(), node->pid);
+      syslog(LOG_DEBUG, "%s(%d): pid %d killed %d", __FUNCTION__, __LINE__, getpid(), node->pid);
     node = node->next;
   }
 }
@@ -314,7 +314,7 @@ static void _sigchld(int signum) {
   while ((pid = waitpid(-1, &stat, WNOHANG)) > 0) {
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "child %d terminated", pid);
+      syslog(LOG_DEBUG, "%s(%d): child %d terminated", __FUNCTION__, __LINE__, pid);
 #endif
 #ifdef ENABLE_CHILLIRADSEC
     if (!_options.debug && radsec_pid > 0 && radsec_pid == pid) {
@@ -340,19 +340,19 @@ static void _sigchld(int signum) {
 }
 
 static void _sigterm(int signum) {
-  syslog(LOG_DEBUG, "SIGTERM: shutdown");
+  syslog(LOG_DEBUG, "%s(%d): SIGTERM: shutdown", __FUNCTION__, __LINE__);
   if (p_keep_going)
     *p_keep_going = 0;
 }
 
 static void _sigvoid(int signum) {
 #if(_debug_)
-  syslog(LOG_DEBUG, "received %d signal", signum);
+  syslog(LOG_DEBUG, "%s(%d): received %d signal", __FUNCTION__, __LINE__, signum);
 #endif
 }
 
 static void _sigusr1(int signum) {
-  syslog(LOG_DEBUG, "SIGUSR1: reloading configuration");
+  syslog(LOG_DEBUG, "%s(%d): SIGUSR1: reloading configuration", __FUNCTION__, __LINE__);
 
   if (p_reload_config)
     *p_reload_config = 1;
@@ -375,7 +375,7 @@ static void _sigusr1(int signum) {
 }
 
 static void _sighup(int signum) {
-  syslog(LOG_DEBUG, "SIGHUP: rereading configuration");
+  syslog(LOG_DEBUG, "%s(%d): SIGHUP: rereading configuration", __FUNCTION__, __LINE__);
 
   do_interval = 1;
 }
@@ -384,7 +384,7 @@ int chilli_handle_signal(void *ctx, int fd) {
   int signo = selfpipe_read();
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "caught %d via selfpipe", signo);
+    syslog(LOG_DEBUG, "%s(%d): caught %d via selfpipe", __FUNCTION__, __LINE__,  signo);
 #endif
   switch (signo) {
     case SIGCHLD: _sigchld(signo); break;
@@ -672,7 +672,7 @@ leaky_bucket(struct app_conn_t *conn,
     if ((conn->s_state.bucketup + octetsup) >
 	conn->s_state.bucketupsize) {
       if (_options.debug)
-	syslog(LOG_DEBUG, "Leaky bucket dropping upload overflow from "MAC_FMT,
+	syslog(LOG_DEBUG, "%s(%d): Leaky bucket dropping upload overflow from "MAC_FMT, __FUNCTION__, __LINE__,
                MAC_ARG(conn->hismac));
       result = -1;
     }
@@ -698,7 +698,7 @@ leaky_bucket(struct app_conn_t *conn,
     if ((conn->s_state.bucketdown + octetsdown) >
 	conn->s_state.bucketdownsize) {
       if (_options.debug)
-	syslog(LOG_DEBUG, "Leaky bucket dropping download overflow to "MAC_FMT,
+	syslog(LOG_DEBUG, "%s(%d): Leaky bucket dropping download overflow to "MAC_FMT, __FUNCTION__, __LINE__,
                MAC_ARG(conn->hismac));
       result = -1;
     }
@@ -711,7 +711,7 @@ leaky_bucket(struct app_conn_t *conn,
   if (_options.debug &&
       (conn->s_params.bandwidthmaxup || conn->s_params.bandwidthmaxdown))
     if (_options.debug)
-      syslog(LOG_DEBUG, "Leaky bucket: bucketup: %lld/%lld, "
+      syslog(LOG_DEBUG, "%s(%d): Leaky bucket: bucketup: %lld/%lld, " __FUNCTION__, __LINE__,
              "bucketdown: %lld/%lld, up: %lld/(%lld), down: %lld/(%lld)",
              conn->s_state.bucketup, conn->s_state.bucketupsize,
              conn->s_state.bucketdown, conn->s_state.bucketdownsize,
@@ -829,6 +829,8 @@ int runscript(struct app_conn_t *appconn, char* script,
   set_env("COOVACHILLI_MAX_TOTAL_OCTETS", VAL_ULONG64, &appconn->s_params.maxtotaloctets, 0);
   set_env("INPUT_OCTETS", VAL_ULONG64, &appconn->s_state.input_octets, 0);
   set_env("OUTPUT_OCTETS", VAL_ULONG64, &appconn->s_state.output_octets, 0);
+  set_env("INPUT_PACKETS", VAL_ULONG64, &appconn->s_state.input_packets, 0);
+  set_env("OUTPUT_PACKETS", VAL_ULONG64, &appconn->s_state.output_packets, 0);
   sessiontime = mainclock_diffu(appconn->s_state.start_time);
   set_env("SESSION_TIME", VAL_ULONG, &sessiontime, 0);
   sessiontime = mainclock_diffu(appconn->s_state.last_up_time);
@@ -880,7 +882,7 @@ static int newip(struct ippoolm_t **ipm, struct in_addr *hisip, uint8_t *hismac)
 #endif
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "newip %s", inet_ntoa(*hisip));
+    syslog(LOG_DEBUG, "%s(%d): newip %s", __FUNCTION__, __LINE__,  inet_ntoa(*hisip));
 
   if (ippool_newip(ippool, ipm, hisip, 1)) {
     if (ippool_newip(ippool, ipm, hisip, 0)) {
@@ -1399,7 +1401,7 @@ int chilli_req_attrs(struct radius_t *radius,
     case ACCT_USER:
       if (state->redir.classlen) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "RADIUS Request + Class(%zu)", state->redir.classlen);
+          syslog(LOG_DEBUG, "%s(%d): RADIUS Request + Class(%zu)", __FUNCTION__, __LINE__,  state->redir.classlen);
         radius_addattr(radius, pack,
                        RADIUS_ATTR_CLASS, 0, 0, 0,
                        state->redir.classbuf,
@@ -1408,7 +1410,7 @@ int chilli_req_attrs(struct radius_t *radius,
 
       if (state->redir.cuilen > 1) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "RADIUS Request + CUI(%zu)", state->redir.cuilen);
+          syslog(LOG_DEBUG, "%s(%d): RADIUS Request + CUI(%zu)", __FUNCTION__, __LINE__, state->redir.cuilen);
         radius_addattr(radius, pack,
                        RADIUS_ATTR_CHARGEABLE_USER_IDENTITY, 0, 0, 0,
                        state->redir.cuibuf,
@@ -1417,7 +1419,7 @@ int chilli_req_attrs(struct radius_t *radius,
 
       if (state->redir.statelen) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "RADIUS Request + State(%d)", state->redir.statelen);
+          syslog(LOG_DEBUG, "%s(%d): RADIUS Request + State(%d)", __FUNCTION__, __LINE__, state->redir.statelen);
         radius_addattr(radius, pack,
                        RADIUS_ATTR_STATE, 0, 0, 0,
                        state->redir.statebuf,
@@ -1561,7 +1563,7 @@ int static auth_radius(struct app_conn_t *appconn,
   if (!radius) return -1;
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "Starting radius authentication");
+    syslog(LOG_DEBUG, "%s(%d): Starting radius authentication", __FUNCTION__, __LINE__);
 
   if (radius_default_pack(radius, &radius_pack, RADIUS_CODE_ACCESS_REQUEST)) {
     syslog(LOG_ERR, "radius_default_pack() failed");
@@ -1675,7 +1677,7 @@ int static radius_access_challenge(struct app_conn_t *conn) {
   size_t eaplen = 0;
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "Sending RADIUS AccessChallenge to client");
+    syslog(LOG_DEBUG, "%s(%d): Sending RADIUS AccessChallenge to client", __FUNCTION__, __LINE__);
 
   conn->radiuswait = 0;
 
@@ -1934,7 +1936,7 @@ static int acct_req(acct_type type,
         incl_garden = 1;
         if (!conn->s_state.garden_start_time) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "session hasn't started yet");
+            syslog(LOG_DEBUG, "%s(%d): session hasn't started yet", __FUNCTION__, __LINE__);
           return 0;
         }
         timediff = mainclock_diffu(conn->s_state.garden_start_time);
@@ -2071,7 +2073,7 @@ int chilli_assign_snat(struct app_conn_t *appconn, int force) {
       (appconn->hisip.s_addr & _options.uamnatanyipex_mask.s_addr) ==
       _options.uamnatanyipex_addr.s_addr) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "Excluding ip %s from SNAT becuase it is in uamnatanyipex",
+      syslog(LOG_DEBUG, "%s(%d): Excluding ip %s from SNAT becuase it is in uamnatanyipex", __FUNCTION__, __LINE__,
              inet_ntoa(appconn->hisip));
     return 0;
   }
@@ -2080,10 +2082,10 @@ int chilli_assign_snat(struct app_conn_t *appconn, int force) {
     return 0;
 
   if (_options.debug) {
-    syslog(LOG_DEBUG, "Request SNAT ip for client ip: %s",
+    syslog(LOG_DEBUG, "%s(%d): Request SNAT ip for client ip: %s", __FUNCTION__, __LINE__,
            inet_ntoa(appconn->hisip));
-    syslog(LOG_DEBUG, "SNAT mask: %s", inet_ntoa(appconn->mask));
-    syslog(LOG_DEBUG, "SNAT ourip: %s", inet_ntoa(appconn->ourip));
+    syslog(LOG_DEBUG, "%s(%d): SNAT mask: %s", __FUNCTION__, __LINE__, inet_ntoa(appconn->mask));
+    syslog(LOG_DEBUG, "%s(%d): SNAT ourip: %s", __FUNCTION__, __LINE__, inet_ntoa(appconn->ourip));
   }
 
   if (ippool_newip(ippool, &newipm, &appconn->natip, 0)) {
@@ -2101,7 +2103,7 @@ int chilli_assign_snat(struct app_conn_t *appconn, int force) {
   newipm->peer = appconn;
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "SNAT IP %s assigned", inet_ntoa(appconn->natip));
+    syslog(LOG_DEBUG, "%s(%d): SNAT IP %s assigned", __FUNCTION__, __LINE__, inet_ntoa(appconn->natip));
 
   return 0;
 }
@@ -2136,7 +2138,7 @@ int dnprot_reject(struct app_conn_t *appconn) {
 
     case DNPROT_UAM:
       if (_options.debug)
-        syslog(LOG_DEBUG, "Rejecting UAM");
+        syslog(LOG_DEBUG, "%s(%d): Rejecting UAM", __FUNCTION__, __LINE__);
       return 0;
 
 #ifdef ENABLE_RADPROXY
@@ -2363,7 +2365,7 @@ int dnprot_accept(struct app_conn_t *appconn) {
     /* Run connection up script */
     if (_options.conup && !(appconn->s_params.flags & NO_SCRIPT)) {
  if (_options.debug)
-     syslog(LOG_DEBUG, "Calling connection up script: %s\n", _options.conup);
+     syslog(LOG_DEBUG, "%s(%d): Calling connection up script: %s\n", __FUNCTION__, __LINE__, _options.conup);
       runscript(appconn, _options.conup, 0, 0);
     }
   }
@@ -2389,8 +2391,8 @@ static int fwd_ssdp(struct in_addr *dst,
   if (udph && dst->s_addr == ssdp.s_addr) {
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "src="MAC_FMT" "
-             "dst="MAC_FMT" prot=%.4x",
+      syslog(LOG_DEBUG, "%s(%d): src="MAC_FMT" "
+             "dst="MAC_FMT" prot=%.4x", __FUNCTION__, __LINE__,
              MAC_ARG(ethh->src),
              MAC_ARG(ethh->dst),
              ntohs(ethh->prot));
@@ -2404,7 +2406,7 @@ static int fwd_ssdp(struct in_addr *dst,
 
       src.s_addr = iph->saddr;
 
-      syslog(LOG_DEBUG, "ssdp multicast from %s\n%.*s", inet_ntoa(src),
+      syslog(LOG_DEBUG, "%s(%d): ssdp multicast from %s\n%.*s", __FUNCTION__, __LINE__, inet_ntoa(src),
              ntohs(udph->len), bufr);
     }
 
@@ -2448,7 +2450,7 @@ static int fwd_layer3(struct app_conn_t *appconn,
       if (!appconn) {
 	struct in_addr src;
         if (_options.debug)
-          syslog(LOG_DEBUG, "Detecting layer3 IP assignment");
+          syslog(LOG_DEBUG, "%s(%d): Detecting layer3 IP assignment", __FUNCTION__, __LINE__);
 
 	src.s_addr = pdhcp->yiaddr;
 	appconn = chilli_connect_layer3(&src, 0);
@@ -2463,7 +2465,7 @@ static int fwd_layer3(struct app_conn_t *appconn,
 	struct pkt_ethhdr_t *ethh = pkt_ethhdr(pkt_buffer_head(pb));
 
         if (_options.debug)
-          syslog(LOG_DEBUG, "forwarding layer3 dhcp-broadcast: %s", inet_ntoa(*dst));
+          syslog(LOG_DEBUG, "%s(%d): forwarding layer3 dhcp-broadcast: %s",__FUNCTION__, __LINE__, inet_ntoa(*dst));
 
 	dhcp_send(dhcp, -1, ethh->dst,
 		  pkt_buffer_head(pb),
@@ -2567,9 +2569,9 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
           memcpy(&reqaddr.s_addr, p_arp->tpa, PKT_IP_ALEN);
 
           if (_options.debug)
-            syslog(LOG_DEBUG, "arp: ifidx=%d src="MAC_FMT" "
+            syslog(LOG_DEBUG, "%s(%d): arp: ifidx=%d src="MAC_FMT" "
                    "dst="MAC_FMT" "
-                   "prot=%.4x (asking for %s)",
+                   "prot=%.4x (asking for %s)", __FUNCTION__, __LINE__,
                    tun(tun,idx).ifindex,
                    MAC_ARG(ethh->src),
                    MAC_ARG(ethh->dst),
@@ -2581,7 +2583,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
            */
           if (ippool_getip(ippool, &ipm, &reqaddr)) {
             if (_options.debug)
-              syslog(LOG_DEBUG, "ARP for unknown IP %s", inet_ntoa(reqaddr));
+              syslog(LOG_DEBUG, "%s(%d): ARP for unknown IP %s", __FUNCTION__, __LINE__, inet_ntoa(reqaddr));
             return 0;
           }
 
@@ -2617,7 +2619,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
               char snatip[56];
               strlcpy(ip, inet_ntoa(appconn->hisip), sizeof(ip));
               strlcpy(snatip, inet_ntoa(appconn->natip), sizeof(snatip));
-              syslog(LOG_DEBUG, "SNAT anyip in ARP response from %s to %s",
+              syslog(LOG_DEBUG, "%s(%d): SNAT anyip in ARP response from %s to %s", __FUNCTION__, __LINE__,
                      ip, snatip);
             }
           } else
@@ -2636,18 +2638,18 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
           packet_ethh->prot = htons(PKT_ETH_PROTO_ARP);
 
           if (_options.debug) {
-            syslog(LOG_DEBUG, "arp-reply: src="MAC_FMT" "
-                   "dst="MAC_FMT,
+            syslog(LOG_DEBUG, "%s(%d): arp-reply: src="MAC_FMT" "
+                   "dst="MAC_FMT, __FUNCTION__, __LINE__,
                    MAC_ARG(packet_ethh->src),
                    MAC_ARG(packet_ethh->dst));
 
             memcpy(&reqaddr.s_addr, packet_arp->spa, PKT_IP_ALEN);
-            syslog(LOG_DEBUG, "arp-reply: source sha="MAC_FMT" spa=%s",
+            syslog(LOG_DEBUG, "%s(%d): arp-reply: source sha="MAC_FMT" spa=%s", __FUNCTION__, __LINE__,
                    MAC_ARG(packet_arp->sha),
                    inet_ntoa(reqaddr));
 
             memcpy(&reqaddr.s_addr, packet_arp->tpa, PKT_IP_ALEN);
-            syslog(LOG_DEBUG, "arp-reply: target tha="MAC_FMT" tpa=%s",
+            syslog(LOG_DEBUG, "%s(%d): arp-reply: target tha="MAC_FMT" tpa=%s", __FUNCTION__, __LINE__,
                    MAC_ARG(packet_arp->tha),
                    inet_ntoa(reqaddr));
           }
@@ -2656,7 +2658,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
         }
       default:
         if (_options.debug)
-          syslog(LOG_DEBUG, "unhandled protocol %x", prot);
+          syslog(LOG_DEBUG, "%s(%d): unhandled protocol %x", __FUNCTION__, __LINE__, prot);
         return 0;
     }
 
@@ -2669,7 +2671,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
   size_t hlen = (ipph->version_ihl & 0x0f) << 2;
   if (ntohs(ipph->tot_len) > ip_len || hlen > ip_len) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "invalid IP packet %d / %zu",
+      syslog(LOG_DEBUG, "%s(%d): invalid IP packet %d / %zu", __FUNCTION__, __LINE__,
              ntohs(ipph->tot_len),
              len);
     return 0;
@@ -2694,9 +2696,9 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
         if (iphdr_offset((struct pkt_iphdr_t*)ipph) == 0) {
           udph = (struct pkt_udphdr_t *)(((void *)ipph) + hlen);
         }
-        if (udph && (ntohs(udph->len) > ip_len)) {
+        if (udph && !iphdr_more_frag((struct pkt_iphdr_t*)ipph) && (ntohs(udph->len) > ip_len)) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "invalid UDP packet %d / %d / %zu",
+            syslog(LOG_DEBUG, "%s(%d): invalid UDP packet %d / %d / %zu", __FUNCTION__, __LINE__,
                    ntohs(ipph->tot_len),
                    udph ? ntohs(udph->len) : -1, ip_len);
           return 0;
@@ -2705,7 +2707,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
       break;
     default:
       if (_options.debug)
-        syslog(LOG_DEBUG, "dropping unhandled packet: %x", ipph->protocol);
+        syslog(LOG_DEBUG, "%s(%d): dropping unhandled packet: %x", __FUNCTION__, __LINE__, ipph->protocol);
       return 0;
   }
 
@@ -2713,7 +2715,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
 
 #if(_debug_ > 1)
   if (_options.debug)
-    syslog(LOG_DEBUG, "sending to : %s", inet_ntoa(dst));
+    syslog(LOG_DEBUG, "%s(%d): sending to : %s", __FUNCTION__, __LINE__, inet_ntoa(dst));
 #endif
 
   if (ippool_getip(ippool, &ipm, &dst)) {
@@ -2733,7 +2735,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
 #endif
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "dropping packet with unknown destination: %s", inet_ntoa(dst));
+      syslog(LOG_DEBUG, "%s(%d): dropping packet with unknown destination: %s", __FUNCTION__, __LINE__, inet_ntoa(dst));
 
     return 0;
   }
@@ -2774,7 +2776,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
       char snatip[56];
       strlcpy(ip, inet_ntoa(appconn->hisip), sizeof(ip));
       strlcpy(snatip, inet_ntoa(appconn->natip), sizeof(snatip));
-      syslog(LOG_DEBUG, "SNAT anyip replace %s back to %s; snat was: %s",
+      syslog(LOG_DEBUG, "%s(%d): SNAT anyip replace %s back to %s; snat was: %s", __FUNCTION__, __LINE__,
              inet_ntoa(dst), ip, snatip);
     }
 #endif
@@ -2800,7 +2802,7 @@ int cb_tun_ind(struct tun_t *tun, struct pkt_buffer *pb, int idx) {
     case DNPROT_NULL:
     case DNPROT_DHCP_NONE:
       if (_options.debug)
-        syslog(LOG_DEBUG, "Dropping...");
+        syslog(LOG_DEBUG, "%s(%d): Dropping...", __FUNCTION__, __LINE__);
       break;
 
     case DNPROT_UAM:
@@ -2848,7 +2850,7 @@ int cb_redir_getstate(struct redir_t *redir,
 
   if (ippool_getip(ippool, &ipm, addr)) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "did not find %s", inet_ntoa(*addr));
+      syslog(LOG_DEBUG, "%s(%d): did not find %s", __FUNCTION__, __LINE__, inet_ntoa(*addr));
     return -1;
   }
 
@@ -2883,7 +2885,7 @@ int cb_redir_getstate(struct redir_t *redir,
 	    ) {
 #if(_debug_)
           if (_options.debug)
-            syslog(LOG_DEBUG, "redir connection is SSL");
+            syslog(LOG_DEBUG, "%s(%d): redir connection is SSL", __FUNCTION__, __LINE__);
 #endif
 	  flags |= USING_SSL;
 	}
@@ -2899,7 +2901,7 @@ int cb_redir_getstate(struct redir_t *redir,
 	ntohs(baddress->sin_port) == _options.uamuiport) {
 #if(_debug_)
       if (_options.debug)
-        syslog(LOG_DEBUG, "redir connection is SSL");
+        syslog(LOG_DEBUG, "%s(%d): redir connection is SSL", __FUNCTION__, __LINE__);
 #endif
       flags |= USING_SSL;
     }
@@ -2941,7 +2943,7 @@ chilli_learn_location(uint8_t *loc, int loclen,
   prev_loc_len = strlen(prev_loc_buff);
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "Learned location : [%.*s]", loclen, loc);
+    syslog(LOG_DEBUG, "%s(%d): Learned location : [%.*s]", __FUNCTION__, __LINE__, loclen, loc);
 
   if (prev_loc_len == 0 ||
       prev_loc_len != loclen ||
@@ -2955,7 +2957,7 @@ chilli_learn_location(uint8_t *loc, int loclen,
       appconn->s_state.pending_location[0]=0;
 
       if (_options.debug)
-        syslog(LOG_DEBUG, "Learned new-location : %d [%.*s] old %d [%s]",
+        syslog(LOG_DEBUG, "%s(%d): Learned new-location : %d [%.*s] old %d [%s]", __FUNCTION__, __LINE__,
                loclen, loclen, loc,
                prev_loc_len, prev_loc_buff);
 
@@ -3128,7 +3130,7 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
 
 #if(_debug_)
       if (_options.debug)
-        syslog(LOG_DEBUG, "Remembering VSA");
+        syslog(LOG_DEBUG, "%s(%d): Remembering VSA", __FUNCTION__, __LINE__);
 #endif
     }
   } while (attr);
@@ -3153,13 +3155,13 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
 
 #if(_debug_)
         if (_options.debug)
-          syslog(LOG_DEBUG, "looking for attr %d", _options.proxy_loc[i].attr);
+          syslog(LOG_DEBUG, "%s(%d): looking for attr %d", __FUNCTION__, __LINE__, _options.proxy_loc[i].attr);
 #endif
 
 	if (radius_getattr(pack, &attr, _options.proxy_loc[i].attr,
 			   0, 0, 0)) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "didn't find attr %d", _options.proxy_loc[i].attr);
+            syslog(LOG_DEBUG, "%s(%d): didn't find attr %d", __FUNCTION__, __LINE__, _options.proxy_loc[i].attr);
 	  attr = 0;
 	}
       } else {
@@ -3169,7 +3171,7 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
 
 #if(_debug_)
         if (_options.debug)
-          syslog(LOG_DEBUG, "looking for attr %d/%d", _options.proxy_loc[i].attr_vsa,
+          syslog(LOG_DEBUG, "%s(%d): looking for attr %d/%d", __FUNCTION__, __LINE__, _options.proxy_loc[i].attr_vsa,
                  _options.proxy_loc[i].attr);
 #endif
 
@@ -3179,7 +3181,7 @@ chilli_proxy_radlocation(struct radius_packet_t *pack,
 			   _options.proxy_loc[i].attr, 0)) {
 #if(_debug_)
           if (_options.debug)
-            syslog(LOG_DEBUG, "didn't find attr %d/%d", _options.proxy_loc[i].attr_vsa,
+            syslog(LOG_DEBUG, "%s(%d): didn't find attr %d/%d", __FUNCTION__, __LINE__, _options.proxy_loc[i].attr_vsa,
                    _options.proxy_loc[i].attr);
 #endif
 	  attr = 0;
@@ -3261,7 +3263,7 @@ int accounting_request(struct radius_packet_t *pack,
     if (!radius_getattr(pack, &hismacattr,
 			RADIUS_ATTR_CALLING_STATION_ID, 0, 0, 0)) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "Calling Station ID is: %.*s",
+        syslog(LOG_DEBUG, "%s(%d): Calling Station ID is: %.*s", __FUNCTION__, __LINE__,
                hismacattr->l-2, hismacattr->v.t);
 
       if ((macstrlen = (size_t)hismacattr->l-2) >= (RADIUS_ATTR_VLEN-1)) {
@@ -3329,7 +3331,7 @@ int accounting_request(struct radius_packet_t *pack,
 
     if (!appconn) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "No application context for RADIUS proxy");
+        syslog(LOG_DEBUG, "%s(%d): No application context for RADIUS proxy", __FUNCTION__, __LINE__);
       return 0;
     }
 
@@ -3337,18 +3339,18 @@ int accounting_request(struct radius_packet_t *pack,
     if (appconn->radiuswait) {
       if (appconn->radiuswait == 2) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "Giving up on previous packet.. not dropping this one");
+          syslog(LOG_DEBUG, "%s(%d): Giving up on previous packet.. not dropping this one", __FUNCTION__, __LINE__);
 	appconn->radiuswait = 0;
       } else {
         if (_options.debug)
-          syslog(LOG_DEBUG, "Dropping RADIUS while waiting");
+          syslog(LOG_DEBUG, "%s(%d): Dropping RADIUS while waiting", __FUNCTION__, __LINE__);
 	appconn->radiuswait++;
 	return 0;
       }
     }
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "Handing RADIUS accounting proxy packet");
+      syslog(LOG_DEBUG, "%s(%d): Handing RADIUS accounting proxy packet", __FUNCTION__, __LINE__);
 
     dhcpconn = (struct dhcp_conn_t*) appconn->dnlink;
 
@@ -3361,7 +3363,7 @@ int accounting_request(struct radius_packet_t *pack,
       memcpy(appconn->s_state.ap_sessionid, attr->v.t, len);
       appconn->s_state.ap_sessionid[len]=0;
       if (_options.debug)
-        syslog(LOG_DEBUG, "AP Acct-Session-ID is: %s",
+        syslog(LOG_DEBUG, "%s(%d): AP Acct-Session-ID is: %s", __FUNCTION__, __LINE__,
                appconn->s_state.ap_sessionid);
     }
 #endif
@@ -3445,7 +3447,7 @@ int access_request(struct radius_packet_t *pack,
   uint8_t qid;
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "RADIUS Access-Request received");
+    syslog(LOG_DEBUG, "%s(%d): RADIUS Access-Request received", __FUNCTION__, __LINE__);
 
   if (radius_default_pack(radius, &radius_pack, RADIUS_CODE_ACCESS_REJECT)) {
     syslog(LOG_ERR, "radius_default_pack() failed");
@@ -3471,14 +3473,14 @@ int access_request(struct radius_packet_t *pack,
     }
     hisip.s_addr = hisipattr->v.i;
     if (_options.debug)
-      syslog(LOG_DEBUG, "Framed IP address is: %s", inet_ntoa(hisip));
+      syslog(LOG_DEBUG, "%s(%d): Framed IP address is: %s", __FUNCTION__, __LINE__, inet_ntoa(hisip));
   }
 
   /* Calling Station ID: MAC Address (Conditional) */
   if (!radius_getattr(pack, &hismacattr,
 		      RADIUS_ATTR_CALLING_STATION_ID, 0, 0, 0)) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "Calling Station ID is: %.*s", hismacattr->l-2, hismacattr->v.t);
+      syslog(LOG_DEBUG, "%s(%d): Calling Station ID is: %.*s", __FUNCTION__, __LINE__, hismacattr->l-2, hismacattr->v.t);
 
     if ((macstrlen = (size_t)hismacattr->l-2) >= (RADIUS_ATTR_VLEN-1)) {
       syslog(LOG_ERR, "Wrong length of calling station ID");
@@ -3563,11 +3565,11 @@ int access_request(struct radius_packet_t *pack,
   if (appconn->radiuswait) {
     if (appconn->radiuswait == 2) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "Giving up on previous packet.. not dropping this one");
+        syslog(LOG_DEBUG, "%s(%d): Giving up on previous packet.. not dropping this one", __FUNCTION__, __LINE__);
       appconn->radiuswait = 0;
     } else {
       if (_options.debug)
-        syslog(LOG_DEBUG, "Dropping RADIUS while waiting");
+        syslog(LOG_DEBUG, "%s(%d): Dropping RADIUS while waiting", __FUNCTION__, __LINE__);
       appconn->radiuswait++;
       return 0;
     }
@@ -3586,7 +3588,7 @@ int access_request(struct radius_packet_t *pack,
     }
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Password is: %s", pwd);
+      syslog(LOG_DEBUG, "%s(%d): Password is: %s", __FUNCTION__, __LINE__, pwd);
 #endif
   }
 
@@ -3809,7 +3811,7 @@ session_disconnect(struct app_conn_t *appconn,
 	  mask.s_addr = 0xffffffff;
 	  res = net_del_route(&member->addr, &appconn->ourip, &mask);
           if (_options.debug)
-            syslog(LOG_DEBUG, "Removing route: %s %d", inet_ntoa(member->addr), res);
+            syslog(LOG_DEBUG, "%s(%d): Removing route: %s %d", __FUNCTION__, __LINE__, inet_ntoa(member->addr), res);
 	}
       } else {
 	struct ippoolm_t *natipm;
@@ -3859,7 +3861,7 @@ session_disconnect(struct app_conn_t *appconn,
   }
 
   if (_options.macdown) {
-    syslog(LOG_DEBUG, "Calling MAC down script: %s",_options.macdown);
+    syslog(LOG_DEBUG, "%s(%d): Calling MAC down script: %s", __FUNCTION__, __LINE__, _options.macdown);
     runscript(appconn, _options.macdown, 0, 0);
   }
 
@@ -3887,7 +3889,7 @@ upprot_getip(struct app_conn_t *appconn,
 
 #if(_debug_ > 1)
   if (_options.debug)
-    syslog(LOG_DEBUG, "UPPROT - GETIP");
+    syslog(LOG_DEBUG, "%s(%d): UPPROT - GETIP", __FUNCTION__, __LINE__);
 #endif
 
   /* If IP address is already allocated: Fill it in */
@@ -4134,12 +4136,12 @@ config_radius_session(struct session_params *params,
 
       if (len == strlen(uamauth) && !memcmp(val, uamauth, len)) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "received require-uam-auth");
+          syslog(LOG_DEBUG, "%s(%d): received require-uam-auth", __FUNCTION__, __LINE__);
 	params->flags |= REQUIRE_UAM_AUTH;
       }
       else if (len == strlen(splash) && !memcmp(val, splash, len)) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "received splash response");
+          syslog(LOG_DEBUG, "%s(%d): received splash response", __FUNCTION__, __LINE__);
 	params->flags |= REQUIRE_UAM_SPLASH;
 	/*is_splash = 1;*/
       }
@@ -4304,7 +4306,7 @@ static int chilliauth_cb(struct radius_t *radius,
   if (_options.adminupdatefile) {
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "looking to replace: %s", _options.adminupdatefile);
+      syslog(LOG_DEBUG, "%s(%d): looking to replace: %s", __FUNCTION__, __LINE__, _options.adminupdatefile);
 
     if (!radius_getnextattr(pack, &attr,
 			    RADIUS_ATTR_VENDOR_SPECIFIC,
@@ -4321,7 +4323,7 @@ static int chilliauth_cb(struct radius_t *radius,
        */
 
       if (_options.debug)
-        syslog(LOG_DEBUG, "using template temp file: %s", template);
+        syslog(LOG_DEBUG, "%s(%d): using template temp file: %s", __FUNCTION__, __LINE__, template);
 
       int fd = mkstemp(template);
       if (fd > 0) {
@@ -4367,7 +4369,7 @@ static int chilliauth_cb(struct radius_t *radius,
 
 	  if (differ) {
             if (_options.debug)
-              syslog(LOG_DEBUG, "Writing out new hs.conf file with administraive-user settings");
+              syslog(LOG_DEBUG, "%s(%d): Writing out new hs.conf file with administraive-user settings", __FUNCTION__, __LINE__);
 
 	    oldfd = open(hs_conf, O_RDWR | O_TRUNC | O_CREAT, 0644);
 
@@ -4486,7 +4488,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "Received RADIUS response id=%d", pack->id);
+    syslog(LOG_DEBUG, "%s(%d): Received RADIUS response id=%d", __FUNCTION__, __LINE__, pack->id);
 #endif
 
 
@@ -4507,7 +4509,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
     hisip.s_addr = hisipattr->v.i;
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "Framed IP address set to: %s", inet_ntoa(hisip));
+      syslog(LOG_DEBUG, "%s(%d): Framed IP address set to: %s", __FUNCTION__, __LINE__, inet_ntoa(hisip));
 
     if (!radius_getattr(pack, &hisipattr, RADIUS_ATTR_FRAMED_IP_NETMASK, 0, 0, 0)
 #ifdef ENABLE_DHCPRADIUS
@@ -4524,7 +4526,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
       hismask.s_addr = hisipattr->v.i;
 
       if (_options.debug)
-        syslog(LOG_DEBUG, "Framed IP netmask set to: %s", inet_ntoa(hismask));
+        syslog(LOG_DEBUG, "%s(%d): Framed IP netmask set to: %s", __FUNCTION__, __LINE__, inet_ntoa(hismask));
     }
   }
   else {
@@ -4544,8 +4546,8 @@ int cb_radius_auth_conf(struct radius_t *radius,
 	  memcpy(hwaddr, dhcpconn->hismac, sizeof(hwaddr));
 
           if (_options.debug) {
-            syslog(LOG_DEBUG, "Old ip address freed %s", inet_ntoa(ipm->addr));
-            syslog(LOG_DEBUG, "Resetting ip address to %s", inet_ntoa(hisip));
+            syslog(LOG_DEBUG, "%s(%d): Old ip address freed %s", __FUNCTION__, __LINE__, inet_ntoa(ipm->addr));
+            syslog(LOG_DEBUG, "%s(%d): Resetting ip address to %s", __FUNCTION__, __LINE__, inet_ntoa(hisip));
           }
 
 	  dhcp_freeconn(dhcpconn, 0);
@@ -4633,7 +4635,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
   /* ACCESS-REJECT */
   if (pack->code == RADIUS_CODE_ACCESS_REJECT) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "Received RADIUS Access-Reject");
+      syslog(LOG_DEBUG, "%s(%d): Received RADIUS Access-Reject", __FUNCTION__, __LINE__);
     config_radius_session(&appconn->s_params, pack, appconn, 0); /*XXX*/
     return dnprot_reject(appconn);
   }
@@ -4648,7 +4650,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
   /* ACCESS-CHALLENGE */
   if (pack->code == RADIUS_CODE_ACCESS_CHALLENGE) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "Received RADIUS Access-Challenge");
+      syslog(LOG_DEBUG, "%s(%d): Received RADIUS Access-Challenge", __FUNCTION__, __LINE__);
 
     /* Get EAP message */
     appconn->challen = 0;
@@ -4682,7 +4684,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "Received RADIUS Access-Accept");
+    syslog(LOG_DEBUG, "%s(%d): Received RADIUS Access-Accept", __FUNCTION__, __LINE__);
 #endif
 
   if (!radius_getattr(pack, &uidattr, RADIUS_ATTR_USER_NAME, 0, 0, 0)) {
@@ -4693,7 +4695,7 @@ int cb_radius_auth_conf(struct radius_t *radius,
     }
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Received User-Name override from RADIUS Access-Accept: %s", appconn->s_state.redir.username);
+      syslog(LOG_DEBUG, "%s(%d): Received User-Name override from RADIUS Access-Accept: %s", __FUNCTION__, __LINE__, appconn->s_state.redir.username);
 #endif
   }
 
@@ -4871,7 +4873,7 @@ int cb_radius_coa_ind(struct radius_t *radius, struct radius_packet_t *pack,
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "Received coa or disconnect request\n");
+    syslog(LOG_DEBUG, "%s(%d): Received coa or disconnect request\n", __FUNCTION__, __LINE__);
 #endif
 
   if (pack->code != RADIUS_CODE_DISCONNECT_REQUEST &&
@@ -4890,9 +4892,9 @@ int cb_radius_coa_ind(struct radius_t *radius, struct radius_packet_t *pack,
 
   if (!radius_getattr(pack, &sattr, RADIUS_ATTR_ACCT_SESSION_ID, 0, 0, 0))
     if (_options.debug) {
-      syslog(LOG_DEBUG, "Session-id present in disconnect. Only disconnecting that session\n");
+      syslog(LOG_DEBUG, "%s(%d): Session-id present in disconnect. Only disconnecting that session\n", __FUNCTION__, __LINE__);
 
-      syslog(LOG_DEBUG, "Looking for session [username=%.*s,sessionid=%.*s]",
+      syslog(LOG_DEBUG, "%s(%d): Looking for session [username=%.*s,sessionid=%.*s]", __FUNCTION__, __LINE__,
              uattr->l-2, uattr->v.t, sattr ? sattr->l-2 : 3,
              sattr ? (char*)sattr->v.t : "all");
     }
@@ -4910,7 +4912,7 @@ int cb_radius_coa_ind(struct radius_t *radius, struct radius_packet_t *pack,
 
 #if(_debug_)
       if (_options.debug)
-        syslog(LOG_DEBUG, "Found session %s", appconn->s_state.sessionid);
+        syslog(LOG_DEBUG, "%s(%d): Found session %s", __FUNCTION__, __LINE__, appconn->s_state.sessionid);
 #endif
 
       if (iscoa) {
@@ -4985,7 +4987,7 @@ int cb_dhcp_request(struct dhcp_conn_t *conn, struct in_addr *addr,
   char allocate = 1;
 
 #if(_debug_)
-  syslog(LOG_DEBUG, "DHCP request for IP address %s",
+  syslog(LOG_DEBUG, "%s(%d): DHCP request for IP address %s", __FUNCTION__, __LINE__,
          addr ? inet_ntoa(*addr) : "n/a");
 #endif
 
@@ -5012,7 +5014,7 @@ int cb_dhcp_request(struct dhcp_conn_t *conn, struct in_addr *addr,
       /* clients with an IPv4LL ip normally have no default gw assigned, rendering uamanyip useless
 	 They must rather get a proper dynamic ip via dhcp */
       if (_options.debug)
-        syslog(LOG_DEBUG, "IPv4LL/APIPA address requested, ignoring %s",
+        syslog(LOG_DEBUG, "%s(%d): IPv4LL/APIPA address requested, ignoring %s", __FUNCTION__, __LINE__,
                inet_ntoa(*addr));
       return -1;
     }
@@ -5114,7 +5116,7 @@ int cb_dhcp_request(struct dhcp_conn_t *conn, struct in_addr *addr,
     appconn->hismask.s_addr = _options.mask.s_addr;
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "Client MAC="MAC_FMT" assigned IP %s" ,
+      syslog(LOG_DEBUG, "%s(%d): Client MAC="MAC_FMT" assigned IP %s" , __FUNCTION__, __LINE__,
              MAC_ARG(conn->hismac), inet_ntoa(appconn->hisip));
 
 #ifdef ENABLE_MODULES
@@ -5187,7 +5189,7 @@ int chilli_connect(struct app_conn_t **appconn, struct dhcp_conn_t *conn) {
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "New Chilli Connection");
+    syslog(LOG_DEBUG, "%s(%d): New Chilli Connection", __FUNCTION__, __LINE__);
 #endif
 
   /* Allocate new application connection */
@@ -5226,7 +5228,7 @@ int cb_dhcp_connect(struct dhcp_conn_t *conn) {
   struct app_conn_t *appconn;
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "New DHCP request from MAC="MAC_FMT,
+    syslog(LOG_DEBUG, "%s(%d): New DHCP request from MAC="MAC_FMT, __FUNCTION__, __LINE__,
            MAC_ARG(conn->hismac));
 
   if (chilli_connect(&appconn, conn))
@@ -5238,7 +5240,7 @@ int cb_dhcp_connect(struct dhcp_conn_t *conn) {
 
   if (_options.macup) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "Calling MAC up script: %s",_options.macup);
+      syslog(LOG_DEBUG, "%s(%d): Calling MAC up script: %s", __FUNCTION__, __LINE__, _options.macup);
     runscript(appconn, _options.macup, 0, 0);
   }
 
@@ -5252,7 +5254,7 @@ struct app_conn_t * chilli_connect_layer3(struct in_addr *src, struct dhcp_conn_
 
   if (ippool_getip(ippool, &ipm, src)) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "New Layer3 %s", inet_ntoa(*src));
+      syslog(LOG_DEBUG, "%s(%d): New Layer3 %s", __FUNCTION__, __LINE__, inet_ntoa(*src));
     if (ippool_newip(ippool, &ipm, src, 1)) {
       if (ippool_newip(ippool, &ipm, src, 0)) {
 	syslog(LOG_ERR, "Failed to allocate either static or dynamic IP address");
@@ -5263,7 +5265,7 @@ struct app_conn_t * chilli_connect_layer3(struct in_addr *src, struct dhcp_conn_
 
   if (!ipm) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "unknown ip");
+      syslog(LOG_DEBUG, "%s(%d): unknown ip", __FUNCTION__, __LINE__);
     return 0;
   }
 
@@ -5465,13 +5467,13 @@ void chilli_print(bstring s, int listfmt,
           (!appconn || !appconn->inuse)) {
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Can not print info about unused chilli connection");
+      syslog(LOG_DEBUG, "%s(%d): Can not print info about unused chilli connection", __FUNCTION__, __LINE__);
 #endif
     return;
   } else if (conn && !conn->inuse) {
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Can not print info about unused dhcp connection");
+      syslog(LOG_DEBUG, "%s(%d): Can not print info about unused dhcp connection", __FUNCTION__, __LINE__);
 #endif
     return;
   } else {
@@ -5562,7 +5564,6 @@ clear_appconn(struct app_conn_t *appconn) {
       appconn->s_params.maxtotaloctets =
       appconn->s_params.sessiontimeout = 0;
   appconn->s_params.idletimeout = 0;
-  appconn->s_params.idletimeout = 0;
   appconn->s_params.interim_interval = 0;
   appconn->s_params.sessionterminatetime = 0;
 }
@@ -5591,7 +5592,7 @@ int terminate_appconn(struct app_conn_t *appconn, int terminate_cause) {
 
     if (_options.condown && !(appconn->s_params.flags & NO_SCRIPT)) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "Calling connection down script: %s\n",_options.condown);
+        syslog(LOG_DEBUG, "%s(%d): Calling connection down script: %s\n", __FUNCTION__, __LINE__, _options.condown);
       runscript(appconn, _options.condown, 0, 0);
     }
 
@@ -5617,7 +5618,7 @@ int cb_dhcp_disconnect(struct dhcp_conn_t *conn, int term_cause) {
          MAC_ARG(conn->hismac), inet_ntoa(conn->hisip));
 
   if (_options.debug)
-    syslog(LOG_DEBUG, "DHCP connection removed");
+    syslog(LOG_DEBUG, "%s(%d): DHCP connection removed", __FUNCTION__, __LINE__);
 
   if (!conn->peer) {
     /* No appconn allocated. Stop here */
@@ -5665,7 +5666,7 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, uint8_t *pack, size_t len) {
 
       if (ippool_getip(ippool, &ipm, &addr)) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "unknown IP address: %s", inet_ntoa(addr));
+          syslog(LOG_DEBUG, "%s(%d): unknown IP address: %s", __FUNCTION__, __LINE__, inet_ntoa(addr));
 	return -1;
       }
 
@@ -5683,7 +5684,7 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, uint8_t *pack, size_t len) {
     case DNPROT_NULL:
     case DNPROT_DHCP_NONE:
       if (_options.debug)
-        syslog(LOG_DEBUG, "NULL: %d", appconn->dnprot);
+        syslog(LOG_DEBUG, "%s(%d): NULL: %d", __FUNCTION__, __LINE__, appconn->dnprot);
       return -1;
 
     case DNPROT_UAM:
@@ -5710,7 +5711,7 @@ int cb_dhcp_data_ind(struct dhcp_conn_t *conn, uint8_t *pack, size_t len) {
   if (_options.uamanyip && appconn->natip.s_addr) {
 #if(_debug_ > 1)
     if (_options.debug)
-      syslog(LOG_DEBUG, "SNAT to: %s", inet_ntoa(appconn->natip));
+      syslog(LOG_DEBUG, "%s(%d): SNAT to: %s", __FUNCTION__, __LINE__, inet_ntoa(appconn->natip));
 #endif
     ipph->saddr = appconn->natip.s_addr;
     if (chksum((struct pkt_iphdr_t *) ipph) < 0)
@@ -5769,7 +5770,7 @@ int chilli_acct_fromsub(struct app_conn_t *appconn,
 #ifdef ENABLE_LEAKYBUCKET
       do_bw = 0;
       if (_options.debug)
-        syslog(LOG_DEBUG, "!!!! Skipping leaky bucket because of authedallowed");
+        syslog(LOG_DEBUG, "%s(%d): !!!! Skipping leaky bucket because of authedallowed", __FUNCTION__, __LINE__);
 #endif
     }
 #endif
@@ -5790,7 +5791,7 @@ int chilli_acct_fromsub(struct app_conn_t *appconn,
 #ifdef ENABLE_LEAKYBUCKET
 	do_bw = 0;
         if (_options.debug)
-          syslog(LOG_DEBUG, "!!!! Skipping leaky bucket because of uamauthedallowed");
+          syslog(LOG_DEBUG, "%s(%d): !!!! Skipping leaky bucket because of uamauthedallowed", __FUNCTION__, __LINE__);
 #endif
       }
     }
@@ -5996,7 +5997,7 @@ int cb_dhcp_eap_ind(struct dhcp_conn_t *conn, uint8_t *pack, size_t len) {
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "EAP Packet received");
+    syslog(LOG_DEBUG, "%s(%d): EAP Packet received", __FUNCTION__, __LINE__);
 #endif
 
   /* If this is the first EAPOL authentication request */
@@ -6084,7 +6085,7 @@ int static uam_msg(struct redir_msg_t *msg) {
 
   if (ippool_getip(ippool, &ipm, &msg->mdata.address.sin_addr)) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "UAM login with unknown IP address: %s", inet_ntoa(msg->mdata.address.sin_addr));
+      syslog(LOG_DEBUG, "%s(%d): UAM login with unknown IP address: %s", __FUNCTION__, __LINE__, inet_ntoa(msg->mdata.address.sin_addr));
     return 0;
   }
 
@@ -6144,7 +6145,7 @@ int static uam_msg(struct redir_msg_t *msg) {
 	     appconn->s_state.redir.username, inet_ntoa(appconn->hisip));
 
       if (_options.debug)
-        syslog(LOG_DEBUG, "Received logoff from UAM");
+        syslog(LOG_DEBUG, "%s(%d): Received logoff from UAM", __FUNCTION__, __LINE__);
 
       if (appconn->s_state.authenticated == 1) {
 #ifdef ENABLE_SESSIONSTATE
@@ -6243,7 +6244,7 @@ static struct app_conn_t * find_app_conn(struct cmdsock_request *req,
 
   if (appconn && !appconn->inuse) {
     if (_options.debug)
-      syslog(LOG_DEBUG, "appconn not in use!");
+      syslog(LOG_DEBUG, "%s(%d): appconn not in use!", __FUNCTION__, __LINE__);
     return 0;
   }
 
@@ -6269,7 +6270,7 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
         memset(z, 0, PKT_ETH_ALEN);
 
         if (_options.debug)
-          syslog(LOG_DEBUG, "looking to inspect ip=%s/mac="MAC_FMT,
+          syslog(LOG_DEBUG, "%s(%d): looking to inspect ip=%s/mac="MAC_FMT, __FUNCTION__, __LINE__,
                  inet_ntoa(req->ip), MAC_ARG(req->mac));
 
         if (req->ip.s_addr)
@@ -6283,7 +6284,7 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
         if (!appconn && !dhcpconn) {
 
           if (_options.debug)
-            syslog(LOG_DEBUG, "not found");
+            syslog(LOG_DEBUG, "%s(%d): not found", __FUNCTION__, __LINE__);
 
         } else {
 
@@ -6677,7 +6678,7 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
         memset(z, 0, PKT_ETH_ALEN);
 
         if (_options.debug)
-          syslog(LOG_DEBUG, "looking to %s to garden ip=%s/sessionid=%s",
+          syslog(LOG_DEBUG, "%s(%d): looking to %s to garden ip=%s/sessionid=%s", __FUNCTION__, __LINE__,
                  remove ? "remove" : "add", inet_ntoa(req->ip), req->d.sess.sessionid);
 
         if (req->ip.s_addr || memcmp(req->mac, z, PKT_ETH_ALEN)) {
@@ -6690,7 +6691,7 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
                   ) ) {
 
               if (_options.debug)
-                syslog(LOG_DEBUG, "remote %s garden for session %s",
+                syslog(LOG_DEBUG, "%s(%d): remote %s garden for session %s", __FUNCTION__, __LINE__,
                        remove ? "rem" : "add", appconn->s_state.sessionid);
 
 #ifdef HAVE_PATRICIA
@@ -6731,12 +6732,12 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
         struct app_conn_t *appconn = find_app_conn(req, 0);
 
         if (_options.debug)
-          syslog(LOG_DEBUG, "looking to logout session %s",
+          syslog(LOG_DEBUG, "%s(%d): looking to logout session %s", __FUNCTION__, __LINE__,
                  inet_ntoa(req->ip));
 
         if (appconn) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "found %s %s",
+            syslog(LOG_DEBUG, "%s(%d): found %s %s", __FUNCTION__, __LINE__,
                    inet_ntoa(appconn->hisip), appconn->s_state.sessionid);
 
           terminate_appconn(appconn, RADIUS_TERMINATE_CAUSE_ADMIN_RESET);
@@ -6852,18 +6853,18 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
       {
         if (req->type == CMDSOCK_ROUTE_GW) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "setting route for idx %d", req->d.sess.params.routeidx);
+            syslog(LOG_DEBUG, "%s(%d): setting route for idx %d", __FUNCTION__, __LINE__, req->d.sess.params.routeidx);
           copy_mac6(tun(tun, req->d.sess.params.routeidx).gwaddr, req->mac);
         } else {
           struct dhcp_conn_t *conn = dhcp->firstusedconn;
           if (_options.debug)
-            syslog(LOG_DEBUG, "looking to alter session %s",inet_ntoa(req->ip));
+            syslog(LOG_DEBUG, "%s(%d): looking to alter session %s", __FUNCTION__, __LINE__, inet_ntoa(req->ip));
           while (conn && conn->inuse) {
             if (conn->peer) {
               struct app_conn_t * appconn = (struct app_conn_t*)conn->peer;
               if (!memcmp(appconn->hismac, req->mac, 6)) {
                 if (_options.debug)
-                  syslog(LOG_DEBUG, "routeidx %s %d",
+                  syslog(LOG_DEBUG, "%s(%d): routeidx %s %d", __FUNCTION__, __LINE__,
                          appconn->s_state.sessionid,
                          req->d.sess.params.routeidx);
                 appconn->s_params.routeidx = req->d.sess.params.routeidx;
@@ -6934,7 +6935,7 @@ int chilli_cmd(struct cmdsock_request *req, bstring s, int sock) {
           char *uname = req->d.sess.username;
 
           if (_options.debug)
-            syslog(LOG_DEBUG, "remotely authorized session %s",
+            syslog(LOG_DEBUG, "%s(%d): remotely authorized session %s", __FUNCTION__, __LINE__,
                    appconn->s_state.sessionid);
 
           memcpy(&appconn->s_params, &req->d.sess.params,
@@ -7043,7 +7044,7 @@ static int cmdsock_accept(void *nullData, int sock) {
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "Processing cmdsock request...");
+    syslog(LOG_DEBUG, "%s(%d): Processing cmdsock request...", __FUNCTION__, __LINE__);
 #endif
 
   len = sizeof(remote);
@@ -7215,7 +7216,7 @@ static int session_timeout() {
     if (mainclock_diff(check_conn->s_state.last_up_time) >
 	_options.lease + _options.leaseplus) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "Session timeout: Removing connection");
+        syslog(LOG_DEBUG, "%s(%d): Session timeout: Removing connection", __FUNCTION__, __LINE__);
       session_disconnect(check_conn, 0, RADIUS_TERMINATE_CAUSE_LOST_CARRIER);
     }
   }
@@ -7259,13 +7260,16 @@ int chilli_main(int argc, char **argv) {
 
   int syslog_options = LOG_PID;
   int syslog_debug_options = 0;
+  char *syslog_ident = NULL;
 
 #ifdef LOG_PERROR
   syslog_debug_options = LOG_PERROR;
 #endif
 
+  syslog_ident = basename(argv[0]);
+
   /* Start out also logging to stderr until we load options. */
-  openlog(PACKAGE, syslog_options|syslog_debug_options, LOG_DAEMON);
+  openlog(syslog_ident, syslog_options|syslog_debug_options, LOG_DAEMON);
 
   options_init();
 
@@ -7295,7 +7299,7 @@ int chilli_main(int argc, char **argv) {
       fclose(fp);
       fp = NULL;
     }
-#if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__)
+#if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
     if (fork() > 0) {
       exit(0);
 #else
@@ -7366,7 +7370,7 @@ int chilli_main(int argc, char **argv) {
 
     if (_options.debug)
       syslog_options |= syslog_debug_options;
-    openlog(PACKAGE, syslog_options, (_options.logfacility<<3));
+    openlog(syslog_ident, syslog_options, (_options.logfacility<<3));
     if (!_options.debug)
       setlogmask(LOG_UPTO(_options.loglevel));
 
@@ -7418,13 +7422,13 @@ int chilli_main(int argc, char **argv) {
       syslog(LOG_ERR, "%s: getting startup (realtime) time", strerror(errno));
     }
     if (_options.debug)
-      syslog(LOG_DEBUG, "clock realtime sec %ld nsec %ld", startup_real.tv_sec, startup_real.tv_nsec);
+      syslog(LOG_DEBUG, "%s(%d): clock realtime sec %ld nsec %ld", __FUNCTION__, __LINE__, startup_real.tv_sec, startup_real.tv_nsec);
 #ifdef CLOCK_MONOTONIC
     if (clock_gettime(CLOCK_MONOTONIC, &startup_mono) < 0) {
       syslog(LOG_ERR, "%s: getting startup (monotonic) time", strerror(errno));
     }
     if (_options.debug)
-      syslog(LOG_DEBUG, "clock monotonic sec %ld nsec %ld", startup_mono.tv_sec, startup_mono.tv_nsec);
+      syslog(LOG_DEBUG, "%s(%d): clock monotonic sec %ld nsec %ld", __FUNCTION__, __LINE__, startup_mono.tv_sec, startup_mono.tv_nsec);
 #endif
 #endif
 
@@ -7579,7 +7583,7 @@ int chilli_main(int argc, char **argv) {
 
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Waiting for client request...");
+      syslog(LOG_DEBUG, "%s(%d): Waiting for client request...", __FUNCTION__, __LINE__);
 #endif
 
     /*
@@ -7690,7 +7694,7 @@ int chilli_main(int argc, char **argv) {
     }
 #endif
 
-#elif defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__)
+#elif defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
     for (i=0; i < MAX_RAWIF && dhcp->rawif[i].fd > 0; i++) {
       net_select_reg(&sctx, dhcp->rawif[i].fd, SELECT_READ,
                      (select_callback)dhcp_receive, dhcp, i);

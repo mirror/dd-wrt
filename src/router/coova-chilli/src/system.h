@@ -169,7 +169,7 @@
 #include <net/if_tun.h>
 #endif
 
-#ifdef HAVE_NET_ETHERNET_H
+#if defined(HAVE_NET_ETHERNET_H) && !defined(__linux__)
 #ifdef __UCLIBC__
 #include <net/ethernet.h>
 #endif

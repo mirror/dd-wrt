@@ -460,8 +460,7 @@ int net_select_rmfd(select_ctx *sctx, int fd) {
   event.data.fd = fd;
   if (_options.debug)
     syslog(LOG_DEBUG, "epoll rm %d", fd);
-  /*
-   */
+
   if (epoll_ctl(sctx->efd, EPOLL_CTL_DEL, fd, &event))
     syslog(LOG_ERR, "%d Failed to remove fd %d (%d)",
            errno, fd, sctx->efd);

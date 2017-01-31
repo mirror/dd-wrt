@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.59])
-AC_INIT([coova-chilli],[1.3.2],[support@coova.com])
+AC_INIT([coova-chilli],[1.4],[https://github.com/coova/coova-chilli/issues])
 AC_CONFIG_SRCDIR([src/chilli.c])
 
 AM_INIT_AUTOMAKE
@@ -322,13 +322,6 @@ AC_ARG_ENABLE(proxyvsa, [AS_HELP_STRING([--enable-proxyvsa],[Enable support for 
 
 if test x"$enable_proxyvsa" = xyes; then
    AC_DEFINE(ENABLE_PROXYVSA,1,[Define to enable VSA proxy])
-fi
-
-AC_ARG_ENABLE(dnslog, [AS_HELP_STRING([--enable-dnslog],[Enable support to log DNS name queries])], 
-  enable_dnslog=$enableval, enable_dnslog=no)
-
-if test x"$enable_dnslog" = xyes; then
-   AC_DEFINE(ENABLE_DNSLOG,1,[Define to logging of DNS requests])
 fi
 
 AC_ARG_ENABLE(ipwhitelist, [AS_HELP_STRING([--enable-ipwhitelist],[Enable file based IP white list])], 
