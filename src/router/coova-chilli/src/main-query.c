@@ -658,7 +658,7 @@ int mquery_main(int argc, char **argv) {
     remote.sun_family = AF_UNIX;
     strlcpy(remote.sun_path, cmdsock, sizeof(remote.sun_path));
 
-#if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__)
+#if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
     remote.sun_len = strlen(remote.sun_path) + 1;
 #endif
 

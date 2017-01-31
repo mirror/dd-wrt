@@ -265,7 +265,6 @@ option "natport"   - "Port to use when oding nat on the WAN (routeidx)" int defa
 option "redirssl"  - "Enable redirection of SSL/HTTP port (requires SSL support)" flag off
 option "uamuissl"  - "Enable SSL/HTTPS support on the uamuiport" flag off
 
-option "dnslog"    - "Log DNS requests to a file." string no
 option "ipwhitelist" - "Binary IP White List file" string no
 option "uamdomainfile" - "Load uamdomains (regex) from file" string no
 

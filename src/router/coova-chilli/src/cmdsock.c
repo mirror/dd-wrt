@@ -106,7 +106,7 @@ void cmdsock_shutdown(int s) {
   if (s < 0) {
     return;
   }
-  syslog(LOG_DEBUG, "Shutting down cmdsocket");
+  syslog(LOG_DEBUG, "%s(%d): Shutting down cmdsocket", __FUNCTION__, __LINE__);
   shutdown(s, 2);
   close(s);
 }

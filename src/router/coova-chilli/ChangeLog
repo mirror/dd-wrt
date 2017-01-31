@@ -1,3 +1,23 @@
+== ChangeLog (CoovaChilli-v1.4) ==
+* input_packets and output_packets now exported for scripts to use. via #285
+* NetBSD now included in the BSD specific ifdef statements. via #289
+* Fixed build Linux kernel 4.4.14 and newer. via #292
+* Dropped redundant line in clear_appcon(). via #295
+* Fix support for browsers behind a proxy, visiting HTTPS sites. via #296
+* Function name & line number now stated in LOG_DEBUG level syslog messages. via #298
+* Add support for identitites to syslog to differentiate messages when running multiple instances. via #300
+* Fix possible crash due to invalid buffer size. via #303
+* Fix check in IP header for More Frag flag. via #304
+* Fix spelling mistake
+* Remove empty comments. via #311
+* Start documenting the build and install process in INSTALL file from scratch. via #315
+* Fix sslkeypass function for use with passphrase protected certificates. via #319, fixes #297
+* Drop dnslog function. via #320
+* Remove stale spec file. via #321
+* Replace invalid email address with Github issues URL in configure script. via #322
+* Drop bogus path to functions file in init.d script
+* Added ETCDIR macro for use in chilli init.d script to accomodate installs in different prefix or sysconfdir. via #324
+
 == ChangeLog (CoovaChilli-v1.3.2) ==
 * Certificate bundles now support using SSL_CTX_use_certificate_chain_file() via #204
 * Add a preliminary configuration file for use with Doxygen. via #142

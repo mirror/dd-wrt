@@ -110,7 +110,7 @@ void conn_finish(struct conn_t *conn) {
 
 int conn_update_write(struct conn_t *conn) {
 #if(_debug_)
-  syslog(LOG_DEBUG, "socket writeable!");
+  syslog(LOG_DEBUG, "%s(%d): socket writeable!", __FUNCTION__, __LINE__);
 #endif
 
   if (conn->write_pos == 0) {
@@ -140,7 +140,7 @@ int conn_update_write(struct conn_t *conn) {
       conn->write_pos += ret;
     } else if (ret < 0 || errno != EWOULDBLOCK) {
 #if(_debug_)
-      syslog(LOG_DEBUG, "socket closed!");
+      syslog(LOG_DEBUG, "%s(%d): socket closed!", __FUNCTION__, __LINE__);
 #endif
       conn_finish(conn);
       return -1;
@@ -154,7 +154,7 @@ int conn_select_update(struct conn_t *conn, select_ctx *sctx) {
   if (conn->sock) {
     switch (net_select_read_fd(sctx, conn->sock)) {
       case -1:
-        syslog(LOG_DEBUG, "exception");
+        syslog(LOG_DEBUG, "%s(%d): exception", __FUNCTION__, __LINE__);
         conn_finish(conn);
         return -1;
 
@@ -186,7 +186,7 @@ int conn_update(struct conn_t *conn, fd_set *r, fd_set *w, fd_set *e) {
 
     if (FD_ISSET(conn->sock, e)) {
 #if(_debug_)
-      syslog(LOG_DEBUG, "socket exception!");
+      syslog(LOG_DEBUG, "%s(%d): socket exception!", __FUNCTION__, __LINE__);
 #endif
       conn_finish(conn);
     }
@@ -207,13 +207,13 @@ _conn_bstring_readhandler(struct conn_t *conn, void *ctx) {
 
   if (ret > 0) {
 #if(_debug_)
-    syslog(LOG_DEBUG, "bstring_read: %d bytes", ret);
+    syslog(LOG_DEBUG, "%s(%d): bstring_read: %d bytes", __FUNCTION__, __LINE__, ret);
 #endif
     data->slen += ret;
   } else {
 #if(_debug_)
-    syslog(LOG_DEBUG, "socket closed!");
-    syslog(LOG_DEBUG, "<== [%s]", data->data);
+    syslog(LOG_DEBUG, "%s(%d): socket closed!", __FUNCTION__, __LINE__);
+    syslog(LOG_DEBUG, "%s(%d): <== [%s]", __FUNCTION__, __LINE__, data->data);
 #endif
     conn_finish(conn);
   }

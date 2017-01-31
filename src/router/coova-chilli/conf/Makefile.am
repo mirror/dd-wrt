@@ -17,6 +17,7 @@ $(chilli_SCRIPTS:=.in) chilli.conf.in defaults.in \
 CoovaChilliLib.py.in gui-config-default.ini 
 
 edit = sed \
+	-e 's,@ETCDIR\@,$(sysconfdir),g' \
 	-e 's,@SBINDIR\@,$(sbindir),g' \
 	-e 's,@INITDIR\@,$(initrddir),g' \
 	-e 's,@VARTMP\@,$(localstatedir)/tmp,g' \

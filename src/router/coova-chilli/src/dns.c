@@ -36,7 +36,7 @@ dns_fullname(char *data, size_t dlen,      /* buffer to store name */
 
 #if(_debug_ > 1)
   if (_options.debug)
-    syslog(LOG_DEBUG, "%s dlen=%zd reslen=%zd olen=%zd lvl=%d",
+    syslog(LOG_DEBUG, "%s(%d): %s dlen=%zd reslen=%zd olen=%zd lvl=%d", __FUNCTION__, __LINE__,
            __FUNCTION__, dlen, reslen, olen, lvl);
 #endif
 
@@ -54,13 +54,13 @@ dns_fullname(char *data, size_t dlen,      /* buffer to store name */
 
 	if (offset > olen) {
           if (_options.debug)
-            syslog(LOG_DEBUG, "bad value");
+            syslog(LOG_DEBUG, "%s(%d): bad value", __FUNCTION__, __LINE__);
 	  return -1;
 	}
 
 #if(_debug_ > 1)
         if (_options.debug)
-          syslog(LOG_DEBUG, "skip[%d] olen=%zd", offset, olen);
+          syslog(LOG_DEBUG, "%s(%d): skip[%d] olen=%zd", __FUNCTION__, __LINE__, offset, olen);
 #endif
 
 	if (dns_fullname(d, dlen,
@@ -74,13 +74,13 @@ dns_fullname(char *data, size_t dlen,      /* buffer to store name */
 
     if (l >= dlen || l >= olen) {
       if (_options.debug)
-        syslog(LOG_DEBUG, "bad value %d/%zu/%zu", l, dlen, olen);
+        syslog(LOG_DEBUG, "%s(%d): bad value %d/%zu/%zu", __FUNCTION__, __LINE__, l, dlen, olen);
       return -1;
     }
 
 #if(_debug_ > 1)
     if (_options.debug)
-      syslog(LOG_DEBUG, "part[%.*s] reslen=%zd l=%d dlen=%zd",
+      syslog(LOG_DEBUG, "%s(%d): part[%.*s] reslen=%zd l=%d dlen=%zd", __FUNCTION__, __LINE__, 
              l, res, reslen, l, dlen);
 #endif
 
@@ -136,7 +136,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 	     int isReq, int *qmatch, int *modified, int mode) {
 
 #define return_error {                                                  \
-    if (_options.debug) syslog(LOG_DEBUG, "failed parsing DNS packet"); return -1; }
+    if (_options.debug) syslog(LOG_DEBUG, "%s(%d): failed parsing DNS packet", __FUNCTION__, __LINE__); return -1; }
 
   uint8_t *p_pkt = *pktp;
   size_t len = *left;
@@ -162,8 +162,8 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
 #if(_debug_ > 1)
   if (_options.debug)
-    syslog(LOG_DEBUG, "%s: left=%zd olen=%zd qsize=%zd",
-           __FUNCTION__, *left, olen, qsize);
+    syslog(LOG_DEBUG, "%s(%d): left=%zd olen=%zd qsize=%zd",
+           __FUNCTION__, __LINE__, *left, olen, qsize);
 #endif
 
   memset(name, 0, sizeof(name));
@@ -198,7 +198,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
 #if(_debug_)
   if (_options.debug)
-    syslog(LOG_DEBUG, "It was a dns record type: %d class: %d", type, class);
+    syslog(LOG_DEBUG, "%s(%d): It was a dns record type: %d class: %d", __FUNCTION__, __LINE__, type, class);
 #endif
 
   if (q) {
@@ -206,7 +206,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
       return_error;
 
     if (_options.debug)
-      syslog(LOG_DEBUG, "DNS: %s", question);
+      syslog(LOG_DEBUG, "%s(%d): DNS: %s", __FUNCTION__, __LINE__, question);
 
     *pktp = p_pkt;
     *left = len;
@@ -221,7 +221,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
 #if(_debug_)
         if (_options.debug)
-          syslog(LOG_DEBUG, "checking %s [%s]",
+          syslog(LOG_DEBUG, "%s(%d): checking %s [%s]", __FUNCTION__, __LINE__,
                  _options.uamdomains[id], question);
 #endif
 
@@ -244,7 +244,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 	      ) ) {
 #if(_debug_)
           if (_options.debug)
-            syslog(LOG_DEBUG, "matched %s [%s]", _options.uamdomains[id], question);
+            syslog(LOG_DEBUG, "%s(%d): matched %s [%s]", __FUNCTION__, __LINE__, _options.uamdomains[id], question);
 #endif
 	  *qmatch = 1;
 	  break;
@@ -262,14 +262,14 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
     if (_options.ipv6) {
       if (isReq && type == 28) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "changing AAAA to A request");
+          syslog(LOG_DEBUG, "%s(%d): changing AAAA to A request", __FUNCTION__, __LINE__);
 	us = 1;
 	us = htons(us);
 	memcpy(pkt_type, &us, sizeof(us));
 	*modified = 1;
       } else if (!isReq && type == 1) {
         if (_options.debug)
-          syslog(LOG_DEBUG, "changing A to AAAA response");
+          syslog(LOG_DEBUG, "%s(%d): changing A to AAAA response", __FUNCTION__, __LINE__);
 	us = 28;
 	us = htons(us);
 	memcpy(pkt_type, &us, sizeof(us));
@@ -296,13 +296,13 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
 #if(_debug_ > 1)
   if (_options.debug)
-    syslog(LOG_DEBUG, "-> w ttl: %d rdlength: %d/%zd", ttl, rdlen, len);
+    syslog(LOG_DEBUG, "%s(%d): -> w ttl: %d rdlength: %d/%zd", __FUNCTION__, __LINE__, ttl, rdlen, len);
 #endif
 
   if (*qmatch == 1 && ttl > _options.uamdomain_ttl) {
 #if(_debug_)
     if (_options.debug)
-      syslog(LOG_DEBUG, "Rewriting DNS ttl from %d to %d",
+      syslog(LOG_DEBUG, "%s(%d): Rewriting DNS ttl from %d to %d", __FUNCTION__, __LINE__,
              (int) ttl, _options.uamdomain_ttl);
 #endif
     ul = _options.uamdomain_ttl;
@@ -321,14 +321,14 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
     default:
       if (_options.debug)
-        syslog(LOG_DEBUG, "Record type %d", type);
+        syslog(LOG_DEBUG, "%s(%d): Record type %d", __FUNCTION__, __LINE__, type);
       return_error;
       break;
 
     case 1:
 #if(_debug_ > 1)
       if (_options.debug)
-        syslog(LOG_DEBUG, "A record");
+        syslog(LOG_DEBUG, "%s(%d): A record", __FUNCTION__, __LINE__);
 #endif
       required = 1;
 
@@ -340,7 +340,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
           memcpy(&reqaddr.s_addr, p_pkt+offset, 4);
 #if(_debug_)
           if (_options.debug)
-            syslog(LOG_DEBUG, "mDNS %s = %s", name, inet_ntoa(reqaddr));
+            syslog(LOG_DEBUG, "%s(%d): mDNS %s = %s", __FUNCTION__, __LINE__, name, inet_ntoa(reqaddr));
 #endif
         }
         break;
@@ -357,32 +357,32 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
     case 2: 
       if (_options.debug)
-        syslog(LOG_DEBUG, "NS record");
+        syslog(LOG_DEBUG, "%s(%d): NS record", __FUNCTION__, __LINE__);
       required = 1;
       break;
     case 5: 
       if (_options.debug)
-        syslog(LOG_DEBUG, "CNAME record %s", name);
+        syslog(LOG_DEBUG, "%s(%d): CNAME record %s", __FUNCTION__, __LINE__, name);
       required = 1;
       break;
     case 6: 
       if (_options.debug)
-        syslog(LOG_DEBUG, "SOA record");
+        syslog(LOG_DEBUG, "%s(%d): SOA record", __FUNCTION__, __LINE__);
       break;
 
     case 12:
       if (_options.debug)
-        syslog(LOG_DEBUG, "PTR record");
+        syslog(LOG_DEBUG, "%s(%d): PTR record", __FUNCTION__, __LINE__);
       break;
     case 15:
       if (_options.debug)
-        syslog(LOG_DEBUG, "MX record");
+        syslog(LOG_DEBUG, "%s(%d): MX record", __FUNCTION__, __LINE__);
       required = 1;
       break;
 
     case 16:/* TXT */
       if (_options.debug)
-        syslog(LOG_DEBUG, "TXT record %d", rdlen);
+        syslog(LOG_DEBUG, "%s(%d): TXT record %d", __FUNCTION__, __LINE__, rdlen);
       if (_options.debug) {
         char *txt = (char *)p_pkt;
         int txtlen = rdlen;
@@ -390,7 +390,7 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
           uint8_t l = *txt++;
           if (l == 0) break;
           if (_options.debug)
-            syslog(LOG_DEBUG, "Text: %.*s", (int) l, txt);
+            syslog(LOG_DEBUG, "%s(%d): Text: %.*s", __FUNCTION__, __LINE__, (int) l, txt);
           txt += l;
           txtlen -= l;
         }
@@ -399,24 +399,24 @@ dns_copy_res(struct dhcp_conn_t *conn, int q,
 
     case 28:
       if (_options.debug)
-        syslog(LOG_DEBUG, "AAAA record");
+        syslog(LOG_DEBUG, "%s(%d): AAAA record", __FUNCTION__, __LINE__);
       required = 1;
       break;
     case 29:
       if (_options.debug)
-        syslog(LOG_DEBUG, "LOC record");
+        syslog(LOG_DEBUG, "%s(%d): LOC record", __FUNCTION__, __LINE__);
       break;
     case 33:
       if (_options.debug)
-        syslog(LOG_DEBUG, "SRV record");
+        syslog(LOG_DEBUG, "%s(%d): SRV record", __FUNCTION__, __LINE__);
       break;
     case 41:
       if (_options.debug)
-        syslog(LOG_DEBUG, "EDNS OPT pseudorecord");
+        syslog(LOG_DEBUG, "%s(%d): EDNS OPT pseudorecord", __FUNCTION__, __LINE__);
       break;
     case 47:
       if (_options.debug)
-        syslog(LOG_DEBUG, "NSEC record");
+        syslog(LOG_DEBUG, "%s(%d): NSEC record", __FUNCTION__, __LINE__);
       break;
   }
 

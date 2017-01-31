@@ -25,3 +25,5 @@ To get started after cloning git repository:
   `./configure` 
   
   `make`
+
+More details about the build process and dependencies are covered in the [INSTALL file](/INSTALL)
