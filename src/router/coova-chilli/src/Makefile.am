@@ -184,9 +184,9 @@ install-exec-hook:
 
 main-opt.c: cmdline.c cmdline.h
 
-cmdline.c cmdline.h: cmdline.ggo cmdline.patch
+cmdline.c: cmdline.ggo cmdline.patch
 	cat $(CMDLINE) | gengetopt -C 
-	cp cmdline.c cmdline.c.orig
+	cp cmdline.c cmdline.orig
 	patch -p0 < cmdline.patch
 
 cmdline.mini.gen: cmdline.ggo 
