@@ -109,7 +109,7 @@ void detect_apple_partmap(SECTION *section, int level)
 
 void detect_apple_volume(SECTION *section, int level)
 {
-  char s[256], t[514];
+  char s[256], t[1026];
   unsigned char *buf;
   u2 magic, version, volnamelen;
   u4 blocksize, blockstart;
