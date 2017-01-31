@@ -35,6 +35,8 @@ chillispot-configure:
 	cd $(CHILLIDIR) &&  rm -rf config.{cache,status} && ./configure $(CHILLIEXTRAFLAGS) --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) $(CHILLIEXTRA_CFLAGS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 chillispot:
+	rm -f coova-chilli/src/cmdline.c
+	rm -f coova-chilli/src/cmdline.h
 	$(MAKE) -j 4 -C $(CHILLIDIR)
 
 chillispot-install:
