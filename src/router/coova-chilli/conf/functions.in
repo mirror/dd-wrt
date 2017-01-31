@@ -247,7 +247,6 @@ writeconfig() {
 	[ "$HS_DOMAINDNSLOCAL" = "on" ] && addconfig2 "domaindnslocal"
 	[ "$HS_SESKEEPALIVE" = "on" ] && addconfig2 "seskeepalive"
 	[ "$HS_RADSEC" = "on" ] && addconfig2 "radsec"
-	[ -n "$HS_DNSLOG" ] && addconfig2 "dnslog \"$HS_DNSLOG\""
 	[ -n "$HS_USESTATUSFILE" ] && addconfig2 "usestatusfile \"$HS_USESTATUSFILE\""
 	[ -n "$HS_UAMLOGOUTIP" ] && addconfig2 "uamlogoutip \"$HS_UAMLOGOUTIP\""
 	[ -n "$HS_UAMALIASIP" ] && addconfig2 "uamaliasip \"$HS_UAMALIASIP\""

@@ -1,31 +1,30 @@
 Summary:   Coova-Chilli is a Wireless LAN Access Point Controller
-Name:      @PACKAGE@
-Version:   @VERSION@
-Release:   1
+Name:      coova-chilli
+Version:   1.3.1.3
+Release:   1%{?dist}
 URL:       http://coova.github.io/
 Source0:   %{name}-%{version}.tar.gz
 License:   GPL
 Group:     System Environment/Daemons
-BuildRoot: %{_tmppath}/%{name}-root
 
 %if %{!?_without_ssl:1}0
-BuildRequires: openssl-devel
+BuildRequires: openssl-devel libtool gengetopt
 %endif
 
-%description 
+%description
 
-Coova-Chilli is an open source captive portal or wireless LAN access point
-controller. It supports web based login
+Coova-Chilli is a fork of the ChilliSpot project - an open source captive
+portal or wireless LAN access point controller. It supports web based login
 (Universal Access Method, or UAM), standard for public HotSpots, and it
 supports Wireless Protected Access (WPA), the standard for secure roamable
 networks. Authentication, Authorization and Accounting (AAA) is handled by
 your favorite radius server. Read more at http://coova.github.io/.
 
 %prep
-%setup 
+%setup
 
 %build
-
+sh bootstrap
 %configure \
         --disable-static \
         --enable-shared \
@@ -35,6 +34,7 @@ your favorite radius server. Read more at http://coova.github.io/.
 	--enable-chilliproxy \
         --enable-chilliscript \
 	--with-poll \
+    --enable-libjson \
 %if %{!?_without_ssl:1}0
 	--with-openssl \
 	--enable-chilliradsec \
@@ -46,9 +46,14 @@ make
 %install
 make install DESTDIR=$RPM_BUILD_ROOT
 
-rm -rf $RPM_BUILD_ROOT/usr/include/*
-rm -rf $RPM_BUILD_ROOT/usr/lib/*.la
-rm -rf $RPM_BUILD_ROOT/usr/lib/*.a
+rm -rf $RPM_BUILD_ROOT%{_prefix}/include/*
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.la
+rm -f $RPM_BUILD_ROOT%{_libdir}/*.a
+#cp -f chilli $RPM_BUILD_ROOT%{_sysconfdir}/init.d/chilli
+
+%check
+rm -f $RPM_BUILD_ROOT%{_libdir}/python/*.pyc
+rm -f $RPM_BUILD_ROOT%{_libdir}/python/*.pyo
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -76,16 +81,29 @@ fi
 %dir %{_sysconfdir}/chilli
 %dir %{_sysconfdir}/chilli/www
 %attr(755,root,root)%{_sysconfdir}/chilli/www/config.sh
-%attr(4750,root,chilli)%{_sbindir}/chilli_script
+%attr(4750,root,root)%{_sbindir}/chilli_script
 %{_sysconfdir}/chilli/www/*
 %{_sysconfdir}/chilli/wwwsh
 %{_sysconfdir}/chilli/functions
 %{_sysconfdir}/chilli/*.sh
+%{_sysconfdir}/chilli/wpad.dat
 %{_mandir}/man1/*.1*
 %{_mandir}/man5/*.5*
 %{_mandir}/man8/*.8*
 
 %changelog
+* Fri Jun 26 2015 Giovanni Bezicheri <giovanni.bezicheri@nethesis.it>
+* Fix json encoding for radius reply.
+
+* Tue May 13 2015 Giovanni Bezicheri <giovanni.bezicheri@nethesis.it>
+* Add support for json uri.
+
+* Fri Nov 14 2014 Giovanni Bezicheri <giovanni.bezicheri@nethesis.it>
+- Add HS_LANIF_KEEPADDR option in chilli sysconfig.
+
+* Thu Jul 10 2014 Giovanni Bezicheri <giovanni.bezicheri@nethesis.it>
+- 1.3.1 release for NethServer. See ChangeLog.
+
 * Sat Jan 2 2010 <david@coova.com>
 - 1.2.0 release
 * Thu Sep 30 2007 <david@coova.com>

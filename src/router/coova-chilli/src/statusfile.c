@@ -47,7 +47,7 @@ int loadstatus() {
 
   statedir_file(filedest, sizeof(filedest), _options.usestatusfile, 0);
 
-  syslog(LOG_DEBUG, "Loading file %s", filedest);
+  syslog(LOG_DEBUG, "%s(%d): Loading file %s", __FUNCTION__, __LINE__, filedest);
 
   file = fopen(filedest, "r");
   if (!file) { syslog(LOG_ERR, "%s: could not open file %s", strerror(errno), filedest); return -1; }
@@ -79,11 +79,11 @@ int loadstatus() {
   }
 
   rtoffset = wall - rt;
-  syslog(LOG_DEBUG, "now: wall = %d, rt = %d, wall at rt=0 %d",
+  syslog(LOG_DEBUG, "%s(%d): now: wall = %d, rt = %d, wall at rt=0 %d", __FUNCTION__, __LINE__, 
          (int)wall, (int)rt, (int)rtoffset);
 
   r_rtoffset = r_wall - r_rt;
-  syslog(LOG_DEBUG, "file: wall = %d, rt = %d, wall at rt=0 %d",
+  syslog(LOG_DEBUG, "%s(%d): file: wall = %d, rt = %d, wall at rt=0 %d", __FUNCTION__, __LINE__,
          (int)r_wall, (int)r_rt, (int)r_rtoffset);
 
   while (fread(&dhcpconn, sizeof(struct dhcp_conn_t), 1, file) == 1) {
@@ -138,7 +138,7 @@ int loadstatus() {
 	memset(conn->dnat[n].mac, 0, PKT_ETH_ALEN);
       }
 
-      syslog(LOG_DEBUG, "checking IP %s", inet_ntoa(dhcpconn.hisip));
+      syslog(LOG_DEBUG, "%s(%d): checking IP %s", __FUNCTION__, __LINE__, inet_ntoa(dhcpconn.hisip));
 
       /* add into ippool */
       if (ippool_getip(ippool, &newipm, &dhcpconn.hisip)) {
@@ -319,7 +319,7 @@ int printstatus() {
 
   statedir_file(filedest, sizeof(filedest), _options.usestatusfile, 0);
 
-  syslog(LOG_DEBUG, "Writing status file: %s", filedest);
+  syslog(LOG_DEBUG, "%s(%d): Writing status file: %s", __FUNCTION__, __LINE__, filedest);
 
   file = fopen(filedest, "w");
   if (!file) { syslog(LOG_ERR, "%s: could not open file %s", strerror(errno), filedest); return -1; }
@@ -347,7 +347,7 @@ int printstatus() {
 #ifdef ENABLE_LAYER3
       case DHCP_AUTH_ROUTER:
 #endif
-        syslog(LOG_DEBUG, "Saving dhcp connection %.2X-%.2X-%.2X-%.2X-%.2X-%.2X %s",
+        syslog(LOG_DEBUG, "%s(%d): Saving dhcp connection %.2X-%.2X-%.2X-%.2X-%.2X-%.2X %s", __FUNCTION__, __LINE__, 
                dhcpconn->hismac[0], dhcpconn->hismac[1],
                dhcpconn->hismac[2], dhcpconn->hismac[3],
                dhcpconn->hismac[4], dhcpconn->hismac[5],

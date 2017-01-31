@@ -382,10 +382,6 @@ struct options_t {
   int dhcp_options_len;
 #endif
 
-#ifdef ENABLE_DNSLOG
-  char *dnslog;
-#endif
-
 #ifdef ENABLE_IPWHITELIST
   char *ipwhitelist;
 #endif
