@@ -1530,26 +1530,37 @@ int __init ar7240_platform_init(void)
 	iounmap(base);
 
 
-	mdiobus_register_board_info(wpj344_mdio0_info,
-					ARRAY_SIZE(wpj344_mdio0_info));
 
-	ar71xx_add_device_mdio(1, 0x0);
 	ar71xx_add_device_mdio(0, 0x0);
 
 	/* GMAC0 is connected to an AR8327 switch */
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
 	ar71xx_eth0_data.phy_mask = BIT(0);
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
-	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
 
+#ifdef CONFIG_WILLY
+	mdiobus_register_board_info(cf_e380ac_mdio0_info,
+				    ARRAY_SIZE(cf_e380ac_mdio0_info));
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.phy_mask = BIT(0);
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;
+	ar71xx_eth0_pll_data.pll_100 = 0x00000101;
+	ar71xx_eth0_pll_data.pll_1000 = 0x0e000000;
+#else
+	mdiobus_register_board_info(wpj344_mdio0_info,
+					ARRAY_SIZE(wpj344_mdio0_info));
+
+	ar71xx_eth0_pll_data.pll_1000 = 0x06000000;
+	ar71xx_add_device_mdio(1, 0x0);
+#endif
+	ar71xx_add_device_eth(0);
+	#ifndef CONFIG_WILLY
 	/* GMAC1 is connected to the internal switch */
 	ar71xx_eth1_data.phy_if_mode = PHY_INTERFACE_MODE_GMII;
 	ar71xx_eth1_data.speed = SPEED_1000;
 	ar71xx_eth1_data.duplex = DUPLEX_FULL;
-
-	ar71xx_add_device_eth(0);
 	ar71xx_add_device_eth(1);
-
+	#endif
 	#else
 	/* GMAC0 of the AR8327 switch is connected to GMAC1 via SGMII */
 	ap136_ar8327_pad0_cfg.mode = AR8327_PAD_MAC_SGMII;
