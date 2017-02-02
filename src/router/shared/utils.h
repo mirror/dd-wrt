@@ -748,6 +748,8 @@
 
 #define ROUTER_ASROCK_G10 0xfe01
 
+#define ROUTER_TPLINK_ARCHERC3150 0xff111
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)

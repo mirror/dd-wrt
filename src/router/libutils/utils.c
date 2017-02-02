@@ -1218,6 +1218,12 @@ int internal_getRouterBrand()
 		return ROUTER_TPLINK_ARCHERC9;
 	}
 
+	if (nvram_match("boardtype", "0x072F") && nvram_match("boardrev", "0x1101") && (boardnum == 1234 || boardnum == 10)) {
+		setRouter("TPLINK Archer C3150");
+
+		return ROUTER_TPLINK_ARCHERC3150;
+	}
+
 	if (nvram_match("boardtype", "0xD646") && nvram_match("boardrev", "0x1100") && nvram_match("0:devid", "0x43A1")) {
 		setRouter("Linksys EA6900");
 
@@ -6614,6 +6620,17 @@ int led_control(int type, int act)
 		connected_gpio = 0x00e;
 		power_gpio = 0x112;
 		diag_gpio = 0x012;
+		usb_power = 0x00c;	// usb 3
+		usb_power1 = 0x00d;	// usb 2
+		break;
+	case ROUTER_TPLINK_ARCHERC3150:
+		ses_gpio = 0x002;
+//		usb_gpio = 0x006;
+//		usb_gpio1 = 0x007;
+//		disconnected_gpio = 0x00f;
+//		connected_gpio = 0x00e;
+//		power_gpio = 0x112;
+//		diag_gpio = 0x012;
 		usb_power = 0x00c;	// usb 3
 		usb_power1 = 0x00d;	// usb 2
 		break;
