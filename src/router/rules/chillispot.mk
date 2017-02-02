@@ -37,7 +37,7 @@ chillispot-configure:
 chillispot:
 	rm -f coova-chilli/src/cmdline.c
 	rm -f coova-chilli/src/cmdline.h
-	$(MAKE) -j 4 -C $(CHILLIDIR)
+	$(MAKE) -C $(CHILLIDIR)
 
 chillispot-install:
 ifneq ($(CONFIG_FON),y)
