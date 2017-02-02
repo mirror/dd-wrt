@@ -530,6 +530,13 @@ ifeq ($(CONFIG_ERC),y)
 else
 	echo "# CONFIG_ERC is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_WILLY),y)
+	sed -i 's/\# CONFIG_WILLY is not set/CONFIG_WILLY=y/g' $(LINUXDIR)/.config
+	echo CONFIG_WILLY=y >> $(LINUXDIR)/.config
+	sed -i 's/\# CONFIG_AT803X_PHY is not set/CONFIG_AT803X_PHY=y/g' $(LINUXDIR)/.config
+else
+	echo "# CONFIG_WILLY is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_EHCI),y)
 	sed -i 's/\# CONFIG_USB_EHCI_HCD is not set/CONFIG_USB_EHCI_HCD=m/g' $(LINUXDIR)/.config
 	echo "CONFIG_USB_EHCI_ROOT_HUB_TT=y" >> $(LINUXDIR)/.config
@@ -818,7 +825,7 @@ ifneq ($(CONFIG_NOOPT),y)
 
 	mkdir -p /tmp/$(ARCHITECTURE)/mklibs-out
 ifneq ($(CONFIG_MUSL),y)
-	mklibs.py -D \
+	mklibs -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
@@ -827,7 +834,7 @@ ifneq ($(CONFIG_MUSL),y)
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 else
-	mklibs.py -D \
+	mklibs -D \
 		-d /tmp/$(ARCHITECTURE)/mklibs-out \
 		--sysroot $(TARGETDIR) \
 		-L /lib \
@@ -1340,6 +1347,7 @@ ifeq ($(CONFIG_WP546),y)
 		-p0x30000:0x7d0000:alp:0x80060000 \
 		-b0x30000:0x7d0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/wp546.img
+
 endif
 endif
 endif
@@ -1358,6 +1366,11 @@ ifeq ($(CONFIG_MMS344),y)
 		-p0x30000:0x7d0000:al:0x80060000 \
 		-b0x30000:0x7d0000::$(ARCH)-uclibc/aligned.uimage 	\
 		mips-uclibc/mms344.img
+
+	-./tools/compex/mkmylofw -B DR342 \
+		-p0x50000:0xfb0000:alp:0x80060000 \
+		-b0x50000:0xfb0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		mips-uclibc/willy.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
 	dd if=$(ARCH)-uclibc/root.uimage of=$(ARCH)-uclibc/aligned.uimage bs=4096 conv=sync
