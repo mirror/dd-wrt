@@ -137,7 +137,7 @@ void start_sysinit(void)
 	 */
 	fprintf(stderr, "load ATH Ethernet Driver\n");
 	system("insmod ag71xx || insmod ag7240_mod");
-
+#ifndef HAVE_WILLY
 #ifdef HAVE_WDR3500
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
@@ -179,7 +179,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
-#elif defined (HAVE_MMS344)
+#elif defined (HAVE_MMS344) 
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -199,6 +199,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0t 5");
+#endif
 #endif
 #endif
 	eval("swconfig", "dev", "eth0", "set", "apply");
@@ -222,7 +223,11 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
+		#ifdef HAVE_WILLY
+		fseek(fp, 0x3f810, SEEK_SET);		
+		#else
 		fseek(fp, 0x2e010, SEEK_SET);
+		#endif
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
@@ -244,7 +249,7 @@ void start_sysinit(void)
 	runStartup("/etc/config/", ".onnet");
 #endif
 
-#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C)
+#if !defined(HAVE_WR650AC) && !defined(HAVE_E355AC) && !defined(HAVE_E325N) && !defined(HAVE_E380AC) && !defined(HAVE_WR615N)  && !defined(HAVE_AP120C) && !defined(HAVE_WILLY)
 #ifndef HAVE_JWAP606
 	eval("ifconfig", "eth0", "up");
 #if (defined(HAVE_MMS344) || defined(HAVE_XD3200)) && !defined(HAVE_DIR862)
