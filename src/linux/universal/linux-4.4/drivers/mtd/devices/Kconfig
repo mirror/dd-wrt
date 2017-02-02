@@ -281,6 +281,9 @@ config DIR825C1
 config MMS344
 	bool "support for MMS344"
 	depends on DIR825C1
+config WILLY
+	bool "support for WILLY"
+	depends on DIR825C1
 config JWAP606
 	bool "support for JWAP606"
 	depends on DIR825C1
