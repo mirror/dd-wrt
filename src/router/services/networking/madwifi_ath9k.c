@@ -1031,7 +1031,7 @@ static void addvhtcaps(char *prefix, FILE * fp)
 		if (mask) {
 			fprintf(fp, "\tvht_capa=0\n");
 			fprintf(fp, "\tvht_capa_mask=%d\n", mask);
-		}#
+		}
 	}
 #endif
 #ifdef HAVE_ATH9K
