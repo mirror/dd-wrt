@@ -2267,6 +2267,11 @@ int internal_getRouterBrand()
 	nvram_default_get("ath1_rxantenna", "7");
 	nvram_default_get("ath1_txantenna", "7");
 	return ROUTER_BOARD_WHRHPGN;
+#elif HAVE_WILLY
+	setRouter("Wallystech DR342-NAS");
+	nvram_default_get("ath0_rxantenna", "3");
+	nvram_default_get("ath0_txantenna", "3");
+	return ROUTER_BOARD_WHRHPGN;
 #elif HAVE_MMS344
 	setRouter("Compex MMS344");
 	nvram_default_get("ath0_rxantenna", "3");
@@ -7328,7 +7333,7 @@ int getath9kdevicecount(void)
 			count = (int)globbuf.gl_pathc;
 		globfree(&globbuf);
 	}
-#if (defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)) && !defined(HAVE_DAP2330)
+#if (defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)) && !defined(HAVE_DAP2330) && !defined(HAVE_WILLY)
 	return 2;
 #else
 	return (count);
