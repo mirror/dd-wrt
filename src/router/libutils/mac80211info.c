@@ -775,7 +775,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface) && vht80) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface) && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
@@ -795,6 +795,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
 			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
 			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && vht8080) ? "[VHT160-80PLUS80]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB) ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB) ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
