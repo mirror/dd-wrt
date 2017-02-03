@@ -110,9 +110,15 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 		} else {
 			if (strchr(var, ':') != NULL) {
 				buffersize = checkbuffer(&buffer, var, buffersize);
-				snprintf(buffer, buffersize, "%s%s", buffer, var);
+				char *copy = malloc(buffersize);
+				snprintf(copy, buffersize, "%s%s", buffer, var);
+				strcpy(buffer,copy);
+				free(copy);
 				buffersize = checkbuffer(&buffer, " ", buffersize);
-				snprintf(buffer, buffersize, "%s ", buffer);
+				char *copy = malloc(buffersize);
+				snprintf(copy, buffersize, "%s ", buffer);
+				strcpy(buffer,copy);
+				free(copy);
 			}
 		}
 		i++;
@@ -122,10 +128,16 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 	if (i < (days + 2)) {
 		for (a = i; a <= days; a++) {
 			buffersize = checkbuffer(&buffer, "0:0 ", buffersize);
-			snprintf(buffer, buffersize, "%s0:0 ", buffer);
+			char *copy = malloc(buffersize);
+			snprintf(copy, buffersize, "%s0:0 ", buffer);
+			strcpy(buffer,copy);
+			free(copy);
 		}
 		buffersize = checkbuffer(&buffer, "[0:0] ", buffersize);
-		snprintf(buffer, buffersize, "%s[0:0] ", buffer);
+		char *copy = malloc(buffersize);
+		snprintf(copy, buffersize, "%s[0:0] ", buffer);
+		strcpy(buffer,copy);
+		free(copy);
 	}
 	strtrim_right(buffer, ' ');
 	nvram_set(tq, buffer);
