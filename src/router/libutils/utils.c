@@ -1080,8 +1080,13 @@ void setRouter(char *name)
 	nvram_set("DD_BOARD2", name);
 #elif HAVE_ONNET
 #ifdef HAVE_MMS344
+#ifdef HAVE_WILLY
+	nvram_set("DD_BOARD", "9342-AN4g");
+	nvram_set("DD_BOARD2", "9342-AN4g");
+#else
 	nvram_set("DD_BOARD", "DBDC344");
 	nvram_set("DD_BOARD2", "DBDC344");
+#endif
 #else
 	if (name)
 		nvram_set(NVROUTER, name);
