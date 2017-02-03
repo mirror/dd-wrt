@@ -1562,10 +1562,17 @@ void qos_save(webs_t wp)
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		if (strlen(svqos_var) > 0)
-			sprintf(svqos_var, "%s %s %s |", svqos_var, data, level);
-		else
-			sprintf(svqos_var, "%s %s |", data, level);
+		if (strlen(svqos_var) > 0) {
+			char *copy = malloc(4096);
+			snprintf(copy,4096, "%s %s %s |", svqos_var, data, level);
+			strcpy(svqos_var, copy);
+			free(copy);
+		} else {
+			char *copy = malloc(4096);
+			sprintf(copy, "%s %s |", data, level);
+			strcpy(svqos_var, copy);
+			free(copy);
+		}
 #else
 		snprintf(field, 31, "svqos_devprio%d", i);
 		prio = websGetVar(wp, field, NULL);
