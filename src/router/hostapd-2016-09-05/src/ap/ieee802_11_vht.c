@@ -93,7 +93,7 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 		hapd->iconf->vht_oper_centr_freq_seg1_idx;
 
 	oper->vht_op_info_chwidth = hapd->iconf->vht_oper_chwidth;
-#if 0
+
 	if (hapd->iconf->vht_oper_chwidth == 2) {
 		/*
 		 * Convert 160 MHz channel width to new style as interop
@@ -114,7 +114,6 @@ u8 * hostapd_eid_vht_operation(struct hostapd_data *hapd, u8 *eid)
 		 */
 		oper->vht_op_info_chwidth = 1;
 	}
-#endif
 	/* VHT Basic MCS set comes from hw */
 	/* Hard code 1 stream, MCS0-7 is a min Basic VHT MCS rates */
 	oper->vht_basic_mcs_set = host_to_le16(0xfffc);
