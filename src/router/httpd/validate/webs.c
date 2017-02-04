@@ -1371,8 +1371,6 @@ void qos_add_ip(webs_t wp)
 #else
 	snprintf(new_ip, 4095, "%s %s 30 |", svqos_ips, add_ip);
 #endif
-	if (strlen(new_ip) >= sizeof(new_ip))
-		return;
 
 	nvram_set("svqos_ips", new_ip);
 
@@ -1411,8 +1409,6 @@ void qos_add_mac(webs_t wp)
 #else
 	snprintf(new_mac, 4095, "%s %s 30 |", svqos_macs, add_mac);
 #endif
-	if (strlen(new_mac) >= sizeof(new_mac))
-		return;
 
 	nvram_set("svqos_macs", new_mac);
 
@@ -1535,8 +1531,7 @@ void qos_save(webs_t wp)
 
 	}
 
-	if (strlen(svqos_var) <= sizeof(svqos_var))
-		nvram_set("svqos_svcs", svqos_var);
+	nvram_set("svqos_svcs", svqos_var);
 	// nvram_commit ();
 	memset(svqos_var, 0, sizeof(svqos_var));
 
@@ -1608,8 +1603,7 @@ void qos_save(webs_t wp)
 
 	}
 
-	if (strlen(svqos_var) <= sizeof(svqos_var))
-		nvram_set("svqos_devs", svqos_var);
+	nvram_set("svqos_devs", svqos_var);
 	memset(svqos_var, 0, sizeof(svqos_var));
 
 	/*
@@ -1668,8 +1662,7 @@ void qos_save(webs_t wp)
 
 	}
 
-	if (strlen(svqos_var) <= sizeof(svqos_var))
-		nvram_set("svqos_ips", svqos_var);
+	nvram_set("svqos_ips", svqos_var);
 	// nvram_commit ();
 	memset(svqos_var, 0, sizeof(svqos_var));
 
@@ -1729,8 +1722,7 @@ void qos_save(webs_t wp)
 
 	}
 
-	if (strlen(svqos_var) <= sizeof(svqos_var))
-		nvram_set("svqos_macs", svqos_var);
+	nvram_set("svqos_macs", svqos_var);
 	// nvram_commit ();
 
 	/*
