@@ -1034,29 +1034,35 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				chan->uuu = 0;
 			}
 			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
-			if (bw == 80 && chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30)) {
-				chan->ull = 0;
+			if (bw == 80) {
+
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30)) {
+					chan->ull = 0;
+				}
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30)) {
+					chan->luu = 0;
+				}
+
 			}
-			if (bw == 160 && chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70)) {
-				chan->ull = 0;
-			}
-			if (bw == 160 && chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70)) {
-				chan->ulu = 0;
-			}
-			if (bw == 160 && chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70)) {
-				chan->uul = 0;
-			}
-			if (bw == 80 && chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30)) {
-				chan->luu = 0;
-			}
-			if (bw == 160 && chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70)) {
-				chan->luu = 0;
-			}
-			if (bw == 160 && chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70)) {
-				chan->lul = 0;
-			}
-			if (bw == 160 && chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70)) {
-				chan->llu = 0;
+			if (bw == 160) {
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70)) {
+					chan->ull = 0;
+				}
+				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70)) {
+					chan->ulu = 0;
+				}
+				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70)) {
+					chan->uul = 0;
+				}
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70)) {
+					chan->luu = 0;
+				}
+				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70)) {
+					chan->lul = 0;
+				}
+				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70)) {
+					chan->llu = 0;
+				}
 			}
 			if (a == 2) {
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
