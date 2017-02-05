@@ -479,17 +479,16 @@ struct dns_lists *get_dns_list(void)
 		snprintf(list, 256, "%s", sv_localdns);
 	if (strlen(wan_dns)) {
 		if (strlen(list)) {
-			strcat(list," ");
-			strcat(list,wan_dns);
-		}
-		else
+			strcat(list, " ");
+			strcat(list, wan_dns);
+		} else
 			snprintf(list, 256, "%s", wan_dns);
 	}
 
 	if (strlen(wan_get_dns)) {
 		if (strlen(list)) {
-			strcat(list," ");
-			strcat(list,wan_get_dns);
+			strcat(list, " ");
+			strcat(list, wan_get_dns);
 		} else
 			snprintf(list, 256, "%s", wan_get_dns);
 	}

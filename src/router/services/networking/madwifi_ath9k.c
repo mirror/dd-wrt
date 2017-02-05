@@ -398,7 +398,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
-			} 
+			}
 			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
 				sprintf(ht, "HT40-");
 				iht = -1;
@@ -423,14 +423,14 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				sprintf(ht, "HT40-");
 				iht = -1;
 				channeloffset = 6;
-			}		
+			}
 		} else if (!strcmp(nbw, "160")) {
 			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 				channeloffset = 14;
 			}
-			if (nvram_match(sb, "uul") ) {
+			if (nvram_match(sb, "uul")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 				channeloffset = 10;
@@ -465,9 +465,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				iht = -1;
 				channeloffset = 14;
 			}
-		
-		
-		} else sprintf(ht, "HT20");
+
+		} else
+			sprintf(ht, "HT20");
 	} else {
 		sprintf(ht, "HT20");
 	}
