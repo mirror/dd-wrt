@@ -291,8 +291,19 @@ int snd_timer_open(struct snd_timer_instance **ti,
 	}
 	timeri->slave_class = tid->dev_sclass;
 	timeri->slave_id = slave_id;
-	if (list_empty(&timer->open_list_head) && timer->hw.open)
-		timer->hw.open(timer);
+
+	if (list_empty(&timer->open_list_head) && timer->hw.open) {
+		int err = timer->hw.open(timer);
+		if (err) {
+			kfree(timeri->owner);
+			kfree(timeri);
+
+			module_put(timer->module);
+			mutex_unlock(&register_mutex);
+			return err;
+		}
+	}
+
 	list_add_tail(&timeri->open_list, &timer->open_list_head);
 	snd_timer_check_master(timeri);
 	mutex_unlock(&register_mutex);
@@ -817,6 +828,7 @@ int snd_timer_new(struct snd_card *card, char *id, struct snd_timer_id *tid,
 	timer->tmr_subdevice = tid->subdevice;
 	if (id)
 		strlcpy(timer->id, id, sizeof(timer->id));
+	timer->sticks = 1;
 	INIT_LIST_HEAD(&timer->device_list);
 	INIT_LIST_HEAD(&timer->open_list_head);
 	INIT_LIST_HEAD(&timer->active_list_head);
@@ -1922,19 +1934,23 @@ static ssize_t snd_timer_user_read(struct file *file, char __user *buffer,
 		if (err < 0)
 			goto _error;
 
+		mutex_lock(&tu->ioctl_lock);
 		if (tu->tread) {
 			if (copy_to_user(buffer, &tu->tqueue[tu->qhead++],
 					 sizeof(struct snd_timer_tread))) {
+				mutex_unlock(&tu->ioctl_lock);
 				err = -EFAULT;
 				goto _error;
 			}
 		} else {
 			if (copy_to_user(buffer, &tu->queue[tu->qhead++],
 					 sizeof(struct snd_timer_read))) {
+				mutex_unlock(&tu->ioctl_lock);
 				err = -EFAULT;
 				goto _error;
 			}
 		}
+		mutex_unlock(&tu->ioctl_lock);
 
 		tu->qhead %= tu->queue_size;
 

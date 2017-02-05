@@ -2241,7 +2241,7 @@ int skb_checksum_help(struct sk_buff *skb)
 			goto out;
 	}
 
-	*(__sum16 *)(skb->data + offset) = csum_fold(csum);
+	*(__sum16 *)(skb->data + offset) = csum_fold(csum) ?: CSUM_MANGLED_0;
 out_set_summed:
 	skb->ip_summed = CHECKSUM_NONE;
 out:
@@ -3377,6 +3377,22 @@ out:
 	return skb;
 }
 #endif
+
+/**
+ *	netdev_is_rx_handler_busy - check if receive handler is registered
+ *	@dev: device to check
+ *
+ *	Check if a receive handler is already registered for a given device.
+ *	Return true if there one.
+ *
+ *	The caller must hold the rtnl_mutex.
+ */
+bool netdev_is_rx_handler_busy(struct net_device *dev)
+{
+	ASSERT_RTNL();
+	return dev && rtnl_dereference(dev->rx_handler);
+}
+EXPORT_SYMBOL_GPL(netdev_is_rx_handler_busy);
 
 /**
  *	netdev_rx_handler_register - register receive handler
