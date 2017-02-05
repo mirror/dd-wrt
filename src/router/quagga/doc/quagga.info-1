@@ -23,8 +23,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 1.1.0, last updated 18 October 2016 of 'The Quagga
-Manual', for Quagga Version 1.1.0.
+   This is Edition 1.1.1, last updated 23 January 2017 of 'The Quagga
+Manual', for Quagga Version 1.1.1.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -49,7 +49,7 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 1.1.0.
+TCP/IP based routing protocols.  This is the Manual for Quagga 1.1.1.
 Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
@@ -1036,7 +1036,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 1.1.0)
+     Hello, this is Quagga (version 1.1.1)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -1176,6 +1176,11 @@ means press the Control Key.
 'C-t'
      Transpose character.
 
+'C-v'
+     Interpret following character literally.  Do not treat it
+     specially.  This can be used to, e.g., type in a literal '?' rather
+     than do help completion.
+
 
 File: quagga.info,  Node: CLI Advanced Commands,  Prev: CLI Editing Commands,  Up: VTY CLI Commands
 
@@ -1206,6 +1211,9 @@ insta-help, and VTY session management.
      You can use command line help by typing 'help' at the beginning of
      the line.  Typing '?' at any point in the line will show possible
      completions.
+
+     To enter an actual '?' character rather show completions, e.g.  to
+     enter into a regexp, use '<C>-v ?'.
 
 
 File: quagga.info,  Node: Zebra,  Next: RIP,  Prev: Basic commands,  Up: Top

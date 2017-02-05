@@ -40,6 +40,8 @@
 #include <arpa/telnet.h>
 #include <termios.h>
 
+#define VTY_BUFSIZ 4096
+
 /* Vty events */
 enum event 
 {
@@ -91,6 +93,23 @@ static u_char restricted_mode = 0;
 char integrate_default[] = SYSCONFDIR INTEGRATE_DEFAULT_CONFIG;
 
 static int do_log_commands = 0;
+
+static void
+vty_buf_assert (struct vty *vty)
+{
+  assert (vty->cp <= vty->length);
+  assert (vty->length < vty->max); 
+  assert (vty->buf[vty->length] == '\0');
+}
+
+/* Sanity/safety wrappers around access to vty->buf */
+static void
+vty_buf_put (struct vty *vty, char c)
+{
+  vty_buf_assert (vty);
+  vty->buf[vty->cp] = c;
+  vty->buf[vty->max - 1] = '\0';
+}
 
 /* VTY standard output function. */
 int
@@ -507,84 +526,104 @@ vty_write (struct vty *vty, const char *buf, size_t nbytes)
   buffer_put (vty->obuf, buf, nbytes);
 }
 
-/* Ensure length of input buffer.  Is buffer is short, double it. */
-static void
-vty_ensure (struct vty *vty, int length)
-{
-  if (vty->max <= length)
-    {
-      vty->max *= 2;
-      vty->buf = XREALLOC (MTYPE_VTY, vty->buf, vty->max);
-    }
-}
-
 /* Basic function to insert character into vty. */
 static void
 vty_self_insert (struct vty *vty, char c)
 {
   int i;
   int length;
+  
+  vty_buf_assert (vty);
+  
+  /* length is sans nul, max is with */
+  if (vty->length + 1 >= vty->max)
+    return;
 
-  vty_ensure (vty, vty->length + 1);
   length = vty->length - vty->cp;
   memmove (&vty->buf[vty->cp + 1], &vty->buf[vty->cp], length);
-  vty->buf[vty->cp] = c;
+  vty->length++;
+  vty->buf[vty->length] = '\0';
+
+  vty_buf_put (vty, c);
 
   vty_write (vty, &vty->buf[vty->cp], length + 1);
   for (i = 0; i < length; i++)
     vty_write (vty, &telnet_backward_char, 1);
 
   vty->cp++;
-  vty->length++;
+  
+  vty_buf_assert (vty);
 }
 
 /* Self insert character 'c' in overwrite mode. */
 static void
 vty_self_insert_overwrite (struct vty *vty, char c)
 {
-  vty_ensure (vty, vty->length + 1);
-  vty->buf[vty->cp++] = c;
+  vty_buf_assert (vty);
+  
+  if (vty->cp == vty->length)
+    {
+      vty_self_insert (vty, c);
+      return;
+    }
 
-  if (vty->cp > vty->length)
-    vty->length++;
-
-  if ((vty->node == AUTH_NODE) || (vty->node == AUTH_ENABLE_NODE))
-    return;
-
+  vty_buf_put (vty, c);
+  vty->cp++;
+  
+  vty_buf_assert (vty);
+  
   vty_write (vty, &c, 1);
 }
 
-/* Insert a word into vty interface with overwrite mode. */
+/**
+ * Insert a string into vty->buf at the current cursor position.
+ *
+ * If the resultant string would be larger than VTY_BUFSIZ it is
+ * truncated to fit.
+ */
 static void
 vty_insert_word_overwrite (struct vty *vty, char *str)
 {
-  int len = strlen (str);
-  vty_write (vty, str, len);
-  strcpy (&vty->buf[vty->cp], str);
-  vty->cp += len;
+  vty_buf_assert (vty);
+  
+  size_t nwrite = MIN ((int) strlen (str), vty->max - vty->cp - 1);
+  memcpy (&vty->buf[vty->cp], str, nwrite);
+  vty->cp += nwrite;
   vty->length = vty->cp;
+  vty->buf[vty->length] = '\0';
+  vty_buf_assert (vty);
+  
+  vty_write (vty, str, nwrite);
 }
 
 /* Forward character. */
 static void
 vty_forward_char (struct vty *vty)
 {
+  vty_buf_assert (vty);
+  
   if (vty->cp < vty->length)
     {
       vty_write (vty, &vty->buf[vty->cp], 1);
       vty->cp++;
     }
+  
+  vty_buf_assert (vty);
 }
 
 /* Backward character. */
 static void
 vty_backward_char (struct vty *vty)
 {
+  vty_buf_assert (vty);
+  
   if (vty->cp > 0)
     {
       vty->cp--;
       vty_write (vty, &telnet_backward_char, 1);
     }
+  
+  vty_buf_assert (vty);
 }
 
 /* Move to the beginning of the line. */
@@ -619,7 +658,9 @@ vty_history_print (struct vty *vty)
   length = strlen (vty->hist[vty->hp]);
   memcpy (vty->buf, vty->hist[vty->hp], length);
   vty->cp = vty->length = length;
-
+  vty->buf[vty->length] = '\0';
+  vty_buf_assert (vty);
+  
   /* Redraw current line */
   vty_redraw_line (vty);
 }
@@ -675,6 +716,8 @@ vty_redraw_line (struct vty *vty)
 {
   vty_write (vty, vty->buf, vty->length);
   vty->cp = vty->length;
+  
+  vty_buf_assert (vty);
 }
 
 /* Forward word. */
@@ -779,10 +822,12 @@ vty_delete_char (struct vty *vty)
       vty_down_level (vty);
       return;
     }
-
+  
   if (vty->cp == vty->length)
     return;			/* completion need here? */
 
+  vty_buf_assert (vty);
+  
   size = vty->length - vty->cp;
 
   vty->length--;
@@ -829,6 +874,7 @@ vty_kill_line (struct vty *vty)
 
   memset (&vty->buf[vty->cp], 0, size);
   vty->length = vty->cp;
+  vty_buf_assert (vty);
 }
 
 /* Kill line from the beginning. */
@@ -1340,8 +1386,9 @@ vty_execute (struct vty *vty)
 
 #define CONTROL(X)  ((X) - '@')
 #define VTY_NORMAL     0
-#define VTY_PRE_ESCAPE 1
-#define VTY_ESCAPE     2
+#define VTY_PRE_ESCAPE 1  /* Esc seen */
+#define VTY_ESCAPE     2  /* ANSI terminal escape (Esc-[) seen */
+#define VTY_LITERAL    3  /* Next char taken as literal */
 
 /* Escape character command map. */
 static void
@@ -1469,7 +1516,14 @@ vty_read (struct thread *thread)
 	  vty_escape_map (buf[i], vty);
 	  continue;
 	}
-
+      
+      if (vty->escape == VTY_LITERAL)
+        {
+          vty_self_insert (vty, buf[i]);
+          vty->escape = VTY_NORMAL;
+          continue;
+        }
+      
       /* Pre-escape status. */
       if (vty->escape == VTY_PRE_ESCAPE)
 	{
@@ -1541,6 +1595,9 @@ vty_read (struct thread *thread)
 	case CONTROL('U'):
 	  vty_kill_line_from_beginning (vty);
 	  break;
+        case CONTROL('V'):
+          vty->escape = VTY_LITERAL;
+          break;
 	case CONTROL('W'):
 	  vty_backward_kill_word (vty);
 	  break;
@@ -2198,12 +2255,21 @@ vtysh_read (struct thread *thread)
   printf ("line: %.*s\n", nbytes, buf);
 #endif /* VTYSH_DEBUG */
 
+  if (vty->length + nbytes >= vty->max)
+    {
+      /* Clear command line buffer. */
+      vty->cp = vty->length = 0;
+      vty_clear_buf (vty);
+      vty_out (vty, "%% Command is too long.%s", VTY_NEWLINE);
+      goto out;
+    }
+  
   for (p = buf; p < buf+nbytes; p++)
     {
-      vty_ensure(vty, vty->length+1);
       vty->buf[vty->length++] = *p;
       if (*p == '\0')
 	{
+	  
 	  /* Pass this line to parser. */
 	  ret = vty_execute (vty);
 	  /* Note that vty_execute clears the command buffer and resets
@@ -2224,6 +2290,7 @@ vtysh_read (struct thread *thread)
 	}
     }
 
+out:
   vty_event (VTYSH_READ, sock, vty);
 
   return 0;

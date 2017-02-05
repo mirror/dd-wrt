@@ -552,6 +552,12 @@ Kill line from the beginning, erasing input.
 @kindex C-t
 Transpose character.
 
+@item C-v
+@kindex C-v
+Interpret following character literally. Do not treat it specially.
+This can be used to, e.g., type in a literal @kbd{?} rather than do
+help completion.
+
 @end table
 
 @node CLI Advanced Commands
@@ -592,5 +598,8 @@ Use command line completion by typing @key{TAB}.
 You can use command line help by typing @code{help} at the beginning of
 the line.  Typing @kbd{?} at any point in the line will show possible
 completions.
+
+To enter an actual @kbd{?} character rather show completions, e.g. to
+enter into a regexp, use @kbd{@key{C}-v ?}.
 
 @end table

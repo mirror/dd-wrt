@@ -5,7 +5,7 @@ AM_CFLAGS = $(WERROR)
 DEFS = @DEFS@ -DSYSCONFDIR=\"$(sysconfdir)/\"
 
 lib_LTLIBRARIES = libzebra.la
-libzebra_la_LDFLAGS = -version-info 0:0:0 
+libzebra_la_LDFLAGS = -version-info 1:0:0 
 
 libzebra_la_SOURCES = \
 	network.c pid_output.c getopt.c getopt1.c daemon.c \
