@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <shutils.h>
 
 #ifndef cprintf
 #define cprintf(fmt,...);
