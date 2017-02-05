@@ -398,6 +398,11 @@ function setChannelProperties(channels) {
 
 	// check for HT40 upper / lower channel
 	var nctrlsb = document.forms[0][iflabel + '_nctrlsb'];
+	var F = document.forms[0][iflabel + '_channelbw'];
+	if (!F) {
+	    F = document.forms[0][iflabel + '_nbw'];
+	}
+	
 	if( nctrlsb ) {
 
 		var selected = 0;
@@ -414,14 +419,57 @@ function setChannelProperties(channels) {
 		if( channels[index].value == '0' ) {
 			nctrlsb.options[nctrlsb.length] = new Option( 'auto', wl_basic.ch_pos_auto );
 		} else {
-
+			if (F.value == 40) {
 			// HT40 minus
-			if( properties.HT40minus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lwr, 'lower' );
+			if( properties.luu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lwr, 'luu' );
 			}
-	
-			if( properties.HT40plus == 1 ) {
-				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_upr, 'upper' );
+			if( properties.ull == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_upr, 'ull' );
+			}
+			}
+			if (F.value == 80) {
+			// HT40 minus
+			if( properties.lul == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_ll, 'lul' );
+			}
+			if( properties.luu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lu, 'luu' );
+			}
+			if( properties.ull == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_ul, 'ull' );
+			}
+			if( properties.ulu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_uu, 'ulu' );
+			}
+			}
+
+			if (F.value == 160) {
+			// HT40 minus
+			if( properties.lll == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lll, 'lll' );
+			}
+			if( properties.llu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_llu, 'llu' );
+			}
+			if( properties.lul == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_lul, 'lul' );
+			}
+			if( properties.luu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_luu, 'luu' );
+			}
+			if( properties.ull == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_ull, 'ull' );
+			}
+			if( properties.ulu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_ulu, 'ulu' );
+			}
+			if( properties.uul == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_uul, 'uul' );
+			}
+			if( properties.uuu == 1 ) {
+				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_uuu, 'uuu' );
+			}
 			}
 		}
 

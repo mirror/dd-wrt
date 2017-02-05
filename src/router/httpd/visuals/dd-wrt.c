@@ -1453,7 +1453,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					continue;
 				}
 #endif
-				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
+
+				if (channelbw > 20 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
@@ -1461,10 +1462,8 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				cprintf("%d\n", chan[i].freq);
 
 #ifdef HAVE_ATH9K
-				if (nvram_matchi("ath9k_channeldebug", 1)) {
-					sprintf(cn, "%d (-%d,+%d,o%d,d%d,m%d,nofdm%d)", chan[i].channel, chan[i].ht40minus, chan[i].ht40plus, chan[i].no_outdoor, chan[i].dfs, chan[i].max_eirp, chan[i].no_ofdm);
-				} else
-					sprintf(cn, "%d", chan[i].channel);
+
+				sprintf(cn, "%d", chan[i].channel);
 #else
 				sprintf(cn, "%d", chan[i].channel);
 #endif
@@ -1472,10 +1471,11 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 				int freq = get_wififreq(prefix, chan[i].freq);
 				if (freq != -1) {
 #ifdef HAVE_ATH9K
+
 					if (is_ath9k(prefix)) {
 						websWrite(wp,
-							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"HT40minus\\\":%d,\\\"HT40plus\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-							  fr, chan[i].ht40minus, chan[i].ht40plus, nvram_match(wl_channel, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq));
+							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
+							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, nvram_match(wl_channel, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq));
 					} else
 #endif
 					{
