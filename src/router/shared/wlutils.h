@@ -182,13 +182,30 @@ extern int mac80211_get_configured_rx_antenna(int phy);
 extern int mac80211_check_valid_frequency(char *interface, char *country, int freq);
 extern int getFrequency_mac80211(char *interface);
 
+
 struct wifi_channels {
 	int channel;
 	int freq;
 	int noise;
 	int max_eirp;
 	int hw_eirp;
-	unsigned int no_outdoor:1, no_indoor:1, no_ofdm:1, no_cck:1, ptp_only:1, ptmp_only:1, passive_scan:1, no_ibss:1, ht40minus:1, ht40plus:1, dfs:1;
+	unsigned int no_outdoor:1, 
+			no_indoor:1, 
+			no_ofdm:1, 
+			no_cck:1, 
+			ptp_only:1, 
+			ptmp_only:1, 
+			passive_scan:1, 
+			no_ibss:1, 
+			lll:1, 
+			llu:1, 
+			lul:1, 
+			luu:1, 
+			ull:1, 
+			ulu:1, 
+			uul:1, 
+			uuu:1, 
+			dfs:1;
 };
 
 struct mac80211_info {
