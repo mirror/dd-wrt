@@ -1991,6 +1991,9 @@ static void dma_ops_domain_free(struct dma_ops_domain *dom)
 		kfree(dom->aperture[i]);
 	}
 
+	if (dom->domain.id)
+		domain_id_free(dom->domain.id);
+
 	kfree(dom);
 }
 
@@ -2551,8 +2554,16 @@ static void update_device_table(struct protection_domain *domain)
 {
 	struct iommu_dev_data *dev_data;
 
-	list_for_each_entry(dev_data, &domain->dev_list, list)
+	list_for_each_entry(dev_data, &domain->dev_list, list) {
 		set_dte_entry(dev_data->devid, domain, dev_data->ats.enabled);
+
+		if (dev_data->alias_data == NULL)
+			continue;
+
+		/* There is an alias, update device table entry for it */
+		set_dte_entry(dev_data->alias_data->devid, domain,
+			      dev_data->alias_data->ats.enabled);
+	}
 }
 
 static void update_domain(struct protection_domain *domain)
