@@ -6630,12 +6630,12 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_TPLINK_ARCHERC3150:
 		ses_gpio = 0x002;
-//		usb_gpio = 0x006;
-//		usb_gpio1 = 0x007;
-//		disconnected_gpio = 0x00f;
-//		connected_gpio = 0x00e;
-//		power_gpio = 0x112;
-//		diag_gpio = 0x012;
+//              usb_gpio = 0x006;
+//              usb_gpio1 = 0x007;
+//              disconnected_gpio = 0x00f;
+//              connected_gpio = 0x00e;
+//              power_gpio = 0x112;
+//              diag_gpio = 0x012;
 		usb_power = 0x00c;	// usb 3
 		usb_power1 = 0x00d;	// usb 2
 		break;
