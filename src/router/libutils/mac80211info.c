@@ -1012,7 +1012,6 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 		count = 4;	// must check 40 mhz and 80 mhz space, since vht80 supports ht40 and vht80 as well
 		break;
 	}
-
 	int a;
 	for (a = 1; a < count; a++) {
 		int i = 0;
@@ -1033,6 +1032,31 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				chan->ulu = 0;
 				chan->uul = 0;
 				chan->uuu = 0;
+			}
+			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
+			if (bw == 80 && chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30)) {
+				chan->ull = 0;
+			}
+			if (bw == 160 && chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70)) {
+				chan->ull = 0;
+			}
+			if (bw == 160 && chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70)) {
+				chan->ulu = 0;
+			}
+			if (bw == 160 && chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70)) {
+				chan->uul = 0;
+			}
+			if (bw == 80 && chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30)) {
+				chan->luu = 0;
+			}
+			if (bw == 160 && chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70)) {
+				chan->luu = 0;
+			}
+			if (bw == 160 && chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70)) {
+				chan->lul = 0;
+			}
+			if (bw == 160 && chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70)) {
+				chan->llu = 0;
 			}
 			if (a == 2) {
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
