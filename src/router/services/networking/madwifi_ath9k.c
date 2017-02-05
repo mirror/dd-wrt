@@ -390,17 +390,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "dynamic_ht40=0\n");
 		}
 		char *nbw = nvram_default_get(bw, "20");
+		char sb[32];
+		sprintf(sb, "%s_nctrlsb", prefix);
 		if (!strcmp(nbw, "20")) {
 			sprintf(ht, "HT20");
 		} else if (!strcmp(nbw, "40") || !strcmp(nbw, "2040")) {
-			char sb[32];
-			sprintf(sb, "%s_nctrlsb", prefix);
 			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 			} 
 			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-			{
 				sprintf(ht, "HT40-");
 				iht = -1;
 			}
@@ -436,7 +435,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				iht = 1;
 				channeloffset = 10;
 			}
-			if (nvram__match(sb, "ulu")) {
+			if (nvram_match(sb, "ulu")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
 				channeloffset = 6;

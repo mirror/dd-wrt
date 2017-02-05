@@ -991,7 +991,6 @@ static int isinlist(struct wifi_channels *list, int base, int freq)
 //	fprintf(stderr,"nope\n");
 	return 0;
 }
-if (channelbw > 20 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 
 static void check_validchannels(struct wifi_channels *list, int bw)
 {
