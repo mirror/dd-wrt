@@ -351,6 +351,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	char *crypto = nvram_nget("%s_crypto", prefix);
 	char ht[6];
 	int iht = 0;
+	int channeloffset = 6;
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
 	ht[0] = 0;
@@ -391,18 +392,83 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		char *nbw = nvram_default_get(bw, "20");
 		if (!strcmp(nbw, "20")) {
 			sprintf(ht, "HT20");
-		} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
+		} else if (!strcmp(nbw, "40") || !strcmp(nbw, "2040")) {
 			char sb[32];
 			sprintf(sb, "%s_nctrlsb", prefix);
-			if (nvram_default_match(sb, "upper", "lower")) {
+			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
-			} else {
+			} 
+			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+			{
 				sprintf(ht, "HT40-");
 				iht = -1;
 			}
-		} else
-			sprintf(ht, "HT20");
+		} else if (!strcmp(nbw, "80") || !strcmp(nbw, "80+80")) {
+			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 6;
+			}
+			if (nvram_match(sb, "ull")) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 2;
+			}
+			if (nvram_match(sb, "luu")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 2;
+			}
+			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 6;
+			}		
+		} else if (!strcmp(nbw, "160")) {
+			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 14;
+			}
+			if (nvram_match(sb, "uul") ) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 10;
+			}
+			if (nvram__match(sb, "ulu")) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 6;
+			}
+			if (nvram_match(sb, "ull")) {
+				sprintf(ht, "HT40+");
+				iht = 1;
+				channeloffset = 2;
+			}
+			if (nvram_match(sb, "luu")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 2;
+			}
+			if (nvram_match(sb, "lul")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 6;
+			}
+			if (nvram_match(sb, "llu")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 10;
+			}
+			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
+				sprintf(ht, "HT40-");
+				iht = -1;
+				channeloffset = 14;
+			}
+		
+		
+		} else sprintf(ht, "HT20");
 	} else {
 		sprintf(ht, "HT20");
 	}
@@ -491,10 +557,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				if (!strcmp(nbw, "20")) {
 					sprintf(ht, "HT20");
 				} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
-					if (chan[i].ht40minus) {
+					if (chan[i].luu) {
 						sprintf(ht, "HT40-");
 						iht = -1;
-					} else if (chan[i].ht40plus) {
+					} else if (chan[i].ull) {
 						sprintf(ht, "HT40+");
 						iht = 1;
 					} else {
@@ -577,16 +643,16 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 				} else if (nvram_matchi(bw, 80)) {
 					fprintf(fp, "vht_oper_chwidth=1\n");
-					int idx = channel + (6 * iht);
+					int idx = channel + (channeloffset * iht);
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 				} else if (nvram_matchi(bw, 160)) {
 					fprintf(fp, "vht_oper_chwidth=2\n");
-					int idx = channel + (14 * iht);
+					int idx = channel + (channeloffset * iht);
 					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 				} else {
 					if (nvram_match(bw, "80+80")) {
 						fprintf(fp, "vht_oper_chwidth=3\n");
-						int idx = channel + (6 * iht);
+						int idx = channel + (channeloffset * iht);
 						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
 						fprintf(fp, "vht_oper_centr_freq_seg1_idx=155\n");
 					} else {

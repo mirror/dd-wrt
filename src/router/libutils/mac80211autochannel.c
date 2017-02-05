@@ -361,7 +361,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 	}
 
 	/* if HT40, VHT80 or VHT160 auto channel is requested, check if desired channel is capabile of that operation mode, if not, move it to the bottom of the list */
-	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->ht40minus && !chan->ht40plus) {
+	if ((_htflags & AUTO_FORCEHT40 || _htflags & AUTO_FORCEVHT80 || _htflags & AUTO_FORCEVHT160) && !chan->luu && !chan->ull) {
 		fprintf(stderr, "channel %d is not ht capable, set set quality to zero\n", chan->freq);
 		return 0;
 	}
