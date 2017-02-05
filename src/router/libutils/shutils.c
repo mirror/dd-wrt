@@ -819,6 +819,38 @@ int wait_file_exists(const char *name, int max, int invert)
 	return 0;
 }
 
+#undef sprintf
+#undef snprintf 
+
+int dd_snprintf(char *str, int len, const char *fmt, ...)
+{
+	va_list ap;
+	int n;
+	char *dest;
+
+	va_start(ap, fmt);
+	n = vasprintf(&dest, fmt, ap);
+	va_end(ap);
+	strncpy(str,dest,len);
+	free(dest);
+	
+	return n;
+}
+
+int dd_sprintf(char *str, const char *fmt, ...)
+{
+	va_list ap;
+	int n;
+	char *dest;
+
+	va_start(ap, fmt);
+	n = vasprintf(&dest, fmt, ap);
+	va_end(ap);
+	strcpy(str,dest);
+	free(dest);
+	
+	return n;
+}
 #ifdef MEMDEBUG
 #define MEMDEBUGSIZE 1024
 typedef struct MEMENTRY {
