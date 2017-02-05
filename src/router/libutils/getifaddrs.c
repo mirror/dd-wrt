@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
+#include <shutils.h>
 
 typedef union {
 	struct sockaddr_in6 v6;
