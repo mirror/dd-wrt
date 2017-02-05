@@ -975,16 +975,20 @@ nla_put_failure:
 	return 0;
 }
 
-static int isinlist(struct wifi_channels *list, int freq)
+static int isinlist(struct wifi_channels *list, int base, int freq)
 {
 	int i = 0;
+	fprintf(stderr, "check for base %d freq %d present:", base , freq);
 	while (1) {
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
 			break;
-		if (chan->freq == freq)
+		if (chan->freq == freq) {
+			fprintf(stderr,"true\n");
 			return 1;
+		}
 	}
+	fprintf(stderr,"nope\n");
 	return 0;
 }
 
