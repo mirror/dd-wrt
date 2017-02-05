@@ -428,7 +428,7 @@ function setChannelProperties(channels) {
 				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_upr, 'ull' );
 			}
 			}
-			if (F.value == 80) {
+			if (F.value == "80+80" || F.value == 80) {
 			// HT40 minus
 			if( properties.lul == 1 ) {
 				nctrlsb.options[nctrlsb.length] = new Option( wl_basic.ch_pos_ll, 'lul' );
