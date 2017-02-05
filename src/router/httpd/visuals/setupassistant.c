@@ -988,7 +988,7 @@ void sas_show_channel(webs_t wp, char *dev, char *prefix, int type)
 
 				sprintf(cn, "%d", chan[i].channel);
 				sprintf(fr, "%d", chan[i].freq);
-				if (channelbw > 20 && !chan[i].ht40minus && !chan[i].ht40plus) {
+				if (channelbw > 20 && !chan[i].lll && !chan[i].llu && !chan[i].lul && !chan[i].luu && !chan[i].ull && !chan[i].ulu && !chan[i].uul && !chan[i].uuu) {
 					i++;
 					continue;	// do not show channels where bandwidth is not available
 				}
