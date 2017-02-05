@@ -443,7 +443,7 @@ vtysh_config_from_file (struct vty *vty, FILE *fp)
   int ret;
   struct cmd_element *cmd;
 
-  while (fgets (vty->buf, VTY_BUFSIZ, fp))
+  while (fgets (vty->buf, vty->max, fp))
     {
       ret = command_config_read_one_line (vty, &cmd, 1);
 

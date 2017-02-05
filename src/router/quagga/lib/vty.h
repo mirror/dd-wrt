@@ -25,7 +25,6 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "log.h"
 #include "sockunion.h"
 
-#define VTY_BUFSIZ 512
 #define VTY_MAXHIST 20
 
 /* VTY struct. */
