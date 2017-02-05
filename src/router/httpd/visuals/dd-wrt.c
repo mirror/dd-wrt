@@ -1475,7 +1475,9 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 					if (is_ath9k(prefix)) {
 						websWrite(wp,
 							  "document.write(\"<option value=\\\"%s\\\" rel=\\\'{\\\"lll\\\":%d,\\\"llu\\\":%d,\\\"lul\\\":%d,\\\"luu\\\":%d,\\\"ull\\\":%d,\\\"ulu\\\":%d,\\\"uul\\\":%d,\\\"uuu\\\":%d}\\\'%s>%s - %d \"+wl_basic.mhz+\"</option>\");\n",
-							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, nvram_match(wl_channel, fr) ? " selected=\\\"selected\\\"" : "", cn, (freq));
+							  fr, chan[i].lll, chan[i].llu, chan[i].lul, chan[i].luu, chan[i].ull, chan[i].ulu, chan[i].uul, chan[i].uuu, nvram_match(wl_channel,
+																						  fr) ? " selected=\\\"selected\\\"" : "",
+							  cn, (freq));
 					} else
 #endif
 					{

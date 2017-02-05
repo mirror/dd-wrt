@@ -122,7 +122,7 @@ static void flog(const char *fmt, ...)
 int system2(char *command)
 {
 
-#if !defined(HAVE_X86) && !defined(HAVE_RB600)		//we must disable this on x86 since nvram is not available at startup
+#if !defined(HAVE_X86) && !defined(HAVE_RB600)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "system: %s\n", command);
@@ -197,7 +197,7 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 	// if (debugfp==NULL)
 	// debugfp = fopen("/tmp/evallog.log","wb");
 	// char buf[254] = "";
-#if !defined(HAVE_X86) && !defined(HAVE_RB600)		//we must disable this on x86 since nvram is not available at startup
+#if !defined(HAVE_X86) && !defined(HAVE_RB600)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_matchi("console_debug", 1)) {
 		int i = 0;
@@ -820,7 +820,7 @@ int wait_file_exists(const char *name, int max, int invert)
 }
 
 #undef sprintf
-#undef snprintf 
+#undef snprintf
 
 int dd_snprintf(char *str, int len, const char *fmt, ...)
 {
@@ -831,9 +831,9 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	va_start(ap, fmt);
 	n = vasprintf(&dest, fmt, ap);
 	va_end(ap);
-	strncpy(str,dest,len);
+	strncpy(str, dest, len);
 	free(dest);
-	
+
 	return n;
 }
 
@@ -846,11 +846,12 @@ int dd_sprintf(char *str, const char *fmt, ...)
 	va_start(ap, fmt);
 	n = vasprintf(&dest, fmt, ap);
 	va_end(ap);
-	strcpy(str,dest);
+	strcpy(str, dest);
 	free(dest);
-	
+
 	return n;
 }
+
 #ifdef MEMDEBUG
 #define MEMDEBUGSIZE 1024
 typedef struct MEMENTRY {

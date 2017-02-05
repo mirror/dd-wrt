@@ -978,17 +978,17 @@ nla_put_failure:
 static int isinlist(struct wifi_channels *list, int base, int freq)
 {
 	int i = 0;
-//	fprintf(stderr, "check for base %d freq %d present:", base , freq);
+//      fprintf(stderr, "check for base %d freq %d present:", base , freq);
 	while (1) {
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
 			break;
 		if (chan->freq == freq) {
-//			fprintf(stderr,"true\n");
+//                      fprintf(stderr,"true\n");
 			return 1;
 		}
 	}
-//	fprintf(stderr,"nope\n");
+//      fprintf(stderr,"nope\n");
 	return 0;
 }
 
@@ -1020,50 +1020,50 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			if (chan->luu && !isinlist(list,chan->freq, chan->freq - (distance << a))) {
+			if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a))) {
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->luu = 0;
 				chan->lul = 0;
 				chan->llu = 0;
 				chan->lll = 0;
 			}
-			if (chan->ull && !isinlist(list,chan->freq, chan->freq + (distance << a))) {
+			if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a))) {
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
-				chan->ull= 0;
-				chan->ulu= 0;
-				chan->uul= 0;
-				chan->uuu= 0;
+				chan->ull = 0;
+				chan->ulu = 0;
+				chan->uul = 0;
+				chan->uuu = 0;
 			}
 			if (a == 2) {
-				if (chan->lul && !isinlist(list,chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
+				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
-				chan->llu = 0;
-				chan->lll = 0;
+					chan->llu = 0;
+					chan->lll = 0;
 				}
-				if (chan->ulu && !isinlist(list,chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))))) {
+				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
 					chan->ulu = 0;
-				chan->uul= 0;
-				chan->uuu= 0;
+					chan->uul = 0;
+					chan->uuu = 0;
 				}
 			}
 			if (a == 3) {
-				if (chan->llu && !isinlist(list,chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))))) {
+				if (chan->llu && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->llu = 0;
 					chan->lll = 0;
 				}
-				if (chan->uul && !isinlist(list,chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))))) {
+				if (chan->uul && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uul = 0;
 					chan->uuu = 0;
 				}
-				if (chan->lll && !isinlist(list,chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))))) {
+				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->lll = 0;
 				}
-				if (chan->uuu && !isinlist(list,chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))))) {
+				if (chan->uuu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable uuu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uuu = 0;
 
@@ -1265,16 +1265,16 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 							list[count].uuu = 0;
 //                                                      fprintf(stderr,"freq %d, htrange %d, startfreq %d, stopfreq %d\n", freq_mhz, range, startfreq, stopfreq);
 							if (((freq_mhz - range) - (max_bandwidth_khz / 2)) >= startfreq) {	// 5510 -         5470  
-							list[count].lll = 1;
-							list[count].llu = 1;
-							list[count].lul = 1;
-							list[count].luu = 1;
+								list[count].lll = 1;
+								list[count].llu = 1;
+								list[count].lul = 1;
+								list[count].luu = 1;
 							}
 							if (((freq_mhz + range) + (max_bandwidth_khz / 2)) <= stopfreq) {
-							list[count].ull = 1;
-							list[count].ulu = 1;
-							list[count].uul = 1;
-							list[count].uuu = 1;
+								list[count].ull = 1;
+								list[count].ulu = 1;
+								list[count].uul = 1;
+								list[count].uuu = 1;
 							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
 								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,

@@ -1524,7 +1524,7 @@ void qos_save(webs_t wp)
 		if (strlen(svqos_var) > 0) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s |", svqos_var, name, protocol, ports, level);
-			strcpy(svqos_var,tmp);
+			strcpy(svqos_var, tmp);
 			free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s %s |", name, protocol, ports, level);
@@ -1559,7 +1559,7 @@ void qos_save(webs_t wp)
 			continue;
 		if (strlen(svqos_var) > 0) {
 			char *copy = malloc(4096);
-			snprintf(copy,4096, "%s %s %s |", svqos_var, data, level);
+			snprintf(copy, 4096, "%s %s %s |", svqos_var, data, level);
 			strcpy(svqos_var, copy);
 			free(copy);
 		} else {
@@ -1594,9 +1594,9 @@ void qos_save(webs_t wp)
 		if (strlen(svqos_var) > 0) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio, proto);
-			strcpy(svqos_var,tmp);
+			strcpy(svqos_var, tmp);
 			free(tmp);
-		}else
+		} else
 			sprintf(svqos_var, "%s %s %s %s %s %s |", data, level, level2, lanlevel, prio, proto);
 
 #endif
@@ -1653,9 +1653,9 @@ void qos_save(webs_t wp)
 		if (strlen(svqos_var) > 0) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s %s %s |", svqos_var, data, level, level2, lanlevel, prio);
-			strcpy(svqos_var,tmp);
+			strcpy(svqos_var, tmp);
 			free(tmp);
-		}else
+		} else
 			sprintf(svqos_var, "%s %s %s %s %s |", data, level, level2, lanlevel, prio);
 
 #endif
@@ -1713,7 +1713,7 @@ void qos_save(webs_t wp)
 		if (strlen(svqos_var) > 0) {
 			char *tmp;
 			asprintf(&tmp, "%s %s %s %s user %s %s |", svqos_var, data, level, level2, lanlevel, prio);
-			strcpy(svqos_var,tmp);
+			strcpy(svqos_var, tmp);
 			free(tmp);
 		} else
 			sprintf(svqos_var, "%s %s %s user %s %s |", data, level, level2, lanlevel, prio);
@@ -2487,7 +2487,7 @@ void del_olsrd(webs_t wp)
 		if (count != d) {
 			strcat(newlist, " ");
 			strcat(newlist, word);
-			}
+		}
 		count++;
 	}
 	nvram_set("olsrd_interfaces", newlist);
@@ -2536,7 +2536,7 @@ void save_olsrd(webs_t wp)
 		char *hnavaliditytime = websGetVar(wp, valuename, "0");
 		char *tmp;
 		asprintf(&tmp, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s", newlist, interface, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime);
-		strcpy(newlist,tmp);
+		strcpy(newlist, tmp);
 		free(tmp);
 	}
 	nvram_set("olsrd_interfaces", newlist);
