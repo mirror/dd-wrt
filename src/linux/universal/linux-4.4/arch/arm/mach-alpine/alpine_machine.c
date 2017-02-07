@@ -79,7 +79,7 @@ static void __init al_timer_init(void)
 
 	/* Timer initialization */
 	of_clk_init(NULL);
-	clocksource_of_init();
+	clocksource_probe();
 }
 
 static void al_power_off(void)
@@ -87,7 +87,7 @@ static void al_power_off(void)
 	printk(KERN_EMERG "Unable to shutdown\n");
 }
 
-static void al_restart(char str, const char *cmd)
+static void al_restart(enum reboot_mode mode, const char *cmd)
 {
 	if (!wd0_base) {
 		pr_err("%s: Not supported!\n", __func__);

@@ -30,6 +30,7 @@
 #include <linux/export.h>
 #include <linux/pci.h>
 #include <linux/slab.h>
+#include <linux/module.h>
 
 #include <linux/of_address.h>
 #include <linux/of_pci.h>
@@ -437,7 +438,7 @@ static int al_pcie_parse_dt(struct al_pcie_pd *pcie)
 			return err;
 		}
 		dev_dbg(pcie->dev, " regs %pR\n",  &pcie->regs);
-		pcie->regs_base = devm_request_and_ioremap(pcie->dev,
+		pcie->regs_base = devm_ioremap_resource(pcie->dev,
 							   &pcie->regs);
 		if (!pcie->regs_base)
 			return -EADDRNOTAVAIL;
@@ -447,7 +448,7 @@ static int al_pcie_parse_dt(struct al_pcie_pd *pcie)
 		pcie->local_bridge_config_space = pcie->regs_base + 0x2000;
 	}
 	/* Get the ECAM, I/O and memory ranges from DT */
-	for_each_of_pci_range(&iter, np) {
+	for_each_of_pci_range_compat(&iter, np) {
 		unsigned long restype = iter.flags & IORESOURCE_TYPE_BITS;
 		if (restype == 0) {
 			range_iter_fill_resource(iter, np, &pcie->ecam);
@@ -471,7 +472,7 @@ static int al_pcie_parse_dt(struct al_pcie_pd *pcie)
 
 	/* map ecam space */
 	dev_dbg(pcie->dev, " ecam %pr\n",  &pcie->ecam);
-	pcie->ecam_base = devm_request_and_ioremap(pcie->dev, &pcie->ecam);
+	pcie->ecam_base = devm_ioremap_resource(pcie->dev, &pcie->ecam);
 	if (!pcie->ecam_base)
 		return -EADDRNOTAVAIL;
 
@@ -498,7 +499,7 @@ static int al_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 	if (ret)
 		return ret;
 
-	return irq_create_of_mapping(oirq.controller, oirq.specifier,
+	return irq_create_of_mapping_compat(oirq.controller, oirq.specifier,
 					oirq.size);
 }
 
@@ -539,7 +540,7 @@ static int al_pcie_add_host_bridge(struct al_pcie_pd *pcie)
 	memset(&hw, 0, sizeof(hw));
 
 	hw.nr_controllers = 1;
-	hw.domain = pcie->index;
+//	hw.domain = pcie->index;
 	hw.private_data = (void **)&pcie;
 	hw.setup = al_pcie_setup;
 	hw.scan = al_pcie_scan_bus;

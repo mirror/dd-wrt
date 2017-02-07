@@ -1,32 +1,3 @@
-config ARCH_ALPINE
-        bool "AnnapurnaLabs Alpine SOCs with Device Tree support"
-        select ARCH_WANT_OPTIONAL_GPIOLIB
-        select ARM_AMBA
-		select SPARSE_IRQ
-        select ARM_TIMER_SP804
-        select CLKDEV_LOOKUP
-        select GENERIC_CLOCKEVENTS
-		select GENERIC_IRQ_CHIP
-        select HAVE_CLK
-        select HAVE_SMP 
-        select HAVE_ARM_ARCH_TIMER
-        select HAVE_SCHED_CLOCK
-        select ARCH_SCHED_CLOCK
-        select ICST
-        select CPU_V7
-        select ARM_GIC
-        select HAVE_ARCH_TIMERS
-        select COMMON_CLK
-        select PCI
-	select PCI_DOMAINS
-        select ARCH_SUPPORTS_MSI
-	select ARM_HWCC_FLAG
-	select ARCH_LONG_LONG_ATOMIC
-	select ARM_HAS_SG_CHAIN
-	select ARCH_SUPPORTS_BIG_ENDIAN
-        help
-          This enables support for the AnnapurnaLabs SoC Gen1 boards.
-
 menu "Annapurna Labs Alpine Soc Device Tree"
 	depends on ARCH_ALPINE
 

@@ -533,7 +533,7 @@ int ecc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 }
 
 int ecc_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
-			uint32_t offs, uint32_t len, uint8_t *buf)
+			uint32_t offs, uint32_t len, uint8_t *buf, int page)
 {
 	pr_err("ERROR: read subpage not supported!\n");
 	return -1;
@@ -543,7 +543,7 @@ int ecc_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
  * this function is called after the commands and adderess for this page sent.
  */
 int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
-			const uint8_t *buf, int oob_required)
+			const uint8_t *buf, int oob_required, int page)
 {
 	int bytes = chip->ecc.layout->eccbytes;
 	uint32_t cmd;
@@ -913,7 +913,7 @@ static int al_nand_probe(struct platform_device *pdev)
 	nand->read_word = nand_read_word;
 	nand->read_buf = nand_read_buff;
 	nand->dev_ready = nand_dev_ready;
-	nand->init_size = nand_init_size;
+//	nand->init_size = nand_init_size;
 	nand->write_buf = nand_write_buff;
 	nand->select_chip = nand_dev_select;
 

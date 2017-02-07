@@ -72,13 +72,13 @@ void destroy_irq(unsigned int irq)
 
 static void al_msix_irq_mask(struct irq_data *d)
 {
-	if (d->msi_desc)
+	if (d->common && d->common->msi_desc)
 		mask_msi_irq(d);
 }
 
 static void al_msix_irq_unmask(struct irq_data *d)
 {
-	if (d->msi_desc)
+	if (d->common && d->common->msi_desc)
 		unmask_msi_irq(d);
 }
 
@@ -119,13 +119,13 @@ int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 
 	/*get the hwirq from irq using the domain*/
 	irq_data = irq_get_irq_data(irq);
-	domain = irq_data->domain;
-	if (domain->revmap_type) /*revmap type is not legacy*/
-		return -1;
+//	domain = irq_data->domain;
+//	if (domain->revmap_type) /*revmap type is not legacy*/
+//		return -1;
 
-	sgi = irq - domain->revmap_data.legacy.first_irq +
-				domain->revmap_data.legacy.first_hwirq;
-	sgi = sgi - 32;
+	sgi = irq_data->hwirq;//irq - domain->revmap_data.legacy.first_irq +
+		//		domain->revmap_data.legacy.first_hwirq;
+//	sgi = sgi - 32;
 
 	/*
 	 * MSIX message address format:
@@ -168,9 +168,9 @@ int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 	 * PPIS are hw-irqs 17-31.
 	 * first_hwirq will be 16 for main gic and 32 for secondary gic.
 	 * */
-	if (domain->revmap_data.legacy.first_hwirq == 16)
+	if (sgi >= 16 && sgi < 32)
 		msg.address_lo = al_irq_msi_addr_low + (1<<16) + (sgi << 3);
-	else if (domain->revmap_data.legacy.first_hwirq == 32)
+	else if (sgi >= 32)
 		msg.address_lo = al_irq_msi_addr_low + (1<<17) + (sgi << 3);
 	else
 		return -1;

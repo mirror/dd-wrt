@@ -50,8 +50,9 @@ static inline int thermal_enable(
 	return 0;
 }
 
+
 static inline int thermal_get_temp(struct thermal_zone_device *thermal,
-				unsigned long *temp)
+				int *temp)
 {
 	struct al_thermal_dev *al_dev = thermal->devdata;
 	int timeout;
