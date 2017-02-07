@@ -1044,9 +1044,6 @@ int al_crypto_cleanup_fn(struct al_crypto_chan *chan, int from_tasklet)
 		if (desc->req_type == AL_CRYPTO_REQ_ABLKCIPHER)
 			al_crypto_cleanup_single_ablkcipher(
 				chan, desc, comp_status);
-		else if (desc->req_type == AL_CRYPTO_REQ_AEAD)
-			al_crypto_cleanup_single_aead(
-				chan, desc, comp_status);
 		else if (desc->req_type == AL_CRYPTO_REQ_AHASH)
 			al_crypto_cleanup_single_ahash(
 				chan, desc, comp_status);
