@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.39 Kernel Configuration
+# Linux/mips 4.4.47 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1230,6 +1230,7 @@ CONFIG_ETHERNET=y
 # CONFIG_NET_VENDOR_ADAPTEC is not set
 # CONFIG_NET_VENDOR_AGERE is not set
 # CONFIG_NET_VENDOR_ALTEON is not set
+# CONFIG_NET_AL_ETH is not set
 # CONFIG_ALTERA_TSE is not set
 # CONFIG_NET_VENDOR_AMD is not set
 # CONFIG_NET_VENDOR_ARC is not set
@@ -2441,6 +2442,7 @@ CONFIG_CRYPTO_DEFLATE=m
 CONFIG_CRYPTO_HW=y
 # CONFIG_CRYPTO_DEV_HIFN_795X is not set
 # CONFIG_CRYPTO_DEV_IMGTEC_HASH is not set
+# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 
 #
 # Certificates for signature checking

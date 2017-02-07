@@ -67,6 +67,7 @@ obj-$(CONFIG_XGENE_DMA) += xgene-dma.o
 obj-$(CONFIG_ZX_DMA) += zx296702_dma.o
 obj-$(CONFIG_QCOM_BAM_DMA) += qcom_bam_dma.o
 obj-$(CONFIG_QCOM_ADM) += qcom_adm.o
+obj-$(CONFIG_AL_DMA) += al/
 #obj-$(CONFIG_QCOM_ADM_DMA) += qcom_adm_dma.o
 
 obj-y += xilinx/

@@ -1,12 +1,39 @@
 config ARCH_ALPINE
-	bool "Annapurna Labs Alpine platform" if ARCH_MULTI_V7
-	select ARM_AMBA
-	select ARM_GIC
-	select GENERIC_IRQ_CHIP
-	select HAVE_ARM_ARCH_TIMER
-	select HAVE_SMP
-	select MFD_SYSCON
-	select PCI
-	select PCI_HOST_GENERIC
+        bool "AnnapurnaLabs Alpine SOCs with Device Tree support"
+        select ARCH_WANT_OPTIONAL_GPIOLIB
+        select ARM_AMBA
+		select SPARSE_IRQ
+        select ARM_TIMER_SP804
+        select CLKDEV_LOOKUP
+        select GENERIC_CLOCKEVENTS
+		select GENERIC_IRQ_CHIP
+        select HAVE_CLK
+        select HAVE_SMP 
+        select HAVE_ARM_ARCH_TIMER
+        select HAVE_SCHED_CLOCK
+        select ARCH_SCHED_CLOCK
+        select ICST
+        select CPU_V7
+        select ARM_GIC
+        select HAVE_ARCH_TIMERS
+        select COMMON_CLK
+        select PCI
+	select PCI_DOMAINS
+        select ARCH_SUPPORTS_MSI
+	select ARM_HWCC_FLAG
+	select ARCH_LONG_LONG_ATOMIC
+	select ARM_HAS_SG_CHAIN
+	select ARCH_SUPPORTS_BIG_ENDIAN
+        help
+          This enables support for the AnnapurnaLabs SoC Gen1 boards.
+
+menu "Annapurna Labs Alpine Soc Device Tree"
+	depends on ARCH_ALPINE
+
+config AL_PCIE_RMN_1010
+	bool "Annapurna Labs PCIe RMN 1010 fix"
+	depends on AL_DMA
 	help
-	  This enables support for the Annapurna Labs Alpine V1 boards.
+		Use the DMA engine to access pcie memory instead of the CPU.
+
+endmenu

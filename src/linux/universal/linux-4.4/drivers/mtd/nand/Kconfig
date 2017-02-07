@@ -574,4 +574,10 @@ config MTD_NAND_HISI504
 	help
 	  Enables support for NAND controller on Hisilicon SoC Hip04.
 
+config MTD_NAND_AL
+	tristate "NAND support for Annapurna Labs NAND controller"
+	depends on MTD_NAND
+	help
+	  Enable support for NAND Flash chips on Annapurna Labs NAND controllers.
+
 endif # MTD_NAND
