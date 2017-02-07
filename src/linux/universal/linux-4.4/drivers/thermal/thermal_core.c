@@ -1888,16 +1888,28 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 	struct thermal_governor *governor;
 
 	if (type && strlen(type) >= THERMAL_NAME_LENGTH)
+	{
+	printk(KERN_EMERG "type invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (trips > THERMAL_MAX_TRIPS || trips < 0 || mask >> trips)
+	{
+	printk(KERN_EMERG "trips invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (!ops)
+	{
+	printk(KERN_EMERG "ops invalid\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	if (trips > 0 && (!ops->get_trip_type || !ops->get_trip_temp))
+	{
+	printk(KERN_EMERG "trip type bad\n");
 		return ERR_PTR(-EINVAL);
+	}
 
 	tz = kzalloc(sizeof(struct thermal_zone_device), GFP_KERNEL);
 	if (!tz)
@@ -1926,6 +1938,7 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 	dev_set_name(&tz->device, "thermal_zone%d", tz->id);
 	result = device_register(&tz->device);
 	if (result) {
+	printk(KERN_EMERG "device register fail\n");
 		release_idr(&thermal_tz_idr, &thermal_idr_lock, tz->id);
 		kfree(tz);
 		return ERR_PTR(result);
@@ -1934,24 +1947,30 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 	/* sys I/F */
 	if (type) {
 		result = device_create_file(&tz->device, &dev_attr_type);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+		}
 	}
 
 	result = device_create_file(&tz->device, &dev_attr_temp);
-	if (result)
+	if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
-
+}
 	if (ops->get_mode) {
 		result = device_create_file(&tz->device, &dev_attr_mode);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+}
 	}
 
 	result = create_trip_attrs(tz, mask);
-	if (result)
+	if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
-
+}
 	for (count = 0; count < trips; count++) {
 		if (tz->ops->get_trip_type(tz, count, &trip_type))
 			set_bit(count, &tz->trips_disabled);
@@ -1966,36 +1985,38 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 
 	if (!passive) {
 		result = device_create_file(&tz->device, &dev_attr_passive);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+}
 	}
 
 	if (IS_ENABLED(CONFIG_THERMAL_EMULATION)) {
 		result = device_create_file(&tz->device, &dev_attr_emul_temp);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+}
 	}
 
 	/* Create policy attribute */
 	result = device_create_file(&tz->device, &dev_attr_policy);
-	if (result)
+	if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
-
+}
 	/* Add thermal zone params */
 	result = create_tzp_attrs(&tz->device);
-	if (result)
+	if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
-
+}
 	/* Create available_policies attribute */
 	result = device_create_file(&tz->device, &dev_attr_available_policies);
-	if (result)
+	if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
-
-	/* Create available_policies attribute */
-	result = device_create_file(&tz->device, &dev_attr_available_policies);
-	if (result)
-		goto unregister;
-
+}
 	/* Update 'this' zone's governor information */
 	mutex_lock(&thermal_governor_lock);
 
@@ -2007,6 +2028,7 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 	result = thermal_set_governor(tz, governor);
 	if (result) {
 		mutex_unlock(&thermal_governor_lock);
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 		goto unregister;
 	}
 
@@ -2020,8 +2042,10 @@ struct thermal_zone_device *thermal_zone_device_register(const char *type,
 
 	if (!tz->tzp || !tz->tzp->no_hwmon) {
 		result = thermal_add_hwmon_sysfs(tz);
-		if (result)
+		if (result) {
+	printk(KERN_EMERG "device register fail %d\n",__LINE__);
 			goto unregister;
+		}
 	}
 
 	mutex_lock(&thermal_list_lock);
