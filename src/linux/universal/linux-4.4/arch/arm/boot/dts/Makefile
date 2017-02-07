@@ -1,7 +1,18 @@
 ifeq ($(CONFIG_OF),y)
 
 dtb-$(CONFIG_ARCH_ALPINE) += \
-	alpine-db.dtb
+	alpine_security_box.dtb \
+	alpine_k2s.dtb \
+	alpine_sdnic_nand.dtb \
+	alpine_sdnic.dtb \
+	alpine_db_pcie_no_arch_timer.dtb \
+	alpine_db_pcie.dtb \
+	alpine_db_al314.dtb \
+	alpine_db_al212.dtb \
+	alpine_db_no_arch_timer.dtb \
+	alpine_db.dtb \
+	alpine_db_m0.dtb
+
 dtb-$(CONFIG_MACH_ASM9260) += \
 	alphascale-asm9260-devkit.dtb
 # Keep at91 dtb files sorted alphabetically for each SoC

@@ -99,6 +99,7 @@
 #include <linux/irqdomain.h>
 
 struct device_node;
+extern struct irq_chip gic_arch_extn;
 
 void gic_cascade_irq(unsigned int gic_nr, unsigned int irq);
 int gic_cpu_if_down(unsigned int gic_nr);

@@ -128,7 +128,7 @@ static struct notifier_block al_fabric_pci_device_nb = {
 	.notifier_call = al_fabric_pci_device_notifier,
 };
 
-static void sf_irq_handler(unsigned irq, struct irq_desc *desc)
+static void sf_irq_handler(struct irq_desc *desc)
 {
 	unsigned long pending, mask;
 	int offset;

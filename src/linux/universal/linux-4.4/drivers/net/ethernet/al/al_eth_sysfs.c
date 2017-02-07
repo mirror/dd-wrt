@@ -285,12 +285,12 @@ static ssize_t al_eth_show_serdes_rx_param(struct device *dev,
 }
 
 #define AL_ETH_SERDES_TX_PARAMS_ATTR(_name) {				    \
-	__ATTR(serdes_tx_##_name, (S_IRUGO | S_IWUSR),			    \
+	__ATTR(serdes_tx_##_name, 0660,			    \
 		al_eth_show_serdes_tx_param, al_eth_store_serdes_tx_param), \
 	(void*)offsetof(struct al_serdes_adv_tx_params, _name) }
 
 #define AL_ETH_SERDES_RX_PARAMS_ATTR(_name) {				    \
-	__ATTR(serdes_rx_##_name, (S_IRUGO | S_IWUSR),			    \
+	__ATTR(serdes_rx_##_name, 0660,			    \
 		al_eth_show_serdes_rx_param, al_eth_store_serdes_rx_param), \
 	(void*)offsetof(struct al_serdes_adv_rx_params, _name) }
 
@@ -347,7 +347,7 @@ static struct device_attribute dev_attr_max_rx_buff_alloc_size = {
 
 
 #define UDMA_DUMP_PREP_ATTR(_name, _type) {\
-        __ATTR(udma_dump_##_name, S_IRUGO|S_IWUGO, rd_udma_dump, wr_udma_dump),\
+        __ATTR(udma_dump_##_name, 0660, rd_udma_dump, wr_udma_dump),\
         (void*)_type }
 
 enum udma_dump_type {

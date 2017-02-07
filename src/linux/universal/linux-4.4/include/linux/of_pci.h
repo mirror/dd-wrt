@@ -7,8 +7,10 @@
 struct pci_dev;
 struct of_phandle_args;
 struct device_node;
+struct of_irq;
 
 #ifdef CONFIG_OF
+int of_irq_map_pci(const struct pci_dev *pdev, struct of_irq *out_irq);
 int of_irq_parse_pci(const struct pci_dev *pdev, struct of_phandle_args *out_irq);
 struct device_node *of_pci_find_child_device(struct device_node *parent,
 					     unsigned int devfn);
