@@ -2145,6 +2145,9 @@ int internal_getRouterBrand()
 		setRouter("ASRock G10");
 		return ROUTER_ASROCK_G10;
 	}
+#elif HAVE_R9000
+	setRouter("Netgear Nighthawk X4");
+	return ROUTER_NETGEAR_R9000;
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
@@ -4322,7 +4325,7 @@ static char *getUEnvExt(char *name)
 
 #endif
 
-#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) || defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
+#if defined(HAVE_BUFFALO) || defined(HAVE_BUFFALO_BL_DEFAULTS) || defined(HAVE_WMBR_G300NH) || defined(HAVE_WZRG450) || defined(HAVE_DIR810L) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X) || defined(HAVE_ALPINE)
 void *getUEnv(char *name)
 {
 
@@ -4537,7 +4540,7 @@ unsigned int write_gpio(char *device, unsigned int val)
 
 int diag_led_4704(int type, int act)
 {
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA) || defined(HAVE_MERAKI)|| defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) || defined(HAVE_ALPINE)
 	return 0;
 #else
 	unsigned int control, in, outen, out;
@@ -4584,7 +4587,7 @@ int diag_led_4704(int type, int act)
 int diag_led_4712(int type, int act)
 {
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC)
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)	
 	return 0;
 #else
 	unsigned int control, in, outen, out, ctr_mask, out_mask;
@@ -5264,6 +5267,9 @@ char *cpustring(void)
 		else
 			strcpy(buf, "Marvel Armada 385");
 	}
+	return buf;
+#elif HAVE_ALPINE
+	strcpy(buf, "Annapurna Labs Alpine");
 	return buf;
 #elif HAVE_IPQ806X
 	strcpy(buf, "QCA IPQ806X");
@@ -6790,6 +6796,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x009;	// power led orange     
 		connected_gpio = 0x008;	// wan led
 		disconnected_gpio = 0x007;	// wan led
+		break;
+	case ROUTER_NETGEAR_R9000:
 		break;
 	case ROUTER_TRENDNET_TEW827:
 		power_gpio = 0x135;	// power led 

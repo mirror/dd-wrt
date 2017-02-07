@@ -344,7 +344,18 @@ void set_gpio(int gpio, int value)
 	}
 
 }
+#elif HAVE_ALPINE
 
+int get_gpio(int gpio)
+{
+	return 0;
+}
+
+
+void set_gpio(int gpio, int value)
+{
+
+}
 #elif HAVE_IPQ806X
 
 int get_gpio(int gpio)
