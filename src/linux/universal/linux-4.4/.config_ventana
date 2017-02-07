@@ -303,6 +303,7 @@ CONFIG_ARCH_MULTIPLATFORM=y
 # CONFIG_ARCH_DAVINCI is not set
 # CONFIG_ARCH_OMAP1 is not set
 # CONFIG_ARCH_BRCM is not set
+# CONFIG_ARCH_ALPINE is not set
 
 #
 # Multiple platform selection
@@ -317,7 +318,6 @@ CONFIG_ARCH_MULTI_V6_V7=y
 # CONFIG_ARCH_MULTI_CPU_AUTO is not set
 # CONFIG_ARCH_VIRT is not set
 # CONFIG_ARCH_MVEBU is not set
-# CONFIG_ARCH_ALPINE is not set
 # CONFIG_ARCH_AT91 is not set
 # CONFIG_ARCH_BCM is not set
 # CONFIG_ARCH_BERLIN is not set
@@ -2241,6 +2241,7 @@ CONFIG_HWMON=y
 # CONFIG_SENSORS_GL520SM is not set
 CONFIG_SENSORS_GSP=y
 # CONFIG_SENSORS_G760A is not set
+# CONFIG_SENSORS_G761 is not set
 # CONFIG_SENSORS_G762 is not set
 # CONFIG_SENSORS_GPIO_FAN is not set
 # CONFIG_SENSORS_HIH6130 is not set
