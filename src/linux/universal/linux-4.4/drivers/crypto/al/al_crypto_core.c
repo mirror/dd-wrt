@@ -432,7 +432,7 @@ static int al_crypto_setup_interrupts(struct al_crypto_device *device)
 
 		devm_alloc_num++;
 
-		cpu = next_cpu((i % num_online_cpus() - 1), *cpu_online_mask);
+		cpu = cpumask_next((i % num_online_cpus() - 1), cpu_online_mask);
 		cpumask_set_cpu(cpu, &chan->affinity_hint_mask);
 
 		irq_set_affinity_hint(msix->vector, &chan->affinity_hint_mask);
