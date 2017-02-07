@@ -243,6 +243,13 @@ config EDAC_I7300
 	  Support for error detection and correction the Intel
 	  Clarksboro MCH (Intel 7300 chipset).
 
+config EDAC_AL_MC
+	tristate "Annapurna Labs Memory Controller"
+	depends on EDAC_MM_EDAC && ARCH_ALPINE
+	help
+	  Support for error detection and correction for Annapurna
+	  Labs Alpine chipset
+
 config EDAC_SBRIDGE
 	tristate "Intel Sandy-Bridge/Ivy-Bridge/Haswell Integrated MC"
 	depends on EDAC_MM_EDAC && PCI && X86_64 && X86_MCE_INTEL

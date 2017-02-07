@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.4.39 Kernel Configuration
+# Linux/powerpc 4.4.47 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1039,6 +1039,7 @@ CONFIG_MTD_NAND_FSL_ELBC=y
 CONFIG_MTD_NAND_FSL_IFC=y
 # CONFIG_MTD_NAND_FSL_UPM is not set
 # CONFIG_MTD_NAND_HISI504 is not set
+# CONFIG_MTD_NAND_AL is not set
 # CONFIG_MTD_ONENAND is not set
 
 #
@@ -1263,6 +1264,7 @@ CONFIG_ETHERNET=y
 # CONFIG_NET_VENDOR_ADAPTEC is not set
 # CONFIG_NET_VENDOR_AGERE is not set
 # CONFIG_NET_VENDOR_ALTEON is not set
+# CONFIG_NET_AL_ETH is not set
 # CONFIG_ALTERA_TSE is not set
 # CONFIG_NET_VENDOR_AMD is not set
 # CONFIG_NET_VENDOR_ARC is not set
@@ -2774,6 +2776,7 @@ CONFIG_CRYPTO_HW=y
 # CONFIG_CRYPTO_DEV_FSL_CAAM is not set
 CONFIG_CRYPTO_DEV_TALITOS=m
 # CONFIG_CRYPTO_DEV_TALITOS2 is not set
+# CONFIG_CRYPTO_DEV_AL_AHASH_CRC is not set
 
 #
 # Certificates for signature checking

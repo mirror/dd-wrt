@@ -74,3 +74,11 @@ config ARM_MVEBU_V7_CPUIDLE
 	depends on ARCH_MVEBU && !ARM64
 	help
 	  Select this to enable cpuidle on Armada 370, 38x and XP processors.
+
+config CPU_IDLE_ALPINE
+	bool "CPU Idle Driver for Annapurna Labs Alpine SOC"
+	depends on ARCH_ALPINE
+	default y
+	help
+	  Select this to enable cpuidle on  Annapurna Labs Alpine SOC.
+	  If unsure say Y.

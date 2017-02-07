@@ -875,6 +875,16 @@ struct dwc3 {
 
 	u32			phy_misc_reg;
 	u32			phy_host_disc_on;
+#ifdef CONFIG_USB_DWC3_AL_RMN_2648
+	void __iomem *		serdes_regs_base;
+u32			serdes_group;
+	u32			serdes_lane;
+#endif
+#ifdef CONFIG_USB_DWC3_AL_VBUS_GPIO
+	int			vbus_active;
+	int			vbus_gpio;
+	struct delayed_work	vbus_work;
+#endif
 };
 
 /* -------------------------------------------------------------------------- */

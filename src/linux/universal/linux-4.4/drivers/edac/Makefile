@@ -47,6 +47,8 @@ amd64_edac_mod-y := amd64_edac.o
 amd64_edac_mod-$(CONFIG_EDAC_DEBUG) += amd64_edac_dbg.o
 amd64_edac_mod-$(CONFIG_EDAC_AMD64_ERROR_INJECTION) += amd64_edac_inj.o
 
+obj-$(CONFIG_EDAC_AL_MC)		+= al_mc_edac.o
+
 obj-$(CONFIG_EDAC_AMD64)		+= amd64_edac_mod.o
 
 obj-$(CONFIG_EDAC_PASEMI)		+= pasemi_edac.o

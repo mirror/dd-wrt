@@ -104,4 +104,24 @@ config USB_DWC3_QCOM
 	  Recent Qualcomm SoCs ship with one DesignWare Core USB3 IP inside,
 	  say 'Y' or 'M' if you have one such device.
 
+config USB_DWC3_AL
+	bool "Annapurna Labs USB3 Core Support"
+	select USB_DWC3_AL_RMN_2648
+	select USB_DWC3_AL_VBUS_GPIO
+	help
+	  Say Y here to enable Annapurna Labs USB3 core support.
+
+config USB_DWC3_AL_RMN_2648
+	bool "Annapurna Labs USB3 Core RMN 2648 fix"
+	depends on USB_DWC3_AL
+	help
+	  Say Y here to enable Annapurna Labs USB3 core RMN 2648 fix.
+
+config USB_DWC3_AL_VBUS_GPIO
+	bool "Annapurna Labs USB3 Core Vbus indication using GPIO"
+	depends on USB_DWC3_AL
+	help
+	  Say Y here to enable Annapurna Labs USB3 core Vbus indication
+	  using GPIO.
+
 endif
