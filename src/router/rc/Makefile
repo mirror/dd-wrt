@@ -329,6 +329,9 @@ endif
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO
 endif
+ifeq ($(CONFIG_R9000),y)
+CFLAGS += -DHAVE_R9000
+endif
 ifeq ($(CONFIG_SPOTPASS),y)
 CFLAGS += -DHAVE_SPOTPASS
 endif
