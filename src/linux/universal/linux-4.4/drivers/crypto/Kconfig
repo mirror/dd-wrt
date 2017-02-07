@@ -528,4 +528,6 @@ config CRYPTO_DEV_SUN4I_SS
 	  To compile this driver as a module, choose M here: the module
 	  will be called sun4i-ss.
 
+source "drivers/crypto/al/Kconfig"
+
 endif # CRYPTO_HW

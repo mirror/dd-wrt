@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.39 Kernel Configuration
+# Linux/mips 4.4.47 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1051,6 +1051,7 @@ CONFIG_MTD_NAND_IDS=y
 # CONFIG_MTD_NAND_BRCMNAND is not set
 # CONFIG_MTD_NAND_PLATFORM is not set
 # CONFIG_MTD_NAND_HISI504 is not set
+# CONFIG_MTD_NAND_AL is not set
 # CONFIG_MTD_ONENAND is not set
 
 #
@@ -1275,6 +1276,7 @@ CONFIG_ETHERNET=y
 # CONFIG_NET_VENDOR_ADAPTEC is not set
 # CONFIG_NET_VENDOR_AGERE is not set
 # CONFIG_NET_VENDOR_ALTEON is not set
+# CONFIG_NET_AL_ETH is not set
 # CONFIG_ALTERA_TSE is not set
 # CONFIG_NET_VENDOR_AMD is not set
 # CONFIG_NET_VENDOR_ARC is not set

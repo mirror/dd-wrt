@@ -128,6 +128,19 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	reg |= DWC3_GCTL_CORESOFTRESET;
 	dwc3_writel(dwc->regs, DWC3_GCTL, reg);
 
+#ifdef CONFIG_USB_DWC3_AL
+	/* Annapurna Labs specific USB3 PHY configuration */
+	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
+	reg |= (1 << 9); /* LFPS filter */
+	reg |= (1 << 10); /* U3 exit handshake is performed in P2 */
+	reg |= (1 << 11); /* Direct P2<->P3 transitions */
+	reg |= (1 << 13); /* Skip RX detect if pipe3_RxElecIdle is low,
+				retry after appropriate timeout */
+	reg |= (1 << 27); /* U1/U2/U3 exit in PHY power state P1/P2/P3 */
+	dwc3_writel(dwc->regs, DWC3_GUSB3PIPECTL(0), reg);
+	mdelay(100);
+#endif
+
 	/* Assert USB3 PHY reset */
 	reg = dwc3_readl(dwc->regs, DWC3_GUSB3PIPECTL(0));
 	reg |= DWC3_GUSB3PIPECTL_PHYSOFTRST;
@@ -160,7 +173,6 @@ static int dwc3_core_soft_reset(struct dwc3 *dwc)
 	reg = dwc3_readl(dwc->regs, DWC3_GUSB2PHYCFG(0));
 	reg &= ~DWC3_GUSB2PHYCFG_PHYSOFTRST;
 	dwc3_writel(dwc->regs, DWC3_GUSB2PHYCFG(0), reg);
-
 	mdelay(100);
 
 	/* After PHYs are stable we can take Core out of reset state */

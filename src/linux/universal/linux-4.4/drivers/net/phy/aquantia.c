@@ -23,6 +23,11 @@
 #define PHY_ID_AQR105	0x03a1b4a2
 #define PHY_ID_AQR405	0x03a1b4b0
 
+#define PHY_ID_AQR105_2	0x3a1b4a3
+
+#define AQ_AN_VENDOR_STATUS_SPEED_MASK		0xe
+#define AQ_AN_VENDOR_STATUS_DUPLEX_MASK		0x1
+
 #define PHY_AQUANTIA_FEATURES	(SUPPORTED_10000baseT_Full | \
 				 SUPPORTED_1000baseT_Full | \
 				 SUPPORTED_100baseT_Full | \
@@ -32,6 +37,8 @@ static int aquantia_config_aneg(struct phy_device *phydev)
 {
 	phydev->supported = PHY_AQUANTIA_FEATURES;
 	phydev->advertising = phydev->supported;
+	phydev->state = PHY_NOLINK;
+	phydev->autoneg = AUTONEG_ENABLE;
 
 	return 0;
 }
@@ -96,22 +103,32 @@ static int aquantia_read_status(struct phy_device *phydev)
 	mdelay(10);
 	reg = phy_read_mmd(phydev, MDIO_MMD_AN, 0xc800);
 
-	switch (reg) {
-	case 0x9:
-		phydev->speed = SPEED_2500;
-		break;
-	case 0x5:
-		phydev->speed = SPEED_1000;
-		break;
-	case 0x3:
-		phydev->speed = SPEED_100;
-		break;
-	case 0x7:
-	default:
+	switch (reg & AQ_AN_VENDOR_STATUS_SPEED_MASK) {
+	case 0x6:
 		phydev->speed = SPEED_10000;
 		break;
+	case 0xa:
+		phydev->speed = SPEED_5000;
+		break;
+	case 0x8:
+		phydev->speed = SPEED_2500;
+		break;
+	case 0x4:
+		phydev->speed = SPEED_1000;
+		break;
+	case 0x2:
+		phydev->speed = SPEED_100;
+		break;
+	default:
+		break;
 	}
-	phydev->duplex = DUPLEX_FULL;
+
+	if ((reg & AQ_AN_VENDOR_STATUS_DUPLEX_MASK) != 0) {
+		phydev->duplex = DUPLEX_FULL;
+	} else {
+		phydev->duplex = DUPLEX_HALF;
+	}
+
 
 	return 0;
 }
@@ -147,6 +164,19 @@ static struct phy_driver aquantia_driver[] = {
 	.phy_id		= PHY_ID_AQR105,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Aquantia AQR105",
+	.features	= PHY_AQUANTIA_FEATURES,
+	.flags		= PHY_HAS_INTERRUPT,
+	.aneg_done	= aquantia_aneg_done,
+	.config_aneg    = aquantia_config_aneg,
+	.config_intr	= aquantia_config_intr,
+	.ack_interrupt	= aquantia_ack_interrupt,
+	.read_status	= aquantia_read_status,
+	.driver		= { .owner = THIS_MODULE,},
+},
+{
+	.phy_id		= PHY_ID_AQR105_2,
+	.phy_id_mask	= 0xfffffff0,
+	.name		= "Aquantia AQR105 V2",
 	.features	= PHY_AQUANTIA_FEATURES,
 	.flags		= PHY_HAS_INTERRUPT,
 	.aneg_done	= aquantia_aneg_done,

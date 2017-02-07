@@ -50,3 +50,4 @@ obj-$(CONFIG_TEGRA_SOCTHERM)	+= tegra_soctherm.o
 obj-$(CONFIG_HISI_THERMAL)     += hisi_thermal.o
 obj-$(CONFIG_THERMAL_QCOMTSENS)        += qcom-tsens.o
 obj-$(CONFIG_THERMAL_MONITOR)	+= msm_thermal.o
+obj-$(CONFIG_AL_THERMAL)	+= al/

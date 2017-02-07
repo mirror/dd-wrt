@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.4.39 Kernel Configuration
+# Linux/mips 4.4.47 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1177,6 +1177,7 @@ CONFIG_ETHERNET=y
 # CONFIG_NET_VENDOR_ADAPTEC is not set
 # CONFIG_NET_VENDOR_AGERE is not set
 # CONFIG_NET_VENDOR_ALTEON is not set
+# CONFIG_NET_AL_ETH is not set
 # CONFIG_ALTERA_TSE is not set
 # CONFIG_NET_VENDOR_AMD is not set
 # CONFIG_NET_VENDOR_ARC is not set

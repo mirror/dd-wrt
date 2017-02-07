@@ -126,6 +126,14 @@ config ARM_DMA_IOMMU_ALIGNMENT
 
 endif
 
+config ARM_HWCC_FLAG
+	bool
+	default n
+	help
+	  Select if you want the ARM specific device structure to inclue a flag
+	  for determining whether HW cache coherency is enabled.
+	  If unsure, say 'N'.
+
 config MIGHT_HAVE_PCI
 	bool
 
@@ -186,6 +194,10 @@ config ARCH_HAS_ILOG2_U32
 
 config ARCH_HAS_ILOG2_U64
 	bool
+
+config ARCH_LONG_LONG_ATOMIC
+	bool
+	default n
 
 config ARCH_HAS_BANDGAP
 	bool
@@ -967,6 +979,8 @@ source "arch/arm/mach-versatile/Kconfig"
 
 source "arch/arm/mach-vexpress/Kconfig"
 source "arch/arm/plat-versatile/Kconfig"
+
+source "arch/arm/mach-alpine/Kconfig"
 
 source "arch/arm/mach-vt8500/Kconfig"
 
