@@ -364,7 +364,7 @@ static ssize_t wr_udma_dump(
 }
 
 #define UDMA_DUMP_PREP_ATTR(_name, _type) {\
-	__ATTR(udma_dump_##_name, S_IRUGO|S_IWUGO, rd_udma_dump, wr_udma_dump),\
+	__ATTR(udma_dump_##_name, 0660, rd_udma_dump, wr_udma_dump),\
 	(void*)_type }
 
 /* Device attrs - udma debug */
@@ -437,7 +437,7 @@ static ssize_t al_crypto_wr_config(
 }
 
 #define CONFIG_PREP_ATTR(_name, _type) {\
-	__ATTR(_name, S_IRUGO|S_IWUGO,\
+	__ATTR(_name, 0660,\
 			al_crypto_rd_config, al_crypto_wr_config),\
 	(void*)_type }
 
