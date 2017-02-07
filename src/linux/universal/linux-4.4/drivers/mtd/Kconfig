@@ -129,6 +129,20 @@ config MTD_CMDLINE_PARTS
 
 	  If unsure, say 'N'.
 
+config USE_DNI_PARTITION
+	tristate "Force to use DNI Define Partitions"
+	default n
+	depends on MTD_CMDLINE_PARTS && ARCH_ALPINE
+	---help---
+	  Force to use DNI Define Partitions
+
+config DNI_PARTITION_CMDLINE
+	string "DNI Partition command string"
+	default ""
+	depends on USE_DNI_PARTITION
+	---help---
+	   DNI Partition command string
+
 config MTD_AFS_PARTS
 	tristate "ARM Firmware Suite partition parsing"
 	depends on ARM

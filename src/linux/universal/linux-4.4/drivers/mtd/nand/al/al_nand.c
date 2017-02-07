@@ -968,11 +968,7 @@ static int al_nand_probe(struct platform_device *pdev)
 	 * if no partition declaration will be found, 1 partition will be
 	 * created for the all device */
 	ppdata.of_node = pdev->dev.of_node;
-#if defined(CONFIG_USE_DNI_PARTITION)
 	mtd_device_parse_register(mtd, dni_part_probes, NULL, NULL, 0);
-#else
-	mtd_device_parse_register(mtd, NULL, &ppdata, NULL, 0);
-#endif
 
 	return 0;
 
