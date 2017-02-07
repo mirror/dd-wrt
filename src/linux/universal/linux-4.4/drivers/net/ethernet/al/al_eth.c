@@ -2087,10 +2087,10 @@ al_eth_rx_poll(struct napi_struct *napi, int budget)
 
 		al_eth_rx_checksum(adapter, hal_pkt, skb);
 		if (likely(adapter->netdev->features & NETIF_F_RXHASH)) {
-			skb->rxhash = hal_pkt->rxhash;
+			skb->hash = hal_pkt->rxhash;
 			if (likely((hal_pkt->l4_proto_idx == AL_ETH_PROTO_ID_TCP) ||
 				   (hal_pkt->l4_proto_idx == AL_ETH_PROTO_ID_UDP)))
-				skb->l4_rxhash = 1;
+				skb->l4_hash = 1;
 		}
 
 		skb_record_rx_queue(skb, qid);
@@ -2344,8 +2344,7 @@ al_eth_setup_int_mode(struct al_eth_adapter *adapter, int dis_msi)
 		adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].handler = al_eth_intr_intx_all;
 		adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].vector = adapter->pdev->irq;
 		adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].data = adapter;
-
-		cpu = first_cpu(*cpu_online_mask);
+		cpu = cpumask_first(cpu_online_mask);
 		cpumask_set_cpu(cpu, &adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].affinity_hint_mask);
 
 		return 0;
@@ -2359,7 +2358,7 @@ al_eth_setup_int_mode(struct al_eth_adapter *adapter, int dis_msi)
 		adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].vector = adapter->msix_entries[AL_ETH_MGMT_IRQ_IDX].vector;
 		adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].data = adapter;
 
-		cpu = first_cpu(*cpu_online_mask);
+		cpu = cpumask_first(cpu_online_mask);
 		cpumask_set_cpu(cpu, &adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].affinity_hint_mask);
 
 		return 0;
@@ -2371,7 +2370,7 @@ al_eth_setup_int_mode(struct al_eth_adapter *adapter, int dis_msi)
 
 	adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].data = adapter;
 	adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].vector = adapter->msix_entries[AL_ETH_MGMT_IRQ_IDX].vector;
-	cpu = first_cpu(*cpu_online_mask);
+	cpu = cpumask_first(cpu_online_mask);
 	cpumask_set_cpu(cpu, &adapter->irq_tbl[AL_ETH_MGMT_IRQ_IDX].affinity_hint_mask);
 
 	for (i = 0; i < adapter->num_rx_queues; i++) {
@@ -2385,7 +2384,7 @@ al_eth_setup_int_mode(struct al_eth_adapter *adapter, int dis_msi)
 		adapter->irq_tbl[irq_idx].data = &adapter->al_napi[napi_idx];
 		adapter->irq_tbl[irq_idx].vector = adapter->msix_entries[irq_idx].vector;
 
-		cpu = next_cpu((i % num_online_cpus() - 1), *cpu_online_mask);
+		cpu = cpumask_next((i % num_online_cpus() - 1), cpu_online_mask);
 		cpumask_set_cpu(cpu, &adapter->irq_tbl[irq_idx].affinity_hint_mask);
 	}
 
@@ -2400,7 +2399,7 @@ al_eth_setup_int_mode(struct al_eth_adapter *adapter, int dis_msi)
 		adapter->irq_tbl[irq_idx].data = &adapter->al_napi[napi_idx];
 		adapter->irq_tbl[irq_idx].vector = adapter->msix_entries[irq_idx].vector;
 
-		cpu = next_cpu((i % num_online_cpus() - 1), *cpu_online_mask);
+		cpu = cpumask_next((i % num_online_cpus() - 1), cpu_online_mask);
 		cpumask_set_cpu(cpu, &adapter->irq_tbl[irq_idx].affinity_hint_mask);
 	}
 
@@ -3811,10 +3810,13 @@ static u32 al_eth_get_rxfh_indir_size(struct net_device *netdev)
 	return AL_ETH_RX_RSS_TABLE_SIZE;
 }
 
-static int al_eth_get_rxfh_indir(struct net_device *netdev, u32 *indir)
+
+static int al_eth_get_rxfh(struct net_device *netdev, u32 *indir, u8 *key, u8 *hfunc)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	int i;
+	if (hfunc)
+		*hfunc = ETH_RSS_HASH_TOP;
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++)
 		indir[i] = adapter->rss_ind_tbl[i];
@@ -3822,10 +3824,16 @@ static int al_eth_get_rxfh_indir(struct net_device *netdev, u32 *indir)
 	return 0;
 }
 
-static int al_eth_set_rxfh_indir(struct net_device *netdev, const u32 *indir)
+
+static int al_eth_set_rxfh(struct net_device *netdev, const u32 *indir, const u8 *key,
+			const u8 hfunc)
 {
 	struct al_eth_adapter *adapter = netdev_priv(netdev);
 	size_t i;
+
+	if (key ||
+	    (hfunc != ETH_RSS_HASH_NO_CHANGE && hfunc != ETH_RSS_HASH_TOP))
+		return -EOPNOTSUPP;
 
 	for (i = 0; i < AL_ETH_RX_RSS_TABLE_SIZE; i++) {
 		adapter->rss_ind_tbl[i] = indir[i];
@@ -3963,8 +3971,8 @@ static const struct ethtool_ops al_eth_ethtool_ops = {
 	.get_rxnfc		= al_eth_get_rxnfc,
 /*	.get_sset_count		= al_eth_get_sset_count,*/
 	.get_rxfh_indir_size    = al_eth_get_rxfh_indir_size,
-	.get_rxfh_indir		= al_eth_get_rxfh_indir,
-	.set_rxfh_indir		= al_eth_set_rxfh_indir,
+	.get_rxfh		= al_eth_get_rxfh,
+	.set_rxfh		= al_eth_set_rxfh,
 	.get_channels		= al_eth_get_channels,
 /*	.set_channels		= al_eth_set_channels,*/
 
@@ -4134,7 +4142,8 @@ dma_error:
 }
 
 /* Return subqueue id on this core (one per core). */
-static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb)
+static u16 al_eth_select_queue(struct net_device *dev, struct sk_buff *skb,
+			     void *accel_priv, select_queue_fallback_t fallback)
 {
 #ifdef CONFIG_ARCH_ALPINE
 	return smp_processor_id();
@@ -4438,7 +4447,7 @@ al_eth_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	netdev->netdev_ops = &al_eth_netdev_ops;
 	netdev->watchdog_timeo = TX_TIMEOUT;
-	SET_ETHTOOL_OPS(netdev, &al_eth_ethtool_ops);
+	netdev->ethtool_ops = &al_eth_ethtool_ops;
 
 	if (!is_valid_ether_addr(adapter->mac_addr)) {
 		eth_hw_addr_random(netdev);

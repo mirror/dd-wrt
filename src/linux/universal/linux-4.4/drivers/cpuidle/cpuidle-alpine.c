@@ -38,25 +38,23 @@ static int alpine_enter_lowpower(struct cpuidle_device *dev,
 				struct cpuidle_driver *drv,
 				int index);
 
-static struct cpuidle_state alpine_cpuidle_set[] __initdata = {
-	[0] = ARM_CPUIDLE_WFI_STATE_PWR(250),
-	[1] = {
+static struct cpuidle_driver alpine_idle_driver = {
+	.name			= "alpine_idle",
+	.owner			= THIS_MODULE,
+	.states[0] = ARM_CPUIDLE_WFI_STATE_PWR(250),
+	.states[1] = {
 		.enter			= alpine_enter_lowpower,
 		.exit_latency		= 10,
 		.power_usage		= 125,
 		.target_residency	= 1000,
-		.flags			= CPUIDLE_FLAG_TIME_VALID,
+		.flags			= 0,
 		.name			= "C1",
 		.desc			= "ARM power down",
 	},
+	.state_count = 2,
 };
 
 static DEFINE_PER_CPU(struct cpuidle_device, alpine_cpuidle_device);
-
-static struct cpuidle_driver alpine_idle_driver = {
-	.name			= "alpine_idle",
-	.owner			= THIS_MODULE,
-};
 
 static int alpine_enter_lowpower(struct cpuidle_device *dev,
 				struct cpuidle_driver *drv,
@@ -81,20 +79,13 @@ static int __init alpine_init_cpuidle(void)
 	}
 
 	/* Setup cpuidle driver */
-	drv->state_count = (sizeof(alpine_cpuidle_set) /
-				       sizeof(struct cpuidle_state));
-	max_cpuidle_state = drv->state_count;
-	for (i = 0; i < max_cpuidle_state; i++) {
-		memcpy(&drv->states[i], &alpine_cpuidle_set[i],
-				sizeof(struct cpuidle_state));
-	}
 	drv->safe_state_index = 0;
 	cpuidle_register_driver(&alpine_idle_driver);
 
 	for_each_cpu(cpu_id, cpu_online_mask) {
 		device = &per_cpu(alpine_cpuidle_device, cpu_id);
 		device->cpu = cpu_id;
-		device->state_count = alpine_idle_driver.state_count;
+//		device->state_count = alpine_idle_driver.state_count;
 		if (cpuidle_register_device(device)) {
 			pr_err("CPUidle device registration failed\n,");
 			return -EIO;

@@ -669,7 +669,7 @@ static void __init ubiblock_create_auto_rootfs(void)
 
 		ret = ubiblock_create(&vi);
 		if (ret)
-			ubi_err("block: can't add '%s' volume, err=%d\n",
+			pr_err("block: can't add '%s' volume, err=%d\n",
 				vi.name, ret);
 		/* always break if we get here */
 		break;
