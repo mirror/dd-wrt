@@ -750,6 +750,8 @@
 
 #define ROUTER_TPLINK_ARCHERC3150 0xff111
 
+#define ROUTER_NETGEAR_R9000 0x100111
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
