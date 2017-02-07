@@ -97,6 +97,9 @@ void arch_teardown_msi_irq(unsigned int irq)
 
 	destroy_irq(irq);
 }
+#define PCIE_BUS_PRIV_DATA(pdev) \
+	(((struct pci_sys_data *)pdev->bus->sysdata)->private_data)
+
 
 int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 {
@@ -122,10 +125,11 @@ int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 //	domain = irq_data->domain;
 //	if (domain->revmap_type) /*revmap type is not legacy*/
 //		return -1;
-
-	sgi = irq_data->hwirq;//irq - domain->revmap_data.legacy.first_irq +
+	printk(KERN_EMERG "msi irq %d = hw irq %d/%d\n",irq,irq_data->hwirq,irq_data->irq);
+//	sgi = irq - 16 + 128;//irq - domain->revmap_data.legacy.first_irq +
 		//		domain->revmap_data.legacy.first_hwirq;
-//	sgi = sgi - 32;
+	sgi = irq - irq_find_mapping(pci_host_bridge_of_msi_domain(pdev->bus), irq_data->hwirq);
+	printk(KERN_EMERG "sgi %d\n",sgi);
 
 	/*
 	 * MSIX message address format:
@@ -168,9 +172,9 @@ int arch_setup_msi_irq(struct pci_dev *pdev, struct msi_desc *desc)
 	 * PPIS are hw-irqs 17-31.
 	 * first_hwirq will be 16 for main gic and 32 for secondary gic.
 	 * */
-	if (sgi >= 16 && sgi < 32)
+	if (sgi == 16)
 		msg.address_lo = al_irq_msi_addr_low + (1<<16) + (sgi << 3);
-	else if (sgi >= 32)
+	else if (sgi == 32)
 		msg.address_lo = al_irq_msi_addr_low + (1<<17) + (sgi << 3);
 	else
 		return -1;
