@@ -282,7 +282,7 @@ static int pl061_probe(struct amba_device *adev, const struct amba_id *id)
 	struct device *dev = &adev->dev;
 	struct pl061_platform_data *pdata = dev_get_platdata(dev);
 	struct pl061_gpio *chip;
-	int ret, irq, i, irq_base;
+	int ret, irq, i, irq_base = 0;
 
 	chip = devm_kzalloc(dev, sizeof(*chip), GFP_KERNEL);
 	if (chip == NULL)
@@ -295,9 +295,16 @@ static int pl061_probe(struct amba_device *adev, const struct amba_id *id)
 			dev_err(&adev->dev, "invalid IRQ base in pdata\n");
 			return -ENODEV;
 		}
+	} else if (adev->dev.of_node) {
+		const void *ptr;
+		unsigned int baseidx = -1; /* GPIO dynamic allocation */
+
+		ptr = of_get_property(adev->dev.of_node, "baseidx", NULL);
+		if (ptr)
+			baseidx = be32_to_cpup(ptr);
+		chip->gc.base = baseidx;
 	} else {
 		chip->gc.base = -1;
-		irq_base = 0;
 	}
 
 	chip->base = devm_ioremap_resource(dev, &adev->res);
