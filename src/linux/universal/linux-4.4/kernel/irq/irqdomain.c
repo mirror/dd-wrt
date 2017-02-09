@@ -122,7 +122,6 @@ struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
 	list_add(&domain->link, &irq_domain_list);
 	mutex_unlock(&irq_domain_mutex);
 
-	pr_debug("Added domain %s\n", domain->name);
 	return domain;
 }
 EXPORT_SYMBOL_GPL(__irq_domain_add);
@@ -586,7 +585,6 @@ unsigned int irq_create_fwspec_mapping(struct irq_fwspec *fwspec)
 
 	if (irq_domain_translate(domain, fwspec, &hwirq, &type))
 		return 0;
-
 	if (irq_domain_is_hierarchy(domain)) {
 		/*
 		 * If we've already configured this interrupt,
@@ -605,7 +603,6 @@ unsigned int irq_create_fwspec_mapping(struct irq_fwspec *fwspec)
 		if (!virq)
 			return virq;
 	}
-
 	/* Set type if specified and different than the current one */
 	if (type != IRQ_TYPE_NONE &&
 	    type != irq_get_trigger_type(virq))
@@ -622,55 +619,6 @@ unsigned int irq_create_of_mapping(struct of_phandle_args *irq_data)
 	return irq_create_fwspec_mapping(&fwspec);
 }
 EXPORT_SYMBOL_GPL(irq_create_of_mapping);
-unsigned int irq_create_of_mapping_compat(struct device_node *controller,
-				   const u32 *intspec, unsigned int intsize)
-{
-	struct irq_domain *domain;
-	irq_hw_number_t hwirq;
-	unsigned int type = IRQ_TYPE_NONE;
-	unsigned int virq;
-
-	domain = controller ? irq_find_host(controller) : irq_default_domain;
-	if (!domain) {
-#ifdef CONFIG_MIPS
-		/*
-		 * Workaround to avoid breaking interrupt controller drivers
-		 * that don't yet register an irq_domain.  This is temporary
-		 * code. ~~~gcl, Feb 24, 2012
-		 *
-		 * Scheduled for removal in Linux v3.6.  That should be enough
-		 * time.
-		 */
-		if (intsize > 0)
-			return intspec[0];
-#endif
-		pr_warning("no irq domain found for %s !\n",
-			   of_node_full_name(controller));
-		return 0;
-	}
-
-	/* If domain has no translation, then we assume interrupt line */
-	if (domain->ops->xlate == NULL)
-		hwirq = intspec[0];
-	else {
-		if (domain->ops->xlate(domain, controller, intspec, intsize,
-				     &hwirq, &type))
-			return 0;
-	}
-
-	/* Create mapping */
-	virq = irq_create_mapping(domain, hwirq);
-	if (!virq)
-		return virq;
-
-	/* Set type if specified and different than the current one */
-	if (type != IRQ_TYPE_NONE &&
-	    type != (irqd_get_trigger_type(irq_get_irq_data(virq))))
-		irq_set_irq_type(virq, type);
-	return virq;
-}
-EXPORT_SYMBOL_GPL(irq_create_of_mapping_compat);
-
 
 /**
  * irq_dispose_mapping() - Unmap an interrupt
