@@ -11,6 +11,7 @@ dtb-$(CONFIG_ARCH_ALPINE) += \
 	alpine_db_al212.dtb \
 	alpine_db_no_arch_timer.dtb \
 	alpine_db.dtb \
+	alpine-r9000.dtb \
 	alpine_db_m0.dtb
 
 dtb-$(CONFIG_MACH_ASM9260) += \

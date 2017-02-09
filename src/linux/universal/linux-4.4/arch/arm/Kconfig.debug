@@ -94,14 +94,6 @@ choice
 	prompt "Kernel low-level debugging port"
 	depends on DEBUG_LL
 
-	config DEBUG_ALPINE_UART0
-		bool "Kernel low-level debugging messages via Alpine UART0"
-		depends on ARCH_ALPINE
-		select DEBUG_UART_8250
-		help
-		  Say Y here if you want kernel low-level debugging support
-		  on Alpine based platforms.
-
 	config DEBUG_ASM9260_UART
 		bool "Kernel low-level debugging via asm9260 UART"
 		depends on MACH_ASM9260
