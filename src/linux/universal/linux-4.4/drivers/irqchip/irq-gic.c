@@ -115,7 +115,12 @@ static struct static_key supports_deactivate = STATIC_KEY_INIT_TRUE;
 #define MAX_GIC_NR	2
 #endif
 
-static struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
+struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
+
+struct irq_domain * getgicdomain(void)
+{
+	return gic_data[0].domain;
+}
 
 #ifdef CONFIG_GIC_NON_BANKED
 static void __iomem *gic_get_percpu_base(union gic_base *base)
@@ -199,7 +204,7 @@ static void gic_mask_irq(struct irq_data *d)
 	gic_poke_irq(d, GIC_DIST_ENABLE_CLEAR);
 }
 
-static void gic_eoimode1_mask_irq(struct irq_data *d)
+void gic_eoimode1_mask_irq(struct irq_data *d)
 {
 	gic_mask_irq(d);
 	/*
@@ -214,7 +219,7 @@ static void gic_eoimode1_mask_irq(struct irq_data *d)
 		gic_poke_irq(d, GIC_DIST_ACTIVE_CLEAR);
 }
 
-static void gic_unmask_irq(struct irq_data *d)
+void gic_unmask_irq(struct irq_data *d)
 {
 	if (gic_arch_extn.irq_unmask)
 		gic_arch_extn.irq_unmask(d);
@@ -357,7 +362,6 @@ static void __exception_irq_entry gic_handle_irq(struct pt_regs *regs)
 	do {
 		irqstat = readl_relaxed(cpu_base + GIC_CPU_INTACK);
 		irqnr = irqstat & GICC_IAR_INT_ID_MASK;
-
 		if (likely(irqnr > 15 && irqnr < 1021)) {
 			if (static_key_true(&supports_deactivate))
 				writel_relaxed(irqstat, cpu_base + GIC_CPU_EOI);
@@ -393,7 +397,6 @@ static void gic_handle_cascade_irq(struct irq_desc *desc)
 	unsigned long status;
 
 	chained_irq_enter(chip, desc);
-
 	raw_spin_lock(&irq_controller_lock);
 	status = readl_relaxed(gic_data_cpu_base(chip_data) + GIC_CPU_INTACK);
 	raw_spin_unlock(&irq_controller_lock);
@@ -1090,7 +1093,6 @@ static void __init __gic_init_bases(unsigned int gic_nr, int irq_start,
 	irq_hw_number_t hwirq_base;
 	struct gic_chip_data *gic;
 	int gic_irqs, irq_base, i;
-
 	BUG_ON(gic_nr >= MAX_GIC_NR);
 
 	gic_check_cpu_features();
@@ -1139,7 +1141,7 @@ static void __init __gic_init_bases(unsigned int gic_nr, int irq_start,
 		gic_irqs = 1020;
 	gic->gic_irqs = gic_irqs;
 
-	if (handle) {		/* DT/ACPI */
+	if (handle){
 		gic->domain = irq_domain_create_linear(handle, gic_irqs,
 						       &gic_irq_domain_hierarchy_ops,
 						       gic);
@@ -1272,7 +1274,6 @@ gic_of_init(struct device_node *node, struct device_node *parent)
 
 	if (of_property_read_u32(node, "cpu-offset", &percpu_offset))
 		percpu_offset = 0;
-
 	__gic_init_bases(gic_cnt, -1, dist_base, cpu_base, percpu_offset,
 			 &node->fwnode);
 	if (!gic_cnt)

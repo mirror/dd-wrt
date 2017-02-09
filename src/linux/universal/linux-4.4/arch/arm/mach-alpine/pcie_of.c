@@ -354,8 +354,8 @@ static int al_internal_read_config(struct pci_bus *bus, unsigned int devfn,
 	void __iomem *addr = al_pcie_cfg_addr(pcie, bus, devfn, where & ~3);
 	u32 v;
 
-	pr_debug("read_config from %d size %d dev %d:%d:%d\n", where, size,
-		 bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn));
+//	printk(KERN_EMERG "read_config from %d size %d dev %d:%d:%d\n", where, size,
+//		 bus->number, PCI_SLOT(devfn), PCI_FUNC(devfn));
 
 	switch (size) {
 	case 1:
@@ -492,16 +492,14 @@ static int al_pcie_parse_dt(struct al_pcie_pd *pcie)
 /* map the specified device/slot/pin to an IRQ */
 static int al_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
-	struct of_irq oirq;
-	int ret;
-
-	ret = of_irq_map_pci(dev, &oirq);
+	struct of_phandle_args oirq;
+	int ret,irq;
+	ret = of_irq_parse_pci(dev, &oirq);
 	if (ret)
 		return ret;
-
-	return irq_create_of_mapping_compat(oirq.controller, oirq.specifier,
-					oirq.size);
-}
+	irq = irq_create_of_mapping(&oirq);
+	return irq;
+}	
 
 static struct pci_bus *al_pcie_scan_bus(int nr, struct pci_sys_data *sys)
 {
@@ -552,8 +550,8 @@ static int al_pcie_add_host_bridge(struct al_pcie_pd *pcie)
 }
 
 static const struct of_device_id al_pcie_of_match[] = {
-	{ .compatible = "annapurna-labs,al-pci", .data = (void *)AL_PCI_TYPE_EXTERNAL },
 	{ .compatible = "annapurna-labs,al-internal-pcie", .data = (void *)AL_PCI_TYPE_INTERNAL },
+	{ .compatible = "annapurna-labs,al-pci", .data = (void *)AL_PCI_TYPE_EXTERNAL },
 	{ },
 };
 
@@ -639,7 +637,7 @@ static int al_pcie_probe(struct platform_device *pdev)
 			al_pcie_port_snoop_config(&pcie->pcie_port, 1);
 		}
 	}
-
+udelay(1000);
 	err = al_pcie_add_host_bridge(pcie);
 	if (err < 0) {
 		dev_err(&pdev->dev, "failed to enable PCIe controller: %d\n",

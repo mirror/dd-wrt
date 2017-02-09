@@ -809,6 +809,10 @@ config ARCH_ALPINE
         select HAVE_ARCH_TIMERS
         select COMMON_CLK
         select PCI
+	select PCI_HOST_GENERIC
+	select ARM_GIC
+	select PCI_MSI_IRQ_DOMAIN
+	select ALPINE_MSI
 	select PCI_DOMAINS
         select ARCH_SUPPORTS_MSI
 	select ARM_HWCC_FLAG
