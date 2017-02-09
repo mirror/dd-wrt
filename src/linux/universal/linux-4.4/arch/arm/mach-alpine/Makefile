@@ -15,7 +15,8 @@ obj-y					+= al_fabric.o
 obj-y 					+= al_hal/
 obj-$(CONFIG_SMP)			+= platsmp.o
 obj-$(CONFIG_HOTPLUG_CPU)		+= sleep-alpine.o
-obj-$(CONFIG_PCI_MSI)			+= msix.o
+obj-$(CONFIG_PCI_MSI)			+= irq-alpine-msi.o
+#obj-$(CONFIG_PCI_MSI)			+= msix.o
 
 # only build sleep-alpine once
 ifneq ($(CONFIG_HOTPLUG_CPU), y)

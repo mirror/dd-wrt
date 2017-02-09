@@ -28,5 +28,5 @@
 		.endm
 
 #define UART_SHIFT	2
-#include <asm/hardware/debug-8250.S>
+#include <debug/8250.S>
 

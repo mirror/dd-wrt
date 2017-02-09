@@ -2468,7 +2468,7 @@ al_eth_request_irq(struct al_eth_adapter *adapter)
 		rc = request_irq(irq->vector, irq->handler, flags, irq->name,
 				 irq->data);
 		if (rc) {
-			netdev_err(adapter->netdev, "failed to request irq. index %d rc %d\n", i, rc);
+			netdev_err(adapter->netdev, "failed to request irq %d. index %d rc %d\n", irq, i, rc);
 			break;
 		}
 		irq->requested = 1;
