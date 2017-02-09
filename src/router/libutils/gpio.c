@@ -348,13 +348,13 @@ void set_gpio(int gpio, int value)
 
 int get_gpio(int gpio)
 {
-	return 0;
+	return get_linux_gpio(gpio);
 }
 
 
 void set_gpio(int gpio, int value)
 {
-
+	set_linux_gpio(gpio, value);
 }
 #elif HAVE_IPQ806X
 

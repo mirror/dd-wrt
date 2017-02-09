@@ -2106,7 +2106,7 @@ int internal_getRouterBrand()
 		return ROUTER_WRT_1900ACS;	// similar
 	}
 #elif HAVE_R9000
-	setRouter("Netgear Nighthawk X4");
+	setRouter("Netgear Nighthawk X10");
 	return ROUTER_NETGEAR_R9000;
 #elif HAVE_IPQ806X
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
@@ -6798,6 +6798,19 @@ int led_control(int type, int act)
 		disconnected_gpio = 0x007;	// wan led
 		break;
 	case ROUTER_NETGEAR_R9000:
+
+
+		power_gpio = 0x016;	// power led 
+		diag_gpio = 0x116;	// power led orange     
+		diag_gpio_disabled = 0x016;	// power led orange     
+		connected_gpio = 0x017;	// wan led
+//		usb_power = 0x010;	// usb enable
+//		usb_power1 = 0x00f;
+//		wlan0_gpio = 0x009;	// radio 5G 
+///		wlan1_gpio = 0x008;	// radio 2G
+		ses_gpio = 0x027;     // wps button led used for 2G
+		usb_gpio = 0x024;	//usb1 
+		usb_gpio1 = 0x025;	//usb2
 		break;
 	case ROUTER_TRENDNET_TEW827:
 		power_gpio = 0x135;	// power led 
