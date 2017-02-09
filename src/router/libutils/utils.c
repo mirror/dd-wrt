@@ -2105,6 +2105,9 @@ int internal_getRouterBrand()
 		setRouter("Linksys WRT3200ACM");
 		return ROUTER_WRT_1900ACS;	// similar
 	}
+#elif HAVE_R9000
+	setRouter("Netgear Nighthawk X4");
+	return ROUTER_NETGEAR_R9000;
 #elif HAVE_IPQ806X
 	FILE *fp = fopen("/sys/firmware/devicetree/base/model", "rb");
 	if (!fp) {
@@ -2145,9 +2148,6 @@ int internal_getRouterBrand()
 		setRouter("ASRock G10");
 		return ROUTER_ASROCK_G10;
 	}
-#elif HAVE_R9000
-	setRouter("Netgear Nighthawk X4");
-	return ROUTER_NETGEAR_R9000;
 #elif HAVE_MERAKI
 	setRouter("Meraki Mini");
 	return ROUTER_BOARD_MERAKI;
