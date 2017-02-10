@@ -114,7 +114,16 @@ void start_sysinit(void)
 		nvram_set("et0macaddr_safe", macaddr);
 		close(s);
 	}
+	insmod("mii_gpio");
+	system("swconfig dev switch0 set reset 1");
+	system("swconfig dev switch0 set enable_vlan 0");
+	system("swconfig dev switch0 vlan 1 set ports \"0 1 2 3 4 5 6\"");
+	system("swconfig dev switch0 set apply");
 
+	system("swconfig dev switch1 set reset 1");
+	system("swconfig dev switch1 set enable_vlan 0");
+	system("swconfig dev switch1 vlan 1 set ports \"0 1 2 3 4 5 6\"");
+	system("swconfig dev switch1 set apply");
 
 	/*
 	 * Set a sane date 
