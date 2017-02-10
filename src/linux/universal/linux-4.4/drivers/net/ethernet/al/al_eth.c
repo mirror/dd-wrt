@@ -3393,6 +3393,9 @@ static int al_eth_aq_phy_fixup(struct phy_device *phydev)
  * handler is registered with the OS, the watchdog timer is started,
  * and the stack is notified that the interface is ready.
  **/
+struct mii_bus * al_get_mdiobus_by_gpio(void);
+
+
 static int al_eth_open(struct net_device *netdev)
 {
 	struct al_eth_adapter		*adapter = netdev_priv(netdev);
@@ -3461,6 +3464,7 @@ static int al_eth_open(struct net_device *netdev)
 			goto err_mdiobus_setup;
 		}
 	}
+//	adapter->mdio_bus = al_get_mdiobus_by_gpio();
 
 	if (adapter->mdio_bus) {
 		rc = al_eth_phy_init(adapter);

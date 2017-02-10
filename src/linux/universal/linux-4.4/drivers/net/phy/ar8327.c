@@ -625,10 +625,11 @@ ar8327_hw_init(struct ar8xxx_priv *priv)
 		ret = ar8327_hw_config_pdata(priv,
 					     priv->phy->dev.platform_data);
 
+#ifndef CONFIG_ARCH_ALPINE
 	if (ret)
 		return ret;
-
 	ar8327_leds_init(priv);
+#endif
 
 	ar8xxx_phy_init(priv);
 

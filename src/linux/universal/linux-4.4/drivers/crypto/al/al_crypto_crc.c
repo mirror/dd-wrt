@@ -634,7 +634,7 @@ int al_crypto_crc_init(struct al_crypto_device *device)
 		dev_info(&device->pdev->dev,
 			"crc/csum algorithms registered in /proc/crypto\n");
 
-	return err;
+	return 0;
 }
 
 /******************************************************************************
