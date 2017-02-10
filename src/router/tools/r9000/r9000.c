@@ -120,8 +120,8 @@ int main(int argc, char **argv)
 	header.crc = 0;
 
 	// create a firmware image in memory and copy the input_file to it
-	buf = malloc(buflen+65536);
-	memset(buf, 0, buflen + 65536);
+	buf = malloc(buflen);
+	memset(buf, 0, buflen);
 	memcpy(buf, input_file, len);
 
 	// CRC of temporary header
@@ -135,21 +135,18 @@ int main(int argc, char **argv)
 		off_t new_buflen;
 
 		new_buflen = buflen + 4;
-		new_buf = malloc(new_buflen+65536);
+		new_buf = malloc(new_buflen);
 
-		image_len = buflen + 65536;
+		image_len = buflen;
 
 		memcpy(new_buf, &image_len, sizeof(image_len));
-		memcpy(new_buf + 4, buf, buflen+65536);
+		memcpy(new_buf + 4, buf, buflen);
 
 		free(buf);
 		buf = new_buf;
 		buflen = new_buflen;
 	}
-	int aligned = buflen + 65536;
-	aligned /=65536;
-	aligned *=65536;
-	aligned -=64;
+	int aligned = buflen;
 	// write the buf
 	if ((fd = open(argv[2], O_CREAT|O_WRONLY|O_TRUNC,0644)) < 0
 	|| write(fd, buf, aligned) != aligned
