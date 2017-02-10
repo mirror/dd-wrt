@@ -59,4 +59,6 @@ obj-$(CONFIG_MICROCHIP_PHY)	+= microchip.o
 obj-$(CONFIG_MDIO_BCM_IPROC)	+= mdio-bcm-iproc.o
 
 # GPIO simulate MDIO
-obj-$(CONFIG_ARCH_ALPINE)       += mii_gpio.o
+ifeq ($(CONFIG_ARCH_ALPINE),y)
+obj-m				+= mii_gpio.o
+endif
