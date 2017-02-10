@@ -4288,7 +4288,7 @@ struct mii_bus *al_get_mdiobus_by_name(const char *ethname)
         bus_p->priv = netdev_priv(netdev_p);
         bus_p->read = &al_mdio_read;
         bus_p->write = &al_mdio_write;
-		mutex_init(&bus_p->mdio_lock);
+	mutex_init(&bus_p->mdio_lock);
         // adapter->mdio_bus = bus_p;
     }
     return BUS_P;
