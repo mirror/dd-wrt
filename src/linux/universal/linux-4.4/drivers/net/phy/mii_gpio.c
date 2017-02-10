@@ -202,12 +202,16 @@ static struct mii_bus * bus = NULL;
 static void al_eth_adjust_link(struct net_device *dev)
 {
 }
+
+struct mii_bus *al_get_mdiobus_by_name(const char *ethname);
+
 static int __init mdiobus_probe(void)
 {
     int status;
     u16 phy_addr, phy_reg;
     struct phy_device *phydev = NULL;
     struct mii_bus * p_bus = NULL;
+    struct mii_bus * slave = NULL;
     u16 phy_val;
 
     struct platform_device *pdev = platform_device_register_simple("AL MDIO bus", 0, NULL, 0);
@@ -261,6 +265,21 @@ static int __init mdiobus_probe(void)
     }
 
 
+    slave = al_get_mdiobus_by_name("eth1");
+    slave->parent = &pdev->dev;
+    if(mdiobus_register(slave))
+		printk("mdio bus register fail!\n");
+
+    phydev = slave->phy_map[0];
+
+    if (phydev!=NULL)
+    {
+    phydev = phy_connect(slave->priv, dev_name(&phydev->dev), &al_eth_adjust_link ,PHY_INTERFACE_MODE_RGMII);
+    phydev->supported &= PHY_BASIC_FEATURES;
+    phydev->advertising = phydev->supported;
+    }else{
+    printk(KERN_EMERG "phymap is null\n");
+    }
 
     return 0;
 }
@@ -296,5 +315,6 @@ static void __exit mdio_gpio_exit(void)
 }
 
 module_init(mdiobus_probe);
+module_exit(mdio_gpio_exit);
 
 
