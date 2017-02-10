@@ -426,14 +426,19 @@ endif
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
 	#mkdir $(TARGETDIR)/boot
 	
-	
-	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/zImage-alpine
 #	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine;
-	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-alpine $(ARCH)-uclibc/uImage;
 	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
+	
+
+	dd if=$(ARCH)-uclibc/zImage-alpine bs=$(shell expr $(MAX_KERNEL_SIZE)) conv=sync of=$(ARCH)-uclibc/zImage-alpine-fix
+	dd if=$(ARCH)-uclibc/zImage-alpine-fix bs=1 count=$(shell expr $(MAX_KERNEL_SIZE) - 132) conv=sync of=$(ARCH)-uclibc/zImage-alpine-fix2
+	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-alpine-fix2 $(ARCH)-uclibc/uImage;
+
+#	dd if=$(ARCH)-uclibc/uImage bs=$(shell expr $(MAX_KERNEL_SIZE)) conv=sync of=$(ARCH)-uclibc/uImage.fix
 
 	./tools/r9000/r9000 $(ARCH)-uclibc/uImage $(ARCH)-uclibc/vmlinux.uImage.normal add_image_size
+
 	dd if=$(ARCH)-uclibc/root.squashfs of=$(ARCH)-uclibc/root.squashfs.final bs=2k conv=sync
 	mkimage -A arm -O linux -C lzma -T kernel -a 0x40908000 \
 		-e 0x40908000 -n 'Linux-DD-WRT' \
@@ -442,6 +447,9 @@ endif
 		$(ARCH)-uclibc/squashfs.uImage \
 		$(ARCH)-uclibc/squashfs.uImage.tmp
 	cat $(ARCH)-uclibc/squashfs.uImage.tmp >> $(ARCH)-uclibc/vmlinux.uImage.normal
+
+
+
 #	cat $(ARCH)-uclibc/vmlinux.uImage.normal > $(ARCH)-uclibc/vmlinux.uImage.tmp
 #	dd if=$(ARCH)-uclibc/vmlinux.uImage.tmp bs=$(shell expr $(MAX_KERNEL_SIZE) - 64) conv=sync of=$(ARCH)-uclibc/vmlinux.uImage.final
 #	dd if=$(ARCH)-uclibc/squashfs.uImage.tmp bs=64 count=1 >> $(ARCH)-uclibc/vmlinux.uImage.final
@@ -454,6 +462,43 @@ endif
 		-i $(ARCH)-uclibc/vmlinux.uImage.normal \
 		-o $(ARCH)-uclibc/$(MODULE_NAME)-$(FW_VERSION)$(FW_REGION).img
 
+
+	
+
+
+
+fixup:
+
+	dd if=$(ARCH)-uclibc/zImage-alpine bs=$(shell expr $(MAX_KERNEL_SIZE)) conv=sync of=$(ARCH)-uclibc/zImage-alpine-fix
+	dd if=$(ARCH)-uclibc/zImage-alpine-fix bs=1 count=$(shell expr $(MAX_KERNEL_SIZE) - 132) conv=sync of=$(ARCH)-uclibc/zImage-alpine-fix2
+	mkimage -A arm -O linux -T kernel -a 0x00008000 -C none -e 0x00008000 -n 'DD-WRT' -d $(ARCH)-uclibc/zImage-alpine-fix2 $(ARCH)-uclibc/uImage;
+
+#	dd if=$(ARCH)-uclibc/uImage bs=$(shell expr $(MAX_KERNEL_SIZE)) conv=sync of=$(ARCH)-uclibc/uImage.fix
+
+	./tools/r9000/r9000 $(ARCH)-uclibc/uImage $(ARCH)-uclibc/vmlinux.uImage.normal add_image_size
+
+	dd if=$(ARCH)-uclibc/root.squashfs of=$(ARCH)-uclibc/root.squashfs.final bs=2k conv=sync
+	mkimage -A arm -O linux -C lzma -T kernel -a 0x40908000 \
+		-e 0x40908000 -n 'Linux-DD-WRT' \
+		-d $(ARCH)-uclibc/root.squashfs.final $(ARCH)-uclibc/squashfs.uImage
+	./tools/r9000/r9000 \
+		$(ARCH)-uclibc/squashfs.uImage \
+		$(ARCH)-uclibc/squashfs.uImage.tmp
+	cat $(ARCH)-uclibc/squashfs.uImage.tmp >> $(ARCH)-uclibc/vmlinux.uImage.normal
+
+
+
+#	cat $(ARCH)-uclibc/vmlinux.uImage.normal > $(ARCH)-uclibc/vmlinux.uImage.tmp
+#	dd if=$(ARCH)-uclibc/vmlinux.uImage.tmp bs=$(shell expr $(MAX_KERNEL_SIZE) - 64) conv=sync of=$(ARCH)-uclibc/vmlinux.uImage.final
+#	dd if=$(ARCH)-uclibc/squashfs.uImage.tmp bs=64 count=1 >> $(ARCH)-uclibc/vmlinux.uImage.final
+#	( \
+#		dd if=$(ARCH)-uclibc/vmlinux.uImage.final bs=$(MAX_KERNEL_SIZE) conv=sync; \
+#		dd if=$(ARCH)-uclibc/root.squashfs.final bs=64k; \
+#	) > $(ARCH)-uclibc/alpine-sysupgrade.bin
+	./tools/r9000/mkdniimg \
+		-B $(MODULE_NAME) -v $(FW_VERSION) -r $(FW_REGION) -H $(HW_ID) \
+		-i $(ARCH)-uclibc/vmlinux.uImage.normal \
+		-o $(ARCH)-uclibc/$(MODULE_NAME)-$(FW_VERSION)$(FW_REGION).img
 
 
 
