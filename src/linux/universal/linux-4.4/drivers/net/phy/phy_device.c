@@ -645,7 +645,6 @@ int phy_attach_direct(struct net_device *dev, struct phy_device *phydev,
 	struct mii_bus *bus = phydev->bus;
 	struct device *d = &phydev->dev;
 	int err;
-
 	if (!try_module_get(bus->owner)) {
 		dev_err(&dev->dev, "failed to get the bus module\n");
 		return -EIO;
@@ -677,7 +676,8 @@ int phy_attach_direct(struct net_device *dev, struct phy_device *phydev,
 	}
 
 	phydev->attached_dev = dev;
-	dev->phydev = phydev;
+	if (dev)
+	    dev->phydev = phydev;
 
 	phydev->dev_flags = flags;
 
