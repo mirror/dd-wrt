@@ -186,7 +186,9 @@ void phy_reg_write_by_gpio(char phy_addr,char phy_reg, unsigned int phy_val)
 static int
 al_mdio_gpio_read(struct mii_bus *bp, int mii_id, int reg)
 {
-	return phy_reg_read_by_gpio(mii_id, reg);
+	int reg2 = phy_reg_read_by_gpio(mii_id, reg); 
+//	printk(KERN_EMERG "read mdio %X:%X = %X\n",mii_id,reg,reg2);
+	return reg2;
 }
 
 static int
@@ -195,14 +197,20 @@ al_mdio_gpio_write(struct mii_bus *bp, int mii_id, int reg, u16 val)
 	phy_reg_write_by_gpio(mii_id, reg, val);
 	return 0;
 }
+static struct mii_bus * bus = NULL;
 
-static int __init mdiobus_probe(struct platform_device *pdev)
+static void al_eth_adjust_link(struct net_device *dev)
+{
+}
+static int __init mdiobus_probe(void)
 {
     int status;
     u16 phy_addr, phy_reg;
+    struct phy_device *phydev = NULL;
     struct mii_bus * p_bus = NULL;
     u16 phy_val;
 
+    struct platform_device *pdev = platform_device_register_simple("AL MDIO bus", 0, NULL, 0);
     pr_info("mido_gpio module init\n");
 
     /* MDC */
@@ -234,19 +242,35 @@ static int __init mdiobus_probe(struct platform_device *pdev)
 	p_bus->read = &al_mdio_gpio_read;
 	p_bus->write = &al_mdio_gpio_write;
 	p_bus->parent = &pdev->dev;
-	snprintf(p_bus->id, MII_BUS_ID_SIZE, "fixed-gpio");
+	snprintf(p_bus->id, MII_BUS_ID_SIZE, "mdio-al");
 //	#if 0
 	if(mdiobus_register(p_bus))
 		printk("mdio bus register fail!\n");
 //	#endif
+	bus = p_bus;
 	mutex_init(&p_bus->mdio_lock);
+    phydev = p_bus->phy_map[0];
+
+    if (phydev!=NULL)
+    {
+    phydev = phy_connect(NULL, dev_name(&phydev->dev), &al_eth_adjust_link ,PHY_INTERFACE_MODE_RGMII);
+    phydev->supported &= PHY_BASIC_FEATURES;
+    phydev->advertising = phydev->supported;
+    }else{
+    printk(KERN_EMERG "phymap is null\n");
+    }
+
+
+
     return 0;
 }
 
 
 struct mii_bus * al_get_mdiobus_by_gpio(void)
 {
+	return bus;
 
+/*
 	struct mii_bus * p_bus = NULL;
 
 	p_bus = mdiobus_alloc();
@@ -258,7 +282,7 @@ struct mii_bus * al_get_mdiobus_by_gpio(void)
 		printk("mdio bus register fail!\n");
 //	#endif
 	mutex_init(&p_bus->mdio_lock);
-	return p_bus;
+	return p_bus;*/
 	
 }
 
@@ -271,12 +295,6 @@ static void __exit mdio_gpio_exit(void)
     gpio_free(GPIO_MDIO_PIN);
 }
 
-static struct platform_driver al_mdiobus_driver = {
-	.driver = {
-		.name		= "mdio-al",
-	},
-	.probe		= mdiobus_probe,
-};
+module_init(mdiobus_probe);
 
 
-module_platform_driver(al_mdiobus_driver);
