@@ -3538,7 +3538,7 @@ static void save_prefix(webs_t wp, char *prefix)
 		if (wl && !strcmp(prefix, "wl0"))
 			nvram_set("wl_mode", wl);
 #ifndef HAVE_MADWIFI
-		if (strcmp(wl, "ap") && strcmp(wl, "apsta")
+		if (wl && strcmp(wl, "ap") && strcmp(wl, "apsta")
 		    && strcmp(wl, "apstawet")) {
 			nvram_nset("", "%s_vifs", prefix);
 		}
