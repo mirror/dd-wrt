@@ -998,6 +998,19 @@ void start_lan(void)
 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
+#elif HAVE_R9000
+	nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1");
+	if (getSTA() || getWET() || CANBRIDGE()) {
+		PORTSETUPWAN("");
+	} else {
+		PORTSETUPWAN("eth2");
+	}
+
+	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
+	ioctl(s, SIOCGIFHWADDR, &ifr);
+	if (nvram_match("et0macaddr", ""))
+		nvram_set("et0macaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
+	strcpy(mac, nvram_safe_get("et0macaddr"));
 #elif HAVE_IPQ806X
 	int board = getRouterBrand();
 	switch (board) {
@@ -3085,6 +3098,9 @@ void start_wan(int status)
 #elif HAVE_UNIWIP
 	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
 						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth0";
+#elif HAVE_R9000
+	char *pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname",
+						"") ? nvram_safe_get("pppoe_wan_ifname") : "eth2";
 #elif HAVE_MVEBU
 	char *pppoe_wan_ifname;
 	if (getRouterBrand() == ROUTER_WRT_1900AC)

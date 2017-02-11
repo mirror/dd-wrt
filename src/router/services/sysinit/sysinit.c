@@ -1188,6 +1188,16 @@ void start_restore_defaults(void)
 		generic = wrt1900;
 	else
 		generic = wrt1200;
+#elif HAVE_R9000
+	struct nvram_param generic[] = {
+		{"lan_ifname", "br0"},
+		{"lan_ifnames", "eth0 eth1 eth2 ath0 ath1"},
+		{"wan_ifname", "eth2"},
+		{"wan_ifname2", "eth2"},
+		{"wan_ifnames", "eth2"},
+		{"wan_default", "eth2"},
+		{0, 0}
+	};
 #elif HAVE_IPQ806X
 	struct nvram_param ipq806x[] = {
 		{"lan_ifname", "br0"},
@@ -2959,6 +2969,7 @@ void start_drivers(void)
 #endif
 		if (nvram_matchi("usb_storage", 1)) {
 			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage sata_mv ehci-orion");
+			insmod("libata libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx sdhci-pxav3");
 		}
 
 		if (nvram_matchi("usb_printer", 1)) {
@@ -2974,7 +2985,6 @@ void start_drivers(void)
 #endif
 
 //ahci
-		insmod("libata libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx sdhci-pxav3");
 
 		mount("devpts", "/proc/bus/usb", "usbfs", MS_MGC_VAL, NULL);
 	} else {
