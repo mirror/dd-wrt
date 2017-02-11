@@ -461,6 +461,7 @@ endif
 		-B $(MODULE_NAME) -v $(FW_VERSION) -r $(FW_REGION) -H $(HW_ID) \
 		-i $(ARCH)-uclibc/vmlinux.uImage.normal \
 		-o $(ARCH)-uclibc/$(MODULE_NAME)-$(FW_VERSION)$(FW_REGION).img
+	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/r9000.bin $(ARCH)-uclibc/vmlinux.uImage.normal 
 
 
 	
