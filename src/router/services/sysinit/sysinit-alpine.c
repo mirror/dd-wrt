@@ -138,14 +138,14 @@ void start_sysinit(void)
 
 
 	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 1");
-	system("swconfig dev switch0 vlan 1 set ports \"0t 4t 6t 1 2\"");
-	system("swconfig dev switch0 vlan 2 set ports \"5t 3\"");
+	system("swconfig dev switch0 set enable_vlan 0");
+	system("swconfig dev switch0 vlan 1 set ports \"0 4 1 2\"");
+	system("swconfig dev switch0 vlan 2 set ports \"5 3\"");
 	system("swconfig dev switch0 set apply");
 
 	system("swconfig dev switch1 set reset 1");
-	system("swconfig dev switch1 set enable_vlan 1");
-	system("swconfig dev switch1 vlan 1 set ports \"0t 5t 4 3 2 1\"");
+	system("swconfig dev switch1 set enable_vlan 0");
+	system("swconfig dev switch1 vlan 1 set ports \"0 4 3 2 1\"");
 	system("swconfig dev switch1 set apply");
 
 
