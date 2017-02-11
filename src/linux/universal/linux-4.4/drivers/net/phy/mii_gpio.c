@@ -215,6 +215,7 @@ static int __init mdiobus_probe(void)
     u16 phy_val;
 
     struct platform_device *pdev = platform_device_register_simple("AL MDIO bus", 0, NULL, 0);
+    struct platform_device *pdevslave = platform_device_register_simple("AL MDIO bus slave", 0, NULL, 0);
     pr_info("mido_gpio module init\n");
 
     /* MDC */
@@ -241,6 +242,25 @@ static int __init mdiobus_probe(void)
         printk("QCA8337 is found\n");
     }
 
+    slave = al_get_mdiobus_by_name("eth1");
+    slave->parent = &pdevslave->dev;
+    if(mdiobus_register(slave))
+		printk("mdio bus register fail!\n");
+
+    phydev = slave->phy_map[0];
+
+    if (phydev!=NULL)
+    {
+    phydev = phy_connect(slave->priv, dev_name(&phydev->dev), &al_eth_adjust_link ,PHY_INTERFACE_MODE_RGMII);
+    phydev->supported &= PHY_BASIC_FEATURES;
+    phydev->advertising = phydev->supported;
+    }else{
+    printk(KERN_EMERG "phymap is null\n");
+    }
+
+
+
+
 	p_bus = mdiobus_alloc();
 	p_bus->name = "mdio-al";
 	p_bus->read = &al_mdio_gpio_read;
@@ -265,23 +285,82 @@ static int __init mdiobus_probe(void)
     }
 
 
-    slave = al_get_mdiobus_by_name("eth1");
-    slave->parent = &pdev->dev;
-    if(mdiobus_register(slave))
-		printk("mdio bus register fail!\n");
+    phy_reg_write_by_gpio(0x2,0x1, 0x000B);
+    /*      0x0009 for 1000base-X
+						0x100A for SGMII
+						0x000B for 2500base-X   */
+    phy_reg_write_by_gpio(0x2,0x0, 0x9520); /* write to port 9 */
+    phy_reg_write_by_gpio(0x2,0x0, 0x9540); /* write to port 10 */
+    
+    phy_reg_write_by_gpio(0x2,0x1, 0x303F); /* 0x203E for 1G,  0x303F for 2.5G */
+    /*      force speed/duplex/link , 
+						suppose we dont need this.  
+						Only for 1G/2.5G fail , debug purpose, set speed according the speed above.   */
+    phy_reg_write_by_gpio(0x2,0x0, 0x9521); /* write to port 9 */
+    phy_reg_write_by_gpio(0x2,0x0, 0x9541); /* write to port 10 */
+    
+    /* switch software reset */
+    phy_reg_write_by_gpio(0x2,0x1, 0xc001);
+    phy_reg_write_by_gpio(0x2,0x0, 0x9764);
+    
+    phy_reg_write_by_gpio(0x2,0x1, 0x9140);
+    phy_reg_write_by_gpio(0x2,0x0, 0x9799);
+    phy_reg_write_by_gpio(0x2,0x1, 0x9420);
+    phy_reg_write_by_gpio(0x2,0x0, 0x9798);
 
-    phydev = slave->phy_map[0];
 
-    if (phydev!=NULL)
-    {
-    phydev = phy_connect(slave->priv, dev_name(&phydev->dev), &al_eth_adjust_link ,PHY_INTERFACE_MODE_RGMII);
-    phydev->supported &= PHY_BASIC_FEATURES;
-    phydev->advertising = phydev->supported;
-    }else{
-    printk(KERN_EMERG "phymap is null\n");
-    }
+	slave->write(slave, 0x18, 0x00, 0x0000);
+	slave->write(slave, 0x11, 0x1e, 0x007e);
+	slave->write(slave, 0x11, 0x1f, 0x0000);
+
+	/*
+	mdio write al_eth1 0x18 0x00 0x0000
+	mdio write al_eth1 0x10 0x02 0x0000
+	mdio write al_eth1 0x10 0x03 0x0760
+	*/
+	slave->write(slave, 0x18, 0x00, 0x0000);
+	slave->write(slave, 0x10, 0x02, 0x0000);
+	slave->write(slave, 0x10, 0x03, 0x0760);
+
+	/*
+	mdio write al_eth1 0x18 0x00 0x0003
+	mdio write al_eth1 0x10 0x12 0x7f7f
+	mdio write al_eth1 0x10 0x13 0x007f
+	*/
+	slave->write(slave, 0x18, 0x00, 0x0003);
+	slave->write(slave, 0x10, 0x12, 0x7f7f);
+	slave->write(slave, 0x10, 0x13, 0x007f);
+
+	/*
+	mdio write al_eth1 0x18 0x00 0x0000
+	mdio write al_eth1 0x13 0x12 0xa545
+	mdio write al_eth1 0x13 0x13 0x000e
+	*/
+	slave->write(slave, 0x18, 0x00, 0x0000);
+	slave->write(slave, 0x13, 0x12, 0xa545);
+	slave->write(slave, 0x13, 0x13, 0x000e);
+
+	/*
+	mdio write al_eth1 0x18 0x00 0x0000
+	mdio write al_eth1 0x10 0x04 0x0000
+	mdio write al_eth1 0x10 0x05 0x0760
+	*/
+	slave->write(slave, 0x18, 0x00, 0x0000);
+	slave->write(slave, 0x10, 0x04, 0x0000);
+	slave->write(slave, 0x10, 0x05, 0x0760);
+
+	/* ====== MAC 5, RGMII_B ======= */
+	/*
+	mdio write al_eth1 0x18 0x00 0x0000
+	mdio write al_eth1 0x12 0x08 0x007e
+	mdio write al_eth1 0x12 0x09 0x0000
+	*/
+	slave->write(slave, 0x18, 0x00, 0x0000);
+	slave->write(slave, 0x12, 0x08, 0x007e);
+	slave->write(slave, 0x12, 0x09, 0x0000);
 
     return 0;
+
 }
 
 

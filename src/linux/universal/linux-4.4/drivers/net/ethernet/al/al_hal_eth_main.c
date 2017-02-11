@@ -1813,8 +1813,8 @@ int al_eth_mdio_10g_mac_type22(struct al_hal_eth_adapter *adapter, int read, uin
 	mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
 
 	if (mdio_cfg_status & AL_BIT(1)){ //error
-		al_err(" %s mdio %s failed on error. phy_addr 0x%x reg 0x%x\n",
-			adapter->name, op, phy_addr, reg);
+//		al_err(" %s mdio %s failed on error. phy_addr 0x%x reg 0x%x\n",
+//			adapter->name, op, phy_addr, reg);
 			return -EIO;
 	}
 	if (read)
@@ -1872,8 +1872,8 @@ int al_eth_mdio_10g_mac_type45(struct al_hal_eth_adapter *adapter, int read, uin
 	mdio_cfg_status = al_reg_read32(&adapter->mac_regs_base->mac_10g.mdio_cfg_status);
 
 	if (mdio_cfg_status & AL_BIT(1)){ //error
-		al_err(" %s mdio %s failed on error. port 0x%x, device 0x%x reg 0x%x\n",
-			adapter->name, op, port_addr, device, reg);
+//		al_err(" %s mdio %s failed on error. port 0x%x, device 0x%x reg 0x%x\n",
+//			adapter->name, op, port_addr, device, reg);
 			return -EIO;
 	}
 	if (read)
