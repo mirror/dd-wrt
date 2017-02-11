@@ -7269,7 +7269,7 @@ int chilli_main(int argc, char **argv) {
   syslog_ident = basename(argv[0]);
 
   /* Start out also logging to stderr until we load options. */
-  openlog(syslog_ident, syslog_options|syslog_debug_options, LOG_DAEMON);
+//  openlog(syslog_ident, syslog_options|syslog_debug_options, LOG_DAEMON);
 
   options_init();
 
@@ -7366,13 +7366,13 @@ int chilli_main(int argc, char **argv) {
       _options.logfacility= LOG_FAC(LOG_DAEMON);
 #endif
 
-    closelog();
+//    closelog();
 
     if (_options.debug)
       syslog_options |= syslog_debug_options;
-    openlog(syslog_ident, syslog_options, (_options.logfacility<<3));
+//    openlog(syslog_ident, syslog_options, (_options.logfacility<<3));
     if (!_options.debug)
-      setlogmask(LOG_UPTO(_options.loglevel));
+//      setlogmask(LOG_UPTO(_options.loglevel));
 
     chilli_signals(&keep_going, &reload_config);
 
