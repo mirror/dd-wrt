@@ -93,6 +93,8 @@ void start_freeradius(void)
 #ifndef HAVE_WDR4900
 #if defined(HAVE_X86) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
+#elif HAVE_R9000
+	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:netgear", "/jffs");
 #elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 #else
