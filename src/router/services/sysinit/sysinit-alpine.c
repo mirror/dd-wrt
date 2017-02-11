@@ -115,15 +115,26 @@ void start_sysinit(void)
 		close(s);
 	}
 	insmod("mii_gpio");
-	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 0");
-	system("swconfig dev switch0 vlan 1 set ports \"0 1 2 3 4 5 6\"");
-	system("swconfig dev switch0 set apply");
 
-	system("swconfig dev switch1 set reset 1");
-	system("swconfig dev switch1 set enable_vlan 0");
-	system("swconfig dev switch1 vlan 1 set ports \"0 1 2 3 4 5 6\"");
-	system("swconfig dev switch1 set apply");
+//	system("swconfig dev switch0 set reset 1");
+//	system("swconfig dev switch0 set enable_vlan 0");
+//	system("swconfig dev switch0 vlan 1 set ports \"4 6\"");
+//	system("swconfig dev switch0 set apply");
+
+//	system("swconfig dev switch1 set reset 1");
+//	system("swconfig dev switch1 set enable_vlan 0");
+//	system("swconfig dev switch1 vlan 1 set ports \"0 5\"");
+//	system("swconfig dev switch1 set apply");
+
+
+//	sw_user_lan_ports_vlan_config "1" "1 2 3 4 5 6" "0" "0" "0" "normal_lan"
+//	sw_user_lan_ports_vlan_config "2" ""            "0" "1" "0" "wan"
+//	local vlanid="$1"
+//	local lan_ports="$2"
+//	local is_bridge_vlan="$3"
+//	local is_wan_vlan="$4"
+//	local is_iptv_vlan="$5"
+//	local vlan_mode="$6"
 
 	/*
 	 * Set a sane date 
