@@ -50,7 +50,7 @@ int mscript_main(int argc, char **argv) {
 
   options_init();
 
-  openlog(PACKAGE, LOG_PID, LOG_DAEMON);
+//  openlog(PACKAGE, LOG_PID, LOG_DAEMON);
 
   memset(&statbuf, 0, sizeof(statbuf));
 
