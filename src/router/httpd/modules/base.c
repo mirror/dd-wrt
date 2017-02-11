@@ -2035,11 +2035,10 @@ static char *scanfile(char *buf, const char *tran)
 			}
 
 		}
-
+		free(temp1);
 		fclose(fp);
 	}
 	free(temp);
-	free(temp1);
 	return NULL;
 }
 
