@@ -28,6 +28,9 @@
 /* MSIX message address format: local GIC target */
 #define ALPINE_MSIX_SPI_TARGET_CLUSTER0		BIT(16)
 
+static u32 al_irq_msi_addr_high;
+static u32 al_irq_msi_addr_low;
+
 struct alpine_msix_data {
 	spinlock_t msi_map_lock;
 	phys_addr_t addr;
@@ -91,13 +94,11 @@ static void alpine_msix_free_sgi(struct alpine_msix_data *priv, unsigned sgi,
 static void alpine_msix_compose_msi_msg(struct irq_data *data,
 					struct msi_msg *msg)
 {
-	struct alpine_msix_data *priv = irq_data_get_irq_chip_data(data);
-	phys_addr_t msg_addr = priv->addr;
+	msg->address_hi = al_irq_msi_addr_high;
+	msg->address_lo = al_irq_msi_addr_low + (1<<16) + (data->hwirq << 3);
 
-	msg_addr |= (data->hwirq << 3);
-
-	msg->address_hi = upper_32_bits(msg_addr);
-	msg->address_lo = lower_32_bits(msg_addr);
+//	msg->address_hi = upper_32_bits(msg_addr);
+//	msg->address_lo = lower_32_bits(msg_addr);
 	msg->data = 0;
 }
 
@@ -255,6 +256,14 @@ int al_msix_init(void)
 	 * To select the primary GIC as the target GIC, bits [18:17] must be set
 	 * to 0x0. In this case, bit 16 (SPI_TARGET_CLUSTER0) must be set.
 	 */
+
+	al_irq_msi_addr_high = ((u64)res.start) >> 32;
+	al_irq_msi_addr_low = res.start & 0xffffffff;
+
+
+//	priv->addr = (((u64)res.start) >> 32) << 16;
+//	priv->addr |= res.start & 0xffffffff;
+
 	priv->addr = res.start & GENMASK_ULL(63,20);
 	priv->addr |= ALPINE_MSIX_SPI_TARGET_CLUSTER0;
 
