@@ -295,7 +295,7 @@ void ej_samba3_users(webs_t wp, int argc, char_t ** argv)
 			free(csu);
 		}
 		csnext = cs->next;
-		free(csnext);
+		free(cs);
 	}
 
 	websWrite(wp, "		</table>\n");
