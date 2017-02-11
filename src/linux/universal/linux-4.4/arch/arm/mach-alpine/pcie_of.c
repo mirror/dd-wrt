@@ -492,13 +492,7 @@ static int al_pcie_parse_dt(struct al_pcie_pd *pcie)
 /* map the specified device/slot/pin to an IRQ */
 static int al_pcie_map_irq(const struct pci_dev *dev, u8 slot, u8 pin)
 {
-	struct of_phandle_args oirq;
-	int ret,irq;
-	ret = of_irq_parse_pci(dev, &oirq);
-	if (ret)
-		return ret;
-	irq = irq_create_of_mapping(&oirq);
-	return irq;
+	return of_irq_parse_and_map_pci(dev, slot, pin);
 }	
 
 static struct pci_bus *al_pcie_scan_bus(int nr, struct pci_sys_data *sys)
