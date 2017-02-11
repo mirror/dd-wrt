@@ -72,8 +72,8 @@ void start_sysinit(void)
 	char mtdpath[64];
 	int board = getRouterBrand();
 
-	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth0", "up");
+	eval("ifconfig", "eth1", "up");
 	eval("ifconfig", "eth2", "up");
 
 	int mtd = getMTD("ART");
@@ -116,15 +116,37 @@ void start_sysinit(void)
 	}
 	insmod("mii_gpio");
 
-//	system("swconfig dev switch0 set reset 1");
-//	system("swconfig dev switch0 set enable_vlan 0");
-//	system("swconfig dev switch0 vlan 1 set ports \"4 6\"");
-//	system("swconfig dev switch0 set apply");
 
-//	system("swconfig dev switch1 set reset 1");
-//	system("swconfig dev switch1 set enable_vlan 0");
-//	system("swconfig dev switch1 vlan 1 set ports \"0 5\"");
-//	system("swconfig dev switch1 set apply");
+/*
+# Switch-A:
+# sw port 0 -> Trunk to CPU(eth1)
+# sw port 5 -> Trunk to CPU(eth2)
+# sw port 4 -> Trunk to Switch-B sw port 0
+# sw port 6 -> Trunk to Switch-B sw port 5
+# sw port 3 -> WAN
+# sw port 2 -> LAN1
+# sw port 1 -> LAN2
+# Switch-B:
+# sw port 0 -> Trunk to Switch-A sw port 4
+# sw port 5 -> Trunk to Switch-A sw port 6
+# sw port 4 -> LAN3
+# sw port 3 -> LAN4
+# sw port 2 -> LAN5
+# sw port 1 -> LAN6
+# sw port 6 -> No Used
+*/
+
+
+	system("swconfig dev switch0 set reset 1");
+	system("swconfig dev switch0 set enable_vlan 1");
+	system("swconfig dev switch0 vlan 1 set ports \"0t 4t 6t 1 2\"");
+	system("swconfig dev switch0 vlan 2 set ports \"5t 3\"");
+	system("swconfig dev switch0 set apply");
+
+	system("swconfig dev switch1 set reset 1");
+	system("swconfig dev switch1 set enable_vlan 1");
+	system("swconfig dev switch1 vlan 1 set ports \"0t 5t 4 3 2 1\"");
+	system("swconfig dev switch1 set apply");
 
 
 //	sw_user_lan_ports_vlan_config "1" "1 2 3 4 5 6" "0" "0" "0" "normal_lan"
