@@ -1163,7 +1163,7 @@ CONFIG_MTD_ROOTFS_SPLIT=y
 # CONFIG_MTD_REDBOOT_PARTS is not set
 CONFIG_MTD_CMDLINE_PARTS=y
 CONFIG_USE_DNI_PARTITION=y
-CONFIG_DNI_PARTITION_CMDLINE="Alpine nand flash:1920k(u-boot)ro,1152k(u-boot-env)ro,1280k(ART),1280k(ART.bak),4352k(kernel),40960k(rootfs),45312k@0x580000(firmware),70144k(netgear),307200k(plex),89600k(reserve),512k(crashdump),3584k(language),1152k(nvram),1152k(pot)"
+CONFIG_DNI_PARTITION_CMDLINE="Alpine nand flash:1920k(u-boot)ro,1152k(u-boot-env)ro,1280k(ART),1280k(ART.bak),4352k(kernel),40960k(rootfs),45312k@0x580000(linux),70144k(netgear),307200k(plex),89600k(reserve),512k(crashdump),3584k(language),1152k(nvram),1152k(pot)"
 # CONFIG_MTD_AFS_PARTS is not set
 # CONFIG_MTD_OF_PARTS is not set
 # CONFIG_MTD_AR7_PARTS is not set

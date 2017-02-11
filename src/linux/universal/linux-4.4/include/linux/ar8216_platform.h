@@ -48,6 +48,7 @@ struct ar8327_pad_cfg {
 	enum ar8327_clk_delay_sel txclk_delay_sel;
 	enum ar8327_clk_delay_sel rxclk_delay_sel;
 	bool mac06_exchange_dis;
+	u32  value;
 };
 
 enum ar8327_port_speed {
@@ -120,11 +121,12 @@ struct ar8327_platform_data {
 	struct ar8327_pad_cfg *pad6_cfg;
 	struct ar8327_sgmii_cfg *sgmii_cfg;
 	struct ar8327_port_cfg port0_cfg;
+	struct ar8327_port_cfg port5_cfg;
 	struct ar8327_port_cfg port6_cfg;
 	struct ar8327_led_cfg *led_cfg;
 
 	int (*get_port_link)(unsigned port);
-
+	u32 e4;
 	unsigned num_leds;
 	const struct ar8327_led_info *leds;
 };
