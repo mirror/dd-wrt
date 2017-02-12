@@ -1,0 +1,41 @@
+#!/bin/sh
+# (C) 2008 openwrt.org
+
+SSDK_SH=/usr/sbin/ssdk_sh
+SSDK_ID=/sys/ssdk/dev_id
+
+local sw_index=$1
+
+if [ "$sw_index" != "0" -a "$sw_index" != "1" ]; then
+	echo "Error Switch Index Input"
+	return
+fi
+
+shift 
+
+BLOCKFILE=/tmp/dni_blockfile
+couter=0
+
+#echo -e "start at `date '+%Y-%m-%d %H:%M:%S'` \n"
+
+while [ $couter -lt 3 ];do
+	if [ ! -f $BLOCKFILE ];then
+		let couter=0
+		#echo -e "block file not exit \n"
+		break
+	fi
+	let couter=couter+1
+	sleep 1;
+	if [ "$couter" = "3" ]; then
+		rm -rf $BLOCKFILE
+		#echo -e "3 times tryed find blockfile \n"
+	fi
+done
+
+touch $BLOCKFILE
+#echo -e "touch blockfile \n"
+
+echo "$sw_index" > $SSDK_ID
+$SSDK_SH $@
+
+rm -rf $BLOCKFILE
