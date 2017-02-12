@@ -41,4 +41,5 @@ python-install:
 	rm -rf $(INSTALLDIR)/libffi/usr/share
 	rm -f $(INSTALLDIR)/libffi/usr/lib/*.a
 	rm -f $(INSTALLDIR)/libffi/usr/lib/*.la
+	rm -rf $(INSTALLDIR)/libffi/usr/lib/pkgconfig
 

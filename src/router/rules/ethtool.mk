@@ -9,6 +9,6 @@ ethtool-clean:
 
 ethtool-install:
 	make   -C ethtool install DESTDIR=$(INSTALLDIR)/ethtool
-	rm -rf $(INSTALLDIR)/ethtool/usr/man
+	rm -rf $(INSTALLDIR)/ethtool/usr/share/man
 	rm -rf $(INSTALLDIR)/ethtool/usr/lib
 
