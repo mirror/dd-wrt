@@ -208,10 +208,13 @@ static struct ar8327_platform_data switch0_data = {
 		      .force_link = 1,
 		      .speed = AR8327_PORT_SPEED_1000,
 		      .duplex = 1,
-		      .rxpause = 1,
-		      .txpause = 1,
 		      },
 	.port5_cfg = {
+		      .force_link = 1,
+		      .speed = AR8327_PORT_SPEED_1000,
+		      .duplex = 1,
+		      },
+	.port6_cfg = {
 		      .force_link = 1,
 		      .speed = AR8327_PORT_SPEED_1000,
 		      .duplex = 1,
@@ -223,7 +226,14 @@ static struct ar8327_platform_data switch0_data = {
 
 static struct ar8327_platform_data switch1_data = {
 	.pad0_cfg = &switch1_pad0_cfg,
-	.e4 = 0xaa545
+	.e4 = 0xaa545,
+	.port0_cfg = {
+		      .force_link = 1,
+		      .speed = AR8327_PORT_SPEED_1000,
+		      .duplex = 1,
+		      .rxpause = 1,
+		      .txpause = 1,
+		      },
 };
 
 static struct mdio_board_info switch0_mdio_info[] = {
@@ -285,7 +295,7 @@ static int __init mdiobus_probe(void)
 	struct mii_bus *p_bus = NULL;
 	struct mii_bus *slave = NULL;
 	u16 phy_val;
-
+#if 0
 	struct platform_device *pdev = platform_device_register_simple("AL MDIO bus", 0, NULL, 0);
 	struct platform_device *pdevslave = platform_device_register_simple("AL MDIO bus slave", 0, NULL, 0);
 
@@ -293,7 +303,7 @@ static int __init mdiobus_probe(void)
 	mdiobus_register_board_info_my(switch0_mdio_info, ARRAY_SIZE(switch0_mdio_info));
 	printk(KERN_EMERG "register 1\n");
 	mdiobus_register_board_info_my(switch1_mdio_info, ARRAY_SIZE(switch1_mdio_info));
-
+#endif
 	pr_info("mido_gpio module init\n");
 
 	/* MDC */
@@ -318,6 +328,7 @@ static int __init mdiobus_probe(void)
 		printk("QCA8337 is found\n");
 	}
 
+#if 0
 	slave = al_get_mdiobus_by_name("eth1");
 	slave->parent = &pdevslave->dev;
 
@@ -328,7 +339,6 @@ static int __init mdiobus_probe(void)
 	if (mdiobus_register(slave))
 		printk("mdio bus register fail!\n");
 
-#if 0
 	phydev = slave->phy_map[0];
 
 	if (phydev != NULL) {
@@ -344,20 +354,20 @@ static int __init mdiobus_probe(void)
 	p_bus->name = "mdio-al";
 	p_bus->read = &al_mdio_gpio_read;
 	p_bus->write = &al_mdio_gpio_write;
-	p_bus->parent = &pdev->dev;
+	//p_bus->parent = &pdev->dev;
 	snprintf(p_bus->id, MII_BUS_ID_SIZE, "mdio-al");
 
 	p_bus->irq = mii_irq_sw1;
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		mii_irq_sw1[i] = PHY_POLL;
 
+#if 0
 //      #if 0
 	if (mdiobus_register(p_bus))
 		printk("mdio bus register fail!\n");
 //      #endif
 	bus = p_bus;
 	mutex_init(&p_bus->mdio_lock);
-#if 0
 	phydev = p_bus->phy_map[0];
 
 	if (phydev != NULL) {
@@ -452,7 +462,6 @@ static int __init mdiobus_probe(void)
 	slave->write(slave, 0x18, 0x00, 0x0000);
 	slave->write(slave, 0x12, 0x08, 0x007e);
 	slave->write(slave, 0x12, 0x09, 0x0000);
-#endif
 
 
 
@@ -461,6 +470,7 @@ static int __init mdiobus_probe(void)
 	slave->write(slave, 0x3, 0xd, 0x4007);
 	slave->write(slave, 0x3, 0xe, 0x00);
 	slave->write(slave, 0x3, 0x00, 0x1200);
+#endif
 
 
 	return 0;

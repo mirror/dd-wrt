@@ -711,7 +711,11 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	else
 		t = AR8216_PORT_STATUS_LINK_AUTO;
 
+#if CONFIG_ARCH_ALPINE
+	if (port != AR8216_PORT_CPU && port != 6 && port != 5) {
+#else
 	if (port != AR8216_PORT_CPU && port != 6) {
+#endif
 		/*hw limitation:if configure mac when there is traffic,
 		port MAC may work abnormal. Need disable lan&wan mac at fisrt*/
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), 0);
@@ -721,7 +725,7 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	} else {
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
 	}
-
+	printk(KERN_EMERG "port %d = status %X\n",port, t);
 	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), 0);
@@ -752,6 +756,7 @@ ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 		if (t & AR8327_PORT_STATUS_RXFLOW_AUTO)
 			t |= AR8216_PORT_STATUS_RXFLOW;
 	}
+	printk(KERN_EMERG "update port %d = status %X\n",port, t);
 
 	return t;
 }
