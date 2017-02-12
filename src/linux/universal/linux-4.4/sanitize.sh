@@ -4,6 +4,7 @@ for i in .config*
 do 
     echo COPY $i
     cp $i .config
+    sed -i 's/\CONFIG_EXFAT_FS=m/ /g' .config	    
     echo "# CONFIG_EXFAT_FS is not set" >> .config
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
