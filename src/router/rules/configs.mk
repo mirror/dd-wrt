@@ -263,6 +263,8 @@ obj-$(CONFIG_SERVICEGATE) += servicegate
 obj-$(CONFIG_UNBOUND) += unbound
 obj-$(CONFIG_JAVA) += java
 obj-$(CONFIG_SOFTETHER) += softether
+obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
+obj-$(CONFIG_ETHTOOL) += ethtool
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
