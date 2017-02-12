@@ -1,4 +1,24 @@
 ------------------------------------------------------------------------
+r3294 | brainslayer | 2017-02-13 00:47:09 +0100 (Mon, 13 Feb 2017) | 1 line
+
+create symbolic links for boarddata
+------------------------------------------------------------------------
+r3293 | brainslayer | 2017-02-13 00:21:45 +0100 (Mon, 13 Feb 2017) | 1 line
+
+workaround since we need 2 different board data sets for nighthawk x10. this may likelly also have a positive influence to ipq devices
+------------------------------------------------------------------------
+r3292 | brainslayer | 2017-02-13 00:00:12 +0100 (Mon, 13 Feb 2017) | 1 line
+
+fix board data
+------------------------------------------------------------------------
+r3291 | brainslayer | 2017-02-12 23:47:00 +0100 (Sun, 12 Feb 2017) | 1 line
+
+symlinks for 9984
+------------------------------------------------------------------------
+r3290 | brainslayer | 2017-02-12 23:46:18 +0100 (Sun, 12 Feb 2017) | 1 line
+
+symlinks for 9984
+------------------------------------------------------------------------
 r3289 | brainslayer | 2017-02-12 22:12:41 +0100 (Sun, 12 Feb 2017) | 1 line
 
 clean up and fix ath_tx_count_airtime
