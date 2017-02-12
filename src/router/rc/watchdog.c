@@ -148,6 +148,39 @@ static void watchdog(void)
 
 		}
 #endif
+#ifdef HAVE_R9000
+			int cpu, wifi1,wifi2;
+			FILE *tempfp;
+			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &cpu);
+				fclose(tempfp);
+			}
+			cpu *= 1000;
+			tempfp = fopen("/sys/class/hwmon/hwmon2/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &wifi1);
+				fclose(tempfp);
+			}
+			tempfp = fopen("/sys/class/hwmon/hwmon3/temp1_input", "rb");
+			if (tempfp) {
+				fscanf(tempfp, "%d", &wifi2);
+				fclose(tempfp);
+			}
+			if (wifi1 > cpu)
+			    cpu = wifi1;
+			if (wifi2 > cpu)
+			    cpu = wifi2;
+				int target = cpu - ((nvram_geti("hwmon_temp_max") + 10) * 1000);
+				if (target < 0)
+					target = 0;
+				if (target > 10000)
+					target = 10000;
+				target *= 4000;
+				target /= 10000;
+				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
+			}
+#endif
 
 		sleep(5);
 		if (nvram_matchi("warn_enabled", 1)) {
