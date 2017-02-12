@@ -572,6 +572,9 @@ endif
 ifeq ($(CONFIG_ALPHA),y)
 CFLAGS += -DHAVE_ALPHA
 endif
+ifeq ($(CONFIG_ALPINE),y)
+CFLAGS += -DHAVE_ALPINE
+endif
 ifeq ($(CONFIG_EOC2610),y)
 CFLAGS += -DHAVE_EOC2610
 endif
