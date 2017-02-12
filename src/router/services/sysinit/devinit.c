@@ -185,6 +185,7 @@ void start_devinit(void)
 #ifdef HAVE_ATH10K
 	eval("rm", "-f", "/tmp/ath10k-board.bin");
 	eval("ln", "-s", "/lib/ath10k/board.bin", "/tmp/ath10k-board.bin");
+	eval("ln", "-s", "/lib/ath10k/board_9984.bin", "/tmp/board1.bin");
 #endif
 	fprintf(stderr, "done\n");
 }
