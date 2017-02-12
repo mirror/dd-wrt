@@ -115,7 +115,8 @@ void start_sysinit(void)
 		close(s);
 	}
 	insmod("mii_gpio");
-
+	insmod("qca-ssdk");
+	
 
 /*
 # Switch-A:
@@ -137,7 +138,7 @@ void start_sysinit(void)
 */
 
 
-	system("swconfig dev switch0 set reset 1");
+/*	system("swconfig dev switch0 set reset 1");
 	system("swconfig dev switch0 set enable_vlan 0");
 	system("swconfig dev switch0 vlan 1 set ports \"0 4 1 2\"");
 	system("swconfig dev switch0 vlan 2 set ports \"5 3\"");
@@ -148,15 +149,66 @@ void start_sysinit(void)
 	system("swconfig dev switch1 vlan 1 set ports \"0 4 3 2 1\"");
 	system("swconfig dev switch1 set apply");
 
-
-//	sw_user_lan_ports_vlan_config "1" "1 2 3 4 5 6" "0" "0" "0" "normal_lan"
-//	sw_user_lan_ports_vlan_config "2" ""            "0" "1" "0" "wan"
-//	local vlanid="$1"
-//	local lan_ports="$2"
-//	local is_bridge_vlan="$3"
-//	local is_wan_vlan="$4"
-//	local is_iptv_vlan="$5"
-//	local vlan_mode="$6"
+*/
+system("ethtool -K eth1 gro on");
+system("ssdk_sh_id 0 0 vlan entry flush");
+system("ssdk_sh_id 1 0 vlan entry flush");
+system("ssdk_sh_id 0 portvlan defaultCVid set 0 1");
+system("ssdk_sh_id 0 portvlan ingress set 0 check");
+system("ssdk_sh_id 0 portvlan egress set 0 tagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 4 1");
+system("ssdk_sh_id 0 portvlan ingress set 4 check");
+system("ssdk_sh_id 0 portvlan egress set 4 tagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 6 1");
+system("ssdk_sh_id 0 portvlan ingress set 6 check");
+system("ssdk_sh_id 0 portvlan egress set 6 tagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 2 1");
+system("ssdk_sh_id 0 portvlan ingress set 2 check");
+system("ssdk_sh_id 0 portvlan egress set 2 untagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 1 1");
+system("ssdk_sh_id 0 portvlan ingress set 1 check");
+system("ssdk_sh_id 0 portvlan egress set 1 untagged");
+system("ssdk_sh_id 0 vlan entry create 1");
+system("ssdk_sh_id 0 vlan member add 1 0 tagged");
+system("ssdk_sh_id 0 vlan member add 1 4 tagged");
+system("ssdk_sh_id 0 vlan member add 1 6 tagged");
+system("ssdk_sh_id 0 vlan member add 1 2 untagged");
+system("ssdk_sh_id 0 vlan member add 1 1 untagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 0 1");
+system("ssdk_sh_id 1 portvlan ingress set 0 check");
+system("ssdk_sh_id 1 portvlan egress set 0 tagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 5 1");
+system("ssdk_sh_id 1 portvlan ingress set 5 check");
+system("ssdk_sh_id 1 portvlan egress set 5 tagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 4 1");
+system("ssdk_sh_id 1 portvlan ingress set 4 check");
+system("ssdk_sh_id 1 portvlan egress set 4 untagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 3 1");
+system("ssdk_sh_id 1 portvlan ingress set 3 check");
+system("ssdk_sh_id 1 portvlan egress set 3 untagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 2 1");
+system("ssdk_sh_id 1 portvlan ingress set 2 check");
+system("ssdk_sh_id 1 portvlan egress set 2 untagged");
+system("ssdk_sh_id 1 portvlan defaultCVid set 1 1");
+system("ssdk_sh_id 1 portvlan ingress set 1 check");
+system("ssdk_sh_id 1 portvlan egress set 1 untagged");
+system("ssdk_sh_id 1 vlan entry create 1");
+system("ssdk_sh_id 1 vlan member add 1 0 tagged");
+system("ssdk_sh_id 1 vlan member add 1 5 tagged");
+system("ssdk_sh_id 1 vlan member add 1 4 untagged");
+system("ssdk_sh_id 1 vlan member add 1 3 untagged");
+system("ssdk_sh_id 1 vlan member add 1 2 untagged");
+system("ssdk_sh_id 1 vlan member add 1 1 untagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 5 2");
+system("ssdk_sh_id 0 portvlan ingress set 5 check");
+system("ssdk_sh_id 0 portvlan egress set 5 tagged");
+system("ssdk_sh_id 0 portvlan defaultCVid set 3 2");
+system("ssdk_sh_id 0 portvlan ingress set 3 check");
+system("ssdk_sh_id 0 portvlan egress set 3 untagged");
+system("ssdk_sh_id 0 vlan entry create 2");
+system("ssdk_sh_id 0 vlan member add 2 5 tagged");
+system("ssdk_sh_id 0 vlan member add 2 3 untagged");
+system("ssdk_sh_id 1 vlan entry create 2");
 
 	/*
 	 * Set a sane date 
