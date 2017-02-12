@@ -999,11 +999,11 @@ void start_lan(void)
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 	ioctl(s, SIOCSIFHWADDR, &ifr);
 #elif HAVE_R9000
-	nvram_setz(lan_ifnames, "eth0 eth1 eth2 ath0 ath1");
+	nvram_setz(lan_ifnames, "eth0 vlan1 vlan2 ath0 ath1");
 	if (getSTA() || getWET() || CANBRIDGE()) {
 		PORTSETUPWAN("");
 	} else {
-		PORTSETUPWAN("eth2");
+		PORTSETUPWAN("vlan2");
 	}
 
 	strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);

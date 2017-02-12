@@ -287,6 +287,11 @@ system("ssdk_sh_id 0 vlan member add 2 5 tagged");
 system("ssdk_sh_id 0 vlan member add 2 3 untagged");
 system("ssdk_sh_id 1 vlan entry create 2");
 
+
+		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("/sbin/vconfig", "add", "eth1", "1");
+		eval("/sbin/vconfig", "add", "eth2", "2");
+
 	/*
 	 * Set a sane date 
 	 */
