@@ -188,7 +188,7 @@ static inline int of_pci_range_to_resource(struct of_pci_range *range,
 {
 	return -ENOSYS;
 }
-struct of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
+struct inline of_pci_range_iter *of_pci_process_ranges(struct of_pci_range_iter *iter,
 						struct device_node *node)
 {
 	return NULL;
