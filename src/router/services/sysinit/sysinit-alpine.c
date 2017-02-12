@@ -51,7 +51,6 @@
 #include <linux/mii.h>
 #include "devices/wireless.c"
 
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -86,7 +85,7 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-
+		eval("rm","-f","/tmp/board1.bin");
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 12064, 1, fp);
 		fclose(fp);
@@ -96,7 +95,6 @@ void start_sysinit(void)
 		free(smem);
 
 	}
-
 
 	detect_wireless_devices();
 
@@ -116,185 +114,150 @@ void start_sysinit(void)
 	}
 	insmod("mii_gpio");
 	insmod("qca-ssdk");
-	
 
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe0", "0xc74164de", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xe4", "0x000ea545", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x4", "0x07680000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x8", "0x07600000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0xc", "0x80", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x624", "0x007f7f7f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x7c", "0x4e", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x90", "0x4e", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x94", "0x4e", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x10 0x002613a0 4");
-	system("ssdk_sh_id 0 debug reg set 0xe0 0xc74164de 4");
-	system("ssdk_sh_id 0 debug reg set 0xe4 0x000ea545 4");
-	system("ssdk_sh_id 0 debug reg set 0x4 0x07680000 4");
-	system("ssdk_sh_id 0 debug reg set 0x8 0x07600000 4");
-	system("ssdk_sh_id 0 debug reg set 0xc 0x80 4");
-	system("ssdk_sh_id 0 debug reg set 0x624 0x007f7f7f 4");
-	system("ssdk_sh_id 0 debug reg set 0x7c 0x4e 4");
-	system("ssdk_sh_id 0 debug reg set 0x90 0x4e 4");
-	system("ssdk_sh_id 0 debug reg set 0x94 0x4e 4");
+//      #CPU -->","(P0/5)QCA8337A(P4/6)--->(P0/5)QCA8337B
+//      #remove trunking on -0/5
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0x00ec0000", "4");
 
-//	#CPU --> (P0/5)QCA8337A(P4/6)--->(P0/5)QCA8337B
-//	#remove trunking on -0/5
-	system("ssdk_sh_id 0 debug reg set 0x700 0xd000 4");
-	system("ssdk_sh_id 0 debug reg set 0x704 0x00ec0000 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x660", "0x0014017e", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x66c", "0x0014017d", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x678", "0x0014017b", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x684", "0x00140177", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x690", "0x0014016f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x69c", "0x0014015f", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x6a8", "0x0014013f", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x660 0x0014017e 4");
-	system("ssdk_sh_id 0 debug reg set 0x66c 0x0014017d 4");
-	system("ssdk_sh_id 0 debug reg set 0x678 0x0014017b 4");
-	system("ssdk_sh_id 0 debug reg set 0x684 0x00140177 4");
-	system("ssdk_sh_id 0 debug reg set 0x690 0x0014016f 4");
-	system("ssdk_sh_id 0 debug reg set 0x69c 0x0014015f 4");
-	system("ssdk_sh_id 0 debug reg set 0x6a8 0x0014013f 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x420", "0x00010001", "4");
+//      #change","p5","vid","-->2
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x448", "0x00020001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x428", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x430", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x440", "0x00010001", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x450", "0x00010001", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x420 0x00010001 4");
-//	#change p5 vid -->2
-	system("ssdk_sh_id 0 debug reg set 0x448 0x00020001 4");
-	system("ssdk_sh_id 0 debug reg set 0x428 0x00010001 4");
-	system("ssdk_sh_id 0 debug reg set 0x430 0x00010001 4");
-	system("ssdk_sh_id 0 debug reg set 0x440 0x00010001 4");
-	system("ssdk_sh_id 0 debug reg set 0x450 0x00010001 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x438", "0x00020001", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x438 0x00020001 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x424", "0x00002040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x44c", "0x00002040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x42c", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x434", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x43c", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x444", "0x00001040", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x454", "0x00001040", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x424 0x00002040 4");
-	system("ssdk_sh_id 0 debug reg set 0x44c 0x00002040 4");
-	system("ssdk_sh_id 0 debug reg set 0x42c 0x00001040 4");
-	system("ssdk_sh_id 0 debug reg set 0x434 0x00001040 4");
-	system("ssdk_sh_id 0 debug reg set 0x43c 0x00001040 4");
-	system("ssdk_sh_id 0 debug reg set 0x444 0x00001040 4");
-	system("ssdk_sh_id 0 debug reg set 0x454 0x00001040 4");
+//      #VLAN1-0t/1/2/4/5t/6,VLAN2-0t/3/5t
+//      #vlan1-0t/1/2/4/6 vlan2-3/5t
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x0019dd50", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80010002", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x610", "0x001b77f0", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x614", "0x80020002", "4");
 
-//	#VLAN1-0t/1/2/4/5t/6,VLAN2-0t/3/5t
-//	#vlan1-0t/1/2/4/6 vlan2-3/5t
-	system("ssdk_sh_id 0 debug reg set 0x610 0x0019dd50 4");
-	system("ssdk_sh_id 0 debug reg set 0x614 0x80010002 4");
-	system("ssdk_sh_id 0 debug reg set 0x610 0x001b77f0 4");
-	system("ssdk_sh_id 0 debug reg set 0x614 0x80020002 4");
+//      #","do","not","learn","mac","address","on","internal","trunk","5
+	eval("ssdk_sh_id", "0", "fdb", "portLearn", "set", "5", "disable");
+	eval("ssdk_sh_id", "0", "fdb", "fdb", "entry", "flush", "0");
 
-//	# do not learn mac address on internal trunk 5
-	system("ssdk_sh_id 0 fdb portLearn set 5 disable");
-	system("ssdk_sh_id 0 fdb fdb entry flush 0");
+//      # For rfc packet lose issue
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x94", "0x7e", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x7c", "0x7e", "4");
 
-//	# For rfc packet lose issue
-	system("ssdk_sh_id 0 debug reg set 0x94 0x7e 4");
-	system("ssdk_sh_id 1 debug reg set 0x7c 0x7e 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x700", "0xd000", "4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x704", "0xec0000", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x620", "0x1000f0", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x700 0xd000 4");
-	system("ssdk_sh_id 0 debug reg set 0x704 0xec0000 4");
-	system("ssdk_sh_id 1 debug reg set 0x620 0x1000f0 4");
+	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x808", "0x7f004e", "4");
+	eval("ssdk_sh_id", "1", "debug", "reg", "set", "0x808", "0x7f004e", "4");
 
-	system("ssdk_sh_id 0 debug reg set 0x808 0x7f004e 4");
-	system("ssdk_sh_id 1 debug reg set 0x808 0x7f004e 4");
+	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xd", "0x7");
+	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xe", "0x3c");
+	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xd", "0x4007");
+	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0xe", "0x00");
+	eval("ssdk_sh_id", "0", "debug", "phy", "set", "0x3", "0x00", "0x1200");
 
-	system("ssdk_sh_id 0 debug phy set 0x3 0xd 0x7");
-	system("ssdk_sh_id 0 debug phy set 0x3 0xe 0x3c");
-	system("ssdk_sh_id 0 debug phy set 0x3 0xd 0x4007");
-	system("ssdk_sh_id 0 debug phy set 0x3 0xe 0x00");
-	system("ssdk_sh_id 0 debug phy set 0x3 0x00 0x1200");
+	eval("ssdk_sh_id", "1", "debug", "phy", "set", "0x4", "0xd", "0x7");
+	eval("ssdk_sh_id", "1", "debug", "phy", "set", "0x4", "0xe", "0x3c");
+	eval("ssdk_sh_id", "1", "debug", "phy", "set", "0x4", "0xd", "0x4007");
+	eval("ssdk_sh_id", "1", "debug", "phy", "set", "0x4", "0xe", "0x00");
+	eval("ssdk_sh_id", "1", "debug", "phy", "set", "0x4", "0x00", "0x1200");
 
-	system("ssdk_sh_id 1 debug phy set 0x4 0xd 0x7");
-	system("ssdk_sh_id 1 debug phy set 0x4 0xe 0x3c");
-	system("ssdk_sh_id 1 debug phy set 0x4 0xd 0x4007");
-	system("ssdk_sh_id 1 debug phy set 0x4 0xe 0x00");
-	system("ssdk_sh_id 1 debug phy set 0x4 0x00 0x1200");
+	eval("ethtool", "-K", "eth1", "gro", "on");
+	eval("ssdk_sh_id", "0", "0", "vlan", "entry", "flush");
+	eval("ssdk_sh_id", "1", "0", "vlan", "entry", "flush");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "0", "1");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "0", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "0", "tagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "4", "1");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "4", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "4", "tagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "6", "1");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "6", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "6", "tagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "2", "1");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "2", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "2", "untagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "1", "1");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "1", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "1", "untagged");
+	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "1");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "0", "tagged");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "4", "tagged");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "6", "tagged");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "2", "untagged");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "1", "1", "untagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "0", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "0", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "0", "tagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "5", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "5", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "5", "tagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "4", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "4", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "4", "untagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "3", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "3", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "3", "untagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "2", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "2", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "2", "untagged");
+	eval("ssdk_sh_id", "1", "portvlan", "defaultCVid", "set", "1", "1");
+	eval("ssdk_sh_id", "1", "portvlan", "ingress", "set", "1", "check");
+	eval("ssdk_sh_id", "1", "portvlan", "egress", "set", "1", "untagged");
+	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "1");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "0", "tagged");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "5", "tagged");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "4", "untagged");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "3", "untagged");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "2", "untagged");
+	eval("ssdk_sh_id", "1", "vlan", "member", "add", "1", "1", "untagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "5", "2");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "5", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "5", "tagged");
+	eval("ssdk_sh_id", "0", "portvlan", "defaultCVid", "set", "3", "2");
+	eval("ssdk_sh_id", "0", "portvlan", "ingress", "set", "3", "check");
+	eval("ssdk_sh_id", "0", "portvlan", "egress", "set", "3", "untagged");
+	eval("ssdk_sh_id", "0", "vlan", "entry", "create", "2");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "5", "tagged");
+	eval("ssdk_sh_id", "0", "vlan", "member", "add", "2", "3", "untagged");
+	eval("ssdk_sh_id", "1", "vlan", "entry", "create", "2");
 
-/*
-# Switch-A:
-# sw port 0 -> Trunk to CPU(eth1)
-# sw port 5 -> Trunk to CPU(eth2)
-# sw port 4 -> Trunk to Switch-B sw port 0
-# sw port 6 -> Trunk to Switch-B sw port 5
-# sw port 3 -> WAN
-# sw port 2 -> LAN1
-# sw port 1 -> LAN2
-# Switch-B:
-# sw port 0 -> Trunk to Switch-A sw port 4
-# sw port 5 -> Trunk to Switch-A sw port 6
-# sw port 4 -> LAN3
-# sw port 3 -> LAN4
-# sw port 2 -> LAN5
-# sw port 1 -> LAN6
-# sw port 6 -> No Used
-*/
-
-
-/*	system("swconfig dev switch0 set reset 1");
-	system("swconfig dev switch0 set enable_vlan 0");
-	system("swconfig dev switch0 vlan 1 set ports \"0 4 1 2\"");
-	system("swconfig dev switch0 vlan 2 set ports \"5 3\"");
-	system("swconfig dev switch0 set apply");
-
-	system("swconfig dev switch1 set reset 1");
-	system("swconfig dev switch1 set enable_vlan 0");
-	system("swconfig dev switch1 vlan 1 set ports \"0 4 3 2 1\"");
-	system("swconfig dev switch1 set apply");
-
-*/
-system("ethtool -K eth1 gro on");
-system("ssdk_sh_id 0 0 vlan entry flush");
-system("ssdk_sh_id 1 0 vlan entry flush");
-system("ssdk_sh_id 0 portvlan defaultCVid set 0 1");
-system("ssdk_sh_id 0 portvlan ingress set 0 check");
-system("ssdk_sh_id 0 portvlan egress set 0 tagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 4 1");
-system("ssdk_sh_id 0 portvlan ingress set 4 check");
-system("ssdk_sh_id 0 portvlan egress set 4 tagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 6 1");
-system("ssdk_sh_id 0 portvlan ingress set 6 check");
-system("ssdk_sh_id 0 portvlan egress set 6 tagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 2 1");
-system("ssdk_sh_id 0 portvlan ingress set 2 check");
-system("ssdk_sh_id 0 portvlan egress set 2 untagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 1 1");
-system("ssdk_sh_id 0 portvlan ingress set 1 check");
-system("ssdk_sh_id 0 portvlan egress set 1 untagged");
-system("ssdk_sh_id 0 vlan entry create 1");
-system("ssdk_sh_id 0 vlan member add 1 0 tagged");
-system("ssdk_sh_id 0 vlan member add 1 4 tagged");
-system("ssdk_sh_id 0 vlan member add 1 6 tagged");
-system("ssdk_sh_id 0 vlan member add 1 2 untagged");
-system("ssdk_sh_id 0 vlan member add 1 1 untagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 0 1");
-system("ssdk_sh_id 1 portvlan ingress set 0 check");
-system("ssdk_sh_id 1 portvlan egress set 0 tagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 5 1");
-system("ssdk_sh_id 1 portvlan ingress set 5 check");
-system("ssdk_sh_id 1 portvlan egress set 5 tagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 4 1");
-system("ssdk_sh_id 1 portvlan ingress set 4 check");
-system("ssdk_sh_id 1 portvlan egress set 4 untagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 3 1");
-system("ssdk_sh_id 1 portvlan ingress set 3 check");
-system("ssdk_sh_id 1 portvlan egress set 3 untagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 2 1");
-system("ssdk_sh_id 1 portvlan ingress set 2 check");
-system("ssdk_sh_id 1 portvlan egress set 2 untagged");
-system("ssdk_sh_id 1 portvlan defaultCVid set 1 1");
-system("ssdk_sh_id 1 portvlan ingress set 1 check");
-system("ssdk_sh_id 1 portvlan egress set 1 untagged");
-system("ssdk_sh_id 1 vlan entry create 1");
-system("ssdk_sh_id 1 vlan member add 1 0 tagged");
-system("ssdk_sh_id 1 vlan member add 1 5 tagged");
-system("ssdk_sh_id 1 vlan member add 1 4 untagged");
-system("ssdk_sh_id 1 vlan member add 1 3 untagged");
-system("ssdk_sh_id 1 vlan member add 1 2 untagged");
-system("ssdk_sh_id 1 vlan member add 1 1 untagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 5 2");
-system("ssdk_sh_id 0 portvlan ingress set 5 check");
-system("ssdk_sh_id 0 portvlan egress set 5 tagged");
-system("ssdk_sh_id 0 portvlan defaultCVid set 3 2");
-system("ssdk_sh_id 0 portvlan ingress set 3 check");
-system("ssdk_sh_id 0 portvlan egress set 3 untagged");
-system("ssdk_sh_id 0 vlan entry create 2");
-system("ssdk_sh_id 0 vlan member add 2 5 tagged");
-system("ssdk_sh_id 0 vlan member add 2 3 untagged");
-system("ssdk_sh_id 1 vlan entry create 2");
-
-
-		eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("/sbin/vconfig", "add", "eth1", "1");
-		eval("/sbin/vconfig", "add", "eth2", "2");
+	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+	eval("/sbin/vconfig", "add", "eth1", "1");
+	eval("/sbin/vconfig", "add", "eth2", "2");
 
 	/*
-	 * Set a sane date 
-	 */
+	   ","*","Set","a","sane","date","
+	   "," */
 	stime(&tm);
 	nvram_set("wl0_ifname", "ath0");
 	nvram_set("wl1_ifname", "ath1");
