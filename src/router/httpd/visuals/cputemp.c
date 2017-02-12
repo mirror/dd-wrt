@@ -21,7 +21,7 @@
  */
 #ifdef HAVE_CPUTEMP
 
-#ifdef HAVE_MVEBU
+#if defined(HAVE_MVEBU)
 static void show_temp(webs_t wp, int mon, int input, char *fmt)
 {
 	char sysfs[64];
@@ -34,9 +34,20 @@ static void show_temp(webs_t wp, int mon, int input, char *fmt)
 		websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
 	}
 }
-#endif
-
-#ifdef HAVE_IPQ806X
+#elif defined(HAVE_ALPINE)
+static void show_temp(webs_t wp, int mon, int input, char *fmt)
+{
+	char sysfs[64];
+	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
+	FILE *tempfp = fopen(sysfs, "rb");
+	if (tempfp) {
+		int cpu;
+		fscanf(tempfp, "%d", &cpu);
+		fclose(tempfp);
+		websWrite(wp, fmt, cpu , 0);
+	}
+}
+#elif defined(HAVE_IPQ806X)
 static void show_temp(webs_t wp, char *fmt)
 {
 	char sysfs[64];
@@ -72,7 +83,10 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 	return;
 #endif
-#ifdef HAVE_IPQ806X
+#ifdef HAVE_ALPINE
+	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
+	cpufound = 1;
+#elif defined(HAVE_IPQ806X)
 	show_temp(wp, "CPU %d.%d &#176;C");
 	cpufound = 1;
 #endif
