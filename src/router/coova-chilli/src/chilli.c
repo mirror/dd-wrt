@@ -7269,7 +7269,7 @@ int chilli_main(int argc, char **argv) {
   syslog_ident = basename(argv[0]);
 
   /* Start out also logging to stderr until we load options. */
-//  openlog(syslog_ident, syslog_options|syslog_debug_options, LOG_DAEMON);
+  //openlog(syslog_ident, syslog_options|syslog_debug_options, LOG_DAEMON);
 
   options_init();
 
@@ -7280,25 +7280,7 @@ int chilli_main(int argc, char **argv) {
   /* foreground                                                   */
   /* If flag not given run as a daemon                            */
   if (!_options.foreground) {
-    FILE *fp = NULL;
-    if (!(fp = freopen("/dev/null", "w", stdout))) {
-      syslog(LOG_ERR, "freopen()");
-    } else {
-      fclose(fp);
-      fp = NULL;
-    }
-    if (!(fp = freopen("/dev/null", "w", stderr))) {
-      syslog(LOG_ERR, "freopen()");
-    } else {
-      fclose(fp);
-      fp = NULL;
-    }
-    if (!(fp = freopen("/dev/null", "r", stdin))) {
-      syslog(LOG_ERR, "freopen()");
-    } else {
-      fclose(fp);
-      fp = NULL;
-    }
+
 #if defined (__FreeBSD__)  || defined (__APPLE__) || defined (__OpenBSD__) || defined (__NetBSD__)
     if (fork() > 0) {
       exit(0);
@@ -7362,17 +7344,17 @@ int chilli_main(int argc, char **argv) {
     }
 
 #ifdef LOG_NFACILITIES
-    if (_options.logfacility < 0 || _options.logfacility > LOG_NFACILITIES)
-      _options.logfacility= LOG_FAC(LOG_DAEMON);
+//    if (_options.logfacility < 0 || _options.logfacility > LOG_NFACILITIES)
+//      _options.logfacility= LOG_FAC(LOG_DAEMON);
 #endif
 
-//    closelog();
+    //closelog();
 
-    if (_options.debug)
-      syslog_options |= syslog_debug_options;
-//    openlog(syslog_ident, syslog_options, (_options.logfacility<<3));
-    if (!_options.debug)
-//      setlogmask(LOG_UPTO(_options.loglevel));
+    //if (_options.debug)
+    //  syslog_options |= syslog_debug_options;
+    //openlog(syslog_ident, syslog_options, (_options.logfacility<<3));
+    //if (!_options.debug)
+    //  setlogmask(LOG_UPTO(_options.loglevel));
 
     chilli_signals(&keep_going, &reload_config);
 
