@@ -80,6 +80,21 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 	}
 	return;
 }
+#elif HAVE_ALPINE
+void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
+{
+	FILE *fp = fopen("/sys/kernel/debug/clk/krait0_pri_mux/clk_rate", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000000);
+	} else {
+		websWrite(wp, "1700");
+
+	}
+	return;
+}
 #elif HAVE_IPQ806X
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
