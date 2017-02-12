@@ -169,7 +169,7 @@ static void watchdog(void)
 			}
 			if (wifi1 > cpu)
 			    cpu = wifi1;
-			if (wifi2 > cpu)
+			if (wifi2 > cpu) {
 			    cpu = wifi2;
 				int target = cpu - ((nvram_geti("hwmon_temp_max") + 10) * 1000);
 				if (target < 0)
