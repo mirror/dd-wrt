@@ -361,12 +361,12 @@ static int __init mdiobus_probe(void)
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		mii_irq_sw1[i] = PHY_POLL;
 
+	bus = p_bus;
 #if 0
 //      #if 0
 	if (mdiobus_register(p_bus))
 		printk("mdio bus register fail!\n");
 //      #endif
-	bus = p_bus;
 	mutex_init(&p_bus->mdio_lock);
 	phydev = p_bus->phy_map[0];
 
