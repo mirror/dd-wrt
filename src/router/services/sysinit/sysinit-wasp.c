@@ -179,7 +179,7 @@ void start_sysinit(void)
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "0");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 	eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6");
-#elif defined (HAVE_MMS344) 
+#elif defined (HAVE_MMS344)
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0t 2");
@@ -223,11 +223,11 @@ void start_sysinit(void)
 	FILE *fp = fopen("/dev/mtdblock/6", "rb");
 	if (fp) {
 		unsigned char buf2[256];
-		#ifdef HAVE_WILLY
-		fseek(fp, 0x3f810, SEEK_SET);		
-		#else
+#ifdef HAVE_WILLY
+		fseek(fp, 0x3f810, SEEK_SET);
+#else
 		fseek(fp, 0x2e010, SEEK_SET);
-		#endif
+#endif
 		fread(buf2, 256, 1, fp);
 		fclose(fp);
 		if ((!memcmp(buf2, "\xff\xff\xff\xff\xff\xff", 6)
