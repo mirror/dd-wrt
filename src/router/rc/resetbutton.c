@@ -1231,6 +1231,12 @@ static void period_check(int sig)
 		wifi24gpio = 0x106;
 		val |= get_gpio(6) << 6;
 		break;
+	case ROUTER_NETGEAR_R9000:
+		sesgpio = 0x105;
+		wifi24gpio = 0x106;
+		val |= get_gpio(32) << 5;
+		val |= get_gpio(5) << 6;
+		break;
 	}
 #endif
 
