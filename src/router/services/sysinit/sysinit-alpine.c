@@ -110,9 +110,18 @@ void start_sysinit(void)
 		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
+		
+		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
+		ioctl(s, SIOCGIFHWADDR, &ifr);
+		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
+		
 		close(s);
+		
+		eval("ifconfig", "eth2", "hw", "ether", macaddr);
 	}
+
 	insmod("mii_gpio");
+	insmod("leds_gpio");
 	insmod("qca-ssdk");
 
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0", "4");
