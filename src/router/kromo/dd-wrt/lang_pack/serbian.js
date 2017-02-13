@@ -2142,6 +2142,7 @@ wl_basic.clientRelaydDefaultGwMode="Подразумевани GW Режим";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
 wl_basic.ac="AC-Only";
+wl_basic.ad="AD-Only";
 wl_basic.na="NA-Mixed";
 wl_basic.ng="NG-Mixed";
 wl_basic.n5="N-Only (5 GHz)";
