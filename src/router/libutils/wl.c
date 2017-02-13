@@ -52,11 +52,11 @@ int ieee80211_mhz2ieee(int freq)
 	if (freq < 5000)
 		return 15 + ((freq - 2512) / 20);
 	if (freq == 58320)
-	    return 1;	
+		return 1;
 	if (freq == 60480)
-	    return 2;	
+		return 2;
 	if (freq == 62640)
-	    return 3;	
+		return 3;
 
 	return (freq - 5000) / 5;
 }
