@@ -525,6 +525,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		freq = nvram_default_geti(nfreq, 0);
 
 		if (freq == 0) {
+			if (has_ad(prefix)) {
+			    channel = 1;
+			    freq = 53320;
+			}else{
 			struct mac80211_ac *acs;
 			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
 			eval("ifconfig", prefix, "up");
@@ -583,6 +587,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						freq = 5200;
 					}
 				}
+			}
 			}
 		} else {
 			channel = ieee80211_mhz2ieee(freq);
