@@ -149,7 +149,7 @@ static void watchdog(void)
 		}
 #endif
 #ifdef HAVE_R9000
-		int cpu, wifi1, wifi2;
+		int cpu, wifi1, wifi2, wifi3_mac=0, wifi3_phy=0;
 		FILE *tempfp;
 		tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 		if (tempfp) {
@@ -167,18 +167,36 @@ static void watchdog(void)
 			fscanf(tempfp, "%d", &wifi2);
 			fclose(tempfp);
 		}
+		int dummy;
+		tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
+		if (tempfp) {
+			
+			fscanf(tempfp, "%d.%d", &wifi3_mac,&dummy);
+			fclose(tempfp);
+		}
+		tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
+		if (tempfp) {
+			fscanf(tempfp, "%d.%d", &wifi3_phy,&dummy);
+			fclose(tempfp);
+		}
 		if (wifi1 > cpu)
 			cpu = wifi1;
 		if (wifi2 > cpu)
 			cpu = wifi2;
+		if (wifi3_mac > cpu)
+			cpu = wifi3_mac;
+		if (wifi3_phy > cpu)
+			cpu = wifi3_phy;
 
 		int target = cpu - (nvram_geti("hwmon_temp_max") * 1000);
 		if (target < 0)
 			target = 0;
-		if (target > 10000)
+		if (target > 10000) 
 			target = 10000;
 		target *= 4000;
 		target /= 10000;
+		if (target)
+			fprintf(stderr,"set fan to %d\n",target);
 		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
 
 #endif
