@@ -267,6 +267,19 @@ void start_sysinit(void)
 	set_smp_affinity(258, 3);
 	set_smp_affinity(259, 2);
 	set_smp_affinity(260, 1);
+	
+	
+	
+	switch (board) {
+	case ROUTER_NETGEAR_R9000:
+		set_gpio(29,1); //WIFI button led
+		set_gpio(30,1); //10G led
+		break;
+	default:
+		break;
+	}
+		
+
 
 	/*
 	   ","*","Set","a","sane","date","
