@@ -7511,6 +7511,14 @@ int is_ath10k(const char *prefix)
 }
 
 #endif
+#ifdef HAVE_WIL6210
+int is_wil6210(const char *prefix)
+{
+	// get legacy interface count
+	return devicecountbydriver(prefix, "wil62102");
+}
+
+#endif
 
 static int HTtoVHTindex(int mcs)
 {
