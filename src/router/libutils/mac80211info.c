@@ -1109,6 +1109,15 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 	}
 }
 
+
+
+static struct wifi_channels ghz60channels[] = {
+	{.channel = 1,.freq = 58320,.max_eirp = 40, .hw_eirp = 40},
+	{.channel = 2,.freq = 60480,.max_eirp = 40, .hw_eirp = 40},
+	{.channel = 3,.freq = 62640,.max_eirp = 40, .hw_eirp = 40},
+	{.channel = -1,.freq = -1,.max_eirp = -1, .hw_eirp = -1},
+};
+
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
@@ -1126,6 +1135,9 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	int skip = 1;
 	int rrdcount = 0;
 	int super = 0;
+	if (has_ad(interface)) {
+		return ghz60channels;
+	}
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1)
 		return NULL;
