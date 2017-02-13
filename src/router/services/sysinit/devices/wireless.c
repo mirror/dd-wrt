@@ -252,9 +252,6 @@ static void detect_wireless_devices(void)
 #else
 			insmod("/lib/ath9k/ath9k.ko");
 #endif
-#ifdef HAVE_WIL6210
-			insmod("/lib/ath9k/wil6210.ko");
-#endif
 			delete_ath9k_devices(NULL);
 		}
 	} else {
@@ -284,6 +281,9 @@ static void detect_wireless_devices(void)
 	insmod("thermal_sys");
 	insmod("/lib/ath9k/ath10k_core.ko");
 	insmod("/lib/ath9k/ath10k_pci.ko");
+#endif
+#ifdef HAVE_WIL6210
+			insmod("/lib/ath9k/wil6210.ko");
 #endif
 
 #endif
