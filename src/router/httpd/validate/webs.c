@@ -134,7 +134,11 @@ void save_wifi(webs_t wp)
 	char *var = websGetVar(wp, "wifi_display", NULL);
 
 	if (var) {
-		nvram_set("wifi_display", var);
+		if (has_ad(var))
+			nvram_set("wifi_display", "giwifi");
+		else
+			nvram_set("wifi_display", var);
+
 	}
 }
 

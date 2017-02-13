@@ -1062,11 +1062,17 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
+		if (has_ad(var))
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(var));
+		else
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 		char *names = nvram_nget("ath%d_vifs", i);
 
 		foreach(var, names, next) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
+			if (has_ad(var))
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(var));
+			else
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(var));
 		}
 	}
 	websWrite(wp, "</select>\n");
@@ -1891,9 +1897,9 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
-	if (has_ad(prefix)) {
-		websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n", nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
-	}
+		if (has_ad(prefix)) {
+			websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n", nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
+		}
 	}
 #endif
 
@@ -2371,7 +2377,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 #ifndef HAVE_GUESTPORT
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if (count < 8)
+	if (!has_ad(prefix) && count < 8)
 #elif HAVE_RT2880
 	if (count < 7)
 #else
@@ -2384,7 +2390,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
 
-	if (count > 1)
+	if (!has_ad(prefix) && count > 1)
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
@@ -2458,7 +2464,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 	}
 	websWrite(wp, "<div class=\"center\">\n");
 #ifdef HAVE_MADWIFI
-	if (count < 8 && gpfound == 0)
+	if (count < 8 && gpfound == 0 && !has_ad(prefix))
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
 #else
@@ -2471,7 +2477,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"$('gp_modify').value='add';vifs_add_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
 
-	if (gpfound == 1)
+	if (gpfound == 1 && !has_ad(prefix))
 		websWrite(wp,
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"$('gp_modify').value='remove';vifs_remove_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 			  prefix);
@@ -2565,7 +2571,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ssid, "%s_ssid", prefix);
 	// check the frequency capabilities;
 	if (has_ad(prefix)) {
-		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]\");</script>");	
+		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[60\"+wl_basic.ghz+\" 802.11ad]\");</script>");
 	} else if (has_2ghz(prefix) && has_5ghz(prefix) && has_ac(prefix)) {
 		sprintf(frequencies, " <script type=\"text/javascript\">document.write(\"[2.4\"+wl_basic.ghz+\"/5 \"+wl_basic.ghz+\"/802.11ac]\");</script>");
 	} else if (has_5ghz(prefix) && has_ac(prefix)) {
@@ -2947,7 +2953,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 #endif
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"setChannelProperties(this.form.%s_channel);\">\n", wl_width, prefix);
+	websWrite(wp,
+		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"setChannelProperties(this.form.%s_channel);\">\n",
+		  wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
@@ -3573,7 +3581,9 @@ if (!strcmp(prefix, "wl2"))
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"setChannelProperties(this.form.%s_channel);\">\n", wl_width, prefix);
+	websWrite(wp,
+		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"setChannelProperties(this.form.%s_channel);\">\n",
+		  wl_width, prefix);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 #if defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
