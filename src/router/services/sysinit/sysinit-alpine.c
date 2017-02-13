@@ -85,7 +85,7 @@ void start_sysinit(void)
 		fread(smem, 0x8000, 1, fp);
 
 		fclose(fp);
-		eval("rm","-f","/tmp/board1.bin");
+		eval("rm", "-f", "/tmp/board1.bin");
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 12064, 1, fp);
 		fclose(fp);
@@ -110,13 +110,13 @@ void start_sysinit(void)
 		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
 		nvram_set("et0macaddr", macaddr);
 		nvram_set("et0macaddr_safe", macaddr);
-		
+
 		strncpy(ifr.ifr_name, "eth0", IFNAMSIZ);
 		ioctl(s, SIOCGIFHWADDR, &ifr);
 		strcpy(macaddr, ether_etoa((char *)ifr.ifr_hwaddr.sa_data, eabuf));
-		
+
 		close(s);
-		
+
 		eval("ifconfig", "eth2", "hw", "ether", macaddr);
 	}
 
@@ -267,19 +267,15 @@ void start_sysinit(void)
 	set_smp_affinity(258, 3);
 	set_smp_affinity(259, 2);
 	set_smp_affinity(260, 1);
-	
-	
-	
+
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:
-		set_gpio(29,1); //WIFI button led
-		set_gpio(30,1); //10G led
+		set_gpio(29, 1);	//WIFI button led
+		set_gpio(30, 1);	//10G led
 		break;
 	default:
 		break;
 	}
-		
-
 
 	/*
 	   ","*","Set","a","sane","date","
