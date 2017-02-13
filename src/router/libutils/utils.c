@@ -7513,6 +7513,10 @@ int is_ath10k(const char *prefix)
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
 {
+	if (!strcmp(prefix,"wlan0"))
+		return 1;
+	if (!strcmp(prefix,"ath2"))
+		return 1;
 	// get legacy interface count
 	return devicecountbydriver(prefix, "wil6210");
 }
