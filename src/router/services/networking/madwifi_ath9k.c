@@ -382,12 +382,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
-		if (!isath5k)
+		if (!isath5k && !has_ad(pefix)) {
 			fprintf(fp, "ieee80211n=1\n");
-		if (nvram_matchi(bw, 2040)) {
-			fprintf(fp, "dynamic_ht40=1\n");
-		} else {
-			fprintf(fp, "dynamic_ht40=0\n");
+			if (nvram_matchi(bw, 2040)) {
+				fprintf(fp, "dynamic_ht40=1\n");
+			} else {
+				fprintf(fp, "dynamic_ht40=0\n");
+			}
 		}
 		char *nbw = nvram_default_get(bw, "20");
 		char sb[32];
@@ -526,74 +527,74 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 		if (freq == 0) {
 			if (has_ad(prefix)) {
-			    channel = 1;
-			    freq = 53320;
-			}else{
-			struct mac80211_ac *acs;
-			fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
-			eval("ifconfig", prefix, "up");
-			switch (usebw) {
-			case 40:
-				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEHT40);
-				break;
-			case 80:
-				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
-				break;
-			case 160:
-			case 8080:
-				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
-				break;
-			default:
-				acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
-			}
-			if (acs != NULL) {
-				freq = acs->freq;
-				channel = ieee80211_mhz2ieee(freq);
-				fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
-				int i = 0;
-				while (chan[i].freq != -1) {
-					if (chan[i].freq == freq)
-						break;
-					i++;
-				}
-				char *nbw = nvram_default_get(bw, "20");
-				if (!strcmp(nbw, "20")) {
-					sprintf(ht, "HT20");
-				} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
-					if (chan[i].luu) {
-						sprintf(ht, "HT40-");
-						iht = -1;
-					} else if (chan[i].ull) {
-						sprintf(ht, "HT40+");
-						iht = 1;
-					} else {
-						sprintf(ht, "HT20");
-					}
-				}
-				free_mac80211_ac(acs);
+				channel = 1;
+				freq = 53320;
 			} else {
-				if (has_2ghz(prefix)) {
-					channel = 6;
-					freq = 2437;
+				struct mac80211_ac *acs;
+				fprintf(stderr, "call mac80211autochannel for interface: %s\n", prefix);
+				eval("ifconfig", prefix, "up");
+				switch (usebw) {
+				case 40:
+					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEHT40);
+					break;
+				case 80:
+					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT80);
+					break;
+				case 160:
+				case 8080:
+					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_FORCEVHT160);
+					break;
+				default:
+					acs = mac80211autochannel(prefix, NULL, 2, 1, 0, AUTO_ALL);
 				}
-				if (has_5ghz(prefix)) {
-					if (nvram_matchi(bw, 80)) {
-						channel = 44;
-						sprintf(ht, "HT40+");
-						iht = 1;
-						freq = 5220;
-					} else {
-						channel = 40;
-						freq = 5200;
+				if (acs != NULL) {
+					freq = acs->freq;
+					channel = ieee80211_mhz2ieee(freq);
+					fprintf(stderr, "mac80211autochannel interface: %s frequency: %d\n", prefix, freq);
+					int i = 0;
+					while (chan[i].freq != -1) {
+						if (chan[i].freq == freq)
+							break;
+						i++;
+					}
+					char *nbw = nvram_default_get(bw, "20");
+					if (!strcmp(nbw, "20")) {
+						sprintf(ht, "HT20");
+					} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
+						if (chan[i].luu) {
+							sprintf(ht, "HT40-");
+							iht = -1;
+						} else if (chan[i].ull) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+						} else {
+							sprintf(ht, "HT20");
+						}
+					}
+					free_mac80211_ac(acs);
+				} else {
+					if (has_2ghz(prefix)) {
+						channel = 6;
+						freq = 2437;
+					}
+					if (has_5ghz(prefix)) {
+						if (nvram_matchi(bw, 80)) {
+							channel = 44;
+							sprintf(ht, "HT40+");
+							iht = 1;
+							freq = 5220;
+						} else {
+							channel = 40;
+							freq = 5200;
+						}
 					}
 				}
-			}
 			}
 		} else {
 			channel = ieee80211_mhz2ieee(freq);
 		}
 	}
-	if (!isath5k) {
+	if (!isath5k && !has_ad(prefix)) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
@@ -672,8 +673,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	if (chan)
 		free(chan);
-	if (has_ad(prefix) && !strcmp(netmode, "ad-only")) {
-			fprintf(fp, "hw_mode=ad\n");
+	if (has_ad(prefix)) {
+		fprintf(fp, "hw_mode=ad\n");
 	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
@@ -689,7 +690,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	}
 	fprintf(fp, "channel=%d\n", channel);
-	fprintf(fp, "frequency=%d\n", freq);
+	if (!has_ad(prefix))
+		fprintf(fp, "frequency=%d\n", freq);
 	char bcn[32];
 	sprintf(bcn, "%s_bcn", prefix);
 	fprintf(fp, "beacon_int=%s\n", nvram_default_get(bcn, "100"));
@@ -824,7 +826,9 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
 	}
 	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-	fprintf(fp, "bssid=%s\n", macaddr);
+	if (!has_ad(maininterface)) {
+		fprintf(fp, "bssid=%s\n", macaddr);
+	}
 	char vathmac[16];
 	sprintf(vathmac, "%s_hwaddr", ifname);
 	nvram_set(vathmac, macaddr);

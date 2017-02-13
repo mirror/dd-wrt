@@ -4587,7 +4587,7 @@ int diag_led_4704(int type, int act)
 int diag_led_4712(int type, int act)
 {
 
-#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)	
+#if defined(HAVE_IPQ806X) || defined(HAVE_MVEBU) || defined(HAVE_GEMTEK) || defined(HAVE_RB500) || defined(HAVE_XSCALE) || defined(HAVE_LAGUNA) || defined(HAVE_MAGICBOX) || defined(HAVE_RB600) || defined(HAVE_FONERA)|| defined(HAVE_MERAKI) || defined(HAVE_LS2) || defined(HAVE_WHRAG108) || defined(HAVE_X86) || defined(HAVE_CA8) || defined(HAVE_TW6600) || defined(HAVE_PB42) || defined(HAVE_LS5) || defined(HAVE_LSX) || defined(HAVE_DANUBE) || defined(HAVE_STORM) || defined(HAVE_ADM5120) || defined(HAVE_RT2880) || defined(HAVE_OPENRISC) | defined(HAVE_ALPINE)
 	return 0;
 #else
 	unsigned int control, in, outen, out, ctr_mask, out_mask;
@@ -6799,16 +6799,15 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_NETGEAR_R9000:
 
-
 		power_gpio = 0x016;	// power led 
 		diag_gpio = 0x116;	// power led orange     
 		diag_gpio_disabled = 0x016;	// power led orange     
 		connected_gpio = 0x017;	// wan led
-//		usb_power = 0x010;	// usb enable
-//		usb_power1 = 0x00f;
-//		wlan0_gpio = 0x009;	// radio 5G 
-///		wlan1_gpio = 0x008;	// radio 2G
-		ses_gpio = 0x027;     // wps button led used for 2G
+//              usb_power = 0x010;      // usb enable
+//              usb_power1 = 0x00f;
+//              wlan0_gpio = 0x009;     // radio 5G 
+///             wlan1_gpio = 0x008;     // radio 2G
+		ses_gpio = 0x027;	// wps button led used for 2G
 		usb_gpio = 0x024;	//usb1 
 		usb_gpio1 = 0x025;	//usb2
 		break;

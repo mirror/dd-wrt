@@ -351,7 +351,6 @@ int get_gpio(int gpio)
 	return get_linux_gpio(gpio);
 }
 
-
 void set_gpio(int gpio, int value)
 {
 	set_linux_gpio(gpio, value);
