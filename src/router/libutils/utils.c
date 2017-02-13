@@ -7393,6 +7393,8 @@ int get_ath9k_phy_idx(int idx)
 int get_ath9k_phy_ifname(const char *ifname)
 {
 	int devnum;
+	if (has_ad(ifname))
+		 return 2;
 	if (strncmp(ifname, "ath", 3))
 		return -1;
 	if (!sscanf(ifname, "ath%d", &devnum))
