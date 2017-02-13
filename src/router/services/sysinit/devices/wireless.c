@@ -252,6 +252,9 @@ static void detect_wireless_devices(void)
 #else
 			insmod("/lib/ath9k/ath9k.ko");
 #endif
+#ifdef HAVE_WIL6210
+			insmod("/lib/ath9k/wil6210.ko");
+#endif
 			delete_ath9k_devices(NULL);
 		}
 	} else {
