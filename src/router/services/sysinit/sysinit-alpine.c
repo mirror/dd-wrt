@@ -255,8 +255,9 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "add", "eth1", "1");
 	eval("/sbin/vconfig", "add", "eth2", "2");
 
-	set_smp_affinity(249, 3);
-	set_smp_affinity(250, 2);
+	set_smp_affinity(258, 3);
+	set_smp_affinity(259, 2);
+	set_smp_affinity(260, 1);
 
 	/*
 	   ","*","Set","a","sane","date","

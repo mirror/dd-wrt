@@ -800,7 +800,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (isfirst) {
 		fp = fopen(fstr, "wb");
 		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
-		fprintf(fp, "interface=%s\n", ifname);
+		if (has_ad(ifname))
+			fprintf(fp, "interface=wlan0\n");
+		else
+			fprintf(fp, "interface=%s\n", ifname);
 	} else {
 		fp = fopen(fstr, "ab");
 		fprintf(stderr, "setup vap %d bss %s\n", vapid, ifname);
@@ -1447,6 +1450,9 @@ void ath9k_start_supplicant(int count)
 	sprintf(power, "ath%d_txpwrdbm", count);
 	vifs = nvram_safe_get(wifivifs);
 	sprintf(psk, "-i%s", dev);
+	if (has_ad(dev))
+		sprintf(psk, "-iwlan0");
+
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
 	debug = nvram_nget("%s_wpa_debug", dev);
@@ -1511,6 +1517,8 @@ void ath9k_start_supplicant(int count)
 #endif
 		}
 	}
+	if (has_ad(dev))
+		sprintf(dev,"wlan0");
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
 #else
