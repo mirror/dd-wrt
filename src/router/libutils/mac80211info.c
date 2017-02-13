@@ -1694,6 +1694,8 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_INTERFACE, false);
 	if (!msg)
 		return NULL;
+	if (has_ad(dev))
+		dev = "giwifi";
 	int devidx = if_nametoindex(dev);
 
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
