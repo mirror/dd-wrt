@@ -382,7 +382,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			if (!isath5k)
 				fprintf(fp, "require_ht=1\n");
 		}
-		if (!isath5k && !has_ad(pefix)) {
+		if (!isath5k && !has_ad(prefix)) {
 			fprintf(fp, "ieee80211n=1\n");
 			if (nvram_matchi(bw, 2040)) {
 				fprintf(fp, "dynamic_ht40=1\n");
