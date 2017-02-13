@@ -2392,6 +2392,8 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "Capture(wl_basic.n5)");
 	if (nvram_match(mode, "ac-only"))
 		websWrite(wp, "Capture(wl_basic.ac)");
+	if (nvram_match(mode, "ad-only"))
+		websWrite(wp, "Capture(wl_basic.ad)");
 	if (nvram_match(mode, "acn-mixed"))
 		websWrite(wp, "Capture(wl_basic.acn)");
 	websWrite(wp, "</script>&nbsp;\n");

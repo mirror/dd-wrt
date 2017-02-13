@@ -1859,6 +1859,9 @@ static void show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"acn-mixed\\\" %s>\" + wl_basic.acn + \"</option>\");\n", nvram_match(wl_net_mode, "acn-mixed") ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 	}
+	if (has_ad(prefix)) {
+		websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n", nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
+	}
 #else
 #if HAVE_WHRAG108
 	if (!strcmp(prefix, "ath0"))
@@ -1888,6 +1891,9 @@ static void show_netmode(webs_t wp, char *prefix)
 			websWrite(wp, "document.write(\"<option value=\\\"ac-only\\\" %s>\" + wl_basic.ac + \"</option>\");\n", nvram_match(wl_net_mode, "ac-only") ? "selected=\\\"selected\\\"" : "");
 		}
 #endif
+	if (has_ad(prefix)) {
+		websWrite(wp, "document.write(\"<option value=\\\"ad-only\\\" %s>\" + wl_basic.ad + \"</option>\");\n", nvram_match(wl_net_mode, "ad-only") ? "selected=\\\"selected\\\"" : "");
+	}
 	}
 #endif
 

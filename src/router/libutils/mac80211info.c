@@ -707,6 +707,8 @@ int has_5ghz(char *prefix)
 {
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
+	if (has_ad(prefix))
+		return 0;
 #ifdef HAVE_ATH9K
 	if (is_ath9k(prefix))
 		return mac80211_check_band(prefix, 5);

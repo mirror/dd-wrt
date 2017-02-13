@@ -667,7 +667,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	if (chan)
 		free(chan);
-	if (freq < 4000) {
+	if (has_ad(prefix) && !strcmp(netmode, "ad-only")) {
+			fprintf(fp, "hw_mode=ad\n");
+	} else if (freq < 4000) {
 		if (!strcmp(netmode, "b-only")) {
 			fprintf(fp, "hw_mode=b\n");
 			fprintf(fp, "supported_rates=10 20 55 110\n");
