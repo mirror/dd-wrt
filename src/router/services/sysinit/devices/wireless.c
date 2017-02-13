@@ -283,7 +283,7 @@ static void detect_wireless_devices(void)
 	insmod("/lib/ath9k/ath10k_pci.ko");
 #endif
 #ifdef HAVE_WIL6210
-			insmod("/lib/ath9k/wil6210.ko");
+	insmod("/lib/ath9k/wil6210.ko");
 #endif
 
 #endif
