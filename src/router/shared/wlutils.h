@@ -103,6 +103,11 @@ extern int getRssi_ath9k(char *ifname, unsigned char *mac);
 
 extern int has_mimo(char *prefix);
 extern int has_ac(char *prefix);
+#ifdef HAVE_WIL6210
+extern int has_ad(char *prefix);
+#else
+#define has_ad(prefix) (0)
+#endif
 extern int has_qtn(char *prefix);
 
 extern int has_athmask(int devnum, int mask);

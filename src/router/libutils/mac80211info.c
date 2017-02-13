@@ -864,6 +864,12 @@ int has_ac(char *prefix)
 	return (is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix));
 }
 #endif
+#ifdef HAVE_WIL6210
+int has_ad(char *prefix)
+{
+	return (is_wil6210(prefix));
+}
+#endif
 int has_vht80plus80(char *interface)
 {
 #if defined(HAVE_ATH10K) || defined(HAVE_MVEBU)
