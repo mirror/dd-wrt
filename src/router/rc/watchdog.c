@@ -172,12 +172,12 @@ static void watchdog(void)
 		if (tempfp) {
 			
 			fscanf(tempfp, "%d.%d", &wifi3_mac,&dummy);
-			fclose(tempfp);
+			pclose(tempfp);
 		}
 		tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
 		if (tempfp) {
 			fscanf(tempfp, "%d.%d", &wifi3_phy,&dummy);
-			fclose(tempfp);
+			pclose(tempfp);
 		}
 		if (wifi1 > cpu)
 			cpu = wifi1;
