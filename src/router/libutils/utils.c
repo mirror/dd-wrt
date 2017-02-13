@@ -6803,11 +6803,9 @@ int led_control(int type, int act)
 		diag_gpio = 0x116;	// power led orange     
 		diag_gpio_disabled = 0x016;	// power led orange     
 		connected_gpio = 0x017;	// wan led
-//              usb_power = 0x010;      // usb enable
-//              usb_power1 = 0x00f;
-//              wlan0_gpio = 0x009;     // radio 5G 
-///             wlan1_gpio = 0x008;     // radio 2G
-		ses_gpio = 0x027;	// wps button led used for 2G
+//      usb_power = 0x010;      // usb enable
+//      usb_power1 = 0x00f;
+		ses_gpio = 0x127;	// wps button led used for 2G
 		usb_gpio = 0x024;	//usb1 
 		usb_gpio1 = 0x025;	//usb2
 		break;
