@@ -406,7 +406,7 @@ void start_sysinit(void)
 		calcchecksum(smem);
 		calcchecksum(&smem[0x4000]);
 
-		eval("rm","-f","/tmp/board1.bin");
+		eval("rm", "-f", "/tmp/board1.bin");
 		fp = fopen("/tmp/board1.bin", "wb");
 		fwrite(smem, 12064, 1, fp);
 		fclose(fp);
