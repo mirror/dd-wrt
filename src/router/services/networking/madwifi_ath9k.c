@@ -201,7 +201,8 @@ void configure_single_ath9k(int count)
 		nvram_default_get(txantenna, txdefstr);
 		nvram_default_get(rxantenna, rxdefstr);
 	}
-	mac80211_set_antennas(phy_idx, txchain, rxchain);
+	if (!has_ad(dev))
+		mac80211_set_antennas(phy_idx, txchain, rxchain);
 
 	sprintf(wl, "ath%d_mode", count);
 	apm = nvram_default_get(wl, "ap");
@@ -801,7 +802,7 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fp = fopen(fstr, "wb");
 		setupHostAP_generic_ath9k(maininterface, fp, isrepeater, aoss);
 		if (has_ad(ifname))
-			fprintf(fp, "interface=wlan0\n");
+			fprintf(fp, "interface=giwifi\n");
 		else
 			fprintf(fp, "interface=%s\n", ifname);
 	} else {
@@ -1451,7 +1452,7 @@ void ath9k_start_supplicant(int count)
 	vifs = nvram_safe_get(wifivifs);
 	sprintf(psk, "-i%s", dev);
 	if (has_ad(dev))
-		sprintf(psk, "-iwlan0");
+		sprintf(psk, "-igiwifi");
 
 	sprintf(wmode, "%s_mode", dev);
 	sprintf(bridged, "%s_bridged", dev);
@@ -1518,7 +1519,7 @@ void ath9k_start_supplicant(int count)
 		}
 	}
 	if (has_ad(dev))
-		sprintf(dev,"wlan0");
+		sprintf(dev,"giwifi");
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
 #else

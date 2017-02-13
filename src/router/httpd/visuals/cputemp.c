@@ -44,7 +44,7 @@ static void show_temp(webs_t wp, int mon, int input, char *fmt)
 		int cpu;
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
-		websWrite(wp, fmt, cpu , 0);
+		websWrite(wp, fmt, cpu, 0);
 	}
 }
 #elif defined(HAVE_IPQ806X)
