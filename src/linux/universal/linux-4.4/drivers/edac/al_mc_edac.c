@@ -142,7 +142,7 @@ static ssize_t al_inject_phys_addr_store(
 	al_phys_addr_t addr;
 	int rc;
 
-	rc = strict_strtoul(data, 16, &data_val);
+	rc = kstrtoul(data, 16, &data_val);
 	if (rc < 0)
 		return -EIO;
 
@@ -195,7 +195,7 @@ static ssize_t al_inject_enable_store(
 	unsigned long data_val;
 	int rc;
 
-	rc = strict_strtoul(data, 10, &data_val);
+	rc = kstrtoul(data, 10, &data_val);
 	if (rc < 0)
 		return -EIO;
 
@@ -239,7 +239,7 @@ static ssize_t al_inject_enable_show(
 		unsigned long data_val;					\
 		int rc;							\
 									\
-		rc = strict_strtoul(data, 10, &data_val);		\
+		rc = kstrtoul(data, 10, &data_val);		\
 		if (rc < 0)						\
 			return -EIO;					\
 		drvdata->inject._field = data_val;			\
