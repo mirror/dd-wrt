@@ -1063,6 +1063,12 @@ extern int is_ath5k(const char *prefix);
 #else
 #define is_ath5k(prefix) 0
 #endif
+#ifdef HAVE_WIL6210
+int is_wil6210(const char *prefix);
+#else
+#define is_wil6210(prefix) 0
+#endif
+
 #ifdef HAVE_ATH9K
 extern int is_ath9k(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
