@@ -7517,8 +7517,9 @@ int is_wil6210(const char *prefix)
 		return 1;
 	if (!strcmp(prefix,"ath2"))
 		return 1;
+	return 0;
 	// get legacy interface count
-	return devicecountbydriver(prefix, "wil6210");
+//	return devicecountbydriver(prefix, "wil6210");
 }
 
 #endif
