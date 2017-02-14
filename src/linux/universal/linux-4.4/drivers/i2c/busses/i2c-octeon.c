@@ -212,7 +212,7 @@ static int octeon_i2c_test_iflg(struct octeon_i2c *i2c)
  */
 static int octeon_i2c_wait(struct octeon_i2c *i2c)
 {
-	long result;
+	int result;
 
 	if (i2c->broken_irq_mode) {
 		/*
@@ -236,7 +236,17 @@ static int octeon_i2c_wait(struct octeon_i2c *i2c)
 
 	octeon_i2c_int_disable(i2c);
 
-	if (result == 0) {
+
+	if (result <= 0 && octeon_i2c_test_iflg(i2c)) {
+		dev_err(i2c->dev, "broken irq connection detected, switching to polling mode.\n");
+		i2c->broken_irq_mode = 1;
+		return 0;
+	}
+
+	if (result < 0) {
+		dev_dbg(i2c->dev, "%s: wait interrupted\n", __func__);
+		return result;
+	} else if (result == 0) {
 		dev_dbg(i2c->dev, "%s: timeout\n", __func__);
 		return -ETIMEDOUT;
 	}
