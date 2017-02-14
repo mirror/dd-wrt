@@ -79,6 +79,8 @@ struct wpa_bss {
 	u8 ssid[SSID_MAX_LEN];
 	/** Length of SSID */
 	size_t ssid_len;
+	
+	struct ieee80211_vht_operation *vht_oper;
 	/** HT capabilities */
 	u16 ht_capab;
 	/* Five octets of HT Operation Information */
