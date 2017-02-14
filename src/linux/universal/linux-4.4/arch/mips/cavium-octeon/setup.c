@@ -1092,16 +1092,19 @@ int ubnt_dt_set_mac(void);
 
 extern const char __appended_dtb;
 extern const char __dtb_octeon_3xxx_begin;
+extern const char __dtb_octeon_3xxx_end;
 extern const char __dtb_octeon_68xx_begin;
+extern const char __dtb_octeon_68xx_end;
 extern const char __dtb_ubnt_e100_begin;
 extern const char __dtb_ubnt_e100_end;
 extern const char __dtb_ubnt_e101_begin;
 extern const char __dtb_ubnt_e101_end;
 void __init device_tree_init(void)
 {
-	const void *fdt;
+	void *fdt;
 	bool do_prune;
 	bool do_set_mac = false;
+	int dt_size;
 
 #ifdef CONFIG_MIPS_ELF_APPENDED_DTB
 	if (!fdt_check_header(&__appended_dtb)) {
@@ -1115,9 +1118,11 @@ void __init device_tree_init(void)
 		if (fdt_check_header(fdt))
 			panic("Corrupt Device Tree passed to kernel.");
 		do_prune = false;
+		dt_size = fdt_totalsize(fdt);
 		pr_info("Using passed Device Tree.\n");
 	} else if (OCTEON_IS_MODEL(OCTEON_CN68XX)) {
-		fdt = &__dtb_octeon_68xx_begin;
+		fdt = (void*)&__dtb_octeon_68xx_begin;
+		dt_size = &__dtb_octeon_68xx_end - &__dtb_octeon_68xx_begin;
 		do_prune = true;
 	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E100) {
 		switch (octeon_bootinfo->board_rev_major) {
@@ -1137,18 +1142,22 @@ void __init device_tree_init(void)
 		do_prune = false;
 		do_set_mac = true;
 	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E120) {
-		fdt = (struct boot_param_header *)
+		fdt = (void*)
 			&__dtb_ubnt_e100_begin;
 		dt_size = &__dtb_ubnt_e100_end
 			- &__dtb_ubnt_e100_begin;
 		do_prune = false;
 		do_set_mac = true;
 	} else {
-		fdt = &__dtb_octeon_3xxx_begin;
+		fdt = (void*)&__dtb_octeon_3xxx_begin;
+		dt_size = &__dtb_octeon_3xxx_end - &__dtb_octeon_3xxx_begin;
 		do_prune = true;
 	}
 
-	initial_boot_params = (void *)fdt;
+	initial_boot_params = early_init_dt_alloc_memory_arch(dt_size, 8);
+	if (initial_boot_params == NULL)
+		panic("Could not allocate initial_boot_params\n");
+	memcpy(initial_boot_params, fdt, dt_size);
 
 	if (do_prune) {
 		octeon_prune_device_tree();
@@ -1156,7 +1165,7 @@ void __init device_tree_init(void)
 	}
 	if (do_set_mac)
 		ubnt_dt_set_mac();
-	unflatten_and_copy_device_tree();
+	unflatten_device_tree();
 }
 
 static int __initdata disable_octeon_edac_p;
