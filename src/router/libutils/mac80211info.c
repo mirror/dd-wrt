@@ -1000,7 +1000,7 @@ static int isinlist(struct wifi_channels *list, int base, int freq)
 	return 0;
 }
 
-static void check_validchannels(struct wifi_channels *list, int bw, int bw40, int bw80, int bw160)
+static void check_validchannels(struct wifi_channels *list, int bw)
 {
 	int distance = 10;
 	int count = 0;
@@ -1072,7 +1072,7 @@ static void check_validchannels(struct wifi_channels *list, int bw, int bw40, in
 					chan->llu = 0;
 				}
 			}
-			if (a == 2) 
+			if (a == 2) {
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
@@ -1084,14 +1084,6 @@ static void check_validchannels(struct wifi_channels *list, int bw, int bw40, in
 					chan->ulu = 0;
 					chan->uul = 0;
 					chan->uuu = 0;
-				}
-				if (!bw80) {
-					chan->ulu = 0;
-					chan->uul = 0;
-					chan->uuu = 0;
-					chan->lul = 0;
-					chan->llu = 0;
-					chan->lll = 0;
 				}
 			}
 			if (a == 3) {
@@ -1114,13 +1106,7 @@ static void check_validchannels(struct wifi_channels *list, int bw, int bw40, in
 					chan->uuu = 0;
 
 				}
-				if (!bw160) {
-					chan->uul = 0;
-					chan->uuu = 0;
-					chan->llu = 0;
-					chan->lll = 0;
-				}
-			}
+			}	
 		}
 	}
 }
@@ -1207,11 +1193,9 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					/* fall through */
 				case 1:
 					width_160 = true;
-				break;
+					break;
 				}
 			}
-
-
 
 			freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
 			if (!freqlist)
@@ -1371,6 +1355,26 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].uul = 1;
 								list[count].uuu = 1;
 							}
+							if (!width_40 && max_bandwidth_khz==40) {
+								list[count].luu = 0;
+								list[count].ull = 0;
+							}
+							if (!width_80 && max_bandwidth_khz==80) {
+								list[count].ull = 0;
+								list[count].uul = 0;
+								list[count].lul = 0;
+								list[count].ulu = 0;
+							}
+							if (!width_160 && max_bandwidth_khz==160) {
+								list[count].luu = 0;
+								list[count].ull = 0;
+								list[count].ulu = 0;
+								list[count].uul = 0;
+								list[count].uuu = 0;
+								list[count].lul = 0;
+								list[count].llu = 0;
+								list[count].lll = 0;
+							}
 							if (regmaxbw > 20 && regmaxbw >= max_bandwidth_khz) {
 								//      fprintf(stderr, "freq %d, htrange %d, startfreq %d stopfreq %d, regmaxbw %d hw_eirp %d max_eirp %d ht40plus %d ht40minus %d\n", freq_mhz, max_bandwidth_khz,
 								//              startfreq, stopfreq, regmaxbw, eirp, regpower.max_eirp, list[count].ht40plus, list[count].ht40minus);
@@ -1388,7 +1392,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
-	check_validchannels(list, max_bandwidth_khz, width_40,width_80,width_160);
+	check_validchannels(list, max_bandwidth_khz);
 	return list;
 out:
 nla_put_failure:
