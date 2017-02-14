@@ -1087,14 +1087,20 @@ void __init prom_free_prom_memory(void)
 }
 
 int octeon_prune_device_tree(void);
+int ubnt_dt_set_mac(void);
 
 extern const char __appended_dtb;
 extern const char __dtb_octeon_3xxx_begin;
 extern const char __dtb_octeon_68xx_begin;
+extern const char __dtb_ubnt_e100_begin;
+extern const char __dtb_ubnt_e100_end;
+extern const char __dtb_ubnt_e101_begin;
+extern const char __dtb_ubnt_e101_end;
 void __init device_tree_init(void)
 {
 	const void *fdt;
 	bool do_prune;
+	bool do_set_mac = false;
 
 #ifdef CONFIG_MIPS_ELF_APPENDED_DTB
 	if (!fdt_check_header(&__appended_dtb)) {
@@ -1112,6 +1118,30 @@ void __init device_tree_init(void)
 	} else if (OCTEON_IS_MODEL(OCTEON_CN68XX)) {
 		fdt = &__dtb_octeon_68xx_begin;
 		do_prune = true;
+	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E100) {
+		switch (octeon_bootinfo->board_rev_major) {
+		case 1:
+			fdt = (struct boot_param_header *)
+			      &__dtb_ubnt_e101_begin;
+			dt_size = &__dtb_ubnt_e101_end
+			          - &__dtb_ubnt_e101_begin;
+			break;
+		default:
+			fdt = (struct boot_param_header *)
+			      &__dtb_ubnt_e100_begin;
+			dt_size = &__dtb_ubnt_e100_end
+			          - &__dtb_ubnt_e100_begin;
+			break;
+		}
+		do_prune = false;
+		do_set_mac = true;
+	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E120) {
+		fdt = (struct boot_param_header *)
+			&__dtb_ubnt_e100_begin;
+		dt_size = &__dtb_ubnt_e100_end
+			- &__dtb_ubnt_e100_begin;
+		do_prune = false;
+		do_set_mac = true;
 	} else {
 		fdt = &__dtb_octeon_3xxx_begin;
 		do_prune = true;
@@ -1123,6 +1153,8 @@ void __init device_tree_init(void)
 		octeon_prune_device_tree();
 		pr_info("Using internal Device Tree.\n");
 	}
+	if (do_set_mac)
+		ubnt_dt_set_mac();
 	unflatten_and_copy_device_tree();
 }
 
