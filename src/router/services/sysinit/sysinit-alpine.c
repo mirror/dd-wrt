@@ -121,7 +121,7 @@ void start_sysinit(void)
 	}
 
 	insmod("mii_gpio");
-	insmod("leds_gpio");
+	insmod("gpio-pca953x");
 	insmod("qca-ssdk");
 
 	eval("ssdk_sh_id", "0", "debug", "reg", "set", "0x10", "0x002613a0", "4");
@@ -272,6 +272,7 @@ void start_sysinit(void)
 	case ROUTER_NETGEAR_R9000:
 		set_gpio(29, 1);	//WIFI button led
 		set_gpio(30, 1);	//10G led
+		set_gpio(504, 1);
 		break;
 	default:
 		break;
