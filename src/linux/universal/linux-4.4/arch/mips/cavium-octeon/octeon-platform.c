@@ -605,6 +605,44 @@ static void __init octeon_fdt_pip_iface(int pip, int idx, u64 *pmac)
 		octeon_fdt_pip_port(iface, idx, p, count - 1, pmac);
 }
 
+void __init ubnt_dt_set_mac(void)
+{
+	int i, aliases, pip, iface, eth;
+	const char *pip_path;
+	u64 mac_addr_base;
+	char nbuf[20];
+
+	if ((aliases = fdt_path_offset(initial_boot_params, "/aliases")) < 0)
+		return;
+
+	if (!(pip_path = fdt_getprop(initial_boot_params, aliases, "pip",
+				     NULL)))
+		return;
+
+	if ((pip = fdt_path_offset(initial_boot_params, pip_path)) < 0)
+		return;
+
+	if ((iface = fdt_subnode_offset(initial_boot_params, pip,
+					"interface@0")) < 0)
+		return;
+
+	mac_addr_base =
+		((octeon_bootinfo->mac_addr_base[0] & 0xffull)) << 40 |
+		((octeon_bootinfo->mac_addr_base[1] & 0xffull)) << 32 |
+		((octeon_bootinfo->mac_addr_base[2] & 0xffull)) << 24 |
+		((octeon_bootinfo->mac_addr_base[3] & 0xffull)) << 16 |
+		((octeon_bootinfo->mac_addr_base[4] & 0xffull)) << 8 |
+		(octeon_bootinfo->mac_addr_base[5] & 0xffull);
+
+	for (i = 0; i < 4; i++) {
+		snprintf(nbuf, sizeof(nbuf), "ethernet@%x", i);
+		eth = fdt_subnode_offset(initial_boot_params, iface, nbuf);
+		if (eth < 0)
+			break;
+		octeon_fdt_set_mac_addr(eth, &mac_addr_base);
+	}
+}
+
 int __init octeon_prune_device_tree(void)
 {
 	int i, max_port, uart_mask;
