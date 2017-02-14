@@ -7394,7 +7394,7 @@ int get_ath9k_phy_ifname(const char *ifname)
 {
 	int devnum;
 	if (is_wil6210(ifname))
-		 return 2;
+		return 2;
 	if (strncmp(ifname, "ath", 3))
 		return -1;
 	if (!sscanf(ifname, "ath%d", &devnum))
@@ -7513,13 +7513,13 @@ int is_ath10k(const char *prefix)
 #ifdef HAVE_WIL6210
 int is_wil6210(const char *prefix)
 {
-	if (!strcmp(prefix,"giwifi"))
+	if (!strcmp(prefix, "giwifi"))
 		return 1;
-	if (!strcmp(prefix,"ath2"))
+	if (!strcmp(prefix, "ath2"))
 		return 1;
 	return 0;
 	// get legacy interface count
-//	return devicecountbydriver(prefix, "wil6210");
+//      return devicecountbydriver(prefix, "wil6210");
 }
 
 #endif
