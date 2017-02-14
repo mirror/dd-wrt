@@ -653,6 +653,7 @@ void __init prom_init(void)
 	sysinfo->board_type = octeon_bootinfo->board_type;
 	sysinfo->board_rev_major = octeon_bootinfo->board_rev_major;
 	sysinfo->board_rev_minor = octeon_bootinfo->board_rev_minor;
+	printk(KERN_INFO "board revision %d:%d\n",sysinfo->board_rev_major, sysinfo->board_rev_minor);
 	memcpy(sysinfo->mac_addr_base, octeon_bootinfo->mac_addr_base,
 	       sizeof(sysinfo->mac_addr_base));
 	sysinfo->mac_addr_count = octeon_bootinfo->mac_addr_count;
