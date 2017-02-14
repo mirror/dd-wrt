@@ -1000,7 +1000,7 @@ static int isinlist(struct wifi_channels *list, int base, int freq)
 	return 0;
 }
 
-static void check_validchannels(struct wifi_channels *list, int bw)
+static void check_validchannels(struct wifi_channels *list, int bw, int bw40, int bw80, int bw160)
 {
 	int distance = 10;
 	int count = 0;
@@ -1072,7 +1072,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->llu = 0;
 				}
 			}
-			if (a == 2) {
+			if (a == 2) 
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))))) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
@@ -1084,6 +1084,14 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->ulu = 0;
 					chan->uul = 0;
 					chan->uuu = 0;
+				}
+				if (!bw80) {
+					chan->ulu = 0;
+					chan->uul = 0;
+					chan->uuu = 0;
+					chan->lul = 0;
+					chan->llu = 0;
+					chan->lll = 0;
 				}
 			}
 			if (a == 3) {
@@ -1106,6 +1114,12 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->uuu = 0;
 
 				}
+				if (!bw160) {
+					chan->uul = 0;
+					chan->uuu = 0;
+					chan->llu = 0;
+					chan->lll = 0;
+				}
 			}
 		}
 	}
@@ -1121,6 +1135,7 @@ static struct wifi_channels ghz60channels[] = {
 struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
+	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band, *freqlist, *freq;
 	struct ieee80211_regdomain *rd;
@@ -1135,6 +1150,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	int skip = 1;
 	int rrdcount = 0;
 	int super = 0;
+	bool width_40 = false;
+	bool width_160 = false;
+	bool width_80 = false;
+
 	if (has_ad(interface)) {
 		return ghz60channels;
 	}
@@ -1166,6 +1185,34 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 			list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (chancount + 1), 1);
 		}
 		nla_for_each_nested(band, bands, rem) {
+
+			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
+
+			if (tb_band[NL80211_BAND_ATTR_HT_CAPA]) {
+				__u16 cap = nla_get_u16(tb_band[NL80211_BAND_ATTR_HT_CAPA]);
+
+				if (cap & BIT(1))
+					width_40 = true;
+			}
+
+			if (tb_band[NL80211_BAND_ATTR_VHT_CAPA]) {
+				__u32 capa;
+
+				width_80 = true;
+
+				capa = nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]);
+				switch ((capa >> 2) & 3) {
+				case 2:
+					/* width_80p80 = true; */
+					/* fall through */
+				case 1:
+					width_160 = true;
+				break;
+				}
+			}
+
+
+
 			freqlist = nla_find(nla_data(band), nla_len(band), NL80211_BAND_ATTR_FREQS);
 			if (!freqlist)
 				continue;
@@ -1341,7 +1388,7 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
-	check_validchannels(list, max_bandwidth_khz);
+	check_validchannels(list, max_bandwidth_khz, width_40,width_80,width_160);
 	return list;
 out:
 nla_put_failure:
