@@ -381,7 +381,7 @@ int __get_hz(void)
 				hz = denom;
 		fclose(fp);
 	}
-	if (hz)
+	if (hz && hz <= 1000)
 		return hz;
 	return HZ;
 }
