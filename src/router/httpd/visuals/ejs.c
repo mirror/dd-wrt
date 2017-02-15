@@ -1571,7 +1571,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int count = 0;
 	for (a = 0; a < ifcount; a++) {
 		char check[32];
-		sprintf(check, "ath%d\n", a);
+		sprintf(check, "ath%d", a);
 		if (has_ad(check))
 			continue;
 		sprintf(&menu[1][count + 8][0], "Wireless_WDS-ath%d.asp", a);
