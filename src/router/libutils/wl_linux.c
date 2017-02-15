@@ -39,6 +39,7 @@ typedef uint8_t u8;
 #include <typedefs.h>
 #include <wlioctl.h>
 #include <wlutils.h>
+#include <utils.h>
 
 static int s_socket = -1;
 int getsocket(void)
