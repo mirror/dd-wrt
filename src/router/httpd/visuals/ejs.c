@@ -1568,14 +1568,18 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	if (ifcount > 4)
 		ifcount = 4;	//truncate to max of 4
 	int a;
-
+	int count = 0;
 	for (a = 0; a < ifcount; a++) {
-		sprintf(&menu[1][a + 8][0], "Wireless_WDS-ath%d.asp", a);
+		char check[32];
+		sprintf(check, "ath%d\n", a);
+		if (has_ad(check))
+			continue;
+		sprintf(&menu[1][count + 8][0], "Wireless_WDS-ath%d.asp", a);
 		if (ifcount == 1)
-			sprintf(&menuname[1][a + 9][0], "wirelessWds");
+			sprintf(&menuname[1][count + 9][0], "wirelessWds");
 		else
-			sprintf(&menuname[1][a + 9][0], "wirelessWds%d", a);
-	}
+			sprintf(&menuname[1][count + 9][0], "wirelessWds%d", a);
+	count++}
 #endif
 #else
 #ifdef HAVE_ERC
