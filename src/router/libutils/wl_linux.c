@@ -105,7 +105,7 @@ int wl_hwaddr(char *name, unsigned char *hwaddr)
 	struct ifreq ifr;
 	int ret = 0;
 	int s;
-	if (has_ad(name))
+	if (is_wil6210(name))
 		name = "giwifi";
 #ifdef HAVE_DIR862
 	if (!strcmp(name, "ath1"))
