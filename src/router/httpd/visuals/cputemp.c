@@ -22,7 +22,7 @@
 #ifdef HAVE_CPUTEMP
 
 #if defined(HAVE_MVEBU)
-static void show_temp(webs_t wp, int mon, int input, char *fmt)
+static int show_temp(webs_t wp, int mon, int input, char *fmt)
 {
 	char sysfs[64];
 	snprintf(sysfs, 64, "/sys/class/hwmon/hwmon%d/temp%d_input", mon, input);
@@ -31,9 +31,14 @@ static void show_temp(webs_t wp, int mon, int input, char *fmt)
 		int cpu;
 		fscanf(tempfp, "%d", &cpu);
 		fclose(tempfp);
-		websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
+		if (cpu > 0)
+			websWrite(wp, fmt, cpu / 1000, (cpu % 1000) / 100);
+		else
+			return -1;
 	}
+	return 0;
 }
+
 #elif defined(HAVE_ALPINE)
 static void show_temp(webs_t wp, int mon, int input, char *fmt)
 {
@@ -77,8 +82,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		show_temp(wp, 2, 1, " / WL0 %d.%d &#176;C");
 		show_temp(wp, 2, 2, " / WL1 %d.%d &#176;C");
 	} else {
-		show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
-		show_temp(wp, 1, 1, " / WL0 %d.%d &#176;C");
+		int cpuresult = show_temp(wp, 0, 1, "CPU %d.%d &#176;C");
+		if (cpuresult)
+			show_temp(wp, 1, 1, "WL0 %d.%d &#176;C");
+		else
+			show_temp(wp, 1, 1, " / WL0 %d.%d &#176;C");
 		show_temp(wp, 1, 2, " / WL1 %d.%d &#176;C");
 	}
 	return;
