@@ -1106,7 +1106,7 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 					chan->uuu = 0;
 
 				}
-			}	
+			}
 		}
 	}
 }
@@ -1355,17 +1355,17 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								list[count].uul = 1;
 								list[count].uuu = 1;
 							}
-							if (!width_40 && max_bandwidth_khz==40) {
+							if (!width_40 && max_bandwidth_khz == 40) {
 								list[count].luu = 0;
 								list[count].ull = 0;
 							}
-							if (!width_80 && max_bandwidth_khz==80) {
+							if (!width_80 && max_bandwidth_khz == 80) {
 								list[count].ull = 0;
 								list[count].uul = 0;
 								list[count].lul = 0;
 								list[count].ulu = 0;
 							}
-							if (!width_160 && max_bandwidth_khz==160) {
+							if (!width_160 && max_bandwidth_khz == 160) {
 								list[count].luu = 0;
 								list[count].ull = 0;
 								list[count].ulu = 0;

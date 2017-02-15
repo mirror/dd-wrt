@@ -1625,24 +1625,26 @@ int get_radiostate(char *ifname)
 {
 	if (nvram_nmatch("disabled", "%s_net_mode", ifname))
 		return 0;
+	if (!has_ad(ifname)) {
 #ifdef HAVE_ATH9K
-	if (is_ath9k(ifname)) {
-		char debugstring[64];
-		FILE *fp;
-		int idx;
-		char state[11];
+		if (is_ath9k(ifname)) {
+			char debugstring[64];
+			FILE *fp;
+			int idx;
+			char state[11];
 
-		sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname));
-		fp = fopen(debugstring, "r");
-		if (fp) {
-			fread(state, sizeof(state) - 1, 1, fp);
-			fclose(fp);
-			state[10] = '\0';
-			if (!strncmp(state, "0x00000003", 10))
-				return 0;
+			sprintf(debugstring, "/sys/kernel/debug/ieee80211/phy%d/ath9k/diag", get_ath9k_phy_ifname(ifname));
+			fp = fopen(debugstring, "r");
+			if (fp) {
+				fread(state, sizeof(state) - 1, 1, fp);
+				fclose(fp);
+				state[10] = '\0';
+				if (!strncmp(state, "0x00000003", 10))
+					return 0;
+			}
 		}
-	}
 #endif
+	}
 	struct ifreq ifr;
 	int skfd = getsocket();
 
