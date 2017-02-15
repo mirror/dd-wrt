@@ -2335,18 +2335,19 @@ void ej_getwirelessssid(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-	    ifname = "ath2";
+		ifname = "ath2";
 	sprintf(ssid, "%s_ssid", ifname);
-	fprintf(stderr, "get ssid from %s = %s\n",ssid,nvram_safe_get(ssid));
 	tf_webWriteESCNV(wp, ssid);
 
-} void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
+}
+
+void ej_getwirelessmode(webs_t wp, int argc, char_t ** argv)
 {
 	char mode[32];
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-	    ifname = "ath2";
+		ifname = "ath2";
 	sprintf(mode, "%s_mode", ifname);
 
 	websWrite(wp, "<script type=\"text/javascript\">");
@@ -2377,7 +2378,7 @@ void ej_getwirelessnetmode(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-	    ifname = "ath2";
+		ifname = "ath2";
 	strncpy(m, ifname, 4);
 	m[4] = 0;
 	sprintf(mode, "%s_net_mode", m);
