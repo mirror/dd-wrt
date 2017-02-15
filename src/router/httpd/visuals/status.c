@@ -382,7 +382,7 @@ void ej_show_wl_mac(webs_t wp, int argc, char_t ** argv)
 
 	char *ifname = nvram_safe_get("wifi_display");
 	if (has_ad(ifname))
-	    ifname = "ath2";
+		ifname = "ath2";
 	sprintf(wifmac, "%s_hwaddr", ifname);
 
 	websWrite(wp, "%s", nvram_safe_get(wifmac));
