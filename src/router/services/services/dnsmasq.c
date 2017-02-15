@@ -149,10 +149,10 @@ void start_dnsmasq(void)
 		stop_dnsmasq();
 		return;
 	}
-	
+
 	update_timezone();
-	
-	if (nvram_matchi("dns_crypt", 1)){
+
+	if (nvram_matchi("dns_crypt", 1)) {
 		eval("killall", "dnscrypt-proxy");
 		eval("dnscrypt-proxy", "-a", "127.0.0.1:30", "-R", nvram_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
@@ -220,12 +220,11 @@ void start_dnsmasq(void)
 	//fprintf(fp, "all-servers\n");
 	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
-	
-	if (nvram_matchi("dns_crypt", 1)){
+
+	if (nvram_matchi("dns_crypt", 1)) {
 		fprintf(fp, "no-resolv\n");
 		fprintf(fp, "server=127.0.0.1#30\n");
 	}
-
 #ifdef HAVE_UNBOUND
 	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "port=0\n");
@@ -402,10 +401,10 @@ void start_dnsmasq(void)
 	dns_to_resolv();
 
 	chmod("/etc/lease_update.sh", 0700);
-	
+
 	char wpad[64];
 #ifdef HAVE_PRIVOXY
-	if (nvram_matchi("privoxy_enable", 1)){
+	if (nvram_matchi("privoxy_enable", 1)) {
 		if (nvram_matchi("privoxy_transp_enable", 1)) {
 			sprintf(wpad, "--dhcp-option=252,http://config.privoxy.org/wpad.dat");
 		} else {
@@ -417,7 +416,7 @@ void start_dnsmasq(void)
 #else
 	sprintf(wpad, "--dhcp-option=252,\"\n\"");
 #endif
-	
+
 	FILE *conf = NULL;
 	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
 

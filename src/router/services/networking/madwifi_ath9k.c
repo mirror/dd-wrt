@@ -1519,7 +1519,7 @@ void ath9k_start_supplicant(int count)
 		}
 	}
 	if (has_ad(dev))
-		sprintf(dev,"giwifi");
+		sprintf(dev, "giwifi");
 #ifdef HAVE_RELAYD
 	if (strcmp(apm, "sta") && strcmp(apm, "wet")) {
 #else
