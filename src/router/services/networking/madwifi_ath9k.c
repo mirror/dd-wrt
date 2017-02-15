@@ -493,16 +493,19 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			channel = 100;
 			sprintf(ht, "HT40+");
 			iht = 1;
+			channeloffset = 14;
 			freq = 5500;
 		} else if (nvram_matchi(bw, 80)) {
 			channel = 44;
 			sprintf(ht, "HT40+");
+			channeloffset = 6;
 			iht = 1;
 			freq = 5220;
 		} else if (nvram_match(bw, "80+80")) {
 			channel = 100;
 			sprintf(ht, "HT40+");
 			iht = 1;
+			channeloffset = 6;
 			freq = 5500;
 		} else {
 
