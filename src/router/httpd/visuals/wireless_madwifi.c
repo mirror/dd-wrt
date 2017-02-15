@@ -446,7 +446,6 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
 	char *prefix = nvram_safe_get("wifi_display");
 	int channel = wifi_getchannel(prefix);
-
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
 		if (!interface) {
