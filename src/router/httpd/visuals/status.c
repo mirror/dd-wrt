@@ -37,6 +37,7 @@
 // #endif
 #include <broadcom.h>
 #include <netdb.h>
+#include <wlutils.h>
 
 #define	STATUS_RETRY_COUNT	10
 #define STATUS_REFRESH_TIME1	5
