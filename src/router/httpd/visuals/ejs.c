@@ -1579,7 +1579,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			sprintf(&menuname[1][count + 9][0], "wirelessWds");
 		else
 			sprintf(&menuname[1][count + 9][0], "wirelessWds%d", a);
-	count++}
+		count++;
+	}
 #endif
 #else
 #ifdef HAVE_ERC
