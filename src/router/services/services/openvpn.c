@@ -41,17 +41,17 @@ void start_openvpnserver(void)
 	int jffs = 0;
 
 	char proto[16];
-	
+
 	strcpy(proto, nvram_safe_get("openvpn_proto"));
-	
-	if(!nvram_matchi("ipv6_enable",1)){
-		if(!strcmp(proto, "udp")){
+
+	if (!nvram_matchi("ipv6_enable", 1)) {
+		if (!strcmp(proto, "udp")) {
 			strcpy(proto, "udp4");
-		}else{
+		} else {
 			strcpy(proto, "tcp4-server");
 		}
 	}
-	
+
 	if (nvram_invmatchi("openvpn_enable", 1))
 		return;
 	update_timezone();
@@ -133,8 +133,7 @@ void start_openvpnserver(void)
 			"management 127.0.0.1 14\n"
 			"management-log-cache 100\n"
 			"topology subnet\n"
-			"script-security 2\n"
-			"port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 		fprintf(fp, "client-connect /tmp/openvpn/clcon.sh\n");
 		fprintf(fp, "client-disconnect /tmp/openvpn/cldiscon.sh\n");
 		if (jffs == 1)	//  use usb/jffs for ccd if available
@@ -177,7 +176,7 @@ void start_openvpnserver(void)
 			fprintf(fp, "server %s %s\n", nvram_safe_get("openvpn_net"), nvram_safe_get("openvpn_tunmask"));
 			fprintf(fp, "dev tun2\n");
 #ifdef HAVE_IPV6
-			//fprintf(fp, "tun-ipv6\n");	//enable ipv6 support.
+			//fprintf(fp, "tun-ipv6\n");    //enable ipv6 support.
 #endif
 		} else if (nvram_match("openvpn_tuntap", "tap") && nvram_matchi("openvpn_proxy", 0)) {
 			fprintf(fp, "server-bridge %s %s %s %s\n", nvram_safe_get("openvpn_gateway"), nvram_safe_get("openvpn_mask"), nvram_safe_get("openvpn_startip"), nvram_safe_get("openvpn_endip"));
@@ -366,15 +365,15 @@ void start_openvpn(void)
 	write_nvram("/tmp/openvpncl/cert.p12", "openvpncl_pkcs12");
 	write_nvram("/tmp/openvpncl/static.key", "openvpncl_static");
 	chmod("/tmp/openvpn/client.key", 0600);
-	
+
 	char proto[16];
-	
+
 	strcpy(proto, nvram_safe_get("openvpncl_proto"));
-	
-	if(!nvram_matchi("ipv6_enable",1)){
-		if(!strcmp(proto, "udp")){
+
+	if (!nvram_matchi("ipv6_enable", 1)) {
+		if (!strcmp(proto, "udp")) {
 			strcpy(proto, "udp4");
-		}else{
+		} else {
 			strcpy(proto, "tcp4-client");
 		}
 	}
@@ -456,8 +455,8 @@ void start_openvpn(void)
 		fprintf(fp, "ns-cert-type server\n");
 	if (nvram_match("openvpncl_proto", "udp"))
 		fprintf(fp, "fast-io\n");	//experimental!improving CPU efficiency by 5%-10%
-//	if (nvram_match("openvpncl_tuntap", "tun"))
-//		fprintf(fp, "tun-ipv6\n");	//enable ipv6 support.
+//      if (nvram_match("openvpncl_tuntap", "tun"))
+//              fprintf(fp, "tun-ipv6\n");      //enable ipv6 support.
 	if (strlen(nvram_safe_get("openvpncl_tlsauth")) > 0)
 		fprintf(fp, "tls-auth /tmp/openvpncl/ta.key 1\n");
 	if (nvram_invmatchi("openvpncl_tlscip", 0))
@@ -527,7 +526,6 @@ void start_openvpn(void)
 /*	if (nvram_matchi("wshaper_enable",1))
 		fprintf(fp, "stopservice wshaper\n" "startservice wshaper\n");*/
 
-	
 	fclose(fp);
 
 	fp = fopen("/tmp/openvpncl/route-down.sh", "wb");
