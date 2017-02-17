@@ -391,12 +391,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				fprintf(fp, "dynamic_ht40=0\n");
 			}
 		}
-		char *nbw = nvram_default_get(bw, "20");
 		char sb[32];
 		sprintf(sb, "%s_nctrlsb", prefix);
-		if (!strcmp(nbw, "20")) {
-			sprintf(ht, "HT20");
-		} else if (!strcmp(nbw, "40") || !strcmp(nbw, "2040")) {
+		switch (usebw) {
+		case 40:
 			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
@@ -405,7 +403,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				sprintf(ht, "HT40-");
 				iht = -1;
 			}
-		} else if (!strcmp(nbw, "80") || !strcmp(nbw, "80+80")) {
+			break;
+		case 80:
+		case 8080:
 			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
@@ -426,7 +426,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				iht = -1;
 				channeloffset = 6;
 			}
-		} else if (!strcmp(nbw, "160")) {
+			break;
+		case 160:
 			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
 				sprintf(ht, "HT40+");
 				iht = 1;
@@ -467,9 +468,12 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				iht = -1;
 				channeloffset = 14;
 			}
-
-		} else
+			break;
+		case 20:
+		default:
 			sprintf(ht, "HT20");
+			break;
+		}
 	} else {
 		sprintf(ht, "HT20");
 	}
@@ -489,40 +493,35 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				i = 1;
 			}
 		}
-		if (nvram_matchi(bw, 160)) {
+		switch (usebw) {
+		case 160:
 			channel = 100;
 			sprintf(ht, "HT40+");
 			iht = 1;
 			channeloffset = 14;
 			freq = 5500;
-		} else if (nvram_matchi(bw, 80)) {
+			break;
+		case 80:
+		case 8080:
 			channel = 100;
 			sprintf(ht, "HT40+");
 			channeloffset = 6;
 			iht = 1;
 			freq = 5500;
-		} else if (nvram_match(bw, "80+80")) {
-			channel = 100;
+			break;
+		case 40:
 			sprintf(ht, "HT40+");
-			iht = 1;
-			channeloffset = 6;
-			freq = 5500;
-		} else {
-
-			if (chan != NULL && chan[i].freq != -1) {
-				channel = chan[i].channel;
-				freq = chan[i].freq;
-			} else {
-				// that should never be called
-				if (has_2ghz(prefix)) {
-					channel = 6;
-					freq = 2437;
-				}
-				if (has_5ghz(prefix)) {
-					channel = 40;
-					freq = 5200;
-				}
+		case 20:
+		default:
+			if (has_2ghz(prefix)) {
+				channel = 6;
+				freq = 2437;
 			}
+			if (has_5ghz(prefix)) {
+				channel = 100;
+				freq = 5500;
+			}
+			break;
 		}
 	} else {
 		// also we still should take care on the selected mode
@@ -561,10 +560,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							break;
 						i++;
 					}
-					char *nbw = nvram_default_get(bw, "20");
-					if (!strcmp(nbw, "20")) {
-						sprintf(ht, "HT20");
-					} else if (!strcmp(nbw, "40") || !strcmp(nbw, "2040")) {
+					switch (usebw) {
+					case 40:
 						if (chan[i].luu) {
 							sprintf(ht, "HT40-");
 							iht = -1;
@@ -572,7 +569,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							sprintf(ht, "HT40+");
 							iht = 1;
 						}
-					} else if (!strcmp(nbw, "80") || !strcmp(nbw, "80+80")) {
+						break;
+					case 80:
+					case 8080:
 						if (chan[i].luu) {
 							sprintf(ht, "HT40-");
 							channeloffset = 2;
@@ -590,7 +589,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							iht = 1;
 							channeloffset = 2;
 						}
-					} else if (!strcmp(nbw, "160")) {
+						break;
+					case 160:
 						if (chan[i].uul) {
 							sprintf(ht, "HT40+");
 							iht = 1;
@@ -620,8 +620,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							iht = -1;
 							channeloffset = 14;
 						}
-					} else {
+						break;
+					default:
+					case 20:
 						sprintf(ht, "HT20");
+						break;
 					}
 					free_mac80211_ac(acs);
 				} else {
@@ -630,27 +633,34 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						freq = 2437;
 					}
 					if (has_5ghz(prefix)) {
-						if (nvram_matchi(bw, 80)) {
+						switch (usebw) {
+						case 8080:
+						case 80:
 							channel = 100;
 							sprintf(ht, "HT40+");
 							iht = 1;
 							channeloffset = 6;
 							freq = 5500;
-						} else if (nvram_match(bw, "80+80")) {
-							channel = 100;
-							sprintf(ht, "HT40+");
-							iht = 1;
-							channeloffset = 6;
-							freq = 5500;
-						} else if (nvram_match(bw, "160")) {
+							break;
+						case 160:
 							channel = 100;
 							sprintf(ht, "HT40+");
 							iht = 1;
 							channeloffset = 14;
 							freq = 5500;
-						} else {
+							break;
+						case 40:
+							channel = 100;
+							sprintf(ht, "HT40+");
+							iht = 1;
+							freq = 5500;
+							break;
+						case 20:
+						default:
 							channel = 100;
 							freq = 5500;
+							break;
+
 						}
 					}
 				}
@@ -706,28 +716,28 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					//fprintf(fp, "spectrum_mgmt_required=1\n");
 					//fprintf(fp, "local_pwr_constraint=3\n");
 				}
-
-				if (nvram_matchi(bw, 40)) {
+				switch (usebw) {
+				case 40:
 					fprintf(fp, "vht_oper_chwidth=0\n");
-					int idx = channel + (2 * iht);
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-				} else if (nvram_matchi(bw, 80)) {
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (2 * iht));
+					break;
+				case 80:
 					fprintf(fp, "vht_oper_chwidth=1\n");
-					int idx = channel + (channeloffset * iht);
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-				} else if (nvram_matchi(bw, 160)) {
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
+					break;
+				case 160:
 					fprintf(fp, "vht_oper_chwidth=2\n");
-					int idx = channel + (channeloffset * iht);
-					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-				} else {
-					if (nvram_match(bw, "80+80")) {
-						fprintf(fp, "vht_oper_chwidth=3\n");
-						int idx = channel + (channeloffset * iht);
-						fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", idx);
-						fprintf(fp, "vht_oper_centr_freq_seg1_idx=155\n");
-					} else {
-						fprintf(fp, "vht_oper_chwidth=0\n");
-					}
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
+					break;
+				case 8080:
+					fprintf(fp, "vht_oper_chwidth=3\n");
+					fprintf(fp, "vht_oper_centr_freq_seg0_idx=%d\n", channel + (channeloffset * iht));
+					fprintf(fp, "vht_oper_centr_freq_seg1_idx=155\n");
+					break;
+				default:
+					fprintf(fp, "vht_oper_chwidth=0\n");
+					break;
+
 				}
 			}
 
@@ -754,6 +764,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		}
 
 	}
+
 	fprintf(fp, "channel=%d\n", channel);
 	if (!has_ad(prefix))
 		fprintf(fp, "frequency=%d\n", freq);
