@@ -2600,9 +2600,11 @@ int internal_getRouterBrand()
 		{"UniFi UAP-AC-LR", 0xe527, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{"UniFi UAP-AC-Pro-Gen2", 0xe537, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{"UniFi UAP-AC-EDU", 0xe547, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-PICO", 0xe557, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-AC-LR-OUTDOOR", 0xe567, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
-		{"UniFi UAP-InWall", 0xe592, 3, 3, 0, 0, ROUTER_BOARD_UNIFI, 0, 10},	//
+		{"UniFi UAP-AC-MESH", 0xe557, 7, 7, 3, 3, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-MESH-PRO", 0xe567, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-InWall", 0xe587, 7, 7, 7, 7, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-InWall", 0xe592, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10},	//
+		{"UniFi UAP-AC-HD", 0xe535, 3, 3, 0, 0, ROUTER_UBNT_UAPAC, 0, 10},	//
 		{NULL, 0, 0, 0, 0, 0, 0},	//
 	};
 
