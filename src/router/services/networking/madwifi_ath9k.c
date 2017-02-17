@@ -564,16 +564,64 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					char *nbw = nvram_default_get(bw, "20");
 					if (!strcmp(nbw, "20")) {
 						sprintf(ht, "HT20");
-					} else if (!strcmp(nbw, "80") || !strcmp(nbw, "40") || !strcmp(nbw, "2040") || !strcmp(nbw, "160") || !strcmp(nbw, "80+80")) {
+					} else if (!strcmp(nbw, "40") || !strcmp(nbw, "2040")) {
 						if (chan[i].luu) {
 							sprintf(ht, "HT40-");
 							iht = -1;
 						} else if (chan[i].ull) {
 							sprintf(ht, "HT40+");
 							iht = 1;
-						} else {
-							sprintf(ht, "HT20");
 						}
+					} else if (!strcmp(nbw, "80") || !strcmp(nbw, "80+80")) {
+						if (chan[i].luu) {
+							sprintf(ht, "HT40-");
+							channeloffset = 2;
+							iht = -1;
+						} else if (chan[i].ulu) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 4;
+						} else if (chan[i].lul) {
+							sprintf(ht, "HT40-");
+							channeloffset = 4;
+							iht = -1;
+						} else if (chan[i].ull) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 2;
+						}
+					} else if (!strcmp(nbw, "160")) {
+						if (chan[i].uul) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 10;
+						} else if (chan[i].ulu) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 6;
+						} else if (chan[i].ull) {
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 2;
+						} else if (chan[i].luu) {
+							sprintf(ht, "HT40-");
+							iht = -1;
+							channeloffset = 2;
+						} else if (chan[i].lul) {
+							sprintf(ht, "HT40-");
+							iht = -1;
+							channeloffset = 6;
+						} else if (chan[i].llu) {
+							sprintf(ht, "HT40-");
+							iht = -1;
+							channeloffset = 10;
+						} else if (chan[i].lll) {
+							sprintf(ht, "HT40-");
+							iht = -1;
+							channeloffset = 14;
+						}
+					} else {
+						sprintf(ht, "HT20");
 					}
 					free_mac80211_ac(acs);
 				} else {
@@ -583,13 +631,26 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					}
 					if (has_5ghz(prefix)) {
 						if (nvram_matchi(bw, 80)) {
-							channel = 44;
+							channel = 100;
 							sprintf(ht, "HT40+");
 							iht = 1;
-							freq = 5220;
+							channeloffset = 6;
+							freq = 5500;
+						} else if (nvram_match(bw, "80+80")) {
+							channel = 100;
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 6;
+							freq = 5500;
+						} else if (nvram_match(bw, "160")) {
+							channel = 100;
+							sprintf(ht, "HT40+");
+							iht = 1;
+							channeloffset = 14;
+							freq = 5500;
 						} else {
-							channel = 40;
-							freq = 5200;
+							channel = 100;
+							freq = 5500;
 						}
 					}
 				}
