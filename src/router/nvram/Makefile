@@ -88,6 +88,9 @@ endif
 ifeq ($(CONFIG_X86),y)
 CFLAGS += -DHAVE_X86
 endif
+ifeq ($(CONFIG_ALPINE),y)
+CFLAGS += -DHAVE_ALPINE
+endif
 ifeq ($(CONFIG_RB600),y)
 CFLAGS += -DHAVE_RB600
 endif
