@@ -162,6 +162,10 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 		return -1;
 	}
 //	fprintf(stderr,"send command %s\n",cmd);
+	char log[256];
+	sprintf(log,"echo \"send command %s\n\" >> /tmp/send.log\n",cmd);
+	system(log);
+//	wpa_printf(MSG_DEBUG, "\nsend command %s\n",cmd);
 	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
 	free(cmd);
 
