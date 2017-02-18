@@ -366,7 +366,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 	data->center_freq1 = freq + sec_channel_offset * 10;
 	data->center_freq2 = 0;
 	data->bandwidth = sec_channel_offset ? 40 : 20;
-	wpa_printf(MSG_DEBUG,"mode %d, freq = %d, channel = %d, ht_enable = %d vht_enable = %d, sec_channel_offset %d width %d",mode, freq, channel,ht_enabled,vht_enabled, sec_channel_offset, vht_oper_chwidth);
+	wpa_printf(MSG_DEBUG,"vht: %d vhtwidth: %d seg0 %d seg1 %d mode %d, freq = %d, channel = %d, ht_enable = %d vht_enable = %d, sec_channel_offset %d width %d",data->vht_enabled, vht_oper_chwidth,center_segment0,center_segment1,mode, freq, channel,ht_enabled,vht_enabled, sec_channel_offset, vht_oper_chwidth);
 	if (data->vht_enabled) switch (vht_oper_chwidth) {
 	case VHT_CHANWIDTH_USE_HT:
 		if (center_segment1 ||
@@ -412,6 +412,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 			 * HT40 channel band is in VHT80 Pri channel band
 			 * configuration.
 			 */
+			wpa_printf(MSG_DEBUG, "center segment0 = %d\n",center_segment0);
 			if (center_segment0 == channel + 6 ||
 			    center_segment0 == channel + 2 ||
 			    center_segment0 == channel - 2 ||
@@ -419,6 +420,7 @@ int hostapd_set_freq_params(struct hostapd_freq_params *data,
 				data->center_freq1 = 5000 + center_segment0 * 5;
 			else
 				return -1;
+			wpa_printf(MSG_DEBUG, "center freq1 = %d\n",data->center_freq1);
 		}
 		break;
 	case VHT_CHANWIDTH_160MHZ:
