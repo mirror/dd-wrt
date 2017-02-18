@@ -1146,7 +1146,7 @@ void __init ar71xx_add_device_eth(unsigned int id)
 			if (pdata->phy_if_mode == PHY_INTERFACE_MODE_SGMII)
 				pdata->set_speed = qca956x_set_speed_sgmii;
 			else
-				pdata->set_speed = ar71xx_set_speed_ge0;
+				pdata->set_speed = ar934x_set_speed_ge0;
 		} else {
 			pdata->reset_bit = QCA955X_RESET_GE1_MAC |
 					   QCA955X_RESET_GE1_MDIO;
