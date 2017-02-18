@@ -186,9 +186,9 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 			if (conf->secondary_channel==-1)			
 				conf->vht_oper_centr_freq_seg0_idx = conf->channel - 6;
 		} else if ((val = get_option(opt, "sec_idx0="))) {
-			conf->vht_oper_centr_freq_seg0_idx = val;
+			conf->vht_oper_centr_freq_seg0_idx = atoi(val);
 		} else if ((val = get_option(opt, "sec_idx1="))) {
-			conf->vht_oper_centr_freq_seg1_idx = val;
+			conf->vht_oper_centr_freq_seg1_idx = atoi(val);
 		} else if ((val = get_option(opt, "hw_mode=")))
 			conf->hw_mode = atoi(val);
 		else if ((val = get_option(opt, "ieee80211n=")))
