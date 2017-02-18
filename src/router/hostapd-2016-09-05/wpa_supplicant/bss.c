@@ -316,9 +316,11 @@ static void wpa_bss_copy_res(struct wpa_bss *dst, struct wpa_scan_res *src,
 		dst->ht_capab = le_to_host16(capab->ht_capabilities_info);
 	if (oper)
 		dst->ht_param = oper->ht_param;
-	if (vht_oper)
-		dst->vht_oper = vht_oper;
-
+	dst->has_vht = 0;
+	if (vht_oper) {
+		dst->has_vht = 1;
+		memcpy(&dst->vht_oper, vht_oper, sizeof(*vht_oper));
+	}
 	calculate_update_time(fetch_time, src->age, &dst->last_update);
 }
 
