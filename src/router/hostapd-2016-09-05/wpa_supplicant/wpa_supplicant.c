@@ -147,15 +147,21 @@ static int hostapd_reload(struct wpa_supplicant *wpa_s, struct wpa_bss *bss)
 	}
 
 	hw_mode = ieee80211_freq_to_chan(bss->freq, &channel);
-	if (bss->vht_oper) {
-	if (asprintf(&cmd, "UPDATE channel=%d frequency=%d chwidth=%d sec_chan=%d sec_idx0=%d sec_idx1=%d hw_mode=%d ieee80211n=%d",
-		     channel, bss->freq,bss->vht_oper->vht_op_info_chwidth, sec_chan, bss->vht_oper->vht_op_info_chan_center_freq_seg0_idx, bss->vht_oper->vht_op_info_chan_center_freq_seg1_idx, hw_mode, !!bss->ht_capab) < 0)
+	if (bss->has_vht) {
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d chwidth=%d sec_chan=%d sec_idx0=%d sec_idx1=%d hw_mode=%d ieee80211n=%d", 
+		    channel, 
+		    bss->freq,bss->vht_oper.vht_op_info_chwidth, 
+		    sec_chan, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg0_idx, 
+		    bss->vht_oper.vht_op_info_chan_center_freq_seg1_idx, 
+		    hw_mode, !!bss->ht_capab) < 0)
 		return -1;
 	} else { 
-	if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
+		if (asprintf(&cmd, "UPDATE channel=%d frequency=%d sec_chan=%d hw_mode=%d ieee80211n=%d",
 		     channel, bss->freq, sec_chan, hw_mode, !!bss->ht_capab) < 0)
 		return -1;
 	}
+//	fprintf(stderr,"send command %s\n",cmd);
 	ret = wpa_ctrl_request(wpa_s->hostapd, cmd, os_strlen(cmd), buf, &len, NULL);
 	free(cmd);
 
