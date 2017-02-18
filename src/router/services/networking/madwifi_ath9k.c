@@ -510,7 +510,17 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			break;
 		case 40:
 			ht = "HT40+";
+			if (has_2ghz(prefix)) {
+				channel = 6;
+				freq = 2437;
+			}
+			if (has_5ghz(prefix)) {
+				channel = 100;
+				freq = 5500;
+			}
+			break;
 		case 20:
+			ht = "HT20";
 		default:
 			if (has_2ghz(prefix)) {
 				channel = 6;
@@ -656,6 +666,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							break;
 						case 20:
 						default:
+							ht = "HT20";
 							channel = 100;
 							freq = 5500;
 							break;
