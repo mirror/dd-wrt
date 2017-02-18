@@ -173,7 +173,7 @@ extern void writenvram(char *var, char *file);
 #define NVRAM_MAGIC		0x48534C46	/* 'FLSH' */
 #define NVRAM_VERSION		1
 #define NVRAM_HEADER_SIZE	20
-#if defined(HAVE_WZRG300NH)
+#if defined(HAVE_WZRG300NH) || defined(HAVE_ALPINE)
 #define NVRAM_SPACE		0x20000
 #elif defined(HAVE_X86) || defined(HAVE_WHRAG108) || defined(HAVE_FONERA) || defined(HAVE_AR531X) || defined(HAVE_RT2880) || defined(HAVE_RT3052) || defined(HAVE_XSCALE) || defined(HAVE_STORM) || defined(HAVE_LSX) || defined(HAVE_LAGUNA) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_EROUTER)
 #define NVRAM_SPACE		0x10000
