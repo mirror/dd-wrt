@@ -177,6 +177,8 @@ static struct hostapd_config *hostapd_ctrl_iface_config_read(const char *fname)
 			conf->ht_capab = atoi(val);
 		else if ((val = get_option(opt, "ht_capab_mask=")))
 			conf->ht_capab &= atoi(val);
+		else if ((val = get_option(opt, "chwidth=")))
+			conf->vht_oper_chwidth = atoi(val);
 		else if ((val = get_option(opt, "sec_chan="))) {
 			conf->secondary_channel = atoi(val);
 			if (conf->secondary_channel==1)			
