@@ -350,12 +350,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 
 	char *akm = nvram_nget("%s_akm", prefix);
 	char *crypto = nvram_nget("%s_crypto", prefix);
-	char ht[6];
+	char *ht = NULL;
 	int iht = 0;
 	int channeloffset = 6;
 	char bw[32];
 	sprintf(bw, "%s_channelbw", prefix);
-	ht[0] = 0;
 	int usebw = 20;
 	if (nvram_matchi(bw, 40))
 		usebw = 40;
@@ -396,86 +395,86 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		switch (usebw) {
 		case 40:
 			if (nvram_default_match(sb, "ull", "luu") || nvram_match(sb, "upper")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 			}
 			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 			}
 			break;
 		case 80:
 		case 8080:
 			if (nvram_default_match(sb, "ulu", "lul") || nvram_match(sb, "upper")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 6;
 			}
 			if (nvram_match(sb, "ull")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 2;
 			}
 			if (nvram_match(sb, "luu")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 2;
 			}
 			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 6;
 			}
 			break;
 		case 160:
 			if (nvram_default_match(sb, "uuu", "lll") || nvram_match(sb, "upper")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 14;
 			}
 			if (nvram_match(sb, "uul")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 10;
 			}
 			if (nvram_match(sb, "ulu")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 6;
 			}
 			if (nvram_match(sb, "ull")) {
-				sprintf(ht, "HT40+");
+				ht = "HT40+";
 				iht = 1;
 				channeloffset = 2;
 			}
 			if (nvram_match(sb, "luu")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 2;
 			}
 			if (nvram_match(sb, "lul")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 6;
 			}
 			if (nvram_match(sb, "llu")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 10;
 			}
 			if (nvram_match(sb, "lll") || nvram_match(sb, "lower")) {
-				sprintf(ht, "HT40-");
+				ht = "HT40-";
 				iht = -1;
 				channeloffset = 14;
 			}
 			break;
 		case 20:
 		default:
-			sprintf(ht, "HT20");
+			ht = "HT20";
 			break;
 		}
 	} else {
-		sprintf(ht, "HT20");
+		ht = "HT20";
 	}
 	char regdomain[16];
 	sprintf(regdomain, "%s_regdomain", prefix);
@@ -496,7 +495,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		switch (usebw) {
 		case 160:
 			channel = 100;
-			sprintf(ht, "HT40+");
+			ht = "HT40+";
 			iht = 1;
 			channeloffset = 14;
 			freq = 5500;
@@ -504,13 +503,13 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		case 80:
 		case 8080:
 			channel = 100;
-			sprintf(ht, "HT40+");
+			ht = "HT40+";
 			channeloffset = 6;
 			iht = 1;
 			freq = 5500;
 			break;
 		case 40:
-			sprintf(ht, "HT40+");
+			ht = "HT40+";
 		case 20:
 		default:
 			if (has_2ghz(prefix)) {
@@ -563,67 +562,67 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 					switch (usebw) {
 					case 40:
 						if (chan[i].luu) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							iht = -1;
 						} else if (chan[i].ull) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 						}
 						break;
 					case 80:
 					case 8080:
 						if (chan[i].luu) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							channeloffset = 2;
 							iht = -1;
 						} else if (chan[i].ulu) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 4;
 						} else if (chan[i].lul) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							channeloffset = 4;
 							iht = -1;
 						} else if (chan[i].ull) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 2;
 						}
 						break;
 					case 160:
 						if (chan[i].uul) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 10;
 						} else if (chan[i].ulu) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
 						} else if (chan[i].ull) {
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 2;
 						} else if (chan[i].luu) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							iht = -1;
 							channeloffset = 2;
 						} else if (chan[i].lul) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							iht = -1;
 							channeloffset = 6;
 						} else if (chan[i].llu) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							iht = -1;
 							channeloffset = 10;
 						} else if (chan[i].lll) {
-							sprintf(ht, "HT40-");
+							ht = "HT40-";
 							iht = -1;
 							channeloffset = 14;
 						}
 						break;
 					default:
 					case 20:
-						sprintf(ht, "HT20");
+						ht = "HT20";
 						break;
 					}
 					free_mac80211_ac(acs);
@@ -637,21 +636,21 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						case 8080:
 						case 80:
 							channel = 100;
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 6;
 							freq = 5500;
 							break;
 						case 160:
 							channel = 100;
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							channeloffset = 14;
 							freq = 5500;
 							break;
 						case 40:
 							channel = 100;
-							sprintf(ht, "HT40+");
+							ht = "HT40+";
 							iht = 1;
 							freq = 5500;
 							break;
@@ -675,7 +674,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		char greenfield[32];
 		sprintf(greenfield, "%s_gf", prefix);
 		caps = mac80211_get_caps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, nvram_default_match(greenfield, "1", "0") ? 1 : 0);
-		if (strlen(ht) > 0) {
+		if (ht) {
 			fprintf(fp, "ht_capab=[%s]%s\n", ht, caps);
 		} else {
 			fprintf(fp, "ht_capab=%s\n", caps);
