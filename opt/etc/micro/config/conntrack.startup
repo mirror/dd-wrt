@@ -6,5 +6,5 @@ CONNTRACK_UDP_TIMEOUTS=$(nvram get ip_conntrack_udp_timeouts)
 
 # adjust conntrack settings
 /bin/echo $CONNTRACK_MAX > /proc/sys/net/ipv4/ip_conntrack_max
-/bin/echo "3600 $CONNTRACK_TCP_TIMEOUTS 120 60 120 120 10 60 30 120" > /proc/sys/net/ipv4/ip_conntrack_tcp_timeouts
-/bin/echo "65 $CONNTRACK_UDP_TIMEOUTS" > /proc/sys/net/ipv4/ip_conntrack_udp_timeouts
+/bin/echo "3600 $CONNTRACK_TCP_TIMEOUTS 120 60 120 120 10 60 30 120" > /proc/sys/net/ipv4/ip_conntrack_tcp_timeout
+/bin/echo "65 $CONNTRACK_UDP_TIMEOUTS" > /proc/sys/net/ipv4/ip_conntrack_udp_timeout
