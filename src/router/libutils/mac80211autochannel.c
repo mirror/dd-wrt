@@ -356,7 +356,7 @@ static int freq_quality(struct frequency *f, struct sort_data *s)
 		if (chan->freq == f->freq)
 			break;
 	}
-	if (chan->freq == -1) {
+	if (chan->freq == -1 || chan->freq == 2472) {
 		return 0;
 	}
 
