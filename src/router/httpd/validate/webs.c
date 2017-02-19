@@ -4007,6 +4007,7 @@ void ddns_save_value(webs_t wp)
 	case 4:		// no-ip
 	case 8:		// tzo
 	case 9:		// dynSIP
+	case 11:	//duiadns
 		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
 		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
 		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
