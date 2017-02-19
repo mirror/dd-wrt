@@ -62,7 +62,7 @@ dnsmasq (2.76-1) unstable; urgency=low
    * New upstream. (closes: #798586)
    * Use /run/dnsmasq directly, rather than relying on link from /var/run
      to avoid problems before /var is mounted. (closes: #800351)
-   * Test for the existance of /usr/share/doc/dnsmasq rather then
+   * Test for the existence of /usr/share/doc/dnsmasq rather then
      /etc/dnsmasq.d/README in the daemon startup script. (closes: #819856)
    * Add --help to manpage and mention dhcp6 in summary. (closes: #821226)
 
@@ -104,7 +104,7 @@ dnsmasq (2.72-3) unstable; urgency=medium
      work without it. (Closes: #769486, #776530)
      - debian/init: when called with systemd-exec argument, let dnsmasq
        go into the background, so Type=forking can detect when it is ready
-   * Remove line containing only whitespace in debian/contol.
+   * Remove line containing only whitespace in debian/control.
      (closes: #777571)
 
  -- Simon Kelley <simon@thekelleys.org.uk>  Wed, 11 Feb 2015 21:56:12 +0000
@@ -716,7 +716,7 @@ dnsmasq (2.26-1) unstable; urgency=high
 dnsmasq (2.25-1) unstable; urgency=low
 
    * Remove bashisms in postinst and prerm scripts.
-   * Remove misconcieved dependency on locales.	
+   * Remove misconceived dependency on locales.	
    * Depend on adduser.
 		
  -- Simon Kelley <simon@thekelleys.org.uk>  Thu, 01 Dec 2005 21:02:12 +0000
@@ -738,7 +738,7 @@ dnsmasq (2.23-1) unstable; urgency=low
    * Add support for DNSMASQ_EXCEPT in /etc/defaults/dnsmasq.
      putting "lo" in this also disables resolvconf support.
    * No longer delete pre-existing /etc/init.d symlinks. The 
-     change in default runlevels which neccesitated this 
+     change in default runlevels which necessitated this 
      is now ancient history and anyway the startup script now 
      behaves when called twice. (closes: #312111)
    * Tightened config-file parser. (closes: #317030)
@@ -923,7 +923,7 @@ dnsmasq (2.6-3) unstable; urgency=low
 
    * Removed reload command from start script and moved force-reload
      to be equivalent to restart. This is needed to be policy compliant
-     since SIHGUP doesn't cause dnsmasq to reload its configuration file,
+     since SIGHUP doesn't cause dnsmasq to reload its configuration file,
      only the /etc/hosts, /etc/resolv.conf etc. (closes: #244208)
 	
  -- Simon Kelley <simon@thekelleys.org.uk>  Sun, 18 Apr 2004 14:40:51 +0000
@@ -1013,8 +1013,8 @@ dnsmasq (2.0-1) unstable; urgency=low
    * New upstream: This removes the ability to read the 
      the leases file of ISC DHCP and replaces it with a built-in 
      DHCP server. Apologies in advance for breaking backwards 
-     compatibilty, but this replaces a bit of a hack (the ISC stuff)
-     with a nicely engineered and much more apropriate solution.
+     compatibility, but this replaces a bit of a hack (the ISC stuff)
+     with a nicely engineered and much more appropriate solution.
      Wearing my upstream-maintainer hat, I want to lose the hack now,
      rather than have to support it into Sarge.
    * New upstream closes some bugs since they become 
@@ -1040,7 +1040,7 @@ dnsmasq (1.18-1) unstable; urgency=low
    * New upstream which does round-robin. (closes: #215460)
    * Removed conflicts with other dns servers since it is now
      possible to control exactly where dnsmasq listens on multi-homed 
-     hosts, making co-existance with another nameserver 
+     hosts, making co-existence with another nameserver 
      a viable proposition. (closes #176163)
    * New upstream allows _ in hostnames and check for illegal
      names in /etc/hosts. (closes: #218842)
@@ -1126,13 +1126,13 @@ dnsmasq (1.11-2) unstable; urgency=low
 
 dnsmasq (1.11-1) unstable; urgency=low
 
-   * New uptream.
+   * New upstream.
   
  -- Simon Kelley <simon@thekelleys.org.uk>  Tues, 12 Jan 2003 22:25:17 -0100
 
 dnsmasq (1.10-1) unstable; urgency=low
 
-   * New uptream.
+   * New upstream.
    * Force service to stop in postinst before restarting. I don't
      understand the circumstances under which it would still be running at
      this point, but this is the correct fix anyway. (closes: #169718) 
@@ -1144,7 +1144,7 @@ dnsmasq (1.10-1) unstable; urgency=low
 
 dnsmasq (1.9-1) unstable; urgency=low
 
-   * New uptream.
+   * New upstream.
   
  -- Simon Kelley <simon@thekelleys.org.uk>  Mon, 23 Sept 2002 21:35:07 -0100
 

@@ -864,7 +864,7 @@ size_t answer_auth(struct dns_header *header, char *limit, size_t qlen, time_t n
       header->hb4 &= ~HB4_RA;
     }
 
-  /* authoritive */
+  /* authoritative */
   if (auth)
     header->hb3 |= HB3_AA;
   

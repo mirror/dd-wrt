@@ -30,7 +30,7 @@ DHCPv4 server, and in addition, it includes router advertisements and
 a neat feature which allows nameing for clients which use DHCPv4 and
 stateless autoconfiguration only for IPv6 configuration. There is support for doing address allocation (both DHCPv6 and RA) from subnets which are dynamically delegated via DHCPv6 prefix delegation.
 .PP
-Dnsmasq is coded with small embedded systems in mind. It aims for the smallest possible memory footprint compatible with the supported functions,  and allows uneeded functions to be omitted from the compiled binary.  
+Dnsmasq is coded with small embedded systems in mind. It aims for the smallest possible memory footprint compatible with the supported functions,  and allows unneeded functions to be omitted from the compiled binary.  
 .SH OPTIONS
 Note that in general missing parameters are allowed and switch off
 functions, for instance "--pid-file" disables writing a PID file. On
@@ -232,7 +232,7 @@ or
 .B --listen-address
 configuration, indeed
 .B --auth-server
-will overide these and provide a different DNS service on the
+will override these and provide a different DNS service on the
 specified interface. The <domain> is the "glue record". It should
 resolve in the global DNS to a A and/or AAAA record which points to
 the address dnsmasq is listening on. When an interface is specified,
@@ -434,7 +434,7 @@ address using a # character.
 More than one -S flag is allowed, with
 repeated domain or ipaddr parts as required.
 
-More specific domains take precendence over less specific domains, so:
+More specific domains take precedence over less specific domains, so:
 .B --server=/google.com/1.2.3.4
 .B --server=/www.google.com/2.3.4.5
 will send queries for *.google.com to 1.2.3.4, except *www.google.com,
@@ -699,7 +699,7 @@ permitted to reduce the cache size below the default when DNSSEC is
 enabled. The nameservers upstream of dnsmasq must be DNSSEC-capable,
 ie capable of returning DNSSEC records with data. If they are not,
 then dnsmasq will not be able to determine the trusted status of
-answers. In the default mode, this menas that all replies will be
+answers. In the default mode, this means that all replies will be
 marked as untrusted. If 
 .B --dnssec-check-unsigned
 is set and the upstream servers don't support DNSSEC, then DNS service will be entirely broken.
@@ -838,7 +838,7 @@ For IPv6, the parameters are slightly different: instead of netmask
 and broadcast address, there is an optional prefix length which must
 be equal to or larger then the prefix length on the local interface. If not
 given, this defaults to 64. Unlike the IPv4 case, the prefix length is not
-automatically derived from the interface configuration. The mimimum
+automatically derived from the interface configuration. The minimum
 size of the prefix length is 64.
 
 IPv6 (only) supports another type of range. In this, the start address and optional end address contain only the network part (ie ::1) and they are followed by
@@ -1063,7 +1063,7 @@ This is equivalent to dhcp-hostsfile, except for the following. The path MUST be
 directory, and not an individual file. Changed or new files within
 the directory are read automatically, without the need to send SIGHUP.
 If a file is deleted for changed after it has been read by dnsmasq, then the
-host record it contained will remain until dnsmasq recieves a SIGHUP, or 
+host record it contained will remain until dnsmasq receives a SIGHUP, or 
 is restarted; ie host records are only added dynamically.
 .TP
 .B --dhcp-optsdir=<path>
@@ -1655,7 +1655,7 @@ and
 functions are called only when enabled with
 .B --script-arp
 and have a table which holds the tags
-.B mac_addres
+.B mac_address
 and
 .B client_address.
 .TP
@@ -1765,7 +1765,7 @@ subnets with the mode keywords described in
 RFC6106 DNS parameters are included in the advertisements. By default,
 the relevant link-local address of the machine running dnsmasq is sent
 as recursive DNS server. If provided, the DHCPv6 options dns-server and
-domain-search are used for the DNS server (RDNSS) and the domain serach list (DNSSL).
+domain-search are used for the DNS server (RDNSS) and the domain search list (DNSSL).
 .TP
 .B --ra-param=<interface>,[high|low],[[<ra-interval>],<router lifetime>]
 Set non-default values for router advertisements sent via an
@@ -1786,7 +1786,7 @@ Enable the TFTP server function. This is deliberately limited to that
 needed to net-boot a client. Only reading is allowed; the tsize and
 blksize extensions are supported (tsize is only supported in octet
 mode). Without an argument, the TFTP service is provided to the same set of interfaces as DHCP service. 
-If the list of interfaces is provided, that defines which interfaces recieve TFTP service.
+If the list of interfaces is provided, that defines which interfaces receive TFTP service.
 .TP
 .B --tftp-root=<directory>[,<interface>]
 Look for files to transfer using TFTP relative to the given
@@ -1874,7 +1874,7 @@ A special case of
 .B --conf-file
 which differs in two respects. Firstly, only --server and --rev-server are allowed 
 in the configuration file included. Secondly, the file is re-read and the configuration
-therein is updated when dnsmasq recieves SIGHUP.
+therein is updated when dnsmasq receives SIGHUP.
 .SH CONFIG FILE
 At startup, dnsmasq reads
 .I /etc/dnsmasq.conf,
@@ -2228,7 +2228,7 @@ provided the address falls into one of the subnets specified in the
 .PP
 Addresses of DHCP leases, provided the address falls into one of the subnets specified in the
 .B --auth-zone.
-(If contructed DHCP ranges are is use, which depend on the address dynamically 
+(If constructed DHCP ranges are is use, which depend on the address dynamically 
 assigned to an interface, then the form of
 .B --auth-zone
 which defines subnets by the dynamic address of an interface should

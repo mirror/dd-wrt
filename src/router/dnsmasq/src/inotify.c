@@ -260,7 +260,7 @@ int inotify_check(time_t now)
 #ifdef HAVE_DHCP
 			if (daemon->dhcp || daemon->doing_dhcp6) 
 			  {
-			    /* Propogate the consequences of loading a new dhcp-host */
+			    /* Propagate the consequences of loading a new dhcp-host */
 			    dhcp_update_configs(daemon->dhcp_conf);
 			    lease_update_from_configs(); 
 			    lease_update_file(now); 
@@ -273,7 +273,7 @@ int inotify_check(time_t now)
 		      {
 			if (option_read_dynfile(path, AH_DHCP_HST))
 			  {
-			    /* Propogate the consequences of loading a new dhcp-host */
+			    /* Propagate the consequences of loading a new dhcp-host */
 			    dhcp_update_configs(daemon->dhcp_conf);
 			    lease_update_from_configs(); 
 			    lease_update_file(now); 

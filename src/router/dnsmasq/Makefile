@@ -123,7 +123,7 @@ merge :
 		echo -n msgmerge $(PO)/$$f && $(MSGMERGE) --no-wrap -U $(PO)/$$f $(BUILDDIR)/dnsmasq.pot; \
 	done
 
-# Cannonicalise .po file.
+# Canonicalise .po file.
 %.po : 
 	@cd $(BUILDDIR) && $(MAKE) -f $(top)/Makefile dnsmasq.pot
 	mv $(PO)/$*.po $(PO)/$*.po.orig && $(MSGMERGE) --no-wrap $(PO)/$*.po.orig $(BUILDDIR)/dnsmasq.pot >$(PO)/$*.po; 
@@ -142,7 +142,7 @@ bloatcheck : $(BUILDDIR)/dnsmasq_baseline mostly_clean all
            $(top)/bld/bloat-o-meter dnsmasq_baseline dnsmasq; \
            size dnsmasq_baseline dnsmasq
 
-# rules below are targets in recusive makes with cwd=$(BUILDDIR)
+# rules below are targets in recursive makes with cwd=$(BUILDDIR)
 
 $(copts_conf): $(hdrs)
 	@rm -f *.o .copts_*

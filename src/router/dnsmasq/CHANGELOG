@@ -58,7 +58,26 @@ version 2.77
 	    this is Nominum's. Thanks to Dave Täht for spotting the
 	    bug and assisting in the fix.
 
-	
+            Fix the manpage which lied that only the primary address
+	    of an interface is used by --interface-name.
+
+	    Make --localise-queries apply to names from --interface-name.
+	    Thanks to Kevin Darbyshire-Bryant and Eric Luehrsen
+	    for pushing this.
+
+            Improve connection handling when talking to TCP upsteam 
+	    servers. Specifically, be prepared to open a new TCP
+	    connection when we want to make multiple queries
+            but the upstream server accepts fewer queries per connection.
+ 
+            Improve logging of upstream servers when there are a lot
+	    of "local addresses only" entries. Thanks to Hannu Nyman for
+	    the patch.
+
+            Implement RFC 6842. Thanks to Reddeiah Raju Konduru for
+            pointing out that this was missing.
+
+
 version 2.76
             Include 0.0.0.0/8 in DNS rebind checks. This range 
 	    translates to hosts on  the local network, or, at 
@@ -97,10 +116,10 @@ version 2.76
 
 	    Add --script-arp and two new functions for the dhcp-script.
 	    These are "arp" and "arp-old" which announce the arrival and
-	    removal of entries in the ARP or nieghbour tables.
+	    removal of entries in the ARP or neighbour tables.
 
 	    Extend --add-mac to allow a new encoding of the MAC address 
-	    as base64, by configurting --add-mac=base64
+	    as base64, by configuring --add-mac=base64
  
 	    Add --add-cpe-id option.
 
@@ -148,7 +167,7 @@ version 2.76
             Fix PXE booting for UEFI architectures. Modify PXE boot
 	    sequence in this case to force the client to talk to dnsmasq
 	    over port 4011. This makes PXE and especially proxy-DHCP PXE
-	    work with these archictectures.
+	    work with these architectures.
 
 	    Workaround problems with UEFI PXE clients. There exist
 	    in the wild PXE clients which have problems with PXE
@@ -249,7 +268,7 @@ version 2.73
 	    good idea, but I've been persuaded that there are 
 	    sometimes reasons to do it. (Step forward, GFW).
 	    To avoid misuse, there's a hard limit on the TTL 
-	    floor of one hour. Thansk to RinSatsuki for the patch.
+	    floor of one hour. Thanks to RinSatsuki for the patch.
 
 	    Cope with multiple interfaces with the same link-local 
 	    address. (IPv6 addresses are scoped, so this is allowed.)
@@ -339,7 +358,7 @@ version 2.72
             Add ra-advrouter mode, for RFC-3775 mobile IPv6 support.
 
 	    Add support for "ipsets" in *BSD, using pf. Thanks to 
-	    Sven Falempim for the patch.
+	    Sven Falempin for the patch.
 
 	    Fix race condition which could lock up dnsmasq when an 
 	    interface goes down and up rapidly. Thanks to Conrad 
@@ -351,7 +370,7 @@ version 2.72
 	    Fix failure to build against Nettle-3.0. Thanks to Steven 
 	    Barth for spotting this and finding the fix. 
 	    
-	    When assigning existing DHCP leases to intefaces by comparing 
+	    When assigning existing DHCP leases to interfaces by comparing 
 	    networks, handle the case that two or more interfaces have the
 	    same network part, but different prefix lengths (favour the
 	    longer prefix length.) Thanks to Lung-Pin Chang for the 
@@ -408,7 +427,7 @@ version 2.70
 
 version 2.69
 	    Implement dynamic interface discovery on *BSD. This allows
-	    the contructor: syntax to be used in dhcp-range for DHCPv6
+	    the constructor: syntax to be used in dhcp-range for DHCPv6
 	    on the BSD platform. Thanks to Matthias Andree for
 	    valuable research on how to implement this.
 
@@ -546,11 +565,11 @@ version 2.68
 	    names as well as address literals. This makes it possible
 	    to configure authoritative DNS when local address ranges
 	    are dynamic and works much better than the previous
-	    work-around which exempted contructed DHCP ranges from the
+	    work-around which exempted constructed DHCP ranges from the
 	    IP address filtering. As a consequence, that work-around
 	    is removed. Under certain circumstances, this change wil
 	    break existing configuration: if you're relying on the
-	    contructed-range exception, you need to change --auth-zone
+	    constructed-range exception, you need to change --auth-zone
 	    to specify the same interface as is used to construct your
 	    DHCP ranges, probably with a trailing "/6" like this: 
 	    --auth-zone=example.com,eth0/6 to limit the addresses to
@@ -709,7 +728,7 @@ version 2.67
 	    Fix problem in DHCPv6 vendorclass/userclass matching
 	    code. Thanks to Tanguy Bouzeloc for the patch.
 
- 	    Update Spanish transalation. Thanks to Vicente Soriano.
+ 	    Update Spanish translation. Thanks to Vicente Soriano.
 
 	    Add --ra-param option. Thanks to Vladislav Grishenko for
 	    inspiration on this.
@@ -726,7 +745,7 @@ version 2.67
 	    suggestion. 
 
 	    Avoid treating a --dhcp-host which has an IPv6 address
-	    as eligable for use with DHCPv4 on the grounds that it has
+	    as eligible for use with DHCPv4 on the grounds that it has
 	    no address, and vice-versa. Thanks to Yury Konovalov for
 	    spotting the problem.
 
@@ -767,7 +786,7 @@ version 2.66
 	    the local DNS server if dnsmasq is configured to not act
 	    as DNS server, or it's configured to a non-standard port.
  
-            Add DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBCRIBER_ID,
+            Add DNSMASQ_CIRCUIT_ID, DNSMASQ_SUBSCRIBER_ID,
             DNSMASQ_REMOTE_ID variables to the environment of the
             lease-change script (and the corresponding Lua). These hold
             information inserted into the DHCP request by a DHCP relay
@@ -810,7 +829,7 @@ version 2.65
 	    Fix failure to build with DHCP support excluded. Thanks to 
 	    Gustavo Zacarias for the patch.
 	    
-	    Fix nasty regression in 2.64 which completely broke cacheing.
+	    Fix nasty regression in 2.64 which completely broke caching.
 
 
 version 2.64
@@ -821,7 +840,7 @@ version 2.64
 	    Finesse the check for /etc/hosts names which conflict with
 	    DHCP names. Previously a name/address pair in /etc/hosts
 	    which didn't match the name/address of a DHCP lease would
-	    generate a warning. Now that only happesn if there is not
+	    generate a warning. Now that only happens if there is not
 	    also a match. This allows multiple addresses for a name in 
 	    /etc/hosts with one of them assigned via DHCP.
 
@@ -831,7 +850,7 @@ version 2.64
 	    Don't report spurious netlink errors, regression in
 	    2.63. Thanks to Vladislav Grishenko for the patch.
 
-	    Flag DHCP or DHCPv6 in starup logging. Thanks to 
+	    Flag DHCP or DHCPv6 in startup logging. Thanks to 
 	    Vladislav Grishenko for the patch.
 
 	    Add SetServersEx method in DBus interface. Thanks to Dan
@@ -840,14 +859,14 @@ version 2.64
 	    Add SetDomainServers method in DBus interface. Thanks to
 	    Roy Marples for the patch.
 
-	    Fix build with later Lua libraries. Thansk to Cristian
+	    Fix build with later Lua libraries. Thanks to Cristian
 	    Rodriguez for the patch.
 
 	    Add --max-cache-ttl option. Thanks to Dennis Kaarsemaker
 	    for the patch.
 
 	    Fix breakage of --host-record parsing, resulting in
-	    infinte loop at startup. Regression in 2.63. Thanks to
+	    infinite loop at startup. Regression in 2.63. Thanks to
 	    Haim Gelfenbeyn for spotting this.
 
 	    Set SO_REUSEADDRESS and SO_V6ONLY options on the DHCPv6
@@ -922,7 +941,7 @@ version 2.63
 
 	    Allow "w" (for week) as multiplier in lease times, as well
 	    as seconds, minutes, hours and days.  Álvaro Gámez Machado 
-	    spotted the ommission.
+	    spotted the omission.
  
 	    Update French translation. Thanks to Gildas Le Nadan.
 
@@ -974,7 +993,7 @@ version 2.61
 
 	    Add --dhcp-duid to allow DUID-EN uids to be used.
 
-	    Explicity send DHCPv6 replies to the correct port, instead
+	    Explicitly send DHCPv6 replies to the correct port, instead
 	    of relying on clients to send requests with the correct
 	    source address, since at least one client in the wild gets
 	    this wrong. Thanks to Conrad Kostecki for help tracking
@@ -992,7 +1011,7 @@ version 2.61
 	    Invoke the DHCP script with action "tftp" when a TFTP file
 	    transfer completes. The size of the file, address to which
 	    it was sent and complete pathname are supplied. Note that
-	    version 2.60 introduced some script incompatibilties
+	    version 2.60 introduced some script incompatibilities
 	    associated with DHCPv6, and this is a further change. To
 	    be safe, scripts should ignore unknown actions, and if
 	    not IPv6-aware, should exit if the environment
@@ -1022,14 +1041,14 @@ version 2.61
 
 	    Add a new DHCP lease time keyword, "deprecated" for
 	    --dhcp-range. This is only valid for IPv6, and sets the
-	    preffered lease time for both DHCP and RA to zero. The
+	    preferred lease time for both DHCP and RA to zero. The
 	    effect is that clients can continue to use the address 
 	    for existing connections, but new connections will use
             other addresses, if they exist. This makes hitless
 	    renumbering at least possible.
 
 	    Fix bug in address6_available() which caused DHCPv6 lease
-	    aquisition to fail if more than one dhcp-range in use.
+	    acquisition to fail if more than one dhcp-range in use.
 
 	    Provide RDNSS and DNSSL data in router advertisements,
 	    using the settings provided for DHCP options
@@ -1039,7 +1058,7 @@ version 2.61
 	    SamLT for work on this.
 	    
 	    Don't cache data from non-recursive nameservers, since it
-	    may erroneously look like a valid CNAME to a non-exitant
+	    may erroneously look like a valid CNAME to a non-existent
 	    name. Thanks to Ben Winslow for finding this.
 
 	    Call SO_BINDTODEVICE on the DHCP socket(s) when doing DHCP
@@ -1051,7 +1070,7 @@ version 2.61
 
 	    Updated French translation. Thanks to Gildas Le Nadan.
 
-	    Give correct from-cache answers to explict CNAME queries.
+	    Give correct from-cache answers to explicit CNAME queries.
 	    Thanks to Rob Zwissler for spotting this.
 	    
 	    Add --tftp-lowercase option. Thanks to Oliver Rath for the
@@ -1319,8 +1338,8 @@ version 2.56
 	    the DHCP subsystem. Thanks to Olaf Westrik for the patch.
 
 	    Omit timestamps from logs when a) logging to stderr and 
-	    b) --keep-in-forground is set. The logging facility on the
-	    other end of stderr can be assumned to supply them. Thanks
+	    b) --keep-in-foreground is set. The logging facility on the
+	    other end of stderr can be assumed to supply them. Thanks
 	    to John Hallam for the patch.
 
 	    Don't complain about strings longer than 255 characters in
@@ -1333,7 +1352,7 @@ version 2.56
 	    script. Thanks to Ferenc Wagner for finding the problem.
 
 	    Only log that a file has been sent by TFTP after the
-	    transfer has completed succesfully. 
+	    transfer has completed successfully. 
 
 	    A good suggestion from Ferenc Wagner: extend
 	    the --domain option to allow this sort of thing:
@@ -1342,7 +1361,7 @@ version 2.56
 	    --local=/thekelleys.org.uk/
 	    --local=/0.168.192.in-addr.arpa/ 
 
-	    Tighten up syntax checking of hex contants in the config
+	    Tighten up syntax checking of hex constants in the config
 	    file.  Thanks to Fred Damen for spotting this.
 
 	    Add dnsmasq logo/icon, contributed by Justin Swift. Many
@@ -1380,11 +1399,11 @@ version 2.56
 	    an NODATA reply for IPv6 (or vice-versa). So
 	    --address=/google.com/1.2.3.4 stops IPv6 queries for
 	    *google.com from being forwarded. Make it possible to
-	    override this behaviour by defining the sematics if the
+	    override this behaviour by defining the semantics if the
 	    same domain appears in  both --server and --address.
 	    In that case, the --address has priority for the address
 	    family in which is appears, but the --server has priority
-	    of the address family which doesn't appear in --adddress  
+	    of the address family which doesn't appear in --address  
 	    So:
 	    --address=/google.com/1.2.3.4
 	    --server=/google.com/#
@@ -1484,7 +1503,7 @@ version 2.53
 	    to be added to dnsmasq configuration which then supplies
 	    DHCP and DNS services to that interface, without affecting
 	    what services are supplied to other interfaces and 
-	    irrespective of the existance or lack of 
+	    irrespective of the existence or lack of 
                 interface=<interface> 
             lines elsewhere in the dnsmasq configuration. The idea is
 	    that such a line can be added automatically by libvirt
@@ -1860,7 +1879,7 @@ version 2.47
 
 	    Updated config.h to use the same location for the lease
 	    file on NetBSD as the other *BSD variants. Also allow
-	    LEASEFILE and CONFFILE symbols to be overriden in CFLAGS.  
+	    LEASEFILE and CONFFILE symbols to be overridden in CFLAGS.  
 
             Handle duplicate address detection on IPv6 more
             intelligently. In IPv6, an interface can have an address

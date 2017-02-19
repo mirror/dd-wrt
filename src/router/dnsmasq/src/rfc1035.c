@@ -176,7 +176,7 @@ int in_arpa_name_2_addr(char *namein, struct all_addr *addrp)
   if (hostname_isequal(lastchunk, "arpa") && hostname_isequal(penchunk, "in-addr"))
     {
       /* IP v4 */
-      /* address arives as a name of the form
+      /* address arrives as a name of the form
 	 www.xxx.yyy.zzz.in-addr.arpa
 	 some of the low order address octets might be missing
 	 and should be set to zero. */
@@ -206,7 +206,7 @@ int in_arpa_name_2_addr(char *namein, struct all_addr *addrp)
          Address arrives as 0.1.2.3.4.5.6.7.8.9.a.b.c.d.e.f.ip6.[int|arpa]
     	 or \[xfedcba9876543210fedcba9876543210/128].ip6.[int|arpa]
       
-	 Note that most of these the various reprentations are obsolete and 
+	 Note that most of these the various representations are obsolete and 
 	 left-over from the many DNS-for-IPv6 wars. We support all the formats
 	 that we can since there is no reason not to.
       */
@@ -336,7 +336,7 @@ unsigned char *skip_section(unsigned char *ansp, int count, struct dns_header *h
 }
 
 /* CRC the question section. This is used to safely detect query 
-   retransmision and to detect answers to questions we didn't ask, which 
+   retransmission and to detect answers to questions we didn't ask, which 
    might be poisoning attacks. Note that we decode the name rather 
    than CRC the raw bytes, since replies might be compressed differently. 
    We ignore case in the names for the same reason. Return all-ones
@@ -1557,7 +1557,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 		{
 		  int localise = 0;
 		  
-		  /* See if a putative address is on the network from which we recieved
+		  /* See if a putative address is on the network from which we received
 		     the query, is so we'll filter other answers. */
 		  if (local_addr.s_addr != 0 && option_bool(OPT_LOCALISE) && flag == F_IPV4)
 		    {
@@ -1833,7 +1833,7 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
   /* set RA flag */
   header->hb4 |= HB4_RA;
    
-  /* authoritive - only hosts and DHCP derived names. */
+  /* authoritative - only hosts and DHCP derived names. */
   if (auth)
     header->hb3 |= HB3_AA;
   

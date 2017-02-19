@@ -118,7 +118,7 @@ static int dhcp6_maybe_relay(struct state *state, void *inbuff, size_t sz,
   void *opt;
   struct dhcp_vendor *vendor;
 
-  /* if not an encaplsulated relayed message, just do the stuff */
+  /* if not an encapsulated relayed message, just do the stuff */
   if (msg_type != DHCP6RELAYFORW)
     {
       /* if link_address != NULL if points to the link address field of the 
@@ -262,7 +262,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
   state->hostname_auth = 0;
   state->hostname = NULL;
   state->client_hostname = NULL;
-  state->fqdn_flags = 0x01; /* default to send if we recieve no FQDN option */
+  state->fqdn_flags = 0x01; /* default to send if we receive no FQDN option */
 #ifdef OPTION6_PREFIX_CLASS
   state->send_prefix_class = NULL;
 #endif
@@ -381,7 +381,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
   
   /* dhcp-match. If we have hex-and-wildcards, look for a left-anchored match.
      Otherwise assume the option is an array, and look for a matching element. 
-     If no data given, existance of the option is enough. This code handles 
+     If no data given, existence of the option is enough. This code handles 
      V-I opts too. */
   for (opt_cfg = daemon->dhcp_match6; opt_cfg; opt_cfg = opt_cfg->next)
     {
@@ -1273,7 +1273,7 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
 	    
 	  }
 
-	/* We must anwser with 'success' in global section anyway */
+	/* We must answer with 'success' in global section anyway */
 	o1 = new_opt6(OPTION6_STATUS_CODE);
 	put_opt6_short(DHCP6SUCCESS);
 	put_opt6_string(_("success"));
@@ -1387,7 +1387,7 @@ static struct dhcp_netid *add_options(struct state *state, int do_refresh)
       unsigned int lease_time = 0xffffffff;
       
       /* Find the smallest lease tie of all contexts,
-	 subjext to the RFC-4242 stipulation that this must not 
+	 subject to the RFC-4242 stipulation that this must not 
 	 be less than 600. */
       for (c = state->context; c; c = c->next)
 	if (c->lease_time < lease_time)

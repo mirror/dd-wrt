@@ -70,7 +70,7 @@ void lease_init(time_t now)
      Check various buffers are big enough for the code below */
 
 #if (DHCP_BUFF_SZ < 255) || (MAXDNAME < 64) || (PACKETSZ+MAXDNAME+RRFIXEDSZ  < 764)
-# error Buffer size breakage in leasfile parsing. 
+# error Buffer size breakage in leasefile parsing. 
 #endif
 
   if (leasestream)
@@ -100,7 +100,7 @@ void lease_init(time_t now)
 	    (lease = lease4_allocate(addr.addr.addr4)))
 	  {
 	    hw_len = parse_hex(daemon->dhcp_buff2, (unsigned char *)daemon->dhcp_buff2, DHCP_CHADDR_MAX, NULL, &hw_type);
-	    /* For backwards compatibility, no explict MAC address type means ether. */
+	    /* For backwards compatibility, no explicit MAC address type means ether. */
 	    if (hw_type == 0 && hw_len != 0)
 	      hw_type = ARPHRD_ETHER; 
 
@@ -413,7 +413,7 @@ void lease_ping_reply(struct in6_addr *sender, unsigned char *packet, char *inte
 
 void lease_update_slaac(time_t now)
 {
-  /* Called when we contruct a new RA-names context, to add putative
+  /* Called when we construct a new RA-names context, to add putative
      new SLAAC addresses to existing leases. */
 
   struct dhcp_lease *lease;
@@ -783,7 +783,7 @@ void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
     {
       exp = now + (time_t)len;
       /* Check for 2038 overflow. Make the lease
-	 inifinite in that case, as the least disruptive
+	 infinite in that case, as the least disruptive
 	 thing we can do. */
       if (difftime(exp, now) <= 0.0)
 	exp = 0;
@@ -1117,7 +1117,7 @@ int do_script_run(time_t now)
 }
 
 #ifdef HAVE_SCRIPT
-/* delim == -1 -> delim = 0, but embeded 0s, creating extra records, are OK. */
+/* delim == -1 -> delim = 0, but embedded 0s, creating extra records, are OK. */
 void lease_add_extradata(struct dhcp_lease *lease, unsigned char *data, unsigned int len, int delim)
 {
   unsigned int i;
@@ -1125,7 +1125,7 @@ void lease_add_extradata(struct dhcp_lease *lease, unsigned char *data, unsigned
   if (delim == -1)
     delim = 0;
   else
-    /* check for embeded NULLs */
+    /* check for embedded NULLs */
     for (i = 0; i < len; i++)
       if (data[i] == 0)
 	{

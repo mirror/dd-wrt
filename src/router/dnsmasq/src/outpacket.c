@@ -31,7 +31,7 @@ void end_opt6(int container)
 
 void reset_counter(void)
 {
-  /* Clear out buffer when starting from begining */
+  /* Clear out buffer when starting from beginning */
   if (daemon->outpacket.iov_base)
     memset(daemon->outpacket.iov_base, 0, daemon->outpacket.iov_len);
  

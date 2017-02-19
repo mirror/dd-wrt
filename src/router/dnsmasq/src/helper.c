@@ -18,7 +18,7 @@
 
 #ifdef HAVE_SCRIPT
 
-/* This file has code to fork a helper process which recieves data via a pipe 
+/* This file has code to fork a helper process which receives data via a pipe 
    shared with the main process and which is responsible for calling a script when
    DHCP leases change.
 

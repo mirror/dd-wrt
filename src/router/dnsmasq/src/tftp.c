@@ -470,7 +470,7 @@ static struct tftp_file *check_tftp_fileperm(ssize_t *len, char *prefix)
   else if (option_bool(OPT_TFTP_SECURE) && uid != statbuf.st_uid)
     goto perm;
       
-  /* If we're doing many tranfers from the same file, only 
+  /* If we're doing many transfers from the same file, only 
      open it once this saves lots of file descriptors 
      when mass-booting a big cluster, for instance. 
      Be conservative and only share when inode and name match
