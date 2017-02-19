@@ -707,7 +707,7 @@
 			pinctrl-0 = <&pcie0_pins>;
 			pinctrl-names = "default";
 
-			perst-gpio = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
+			perst-gpios = <&qcom_pinmux 3 GPIO_ACTIVE_LOW>;
 
 			status = "disabled";
 		};
@@ -759,7 +759,7 @@
 			pinctrl-0 = <&pcie1_pins>;
 			pinctrl-names = "default";
 
-			perst-gpio = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
+			perst-gpios = <&qcom_pinmux 48 GPIO_ACTIVE_LOW>;
 
 			status = "disabled";
 		};
@@ -811,7 +811,7 @@
 			pinctrl-0 = <&pcie2_pins>;
 			pinctrl-names = "default";
 
-			perst-gpio = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
+			perst-gpios = <&qcom_pinmux 63 GPIO_ACTIVE_LOW>;
 
 			status = "disabled";
 		};
