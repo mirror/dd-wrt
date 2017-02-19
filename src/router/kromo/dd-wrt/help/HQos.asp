@@ -15,7 +15,7 @@
 				<dt><% tran("qos.type"); %></dt>
 				<% tran("hqos.page3"); %>
 				
-				<dt><% tran("qos.uplink"); %> / <% tran("qos.dnlink"); %></dt>
+				<dt><% tran("qos.dnlink"); %> / <% tran("qos.uplink"); %></dt>
 				<% tran("hqos.page4"); %>
 				
 				<dt><% tran("share.priority"); %></td>
