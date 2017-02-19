@@ -991,9 +991,12 @@ static int isinlist(struct wifi_channels *list, int base, int freq, int bw)
 		struct wifi_channels *chan = &list[i++];
 		if (chan->freq == -1)
 			break;
-		if (bw == 40 && !chan->ht40) continue;
-		if (bw == 80 && !chan->vht80) continue;
-		if (bw == 160 && !chan->vht160) continue;
+		if (bw == 40 && !chan->ht40)
+			continue;
+		if (bw == 80 && !chan->vht80)
+			continue;
+		if (bw == 160 && !chan->vht160)
+			continue;
 		if (chan->freq == freq) {
 //                      fprintf(stderr,"true\n");
 			return 1;
@@ -1030,14 +1033,14 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			struct wifi_channels *chan = &list[i++];
 			if (chan->freq == -1)
 				break;
-			if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a),40)) {
+			if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->luu = 0;
 				chan->lul = 0;
 				chan->llu = 0;
 				chan->lll = 0;
 			}
-			if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a),40)) {
+			if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
 				fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
 				chan->ull = 0;
 				chan->ulu = 0;
@@ -1047,42 +1050,42 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			/* sort out incompatible dfs property channels.settings which starts always bellow control channel */
 			if (bw == 80) {
 
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30,80)) {
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 30, 80)) {
 					chan->ull = 0;
 				}
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30,80)) {
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 30, 80)) {
 					chan->luu = 0;
 				}
 
 			}
 			if (bw == 160) {
-				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70,160)) {
+				if (chan->ull && !isinlist(list, chan->freq, (chan->freq + 10) - 70, 160)) {
 					chan->ull = 0;
 				}
-				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70,160)) {
+				if (chan->ulu && !isinlist(list, chan->freq, (chan->freq + 30) - 70, 160)) {
 					chan->ulu = 0;
 				}
-				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70,160)) {
+				if (chan->uul && !isinlist(list, chan->freq, (chan->freq + 50) - 70, 160)) {
 					chan->uul = 0;
 				}
-				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70,160)) {
+				if (chan->luu && !isinlist(list, chan->freq, (chan->freq - 10) - 70, 160)) {
 					chan->luu = 0;
 				}
-				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70,160)) {
+				if (chan->lul && !isinlist(list, chan->freq, (chan->freq - 30) - 70, 160)) {
 					chan->lul = 0;
 				}
-				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70,160)) {
+				if (chan->llu && !isinlist(list, chan->freq, (chan->freq - 50) - 70, 160)) {
 					chan->llu = 0;
 				}
 			}
 			if (a == 2) {
-				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))),80)) {
+				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))), bw)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
 					chan->llu = 0;
 					chan->lll = 0;
 				}
-				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))),80)) {
+				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))), bw)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
 					chan->ulu = 0;
 					chan->uul = 0;
@@ -1090,21 +1093,21 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 				}
 			}
 			if (a == 3) {
-				if (chan->llu && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))),160)) {
+				if (chan->llu && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))), 160)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->llu = 0;
 					chan->lll = 0;
 				}
-				if (chan->uul && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))),160)) {
+				if (chan->uul && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))), 160)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uul = 0;
 					chan->uuu = 0;
 				}
-				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))),160)) {
+				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable lll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->lll = 0;
 				}
-				if (chan->uuu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))),160)) {
+				if (chan->uuu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
 					fprintf(stderr, "freq %d has no %s parent at %d, disable uuu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uuu = 0;
 

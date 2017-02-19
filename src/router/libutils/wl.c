@@ -1596,7 +1596,6 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 {
 	struct iwreq wrq;
 
-	
 #ifdef HAVE_ATH9K
 	if (has_ad(ifname))
 		return mac80211_get_interface("giwifi");
