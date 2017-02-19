@@ -3348,6 +3348,12 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		  wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 }
+
+if (has_ac(prefix) && has_2ghz(prefix)) {
+	char wl_turboqam[16];
+	sprintf(wl_turboqam, "%s_turbo_qam", prefix);
+	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
+}
 #ifdef HAVE_80211AC
 #ifndef HAVE_NOAC
 if (!has_qtn(prefix)) {
@@ -3355,12 +3361,6 @@ if (!has_qtn(prefix)) {
 	sprintf(wl_igmp, "%s_wmf_bss_enable", prefix);
 	nvram_default_get(wl_igmp, "0");
 	showRadio(wp, "wl_basic.igmpsnooping", wl_igmp);
-}
-
-if (has_ac(prefix) && has_2ghz(prefix)) {
-	char wl_turboqam[16];
-	sprintf(wl_turboqam, "%s_turbo_qam", prefix);
-	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
 }
 
 if (has_ac(prefix) && nvram_nmatch("15", "%s_hw_rxchain", prefix)) {

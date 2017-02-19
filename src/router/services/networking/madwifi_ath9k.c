@@ -693,6 +693,18 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		free(caps);
 	}
 #ifdef HAVE_ATH10K
+	if (has_ac(prefix) && has_2ghz(prefix)) {
+		if (nvram_nmatch("1", "%s_turbo_qam", prefix)) {
+			caps =
+			    mac80211_get_vhtcaps(prefix, nvram_default_match(shortgi, "1", "1") ? 1 : 0, (usebw == 80 || usebw == 160 || usebw == 8080) ? 1 : 0, usebw == 160 ? 1 : 0, usebw == 8080 ? 1 : 0,
+						 nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
+			fprintf(fp, "vht_capab=%s\n", caps);
+			fprintf(fp, "ieee80211ac=1\n");
+			fprintf(fp, "require_vht=1\n");
+			free(caps);
+		}
+
+	}
 	if (has_ac(prefix) && has_5ghz(prefix)) {
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
