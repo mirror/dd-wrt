@@ -1511,7 +1511,6 @@ service.milkfish_localalias="Локальные псевдонимы";
 service.milkfish_messaging="Сообщения SIP";
 service.milkfish_siptrace="Трассировка SIP";
 service.milkfish_advdynsip="Расширенные настройки DynSIP";
-service.milkfish_answers="Проблемы, вопросы, предложения? – Ищите ответы на <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Форуме пользователей Milkfish-dd</a>";
 
 //service.milkfish_="";//
 service.hmilkfish_right2="Включает/отключает ваш роутер Milkfish SIP.";

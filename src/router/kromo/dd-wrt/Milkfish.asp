@@ -215,26 +215,6 @@ addEvent(window, "unload", function() {
 				</script>
 	</fieldset>
 
-<br />
-	<fieldset>
-            <div class="center"><br />
-		<b>
-		<script type="text/javascript">
-		//<![CDATA[
-		document.write(service.milkfish_answers);
-		//]]
-		</script>
-		</b><br />
-		<br />
-	    </div>
-	</fieldset>
-<!--	<fieldset>
-
-	    <div class="center">powered by<br><img src="images/sipwerk.png" alt="sipwerk logo" /></div><br />
-	    
-	</fieldset>
--->
-<br />	
 </div>
 </fieldset>
 <br/>
