@@ -133,7 +133,11 @@ void start_openvpnserver(void)
 			"management 127.0.0.1 14\n"
 			"management-log-cache 100\n"
 			"topology subnet\n"
-			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" 
+			"port %s\n" 
+			"proto %s\n" 
+			"cipher %s\n" 
+			"auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 		fprintf(fp, "client-connect /tmp/openvpn/clcon.sh\n");
 		fprintf(fp, "client-disconnect /tmp/openvpn/cldiscon.sh\n");
 		if (jffs == 1)	//  use usb/jffs for ccd if available
