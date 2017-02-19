@@ -1756,7 +1756,6 @@ service.milkfish_localalias="로컬 별명";
 service.milkfish_messaging="SIP 메시징";
 service.milkfish_siptrace="SIP 추적";
 service.milkfish_advdynsip="고급 DynSIP 설정";
-service.milkfish_answers="문제, 질문, 제안이 있나요? - <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>에서 답을 찾으세요";
 //service.milkfish_="";//
 service.hmilkfish_right2="Milkfish SIP 라우터를 활성화 또는 비활성화 합니다.";
 service.hmilkfish_right4="다음으로부터 활성화 또는 비활성화 합니다:-발신 SIP 메시지의 WAN IP 주소의 헤더필드 대체. 만일 WAN IP 주소가 변경되었을 시, 피 호출자로부터의 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";

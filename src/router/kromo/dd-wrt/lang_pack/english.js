@@ -1873,7 +1873,6 @@ service.milkfish_localalias="Local Aliases";
 service.milkfish_messaging="SIP Messaging";
 service.milkfish_siptrace="SIP Trace";
 service.milkfish_advdynsip="Advanced DynSIP Settings";
-service.milkfish_answers="Problems, Questions, Suggestions? - Find answers in the <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>";
 //service.milkfish_="";//
 service.hmilkfish_right2="Enable or disable your Milkfish SIP router.";
 service.hmilkfish_right4="Enable or disable from:-headerfield substitution of your WAN IP in outgoing SIP messages. This setting should be enabled if you want to allow callees to call you back if your WAN IP has changed.";

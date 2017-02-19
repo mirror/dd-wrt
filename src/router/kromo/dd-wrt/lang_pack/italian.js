@@ -1771,7 +1771,6 @@ service.milkfish_localalias="Alias Locali";
 service.milkfish_messaging="Messaggi SIP";
 service.milkfish_siptrace="SIP Trace";
 service.milkfish_advdynsip="Impostazioni Avanzate DynSIP";
-service.milkfish_answers="Problemi, Domande, Suggerimenti? - Trova le risposte su <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>";
 //service.milkfish_="";//
 service.hmilkfish_right2="Abilita/Disabilita il tuo Milkfish SIP Router.";
 service.hmilkfish_right4="Abilita/Disabilita la sostituzione del campo di intestazione &apos;From&apos; del tuo IP WAN nei messagi SIP uscenti. Questo settaggio pu&ograve; essere abilitato se vuoi permettere che le persone da te contattate ti richiamino se il tuo IP WAN &egrave; cambiato";
