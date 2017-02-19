@@ -13,11 +13,18 @@
 #define NVRAMSPACE 0x20000
 #elif HAVE_MVEBU
 #define NVRAMSPACE 0x10000
+#elif HAVE_ALPINE
+#define NVRAMSPACE 0x20000
 #elif HAVE_IPQ806X
 #define NVRAMSPACE 0x10000
 #else
 #define NVRAMSPACE NVRAM_SPACE
 #endif
+
+#define VALUE_TO_STRING(x) #x
+#define VALUE(x) VALUE_TO_STRING(x)
+#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+#pragma message (VAR_NAME_VALUE(NVRAMSPACE))
 
 /* 
  * NVRAM utility 
