@@ -398,7 +398,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 				ht = "HT40+";
 				iht = 1;
 			}
-			if (nvram_match(sb, "lul") || nvram_match(sb, "lower")) {
+			if (nvram_match(sb, "luu") || nvram_match(sb, "lower")) {
 				ht = "HT40-";
 				iht = -1;
 			}
