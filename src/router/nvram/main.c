@@ -33,7 +33,7 @@ static void usage(void)
 #elif HAVE_MVEBU
 #define NVRAMSPACE 0x10000
 #elif HAVE_ALPINE
-#define NVRAMSPACE 0x10000
+#define NVRAMSPACE 0x20000
 #elif HAVE_IPQ806X
 #define NVRAMSPACE 0x10000
 #else
