@@ -158,6 +158,14 @@ int init_ddns(void)
 		snprintf(_hostname, sizeof(_username), "%s", "ddns_username_10");
 		break;
 
+	case 11:
+		strcpy(service, "default@duiadns.net");
+
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_11");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_11");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_11");
+		break;
+
 	default:
 		return -1;
 	}
