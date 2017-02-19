@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   *(p++) = 1;
   *(p++) = DHCPINFORM;
 
-  /* Explicity request the lease time, it won't be sent otherwise:
+  /* Explicitly request the lease time, it won't be sent otherwise:
      this is a dnsmasq extension, not standard. */
   *(p++) = OPTION_REQUESTED_OPTIONS;
   *(p++) = 1;

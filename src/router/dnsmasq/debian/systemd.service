@@ -18,7 +18,7 @@ ExecStartPre=/usr/sbin/dnsmasq --test
 ExecStart=/etc/init.d/dnsmasq systemd-exec
 
 # The systemd-*-resolvconf functions configure (and deconfigure)
-# resolvconf to work with the dnsmasq DNS server. They're called liek
+# resolvconf to work with the dnsmasq DNS server. They're called like
 # this to get correct error handling (ie don't start-resolvconf if the 
 # dnsmasq daemon fails to start.
 ExecStartPost=/etc/init.d/dnsmasq systemd-start-resolvconf

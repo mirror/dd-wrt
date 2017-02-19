@@ -82,7 +82,7 @@ void ra_init(time_t now)
   /* ensure this is around even if we're not doing DHCPv6 */
   expand_buf(&daemon->outpacket, sizeof(struct dhcp_packet));
  
-  /* See if we're guessing SLAAC addresses, if so we need to recieve ping replies */
+  /* See if we're guessing SLAAC addresses, if so we need to receive ping replies */
   for (context = daemon->dhcp6; context; context = context->next)
     if ((context->flags & CONTEXT_RA_NAME))
       break;
@@ -112,10 +112,10 @@ void ra_init(time_t now)
    daemon->icmp6fd = fd;
    
    if (daemon->doing_ra)
-     ra_start_unsolicted(now, NULL);
+     ra_start_unsolicited(now, NULL);
 }
 
-void ra_start_unsolicted(time_t now, struct dhcp_context *context)
+void ra_start_unsolicited(time_t now, struct dhcp_context *context)
 {   
    /* init timers so that we do ra's for some/all soon. some ra_times will end up zeroed
      if it's not appropriate to advertise those contexts.
@@ -400,7 +400,7 @@ static void send_ra_alias(time_t now, int iface, char *iface_name, struct in6_ad
     }
 
 #ifdef HAVE_LINUX_NETWORK
-  /* Note that IPv6 MTU is not necessarilly the same as the IPv4 MTU
+  /* Note that IPv6 MTU is not neccessarily the same as the IPv4 MTU
      available from SIOCGIFMTU */
   sprintf(daemon->namebuff, "/proc/sys/net/ipv6/conf/%s/mtu", iface_name);
   if ((f = fopen(daemon->namebuff, "r")))
@@ -780,7 +780,7 @@ time_t periodic_ra(time_t now)
 	   associated with it, because it's for a subnet we dont 
 	   have an interface on. Probably we're doing DHCP on
 	   a remote subnet via a relay. Zero the timer, since we won't
-	   ever be able to send ra's and satistfy it. */
+	   ever be able to send ra's and satisfy it. */
 	context->ra_time = 0;
       
       if (param.iface != 0 &&

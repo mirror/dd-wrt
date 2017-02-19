@@ -202,12 +202,12 @@ int main (int argc, char **argv)
 
 #ifdef HAVE_SOLARIS_NETWORK
   if (daemon->max_logs != 0)
-    die(_("asychronous logging is not available under Solaris"), NULL, EC_BADCONF);
+    die(_("asynchronous logging is not available under Solaris"), NULL, EC_BADCONF);
 #endif
   
 #ifdef __ANDROID__
   if (daemon->max_logs != 0)
-    die(_("asychronous logging is not available under Android"), NULL, EC_BADCONF);
+    die(_("asynchronous logging is not available under Android"), NULL, EC_BADCONF);
 #endif
 
 #ifndef HAVE_AUTH
@@ -514,7 +514,7 @@ int main (int argc, char **argv)
 	     extent that an attacker running as the unprivileged  user could replace the pidfile with a 
 	     symlink, and have the target of that symlink overwritten as root next time dnsmasq starts. 
 
-	     The folowing code first deletes any existing file, and then opens it with the O_EXCL flag,
+	     The following code first deletes any existing file, and then opens it with the O_EXCL flag,
 	     ensuring that the open() fails should there be any existing file (because the unlink() failed, 
 	     or an attacker exploited the race between unlink() and open()). This ensures that no symlink
 	     attack can succeed. 
@@ -583,7 +583,7 @@ int main (int argc, char **argv)
       int bad_capabilities = 0;
       gid_t dummy;
       
-      /* remove all supplimentary groups */
+      /* remove all supplementary groups */
       if (gp && 
 	  (setgroups(0, &dummy) == -1 ||
 	   setgid(gp->gr_gid) == -1))
@@ -655,7 +655,7 @@ int main (int argc, char **argv)
 	     (1 << CAP_NET_ADMIN) | (1 << CAP_NET_RAW);
 	  data->inheritable = 0;
 	  
-	  /* lose the setuid and setgid capbilities */
+	  /* lose the setuid and setgid capabilities */
 	  if (capset(hdr, data) == -1)
 	    {
 	      send_event(err_pipe[1], EVENT_CAP_ERR, errno, NULL);
@@ -818,7 +818,7 @@ int main (int argc, char **argv)
     my_syslog(MS_DHCP | LOG_INFO, _("DHCP, sockets bound exclusively to interface %s"), bound_device);
 #  endif
 
-  /* after dhcp_contruct_contexts */
+  /* after dhcp_construct_contexts */
   if (daemon->dhcp || daemon->doing_dhcp6)
     lease_find_interfaces(now);
 #endif
@@ -1680,7 +1680,7 @@ static void check_dns_listeners(time_t now)
 		}
 
 #ifndef NO_FORK
-	      /* Arrange for SIGALARM after CHILD_LIFETIME seconds to
+	      /* Arrange for SIGALRM after CHILD_LIFETIME seconds to
 		 terminate the process. */
 	      if (!option_bool(OPT_DEBUG))
 		alarm(CHILD_LIFETIME);
