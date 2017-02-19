@@ -21,12 +21,13 @@
 #define TCP_BACKLOG 32  /* kernel backlog limit for TCP connections */
 #define EDNS_PKTSZ 4096 /* default max EDNS.0 UDP packet from RFC5625 */
 #define SAFE_PKTSZ 1280 /* "go anywhere" UDP packet size */
-#define KEYBLOCK_LEN 40 /* choose to mininise fragmentation when storing DNSSEC keys */
+#define KEYBLOCK_LEN 40 /* choose to minimise fragmentation when storing DNSSEC keys */
 #define DNSSEC_WORK 50 /* Max number of queries to validate one question */
 #define TIMEOUT 10 /* drop UDP queries after TIMEOUT seconds */
 #define FORWARD_TEST 50 /* try all servers every 50 queries */
 #define FORWARD_TIME 20 /* or 20 seconds */
 #define SERVERS_LOGGED 30 /* Only log this many servers when logging state */
+#define LOCALS_LOGGED 8 /* Only log this many local addresses when logging state */
 #define RANDOM_SOCKS 64 /* max simultaneous random ports */
 #define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
 #define CACHESIZ 150 /* default cache size */
@@ -99,7 +100,7 @@ HAVE_IDN
 	 *-i18n makefile targets, even if HAVE_IDN is not explicitly set.
 
 HAVE_CONNTRACK
-   define this to include code which propogates conntrack marks from
+   define this to include code which propagates conntrack marks from
    incoming DNS queries to the corresponding upstream queries. This adds
    a build-dependency on libnetfilter_conntrack, but the resulting binary will
    still run happily on a kernel without conntrack support.
@@ -131,7 +132,7 @@ NO_SCRIPT
 NO_LARGEFILE
 NO_AUTH
 NO_INOTIFY
-   these are avilable to explictly disable compile time options which would 
+   these are avilable to explicitly disable compile time options which would 
    otherwise be enabled automatically (HAVE_IPV6, >2Gb file sizes) or 
    which are enabled  by default in the distributed source tree. Building dnsmasq
    with something like "make COPTS=-DNO_SCRIPT" will do the trick.
@@ -236,7 +237,7 @@ HAVE_SOCKADDR_SA_LEN
    defined if struct sockaddr has sa_len field (*BSD) 
 */
 
-/* Must preceed __linux__ since uClinux defines __linux__ too. */
+/* Must precede __linux__ since uClinux defines __linux__ too. */
 #if defined(__uClinux__)
 #define HAVE_LINUX_NETWORK
 #define HAVE_GETOPT_LONG
@@ -274,7 +275,7 @@ HAVE_SOCKADDR_SA_LEN
       defined(__DragonFly__) || \
       defined(__FreeBSD_kernel__)
 #define HAVE_BSD_NETWORK
-/* Later verions of FreeBSD have getopt_long() */
+/* Later versions of FreeBSD have getopt_long() */
 #if defined(optional_argument) && defined(required_argument)
 #   define HAVE_GETOPT_LONG
 #endif
@@ -372,7 +373,7 @@ HAVE_SOCKADDR_SA_LEN
 //#endif
 
 /* Define a string indicating which options are in use.
-   DNSMASQP_COMPILE_OPTS is only defined in dnsmasq.c */
+   DNSMASQ_COMPILE_OPTS is only defined in dnsmasq.c */
 
 #ifdef DNSMASQ_COMPILE_OPTS
 

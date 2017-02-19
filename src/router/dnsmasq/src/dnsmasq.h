@@ -125,7 +125,7 @@ typedef unsigned long long u64;
 #if defined(HAVE_LINUX_NETWORK)
 #include <linux/capability.h>
 /* There doesn't seem to be a universally-available 
-   userpace header for these. */
+   userspace header for these. */
 extern int capset(cap_user_header_t header, cap_user_data_t data);
 extern int capget(cap_user_header_t header, cap_user_data_t data);
 #define LINUX_CAPABILITY_VERSION_1  0x19980330
@@ -485,6 +485,7 @@ union mysockaddr {
 #define SERV_FROM_FILE      4096  /* read from --servers-file */
 #define SERV_LOOP           8192  /* server causes forwarding loop */
 #define SERV_DO_DNSSEC     16384  /* Validate DNSSEC when using this server */
+#define SERV_GOT_TCP       32768  /* Got some data from the TCP connection */
 
 struct serverfd {
   int fd;
@@ -789,7 +790,7 @@ struct pxe_service {
 #define MATCH_REMOTE     4
 #define MATCH_SUBSCRIBER 5
 
-/* vendorclass, userclass, remote-id or cicuit-id */
+/* vendorclass, userclass, remote-id or circuit-id */
 struct dhcp_vendor {
   int len, match_type;
   unsigned int enterprise;
@@ -1504,7 +1505,7 @@ void put_opt6_string(char *s);
 void ra_init(time_t now);
 void icmp6_packet(time_t now);
 time_t periodic_ra(time_t now);
-void ra_start_unsolicted(time_t now, struct dhcp_context *context);
+void ra_start_unsolicited(time_t now, struct dhcp_context *context);
 #endif
 
 /* slaac.c */ 

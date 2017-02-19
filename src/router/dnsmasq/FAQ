@@ -59,7 +59,7 @@ A: Yes, there is explicit support for *BSD and MacOS X and Solaris.
  
 Q: My company's nameserver knows about some names which aren't in the
    public DNS. Even though I put it first in /etc/resolv.conf, it
-   dosen't work: dnsmasq seems not to use the nameservers in the order
+   doesn't work: dnsmasq seems not to use the nameservers in the order
    given. What am I doing wrong?
 
 A: By default, dnsmasq treats all the nameservers it knows about as
@@ -144,13 +144,13 @@ Q: Who are Verisign, what do they have to do with the bogus-nxdomain
    option in dnsmasq and why should I wory about it?
 
 A: [note: this was written in September 2003, things may well change.]
-   Versign run the .com and .net top-level-domains. They have just
+   Verisign run the .com and .net top-level-domains. They have just
    changed the configuration of their servers so that unknown .com and
    .net domains, instead of returning an error code NXDOMAIN, (no such
-   domain) return the address of a host at Versign which runs a web
+   domain) return the address of a host at Verisign which runs a web
    server showing a search page. Most right-thinking people regard
    this new behaviour as broken :-).  You can test to see if you are
-   suffering Versign brokeness by run a command like 
+   suffering Verisign brokenness by run a command like 
    
    host jlsdajkdalld.com
 
@@ -180,7 +180,7 @@ A: There are a couple of configuration gotchas which have been
    whilst the ISC one works.
 
    The first thing to check is the broadcast address set for the
-   ethernet interface. This is normally the adddress on the connected
+   ethernet interface. This is normally the address on the connected
    network with all ones in the host part. For instance if the 
    address of the ethernet interface is 192.168.55.7 and the netmask
    is 255.255.255.0 then the broadcast address should be
@@ -205,7 +205,7 @@ A: By default, none of the DHCP clients send the host-name when asking
    send with the "hostname" keyword in /etc/network/interfaces. (See
    "man interfaces" for details.) That doesn't work for dhclient, were
    you have to add something like "send host-name daisy" to
-   /etc/dhclient.conf [Update: the lastest dhcpcd packages _do_ send
+   /etc/dhclient.conf [Update: the latest dhcpcd packages _do_ send
    the hostname by default.
 
 Q: I'm network booting my machines, and trying to give them static
@@ -240,7 +240,7 @@ Q: What are these strange "bind-interface" and "bind-dynamic" options?
 
 A: Dnsmasq from v2.63 can operate in one of three different "networking
    modes". This is unfortunate as it requires users configuring dnsmasq
-   to take into account some rather bizzare contraints and select the
+   to take into account some rather bizarre constraints and select the
    mode which best fits the requirements of a particular installation.
    The origin of these are deficiencies in the Unix networking
    model and APIs and each mode has different advantages and
@@ -252,10 +252,10 @@ A: Dnsmasq from v2.63 can operate in one of three different "networking
    The three modes are "wildcard", "bind-interfaces" and "bind-dynamic".
 
    In "wildcard" mode, dnsmasq binds the wildcard IP address (0.0.0.0 or
-   ::). This allows it to recieve all the packets sent to the server on
+   ::). This allows it to receive all the packets sent to the server on
    the relevant port. Access control (--interface, --except-interface,
    --listen-address, etc) is implemented by dnsmasq: it queries the
-   kernel to determine the interface on which a packet was recieved and
+   kernel to determine the interface on which a packet was received and
    the address to which it was sent, and applies the configured
    rules. Wildcard mode is the default if neither of the other modes are
    specified. 
@@ -276,7 +276,7 @@ A: Dnsmasq from v2.63 can operate in one of three different "networking
    The mode chosen has four different effects: co-existence with other
    servers, semantics of --interface access control, effect of new
    interfaces, and legality of --interface specifications for
-   non-existent inferfaces. We will deal with these in order.
+   non-existent interfaces. We will deal with these in order.
 
    A dnsmasq instance running in wildcard mode precludes a machine from
    running a second instance of dnsmasq or any other DNS, TFTP or DHCP
@@ -313,7 +313,7 @@ Q: Can I get email notification when a new version of dnsmasq is
    released?
 
 A: Yes, new releases of dnsmasq are always announced through
-   freshmeat.net, and they allow you to subcribe to email alerts when
+   freshmeat.net, and they allow you to subscribe to email alerts when
    new versions of particular projects are released. New releases are
    also announced in the dnsmasq-discuss mailing list, subscribe at 
    http://lists.thekelleys.org.uk/mailman/listinfo/dnsmasq-discuss
@@ -354,7 +354,7 @@ Addendum:
    involve setting client-IDs. It's possible to put more than one MAC
    address in a --dhcp-host configuration. This tells dnsmasq that it
    should use the specified IP for any of the specified MAC addresses,
-   and furthermore it gives dnsmasq permission to sumarily abandon a
+   and furthermore it gives dnsmasq permission to summarily abandon a
    lease to one of the MAC addresses if another one comes along. Note
    that this will work fine only as longer as only one interface is
    up at any time. There is no way for dnsmasq to enforce this
@@ -488,7 +488,7 @@ Q: DHCP doesn't work with windows 7 but everything else is fine.
 
 A: There seems to be a problem if Windows 7 doesn't get a value for
    DHCP option 252 in DHCP packets it gets from the server. The
-   symtoms have beeen variously reported as continual DHCPINFORM
+   symptoms have been variously reported as continual DHCPINFORM
    requests in an attempt to get an option-252, or even ignoring DHCP
    offers completely (and failing to get an IP address) if there is no
    option-252 supplied. DHCP option 252 is for WPAD, WWW Proxy 

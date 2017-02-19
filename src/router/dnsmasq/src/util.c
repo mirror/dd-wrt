@@ -373,7 +373,7 @@ int is_same_net6(struct in6_addr *a, struct in6_addr *b, int prefixlen)
   return 0;
 }
 
-/* return least signigicant 64 bits if IPv6 address */
+/* return least significant 64 bits if IPv6 address */
 u64 addr6part(struct in6_addr *addr)
 {
   int i;

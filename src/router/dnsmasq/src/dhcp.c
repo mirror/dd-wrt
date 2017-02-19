@@ -67,9 +67,9 @@ static int make_fd(int port)
       setsockopt(fd, SOL_SOCKET, SO_BROADCAST, &oneopt, sizeof(oneopt)) == -1)  
     die(_("failed to set options on DHCP socket: %s"), NULL, EC_BADNET);
   
-  /* When bind-interfaces is set, there might be more than one dnmsasq
+  /* When bind-interfaces is set, there might be more than one dnsmasq
      instance binding port 67. That's OK if they serve different networks.
-     Need to set REUSEADDR|REUSEPORT to make this posible.
+     Need to set REUSEADDR|REUSEPORT to make this possible.
      Handle the case that REUSEPORT is defined, but the kernel doesn't 
      support it. This handles the introduction of REUSEPORT on Linux. */
   if (option_bool(OPT_NOWILD) || option_bool(OPT_CLEVERBIND))
@@ -596,7 +596,7 @@ struct dhcp_context *narrow_context(struct dhcp_context *context,
 {
   /* We start of with a set of possible contexts, all on the current physical interface.
      These are chained on ->current.
-     Here we have an address, and return the actual context correponding to that
+     Here we have an address, and return the actual context corresponding to that
      address. Note that none may fit, if the address came a dhcp-host and is outside
      any dhcp-range. In that case we return a static range if possible, or failing that,
      any context on the correct subnet. (If there's more than one, this is a dodgy 
