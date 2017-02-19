@@ -3348,7 +3348,6 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 		  wl_closed, nvram_matchi(wl_closed, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 }
-
 if (has_ac(prefix) && has_2ghz(prefix)) {
 	char wl_turboqam[16];
 	sprintf(wl_turboqam, "%s_turbo_qam", prefix);
@@ -3785,6 +3784,11 @@ if (!strcmp(prefix, "wl2"))
 #endif
 		}
 	}
+if (has_ac(prefix) && has_2ghz(prefix)) {
+	char wl_turboqam[16];
+	sprintf(wl_turboqam, "%s_turbo_qam", prefix);
+	showRadio(wp, "wl_basic.turboqam", wl_turboqam);
+}
 // wireless ssid
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp,
