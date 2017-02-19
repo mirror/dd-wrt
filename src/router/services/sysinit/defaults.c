@@ -2019,6 +2019,11 @@ struct nvram_param srouter_defaults[] = {
 
 	{"ddns_username_10", ""},
 	{"ddns_passwd_10", ""},
+	
+	// duiadns
+	{"ddns_username_11", ""},
+	{"ddns_passwd_11", ""},
+	{"ddns_hostname_11", ""},
 
 	/*
 	 * for last value 

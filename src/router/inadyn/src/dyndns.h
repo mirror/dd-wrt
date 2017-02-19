@@ -46,6 +46,7 @@ typedef enum
     DYNSIP_DEFAULT,
     DYNDNS_3322_DYNAMIC,
     DTDNS_DEFAULT,
+    DUIADNS_DEFAULT,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -78,6 +79,11 @@ typedef enum
 #define DYNDNS_DTDNS_MY_DNS_SERVER	"www.dtdns.com"
 #define DYNDNS_DTDNS_MY_DNS_SERVER_URL "/api/autodns.cfm?"
 
+#define DYNDNS_DUIADNS_MY_IP_SERVER			"ipv4.duiadns.net"
+#define DYNDNS_DUIADNS_MY_IP_SERVER_URL		"/"
+#define DYNDNS_DUIADNS_MY_DNS_SERVER		"ipv4.duiadns.net"
+#define DYNDNS_DUIADNS_MY_DNS_SERVER_URL	"/dyndns.duia?"
+
 /*REQ/RSP definitions*/
 
 #define DYNDNS_IP_SERVER_RESPONSE_BEGIN "Current IP Address: "
@@ -108,6 +114,13 @@ typedef enum
 	  "User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
     
 
+#define DYNDNS_DUIADNS_GET_MY_IP_HTTP_REQUEST_FORMAT \
+    "GET %s" \
+    "hostname=%s&myip=%s " \
+	 "HTTP/1.0\r\n" \
+	"Authorization: Basic %s\r\n" \
+	"Host: %s\r\n" \
+	"User-Agent: dd-wrt " DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR "\r\n\r\n"
 
 
 /* dyndns.org specific update address format */
