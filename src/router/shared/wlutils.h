@@ -210,6 +210,9 @@ struct wifi_channels {
 			ulu:1, 
 			uul:1, 
 			uuu:1, 
+			ht40:1,
+			vht80:1,
+			vht160:1,
 			dfs:1;
 };
 
