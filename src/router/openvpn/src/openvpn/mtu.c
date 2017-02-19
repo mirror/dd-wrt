@@ -166,6 +166,13 @@ frame_print(const struct frame *frame,
 
 #define MTUDISC_NOT_SUPPORTED_MSG "--mtu-disc is not supported on this OS"
 
+#ifndef IP_MTU_DISCOVER
+#define IP_MTU_DISCOVER    10
+#endif
+#ifndef IP_MTU_DISCOVER
+#define IPV6_MTU_DISCOVER    23
+#endif
+
 void
 set_mtu_discover_type(int sd, int mtu_type, sa_family_t proto_af)
 {
@@ -178,7 +185,7 @@ set_mtu_discover_type(int sd, int mtu_type, sa_family_t proto_af)
                 if (setsockopt
                         (sd, IPPROTO_IP, IP_MTU_DISCOVER, &mtu_type, sizeof(mtu_type)))
                 {
-                    msg(M_ERR, "Error setting IP_MTU_DISCOVER type=%d on TCP/UDP socket",
+                    msg(M_WARN, "Error setting IP_MTU_DISCOVER type=%d on TCP/UDP socket",
                         mtu_type);
                 }
                 break;
@@ -189,14 +196,14 @@ set_mtu_discover_type(int sd, int mtu_type, sa_family_t proto_af)
                 if (setsockopt
                         (sd, IPPROTO_IPV6, IPV6_MTU_DISCOVER, &mtu_type, sizeof(mtu_type)))
                 {
-                    msg(M_ERR, "Error setting IPV6_MTU_DISCOVER type=%d on TCP6/UDP6 socket",
+                    msg(M_WARN, "Error setting IPV6_MTU_DISCOVER type=%d on TCP6/UDP6 socket",
                         mtu_type);
                 }
                 break;
 
 #endif
             default:
-                msg(M_FATAL, MTUDISC_NOT_SUPPORTED_MSG);
+                msg(M_WARN, MTUDISC_NOT_SUPPORTED_MSG);
                 break;
         }
     }
