@@ -1,6 +1,6 @@
-﻿//////////////////////////////////////////////////////////////////////////////////////////////
-//                Korean translation file - DD-WRT V24 SP2        2015-06-06                //
-//              This translation file is based on R27102 English language file              //
+//////////////////////////////////////////////////////////////////////////////////////////////
+//                Korean translation file - DD-WRT V24 SP2        2016-01-17                //
+//              This translation file is based on R28843 English language file              //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // ** COMMON SHARE LABEL **//
@@ -171,8 +171,9 @@ share.styl_dark="다크 스타일 사용";
 share.err="에러";
 share.errs="에러";
 share.meters="미터";
-share.vht80="VHT (80+80 MHz)";
-share.ht40="Wide HT40 (20+20 MHz)";
+share.ht160="VHT160 (80+80 MHz)";
+share.ht80="VHT80 (80 MHz)";
+share.ht40="Wide HT40 (40 MHz)";
 share.ht20="Full HT20 (20 MHz)";
 share.dynamicturbo="Dynamic (20/40 MHz)";
 share.turbo="Turbo (40 MHz)";
@@ -226,7 +227,7 @@ sbutton.savetitle="설정을 저장합니다";
 sbutton.apply="설정 적용";
 sbutton.applytitle="설정을 즉시 적용합니다";
 sbutton.saving="저장됨";
-sbutton.cmd="실행중";
+sbutton.cmd="실행 중";
 sbutton.cancel="변경 취소";
 sbutton.canceltitle="현재 페이지의 변경을 취소합니다";
 sbutton.refres="새로고침";
@@ -406,6 +407,7 @@ bmenu.wimax="WiMAX";
 bmenu.wirelessSecurity="무선 보안";
 bmenu.wirelessAoss="AOSS";
 bmenu.wirelessAossWPS="AOSS / WPS";
+bmenu.wirelessWPS="WPS";
 bmenu.wirelessMac="MAC 필터";
 bmenu.wirelessAdvanced="고급 설정";
 bmenu.wirelessAdvancedwl0="WL0-고급";
@@ -571,6 +573,8 @@ diag.startup="시작 스크립트";
 diag.shutdown="종료 스크립트";
 diag.firewall="방화벽 스크립트";
 diag.custom="커스텀 스크립트";
+diag.running="실행 중";
+diag.stopped="중지됨";
 
 //help container
 hdiag.right2="웹 인터페이스에서 콘솔 명령을 실행하는 것이 가능합니다. 텍스트 영역에 실행하고 싶은 명령을 입력하신 후 <em>" + sbutton.runcmd + "</em>을 클릭해 실행할 수 있습니다.";
@@ -730,7 +734,7 @@ pforward.titl="포트 포워딩";
 pforward.h2="포트 포워딩";
 pforward.legend="포워드 리스트";
 pforward.app="어플리케이션";
-pforward.src="Source Net";
+pforward.src="소스 넷";
 pforward.from="외부 포트";
 pforward.to="내부 포트";
 
@@ -1225,9 +1229,10 @@ management.ipv6_dhcp6s_cust="Dhcp6s 커스텀";
 management.ipv6_dhcp6s_conf="Dhcp6s 설정";
 management.ipv6_tun_end_ipv4="터널 종점 IPv4 주소";
 management.ipv6_tun_client_addr="터널 클라이언트 IPv6 주소";
+management.ipv6_tun_upd_url="터널 업데이트 URL";
 management.jffs_legend="JFFS2 지원";
-management.jffs_srv="JFFS2";
-management.jffs_clean="JFFS2 초기화";
+management.jffs_srv="내장 플래시 저장소";
+management.jffs_clean="내장 플래시 저장소 초기화";
 management.lang_legend="언어 선택";
 management.lang_srv="언어";
 management.lang_bulgarian="Bulgarian 불가리아어";
@@ -1327,7 +1332,27 @@ networking.bond="본드";
 networking.slave="Slave";
 networking.max="Max";
 networking.leasetime="할당 시간";
-
+networking.ipvs="IP 가상 서버";
+networking.create_ipvs="가상 서버 생성";
+networking.ipvs_name="서버 이름";
+networking.ipvs_sourceip="소스 IP";
+networking.ipvs_sourceport="소스 포트";
+networking.ipvs_scheduler="스케줄러";
+networking.wrr="Weighted Round Robin";
+networking.lc="Least-Connection";
+networking.wlc="Weighted Least-Connection";
+networking.fo="Weighted Failover";
+networking.ovf="Weighted Overflow";
+networking.lblc="Locality Least-Connection";
+networking.lblcr="Locality Least-Connection / Replication";
+networking.dh="Destination Hash";
+networking.sh="Source Hash";
+networking.sed="Shortest Expected Delay";
+networking.nq="Never Queue";
+networking.ipvs_targets="가상 서버 타겟";
+networking.ipvs_targetip="타겟 IP";
+networking.ipvs_targetport="타겟 포트";
+networking.ipvs_weight="가중치";
 //help container
 hnetworking.right1="멀티 DHCPD";
 hnetworking.right2="멀티 DHCPD를 사용하기 위해서는, DNSMasq를 DHCP 서버로 설정해야 합니다.";
@@ -1663,7 +1688,7 @@ hstatus_vpn.right3="일반적:<br><i> pkcs12 (+dh on server), 고정, 표준 인
 
 //help page
 hstatus_vpn.page1="<dd>A VPN technology by Microsoft and remote access vendors, it is implemented in multiple OS's both desktop and mobile. Configuring this allows you to access your LAN at home remotely.<ul class=\"wide\"><li>Server IP &ndash; The IP address of your router</li><li>Client IP &ndash; A list or range of IP addresses for remotely connected machines. This range should not overlap with the DHCP range (for example 192.168.0.2,192.168.0.3), a range (192.168.0.1-254 or 192.168.0-255.2) or some combination (192.168.0.2,192.168.0.5-8).</li><li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd main page.</li></ul></dd>";
-hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU &ndash; Maximum Transmission Unit (Default: 1436) </li><li>MRU &ndash; Maximum Receiving Unit (Default: 1436) </li><li>User Name &ndash; Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password &ndash; Enter the password of the for the username </li></ul></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
+hstatus_vpn.page2="<dd>A VPN Client that enables you to connect to VPN servers by Microsoft and remote access vendors. Configuring this allows the router to VPN into a remote network.<ul class=\"wide\"><li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li><li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li><li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li><li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li><li>MTU &ndash; Maximum Transmission Unit (Default: 1436) </li><li>MRU &ndash; Maximum Receiving Unit (Default: 1436) </li><li>NAT &ndash; Enabling this option will make outbound traffic from inside appear to be coming from router IP, instead of client IP. Enabling this can improve security, but can cause issues in some cases, i.e. when VoIP is used. </li><li>User Name &ndash; Enter the username that you will use to connect to the VPN server. If you are connecting to another Linux based PPTP server you just need to enter the username. But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\username). </li><li>Password &ndash; Enter the password of the for the username </li><li>Additional PPTP Options &ndash; If default options are not working for your setup, you can use this field. If defined, they will replace the default internal options. The options above are still used. </li></ul></dd><dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1692,8 +1717,8 @@ service.ses_script="커스텀 스크립트";
 
 //hwmon.webservices
 service.hwmon_legend="하드웨어 모니터링";
-service.hwmon_critemp="임계 상한 온도 (FAN 동작 시작)";
-service.hwmon_hystemp="임계 하한 온도 (FAN 동작 정지)";
+service.hwmon_critemp="높은 온도 (FAN 켜기)";
+service.hwmon_hystemp="표준 온도 (FAN 끄기)";
 
 //rstat.webservices
 service.rstats_legend="대역폭 모니터링";
@@ -1756,6 +1781,7 @@ service.milkfish_localalias="로컬 별명";
 service.milkfish_messaging="SIP 메시징";
 service.milkfish_siptrace="SIP 추적";
 service.milkfish_advdynsip="고급 DynSIP 설정";
+service.milkfish_answers="문제, 질문, 제안이 있나요? - <a href=\"http:\/\/forum.milkfish.org\" target=\"_blank\">Milkfish-dd User Forum</a>에서 답을 찾으세요";
 //service.milkfish_="";//
 service.hmilkfish_right2="Milkfish SIP 라우터를 활성화 또는 비활성화 합니다.";
 service.hmilkfish_right4="다음으로부터 활성화 또는 비활성화 합니다:-발신 SIP 메시지의 WAN IP 주소의 헤더필드 대체. 만일 WAN IP 주소가 변경되었을 시, 피 호출자로부터의 회신을 허락할 경우 이 설정을 활성화 시켜야 합니다.";
@@ -2455,6 +2481,7 @@ wl_basic.label6="감도 범위 (ACK 타이밍)";
 wl_basic.label7="802.11n 전송 모드";
 wl_basic.igmpsnooping="멀티캐스트 트래픽 최적화";
 wl_basic.turboqam="터보QAM (QAM256) 지원";
+wl_basic.nitroqam="니트로QAM (QAM1024) 지원";
 wl_basic.scanlist="스캔리스트";
 wl_basic.duallink="듀얼 링크";
 wl_basic.parent="부모 IP";
@@ -2471,6 +2498,8 @@ wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
 wl_basic.bft="명시적 빔포밍";
 wl_basic.bfr="암시적 빔포밍";
+wl_basic.atf="Airtime Fairness";
+wl_basic.shortgi="짧은 GI";
 wl_basic.greenfield="그린 필드";
 wl_basic.preamble="짧은 프리앰블";
 wl_basic.clientRelaydDefaultGwMode="기본 GW 모드";
@@ -2552,7 +2581,7 @@ wl_basic.upper="상위";
 wl_basic.lower="하위";
 
 //help container
-hwl_basic.right2="만일 G모드의 클라이언트를 제외하고자 할 경우, <em>B-Only</em> 모드를 선택해 주세요. 만일 무선 연결을 사용하지 않으려는 경우, <em>사용안함</em>을 선택해 주세요.<br/><b>알림 :</b> 무선 모드을 변경할 경우, 일부 고급 파라미터가 수정에 민감해질 수 있습니다. (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="주의: 필드와 대응하는 파라미터를 업데이트 하기 위해 값을 변경 하신 뒤 <em>설정 적용</em> 하시는 것을 권장합니다.";
 hwl_basic.right3="감도 범위: ";
 hwl_basic.right4="ACK 타이밍을 조정할 수 있습니다. 0은 브로드컴 펌웨어의 ack timing을 비활성화 시킵니다. Atheros 기반의 펌웨어에서는, 0 은 자동 ACK 타이밍 모드를 활성화 시킵니다.";
 hwl_basic.right6="임의의 시간을 클릭하면 무선 신호를 비활성화 또는 활성화합니다. (<em>green</em>은 무선 연결이 허락된 것을 나타내고, <em>red</em>는 무선 연결이 차단된 것을 나타냅니다.)";
