@@ -315,6 +315,7 @@ struct nvram_param srouter_defaults[] = {
 	 */
 	{"wan_vdsl", "0"},
 	{"dtag_vlan8", "0"},
+	{"dtag_bng", "0"},
 #ifdef HAVE_SKYTRON
 	{"wan_proto", "static"},	/* [static|dhcp|pppoe|disabled] */
 	{"wan_ipaddr", "10.254.254.254"},	/* WAN IP address */
