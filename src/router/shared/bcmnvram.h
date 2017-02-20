@@ -116,7 +116,7 @@ int nvram_default_geti(char *var, int def);
 
 extern char *nvram_nget(const char *fmt, ...);
 
-extern char *nvram_nset(char *value, const char *fmt, ...);
+extern int nvram_nset(char *value, const char *fmt, ...);
 
 extern int nvram_nmatch(char *match, const char *fmt, ...);
 

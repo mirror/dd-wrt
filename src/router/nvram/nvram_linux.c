@@ -342,7 +342,6 @@ int file2nvram(char *filename, char *varname)
 int nvram2file(char *varname, char *filename)
 {
 	FILE *fp;
-	int c, tmp;
 	int i = 0;
 	char *buf;
 
