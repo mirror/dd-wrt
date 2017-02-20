@@ -1547,6 +1547,7 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 			break;
 		}
 	}
+	fprintf(stderr,"vht mcs %d\n",latest);
 	return latest;
 }
 
