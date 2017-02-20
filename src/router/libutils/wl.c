@@ -1157,8 +1157,13 @@ long long wifi_getrate(char *ifname)
 			return -1;
 		long long rate;
 		int sgi = has_shortgi(ifname);
+		int vhtmcs = -1;
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
-		int vhtmcs = mac80211_get_maxvhtmcs(ifname);
+		if (nvram_nmatch("mixed", "%s_net_mode", ifname) ||	//
+		    nvram_nmatch("ac-only", "%s_net_mode", ifname) ||	//
+		    nvram_nmatch("1", "%s_turbo_qam", ifname) ||	//
+		    nvram_nmatch("acn-mixed", "%s_net_mode", ifname))	//
+			vhtmcs = mac80211_get_maxvhtmcs(ifname);
 		int mcs = mac80211_get_maxmcs(ifname);
 		int novht = 0;
 #ifdef HAVE_ATH10K
