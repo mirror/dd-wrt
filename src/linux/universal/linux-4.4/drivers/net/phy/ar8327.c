@@ -756,7 +756,6 @@ ar8327_read_port_status(struct ar8xxx_priv *priv, int port)
 		if (t & AR8327_PORT_STATUS_RXFLOW_AUTO)
 			t |= AR8216_PORT_STATUS_RXFLOW;
 	}
-	printk(KERN_EMERG "update port %d = status %X\n",port, t);
 
 	return t;
 }
