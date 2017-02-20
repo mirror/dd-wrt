@@ -35,6 +35,7 @@ share.advanced="Advanced settings";
 share.vdsl="Advanced VLAN Tagging";
 share.vdslvlan7="T-Home VLAN 7 support";
 share.vdslvlan8="T-Home VLAN 8 support";
+share.vdslbng="T-Home VLAN BNG support";
 share.wan_vlantag="VLAN Tag ID";
 share.wan_dualaccess="Dual-Access mode";
 share.compression="PPP Compression (MPPC)";
