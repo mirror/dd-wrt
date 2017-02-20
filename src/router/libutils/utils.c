@@ -7537,7 +7537,7 @@ static int HTtoVHTindex(int mcs)
 	return mcs + 6;
 }
 
-int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int bw)
+int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned int novht, unsigned int bw)
 {
 	static int vHTTxRate20_800[40] = {
 		6500, 13000, 19500, 26000, 39000, 52000, 58500, 65000, 78000, 78000,	// MCS 0 -8 
@@ -7590,6 +7590,7 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 	};
 
 	int *table = vHTTxRate20_400;
+//      fprintf(stderr, "sgi %d mcs %d vhtmcs %d\n", sgi, mcs, vhtmcs);
 	if (sgi) {
 		switch (bw) {
 		case 20:
@@ -7622,7 +7623,7 @@ int VHTTxRate(unsigned int mcs, unsigned int vhtmcs, unsigned int sgi, unsigned 
 			break;
 		}
 	}
-	if (vhtmcs == -1) {
+	if (vhtmcs == -1 || novht) {
 		vhtmcs = HTtoVHTindex(mcs);
 	}
 

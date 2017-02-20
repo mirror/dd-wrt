@@ -1535,19 +1535,19 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 	for (i = 1; i <= 8; i++) {
 		switch ((tmp >> ((i - 1) * 2)) & 3) {
 		case 0:
-			latest = ((i - 1) * 9) + 7;
+			latest = ((i - 1) * 10) + 7;
 			break;
 		case 1:
-			latest = ((i - 1) * 9) + 8;
+			latest = ((i - 1) * 10) + 8;
 			break;
 		case 2:
-			latest = ((i - 1) * 9) + 9;
+			latest = ((i - 1) * 10) + 9;
 			break;
 		case 3:
 			break;
 		}
 	}
-	fprintf(stderr,"vht mcs %d\n",latest);
+//      fprintf(stderr,"vht mcs %d\n",latest);
 	return latest;
 }
 
