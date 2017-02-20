@@ -1160,6 +1160,12 @@ long long wifi_getrate(char *ifname)
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
 		int vhtmcs = mac80211_get_maxvhtmcs(ifname);
 		int mcs = mac80211_get_maxmcs(ifname);
+		int novht = 0;
+#ifdef HAVE_ATH10K
+		if (is_ath10k(ifname) && has_2ghz(ifname))
+			novht = nvram_nmatch("0", "%s_turbo_qam", ifname);
+#endif
+		sgi = sgi ? nvram_nmatch("1", "%s_shortgi", ifname) : 0;
 		switch (interface->width) {
 		case 2:
 			rate = 54000;
@@ -1174,10 +1180,10 @@ long long wifi_getrate(char *ifname)
 		case 40:
 		case 80:
 		case 160:
-			rate = VHTTxRate(mcs, vhtmcs, sgi, interface->width);
+			rate = VHTTxRate(mcs, vhtmcs, sgi, novht, interface->width);
 			break;
 		case 8080:
-			rate = VHTTxRate(mcs, vhtmcs, sgi, 160);
+			rate = VHTTxRate(mcs, vhtmcs, sgi, novht, 160);
 			break;
 		default:
 			rate = 54000;
