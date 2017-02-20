@@ -797,7 +797,7 @@ static void nat_postrouting(void)
 		// ("-A POSTROUTING -p udp -o %s --sport 5060:5070 -j
 		// MASQUERADE "
 		// "--to-ports 5056-5071\n", wanface);
-		if (nvram_matchi("dtag_vlan8", 1)
+		if (nvram_matchi("dtag_vlan8", 1) && 
 		    && nvram_matchi("wan_vdsl", 1)) {
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
