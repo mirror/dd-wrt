@@ -234,23 +234,23 @@ static void detect_wireless_devices(void)
 			fprintf(stderr, "load ATH9K 802.11n Driver\n");
 			// some are just for future use and not (yet) there
 			
-			insmod("/lib/ath9k/compat.ko");
-			insmod("/lib/ath9k/compat_firmware_class.ko");
-			insmod("/lib/ath9k/cfg80211.ko");
-			insmod("/lib/ath9k/mac80211.ko");
-			insmod("/lib/ath9k/ath.ko");
+			insmod("compat");
+			insmod("compat_firmware_class");
+			insmod("cfg80211");
+			insmod("mac80211");
+			insmod("ath");
 #ifdef HAVE_ATH5K
 			if (loadath5k) {
 				fprintf(stderr, "load ATH5K 802.11 Driver\n");
-				insmod("/lib/ath9k/ath5k.ko");
+				insmod("ath5k");
 			}
 #endif
-			insmod("/lib/ath9k/ath9k_hw.ko");
-			insmod("/lib/ath9k/ath9k_common.ko");
+			insmod("ath9k_hw");
+			insmod("ath9k_common");
 #ifdef HAVE_WZRG450
-			system("/sbin/insmod /lib/ath9k/ath9k.ko blink=1");
+			system("insmod ath9k blink=1");
 #else
-			insmod("/lib/ath9k/ath9k.ko");
+			insmod("ath9k");
 #endif
 			delete_ath9k_devices(NULL);
 		}
@@ -279,8 +279,8 @@ static void detect_wireless_devices(void)
 	fprintf(stderr, "load ATH/QCA 802.11ac Driver\n");
 	insmod("hwmon");
 	insmod("thermal_sys");
-	insmod("/lib/ath9k/ath10k_core.ko");
-	insmod("/lib/ath9k/ath10k_pci.ko");
+	insmod("ath10k_core");
+	insmod("ath10k_pci");
 #endif
 #ifdef HAVE_WIL6210
 //	insmod("/lib/ath9k/wil6210.ko");
