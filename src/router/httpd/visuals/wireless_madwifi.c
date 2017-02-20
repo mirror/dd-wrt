@@ -437,7 +437,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 			rate *= 2;
 	}
 	if (rate > 0) {
-		long ext = (rate % divisor) / 100;
+		long long ext = (rate % divisor) / 100000;
 		if (ext)
 			websWrite(wp, "%lld.%lld %cb/s", rate / divisor, ext, scale);
 		else
