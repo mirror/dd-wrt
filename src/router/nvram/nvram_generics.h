@@ -164,7 +164,7 @@ int nvram_ngeti(const char *fmt, ...)
 	return atoi(nvram_safe_get(varbuf));
 }
 
-char *nvram_nset(char *value, const char *fmt, ...)
+int nvram_nset(char *value, const char *fmt, ...)
 {
 	char varbuf[64];
 	va_list args;
@@ -216,7 +216,6 @@ int nvram_default_match(char *var, char *match, char *def)
 
 char *nvram_default_get(char *var, char *def)
 {
-	char tmp[100];
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
