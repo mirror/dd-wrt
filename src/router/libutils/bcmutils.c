@@ -1989,33 +1989,3 @@ void addAction(char *action)
 	nvram_commit();
 
 }
-
-#ifdef NVRAM_SPACE_256
-#define NVRAMSPACE NVRAM_SPACE_256
-#elif HAVE_NVRAM_128
-#define NVRAMSPACE 0x20000
-#elif HAVE_MVEBU
-#define NVRAMSPACE 0x10000
-#elif HAVE_IPQ806X
-#define NVRAMSPACE 0x10000
-#else
-#define NVRAMSPACE NVRAM_SPACE
-#endif
-
-int nvram_used(int *space)
-{
-	char *name, buf[NVRAMSPACE];
-
-	*space = NVRAMSPACE;
-
-	nvram_getall(buf, sizeof(buf));
-
-	name = buf;
-
-	while (*name) {
-		name += strlen(name) + 1;
-	}
-
-	return (sizeof(struct nvram_header) + (long)name - (long)buf);
-
-}
