@@ -191,13 +191,13 @@ static char bGetHTTxRateByBW_GI_MCS(int nBW, int nGI, int nMCS, int *dRate)
 		nMCS = 25;
 
 	if (nBW == BW_20 && nGI == GI_800)
-		*dRate = VHTTxRate(nMCS, -1, 0,1, 20);
+		*dRate = VHTTxRate(nMCS, -1, 0, 1, 20);
 	else if (nBW == BW_20 && nGI == GI_400)
-		*dRate = VHTTxRate(nMCS, -1, 1,1, 20);
+		*dRate = VHTTxRate(nMCS, -1, 1, 1, 20);
 	else if (nBW == BW_40 && nGI == GI_800)
-		*dRate = VHTTxRate(nMCS, -1, 0,1, 40);
+		*dRate = VHTTxRate(nMCS, -1, 0, 1, 40);
 	else if (nBW == BW_40 && nGI == GI_400)
-		*dRate = VHTTxRate(nMCS, -1, 1,1, 40);
+		*dRate = VHTTxRate(nMCS, -1, 1, 1, 40);
 	else
 		return 0;	//false
 
