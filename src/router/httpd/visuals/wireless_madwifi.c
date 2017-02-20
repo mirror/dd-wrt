@@ -437,7 +437,11 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 			rate *= 2;
 	}
 	if (rate > 0) {
-		websWrite(wp, "%lld.%d %cb/s", rate / divisor, (rate % divisor) / 100 , scale);
+		long ext = (rate % divisor) / 100;
+		if (ext)
+			websWrite(wp, "%lld.%lld %cb/s", rate / divisor, ext, scale);
+		else
+			websWrite(wp, "%lld %cb/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate("share.auto"));
 }
