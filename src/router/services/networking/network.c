@@ -3345,7 +3345,7 @@ void start_wan(int status)
 #endif
 #endif
 #ifdef HAVE_MULTICAST
-	if (!nvram_matchi("dtag_vlan8", 1) || nvram_matchi("wan_vdsl", 0))
+	if ((!nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 1)) || nvram_matchi("wan_vdsl", 0))
 		stop_igmprt();
 #endif
 #ifdef HAVE_UDPXY
@@ -3898,7 +3898,7 @@ void start_wan(int status)
 			if (nvram_matchi("wan_vdsl", 1)) {
 				char *ifn = enable_dtag_vlan(1);
 
-				if (nvram_matchi("dtag_vlan8", 1)) {
+				if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
 					sprintf(vlannic, "%s.0008", ifn);
 					if (!ifexists(vlannic)) {
 						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
@@ -3934,7 +3934,7 @@ void start_wan(int status)
 			if (nvram_matchi("wan_vdsl", 1))	// Deutsche Telekom
 				// VDSL2 Vlan 7 Tag
 			{
-				if (nvram_matchi("dtag_vlan8", 1)) {
+				if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
 					sprintf(vlannic, "%s.0008", pppoe_wan_ifname);
 					if (!ifexists(vlannic)) {
 						eval("vconfig", "set_name_type", "DEV_PLUS_VID");
@@ -4924,7 +4924,7 @@ void start_wan_done(char *wan_ifname)
 #endif
 	cprintf("start igmp proxy\n");
 #ifdef HAVE_MULTICAST
-	if (!nvram_matchi("dtag_vlan8", 1) || nvram_matchi("wan_vdsl", 0))
+	if ((!nvram_matchi("dtag_vlan8", 1) && !nvram_matchi("dtag_bng", 1)) || nvram_matchi("wan_vdsl", 0))
 		stop_igmprt();
 	start_igmprt();
 #endif
