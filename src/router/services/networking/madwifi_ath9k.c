@@ -705,6 +705,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			fprintf(fp, "vht_capab=%s\n", caps);
 			fprintf(fp, "ieee80211ac=1\n");
 			fprintf(fp, "require_vht=1\n");
+			fprintf(fp, "vendor_vht=1\n");
 			free(caps);
 		}
 
