@@ -1144,33 +1144,35 @@ long long wifi_getrate(char *ifname)
 {
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
-		if (nvram_nmatch("b-only", "%s_net_mode", ifname))
+		char physical[32];
+		strncpy(physical,ifname,4);
+		if (nvram_nmatch("b-only", "%s_net_mode", physical))
 			return 11000 * KILO;
-		if (nvram_nmatch("g-only", "%s_net_mode", ifname))
+		if (nvram_nmatch("g-only", "%s_net_mode", physical))
 			return 54000 * KILO;
-		if (nvram_nmatch("a-only", "%s_net_mode", ifname))
+		if (nvram_nmatch("a-only", "%s_net_mode", physical))
 			return 54000 * KILO;
-		if (nvram_nmatch("bg-mixed", "%s_net_mode", ifname))
+		if (nvram_nmatch("bg-mixed", "%s_net_mode", physical))
 			return 54000 * KILO;
 		struct wifi_interface *interface = mac80211_get_interface(ifname);
 		if (!interface)
 			return -1;
 		long long rate;
-		int sgi = has_shortgi(ifname);
+		int sgi = has_shortgi(physical);
 		int vhtmcs = -1;
 		//fprintf(stderr,"sgi %d, width %d\n",sgi, interface->width);
-		if (nvram_nmatch("mixed", "%s_net_mode", ifname) ||	//
-		    nvram_nmatch("ac-only", "%s_net_mode", ifname) ||	//
-		    nvram_nmatch("1", "%s_turbo_qam", ifname) ||	//
-		    nvram_nmatch("acn-mixed", "%s_net_mode", ifname))	//
-			vhtmcs = mac80211_get_maxvhtmcs(ifname);
-		int mcs = mac80211_get_maxmcs(ifname);
+		if (nvram_nmatch("mixed", "%s_net_mode", physical) ||	//
+		    nvram_nmatch("ac-only", "%s_net_mode", physical) ||	//
+		    nvram_nmatch("1", "%s_turbo_qam", physical) ||	//
+		    nvram_nmatch("acn-mixed", "%s_net_mode", physical))	//
+			vhtmcs = mac80211_get_maxvhtmcs(physical);
+		int mcs = mac80211_get_maxmcs(physical);
 		int novht = 0;
 #ifdef HAVE_ATH10K
-		if (is_ath10k(ifname) && has_2ghz(ifname))
-			novht = nvram_nmatch("0", "%s_turbo_qam", ifname);
+		if (is_ath10k(ifname) && has_2ghz(physical))
+			novht = nvram_nmatch("0", "%s_turbo_qam", physical);
 #endif
-		sgi = sgi ? nvram_nmatch("1", "%s_shortgi", ifname) : 0;
+		sgi = sgi ? nvram_nmatch("1", "%s_shortgi", physical) : 0;
 		switch (interface->width) {
 		case 2:
 			rate = 54000;
