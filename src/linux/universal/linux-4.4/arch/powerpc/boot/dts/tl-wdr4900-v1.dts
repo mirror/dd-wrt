@@ -58,8 +58,8 @@
 					label = "kernel";
 				};
 
-				rootfs@290000 {
-					reg = <0x00290000 0x00d40000>;
+				rootfs@280000 {
+					reg = <0x00280000 0x00d40000>;
 					label = "rootfs";
 				};
 
