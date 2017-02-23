@@ -725,7 +725,6 @@ ar8327_init_port(struct ar8xxx_priv *priv, int port)
 	} else {
 		ar8xxx_write(priv, AR8327_REG_PORT_STATUS(port), t);
 	}
-	printk(KERN_EMERG "port %d = status %X\n",port, t);
 	ar8xxx_write(priv, AR8327_REG_PORT_HEADER(port), 0);
 
 	ar8xxx_write(priv, AR8327_REG_PORT_VLAN0(port), 0);
