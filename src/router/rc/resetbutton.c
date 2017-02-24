@@ -760,7 +760,7 @@ static void handle_reset(void)
 		// database
 		eval("rm", "-f", "/etc/nvram/*");	// delete nvram
 		// database
-#elif HAVE_RB600
+#elif defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
 		// database
 		unlink("/tmp/nvram/.lock");	// delete

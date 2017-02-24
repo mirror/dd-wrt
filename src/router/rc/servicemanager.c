@@ -72,7 +72,7 @@ static int _STOPPED(const char *method, const char *name)
 	FILE *fp = fopen(fname, "rb");
 	if (fp) {
 		fclose(fp);
-#if defined(HAVE_X86) || defined(HAVE_RB600)
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		if (!strcmp(method, "stop")) {
 			if (stops_running)
 				stops_running[0]--;
@@ -117,7 +117,7 @@ static int handle_service(const char *method, const char *name)
 			RELEASESTOPPED("start");
 		STOPPED();
 	}
-#if !defined(HAVE_X86) && !defined(HAVE_RB600)
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (nvram_matchi("service_debug", 1))
 		fprintf(stderr, "calling %s_%s\n", method, name);
 #endif
@@ -149,7 +149,7 @@ static int handle_service(const char *method, const char *name)
 		if (stops_running)
 			stops_running[0]--;
 	}
-#if !defined(HAVE_X86) && !defined(HAVE_RB600)
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (nvram_matchi("service_debug", 1)) {
 		if (stops_running)
 			fprintf(stderr, "calling done %s_%s (pending stops %d)\n", method, name, stops_running[0]);
@@ -242,7 +242,7 @@ static int stop_running_main(int argc, char **argv)
 {
 	int dead = 0;
 	while (stops_running != NULL && stop_running() && dead < 100) {
-#if !defined(HAVE_X86) && !defined(HAVE_RB600)
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 		if (nvram_matchi("service_debugrunnings", 1))
 			fprintf(stderr, "%s: dead: %d running %d\n", __func__, dead, stops_running[0]);
 #endif
