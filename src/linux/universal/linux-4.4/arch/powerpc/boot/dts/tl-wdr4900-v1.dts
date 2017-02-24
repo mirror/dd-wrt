@@ -59,12 +59,12 @@
 				};
 
 				rootfs@270000 {
-					reg = <0x00270000 0x00d40000>;
+					reg = <0x00270000 0x00d30000>;
 					label = "rootfs";
 				};
 
-				nvram@fd0000 {
-					reg = <0x00fd0000 0x00010000>;
+				nvram@fc0000 {
+					reg = <0x00fc0000 0x00020000>;
 					label = "nvram";
 				};
 
@@ -81,7 +81,7 @@
 				};
 
 				firmware@60000 {
-					reg = <0x00060000 0x00f70000>;
+					reg = <0x00060000 0x00f60000>;
 					label = "linux";
 				};
 			};
