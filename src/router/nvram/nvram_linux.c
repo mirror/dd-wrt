@@ -36,6 +36,8 @@
 #define NVRAMSPACE 0x20000
 #elif HAVE_MVEBU
 #define NVRAMSPACE 0x10000
+#elif HAVE_WDR4900
+#define NVRAMSPACE 0x20000
 #elif HAVE_ALPINE
 #define NVRAMSPACE 0x20000
 #elif HAVE_IPQ806X
@@ -52,11 +54,13 @@ static char *nvram_buf = NULL;
 
 int nvram_init(void *unused)
 {
-	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0)
+	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0) {
+		fprintf(stderr,"cannot open /dev/nvram\n");
 		goto err;
+	}
 
 	/* Map kernel string buffer into user space */
-	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
+	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED | MAP_FIXED, nvram_fd, 0);
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "nvram_init(): failed\n");
@@ -105,7 +109,7 @@ char *nvram_get(const char *name)
 	unsigned long *off;
 
 	if (nvram_fd < 0) {
-#if defined(HAVE_X86) || defined(HAVE_RB600)
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 		if (in == NULL) {
 			unlock();
@@ -138,9 +142,11 @@ char *nvram_get(const char *name)
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
 
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 	free(off);
 	unlock();
-
 	return value;
 }
 
@@ -150,7 +156,7 @@ int nvram_getall(char *buf, int count)
 	int ret;
 
 	if (nvram_fd < 0) {
-#if defined(HAVE_X86) || defined(HAVE_RB600)
+#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 		if (in == NULL)
 			return 0;
@@ -168,8 +174,14 @@ int nvram_getall(char *buf, int count)
 	/* Get all variables */
 	*buf = '\0';
 
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 	ret = read(nvram_fd, buf, count);
 
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 	//unlock();
@@ -218,7 +230,13 @@ static int _nvram_set(const char *name, const char *value)
 		strcpy(buf, name);
 
 	count = strlen(buf) + 1;
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 	ret = write(nvram_fd, buf, count);
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
@@ -288,7 +306,13 @@ int nvram_commit(void)
 			return ret;
 		}
 	}
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
+#ifndef HAVE_MICRO
+	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
+#endif
 
 	if (ret < 0) {
 		fprintf(stderr, "nvram_commit(): failed\n");
