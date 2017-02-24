@@ -1881,7 +1881,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_MAGICBOX
 	{"remote_management", "1"},	/* Remote Management [1|0] */
 #elif HAVE_RB600
-	{"remote_management", "1"},	/* Remote Management [1|0] */
+	{"remote_management", "0"},	/* Remote Management [1|0] */
 #elif HAVE_XSCALE
 	{"remote_management", "1"},	/* Remote Management [1|0] */
 #elif HAVE_FONERA
@@ -2286,7 +2286,7 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_MAGICBOX
 	{"sshd_enable", "1"},
 #elif HAVE_RB600
-	{"sshd_enable", "1"},
+	{"sshd_enable", "0"},
 #elif HAVE_WHRAG108
 	{"sshd_enable", "1"},
 #elif HAVE_TW6600
@@ -2317,7 +2317,7 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_MAGICBOX
 	{"remote_mgt_ssh", "1"},
 #elif HAVE_RB600
-	{"remote_mgt_ssh", "1"},
+	{"remote_mgt_ssh", "0"},
 #elif HAVE_GGEW
 	{"remote_mgt_ssh", "0"},
 #elif HAVE_FONERA
