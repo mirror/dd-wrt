@@ -35,7 +35,7 @@ CFLAGS	+= -I. -I$(TOP)/shared
 CFLAGS	+= -s $(COPTS) $(MIPS16_OPT) -fPIC
 LDFLAGS += -L.
 ifeq ($(ARCH),powerpc)
-CFLAGS  += -DHAVE_MAGICBOX -fpic
+#CFLAGS  += -DHAVE_MAGICBOX -fpic
 endif
 ifeq ($(ARCHITECTURE),gateworx)
 CFLAGS  += -DHAVE_GATEWORX
