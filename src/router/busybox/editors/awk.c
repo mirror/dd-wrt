@@ -72,12 +72,9 @@
 
 
 #define OPTSTR_AWK \
-	"F:v:f:" \
-	IF_FEATURE_AWK_GNU_EXTENSIONS("e:") \
+	"F:v:*f:*" \
+	IF_FEATURE_AWK_GNU_EXTENSIONS("e:*") \
 	"W:"
-#define OPTCOMPLSTR_AWK \
-	"v::f::" \
-	IF_FEATURE_AWK_GNU_EXTENSIONS("e::")
 enum {
 	OPTBIT_F,	/* define field separator */
 	OPTBIT_v,	/* define variable */
@@ -1517,7 +1514,7 @@ static void chain_group(void)
 			next_token(TC_SEQSTART);
 			n2 = parse_expr(TC_SEMICOL | TC_SEQTERM);
 			if (t_tclass & TC_SEQTERM) {	/* for-in */
-				if ((n2->info & OPCLSMASK) != OC_IN)
+				if (!n2 || (n2->info & OPCLSMASK) != OC_IN)
 					syntax_error(EMSG_UNEXP_TOKEN);
 				n = chain_node(OC_WALKINIT | VV);
 				n->l.n = n2->l.n;
@@ -3209,7 +3206,6 @@ int awk_main(int argc, char **argv)
 			*s1 = '=';
 		}
 	}
-	opt_complementary = OPTCOMPLSTR_AWK;
 	opt = getopt32(argv, OPTSTR_AWK, &opt_F, &list_v, &list_f, IF_FEATURE_AWK_GNU_EXTENSIONS(&list_e,) NULL);
 	argv += optind;
 	argc -= optind;

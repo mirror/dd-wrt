@@ -10,6 +10,15 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config SCRIPT
+//config:	bool "script"
+//config:	default y
+//config:	help
+//config:	  The script makes typescript of terminal session.
+
+//applet:IF_SCRIPT(APPLET(script, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_SCRIPT) += script.o
 
 //usage:#define script_trivial_usage
 //usage:       "[-afq" IF_SCRIPTREPLAY("t") "] [-c PROG] [OUTFILE]"
@@ -23,6 +32,7 @@
 //usage:	)
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 int script_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int script_main(int argc UNUSED_PARAM, char **argv)
@@ -108,11 +118,12 @@ int script_main(int argc UNUSED_PARAM, char **argv)
 
 	if (child_pid) {
 		/* parent */
-#define buf bb_common_bufsiz1
 		struct pollfd pfd[2];
 		int outfd, count, loop;
 		double oldtime = ENABLE_SCRIPTREPLAY ? time(NULL) : 0;
 		smallint fd_count = 2;
+#define buf bb_common_bufsiz1
+		setup_common_bufsiz();
 
 		outfd = xopen(fname, mode);
 		pfd[0].fd = pty;
@@ -134,7 +145,7 @@ int script_main(int argc UNUSED_PARAM, char **argv)
 			}
 			if (pfd[0].revents) {
 				errno = 0;
-				count = safe_read(pty, buf, sizeof(buf));
+				count = safe_read(pty, buf, COMMON_BUFSIZE);
 				if (count <= 0 && errno != EAGAIN) {
 					/* err/eof from pty: exit */
 					goto restore;
@@ -157,7 +168,7 @@ int script_main(int argc UNUSED_PARAM, char **argv)
 				}
 			}
 			if (pfd[1].revents) {
-				count = safe_read(STDIN_FILENO, buf, sizeof(buf));
+				count = safe_read(STDIN_FILENO, buf, COMMON_BUFSIZE);
 				if (count <= 0) {
 					/* err/eof from stdin: don't read stdin anymore */
 					pfd[1].revents = 0;
@@ -176,7 +187,7 @@ int script_main(int argc UNUSED_PARAM, char **argv)
 		 * (util-linux's script doesn't do this. buggy :) */
 		loop = 999;
 		/* pty is in O_NONBLOCK mode, we exit as soon as buffer is empty */
-		while (--loop && (count = safe_read(pty, buf, sizeof(buf))) > 0) {
+		while (--loop && (count = safe_read(pty, buf, COMMON_BUFSIZE)) > 0) {
 			full_write(STDOUT_FILENO, buf, count);
 			full_write(outfd, buf, count);
 		}

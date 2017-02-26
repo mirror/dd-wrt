@@ -125,6 +125,7 @@
 //usage:     "\n	-w	Ignore all whitespace"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #if 0
 # define dbg_error_msg(...) bb_error_msg(__VA_ARGS__)
@@ -748,6 +749,7 @@ static int diffreg(char *file[2])
 		fp[i] = fdopen(fd, "r");
 	}
 
+	setup_common_bufsiz();
 	while (1) {
 		const size_t sz = COMMON_BUFSIZE / 2;
 		char *const buf0 = bb_common_bufsiz1;
@@ -980,11 +982,11 @@ int diff_main(int argc UNUSED_PARAM, char **argv)
 	INIT_G();
 
 	/* exactly 2 params; collect multiple -L <label>; -U N */
-	opt_complementary = "=2:L::U+";
+	opt_complementary = "=2";
 #if ENABLE_FEATURE_DIFF_LONG_OPTIONS
 	applet_long_options = diff_longopts;
 #endif
-	getopt32(argv, "abdiL:NqrsS:tTU:wupBE",
+	getopt32(argv, "abdiL:*NqrsS:tTU:+wupBE",
 			&L_arg, &s_start, &opt_U_context);
 	argv += optind;
 	while (L_arg)

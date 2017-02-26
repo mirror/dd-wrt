@@ -6,6 +6,15 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config CKSUM
+//config:	bool "cksum"
+//config:	default y
+//config:	help
+//config:	  cksum is used to calculate the CRC32 checksum of a file.
+
+//applet:IF_CKSUM(APPLET_NOEXEC(cksum, cksum, BB_DIR_USR_BIN, BB_SUID_DROP, cksum))
+
+//kbuild:lib-$(CONFIG_CKSUM) += cksum.o
 
 //usage:#define cksum_trivial_usage
 //usage:       "FILES..."
@@ -13,6 +22,7 @@
 //usage:       "Calculate the CRC32 checksums of FILES"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 /* This is a NOEXEC applet. Be very careful! */
 
@@ -32,6 +42,7 @@ int cksum_main(int argc UNUSED_PARAM, char **argv)
 	argv++;
 #endif
 
+	setup_common_bufsiz();
 	do {
 		int fd = open_or_warn_stdin(*argv ? *argv : bb_msg_standard_input);
 
@@ -43,7 +54,7 @@ int cksum_main(int argc UNUSED_PARAM, char **argv)
 		length = 0;
 
 #define read_buf bb_common_bufsiz1
-		while ((bytes_read = safe_read(fd, read_buf, sizeof(read_buf))) > 0) {
+		while ((bytes_read = safe_read(fd, read_buf, COMMON_BUFSIZE)) > 0) {
 			length += bytes_read;
 			crc = crc32_block_endian1(crc, read_buf, bytes_read, crc32_table);
 		}

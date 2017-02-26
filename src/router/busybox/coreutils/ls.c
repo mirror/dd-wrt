@@ -4,7 +4,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
 /* [date unknown. Perhaps before year 2000]
  * To achieve a small memory footprint, this version of 'ls' doesn't do any
  * file sorting, and only has the most essential command line switches
@@ -28,6 +27,75 @@
  * [2009-03]
  * ls sorts listing now, and supports almost all options.
  */
+//config:config LS
+//config:	bool "ls"
+//config:	default y
+//config:	help
+//config:	  ls is used to list the contents of directories.
+//config:
+//config:config FEATURE_LS_FILETYPES
+//config:	bool "Enable filetyping options (-p and -F)"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Enable the ls options (-p and -F).
+//config:
+//config:config FEATURE_LS_FOLLOWLINKS
+//config:	bool "Enable symlinks dereferencing (-L)"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Enable the ls option (-L).
+//config:
+//config:config FEATURE_LS_RECURSIVE
+//config:	bool "Enable recursion (-R)"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Enable the ls option (-R).
+//config:
+//config:config FEATURE_LS_SORTFILES
+//config:	bool "Sort the file names"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Allow ls to sort file names alphabetically.
+//config:
+//config:config FEATURE_LS_TIMESTAMPS
+//config:	bool "Show file timestamps"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Allow ls to display timestamps for files.
+//config:
+//config:config FEATURE_LS_USERNAME
+//config:	bool "Show username/groupnames"
+//config:	default y
+//config:	depends on LS
+//config:	help
+//config:	  Allow ls to display username/groupname for files.
+//config:
+//config:config FEATURE_LS_COLOR
+//config:	bool "Allow use of color to identify file types"
+//config:	default y
+//config:	depends on LS && LONG_OPTS
+//config:	help
+//config:	  This enables the --color option to ls.
+//config:
+//config:config FEATURE_LS_COLOR_IS_DEFAULT
+//config:	bool "Produce colored ls output by default"
+//config:	default y
+//config:	depends on FEATURE_LS_COLOR
+//config:	help
+//config:	  Saying yes here will turn coloring on by default,
+//config:	  even if no "--color" option is given to the ls command.
+//config:	  This is not recommended, since the colors are not
+//config:	  configurable, and the output may not be legible on
+//config:	  many output screens.
+
+//applet:IF_LS(APPLET_NOEXEC(ls, ls, BB_DIR_BIN, BB_SUID_DROP, ls))
+
+//kbuild:lib-$(CONFIG_LS) += ls.o
 
 //usage:#define ls_trivial_usage
 //usage:	"[-1AaCxd"
@@ -93,6 +161,7 @@
 //usage:	)
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "unicode.h"
 
 
@@ -365,8 +434,9 @@ struct globals {
 	time_t current_time_t;
 #endif
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
 	/* we have to zero it out because of NOEXEC */ \
 	memset(&G, 0, sizeof(G)); \
 	IF_FEATURE_AUTOWIDTH(G_terminal_width = TERMINAL_WIDTH;) \
@@ -668,7 +738,7 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (column_width < len)
 				column_width = len;
 		}
-		column_width += 1 +
+		column_width += 2 +
 			IF_SELINUX( ((G.all_fmt & LIST_CONTEXT) ? 33 : 0) + )
 				((G.all_fmt & LIST_INO) ? 8 : 0) +
 				((G.all_fmt & LIST_BLOCKS) ? 5 : 0);
@@ -696,8 +766,8 @@ static void display_files(struct dnode **dn, unsigned nfiles)
 			if (i < nfiles) {
 				if (column > 0) {
 					nexttab -= column;
-					printf("%*s ", nexttab, "");
-					column += nexttab + 1;
+					printf("%*s", nexttab, "");
+					column += nexttab;
 				}
 				nexttab = column + column_width;
 				column += display_single(dn[i]);
@@ -1105,7 +1175,7 @@ int ls_main(int argc UNUSED_PARAM, char **argv)
 
 #if ENABLE_FEATURE_AUTOWIDTH
 	/* obtain the terminal width */
-	get_terminal_width_height(STDIN_FILENO, &G_terminal_width, NULL);
+	G_terminal_width = get_terminal_width(STDIN_FILENO);
 	/* go one less... */
 	G_terminal_width--;
 #endif

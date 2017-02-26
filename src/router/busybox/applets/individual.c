@@ -18,7 +18,6 @@ int main(int argc, char **argv)
 }
 
 #ifndef HAVE_NOMESSAGE
-
 void bb_show_usage(void)
 {
 	fputs(APPLET_full_usage "\n", stdout);

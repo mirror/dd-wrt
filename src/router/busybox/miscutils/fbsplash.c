@@ -20,6 +20,31 @@
  *   "NN" (ASCII decimal number) - percentage to show on progress bar.
  *   "exit" (or just close fifo) - well you guessed it.
  */
+//config:config FBSPLASH
+//config:	bool "fbsplash"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Shows splash image and progress bar on framebuffer device.
+//config:	  Can be used during boot phase of an embedded device. ~2kb.
+//config:	  Usage:
+//config:	  - use kernel option 'vga=xxx' or otherwise enable fb device.
+//config:	  - put somewhere fbsplash.cfg file and an image in .ppm format.
+//config:	  - $ setsid fbsplash [params] &
+//config:	    -c: hide cursor
+//config:	    -d /dev/fbN: framebuffer device (if not /dev/fb0)
+//config:	    -s path_to_image_file (can be "-" for stdin)
+//config:	    -i path_to_cfg_file (can be "-" for stdin)
+//config:	    -f path_to_fifo (can be "-" for stdin)
+//config:	  - if you want to run it only in presence of kernel parameter:
+//config:	    grep -q "fbsplash=on" </proc/cmdline && setsid fbsplash [params] &
+//config:	  - commands for fifo:
+//config:	    "NN" (ASCII decimal number) - percentage to show on progress bar
+//config:	    "exit" - well you guessed it
+
+//applet:IF_FBSPLASH(APPLET(fbsplash, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_FBSPLASH) += fbsplash.o
 
 //usage:#define fbsplash_trivial_usage
 //usage:       "-s IMGFILE [-c] [-d DEV] [-i INIFILE] [-f CMD]"
@@ -34,6 +59,7 @@
 //usage:     "\n			commands: 'NN' (% for progress bar) or 'exit'"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include <linux/fb.h>
 
 /* If you want logging messages on /tmp/fbsplash.log... */
@@ -150,7 +176,7 @@ static void fb_open(const char *strfb_device)
 
 	// map the device in memory
 	G.addr = mmap(NULL,
-			G.scr_var.yres * G.scr_fix.line_length,
+			(G.scr_var.yres_virtual ?: G.scr_var.yres) * G.scr_fix.line_length,
 			PROT_WRITE, MAP_SHARED, fbfd, 0);
 	if (G.addr == MAP_FAILED)
 		bb_perror_msg_and_die("mmap");
@@ -373,10 +399,12 @@ static void fb_drawimage(void)
 	 *   in pure binary by 1 or 2 bytes. (we support only 1 byte)
 	 */
 #define concat_buf bb_common_bufsiz1
+	setup_common_bufsiz();
+
 	read_ptr = concat_buf;
 	while (1) {
 		int w, h, max_color_val;
-		int rem = concat_buf + sizeof(concat_buf) - read_ptr;
+		int rem = concat_buf + COMMON_BUFSIZE - read_ptr;
 		if (rem < 2
 		 || fgets(read_ptr, rem, theme_file) == NULL
 		) {

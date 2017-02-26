@@ -7,6 +7,26 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+//config:config UMOUNT
+//config:	bool "umount"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  When you want to remove a mounted filesystem from its current mount
+//config:	  point, for example when you are shutting down the system, the
+//config:	  'umount' utility is the tool to use. If you enabled the 'mount'
+//config:	  utility, you almost certainly also want to enable 'umount'.
+//config:
+//config:config FEATURE_UMOUNT_ALL
+//config:	bool "Support option -a"
+//config:	default y
+//config:	depends on UMOUNT
+//config:	help
+//config:	  Support -a option to unmount all currently mounted filesystems.
+
+//applet:IF_UMOUNT(APPLET(umount, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_UMOUNT) += umount.o
 
 //usage:#define umount_trivial_usage
 //usage:       "[OPTIONS] FILESYSTEM|DIRECTORY"
@@ -30,7 +50,11 @@
 
 #include <mntent.h>
 #include <sys/mount.h>
+#ifndef MNT_DETACH
+# define MNT_DETACH 0x00000002
+#endif
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #if defined(__dietlibc__)
 // TODO: This does not belong here.
@@ -55,14 +79,14 @@ static struct mntent *getmntent_r(FILE* stream, struct mntent* result,
 #define OPTION_STRING           "fldDnra" "vt:i"
 #define OPT_FORCE               (1 << 0) // Same as MNT_FORCE
 #define OPT_LAZY                (1 << 1) // Same as MNT_DETACH
-#ifndef MNT_DETACH
-#define MNT_DETACH	0x00000002	/* Just detach from the tree */
-#endif
 //#define OPT_FREE_LOOP           (1 << 2) // -d is assumed always present
 #define OPT_DONT_FREE_LOOP      (1 << 3)
 #define OPT_NO_MTAB             (1 << 4)
 #define OPT_REMOUNT             (1 << 5)
 #define OPT_ALL                 (ENABLE_FEATURE_UMOUNT_ALL ? (1 << 6) : 0)
+#ifndef MNT_DETACH
+#define MNT_DETACH	0x00000002	/* Just detach from the tree */
+#endif
 
 int umount_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int umount_main(int argc UNUSED_PARAM, char **argv)
@@ -85,11 +109,7 @@ int umount_main(int argc UNUSED_PARAM, char **argv)
 
 	// MNT_FORCE and MNT_DETACH (from linux/fs.h) must match
 	// OPT_FORCE and OPT_LAZY.
-	{
-		typedef char bug[
-			(OPT_FORCE != MNT_FORCE || OPT_LAZY != MNT_DETACH) ? -1 : 1
-		];
-	}
+	BUILD_BUG_ON(OPT_FORCE != MNT_FORCE || OPT_LAZY != MNT_DETACH);
 	doForce = opt & (OPT_FORCE|OPT_LAZY);
 
 	/* Get a list of mount points from mtab.  We read them all in now mostly
@@ -106,7 +126,8 @@ int umount_main(int argc UNUSED_PARAM, char **argv)
 		if (opt & OPT_ALL)
 			bb_error_msg_and_die("can't open '%s'", bb_path_mtab_file);
 	} else {
-		while (getmntent_r(fp, &me, bb_common_bufsiz1, sizeof(bb_common_bufsiz1))) {
+		setup_common_bufsiz();
+		while (getmntent_r(fp, &me, bb_common_bufsiz1, COMMON_BUFSIZE)) {
 			/* Match fstype if passed */
 			if (!match_fstype(&me, fstype))
 				continue;

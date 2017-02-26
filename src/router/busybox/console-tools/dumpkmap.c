@@ -7,7 +7,17 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  */
-/* no options, no getopt */
+//config:config DUMPKMAP
+//config:	bool "dumpkmap"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  This program dumps the kernel's keyboard translation table to
+//config:	  stdout, in binary format. You can then use loadkmap to load it.
+
+//applet:IF_DUMPKMAP(APPLET(dumpkmap, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_DUMPKMAP) += dumpkmap.o
 
 //usage:#define dumpkmap_trivial_usage
 //usage:       "> keymap"
@@ -18,6 +28,7 @@
 //usage:       "$ dumpkmap > keymap\n"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 /* From <linux/kd.h> */
 struct kbentry {
@@ -37,6 +48,7 @@ int dumpkmap_main(int argc UNUSED_PARAM, char **argv)
 	struct kbentry ke;
 	int i, j, fd;
 #define flags bb_common_bufsiz1
+	setup_common_bufsiz();
 
 	/* When user accidentally runs "dumpkmap FILE"
 	 * instead of "dumpkmap >FILE", we'd dump binary stuff to tty.

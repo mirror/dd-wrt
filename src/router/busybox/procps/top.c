@@ -49,7 +49,6 @@
  * cp stat meminfo loadavg proc
  * chroot . ./top -bn1 >top1.out
  */
-
 //config:config TOP
 //config:	bool "top"
 //config:	default y
@@ -104,7 +103,12 @@
 //config:	help
 //config:	  Enable 's' in top (gives lots of memory info).
 
+//applet:IF_TOP(APPLET(top, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_TOP) += top.o
+
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 
 typedef struct top_status_t {
@@ -183,11 +187,7 @@ struct globals {
 	char line_buf[80];
 }; //FIX_ALIASING; - large code growth
 enum { LINE_BUF_SIZE = COMMON_BUFSIZE - offsetof(struct globals, line_buf) };
-#define G (*(struct globals*)&bb_common_bufsiz1)
-struct BUG_bad_size {
-	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
-	char BUG_line_buf_too_small[LINE_BUF_SIZE > 80 ? 1 : -1];
-};
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define top              (G.top               )
 #define ntop             (G.ntop              )
 #define sort_field       (G.sort_field        )
@@ -204,7 +204,11 @@ struct BUG_bad_size {
 #define num_cpus         (G.num_cpus          )
 #define total_pcpu       (G.total_pcpu        )
 #define line_buf         (G.line_buf          )
-#define INIT_G() do { } while (0)
+#define INIT_G() do { \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+	BUILD_BUG_ON(LINE_BUF_SIZE <= 80); \
+} while (0)
 
 enum {
 	OPT_d = (1 << 0),
@@ -264,9 +268,9 @@ static int mult_lvl_cmp(void* a, void* b)
 static NOINLINE int read_cpu_jiffy(FILE *fp, jiffy_counts_t *p_jif)
 {
 #if !ENABLE_FEATURE_TOP_SMP_CPU
-	static const char fmt[] = "cpu %llu %llu %llu %llu %llu %llu %llu %llu";
+	static const char fmt[] ALIGN1 = "cpu %llu %llu %llu %llu %llu %llu %llu %llu";
 #else
-	static const char fmt[] = "cp%*s %llu %llu %llu %llu %llu %llu %llu %llu";
+	static const char fmt[] ALIGN1 = "cp%*s %llu %llu %llu %llu %llu %llu %llu %llu";
 #endif
 	int ret;
 
@@ -518,7 +522,7 @@ enum {
 
 static void parse_meminfo(unsigned long meminfo[MI_MAX])
 {
-	static const char fields[] =
+	static const char fields[] ALIGN1 =
 		"MemTotal\0"
 		"MemFree\0"
 		"MemShared\0"
@@ -727,12 +731,6 @@ static void reset_term(void)
 {
 	if (!OPT_BATCH_MODE)
 		tcsetattr_stdin_TCSANOW(&initial_settings);
-	if (ENABLE_FEATURE_CLEAN_UP) {
-		clearmems();
-# if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
-		free(prev_hist);
-# endif
-	}
 }
 
 static void sig_catcher(int sig)
@@ -830,10 +828,17 @@ static NOINLINE void display_topmem_process_list(int lines_rem, int scr_width)
 #define HDR_STR "  PID   VSZ VSZRW   RSS (SHR) DIRTY (SHR) STACK"
 #define MIN_WIDTH sizeof(HDR_STR)
 	const topmem_status_t *s = topmem + G_scroll_ofs;
+	char *cp, ch;
 
 	display_topmem_header(scr_width, &lines_rem);
+
 	strcpy(line_buf, HDR_STR " COMMAND");
-	line_buf[11 + sort_field * 6] = "^_"[inverted];
+	/* Mark the ^FIELD^ we sort by */
+	cp = &line_buf[5 + sort_field * 6];
+	ch = "^_"[inverted];
+	cp[6] = ch;
+	do *cp++ = ch; while (*cp == ' ');
+
 	printf(OPT_BATCH_MODE ? "%.*s" : "\e[7m%.*s\e[0m", scr_width, line_buf);
 	lines_rem--;
 
@@ -1037,7 +1042,9 @@ static unsigned handle_input(unsigned scan_mask, unsigned interval)
 //usage:       "Provide a view of process activity in real time."
 //usage:   "\n""Read the status of all processes from /proc each SECONDS"
 //usage:   "\n""and display a screenful of them."
-//usage:   "\n""Keys:"
+//usage:   "\n"
+//usage:	IF_FEATURE_USE_TERMIOS(
+//usage:       "Keys:"
 //usage:   "\n""	N/M"
 //usage:                IF_FEATURE_TOP_CPU_USAGE_PERCENTAGE("/P")
 //usage:                IF_FEATURE_TOP_CPU_USAGE_PERCENTAGE("/T")
@@ -1057,6 +1064,7 @@ static unsigned handle_input(unsigned scan_mask, unsigned interval)
 //usage:   "\n""	Q,^C: exit"
 //usage:   "\n"
 //usage:   "\n""Options:"
+//usage:	)
 //usage:   "\n""	-b	Batch mode"
 //usage:   "\n""	-n N	Exit after N iterations"
 //usage:   "\n""	-d N	Delay between updates"
@@ -1173,10 +1181,8 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 		ntop = 0;
 		while ((p = procps_scan(p, scan_mask)) != NULL) {
 			int n;
-#if ENABLE_FEATURE_TOPMEM
-			if (scan_mask != TOPMEM_MASK)
-#endif
-			{
+
+			IF_FEATURE_TOPMEM(if (scan_mask != TOPMEM_MASK)) {
 				n = ntop;
 				top = xrealloc_vector(top, 6, ntop++);
 				top[n].pid = p->pid;
@@ -1216,7 +1222,7 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 			break;
 		}
 
-		if (scan_mask != TOPMEM_MASK) {
+		IF_FEATURE_TOPMEM(if (scan_mask != TOPMEM_MASK)) {
 #if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
 			if (!prev_hist_count) {
 				do_stats();
@@ -1230,17 +1236,13 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 #else
 			qsort(top, ntop, sizeof(top_status_t), (void*)(sort_function[0]));
 #endif
+			display_process_list(G.lines, col);
 		}
 #if ENABLE_FEATURE_TOPMEM
 		else { /* TOPMEM */
 			qsort(topmem, ntop, sizeof(topmem_status_t), (void*)topmem_sort);
-		}
-#endif
-		if (scan_mask != TOPMEM_MASK)
-			display_process_list(G.lines, col);
-#if ENABLE_FEATURE_TOPMEM
-		else
 			display_topmem_process_list(G.lines, col);
+		}
 #endif
 		clearmems();
 		if (iterations >= 0 && !--iterations)
@@ -1249,12 +1251,18 @@ int top_main(int argc UNUSED_PARAM, char **argv)
 		sleep(interval);
 #else
 		scan_mask = handle_input(scan_mask, interval);
-#endif /* FEATURE_USE_TERMIOS */
+#endif
 	} /* end of "while (not Q)" */
 
 	bb_putchar('\n');
 #if ENABLE_FEATURE_USE_TERMIOS
 	reset_term();
 #endif
+	if (ENABLE_FEATURE_CLEAN_UP) {
+		clearmems();
+#if ENABLE_FEATURE_TOP_CPU_USAGE_PERCENTAGE
+		free(prev_hist);
+#endif
+	}
 	return EXIT_SUCCESS;
 }

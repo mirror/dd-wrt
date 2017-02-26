@@ -20,6 +20,35 @@
  * by Fernando Silveira <swrh@gmx.net>
  *
  */
+//config:config TELNET
+//config:	bool "telnet"
+//config:	default y
+//config:	help
+//config:	  Telnet is an interface to the TELNET protocol, but is also commonly
+//config:	  used to test other simple protocols.
+//config:
+//config:config FEATURE_TELNET_TTYPE
+//config:	bool "Pass TERM type to remote host"
+//config:	default y
+//config:	depends on TELNET
+//config:	help
+//config:	  Setting this option will forward the TERM environment variable to the
+//config:	  remote host you are connecting to. This is useful to make sure that
+//config:	  things like ANSI colors and other control sequences behave.
+//config:
+//config:config FEATURE_TELNET_AUTOLOGIN
+//config:	bool "Pass USER type to remote host"
+//config:	default y
+//config:	depends on TELNET
+//config:	help
+//config:	  Setting this option will forward the USER environment variable to the
+//config:	  remote host you are connecting to. This is useful when you need to
+//config:	  log into a machine without telling the username (autologin). This
+//config:	  option enables `-a' and `-l USER' arguments.
+
+//applet:IF_TELNET(APPLET(telnet, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_TELNET) += telnet.o
 
 //usage:#if ENABLE_FEATURE_TELNET_AUTOLOGIN
 //usage:#define telnet_trivial_usage
@@ -39,6 +68,7 @@
 #include <arpa/telnet.h>
 #include <netinet/in.h>
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #ifdef __BIONIC__
 /* should be in arpa/telnet.h */
@@ -108,11 +138,10 @@ struct globals {
 	struct termios termios_def;
 	struct termios termios_raw;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
-	struct G_sizecheck { \
-		char G_sizecheck[sizeof(G) > COMMON_BUFSIZE ? -1 : 1]; \
-	}; \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
 } while (0)
 
 
@@ -311,15 +340,16 @@ static void put_iac(int c)
 	G.iacbuf[G.iaclen++] = c;
 }
 
-static void put_iac2(byte wwdd, byte c)
+static void put_iac2_merged(unsigned wwdd_and_c)
 {
 	if (G.iaclen + 3 > IACBUFSIZE)
 		iac_flush();
 
 	put_iac(IAC);
-	put_iac(wwdd);
-	put_iac(c);
+	put_iac(wwdd_and_c >> 8);
+	put_iac(wwdd_and_c & 0xff);
 }
+#define put_iac2(wwdd,c) put_iac2_merged(((wwdd)<<8) + (c))
 
 #if ENABLE_FEATURE_TELNET_TTYPE
 static void put_iac_subopt(byte c, char *str)

@@ -28,50 +28,89 @@
  *   with wrong source IP...
  * - don't know how to retrieve ORIGDST for udp.
  */
+//config:config TCPSVD
+//config:	bool "tcpsvd"
+//config:	default y
+//config:	help
+//config:	  tcpsvd listens on a TCP port and runs a program for each new
+//config:	  connection.
+//config:
+//config:config UDPSVD
+//config:	bool "udpsvd"
+//config:	default y
+//config:	help
+//config:	  udpsvd listens on an UDP port and runs a program for each new
+//config:	  connection.
+
+//applet:IF_TCPSVD(APPLET_ODDNAME(tcpsvd, tcpudpsvd, BB_DIR_USR_BIN, BB_SUID_DROP, tcpsvd))
+//applet:IF_UDPSVD(APPLET_ODDNAME(udpsvd, tcpudpsvd, BB_DIR_USR_BIN, BB_SUID_DROP, udpsvd))
+
+//kbuild:lib-$(CONFIG_TCPSVD) += tcpudp.o tcpudp_perhost.o
+//kbuild:lib-$(CONFIG_UDPSVD) += tcpudp.o tcpudp_perhost.o
 
 //usage:#define tcpsvd_trivial_usage
 //usage:       "[-hEv] [-c N] [-C N[:MSG]] [-b N] [-u USER] [-l NAME] IP PORT PROG"
 /* with not-implemented options: */
 /* //usage:    "[-hpEvv] [-c N] [-C N[:MSG]] [-b N] [-u USER] [-l NAME] [-i DIR|-x CDB] [-t SEC] IP PORT PROG" */
 //usage:#define tcpsvd_full_usage "\n\n"
-//usage:       "Create TCP socket, bind to IP:PORT and listen\n"
-//usage:       "for incoming connection. Run PROG for each connection.\n"
-//usage:     "\n	IP		IP to listen on, 0 = all"
-//usage:     "\n	PORT		Port to listen on"
+//usage:       "Create TCP socket, bind to IP:PORT and listen for incoming connections.\n"
+//usage:       "Run PROG for each connection.\n"
+//usage:     "\n	IP PORT		IP:PORT to listen on"
 //usage:     "\n	PROG ARGS	Program to run"
-//usage:     "\n	-l NAME		Local hostname (else looks up local hostname in DNS)"
 //usage:     "\n	-u USER[:GRP]	Change to user/group after bind"
-//usage:     "\n	-c N		Handle up to N connections simultaneously"
-//usage:     "\n	-b N		Allow a backlog of approximately N TCP SYNs"
-//usage:     "\n	-C N[:MSG]	Allow only up to N connections from the same IP"
-//usage:     "\n			New connections from this IP address are closed"
-//usage:     "\n			immediately. MSG is written to the peer before close"
+//usage:     "\n	-c N		Up to N connections simultaneously (default 30)"
+//usage:     "\n	-b N		Allow backlog of approximately N TCP SYNs (default 20)"
+//usage:     "\n	-C N[:MSG]	Allow only up to N connections from the same IP:"
+//usage:     "\n			new connections from this IP address are closed"
+//usage:     "\n			immediately, MSG is written to the peer before close"
+//usage:     "\n	-E		Don't set up environment"
 //usage:     "\n	-h		Look up peer's hostname"
-//usage:     "\n	-E		Don't set up environment variables"
+//usage:     "\n	-l NAME		Local hostname (else look up local hostname in DNS)"
 //usage:     "\n	-v		Verbose"
+//usage:     "\n"
+//usage:     "\nEnvironment if no -E:"
+//usage:     "\nPROTO='TCP'"
+//usage:     "\nTCPREMOTEADDR='ip:port'" IF_FEATURE_IPV6(" ('[ip]:port' for IPv6)")
+//usage:     "\nTCPLOCALADDR='ip:port'"
+//usage:     "\nTCPORIGDSTADDR='ip:port' of destination before firewall"
+//usage:     "\n	Useful for REDIRECTed-to-local connections:"
+//usage:     "\n	iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080"
+//usage:     "\nTCPCONCURRENCY=num_of_connects_from_this_ip"
+//usage:     "\nIf -h:"
+//usage:     "\nTCPLOCALHOST='hostname' (-l NAME is used if specified)"
+//usage:     "\nTCPREMOTEHOST='hostname'"
+
 //usage:
 //usage:#define udpsvd_trivial_usage
 //usage:       "[-hEv] [-c N] [-u USER] [-l NAME] IP PORT PROG"
 //usage:#define udpsvd_full_usage "\n\n"
-//usage:       "Create UDP socket, bind to IP:PORT and wait\n"
-//usage:       "for incoming packets. Run PROG for each packet,\n"
-//usage:       "redirecting all further packets with same peer ip:port to it.\n"
-//usage:     "\n	IP		IP to listen on, 0 = all"
-//usage:     "\n	PORT		Port to listen on"
+//usage:       "Create UDP socket, bind to IP:PORT and wait for incoming packets.\n"
+//usage:       "Run PROG for each packet, redirecting all further packets with same\n"
+//usage:       "peer ip:port to it.\n"
+//usage:     "\n	IP PORT		IP:PORT to listen on"
 //usage:     "\n	PROG ARGS	Program to run"
-//usage:     "\n	-l NAME		Local hostname (else looks up local hostname in DNS)"
 //usage:     "\n	-u USER[:GRP]	Change to user/group after bind"
-//usage:     "\n	-c N		Handle up to N connections simultaneously"
+//usage:     "\n	-c N		Up to N connections simultaneously (default 30)"
+//usage:     "\n	-E		Don't set up environment"
 //usage:     "\n	-h		Look up peer's hostname"
-//usage:     "\n	-E		Don't set up environment variables"
+//usage:     "\n	-l NAME		Local hostname (else look up local hostname in DNS)"
 //usage:     "\n	-v		Verbose"
+//usage:     "\n"
+//usage:     "\nEnvironment if no -E:"
+//usage:     "\nPROTO='UDP'"
+//usage:     "\nUDPREMOTEADDR='ip:port'" IF_FEATURE_IPV6(" ('[ip]:port' for IPv6)")
+//usage:     "\nUDPLOCALADDR='ip:port'"
+//usage:     "\nIf -h:"
+//usage:     "\nUDPLOCALHOST='hostname' (-l NAME is used if specified)"
+//usage:     "\nUDPREMOTEHOST='hostname'"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
-/* Wants <limits.h> etc, thus included after libbb.h: */
 #ifdef __linux__
-#include <linux/types.h> /* for __be32 etc */
-#include <linux/netfilter_ipv4.h>
+/* from linux/netfilter_ipv4.h: */
+# undef  SO_ORIGINAL_DST
+# define SO_ORIGINAL_DST 80
 #endif
 
 // TODO: move into this file:
@@ -91,7 +130,7 @@ struct globals {
 	char **env_cur;
 	char *env_var[1]; /* actually bigger */
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define verbose      (G.verbose     )
 #define max_per_host (G.max_per_host)
 #define cur_per_host (G.cur_per_host)
@@ -100,6 +139,7 @@ struct globals {
 #define env_cur      (G.env_cur     )
 #define env_var      (G.env_var     )
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
 	cmax = 30; \
 	env_cur = &env_var[0]; \
 } while (0)
@@ -230,15 +270,15 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
 	tcp = (applet_name[0] == 't');
 
 	/* 3+ args, -i at most once, -p implies -h, -v is counter, -b N, -c N */
-	opt_complementary = "-3:i--i:ph:vv:b+:c+";
+	opt_complementary = "-3:i--i:ph:vv";
 #ifdef SSLSVD
-	opts = getopt32(argv, "+c:C:i:x:u:l:Eb:hpt:vU:/:Z:K:",
+	opts = getopt32(argv, "+c:+C:i:x:u:l:Eb:+hpt:vU:/:Z:K:",
 		&cmax, &str_C, &instructs, &instructs, &user, &preset_local_hostname,
 		&backlog, &str_t, &ssluser, &root, &cert, &key, &verbose
 	);
 #else
 	/* "+": stop on first non-option */
-	opts = getopt32(argv, "+c:C:i:x:u:l:Eb:hpt:v",
+	opts = getopt32(argv, "+c:+C:i:x:u:l:Eb:hpt:v",
 		&cmax, &str_C, &instructs, &instructs, &user, &preset_local_hostname,
 		&backlog, &str_t, &verbose
 	);
@@ -347,16 +387,20 @@ int tcpudpsvd_main(int argc UNUSED_PARAM, char **argv)
  again:
 	hccp = NULL;
 
+ again1:
+	close(0);
+	/* It's important to close(0) _before_ wait loop:
+	 * fd#0 can be a shared connection fd.
+	 * If kept open by us, peer can't detect PROG closing it.
+	 */
 	while (cnum >= cmax)
 		wait_for_any_sig(); /* expecting SIGCHLD */
 
-	/* Accept a connection to fd #0 */
- again1:
-	close(0);
  again2:
 	sig_unblock(SIGCHLD);
 	local.len = remote.len = sa_len;
 	if (tcp) {
+		/* Accept a connection to fd #0 */
 		conn = accept(sock, &remote.u.sa, &remote.len);
 	} else {
 		/* In case recv_from_to won't be able to recover local addr.

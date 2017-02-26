@@ -60,13 +60,21 @@ static unsigned long long getOctal(char *str, int len)
 }
 #define GET_OCTAL(a) getOctal((a), sizeof(a))
 
+#define TAR_EXTD (ENABLE_FEATURE_TAR_GNU_EXTENSIONS || ENABLE_FEATURE_TAR_SELINUX)
+#if !TAR_EXTD
+#define process_pax_hdr(archive_handle, sz, global) \
+	process_pax_hdr(archive_handle, sz)
+#endif
 /* "global" is 0 or 1 */
 static void process_pax_hdr(archive_handle_t *archive_handle, unsigned sz, int global)
 {
+#if !TAR_EXTD
+	unsigned blk_sz = (sz + 511) & (~511);
+	seek_by_read(archive_handle->src_fd, blk_sz);
+#else
+	unsigned blk_sz = (sz + 511) & (~511);
 	char *buf, *p;
-	unsigned blk_sz;
 
-	blk_sz = (sz + 511) & (~511);
 	p = buf = xmalloc(blk_sz + 1);
 	xread(archive_handle->src_fd, buf, blk_sz);
 	archive_handle->offset += blk_sz;
@@ -104,30 +112,39 @@ static void process_pax_hdr(archive_handle_t *archive_handle, unsigned sz, int g
 		p[-1] = '\0';
 		value = end + 1;
 
-#if ENABLE_FEATURE_TAR_GNU_EXTENSIONS
-		if (!global && is_prefixed_with(value, "path=")) {
-			value += sizeof("path=") - 1;
-			free(archive_handle->tar__longname);
-			archive_handle->tar__longname = xstrdup(value);
-			continue;
+# if ENABLE_FEATURE_TAR_GNU_EXTENSIONS
+		if (!global) {
+			if (is_prefixed_with(value, "path=")) {
+				value += sizeof("path=") - 1;
+				free(archive_handle->tar__longname);
+				archive_handle->tar__longname = xstrdup(value);
+				continue;
+			}
+			if (is_prefixed_with(value, "linkpath=")) {
+				value += sizeof("linkpath=") - 1;
+				free(archive_handle->tar__linkname);
+				archive_handle->tar__linkname = xstrdup(value);
+				continue;
+			}
 		}
-#endif
+# endif
 
-#if ENABLE_FEATURE_TAR_SELINUX
+# if ENABLE_FEATURE_TAR_SELINUX
 		/* Scan for SELinux contexts, via "RHT.security.selinux" keyword.
 		 * This is what Red Hat's patched version of tar uses.
 		 */
-# define SELINUX_CONTEXT_KEYWORD "RHT.security.selinux"
+#  define SELINUX_CONTEXT_KEYWORD "RHT.security.selinux"
 		if (is_prefixed_with(value, SELINUX_CONTEXT_KEYWORD"=")) {
 			value += sizeof(SELINUX_CONTEXT_KEYWORD"=") - 1;
 			free(archive_handle->tar__sctx[global]);
 			archive_handle->tar__sctx[global] = xstrdup(value);
 			continue;
 		}
-#endif
+# endif
 	}
 
 	free(buf);
+#endif
 }
 
 char FAST_FUNC get_header_tar(archive_handle_t *archive_handle)
@@ -170,7 +187,13 @@ char FAST_FUNC get_header_tar(archive_handle_t *archive_handle)
 	 * the message and we don't check whether we indeed
 	 * saw zero block directly before this. */
 	if (i == 0) {
-		bb_error_msg("short read");
+		/* GNU tar 1.29 will be silent if tar archive ends abruptly
+		 * (if there are no zero blocks at all, and last read returns zero,
+		 * not short read 0 < len < 512). Complain only if
+		 * the very first read fails. Grrr.
+		 */
+		if (archive_handle->offset == 0)
+			bb_error_msg("short read");
 		/* this merely signals end of archive, not exit(1): */
 		return EXIT_FAILURE;
 	}
@@ -186,7 +209,11 @@ char FAST_FUNC get_header_tar(archive_handle_t *archive_handle)
 	archive_handle->offset += i;
 
 	/* If there is no filename its an empty header */
-	if (tar.name[0] == 0 && tar.prefix[0] == 0) {
+	if (tar.name[0] == 0 && tar.prefix[0] == 0
+	/* Have seen a tar archive with pax 'x' header supplying UTF8 filename,
+	 * with actual file having all name fields NUL-filled. Check this: */
+	 && !p_longname
+	) {
 		if (archive_handle->tar__end) {
 			/* Second consecutive empty header - end of archive.
 			 * Read until the end to empty the pipe from gz or bz2
@@ -418,6 +445,7 @@ char FAST_FUNC get_header_tar(archive_handle_t *archive_handle)
 
 	/* Everything up to and including last ".." component is stripped */
 	overlapping_strcpy(file_header->name, strip_unsafe_prefix(file_header->name));
+//TODO: do the same for file_header->link_target?
 
 	/* Strip trailing '/' in directories */
 	/* Must be done after mode is set as '/' is used to check if it's a directory */

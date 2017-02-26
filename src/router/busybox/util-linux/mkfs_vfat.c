@@ -7,6 +7,25 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+//config:config MKDOSFS
+//config:	bool "mkdosfs"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Utility to create FAT32 filesystems.
+//config:
+//config:config MKFS_VFAT
+//config:	bool "mkfs.vfat"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Alias to "mkdosfs".
+
+//applet:IF_MKDOSFS(APPLET_ODDNAME(mkdosfs, mkfs_vfat, BB_DIR_SBIN, BB_SUID_DROP, mkfs_vfat))
+//applet:IF_MKFS_VFAT(APPLET_ODDNAME(mkfs.vfat, mkfs_vfat, BB_DIR_SBIN, BB_SUID_DROP, mkfs_vfat))
+
+//kbuild:lib-$(CONFIG_MKDOSFS) += mkfs_vfat.o
+//kbuild:lib-$(CONFIG_MKFS_VFAT) += mkfs_vfat.o
 
 //usage:#define mkfs_vfat_trivial_usage
 //usage:       "[-v] [-n LABEL] BLOCKDEV [KBYTES]"
@@ -578,7 +597,7 @@ int mkfs_vfat_main(int argc UNUSED_PARAM, char **argv)
 		start_data_sector = (reserved_sect + NUM_FATS * sect_per_fat) * (bytes_per_sect / SECTOR_SIZE);
 		start_data_block = (start_data_sector + SECTORS_PER_BLOCK - 1) / SECTORS_PER_BLOCK;
 
-		bb_info_msg("searching for bad blocks ");
+		bb_error_msg("searching for bad blocks");
 		currently_testing = 0;
 		try = TEST_BUFFER_BLOCKS;
 		while (currently_testing < volume_size_blocks) {
@@ -616,7 +635,7 @@ int mkfs_vfat_main(int argc UNUSED_PARAM, char **argv)
 		}
 		free(blkbuf);
 		if (badblocks)
-			bb_info_msg("%d bad block(s)", badblocks);
+			bb_error_msg("%d bad block(s)", badblocks);
 	}
 #endif
 

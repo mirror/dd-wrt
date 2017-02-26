@@ -6,8 +6,18 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+//config:config FREE
+//config:	bool "free"
+//config:	default y
+//config:	select PLATFORM_LINUX #sysinfo()
+//config:	help
+//config:	  free displays the total amount of free and used physical and swap
+//config:	  memory in the system, as well as the buffers used by the kernel.
+//config:	  The shared memory column should be ignored; it is obsolete.
 
-/* getopt not needed */
+//applet:IF_FREE(APPLET(free, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_FREE) += free.o
 
 //usage:#define free_trivial_usage
 //usage:       "" IF_DESKTOP("[-b/k/m/g]")
@@ -22,6 +32,7 @@
 //usage:       "Total:       386144       257128       129016\n"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #ifdef __linux__
 # include <sys/sysinfo.h>
 #endif
@@ -35,8 +46,8 @@ struct globals {
 # define G_unit_steps 10
 #endif
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() do { } while (0)
+#define G (*(struct globals*)bb_common_bufsiz1)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 
 static unsigned long long scale(unsigned long d)

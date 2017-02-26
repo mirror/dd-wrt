@@ -6,11 +6,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
-/* BB_AUDIT SUSv3 compliant (need fancy for -c) */
-/* BB_AUDIT GNU compatible -c, -q, and -v options in 'fancy' configuration. */
-/* http://www.opengroup.org/onlinepubs/007904975/utilities/tail.html */
-
 /* Mar 16, 2003      Manuel Novoa III   (mjn3@codepoet.org)
  *
  * Pretty much rewritten to fix numerous bugs and reduce realloc() calls.
@@ -23,8 +18,33 @@
  * 6) no check for lseek error
  * 7) lseek attempted when count==0 even if arg was +0 (from top)
  */
+//config:config TAIL
+//config:	bool "tail"
+//config:	default y
+//config:	help
+//config:	  tail is used to print the last specified number of lines
+//config:	  from files.
+//config:
+//config:config FEATURE_FANCY_TAIL
+//config:	bool "Enable extra tail options (-q, -s, -v, and -F)"
+//config:	default y
+//config:	depends on TAIL
+//config:	help
+//config:	  The options (-q, -s, -v and -F) are provided by GNU tail, but
+//config:	  are not specific in the SUSv3 standard.
+//config:
+//config:	    -q      Never output headers giving file names
+//config:	    -s SEC  Wait SEC seconds between reads with -f
+//config:	    -v      Always output headers giving file names
+//config:	    -F      Same as -f, but keep retrying
+
+//applet:IF_TAIL(APPLET(tail, BB_DIR_USR_BIN, BB_SUID_DROP))
 
 //kbuild:lib-$(CONFIG_TAIL) += tail.o
+
+/* BB_AUDIT SUSv3 compliant (need fancy for -c) */
+/* BB_AUDIT GNU compatible -c, -q, and -v options in 'fancy' configuration. */
+/* http://www.opengroup.org/onlinepubs/007904975/utilities/tail.html */
 
 //usage:#define tail_trivial_usage
 //usage:       "[OPTIONS] [FILE]..."
@@ -49,13 +69,14 @@
 //usage:       "nameserver 10.0.0.1\n"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 struct globals {
 	bool from_top;
 	bool exitcode;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() do { } while (0)
+#define G (*(struct globals*)bb_common_bufsiz1)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 static void tail_xprint_header(const char *fmt, const char *filename)
 {
@@ -120,8 +141,8 @@ int tail_main(int argc, char **argv)
 #endif
 
 	/* -s NUM, -F imlies -f */
-	IF_FEATURE_FANCY_TAIL(opt_complementary = "s+:Ff";)
-	opt = getopt32(argv, "fc:n:" IF_FEATURE_FANCY_TAIL("qs:vF"),
+	IF_FEATURE_FANCY_TAIL(opt_complementary = "Ff";)
+	opt = getopt32(argv, "fc:n:" IF_FEATURE_FANCY_TAIL("qs:+vF"),
 			&str_c, &str_n IF_FEATURE_FANCY_TAIL(,&sleep_period));
 #define FOLLOW (opt & 0x1)
 #define COUNT_BYTES (opt & 0x2)

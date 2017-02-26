@@ -10,6 +10,17 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config ADJTIMEX
+//config:	bool "adjtimex"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Adjtimex reads and optionally sets adjustment parameters for
+//config:	  the Linux clock adjustment algorithm.
+
+//applet:IF_ADJTIMEX(APPLET(adjtimex, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_ADJTIMEX) += adjtimex.o
 
 //usage:#define adjtimex_trivial_usage
 //usage:       "[-q] [-o OFF] [-f FREQ] [-p TCONST] [-t TICK]"
@@ -29,7 +40,7 @@
 # include <sys/timex.h>
 #endif
 
-static const uint16_t statlist_bit[] = {
+static const uint16_t statlist_bit[] ALIGN2 = {
 	STA_PLL,
 	STA_PPSFREQ,
 	STA_PPSTIME,
@@ -45,7 +56,7 @@ static const uint16_t statlist_bit[] = {
 	STA_CLOCKERR,
 	0
 };
-static const char statlist_name[] =
+static const char statlist_name[] ALIGN1 =
 	"PLL"       "\0"
 	"PPSFREQ"   "\0"
 	"PPSTIME"   "\0"
@@ -61,7 +72,7 @@ static const char statlist_name[] =
 	"CLOCKERR"
 ;
 
-static const char ret_code_descript[] =
+static const char ret_code_descript[] ALIGN1 =
 	"clock synchronized" "\0"
 	"insert leap second" "\0"
 	"delete leap second" "\0"
