@@ -471,7 +471,7 @@ endif
 	echo "# CONFIG_BASH_IS_ASH is not set" >> busybox/.config
 	echo "# CONFIG_BASH_IS_HUSH is not set" >> busybox/.config
 	echo "CONFIG_BASH_IS_NONE=y" >> busybox/.config
-	echo "# CONFIG_ASH_INTERNAL_GLOB is not set" >> busybox/.config
+	echo "CONFIG_ASH_INTERNAL_GLOB=y" >> busybox/.config
 	echo "CONFIG_FEATURE_SH_MATH=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_64 is not set" >> busybox/.config
 	cd busybox && make oldconfig
