@@ -1,4 +1,4 @@
-busybox-config: 
+busybox-config: -
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config net-tools bird dhcpforwarder
@@ -375,12 +375,17 @@ else
 	echo "# CONFIG_FEATURE_VOLUMEID_LINUXRAID is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_MKSWAP_UUID is not set" >> busybox/.config
 endif
+	echo "# CONFIG_FEATURE_VOLUMEID_UBIFS is not set" >> busybox/.config
 ifeq ($(CONFIG_SWAP),y)
 	echo "CONFIG_MKSWAP=y" >> busybox/.config
 	echo "CONFIG_SWAPONOFF=y" >> busybox/.config
+	echo "CONFIG_SWAPON=y" >> busybox/.config
+	echo "CONFIG_SWAPOFF=y" >> busybox/.config
 	echo "CONFIG_FEATURE_SWAPON_PRI=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_SWAPON_DISCARD is not set" >> busybox/.config
 else
+	echo "# CONFIG_SWAPON is not set" >> busybox/.config
+	echo "# CONFIG_SWAPOFF is not set" >> busybox/.config
 	echo "# CONFIG_MKSWAP is not set" >> busybox/.config
 	echo "# CONFIG_SWAPONOFF is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_SWAPON_PRI is not set" >> busybox/.config
@@ -437,6 +442,38 @@ endif
 ifeq ($(CONFIG_BUSYBOX_INETD),y)
 	sed -i 's/\# CONFIG_INETD is not set/CONFIG_INETD=y/g' busybox/.config
 endif
+	echo "# CONFIG_ZCAT is not set" >> busybox/.config
+	echo "# CONFIG_BZCAT is not set" >> busybox/.config
+	echo "# CONFIG_LZCAT is not set" >> busybox/.config
+	echo "# CONFIG_XZCAT is not set" >> busybox/.config
+	echo "# CONFIG_UNLZOP is not set" >> busybox/.config
+	echo "# CONFIG_LZOPCAT is not set" >> busybox/.config
+	echo "# CONFIG_TEST1 is not set" >> busybox/.config
+	echo "# CONFIG_TEST2 is not set" >> busybox/.config
+	echo "# CONFIG_EGREP is not set" >> busybox/.config
+	echo "# CONFIG_FGREP is not set" >> busybox/.config
+	echo "# CONFIG_POWEROFF is not set" >> busybox/.config
+	echo "# CONFIG_MKE2FS is not set" >> busybox/.config
+	echo "# CONFIG_MKDOSFS is not set" >> busybox/.config
+	echo "# CONFIG_LINUX32 is not set" >> busybox/.config
+	echo "# CONFIG_LINUX64 is not set" >> busybox/.config
+	echo "# CONFIG_LOCK is not set" >> busybox/.config
+	echo "# CONFIG_DNSDOMAINNAME is not set" >> busybox/.config
+	echo "# CONFIG_IFUP is not set" >> busybox/.config
+	echo "# CONFIG_IFDOWN is not set" >> busybox/.config
+	echo "# CONFIG_IPNEIGH is not set" >> busybox/.config
+	echo "# CONFIG_NETMSG is not set" >> busybox/.config
+	echo "# CONFIG_SVC is not set" >> busybox/.config
+	echo "CONFIG_REBOOT=y" >> busybox/.config
+	echo "CONFIG_SH_IS_ASH=y" >> busybox/.config
+	echo "# CONFIG_SH_IS_HUSH is not set" >> busybox/.config
+	echo "# CONFIG_SH_IS_NONE is not set" >> busybox/.config
+	echo "# CONFIG_BASH_IS_ASH is not set" >> busybox/.config
+	echo "# CONFIG_BASH_IS_HUSH is not set" >> busybox/.config
+	echo "CONFIG_BASH_IS_NONE=y" >> busybox/.config
+	echo "# CONFIG_ASH_INTERNAL_GLOB is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_SH_MATH=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_SH_MATH_64 is not set" >> busybox/.config
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
