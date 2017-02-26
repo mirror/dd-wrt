@@ -16,10 +16,21 @@
 //config:	help
 //config:	  init is the first program run when the system boots.
 //config:
+//config:config LINUXRC
+//config:	bool "Support running init from within an initrd (not initramfs)"
+//config:	default y
+//config:	select FEATURE_SYSLOG
+//config:	help
+//config:	  Legacy support for running init under the old-style initrd. Allows
+//config:	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
+//config:
+//config:	  This does not apply to initramfs, which runs /init as PID 1 and
+//config:	  requires no special support.
+//config:
 //config:config FEATURE_USE_INITTAB
 //config:	bool "Support reading an inittab file"
 //config:	default y
-//config:	depends on INIT
+//config:	depends on INIT || LINUXRC
 //config:	help
 //config:	  Allow init to read an inittab file when the system boot.
 //config:
@@ -46,7 +57,7 @@
 //config:config FEATURE_INIT_SCTTY
 //config:	bool "Run commands with leading dash with controlling tty"
 //config:	default y
-//config:	depends on INIT
+//config:	depends on INIT || LINUXRC
 //config:	help
 //config:	  If this option is enabled, init will try to give a controlling
 //config:	  tty to any command which has leading hyphen (often it's "-/bin/sh").
@@ -61,40 +72,29 @@
 //config:config FEATURE_INIT_SYSLOG
 //config:	bool "Enable init to write to syslog"
 //config:	default y
-//config:	depends on INIT
+//config:	depends on INIT || LINUXRC
 //config:
 //config:config FEATURE_EXTRA_QUIET
 //config:	bool "Be _extra_ quiet on boot"
 //config:	default y
-//config:	depends on INIT
+//config:	depends on INIT || LINUXRC
 //config:	help
 //config:	  Prevent init from logging some messages to the console during boot.
 //config:
 //config:config FEATURE_INIT_COREDUMPS
 //config:	bool "Support dumping core for child processes (debugging only)"
-//config:	default y
-//config:	depends on INIT
+//config:	default n	# not Y because this is a debug option
+//config:	depends on INIT || LINUXRC
 //config:	help
 //config:	  If this option is enabled and the file /.init_enable_core
 //config:	  exists, then init will call setrlimit() to allow unlimited
 //config:	  core file sizes. If this option is disabled, processes
 //config:	  will not generate any core files.
 //config:
-//config:config FEATURE_INITRD
-//config:	bool "Support running init from within an initrd (not initramfs)"
-//config:	default y
-//config:	depends on INIT
-//config:	help
-//config:	  Legacy support for running init under the old-style initrd. Allows
-//config:	  the name linuxrc to act as init, and it doesn't assume init is PID 1.
-//config:
-//config:	  This does not apply to initramfs, which runs /init as PID 1 and
-//config:	  requires no special support.
-//config:
 //config:config INIT_TERMINAL_TYPE
 //config:	string "Initial terminal type"
 //config:	default "linux"
-//config:	depends on INIT
+//config:	depends on INIT || LINUXRC
 //config:	help
 //config:	  This is the initial value set by init for the TERM environment
 //config:	  variable. This variable is used by programs which make use of
@@ -102,17 +102,32 @@
 //config:
 //config:	  Note that on Linux, init attempts to detect serial terminal and
 //config:	  sets TERM to "vt102" if one is found.
+//config:
+//config:config FEATURE_INIT_MODIFY_CMDLINE
+//config:	bool "Modify the command-line to \"init\""
+//config:	default y
+//config:	depends on INIT || LINUXRC
+//config:	help
+//config:	  When launched as PID 1 and after parsing its arguments, init
+//config:	  wipes all the arguments but argv[0] and rewrites argv[0] to
+//config:	  contain only "init", so that its command-line appears solely as
+//config:	  "init" in tools such as ps.
+//config:	  If this option is set to Y, init will keep its original behavior,
+//config:	  otherwise, all the arguments including argv[0] will be preserved,
+//config:	  be they parsed or ignored by init.
+//config:	  The original command-line used to launch init can then be
+//config:	  retrieved in /proc/1/cmdline on Linux, for example.
 
 //applet:IF_INIT(APPLET(init, BB_DIR_SBIN, BB_SUID_DROP))
-//applet:IF_FEATURE_INITRD(APPLET_ODDNAME(linuxrc, init, BB_DIR_ROOT, BB_SUID_DROP, linuxrc))
+//applet:IF_LINUXRC(APPLET_ODDNAME(linuxrc, init, BB_DIR_ROOT, BB_SUID_DROP, linuxrc))
 
 //kbuild:lib-$(CONFIG_INIT) += init.o
+//kbuild:lib-$(CONFIG_LINUXRC) += init.o
 
 #define DEBUG_SEGV_HANDLER 0
 
 #include "libbb.h"
 #include <syslog.h>
-#include <paths.h>
 #include <sys/resource.h>
 #ifdef __linux__
 # include <linux/vt.h>
@@ -282,6 +297,11 @@ static void console_init(void)
 	s = getenv("CONSOLE");
 	if (!s)
 		s = getenv("console");
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+	/* BSD people say their kernels do not open fd 0,1,2; they need this: */
+	if (!s)
+		s = (char*)"/dev/console";
+#endif
 	if (s) {
 		int fd = open(s, O_RDWR | O_NONBLOCK | O_NOCTTY);
 		if (fd >= 0) {
@@ -1043,7 +1063,7 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 	if (!DEBUG_INIT) {
 		/* Expect to be invoked as init with PID=1 or be invoked as linuxrc */
 		if (getpid() != 1
-		 && (!ENABLE_FEATURE_INITRD || applet_name[0] != 'l') /* not linuxrc? */
+		 && (!ENABLE_LINUXRC || applet_name[0] != 'l') /* not linuxrc? */
 		) {
 			bb_error_msg_and_die("must be run as PID 1");
 		}
@@ -1139,11 +1159,13 @@ int init_main(int argc UNUSED_PARAM, char **argv)
 	}
 #endif
 
-	/* Make the command line just say "init"  - thats all, nothing else */
-	strncpy(argv[0], "init", strlen(argv[0]));
-	/* Wipe argv[1]-argv[N] so they don't clutter the ps listing */
-	while (*++argv)
-		nuke_str(*argv);
+	if (ENABLE_FEATURE_INIT_MODIFY_CMDLINE) {
+		/* Make the command line just say "init"  - that's all, nothing else */
+		strncpy(argv[0], "init", strlen(argv[0]));
+		/* Wipe argv[1]-argv[N] so they don't clutter the ps listing */
+		while (*++argv)
+			nuke_str(*argv);
+	}
 
 	/* Set up signal handlers */
 	if (!DEBUG_INIT) {

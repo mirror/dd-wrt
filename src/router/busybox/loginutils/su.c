@@ -4,18 +4,43 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config SU
+//config:	bool "su"
+//config:	default y
+//config:	select FEATURE_SYSLOG
+//config:	help
+//config:	  su is used to become another user during a login session.
+//config:	  Invoked without a username, su defaults to becoming the super user.
+//config:
+//config:	  Note that Busybox binary must be setuid root for this applet to
+//config:	  work properly.
+//config:
+//config:config FEATURE_SU_SYSLOG
+//config:	bool "Enable su to write to syslog"
+//config:	default y
+//config:	depends on SU
+//config:
+//config:config FEATURE_SU_CHECKS_SHELLS
+//config:	bool "Enable su to check user's shell to be listed in /etc/shells"
+//config:	depends on SU
+//config:	default y
 
-#include "libbb.h"
-#include <syslog.h>
+//applet:/* Needs to be run by root or be suid root - needs to change uid and gid: */
+//applet:IF_SU(APPLET(su, BB_DIR_BIN, BB_SUID_REQUIRE))
+
+//kbuild:lib-$(CONFIG_SU) += su.o
 
 //usage:#define su_trivial_usage
-//usage:       "[OPTIONS] [-] [USER]"
+//usage:       "[-lmp] [-] [-s SH] [USER [SCRIPT ARGS / -c 'CMD' ARG0 ARGS]]"
 //usage:#define su_full_usage "\n\n"
 //usage:       "Run shell under USER (by default, root)\n"
-//usage:     "\n	-,-l	Clear environment, run shell as login shell"
+//usage:     "\n	-,-l	Clear environment, go to home dir, run shell as login shell"
 //usage:     "\n	-p,-m	Do not set new $HOME, $SHELL, $USER, $LOGNAME"
 //usage:     "\n	-c CMD	Command to pass to 'sh -c'"
 //usage:     "\n	-s SH	Shell to use instead of user's default"
+
+#include "libbb.h"
+#include <syslog.h>
 
 #if ENABLE_FEATURE_SU_CHECKS_SHELLS
 /* Return 1 if SHELL is a restricted shell (one not returned by
@@ -56,8 +81,12 @@ int su_main(int argc UNUSED_PARAM, char **argv)
 #endif
 	const char *old_user;
 
+	/* Note: we don't use "'+': stop at first non-option" idiom here.
+	 * For su, "SCRIPT ARGS" or "-c CMD ARGS" do not stop option parsing:
+	 * ARGS starting with dash will be treated as su options,
+	 * not passed to shell. (Tested on util-linux 2.28).
+	 */
 	flags = getopt32(argv, "mplc:s:", &opt_command, &opt_shell);
-	//argc -= optind;
 	argv += optind;
 
 	if (argv[0] && LONE_DASH(argv[0])) {
@@ -137,8 +166,29 @@ int su_main(int argc UNUSED_PARAM, char **argv)
 			pw);
 	IF_SELINUX(set_current_security_context(NULL);)
 
+	if (opt_command) {
+		*--argv = opt_command;
+		*--argv = (char*)"-c";
+	}
+
+	/* A nasty ioctl exists which can stuff data into input queue:
+	 * #include <sys/ioctl.h>
+	 * int main() {
+	 *	const char *msg = "echo $UID\n";
+	 *	while (*msg) ioctl(0, TIOCSTI, *msg++);
+	 *	return 0;
+	 * }
+	 * With "su USER -c EXPLOIT" run by root, exploit can make root shell
+	 * read as input and execute arbitrary command.
+	 * It's debatable whether we need to protect against this
+	 * (root may hesitate to run unknown scripts interactively).
+	 *
+	 * Some versions of su run -c CMD in a different session:
+	 * ioctl(TIOCSTI) works only on the controlling tty.
+	 */
+
 	/* Never returns */
-	run_shell(opt_shell, flags & SU_OPT_l, opt_command, (const char**)argv);
+	run_shell(opt_shell, flags & SU_OPT_l, (const char**)argv);
 
 	/* return EXIT_FAILURE; - not reached */
 }

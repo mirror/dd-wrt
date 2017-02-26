@@ -9,11 +9,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
-//applet:IF_CONSPY(APPLET(conspy, BB_DIR_BIN, BB_SUID_DROP))
-
-//kbuild:lib-$(CONFIG_CONSPY) += conspy.o
-
 //config:config CONSPY
 //config:	bool "conspy"
 //config:	default y
@@ -23,6 +18,10 @@
 //config:	  example:  conspy NUM      shared access to console num
 //config:	  or        conspy -nd NUM  screenshot of console num
 //config:	  or        conspy -cs NUM  poor man's GNU screen like
+
+//applet:IF_CONSPY(APPLET(conspy, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_CONSPY) += conspy.o
 
 //usage:#define conspy_trivial_usage
 //usage:	"[-vcsndfFQ] [-x COL] [-y LINE] [CONSOLE_NO]"
@@ -42,6 +41,7 @@
 //usage:     "\n	-y LINE	Starting line"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include <sys/kd.h>
 
 #define ESC "\033"
@@ -363,7 +363,6 @@ int conspy_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int conspy_main(int argc UNUSED_PARAM, char **argv)
 {
 	char tty_name[sizeof(DEV_TTY "NN")];
-#define keybuf bb_common_bufsiz1
 	struct termios termbuf;
 	unsigned opts;
 	unsigned ttynum;
@@ -382,11 +381,14 @@ int conspy_main(int argc UNUSED_PARAM, char **argv)
 
 	applet_long_options = getopt_longopts;
 #endif
+#define keybuf bb_common_bufsiz1
+	setup_common_bufsiz();
+
 	INIT_G();
 	strcpy(G.vcsa_name, DEV_VCSA);
 
-	opt_complementary = "x+:y+"; // numeric params
-	opts = getopt32(argv, "vcQsndfFx:y:", &G.x, &G.y);
+	// numeric params
+	opts = getopt32(argv, "vcQsndfFx:+y:+", &G.x, &G.y);
 	argv += optind;
 	ttynum = 0;
 	if (argv[0]) {
@@ -513,7 +515,7 @@ int conspy_main(int argc UNUSED_PARAM, char **argv)
 		default:
 			// Read the keys pressed
 			k = keybuf + G.key_count;
-			bytes_read = read(G.kbd_fd, k, sizeof(keybuf) - G.key_count);
+			bytes_read = read(G.kbd_fd, k, COMMON_BUFSIZE - G.key_count);
 			if (bytes_read < 0)
 				goto abort;
 

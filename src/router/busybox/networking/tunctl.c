@@ -9,6 +9,24 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+//config:config TUNCTL
+//config:	bool "tunctl"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  tunctl creates or deletes tun devices.
+//config:
+//config:config FEATURE_TUNCTL_UG
+//config:	bool "Support owner:group assignment"
+//config:	default y
+//config:	depends on TUNCTL
+//config:	help
+//config:	  Allow to specify owner and group of newly created interface.
+//config:	  340 bytes of pure bloat. Say no here.
+
+//applet:IF_TUNCTL(APPLET(tunctl, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_TUNCTL) += tunctl.o
 
 //usage:#define tunctl_trivial_usage
 //usage:       "[-f device] ([-t name] | -d name)" IF_FEATURE_TUNCTL_UG(" [-u owner] [-g group] [-b]")
@@ -82,7 +100,7 @@ int tunctl_main(int argc UNUSED_PARAM, char **argv)
 	// delete?
 	if (opts & OPT_d) {
 		IOCTL(fd, TUNSETPERSIST, (void *)(uintptr_t)0);
-		bb_info_msg("Set '%s' %spersistent", ifr.ifr_name, "non");
+		printf("Set '%s' nonpersistent\n", ifr.ifr_name);
 		return EXIT_SUCCESS;
 	}
 

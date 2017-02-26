@@ -26,7 +26,27 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 /* Busyboxed by Denys Vlasenko <vda.linux@googlemail.com> */
-/* TODO: depends on runit_lib.c - review and reduce/eliminate */
+
+//config:config RUNSVDIR
+//config:	bool "runsvdir"
+//config:	default y
+//config:	help
+//config:	  runsvdir starts a runsv process for each subdirectory, or symlink to
+//config:	  a directory, in the services directory dir, up to a limit of 1000
+//config:	  subdirectories, and restarts a runsv process if it terminates.
+//config:
+//config:config FEATURE_RUNSVDIR_LOG
+//config:	bool "Enable scrolling argument log"
+//config:	depends on RUNSVDIR
+//config:	default n
+//config:	help
+//config:	  Enable feature where second parameter of runsvdir holds last error
+//config:	  message (viewable via top/ps). Otherwise (feature is off
+//config:	  or no parameter), error messages go to stderr only.
+
+//applet:IF_RUNSVDIR(APPLET(runsvdir, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_RUNSVDIR) += runsvdir.o
 
 //usage:#define runsvdir_trivial_usage
 //usage:       "[-P] [-s SCRIPT] DIR"
@@ -37,6 +57,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <sys/file.h>
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "runit_lib.h"
 
 #define MAXSERVICES 1000
@@ -64,7 +85,7 @@ struct globals {
 	unsigned stamplog;
 #endif
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define sv          (G.sv          )
 #define svdir       (G.svdir       )
 #define svnum       (G.svnum       )
@@ -72,7 +93,7 @@ struct globals {
 #define logpipe     (G.logpipe     )
 #define pfd         (G.pfd         )
 #define stamplog    (G.stamplog    )
-#define INIT_G() do { } while (0)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 static void fatal2_cannot(const char *m1, const char *m2)
 {
@@ -160,9 +181,9 @@ static NOINLINE int do_rescan(void)
 			continue;
 		/* Do we have this service listed already? */
 		for (i = 0; i < svnum; i++) {
-			if ((sv[i].ino == s.st_ino)
+			if (sv[i].ino == s.st_ino
 #if CHECK_DEVNO_TOO
-			 && (sv[i].dev == s.st_dev)
+			 && sv[i].dev == s.st_dev
 #endif
 			) {
 				if (sv[i].pid == 0) /* restart if it has died */

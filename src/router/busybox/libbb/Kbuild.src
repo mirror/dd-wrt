@@ -46,7 +46,6 @@ lib-y += get_volsize.o
 lib-y += herror_msg.o
 lib-y += human_readable.o
 lib-y += inet_common.o
-lib-y += info_msg.o
 lib-y += inode_hash.o
 lib-y += isdirectory.o
 lib-y += kernel_version.o
@@ -133,6 +132,7 @@ lib-$(CONFIG_TFTPD) += udp_io.o
 lib-$(CONFIG_TCPSVD) += udp_io.o
 lib-$(CONFIG_UDPSVD) += udp_io.o
 lib-$(CONFIG_TRACEROUTE) += udp_io.o
+lib-$(CONFIG_TRACEROUTE6) += udp_io.o
 
 lib-$(CONFIG_LOSETUP) += loop.o
 lib-$(CONFIG_FEATURE_MOUNT_LOOP) += loop.o
@@ -142,10 +142,11 @@ lib-$(CONFIG_ADDUSER) += update_passwd.o
 lib-$(CONFIG_DELGROUP) += update_passwd.o
 lib-$(CONFIG_DELUSER) += update_passwd.o
 
-lib-$(CONFIG_FTPD) += correct_password.o
+lib-$(CONFIG_FTPD) += pw_encrypt.o correct_password.o
 lib-$(CONFIG_PASSWD) += pw_encrypt.o update_passwd.o obscure.o
 lib-$(CONFIG_CHPASSWD) += pw_encrypt.o update_passwd.o
 lib-$(CONFIG_CRYPTPW) += pw_encrypt.o
+lib-$(CONFIG_MKPASSWD) += pw_encrypt.o
 lib-$(CONFIG_SULOGIN) += pw_encrypt.o correct_password.o
 lib-$(CONFIG_VLOCK) += pw_encrypt.o correct_password.o
 lib-$(CONFIG_SU) += pw_encrypt.o correct_password.o
@@ -156,6 +157,7 @@ lib-$(CONFIG_FEATURE_FTP_AUTHENTICATION) += pw_encrypt.o
 lib-$(CONFIG_DF) += find_mount_point.o
 lib-$(CONFIG_MKFS_MINIX) += find_mount_point.o
 lib-$(CONFIG_MKFS_EXT2) += find_mount_point.o
+lib-$(CONFIG_MKE2FS) += find_mount_point.o
 lib-$(CONFIG_MKFS_REISER) += find_mount_point.o
 lib-$(CONFIG_FSCK_MINIX) += find_mount_point.o
 lib-$(CONFIG_MOUNT) += find_mount_point.o
@@ -168,11 +170,13 @@ lib-$(CONFIG_MPSTAT) += get_cpu_count.o
 lib-$(CONFIG_POWERTOP) += get_cpu_count.o
 
 lib-$(CONFIG_PING) += inet_cksum.o
+lib-$(CONFIG_PING6) += inet_cksum.o
 lib-$(CONFIG_TRACEROUTE) += inet_cksum.o
 lib-$(CONFIG_TRACEROUTE6) += inet_cksum.o
 lib-$(CONFIG_UDHCPC) += inet_cksum.o
 lib-$(CONFIG_UDHCPC6) += inet_cksum.o
 lib-$(CONFIG_UDHCPD) += inet_cksum.o
+lib-$(CONFIG_DHCPRELAY) += inet_cksum.o
 
 # We shouldn't build xregcomp.c if we don't need it - this ensures we don't
 # require regex.h to be in the include dir even if we don't need it thereby
@@ -181,6 +185,8 @@ lib-$(CONFIG_UDHCPD) += inet_cksum.o
 lib-$(CONFIG_AWK) += xregcomp.o
 lib-$(CONFIG_SED) += xregcomp.o
 lib-$(CONFIG_GREP) += xregcomp.o
+lib-$(CONFIG_EGREP) += xregcomp.o
+lib-$(CONFIG_FGREP) += xregcomp.o
 lib-$(CONFIG_EXPR) += xregcomp.o
 lib-$(CONFIG_MDEV) += xregcomp.o
 lib-$(CONFIG_LESS) += xregcomp.o

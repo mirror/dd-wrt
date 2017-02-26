@@ -12,6 +12,17 @@
  *
  * - The -F options allows disabling of RTS/CTS flow control.
  */
+//config:config SLATTACH
+//config:	bool "slattach"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  slattach is a small utility to attach network interfaces to serial
+//config:	  lines.
+
+//applet:IF_SLATTACH(APPLET(slattach, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_SLATTACH) += slattach.o
 
 //usage:#define slattach_trivial_usage
 //usage:       "[-cehmLF] [-s SPEED] [-p PROTOCOL] DEVICE"
@@ -27,18 +38,19 @@
 //usage:     "\n	-F	Disable RTS/CTS flow control"
 
 #include "libbb.h"
-#include "libiproute/utils.h" /* invarg() */
+#include "common_bufsiz.h"
+#include "libiproute/utils.h" /* invarg_1_to_2() */
 
 struct globals {
 	int handle;
 	int saved_disc;
 	struct termios saved_state;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define handle       (G.handle      )
 #define saved_disc   (G.saved_disc  )
 #define saved_state  (G.saved_state )
-#define INIT_G() do { } while (0)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 
 /*
@@ -175,7 +187,7 @@ int slattach_main(int argc UNUSED_PARAM, char **argv)
 	encap = index_in_strings(proto_names, proto);
 
 	if (encap < 0)
-		invarg(proto, "protocol");
+		invarg_1_to_2(proto, "protocol");
 	if (encap > 3)
 		encap = 8;
 
@@ -183,7 +195,7 @@ int slattach_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_s_baud) {
 		baud_code = tty_value_to_baud(xatoi(baud_str));
 		if (baud_code < 0)
-			invarg(baud_str, "baud rate");
+			invarg_1_to_2(baud_str, "baud rate");
 	}
 
 	/* Trap signals in order to restore tty states upon exit */

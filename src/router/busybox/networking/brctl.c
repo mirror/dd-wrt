@@ -12,6 +12,36 @@
 /* This applet currently uses only the ioctl interface and no sysfs at all.
  * At the time of this writing this was considered a feature.
  */
+//config:config BRCTL
+//config:	bool "brctl"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Manage ethernet bridges.
+//config:	  Supports addbr/delbr and addif/delif.
+//config:
+//config:config FEATURE_BRCTL_FANCY
+//config:	bool "Fancy options"
+//config:	default y
+//config:	depends on BRCTL
+//config:	help
+//config:	  Add support for extended option like:
+//config:	    setageing, setfd, sethello, setmaxage,
+//config:	    setpathcost, setportprio, setbridgeprio,
+//config:	    stp
+//config:	  This adds about 600 bytes.
+//config:
+//config:config FEATURE_BRCTL_SHOW
+//config:	bool "Support show"
+//config:	default y
+//config:	depends on BRCTL && FEATURE_BRCTL_FANCY
+//config:	help
+//config:	  Add support for option which prints the current config:
+//config:	    show
+
+//applet:IF_BRCTL(APPLET(brctl, BB_DIR_USR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_BRCTL) += brctl.o
 
 //usage:#define brctl_trivial_usage
 //usage:       "COMMAND [BRIDGE [INTERFACE]]"
@@ -128,7 +158,7 @@ static ALWAYS_INLINE void bb_strtotimeval(struct timeval *tv,
 # else
 	if (sscanf(time_str, "%lf", &secs) != 1)
 # endif
-		bb_error_msg_and_die(bb_msg_invalid_arg, time_str, "timespec");
+		bb_error_msg_and_die(bb_msg_invalid_arg_to, time_str, "timespec");
 	tv->tv_sec = secs;
 	tv->tv_usec = 1000000 * (secs - tv->tv_sec);
 }
@@ -205,7 +235,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 
 		key = index_in_strings(keywords, *argv);
 		if (key == -1) /* no match found in keywords array, bail out. */
-			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+			bb_error_msg_and_die(bb_msg_invalid_arg_to, *argv, applet_name);
 		argv++;
 		fd = xsocket(AF_INET, SOCK_STREAM, 0);
 
@@ -299,7 +329,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 				"1\0" "on\0"  "y\0" "yes\0"; /* 4 .. 7 */
 			int onoff = index_in_strings(no_yes, *argv);
 			if (onoff < 0)
-				bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+				bb_error_msg_and_die(bb_msg_invalid_arg_to, *argv, applet_name);
 			onoff = (unsigned)onoff / 4;
 			arm_ioctl(args, BRCTL_SET_BRIDGE_STP_STATE, onoff, 0);
 			goto fire;
@@ -332,7 +362,7 @@ int brctl_main(int argc UNUSED_PARAM, char **argv)
 
 				port = if_nametoindex(*argv++);
 				if (!port)
-					bb_error_msg_and_die(bb_msg_invalid_arg, *argv, "port");
+					bb_error_msg_and_die(bb_msg_invalid_arg_to, *argv, "port");
 				memset(ifidx, 0, sizeof ifidx);
 				arm_ioctl(args, BRCTL_GET_PORT_LIST, (unsigned long)ifidx,
 						MAX_PORTS);

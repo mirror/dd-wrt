@@ -7,6 +7,15 @@
  *
  * Licensed under GPLv2, see file LICENSE in this source tree.
  */
+//config:config MICROCOM
+//config:	bool "microcom"
+//config:	default y
+//config:	help
+//config:	  The poor man's minicom utility for chatting with serial port devices.
+
+//applet:IF_MICROCOM(APPLET(microcom, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_MICROCOM) += microcom.o
 
 //usage:#define microcom_trivial_usage
 //usage:       "[-d DELAY] [-t TIMEOUT] [-s SPEED] [-X] TTY"
@@ -19,6 +28,7 @@
 //usage:     "\n	-X	Disable special meaning of NUL and Ctrl-X from stdin"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 // set raw tty mode
 static void xget1(int fd, struct termios *t, struct termios *oldt)
@@ -63,8 +73,7 @@ int microcom_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opts;
 
 	// fetch options
-	opt_complementary = "=1:s+:d+:t+"; // exactly one arg, numeric options
-	opts = getopt32(argv, "Xs:d:t:", &speed, &delay, &timeout);
+	opts = getopt32(argv, "Xs:+d:+t:+", &speed, &delay, &timeout);
 //	argc -= optind;
 	argv += optind;
 
@@ -155,10 +164,11 @@ int microcom_main(int argc UNUSED_PARAM, char **argv)
 skip_write: ;
 		}
 		if (pfd[0].revents) {
-#define iobuf bb_common_bufsiz1
 			ssize_t len;
+#define iobuf bb_common_bufsiz1
+			setup_common_bufsiz();
 			// read from device -> write to stdout
-			len = safe_read(sfd, iobuf, sizeof(iobuf));
+			len = safe_read(sfd, iobuf, COMMON_BUFSIZE);
 			if (len > 0)
 				full_write(STDOUT_FILENO, iobuf, len);
 			else {

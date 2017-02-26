@@ -18,8 +18,16 @@
    David MacKenzie <djm@gnu.ai.mit.edu>
 
    Special for busybox ported by Vladimir Oleynik <dzo@simtreas.ru> 2001
+*/
+//config:config STTY
+//config:	bool "stty"
+//config:	default y
+//config:	help
+//config:	  stty is used to change and print terminal line settings.
 
-   */
+//applet:IF_STTY(APPLET(stty, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_STTY) += stty.o
 
 //usage:#define stty_trivial_usage
 //usage:       "[-a|g] [-F DEVICE] [SETTING]..."
@@ -32,6 +40,7 @@
 //usage:     "\n	[SETTING]	See manpage"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #ifndef _POSIX_VDISABLE
 # define _POSIX_VDISABLE ((unsigned char) 0)
@@ -317,7 +326,7 @@ enum {
 #define MI_ENTRY(N,T,F,B,M) N "\0"
 
 /* Mode names given on command line */
-static const char mode_name[] =
+static const char mode_name[] ALIGN1 =
 	MI_ENTRY("evenp",    combination, REV        | OMIT, 0,          0 )
 	MI_ENTRY("parity",   combination, REV        | OMIT, 0,          0 )
 	MI_ENTRY("oddp",     combination, REV        | OMIT, 0,          0 )
@@ -680,7 +689,7 @@ enum {
 #define CI_ENTRY(n,s,o) n "\0"
 
 /* Name given on command line */
-static const char control_name[] =
+static const char control_name[] ALIGN1 =
 	CI_ENTRY("intr",     CINTR,   VINTR   )
 	CI_ENTRY("quit",     CQUIT,   VQUIT   )
 	CI_ENTRY("erase",    CERASE,  VERASE  )
@@ -722,7 +731,7 @@ static const char control_name[] =
 #undef CI_ENTRY
 #define CI_ENTRY(n,s,o) { s, o },
 
-static const struct control_info control_info[] = {
+static const struct control_info control_info[] ALIGN2 = {
 	/* This should be verbatim cut-n-paste copy of the above CI_ENTRYs */
 	CI_ENTRY("intr",     CINTR,   VINTR   )
 	CI_ENTRY("quit",     CQUIT,   VQUIT   )
@@ -775,7 +784,7 @@ struct globals {
 	unsigned current_col;
 	char buf[10];
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
 	G.device_name = bb_msg_standard_input; \
 	G.max_col = 80; \
@@ -1403,7 +1412,7 @@ int stty_main(int argc UNUSED_PARAM, char **argv)
 		perror_on_device_and_die("%s");
 
 	if (stty_state & (STTY_verbose_output | STTY_recoverable_output | STTY_noargs)) {
-		get_terminal_width_height(STDOUT_FILENO, &G.max_col, NULL);
+		G.max_col = get_terminal_width(STDOUT_FILENO);
 		output_func(&mode, display_all);
 		return EXIT_SUCCESS;
 	}

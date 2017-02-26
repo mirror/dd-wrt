@@ -5,6 +5,17 @@
  * Author: Alexey Kuznetsov <kuznet@ms2.inr.ac.ru>
  * Busybox port: Nick Fedchik <nick@fedchik.org.ua>
  */
+//config:config ARPING
+//config:	bool "arping"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Ping hosts by ARP packets.
+//config:
+
+//applet:IF_ARPING(APPLET(arping, BB_DIR_USR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_ARPING) += arping.o
 
 //usage:#define arping_trivial_usage
 //usage:       "[-fqbDUA] [-c CNT] [-w TIMEOUT] [-I IFACE] [-s SRC_IP] DST_IP"
@@ -28,6 +39,7 @@
 #include <netpacket/packet.h>
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 /* We don't expect to see 1000+ seconds delay, unsigned is enough */
 #define MONOTONIC_US() ((unsigned)monotonic_us())
@@ -60,7 +72,7 @@ struct globals {
 	unsigned brd_recv;
 	unsigned req_recv;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define src        (G.src       )
 #define dst        (G.dst       )
 #define me         (G.me        )
@@ -76,6 +88,7 @@ struct globals {
 #define brd_recv   (G.brd_recv  )
 #define req_recv   (G.req_recv  )
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
 	count = -1; \
 } while (0)
 
@@ -229,20 +242,23 @@ static void recv_pack(unsigned char *buf, int len, struct sockaddr_ll *FROM)
 	if (!(option_mask32 & QUIET)) {
 		int s_printed = 0;
 
-		printf("%scast re%s from %s [%s]",
+		printf("%scast re%s from %s [%02x:%02x:%02x:%02x:%02x:%02x]",
 			FROM->sll_pkttype == PACKET_HOST ? "Uni" : "Broad",
 			ah->ar_op == htons(ARPOP_REPLY) ? "ply" : "quest",
 			inet_ntoa(src_ip),
-			ether_ntoa((struct ether_addr *) p));
+			p[0], p[1], p[2], p[3], p[4], p[5]
+		);
 		if (dst_ip.s_addr != src.s_addr) {
 			printf("for %s ", inet_ntoa(dst_ip));
 			s_printed = 1;
 		}
 		if (memcmp(p + ah->ar_hln + 4, me.sll_addr, ah->ar_hln)) {
+			unsigned char *pp = p + ah->ar_hln + 4;
 			if (!s_printed)
 				printf("for ");
-			printf("[%s]",
-				ether_ntoa((struct ether_addr *) p + ah->ar_hln + 4));
+			printf("[%02x:%02x:%02x:%02x:%02x:%02x]",
+				pp[0], pp[1], pp[2], pp[3], pp[4], pp[5]
+			);
 		}
 
 		if (last) {
@@ -290,8 +306,8 @@ int arping_main(int argc UNUSED_PARAM, char **argv)
 		/* Dad also sets quit_on_reply.
 		 * Advert also sets unsolicited.
 		 */
-		opt_complementary = "=1:Df:AU:c+";
-		opt = getopt32(argv, "DUAqfbc:w:I:s:",
+		opt_complementary = "=1:Df:AU";
+		opt = getopt32(argv, "DUAqfbc:+w:I:s:",
 				&count, &str_timeout, &device, &source);
 		if (opt & 0x80) /* -w: timeout */
 			timeout_us = xatou_range(str_timeout, 0, INT_MAX/2000000) * 1000000 + 500000;

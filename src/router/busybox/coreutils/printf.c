@@ -38,6 +38,17 @@
 
 /* 19990508 Busy Boxed! Dave Cinege */
 
+//config:config PRINTF
+//config:	bool "printf"
+//config:	default y
+//config:	help
+//config:	  printf is used to format and print specified strings.
+//config:	  It's similar to `echo' except it has more options.
+
+//applet:IF_PRINTF(APPLET_NOFORK(printf, printf, BB_DIR_USR_BIN, BB_SUID_DROP, printf))
+
+//kbuild:lib-$(CONFIG_PRINTF) += printf.o
+
 //usage:#define printf_trivial_usage
 //usage:       "FORMAT [ARG]..."
 //usage:#define printf_full_usage "\n\n"
@@ -131,8 +142,8 @@ static double my_xstrtod(const char *arg)
 	return result;
 }
 
-/* Handles %b */
-static void print_esc_string(const char *str)
+/* Handles %b; return 1 if output is to be short-circuited by \c */
+static int print_esc_string(const char *str)
 {
 	char c;
 	while ((c = *str) != '\0') {
@@ -145,6 +156,9 @@ static void print_esc_string(const char *str)
 					str++;
 				}
 			}
+			else if (*str == 'c') {
+				return 1;
+			}
 			{
 				/* optimization: don't force arg to be on-stack,
 				 * use another variable for that. */
@@ -155,6 +169,8 @@ static void print_esc_string(const char *str)
 		}
 		putchar(c);
 	}
+
+	return 0;
 }
 
 static void print_direc(char *format, unsigned fmt_length,
@@ -280,7 +296,8 @@ static char **print_formatted(char *f, char **argv, int *conv_err)
 			}
 			if (*f == 'b') {
 				if (*argv) {
-					print_esc_string(*argv);
+					if (print_esc_string(*argv))
+						return saved_argv; /* causes main() to exit */
 					++argv;
 				}
 				break;

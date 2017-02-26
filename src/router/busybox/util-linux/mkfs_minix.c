@@ -62,6 +62,27 @@
  * Modified for BusyBox by Erik Andersen <andersen@debian.org> --
  *	removed getopt based parser and added a hand rolled one.
  */
+//config:config MKFS_MINIX
+//config:	bool "mkfs_minix"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  The minix filesystem is a nice, small, compact, read-write filesystem
+//config:	  with little overhead. If you wish to be able to create minix
+//config:	  filesystems this utility will do the job for you.
+//config:
+//config:config FEATURE_MINIX2
+//config:	bool "Support Minix fs v2 (fsck_minix/mkfs_minix)"
+//config:	default y
+//config:	depends on FSCK_MINIX || MKFS_MINIX
+//config:	help
+//config:	  If you wish to be able to create version 2 minix filesystems, enable
+//config:	  this. If you enabled 'mkfs_minix' then you almost certainly want to
+//config:	  be using the version 2 filesystem support.
+
+//applet:IF_MKFS_MINIX(APPLET_ODDNAME(mkfs.minix, mkfs_minix, BB_DIR_SBIN, BB_SUID_DROP, mkfs_minix))
+
+//kbuild:lib-$(CONFIG_MKFS_MINIX) += mkfs_minix.o
 
 //usage:#define mkfs_minix_trivial_usage
 //usage:       "[-c | -l FILE] [-nXX] [-iXX] BLOCKDEV [KBYTES]"
@@ -604,8 +625,7 @@ int mkfs_minix_main(int argc UNUSED_PARAM, char **argv)
 		bb_error_msg_and_die("bad inode size");
 #endif
 
-	opt_complementary = "n+"; /* -n N */
-	opt = getopt32(argv, "ci:l:n:v", &str_i, &listfile, &G.namelen);
+	opt = getopt32(argv, "ci:l:n:+v", &str_i, &listfile, &G.namelen);
 	argv += optind;
 	//if (opt & 1) -c
 	if (opt & 2) G.req_nr_inodes = xatoul(str_i); // -i

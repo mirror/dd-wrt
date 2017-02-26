@@ -7,10 +7,6 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
-
-/* BB_AUDIT SUSv3 _NOT_ compliant -- option -t missing. */
-/* http://www.opengroup.org/onlinepubs/007904975/utilities/df.html */
-
 /* Mar 16, 2003      Manuel Novoa III   (mjn3@codepoet.org)
  *
  * Size reduction.  Removed floating point dependency.  Added error checking
@@ -21,6 +17,30 @@
  *
  * Implement -P and -B; better coreutils compat; cleanup
  */
+//config:config DF
+//config:	bool "df"
+//config:	default y
+//config:	help
+//config:	  df reports the amount of disk space used and available
+//config:	  on filesystems.
+//config:
+//config:config FEATURE_DF_FANCY
+//config:	bool "Enable -a, -i, -B"
+//config:	default y
+//config:	depends on DF
+//config:	help
+//config:	  This option enables -a, -i and -B.
+//config:
+//config:	    -a Show all filesystems
+//config:	    -i Inodes
+//config:	    -B <SIZE> Blocksize
+
+//applet:IF_DF(APPLET(df, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_DF) += df.o
+
+/* BB_AUDIT SUSv3 _NOT_ compliant -- option -t missing. */
+/* http://www.opengroup.org/onlinepubs/007904975/utilities/df.html */
 
 //usage:#define df_trivial_usage
 //usage:	"[-Pk"
@@ -109,8 +129,19 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & OPT_MEGA)
 		df_disp_hr = 1024*1024;
 
-	if (opt & OPT_BSIZE)
-		df_disp_hr = xatoul_range(chp, 1, ULONG_MAX); /* disallow 0 */
+	if (opt & OPT_BSIZE) {
+		/* GNU coreutils 8.25 accepts "-BMiB" form too */
+		int i;
+		for (i = 0; kmg_i_suffixes[i].suffix[0]; i++) {
+			if (strcmp(kmg_i_suffixes[i].suffix, chp) == 0) {
+				df_disp_hr = kmg_i_suffixes[i].mult;
+				goto got_it;
+			}
+		}
+		/* Range used to disallow 0 */
+		df_disp_hr = xatoul_range_sfx(chp, 1, ULONG_MAX, kmg_i_suffixes);
+ got_it: ;
+	}
 
 	/* From the manpage of df from coreutils-6.10:
 	 * Disk space is shown in 1K blocks by default, unless the environment
@@ -183,12 +214,17 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 			bb_simple_perror_msg(mount_point);
 			goto set_error;
 		}
+		/* Some uclibc versions were seen to lose f_frsize
+		 * (kernel does return it, but then uclibc does not copy it)
+		 */
+		if (s.f_frsize == 0)
+			s.f_frsize = s.f_bsize;
 
 		if ((s.f_blocks > 0) || !mount_table || (opt & OPT_ALL)) {
 			if (opt & OPT_INODE) {
 				s.f_blocks = s.f_files;
 				s.f_bavail = s.f_bfree = s.f_ffree;
-				s.f_bsize = 1;
+				s.f_frsize = 1;
 
 				if (df_disp_hr)
 					df_disp_hr = 1;
@@ -246,26 +282,26 @@ int df_main(int argc UNUSED_PARAM, char **argv)
 
 #if ENABLE_FEATURE_HUMAN_READABLE
 			printf(" %9s ",
-				/* f_blocks x f_bsize / df_disp_hr, show one fractional,
+				/* f_blocks x f_frsize / df_disp_hr, show one fractional,
 				 * use suffixes if df_disp_hr == 0 */
-				make_human_readable_str(s.f_blocks, s.f_bsize, df_disp_hr));
+				make_human_readable_str(s.f_blocks, s.f_frsize, df_disp_hr));
 
 			printf(" %9s " + 1,
-				/* EXPR x f_bsize / df_disp_hr, show one fractional,
+				/* EXPR x f_frsize / df_disp_hr, show one fractional,
 				 * use suffixes if df_disp_hr == 0 */
 				make_human_readable_str((s.f_blocks - s.f_bfree),
-						s.f_bsize, df_disp_hr));
+						s.f_frsize, df_disp_hr));
 
 			printf("%9s %3u%% %s\n",
-				/* f_bavail x f_bsize / df_disp_hr, show one fractional,
+				/* f_bavail x f_frsize / df_disp_hr, show one fractional,
 				 * use suffixes if df_disp_hr == 0 */
-				make_human_readable_str(s.f_bavail, s.f_bsize, df_disp_hr),
+				make_human_readable_str(s.f_bavail, s.f_frsize, df_disp_hr),
 				blocks_percent_used, mount_point);
 #else
 			printf(" %9lu %9lu %9lu %3u%% %s\n",
-				kscale(s.f_blocks, s.f_bsize),
-				kscale(s.f_blocks - s.f_bfree, s.f_bsize),
-				kscale(s.f_bavail, s.f_bsize),
+				kscale(s.f_blocks, s.f_frsize),
+				kscale(s.f_blocks - s.f_bfree, s.f_frsize),
+				kscale(s.f_bavail, s.f_frsize),
 				blocks_percent_used, mount_point);
 #endif
 		}

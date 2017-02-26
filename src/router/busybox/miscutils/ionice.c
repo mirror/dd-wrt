@@ -6,6 +6,17 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config IONICE
+//config:	bool "ionice"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	help
+//config:	  Set/set program io scheduling class and priority
+//config:	  Requires kernel >= 2.6.13
+
+//applet:IF_IONICE(APPLET(ionice, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_IONICE) += ionice.o
 
 //usage:#define ionice_trivial_usage
 //usage:	"[-c 1-3] [-n 0-7] [-p PID] [PROG]"
@@ -41,7 +52,7 @@ enum {
 	IOPRIO_CLASS_IDLE
 };
 
-static const char to_prio[] = "none\0realtime\0best-effort\0idle";
+static const char to_prio[] ALIGN1 = "none\0realtime\0best-effort\0idle";
 
 #define IOPRIO_CLASS_SHIFT      13
 
@@ -60,9 +71,8 @@ int ionice_main(int argc UNUSED_PARAM, char **argv)
 	};
 
 	/* Numeric params */
-	opt_complementary = "n+:c+:p+";
 	/* '+': stop at first non-option */
-	opt = getopt32(argv, "+n:c:p:", &pri, &ioclass, &pid);
+	opt = getopt32(argv, "+n:+c:+p:+", &pri, &ioclass, &pid);
 	argv += optind;
 
 	if (opt & OPT_c) {

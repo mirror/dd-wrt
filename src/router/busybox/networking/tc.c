@@ -7,6 +7,22 @@
  * Bernhard Reutner-Fischer adjusted for busybox
  */
 
+/* Was disabled in 2008 by Bernhard, not known why.
+--//config:#config TC
+--//config:#	bool "tc"
+--//config:#	default y
+--//config:#	help
+--//config:#	  Show / manipulate traffic control settings
+--//config:#
+--//config:#config FEATURE_TC_INGRESS
+--//config:#	default y
+--//config:#	depends on TC
+--
+--//applet:IF_TC(APPLET(tc, BB_DIR_SBIN, BB_SUID_DROP))
+--
+--//kbuild:lib-$(CONFIG_TC) += tc.o
+*/
+
 //usage:#define tc_trivial_usage
 /* //usage: "[OPTIONS] OBJECT CMD [dev STRING]" */
 //usage:	"OBJECT CMD [dev STRING]"
@@ -29,6 +45,7 @@
 //usage:	"filter show [ dev STRING ] [ root | parent CLASSID ]"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 #include "libiproute/utils.h"
 #include "libiproute/ip_common.h"
@@ -63,16 +80,16 @@ struct globals {
 	uint32_t filter_prio;
 	uint32_t filter_proto;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-struct BUG_G_too_big {
-	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
-};
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define filter_ifindex (G.filter_ifindex)
 #define filter_qdisc (G.filter_qdisc)
 #define filter_parent (G.filter_parent)
 #define filter_prio (G.filter_prio)
 #define filter_proto (G.filter_proto)
-#define INIT_G() do { } while (0)
+#define INIT_G() do { \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+} while (0)
 
 /* Allocates a buffer containing the name of a class id.
  * The caller must free the returned memory.  */
@@ -99,7 +116,7 @@ static int get_qdisc_handle(uint32_t *h, const char *str) {
 	char *p;
 
 	maj = TC_H_UNSPEC;
-	if (!strcmp(str, "none"))
+	if (strcmp(str, "none") == 0)
 		goto ok;
 	maj = strtoul(str, &p, 16);
 	if (p == str)
@@ -118,10 +135,10 @@ static int get_tc_classid(uint32_t *h, const char *str) {
 	char *p;
 
 	maj = TC_H_ROOT;
-	if (!strcmp(str, "root"))
+	if (strcmp(str, "root") == 0)
 		goto ok;
 	maj = TC_H_UNSPEC;
-	if (!strcmp(str, "none"))
+	if (strcmp(str, "none") == 0)
 		goto ok;
 	maj = strtoul(str, &p, 16);
 	if (p == str) {
@@ -460,14 +477,14 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 
 	obj = index_in_substrings(objects, *argv++);
 
-	if (obj < OBJ_qdisc)
+	if (obj < 0)
 		bb_show_usage();
 	if (!*argv)
 		cmd = CMD_show; /* list is the default */
 	else {
 		cmd = index_in_substrings(commands, *argv);
 		if (cmd < 0)
-			bb_error_msg_and_die(bb_msg_invalid_arg, *argv, applet_name);
+			invarg_1_to_2(*argv, argv[-1]);
 		argv++;
 	}
 	memset(&msg, 0, sizeof(msg));
@@ -490,7 +507,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			NEXT_ARG();
 			/* We don't care about duparg2("qdisc handle",*argv) for now */
 			if (get_qdisc_handle(&filter_qdisc, *argv))
-				invarg(*argv, "qdisc");
+				invarg_1_to_2(*argv, "qdisc");
 		} else
 		if (obj != OBJ_qdisc
 		 && (arg == ARG_root
@@ -500,7 +517,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 		) {
 			/* nothing */
 		} else {
-			invarg(*argv, "command");
+			invarg_1_to_2(*argv, "command");
 		}
 		NEXT_ARG();
 		if (arg == ARG_root) {
@@ -514,7 +531,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			if (msg.tcm_parent)
 				duparg(*argv, "parent");
 			if (get_tc_classid(&handle, *argv))
-				invarg(*argv, "parent");
+				invarg_1_to_2(*argv, "parent");
 			msg.tcm_parent = handle;
 			if (obj == OBJ_filter)
 				filter_parent = handle;
@@ -539,7 +556,7 @@ int tc_main(int argc UNUSED_PARAM, char **argv)
 			if (filter_proto)
 				duparg(*argv, "protocol");
 			if (ll_proto_a2n(&tmp, *argv))
-				invarg(*argv, "protocol");
+				invarg_1_to_2(*argv, "protocol");
 			filter_proto = tmp;
 		}
 	}

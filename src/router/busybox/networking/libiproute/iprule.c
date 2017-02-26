@@ -44,7 +44,6 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	int len = n->nlmsg_len;
 	int host_len = -1;
 	struct rtattr * tb[RTA_MAX+1];
-	char abuf[256];
 
 	if (n->nlmsg_type != RTM_NEWRULE)
 		return 0;
@@ -71,16 +70,14 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	printf("from ");
 	if (tb[RTA_SRC]) {
 		if (r->rtm_src_len != host_len) {
-			printf("%s/%u", rt_addr_n2a(r->rtm_family,
-							RTA_DATA(tb[RTA_SRC]),
-							abuf, sizeof(abuf)),
+			printf("%s/%u",
+				rt_addr_n2a(r->rtm_family, RTA_DATA(tb[RTA_SRC])),
 				r->rtm_src_len
 			);
 		} else {
 			fputs(format_host(r->rtm_family,
 						RTA_PAYLOAD(tb[RTA_SRC]),
-						RTA_DATA(tb[RTA_SRC]),
-						abuf, sizeof(abuf)),
+						RTA_DATA(tb[RTA_SRC])),
 				stdout
 			);
 		}
@@ -94,15 +91,13 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 	if (tb[RTA_DST]) {
 		if (r->rtm_dst_len != host_len) {
 			printf("to %s/%u ", rt_addr_n2a(r->rtm_family,
-							 RTA_DATA(tb[RTA_DST]),
-							 abuf, sizeof(abuf)),
+							 RTA_DATA(tb[RTA_DST])),
 				r->rtm_dst_len
 				);
 		} else {
 			printf("to %s ", format_host(r->rtm_family,
 						       RTA_PAYLOAD(tb[RTA_DST]),
-						       RTA_DATA(tb[RTA_DST]),
-						       abuf, sizeof(abuf)));
+						       RTA_DATA(tb[RTA_DST])));
 		}
 	} else if (r->rtm_dst_len) {
 		printf("to 0/%d ", r->rtm_dst_len);
@@ -119,7 +114,9 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 		printf("iif %s ", (char*)RTA_DATA(tb[RTA_IIF]));
 	}
 
-	if (r->rtm_table)
+	if (tb[RTA_TABLE])
+		printf("lookup %s ", rtnl_rttable_n2a(*(uint32_t*)RTA_DATA(tb[RTA_TABLE])));
+	else if (r->rtm_table)
 		printf("lookup %s ", rtnl_rttable_n2a(r->rtm_table));
 
 	if (tb[RTA_FLOW]) {
@@ -139,8 +136,8 @@ static int FAST_FUNC print_rule(const struct sockaddr_nl *who UNUSED_PARAM,
 			printf("map-to %s ",
 				format_host(r->rtm_family,
 					    RTA_PAYLOAD(tb[RTA_GATEWAY]),
-					    RTA_DATA(tb[RTA_GATEWAY]),
-					    abuf, sizeof(abuf)));
+					    RTA_DATA(tb[RTA_GATEWAY]))
+			);
 		} else
 			printf("masquerade");
 	} else if (r->rtm_type != RTN_UNICAST)
@@ -202,9 +199,11 @@ static int iprule_modify(int cmd, char **argv)
 	req.n.nlmsg_flags = NLM_F_REQUEST;
 	req.r.rtm_family = preferred_family;
 	req.r.rtm_protocol = RTPROT_BOOT;
-	req.r.rtm_scope = RT_SCOPE_UNIVERSE;
-	req.r.rtm_table = 0;
-	req.r.rtm_type = RTN_UNSPEC;
+	if (RT_SCOPE_UNIVERSE != 0)
+		req.r.rtm_scope = RT_SCOPE_UNIVERSE;
+	/*req.r.rtm_table = 0; - already is */
+	if (RTN_UNSPEC != 0)
+		req.r.rtm_type = RTN_UNSPEC;
 
 	if (cmd == RTM_NEWRULE) {
 		req.n.nlmsg_flags |= NLM_F_CREATE|NLM_F_EXCL;
@@ -214,7 +213,7 @@ static int iprule_modify(int cmd, char **argv)
 	while (*argv) {
 		key = index_in_substrings(keywords, *argv) + 1;
 		if (key == 0) /* no match found in keywords array, bail out. */
-			invarg(*argv, applet_name);
+			invarg_1_to_2(*argv, applet_name);
 		if (key == ARG_from) {
 			inet_prefix dst;
 			NEXT_ARG();
@@ -239,7 +238,7 @@ static int iprule_modify(int cmd, char **argv)
 			uint32_t tos;
 			NEXT_ARG();
 			if (rtnl_dsfield_a2n(&tos, *argv))
-				invarg(*argv, "TOS");
+				invarg_1_to_2(*argv, "TOS");
 			req.r.rtm_tos = tos;
 		} else if (key == ARG_fwmark) {
 			uint32_t fwmark;
@@ -250,7 +249,7 @@ static int iprule_modify(int cmd, char **argv)
 			uint32_t realm;
 			NEXT_ARG();
 			if (get_rt_realms(&realm, *argv))
-				invarg(*argv, "realms");
+				invarg_1_to_2(*argv, "realms");
 			addattr32(&req.n, sizeof(req), RTA_FLOW, realm);
 		} else if (key == ARG_table ||
 			   key == ARG_lookup
@@ -258,8 +257,13 @@ static int iprule_modify(int cmd, char **argv)
 			uint32_t tid;
 			NEXT_ARG();
 			if (rtnl_rttable_a2n(&tid, *argv))
-				invarg(*argv, "table ID");
-			req.r.rtm_table = tid;
+				invarg_1_to_2(*argv, "table ID");
+			if (tid < 256)
+				req.r.rtm_table = tid;
+			else {
+				req.r.rtm_table = RT_TABLE_UNSPEC;
+				addattr32(&req.n, sizeof(req), RTA_TABLE, tid);
+			}
 			table_ok = 1;
 		} else if (key == ARG_dev ||
 			   key == ARG_iif
@@ -281,7 +285,7 @@ static int iprule_modify(int cmd, char **argv)
 			if (key == ARG_help)
 				bb_show_usage();
 			if (rtnl_rtntype_a2n(&type, *argv))
-				invarg(*argv, "type");
+				invarg_1_to_2(*argv, "type");
 			req.r.rtm_type = type;
 		}
 		argv++;
@@ -309,7 +313,7 @@ int FAST_FUNC do_iprule(char **argv)
 	if (*argv) {
 		int cmd = index_in_substrings(ip_rule_commands, *argv);
 		if (cmd < 0)
-			invarg(*argv, applet_name);
+			invarg_1_to_2(*argv, applet_name);
 		argv++;
 		if (cmd < 2)
 			return iprule_modify((cmd == 0) ? RTM_NEWRULE : RTM_DELRULE, argv);
