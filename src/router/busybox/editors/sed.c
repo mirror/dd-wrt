@@ -86,6 +86,7 @@
 //usage:       "bar\n"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include "xregex.h"
 
 #if 0
@@ -113,7 +114,7 @@ typedef struct sed_cmd_s {
 	int end_line;           /* 'sed 1,3p' 0 == one line only. -1 = last line ($). -2-N = +N */
 	int end_line_orig;
 
-	FILE *sw_file;          /* File (sw) command writes to, -1 for none. */
+	FILE *sw_file;          /* File (sw) command writes to, NULL for none. */
 	char *string;           /* Data string for (saicytb) commands. */
 
 	unsigned which_match;   /* (s) Which match to replace (0 for all) */
@@ -161,11 +162,10 @@ struct globals {
 		int len;    /* Space allocated */
 	} pipeline;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-struct BUG_G_too_big {
-	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
-};
+#define G (*(struct globals*)bb_common_bufsiz1)
 #define INIT_G() do { \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
 	G.sed_cmd_tail = &G.sed_cmd_head; \
 } while (0)
 
@@ -181,7 +181,7 @@ static void sed_free_and_close_stuff(void)
 		sed_cmd_t *sed_cmd_next = sed_cmd->next;
 
 		if (sed_cmd->sw_file)
-			xprint_and_close_file(sed_cmd->sw_file);
+			fclose(sed_cmd->sw_file);
 
 		if (sed_cmd->beg_match) {
 			regfree(sed_cmd->beg_match);
@@ -218,23 +218,33 @@ static void cleanup_outname(void)
 
 /* strcpy, replacing "\from" with 'to'. If to is NUL, replacing "\any" with 'any' */
 
-static void parse_escapes(char *dest, const char *string, int len, char from, char to)
+static unsigned parse_escapes(char *dest, const char *string, int len, char from, char to)
 {
+	char *d = dest;
 	int i = 0;
+
+	if (len == -1)
+		len = strlen(string);
 
 	while (i < len) {
 		if (string[i] == '\\') {
 			if (!to || string[i+1] == from) {
-				*dest++ = to ? to : string[i+1];
+				if ((*d = to ? to : string[i+1]) == '\0')
+					return d - dest;
 				i += 2;
+				d++;
 				continue;
 			}
-			*dest++ = string[i++];
+			i++; /* skip backslash in string[] */
+			*d++ = '\\';
+			/* fall through: copy next char verbatim */
 		}
-		/* TODO: is it safe wrt a string with trailing '\\' ? */
-		*dest++ = string[i++];
+		if ((*d = string[i++]) == '\0')
+			return d - dest;
+		d++;
 	}
-	*dest = '\0';
+	*d = '\0';
+	return d - dest;
 }
 
 static char *copy_parsing_escapes(const char *string, int len)
@@ -245,9 +255,8 @@ static char *copy_parsing_escapes(const char *string, int len)
 	/* sed recognizes \n */
 	/* GNU sed also recognizes \t and \r */
 	for (s = "\nn\tt\rr"; *s; s += 2) {
-		parse_escapes(dest, string, len, s[1], s[0]);
+		len = parse_escapes(dest, string, len, s[1], s[0]);
 		string = dest;
-		len = strlen(dest);
 	}
 	return dest;
 }
@@ -428,8 +437,11 @@ static int parse_subst_cmd(sed_cmd_t *sed_cmd, const char *substr)
 		/* Write to file */
 		case 'w':
 		{
-			char *temp;
-			idx += parse_file_cmd(/*sed_cmd,*/ substr+idx, &temp);
+			char *fname;
+			idx += parse_file_cmd(/*sed_cmd,*/ substr+idx+1, &fname);
+			sed_cmd->sw_file = xfopen_for_write(fname);
+			sed_cmd->sw_last_char = '\n';
+			free(fname);
 			break;
 		}
 		/* Ignore case (gnu exension) */
@@ -470,7 +482,7 @@ static int parse_subst_cmd(sed_cmd_t *sed_cmd, const char *substr)
  */
 static const char *parse_cmd_args(sed_cmd_t *sed_cmd, const char *cmdstr)
 {
-	static const char cmd_letters[] = "saicrw:btTydDgGhHlnNpPqx={}";
+	static const char cmd_letters[] ALIGN1 = "saicrw:btTydDgGhHlnNpPqx={}";
 	enum {
 		IDX_s = 0,
 		IDX_a,
@@ -501,9 +513,11 @@ static const char *parse_cmd_args(sed_cmd_t *sed_cmd, const char *cmdstr)
 		IDX_rbrace,
 		IDX_nul
 	};
-	struct chk { char chk[sizeof(cmd_letters)-1 == IDX_nul ? 1 : -1]; };
+	unsigned idx;
 
-	unsigned idx = strchrnul(cmd_letters, sed_cmd->cmd) - cmd_letters;
+	BUILD_BUG_ON(sizeof(cmd_letters)-1 != IDX_nul);
+
+	idx = strchrnul(cmd_letters, sed_cmd->cmd) - cmd_letters;
 
 	/* handle (s)ubstitution command */
 	if (idx == IDX_s) {
@@ -511,6 +525,8 @@ static const char *parse_cmd_args(sed_cmd_t *sed_cmd, const char *cmdstr)
 	}
 	/* handle edit cmds: (a)ppend, (i)nsert, and (c)hange */
 	else if (idx <= IDX_c) { /* a,i,c */
+		unsigned len;
+
 		if (idx < IDX_c) { /* a,i */
 			if (sed_cmd->end_line || sed_cmd->end_match)
 				bb_error_msg_and_die("command '%c' uses only one address", sed_cmd->cmd);
@@ -524,10 +540,11 @@ static const char *parse_cmd_args(sed_cmd_t *sed_cmd, const char *cmdstr)
 				break;
 			cmdstr++;
 		}
-		sed_cmd->string = xstrdup(cmdstr);
+		len = strlen(cmdstr);
+		sed_cmd->string = copy_parsing_escapes(cmdstr, len);
+		cmdstr += len;
 		/* "\anychar" -> "anychar" */
-		parse_escapes(sed_cmd->string, sed_cmd->string, strlen(cmdstr), '\0', '\0');
-		cmdstr += strlen(cmdstr);
+		parse_escapes(sed_cmd->string, sed_cmd->string, -1, '\0', '\0');
 	}
 	/* handle file cmds: (r)ead */
 	else if (idx <= IDX_w) { /* r,w */
@@ -559,8 +576,8 @@ static const char *parse_cmd_args(sed_cmd_t *sed_cmd, const char *cmdstr)
 
 		cmdstr += parse_regex_delim(cmdstr, &match, &replace)+1;
 		/* \n already parsed, but \delimiter needs unescaping. */
-		parse_escapes(match, match, strlen(match), i, i);
-		parse_escapes(replace, replace, strlen(replace), i, i);
+		parse_escapes(match,   match,   -1, i, i);
+		parse_escapes(replace, replace, -1, i, i);
 
 		sed_cmd->string = xzalloc((strlen(match) + 1) * 2);
 		for (i = 0; match[i] && replace[i]; i++) {
@@ -875,7 +892,10 @@ static sed_cmd_t *branch_to(char *label)
 	sed_cmd_t *sed_cmd;
 
 	for (sed_cmd = G.sed_cmd_head; sed_cmd; sed_cmd = sed_cmd->next) {
-		if (sed_cmd->cmd == ':' && sed_cmd->string && !strcmp(sed_cmd->string, label)) {
+		if (sed_cmd->cmd == ':'
+		 && sed_cmd->string
+		 && strcmp(sed_cmd->string, label) == 0
+		) {
 			return sed_cmd;
 		}
 	}
@@ -939,13 +959,22 @@ static void puts_maybe_newline(char *s, FILE *file, char *last_puts_char, char l
 	*last_puts_char = lpc;
 }
 
-static void flush_append(char *last_puts_char, char last_gets_char)
+static void flush_append(char *last_puts_char)
 {
 	char *data;
 
 	/* Output appended lines. */
-	while ((data = (char *)llist_pop(&G.append_head))) {
-		puts_maybe_newline(data, G.nonstdout, last_puts_char, last_gets_char);
+	while ((data = (char *)llist_pop(&G.append_head)) != NULL) {
+		/* Append command does not respect "nonterminated-ness"
+		 * of last line. Try this:
+		 * $ echo -n "woot" | sed -e '/woot/a woo' -
+		 * woot
+		 * woo
+		 * (both lines are terminated with \n)
+		 * Therefore we do not propagate "last_gets_char" here,
+		 * pass '\n' instead:
+		 */
+		puts_maybe_newline(data, G.nonstdout, last_puts_char, '\n');
 		free(data);
 	}
 }
@@ -953,13 +982,13 @@ static void flush_append(char *last_puts_char, char last_gets_char)
 /* Get next line of input from G.input_file_list, flushing append buffer and
  * noting if we ran out of files without a newline on the last line we read.
  */
-static char *get_next_line(char *gets_char, char *last_puts_char, char last_gets_char)
+static char *get_next_line(char *gets_char, char *last_puts_char)
 {
 	char *temp = NULL;
 	int len;
 	char gc;
 
-	flush_append(last_puts_char, last_gets_char);
+	flush_append(last_puts_char);
 
 	/* will be returned if last line in the file
 	 * doesn't end with either '\n' or '\0' */
@@ -1037,7 +1066,7 @@ static void process_files(void)
 	int substituted;
 
 	/* Prime the pump */
-	next_line = get_next_line(&next_gets_char, &last_puts_char, '\n' /*last_gets_char*/);
+	next_line = get_next_line(&next_gets_char, &last_puts_char);
 
 	/* Go through every line in each file */
  again:
@@ -1051,7 +1080,7 @@ static void process_files(void)
 
 	/* Read one line in advance so we can act on the last line,
 	 * the '$' address */
-	next_line = get_next_line(&next_gets_char, &last_puts_char, last_gets_char);
+	next_line = get_next_line(&next_gets_char, &last_puts_char);
 	linenum++;
 
 	/* For every line, go through all the commands */
@@ -1274,16 +1303,17 @@ static void process_files(void)
 		case 'n':
 			if (!G.be_quiet)
 				sed_puts(pattern_space, last_gets_char);
-			if (next_line) {
-				free(pattern_space);
-				pattern_space = next_line;
-				last_gets_char = next_gets_char;
-				next_line = get_next_line(&next_gets_char, &last_puts_char, last_gets_char);
-				substituted = 0;
-				linenum++;
-				break;
+			if (next_line == NULL) {
+				/* If no next line, jump to end of script and exit. */
+				goto discard_line;
 			}
-			/* fall through */
+			free(pattern_space);
+			pattern_space = next_line;
+			last_gets_char = next_gets_char;
+			next_line = get_next_line(&next_gets_char, &last_puts_char);
+			substituted = 0;
+			linenum++;
+			break;
 
 		/* Quit.  End of script, end of input. */
 		case 'q':
@@ -1314,7 +1344,7 @@ static void process_files(void)
 			pattern_space[len] = '\n';
 			strcpy(pattern_space + len+1, next_line);
 			last_gets_char = next_gets_char;
-			next_line = get_next_line(&next_gets_char, &last_puts_char, last_gets_char);
+			next_line = get_next_line(&next_gets_char, &last_puts_char);
 			linenum++;
 			break;
 		}
@@ -1418,7 +1448,7 @@ static void process_files(void)
 
 	/* Delete and such jump here. */
  discard_line:
-	flush_append(&last_puts_char, last_gets_char);
+	flush_append(&last_puts_char /*,last_gets_char*/);
 	free(pattern_space);
 
 	goto again;
@@ -1477,8 +1507,7 @@ int sed_main(int argc UNUSED_PARAM, char **argv)
 	/* do normal option parsing */
 	opt_e = opt_f = NULL;
 	opt_i = NULL;
-	opt_complementary = "e::f::" /* can occur multiple times */
-	                    "nn"; /* count -n */
+	opt_complementary = "nn"; /* count -n */
 
 	IF_LONG_OPTS(applet_long_options = sed_longopts);
 
@@ -1487,7 +1516,7 @@ int sed_main(int argc UNUSED_PARAM, char **argv)
 	 * GNU sed 4.2.1 mentions it in neither --help
 	 * nor manpage, but does recognize it.
 	 */
-	opt = getopt32(argv, "i::rEne:f:", &opt_i, &opt_e, &opt_f,
+	opt = getopt32(argv, "i::rEne:*f:*", &opt_i, &opt_e, &opt_f,
 			    &G.be_quiet); /* counter for -n */
 	//argc -= optind;
 	argv += optind;
@@ -1504,12 +1533,12 @@ int sed_main(int argc UNUSED_PARAM, char **argv)
 	while (opt_f) { // -f
 		char *line;
 		FILE *cmdfile;
-		cmdfile = xfopen_for_read(llist_pop(&opt_f));
+		cmdfile = xfopen_stdin(llist_pop(&opt_f));
 		while ((line = xmalloc_fgetline(cmdfile)) != NULL) {
 			add_cmd(line);
 			free(line);
 		}
-		fclose(cmdfile);
+		fclose_if_not_stdin(cmdfile);
 	}
 	/* if we didn't get a pattern from -e or -f, use argv[0] */
 	if (!(opt & 0x30)) {

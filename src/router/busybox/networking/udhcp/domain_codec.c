@@ -7,6 +7,7 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
 #ifdef DNS_COMPR_TESTING
+# define _GNU_SOURCE
 # define FAST_FUNC /* nothing */
 # define xmalloc malloc
 # include <stdlib.h>
@@ -42,7 +43,7 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 	 */
 	while (1) {
 		/* note: "return NULL" below are leak-safe since
-		 * dst isn't yet allocated */
+		 * dst isn't allocated yet */
 		const uint8_t *c;
 		unsigned crtpos, retpos, depth, len;
 
@@ -97,9 +98,8 @@ char* FAST_FUNC dname_dec(const uint8_t *cstr, int clen, const char *pre)
 		if (!dst) { /* first pass? */
 			/* allocate dst buffer and copy pre */
 			unsigned plen = strlen(pre);
-			ret = dst = xmalloc(plen + len);
-			memcpy(dst, pre, plen);
-			dst += plen;
+			ret = xmalloc(plen + len);
+			dst = stpcpy(ret, pre);
 		} else {
 			dst[len - 1] = '\0';
 			break;

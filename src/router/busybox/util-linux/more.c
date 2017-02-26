@@ -13,6 +13,19 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config MORE
+//config:	bool "more"
+//config:	default y
+//config:	help
+//config:	  more is a simple utility which allows you to read text one screen
+//config:	  sized page at a time. If you want to read text that is larger than
+//config:	  the screen, and you are using anything faster than a 300 baud modem,
+//config:	  you will probably find this utility very helpful. If you don't have
+//config:	  any need to reading text files, you can leave this disabled.
+
+//applet:IF_MORE(APPLET(more, BB_DIR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_MORE) += more.o
 
 //usage:#define more_trivial_usage
 //usage:       "[FILE]..."
@@ -23,6 +36,7 @@
 //usage:       "$ dmesg | more\n"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 /* Support for FEATURE_USE_TERMIOS */
 
@@ -32,10 +46,10 @@ struct globals {
 	struct termios new_settings;
 } FIX_ALIASING;
 #define G (*(struct globals*)bb_common_bufsiz1)
-#define INIT_G() ((void)0)
 #define initial_settings (G.initial_settings)
 #define new_settings     (G.new_settings    )
 #define cin_fileno       (G.cin_fileno      )
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 #define setTermSettings(fd, argp) \
 do { \
@@ -72,7 +86,16 @@ int more_main(int argc UNUSED_PARAM, char **argv)
 
 	INIT_G();
 
-	argv++;
+	/* Parse options */
+	/* Accepted but ignored: */
+	/* -d	Display help instead of ringing bell is pressed */
+	/* -f	Count logical lines (IOW: long lines are not folded) */
+	/* -l	Do not pause after any line containing a ^L (form feed) */
+	/* -s	Squeeze blank lines into one */
+	/* -u	Suppress underlining */
+	getopt32(argv, "dflsu");
+	argv += optind;
+
 	/* Another popular pager, most, detects when stdout
 	 * is not a tty and turns into cat. This makes sense. */
 	if (!isatty(STDOUT_FILENO))

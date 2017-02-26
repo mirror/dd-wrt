@@ -18,15 +18,26 @@
  *   options -p, -g, and -u are treated as mode switches for the
  *   following IDs (if any).  Multiple switches are allowed.
  */
+//config:config RENICE
+//config:	bool "renice"
+//config:	default y
+//config:	help
+//config:	  Renice alters the scheduling priority of one or more running
+//config:	  processes.
+
+//applet:IF_RENICE(APPLET(renice, BB_DIR_USR_BIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_RENICE) += renice.o
 
 //usage:#define renice_trivial_usage
-//usage:       "{{-n INCREMENT} | PRIORITY} [[-p | -g | -u] ID...]"
+//usage:       "[-n] PRIORITY [[-p | -g | -u] ID...]..."
 //usage:#define renice_full_usage "\n\n"
-//usage:       "Change scheduling priority for a running process\n"
-//usage:     "\n	-n	Adjust current nice value (smaller is faster)"
-//usage:     "\n	-p	Process id(s) (default)"
-//usage:     "\n	-g	Process group id(s)"
-//usage:     "\n	-u	Process user name(s) and/or id(s)"
+//usage:       "Change scheduling priority of a running process\n"
+//usage:     "\n	-n	Add PRIORITY to current nice value"
+//usage:     "\n		Without -n, nice value is set to PRIORITY"
+//usage:     "\n	-p	Process ids (default)"
+//usage:     "\n	-g	Process group ids"
+//usage:     "\n	-u	Process user names"
 
 #include "libbb.h"
 #include <sys/resource.h>

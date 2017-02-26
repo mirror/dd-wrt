@@ -9,6 +9,31 @@
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  *
  */
+//config:config ADDGROUP
+//config:	bool "addgroup"
+//config:	default y
+//config:	help
+//config:	  Utility for creating a new group account.
+//config:
+//config:config FEATURE_ADDGROUP_LONG_OPTIONS
+//config:	bool "Enable long options"
+//config:	default y
+//config:	depends on ADDGROUP && LONG_OPTS
+//config:	help
+//config:	  Support long options for the addgroup applet.
+//config:
+//config:config FEATURE_ADDUSER_TO_GROUP
+//config:	bool "Support for adding users to groups"
+//config:	default y
+//config:	depends on ADDGROUP
+//config:	help
+//config:	  If  called  with two non-option arguments,
+//config:	  addgroup will add an existing user to an
+//config:	  existing group.
+
+//applet:IF_ADDGROUP(APPLET(addgroup, BB_DIR_USR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_ADDGROUP) += addgroup.o
 
 //usage:#define addgroup_trivial_usage
 //usage:       "[-g GID] [-S] " IF_FEATURE_ADDUSER_TO_GROUP("[USER] ") "GROUP"
@@ -161,7 +186,7 @@ int addgroup_main(int argc UNUSED_PARAM, char **argv)
 		gr = xgetgrnam(argv[1]); /* unknown group: exit */
 		/* check if user is already in this group */
 		for (; *(gr->gr_mem) != NULL; (gr->gr_mem)++) {
-			if (!strcmp(argv[0], *(gr->gr_mem))) {
+			if (strcmp(argv[0], *(gr->gr_mem)) == 0) {
 				/* user is already in group: do nothing */
 				return EXIT_SUCCESS;
 			}

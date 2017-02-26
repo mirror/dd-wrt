@@ -14,6 +14,22 @@
  * routed at the IP level, though various proxies or bridges can
  * certainly be used.  Its naming is built over multicast DNS.
  */
+//config:config ZCIP
+//config:	bool "zcip"
+//config:	default y
+//config:	select PLATFORM_LINUX
+//config:	select FEATURE_SYSLOG
+//config:	help
+//config:	  ZCIP provides ZeroConf IPv4 address selection, according to RFC 3927.
+//config:	  It's a daemon that allocates and defends a dynamically assigned
+//config:	  address on the 169.254/16 network, requiring no system administrator.
+//config:
+//config:	  See http://www.zeroconf.org for further details, and "zcip.script"
+//config:	  in the busybox examples.
+
+//applet:IF_ZCIP(APPLET(zcip, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_ZCIP) += zcip.o
 
 //#define DEBUG
 
@@ -40,6 +56,7 @@
 //usage:     "\nexits only on I/O errors (link down etc)"
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 #include <netinet/ether.h>
 #include <net/if.h>
 #include <net/if_arp.h>
@@ -90,8 +107,8 @@ struct globals {
 	struct ether_addr our_ethaddr;
 	uint32_t localnet_ip;
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
-#define INIT_G() do { } while (0)
+#define G (*(struct globals*)bb_common_bufsiz1)
+#define INIT_G() do { setup_common_bufsiz(); } while (0)
 
 
 /**
@@ -176,7 +193,7 @@ static int run(char *argv[3], const char *param, uint32_t nip)
 		xsetenv("ip", addr);
 		fmt -= 3;
 	}
-	bb_info_msg(fmt, argv[2], argv[0], addr);
+	bb_error_msg(fmt, argv[2], argv[0], addr);
 
 	status = spawn_and_wait(argv + 1);
 	if (status < 0) {
@@ -317,7 +334,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 #if BB_MMU
 		bb_daemonize(0 /*was: DAEMON_CHDIR_ROOT*/);
 #endif
-		bb_info_msg("start, interface %s", argv_intf);
+		bb_error_msg("start, interface %s", argv_intf);
 	}
 
 	// Run the dynamic address negotiation protocol,
@@ -345,7 +362,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 	state = PROBE;
 	while (1) {
 		struct pollfd fds[1];
-		unsigned deadline_us;
+		unsigned deadline_us = deadline_us;
 		struct arp_packet p;
 		int ip_conflict;
 		int n;
@@ -361,8 +378,10 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 			// make the kernel filter out all packets except
 			// ones we'd care about.
 		}
-		// Set deadline_us to the point in time when we timeout
-		deadline_us = MONOTONIC_US() + timeout_ms * 1000;
+		if (timeout_ms >= 0) {
+			// Set deadline_us to the point in time when we timeout
+			deadline_us = MONOTONIC_US() + timeout_ms * 1000;
+		}
 
 		VDBG("...wait %d %s nsent=%u\n",
 				timeout_ms, argv_intf, nsent);
@@ -387,7 +406,7 @@ int zcip_main(int argc UNUSED_PARAM, char **argv)
 					send_arp_request(0, &null_ethaddr, chosen_nip);
 					continue;
 				}
-  				// Switch to announce state
+				// Switch to announce state
 				nsent = 0;
 				state = ANNOUNCE;
 				goto send_announce;

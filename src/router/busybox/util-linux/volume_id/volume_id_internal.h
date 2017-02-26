@@ -169,6 +169,8 @@ int FAST_FUNC volume_id_probe_linux_raid(struct volume_id *id /*,uint64_t off*/,
 
 /* FS */
 
+int FAST_FUNC volume_id_probe_bcache(struct volume_id *id /*,uint64_t off*/);
+
 int FAST_FUNC volume_id_probe_btrfs(struct volume_id *id /*,uint64_t off*/);
 
 int FAST_FUNC volume_id_probe_cramfs(struct volume_id *id /*,uint64_t off*/);
@@ -218,5 +220,7 @@ int FAST_FUNC volume_id_probe_udf(struct volume_id *id /*,uint64_t off*/);
 //int FAST_FUNC volume_id_probe_ufs(struct volume_id *id /*,uint64_t off*/);
 
 int FAST_FUNC volume_id_probe_xfs(struct volume_id *id /*,uint64_t off*/);
+
+int FAST_FUNC volume_id_probe_ubifs(struct volume_id *id /*,uint64_t off*/);
 
 POP_SAVED_FUNCTION_VISIBILITY

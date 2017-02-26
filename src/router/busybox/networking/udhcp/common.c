@@ -183,7 +183,7 @@ static void log_option(const char *pfx, const uint8_t *opt)
 	if (dhcp_verbose >= 2) {
 		char buf[256 * 2 + 2];
 		*bin2hex(buf, (void*) (opt + OPT_DATA), opt[OPT_LEN]) = '\0';
-		bb_info_msg("%s: 0x%02x %s", pfx, opt[OPT_CODE], buf);
+		bb_error_msg("%s: 0x%02x %s", pfx, opt[OPT_CODE], buf);
 	}
 }
 #else
@@ -226,9 +226,12 @@ uint8_t* FAST_FUNC udhcp_get_option(struct dhcp_packet *packet, int code)
 	rem = sizeof(packet->options);
 	while (1) {
 		if (rem <= 0) {
+ complain:
 			bb_error_msg("bad packet, malformed option field");
 			return NULL;
 		}
+
+		/* DHCP_PADDING and DHCP_END have no [len] byte */
 		if (optionptr[OPT_CODE] == DHCP_PADDING) {
 			rem--;
 			optionptr++;
@@ -251,25 +254,29 @@ uint8_t* FAST_FUNC udhcp_get_option(struct dhcp_packet *packet, int code)
 			}
 			break;
 		}
+
+		if (rem <= OPT_LEN)
+			goto complain; /* complain and return NULL */
 		len = 2 + optionptr[OPT_LEN];
 		rem -= len;
 		if (rem < 0)
-			continue; /* complain and return NULL */
+			goto complain; /* complain and return NULL */
 
 		if (optionptr[OPT_CODE] == code) {
-			log_option("Option found", optionptr);
+			log_option("option found", optionptr);
 			return optionptr + OPT_DATA;
 		}
 
 		if (optionptr[OPT_CODE] == DHCP_OPTION_OVERLOAD) {
-			overload |= optionptr[OPT_DATA];
+			if (len >= 3)
+				overload |= optionptr[OPT_DATA];
 			/* fall through */
 		}
 		optionptr += len;
 	}
 
 	/* log3 because udhcpc uses it a lot - very noisy */
-	log3("Option 0x%02x not found", code);
+	log3("option 0x%02x not found", code);
 	return NULL;
 }
 
@@ -303,7 +310,7 @@ void FAST_FUNC udhcp_add_binary_option(struct dhcp_packet *packet, uint8_t *addo
 				addopt[OPT_CODE]);
 		return;
 	}
-	log_option("Adding option", addopt);
+	log_option("adding option", addopt);
 	memcpy(optionptr + end, addopt, len);
 	optionptr[end + len] = DHCP_END;
 }
@@ -402,7 +409,7 @@ static NOINLINE void attach_option(
 		struct option_set *new, **curr;
 
 		/* make a new option */
-		log2("Attaching option %02x to list", optflag->code);
+		log2("attaching option %02x to list", optflag->code);
 		new = xmalloc(sizeof(*new));
 		new->data = xmalloc(length + OPT_DATA);
 		new->data[OPT_CODE] = optflag->code;
@@ -422,7 +429,7 @@ static NOINLINE void attach_option(
 		unsigned old_len;
 
 		/* add it to an existing option */
-		log2("Attaching option %02x to existing member of list", optflag->code);
+		log2("attaching option %02x to existing member of list", optflag->code);
 		old_len = existing->data[OPT_LEN];
 		if (old_len + length < 255) {
 			/* actually 255 is ok too, but adding a space can overlow it */

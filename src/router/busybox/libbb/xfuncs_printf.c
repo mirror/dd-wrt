@@ -235,8 +235,16 @@ void FAST_FUNC xwrite(int fd, const void *buf, size_t count)
 {
 	if (count) {
 		ssize_t size = full_write(fd, buf, count);
-		if ((size_t)size != count)
-			bb_error_msg_and_die("short write");
+		if ((size_t)size != count) {
+			/*
+			 * Two cases: write error immediately;
+			 * or some writes succeeded, then we hit an error.
+			 * In either case, errno is set.
+			 */
+			bb_perror_msg_and_die(
+				size >= 0 ? "short write" : "write error"
+			);
+		}
 	}
 }
 void FAST_FUNC xwrite_str(int fd, const char *str)
@@ -388,6 +396,12 @@ void FAST_FUNC xchdir(const char *path)
 {
 	if (chdir(path))
 		bb_perror_msg_and_die("can't change directory to '%s'", path);
+}
+
+void FAST_FUNC xfchdir(int fd)
+{
+	if (fchdir(fd))
+		bb_perror_msg_and_die("fchdir");
 }
 
 void FAST_FUNC xchroot(const char *path)
@@ -657,3 +671,19 @@ pid_t FAST_FUNC xfork(void)
 	return pid;
 }
 #endif
+
+void FAST_FUNC xvfork_parent_waits_and_exits(void)
+{
+	pid_t pid;
+
+	fflush_all();
+	pid = xvfork();
+	if (pid > 0) {
+		/* Parent */
+		int exit_status = wait_for_exitstatus(pid);
+		if (WIFSIGNALED(exit_status))
+			kill_myself_with_sig(WTERMSIG(exit_status));
+		_exit(WEXITSTATUS(exit_status));
+	}
+	/* Child continues */
+}

@@ -12,6 +12,30 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+//config:config FTPGET
+//config:	bool "ftpget"
+//config:	default y
+//config:	help
+//config:	  Retrieve a remote file via FTP.
+//config:
+//config:config FTPPUT
+//config:	bool "ftpput"
+//config:	default y
+//config:	help
+//config:	  Store a remote file via FTP.
+//config:
+//config:config FEATURE_FTPGETPUT_LONG_OPTIONS
+//config:	bool "Enable long options in ftpget/ftpput"
+//config:	default y
+//config:	depends on LONG_OPTS && (FTPGET || FTPPUT)
+//config:	help
+//config:	  Support long options for the ftpget/ftpput applet.
+
+//applet:IF_FTPGET(APPLET_ODDNAME(ftpget, ftpgetput, BB_DIR_USR_BIN, BB_SUID_DROP, ftpget))
+//applet:IF_FTPPUT(APPLET_ODDNAME(ftpput, ftpgetput, BB_DIR_USR_BIN, BB_SUID_DROP, ftpput))
+
+//kbuild:lib-$(CONFIG_FTPGET) += ftpgetput.o
+//kbuild:lib-$(CONFIG_FTPPUT) += ftpgetput.o
 
 //usage:#define ftpget_trivial_usage
 //usage:       "[OPTIONS] HOST [LOCAL_FILE] REMOTE_FILE"
@@ -50,6 +74,7 @@
 //usage:	)
 
 #include "libbb.h"
+#include "common_bufsiz.h"
 
 struct globals {
 	const char *user;
@@ -60,11 +85,8 @@ struct globals {
 	int do_continue;
 	char buf[4]; /* actually [BUFSZ] */
 } FIX_ALIASING;
-#define G (*(struct globals*)&bb_common_bufsiz1)
+#define G (*(struct globals*)bb_common_bufsiz1)
 enum { BUFSZ = COMMON_BUFSIZE - offsetof(struct globals, buf) };
-struct BUG_G_too_big {
-	char BUG_G_too_big[sizeof(G) <= COMMON_BUFSIZE ? 1 : -1];
-};
 #define user           (G.user          )
 #define password       (G.password      )
 #define lsa            (G.lsa           )
@@ -72,7 +94,10 @@ struct BUG_G_too_big {
 #define verbose_flag   (G.verbose_flag  )
 #define do_continue    (G.do_continue   )
 #define buf            (G.buf           )
-#define INIT_G() do { } while (0)
+#define INIT_G() do { \
+	setup_common_bufsiz(); \
+	BUILD_BUG_ON(sizeof(G) > COMMON_BUFSIZE); \
+} while (0)
 
 
 static void ftp_die(const char *msg) NORETURN;
