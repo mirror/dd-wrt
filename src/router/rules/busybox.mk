@@ -428,7 +428,7 @@ ifeq ($(CONFIG_TFTP),y)
 endif
 	echo "# CONFIG_BUSYBOX is not set" >> busybox/.config
 	echo "# CONFIG_DEBUG_SANITIZE is not set" >> busybox/.config
-	echo "CONFIG_FEATURE_USE_BSS_TAIL=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_USE_BSS_TAIL is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_GUNZIP_LONG_OPTIONS is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_CALL_TELINIT is not set" >> busybox/.config
 	echo "# CONFIG_LINUXRC is not set" >> busybox/.config
