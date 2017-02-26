@@ -60,7 +60,7 @@ int nvram_init(void *unused)
 	}
 
 	/* Map kernel string buffer into user space */
-	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED | MAP_FIXED, nvram_fd, 0);
+	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
 	if (nvram_buf == MAP_FAILED) {
 		close(nvram_fd);
 		fprintf(stderr, "nvram_init(): failed\n");
