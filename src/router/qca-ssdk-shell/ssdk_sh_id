@@ -4,7 +4,7 @@
 SSDK_SH=/usr/sbin/ssdk_sh
 SSDK_ID=/sys/ssdk/dev_id
 
-local sw_index=$1
+sw_index=$1
 
 if [ "$sw_index" != "0" -a "$sw_index" != "1" ]; then
 	echo "Error Switch Index Input"
