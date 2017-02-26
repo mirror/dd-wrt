@@ -5,6 +5,11 @@
  *
  * Licensed under GPLv2 or later, see file LICENSE in this source tree.
  */
+
+//applet:IF_MODINFO(APPLET(modinfo, BB_DIR_SBIN, BB_SUID_DROP))
+
+//kbuild:lib-$(CONFIG_MODINFO) += modinfo.o modutils.o
+
 //config:config MODINFO
 //config:	bool "modinfo"
 //config:	default y
@@ -12,46 +17,26 @@
 //config:	help
 //config:	  Show information about a Linux Kernel module
 
-//applet:IF_MODINFO(APPLET(modinfo, BB_DIR_SBIN, BB_SUID_DROP))
-
-//kbuild:lib-$(CONFIG_MODINFO) += modinfo.o modutils.o
-
 #include <fnmatch.h>
 #include <sys/utsname.h> /* uname() */
 #include "libbb.h"
 #include "modutils.h"
 
-static const char *const shortcuts[] = {
-	"filename",	// -n
-	"author",	// -a
-	"description",	// -d
-	"license",	// -l
-	"parm",		// -p
-	"version",	// the rest has no shortcut options
-	"alias",
-	"srcversion",
-	"depends",
-	"uts_release",
-	"intree",
-	"vermagic",
-	"firmware",
-};
 
 enum {
-	OPT_0 = (1 << 0), /* \0 as separator */
-	OPT_F = (1 << 1), /* field name */
-	/* first bits are for -nadlp options, the rest are for
-	 * fields not selectable with "shortcut" options
-	 */
-	OPT_n = (1 << 2),
-	OPT_TAGS = ((1 << ARRAY_SIZE(shortcuts)) - 1) << 2,
+	OPT_TAGS = (1 << 12) - 1, /* shortcut count */
+	OPT_F = (1 << 12), /* field name */
+	OPT_0 = (1 << 13), /* \0 as separator */
 };
 
-static void display(const char *data, const char *pattern)
+struct modinfo_env {
+	char *field;
+	int tags;
+};
+
+static void display(const char *data, const char *pattern, int flag)
 {
-	int flag = option_mask32 >> 1; /* shift out -0 bit */
-	if (flag & (flag-1)) {
-		/* more than one field to show: print "FIELD:" pfx */
+	if (flag) {
 		int n = printf("%s:", pattern);
 		while (n++ < 16)
 			bb_putchar(' ');
@@ -60,45 +45,55 @@ static void display(const char *data, const char *pattern)
 }
 
 static void modinfo(const char *path, const char *version,
-			const char *field)
+			const struct modinfo_env *env)
 {
+	static const char *const shortcuts[] = {
+		"filename",
+		"license",
+		"author",
+		"description",
+		"version",
+		"alias",
+		"srcversion",
+		"depends",
+		"uts_release",
+		"vermagic",
+		"parm",
+		"firmware",
+	};
 	size_t len;
 	int j;
 	char *ptr, *the_module;
-	char *allocated;
-	int tags = option_mask32;
+	const char *field = env->field;
+	int tags = env->tags;
 
-	allocated = NULL;
+	if (tags & 1) { /* filename */
+		display(path, shortcuts[0], 1 != tags);
+	}
+
 	len = MAXINT(ssize_t);
 	the_module = xmalloc_open_zipped_read_close(path, &len);
 	if (!the_module) {
 		if (path[0] == '/')
 			return;
 		/* Newer depmod puts relative paths in modules.dep */
-		path = allocated = xasprintf("%s/%s/%s", CONFIG_DEFAULT_MODULES_DIR, version, path);
+		path = xasprintf("%s/%s/%s", CONFIG_DEFAULT_MODULES_DIR, version, path);
 		the_module = xmalloc_open_zipped_read_close(path, &len);
-		if (!the_module) {
-			bb_error_msg("module '%s' not found", path);
-			goto ret;
-		}
+		free((char*)path);
+		if (!the_module)
+			return;
 	}
 
-	for (j = 1; (1<<j) & (OPT_TAGS|OPT_F); j++) {
+	if (field)
+		tags |= OPT_F;
+	for (j = 1; (1<<j) & (OPT_TAGS + OPT_F); j++) {
 		const char *pattern;
 
 		if (!((1<<j) & tags))
 			continue;
-
 		pattern = field;
 		if ((1<<j) & OPT_TAGS)
-			pattern = shortcuts[j-2];
-
-		if (strcmp(pattern, shortcuts[0]) == 0) {
-			/* "-n" or "-F filename" */
-			display(path, shortcuts[0]);
-			continue;
-		}
-
+			pattern = shortcuts[j];
 		ptr = the_module;
 		while (1) {
 			char *after_pattern;
@@ -111,7 +106,7 @@ static void modinfo(const char *path, const char *version,
 				/* field prefixes are 0x80 or 0x00 */
 				if ((ptr[-1] & 0x7F) == 0x00) {
 					ptr = after_pattern + 1;
-					display(ptr, pattern);
+					display(ptr, pattern, (1<<j) != tags);
 					ptr += strlen(ptr);
 				}
 			}
@@ -119,18 +114,15 @@ static void modinfo(const char *path, const char *version,
 		}
 	}
 	free(the_module);
- ret:
-	free(allocated);
 }
 
 //usage:#define modinfo_trivial_usage
-//usage:       "[-adlpn0] [-F keyword] MODULE"
+//usage:       "[-adlp0] [-F keyword] MODULE"
 //usage:#define modinfo_full_usage "\n\n"
 //usage:       "	-a		Shortcut for '-F author'"
 //usage:     "\n	-d		Shortcut for '-F description'"
 //usage:     "\n	-l		Shortcut for '-F license'"
 //usage:     "\n	-p		Shortcut for '-F parm'"
-////usage:     "\n	-n		Shortcut for '-F filename'"
 //usage:     "\n	-F keyword	Keyword to look for"
 //usage:     "\n	-0		Separate output with NULs"
 //usage:#define modinfo_example_usage
@@ -139,7 +131,7 @@ static void modinfo(const char *path, const char *version,
 int modinfo_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int modinfo_main(int argc UNUSED_PARAM, char **argv)
 {
-	const char *field;
+	struct modinfo_env env;
 	char name[MODULE_NAME_LEN];
 	struct utsname uts;
 	parser_t *parser;
@@ -147,12 +139,10 @@ int modinfo_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opts;
 	unsigned i;
 
-	field = NULL;
+	env.field = NULL;
 	opt_complementary = "-1"; /* minimum one param */
-	opts = getopt32(argv, "0F:nadlp", &field);
-	/* If no field selected, show all */
-	if (!(opts & (OPT_TAGS|OPT_F)))
-		option_mask32 |= OPT_TAGS;
+	opts = getopt32(argv, "nladvAsDumpF:0", &env.field);
+	env.tags = opts & OPT_TAGS ? opts & OPT_TAGS : OPT_TAGS;
 	argv += optind;
 
 	uname(&uts);
@@ -169,7 +159,7 @@ int modinfo_main(int argc UNUSED_PARAM, char **argv)
 		filename2modname(bb_basename(tokens[0]), name);
 		for (i = 0; argv[i]; i++) {
 			if (fnmatch(argv[i], name, 0) == 0) {
-				modinfo(tokens[0], uts.release, field);
+				modinfo(tokens[0], uts.release, &env);
 				argv[i] = (char *) "";
 			}
 		}
@@ -179,7 +169,7 @@ int modinfo_main(int argc UNUSED_PARAM, char **argv)
 
 	for (i = 0; argv[i]; i++) {
 		if (argv[i][0]) {
-			modinfo(argv[i], uts.release, field);
+			modinfo(argv[i], uts.release, &env);
 		}
 	}
 
