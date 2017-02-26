@@ -266,7 +266,6 @@ void start_sysinit(void)
 
 	set_smp_affinity(258, 3);
 	set_smp_affinity(259, 2);
-	set_smp_affinity(260, 1);
 
 	switch (board) {
 	case ROUTER_NETGEAR_R9000:

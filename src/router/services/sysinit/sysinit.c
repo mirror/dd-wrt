@@ -3074,14 +3074,17 @@ void start_drivers(void)
 	if (nvram_matchi("sdio_loaded", 0)) {
 		insmod("sdhci-pxav3");
 		sleep(2);
-		insmod("/lib/ath9k/mvsdio");
+		insmod("mvsdio");
 		sleep(2);
-		insmod("/lib/ath9k/mwifiex_sdio.ko");
-		insmod("/lib/ath9k/bluetooth");
-		insmod("/lib/ath9k/btmrvl");
-		insmod("/lib/ath9k/btmrvl_sdio");
+		insmod("mwifiex_sdio.ko");
+		insmod("bluetooth");
+		insmod("btmrvl");
+		insmod("btmrvl_sdio");
 		nvram_seti("sdio_loaded", 1);
 	}
+#endif
+#ifdef HAVE_ALPINE
+	set_smp_affinity(260, 1);
 #endif
 #ifdef HAVE_NORTHSTAR
 	set_smp_affinity(111, 2);
