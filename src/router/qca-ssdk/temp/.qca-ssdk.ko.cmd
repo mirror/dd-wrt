@@ -1,1 +1,0 @@
-cmd_/home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk.ko := ccache arm-linux-uclibc-ld -EL -r  -T ./scripts/module-common.lds -s --build-id   -o /home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk.ko /home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk.o /home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk.mod.o
