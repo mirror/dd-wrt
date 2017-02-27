@@ -1,3 +1,0 @@
-0x00000000	r9000_trunk_ports_phy_read	/home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk	EXPORT_SYMBOL
-0x00000000	qca_trunk_sendout_issue_workaround	/home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk	EXPORT_SYMBOL
-0x00000000	r9000_trunk_ports_phy_write	/home/seg/DEV/alpine/src/router/qca-ssdk/temp//qca-ssdk	EXPORT_SYMBOL
