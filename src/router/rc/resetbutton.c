@@ -651,7 +651,7 @@ static int getbuttonstate()
 static int mode = 0;		/* mode 1 : pushed */
 static int ses_mode = 0;	/* mode 1 : pushed */
 static int wifi_mode = 0;	/* mode 1 : pushed */
-static int count = 0;
+static int _count = 0;
 
 static int ses_pushed = 0;
 static int wifi24_pushed = 0;
@@ -662,7 +662,7 @@ static int initses = 1;
 
 static int brand;
 
-static void alarmtimer(unsigned long sec, unsigned long usec)
+static void resetbtn_alarmtimer(unsigned long sec, unsigned long usec)
 {
 	struct itimerval itv;
 
@@ -717,7 +717,7 @@ static void service_restart(void)
 	/* 
 	 * Stop the timer alarm 
 	 */
-	alarmtimer(0, 0);
+	resetbtn_alarmtimer(0, 0);
 	/* 
 	 * Reset the Diagnostic LED 
 	 */
@@ -740,7 +740,7 @@ static void handle_reset(void)
 		led_control(LED_DIAG, LED_ON);
 #endif
 		ACTION("ACT_HW_RESTORE");
-		alarmtimer(0, 0);	/* Stop the timer alarm */
+		resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 #ifdef HAVE_X86
 		eval("mount", "/usr/local", "-o", "remount,rw");
 		eval("rm", "-f", "/tmp/nvram/*");	// delete nvram
@@ -814,7 +814,7 @@ static void handle_wifi(void)
 {
 
 	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
-	count = 0;
+	_count = 0;
 	switch (wifi_mode) {
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
@@ -835,7 +835,7 @@ static void handle_wifi24(void)
 {
 
 	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
-	count = 0;
+	_count = 0;
 	switch (wifi_mode) {
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
@@ -856,7 +856,7 @@ static void handle_wifi5(void)
 {
 
 	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
-	count = 0;
+	_count = 0;
 	switch (wifi_mode) {
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
@@ -880,7 +880,7 @@ static void handle_ses(void)
 	runStartup("/jffs/etc/config", ".sesbutton");	// if available
 	runStartup("/mmc/etc/config", ".sesbutton");	// if available
 	runStartup("/tmp/etc/config", ".sesbutton");	// if available
-	count = 0;
+	_count = 0;
 	if (nvram_matchi("usb_ses_umount", 1)) {
 		led_control(LED_DIAG, LED_FLASH);
 		runStartup("/etc/config", ".umount");
@@ -947,7 +947,7 @@ static void handle_ses(void)
 
 }
 
-static void period_check(int sig)
+static void resetbtn_period_check(int sig)
 {
 	FILE *fp;
 	unsigned int val = 0;
@@ -1510,71 +1510,71 @@ static void period_check(int sig)
 	 * The value is zero during button-pushed. 
 	 */
 	if (state && nvram_matchi("resetbutton_enable", 1)) {
-		DEBUG("resetbutton: mode=%d, count=%d\n", mode, count);
+		DEBUG("resetbutton: mode=%d, count=%d\n", mode, _count);
 
 		if (mode == 0) {
 			/* 
 			 * We detect button pushed first time 
 			 */
-			alarmtimer(0, URGENT_INTERVAL);
+			resetbtn_alarmtimer(0, URGENT_INTERVAL);
 			mode = 1;
 		}
-		if (++count > RESET_WAIT_COUNT) {
+		if (++_count > RESET_WAIT_COUNT) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
 			handle_reset();
 		}
 	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
-		if (!ses_pushed && (++count > SES_WAIT)) {
+		if (!ses_pushed && (++_count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
-			count = 0;
+			_count = 0;
 			ses_pushed = 1;
 			handle_ses();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
-		if (!wifi24_pushed && (++count > SES_WAIT)) {
+		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
-			count = 0;
+			_count = 0;
 			wifi24_pushed = 1;
 			handle_wifi();
 		}
 
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
-		if (!wifi24_pushed && (++count > SES_WAIT)) {
+		if (!wifi24_pushed && (++_count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
-			count = 0;
+			_count = 0;
 			wifi24_pushed = 1;
 			handle_wifi24();
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
-		if (!wifi5_pushed && (++count > SES_WAIT)) {
+		if (!wifi5_pushed && (++_count > SES_WAIT)) {
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
-			count = 0;
+			_count = 0;
 			wifi5_pushed = 1;
 			handle_wifi5();
 		}
 
 	} else {
-		count = 0;	// reset counter to avoid factory default
+		_count = 0;	// reset counter to avoid factory default
 		wifi24_pushed = 0;
 		wifi5_pushed = 0;
 		ses_pushed = 0;
@@ -1583,14 +1583,14 @@ static void period_check(int sig)
 		 */
 		if (mode == 1) {
 //                      fprintf(stderr, "[RESETBUTTON] released %d\n", count);
-			alarmtimer(NORMAL_INTERVAL, 0);
+			resetbtn_alarmtimer(NORMAL_INTERVAL, 0);
 			mode = 0;
 #ifdef HAVE_UNFY
-			if (count > UPGRADE_WAIT_COUNT) {
+			if (_count > UPGRADE_WAIT_COUNT) {
 
 				char *upgrade_script = "firmware_upgrade.sh";
 				char call[32];
-				fprintf(stderr, "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), count);
+				fprintf(stderr, "[RESETBUTTON] check:%d count:%d\n", pidof(upgrade_script), _count);
 				if (pidof(upgrade_script) < 0) {
 					sprintf(call, "/%s/%s", nvram_safe_get("fw_upgrade_dir"), upgrade_script);
 					if (f_exists(call)) {
@@ -1605,7 +1605,7 @@ static void period_check(int sig)
 #else
 			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
-				alarmtimer(0, 0);	/* Stop the timer alarm */
+				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
 			}
 #endif
@@ -1654,12 +1654,12 @@ static int resetbutton_main(int argc, char *argv[])
 	/* 
 	 * set the signal handler 
 	 */
-	signal(SIGALRM, period_check);
+	signal(SIGALRM, resetbtn_period_check);
 
 	/* 
 	 * set timer 
 	 */
-	alarmtimer(NORMAL_INTERVAL, 0);
+	resetbtn_alarmtimer(NORMAL_INTERVAL, 0);
 
 	/* 
 	 * Most of time it goes to sleep 
