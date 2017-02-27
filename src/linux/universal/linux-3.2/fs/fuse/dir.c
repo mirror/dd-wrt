@@ -1393,10 +1393,42 @@ error:
 
 static int fuse_setattr(struct dentry *entry, struct iattr *attr)
 {
-	if (attr->ia_valid & ATTR_FILE)
-		return fuse_do_setattr(entry, attr, attr->ia_file);
-	else
-		return fuse_do_setattr(entry, attr, NULL);
+	struct inode *inode = entry->d_inode;
+	struct file *file = (attr->ia_valid & ATTR_FILE) ? attr->ia_file : NULL;
+	int ret;
+
+	if (attr->ia_valid & (ATTR_KILL_SUID | ATTR_KILL_SGID)) {
+		attr->ia_valid &= ~(ATTR_KILL_SUID | ATTR_KILL_SGID |
+				    ATTR_MODE);
+		/*
+		 * ia_mode calculation may have used stale i_mode.  Refresh and
+		 * recalculate.
+		 */
+		ret = fuse_do_getattr(inode, NULL, file);
+		if (ret)
+			return ret;
+
+		attr->ia_mode = inode->i_mode;
+		if (inode->i_mode & S_ISUID) {
+			attr->ia_valid |= ATTR_MODE;
+			attr->ia_mode &= ~S_ISUID;
+		}
+		if ((inode->i_mode & (S_ISGID | S_IXGRP)) == (S_ISGID | S_IXGRP)) {
+			attr->ia_valid |= ATTR_MODE;
+			attr->ia_mode &= ~S_ISGID;
+		}
+	}
+	if (!attr->ia_valid)
+		return 0;
+
+	ret = fuse_do_setattr(entry, attr, file);
+	if (!ret) {
+		/* Directory mode changed, may need to revalidate access */
+		if (S_ISDIR(entry->d_inode->i_mode) &&
+		    (attr->ia_valid & ATTR_MODE))
+			fuse_invalidate_entry_cache(entry);
+	}
+	return ret;
 }
 
 static int fuse_getattr(struct vfsmount *mnt, struct dentry *entry,
@@ -1501,6 +1533,23 @@ static ssize_t fuse_getxattr(struct dentry *entry, const char *name,
 	return ret;
 }
 
+static int fuse_verify_xattr_list(char *list, size_t size)
+{
+	size_t origsize = size;
+
+	while (size) {
+		size_t thislen = strnlen(list, size);
+
+		if (!thislen || thislen == size)
+			return -EIO;
+
+		size -= thislen + 1;
+		list += thislen + 1;
+	}
+
+	return origsize;
+}
+
 static ssize_t fuse_listxattr(struct dentry *entry, char *list, size_t size)
 {
 	struct inode *inode = entry->d_inode;
@@ -1539,9 +1588,11 @@ static ssize_t fuse_listxattr(struct dentry *entry, char *list, size_t size)
 	}
 	fuse_request_send(fc, req);
 	ret = req->out.h.error;
-	if (!ret)
+	if (!ret) {
 		ret = size ? req->out.args[0].size : outarg.size;
-	else {
+		if (ret > 0 && size)
+			ret = fuse_verify_xattr_list(list, ret);
+	} else {
 		if (ret == -ENOSYS) {
 			fc->no_listxattr = 1;
 			ret = -EOPNOTSUPP;
