@@ -144,19 +144,19 @@ int redial_main(int argc, char **argv)
 	int need_redial = 0;
 	int status;
 	pid_t pid;
-	int count = 1;
+	int _count = 1;
 	int num;
 
 	while (1) {
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 		if (nvram_match("wan_proto", "3g")
-		    && nvram_match("3gdata", "qmi") && count == 1) {
+		    && nvram_match("3gdata", "qmi") && _count == 1) {
 			check_qmi();
 		}
 #endif
 		sleep(atoi(argv[1]));
 		num = 0;
-		count++;
+		_count++;
 
 #if defined(HAVE_UQMI) || defined(HAVE_LIBQMI)
 		if (nvram_match("wan_proto", "3g")
