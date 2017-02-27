@@ -496,7 +496,7 @@ static int check_listen_addrs(struct in_addr local, int if_index, char *label,
    3) Fills in local (this host) and router (this host or relay) addresses.
    4) Links contexts which are valid for hosts directly connected to the arrival interface on ->current.
 
-   Note that the current chain may be superceded later for configured hosts or those coming via gateways. */
+   Note that the current chain may be superseded later for configured hosts or those coming via gateways. */
 
 static int complete_context(struct in_addr local, int if_index, char *label,
 			    struct in_addr netmask, struct in_addr broadcast, void *vparam)

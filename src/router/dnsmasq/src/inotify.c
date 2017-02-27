@@ -104,7 +104,7 @@ void inotify_dnsmasq_init()
 
       strcpy(path, res->name);
 
-      /* Follow symlinks until we reach a non-symlink, or a non-existant file. */
+      /* Follow symlinks until we reach a non-symlink, or a non-existent file. */
       while ((new_path = my_readlink(path)))
 	{
 	  if (links-- == 0)

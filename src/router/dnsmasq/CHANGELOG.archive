@@ -78,7 +78,7 @@ release 0.98  Some enhancements and bug-fixes.
                   ids, to thwart DNS spoofers.
               (7) Dnsmasq no longer forwards queries when the 
 	          "recursion desired" bit is not set in the header.
-	      (8) Fixed getopt code to work on compliers with unsigned char.
+	      (8) Fixed getopt code to work on compilers with unsigned char.
               
 release 0.991 Added -b flag: when set causes dnsmasq to always answer
 	      reverse queries on the RFC 1918 private IP space itself and
@@ -319,7 +319,7 @@ release 1.9   Fixes to rpm .spec files.
               uClinux. Thanks to Matthew Natalier for uClinux stuff. 
 
 release 1.10  Log warnings if resolv.conf or dhcp.leases are not
-              accessable for any reason, as suggested by Hinrich Eilts.
+              accessible for any reason, as suggested by Hinrich Eilts.
 
 	      Fixed wrong address printing in error message about
 	      no interface with address.
@@ -975,7 +975,7 @@ release 2.8
 	     configuration. Specifically: (1) options are matched on
 	     the netids from dhcp-range, dhcp-host, vendor class and
 	     user class(es). Multiple net-ids are allowed and options
-	     are searched on them all. (2) matches agains vendor class
+	     are searched on them all. (2) matches against vendor class
 	     and user class are now on a substring, if the given
 	     string is a substring of the vendor/user class, then a
 	     match occurs. Thanks again to Richard Musil for prompting
@@ -1019,7 +1019,7 @@ release 2.9
 	     broken. The new algorithm is to pick as before for the
 	     first try, but if a query is retried, to send to all
 	     available servers in parallel. The first one to reply
-	     then becomes prefered for the next query. This should 
+	     then becomes preferred for the next query. This should 
 	     improve reliability without generating significant extra
 	     upstream load.
 
@@ -1229,7 +1229,7 @@ version 2.16
 
             Set NONBLOCK on all listening sockets to workaround non-POSIX
             compliance in Linux 2.4 and 2.6. This fixes rare hangs which
-            occured when corrupted packets were received. Thanks to
+            occurred when corrupted packets were received. Thanks to
 	    Joris van Rantwijk for chasing that down.
  
 	    Updated config.h for NetBSD. Thanks to Martin Lambers.
@@ -1297,7 +1297,7 @@ version 2.18
 	    interfaces with more than one IPv6 address. Thanks to
             Martin Pels for help with that.
 
-	    Fix problems which occured when more than one dhcp-range
+	    Fix problems which occurred when more than one dhcp-range
 	    was specified in the same subnet: sometimes parameters
 	    (lease time, network-id tag) from the wrong one would be
 	    used. Thanks to Rory Campbell-Lange for the bug report.
@@ -1740,7 +1740,7 @@ version 2.28
 	    Fixed regression in netlink code under 2.2.x kernels which 
 	    occurred in 2.27. Erik Jan Tromp is the vintage kernel fan 
 	    who found this. P.S. It looks like this "netlink bind:
-	    permission denied" problem occured in kernels at least as
+	    permission denied" problem occurred in kernels at least as
 	    late a 2.4.18. Good information from Alain Richoux.
 
 	    Added a warning when it's impossible to give a host its

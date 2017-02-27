@@ -426,6 +426,19 @@ int private_net(struct in_addr addr, int ban_localhost)
     ((ip_addr & 0xFFFFFFFF) == 0xFFFFFFFF)  /* 255.255.255.255/32 (broadcast)*/ ;
 }
 
+#ifdef HAVE_IPV6
+static int private_net6(struct in6_addr *a)
+{
+  return 
+    IN6_IS_ADDR_UNSPECIFIED(a) || /* RFC 6303 4.3 */
+    IN6_IS_ADDR_LOOPBACK(a) ||    /* RFC 6303 4.3 */
+    IN6_IS_ADDR_LINKLOCAL(a) ||   /* RFC 6303 4.5 */
+    ((unsigned char *)a)[0] == 0xfd ||   /* RFC 6303 4.4 */
+    ((u32 *)a)[0] == htonl(0x20010db8); /* RFC 6303 4.6 */
+}
+#endif
+
+
 static unsigned char *do_doctor(unsigned char *p, int count, struct dns_header *header, size_t qlen, char *name, int *doctored)
 {
   int i, qtype, qclass, rdlen;
@@ -1184,7 +1197,7 @@ static unsigned long crec_ttl(struct crec *crecp, time_t now)
   if (crecp->flags & F_IMMORTAL)
     return crecp->ttd;
 
-  /* Return the Max TTL value if it is lower then the actual TTL */
+  /* Return the Max TTL value if it is lower than the actual TTL */
   if (daemon->max_ttl == 0 || ((unsigned)(crecp->ttd - now) < daemon->max_ttl))
     return crecp->ttd - now;
   else
@@ -1440,20 +1453,22 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			      anscount++;
 		    }
 		}
-	      else if (is_arpa == F_IPV4 && 
-		       option_bool(OPT_BOGUSPRIV) && 
-		       private_net(addr.addr.addr4, 1))
+	      else if (option_bool(OPT_BOGUSPRIV) && (
+#ifdef HAVE_IPV6
+		       (is_arpa == F_IPV6 && private_net6(&addr.addr.addr6)) ||
+#endif
+		       (is_arpa == F_IPV4 && private_net(addr.addr.addr4, 1))))
 		{
 		  /* if not in cache, enabled and private IPV4 address, return NXDOMAIN */
 		  ans = 1;
 		  sec_data = 0;
 		  nxdomain = 1;
 		  if (!dryrun)
-		    log_query(F_CONFIG | F_REVERSE | F_IPV4 | F_NEG | F_NXDOMAIN, 
+		    log_query(F_CONFIG | F_REVERSE | is_arpa | F_NEG | F_NXDOMAIN, 
 			      name, &addr, NULL);
 		}
 	    }
-	    
+	  
 	  for (flag = F_IPV4; flag; flag = (flag == F_IPV4) ? F_IPV6 : 0)
 	    {
 	      unsigned short type = T_A;
@@ -1516,9 +1531,24 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 	      if (intr)
 		{
 		  struct addrlist *addrlist;
-		  int gotit = 0;
+		  int gotit = 0, localise = 0;
 
 		  enumerate_interfaces(0);
+		    
+		  /* See if a putative address is on the network from which we received
+		     the query, is so we'll filter other answers. */
+		  if (local_addr.s_addr != 0 && option_bool(OPT_LOCALISE) && type == T_A)
+		    for (intr = daemon->int_names; intr; intr = intr->next)
+		      if (hostname_isequal(name, intr->name))
+			for (addrlist = intr->addr; addrlist; addrlist = addrlist->next)
+#ifdef HAVE_IPV6
+			  if (!(addrlist->flags & ADDRLIST_IPV6))
+#endif
+			    if (is_same_net(*((struct in_addr *)&addrlist->addr), local_addr, local_netmask))
+			      {
+				localise = 1;
+				break;
+			      }
 		  
 		  for (intr = daemon->int_names; intr; intr = intr->next)
 		    if (hostname_isequal(name, intr->name))
@@ -1528,6 +1558,10 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 			  if (((addrlist->flags & ADDRLIST_IPV6) ? T_AAAA : T_A) == type)
 #endif
 			    {
+			      if (localise && 
+				  !is_same_net(*((struct in_addr *)&addrlist->addr), local_addr, local_netmask))
+				continue;
+
 #ifdef HAVE_IPV6
 			      if (addrlist->flags & ADDRLIST_REVONLY)
 				continue;
