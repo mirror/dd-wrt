@@ -260,7 +260,9 @@ int iface_enumerate(int family, void *parm, int (*callback)())
 		    
 		    if (ifa->ifa_flags & IFA_F_DEPRECATED)
 		      flags |= IFACE_DEPRECATED;
-		    
+#ifndef IFA_F_TEMPORARY
+#define IFA_F_TEMPORARY IFA_F_SECONDARY
+#endif
 		    if (!(ifa->ifa_flags & IFA_F_TEMPORARY))
 		      flags |= IFACE_PERMANENT;
     		    
