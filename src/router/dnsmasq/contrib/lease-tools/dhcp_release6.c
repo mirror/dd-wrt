@@ -20,7 +20,7 @@
  The iaid argument is numeric string and mandatory. Normally
  it can be found in leases file both on client and server.
  
- IP is an IPv6 adress to release
+ IP is an IPv6 address to release
  
  If --dry-run is specified, dhcp_release6 just prints hexadecimal representation of
  packet to send to stdout and exits.
