@@ -1,6 +1,6 @@
 include ../.config
 export TOOL_PATH=$(TOOLCHAIN)/bin
-export TOOL_PATH=/xfs/toolchains/toolchain-arm_cortex-a15+neon-vfpv4_gcc-6.1.0_musl-1.1.15_eabi/bin
+#export TOOL_PATH=/xfs/toolchains/toolchain-arm_cortex-a15+neon-vfpv4_gcc-6.1.0_musl-1.1.15_eabi/bin
 export SYS_PATH=$(LINUXDIR)
 export TOOLPREFIX=$(ARCH)-linux-uclibc-
 export KVER=$(KERNEL_VERSION)
