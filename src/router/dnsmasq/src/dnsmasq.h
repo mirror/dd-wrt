@@ -369,7 +369,7 @@ struct interface_name {
 };
 
 union bigname {
-  char name[MAXDNAME];
+  char name[MAXDNAME+1];
   union bigname *next; /* freelist */
 };
 
@@ -407,7 +407,7 @@ struct crec {
   unsigned int uid; 
   unsigned short flags;
   union {
-    char sname[SMALLDNAME];
+    char sname[SMALLDNAME+1];
     union bigname *bname;
     char *namep;
   } name;
