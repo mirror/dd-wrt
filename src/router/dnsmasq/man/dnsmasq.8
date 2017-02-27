@@ -301,7 +301,8 @@ attached to. Currently this facility is limited to IPv4.
 .B \-b, --bogus-priv
 Bogus private reverse lookups. All reverse lookups for private IP ranges (ie 192.168.x.x, etc)
 which are not found in /etc/hosts or the DHCP leases file are answered
-with "no such domain" rather than being forwarded upstream.
+with "no such domain" rather than being forwarded upstream. The 
+set of prefixes affected is the list given in RFC6303, for IPv4 and IPv6.
 .TP
 .B \-V, --alias=[<old-ip>]|[<start-ip>-<end-ip>],<new-ip>[,<mask>]
 Modify IPv4 addresses returned from upstream nameservers; old-ip is
@@ -1475,7 +1476,7 @@ DUID automatically when it is first needed. When given, this option
 provides dnsmasq the data required to create a DUID-EN type DUID. Note
 that once set, the DUID is stored in the lease database, so to change between DUID-EN and
 automatically created DUIDs or vice-versa, the lease database must be
-re-intialised. The enterprise-id is assigned by IANA, and the uid is a
+re-initialised. The enterprise-id is assigned by IANA, and the uid is a
 string of hex octets unique to a particular device.
 .TP
 .B \-6 --dhcp-script=<path>
@@ -1605,7 +1606,7 @@ the arrival of a new entry in the ARP or neighbour table, and "arp-del" indicate
 .B --dhcp-luascript=<path>
 Specify a script written in Lua, to be run when leases are created,
 destroyed or changed. To use this option, dnsmasq must be compiled
-with the correct support. The Lua interpreter is intialised once, when
+with the correct support. The Lua interpreter is initialised once, when
 dnsmasq starts, so that global variables persist between lease
 events. The Lua code must define a
 .B lease

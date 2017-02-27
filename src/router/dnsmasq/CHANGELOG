@@ -51,7 +51,7 @@ version 2.77
 	    Add DNSMASQ_REQUESTED_OPTIONS environment variable to the 
 	    lease-change script. Thanks to ZHAO Yu for the patch.
 
-	    Fix foobar in rrfilter code, that could cause misformed 
+	    Fix foobar in rrfilter code, that could cause malformed 
 	    replies, especially when DNSSEC validation on, and 
 	    the upstream server returns answer with the RRs in a 
 	    particular order. The only DNS server known to tickle
@@ -65,7 +65,7 @@ version 2.77
 	    Thanks to Kevin Darbyshire-Bryant and Eric Luehrsen
 	    for pushing this.
 
-            Improve connection handling when talking to TCP upsteam 
+            Improve connection handling when talking to TCP upstream 
 	    servers. Specifically, be prepared to open a new TCP
 	    connection when we want to make multiple queries
             but the upstream server accepts fewer queries per connection.
@@ -77,6 +77,9 @@ version 2.77
             Implement RFC 6842. Thanks to Reddeiah Raju Konduru for
             pointing out that this was missing.
 
+	    Make --bogus-priv apply to IPv6, for the prefixes specified
+	    in RFC6303. Thanks to Kevin Darbyshire-Bryant for work on this.
+	
 
 version 2.76
             Include 0.0.0.0/8 in DNS rebind checks. This range 
@@ -468,7 +471,7 @@ version 2.69
 	    conf-file=/path/to/trust-anchors.conf
 	    dnssec
 
-	    to your config is all thats needed to get things
+	    to your config is all that's needed to get things
 	    working. The upstream nameservers have to be DNSSEC-capable
 	    too, of course. Many ISP nameservers aren't, but the
 	    Google public nameservers (8.8.8.8 and 8.8.4.4) are.
@@ -656,7 +659,7 @@ version 2.67
 	    we can't use SO_BINDTODEVICE. Thanks to Natrio for the bug
 	    report. 
 
-	    Increase timeout/number of retries in TFTP to accomodate
+	    Increase timeout/number of retries in TFTP to accommodate
 	    AudioCodes Voice Gateways doing streaming writes to flash.
 	    Thanks to Damian Kaczkowski for spotting the problem.
 
@@ -924,7 +927,7 @@ version 2.63
 	    still-born attempt to allow automatic isolated
 	    configuration by libvirt, but have never (to my knowledge)
 	    been used, had very strange semantics, and have been
-	    superceded by other mechanisms. 
+	    superseded by other mechanisms. 
 
 	    Fixed bug logging filenames when duplicate dhcp-host
 	    addresses are found. Thanks to John Hanks for the patch.
@@ -957,7 +960,7 @@ version 2.63
 version 2.62
             Update German translation. Thanks to Conrad Kostecki.
 
-	    Cope with router-solict packets wich don't have a valid 
+	    Cope with router-solict packets which don't have a valid 
 	    source address. Thanks to Vladislav Grishenko for the patch.
 
 	    Fixed bug which caused missing periodic router
@@ -1211,7 +1214,7 @@ version 2.58
 
 	    Relax the need to supply a netmask in --dhcp-range for
 	    networks which use a DHCP relay. Whilst this is still
-	    desireable, in the absence of a netmask dnsmasq will use
+	    desirable, in the absence of a netmask dnsmasq will use
 	    a default based on the class (A, B, or C) of the address. 
 	    This should at least remove a cause of mysterious failure 
 	    for people using RFC1918 addresses and relays.
@@ -1325,7 +1328,7 @@ version 2.56
 
 	    Add --add-mac option. This is to support currently 
 	    experimental DNS filtering facilities. Thanks to Benjamin
-	    Petrin for the orignal patch. 
+	    Petrin for the original patch. 
 
 	    Fix bug which meant that tags were ignored in dhcp-range
 	    configuration specifying PXE-proxy service. Thanks to
