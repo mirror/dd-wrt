@@ -4,7 +4,7 @@ export TOOL_PATH=$(TOOLCHAIN)/bin
 export SYS_PATH=$(LINUXDIR)
 export TOOLPREFIX=$(ARCH)-linux-uclibc-
 export KVER=$(KERNEL_VERSION)
-export CFLAGS=
+export CFLAGS=$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 include ./config
