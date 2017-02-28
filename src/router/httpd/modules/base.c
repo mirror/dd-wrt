@@ -2148,7 +2148,7 @@ char *live_translate(const char *tran)
 		entry->translation = strdup("Error");
 	return entry->translation;
 }
-
+#ifdef HAVE_STATUS_SYSLOG
 static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 
@@ -2199,7 +2199,7 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	websWrite(stream, "</fieldset><p></body></html>");
 	return;
 }
-
+#endif
 static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 #define COL_WIDTH 16		/* single column width */
@@ -2581,7 +2581,9 @@ struct mime_handler mime_handlers[] = {
 	 do_cfebackup,
 	 do_auth, 0},
 #endif
+#ifdef HAVE_STATUS_SYSLOG
 	{"syslog.cgi*", "text/html", no_cache, NULL, do_syslog, do_auth, 1},
+#endif
 	{"ttgraph.cgi*", "text/html", no_cache, NULL, do_ttgraph, do_auth, 1},
 	{"traffdata.bak*", "text/html", no_cache, NULL, ttraff_backup,
 	 do_auth, 0},
