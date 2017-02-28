@@ -1635,6 +1635,7 @@ service.pptp_chap="CHAP-Secrets";
 //syslog.webservices
 service.syslog_legend="System Log";
 service.syslog_srv="Syslogd";
+service.klog="Klogd";
 service.syslog_ip="Remote Server";
 
 //telnet.webservices
