@@ -68,6 +68,8 @@ void start_syslog(void)
 		ret1 = eval("syslogd", "-L");
 
 	dd_syslog(LOG_INFO, "syslogd : syslog daemon successfully started\n");
+	if (!nvram_invmatchi("klogd_enable", 0))
+		return;
 	ret2 = eval("klogd");
 	dd_syslog(LOG_INFO, "klogd : klog daemon successfully started\n");
 
