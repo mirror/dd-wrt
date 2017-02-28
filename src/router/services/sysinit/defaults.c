@@ -2344,6 +2344,7 @@ struct nvram_param srouter_defaults[] = {
 	{"remote_mgt_telnet", "0"},
 	{"telnet_wanport", "23"},	/* WAN port to listen on */
 	{"syslogd_enable", "0"},
+	{"klogd_enable", "0"},
 	{"syslogd_rem_ip", ""},
 #ifdef HAVE_ONNET
 	{"tcp_congestion_control", "vegas"},
