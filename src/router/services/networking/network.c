@@ -1015,7 +1015,6 @@ void start_lan(void)
 	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_TRENDNET_TEW827:
-	case ROUTER_ASROCK_G10:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "eth0 eth1 ath0");
 			PORTSETUPWAN("");
@@ -1025,6 +1024,7 @@ void start_lan(void)
 		}
 		strncpy(ifr.ifr_name, "eth1", IFNAMSIZ);
 		break;
+	case ROUTER_ASROCK_G10:
 	case ROUTER_LINKSYS_EA8500:
 		if (getSTA() || getWET() || CANBRIDGE()) {
 			nvram_setz(lan_ifnames, "vlan1 vlan2 ath0 ath1");
@@ -3112,6 +3112,7 @@ void start_wan(int status)
 	int board = getRouterBrand();
 	switch (board) {
 	case ROUTER_LINKSYS_EA8500:
+	case ROUTER_ASROCK_G10:
 		pppoe_wan_ifname = nvram_invmatch("pppoe_wan_ifname", "") ? nvram_safe_get("pppoe_wan_ifname") : "vlan2";
 		break;
 	case ROUTER_NETGEAR_R7800:
