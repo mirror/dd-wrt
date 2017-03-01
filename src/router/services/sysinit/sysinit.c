@@ -1221,7 +1221,7 @@ void start_restore_defaults(void)
 	struct nvram_param *generic = NULL;
 
 	int wrt_brand = getRouterBrand();
-	if (wrt_brand == ROUTER_LINKSYS_EA8500)
+	if (wrt_brand == ROUTER_LINKSYS_EA8500 || wrt_brand == ROUTER_ASROCK_G10)
 		generic = ea8500;
 	else if (wrt_brand == ROUTER_NETGEAR_R7800)
 		generic = ipq806x;
