@@ -492,15 +492,14 @@ void start_sysinit(void)
 		break;
 	case ROUTER_ASROCK_G10:
 		system("swconfig dev switch0 set reset 1");
-		system("swconfig dev switch0 set enable_vlan 0");
-		system("swconfig dev switch0 vlan 1 set ports \"2 3 4 5 6\"");
-		system("swconfig dev switch0 vlan 2 set ports \"0 1\"");
+		system("swconfig dev switch0 set enable_vlan 1");
+		system("swconfig dev switch0 vlan 1 set ports \"2 3 4 5 6t\"");
+		system("swconfig dev switch0 vlan 2 set ports \"1 6t\"");
 		system("swconfig dev switch0 set apply");
 		eval("ifconfig", "eth0", "up");
-		eval("ifconfig", "eth1", "up");
-//              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-//              eval("vconfig", "add", "eth1", "1");
-//              eval("vconfig", "add", "eth0", "2");
+              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+              eval("vconfig", "add", "eth0", "1");
+              eval("vconfig", "add", "eth0", "2");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		system("swconfig dev switch0 set reset 1");
@@ -508,10 +507,10 @@ void start_sysinit(void)
 		system("swconfig dev switch0 vlan 1 set ports \"0t 1 2 3 4\"");
 		system("swconfig dev switch0 vlan 2 set ports \"0t 5\"");
 		system("swconfig dev switch0 set apply");
-		eval("ifconfig", "eth0", "up");
+		eval("ifconfig", "eth1", "up");
 		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-		eval("vconfig", "add", "eth0", "1");
-		eval("vconfig", "add", "eth0", "2");
+		eval("vconfig", "add", "eth1", "1");
+		eval("vconfig", "add", "eth1", "2");
 		break;
 	default:
 		system("swconfig dev switch0 set reset 1");
