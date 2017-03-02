@@ -223,9 +223,9 @@
 			pinctrl-0 = <&mdio0_pins>;
 			pinctrl-names = "default";
 
-			phy4: ethernet-phy@4 {
+			phy0: ethernet-phy@0 {
 				device_type = "ethernet-phy";
-				reg = <4>;
+				reg = <0>;
 				qca,ar8327-initvals = <
 					0x00004 0x7600000   /* PAD0_MODE */
 					0x0000c 0x80        /* PAD6_MODE */
@@ -236,9 +236,9 @@
 					>;
 			};
 
-			phy0: ethernet-phy@0 {
+			phy4: ethernet-phy@4 {
 				device_type = "ethernet-phy";
-				reg = <0>;
+				reg = <4>;
 			};
 
 		};
@@ -247,7 +247,7 @@
 			status = "ok";
 			phy-mode = "rgmii";
 			qcom,id = <1>;
-			phy-handle = <&phy0>;
+			phy-handle = <&phy4>;
 
 			pinctrl-0 = <&rgmii2_pins>;
 			pinctrl-names = "default";
@@ -264,7 +264,7 @@
 			status = "ok";
 			phy-mode = "sgmii";
 			qcom,id = <2>;
-			phy-handle = <&phy4>;
+			phy-handle = <&phy0>;
 
 			mtd-mac-address = <&art 0>;
 
