@@ -588,10 +588,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						} else if (chan[i].ulu) {
 							ht = "HT40+";
 							iht = 1;
-							channeloffset = 4;
+							channeloffset = 6;
 						} else if (chan[i].lul) {
 							ht = "HT40-";
-							channeloffset = 4;
+							channeloffset = 6;
 							iht = -1;
 						} else if (chan[i].ull) {
 							ht = "HT40+";
@@ -600,7 +600,11 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						}
 						break;
 					case 160:
-						if (chan[i].uul) {
+						if (chan[i].uuu) {
+							ht = "HT40+";
+							iht = 1;
+							channeloffset = 14;
+						else if (chan[i].uul) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 10;
