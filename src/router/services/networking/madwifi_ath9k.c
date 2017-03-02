@@ -604,7 +604,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 14;
-						else if (chan[i].uul) {
+						} else if (chan[i].uul) {
 							ht = "HT40+";
 							iht = 1;
 							channeloffset = 10;
