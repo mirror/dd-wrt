@@ -42,6 +42,8 @@ void start_openvpnserver(void)
 
 	char proto[16];
 
+	if (nvram_invmatchi("openvpn_enable", 1))
+		return;
 	strcpy(proto, nvram_safe_get("openvpn_proto"));
 
 	if (!nvram_matchi("ipv6_enable", 1)) {
@@ -52,8 +54,7 @@ void start_openvpnserver(void)
 		}
 	}
 
-	if (nvram_invmatchi("openvpn_enable", 1))
-		return;
+	insmod("tun");
 	update_timezone();
 	if ((freediskSpace("/jffs") > 16384)
 	    || (nvram_matchi("enable_jffs2", 1)
@@ -133,11 +134,7 @@ void start_openvpnserver(void)
 			"management 127.0.0.1 14\n"
 			"management-log-cache 100\n"
 			"topology subnet\n"
-			"script-security 2\n" 
-			"port %s\n" 
-			"proto %s\n" 
-			"cipher %s\n" 
-			"auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 		fprintf(fp, "client-connect /tmp/openvpn/clcon.sh\n");
 		fprintf(fp, "client-disconnect /tmp/openvpn/cldiscon.sh\n");
 		if (jffs == 1)	//  use usb/jffs for ccd if available
@@ -360,6 +357,7 @@ void start_openvpn(void)
 {
 	if (nvram_invmatchi("openvpncl_enable", 1))
 		return;
+	insmod("tun");
 	dd_syslog(LOG_INFO, "openvpn : OpenVPN daemon (Client) starting/restarting...\n");
 	mkdir("/tmp/openvpncl", 0700);
 	write_nvram("/tmp/openvpncl/ca.crt", "openvpncl_ca");

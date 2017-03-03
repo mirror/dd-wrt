@@ -79,7 +79,7 @@ void start_chilli(void)
 		return;
 
 #endif
-
+	insmod("tun");
 	if ((nvram_matchi("usb_enable", 1)
 	     && nvram_matchi("usb_storage", 1)
 	     && nvram_matchi("usb_automnt", 1)
