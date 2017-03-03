@@ -397,7 +397,7 @@ static long nvram_unlocked_ioctl(struct file *file, u_int cmd, u_long arg)
 static int dev_nvram_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	unsigned long offset = virt_to_phys(nvram_buf);
-	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+//	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 //	printk(KERN_EMERG "vma size %d\n",offset);
 	if (remap_pfn_range(vma, vma->vm_start, offset >> PAGE_SHIFT, vma->vm_end - vma->vm_start, vma->vm_page_prot)) {
 	
