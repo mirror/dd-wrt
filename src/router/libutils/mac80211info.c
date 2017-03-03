@@ -1119,7 +1119,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = 1,.freq = 58320,.max_eirp = 40,.hw_eirp = 40},
 	{.channel = 2,.freq = 60480,.max_eirp = 40,.hw_eirp = 40},
 	{.channel = 3,.freq = 62640,.max_eirp = 40,.hw_eirp = 40},
-	{.channel = 4,.freq = 64800,.max_eirp = 40,.hw_eirp = 40},
+//	{.channel = 4,.freq = 64800,.max_eirp = 40,.hw_eirp = 40},
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
