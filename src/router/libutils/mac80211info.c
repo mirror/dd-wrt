@@ -777,7 +777,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 		if (!caps)
 			continue;
 		cap = nla_get_u32(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface) && vht80) ? "[SHORT-GI-80]" : "")
 			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface) && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
@@ -786,9 +786,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , (((cap >> 8) & 0x7) == 3 ? "[RX-STBC-123]" : "")
 			 , (((cap >> 8) & 0x7) == 4 ? "[RX-STBC-1234]" : "")
 			 , (((cap & VHT_CAP_SU_BEAMFORMER_CAPABLE) && su_bf) ? "[SU-BEAMFORMER]" : "")
-			 , (((cap & VHT_CAP_SU_BEAMFORMEE_CAPABLE) && su_bf) ? "[SU-BEAMFORMEE]" : "")
 			 , (((cap & VHT_CAP_MU_BEAMFORMER_CAPABLE) && mu_bf) ? "[MU-BEAMFORMER]" : "")
-			 , (((cap & VHT_CAP_MU_BEAMFORMEE_CAPABLE) && mu_bf) ? "[MU-BEAMFORMEE]" : "")
 			 , (cap & VHT_CAP_VHT_TXOP_PS ? "[VHT-TXOP-PS]" : "")
 			 , (cap & VHT_CAP_HTC_VHT ? "[HTC-VHT]" : "")
 			 , (cap & VHT_CAP_RX_ANTENNA_PATTERN ? "[RX-ANTENNA-PATTERN]" : "")
