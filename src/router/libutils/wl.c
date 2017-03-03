@@ -1614,6 +1614,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 #ifdef HAVE_ATH9K
 	if (has_ad(ifname)) {
 		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+		memset(interface,0,sizeof(struct wifi_interface));
 		interface->freq = atoi(nvram_safe_get("ath2_channel"));
 		return interface;
 	}
@@ -1627,6 +1628,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+	memset(interface,0,sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
 	return interface;
 }
