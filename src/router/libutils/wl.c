@@ -1612,8 +1612,11 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	struct iwreq wrq;
 
 #ifdef HAVE_ATH9K
-	if (has_ad(ifname))
-		return nvram_safe_get("ath2_channel");
+	if (has_ad(ifname)) {
+		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
+		interface->freq = atoi(nvram_safe_get("ath2_channel"));
+		return interface;
+	}
 	if (is_ath9k(ifname)) {
 		return mac80211_get_interface(ifname);
 	}
