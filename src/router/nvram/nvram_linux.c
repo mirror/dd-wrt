@@ -142,9 +142,6 @@ char *nvram_get(const char *name)
 	if (count < 0)
 		perror(PATH_DEV_NVRAM);
 
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 	free(off);
 	unlock();
 	return value;
@@ -173,15 +170,8 @@ int nvram_getall(char *buf, int count)
 	}
 	/* Get all variables */
 	*buf = '\0';
-
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 	ret = read(nvram_fd, buf, count);
 
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 	//unlock();
@@ -230,13 +220,7 @@ static int _nvram_set(const char *name, const char *value)
 		strcpy(buf, name);
 
 	count = strlen(buf) + 1;
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 	ret = write(nvram_fd, buf, count);
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
@@ -306,13 +290,7 @@ int nvram_commit(void)
 			return ret;
 		}
 	}
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
-#ifndef HAVE_MICRO
-	msync(nvram_buf, NVRAMSPACE, MS_SYNC);
-#endif
 
 	if (ret < 0) {
 		fprintf(stderr, "nvram_commit(): failed\n");
