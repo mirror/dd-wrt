@@ -3084,7 +3084,7 @@ void start_drivers(void)
 	}
 #endif
 #ifdef HAVE_ALPINE
-	set_smp_affinity(260, 1);
+	set_smp_affinity(261, 1);
 #endif
 #ifdef HAVE_NORTHSTAR
 	set_smp_affinity(111, 2);
