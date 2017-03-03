@@ -1613,7 +1613,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 
 #ifdef HAVE_ATH9K
 	if (has_ad(ifname))
-		return mac80211_get_interface("giwifi");
+		return nvram_safe_get("ath2_channel");
 	if (is_ath9k(ifname)) {
 		return mac80211_get_interface(ifname);
 	}
