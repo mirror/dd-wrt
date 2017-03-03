@@ -1147,7 +1147,7 @@ long long wifi_getrate(char *ifname)
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		char physical[32];
-		strncpy(physical,ifname,4);
+		strncpy(physical, ifname, 4);
 		if (nvram_nmatch("b-only", "%s_net_mode", physical))
 			return 11000 * KILO;
 		if (nvram_nmatch("g-only", "%s_net_mode", physical))
@@ -1614,8 +1614,10 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 #ifdef HAVE_ATH9K
 	if (has_ad(ifname)) {
 		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-		memset(interface,0,sizeof(struct wifi_interface));
+		memset(interface, 0, sizeof(struct wifi_interface));
 		interface->freq = atoi(nvram_safe_get("ath2_channel"));
+		interface->center1 = -1;
+		interface->center2 = -1;
 		return interface;
 	}
 	if (is_ath9k(ifname)) {
@@ -1628,8 +1630,10 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-	memset(interface,0,sizeof(struct wifi_interface));
+	memset(interface, 0, sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
+	interface->center1 = -1;
+	interface->center2 = -1;
 	return interface;
 }
 
