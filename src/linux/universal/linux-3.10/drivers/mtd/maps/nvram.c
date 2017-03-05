@@ -28,7 +28,7 @@ int _nvram_commit(struct nvram_header *header);
 int _nvram_init(void);
 void _nvram_exit(void);
 
-static struct nvram_tuple *nvram_hash[257];
+static struct nvram_tuple *nvram_hash[1024];
 static struct nvram_tuple *nvram_dead;
 
 #define CRC_INNER_LOOP(n, c, x) \
@@ -135,7 +135,7 @@ static INLINE uint hash(const char *s)
 	uint hash = 0;
 
 	while (*s)
-		hash = 31 * hash + *s++;
+		hash = 119 * hash + *s++;
 
 	return hash;
 }
