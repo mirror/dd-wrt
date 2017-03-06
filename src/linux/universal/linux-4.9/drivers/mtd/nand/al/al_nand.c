@@ -811,8 +811,8 @@ static int fsl_elbc_ooblayout_ecc(struct mtd_info *mtd, int section,
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
 
-	oobregion->offset = 2;
-	oobregion->length = mtd->oobsize - s_ecc_loc;
+	oobregion->offset = s_ecc_loc;
+	oobregion->length = chip->ecc.bytes;
 
 	return 0;
 }
@@ -823,7 +823,7 @@ static int fsl_elbc_ooblayout_free(struct mtd_info *mtd, int section,
 	struct nand_chip *chip = mtd_to_nand(mtd);
 
 
-	oobregion->offset = s_ecc_loc;
+	oobregion->offset = 2;
 	oobregion->length = s_ecc_loc - 2;
 	return 0;
 }
@@ -847,8 +847,9 @@ static void nand_ecc_config(
 		ecc->mode = NAND_ECC_HW;
 
 		//memset(layout, 0, sizeof(struct nand_ecclayout));
-		//ecc->bytes = oob_size - ecc_loc;
+		ecc->bytes = oob_size - ecc_loc;
 		s_ecc_loc = ecc_loc;
+		printk(KERN_EMERG "ecc loc %d\n",ecc_loc);
 		//layout->oobfree[0].offset = 2;
 		//layout->oobfree[0].length = ecc_loc - 2;
 		//layout->eccpos[0] = ecc_loc;
