@@ -52,7 +52,7 @@
 #if 1 //defined(__GLIBC__)
 
 /* Coordinate with glibc net/if.h header. */
-#if defined(_NET_IF_H) && defined(__USE_MISC)
+#if defined(_NET_IF_H) //&& defined(__USE_MISC)
 
 /* GLIBC headers included first so don't define anything
  * that would already be defined. */
@@ -65,7 +65,7 @@
 #define __UAPI_DEF_IF_NET_DEVICE_FLAGS 0
 /* For the future if glibc adds IFF_LOWER_UP, IFF_DORMANT and IFF_ECHO */
 #ifndef __UAPI_DEF_IF_NET_DEVICE_FLAGS_LOWER_UP_DORMANT_ECHO
-#define __UAPI_DEF_IF_NET_DEVICE_FLAGS_LOWER_UP_DORMANT_ECHO 1
+#define __UAPI_DEF_IF_NET_DEVICE_FLAGS_LOWER_UP_DORMANT_ECHO 0
 #endif /* __UAPI_DEF_IF_NET_DEVICE_FLAGS_LOWER_UP_DORMANT_ECHO */
 
 #else /* _NET_IF_H */
@@ -102,10 +102,12 @@
  * if the glibc code didn't define them. This guard matches
  * the guard in glibc/inet/netinet/in.h which defines the
  * additional in6_addr macros e.g. s6_addr16, and s6_addr32. */
-#if defined(__USE_MISC) || defined (__USE_GNU)
+#ifndef __UAPI_DEF_IN6_ADDR_ALT
+#if defined (__USE_GNU) 
 #define __UAPI_DEF_IN6_ADDR_ALT		0
 #else
 #define __UAPI_DEF_IN6_ADDR_ALT		1
+#endif
 #endif
 #define __UAPI_DEF_SOCKADDR_IN6		0
 #define __UAPI_DEF_IPV6_MREQ		0
