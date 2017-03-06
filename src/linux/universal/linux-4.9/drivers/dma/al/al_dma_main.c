@@ -50,7 +50,7 @@ static void al_dma_pci_remove(
 static void al_dma_pci_shutdown(
 	struct pci_dev	*pdev);
 
-static DEFINE_PCI_DEVICE_TABLE(al_dma_pci_tbl) = {
+static const struct pci_device_id al_dma_pci_tbl[] = {
 	{ PCI_VDEVICE(ANNAPURNA_LABS, PCI_DEVICE_ID_AL_RAID_DMA) },
 	{ PCI_VDEVICE(ANNAPURNA_LABS, PCI_DEVICE_ID_AL_RAID_DMA_VF) },
 	{ 0, }

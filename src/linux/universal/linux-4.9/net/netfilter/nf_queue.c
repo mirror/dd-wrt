@@ -126,14 +126,15 @@ void nf_queue_nf_hook_drop(struct net *net, const struct nf_hook_entry *entry)
 }
 
 static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
-		      unsigned int queuenum, unsigned int queuetype)
+		      unsigned int verdict)
 {
 	int status = -ENOENT;
 	struct nf_queue_entry *entry = NULL;
 	const struct nf_afinfo *afinfo;
 	const struct nf_queue_handler *qh;
 	struct net *net = state->net;
-
+	unsigned int queuetype = verdict & NF_VERDICT_MASK;
+	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	if (queuetype == NF_IMQ_QUEUE) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -192,8 +193,14 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 	int ret;
 
 	RCU_INIT_POINTER(state->hook_entries, entry);
-	ret = __nf_queue(skb, state, verdict >> NF_VERDICT_QBITS, verdict & NF_VERDICT_MASK);
+	ret = __nf_queue(skb, state, verdict, verdict);
 	if (ret < 0) {
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+		if (ret == -ECANCELED && skb->imq_flags == 0) { // down interface
+			*entryp = rcu_dereference(entry->next);
+			return 1;
+		}
+#endif
 		if (ret == -ESRCH &&
 		    (verdict & NF_VERDICT_FLAG_QUEUE_BYPASS)) {
 			*entryp = rcu_dereference(entry->next);

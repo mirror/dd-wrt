@@ -774,7 +774,7 @@ int main(int argc, char **argv)
 				symbol_prefix_char = *p;
 			} else if (strcmp(argv[i], "--uncompressed") == 0)
 				uncompressed = 1;
-			} else if (strcmp(argv[i], "--base-relative") == 0)
+			else if (strcmp(argv[i], "--base-relative") == 0)
 				base_relative = 1;
 			else
 				usage();

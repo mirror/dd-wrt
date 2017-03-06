@@ -108,7 +108,7 @@ static struct {
 	},
 };
 
-static DEFINE_PCI_DEVICE_TABLE(al_eth_pci_tbl) = {
+static const struct pci_device_id al_eth_pci_tbl[] = {
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH,
 	  PCI_ANY_ID, PCI_ANY_ID, 0, 0, ALPINE_INTEGRATED},
 	{ PCI_VENDOR_ID_ANNAPURNA_LABS, PCI_DEVICE_ID_AL_ETH_ADVANCED,
