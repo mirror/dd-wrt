@@ -4348,6 +4348,9 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 	if (!mtd->name && mtd->dev.parent)
 		mtd->name = dev_name(mtd->dev.parent);
 
+	/* Set the default functions */
+	nand_set_defaults(chip, chip->options & NAND_BUSWIDTH_16);
+
 	if ((!chip->cmdfunc || !chip->select_chip) && !chip->cmd_ctrl) {
 		/*
 		 * Default functions assigned for chip_select() and
@@ -4357,8 +4360,7 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 		pr_err("chip.cmd_ctrl() callback is not provided");
 		return -EINVAL;
 	}
-	/* Set the default functions */
-	nand_set_defaults(chip, chip->options & NAND_BUSWIDTH_16);
+
 
 	/* Read the flash type */
 	type = nand_get_flash_type(mtd, chip, &nand_maf_id,
