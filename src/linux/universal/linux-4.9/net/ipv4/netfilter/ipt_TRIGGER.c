@@ -63,7 +63,7 @@ struct ipt_trigger {
 	u_int8_t reply;			/* Confirm a reply connection */
 };
 
-LIST_HEAD(trigger_list);
+static LIST_HEAD(trigger_list);
 //DECLARE_LOCK(ip_trigger_lock);
 
 static void trigger_refresh(struct ipt_trigger *trig, unsigned long extra_jiffies)

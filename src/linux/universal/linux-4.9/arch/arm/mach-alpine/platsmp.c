@@ -1,7 +1,5 @@
 /*
- * SMP operations for Alpine platform.
- *
- * Copyright (C) 2015 Annapurna Labs Ltd.
+ *  linux/arch/arm/mach-alpine/platsmp.c
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -12,38 +10,160 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
 #include <linux/init.h>
 #include <linux/errno.h>
+#include <linux/delay.h>
+#include <linux/device.h>
+#include <linux/jiffies.h>
+#include <linux/smp.h>
 #include <linux/io.h>
 #include <linux/of.h>
+#include <linux/of_address.h>
 
-#include <asm/smp_plat.h>
+#include <asm/cacheflush.h>
+#include <asm/unified.h>
 
-#include "alpine_cpu_pm.h"
+#include <mach/alpine_machine.h>
 
-static int alpine_boot_secondary(unsigned int cpu, struct task_struct *idle)
+extern void secondary_startup(void);
+
+static void ca15x4_init_cpu_map(void)
 {
-	phys_addr_t addr;
+	unsigned int i, ncores;
 
-	addr = virt_to_phys(secondary_startup);
+	asm volatile("mrc p15, 1, %0, c9, c0, 2\n" : "=r" (ncores));
+	ncores = ((ncores >> 24) & 3) + 1;
 
-	if (addr > (phys_addr_t)(uint32_t)(-1)) {
-		pr_err("FAIL: resume address over 32bit (%pa)", &addr);
-		return -EINVAL;
+	for (i = 0; i < ncores; i++)
+		set_cpu_possible(i, true);
+}
+
+static void ca15x4_smp_enable(unsigned int max_cpus)
+{
+	int i;
+
+	for (i = 0; i < max_cpus; i++)
+		set_cpu_present(i, true);
+}
+
+
+/*
+ * Write pen_release in a way that is guaranteed to be visible to all
+ * observers, irrespective of whether they're taking part in coherency
+ * or not.  This is necessary for the hotplug code to work reliably.
+ */
+static void write_pen_release(int val)
+{
+	pen_release = val;
+	smp_wmb();
+	__cpuc_flush_dcache_area((void *)&pen_release, sizeof(pen_release));
+	outer_clean_range(__pa(&pen_release), __pa(&pen_release + 1));
+}
+
+static DEFINE_SPINLOCK(boot_lock);
+
+void platform_secondary_init(unsigned int cpu)
+{
+	/*
+	 * let the primary processor know we're out of the
+	 * pen, then head off into the C entry point
+	 */
+	write_pen_release(-1);
+
+	/*
+	 * Synchronise with the boot thread.
+	 */
+	spin_lock(&boot_lock);
+	spin_unlock(&boot_lock);
+}
+
+int al_boot_secondary(unsigned int cpu
+				, struct task_struct *idle)
+{
+	unsigned long timeout;
+
+	/* Check CPU resume regs validity */
+	if (!alpine_cpu_suspend_wakeup_supported()) {
+		WARN(1, "%s: wakeup not supported!\n", __func__);
+		return -ENOSYS;
 	}
 
-	return alpine_cpu_wakeup(cpu_logical_map(cpu), (uint32_t)addr);
+	/*
+	 * Set synchronisation state between this boot processor
+	 * and the secondary one
+	 */
+	spin_lock(&boot_lock);
+
+	/*
+	 * This is really belt and braces; we hold unintended secondary
+	 * CPUs in the holding pen until we're ready for them.  However,
+	 * since we haven't sent them a soft interrupt, they shouldn't
+	 * be there.
+	 */
+	write_pen_release(cpu);
+
+	/* Wake-up secondary CPU */
+	alpine_cpu_wakeup(cpu, virt_to_phys(secondary_startup));
+
+	/*
+	 * Send the secondary CPU a soft interrupt, thereby causing
+	 * the boot monitor to read the system wide flags register,
+	 * and branch to the address found there.
+	 */
+	arch_send_wakeup_ipi_mask(cpumask_of(cpu));
+
+	timeout = jiffies + (1 * HZ);
+	while (time_before(jiffies, timeout)) {
+		smp_rmb();
+		if (pen_release == -1)
+			break;
+
+		udelay(10);
+	}
+
+	/*
+	 * now the secondary core is starting up let it run its
+	 * calibrations, then wait for it to finish
+	 */
+	spin_unlock(&boot_lock);
+
+	return pen_release != -1 ? -ENOSYS : 0;
 }
 
-static void __init alpine_smp_prepare_cpus(unsigned int max_cpus)
+/*
+ * Initialise the CPU possible map early - this describes the CPUs
+ * which may be present or become present in the system.
+ */
+void __init al_smp_init_cpus(void)
+{
+	ca15x4_init_cpu_map();
+}
+
+void __init platform_smp_prepare_cpus(unsigned int max_cpus)
 {
 	alpine_cpu_pm_init();
+
+	/*
+	 * Initialise the present map, which describes the set of CPUs
+	 * actually populated at the present time.
+	 */
+	ca15x4_smp_enable(max_cpus);
 }
 
-static const struct smp_operations alpine_smp_ops __initconst = {
-	.smp_prepare_cpus	= alpine_smp_prepare_cpus,
-	.smp_boot_secondary	= alpine_boot_secondary,
+extern int alpine_suspend_finish(unsigned long);
+
+struct smp_operations __initdata al_smp_ops = {
+	.smp_init_cpus		= al_smp_init_cpus,
+	.smp_prepare_cpus	= platform_smp_prepare_cpus,
+	.smp_secondary_init	= platform_secondary_init,
+	.smp_boot_secondary	= al_boot_secondary,
+#ifdef CONFIG_HOTPLUG_CPU
+	.cpu_die		= alpine_cpu_die,
+#endif
 };
-CPU_METHOD_OF_DECLARE(alpine_smp, "al,alpine-smp", &alpine_smp_ops);

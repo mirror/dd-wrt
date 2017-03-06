@@ -281,8 +281,6 @@ static int mdiobus_register_board_info_my(struct mdio_board_info const *info, un
 	return 0;
 }
 
-static int mii_irq_sw0[PHY_MAX_ADDR];
-static int mii_irq_sw1[PHY_MAX_ADDR];
 
 struct mii_bus *al_get_mdiobus_by_name(const char *ethname);
 
@@ -332,7 +330,6 @@ static int __init mdiobus_probe(void)
 	slave = al_get_mdiobus_by_name("eth1");
 	slave->parent = &pdevslave->dev;
 
-	slave->irq = mii_irq_sw0;
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		mii_irq_sw0[i] = PHY_POLL;
 
@@ -357,7 +354,6 @@ static int __init mdiobus_probe(void)
 	//p_bus->parent = &pdev->dev;
 	snprintf(p_bus->id, MII_BUS_ID_SIZE, "mdio-al");
 
-	p_bus->irq = mii_irq_sw1;
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		mii_irq_sw1[i] = PHY_POLL;
 

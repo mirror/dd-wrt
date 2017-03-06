@@ -102,13 +102,14 @@ conntrack_mt_v0(const struct sk_buff *skb, struct xt_action_param *par)
 		return false;
 
 	if(sinfo->flags & XT_CONNTRACK_EXPIRES) {
-		unsigned long expires = timer_pending(&ct->timeout) ?
-					(ct->timeout.expires - jiffies)/HZ : 0;
+		unsigned long expires = nf_ct_expires(ct) / HZ;
 
-		if (FWINV(!(expires >= sinfo->expires_min &&
-			    expires <= sinfo->expires_max),
-			  XT_CONNTRACK_EXPIRES))
+		if ((expires >= sinfo->expires_min &&
+		    expires <= sinfo->expires_max) ^
+		    !(sinfo->invflags & XT_CONNTRACK_EXPIRES))
 			return false;
+
+		
 	}
 	return true;
 #undef FWINV

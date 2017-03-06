@@ -48,7 +48,7 @@ MODULE_DESCRIPTION("Ethernet over IPv4 tunnel driver");
  * These 2 defines are taken from ipip.c - if it's good enough for them
  * it's good enough for me.
  */
-#define HASH_SIZE        16
+#define E_HASH_SIZE        16
 #define HASH(addr)       ((addr^(addr>>4))&0xF)
 
 #define ETHERIP_HEADER   ((u16)0x0300)
@@ -98,7 +98,7 @@ static struct net_device_stats *etherip_get_stats(struct net_device *dev)
 }
 */
 static struct net_device *etherip_tunnel_dev;
-static struct list_head tunnels[HASH_SIZE];
+static struct list_head tunnels[E_HASH_SIZE];
 
 static DEFINE_RWLOCK(etherip_lock);
 
@@ -260,7 +260,7 @@ static int etherip_tunnel_xmit(struct sk_buff *skb, struct net_device *dev)
 	nf_reset(skb);
 //	tstats = this_cpu_ptr(dev->tstats);
 	__IPTUNNEL_XMIT_COMPAT(dev_net(dev), skb->sk, &dev->stats, &dev->stats);
-	tunnel->dev->trans_start = jiffies;
+	netif_trans_update(tunnel->dev);
 	tunnel->recursion--;
 
 	return 0;
@@ -527,7 +527,7 @@ static int __init etherip_init(void)
 
 	printk(KERN_INFO BANNER1);
 
-	for (i = 0; i < HASH_SIZE; ++i)
+	for (i = 0; i < E_HASH_SIZE; ++i)
 		INIT_LIST_HEAD(&tunnels[i]);
 
 	if (inet_add_protocol(&etherip_protocol, IPPROTO_ETHERIP)) {
@@ -573,7 +573,7 @@ static void __exit etherip_destroy_tunnels(void)
 	struct list_head *ptr;
 	struct etherip_tunnel *tun;
 
-	for (i = 0; i < HASH_SIZE; ++i) {
+	for (i = 0; i < E_HASH_SIZE; ++i) {
 		list_for_each(ptr, &tunnels[i]) {
 			tun = list_entry(ptr, struct etherip_tunnel, list);
 			ptr = ptr->prev;

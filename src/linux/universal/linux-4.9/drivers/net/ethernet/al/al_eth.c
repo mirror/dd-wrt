@@ -260,7 +260,7 @@ static int al_eth_ioctl(struct net_device *netdev, struct ifreq *ifr, int cmd)
 			mdio->phy_id, mdio->reg_num, mdio->val_in);
 
 	if (adapter->mdio_bus) {
-		phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev)
 			return phy_mii_ioctl(phydev, ifr, cmd);
 	}
@@ -370,15 +370,14 @@ static void al_eth_adjust_link(struct net_device *dev)
 
 static int al_eth_phy_init(struct al_eth_adapter *adapter)
 {
-	struct phy_device *phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
-
+	struct phy_device *phydev = phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 	adapter->link_config.old_link = 0;
 	adapter->link_config.active_duplex = DUPLEX_UNKNOWN;
 	adapter->link_config.active_speed = SPEED_UNKNOWN;
 
 	/* Attach the MAC to the PHY. */
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3,9,0)
-	phydev = phy_connect(adapter->netdev, dev_name(&phydev->dev), al_eth_adjust_link,
+	phydev = phy_connect(adapter->netdev, phydev_name(phydev), al_eth_adjust_link,
 			     PHY_INTERFACE_MODE_RGMII);
 #else
 	phydev = phy_connect(adapter->netdev, dev_name(&phydev->dev), al_eth_adjust_link,
@@ -389,9 +388,7 @@ static int al_eth_phy_init(struct al_eth_adapter *adapter)
 		return PTR_ERR(phydev);
 	}
 
-	netdev_info(adapter->netdev, "phy[%d]: device %s, driver %s\n",
-			phydev->addr, dev_name(&phydev->dev),
-			phydev->drv ? phydev->drv->name : "unknown");
+	phy_attached_info(phydev);
 
 	/* Mask with MAC supported features. */
 	phydev->supported &= (PHY_GBIT_FEATURES |
@@ -399,9 +396,6 @@ static int al_eth_phy_init(struct al_eth_adapter *adapter)
 				SUPPORTED_Asym_Pause);
 
 	phydev->advertising = phydev->supported;
-
-	netdev_info(adapter->netdev, "phy[%d]:supported %x adv %x\n",
-			phydev->addr, phydev->supported, phydev->advertising);
 
 	adapter->phydev = phydev;
 	/* Bring the PHY up */
@@ -434,11 +428,6 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 	adapter->mdio_bus->write    = &al_mdio_write;
 	adapter->mdio_bus->phy_mask = ~(1 << adapter->phy_addr);
 
-	adapter->mdio_bus->irq = kmalloc(sizeof(int) * PHY_MAX_ADDR, GFP_KERNEL);
-	if (!adapter->mdio_bus->irq) {
-		mdiobus_free(adapter->mdio_bus);
-		return -ENOMEM;
-	}
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
 		adapter->mdio_bus->irq[i] = PHY_POLL;
@@ -453,8 +442,7 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 			mdiobus_free(adapter->mdio_bus);
 			return i;
 		}
-
-		phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 	} else {
 		adapter->mdio_bus->phy_mask = 0xffffffff;
 		i = mdiobus_register(adapter->mdio_bus);
@@ -489,7 +477,6 @@ static int al_eth_mdiobus_setup(struct al_eth_adapter *adapter)
 error:
 	netdev_warn(adapter->netdev, "No PHY devices\n");
 	mdiobus_unregister(adapter->mdio_bus);
-	kfree(adapter->mdio_bus->irq);
 	mdiobus_free(adapter->mdio_bus);
 	return -ENODEV;
 }
@@ -505,7 +492,6 @@ static void al_eth_mdiobus_teardown(struct al_eth_adapter *adapter)
 		return;
 
 	mdiobus_unregister(adapter->mdio_bus);
-	kfree(adapter->mdio_bus->irq);
 	mdiobus_free(adapter->mdio_bus);
 	phy_device_free(adapter->phydev);
 }
@@ -750,7 +736,7 @@ al_eth_flow_ctrl_init(struct al_eth_adapter *adapter)
 static uint8_t
 al_eth_flow_ctrl_mutual_cap_get(struct al_eth_adapter *adapter)
 {
-	struct phy_device *phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+	struct phy_device *phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 	struct al_eth_link_config *link_config = &adapter->link_config;
 	uint8_t peer_flow_ctrl = AL_ETH_FLOW_CTRL_AUTONEG;
 	uint8_t new_flow_ctrl = AL_ETH_FLOW_CTRL_AUTONEG;
@@ -2468,7 +2454,7 @@ al_eth_request_irq(struct al_eth_adapter *adapter)
 		rc = request_irq(irq->vector, irq->handler, flags, irq->name,
 				 irq->data);
 		if (rc) {
-			netdev_err(adapter->netdev, "failed to request irq %d. index %d rc %d\n", irq, i, rc);
+			netdev_err(adapter->netdev, "failed to request irq %d. index %d rc %d\n", irq->vector, i, rc);
 			break;
 		}
 		irq->requested = 1;
@@ -3769,7 +3755,7 @@ al_eth_set_pauseparam(struct net_device *netdev,
 		struct phy_device *phydev;
 		uint32_t oldadv;
 
-		phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		oldadv = phydev->advertising &
 				     (ADVERTISED_Pause | ADVERTISED_Asym_Pause);
 		link_config->flow_ctrl_supported |= AL_ETH_FLOW_CTRL_AUTONEG;
@@ -3893,7 +3879,7 @@ static int al_eth_set_eee(struct net_device *netdev,
 	if (!adapter->phy_exist)
 		return -EOPNOTSUPP;
 
-	phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+	phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 
 	phy_init_eee(phydev, 1);
 
@@ -3916,7 +3902,7 @@ static void al_eth_get_wol(struct net_device *netdev,
 	wol->wolopts = adapter->wol;
 
 	if ((adapter) && (adapter->phy_exist) && (adapter->mdio_bus)) {
-		phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev) {
 			phy_ethtool_get_wol(phydev, wol);
 			wol->supported |= WAKE_PHY;
@@ -3938,7 +3924,7 @@ static int al_eth_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol
 	adapter->wol = wol->wolopts;
 
 	if ((adapter) && (adapter->phy_exist) && (adapter->mdio_bus)) {
-		phydev = adapter->mdio_bus->phy_map[adapter->phy_addr];
+		phydev = mdiobus_get_phy(adapter->mdio_bus, adapter->phy_addr);
 		if (phydev)
 			return phy_ethtool_set_wol(phydev, wol);
 	}
