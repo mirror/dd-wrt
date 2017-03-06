@@ -1,0 +1,110 @@
+if RALINK_RT3052 || RALINK_RT3350
+#-----------------------------
+
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3052_ASIC
+
+config  RT3052_ASIC 
+        bool "RT305x/RT3350-ASIC"
+endchoice
+
+
+choice
+        prompt "RF Type"
+        depends on RALINK_RT3052
+        default RALINK_RT3052_2T2R
+
+        config  RALINK_RT3050_1T1R
+        bool "1T1R"
+
+        config  RALINK_RT3051_1T2R
+        bool "1T2R"
+
+        config  RALINK_RT3052_2T2R
+        bool "2T2R"
+endchoice
+
+choice
+        prompt "RF Type"
+        depends on  RALINK_RT3352 
+
+        config  RALINK_RT3352_2T2R
+        bool "2T2R"
+endchoice
+
+choice
+	prompt "RF Type"
+	depends on RALINK_RT3883
+
+	config  RALINK_RT3662_2T2R
+	bool "2T3R (RT3662)"
+
+	config  RALINK_RT3883_3T3R
+	bool "3T3R (RT3883)"
+endchoice
+
+endif
+if RALINK_RT3352
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3352_ASIC
+
+config  RT3352_ASIC 
+	bool "RT3352-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
+endchoice
+
+endif
+
+#--------------------------
+
+if RALINK_RT3883
+
+choice
+        prompt "Soc Hardware Type"
+	default RT3883_ASIC
+
+config  RT3883_ASIC 
+	bool "RT3883/RT3662-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+endchoice
+
+choice
+        prompt "RT3883 PCI architecture"
+	default PCIE_PCI_CONCURRENT
+
+config PCIE_PCI_CONCURRENT
+        bool "PCIE RC and PCI HOST CONCURRENT"
+config PCIE_ONLY
+        bool "PCIE RC ONLY"
+config PCI_ONLY
+        bool "PCI HOST ONLY"
+config PCIE_PCI_NONE
+        bool "Non-support PCI/PCIe"
+endchoice
+
+endif
+
+#---------------------------
+
+if RALINK_RT5350
+
+choice
+	prompt "Soc Hardware Type"
+	default RT5350_ASIC
+
+config	RT5350_ASIC 
+	bool "RT5350-ASIC"
+	select USB_ARCH_HAS_OHCI
+	select USB_ARCH_HAS_EHCI
+
+endchoice
+
+endif
+

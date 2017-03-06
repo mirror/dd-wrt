@@ -1,0 +1,29 @@
+--- linux-3.10.20/drivers/gpio/gpio-pl061.c	2013-11-20 21:28:01.000000000 +0100
++++ kernel/drivers/gpio/gpio-pl061.c	2016-12-08 22:17:49.000000000 +0100
+@@ -261,7 +261,7 @@ static int pl061_probe(struct amba_devic
+ 	struct device *dev = &adev->dev;
+ 	struct pl061_platform_data *pdata = dev->platform_data;
+ 	struct pl061_gpio *chip;
+-	int ret, irq, i, irq_base;
++	int ret, irq, i, irq_base = 0;
+ 
+ 	chip = devm_kzalloc(dev, sizeof(*chip), GFP_KERNEL);
+ 	if (chip == NULL)
+@@ -272,9 +272,16 @@ static int pl061_probe(struct amba_devic
+ 		irq_base = pdata->irq_base;
+ 		if (irq_base <= 0)
+ 			return -ENODEV;
++	} else if (adev->dev.of_node) {
++		const void *ptr;
++		unsigned int baseidx = -1; /* GPIO dynamic allocation */
++
++		ptr = of_get_property(adev->dev.of_node, "baseidx", NULL);
++		if (ptr)
++			baseidx = be32_to_cpup(ptr);
++		chip->gc.base = baseidx;
+ 	} else {
+ 		chip->gc.base = -1;
+-		irq_base = 0;
+ 	}
+ 
+ 	if (!devm_request_mem_region(dev, adev->res.start,
