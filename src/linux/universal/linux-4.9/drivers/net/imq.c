@@ -317,7 +317,7 @@ static netdev_tx_t imq_dev_xmit(struct sk_buff *skb, struct net_device *dev)
 	struct nf_queue_entry *entry = skb->nf_queue_entry;
 
 	skb->nf_queue_entry = NULL;
-	dev->trans_start = jiffies;
+	netif_trans_update(dev);
 
 	dev->stats.tx_bytes += skb->len;
 	dev->stats.tx_packets++;
@@ -390,7 +390,7 @@ static struct nf_queue_entry *nf_queue_entry_dup(struct nf_queue_entry *e)
 	struct nf_queue_entry *entry = kmemdup(e, e->size, GFP_ATOMIC);
 	if (entry) {
 		nf_queue_entry_get_refs(entry);
-		return entry;
+			return entry;
 	}
 	return NULL;
 }
@@ -549,6 +549,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 {
 	struct sk_buff *skb_orig, *skb, *skb_shared, *skb_popd;
 	struct Qdisc *q;
+	struct sk_buff *to_free = NULL;
 	struct netdev_queue *txq;
 	spinlock_t *root_lock;
 	int users;
@@ -607,7 +608,7 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 
 	/* backup skb->cb, as qdisc layer will overwrite it */
 	skb_save_cb(skb_shared);
-	qdisc_enqueue_root(skb_shared, q); /* might kfree_skb */
+	qdisc_enqueue_root(skb_shared, q, &to_free); /* might kfree_skb */
 	if (likely(atomic_read(&skb_shared->users) == users + 1)) {
 		bool validate;
 
@@ -631,13 +632,13 @@ static int __imq_nf_queue(struct nf_queue_entry *entry, struct net_device *dev)
 			/* Note that we validate skb (GSO, checksum, ...) outside of locks */
 			if (validate)
         		skb_popd = validate_xmit_skb_list(skb_popd, dev);
-			
+
 			if (skb_popd) {
 				int dummy_ret;
 				int cpu = smp_processor_id(); /* ok because BHs are off */
 
 				txq = skb_get_tx_queue(dev, skb_popd);
-				/* 
+				/*
 				IMQ device will not be frozen or stoped, and it always be successful.
 				So we need not check its status and return value to accelerate.
 				*/
@@ -684,11 +685,14 @@ packet_not_eaten_by_imq_dev:
 	}
 	retval = -1;
 out:
+	if (unlikely(to_free)) {
+		kfree_skb_list(to_free);
+	}
 	return retval;
 }
 static unsigned int imq_nf_hook(void *priv,
-			       struct sk_buff *skb,
-			       const struct nf_hook_state *state)
+				struct sk_buff *skb,
+				const struct nf_hook_state *state)
 {
 	return (skb->imq_flags & IMQ_F_ENQUEUE) ? NF_IMQ_QUEUE : NF_ACCEPT;
 }
@@ -808,12 +812,13 @@ static int __init imq_init_devs(void)
 	    numqueues = num_online_cpus();
 	    pr_info("IMQ: use %d as queue number\n",numqueues);
 	}    
+
 	if (numqueues < 1 || numqueues > IMQ_MAX_QUEUES) {
 		pr_err("IMQ: numqueues has to be betweed 1 and %u\n",
 		       IMQ_MAX_QUEUES);
 		return -EINVAL;
 	}
-	
+
 	get_random_bytes(&imq_hashrnd, sizeof(imq_hashrnd));
 
 	rtnl_lock();
@@ -901,7 +906,7 @@ MODULE_PARM_DESC(numdevs, "number of IMQ devices (how many imq* devices will be 
 MODULE_PARM_DESC(numqueues, "number of queues per IMQ device");
 MODULE_PARM_DESC(imq_dev_accurate_stats, "Notify if need the accurate imq device stats");
 
-MODULE_AUTHOR("http://https://github.com/imq/linuximq");
+MODULE_AUTHOR("https://github.com/imq/linuximq");
 MODULE_DESCRIPTION("Pseudo-driver for the intermediate queue device. See https://github.com/imq/linuximq/wiki for more information.");
 MODULE_LICENSE("GPL");
 MODULE_ALIAS_RTNL_LINK("imq");

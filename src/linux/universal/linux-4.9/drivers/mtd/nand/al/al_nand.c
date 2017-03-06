@@ -72,7 +72,6 @@ struct nand_data {
 	struct al_nand_ctrl_obj nand_obj;
 	uint8_t word_cache[4];
 	int cache_pos;
-	struct nand_ecclayout nand_oob;
 	uint32_t cw_size;
 	struct al_nand_ecc_config ecc_config;
 
@@ -460,11 +459,11 @@ static inline int is_empty_oob(uint8_t *oob, int len)
 int ecc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 			uint8_t *buf, int oob_required, int page)
 {
-	int bytes = chip->ecc.layout->eccbytes;
+	int bytes = mtd_ooblayout_count_eccbytes(mtd);
 	struct nand_data *nand;
 	int uncorr_err_count = 0;
 	int corr_err_count = 0;
-
+	struct mtd_oob_region oobregion;
 	nand = nand_data_get(mtd);
 
 	dev_dbg(&nand->pdev->dev, "ecc_read_page: read page %d\n", page);
@@ -480,9 +479,9 @@ int ecc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 	BUG_ON(oob_required);
 
+	mtd_ooblayout_ecc(mtd, 0, &oobregion);
 	/* First need to read the OOB to the controller to calc the ecc */
-	chip->cmdfunc(mtd, NAND_CMD_READOOB,
-			chip->ecc.layout->eccpos[0], page);
+	chip->cmdfunc(mtd, NAND_CMD_READOOB, oobregion.offset, page);
 
 	nand_send_byte_count_command(&nand->nand_obj,
 				AL_NAND_COMMAND_TYPE_SPARE_READ_COUNT,
@@ -545,9 +544,10 @@ int ecc_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
 int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 			const uint8_t *buf, int oob_required, int page)
 {
-	int bytes = chip->ecc.layout->eccbytes;
+	int bytes = mtd_ooblayout_count_eccbytes(mtd);
 	uint32_t cmd;
 	struct nand_data *nand;
+	struct mtd_oob_region oobregion;
 
 	nand = nand_data_get(mtd);
 
@@ -559,8 +559,10 @@ int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 	nand_write_buff(mtd, buf, mtd->writesize);
 
+	mtd_ooblayout_ecc(mtd, 0, &oobregion);
+	/* First need to read the OOB to the controller to calc the ecc */
 	chip->cmdfunc(mtd, NAND_CMD_RNDIN,
-			mtd->writesize + chip->ecc.layout->eccpos[0], -1);
+			mtd->writesize + oobregion.offset, -1);
 
 	cmd = AL_NAND_CMD_SEQ_ENTRY(
 			AL_NAND_COMMAND_TYPE_WAIT_CYCLE_COUNT,
@@ -804,9 +806,9 @@ static void nand_onfi_config_set(
 }
 
 static void nand_ecc_config(
+		struct mtd_info *mtd,
 		struct nand_chip *nand,
 		struct nand_ecc_ctrl *ecc,
-		struct nand_ecclayout *layout,
 		uint32_t oob_size,
 		uint32_t hw_ecc_enabled,
 		uint32_t ecc_loc)
@@ -815,19 +817,21 @@ static void nand_ecc_config(
 	if (hw_ecc_enabled != 0) {
 		ecc->mode = NAND_ECC_HW;
 
-		memset(layout, 0, sizeof(struct nand_ecclayout));
-		layout->eccbytes = oob_size - ecc_loc;
-		layout->oobfree[0].offset = 2;
-		layout->oobfree[0].length = ecc_loc - 2;
-		layout->eccpos[0] = ecc_loc;
+		//memset(layout, 0, sizeof(struct nand_ecclayout));
+		ecc->bytes = oob_size - ecc_loc;
+		//layout->oobfree[0].offset = 2;
+		//layout->oobfree[0].length = ecc_loc - 2;
+		//layout->eccpos[0] = ecc_loc;
 
-		ecc->layout = layout;
+		//ecc->layout = layout;
 
 		ecc->read_page = ecc_read_page;
 		ecc->read_subpage = ecc_read_subpage;
 		ecc->write_page = ecc_write_page;
 
 		ecc->strength = nand->onfi_params.ecc_bits;
+
+		mtd_set_ooblayout(mtd, &nand_ooblayout_lp_ops);
 	} else {
 		ecc->mode = NAND_ECC_NONE;
 	}
@@ -941,10 +945,9 @@ static int al_nand_probe(struct platform_device *pdev)
 
 	nand_onfi_config_set(nand, &device_properties, &nand_dat->ecc_config);
 
-	nand_ecc_config(
+	nand_ecc_config(mtd,
 		nand,
 		&nand->ecc,
-		&nand_dat->nand_oob,
 		mtd->oobsize,
 		dev_ext_props.eccIsEnabled,
 		(nand_dat->ecc_config.spareAreaOffset - dev_ext_props.pageSize));

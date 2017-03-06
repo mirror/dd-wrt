@@ -1449,7 +1449,7 @@ static int __init ubi_init(void)
 
 	/* auto-attach mtd devices only if built-in to the kernel and no ubi.mtd
 	 * parameter was given */
-	if (config_enabled(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
+	if (IS_ENABLED(CONFIG_MTD_ROOTFS_ROOT_DEV) &&
 	    !ubi_is_module() && !mtd_devs)
 		ubi_auto_attach();
 
