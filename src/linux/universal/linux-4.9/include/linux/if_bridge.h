@@ -47,7 +47,7 @@ struct br_ip_list {
 #define BR_PROXYARP_WIFI	BIT(10)
 #define BR_MCAST_FLOOD		BIT(11)
 #define BR_ISOLATE_MODE		BIT(12)
-#define BR_MULTICAST_TO_UCAST	BIT(13)
+#define BR_MULTICAST_TO_UNICAST	BIT(13)
  
 
 #define BR_DEFAULT_AGEING_TIME	(300 * HZ)

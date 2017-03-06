@@ -209,13 +209,13 @@ static void update_bus(struct dentry *bus)
 	bus->d_inode->i_gid.val = busgid;
 	bus->d_inode->i_mode = S_IFDIR | busmode;
 
-	mutex_lock(&bus->d_inode->i_mutex);
+	inode_lock(d_inode(bus));
 
 	list_for_each_entry(dev, &bus->d_subdirs, d_child)
 		if (dev->d_inode)
 			update_dev(dev);
 
-	mutex_unlock(&bus->d_inode->i_mutex);
+	inode_unlock(d_inode(bus));	
 }
 
 static void update_sb(struct super_block *sb)
@@ -226,7 +226,8 @@ static void update_sb(struct super_block *sb)
 	if (!root)
 		return;
 
-	mutex_lock_nested(&root->d_inode->i_mutex, I_MUTEX_PARENT);
+	inode_lock(d_inode(root));
+	//mutex_lock_nested(&root->d_inode->i_mutex, I_MUTEX_PARENT);
 
 	list_for_each_entry(bus, &root->d_subdirs, d_child) {
 		if (bus->d_inode) {
@@ -245,8 +246,7 @@ static void update_sb(struct super_block *sb)
 			}
 		}
 	}
-
-	mutex_unlock(&root->d_inode->i_mutex);
+	inode_unlock(d_inode(root));
 }
 
 static int remount(struct super_block *sb, int *flags, char *data)
@@ -359,10 +359,10 @@ static int usbfs_empty (struct dentry *dentry)
 static int usbfs_unlink (struct inode *dir, struct dentry *dentry)
 {
 	struct inode *inode = dentry->d_inode;
-	mutex_lock(&inode->i_mutex);
+	inode_lock(d_inode(dentry));
 	drop_nlink(dentry->d_inode);
 	dput(dentry);
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(d_inode(dentry));
 	d_delete(dentry);
 	return 0;
 }
@@ -372,8 +372,7 @@ static int usbfs_rmdir(struct inode *dir, struct dentry *dentry)
 	int error = -ENOTEMPTY;
 	struct inode * inode = dentry->d_inode;
 
-	mutex_lock(&inode->i_mutex);
-	dentry_unhash(dentry);
+	inode_lock(d_inode(dentry));	
 	if (usbfs_empty(dentry)) {
 		dont_mount(dentry);
 		drop_nlink(dentry->d_inode);
@@ -383,7 +382,7 @@ static int usbfs_rmdir(struct inode *dir, struct dentry *dentry)
 		drop_nlink(dir);
 		error = 0;
 	}
-	mutex_unlock(&inode->i_mutex);
+	inode_unlock(d_inode(dentry));
 	if (!error)
 		d_delete(dentry);
 	return error;
@@ -407,7 +406,7 @@ static loff_t default_file_lseek (struct file *file, loff_t offset, int orig)
 {
 	loff_t retval = -EINVAL;
 
-	mutex_lock(&file->f_path.dentry->d_inode->i_mutex);
+	inode_lock(d_inode(file->f_path.dentry));
 	switch(orig) {
 	case 0:
 		if (offset > 0) {
@@ -424,7 +423,7 @@ static loff_t default_file_lseek (struct file *file, loff_t offset, int orig)
 	default:
 		break;
 	}
-	mutex_unlock(&file->f_path.dentry->d_inode->i_mutex);
+	inode_unlock(d_inode(file->f_path.dentry));
 	return retval;
 }
 
@@ -446,8 +445,8 @@ static int usbfs_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct inode *inode;
 
-	sb->s_blocksize = PAGE_CACHE_SIZE;
-	sb->s_blocksize_bits = PAGE_CACHE_SHIFT;
+	sb->s_blocksize = PAGE_SIZE;
+	sb->s_blocksize_bits = PAGE_SHIFT;
 	sb->s_magic = USBDEVICE_SUPER_MAGIC;
 	sb->s_op = &usbfs_ops;
 	sb->s_time_gran = 1;
@@ -488,7 +487,7 @@ static int fs_create_by_name (const char *name, umode_t mode,
 	}
 
 	*dentry = NULL;
-	mutex_lock(&parent->d_inode->i_mutex);
+	inode_lock(d_inode(parent));
 	*dentry = lookup_one_len(name, parent, strlen(name));
 	if (!IS_ERR(*dentry)) {
 		if (S_ISDIR(mode))
@@ -497,7 +496,7 @@ static int fs_create_by_name (const char *name, umode_t mode,
 			error = usbfs_create (parent->d_inode, *dentry, mode);
 	} else
 		error = PTR_ERR(*dentry);
-	mutex_unlock(&parent->d_inode->i_mutex);
+	inode_unlock(d_inode(parent));	
 
 	return error;
 }
@@ -534,8 +533,7 @@ static void fs_remove_file (struct dentry *dentry)
 	
 	if (!parent || !parent->d_inode)
 		return;
-
-	mutex_lock_nested(&parent->d_inode->i_mutex, I_MUTEX_PARENT);
+	inode_lock(d_inode(parent));
 	if (usbfs_positive(dentry)) {
 		if (dentry->d_inode) {
 			if (S_ISDIR(dentry->d_inode->i_mode))
@@ -545,7 +543,7 @@ static void fs_remove_file (struct dentry *dentry)
 		dput(dentry);
 		}
 	}
-	mutex_unlock(&parent->d_inode->i_mutex);
+	inode_unlock(d_inode(parent));
 }
 
 /* --------------------------------------------------------------------- */
