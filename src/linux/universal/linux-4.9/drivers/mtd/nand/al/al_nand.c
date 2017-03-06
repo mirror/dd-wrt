@@ -805,6 +805,35 @@ static void nand_onfi_config_set(
 #endif
 }
 
+static uint32_t s_ecc_loc;
+static int fsl_elbc_ooblayout_ecc(struct mtd_info *mtd, int section,
+				  struct mtd_oob_region *oobregion)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+
+	oobregion->offset = 2;
+	oobregion->length = mtd->oobsize - s_ecc_loc;
+
+	return 0;
+}
+
+static int fsl_elbc_ooblayout_free(struct mtd_info *mtd, int section,
+				   struct mtd_oob_region *oobregion)
+{
+	struct nand_chip *chip = mtd_to_nand(mtd);
+
+
+	oobregion->offset = s_ecc_loc;
+	oobregion->length = s_ecc_loc - 2;
+	return 0;
+}
+
+static const struct mtd_ooblayout_ops lp_ops = {
+	.ecc = fsl_elbc_ooblayout_ecc,
+	.free = fsl_elbc_ooblayout_free,
+};
+
+
 static void nand_ecc_config(
 		struct mtd_info *mtd,
 		struct nand_chip *nand,
@@ -818,7 +847,8 @@ static void nand_ecc_config(
 		ecc->mode = NAND_ECC_HW;
 
 		//memset(layout, 0, sizeof(struct nand_ecclayout));
-		ecc->bytes = oob_size - ecc_loc;
+		//ecc->bytes = oob_size - ecc_loc;
+		s_ecc_loc = ecc_loc;
 		//layout->oobfree[0].offset = 2;
 		//layout->oobfree[0].length = ecc_loc - 2;
 		//layout->eccpos[0] = ecc_loc;
@@ -831,7 +861,7 @@ static void nand_ecc_config(
 
 		ecc->strength = nand->onfi_params.ecc_bits;
 
-		mtd_set_ooblayout(mtd, &nand_ooblayout_lp_ops);
+		mtd_set_ooblayout(mtd, &lp_ops);
 	} else {
 		ecc->mode = NAND_ECC_NONE;
 	}
@@ -869,7 +899,7 @@ static int al_nand_probe(struct platform_device *pdev)
 	pr_info("%s: AnnapurnaLabs nand driver\n", __func__);
 
 	nand = &nand_dat->chip;
-	mtd = &nand_dat->mtd;
+	mtd = nand_to_mtd(nand);
 	mtd->priv = nand;
 
 	nand_dat->cache_pos = -1;
