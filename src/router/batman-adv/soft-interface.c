@@ -162,8 +162,11 @@ static int batadv_interface_tx(struct sk_buff *skb,
 	if (atomic_read(&bat_priv->mesh_state) != BATADV_MESH_ACTIVE)
 		goto dropped;
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,8,0)
+	netif_trans_update(soft_iface);
+#else
 	soft_iface->trans_start = jiffies;
-
+#endif
 	switch (ntohs(ethhdr->h_proto)) {
 	case ETH_P_8021Q:
 		vhdr = (struct vlan_ethhdr *)skb->data;
