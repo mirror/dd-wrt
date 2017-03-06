@@ -144,7 +144,7 @@ static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 		goto err_unlock;
 #endif
 	} else {
-		qh = rcu_dereference(queue_handler);
+		qh = rcu_dereference(net->nf.queue_handler);
 	}
 
 	if (!qh) {
@@ -193,7 +193,7 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 	int ret;
 
 	RCU_INIT_POINTER(state->hook_entries, entry);
-	ret = __nf_queue(skb, state, verdict, verdict);
+	ret = __nf_queue(skb, state, verdict);
 	if (ret < 0) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 		if (ret == -ECANCELED && skb->imq_flags == 0) { // down interface

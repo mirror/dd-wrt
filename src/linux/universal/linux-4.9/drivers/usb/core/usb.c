@@ -751,42 +751,6 @@ exit:
 }
 
 /**
- * usb_find_device_by_name - find a specific usb device in the system
- * @name: the name of the device to find
- *
- * Returns a pointer to a struct usb_device if such a specified usb
- * device is present in the system currently.  The usage count of the
- * device will be incremented if a device is found.  Make sure to call
- * usb_put_dev() when the caller is finished with the device.
- *
- * If a device with the specified bus id is not found, NULL is returned.
- */
-struct usb_device *usb_find_device_by_name(const char *name)
-{
-	struct list_head *buslist;
-	struct usb_bus *bus;
-	struct usb_device *dev = NULL;
-
-	mutex_lock(&usb_bus_list_lock);
-	for (buslist = usb_bus_list.next;
-	     buslist != &usb_bus_list;
-	     buslist = buslist->next) {
-		bus = container_of(buslist, struct usb_bus, bus_list);
-		if (!bus->root_hub)
-			continue;
-		usb_lock_device(bus->root_hub);
-		dev = match_device_name(bus->root_hub, name);
-		usb_unlock_device(bus->root_hub);
-		if (dev)
-			goto exit;
-	}
-exit:
-	mutex_unlock(&usb_bus_list_lock);
-	return dev;
-}
-EXPORT_SYMBOL_GPL(usb_find_device_by_name);
-
-/**
  * usb_alloc_coherent - allocate dma-consistent buffer for URB_NO_xxx_DMA_MAP
  * @dev: device the buffer will be used with
  * @size: requested buffer size

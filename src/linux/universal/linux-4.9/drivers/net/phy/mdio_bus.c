@@ -409,10 +409,10 @@ static void mdiobus_setup_phydev_from_boardinfo(struct mii_bus *bus,
 						struct mdio_board_info *bi)
 {
 	if (strcmp(bus->id, bi->bus_id) ||
-	    bi->phy_addr != phydev->addr)
-		return;
+	    bi->phy_addr != phydev->mdio.addr)
+	    return;
 
-	phydev->dev.platform_data = (void *) bi->platform_data;
+	phydev->mdio.dev.platform_data = (void *) bi->platform_data;
 }
 /**
  * mdiobus_scan - scan a bus for MDIO devices.

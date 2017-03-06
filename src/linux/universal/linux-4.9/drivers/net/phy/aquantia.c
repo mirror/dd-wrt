@@ -169,7 +169,6 @@ static struct phy_driver aquantia_driver[] = {
 	.config_intr	= aquantia_config_intr,
 	.ack_interrupt	= aquantia_ack_interrupt,
 	.read_status	= aquantia_read_status,
-	.driver		= { .owner = THIS_MODULE,},
 },
 {
 	.phy_id		= PHY_ID_AQR105_2,
