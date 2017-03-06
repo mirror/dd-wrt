@@ -23,6 +23,7 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/phy.h>
+#include <linux/version.h>
 
 static a_uint16_t
 _phy_reg_read(a_uint32_t dev_id, a_uint32_t phy_addr, a_uint32_t reg)
@@ -2507,10 +2508,16 @@ a_bool_t malibu_phy_register(void)
 		.probe = malibu_phy_probe,
 		.remove = malibu_phy_remove,
 		.features = PHY_BASIC_FEATURES,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4,9,0)	
 		.driver = {.owner = THIS_MODULE},
-	};
+#endif
+		};
 
+#if LINUX_VERSION_CODE > KERNEL_VERSION(4,8,0)
+	return phy_driver_register(&qca_malibu_phy_driver,THIS_MODULE);
+#else
 	return phy_driver_register(&qca_malibu_phy_driver);
+#endif
 }
 
 int malibu_phy_init(a_uint32_t dev_id)
