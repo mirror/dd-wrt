@@ -349,7 +349,7 @@ static int exfat_d_hash(const struct dentry *dentry, const struct inode *inode,
 		struct qstr *qstr)
 #endif
 {
-	qstr->hash = full_name_hash(qstr->name, exfat_striptail_len(qstr));
+	qstr->hash = full_name_hash(NULL, qstr->name, exfat_striptail_len(qstr));
 	return 0;
 }
 
@@ -370,15 +370,17 @@ static int exfat_d_hashi(const struct dentry *dentry, const struct inode *inode,
 	name = qstr->name;
 	len = exfat_striptail_len(qstr);
 
-	hash = init_name_hash();
+	hash = init_name_hash(NULL);
 	while (len--)
 		hash = partial_name_hash(nls_upper(sb, *name++), hash);
 	qstr->hash = end_name_hash(hash);
 
 	return 0;
 }
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_cmpi(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_cmpi(const struct dentry *parent, const struct dentry *dentry,
 		unsigned int len, const char *str, const struct qstr *name)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -389,7 +391,7 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 		unsigned int len, const char *str, const struct qstr *name)
 #endif
 {
-	struct nls_table *t = EXFAT_SB(parent->d_sb)->nls_io;
+	struct nls_table *t = EXFAT_SB(dentry->d_sb)->nls_io;
 	unsigned int alen, blen;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -416,8 +418,10 @@ static int exfat_cmpi(const struct dentry *parent, const struct inode *pinode,
 	}
 	return 1;
 }
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_cmp(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_cmp(const struct dentry *parent, const struct dentry *dentry,
 		unsigned int len, const char *str, const struct qstr *name)
 #elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
@@ -1085,7 +1089,7 @@ out:
 }
 
 static int exfat_rename(struct inode *old_dir, struct dentry *old_dentry,
-						struct inode *new_dir, struct dentry *new_dentry)
+						struct inode *new_dir, struct dentry *new_dentry,unsigned int flags)
 {
 	struct inode *old_inode, *new_inode;
 	struct super_block *sb = old_dir->i_sb;
@@ -1276,7 +1280,7 @@ static int exfat_setattr(struct dentry *dentry, struct iattr *attr)
 		attr->ia_valid &= ~(ATTR_MTIME_SET | ATTR_ATIME_SET | ATTR_TIMES_SET);
 	}
 
-	error = inode_change_ok(inode, attr);
+	error = setattr_prepare(dentry, attr);
 	attr->ia_valid = ia_valid;
 	if (error)
 		return error;

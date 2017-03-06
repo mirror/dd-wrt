@@ -95,17 +95,6 @@ static bool ksoftirqd_running(void)
 }
 
 /*
- * If ksoftirqd is scheduled, we do not want to process pending softirqs
- * right now. Let ksoftirqd handle this at its own rate, to get fairness.
- */
-static bool ksoftirqd_running(void)
-{
-	struct task_struct *tsk = __this_cpu_read(ksoftirqd);
-
-	return tsk && (tsk->state == TASK_RUNNING);
-}
-
-/*
  * preempt_count and SOFTIRQ_OFFSET usage:
  * - preempt_count is changed by SOFTIRQ_OFFSET on entering or leaving
  *   softirq processing.

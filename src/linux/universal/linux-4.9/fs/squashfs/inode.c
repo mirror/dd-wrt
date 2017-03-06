@@ -233,7 +233,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 				goto block_release;
 			bytes += msblk->devblksize;
 		}
-		ll_rw_block(READ, b, bh);
+		ll_rw_block(READ, 0, b, bh);
 	} else {
 		if (!(bh[0] = get_block_length(s, &cur_index, &offset,
 								&c_byte)))
@@ -252,7 +252,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 				goto block_release;
 			bytes += msblk->devblksize;
 		}
-		ll_rw_block(READ, b - 1, bh + 1);
+		ll_rw_block(READ, 0, b - 1, bh + 1);
 	}
 
 	if (compressed)
@@ -1209,7 +1209,7 @@ static int squashfs_statfs(struct dentry *dentry, struct kstatfs *buf)
 static int squashfs_symlink_readpage(struct file *file, struct page *page)
 {
 	struct inode *inode = page->mapping->host;
-	int index = page->index << PAGE_CACHE_SHIFT, length, bytes;
+	int index = page->index << PAGE_SHIFT, length, bytes;
 	long long block = SQUASHFS_I(inode)->start_block;
 	int offset = SQUASHFS_I(inode)->offset;
 	void *pageaddr = kmap(page);
@@ -1221,7 +1221,7 @@ static int squashfs_symlink_readpage(struct file *file, struct page *page)
 
 	for (length = 0; length < index; length += bytes) {
 		if (!(bytes = squashfs_get_cached_block(inode->i_sb, NULL,
-				block, offset, PAGE_CACHE_SIZE, &block,
+				block, offset, PAGE_SIZE, &block,
 				&offset))) {
 			ERROR("Unable to read symbolic link [%llx:%x]\n", block,
 					offset);
@@ -1235,7 +1235,7 @@ static int squashfs_symlink_readpage(struct file *file, struct page *page)
 		goto skip_read;
 	}
 
-	bytes = (i_size_read(inode) - length) > PAGE_CACHE_SIZE ? PAGE_CACHE_SIZE :
+	bytes = (i_size_read(inode) - length) > PAGE_SIZE ? PAGE_SIZE :
 					i_size_read(inode) - length;
 
 	if (!(bytes = squashfs_get_cached_block(inode->i_sb, pageaddr, block,
@@ -1243,7 +1243,7 @@ static int squashfs_symlink_readpage(struct file *file, struct page *page)
 		ERROR("Unable to read symbolic link [%llx:%x]\n", block, offset);
 
 skip_read:
-	memset(pageaddr + bytes, 0, PAGE_CACHE_SIZE - bytes);
+	memset(pageaddr + bytes, 0, PAGE_SIZE - bytes);
 	kunmap(page);
 	SetPageUptodate(page);
 	unlock_page(page);
@@ -1523,12 +1523,12 @@ static int squashfs_readpage(struct file *file, struct page *page)
 	unsigned char block_list[SIZE];
 	long long block;
 	unsigned int bsize, i = 0, bytes = 0, byte_offset = 0;
-	int index = page->index >> (sblk->block_log - PAGE_CACHE_SHIFT);
+	int index = page->index >> (sblk->block_log - PAGE_SHIFT);
  	void *pageaddr;
 	struct squashfs_fragment_cache *fragment = NULL;
 	char *data_ptr = msblk->read_page;
 
-	int mask = (1 << (sblk->block_log - PAGE_CACHE_SHIFT)) - 1;
+	int mask = (1 << (sblk->block_log - PAGE_SHIFT)) - 1;
 	int start_index = page->index & ~mask;
 	int end_index = start_index | mask;
 
@@ -1536,8 +1536,8 @@ static int squashfs_readpage(struct file *file, struct page *page)
 					page->index,
 					SQUASHFS_I(inode)->start_block);
 
-	if (page->index >= ((i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
-					PAGE_CACHE_SHIFT))
+	if (page->index >= ((i_size_read(inode) + PAGE_SIZE - 1) >>
+					PAGE_SHIFT))
 		goto skip_read;
 
 	if (SQUASHFS_I(inode)->u.s1.fragment_start_block == SQUASHFS_INVALID_BLK
@@ -1577,10 +1577,10 @@ static int squashfs_readpage(struct file *file, struct page *page)
 	}
 
 	for (i = start_index; i <= end_index && byte_offset < bytes;
-					i++, byte_offset += PAGE_CACHE_SIZE) {
+					i++, byte_offset += PAGE_SIZE) {
 		struct page *push_page;
-		int available_bytes = (bytes - byte_offset) > PAGE_CACHE_SIZE ?
-					PAGE_CACHE_SIZE : bytes - byte_offset;
+		int available_bytes = (bytes - byte_offset) > PAGE_SIZE ?
+					PAGE_SIZE : bytes - byte_offset;
 
 		TRACE("bytes %d, i %d, byte_offset %d, available_bytes %d\n",
 					bytes, i, byte_offset, available_bytes);
@@ -1590,7 +1590,7 @@ static int squashfs_readpage(struct file *file, struct page *page)
 			memcpy(pageaddr, data_ptr + byte_offset,
 					available_bytes);
 			memset(pageaddr + available_bytes, 0,
-					PAGE_CACHE_SIZE - available_bytes);
+					PAGE_SIZE - available_bytes);
 			kunmap_atomic(pageaddr);
 			flush_dcache_page(page);
 			SetPageUptodate(page);
@@ -1602,12 +1602,12 @@ static int squashfs_readpage(struct file *file, struct page *page)
 			memcpy(pageaddr, data_ptr + byte_offset,
 					available_bytes);
 			memset(pageaddr + available_bytes, 0,
-					PAGE_CACHE_SIZE - available_bytes);
+					PAGE_SIZE - available_bytes);
 			kunmap_atomic(pageaddr);
 			flush_dcache_page(push_page);
 			SetPageUptodate(push_page);
 			unlock_page(push_page);
-			page_cache_release(push_page);
+			put_page(push_page);
 		}
 	}
 
@@ -1622,7 +1622,7 @@ static int squashfs_readpage(struct file *file, struct page *page)
 
 skip_read:
 	pageaddr = kmap_atomic(page);
-	memset(pageaddr + bytes, 0, PAGE_CACHE_SIZE - bytes);
+	memset(pageaddr + bytes, 0, PAGE_SIZE - bytes);
 	kunmap_atomic(pageaddr);
 	flush_dcache_page(page);
 	SetPageUptodate(page);
@@ -1646,8 +1646,8 @@ static int squashfs_readpage4K(struct file *file, struct page *page)
 					page->index,
 					SQUASHFS_I(inode)->start_block);
 
-	if (page->index >= ((i_size_read(inode) + PAGE_CACHE_SIZE - 1) >>
-					PAGE_CACHE_SHIFT)) {
+	if (page->index >= ((i_size_read(inode) + PAGE_SIZE - 1) >>
+					PAGE_SHIFT)) {
 		pageaddr = kmap_atomic(page);
 		goto skip_read;
 	}
@@ -1688,7 +1688,7 @@ static int squashfs_readpage4K(struct file *file, struct page *page)
 	}
 
 skip_read:
-	memset(pageaddr + bytes, 0, PAGE_CACHE_SIZE - bytes);
+	memset(pageaddr + bytes, 0, PAGE_SIZE - bytes);
 	kunmap_atomic(pageaddr);
 	flush_dcache_page(page);
 	SetPageUptodate(page);

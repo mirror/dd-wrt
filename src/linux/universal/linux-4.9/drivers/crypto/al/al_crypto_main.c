@@ -54,7 +54,8 @@ static void al_crypto_pci_remove(
 
 static void al_crypto_flr(struct pci_dev *pdev);
 
-static DEFINE_PCI_DEVICE_TABLE(al_crypto_pci_tbl) = {
+
+static const struct pci_device_id al_crypto_pci_tbl[] = {
 	{ PCI_VDEVICE(ANNAPURNA_LABS, PCI_DEVICE_ID_AL_CRYPTO), },
 	{ PCI_VDEVICE(ANNAPURNA_LABS, PCI_DEVICE_ID_AL_CRYPTO_VF), },
 	{ 0, }

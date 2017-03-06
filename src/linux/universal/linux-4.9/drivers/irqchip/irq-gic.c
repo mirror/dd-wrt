@@ -135,9 +135,7 @@ struct irq_chip gic_arch_extn = {
 
 static struct static_key supports_deactivate = STATIC_KEY_INIT_TRUE;
 
-static struct gic_chip_data gic_data[CONFIG_ARM_GIC_MAX_NR] __read_mostly;
-
-struct gic_chip_data gic_data[MAX_GIC_NR] __read_mostly;
+struct gic_chip_data gic_data[CONFIG_ARM_GIC_MAX_NR] __read_mostly;
 
 struct irq_domain * getgicdomain(void)
 {

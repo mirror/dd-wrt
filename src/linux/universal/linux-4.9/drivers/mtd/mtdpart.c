@@ -58,6 +58,7 @@ static inline struct mtd_part *mtd_to_part(const struct mtd_info *mtd)
 	return container_of(mtd, struct mtd_part, mtd);
 }
 
+#define PART(x)  ((struct mtd_part *)(x))
 #define IS_PART(mtd) (mtd->_read == part_read)
 
 /*
