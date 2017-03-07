@@ -188,8 +188,6 @@ static const struct irq_domain_ops alpine_msix_middle_domain_ops = {
 	.free	= alpine_msix_middle_domain_free,
 };
 
-struct irq_domain * getgicdomain(void);
-
 static int alpine_msix_init_domains(struct alpine_msix_data *priv,
 				    struct device_node *node)
 {
