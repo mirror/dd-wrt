@@ -84,6 +84,8 @@ struct nand_data {
 	uint8_t oob[AL_NAND_MAX_OOB_SIZE];
 };
 
+static uint32_t s_ecc_loc;
+static uint32_t s_oob_size;
 /*
  * Addressing RMN: 2903
  *
@@ -164,9 +166,9 @@ static uint32_t wait_for_irq(struct nand_data *nand, uint32_t irq_mask);
 static inline struct nand_data *nand_data_get(
 				struct mtd_info *mtd)
 {
-	struct nand_chip *nand_chip = mtd->priv;
+	struct nand_chip *nand_chip = mtd_to_nand(mtd);
 
-	return nand_chip->priv;
+	return nand_get_controller_data(nand_chip);
 }
 
 static void nand_cw_size_get(
@@ -231,7 +233,6 @@ void nand_cmd_ctrl(struct mtd_info *mtd, int dat, unsigned int ctrl)
 	uint32_t cmd;
 	enum al_nand_command_type type;
 	struct nand_data *nand;
-
 	if ((ctrl & (NAND_CLE | NAND_ALE)) == 0)
 		return;
 
@@ -302,7 +303,6 @@ void nand_read_buff(struct mtd_info *mtd, uint8_t *buf, int len)
 	struct nand_data *nand;
 	uint32_t intr_status;
 	void __iomem *data_buff;
-
 	nand = nand_data_get(mtd);
 
 	dev_dbg(&nand->pdev->dev, "nand_read_buff: read len = %d\n", len);
@@ -375,11 +375,10 @@ u16 nand_read_word(struct mtd_info *mtd)
  */
 void nand_write_buff(struct mtd_info *mtd, const uint8_t *buf, int len)
 {
-	uint32_t cw_size = ((struct nand_chip *)mtd->priv)->ecc.size;
+	uint32_t cw_size = mtd_to_nand(mtd)->ecc.size;
 	uint32_t cw_count;
 	struct nand_data *nand;
 	void __iomem *data_buff;
-
 	nand = nand_data_get(mtd);
 
 	dev_dbg(&nand->pdev->dev, "nand_write_buff: len = %d start: 0x%x%x%x\n",
@@ -410,7 +409,6 @@ void nand_write_buff(struct mtd_info *mtd, const uint8_t *buf, int len)
 		buf += cw_size;
 		len -= cw_size;
 	}
-
 	/* enable wp and disable tx will be executed after commands
 	 * NAND_CMD_PAGEPROG and AL_NAND_COMMAND_TYPE_WAIT_FOR_READY will be
 	 * sent to make sure all data were written.
@@ -459,14 +457,13 @@ static inline int is_empty_oob(uint8_t *oob, int len)
 int ecc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 			uint8_t *buf, int oob_required, int page)
 {
-	int bytes = mtd_ooblayout_count_eccbytes(mtd);
+//	int bytes = mtd_ooblayout_count_eccbytes(mtd);
+	int bytes =s_oob_size - s_ecc_loc;
 	struct nand_data *nand;
 	int uncorr_err_count = 0;
 	int corr_err_count = 0;
-	struct mtd_oob_region oobregion;
 	nand = nand_data_get(mtd);
 
-	dev_dbg(&nand->pdev->dev, "ecc_read_page: read page %d\n", page);
 
 	/* Clear TX/RX ECC state machine */
 	al_nand_tx_set_enable(&nand->nand_obj, 1);
@@ -479,9 +476,8 @@ int ecc_read_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 	BUG_ON(oob_required);
 
-	mtd_ooblayout_ecc(mtd, 0, &oobregion);
 	/* First need to read the OOB to the controller to calc the ecc */
-	chip->cmdfunc(mtd, NAND_CMD_READOOB, oobregion.offset, page);
+	chip->cmdfunc(mtd, NAND_CMD_READOOB, s_ecc_loc, page);
 
 	nand_send_byte_count_command(&nand->nand_obj,
 				AL_NAND_COMMAND_TYPE_SPARE_READ_COUNT,
@@ -544,11 +540,9 @@ int ecc_read_subpage(struct mtd_info *mtd, struct nand_chip *chip,
 int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 			const uint8_t *buf, int oob_required, int page)
 {
-	int bytes = mtd_ooblayout_count_eccbytes(mtd);
+	int bytes =s_oob_size - s_ecc_loc;
 	uint32_t cmd;
 	struct nand_data *nand;
-	struct mtd_oob_region oobregion;
-
 	nand = nand_data_get(mtd);
 
 	dev_dbg(&nand->pdev->dev, "ecc_write_page\n");
@@ -559,10 +553,9 @@ int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 
 	nand_write_buff(mtd, buf, mtd->writesize);
 
-	mtd_ooblayout_ecc(mtd, 0, &oobregion);
 	/* First need to read the OOB to the controller to calc the ecc */
 	chip->cmdfunc(mtd, NAND_CMD_RNDIN,
-			mtd->writesize + oobregion.offset, -1);
+			mtd->writesize + s_ecc_loc, -1);
 
 	cmd = AL_NAND_CMD_SEQ_ENTRY(
 			AL_NAND_COMMAND_TYPE_WAIT_CYCLE_COUNT,
@@ -584,7 +577,6 @@ int ecc_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 	al_nand_tx_set_enable(&nand->nand_obj, 0);
 
 	al_nand_ecc_set_enabled(&nand->nand_obj, 0);
-
 	return 0;
 }
 #endif
@@ -781,7 +773,7 @@ static void nand_onfi_config_set(
 
 	BUG_ON(i < 0);
 
-	nand_set_timing_mode(nand->priv, device_properties->timingMode);
+	nand_set_timing_mode(nand_get_controller_data(nand), device_properties->timingMode);
 
 	device_properties->num_col_cyc =
 		((nand->onfi_params.addr_cycles & ONFI_COL_ADDR_CYCLE_MASK)
@@ -805,7 +797,7 @@ static void nand_onfi_config_set(
 #endif
 }
 
-static uint32_t s_ecc_loc;
+
 static int fsl_elbc_ooblayout_ecc(struct mtd_info *mtd, int section,
 				  struct mtd_oob_region *oobregion)
 {
@@ -847,9 +839,11 @@ static void nand_ecc_config(
 		ecc->mode = NAND_ECC_HW;
 
 		//memset(layout, 0, sizeof(struct nand_ecclayout));
+		
 		ecc->bytes = oob_size - ecc_loc;
 		s_ecc_loc = ecc_loc;
-		printk(KERN_EMERG "ecc loc %d\n",ecc_loc);
+		s_oob_size = oob_size;
+		//ecc->total = ecc_loc;
 		//layout->oobfree[0].offset = 2;
 		//layout->oobfree[0].length = ecc_loc - 2;
 		//layout->eccpos[0] = ecc_loc;
@@ -862,7 +856,7 @@ static void nand_ecc_config(
 
 		ecc->strength = nand->onfi_params.ecc_bits;
 
-		mtd_set_ooblayout(mtd, &lp_ops);
+		mtd_set_ooblayout(mtd, &nand_ooblayout_lp_ops);
 	} else {
 		ecc->mode = NAND_ECC_NONE;
 	}
@@ -901,10 +895,11 @@ static int al_nand_probe(struct platform_device *pdev)
 
 	nand = &nand_dat->chip;
 	mtd = nand_to_mtd(nand);
-	mtd->priv = nand;
+//	mtd->priv = nand;
 
 	nand_dat->cache_pos = -1;
-	nand->priv = nand_dat;
+	nand_set_controller_data(nand, nand_dat);
+	//nand->priv = nand_dat;
 	nand_dat->pdev = pdev;
 
 	dev_set_drvdata(&pdev->dev, nand_dat);
@@ -965,7 +960,6 @@ static int al_nand_probe(struct platform_device *pdev)
 	/* must be set before scan_ident cause it uses read_buff */
 	nand->ecc.size = 512 << nand_dat->ecc_config.messageSize;
 	nand_dat->cw_size = 512 << nand_dat->ecc_config.messageSize;
-
 	ret = nand_scan_ident(mtd, AL_NAND_MAX_CHIPS, NULL);
 	if (ret) {
 		pr_err("%s: nand_scan_ident failed\n", __func__);
@@ -991,13 +985,11 @@ static int al_nand_probe(struct platform_device *pdev)
 		ret = -EIO;
 		goto err;
 	}
-
 	ret = nand_scan_tail(mtd);
 	if (ret) {
 		pr_err("%s: scan_tail failed\n", __func__);
 		goto err;
 	}
-
 	/* parse the device tree looking for partitions declaration.
 	 * if no partition declaration will be found, 1 partition will be
 	 * created for the all device */
