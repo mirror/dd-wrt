@@ -28,6 +28,60 @@
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
 #pragma message (VAR_NAME_VALUE(NVRAMSPACE))
 
+
+#if 0
+static int *nvram_hash;
+
+static INLINE uint hash(const char *s, int mul)
+{
+	uint hash = 0;
+
+	while (*s)
+		hash = mul * hash + *s++;
+
+	return hash;
+}
+
+void main(int argc, char *argv[])
+{
+	int i;
+	char buf[NVRAMSPACE], *name;
+	int mul, max;
+	int lowest=255;
+	int lowesti=0;
+	int mod = atoi(argv[1]);
+	nvram_hash = malloc(mod * 4);
+	for (mul = 0; mul < mod; mul++) {
+		memset(buf, 0, NVRAMSPACE);
+		memset(nvram_hash, 0, mod * 4);
+		nvram_getall(buf, sizeof(buf));
+		int len;
+		for (name = buf; *name; name += len + 1) {
+			len = strlen(name);
+			for (i = 0; i < len; i++)
+				if (name[i] == '=')
+					name[i] = 0;
+			nvram_hash[hash(name, mul) % mod]++;
+		}
+
+		max = 0;
+		for (i = 0; i < mod; i++) {
+			if (nvram_hash[i] > max)
+				max = nvram_hash[i];
+		//fprintf(stderr, "%d ",nvram_hash[i]);
+		}
+		if (max < lowest) {
+		lowest = max;
+		lowesti = mul;
+		}
+		fprintf(stderr, "\n%d = %d\n", mul, max);
+	}
+
+
+		fprintf(stderr, "\n%d = %d\n", lowesti, lowest);
+}
+#endif
+
 /* 
  * NVRAM utility 
  */
