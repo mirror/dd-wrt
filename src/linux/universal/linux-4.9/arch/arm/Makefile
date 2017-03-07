@@ -22,15 +22,10 @@ endif
 ifeq ($(CONFIG_ARM_MODULE_PLTS),y)
 LDFLAGS_MODULE	+= -T $(srctree)/arch/arm/kernel/module.lds
 endif
-LDFLAGS_vmlinux += --gc-sections
 
 GZFLAGS		:=-9
 #KBUILD_CFLAGS	+=-pipe
 KBUILD_CFLAGS	+=$(call cc-option,-ffreestanding,)
-
-ifndef CONFIG_FUNCTION_TRACER
-KBUILD_CFLAGS_KERNEL += -ffunction-sections -fdata-sections
-endif
 
 # Never generate .eh_frame
 KBUILD_CFLAGS	+= $(call cc-option,-fno-dwarf2-cfi-asm)

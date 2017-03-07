@@ -686,7 +686,6 @@ static int load_elf_binary(struct linux_binprm *bprm)
 		struct elfhdr interp_elf_ex;
 	} *loc;
 	struct arch_elf_state arch_state = INIT_ARCH_ELF_STATE;
-	printk(KERN_EMERG "load %s\n",bprm->filename);
 	loc = kmalloc(sizeof(*loc), GFP_KERNEL);
 	if (!loc) {
 		retval = -ENOMEM;
