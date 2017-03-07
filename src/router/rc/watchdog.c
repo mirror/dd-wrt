@@ -19,6 +19,8 @@ static void watchdog(void)
 	int radiostate2 = -1;
 	int oldstate2 = -1;
 	int counter = 0;
+
+	static int lasttarget = 0;
 	int radioledinitcount = 0;
 	int fd = open("/dev/misc/watchdog", O_WRONLY);
 	if (fd == -1)
@@ -202,8 +204,10 @@ static void watchdog(void)
 		target /= 10000;
 		if (target)
 			fprintf(stderr, "set fan to %d\n", target);
-		sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
-
+		if (target != lasttarget) {
+			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
+			lasttarget = target;
+		}
 #endif
 
 		sleep(5);
