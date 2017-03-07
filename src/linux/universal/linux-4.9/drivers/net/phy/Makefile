@@ -70,5 +70,5 @@ obj-$(CONFIG_RTL8367B_PHY)	+= rtl8367b.o
 
 # GPIO simulate MDIO
 ifeq ($(CONFIG_ARCH_ALPINE),y)
-#obj-m				+= mii_gpio.o
+obj-m				+= mii_gpio.o
 endif

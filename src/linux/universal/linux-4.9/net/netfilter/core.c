@@ -360,7 +360,8 @@ next_hook:
 		ret = NF_DROP_GETERR(verdict);
 		if (ret == 0)
 			ret = -EPERM;
-	} else if ((verdict & NF_VERDICT_MASK) == NF_QUEUE || (verdict & NF_VERDICT_MASK) == NF_IMQ_QUEUE) {
+	} else if ((verdict & NF_VERDICT_MASK) == NF_QUEUE ||
+		   (verdict & NF_VERDICT_MASK) == NF_IMQ_QUEUE) {
 		ret = nf_queue(skb, state, &entry, verdict);
 		if (ret == -ECANCELED)
 			goto next_hook;

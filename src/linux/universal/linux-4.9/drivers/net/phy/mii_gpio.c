@@ -355,7 +355,7 @@ static int __init mdiobus_probe(void)
 	snprintf(p_bus->id, MII_BUS_ID_SIZE, "mdio-al");
 
 	for (i = 0; i < PHY_MAX_ADDR; i++)
-		mii_irq_sw1[i] = PHY_POLL;
+		p_bus->irq[i] = PHY_POLL;
 
 	bus = p_bus;
 	mutex_init(&p_bus->mdio_lock);

@@ -146,6 +146,27 @@ int skb_restore_cb(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(skb_restore_cb);
 
+static void skb_copy_stored_cb(struct sk_buff *   , const struct sk_buff *     ) __attribute__ ((unused));
+static void skb_copy_stored_cb(struct sk_buff *new, const struct sk_buff *__old)
+{
+	struct skb_cb_table *next;
+	struct sk_buff *old;
+
+	if (!__old->cb_next) {
+		new->cb_next = NULL;
+		return;
+	}
+
+	spin_lock(&skb_cb_store_lock);
+
+	old = (struct sk_buff *)__old;
+
+	next = old->cb_next;
+	atomic_inc(&next->refcnt);
+	new->cb_next = next;
+
+	spin_unlock(&skb_cb_store_lock);
+}
 #endif
 
 /**
@@ -324,11 +345,6 @@ struct sk_buff *__alloc_skb(unsigned int size, gfp_t gfp_mask,
 	skb->end = skb->tail + size;
 	skb->mac_header = (typeof(skb->mac_header))~0U;
 	skb->transport_header = (typeof(skb->transport_header))~0U;
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	skb->cb_next = NULL;
-	skb->nf_queue_entry = NULL;
-	skb->imq_flags = 0;
-#endif
 
 	/* make sure we initialize shinfo sequentially */
 	shinfo = skb_shinfo(skb);
@@ -750,16 +766,19 @@ static void skb_release_head_state(struct sk_buff *skb)
 		skb->destructor(skb);
 	}
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	/* This should not happen. When it does, avoid memleak by restoring
-	the chain of cb-backups. */
+	/*
+	 * This should not happen. When it does, avoid memleak by restoring
+	 * the chain of cb-backups.
+	 */
 	while (skb->cb_next != NULL) {
 		if (net_ratelimit())
-			pr_warn("IMQ: kfree_skb: skb->cb_next: "
-				"%08x\n", (unsigned int)skb->cb_next);
+			pr_warn("IMQ: kfree_skb: skb->cb_next: %08x\n",
+				(unsigned int)(uintptr_t)skb->cb_next);
 
 		skb_restore_cb(skb);
 	}
-	/* This should not happen either, nf_queue_entry is nullified in
+	/*
+	 * This should not happen either, nf_queue_entry is nullified in
 	 * imq_dev_xmit(). If we have non-NULL nf_queue_entry then we are
 	 * leaking entry pointers, maybe memory. We don't know if this is
 	 * pointer to already freed memory, or should this be freed.
@@ -962,9 +981,7 @@ static void BCMFASTPATH_HOST __copy_skb_header(struct sk_buff *new, const struct
 	/*skb_copy_stored_cb(new, old);*/
 #endif
 
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-	new->cb_next = NULL;
-#endif
+
 	/* Note : this field could be in headers_start/headers_end section
 	 * It is not yet because we do not want to have a 16 bit hole
 	 */

@@ -61,7 +61,6 @@ void nf_unregister_queue_handler(struct net *net)
 }
 EXPORT_SYMBOL(nf_unregister_queue_handler);
 
-
 void nf_queue_entry_release_refs(struct nf_queue_entry *entry)
 {
 	struct nf_hook_state *state = &entry->state;
@@ -135,6 +134,7 @@ static int __nf_queue(struct sk_buff *skb, const struct nf_hook_state *state,
 	struct net *net = state->net;
 	unsigned int queuetype = verdict & NF_VERDICT_MASK;
 	unsigned int queuenum  = verdict >> NF_VERDICT_QBITS;
+
 	/* QUEUE == DROP if no one is waiting, to be safe. */
 	if (queuetype == NF_IMQ_QUEUE) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
@@ -211,7 +211,6 @@ int nf_queue(struct sk_buff *skb, struct nf_hook_state *state,
 
 	return 0;
 }
-
 
 void nf_reinject(struct nf_queue_entry *entry, unsigned int verdict)
 {
