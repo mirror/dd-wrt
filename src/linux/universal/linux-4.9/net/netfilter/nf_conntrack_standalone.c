@@ -473,11 +473,32 @@ nf_conntrack_hash_sysctl(struct ctl_table *table, int write,
 	nf_conntrack_htable_size_user = nf_conntrack_htable_size;
 	return ret;
 }
+static int nf_conntrack_flush_var = 0;
+
+static int
+nf_conntrack_flush_sysctl(struct ctl_table *table, int write,
+			 void __user *buffer, size_t *lenp, loff_t *ppos)
+{
+	int ret;
+
+	ret = proc_dointvec(table, write, buffer, lenp, ppos);
+	if (ret < 0 || !write)
+		return ret;
+
+	nf_conntrack_flush();
+	return ret;
+}
 
 static struct ctl_table_header *nf_ct_netfilter_header;
 
 static struct ctl_table nf_ct_sysctl_table[] = {
 	{
+		.procname	= "nf_conntrack_flush",
+		.data		= &nf_conntrack_flush_var,
+		.maxlen		= sizeof(int),
+		.mode		= 0644,
+		.proc_handler	= nf_conntrack_flush_sysctl,
+	},	{
 		.procname	= "nf_conntrack_max",
 		.data		= &nf_conntrack_max,
 		.maxlen		= sizeof(int),
