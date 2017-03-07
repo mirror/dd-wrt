@@ -277,7 +277,7 @@ config IMQ
 	  and distribute bandwidth among them. Iptables is used to specify
 	  through which IMQ device, if any, packets travel.
 
-	  More information at: http://www.linuximq.net/
+	  More information at: https://github.com/imq/linuximq
 
 	  To compile this driver as a module, choose M here: the module
 	  will be called imq.  If unsure, say N.
@@ -305,7 +305,7 @@ choice
 	  This settings are specially usefull when trying to use IMQ
 	  to shape NATed clients.
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
 
@@ -320,7 +320,7 @@ config IMQ_BEHAVIOR_AA
 	  PREROUTING:   After NAT
 	  POSTROUTING:  After NAT
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
 
@@ -335,7 +335,7 @@ config IMQ_BEHAVIOR_AB
 	  PREROUTING:   After NAT
 	  POSTROUTING:  Before NAT
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
 
@@ -350,7 +350,7 @@ config IMQ_BEHAVIOR_BA
 	  PREROUTING:   Before NAT
 	  POSTROUTING:  After NAT
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
 
@@ -365,7 +365,7 @@ config IMQ_BEHAVIOR_BB
 	  PREROUTING:   Before NAT
 	  POSTROUTING:  Before NAT
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
 
@@ -377,26 +377,13 @@ config IMQ_NUM_DEVS
 	depends on IMQ
 	default "16"
 	help
-	  This setting defines how many IMQ devices may be use.
+	  This setting defines how many IMQ devices will be created.
 
 	  The default value is 16.
 
-	  More information can be found at: www.linuximq.net
+	  More information can be found at: https://github.com/imq/linuximq
 
 	  If not sure leave the default settings alone.
-
-config IMQ_ALLOC_DEVS
-	int "Number of created IMQ devices"
-	range 2 16
-	depends on IMQ
-	default "1"
-	help
-	  This setting defines how many IMQ devices will be created on startup.
-
-	  The default value is 1.
-
-	  Other devices can be created later using the command "ip link add imqX type imq"
-
 
 config TUN
 	tristate "Universal TUN/TAP device driver support"

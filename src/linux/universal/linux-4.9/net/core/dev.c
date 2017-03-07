@@ -99,9 +99,6 @@
 #include <net/sock.h>
 #include <net/busy_poll.h>
 #include <linux/rtnetlink.h>
-#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
-#include <linux/imq.h>
-#endif
 #include <linux/stat.h>
 #include <net/dst.h>
 #include <net/dst_metadata.h>
@@ -144,6 +141,9 @@
 #include <linux/netfilter_ingress.h>
 #include <linux/sctp.h>
 #include <linux/crash_dump.h>
+#if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
+#include <linux/imq.h>
+#endif
 
 #include "net-sysfs.h"
 
@@ -2960,7 +2960,8 @@ out:
 	*ret = rc;
 	return skb;
 }
-EXPORT_SYMBOL(dev_hard_start_xmit);
+
+EXPORT_SYMBOL_GPL(dev_hard_start_xmit);
 
 static struct sk_buff *validate_xmit_vlan(struct sk_buff *skb,
 					  netdev_features_t features)
