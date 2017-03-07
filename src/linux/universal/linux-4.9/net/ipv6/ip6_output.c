@@ -147,8 +147,10 @@ int ip6_output(struct net *net, struct sock *sk, struct sk_buff *skb)
 		return 0;
 	}
 
-	/* IMQ-patch: moved setting skb->dev and skb->protocol from
-	 * ip6_finish_output2 to fix crashing at netif_skb_features(). */
+	/*
+	* IMQ-patch: moved setting skb->dev and skb->protocol from
+	* ip6_finish_output2 to fix crashing at netif_skb_features().
+	*/
 	skb->protocol = htons(ETH_P_IPV6);
 	skb->dev = dev;
 
