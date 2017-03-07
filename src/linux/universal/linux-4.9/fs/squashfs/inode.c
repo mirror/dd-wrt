@@ -44,6 +44,7 @@
 #include <linux/blkdev.h>
 #include <linux/vmalloc.h>
 #include <asm/uaccess.h>
+#include <linux/pagemap.h>
 //#include <asm/semaphore.h>
 
 #include "squashfs.h"
@@ -120,7 +121,7 @@ SQSH_EXTERN struct address_space_operations squashfs_aops_4K = {
 
 static struct file_operations squashfs_dir_ops = {
 	.read = generic_read_dir,
-	.iterate = squashfs_readdir
+	.iterate_shared = squashfs_readdir
 };
 
 SQSH_EXTERN struct inode_operations squashfs_dir_inode_ops = {
@@ -233,7 +234,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 				goto block_release;
 			bytes += msblk->devblksize;
 		}
-		ll_rw_block(READ, 0, b, bh);
+		ll_rw_block(REQ_OP_READ, 0, b, bh);
 	} else {
 		if (!(bh[0] = get_block_length(s, &cur_index, &offset,
 								&c_byte)))
@@ -252,7 +253,7 @@ SQSH_EXTERN unsigned int squashfs_read_data(struct super_block *s, char *buffer,
 				goto block_release;
 			bytes += msblk->devblksize;
 		}
-		ll_rw_block(READ, 0, b - 1, bh + 1);
+		ll_rw_block(REQ_OP_READ, 0, b - 1, bh + 1);
 	}
 
 	if (compressed)
@@ -824,6 +825,7 @@ static struct inode *squashfs_iget(struct super_block *s, squashfs_inode_t inode
 			set_nlink(i,inodep->nlink);
 			i->i_size = inodep->symlink_size;
 			i->i_op = &page_symlink_inode_operations;
+			inode_nohighmem(i);
 			i->i_data.a_ops = &squashfs_symlink_aops;
 			i->i_mode |= S_IFLNK;
 			SQUASHFS_I(i)->start_block = next_block;
@@ -2130,7 +2132,7 @@ static int __init init_inodecache(void)
 {
 	squashfs_inode_cachep = kmem_cache_create("squashfs_inode_cache",
 	     sizeof(struct squashfs_inode_info),
-	     0, SLAB_HWCACHE_ALIGN|SLAB_RECLAIM_ACCOUNT,
+	     0, SLAB_HWCACHE_ALIGN|SLAB_RECLAIM_ACCOUNT|SLAB_ACCOUNT,
 	     init_once);
 	if (squashfs_inode_cachep == NULL)
 		return -ENOMEM;
