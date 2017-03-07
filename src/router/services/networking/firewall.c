@@ -2722,6 +2722,7 @@ void start_firewall(void)
 	int log_level = 0;
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush");
+	system("cat /proc/net/netfilter/nf_conntrack_flush");
 
 #ifndef	HAVE_80211AC
 	/*
