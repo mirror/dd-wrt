@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <getopt.h>
-#if defined(__GLIBC__) && __GLIBC__ == 2
+#if 1 //defined(__GLIBC__) && __GLIBC__ == 2
 #include <net/ethernet.h>
 #else
 #include <linux/if_ether.h>
