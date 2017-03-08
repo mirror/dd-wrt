@@ -47,6 +47,7 @@
 #include <sys/socket.h>
 #endif
 
+#include <netinet/in.h>
 /* Ugly header files on some Linux boxes... */
 #if defined(HAVE_LINUX_IF_H)
 #include <linux/if.h>
@@ -84,7 +85,7 @@ typedef unsigned long UINT32_t;
 #include <linux/if_ether.h>
 #endif
 
-//#include <netinet/in.h>
+
 
 
 
