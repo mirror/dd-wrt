@@ -90,7 +90,7 @@ typedef enum {
 
 
 #define E1000_WRITE_REG(a, reg, value) ( \
-    writel((value), ((a)->hw_addr + \
+    writel((unsigned int)(value), ((a)->hw_addr + \
         (((a)->mac_type >= iegbe_82543) ? E1000_##reg : E1000_82542_##reg))))
 
 #define E1000_READ_REG(a, reg) ( \
