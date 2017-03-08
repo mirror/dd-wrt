@@ -3196,8 +3196,8 @@ static int iegbe_xmit_frame(struct sk_buff *skb, struct net_device *netdev)
 	               iegbe_tx_map(adapter, tx_ring, skb, first,
 	                            max_per_txd, nr_frags, mss));
 
-	netdev->trans_start = jiffies;
-
+	netif_trans_update(netdev);
+	
 	/* Make sure there is space in the ring for the next send. */
 	iegbe_maybe_stop_tx(netdev, tx_ring, MAX_SKB_FRAGS + 2);
 
