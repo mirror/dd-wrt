@@ -2175,13 +2175,14 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 				count++;
 				if (offset < count && ((offset + 50) > count)) {	// show 100 lines
 					// a few sample colors
-					if (strstr(line, "authpriv.info")) {
+					if (strstr(line, ".warn")) {
 						websWrite(stream, "<tr bgcolor=\"#FFFF00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "authpriv.notice")) {
 						websWrite(stream, "<tr bgcolor=\"#7CFC00\"><td>%s</td></tr>", line);
 					} else if (strstr(line, "mounting unchecked fs")
 						   || strstr(line, "httpd login failure")
-						   || strstr(line, "auth-failure")) {
+						   || strstr(line, "auth-failure")
+						   || strstr(line, ".err")) {
 						websWrite(stream, "<tr bgcolor=\"#FF0000\"><td>%s</td></tr>", line);
 					} else {
 						websWrite(stream, "<tr><td>%s</td></tr>", line);
