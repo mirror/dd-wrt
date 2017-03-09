@@ -16,49 +16,64 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program; if not, write to the Free Software
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
+
  */
 
 #include <string.h>
 #include <arpa/inet.h>
 #include <assert.h>
 #include <pthread.h>
+#include <stdint.h>
 #include "crypto.h"
 #include "crctable.h"
 #include "aircrack-ng.h"
 
 #define GET_UINT32_LE(n,b,i)                    \
 {                                               \
-    (n) = ( (uint32) (b)[(i)    ]       )       \
-        | ( (uint32) (b)[(i) + 1] <<  8 )       \
-        | ( (uint32) (b)[(i) + 2] << 16 )       \
-        | ( (uint32) (b)[(i) + 3] << 24 );      \
+    (n) = ( (uint32_t) (b)[(i)    ]       )       \
+        | ( (uint32_t) (b)[(i) + 1] <<  8 )       \
+        | ( (uint32_t) (b)[(i) + 2] << 16 )       \
+        | ( (uint32_t) (b)[(i) + 3] << 24 );      \
 }
 
 #define PUT_UINT32_LE(n,b,i)                    \
 {                                               \
-    (b)[(i)    ] = (uint8) ( (n)       );       \
-    (b)[(i) + 1] = (uint8) ( (n) >>  8 );       \
-    (b)[(i) + 2] = (uint8) ( (n) >> 16 );       \
-    (b)[(i) + 3] = (uint8) ( (n) >> 24 );       \
+    (b)[(i)    ] = (uint8_t) ( (n)       );       \
+    (b)[(i) + 1] = (uint8_t) ( (n) >>  8 );       \
+    (b)[(i) + 2] = (uint8_t) ( (n) >> 16 );       \
+    (b)[(i) + 3] = (uint8_t) ( (n) >> 24 );       \
 }
 
 #define GET_UINT32_BE(n,b,i)                    \
 {                                               \
-    (n) = ( (uint32) (b)[(i)    ] << 24 )       \
-        | ( (uint32) (b)[(i) + 1] << 16 )       \
-        | ( (uint32) (b)[(i) + 2] <<  8 )       \
-        | ( (uint32) (b)[(i) + 3]       );      \
+    (n) = ( (uint32_t) (b)[(i)    ] << 24 )       \
+        | ( (uint32_t) (b)[(i) + 1] << 16 )       \
+        | ( (uint32_t) (b)[(i) + 2] <<  8 )       \
+        | ( (uint32_t) (b)[(i) + 3]       );      \
 }
 
 #define PUT_UINT32_BE(n,b,i)                    \
 {                                               \
-    (b)[(i)    ] = (uint8) ( (n) >> 24 );       \
-    (b)[(i) + 1] = (uint8) ( (n) >> 16 );       \
-    (b)[(i) + 2] = (uint8) ( (n) >>  8 );       \
-    (b)[(i) + 3] = (uint8) ( (n)       );       \
+    (b)[(i)    ] = (uint8_t) ( (n) >> 24 );       \
+    (b)[(i) + 1] = (uint8_t) ( (n) >> 16 );       \
+    (b)[(i) + 2] = (uint8_t) ( (n) >>  8 );       \
+    (b)[(i) + 3] = (uint8_t) ( (n)       );       \
 }
 
-static uchar ZERO[32] =
+static unsigned char ZERO[32] =
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
         "\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -68,7 +83,7 @@ static uchar ZERO[32] =
 
 /*  SSL decryption */
 
-int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
+int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
 {
     RC4_KEY S;
 
@@ -79,7 +94,7 @@ int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
 
 }
 
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
+int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
 {
     encrypt_wep (data,len,key,keylen);
     return( check_crc_buf( data, len - 4 ) );
@@ -136,7 +151,7 @@ void rc4_crypt( struct rc4_state *s, unsigned char *data, int length )
 
 /* WEP (barebone RC4) en-/decryption routines */
 /*
-int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
+int encrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
 {
     struct rc4_state S;
 
@@ -146,7 +161,7 @@ int encrypt_wep( uchar *data, int len, uchar *key, int keylen )
     return( 0 );
 }
 
-int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
+int decrypt_wep( unsigned char *data, int len, unsigned char *key, int keylen )
 {
     struct rc4_state S;
 
@@ -159,10 +174,10 @@ int decrypt_wep( uchar *data, int len, uchar *key, int keylen )
 
 /* derive the PMK from the passphrase and the essid */
 
-void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
+void calc_pmk( char *key, char *essid_pre, unsigned char pmk[40] )
 {
 	int i, j, slen;
-	uchar buffer[65];
+	unsigned char buffer[65];
 	char essid[33+4];
 	SHA_CTX ctx_ipad;
 	SHA_CTX ctx_opad;
@@ -192,7 +207,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 	/* iterate HMAC-SHA1 over itself 8192 times */
 
 	essid[slen - 1] = '\1';
-	HMAC(EVP_sha1(), (uchar *)key, strlen(key), (uchar*)essid, slen, pmk, NULL);
+	HMAC(EVP_sha1(), (unsigned char *)key, strlen(key), (unsigned char*)essid, slen, pmk, NULL);
 	memcpy( buffer, pmk, 20 );
 
 	for( i = 1; i < 4096; i++ )
@@ -210,7 +225,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 	}
 
 	essid[slen - 1] = '\2';
-	HMAC(EVP_sha1(), (uchar *)key, strlen(key), (uchar*)essid, slen, pmk+20, NULL);
+	HMAC(EVP_sha1(), (unsigned char *)key, strlen(key), (unsigned char*)essid, slen, pmk+20, NULL);
 	memcpy( buffer, pmk + 20, 20 );
 
 	for( i = 1; i < 4096; i++ )
@@ -230,7 +245,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 
 // void calc_ptk (struct WPA_hdsk *wpa, unsigned char bssid[6], unsigned char pmk[32], unsigned char ptk[80]) {
 // 	int i;
-// 	uchar pke[100];
+// 	unsigned char pke[100];
 // 	HMAC_CTX ctx;
 //
 // 	memcpy( pke, "Pairwise key expansion", 23 );
@@ -272,7 +287,7 @@ void calc_pmk( char *key, char *essid_pre, uchar pmk[40] )
 
 void calc_mic (struct AP_info *ap, unsigned char pmk[32], unsigned char ptk[80], unsigned char mic[20]) {
 	int i;
-	uchar pke[100];
+	unsigned char pke[100];
 	HMAC_CTX ctx;
 
 	memcpy( pke, "Pairwise key expansion", 23 );
@@ -438,6 +453,18 @@ int is_arp(void *wh, int len)
         return 0;
 }
 
+int is_wlccp(void *wh, int len)
+{
+	int wlccpsize = 58;
+
+	if(wh) {}
+
+	if (len == wlccpsize)
+		return 1;
+
+	return 0;
+}
+
 int is_qos_arp_tkip(void *wh, int len)
 {
         unsigned char *packet = (unsigned char*) wh;
@@ -460,8 +487,9 @@ int is_qos_arp_tkip(void *wh, int len)
 
 int is_spantree(void *wh)
 {
-        if ( memcmp( wh +  4, SPANTREE, 6 ) == 0 ||
-             memcmp( wh + 16, SPANTREE, 6 ) == 0 )
+        if ( wh != NULL &&
+	     (memcmp( wh +  4, SPANTREE, 6 ) == 0 ||
+              memcmp( wh + 16, SPANTREE, 6 ) == 0 ))
             return 1;
 
         return 0;
@@ -506,6 +534,29 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
             /* src mac */
             len = 6;
             memcpy(ptr, get_sa(wh), len);
+            ptr += len;
+
+            len = ptr - ((unsigned char*)clear);
+            *clen = len;
+	    if (weight)
+                weight[0] = 256;
+            return 1;
+
+        }
+        else if(is_wlccp(wh, len)) /*wlccp*/
+        {
+            len = sizeof(S_LLC_SNAP_WLCCP) - 1;
+            memcpy(ptr, S_LLC_SNAP_WLCCP, len);
+            ptr += len;
+
+            /* wlccp hdr */
+            len = 4;
+            memcpy(ptr, "\x00\x32\x40\x01", len);
+            ptr += len;
+
+            /* dst mac */
+            len = 6;
+            memcpy(ptr, get_da(wh), len);
             ptr += len;
 
             len = ptr - ((unsigned char*)clear);
@@ -591,17 +642,15 @@ int known_clear(void *clear, int *clen, int *weight, unsigned char *wh, int len)
 
                 return num;
         }
-        *clen=0;
-        return 1;
 }
 
 /* derive the pairwise transcient keys from a bunch of stuff */
 
-int calc_ptk( struct WPA_ST_info *wpa, uchar pmk[32] )
+int calc_ptk( struct WPA_ST_info *wpa, unsigned char pmk[32] )
 {
     int i;
-    uchar pke[100];
-    uchar mic[20];
+    unsigned char pke[100];
+    unsigned char mic[20];
 
     memcpy( pke, "Pairwise key expansion", 23 );
 
@@ -643,7 +692,7 @@ int calc_ptk( struct WPA_ST_info *wpa, uchar pmk[32] )
     return( memcmp( mic, wpa->keymic, 16 ) == 0 );
 }
 
-int init_michael(struct Michael *mic, uchar key[8])
+int init_michael(struct Michael *mic, unsigned char key[8])
 {
     mic->key0 = key[0]<<0 | key[1]<<8 | key[2]<<16 | key[3]<<24;
     mic->key1 = key[4]<<0 | key[5]<<8 | key[6]<<16 | key[7]<<24;
@@ -655,7 +704,7 @@ int init_michael(struct Michael *mic, uchar key[8])
     return 0;
 }
 
-int michael_append_byte(struct Michael *mic, uchar byte)
+int michael_append_byte(struct Michael *mic, unsigned char byte)
 {
     mic->message |= (byte << (8*mic->nBytesInM));
     mic->nBytesInM++;
@@ -678,7 +727,7 @@ int michael_append_byte(struct Michael *mic, uchar byte)
     return 0;
 }
 
-int michael_remove_byte(struct Michael *mic, uchar bytes[4])
+int michael_remove_byte(struct Michael *mic, unsigned char bytes[4])
 {
     if( mic->nBytesInM == 0 )
     {
@@ -701,7 +750,7 @@ int michael_remove_byte(struct Michael *mic, uchar bytes[4])
     return 0;
 }
 
-int michael_append(struct Michael *mic, uchar *bytes, int length)
+int michael_append(struct Michael *mic, unsigned char *bytes, int length)
 {
     while(length > 0)
     {
@@ -711,7 +760,7 @@ int michael_append(struct Michael *mic, uchar *bytes, int length)
     return 0;
 }
 
-int michael_remove(struct Michael *mic, uchar *bytes, int length)
+int michael_remove(struct Michael *mic, unsigned char *bytes, int length)
 {
     while(length >= 4)
     {
@@ -773,7 +822,7 @@ int michael_finalize_zero(struct Michael *mic)
     return 0;
 }
 
-int michael_test(uchar key[8], uchar *message, int length, uchar out[8])
+int michael_test(unsigned char key[8], unsigned char *message, int length, unsigned char out[8])
 {
     int i=0;
     struct Michael mic0;
@@ -821,13 +870,13 @@ int michael_test(uchar key[8], uchar *message, int length, uchar out[8])
     return (memcmp(mic.mic, out, 8) == 0);
 }
 
-int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
+int calc_tkip_mic_key(unsigned char* packet, int length, unsigned char key[8])
 {
-    int z, koffset=0, is_qos=0;
-    uchar smac[6], dmac[6], bssid[6];
-    uchar prio[4];
-    uchar message[4096];
-    uchar *ptr;
+    int z, is_qos=0;
+    unsigned char smac[6], dmac[6], bssid[6];
+    unsigned char prio[4];
+    unsigned char message[4096];
+    unsigned char *ptr;
     struct Michael mic;
 
     memset(message, 0, 4096);
@@ -860,13 +909,11 @@ int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
             memcpy( bssid, packet + 4, 6 );
             memcpy( dmac, packet + 16, 6 );
             memcpy( smac, packet + 10, 6 );
-            koffset = 48+8;
             break;
         case  2:
             memcpy( bssid, packet + 10, 6 );
             memcpy( dmac, packet + 4, 6 );
             memcpy( smac, packet + 16, 6 );
-            koffset = 48;
             break;
         default:
             memcpy( bssid, packet + 10, 6 );
@@ -901,11 +948,11 @@ int calc_tkip_mic_key(uchar* packet, int length, uchar key[8])
     return 0;
 }
 
-int calc_tkip_mic(uchar* packet, int length, uchar ptk[80], uchar value[8])
+int calc_tkip_mic(unsigned char* packet, int length, unsigned char ptk[80], unsigned char value[8])
 {
     int z, koffset=0, is_qos=0;
-    uchar smac[6], dmac[6], bssid[6];
-    uchar prio[4];
+    unsigned char smac[6], dmac[6], bssid[6];
+    unsigned char prio[4];
     struct Michael mic;
 
     z = ( ( packet[1] & 3 ) != 3 ) ? 24 : 30;
@@ -1052,7 +1099,7 @@ const short TkipSbox[2][256]=
 #define TK16(N)       MK16(TK1[2*(N)+1],TK1[2*(N)])
 #define _S_(x)        (TkipSbox[0][LO8(x)] ^ TkipSbox[1][HI8(x)])
 
-int calc_tkip_ppk( uchar *h80211, int caplen, uchar TK1[16], uchar key[16] )
+int calc_tkip_ppk( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char key[16] )
 {
     int i, z;
     uint32_t IV32;
@@ -1115,9 +1162,9 @@ int calc_tkip_ppk( uchar *h80211, int caplen, uchar TK1[16], uchar key[16] )
     return 0;
 }
 
-int decrypt_tkip( uchar *h80211, int caplen, uchar TK1[16] )
+int decrypt_tkip( unsigned char *h80211, int caplen, unsigned char TK1[16] )
 {
-    uchar K[16];
+    unsigned char K[16];
     int z;
 
     z = ( ( h80211[1] & 3 ) != 3 ) ? 24 : 30;
@@ -1132,24 +1179,174 @@ int decrypt_tkip( uchar *h80211, int caplen, uchar TK1[16] )
 
 /* CCMP (AES-CTR-MAC) decryption routine */
 
-static inline void XOR( uchar *dst, uchar *src, int len )
+static inline void XOR( unsigned char *dst, unsigned char *src, int len )
 {
     int i;
     for( i = 0; i < len; i++ )
         dst[i] ^= src[i];
 }
 
-int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
+// Important documents for the implementation of encrypt_ccmp() and
+// decrypt_ccmp():
+//
+//  * RFC 3610 Counter with CBC-MAC (CCM)
+//    https://www.ietf.org/rfc/rfc3610.txt
+//
+//  * IEEE 802.11(TM)-2012
+//    http://standards.ieee.org/about/get/802/802.11.html
+//
+// Note: RFC uses the abbriviation MAC (Message Authentication Code, or
+//       value U in the RFC). It is the same as IEEE's MIC (Message
+//       Integrity Code)
+
+// encrypt_ccmp() takes an h80211 frame and encrypts it in-place using CCMP.
+// This results in a frame that is 16 bytes longer than the original, take this
+// into account when allocating h80211! encrypt() returns the new length (and
+// thus the offset where the caller needs to write the FCS).
+// caplen is the combined length of the 802.11 header and data, not the FCS!
+int encrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16], unsigned char PN[6] )
 {
-    int is_a4, i, n, z, blocks;
+    int is_a4, i, n, z, blocks, is_qos;
     int data_len, last, offset;
-    uchar B0[16], B[16], MIC[16];
-    uchar PN[6], AAD[32];
+    unsigned char B0[16], B[16], MIC[16];
+    unsigned char AAD[32];
     AES_KEY aes_ctx;
 
     is_a4 = ( h80211[1] & 3 ) == 3;
-
+    is_qos = ( h80211[0] & 0x8C ) == 0x88;
     z = 24 + 6 * is_a4;
+    z += 2 * is_qos;
+
+    // Insert CCMP header
+    memmove( h80211+z+8, h80211+z, caplen-z );
+    h80211[z + 0] = PN[5];
+    h80211[z + 1] = PN[4];
+    h80211[z + 2] = 0x00;           // Reserved -> 0
+    h80211[z + 3] = 0x20;           // ExtIV=1, KeyID=0
+    h80211[z + 4] = PN[3];
+    h80211[z + 5] = PN[2];
+    h80211[z + 6] = PN[1];
+    h80211[z + 7] = PN[0];
+
+    data_len = caplen - z;
+
+    // B_0 := B0
+    B0[0] = 0x59;                      // Flags
+    B0[1] = 0;                         // Nonce := CCM Nonce: - Nonce flags
+    memcpy( B0 + 2, h80211 + 10, 6 );  //                     - A2
+    memcpy( B0 + 8, PN, 6 );           //                     - PN
+    B0[14] = ( data_len >> 8 ) & 0xFF; // l(m)
+    B0[15] = ( data_len & 0xFF );      // l(m)
+
+    // B_1 := AAD[ 0..15]
+    // B_2 := AAD[16..31]
+    //        AAD[ 0.. 1] = l(a)
+    //        AAD[ 2..31] = a
+    memset( AAD, 0, sizeof( AAD ) );
+    AAD[2] = h80211[0] & 0x8F;              // AAD[2..3]  = FC
+    AAD[3] = h80211[1] & 0xC7;              //
+    memcpy( AAD + 4, h80211 + 4, 3 * 6 );   // AAD[4..21] = [A1,A2,A3]
+    AAD[22] = h80211[22] & 0x0F;            // AAD[22]    = SC
+
+    if( is_a4 )
+    {
+        memcpy( AAD + 24, h80211 + 24, 6 ); // AAD[24..29] = A4
+
+        if( is_qos )
+        {
+            AAD[30] = h80211[z - 2] & 0x0F; // AAD[30..31] = QC
+            AAD[31] = 0;                    //
+            B0[1] = AAD[30];                //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 2 + 6;            // AAD[ 0.. 1] = l(a)
+        }
+        else
+        {
+            memset(&AAD[30], 0, 2);         // AAD[30..31] = QC
+            B0[1] = 0;                      //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 6;                // AAD[ 0.. 1] = l(a)
+        }
+    }
+    else
+    {
+        if( is_qos )
+        {
+            AAD[24] = h80211[z - 2] & 0x0F; // AAD[24..25] = QC
+            AAD[25] = 0;                    //
+            B0[1] = AAD[24];                //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 2;                // AAD[ 0.. 1] = l(a)
+        }
+        else
+        {
+            memset(&AAD[24], 0, 2);         // AAD[24..25] = QC
+            B0[1] = 0;                      //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22;                    // AAD[ 0.. 1] = l(a)
+        }
+    }
+
+    AES_set_encrypt_key( TK1, 128, &aes_ctx );
+    AES_encrypt( B0, MIC, &aes_ctx );       // X_1 := E( K, B_0 )
+    XOR( MIC, AAD, 16 );                    // X_2 := E( K, X_1 XOR B_1 )
+    AES_encrypt( MIC, MIC, &aes_ctx );      //
+    XOR( MIC, AAD + 16, 16 );               // X_3 := E( K, X_2 XOR B_2 )
+    AES_encrypt( MIC, MIC, &aes_ctx );      //
+
+    // A_i := B0
+    //        B0[     0] = Flags
+    //        B0[ 1..13] = Nonce := CCM Nonce
+    //        B0[14..15] = i
+    B0[0] &= 0x07;
+    B0[14] = B0[15] = 0;
+    AES_encrypt( B0, B, &aes_ctx );         // S_0 := E( K, A_i )
+    memcpy( h80211+z+8+data_len, B, 8 );
+    //      ^^^^^^^^^^^^^^^^^^^  ^
+    //      S_0[0..7]/future U   S_0
+
+    blocks = ( data_len + 16 - 1 ) / 16;
+    last = data_len % 16;
+    offset = z + 8;
+
+    for( i = 1; i <= blocks; i++ )
+    {
+        n = ( last > 0 && i == blocks ) ? last : 16;
+
+        XOR( MIC, h80211 + offset, n );     // X_i+3 := E( K, X_i+2 XOR B_i+2 )
+        AES_encrypt( MIC, MIC, &aes_ctx );  //
+        //    (X_i+2 ^^^)(^^^ X_i+3)
+
+        // The message is encrypted by XORing the octets of message m with the
+        // first l(m) octets of the concatenation of S_1, S_2, S_3, ... .
+        B0[14] = ( i >> 8 ) & 0xFF;         // A_i[14..15] = i
+        B0[15] =   i & 0xFF;                //
+        AES_encrypt( B0, B, &aes_ctx );     // S_i := E( K, A_i )
+        XOR( h80211 + offset, B, n );
+        // [B_3, ..., B_n] := m
+
+        offset += n;
+    }
+
+    // We need to free the ctx when using gcrypt to avoid memory leaks
+    #ifdef USE_GCRYPT
+        gcry_cipher_close(aes_ctx);
+    #endif
+
+    // T :=     X_i+3[ 0.. 7]
+    // U := T XOR S_0[ 0.. 7]
+    XOR( h80211+offset, MIC, 8 );
+    return z+8+data_len+8;
+}
+
+int decrypt_ccmp( unsigned char *h80211, int caplen, unsigned char TK1[16] )
+{
+    int is_a4, i, n, z, blocks, is_qos;
+    int data_len, last, offset;
+    unsigned char B0[16], B[16], MIC[16];
+    unsigned char PN[6], AAD[32];
+    AES_KEY aes_ctx;
+
+    is_a4 = ( h80211[1] & 3 ) == 3;
+    is_qos = ( h80211[0] & 0x8C ) == 0x88;
+    z = 24 + 6 * is_a4;
+    z += 2 * is_qos;
 
     PN[0] = h80211[z + 7];
     PN[1] = h80211[z + 6];
@@ -1160,34 +1357,76 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
 
     data_len = caplen - z - 8 - 8;
 
-    B0[0] = 0x59;
-    B0[1] = 0;
-    memcpy( B0 + 2, h80211 + 10, 6 );
-    memcpy( B0 + 8, PN, 6 );
-    B0[14] = ( data_len >> 8 ) & 0xFF;
-    B0[15] = ( data_len & 0xFF );
+    // B_0 := B0
+    B0[0] = 0x59;                      // Flags
+    B0[1] = 0;                         // Nonce := CCM Nonce: - Nonce flags
+    memcpy( B0 + 2, h80211 + 10, 6 );  //                     - A2
+    memcpy( B0 + 8, PN, 6 );           //                     - PN
+    B0[14] = ( data_len >> 8 ) & 0xFF; // l(m)
+    B0[15] = ( data_len & 0xFF );      // l(m)
 
+    // B_1 := AAD[ 0..15]
+    // B_2 := AAD[16..31]
+    //        AAD[ 0.. 1] = l(a)
+    //        AAD[ 2..31] = a
     memset( AAD, 0, sizeof( AAD ) );
-
-    AAD[1] = 22 + 6 * is_a4;
-    AAD[2] = h80211[0] & 0x8F;
-    AAD[3] = h80211[1] & 0xC7;
-    memcpy( AAD + 4, h80211 + 4, 3 * 6 );
-    AAD[22] = h80211[22] & 0x0F;
-    if( is_a4 )
-        memcpy( AAD + 24, h80211 + 24, 6 );
+    AAD[2] = h80211[0] & 0x8F;              // AAD[2..3]  = FC
+    AAD[3] = h80211[1] & 0xC7;              //
+    memcpy( AAD + 4, h80211 + 4, 3 * 6 );   // AAD[4..21] = [A1,A2,A3]
+    AAD[22] = h80211[22] & 0x0F;            // AAD[22]    = SC
+    
+    if( is_a4 ) 
+    {
+        memcpy( AAD + 24, h80211 + 24, 6 ); // AAD[24..29] = A4
+        
+        if( is_qos ) 
+        {
+            AAD[30] = h80211[z - 2] & 0x0F; // AAD[30..31] = QC
+            AAD[31] = 0;                    //
+            B0[1] = AAD[30];                //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 2 + 6;            // AAD[ 0.. 1] = l(a)
+        } 
+        else 
+        {
+            memset(&AAD[30], 0, 2);         // AAD[30..31] = QC
+            B0[1] = 0;                      //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 6;                // AAD[ 0.. 1] = l(a)
+        }
+    } 
+    else 
+    {
+        if( is_qos ) 
+        {
+            AAD[24] = h80211[z - 2] & 0x0F; // AAD[24..25] = QC
+            AAD[25] = 0;                    //
+            B0[1] = AAD[24];                //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22 + 2;                // AAD[ 0.. 1] = l(a)
+        }
+        else
+        {
+            memset(&AAD[24], 0, 2);         // AAD[24..25] = QC
+            B0[1] = 0;                      //  B0[     1] = CCM Nonce flags
+            AAD[1] = 22;                    // AAD[ 0.. 1] = l(a)
+        }
+    }
 
     AES_set_encrypt_key( TK1, 128, &aes_ctx );
-    AES_encrypt( B0, MIC, &aes_ctx );
-    XOR( MIC, AAD, 16 );
-    AES_encrypt( MIC, MIC, &aes_ctx );
-    XOR( MIC, AAD + 16, 16 );
-    AES_encrypt( MIC, MIC, &aes_ctx );
+    AES_encrypt( B0, MIC, &aes_ctx );       // X_1 := E( K, B_0 )
+    XOR( MIC, AAD, 16 );                    // X_2 := E( K, X_1 XOR B_1 )
+    AES_encrypt( MIC, MIC, &aes_ctx );      //
+    XOR( MIC, AAD + 16, 16 );               // X_3 := E( K, X_2 XOR B_2 )
+    AES_encrypt( MIC, MIC, &aes_ctx );      //
 
+    // A_i := B0
+    //        B0[     0] = Flags
+    //        B0[ 1..13] = Nonce := CCM Nonce
+    //        B0[14..15] = i
     B0[0] &= 0x07;
     B0[14] = B0[15] = 0;
-    AES_encrypt( B0, B, &aes_ctx );
-    XOR( h80211 + caplen - 8, B, 8 );
+    AES_encrypt( B0, B, &aes_ctx );         // S_0 := E( K, A_i )
+    XOR( h80211 + caplen - 8, B, 8 );       // T   := U XOR S_0[0..7]
+    //   ^^^^^^^^^^^^^^^      ^
+    //     U:=MIC -> T       S_0
 
     blocks = ( data_len + 16 - 1 ) / 16;
     last = data_len % 16;
@@ -1197,17 +1436,29 @@ int decrypt_ccmp( uchar *h80211, int caplen, uchar TK1[16] )
     {
         n = ( last > 0 && i == blocks ) ? last : 16;
 
-        B0[14] = ( i >> 8 ) & 0xFF;
-        B0[15] =   i & 0xFF;
+        B0[14] = ( i >> 8 ) & 0xFF;         // A_i[14..15] = i
+        B0[15] =   i & 0xFF;                //
 
-        AES_encrypt( B0, B, &aes_ctx );
+        AES_encrypt( B0, B, &aes_ctx );     // S_i := E( K, A_i )
+        // The message is encrypted by XORing the octets of message m with the
+        // first l(m) octets of the concatenation of S_1, S_2, S_3, ... .
         XOR( h80211 + offset, B, n );
-        XOR( MIC, h80211 + offset, n );
-        AES_encrypt( MIC, MIC, &aes_ctx );
+        // [B_3, ..., B_n] := m
+        XOR( MIC, h80211 + offset, n );     // X_i+3 := E( K, X_i+2 XOR B_i+2 )
+        AES_encrypt( MIC, MIC, &aes_ctx );  //
+        //    (X_i+2 ^^^)(^^^ X_i+3)
 
         offset += n;
     }
 
+    // We need to free the ctx when using gcrypt to avoid memory leaks
+    #ifdef USE_GCRYPT
+        gcry_cipher_close(aes_ctx);
+    #endif
+
+    // T := X_n[ 0.. 7]
+    // Note: Decryption is succesful if calculated T is the same as the one
+    //       that was sent with the message.
     return( memcmp( h80211 + offset, MIC, 8 ) == 0 );
 }
 

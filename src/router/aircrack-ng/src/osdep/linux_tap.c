@@ -23,7 +23,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/time.h>
-#include <linux/if.h>
+#include <net/if.h>
 #include <linux/if_ether.h>
 #include <netinet/in.h>
 #include <linux/if_tun.h>
@@ -119,10 +119,13 @@ static int ti_get_mtu_linux(struct tif *ti)
 	int mtu;
 	struct tip_linux *priv = ti_priv(ti);
 
-	ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr);
-
-	mtu = priv->tl_ifr.ifr_mtu;
-
+	if (ioctl(priv->tl_ioctls, SIOCSIFMTU, &priv->tl_ifr) != -1){
+		mtu = priv->tl_ifr.ifr_mtu;
+	}
+	else{
+		mtu = 1500;	
+	}
+	
 	return mtu;
 }
 

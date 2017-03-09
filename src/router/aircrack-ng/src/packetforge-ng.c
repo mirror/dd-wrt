@@ -2,7 +2,7 @@
  *  802.11 ARP-request WEP packet forgery
  *  UDP, ICMP and custom packet forging developped by Martin Beck
  *
- *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine (arpforge)
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -76,8 +76,8 @@ extern int add_crc32(unsigned char* data, int length);
 
 char usage[] =
 "\n"
-"  %s - (C) 2006, 2007, 2008, 2009 Thomas d\'Otreppe\n"
-"  Original work: Christophe Devine and Martin Beck\n"
+"  %s - (C) 2006-2015 Thomas d\'Otreppe\n"
+"  Original work: Martin Beck\n"
 "  http://www.aircrack-ng.org\n"
 "\n"
 "  Usage: packetforge-ng <mode> <options>\n"
@@ -202,8 +202,10 @@ int capture_ask_packet( int *caplen )
             return( 1 );
         }
 
-        if( dev.pfh_in.magic == TCPDUMP_CIGAM )
+        if( dev.pfh_in.magic == TCPDUMP_CIGAM ) {
             SWAP32( pkh.caplen );
+            SWAP32( pkh.len );
+        }
 
         tv.tv_sec  = pkh.tv_sec;
         tv.tv_usec = pkh.tv_usec;
@@ -948,6 +950,7 @@ int read_prga(unsigned char **dest, char *file)
         if( (unsigned) size < sizeof(struct ivs2_filehdr) + 4)
         {
             fprintf( stderr, "No valid %s file.", IVS2_EXTENSION);
+            fclose( f );
             return( 1 );
         }
         memcpy( &fivs2, (*dest) + 4, sizeof(struct ivs2_filehdr));
@@ -1102,7 +1105,9 @@ int forge_custom()
 
 void print_usage(void)
 {
-    printf(usage, getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC) );
+    char *version_info = getVersion("Packetforge-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
+    printf(usage, version_info);
+    free(version_info);
 }
 
 int main(int argc, char* argv[])
