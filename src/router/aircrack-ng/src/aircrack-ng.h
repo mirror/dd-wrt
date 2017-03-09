@@ -1,9 +1,51 @@
+/*
+ *  802.11 WEP / WPA-PSK Key Cracker
+ *
+ *  Copyright (C) 2007-2012 Martin Beck <hirte@aircrack-ng.org>
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ *  In addition, as a special exception, the copyright holders give
+ *  permission to link the code of portions of this program with the
+ *  OpenSSL library under certain conditions as described in each
+ *  individual source file, and distribute linked combinations
+ *  including the two.
+ *  You must obey the GNU General Public License in all respects
+ *  for all of the code used other than OpenSSL. *  If you modify
+ *  file(s) with this exception, you may extend this exception to your
+ *  version of the file(s), but you are not obligated to do so. *  If you
+ *  do not wish to do so, delete this exception statement from your
+ *  version. *  If you delete this exception statement from all source
+ *  files in the program, then also delete it here.
+ */
+
 #ifndef _AIRCRACK_NG_H
 #define _AIRCRACK_NG_H
 
 #include <stdint.h>
 #include <stdio.h>
+#include <time.h>
+#include <sys/time.h>
+#if defined(__FreeBSD__)
+#include <unistd.h>
+#endif
 #include "aircrack-ptw-lib.h"
+#include "eapol.h"
+
+#include <pthread.h>
 
 #define SUCCESS  0
 #define FAILURE  1
@@ -45,14 +87,32 @@ struct hashdb_rec {
 	uint8_t pmk[32];
 } __attribute__ ((packed));
 
+struct _cpuinfo {
+	int simdsize;				/* SIMD size		*/
+	char *flags;				/* Feature Flags	*/
+	char *model;				/* CPU Model		*/
+	int cores;				/* Real CPU cores       */
+	int coreperid;				/* Max cores per id     */
+	int htt;				/* Hyper-Threading      */
+	int maxlogic;				/* Max addressible lCPU */
+	int hv;					/* Hypervisor detected  */
+	int cpufreq_cur;			/* CPUfreq Current	*/
+	int cpufreq_max;			/* CPUfreq Maximum	*/
+	float coretemp;				/* CPU Temperature	*/
+	char *cputemppath;			/* Linux CPU Sensor Path*/
+};
 
+extern float chrono(struct timeval *start, int reset);
 
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 extern int getmac(char * macAddress, int strict, unsigned char * mac);
 extern int readLine(char line[], int maxlength);
 extern int hexToInt(char s[], int len);
 extern int hexCharToInt(unsigned char c);
-
+extern int cpuid_simdsize();
+extern int cpuid_getinfo();
+extern struct _cpuinfo cpuinfo;
+extern int get_nb_cpus();
 
 #define S_LLC_SNAP      "\xAA\xAA\x03\x00\x00\x00"
 #define S_LLC_SNAP_ARP  (S_LLC_SNAP "\x08\x06")
@@ -82,6 +142,13 @@ enum KoreK_attacks
 	A_4_u5_2,					 /* unstable      5% on q = 4    */
 	A_neg						 /* helps reject false positives */
 };
+
+struct dictfiles {
+	off_t	dictsize;			/* Total file size */
+	off_t	dictpos;			/* Current position of dictionary */
+	off_t	wordcount;			/* Total amount of words in dict file */
+	int	loaded;				/* Have finished processing? */
+} dicts;
 
 struct options
 {
@@ -117,7 +184,10 @@ struct options
 	int nbdict;				 /* current dict number  */
 	int no_stdin;				 /* if dict == stdin     */
 	int hexdict[MAX_DICTS];			 /* if dict in hex       */
-
+	long long int wordcount;		/* Total wordcount for all dicts*/
+	struct dictfiles dictidx[MAX_DICTS];	/* Dictionary structure		*/
+	int totaldicts;				/* total loaded dictionaries	*/
+	int dictfinish;				/* finished processing all dicts*/
 	int showASCII;				 /* Show ASCII version of*/
 								 /* the wepkey           */
 
@@ -148,6 +218,11 @@ struct options
 
 	char * logKeyToFile;
 
+        int forced_amode;	/* signals disregarding automatic detection of encryption type */
+
+	char * wkp;					 /* EWSA Project file */
+	char * hccap;				         /* Hashcat capture file */
+
 }
 
 opt;
@@ -165,21 +240,7 @@ struct WEP_data
 	int fudge[64];				 /* bruteforce level (1 to 256)  */
 	int depth[64];				 /* how deep we are in the fudge */
 	vote poll[64][256];			 /* KoreK cryptanalysis results  */
-}
-
-wep;
-
-struct WPA_hdsk
-{
-	unsigned char stmac[6];				 /* supplicant MAC               */
-	unsigned char snonce[32];			 /* supplicant nonce             */
-	unsigned char anonce[32];			 /* authenticator nonce          */
-	unsigned char keymic[16];			 /* eapol frame MIC              */
-	unsigned char eapol[256];			 /* eapol frame contents         */
-	int eapol_size;				 /* eapol frame size             */
-	int keyver;					 /* key version (TKIP / AES)     */
-	int state;					 /* handshake completion         */
-};
+} wep;
 
 struct AP_info
 {
@@ -223,6 +284,7 @@ struct mergeBSSID
 struct WPA_data {
 	struct AP_info* ap;				/* AP information */
 	int	thread;						/* number of this thread */
+	int	threadid;						/* id of this thread */
 	int nkeys;						/* buffer capacity */
 	char *key_buffer;				/* queue as a circular buffer for feeding and consuming keys */
 	int front;						/* front marker for the circular buffers */
@@ -234,6 +296,5 @@ struct WPA_data {
 
 
 void show_wep_stats( int B, int force, PTW_tableentry table[PTW_KEYHSBYTES][PTW_n], int choices[KEYHSBYTES], int depth[KEYHSBYTES], int prod );
-
 
 #endif /* _AIRCRACK_NG_H */

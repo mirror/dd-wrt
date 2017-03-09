@@ -1,7 +1,7 @@
 /*
  *  A tool to compute and manage PBKDF2 values as used in WPA-PSK and WPA2-PSK
  *
- *  Copyright (C) 2007; 2008, 2009 ebfe
+ *  Copyright (C) 2007-2009 ebfe
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -59,6 +59,7 @@
 extern char * getVersion(char * progname, int maj, int min, int submin, int svnrev, int beta, int rc);
 
 void print_help(const char * msg) {
+	char *version_info = getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 ebfe\n"
 		"  http://www.aircrack-ng.org\n"
@@ -84,7 +85,8 @@ void print_help(const char * msg) {
 		"       --export cowpatty <essid> <file> :\n"
 		"                        Export to a cowpatty file.\n"
 		"\n",
-		getVersion("Airolib-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
+	free(version_info);
 
 	if (msg && strlen(msg) > 0) {
 		printf("%s", msg);
@@ -434,7 +436,7 @@ void vacuum(sqlite3* db, int deep) {
 // returns 0 if ok, !=0 otherwise
 void verify(sqlite3* db, int complete) {
 	if (complete != 1) {
-		printf("Checking ~10.000 randomly chosen PMKs...\n");
+		printf("Checking ~10 000 randomly chosen PMKs...\n");
 		// this is faster than 'order by random()'. we need the subquery to trick the optimizer...
 		sql_stdout(db,"select s.essid AS ESSID, COUNT(*) AS CHECKED, CASE WHEN MIN(s.pmk == PMK(essid,passwd)) == 0 THEN 'FAILED' ELSE 'OK' END AS STATUS FROM (select distinct essid,passwd,pmk FROM pmk INNER JOIN passwd ON passwd.passwd_id = pmk.passwd_id INNER JOIN essid ON essid.essid_id = pmk.essid_id WHERE abs(random() % (select count(*) from pmk)) < 10000) AS s GROUP BY s.essid;",0);
 	} else {
@@ -496,6 +498,8 @@ void export_cowpatty(sqlite3* db, char* essid, char* filename) {
 	f = fopen(filename, "w");
 	if (f == NULL || fwrite(&filehead, sizeof(filehead), 1, f) != 1) {
 		printf("Couldn't open the export file for writing.\n");
+		if (f != NULL)
+			fclose(f);
 		return;
 	}
 
@@ -531,6 +535,8 @@ int import_cowpatty(sqlite3* db, char* filename) {
 	}
 	if (f == NULL || fread(&filehead, sizeof(filehead),1,f) != 1) {
 		printf("Couldn't open the import file for reading.\n");
+		if (f != NULL)
+			fclose(f);
 		return 0;
 	} else if (filehead.magic != GENPMKMAGIC) {
 		printf("File doesn't seem to be a cowpatty file.\n");
@@ -569,7 +575,7 @@ int import_cowpatty(sqlite3* db, char* filename) {
 
 	printf("Reading...\n");
 	while ((rc = fread(&rec.rec_size, sizeof(rec.rec_size), 1, f)) == 1) {
-		wordlength = abs(rec.rec_size) - (sizeof(rec.pmk) + sizeof(rec.rec_size));
+		wordlength = rec.rec_size - (sizeof(rec.pmk) + sizeof(rec.rec_size));
 		//prevent out of bounds writing (sigsegv guaranteed) but don't skip the whole file if wordlength < 8
 		if (wordlength > 0 && wordlength < (int) sizeof(passwd)) {
 			passwd[wordlength] = 0;
@@ -903,6 +909,13 @@ int main(int argc, char **argv) {
 		{"essid",       1, 0, 'd'},
 		{0,             0, 0,  0 }
 	};
+
+#ifdef USE_GCRYPT
+	// Disable secure memory.
+	gcry_control (GCRYCTL_DISABLE_SECMEM, 0);
+	// Tell Libgcrypt that initialization has completed.
+	gcry_control (GCRYCTL_INITIALIZATION_FINISHED, 0);
+#endif
 
 	option = getopt_long( argc, argv, "bc:d:e:hi:s:t:v:", long_options, &option_index );
 
