@@ -1,7 +1,7 @@
 /*
  *  OS dependent APIs for Linux
  *
- *  Copyright (C) 2006, 2007, 2008 Thomas d'Otreppe
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005 Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,8 @@
 #include <sys/stat.h>
 #include <netpacket/packet.h>
 #include <linux/if_ether.h>
-#include <linux/if.h>
-#include <linux/wireless.h>
+#include <net/if.h>
+#include "wireless.h"
 #include <netinet/in.h>
 #include <linux/if_tun.h>
 #include <stdio.h>
@@ -39,8 +39,20 @@
 #include <errno.h>
 #include <dirent.h>
 #include <sys/utsname.h>
+#include <net/if_arp.h>
 
-#include "radiotap/radiotap-parser.h"
+#ifdef CONFIG_LIBNL
+#include <linux/nl80211.h>
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+#include <linux/genetlink.h>
+#endif //CONFIG_LIBNL
+
+#include "radiotap/radiotap.h"
+#include "radiotap/radiotap_iter.h"
         /* radiotap-parser defines types like u8 that
          * ieee80211_radiotap.h needs
          *
@@ -49,14 +61,20 @@
          * - since we can't support extensions we don't understand
          * - since linux does not include it in userspace headers
          */
-#include "radiotap/ieee80211_radiotap.h"
 #include "osdep.h"
 #include "pcap.h"
 #include "crctable_osdep.h"
 #include "common.h"
 #include "byteorder.h"
 
-#define uchar unsigned char
+#ifdef CONFIG_LIBNL
+struct nl80211_state state;
+static int chan;
+#endif //CONFIG_LIBNL
+
+/* if_nametoindex is defined in net/if.h but that conflicts with linux/if.h */
+extern unsigned int if_nametoindex (const char *__ifname);
+extern char *if_indextoname (unsigned int __ifindex, char *__ifname);
 
 typedef enum {
         DT_NULL = 0,
@@ -163,6 +181,8 @@ int check_crc_buf_osdep( unsigned char *buf, int len )
 static int is_ndiswrapper(const char * iface, const char * path)
 {
     int n, pid, unused;
+    if (!path || !iface)
+	return 0;
     if ((pid=fork())==0)
     {
         close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
@@ -206,10 +226,9 @@ static char * searchInside(const char * dir, const char * filename)
             (void)closedir(dp);
             return curfile;
         }
-        lstat(curfile, &sb);
 
         //If it's a directory and not a link, try to go inside to search
-        if (S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
+        if ( lstat(curfile, &sb)==0 && S_ISDIR(sb.st_mode) && !S_ISLNK(sb.st_mode))
         {
             //Check if the directory isn't "." or ".."
             if (strcmp(".", ep->d_name) && strcmp("..", ep->d_name))
@@ -233,7 +252,7 @@ static char * searchInside(const char * dir, const char * filename)
 /* Search a wireless tool and return its path */
 static char * wiToolsPath(const char * tool)
 {
-        char * path;
+        char * path /*, *found, *env */;
         int i, nbelems;
         static const char * paths [] = {
                 "/sbin",
@@ -245,17 +264,121 @@ static char * wiToolsPath(const char * tool)
                 "/tmp"
         };
 
-        nbelems = sizeof(paths) / sizeof(char *);
-
-        for (i = 0; i < nbelems; i++)
-        {
-                path = searchInside(paths[i], tool);
-                if (path != NULL)
-                        return path;
-        }
+	// Also search in other known location just in case we haven't found it yet
+	nbelems = sizeof(paths) / sizeof(char *);
+	for (i = 0; i < nbelems; i++)
+	{
+		path = searchInside(paths[i], tool);
+		if (path != NULL)
+			return path;
+	}
 
         return NULL;
 }
+
+
+/* nl80211 */
+#ifdef CONFIG_LIBNL
+struct nl80211_state {
+#if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
+    struct nl_handle *nl_sock;
+#else
+    struct nl_sock *nl_sock;
+#endif
+    struct nl_cache *nl_cache;
+    struct genl_family *nl80211;
+};
+
+#if !defined(CONFIG_LIBNL30) && !defined(CONFIG_LIBNL20)
+static inline struct nl_handle *nl_socket_alloc(void)
+{
+    return nl_handle_alloc();
+}
+
+static inline void nl_socket_free(struct nl_handle *h)
+{
+        nl_handle_destroy(h);
+}
+
+static inline int __genl_ctrl_alloc_cache(struct nl_handle *h, struct nl_cache **cache)
+{
+    struct nl_cache *tmp = genl_ctrl_alloc_cache(h);
+    if (!tmp)
+        return -ENOMEM;
+    *cache = tmp;
+    return 0;
+}
+#define genl_ctrl_alloc_cache __genl_ctrl_alloc_cache
+#endif
+
+static int linux_nl80211_init(struct nl80211_state *state)
+{
+    int err;
+
+    state->nl_sock = nl_socket_alloc();
+
+    if (!state->nl_sock) {
+        fprintf(stderr, "Failed to allocate netlink socket.\n");
+        return -ENOMEM;
+    }
+
+    if (genl_connect(state->nl_sock)) {
+        fprintf(stderr, "Failed to connect to generic netlink.\n");
+        err = -ENOLINK;
+        goto out_handle_destroy;
+    }
+
+    if (genl_ctrl_alloc_cache(state->nl_sock, &state->nl_cache)) {
+        fprintf(stderr, "Failed to allocate generic netlink cache.\n");
+        err = -ENOMEM;
+        goto out_handle_destroy;
+    }
+
+    state->nl80211 = genl_ctrl_search_by_name(state->nl_cache, "nl80211");
+    if (!state->nl80211) {
+        fprintf(stderr, "nl80211 not found.\n");
+        err = -ENOENT;
+        goto out_cache_free;
+    }
+
+    return 0;
+
+ out_cache_free:
+    nl_cache_free(state->nl_cache);
+ out_handle_destroy:
+    nl_socket_free(state->nl_sock);
+    return err;
+}
+
+static void nl80211_cleanup(struct nl80211_state *state)
+{
+    genl_family_put(state->nl80211);
+    nl_cache_free(state->nl_cache);
+    nl_socket_free(state->nl_sock);
+}
+
+/* Callbacks */
+
+/*
+static int error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err,
+                     void *arg)
+{
+	if (nla) { }
+	printf("\n\n\nERROR");
+	int *ret = arg;
+	*ret = err->error;
+	return NL_STOP;
+}
+*/
+
+/*
+static void test_callback(struct nl_msg *msg, void *arg)
+{
+	if (msg || arg) { }
+}
+*/
+#endif /* End nl80211 */
+
 
 static int linux_get_channel(struct wif *wi)
 {
@@ -270,7 +393,7 @@ static int linux_get_channel(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
-
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     fd = dev->fd_in;
     if(dev->drivertype == DT_IPW2200)
@@ -304,7 +427,7 @@ static int linux_get_freq(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
-
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     fd = dev->fd_in;
     if(dev->drivertype == DT_IPW2200)
@@ -376,7 +499,10 @@ static int linux_set_rate(struct wif *wi, int rate)
     case DT_MAC80211_RT:
 
         dev->rate = (rate/500000);
-        return 0;
+        //return 0;
+        //Newer mac80211 stacks (2.6.31 and up)
+        //don't care about Radiotap header anymore, so ioctl below must also be done!
+        //[see Documentation/networking/mac80211-injection.txt]
         break;
 
     default:
@@ -391,8 +517,11 @@ static int linux_set_rate(struct wif *wi, int rate)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     wrq.u.bitrate.value = rate;
+    wrq.u.bitrate.fixed = 1;
+
     if( ioctl( dev->fd_in, SIOCSIWRATE, &wrq ) < 0 )
     {
         return( -1 );
@@ -415,6 +544,7 @@ static int linux_get_rate(struct wif *wi)
         strncpy( wrq.ifr_name, dev->main_if, IFNAMSIZ );
     else
         strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( dev->fd_in, SIOCGIWRATE, &wrq ) < 0 )
     {
@@ -495,7 +625,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
         break;
     }
 
-    memset( buf, 0, sizeof( buf ) );
+    memset( buf, 0, count );
 
     /* XXX */
     if (ri)
@@ -554,7 +684,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
 
         rthdr = (struct ieee80211_radiotap_header *) tmpbuf;
 
-        if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen) < 0)
+        if (ieee80211_radiotap_iterator_init(&iterator, rthdr, caplen, NULL) < 0)
             return (0);
 
         /* go through the radiotap arguments we have been given
@@ -618,7 +748,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 break;
 
             case IEEE80211_RADIOTAP_CHANNEL:
-                ri->ri_channel = *iterator.this_arg;
+                ri->ri_channel = getChannelFromFrequency(le16toh(*(uint16_t*)iterator.this_arg));
                 got_channel = 1;
                 break;
 
@@ -638,7 +768,7 @@ static int linux_read(struct wif *wi, unsigned char *buf, int count,
                 }
 
                 if ( *iterator.this_arg &
-                    IEEE80211_RADIOTAP_F_RX_BADFCS )
+                    IEEE80211_RADIOTAP_F_BADFCS )
                     return( 0 );
 
                 break;
@@ -752,7 +882,7 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
         }
         /* fall thru */
     case DT_HOSTAP:
-        if( ( ((uchar *) buf)[1] & 3 ) == 2 )
+        if( ( ((unsigned char *) buf)[1] & 3 ) == 2 )
         {
             /* Prism2 firmware swaps the dmac and smac in FromDS packets */
 
@@ -799,6 +929,121 @@ static int linux_write(struct wif *wi, unsigned char *buf, int count,
 
     return( ret );
 }
+
+#if defined(CONFIG_LIBNL)
+static int ieee80211_channel_to_frequency(int chan)
+{
+    if (chan < 14)
+        return 2407 + chan * 5;
+
+    if (chan == 14)
+        return 2484;
+
+    /* FIXME: dot11ChannelStartingFactor (802.11-2007 17.3.8.3.2) */
+    return (chan + 1000) * 5;
+}
+
+static int linux_set_channel_nl80211(struct wif *wi, int channel)
+{
+    struct priv_linux *dev = wi_priv(wi);
+    char s[32];
+    int pid, status, unused;
+
+    unsigned int devid;
+    struct nl_msg *msg;
+    unsigned int freq;
+    unsigned int htval = NL80211_CHAN_NO_HT;
+
+    memset( s, 0, sizeof( s ) );
+
+    switch (dev->drivertype) {
+    case DT_WLANNG:
+        snprintf( s,  sizeof( s ) - 1, "channel=%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execl( dev->wlanctlng, "wlanctl-ng", wi_get_ifname(wi),
+                    "lnxreq_wlansniff", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+
+        if( WIFEXITED(status) )
+        {
+            dev->channel=channel;
+            return( WEXITSTATUS(status) );
+        }
+        else
+            return( 1 );
+        break;
+
+    case DT_ORINOCO:
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execlp( dev->iwpriv, "iwpriv", wi_get_ifname(wi),
+                    "monitor", "1", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        dev->channel = channel;
+        return 0;
+        break;  //yeah ;)
+
+    case DT_ZD1211RW:
+        snprintf( s,  sizeof( s ) - 1, "%d", channel );
+
+        if( ( pid = fork() ) == 0 )
+        {
+            close( 0 ); close( 1 ); close( 2 ); unused = chdir( "/" );
+            execlp(dev->iwconfig, "iwconfig", wi_get_ifname(wi),
+                    "channel", s, NULL );
+            exit( 1 );
+        }
+
+        waitpid( pid, &status, 0 );
+        dev->channel = channel;
+	    chan=channel;
+        return 0;
+        break; //yeah ;)
+
+    default:
+        break;
+    }
+
+/* libnl stuff */
+    chan=channel;
+
+    devid=if_nametoindex(wi->wi_interface);
+    freq=ieee80211_channel_to_frequency(channel);
+    msg=nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "failed to allocate netlink message\n");
+        return 2;
+    }
+
+    genlmsg_put(msg, 0, 0, genl_family_get_id(state.nl80211), 0,
+            0, NL80211_CMD_SET_WIPHY, 0);
+
+    NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devid);
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, htval);
+
+    nl_send_auto_complete(state.nl_sock,msg);
+    nlmsg_free(msg);
+
+    dev->channel = channel;
+
+    return( 0 );
+ nla_put_failure:
+    return -ENOBUFS;
+}
+#else //CONFIG_LIBNL
 
 static int linux_set_channel(struct wif *wi, int channel)
 {
@@ -870,6 +1115,8 @@ static int linux_set_channel(struct wif *wi, int channel)
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
+
     wrq.u.freq.m = (double) channel;
     wrq.u.freq.e = (double) 0;
 
@@ -888,6 +1135,7 @@ static int linux_set_channel(struct wif *wi, int channel)
 
     return( 0 );
 }
+#endif
 
 static int linux_set_freq(struct wif *wi, int freq)
 {
@@ -923,6 +1171,8 @@ static int linux_set_freq(struct wif *wi, int freq)
 
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
+
     wrq.u.freq.m = (double) freq*100000;
     wrq.u.freq.e = (double) 1;
 
@@ -951,9 +1201,10 @@ static int opensysfs(struct priv_linux *dev, char *iface, int fd) {
     fd2 = open(buf, O_WRONLY);
 
     /* bcm43xx injection */
-    if (fd2 == -1)
-    snprintf(buf, 256, "/sys/class/net/%s/device/inject_nofcs", iface);
-    fd2 = open(buf, O_WRONLY);
+    if (fd2 == -1) {
+        snprintf(buf, 256, "/sys/class/net/%s/device/inject_nofcs", iface);
+        fd2 = open(buf, O_WRONLY);
+    }
 
     if (fd2 == -1)
         return -1;
@@ -998,6 +1249,7 @@ int linux_get_monitor(struct wif *wi)
     /* lookup iw mode */
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, wi_get_ifname(wi), IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( wi_fd(wi), SIOCGIWMODE, &wrq ) < 0 )
     {
@@ -1102,6 +1354,7 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
 
         memset( &wrq, 0, sizeof( struct iwreq ) );
         strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+        wrq.ifr_name[IFNAMSIZ-1] = 0;
         wrq.u.mode = IW_MODE_MONITOR;
 
         if( ioctl( fd, SIOCSIWMODE, &wrq ) < 0 )
@@ -1147,7 +1400,7 @@ int set_monitor( struct priv_linux *dev, char *iface, int fd )
 
 
 static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
-		   uchar *mac)
+		   unsigned char *mac)
 {
     struct ifreq ifr;
     struct ifreq ifr2;
@@ -1190,6 +1443,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
         /* set iw mode to managed on main interface */
         memset( &wrq2, 0, sizeof( struct iwreq ) );
         strncpy( wrq2.ifr_name, dev->main_if, IFNAMSIZ );
+        wrq2.ifr_name[IFNAMSIZ-1] = 0;
 
         if( ioctl( dev->fd_main, SIOCGIWMODE, &wrq2 ) < 0 )
         {
@@ -1243,6 +1497,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
     /* lookup iw mode */
     memset( &wrq, 0, sizeof( struct iwreq ) );
     strncpy( wrq.ifr_name, iface, IFNAMSIZ );
+    wrq.ifr_name[IFNAMSIZ-1] = 0;
 
     if( ioctl( fd, SIOCGIWMODE, &wrq ) < 0 )
     {
@@ -1256,7 +1511,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
           ifr.ifr_hwaddr.sa_family != ARPHRD_IEEE80211_FULL) ||
         ( wrq.u.mode != IW_MODE_MONITOR) )
     {
-        if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
+        if (set_monitor( dev, iface, fd ) && dev->drivertype != DT_ORINOCO )
         {
             ifr.ifr_flags &= ~(IFF_UP | IFF_BROADCAST | IFF_RUNNING);
 
@@ -1266,7 +1521,7 @@ static int openraw(struct priv_linux *dev, char *iface, int fd, int *arptype,
                 return( 1 );
             }
 
-            if (set_monitor( dev, iface, fd ) && !dev->drivertype == DT_ORINOCO )
+            if (set_monitor( dev, iface, fd ) )
             {
                 printf("Error setting monitor mode on %s\n",iface);
                 return( 1 );
@@ -1352,7 +1607,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     int kver, unused;
     struct utsname checklinuxversion;
     struct priv_linux *dev = wi_priv(wi);
-    char *iwpriv;
+    char *iwpriv = NULL;
     char strbuf[512];
     FILE *f;
     char athXraw[] = "athXraw";
@@ -1364,6 +1619,7 @@ static int do_linux_open(struct wif *wi, char *iface)
     char r_file[128], buf[128];
     struct ifreq ifr;
     char * unused_str;
+    int iface_malloced = 0;
 
     dev->inject_wlanng = 1;
     dev->rate = 2; /* default to 1Mbps if nothing is set */
@@ -1388,8 +1644,9 @@ static int do_linux_open(struct wif *wi, char *iface)
     }
 
         /* Check iwpriv existence */
+	iwpriv = wiToolsPath("iwpriv");
 
-    iwpriv = wiToolsPath("iwpriv");
+#ifndef CONFIG_LIBNL
     dev->iwpriv = iwpriv;
     dev->iwconfig = wiToolsPath("iwconfig");
     dev->ifconfig = wiToolsPath("ifconfig");
@@ -1399,6 +1656,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         fprintf(stderr, "Can't find wireless tools, exiting.\n");
         goto close_in;
     }
+#endif
 
     /* Exit if ndiswrapper : check iwpriv ndis_reset */
 
@@ -1649,6 +1907,7 @@ static int do_linux_open(struct wif *wi, char *iface)
         strncpy(dev->main_if, iface, strlen(iface));
 
         iface=(char*)malloc(strlen(buf)+1);
+        iface_malloced = 1;
         memset(iface, 0, strlen(buf)+1);
         strncpy(iface, buf, strlen(buf));
     }
@@ -1759,11 +2018,14 @@ static int do_linux_open(struct wif *wi, char *iface)
 
     dev->arptype_in = dev->arptype_out;
 
+    if(iface_malloced) free(iface);
     return 0;
 close_out:
     close(dev->fd_out);
 close_in:
     close(dev->fd_in);
+    if(iface_malloced) free(iface);
+    if(iwpriv) free(iwpriv);
     return 1;
 }
 
@@ -1793,6 +2055,7 @@ static void do_free(struct wif *wi)
 	free(wi);
 }
 
+#ifndef CONFIG_LIBNL
 static void linux_close(struct wif *wi)
 {
 	struct priv_linux *pl = wi_priv(wi);
@@ -1801,9 +2064,27 @@ static void linux_close(struct wif *wi)
 		close(pl->fd_in);
 	if (pl->fd_out)
 		close(pl->fd_out);
+	if (pl->fd_main)
+		close(pl->fd_main);
 
 	do_free(wi);
 }
+
+#else
+
+static void linux_close_nl80211(struct wif *wi)
+{
+	struct priv_linux *pl = wi_priv(wi);
+    nl80211_cleanup(&state);
+
+	if (pl->fd_in)
+		close(pl->fd_in);
+	if (pl->fd_out)
+		close(pl->fd_out);
+
+	do_free(wi);
+}
+#endif
 
 static int linux_fd(struct wif *wi)
 {
@@ -1880,13 +2161,12 @@ static int linux_set_mac(struct wif *wi, unsigned char *mac)
             return( 1 );
         }
 
-// 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-// 	ifr.ifr_hwaddr.sa_len = 6;
+ 	ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 	memcpy(ifr.ifr_hwaddr.sa_data, mac, 6);
 	memcpy(pl->pl_mac, mac, 6);
 
         //set mac
-        ret = ioctl(fd, SIOCSIFHWADDR, ifr);
+        ret = ioctl(fd, SIOCSIFHWADDR, &ifr);
 
         //if up
         ifr.ifr_flags |= IFF_UP | IFF_BROADCAST | IFF_RUNNING;
@@ -1910,11 +2190,20 @@ static struct wif *linux_open(char *iface)
 		return NULL;
         wi->wi_read             = linux_read;
         wi->wi_write            = linux_write;
+#ifdef CONFIG_LIBNL
+        linux_nl80211_init(&state);
+        wi->wi_set_channel      = linux_set_channel_nl80211;
+#else
         wi->wi_set_channel      = linux_set_channel;
+#endif
         wi->wi_get_channel      = linux_get_channel;
         wi->wi_set_freq		= linux_set_freq;
         wi->wi_get_freq		= linux_get_freq;
+#ifdef CONFIG_LIBNL
+        wi->wi_close            = linux_close_nl80211;
+#else
         wi->wi_close            = linux_close;
+#endif
 	wi->wi_fd		= linux_fd;
 	wi->wi_get_mac		= linux_get_mac;
 	wi->wi_set_mac		= linux_set_mac;
@@ -1951,24 +2240,29 @@ int get_battery_state(void)
 
     if (linux_apm == 1)
     {
+        char *battery_data = NULL;
+
         if ((apm = fopen("/proc/apm", "r")) != NULL ) {
-            if ( fgets(buf, 128,apm) != NULL ) {
-                int charging, ac;
-                fclose(apm);
+            battery_data = fgets(buf, 128, apm);
+            fclose(apm);
+        }
 
-                ret = sscanf(buf, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
-                                                        &charging, &flag, &batteryTime, units);
+        if ( battery_data != NULL ) {
+            int charging, ac;
 
-                                if(!ret) return 0;
+            ret = sscanf(battery_data, "%*s %*d.%*d %*x %x %x %x %*d%% %d %s\n", &ac,
+                                                    &charging, &flag, &batteryTime, units);
+            if(!ret)
+                return 0;
 
-                if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
-                    if (!strncmp(units, "min", 32))
-                        batteryTime *= 60;
-                }
-                else return 0;
-                linux_acpi = 0;
-                return batteryTime;
+            if ((flag & 0x80) == 0 && charging != 0xFF && ac != 1 && batteryTime != -1) {
+                if (!strncmp(units, "min", 32))
+                    batteryTime *= 60;
             }
+            else
+                return 0;
+            linux_acpi = 0;
+            return batteryTime;
         }
         linux_apm = 0;
     }
@@ -2048,6 +2342,7 @@ int get_battery_state(void)
                 else if (strncmp(buf, "charging state:", 15) == 0) {
                                 /* the space makes it different than discharging */
                     if (strstr(buf, " charging" )) {
+                        closedir(batteries);
                         fclose( acpi );
                         return 0;
                     }

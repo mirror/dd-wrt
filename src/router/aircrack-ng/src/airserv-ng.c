@@ -1,7 +1,7 @@
  /*
   *  Server for osdep network driver.  Uses osdep itself!  [ph33r teh recursion]
   *
-  *  Copyright (c) 2007, 2008, 2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
+  *  Copyright (c) 2007-2009  Andrea Bittau <a.bittau@cs.ucl.ac.uk>
   *
   *  Advanced WEP attacks developed by KoreK
   *  WPA-PSK  attack code developed by Joshua Wright
@@ -31,9 +31,12 @@
 #include <unistd.h>
 #include <err.h>
 #include <string.h>
-#include <assert.h>
 #include <stdarg.h>
 #include <signal.h>
+
+#ifdef __NetBSD__
+	#include <sys/select.h>
+#endif
 
 #include "osdep/osdep.h"
 #include "osdep/network.h"
@@ -70,7 +73,7 @@ static struct sstate *get_ss()
 static void usage(char *p)
 {
 	if (p) {}
-
+	char *version_info = getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC);
 	printf("\n"
 		"  %s - (C) 2007, 2008, 2009 Andrea Bittau\n"
 		"  http://www.aircrack-ng.org\n"
@@ -85,7 +88,8 @@ static void usage(char *p)
 		"       -c  <chan> : Channel to use\n"
 		"       -v <level> : Debug level (1 to 3; default: 1)\n"
 		"\n",
-		getVersion("Airserv-ng", _MAJ, _MIN, _SUB_MIN, _REVISION, _BETA, _RC));
+		version_info);
+	free(version_info);
 	exit(1);
 }
 
@@ -139,6 +143,7 @@ static void client_kill(struct client *c)
 	c->c_next->c_prev = c->c_prev;
 	printf("Death from %s\n", c->c_ip);
 	free(c);
+	c = NULL;
 }
 
 static void card_open(struct sstate *ss, char *dev)
@@ -429,6 +434,7 @@ static void handle_card(struct sstate *ss)
 	int rd;
 	struct rx_info *ri = (struct rx_info*) buf;
 	struct client *c;
+	struct client *next_c;
 
 	rd = card_read(ss, ri + 1, sizeof(buf) - sizeof(*ri), ri);
     if (rd >= 0)
@@ -440,11 +446,13 @@ static void handle_card(struct sstate *ss)
 	ri->ri_channel = __cpu_to_be32(ri->ri_channel);
 	ri->ri_rate = __cpu_to_be32(ri->ri_rate);
 	ri->ri_antenna = __cpu_to_be32(ri->ri_antenna);
+	ri->ri_freq = __cpu_to_be32(ri->ri_freq);
 
 	c = ss->ss_clients.c_next;
 	while (c != &ss->ss_clients) {
+		next_c = c->c_next;
 		client_send_packet(ss, c, buf, rd);
-		c = c->c_next;
+		c = next_c;
 	}
 }
 
@@ -453,6 +461,7 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 	int max;
 	fd_set fds;
 	struct client *c;
+	struct client *next;
 	int card_fd;
 
 	open_card_and_sock(ss, dev, port, chan);
@@ -485,10 +494,11 @@ static void serv(struct sstate *ss, char *dev, int port, int chan)
 		/* handle clients */
 		c = ss->ss_clients.c_next;
 		while (c != &ss->ss_clients) {
+			next = c->c_next;
 			if (FD_ISSET(c->c_s, &fds))
 				handle_client(ss, c);
 
-			c = c->c_next;
+			c = next;
 		}
 
 		/* handle server */

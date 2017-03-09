@@ -1,7 +1,7 @@
 /*
  *  Kstat: displays the votes of the korek attack for each keybyte
  *
- *  Copyright (C) 2006, 2007, 2008, 2009 Thomas d'Otreppe
+ *  Copyright (C) 2006-2016 Thomas d'Otreppe <tdotreppe@aircrack-ng.org>
  *  Copyright (C) 2004, 2005  Christophe Devine
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -318,18 +318,23 @@ int main( int argc, char *argv[] )
 
     if( ( f = fopen( argv[1], "rb" ) ) == NULL )
     {
+    	free(ivbuf);
         perror( "fopen" );
         return( 1 );
     }
 
     if( fread( buffer, 1, 4, f ) != 4 )
     {
+    	free(ivbuf);
+    	fclose(f);
         perror( "fread header" );
         return( 1 );
     }
 
     if( memcmp( buffer, "\xBF\xCA\x84\xD4", 4 ) != 0 )
     {
+    	free(ivbuf);
+    	fclose(f);
         fprintf( stderr, "Not an .IVS file\n" );
         return( 1 );
     }
@@ -405,6 +410,9 @@ int main( int argc, char *argv[] )
 
         printf( "\n\n" );
     }
+
+    free(ivbuf);
+    fclose(f);
 
     return( 0 );
 }

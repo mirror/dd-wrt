@@ -1,4 +1,4 @@
-.TH PACKETFORGE-NG 1 "April 2010" "Version 1.1"
+.TH PACKETFORGE-NG 1 "February 2016" "Version 1.2-rc4"
 
 .SH NAME
 packetforge-ng - forge packets: ARP, UDP, ICMP or custom packets.
@@ -38,10 +38,10 @@ clear ToDS bit
 disable WEP encryption
 .TP
 .I -k <ip:[port]>
-Set source IP (and port)
+Set destination IP (and port)
 .TP
 .I -l <ip:[port]>
-Set destination IP (and port)
+Set source IP (and port)
 .TP
 .I -w <file>
 Write packet to this pcap file
@@ -76,12 +76,32 @@ Build a custom packet, requires \-r to read an unencrypted frame out of a pcap f
 .B packetforge-ng
 \-y test.xor \-a 00:09:5b:12:40:cc \-h 00:10:2a:cb:30:14 \-k 192.168.1.100 \-l 192.168.1.1 \-w arp-request.cap
 .SH AUTHOR
-This manual page was written by Thomas d'Otreppe.
+This manual page was written by Thomas d\(aqOtreppe.
 Permission is granted to copy, distribute and/or modify this document under the terms of the GNU General Public License, Version 2 or any later version published by the Free Software Foundation
 On Debian systems, the complete text of the GNU General Public License can be found in /usr/share/common-licenses/GPL.
 .SH SEE ALSO
 .br
-.B airbase-ng(1)
+.B airbase-ng(8)
+.br
+.B aireplay-ng(8)
+.br
+.B airmon-ng(8)
+.br
+.B airodump-ng(8)
+.br
+.B airodump-ng-oui-update(8)
+.br
+.B airserv-ng(8)
+.br
+.B airtun-ng(8)
+.br
+.B besside-ng(8)
+.br
+.B easside-ng(8)
+.br
+.B tkiptun-ng(8)
+.br
+.B wesside-ng(8)
 .br
 .B aircrack-ng(1)
 .br
@@ -89,23 +109,11 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .br
 .B airdecloak-ng(1)
 .br
-.B airdriver-ng(1)
-.br
-.B aireplay-ng(1)
-.br
-.B airmon-ng(1)
-.br
-.B airodump-ng(1)
-.br
 .B airolib-ng(1)
 .br
-.B airserv-ng(1)
-.br
-.B airtun-ng(1)
+.B besside-ng-crawler(1)
 .br
 .B buddy-ng(1)
-.br
-.B easside-ng(1)
 .br
 .B ivstools(1)
 .br
@@ -113,6 +121,4 @@ On Debian systems, the complete text of the GNU General Public License can be fo
 .br
 .B makeivs-ng(1)
 .br
-.B tkiptun-ng(1)
-.br
-.B wesside-ng(1)
+.B wpaclean(1)

@@ -1,9 +1,40 @@
+/* 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * is provided AS IS, WITHOUT ANY WARRANTY; without even the implied
+ * warranty of MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, and
+ * NON-INFRINGEMENT.  See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+ * MA 02111-1307, USA.
+ *
+ * In addition, as a special exception, the copyright holders give
+ * permission to link the code of portions of this program with the
+ * OpenSSL library under certain conditions as described in each
+ * individual source file, and distribute linked combinations
+ * including the two.
+ * You must obey the GNU General Public License in all respects
+ * for all of the code used other than OpenSSL.  If you modify
+ * file(s) with this exception, you may extend this exception to your
+ * version of the file(s), but you are not obligated to do so.  If you
+ * do not wish to do so, delete this exception statement from your
+ * version.  If you delete this exception statement from all source
+ * files in the program, then also delete it here.
+ */
+
 #ifndef _AIRODUMP_NG_H_
 #define _AIRODUMP_NG_H_
 
-/* some constants */
+#include "eapol.h"
 
-#define MAX_IE_ELEMENT_SIZE 256
+/* some constants */
 
 #define REFRESH_RATE 100000  /* default delay in us between updates */
 #define DEFAULT_HOPFREQ 250  /* default delay in ms between channel hopping */
@@ -105,13 +136,26 @@ char *f_ext[NB_EXTENSIONS] = { AIRODUMP_NG_CSV_EXT, AIRODUMP_NG_GPS_EXT, AIRODUM
 extern const unsigned long int crc_tbl[256];
 extern const unsigned char crc_chop_tbl[256][4];
 
-static uchar ZERO[32] =
+static unsigned char ZERO[32] =
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00"
 "\x00\x00\x00\x00\x00\x00\x00\x00";
 
-#define OUI_PATH "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt"
+const char *OUI_PATHS[] = {
+    "/etc/aircrack-ng/airodump-ng-oui.txt",
+    "/usr/local/etc/aircrack-ng/airodump-ng-oui.txt",
+    "/usr/share/aircrack-ng/airodump-ng-oui.txt",
+    "/var/lib/misc/oui.txt",
+    "/usr/share/misc/oui.txt",
+    "/var/lib/ieee-data/oui.txt",
+    "/usr/share/ieee-data/oui.txt",
+    "/etc/manuf/oui.txt",
+    "/usr/share/wireshark/wireshark/manuf/oui.txt",
+    "/usr/share/wireshark/manuf/oui.txt",
+    NULL
+};
+
 #define MIN_RAM_SIZE_LOAD_OUI_RAM 32768
 
 int read_pkts=0;
@@ -156,6 +200,14 @@ struct oui {
 	struct oui *next;
 };
 
+/* WPS_info struct */
+struct WPS_info {
+    unsigned char version;    /* WPS Version */
+    unsigned char state;      /* Current WPS state */
+    unsigned char ap_setup_locked; /* AP setup locked */
+    unsigned int meth;        /* WPS Config Methods */
+};
+
 /* linked list of detected access points */
 struct AP_info
 {
@@ -191,6 +243,8 @@ struct AP_info
     char *manuf;              /* the access point's manufacturer */
     unsigned char essid[MAX_IE_ELEMENT_SIZE];
                               /* ascii network identifier */
+    unsigned long long timestamp;
+    						  /* Timestamp to calculate uptime   */
 
     unsigned char lanip[4];   /* last detected ip address */
                               /* if non-encrypted network */
@@ -223,18 +277,7 @@ struct AP_info
 					  
     int marked;
     int marked_color;
-};
-
-struct WPA_hdsk
-{
-    uchar stmac[6];				 /* supplicant MAC               */
-    uchar snonce[32];			 /* supplicant nonce             */
-    uchar anonce[32];			 /* authenticator nonce          */
-    uchar keymic[16];			 /* eapol frame MIC              */
-    uchar eapol[256];			 /* eapol frame contents         */
-    int eapol_size;				 /* eapol frame size             */
-    int keyver;					 /* key version (TKIP / AES)     */
-    int state;					 /* handshake completion         */
+    struct WPS_info wps;
 };
 
 /* linked list of detected clients */
@@ -261,6 +304,8 @@ struct ST_info
     struct WPA_hdsk wpa;     /* WPA handshake data        */
     int qos_to_ds;           /* does it use 802.11e to ds */
     int qos_fr_ds;           /* does it receive 802.11e   */
+    int channel;             /* Channel station is seen   */
+                             /*  Not used yet		  */
 };
 
 /* linked list of detected macs through ack, cts or rts frames */
@@ -294,6 +339,11 @@ struct globals
     unsigned char prev_bssid[6];
     unsigned char f_bssid[6];
     unsigned char f_netmask[6];
+    char **f_essid;
+    int f_essid_count;
+#ifdef HAVE_PCRE
+    pcre *f_essid_regex;
+#endif
     char *dump_prefix;
     char *keyout;
     char *f_cap_name;
@@ -417,7 +467,15 @@ struct globals
     pthread_mutex_t mx_print;			 /* lock write access to ap LL   */
     pthread_mutex_t mx_sort;			 /* lock write access to ap LL   */
     
-    uchar selected_bssid[6];	/* bssid that is selected */
+    unsigned char selected_bssid[6];	/* bssid that is selected */
+
+    int ignore_negative_one;
+    u_int maxsize_essid_seen;
+    int show_manufacturer;
+    int show_uptime;
+    int file_write_interval;
+    u_int maxsize_wps_seen;
+    int show_wps;
 }
 G;
 
