@@ -44,7 +44,7 @@
 #include "version.h"
 #include "aircrack-ptw-lib.h"
 #include "osdep/osdep.h"
-#include "ieee80211.h"
+#include "include/ieee80211.h"
 #include "crypto.h"
 #include "pcap.h"
 
