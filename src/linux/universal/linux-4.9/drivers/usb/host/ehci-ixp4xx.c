@@ -13,8 +13,10 @@
 
 #include <linux/platform_device.h>
 
-static int drv_ehci_port_power (struct ehci_hcd *ehci, int p, int is_on)
+
+static int drv_ehci_port_power (struct usb_hcd *hcd, int p, bool is_on)
 {
+	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
 	unsigned port;
 
 	if (!HCS_PPC (ehci->hcs_params))

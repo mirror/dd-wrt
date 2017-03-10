@@ -2482,7 +2482,7 @@ static int port_enable(struct net_device *dev)
     TRACE;
 
     /* reset the current time for the watchdog timer */
-    dev->trans_start = jiffies;
+    netif_trans_update(dev);
 
     netif_start_queue(dev);
 
@@ -2515,7 +2515,7 @@ static void port_disable(struct net_device *dev)
 
     if (!netif_queue_stopped(dev))
     {
-        dev->trans_start = jiffies;
+	netif_trans_update(dev);
         netif_stop_queue(dev);
     }
 
@@ -2614,7 +2614,7 @@ int p_dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev)
             ixEthAccPortTxDoneCallbackRegister(priv->port_id, 
                                                tx_done_queue_stopped_cb,
                                                (UINT32)dev);
-            dev->trans_start = jiffies;
+	    netif_trans_update(dev);
             netif_stop_queue (dev);
         }
 	return 0;
@@ -4308,7 +4308,7 @@ if (machine_is_pronghorn() || machine_is_pronghorn_metro())
     {
 	TRACE;
 
-        ndev->trans_start = jiffies;
+	netif_trans_update(ndev);
         netif_stop_queue(ndev);
     }
 
