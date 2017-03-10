@@ -54,6 +54,7 @@ void delete_ath9k_devices(char *physical_iface)
 {
 	glob_t globbuf;
 	char globstring[1024];
+	char tmp[256];
 	int globresult;
 	if (physical_iface)
 		sprintf(globstring, "/sys/class/ieee80211/%s/device/net/*", physical_iface);
@@ -66,16 +67,25 @@ void delete_ath9k_devices(char *physical_iface)
 		ifname = strrchr(globbuf.gl_pathv[i], '/');
 		if (!ifname)
 			continue;
-		eval("ifconfig", ifname + 1, "down");
-		eval("iw", ifname + 1, "del");
+		char dev[32];
+		sprintf(dev, "%s", ifname + 1);
+		if (has_ad(dev))
+			br_del_interface(getBridge("ath2", tmp), dev);
+		else
+			br_del_interface(getBridge(dev, tmp), dev);
+		eval("ifconfig", dev, "down");
+		eval("iw", dev, "del");
 	}
 }
 
 void deconfigure_single_ath9k(int count)
 {
-	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n", get_ath9k_phy_idx(count), count);
+	int idx = get_ath9k_phy_idx(count);
+	fprintf(stderr, "ath9k deconfigure_single: phy%d ath%d\n", idx, count);
 	char wif[10];
-	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
+	sprintf(wif, "phy%d", idx);
+	sysprintf("rm -f /tmp/ath%d_hostapd.conf", idx);
+	sysprintf("rm -f /tmp/ath%d_wpa_supplicant.conf", idx);
 	delete_ath9k_devices(wif);
 }
 
@@ -127,7 +137,7 @@ void configure_single_ath9k(int count)
 	sprintf(rxantenna, "ath%d_rxantenna", count);
 	sprintf(txantenna, "ath%d_txantenna", count);
 	// create base device
-	cprintf("configure base interface %d\n", count);
+	cprintf("configure base interface %d / %s\n", count, dev);
 	sprintf(net, "%s_net_mode", dev);
 	char *netmode = nvram_default_get(net, "mixed");
 	if (!strcmp(netmode, "disabled"))
@@ -703,9 +713,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			sprintf(mubf, "%s_mubf", prefix);
 			char subf[32];
 			sprintf(subf, "%s_subf", prefix);
-			caps =
-			    mac80211_get_vhtcaps(prefix, 0, 0, 0, 0,
-						 nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
+			caps = mac80211_get_vhtcaps(prefix, 0, 0, 0, 0, nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
 			fprintf(fp, "vht_capab=%s\n", caps);
 			fprintf(fp, "ieee80211ac=1\n");
 			fprintf(fp, "require_vht=1\n");
@@ -1546,12 +1554,17 @@ void ath9k_start_supplicant(int count)
 #endif
 	char *debug;
 	char psk[16];
+	char net[16];
 	char wmode[16];
 	int ctrlifneeded = 0;
 	char wif[10];
 	sprintf(wif, "phy%d", get_ath9k_phy_idx(count));
 	sprintf(wl, "ath%d_mode", count);
 	sprintf(dev, "ath%d", count);
+	sprintf(net, "%s_net_mode", dev);
+	char *netmode = nvram_default_get(net, "mixed");
+	if (!strcmp(netmode, "disabled"))
+		return;
 	apm = nvram_safe_get(wl);
 	sprintf(wifivifs, "ath%d_vifs", count);
 	sprintf(power, "ath%d_txpwrdbm", count);
