@@ -91,7 +91,7 @@ typedef void    VOID;
  * We do it for some specific revisions now. 
  */
 #if (KERNEL_VERSION(2,6,0) <= LINUX_VERSION_CODE) && \
-    (KERNEL_VERSION(4,7,0) > LINUX_VERSION_CODE)
+    (KERNEL_VERSION(5,0,0) > LINUX_VERSION_CODE)
 
 #define IX_OSAL_OS_LINUX_VERSION_2_6   1  /* Kernel 2.6 */
 #undef IX_OSAL_OS_LINUX_VERSION_2_4
