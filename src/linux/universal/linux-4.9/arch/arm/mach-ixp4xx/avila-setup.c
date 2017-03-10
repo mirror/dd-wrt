@@ -348,7 +348,7 @@ eeprom_getb(int more)
 }
 
 
-int
+int __init
 eeprom_read(int addr, cyg_uint8 *buf, int nbytes)
 {
     cyg_uint8 start_byte;
@@ -416,8 +416,9 @@ static struct i2c_board_info __initdata avila_i2c_board_info[] = {
 
 static void __init avila_init(void)
 {
-	ixp4xx_sys_init();
 	char model[16];
+	ixp4xx_sys_init();
+
 	memset(model,0,16);
 
     HAL_GPIO_OUTPUT_SET(GPIO_EEPROM_SCL);
