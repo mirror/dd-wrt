@@ -271,7 +271,7 @@ done:
 	return hw->len;
 }
 
-static void __init cns3xxx_spi_initial(void)
+static void cns3xxx_spi_initial(void)
 {
 	u32 __iomem *gpiob = (void __iomem *) (CNS3XXX_MISC_BASE_VIRT + 0x0018);
 	u32 gpiob_pins = __raw_readl(gpiob);
@@ -324,7 +324,7 @@ static void __init cns3xxx_spi_initial(void)
 	return;
 }
 
-static int __init cns3xxx_spi_probe(struct platform_device *pdev)
+static int cns3xxx_spi_probe(struct platform_device *pdev)
 {
 	struct spi_master *master;
 	struct cns3xxx_spi *hw;
@@ -428,12 +428,12 @@ static struct platform_driver cns3xxx_spi_driver = {
 	},
 };
 
-static int __init cns3xxx_spi_init(void)
+static int cns3xxx_spi_init(void)
 {
 	return platform_driver_register(&cns3xxx_spi_driver);
 }
 
-static void __exit cns3xxx_spi_exit(void)
+static void cns3xxx_spi_exit(void)
 {
 	platform_driver_unregister(&cns3xxx_spi_driver);
 }
