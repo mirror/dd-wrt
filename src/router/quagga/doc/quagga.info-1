@@ -23,8 +23,8 @@ END-INFO-DIR-ENTRY
    This file documents the Quagga Software Routing Suite which manages
 common TCP/IP routing protocols.
 
-   This is Edition 1.1.1, last updated 23 January 2017 of 'The Quagga
-Manual', for Quagga Version 1.1.1.
+   This is Edition 1.2.1, last updated 10 March 2017 of 'The Quagga
+Manual', for Quagga Version 1.2.1.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
@@ -49,7 +49,7 @@ Quagga
 ******
 
 Quagga is an advanced routing software package that provides a suite of
-TCP/IP based routing protocols.  This is the Manual for Quagga 1.1.1.
+TCP/IP based routing protocols.  This is the Manual for Quagga 1.2.1.
 Quagga is a fork of GNU Zebra.
 
    Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
@@ -79,6 +79,7 @@ Quagga is a fork of GNU Zebra.
 * OSPFv2::
 * OSPFv3::
 * ISIS::
+* NHRP::
 * BGP::
 * Configuring Quagga as a Route Server::
 * VTY shell::
@@ -675,6 +676,7 @@ them.  Please add the following entries to '/etc/services'.
      ospfapi       2607/tcp		  # ospfapi
      isisd         2608/tcp		  # ISISd vty
      pimd          2611/tcp		  # PIMd vty
+     nhrpd         2612/tcp		  # nhrpd vty
 
    If you use a FreeBSD newer than 2.2.8, the above entries are already
 added to '/etc/services' so there is no need to add it.  If you specify
@@ -1036,7 +1038,7 @@ all.
      Connected to localhost.
      Escape character is '^]'.
 
-     Hello, this is Quagga (version 1.1.1)
+     Hello, this is Quagga (version 1.2.1)
      Copyright (C) 1999-2005 Kunihiro Ishiguro, et al.
 
      User Access Verification
@@ -1399,9 +1401,9 @@ defines static prefix and gateway.
      A.B.C.D format, user must define NETMASK value with A.B.C.D format.
      GATEWAY is same option as above command
 
-          ip route 10.0.0.0 255.255.255.0 10.0.0.2
-          ip route 10.0.0.0 255.255.255.0 ppp0
-          ip route 10.0.0.0 255.255.255.0 null0
+          ip route 10.0.0.0 255.0.0.0 10.0.0.2
+          ip route 10.0.0.0 255.0.0.0 ppp0
+          ip route 10.0.0.0 255.0.0.0 null0
 
      These statements are equivalent to those in the previous example.
 
@@ -1554,9 +1556,9 @@ in the kernel.
      Within a route-map, set the preferred source address for matching
      routes when installing in the kernel.
 
-     The following creates a prefix-list that matches all addresses, a route-map
-     that sets the preferred source address, and applies the route-map to all
-     rip routes.
+   The following creates a prefix-list that matches all addresses, a
+route-map that sets the preferred source address, and applies the
+route-map to all 'rip' routes.
 
      ip prefix-list ANY permit 0.0.0.0/0 le 32
      route-map RM1 permit 10
@@ -3484,22 +3486,17 @@ File: quagga.info,  Node: Showing OSPF information,  Next: Opaque LSA,  Prev: Re
  -- Command: show ip ospf neighbor INTERFACE detail
 
  -- Command: show ip ospf database
-
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary)
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary) LINK-STATE-ID
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary) LINK-STATE-ID
-          adv-router ADV-ROUTER
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary) adv-router
+ -- Command: show ip ospf database asbr-summary
+ -- Command: show ip ospf database external
+ -- Command: show ip ospf database network
+ -- Command: show ip ospf database asbr-router
+ -- Command: show ip ospf database summary
+ -- Command: show ip ospf database ... LINK-STATE-ID
+ -- Command: show ip ospf database ... LINK-STATE-ID adv-router
           ADV-ROUTER
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary) LINK-STATE-ID
-          self-originate
- -- Command: show ip ospf database
-          (asbr-summary|external|network|router|summary) self-originate
+ -- Command: show ip ospf database ... adv-router ADV-ROUTER
+ -- Command: show ip ospf database ... LINK-STATE-ID self-originate
+ -- Command: show ip ospf database ... self-originate
 
  -- Command: show ip ospf database max-age
 
@@ -3962,7 +3959,7 @@ Example of ospf6d configured on one interface and area:
      !
 
 
-File: quagga.info,  Node: ISIS,  Next: BGP,  Prev: OSPFv3,  Up: Top
+File: quagga.info,  Node: ISIS,  Next: NHRP,  Prev: OSPFv3,  Up: Top
 
 9 ISIS
 ******
@@ -4377,9 +4374,155 @@ A simple example, with MD5 authentication enabled:
      line vty
 
 
-File: quagga.info,  Node: BGP,  Next: Configuring Quagga as a Route Server,  Prev: ISIS,  Up: Top
+File: quagga.info,  Node: NHRP,  Next: BGP,  Prev: ISIS,  Up: Top
 
-10 BGP
+10 NHRP
+*******
+
+'nhrpd' is a daemon to support Next Hop Routing Protocol (NHRP). NHRP is
+described in RFC2332.
+
+   NHRP is used to improve the efficiency of routing computer network
+traffic over Non-Broadcast, Multiple Access (NBMA) Networks.  NHRP
+provides an ARP-like solution that allows a system to dynamically learn
+the NBMA address of the other systems that are part of that network,
+allowing these systems to directly communicate without requiring traffic
+to use an intermediate hop.
+
+   Cisco Dynamic Multipoint VPN (DMVPN) is based on NHRP, and Quagga
+nrhpd implements this scenario.
+
+* Menu:
+
+* Routing Design::
+* Configuring NHRP::
+* Hub Functionality::
+* Integration with IKE::
+* NHRP Events::
+* Configuration Example::
+
+
+File: quagga.info,  Node: Routing Design,  Next: Configuring NHRP,  Up: NHRP
+
+10.1 Routing Design
+===================
+
+nhrpd never handles routing of prefixes itself.  You need to run some
+real routing protocol (e.g.  BGP) to advertise routes over the tunnels.
+What nhrpd does it establishes 'shortcut routes' that optimizes the
+routing protocol to avoid going through extra nodes in NBMA GRE mesh.
+
+   nhrpd does route NHRP domain addresses individually using per-host
+prefixes.  This is similar to Cisco FlexVPN; but in contrast to opennhrp
+which uses a generic subnet route.
+
+   To create NBMA GRE tunnel you might use the following (linux terminal
+commands):
+      ip tunnel add gre1 mode gre key 42 ttl 64
+      ip addr add 10.255.255.2/32 dev gre1
+      ip link set gre1 up
+
+   Note that the IP-address is assigned as host prefix to gre1.  nhrpd
+will automatically create additional host routes pointing to gre1 when a
+connection with these hosts is established.
+
+   The gre1 subnet prefix should be announced by routing protocol from
+the hub nodes (e.g.  BGP 'network' announce).  This allows the routing
+protocol to decide which is the closest hub and determine the relay hub
+on prefix basis when direct tunnel is not established.
+
+   nhrpd will redistribute directly connected neighbors to zebra.
+Within hub nodes, these routes should be internally redistributed using
+some routing protocol (e.g.  iBGP) to allow hubs to be able to relay all
+traffic.
+
+   This can be achieved in hubs with the following bgp configuration
+(network command defines the GRE subnet):
+     router bgp 65555
+        network 172.16.0.0/16
+        redistribute nhrp
+
+
+File: quagga.info,  Node: Configuring NHRP,  Next: Hub Functionality,  Prev: Routing Design,  Up: NHRP
+
+10.2 Configuring NHRP
+=====================
+
+FIXME
+
+
+File: quagga.info,  Node: Hub Functionality,  Next: Integration with IKE,  Prev: Configuring NHRP,  Up: NHRP
+
+10.3 Hub Functionality
+======================
+
+In addition to routing nhrp redistributed host prefixes, the hub nodes
+are also responsible to send NHRP Traffic Indication messages that
+trigger creation of the shortcut tunnels.
+
+   nhrpd sends Traffic Indication messages based on network traffic
+captured using NFLOG. Typically you want to send Traffic Indications for
+network traffic that is routed from gre1 back to gre1 in rate limited
+manner.  This can be achieved with the following iptables rule.
+
+     iptables -A FORWARD -i gre1 -o gre1 \
+     	-m hashlimit --hashlimit-upto 4/minute --hashlimit-burst 1 \
+     	--hashlimit-mode srcip,dstip --hashlimit-srcmask 24 \
+     	--hashlimit-dstmask 24 --hashlimit-name loglimit-0 \
+     	-j NFLOG --nflog-group 1 --nflog-range 128
+
+   You can fine tune the src/dstmask according to the prefix lengths you
+announce internal, add additional IP range matches, or rate limitation
+if needed.  However, the above should be good in most cases.
+
+   This kernel NFLOG target's nflog-group is configured in global nhrp
+config with:
+     nhrp nflog-group 1
+
+   To start sending these traffic notices out from hubs, use the nhrp
+per-interface directive:
+     interface gre1
+      ip nhrp redirect
+
+
+File: quagga.info,  Node: Integration with IKE,  Next: NHRP Events,  Prev: Hub Functionality,  Up: NHRP
+
+10.4 Integration with IKE
+=========================
+
+nhrpd needs tight integration with IKE daemon for various reasons.
+Currently only strongSwan is supported as IKE daemon.
+
+   nhrpd connects to strongSwan using VICI protocol based on UNIX socket
+(hardcoded now as /var/run/charon.vici).
+
+   strongSwan currently needs few patches applied.  Please check out the
+release
+(http://git.alpinelinux.org/cgit/user/tteras/strongswan/log/?h=tteras-release)
+and working tree
+(http://git.alpinelinux.org/cgit/user/tteras/strongswan/log/?h=tteras)
+git repositories for the patches.
+
+
+File: quagga.info,  Node: NHRP Events,  Next: Configuration Example,  Prev: Integration with IKE,  Up: NHRP
+
+10.5 NHRP Events
+================
+
+FIXME
+
+
+File: quagga.info,  Node: Configuration Example,  Prev: NHRP Events,  Up: NHRP
+
+10.6 Configuration Example
+==========================
+
+FIXME
+
+
+File: quagga.info,  Node: BGP,  Next: Configuring Quagga as a Route Server,  Prev: NHRP,  Up: Top
+
+11 BGP
 ******
 
 BGP stands for a Border Gateway Protocol.  The lastest BGP version is 4.
@@ -4414,7 +4557,7 @@ BGP-4.
 
 File: quagga.info,  Node: Starting BGP,  Next: BGP router,  Up: BGP
 
-10.1 Starting BGP
+11.1 Starting BGP
 =================
 
 Default configuration file of 'bgpd' is 'bgpd.conf'.  'bgpd' searches
@@ -4442,7 +4585,7 @@ options may also be specified (*note Common Invocation Options::).
 
 File: quagga.info,  Node: BGP router,  Next: BGP MED,  Prev: Starting BGP,  Up: BGP
 
-10.2 BGP router
+11.2 BGP router
 ===============
 
 First of all you must configure BGP router with 'router bgp' command.
@@ -4477,7 +4620,7 @@ one.
 
 File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP router
 
-10.2.1 BGP distance
+11.2.1 BGP distance
 -------------------
 
  -- BGP: distance bgp <1-255> <1-255> <1-255>
@@ -4492,7 +4635,7 @@ File: quagga.info,  Node: BGP distance,  Next: BGP decision process,  Up: BGP ro
 
 File: quagga.info,  Node: BGP decision process,  Next: BGP route flap dampening,  Prev: BGP distance,  Up: BGP router
 
-10.2.2 BGP decision process
+11.2.2 BGP decision process
 ---------------------------
 
 The decision process Quagga BGP uses to select routes is as follows:
@@ -4589,7 +4732,7 @@ The decision process Quagga BGP uses to select routes is as follows:
 
 File: quagga.info,  Node: BGP route flap dampening,  Prev: BGP decision process,  Up: BGP router
 
-10.2.3 BGP route flap dampening
+11.2.3 BGP route flap dampening
 -------------------------------
 
  -- BGP: bgp dampening <1-45> <1-20000> <1-20000> <1-255>
@@ -4611,7 +4754,7 @@ File: quagga.info,  Node: BGP route flap dampening,  Prev: BGP decision process,
 
 File: quagga.info,  Node: BGP MED,  Next: BGP network,  Prev: BGP router,  Up: BGP
 
-10.3 BGP MED
+11.3 BGP MED
 ============
 
 The BGP MED (Multi_Exit_Discriminator) attribute has properties which
@@ -4865,7 +5008,7 @@ in the order and the set has a total order.
 
 File: quagga.info,  Node: BGP network,  Next: BGP Peer,  Prev: BGP MED,  Up: BGP
 
-10.4 BGP network
+11.4 BGP network
 ================
 
 * Menu:
@@ -4877,7 +5020,7 @@ File: quagga.info,  Node: BGP network,  Next: BGP Peer,  Prev: BGP MED,  Up: BGP
 
 File: quagga.info,  Node: BGP route,  Next: Route Aggregation,  Up: BGP network
 
-10.4.1 BGP route
+11.4.1 BGP route
 ----------------
 
  -- BGP: network A.B.C.D/M
@@ -4894,7 +5037,7 @@ File: quagga.info,  Node: BGP route,  Next: Route Aggregation,  Up: BGP network
 
 File: quagga.info,  Node: Route Aggregation,  Next: Redistribute to BGP,  Prev: BGP route,  Up: BGP network
 
-10.4.2 Route Aggregation
+11.4.2 Route Aggregation
 ------------------------
 
  -- BGP: aggregate-address A.B.C.D/M
@@ -4913,7 +5056,7 @@ File: quagga.info,  Node: Route Aggregation,  Next: Redistribute to BGP,  Prev: 
 
 File: quagga.info,  Node: Redistribute to BGP,  Prev: Route Aggregation,  Up: BGP network
 
-10.4.3 Redistribute to BGP
+11.4.3 Redistribute to BGP
 --------------------------
 
  -- BGP: redistribute kernel
@@ -4934,7 +5077,7 @@ File: quagga.info,  Node: Redistribute to BGP,  Prev: Route Aggregation,  Up: BG
 
 File: quagga.info,  Node: BGP Peer,  Next: BGP Peer Group,  Prev: BGP network,  Up: BGP
 
-10.5 BGP Peer
+11.5 BGP Peer
 =============
 
 * Menu:
@@ -4946,7 +5089,7 @@ File: quagga.info,  Node: BGP Peer,  Next: BGP Peer Group,  Prev: BGP network,  
 
 File: quagga.info,  Node: Defining Peer,  Next: BGP Peer commands,  Up: BGP Peer
 
-10.5.1 Defining Peer
+11.5.1 Defining Peer
 --------------------
 
  -- BGP: neighbor PEER remote-as ASN
@@ -4965,7 +5108,7 @@ File: quagga.info,  Node: Defining Peer,  Next: BGP Peer commands,  Up: BGP Peer
 
 File: quagga.info,  Node: BGP Peer commands,  Next: Peer filtering,  Prev: Defining Peer,  Up: BGP Peer
 
-10.5.2 BGP Peer commands
+11.5.2 BGP Peer commands
 ------------------------
 
 In a 'router bgp' clause there are neighbor specific configurations
@@ -5074,7 +5217,7 @@ required.
 
 File: quagga.info,  Node: Peer filtering,  Prev: BGP Peer commands,  Up: BGP Peer
 
-10.5.3 Peer filtering
+11.5.3 Peer filtering
 ---------------------
 
  -- BGP: neighbor PEER distribute-list NAME [in|out]
@@ -5097,7 +5240,7 @@ File: quagga.info,  Node: Peer filtering,  Prev: BGP Peer commands,  Up: BGP Pee
 
 File: quagga.info,  Node: BGP Peer Group,  Next: BGP Address Family,  Prev: BGP Peer,  Up: BGP
 
-10.6 BGP Peer Group
+11.6 BGP Peer Group
 ===================
 
  -- BGP: neighbor WORD peer-group
@@ -5109,7 +5252,7 @@ File: quagga.info,  Node: BGP Peer Group,  Next: BGP Address Family,  Prev: BGP 
 
 File: quagga.info,  Node: BGP Address Family,  Next: Autonomous System,  Prev: BGP Peer Group,  Up: BGP
 
-10.7 BGP Address Family
+11.7 BGP Address Family
 =======================
 
 Multiprotocol BGP enables BGP to carry routing information for multiple
@@ -5139,7 +5282,7 @@ supported.
 
 File: quagga.info,  Node: Autonomous System,  Next: BGP Communities Attribute,  Prev: BGP Address Family,  Up: BGP
 
-10.8 Autonomous System
+11.8 Autonomous System
 ======================
 
 The AS (Autonomous System) number is one of the essential element of
@@ -5164,7 +5307,7 @@ Private AS numbers must not to be advertised in the global Internet.
 
 File: quagga.info,  Node: AS Path Regular Expression,  Next: Display BGP Routes by AS Path,  Up: Autonomous System
 
-10.8.1 AS Path Regular Expression
+11.8.1 AS Path Regular Expression
 ---------------------------------
 
 AS path regular expression can be used for displaying BGP routes and AS
@@ -5197,7 +5340,7 @@ expression.
 
 File: quagga.info,  Node: Display BGP Routes by AS Path,  Next: AS Path Access List,  Prev: AS Path Regular Expression,  Up: Autonomous System
 
-10.8.2 Display BGP Routes by AS Path
+11.8.2 Display BGP Routes by AS Path
 ------------------------------------
 
 To show BGP routes which has specific AS path information 'show ip bgp'
@@ -5210,7 +5353,7 @@ command can be used.
 
 File: quagga.info,  Node: AS Path Access List,  Next: Using AS Path in Route Map,  Prev: Display BGP Routes by AS Path,  Up: Autonomous System
 
-10.8.3 AS Path Access List
+11.8.3 AS Path Access List
 --------------------------
 
 AS path access list is user defined AS path.
@@ -5224,7 +5367,7 @@ AS path access list is user defined AS path.
 
 File: quagga.info,  Node: Using AS Path in Route Map,  Next: Private AS Numbers,  Prev: AS Path Access List,  Up: Autonomous System
 
-10.8.4 Using AS Path in Route Map
+11.8.4 Using AS Path in Route Map
 ---------------------------------
 
  -- Route Map: match as-path WORD
@@ -5239,13 +5382,13 @@ File: quagga.info,  Node: Using AS Path in Route Map,  Next: Private AS Numbers,
 
 File: quagga.info,  Node: Private AS Numbers,  Prev: Using AS Path in Route Map,  Up: Autonomous System
 
-10.8.5 Private AS Numbers
+11.8.5 Private AS Numbers
 -------------------------
 
 
 File: quagga.info,  Node: BGP Communities Attribute,  Next: BGP Extended Communities Attribute,  Prev: Autonomous System,  Up: BGP
 
-10.9 BGP Communities Attribute
+11.9 BGP Communities Attribute
 ==============================
 
 BGP communities attribute is widely used for implementing policy
@@ -5302,7 +5445,7 @@ values are sorted in numerical order.
 
 File: quagga.info,  Node: BGP Community Lists,  Next: Numbered BGP Community Lists,  Up: BGP Communities Attribute
 
-10.9.1 BGP Community Lists
+11.9.1 BGP Community Lists
 --------------------------
 
 BGP community list is a user defined BGP communites attribute list.  BGP
@@ -5360,7 +5503,7 @@ expanded community list.
 
 File: quagga.info,  Node: Numbered BGP Community Lists,  Next: BGP Community in Route Map,  Prev: BGP Community Lists,  Up: BGP Communities Attribute
 
-10.9.2 Numbered BGP Community Lists
+11.9.2 Numbered BGP Community Lists
 -----------------------------------
 
 When number is used for BGP community list name, the number has special
@@ -5392,7 +5535,7 @@ named community lists.
 
 File: quagga.info,  Node: BGP Community in Route Map,  Next: Display BGP Routes by Community,  Prev: Numbered BGP Community Lists,  Up: BGP Communities Attribute
 
-10.9.3 BGP Community in Route Map
+11.9.3 BGP Community in Route Map
 ---------------------------------
 
 In Route Map (*note Route Map::), we can match or set BGP communities
@@ -5433,7 +5576,7 @@ network policy based on BGP communities attribute.
 
 File: quagga.info,  Node: Display BGP Routes by Community,  Next: Using BGP Communities Attribute,  Prev: BGP Community in Route Map,  Up: BGP Communities Attribute
 
-10.9.4 Display BGP Routes by Community
+11.9.4 Display BGP Routes by Community
 --------------------------------------
 
 To show BGP routes which has specific BGP communities attribute, 'show
@@ -5458,7 +5601,7 @@ be used for 'show ip bgp' command.
 
 File: quagga.info,  Node: Using BGP Communities Attribute,  Prev: Display BGP Routes by Community,  Up: BGP Communities Attribute
 
-10.9.5 Using BGP Communities Attribute
+11.9.5 Using BGP Communities Attribute
 --------------------------------------
 
 Following configuration is the most typical usage of BGP communities
@@ -5561,7 +5704,7 @@ community-list is used.  'deny' community-list is ignored.
 
 File: quagga.info,  Node: BGP Extended Communities Attribute,  Next: Displaying BGP routes,  Prev: BGP Communities Attribute,  Up: BGP
 
-10.10 BGP Extended Communities Attribute
+11.10 BGP Extended Communities Attribute
 ========================================
 
 BGP extended communities attribute is introduced with MPLS VPN/BGP
@@ -5602,7 +5745,7 @@ based format the other is IP address based format.
 
 File: quagga.info,  Node: BGP Extended Community Lists,  Next: BGP Extended Communities in Route Map,  Up: BGP Extended Communities Attribute
 
-10.10.1 BGP Extended Community Lists
+11.10.1 BGP Extended Community Lists
 ------------------------------------
 
 Expanded Community Lists is a user defined BGP Expanded Community Lists.
@@ -5643,7 +5786,7 @@ Expanded Community Lists is a user defined BGP Expanded Community Lists.
 
 File: quagga.info,  Node: BGP Extended Communities in Route Map,  Prev: BGP Extended Community Lists,  Up: BGP Extended Communities Attribute
 
-10.10.2 BGP Extended Communities in Route Map
+11.10.2 BGP Extended Communities in Route Map
 ---------------------------------------------
 
  -- Route Map: match extcommunity WORD
@@ -5657,7 +5800,7 @@ File: quagga.info,  Node: BGP Extended Communities in Route Map,  Prev: BGP Exte
 
 File: quagga.info,  Node: Displaying BGP routes,  Next: Capability Negotiation,  Prev: BGP Extended Communities Attribute,  Up: BGP
 
-10.11 Displaying BGP Routes
+11.11 Displaying BGP Routes
 ===========================
 
 * Menu:
@@ -5668,7 +5811,7 @@ File: quagga.info,  Node: Displaying BGP routes,  Next: Capability Negotiation, 
 
 File: quagga.info,  Node: Show IP BGP,  Next: More Show IP BGP,  Up: Displaying BGP routes
 
-10.11.1 Show IP BGP
+11.11.1 Show IP BGP
 -------------------
 
  -- Command: show ip bgp
@@ -5689,7 +5832,7 @@ File: quagga.info,  Node: Show IP BGP,  Next: More Show IP BGP,  Up: Displaying 
 
 File: quagga.info,  Node: More Show IP BGP,  Prev: Show IP BGP,  Up: Displaying BGP routes
 
-10.11.2 More Show IP BGP
+11.11.2 More Show IP BGP
 ------------------------
 
  -- Command: show ip bgp regexp LINE
@@ -5739,7 +5882,7 @@ File: quagga.info,  Node: More Show IP BGP,  Prev: Show IP BGP,  Up: Displaying 
 
 File: quagga.info,  Node: Capability Negotiation,  Next: Route Reflector,  Prev: Displaying BGP routes,  Up: BGP
 
-10.12 Capability Negotiation
+11.12 Capability Negotiation
 ============================
 
 When adding IPv6 routing information exchange feature to BGP. There were
@@ -5810,7 +5953,7 @@ values.
 
 File: quagga.info,  Node: Route Reflector,  Next: Route Server,  Prev: Capability Negotiation,  Up: BGP
 
-10.13 Route Reflector
+11.13 Route Reflector
 =====================
 
  -- BGP: bgp cluster-id A.B.C.D
@@ -5821,7 +5964,7 @@ File: quagga.info,  Node: Route Reflector,  Next: Route Server,  Prev: Capabilit
 
 File: quagga.info,  Node: Route Server,  Next: How to set up a 6-Bone connection,  Prev: Route Reflector,  Up: BGP
 
-10.14 Route Server
+11.14 Route Server
 ==================
 
 At an Internet Exchange point, many ISPs are connected to each other by
@@ -5850,7 +5993,7 @@ BGP router or Route Server or both at the same time.
 
 File: quagga.info,  Node: Multiple instance,  Next: BGP instance and view,  Up: Route Server
 
-10.14.1 Multiple instance
+11.14.1 Multiple instance
 -------------------------
 
 To enable multiple view function of 'bgpd', you must turn on multiple
@@ -5905,7 +6048,7 @@ neighbor by default.  To send community attribute user has to specify
 
 File: quagga.info,  Node: BGP instance and view,  Next: Routing policy,  Prev: Multiple instance,  Up: Route Server
 
-10.14.2 BGP instance and view
+11.14.2 BGP instance and view
 -----------------------------
 
 BGP instance is a normal BGP process.  The result of route selection
@@ -5949,7 +6092,7 @@ exchanging BGP routing information.
 
 File: quagga.info,  Node: Routing policy,  Next: Viewing the view,  Prev: BGP instance and view,  Up: Route Server
 
-10.14.3 Routing policy
+11.14.3 Routing policy
 ----------------------
 
 You can set different routing policy for a peer.  For example, you can
@@ -5973,7 +6116,7 @@ distribute-list 2 is applied.
 
 File: quagga.info,  Node: Viewing the view,  Prev: Routing policy,  Up: Route Server
 
-10.14.4 Viewing the view
+11.14.4 Viewing the view
 ------------------------
 
 To display routing table of BGP view, you must specify view name.
@@ -5984,7 +6127,7 @@ To display routing table of BGP view, you must specify view name.
 
 File: quagga.info,  Node: How to set up a 6-Bone connection,  Next: Dump BGP packets and table,  Prev: Route Server,  Up: BGP
 
-10.15 How to set up a 6-Bone connection
+11.15 How to set up a 6-Bone connection
 =======================================
 
      zebra configuration
@@ -6031,7 +6174,7 @@ File: quagga.info,  Node: How to set up a 6-Bone connection,  Next: Dump BGP pac
 
 File: quagga.info,  Node: Dump BGP packets and table,  Next: BGP Configuration Examples,  Prev: How to set up a 6-Bone connection,  Up: BGP
 
-10.16 Dump BGP packets and table
+11.16 Dump BGP packets and table
 ================================
 
  -- Command: dump bgp all PATH [INTERVAL]
@@ -6066,7 +6209,7 @@ File: quagga.info,  Node: Dump BGP packets and table,  Next: BGP Configuration E
 
 File: quagga.info,  Node: BGP Configuration Examples,  Prev: Dump BGP packets and table,  Up: BGP
 
-10.17 BGP Configuration Examples
+11.17 BGP Configuration Examples
 ================================
 
 Example of a session to an upstream, advertising only one prefix to it.
@@ -6295,15 +6438,14 @@ flaws.
 
 File: quagga.info,  Node: Configuring Quagga as a Route Server,  Next: VTY shell,  Prev: BGP,  Up: Top
 
-11 Configuring Quagga as a Route Server
+12 Configuring Quagga as a Route Server
 ***************************************
 
 The purpose of a Route Server is to centralize the peerings between BGP
 speakers.  For example if we have an exchange point scenario with four
 BGP speakers, each of which maintaining a BGP peering with the other
-three (*note Figure 11.2: fig:full-mesh.), we can convert it into a
-centralized scenario where each of the four establishes a single BGP
-peering against the Route Server (*note Figure 11.3: fig:route-server.).
+three we can convert it into a centralized scenario where each of the
+four establishes a single BGP peering against the Route Server.
 
    We will first describe briefly the Route Server model implemented by
 Quagga.  We will explain the commands that have been added for
@@ -6319,12 +6461,12 @@ Quagga configured as Route Server.
 
 File: quagga.info,  Node: Description of the Route Server model,  Next: Commands for configuring a Route Server,  Up: Configuring Quagga as a Route Server
 
-11.1 Description of the Route Server model
+12.1 Description of the Route Server model
 ==========================================
 
 First we are going to describe the normal processing that BGP
 announcements suffer inside a standard BGP speaker, as shown in *note
-Figure 11.1: fig:normal-processing, it consists of three steps:
+Figure 12.1: fig:normal-processing, it consists of three steps:
 
    * When an announcement is received from some peer, the 'In' filters
      configured for that peer are applied to the announcement.  These
@@ -6358,24 +6500,7 @@ From Peer D --->|(D)-|_________|   |_________|-[D]|--->To Peer D
 Key:  (X) - 'In'  Filter applied to Peer X's announcements
       [X] - 'Out' Filter applied to announcements to Peer X" ]
 
-Figure 11.1: Announcement processing inside a "normal" BGP speaker
-
- [image src="fig_topologies_full.png" alt="Full Mesh BGP Topology" text="(RF1)--(RF2)
-  | \\  / |
-  |  \\/  |
-  |  /\\  |
-  | /  \\ |
-(RF3)--(RF4)" ]
-
-Figure 11.2: Full Mesh
-
- [image src="fig_topologies_rs.png" alt="Route Server BGP Topology" text="(RF1)  (RF2)
-    \\  /
-    [RS]
-    /  \\
-(RF3)  (RF4)" ]
-
-Figure 11.3: Route Server and clients
+Figure 12.1: Announcement processing inside a "normal" BGP speaker
 
    Of course we want that the routing tables obtained in each of the
 routers are the same when using the route server than when not.  But as
@@ -6441,7 +6566,7 @@ modify some BGP attributes (next-hop, as-path and MED) that are usually
 modified by standard BGP speakers before announcing a route.
 
    The announcement processing model implemented by Quagga is shown in
-*note Figure 11.4: fig:rs-processing.  The figure shows a mixture of
+*note Figure 12.2: fig:rs-processing.  The figure shows a mixture of
 RS-clients (B, C and D) with normal BGP peers (A). There are some
 details that worth additional comments:
 
@@ -6507,13 +6632,13 @@ Key:  (X) - 'In'  Filter applied to Peer X's announcements before
       {X} - 'Import' Filter of RS-Client X, to apply X's policies
             on routes before allowing them into X's RIB." ]
 
-Figure 11.4: Announcement processing model implemented by the Route
+Figure 12.2: Announcement processing model implemented by the Route
 Server
 
 
 File: quagga.info,  Node: Commands for configuring a Route Server,  Next: Example of Route Server Configuration,  Prev: Description of the Route Server model,  Up: Configuring Quagga as a Route Server
 
-11.2 Commands for configuring a Route Server
+12.2 Commands for configuring a Route Server
 ============================================
 
 Now we will describe the commands that have been added to quagga in
@@ -6532,7 +6657,7 @@ order to support the route server features.
 
      With the route server patch, this command, apart from setting the
      transparent mode, creates a new Loc-RIB dedicated to the specified
-     peer (those named 'Loc-RIB for X' in *note Figure 11.4:
+     peer (those named 'Loc-RIB for X' in *note Figure 12.2:
      fig:rs-processing.).  Starting from that moment, every announcement
      received by the route server will be also considered for the new
      Loc-RIB.
@@ -6559,7 +6684,7 @@ order to support the route server features.
      {A.B.C.D|X:X::X:X} is the address of the RS-Client into whose
      Loc-RIB the announce is going to be inserted (how the same export
      policy is applied before different Loc-RIBs is shown in *note
-     Figure 11.4: fig:rs-processing.).
+     Figure 12.2: fig:rs-processing.).
 
  -- Route-map Command: call WORD
      This command (also used inside a route-map) jumps into a different
@@ -6572,7 +6697,7 @@ order to support the route server features.
 
 File: quagga.info,  Node: Example of Route Server Configuration,  Prev: Commands for configuring a Route Server,  Up: Configuring Quagga as a Route Server
 
-11.3 Example of Route Server Configuration
+12.3 Example of Route Server Configuration
 ==========================================
 
 Finally we are going to show how to configure a Quagga daemon to act as
@@ -6595,7 +6720,7 @@ from scenarios which were tested using the VNUML tool VNUML
 
 File: quagga.info,  Node: Configuration of the BGP routers without Route Server,  Next: Configuration of the BGP routers with Route Server,  Up: Example of Route Server Configuration
 
-11.3.1 Configuration of the BGP routers without Route Server
+12.3.1 Configuration of the BGP routers without Route Server
 ------------------------------------------------------------
 
 We will suppose that our initial scenario is an exchange point with
@@ -6670,7 +6795,7 @@ example the configuration file for router RA could be the following:
 
 File: quagga.info,  Node: Configuration of the BGP routers with Route Server,  Next: Configuration of the Route Server itself,  Prev: Configuration of the BGP routers without Route Server,  Up: Example of Route Server Configuration
 
-11.3.2 Configuration of the BGP routers with Route Server
+12.3.2 Configuration of the BGP routers with Route Server
 ---------------------------------------------------------
 
 To convert the initial scenario into one with route server, first we
@@ -6707,7 +6832,7 @@ disappeared.
 
 File: quagga.info,  Node: Configuration of the Route Server itself,  Next: Further considerations about Import and Export route-maps,  Prev: Configuration of the BGP routers with Route Server,  Up: Example of Route Server Configuration
 
-11.3.3 Configuration of the Route Server itself
+12.3.3 Configuration of the Route Server itself
 -----------------------------------------------
 
 As we said when we described the functions of a route server (*note
@@ -6831,7 +6956,7 @@ process would be identical.
 
 File: quagga.info,  Node: Further considerations about Import and Export route-maps,  Prev: Configuration of the Route Server itself,  Up: Example of Route Server Configuration
 
-11.3.4 Further considerations about Import and Export route-maps
+12.3.4 Further considerations about Import and Export route-maps
 ----------------------------------------------------------------
 
 The current version of the route server patch only allows to specify a
@@ -6904,7 +7029,7 @@ route.
 
 File: quagga.info,  Node: VTY shell,  Next: Filtering,  Prev: Configuring Quagga as a Route Server,  Up: Top
 
-12 VTY shell
+13 VTY shell
 ************
 
 'vtysh' is integrated shell of Quagga software.
@@ -6927,7 +7052,7 @@ settings.
 
 File: quagga.info,  Node: VTY shell username,  Next: VTY shell integrated configuration,  Up: VTY shell
 
-12.1 VTY shell username
+13.1 VTY shell username
 =======================
 
  -- Command: username USERNAME nopassword
@@ -6944,7 +7069,7 @@ File: quagga.info,  Node: VTY shell username,  Next: VTY shell integrated config
 
 File: quagga.info,  Node: VTY shell integrated configuration,  Prev: VTY shell username,  Up: VTY shell
 
-12.2 VTY shell integrated configuration
+13.2 VTY shell integrated configuration
 =======================================
 
  -- Command: service integrated-vtysh-config
@@ -6973,7 +7098,7 @@ File: quagga.info,  Node: VTY shell integrated configuration,  Prev: VTY shell u
 
 File: quagga.info,  Node: Filtering,  Next: Route Map,  Prev: VTY shell,  Up: Top
 
-13 Filtering
+14 Filtering
 ************
 
 Quagga provides many very flexible filtering features.  Filtering is
@@ -6988,7 +7113,7 @@ filtering is defined, it can be applied in any direction.
 
 File: quagga.info,  Node: IP Access List,  Next: IP Prefix List,  Up: Filtering
 
-13.1 IP Access List
+14.1 IP Access List
 ===================
 
  -- Command: access-list NAME permit IPV4-NETWORK
@@ -7003,7 +7128,7 @@ example.
 
 File: quagga.info,  Node: IP Prefix List,  Prev: IP Access List,  Up: Filtering
 
-13.2 IP Prefix List
+14.2 IP Prefix List
 ===================
 
 'ip prefix-list' provides the most powerful prefix based filtering
@@ -7076,7 +7201,7 @@ exactly the length specified in the prefix list.
 
 File: quagga.info,  Node: ip prefix-list description,  Next: ip prefix-list sequential number control,  Up: IP Prefix List
 
-13.2.1 ip prefix-list description
+14.2.1 ip prefix-list description
 ---------------------------------
 
  -- Command: ip prefix-list NAME description DESC
@@ -7090,7 +7215,7 @@ File: quagga.info,  Node: ip prefix-list description,  Next: ip prefix-list sequ
 
 File: quagga.info,  Node: ip prefix-list sequential number control,  Next: Showing ip prefix-list,  Prev: ip prefix-list description,  Up: IP Prefix List
 
-13.2.2 ip prefix-list sequential number control
+14.2.2 ip prefix-list sequential number control
 -----------------------------------------------
 
  -- Command: ip prefix-list sequence-number
@@ -7104,7 +7229,7 @@ File: quagga.info,  Node: ip prefix-list sequential number control,  Next: Showi
 
 File: quagga.info,  Node: Showing ip prefix-list,  Next: Clear counter of ip prefix-list,  Prev: ip prefix-list sequential number control,  Up: IP Prefix List
 
-13.2.3 Showing ip prefix-list
+14.2.3 Showing ip prefix-list
 -----------------------------
 
  -- Command: show ip prefix-list
@@ -7136,7 +7261,7 @@ File: quagga.info,  Node: Showing ip prefix-list,  Next: Clear counter of ip pre
 
 File: quagga.info,  Node: Clear counter of ip prefix-list,  Prev: Showing ip prefix-list,  Up: IP Prefix List
 
-13.2.4 Clear counter of ip prefix-list
+14.2.4 Clear counter of ip prefix-list
 --------------------------------------
 
  -- Command: clear ip prefix-list
@@ -7150,7 +7275,7 @@ File: quagga.info,  Node: Clear counter of ip prefix-list,  Prev: Showing ip pre
 
 File: quagga.info,  Node: Route Map,  Next: IPv6 Support,  Prev: Filtering,  Up: Top
 
-14 Route Map
+15 Route Map
 ************
 
 Route maps provide a means to both filter and/or apply actions to route,
@@ -7252,7 +7377,7 @@ _Deny_   deny     cont
 
 File: quagga.info,  Node: Route Map Command,  Next: Route Map Match Command,  Up: Route Map
 
-14.1 Route Map Command
+15.1 Route Map Command
 ======================
 
  -- Command: route-map ROUTE-MAP-NAME (permit|deny) ORDER
@@ -7263,7 +7388,7 @@ File: quagga.info,  Node: Route Map Command,  Next: Route Map Match Command,  Up
 
 File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,  Prev: Route Map Command,  Up: Route Map
 
-14.2 Route Map Match Command
+15.2 Route Map Match Command
 ============================
 
  -- Route-map Command: match ip address ACCESS_LIST
@@ -7287,7 +7412,7 @@ File: quagga.info,  Node: Route Map Match Command,  Next: Route Map Set Command,
 
 File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command,  Prev: Route Map Match Command,  Up: Route Map
 
-14.3 Route Map Set Command
+15.3 Route Map Set Command
 ==========================
 
  -- Route-map Command: set ip next-hop IPV4_ADDRESS
@@ -7317,7 +7442,7 @@ File: quagga.info,  Node: Route Map Set Command,  Next: Route Map Call Command, 
 
 File: quagga.info,  Node: Route Map Call Command,  Next: Route Map Exit Action Command,  Prev: Route Map Set Command,  Up: Route Map
 
-14.4 Route Map Call Command
+15.4 Route Map Call Command
 ===========================
 
  -- Route-map Command: call NAME
@@ -7327,7 +7452,7 @@ File: quagga.info,  Node: Route Map Call Command,  Next: Route Map Exit Action C
 
 File: quagga.info,  Node: Route Map Exit Action Command,  Next: Route Map Examples,  Prev: Route Map Call Command,  Up: Route Map
 
-14.5 Route Map Exit Action Command
+15.5 Route Map Exit Action Command
 ==================================
 
  -- Route-map Command: on-match next
@@ -7342,7 +7467,7 @@ File: quagga.info,  Node: Route Map Exit Action Command,  Next: Route Map Exampl
 
 File: quagga.info,  Node: Route Map Examples,  Prev: Route Map Exit Action Command,  Up: Route Map
 
-14.6 Route Map Examples
+15.6 Route Map Examples
 =======================
 
 A simple example of a route-map:
@@ -7360,7 +7485,7 @@ sophisticated useage of route-maps, including of the 'call' action.
 
 File: quagga.info,  Node: IPv6 Support,  Next: Kernel Interface,  Prev: Route Map,  Up: Top
 
-15 IPv6 Support
+16 IPv6 Support
 ***************
 
 Quagga fully supports IPv6 routing.  As described so far, Quagga
@@ -7377,7 +7502,7 @@ advertisement messages to the all nodes that exist on the network.
 
 File: quagga.info,  Node: Router Advertisement,  Up: IPv6 Support
 
-15.1 Router Advertisement
+16.1 Router Advertisement
 =========================
 
  -- Interface Command: no ipv6 nd suppress-ra
@@ -7535,7 +7660,7 @@ Router Preferences and More-Specific Routes)'.
 
 File: quagga.info,  Node: Kernel Interface,  Next: SNMP Support,  Prev: IPv6 Support,  Up: Top
 
-16 Kernel Interface
+17 Kernel Interface
 *******************
 
 There are several different methods for reading kernel routing table
@@ -7584,7 +7709,7 @@ interfaces.
 
 File: quagga.info,  Node: SNMP Support,  Next: Zebra Protocol,  Prev: Kernel Interface,  Up: Top
 
-17 SNMP Support
+18 SNMP Support
 ***************
 
 SNMP (Simple Network Managing Protocol) is a widely implemented feature
@@ -7605,7 +7730,7 @@ available through it.
 
 File: quagga.info,  Node: Getting and installing an SNMP agent,  Next: AgentX configuration,  Up: SNMP Support
 
-17.1 Getting and installing an SNMP agent
+18.1 Getting and installing an SNMP agent
 =========================================
 
 There are several SNMP agent which support SMUX or AgentX. We recommend
@@ -7624,7 +7749,7 @@ coverage.
 
 File: quagga.info,  Node: AgentX configuration,  Next: SMUX configuration,  Prev: Getting and installing an SNMP agent,  Up: SNMP Support
 
-17.2 AgentX configuration
+18.2 AgentX configuration
 =========================
 
 To enable AgentX protocol support, Quagga must have been build with the
@@ -7677,7 +7802,7 @@ transport, you can configure it through '/etc/snmp/quagga.conf':
 
 File: quagga.info,  Node: SMUX configuration,  Next: MIB and command reference,  Prev: AgentX configuration,  Up: SNMP Support
 
-17.3 SMUX configuration
+18.3 SMUX configuration
 =======================
 
 To enable SMUX protocol support, Quagga must have been build with the
@@ -7729,237 +7854,3 @@ enormous log file sizes.  If that is a problem you should consider to
 patch snmpd and comment out the troublesome 'snmp_log()' line in the
 function 'netsnmp_agent_check_packet()' in 'agent/snmp_agent.c'.
 
-
-File: quagga.info,  Node: MIB and command reference,  Next: Handling SNMP Traps,  Prev: SMUX configuration,  Up: SNMP Support
-
-17.4 MIB and command reference
-==============================
-
-The following OID numbers are used for the interprocess communication of
-snmpd and the Quagga daemons with SMUX only.
-                 (OIDs below .iso.org.dod.internet.private.enterprises)
-     zebra	.1.3.6.1.4.1.3317.1.2.1 .gnome.gnomeProducts.zebra.zserv
-     bgpd	.1.3.6.1.4.1.3317.1.2.2 .gnome.gnomeProducts.zebra.bgpd
-     ripd	.1.3.6.1.4.1.3317.1.2.3 .gnome.gnomeProducts.zebra.ripd
-     ospfd	.1.3.6.1.4.1.3317.1.2.5 .gnome.gnomeProducts.zebra.ospfd
-     ospf6d	.1.3.6.1.4.1.3317.1.2.6 .gnome.gnomeProducts.zebra.ospf6d
-
-   Sadly, SNMP has not been implemented in all daemons yet.  The
-following OID numbers are used for querying the SNMP daemon by a client:
-     zebra	.1.3.6.1.2.1.4.24   .iso.org.dot.internet.mgmt.mib-2.ip.ipForward
-     ospfd	.1.3.6.1.2.1.14	    .iso.org.dot.internet.mgmt.mib-2.ospf
-     bgpd	.1.3.6.1.2.1.15	    .iso.org.dot.internet.mgmt.mib-2.bgp
-     ripd	.1.3.6.1.2.1.23	    .iso.org.dot.internet.mgmt.mib-2.rip2
-     ospf6d	.1.3.6.1.3.102	    .iso.org.dod.internet.experimental.ospfv3
-
-   The following syntax is understood by the Quagga daemons for
-configuring SNMP using SMUX:
- -- Command: smux peer OID
- -- Command: no smux peer OID
-
- -- Command: smux peer OID PASSWORD
- -- Command: no smux peer OID PASSWORD
-
-   Here is the syntax for using AgentX:
- -- Command: agentx
- -- Command: no agentx
-
-
-File: quagga.info,  Node: Handling SNMP Traps,  Prev: MIB and command reference,  Up: SNMP Support
-
-17.5 Handling SNMP Traps
-========================
-
-To handle snmp traps make sure your snmp setup of quagga works correctly
-as described in the quagga documentation in *Note SNMP Support::.
-
-   The BGP4 mib will send traps on peer up/down events.  These should be
-visible in your snmp logs with a message similar to:
-
-   'snmpd[13733]: Got trap from peer on fd 14'
-
-   To react on these traps they should be handled by a trapsink.
-Configure your trapsink by adding the following lines to
-'/etc/snmpd/snmpd.conf':
-
-       # send traps to the snmptrapd on localhost
-       trapsink localhost
-
-   This will send all traps to an snmptrapd running on localhost.  You
-can of course also use a dedicated management station to catch traps.
-Configure the snmptrapd daemon by adding the following line to
-'/etc/snmpd/snmptrapd.conf':
-
-       traphandle .1.3.6.1.4.1.3317.1.2.2 /etc/snmp/snmptrap_handle.sh
-
-   This will use the bash script '/etc/snmp/snmptrap_handle.sh' to
-handle the BGP4 traps.  To add traps for other protocol daemons, lookup
-their appropriate OID from their mib.  (For additional information about
-which traps are supported by your mib, lookup the mib on
-<http://www.oidview.com/mibs/detail.html>).
-
-   Make sure snmptrapd is started.
-
-   The snmptrap_handle.sh script I personally use for handling BGP4
-traps is below.  You can of course do all sorts of things when handling
-traps, like sound a siren, have your display flash, etc., be creative
-;).
-
-  #!/bin/bash
-
-  # routers name
-  ROUTER=`hostname -s`
-
-  #email address use to sent out notification
-  EMAILADDR="john@doe.com"
-  #email address used (allongside above) where warnings should be sent
-  EMAILADDR_WARN="sms-john@doe.com"
-
-  # type of notification
-  TYPE="Notice"
-
-  # local snmp community for getting AS belonging to peer
-  COMMUNITY="<community>"
-
-  # if a peer address is in $WARN_PEERS a warning should be sent
-  WARN_PEERS="192.0.2.1"
-
-
-  # get stdin
-  INPUT=`cat -`
-
-  # get some vars from stdin
-  uptime=`echo $INPUT | cut -d' ' -f5`
-  peer=`echo $INPUT | cut -d' ' -f8 | sed -e 's/SNMPv2-SMI::mib-2.15.3.1.14.//g'`
-  peerstate=`echo $INPUT | cut -d' ' -f13`
-  errorcode=`echo $INPUT | cut -d' ' -f9 | sed -e 's/\"//g'`
-  suberrorcode=`echo $INPUT | cut -d' ' -f10 | sed -e 's/\"//g'`
-  remoteas=`snmpget -v2c -c $COMMUNITY localhost SNMPv2-SMI::mib-2.15.3.1.9.$peer | cut -d' ' -f4`
-
-  WHOISINFO=`whois -h whois.ripe.net " -r AS$remoteas" | egrep '(as-name|descr)'`
-  asname=`echo "$WHOISINFO" | grep "^as-name:" | sed -e 's/^as-name://g' -e 's/  //g' -e 's/^ //g' | uniq`
-  asdescr=`echo "$WHOISINFO" | grep "^descr:" | sed -e 's/^descr://g' -e 's/  //g' -e 's/^ //g' | uniq`
-
-  # if peer address is in $WARN_PEER, the email should also
-  # be sent to $EMAILADDR_WARN
-  for ip in $WARN_PEERS; do
-    if [ "x$ip" == "x$peer" ]; then
-      EMAILADDR="$EMAILADDR,$EMAILADDR_WARN"
-      TYPE="WARNING"
-      break
-    fi
-  done
-
-
-  # convert peer state
-  case "$peerstate" in
-    1) peerstate="Idle" ;;
-    2) peerstate="Connect" ;;
-    3) peerstate="Active" ;;
-    4) peerstate="Opensent" ;;
-    5) peerstate="Openconfirm" ;;
-    6) peerstate="Established" ;;
-    *) peerstate="Unknown" ;;
-  esac
-
-  # get textual messages for errors
-  case "$errorcode" in
-    00)
-      error="No error"
-      suberror=""
-      ;;
-    01)
-      error="Message Header Error"
-      case "$suberrorcode" in
-        01) suberror="Connection Not Synchronized" ;;
-        02) suberror="Bad Message Length" ;;
-        03) suberror="Bad Message Type" ;;
-        *) suberror="Unknown" ;;
-      esac
-      ;;
-    02)
-      error="OPEN Message Error"
-      case "$suberrorcode" in
-        01) suberror="Unsupported Version Number" ;;
-        02) suberror="Bad Peer AS" ;;
-        03) suberror="Bad BGP Identifier" ;;
-        04) suberror="Unsupported Optional Parameter" ;;
-        05) suberror="Authentication Failure" ;;
-        06) suberror="Unacceptable Hold Time" ;;
-        *) suberror="Unknown" ;;
-      esac
-      ;;
-    03)
-      error="UPDATE Message Error"
-      case "$suberrorcode" in
-        01) suberror="Malformed Attribute List" ;;
-        02) suberror="Unrecognized Well-known Attribute" ;;
-        03) suberror="Missing Well-known Attribute" ;;
-        04) suberror="Attribute Flags Error" ;;
-        05) suberror="Attribute Length Error" ;;
-        06) suberror="Invalid ORIGIN Attribute" ;;
-        07) suberror="AS Routing Loop" ;;
-        08) suberror="Invalid NEXT_HOP Attribute" ;;
-        09) suberror="Optional Attribute Error" ;;
-        10) suberror="Invalid Network Field" ;;
-        11) suberror="Malformed AS_PATH" ;;
-        *) suberror="Unknown" ;;
-      esac
-      ;;
-    04)
-      error="Hold Timer Expired"
-      suberror=""
-      ;;
-    05)
-      error="Finite State Machine Error"
-      suberror=""
-      ;;
-    06)
-      error="Cease"
-      case "$suberrorcode" in
-        01) suberror="Maximum Number of Prefixes Reached" ;;
-        02) suberror="Administratively Shutdown" ;;
-        03) suberror="Peer Unconfigured" ;;
-        04) suberror="Administratively Reset" ;;
-        05) suberror="Connection Rejected" ;;
-        06) suberror="Other Configuration Change" ;;
-        07) suberror="Connection collision resolution" ;;
-        08) suberror="Out of Resource" ;;
-        09) suberror="MAX" ;;
-        *) suberror="Unknown" ;;
-      esac
-      ;;
-    *)
-      error="Unknown"
-      suberror=""
-      ;;
-  esac
-
-  # create textual message from errorcodes
-  if [ "x$suberror" == "x" ]; then
-    NOTIFY="$errorcode ($error)"
-  else
-    NOTIFY="$errorcode/$suberrorcode ($error/$suberror)"
-  fi
-
-
-  # form a decent subject
-  SUBJECT="$TYPE: $ROUTER [bgp] $peer is $peerstate: $NOTIFY"
-  # create the email body
-  MAIL=`cat << EOF
-  BGP notification on router $ROUTER.
-
-  Peer: $peer
-  AS: $remoteas
-  New state: $peerstate
-  Notification: $NOTIFY
-
-  Info:
-  $asname
-  $asdescr
-
-  Snmpd uptime: $uptime
-  EOF`
-
-  # mail the notification
-  echo "$MAIL" | mail -s "$SUBJECT" $EMAILADDR

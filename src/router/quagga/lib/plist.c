@@ -675,7 +675,16 @@ vty_prefix_list_install (struct vty *vty, afi_t afi, const char *name,
   int seqnum = -1;
   int lenum = 0;
   int genum = 0;
-
+  
+  /* This code only works for IP.  Provide a safe-guard and user-visible
+   * warning
+   */
+  if (!(afi == AFI_IP || afi == AFI_IP6))
+    {
+      vty_out (vty, "%% prefix must be IPv4 or IPv6!%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+  
   /* Sequential number. */
   if (seq)
     seqnum = atoi (seq);

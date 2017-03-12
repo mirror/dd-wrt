@@ -598,7 +598,7 @@ gen_spgrid_topology (struct vty *vty, struct list *topology)
     init_rand ( seed1);
     pl = pl - pm + 1;
 
-    for ( x = 0; x < X; x ++ )
+    for ( x = 0; x < X; x ++ ) {
       for ( y = 0; y < Y; y ++ ) {
         p_t = pm + nrand ( pl );
         if ( pn_f ) p_t *= (long) ( (1 + x) * pn );
@@ -606,9 +606,10 @@ gen_spgrid_topology (struct vty *vty, struct list *topology)
 
         p[ NODE ( x, y ) ] = p_t;
       }
-      p[n0] = 0;
-      if ( s_f ) p[n0-1] = 0;
     }
+    p[n0] = 0;
+    if ( s_f ) p[n0-1] = 0;
+  }
 
   if ( s_f ) /* additional arcs from artifical source */
     {

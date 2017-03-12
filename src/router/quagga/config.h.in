@@ -647,6 +647,9 @@
 /* Maximum number of paths for a route */
 #undef MULTIPATH_NUM
 
+/* nhrpd vty socket */
+#undef NHRP_VTYSH_PATH
+
 /* OpenBSD */
 #undef OPEN_BSD
 
@@ -685,6 +688,9 @@
 
 /* isisd PID */
 #undef PATH_ISISD_PID
+
+/* nhrpd PID */
+#undef PATH_NHRPD_PID
 
 /* ospf6d PID */
 #undef PATH_OSPF6D_PID

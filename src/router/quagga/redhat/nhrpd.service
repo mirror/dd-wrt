@@ -1,15 +1,15 @@
 [Unit]
-Description=RIP routing daemon for IPv6
+Description=Quagga NHRP daemon
 BindsTo=zebra.service
 Wants=network.target
 After=zebra.service network-pre.target
 Before=network.target
-ConditionPathExists=/etc/quagga/ripngd.conf
+ConditionPathExists=/etc/quagga/nhrpd.conf
 
 [Service]
 Type=forking
 EnvironmentFile=/etc/sysconfig/quagga
-ExecStart=/usr/sbin/ripngd -d $RIPNGD_OPTS -f /etc/quagga/ripngd.conf
+ExecStart=/usr/sbin/nhrpd -d $NHRPD_OPTS -f /etc/quagga/nhrpdd.conf
 Restart=on-abort
 
 [Install]

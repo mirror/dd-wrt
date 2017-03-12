@@ -97,6 +97,7 @@ struct ospf6_path
   u_int8_t metric_type;
   u_int32_t cost;
   u_int32_t cost_e2;
+  u_int32_t tag;
 };
 
 #define OSPF6_PATH_TYPE_NONE         0

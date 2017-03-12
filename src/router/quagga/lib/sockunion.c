@@ -632,6 +632,21 @@ sockunion_get_addr(const union sockunion *su)
   return NULL;
 }
 
+unsigned short
+sockunion_get_port (const union sockunion *su)
+{
+  switch (sockunion_family (su))
+    {
+    case AF_INET:
+      return ntohs(su->sin.sin_port);
+#ifdef HAVE_IPV6
+    case AF_INET6:
+      return ntohs(su->sin6.sin6_port);
+#endif /* HAVE_IPV6 */
+    }
+  return 0;
+}
+
 void
 sockunion_set(union sockunion *su, int family, const u_char *addr, size_t bytes)
 {

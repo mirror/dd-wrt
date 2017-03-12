@@ -320,6 +320,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BGPD = @BGPD@
+CARES_CFLAGS = @CARES_CFLAGS@
+CARES_LIBS = @CARES_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -377,6 +379,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NETSNMP_CONFIG = @NETSNMP_CONFIG@
+NHRPD = @NHRPD@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -394,6 +397,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
 PERL = @PERL@
@@ -505,6 +509,7 @@ AM_CPPFLAGS = -I.. -I$(top_srcdir) -I$(top_srcdir)/lib -I$(top_builddir)/lib
 @BGPD_FALSE@TESTS_BGPD = 
 @BGPD_TRUE@TESTS_BGPD = aspathtest testbgpcap ecommtest testbgpmpattr testbgpmpath
 BUILT_SOURCES = test-commands-defun.c
+CLEANFILES = test-commands-defun.c bgpd libzebra
 noinst_HEADERS = prng.h tests.h common-cli.h
 testcli_SOURCES = test-cli.c common-cli.c
 testsig_SOURCES = test-sig.c
@@ -964,6 +969,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)

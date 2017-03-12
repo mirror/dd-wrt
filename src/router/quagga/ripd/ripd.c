@@ -746,9 +746,9 @@ rip_packet_dump (struct rip_packet *packet, int size, const char *sndrcv)
 		  zlog_debug ("  family 0x%X type %d (MD5 data)",
 			     ntohs (rte->family), ntohs (rte->tag));
 		  zlog_debug ("    MD5: %02X%02X%02X%02X%02X%02X%02X%02X"
-			     "%02X%02X%02X%02X%02X%02X%02X",
+			     "%02X%02X%02X%02X%02X%02X%02X%02X",
                              p[0], p[1], p[2], p[3], p[4], p[5], p[6],
-                             p[7], p[9], p[10], p[11], p[12], p[13],
+                             p[7], p[8], p[9], p[10], p[11], p[12], p[13],
                              p[14], p[15]);
 		}
 	      else
@@ -1312,17 +1312,19 @@ rip_response_process (struct rip_packet *packet, int size,
 	  rip_peer_bad_route (from);
 	  continue;
 	}
-
-      /* Default route's netmask is ignored. */
+      
+      /* Default route sanity check */
       if (packet->version == RIPv2
-	  && (rte->prefix.s_addr == 0)
-	  && (rte->mask.s_addr != 0))
-	{
-	  if (IS_RIP_DEBUG_EVENT)
-	    zlog_debug ("Default route with non-zero netmask.  Set zero to netmask");
-	  rte->mask.s_addr = 0;
-	}
-	  
+          && (rte->mask.s_addr == 0)
+          && (rte->prefix.s_addr != 0))
+        {
+          if (IS_RIP_DEBUG_EVENT)
+            zlog_warn ("Malformed route, zero netmask "
+                       "with non-zero addr - dropping route!");
+          rip_peer_bad_route (from);
+          continue;
+        }
+      
       /* Routing table updates. */
       rip_rte_process (rte, from, ifc->ifp);
     }
@@ -1510,7 +1512,8 @@ rip_send_packet (u_char * buf, int size, struct sockaddr_in *to,
 void
 rip_redistribute_add (int type, int sub_type, struct prefix_ipv4 *p, 
 		      ifindex_t ifindex, struct in_addr *nexthop,
-                      unsigned int metric, unsigned char distance)
+                      unsigned int metric, unsigned char distance,
+                      route_tag_t tag)
 {
   int ret;
   struct route_node *rp = NULL;
@@ -1531,6 +1534,8 @@ rip_redistribute_add (int type, int sub_type, struct prefix_ipv4 *p,
   newinfo.metric = 1;
   newinfo.external_metric = metric;
   newinfo.distance = distance;
+  if (tag <= UINT16_MAX) /* RIP only supports 16 bit tags */
+    newinfo.tag = tag;
   newinfo.rp = rp;
   if (nexthop)
     newinfo.nexthop = *nexthop;
@@ -2297,7 +2302,7 @@ rip_output_process (struct connected *ifc, struct sockaddr_in *to,
 	        if (IS_RIP_DEBUG_PACKET)
 	          zlog_debug ("RIP %s/%d is filtered by route-map out",
 			     inet_ntoa (p->prefix), p->prefixlen);
-		  continue;
+                continue;
 	      }
 	  }
            
@@ -2939,7 +2944,7 @@ DEFUN (rip_route,
 
   node->info = (char *)"static";
 
-  rip_redistribute_add (ZEBRA_ROUTE_RIP, RIP_ROUTE_STATIC, &p, 0, NULL, 0, 0);
+  rip_redistribute_add (ZEBRA_ROUTE_RIP, RIP_ROUTE_STATIC, &p, 0, NULL, 0, 0, 0);
 
   return CMD_SUCCESS;
 }

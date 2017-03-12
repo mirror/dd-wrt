@@ -91,6 +91,12 @@ ripng_zebra_ipv6_send (struct route_node *rp, u_char cmd)
       SET_FLAG (api.message, ZAPI_MESSAGE_METRIC);
       api.metric = rinfo->metric;
 
+      if (rinfo->tag)
+        {
+          SET_FLAG (api.message, ZAPI_MESSAGE_TAG);
+          api.tag = rinfo->tag;
+        }
+
       zapi_ipv6_route (cmd, zclient,
                        (struct prefix_ipv6 *)&rp->p, &api);
 
@@ -172,8 +178,14 @@ ripng_zebra_read_ipv6 (int command, struct zclient *zclient,
   else
     api.metric = 0;
 
+  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_TAG))
+    api.tag = stream_getl (s);
+  else
+    api.tag = 0;
+
   if (command == ZEBRA_IPV6_ROUTE_ADD)
-    ripng_redistribute_add (api.type, RIPNG_ROUTE_REDISTRIBUTE, &p, ifindex, &nexthop);
+    ripng_redistribute_add (api.type, RIPNG_ROUTE_REDISTRIBUTE, &p,
+                            ifindex, &nexthop, api.tag);
   else
     ripng_redistribute_delete (api.type, RIPNG_ROUTE_REDISTRIBUTE, &p, ifindex);
 

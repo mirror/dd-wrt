@@ -123,10 +123,10 @@ am_libbgp_a_OBJECTS = bgpd.$(OBJEXT) bgp_fsm.$(OBJEXT) \
 	bgp_packet.$(OBJEXT) bgp_network.$(OBJEXT) \
 	bgp_filter.$(OBJEXT) bgp_regex.$(OBJEXT) bgp_clist.$(OBJEXT) \
 	bgp_dump.$(OBJEXT) bgp_snmp.$(OBJEXT) bgp_ecommunity.$(OBJEXT) \
-	bgp_mplsvpn.$(OBJEXT) bgp_nexthop.$(OBJEXT) bgp_damp.$(OBJEXT) \
-	bgp_table.$(OBJEXT) bgp_advertise.$(OBJEXT) bgp_vty.$(OBJEXT) \
-	bgp_mpath.$(OBJEXT) bgp_encap.$(OBJEXT) \
-	bgp_encap_tlv.$(OBJEXT) bgp_nht.$(OBJEXT)
+	bgp_lcommunity.$(OBJEXT) bgp_mplsvpn.$(OBJEXT) \
+	bgp_nexthop.$(OBJEXT) bgp_damp.$(OBJEXT) bgp_table.$(OBJEXT) \
+	bgp_advertise.$(OBJEXT) bgp_vty.$(OBJEXT) bgp_mpath.$(OBJEXT) \
+	bgp_encap.$(OBJEXT) bgp_encap_tlv.$(OBJEXT) bgp_nht.$(OBJEXT)
 libbgp_a_OBJECTS = $(am_libbgp_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(examplesdir)"
@@ -241,6 +241,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BGPD = @BGPD@
+CARES_CFLAGS = @CARES_CFLAGS@
+CARES_LIBS = @CARES_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -298,6 +300,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NETSNMP_CONFIG = @NETSNMP_CONFIG@
+NHRPD = @NHRPD@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -315,6 +318,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
 PERL = @PERL@
@@ -414,7 +418,8 @@ libbgp_a_SOURCES = \
 	bgpd.c bgp_fsm.c bgp_aspath.c bgp_community.c bgp_attr.c \
 	bgp_debug.c bgp_route.c bgp_zebra.c bgp_open.c bgp_routemap.c \
 	bgp_packet.c bgp_network.c bgp_filter.c bgp_regex.c bgp_clist.c \
-	bgp_dump.c bgp_snmp.c bgp_ecommunity.c bgp_mplsvpn.c bgp_nexthop.c \
+	bgp_dump.c bgp_snmp.c bgp_ecommunity.c bgp_lcommunity.c \
+	bgp_mplsvpn.c bgp_nexthop.c \
 	bgp_damp.c bgp_table.c bgp_advertise.c bgp_vty.c bgp_mpath.c \
 	bgp_encap.c bgp_encap_tlv.c bgp_nht.c
 
@@ -422,7 +427,8 @@ noinst_HEADERS = \
 	bgp_aspath.h bgp_attr.h bgp_community.h bgp_debug.h bgp_fsm.h \
 	bgp_network.h bgp_open.h bgp_packet.h bgp_regex.h bgp_route.h \
 	bgpd.h bgp_filter.h bgp_clist.h bgp_dump.h bgp_zebra.h \
-	bgp_ecommunity.h bgp_mplsvpn.h bgp_nexthop.h bgp_damp.h bgp_table.h \
+	bgp_ecommunity.h bgp_lcommunity.h \
+	bgp_mplsvpn.h bgp_nexthop.h bgp_damp.h bgp_table.h \
 	bgp_advertise.h bgp_snmp.h bgp_vty.h bgp_mpath.h \
 	bgp_encap.h bgp_encap_tlv.h bgp_encap_types.h bgp_nht.h
 
@@ -601,6 +607,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_encap_tlv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_filter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_fsm.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_lcommunity.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_mpath.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bgp_mplsvpn.Po@am__quote@

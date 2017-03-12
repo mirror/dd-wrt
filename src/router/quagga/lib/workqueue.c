@@ -85,7 +85,8 @@ work_queue_new (struct thread_master *m, const char *queue_name)
   listnode_add (work_queues, new);
   
   new->cycles.granularity = WORK_QUEUE_MIN_GRANULARITY;
-
+  new->cycles.worst = UINT_MAX;
+  
   /* Default values, can be overriden by caller */
   new->spec.hold = WORK_QUEUE_DEFAULT_HOLD;
     
@@ -184,29 +185,33 @@ DEFUN(show_work_queues,
   struct work_queue *wq;
   
   vty_out (vty, 
-           "%c %8s %5s %8s %21s%s",
+           "%c %8s %5s %8s %21s %6s %5s%s",
            ' ', "List","(ms) ","Q. Runs","Cycle Counts   ",
+           " ","Worst",
            VTY_NEWLINE);
   vty_out (vty,
-           "%c %8s %5s %8s %7s %6s %6s %s%s",
+           "%c %8s %5s %8s %7s %6s %6s %6s %5s %s%s",
            'P',
            "Items",
            "Hold",
            "Total",
-           "Best","Gran.","Avg.", 
+           "Best","Worst","Gran.","Avg.", "Lat.",
            "Name", 
            VTY_NEWLINE);
  
   for (ALL_LIST_ELEMENTS_RO (work_queues, node, wq))
     {
-      vty_out (vty,"%c %8d %5d %8ld %7d %6d %6u %s%s",
+      vty_out (vty,"%c %8u %5u %8lu %7u %6u %6u %6u %5lu %s%s",
                (CHECK_FLAG (wq->flags, WQ_UNPLUGGED) ? ' ' : 'P'),
                listcount (wq->items),
                wq->spec.hold,
                wq->runs,
-               wq->cycles.best, wq->cycles.granularity,
+               wq->cycles.best, 
+               MIN(wq->cycles.best, wq->cycles.worst),
+               wq->cycles.granularity,
                  (wq->runs) ? 
                    (unsigned int) (wq->cycles.total / wq->runs) : 0,
+               wq->worst_usec,
                wq->name,
                VTY_NEWLINE);
     }
@@ -249,6 +254,7 @@ work_queue_run (struct thread *thread)
 {
   struct work_queue *wq;
   struct work_queue_item *item;
+  unsigned long took;
   wq_item_status ret;
   unsigned int cycles = 0;
   struct listnode *node, *nnode;
@@ -267,6 +273,8 @@ work_queue_run (struct thread *thread)
    * provide some hysteris, but not past cycles.best or 2*cycles.
    *
    * Best: starts low, can only increase
+   *
+   * Worst: starts at MAX, can only decrease.
    *
    * Granularity: starts at WORK_QUEUE_MIN_GRANULARITY, can be decreased 
    *              if we run to end of time slot, can increase otherwise 
@@ -342,7 +350,7 @@ work_queue_run (struct thread *thread)
 
     /* test if we should yield */
     if ( !(cycles % wq->cycles.granularity) 
-        && thread_should_yield (thread))
+        && (took = thread_should_yield (thread)))
       {
         yielded = 1;
         goto stats;
@@ -353,24 +361,32 @@ stats:
 
 #define WQ_HYSTERESIS_FACTOR 4
 
+  if (cycles > wq->cycles.best)
+    wq->cycles.best = cycles;
+  
+  if (took > wq->worst_usec)
+    wq->worst_usec = took;
+    
   /* we yielded, check whether granularity should be reduced */
   if (yielded && (cycles < wq->cycles.granularity))
     {
       wq->cycles.granularity = ((cycles > 0) ? cycles 
                                              : WORK_QUEUE_MIN_GRANULARITY);
+      if (cycles < wq->cycles.worst)
+        wq->cycles.worst = cycles;
     }
   /* otherwise, should granularity increase? */
   else if (cycles >= (wq->cycles.granularity))
     {
-      if (cycles > wq->cycles.best)
-        wq->cycles.best = cycles;
-      
-      /* along with yielded check, provides hysteresis for granularity */
+      /* along with yielded check, provides hysteresis for granularity */      
       if (cycles > (wq->cycles.granularity * WQ_HYSTERESIS_FACTOR
                                            * WQ_HYSTERESIS_FACTOR))
         wq->cycles.granularity *= WQ_HYSTERESIS_FACTOR; /* quick ramp-up */
       else if (cycles > (wq->cycles.granularity * WQ_HYSTERESIS_FACTOR))
         wq->cycles.granularity += WQ_HYSTERESIS_FACTOR;
+        
+      /* clamp granularity down to the worst yielded cycle count */
+      wq->cycles.granularity = MIN(wq->cycles.granularity, wq->cycles.worst);
     }
 #undef WQ_HYSTERIS_FACTOR
   

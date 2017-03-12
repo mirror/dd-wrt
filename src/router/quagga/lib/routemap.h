@@ -22,6 +22,8 @@
 #ifndef _ZEBRA_ROUTEMAP_H
 #define _ZEBRA_ROUTEMAP_H
 
+#include "prefix.h"
+
 /* Route map's type. */
 enum route_map_type
 {
@@ -195,5 +197,8 @@ extern route_map_result_t route_map_apply (struct route_map *map,
 extern void route_map_add_hook (void (*func) (const char *));
 extern void route_map_delete_hook (void (*func) (const char *));
 extern void route_map_event_hook (void (*func) (route_map_event_t, const char *));
+
+extern void *route_map_rule_tag_compile (const char *arg);
+extern void route_map_rule_tag_free (void *rule);
 
 #endif /* _ZEBRA_ROUTEMAP_H */

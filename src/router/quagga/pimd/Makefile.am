@@ -52,7 +52,8 @@ libpim_a_SOURCES = \
 	pim_oil.c pim_zlookup.c pim_pim.c pim_tlv.c pim_neighbor.c \
 	pim_hello.c pim_ifchannel.c pim_join.c pim_assert.c \
 	pim_msg.c pim_upstream.c pim_rpf.c pim_macro.c \
-	pim_igmp_join.c pim_ssmpingd.c pim_int.c pim_static.c
+	pim_igmp_join.c pim_ssmpingd.c pim_int.c pim_static.c \
+        pim_routemap.c
 
 noinst_HEADERS = \
 	pimd.h pim_version.h pim_cmd.h pim_signals.h pim_iface.h \

@@ -96,9 +96,10 @@ target_triplet = @target@
 @OSPFD_TRUE@am__append_6 = ospfd.8
 @RIPD_TRUE@am__append_7 = ripd.8
 @RIPNGD_TRUE@am__append_8 = ripngd.8
-@VTYSH_TRUE@am__append_9 = vtysh.1
-@WATCHQUAGGA_TRUE@am__append_10 = watchquagga.8
-@ZEBRA_TRUE@am__append_11 = zebra.8
+@NHRPD_TRUE@am__append_9 = nhrpd.8
+@VTYSH_TRUE@am__append_10 = vtysh.1
+@WATCHQUAGGA_TRUE@am__append_11 = watchquagga.8
+@ZEBRA_TRUE@am__append_12 = zebra.8
 subdir = doc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_sys_weak_alias.m4 \
@@ -111,7 +112,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/version.texi \
 	$(srcdir)/stamp-vti $(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = defines.texi
+CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -155,7 +156,7 @@ AM_V_texidevnull = $(am__v_texidevnull_@AM_V@)
 am__v_texidevnull_ = $(am__v_texidevnull_@AM_DEFAULT_V@)
 am__v_texidevnull_0 = > /dev/null
 am__v_texidevnull_1 = 
-INFO_DEPS = $(srcdir)/quagga.info
+INFO_DEPS = quagga.info
 am__TEXINFO_TEX_DIR = $(srcdir)
 DVIS = quagga.dvi
 PDFS = quagga.pdf
@@ -165,7 +166,6 @@ TEXINFOS = quagga.texi
 TEXI2DVI = texi2dvi
 TEXI2PDF = $(TEXI2DVI) --pdf --batch
 MAKEINFOHTML = $(MAKEINFO) --html
-AM_MAKEINFOHTMLFLAGS = $(AM_MAKEINFOFLAGS)
 DVIPS = dvips
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
@@ -206,8 +206,8 @@ man8dir = $(mandir)/man8
 NROFF = nroff
 MANS = $(man_MANS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-am__DIST_COMMON = $(quagga_TEXINFOS) $(srcdir)/Makefile.in \
-	$(srcdir)/defines.texi.in mdate-sh texinfo.tex
+am__DIST_COMMON = $(quagga_TEXINFOS) $(srcdir)/Makefile.in mdate-sh \
+	texinfo.tex
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -218,6 +218,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BGPD = @BGPD@
+CARES_CFLAGS = @CARES_CFLAGS@
+CARES_LIBS = @CARES_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -275,6 +277,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NETSNMP_CONFIG = @NETSNMP_CONFIG@
+NHRPD = @NHRPD@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -292,6 +295,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
 PERL = @PERL@
@@ -404,9 +408,7 @@ PNGTOPDF = $(PNGTOEPS)
 EPSTOPDF = epstopdf
 
 # The figure sources
-figures_names_parts = -normal-processing -rs-processing \
-	_topologies_full _topologies_rs
-
+figures_names_parts = -normal-processing -rs-processing
 figures_sources = $(figures_names_parts:%=fig%.dia)
 figures_png = $(figures_names_parts:%=fig%.png)
 figures_pdf = $(figures_names_parts:%=fig%.pdf)
@@ -419,32 +421,35 @@ figures_txt = $(figures_names_parts:%=fig%.txt)
 # provided by automake. If you are an automake wizard, please feel free to
 # compact it somehow.
 
-# Built from defines.texi.in
-BUILT_SOURCES = defines.texi
+#quagga.pdf: $(info_TEXINFOS) $(quagga_TEXINFOS)
+#	$(TEXI2PDF) -o "$@" $< || true
 info_TEXINFOS = quagga.texi
 quagga_TEXINFOS = appendix.texi basic.texi bgpd.texi filter.texi \
 	install.texi ipv6.texi kernel.texi main.texi ospf6d.texi ospfd.texi \
 	overview.texi protocol.texi ripd.texi ripngd.texi routemap.texi \
 	snmp.texi vtysh.texi routeserver.texi defines.texi $(figures_png) \
-	snmptrap.texi ospf_fundamentals.texi isisd.texi $(figures_txt)
+	snmptrap.texi ospf_fundamentals.texi isisd.texi nhrpd.texi \
+	$(figures_txt)
 
 man_MANS = $(am__append_1) $(am__append_2) $(am__append_3) \
 	$(am__append_4) $(am__append_5) $(am__append_6) \
 	$(am__append_7) $(am__append_8) $(am__append_9) \
-	$(am__append_10) $(am__append_11)
+	$(am__append_10) $(am__append_11) $(am__append_12)
+AM_MAKEINFOHTMLFLAGS = --css-include=$(srcdir)/texinfo.css
 EXTRA_DIST = BGP-TypeCode draft-zebra-00.ms draft-zebra-00.txt \
 	bgpd.8 isisd.8 ospf6d.8 ospfclient.8 ospfd.8 ripd.8 \
-	ripngd.8 pimd.8 vtysh.1 watchquagga.8 zebra.8 \
+	ripngd.8 nhrpd.8 pimd.8 vtysh.1 watchquagga.8 zebra.8 \
 	mpls/ChangeLog.opaque.txt mpls/cli_summary.txt \
 	mpls/opaque_lsa.txt mpls/ospfd.conf \
 	$(figures_sources) $(figures_png) $(figures_txt) \
-	texinfo.tex
+	texinfo.tex texinfo.css
 
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+CLEANFILES = *.{fn,fns,cp,cps,ky,kys}
+DISTCLEANFILES = quagga.info*
+all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .png .eps .dia .pdf .dvi .html .info .ps .texi
+.SUFFIXES: .png .eps .dia .pdf .dvi .ps
 $(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -474,8 +479,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-defines.texi: $(top_builddir)/config.status $(srcdir)/defines.texi.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -483,52 +486,45 @@ mostlyclean-libtool:
 clean-libtool:
 	-rm -rf .libs _libs
 
-.texi.info:
+quagga.info: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS)
 	$(AM_V_MAKEINFO)restore=: && backupdir="$(am__leading_dot)am$$$$" && \
-	am__cwd=`pwd` && $(am__cd) $(srcdir) && \
 	rm -rf $$backupdir && mkdir $$backupdir && \
 	if ($(MAKEINFO) --version) >/dev/null 2>&1; then \
 	  for f in $@ $@-[0-9] $@-[0-9][0-9] $(@:.info=).i[0-9] $(@:.info=).i[0-9][0-9]; do \
 	    if test -f $$f; then mv $$f $$backupdir; restore=mv; else :; fi; \
 	  done; \
 	else :; fi && \
-	cd "$$am__cwd"; \
 	if $(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	 -o $@ $<; \
+	 -o $@ `test -f 'quagga.texi' || echo '$(srcdir)/'`quagga.texi; \
 	then \
 	  rc=0; \
-	  $(am__cd) $(srcdir); \
 	else \
 	  rc=$$?; \
-	  $(am__cd) $(srcdir) && \
 	  $$restore $$backupdir/* `echo "./$@" | sed 's|[^/]*$$||'`; \
 	fi; \
 	rm -rf $$backupdir; exit $$rc
 
-.texi.dvi:
+quagga.dvi: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS) 
 	$(AM_V_TEXI2DVI)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2DVI) $(AM_V_texinfo) --build-dir=$(@:.dvi=.t2d) -o $@ $(AM_V_texidevnull) \
-	$<
+	`test -f 'quagga.texi' || echo '$(srcdir)/'`quagga.texi
 
-.texi.pdf:
+quagga.pdf: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS) 
 	$(AM_V_TEXI2PDF)TEXINPUTS="$(am__TEXINFO_TEX_DIR)$(PATH_SEPARATOR)$$TEXINPUTS" \
 	MAKEINFO='$(MAKEINFO) $(AM_MAKEINFOFLAGS) $(MAKEINFOFLAGS) -I $(srcdir)' \
 	$(TEXI2PDF) $(AM_V_texinfo) --build-dir=$(@:.pdf=.t2p) -o $@ $(AM_V_texidevnull) \
-	$<
+	`test -f 'quagga.texi' || echo '$(srcdir)/'`quagga.texi
 
-.texi.html:
+quagga.html: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS) 
 	$(AM_V_MAKEINFO)rm -rf $(@:.html=.htp)
 	$(AM_V_at)if $(MAKEINFOHTML) $(AM_MAKEINFOHTMLFLAGS) $(MAKEINFOFLAGS) -I $(srcdir) \
-	 -o $(@:.html=.htp) $<; \
+	 -o $(@:.html=.htp) `test -f 'quagga.texi' || echo '$(srcdir)/'`quagga.texi; \
 	then \
 	  rm -rf $@ && mv $(@:.html=.htp) $@; \
 	else \
 	  rm -rf $(@:.html=.htp); exit 1; \
 	fi
-$(srcdir)/quagga.info: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS)
-quagga.dvi: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS)
-quagga.html: quagga.texi $(srcdir)/version.texi $(quagga_TEXINFOS)
 $(srcdir)/version.texi:  $(srcdir)/stamp-vti
 $(srcdir)/stamp-vti: quagga.texi $(top_srcdir)/configure
 	@(dir=.; test -f ./quagga.texi || dir=$(srcdir); \
@@ -769,15 +765,13 @@ distdir: $(DISTFILES)
 	  top_distdir="$(top_distdir)" distdir="$(distdir)" \
 	  dist-info
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
+check: check-am
 all-am: Makefile $(INFO_DEPS) $(MANS)
 installdirs:
 	for dir in "$(DESTDIR)$(infodir)" "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man8dir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
+install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -799,15 +793,16 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-aminfo clean-generic clean-libtool mostlyclean-am
@@ -815,8 +810,6 @@ clean-am: clean-aminfo clean-generic clean-libtool mostlyclean-am
 distclean: distclean-am
 	-rm -f Makefile
 distclean-am: clean-am distclean-generic
-
-dvi: dvi-am
 
 dvi-am: $(DVIS)
 
@@ -970,7 +963,7 @@ uninstall-am: uninstall-dvi-am uninstall-html-am uninstall-info-am \
 
 uninstall-man: uninstall-man1 uninstall-man8
 
-.MAKE: all check install install-am install-strip
+.MAKE: install-am install-strip
 
 .PHONY: all all-am check check-am clean clean-aminfo clean-generic \
 	clean-libtool cscopelist-am ctags-am dist-info distclean \
@@ -992,13 +985,6 @@ uninstall-man: uninstall-man1 uninstall-man8
 .PRECIOUS: Makefile
 
 
-# Have to manually specify the quagga.pdf rule in order to allow
-# us to have a generic automatic .pdf rule to build the figure sources
-# because it cant just work from the png's directly it seems - contrary
-# to the documentation...
-quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
-	$(TEXI2PDF) -o "$@" $< || true
-
 .png.eps:
 	$(PNGTOEPS) $< "$@"
 
@@ -1010,6 +996,10 @@ quagga.pdf: $(info_TEXINFOS) $(figures_pdf) $(quagga_TEXINFOS)
 
 draft-zebra-00.txt: draft-zebra-00.ms
 	groff -T ascii -ms $< > $@
+
+# do nothing for DVI, so we don't have to generate or distribute EPS
+# figures
+dvi: # nothing
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -144,6 +144,29 @@ ospf_if_reset_variables (struct ospf_interface *oi)
   oi->v_ls_ack = 1;  
 }
 
+void
+ospf_if_reset_type (struct interface *ifp, u_char type)
+{
+  struct route_node *rn;
+  
+  for (rn = route_top (IF_OIFS (ifp)); rn; rn = route_next (rn))
+    {
+      struct ospf_interface *oi = rn->info;
+      u_char orig_ism_state;
+      
+      if (!oi)
+	continue;
+      
+      orig_ism_state = oi->state;
+      OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceDown);
+      
+      oi->type = IF_DEF_PARAMS (ifp)->type;
+      
+      if (orig_ism_state > ISM_Down)
+        OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceUp);
+    }
+}
+
 /* lookup oi for specified prefix/ifp */
 struct ospf_interface *
 ospf_if_table_lookup (struct interface *ifp, struct prefix *prefix)
