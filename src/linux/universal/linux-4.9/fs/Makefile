@@ -74,6 +74,7 @@ obj-$(CONFIG_EXT2_FS)		+= ext2/
 obj-$(CONFIG_JBD2)		+= jbd2/
 obj-$(CONFIG_CRAMFS)		+= cramfs/
 obj-$(CONFIG_SQUASHFS)		+= squashfs/
+obj-$(CONFIG_SQUASHFS_DD)		+= squashfs-dd/
 obj-y				+= ramfs/
 obj-$(CONFIG_HUGETLBFS)		+= hugetlbfs/
 obj-$(CONFIG_CODA_FS)		+= coda/

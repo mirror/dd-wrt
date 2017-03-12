@@ -14,7 +14,7 @@
 #else
 #include <linux/semaphore.h>
 #endif
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include "../mtdcore.h"

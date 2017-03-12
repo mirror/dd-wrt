@@ -24,7 +24,7 @@
 #include <linux/mtd/nand.h>
 #include <linux/romfs_fs.h>
 #include <linux/cramfs_fs.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #endif
 
 #include <linux/memblock.h>
