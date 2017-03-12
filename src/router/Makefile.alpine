@@ -428,7 +428,8 @@ endif
 	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/zImage-alpine
 #	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine;
-	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -nopad  -root-owned -noappend -Xbcj arm
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	
 
 	dd if=$(ARCH)-uclibc/zImage-alpine bs=$(shell expr $(MAX_KERNEL_SIZE)) conv=sync of=$(ARCH)-uclibc/zImage-alpine-fix
