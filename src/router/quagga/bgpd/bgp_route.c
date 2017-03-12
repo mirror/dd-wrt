@@ -1,5 +1,6 @@
 /* BGP routing information
    Copyright (C) 1996, 97, 98, 99 Kunihiro Ishiguro
+   Copyright (C) 2016 Job Snijders <job@instituut.net>
 
 This file is part of GNU Zebra.
 
@@ -44,6 +45,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "bgpd/bgp_regex.h"
 #include "bgpd/bgp_community.h"
 #include "bgpd/bgp_ecommunity.h"
+#include "bgpd/bgp_lcommunity.h"
 #include "bgpd/bgp_clist.h"
 #include "bgpd/bgp_packet.h"
 #include "bgpd/bgp_filter.h"
@@ -134,7 +136,7 @@ bgp_info_free (struct bgp_info *binfo)
   if (binfo->attr)
     bgp_attr_unintern (&binfo->attr);
 
-  bgp_unlink_nexthop(binfo);
+  bgp_unlink_nexthop (binfo);
   bgp_info_extra_free (&binfo->extra);
   bgp_info_mpath_free (&binfo->mpath);
 
@@ -896,7 +898,6 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
 	      peer->host, peer->as);
       return 0;
     }
-#endif /* BGP_SEND_ASPATH_CHECK */
 
   /* If we're a CONFED we need to loop check the CONFED ID too */
   if (CHECK_FLAG(bgp->config, BGP_CONFIG_CONFEDERATION))
@@ -911,6 +912,7 @@ bgp_announce_check (struct bgp_info *ri, struct peer *peer, struct prefix *p,
 	  return 0;
 	}      
     }
+#endif /* BGP_SEND_ASPATH_CHECK */
 
   /* Route-Reflect check. */
   if (from->sort == BGP_PEER_IBGP && peer->sort == BGP_PEER_IBGP)
@@ -2339,13 +2341,13 @@ bgp_update_main (struct peer *peer, struct prefix *p, struct attr *attr,
       /* Nexthop reachability check. */
       if ((afi == AFI_IP || afi == AFI_IP6) && safi == SAFI_UNICAST)
 	{
-	  if (peer->sort == BGP_PEER_EBGP && peer->ttl == 1 &&
+	  if (peer->sort == BGP_PEER_EBGP && peer_ttl (peer) == 1 &&
 	      ! CHECK_FLAG (peer->flags, PEER_FLAG_DISABLE_CONNECTED_CHECK))
 	    connected = 1;
 	  else
 	    connected = 0;
 
-	  if (bgp_find_or_add_nexthop (afi, ri, NULL, connected))
+	  if (bgp_ensure_nexthop (ri, NULL, connected))
 	    bgp_info_set_flag (rn, ri, BGP_INFO_VALID);
 	  else
 	    {
@@ -2391,13 +2393,13 @@ bgp_update_main (struct peer *peer, struct prefix *p, struct attr *attr,
   /* Nexthop reachability check. */
   if ((afi == AFI_IP || afi == AFI_IP6) && safi == SAFI_UNICAST)
     {
-      if (peer->sort == BGP_PEER_EBGP && peer->ttl == 1 &&
+      if (peer->sort == BGP_PEER_EBGP && peer_ttl (peer) == 1 &&
 	  ! CHECK_FLAG (peer->flags, PEER_FLAG_DISABLE_CONNECTED_CHECK))
 	connected = 1;
       else
 	connected = 0;
 
-      if (bgp_find_or_add_nexthop (afi, new, NULL, connected))
+      if (bgp_ensure_nexthop (new, NULL, connected))
 	bgp_info_set_flag (rn, new, BGP_INFO_VALID);
       else
 	{
@@ -3543,7 +3545,7 @@ bgp_static_update_rsclient (struct peer *rsclient, struct prefix *p,
 	  /* Nexthop reachability check. */
 	  if (bgp_flag_check (bgp, BGP_FLAG_IMPORT_CHECK))
 	    {
-	      if (bgp_find_or_add_nexthop (afi, ri, NULL, 0))
+	      if (bgp_ensure_nexthop (ri, NULL, 0))
 		bgp_info_set_flag (rn, ri, BGP_INFO_VALID);
 	      else
 		{
@@ -3572,7 +3574,7 @@ bgp_static_update_rsclient (struct peer *rsclient, struct prefix *p,
   /* Nexthop reachability check. */
   if (bgp_flag_check (bgp, BGP_FLAG_IMPORT_CHECK))
     {
-      if (bgp_find_or_add_nexthop (afi, new, NULL, 0))
+      if (bgp_ensure_nexthop (new, NULL, 0))
 	bgp_info_set_flag (rn, new, BGP_INFO_VALID);
       else
 	{
@@ -3692,7 +3694,7 @@ bgp_static_update_main (struct bgp *bgp, struct prefix *p,
 	  /* Nexthop reachability check. */
 	  if (bgp_flag_check (bgp, BGP_FLAG_IMPORT_CHECK))
 	    {
-	      if (bgp_find_or_add_nexthop (afi, ri, NULL, 0))
+	      if (bgp_ensure_nexthop (ri, NULL, 0))
 		bgp_info_set_flag (rn, ri, BGP_INFO_VALID);
 	      else
 		{
@@ -3722,7 +3724,7 @@ bgp_static_update_main (struct bgp *bgp, struct prefix *p,
   /* Nexthop reachability check. */
   if (bgp_flag_check (bgp, BGP_FLAG_IMPORT_CHECK))
     {
-      if (bgp_find_or_add_nexthop (afi, new, NULL, 0))
+      if (bgp_ensure_nexthop (new, NULL, 0))
 	bgp_info_set_flag (rn, new, BGP_INFO_VALID);
       else
 	{
@@ -6033,12 +6035,12 @@ route_vty_out(
 
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_MULTI_EXIT_DISC))
-	vty_out (vty, "%10u ", attr->med);
+	vty_out (vty, "%10u", attr->med);
       else
 	  vty_out (vty, "          ");
 
       if (attr->flag & ATTR_FLAG_BIT (BGP_ATTR_LOCAL_PREF))
-	vty_out (vty, "%7u ", attr->local_pref);
+	vty_out (vty, "%7u", attr->local_pref);
       else
 	  vty_out (vty, "       ");
 
@@ -6428,8 +6430,13 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
       if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_EXT_COMMUNITIES))
 	vty_out (vty, "      Extended Community: %s%s", 
 	         attr->extra->ecommunity->str, VTY_NEWLINE);
-	  
-      /* Line 6 display Originator, Cluster-id */
+
+      /* Line 6 display Large community */
+      if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_LARGE_COMMUNITIES))
+	vty_out (vty, "      Large Community: %s%s",
+	         attr->extra->lcommunity->str, VTY_NEWLINE);
+
+      /* Line 7 display Originator, Cluster-id */
       if ((attr->flag & ATTR_FLAG_BIT(BGP_ATTR_ORIGINATOR_ID)) ||
 	  (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_CLUSTER_LIST)))
 	{
@@ -6452,7 +6459,7 @@ route_vty_out_detail (struct vty *vty, struct bgp *bgp, struct prefix *p,
       if (binfo->extra && binfo->extra->damp_info)
 	bgp_damp_info_vty (vty, binfo);
 
-      /* Line 7 display Uptime */
+      /* Line 8 display Uptime */
 #ifdef HAVE_CLOCK_MONOTONIC
       tbuf = time(NULL) - (bgp_clock() - binfo->uptime);
       vty_out (vty, "      Last update: %s", ctime(&tbuf));
@@ -6486,6 +6493,9 @@ enum bgp_show_type
   bgp_show_type_community_exact,
   bgp_show_type_community_list,
   bgp_show_type_community_list_exact,
+  bgp_show_type_lcommunity_all,
+  bgp_show_type_lcommunity,
+  bgp_show_type_lcommunity_list,
   bgp_show_type_flap_statistics,
   bgp_show_type_flap_address,
   bgp_show_type_flap_prefix,
@@ -6646,6 +6656,32 @@ bgp_show_table (struct vty *vty, struct bgp_table *table, struct in_addr *router
 		struct community_list *list = output_arg;
 
 		if (! community_list_exact_match (ri->attr->community, list))
+		  continue;
+	      }
+	    if (type == bgp_show_type_community_all)
+	      {
+		if (! ri->attr->community)
+		  continue;
+	      }
+	    if (type == bgp_show_type_lcommunity)
+	      {
+		struct lcommunity *lcom = output_arg;
+
+		if (! ri->attr->extra || ! ri->attr->extra->lcommunity ||
+		    ! lcommunity_match (ri->attr->extra->lcommunity, lcom))
+		  continue;
+	      }
+	    if (type == bgp_show_type_lcommunity_list)
+	      {
+		struct community_list *list = output_arg;
+
+		if (! ri->attr->extra ||
+		    ! lcommunity_list_match (ri->attr->extra->lcommunity, list))
+		  continue;
+	      }
+	    if (type == bgp_show_type_lcommunity_all)
+	      {
+		if (! ri->attr->extra || ! ri->attr->extra->lcommunity)
 		  continue;
 	      }
 	    if (type == bgp_show_type_flap_address
@@ -9163,6 +9199,84 @@ DEFUN (show_ipv6_mbgp_community_all,
 		   bgp_show_type_community_all, NULL);
 }
 
+/* large-community */
+DEFUN (show_ip_bgp_lcommunity_all,
+       show_ip_bgp_lcommunity_all_cmd,
+       "show ip bgp large-community",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-communities\n")
+{
+  return bgp_show (vty, NULL, AFI_IP, SAFI_UNICAST,
+		     bgp_show_type_lcommunity_all, NULL);
+}
+
+DEFUN (show_ip_bgp_ipv4_lcommunity_all,
+       show_ip_bgp_ipv4_lcommunity_all_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n")
+{
+  if (strncmp (argv[0], "m", 1) == 0)
+    return bgp_show (vty, NULL, AFI_IP, SAFI_MULTICAST,
+		     bgp_show_type_lcommunity_all, NULL);
+
+  return bgp_show (vty, NULL, AFI_IP, SAFI_UNICAST,
+		   bgp_show_type_lcommunity_all, NULL);
+}
+
+DEFUN (show_bgp_lcommunity_all,
+       show_bgp_lcommunity_all_cmd,
+       "show bgp large-community",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-communities\n")
+{
+  return bgp_show (vty, NULL, AFI_IP6, SAFI_UNICAST,
+		   bgp_show_type_lcommunity_all, NULL);
+}
+
+ALIAS (show_bgp_lcommunity_all,
+       show_bgp_ipv6_lcommunity_all_cmd,
+       "show bgp ipv6 large-community",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-communities\n")
+
+/* old command */
+DEFUN (show_ipv6_bgp_lcommunity_all,
+       show_ipv6_bgp_lcommunity_all_cmd,
+       "show ipv6 bgp large-community",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-communities\n")
+{
+  return bgp_show (vty, NULL, AFI_IP6, SAFI_UNICAST,
+		   bgp_show_type_lcommunity_all, NULL);
+}
+
+/* old command */
+DEFUN (show_ipv6_mbgp_lcommunity_all,
+       show_ipv6_mbgp_lcommunity_all_cmd,
+       "show ipv6 mbgp large-community",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-communities\n")
+{
+  return bgp_show (vty, NULL, AFI_IP6, SAFI_MULTICAST,
+		   bgp_show_type_lcommunity_all, NULL);
+}
+
+
 DEFUN (show_bgp_ipv4_route_map, 
        show_bgp_ipv4_route_map_cmd,
        "show bgp ipv4 route-map WORD",
@@ -9428,7 +9542,7 @@ bgp_show_community (struct vty *vty, const char *view_name, int argc,
   struct community *com;
   struct buffer *b;
   struct bgp *bgp;
-  int i;
+  int i, rv;
   char *str;
   int first = 0;
 
@@ -9479,9 +9593,11 @@ bgp_show_community (struct vty *vty, const char *view_name, int argc,
       return CMD_WARNING;
     }
 
-  return bgp_show (vty, bgp, afi, safi,
-                   (exact ? bgp_show_type_community_exact :
-		            bgp_show_type_community), com);
+  rv = bgp_show (vty, bgp, afi, safi,
+                 (exact ? bgp_show_type_community_exact :
+		          bgp_show_type_community), com);
+  community_free(com);
+  return rv;
 }
 
 DEFUN (show_ip_bgp_community,
@@ -11394,6 +11510,795 @@ DEFUN (show_bgp_ipv6_safi_community_list_exact,
     return CMD_WARNING;
   }
   return bgp_show_community_list (vty, argv[1], 1, AFI_IP6, safi);
+}
+
+/*
+ * Large Community show commands.
+ */
+
+DEFUN (show_bgp_afi_lcommunity_all,
+       show_bgp_afi_lcommunity_all_cmd,
+       "show bgp (ipv4|ipv6) large-community",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family\n"
+       "Display routes matching the large-communities\n")
+{
+  afi_t		afi;
+  safi_t	safi = SAFI_UNICAST;
+
+  if (bgp_parse_afi(argv[0], &afi)) {
+    vty_out (vty, "Error: Bad AFI: %s%s", argv[0], VTY_NEWLINE);
+    return CMD_WARNING;
+  }
+  return bgp_show (vty, NULL, afi, safi, bgp_show_type_lcommunity_all, NULL);
+}
+
+static int
+bgp_show_lcommunity (struct vty *vty, const char *view_name, int argc,
+		     const char **argv, afi_t afi, safi_t safi)
+{
+  struct lcommunity *lcom;
+  struct buffer *b;
+  struct bgp *bgp;
+  int i;
+  char *str;
+  int first = 0;
+
+  /* BGP structure lookup */
+  if (view_name)
+    {
+      bgp = bgp_lookup_by_name (view_name);
+      if (bgp == NULL)
+	{
+	  vty_out (vty, "Can't find BGP view %s%s", view_name, VTY_NEWLINE);
+	  return CMD_WARNING;
+	}
+    }
+  else
+    {
+      bgp = bgp_get_default ();
+      if (bgp == NULL)
+	{
+	  vty_out (vty, "No BGP process is configured%s", VTY_NEWLINE);
+	  return CMD_WARNING;
+	}
+    }
+
+  b = buffer_new (1024);
+  for (i = 0; i < argc; i++)
+    {
+      if (first)
+        buffer_putc (b, ' ');
+      else
+	{
+	  if ((strcmp (argv[i], "unicast") == 0) || (strcmp (argv[i], "multicast") == 0))
+	    continue;
+	  first = 1;
+	}
+
+      buffer_putstr (b, argv[i]);
+    }
+  buffer_putc (b, '\0');
+
+  str = buffer_getstr (b);
+  buffer_free (b);
+
+  lcom = lcommunity_str2com (str);
+  XFREE (MTYPE_TMP, str);
+  if (! lcom)
+    {
+      vty_out (vty, "%% Large-community malformed: %s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  return bgp_show (vty, bgp, afi, safi, bgp_show_type_lcommunity, lcom);
+}
+
+DEFUN (show_ip_bgp_lcommunity,
+       show_ip_bgp_lcommunity_cmd,
+       "show ip bgp large-community (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_UNICAST);
+}
+
+ALIAS (show_ip_bgp_lcommunity,
+       show_ip_bgp_lcommunity2_cmd,
+       "show ip bgp large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_ip_bgp_lcommunity,
+       show_ip_bgp_lcommunity3_cmd,
+       "show ip bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "largecommunity number\n"
+       "largecommunity number\n"
+       "largecommunity number\n")
+
+ALIAS (show_ip_bgp_lcommunity,
+       show_ip_bgp_lcommunity4_cmd,
+       "show ip bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_ip_bgp_ipv4_lcommunity,
+       show_ip_bgp_ipv4_lcommunity_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  if (strncmp (argv[0], "m", 1) == 0)
+    return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_MULTICAST);
+
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_UNICAST);
+}
+
+ALIAS (show_ip_bgp_ipv4_lcommunity,
+       show_ip_bgp_ipv4_lcommunity2_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_ip_bgp_ipv4_lcommunity,
+       show_ip_bgp_ipv4_lcommunity3_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_ip_bgp_ipv4_lcommunity,
+       show_ip_bgp_ipv4_lcommunity4_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_bgp_lcommunity,
+       show_bgp_lcommunity_cmd,
+       "show bgp large-community (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP6, SAFI_UNICAST);
+}
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_ipv6_lcommunity_cmd,
+       "show bgp ipv6 large-community (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_lcommunity2_cmd,
+       "show bgp large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_ipv6_lcommunity2_cmd,
+       "show bgp ipv6 large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_lcommunity3_cmd,
+       "show bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_ipv6_lcommunity3_cmd,
+       "show bgp ipv6 large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_lcommunity4_cmd,
+       "show bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_lcommunity,
+       show_bgp_ipv6_lcommunity4_cmd,
+       "show bgp ipv6 large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+DEFUN (show_ipv6_bgp_lcommunity,
+       show_ipv6_bgp_lcommunity_cmd,
+       "show ipv6 bgp large-community (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP6, SAFI_UNICAST);
+}
+
+/* old command */
+ALIAS (show_ipv6_bgp_lcommunity,
+       show_ipv6_bgp_lcommunity2_cmd,
+       "show ipv6 bgp large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+ALIAS (show_ipv6_bgp_lcommunity,
+       show_ipv6_bgp_lcommunity3_cmd,
+       "show ipv6 bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+ALIAS (show_ipv6_bgp_lcommunity,
+       show_ipv6_bgp_lcommunity4_cmd,
+       "show ipv6 bgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+DEFUN (show_ipv6_mbgp_lcommunity,
+       show_ipv6_mbgp_lcommunity_cmd,
+       "show ipv6 mbgp large-community (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP6, SAFI_MULTICAST);
+}
+
+/* old command */
+ALIAS (show_ipv6_mbgp_lcommunity,
+       show_ipv6_mbgp_lcommunity2_cmd,
+       "show ipv6 mbgp large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+ALIAS (show_ipv6_mbgp_lcommunity,
+       show_ipv6_mbgp_lcommunity3_cmd,
+       "show ipv6 mbgp large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+/* old command */
+ALIAS (show_ipv6_mbgp_lcommunity,
+       show_ipv6_mbgp_lcommunity4_cmd,
+       "show ipv6 mbgp laarge-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_bgp_ipv4_lcommunity,
+       show_bgp_ipv4_lcommunity_cmd,
+       "show bgp ipv4 large-community (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       IP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_UNICAST);
+}
+
+ALIAS (show_bgp_ipv4_lcommunity,
+       show_bgp_ipv4_lcommunity2_cmd,
+       "show bgp ipv4 large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       IP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv4_lcommunity,
+       show_bgp_ipv4_lcommunity3_cmd,
+       "show bgp ipv4 large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       IP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv4_lcommunity,
+       show_bgp_ipv4_lcommunity4_cmd,
+       "show bgp ipv4 large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       IP_STR
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_bgp_ipv4_safi_lcommunity,
+       show_bgp_ipv4_safi_lcommunity_cmd,
+       "show bgp ipv4 (unicast|multicast) large-community (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  if (strncmp (argv[0], "m", 1) == 0)
+    return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_MULTICAST);
+
+  return bgp_show_lcommunity (vty, NULL, argc, argv, AFI_IP, SAFI_UNICAST);
+}
+
+ALIAS (show_bgp_ipv4_safi_lcommunity,
+       show_bgp_ipv4_safi_lcommunity2_cmd,
+       "show bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv4_safi_lcommunity,
+       show_bgp_ipv4_safi_lcommunity3_cmd,
+       "show bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv4_safi_lcommunity,
+       show_bgp_ipv4_safi_lcommunity4_cmd,
+       "show bgp ipv4 (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_bgp_view_afi_safi_lcommunity_all,
+       show_bgp_view_afi_safi_lcommunity_all_cmd,
+       "show bgp view WORD (ipv4|ipv6) (unicast|multicast) large-community",
+       SHOW_STR
+       BGP_STR
+       "BGP view\n"
+       "View name\n"
+       "Address family\n"
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-communities\n")
+{
+  int afi;
+  int safi;
+  struct bgp *bgp;
+
+  /* BGP structure lookup. */
+  bgp = bgp_lookup_by_name (argv[0]);
+  if (bgp == NULL)
+    {
+      vty_out (vty, "Can't find BGP view %s%s", argv[0], VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  afi = (strncmp (argv[1], "ipv6", 4) == 0) ? AFI_IP6 : AFI_IP;
+  safi = (strncmp (argv[2], "m", 1) == 0) ? SAFI_MULTICAST : SAFI_UNICAST;
+  return bgp_show (vty, bgp, afi, safi, bgp_show_type_lcommunity_all, NULL);
+}
+
+DEFUN (show_bgp_view_afi_safi_lcommunity,
+       show_bgp_view_afi_safi_lcommunity_cmd,
+       "show bgp view WORD (ipv4|ipv6) (unicast|multicast) large-community (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "BGP view\n"
+       "View name\n"
+       "Address family\n"
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  int afi;
+  int safi;
+
+  afi = (strncmp (argv[1], "ipv6", 4) == 0) ? AFI_IP6 : AFI_IP;
+  safi = (strncmp (argv[2], "m", 1) == 0) ? SAFI_MULTICAST : SAFI_UNICAST;
+  return bgp_show_lcommunity (vty, argv[0], argc-3, &argv[3], afi, safi);
+}
+
+ALIAS (show_bgp_view_afi_safi_lcommunity,
+       show_bgp_view_afi_safi_lcommunity2_cmd,
+       "show bgp view WORD (ipv4|ipv6) (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "BGP view\n"
+       "View name\n"
+       "Address family\n"
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_view_afi_safi_lcommunity,
+       show_bgp_view_afi_safi_lcommunity3_cmd,
+       "show bgp view WORD (ipv4|ipv6) (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "BGP view\n"
+       "View name\n"
+       "Address family\n"
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_view_afi_safi_lcommunity,
+       show_bgp_view_afi_safi_lcommunity4_cmd,
+       "show bgp view WORD (ipv4|ipv6) (unicast|multicast) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "BGP view\n"
+       "View name\n"
+       "Address family\n"
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+DEFUN (show_bgp_ipv6_safi_lcommunity,
+       show_bgp_ipv6_safi_lcommunity_cmd,
+       "show bgp ipv6 (encap|multicast|unicast|vpn) large-community AA:BB:CC",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n")
+{
+  safi_t	safi;
+
+  if (bgp_parse_safi(argv[0], &safi)) {
+    vty_out (vty, "Error: Bad SAFI: %s%s", argv[0], VTY_NEWLINE);
+    return CMD_WARNING;
+  }
+  return bgp_show_lcommunity (vty, NULL, argc-1, argv+1, AFI_IP6, safi);
+}
+
+ALIAS (show_bgp_ipv6_safi_lcommunity,
+       show_bgp_ipv6_safi_lcommunity2_cmd,
+       "show bgp ipv6 (encap|multicast|unicast|vpn) large-community (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv6_safi_lcommunity,
+       show_bgp_ipv6_safi_lcommunity3_cmd,
+       "show bgp ipv6 (encap|multicast|unicast|vpn) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+ALIAS (show_bgp_ipv6_safi_lcommunity,
+       show_bgp_ipv6_safi_lcommunity4_cmd,
+       "show bgp ipv6 (encap|multicast|unicast|vpn) large-community (AA:BB:CC) (AA:BB:CC) (AA:BB:CC) (AA:BB:CC)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-communities\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n"
+       "large-community number\n")
+
+static int
+bgp_show_lcommunity_list (struct vty *vty, const char *lcom,
+			  afi_t afi, safi_t safi)
+{
+  struct community_list *list;
+
+  list = community_list_lookup (bgp_clist, lcom, LARGE_COMMUNITY_LIST_MASTER);
+  if (list == NULL)
+    {
+      vty_out (vty, "%% %s is not a valid large-community-list name%s", lcom,
+	       VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  return bgp_show (vty, NULL, afi, safi, bgp_show_type_lcommunity_list, list);
+}
+
+DEFUN (show_ip_bgp_lcommunity_list,
+       show_ip_bgp_lcommunity_list_cmd,
+       "show ip bgp large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  return bgp_show_lcommunity_list (vty, argv[0], AFI_IP, SAFI_UNICAST);
+}
+
+DEFUN (show_ip_bgp_ipv4_lcommunity_list,
+       show_ip_bgp_ipv4_lcommunity_list_cmd,
+       "show ip bgp ipv4 (unicast|multicast) large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  if (strncmp (argv[0], "m", 1) == 0)
+    return bgp_show_lcommunity_list (vty, argv[1], AFI_IP, SAFI_MULTICAST);
+
+  return bgp_show_lcommunity_list (vty, argv[1], AFI_IP, SAFI_UNICAST);
+}
+
+DEFUN (show_bgp_lcommunity_list,
+       show_bgp_lcommunity_list_cmd,
+       "show bgp large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       BGP_STR
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  return bgp_show_lcommunity_list (vty, argv[0], AFI_IP6, SAFI_UNICAST);
+}
+
+ALIAS (show_bgp_lcommunity_list,
+       show_bgp_ipv6_lcommunity_list_cmd,
+       "show bgp ipv6 large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+
+/* old command */
+DEFUN (show_ipv6_bgp_lcommunity_list,
+       show_ipv6_bgp_lcommunity_list_cmd,
+       "show ipv6 bgp large-community-list WORD",
+       SHOW_STR
+       IPV6_STR
+       BGP_STR
+       "Display routes matching the large-community-list\n"
+       "large-community-list name\n")
+{
+  return bgp_show_lcommunity_list (vty, argv[0], AFI_IP6, SAFI_UNICAST);
+}
+
+/* old command */
+DEFUN (show_ipv6_mbgp_lcommunity_list,
+       show_ipv6_mbgp_lcommunity_list_cmd,
+       "show ipv6 mbgp large-community-list WORD",
+       SHOW_STR
+       IPV6_STR
+       MBGP_STR
+       "Display routes matching the large-community-list\n"
+       "large-community-list name\n")
+{
+  return bgp_show_lcommunity_list (vty, argv[0], AFI_IP6, SAFI_MULTICAST);
+}
+
+DEFUN (show_bgp_ipv4_lcommunity_list,
+       show_bgp_ipv4_lcommunity_list_cmd,
+       "show bgp ipv4 large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       BGP_STR
+       IP_STR
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  return bgp_show_lcommunity_list (vty, argv[0], AFI_IP, SAFI_UNICAST);
+}
+
+DEFUN (show_bgp_ipv4_safi_lcommunity_list,
+       show_bgp_ipv4_safi_lcommunity_list_cmd,
+       "show bgp ipv4 (unicast|multicast) large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address Family modifier\n"
+       "Address Family modifier\n"
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  if (strncmp (argv[0], "m", 1) == 0)
+    return bgp_show_lcommunity_list (vty, argv[1], AFI_IP, SAFI_MULTICAST);
+
+  return bgp_show_lcommunity_list (vty, argv[1], AFI_IP, SAFI_UNICAST);
+}
+
+DEFUN (show_bgp_ipv6_safi_lcommunity_list,
+       show_bgp_ipv6_safi_lcommunity_list_cmd,
+       "show bgp ipv6 (encap|multicast|unicast|vpn) large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       BGP_STR
+       "Address family\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Address family modifier\n"
+       "Display routes matching the large-community-list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  safi_t	safi;
+
+  if (bgp_parse_safi(argv[0], &safi)) {
+    vty_out (vty, "Error: Bad SAFI: %s%s", argv[0], VTY_NEWLINE);
+    return CMD_WARNING;
+  }
+  return bgp_show_lcommunity_list (vty, argv[1], AFI_IP6, safi);
 }
 
 static int
@@ -16219,14 +17124,14 @@ bgp_config_write_distance (struct vty *vty, struct bgp *bgp,
                  bgp->ipv6_distance_ebgp, bgp->ipv6_distance_ibgp, bgp->ipv6_distance_local,
                  VTY_NEWLINE);
 
-        for (rn = bgp_table_top (bgp_distance_table); rn; rn = bgp_route_next (rn))
-          if ((bdistance = rn->info) != NULL)
-            {
-              vty_out (vty, " distance %d %s/%d %s%s", bdistance->distance,
-                       inet6_ntoa (rn->p.u.prefix6), rn->p.prefixlen,
-                       bdistance->access_list ? bdistance->access_list : "",
-                       VTY_NEWLINE);
-            }
+      for (rn = bgp_table_top (bgp_distance_table); rn; rn = bgp_route_next (rn))
+        if ((bdistance = rn->info) != NULL)
+          {
+            vty_out (vty, " distance %d %s/%d %s%s", bdistance->distance,
+                     inet6_ntoa (rn->p.u.prefix6), rn->p.prefixlen,
+                     bdistance->access_list ? bdistance->access_list : "",
+                     VTY_NEWLINE);
+          }
     }
 #endif /* HAVE_IPV6 */
 
@@ -16407,6 +17312,24 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_bgp_ipv4_safi_community_list_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv4_community_list_exact_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv4_safi_community_list_exact_cmd);
+
+  /* large-communities */
+  install_element (VIEW_NODE, &show_bgp_ipv4_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_safi_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_safi_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_safi_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_safi_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_view_afi_safi_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_bgp_view_afi_safi_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_view_afi_safi_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_view_afi_safi_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_view_afi_safi_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_lcommunity_list_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv4_safi_lcommunity_list_cmd);
+
   install_element (VIEW_NODE, &show_bgp_ipv4_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv4_safi_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_prefix_longer_cmd);
@@ -16504,6 +17427,22 @@ bgp_route_init (void)
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_community2_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_community3_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_community4_exact_cmd);
+
+  /* large-community */
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_lcommunity4_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_lcommunity4_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_view_afi_safi_lcommunity_all_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_view_afi_safi_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_view_afi_safi_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_view_afi_safi_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_view_afi_safi_lcommunity4_cmd);
+
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_rsclient_route_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv4_safi_rsclient_prefix_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_view_ipv4_safi_rsclient_route_cmd);
@@ -16512,6 +17451,7 @@ bgp_route_init (void)
   /* BGP dampening clear commands */
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_cmd);
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_prefix_cmd);
+
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_address_cmd);
   install_element (ENABLE_NODE, &clear_ip_bgp_dampening_address_mask_cmd);
 
@@ -16556,6 +17496,14 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_community3_exact_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_community4_exact_cmd);
   install_element (VIEW_NODE, &show_bgp_community_list_cmd);
+
+  /* large-community */
+  install_element (VIEW_NODE, &show_bgp_ipv6_safi_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_safi_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_safi_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_safi_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity_list_cmd);
+
   install_element (VIEW_NODE, &show_bgp_ipv6_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_neighbor_advertised_route_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_neighbor_received_routes_cmd);
@@ -16602,6 +17550,10 @@ bgp_route_init (void)
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_community2_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_community3_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_community4_exact_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_lcommunity4_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_rsclient_route_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_safi_rsclient_route_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_ipv6_rsclient_prefix_cmd);
@@ -16751,6 +17703,18 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community_list_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_community_list_exact_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_community_list_exact_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity_list_cmd);
+  install_element (VIEW_NODE, &show_ip_bgp_ipv4_lcommunity_list_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_ipv4_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_ip_bgp_neighbor_advertised_route_cmd);
@@ -16824,6 +17788,14 @@ bgp_route_init (void)
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community2_exact_cmd);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community3_exact_cmd);
   install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_community4_exact_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_lcommunity4_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_ip_bgp_ipv4_lcommunity4_cmd);
   install_element (RESTRICTED_NODE, &show_ip_bgp_rsclient_route_cmd);
   install_element (RESTRICTED_NODE, &show_ip_bgp_rsclient_prefix_cmd);
   install_element (RESTRICTED_NODE, &show_ip_bgp_view_rsclient_route_cmd);
@@ -16860,6 +17832,13 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_community_list_cmd);
   install_element (VIEW_NODE, &show_bgp_community_list_exact_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_safi_community_list_exact_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_safi_lcommunity_list_cmd);
   install_element (VIEW_NODE, &show_bgp_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_bgp_neighbor_advertised_route_cmd);
   install_element (VIEW_NODE, &show_bgp_neighbor_received_routes_cmd);
@@ -16895,6 +17874,10 @@ bgp_route_init (void)
   install_element (RESTRICTED_NODE, &show_bgp_community2_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_community3_exact_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_community4_exact_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_lcommunity4_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_view_route_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_view_prefix_cmd);
   install_element (RESTRICTED_NODE, &show_bgp_view_neighbor_received_prefix_filter_cmd);
@@ -16919,6 +17902,12 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_ipv6_bgp_community4_exact_cmd);
   install_element (VIEW_NODE, &show_ipv6_bgp_community_list_cmd);
   install_element (VIEW_NODE, &show_ipv6_bgp_community_list_exact_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_ipv6_bgp_lcommunity_list_cmd);
   install_element (VIEW_NODE, &show_ipv6_bgp_prefix_longer_cmd);
   install_element (VIEW_NODE, &show_ipv6_mbgp_cmd);
   install_element (VIEW_NODE, &show_ipv6_mbgp_route_cmd);
@@ -16937,6 +17926,12 @@ bgp_route_init (void)
   install_element (VIEW_NODE, &show_ipv6_mbgp_community4_exact_cmd);
   install_element (VIEW_NODE, &show_ipv6_mbgp_community_list_cmd);
   install_element (VIEW_NODE, &show_ipv6_mbgp_community_list_exact_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity_all_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_ipv6_mbgp_lcommunity_list_cmd);
   install_element (VIEW_NODE, &show_ipv6_mbgp_prefix_longer_cmd);
   install_element (VIEW_NODE, &ipv6_bgp_neighbor_advertised_route_cmd);
   install_element (VIEW_NODE, &ipv6_mbgp_neighbor_advertised_route_cmd);
@@ -16964,6 +17959,16 @@ bgp_route_init (void)
 
   install_element (VIEW_NODE, &show_bgp_ipv6_community_list_cmd);
   install_element (VIEW_NODE, &show_bgp_ipv6_community_list_exact_cmd);
+
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity2_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity3_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity4_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_lcommunity_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_lcommunity2_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_lcommunity3_cmd);
+  install_element (RESTRICTED_NODE, &show_bgp_ipv6_lcommunity4_cmd);
+  install_element (VIEW_NODE, &show_bgp_ipv6_lcommunity_list_cmd);
 
   install_element (VIEW_NODE, &show_bgp_rsclient_route_cmd);
   install_element (VIEW_NODE, &show_bgp_rsclient_prefix_cmd);

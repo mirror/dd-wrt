@@ -49,6 +49,7 @@
 #include "ospfd/ospf_route.h"
 #include "ospfd/ospf_ase.h"
 #include "ospfd/ospf_zebra.h"
+#include "ospfd/ospf_abr.h"
 
 
 u_int32_t
@@ -2551,6 +2552,7 @@ ospf_external_lsa_install (struct ospf *ospf, struct ospf_lsa *new,
            * New translations will be taken care of by the abr_task.
            */ 
           ospf_translated_nssa_refresh (ospf, new, NULL);
+          ospf_schedule_abr_task(ospf);
         }
     }
 

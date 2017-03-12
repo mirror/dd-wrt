@@ -43,6 +43,8 @@ test-commands-defun.c: ../vtysh/vtysh_cmd.c
 		> test-commands-defun.c
 
 BUILT_SOURCES = test-commands-defun.c
+CLEANFILES = test-commands-defun.c bgpd libzebra
+
 noinst_HEADERS = prng.h tests.h common-cli.h
 
 testcli_SOURCES = test-cli.c common-cli.c

@@ -53,12 +53,20 @@ static void path_nh_map(struct bgp_info *path, struct bgp_nexthop_cache *bnc,
 			int keep);
 
 int
-bgp_find_nexthop (struct bgp_info *path, int connected)
+bgp_nexthop_check (struct bgp_info *path, int connected)
 {
   struct bgp_nexthop_cache *bnc = path->nexthop;
 
   if (!bnc)
     return 0;
+
+  if (BGP_DEBUG(nht, NHT))
+    {
+      char buf[INET6_ADDRSTRLEN];
+      zlog_debug("%s: NHT checking %s", 
+                 __FUNCTION__,
+                 bnc_str (bnc, buf, INET6_ADDRSTRLEN));
+    }
 
   if (connected && !(CHECK_FLAG(bnc->flags, BGP_NEXTHOP_CONNECTED)))
     return 0;
@@ -67,89 +75,32 @@ bgp_find_nexthop (struct bgp_info *path, int connected)
           CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID));
 }
 
-static void
-bgp_unlink_nexthop_check (struct bgp_nexthop_cache *bnc)
-{
-  if (LIST_EMPTY(&(bnc->paths)) && !bnc->nht_info)
-    {
-      if (BGP_DEBUG(nht, NHT))
-	{
-	  char buf[INET6_ADDRSTRLEN];
-	  zlog_debug("bgp_unlink_nexthop: freeing bnc %s",
-		     bnc_str(bnc, buf, INET6_ADDRSTRLEN));
-	}
-      unregister_nexthop(bnc);
-      bnc->node->info = NULL;
-      bgp_unlock_node(bnc->node);
-      bnc->node = NULL;
-      bnc_free(bnc);
-    }
-}
-
-void
-bgp_unlink_nexthop (struct bgp_info *path)
-{
-  struct bgp_nexthop_cache *bnc = path->nexthop;
-
-  if (!bnc)
-    return;
-
-  path_nh_map(path, NULL, 0);
-  
-  bgp_unlink_nexthop_check (bnc);
-}
-
-void
-bgp_unlink_nexthop_by_peer (struct peer *peer)
+/* Helper to get the rn for the appropriate nexthop for path or peer.
+ * returns the locked rn - caller must bump down the refcnt.
+ *
+ * may return NULL in error cases.
+ */
+static
+struct bgp_node *
+bgp_get_nexthop_rn (struct bgp_info *path, struct peer *peer)
 {
   struct prefix p;
-  struct bgp_node *rn;
-  struct bgp_nexthop_cache *bnc;
-  afi_t afi = family2afi(peer->su.sa.sa_family);
-
-  if (afi == AFI_IP)
+  afi_t afi;
+  
+  assert (path || peer);
+  
+  if (!(path || peer))
+    return NULL;
+  
+  if (path)
     {
-      p.family = AF_INET;
-      p.prefixlen = IPV4_MAX_BITLEN;
-      p.u.prefix4 = peer->su.sin.sin_addr;
-    }
-  else if (afi == AFI_IP6)
-    {
-      p.family = AF_INET6;
-      p.prefixlen = IPV6_MAX_BITLEN;
-      p.u.prefix6 = peer->su.sin6.sin6_addr;
+      afi = family2afi (path->net->p.family);
+      if (make_prefix(afi, path, &p) < 0)
+	return NULL;
     }
   else
-    return;
-
-  rn = bgp_node_get (bgp_nexthop_cache_table[afi], &p);
-
-  if (!rn->info)
-    return;
-  
-  bnc = rn->info;
-  
-  /* cleanup the peer reference */
-  bnc->nht_info = NULL;
-  
-  bgp_unlink_nexthop_check (bnc);
-}
-
-int
-bgp_find_or_add_nexthop (afi_t afi, struct bgp_info *ri, struct peer *peer,
-			 int connected)
-{
-  struct bgp_node *rn;
-  struct bgp_nexthop_cache *bnc;
-  struct prefix p;
-
-  if (ri)
     {
-      if (make_prefix(afi, ri, &p) < 0)
-	return 1;
-    }
-  else if (peer)
-    {
+      afi = family2afi(peer->su.sa.sa_family);
       if (afi == AFI_IP)
 	{
 	  p.family = AF_INET;
@@ -162,10 +113,101 @@ bgp_find_or_add_nexthop (afi_t afi, struct bgp_info *ri, struct peer *peer,
 	  p.prefixlen = IPV6_MAX_BITLEN;
 	  p.u.prefix6 = peer->su.sin6.sin6_addr;
 	}
+      else
+        return NULL;
     }
+  
+  return bgp_node_get (bgp_nexthop_cache_table[afi], &p);
+}
 
-  rn = bgp_node_get (bgp_nexthop_cache_table[afi], &p);
+static
+struct bgp_nexthop_cache *
+bgp_find_nexthop (struct bgp_info *path, struct peer *peer)
+{
+  struct bgp_nexthop_cache *bnc = NULL;
+  struct bgp_node *rn = bgp_get_nexthop_rn (path, peer);
+  
+  if (!rn)
+    return NULL;
+  
+  bnc = rn->info;
+  bgp_unlock_node (rn);
+  
+  return bnc;
+}
 
+static void
+bgp_unlink_nexthop_check (struct bgp_nexthop_cache *bnc)
+{
+  if (LIST_EMPTY(&(bnc->paths)) && !bnc->nht_info)
+    {
+      if (BGP_DEBUG(nht, NHT))
+	{
+	  char buf[INET6_ADDRSTRLEN];
+	  zlog_debug("bgp_unlink_nexthop: freeing bnc %s",
+		     bnc_str (bnc, buf, INET6_ADDRSTRLEN));
+ 	}
+      unregister_nexthop(bnc);
+      bnc->node->info = NULL;
+      bgp_unlock_node (bnc->node);
+      bnc->node = NULL;
+      bnc_free (bnc);
+    }
+}
+
+void
+bgp_unlink_nexthop (struct bgp_info *path)
+{
+  struct bgp_nexthop_cache *bnc = path->nexthop;
+
+  if (!bnc)
+    return;
+
+  if (BGP_DEBUG(nht, NHT))
+    {
+      char buf[INET6_ADDRSTRLEN];
+      zlog_debug("%s: NHT unlinking %s", 
+                 __FUNCTION__, bnc_str (bnc, buf, INET6_ADDRSTRLEN));
+    }
+  
+  path_nh_map(path, NULL, 0);
+  
+  bgp_unlink_nexthop_check (bnc);
+}
+
+void
+bgp_unlink_nexthop_by_peer (struct peer *peer)
+{
+  struct bgp_nexthop_cache *bnc = bgp_find_nexthop (NULL, peer);
+     
+  if (!bnc)
+    return;
+
+  if (BGP_DEBUG(nht, NHT))
+    zlog_debug("%s: NHT unlinking %s", 
+                __FUNCTION__, peer->host);
+  
+  bnc->nht_info = NULL;
+  
+  bgp_unlink_nexthop_check (bnc);
+}
+
+int
+bgp_ensure_nexthop (struct bgp_info *ri, struct peer *peer,
+                    int connected)
+{
+  struct bgp_node *rn;
+  struct bgp_nexthop_cache *bnc;
+  
+  rn = bgp_get_nexthop_rn (ri, peer);
+  
+  if (!rn)
+    {
+      zlog_debug("%s: NHT could not ensure, failed to get rn!", 
+                 __FUNCTION__);
+      return 0;
+    }
+  
   if (!rn->info)
     {
       bnc = bnc_new();
@@ -194,6 +236,13 @@ bgp_find_or_add_nexthop (afi_t afi, struct bgp_info *ri, struct peer *peer,
   else if (peer)
     bnc->nht_info = (void *)peer; /* NHT peer reference */
 
+  if (BGP_DEBUG(nht, NHT))
+    {
+      char buf[INET6_ADDRSTRLEN];
+      zlog_debug("%s: NHT ensured %s", 
+                 __FUNCTION__, bnc_str (bnc, buf, INET6_ADDRSTRLEN));
+    }
+  
   return (bgp_zebra_num_connects() == 0 ||
           CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID));
 }
@@ -531,7 +580,6 @@ evaluate_paths (struct bgp_nexthop_cache *bnc)
     {
       if (BGP_DEBUG(nht, NHT))
 	zlog_debug("%s: Updating peer (%s) status with NHT", __FUNCTION__, peer->host);
-      BGP_EVENT_ADD (peer, NHT_Update);
       SET_FLAG(bnc->flags, BGP_NEXTHOP_PEER_NOTIFIED);
     }
 

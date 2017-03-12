@@ -177,9 +177,9 @@ A.B.C.D format, user must define @var{netmask} value with A.B.C.D
 format.  @var{gateway} is same option as above command
 
 @example
-ip route 10.0.0.0 255.255.255.0 10.0.0.2
-ip route 10.0.0.0 255.255.255.0 ppp0
-ip route 10.0.0.0 255.255.255.0 null0
+ip route 10.0.0.0 255.0.0.0 10.0.0.2
+ip route 10.0.0.0 255.0.0.0 ppp0
+ip route 10.0.0.0 255.0.0.0 null0
 @end example
 
 These statements are equivalent to those in the previous example.
@@ -355,11 +355,11 @@ Within a route-map, set the preferred source address for matching routes
 when installing in the kernel.
 @end deffn
 
-@example
 The following creates a prefix-list that matches all addresses, a route-map
 that sets the preferred source address, and applies the route-map to all
 @command{rip} routes.
 
+@example
 @group
 ip prefix-list ANY permit 0.0.0.0/0 le 32
 route-map RM1 permit 10

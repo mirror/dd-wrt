@@ -276,6 +276,7 @@ extern void ospf_if_init (void);
 extern void ospf_if_stream_set (struct ospf_interface *);
 extern void ospf_if_stream_unset (struct ospf_interface *);
 extern void ospf_if_reset_variables (struct ospf_interface *);
+extern void ospf_if_reset_type (struct interface *, u_char type);
 extern int ospf_if_is_enable (struct ospf_interface *);
 extern int ospf_if_get_output_cost (struct ospf_interface *);
 extern void ospf_if_recalculate_output_cost (struct interface *);

@@ -969,7 +969,7 @@ DEFUN (show_bgp_ipv4_vpn_rd_neighbor_routes,
        "Display routes learned from neighbor\n")
 {
   int ret;
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
   struct prefix_rd prd;
 
@@ -980,21 +980,20 @@ DEFUN (show_bgp_ipv4_vpn_rd_neighbor_routes,
       return CMD_WARNING;
     }
 
-  su = sockunion_str2su (argv[1]);
-  if (su == NULL)
+  if (str2sockunion(argv[1], &su))
     {
       vty_out (vty, "Malformed address: %s%s", argv[1], VTY_NEWLINE);
                return CMD_WARNING;
     }
 
-  peer = peer_lookup (NULL, su);
+  peer = peer_lookup (NULL, &su);
   if (! peer || ! peer->afc[AFI_IP][SAFI_MPLS_VPN])
     {
       vty_out (vty, "%% No such neighbor or address family%s", VTY_NEWLINE);
       return CMD_WARNING;
     }
 
-  return bgp_show_mpls_vpn (vty, AFI_IP, &prd, bgp_show_type_neighbor, su, 0);
+  return bgp_show_mpls_vpn (vty, AFI_IP, &prd, bgp_show_type_neighbor, &su, 0);
 }
 DEFUN (show_bgp_ipv6_vpn_rd_neighbor_routes,
        show_bgp_ipv6_vpn_rd_neighbor_routes_cmd,
@@ -1010,7 +1009,7 @@ DEFUN (show_bgp_ipv6_vpn_rd_neighbor_routes,
        "Display routes learned from neighbor\n")
 {
   int ret;
-  union sockunion *su;
+  union sockunion su;
   struct peer *peer;
   struct prefix_rd prd;
 
@@ -1021,21 +1020,20 @@ DEFUN (show_bgp_ipv6_vpn_rd_neighbor_routes,
       return CMD_WARNING;
     }
 
-  su = sockunion_str2su (argv[1]);
-  if (su == NULL)
+  if (str2sockunion(argv[1], &su))
     {
       vty_out (vty, "Malformed address: %s%s", argv[1], VTY_NEWLINE);
                return CMD_WARNING;
     }
 
-  peer = peer_lookup (NULL, su);
+  peer = peer_lookup (NULL, &su);
   if (! peer || ! peer->afc[AFI_IP6][SAFI_MPLS_VPN])
     {
       vty_out (vty, "%% No such neighbor or address family%s", VTY_NEWLINE);
       return CMD_WARNING;
     }
 
-  return bgp_show_mpls_vpn (vty, AFI_IP6, &prd, bgp_show_type_neighbor, su, 0);
+  return bgp_show_mpls_vpn (vty, AFI_IP6, &prd, bgp_show_type_neighbor, &su, 0);
 }
 
 void

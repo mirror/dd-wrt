@@ -36,6 +36,8 @@
 #include "vty.h"
 #include "sigevent.h"
 #include "version.h"
+#include "prefix.h"
+#include "plist.h"
 
 #include "pimd.h"
 #include "pim_version.h"
@@ -200,6 +202,8 @@ int main(int argc, char** argv, char** envp) {
   memory_init();
   vrf_init();
   access_list_init();
+  prefix_list_init ();
+  pim_route_map_init ();
   pim_init();
 
   /*

@@ -184,8 +184,20 @@ vtysh_config_parse_line (const char *line)
 	  else if (strncmp (line, " address-family ipv6",
 		   strlen (" address-family ipv6")) == 0)
 	    config = config_get (BGP_IPV6_NODE, line);
+	  else if (strncmp (line, " link-params", strlen (" link-params")) == 0)
+	    {
+	      config_add_line (config->line, line);
+	      config->index = LINK_PARAMS_NODE;
+	    }
+	  else if (config->index == LINK_PARAMS_NODE &&
+	           strncmp (line, "  exit-link-params", strlen ("  exit")) == 0)
+	    {
+	      config_add_line (config->line, line);
+	      config->index = INTERFACE_NODE;
+	    }
 	  else if (config->index == RMAP_NODE ||
-		   config->index == VTY_NODE)
+	      config->index == INTERFACE_NODE ||
+	      config->index == VTY_NODE)
 	    config_add_line_uniq (config->line, line);
 	  else
 	    config_add_line (config->line, line);

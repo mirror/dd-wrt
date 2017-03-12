@@ -218,6 +218,8 @@ extern size_t stream_write (struct stream *, const void *, size_t);
 
 /* reset the stream. See Note above */
 extern void stream_reset (struct stream *);
+/* move unread data to start of stream, discarding read data */
+extern void stream_discard (struct stream *);
 extern int stream_flush (struct stream *, int);
 extern int stream_empty (struct stream *); /* is the stream empty? */
 

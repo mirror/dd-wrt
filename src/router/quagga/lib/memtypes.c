@@ -87,6 +87,7 @@ struct memory_list memory_list_zebra[] =
   { MTYPE_RIB_DEST,		"RIB destination"		},
   { MTYPE_RIB_TABLE_INFO,	"RIB table info"		},
   { MTYPE_NETLINK_NAME,	"Netlink name"			},
+  { MTYPE_NETLINK_RCVBUF,	"Netlink receive buffer"	},
   { MTYPE_RNH,		        "Nexthop tracking object"	},
   { -1, NULL },
 };
@@ -157,6 +158,9 @@ struct memory_list memory_list_bgp[] =
   { MTYPE_BGP_AGGREGATE,	"BGP aggregate"			},
   { MTYPE_BGP_ADDR,		"BGP own address"		},
   { MTYPE_ENCAP_TLV,		"ENCAP TLV",			},
+  { MTYPE_LCOMMUNITY,           "Large Community",              },
+  { MTYPE_LCOMMUNITY_STR,       "Large Community str",          },
+  { MTYPE_LCOMMUNITY_VAL,       "Large Community val",          },
   { -1, NULL }
 };
 
@@ -280,6 +284,19 @@ struct memory_list memory_list_pim[] =
   { -1, NULL },
 };
 
+struct memory_list memory_list_nhrp[] =
+{
+  { MTYPE_NHRP_IF,		"NHRP interface"		},
+  { MTYPE_NHRP_VC,		"NHRP virtual connection"	},
+  { MTYPE_NHRP_PEER,		"NHRP peer entry"		},
+  { MTYPE_NHRP_CACHE,		"NHRP cache entry"		},
+  { MTYPE_NHRP_NHS,		"NHRP next hop server"		},
+  { MTYPE_NHRP_REGISTRATION,	"NHRP registration entries"	},
+  { MTYPE_NHRP_SHORTCUT,	"NHRP shortcut"			},
+  { MTYPE_NHRP_ROUTE,		"NHRP routing entry"		},
+  { -1, NULL }
+};
+
 struct memory_list memory_list_vtysh[] =
 {
   { MTYPE_VTYSH_CONFIG,		"Vtysh configuration",		},
@@ -297,5 +314,6 @@ struct mlist mlists[] __attribute__ ((unused)) = {
   { memory_list_isis,	"ISIS"	},
   { memory_list_bgp,	"BGP"	},
   { memory_list_pim,	"PIM"	},
+  { memory_list_nhrp,	"NHRP"	},
   { NULL, NULL},
 };

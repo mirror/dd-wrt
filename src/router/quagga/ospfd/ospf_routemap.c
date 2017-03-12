@@ -436,45 +436,13 @@ route_match_tag (void *rule, struct prefix *prefix,
   return RMAP_NOMATCH;
 }
 
-/*  Route map `match tag' match statement. `arg' is TAG value */
-static void *
-route_match_tag_compile (const char *arg)
-{
-  route_tag_t *tag;
-  route_tag_t tmp;
-
-  /* tag value shoud be integer. */
-  if (! all_digit (arg))
-    return NULL;
-
-  tmp = atoi(arg);
-  if (tmp < 1)
-    return NULL;
-
-  tag = XMALLOC (MTYPE_ROUTE_MAP_COMPILED, sizeof (u_short));
-
-  if (!tag)
-    return tag;
-
-  *tag = tmp;
-
-  return tag;
-}
-
-/* Free route map's compiled 'match tag' value. */
-static void
-route_match_tag_free (void *rule)
-{
-  XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
-}
-
 /* Route map commands for tag matching. */
-struct route_map_rule_cmd route_match_tag_cmd =
+static struct route_map_rule_cmd route_match_tag_cmd =
 {
   "tag",
   route_match_tag,
-  route_match_tag_compile,
-  route_match_tag_free,
+  route_map_rule_tag_compile,
+  route_map_rule_tag_free,
 };
 
 
@@ -626,46 +594,13 @@ route_set_tag (void *rule, struct prefix *prefix,
   return RMAP_OKAY;
 }
 
-/* Route map `tag' compile function.  Given string is converted to u_short. */
-static void *
-route_set_tag_compile (const char *arg)
-{
-  route_tag_t *tag;
-  route_tag_t tmp;
-
-  /* tag value shoud be integer. */
-  if (! all_digit (arg))
-    return NULL;
-
-  tmp = atoi(arg);
-
-  if (tmp < 1)
-      return NULL;
-
-  tag = XMALLOC (MTYPE_ROUTE_MAP_COMPILED, sizeof (u_short));
-
-  if (!tag)
-    return tag;
-
-  *tag = tmp;
-
-  return tag;
-}
-
-/* Free route map's tag value. */
-static void
-route_set_tag_free (void *rule)
-{
-  XFREE (MTYPE_ROUTE_MAP_COMPILED, rule);
-}
-
 /* Route map commands for tag set. */
-struct route_map_rule_cmd route_set_tag_cmd =
+static struct route_map_rule_cmd route_set_tag_cmd =
 {
   "tag",
   route_set_tag,
-  route_set_tag_compile,
-  route_set_tag_free,
+  route_map_rule_tag_compile,
+  route_map_rule_tag_free,
 };
 
 DEFUN (match_ip_nexthop,
@@ -855,7 +790,7 @@ ALIAS (no_match_interface,
 
 DEFUN (match_tag,
        match_tag_cmd,
-       "match tag <1-65535>",
+       "match tag <1-4294967295>",
        MATCH_STR
        "Match tag of route\n"
        "Tag value\n")
@@ -878,7 +813,7 @@ DEFUN (no_match_tag,
 
 ALIAS (no_match_tag,
        no_match_tag_val_cmd,
-       "no match tag <1-65535>",
+       "no match tag <1-4294967295>",
        NO_STR
        MATCH_STR
        "Match tag of route\n"
@@ -955,7 +890,7 @@ ALIAS (no_set_metric_type,
 
 DEFUN (set_tag,
        set_tag_cmd,
-       "set tag <1-65535>",
+       "set tag <1-4294967295>",
        SET_STR
        "Tag value for routing protocol\n"
        "Tag value\n")
@@ -978,7 +913,7 @@ DEFUN (no_set_tag,
 
 ALIAS (no_set_tag,
        no_set_tag_val_cmd,
-       "no set tag <1-65535>",
+       "no set tag <1-4294967295>",
        NO_STR
        SET_STR
        "Tag value for routing protocol\n"

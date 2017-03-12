@@ -1,6 +1,8 @@
 [Unit]
 Description=GNU Zebra routing manager
-After=syslog.target network.target
+Wants=network.target
+Before=network.target
+After=network-pre.target
 ConditionPathExists=/etc/quagga/zebra.conf
 
 [Service]
@@ -11,4 +13,4 @@ ExecStart=/usr/sbin/zebra -d $ZEBRA_OPTS -f /etc/quagga/zebra.conf
 Restart=on-abort
 
 [Install]
-WantedBy=network.target
+WantedBy=multi-user.target

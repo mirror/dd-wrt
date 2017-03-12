@@ -107,6 +107,9 @@ bgp_interface_delete (int command, struct zclient *zclient,
 
   s = zclient->ibuf;
   ifp = zebra_interface_state_read (s, vrf_id);
+  if (! ifp)
+    return 0;
+
   ifp->ifindex = IFINDEX_INTERNAL;
 
   if (BGP_DEBUG(zebra, ZEBRA))
@@ -172,11 +175,10 @@ bgp_interface_down (int command, struct zclient *zclient, zebra_size_t length,
 
 	for (ALL_LIST_ELEMENTS (bgp->peer, node, nnode, peer))
 	  {
-	    if ((peer->ttl != 1) && (peer->gtsm_hops != 1))
-	      continue;
-
-	    if (ifp == peer->nexthop.ifp)
-	      BGP_EVENT_ADD (peer, BGP_Stop);
+            if (peer->gtsm_hops != 1 && peer_ttl (peer) != 1)
+              continue;
+            if (ifp == peer->nexthop.ifp)
+              BGP_EVENT_ADD (peer, BGP_Stop);
 	  }
       }
   }
@@ -716,7 +718,7 @@ bgp_zebra_announce (struct prefix *p, struct bgp_info *info, struct bgp *bgp, sa
       SET_FLAG (flags, ZEBRA_FLAG_INTERNAL);
     }
 
-  if ((peer->sort == BGP_PEER_EBGP && peer->ttl != 1)
+  if ((peer->sort == BGP_PEER_EBGP && peer_ttl (peer) != 1)
       || CHECK_FLAG (peer->flags, PEER_FLAG_DISABLE_CONNECTED_CHECK))
     SET_FLAG (flags, ZEBRA_FLAG_INTERNAL);
 
@@ -991,7 +993,7 @@ bgp_zebra_withdraw (struct prefix *p, struct bgp_info *info, safi_t safi)
       SET_FLAG (flags, ZEBRA_FLAG_IBGP);
     }
 
-  if ((peer->sort == BGP_PEER_EBGP && peer->ttl != 1)
+  if ((peer->sort == BGP_PEER_EBGP && peer_ttl (peer) != 1)
       || CHECK_FLAG (peer->flags, PEER_FLAG_DISABLE_CONNECTED_CHECK))
     SET_FLAG (flags, ZEBRA_FLAG_INTERNAL);
 

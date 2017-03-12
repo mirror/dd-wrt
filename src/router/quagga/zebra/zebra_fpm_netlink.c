@@ -252,11 +252,16 @@ netlink_route_info_fill (netlink_route_info_t *ri, int cmd,
    * An RTM_DELROUTE need not be accompanied by any nexthops,
    * particularly in our communication with the FPM.
    */
-  if (cmd == RTM_DELROUTE && !rib)
+  if (cmd == RTM_DELROUTE)
     goto skip;
 
-  if (rib)
-    ri->rtm_protocol = netlink_proto_from_route_type (rib->type);
+  if (!rib)
+    {
+      zlog_err("netlink_route_info_fill RTM_ADDROUTE called without rib info");
+      return 0;
+    }
+
+  ri->rtm_protocol = netlink_proto_from_route_type (rib->type);
 
   if ((rib->flags & ZEBRA_FLAG_BLACKHOLE) || (rib->flags & ZEBRA_FLAG_REJECT))
     discard = 1;

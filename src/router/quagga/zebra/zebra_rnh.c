@@ -223,16 +223,27 @@ zebra_evaluate_rnh_table (vrf_id_t vrfid, int family)
 	    {
 	      if (CHECK_FLAG (rib->status, RIB_ENTRY_REMOVED))
 		continue;
-	      if (CHECK_FLAG (rib->flags, ZEBRA_FLAG_SELECTED))
+	      if (! CHECK_FLAG (rib->status, RIB_ENTRY_SELECTED_FIB))
+		continue;
+
+	      if (CHECK_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED))
 		{
-		  if (CHECK_FLAG(rnh->flags, ZEBRA_NHT_CONNECTED))
+		  if (rib->type == ZEBRA_ROUTE_CONNECT)
+		    break;
+
+		  if (rib->type == ZEBRA_ROUTE_NHRP)
 		    {
-		      if (rib->type == ZEBRA_ROUTE_CONNECT)
+		      struct nexthop *nexthop;
+		      for (nexthop = rib->nexthop; nexthop; nexthop = nexthop->next)
+			if (nexthop->type == NEXTHOP_TYPE_IFINDEX ||
+			    nexthop->type == NEXTHOP_TYPE_IFNAME)
+			  break;
+		      if (nexthop)
 			break;
 		    }
-		  else
-		    break;
 		}
+	      else
+		break;
 	    }
 	}
 
@@ -498,8 +509,8 @@ send_client (struct rnh *rnh, struct zserv *client, vrf_id_t vrf_id)
       nump = stream_get_endp(s);
       stream_putc (s, 0);
       for (nexthop = rib->nexthop; nexthop; nexthop = nexthop->next)
-	if ((CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB) ||
-             CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_RECURSIVE)) &&
+	if (CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_FIB) &&
+            ! CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_RECURSIVE) &&
 	    CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_ACTIVE))
 	  {
 	    stream_putc (s, nexthop->type);

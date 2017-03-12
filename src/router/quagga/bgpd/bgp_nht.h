@@ -25,33 +25,40 @@
 /**
  * bgp_parse_nexthop_update() - parse a nexthop update message from Zebra.
  */
-extern void bgp_parse_nexthop_update(void);
+void bgp_parse_nexthop_update (void);
 
 /**
- * bgp_find_nexthop() - lookup the nexthop cache table for the bnc object
+ * bgp_nexthop_check() - check if the bnc object is valid.
  * ARGUMENTS:
  *   p - path for which the nexthop object is being looked up
  *   connected - True if NH MUST be a connected route
  */
-extern int bgp_find_nexthop(struct bgp_info *p, int connected);
+int bgp_nexthop_check (struct bgp_info *, int connected);
 
 /**
- * bgp_find_or_add_nexthop() - lookup the nexthop cache table for the bnc
- *  object. If not found, create a new object and register with ZEBRA for
- *  nexthop notification.
+ * bgp_ensure_nexthop() - Ensure a bgp_nexthop_cache object exists for 
+ *  the given prefix or peer.  If an existing one is not found,
+ *  create a new object and register with ZEBRA for nexthop
+ *  notification.
  * ARGUMENTS:
- *   a - afi: AFI_IP or AF_IP6
- *   p - path for which the nexthop object is being looked up
- *   peer - The BGP peer associated with this NHT
+ *   afi: AFI_IP or AF_IP6
+ *     struct bgp_info *: path for which the nexthop object is 
+ *                        being looked up
+ *   OR
+ *     struct peer The BGP peer associated with this NHT
  *   connected - True if NH MUST be a connected route
  */
-extern int bgp_find_or_add_nexthop(afi_t a, struct bgp_info *p,
-				   struct peer *peer, int connected);
+int bgp_ensure_nexthop (struct bgp_info *, struct peer *, int connected);
 
 /**
  * bgp_unlink_nexthop() - Unlink the nexthop object from the path structure.
  * ARGUMENTS:
- *   p - path structure.
+ *   struct bgp_info *: path structure.
+ */
+void bgp_unlink_nexthop (struct bgp_info *);
+
+/**
+ * bgp_unlink_nexthop() - Unlink the nexthop object for the given peer.
  */
 extern void bgp_unlink_nexthop(struct bgp_info *p);
 void bgp_unlink_nexthop_by_peer (struct peer *);

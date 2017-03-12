@@ -38,6 +38,7 @@ Software Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
 #include "bgpd/bgp_aspath.h"
 #include "bgpd/bgp_community.h"
 #include "bgpd/bgp_ecommunity.h"
+#include "bgpd/bgp_lcommunity.h"
 #include "bgpd/bgp_damp.h"
 #include "bgpd/bgp_debug.h"
 #include "bgpd/bgp_fsm.h"
@@ -2364,13 +2365,15 @@ DEFUN (no_neighbor_send_community,
 /* neighbor send-community extended. */
 DEFUN (neighbor_send_community_type,
        neighbor_send_community_type_cmd,
-       NEIGHBOR_CMD2 "send-community (both|extended|standard)",
+       NEIGHBOR_CMD2 "send-community (both|all|extended|standard|large)",
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Send Community attribute to this neighbor\n"
-       "Send Standard and Extended Community attributes\n"
+       "Send Standard, Large and Extended Community attributes\n"
+       "Send Standard, Large and Extended Community attributes\n"
        "Send Extended Community attributes\n"
-       "Send Standard Community attributes\n")
+       "Send Standard Community attributes\n"
+       "Send Large Community attributes\n")
 {
   if (strncmp (argv[1], "s", 1) == 0)
     return peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
@@ -2380,23 +2383,30 @@ DEFUN (neighbor_send_community_type,
     return peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
 				 bgp_node_safi (vty),
 				 PEER_FLAG_SEND_EXT_COMMUNITY);
+  if (strncmp (argv[1], "l", 1) == 0)
+    return peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
+				 bgp_node_safi (vty),
+				 PEER_FLAG_SEND_LARGE_COMMUNITY);
 
   return peer_af_flag_set_vty (vty, argv[0], bgp_node_afi (vty),
 			       bgp_node_safi (vty),
 			       (PEER_FLAG_SEND_COMMUNITY|
-				PEER_FLAG_SEND_EXT_COMMUNITY));
+				PEER_FLAG_SEND_EXT_COMMUNITY|
+				PEER_FLAG_SEND_LARGE_COMMUNITY));
 }
 
 DEFUN (no_neighbor_send_community_type,
        no_neighbor_send_community_type_cmd,
-       NO_NEIGHBOR_CMD2 "send-community (both|extended|standard)",
+       NO_NEIGHBOR_CMD2 "send-community (both|all|extended|standard|large)",
        NO_STR
        NEIGHBOR_STR
        NEIGHBOR_ADDR_STR2
        "Send Community attribute to this neighbor\n"
-       "Send Standard and Extended Community attributes\n"
+       "Send Standard, Large and Extended Community attributes\n"
+       "Send Standard, Large and Extended Community attributes\n"
        "Send Extended Community attributes\n"
-       "Send Standard Community attributes\n")
+       "Send Standard Community attributes\n"
+       "Send Large Community attributes\n")
 {
   if (strncmp (argv[1], "s", 1) == 0)
     return peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
@@ -2406,11 +2416,16 @@ DEFUN (no_neighbor_send_community_type,
     return peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
 				   bgp_node_safi (vty),
 				   PEER_FLAG_SEND_EXT_COMMUNITY);
+  if (strncmp (argv[1], "l", 1) == 0)
+    return peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
+				   bgp_node_safi (vty),
+				   PEER_FLAG_SEND_LARGE_COMMUNITY);
 
   return peer_af_flag_unset_vty (vty, argv[0], bgp_node_afi (vty),
 				 bgp_node_safi (vty),
 				 (PEER_FLAG_SEND_COMMUNITY |
-				  PEER_FLAG_SEND_EXT_COMMUNITY));
+				  PEER_FLAG_SEND_EXT_COMMUNITY|
+				  PEER_FLAG_SEND_LARGE_COMMUNITY));
 }
 
 /* neighbor soft-reconfig. */
@@ -3058,7 +3073,7 @@ peer_ebgp_multihop_unset_vty (struct vty *vty, const char *ip_str)
   if (! peer)
     return CMD_WARNING;
 
-  return bgp_vty_return (vty, peer_ebgp_multihop_unset (peer));
+  return bgp_vty_return (vty, peer_ebgp_multihop_set (peer, 0));
 }
 
 /* neighbor ebgp-multihop. */
@@ -4380,7 +4395,7 @@ DEFUN (no_neighbor_ttl_security,
   if (! peer)
     return CMD_WARNING;
 
-  return bgp_vty_return (vty, peer_ttl_security_hops_unset (peer));
+  return bgp_vty_return (vty, peer_ttl_security_hops_set (peer, 0));
 }
 
 /* Address family configuration.  */
@@ -7434,7 +7449,12 @@ DEFUN (show_bgp_memory,
              mtype_memstr (memstrbuf, sizeof (memstrbuf),
                          count * sizeof (struct ecommunity)),
              VTY_NEWLINE);
-  
+  if ((count = mtype_stats_alloc (MTYPE_LCOMMUNITY)))
+    vty_out (vty, "%ld BGP large-community entries, using %s of memory%s",
+	     count,
+             mtype_memstr (memstrbuf, sizeof (memstrbuf),
+                         count * sizeof (struct lcommunity)),
+             VTY_NEWLINE);
   if ((count = mtype_stats_alloc (MTYPE_CLUSTER)))
     vty_out (vty, "%ld Cluster lists, using %s of memory%s", count,
              mtype_memstr (memstrbuf, sizeof (memstrbuf),
@@ -7480,6 +7500,8 @@ bgp_show_summary (struct vty *vty, struct bgp *bgp, int afi, int safi)
   struct peer *peer;
   struct listnode *node, *nnode;
   unsigned int count = 0;
+  unsigned int totrcount = 0;
+  unsigned int totecount = 0;
   char timebuf[BGP_UPTIME_LEN];
   int len;
 
@@ -7561,6 +7583,8 @@ bgp_show_summary (struct vty *vty, struct bgp *bgp, int afi, int safi)
 	  if (peer->status == Established)
 	    {
 	      vty_out (vty, " %8ld", peer->pcount[afi][safi]);
+	      totrcount += peer->pcount[afi][safi];
+	      totecount++;
 	    }
 	  else
 	    {
@@ -7577,8 +7601,14 @@ bgp_show_summary (struct vty *vty, struct bgp *bgp, int afi, int safi)
     }
 
   if (count)
-    vty_out (vty, "%sTotal number of neighbors %d%s", VTY_NEWLINE,
-	     count, VTY_NEWLINE);
+    {
+      vty_out (vty, "%sTotal number of neighbors %d%s", VTY_NEWLINE,
+	       count, VTY_NEWLINE);
+      vty_out (vty, "%sTotal num. Established sessions %d%s", VTY_NEWLINE,
+	       totecount, VTY_NEWLINE);
+      vty_out (vty, "Total num. of routes received     %d%s",
+               totrcount, VTY_NEWLINE);
+    }
   else
     vty_out (vty, "No %s neighbor is configured%s",
 	     afi == AFI_IP ? "IPv4" : "IPv6", VTY_NEWLINE);
@@ -8232,14 +8262,18 @@ bgp_show_peer_afi (struct vty *vty, struct peer *p, afi_t afi, safi_t safi)
   if (CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_MED_UNCHANGED))
     vty_out (vty, "  MED is propagated unchanged to this neighbor%s", VTY_NEWLINE);
   if (CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_COMMUNITY)
-      || CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY))
+      || CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY)
+      || CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_LARGE_COMMUNITY))
     {
       vty_out (vty, "  Community attribute sent to this neighbor");
       if (CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_COMMUNITY)
-	&& CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY))
-	vty_out (vty, "(both)%s", VTY_NEWLINE);
+	  && CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY)
+	  && CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_LARGE_COMMUNITY))
+	vty_out (vty, "(all)%s", VTY_NEWLINE);
       else if (CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_EXT_COMMUNITY))
 	vty_out (vty, "(extended)%s", VTY_NEWLINE);
+      else if (CHECK_FLAG (p->af_flags[afi][safi], PEER_FLAG_SEND_LARGE_COMMUNITY))
+	vty_out (vty, "(large)%s", VTY_NEWLINE);
       else 
 	vty_out (vty, "(standard)%s", VTY_NEWLINE);
     }
@@ -8364,6 +8398,7 @@ bgp_show_peer (struct vty *vty, struct peer *p)
   char timebuf[BGP_UPTIME_LEN];
   afi_t afi;
   safi_t safi;
+  int ttl;
 
   bgp = p->bgp;
 
@@ -8663,21 +8698,12 @@ bgp_show_peer (struct vty *vty, struct peer *p)
     }
 
   /* EBGP Multihop and GTSM */
-  if (p->sort != BGP_PEER_IBGP)
-    {
-      if (p->gtsm_hops > 0)
-	vty_out (vty, "  External BGP neighbor may be up to %d hops away.%s",
-		 p->gtsm_hops, VTY_NEWLINE);
-      else if (p->ttl > 1)
-	vty_out (vty, "  External BGP neighbor may be up to %d hops away.%s",
-		 p->ttl, VTY_NEWLINE);
-    }
-  else
-    {
-      if (p->gtsm_hops > 0)
-	vty_out (vty, "  Internal BGP neighbor may be up to %d hops away.%s",
-		 p->gtsm_hops, VTY_NEWLINE);
-    }
+  ttl = p->gtsm_hops;
+  if (! ttl)
+    ttl = peer_ttl (p);
+  vty_out (vty, "  %s BGP neighbor may be up to %d hops away.%s",
+           p->sort == BGP_PEER_IBGP ? "Internal" : "External",
+           ttl, VTY_NEWLINE);
 
   /* Local address. */
   if (p->su_local)
@@ -9092,6 +9118,35 @@ DEFUN (show_ip_bgp_community_info,
   hash_iterate (community_hash (), 
 		(void (*) (struct hash_backet *, void *))
 		community_show_all_iterator,
+		vty);
+
+  return CMD_SUCCESS;
+}
+
+static void
+lcommunity_show_all_iterator (struct hash_backet *backet, struct vty *vty)
+{
+  struct lcommunity *lcom;
+
+  lcom = (struct lcommunity *) backet->data;
+  vty_out (vty, "[%p] (%ld) %s%s", (void *)backet, lcom->refcnt,
+	   lcommunity_str (lcom), VTY_NEWLINE);
+}
+
+/* Show BGP's community internal data. */
+DEFUN (show_ip_bgp_lcommunity_info,
+       show_ip_bgp_lcommunity_info_cmd,
+       "show ip bgp large-community-info",
+       SHOW_STR
+       IP_STR
+       BGP_STR
+       "List all bgp large-community information\n")
+{
+  vty_out (vty, "Address Refcnt Large-community%s", VTY_NEWLINE);
+
+  hash_iterate (lcommunity_hash (),
+		(void (*) (struct hash_backet *, void *))
+		lcommunity_show_all_iterator,
 		vty);
 
   return CMD_SUCCESS;
@@ -11206,6 +11261,9 @@ bgp_vty_init (void)
   /* "show ip bgp community" commands. */
   install_element (VIEW_NODE, &show_ip_bgp_community_info_cmd);
 
+  /* "show ip bgp large-community" commands. */
+  install_element (VIEW_NODE, &show_ip_bgp_lcommunity_info_cmd);
+
   /* "show ip bgp attribute-info" commands. */
   install_element (VIEW_NODE, &show_ip_bgp_attr_info_cmd);
 
@@ -11691,6 +11749,359 @@ DEFUN (show_ip_community_list_arg,
   return CMD_SUCCESS;
 }
 
+/*
+ * Large Community code.
+ */
+static int
+lcommunity_list_set_vty (struct vty *vty, int argc, const char **argv,
+			 int style, int reject_all_digit_name)
+{
+  int ret;
+  int direct;
+  char *str;
+
+  /* Check the list type. */
+  if (strncmp (argv[1], "p", 1) == 0)
+    direct = COMMUNITY_PERMIT;
+  else if (strncmp (argv[1], "d", 1) == 0)
+    direct = COMMUNITY_DENY;
+  else
+    {
+      vty_out (vty, "%% Matching condition must be permit or deny%s",
+	       VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  /* All digit name check.  */
+  if (reject_all_digit_name && all_digit (argv[0]))
+    {
+      vty_out (vty, "%% Community name cannot have all digits%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  /* Concat community string argument.  */
+  if (argc > 1)
+    str = argv_concat (argv, argc, 2);
+  else
+    str = NULL;
+
+  ret = lcommunity_list_set (bgp_clist, argv[0], str, direct, style);
+
+  /* Free temporary community list string allocated by
+     argv_concat().  */
+  if (str)
+    XFREE (MTYPE_TMP, str);
+
+  if (ret < 0)
+    {
+      community_list_perror (vty, ret);
+      return CMD_WARNING;
+    }
+  return CMD_SUCCESS;
+}
+
+static int
+lcommunity_list_unset_vty (struct vty *vty, int argc, const char **argv,
+			   int style)
+{
+  int ret;
+  int direct = 0;
+  char *str = NULL;
+
+  if (argc > 1)
+    {
+      /* Check the list direct. */
+      if (strncmp (argv[1], "p", 1) == 0)
+	direct = COMMUNITY_PERMIT;
+      else if (strncmp (argv[1], "d", 1) == 0)
+	direct = COMMUNITY_DENY;
+      else
+	{
+	  vty_out (vty, "%% Matching condition must be permit or deny%s",
+		   VTY_NEWLINE);
+	  return CMD_WARNING;
+	}
+
+      /* Concat community string argument.  */
+      str = argv_concat (argv, argc, 2);
+    }
+
+  /* Unset community list.  */
+  ret = lcommunity_list_unset (bgp_clist, argv[0], str, direct, style);
+
+  /* Free temporary community list string allocated by
+     argv_concat().  */
+  if (str)
+    XFREE (MTYPE_TMP, str);
+
+  if (ret < 0)
+    {
+      community_list_perror (vty, ret);
+      return CMD_WARNING;
+    }
+
+  return CMD_SUCCESS;
+}
+
+/* "large-community-list" keyword help string.  */
+#define LCOMMUNITY_LIST_STR "Add a large community list entry\n"
+#define LCOMMUNITY_VAL_STR  "large community in 'aa:bb:cc' format\n"
+
+DEFUN (ip_lcommunity_list_standard,
+       ip_lcommunity_list_standard_cmd,
+       "ip large-community-list <1-99> (deny|permit) .AA:BB:CC",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (standard)\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       LCOMMUNITY_VAL_STR)
+{
+  return lcommunity_list_set_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD, 0);
+}
+
+ALIAS (ip_lcommunity_list_standard,
+       ip_lcommunity_list_standard2_cmd,
+       "ip large-community-list <1-99> (deny|permit)",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (standard)\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n")
+
+DEFUN (ip_lcommunity_list_expanded,
+       ip_lcommunity_list_expanded_cmd,
+       "ip large-community-list <100-500> (deny|permit) .LINE",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (expanded)\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       "An ordered list as a regular-expression\n")
+{
+  return lcommunity_list_set_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED, 0);
+}
+
+DEFUN (ip_lcommunity_list_name_standard,
+       ip_lcommunity_list_name_standard_cmd,
+       "ip large-community-list standard WORD (deny|permit) .AA:BB.CC",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify standard large-community-list\n"
+       "Large Community list name\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       LCOMMUNITY_VAL_STR)
+{
+  return lcommunity_list_set_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD, 1);
+}
+
+ALIAS (ip_lcommunity_list_name_standard,
+       ip_lcommunity_list_name_standard2_cmd,
+       "ip large-community-list standard WORD (deny|permit)",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify standard large-community-list\n"
+       "Large Community list name\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n")
+
+DEFUN (ip_lcommunity_list_name_expanded,
+       ip_lcommunity_list_name_expanded_cmd,
+       "ip large-community-list expanded WORD (deny|permit) .LINE",
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify expanded large-community-list\n"
+       "Large Community list name\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       "An ordered list as a regular-expression\n")
+{
+  return lcommunity_list_set_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED, 1);
+}
+
+DEFUN (no_ip_lcommunity_list_standard_all,
+       no_ip_lcommunity_list_standard_all_cmd,
+       "no ip large-community-list <1-99>",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (standard)\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD);
+}
+
+DEFUN (no_ip_lcommunity_list_expanded_all,
+       no_ip_lcommunity_list_expanded_all_cmd,
+       "no ip large-community-list <100-500>",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (expanded)\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED);
+}
+
+DEFUN (no_ip_lcommunity_list_name_standard_all,
+       no_ip_lcommunity_list_name_standard_all_cmd,
+       "no ip large-community-list standard WORD",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify standard large-community-list\n"
+       "Large Community list name\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD);
+}
+
+DEFUN (no_ip_lcommunity_list_name_expanded_all,
+       no_ip_lcommunity_list_name_expanded_all_cmd,
+       "no ip large-community-list expanded WORD",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify expanded large-community-list\n"
+       "Large Community list name\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED);
+}
+
+DEFUN (no_ip_lcommunity_list_standard,
+       no_ip_lcommunity_list_standard_cmd,
+       "no ip large-community-list <1-99> (deny|permit) .AA:.AA:NN",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (standard)\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       LCOMMUNITY_VAL_STR)
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD);
+}
+
+DEFUN (no_ip_lcommunity_list_expanded,
+       no_ip_lcommunity_list_expanded_cmd,
+       "no ip large-community-list <100-500> (deny|permit) .LINE",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Large Community list number (expanded)\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       "An ordered list as a regular-expression\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED);
+}
+
+DEFUN (no_ip_lcommunity_list_name_standard,
+       no_ip_lcommunity_list_name_standard_cmd,
+       "no ip large-community-list standard WORD (deny|permit) .AA:.AA:NN",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify standard large-community-list\n"
+       "Large Community list name\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       LCOMMUNITY_VAL_STR)
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_STANDARD);
+}
+
+DEFUN (no_ip_lcommunity_list_name_expanded,
+       no_ip_lcommunity_list_name_expanded_cmd,
+       "no ip large-community-list expanded WORD (deny|permit) .LINE",
+       NO_STR
+       IP_STR
+       LCOMMUNITY_LIST_STR
+       "Specify expanded large-community-list\n"
+       "Large community list name\n"
+       "Specify large community to reject\n"
+       "Specify large community to accept\n"
+       "An ordered list as a regular-expression\n")
+{
+  return lcommunity_list_unset_vty (vty, argc, argv, LARGE_COMMUNITY_LIST_EXPANDED);
+}
+
+static void
+lcommunity_list_show (struct vty *vty, struct community_list *list)
+{
+  struct community_entry *entry;
+
+  for (entry = list->head; entry; entry = entry->next)
+    {
+      if (entry == list->head)
+	{
+	  if (all_digit (list->name))
+	    vty_out (vty, "Large community %s list %s%s",
+		     entry->style == EXTCOMMUNITY_LIST_STANDARD ?
+		     "standard" : "(expanded) access",
+		     list->name, VTY_NEWLINE);
+	  else
+	    vty_out (vty, "Named large community %s list %s%s",
+		     entry->style == EXTCOMMUNITY_LIST_STANDARD ?
+		     "standard" : "expanded",
+		     list->name, VTY_NEWLINE);
+	}
+      if (entry->any)
+	vty_out (vty, "    %s%s",
+		 community_direct_str (entry->direct), VTY_NEWLINE);
+      else
+	vty_out (vty, "    %s %s%s",
+		 community_direct_str (entry->direct),
+		 entry->style == EXTCOMMUNITY_LIST_STANDARD ?
+		 entry->u.ecom->str : entry->config,
+		 VTY_NEWLINE);
+    }
+}
+
+DEFUN (show_ip_lcommunity_list,
+       show_ip_lcommunity_list_cmd,
+       "show ip large-community-list",
+       SHOW_STR
+       IP_STR
+       "List large-community list\n")
+{
+  struct community_list *list;
+  struct community_list_master *cm;
+
+  cm = community_list_master_lookup (bgp_clist, LARGE_COMMUNITY_LIST_MASTER);
+  if (! cm)
+    return CMD_SUCCESS;
+
+  for (list = cm->num.head; list; list = list->next)
+    lcommunity_list_show (vty, list);
+
+  for (list = cm->str.head; list; list = list->next)
+    lcommunity_list_show (vty, list);
+
+  return CMD_SUCCESS;
+}
+
+DEFUN (show_ip_lcommunity_list_arg,
+       show_ip_lcommunity_list_arg_cmd,
+       "show ip large-community-list (<1-500>|WORD)",
+       SHOW_STR
+       IP_STR
+       "List large-community list\n"
+       "large-community-list number\n"
+       "large-community-list name\n")
+{
+  struct community_list *list;
+
+  list = community_list_lookup (bgp_clist, argv[0], LARGE_COMMUNITY_LIST_MASTER);
+  if (! list)
+    {
+      vty_out (vty, "%% Can't find extcommunity-list%s", VTY_NEWLINE);
+      return CMD_WARNING;
+    }
+
+  lcommunity_list_show (vty, list);
+
+  return CMD_SUCCESS;
+}
+
 static int
 extcommunity_list_set_vty (struct vty *vty, int argc, const char **argv, 
                            int style, int reject_all_digit_name)
@@ -12113,6 +12524,30 @@ community_list_config_write (struct vty *vty)
 		 community_list_config_str (entry), VTY_NEWLINE);
 	write++;
       }
+
+
+    /* lcommunity-list.  */
+  cm = community_list_master_lookup (bgp_clist, LARGE_COMMUNITY_LIST_MASTER);
+
+  for (list = cm->num.head; list; list = list->next)
+    for (entry = list->head; entry; entry = entry->next)
+      {
+	vty_out (vty, "ip large-community-list %s %s %s%s",
+		 list->name, community_direct_str (entry->direct),
+		 community_list_config_str (entry), VTY_NEWLINE);
+	write++;
+      }
+  for (list = cm->str.head; list; list = list->next)
+    for (entry = list->head; entry; entry = entry->next)
+      {
+	vty_out (vty, "ip large-community-list %s %s %s %s%s",
+		 entry->style == LARGE_COMMUNITY_LIST_STANDARD
+		 ? "standard" : "expanded",
+		 list->name, community_direct_str (entry->direct),
+		 community_list_config_str (entry), VTY_NEWLINE);
+	write++;
+      }
+
   return write;
 }
 
@@ -12163,4 +12598,22 @@ community_list_vty (void)
   install_element (CONFIG_NODE, &no_ip_extcommunity_list_name_expanded_cmd);
   install_element (VIEW_NODE, &show_ip_extcommunity_list_cmd);
   install_element (VIEW_NODE, &show_ip_extcommunity_list_arg_cmd);
+
+  /* Large Community List */
+  install_element (CONFIG_NODE, &ip_lcommunity_list_standard_cmd);
+  install_element (CONFIG_NODE, &ip_lcommunity_list_standard2_cmd);
+  install_element (CONFIG_NODE, &ip_lcommunity_list_expanded_cmd);
+  install_element (CONFIG_NODE, &ip_lcommunity_list_name_standard_cmd);
+  install_element (CONFIG_NODE, &ip_lcommunity_list_name_standard2_cmd);
+  install_element (CONFIG_NODE, &ip_lcommunity_list_name_expanded_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_standard_all_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_expanded_all_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_name_standard_all_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_name_expanded_all_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_standard_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_expanded_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_name_standard_cmd);
+  install_element (CONFIG_NODE, &no_ip_lcommunity_list_name_expanded_cmd);
+  install_element (VIEW_NODE, &show_ip_lcommunity_list_cmd);
+  install_element (VIEW_NODE, &show_ip_lcommunity_list_arg_cmd);
 }

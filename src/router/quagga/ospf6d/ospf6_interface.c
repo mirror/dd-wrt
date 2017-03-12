@@ -340,29 +340,6 @@ ospf6_interface_if_add (struct interface *ifp)
 }
 
 void
-ospf6_interface_if_del (struct interface *ifp)
-{
-  struct ospf6_interface *oi;
-
-  oi = (struct ospf6_interface *) ifp->info;
-  if (oi == NULL)
-    return;
-
-  /* interface stop */
-  if (oi->area)
-    thread_execute (master, interface_down, oi, 0);
-
-  listnode_delete (oi->area->if_list, oi);
-  oi->area = (struct ospf6_area *) NULL;
-
-  /* cut link */
-  oi->interface = NULL;
-  ifp->info = NULL;
-
-  ospf6_interface_delete (oi);
-}
-
-void
 ospf6_interface_state_update (struct interface *ifp)
 {
   struct ospf6_interface *oi;
@@ -704,7 +681,7 @@ interface_up (struct thread *thread)
       if (IS_OSPF6_DEBUG_INTERFACE)
 	zlog_debug ("Interface %s has no link local address, can't execute [InterfaceUp]",
 		    oi->interface->name);
-	return 0;
+      return 0;
     }
 
   /* Recompute cost */
