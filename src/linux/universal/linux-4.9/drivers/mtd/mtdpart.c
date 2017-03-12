@@ -758,6 +758,8 @@ int mtd_del_partition(struct mtd_info *master, int partno)
 }
 EXPORT_SYMBOL_GPL(mtd_del_partition);
 
+
+
 #ifdef CONFIG_MTD_ROOTFS_SPLIT
 #define ROOTFS_SPLIT_NAME "ddwrt"
 #define ROOTFS_REMOVED_NAME "<removed>"

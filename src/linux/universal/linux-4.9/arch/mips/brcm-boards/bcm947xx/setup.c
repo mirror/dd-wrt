@@ -421,6 +421,29 @@ static uint32 boot_partition_size(uint32 flash_phys) {
 	return bootsz;
 }
 
+
+struct squashfs_super_block {
+	__le32			s_magic;
+	__le32			inodes;
+	__le32			mkfs_time;
+	__le32			block_size;
+	__le32			fragments;
+	__le16			compression;
+	__le16			block_log;
+	__le16			flags;
+	__le16			no_ids;
+	__le16			s_major;
+	__le16			s_minor;
+	__le64			root_inode;
+	__le64			bytes_used;
+	__le64			id_table_start;
+	__le64			xattr_id_table_start;
+	__le64			inode_table_start;
+	__le64			directory_table_start;
+	__le64			fragment_table_start;
+	__le64			lookup_table_start;
+};
+
 #if defined(BCMCONFMTD) && defined(PLC)
 #define FLASH_PARTS_NUM	7
 #elif defined(BCMCONFMTD) || defined(PLC)
