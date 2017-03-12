@@ -14,7 +14,7 @@
 #include <asm/delay.h>
 #include <asm/io.h>
 #include <linux/semaphore.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 #include "ar7100.h"
 #include "wzrag300nh_flash.h"

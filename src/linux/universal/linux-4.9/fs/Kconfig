@@ -247,8 +247,9 @@ source "fs/jffs2/Kconfig"
 source "fs/ubifs/Kconfig"
 source "fs/logfs/Kconfig"
 source "fs/cramfs/Kconfig"
+source "fs/squashfs/Kconfig"
 
-config SQUASHFS
+config SQUASHFS_DD
 	tristate "SquashFS 3.0 - Squashed file system support"
 	help
 	  Saying Y here includes support for SquashFS 3.0 (a Compressed Read-Only File
@@ -272,10 +273,10 @@ config SQUASHFS
 
 	  If unsure, say N.
 
-config SQUASHFS_EMBEDDED
+config SQUASHFS_EMBEDDED_DD
 
 	bool "Additional options for memory-constrained systems" 
-	depends on SQUASHFS
+	depends on SQUASHFS_DD
 	default n
 	help
 	  Saying Y here allows you to specify cache sizes and how Squashfs
@@ -284,9 +285,9 @@ config SQUASHFS_EMBEDDED
 
 	  If unsure, say N.
 
-config SQUASHFS_FRAGMENT_CACHE_SIZE
+config SQUASHFS_FRAGMENT_CACHE_SIZE_DD
 	int "Number of fragments cached" if SQUASHFS_EMBEDDED
-	depends on SQUASHFS
+	depends on SQUASHFS_DD
 	default "3"
 	help
 	  By default SquashFS caches the last 3 fragments read from
@@ -298,9 +299,9 @@ config SQUASHFS_FRAGMENT_CACHE_SIZE
 	  Note there must be at least one cached fragment.  Anything
 	  much more than three will probably not make much difference.
 
-config SQUASHFS_VMALLOC
+config SQUASHFS_VMALLOC_DD
 	bool "Use Vmalloc rather than Kmalloc" if SQUASHFS_EMBEDDED
-	depends on SQUASHFS
+	depends on SQUASHFS_DD
 	default n
 	help
 	  By default SquashFS uses kmalloc to obtain fragment cache memory.

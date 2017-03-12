@@ -49,7 +49,7 @@
 #include <mach/cns3xxx.h>
 #include <mach/platform.h>
 #include <mach/irqs.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #ifdef CONFIG_CPU_FREQ
 #include <linux/cpufreq.h>
 extern struct cpufreq_driver cns_cpu_freq_driver;

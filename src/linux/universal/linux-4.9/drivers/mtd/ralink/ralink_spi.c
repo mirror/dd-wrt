@@ -26,7 +26,7 @@
 #include <linux/mutex.h>
 #include <linux/delay.h>
 #include "ralink_spi.h"
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #include "../mtdcore.h"
 #include <linux/platform_device.h>
 

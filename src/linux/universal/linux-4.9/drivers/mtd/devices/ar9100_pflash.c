@@ -17,7 +17,7 @@
 
 #include "ar7100.h"
 #include "ar9100_pflash.h"
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 /* this is passed in as a boot parameter by bootloader */
 extern int __ath_flash_size;

@@ -22,7 +22,7 @@
 #include <linux/mtd/nand.h>
 #include <linux/mtd/nand_ecc.h>
 #include <linux/mtd/partitions.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 #include <asm/cacheflush.h>
 #include "../mtdcore.h"

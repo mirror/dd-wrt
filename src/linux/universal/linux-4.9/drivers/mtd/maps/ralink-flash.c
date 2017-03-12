@@ -19,7 +19,7 @@
 #include <linux/mtd/concat.h>
 #include <linux/mtd/partitions.h>
 #include <linux/vmalloc.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #include <linux/err.h>
 #include <asm/rt2880/rt_mmap.h>
 #include "../mtdcore.h"
