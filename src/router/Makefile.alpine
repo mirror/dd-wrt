@@ -428,7 +428,7 @@ endif
 	
 	cp -fpR $(LINUXDIR)/arch/arm/boot/zImage $(ARCH)-uclibc/zImage-alpine
 #	cat $(LINUXDIR)/arch/arm/boot/dts/alpine-r9000.dtb >> $(ARCH)-uclibc/zImage-alpine;
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -nopad  -root-owned -noappend -Xbcj arm
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	
 
@@ -462,7 +462,7 @@ endif
 		-B $(MODULE_NAME) -v $(FW_VERSION) -r $(FW_REGION) -H $(HW_ID) \
 		-i $(ARCH)-uclibc/vmlinux.uImage.normal \
 		-o $(ARCH)-uclibc/$(MODULE_NAME)-$(FW_VERSION)$(FW_REGION).img
-	-./tools/trx_n -m 55000000 -o $(ARCH)-uclibc/r9000.bin $(ARCH)-uclibc/vmlinux.uImage.normal 
+	-./tools/trx_n -m 60000000 -o $(ARCH)-uclibc/r9000.bin $(ARCH)-uclibc/vmlinux.uImage.normal 
 
 
 	
