@@ -30,7 +30,7 @@
 #include <linux/mtd/partitions.h>
 #include "../mtdcore.h"
 #include <linux/vmalloc.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 #include <asm/io.h>
 #include <asm/mach/flash.h>

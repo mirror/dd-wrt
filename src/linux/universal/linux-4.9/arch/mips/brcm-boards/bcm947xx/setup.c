@@ -37,7 +37,7 @@
 #include <asm/cpu.h>
 #include <asm/time.h>
 #include <asm/reboot.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 #ifdef CONFIG_MTD
 #include <linux/mtd/mtd.h>

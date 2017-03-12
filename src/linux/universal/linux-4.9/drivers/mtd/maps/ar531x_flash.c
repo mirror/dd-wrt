@@ -19,7 +19,7 @@
 #include <linux/mtd/map.h>
 #include <linux/init.h>
 #include <linux/vmalloc.h>
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 
 #include <linux/mtd/partitions.h>

@@ -21,7 +21,7 @@
 #include <linux/mtd/map.h>
 #include <linux/mtd/partitions.h>
 #include "../mtdcore.h"
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 #include <linux/jffs2.h>
 #include <linux/crc32.h>
 #include <linux/vmalloc.h>

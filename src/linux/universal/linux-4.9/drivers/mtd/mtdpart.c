@@ -33,7 +33,7 @@
 #include <linux/magic.h>
 #include <linux/err.h>
 #include "mtdcore.h"
-#include <linux/squashfs_fs.h>
+#include <linux/magic.h>
 
 #define MTD_ERASE_PARTIAL	0x8000 /* partition only covers parts of an erase block */
  
