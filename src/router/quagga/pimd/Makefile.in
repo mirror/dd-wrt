@@ -151,7 +151,8 @@ am_libpim_a_OBJECTS = pimd.$(OBJEXT) pim_version.$(OBJEXT) \
 	pim_ifchannel.$(OBJEXT) pim_join.$(OBJEXT) \
 	pim_assert.$(OBJEXT) pim_msg.$(OBJEXT) pim_upstream.$(OBJEXT) \
 	pim_rpf.$(OBJEXT) pim_macro.$(OBJEXT) pim_igmp_join.$(OBJEXT) \
-	pim_ssmpingd.$(OBJEXT) pim_int.$(OBJEXT) pim_static.$(OBJEXT)
+	pim_ssmpingd.$(OBJEXT) pim_int.$(OBJEXT) pim_static.$(OBJEXT) \
+	pim_routemap.$(OBJEXT)
 libpim_a_OBJECTS = $(am_libpim_a_OBJECTS)
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" \
 	"$(DESTDIR)$(examplesdir)"
@@ -166,7 +167,8 @@ am__objects_1 = pimd.$(OBJEXT) pim_version.$(OBJEXT) pim_cmd.$(OBJEXT) \
 	pim_ifchannel.$(OBJEXT) pim_join.$(OBJEXT) \
 	pim_assert.$(OBJEXT) pim_msg.$(OBJEXT) pim_upstream.$(OBJEXT) \
 	pim_rpf.$(OBJEXT) pim_macro.$(OBJEXT) pim_igmp_join.$(OBJEXT) \
-	pim_ssmpingd.$(OBJEXT) pim_int.$(OBJEXT) pim_static.$(OBJEXT)
+	pim_ssmpingd.$(OBJEXT) pim_int.$(OBJEXT) pim_static.$(OBJEXT) \
+	pim_routemap.$(OBJEXT)
 am_pimd_OBJECTS = pim_main.$(OBJEXT) $(am__objects_1)
 pimd_OBJECTS = $(am_pimd_OBJECTS)
 pimd_DEPENDENCIES = ../lib/libzebra.la
@@ -281,6 +283,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BGPD = @BGPD@
+CARES_CFLAGS = @CARES_CFLAGS@
+CARES_LIBS = @CARES_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -338,6 +342,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NETSNMP_CONFIG = @NETSNMP_CONFIG@
+NHRPD = @NHRPD@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -355,6 +360,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
 PERL = @PERL@
@@ -462,7 +468,8 @@ libpim_a_SOURCES = \
 	pim_oil.c pim_zlookup.c pim_pim.c pim_tlv.c pim_neighbor.c \
 	pim_hello.c pim_ifchannel.c pim_join.c pim_assert.c \
 	pim_msg.c pim_upstream.c pim_rpf.c pim_macro.c \
-	pim_igmp_join.c pim_ssmpingd.c pim_int.c pim_static.c
+	pim_igmp_join.c pim_ssmpingd.c pim_int.c pim_static.c \
+        pim_routemap.c
 
 noinst_HEADERS = \
 	pimd.h pim_version.h pim_cmd.h pim_signals.h pim_iface.h \
@@ -653,6 +660,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_neighbor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_oil.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_pim.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_routemap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_rpf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_signals.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pim_sock.Po@am__quote@

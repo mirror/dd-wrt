@@ -585,6 +585,7 @@ zsend_ipv6_nexthop_lookup (struct zserv *client, struct in6_addr *addr,
 	      }
 	    num++;
 	  }
+
       stream_putc_at (s, nump, num);
     }
   else
@@ -599,9 +600,14 @@ zsend_ipv6_nexthop_lookup (struct zserv *client, struct in6_addr *addr,
 }
 #endif /* HAVE_IPV6 */
 
+/*
+  In the case of ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB:
+    query unicast rib if nexthop is not found on mrib
+    and return both route metric and protocol distance.
+*/
 static int
 zsend_ipv4_nexthop_lookup (struct zserv *client, struct in_addr addr,
-    vrf_id_t vrf_id)
+			   int cmd, vrf_id_t vrf_id)
 {
   struct stream *s;
   struct rib *rib;
@@ -609,92 +615,32 @@ zsend_ipv4_nexthop_lookup (struct zserv *client, struct in_addr addr,
   u_char num;
   struct nexthop *nexthop;
 
-  /* Lookup nexthop - eBGP excluded */
-  rib = rib_match_ipv4_safi (addr, SAFI_UNICAST, 1, NULL, vrf_id);
-
   /* Get output stream. */
   s = client->obuf;
   stream_reset (s);
 
   /* Fill in result. */
-  zserv_create_header (s, ZEBRA_IPV4_NEXTHOP_LOOKUP, vrf_id);
+  zserv_create_header (s, cmd, vrf_id);
   stream_put_in_addr (s, &addr);
+
+  /* Lookup nexthop - eBGP excluded */
+  if (cmd == ZEBRA_IPV4_NEXTHOP_LOOKUP)
+    rib = rib_match_ipv4_safi (addr, SAFI_UNICAST, 1, NULL, vrf_id);
+  else  /* ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB */
+    {
+      rib = rib_match_ipv4_multicast (addr, NULL, vrf_id);
+      /* handle the distance field here since
+       * it is only needed for MRIB command */
+      if (rib)
+	stream_putc (s, rib->distance);
+      else
+        stream_putc (s, 0); /* distance */
+    }
 
   if (rib)
     {
       if (IS_ZEBRA_DEBUG_PACKET && IS_ZEBRA_DEBUG_RECV)
         zlog_debug("%s: Matching rib entry found.", __func__);
-      stream_putl (s, rib->metric);
-      num = 0;
-      nump = stream_get_endp(s);
-      stream_putc (s, 0);
-      /* Only non-recursive routes are elegible to resolve the nexthop we
-       * are looking up. Therefore, we will just iterate over the top
-       * chain of nexthops. */
-      for (nexthop = rib->nexthop; nexthop; nexthop = nexthop->next)
-	if (CHECK_FLAG (nexthop->flags, NEXTHOP_FLAG_ACTIVE))
-	  {
-	    stream_putc (s, nexthop->type);
-	    switch (nexthop->type)
-	      {
-	      case ZEBRA_NEXTHOP_IPV4:
-		stream_put_in_addr (s, &nexthop->gate.ipv4);
-		break;
-	      case ZEBRA_NEXTHOP_IPV4_IFINDEX:
-		stream_put_in_addr (s, &nexthop->gate.ipv4);
-		stream_putl (s, nexthop->ifindex);
-		break;
-	      case ZEBRA_NEXTHOP_IFINDEX:
-	      case ZEBRA_NEXTHOP_IFNAME:
-		stream_putl (s, nexthop->ifindex);
-		break;
-	      default:
-                /* do nothing */
-		break;
-	      }
-	    num++;
-	  }
-      stream_putc_at (s, nump, num);
-    }
-  else
-    {
-      if (IS_ZEBRA_DEBUG_PACKET && IS_ZEBRA_DEBUG_RECV)
-        zlog_debug("%s: No matching rib entry found.", __func__);
-      stream_putl (s, 0);
-      stream_putc (s, 0);
-    }
-
-  stream_putw_at (s, 0, stream_get_endp (s));
-  
-  return zebra_server_send_message(client);
-}
-
-/*
-  Modified version of zsend_ipv4_nexthop_lookup():
-  Query unicast rib if nexthop is not found on mrib.
-  Returns both route metric and protocol distance.
-*/
-static int
-zsend_ipv4_nexthop_lookup_mrib (struct zserv *client, struct in_addr addr,
-				struct rib *rib)
-{
-  struct stream *s;
-  unsigned long nump;
-  u_char num;
-  struct nexthop *nexthop;
-
-  /* Get output stream. */
-  s = client->obuf;
-  stream_reset (s);
-
-  /* Fill in result. */
-  zserv_create_header (s, ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB, 
-		       rib ? rib->vrf_id : VRF_DEFAULT);
-  stream_put_in_addr (s, &addr);
-
-  if (rib)
-    {
-      stream_putc (s, rib->distance);
       stream_putl (s, rib->metric);
       num = 0;
       nump = stream_get_endp(s); /* remember position for nexthop_num */
@@ -725,12 +671,13 @@ zsend_ipv4_nexthop_lookup_mrib (struct zserv *client, struct in_addr addr,
 	      }
 	    num++;
 	  }
-    
+
       stream_putc_at (s, nump, num); /* store nexthop_num */
     }
   else
     {
-      stream_putc (s, 0); /* distance */
+      if (IS_ZEBRA_DEBUG_PACKET && IS_ZEBRA_DEBUG_RECV)
+        zlog_debug("%s: No matching rib entry found.", __func__);
       stream_putl (s, 0); /* metric */
       stream_putc (s, 0); /* nexthop_num */
     }
@@ -1039,7 +986,9 @@ zread_ipv4_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
   /* Tag */
   if (CHECK_FLAG (message, ZAPI_MESSAGE_TAG))
     rib->tag = stream_getl (s);
-
+  else
+    rib->tag = 0;
+  
   /* Table */
   rib->table=zebrad.rtm_table_default;
   ret = rib_add_ipv4_multipath (&p, rib, safi);
@@ -1143,7 +1092,7 @@ zread_ipv4_delete (struct zserv *client, u_short length, vrf_id_t vrf_id)
 
 /* Nexthop lookup for IPv4. */
 static int
-zread_ipv4_nexthop_lookup (struct zserv *client, u_short length,
+zread_ipv4_nexthop_lookup (int cmd, struct zserv *client, u_short length,
     vrf_id_t vrf_id)
 {
   struct in_addr addr;
@@ -1153,20 +1102,8 @@ zread_ipv4_nexthop_lookup (struct zserv *client, u_short length,
   if (IS_ZEBRA_DEBUG_PACKET && IS_ZEBRA_DEBUG_RECV)
     zlog_debug("%s: looking up %s", __func__,
                inet_ntop (AF_INET, &addr, buf, BUFSIZ));
-  return zsend_ipv4_nexthop_lookup (client, addr, vrf_id);
-}
 
-/* MRIB Nexthop lookup for IPv4. */
-static int
-zread_ipv4_nexthop_lookup_mrib (struct zserv *client, u_short length,
-    vrf_id_t vrf_id)
-{
-  struct in_addr addr;
-  struct rib *rib;
-
-  addr.s_addr = stream_get_ipv4 (client->ibuf);
-  rib = rib_match_ipv4_multicast (addr, NULL, vrf_id);
-  return zsend_ipv4_nexthop_lookup_mrib (client, addr, rib);
+  return zsend_ipv4_nexthop_lookup (client, addr, cmd, vrf_id);
 }
 
 /* Nexthop lookup for IPv4. */
@@ -1287,7 +1224,9 @@ zread_ipv6_add (struct zserv *client, u_short length, vrf_id_t vrf_id)
   /* Tag */
   if (CHECK_FLAG (message, ZAPI_MESSAGE_TAG))
     rib->tag = stream_getl (s);
-
+  else
+    rib->tag = 0;
+  
   /* Table */
   rib->table=zebrad.rtm_table_default;
   ret = rib_add_ipv6_multipath (&p, rib, safi);
@@ -1695,10 +1634,8 @@ zebra_client_read (struct thread *thread)
       zebra_redistribute_default_delete (command, client, length, vrf_id);
       break;
     case ZEBRA_IPV4_NEXTHOP_LOOKUP:
-      zread_ipv4_nexthop_lookup (client, length, vrf_id);
-      break;
     case ZEBRA_IPV4_NEXTHOP_LOOKUP_MRIB:
-      zread_ipv4_nexthop_lookup_mrib (client, length, vrf_id);
+      zread_ipv4_nexthop_lookup (command, client, length, vrf_id);
       break;
 #ifdef HAVE_IPV6
     case ZEBRA_IPV6_NEXTHOP_LOOKUP:

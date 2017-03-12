@@ -613,14 +613,16 @@ interfaces if no interface is given.
 @end deffn
 
 @deffn {Command} {show ip ospf database} {}
-@end deffn
-
-@deffn {Command} {show ip ospf database (asbr-summary|external|network|router|summary)} {}
-@deffnx {Command} {show ip ospf database (asbr-summary|external|network|router|summary) @var{link-state-id}} {}
-@deffnx {Command} {show ip ospf database (asbr-summary|external|network|router|summary) @var{link-state-id} adv-router @var{adv-router}} {}
-@deffnx {Command} {show ip ospf database (asbr-summary|external|network|router|summary) adv-router @var{adv-router}} {}
-@deffnx {Command} {show ip ospf database (asbr-summary|external|network|router|summary) @var{link-state-id} self-originate} {}
-@deffnx {Command} {show ip ospf database (asbr-summary|external|network|router|summary) self-originate} {}
+@deffnx {Command} {show ip ospf database asbr-summary} {}
+@deffnx {Command} {show ip ospf database external} {}
+@deffnx {Command} {show ip ospf database network} {}
+@deffnx {Command} {show ip ospf database asbr-router} {}
+@deffnx {Command} {show ip ospf database summary} {}
+@deffnx {Command} {show ip ospf database @dots{} @var{link-state-id}} {}
+@deffnx {Command} {show ip ospf database @dots{} @var{link-state-id} adv-router @var{adv-router}} {}
+@deffnx {Command} {show ip ospf database @dots{} adv-router @var{adv-router}} {}
+@deffnx {Command} {show ip ospf database @dots{} @var{link-state-id} self-originate} {}
+@deffnx {Command} {show ip ospf database @dots{} self-originate} {}
 @end deffn
 
 @deffn {Command} {show ip ospf database max-age} {}

@@ -120,7 +120,7 @@ routeadm_daemon_args () {
 	
 	# user and group we need for config file upgrade..
 	SMF_USER=`get_routeadm_property $SMF_FMRI user`
-	SMF_GROUP=`get_routeadm_property()$SMF_FMRI group`
+	SMF_GROUP=`get_routeadm_property() $SMF_FMRI group`
 	if [ "${SMF_USER}" ] ; then
 		USER="${SMF_USER}"
 		args="${args} -u ${SMF_USER}"
@@ -197,7 +197,7 @@ fi
 DAEMON="$1"
 
 # daemon path must be given
-if [ -z "$DAEMON_PATH/$DAEMON" ]; then
+if [ "$DAEMON_PATH/$DAEMON" = "/" ]; then
 	usage
 	exit $SMF_EXIT_ERR_FATAL
 fi
@@ -231,9 +231,13 @@ fi
 
 upgrade_config "$DAEMON"
 
-if [ ! -f "@sysconfdir@/${DAEMON}.conf" ] ; then
-	echo "Could not find config file, @sysconfdir@/${DAEMON}.conf"
-	exit $SMF_EXIT_ERR_CONFIG
+CONF_FILE=`get_routeadm_property $SMF_FMRI config_file`
+if [ -z "$CONF_FILE" ] ; then
+        CONF_FILE="@sysconfdir@/${DAEMON}.conf"
+fi
+if [ ! -f "$CONF_FILE" ] ; then
+        echo "Could not find config file, $CONF_FILE"
+        exit $SMF_EXIT_ERR_CONFIG
 fi
 
 # we need @quagga_statedir@ to exist, it probably is on tmpfs.

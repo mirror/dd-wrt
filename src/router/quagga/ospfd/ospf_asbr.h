@@ -44,7 +44,7 @@ struct external_info
   /* Nexthop address. */
   struct in_addr nexthop;
 
-  /* Additional Route tag. */
+  /* Additional Route tag: this is the wire type */
   u_int32_t tag;
 
   struct route_map_set_values route_map_set;

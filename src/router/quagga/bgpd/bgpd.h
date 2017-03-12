@@ -425,6 +425,7 @@ struct peer
 #define PEER_FLAG_MAX_PREFIX_WARNING        (1 << 15) /* maximum prefix warning-only */
 #define PEER_FLAG_NEXTHOP_LOCAL_UNCHANGED   (1 << 16) /* leave link-local nexthop unchanged */
 #define PEER_FLAG_NEXTHOP_SELF_ALL          (1 << 17) /* next-hop-self all */
+#define PEER_FLAG_SEND_LARGE_COMMUNITY      (1 << 18) /* Send large Communities */
 
   /* MD5 password */
   char *password;
@@ -441,7 +442,7 @@ struct peer
 #define PEER_STATUS_ACCEPT_PEER	      (1 << 0) /* accept peer */
 #define PEER_STATUS_PREFIX_OVERFLOW   (1 << 1) /* prefix-overflow */
 #define PEER_STATUS_CAPABILITY_OPEN   (1 << 2) /* capability open send */
-#define PEER_STATUS_HAVE_ACCEPT       (1 << 3) /* accept peer's parent */
+#define PEER_STATUS_OPEN_DEFERRED     (1 << 3) /* deferred to open_receive */
 #define PEER_STATUS_GROUP             (1 << 4) /* peer-group conf */
 #define PEER_STATUS_NSF_MODE          (1 << 5) /* NSF aware peer */
 #define PEER_STATUS_NSF_WAIT          (1 << 6) /* wait comeback peer */
@@ -655,6 +656,7 @@ struct bgp_nlri
 #define BGP_ATTR_AS4_AGGREGATOR                 18
 #define BGP_ATTR_AS_PATHLIMIT                   21
 #define BGP_ATTR_ENCAP                          23
+#define BGP_ATTR_LARGE_COMMUNITIES              32
 
 /* BGP update origin.  */
 #define BGP_ORIGIN_IGP                           0
@@ -747,17 +749,16 @@ struct bgp_nlri
 #define Receive_UPDATE_message                  12
 #define Receive_NOTIFICATION_message            13
 #define Clearing_Completed                      14
-#define NHT_Update                              15
+#define BGP_Stop_with_error                     15
 #define BGP_EVENTS_MAX                          16
 
 /* BGP timers default value.  */
 #define BGP_INIT_START_TIMER                     1
 #define BGP_DEFAULT_HOLDTIME                   180
 #define BGP_DEFAULT_KEEPALIVE                   60 
-#define BGP_DEFAULT_EBGP_ROUTEADV               30
-#define BGP_DEFAULT_IBGP_ROUTEADV                5
-#define BGP_CLEAR_CONNECT_RETRY                 20
-#define BGP_DEFAULT_CONNECT_RETRY               10
+#define BGP_DEFAULT_EBGP_ROUTEADV                3
+#define BGP_DEFAULT_IBGP_ROUTEADV                1
+#define BGP_DEFAULT_CONNECT_RETRY                5
 
 /* BGP default local preference.  */
 #define BGP_DEFAULT_LOCAL_PREF                 100
@@ -832,8 +833,8 @@ enum bgp_clear_type
 #define BGP_ERR_TCPSIG_FAILED			-29
 #define BGP_ERR_NO_EBGP_MULTIHOP_WITH_TTLHACK	-30
 #define BGP_ERR_NO_IBGP_WITH_TTLHACK		-31
-#define BGP_ERR_MAX				-32
-#define BGP_ERR_CANNOT_HAVE_LOCAL_AS_SAME_AS_REMOTE_AS    -33
+#define BGP_ERR_CANNOT_HAVE_LOCAL_AS_SAME_AS_REMOTE_AS    -32
+#define BGP_ERR_MAX				-33
 
 extern struct bgp_master *bm;
 
@@ -913,6 +914,7 @@ extern int peer_rsclient_active (struct peer *);
 
 extern int peer_remote_as (struct bgp *, union sockunion *, as_t *, afi_t, safi_t);
 extern int peer_group_remote_as (struct bgp *, const char *, as_t *);
+extern int peer_ttl (struct peer *peer);
 extern int peer_delete (struct peer *peer);
 extern int peer_group_delete (struct peer_group *);
 extern int peer_group_remote_as_delete (struct peer_group *);
@@ -934,7 +936,6 @@ extern int peer_af_flag_unset (struct peer *, afi_t, safi_t, u_int32_t);
 extern int peer_af_flag_check (struct peer *, afi_t, safi_t, u_int32_t);
 
 extern int peer_ebgp_multihop_set (struct peer *, int);
-extern int peer_ebgp_multihop_unset (struct peer *);
 
 extern int peer_description_set (struct peer *, const char *);
 extern int peer_description_unset (struct peer *);
@@ -996,7 +997,6 @@ extern int peer_clear (struct peer *);
 extern int peer_clear_soft (struct peer *, afi_t, safi_t, enum bgp_clear_type);
 
 extern int peer_ttl_security_hops_set (struct peer *, int);
-extern int peer_ttl_security_hops_unset (struct peer *);
 
 extern void bgp_scan_finish (void);
 #endif /* _QUAGGA_BGPD_H */

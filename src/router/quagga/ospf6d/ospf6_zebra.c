@@ -120,13 +120,6 @@ ospf6_zebra_if_del (int command, struct zclient *zclient, zebra_size_t length,
     zlog_debug ("Zebra Interface delete: %s index %d mtu %d",
 		ifp->name, ifp->ifindex, ifp->mtu6);
 
-#if 0
-  /* XXX: ospf6_interface_if_del is not the right way to handle this,
-   * because among other thinkable issues, it will also clear all
-   * settings as they are contained in the struct ospf6_interface. */
-  ospf6_interface_if_del (ifp);
-#endif /*0*/
-
   ifp->ifindex = IFINDEX_INTERNAL;
   return 0;
 }
@@ -254,6 +247,11 @@ ospf6_zebra_read_ipv6 (int command, struct zclient *zclient,
   else
     api.metric = 0;
 
+  if (CHECK_FLAG (api.message, ZAPI_MESSAGE_TAG))
+    api.tag = stream_getl (s);
+  else
+    api.tag = 0;
+
   if (IS_OSPF6_DEBUG_ZEBRA (RECV))
     {
       char prefixstr[128], nexthopstr[128];
@@ -263,14 +261,14 @@ ospf6_zebra_read_ipv6 (int command, struct zclient *zclient,
       else
         snprintf (nexthopstr, sizeof (nexthopstr), "::");
 
-      zlog_debug ("Zebra Receive route %s: %s %s nexthop %s ifindex %ld",
+      zlog_debug ("Zebra Receive route %s: %s %s nexthop %s ifindex %ld tag %u",
 		  (command == ZEBRA_IPV6_ROUTE_ADD ? "add" : "delete"),
-		  zebra_route_string(api.type), prefixstr, nexthopstr, ifindex);
+		  zebra_route_string(api.type), prefixstr, nexthopstr, ifindex, api.tag);
     }
  
   if (command == ZEBRA_IPV6_ROUTE_ADD)
     ospf6_asbr_redistribute_add (api.type, ifindex, (struct prefix *) &p,
-                                 api.nexthop_num, nexthop);
+                                 api.nexthop_num, nexthop, api.tag);
   else
     ospf6_asbr_redistribute_remove (api.type, ifindex, (struct prefix *) &p);
 
@@ -477,9 +475,12 @@ ospf6_zebra_route_update (int type, struct ospf6_route *request)
   SET_FLAG (api.message, ZAPI_MESSAGE_METRIC);
   api.metric = (request->path.metric_type == 2 ?
                 request->path.cost_e2 : request->path.cost);
-  SET_FLAG (api.message, ZAPI_MESSAGE_DISTANCE);
-  api.distance = ospf6_distance_apply (request, ospf6);
-
+  if (request->path.tag)
+    {
+      SET_FLAG (api.message, ZAPI_MESSAGE_TAG);
+      api.tag = request->path.tag;
+    }
+  
   dest = (struct prefix_ipv6 *) &request->prefix;
   if (type == REM)
     ret = zapi_ipv6_route (ZEBRA_IPV6_ROUTE_DELETE, zclient, dest, &api);

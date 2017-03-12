@@ -89,9 +89,11 @@ struct work_queue
   /* remaining fields should be opaque to users */
   struct list *items;                 /* queue item list */
   unsigned long runs;                 /* runs count */
+  unsigned long worst_usec;
   
   struct {
     unsigned int best;
+    unsigned int worst;
     unsigned int granularity;
     unsigned long total;
   } cycles;	/* cycle counts */

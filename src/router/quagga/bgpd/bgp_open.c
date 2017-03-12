@@ -143,6 +143,8 @@ bgp_afi_safi_valid_indices (afi_t afi, safi_t *safi)
 	case SAFI_ENCAP:
 	  return 1;
 	}
+    case AFI_ETHER:
+    default:
       break;
     }
 

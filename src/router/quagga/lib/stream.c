@@ -960,6 +960,31 @@ stream_reset (struct stream *s)
   s->getp = s->endp = 0;
 }
 
+/* Discard read data (prior to the getp), and move the unread data
+ * to the beginning of the stream.
+ *
+ * See also stream_fifo_* functions, for another approach to managing
+ * streams.
+ */
+void
+stream_discard (struct stream *s)
+{
+  STREAM_VERIFY_SANE (s);
+  
+  if (s->getp == 0)
+    return;
+  
+  if (s->getp == s->endp)
+    {
+      stream_reset (s);
+      return;
+    }
+  
+  s->data = memmove (s->data, s->data + s->getp, s->endp - s->getp);
+  s->endp -= s->getp;
+  s->getp = 0;
+}
+
 /* Write stream contens to the file discriptor. */
 int
 stream_flush (struct stream *s, int fd)

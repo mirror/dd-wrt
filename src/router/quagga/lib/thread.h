@@ -176,6 +176,7 @@ enum quagga_clkid {
 #define thread_add_write(m,f,a,v) funcname_thread_add_write(m,f,a,v,#f,__FILE__,__LINE__)
 #define thread_add_timer(m,f,a,v) funcname_thread_add_timer(m,f,a,v,#f,__FILE__,__LINE__)
 #define thread_add_timer_msec(m,f,a,v) funcname_thread_add_timer_msec(m,f,a,v,#f,__FILE__,__LINE__)
+#define thread_add_timer_tv(m,f,a,v) funcname_thread_add_timer_tv(m,f,a,v,#f,__FILE__,__LINE__)
 #define thread_add_event(m,f,a,v) funcname_thread_add_event(m,f,a,v,#f,__FILE__,__LINE__)
 #define thread_execute(m,f,a,v) funcname_thread_execute(m,f,a,v,#f,__FILE__,__LINE__)
 
@@ -198,6 +199,10 @@ extern struct thread *funcname_thread_add_timer (struct thread_master *,
 extern struct thread *funcname_thread_add_timer_msec (struct thread_master *,
 				                      int (*)(struct thread *),
 				                      void *, long, debugargdef);
+extern struct thread *funcname_thread_add_timer_tv (struct thread_master *,
+				                    int (*)(struct thread *),
+				                    void *, struct timeval *,
+						    debugargdef);
 extern struct thread *funcname_thread_add_event (struct thread_master *,
 				                 int (*)(struct thread *),
 				                 void *, int, debugargdef);

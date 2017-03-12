@@ -37,7 +37,7 @@
 
 #define QUAGGA_PROGNAME   "Quagga"
 
-#define QUAGGA_VERSION     "1.1.1" GIT_SUFFIX
+#define QUAGGA_VERSION     "1.2.1" GIT_SUFFIX
 
 #define ZEBRA_BUG_ADDRESS "https://bugzilla.quagga.net"
 

@@ -886,7 +886,7 @@ static int
 ospf_vl_set_timers (struct ospf_vl_data *vl_data,
 		    struct ospf_vl_config_data *vl_config)
 {
-  struct interface *ifp = ifp = vl_data->vl_oi->ifp;
+  struct interface *ifp = vl_data->vl_oi->ifp;
   /* Virtual Link data initialised to defaults, so only set
      if a value given */
   if (vl_config->hello_interval)
@@ -3872,8 +3872,8 @@ show_as_external_lsa_stdvty (struct ospf_lsa *lsa)
   zlog_debug( "        Forward Address: %s%s",
 	     inet_ntoa (al->e[0].fwd_addr), "\n");
 
-  zlog_debug( "        External Route Tag: %u%s%s",
-	     ntohl (al->e[0].route_tag), "\n", "\n");
+  zlog_debug( "        External Route Tag: %lu%s%s",
+	     (u_long)ntohl (al->e[0].route_tag), "\n", "\n");
 
   return 0;
 }
@@ -3900,8 +3900,8 @@ show_as_nssa_lsa_detail (struct vty *vty, struct ospf_lsa *lsa)
       vty_out (vty, "        NSSA: Forward Address: %s%s",
 	       inet_ntoa (al->e[0].fwd_addr), VTY_NEWLINE);
 
-      vty_out (vty, "        External Route Tag: %u%s%s",
-	       ntohl (al->e[0].route_tag), VTY_NEWLINE, VTY_NEWLINE);
+      vty_out (vty, "        External Route Tag: %lu%s%s",
+	       (u_long)ntohl (al->e[0].route_tag), VTY_NEWLINE, VTY_NEWLINE);
     }
 
   return 0;
@@ -5418,7 +5418,6 @@ DEFUN (ip_ospf_network,
 {
   struct interface *ifp = vty->index;
   int old_type = IF_DEF_PARAMS (ifp)->type;
-  struct route_node *rn;
 
   if (old_type == OSPF_IFTYPE_LOOPBACK)
     {
@@ -5439,23 +5438,7 @@ DEFUN (ip_ospf_network,
     return CMD_SUCCESS;
 
   SET_IF_PARAM (IF_DEF_PARAMS (ifp), type);
-
-  for (rn = route_top (IF_OIFS (ifp)); rn; rn = route_next (rn))
-    {
-      struct ospf_interface *oi = rn->info;
-
-      if (!oi)
-	continue;
-      
-      oi->type = IF_DEF_PARAMS (ifp)->type;
-      
-      if (oi->state > ISM_Down)
-	{
-	  OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceDown);
-	  OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceUp);
-	}
-    }
-
+  ospf_if_reset_type (ifp, IF_DEF_PARAMS (ifp)->type);
   return CMD_SUCCESS;
 }
 
@@ -5479,29 +5462,14 @@ DEFUN (no_ip_ospf_network,
 {
   struct interface *ifp = vty->index;
   int old_type = IF_DEF_PARAMS (ifp)->type;
-  struct route_node *rn;
 
   IF_DEF_PARAMS (ifp)->type = ospf_default_iftype(ifp);
 
   if (IF_DEF_PARAMS (ifp)->type == old_type)
     return CMD_SUCCESS;
-
-  for (rn = route_top (IF_OIFS (ifp)); rn; rn = route_next (rn))
-    {
-      struct ospf_interface *oi = rn->info;
-
-      if (!oi)
-	continue;
-      
-      oi->type = IF_DEF_PARAMS (ifp)->type;
-      
-      if (oi->state > ISM_Down)
-	{
-	  OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceDown);
-	  OSPF_ISM_EVENT_EXECUTE (oi, ISM_InterfaceUp);
-	}
-    }
-
+  
+  ospf_if_reset_type (ifp, IF_DEF_PARAMS (ifp)->type);
+  
   return CMD_SUCCESS;
 }
 

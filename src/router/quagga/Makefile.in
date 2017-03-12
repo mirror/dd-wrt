@@ -214,6 +214,8 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BGPD = @BGPD@
+CARES_CFLAGS = @CARES_CFLAGS@
+CARES_LIBS = @CARES_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -271,6 +273,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 NETSNMP_CONFIG = @NETSNMP_CONFIG@
+NHRPD = @NHRPD@
 NM = @NM@
 NMEDIT = @NMEDIT@
 OBJDUMP = @OBJDUMP@
@@ -288,6 +291,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PANDOC = @PANDOC@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
 PERL = @PERL@
@@ -379,18 +383,17 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = lib qpb fpm @ZEBRA@ @BGPD@ @RIPD@ @RIPNGD@ @OSPFD@ @OSPF6D@ \
+SUBDIRS = lib qpb fpm @ZEBRA@ @BGPD@ @RIPD@ @RIPNGD@ @OSPFD@ @OSPF6D@ @NHRPD@ \
          @ISISD@ @PIMD@ @WATCHQUAGGA@ @VTYSH@ @OSPFCLIENT@ @DOC@ m4 @pkgsrcdir@ \
          redhat @SOLARIS@ tests
 
-DIST_SUBDIRS = lib qpb fpm zebra bgpd ripd ripngd ospfd ospf6d \
+DIST_SUBDIRS = lib qpb fpm zebra bgpd ripd ripngd ospfd ospf6d nhrpd \
 	  isisd watchquagga vtysh ospfclient doc m4 pkgsrc redhat tests \
 	  solaris pimd
 
 EXTRA_DIST = aclocal.m4 SERVICES TODO REPORTING-BUGS INSTALL.quagga.txt \
 	update-autotools \
 	vtysh/Makefile.in vtysh/Makefile.am \
-	tools/rrcheck.pl tools/rrlookup.pl tools/zc.pl \
 	tools/zebra.el tools/multiple-bgpd.sh
 
 ACLOCAL_AMFLAGS = -I m4
@@ -785,7 +788,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@HAVE_LATEX_FALSE@clean-local:
+@HAVE_PANDOC_FALSE@clean-local:
 clean: clean-recursive
 
 clean-am: clean-generic clean-libtool clean-local mostlyclean-am
@@ -878,11 +881,11 @@ uninstall-am:
 .PRECIOUS: Makefile
 
 
-@HAVE_LATEX_TRUE@HACKING.pdf: HACKING.tex
-@HAVE_LATEX_TRUE@	$(LATEXMK) -pdf $<
+@HAVE_PANDOC_TRUE@HACKING.pdf: HACKING.md
+@HAVE_PANDOC_TRUE@	pandoc -o $@ $<
 
-@HAVE_LATEX_TRUE@clean-local:
-@HAVE_LATEX_TRUE@	-$(LATEXMK) -C HACKING.tex
+@HAVE_PANDOC_TRUE@clean-local:
+@HAVE_PANDOC_TRUE@	-$(LATEXMK) -C HACKING.tex
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

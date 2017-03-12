@@ -69,15 +69,21 @@ like sound a siren, have your display flash, etc., be creative ;).
 
   # get some vars from stdin
   uptime=`echo $INPUT | cut -d' ' -f5`
-  peer=`echo $INPUT | cut -d' ' -f8 | sed -e 's/SNMPv2-SMI::mib-2.15.3.1.14.//g'`
+  peer=`echo $INPUT | cut -d' ' -f8 | \
+	sed -e 's/SNMPv2-SMI::mib-2.15.3.1.14.//g'`
   peerstate=`echo $INPUT | cut -d' ' -f13`
   errorcode=`echo $INPUT | cut -d' ' -f9 | sed -e 's/\"//g'`
   suberrorcode=`echo $INPUT | cut -d' ' -f10 | sed -e 's/\"//g'`
-  remoteas=`snmpget -v2c -c $COMMUNITY localhost SNMPv2-SMI::mib-2.15.3.1.9.$peer | cut -d' ' -f4`
+  remoteas=`snmpget -v2c -c $COMMUNITY \
+		localhost SNMPv2-SMI::mib-2.15.3.1.9.$peer \
+		| cut -d' ' -f4`
 
-  WHOISINFO=`whois -h whois.ripe.net " -r AS$remoteas" | egrep '(as-name|descr)'`
-  asname=`echo "$WHOISINFO" | grep "^as-name:" | sed -e 's/^as-name://g' -e 's/  //g' -e 's/^ //g' | uniq`
-  asdescr=`echo "$WHOISINFO" | grep "^descr:" | sed -e 's/^descr://g' -e 's/  //g' -e 's/^ //g' | uniq`
+  WHOISINFO=`whois -h whois.ripe.net " -r AS$remoteas" | \
+		egrep '(as-name|descr)'`
+  asname=`echo "$WHOISINFO" | grep "^as-name:" | \
+		sed -e 's/^as-name://g' -e 's/  //g' -e 's/^ //g' | uniq`
+  asdescr=`echo "$WHOISINFO" | grep "^descr:" | \
+		sed -e 's/^descr://g' -e 's/  //g' -e 's/^ //g' | uniq`
 
   # if peer address is in $WARN_PEER, the email should also
   # be sent to $EMAILADDR_WARN

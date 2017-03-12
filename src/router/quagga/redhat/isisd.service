@@ -1,7 +1,9 @@
 [Unit]
 Description=IS-IS routing daemon
-BindTo=zebra.service
-After=syslog.target network.target zebra.service
+BindsTo=zebra.service
+Wants=network.target
+After=zebra.service network-pre.target
+Before=network.target
 ConditionPathExists=/etc/quagga/isisd.conf
 
 [Service]
@@ -11,4 +13,4 @@ ExecStart=/usr/sbin/isisd -d $ISISD_OPTS -f /etc/quagga/isisd.conf
 Restart=on-abort
 
 [Install]
-WantedBy=network.target
+WantedBy=multi-user.target

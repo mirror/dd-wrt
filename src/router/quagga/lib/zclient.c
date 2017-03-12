@@ -530,7 +530,7 @@ zclient_connect (struct thread *t)
   * If ZAPI_MESSAGE_METRIC is set, the metric value is written as an 8
   * byte value.
   *
-  * If ZAPI_MESSAGE_TAG is set, the tag value is written as a 2 byte value
+  * If ZAPI_MESSAGE_TAG is set, the tag value is written as a 4 byte value
   *
   * XXX: No attention paid to alignment.
   */ 
