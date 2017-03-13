@@ -1406,10 +1406,10 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 	uint64_t base = offset + mtd->erasesize;
 	while (base < mtd->size) {
 		mtd_read(mtd,offset,512,&retlen,&buf[0]);
-		if (*((__u32 *)buf) == SQUASHFS_MAGIC)
+		if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP)
 		    bbuf = buf;
 		else
-		if (*((__u32 *)&buf[128]) == SQUASHFS_MAGIC)
+		if (*((__u32 *)&buf[128]) == SQUASHFS_MAGIC_SWAP)
 		{
 		    bbuf = &buf[128];
 		    offset+=128;
