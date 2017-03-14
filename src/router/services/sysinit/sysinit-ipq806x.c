@@ -343,6 +343,32 @@ void *get_deviceinfo_g10(char *var)
 	return NULL;
 }
 
+static void setasrockcountry(void)
+{
+	char buf[32];
+	char c[32];
+	char *set = NULL;
+	char *set5 = NULL;
+	char rev = -1;
+	char rev5 = -1;
+#define defstr "HW.RegionDomain="
+	FILE *fp = popen("cat /dev/mtdblock9|grep HW.RegionDomain=", "r");
+	if (!fp)
+		return;
+	fread(buf, 1, 18, fp);
+	pclose(fp);
+	buf[sizeof(defstr) + 2] = 0;
+	memset(c, 0, sizeof(c));
+	strncpy(c, &buf[sizeof(defstr)], 2);
+	char *ctry = getCountryByIso(c);
+	if (!ctry)
+		return;
+	if (!nvram_get("nocountrysel"))
+		nvram_seti("nocountrysel", 1);
+	nvram_set("ath0_regdomain", ctry);
+	nvram_set("ath1_regdomain", ctry);
+}
+
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];
@@ -384,6 +410,7 @@ void start_sysinit(void)
 					maddr[8] & 0xff, maddr[9] & 0xff, maddr[10] & 0xff, maddr[11] & 0xff);
 				maddr = &mg10[0];
 			}
+			setasrockcountry();
 		}
 
 		if (maddr) {
@@ -497,9 +524,9 @@ void start_sysinit(void)
 		system("swconfig dev switch0 vlan 2 set ports \"1 6t\"");
 		system("swconfig dev switch0 set apply");
 		eval("ifconfig", "eth1", "up");
-              eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
-              eval("vconfig", "add", "eth1", "1");
-              eval("vconfig", "add", "eth1", "2");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth1", "1");
+		eval("vconfig", "add", "eth1", "2");
 		break;
 	case ROUTER_LINKSYS_EA8500:
 		system("swconfig dev switch0 set reset 1");
