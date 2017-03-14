@@ -286,6 +286,49 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				goto write_data;
 			}
 #endif
+//0x1200000 0x70000 RN67
+#ifdef HAVE_IPQ806X
+
+#define _WEB_HEADER_ "RN67"
+#define	FW_HEADER			((char *)"CSYS")
+#define	DWORD_SWAP(v)	((((v&0xff)<<24)&0xff000000) | \
+						((((v>>8)&0xff)<<16)&0xff0000) | \
+						((((v>>16)&0xff)<<8)&0xff00) | \
+						(((v>>24)&0xff)&0xff) )
+
+			typedef struct img_header {
+				unsigned char signature[4];
+				unsigned int startAddr __attribute__((packed));
+				unsigned int burnAddr __attribute__((packed));
+				unsigned char modTag[4];
+				unsigned int len __attribute__((packed));
+			} __attribute__((packed)) img_header_t;
+			if (brand == ROUTER_ASROCK_G10) {
+				img_header_t *header = (img_header_t *)buf;
+				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4) && header->startAddr == DWORD_SWAP(0x1200000) && header->burnAddr == DWORD_SWAP(0x70000)) {
+					fprintf(stderr, "found valid ASROCK-G10 Image\n");
+					count -= sizeof(struct img_header);
+					memcpy(buf, buf + sizeof(struct img_header), count);
+					char *write_argv_buf[8];
+					write_argv_buf[0] = "mtd";
+					write_argv_buf[1] = "-e";
+					write_argv_buf[2] = "linux";
+					write_argv_buf[3] = "-f";
+					write_argv_buf[4] = "write";
+					write_argv_buf[5] = upload_fifo;
+					write_argv_buf[6] = "linux";
+					write_argv_buf[7] = NULL;
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+					    || !(fifo = fopen(upload_fifo, "w"))) {
+						if (!ret)
+							ret = errno;
+						goto err;
+					}
+					goto write_data;
+				}
+			}
+
+#endif
 #if defined(HAVE_DIR860) || defined(HAVE_DIR859)
 #define SEAMA_MAGIC		0x5EA3A417
 
@@ -314,8 +357,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					fprintf(stderr, "firmware signature must be %s\n", signature);
 					goto err;
 				}
-				memcpy(buf, buf + skip, count - skip);
+
 				count -= skip;
+				memcpy(buf, buf + skip, count);
 				char *write_argv_buf[8];
 				write_argv_buf[0] = "mtd";
 				write_argv_buf[1] = "-f";
