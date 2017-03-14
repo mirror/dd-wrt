@@ -1879,6 +1879,7 @@ static int gpiod_get_value(const struct gpio_desc *desc)
 	/* Should be using gpio_get_value_cansleep() */
 	WARN_ON(chip->can_sleep);
 	value = chip->get ? chip->get(chip, offset) : 0;
+	value = value < 0 ? value : !!value;
 	trace_gpio_value(desc_to_gpio(desc), 1, value);
 	return value;
 }
