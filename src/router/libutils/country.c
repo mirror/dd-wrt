@@ -949,6 +949,16 @@ char *getIsoName(const char *country)
 	return 0;
 }
 
+char *getCountryByIso(const char *country)
+{
+	int i;
+	for (i = 0; i < N(allCountries); i++) {
+		if (!strcmp(allCountries[i].isoName, country))
+			return allCountries[i].name;
+	}
+	return 0;
+}
+
 extern int getRouterBrand(void);
 
 #ifdef HAVE_BUFFALO
