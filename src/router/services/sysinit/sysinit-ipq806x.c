@@ -357,10 +357,13 @@ static void setasrockcountry(void)
 		return;
 	fread(buf, 1, 18, fp);
 	pclose(fp);
-	buf[sizeof(defstr) + 2] = 0;
+	buf[strlen(defstr) + 2] = 0;
 	memset(c, 0, sizeof(c));
-	strncpy(c, &buf[sizeof(defstr)], 2);
+	strncpy(c, &buf[strlen(defstr)], 2);
+//	fprintf(stderr,"isostr %s\n",buf);
+	fprintf(stderr,"iso %s\n",c);
 	char *ctry = getCountryByIso(c);
+	fprintf(stderr,"country %s\n",ctry);
 	if (!ctry)
 		return;
 	if (!nvram_get("nocountrysel"))
