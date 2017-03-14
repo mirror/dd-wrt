@@ -305,8 +305,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			} __attribute__((packed)) img_header_t;
 			if (brand == ROUTER_ASROCK_G10) {
 				img_header_t *header = (img_header_t *)buf;
-				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4) && header->startAddr == DWORD_SWAP(0x1200000) && header->burnAddr == DWORD_SWAP(0x70000)) {
+				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
 					fprintf(stderr, "found valid ASROCK-G10 Image\n");
+					sysprintf("startservice bootprimary");
+					sysprintf("startservice finishupgrade");
 					count -= sizeof(struct img_header);
 					memcpy(buf, buf + sizeof(struct img_header), count);
 					char *write_argv_buf[8];
