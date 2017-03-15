@@ -1069,7 +1069,9 @@ endif
 #ifeq ($(CONFIG_DLNA),y)
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be -b 262144
 #else
-	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend
+
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 #endif
 	mkfs.jffs2 --pad --big-endian --squash -e 0x10000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
 	
@@ -1942,6 +1944,7 @@ ifeq ($(CONFIG_WR1043V2),y)
 
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v1 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v1-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v1-firmwareUS.bin
+
 	-./tools/tplink/mktplinkfw -B ARCHER-C7v2 -u -N DD-WRT -V 24 -k $(ARCH)-uclibc/vmlinux.tpl -r $(ARCH)-uclibc/root.fs -o mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 	-./tools/trx_n -m 40000000 -o $(ARCH)-uclibc/ARCHER-C7v2-firmwareUS.bin mips-uclibc/tplink-ARCHER-C7v2-firmwareUS.bin
 

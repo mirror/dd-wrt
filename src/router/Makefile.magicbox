@@ -528,7 +528,8 @@ endif
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 ifneq ($(CONFIG_RB600),y)
-	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend -Xbcj powerpc
+#	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -be
 	cp $(LINUXDIR)/arch/ppc/boot/images/uImage $(ARCH)-uclibc/dd-wrt-uImage
 	cat $(ARCH)-uclibc/root.fs >> $(ARCH)-uclibc/dd-wrt-uImage
 	./tools/trx_n -o $(ARCH)-uclibc/magicbox-firmware.bin -m 100000000 $(ARCH)-uclibc/dd-wrt-uImage 
