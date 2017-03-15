@@ -32,6 +32,7 @@
 #include <linux/root_dev.h>
 #include <linux/magic.h>
 #include <linux/err.h>
+#include <linux/squashfs_fs.h>
 
 #define MTD_ERASE_PARTIAL	0x8000 /* partition only covers parts of an erase block */
 
@@ -691,12 +692,6 @@ EXPORT_SYMBOL_GPL(mtd_del_partition);
 #ifdef CONFIG_MTD_ROOTFS_SPLIT
 #define ROOTFS_SPLIT_NAME "rootfs_data"
 #define ROOTFS_REMOVED_NAME "<removed>"
-
-struct squashfs_super_block {
-	__le32 s_magic;
-	__le32 pad0[9];
-	__le64 bytes_used;
-};
 
 
 static int split_squashfs(struct mtd_info *master, int offset, int *split_offset)

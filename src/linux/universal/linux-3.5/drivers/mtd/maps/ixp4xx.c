@@ -334,7 +334,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
 		if (*((__u16 *) buf) != 0x1985)
 			{
-			filesyssize = sb->bytes_used;
+			filesyssize = le64_to_cpu(sb->bytes_used);
 			tmplen = offset + filesyssize;
 			tmplen +=  (erasesize - 1);
 			tmplen &= ~(erasesize - 1);
