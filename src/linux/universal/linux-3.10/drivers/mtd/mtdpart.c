@@ -706,7 +706,7 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 		return -EINVAL;
 	}
 
-	if (SQUASHFS_MAGIC != sb.s_magic ) {
+	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic ) {
 		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
 			master->name);
 		*split_offset = 0;
@@ -888,7 +888,7 @@ int add_mtd_partitions(struct mtd_info *master,
 			    {
 			    int retlen;
 			    mtd_read(master,offset,4, &retlen, (u_char *)&buf);
-			    if (buf == SQUASHFS_MAGIC)
+			    if (SQUASHFS_MAGIC != le32_to_cpu(buf))
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				    	struct mtd_partition part;

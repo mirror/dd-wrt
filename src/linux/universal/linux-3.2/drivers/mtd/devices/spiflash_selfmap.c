@@ -766,7 +766,7 @@ static int spiflash_probe(struct platform_device *pdev)
 	while((offset+mtd->erasesize)<mtd->size)
 	    {
 //	    printk(KERN_EMERG "[0x%08X]\n",offset);
-	    if (*((__u32 *) buf) == SQUASHFS_MAGIC) 
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP) 
 		{
 		printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 		sb = (struct squashfs_super_block *) buf;
