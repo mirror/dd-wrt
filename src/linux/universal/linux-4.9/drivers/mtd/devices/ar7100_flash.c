@@ -452,7 +452,7 @@ static int __init ar7100_flash_init(void)
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
 
-				dir_parts[2].size = sb->bytes_used;
+				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
@@ -498,7 +498,7 @@ static int __init ar7100_flash_init(void)
 				    {
 				    dir_parts[1].size = 0x7d0000 - 0x50000;
 				    dir_parts[1].offset = 0x50000;
-				    dir_parts[2].size = sb->bytes_used;
+				    dir_parts[2].size = le64_to_cpu(sb->bytes_used);
 				    dir_parts[2].offset = 0x50000;
 				    len = dir_parts[2].offset + dir_parts[2].size;
 				    len += (mtd->erasesize - 1);

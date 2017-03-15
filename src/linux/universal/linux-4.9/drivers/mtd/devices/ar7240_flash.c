@@ -526,7 +526,7 @@ static int __init ar7240_flash_init(void)
 				dir_parts[2].offset = offset;
 
 				
-				dir_parts[2].size = sb->bytes_used;
+				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
 				size_t origlen = dir_parts[2].offset + dir_parts[2].size;
 				
 				len = dir_parts[2].offset + dir_parts[2].size;
