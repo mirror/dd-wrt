@@ -402,10 +402,10 @@ find_root(struct mtd_info *mtd, size_t size, struct mtd_partition *part)
 		return 0;
 
 	if (*((__u32 *) buf) == SQUASHFS_MAGIC) {
-		printk(KERN_EMERG  "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) sb->bytes_used);
+		printk(KERN_EMERG  "%s: Filesystem type: squashfs, size=0x%x\n", mtd->name, (u32) le64_to_cpu(sb.bytes_used));
 
 		/* Update the squashfs partition size based on the superblock info */
-		part->size = sb->bytes_used;
+		part->size = le64_to_cpu(sb.bytes_used);
 		//part->size = part->size + 1024; /* uncomment for belkin v2000 ! */
 		len = part->offset + part->size;
 		len +=  (mtd->erasesize - 1);

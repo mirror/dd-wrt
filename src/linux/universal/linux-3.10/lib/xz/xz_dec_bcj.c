@@ -19,6 +19,7 @@
 struct xz_dec_bcj {
 	/* Type of the BCJ filter being used */
 	enum {
+		BCJ_DELTA = 3,        /* Delta encoding */
 		BCJ_X86 = 4,        /* x86 or x86-64 */
 		BCJ_POWERPC = 5,    /* Big endian only */
 		BCJ_IA64 = 6,       /* Big or little endian */

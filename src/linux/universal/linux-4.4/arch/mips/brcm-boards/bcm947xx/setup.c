@@ -485,7 +485,7 @@ static uint lookup_nflash_rootfs_offset(hndnand_t *nfl, struct mtd_info *mtd, in
 			printk(KERN_NOTICE
 			       "%s: squash filesystem with lzma found at offset %X\n",
 			       mtd->name, off );
-		int size = squashfsb->bytes_used;
+		int size = le64_to_cpu(squashfsb->bytes_used);
 		//part->size = part->size + 1024; /* uncomment for belkin v2000 ! */
 		int len = offset + size;
 		len +=  (mtd->erasesize - 1);

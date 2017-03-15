@@ -500,7 +500,7 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 		}
 
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
-			rootfssize = squashfsb->bytes_used;
+			rootfssize = le64_to_cpu(squashfsb->bytes_used);
 			printk(KERN_NOTICE "%s: squash filesystem found at block %d\n", mtd->name, off / mtd->erasesize);
 			break;
 		}
@@ -901,12 +901,12 @@ static uint lookup_nflash_rootfs_offset(hndnand_t * nfl, struct mtd_info *mtd, i
 		}
 
 		if (squashfsb->s_magic == SQUASHFS_MAGIC) {
-			rootfssize = squashfsb->bytes_used;
+			rootfssize = le64_to_cpu(squashfsb->bytes_used);
 			printk(KERN_NOTICE "%s: squash filesystem with lzma found at block %d\n", mtd->name, off / blocksize);
 			break;
 		}
 		if (squashfsb2 && squashfsb2->s_magic == SQUASHFS_MAGIC) {
-			rootfssize = squashfsb2->bytes_used;
+			rootfssize = le64_to_cpu(squashfsb2->bytes_used);
 			off += 0x60;
 			printk(KERN_NOTICE "%s: squash filesystem with lzma found at block %d\n", mtd->name, off / blocksize);
 			break;

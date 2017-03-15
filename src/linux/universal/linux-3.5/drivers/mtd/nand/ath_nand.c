@@ -1420,7 +1420,7 @@ static int ath_nand_add_partition(ath_nand_sc_t *sc)
 				printk(KERN_EMERG "\nfound squashfs at 0x%llX\n",offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
-				dir_parts[2].size = sb->bytes_used;
+				dir_parts[2].size = le64_to_cpu(sb->bytes_used);
 				len = dir_parts[2].offset + dir_parts[2].size;
 				len += (mtd->erasesize - 1);
 				len &= ~(mtd->erasesize - 1);
