@@ -181,7 +181,7 @@ int __init init_ar531x(void)
 					sb = (struct squashfs_super_block *)buf;
 
 					dir_parts[2].offset = offset;
-					len = sb->bytes_used;
+					len = le64_to_cpu(sb->bytes_used);
 					len += (mymtd->erasesize - 1);
 					len &= ~(mymtd->erasesize - 1);
 					dir_parts[2].size = len;
