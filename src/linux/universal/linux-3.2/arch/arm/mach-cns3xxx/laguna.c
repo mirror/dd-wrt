@@ -833,7 +833,7 @@ static int __init laguna_model_setup(void)
 			{
 		//	printk(KERN_EMERG "found squashfs\n");
 	    		struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
-			filesyssize = sb->bytes_used;
+			filesyssize = le64_to_cpu(sb->bytes_used);
 			tmplen = offset + filesyssize;
 			tmplen +=  (erasesize - 1);
 			tmplen &= ~(erasesize - 1);
@@ -893,7 +893,7 @@ static int __init laguna_model_setup(void)
 			memcpy(block,buf,0x40000);
 			sb = (struct squashfs_super_block*)block;
 			printk(KERN_EMERG "found squashfs @0x%08X magic=0x%08X\n",offset,*((__u32 *) buf));
-			filesyssize = sb->bytes_used;
+			filesyssize = le64_to_cpu(sb->bytes_used);
 			vfree(block);
 			tmplen = offset + filesyssize;
 			tmplen +=  (erasesize - 1);

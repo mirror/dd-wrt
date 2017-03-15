@@ -713,14 +713,14 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 		return 0;
 	}
 
-	if (sb.bytes_used <= 0) {
+	if (le64_to_cpu(sb->bytes_used) <= 0) {
 		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
 			master->name);
 		*split_offset = 0;
 		return 0;
 	}
 
-	len = sb.bytes_used;
+	len = le64_to_cpu(sb->bytes_used);
 	len += (offset & 0x000fffff);
 	len +=  (((master->erasesize<65536)?65536:master->erasesize) - 1);
 	len &= ~(((master->erasesize<65536)?65536:master->erasesize) - 1);
