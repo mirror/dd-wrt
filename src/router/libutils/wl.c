@@ -1147,6 +1147,7 @@ long long wifi_getrate(char *ifname)
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		char physical[32];
+		memset(physical,0,sizeof(physical));
 		strncpy(physical, ifname, 4);
 		if (nvram_nmatch("b-only", "%s_net_mode", physical))
 			return 11000 * KILO;
