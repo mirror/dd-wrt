@@ -497,7 +497,7 @@ endif
 	cp $(LINUXDIR)/arch/arm/boot/zImage tools/wrt300n
 	cd tools/wrt300n && ./linuxbb
 	./tools/mkmylofw -B WP188 armeb-uclibc/firmware.compex -p0x40000:0x790000:ar:0x00800000 -b0x40000:0x790000::armeb-uclibc/gateworx-firmware.raw2
-	./tools/mkmylofw -B WP18 armeb-uclibc/firmware_wp18.compex -p0x40000:0x790000:ar:0x00800000 -b0x40000:0x790000::armeb-uclibc/gateworx-firmware.raw2
+	./tools/mkmylofw -B WP18 armeb-uclibc/firmware_wp18.compex -p0x40000:0x390000:ar:0x00800000 -b0x40000:0x390000::armeb-uclibc/gateworx-firmware.raw2
 
 
 
