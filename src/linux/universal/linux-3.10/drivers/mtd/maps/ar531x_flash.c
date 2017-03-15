@@ -185,7 +185,7 @@ int __init init_ar531x(void)
 			    char *buf = 0xbfc00000;
 			    while((offset+mymtd->erasesize)<mymtd->size)
 			    {
-			    if (*((__u32 *) buf) == SQUASHFS_MAGIC)
+			    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP)
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 					ar531x_partitions[3].offset=offset;					
