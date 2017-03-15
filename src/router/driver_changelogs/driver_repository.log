@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3346 | brainslayer | 2017-03-15 14:06:25 +0100 (Wed, 15 Mar 2017) | 1 line
+
+fix buzzer export and change kernel driver with some experimental changes to get it to work
+------------------------------------------------------------------------
 r3345 | brainslayer | 2017-03-15 10:14:51 +0100 (Wed, 15 Mar 2017) | 1 line
 
 fix typo
