@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3347 | brainslayer | 2017-03-15 14:40:38 +0100 (Wed, 15 Mar 2017) | 1 line
+
+disable bullshit check
+------------------------------------------------------------------------
 r3346 | brainslayer | 2017-03-15 14:06:25 +0100 (Wed, 15 Mar 2017) | 1 line
 
 fix buzzer export and change kernel driver with some experimental changes to get it to work
