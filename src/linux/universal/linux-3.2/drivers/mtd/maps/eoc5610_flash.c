@@ -174,7 +174,7 @@ int __init init_ar531x(void)
 			int offset = 0x0;
 			unsigned char *buf = (unsigned char *)0xbe000000;
 			while ((offset + mymtd->erasesize) < mymtd->size) {
-				if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
+				if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
 					printk(KERN_EMERG
 					       "\nfound squashfs at %X\n",
 					       offset);

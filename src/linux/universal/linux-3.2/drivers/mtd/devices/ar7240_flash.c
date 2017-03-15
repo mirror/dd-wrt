@@ -135,7 +135,7 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "WRT160NL uboot detected\n");
 			return i * 4;	// uboot, lzma image
 		}
-		if (ofs[i] == SQUASHFS_MAGIC) {
+		if (ofs[i] == SQUASHFS_MAGIC_SWAP) {
 			printk(KERN_EMERG "ZCom quirk found\n");
 			zcom=1;
 			for (a = i; a < maxscan; a += 16384) {
@@ -370,7 +370,7 @@ static int __init ar7240_flash_init(void)
 		}
 		while ((offset + mtd->erasesize) < mtd->size) {
 //                      printk(KERN_EMERG "[0x%08X] = [0x%08X]!=[0x%08X]\n",offset,*((unsigned int *) buf),SQUASHFS_MAGIC);
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",
 				       offset);
 				sb = (struct squashfs_super_block *)buf;

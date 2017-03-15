@@ -308,7 +308,7 @@ static int ixp4xx_flash_probe(struct platform_device *dev)
 	while((offset+erasesize)<mtd->size)
 	    {
 	    printk(KERN_EMERG "[0x%08X]\r",offset);
-	    if (*((__u32 *) buf) == SQUASHFS_MAGIC || *((__u16 *) buf) == 0x1985) 
+	    if (*((__u32 *) buf) == SQUASHFS_MAGIC_SWAP || *((__u16 *) buf) == 0x1985) 
 		{
 	        struct squashfs_super_block *sb = (struct squashfs_super_block *) buf;
 		if (*((__u16 *) buf) != 0x1985)

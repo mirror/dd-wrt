@@ -106,7 +106,7 @@ detect_squashfs_partition(struct map_info *map, unsigned long offset)
 {
 	unsigned long temp;
 	map->copy_from(map, &temp, offset, 4);
-	return le32_to_cpu(temp) == SQUASHFS_MAGIC;
+	return le32_to_cpu(temp) == SQUASHFS_MAGIC_SWAP;
 }
 
 #ifdef CONFIG_AR9

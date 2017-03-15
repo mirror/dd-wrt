@@ -725,7 +725,7 @@ static int __init ar7100_flash_init (void)
 
 		while ((offset + mtd->erasesize) < mtd->size) {
 			mtd_read(mtd,offset,512,&retlen,&buf[0]);
-			if (*((__u32 *)buf) == SQUASHFS_MAGIC) {
+			if (*((__u32 *)buf) == SQUASHFS_MAGIC_SWAP) {
 				printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				sb = (struct squashfs_super_block *)buf;
 				dir_parts[2].offset = offset;
