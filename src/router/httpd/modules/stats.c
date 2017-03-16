@@ -35,6 +35,8 @@ extern int http_post(const char *server, char *buf, size_t count);
 #define NVRAMSPACE 0x20000
 #elif HAVE_MVEBU
 #define NVRAMSPACE 0x10000
+#elif HAVE_WDR4900
+#define NVRAMSPACE 0x20000
 #elif HAVE_ALPINE
 #define NVRAMSPACE 0x20000
 #elif HAVE_IPQ806X
