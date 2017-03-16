@@ -25,5 +25,6 @@ ncurses:
 ncurses-install:
 	make -C ncurses install.libs DESTDIR=$(INSTALLDIR)/ncurses
 	rm -rf $(INSTALLDIR)/ncurses/usr/include
+	rm -rf $(INSTALLDIR)/ncurses/usr/bin
 	rm -f $(INSTALLDIR)/ncurses/usr/lib/*.a
 
