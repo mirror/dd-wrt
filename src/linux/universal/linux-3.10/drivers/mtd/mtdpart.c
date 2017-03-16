@@ -706,14 +706,14 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 		return -EINVAL;
 	}
 
-	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic )) {
+	if (SQUASHFS_MAGIC != le32_to_cpu(sb.s_magic)) {
 		printk(KERN_ALERT "split_squashfs: no squashfs found in \"%s\"\n",
 			master->name);
 		*split_offset = 0;
 		return 0;
 	}
 
-	if (le64_to_cpu(sb->bytes_used) <= 0) {
+	if (le64_to_cpu(sb.bytes_used) <= 0) {
 		printk(KERN_ALERT "split_squashfs: squashfs is empty in \"%s\"\n",
 			master->name);
 		*split_offset = 0;
