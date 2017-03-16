@@ -720,7 +720,7 @@ static int split_squashfs(struct mtd_info *master, int offset, int *split_offset
 		return 0;
 	}
 
-	len = le64_to_cpu(sb->bytes_used);
+	len = le64_to_cpu(sb.bytes_used);
 	len += (offset & 0x000fffff);
 	len +=  (((master->erasesize<65536)?65536:master->erasesize) - 1);
 	len &= ~(((master->erasesize<65536)?65536:master->erasesize) - 1);
