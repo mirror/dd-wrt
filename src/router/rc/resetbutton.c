@@ -1095,8 +1095,9 @@ static void resetbtn_period_check(int sig)
 	val |= get_gpio(5) << 5;	//aoss pushbutton
 #elif defined(HAVE_CARAMBOLA)
 #if defined(HAVE_ERC)
-//      wifi24gpio = 0x117;
-//      val |= get_gpio(23) << 23;
+//	sesgpio = 0x017;
+      wifi24gpio = 0x117;
+      val |= get_gpio(23) << 23;
 #endif
 #elif defined(HAVE_HORNET)
 	sesgpio = 0x00b;
