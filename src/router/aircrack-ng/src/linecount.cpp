@@ -58,6 +58,7 @@
 #include <fstream>
 #include <vector>
 #include <ctime>
+#include <unistd.h>
 #include <string.h>
 #include "linecount.h"
 
