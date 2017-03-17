@@ -75,20 +75,16 @@ static char *getdisc(void)	// works only for squashfs
 			char buf[4];
 
 			fread(buf, 4, 1, in);
-			if (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') {
+			if ((buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h')
+			    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
+			    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
 				fclose(in);
 				// filesystem detected
 				fprintf(stderr, "file system detected at %s\n", disks[i]);
 				strncpy(ret, disks[i], 3);
 				return ret;
 			}
-			if (buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h') {
-				fclose(in);
-				// filesystem detected
-				fprintf(stderr, "file system detected at %s\n", disks[i]);
-				strncpy(ret, disks[i], 3);
-				return ret;
-			}
+
 			fclose(in);
 		      skip:;
 		}
