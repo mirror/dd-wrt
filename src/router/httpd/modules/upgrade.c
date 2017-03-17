@@ -304,7 +304,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				unsigned int len __attribute__((packed));
 			} __attribute__((packed)) img_header_t;
 			if (brand == ROUTER_ASROCK_G10) {
-				img_header_t *header = (img_header_t *)buf;
+				img_header_t *header = (img_header_t *) buf;
 				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
 					fprintf(stderr, "found valid ASROCK-G10 Image\n");
 					sysprintf("startservice bootprimary");
@@ -329,7 +329,6 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					goto write_data;
 				}
 			}
-
 #endif
 #if defined(HAVE_DIR860) || defined(HAVE_DIR859)
 #define SEAMA_MAGIC		0x5EA3A417
