@@ -308,7 +308,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
 					fprintf(stderr, "found valid ASROCK-G10 Image\n");
 					sysprintf("startservice bootprimary");
-					sysprintf("startservice finishupgrade");
+				//	sysprintf("startservice finishupgrade");
 					count -= sizeof(struct img_header);
 					memcpy(buf, buf + sizeof(struct img_header), count);
 					char *write_argv_buf[8];
