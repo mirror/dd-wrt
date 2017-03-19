@@ -86,7 +86,7 @@ static ssize_t gpio_read(struct file *file, char *buf, size_t count, loff_t * pp
 	return sizeof(val);
 }
 
-int gpio_kernel_api(unsigned int cmd, unsigned int mask, unsigned int val)
+int __init gpio_kernel_api(unsigned int cmd, unsigned int mask, unsigned int val)
 {
 
 	if (gpio_init_flag != 1) {

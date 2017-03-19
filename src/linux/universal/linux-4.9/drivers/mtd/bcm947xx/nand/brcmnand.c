@@ -59,6 +59,13 @@
 #include <bcmnvram.h>
 #include <bcmutils.h>
 
+
+struct nand_ecclayout {
+	__u32 eccbytes;
+	__u32 eccpos[MTD_MAX_ECCPOS_ENTRIES];
+	__u32 oobavail;
+	struct nand_oobfree oobfree[MTD_MAX_OOBFREE_ENTRIES];
+};
 /*
  * Because the bcm_nflash doesn't consider second chip case,
  * So in this brcmnand driver we just define NANDC_MAX_CHIPS to 1
@@ -90,7 +97,6 @@ struct brcmnand_mtd {
 
 	struct nand_ecclayout	ecclayout;
 	int			cmd_ret;	/* saved error code */
-	int			page_addr;	/* saved page address from SEQIN */
 	unsigned char		oob_index;
 	unsigned char		id_byte_index;
 	unsigned char		last_cmd;
@@ -284,10 +290,10 @@ brcmnand_hw_ecc_layout(struct brcmnand_mtd *brcmnand)
 
 	layout->oobavail = ((oob_per_sec - ecc_per_sec)	<< brcmnand->sec_per_page_shift) - 1;
 
-	brcmnand->mtd.oobavail = layout->oobavail;
+//	brcmnand->mtd.oobavail = layout->oobavail;
 //	brcmnand->chip.ecclayout = layout;
-	brcmnand->chip.ecc.layout = layout;
-
+//	brcmnand->chip.ecc.layout = layout;
+	mtd_set_ooblayout(&brcmnand->mtd, &nand_ooblayout_lp_ops);
 	/* Output layout for debugging */
 	printk("Spare area=%d eccbytes %d, ecc bytes located at:\n",
 		brcmnand->mtd.oobsize, layout->eccbytes);
@@ -379,7 +385,7 @@ brcmnand_options_print(unsigned opts)
 static int
 brcmnand_dev_ready(struct mtd_info *mtd)
 {
-	struct nand_chip *chip = (struct nand_chip *)mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);;
 	struct brcmnand_mtd *brcmnand = (struct brcmnand_mtd *)chip->priv;
 
 	return (hndnand_dev_ready(brcmnand->nfl));
@@ -498,20 +504,21 @@ brcmnand_read_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
 /*
  * INTERNAL - do page write, with or without ECC generation enabled
  */
+ 
+ 
 static void
-_brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint8_t *buf, bool ecc)
+_brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint8_t *buf, int page, bool ecc)
 {
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	uint8_t tmp_poi[NAND_MAX_OOBSIZE];
 	uint64 nand_addr;
 	int i;
 
-	BUG_ON(brcmnand->page_addr == 0);
 	BUG_ON(mtd->oobsize > sizeof(tmp_poi));
 
 	/* Retreive pre-existing OOB values */
 	memcpy(tmp_poi, chip->oob_poi, mtd->oobsize);
-	brcmnand->cmd_ret = brcmnand_read_oob(mtd, chip, brcmnand->page_addr);
+	brcmnand->cmd_ret = brcmnand_read_oob(mtd, chip, page);
 	if (brcmnand->cmd_ret < 0)
 		return;
 
@@ -519,7 +526,8 @@ _brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint
 	for (i = 0; i < mtd->oobsize; i ++)
 		chip->oob_poi[i] &= tmp_poi[i];
 
-	nand_addr = ((uint64)brcmnand->page_addr << chip->page_shift);
+			
+	nand_addr = ((uint64)page << chip->page_shift);
 	brcmnand->cmd_ret = hndnand_write_page(brcmnand->nfl, nand_addr, buf,
 		chip->oob_poi, ecc);
 
@@ -531,9 +539,9 @@ _brcmnand_write_page_do(struct mtd_info *mtd, struct nand_chip *chip, const uint
  */
 static int
 brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf, int oob_required)
+                const uint8_t *buf, int oob_required, int page)
 {
-	_brcmnand_write_page_do(mtd, chip, buf, TRUE);
+	_brcmnand_write_page_do(mtd, chip, buf, page, TRUE);
 	return 0;
 }
 
@@ -542,11 +550,11 @@ brcmnand_write_page_ecc(struct mtd_info *mtd, struct nand_chip *chip,
  */
 static int
 brcmnand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
-                const uint8_t *buf, int oob_required)
+                const uint8_t *buf, int oob_required, int page)
 {
 	printk(KERN_INFO "%s: Enter!\n", __FUNCTION__);
 
-	_brcmnand_write_page_do(mtd, chip, buf, FALSE);
+	_brcmnand_write_page_do(mtd, chip, buf, page, FALSE);
 	return 0;
 }
 
@@ -559,7 +567,7 @@ brcmnand_write_page_raw(struct mtd_info *mtd, struct nand_chip *chip,
 static uint8_t
 brcmnand_read_byte(struct mtd_info *mtd)
 {
-	struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	uint32 reg;
 	uint8_t b = ~0;
@@ -617,7 +625,7 @@ brcmnand_read_word(struct mtd_info *mtd)
 static void
 brcmnand_select_chip(struct mtd_info *mtd, int chip_num)
 {
-	struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	/* chip_num == -1 means de-select the device */
 	hndnand_select_chip(brcmnand->nfl, 0);
@@ -632,7 +640,7 @@ brcmnand_select_chip(struct mtd_info *mtd, int chip_num)
 static void
 brcmnand_cmdfunc(struct mtd_info *mtd, unsigned command, int column, int page_addr)
 {
-	struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	uint64 nand_addr;
 
@@ -655,7 +663,6 @@ brcmnand_cmdfunc(struct mtd_info *mtd, unsigned command, int column, int page_ad
 
 		case NAND_CMD_SEQIN:
 			BUG_ON(column >= mtd->writesize);
-			brcmnand->page_addr = page_addr;
 			nand_addr = (uint64) column | ((uint64)page_addr << chip->page_shift);
 			hndnand_cmdfunc(brcmnand->nfl, nand_addr, CMDFUNC_SEQIN);
 			break;
@@ -698,7 +705,7 @@ brcmnand_cmdfunc(struct mtd_info *mtd, unsigned command, int column, int page_ad
 static int
 brcmnand_scan(struct mtd_info *mtd)
 {
-	struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	hndnand_t *nfl = brcmnand->nfl;
 	int ret;
@@ -726,8 +733,8 @@ brcmnand_scan(struct mtd_info *mtd)
 	if ((ret = brcmnand_hw_ecc_layout(brcmnand)) != 0)
 		return ret;
 
-	pr_debug( "%s: layout.oobavail=%d\n", __func__,
-		chip->ecc.layout->oobavail);
+//	pr_debug( "%s: layout.oobavail=%d\n", __func__,
+//		chip->ecc.layout->oobavail);
 
 	ret = nand_scan_tail(mtd);
 
@@ -776,7 +783,7 @@ brcmnand_dummy_func(struct mtd_info * mtd)
 static void
 brcmnand_command_lp(struct mtd_info *mtd, unsigned int command, int column, int page_addr)
 {
-	register struct nand_chip *chip = mtd->priv;
+	register struct nand_chip *chip = mtd_to_nand(mtd);
 
 	/* Emulate NAND_CMD_READOOB */
 	if (command == NAND_CMD_READOOB) {
@@ -893,7 +900,7 @@ brcmnand_command_lp(struct mtd_info *mtd, unsigned int command, int column, int 
 static void
 brcmnand_command(struct mtd_info *mtd, unsigned int command, int column, int page_addr)
 {
-	register struct nand_chip *chip = mtd->priv;
+	register struct nand_chip *chip = mtd_to_nand(mtd);
 	int ctrl = NAND_CTRL_CLE;
 
 	/* Invoke large page command function */
@@ -1019,7 +1026,7 @@ init_brcmnand_mtd_partitions(struct mtd_info *mtd, size_t size)
 {
 	int knldev;
 	int offset = 0;
-	struct nand_chip *chip = mtd->priv;
+	struct nand_chip *chip = mtd_to_nand(mtd);
 	struct brcmnand_mtd *brcmnand = chip->priv;
 	int isbufdual=0;
 	uint boardnum = bcm_strtoul(nvram_safe_get("boardnum"), NULL, 0);
