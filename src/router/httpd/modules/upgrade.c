@@ -306,19 +306,26 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (brand == ROUTER_ASROCK_G10) {
 				img_header_t *header = (img_header_t *) buf;
 				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
+					char *mtd = "linux";
 					fprintf(stderr, "found valid ASROCK-G10 Image\n");
-					sysprintf("startservice bootprimary");
-				//	sysprintf("startservice finishupgrade");
+					if (nvram_matchi("bootpartition", 0)) {
+						mtd = "linux2";
+						eval("startservice", "bootsecondary");
+					} else {
+						eval("startservice", "bootprimary");
+					}
+
+					sysprintf("startservice finishupgrade");
 					count -= sizeof(struct img_header);
 					memcpy(buf, buf + sizeof(struct img_header), count);
 					char *write_argv_buf[8];
 					write_argv_buf[0] = "mtd";
 					write_argv_buf[1] = "-e";
-					write_argv_buf[2] = "linux";
+					write_argv_buf[2] = mtd;
 					write_argv_buf[3] = "-f";
 					write_argv_buf[4] = "write";
 					write_argv_buf[5] = upload_fifo;
-					write_argv_buf[6] = "linux";
+					write_argv_buf[6] = mtd;
 					write_argv_buf[7] = NULL;
 					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 					    || !(fifo = fopen(upload_fifo, "w"))) {
