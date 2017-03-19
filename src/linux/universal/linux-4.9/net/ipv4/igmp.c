@@ -2950,6 +2950,7 @@ static const struct file_operations igmp_mcf_seq_fops = {
 
 static int __net_init igmp_net_init(struct net *net)
 {
+#ifndef CONFIG_PROC_STRIPPED
 	struct proc_dir_entry *pde;
 	int err;
 
@@ -2967,7 +2968,7 @@ static int __net_init igmp_net_init(struct net *net)
 		       err);
 		goto out_sock;
 	}
-
+#endif
 	/* Sysctl initialization */
 	net->ipv4.sysctl_igmp_max_memberships = 20;
 	net->ipv4.sysctl_igmp_max_msf = 10;
@@ -2986,8 +2987,10 @@ out_igmp:
 
 static void __net_exit igmp_net_exit(struct net *net)
 {
+#ifndef CONFIG_PROC_STRIPPED
 	remove_proc_entry("mcfilter", net->proc_net);
 	remove_proc_entry("igmp", net->proc_net);
+#endif
 	inet_ctl_sock_destroy(net->ipv4.mc_autojoin_sk);
 }
 
@@ -3023,8 +3026,6 @@ int __init igmp_mc_init(void)
 {
 #if defined(CONFIG_PROC_FS)
 	int err;
-	if (IS_ENABLED(CONFIG_PROC_STRIPPED))
-		return 0;
 		
 	err = register_pernet_subsys(&igmp_net_ops);
 	if (err)
