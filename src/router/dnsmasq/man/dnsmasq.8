@@ -203,12 +203,17 @@ or
 options are given dnsmasq listens on all available interfaces except any
 given in
 .B \--except-interface
-options. IP alias interfaces (eg "eth1:0") cannot be used with
-.B --interface
+options. On Linux, when
+.B \--bind-interfaces
 or
-.B --except-interface
-options, use --listen-address instead. A simple wildcard, consisting
-of a trailing '*', can be used in 
+.B \--bind-dynamic
+are in effect, IP alias interface labels (eg "eth1:0") are checked, rather than
+interface names. In the degenerate case when an interface has one address, this amounts to the same thing but when an interface has multiple addresses it
+allows control over which of those addresses are accepted.
+The same effect is achievable in default mode by using
+.B \--listen-address.
+A simple wildcard, consisting of a trailing '*',
+can be used in
 .B \--interface 
 and
 .B \--except-interface
@@ -222,7 +227,9 @@ and
 .B --except-interface
 options does not matter and that 
 .B --except-interface
-options always override the others.
+options always override the others. The comments about interface labels for
+.B --listen-address
+apply here.
 .TP
 .B --auth-server=<domain>,<interface>|<ip-address>
 Enable DNS authoritative mode for queries arriving at an interface or address. Note that the interface or address
@@ -961,7 +968,7 @@ subnets which don't need a pool of dynamically allocated addresses,
 use the "static" keyword in the dhcp-range declaration.
 
 It is allowed to use client identifiers (called client
-DUID in IPv6-land rather than
+DUID in IPv6-land) rather than
 hardware addresses to identify hosts by prefixing with 'id:'. Thus: 
 .B --dhcp-host=id:01:02:03:04,..... 
 refers to the host with client identifier 01:02:03:04. It is also

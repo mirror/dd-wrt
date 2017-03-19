@@ -522,7 +522,7 @@ struct ipsets {
 struct irec {
   union mysockaddr addr;
   struct in_addr netmask; /* only valid for IPv4 */
-  int tftp_ok, dhcp_ok, mtu, done, warned, dad, dns_auth, index, multicast_done, found;
+  int tftp_ok, dhcp_ok, mtu, done, warned, dad, dns_auth, index, multicast_done, found, label;
   char *name; 
   struct irec *next;
 };
@@ -1263,6 +1263,7 @@ int enumerate_interfaces(int reset);
 void create_wildcard_listeners(void);
 void create_bound_listeners(int die);
 void warn_bound_listeners(void);
+void warn_wild_labels(void);
 void warn_int_names(void);
 int is_dad_listeners(void);
 int iface_check(int family, struct all_addr *addr, char *name, int *auth_dns);
