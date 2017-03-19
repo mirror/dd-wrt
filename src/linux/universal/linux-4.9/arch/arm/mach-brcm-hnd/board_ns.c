@@ -166,7 +166,7 @@ void __init board_init_irq(void)
 	/* serial_setup(sih); */
 }
 
-void board_init_timer(void)
+void __init board_init_timer(void)
 {
 	/* Get global SB handle */
 	sih = si_kattach(SI_OSH);
@@ -351,7 +351,7 @@ void __init bcm47xx_adjust_zones(unsigned long *size, unsigned long *hole)
 //#error IO_BASE_VA 
 //#endif
 
-void brcm_reset(char mode, const char *cmd)
+static void brcm_reset(enum reboot_mode mode, const char *cmd)
 {
 #ifdef CONFIG_OUTER_CACHE_SYNC
 	outer_cache.sync = NULL;
@@ -534,7 +534,7 @@ static uint lookup_flash_rootfs_offset(struct mtd_info *mtd, int *trx_off, size_
 }
 extern int __init root_dev_setup(char *line);
 
-struct mtd_partition *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_info *mtd, size_t size)
+struct mtd_partition __init *init_mtd_partitions(hndsflash_t * sfl_info, struct mtd_info *mtd, size_t size)
 {
 	int bootdev;
 	int knldev;

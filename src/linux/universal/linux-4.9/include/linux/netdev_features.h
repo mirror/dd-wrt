@@ -170,6 +170,12 @@ enum {
 /* List of features with software fallbacks. */
 #define NETIF_F_GSO_SOFTWARE	(NETIF_F_ALL_TSO | NETIF_F_UFO | \
 				 NETIF_F_GSO_SCTP)
+				 
+#define NETIF_F_GEN_CSUM	NETIF_F_HW_CSUM
+#define NETIF_F_V4_CSUM		(NETIF_F_GEN_CSUM | NETIF_F_IP_CSUM)
+#define NETIF_F_V6_CSUM		(NETIF_F_GEN_CSUM | NETIF_F_IPV6_CSUM)
+#define NETIF_F_ALL_CSUM	(NETIF_F_V4_CSUM | NETIF_F_V6_CSUM)
+
 
 /*
  * If one device supports one of these features, then enable them

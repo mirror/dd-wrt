@@ -53,7 +53,7 @@
 int nvram_space = 0x10000;
 
 /* Temp buffer to hold the nvram transfered romboot CFE */
-char __initdata ram_nvram_buf[MAX_NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
+char ram_nvram_buf[MAX_NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[MAX_NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
@@ -139,7 +139,7 @@ BCMINITFN(nand_find_nvram)(hndnand_t *nfl, uint32 off)
 #endif /* CONFIG_MTD_NFLASH */
 
 /* Probe for NVRAM header */
-static int
+int
 early_nvram_init(void)
 {
 	struct nvram_header *header;
@@ -262,7 +262,7 @@ found:
 }
 
 /* Early (before mm or mtd) read-only access to NVRAM */
-static char *
+char *
 early_nvram_get(const char *name)
 {
 	char *var, *value, *end, *eq;
@@ -295,7 +295,7 @@ early_nvram_get(const char *name)
 	return NULL;
 }
 
-static int
+int
 early_nvram_getall(char *buf, int count)
 {
 	char *var, *end;
