@@ -244,6 +244,7 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
   int tftp_ok = !!option_bool(OPT_TFTP);
   int dhcp_ok = 1;
   int auth_dns = 0;
+  int is_label = 0;
 #if defined(HAVE_DHCP) || defined(HAVE_TFTP)
   struct iname *tmp;
 #endif
@@ -264,6 +265,8 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
   
   if (!label)
     label = ifr.ifr_name;
+  else
+    is_label = strcmp(label, ifr.ifr_name);
  
   /* maintain a list of all addresses on all interfaces for --local-service option */
   if (option_bool(OPT_LOCAL_SERVICE))
@@ -482,6 +485,7 @@ static int iface_allowed(struct iface_param *param, int if_index, char *label,
       iface->found = 1;
       iface->done = iface->multicast_done = iface->warned = 0;
       iface->index = if_index;
+      iface->label = is_label;
       if ((iface->name = whine_malloc(strlen(ifr.ifr_name)+1)))
 	{
 	  strcpy(iface->name, ifr.ifr_name);
@@ -1032,6 +1036,15 @@ void warn_bound_listeners(void)
   
   if (advice)
     my_syslog(LOG_WARNING, _("LOUD WARNING: use --bind-dynamic rather than --bind-interfaces to avoid DNS amplification attacks via these interface(s)")); 
+}
+
+void warn_wild_labels(void)
+{
+  struct irec *iface;
+
+  for (iface = daemon->interfaces; iface; iface = iface->next)
+    if (iface->found && iface->name && iface->label)
+      my_syslog(LOG_WARNING, _("warning: using interface %s instead"), iface->name);
 }
 
 void warn_int_names(void)
