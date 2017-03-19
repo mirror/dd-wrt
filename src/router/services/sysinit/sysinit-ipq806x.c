@@ -119,7 +119,7 @@ void start_finishupgrade(void)
 		if (ipq_smem_bootconfig_v2_info->upgradeinprogress) {
 			for (i = 0; i < ipq_smem_bootconfig_v2_info->numaltpart; i++) {
 				if (!strncmp(ipq_smem_bootconfig_v2_info->per_part_entry[i].name, "rootfs", 6)) {
-				//	ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_v2_info->per_part_entry[i].primaryboot;
 					ipq_smem_bootconfig_v2_info->per_part_entry[i].upgraded = 0;
 				}
 			}
@@ -133,7 +133,7 @@ void start_finishupgrade(void)
 		if (ipq_smem_bootconfig_info->upgradeinprogress) {
 			for (i = 0; i < ipq_smem_bootconfig_info->numaltpart; i++) {
 				if (!strncmp(ipq_smem_bootconfig_info->per_part_entry[i].name, "rootfs", 6)) {
-				//	ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_info->per_part_entry[i].primaryboot;
+					ipq_smem_bootconfig_info->per_part_entry[i].primaryboot = !ipq_smem_bootconfig_info->per_part_entry[i].primaryboot;
 					ipq_smem_bootconfig_info->per_part_entry[i].upgraded = 0;
 				}
 			}
