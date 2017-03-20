@@ -3955,14 +3955,41 @@ char *request_freedns(char *user, char *password)
 	return hash;
 }
 
+static void getddns_userdata(int enable, char *_username, char *_passwd, char *_hostname)
+{
+
+	switch (enable) {
+	case 1:
+		// dyndns
+		snprintf(_username, sizeof(_username), "%s", "ddns_username");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+
+	case 2:
+	case 3:		// zoneedit
+	case 4:		// no-ip
+	case 5:
+	case 6:
+	case 7:
+	case 8:		// tzo
+	case 9:		// dynSIP
+	case 10:		// dtdns
+	case 11:		//duiadns
+		// 3322 dynamic : added botho 30/07/06
+		// easydns
+		snprintf(_username, sizeof(_username), "ddns_username_%d", enable);
+		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%d", enable);
+		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%d", enable);
+
+		break;
+	}
+
+}
+
 void ddns_save_value(webs_t wp)
 {
-	char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *force, *wan_ip;
-	struct variable ddns_variables[] = {
-		{
-	      argv:ARGV("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10")}, {
-	      argv:								 ARGV("30")},
-	}, *which;
+	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip;
+	int enable, force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
 	char _hostname[] = "ddns_hostname_XX";
@@ -3974,15 +4001,26 @@ void ddns_save_value(webs_t wp)
 	char _force[] = "ddns_force";
 	char _wan_ip[] = "ddns_wan_ip";
 
-	which = &ddns_variables[0];
-
-	enable = websGetVar(wp, "ddns_enable", NULL);
-	if (!enable && !valid_choice(wp, enable, &which[0])) {
+	char *s_enable = websGetVar(wp, "ddns_enable", NULL);
+	if (s_enable)
+		enable = atoi(s_enable);
+	if (!s_enable || enable > 11 || enable < 0) {
 		return;
 	}
 	int gethash = 0;
 
-	switch (atoi(enable)) {
+	int i;
+	for (i = 1; i < 12; i++) {
+		if (i == atoi(enable))
+			continue;
+		getddns_userdata(i, _username, _passwd, _hostname);
+		nvram_unset(_username);
+		nvram_unset(_passwd);
+		nvram_unset(_hostname);
+	}
+	getddns_userdata(atoi(enable), _username, _passwd, _hostname);
+
+	switch (enable) {
 	case 0:
 		// Disable
 		nvram_set("ddns_enable", enable);
@@ -3990,56 +4028,28 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 1:
 		// dyndns
-		snprintf(_username, sizeof(_username), "%s", "ddns_username");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+
 		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
 		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
 		break;
 	case 2:
 		// afraid
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
 		gethash = 1;
-		break;
-	case 3:		// zoneedit
-	case 4:		// no-ip
-	case 8:		// tzo
-	case 9:		// dynSIP
-	case 11:	//duiadns
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
-		break;
-	case 10:		// dtdns
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_username_%s", enable);
 		break;
 	case 5:
 		// custom
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
-		snprintf(_custom, sizeof(_custom), "ddns_custom_%s", enable);
+		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
 		snprintf(_conf, sizeof(_conf), "%s", "ddns_conf");
 		snprintf(_url, sizeof(_url), "%s", "ddns_url");
 		break;
 	case 6:
 		// 3322 dynamic : added botho 30/07/06
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype_%s", enable);
-		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%s", enable);
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype_%d", enable);
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	case 7:
 		// easydns
-		snprintf(_username, sizeof(_username), "ddns_username_%s", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%s", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%s", enable);
-		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%s", enable);
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	}
 
@@ -4051,18 +4061,18 @@ void ddns_save_value(webs_t wp)
 	custom = websGetVar(wp, _custom, NULL);
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
-	force = websGetVar(wp, _force, NULL);
+	force = atoi(websGetVar(wp, _force, "0"));
 	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
 	if (!username || !passwd || !hostname || !force || !wan_ip) {
 		return;
 	}
 
-	if (atoi(force) < 1 || atoi(force) > 60) {
-		force = "10";
+	if (force < 1 || force > 60) {
+		force = 10;
 	}
 
-	nvram_set("ddns_enable", enable);
+	nvram_seti("ddns_enable", enable);
 	nvram_set(_username, username);
 	if (strcmp(passwd, TMP_PASSWD)) {
 		nvram_set(_passwd, passwd);
@@ -4085,7 +4095,7 @@ void ddns_save_value(webs_t wp)
 	nvram_set(_custom, custom);
 	nvram_set(_conf, conf);
 	nvram_set(_url, url);
-	nvram_set(_force, force);
+	nvram_seti(_force, force);
 	nvram_set(_wan_ip, wan_ip);
 
 }
