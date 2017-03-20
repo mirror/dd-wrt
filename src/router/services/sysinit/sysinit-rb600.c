@@ -55,40 +55,6 @@
 #include <cymac.h>
 #include "devices/wireless.c"
 
-static char *getdisc(void)	// works only for squashfs 
-{
-	int i;
-	static char ret[4];
-	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-		"sdi2"
-	};
-	for (i = 0; i < 9; i++) {
-		char dev[64];
-
-		sprintf(dev, "/dev/%s", disks[i]);
-		FILE *in = fopen(dev, "rb");
-
-		if (in == NULL)
-			continue;	// no second partition or disc does not
-		// exist, skipping
-		char buf[4];
-
-		fread(buf, 4, 1, in);
-		if ((buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h')
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
-			fclose(in);
-			ret[3] = 0;
-			// filesystem detected
-			strncpy(ret, disks[i], 3);
-			return ret;
-		}
-
-		fclose(in);
-	}
-	return NULL;
-}
-
 void start_sysinit(void)
 {
 	char buf[PATH_MAX];

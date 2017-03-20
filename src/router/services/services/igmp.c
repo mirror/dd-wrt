@@ -39,7 +39,7 @@ void start_igmprt(void)
 	int ifcount = 0;
 	if (nvram_match("wan_proto", "disabled") || !strlen(get_wan_face()))	// todo: add upstream 
 		return;
-	
+
 	FILE *fp = fopen("/tmp/igmpproxy.conf", "wb");
 
 	if (nvram_matchi("dtag_bng", 1) && nvram_matchi("wan_vdsl", 1)) {

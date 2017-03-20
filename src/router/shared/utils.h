@@ -1120,7 +1120,7 @@ extern int dd_timer_connect(timer_t timerid, void (*routine) (timer_t, int), int
 extern int dd_timer_settime(timer_t timerid, int flags, const struct itimerspec *value, struct itimerspec *ovalue);
 
 int endswith(char *str, char *cmp);
-
+char *getdisc(void);
 int isListed(char *listname, char *value);
 void addList(char *listname, char *value);
 int searchfor(FILE * fp, char *str, int scansize);
