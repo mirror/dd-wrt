@@ -28,7 +28,6 @@
 #define VAR_NAME_VALUE(var) #var "="  VALUE(var)
 #pragma message (VAR_NAME_VALUE(NVRAMSPACE))
 
-
 #if 0
 static int *nvram_hash;
 
@@ -47,8 +46,8 @@ void main(int argc, char *argv[])
 	int i;
 	char buf[NVRAMSPACE], *name;
 	int mul, max;
-	int lowest=255;
-	int lowesti=0;
+	int lowest = 255;
+	int lowesti = 0;
 	int mod = atoi(argv[1]);
 	nvram_hash = malloc(mod * 4);
 	for (mul = 0; mul < mod; mul++) {
@@ -68,17 +67,16 @@ void main(int argc, char *argv[])
 		for (i = 0; i < mod; i++) {
 			if (nvram_hash[i] > max)
 				max = nvram_hash[i];
-		//fprintf(stderr, "%d ",nvram_hash[i]);
+			//fprintf(stderr, "%d ",nvram_hash[i]);
 		}
 		if (max < lowest) {
-		lowest = max;
-		lowesti = mul;
+			lowest = max;
+			lowesti = mul;
 		}
 		fprintf(stderr, "\n%d = %d\n", mul, max);
 	}
 
-
-		fprintf(stderr, "\n%d = %d\n", lowesti, lowest);
+	fprintf(stderr, "\n%d = %d\n", lowesti, lowest);
 }
 #endif
 
