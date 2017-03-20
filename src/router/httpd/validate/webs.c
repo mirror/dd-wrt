@@ -3964,7 +3964,7 @@ static void getddns_userdata(int enable, char *_username, char *_passwd, char *_
 		sprintf(_username, "ddns_username");
 		sprintf(_passwd, "ddns_passwd");
 		sprintf(_hostname, "ddns_hostname");
-
+		break;
 	case 2:
 	case 3:		// zoneedit
 	case 4:		// no-ip
