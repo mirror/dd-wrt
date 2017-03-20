@@ -27,6 +27,11 @@ extern void check_udhcpd(timer_t t, int arg);
 extern void init_event_queue(int n);
 extern int timer_connect(timer_t timerid, void (*routine) (timer_t, int), int arg);
 
+struct syncservice {
+	char *nvram;
+	char *service;
+};
+
 #define NTP_M_TIMER 3600
 #define NTP_N_TIMER 30
 
@@ -79,53 +84,38 @@ static int process_monitor_main(int argc, char **argv)
 		struct timeval then;
 
 		gettimeofday(&then, NULL);
-
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_matchi("cron_enable", 1)) {
-			eval("stopservice", "cron");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting cron  (time sync change)\n");
-			eval("startservice_f", "cron");
-
-		}
+		struct syncservice service[] = {
+			{"cron_enable", "cron"},
 #ifdef HAVE_SNMP
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_matchi("snmpd_enable", 1)) {
-			eval("stopservice", "snmp");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting snmpd  (time sync change)\n");
-			eval("startservice_f", "snmp");
-
-		}
+			{"snmpd_enable", "snmp"},
 #endif
 #ifdef HAVE_CHILLI
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && (nvram_matchi("chilli_enable", 1) || nvram_matchi("hotss_enable", 1))) {
-			eval("stopservice", "chilli");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting Chillispot (time sync change)\n");
-			eval("startservice_f", "chilli");
-
-		}
+			{"chilli_enable", "chilli"},
+			{"hotss_enable", "chilli"},
 #endif
-#ifdef HAVE_WIFIDOG		// dirty fix for wifidog
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_matchi("wd_enable", 1)) {
-			eval("stopservice", "wifidog");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting Wifidog daemon (time sync change)\n");
-			eval("startservice_f", "wifidog");
-		}
+#ifdef HAVE_WIFIDOG
+			{"wd_enable", "wifidog"},
 #endif
 #ifdef HAVE_UNBOUND
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_matchi("recursive_dns", 1)) {
-			eval("stopservice", "unbound");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting unbound daemon (time sync change)\n");
-			eval("startservice_f", "unbound");
-		}
+			{"recursive_dns", "unbound"},
 #endif
+		};
+
+		if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
+
+			int i;
+			for (i = 0; i < sizeof(service) / sizeof(struct syncservice); i++) {
+
+				if (nvram_matchi(service[i].nvram, 1)) {
+					eval("stopservice", service[i].service);
+					sleep(1);
+					dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
+					eval("startservice_f", service[i].service);
+
+				}
+			}
+
+		}
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
