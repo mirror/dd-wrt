@@ -1298,46 +1298,6 @@ void do_logout(void)		// static functions are not exportable,
 	send_authenticate(auth_realm);
 }
 
-static char *getdisc(void)	// works only for squashfs 
-{
-	int i;
-	static char ret[4];
-	unsigned char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-		"sdi2"
-	};
-	int a;
-
-	for (a = 0; a < 10; a++) {
-		for (i = 0; i < 9; i++) {
-			char dev[64];
-
-			sprintf(dev, "/dev/%s", disks[i]);
-			FILE *in = fopen(dev, "rb");
-
-			if (in == NULL)
-				goto skip;
-			// exist, skipping
-			char buf[4];
-
-			fread(buf, 4, 1, in);
-			if ((buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h')
-			    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
-			    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
-				fclose(in);
-				// filesystem detected
-				fprintf(stderr, "file system detected at %s\n", disks[i]);
-				strncpy(ret, disks[i], 3);
-				return ret;
-			}
-
-			fclose(in);
-		      skip:;
-		}
-		sleep(1);
-	}
-	return NULL;
-}
-
 static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
 {
 	int action = NOTHING;
