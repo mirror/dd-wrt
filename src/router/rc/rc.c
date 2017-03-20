@@ -508,7 +508,6 @@ int main(int argc, char **argv)
 			stop_service(argv[1]);
 		return 0;
 	}
-	 
 #ifndef HAVE_RB500
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	/* 
