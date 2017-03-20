@@ -3961,9 +3961,9 @@ static void getddns_userdata(int enable, char *_username, char *_passwd, char *_
 	switch (enable) {
 	case 1:
 		// dyndns
-		snprintf(_username, sizeof(_username), "%s", "ddns_username");
-		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
-		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+		sprintf(_username, "ddns_username");
+		sprintf(_passwd, "ddns_passwd");
+		sprintf(_hostname, "ddns_hostname");
 
 	case 2:
 	case 3:		// zoneedit
@@ -3977,9 +3977,9 @@ static void getddns_userdata(int enable, char *_username, char *_passwd, char *_
 	case 11:		//duiadns
 		// 3322 dynamic : added botho 30/07/06
 		// easydns
-		snprintf(_username, sizeof(_username), "ddns_username_%d", enable);
-		snprintf(_passwd, sizeof(_passwd), "ddns_passwd_%d", enable);
-		snprintf(_hostname, sizeof(_hostname), "ddns_hostname_%d", enable);
+		sprintf(_username, "ddns_username_%d", enable);
+		sprintf(_passwd, "ddns_passwd_%d", enable);
+		sprintf(_hostname, "ddns_hostname_%d", enable);
 
 		break;
 	}
