@@ -26,39 +26,7 @@ static int usb_add_ufd(char *dev);
 
 #define DUMPFILE	"/tmp/disktype.dump"
 #define DUMPFILE_PART	"/tmp/parttype.dump"
-#if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
-static char *getdisc(void)	// works only for squashfs 
-{
-	int i;
-	static char ret[4];
-	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
-		"sdi2"
-	};
-	for (i = 0; i < 9; i++) {
-		char dev[64];
 
-		sprintf(dev, "/dev/%s", disks[i]);
-		FILE *in = fopen(dev, "rb");
-
-		if (in == NULL)
-			continue;	// no second partition or disc does not
-		// exist, skipping
-		char buf[4];
-
-		fread(buf, 4, 1, in);
-		if ((buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h')
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't') 
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
-			fclose(in);
-			// filesystem detected
-			strncpy(ret, disks[i], 3);
-			return ret;
-		}
-		fclose(in);
-	}
-	return NULL;
-}
-#endif
 void stop_hotplug_usb(void)
 {
 }
