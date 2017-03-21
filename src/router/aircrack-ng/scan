@@ -1,7 +1,7 @@
 #!/bin/sh
 if test x$1 = x
 then
-        echo "Usage $0 interace [--band=abg] [--channel=xxxx]"
+        echo "Usage $0 interface [--band=abg] [--channel=xxxx]"
         echo "channel = frequency"
         echo "Band can be a / b / g / ab / ag / bg / abg"
         echo
