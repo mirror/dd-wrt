@@ -629,7 +629,7 @@ err:
 		free(buf);
 	if (fifo)
 		fclose(fifo);
-	if (getRouterBrand() == ROUTER_ASROCK_G10) {
+	if (brand == ROUTER_ASROCK_G10) {
 		fprintf(stderr, "write secondary partition for asrock-g10");
 		eval("mtd", "-e", "linux2", "-f", "write", upload_fifo, "linux2");
 	}
