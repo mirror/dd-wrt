@@ -492,19 +492,19 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 
 	/* avoid out of memory problems which could lead to broken wireless, so we limit the minimum free ram everything else can be used for fs cache */
 #ifdef HAVE_80211AC
-	writeproc("/proc/sys/vm/min_free_kbytes", "20480");
+	writeprocsys("vm/min_free_kbytes", "20480");
 #elif HAVE_MVEBU
-	writeproc("/proc/sys/vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", "65536");
 #elif HAVE_IPQ806X
-	writeproc("/proc/sys/vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", "65536");
 #else
-	writeproc("/proc/sys/vm/min_free_kbytes", "4096");
+	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
-	writeproc("/proc/sys/vm/vfs_cache_pressure", "10000");
-//      writeproc("/proc/sys/vm/pagecache_ratio","90");
-//      writeproc("/proc/sys/vm/swappiness","90");
-//      writeproc("/proc/sys/vm/overcommit_memory","2");
-//      writeproc("/proc/sys/vm/overcommit_ratio","145");
+	writeprocsys("vm/vfs_cache_pressure", "10000");
+//      writeprocsys("vm/pagecache_ratio","90");
+//      writeprocsys("vm/swappiness","90");
+//      writeprocsys("vm/overcommit_memory","2");
+//      writeprocsys("vm/overcommit_ratio","145");
 	//prepare for optware
 	//sysprintf("mkdir -p /jffs/lib/opkg");
 
@@ -523,7 +523,7 @@ static void usb_unmount(char *devpath)
 
 	usb_stop_services();
 
-	writeproc("/proc/sys/vm/drop_caches", "3");	// flush fs cache
+	writeprocsys("vm/drop_caches", "3");	// flush fs cache
 
 	//K3 code
 	eval("umount", devpath);

@@ -862,7 +862,7 @@ static void nat_postrouting(void)
 			}
 		}
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
-			writeproc("/proc/sys/net/ipv4/conf/br0/loop", "1");
+			writeprocsysnet("ipv4/conf/br0/loop", "1");
 
 		if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
 			//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
@@ -2728,7 +2728,7 @@ void start_firewall(void)
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
-	system("echo 120 > /proc/sys/net/core/netdev_max_backlog");
+	writeprocsysnet("core/netdev_max_backlog","120");
 #endif
 	/*
 	 * Block obviously spoofed IP addresses 
@@ -2931,7 +2931,7 @@ void start_firewall(void)
 	cprintf("start ipv6\n");
 #ifdef HAVE_IPV6
 	if (nvram_matchi("ipv6_enable", 1)) {
-		writeproc("/proc/sys/net/ipv6/conf/all/forwarding", "1");
+		writeprocsysnet("ipv6/conf/all/forwarding", "1");
 	}
 #endif
 #ifdef HAVE_GGEW

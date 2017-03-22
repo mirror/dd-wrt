@@ -332,8 +332,8 @@ void start_sysinit(void)
 	setWirelessLed(2, 2);
 #elif HAVE_WRT160NL
 	setWirelessLed(0, 6);
-	writeproc("/proc/sys/dev/wifi0/ledpin", "6");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "6");
+	writeprocsys("dev/wifi0/softled", "1");
 	eval("swconfig", "dev", "eth0", "set", "reset", "1");
 	eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 4 5");

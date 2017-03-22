@@ -1199,6 +1199,8 @@ struct arph {
 int gratarp_main(char *iface);
 
 int writeproc(char *path, char *value);
+int writeprocsysnet(char *path, char *value);
+int writeprocsys(char *path, char *value);
 
 void set_smp_affinity(int irq, int cpu);
 

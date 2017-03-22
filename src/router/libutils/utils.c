@@ -4463,13 +4463,13 @@ int diag_led_4702(int type, int act)
 	if (act == START_LED) {
 		switch (type) {
 		case DMZ:
-			writeproc("/proc/sys/diag", "1");
+			writeprocsys("diag", "1");
 			break;
 		}
 	} else {
 		switch (type) {
 		case DMZ:
-			writeproc("/proc/sys/diag", "0");
+			writeprocsys("diag", "0");
 			break;
 		}
 	}
@@ -4503,7 +4503,7 @@ int C_led_4702(int i)
 
 	memset(string, 0, 10);
 	sprintf(string, "%d", flg);
-	writeproc("/proc/sys/diag", string);
+	writeprocsys("diag", string);
 
 	return 0;
 #endif
@@ -5024,7 +5024,7 @@ void set_ip_forward(char c)
 {
 	char ch[8];
 	sprintf(ch, "%c", c);
-	writeproc("/proc/sys/net/ipv4/ip_forward", ch);
+	writeprocsysnet("ipv4/ip_forward", ch);
 }
 
 int ifexists(const char *ifname)
@@ -7641,6 +7641,20 @@ int writeproc(char *path, char *value)
 	write(fd, value, strlen(value));
 	close(fd);
 	return 0;
+}
+
+int writeprocsysnet(char *path, char *value)
+{
+	char syspath[64];
+	snprintf(syspath,64,"/proc/sys/net/%s",path);
+	return writeproc(syspath,value);
+}
+
+int writeprocsys(char *path, char *value)
+{
+	char syspath[64];
+	snprintf(syspath,64,"/proc/sys/%s",path);
+	return writeproc(syspath,value);
 }
 
 int writevaproc(char *value, char *fmt, ...)

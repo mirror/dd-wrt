@@ -67,9 +67,9 @@ void start_stabridge(void)
 	if (getWET()) {
 		// let packages pass to iptables without ebtables loaded
 
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
 		insmod("ebtables ebtables ebtable_filter ebtable_nat ebtable_broute ebt_arpnat ebt_broute");
 		eval("ebtables", "-t", "nat", "-A", "PREROUTING", "--in-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
 		eval("ebtables", "-t", "nat", "-A", "POSTROUTING", "--out-interface", getWET(), "-j", "arpnat", "--arpnat-target", "ACCEPT");
@@ -96,8 +96,8 @@ void stop_stabridge(void)
 	eval("ebtables", "-t", "nat", "-F");
 	rmmod("ebt_broute ebt_arpnat ebtable_broute ebtable_nat ebtable_filter ebtables");
 	// don't let packages pass to iptables without ebtables loaded
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-iptables", "0");
 #endif
 }

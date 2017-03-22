@@ -193,7 +193,7 @@ void start_sysinit(void)
 		setWirelessLed(0, 7);
 		setWirelessLed(1, 8);
 	} else {
-		writeproc("/proc/sys/dev/wifi0/softled", "0");
+		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
 			eval("/sbin/wlanled", "-L", "generic_11:-94", "-L", "generic_16:-80", "-l", "generic_13:-73", "-L", "generic_14:-65");
 	}
@@ -209,7 +209,7 @@ void start_sysinit(void)
 	case ROUTER_BOARD_AIRROUTER:
 		break;
 	default:
-		writeproc("/proc/sys/dev/wifi0/softled", "0");
+		writeprocsys("dev/wifi0/softled", "0");
 		if (!nvram_matchi("wlanled", 0))
 			eval("/sbin/wlanled", "-l", "generic_0:-94", "-l", "generic_1:-80", "-l", "generic_11:-73", "-l", "generic_7:-65");
 
