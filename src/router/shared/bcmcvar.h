@@ -38,6 +38,4 @@ struct variable {
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-int variables_arraysize(void);
-
 #endif				/* _bcmcvar_h */
