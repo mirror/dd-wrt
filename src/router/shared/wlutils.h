@@ -186,7 +186,7 @@ extern int mac80211_get_configured_tx_antenna(int phy);
 extern int mac80211_get_configured_rx_antenna(int phy);
 extern int mac80211_check_valid_frequency(char *interface, char *country, int freq);
 extern int getFrequency_mac80211(char *interface);
-
+extern int mac80211_get_phyidx_by_vifname(char *vif);
 
 struct wifi_channels {
 	int channel;

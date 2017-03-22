@@ -109,7 +109,7 @@ int sys_commit(void)
 #include <dirent.h>
 #include <stdlib.h>
 
-void StringStart(FILE * in)
+static void StringStart(FILE * in)
 {
 	while (getc(in) != '"') {
 		if (feof(in))
@@ -117,7 +117,7 @@ void StringStart(FILE * in)
 	}
 }
 
-char *getFileString(FILE * in)
+static char *getFileString(FILE * in)
 {
 	char *buf;
 	int i, b;
@@ -138,7 +138,7 @@ char *getFileString(FILE * in)
 	return buf;
 }
 
-void skipFileString(FILE * in)
+static void skipFileString(FILE * in)
 {
 	int i, b;
 
@@ -166,7 +166,7 @@ struct SIMPLEVAL {
 	int args;
 };
 
-struct variable **variables;
+static struct variable **variables;
 void Initnvramtab()
 {
 	struct dirent *entry;
@@ -350,7 +350,7 @@ void Initnvramtab()
 #include "../../../opt/mac.h"
 #endif
 // Added by Daniel(2004-07-29) for EZC
-int variables_arraysize(void)
+static int variables_arraysize(void)
 {
 	int varcount = 0;
 
@@ -436,7 +436,7 @@ static char *insert(char *ifname, char *index, char *filename)
 }
 
 // and now the tricky part (more dirty as dirty)
-void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char ifname[32];
 	char *temp2;
@@ -481,20 +481,14 @@ static void cert_file_out(struct mime_handler *handler, char *path, webs_t strea
 
 static void show_certfield(webs_t wp, char *title, char *file)
 {
-	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", title);
-	websWrite(wp, "<script type=\"text/javascript\">\n");
-	websWrite(wp, "//<![CDATA[\n");
-	websWrite(wp,
-		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n",
-		  file);
-	websWrite(wp, "//]]>\n");
-	websWrite(wp, "</script>\n");
-	websWrite(wp, "</div>\n");
-
+	websWrite(wp, "<div class=\"setting\">\n<div class=\"label\">%s</div>\n"
+		  "<script type=\"text/javascript\">\n"
+		  "//<![CDATA[\n"
+		  "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"download_button\\\" "
+		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
-void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -646,7 +640,7 @@ void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char
 #endif
 
 #ifdef HAVE_ATH9K
-void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char *query)
+static void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char *query)
 {
 #define json_cache "/tmp/spectral_scan.json"
 #define json_cache_timeout 2
@@ -701,7 +695,7 @@ void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char
 }
 #endif
 
-void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = NULL;
 	char ifname[32];
@@ -729,7 +723,7 @@ void do_activetable(struct mime_handler *handler, char *path, webs_t stream, cha
 	free(temp);
 }
 
-void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -743,7 +737,7 @@ void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query
 	free(temp);
 }
 
-void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -1079,7 +1073,7 @@ static struct gozila_action gozila_actions[] = {
 #endif
 };
 
-struct gozila_action *handle_gozila_action(char *name, char *type)
+static struct gozila_action *handle_gozila_action(char *name, char *type)
 {
 	struct gozila_action *v;
 
@@ -1094,8 +1088,8 @@ struct gozila_action *handle_gozila_action(char *name, char *type)
 	return NULL;
 }
 
-char my_next_page[30] = "";
-int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
+static char my_next_page[30] = "";
+static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
@@ -1180,7 +1174,7 @@ int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t *
 	return 1;
 }
 
-struct apply_action apply_actions[] = {
+static struct apply_action apply_actions[] = {
 	/*
 	 * name, service, sleep_time, action, function_to_execute 
 	 */
@@ -1266,7 +1260,7 @@ struct apply_action apply_actions[] = {
 
 };
 
-struct apply_action *handle_apply_action(char *name)
+static struct apply_action *handle_apply_action(char *name)
 {
 	struct apply_action *v;
 
@@ -1282,7 +1276,7 @@ struct apply_action *handle_apply_action(char *name)
 	return NULL;
 }
 
-int getFileLen(FILE * in)
+static int getFileLen(FILE * in)
 {
 	int len;
 
@@ -1292,7 +1286,7 @@ int getFileLen(FILE * in)
 	return len;
 }
 
-void do_logout(void)		// static functions are not exportable,
+static void do_logout(void)		// static functions are not exportable,
 				// additionally this is no ej function
 {
 	send_authenticate(auth_realm);
@@ -1573,7 +1567,7 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisat
 	return 0;
 }
 
-int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (nvram_matchi("info_passwd", 0))
 		return 1;
@@ -1581,7 +1575,7 @@ int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisa
 }
 
 #ifdef HAVE_REGISTER
-int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (!isregistered())
 		return 1;
@@ -1592,7 +1586,7 @@ int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *author
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-int do_auth2(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_auth2(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	strncpy(userid, nvram_safe_get("http2_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http2_passwd"), AUTH_MAX);
@@ -1611,7 +1605,7 @@ char ezc_version[128];
 extern int post;
 
 static char *post_buf = NULL;
-void				// support GET and POST 2003-08-22
+static void				// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
@@ -1657,12 +1651,13 @@ static void do_wpad(struct mime_handler *handler, char *url, webs_t stream, char
 	fp = fopen("/tmp/wpad.dat", "wb");
 
 	if (fp != NULL) {
-		fprintf(fp,
-			"function FindProxyForURL(url, host) {\n"
-			"var proxy = \"PROXY %s:8118; DIRECT\";\n"
-			"var direct = \"DIRECT\";\n"
-			"if(isPlainHostName(host)) return direct;\n"
-			"if (\n" "url.substring(0, 4) == \"ftp:\" ||\n" "url.substring(0, 6) == \"rsync:\"\n" ")\n" "return direct;\n" "return proxy;\n" "}", nvram_safe_get("lan_ipaddr"));
+		fprintf(fp, "function FindProxyForURL(url, host) {\n"	//
+			"var proxy = \"PROXY %s:8118; DIRECT\";\n"	//
+			"var direct = \"DIRECT\";\n"	//
+			"if(isPlainHostName(host)) return direct;\n"	//
+			"if (\n" "url.substring(0, 4) == \"ftp:\" ||\n"	//
+			"url.substring(0, 6) == \"rsync:\"\n" ")\n"	//
+			"return direct;\n" "return proxy;\n" "}", nvram_safe_get("lan_ipaddr"));
 		fclose(fp);
 	}
 
@@ -1787,7 +1782,9 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 
 static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
-	websWrite(stream, ".submitFooter input {\n" "padding:.362em .453em;\n" "}\n" "fieldset {\n" "padding-top:0;\n" "}\n" "fieldset legend {\n" "margin-left:-9px;\n" "margin-bottom:8px;\n" "padding:0 .09em;\n" "}\n");
+	websWrite(stream, ".submitFooter input {\npadding:.362em .453em;\n}\n"	//
+		  "fieldset {\npadding-top:0;\n}\nfieldset legend {\n"	//
+		  "margin-left:-9px;\nmargin-bottom:8px;\npadding:0 .09em;\n}\n");
 }
 #endif
 #ifdef HAVE_REGISTER
@@ -2281,8 +2278,10 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 	for (i = 0; i < days; i++) {
 		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
 		wd++;
-		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" "
-			  "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\">%d\n<ul>\n<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n</ul>\n</li>\n",
+		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" "	//
+			  "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\">%d\n<ul>\n"
+			  "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n"
+			  "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n</ul>\n</li>\n",
 			  monthname, i + 1, year, incom, rcvd[i], outcom, sent[i], monthname, year, incom, totin, outcom, totout, i + 1, rcvd[i] * 300 / smax, sent[i] * 300 / smax);
 
 	}
