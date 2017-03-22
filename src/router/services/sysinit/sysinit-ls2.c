@@ -126,8 +126,8 @@ void start_sysinit(void)
 	eval("vconfig", "add", "eth0", "2");
 #else
 	vlan_init(0xff);	// 4 lan + 1 wan
-	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "7");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];
@@ -162,12 +162,12 @@ void start_sysinit(void)
 		close(s);
 	}
 #if defined(HAVE_MS2)
-	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "2");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 #if defined(HAVE_BWRG1000)
-	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "2");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 
 	/*

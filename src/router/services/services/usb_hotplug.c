@@ -257,16 +257,16 @@ static int usb_process_path(char *path, char *fs, char *target)
 			ret = eval("/bin/mount", path, mount_point);	//guess fs
 	}
 #ifdef HAVE_80211AC
-	writeproc("/proc/sys/vm/min_free_kbytes", "16384");
+	writeprocsys("vm/min_free_kbytes", "16384");
 #elif HAVE_IPQ806X
-	writeproc("/proc/sys/vm/min_free_kbytes", "65536");
+	writeprocsys("vm/min_free_kbytes", "65536");
 #else
-	writeproc("/proc/sys/vm/min_free_kbytes", "4096");
+	writeprocsys("vm/min_free_kbytes", "4096");
 #endif
-//      writeproc("/proc/sys/vm/pagecache_ratio","90");
-//      writeproc("/proc/sys/vm/swappiness","90");
-//      writeproc("/proc/sys/vm/overcommit_memory","2");
-//      writeproc("/proc/sys/vm/overcommit_ratio","145");
+//      writeprocsys("vm/pagecache_ratio","90");
+//      writeprocsys("vm/swappiness","90");
+//      writeprocsys("vm/overcommit_memory","2");
+//      writeprocsys("vm/overcommit_ratio","145");
 	eval("startservice_f", "samba3");
 	eval("startservice_f", "ftpsrv");
 	eval("startservice_f", "dlna");
@@ -317,7 +317,7 @@ static void usb_unmount(char *path)
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "ftpsrv");
-	writeproc("/proc/sys/vm/drop_caches", "3");	// flush fs cache
+	writeprocsys("vm/drop_caches", "3");	// flush fs cache
 /* todo: how to unmount correct drive */
 	if (!path)
 		sprintf(mount_point, "/%s", nvram_default_get("usb_mntpoint", "mnt"));

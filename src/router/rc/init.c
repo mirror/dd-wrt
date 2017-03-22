@@ -424,6 +424,7 @@ static int noconsole = 0;
 static void set_tcp_params(void)
 {
 	eval("/etc/preinit");	// sets default values for ip_conntrack
+	startservice("conntrack");
 
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
@@ -438,14 +439,14 @@ static void set_tcp_params(void)
 			bic = "1";
 			vegas = "0";
 		}
-		writeproc("/proc/sys/net/ipv4/tcp_westwood", westwood);
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_cong_avoid", vegas);
-		writeproc("/proc/sys/net/ipv4/tcp_bic", bic);
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_alpha", "3");
-		writeproc("/proc/sys/net/ipv4/tcp_vegas_beta", "3");
+		writeprocsysnet("ipv4/tcp_westwood", westwood);
+		writeprocsysnet("ipv4/tcp_vegas_cong_avoid", vegas);
+		writeprocsysnet("ipv4/tcp_bic", bic);
+		writeprocsysnet("ipv4/tcp_vegas_alpha", "3");
+		writeprocsysnet("ipv4/tcp_vegas_beta", "3");
 	} else {
 		fclose(fp);
-		writeproc("/proc/sys/net/ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
+		writeprocsysnet("ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
 	}
 
 }

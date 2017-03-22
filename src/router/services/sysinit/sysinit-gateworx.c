@@ -439,14 +439,14 @@ void start_sysinit(void)
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2358-4")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2358-4")) {
 		insmod("8250_gw2358");
-		writeproc("/proc/sys/dev/wifi0/ledpin", "0");
-		writeproc("/proc/sys/dev/wifi0/softled", "1");
-		writeproc("/proc/sys/dev/wifi1/ledpin", "1");
-		writeproc("/proc/sys/dev/wifi1/softled", "1");
-		writeproc("/proc/sys/dev/wifi2/ledpin", "2");
-		writeproc("/proc/sys/dev/wifi2/softled", "1");
-		writeproc("/proc/sys/dev/wifi3/ledpin", "3");
-		writeproc("/proc/sys/dev/wifi3/softled", "1");
+		writeprocsys("dev/wifi0/ledpin", "0");
+		writeprocsys("dev/wifi0/softled", "1");
+		writeprocsys("dev/wifi1/ledpin", "1");
+		writeprocsys("dev/wifi1/softled", "1");
+		writeprocsys("dev/wifi2/ledpin", "2");
+		writeprocsys("dev/wifi2/softled", "1");
+		writeprocsys("dev/wifi3/ledpin", "3");
+		writeprocsys("dev/wifi3/softled", "1");
 	}
 	if (nvram_match("DD_BOARD", "Gateworks Cambria GW2350")
 	    || nvram_match("DD_BOARD2", "Gateworks Cambria GW2350")) {

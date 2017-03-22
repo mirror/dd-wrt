@@ -577,9 +577,9 @@ static int svqos_iptables(void)
 	insmod("xt_mac");
 	if (!strcmp(wshaper_dev, "LAN")) {
 		// don't let packages pass to iptables without ebtables loaded
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
-		writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
+		writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
 
 		insmod("ebtables");
 	}
@@ -732,9 +732,9 @@ static int svqos_iptables(void)
 		insmod("xt_physdev");
 		// look for present tap-devices
 		if (getifcount("tap")) {
-			writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "1");
-			writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "1");
-			writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "1");
+			writeprocsysnet("bridge/bridge-nf-call-arptables", "1");
+			writeprocsysnet("bridge/bridge-nf-call-ip6tables", "1");
+			writeprocsysnet("bridge/bridge-nf-call-iptables", "1");
 
 			insmod("ebtables");
 
@@ -1182,9 +1182,9 @@ void stop_wshaper(void)
 	start_firewall();
 #endif
 	// don't let packages pass to iptables without ebtables loaded
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-arptables", "0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-ip6tables", "0");
-	writeproc("/proc/sys/net/bridge/bridge-nf-call-iptables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-arptables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-ip6tables", "0");
+	writeprocsysnet("bridge/bridge-nf-call-iptables", "0");
 
 	rmmod("xt_IMQ");
 	rmmod("ipt_IMQ");
