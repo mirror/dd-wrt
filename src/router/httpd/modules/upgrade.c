@@ -44,7 +44,7 @@
 #endif
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
-
+static char upload_fifo[] = "/tmp/uploadXXXXXX";
 void set_upgrade_ret(int result)
 {
 	if (result != 0) {
@@ -306,26 +306,19 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			if (brand == ROUTER_ASROCK_G10) {
 				img_header_t *header = (img_header_t *) buf;
 				if (!memcmp(header->signature, FW_HEADER, 4) && !memcmp(header->modTag, _WEB_HEADER_, 4)) {
-					char *mtd = "linux";
 					fprintf(stderr, "found valid ASROCK-G10 Image\n");
-					if (nvram_matchi("bootpartition", 0)) {
-						mtd = "linux2";
-						eval("startservice", "bootsecondary");
-					} else {
-						eval("startservice", "bootprimary");
-					}
-
-					sysprintf("startservice finishupgrade");
+					eval("startservice", "bootprimary");
+					eval("startservice", "finishupgrade");
 					count -= sizeof(struct img_header);
 					memcpy(buf, buf + sizeof(struct img_header), count);
 					char *write_argv_buf[8];
 					write_argv_buf[0] = "mtd";
 					write_argv_buf[1] = "-e";
-					write_argv_buf[2] = mtd;
+					write_argv_buf[2] = "linux";
 					write_argv_buf[3] = "-f";
 					write_argv_buf[4] = "write";
 					write_argv_buf[5] = upload_fifo;
-					write_argv_buf[6] = mtd;
+					write_argv_buf[6] = "linux";
 					write_argv_buf[7] = NULL;
 					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
 					    || !(fifo = fopen(upload_fifo, "w"))) {
@@ -636,6 +629,10 @@ err:
 		free(buf);
 	if (fifo)
 		fclose(fifo);
+	if (getRouterBrand() == ROUTER_ASROCK_G10) {
+		fprintf(stderr, "write secondary partition for asrock-g10");
+		eval("mtd", "-e", "linux2", "-f", "write", upload_fifo, "linux2");
+	}
 	unlink(upload_fifo);
 	// diag_led(DIAG, STOP_LED);
 	C_led(0);
