@@ -2123,12 +2123,11 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	if (sscanf(query, "%d", &offset) != 1)
 		return;
 
-	websWrite(stream,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
-	websWrite(stream,
-		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n</head>\n");
-	websWrite(stream, "<body>\n<fieldset><legend>System Log</legend>");
+	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
+		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
+		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
+		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
+		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", live_translate("lang_charset.set"));
 
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
@@ -2246,49 +2245,46 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 
 	snprintf(monthname, 32, "%s", live_translate(months[month - 1]));
 
-	websWrite(stream,
-		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"
-		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", live_translate("lang_charset.set"));
-
-	websWrite(stream, "<title>dd-wrt traffic graph</title>\n"
-		  "<script type=\"text/javascript\">\n"
-		  "//<![CDATA[\n"
-		  "function Show(label) {\n"
-		  "document.getElementById(\"label\").innerHTML = label;\n" "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n" "#t-graph {position: relative; width: %upx; height: 300px;\n", days * COL_WIDTH);
-	websWrite(stream,
-		  "  margin: 1.1em 0 3.5em; padding: 0;\n"
-		  "  border: 1px solid gray; list-style: none;\n"
-		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 20; list-style: none;}\n" "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n", COL_WIDTH);
-	websWrite(stream,
-		  "  margin: 0; padding: 0;\n"
-		  "  text-align: center; list-style: none;}\n"
-		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"
-		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"
-		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"
-		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n" "#t-graph li.rcvd {left: 3px; background: #228B22;}\n" "#t-graph li.sent {left: 8px; background: #CD0000;}\n");
+	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
+		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
+		  "<title>dd-wrt traffic graph</title>\n"	//
+		  "<script type=\"text/javascript\">\n"	//
+		  "//<![CDATA[\n"	//
+		  "function Show(label) {\n"	//
+		  "document.getElementById(\"label\").innerHTML = label;\n"	//
+		  "}\n" "//]]>\n" "</script>\n" "<style type=\"text/css\">\n\n"	//
+		  "#t-graph {position: relative; width: %upx; height: 300px;\n"	//
+		  "  margin: 1.1em 0 3.5em; padding: 0;\n"	//
+		  "  border: 1px solid gray; list-style: none;\n"	//
+		  "  font: 9px Tahoma, Arial, sans-serif; color: #666;}\n" "#t-graph ul {margin: 0; padding: 20; list-style: none;}\n"	//
+		  "#t-graph li {position: absolute; bottom: 0; width: %dpx; z-index: 2;\n"	//
+		  "  margin: 0; padding: 0;\n"	//
+		  "  text-align: center; list-style: none;}\n"	//
+		  "#t-graph li.day {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #AAA;}\n"	//
+		  "#t-graph li.day_sun {height: 298px; padding-top: 2px; border-right: 1px dotted #C4C4C4; color: #E00;}\n"	//
+		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"	//
+		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"	//
+		  "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"	//
+		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n", live_translate("lang_charset.set"), days * COL_WIDTH, COL_WIDTH);
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
 	}
 	websWrite(stream, "#t-graph #d%u {left: %upx; border-right: none;}\n", days, (days - 1) * COL_WIDTH);
 
-	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n", days * COL_WIDTH);
-	websWrite(stream, "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n", days * COL_WIDTH);
-	websWrite(stream,
-		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"
-		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n" "</style>\n" "</head>\n\n" "<body>\n" "<ul id=\"t-graph\">\n");
+	websWrite(stream, "#t-graph #ticks {width: %upx; height: 300px; z-index: 1;}\n"	//
+		  "#t-graph #ticks .tick {position: relative; border-bottom: 1px solid #BBB; width: %upx;}\n"	// 
+		  "#t-graph #ticks .tick p {position: absolute; left: 100%%; top: -0.67em; margin: 0 0 0 0.5em;}\n"	//
+		  "#t-graph #label {width: 500px; bottom: -20px;  z-index: 1; font: 12px Tahoma, Arial, sans-serif; font-weight: bold;}\n"	//
+		  "</style>\n" "</head>\n\n" "<body>\n" "<ul id=\"t-graph\">\n", days * COL_WIDTH, days * COL_WIDTH);
 
 	for (i = 0; i < days; i++) {
 		websWrite(stream, "<li class=\"day%s\" id=\"d%d\" ", (wd % 7) == 6 ? "_sun" : "", i + 1);
 		wd++;
-		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" ", monthname, i + 1, year, incom, rcvd[i], outcom, sent[i]);
-		websWrite(stream, "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\"", monthname, year, incom, totin, outcom, totout);
-		websWrite(stream, ">%d\n", i + 1);
-		websWrite(stream, "<ul>\n");
-		websWrite(stream, "<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n", rcvd[i] * 300 / smax);
-		websWrite(stream, "<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n", sent[i] * 300 / smax);
-		websWrite(stream, "</ul>\n");
-		websWrite(stream, "</li>\n");
+		websWrite(stream, "onmouseover=\"Show(\'%s %d, %d (%s: %lu MB / %s: %lu MB)\')\" "
+			  "onmouseout=\"Show(\'%s %d (%s: %lu MB / %s: %lu MB)\')\">%d\n<ul>\n<li class=\"rcvd bar\" style=\"height: %lupx;\"><p></p></li>\n<li class=\"sent bar\" style=\"height: %lupx;\"><p></p></li>\n</ul>\n</li>\n",
+			  monthname, i + 1, year, incom, rcvd[i], outcom, sent[i], monthname, year, incom, totin, outcom, totout, i + 1, rcvd[i] * 300 / smax, sent[i] * 300 / smax);
+
 	}
 
 	websWrite(stream, "<li id=\"ticks\">\n");
@@ -2296,11 +2292,7 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 	{
 		websWrite(stream, "<div class=\"tick\" style=\"height: 59px;\"><p>%d%sMB</p></div>\n", smax * i / 5, (smax > 10000) ? " " : "&nbsp;");
 	}
-	websWrite(stream, "</li>\n\n");
-
-	websWrite(stream, "<li id=\"label\">\n");
-	websWrite(stream, "%s %d (%s: %lu MB / %s: %lu MB)\n", monthname, year, incom, totin, outcom, totout);
-	websWrite(stream, "</li>\n" "</ul>\n\n" "</body>\n" "</html>\n");
+	websWrite(stream, "</li>\n\n<li id=\"label\">\n%s %d (%s: %lu MB / %s: %lu MB)\n</li>\n" "</ul>\n\n" "</body>\n" "</html>\n", monthname, year, incom, totin, outcom, totout);
 
 }
 
