@@ -25,7 +25,7 @@ install:
 	install -d $(INSTALLDIR)/etc
 	install -d $(INSTALLDIR)/etc/config
 	install -d $(INSTALLDIR)/usr/sbin
-	cp $(MODULE)* $(INSTALLDIR)/etc/config
+#	cp $(MODULE)* $(INSTALLDIR)/etc/config
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
 ifeq ($(CONFIG_SENDMAIL),y)
