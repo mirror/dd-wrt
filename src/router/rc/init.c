@@ -424,7 +424,7 @@ static int noconsole = 0;
 static void set_tcp_params(void)
 {
 	eval("/etc/preinit");	// sets default values for ip_conntrack
-	startservice("conntrack");
+	start_service("conntrack");
 
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
