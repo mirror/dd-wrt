@@ -1765,30 +1765,24 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 	else			// default to elegant
 		memcpy(sdata, elegant, sizeof(elegant));
 
-	websWrite(stream, "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n", sdata[0]);
-	websWrite(stream, "color:#%03x;\n", sdata[1]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n", sdata[2], sdata[3], sdata[4], sdata[5]);
-	websWrite(stream, "background:#%03x;\n", sdata[6]);
-	websWrite(stream, "color:#%03x;\n", sdata[7]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a:hover {\n", sdata[8], sdata[9], sdata[10], sdata[11]);
-	websWrite(stream, "background:#%03x;\n", sdata[12]);
-	websWrite(stream, "color:#%03x;\n", sdata[13]);
-	websWrite(stream, "border-color:#%03x #%03x #%03x #%03x;\n}\nfieldset legend {\n", sdata[14], sdata[15], sdata[16], sdata[17]);
-	websWrite(stream, "color:#%03x;\n}\n#help a {\n", sdata[18]);
-	websWrite(stream, "color:#%03x;\n}\n#help a:hover {\n", sdata[19]);
-	websWrite(stream, "color:#%03x;\n}\n.meter .bar {\n", sdata[20]);
-	websWrite(stream, "background-color: #%03x;\n}\n.meter .text {\n", sdata[21]);
-	websWrite(stream, "color:#%03x;\n}\n.progressbar {\n", sdata[22]);
-	websWrite(stream, "background-color: #%03x;\n", sdata[23]);
-	websWrite(stream, "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n.progressbarblock {\n", sdata[24]);
-	websWrite(stream, "background-color: #%03x;\nfont-size:.09em;\n}\ninput.button {\n", sdata[25]);
-	websWrite(stream, "background: #%03x;\n", sdata[26]);
-	websWrite(stream, "color: #%03x;\n}\ninput.button:hover {\n", sdata[27]);
-	websWrite(stream, "background: #%03x;\n", sdata[28]);
-	websWrite(stream, "color: #%03x;\n}\n", sdata[29]);
-	// color for H2 headers (better look on dark backgrounds)
-	websWrite(stream, "h2, h3 {\ncolor: #%03x;\nbackground-color: #%03x;\n}\n", sdata[30], sdata[31]);
-	websWrite(stream, "table tr th {\ncolor: #%03x;\n}\n", sdata[32]);
+	websWrite(stream, "@import url(../common.css);\n#menuSub,\n#menuMainList li span,\n#help h2 {\nbackground:#%03x;\n"	//
+		  "color:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n#menuSubList li a {\n"	//
+		  "background:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}\n"	//
+		  "#menuSubList li a:hover {\nbackground:#%03x;\ncolor:#%03x;\nborder-color:#%03x #%03x #%03x #%03x;\n}"	//
+		  "\nfieldset legend {\ncolor:#%03x;\n}\n#help a {\ncolor:#%03x;\n}\n"	//
+		  "#help a:hover {\ncolor:#%03x;\n}\n.meter .bar {\nbackground-color: #%03x;\n}\n"	//
+		  ".meter .text {\ncolor:#%03x;\n}\n.progressbar {\nbackground-color: #%03x;\n"	//
+		  "border-color: #%03x;\nfont-size:.09em;\nborder-width:.09em;\n}\n"	//
+		  ".progressbarblock {\nbackground-color: #%03x;\nfont-size:.09em;\n}"	//
+		  "\ninput.button {\nbackground: #%03x;\ncolor: #%03x;\n}\n"	//
+		  "input.button:hover {\nbackground: #%03x;\ncolor: #%03x;\n"	//
+		  "}\nh2, h3 {\ncolor: #%03x;\nbackground-color: #%03x;\n}"	//
+		  "\ntable tr th {\ncolor: #%03x;\n}\n", sdata[0], sdata[1], sdata[2], sdata[3], sdata[4], sdata[5],	//
+		  sdata[6], sdata[7], sdata[8], sdata[9], sdata[10], sdata[11], sdata[12],	//
+		  sdata[13], sdata[14], sdata[15], sdata[16], sdata[17], sdata[18],	//
+		  sdata[19], sdata[20], sdata[21], sdata[22],	//
+		  sdata[23], sdata[24], sdata[25], sdata[26], sdata[27], sdata[28],	// 
+		  sdata[29], sdata[30], sdata[31], sdata[32]);
 }
 
 static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t stream, char *query)
