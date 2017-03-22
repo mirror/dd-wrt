@@ -30,19 +30,19 @@
 void start_conntrack(void)
 {
 
-char *CONNTRACK_MAX=nvram_safe_get("ip_conntrack_max");
-char *CONNTRACK_TCP_TIMEOUTS=nvram_safe_get("ip_conntrack_tcp_timeouts");
-char *CONNTRACK_UDP_TIMEOUTS=nvram_safe_get("ip_conntrack_udp_timeouts");
+	char *CONNTRACK_MAX = nvram_safe_get("ip_conntrack_max");
+	char *CONNTRACK_TCP_TIMEOUTS = nvram_safe_get("ip_conntrack_tcp_timeouts");
+	char *CONNTRACK_UDP_TIMEOUTS = nvram_safe_get("ip_conntrack_udp_timeouts");
 
-writeproc("/proc/sys/net/ipv4/ip_conntrack_max",CONNTRACK_MAX);
-writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_max",CONNTRACK_MAX);
-writeproc("/proc/sys/net/nf_conntrack_max",CONNTRACK_MAX);
+	writeprocsysnet("ipv4/ip_conntrack_max", CONNTRACK_MAX);
+	writeprocsysnet("ipv4/netfilter/ip_conntrack_max", CONNTRACK_MAX);
+	writeprocsysnet("nf_conntrack_max", CONNTRACK_MAX);
 
-writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_tcp_timeout_established",CONNTRACK_TCP_TIMEOUTS);
-writeproc("/proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established",CONNTRACK_TCP_TIMEOUTS);
+	writeprocsysnet("ipv4/netfilter/ip_conntrack_tcp_timeout_established", CONNTRACK_TCP_TIMEOUTS);
+	writeprocsysnet("netfilter/nf_conntrack_tcp_timeout_established", CONNTRACK_TCP_TIMEOUTS);
 
-writeproc("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout",CONNTRACK_UDP_TIMEOUTS);
-writeproc("/proc/sys/net/netfilter/nf_conntrack_udp_timeout",CONNTRACK_UDP_TIMEOUTS);
+	writeprocsysnet("ipv4/netfilter/ip_conntrack_udp_timeout", CONNTRACK_UDP_TIMEOUTS);
+	writeprocsysnet("netfilter/nf_conntrack_udp_timeout", CONNTRACK_UDP_TIMEOUTS);
 
 	return;
 }

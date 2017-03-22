@@ -95,10 +95,10 @@ void start_sysinit(void)
 	int s;
 	struct ifreq ifr;
 	if (getRouterBrand() == ROUTER_BOARD_RDAT81) {
-		writeproc("/proc/sys/dev/wifi0/ledpin", "7");
-		writeproc("/proc/sys/dev/wifi0/softled", "1");
-		writeproc("/proc/sys/dev/wifi1/ledpin", "5");
-		writeproc("/proc/sys/dev/wifi1/softled", "1");
+		writeprocsys("dev/wifi0/ledpin", "7");
+		writeprocsys("dev/wifi0/softled", "1");
+		writeprocsys("dev/wifi1/ledpin", "5");
+		writeprocsys("dev/wifi1/softled", "1");
 	}
 	if (getRouterBrand() == ROUTER_BOARD_RCAA01) {
 		insmod("mvswitch");
@@ -122,10 +122,10 @@ void start_sysinit(void)
 			ioctl(s, SIOCSIFHWADDR, &ifr);
 			close(s);
 		}
-		writeproc("/proc/sys/dev/wifi0/ledpin", "4");
-		writeproc("/proc/sys/dev/wifi0/softled", "1");
-		writeproc("/proc/sys/dev/wifi1/ledpin", "5");
-		writeproc("/proc/sys/dev/wifi1/softled", "1");
+		writeprocsys("dev/wifi0/ledpin", "4");
+		writeprocsys("dev/wifi0/softled", "1");
+		writeprocsys("dev/wifi1/ledpin", "5");
+		writeprocsys("dev/wifi1/softled", "1");
 	}
 	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW))) {
 		char eabuf[32];

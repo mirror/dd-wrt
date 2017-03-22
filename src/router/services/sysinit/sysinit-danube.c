@@ -237,8 +237,8 @@ void start_sysinit(void)
 #ifdef HAVE_ATH9K
 	sysprintf("echo phy0tpt > /sys/devices/platform/leds-gpio/leds/soc:green:wlan/trigger");
 #else
-	writeproc("/proc/sys/dev/wifi0/ledpin", "15");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "15");
+	writeprocsys("dev/wifi0/softled", "1");
 
 #endif
 	set_gpio(1, 0);
@@ -254,8 +254,8 @@ void start_sysinit(void)
 	strcpy(mac, nvram_safe_get("et0macaddr"));
 	MAC_ADD(mac);
 	eval("ifconfig", "wifi0", "hw", "ether", mac);
-	writeproc("/proc/sys/dev/wifi0/ledpin", "219");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "219");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 
 	/*

@@ -143,11 +143,11 @@ void start_sysinit(void)
 	}
 	set_gpio(1, 1);
 #ifdef HAVE_RTG32
-	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "7");
+	writeprocsys("dev/wifi0/softled", "1");
 #else
-	writeproc("/proc/sys/dev/wifi0/ledpin", "0");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "0");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 	/*
 	 * Set a sane date 

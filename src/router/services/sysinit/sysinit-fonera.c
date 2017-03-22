@@ -100,20 +100,20 @@ void start_sysinit(void)
 	detect_wireless_devices();
 
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
-	writeproc("/proc/sys/dev/wifi0/ledpin", "2");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "2");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_GWMF54G2
-	writeproc("/proc/sys/dev/wifi0/ledpin", "4");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "4");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_DLM101
-	writeproc("/proc/sys/dev/wifi0/ledpin", "7");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "7");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 #ifdef HAVE_MERAKI
-	writeproc("/proc/sys/dev/wifi0/ledpin", "3");
-	writeproc("/proc/sys/dev/wifi0/softled", "1");
+	writeprocsys("dev/wifi0/ledpin", "3");
+	writeprocsys("dev/wifi0/softled", "1");
 #endif
 	// eval ("ifconfig", "wifi0", "up");
 #ifdef HAVE_LS2
