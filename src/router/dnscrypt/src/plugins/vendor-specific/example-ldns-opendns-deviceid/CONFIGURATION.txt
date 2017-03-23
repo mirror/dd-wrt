@@ -1,0 +1,10 @@
+## -- The following option can be included in the configuration file --
+
+## OpenDNS Umbrella customers are identified by appending an 8 bytes password
+## in clear text to each query. That password can be retrieved with the
+## following command: "dig TXT debug.opendns.com." while using the VPN or their
+## proprietary client, next to the "device:" line. The password is also visible
+## in the command-line of the dnscrypt-proxy process when running that client.
+## The value for this property is the path to a file containing the password.
+
+# OpenDNSPasswordFile /etc/umbrella-password.txt

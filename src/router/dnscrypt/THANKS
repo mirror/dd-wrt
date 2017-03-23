@@ -1,0 +1,10 @@
+Stuart Henderson <sthen at openbsd dot org> - OpenBSD port
+D. J. Bernstein <dan at cr dot yp dot to> - for his feedback
+Lance Fredrickson <lance at lancethepants dot com> - for his feedback on DD-WRT/mips
+Sebastian Sjoholm <sebastian.sjoholm at gmail dot com> - reported and fixed a compilation issue on Debian PPC.
+David Lebel <lebel at lebel.org> - Gentoo package
+Black Roland - OpenWRT packages
+RotBlitz - Reported that Windows binary packages should work on old CPUs.
+Marguerite Su - OpenSuSE packages
+InsanityBit - AppArmor profile
+Moffa~, Chef-Koch, Simon Levermann, Sergey Shatunov - Android scripts

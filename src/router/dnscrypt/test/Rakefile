@@ -1,0 +1,7 @@
+require 'cucumber'
+require 'cucumber/rake/task'
+require 'rake/clean'
+
+Cucumber::Rake::Task.new
+
+task :default => [:cucumber]

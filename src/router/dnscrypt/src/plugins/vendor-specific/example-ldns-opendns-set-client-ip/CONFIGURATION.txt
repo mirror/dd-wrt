@@ -1,0 +1,9 @@
+## -- The following option can be included in the configuration file --
+
+## In order to have content blocked, free OpenDNS users must create an account
+## and register an IP address.
+## The following parameter defines the registered IP address to apply the
+## rules from, no matter what the client IP address is (useful with dynamic IP
+## addresses and when roaming). Use either this option or the former, not both.
+
+# OpenDNSIP 203.0.113.1

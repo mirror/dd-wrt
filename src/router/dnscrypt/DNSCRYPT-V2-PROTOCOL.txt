@@ -1,0 +1,453 @@
+
+DNSCrypt version 2 protocol specification
+=========================================
+
+1. Protocol overview
+--------------------
+
+The DNSCrypt protocol can use the UDP and TCP transport protocols.
+DNSCrypt Clients and resolvers should support the protocol over UDP
+and must support it over TCP.
+
+The default port for this protocol should be 443, both for TCP and UDP.
+
+Both the client and the resolver initially generate a short-term key
+pair for each supported encryption system.
+
+From a client perspective, a DNSCrypt session begins with the client
+sending a non-authenticated DNS query to a DNSCrypt-enabled resolver.
+This DNS query encodes the certificate versions supported by the
+client, as well as a public identifier of the provider requested by
+the client.
+
+The resolver responds with a public set of signed certificates, that
+must be verified by the client using a previously distributed public
+key, known as the provider public key.
+
+Each certificate includes a validity period, a serial number, a
+version that defines a key exchange mechanism, an authenticated
+encryption algorithm and its parameters, as well as a short-term
+public key, known as the resolver public key.
+
+A resolver can support multiple algorithms and advertise multiple
+resolver public keys simultaneously. The client picks the one with the
+highest serial number among the currently valid ones that match a
+supported protocol version.
+
+Each certificate includes a magic number that the client must prefix its
+queries with, in order for the resolver to know what certificate was
+chosen by the client to construct a given query.
+
+The encryption algorithm, resolver public key and client magic number
+from the chosen certificate are then used by the client to send
+encrypted queries. These queries include the client public key.
+
+Using this client public key, and knowing which certificate was chosen
+by the client as well as the relevant secret key, the resolver
+verifies and decrypts the query, and encrypts the response using the
+same parameters.
+
+2. Common definitions for client queries
+----------------------------------------
+
+<dnscrypt-query> ::= <client-magic> <client-pk> <client-nonce> <encrypted-query>
+
+<client-magic> ::= a 8 byte identifier for the resolver certificate
+chosen by the client.
+
+<client-pk> ::= the client's public key, whose length depends on the
+encryption algorithm defined in the chosen certificate.
+
+<client-sk> ::= the client's secret key.
+
+<resolver-pk> ::= the resolver's public key.
+
+<client-nonce> ::= a unique query identifier for a given
+(<client-sk>, <resolver-pk>) tuple. The same query sent twice for the same
+(<client-sk>, <resolver-pk>) tuple must use two distinct <client-nonce>
+values. The length of <client-nonce> depends on the chosen encryption
+algorithm.
+
+<encrypted-query> ::= AE(<shared-key> <client-nonce> <client-nonce-pad>,
+                         <client-query> <client-query-pad>)
+
+AE ::= the authenticated encryption algorithm.
+
+<shared-key> ::= the shared key derived from <resolver-pk> and
+<client-sk>, using the key exchange algorithm defined in the chosen
+certificate.
+
+<client-query> ::= the unencrypted client query. The query is not
+modified; in particular, the query flags are not altered and the query
+length must be kept in queries prepared to be sent over TCP.
+
+<client-nonce-pad> ::= <client-nonce> length is half the nonce length
+required by the encryption algorithm. In client queries, the other half,
+<client-nonce-pad> is filled with NUL bytes.
+
+<client-query-pad> ::= variable-length padding.
+
+3. Padding for client queries over UDP
+--------------------------------------
+
+Prior to encryption, queries are padded using the ISO/IEC 7816-4
+format. The padding starts with a byte valued 0x80 followed by a
+variable number of NUL bytes.
+
+<client-query> <client-query-pad> must be at least <min-query-len>
+bytes. If the length of the client query is less than <min-query-len>,
+the padding length must be adjusted in order to satisfy this
+requirement.
+
+<min-query-len> is a variable length, initially set to 256 bytes, and
+must be a multiple of 64 bytes.
+
+4. Client queries over UDP
+--------------------------
+
+Client queries sent using UDP must be padded as described in section 3.
+
+A UDP packet can contain a single query, whose entire content is
+the <dnscrypt-query> construction documented in section 2.
+
+UDP packets using the DNSCrypt protocol can be fragmented into
+multiple IP packets and can use a single source port.
+
+After having received a query, the resolver can either ignore the query
+or reply with a DNSCrypt-encapsulated response.
+
+The client must verify and decrypt the response using the resolver's
+public key, the shared secret and the received nonce. If the response
+cannot be verified, the response must be discarded.
+
+If the response has the TC flag set, the client must:
+1) send the query again using TCP
+2) set the new minimum query length as:
+
+    <min-query-len> ::= min(<min-query-len> + 64, <max-query-len>)
+
+<min-query-len> must be capped so that the full length of a DNSCrypt
+packet doesn't exceed the maximum size required by the transport layer.
+
+The client may decrease <min-query-len>, but the length must remain a multiple
+of 64 bytes.
+
+5. Padding for client queries over TCP
+--------------------------------------
+
+Prior to encryption, queries are padded using the ISO/IEC 7816-4
+format. The padding starts with a byte valued 0x80 followed by a
+variable number of NUL bytes.
+
+The length of <client-query-pad> is randomly chosen between 0 and 256
+bytes, but the total length of <client-query> <client-query-pad> must be
+a multiple of 64 bytes.
+
+For example, an originally unpadded 56-bytes DNS query can be padded as:
+
+<56-bytes-query> 0x80 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+or
+<56-bytes-query> 0x80 (0x00 * 71)
+or
+<56-bytes-query> 0x80 (0x00 * 135)
+or
+<56-bytes-query> 0x80 (0x00 * 199)
+
+6. Client queries over TCP
+--------------------------
+
+Client queries over TCP only differ from queries sent over UDP by the
+padding length computation.
+
+Unlike UDP queries, a query sent over TCP can be shorter than the
+response.
+
+After having received a response from the resolver, the client and the
+resolver must close the TCP connection. Multiple transactions over the
+same TCP connections are not allowed by this revision of the protocol.
+
+7. Common definitions for resolver responses
+--------------------------------------------
+
+<dnscrypt-response> ::= <resolver-magic> <nonce> <encrypted-response>
+
+<resolver-magic> ::= 0x72 0x36 0x66 0x6e 0x76 0x57 0x6a 0x38
+
+<nonce> ::= <client-nonce> <resolver-nonce>
+
+<client-nonce> ::= the nonce sent by the client in the related query.
+
+<client-pk> ::= the client's secret key.
+
+<resolver-sk> ::= the resolver's public key.
+
+<resolver-nonce> ::= a unique response identifier for a given
+(<client-pk>, <resolver-sk>) tuple. The length of <resolver-nonce>
+depends on the chosen encryption algorithm.
+
+<encrypted-response> ::= AE(<shared-key>, <nonce>,
+                            <resolver-response> <resolver-response-pad>)
+
+AE ::= the authenticated encryption algorithm.
+
+<shared-key> ::= the shared key derived from <resolver-sk> and
+<client-pk>, using the key exchange algorithm defined in the chosen
+certificate.
+
+<resolver-response> ::= the unencrypted resolver response. The
+response is not modified; in particular, the query flags are not
+altered and the response length must be kept in responses prepared to
+be sent over TCP.
+
+<resolver-response-pad> ::= variable-length padding.
+
+8. Padding for resolver responses
+---------------------------------
+
+Prior to encryption, responses are padded using the ISO/IEC 7816-4
+format. The padding starts with a byte valued 0x80 followed by a
+variable number of NUL bytes.
+
+The total length of <resolver-response> <resolver-response-pad> must
+be a multiple of 64 bytes.
+
+The length of <resolver-response-pad> must be between 0 and 256 bytes,
+and must be constant for a given (<resolver-sk>, <client-nonce>) tuple.
+
+A pseudo random function can be used to satisfy this requirement.
+
+9. Resolver responses over UDP
+------------------------------
+
+The resolver must verify and decrypt client queries. Queries that
+cannot be verified must be ignored.
+
+Any client-supplied nonce must be accepted. However, a resolver can
+ignore or refuse queries encrypted using untrusted public keys.
+
+Responses must be padded using the algorithm described in section 8
+and encrypted as described in section 7.
+
+If the full client query length is shorter than 256 bytes, or shorter
+than the full response length, the resolver may truncate the response
+and set the TC flag prior to encrypting it. The response length should
+always be equal to or shorter than the initial client query length.
+
+10. Resolver responses over TCP
+-------------------------------
+
+The resolver must verify and decrypt client queries. Queries that
+cannot be verified must be ignored.
+
+Any client-supplied nonce must be accepted. However, a resolver can
+ignore or refuse queries encrypted using untrusted public keys.
+
+Responses must be padded using the algorithm described in section 8
+and encrypted as described in section 7.
+
+Responses must be send unmodified even if their length exceeds the
+length of the client query.
+
+11. Authenticated encryption and key exchange algorithm
+-------------------------------------------------------
+
+The X25519-XSalsa20Poly1305 construction, and the way to use it
+described in this section, must be referenced in certificates as
+version 1 of the public-key authenticated encryption system.
+
+In the current version, the construction, originally implemented in
+the NaCl cryptographic library and exposed under the name
+"crypto_box", uses the Curve25119 elliptic curve in Montgomery form
+and the hsalsa20 hash function for key exchange, the XSalsa20 stream
+cipher, and Poly1305 for message authentication.
+
+The public and secret keys are 32 bytes long in storage. The MAC is 16 bytes
+long, and is prepended to the ciphertext.
+
+When using X25519-XSalsa20Poly1305, this construction requires a 24 bytes
+nonce, that must not be reused for a given shared secret.
+
+With a 24 bytes nonce, a question sent by a DNSCrypt client must be
+encrypted using the shared secret, and a nonce constructed as follows:
+12 bytes chosen by the client followed by 12 NUL (0) bytes.
+
+A response to this question must be encrypted using the shared secret,
+and a nonce constructed as follows: the bytes originally chosen by
+the client, followed by bytes chosen by the resolver.
+
+The resolver's half of the nonce should be randomly chosen.
+
+The client's half of the nonce can include a timestamp in addition to a
+counter or to random bytes, so that when a response is received, the
+client can use this timestamp to immediately discard responses to
+queries that have been sent too long ago, or dated in the future.
+
+12. Certificates
+----------------
+
+The client begins a DNSCrypt session by sending a regular unencrypted
+TXT DNS query to the resolver IP address, on the DNSCrypt port, first
+over UDP, then, in case of failure, timeout or truncation, over TCP.
+
+Resolvers are not required to serve certificates both on UDP and TCP.
+
+The name in the question must follow this scheme:
+
+<provider name> ::= <protocol-major-version> . dnscrypt-cert . <zone>
+
+A major protocol version has only one certificate format.
+
+A DNSCrypt client implementing the second version of the protocol must
+send a query with the TXT type and a name of the form:
+
+2.dnscrypt-cert.example.com
+
+The zone must be a valid DNS name, but may not be registered in the DNS
+hierarchy.
+
+A single provider name can be shared by multiple resolvers operated by
+the same entity, and a resolver can respond to multiple provider
+names, especially to support multiple protocol versions simultaneously.
+
+In order to use a DNSCrypt-enabled resolver, a client must know the
+following information:
+
+- The resolver IP address and port
+- The provider name
+- The provider public key
+
+The provider public key is a long-term key whose sole purpose is to
+verify the certificates. It is never used to encrypt or verify DNS queries.
+A unique provider public key can be used to sign multiple certificates.
+
+For example, an organization operating multiple resolvers can use
+a unique provider name and provider public key across all resolvers,
+and just provide a list of IP addresses and ports. Each resolver may
+have its unique set of certificates that can be signed with the
+same key.
+
+Certificates should be signed on dedicated hardware and not on the
+resolvers. Resolvers must serve the certificates, provided that they
+have already been signed.
+
+A successful response to certificate request contains one or more TXT
+records, each record containing a certificate encoded as follows:
+
+<cert> ::= <cert-magic> <es-version> <protocol-minor-version> <signature>
+           <resolver-pk> <client-magic> <serial> <ts-start> <ts-end>
+           <extensions>
+
+<cert-magic> ::= 0x44 0x4e 0x53 0x43
+
+<es-version> ::= the cryptographic construction to use with this
+certificate.
+For X25519-XSalsa20Poly1305, <es-version> must be 0x00 0x01.
+For X25519-XChacha20Poly1305, <es-version> must be 0x00 0x02.
+
+<protocol-minor-version> ::= 0x00 0x00
+
+<signature> ::= a 64-byte signature of (<resolver-pk> <client-magic>
+<serial> <ts-start> <ts-end> <extensions>) using the Ed25519 algorithm and the
+provider secret key. Ed25519 must be used in this version of the
+protocol.
+
+<resolver-pk> ::= the resolver short-term public key, which is 32 bytes when
+using X25519.
+
+<client-magic> ::= the first 8 bytes of a client query that was built
+using the information from this certificate. It may be a truncated
+public key. Two valid certificates cannot share the same <client-magic>.
+
+<serial> ::= a 4 byte serial number in big-endian format. If more than
+one certificates are valid, the client must prefer the certificate
+with a higher serial number.
+
+<ts-start> ::= the date the certificate is valid from, as a 4-byte
+unsigned Unix timestamp.
+
+<ts-end> ::= the date the certificate is valid until (inclusive), as a
+4-byte unsigned Unix timestamp.
+
+<extensions> ::= empty in the current protocol version, but may
+contain additional data in future revisions, including minor versions.
+The computation and the verification of the signature must include the
+extensions. An implementation not supporting these extensions must
+ignore them.
+
+Certificates made of these information, without extensions, are 116 bytes
+long. With the addition of the cert-magic, es-version and
+protocol-minor-version, the record is 124 bytes long.
+
+After having received a set of certificates, the client checks their
+validity based on the current date, filters out the ones designed for
+encryption systems that are not supported by the client, and chooses
+the certificate with the higher serial number.
+
+DNSCrypt queries sent by the client must use the <client-magic>
+header of the chosen certificate, as well as the specified encryption
+system and public key.
+
+The client must check for new certificates every hour, and switch to a
+new certificate if:
+- the current certificate is not present or not valid any more
+or
+- a certificate with a higher serial number than the current one is
+available.
+
+13. Operational perspective
+---------------------------
+
+Special attention should be paid to the uniqueness of the generated
+secret keys.
+
+Client public keys can be used by resolvers to authenticate clients,
+link queries to customer accounts, and unlock business-specific
+features such as redirecting specific domain names to a sinkhole.
+
+Resolvers accessible from any client IP address can also opt for only
+responding to a set of whitelisted public keys.
+
+Resolvers accepting queries from any client must accept any client
+public key. In particular, an anonymous client can generate a new key pair
+for every session, or even for every query. This mitigates the ability
+for a resolver to group queries by client public keys, and discover
+the set of IP addresses a user might have been operating.
+
+Resolvers that do not keep query logs should rotate the short-term key pair
+every 24 hours, and must throw away the previous secret key.
+
+During a key rotation, and provided that the old key hasn't been
+compromised, a resolver should accept both the old and the new key for at
+least 4 hours, and public them as different certificates.
+
+Provider public keys may be published as a DNSSEC-signed TXT records,
+in the same zone as the provider name.
+
+For example, a query for the TXT type on the name "2.pubkey.example.com"
+may return a signed record containing a hexadecimal-encoded provider
+public key for the provider name "2.dnscrypt-cert.example.com".
+
+While authenticated and unauthenticated queries can share the same
+resolver TCP and/or UDP port, this should be avoided. Client magic
+numbers do not completely prevent collisions with legitimate unauthenticated
+DNS queries. In addition, DNSCrypt offers some mitigation against
+abusing resolvers to conduct DDoS attacks. Accepting unauthenticated
+queries on the same port would defeat this mechanism.
+
+As this version of the protocol may require many short-lived TCP
+sessions, the TCP Fast Open mechanism should be used where available.
+
+14. Implementations
+-------------------
+
+Known open source implementations of the DNSCrypt version 2 protocol are:
+
+- dnscrypt-wrapper - server-side implementation in C
+- powerdns dnsdist - a DNS loadbalancer that provides server-side DNSCrypt
+- dnscrypt-proxy - client-side implementation in C
+- pcap_dnsproxy - client-side implementation in C++
+- dnscrypt-python - client-side implementation in Python
+
+Known closed source implementations of the protocol :
+
+- OpenNIC Fusl servers - server-side implementation as a Linux kernel module
