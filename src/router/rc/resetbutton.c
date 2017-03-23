@@ -19,7 +19,7 @@
 #define RESET_WAIT		3	/* seconds */
 #define RESET_WAIT_COUNT	RESET_WAIT * 10	/* 10 times a second */
 #ifdef HAVE_ERC
-#define SES_WAIT		5	/* seconds */
+#define SES_WAIT		2	/* seconds */
 #else
 #define SES_WAIT		3	/* seconds */
 #endif
