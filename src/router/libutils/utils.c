@@ -8166,7 +8166,7 @@ char *getdisc(void)		// works only for squashfs
 	char *disks[] = { "sda2", "sdb2", "sdc2", "sdd2", "sde2", "sdf2", "sdg2", "sdh2",
 		"sdi2", "mmcblk0p2"
 	};
-	for (i = 0; i < 9; i++) {
+	for (i = 0; i < 10; i++) {
 		char dev[64];
 
 		sprintf(dev, "/dev/%s", disks[i]);
