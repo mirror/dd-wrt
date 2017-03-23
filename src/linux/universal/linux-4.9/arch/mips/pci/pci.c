@@ -57,7 +57,6 @@ void pci_resource_to_user(const struct pci_dev *dev, int bar,
 	*start = fixup_bigphys_addr(rsrc->start, size);
 	*end = rsrc->start + size;
 }
-#endif
 
 int pci_mmap_page_range(struct pci_dev *dev, struct vm_area_struct *vma,
 			enum pci_mmap_state mmap_state, int write_combine)

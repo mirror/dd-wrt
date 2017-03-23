@@ -134,7 +134,7 @@ obj-$(CONFIG_CRYPTO_USER_API_SKCIPHER) += algif_skcipher.o
 obj-$(CONFIG_CRYPTO_USER_API_RNG) += algif_rng.o
 obj-$(CONFIG_CRYPTO_USER_API_AEAD) += algif_aead.o
 
-obj-$(CONFIG_OCF_OCF) += ocf/
+#obj-$(CONFIG_OCF_OCF) += ocf/
 
 #
 # generic algorithms and the async_tx api

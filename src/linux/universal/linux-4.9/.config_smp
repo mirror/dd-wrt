@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.16-rc1 Kernel Configuration
+# Linux/i386 4.9.17 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -4134,11 +4134,6 @@ CONFIG_CRYPTO_DEV_QAT_C62X=y
 #
 # Certificates for signature checking
 #
-
-#
-# OCF Configuration
-#
-# CONFIG_OCF_OCF is not set
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
 # CONFIG_BINARY_PRINTF is not set

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.16-rc1 Kernel Configuration
+# Linux/arm 4.9.17 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -3055,26 +3055,6 @@ CONFIG_CRYPTO_JITTERENTROPY=m
 #
 # Certificates for signature checking
 #
-
-#
-# OCF Configuration
-#
-CONFIG_OCF_OCF=m
-# CONFIG_OCF_RANDOMHARVEST is not set
-CONFIG_OCF_CRYPTODEV=m
-# CONFIG_OCF_CRYPTOSOFT is not set
-# CONFIG_OCF_SAFE is not set
-CONFIG_OCF_IXP4XX=m
-CONFIG_OCF_IXP4XX_SHA1_MD5=y
-# CONFIG_OCF_HIFN is not set
-# CONFIG_OCF_HIFNHIPP is not set
-# CONFIG_OCF_EP80579 is not set
-# CONFIG_OCF_CRYPTOCTEON is not set
-# CONFIG_OCF_KIRKWOOD is not set
-# CONFIG_OCF_C7108 is not set
-# CONFIG_OCF_UBSEC_SSB is not set
-# CONFIG_OCF_OCFNULL is not set
-# CONFIG_OCF_BENCH is not set
 CONFIG_ARM_CRYPTO=y
 CONFIG_CRYPTO_SHA1_ARM=y
 CONFIG_CRYPTO_SHA256_ARM=y

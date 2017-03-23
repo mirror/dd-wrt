@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.16-rc1 Kernel Configuration
+# Linux/mips 4.9.17 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2717,25 +2717,6 @@ CONFIG_X509_CERTIFICATE_PARSER=y
 # Certificates for signature checking
 #
 # CONFIG_SYSTEM_TRUSTED_KEYRING is not set
-
-#
-# OCF Configuration
-#
-CONFIG_OCF_OCF=m
-# CONFIG_OCF_RANDOMHARVEST is not set
-CONFIG_OCF_CRYPTODEV=m
-CONFIG_OCF_CRYPTOSOFT=m
-# CONFIG_OCF_SAFE is not set
-# CONFIG_OCF_IXP4XX is not set
-# CONFIG_OCF_HIFN is not set
-# CONFIG_OCF_HIFNHIPP is not set
-# CONFIG_OCF_EP80579 is not set
-CONFIG_OCF_CRYPTOCTEON=m
-# CONFIG_OCF_KIRKWOOD is not set
-# CONFIG_OCF_C7108 is not set
-# CONFIG_OCF_UBSEC_SSB is not set
-# CONFIG_OCF_OCFNULL is not set
-CONFIG_OCF_BENCH=m
 # CONFIG_BINARY_PRINTF is not set
 
 #
