@@ -1720,5 +1720,5 @@ source certs/Kconfig
 
 endif	# if CRYPTO
 
-source "crypto/ocf/Kconfig"
+#source "crypto/ocf/Kconfig"
 
