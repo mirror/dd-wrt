@@ -5562,6 +5562,27 @@ char *getNetworkLabel(char *var)
 #endif
 #include "macfilter.c"
 
+void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
+{
+	char line[512];
+	char name[32], fname[128], dummy[255];
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.dns_crypt_resolv)</script></div>\n");
+	websWrite(wp, "<select name=\"dns_crypt_resolver\">\n");
+	
+	FILE *fp = fopen("/etc/dnscrypt/dnscrypt-resolvers.csv", "rb");
+	
+	if (fp != NULL) {
+		while (fgets(line, sizeof(line), fp) != NULL) {
+			sscanf(line, "%[^','],%[^','],%s", name, fname, dummy);
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
+		}
+		fclose(fp);
+	}
+	websWrite(wp, "</select>\n");
+	websWrite(wp, "</div>\n");
+}
+
 void ej_show_congestion(webs_t wp, int argc, char_t ** argv)
 {
 	char *next;
