@@ -119,7 +119,10 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	sprintf(dev, "/dev/%s3", disc);
+	if (strlen(disc) == 7) //mmcblk0
+		sprintf(dev, "/dev/%sp3", disc);
+	else
+		sprintf(dev, "/dev/%s3", disc);
 	insmod("jbd2");
 	insmod("mbcache");
 	insmod("crc16");
