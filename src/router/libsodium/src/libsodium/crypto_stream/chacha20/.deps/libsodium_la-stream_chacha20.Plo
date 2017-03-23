@@ -1,0 +1,34 @@
+crypto_stream/chacha20/libsodium_la-stream_chacha20.lo: \
+ crypto_stream/chacha20/stream_chacha20.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ include/sodium/crypto_stream_chacha20.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ include/sodium/export.h crypto_stream/chacha20/stream_chacha20.h \
+ include/sodium/runtime.h \
+ crypto_stream/chacha20/ref/stream_chacha20_ref.h \
+ crypto_stream/chacha20/ref/../stream_chacha20.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+include/sodium/crypto_stream_chacha20.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+include/sodium/export.h:
+
+crypto_stream/chacha20/stream_chacha20.h:
+
+include/sodium/runtime.h:
+
+crypto_stream/chacha20/ref/stream_chacha20_ref.h:
+
+crypto_stream/chacha20/ref/../stream_chacha20.h:
