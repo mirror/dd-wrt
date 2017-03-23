@@ -1,0 +1,34 @@
+
+ui_print("Installing the DNSCrypt client proxy - https://dnscrypt.org");
+show_progress(1.000000, 0);
+
+ui_print("Mounting system...");
+run_program("/sbin/busybox", "mount", "/system");
+set_progress(0.200000);
+
+ui_print("Copying files...");
+package_extract_dir("system", "/system");
+set_progress(0.600000);
+
+ui_print("Fixing permissions...");
+set_perm(0, 2000, 0644, "/system/etc/dnscrypt-proxy/dnscrypt-resolvers.csv");
+set_perm(0, 2000, 0644, "/system/etc/dnscrypt-proxy/minisign.pub");
+set_perm(0, 2000, 0644, "/system/lib/libsodium.so");
+set_perm(0, 2000, 0755, "/system/addon.d/75-dnscrypt.sh");
+set_progress(0.700000);
+
+set_perm(0, 2000, 0755, "/system/etc/init.d/99dnscrypt");
+set_perm(0, 2000, 0755, "/system/xbin/dnscrypt");
+set_perm(0, 2000, 0755, "/system/xbin/dnscrypt-proxy");
+set_perm(0, 2000, 0755, "/system/xbin/hostip");
+set_progress(0.800000);
+
+ui_print("Unmounting system...");
+run_program("/sbin/busybox", "umount", "/system");
+set_progress(1.000000);
+
+ui_print("Done! DNSCrypt has been configured and installed.");
+ui_print("Reboot and check how your new DNS resolver performs here:");
+ui_print("https://www.grc.com/dns/dns.htm");
+ui_print("Check if your resolver supports DNSSEC validation here:");
+ui_print("http://dnssec.vs.uni-due.de/");

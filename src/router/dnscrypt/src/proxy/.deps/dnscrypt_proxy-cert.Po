@@ -1,0 +1,330 @@
+dnscrypt_proxy-cert.o: cert.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ ../../config.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/features.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/glibc-types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/cdefs.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/endian.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/select.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/sysmacros.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/socket.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/socket.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/arpa/inet.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/netinet/in.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/inttypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/assert.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdlib.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/alloca.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/string.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/strings.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/time.h \
+ ../libevent-modified/include/event2/dns.h \
+ ../libevent-modified/include/event2/util.h \
+ ../libevent-modified/include/event2/event-config.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/time.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdarg.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/netdb.h \
+ ../libevent-modified/include/event2/event.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdio.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/core.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/export.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_aead_aes256gcm.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_aead_chacha20poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha512.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box_curve25519xsalsa20poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box_curve25519xsalsa20poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_hsalsa20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_hchacha20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa2012.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa208.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash_blake2b.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash_blake2b.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha512.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth_poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth_poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_argon2i.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_argon2i.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_scryptsalsa208sha256.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult_curve25519.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult_curve25519.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox_xsalsa20poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox_xsalsa20poly1305.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash_siphash24.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash_siphash24.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign_ed25519.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign_ed25519.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_xsalsa20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_aes128ctr.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_chacha20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa2012.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa208.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_xsalsa20.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_16.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_32.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_64.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes_salsa20_random.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes_sysrandom.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/runtime.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/utils.h \
+ /opt/DEV/src/router/libsodium/src/libsodium/include/sodium/version.h \
+ cert.h cert_p.h dnscrypt_proxy.h \
+ ../libevent-modified/include/event2/listener.h app.h plugin_support.h \
+ ../include/dnscrypt/plugin.h ../include/dnscrypt/private.h \
+ ../include/dnscrypt/version.h ../ext/queue.h dnscrypt_client.h \
+ dnscrypt.h logger.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/syslog.h \
+ probes.h shims.h utils.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+../../config.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/features.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/glibc-types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/cdefs.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/endian.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/select.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/sysmacros.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/socket.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/socket.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/arpa/inet.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/netinet/in.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/inttypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/assert.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdlib.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/alloca.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/string.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/strings.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/time.h:
+
+../libevent-modified/include/event2/dns.h:
+
+../libevent-modified/include/event2/util.h:
+
+../libevent-modified/include/event2/event-config.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/time.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stddef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdarg.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/netdb.h:
+
+../libevent-modified/include/event2/event.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdio.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/core.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/export.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_aead_aes256gcm.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_aead_chacha20poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha512.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_auth_hmacsha512256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box_curve25519xsalsa20poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_box_curve25519xsalsa20poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_hsalsa20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_hchacha20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa2012.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_core_salsa208.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash_blake2b.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_generichash_blake2b.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_hash_sha512.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth_poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_onetimeauth_poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_argon2i.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_argon2i.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_pwhash_scryptsalsa208sha256.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult_curve25519.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_scalarmult_curve25519.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox_xsalsa20poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_secretbox_xsalsa20poly1305.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash_siphash24.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_shorthash_siphash24.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign_ed25519.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_sign_ed25519.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_xsalsa20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_aes128ctr.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_chacha20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa2012.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_salsa208.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_stream_xsalsa20.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_16.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_32.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/crypto_verify_64.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes_salsa20_random.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/randombytes_sysrandom.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/runtime.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/utils.h:
+
+/opt/DEV/src/router/libsodium/src/libsodium/include/sodium/version.h:
+
+cert.h:
+
+cert_p.h:
+
+dnscrypt_proxy.h:
+
+../libevent-modified/include/event2/listener.h:
+
+app.h:
+
+plugin_support.h:
+
+../include/dnscrypt/plugin.h:
+
+../include/dnscrypt/private.h:
+
+../include/dnscrypt/version.h:
+
+../ext/queue.h:
+
+dnscrypt_client.h:
+
+dnscrypt.h:
+
+logger.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/syslog.h:
+
+probes.h:
+
+shims.h:
+
+utils.h:

@@ -1,0 +1,40 @@
+# Last Modified: Tue Dec 02 22:20:12 2014
+
+#include <tunables/global>
+
+/usr/sbin/dnscrypt-proxy {
+  #include <abstractions/base>
+
+  network inet stream,
+  network inet6 stream,
+  network inet dgram,
+  network inet6 dgram,
+
+  capability net_admin,
+  capability net_bind_service,
+  capability setgid,
+  capability setuid,
+  capability sys_chroot,
+  capability ipc_lock,
+
+  /bin/false r,
+  /etc/dnscrypt-proxy.conf r,
+  /etc/ld.so.cache r,
+  /etc/nsswitch.conf r,
+  /etc/passwd r,
+
+# Resolvers list
+  /usr/share/dnscrypt-proxy/dnscrypt-resolvers.csv r,
+
+# In case of custom libldns installation
+  /usr/local/lib/{@{multiarch}/,}libldns.so* mr,  
+
+# In case of custom libsodium installation
+  /usr/local/lib/{@{multiarch}/,}libsodium.so* mr,  
+
+# Reasonable pidfile location - tweak this if you prefer a different one
+  /run/dnscrypt-proxy.pid rw,
+
+# Systemd notificaion
+  /run/systemd/notify rw,
+}

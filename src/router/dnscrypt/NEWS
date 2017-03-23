@@ -1,0 +1,284 @@
+
+* Version 1.9.1
+ - The blocking plugin introduced in version 1.9.0 didn't properly
+handle overlapping rules. This has been fixed.
+ - The documentation and examples were updated.
+ - The mimimum time to keep a record in cache can be specified in the
+cache plugin, with the `--with-ttl` option (config file: `with-ttl:...`).
+ - The example generate-domains-blacklist.py script produces a more
+optimized list, without overlapping names.
+
+* Version 1.9.0
+ - Support for TCP was added to the `hostip` tool.
+ - New plugin: `example-ldns-forwarding`. This plugin forwards queries for
+a specific set of domain names to one or more non-DNSCrypt resolvers.
+This can be used to send queries for private domains to the router or
+to an internal DNS server.
+ - New plugin: `example-cache`. This plugin implements a simple,
+zero-configuration DNS response cache.
+ - The default plugin paths, as loaded via the configuration file, use
+the native module file names instead of libtool's `.la` files. Installing the
+`.la` files has now become optional.
+ - Many changes and simplifications were made to the documentation.
+ - `-Z` (syslog prefix) doesn't imply `-S` any more.
+ - The `ResolverAddress` option can now be used even if a full
+configuration was provided via `ResolverName` in order to override the
+resolver IP and port.
+ - A new `contrib` folder is born, and currently contains a Python
+script to automatically generate a malware/spam/ads/tracker blacklist
+from public lists. More contributions would be more than welcome!
+ - Example startup scripts now use the configuration file.
+ - A `SIGHUP` signal sent to the proxy now reloads all the plugins.
+This can be used after a plugin configuration update, or to rotate the log
+files.
+ - `--ignore-timestamps` didn't work as expected. This has been fixed,
+thanks to Toni Uhlig.
+ - `make install` does not overwrite an existing `dnscrypt-proxy.conf`
+file any more. An up-to-date example is installed as
+`dnscrypt-proxy.conf.example`.
+ - The query log and the logfile of hits for blacklisted domains/IPs
+are now more detailed and more readable. As an alternative to human-readable
+records, prefixing a log file name with "ltsv:" causes the log entries to use
+the LTSV structured format. These logs can thus be easily sent to
+Flowgger/ElasticSearch for visualization and reporting.
+ - The domain/ip blocking plugin was completely rewritten, and is now
+extremely fast even with very lasrge blacklists of names and IP addresses.
+It can now be used to locally block malware/spam/ads/trackers and other
+unwanted content, based on prefixes, suffixes and keywords.
+
+* Version 1.8.1
+ - Version 1.8.0 didn't use the same Windows registry key as past
+versions. This has been fixed. In order to upgrade from 1.8.0,
+it is recommended to uninstall the service before upgrading
+(using the `dnscrypt-proxy --uninstall` command).
+ - The SDK used to build Android binaries was downgraded in order to
+retain compatibility with Android 4.1 (Jelly Bean).
+
+* Version 1.8.0:
+ - All the features of the proxy can now be enabled using a
+configuration file.
+ - On Windows, a new option, `--service-name` can be used to set the
+service name, so that multiple instances can run simultaneously.
+ - On Windows, `--install-with-config-file` can be used to install a
+service using a configuration file.
+ - The protocol can now use the XChaCha20 cipher as a faster alternative
+to XSalsa20.
+ - Time stamps are now being added to log files, including log files
+from plugins.
+ - `SIGINT` & `SIGTERM` handlers have been added to give plugins a chance
+to call a teardown function.
+ - A message is now displayed when servers are using a very long key
+rotation period.
+ - The domain blocking plugin is now a `pre_filter`: blocked queries are
+not sent to upstream resolvers any more [breaking change for logging
+resolvers].
+ - The domain blocking plugin do not consider empty files an error any
+more.
+ - The domain blocking plugin has a new option (`--logfile`) to log
+queries sent to blacklisted IPs and names.
+ - Android's update-binary file is not part of the source distribution
+any more.
+ - libevent2 has been updated.
+ - The resolvers list was updated to the latest version.
+ - iOS builds now require iOS 6.0.0.
+ - Windows builds now link ldns against LibreSSL.
+
+* Version 1.7.0:
+ - Plugins are now enabled by default.
+ - Windows: new registry key: `LogFile`.
+ - New command-line option: `--ignore-timestamps` to ignore timestamps
+when performing certificate validation.
+ - New command-line option: `--syslog-prefix` to add a prefix to log
+messages.
+ - Certificates can now be retrieved using TCP.
+ - Libevent was updated to version 2.0.23.
+ - Certificates serial numbers are printed as a string if possible.
+ - The list of known public resolvers was updated.
+ - Builds for Win64 are now available.
+
+* Version 1.6.1:
+ - Security: malformed packets could cause the OpenDNS deviceid,
+OpenDNS set-client-ip, blocking and AAAA blocking plugins to use
+uninitialized pointers, leading to a denial of service or possibly
+code execution. The vulnerable code is present since dnscrypt-proxy
+1.1.0. OpenDNS users and people using dnscrypt-proxy in order to block
+domain names and IP addresses should upgrade as soon as possible.
+
+* Version 1.6.0:
+ - New feature: public-key based client authentication (-K), for
+private and commercial DNS services to securely authenticate the
+sender of a query no matter what the source IP address is, without
+altering the DNS query.
+ - On Windows, paths are now relative to the application folder. Which
+means that the -L option is usually not required any more if the CSV
+file is in the same folder as the dnscrypt-proxy executable. Full
+paths to plugins are not required any more either; plugin names can be
+given directly.
+
+* Version 1.5.0:
+ - New option: -E, to use an ephemeral key pair for each query.
+ - Logging to files is supported on Windows.
+ - TCP FASTOPEN is now enabled on Linux.
+
+* Version 1.4.3:
+ - libevent update, including a fix for CVE-2014-6272
+ - Two new public dnscrypt resolvers were added: opennic-us-wa-ns1 and
+dnscrypt.org-fr.
+ - d0wn servers in France IP have changed.
+ - Compilation fixes.
+
+* Version 1.4.2:
+ - New compilation switch: --with-systemd, to enable socket activation
+support when using systemd.
+ - The list of public DNSCrypt-enabled resolvers was updated.
+ - Libevent2 updates.
+
+* Version 1.4.1:
+ - Alternative ports to dnscrypt.eu servers have been added
+ - Android build scripts are now part of the package
+ - UDP queries timing out are not retried any more. This caused some issues
+and was already better handled by stub resolvers and caching name servers.
+
+* Version 1.4.0:
+ - Security: versions 0.11 to 1.3.3 were vulnerable to a denial of
+service when running out of output buffer space. Reported by @iamultra.
+ - Windows: --uninstall now actually stops the service
+ - Windows: registry keys are automatically created for a given
+provider when installing the service.
+ - The resolver to use and its configuration can now be specified as a
+definition file + the name of the resolver to use. The new
+command-line options to use are --resolvers-list=<csv file> (optional
+on non-Windows platforms) and --resolver-name=<name>. This deprecates
+--provider-key, --provider-name and --resolver-address.
+ - Documentation and diagnostics have been improved.
+
+* Version 1.3.3:
+ - Try to send questions as big as the response can be. Upgrading is
+highly recommended, as the server can refuse to respond to queries using
+UDP if the response is larger than the question.
+
+* Version 1.3.2:
+ - faster startup on iOS and Android
+ - New command-line switch: --test, in order to check if a certificate can be
+   used, with an optional time safety margin.
+ - The package now includes an AppArmor profile, thanks to InsanityBit.
+ - Plugins using ldns can now be compiled on Windows.
+
+* Version 1.3.1:
+ - dnscrypt-proxy doesn't ship its own, possibly outdated copy of libsodium
+   any more, and always picks the system one instead.
+ - Minor compilation improvements for iOS, Android and FreeBSD.
+
+* Version 1.3.0:
+ - The bundled NaCl library with only reference implementations has been
+   replaced with libsodium, leading to significant performance improvements.
+ - A new command-line switch, --loglevel, allows adjusting the log verbosity.
+
+* Version 1.2.1:
+ - Add support for certificates split into multiple TXT records.
+   Contributed by Yecheng Fu, thanks!
+
+* Version 1.2.0:
+ - A pre-filter can now totally bypass the resolver and directly send a
+   reply to the client.
+ - A new example plugin has been shipped: ldns-aaaa-blocking. It
+   directly sends an empty response to AAAA queries in order to
+   significantly speed up lookups on hosts without IPv6 connectivity
+   (but with clients still asking for AAAA records anyway).
+ - Example plugins requiring ldns can be compiled on Windows.
+ - Paths with a drive name are now recognized as absolute paths on
+   Windows.
+
+* Version 1.1.0:
+ - dnscrypt-proxy can now use plugins in order to alter/inspect
+   queries and responses before and after they are relayed.
+   See README-PLUGINS.markdown for more information.
+ - The default max payload size has been trimmed down to 1252 bytes
+   for compatibility with some scary network setups.
+ - The --local-port and --resolver-port options are gone for good.
+   They had been deprecated for a while and were undocumented since
+   version 1.0.
+ - Multiple certificates are now properly handled.
+ - Memory leaks have been fixed, a big bad use-after-free condition
+   has been fixed, uninitialized variables have been initialized.
+   Upgrading is recommended, especially on Windows.
+
+* Version 1.0.1:
+ - dnscrypt-proxy and hostip can now be compiled for Android and
+   Solaris.
+ - The proxy can now run as a Windows service. The new --install and
+   --uninstall command-line switches can automatically register the proxy
+   as a service. Startup options are read from the Windows registry.
+   See the README-WINDOWS.markdown file for details.
+
+* Version 1.0:
+ - Autotools scripts have been improved.
+ - 1.0.
+
+* Version 0.12:
+ - Datagrams are resent after running out of memory, or if the queue
+   was full.
+ - Missing compilation flags broke 0.11 on some Linux distributions.
+   This has been fixed.
+
+* Version 0.11:
+ - A new tool, hostip, can resolve host names before dnscrypt-proxy is
+   started. This should help resolving chicken-and-egg problems on
+   routers, as reported by LanceThePants.
+ - The --local-port and --resolver-port options have been deprecated.
+   Please use --local-address=<ip>:<port> and
+   --resolver-address=<ip>:<port> instead.
+ - Improved stability on Win32.
+
+* Version 0.10.1:
+ - The daemon didn't start on some Linux distributions lacking the
+   RANDOM_UUID sysctl. This has been fixed.
+ - The config.guess files have been patched in order to run out of the
+   box on Bitrig.
+
+* Version 0.10:
+ - Almost a complete rewrite, with libuv being replaced by libevent.
+ - The max number of simultaneous queries is now global, not
+   per-protocol.
+ - As an insane amount of routers and ISPs are hijacking port 53, the default
+   server port is now 443.
+ - iOS binaries are now smaller.
+ - More dtrace probes.
+
+* Version 0.9.5:
+ - Full IPv6 support.
+
+* Version 0.9.4:
+ - The --tcp-port option is gone. The resolver port can now be set
+   with --resolver-port= and forcing use of TCP can be achieved with
+   --tcp-only.
+ - portage files for Gentoo have been added.
+ - Libuv has been updated.
+
+* Version 0.9.3:
+ - Support for native Windows builds.
+ - --daemonize has been fixed.
+
+* Version 0.9.2:
+ - Support for cross-compilation. In particular, the proxy can now
+   compile and work on iOS.
+
+* Version 0.9.1:
+ - DNSCrypt should compile out of the box on DD-WRT and other
+   uclibc-based systems.
+
+* Version 0.9:
+ - libuv has been updated.
+ - Enhanced compatibility with non-Intel architectures.
+
+* Version 0.8:
+ - Support for Windows (through Cygwin, for now) has been improved.
+ - Documentation has been improved.
+ - The package now compiles on Dragonfly BSD-current.
+ - Signatures are now using ed25519 instead of edwards25519sha512batch.
+ - The proxy now compiles on Openwall Linux.
+ - Libuv has been updated.
+ - A sample .plist file and a Homebrew formula for OSX are now provided.
+
+* Version 0.7:
+ - Initial public release.
