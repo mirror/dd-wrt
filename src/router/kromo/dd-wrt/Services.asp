@@ -115,6 +115,7 @@ addEvent(window, "load", function() {
 		show_layer_ext(document.setup.usb_storage, 'idusbstor', <% nvem("usb_storage", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.gps, 'idgps', <% nvem("gps", "1", "1", "0"); %> == 1);
 		show_layer_ext(document.setup.mactelnetd_enable, 'idmactelnetd', <% nvem("mactelnetd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.dnsmasq_enable, 'iddns_crypt', <% nvem("dns_crypt", "1", "1", "0"); %> == 1);
 		
 		if(document.setup.rstats_enable) {
 			rstats_select = '*user';
