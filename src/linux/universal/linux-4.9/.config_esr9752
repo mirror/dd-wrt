@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.16-rc1 Kernel Configuration
+# Linux/mips 4.9.17 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2085,11 +2085,6 @@ CONFIG_CRYPTO_JITTERENTROPY=m
 #
 # Certificates for signature checking
 #
-
-#
-# OCF Configuration
-#
-# CONFIG_OCF_OCF is not set
 # CONFIG_BINARY_PRINTF is not set
 
 #

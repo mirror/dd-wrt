@@ -1165,7 +1165,7 @@ void __init device_tree_init(void)
 {
 	const void *fdt;
 	bool do_prune;
-	bool fill_mac;
+	bool fill_mac = false;
 	bool do_set_mac = false;
 	int dt_size;
 #ifdef CONFIG_MIPS_ELF_APPENDED_DTB
@@ -1206,6 +1206,7 @@ void __init device_tree_init(void)
 		}
 		do_prune = false;
 		do_set_mac = true;
+		fill_mac = false;
 	} else if (octeon_bootinfo->board_type == CVMX_BOARD_TYPE_UBNT_E120) {
 		fdt = (void*)
 			&__dtb_ubnt_e100_begin;
@@ -1213,6 +1214,7 @@ void __init device_tree_init(void)
 			- &__dtb_ubnt_e100_begin;
 		do_prune = false;
 		do_set_mac = true;
+		fill_mac = false;
 	} else {
 		fdt = &__dtb_octeon_3xxx_begin;
 		dt_size = &__dtb_octeon_3xxx_end - &__dtb_octeon_3xxx_begin;
