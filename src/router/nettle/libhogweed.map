@@ -1,0 +1,18 @@
+# libhogweed.map -- libhogweed linker version script.           -*- ld-script -*-
+
+#
+# The symbol version must be updated on every hogweed
+# library major number change. That is taken care by
+# auto-generating the file.
+
+HOGWEED_4
+{
+  global:
+    nettle_*;
+    _nettle_*;
+    
+
+  local:
+    *;
+};
+
