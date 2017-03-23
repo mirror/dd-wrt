@@ -61,6 +61,9 @@ endif
 ifeq ($(CONFIG_DNSMASQ),y)
 CFLAGS += -DHAVE_DNSMASQ
 endif
+ifeq ($(CONFIG_DNSCRYPT),y)
+CFLAGS += -DHAVE_DNSCRYPT
+endif
 ifeq ($(CONFIG_NOWIFI),y)
 CFLAGS += -DHAVE_NOWIFI
 endif
