@@ -1,0 +1,73 @@
+dnscrypt_proxy-safe_rw.o: safe_rw.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ ../../config.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/features.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/glibc-types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/cdefs.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/endian.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/select.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/sysmacros.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/assert.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/errno.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/errno.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/limits.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/limits.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/poll.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/poll.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdlib.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/alloca.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/unistd.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/posix.h \
+ safe_rw.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+../../config.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/features.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/glibc-types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/cdefs.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/endian.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/select.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/sys/sysmacros.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/assert.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/errno.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/errno.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/limits.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/limits.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/poll.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/poll.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/stdlib.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/alloca.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/unistd.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.3.0_musl-1.1.15_eabi/include/bits/posix.h:
+
+safe_rw.h:
