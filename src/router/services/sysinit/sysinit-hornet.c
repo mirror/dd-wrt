@@ -223,11 +223,7 @@ void start_sysinit(void)
 
 	detect_wireless_devices();
 
-#ifndef HAVE_ERC
 	setWirelessLed(0, 0);
-#else
-	setWirelessLed(0, 1);
-#endif
 	/*
 	 * Set a sane date 
 	 */
@@ -237,6 +233,7 @@ void start_sysinit(void)
 #ifdef HAVE_ERC
 	start_drivers();
 	eval("/usr/sbin/interay");
+	set_gpio(1, 1);
 #endif
 
 	return;

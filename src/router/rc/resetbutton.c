@@ -817,11 +817,23 @@ static void handle_wifi(void)
 	_count = 0;
 	switch (wifi_mode) {
 	case 1:
+#ifdef HAVE_ERC
+#ifdef HAVE_HORNET
+		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+		set_gpio(1, 1);
+#endif
+#endif
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
 		sysprintf("startstop radio_on");
 		wifi_mode = 0;
 		break;
 	case 0:
+#ifdef HAVE_ERC
+#ifdef HAVE_HORNET
+		dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+		set_gpio(1, 0);
+#endif
+#endif
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
 		sysprintf("startstop radio_off");
