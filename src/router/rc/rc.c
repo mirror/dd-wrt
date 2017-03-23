@@ -301,6 +301,7 @@ int get_nfmark(int argc, char **argv)
 	}
 
 	fprintf(stdout, "%s\n", get_NFServiceMark(argv[1], atol(argv[2])));
+	return 0;
 }
 
 int gratarp(int argc, char **argv)
