@@ -2,8 +2,13 @@ ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
+
 DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH
 
+ifeq ($(CONFIG_DNSSEC),y)
+export DNSSEC_MAKEFLAGS:=-DHAVE_DNSSEC -DNO_NETTLE_ECC -I$(TOP) -I$(TOP)/gmp
+export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz -L$(TOP)/nettle/.lib -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp
+endif
 
 dnsmasq-clean:
 	$(MAKE) -j 4 -C dnsmasq CFLAGS="$(COPTS)" clean
@@ -22,7 +27,7 @@ else
 ifeq ($(CONFIG_DIST),"micro-special")
 	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 else
-	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
+	$(MAKE) -j 4 -C dnsmasq "COPTS=-DHAVE_BROKEN_RTC -DNO_TFTP" CFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSMASQ_MAKEFLAGS) $(DNSSEC_MAKEFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="$(COPTS) $(DNSMASQ_COPTS) $(DNSSEC_LINKFLAGS) -DNO_LOG -ffunction-sections -fdata-sections -Wl,--gc-sections"
 endif
 endif
 endif
