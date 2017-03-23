@@ -106,7 +106,7 @@ static void setcaldata()
 				nvram_set(var, val);
 			}
 		}
-		fclose(fp);
+		pclose(fp);
 	}
 }
 
