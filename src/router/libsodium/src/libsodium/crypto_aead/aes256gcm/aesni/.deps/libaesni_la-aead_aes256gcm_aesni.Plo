@@ -1,0 +1,57 @@
+crypto_aead/aes256gcm/aesni/libaesni_la-aead_aes256gcm_aesni.lo: \
+ crypto_aead/aes256gcm/aesni/aead_aes256gcm_aesni.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/errno.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/features.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/glibc-types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/cdefs.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/errno.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdlib.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/alloca.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/string.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/strings.h \
+ include/sodium/crypto_aead_aes256gcm.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ include/sodium/export.h include/sodium/export.h include/sodium/runtime.h \
+ include/sodium/utils.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/errno.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/features.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/glibc-types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/cdefs.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/errno.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdlib.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/alloca.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/string.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/strings.h:
+
+include/sodium/crypto_aead_aes256gcm.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+include/sodium/export.h:
+
+include/sodium/export.h:
+
+include/sodium/runtime.h:
+
+include/sodium/utils.h:

@@ -1,0 +1,19 @@
+crypto_scalarmult/libsodium_la-crypto_scalarmult.lo: \
+ crypto_scalarmult/crypto_scalarmult.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ include/sodium/crypto_scalarmult.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ include/sodium/crypto_scalarmult_curve25519.h include/sodium/export.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+include/sodium/crypto_scalarmult.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+include/sodium/crypto_scalarmult_curve25519.h:
+
+include/sodium/export.h:
