@@ -1,0 +1,70 @@
+crypto_onetimeauth/poly1305/sse2/libsse2_la-poly1305_sse2.lo: \
+ crypto_onetimeauth/poly1305/sse2/poly1305_sse2.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/string.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/features.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/glibc-types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/cdefs.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/strings.h \
+ include/sodium/crypto_verify_16.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ include/sodium/export.h include/sodium/utils.h \
+ crypto_onetimeauth/poly1305/sse2/poly1305_sse2.h \
+ include/sodium/crypto_onetimeauth_poly1305.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdlib.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/alloca.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/types.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/endian.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/select.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/sysmacros.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdio.h \
+ crypto_onetimeauth/poly1305/sse2/../onetimeauth_poly1305.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/string.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/features.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/glibc-types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/cdefs.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/strings.h:
+
+include/sodium/crypto_verify_16.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+include/sodium/export.h:
+
+include/sodium/utils.h:
+
+crypto_onetimeauth/poly1305/sse2/poly1305_sse2.h:
+
+include/sodium/crypto_onetimeauth_poly1305.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdlib.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/alloca.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/types.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/endian.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/select.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/sys/sysmacros.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdio.h:
+
+crypto_onetimeauth/poly1305/sse2/../onetimeauth_poly1305.h:

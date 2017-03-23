@@ -1,0 +1,34 @@
+crypto_scalarmult/curve25519/ref10/libsodium_la-x25519_ref10.lo: \
+ crypto_scalarmult/curve25519/ref10/x25519_ref10.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h \
+ include/sodium/utils.h include/sodium/export.h \
+ crypto_scalarmult/curve25519/ref10/x25519_ref10.h \
+ include/sodium/crypto_scalarmult_curve25519.h \
+ crypto_scalarmult/curve25519/ref10/../scalarmult_curve25519.h \
+ include/sodium/private/curve25519_ref10.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdint.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/stdint.h:
+
+include/sodium/utils.h:
+
+include/sodium/export.h:
+
+crypto_scalarmult/curve25519/ref10/x25519_ref10.h:
+
+include/sodium/crypto_scalarmult_curve25519.h:
+
+crypto_scalarmult/curve25519/ref10/../scalarmult_curve25519.h:
+
+include/sodium/private/curve25519_ref10.h:

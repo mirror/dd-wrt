@@ -1,0 +1,19 @@
+crypto_shorthash/libsodium_la-crypto_shorthash.lo: \
+ crypto_shorthash/crypto_shorthash.c \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h \
+ include/sodium/crypto_shorthash.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h \
+ /home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h \
+ include/sodium/crypto_shorthash_siphash24.h include/sodium/export.h
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stdc-predef.h:
+
+include/sodium/crypto_shorthash.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/stddef.h:
+
+/home/bluebat/Toolchains/toolchain-arm_cortex-a9_gcc-6.1.0_musl-1.1.15_eabi/include/bits/alltypes.h:
+
+include/sodium/crypto_shorthash_siphash24.h:
+
+include/sodium/export.h:
