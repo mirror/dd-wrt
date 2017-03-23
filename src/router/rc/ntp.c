@@ -87,13 +87,16 @@ int do_ntp(void)		// called from ntp_main and
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0))
-		servers = "209.81.9.7 207.46.130.100 192.36.144.23 pool.ntp.org";
+		servers = "216.239.35.4 216.239.35.8 216.239.35.12 pool.ntp.org";
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
 		// fprintf (stderr, "ntp returned a error\n");
 		return 1;
 	}
+	
+	nvram_set("ntp_done", "1");
+	
 #if defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w");
 #endif
