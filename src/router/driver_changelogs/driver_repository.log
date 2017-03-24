@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3359 | brainslayer | 2017-03-24 07:37:31 +0100 (Fri, 24 Mar 2017) | 1 line
+
+fix typo
+------------------------------------------------------------------------
 r3358 | brainslayer | 2017-03-24 07:06:13 +0100 (Fri, 24 Mar 2017) | 5 lines
 
 If a device uses the default EEPROM code, typically only the main CTLs
