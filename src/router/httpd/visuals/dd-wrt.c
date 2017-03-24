@@ -5565,6 +5565,7 @@ char *getNetworkLabel(char *var)
 void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 {
 	char line[512];
+	int lines=0;
 	char name[32], fname[128], dummy[255];
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.dns_crypt_resolv)</script></div>\n");
@@ -5574,6 +5575,8 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 	
 	if (fp != NULL) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
+			if (!line++)
+				continue; 
 			sscanf(line, "%[^','],%[^','],%s", name, fname, dummy);
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
 		}
