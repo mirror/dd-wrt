@@ -1,4 +1,25 @@
 ------------------------------------------------------------------------
+r3357 | brainslayer | 2017-03-24 06:56:50 +0100 (Fri, 24 Mar 2017) | 18 lines
+
+From: Felix Fietkau <nbd@nbd.name>
+Date: Wed, 22 Mar 2017 20:37:04 +0100
+Subject: [PATCH] ath9k_hw: fix channel maximum power level test
+
+The tx power applied by set_txpower is limited by the CTL (conformance
+test limit) entries in the EEPROM. These can change based on the user
+configured regulatory domain.
+Depending on the EEPROM data this can cause the tx power to become too
+limited, if the original regdomain CTLs impose lowr limits than the CTLs
+of the user configured regdomain.
+
+To fix this issue, set the initial channel limits without any CTL
+restrictions and only apply the CTL at run time when setting the channel
+and the real tx power.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+
+------------------------------------------------------------------------
 r3356 | brainslayer | 2017-03-24 05:39:09 +0100 (Fri, 24 Mar 2017) | 1 line
 
 enhance chanspec view
