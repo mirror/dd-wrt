@@ -15,5 +15,6 @@ nettle-clean:
 nettle-install:
 	mkdir -p $(INSTALLDIR)/nettle/usr/lib
 ifeq ($(CONFIG_DNSSEC),y)
-	install -D nettle/.lib/* $(INSTALLDIR)/nettle/usr/lib
+	install -D nettle/.lib/libhogweed.so.4 $(INSTALLDIR)/nettle/usr/lib
+	install -D nettle/.lib/libnettle.so.6 $(INSTALLDIR)/nettle/usr/lib
 endif
