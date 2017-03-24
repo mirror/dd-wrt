@@ -14,6 +14,7 @@ nettle-clean:
 
 nettle-install:
 	make -C nettle install DESTDIR=$(INSTALLDIR)/nettle
+	-mv $(INSTALLDIR)/nettle/usr/lib64 $(INSTALLDIR)/nettle/usr/lib
 	rm -rf $(INSTALLDIR)/nettle/usr/lib/pkgconfig
 	rm -rf $(INSTALLDIR)/nettle/usr/include
 	rm -rf $(INSTALLDIR)/nettle/usr/bin
