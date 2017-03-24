@@ -152,11 +152,12 @@ void start_dnsmasq(void)
 
 	update_timezone();
 
+#ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		eval("killall", "dnscrypt-proxy");
 		eval("dnscrypt-proxy", "-S", "-a", "127.0.0.1:30", "-R", nvram_get("dns_crypt_resolver"), "-L", "/etc/dnscrypt/dnscrypt-resolvers.csv");
 	}
-
+#endif
 	usejffs = 0;
 
 	if (nvram_matchi("dhcpd_usejffs", 1)) {
@@ -221,11 +222,13 @@ void start_dnsmasq(void)
 	if (nvram_matchi("dnsmasq_strict", 1))
 		fprintf(fp, "strict-order\n");
 
+#ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		fprintf(fp, "server=127.0.0.1#30\n");
 		if(nvram_matchi("ntp_done", 1))
 			fprintf(fp, "no-resolv\n");
 	}
+#endif
 #ifdef HAVE_UNBOUND
 	if (nvram_matchi("recursive_dns", 1)) {
 		fprintf(fp, "port=0\n");
