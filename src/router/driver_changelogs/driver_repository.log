@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r3358 | brainslayer | 2017-03-24 07:06:13 +0100 (Fri, 24 Mar 2017) | 5 lines
+
+If a device uses the default EEPROM code, typically only the main CTLs
+are valid, and they do not apply properly when switching to a different
+regulatory domain. If the regdomain deviates from the EEPROM one, force
+the world roaming regdomain to ensure that power limits are sane
+
+------------------------------------------------------------------------
 r3357 | brainslayer | 2017-03-24 06:56:50 +0100 (Fri, 24 Mar 2017) | 18 lines
 
 From: Felix Fietkau <nbd@nbd.name>
