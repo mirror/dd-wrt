@@ -29,6 +29,7 @@ usbip-clean:
 
 usbip-install:
 	make -C usbip/eudev install DESTDIR=$(INSTALLDIR)/usbip
+	-mv $(INSTALLDIR)/usbip/usr/lib64 $(INSTALLDIR)/usbip/usr/lib
 	rm -rf $(INSTALLDIR)/usbip/usr/bin
 	rm -rf $(INSTALLDIR)/usbip/usr/etc
 	rm -rf $(INSTALLDIR)/usbip/usr/include
