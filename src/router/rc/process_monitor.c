@@ -99,6 +99,9 @@ static int process_monitor_main(int argc, char **argv)
 #ifdef HAVE_UNBOUND
 			{"recursive_dns", "unbound"},
 #endif
+#ifdef HAVE_DNSCRYPT
+			{"dns_crypt", "dnsmasq"},
+#endif
 		};
 
 		if ((abs(now.tv_sec - then.tv_sec) > 100000000)) {
@@ -116,15 +119,6 @@ static int process_monitor_main(int argc, char **argv)
 			}
 
 		}
-#ifdef HAVE_DNSCRYPT
-		if ((abs(now.tv_sec - then.tv_sec) > 100000000)
-		    && nvram_matchi("dns_crypt", 1)) {
-			eval("stopservice", "dnsmasq");
-			sleep(1);
-			dd_syslog(LOG_DEBUG, "Restarting dnsmasq daemon (time sync change)\n");
-			eval("startservice_f", "dnsmasq");
-		}
-#endif
 		dd_syslog(LOG_DEBUG, "We need to re-update after %d seconds\n", NTP_M_TIMER);
 
 		time = NTP_M_TIMER;
