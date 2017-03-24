@@ -5575,8 +5575,9 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 	
 	if (fp != NULL) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
-			if (!line++)
+			if (!lines++) {
 				continue; 
+			}
 			sscanf(line, "%[^','],%[^','],%s", name, fname, dummy);
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
 		}
