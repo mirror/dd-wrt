@@ -4011,19 +4011,19 @@ void ddns_save_value(webs_t wp)
 
 	int i;
 	for (i = 1; i < 12; i++) {
-		if (i == atoi(enable))
+		if (i == atoi(s_enable))
 			continue;
 		getddns_userdata(i, _username, _passwd, _hostname);
 		nvram_unset(_username);
 		nvram_unset(_passwd);
 		nvram_unset(_hostname);
 	}
-	getddns_userdata(atoi(enable), _username, _passwd, _hostname);
+	getddns_userdata(enable, _username, _passwd, _hostname);
 
 	switch (enable) {
 	case 0:
 		// Disable
-		nvram_set("ddns_enable", enable);
+		nvram_seti("ddns_enable", enable);
 		return;
 		break;
 	case 1:
@@ -4090,6 +4090,7 @@ void ddns_save_value(webs_t wp)
 		}
 	} else
 		nvram_set(_hostname, hostname);
+	
 	nvram_set(_dyndnstype, dyndnstype);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
