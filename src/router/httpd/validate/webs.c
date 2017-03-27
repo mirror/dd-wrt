@@ -4011,7 +4011,7 @@ void ddns_save_value(webs_t wp)
 
 	int i;
 	for (i = 1; i < 12; i++) {
-		if (i == atoi(s_enable))
+		if (i == enable)
 			continue;
 		getddns_userdata(i, _username, _passwd, _hostname);
 		nvram_unset(_username);
@@ -4029,8 +4029,8 @@ void ddns_save_value(webs_t wp)
 	case 1:
 		// dyndns
 
-		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
-		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype");
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
 		break;
 	case 2:
 		// afraid
@@ -4039,8 +4039,8 @@ void ddns_save_value(webs_t wp)
 	case 5:
 		// custom
 		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
-		snprintf(_conf, sizeof(_conf), "%s", "ddns_conf");
-		snprintf(_url, sizeof(_url), "%s", "ddns_url");
+		snprintf(_conf, sizeof(_conf), "ddns_conf");
+		snprintf(_url, sizeof(_url), "ddns_url");
 		break;
 	case 6:
 		// 3322 dynamic : added botho 30/07/06
