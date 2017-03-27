@@ -1286,7 +1286,7 @@ static int getFileLen(FILE * in)
 	return len;
 }
 
-static void do_logout(void)		// static functions are not exportable,
+static void do_logout(void)	// static functions are not exportable,
 				// additionally this is no ej function
 {
 	send_authenticate(auth_realm);
@@ -1605,7 +1605,7 @@ char ezc_version[128];
 extern int post;
 
 static char *post_buf = NULL;
-static void				// support GET and POST 2003-08-22
+static void			// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
