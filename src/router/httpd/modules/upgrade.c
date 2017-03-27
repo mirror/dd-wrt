@@ -28,6 +28,7 @@
 #include <shutils.h>
 #include <byteswap.h>
 #include <endian.h>		/* for __BYTE_ORDER */
+#include <utils.h>
 
 #if (__BYTE_ORDER == __LITTLE_ENDIAN)
 #  define HOST_TO_BE32(x)	bswap_32(x)
@@ -629,11 +630,12 @@ err:
 		free(buf);
 	if (fifo)
 		fclose(fifo);
-	if (brand == ROUTER_ASROCK_G10) {
-		fprintf(stderr, "write secondary partition for asrock-g10");
-		eval("mtd", "-e", "linux2", "-f", "write", upload_fifo, "linux2");
-	}
 	unlink(upload_fifo);
+	if (brand == ROUTER_ASROCK_G10) {
+		sysprintf("cat /dev/mtdblock/%d > /tmp/parttemp", getMTD("linux"));
+		fprintf(stderr, "write secondary partition for asrock-g10");
+		eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
+	}
 	// diag_led(DIAG, STOP_LED);
 	C_led(0);
 	ACTION("ACT_IDLE");
