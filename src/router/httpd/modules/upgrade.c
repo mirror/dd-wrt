@@ -175,6 +175,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #ifndef ANTI_FLASH
 	char upload_fifo[] = "/tmp/uploadXXXXXX";
 	FILE *fifo = NULL;
+	FILE *fifo2 = NULL;
 	char *write_argv[4];
 	pid_t pid;
 	char *buf = NULL;
@@ -327,6 +328,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 							ret = errno;
 						goto err;
 					}
+					fifo2 = fopen("/tmp/parttemp", "wb");
 					goto write_data;
 				}
 			}
@@ -588,6 +590,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			safe_fwrite(buf, 1, count, fifo);	// we have to write the whole header to flash too
 #else
 			safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo);
+			if (fifo2)
+				safe_fwrite(&buf[sizeof(struct code_header)], 1, count - sizeof(struct code_header), fifo2);
 #endif
 			i++;
 			continue;
@@ -596,6 +600,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	      write_data:
 		*total -= count;
 		safe_fwrite(buf, 1, count, fifo);
+		if (fifo2)
+			safe_fwrite(buf, 1, count, fifo2);
 		uploadcount += count;
 		fprintf(stderr, "uploading [%d]\r", uploadcount);
 		if (lastblock)
@@ -605,7 +611,10 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	fprintf(stderr, "uploading [%d]\n", uploadcount);
 	fclose(fifo);
-	fifo = NULL;
+	if (fifo2)
+		fclose(fifo2)
+		    fifo = NULL;
+	fifo2 = NULL;
 	/*
 	 * Wait for write to terminate 
 	 */
@@ -630,10 +639,12 @@ err:
 		free(buf);
 	if (fifo)
 		fclose(fifo);
+	if (fifo2)
+		fclose(fifo2);
 	unlink(upload_fifo);
 	if (brand == ROUTER_ASROCK_G10) {
-		sysprintf("cat /dev/mtdblock/%d > /tmp/parttemp", getMTD("linux"));
-		fprintf(stderr, "write secondary partition for asrock-g10");
+//              sysprintf("cat /dev/mtdblock/%d > /tmp/parttemp", getMTD("linux"));
+		fprintf(stderr, "write secondary partition for asrock-g10\n");
 		eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
 	}
 	// diag_led(DIAG, STOP_LED);
