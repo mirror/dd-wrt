@@ -921,6 +921,7 @@ static void handle_ses(void)
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
 			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
+			set_gpio(0, 1);
 			set_gpio(1, 1);
 #endif
 #endif
@@ -943,6 +944,7 @@ static void handle_ses(void)
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
 			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
+			set_gpio(0, 0);
 			set_gpio(1, 0);
 #endif
 #endif
