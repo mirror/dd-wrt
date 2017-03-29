@@ -1,1 +1,0 @@
-arm/ecc-256-redc.asm
