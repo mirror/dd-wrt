@@ -69,9 +69,11 @@ void delete_ath9k_devices(char *physical_iface)
 			continue;
 		char dev[32];
 		sprintf(dev, "%s", ifname + 1);
-		if (has_ad(dev))
+		if (has_ad(dev)) {
+			sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+			sysprintf("echo 10000 0 10000 0 10000 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
 			br_del_interface(getBridge("ath2", tmp), dev);
-		else
+		} else
 			br_del_interface(getBridge(dev, tmp), dev);
 		eval("ifconfig", dev, "down");
 		eval("iw", dev, "del");
@@ -298,6 +300,11 @@ void configure_single_ath9k(int count)
 		isfirst = 0;
 		counter++;
 		}
+	if (has_ad(dev)) {
+		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
+		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
+	}
+
 }
 
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss)
