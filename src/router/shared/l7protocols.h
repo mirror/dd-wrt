@@ -107,7 +107,7 @@ l7filters filters_list[] = {
 #endif
 	{"edonkey", PDPI},
 #ifdef HAVE_OPENDPI
-	{"egp", NDPI_ONLY},
+	{"ip_egp", NDPI_ONLY},
 	{"epp", NDPI_ONLY},
 #endif
 	{"exe", L7_ONLY},
@@ -151,7 +151,7 @@ l7filters filters_list[] = {
 #endif
 	{"gopher", L7_ONLY},
 #ifdef HAVE_OPENDPI
-	{"gre", NDPI_ONLY},
+	{"ip_gre", NDPI_ONLY},
 	{"grooveshark", NDPI_ONLY},
 #endif
 	{"gtalk", L7_ONLY},
@@ -206,8 +206,8 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"iax", NDPI_ONLY},
 	{"icecast", NDPI_ONLY},
-	{"icmp", NDPI_ONLY},
-	{"icmpv6", NDPI_ONLY},
+	{"ip_icmp", NDPI_ONLY},
+	{"ip_icmpv6", NDPI_ONLY},
 #endif
 	{"icq_file", L7_ONLY},
 	{"icq_file_1", L7_ONLY},
@@ -215,7 +215,7 @@ l7filters filters_list[] = {
 	{"icq_login", L7_ONLY},
 	{"ident", L7_ONLY},
 #ifdef HAVE_OPENDPI
-	{"igmp", NDPI_ONLY},
+	{"ip_igmp", NDPI_ONLY},
 #endif
 	{"imap", DPI},
 #ifdef HAVE_OPENDPI
@@ -225,11 +225,11 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"imessage_facetime", NDPI_ONLY},
 	{"instagram", NDPI_ONLY},
-	{"ipip", NDPI_ONLY},
+	{"ip_ip_in_ip", NDPI_ONLY},
 #endif
 	{"ipp", DPI},
 #ifdef HAVE_OPENDPI
-	{"ipsec", NDPI_ONLY},
+	{"ip_ipsec", NDPI_ONLY},
 #endif
 	{"irc", DPI},
 	{"jabber", DPI},
@@ -316,7 +316,7 @@ l7filters filters_list[] = {
 	{"openvpn", NDPI_ONLY},
 	{"oracle", NDPI_ONLY},
 	{"oscar", NDPI_ONLY},
-	{"ospf", NDPI_ONLY},
+	{"ip_ospf", NDPI_ONLY},
 	{"pando", NDPI_ONLY},
 	{"pandora", NDPI_ONLY},
 #endif
@@ -331,7 +331,7 @@ l7filters filters_list[] = {
 	{"pop3", DPI},
 #ifdef HAVE_OPENDPI
 	{"popo", NDPI_ONLY},
-	{"pops", NDPI_ONLY},
+	{"pop3_ssl", NDPI_ONLY},
 	{"postgres", NDPI_ONLY},
 #endif
 	{"postscript", L7_ONLY},
@@ -394,7 +394,7 @@ l7filters filters_list[] = {
 #ifdef HAVE_OPENDPI
 	{"rx", NDPI_ONLY},
 	{"sap", NDPI_ONLY},
-	{"sctp", NDPI_ONLY},
+	{"ip_sctp", NDPI_ONLY},
 	{"sflow", NDPI_ONLY},
 #endif
 	{"shoutcast", DPI},
