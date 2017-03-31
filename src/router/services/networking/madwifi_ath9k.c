@@ -301,8 +301,10 @@ void configure_single_ath9k(int count)
 		counter++;
 		}
 	if (has_ad(dev)) {
+		sysprintf("echo 0 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_polarity");
 		sysprintf("echo 1 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_cfg");
 		sysprintf("echo 10000 0 200 200 100 100 > /sys/kernel/debug/ieee80211/phy2/wil6210/led_blink_time");
+
 	}
 
 }
