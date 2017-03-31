@@ -715,7 +715,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			sprintf(subf, "%s_subf", prefix);
 			caps = mac80211_get_vhtcaps(prefix, 0, 0, 0, 0, nvram_default_match(subf, "1", "0"), nvram_default_match(mubf, "1", "0"));
 			fprintf(fp, "vht_capab=%s\n", caps);
-			fprintf(fp, "ieee80211ac=1\n");
+			//fprintf(fp, "ieee80211ac=1\n");
 			//fprintf(fp, "require_vht=1\n");
 			fprintf(fp, "vendor_vht=1\n");
 			free(caps);
