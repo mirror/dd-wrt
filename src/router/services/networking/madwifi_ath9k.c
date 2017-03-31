@@ -1138,6 +1138,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 			sprintf(psk, "%s_crypto", ifname);
 			if (nvram_match(psk, "aes"))
 				fprintf(fp, "wpa_pairwise=CCMP\n");
+			if (nvram_match(psk, "gcmp"))
+				fprintf(fp, "wpa_pairwise=GCMP\n");
 			if (nvram_match(psk, "tkip")) {
 				if (!isfirst)
 					fprintf(fp, "ieee80211n=0\n");
@@ -1302,6 +1304,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride)
 		if (nvram_match(psk, "tkip")) {
 			fprintf(fp, "\tpairwise=TKIP\n");
 			fprintf(fp, "\tgroup=TKIP\n");
+		}
+		if (nvram_match(psk, "gcmp")) {
+			fprintf(fp, "\tpairwise=GCMP\n");
+			fprintf(fp, "\tgroup=GCMP\n");
 		}
 		if (nvram_match(psk, "tkip+aes")) {
 			fprintf(fp, "\tpairwise=CCMP TKIP\n");
