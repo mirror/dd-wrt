@@ -4369,9 +4369,14 @@ void show_preshared(webs_t wp, char *prefix)
 	websWrite(wp, "<div><div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.algorithms)</script></div>\n");
 	websWrite(wp, "<select name=\"%s_crypto\">\n", prefix);
-	websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
-	websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
+	if (has_ad(prefix)) {
+		websWrite(wp, "<option value=\"gcmp\" %s>GCMP</option>\n", selmatch(var, "gcmp", "selected=\"selected\""));
+	} else {
+		websWrite(wp, "<option value=\"aes\" %s>AES</option>\n", selmatch(var, "aes", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n", selmatch(var, "tkip+aes", "selected=\"selected\""));
+		websWrite(wp, "<option value=\"tkip\" %s>TKIP</option>\n", selmatch(var, "tkip", "selected=\"selected\""));
+	}
+
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -5565,18 +5570,18 @@ char *getNetworkLabel(char *var)
 void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 {
 	char line[512];
-	int lines=0;
+	int lines = 0;
 	char name[32], fname[128], dummy[255];
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(service.dns_crypt_resolv)</script></div>\n");
 	websWrite(wp, "<select name=\"dns_crypt_resolver\">\n");
-	
+
 	FILE *fp = fopen("/etc/dnscrypt/dnscrypt-resolvers.csv", "rb");
-	
+
 	if (fp != NULL) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (!lines++) {
-				continue; 
+				continue;
 			}
 			sscanf(line, "%[^','],%[^','],%s", name, fname, dummy);
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
