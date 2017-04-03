@@ -139,11 +139,8 @@ void checkreset(char *tty)
 
 static void reset_mc(int needreset, int devicecount)
 {
-
-#ifdef HAVE_CAMBRIA
 	if (needreset)
 		checkreset(devicelist[devicecount].controldevice);
-#endif
 }
 
 static void modeswitch_rezero(int needreset, int devicecount)
