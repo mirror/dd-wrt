@@ -140,8 +140,10 @@ void checkreset(char *tty)
 static void reset_mc(int needreset, int devicecount)
 {
 
+#ifdef HAVE_CAMBRIA
 	if (needreset)
 		checkreset(devicelist[devicecount].controldevice);
+#endif
 }
 
 static void modeswitch_rezero(int needreset, int devicecount)
@@ -715,7 +717,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x6892, "sierra", "3", "3", 1, NULL, "Sierra Compass HSPA"},	//
 	{0x1199, 0x6893, "sierra", "3", "3", 1, NULL, "Sierra C889"},	//
 	{0x1199, 0x68a2, "qcserial", "2", "0", 1 | QMI, NULL, "Sierra MC7710 (modem)"},	// also cdc_mbim
-	{0x1199, 0x68a3, "sierra", "3", "3", 1, &reset_mc, "Sierra MC8700/Compass Direct IP"},	// also sierra_net
+	{0x1199, 0x68a3, "sierra", "3", "4", 1, &reset_mc, "Sierra MC8700/Compass Direct IP"},	// also sierra_net
 	{0x1199, 0x68a5, "qcserial", "2", "0", 1 | QMI, NULL, "Sierra MC8705 (modem)"},	//
 	{0x1199, 0x68a9, "qcserial", "2", "0", 1 | QMI, &select_config1, "Sierra MC7750"},	// cdc_mbim in default config2
 	{0x1199, 0x68aa, "sierra", "3", "3", 1, NULL, "Sierra AC320U/AC330U Direct IP"},	// also sierra_net
