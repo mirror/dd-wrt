@@ -3694,7 +3694,7 @@ void start_wan(int status)
 
 			/* init PIN */
 			if (strlen(nvram_safe_get("wan_pin")))
-				sysprintf("export COMGTPIN=%s;comgt PIN -d %s", nvram_safe_get("wan_pin"), controldevice);
+				sysprintf("export COMGTPIN=%s;comgt -s -d %s PIN", nvram_safe_get("wan_pin"), controldevice);
 			// set netmode, even if it is auto, should be set every time, the stick might save it
 			// some sticks, don't save it ;-)
 			if (strlen(nvram_safe_get("3gnmvariant"))) {
@@ -3730,9 +3730,10 @@ void start_wan(int status)
 			// nvram_seti("3g_fastdial", 1);
 			// return (5);
 			// }
+			sysprintf("export COMGTATC=\"at!scdftprof=1\" ; comgt -s -d /dev/ttyUSB3 /etc/comgt/atcommand.comgt");
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_matchi("wan_dial", 2))
-					sysprintf("export COMGTAPN=\"%s\";comgt APN -d %s", nvram_safe_get("wan_apn"), controldevice);
+					sysprintf("export COMGTAPN=\"%s\";comgt -s -d %s APN", nvram_safe_get("wan_apn"), controldevice);
 			// Lets open option file and enter all the parameters.
 			char *username = nvram_safe_get("ppp_username");
 			char *passwd = nvram_safe_get("ppp_passwd");
@@ -3795,7 +3796,7 @@ void start_wan(int status)
 				dial = "*99***1#";
 				break;
 			}
-			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt DIAL -d %s >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
+			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s >/tmp/comgt.out DIAL 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 			if (strlen(username))
 				fprintf(fp, "user '%s'\n", username);
 			if (strlen(passwd))
