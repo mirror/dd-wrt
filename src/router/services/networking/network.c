@@ -3730,7 +3730,6 @@ void start_wan(int status)
 			// nvram_seti("3g_fastdial", 1);
 			// return (5);
 			// }
-			sysprintf("export COMGTATC=\"at!scdftprof=1\" ; comgt -s -d /dev/ttyUSB3 /etc/comgt/atcommand.comgt");
 			if (strlen(nvram_safe_get("wan_apn")))
 				if (!nvram_matchi("wan_dial", 2))
 					sysprintf("export COMGTAPN=\"%s\";comgt -s -d %s APN", nvram_safe_get("wan_apn"), controldevice);
@@ -3796,7 +3795,12 @@ void start_wan(int status)
 				dial = "*99***1#";
 				break;
 			}
-			fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s >/tmp/comgt.out DIAL 2>&1\"\n", dial, nvram_safe_get("3gdata"));
+			if (nvram_matchi("3gnmvariant", 1)) {
+				fprintf(fp, "connect \"COMGTXDIAL='%s' /etc/comgt/connect.sh %s %s >/tmp/comgt.out 2>&1\"\n", dial, controldevice, nvram_safe_get("3gdata"));
+			}
+			else {
+				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s DIAL >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
+			}
 			if (strlen(username))
 				fprintf(fp, "user '%s'\n", username);
 			if (strlen(passwd))

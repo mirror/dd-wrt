@@ -1520,6 +1520,9 @@ char *get3GControlDevice(void)
 		set_gpio(27, 0);
 	}
 #endif
+#ifdef HAVE_ERC
+	needreset = 0;
+#endif
 	nvram_unset("3gnmvariant");
 //	nvram_set("3gdata", "/dev/usb/tts/0");	// crap
 
