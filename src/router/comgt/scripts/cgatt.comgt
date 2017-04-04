@@ -14,14 +14,9 @@ opengt
     if % = 0 goto out
     if % = 1 goto loop
   :toolong
+  system "rm /tmp/.sierrastatus.sh.lock"
   exit 1
   :error
   exit 0
   :out
-  send "AT+CSQ^m"
- get 1 " ^m" $s
- get 1 " ^m" $s
- get 1 " ^m" $s
- #print $s,"\n" 
- exec "/etc/comgt/signal.sh "+$s
- exit 0
+  exit 0

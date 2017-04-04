@@ -1,0 +1,14 @@
+# give sierra status
+opengt
+ set com 115200n81
+ set senddelay 0.02
+ waitquiet 1 0.2
+ flash 0.1
+
+:start
+ send "AT!GSTATUS?^m"
+:loop
+ get .5 "^m" $s
+ print $s+"\n"
+ if len($s) > 0 goto loop
+ exit 0
