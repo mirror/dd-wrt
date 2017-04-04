@@ -1,0 +1,46 @@
+# dial given number
+opengt
+ set com 115200n81
+ set senddelay 0.02
+ waitquiet 1 0.2
+ flash 0.1
+
+  print "\nWait till carrier is attached\n"
+  let c=1
+ :loop
+    inc c
+    sleep 2
+    send "AT+CGATT?^m"
+    waitfor 5 "+CGATT: 1","+CGATT: 0"
+    print "\n."
+    if % = -1 goto error
+    if c > 10 goto toolong
+    if % = 0 goto dial
+    if % = 1 goto loop
+  :toolong
+  exit 1
+  :error
+  exit 0
+  :dial
+
+ print "Dialing Directip\n"
+ send "at!scact=1,3^m"
+
+ waitfor 15 "CONNECT" "OK","ERR","ERROR"
+ if % = 0 goto continue
+ if % = 1 goto continue
+ if % = 2 goto senderror
+ if % = 3 goto senderror
+
+ print "Timeout dialing Directip\n"
+ system "echo 0 >/tmp/sierradipstatus"
+ exit 1
+
+:senderror
+ print "Error dialing Directip\n"
+ system "echo 0 >/tmp/sierradipstatus"
+ exit 1
+
+:continue
+ system "echo 1 >/tmp/sierradipstatus"
+ exit 0
