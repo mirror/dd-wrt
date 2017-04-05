@@ -440,29 +440,26 @@ static struct resource laguna_uart_resources[] = {
 
 static struct plat_serial8250_port laguna_uart_data[] = {
 	{
-		.membase        = (char*) (CNS3XXX_UART0_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART0_BASE),
 		.irq            = IRQ_CNS3XXX_UART0,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART1_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART1_BASE),
 		.irq            = IRQ_CNS3XXX_UART1,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
 	},{
-		.membase        = (char*) (CNS3XXX_UART2_BASE_VIRT),
 		.mapbase        = (CNS3XXX_UART2_BASE),
 		.irq            = IRQ_CNS3XXX_UART2,
 		.iotype         = UPIO_MEM,
-		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST,
+		.flags          = UPF_BOOT_AUTOCONF | UPF_FIXED_TYPE | UPF_NO_TXEN_TEST | UPF_IOREMAP,
 		.regshift       = 2,
 		.uartclk        = 24000000,
 		.type           = PORT_16550A,
@@ -888,17 +885,7 @@ static struct map_desc laguna_io_desc[] __initdata = {
 		.pfn		= __phys_to_pfn(CNS3XXX_UART0_BASE),
 		.length		= SZ_4K,
 		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART1_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART1_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	},{
-		.virtual	= CNS3XXX_UART2_BASE_VIRT,
-		.pfn		= __phys_to_pfn(CNS3XXX_UART2_BASE),
-		.length		= SZ_4K,
-		.type		= MT_DEVICE,
-	},
+	}
 };
 
 static void __init laguna_map_io(void)
