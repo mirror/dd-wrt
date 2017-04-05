@@ -16,10 +16,10 @@
 
 #include "bcm-phy-lib.h"
 #include <linux/module.h>
+#include <linux/delay.h>
 #include <linux/phy.h>
 #include <linux/brcmphy.h>
 #include <linux/of.h>
-#include <linux/delay.h>
 
 #define BRCM_PHY_MODEL(phydev) \
 	((phydev)->drv->phy_id & (phydev)->drv->phy_id_mask)
@@ -43,6 +43,34 @@ static int bcm54210e_config_init(struct phy_device *phydev)
 	val = bcm_phy_read_shadow(phydev, BCM54810_SHD_CLK_CTL);
 	val &= ~BCM54810_SHD_CLK_CTL_GTXCLK_EN;
 	bcm_phy_write_shadow(phydev, BCM54810_SHD_CLK_CTL, val);
+
+	return 0;
+}
+
+static int bcm54612e_config_init(struct phy_device *phydev)
+{
+	/* Clear TX internal delay unless requested. */
+	if ((phydev->interface != PHY_INTERFACE_MODE_RGMII_ID) &&
+	    (phydev->interface != PHY_INTERFACE_MODE_RGMII_TXID)) {
+		/* Disable TXD to GTXCLK clock delay (default set) */
+		/* Bit 9 is the only field in shadow register 00011 */
+		bcm_phy_write_shadow(phydev, 0x03, 0);
+	}
+
+	/* Clear RX internal delay unless requested. */
+	if ((phydev->interface != PHY_INTERFACE_MODE_RGMII_ID) &&
+	    (phydev->interface != PHY_INTERFACE_MODE_RGMII_RXID)) {
+		u16 reg;
+
+		reg = bcm54xx_auxctl_read(phydev,
+					  MII_BCM54XX_AUXCTL_SHDWSEL_MISC);
+		/* Disable RXD to RXC delay (default set) */
+		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MISC_RGMII_SKEW_EN;
+		/* Clear shadow selector field */
+		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MASK;
+		bcm54xx_auxctl_write(phydev, MII_BCM54XX_AUXCTL_SHDWSEL_MISC,
+				     MII_BCM54XX_AUXCTL_MISC_WREN | reg);
+	}
 
 	return 0;
 }
@@ -251,6 +279,10 @@ static int bcm54xx_config_init(struct phy_device *phydev)
 		err = bcm54210e_config_init(phydev);
 		if (err)
 			return err;
+	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54612E) {
+		err = bcm54612e_config_init(phydev);
+		if (err)
+			return err;
 	} else if (BRCM_PHY_MODEL(phydev) == PHY_ID_BCM54810) {
 		err = bcm54810_config(phydev);
 		if (err)
@@ -379,7 +411,7 @@ static int bcm5481_config_init(struct phy_device *phydev)
 
 static int bcm5481_config_aneg(struct phy_device *phydev)
 {
-	struct device_node *np = phydev->dev.of_node;
+	struct device_node *np = phydev->mdio.dev.of_node;
 	int ret;
 
 	/* Aneg firsly. */
@@ -408,23 +440,6 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 		/* Write bits 14:0. */
 		reg |= (1 << 15);
 		phy_write(phydev, 0x18, reg);
-	}else {
-		u16 reg;
-		printk(KERN_EMERG "workaround for laguna\n");
-		reg = phy_read(phydev, 0); // reset phy
-		reg |= (1 << 15);
-		phy_write(phydev, 0, reg);
-		udelay(10);
-		phy_write(phydev, 0x18, 0xf1e7);
-		phy_write(phydev, 0x1c, 0x8e00);
-
-		phy_write(phydev, 0x10, 0x20);
-		phy_write(phydev, 0x1c, 0xa41f);
-		phy_write(phydev, 0x1c, 0xb41a);
-		phy_write(phydev, 0x1c, 0xb863);
-		phy_write(phydev, 0x17, 0xf04);
-		phy_write(phydev, 0x15, 0x1);
-		phy_write(phydev, 0x17, 0x0);
 	}
 
 	if (of_property_read_bool(np, "enet-phy-lane-swap")) {
@@ -433,39 +448,6 @@ static int bcm5481_config_aneg(struct phy_device *phydev)
 					0x11B);
 		if (ret < 0)
 			return ret;
-	}
-
-	return ret;
-}
-
-static int bcm54612e_config_aneg(struct phy_device *phydev)
-{
-	int ret;
-
-	/* First, auto-negotiate. */
-	ret = genphy_config_aneg(phydev);
-
-	/* Clear TX internal delay unless requested. */
-	if ((phydev->interface != PHY_INTERFACE_MODE_RGMII_ID) &&
-	    (phydev->interface != PHY_INTERFACE_MODE_RGMII_TXID)) {
-		/* Disable TXD to GTXCLK clock delay (default set) */
-		/* Bit 9 is the only field in shadow register 00011 */
-		bcm_phy_write_shadow(phydev, 0x03, 0);
-	}
-
-	/* Clear RX internal delay unless requested. */
-	if ((phydev->interface != PHY_INTERFACE_MODE_RGMII_ID) &&
-	    (phydev->interface != PHY_INTERFACE_MODE_RGMII_RXID)) {
-		u16 reg;
-
-		reg = bcm54xx_auxctl_read(phydev,
-					  MII_BCM54XX_AUXCTL_SHDWSEL_MISC);
-		/* Disable RXD to RXC delay (default set) */
-		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MISC_RGMII_SKEW_EN;
-		/* Clear shadow selector field */
-		reg &= ~MII_BCM54XX_AUXCTL_SHDWSEL_MASK;
-		bcm54xx_auxctl_write(phydev, MII_BCM54XX_AUXCTL_SHDWSEL_MISC,
-				     MII_BCM54XX_AUXCTL_MISC_WREN | reg);
 	}
 
 	return ret;
@@ -610,15 +592,13 @@ static struct phy_driver broadcom_drivers[] = {
 	.phy_id		= PHY_ID_BCM54210E,
 	.phy_id_mask	= 0xfffffff0,
 	.name		= "Broadcom BCM54210E",
-	.features	= PHY_GBIT_FEATURES |
-			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
+	.features	= PHY_GBIT_FEATURES,
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
 	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm_phy_config_intr,
-	.driver		= { .owner = THIS_MODULE },
 }, {
 	.phy_id		= PHY_ID_BCM5461,
 	.phy_id_mask	= 0xfffffff0,
@@ -639,7 +619,7 @@ static struct phy_driver broadcom_drivers[] = {
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
 	.config_init	= bcm54xx_config_init,
-	.config_aneg	= bcm54612e_config_aneg,
+	.config_aneg	= genphy_config_aneg,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm_phy_ack_intr,
 	.config_intr	= bcm_phy_config_intr,
