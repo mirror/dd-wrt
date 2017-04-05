@@ -73,6 +73,7 @@
 #define HWID_TL_WR841ND_V9	0x08410009
 #define HWID_TL_WR841ND_V10	0x08410010
 #define HWID_TL_WR841ND_V11	0x08410011
+#define HWID_TL_WR841ND_V12	0x08410012
 #define HWID_TL_WR941ND_V2	0x09410002
 #define HWID_TL_WR941ND_V4	0x09410004
 #define HWID_TL_WR941ND_V6	0x09410006
@@ -433,6 +434,14 @@ static struct board_info boards[] = {
 		.kernel_ep	= 0x80060000,
 		.rootfs_ofs	= 0xf0000,
 	}, {
+		.id		= "TL-WR841NDv12",
+		.hw_id		= HWID_TL_WR841ND_V12,
+		.hw_rev		= 1,
+		.fw_max_len	= 0x3c0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
 		.id		= "RNX-N300RT",
 		.hw_id		= HWID_TL_WR841ND_V7,
 		.hw_rev		= 0x00420001,
@@ -538,6 +547,14 @@ static struct board_info boards[] = {
 		.rootfs_ofs	= 0x100000,
 	}, {
 		.id		= "ARCHER-C7v2",
+		.hw_id		= HWID_ARCHERC7_V2,
+		.hw_rev		= 1,
+		.fw_max_len	= 0xfb0000,
+		.kernel_la	= 0x80060000,
+		.kernel_ep	= 0x80060000,
+		.rootfs_ofs	= 0xf0000,
+	}, {
+		.id		= "ARCHER-C7v3",
 		.hw_id		= HWID_ARCHERC7_V2,
 		.hw_rev		= 1,
 		.fw_max_len	= 0xfb0000,
@@ -770,14 +787,14 @@ static int check_options(void)
 			return -1;
 		}
 	} else {
-		if (kernel_info.file_size >
-		    board->rootfs_ofs - sizeof(struct fw_header)) {
-			ERR("kernel image is too big, adjust it");
-			board->rootfs_ofs = kernel_info.file_size + sizeof(struct fw_header) + 0xFFFF;
-			board->rootfs_ofs /= 0x10000;
-			board->rootfs_ofs *= 0x10000;
+//		if (kernel_info.file_size >
+//		    board->rootfs_ofs - sizeof(struct fw_header)) {
+//			ERR("kernel image is too big, adjust it");
+			board->rootfs_ofs = kernel_info.file_size + sizeof(struct fw_header) + 0xFFF;
+			board->rootfs_ofs /= 0x1000;
+			board->rootfs_ofs *= 0x1000;
 			fprintf(stderr,"new offset is 0x%X\n",board->rootfs_ofs);
-		}
+//		}
 		if (rootfs_info.file_name == NULL) {
 			ERR("no rootfs image specified");
 			return -1;
