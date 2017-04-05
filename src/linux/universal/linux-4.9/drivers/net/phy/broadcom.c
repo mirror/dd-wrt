@@ -355,6 +355,7 @@ static int bcm5482_read_status(struct phy_device *phydev)
 static int bcm5481_config_init(struct phy_device *phydev)
 {
     bcm54xx_config_init(phydev);
+#ifdef CONFIG_ARCH_CNS3XXX
     printk(KERN_INFO "fixup laguna phy\n");
 		u16 reg;
 		printk(KERN_EMERG "workaround for laguna\n");
@@ -372,6 +373,7 @@ static int bcm5481_config_init(struct phy_device *phydev)
 		phy_write(phydev, 0x17, 0xf04);
 		phy_write(phydev, 0x15, 0x1);
 		phy_write(phydev, 0x17, 0x0);
+#endif
 	return 0;
 }
 
@@ -672,7 +674,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.features	= PHY_GBIT_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
 	.flags		= PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
-	.config_init	= bcm54xx_config_init,
+	.config_init	= bcm5481_config_init,
 	.config_aneg	= bcm5481_config_aneg,
 	.read_status	= genphy_read_status,
 	.ack_interrupt	= bcm_phy_ack_intr,
@@ -684,7 +686,7 @@ static struct phy_driver broadcom_drivers[] = {
 	.features       = PHY_GBIT_FEATURES |
 			  SUPPORTED_Pause | SUPPORTED_Asym_Pause,
 	.flags          = PHY_HAS_MAGICANEG | PHY_HAS_INTERRUPT,
-	.config_init    = bcm5481_config_init,
+	.config_init    = bcm54xx_config_init,
 	.config_aneg    = bcm5481_config_aneg,
 	.read_status    = genphy_read_status,
 	.ack_interrupt  = bcm_phy_ack_intr,
