@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
+ * iperf, Copyright (c) 2014-2017, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -39,7 +39,7 @@ struct iperf_stream;
 #define Ptcp SOCK_STREAM
 #define Pudp SOCK_DGRAM
 #define Psctp 12
-#define DEFAULT_UDP_BLKSIZE 8192
+#define DEFAULT_UDP_BLKSIZE 1460 /* default is dynamically set, else this */
 #define DEFAULT_TCP_BLKSIZE (128 * 1024)  /* default read/write block size */
 #define DEFAULT_SCTP_BLKSIZE (64 * 1024)
 
@@ -50,7 +50,9 @@ struct iperf_stream;
 #define OPT_UDP_COUNTERS_64BIT 4
 #define OPT_CLIENT_PORT 5
 #define OPT_NUMSTREAMS 6
-#define OPT_NO_FQ_SOCKET_PACING 9
+#define OPT_FORCEFLUSH 7
+#define OPT_NO_FQ_SOCKET_PACING 9 /* UNUSED */
+#define OPT_FQ_RATE 10
 
 /* states */
 #define TEST_START 1
@@ -333,6 +335,7 @@ enum {
     IESETSCTPNSTREAM= 138,  //  Unable to set SCTP number of streams (check perror)
     IESETSCTPBINDX= 139,    // Unable to process sctp_bindx() parameters
     IESETPACING= 140,       // Unable to set socket pacing rate
+    IESETBUF2= 141,	    // Socket buffer size incorrect (written value != read value)
     /* Stream errors */
     IECREATESTREAM = 200,   // Unable to create a new stream (check herror/perror)
     IEINITSTREAM = 201,     // Unable to initialize stream (check herror/perror)

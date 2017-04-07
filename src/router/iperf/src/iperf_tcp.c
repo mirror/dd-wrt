@@ -236,21 +236,28 @@ iperf_tcp_listen(struct iperf_test *test)
 	    printf("SO_SNDBUF is %u\n", opt);
 	}
 #if defined(HAVE_SO_MAX_PACING_RATE)
-    /* If socket pacing is available and not disabled, try it. */
-    if (! test->no_fq_socket_pacing) {
+    /* If fq socket pacing is specified, enable it. */
+    if (test->settings->fqrate) {
 	/* Convert bits per second to bytes per second */
-	unsigned int rate = test->settings->rate / 8;
-	if (rate > 0) {
+	unsigned int fqrate = test->settings->fqrate / 8;
+	if (fqrate > 0) {
 	    if (test->debug) {
-		printf("Setting fair-queue socket pacing to %u\n", rate);
+		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
-		warning("Unable to set socket pacing, using application pacing instead");
-		test->no_fq_socket_pacing = 1;
+	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+		warning("Unable to set socket pacing");
 	    }
 	}
     }
 #endif /* HAVE_SO_MAX_PACING_RATE */
+    {
+	unsigned int rate = test->settings->rate / 8;
+	if (rate > 0) {
+	    if (test->debug) {
+		printf("Setting application pacing to %u\n", rate);
+	    }
+	}
+    }
         opt = 1;
         if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
 	    saved_errno = errno;
@@ -317,6 +324,7 @@ iperf_tcp_connect(struct iperf_test *test)
     struct addrinfo hints, *local_res, *server_res;
     char portstr[6];
     int s, opt;
+    socklen_t optlen;
     int saved_errno;
 
     if (test->bind_address) {
@@ -406,18 +414,43 @@ iperf_tcp_connect(struct iperf_test *test)
             return -1;
         }
     }
-    if (test->debug) {
-	socklen_t optlen = sizeof(opt);
-	if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen) < 0) {
-	    saved_errno = errno;
-	    close(s);
-	    freeaddrinfo(server_res);
-	    errno = saved_errno;
-	    i_errno = IESETBUF;
-	    return -1;
-	}
-	printf("SO_SNDBUF is %u\n", opt);
+
+    /* Read back and verify the sender socket buffer size */
+    optlen = sizeof(opt);
+    if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen) < 0) {
+	saved_errno = errno;
+	close(s);
+	freeaddrinfo(server_res);
+	errno = saved_errno;
+	i_errno = IESETBUF;
+	return -1;
     }
+    if (test->debug) {
+	printf("SNDBUF is %u, expecting %u\n", opt, test->settings->socket_bufsize);
+    }
+    if (test->settings->socket_bufsize && test->settings->socket_bufsize > opt) {
+	i_errno = IESETBUF2;
+	return -1;
+    }
+
+    /* Read back and verify the receiver socket buffer size */
+    optlen = sizeof(opt);
+    if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, &optlen) < 0) {
+	saved_errno = errno;
+	close(s);
+	freeaddrinfo(server_res);
+	errno = saved_errno;
+	i_errno = IESETBUF;
+	return -1;
+    }
+    if (test->debug) {
+	printf("RCVBUF is %u, expecting %u\n", opt, test->settings->socket_bufsize);
+    }
+    if (test->settings->socket_bufsize && test->settings->socket_bufsize > opt) {
+	i_errno = IESETBUF2;
+	return -1;
+    }
+
 #if defined(HAVE_FLOWLABEL)
     if (test->settings->flowlabel) {
         if (server_res->ai_addr->sa_family != AF_INET6) {
@@ -464,21 +497,28 @@ iperf_tcp_connect(struct iperf_test *test)
 #endif /* HAVE_FLOWLABEL */
 
 #if defined(HAVE_SO_MAX_PACING_RATE)
-    /* If socket pacing is available and not disabled, try it. */
-    if (! test->no_fq_socket_pacing) {
+    /* If socket pacing is specified try to enable it. */
+    if (test->settings->fqrate) {
 	/* Convert bits per second to bytes per second */
-	unsigned int rate = test->settings->rate / 8;
-	if (rate > 0) {
+	unsigned int fqrate = test->settings->fqrate / 8;
+	if (fqrate > 0) {
 	    if (test->debug) {
-		printf("Socket pacing set to %u\n", rate);
+		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
-		warning("Unable to set socket pacing, using application pacing instead");
-		test->no_fq_socket_pacing = 1;
+	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+		warning("Unable to set socket pacing");
 	    }
 	}
     }
 #endif /* HAVE_SO_MAX_PACING_RATE */
+    {
+	unsigned int rate = test->settings->rate / 8;
+	if (rate > 0) {
+	    if (test->debug) {
+		printf("Setting application pacing to %u\n", rate);
+	    }
+	}
+    }
 
     if (connect(s, (struct sockaddr *) server_res->ai_addr, server_res->ai_addrlen) < 0 && errno != EINPROGRESS) {
 	saved_errno = errno;

@@ -108,6 +108,7 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  -V, --verbose             more detailed output\n"
                            "  -J, --json                output in JSON format\n"
                            "  --logfile f               send output to a log file\n"
+                           "  --forceflush              force flushing output at every interval\n"
                            "  -d, --debug               emit debugging output\n"
                            "  -v, --version             show version information and quit\n"
                            "  -h, --help                show this message and quit\n"
@@ -127,11 +128,15 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  -b, --bandwidth #[KMG][/#] target bandwidth in bits/sec (0 for unlimited)\n"
                            "                            (default %d Mbit/sec for UDP, unlimited for TCP)\n"
                            "                            (optional slash and packet count for burst mode)\n"
+#if defined(HAVE_SO_MAX_PACING_RATE)
+                           "  --fq-rate #[KMG]          enable fair-queuing based socket pacing in\n"
+			   "                            bits/sec (Linux only)\n"
+#endif
                            "  -t, --time      #         time in seconds to transmit for (default %d secs)\n"
                            "  -n, --bytes     #[KMG]    number of bytes to transmit (instead of -t)\n"
                            "  -k, --blockcount #[KMG]   number of blocks (packets) to transmit (instead of -t or -n)\n"
                            "  -l, --len       #[KMG]    length of buffer to read or write\n"
-			   "                            (default %d KB for TCP, %d KB for UDP)\n"
+			   "                            (default %d KB for TCP, dynamic or %d for UDP)\n"
                            "  --cport         <port>    bind to a specific client port (TCP and UDP, default: ephemeral port)\n"
                            "  -P, --parallel  #         number of parallel client streams to run\n"
                            "  -R, --reverse             run in reverse mode (server sends, client receives)\n"
@@ -152,10 +157,6 @@ const char usage_longstr[] = "Usage: iperf [-s|-c host] [options]\n"
                            "  -T, --title str           prefix every output line with this string\n"
                            "  --get-server-output       get results from server\n"
                            "  --udp-counters-64bit      use 64-bit counters in UDP test packets\n"
-#if defined(HAVE_SO_MAX_PACING_RATE)
-                           "  --no-fq-socket-pacing     disable fair-queuing based socket pacing\n"
-			   "                            (Linux only)\n"
-#endif
 
 #ifdef NOT_YET_SUPPORTED /* still working on these */
 #endif

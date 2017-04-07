@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2015, 2016, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2015, 2016, 2017, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -110,7 +110,8 @@ struct iperf_settings
     int       domain;               /* AF_INET or AF_INET6 */
     int       socket_bufsize;       /* window size for TCP */
     int       blksize;              /* size of read/writes (-l) */
-    uint64_t  rate;                 /* target data rate */
+    uint64_t  rate;                 /* target data rate for application pacing*/
+    uint64_t  fqrate;               /* target data rate for FQ pacing*/
     int       burst;                /* packets per burst */
     int       mss;                  /* for TCP MSS */
     int       ttl;                  /* IP TTL option */
@@ -231,6 +232,8 @@ struct iperf_test
     int       listener;
     int       prot_listener;
 
+    int	      ctrl_sck_mss;			/* MSS for the control channel */
+
     /* boolean variables for Options */
     int       daemon;                           /* -D option */
     int       one_off;                          /* -1 option */
@@ -242,7 +245,7 @@ struct iperf_test
     int       debug;				/* -d option - enable debug */
     int	      get_server_output;		/* --get-server-output */
     int	      udp_counters_64bit;		/* --use-64-bit-udp-counters */
-    int       no_fq_socket_pacing;	  /* --no-fq-socket-pacing */
+    int       forceflush; /* --forceflush - flushing output at every interval */
     int	      multisend;
 
     char     *json_output_string; /* rendered JSON output if json_output is set */
@@ -309,6 +312,8 @@ struct iperf_test
 
 #define SEC_TO_NS 1000000000LL	/* too big for enum/const on some platforms */
 #define MAX_RESULT_STRING 4096
+
+#define UDP_BUFFER_EXTRA 1024
 
 /* constants for command line arg sanity checks */
 #define MB (1024 * 1024)
