@@ -1,5 +1,5 @@
 /*
- * iperf, Copyright (c) 2014, 2016, The Regents of the University of
+ * iperf, Copyright (c) 2014, 2016, 2017, The Regents of the University of
  * California, through Lawrence Berkeley National Laboratory (subject
  * to receipt of any required approvals from the U.S. Dept. of
  * Energy).  All rights reserved.
@@ -194,6 +194,80 @@ iperf_udp_send(struct iperf_stream *sp)
  */
 
 /*
+ * Set and verify socket buffer sizes.
+ * Return 0 if no error, -1 if an error, +1 if socket buffers are
+ * potentially too small to hold a message.
+ */
+int
+iperf_udp_buffercheck(struct iperf_test *test, int s)
+{
+    int rc = 0;
+
+    /*
+     * Set socket buffer size if requested.  Do this for both sending and
+     * receiving so that we can cover both normal and --reverse operation.
+     */
+    int opt;
+    socklen_t optlen;
+    
+    if ((opt = test->settings->socket_bufsize)) {
+        if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
+            i_errno = IESETBUF;
+            return -1;
+        }
+        if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt)) < 0) {
+            i_errno = IESETBUF;
+            return -1;
+        }
+    }
+
+    /* Read back and verify the sender socket buffer size */
+    optlen = sizeof(opt);
+    if (getsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, &optlen) < 0) {
+	i_errno = IESETBUF;
+	return -1;
+    }
+    if (test->debug) {
+	printf("SNDBUF is %u, expecting %u\n", opt, test->settings->socket_bufsize);
+    }
+    if (test->settings->socket_bufsize && test->settings->socket_bufsize > opt) {
+	i_errno = IESETBUF2;
+	return -1;
+    }
+    if (test->settings->blksize > opt) {
+	char str[80];
+	snprintf(str, sizeof(str),
+		 "Block size %d > sending socket buffer size %d",
+		 test->settings->blksize, opt);
+	warning(str);
+	rc = 1;
+    }
+
+    /* Read back and verify the receiver socket buffer size */
+    optlen = sizeof(opt);
+    if (getsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, &optlen) < 0) {
+	i_errno = IESETBUF;
+	return -1;
+    }
+    if (test->debug) {
+	printf("RCVBUF is %u, expecting %u\n", opt, test->settings->socket_bufsize);
+    }
+    if (test->settings->socket_bufsize && test->settings->socket_bufsize > opt) {
+	i_errno = IESETBUF2;
+	return -1;
+    }
+    if (test->settings->blksize > opt) {
+	char str[80];
+	snprintf(str, sizeof(str),
+		 "Block size %d > receiving socket buffer size %d",
+		 test->settings->blksize, opt);
+	warning(str);
+	rc = 1;
+    }
+    return rc;
+}
+
+/*
  * iperf_udp_accept
  *
  * Accepts a new UDP "connection"
@@ -205,6 +279,7 @@ iperf_udp_accept(struct iperf_test *test)
     int       buf;
     socklen_t len;
     int       sz, s;
+    int	      rc;
 
     /*
      * Get the current outstanding socket.  This socket will be used to handle
@@ -228,38 +303,50 @@ iperf_udp_accept(struct iperf_test *test)
         return -1;
     }
 
+    /* Check and set socket buffer sizes */
+    rc = iperf_udp_buffercheck(test, s);
+    if (rc < 0)
+	/* error */
+	return rc;
     /*
-     * Set socket buffer size if requested.  Do this for both sending and
-     * receiving so that we can cover both normal and --reverse operation.
+     * If the socket buffer was too small, but it was the default
+     * size, then try explicitly setting it to something larger.
      */
-    int opt;
-    if ((opt = test->settings->socket_bufsize)) {
-        if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETBUF;
-            return -1;
-        }
-        if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETBUF;
-            return -1;
-        }
+    if (rc > 0) {
+	if (test->settings->socket_bufsize == 0) {
+	    int bufsize = test->settings->blksize + UDP_BUFFER_EXTRA;
+	    printf("Increasing socket buffer size to %d\n",
+		bufsize);
+	    test->settings->socket_bufsize = bufsize;
+	    rc = iperf_udp_buffercheck(test, s);
+	    if (rc < 0)
+		return rc;
+	}
     }
-
+	
 #if defined(HAVE_SO_MAX_PACING_RATE)
-    /* If socket pacing is available and not disabled, try it. */
-    if (! test->no_fq_socket_pacing) {
+    /* If socket pacing is specified, try it. */
+    if (test->settings->fqrate) {
 	/* Convert bits per second to bytes per second */
-	unsigned int rate = test->settings->rate / 8;
-	if (rate > 0) {
+	unsigned int fqrate = test->settings->fqrate / 8;
+	if (fqrate > 0) {
 	    if (test->debug) {
-		printf("Setting fair-queue socket pacing to %u\n", rate);
+		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
-		warning("Unable to set socket pacing, using application pacing instead");
-		test->no_fq_socket_pacing = 1;
+	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+		warning("Unable to set socket pacing");
 	    }
 	}
     }
 #endif /* HAVE_SO_MAX_PACING_RATE */
+    {
+	unsigned int rate = test->settings->rate / 8;
+	if (rate > 0) {
+	    if (test->debug) {
+		printf("Setting application pacing to %u\n", rate);
+	    }
+	}
+    }
 
     /*
      * Create a new "listening" socket to replace the one we were using before.
@@ -320,6 +407,7 @@ iperf_udp_connect(struct iperf_test *test)
 #ifdef SO_RCVTIMEO
     struct timeval tv;
 #endif
+    int rc;
 
     /* Create and bind our local socket. */
     if ((s = netdial(test->settings->domain, Pudp, test->bind_address, test->bind_port, test->server_hostname, test->server_port)) < 0) {
@@ -327,38 +415,50 @@ iperf_udp_connect(struct iperf_test *test)
         return -1;
     }
 
+    /* Check and set socket buffer sizes */
+    rc = iperf_udp_buffercheck(test, s);
+    if (rc < 0)
+	/* error */
+	return rc;
     /*
-     * Set socket buffer size if requested.  Do this for both sending and
-     * receiving so that we can cover both normal and --reverse operation.
+     * If the socket buffer was too small, but it was the default
+     * size, then try explicitly setting it to something larger.
      */
-    int opt;
-    if ((opt = test->settings->socket_bufsize)) {
-        if (setsockopt(s, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETBUF;
-            return -1;
-        }
-        if (setsockopt(s, SOL_SOCKET, SO_SNDBUF, &opt, sizeof(opt)) < 0) {
-            i_errno = IESETBUF;
-            return -1;
-        }
+    if (rc > 0) {
+	if (test->settings->socket_bufsize == 0) {
+	    int bufsize = test->settings->blksize + UDP_BUFFER_EXTRA;
+	    printf("Increasing socket buffer size to %d\n",
+		bufsize);
+	    test->settings->socket_bufsize = bufsize;
+	    rc = iperf_udp_buffercheck(test, s);
+	    if (rc < 0)
+		return rc;
+	}
     }
-
+	
 #if defined(HAVE_SO_MAX_PACING_RATE)
     /* If socket pacing is available and not disabled, try it. */
-    if (! test->no_fq_socket_pacing) {
+    if (test->settings->fqrate) {
 	/* Convert bits per second to bytes per second */
-	unsigned int rate = test->settings->rate / 8;
-	if (rate > 0) {
+	unsigned int fqrate = test->settings->fqrate / 8;
+	if (fqrate > 0) {
 	    if (test->debug) {
-		printf("Setting fair-queue socket pacing to %u\n", rate);
+		printf("Setting fair-queue socket pacing to %u\n", fqrate);
 	    }
-	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &rate, sizeof(rate)) < 0) {
-		warning("Unable to set socket pacing, using application pacing instead");
-		test->no_fq_socket_pacing = 1;
+	    if (setsockopt(s, SOL_SOCKET, SO_MAX_PACING_RATE, &fqrate, sizeof(fqrate)) < 0) {
+		warning("Unable to set socket pacing");
 	    }
 	}
     }
 #endif /* HAVE_SO_MAX_PACING_RATE */
+    {
+	unsigned int rate = test->settings->rate / 8;
+	if (rate > 0) {
+	    if (test->debug) {
+		printf("Setting application pacing to %u\n", rate);
+	    }
+	}
+    }
 
 #ifdef SO_RCVTIMEO
     /* 30 sec timeout for a case when there is a network problem. */
