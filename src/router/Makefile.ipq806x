@@ -126,6 +126,7 @@ ifeq ($(CONFIG_R7800),y)
 endif
 ifeq ($(CONFIG_EA8500),y)
 	sed -i 's/\# CONFIG_ARM_ATAG_DTB_COMPAT is not set/CONFIG_ARM_ATAG_DTB_COMPAT=y/g' $(LINUXDIR)/.config
+	echo "# CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_FROM_BOOTLOADER is not set" >> $(LINUXDIR)/.config
 	echo "CONFIG_ARM_ATAG_DTB_COMPAT_CMDLINE_EXTEND=y" >> $(LINUXDIR)/.config
 endif
 
