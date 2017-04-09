@@ -412,6 +412,33 @@
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
 
+/* Define to 1 if you have the `RSA_meth_free' function. */
+#undef HAVE_RSA_METH_FREE
+
+/* Define to 1 if you have the `RSA_meth_new' function. */
+#undef HAVE_RSA_METH_NEW
+
+/* Define to 1 if you have the `RSA_meth_set0_app_data' function. */
+#undef HAVE_RSA_METH_SET0_APP_DATA
+
+/* Define to 1 if you have the `RSA_meth_set_finish' function. */
+#undef HAVE_RSA_METH_SET_FINISH
+
+/* Define to 1 if you have the `RSA_meth_set_init' function. */
+#undef HAVE_RSA_METH_SET_INIT
+
+/* Define to 1 if you have the `RSA_meth_set_priv_dec' function. */
+#undef HAVE_RSA_METH_SET_PRIV_DEC
+
+/* Define to 1 if you have the `RSA_meth_set_priv_enc' function. */
+#undef HAVE_RSA_METH_SET_PRIV_ENC
+
+/* Define to 1 if you have the `RSA_meth_set_pub_dec' function. */
+#undef HAVE_RSA_METH_SET_PUB_DEC
+
+/* Define to 1 if you have the `RSA_meth_set_pub_enc' function. */
+#undef HAVE_RSA_METH_SET_PUB_ENC
+
 /* sa_family_t, needed to hold AF_* info */
 #undef HAVE_SA_FAMILY_T
 
@@ -453,6 +480,13 @@
 
 /* struct sock_extended_err needed for extended socket error support */
 #undef HAVE_SOCK_EXTENDED_ERR
+
+/* Define to 1 if you have the `SSL_CTX_get_default_passwd_cb' function. */
+#undef HAVE_SSL_CTX_GET_DEFAULT_PASSWD_CB
+
+/* Define to 1 if you have the `SSL_CTX_get_default_passwd_cb_userdata'
+   function. */
+#undef HAVE_SSL_CTX_GET_DEFAULT_PASSWD_CB_USERDATA
 
 /* Define to 1 if you have the `SSL_CTX_new' function. */
 #undef HAVE_SSL_CTX_NEW
@@ -594,6 +628,15 @@
 
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
+
+/* Define to 1 if you have the `X509_OBJECT_free' function. */
+#undef HAVE_X509_OBJECT_FREE
+
+/* Define to 1 if you have the `X509_OBJECT_get_type' function. */
+#undef HAVE_X509_OBJECT_GET_TYPE
+
+/* Define to 1 if you have the `X509_STORE_get0_objects' function. */
+#undef HAVE_X509_STORE_GET0_OBJECTS
 
 /* Path to ifconfig tool */
 #undef IFCONFIG_PATH
