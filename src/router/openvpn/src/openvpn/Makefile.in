@@ -102,6 +102,7 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/build/ltrc.inc $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/depcomp
+
 # we want unicode entry point but not the macro
 @WIN32_TRUE@am__append_1 = -municode -UUNICODE
 sbin_PROGRAMS = openvpn$(EXEEXT)
@@ -139,21 +140,21 @@ am__openvpn_SOURCES_DIST = argv.c argv.h base64.c base64.h basic.h \
 	console_builtin.c console_systemd.c mroute.c mroute.h mss.c \
 	mss.h mstats.c mstats.h mtcp.c mtcp.h mtu.c mtu.h mudp.c \
 	mudp.h multi.c multi.h ntlm.c ntlm.h occ.c occ.h occ-inline.h \
-	pkcs11.c pkcs11.h pkcs11_backend.h pkcs11_openssl.c \
-	pkcs11_mbedtls.c openvpn.c openvpn.h options.c options.h \
-	otime.c otime.h packet_id.c packet_id.h perf.c perf.h pf.c \
-	pf.h pf-inline.h ping.c ping.h ping-inline.h plugin.c plugin.h \
-	pool.c pool.h proto.c proto.h proxy.c proxy.h ps.c ps.h push.c \
-	push.h pushlist.h reliable.c reliable.h route.c route.h \
-	schedule.c schedule.h session_id.c session_id.h shaper.c \
-	shaper.h sig.c sig.h socket.c socket.h socks.c socks.h ssl.c \
-	ssl.h ssl_backend.h ssl_openssl.c ssl_openssl.h ssl_mbedtls.c \
-	ssl_mbedtls.h ssl_common.h ssl_verify.c ssl_verify.h \
-	ssl_verify_backend.h ssl_verify_openssl.c ssl_verify_openssl.h \
-	ssl_verify_mbedtls.c ssl_verify_mbedtls.h status.c status.h \
-	syshead.h tls_crypt.c tls_crypt.h tun.c tun.h win32.h win32.c \
-	cryptoapi.h cryptoapi.c openvpn_win32_resources.rc block_dns.c \
-	block_dns.h
+	openssl_compat.h pkcs11.c pkcs11.h pkcs11_backend.h \
+	pkcs11_openssl.c pkcs11_mbedtls.c openvpn.c openvpn.h \
+	options.c options.h otime.c otime.h packet_id.c packet_id.h \
+	perf.c perf.h pf.c pf.h pf-inline.h ping.c ping.h \
+	ping-inline.h plugin.c plugin.h pool.c pool.h proto.c proto.h \
+	proxy.c proxy.h ps.c ps.h push.c push.h pushlist.h reliable.c \
+	reliable.h route.c route.h schedule.c schedule.h session_id.c \
+	session_id.h shaper.c shaper.h sig.c sig.h socket.c socket.h \
+	socks.c socks.h ssl.c ssl.h ssl_backend.h ssl_openssl.c \
+	ssl_openssl.h ssl_mbedtls.c ssl_mbedtls.h ssl_common.h \
+	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
+	ssl_verify_openssl.c ssl_verify_openssl.h ssl_verify_mbedtls.c \
+	ssl_verify_mbedtls.h status.c status.h syshead.h tls_crypt.c \
+	tls_crypt.h tun.c tun.h win32.h win32.c cryptoapi.h \
+	cryptoapi.c openvpn_win32_resources.rc block_dns.c block_dns.h
 @WIN32_TRUE@am__objects_1 = openvpn_win32_resources.$(OBJEXT) \
 @WIN32_TRUE@	block_dns.$(OBJEXT)
 am_openvpn_OBJECTS = argv.$(OBJEXT) base64.$(OBJEXT) buffer.$(OBJEXT) \
@@ -349,6 +350,7 @@ PKCS11_HELPER_LIBS = @PKCS11_HELPER_LIBS@
 PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
+PLUGINDIR = @PLUGINDIR@
 PLUGIN_AUTH_PAM_CFLAGS = @PLUGIN_AUTH_PAM_CFLAGS@
 PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
 RANLIB = @RANLIB@
@@ -361,12 +363,14 @@ SHELL = @SHELL@
 SOCKETS_LIBS = @SOCKETS_LIBS@
 STRIP = @STRIP@
 SYSTEMD_ASK_PASSWORD = @SYSTEMD_ASK_PASSWORD@
+SYSTEMD_UNIT_DIR = @SYSTEMD_UNIT_DIR@
 TAP_CFLAGS = @TAP_CFLAGS@
 TAP_WIN_COMPONENT_ID = @TAP_WIN_COMPONENT_ID@
 TAP_WIN_MIN_MAJOR = @TAP_WIN_MIN_MAJOR@
 TAP_WIN_MIN_MINOR = @TAP_WIN_MIN_MINOR@
 TEST_CFLAGS = @TEST_CFLAGS@
 TEST_LDFLAGS = @TEST_LDFLAGS@
+TMPFILES_DIR = @TMPFILES_DIR@
 VENDOR_BUILD_ROOT = @VENDOR_BUILD_ROOT@
 VENDOR_DIST_ROOT = @VENDOR_DIST_ROOT@
 VENDOR_SRC_ROOT = @VENDOR_SRC_ROOT@
@@ -418,13 +422,14 @@ plugindir = @plugindir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sampledir = @sampledir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
+systemdunitdir = @systemdunitdir@
 target_alias = @target_alias@
+tmpfilesdir = @tmpfilesdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
@@ -445,7 +450,8 @@ AM_CPPFLAGS = \
 
 AM_CFLAGS = $(TAP_CFLAGS) $(OPTIONAL_CRYPTO_CFLAGS) \
 	$(OPTIONAL_LZO_CFLAGS) $(OPTIONAL_LZ4_CFLAGS) \
-	$(OPTIONAL_PKCS11_HELPER_CFLAGS) $(am__append_1)
+	$(OPTIONAL_PKCS11_HELPER_CFLAGS) \
+	-DPLUGIN_LIBDIR=\"${plugindir}\" $(am__append_1)
 openvpn_SOURCES = argv.c argv.h base64.c base64.h basic.h buffer.c \
 	buffer.h circ_list.h clinat.c clinat.h common.h comp.c comp.h \
 	compstub.c comp-lz4.c comp-lz4.h crypto.c crypto.h \
@@ -460,20 +466,21 @@ openvpn_SOURCES = argv.c argv.h base64.c base64.h basic.h buffer.c \
 	console_builtin.c console_systemd.c mroute.c mroute.h mss.c \
 	mss.h mstats.c mstats.h mtcp.c mtcp.h mtu.c mtu.h mudp.c \
 	mudp.h multi.c multi.h ntlm.c ntlm.h occ.c occ.h occ-inline.h \
-	pkcs11.c pkcs11.h pkcs11_backend.h pkcs11_openssl.c \
-	pkcs11_mbedtls.c openvpn.c openvpn.h options.c options.h \
-	otime.c otime.h packet_id.c packet_id.h perf.c perf.h pf.c \
-	pf.h pf-inline.h ping.c ping.h ping-inline.h plugin.c plugin.h \
-	pool.c pool.h proto.c proto.h proxy.c proxy.h ps.c ps.h push.c \
-	push.h pushlist.h reliable.c reliable.h route.c route.h \
-	schedule.c schedule.h session_id.c session_id.h shaper.c \
-	shaper.h sig.c sig.h socket.c socket.h socks.c socks.h ssl.c \
-	ssl.h ssl_backend.h ssl_openssl.c ssl_openssl.h ssl_mbedtls.c \
-	ssl_mbedtls.h ssl_common.h ssl_verify.c ssl_verify.h \
-	ssl_verify_backend.h ssl_verify_openssl.c ssl_verify_openssl.h \
-	ssl_verify_mbedtls.c ssl_verify_mbedtls.h status.c status.h \
-	syshead.h tls_crypt.c tls_crypt.h tun.c tun.h win32.h win32.c \
-	cryptoapi.h cryptoapi.c $(am__append_2)
+	openssl_compat.h pkcs11.c pkcs11.h pkcs11_backend.h \
+	pkcs11_openssl.c pkcs11_mbedtls.c openvpn.c openvpn.h \
+	options.c options.h otime.c otime.h packet_id.c packet_id.h \
+	perf.c perf.h pf.c pf.h pf-inline.h ping.c ping.h \
+	ping-inline.h plugin.c plugin.h pool.c pool.h proto.c proto.h \
+	proxy.c proxy.h ps.c ps.h push.c push.h pushlist.h reliable.c \
+	reliable.h route.c route.h schedule.c schedule.h session_id.c \
+	session_id.h shaper.c shaper.h sig.c sig.h socket.c socket.h \
+	socks.c socks.h ssl.c ssl.h ssl_backend.h ssl_openssl.c \
+	ssl_openssl.h ssl_mbedtls.c ssl_mbedtls.h ssl_common.h \
+	ssl_verify.c ssl_verify.h ssl_verify_backend.h \
+	ssl_verify_openssl.c ssl_verify_openssl.h ssl_verify_mbedtls.c \
+	ssl_verify_mbedtls.h status.c status.h syshead.h tls_crypt.c \
+	tls_crypt.h tun.c tun.h win32.h win32.c cryptoapi.h \
+	cryptoapi.c $(am__append_2)
 openvpn_LDADD = $(top_builddir)/src/compat/libcompat.la \
 	$(SOCKETS_LIBS) $(OPTIONAL_LZO_LIBS) $(OPTIONAL_LZ4_LIBS) \
 	$(OPTIONAL_PKCS11_HELPER_LIBS) $(OPTIONAL_CRYPTO_LIBS) \
