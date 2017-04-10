@@ -185,6 +185,7 @@ addEvent(window, "unload", function() {
 									//]]>
 									</script>&nbsp;
 								</div>
+								<% getchipset(); %>
 								<div class="setting">
 									<div class="label"><% tran("wl_basic.radio"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
