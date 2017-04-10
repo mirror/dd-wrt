@@ -7372,52 +7372,6 @@ int has_gateway(void)
 	return 0;
 }
 
-#ifdef HAVE_ATH9K
-int getath9kdevicecount(void)
-{
-	glob_t globbuf;
-	int globresult;
-	int count = 0;
-#ifndef HAVE_MADWIFI_MIMO
-	if (1) {
-#else
-	if (nvram_match("mimo_driver", "ath9k")) {
-#endif
-		globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
-		if (globresult == 0)
-			count = (int)globbuf.gl_pathc;
-		globfree(&globbuf);
-	}
-#if (defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)) && !defined(HAVE_DAP2330) && !defined(HAVE_WILLY)
-	return 2;
-#else
-	return (count);
-#endif
-}
-
-int get_ath9k_phy_idx(int idx)
-{
-	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
-#ifdef HAVE_MVEBU
-	return idx;
-#else
-	return idx - getifcount("wifi");
-#endif
-}
-
-int get_ath9k_phy_ifname(const char *ifname)
-{
-	int devnum;
-	if (is_wil6210(ifname))
-		return 2;
-	if (strncmp(ifname, "ath", 3))
-		return -1;
-	if (!sscanf(ifname, "ath%d", &devnum))
-		return -1;
-	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
-	return get_ath9k_phy_idx(devnum);
-}
-
 struct wifidevices {
 	char *name;
 	char *vendor;
@@ -7461,7 +7415,10 @@ static struct wifidevices wdevices[] = {
 	{"Qualcomm QCA9980", "0x168c", "0x0040"},
 	{"Qualcomm QCA6164", "0x168c", "0x0041"},
 	{"Qualcomm QCA9377", "0x168c", "0x0042"},
-	{"Qualcomm QCA9887", "0x168c", "0x0050"}
+	{"Qualcomm QCA9887", "0x168c", "0x0050"},
+	{"Marvell 88W8964", "0x11ab", "0x2b40"},
+	{"Marvell 88W8864", "0x11ab", "0x2a55"},
+	{"Marvell 88W8897", "0x11ab", "0x2b38"}
 };
 
 char *getWifiDeviceName(char *prefix)
@@ -7472,7 +7429,7 @@ char *getWifiDeviceName(char *prefix)
 	int devcount;
 	FILE *fp;
 	sscanf(prefix, "ath%d", &devcount);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/id_vendor", devcount);
+	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_vendor", devcount);
 	fp = fopen(globstring, "rb");
 	if (fp) {
 		int v;
@@ -7481,7 +7438,7 @@ char *getWifiDeviceName(char *prefix)
 		fclose(fp);
 	}
 	free(globstring);
-	asprintf(&globstring, "/proc/sys/dev/wifi%d/id_device", devcount);
+	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_device", devcount);
 	fp = fopen(globstring, "rb");
 	if (fp) {
 		int v;
@@ -7526,6 +7483,55 @@ char *getWifiDeviceName(char *prefix)
 	}
 	return NULL;
 
+}
+
+
+
+
+#ifdef HAVE_ATH9K
+int getath9kdevicecount(void)
+{
+	glob_t globbuf;
+	int globresult;
+	int count = 0;
+#ifndef HAVE_MADWIFI_MIMO
+	if (1) {
+#else
+	if (nvram_match("mimo_driver", "ath9k")) {
+#endif
+		globresult = glob("/sys/class/ieee80211/phy*", GLOB_NOSORT, NULL, &globbuf);
+		if (globresult == 0)
+			count = (int)globbuf.gl_pathc;
+		globfree(&globbuf);
+	}
+#if (defined(HAVE_MMS344) || defined(HAVE_ARCHERC7)) && !defined(HAVE_DAP2330) && !defined(HAVE_WILLY)
+	return 2;
+#else
+	return (count);
+#endif
+}
+
+int get_ath9k_phy_idx(int idx)
+{
+	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+#ifdef HAVE_MVEBU
+	return idx;
+#else
+	return idx - getifcount("wifi");
+#endif
+}
+
+int get_ath9k_phy_ifname(const char *ifname)
+{
+	int devnum;
+	if (is_wil6210(ifname))
+		return 2;
+	if (strncmp(ifname, "ath", 3))
+		return -1;
+	if (!sscanf(ifname, "ath%d", &devnum))
+		return -1;
+	// fprintf(stderr,"channel number %d of %d\n", i,achans.ic_nchans);
+	return get_ath9k_phy_idx(devnum);
 }
 
 int is_ath9k(const char *prefix)
