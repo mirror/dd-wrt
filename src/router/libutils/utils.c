@@ -7420,7 +7420,9 @@ static struct wifidevices wdevices[] = {
 	{"Qualcomm QCA9888 802.11ac", 0x168c, 0x0056},
 	{"Marvell 88W8964 802.11ac", 0x11ab, 0x2b40},
 	{"Marvell 88W8864 802.11ac", 0x11ab, 0x2a55},
-	{"Marvell 88W8897 802.11ac", 0x11ab, 0x2b38}
+	{"Marvell 88W8897 802.11ac", 0x11ab, 0x2b38},
+	{"Qualcomm WIL6210 802.11ad", 0x1ae9, 0x0310},
+
 };
 
 char *getWifiDeviceName(char *prefix)
