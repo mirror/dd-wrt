@@ -1147,6 +1147,8 @@ int mac80211_get_maxvhtmcs(char *interface);
 int get_ath9k_phy_idx(int idx);
 int get_ath9k_phy_ifname(const char *ifname);
 
+char *getWifiDeviceName(char *prefix);
+
 void getPortMapping(int *vlanmap);
 
 u_int64_t freediskSpace(char *path);
