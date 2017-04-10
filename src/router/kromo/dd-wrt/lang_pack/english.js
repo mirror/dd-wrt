@@ -2627,6 +2627,7 @@ var wl_basic=new Object();
 wl_basic.titl="Wireless";
 wl_basic.h2="Wireless";
 wl_basic.cardtype="Card Type";
+wl_basic.chipset="Chipset";
 wl_basic.legend="Basic Settings";
 wl_basic.label="Wireless Mode";
 wl_basic.label2="Wireless Network Mode";
