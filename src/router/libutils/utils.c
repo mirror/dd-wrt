@@ -7445,7 +7445,7 @@ char *getWifiDeviceName(char *prefix)
 		fclose(fp);
 	}
 	free(globstring);
-	if (!vendor) {
+	if (!vendor || !device) {
 		devnum = get_ath9k_phy_ifname(prefix);
 		if (devnum == -1)
 			return NULL;
