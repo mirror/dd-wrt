@@ -964,6 +964,7 @@ static int acm_tty_ioctl(struct tty_struct *tty,
 	#define SET_MODE_RS232 0x54ED
 	#define SET_MODE_RS485 0x54EE
 	#define SET_MODE_RS422 0x54EF
+	#define SET_MODE_RS232_RTS_CTS 0x54F0
 
 	#define SET_ACTIVE_PROTOCOL_CMD 0
 
@@ -989,6 +990,7 @@ static int acm_tty_ioctl(struct tty_struct *tty,
 	case SET_MODE_RS232:
 	case SET_MODE_RS485:
 	case SET_MODE_RS422:
+	case SET_MODE_RS232_RTS_CTS:
 		return interay_serial_ctrl_msg(acm, SET_ACTIVE_PROTOCOL_CMD, cmd - SET_MODE_RS232, NULL, 0);
 		break;
 	}
