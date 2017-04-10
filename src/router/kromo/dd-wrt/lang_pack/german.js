@@ -2228,6 +2228,7 @@ hwl_adv.right2="Sie k&ouml;nnen Auto oder Shared Key w&auml;hlen. Die Shared Key
 wl_basic.titl="WLAN";
 wl_basic.h2="WLAN";
 wl_basic.cardtype="Karten Typ";
+wl_basic.chipset="Chipsatz";
 wl_basic.legend="Basis-Einstellungen";
 wl_basic.label="WLAN-Modus";
 wl_basic.label2="WLAN-Netzwerk-Modus";
