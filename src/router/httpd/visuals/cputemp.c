@@ -198,7 +198,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		TEMP_MUL = 100;
 		fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
 		if (!fp)
-		    fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
+			fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
 		if (fp) {	// some heuristic to detect unit 
 			char temp[32];
 			fscanf(fp, "%s", &temp[0]);
