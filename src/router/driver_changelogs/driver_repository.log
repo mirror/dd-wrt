@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3377 | brainslayer | 2017-04-10 11:02:06 +0200 (Mon, 10 Apr 2017) | 1 line
+
+implement correct method for pci ids
+------------------------------------------------------------------------
 r3376 | brainslayer | 2017-04-07 11:56:40 +0200 (Fri, 07 Apr 2017) | 1 line
 
 disable ath9k gpio code, its crashing on arm at least for me
