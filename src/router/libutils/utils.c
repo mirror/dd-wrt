@@ -7374,76 +7374,74 @@ int has_gateway(void)
 
 struct wifidevices {
 	char *name;
-	char *vendor;
-	char *device;
+	int vendor;
+	int device;
 };
 
 static struct wifidevices wdevices[] = {
-	{"Atheros AR5210 802.11a", "0x168c", "0x0007"},
-	{"Atheros AR5210 802.11a", "0x168c", "0x0207"},
-	{"Atheros AR5211 802.11a", "0x168c", "0x0011"},
-	{"Atheros AR5211 802.11ab", "0x168c", "0x0012"},
-	{"Atheros AR5212", "0x168c", "0x0013"},
-	{"Atheros AR5212", "0x168c", "0x1014"},
-	{"Atheros AR2413", "0x168c", "0x001a"},
-	{"Atheros AR5413", "0x168c", "0x001b"},
-	{"Atheros AR542x", "0x168c", "0x001c"},
-	{"Atheros AR2417", "0x168c", "0x001d"},
-	{"Atheros AR5513", "0x168c", "0x0020"},
-	{"Atheros AR5416", "0x168c", "0x0023"},
-	{"Atheros AR5418", "0x168c", "0x0024"},
-	{"Atheros AR9160", "0x168c", "0x0027"},
-	{"Atheros AR922X", "0x168c", "0x0029"},
-	{"Atheros AR928X", "0x168c", "0x002a"},
-	{"Atheros AR9285", "0x168c", "0x002b"},
-	{"Atheros AR2427", "0x168c", "0x002c"},
-	{"Atheros AR9227", "0x168c", "0x002d"},
-	{"Atheros AR9287", "0x168c", "0x002e"},
-	{"Atheros AR93xx", "0x168c", "0x0030"},
-	{"Atheros AR9485", "0x168c", "0x0032"},
-	{"Atheros AR958x", "0x168c", "0x0033"},
-	{"Atheros AR9462", "0x168c", "0x0034"},
-	{"Atheros QCA9565", "0x168c", "0x0036"},
-	{"Atheros AR9485", "0x168c", "0x0037"},
-	{"Atheros AR5002X", "0x168c", "0x9013"},
-	{"Atheros AR5006X", "0x168c", "0xff19"},
-	{"Atheros AR2425", "0x168c", "0xff1b"},
-	{"Atheros AR5008", "0x168c", "0xff1c"},
-	{"Atheros AR922x", "0x168c", "0xff1d"},
-	{"Qualcomm QCA988x", "0x168c", "0x003c"},
-	{"Qualcomm QCA6174", "0x168c", "0x003e"},
-	{"Qualcomm QCA9980", "0x168c", "0x0040"},
-	{"Qualcomm QCA6164", "0x168c", "0x0041"},
-	{"Qualcomm QCA9377", "0x168c", "0x0042"},
-	{"Qualcomm QCA9887", "0x168c", "0x0050"},
-	{"Marvell 88W8964", "0x11ab", "0x2b40"},
-	{"Marvell 88W8864", "0x11ab", "0x2a55"},
-	{"Marvell 88W8897", "0x11ab", "0x2b38"}
+	{"Atheros AR5210 802.11a", 0x168c, 0x0007},
+	{"Atheros AR5210 802.11a", 0x168c, 0x0207},
+	{"Atheros AR5211 802.11a", 0x168c, 0x0011},
+	{"Atheros AR5211 802.11ab", 0x168c, 0x0012},
+	{"Atheros AR5212", 0x168c, 0x0013},
+	{"Atheros AR5212", 0x168c, 0x1014},
+	{"Atheros AR2413", 0x168c, 0x001a},
+	{"Atheros AR5413", 0x168c, 0x001b},
+	{"Atheros AR542x", 0x168c, 0x001c},
+	{"Atheros AR2417", 0x168c, 0x001d},
+	{"Atheros AR5513", 0x168c, 0x0020},
+	{"Atheros AR5416 802.11n", 0x168c, 0x0023},
+	{"Atheros AR5418 802.11n", 0x168c, 0x0024},
+	{"Atheros AR9160 802.11n", 0x168c, 0x0027},
+	{"Atheros AR922X 802.11n", 0x168c, 0x0029},
+	{"Atheros AR928X 802.11n", 0x168c, 0x002a},
+	{"Atheros AR9285 802.11n", 0x168c, 0x002b},
+	{"Atheros AR2427 802.11n", 0x168c, 0x002c},
+	{"Atheros AR9227 802.11n", 0x168c, 0x002d},
+	{"Atheros AR9287 802.11n", 0x168c, 0x002e},
+	{"Atheros AR93xx 802.11n", 0x168c, 0x0030},
+	{"Atheros AR9485 802.11n", 0x168c, 0x0032},
+	{"Atheros AR958x 802.11n", 0x168c, 0x0033},
+	{"Atheros AR9462 802.11n", 0x168c, 0x0034},
+	{"Atheros QCA9565 802.11n", 0x168c, 0x0036},
+	{"Atheros AR9485 802.11n", 0x168c, 0x0037},
+	{"Atheros AR5002X", 0x168c, 0x9013},
+	{"Atheros AR5006X", 0x168c, 0xff19},
+	{"Atheros AR2425", 0x168c, 0xff1b},
+	{"Atheros AR5008", 0x168c, 0xff1c},
+	{"Atheros AR922x 802.11n", 0x168c, 0xff1d},
+	{"Qualcomm QCA988x 802.11ac", 0x168c, 0x003c},
+	{"Qualcomm QCA6174 802.11ac", 0x168c, 0x003e},
+	{"Qualcomm QCA9980 802.11ac", 0x168c, 0x0040},
+	{"Qualcomm QCA6174 802.11ac", 0x168c, 0x0041},
+	{"Qualcomm QCA9377 802.11ac", 0x168c, 0x0042},
+	{"Qualcomm QCA9984 802.11ac", 0x168c, 0x0046},
+	{"Qualcomm QCA9887 802.11ac", 0x168c, 0x0050},
+	{"Qualcomm QCA9888 802.11ac", 0x168c, 0x0056},
+	{"Marvell 88W8964 802.11ac", 0x11ab, 0x2b40},
+	{"Marvell 88W8864 802.11ac", 0x11ab, 0x2a55},
+	{"Marvell 88W8897 802.11ac", 0x11ab, 0x2b38}
 };
 
 char *getWifiDeviceName(char *prefix)
 {
 	char *globstring;
 	int devnum;
-	char *device = NULL, *vendor = NULL;
+	int device = 0, vendor = 0;
 	int devcount;
 	FILE *fp;
 	sscanf(prefix, "ath%d", &devcount);
 	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_vendor", devcount);
 	fp = fopen(globstring, "rb");
 	if (fp) {
-		int v;
-		fscanf(fp, "%d", &v);
-		asprintf(&vendor, "0x%04x", v);
+		fscanf(fp, "%d", &vendor);
 		fclose(fp);
 	}
 	free(globstring);
 	asprintf(&globstring, "/proc/sys/dev/wifi%d/dev_device", devcount);
 	fp = fopen(globstring, "rb");
 	if (fp) {
-		int v;
-		fscanf(fp, "%d", &v);
-		asprintf(&vendor, "0x%04x", v);
+		fscanf(fp, "%d", &device);
 		fclose(fp);
 	}
 	free(globstring);
@@ -7454,39 +7452,30 @@ char *getWifiDeviceName(char *prefix)
 		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/vendor", devnum);
 		fp = fopen(globstring, "rb");
 		if (fp) {
-			vendor = malloc(16);
-			fscanf(fp, "%s", vendor);
+			fscanf(fp, "0x%x", &vendor);
 			fclose(fp);
 		}
 		free(globstring);
 		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/device", devnum);
 		fp = fopen(globstring, "rb");
 		if (fp) {
-			device = malloc(16);
-			fscanf(fp, "%s", device);
+			fscanf(fp, "0x%x", &device);
 			fclose(fp);
 		}
 		free(globstring);
 	}
 
 	if (!vendor || !device) {
-		if (vendor)
-			free(vendor);
-		if (device)
-			free(device);
 		return NULL;
 	}
 	int i;
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
-		if (!strcmp(wdevices[i].vendor, vendor) && !strcmp(wdevices[i].device, device))
+		if (wdevices[i].vendor == vendor && wdevices[i].device == device)
 			return wdevices[i].name;
 	}
 	return NULL;
 
 }
-
-
-
 
 #ifdef HAVE_ATH9K
 int getath9kdevicecount(void)
