@@ -1370,8 +1370,8 @@ ifeq ($(CONFIG_MMS344),y)
 		mips-uclibc/mms344.img
 
 	-./tools/compex/mkmylofw -B DR342 \
-		-p0x50000:0xfb0000:alp:0x80060000 \
-		-b0x50000:0xfb0000::$(ARCH)-uclibc/vmlinux.lsx 	\
+		-p0x50000:0xfa0000:alp:0x80060000 \
+		-b0x50000:0xfa0000::$(ARCH)-uclibc/vmlinux.lsx 	\
 		mips-uclibc/willy.img
 endif
 ifeq ($(CONFIG_UBNTM),y)
