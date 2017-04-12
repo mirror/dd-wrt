@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3381 | brainslayer | 2017-04-12 08:43:22 +0200 (Wed, 12 Apr 2017) | 1 line
+
+revert queue size limit. it will increase the problem
+------------------------------------------------------------------------
 r3380 | brainslayer | 2017-04-12 07:34:00 +0200 (Wed, 12 Apr 2017) | 1 line
 
 experimental: reduce fq queue size to 1 mb, since we may have a oom problem on 32mb devices
