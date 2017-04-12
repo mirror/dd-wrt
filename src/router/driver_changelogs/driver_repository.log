@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3380 | brainslayer | 2017-04-12 07:34:00 +0200 (Wed, 12 Apr 2017) | 1 line
+
+experimental: reduce fq queue size to 1 mb, since we may have a oom problem on 32mb devices
+------------------------------------------------------------------------
 r3379 | brainslayer | 2017-04-10 16:26:01 +0200 (Mon, 10 Apr 2017) | 1 line
 
 add rs232_rts_cts support
