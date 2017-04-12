@@ -8,11 +8,11 @@ do
 		$ipt -D FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		$ipt -D FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
-		$ipt -D INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		$ipt -D INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
-		$ipt -I INPUT -p etherip -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
 		if [ `$nv get oet${i}_bridged` -ne 1 ]
 		then
 			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
