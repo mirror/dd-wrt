@@ -818,6 +818,7 @@ int udp_recvmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 	struct sk_buff *skb;
 	unsigned int ulen, copied;
 	int err;
+	bool checksum_valid = false;
 	int is_udplite = IS_UDPLITE(sk);
 
 	/*
@@ -848,7 +849,8 @@ try_again:
 	 */
 
 	if (copied < ulen || UDP_SKB_CB(skb)->partial_cov) {
-		if (udp_lib_checksum_complete(skb))
+		checksum_valid = !udp_lib_checksum_complete(skb);
+		if (!checksum_valid)
 			goto csum_copy_err;
 	}
 
