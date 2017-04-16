@@ -354,14 +354,14 @@ static void modeswitch_others(int needreset, int devicecount)
 	eval("usb_modeswitch", "-v", "0x1e0e", "-p", "0xf000", "-M", "555342431234567800000000000006bd000000020000000000000000000000");
 }
 
-#define QMIRAW 0x2000		// usbnet, qmi_wwan, cdc_wdm, rawip
-#define H_NCM 0x1000		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
-#define NCM 0x800		// usbnet, cdc_ncm, cdc_wdm
-#define MBIM 0x400		// usbnet, cdc_ncm, cdc_mbim,
-#define RNDIS 0x200		// usbnet, cdc_ether, rndis_host,
-#define S_NET 0x100		// usbnet, sierra_net (direct ip)
-#define QMI 0x80		// usbnet, qmi_wwan, cdc_wdm
-#define ETH 0x40		// usbnet, cdc_ether
+#define QMIRAW 0xa0		// usbnet, qmi_wwan, cdc_wdm, rawip
+#define H_NCM 0x90		// usbnet, cdc_ncm, huawei_cdc_ncm, cdc_wdm
+#define NCM 0x80		// usbnet, cdc_ncm, cdc_wdm
+#define MBIM 0x70		// usbnet, cdc_ncm, cdc_mbim,
+#define RNDIS 0x60		// usbnet, cdc_ether, rndis_host,
+#define S_NET 0x50		// usbnet, sierra_net (direct ip)
+#define QMI 0x40		// usbnet, qmi_wwan, cdc_wdm
+#define ETH 0x30		// usbnet, cdc_ether
 #define GENERIC 0x20		// option new_id on-the-fly
 #define ACM 0x10		// cdc_acm
 
@@ -590,7 +590,7 @@ static struct DEVICES devicelist[] = {
 	{0x0c88, 0x180a, "option", 0, 0, 0, NULL, "Kyocera KPC680"},	//
 
 /* Mediatek */
-	{0x0e8d, 0x0002, NULL, NODEV, NODEV, NULL, &modeswitch_mediatek, "MT6276"},	//
+	{0x0e8d, 0x0002, NULL, NODEV, NODEV, 0, &modeswitch_mediatek, "MT6276"},	//
 	{0x0e8d, 0x00a1, "option", 1, 0, 2 | GENERIC, NULL, "MT6276"},	//
 	{0x0e8d, 0x00a2, "option", 1, 0, 2 | GENERIC, NULL, "MT6276"},	//
 	{0x0e8d, 0x00a4, "option", 1, 0, 2, NULL, "MT6276"},	//
@@ -1535,7 +1535,7 @@ char *get3GControlDevice(void)
 			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
-			if ((devicelist[devicecount].modeswitch & QMI)) {
+			if ((devicelist[devicecount].modeswitch & 0xf0) == QMI) {
 				insmod("cdc-wdm usbnet qmi_wwan");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
@@ -1548,7 +1548,7 @@ char *get3GControlDevice(void)
 				return control;
 			}
 
-			if ((devicelist[devicecount].modeswitch & QMIRAW)) {
+			if ((devicelist[devicecount].modeswitch & 0xf0) == QMIRAW) {
 				insmod("cdc-wdm usbnet qmi_wwan");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
@@ -1569,10 +1569,10 @@ char *get3GControlDevice(void)
 				if (devicelist[devicecount].datadevice == HSO)
 					sprintf(data, "hso");
 				else {
-					if ((devicelist[devicecount].modeswitch & ACM)) {
+					if ((devicelist[devicecount].modeswitch & 0xf0) == ACM) {
 						insmod("cdc-acm");
 						sprintf(data, "/dev/ttyACM%d", devicelist[devicecount].datadevice);
-					} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
+					} else if ((devicelist[devicecount].modeswitch & 0xf0) == GENERIC) {
 						sysprintf("echo %04x %04x > /sys/bus/usb-serial/drivers/option1/new_id", devicelist[devicecount].vendor, devicelist[devicecount].product);
 						insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 						sprintf(data, "/dev/usb/tts/%d", devicelist[devicecount].datadevice);
@@ -1604,11 +1604,11 @@ char *get3GControlDevice(void)
 				fprintf(out, "PIN=%s\n", nvram_safe_get("wan_pin"));
 				fclose(out);
 				eval("/etc/hso/hso_connect.sh", "restart");
-			} else if ((devicelist[devicecount].modeswitch & ACM)) {
+			} else if ((devicelist[devicecount].modeswitch & 0xf0) == ACM) {
 				insmod("cdc-acm");
 				sprintf(control, "/dev/ttyACM%d", devicelist[devicecount].controldevice);
 				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
-			} else if ((devicelist[devicecount].modeswitch & GENERIC)) {
+			} else if ((devicelist[devicecount].modeswitch & 0xf0) == GENERIC) {
 				sysprintf("echo %04x %04x > /sys/bus/usb-serial/drivers/option1/new_id", devicelist[devicecount].vendor, devicelist[devicecount].product);
 				insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
