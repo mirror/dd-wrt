@@ -15,14 +15,14 @@ if test "$PHP_ICONV" != "no"; then
 
   if test "$iconv_avail" != "no"; then
     if test -z "$ICONV_DIR"; then
-      for i in /usr/local /usr; do
+      for i in ; do
         if test -f "$i/include/iconv.h" || test -f "$i/include/giconv.h"; then
           PHP_ICONV_PREFIX="$i"
           break
         fi
       done
       if test -z "$PHP_ICONV_PREFIX"; then
-        PHP_ICONV_PREFIX="/usr"
+        PHP_ICONV_PREFIX=""
       fi
     else
       PHP_ICONV_PREFIX="$ICONV_DIR"
