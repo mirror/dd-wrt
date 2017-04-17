@@ -39,7 +39,6 @@ struct twd_local_timer name __initdata = {	\
 };
 
 int twd_local_timer_register(struct twd_local_timer *);
-
 unsigned long twd_timer_get_rate(void);
 
 #endif
