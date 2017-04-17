@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -207,43 +207,43 @@ ZEND_END_ARG_INFO()
 /* }}} */
 
 const zend_function_entry mcrypt_functions[] = { /* {{{ */
-	PHP_FE(mcrypt_get_key_size, 	arginfo_mcrypt_get_key_size)
-	PHP_FE(mcrypt_get_block_size, 	arginfo_mcrypt_get_block_size)
-	PHP_FE(mcrypt_get_cipher_name, 	arginfo_mcrypt_get_cipher_name)
-	PHP_FE(mcrypt_create_iv, 		arginfo_mcrypt_create_iv)
+	PHP_DEP_FE(mcrypt_get_key_size, 	arginfo_mcrypt_get_key_size)
+	PHP_DEP_FE(mcrypt_get_block_size, 	arginfo_mcrypt_get_block_size)
+	PHP_DEP_FE(mcrypt_get_cipher_name, 	arginfo_mcrypt_get_cipher_name)
+	PHP_DEP_FE(mcrypt_create_iv, 		arginfo_mcrypt_create_iv)
 
-	PHP_FE(mcrypt_list_algorithms, 	arginfo_mcrypt_list_algorithms)
-	PHP_FE(mcrypt_list_modes, 		arginfo_mcrypt_list_modes)
-	PHP_FE(mcrypt_get_iv_size, 		arginfo_mcrypt_get_iv_size)
-	PHP_FE(mcrypt_encrypt, 			arginfo_mcrypt_encrypt)
-	PHP_FE(mcrypt_decrypt, 			arginfo_mcrypt_decrypt)
+	PHP_DEP_FE(mcrypt_list_algorithms, 	arginfo_mcrypt_list_algorithms)
+	PHP_DEP_FE(mcrypt_list_modes, 		arginfo_mcrypt_list_modes)
+	PHP_DEP_FE(mcrypt_get_iv_size, 		arginfo_mcrypt_get_iv_size)
+	PHP_DEP_FE(mcrypt_encrypt, 			arginfo_mcrypt_encrypt)
+	PHP_DEP_FE(mcrypt_decrypt, 			arginfo_mcrypt_decrypt)
 
-	PHP_FE(mcrypt_module_open, 		arginfo_mcrypt_module_open)
-	PHP_FE(mcrypt_generic_init, 	arginfo_mcrypt_generic_init)
-	PHP_FE(mcrypt_generic, 			arginfo_mcrypt_generic)
-	PHP_FE(mdecrypt_generic, 		arginfo_mdecrypt_generic)
-	PHP_FE(mcrypt_generic_deinit, 	arginfo_mcrypt_generic_deinit)
+	PHP_DEP_FE(mcrypt_module_open, 		arginfo_mcrypt_module_open)
+	PHP_DEP_FE(mcrypt_generic_init, 	arginfo_mcrypt_generic_init)
+	PHP_DEP_FE(mcrypt_generic, 			arginfo_mcrypt_generic)
+	PHP_DEP_FE(mdecrypt_generic, 		arginfo_mdecrypt_generic)
+	PHP_DEP_FE(mcrypt_generic_deinit, 	arginfo_mcrypt_generic_deinit)
 
-	PHP_FE(mcrypt_enc_self_test, 	arginfo_mcrypt_enc_self_test)
-	PHP_FE(mcrypt_enc_is_block_algorithm_mode, arginfo_mcrypt_enc_is_block_algorithm_mode)
-	PHP_FE(mcrypt_enc_is_block_algorithm, 	arginfo_mcrypt_enc_is_block_algorithm)
-	PHP_FE(mcrypt_enc_is_block_mode, 		arginfo_mcrypt_enc_is_block_mode)
-	PHP_FE(mcrypt_enc_get_block_size, 		arginfo_mcrypt_enc_get_block_size)
-	PHP_FE(mcrypt_enc_get_key_size, 		arginfo_mcrypt_enc_get_key_size)
-	PHP_FE(mcrypt_enc_get_supported_key_sizes, arginfo_mcrypt_enc_get_supported_key_sizes)
-	PHP_FE(mcrypt_enc_get_iv_size, 			arginfo_mcrypt_enc_get_iv_size)
-	PHP_FE(mcrypt_enc_get_algorithms_name, 	arginfo_mcrypt_enc_get_algorithms_name)
-	PHP_FE(mcrypt_enc_get_modes_name, 		arginfo_mcrypt_enc_get_modes_name)
-	PHP_FE(mcrypt_module_self_test, 		arginfo_mcrypt_module_self_test)
+	PHP_DEP_FE(mcrypt_enc_self_test, 	arginfo_mcrypt_enc_self_test)
+	PHP_DEP_FE(mcrypt_enc_is_block_algorithm_mode, arginfo_mcrypt_enc_is_block_algorithm_mode)
+	PHP_DEP_FE(mcrypt_enc_is_block_algorithm, 	arginfo_mcrypt_enc_is_block_algorithm)
+	PHP_DEP_FE(mcrypt_enc_is_block_mode, 		arginfo_mcrypt_enc_is_block_mode)
+	PHP_DEP_FE(mcrypt_enc_get_block_size, 		arginfo_mcrypt_enc_get_block_size)
+	PHP_DEP_FE(mcrypt_enc_get_key_size, 		arginfo_mcrypt_enc_get_key_size)
+	PHP_DEP_FE(mcrypt_enc_get_supported_key_sizes, arginfo_mcrypt_enc_get_supported_key_sizes)
+	PHP_DEP_FE(mcrypt_enc_get_iv_size, 			arginfo_mcrypt_enc_get_iv_size)
+	PHP_DEP_FE(mcrypt_enc_get_algorithms_name, 	arginfo_mcrypt_enc_get_algorithms_name)
+	PHP_DEP_FE(mcrypt_enc_get_modes_name, 		arginfo_mcrypt_enc_get_modes_name)
+	PHP_DEP_FE(mcrypt_module_self_test, 		arginfo_mcrypt_module_self_test)
 
-	PHP_FE(mcrypt_module_is_block_algorithm_mode, 	arginfo_mcrypt_module_is_block_algorithm_mode)
-	PHP_FE(mcrypt_module_is_block_algorithm, 		arginfo_mcrypt_module_is_block_algorithm)
-	PHP_FE(mcrypt_module_is_block_mode, 			arginfo_mcrypt_module_is_block_mode)
-	PHP_FE(mcrypt_module_get_algo_block_size, 		arginfo_mcrypt_module_get_algo_block_size)
-	PHP_FE(mcrypt_module_get_algo_key_size, 		arginfo_mcrypt_module_get_algo_key_size)
-	PHP_FE(mcrypt_module_get_supported_key_sizes, 	arginfo_mcrypt_module_get_supported_key_sizes)
+	PHP_DEP_FE(mcrypt_module_is_block_algorithm_mode, 	arginfo_mcrypt_module_is_block_algorithm_mode)
+	PHP_DEP_FE(mcrypt_module_is_block_algorithm, 		arginfo_mcrypt_module_is_block_algorithm)
+	PHP_DEP_FE(mcrypt_module_is_block_mode, 			arginfo_mcrypt_module_is_block_mode)
+	PHP_DEP_FE(mcrypt_module_get_algo_block_size, 		arginfo_mcrypt_module_get_algo_block_size)
+	PHP_DEP_FE(mcrypt_module_get_algo_key_size, 		arginfo_mcrypt_module_get_algo_key_size)
+	PHP_DEP_FE(mcrypt_module_get_supported_key_sizes, 	arginfo_mcrypt_module_get_supported_key_sizes)
 
-	PHP_FE(mcrypt_module_close, 					arginfo_mcrypt_module_close)
+	PHP_DEP_FE(mcrypt_module_close, 					arginfo_mcrypt_module_close)
 	PHP_FE_END
 };
 /* }}} */
@@ -563,7 +563,7 @@ PHP_FUNCTION(mcrypt_generic_init)
 	iv_s = emalloc(iv_size + 1);
 	memset(iv_s, 0, iv_size + 1);
 
-	if (key_len > max_key_size) {
+	if (key_len > (size_t)max_key_size) {
 		php_error_docref(NULL, E_WARNING, "Key size too large; supplied length: %zd, max: %d", key_len, max_key_size);
 		key_size = max_key_size;
 	} else {
@@ -571,9 +571,11 @@ PHP_FUNCTION(mcrypt_generic_init)
 	}
 	memcpy(key_s, key, key_len);
 
-	if (iv_len != iv_size) {
-		php_error_docref(NULL, E_WARNING, "Iv size incorrect; supplied length: %zd, needed: %d", iv_len, iv_size);
-		if (iv_len > iv_size) {
+	if (iv_len != (size_t)iv_size) {
+		if (mcrypt_enc_mode_has_iv(pm->td)) {
+			php_error_docref(NULL, E_WARNING, "Iv size incorrect; supplied length: %zd, needed: %d", iv_len, iv_size);
+		}
+		if (iv_len > (size_t)iv_size) {
 			iv_len = iv_size;
 		}
 	}
@@ -642,7 +644,7 @@ PHP_FUNCTION(mcrypt_generic)
 		block_size = mcrypt_enc_get_block_size(pm->td);
 		data_size = ((((int)data_len - 1) / block_size) + 1) * block_size;
 		if (data_size <= 0) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Integer overflow in data size");
+			php_error_docref(NULL, E_WARNING, "Integer overflow in data size");
 			RETURN_FALSE;
 		}
 		data_str = zend_string_alloc(data_size, 0);
@@ -696,7 +698,7 @@ PHP_FUNCTION(mdecrypt_generic)
 		block_size = mcrypt_enc_get_block_size(pm->td);
 		data_size = ((((int)data_len - 1) / block_size) + 1) * block_size;
 		if (data_size <= 0) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Integer overflow in data size");
+			php_error_docref(NULL, E_WARNING, "Integer overflow in data size");
 			RETURN_FALSE;
 		}
 		data_s = emalloc((size_t)data_size + 1);
@@ -1300,7 +1302,7 @@ static void php_mcrypt_do_crypt(char* cipher, const char *key, size_t key_len, c
 
 	if (mcrypt_generic_init(td, (void *) key, (int)key_len, (void *) iv) < 0) {
 		efree(data_s);
-		php_error_docref(NULL, E_RECOVERABLE_ERROR, "Mcrypt initialisation failed");
+		zend_throw_error(NULL, "Mcrypt initialisation failed");
 		mcrypt_module_close(td);
 		RETURN_FALSE;
 	}
@@ -1396,7 +1398,7 @@ PHP_FUNCTION(mcrypt_create_iv)
 			}
 		}
 
-		while (read_bytes < size) {
+		while ((zend_long)read_bytes < size) {
 			n = read(*fd, iv + read_bytes, size - read_bytes);
 			if (n <= 0) {
 				break;

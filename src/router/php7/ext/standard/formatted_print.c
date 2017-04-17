@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -87,7 +87,7 @@ php_sprintf_appendstring(zend_string **buffer, size_t *pos, char *add,
 	m_width = MAX(min_width, copy_len);
 
 	if(m_width > INT_MAX - *pos - 1) {
-		zend_error_noreturn(E_ERROR, "Field width %d is too long", m_width);
+		zend_error_noreturn(E_ERROR, "Field width %zd is too long", m_width);
 	}
 
 	req_size = *pos + m_width + 1;

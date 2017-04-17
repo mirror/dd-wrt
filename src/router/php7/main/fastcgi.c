@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -216,7 +216,7 @@ struct _fcgi_request {
 #ifdef TCP_NODELAY
 	int            nodelay;
 #endif
-	int            closed;
+	int            ended;
 	int            in_len;
 	int            in_pad;
 
@@ -460,6 +460,11 @@ int fcgi_in_shutdown(void)
 void fcgi_terminate(void)
 {
 	in_shutdown = 1;
+}
+
+void fcgi_request_set_keep(fcgi_request *req, int new_value)
+{
+	req->keep = new_value;
 }
 
 #ifndef HAVE_ATTRIBUTE_WEAK
@@ -734,7 +739,7 @@ int fcgi_listen(const char *path, int backlog)
 #else
 		int path_len = strlen(path);
 
-		if (path_len >= sizeof(sa.sa_unix.sun_path)) {
+		if (path_len >= (int)sizeof(sa.sa_unix.sun_path)) {
 			fcgi_log(FCGI_ERROR, "Listening socket's path name is too long.\n");
 			return -1;
 		}
@@ -1045,7 +1050,7 @@ static int fcgi_read_request(fcgi_request *req)
 	unsigned char buf[FCGI_MAX_LENGTH+8];
 
 	req->keep = 0;
-	req->closed = 0;
+	req->ended = 0;
 	req->in_len = 0;
 	req->out_hdr = NULL;
 	req->out_pos = req->out_buf;
@@ -1081,11 +1086,14 @@ static int fcgi_read_request(fcgi_request *req)
 	req->id = (hdr.requestIdB1 << 8) + hdr.requestIdB0;
 
 	if (hdr.type == FCGI_BEGIN_REQUEST && len == sizeof(fcgi_begin_request)) {
+		fcgi_begin_request *b;
+
 		if (safe_read(req, buf, len+padding) != len+padding) {
 			return 0;
 		}
 
-		req->keep = (((fcgi_begin_request*)buf)->flags & FCGI_KEEP_CONN);
+		b = (fcgi_begin_request*)buf;
+		req->keep = (b->flags & FCGI_KEEP_CONN);
 #ifdef TCP_NODELAY
 		if (req->keep && req->tcp && !req->nodelay) {
 # ifdef _WIN32
@@ -1098,7 +1106,7 @@ static int fcgi_read_request(fcgi_request *req)
 			req->nodelay = 1;
 		}
 #endif
-		switch ((((fcgi_begin_request*)buf)->roleB1 << 8) + ((fcgi_begin_request*)buf)->roleB0) {
+		switch ((b->roleB1 << 8) + b->roleB0) {
 			case FCGI_RESPONDER:
 				fcgi_hash_set(&req->env, FCGI_HASH_FUNC("FCGI_ROLE", sizeof("FCGI_ROLE")-1), "FCGI_ROLE", sizeof("FCGI_ROLE")-1, "RESPONDER", sizeof("RESPONDER")-1);
 				break;
@@ -1426,8 +1434,6 @@ int fcgi_accept_request(fcgi_request *req)
 					struct pollfd fds;
 					int ret;
 
-					req->hook.on_read();
-
 					fds.fd = req->fd;
 					fds.events = POLLIN;
 					fds.revents = 0;
@@ -1440,8 +1446,6 @@ int fcgi_accept_request(fcgi_request *req)
 					}
 					fcgi_close(req, 1, 0);
 #else
-					req->hook.on_read();
-
 					if (req->fd < FD_SETSIZE) {
 						struct timeval tv = {5,0};
 						fd_set set;
@@ -1468,6 +1472,7 @@ int fcgi_accept_request(fcgi_request *req)
 		} else if (in_shutdown) {
 			return -1;
 		}
+		req->hook.on_read();
 		if (fcgi_read_request(req)) {
 #ifdef _WIN32
 			if (is_impersonate && !req->tcp) {
@@ -1503,7 +1508,7 @@ static inline void close_packet(fcgi_request *req)
 	}
 }
 
-int fcgi_flush(fcgi_request *req, int close)
+int fcgi_flush(fcgi_request *req, int end)
 {
 	int len;
 
@@ -1511,7 +1516,7 @@ int fcgi_flush(fcgi_request *req, int close)
 
 	len = (int)(req->out_pos - req->out_buf);
 
-	if (close) {
+	if (end) {
 		fcgi_end_request_rec *rec = (fcgi_end_request_rec*)(req->out_pos);
 
 		fcgi_make_header(&rec->hdr, FCGI_END_REQUEST, req->id, sizeof(fcgi_end_request));
@@ -1587,7 +1592,7 @@ int fcgi_write(fcgi_request *req, fcgi_request_type type, const char *str, int l
 		}
 		memcpy(req->out_pos, str, len);
 		req->out_pos += len;
-	} else if (len - limit < sizeof(req->out_buf) - sizeof(fcgi_header)) {
+	} else if (len - limit < (int)(sizeof(req->out_buf) - sizeof(fcgi_header))) {
 		if (!req->out_hdr) {
 			open_packet(req, type);
 		}
@@ -1645,15 +1650,21 @@ int fcgi_write(fcgi_request *req, fcgi_request_type type, const char *str, int l
 	return len;
 }
 
+int fcgi_end(fcgi_request *req) {
+	int ret = 1;
+	if (!req->ended) {
+		ret = fcgi_flush(req, 1);
+		req->ended = 1;
+	}
+	return ret;
+}
+
 int fcgi_finish_request(fcgi_request *req, int force_close)
 {
 	int ret = 1;
 
 	if (req->fd >= 0) {
-		if (!req->closed) {
-			ret = fcgi_flush(req, 1);
-			req->closed = 1;
-		}
+		ret = fcgi_end(req);
 		fcgi_close(req, force_close, 1);
 	}
 	return ret;

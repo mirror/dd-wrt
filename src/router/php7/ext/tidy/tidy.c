@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: c5d43b097bcd741ef0f8e424db7f1c5f5ce80e3a $ */
+/* $Id: f764b98c87afe8ab43162db66290eced256fb9f1 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -31,7 +31,12 @@
 #include "ext/standard/info.h"
 
 #include "tidy.h"
+
+#if HAVE_TIDYBUFFIO_H
+#include "tidybuffio.h"
+#else
 #include "buffio.h"
+#endif
 
 /* compatibility with older versions of libtidy */
 #ifndef TIDY_CALL
@@ -1078,8 +1083,11 @@ static PHP_MINFO_FUNCTION(tidy)
 {
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Tidy support", "enabled");
+#if HAVE_TIDYBUFFIO_H
+	php_info_print_table_row(2, "libTidy Version", (char *)tidyLibraryVersion());
+#endif
 	php_info_print_table_row(2, "libTidy Release", (char *)tidyReleaseDate());
-	php_info_print_table_row(2, "Extension Version", PHP_TIDY_VERSION " ($Id: c5d43b097bcd741ef0f8e424db7f1c5f5ce80e3a $)");
+	php_info_print_table_row(2, "Extension Version", PHP_TIDY_VERSION " ($Id: f764b98c87afe8ab43162db66290eced256fb9f1 $)");
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();
@@ -1849,7 +1857,7 @@ static TIDY_NODE_METHOD(getParent)
          __constructor for tidyNode. */
 static TIDY_NODE_METHOD(__construct)
 {
-	php_error_docref(NULL, E_ERROR, "You should not create a tidyNode manually");
+	zend_throw_error(NULL, "You should not create a tidyNode manually");
 }
 /* }}} */
 

@@ -80,6 +80,7 @@ static const char rcsid[] = "#(@) $Id$";
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "simplestring.h"
 
 #define my_free(thing)  if(thing) {free(thing); thing = 0;}

@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -102,7 +102,7 @@ retry:
 			} while (err == EINTR);
 		}
 		estr = php_socket_strerror(err, NULL, 0);
-		php_error_docref(NULL, E_NOTICE, "send of " ZEND_LONG_FMT " bytes failed with errno=%ld %s",
+		php_error_docref(NULL, E_NOTICE, "send of " ZEND_LONG_FMT " bytes failed with errno=%d %s",
 				(zend_long)count, err, estr);
 		efree(estr);
 	}
@@ -336,7 +336,7 @@ static int php_sockop_set_option(php_stream *stream, int option, int value, void
 					ret = recv(sock->socket, &buf, sizeof(buf), MSG_PEEK);
 					err = php_socket_errno();
 					if (0 == ret || /* the counterpart did properly shutdown*/
-						(0 > ret && err != EWOULDBLOCK && err != EAGAIN)) { /* there was an unrecoverable error */
+						(0 > ret && err != EWOULDBLOCK && err != EAGAIN && err != EMSGSIZE)) { /* there was an unrecoverable error */
 						alive = 0;
 					}
 				}
@@ -571,37 +571,44 @@ static inline char *parse_ip_address_ex(const char *str, size_t str_len, int *po
 	char *host = NULL;
 
 #ifdef HAVE_IPV6
-	char *p;
-
 	if (*(str) == '[' && str_len > 1) {
 		/* IPV6 notation to specify raw address with port (i.e. [fe80::1]:80) */
-		p = memchr(str + 1, ']', str_len - 2);
+		char *p = memchr(str + 1, ']', str_len - 2), *e = NULL;
 		if (!p || *(p + 1) != ':') {
 			if (get_err) {
 				*err = strpprintf(0, "Failed to parse IPv6 address \"%s\"", str);
 			}
 			return NULL;
 		}
-		*portno = atoi(p + 2);
+		*portno = strtol(p + 2, &e, 10);
+		if (e && *e) {
+			if (get_err) {
+				*err = strpprintf(0, "Failed to parse address \"%s\"", str);
+			}
+			return NULL;
+		}
 		return estrndup(str + 1, p - str - 1);
 	}
 #endif
+
 	if (str_len) {
 		colon = memchr(str, ':', str_len - 1);
 	} else {
 		colon = NULL;
 	}
+
 	if (colon) {
-		*portno = atoi(colon + 1);
-		host = estrndup(str, colon - str);
-	} else {
-		if (get_err) {
-			*err = strpprintf(0, "Failed to parse address \"%s\"", str);
+		char *e = NULL;
+		*portno = strtol(colon + 1, &e, 10);
+		if (!e || !*e) {
+			return estrndup(str, colon - str);
 		}
-		return NULL;
 	}
 
-	return host;
+	if (get_err) {
+		*err = strpprintf(0, "Failed to parse address \"%s\"", str);
+	}
+	return NULL;
 }
 
 static inline char *parse_ip_address(php_stream_xport_param *xparam, int *portno)
@@ -752,6 +759,18 @@ static inline int php_tcp_sockop_connect(php_stream *stream, php_netstream_data_
 	}
 #endif
 
+	if (stream->ops != &php_stream_udp_socket_ops /* TCP_NODELAY is only applicable for TCP */
+#ifdef AF_UNIX
+		&& stream->ops != &php_stream_unix_socket_ops
+		&& stream->ops != &php_stream_unixdg_socket_ops
+#endif
+		&& PHP_STREAM_CONTEXT(stream)
+		&& (tmpzval = php_stream_context_get_option(PHP_STREAM_CONTEXT(stream), "socket", "tcp_nodelay")) != NULL
+		&& zend_is_true(tmpzval)
+	) {
+		sockopts |= STREAM_SOCKOP_TCP_NODELAY;
+	}
+
 	/* Note: the test here for php_stream_udp_socket_ops is important, because we
 	 * want the default to be TCP sockets so that the openssl extension can
 	 * re-use this code. */
@@ -793,36 +812,37 @@ static inline int php_tcp_sockop_accept(php_stream *stream, php_netstream_data_t
 		php_stream_xport_param *xparam STREAMS_DC)
 {
 	int clisock;
+	zend_bool nodelay = 0;
+	zval *tmpzval = NULL;
 
 	xparam->outputs.client = NULL;
 
+	if ((NULL != PHP_STREAM_CONTEXT(stream)) &&
+		(tmpzval = php_stream_context_get_option(PHP_STREAM_CONTEXT(stream), "socket", "tcp_nodelay")) != NULL &&
+		zend_is_true(tmpzval)) {
+		nodelay = 1;
+	}
+
 	clisock = php_network_accept_incoming(sock->socket,
-			xparam->want_textaddr ? &xparam->outputs.textaddr : NULL,
-			xparam->want_addr ? &xparam->outputs.addr : NULL,
-			xparam->want_addr ? &xparam->outputs.addrlen : NULL,
-			xparam->inputs.timeout,
-			xparam->want_errortext ? &xparam->outputs.error_text : NULL,
-			&xparam->outputs.error_code
-			);
+		xparam->want_textaddr ? &xparam->outputs.textaddr : NULL,
+		xparam->want_addr ? &xparam->outputs.addr : NULL,
+		xparam->want_addr ? &xparam->outputs.addrlen : NULL,
+		xparam->inputs.timeout,
+		xparam->want_errortext ? &xparam->outputs.error_text : NULL,
+		&xparam->outputs.error_code,
+		nodelay);
 
 	if (clisock >= 0) {
-		php_netstream_data_t *clisockdata;
+		php_netstream_data_t *clisockdata = (php_netstream_data_t*) emalloc(sizeof(*clisockdata));
 
-		clisockdata = emalloc(sizeof(*clisockdata));
+		memcpy(clisockdata, sock, sizeof(*clisockdata));
+		clisockdata->socket = clisock;
 
-		if (clisockdata == NULL) {
-			close(clisock);
-			/* technically a fatal error */
-		} else {
-			memcpy(clisockdata, sock, sizeof(*clisockdata));
-			clisockdata->socket = clisock;
-
-			xparam->outputs.client = php_stream_alloc_rel(stream->ops, clisockdata, NULL, "r+");
-			if (xparam->outputs.client) {
-				xparam->outputs.client->ctx = stream->ctx;
-				if (stream->ctx) {
-					GC_REFCOUNT(stream->ctx)++;
-				}
+		xparam->outputs.client = php_stream_alloc_rel(stream->ops, clisockdata, NULL, "r+");
+		if (xparam->outputs.client) {
+			xparam->outputs.client->ctx = stream->ctx;
+			if (stream->ctx) {
+				GC_REFCOUNT(stream->ctx)++;
 			}
 		}
 	}

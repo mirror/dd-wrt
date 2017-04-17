@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -325,9 +325,7 @@ static int do_callback(struct pdo_sqlite_fci *fc, zval *cb,
 	fake_argc = argc + is_agg;
 
 	fc->fci.size = sizeof(fc->fci);
-	fc->fci.function_table = EG(function_table);
 	ZVAL_COPY_VALUE(&fc->fci.function_name, cb);
-	fc->fci.symbol_table = NULL;
 	fc->fci.object = NULL;
 	fc->fci.retval = &retval;
 	fc->fci.param_count = fake_argc;
@@ -476,9 +474,7 @@ static int php_sqlite3_collation_callback(void *context,
 	struct pdo_sqlite_collation *collation = (struct pdo_sqlite_collation*) context;
 
 	collation->fc.fci.size = sizeof(collation->fc.fci);
-	collation->fc.fci.function_table = EG(function_table);
 	ZVAL_COPY_VALUE(&collation->fc.fci.function_name, &collation->callback);
-	collation->fc.fci.symbol_table = NULL;
 	collation->fc.fci.object = NULL;
 	collation->fc.fci.retval = &retval;
 
@@ -509,7 +505,7 @@ static int php_sqlite3_collation_callback(void *context,
 	return ret;
 }
 
-/* {{{ bool SQLite::sqliteCreateFunction(string name, mixed callback [, int argcount])
+/* {{{ bool SQLite::sqliteCreateFunction(string name, mixed callback [, int argcount, int flags])
    Registers a UDF with the sqlite db handle */
 static PHP_METHOD(SQLite, sqliteCreateFunction)
 {
@@ -518,13 +514,14 @@ static PHP_METHOD(SQLite, sqliteCreateFunction)
 	char *func_name;
 	size_t func_name_len;
 	zend_long argc = -1;
+	zend_long flags = 0;
 	zend_string *cbname = NULL;
 	pdo_dbh_t *dbh;
 	pdo_sqlite_db_handle *H;
 	int ret;
 
-	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz|l",
-			&func_name, &func_name_len, &callback, &argc)) {
+	if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS(), "sz|ll",
+			&func_name, &func_name_len, &callback, &argc, &flags)) {
 		RETURN_FALSE;
 	}
 
@@ -542,7 +539,7 @@ static PHP_METHOD(SQLite, sqliteCreateFunction)
 
 	func = (struct pdo_sqlite_func*)ecalloc(1, sizeof(*func));
 
-	ret = sqlite3_create_function(H->db, func_name, argc, SQLITE_UTF8,
+	ret = sqlite3_create_function(H->db, func_name, argc, flags | SQLITE_UTF8,
 			func, php_sqlite3_func_callback, NULL, NULL);
 	if (ret == SQLITE_OK) {
 		func->funcname = estrdup(func_name);
@@ -731,7 +728,8 @@ static struct pdo_dbh_methods sqlite_methods = {
 	pdo_sqlite_get_attribute,
 	NULL,	/* check_liveness: not needed */
 	get_driver_methods,
-	pdo_sqlite_request_shutdown
+	pdo_sqlite_request_shutdown,
+	NULL
 };
 
 static char *make_filename_safe(const char *filename)

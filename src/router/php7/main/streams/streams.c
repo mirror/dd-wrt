@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1753,7 +1753,7 @@ PHPAPI php_stream_wrapper *php_stream_locate_url_wrapper(const char *path, const
 	HashTable *wrapper_hash = (FG(stream_wrappers) ? FG(stream_wrappers) : &url_stream_wrappers_hash);
 	php_stream_wrapper *wrapper = NULL;
 	const char *p, *protocol = NULL;
-	int n = 0;
+	size_t n = 0;
 
 	if (path_for_open) {
 		*path_for_open = (char*)path;
@@ -2231,6 +2231,7 @@ PHPAPI int php_stream_context_set_option(php_stream_context *context,
 	zval *wrapperhash;
 	zval category;
 
+	SEPARATE_ARRAY(&context->options);
 	wrapperhash = zend_hash_str_find(Z_ARRVAL(context->options), wrappername, strlen(wrappername));
 	if (NULL == wrapperhash) {
 		array_init(&category);
@@ -2241,6 +2242,7 @@ PHPAPI int php_stream_context_set_option(php_stream_context *context,
 	}
 	ZVAL_DEREF(optionvalue);
 	Z_TRY_ADDREF_P(optionvalue);
+	SEPARATE_ARRAY(wrapperhash);
 	return zend_hash_str_update(Z_ARRVAL_P(wrapperhash), optionname, strlen(optionname), optionvalue) ? SUCCESS : FAILURE;
 }
 /* }}} */

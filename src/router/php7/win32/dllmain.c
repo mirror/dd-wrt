@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -19,6 +19,7 @@
 #include <config.w32.h>
 
 #include <win32/time.h>
+#include <win32/ioutil.h>
 #include <php.h>
 
 #ifdef HAVE_LIBXML
@@ -42,6 +43,12 @@ BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID dummy)
 			ret = ret && php_win32_init_gettimeofday();
 			if (!ret) {
 				fprintf(stderr, "gettimeofday() initialization failed");
+				return ret;
+			}
+
+			ret = ret && php_win32_ioutil_init();
+			if (!ret) {
+				fprintf(stderr, "ioutil initialization failed");
 				return ret;
 			}
 			break;

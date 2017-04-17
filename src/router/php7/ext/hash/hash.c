@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -30,12 +30,6 @@
 
 static int php_hash_le_hash;
 HashTable php_hash_hashtable;
-
-#if (PHP_MAJOR_VERSION >= 5)
-# define DEFAULT_CONTEXT FG(default_context)
-#else
-# define DEFAULT_CONTEXT NULL
-#endif
 
 #ifdef PHP_MHASH_BC
 struct mhash_bc_entry {
@@ -140,7 +134,7 @@ static void php_hash_do_hash(INTERNAL_FUNCTION_PARAMETERS, int isfilename, zend_
 			php_error_docref(NULL, E_WARNING, "Invalid path");
 			RETURN_FALSE;
 		}
-		stream = php_stream_open_wrapper_ex(data, "rb", REPORT_ERRORS, NULL, DEFAULT_CONTEXT);
+		stream = php_stream_open_wrapper_ex(data, "rb", REPORT_ERRORS, NULL, FG(default_context));
 		if (!stream) {
 			/* Stream will report errors opening file */
 			RETURN_FALSE;
@@ -214,7 +208,7 @@ static inline void php_hash_string_xor(unsigned char *out, const unsigned char *
 
 static inline void php_hash_hmac_prep_key(unsigned char *K, const php_hash_ops *ops, void *context, const unsigned char *key, const size_t key_len) {
 	memset(K, 0, ops->block_size);
-	if (key_len > ops->block_size) {
+	if (key_len > (size_t)ops->block_size) {
 		/* Reduce the key first */
 		ops->hash_init(context);
 		ops->hash_update(context, key, key_len);
@@ -259,7 +253,7 @@ static void php_hash_do_hash_hmac(INTERNAL_FUNCTION_PARAMETERS, int isfilename, 
 			php_error_docref(NULL, E_WARNING, "Invalid path");
 			RETURN_FALSE;
 		}
-		stream = php_stream_open_wrapper_ex(data, "rb", REPORT_ERRORS, NULL, DEFAULT_CONTEXT);
+		stream = php_stream_open_wrapper_ex(data, "rb", REPORT_ERRORS, NULL, FG(default_context));
 		if (!stream) {
 			/* Stream will report errors opening file */
 			RETURN_FALSE;
@@ -373,7 +367,7 @@ PHP_FUNCTION(hash_init)
 
 		memset(K, 0, ops->block_size);
 
-		if (key_len > ops->block_size) {
+		if (key_len > (size_t)ops->block_size) {
 			/* Reduce the key first */
 			ops->hash_update(context, (unsigned char *) key, key_len);
 			ops->hash_final((unsigned char *) K, context);
@@ -603,6 +597,122 @@ PHP_FUNCTION(hash_algos)
 }
 /* }}} */
 
+static inline zend_bool php_hash_is_crypto(const char *algo, size_t algo_len) {
+
+	char *blacklist[] = { "adler32", "crc32", "crc32b", "fnv132", "fnv1a32", "fnv164", "fnv1a64", "joaat", NULL };
+	char *lower = zend_str_tolower_dup(algo, algo_len);
+	int i = 0;
+
+	while (blacklist[i]) {
+		if (strcmp(lower, blacklist[i]) == 0) {
+			efree(lower);
+			return 0;
+		}
+
+		i++;
+	}
+
+	efree(lower);
+	return 1;
+}
+
+/* {{{ proto string hash_hkdf(string algo, string ikm [, int length = 0, string info = '', string salt = ''])
+RFC5869 HMAC-based key derivation function */
+PHP_FUNCTION(hash_hkdf)
+{
+	zend_string *returnval, *ikm, *algo, *info = NULL, *salt = NULL;
+	zend_long length = 0;
+	unsigned char *prk, *digest, *K;
+	int i, rounds;
+	const php_hash_ops *ops;
+	void *context;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "SS|lSS", &algo, &ikm, &length, &info, &salt) == FAILURE) {
+		return;
+	}
+
+	ops = php_hash_fetch_ops(ZSTR_VAL(algo), ZSTR_LEN(algo));
+	if (!ops) {
+		php_error_docref(NULL, E_WARNING, "Unknown hashing algorithm: %s", ZSTR_VAL(algo));
+		RETURN_FALSE;
+	}
+	
+	if (!php_hash_is_crypto(ZSTR_VAL(algo), ZSTR_LEN(algo))) {
+		php_error_docref(NULL, E_WARNING, "Non-cryptographic hashing algorithm: %s", ZSTR_VAL(algo));
+		RETURN_FALSE;
+	}
+
+	if (ZSTR_LEN(ikm) == 0) {
+		php_error_docref(NULL, E_WARNING, "Input keying material cannot be empty");
+		RETURN_FALSE;
+	}
+
+	if (length < 0) {
+		php_error_docref(NULL, E_WARNING, "Length must be greater than or equal to 0: " ZEND_LONG_FMT, length);
+		RETURN_FALSE;
+	} else if (length == 0) {
+		length = ops->digest_size;
+	} else if (length > ops->digest_size * 255) {
+		php_error_docref(NULL, E_WARNING, "Length must be less than or equal to %d: " ZEND_LONG_FMT, ops->digest_size * 255, length);
+		RETURN_FALSE;
+	}
+
+	context = emalloc(ops->context_size);
+
+	// Extract
+	ops->hash_init(context);
+	K = emalloc(ops->block_size);
+	php_hash_hmac_prep_key(K, ops, context,
+		(unsigned char *) (salt ? ZSTR_VAL(salt) : ""), salt ? ZSTR_LEN(salt) : 0);
+
+	prk = emalloc(ops->digest_size);
+	php_hash_hmac_round(prk, ops, context, K, (unsigned char *) ZSTR_VAL(ikm), ZSTR_LEN(ikm));
+	php_hash_string_xor_char(K, K, 0x6A, ops->block_size);
+	php_hash_hmac_round(prk, ops, context, K, prk, ops->digest_size);
+	ZEND_SECURE_ZERO(K, ops->block_size);
+
+	// Expand
+	returnval = zend_string_alloc(length, 0);
+	digest = emalloc(ops->digest_size);
+	for (i = 1, rounds = (length - 1) / ops->digest_size + 1; i <= rounds; i++) {
+		// chr(i)
+		unsigned char c[1];
+		c[0] = (i & 0xFF);
+
+		php_hash_hmac_prep_key(K, ops, context, prk, ops->digest_size);
+		ops->hash_init(context);
+		ops->hash_update(context, K, ops->block_size);
+
+		if (i > 1) {
+			ops->hash_update(context, digest, ops->digest_size);
+		}
+
+		if (info != NULL && ZSTR_LEN(info) > 0) {
+			ops->hash_update(context, (unsigned char *) ZSTR_VAL(info), ZSTR_LEN(info));
+		}
+
+		ops->hash_update(context, c, 1);
+		ops->hash_final(digest, context);
+		php_hash_string_xor_char(K, K, 0x6A, ops->block_size);
+		php_hash_hmac_round(digest, ops, context, K, digest, ops->digest_size);
+		memcpy(
+			ZSTR_VAL(returnval) + ((i - 1) * ops->digest_size),
+			digest,
+			(i == rounds ? length - ((i - 1) * ops->digest_size) : ops->digest_size)
+		);
+	}
+
+	ZEND_SECURE_ZERO(K, ops->block_size);
+	ZEND_SECURE_ZERO(digest, ops->digest_size);
+	ZEND_SECURE_ZERO(prk, ops->digest_size);
+	efree(K);
+	efree(context);
+	efree(prk);
+	efree(digest);
+	ZSTR_VAL(returnval)[length] = 0;
+	RETURN_STR(returnval);
+}
+
 /* {{{ proto string hash_pbkdf2(string algo, string password, string salt, int iterations [, int length = 0, bool raw_output = false])
 Generate a PBKDF2 hash of the given password and salt
 Returns lowercase hexits by default */
@@ -735,7 +845,8 @@ PHP_FUNCTION(hash_equals)
 {
 	zval *known_zval, *user_zval;
 	char *known_str, *user_str;
-	int result = 0, j;
+	int result = 0;
+	size_t j;
 
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "zz", &known_zval, &user_zval) == FAILURE) {
 		return;
@@ -783,7 +894,7 @@ static void php_hash_dtor(zend_resource *rsrc) /* {{{ */
 	}
 
 	if (hash->key) {
-		memset(hash->key, 0, hash->ops->block_size);
+		ZEND_SECURE_ZERO(hash->key, hash->ops->block_size);
 		efree(hash->key);
 	}
 	efree(hash);
@@ -1013,7 +1124,13 @@ PHP_MINIT_FUNCTION(hash)
 	php_hash_register_algo("sha224",		&php_hash_sha224_ops);
 	php_hash_register_algo("sha256",		&php_hash_sha256_ops);
 	php_hash_register_algo("sha384",		&php_hash_sha384_ops);
+	php_hash_register_algo("sha512/224",            &php_hash_sha512_224_ops);
+	php_hash_register_algo("sha512/256",            &php_hash_sha512_256_ops);
 	php_hash_register_algo("sha512",		&php_hash_sha512_ops);
+	php_hash_register_algo("sha3-224",		&php_hash_sha3_224_ops);
+	php_hash_register_algo("sha3-256",		&php_hash_sha3_256_ops);
+	php_hash_register_algo("sha3-384",		&php_hash_sha3_384_ops);
+	php_hash_register_algo("sha3-512",		&php_hash_sha3_512_ops);
 	php_hash_register_algo("ripemd128",		&php_hash_ripemd128_ops);
 	php_hash_register_algo("ripemd160",		&php_hash_ripemd160_ops);
 	php_hash_register_algo("ripemd256",		&php_hash_ripemd256_ops);
@@ -1204,6 +1321,14 @@ ZEND_BEGIN_ARG_INFO(arginfo_hash_equals, 0)
 	ZEND_ARG_INFO(0, user_string)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_hash_hkdf, 0, 0, 2)
+	ZEND_ARG_INFO(0, ikm)
+	ZEND_ARG_INFO(0, algo)
+	ZEND_ARG_INFO(0, length)
+	ZEND_ARG_INFO(0, string)
+	ZEND_ARG_INFO(0, salt)
+ZEND_END_ARG_INFO()
+
 /* BC Land */
 #ifdef PHP_MHASH_BC
 ZEND_BEGIN_ARG_INFO(arginfo_mhash_get_block_size, 0)
@@ -1252,6 +1377,7 @@ const zend_function_entry hash_functions[] = {
 	PHP_FE(hash_algos,								arginfo_hash_algos)
 	PHP_FE(hash_pbkdf2,								arginfo_hash_pbkdf2)
 	PHP_FE(hash_equals,								arginfo_hash_equals)
+	PHP_FE(hash_hkdf,								arginfo_hash_hkdf)
 
 	/* BC Land */
 #ifdef PHP_HASH_MD5_NOT_IN_CORE

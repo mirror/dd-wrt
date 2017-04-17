@@ -4,7 +4,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -24,7 +24,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: fef39c50b820b589ab0c53e82635319ed1b00525 $ */
+/* $Id: 1991b56a087a4b6df1d9a65676d24112078512a1 $ */
 
 /* Sanity check to ensure that pcre extension needed by this script is available.
  * In the event it is not, print a nice error message indicating that this script will
@@ -57,27 +57,6 @@ if (!function_exists('proc_open')) {
 
 NO_PROC_OPEN_ERROR;
 exit;
-}
-
-// Version constants only available as of 5.2.8
-if (!defined("PHP_VERSION_ID")) {
-	list($major, $minor, $bug) = explode(".", phpversion(), 3);
-	$bug = (int)$bug; // Many distros make up their own versions
-	if ($bug < 10) {
-		$bug = "0$bug";
-	}
-
-	define("PHP_VERSION_ID", "{$major}0{$minor}$bug");
-	define("PHP_MAJOR_VERSION", $major);
-}
-
-// __DIR__ is available from 5.3.0
-if (PHP_VERSION_ID < 50300) {
-	define('__DIR__', realpath(dirname(__FILE__)));
-	// FILE_BINARY is available from 5.2.7
-	if (PHP_VERSION_ID < 50207) {
-		define('FILE_BINARY', 0);
-	}
 }
 
 // If timezone is not set, use UTC.
@@ -113,22 +92,6 @@ while(@ob_end_clean());
 if (ob_get_level()) echo "Not all buffers were deleted.\n";
 
 error_reporting(E_ALL);
-if (PHP_MAJOR_VERSION < 6) {
-	if (ini_get('safe_mode')) {
-		echo <<< SAFE_MODE_WARNING
-
-+-----------------------------------------------------------+
-|                       ! WARNING !                         |
-| You are running the test-suite with "safe_mode" ENABLED ! |
-|                                                           |
-| Chances are high that no test will work at all,           |
-| depending on how you configured "safe_mode" !             |
-+-----------------------------------------------------------+
-
-
-SAFE_MODE_WARNING;
-	}
-}
 
 $environment = isset($_ENV) ? $_ENV : array();
 if ((substr(PHP_OS, 0, 3) == "WIN") && empty($environment["SystemRoot"])) {
@@ -159,16 +122,6 @@ if (getenv('TEST_PHP_EXECUTABLE')) {
 				$php_cgi = null;
 			}
 		}
-
-		if (!getenv('TEST_PHPDBG_EXECUTABLE')) {
-			$phpdbg = $cwd . '/sapi/phpdbg/phpdbg';
-
-			if (file_exists($phpdbg)) {
-				putenv("TEST_PHPDBG_EXECUTABLE=$phpdbg");
-			} else {
-				$phpdbg = null;
-			}
-		}
 	}
 	$environment['TEST_PHP_EXECUTABLE'] = $php;
 }
@@ -182,6 +135,23 @@ if (getenv('TEST_PHP_CGI_EXECUTABLE')) {
 	}
 
 	$environment['TEST_PHP_CGI_EXECUTABLE'] = $php_cgi;
+}
+
+if (!getenv('TEST_PHPDBG_EXECUTABLE')) {
+	if (!strncasecmp(PHP_OS, "win", 3) && file_exists(dirname($php) . "/phpdbg.exe")) {
+		$phpdbg = realpath(dirname($php) . "/phpdbg.exe");
+	} elseif (file_exists(dirname($php) . "/../../sapi/phpdbg/phpdbg")) {
+		$phpdbg = realpath(dirname($php) . "/../../sapi/phpdbg/phpdbg");
+	} elseif (file_exists("./sapi/phpdbg/phpdbg")) {
+		$phpdbg = realpath("./sapi/phpdbg/phpdbg");
+	} elseif (file_exists(dirname($php) . "/phpdbg")) {
+		$phpdbg = realpath(dirname($php) . "/phpdbg");
+	} else {
+		$phpdbg = null;
+	}
+	if ($phpdbg) {
+		putenv("TEST_PHPDBG_EXECUTABLE=$phpdbg");
+	}
 }
 
 if (getenv('TEST_PHPDBG_EXECUTABLE')) {
@@ -240,7 +210,6 @@ $exts_to_test = array();
 $ini_overwrites = array(
 		'output_handler=',
 		'open_basedir=',
-		'safe_mode=0',
 		'disable_functions=',
 		'output_buffering=Off',
 		'error_reporting=' . (E_ALL | E_STRICT),
@@ -304,10 +273,13 @@ More .INIs  : " , (function_exists(\'php_ini_scanned_files\') ? str_replace("\n"
 		$phpdbg_info = '';
 	}
 
+	if (function_exists('opcache_invalidate')) {
+		opcache_invalidate($info_file, true);
+	}
 	@unlink($info_file);
 
 	// load list of enabled extensions
-	save_text($info_file, '<?php echo join(",", get_loaded_extensions()); ?>');
+	save_text($info_file, '<?php echo str_replace("Zend OPcache", "opcache", join(",", get_loaded_extensions())); ?>');
 	$exts_to_test = explode(',',`$php $pass_options $info_params $no_file_cache "$info_file"`);
 	// check for extensions that need special handling and regenerate
 	$info_params_ex = array(
@@ -324,6 +296,9 @@ More .INIs  : " , (function_exists(\'php_ini_scanned_files\') ? str_replace("\n"
 		}
 	}
 
+	if (function_exists('opcache_invalidate')) {
+		opcache_invalidate($info_file, true);
+	}
 	@unlink($info_file);
 
 	// Write test context information.
@@ -595,7 +570,7 @@ if (isset($argc) && $argc > 1) {
 					$ini_overwrites[] = $argv[++$i];
 					break;
 				case 'g':
-					$SHOW_ONLY_GROUPS = explode(",", $argv[++$i]);;
+					$SHOW_ONLY_GROUPS = explode(",", $argv[++$i]);
 					break;
 				//case 'h'
 				case '--keep-all':
@@ -696,7 +671,7 @@ if (isset($argc) && $argc > 1) {
 					$html_output = is_resource($html_file);
 					break;
 				case '--version':
-					echo '$Id: fef39c50b820b589ab0c53e82635319ed1b00525 $' . "\n";
+					echo '$Id: 1991b56a087a4b6df1d9a65676d24112078512a1 $' . "\n";
 					exit(1);
 
 				default:
@@ -866,7 +841,7 @@ HELP;
 
 		junit_save_xml();
 
-		if (getenv('REPORT_EXIT_STATUS') == 1 and $sum_results['FAILED']) {
+		if (getenv('REPORT_EXIT_STATUS') == 1 && ($sum_results['FAILED'] || $sum_results['BORKED'])) {
 			exit(1);
 		}
 
@@ -1002,7 +977,7 @@ save_or_mail_results();
 
 junit_save_xml();
 
-if (getenv('REPORT_EXIT_STATUS') == 1 and $sum_results['FAILED']) {
+if (getenv('REPORT_EXIT_STATUS') == 1 && ($sum_results['FAILED'] || $sum_results['BORKED'])) {
 	exit(1);
 }
 exit(0);
@@ -1404,6 +1379,7 @@ TEST $file
 				return 'SKIPPED';
 			}
 		}
+		$uses_cgi = true;
 	}
 
 	/* For phpdbg tests, check if phpdbg sapi is available and if it is, use it. */
@@ -1415,26 +1391,12 @@ TEST $file
 		if (isset($phpdbg)) {
 			$old_php = $php;
 			$php = $phpdbg . ' -qIb';
-		} else if (!strncasecmp(PHP_OS, "win", 3) && file_exists(dirname($php) . "/phpdbg.exe")) {
-			$old_php = $php;
-			$php = realpath(dirname($php) . "/phpdbg.exe") . ' -qIb ';
 		} else {
-			if (file_exists(dirname($php) . "/../../sapi/phpdbg/phpdbg")) {
-				$old_php = $php;
-				$php = realpath(dirname($php) . "/../../sapi/phpdbg/phpdbg") . ' -qIb ';
-			} else if (file_exists("./sapi/phpdbg/phpdbg")) {
-				$old_php = $php;
-				$php = realpath("./sapi/phpdbg/phpdbg") . ' -qIb ';
-			} else if (file_exists(dirname($php) . "/phpdbg")) {
-				$old_php = $php;
-				$php = realpath(dirname($php) . "/phpdbg") . ' -qIb ';
-			} else {
-				show_result('SKIP', $tested, $tested_file, "reason: phpdbg not available");
+			show_result('SKIP', $tested, $tested_file, "reason: phpdbg not available");
 
-				junit_init_suite(junit_get_suitename_for($shortname));
-				junit_mark_test_as('SKIP', $shortname, $tested, 0, 'phpdbg not available');
-				return 'SKIPPED';
-			}
+			junit_init_suite(junit_get_suitename_for($shortname));
+			junit_mark_test_as('SKIP', $shortname, $tested, 0, 'phpdbg not available');
+			return 'SKIPPED';
 		}
 	}
 
@@ -1633,6 +1595,11 @@ TEST $file
 					$warn = true; /* only if there is a reason */
 					$info = " (warn: $m[1])";
 				}
+			}
+
+			if (!strncasecmp('xfail', ltrim($output), 5)) {
+				// Pretend we have an XFAIL section
+				$section_text['XFAIL'] = trim(substr(ltrim($output), 5));
 			}
 		}
 	}
@@ -1954,7 +1921,7 @@ COMMAND $cmd
 	/* when using CGI, strip the headers from the output */
 	$headers = "";
 
-	if (isset($old_php) && preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $out, $match)) {
+	if (!empty($uses_cgi) && preg_match("/^(.*?)\r?\n\r?\n(.*)/s", $out, $match)) {
 		$output = trim($match[2]);
 		$rh = preg_split("/[\n\r]+/", $match[1]);
 		$headers = array();
@@ -2734,6 +2701,7 @@ function junit_init() {
 			'test_fail'     => 0,
 			'test_error'    => 0,
 			'test_skip'     => 0,
+			'test_warn'     => 0,
 			'execution_time'=> 0,
 			'suites'        => array(),
 			'files'         => array()
@@ -2834,7 +2802,7 @@ function junit_mark_test_as($type, $file_name, $test_name, $time = null, $messag
 	} elseif ('WARN' == $type) {
 		junit_suite_record($suite, 'test_warn');
 		$JUNIT['files'][$file_name]['xml'] .= "<warning>$escaped_message</warning>\n";
-	} elseif('FAIL' == $type) {
+	} elseif ('FAIL' == $type) {
 		junit_suite_record($suite, 'test_fail');
 		$JUNIT['files'][$file_name]['xml'] .= "<failure type='$output_type' message='$escaped_message'>$escaped_details</failure>\n";
 	} else {

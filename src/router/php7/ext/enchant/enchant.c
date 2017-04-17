@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.0 of the PHP license,       |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   |         Ilia Alshanetsky <ilia@prohost.org>                          |
   +----------------------------------------------------------------------+
 
-  $Id: e2428b7830f0b472b3af33bf243504d00d9b11ca $
+  $Id: 77f6840161c5b8604f9815ffce7708199b620f50 $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -323,7 +323,7 @@ PHP_MINFO_FUNCTION(enchant)
 #elif defined(HAVE_ENCHANT_BROKER_SET_PARAM)
 	php_info_print_table_row(2, "Libenchant Version", "1.5.0 or later");
 #endif
-	php_info_print_table_row(2, "Revision", "$Id: e2428b7830f0b472b3af33bf243504d00d9b11ca $");
+	php_info_print_table_row(2, "Revision", "$Id: 77f6840161c5b8604f9815ffce7708199b620f50 $");
 	php_info_print_table_end();
 
 	php_info_print_table_start();
@@ -587,11 +587,7 @@ PHP_FUNCTION(enchant_broker_request_pwl_dict)
 		RETURN_FALSE;
 	}
 
-#if PHP_API_VERSION < 20100412
-	if ((PG(safe_mode) && (!php_checkuid(pwl, NULL, CHECKUID_CHECK_FILE_AND_DIR))) || php_check_open_basedir(pwl)) {
-#else
 	if (php_check_open_basedir(pwl)) {
-#endif
 		RETURN_FALSE;
 	}
 

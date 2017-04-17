@@ -554,9 +554,17 @@
    you don't. */
 #undef HAVE_DECL_ARC4RANDOM_BUF
 
-/* Define to 1 if you have the declaration of `getrandom', and to 0 if you
+/* Define to 1 if you have the declaration of `isfinite', and to 0 if you
    don't. */
-#undef HAVE_DECL_GETRANDOM
+#undef HAVE_DECL_ISFINITE
+
+/* Define to 1 if you have the declaration of `isinf', and to 0 if you don't.
+   */
+#undef HAVE_DECL_ISINF
+
+/* Define to 1 if you have the declaration of `isnan', and to 0 if you don't.
+   */
+#undef HAVE_DECL_ISNAN
 
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
@@ -963,15 +971,6 @@
 
 /* Define to 1 if you have the `isascii' function. */
 #undef HAVE_ISASCII
-
-/* Define to 1 if you have the `isfinite' function. */
-#undef HAVE_ISFINITE
-
-/* Define to 1 if you have the `isinf' function. */
-#undef HAVE_ISINF
-
-/* Define to 1 if you have the `isnan' function. */
-#undef HAVE_ISNAN
 
 /* */
 #undef HAVE_ISQLEXT_H
@@ -1472,6 +1471,9 @@
 #undef HAVE_RESOLV_H
 
 /* */
+#undef HAVE_RES_NDESTROY
+
+/* */
 #undef HAVE_RES_NSEARCH
 
 /* */
@@ -1929,6 +1931,9 @@
 /* */
 #undef HAVE_TIDY
 
+/* defined if tidybuffio.h exists */
+#undef HAVE_TIDYBUFFIO_H
+
 /* */
 #undef HAVE_TIDYOPTGETDOC
 
@@ -2195,17 +2200,11 @@
 /* */
 #undef PHPDBG_DEBUG
 
-/* Whether the system supports BlowFish salt */
-#undef PHP_BLOWFISH_CRYPT
-
 /* PHP build date */
 #undef PHP_BUILD_DATE
 
 /* Define if your system has fork/vfork/CreateProcess */
 #undef PHP_CAN_SUPPORT_PROC_OPEN
-
-/* Whether the system supports extended DES salt */
-#undef PHP_EXT_DES_CRYPT
 
 /* fpm group name */
 #undef PHP_FPM_GROUP
@@ -2243,9 +2242,6 @@
 /* Whether you have IRIX-style functions */
 #undef PHP_IRIX_TIME_R
 
-/* Whether the system supports MD5 salt */
-#undef PHP_MD5_CRYPT
-
 /* */
 #undef PHP_MHASH_BC
 
@@ -2276,17 +2272,8 @@
 /* whether pwrite64 is default */
 #undef PHP_PWRITE_64
 
-/* Whether the system supports SHA256 salt */
-#undef PHP_SHA256_CRYPT
-
-/* Whether the system supports SHA512 salt */
-#undef PHP_SHA512_CRYPT
-
 /* */
 #undef PHP_SIGCHILD
-
-/* Whether the system supports standard DES salt */
-#undef PHP_STD_DES_CRYPT
 
 /* uname -a output */
 #undef PHP_UNAME
@@ -2522,33 +2509,33 @@ int zend_sprintf(char *buffer, const char *format, ...);
 
 /* To enable the is_nan, is_infinite and is_finite PHP functions */
 #ifdef NETWARE
-	#define HAVE_ISNAN 1
-	#define HAVE_ISINF 1
-	#define HAVE_ISFINITE 1
+	#define HAVE_DECL_ISNAN 1
+	#define HAVE_DECL_ISINF 1
+	#define HAVE_DECL_ISFINITE 1
 #endif
 
 #ifndef zend_isnan
-#ifdef HAVE_ISNAN
+#if HAVE_DECL_ISNAN
 #define zend_isnan(a) isnan(a)
 #elif defined(HAVE_FPCLASS)
 #define zend_isnan(a) ((fpclass(a) == FP_SNAN) || (fpclass(a) == FP_QNAN))
 #else
-#define zend_isnan(a) 0
+#define zend_isnan(a) ((a) != (a))
 #endif
 #endif
 
-#ifdef HAVE_ISINF
+#if HAVE_DECL_ISINF
 #define zend_isinf(a) isinf(a)
 #elif defined(INFINITY)
 /* Might not work, but is required by ISO C99 */
-#define zend_isinf(a) (((a)==INFINITY)?1:0)
+#define zend_isinf(a) (((a)==INFINITY || (a)==-INFINITY)?1:0)
 #elif defined(HAVE_FPCLASS)
 #define zend_isinf(a) ((fpclass(a) == FP_PINF) || (fpclass(a) == FP_NINF))
 #else
 #define zend_isinf(a) 0
 #endif
 
-#if defined(HAVE_ISFINITE) || defined(isfinite)
+#if HAVE_DECL_ISFINITE
 #define zend_finite(a) isfinite(a)
 #elif defined(HAVE_FINITE)
 #define zend_finite(a) finite(a)

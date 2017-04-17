@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -19,8 +19,6 @@
  */
 
 /* $Id$ */
-
-/* Synced with php 3.0 revision 1.193 1999-06-16 [ssb] */
 
 #include <stdio.h>
 #include "php.h"
@@ -167,7 +165,7 @@ static zend_string *php_hex2bin(const unsigned char *old, const size_t oldlen)
 		int is_letter = ((unsigned int) ((l - 'A') ^ (l - 'F' - 1))) >> (8 * sizeof(unsigned int) - 1);
 		unsigned char d;
 
-		/* basically (c >= '0' && c <= '9') || (l >= 'A' && l <= 'F') */ 
+		/* basically (c >= '0' && c <= '9') || (l >= 'A' && l <= 'F') */
 		if (EXPECTED((((c ^ '0') - 10) >> (8 * sizeof(unsigned int) - 1)) | is_letter)) {
 			d = (l - 0x10 - 0x27 * is_letter) << 4;
 		} else {
@@ -969,7 +967,7 @@ PHP_FUNCTION(wordwrap)
 		newtext = zend_string_init(ZSTR_VAL(text), ZSTR_LEN(text), 0);
 
 		laststart = lastspace = 0;
-		for (current = 0; current < ZSTR_LEN(text); current++) {
+		for (current = 0; current < (zend_long)ZSTR_LEN(text); current++) {
 			if (ZSTR_VAL(text)[current] == breakchar[0]) {
 				laststart = lastspace = current + 1;
 			} else if (ZSTR_VAL(text)[current] == ' ') {
@@ -1001,7 +999,7 @@ PHP_FUNCTION(wordwrap)
 		newtextlen = 0;
 
 		laststart = lastspace = 0;
-		for (current = 0; current < ZSTR_LEN(text); current++) {
+		for (current = 0; current < (zend_long)ZSTR_LEN(text); current++) {
 			if (chk <= 0) {
 				alloced += (size_t) (((ZSTR_LEN(text) - current + 1)/linelength + 1) * breakchar_len) + 1;
 				newtext = zend_string_extend(newtext, alloced, 0);
@@ -1412,7 +1410,7 @@ PHPAPI zend_string *php_string_toupper(zend_string *s)
 	e = c + ZSTR_LEN(s);
 
 	while (c < e) {
-		if (!isupper(*c)) {
+		if (islower(*c)) {
 			register unsigned char *r;
 			zend_string *res = zend_string_alloc(ZSTR_LEN(s), 0);
 
@@ -1475,7 +1473,7 @@ PHPAPI zend_string *php_string_tolower(zend_string *s)
 	e = c + ZSTR_LEN(s);
 
 	while (c < e) {
-		if (!islower(*c)) {
+		if (isupper(*c)) {
 			register unsigned char *r;
 			zend_string *res = zend_string_alloc(ZSTR_LEN(s), 0);
 
@@ -1631,7 +1629,11 @@ PHP_FUNCTION(dirname)
 
 	if (levels == 1) {
 		/* Defaut case */
+#ifdef PHP_WIN32
+		ZSTR_LEN(ret) = php_win32_ioutil_dirname(ZSTR_VAL(ret), str_len);
+#else
 		ZSTR_LEN(ret) = zend_dirname(ZSTR_VAL(ret), str_len);
+#endif
 	} else if (levels < 1) {
 		php_error_docref(NULL, E_WARNING, "Invalid argument, levels must be >= 1");
 		zend_string_free(ret);
@@ -1639,7 +1641,11 @@ PHP_FUNCTION(dirname)
 	} else {
 		/* Some levels up */
 		do {
+#ifdef PHP_WIN32
+			ZSTR_LEN(ret) = php_win32_ioutil_dirname(ZSTR_VAL(ret), str_len = ZSTR_LEN(ret));
+#else
 			ZSTR_LEN(ret) = zend_dirname(ZSTR_VAL(ret), str_len = ZSTR_LEN(ret));
+#endif
 		} while (ZSTR_LEN(ret) < str_len && --levels);
 	}
 
@@ -1707,7 +1713,7 @@ PHP_FUNCTION(pathinfo)
 
 		p = zend_memrchr(ZSTR_VAL(ret), '.', ZSTR_LEN(ret));
 
-		idx = p ? (p - ZSTR_VAL(ret)) : ZSTR_LEN(ret);
+		idx = p ? (p - ZSTR_VAL(ret)) : (ptrdiff_t)ZSTR_LEN(ret);
 		add_assoc_stringl(&tmp, "filename", ZSTR_VAL(ret), idx);
 	}
 
@@ -1923,6 +1929,9 @@ PHP_FUNCTION(strpos)
 		Z_PARAM_LONG(offset)
 	ZEND_PARSE_PARAMETERS_END();
 
+	if (offset < 0) {
+		offset += (zend_long)ZSTR_LEN(haystack);
+	}
 	if (offset < 0 || (size_t)offset > ZSTR_LEN(haystack)) {
 		php_error_docref(NULL, E_WARNING, "Offset not contained in string");
 		RETURN_FALSE;
@@ -1973,6 +1982,9 @@ PHP_FUNCTION(stripos)
 		return;
 	}
 
+	if (offset < 0) {
+		offset += (zend_long)ZSTR_LEN(haystack);
+	}
 	if (offset < 0 || (size_t)offset > ZSTR_LEN(haystack)) {
 		php_error_docref(NULL, E_WARNING, "Offset not contained in string");
 		RETURN_FALSE;
@@ -2066,7 +2078,7 @@ PHP_FUNCTION(strrpos)
 			RETURN_FALSE;
 		}
 		p = ZSTR_VAL(haystack);
-		if (-offset < needle_len) {
+		if ((size_t)-offset < needle_len) {
 			e = ZSTR_VAL(haystack) + ZSTR_LEN(haystack);
 		} else {
 			e = ZSTR_VAL(haystack) + ZSTR_LEN(haystack) + offset + needle_len;
@@ -2167,7 +2179,7 @@ PHP_FUNCTION(strripos)
 			RETURN_FALSE;
 		}
 		p = ZSTR_VAL(haystack_dup);
-		if (-offset < ZSTR_LEN(needle)) {
+		if ((size_t)-offset < ZSTR_LEN(needle)) {
 			e = ZSTR_VAL(haystack_dup) + ZSTR_LEN(haystack);
 		} else {
 			e = ZSTR_VAL(haystack_dup) + ZSTR_LEN(haystack) + offset + ZSTR_LEN(needle);
@@ -2341,7 +2353,7 @@ PHP_FUNCTION(substr)
 
 	if (f > (zend_long)ZSTR_LEN(str)) {
 		RETURN_FALSE;
-	} else if (f < 0 && -f > ZSTR_LEN(str)) {
+	} else if (f < 0 && (size_t)-f > ZSTR_LEN(str)) {
 		f = 0;
 	}
 
@@ -2373,7 +2385,7 @@ PHP_FUNCTION(substr)
 		RETURN_FALSE;
 	}
 
-	if ((f + l) > (zend_long)ZSTR_LEN(str)) {
+	if ((size_t)l > ZSTR_LEN(str) - (size_t)f) {
 		l = ZSTR_LEN(str) - f;
 	}
 
@@ -2451,7 +2463,7 @@ PHP_FUNCTION(substr_replace)
 				if (f < 0) {
 					f = 0;
 				}
-			} else if (f > Z_STRLEN_P(str)) {
+			} else if ((size_t)f > Z_STRLEN_P(str)) {
 				f = Z_STRLEN_P(str);
 			}
 			/* if "length" position is negative, set it to the length
@@ -2464,7 +2476,7 @@ PHP_FUNCTION(substr_replace)
 				}
 			}
 
-			if (l > Z_STRLEN_P(str) || (l < 0 && (size_t)(-l) > Z_STRLEN_P(str))) {
+			if ((size_t)l > Z_STRLEN_P(str) || (l < 0 && (size_t)(-l) > Z_STRLEN_P(str))) {
 				l = Z_STRLEN_P(str);
 			}
 
@@ -2688,7 +2700,8 @@ PHP_FUNCTION(quotemeta)
 /* }}} */
 
 /* {{{ proto int ord(string character)
-   Returns ASCII value of character */
+   Returns ASCII value of character
+   Warning: This function is special-cased by zend_compile.c and so is bypassed for constant string argument */
 PHP_FUNCTION(ord)
 {
 	char   *str;
@@ -2703,7 +2716,8 @@ PHP_FUNCTION(ord)
 /* }}} */
 
 /* {{{ proto string chr(int ascii)
-   Converts ASCII code to a character */
+   Converts ASCII code to a character
+   Warning: This function is special-cased by zend_compile.c and so is bypassed for constant integer argument */
 PHP_FUNCTION(chr)
 {
 	zend_long c;
@@ -2844,7 +2858,7 @@ PHPAPI char *php_strtr(char *str, size_t len, char *str_from, char *str_to, size
 		for (i = 0; i < trlen; i++) {
 			xlat[(size_t)(unsigned char) str_from[i]] = str_to[i];
 		}
-		
+
 		for (i = 0; i < len; i++) {
 			str[i] = xlat[(size_t)(unsigned char) str[i]];
 		}
@@ -3237,7 +3251,7 @@ static zend_string *php_str_to_str_i_ex(zend_string *haystack, char *lc_haystack
 				zend_string_release(lc_needle);
 				goto nothing_todo;
 			}
-			
+
 			if (str_len > ZSTR_LEN(lc_needle)) {
 				new_str = zend_string_safe_alloc(count, str_len - ZSTR_LEN(lc_needle), ZSTR_LEN(haystack), 0);
 			} else {
@@ -3400,7 +3414,7 @@ PHP_FUNCTION(strtr)
 					ZVAL_LONG(&tmp, num_key);
 					convert_to_string(&tmp);
 					str_key = Z_STR(tmp);
-				}		
+				}
 				replace = zval_get_string(entry);
 				if (ZSTR_LEN(str_key) < 1) {
 					RETVAL_STR_COPY(str);
@@ -3963,7 +3977,7 @@ static zend_long php_str_replace_in_subject(zval *search, zval *replace, zval *s
 						zend_string_release(lc_subject_str);
 						lc_subject_str = NULL;
 					}
-				}				
+				}
 			}
 
 			zend_string_release(search_str);
@@ -4102,8 +4116,8 @@ static void php_hebrev(INTERNAL_FUNCTION_PARAMETERS, int convert_newlines)
 	char *str;
 	char *heb_str, *tmp, *target;
 	size_t block_start, block_end, block_type, block_length, i;
-	zend_long max_chars=0;
-	size_t begin, end, char_count, orig_begin;
+	zend_long max_chars=0, char_count;
+	size_t begin, end, orig_begin;
 	size_t str_len;
 	zend_string *broken_str;
 
@@ -4497,10 +4511,18 @@ PHP_FUNCTION(parse_str)
 
 	if (arrayArg == NULL) {
 		zval tmp;
-		zend_array *symbol_table = zend_rebuild_symbol_table();
+		zend_array *symbol_table;
+		if (zend_forbid_dynamic_call("parse_str() with a single argument") == FAILURE) {
+			efree(res);
+			return;
+		}
 
+		symbol_table = zend_rebuild_symbol_table();
 		ZVAL_ARR(&tmp, symbol_table);
 		sapi_module.treat_data(PARSE_STRING, res, &tmp);
+		if (UNEXPECTED(zend_hash_del(symbol_table, CG(known_strings)[ZEND_STR_THIS]) == SUCCESS)) {
+			zend_throw_error(NULL, "Cannot re-assign $this");
+		}
 	} else 	{
 		zval ret;
 
@@ -5187,24 +5209,21 @@ PHP_FUNCTION(substr_count)
 	endp = p + haystack_len;
 
 	if (offset < 0) {
-		php_error_docref(NULL, E_WARNING, "Offset should be greater than or equal to 0");
-		RETURN_FALSE;
+		offset += (zend_long)haystack_len;
 	}
-
-	if ((size_t)offset > haystack_len) {
-		php_error_docref(NULL, E_WARNING, "Offset value " ZEND_LONG_FMT " exceeds string length", offset);
+	if ((offset < 0) || ((size_t)offset > haystack_len)) {
+		php_error_docref(NULL, E_WARNING, "Offset not contained in string");
 		RETURN_FALSE;
 	}
 	p += offset;
 
 	if (ac == 4) {
 
-		if (length <= 0) {
-			php_error_docref(NULL, E_WARNING, "Length should be greater than 0");
-			RETURN_FALSE;
+		if (length < 0) {
+			length += (haystack_len - offset);
 		}
-		if (length > (haystack_len - offset)) {
-			php_error_docref(NULL, E_WARNING, "Length value " ZEND_LONG_FMT " exceeds string length", length);
+		if (length < 0 || ((size_t)length > (haystack_len - offset))) {
+			php_error_docref(NULL, E_WARNING, "Invalid length value");
 			RETURN_FALSE;
 		}
 		endp = p + length;
@@ -5516,7 +5535,15 @@ PHP_FUNCTION(money_format)
 		zend_string_free(str);
 		RETURN_FALSE;
 	}
+#ifdef _AIX
+	/*
+	On AIX strfmon seems to include the terminating \0 in the length returned by strfmon,
+	despite the documentation indicating it is not included.
+	*/
+	ZSTR_LEN(str) = strlen(ZSTR_VAL(str));
+#else
 	ZSTR_LEN(str) = (size_t)res_len;
+#endif
 	ZSTR_VAL(str)[ZSTR_LEN(str)] = '\0';
 
 	RETURN_NEW_STR(zend_string_truncate(str, ZSTR_LEN(str), 0));
@@ -5626,7 +5653,7 @@ PHP_FUNCTION(substr_compare)
 		RETURN_FALSE;
 	}
 
-	cmp_len = (size_t) (len ? len : MAX(ZSTR_LEN(s2), (ZSTR_LEN(s1) - offset)));
+	cmp_len = len ? (size_t)len : MAX(ZSTR_LEN(s2), (ZSTR_LEN(s1) - offset));
 
 	if (!cs) {
 		RETURN_LONG(zend_binary_strncmp(ZSTR_VAL(s1) + offset, (ZSTR_LEN(s1) - offset), ZSTR_VAL(s2), ZSTR_LEN(s2), cmp_len));
