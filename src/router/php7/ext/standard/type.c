@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -148,11 +148,50 @@ PHP_FUNCTION(intval)
 		Z_PARAM_LONG(base)
 	ZEND_PARSE_PARAMETERS_END();
 
-	if (Z_TYPE_P(num) != IS_STRING) {
+	if (Z_TYPE_P(num) != IS_STRING || base == 10) {
 		RETVAL_LONG(zval_get_long(num));
-	} else {
-		RETVAL_LONG(ZEND_STRTOL(Z_STRVAL_P(num), NULL, base));
+		return;
 	}
+	
+
+	if (base == 0 || base == 2) {
+		char *strval = Z_STRVAL_P(num);
+		size_t strlen = Z_STRLEN_P(num);
+
+		while (isspace(*strval) && strlen) {
+			strval++;
+			strlen--;
+		}
+
+		/* Length of 3+ covers "0b#" and "-0b" (which results in 0) */
+		if (strlen > 2) {
+			int offset = 0;
+			if (strval[0] == '-' || strval[0] == '+') {
+				offset = 1;
+			}
+	
+			if (strval[offset] == '0' && (strval[offset + 1] == 'b' || strval[offset + 1] == 'B')) {
+				char *tmpval;
+				strlen -= 2; /* Removing "0b" */
+				tmpval = emalloc(strlen + 1);
+
+				/* Place the unary symbol at pos 0 if there was one */
+				if (offset) {
+					tmpval[0] = strval[0];
+				}
+	
+				/* Copy the data from after "0b" to the end of the buffer */
+				memcpy(tmpval + offset, strval + offset + 2, strlen - offset);
+				tmpval[strlen] = 0;
+
+				RETVAL_LONG(ZEND_STRTOL(tmpval, NULL, 2));
+				efree(tmpval);
+				return;
+			}
+		}
+	}
+
+	RETVAL_LONG(ZEND_STRTOL(Z_STRVAL_P(num), NULL, base));
 }
 /* }}} */
 
@@ -384,13 +423,7 @@ PHP_FUNCTION(is_callable)
 	if (ZEND_NUM_ARGS() > 2) {
 		retval = zend_is_callable_ex(var, NULL, check_flags, &name, NULL, &error);
 		zval_dtor(callable_name);
-		//??? is it necessary to be consistent with old PHP ("\0" support)
-		if (UNEXPECTED(ZSTR_LEN(name)) != strlen(ZSTR_VAL(name))) {
-			ZVAL_STRINGL(callable_name, ZSTR_VAL(name), strlen(ZSTR_VAL(name)));
-			zend_string_release(name);
-		} else {
-			ZVAL_STR(callable_name, name);
-		}
+		ZVAL_STR(callable_name, name);
 	} else {
 		retval = zend_is_callable_ex(var, NULL, check_flags, NULL, NULL, &error);
 	}
@@ -400,6 +433,20 @@ PHP_FUNCTION(is_callable)
 	}
 
 	RETURN_BOOL(retval);
+}
+/* }}} */
+
+/* {{{ proto bool is_iterable(mixed var)
+   Returns true if var is iterable (array or instance of Traversable). */
+PHP_FUNCTION(is_iterable)
+{
+	zval *var;
+	
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "z", &var) == FAILURE) {
+		return;
+	}
+	
+	RETURN_BOOL(zend_is_iterable(var));
 }
 /* }}} */
 

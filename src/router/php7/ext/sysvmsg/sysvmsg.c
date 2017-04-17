@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: b291daed03ee2339361df6b8cd4d9f5eb4c76387 $ */
+/* $Id: 37aa0d90288b1385356784f17694f4c700575736 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -145,7 +145,7 @@ PHP_MINFO_FUNCTION(sysvmsg)
 {
 	php_info_print_table_start();
 	php_info_print_table_row(2, "sysvmsg support", "enabled");
-	php_info_print_table_row(2, "Revision", "$Id: b291daed03ee2339361df6b8cd4d9f5eb4c76387 $");
+	php_info_print_table_row(2, "Revision", "$Id: 37aa0d90288b1385356784f17694f4c700575736 $");
 	php_info_print_table_end();
 }
 /* }}} */
@@ -268,7 +268,7 @@ PHP_FUNCTION(msg_get_queue)
 		/* doesn't already exist; create it */
 		mq->id = msgget(key, IPC_CREAT | IPC_EXCL | perms);
 		if (mq->id < 0)	{
-			php_error_docref(NULL, E_WARNING, "failed for key 0x%lx: %s", key, strerror(errno));
+			php_error_docref(NULL, E_WARNING, "failed for key 0x" ZEND_XLONG_FMT ": %s", key, strerror(errno));
 			efree(mq);
 			RETURN_FALSE;
 		}
@@ -435,7 +435,7 @@ PHP_FUNCTION(msg_send)
 				break;
 
 			case IS_LONG:
-				message_len = spprintf(&p, 0, "%pd", Z_LVAL_P(message));
+				message_len = spprintf(&p, 0, ZEND_LONG_FMT, Z_LVAL_P(message));
 				break;
 			case IS_FALSE:
 				message_len = spprintf(&p, 0, "0");

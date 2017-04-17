@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -638,7 +638,7 @@ void php_wddx_serialize_var(wddx_packet *packet, zval *var, zend_string *name)
 		case IS_ARRAY:
 			ht = Z_ARRVAL_P(var);
 			if (ht->u.v.nApplyCount > 1) {
-				php_error_docref(NULL, E_RECOVERABLE_ERROR, "WDDX doesn't support circular references");
+				zend_throw_error(NULL, "WDDX doesn't support circular references");
 				return;
 			}
 			if (ZEND_HASH_APPLY_PROTECTION(ht)) {
@@ -653,7 +653,7 @@ void php_wddx_serialize_var(wddx_packet *packet, zval *var, zend_string *name)
 		case IS_OBJECT:
 			ht = Z_OBJPROP_P(var);
 			if (ht->u.v.nApplyCount > 1) {
-				php_error_docref(NULL, E_RECOVERABLE_ERROR, "WDDX doesn't support circular references");
+				zend_throw_error(NULL, "WDDX doesn't support circular references");
 				return;
 			}
 			ht->u.v.nApplyCount++;
@@ -772,6 +772,11 @@ static void php_wddx_push_element(void *user_data, const XML_Char *name, const X
 				php_wddx_process_data(user_data, atts[i+1], strlen((char *)atts[i+1]));
 				break;
 			}
+		} else {
+			ent.type = ST_BOOLEAN;
+			SET_STACK_VARNAME;
+			ZVAL_FALSE(&ent.data);
+			wddx_stack_push((wddx_stack *)stack, &ent, sizeof(st_entry));
 		}
 	} else if (!strcmp((char *)name, EL_NULL)) {
 		ent.type = ST_NULL;
@@ -902,8 +907,13 @@ static void php_wddx_pop_element(void *user_data, const XML_Char *name)
 		}
 
 		if (!strcmp((char *)name, EL_BINARY)) {
-			zend_string *new_str = php_base64_decode(
-				(unsigned char *)Z_STRVAL(ent1->data), Z_STRLEN(ent1->data));
+			zend_string *new_str = NULL;
+
+			if (ZSTR_EMPTY_ALLOC() != Z_STR(ent1->data)) {
+				new_str = php_base64_decode(
+					(unsigned char *)Z_STRVAL(ent1->data), Z_STRLEN(ent1->data));
+			}
+
 			zval_ptr_dtor(&ent1->data);
 			if (new_str) {
 				ZVAL_STR(&ent1->data, new_str);
@@ -957,33 +967,33 @@ static void php_wddx_pop_element(void *user_data, const XML_Char *name)
 							php_error_docref(NULL, E_WARNING, "Class %s can not be unserialized", Z_STRVAL(ent1->data));
 						} else {
 							/* Initialize target object */
-							object_init_ex(&obj, pce);
+							if (object_init_ex(&obj, pce) != SUCCESS || EG(exception)) {
+								zval_ptr_dtor(&ent2->data);
+								ZVAL_UNDEF(&ent2->data);
+								php_error_docref(NULL, E_WARNING, "Class %s can not be instantiated", Z_STRVAL(ent1->data));
+							} else {
+								/* Merge current hashtable with object's default properties */
+								zend_hash_merge(Z_OBJPROP(obj),
+												Z_ARRVAL(ent2->data),
+												zval_add_ref, 0);
 
-							/* Merge current hashtable with object's default properties */
-							zend_hash_merge(Z_OBJPROP(obj),
-											Z_ARRVAL(ent2->data),
-											zval_add_ref, 0);
+								if (incomplete_class) {
+									php_store_class_name(&obj, Z_STRVAL(ent1->data), Z_STRLEN(ent1->data));
+								}
 
-							if (incomplete_class) {
-								php_store_class_name(&obj, Z_STRVAL(ent1->data), Z_STRLEN(ent1->data));
+								/* Clean up old array entry */
+								zval_ptr_dtor(&ent2->data);
+
+								/* Set stack entry to point to the newly created object */
+								ZVAL_COPY_VALUE(&ent2->data, &obj);
 							}
-
-							/* Clean up old array entry */
-							zval_ptr_dtor(&ent2->data);
-
-							/* Set stack entry to point to the newly created object */
-							ZVAL_COPY_VALUE(&ent2->data, &obj);
 						}
 
 						/* Clean up class name var entry */
 						zval_ptr_dtor(&ent1->data);
 					} else if (Z_TYPE(ent2->data) == IS_OBJECT) {
-						zend_class_entry *old_scope = EG(scope);
-
-						EG(scope) = Z_OBJCE(ent2->data);
-						add_property_zval(&ent2->data, ent1->varname, &ent1->data);
+						zend_update_property(Z_OBJCE(ent2->data), &ent2->data, ent1->varname, strlen(ent1->varname), &ent1->data);
 						if Z_REFCOUNTED(ent1->data) Z_DELREF(ent1->data);
-						EG(scope) = old_scope;
 					} else {
 						zend_symtable_str_update(target_hash, ent1->varname, strlen(ent1->varname), &ent1->data);
 					}

@@ -1376,8 +1376,11 @@ main() {
   dir = opendir("/");
   if (!dir) 
     exit(1);
-  if (readdir_r(dir, (struct dirent *) entry, &pentry) == 0)
+  if (readdir_r(dir, (struct dirent *) entry, &pentry) == 0) {
+    close(dir);
     exit(0);
+  }
+  close(dir);
   exit(1);
 }
     ],[
@@ -2264,7 +2267,7 @@ AC_DEFUN([PHP_SETUP_KERBEROS],[
   fi
 
   dnl If krb5-config is found try using it
-  if test "$PHP_KERBEROS" = "yes" && test -x "$KRB5_CONFIG"; then
+  if test "$PHP_KERBEROS" != "no" && test -x "$KRB5_CONFIG"; then
     KERBEROS_LIBS=`$KRB5_CONFIG --libs gssapi`
     KERBEROS_CFLAGS=`$KRB5_CONFIG --cflags gssapi`
 
@@ -2334,13 +2337,13 @@ AC_DEFUN([PHP_SETUP_OPENSSL],[
 
   dnl If pkg-config is found try using it
   if test "$PHP_OPENSSL_DIR" = "yes" && test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
-    if $PKG_CONFIG --atleast-version=0.9.8 openssl; then
+    if $PKG_CONFIG --atleast-version=1.0.1 openssl; then
       found_openssl=yes
       OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
       OPENSSL_INCS=`$PKG_CONFIG --cflags-only-I openssl`
       OPENSSL_INCDIR=`$PKG_CONFIG --variable=includedir openssl`
     else
-      AC_MSG_ERROR([OpenSSL version 0.9.8 or greater required.])
+      AC_MSG_ERROR([OpenSSL version 1.0.1 or greater required.])
     fi
 
     if test -n "$OPENSSL_LIBS"; then
@@ -2381,13 +2384,13 @@ AC_DEFUN([PHP_SETUP_OPENSSL],[
     AC_MSG_CHECKING([for OpenSSL version])
     AC_EGREP_CPP(yes,[
 #include <openssl/opensslv.h>
-#if OPENSSL_VERSION_NUMBER >= 0x0090800fL
+#if OPENSSL_VERSION_NUMBER >= 0x10001001L
   yes
 #endif
     ],[
-      AC_MSG_RESULT([>= 0.9.8])
+      AC_MSG_RESULT([>= 1.0.1])
     ],[
-      AC_MSG_ERROR([OpenSSL version 0.9.8 or greater required.])
+      AC_MSG_ERROR([OpenSSL version 1.0.1 or greater required.])
     ])
     CPPFLAGS=$old_CPPFLAGS
 
@@ -2678,7 +2681,7 @@ EOF
     if test -n "$val"; then
       echo "$var='$val' \\" >> $1
       if test `expr "X$ac_configure_args" : ".*${var}.*"` != 0; then
-        clean_configure_args=$(echo $clean_configure_args | sed -e "s/'$var=$val'//")
+        clean_configure_args=$(echo $clean_configure_args | sed -e "s#'$var=$val'##")
       fi
     fi
   done
@@ -2689,21 +2692,21 @@ EOF
   else 
     CONFIGURE_COMMAND="$CONFIGURE_COMMAND [$]0"
   fi
-
-  for arg in $clean_configure_args; do
-    if test `expr -- $arg : "'.*"` = 0; then
-      if test `expr -- $arg : "-.*"` = 0 && test `expr -- $arg : ".*=.*"` = 0; then
-        continue;
-      fi
-      echo "'[$]arg' \\" >> $1
-      CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS '[$]arg'"
-    else
-      if test `expr -- $arg : "'-.*"` = 0 && test `expr -- $arg : "'.*=.*"` = 0; then
-        continue;
-      fi
-      echo "[$]arg \\" >> $1
-      CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS [$]arg"
-    fi
+  CONFIGURE_ARGS="$clean_configure_args"
+  while test "X$CONFIGURE_ARGS" != "X";
+  do
+   if CURRENT_ARG=`expr "X$CONFIGURE_ARGS" : "X *\('[[^']]*'\)"`
+   then
+     CONFIGURE_ARGS=`expr "X$CONFIGURE_ARGS" : "X *'[[^']]*' \(.*\)"`
+   elif CURRENT_ARG=`expr "X$CONFIGURE_ARGS" : "X *\([[^ ]]*\)"`
+   then
+     CONFIGURE_ARGS=`expr "X$CONFIGURE_ARGS" : "X *[[^ ]]* \(.*\)"`
+     CURRENT_ARG="'$CURRENT_ARG'"
+   else
+    break
+   fi
+   $as_echo "$CURRENT_ARG \\" >>$1
+   CONFIGURE_OPTIONS="$CONFIGURE_OPTIONS $CURRENT_ARG"
   done
   echo '"[$]@"' >> $1
   chmod +x $1
@@ -3109,6 +3112,9 @@ AC_DEFUN([PHP_CHECK_BUILTIN_CTZLL], [
   AC_DEFINE_UNQUOTED([PHP_HAVE_BUILTIN_CTZLL], [$have_builtin_ctzll], [Whether the compiler supports __builtin_ctzll])
 
 ])
+
+dnl Load the AX_CHECK_COMPILE_FLAG macro from the autoconf archive.
+m4_include([build/ax_check_compile_flag.m4])
 # libtool.m4 - Configure libtool for the host system. -*-Autoconf-*-
 ## Copyright 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005, 2006, 2007,
 ## 2008  Free Software Foundation, Inc.

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -175,7 +175,7 @@ static void ps_files_open(ps_files *data, const char *key)
 		}
 
 		if (!ps_files_path_create(buf, sizeof(buf), data, key)) {
-			php_error_docref(NULL TSRMLS_CC, E_WARNING, "Failed to create session data file path. Too short session ID, invalid save_path or path lentgth exceeds MAXPATHLEN(%d)", MAXPATHLEN);
+			php_error_docref(NULL, E_WARNING, "Failed to create session data file path. Too short session ID, invalid save_path or path lentgth exceeds MAXPATHLEN(%d)", MAXPATHLEN);
 			return;
 		}
 
@@ -196,11 +196,17 @@ static void ps_files_open(ps_files *data, const char *key)
 		if (data->fd != -1) {
 #ifndef PHP_WIN32
 			/* check that this session file was created by us or root – we
-			   don't want to end up accepting the sessions of another webapp */
-			if (fstat(data->fd, &sbuf) || (sbuf.st_uid != 0 && sbuf.st_uid != getuid() && sbuf.st_uid != geteuid())) {
+			   don't want to end up accepting the sessions of another webapp
+
+			   If the process is ran by root, we ignore session file ownership
+			   Use case: session is initiated by Apache under non-root and then
+			   accessed by backend with root permissions to execute some system tasks.
+
+			   */
+			if (zend_fstat(data->fd, &sbuf) || (sbuf.st_uid != 0 && sbuf.st_uid != getuid() && sbuf.st_uid != geteuid() && getuid() != 0)) {
 				close(data->fd);
 				data->fd = -1;
-				php_error_docref(NULL TSRMLS_CC, E_WARNING, "Session data file is not created by your uid");
+				php_error_docref(NULL, E_WARNING, "Session data file is not created by your uid");
 				return;
 			}
 #endif
@@ -224,7 +230,7 @@ static void ps_files_open(ps_files *data, const char *key)
 
 static int ps_files_write(ps_files *data, zend_string *key, zend_string *val)
 {
-	zend_long n = 0;
+	size_t n = 0;
 
 	/* PS(id) may be changed by calling session_regenerate_id().
 	   Re-initialization should be tried here. ps_files_open() checks
@@ -264,7 +270,7 @@ static int ps_files_write(ps_files *data, zend_string *key, zend_string *val)
 #endif
 
 	if (n != ZSTR_LEN(val)) {
-		if (n == -1) {
+		if (n == (size_t)-1) {
 			php_error_docref(NULL, E_WARNING, "write failed: %s (%d)", strerror(errno), errno);
 		} else {
 			php_error_docref(NULL, E_WARNING, "write wrote less bytes than requested");
@@ -646,9 +652,11 @@ PS_GC_FUNC(files)
 
 	if (data->dirdepth == 0) {
 		*nrdels = ps_files_cleanup_dir(data->basedir, maxlifetime);
+	} else {
+		*nrdels = -1; // Cannot process multiple depth save dir
 	}
 
-	return SUCCESS;
+	return *nrdels;
 }
 
 

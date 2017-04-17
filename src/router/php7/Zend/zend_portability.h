@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | Zend Engine                                                          |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1998-2016 Zend Technologies Ltd. (http://www.zend.com) |
+   | Copyright (c) 1998-2017 Zend Technologies Ltd. (http://www.zend.com) |
    +----------------------------------------------------------------------+
    | This source file is subject to version 2.00 of the Zend license,     |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -125,9 +125,17 @@
 # define ZEND_IGNORE_VALUE(x) ((void) (x))
 #endif
 
+#define zend_quiet_write(...) ZEND_IGNORE_VALUE(write(__VA_ARGS__))
+
 /* all HAVE_XXX test have to be after the include of zend_config above */
 
 #if defined(HAVE_LIBDL) && !defined(ZEND_WIN32)
+
+# if defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#   define __SANITIZE_ADDRESS__
+#  endif
+# endif
 
 # ifndef RTLD_LAZY
 #  define RTLD_LAZY 1    /* Solaris 1, FreeBSD's (2.1.7.1 and older) */
@@ -139,7 +147,7 @@
 
 # if defined(RTLD_GROUP) && defined(RTLD_WORLD) && defined(RTLD_PARENT)
 #  define DL_LOAD(libname)			dlopen(libname, RTLD_LAZY | RTLD_GLOBAL | RTLD_GROUP | RTLD_WORLD | RTLD_PARENT)
-# elif defined(RTLD_DEEPBIND)
+# elif defined(RTLD_DEEPBIND) && !defined(__SANITIZE_ADDRESS__)
 #  define DL_LOAD(libname)			dlopen(libname, RTLD_LAZY | RTLD_GLOBAL | RTLD_DEEPBIND)
 # else
 #  define DL_LOAD(libname)			dlopen(libname, RTLD_LAZY | RTLD_GLOBAL)
@@ -237,11 +245,13 @@ char *alloca();
 # define ZEND_FASTCALL
 #endif
 
-#if defined(__GNUC__) && ZEND_GCC_VERSION >= 3004
-#else
-# define __restrict__
+#ifndef restrict
+# if defined(__GNUC__) && ZEND_GCC_VERSION >= 3004
+# else
+#  define __restrict__
+# endif
+# define restrict __restrict__
 #endif
-#define restrict __restrict__
 
 #if (defined(__GNUC__) && __GNUC__ >= 3 && !defined(__INTEL_COMPILER) && !defined(DARWIN) && !defined(__hpux) && !defined(_AIX) && !defined(__osf__)) || __has_attribute(noreturn)
 # define HAVE_NORETURN
@@ -284,7 +294,7 @@ char *alloca();
 #  endif
 # elif defined(_MSC_VER)
 #  define zend_always_inline __forceinline
-#  define zend_never_inline
+#  define zend_never_inline __declspec(noinline)
 # else
 #  if __has_attribute(always_inline)
 #   define zend_always_inline inline __attribute__((always_inline))
