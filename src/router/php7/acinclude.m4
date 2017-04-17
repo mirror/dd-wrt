@@ -2336,23 +2336,23 @@ AC_DEFUN([PHP_SETUP_OPENSSL],[
   fi
 
   dnl If pkg-config is found try using it
-  if test "$PHP_OPENSSL_DIR" = "yes" && test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
-    if $PKG_CONFIG --atleast-version=1.0.1 openssl; then
+#  if test "$PHP_OPENSSL_DIR" = "yes" && test -x "$PKG_CONFIG" && $PKG_CONFIG --exists openssl; then
+#    if $PKG_CONFIG --atleast-version=1.0.1 openssl; then
       found_openssl=yes
-      OPENSSL_LIBS=`$PKG_CONFIG --libs openssl`
-      OPENSSL_INCS=`$PKG_CONFIG --cflags-only-I openssl`
-      OPENSSL_INCDIR=`$PKG_CONFIG --variable=includedir openssl`
-    else
-      AC_MSG_ERROR([OpenSSL version 1.0.1 or greater required.])
-    fi
+      OPENSSL_LIBS=`echo $TOP/openssl`
+      OPENSSL_INCS=`echo $TOP/openssl/include`
+#      OPENSSL_INCDIR=`$PKG_CONFIG --variable=includedir openssl`
+#    else
+#      AC_MSG_ERROR([OpenSSL version 1.0.1 or greater required.])
+#    fi
 
-    if test -n "$OPENSSL_LIBS"; then
-      PHP_EVAL_LIBLINE($OPENSSL_LIBS, $1)
-    fi
-    if test -n "$OPENSSL_INCS"; then
-      PHP_EVAL_INCLINE($OPENSSL_INCS)
-    fi
-  fi
+#    if test -n "$OPENSSL_LIBS"; then
+#      PHP_EVAL_LIBLINE($OPENSSL_LIBS, $1)
+#    fi
+#    if test -n "$OPENSSL_INCS"; then
+#      PHP_EVAL_INCLINE($OPENSSL_INCS)
+#    fi
+ # fi
 
   dnl If pkg-config fails for some reason, revert to the old method
   if test "$found_openssl" = "no"; then
@@ -2478,7 +2478,7 @@ AC_DEFUN([PHP_SETUP_ICONV], [
   dnl
   if test "$found_iconv" = "no"; then
 
-    for i in $PHP_ICONV /usr/local /usr; do
+    for i in $PHP_ICONV; do
       if test -r $i/include/giconv.h; then
         AC_DEFINE(HAVE_GICONV_H, 1, [ ])
         ICONV_DIR=$i
