@@ -96,8 +96,6 @@ void _crypt_extended_init_r(void)
 		InterlockedIncrement(&initialized);
 #elif defined(HAVE_SYNC_FETCH_AND_ADD)
 		__sync_fetch_and_add(&initialized, 1);
-#elif (defined(__GNUC__) && (__GNUC__ == 3))
-		initialized = 1;
 #elif defined(HAVE_ATOMIC_H) /* Solaris 10 defines atomic API within */
 		membar_producer();
 		atomic_add_int(&initialized, 1);

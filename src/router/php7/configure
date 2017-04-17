@@ -955,7 +955,6 @@ enable_ipv6
 enable_dtrace
 enable_fd_setsize
 enable_all
-with_system_tzdata
 enable_libxml
 with_libxml_dir
 with_openssl
@@ -1794,7 +1793,6 @@ Extensions:
 
   --disable-all           Disable all extensions which are enabled by default
 
-  --with-system-tzdata=DIR      to specify use of system timezone data
   --disable-libxml        Disable LIBXML support
   --with-libxml-dir=DIR   LIBXML: libxml2 install prefix
   --with-openssl=DIR      Include OpenSSL support (requires OpenSSL >= 1.0.1)
@@ -6244,9 +6242,18 @@ IFS="- /.
   fi
 
   APXS_LIBEXECDIR='$(INSTALL_ROOT)'`$APXS -q LIBEXECDIR`
-  INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
-               $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
-                     -i -n php7"
+  if test -z `$APXS -q SYSCONFDIR`; then
+    INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
+                 $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
+                       -i -n php7"
+  else
+    APXS_SYSCONFDIR='$(INSTALL_ROOT)'`$APXS -q SYSCONFDIR`
+    INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
+                \$(mkinstalldirs) '$APXS_SYSCONFDIR' && \
+                 $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
+                       -S SYSCONFDIR='$APXS_SYSCONFDIR' \
+                       -i -a -n php7"
+  fi
 
   case $host_alias in
   *aix*)
@@ -11597,6 +11604,147 @@ $as_echo "#define HAVE_LIBNSL 1" >>confdefs.h
 
 
 
+  unset ac_cv_func_dlopen
+  unset ac_cv_func___dlopen
+  unset found
+
+  ac_fn_c_check_func "$LINENO" "dlopen" "ac_cv_func_dlopen"
+if test "x$ac_cv_func_dlopen" = xyes; then :
+  found=yes
+else
+   ac_fn_c_check_func "$LINENO" "__dlopen" "ac_cv_func___dlopen"
+if test "x$ac_cv_func___dlopen" = xyes; then :
+  found=yes
+else
+  found=no
+fi
+
+fi
+
+
+  case $found in
+  yes)
+
+$as_echo "#define HAVE_DLOPEN 1" >>confdefs.h
+
+    ac_cv_func_dlopen=yes
+  ;;
+
+    *)
+
+  unset ac_cv_lib_dl_dlopen
+  unset ac_cv_lib_dl___dlopen
+  unset found
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
+$as_echo_n "checking for dlopen in -ldl... " >&6; }
+if ${ac_cv_lib_dl_dlopen+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char dlopen ();
+int
+main ()
+{
+return dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_dl_dlopen=yes
+else
+  ac_cv_lib_dl_dlopen=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl_dlopen" >&5
+$as_echo "$ac_cv_lib_dl_dlopen" >&6; }
+if test "x$ac_cv_lib_dl_dlopen" = xyes; then :
+  found=yes
+else
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for __dlopen in -ldl" >&5
+$as_echo_n "checking for __dlopen in -ldl... " >&6; }
+if ${ac_cv_lib_dl___dlopen+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ldl  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char __dlopen ();
+int
+main ()
+{
+return __dlopen ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_dl___dlopen=yes
+else
+  ac_cv_lib_dl___dlopen=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_dl___dlopen" >&5
+$as_echo "$ac_cv_lib_dl___dlopen" >&6; }
+if test "x$ac_cv_lib_dl___dlopen" = xyes; then :
+  found=yes
+else
+  found=no
+fi
+
+
+fi
+
+
+  if test "$found" = "yes"; then
+    ac_libs=$LIBS
+    LIBS="$LIBS -ldl"
+    if test "$cross_compiling" = yes; then :
+  found=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+main() { return (0); }
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  found=yes
+else
+  found=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+    LIBS=$ac_libs
+  fi
+
+  if test "$found" = "yes"; then
+
 
   case dl in
   c|c_r|pthread*) ;;
@@ -11612,7 +11760,17 @@ $as_echo "#define HAVE_DLOPEN 1" >>confdefs.h
 
 $as_echo "#define HAVE_LIBDL 1" >>confdefs.h
 
-ac_cv_func_dlopen=yes
+    ac_cv_func_dlopen=yes
+  else
+
+  :
+
+  fi
+
+ ;;
+
+  esac
+
 if test "$ac_cv_func_dlopen" = "yes"; then
 
 $as_echo "#define HAVE_LIBDL 1" >>confdefs.h
@@ -16223,45 +16381,6 @@ done
 
 
 
-php_with_system_tzdata=no
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for use of system timezone data" >&5
-$as_echo_n "checking for use of system timezone data... " >&6; }
-
-# Check whether --with-system-tzdata was given.
-if test "${with_system_tzdata+set}" = set; then :
-  withval=$with_system_tzdata; PHP_SYSTEM_TZDATA=$withval
-else
-
-  PHP_SYSTEM_TZDATA=no
-
-
-fi
-
-
-ext_output=$PHP_SYSTEM_TZDATA
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ext_output" >&5
-$as_echo "$ext_output" >&6; }
-
-
-
-
-if test "$PHP_SYSTEM_TZDATA" != "no"; then
-
-$as_echo "#define HAVE_SYSTEM_TZDATA 1" >>confdefs.h
-
-
-   if test "$PHP_SYSTEM_TZDATA" != "yes"; then
-
-cat >>confdefs.h <<_ACEOF
-#define HAVE_SYSTEM_TZDATA_PREFIX "$PHP_SYSTEM_TZDATA"
-_ACEOF
-
-   fi
-fi
-
-
-
 
 PHP_DATE_CFLAGS="-I@ext_builddir@/lib -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1 -DHAVE_TIMELIB_CONFIG_H=1"
 timelib_sources="lib/astro.c lib/dow.c lib/parse_date.c lib/parse_tz.c
@@ -18290,8 +18409,8 @@ fi
       if test -r $i/include/openssl/evp.h; then
         OPENSSL_INCDIR=$i/include
       fi
-      if test -r $i/libssl.a -o -r $i/libssl.$SHLIB_SUFFIX_NAME; then
-        OPENSSL_LIBDIR=$i
+      if test -r $i/$PHP_LIBDIR/libssl.a -o -r $i/$PHP_LIBDIR/libssl.$SHLIB_SUFFIX_NAME; then
+        OPENSSL_LIBDIR=$i/$PHP_LIBDIR
       fi
       test -n "$OPENSSL_INCDIR" && test -n "$OPENSSL_LIBDIR" && break
     done
@@ -30240,11 +30359,10 @@ if test "$PHP_FILEINFO" != "no"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for strcasestr" >&5
 $as_echo_n "checking for strcasestr... " >&6; }
   if test "$cross_compiling" = yes; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: using libmagic strcasestr implementation" >&5
-$as_echo "$as_me: using libmagic strcasestr implementation" >&6;}
-    libmagic_sources="$libmagic_sources libmagic/strcasestr.c"
-
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -31662,8 +31780,8 @@ fi
       if test -r $i/include/openssl/evp.h; then
         OPENSSL_INCDIR=$i/include
       fi
-      if test -r $i/libssl.a -o -r $i/libssl.$SHLIB_SUFFIX_NAME; then
-        OPENSSL_LIBDIR=$i
+      if test -r $i/$PHP_LIBDIR/libssl.a -o -r $i/$PHP_LIBDIR/libssl.$SHLIB_SUFFIX_NAME; then
+        OPENSSL_LIBDIR=$i/$PHP_LIBDIR
       fi
       test -n "$OPENSSL_INCDIR" && test -n "$OPENSSL_LIBDIR" && break
     done
@@ -40040,13 +40158,21 @@ else
 
   if test "$iconv_avail" != "no"; then
     if test -z "$ICONV_DIR"; then
-      PHP_ICONV_PREFIX=""
+      for i in /usr/local /usr; do
+        if test -f "$i/include/iconv.h" || test -f "$i/include/giconv.h"; then
+          PHP_ICONV_PREFIX="$i"
+          break
+        fi
+      done
+      if test -z "$PHP_ICONV_PREFIX"; then
+        PHP_ICONV_PREFIX="/usr"
+      fi
     else
       PHP_ICONV_PREFIX="$ICONV_DIR"
     fi
 
-    CFLAGS="$CFLAGS"
-    LDFLAGS="$LDFLAGS"
+    CFLAGS="-I$PHP_ICONV_PREFIX/include $CFLAGS"
+    LDFLAGS="-L$PHP_ICONV_PREFIX/$PHP_LIBDIR $LDFLAGS"
 
     if test -r "$PHP_ICONV_PREFIX/include/giconv.h"; then
       PHP_ICONV_H_PATH="$PHP_ICONV_PREFIX/include/giconv.h"
@@ -40513,7 +40639,7 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
   ext_srcdir=$abs_srcdir/ext/iconv
   ext_dir=ext/iconv
 
-  ac_extra=`echo "-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"|$SED s#@ext_srcdir@#$ext_srcdir#g|$SED s#@ext_builddir@#$ext_builddir#g`
+  ac_extra=`echo "-I\"$PHP_ICONV_PREFIX/include\" -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1"|$SED s#@ext_srcdir@#$ext_srcdir#g|$SED s#@ext_builddir@#$ext_builddir#g`
 
   if test "$ext_shared" != "shared" && test "$ext_shared" != "yes" && test "" != "cli"; then
     PHP_ICONV_SHARED=no
@@ -42546,8 +42672,8 @@ fi
       if test -r $i/include/openssl/evp.h; then
         OPENSSL_INCDIR=$i/include
       fi
-      if test -r $i/libssl.a -o -r $i/libssl.$SHLIB_SUFFIX_NAME; then
-        OPENSSL_LIBDIR=$i
+      if test -r $i/$PHP_LIBDIR/libssl.a -o -r $i/$PHP_LIBDIR/libssl.$SHLIB_SUFFIX_NAME; then
+        OPENSSL_LIBDIR=$i/$PHP_LIBDIR
       fi
       test -n "$OPENSSL_INCDIR" && test -n "$OPENSSL_LIBDIR" && break
     done
@@ -57537,25 +57663,163 @@ fi
 done
 
 
-  ac_fn_c_check_func "$LINENO" "shmget" "ac_cv_func_shmget"
-if test "x$ac_cv_func_shmget" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sysvipc shared memory support" >&5
+$as_echo_n "checking for sysvipc shared memory support... " >&6; }
+  if test "$cross_compiling" = yes; then :
+  msg=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <unistd.h>
+#include <string.h>
+
+int main() {
+  pid_t pid;
+  int status;
+  int ipc_id;
+  char *shm;
+  struct shmid_ds shmbuf;
+
+  ipc_id = shmget(IPC_PRIVATE, 4096, (IPC_CREAT | SHM_R | SHM_W));
+  if (ipc_id == -1) {
+    return 1;
+  }
+
+  shm = shmat(ipc_id, NULL, 0);
+  if (shm == (void *)-1) {
+    shmctl(ipc_id, IPC_RMID, NULL);
+    return 2;
+  }
+
+  if (shmctl(ipc_id, IPC_STAT, &shmbuf) != 0) {
+    shmdt(shm);
+    shmctl(ipc_id, IPC_RMID, NULL);
+    return 3;
+  }
+
+  shmbuf.shm_perm.uid = getuid();
+  shmbuf.shm_perm.gid = getgid();
+  shmbuf.shm_perm.mode = 0600;
+
+  if (shmctl(ipc_id, IPC_SET, &shmbuf) != 0) {
+    shmdt(shm);
+    shmctl(ipc_id, IPC_RMID, NULL);
+    return 4;
+  }
+
+  shmctl(ipc_id, IPC_RMID, NULL);
+
+  strcpy(shm, "hello");
+
+  pid = fork();
+  if (pid < 0) {
+    return 5;
+  } else if (pid == 0) {
+    strcpy(shm, "bye");
+    return 6;
+  }
+  if (wait(&status) != pid) {
+    return 7;
+  }
+  if (!WIFEXITED(status) || WEXITSTATUS(status) != 6) {
+    return 8;
+  }
+  if (strcmp(shm, "bye") != 0) {
+    return 9;
+  }
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
 
 $as_echo "#define HAVE_SHM_IPC 1" >>confdefs.h
 
-
+    msg=yes
+else
+  msg=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $msg" >&5
+$as_echo "$msg" >&6; }
 
-  ac_fn_c_check_func "$LINENO" "mmap" "ac_cv_func_mmap"
-if test "x$ac_cv_func_mmap" = xyes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mmap() using MAP_ANON shared memory support" >&5
+$as_echo_n "checking for mmap() using MAP_ANON shared memory support... " >&6; }
+  if test "$cross_compiling" = yes; then :
+  msg=no
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
 
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <string.h>
+
+#ifndef MAP_ANON
+# ifdef MAP_ANONYMOUS
+#  define MAP_ANON MAP_ANONYMOUS
+# endif
+#endif
+#ifndef MAP_FAILED
+# define MAP_FAILED ((void*)-1)
+#endif
+
+int main() {
+  pid_t pid;
+  int status;
+  char *shm;
+
+  shm = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANON, -1, 0);
+  if (shm == MAP_FAILED) {
+    return 1;
+  }
+
+  strcpy(shm, "hello");
+
+  pid = fork();
+  if (pid < 0) {
+    return 5;
+  } else if (pid == 0) {
+    strcpy(shm, "bye");
+    return 6;
+  }
+  if (wait(&status) != pid) {
+    return 7;
+  }
+  if (!WIFEXITED(status) || WEXITSTATUS(status) != 6) {
+    return 8;
+  }
+  if (strcmp(shm, "bye") != 0) {
+    return 9;
+  }
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
 
 $as_echo "#define HAVE_SHM_MMAP_ANON 1" >>confdefs.h
 
-
+    msg=yes
+else
+  msg=no
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
 fi
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $msg" >&5
+$as_echo "$msg" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for mmap() using /dev/zero shared memory support" >&5
 $as_echo_n "checking for mmap() using /dev/zero shared memory support... " >&6; }
@@ -57808,14 +58072,10 @@ flock_type=unknown
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is linux ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is linux ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-
-    	flock_type=linux
-
-$as_echo "#define HAVE_FLOCK_LINUX /**/" >>confdefs.h
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"yes\"" >&5
-$as_echo "\"yes\"" >&6; }
-
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -57840,10 +58100,8 @@ $as_echo "#define HAVE_FLOCK_LINUX /**/" >>confdefs.h
 $as_echo "\"yes\"" >&6; }
 
 else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
 $as_echo "\"no\"" >&6; }
-
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -57853,10 +58111,10 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking \"whether flock struct is BSD ordered\"" >&5
 $as_echo_n "checking \"whether flock struct is BSD ordered\"... " >&6; }
 if test "$cross_compiling" = yes; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
-$as_echo "\"no\"" >&6; }
-
+  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See \`config.log' for more details" "$LINENO" 5; }
 else
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -57881,10 +58139,8 @@ $as_echo "#define HAVE_FLOCK_BSD /**/" >>confdefs.h
 $as_echo "\"yes\"" >&6; }
 
 else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: \"no\"" >&5
 $as_echo "\"no\"" >&6; }
-
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
   conftest.$ac_objext conftest.beam conftest.$ac_ext
@@ -57945,7 +58201,15 @@ fi
 	Optimizer/block_pass.c \
 	Optimizer/optimize_temp_vars_5.c \
 	Optimizer/nop_removal.c \
-	Optimizer/compact_literals.c; do
+	Optimizer/compact_literals.c \
+	Optimizer/zend_cfg.c \
+	Optimizer/zend_dfg.c \
+	Optimizer/dfa_pass.c \
+	Optimizer/zend_ssa.c \
+	Optimizer/zend_inference.c \
+	Optimizer/zend_func_info.c \
+	Optimizer/zend_call_graph.c \
+	Optimizer/zend_dump.c; do
 
       IFS=.
       set $ac_src
@@ -93517,8 +93781,8 @@ fi
       if test -r $i/include/openssl/evp.h; then
         OPENSSL_INCDIR=$i/include
       fi
-      if test -r $i/libssl.a -o -r $i/libssl.$SHLIB_SUFFIX_NAME; then
-        OPENSSL_LIBDIR=$i
+      if test -r $i/$PHP_LIBDIR/libssl.a -o -r $i/$PHP_LIBDIR/libssl.$SHLIB_SUFFIX_NAME; then
+        OPENSSL_LIBDIR=$i/$PHP_LIBDIR
       fi
       test -n "$OPENSSL_INCDIR" && test -n "$OPENSSL_LIBDIR" && break
     done
@@ -95611,7 +95875,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 94637 "configure"
+#line 95878 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -97664,7 +97928,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 96719 "configure"' > conftest.$ac_ext
+  echo '#line 97931 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -99062,7 +99326,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 98117 "configure"
+#line 99329 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99220,11 +99484,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98275: $lt_compile\"" >&5)
+   (eval echo "\"configure:99487: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98279: \$? = $ac_status" >&5
+   echo "configure:99491: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99518,11 +99782,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98573: $lt_compile\"" >&5)
+   (eval echo "\"configure:99785: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:98577: \$? = $ac_status" >&5
+   echo "configure:99789: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99622,11 +99886,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:98677: $lt_compile\"" >&5)
+   (eval echo "\"configure:99889: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:98681: \$? = $ac_status" >&5
+   echo "configure:99893: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -100086,7 +100350,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99141 "configure"
+#line 100353 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -100128,7 +100392,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 99183 "configure"
+#line 100395 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101645,7 +101909,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 100700 "configure"
+#line 101912 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -101745,7 +102009,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 100800 "configure"
+#line 102012 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102810,7 +103074,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 101865 "configure"
+#line 103077 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -102853,7 +103117,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 101908 "configure"
+#line 103120 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -104105,11 +104369,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103160: $lt_compile\"" >&5)
+   (eval echo "\"configure:104372: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:103164: \$? = $ac_status" >&5
+   echo "configure:104376: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -104209,11 +104473,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:103264: $lt_compile\"" >&5)
+   (eval echo "\"configure:104476: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:103268: \$? = $ac_status" >&5
+   echo "configure:104480: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized

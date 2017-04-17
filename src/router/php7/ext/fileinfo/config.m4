@@ -46,10 +46,6 @@ int main(void)
     AC_MSG_RESULT(no)
     AC_MSG_NOTICE(using libmagic strcasestr implementation)
     libmagic_sources="$libmagic_sources libmagic/strcasestr.c"
-  ],[
-    dnl cross-compiling; assume not present
-    AC_MSG_NOTICE(using libmagic strcasestr implementation)
-    libmagic_sources="$libmagic_sources libmagic/strcasestr.c"
   ])
 
   PHP_NEW_EXTENSION(fileinfo, fileinfo.c $libmagic_sources, $ext_shared,,-I@ext_srcdir@/libmagic)
