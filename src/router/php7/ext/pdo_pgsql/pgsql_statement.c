@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -428,8 +428,8 @@ static int pgsql_stmt_fetch(pdo_stmt_t *stmt,
 			case PDO_FETCH_ORI_PRIOR:	spprintf(&ori_str, 0, "BACKWARD"); break;
 			case PDO_FETCH_ORI_FIRST:	spprintf(&ori_str, 0, "FIRST"); break;
 			case PDO_FETCH_ORI_LAST:	spprintf(&ori_str, 0, "LAST"); break;
-			case PDO_FETCH_ORI_ABS:		spprintf(&ori_str, 0, "ABSOLUTE %pd", offset); break;
-			case PDO_FETCH_ORI_REL:		spprintf(&ori_str, 0, "RELATIVE %pd", offset); break;
+			case PDO_FETCH_ORI_ABS:		spprintf(&ori_str, 0, "ABSOLUTE " ZEND_LONG_FMT, offset); break;
+			case PDO_FETCH_ORI_REL:		spprintf(&ori_str, 0, "RELATIVE " ZEND_LONG_FMT, offset); break;
 			default:
 				return 0;
 		}

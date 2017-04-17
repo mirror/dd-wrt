@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -35,7 +35,7 @@ static void curlfile_ctor(INTERNAL_FUNCTION_PARAMETERS)
 	size_t fname_len, mime_len, postname_len;
 	zval *cf = return_value;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "s|ss", &fname, &fname_len, &mime, &mime_len, &postname, &postname_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "p|ss", &fname, &fname_len, &mime, &mime_len, &postname, &postname_len) == FAILURE) {
 		return;
 	}
 

@@ -32,6 +32,18 @@ static int month_tab[12]          = {   0,  31,  59,  90, 120, 151, 181, 212, 24
 static int days_in_month_leap[13] = {  31,  31,  29,  31,  30,  31,  30,  31,  31,  30,  31,  30,  31 };
 static int days_in_month[13]      = {  31,  31,  28,  31,  30,  31,  30,  31,  31,  30,  31,  30,  31 };
 
+static void do_range_limit_fraction(double *fraction, timelib_sll *seconds)
+{
+	if (*fraction < 0) {
+		*fraction += 1;
+		*seconds -= 1;
+	}
+	if (*fraction > 1) {
+		*fraction -= 1;
+		*seconds += 1;
+	}
+}
+
 static void do_range_limit(timelib_sll start, timelib_sll end, timelib_sll adj, timelib_sll *a, timelib_sll *b)
 {
 	if (*a < start) {
@@ -154,7 +166,7 @@ static void do_adjust_for_weekday(timelib_time* time)
 	{
 		/* To make "this week" work, where the current DOW is a "sunday" */
 		if (current_dow == 0 && time->relative.weekday != 0) {
-			time->relative.weekday = -6;
+			time->relative.weekday -= 7;
 		}
 
 		/* To make "sunday this week" work, where the current DOW is not a
@@ -192,6 +204,7 @@ void timelib_do_rel_normalize(timelib_time *base, timelib_rel_time *rt)
 
 void timelib_do_normalize(timelib_time* time)
 {
+	if (time->f != TIMELIB_UNSET) do_range_limit_fraction(&time->f, &time->s);
 	if (time->s != TIMELIB_UNSET) do_range_limit(0, 60, 60, &time->s, &time->i);
 	if (time->s != TIMELIB_UNSET) do_range_limit(0, 60, 60, &time->i, &time->h);
 	if (time->s != TIMELIB_UNSET) do_range_limit(0, 24, 24, &time->h, &time->d);
@@ -209,6 +222,8 @@ static void do_adjust_relative(timelib_time* time)
 	timelib_do_normalize(time);
 
 	if (time->have_relative) {
+		time->f += time->relative.f;
+
 		time->s += time->relative.s;
 		time->i += time->relative.i;
 		time->h += time->relative.h;
@@ -354,7 +369,7 @@ static timelib_sll do_years(timelib_sll year)
 	return res;
 }
 
-static timelib_sll do_months(timelib_ull month, timelib_ull year)
+static timelib_sll do_months(timelib_ull month, timelib_sll year)
 {
 	if (timelib_is_leap(year)) {
 		return ((month_tab_leap[month - 1] + 1) * SECS_PER_DAY);
@@ -463,7 +478,7 @@ void timelib_update_ts(timelib_time* time, timelib_tzinfo* tzi)
 	time->sse = res;
 
 	time->sse_uptodate = 1;
-	time->have_relative = time->relative.have_weekday_relative = time->relative.have_special_relative = 0;
+	time->have_relative = time->relative.have_weekday_relative = time->relative.have_special_relative = time->relative.first_last_day_of = 0;
 }
 
 #if 0

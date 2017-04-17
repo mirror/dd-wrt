@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -426,13 +426,13 @@ PHP_FUNCTION(stream_get_contents)
 
 		if (seek_res != 0) {
 			php_error_docref(NULL, E_WARNING,
-				"Failed to seek to position %pd in the stream", desiredpos);
+				"Failed to seek to position " ZEND_LONG_FMT " in the stream", desiredpos);
 			RETURN_FALSE;
 		}
 	}
 
 	if (maxlen > INT_MAX) {
-		php_error_docref(NULL, E_WARNING, "maxlen truncated from %pd to %d bytes", maxlen, INT_MAX);
+		php_error_docref(NULL, E_WARNING, "maxlen truncated from " ZEND_LONG_FMT " to %d bytes", maxlen, INT_MAX);
 		maxlen = INT_MAX;
 	}
 	if ((contents = php_stream_copy_to_mem(stream, maxlen, 0))) {

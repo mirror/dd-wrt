@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -93,18 +93,6 @@ static inline double php_intpow10(int power) {
 }
 /* }}} */
 
-/* {{{ php_math_is_finite */
-static inline int php_math_is_finite(double value) {
-#if defined(PHP_WIN32)
-	return _finite(value);
-#elif defined(isfinite)
-	return isfinite(value);
-#else
-	return value == value && (value == 0. || value * 2. != value);
-#endif
-}
-/* }}} */
-
 /* {{{ php_round_helper
        Actually performs the rounding of a value to integer in a certain mode */
 static inline double php_round_helper(double value, int mode) {
@@ -142,7 +130,7 @@ PHPAPI double _php_math_round(double value, int places, int mode) {
 	double tmp_value;
 	int precision_places;
 
-	if (!php_math_is_finite(value)) {
+	if (!zend_finite(value)) {
 		return value;
 	}
 
@@ -1093,11 +1081,11 @@ PHP_FUNCTION(base_convert)
 	convert_to_string_ex(number);
 
 	if (frombase < 2 || frombase > 36) {
-		php_error_docref(NULL, E_WARNING, "Invalid `from base' (%pd)", frombase);
+		php_error_docref(NULL, E_WARNING, "Invalid `from base' (" ZEND_LONG_FMT ")", frombase);
 		RETURN_FALSE;
 	}
 	if (tobase < 2 || tobase > 36) {
-		php_error_docref(NULL, E_WARNING, "Invalid `to base' (%pd)", tobase);
+		php_error_docref(NULL, E_WARNING, "Invalid `to base' (" ZEND_LONG_FMT ")", tobase);
 		RETURN_FALSE;
 	}
 
@@ -1151,19 +1139,15 @@ PHPAPI zend_string *_php_math_number_format_ex(double d, int dec, char *dec_poin
 
 	/* calculate the length of the return buffer */
 	if (dp) {
-		integral = (int)(dp - ZSTR_VAL(tmpbuf));
+		integral = (dp - ZSTR_VAL(tmpbuf));
 	} else {
 		/* no decimal point was found */
-		integral = (int)ZSTR_LEN(tmpbuf);
+		integral = ZSTR_LEN(tmpbuf);
 	}
 
 	/* allow for thousand separators */
 	if (thousand_sep) {
-		if (integral + thousand_sep_len * ((integral-1) / 3) < integral) {
-			/* overflow */
-			php_error_docref(NULL, E_ERROR, "String overflow");
-		}
-		integral += thousand_sep_len * ((integral-1) / 3);
+		integral = zend_safe_addmult((integral-1)/3, thousand_sep_len, integral, "number formatting");
 	}
 
 	reslen = integral;
@@ -1172,11 +1156,7 @@ PHPAPI zend_string *_php_math_number_format_ex(double d, int dec, char *dec_poin
 		reslen += dec;
 
 		if (dec_point) {
-			if (reslen + dec_point_len < dec_point_len) {
-				/* overflow */
-				php_error_docref(NULL, E_ERROR, "String overflow");
-			}
-			reslen += dec_point_len;
+			reslen = zend_safe_addmult(reslen, 1, dec_point_len, "number formatting");
 		}
 	}
 
@@ -1194,8 +1174,8 @@ PHPAPI zend_string *_php_math_number_format_ex(double d, int dec, char *dec_poin
 	 * Take care, as the sprintf implementation may return less places than
 	 * we requested due to internal buffer limitations */
 	if (dec) {
-		int declen = (int)(dp ? s - dp : 0);
-		int topad = dec > declen ? dec - declen : 0;
+		size_t declen = (dp ? s - dp : 0);
+		size_t topad = dec > declen ? dec - declen : 0;
 
 		/* pad with '0's */
 		while (topad--) {

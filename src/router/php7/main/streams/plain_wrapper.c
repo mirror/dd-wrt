@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -42,6 +42,8 @@
 #ifdef PHP_WIN32
 # include "win32/winutil.h"
 # include "win32/time.h"
+# include "win32/ioutil.h"
+# include "win32/readdir.h"
 #endif
 
 #define php_stream_fopen_from_fd_int(fd, mode, persistent_id)	_php_stream_fopen_from_fd_int((fd), (mode), (persistent_id) STREAMS_CC)
@@ -93,6 +95,12 @@ PHPAPI int php_stream_parse_fopen_modes(const char *mode, int *open_flags)
 	} else {
 		flags |= O_RDONLY;
 	}
+
+#if defined(O_CLOEXEC)
+	if (strchr(mode, 'e')) {
+		flags |= O_CLOEXEC;
+	}
+#endif
 
 #if defined(O_NONBLOCK)
 	if (strchr(mode, 'n')) {
@@ -465,7 +473,11 @@ static int php_stdiop_close(php_stream *stream, int close_handle)
 			return 0; /* everything should be closed already -> success */
 		}
 		if (data->temp_name) {
+#ifdef PHP_WIN32
+			php_win32_ioutil_unlink(ZSTR_VAL(data->temp_name));
+#else
 			unlink(ZSTR_VAL(data->temp_name));
+#endif
 			/* temporary streams are never persistent */
 			zend_string_release(data->temp_name);
 			data->temp_name = NULL;
@@ -999,9 +1011,11 @@ PHPAPI php_stream *_php_stream_fopen(const char *filename, const char *mode, zen
 				return ret;
 		}
 	}
-
+#ifdef PHP_WIN32
+	fd = php_win32_ioutil_open(realpath, open_flags, 0666);
+#else
 	fd = open(realpath, open_flags, 0666);
-
+#endif
 	if (fd != -1)	{
 
 		if (options & STREAM_OPEN_FOR_INCLUDE) {

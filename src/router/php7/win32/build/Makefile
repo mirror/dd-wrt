@@ -1,7 +1,7 @@
 #  +----------------------------------------------------------------------+
 #  | PHP Version 7                                                        |
 #  +----------------------------------------------------------------------+
-#  | Copyright (c) 1997-2016 The PHP Group                                |
+#  | Copyright (c) 1997-2017 The PHP Group                                |
 #  +----------------------------------------------------------------------+
 #  | This source file is subject to version 3.01 of the PHP license,      |
 #  | that is bundled with this package in the file LICENSE, and is        |
@@ -28,6 +28,14 @@ PHP_BUILD=$(PHP_BUILD)
 MCFILE=$(BUILD_DIR)\wsyslog.rc
 BUILD_DIR_DEV_NAME=php-$(PHP_VERSION_STRING)-devel-$(PHP_COMPILER_SHORT)-$(PHP_ARCHITECTURE)
 BUILD_DIR_DEV=$(BUILD_DIR)\$(BUILD_DIR_DEV_NAME)
+
+!if "$(DEBUGGER)" == "1"
+DEBUGGER_CMD=devenv
+DEBUGGER_ARGS=/debugexe
+!else
+DEBUGGER_CMD=
+DEBUGGER_ARGS=
+!endif
 
 all: generated_files $(EXT_TARGETS) $(PECL_TARGETS) $(SAPI_TARGETS)
 
@@ -151,11 +159,22 @@ clean-pgo: clean-all
 	-del /f /q $(BUILD_DIR)\pecl-$(PHP_VERSION_STRING)$(PHP_ZTS_ARCHIVE_POSTFIX)-Win32-$(PHP_COMPILER_SHORT)-$(PHP_ARCHITECTURE).zip
 	-del /f /q $(BUILD_DIR)\php-test-pack-$(PHP_VERSION_STRING).zip
 
-test:
-	"$(BUILD_DIR)\php.exe" -d open_basedir= -d output_buffering=0 run-tests.php $(TESTS) -p "$(BUILD_DIR)\php.exe"
 
-build-snap: generated_files
-	SET PATH=$(PATH);$(PHP_BUILD)\bin
+!if $(PHP_TEST_INI_PATH) == ""
+test: set-tmp-env
+	$(DEBUGGER_CMD) $(DEBUGGER_ARGS) "$(BUILD_DIR)\php.exe" -d open_basedir= -d output_buffering=0 run-tests.php $(TESTS) -p "$(BUILD_DIR)\php.exe"
+
+run: set-tmp-env
+	$(DEBUGGER_CMD) $(DEBUGGER_ARGS) "$(BUILD_DIR)\php.exe" $(ARGS)
+!else
+test: set-tmp-env
+	$(DEBUGGER_CMD) $(DEBUGGER_ARGS) "$(BUILD_DIR)\php.exe" -n -c $(PHP_TEST_INI_PATH) -d open_basedir= -d output_buffering=0 -d memory_limit=-1 run-tests.php -p "$(BUILD_DIR)\php.exe" -n -c $(PHP_TEST_INI_PATH) $(TESTS)
+
+run: set-tmp-env
+	$(DEBUGGER_CMD) $(DEBUGGER_ARGS) "$(BUILD_DIR)\php.exe" -n -c $(PHP_TEST_INI_PATH) $(ARGS)
+!endif
+
+build-snap: set-tmp-env generated_files
 	@$(MAKE) "$(BUILD_DIR)\$(PHPDLL)"
 	-for %T in ($(SAPI_TARGETS)) do $(MAKE) /I /nologo "%T"
 	-for %T in ($(EXT_TARGETS)) do $(MAKE) /I /nologo "%T"

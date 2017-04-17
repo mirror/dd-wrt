@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | phar:// stream wrapper support                                       |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2005-2016 The PHP Group                                |
+  | Copyright (c) 2005-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -180,7 +180,7 @@ static int phar_compare_dir_name(const void *a, const void *b)  /* {{{ */
 static php_stream *phar_make_dirstream(char *dir, HashTable *manifest) /* {{{ */
 {
 	HashTable *data;
-	int dirlen = strlen(dir);
+	size_t dirlen = strlen(dir);
 	char *entry, *found, *save;
 	zend_string *str_key;
 	uint keylen;
@@ -199,7 +199,6 @@ static php_stream *phar_make_dirstream(char *dir, HashTable *manifest) /* {{{ */
 	zend_hash_internal_pointer_reset(manifest);
 
 	while (FAILURE != zend_hash_has_more_elements(manifest)) {
-		keylen = 0;
 		if (HASH_KEY_NON_EXISTENT == zend_hash_get_current_key(manifest, &str_key, &unused)) {
 			break;
 		}

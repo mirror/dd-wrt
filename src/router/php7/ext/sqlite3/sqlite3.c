@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -122,14 +122,6 @@ PHP_METHOD(sqlite3, open)
 			return;
 		}
 
-#if PHP_API_VERSION < 20100412
-		if (PG(safe_mode) && (!php_checkuid(fullpath, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-			zend_throw_exception_ex(zend_ce_exception, 0, "safe_mode prohibits opening %s", fullpath);
-			efree(fullpath);
-			return;
-		}
-#endif
-
 		if (php_check_open_basedir(fullpath)) {
 			zend_throw_exception_ex(zend_ce_exception, 0, "open_basedir prohibits opening %s", fullpath);
 			efree(fullpath);
@@ -163,11 +155,7 @@ PHP_METHOD(sqlite3, open)
 
 	db_obj->initialised = 1;
 
-#if PHP_API_VERSION < 20100412
-	if (PG(safe_mode) || (PG(open_basedir) && *PG(open_basedir))) {
-#else
 	if (PG(open_basedir) && *PG(open_basedir)) {
-#endif
 		sqlite3_set_authorizer(db_obj->db, php_sqlite3_authorizer, NULL);
 	}
 
@@ -705,9 +693,7 @@ static int sqlite3_do_callback(struct php_sqlite3_fci *fc, zval *cb, int argc, s
 	fake_argc = argc + is_agg;
 
 	fc->fci.size = sizeof(fc->fci);
-	fc->fci.function_table = EG(function_table);
 	ZVAL_COPY_VALUE(&fc->fci.function_name, cb);
-	fc->fci.symbol_table = NULL;
 	fc->fci.object = NULL;
 	fc->fci.retval = &retval;
 	fc->fci.param_count = fake_argc;
@@ -864,9 +850,7 @@ static int php_sqlite3_callback_compare(void *coll, int a_len, const void *a, in
 	int ret;
 
 	collation->fci.fci.size = (sizeof(collation->fci.fci));
-	collation->fci.fci.function_table = EG(function_table);
 	ZVAL_COPY_VALUE(&collation->fci.fci.function_name, &collation->cmp_func);
-	collation->fci.fci.symbol_table = NULL;
 	collation->fci.fci.object = NULL;
 	collation->fci.fci.retval = &retval;
 	collation->fci.fci.param_count = 2;
@@ -907,7 +891,7 @@ static int php_sqlite3_callback_compare(void *coll, int a_len, const void *a, in
 }
 /* }}} */
 
-/* {{{ proto bool SQLite3::createFunction(string name, mixed callback [, int argcount])
+/* {{{ proto bool SQLite3::createFunction(string name, mixed callback [, int argcount, int flags])
    Allows registration of a PHP function as a SQLite UDF that can be called within SQL statements. */
 PHP_METHOD(sqlite3, createFunction)
 {
@@ -919,11 +903,12 @@ PHP_METHOD(sqlite3, createFunction)
 	zval *callback_func;
 	zend_string *callback_name;
 	zend_long sql_func_num_args = -1;
+	zend_long flags = 0;
 	db_obj = Z_SQLITE3_DB_P(object);
 
 	SQLITE3_CHECK_INITIALIZED(db_obj, db_obj->initialised, SQLite3)
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz|l", &sql_func, &sql_func_len, &callback_func, &sql_func_num_args) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "sz|ll", &sql_func, &sql_func_len, &callback_func, &sql_func_num_args, &flags) == FAILURE) {
 		return;
 	}
 
@@ -940,7 +925,7 @@ PHP_METHOD(sqlite3, createFunction)
 
 	func = (php_sqlite3_func *)ecalloc(1, sizeof(*func));
 
-	if (sqlite3_create_function(db_obj->db, sql_func, sql_func_num_args, SQLITE_UTF8, func, php_sqlite3_callback_func, NULL, NULL) == SQLITE_OK) {
+	if (sqlite3_create_function(db_obj->db, sql_func, sql_func_num_args, flags | SQLITE_UTF8, func, php_sqlite3_callback_func, NULL, NULL) == SQLITE_OK) {
 		func->func_name = estrdup(sql_func);
 
 		ZVAL_COPY(&func->func, callback_func);
@@ -1195,7 +1180,8 @@ static php_stream_ops php_stream_sqlite3_ops = {
 	"SQLite3",
 	php_sqlite3_stream_seek,
 	php_sqlite3_stream_cast,
-	php_sqlite3_stream_stat
+	php_sqlite3_stream_stat,
+	NULL
 };
 
 /* {{{ proto resource SQLite3::openBlob(string table, string column, int rowid [, string dbname])
@@ -1909,6 +1895,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_sqlite3_createfunction, 0, 0, 2)
 	ZEND_ARG_INFO(0, name)
 	ZEND_ARG_INFO(0, callback)
 	ZEND_ARG_INFO(0, argument_count)
+	ZEND_ARG_INFO(0, flags)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_sqlite3_createaggregate, 0, 0, 3)
@@ -2031,13 +2018,6 @@ static int php_sqlite3_authorizer(void *autharg, int access_type, const char *ar
 		case SQLITE_ATTACH:
 		{
 			if (memcmp(arg3, ":memory:", sizeof(":memory:")) && *arg3) {
-
-#if PHP_API_VERSION < 20100412
-				if (PG(safe_mode) && (!php_checkuid(arg3, NULL, CHECKUID_CHECK_FILE_AND_DIR))) {
-					return SQLITE_DENY;
-				}
-#endif
-
 				if (php_check_open_basedir(arg3)) {
 					return SQLITE_DENY;
 				}
@@ -2302,6 +2282,10 @@ PHP_MINIT_FUNCTION(sqlite3)
 	REGISTER_LONG_CONSTANT("SQLITE3_OPEN_READONLY", SQLITE_OPEN_READONLY, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("SQLITE3_OPEN_READWRITE", SQLITE_OPEN_READWRITE, CONST_CS | CONST_PERSISTENT);
 	REGISTER_LONG_CONSTANT("SQLITE3_OPEN_CREATE", SQLITE_OPEN_CREATE, CONST_CS | CONST_PERSISTENT);
+
+#ifdef SQLITE_DETERMINISTIC
+	REGISTER_LONG_CONSTANT("SQLITE3_DETERMINISTIC", SQLITE_DETERMINISTIC, CONST_CS | CONST_PERSISTENT);
+#endif
 
 	return SUCCESS;
 }

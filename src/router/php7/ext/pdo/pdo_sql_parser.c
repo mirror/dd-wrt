@@ -3,7 +3,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -380,7 +380,7 @@ PDO_API int pdo_parse_params(pdo_stmt_t *stmt, char *inquery, size_t inquery_len
 	Scanner s;
 	char *ptr, *newbuffer;
 	int t;
-	int bindno = 0;
+	uint32_t bindno = 0;
 	int ret = 0;
 	size_t newbuffer_len;
 	HashTable *params;

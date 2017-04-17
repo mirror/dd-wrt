@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id: 613c0b75ea13d5c3f89571bd253d16ac861b43fc $ */
+/* $Id: cdc5e15bb616f10210b94ecd8789e66c927a375f $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -286,6 +286,8 @@ PHP_MINIT_FUNCTION(filter)
 
 	REGISTER_LONG_CONSTANT("FILTER_FLAG_HOSTNAME", FILTER_FLAG_HOSTNAME, CONST_CS | CONST_PERSISTENT);
 
+	REGISTER_LONG_CONSTANT("FILTER_FLAG_EMAIL_UNICODE", FILTER_FLAG_EMAIL_UNICODE, CONST_CS | CONST_PERSISTENT);
+
 	sapi_register_input_filter(php_sapi_filter, php_sapi_filter_init);
 
 	return SUCCESS;
@@ -328,7 +330,7 @@ PHP_MINFO_FUNCTION(filter)
 {
 	php_info_print_table_start();
 	php_info_print_table_row( 2, "Input Validation and Filtering", "enabled" );
-	php_info_print_table_row( 2, "Revision", "$Id: 613c0b75ea13d5c3f89571bd253d16ac861b43fc $");
+	php_info_print_table_row( 2, "Revision", "$Id: cdc5e15bb616f10210b94ecd8789e66c927a375f $");
 	php_info_print_table_end();
 
 	DISPLAY_INI_ENTRIES();

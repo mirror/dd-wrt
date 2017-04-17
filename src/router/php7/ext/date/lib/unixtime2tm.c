@@ -189,6 +189,7 @@ void timelib_unixtime2local(timelib_time *tm, timelib_sll ts)
 
 			timelib_unixtime2gmt(tm, ts - (tm->z * 60) + (tm->dst * 3600));
 
+			tm->sse = ts;
 			tm->z = z;
 			tm->dst = dst;
 			break;
@@ -294,3 +295,10 @@ int timelib_apply_localtime(timelib_time *t, unsigned int localtime)
 	}
 	return 0;
 }
+
+#if HAVE_GETTIMEOFDAY
+void timelib_set_fraction_from_timeval(timelib_time *t, struct timeval tp)
+{
+	t->f = (double) tp.tv_usec / 1000000;
+}
+#endif

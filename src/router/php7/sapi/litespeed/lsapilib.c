@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1499,7 +1499,7 @@ int LSAPI_ReqBodyGetLine_r( LSAPI_Request * pReq, char * pBuf, size_t bufLen, in
     char * pBufCur = pBuf;
     char * pCur;
     char * p;
-    if (!pReq || (pReq->m_fd ==-1) ||( !pBuf )|| !getLF )
+    if (!pReq || (pReq->m_fd ==-1) ||( !pBuf )||(bufLen < 0 )|| !getLF )
         return -1;
     *getLF = 0;
     while( (left = pBufEnd - pBufCur ) > 0 )
@@ -1543,7 +1543,7 @@ ssize_t LSAPI_ReadReqBody_r( LSAPI_Request * pReq, char * pBuf, size_t bufLen )
     ssize_t len;
     off_t total;
     /* char *pOldBuf = pBuf; */
-    if (!pReq || (pReq->m_fd ==-1) || ( !pBuf ))
+    if (!pReq || (pReq->m_fd ==-1) || ( !pBuf )||(bufLen < 0 ))
         return -1;
 
     total = pReq->m_reqBodyLen - pReq->m_reqBodyRead;

@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2016 The PHP Group                                |
+  | Copyright (c) 1997-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -141,7 +141,7 @@ PDO_API void pdo_handle_error(pdo_dbh_t *dbh, pdo_stmt_t *stmt) /* {{{ */
 	}
 
 	if (supp) {
-		message = strpprintf(0, "SQLSTATE[%s]: %s: %ld %s", *pdo_err, msg, native_code, supp);
+		message = strpprintf(0, "SQLSTATE[%s]: %s: " ZEND_LONG_FMT " %s", *pdo_err, msg, native_code, supp);
 	} else {
 		message = strpprintf(0, "SQLSTATE[%s]: %s", *pdo_err, msg);
 	}
@@ -438,10 +438,8 @@ static void pdo_stmt_construct(zend_execute_data *execute_data, pdo_stmt_t *stmt
 		zval retval;
 
 		fci.size = sizeof(zend_fcall_info);
-		fci.function_table = &dbstmt_ce->function_table;
 		ZVAL_UNDEF(&fci.function_name);
 		fci.object = Z_OBJ_P(object);
-		fci.symbol_table = NULL;
 		fci.retval = &retval;
 		fci.param_count = 0;
 		fci.params = NULL;
@@ -451,7 +449,7 @@ static void pdo_stmt_construct(zend_execute_data *execute_data, pdo_stmt_t *stmt
 
 		fcc.initialized = 1;
 		fcc.function_handler = dbstmt_ce->constructor;
-		fcc.calling_scope = EG(scope);
+		fcc.calling_scope = zend_get_executed_scope();
 		fcc.called_scope = Z_OBJCE_P(object);
 		fcc.object = Z_OBJ_P(object);
 
@@ -1250,7 +1248,7 @@ const zend_function_entry pdo_dbh_functions[] = /* {{{ */ {
 	PHP_ME(PDO, __wakeup,               arginfo_pdo__void,         ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 	PHP_ME(PDO, __sleep,                arginfo_pdo__void,         ZEND_ACC_PUBLIC|ZEND_ACC_FINAL)
 	PHP_ME(PDO, getAvailableDrivers,    arginfo_pdo__void,         ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	{NULL, NULL, NULL}
+	PHP_FE_END
 };
 /* }}} */
 
@@ -1313,7 +1311,7 @@ int pdo_hash_methods(pdo_dbh_object_t *dbh_obj, int kind)
 
 			func.arg_info = (zend_internal_arg_info*)funcs->arg_info + 1;
 			func.num_args = funcs->num_args;
-			if (info->required_num_args == -1) {
+			if (info->required_num_args == (uint32_t)-1) {
 				func.required_num_args = funcs->num_args;
 			} else {
 				func.required_num_args = info->required_num_args;
@@ -1434,9 +1432,7 @@ void pdo_dbh_init(void)
 	REGISTER_PDO_CLASS_CONST_LONG("FETCH_KEY_PAIR", (zend_long)PDO_FETCH_KEY_PAIR);
 	REGISTER_PDO_CLASS_CONST_LONG("FETCH_CLASSTYPE", (zend_long)PDO_FETCH_CLASSTYPE);
 
-#if PHP_VERSION_ID >= 50100
 	REGISTER_PDO_CLASS_CONST_LONG("FETCH_SERIALIZE",(zend_long)PDO_FETCH_SERIALIZE);
-#endif
 	REGISTER_PDO_CLASS_CONST_LONG("FETCH_PROPS_LATE", (zend_long)PDO_FETCH_PROPS_LATE);
 	REGISTER_PDO_CLASS_CONST_LONG("FETCH_NAMED", (zend_long)PDO_FETCH_NAMED);
 

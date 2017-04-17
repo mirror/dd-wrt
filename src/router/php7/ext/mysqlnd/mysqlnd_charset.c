@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 7                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 2006-2016 The PHP Group                                |
+  | Copyright (c) 2006-2017 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -19,7 +19,6 @@
 */
 
 #include "php.h"
-#include "php_globals.h"
 #include "mysqlnd.h"
 #include "mysqlnd_priv.h"
 #include "mysqlnd_debug.h"

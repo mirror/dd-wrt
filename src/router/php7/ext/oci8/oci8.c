@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1180,7 +1180,7 @@ PHP_MINFO_FUNCTION(oci)
 	php_info_print_table_row(2, "OCI8 DTrace Support", "disabled");
 #endif
 	php_info_print_table_row(2, "OCI8 Version", PHP_OCI8_VERSION);
-	php_info_print_table_row(2, "Revision", "$Id: 59f993160cf983dd24bb391b68a65a17303d2dba $");
+	php_info_print_table_row(2, "Revision", "$Id: 03698b2e9b50593039b7ca292b2e3cf9eaf064b9 $");
 
 #if ((OCI_MAJOR_VERSION > 10) || ((OCI_MAJOR_VERSION == 10) && (OCI_MINOR_VERSION >= 2)))
 	php_oci_client_get_version(ver, sizeof(ver));

@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -206,7 +206,7 @@ static void dom_copy_doc_props(php_libxml_ref_obj *source_doc, php_libxml_ref_ob
 	}
 }
 
-int dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece, zend_class_entry *ce)
+void dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece, zend_class_entry *ce)
 {
 	dom_doc_propsptr doc_props;
 
@@ -214,7 +214,7 @@ int dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece,
 		doc_props = dom_get_doc_props(document);
 		if (doc_props->classmap == NULL) {
 			if (ce == NULL) {
-				return SUCCESS;
+				return;
 			}
 			ALLOC_HASHTABLE(doc_props->classmap);
 			zend_hash_init(doc_props->classmap, 0, NULL, NULL, 0);
@@ -225,7 +225,6 @@ int dom_set_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece,
 			zend_hash_del(doc_props->classmap, basece->name);
 		}
 	}
-	return SUCCESS;
 }
 
 zend_class_entry *dom_get_doc_classmap(php_libxml_ref_obj *document, zend_class_entry *basece)
@@ -286,7 +285,7 @@ PHP_DOM_EXPORT dom_object *php_dom_object_get_data(xmlNodePtr obj)
 /* {{{ dom_read_na */
 static int dom_read_na(dom_object *obj, zval *retval)
 {
-	php_error_docref(NULL, E_ERROR, "Cannot read property");
+	zend_throw_error(NULL, "Cannot read property");
 	return FAILURE;
 }
 /* }}} */
@@ -294,7 +293,7 @@ static int dom_read_na(dom_object *obj, zval *retval)
 /* {{{ dom_write_na */
 static int dom_write_na(dom_object *obj, zval *newval)
 {
-	php_error_docref(NULL, E_ERROR, "Cannot write property");
+	zend_throw_error(NULL, "Cannot write property");
 	return FAILURE;
 }
 /* }}} */
@@ -420,7 +419,7 @@ static HashTable* dom_get_debug_info_helper(zval *object, int *is_temp) /* {{{ *
 						*std_props;
 	zend_string			*string_key;
 	dom_prop_handler	*entry;
-	zval object_value;
+	zend_string         *object_str;
 
 	*is_temp = 1;
 
@@ -431,7 +430,7 @@ static HashTable* dom_get_debug_info_helper(zval *object, int *is_temp) /* {{{ *
 		return debug_info;
 	}
 
-	ZVAL_STRING(&object_value, "(object value omitted)");
+	object_str = zend_string_init("(object value omitted)", sizeof("(object value omitted)")-1, 0);
 
 	ZEND_HASH_FOREACH_STR_KEY_PTR(prop_handlers, string_key, entry) {
 		zval value;
@@ -442,13 +441,14 @@ static HashTable* dom_get_debug_info_helper(zval *object, int *is_temp) /* {{{ *
 
 		if (Z_TYPE(value) == IS_OBJECT) {
 			zval_dtor(&value);
-			ZVAL_COPY(&value, &object_value);
+			ZVAL_NEW_STR(&value, object_str);
+			zend_string_addref(object_str);
 		}
 
 		zend_hash_add(debug_info, string_key, &value);
 	} ZEND_HASH_FOREACH_END();
 
-	zval_dtor(&object_value);
+	zend_string_release(object_str);
 
 	return debug_info;
 }
@@ -1075,7 +1075,7 @@ static dom_object* dom_objects_set_class(zend_class_entry *class_type, zend_bool
 	dom_object *intern = ecalloc(1, sizeof(dom_object) + zend_object_properties_size(class_type));
 
 	zend_class_entry *base_class = class_type;
-	while (base_class->type != ZEND_INTERNAL_CLASS && base_class->parent != NULL) {
+	while ((base_class->type != ZEND_INTERNAL_CLASS || base_class->info.internal.module->module_number != dom_module_entry.module_number) && base_class->parent != NULL) {
 		base_class = base_class->parent;
 	}
 
@@ -1345,7 +1345,7 @@ xmlNode *dom_get_elements_by_tag_name_ns_raw(xmlNodePtr nodep, char *ns, char *l
 	while (nodep != NULL && (*cur <= index || index == -1)) {
 		if (nodep->type == XML_ELEMENT_NODE) {
 			if (xmlStrEqual(nodep->name, (xmlChar *)local) || xmlStrEqual((xmlChar *)"*", (xmlChar *)local)) {
-				if (ns == NULL || (nodep->ns != NULL && (xmlStrEqual(nodep->ns->href, (xmlChar *)ns) || xmlStrEqual((xmlChar *)"*", (xmlChar *)ns)))) {
+				if (ns == NULL || (!strcmp(ns, "") && nodep->ns == NULL) || (nodep->ns != NULL && (xmlStrEqual(nodep->ns->href, (xmlChar *)ns) || xmlStrEqual((xmlChar *)"*", (xmlChar *)ns)))) {
 					if (*cur == index) {
 						ret = nodep;
 						break;

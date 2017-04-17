@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP Version 7                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -1377,12 +1377,12 @@ PHP_FUNCTION(socket_create)
 		&& arg1 != AF_INET6
 #endif
 		&& arg1 != AF_INET) {
-		php_error_docref(NULL, E_WARNING, "invalid socket domain [%pd] specified for argument 1, assuming AF_INET", arg1);
+		php_error_docref(NULL, E_WARNING, "invalid socket domain [" ZEND_LONG_FMT "] specified for argument 1, assuming AF_INET", arg1);
 		arg1 = AF_INET;
 	}
 
 	if (arg2 > 10) {
-		php_error_docref(NULL, E_WARNING, "invalid socket type [%pd] specified for argument 2, assuming SOCK_STREAM", arg2);
+		php_error_docref(NULL, E_WARNING, "invalid socket type [" ZEND_LONG_FMT "] specified for argument 2, assuming SOCK_STREAM", arg2);
 		arg2 = SOCK_STREAM;
 	}
 
@@ -1659,9 +1659,9 @@ PHP_FUNCTION(socket_send)
 		RETURN_FALSE;
 	}
 
-	retval = send(php_sock->bsd_socket, buf, (buf_len < len ? buf_len : len), flags);
+	retval = send(php_sock->bsd_socket, buf, (buf_len < (size_t)len ? buf_len : (size_t)len), flags);
 
-	if (retval == -1) {
+	if (retval == (size_t)-1) {
 		PHP_SOCKET_ERROR(php_sock, "unable to write to socket", errno);
 		RETURN_FALSE;
 	}
@@ -1827,7 +1827,7 @@ PHP_FUNCTION(socket_sendto)
 			s_un.sun_family = AF_UNIX;
 			snprintf(s_un.sun_path, 108, "%s", addr);
 
-			retval = sendto(php_sock->bsd_socket, buf, (len > buf_len) ? buf_len : len,	flags, (struct sockaddr *) &s_un, SUN_LEN(&s_un));
+			retval = sendto(php_sock->bsd_socket, buf, ((size_t)len > buf_len) ? buf_len : (size_t)len,	flags, (struct sockaddr *) &s_un, SUN_LEN(&s_un));
 			break;
 
 		case AF_INET:
@@ -1843,7 +1843,7 @@ PHP_FUNCTION(socket_sendto)
 				RETURN_FALSE;
 			}
 
-			retval = sendto(php_sock->bsd_socket, buf, (len > buf_len) ? buf_len : len, flags, (struct sockaddr *) &sin, sizeof(sin));
+			retval = sendto(php_sock->bsd_socket, buf, ((size_t)len > buf_len) ? buf_len : (size_t)len, flags, (struct sockaddr *) &sin, sizeof(sin));
 			break;
 #if HAVE_IPV6
 		case AF_INET6:
@@ -1859,7 +1859,7 @@ PHP_FUNCTION(socket_sendto)
 				RETURN_FALSE;
 			}
 
-			retval = sendto(php_sock->bsd_socket, buf, (len > buf_len) ? buf_len : len, flags, (struct sockaddr *) &sin6, sizeof(sin6));
+			retval = sendto(php_sock->bsd_socket, buf, ((size_t)len > buf_len) ? buf_len : (size_t)len, flags, (struct sockaddr *) &sin6, sizeof(sin6));
 			break;
 #endif
 		default:
@@ -2153,12 +2153,12 @@ PHP_FUNCTION(socket_create_pair)
 		&& domain != AF_INET6
 #endif
 		&& domain != AF_UNIX) {
-		php_error_docref(NULL, E_WARNING, "invalid socket domain [%pd] specified for argument 1, assuming AF_INET", domain);
+		php_error_docref(NULL, E_WARNING, "invalid socket domain [" ZEND_LONG_FMT "] specified for argument 1, assuming AF_INET", domain);
 		domain = AF_INET;
 	}
 
 	if (type > 10) {
-		php_error_docref(NULL, E_WARNING, "invalid socket type [%pd] specified for argument 2, assuming SOCK_STREAM", type);
+		php_error_docref(NULL, E_WARNING, "invalid socket type [" ZEND_LONG_FMT "] specified for argument 2, assuming SOCK_STREAM", type);
 		type = SOCK_STREAM;
 	}
 
@@ -2370,7 +2370,7 @@ PHP_FUNCTION(socket_export_stream)
 	char *protocol = NULL;
 	size_t protocollen = 0;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "r", &zsocket) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS(), "r", &zsocket) == FAILURE) {
 		return;
 	}
 	if ((socket = (php_socket *) zend_fetch_resource(Z_RES_P(zsocket), le_socket_name, le_socket)) == NULL) {

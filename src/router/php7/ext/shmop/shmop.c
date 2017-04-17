@@ -2,7 +2,7 @@
    +----------------------------------------------------------------------+
    | PHP version 5                                                        |
    +----------------------------------------------------------------------+
-   | Copyright (c) 1997-2016 The PHP Group                                |
+   | Copyright (c) 1997-2017 The PHP Group                                |
    +----------------------------------------------------------------------+
    | This source file is subject to version 3.01 of the PHP license,      |
    | that is bundled with this package in the file LICENSE, and is        |
@@ -305,7 +305,7 @@ PHP_FUNCTION(shmop_size)
 PHP_FUNCTION(shmop_write)
 {
 	struct php_shmop *shmop;
-	int writesize;
+	zend_long writesize;
 	zend_long offset;
 	zend_string *data;
 	zval *shmid;
@@ -328,7 +328,7 @@ PHP_FUNCTION(shmop_write)
 		RETURN_FALSE;
 	}
 
-	writesize = (ZSTR_LEN(data) < shmop->size - offset) ? ZSTR_LEN(data) : shmop->size - offset;
+	writesize = ((zend_long)ZSTR_LEN(data) < shmop->size - offset) ? (zend_long)ZSTR_LEN(data) : shmop->size - offset;
 	memcpy(shmop->addr + offset, ZSTR_VAL(data), writesize);
 
 	RETURN_LONG(writesize);
