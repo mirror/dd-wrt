@@ -15,6 +15,7 @@
 #include <linux/delay.h>
 #include <linux/device.h>
 #include <linux/err.h>
+#include <linux/export.h>
 #include <linux/smp.h>
 #include <linux/jiffies.h>
 #include <linux/clockchips.h>
@@ -388,6 +389,14 @@ int __init twd_local_timer_register(struct twd_local_timer *tlt)
 	return twd_local_timer_common_register(NULL);
 }
 
+/* Needed by mpcore_wdt */
+unsigned long twd_timer_get_rate(void)
+{
+	return twd_timer_rate;
+}
+EXPORT_SYMBOL_GPL(twd_timer_get_rate);
+
+
 #ifdef CONFIG_OF
 static int __init twd_local_timer_of_register(struct device_node *np)
 {
@@ -415,10 +424,3 @@ CLOCKSOURCE_OF_DECLARE(arm_twd_a9, "arm,cortex-a9-twd-timer", twd_local_timer_of
 CLOCKSOURCE_OF_DECLARE(arm_twd_a5, "arm,cortex-a5-twd-timer", twd_local_timer_of_register);
 CLOCKSOURCE_OF_DECLARE(arm_twd_11mp, "arm,arm11mp-twd-timer", twd_local_timer_of_register);
 #endif
-
-/* Needed by mpcore_wdt */
-unsigned long twd_timer_get_rate(void)
-{
-	return twd_timer_rate;
-}
-EXPORT_SYMBOL_GPL(twd_timer_get_rate);
