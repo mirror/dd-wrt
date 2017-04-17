@@ -26,7 +26,7 @@ if test "$PHP_PHAR" != "no"; then
   fi
   PHP_ADD_EXTENSION_DEP(phar, hash, true)
   PHP_ADD_EXTENSION_DEP(phar, spl, true)
-  PHP_ADD_MAKEFILE_FRAGMENT
+  #PHP_ADD_MAKEFILE_FRAGMENT
 
   PHP_INSTALL_HEADERS([ext/phar], [php_phar.h])
 

@@ -67,18 +67,9 @@ if test "$PHP_APXS2" != "no"; then
   fi
 
   APXS_LIBEXECDIR='$(INSTALL_ROOT)'`$APXS -q LIBEXECDIR`
-  if test -z `$APXS -q SYSCONFDIR`; then
-    INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
-                 $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
-                       -i -n php7"
-  else
-    APXS_SYSCONFDIR='$(INSTALL_ROOT)'`$APXS -q SYSCONFDIR`
-    INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
-                \$(mkinstalldirs) '$APXS_SYSCONFDIR' && \
-                 $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
-                       -S SYSCONFDIR='$APXS_SYSCONFDIR' \
-                       -i -a -n php7"
-  fi
+  INSTALL_IT="\$(mkinstalldirs) '$APXS_LIBEXECDIR' && \
+               $APXS -S LIBEXECDIR='$APXS_LIBEXECDIR' \
+                     -i -n php7"
 
   case $host_alias in
   *aix*)
