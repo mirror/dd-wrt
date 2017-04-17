@@ -453,7 +453,10 @@ PHP_CHECK_FUNC(gethostname, nsl)
 PHP_CHECK_FUNC(gethostbyaddr, nsl)
 PHP_CHECK_FUNC(yp_get_default_domain, nsl)
 
-PHP_CHECK_FUNC(dlopen, dl)
+PHP_ADD_LIBRARY(dl)
+PHP_DEF_HAVE(dlopen)
+PHP_DEF_HAVE(libdl)
+ac_cv_func_dlopen=yes
 if test "$ac_cv_func_dlopen" = "yes"; then
   AC_DEFINE(HAVE_LIBDL, 1, [ ])
 fi
@@ -1445,13 +1448,13 @@ CFLAGS="\$(CFLAGS_CLEAN) $standard_libtool_flag"
 INLINE_CFLAGS="$INLINE_CFLAGS $standard_libtool_flag"
 CXXFLAGS="$CXXFLAGS $standard_libtool_flag \$(PROF_FLAGS)"
 
-if test "$PHP_PHAR" != "no" && test "$PHP_CLI" != "no"; then
-  pharcmd=pharcmd
-  pharcmd_install=install-pharcmd
-else
+#if test "$PHP_PHAR" != "no" && test "$PHP_CLI" != "no"; then
+#  pharcmd=pharcmd
+#  pharcmd_install=install-pharcmd
+#else
   pharcmd=
   pharcmd_install=
-fi;
+#fi;
 
 all_targets="$lcov_target \$(OVERALL_TARGET) \$(PHP_MODULES) \$(PHP_ZEND_EX) \$(PHP_BINARIES) $pharcmd"
 install_targets="$install_sapi $install_modules $install_binaries install-build install-headers install-programs $install_pear $pharcmd_install"
