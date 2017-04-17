@@ -693,12 +693,20 @@ static int do_cli(int argc, char **argv) /* {{{ */
 				goto out;
 
 			case 'v': /* show php version & quit */
-				php_printf("PHP %s (%s) ( %s)\nCopyright (c) 1997-2016 The PHP Group\n%s",
-					PHP_VERSION, cli_sapi_module.name,
+				php_printf("PHP %s (%s) (built: %s %s) ( %s)\nCopyright (c) 1997-2017 The PHP Group\n%s",
+					PHP_VERSION, cli_sapi_module.name, __DATE__, __TIME__,
 #if ZTS
 					"ZTS "
 #else
 					"NTS "
+#endif
+#ifdef COMPILER
+					COMPILER
+					" "
+#endif
+#ifdef ARCHITECTURE
+					ARCHITECTURE
+					" "
 #endif
 #if ZEND_DEBUG
 					"DEBUG "

@@ -2365,8 +2365,8 @@ AC_DEFUN([PHP_SETUP_OPENSSL],[
       if test -r $i/include/openssl/evp.h; then
         OPENSSL_INCDIR=$i/include
       fi
-      if test -r $i/libssl.a -o -r $i/libssl.$SHLIB_SUFFIX_NAME; then
-        OPENSSL_LIBDIR=$i
+      if test -r $i/$PHP_LIBDIR/libssl.a -o -r $i/$PHP_LIBDIR/libssl.$SHLIB_SUFFIX_NAME; then
+        OPENSSL_LIBDIR=$i/$PHP_LIBDIR
       fi
       test -n "$OPENSSL_INCDIR" && test -n "$OPENSSL_LIBDIR" && break
     done

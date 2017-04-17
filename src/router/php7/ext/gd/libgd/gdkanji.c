@@ -9,11 +9,6 @@
 #include "gdhelpers.h"
 
 #include <stdarg.h>
-
-/* force usage of internal conversation routine */
-#undef HAVE_ICONV_H
-#undef HAVE_ICONV
-
 #if defined(HAVE_ICONV_H) || defined(HAVE_ICONV)
 #include <iconv.h>
 #ifdef HAVE_ERRNO_H
