@@ -15,13 +15,21 @@ if test "$PHP_ICONV" != "no"; then
 
   if test "$iconv_avail" != "no"; then
     if test -z "$ICONV_DIR"; then
-      PHP_ICONV_PREFIX=""
+      for i in /usr/local /usr; do
+        if test -f "$i/include/iconv.h" || test -f "$i/include/giconv.h"; then
+          PHP_ICONV_PREFIX="$i"
+          break
+        fi
+      done
+      if test -z "$PHP_ICONV_PREFIX"; then
+        PHP_ICONV_PREFIX="/usr"
+      fi
     else
       PHP_ICONV_PREFIX="$ICONV_DIR"
     fi
 
-    CFLAGS="$CFLAGS"
-    LDFLAGS="$LDFLAGS"
+    CFLAGS="-I$PHP_ICONV_PREFIX/include $CFLAGS"
+    LDFLAGS="-L$PHP_ICONV_PREFIX/$PHP_LIBDIR $LDFLAGS"
 
     if test -r "$PHP_ICONV_PREFIX/include/giconv.h"; then
       PHP_ICONV_H_PATH="$PHP_ICONV_PREFIX/include/giconv.h"
@@ -194,7 +202,7 @@ int main() {
       AC_MSG_RESULT([no])
     ])
 
-    PHP_NEW_EXTENSION(iconv, iconv.c, $ext_shared,, [-DZEND_ENABLE_STATIC_TSRMLS_CACHE=1])
+    PHP_NEW_EXTENSION(iconv, iconv.c, $ext_shared,, [-I\"$PHP_ICONV_PREFIX/include\" -DZEND_ENABLE_STATIC_TSRMLS_CACHE=1])
     PHP_SUBST(ICONV_SHARED_LIBADD)
     PHP_INSTALL_HEADERS([ext/iconv/])
   else
