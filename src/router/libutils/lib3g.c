@@ -1614,9 +1614,10 @@ char *get3GControlDevice(void)
 				insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
 				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
-			} else
+			} else {
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
-			eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
+				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
+			}
 			return control;
 		}
 		devicecount++;
