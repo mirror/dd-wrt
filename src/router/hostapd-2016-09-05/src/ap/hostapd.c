@@ -91,6 +91,14 @@ static void hostapd_reload_bss(struct hostapd_data *hapd)
 			 hapd->iconf->vht_oper_centr_freq_seg0_idx,
 			 hapd->iconf->vht_oper_centr_freq_seg1_idx);
 
+	if (hapd->iface->current_mode) {
+		if (hostapd_prepare_rates(hapd->iface, hapd->iface->current_mode)) {
+                      wpa_printf(MSG_ERROR, "Failed to prepare rates table.");
+                      hostapd_logger(hapd, NULL, HOSTAPD_MODULE_IEEE80211,HOSTAPD_LEVEL_WARNING,
+                                     "Failed to prepare rates table.");
+              }
+        }
+
 	if (!ssid->wpa_psk_set && ssid->wpa_psk && !ssid->wpa_psk->next &&
 	    ssid->wpa_passphrase_set && ssid->wpa_passphrase) {
 		/*
@@ -169,6 +177,8 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 	struct hostapd_data *hapd = iface->bss[0];
 	struct hostapd_config *newconf, *oldconf;
 	size_t j;
+	int i;
+
 
 	if (iface->config_fname == NULL) {
 		/* Only in-memory config in use - assume it has been updated */
@@ -189,6 +199,14 @@ int hostapd_reload_config(struct hostapd_iface *iface)
 
 	oldconf = hapd->iconf;
 	iface->conf = newconf;
+
+      for (i = 0; i < iface->num_hw_features; i++) {
+	              struct hostapd_hw_modes *mode = &iface->hw_features[i];
+	              if (mode->mode == iface->conf->hw_mode) {
+		                      iface->current_mode = mode;
+		                      break;
+		              }
+	      }
 
 	if (iface->conf->channel)
 		iface->freq = hostapd_hw_get_freq(hapd, iface->conf->channel);
