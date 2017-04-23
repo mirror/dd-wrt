@@ -733,6 +733,7 @@ static struct DEVICES devicelist[] = {
 	{0x1199, 0x9057, "qcserial", 2, 0, 1 | QMI, &select_config1, "Netgear AC341U (modem)"},	//
 	{0x1199, 0x9063, "qcserial", 2, 0, 1 | QMI, &select_config1, "Sierra EM7305"},	// cdc_mbim in default config2
 	{0x1199, 0x9071, "qcserial", 2, 0, 1 | QMIRAW, &select_config1, "Sierra MC7430 (modem)"},	// cdc_mbim in default config2
+	{0x1199, 0x9079, "qcserial", 2, 0, 1 | QMIRAW, &select_config1, "Sierra EM7455 (modem)"},	// cdc_mbim in default config2
 
 /* Pirelli Broadband Solutions */
 	{0x1266, 0x1000, "option", 0, 0, 0, &modeswitch_std_eject, "Pirelli"},	//
