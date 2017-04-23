@@ -28,7 +28,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
-#define HSO 0xfe
+#define HSO 0xf0
 #define NODEV 0xff
 
 struct DEVICES {
@@ -492,69 +492,69 @@ static struct DEVICES devicelist[] = {
 /* Option */
 	{0x0af0, 0x4005, "option", 2, 1, 0 | QMI, NULL, "Option GIO711"},	//
 	{0x0af0, 0x4007, NULL, 0, 0, 0, &modeswitch_sierra, "Option GIO711 (cdrom)"},	//
-//      {0x0af0, 0x6711, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE201"},    //express card
-//      {0x0af0, 0x6731, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE"},       //express card
-//      {0x0af0, 0x6751, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE"},       //express card
-//      {0x0af0, 0x6771, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE"},       //express card
-//      {0x0af0, 0x6791, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE"},       //express card
+//      {0x0af0, 0x6711, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE201"},    //express card
+//      {0x0af0, 0x6731, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE"},       //express card
+//      {0x0af0, 0x6751, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE"},       //express card
+//      {0x0af0, 0x6771, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE"},       //express card
+//      {0x0af0, 0x6791, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE"},       //express card
 	{0x0af0, 0x6901, "option", 1, 0, 0, NULL, "Option GI0201"},	//usb
-	{0x0af0, 0x6911, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0225"},	//usb
-	{0x0af0, 0x6951, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0225"},	//usb
-	{0x0af0, 0x6971, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0225"},	//usb
+	{0x0af0, 0x6911, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0225"},	//usb
+	{0x0af0, 0x6951, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0225"},	//usb
+	{0x0af0, 0x6971, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0225"},	//usb
 //      {0x0af0, 0x7011, NULL, HSO, HSO, 2, &modeswitch_rezero, "Option GE301"},    //express card
 //      {0x0af0, 0x7031, NULL, HSO, HSO, 2, &modeswitch_rezero, "Option GE301"},    //express card
 //      {0x0af0, 0x7051, NULL, HSO, HSO, 2, &modeswitch_rezero, "Option GE301"},    //express card
 //      {0x0af0, 0x7071, NULL, HSO, HSO, 2, &modeswitch_rezero, "Option GE301"},    //express card
-	{0x0af0, 0x7111, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM"},	//pcie minicard
+	{0x0af0, 0x7111, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM"},	//pcie minicard
 	{0x0af0, 0x7201, "option", 1, 0, 0, NULL, "Option GTM380"},	//pcie minicard
-	{0x0af0, 0x7211, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
-	{0x0af0, 0x7251, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
-	{0x0af0, 0x7271, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
-//      {0x0af0, 0x7301, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE040x"},   //express card
-	{0x0af0, 0x7311, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM040x"},	//pcie minicard
-//      {0x0af0, 0x7361, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE044x"},   //express card
-//      {0x0af0, 0x7381, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE044x"},   //express card
-	{0x0af0, 0x7401, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0401"},	//usb
-	{0x0af0, 0x7501, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0431"},	//usb
-//      {0x0af0, 0x7601, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GE040x"},   //express card
-	{0x0af0, 0x7701, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0451"},	//usb
-	{0x0af0, 0x7706, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0451"},	//usb
-	{0x0af0, 0x7801, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI04xx"},	//usb
-	{0x0af0, 0x7901, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0452"},	//usb
-	{0x0af0, 0x7a01, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0461"},	//usb
-	{0x0af0, 0x7a05, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0461"},	//usb
+	{0x0af0, 0x7211, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
+	{0x0af0, 0x7251, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
+	{0x0af0, 0x7271, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM380"},	//pcie minicard
+//      {0x0af0, 0x7301, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE040x"},   //express card
+	{0x0af0, 0x7311, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM040x"},	//pcie minicard
+//      {0x0af0, 0x7361, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE044x"},   //express card
+//      {0x0af0, 0x7381, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE044x"},   //express card
+	{0x0af0, 0x7401, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0401"},	//usb
+	{0x0af0, 0x7501, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0431"},	//usb
+//      {0x0af0, 0x7601, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GE040x"},   //express card
+	{0x0af0, 0x7701, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0451"},	//usb
+	{0x0af0, 0x7706, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0451"},	//usb
+	{0x0af0, 0x7801, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI04xx"},	//usb
+	{0x0af0, 0x7901, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0452"},	//usb
+	{0x0af0, 0x7a01, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0461"},	//usb
+	{0x0af0, 0x7a05, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0461"},	//usb
 	{0x0af0, 0x8001, NULL, NODEV, NODEV, 0, &modeswitch_rezero, "Option GI1515"},	//zero footprint install id
 	{0x0af0, 0x8002, NULL, NODEV, NODEV, 0, &modeswitch_rezero, "Option GI1515"},	//zero footprint install id
 	{0x0af0, 0x8003, NULL, NODEV, NODEV, 0, &modeswitch_rezero, "Option GI1515"},	//zero footprint install id
 	{0x0af0, 0x8120, "qcserial", 3, 2, 3 | QMI, NULL, "Option GTM681W"},	//pcie minicard
 	{0x0af0, 0x8121, "qcserial", 3, 2, 3 | QMI, NULL, "Option GTM689W"},	//pcie minicard
-	{0x0af0, 0x8200, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI07xx"},	//usb
-	{0x0af0, 0x8201, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI07xx"},	//usb
-	{0x0af0, 0x8204, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI07xx"},	//usb
-	{0x0af0, 0x8300, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI033x"},	//usb
-	{0x0af0, 0x8302, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI033x"},	//usb
-	{0x0af0, 0x8304, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI033x"},	//usb
-//      {0x0af0, 0x8400, NULL, HSO, HSO, 0, &modeswitch_rezero, "Pioner JP1"},      //
-	{0x0af0, 0x8600, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI063x"},	//usb
-	{0x0af0, 0x8700, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0643"},	//usb
+	{0x0af0, 0x8200, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI07xx"},	//usb
+	{0x0af0, 0x8201, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI07xx"},	//usb
+	{0x0af0, 0x8204, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI07xx"},	//usb
+	{0x0af0, 0x8300, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI033x"},	//usb
+	{0x0af0, 0x8302, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI033x"},	//usb
+	{0x0af0, 0x8304, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI033x"},	//usb
+//      {0x0af0, 0x8400, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Pioner JP1"},      //
+	{0x0af0, 0x8600, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI063x"},	//usb
+	{0x0af0, 0x8700, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0643"},	//usb
 //      {0x0af0, 0x8701, NULL, NODEV, NODEV, 3 | ETH, NULL, "Option GI0643"},     //usb
-	{0x0af0, 0x8800, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM60x"},	//pcie minicard
-	{0x0af0, 0x8900, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GTM67x"},	//pcie minicard
+	{0x0af0, 0x8800, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM60x"},	//pcie minicard
+	{0x0af0, 0x8900, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GTM67x"},	//pcie minicard
 	{0x0af0, 0x9000, NULL, HSO, HSO, 3, &modeswitch_rezero, "Option GTM66x"},	//pcie minicard
-	{0x0af0, 0x9200, NULL, HSO, HSO, 0, NULL, "Option GTM671WFS"},	//pcie minicard
-	{0x0af0, 0xc031, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI031"},	//usb
-	{0x0af0, 0xc100, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI070x"},	//usb
+	{0x0af0, 0x9200, NULL, HSO, HSO, HSO, NULL, "Option GTM671WFS"},	//pcie minicard
+	{0x0af0, 0xc031, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI031"},	//usb
+	{0x0af0, 0xc100, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI070x"},	//usb
 	{0x0af0, 0xd001, NULL, NODEV, NODEV, 0, &modeswitch_rezero, "Option GI1515"},	//zero footprint install id
-	{0x0af0, 0xd031, NULL, HSO, HSO, 0, &modeswitch_rezero, "Qualcomm ICON 321"},	//usb
-	{0x0af0, 0xd033, NULL, HSO, HSO, 0, &modeswitch_rezero, "Qualcomm ICON 322"},	//usb
-	{0x0af0, 0xd055, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0505"},	//usb
-	{0x0af0, 0xd057, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1505"},	//usb
-	{0x0af0, 0xd058, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1509"},	//usb
-	{0x0af0, 0xd155, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI0505"},	//usb
-	{0x0af0, 0xd157, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1515"},	//usb
-	{0x0af0, 0xd255, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1215"},	//usb
-	{0x0af0, 0xd257, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1215"},	//usb
-	{0x0af0, 0xd357, NULL, HSO, HSO, 0, &modeswitch_rezero, "Option GI1505"},	//usb
+	{0x0af0, 0xd031, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Qualcomm ICON 321"},	//usb
+	{0x0af0, 0xd033, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Qualcomm ICON 322"},	//usb
+	{0x0af0, 0xd055, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0505"},	//usb
+	{0x0af0, 0xd057, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1505"},	//usb
+	{0x0af0, 0xd058, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1509"},	//usb
+	{0x0af0, 0xd155, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI0505"},	//usb
+	{0x0af0, 0xd157, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1515"},	//usb
+	{0x0af0, 0xd255, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1215"},	//usb
+	{0x0af0, 0xd257, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1215"},	//usb
+	{0x0af0, 0xd357, NULL, HSO, HSO, HSO, &modeswitch_rezero, "Option GI1505"},	//usb
 
 /* Olivetti */
 	{0x0b3c, 0xc000, "option", 0, 0, 2 | QMI, NULL, "Olivetti Olicard 100"},	//
@@ -1536,7 +1536,9 @@ char *get3GControlDevice(void)
 			fprintf(stderr, "%s detected\n", devicelist[devicecount].name);
 
 #if defined(HAVE_LIBQMI) || defined(HAVE_UQMI)
-			if ((devicelist[devicecount].modeswitch & 0xf0) == QMI) {
+			switch ((devicelist[devicecount].modeswitch & 0xf0)) {
+			case QMI:
+			case QMIRAW:
 				insmod("cdc-wdm usbnet qmi_wwan");
 				//start custom setup, if defined
 				if (devicelist[devicecount].customsetup) {
@@ -1544,22 +1546,19 @@ char *get3GControlDevice(void)
 					devicelist[devicecount].customsetup(needreset, devicecount);
 					sleep(2);
 				}
+			}
+
+			switch ((devicelist[devicecount].modeswitch & 0xf0)) {
+			case QMI:
 				sprintf(control, "qmi");
 				nvram_set("3gdata", "qmi");
 				return control;
-			}
-
-			if ((devicelist[devicecount].modeswitch & 0xf0) == QMIRAW) {
-				insmod("cdc-wdm usbnet qmi_wwan");
-				//start custom setup, if defined
-				if (devicelist[devicecount].customsetup) {
-					fprintf(stderr, "customsetup QMI RawIP\n");
-					devicelist[devicecount].customsetup(needreset, devicecount);
-					sleep(2);
-				}
+				break;
+			case QMIRAW:
 				sprintf(control, "qmiraw");
 				nvram_set("3gdata", "qmiraw");
 				return control;
+				break;
 			}
 #endif
 			if (devicelist[devicecount].driver) {
@@ -1594,7 +1593,8 @@ char *get3GControlDevice(void)
 				devicelist[devicecount].customsetup(needreset, devicecount);
 				sleep(2);
 			}
-			if (devicelist[devicecount].controldevice == HSO) {
+			switch ((devicelist[devicecount].modeswitch & 0xf0)) {
+			case HSO:
 				insmod("hso");
 				sprintf(control, "hso");
 				nvram_set("3gdata", "hso");
@@ -1605,19 +1605,24 @@ char *get3GControlDevice(void)
 				fprintf(out, "PIN=%s\n", nvram_safe_get("wan_pin"));
 				fclose(out);
 				eval("/etc/hso/hso_connect.sh", "restart");
-			} else if ((devicelist[devicecount].modeswitch & 0xf0) == ACM) {
+				break;
+			case ACM:
 				insmod("cdc-acm");
 				sprintf(control, "/dev/ttyACM%d", devicelist[devicecount].controldevice);
 				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
-			} else if ((devicelist[devicecount].modeswitch & 0xf0) == GENERIC) {
+				break;
+			case GENERIC:
 				sysprintf("echo %04x %04x > /sys/bus/usb-serial/drivers/option1/new_id", devicelist[devicecount].vendor, devicelist[devicecount].product);
 				insmod("usb_wwan cdc-wdm usbnet qmi_wwan");
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
 				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
-			} else {
+				break;
+			default:
 				sprintf(control, "/dev/usb/tts/%d", devicelist[devicecount].controldevice);
 				eval("comgt", "-d", control, "-s", "/etc/comgt/wakeup.comgt");
+				break;
 			}
+
 			return control;
 		}
 		devicecount++;
