@@ -147,7 +147,6 @@ SOURCES = \
   dcngettext.c \
   dngettext.c \
   ngettext.c \
-  plural.y \
   plural-exp.c \
   localcharset.c \
   threadlib.c \
