@@ -1,7 +1,7 @@
 /*
    Dialog box features module for the Midnight Commander
 
-   Copyright (C) 1994-2014
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -62,10 +62,10 @@ hook_t *idle_hook = NULL;
 
 /* If set then dialogs just clean the screen when refreshing, else */
 /* they do a complete refresh, refreshing all the parts of the program */
-int fast_refresh = 0;
+gboolean fast_refresh = FALSE;
 
 /* left click outside of dialog closes it */
-int mouse_close_dialog = 0;
+gboolean mouse_close_dialog = FALSE;
 
 const global_keymap_t *dialog_map = NULL;
 
@@ -845,6 +845,7 @@ add_widget_autopos (WDialog * h, void *w, widget_pos_flags_t pos_flags, const vo
 {
     Widget *wh = WIDGET (h);
     Widget *widget;
+    GList *new_current;
 
     /* Don't accept 0 widgets */
     if (w == NULL)
@@ -867,7 +868,7 @@ add_widget_autopos (WDialog * h, void *w, widget_pos_flags_t pos_flags, const vo
     if (h->widgets == NULL || before == NULL)
     {
         h->widgets = g_list_append (h->widgets, widget);
-        h->current = g_list_last (h->widgets);
+        new_current = g_list_last (h->widgets);
     }
     else
     {
@@ -882,17 +883,19 @@ add_widget_autopos (WDialog * h, void *w, widget_pos_flags_t pos_flags, const vo
         b = g_list_next (b);
         h->widgets = g_list_insert_before (h->widgets, b, widget);
         if (b != NULL)
-            h->current = g_list_previous (b);
+            new_current = g_list_previous (b);
         else
-            h->current = g_list_last (h->widgets);
+            new_current = g_list_last (h->widgets);
     }
 
-    /* widget has been added in runtime */
+    /* widget has been added at runtime */
     if (widget_get_state (wh, WST_ACTIVE))
     {
         send_message (widget, NULL, MSG_INIT, 0, NULL);
-        widget_set_state (widget, WST_FOCUSED, TRUE);
+        widget_select (widget);
     }
+    else
+        h->current = new_current;
 
     return widget->id;
 }

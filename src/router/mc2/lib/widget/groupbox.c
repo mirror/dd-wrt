@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Authors:
@@ -59,9 +59,6 @@ groupbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
 
     switch (msg)
     {
-    case MSG_INIT:
-        return MSG_HANDLED;
-
     case MSG_DRAW:
         {
             WDialog *h = w->owner;

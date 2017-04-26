@@ -1,8 +1,9 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
+# Jacques Yip <cong-ye@163.com>, 2017
 # Jake Li <gnozil@gmail.com>, 2012
 # liushuyu011 <liushuyu011@gmail.com>, 2016
 # Mingcong Bai <jeffbai@aosc.xyz>, 2016
@@ -15,9 +16,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-08-07 03:19+0000\n"
-"Last-Translator: Mingcong Bai <jeffbai@aosc.xyz>\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/mc/mc/language/"
 "zh_CN/)\n"
 "Language: zh_CN\n"
@@ -107,6 +108,23 @@ msgstr ""
 "您的旧设置被从 %s 迁移\n"
 "到 %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr "没有找到要搜索的字符串"
 
@@ -153,6 +171,16 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+"无法在支持真色彩的终端下使用皮肤“%s”：\n"
+"%s\n"
+"已加载默认皮肤"
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -160,6 +188,18 @@ msgstr ""
 "无法在非256色终端上使用\n"
 "支持256色的皮肤“%s”。\n"
 "已加载默认皮肤"
+
+msgid "True color not supported with ncurses."
+msgstr "ncurses 不支持真色彩模式"
+
+msgid "True color not supported in this slang version."
+msgstr "此 slang 版本不支持真色彩模式"
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr "你的终端连 256 色都不支持"
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr "如果你的终端真的支持真色彩的话，请设置环境变量 COLORTERM=truecolor"
 
 msgid "Escape"
 msgstr "ESC 键"
@@ -455,6 +495,27 @@ msgstr ""
 "不支持屏幕大小 %dx%d。\n"
 "检查 TERM 环境变量。\n"
 
+msgid "B"
+msgstr "B"
+
+msgid "kB"
+msgstr "kB"
+
+msgid "KiB"
+msgstr "KiB"
+
+msgid "MB"
+msgstr "MB"
+
+msgid "MiB"
+msgstr "MiB"
+
+msgid "GB"
+msgstr "GB"
+
+msgid "GiB"
+msgstr "GiB"
+
 msgid "Cannot create pipe descriptor"
 msgstr "无法创建管道标识符"
 
@@ -684,6 +745,24 @@ msgid ""
 "   Viewer:       viewnormal,viewbold, viewunderline, viewselected\n"
 "   Help:         helpnormal, helpitalic, helpbold, helplink, helpslink\n"
 msgstr ""
+"--colors KEYWORD={FORE},{BACK},{ATTR}:KEYWORD2=...\n"
+"\n"
+"{FORE}, {BACK} 及 {ATTR} 可以省略，省略时使用默认值\n"
+"\n"
+"关键词: \n"
+"全局: errors, disabled, reverse, gauge, header\n"
+"          input, inputmark, inputunchanged, commandlinemark\n"
+"          bbarhotkey, bbarbutton, statusbar\n"
+"文件显示: normal, selected, marked, markselect\n"
+"对话框窗口:dnormal, dfocus, dhotnormal, dhotfocus, errdhotnormal, "
+"errdhotfocus\n"
+"菜单: menunormal, menuhot, menusel, menuhotsel, menuinactive\n"
+"弹出菜单:pmenunormal, pmenusel, pmenutitle\n"
+"编辑器:editnormal, editbold, editmarked, editwhitespace,\n"
+"            editlinestate, editbg, editframe, editframeactive\n"
+"            editframedrag\n"
+"查看器:viewbold, viewunderline, viewselected\n"
+"帮助:helpnormal, helpi talic, helpbold, helplink, helpslink\n"
 
 #. TRANSLATORS: don't translate color names and attributes
 msgid ""
@@ -698,6 +777,15 @@ msgid ""
 "Attributes:\n"
 "   bold, italic, underline, reverse, blink; append more with '+'\n"
 msgstr ""
+"标准颜色: \n"
+"    black, gray, red, brightred, green, brightgreen, brown, yellow, blue, "
+"brightblue, magenta, brightmagenta, cyan, brightcyan, lightgray and white\n"
+"\n"
+"扩展颜色，当256色可用时: \n"
+"   color16 到 color255，或者 rgb000 到 rgb555 或者 gray0 到 gray23\n"
+"\n"
+"属性: \n"
+"   bold, underline, reverse, blink; 添加更多参数用 “+”连接。\n"
 
 msgid "Color options"
 msgstr "颜色选项"
@@ -2417,8 +2505,9 @@ msgstr ""
 "无法读取源链接“%s”\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2718,8 +2807,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "目录: %zd, 总体积: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr "目录: %zu, 总体积: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "无法操作\"..\"!"
@@ -2870,8 +2959,8 @@ msgid "&Edit - F4"
 msgstr "编辑(&E) - F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "找到: %ld"
+msgid "Found: %lu"
+msgstr "找到: %lu"
 
 msgid "Malformed regular expression"
 msgstr "不正确的正规表达式"
@@ -2920,9 +3009,9 @@ msgid "Finished"
 msgstr "完成"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "完成 (忽略 %zd 个目录)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] "完成 (忽略 %zu 个目录)"
 
 msgid "Searching"
 msgstr "正在搜索"
@@ -3082,9 +3171,9 @@ msgid "Size:       %s"
 msgstr "文件大小: %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld 块)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] " (%lu 块)"
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3316,9 +3405,9 @@ msgid "Panels:"
 msgstr "面板: "
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "您有 %zd 个屏幕已打开。确定要退出吗?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "您打开了 %zu 个屏幕。确定要退出吗?"
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3460,11 +3549,6 @@ msgstr "子目录"
 
 msgid "<readlink failed>"
 msgstr "<readlink 失败>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s 字节"
 
 #, c-format
 msgid "%s in %d file"
@@ -3820,8 +3904,11 @@ msgstr "虚拟文件系统: "
 msgid "Data types:"
 msgstr "数据类型: "
 
-msgid "Root directory:"
-msgstr "根目录: "
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
+msgstr ""
 
 msgid "System data"
 msgstr "系统数据"
@@ -4381,6 +4468,3 @@ msgstr "从头继续搜索?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "无法获取 /ftp://some.host/editme.txt 的本地副本"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "无法解析管道命令"

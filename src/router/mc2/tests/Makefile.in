@@ -143,7 +143,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 \
+	$(top_srcdir)/m4.include/mc-assert.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -206,7 +208,7 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in
+am__DIST_COMMON = $(srcdir)/Makefile.in README
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -465,7 +467,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = lib src
-EXTRA_DIST = mctest.h
+EXTRA_DIST = mctest.h README
 all: all-recursive
 
 .SUFFIXES:

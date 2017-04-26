@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011
@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-08 08:14+0000\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Walloon (http://www.transifex.com/mc/mc/language/wa/)\n"
 "Language: wa\n"
@@ -90,6 +90,23 @@ msgid ""
 "to %s\n"
 msgstr ""
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr ""
 
@@ -132,9 +149,28 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
+msgstr ""
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
 msgstr ""
 
 msgid "Escape"
@@ -427,6 +463,27 @@ msgstr "Li variåve d' evironmint TERM n' est nén metowe!\n"
 msgid ""
 "Screen size %dx%d is not supported.\n"
 "Check the TERM environment variable.\n"
+msgstr ""
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
 msgstr ""
 
 msgid "Cannot create pipe descriptor"
@@ -2332,7 +2389,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2560,7 +2617,7 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
+msgid "Directories: %zu, total size: %s"
 msgstr ""
 
 msgid "Cannot operate on \"..\"!"
@@ -2712,7 +2769,7 @@ msgid "&Edit - F4"
 msgstr "&Aspougnî - F4"
 
 #, c-format
-msgid "Found: %ld"
+msgid "Found: %lu"
 msgstr ""
 
 msgid "Malformed regular expression"
@@ -2762,8 +2819,8 @@ msgid "Finished"
 msgstr "Fwait"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -2921,8 +2978,8 @@ msgid "Size:       %s"
 msgstr ""
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -3156,8 +3213,8 @@ msgid "Panels:"
 msgstr ""
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] ""
 msgstr[1] ""
 
@@ -3301,12 +3358,6 @@ msgstr ""
 
 msgid "<readlink failed>"
 msgstr "<readlink a fwait berwete>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] ""
-msgstr[1] ""
 
 #, c-format
 msgid "%s in %d file"
@@ -3650,7 +3701,10 @@ msgstr ""
 msgid "Data types:"
 msgstr ""
 
-msgid "Root directory:"
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
 msgstr ""
 
 msgid "System data"

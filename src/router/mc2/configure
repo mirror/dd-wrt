@@ -965,7 +965,6 @@ with_ncurses_libs
 with_search_engine
 with_pcre
 with_x
-enable_assert
 enable_largefile
 with_mmap
 enable_nls
@@ -979,6 +978,7 @@ enable_charset
 with_gpm_mouse
 enable_mclib
 with_homedir
+enable_assert
 with_internal_edit
 enable_aspell
 with_diff_viewer
@@ -1668,9 +1668,8 @@ Optional Features:
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-tests          Enable unit tests (see
-                          http://check.sourceforge.net/)
+                          http://libcheck.github.io/check/) [auto]
 
-  --disable-assert        turn off assertions
   --disable-largefile     omit support for large files
   --disable-nls           do not use Native Language Support
   --enable-threads={posix|solaris|pth|win32}
@@ -1679,6 +1678,7 @@ Optional Features:
   --disable-rpath         do not hardcode runtime library paths
   --enable-charset        Support for charset selection and conversion [yes]
   --enable-mclib          Compile shared library libmc.so [no]
+  --enable-assert         turn on assertions [yes]
   --enable-aspell         Enable aspell support for internal editor [no]
   --enable-background     Support for background file operations [yes]
   --disable-vfs           Disable VFS
@@ -5873,6 +5873,48 @@ $as_echo "$mc_check_one_cflag" >&6; }
 
   if test x$mc_check_one_cflag = xyes; then
     mc_configured_cflags="$mc_configured_cflags -Wformat-security"
+  fi
+
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether ${CC} accepts -Wformat-signedness" >&5
+$as_echo_n "checking whether ${CC} accepts -Wformat-signedness... " >&6; }
+
+  safe_CFLAGS=$CFLAGS
+
+  case "$CC" in
+    clang*)
+      CFLAGS="-Werror -Wformat-signedness"
+      ;;
+    *)
+      CFLAGS="-Wformat-signedness"
+      ;;
+  esac
+
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  mc_check_one_cflag=yes
+else
+  mc_check_one_cflag=no
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
+  CFLAGS=$safe_CFLAGS
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $mc_check_one_cflag" >&5
+$as_echo "$mc_check_one_cflag" >&6; }
+
+  if test x$mc_check_one_cflag = xyes; then
+    mc_configured_cflags="$mc_configured_cflags -Wformat-signedness"
   fi
 
 
@@ -15676,7 +15718,10 @@ if test "${enable_tests+set}" = set; then :
 fi
 
 
-    if test x$enable_tests != xno; then
+
+    if test x$enable_tests == xno; then
+                tests_msg="no"
+    else
 
 pkg_failed=no
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHECK" >&5
@@ -15736,19 +15781,36 @@ fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$CHECK_PKG_ERRORS" >&5
 
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'Check' utility not found. Check your environment" >&5
-$as_echo "$as_me: WARNING: 'Check' utility not found. Check your environment" >&2;}
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'Check' testing framework not found. Check your environment" >&5
+$as_echo "$as_me: WARNING: 'Check' testing framework not found. Check your environment" >&2;}
+                tests_msg="no ('Check' testing framework not found)"
+
+                                                if test x$enable_tests == xyes; then
+                    as_fn_error $? "You explicitly specified '--enable-tests', but this requirement cannot be met." "$LINENO" 5
+                fi
+
 elif test $pkg_failed = untried; then
      	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'Check' utility not found. Check your environment" >&5
-$as_echo "$as_me: WARNING: 'Check' utility not found. Check your environment" >&2;}
+
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: 'Check' testing framework not found. Check your environment" >&5
+$as_echo "$as_me: WARNING: 'Check' testing framework not found. Check your environment" >&2;}
+                tests_msg="no ('Check' testing framework not found)"
+
+                                                if test x$enable_tests == xyes; then
+                    as_fn_error $? "You explicitly specified '--enable-tests', but this requirement cannot be met." "$LINENO" 5
+                fi
+
 else
 	CHECK_CFLAGS=$pkg_cv_CHECK_CFLAGS
 	CHECK_LIBS=$pkg_cv_CHECK_LIBS
         { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-	have_check=yes
+
+                have_check=yes
+                tests_msg="yes"
+
 fi
 
 
@@ -18736,28 +18798,6 @@ fi
 fi
 
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to enable assertions" >&5
-$as_echo_n "checking whether to enable assertions... " >&6; }
-  # Check whether --enable-assert was given.
-if test "${enable_assert+set}" = set; then :
-  enableval=$enable_assert; ac_enable_assert=$enableval
-     if       test "x$enableval" = xno; then :
-
-$as_echo "#define NDEBUG 1" >>confdefs.h
-
-elif test "x$enableval" != xyes; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: invalid argument supplied to --enable-assert" >&5
-$as_echo "$as_me: WARNING: invalid argument supplied to --enable-assert" >&2;}
-	ac_enable_assert=yes
-fi
-else
-  ac_enable_assert=yes
-fi
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_enable_assert" >&5
-$as_echo "$ac_enable_assert" >&6; }
-
-
 
 
 # Check whether --enable-largefile was given.
@@ -19375,6 +19415,18 @@ ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
 if eval test \"x\$"$as_ac_var"\" = x"yes"; then :
   cat >>confdefs.h <<_ACEOF
 #define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+for ac_func in utimensat
+do :
+  ac_fn_c_check_func "$LINENO" "utimensat" "ac_cv_func_utimensat"
+if test "x$ac_cv_func_utimensat" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_UTIMENSAT 1
 _ACEOF
 
 fi
@@ -21241,7 +21293,7 @@ done
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to get file system space usage" >&5
-$as_echo "$as_me: checking how to get file system space usage" >&6;}
+$as_echo_n "checking how to get file system space usage... " >&6; }
 ac_fsusage_space=no
 
 # Perform only the link test since it seems there are no variants of the
@@ -27179,6 +27231,28 @@ fi
 
 
 
+    # Check whether --enable-assert was given.
+if test "${enable_assert+set}" = set; then :
+  enableval=$enable_assert;
+        if test "x$enableval" = xno; then
+            enable_assert=no
+        else
+            enable_assert=yes
+        fi
+
+else
+  enable_assert=yes
+fi
+
+
+    if test "x$enable_assert" = xno; then
+
+$as_echo "#define G_DISABLE_ASSERT 1" >>confdefs.h
+
+    fi
+
+
+
 
 
 # Check whether --with-internal_edit was given.
@@ -30294,10 +30368,8 @@ ac_config_files="$ac_config_files src/man2hlp/man2hlp"
 ac_config_files="$ac_config_files Makefile contrib/Makefile contrib/dist/Makefile contrib/dist/gentoo/Makefile contrib/dist/redhat/Makefile contrib/dist/redhat/mc.spec contrib/dist/pkginfo contrib/dist/prototype misc/Makefile misc/mc.menu misc/mcedit.menu misc/skins/Makefile misc/ext.d/Makefile misc/ext.d/doc.sh misc/ext.d/misc.sh misc/ext.d/text.sh misc/ext.d/web.sh misc/macros.d/Makefile misc/mc.ext src/Makefile src/consaver/Makefile src/editor/Makefile src/man2hlp/Makefile src/subshell/Makefile src/viewer/Makefile src/diffviewer/Makefile src/filemanager/Makefile src/vfs/Makefile src/vfs/cpio/Makefile src/vfs/extfs/Makefile src/vfs/extfs/helpers/Makefile src/vfs/extfs/helpers/a+ src/vfs/extfs/helpers/apt+ src/vfs/extfs/helpers/audio src/vfs/extfs/helpers/deb src/vfs/extfs/helpers/deba src/vfs/extfs/helpers/debd src/vfs/extfs/helpers/dpkg+ src/vfs/extfs/helpers/iso9660 src/vfs/extfs/helpers/hp48+ src/vfs/extfs/helpers/lslR src/vfs/extfs/helpers/mailfs src/vfs/extfs/helpers/patchfs src/vfs/extfs/helpers/rpms+ src/vfs/extfs/helpers/s3+ src/vfs/extfs/helpers/uace src/vfs/extfs/helpers/ualz src/vfs/extfs/helpers/uar src/vfs/extfs/helpers/uarc src/vfs/extfs/helpers/uarj src/vfs/extfs/helpers/uc1541 src/vfs/extfs/helpers/ucab src/vfs/extfs/helpers/uha src/vfs/extfs/helpers/ulha src/vfs/extfs/helpers/ulib src/vfs/extfs/helpers/urar src/vfs/extfs/helpers/uzip src/vfs/extfs/helpers/uzoo src/vfs/fish/Makefile src/vfs/fish/helpers/Makefile src/vfs/ftpfs/Makefile src/vfs/sftpfs/Makefile src/vfs/local/Makefile src/vfs/sfs/Makefile src/vfs/smbfs/Makefile src/vfs/tar/Makefile src/vfs/undelfs/Makefile lib/Makefile lib/event/Makefile lib/filehighlight/Makefile lib/mcconfig/Makefile lib/search/Makefile lib/skin/Makefile lib/strutil/Makefile lib/tty/Makefile lib/vfs/Makefile lib/widget/Makefile misc/syntax/Makefile misc/syntax/Syntax doc/Makefile doc/hints/Makefile doc/hints/l10n/Makefile doc/man/Makefile doc/man/es/Makefile doc/man/hu/Makefile doc/man/it/Makefile doc/man/pl/Makefile doc/man/ru/Makefile doc/man/sr/Makefile doc/hlp/Makefile doc/hlp/es/Makefile doc/hlp/hu/Makefile doc/hlp/it/Makefile doc/hlp/pl/Makefile doc/hlp/ru/Makefile doc/hlp/sr/Makefile intl/Makefile po/Makefile.in"
 
 
-if test x$enable_tests != xno; then
-    ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/strutil/Makefile tests/lib/vfs/Makefile tests/lib/widget/Makefile tests/src/Makefile tests/src/filemanager/Makefile tests/src/editor/Makefile tests/src/editor/test-data.txt"
+ac_config_files="$ac_config_files tests/Makefile tests/lib/Makefile tests/lib/mcconfig/Makefile tests/lib/search/Makefile tests/lib/strutil/Makefile tests/lib/vfs/Makefile tests/lib/widget/Makefile tests/src/Makefile tests/src/filemanager/Makefile tests/src/editor/Makefile tests/src/editor/test-data.txt tests/src/vfs/Makefile tests/src/vfs/extfs/Makefile tests/src/vfs/extfs/helpers-list/Makefile tests/src/vfs/extfs/helpers-list/data/config.sh tests/src/vfs/extfs/helpers-list/misc/Makefile"
 
-fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -31624,6 +31696,11 @@ do
     "tests/src/filemanager/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/filemanager/Makefile" ;;
     "tests/src/editor/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/editor/Makefile" ;;
     "tests/src/editor/test-data.txt") CONFIG_FILES="$CONFIG_FILES tests/src/editor/test-data.txt" ;;
+    "tests/src/vfs/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/vfs/Makefile" ;;
+    "tests/src/vfs/extfs/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/vfs/extfs/Makefile" ;;
+    "tests/src/vfs/extfs/helpers-list/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/vfs/extfs/helpers-list/Makefile" ;;
+    "tests/src/vfs/extfs/helpers-list/data/config.sh") CONFIG_FILES="$CONFIG_FILES tests/src/vfs/extfs/helpers-list/data/config.sh" ;;
+    "tests/src/vfs/extfs/helpers-list/misc/Makefile") CONFIG_FILES="$CONFIG_FILES tests/src/vfs/extfs/helpers-list/misc/Makefile" ;;
 
   *) as_fn_error $? "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
@@ -33162,6 +33239,8 @@ Configuration:
   Source code location:       ${srcdir}
   Compiler:                   ${CC}
   Compiler flags:             ${CFLAGS}
+  Assertions:                 ${enable_assert}
+  Unit tests:                 ${tests_msg}
   File system:                ${vfs_type}
                               ${vfs_flags}
   Screen library:             ${screen_msg}
@@ -33181,6 +33260,8 @@ Configuration:
   Source code location:       ${srcdir}
   Compiler:                   ${CC}
   Compiler flags:             ${CFLAGS}
+  Assertions:                 ${enable_assert}
+  Unit tests:                 ${tests_msg}
   File system:                ${vfs_type}
                               ${vfs_flags}
   Screen library:             ${screen_msg}

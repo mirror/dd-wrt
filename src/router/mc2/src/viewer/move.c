@@ -2,7 +2,7 @@
    Internal file viewer for the Midnight Commander
    Functions for handle cursor movement
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -173,9 +173,9 @@ mcview_move_left (WView * view, off_t columns)
     if (view->hex_mode)
     {
         off_t old_cursor = view->hex_cursor;
-#ifdef HAVE_ASSERT_H
-        assert (columns == 1);
-#endif
+
+        g_assert (columns == 1);
+
         if (view->hexview_in_text || !view->hexedit_lownibble)
         {
             if (view->hex_cursor > 0)
@@ -201,9 +201,9 @@ mcview_move_right (WView * view, off_t columns)
         off_t old_cursor = view->hex_cursor;
 
         last_byte = mcview_offset_doz (mcview_get_filesize (view), 1);
-#ifdef HAVE_ASSERT_H
-        assert (columns == 1);
-#endif
+
+        g_assert (columns == 1);
+
         if (view->hexview_in_text || view->hexedit_lownibble)
         {
             if (view->hex_cursor < last_byte)

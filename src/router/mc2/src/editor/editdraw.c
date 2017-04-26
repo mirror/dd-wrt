@@ -1,7 +1,7 @@
 /*
    Editor text drawing.
 
-   Copyright (C) 1996-2016
+   Copyright (C) 1996-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -61,9 +61,10 @@
 /*** global variables ****************************************************************************/
 
 /* Toggles statusbar draw style */
-int simple_statusbar = 0;
+gboolean simple_statusbar = FALSE;
 
-int visible_tabs = 1, visible_tws = 1;
+gboolean visible_tws = TRUE;
+gboolean visible_tabs = TRUE;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -124,7 +125,7 @@ status_string (WEdit * edit, char *s, int w)
             cur_utf = edit_buffer_get_utf (&edit->buffer, edit->buffer.curs1, &char_length);
             if (char_length > 0)
             {
-                g_snprintf (byte_str, sizeof (byte_str), "%04d 0x%03X",
+                g_snprintf (byte_str, sizeof (byte_str), "%04u 0x%03X",
                             (unsigned) cur_utf, (unsigned) cur_utf);
             }
             else
@@ -323,7 +324,7 @@ edit_status_window (WEdit * edit)
             cur_utf = edit_buffer_get_utf (&edit->buffer, edit->buffer.curs1, &char_length);
             if (char_length <= 0)
                 cur_utf = edit_buffer_get_current_byte (&edit->buffer);
-            tty_printf ("[%05d 0x%04X]", cur_utf, cur_utf);
+            tty_printf ("[%05u 0x%04X]", cur_utf, cur_utf);
         }
 #endif
         else
@@ -331,7 +332,7 @@ edit_status_window (WEdit * edit)
             unsigned char cur_byte;
 
             cur_byte = edit_buffer_get_current_byte (&edit->buffer);
-            tty_printf ("[%05d 0x%04X]", (unsigned int) cur_byte, (unsigned int) cur_byte);
+            tty_printf ("[%05u 0x%04X]", (unsigned int) cur_byte, (unsigned int) cur_byte);
         }
     }
 }
@@ -549,12 +550,12 @@ edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_c
 
     if (option_line_state)
     {
-        unsigned int cur_line;
+        long cur_line;
 
         cur_line = edit->start_line + row;
-        if (cur_line <= (unsigned int) edit->buffer.lines)
+        if (cur_line <= edit->buffer.lines)
         {
-            g_snprintf (line_stat, sizeof (line_stat), "%7i ", cur_line + 1);
+            g_snprintf (line_stat, sizeof (line_stat), "%7ld ", cur_line + 1);
         }
         else
         {
@@ -574,14 +575,19 @@ edit_draw_this_line (WEdit * edit, off_t b, long row, long start_col, long end_c
         if (row <= edit->buffer.lines - edit->start_line)
         {
             off_t tws = 0;
+
             if (tty_use_colors () && visible_tws)
             {
-                unsigned int c;
-
                 tws = edit_buffer_get_eol (&edit->buffer, b);
-                while (tws > b
-                       && ((c = edit_buffer_get_byte (&edit->buffer, tws - 1)) == ' ' || c == '\t'))
+                while (tws > b)
+                {
+                    unsigned int c;
+
+                    c = edit_buffer_get_byte (&edit->buffer, tws - 1);
+                    if (!whitespace (c))
+                        break;
                     tws--;
+                }
             }
 
             while (col <= end_col - edit->start_col)

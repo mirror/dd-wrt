@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -473,7 +473,8 @@ ilog10 (dev_t n)
 
     do
     {
-        digits++, n /= 10;
+        digits++;
+        n /= 10;
     }
     while (n != 0);
 
@@ -1079,13 +1080,9 @@ display_total_marked_size (const WPanel * panel, int y, int x, gboolean size_onl
     buf = size_only ? b_bytes : buffer;
     cols = w->cols - 2;
 
-    /*
-     * This is a trick to use two ngettext() calls in one sentence.
-     * First make "N bytes", then insert it into "X in M files".
-     */
-    g_snprintf (b_bytes, sizeof (b_bytes),
-                ngettext ("%s byte", "%s bytes", panel->total),
-                size_trunc_sep (panel->total, panels_options.kilobyte_si));
+    g_strlcpy (b_bytes, size_trunc_sep (panel->total, panels_options.kilobyte_si),
+               sizeof (b_bytes));
+
     if (!size_only)
         g_snprintf (buffer, sizeof (buffer),
                     ngettext ("%s in %d file", "%s in %d files", panel->marked),
@@ -1649,13 +1646,11 @@ parse_panel_size (WPanel * panel, const char *format, gboolean isstatus)
 
     if (g_ascii_isdigit (*format))
     {
-        if (!isstatus && panel->list_type == list_brief)
+        if (!isstatus)
         {
-            panel->brief_cols = g_ascii_digit_value (*format);
-            if (panel->brief_cols < 1)
-                panel->brief_cols = 1;
-
-            panel->list_cols = panel->brief_cols;
+            panel->list_cols = g_ascii_digit_value (*format);
+            if (panel->list_cols < 1)
+                panel->list_cols = 1;
         }
 
         format++;
@@ -2519,9 +2514,9 @@ static void
 panel_select_unselect_files (WPanel * panel, const char *title, const char *history_name,
                              gboolean do_select)
 {
-    int files_only = (panels_options.select_flags & SELECT_FILES_ONLY) != 0;
-    int case_sens = (panels_options.select_flags & SELECT_MATCH_CASE) != 0;
-    int shell_patterns = (panels_options.select_flags & SELECT_SHELL_PATTERNS) != 0;
+    gboolean files_only = (panels_options.select_flags & SELECT_FILES_ONLY) != 0;
+    gboolean case_sens = (panels_options.select_flags & SELECT_MATCH_CASE) != 0;
+    gboolean shell_patterns = (panels_options.select_flags & SELECT_SHELL_PATTERNS) != 0;
 
     char *reg_exp;
     mc_search_t *search;
@@ -2557,15 +2552,15 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
     }
 
     search = mc_search_new (reg_exp, NULL);
-    search->search_type = (shell_patterns != 0) ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
+    search->search_type = shell_patterns ? MC_SEARCH_T_GLOB : MC_SEARCH_T_REGEX;
     search->is_entire_line = TRUE;
-    search->is_case_sensitive = case_sens != 0;
+    search->is_case_sensitive = case_sens;
 
     for (i = 0; i < panel->dir.len; i++)
     {
         if (DIR_IS_DOTDOT (panel->dir.list[i].fname))
             continue;
-        if (S_ISDIR (panel->dir.list[i].st.st_mode) && files_only != 0)
+        if (S_ISDIR (panel->dir.list[i].st.st_mode) && files_only)
             continue;
 
         if (mc_search_run (search, panel->dir.list[i].fname, 0, panel->dir.list[i].fnamelen, NULL))
@@ -2577,11 +2572,11 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
 
     /* result flags */
     panels_options.select_flags = 0;
-    if (case_sens != 0)
+    if (case_sens)
         panels_options.select_flags |= SELECT_MATCH_CASE;
-    if (files_only != 0)
+    if (files_only)
         panels_options.select_flags |= SELECT_FILES_ONLY;
-    if (shell_patterns != 0)
+    if (shell_patterns)
         panels_options.select_flags |= SELECT_SHELL_PATTERNS;
 }
 
@@ -3683,7 +3678,6 @@ panel_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
         update_xterm_title_path ();
         select_item (panel);
-        paint_dir (panel);
 
         bb = find_buttonbar (w->owner);
         midnight_set_buttonbar (bb);
@@ -3879,7 +3873,7 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             {
                 my_index = panel->top_file + y;
 
-                if (panel->list_type == list_brief && panel->list_cols > 1)
+                if (panel->list_cols > 1)
                 {
                     int width, lines;
 
@@ -3912,10 +3906,10 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         {
             int y, lines;
 
-            y = event->y - 1;
+            y = event->y - 2;
             lines = panel_lines (panel);
 
-            if (y <= lines)
+            if (y >= 0 && y < lines)
                 do_enter (panel);
         }
         break;

@@ -27,6 +27,9 @@
 #define mc_return_if_error(mcerror) do { if (mcerror != NULL && *mcerror != NULL) return; } while (0)
 #define mc_return_val_if_error(mcerror, mcvalue) do { if (mcerror != NULL && *mcerror != NULL) return mcvalue; } while (0)
 
+#define whitespace(c) ((c) == ' ' || (c) == '\t')
+#define whiteness(c) (whitespace (c) || (c) == '\n')
+
 #define MC_PIPE_BUFSIZE BUF_8K
 #define MC_PIPE_STREAM_EOF 0
 #define MC_PIPE_STREAM_UNREAD -1
@@ -248,6 +251,8 @@ char *guess_message_value (void);
 
 char *mc_build_filename (const char *first_element, ...);
 char *mc_build_filenamev (const char *first_element, va_list args);
+
+const char *mc_get_profile_root (void);
 
 /* *INDENT-OFF* */
 void mc_propagate_error (GError ** dest, int code, const char *format, ...) G_GNUC_PRINTF (3, 4);

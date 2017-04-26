@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
 # Keith Bowes <zooplah@gmail.com>, 2011,2016
@@ -8,9 +8,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-15 16:18+0000\n"
-"Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
 "MIME-Version: 1.0\n"
@@ -99,6 +99,23 @@ msgstr ""
 "Via eksa agordo estis elmigrinta el %s\n"
 "al %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr "Serĉita ĉeno ne trovita"
 
@@ -145,6 +162,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -152,6 +176,18 @@ msgstr ""
 "Ne eblas uzi 256-koloran etoson '%s'.\n"
 "ĉe terminalo kun malpli da koloroj.\n"
 "Uzanta la aprioran etoson"
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
 
 msgid "Escape"
 msgstr "Eskapa klavo"
@@ -446,6 +482,27 @@ msgid ""
 msgstr ""
 "Ekrangrando %dx%d ne estas regata.\n"
 "Kontroli la medivariablon TERM.\n"
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
+msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Ne eblas krei duktan priskribilon"
@@ -2445,8 +2502,9 @@ msgstr ""
 "Ne eblas legi fontan ligilon \"%s\"\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2746,8 +2804,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "Dosierujoj: %zd, ĉioma grando: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Ne eblas operacii je \"..\"!"
@@ -2898,8 +2956,8 @@ msgid "&Edit - F4"
 msgstr "&Redakti - F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Trovita: %ld"
+msgid "Found: %lu"
+msgstr ""
 
 msgid "Malformed regular expression"
 msgstr "Misformita regulesprimo"
@@ -2948,10 +3006,10 @@ msgid "Finished"
 msgstr "Finita"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "Finita (ignoris %zd dosierujo)"
-msgstr[1] "Finita (ignoris %zd dosierujojn)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Searching"
 msgstr "Serĉanta"
@@ -3111,10 +3169,10 @@ msgid "Size:       %s"
 msgstr "Grando:         %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld bloko)"
-msgstr[1] " (%ld blokoj)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3346,10 +3404,10 @@ msgid "Panels:"
 msgstr "Flankoj:"
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "%zd paĝo estas malfermita. Ĉu senkonsidere eliri?"
-msgstr[1] "%zd paĝoj estas malfermitaj. Ĉu senkonsidere eliri?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3491,12 +3549,6 @@ msgstr "MALSUPREN"
 
 msgid "<readlink failed>"
 msgstr "<legi ligilon malsukcesis>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s bajto"
-msgstr[1] "%s bajtoj"
 
 #, c-format
 msgid "%s in %d file"
@@ -3854,8 +3906,11 @@ msgstr "Virtualaj dosiersistemoj:"
 msgid "Data types:"
 msgstr "Datumtipoj:"
 
-msgid "Root directory:"
-msgstr "Radika dosierujo:"
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
+msgstr ""
 
 msgid "System data"
 msgstr "Sistemaj datumoj"
@@ -4415,6 +4470,3 @@ msgstr "Ĉu deiri de la komenco?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Ne eblas atingi lokan kopion de /ftp://some.host/editme.txt"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "Ne eblas analizi komandon por dukto"

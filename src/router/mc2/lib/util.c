@@ -1,7 +1,7 @@
 /*
    Various utilities
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -346,26 +346,26 @@ size_trunc (uintmax_t size, gboolean use_si)
 {
     static char x[BUF_TINY];
     uintmax_t divisor = 1;
-    const char *xtra = "";
+    const char *xtra = _("B");
 
     if (size > 999999999UL)
     {
         divisor = use_si ? 1000 : 1024;
-        xtra = use_si ? "k" : "K";
+        xtra = use_si ? _("kB") : _("KiB");
 
         if (size / divisor > 999999999UL)
         {
             divisor = use_si ? (1000 * 1000) : (1024 * 1024);
-            xtra = use_si ? "m" : "M";
+            xtra = use_si ? _("MB") : _("MiB");
 
             if (size / divisor > 999999999UL)
             {
                 divisor = use_si ? (1000 * 1000 * 1000) : (1024 * 1024 * 1024);
-                xtra = use_si ? "g" : "G";
+                xtra = use_si ? _("GB") : _("GiB");
             }
         }
     }
-    g_snprintf (x, sizeof (x), "%.0f%s", 1.0 * size / divisor, xtra);
+    g_snprintf (x, sizeof (x), "%.0f %s", 1.0 * size / divisor, xtra);
     return x;
 }
 
@@ -383,7 +383,7 @@ size_trunc_sep (uintmax_t size, gboolean use_si)
     p += strlen (p) - 1;
     d = x + sizeof (x) - 1;
     *d-- = '\0';
-    while (p >= y && isalpha ((unsigned char) *p))
+    while (p >= y && (isalpha ((unsigned char) *p) || (unsigned char) *p == ' '))
         *d-- = *p--;
     for (count = 0; p >= y; count++)
     {
@@ -695,8 +695,8 @@ skip_separators (const char *s)
 {
     const char *su = s;
 
-    for (; *su; str_cnext_char (&su))
-        if (*su != ' ' && *su != '\t' && *su != ',')
+    for (; *su != '\0'; str_cnext_char (&su))
+        if (!whitespace (*su) && *su != ',')
             break;
 
     return su;
@@ -709,7 +709,7 @@ skip_numbers (const char *s)
 {
     const char *su = s;
 
-    for (; *su; str_cnext_char (&su))
+    for (; *su != '\0'; str_cnext_char (&su))
         if (!str_isdigit (su))
             break;
 
@@ -1416,6 +1416,30 @@ guess_message_value (void)
         locale = "";
 
     return g_strdup (locale);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * The "profile root" is the tree under which all of MC's user data &
+ * settings are stored.
+ *
+ * It defaults to the user's home dir. The user may override this default
+ * with the environment variable $MC_PROFILE_ROOT.
+ */
+const char *
+mc_get_profile_root (void)
+{
+    static const char *profile_root = NULL;
+
+    if (profile_root == NULL)
+    {
+        profile_root = g_getenv ("MC_PROFILE_ROOT");
+        if (profile_root == NULL || *profile_root == '\0')
+            profile_root = mc_config_get_home_dir ();
+    }
+
+    return profile_root;
 }
 
 /* --------------------------------------------------------------------------------------------- */

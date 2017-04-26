@@ -1,7 +1,7 @@
 /*
    Main dialog (file panels) of the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -368,7 +368,7 @@ init_menu (void)
 static void
 menu_last_selected_cmd (void)
 {
-    menubar_activate (the_menubar, drop_menus != 0, -1);
+    menubar_activate (the_menubar, drop_menus, -1);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -383,7 +383,7 @@ menu_cmd (void)
     else
         selected = g_list_length (the_menubar->menu) - 1;
 
-    menubar_activate (the_menubar, drop_menus != 0, selected);
+    menubar_activate (the_menubar, drop_menus, selected);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -862,7 +862,7 @@ setup_mc (void)
 #ifdef HAVE_CHARSET
     tty_display_8bit (TRUE);
 #else
-    tty_display_8bit (mc_global.full_eight_bits != 0);
+    tty_display_8bit (mc_global.full_eight_bits);
 #endif /* HAVE_CHARSET */
 
 #else /* HAVE_SLANG */
@@ -870,7 +870,7 @@ setup_mc (void)
 #ifdef HAVE_CHARSET
     tty_display_8bit (TRUE);
 #else
-    tty_display_8bit (mc_global.eight_bit_clean != 0);
+    tty_display_8bit (mc_global.eight_bit_clean);
 #endif /* HAVE_CHARSET */
 #endif /* HAVE_SLANG */
 
@@ -880,7 +880,7 @@ setup_mc (void)
 #endif /* !ENABLE_SUBSHELL */
 
     if ((tty_baudrate () < 9600) || mc_global.tty.slow_terminal)
-        verbose = 0;
+        verbose = FALSE;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -932,6 +932,8 @@ create_panels_and_run_mc (void)
 {
     midnight_dlg->get_shortcut = midnight_get_shortcut;
     midnight_dlg->get_title = midnight_get_title;
+    /* allow rebind tab */
+    widget_want_tab (WIDGET (midnight_dlg), TRUE);
 
     create_panels ();
 
@@ -1023,8 +1025,8 @@ quit_cmd_internal (int quiet)
         char msg[BUF_MEDIUM];
 
         g_snprintf (msg, sizeof (msg),
-                    ngettext ("You have %zd opened screen. Quit anyway?",
-                              "You have %zd opened screens. Quit anyway?", n), n);
+                    ngettext ("You have %zu opened screen. Quit anyway?",
+                              "You have %zu opened screens. Quit anyway?", n), n);
 
         if (query_dialog (_("The Midnight Commander"), msg, D_NORMAL, 2, _("&Yes"), _("&No")) != 0)
             return FALSE;
@@ -1104,6 +1106,9 @@ midnight_execute_cmd (Widget * sender, long command)
 
     switch (command)
     {
+    case CK_ChangePanel:
+        change_panel ();
+        break;
     case CK_HotListAdd:
         add2hotlist_cmd ();
         break;
@@ -1452,9 +1457,6 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
         if (widget_get_state (WIDGET (the_menubar), WST_FOCUSED))
             return MSG_NOT_HANDLED;
 
-        if (parm == '\t')
-            input_free_completions (cmdline);
-
         if (parm == '\n')
         {
             size_t i;
@@ -1469,8 +1471,7 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
             if (current_panel->active == 0 && get_other_type () == view_quick)
                 return MSG_NOT_HANDLED;
 
-            for (i = 0; cmdline->buffer[i] != '\0' &&
-                 (cmdline->buffer[i] == ' ' || cmdline->buffer[i] == '\t'); i++)
+            for (i = 0; cmdline->buffer[i] != '\0' && whitespace (cmdline->buffer[i]); i++)
                 ;
 
             if (cmdline->buffer[i] != '\0')

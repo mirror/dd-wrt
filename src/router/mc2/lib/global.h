@@ -135,17 +135,6 @@
 /* one caused by typing 'exit' or 'logout' in the subshell */
 #define SUBSHELL_EXIT 128
 
-#if 0
-#ifdef MC_ENABLE_DEBUGGING_CODE
-#undef NDEBUG
-#else
-#define NDEBUG
-#endif
-#ifdef HAVE_ASSERT_H
-#include <assert.h>
-#endif
-#endif
-
 #define MC_ERROR g_quark_from_static_string (PACKAGE)
 
 #define DEFAULT_CHARSET "ASCII"
@@ -188,12 +177,12 @@ typedef struct
     int display_codepage;
 #else
     /* If true, allow characters in the range 160-255 */
-    int eight_bit_clean;
+    gboolean eight_bit_clean;
     /*
      * If true, also allow characters in the range 128-159.
      * This is reported to break on many terminals (xterm, qansi-m).
      */
-    int full_eight_bits;
+    gboolean full_eight_bits;
 #endif                          /* !HAVE_CHARSET */
     /*
      * If utf-8 terminal utf8_display = TRUE

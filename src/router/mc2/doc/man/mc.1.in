@@ -840,9 +840,10 @@ The user display format must start with a panel size specifier.  This
 may be "half" or "full", and they specify a half screen panel and a
 full screen panel respectively.
 .PP
-After the panel size, you may specify the two columns mode on the
-panel, this is done by adding the number "2" to the user format
-string.
+After the panel size, you may specify how many listings to fit in the
+panel, side\-by\-side (in other words: how many times to repeat the
+fields horizontally). This defaults to 1. You may change this by adding a
+number from 1 to 9 to the format string.
 .PP
 After this you add the name of the fields with an optional size
 specifier.  This are the available fields you may display:
@@ -2030,10 +2031,9 @@ If enabled, one line of status information about the currently selected item
 is shown at the bottom of the panels. Enabled by default.
 .PP
 .I Use SI size units.
-If this option is enabled, Midnight Commander will use SI units (powers of 1000)
-when displaying any byte sizes. The suffixes (k, m ...) are shown in lowercase.
-If disabled (default), Midnight Commander will use binary units (powers of 1024)
-and the suffixes are shown in upper case (K, M ...)
+If this option is enabled, Midnight Commander will use SI prefixes (base 10)
+when displaying any byte sizes. If disabled (default), Midnight Commander will
+use IEC prefixes (base 2).
 .PP
 .I Mix all files.
 If this option is enabled, all files and directories are shown mixed
@@ -2894,10 +2894,13 @@ the quotes.  Each number matches one byte.  You can mix quoted text
 with constants like this:
 .PP
 .nf
-"String" \-1 0xBB 012 "more text"
+"String" 34 0xBB 012 "more text"
 .fi
 .PP
-Note that 012 is an octal number.  \-1 is converted to 0xFF.
+Numbers are always interpreted in hex. In the example above, "34" is
+interpreted as 0x34. The prefix "0x" isn't really needed: we could type
+"BB" instead of "0xBB". And "012" is interpreted as 0x12, not as an octal
+number.
 .PP
 Here is a listing of the actions associated with each key that the
 Midnight Commander handles in the internal file viewer.
@@ -3655,9 +3658,9 @@ with the assignment of colors, as described in Section
 Colors\&.
 .\"Colors"
 .PP
-If your skin contains any of 256\-color definitions, you should define
-the '256colors' key set to TRUE value in [skin] section.
-
+If your skin contains any true\-color definitions, you should define
+the 'truecolors' key set to TRUE value in [skin] section. If true\-color
+is not used but 256\-color is, you should define '256colors' instead.
 .PP
 A skin\-file is searched on the following algorithm (to the first one found):
 .IP
@@ -3707,6 +3710,10 @@ Description of section and parameters
 .\"LINK2"
 Color pair definitions
 .\"Skins colors"
+.br
+.\"LINK2"
+Color and attribute aliases
+.\"Skins aliases"
 .br
 .\"LINK2"
 Draw lines
@@ -3915,6 +3922,24 @@ Possible colors (names) and attributes are described in
 Colors\&.
 .\"Colors"
 section.
+
+.\"NODE "  Skins aliases"
+.SH "  Color and attribute aliases"
+This optional section might define aliases for single colors (not color pairs)
+as well as combination of attributes; in other words, for semicolon\-separated
+fragments of parameters. Aliases can refer to other aliases as long as they
+don't form a loop.
+.PP
+Example:
+.br
+.nf
+[aliases]
+    myfavfg=green
+    myfavbg=black
+    myfavattr=bold+italic
+[core]
+    _default_=myfavfg;myfavbg;myfavattr
+.fi
 
 .\"NODE "  Skins lines"
 .SH "  Draw lines"
@@ -4317,10 +4342,10 @@ Local user\-defined menu. If this file is present, it is used instead of
 the home or system\-wide applications menu.
 .PP
 To change default root directory of MC, you can use
-.BR MC_HOME
-environment variable. The value of MC_HOME must be an absolute path. If MC_HOME
-is unset or empty, HOME variable is used. If HOME is unset or empty, MC
-directories are get from GLib library.
+.BR MC_PROFILE_ROOT
+environment variable. The value of MC_PROFILE_ROOT must be an absolute path.
+If MC_PROFILE_ROOT is unset or empty, HOME variable is used. If HOME is unset
+or empty, MC directories are get from GLib library.
 .\"SKIP_SECTION"
 .SH "LICENSE"
 This program is distributed under the terms of the GNU General Public

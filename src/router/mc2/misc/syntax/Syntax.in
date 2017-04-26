@@ -28,7 +28,7 @@ include syntax.syntax
 file filehighlight.ini$ File\sHighlighting\sdefinitions ^#\sfile\shighlight\srules\sversion\s
 include filehighlight.syntax
 
-file ..\*\\.(e)$ Eiffel\sSource\sFile
+file ..\*\\.e$ Eiffel\sSource\sFile
 include eiffel.syntax
 
 file ..\*\\.(diff|rej|patch)$ Diff\sOutput ^(diff|Index:)\s
@@ -40,7 +40,7 @@ include lsm.syntax
 file .\*(bash_completion|profile|\\.(sh|bash_login|bash_profile|bash_logout|bash_aliases|bash_exports|bash_history|bashrc|profile|zlogin|zlogout|zprofile|zshenv|zshrc))$ Shell\sScript ^#!\s\*/(.\*/|usr/bin/env\s)([a-z]?|ba|pdk)sh
 include sh.syntax
 
-file ..\*\\.(pl|PL|pm|PM|psgi|PSGI)$ Perl\sProgram ^#!.\*([\s/]perl|@PERL@)
+file ..\*\\.(pl|PL|pm|PM|psgi|PSGI|t)$ Perl\sProgram ^#!.\*([\s/]perl|@PERL@)
 include perl.syntax
 
 file ..\*\\.(py|PY)$ Python\sProgram ^#!.\*([\s/]python|@PYTHON@)
@@ -136,7 +136,7 @@ include aspx.syntax
 file ..\*\\.st$ SmallTalk\sProgram
 include smalltalk.syntax
 
-file ..\*\\.(lisp|lsp|el|cl)$ Lisp\sProgram
+file ..\*\\.(lisp|lsp|el)$ Lisp\sProgram
 include lisp.syntax
 
 file ..\*\\.(ml|mli|mly|mll|mlp)$ ML\sProgram
@@ -154,7 +154,7 @@ include spec.syntax
 file ..\*\\.repo$ YUM\sRepo\sFile
 include yum-repo.syntax
 
-file ..\*\\.(awk)$ AWK\sFile
+file ..\*\\.awk$ AWK\sFile
 include awk.syntax
 
 file ..\*\\.(css|qss|CSS|QSS)$ CSS\sFile
@@ -211,7 +211,7 @@ include debian-changelog.syntax
 file changelog.Debian$ Debian\schangelog\sfile
 include debian-changelog.syntax
 
-file .\*\\.dsc$ Debian\sdescriptiom\sfile
+file ..\*\\.dsc$ Debian\sdescriptiom\sfile
 include debian-description.syntax
 
 file ..\*\\.([hH][sS][cC]?)$ Haskell\sprogram
@@ -220,10 +220,10 @@ include haskell.syntax
 file ..\*\\.([cC][aA][bB][aA][lL])$ Cabal\sconfig\sfile
 include cabal.syntax
 
-file ..\*\\.(n|N)$ Nemerle\sProgram
+file ..\*\\.[nN]$ Nemerle\sProgram
 include nemerle.syntax
 
-file ..\*\\.(v|V)$ Verilog\sDevice\sDescription
+file ..\*\\.[vV]$ Verilog\sDevice\sDescription
 include verilog.syntax
 
 file ..\*\\.(hdl|vhd|vdhl|HDL|VHD|VHDL)$ VHDL\sDevice\sDescription
@@ -238,7 +238,7 @@ include erlang.syntax
 file .\*named.conf$ Bind9\sconfiguration
 include named.syntax
 
-file .\*\\.strace$ Strace\sdebug\soutput
+file ..\*\\.strace$ Strace\sdebug\soutput
 include strace.syntax
 
 file PKGBUILD$ Arch\spackage\sbuild\sscript
@@ -259,14 +259,26 @@ include jal.syntax
 file ..\*\\.([lL][kK][rR])$ PIC\slinker\sscript\sfile
 include lkr.syntax
 
-file .\*\\.pp$ Puppet\smanifest\sfile
+file ..\*\\.pp$ Puppet\smanifest\sfile
 include puppet.syntax
 
-file .\*\\.(glsl|vert|frag|geom)$ GLSL\sProgram
+file ..\*\\.(glsl|vert|frag|geom)$ GLSL\sProgram
 include glsl.syntax
 
-file .\*\\.(cu|cuh)$ CUDA\sProgram
+file ..\*\\.(cu|cuh)$ CUDA\sProgram
 include cuda.syntax
+
+file ..\*\\.cl$ OpenCL\sProgram
+include opencl.syntax
+
+file ..\*\\.(ya?ml|YML)$ YAML\sFile
+include yaml.syntax
+
+file .\*\\.osl$ OSL\sProgram
+include osl.syntax
+
+file .\*\\.([rR]|Rd|Rscript)$ R\sProgram
+include r.syntax
 
 file .\* unknown
 include unknown.syntax

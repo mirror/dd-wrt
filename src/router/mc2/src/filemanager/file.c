@@ -1,7 +1,7 @@
 /*
    File management.
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -422,7 +422,7 @@ make_symlink (file_op_context_t * ctx, const char *src_path, const char *dst_pat
     if (ctx->stable_symlinks && !(vfs_file_is_local (src_vpath) && vfs_file_is_local (dst_vpath)))
     {
         message (D_ERROR, MSG_ERROR,
-                 _("Cannot make stable symlinks across"
+                 _("Cannot make stable symlinks across "
                    "non-local filesystems:\n\nOption Stable Symlinks will be disabled"));
         ctx->stable_symlinks = FALSE;
     }
@@ -657,6 +657,20 @@ warn_same_file (const char *fmt, const char *a, const char *b)
         return parent_call (pntr.p, NULL, 3, strlen (fmt), fmt, strlen (a), a, strlen (b), b);
 #endif
     return real_warn_same_file (Foreground, fmt, a, b);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+get_times (const struct stat *sb, mc_timesbuf_t * times)
+{
+#ifdef HAVE_UTIMENSAT
+    (*times)[0] = sb->st_atim;
+    (*times)[1] = sb->st_mtim;
+#else
+    times->actime = sb->st_atime;
+    times->modtime = sb->st_mtime;
+#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1484,7 +1498,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     int src_desc, dest_desc = -1;
     mode_t src_mode = 0;        /* The mode of the source file */
     struct stat src_stat, dst_stat;
-    struct utimbuf utb;
+    mc_timesbuf_t times;
     gboolean dst_exists = FALSE, appending = FALSE;
     off_t file_size = -1;
     FileProgressStatus return_status, temp_status;
@@ -1588,7 +1602,13 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
         if (S_ISCHR (src_stat.st_mode) || S_ISBLK (src_stat.st_mode) || S_ISFIFO (src_stat.st_mode)
             || S_ISNAM (src_stat.st_mode) || S_ISSOCK (src_stat.st_mode))
         {
-            while (mc_mknod (dst_vpath, src_stat.st_mode & ctx->umask_kill, src_stat.st_rdev) < 0
+            dev_t rdev = 0;
+
+#ifdef HAVE_STRUCT_STAT_ST_RDEV
+            rdev = src_stat.st_rdev;
+#endif
+
+            while (mc_mknod (dst_vpath, src_stat.st_mode & ctx->umask_kill, rdev) < 0
                    && !ctx->skip_all)
             {
                 return_status = file_error (_("Cannot create special file \"%s\"\n%s"), dst_path);
@@ -1679,8 +1699,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
     src_mode = src_stat.st_mode;
     src_uid = src_stat.st_uid;
     src_gid = src_stat.st_gid;
-    utb.actime = src_stat.st_atime;
-    utb.modtime = src_stat.st_mtime;
+    get_times (&src_stat, &times);
     file_size = src_stat.st_size;
 
     open_flags = O_WRONLY;
@@ -1995,7 +2014,7 @@ copy_file_file (file_op_total_context_t * tctx, file_op_context_t * ctx,
                 src_mode = 0100666 & ~src_mode;
                 mc_chmod (dst_vpath, (src_mode & ctx->umask_kill));
             }
-            mc_utime (dst_vpath, &utb);
+            mc_utime (dst_vpath, &times);
         }
     }
 
@@ -2257,12 +2276,11 @@ copy_dir_dir (file_op_total_context_t * tctx, file_op_context_t * ctx, const cha
 
     if (ctx->preserve)
     {
-        struct utimbuf utb;
+        mc_timesbuf_t times;
 
         mc_chmod (dst_vpath, cbuf.st_mode & ctx->umask_kill);
-        utb.actime = cbuf.st_atime;
-        utb.modtime = cbuf.st_mtime;
-        mc_utime (dst_vpath, &utb);
+        get_times (&cbuf, &times);
+        mc_utime (dst_vpath, &times);
     }
     else
     {
@@ -2523,7 +2541,7 @@ dirsize_status_update_cb (status_msg_t * sm)
     Widget *wd = WIDGET (sm->dlg);
 
     /* update second (longer label) */
-    label_set_textv (dsm->count_size, _("Directories: %zd, total size: %s"),
+    label_set_textv (dsm->count_size, _("Directories: %zu, total size: %s"),
                      dsm->dir_count, size_trunc_sep (dsm->total_size, panels_options.kilobyte_si));
 
     /* enlarge dialog if required */

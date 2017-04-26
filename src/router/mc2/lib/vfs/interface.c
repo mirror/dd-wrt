@@ -1,7 +1,7 @@
 /*
    Virtual File System: interface functions
 
-   Copyright (C) 2011-2016
+   Copyright (C) 2011-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -251,7 +251,7 @@ int mc_##name inarg \
 
 MC_NAMEOP (chmod, (const vfs_path_t *vpath, mode_t mode), (vpath, mode))
 MC_NAMEOP (chown, (const vfs_path_t *vpath, uid_t owner, gid_t group), (vpath, owner, group))
-MC_NAMEOP (utime, (const vfs_path_t *vpath, struct utimbuf * times), (vpath, times))
+MC_NAMEOP (utime, (const vfs_path_t *vpath, mc_timesbuf_t * times), (vpath, times))
 MC_NAMEOP (readlink, (const vfs_path_t *vpath, char *buf, size_t bufsiz), (vpath, buf, bufsiz))
 MC_NAMEOP (unlink, (const vfs_path_t *vpath), (vpath))
 MC_NAMEOP (mkdir, (const vfs_path_t *vpath, mode_t mode), (vpath, mode))
@@ -832,7 +832,7 @@ mc_mkstemps (vfs_path_t ** pname_vpath, const char *prefix, const char *suffix)
 const char *
 mc_tmpdir (void)
 {
-    static char buffer[64];
+    static char buffer[PATH_MAX];
     static const char *tmpdir = NULL;
     const char *sys_tmp;
     struct passwd *pwd;
