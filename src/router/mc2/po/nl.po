@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
 # flipthegreat <flipthegreat@hotmail.com>, 2011
@@ -9,12 +9,13 @@
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # toniotonba <TonioTonBa@gmail.com>, 2011
 # bucovaina78 <wannessmet@gmail.com>, 2012
+# Yury V. Zaytsev <yury@shurup.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-08 08:14+0000\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/mc/mc/language/nl/)\n"
 "Language: nl\n"
@@ -102,6 +103,23 @@ msgstr ""
 "Uw oude instellingen zijn gemigreerd van %s\n"
 "naar %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr "Gezochte tekst niet gevonden"
 
@@ -148,6 +166,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -155,6 +180,18 @@ msgstr ""
 "Niet instaat '%s' skin te gebruiken met 256 colors support\n"
 "of non-256 colors terminal.\n"
 "Standaard skin is geladen"
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
 
 msgid "Escape"
 msgstr "Escape"
@@ -449,6 +486,27 @@ msgid ""
 msgstr ""
 "Schermgrootte %dx%d wordt niet ondersteund.\n"
 "Controleer omgevingsvariabele TERM ( opdr: set).\n"
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
+msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Aanmaken van pipe discriptor mislukt"
@@ -2442,8 +2500,9 @@ msgstr ""
 "Bron-link \"%s\" lezen mislukt \n"
 "%s "
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2742,8 +2801,8 @@ msgstr ""
 "%s "
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "Directories: %zd, totale grootte: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Opereren op \"..\" is niet mogelijk! "
@@ -2894,8 +2953,8 @@ msgid "&Edit - F4"
 msgstr "Bew&erken -F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Gevonden: %ld"
+msgid "Found: %lu"
+msgstr ""
 
 msgid "Malformed regular expression"
 msgstr "Slecht geformuleerde reguliere expressie"
@@ -2944,10 +3003,10 @@ msgid "Finished"
 msgstr "Klaar"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "Klaar (%zd directory genegeerd)"
-msgstr[1] "Klaar (%zd directories genegeerd)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "Searching"
 msgstr "Aan het zoeken"
@@ -3107,10 +3166,10 @@ msgid "Size:       %s"
 msgstr "Grootte: %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld blok)"
-msgstr[1] " (%ld blokken)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] ""
+msgstr[1] ""
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3342,10 +3401,10 @@ msgid "Panels:"
 msgstr "Vensters:"
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "Je hebt %zd geopend scherm. Toch stoppen?"
-msgstr[1] "Je hebt %zd geopende schermen. Toch stoppen?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
 
 msgid "The Midnight Commander"
 msgstr "The Midnight Commander"
@@ -3489,16 +3548,10 @@ msgid "<readlink failed>"
 msgstr "<readlink mislukt>"
 
 #, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s byte"
-msgstr[1] "%s bytes"
-
-#, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
-msgstr[0] "%s bytes in %d bestand"
-msgstr[1] "%s bytes in %d bestand(en)"
+msgstr[0] "%s in %d bestand"
+msgstr[1] "%s in %d bestanden"
 
 msgid "Panelize"
 msgstr "Als venster"
@@ -3852,8 +3905,11 @@ msgstr "Virtuele Bestandssystemen:"
 msgid "Data types:"
 msgstr "Datatypen:"
 
-msgid "Root directory:"
-msgstr "Rootmap:"
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
+msgstr ""
 
 msgid "System data"
 msgstr "Systeemdata"
@@ -4404,6 +4460,3 @@ msgstr "Doorgaan vanaf het begin?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Kan geen lokale versie van /ftp://some.host/editme.txt ophalen"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "Kan commando voor pipe niet parsen"

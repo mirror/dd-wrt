@@ -144,7 +144,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 \
+	$(top_srcdir)/m4.include/mc-assert.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -451,13 +453,14 @@ SYNTAXFILES = \
 	css.syntax		\
 	cuda.syntax		\
 	cxx.syntax		\
+	cython.syntax		\
 	d.syntax		\
-	dlink.syntax		\
 	debian-changelog.syntax	\
 	debian-control.syntax	\
 	debian-description.syntax	\
 	debian-sources-list.syntax	\
 	diff.syntax		\
+	dlink.syntax		\
 	dos.syntax		\
 	ebuild.syntax		\
 	eiffel.syntax		\
@@ -488,6 +491,8 @@ SYNTAXFILES = \
 	nemerle.syntax		\
 	nroff.syntax		\
 	octave.syntax		\
+	opencl.syntax		\
+	osl.syntax		\
 	pascal.syntax		\
 	perl.syntax		\
 	php.syntax		\
@@ -497,7 +502,7 @@ SYNTAXFILES = \
 	properties.syntax	\
 	puppet.syntax		\
 	python.syntax		\
-	cython.syntax		\
+	r.syntax		\
 	ruby.syntax		\
 	sh.syntax		\
 	slang.syntax		\
@@ -514,6 +519,7 @@ SYNTAXFILES = \
 	verilog.syntax		\
 	vhdl.syntax		\
 	xml.syntax		\
+	yaml.syntax		\
 	yum-repo.syntax		\
 	yxx.syntax
 

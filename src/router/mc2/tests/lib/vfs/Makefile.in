@@ -90,7 +90,7 @@ host_triplet = @host@
 TESTS = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
 	path_cmp$(EXEEXT) path_len$(EXEEXT) \
 	path_manipulations$(EXEEXT) path_serialize$(EXEEXT) \
-	relative_cd$(EXEEXT) tempdir$(EXEEXT) \
+	relative_cd$(EXEEXT) tempdir$(EXEEXT) vfs_adjust_stat$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_from_str_flags$(EXEEXT) \
 	vfs_path_string_convert$(EXEEXT) vfs_prefix_to_class$(EXEEXT) \
 	vfs_setup_cwd$(EXEEXT) vfs_split$(EXEEXT) \
@@ -155,7 +155,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 \
+	$(top_srcdir)/m4.include/mc-assert.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -168,7 +170,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_2 = canonicalize_pathname$(EXEEXT) current_dir$(EXEEXT) \
 	path_cmp$(EXEEXT) path_len$(EXEEXT) \
 	path_manipulations$(EXEEXT) path_serialize$(EXEEXT) \
-	relative_cd$(EXEEXT) tempdir$(EXEEXT) \
+	relative_cd$(EXEEXT) tempdir$(EXEEXT) vfs_adjust_stat$(EXEEXT) \
 	vfs_parse_ls_lga$(EXEEXT) vfs_path_from_str_flags$(EXEEXT) \
 	vfs_path_string_convert$(EXEEXT) vfs_prefix_to_class$(EXEEXT) \
 	vfs_setup_cwd$(EXEEXT) vfs_split$(EXEEXT) \
@@ -204,6 +206,9 @@ relative_cd_LDADD = $(LDADD)
 am_tempdir_OBJECTS = tempdir.$(OBJEXT)
 tempdir_OBJECTS = $(am_tempdir_OBJECTS)
 tempdir_LDADD = $(LDADD)
+am_vfs_adjust_stat_OBJECTS = vfs_adjust_stat.$(OBJEXT)
+vfs_adjust_stat_OBJECTS = $(am_vfs_adjust_stat_OBJECTS)
+vfs_adjust_stat_LDADD = $(LDADD)
 am_vfs_get_encoding_OBJECTS = vfs_get_encoding.$(OBJEXT)
 vfs_get_encoding_OBJECTS = $(am_vfs_get_encoding_OBJECTS)
 vfs_get_encoding_LDADD = $(LDADD)
@@ -270,8 +275,9 @@ SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
 	$(path_cmp_SOURCES) $(path_len_SOURCES) \
 	$(path_manipulations_SOURCES) $(path_recode_SOURCES) \
 	$(path_serialize_SOURCES) $(relative_cd_SOURCES) \
-	$(tempdir_SOURCES) $(vfs_get_encoding_SOURCES) \
-	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_from_str_flags_SOURCES) \
+	$(tempdir_SOURCES) $(vfs_adjust_stat_SOURCES) \
+	$(vfs_get_encoding_SOURCES) $(vfs_parse_ls_lga_SOURCES) \
+	$(vfs_path_from_str_flags_SOURCES) \
 	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
 	$(vfs_setup_cwd_SOURCES) $(vfs_split_SOURCES)
@@ -279,8 +285,9 @@ DIST_SOURCES = $(canonicalize_pathname_SOURCES) $(current_dir_SOURCES) \
 	$(path_cmp_SOURCES) $(path_len_SOURCES) \
 	$(path_manipulations_SOURCES) $(path_recode_SOURCES) \
 	$(path_serialize_SOURCES) $(relative_cd_SOURCES) \
-	$(tempdir_SOURCES) $(vfs_get_encoding_SOURCES) \
-	$(vfs_parse_ls_lga_SOURCES) $(vfs_path_from_str_flags_SOURCES) \
+	$(tempdir_SOURCES) $(vfs_adjust_stat_SOURCES) \
+	$(vfs_get_encoding_SOURCES) $(vfs_parse_ls_lga_SOURCES) \
+	$(vfs_path_from_str_flags_SOURCES) \
 	$(vfs_path_string_convert_SOURCES) \
 	$(vfs_prefix_to_class_SOURCES) $(vfs_s_get_path_SOURCES) \
 	$(vfs_setup_cwd_SOURCES) $(vfs_split_SOURCES)
@@ -784,6 +791,9 @@ relative_cd_SOURCES = \
 tempdir_SOURCES = \
 	tempdir.c
 
+vfs_adjust_stat_SOURCES = \
+	vfs_adjust_stat.c
+
 vfs_get_encoding_SOURCES = \
 	vfs_get_encoding.c
 
@@ -887,6 +897,10 @@ tempdir$(EXEEXT): $(tempdir_OBJECTS) $(tempdir_DEPENDENCIES) $(EXTRA_tempdir_DEP
 	@rm -f tempdir$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(tempdir_OBJECTS) $(tempdir_LDADD) $(LIBS)
 
+vfs_adjust_stat$(EXEEXT): $(vfs_adjust_stat_OBJECTS) $(vfs_adjust_stat_DEPENDENCIES) $(EXTRA_vfs_adjust_stat_DEPENDENCIES) 
+	@rm -f vfs_adjust_stat$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(vfs_adjust_stat_OBJECTS) $(vfs_adjust_stat_LDADD) $(LIBS)
+
 vfs_get_encoding$(EXEEXT): $(vfs_get_encoding_OBJECTS) $(vfs_get_encoding_DEPENDENCIES) $(EXTRA_vfs_get_encoding_DEPENDENCIES) 
 	@rm -f vfs_get_encoding$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(vfs_get_encoding_OBJECTS) $(vfs_get_encoding_LDADD) $(LIBS)
@@ -934,6 +948,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_serialize.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/relative_cd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tempdir.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_adjust_stat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_get_encoding.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_parse_ls_lga.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vfs_path_from_str_flags.Po@am__quote@
@@ -1215,6 +1230,13 @@ relative_cd.log: relative_cd$(EXEEXT)
 tempdir.log: tempdir$(EXEEXT)
 	@p='tempdir$(EXEEXT)'; \
 	b='tempdir'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+vfs_adjust_stat.log: vfs_adjust_stat$(EXEEXT)
+	@p='vfs_adjust_stat$(EXEEXT)'; \
+	b='vfs_adjust_stat'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

@@ -1,7 +1,7 @@
 /*
    Concurrent shell support for the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -327,7 +327,7 @@ init_subshell_child (const char *pty_name)
         break;
 
     default:
-        fprintf (stderr, __FILE__ ": unimplemented subshell type %d\r\n", mc_global.shell->type);
+        fprintf (stderr, __FILE__ ": unimplemented subshell type %u\r\n", mc_global.shell->type);
         my_exit (FORK_FAILURE);
     }
 
@@ -881,7 +881,7 @@ init_subshell_precmd (char *precmd, size_t buff_size)
          * Find out how to fix this.
          */
         g_snprintf (precmd, buff_size,
-                    "if not functions -q fish_prompt_mc;"
+                    " if not functions -q fish_prompt_mc;"
                     "functions -c fish_prompt fish_prompt_mc; end;"
                     "function fish_prompt;"
                     "echo (whoami)@(hostname -s):(set_color $fish_color_cwd)(pwd)(set_color normal)\\$\\ ; "

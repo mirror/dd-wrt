@@ -1,7 +1,7 @@
 /*
    Hypertext file browser.
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -531,18 +531,22 @@ help_show (WDialog * h, const char *paint_start)
                 line++;
                 col = 0;
                 break;
-            case '\t':
-                col = (col / 8 + 1) * 8;
-                if (col >= HELP_WINDOW_WIDTH)
-                {
-                    line++;
-                    col = 8;
-                }
-                break;
             case ' ':
+            case '\t':
                 /* word delimiter */
                 if (painting)
-                    help_print_word (h, word, &col, &line, TRUE);
+                {
+                    help_print_word (h, word, &col, &line, c == ' ');
+                    if (c == '\t')
+                    {
+                        col = (col / 8 + 1) * 8;
+                        if (col >= HELP_WINDOW_WIDTH)
+                        {
+                            line++;
+                            col = 8;
+                        }
+                    }
+                }
                 break;
             default:
                 if (painting && (line < help_lines))

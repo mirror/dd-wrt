@@ -6,7 +6,7 @@
    or, if etags utility not installed:
    $ find . -type f -name "*.[ch]" | ctags --c-kinds=+p --fields=+iaS --extra=+q -e -L-
 
-   Copyright (C) 2009-2016
+   Copyright (C) 2009-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -214,7 +214,7 @@ etags_set_definition_hash (const char *tagfile, const char *start_path,
 
                 pos = strcspn (buf, ",");
                 g_free (filename);
-                filename = g_strndup (buf, pos + 1);
+                filename = g_strndup (buf, pos);
                 state = in_define;
                 break;
             }

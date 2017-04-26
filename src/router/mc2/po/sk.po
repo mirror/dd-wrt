@@ -1,20 +1,21 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Dušan Lago <dusan.lago@gmail.com>, 2011
+# Dušan Lago <inactive+dudko@transifex.com>, 2011
 # helix84 <helix84@centrum.sk>, 2015
 # Jajo Pajo, 2016
 # Jose Riha <jose1711@gmail.com>, 2012
 # Jose Riha <jose1711@gmail.com>, 2012
 # Slava Zanko <slavazanko@gmail.com>, 2011
+# Yury V. Zaytsev <yury@shurup.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-08 08:14+0000\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Slovak (http://www.transifex.com/mc/mc/language/sk/)\n"
 "Language: sk\n"
@@ -104,6 +105,23 @@ msgstr ""
 "Vaše staré nastavenia boli migrované z %s\n"
 "to %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr "Hľadaný znak nebol nájdený"
 
@@ -151,6 +169,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -158,6 +183,18 @@ msgstr ""
 "Nie je možné používať tému vzhľadu „%s“ s podporou\n"
 "256 farieb na termináli, ktorý nemá 256 farieb.\n"
 "Bol načítaný predvolený vzhľad"
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
 
 msgid "Escape"
 msgstr "Escape"
@@ -452,6 +489,27 @@ msgid ""
 msgstr ""
 "Veľkosť obrazovky %dx%d nie je podporovaná.\n"
 "Skontrolujte premennú prostredia TERM.\n"
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
+msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Nemožno vytvoriť popisovač rúry"
@@ -2449,8 +2507,9 @@ msgstr ""
 "Nemožno prečítať zdrojový odkaz „%s“\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2749,8 +2808,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "Adresáre: %zd, celková veľkosť: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Nemožno vykonať operáciu na „..“!"
@@ -2901,8 +2960,8 @@ msgid "&Edit - F4"
 msgstr "&Editácia - F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Nájdené: %ld"
+msgid "Found: %lu"
+msgstr ""
 
 msgid "Malformed regular expression"
 msgstr "Chybný regulárny výraz"
@@ -2951,11 +3010,11 @@ msgid "Finished"
 msgstr "Skončené"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "Hotovo (ignorovaný %zd adresár)"
-msgstr[1] "Hotovo (ignorované %zd adresáre)"
-msgstr[2] "Hotovo (ignorovaných %zd adresárov)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "Searching"
 msgstr "Hľadá sa"
@@ -3115,11 +3174,11 @@ msgid "Size:       %s"
 msgstr "Veľkosť: %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld block)"
-msgstr[1] " (%ld blocks)"
-msgstr[2] " (%ld blokov)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3351,11 +3410,11 @@ msgid "Panels:"
 msgstr "Panely:"
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "Máte %zd otvorenú obrazovku. Ukončiť napriek tomu?"
-msgstr[1] "Máte %zd otvorené obrazovky. Ukončiť napriek tomu?"
-msgstr[2] "Máte %zd otvorených obrazoviek. Ukončiť napriek tomu?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "The Midnight Commander"
 msgstr "Midnight Commander"
@@ -3499,18 +3558,11 @@ msgid "<readlink failed>"
 msgstr "<čítanie odkazu zlyhalo>"
 
 #, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s bajt"
-msgstr[1] "%s bajty"
-msgstr[2] "%s bajtov"
-
-#, c-format
 msgid "%s in %d file"
 msgid_plural "%s in %d files"
-msgstr[0] "%s bajt v %d súboroch"
-msgstr[1] "%s bajty v %d súboroch"
-msgstr[2] "%s bajtov v %d súboroch"
+msgstr[0] "%s v %d súboroch"
+msgstr[1] "%s v %d súboroch"
+msgstr[2] "%s v %d súboroch"
 
 msgid "Panelize"
 msgstr "Panelizovať"
@@ -3863,8 +3915,11 @@ msgstr "Virtuálne súborové systémy:"
 msgid "Data types:"
 msgstr "Typy dát:"
 
-msgid "Root directory:"
-msgstr "Koreňový adresár:"
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
+msgstr ""
 
 msgid "System data"
 msgstr "Systémové dáta"
@@ -4424,6 +4479,3 @@ msgstr "Pokračovať od začiatku?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Nemožno stiahnuť lokálnu kópiu /ftp://some.host/editme.txt"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "Nemožno spracovať príkaz rúry"

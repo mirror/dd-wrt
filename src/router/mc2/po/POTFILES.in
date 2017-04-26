@@ -3,13 +3,17 @@ lib/event/event.c
 lib/event/manage.c
 lib/lock.c
 lib/mcconfig/paths.c
+lib/search/hex.c
 lib/search/lib.c
 lib/search/regex.c
 lib/search/search.c
 lib/skin/common.c
+lib/tty/color-ncurses.c
+lib/tty/color-slang.c
 lib/tty/key.c
 lib/tty/tty.c
 lib/tty/tty-slang.c
+lib/util.c
 lib/utilunix.c
 lib/vfs/direntry.c
 lib/vfs/interface.c

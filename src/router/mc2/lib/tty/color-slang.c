@@ -1,7 +1,7 @@
 /*
    Color setup for S_Lang screen library
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -36,6 +36,7 @@
 #include <sys/types.h>          /* size_t */
 
 #include "lib/global.h"
+#include "lib/util.h"           /* whitespace() */
 
 #include "tty-slang.h"
 #include "color.h"              /* variables */
@@ -72,7 +73,7 @@ has_colors (gboolean disable, gboolean force)
             char *s;
             size_t i = 0;
 
-            while (*cts == ' ' || *cts == '\t')
+            while (whitespace (*cts))
                 cts++;
             s = cts;
 
@@ -212,6 +213,45 @@ gboolean
 tty_use_256colors (void)
 {
     return (SLtt_Use_Ansi_Colors && SLtt_tgetnum ((char *) "Co") == 256);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+gboolean
+tty_use_truecolors (GError ** error)
+{
+    char *colorterm;
+
+    /* True color is supported since slang-2.3.1 on 64-bit machines,
+       and expected to be supported from slang-3 on 32-bit machines:
+       http://lists.jedsoft.org/lists/slang-users/2016/0000014.html.
+       Check for sizeof (long) being 8, exactly as slang does. */
+    if (SLang_Version < 20301 || (sizeof (long) != 8 && SLang_Version < 30000))
+    {
+        g_set_error (error, MC_ERROR, -1, _("True color not supported in this slang version."));
+        return FALSE;
+    }
+
+    /* Sanity check that at least 256 colors are supported. */
+    if (!tty_use_256colors ())
+    {
+        g_set_error (error, MC_ERROR, -1,
+                     _("Your terminal doesn't even seem to support 256 colors."));
+        return FALSE;
+    }
+
+    /* Duplicate slang's check so that we can pop up an error message
+       rather than silently use wrong colors. */
+    colorterm = getenv ("COLORTERM");
+    if (colorterm == NULL
+        || (strcmp (colorterm, "truecolor") != 0 && strcmp (colorterm, "24bit") != 0))
+    {
+        g_set_error (error, MC_ERROR, -1,
+                     _("Set COLORTERM=truecolor if your terminal really supports true colors."));
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Authors:
@@ -315,7 +315,7 @@ widget_set_state (Widget * w, widget_state_t state, gboolean enable)
             {
                 send_message (w, NULL, MSG_DRAW, 0, NULL);
                 /* Notify owner that focus was moved from one widget to another */
-                send_message (w->owner, w, MSG_NOTIFY, (int) msg, NULL);
+                send_message (w->owner, w, MSG_CHANGED_FOCUS, 0, NULL);
             }
         }
         break;
@@ -419,6 +419,7 @@ widget_replace (Widget * old_w, Widget * new_w)
 {
     WDialog *h = old_w->owner;
     gboolean should_focus = FALSE;
+    GList *holder;
 
     if (h->widgets == NULL)
         return;
@@ -426,31 +427,52 @@ widget_replace (Widget * old_w, Widget * new_w)
     if (h->current == NULL)
         h->current = h->widgets;
 
+    /* locate widget position in the list */
     if (old_w == h->current->data)
-        should_focus = TRUE;
+        holder = h->current;
+    else
+        holder = g_list_find (h->widgets, old_w);
 
+    /* if old widget is focused, we should focus the new one... */
+    if (widget_get_state (old_w, WST_FOCUSED))
+        should_focus = TRUE;
+    /* ...but if new widget isn't selectable, we cannot focus it */
+    if (!widget_get_options (new_w, WOP_SELECTABLE))
+        should_focus = FALSE;
+
+    /* if new widget isn't selectable, select other widget before replace */
+    if (!should_focus)
+    {
+        GList *l;
+
+        for (l = dlg_get_widget_next_of (holder);
+             !widget_get_options (WIDGET (l->data), WOP_SELECTABLE)
+             && !widget_get_state (WIDGET (l->data), WST_DISABLED); l = dlg_get_widget_next_of (l))
+            ;
+
+        widget_select (WIDGET (l->data));
+    }
+
+    /* replace widget */
     new_w->owner = h;
     new_w->id = old_w->id;
-
-    if (should_focus)
-        h->current->data = new_w;
-    else
-        g_list_find (h->widgets, old_w)->data = new_w;
+    holder->data = new_w;
 
     send_message (old_w, NULL, MSG_DESTROY, 0, NULL);
     send_message (new_w, NULL, MSG_INIT, 0, NULL);
 
     if (should_focus)
         widget_select (new_w);
-
-    /* draw inactive widget */
-    if (!widget_get_state (new_w, WST_FOCUSED))
+    else
         widget_redraw (new_w);
 }
 
 /* --------------------------------------------------------------------------------------------- */
 /**
  * Select specified widget in it's owner.
+ *
+ * Note: this function (and widget_focus(), which it calls) is a no-op
+ * if the widget is already selected.
  *
  * @param w widget to be selected
  */

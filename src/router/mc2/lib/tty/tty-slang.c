@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Slang wrapper.
 
-   Copyright (C) 2005-2016
+   Copyright (C) 2005-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -316,7 +316,7 @@ tty_init (gboolean mouse_enable, gboolean is_xterm)
     tty_reset_prog_mode ();
     load_terminfo_keys ();
 
-    SLtt_Blink_Mode = tty_use_256colors ()? 1 : 0;
+    SLtt_Blink_Mode = (tty_use_256colors () || tty_use_truecolors (NULL)) ? 1 : 0;
 
     tty_start_interrupt_key ();
 

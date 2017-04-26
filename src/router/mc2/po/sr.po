@@ -1,6 +1,6 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
 # Slava Zanko <slavazanko@gmail.com>, 2011
@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-08 08:14+0000\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-25 09:22+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Serbian (http://www.transifex.com/mc/mc/language/sr/)\n"
 "Language: sr\n"
@@ -101,6 +101,23 @@ msgstr ""
 "Ваша стара подешавања су премештена из „%s“\n"
 "у „%s“\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+msgid "Invalid character"
+msgstr ""
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+
 msgid "Search string not found"
 msgstr "Нисам нашао тражену ниску"
 
@@ -147,6 +164,13 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -154,6 +178,18 @@ msgstr ""
 "Не могу да користим маску „%s“ са подршком за 256 боја\n"
 "на терминалу који нема 256 боја.\n"
 "Учитана је основна маска."
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
 
 msgid "Escape"
 msgstr "Заокрет"
@@ -448,6 +484,27 @@ msgid ""
 msgstr ""
 "Величина екрана %dx%d није подржана.\n"
 "Проверите променљиву окружења „TERM“.\n"
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
+msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Не могу да направим описника спојке"
@@ -2441,8 +2498,9 @@ msgstr ""
 "Не могу да прочитам изворну везу „%s“\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2741,8 +2799,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "Број директоријума: %zd, укупне величине: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr ""
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Не могу да радим над \"..\"!"
@@ -2893,8 +2951,8 @@ msgid "&Edit - F4"
 msgstr "&Уреди — Ф4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Нађох: %ld"
+msgid "Found: %lu"
+msgstr ""
 
 msgid "Malformed regular expression"
 msgstr "Лош регуларни израз"
@@ -2943,11 +3001,11 @@ msgid "Finished"
 msgstr "Готово"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "Готово (занемарио сам %zd директоријум)"
-msgstr[1] "Готово (занемарио сам %zd директоријума)"
-msgstr[2] "Готово (занемарио сам %zd директоријума)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "Searching"
 msgstr "Тражим"
@@ -3107,11 +3165,11 @@ msgid "Size:       %s"
 msgstr "Величина:       %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld блок)"
-msgstr[1] " (%ld блока)"
-msgstr[2] " (%ld блокова)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3343,11 +3401,11 @@ msgid "Panels:"
 msgstr "Панели:"
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "Отворили сте %zd екран. Да ипак изађем?"
-msgstr[1] "Отворили сте %zd екрана. Да ипак изађем?"
-msgstr[2] "Отворили сте %zd екрана. Да ипак изађем?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
 
 msgid "The Midnight Commander"
 msgstr "Поноћни наредник"
@@ -3489,13 +3547,6 @@ msgstr "ПОД-ДИР"
 
 msgid "<readlink failed>"
 msgstr "<читање везе није успело>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s бајт"
-msgstr[1] "%s бајта"
-msgstr[2] "%s бајтова"
 
 #, c-format
 msgid "%s in %d file"
@@ -3854,8 +3905,11 @@ msgstr "Виртуелни систем датотека:"
 msgid "Data types:"
 msgstr "Врсте података:"
 
-msgid "Root directory:"
-msgstr "Корени директоријум:"
+msgid "Home directory:"
+msgstr ""
+
+msgid "Profile root directory:"
+msgstr ""
 
 msgid "System data"
 msgstr "Системски подаци"
@@ -4415,6 +4469,3 @@ msgstr "Да наставим са почетка?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Не могу да довучем месни примерак „/ftp://some.host/editme.txt“"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "Не могу да обрадим наредбу за спојку"

@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Authors:
@@ -62,9 +62,6 @@ gauge_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
     switch (msg)
     {
-    case MSG_INIT:
-        return MSG_HANDLED;
-
     case MSG_DRAW:
         widget_move (w, 0, 0);
         if (!g->shown)

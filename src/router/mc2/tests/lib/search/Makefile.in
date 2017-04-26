@@ -89,7 +89,7 @@ build_triplet = @build@
 host_triplet = @host@
 TESTS = glob_prepare_replace_str$(EXEEXT) \
 	glob_translate_to_regex$(EXEEXT) \
-	regex_replace_esc_seq$(EXEEXT) \
+	hex_translate_to_regex$(EXEEXT) regex_replace_esc_seq$(EXEEXT) \
 	regex_process_escape_sequence$(EXEEXT) \
 	translate_replace_glob_to_regex$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
@@ -149,7 +149,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 \
+	$(top_srcdir)/m4.include/mc-assert.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -159,7 +161,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__EXEEXT_1 = glob_prepare_replace_str$(EXEEXT) \
 	glob_translate_to_regex$(EXEEXT) \
-	regex_replace_esc_seq$(EXEEXT) \
+	hex_translate_to_regex$(EXEEXT) regex_replace_esc_seq$(EXEEXT) \
 	regex_process_escape_sequence$(EXEEXT) \
 	translate_replace_glob_to_regex$(EXEEXT)
 am_glob_prepare_replace_str_OBJECTS =  \
@@ -176,6 +178,9 @@ am_glob_translate_to_regex_OBJECTS =  \
 glob_translate_to_regex_OBJECTS =  \
 	$(am_glob_translate_to_regex_OBJECTS)
 glob_translate_to_regex_LDADD = $(LDADD)
+am_hex_translate_to_regex_OBJECTS = hex_translate_to_regex.$(OBJEXT)
+hex_translate_to_regex_OBJECTS = $(am_hex_translate_to_regex_OBJECTS)
+hex_translate_to_regex_LDADD = $(LDADD)
 am_regex_process_escape_sequence_OBJECTS =  \
 	regex_process_escape_sequence.$(OBJEXT)
 regex_process_escape_sequence_OBJECTS =  \
@@ -225,11 +230,13 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = $(glob_prepare_replace_str_SOURCES) \
 	$(glob_translate_to_regex_SOURCES) \
+	$(hex_translate_to_regex_SOURCES) \
 	$(regex_process_escape_sequence_SOURCES) \
 	$(regex_replace_esc_seq_SOURCES) \
 	$(translate_replace_glob_to_regex_SOURCES)
 DIST_SOURCES = $(glob_prepare_replace_str_SOURCES) \
 	$(glob_translate_to_regex_SOURCES) \
+	$(hex_translate_to_regex_SOURCES) \
 	$(regex_process_escape_sequence_SOURCES) \
 	$(regex_replace_esc_seq_SOURCES) \
 	$(translate_replace_glob_to_regex_SOURCES)
@@ -717,6 +724,9 @@ translate_replace_glob_to_regex_SOURCES = \
 glob_translate_to_regex_SOURCES = \
 	glob_translate_to_regex.c
 
+hex_translate_to_regex_SOURCES = \
+	hex_translate_to_regex.c
+
 all: all-am
 
 .SUFFIXES:
@@ -768,6 +778,10 @@ glob_translate_to_regex$(EXEEXT): $(glob_translate_to_regex_OBJECTS) $(glob_tran
 	@rm -f glob_translate_to_regex$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(glob_translate_to_regex_OBJECTS) $(glob_translate_to_regex_LDADD) $(LIBS)
 
+hex_translate_to_regex$(EXEEXT): $(hex_translate_to_regex_OBJECTS) $(hex_translate_to_regex_DEPENDENCIES) $(EXTRA_hex_translate_to_regex_DEPENDENCIES) 
+	@rm -f hex_translate_to_regex$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hex_translate_to_regex_OBJECTS) $(hex_translate_to_regex_LDADD) $(LIBS)
+
 regex_process_escape_sequence$(EXEEXT): $(regex_process_escape_sequence_OBJECTS) $(regex_process_escape_sequence_DEPENDENCIES) $(EXTRA_regex_process_escape_sequence_DEPENDENCIES) 
 	@rm -f regex_process_escape_sequence$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(regex_process_escape_sequence_OBJECTS) $(regex_process_escape_sequence_LDADD) $(LIBS)
@@ -788,6 +802,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glob_prepare_replace_str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glob_translate_to_regex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hex_translate_to_regex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_process_escape_sequence.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/regex_replace_esc_seq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/translate_replace_glob_to_regex.Po@am__quote@
@@ -1022,6 +1037,13 @@ glob_prepare_replace_str.log: glob_prepare_replace_str$(EXEEXT)
 glob_translate_to_regex.log: glob_translate_to_regex$(EXEEXT)
 	@p='glob_translate_to_regex$(EXEEXT)'; \
 	b='glob_translate_to_regex'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+hex_translate_to_regex.log: hex_translate_to_regex$(EXEEXT)
+	@p='hex_translate_to_regex$(EXEEXT)'; \
+	b='hex_translate_to_regex'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

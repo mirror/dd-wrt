@@ -1,7 +1,7 @@
 /*
    Default values for keybinding engine
 
-   Copyright (C) 2009-2016
+   Copyright (C) 2009-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -83,6 +83,7 @@ typedef struct global_keymap_ini_t
 
 /* midnight */
 static const global_keymap_ini_t default_main_keymap[] = {
+    {"ChangePanel", "tab"},
     {"Help", "f1"},
     {"UserMenu", "f2"},
     {"View", "f3"},

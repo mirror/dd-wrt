@@ -1,7 +1,7 @@
 /*
    Definitions of key bindings.
 
-   Copyright (C) 2005-2016
+   Copyright (C) 2005-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -48,6 +48,7 @@ static name_keymap_t command_names[] = {
     /* common */
     {"InsertChar", CK_InsertChar},
     {"Enter", CK_Enter},
+    {"ChangePanel", CK_ChangePanel},
     {"Up", CK_Up},
     {"Down", CK_Down},
     {"Left", CK_Left},

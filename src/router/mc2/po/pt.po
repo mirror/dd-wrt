@@ -1,18 +1,18 @@
 # SOME DESCRIPTIVE TITLE.
 # Copyright (C) YEAR Free Software Foundation, Inc.
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the mc package.
 #
 # Translators:
 # Gilberto J <2101458@my.ipleiria.pt>, 2012
 # Gilberto Jorge <gmj125@gmail.com>, 2012-2013
-# Gilberto Jorge <gmj125@gmail.com>, 2013-2016
+# Gilberto Jorge <gmj125@gmail.com>, 2013-2017
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
-"PO-Revision-Date: 2016-05-08 13:14+0000\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
+"PO-Revision-Date: 2017-02-26 16:49+0000\n"
 "Last-Translator: Gilberto Jorge <gmj125@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/mc/mc/language/pt/)\n"
 "Language: pt\n"
@@ -102,6 +102,27 @@ msgstr ""
 "As suas antigas configurações foram migradas de %s\n"
 "para %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+"Número excede o limite (deve situar-se no intervalo de um byte, 0 <= n <= "
+"0xFF, em hex)"
+
+msgid "Invalid character"
+msgstr "Caracter inválido"
+
+msgid "Unmatched quotes character"
+msgstr "Caracter aspas sem o respetivo par"
+
+#, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+"Erro no padrão hex na posição %d:\n"
+"%s."
+
 msgid "Search string not found"
 msgstr "Cadeia de carateres de procura não encontrada"
 
@@ -148,6 +169,16 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+"Não foi possível usar a skin '%s' com suporte true colors:\n"
+"%s\n"
+"Foi carregada a skin por omissão"
+
+#, c-format
+msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
 "on non-256 colors terminal.\n"
 "Default skin has been loaded"
@@ -155,6 +186,19 @@ msgstr ""
 "Não é possível usar a skin '%s' com suporte para 256 cores\n"
 "num terminal que não suporta 256 cores.\n"
 "Skin por defeito foi carregada"
+
+msgid "True color not supported with ncurses."
+msgstr "True color não suportado com o ncurses."
+
+msgid "True color not supported in this slang version."
+msgstr "True color não suportado nesta versão slang."
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr "O seu terminal não parece suportar nem 256 cores."
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
+"Colocar COLORTERM=truecolor se o seu terminal suportar mesmo true colors."
 
 msgid "Escape"
 msgstr "Escape"
@@ -449,6 +493,27 @@ msgid ""
 msgstr ""
 "Tamanho de ecrã %dx%d não é suportado.\n"
 "Verifique a variável de ambiente TERM.\n"
+
+msgid "B"
+msgstr "B"
+
+msgid "kB"
+msgstr "kB"
+
+msgid "KiB"
+msgstr "KiB"
+
+msgid "MB"
+msgstr "MB"
+
+msgid "MiB"
+msgstr "MiB"
+
+msgid "GB"
+msgstr "GB"
+
+msgid "GiB"
+msgstr "GiB"
 
 msgid "Cannot create pipe descriptor"
 msgstr "Não é possível criar o descriptor do pipe"
@@ -2448,8 +2513,9 @@ msgstr ""
 "Não é possível ler a ligação fonte \"%s\"\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2750,8 +2816,8 @@ msgstr ""
 "%s"
 
 #, c-format
-msgid "Directories: %zd, total size: %s"
-msgstr "Diretórios: %zd, tamanho total: %s"
+msgid "Directories: %zu, total size: %s"
+msgstr "Directórios: %zu, tamanho total: %s"
 
 msgid "Cannot operate on \"..\"!"
 msgstr "Não é possível operar em \"..\"!"
@@ -2902,8 +2968,8 @@ msgid "&Edit - F4"
 msgstr "&Editar - F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Encontrados: %ld"
+msgid "Found: %lu"
+msgstr "Encontrado: %lu"
 
 msgid "Malformed regular expression"
 msgstr "Expressão regular malformada"
@@ -2952,10 +3018,10 @@ msgid "Finished"
 msgstr "Terminado"
 
 #, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
-msgstr[0] "Terminado (ignorado %zd diretório)"
-msgstr[1] "Terminado (ignorado %zd diretórios)"
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
+msgstr[0] "Terminado (%zu directório ignorado)"
+msgstr[1] "Terminado (%zu directórios ignorados)"
 
 msgid "Searching"
 msgstr "A procurar"
@@ -3115,10 +3181,10 @@ msgid "Size:       %s"
 msgstr "Tamanho:       %s"
 
 #, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
-msgstr[0] " (%ld bloco)"
-msgstr[1] " (%ld blocos)"
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
+msgstr[0] " (%lu bloco)"
+msgstr[1] " (%lu blocos)"
 
 #, c-format
 msgid "Owner:      %s/%s"
@@ -3350,10 +3416,10 @@ msgid "Panels:"
 msgstr "Painéis:"
 
 #, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
-msgstr[0] "Tem %zd ecrã aberto. Sair na mesma?"
-msgstr[1] "Tem %zd ecrãs abertos. Sair na mesma?"
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
+msgstr[0] "Tem %zu ecrã aberto. Terminar de qualquer modo?"
+msgstr[1] "Tem %zu ecrãs abertos. Terminar de qualquer modo?"
 
 msgid "The Midnight Commander"
 msgstr "O Midnight Commander"
@@ -3495,12 +3561,6 @@ msgstr "SUB-DIR"
 
 msgid "<readlink failed>"
 msgstr "<falha readlink>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s byte"
-msgstr[1] "%s bytes"
 
 #, c-format
 msgid "%s in %d file"
@@ -3858,8 +3918,11 @@ msgstr "Sistemas de Ficheiros Virtuais:"
 msgid "Data types:"
 msgstr "Tipos de dados:"
 
-msgid "Root directory:"
-msgstr "Diretório de root:"
+msgid "Home directory:"
+msgstr "Directório Home:"
+
+msgid "Profile root directory:"
+msgstr "Directório do perfil root:"
 
 msgid "System data"
 msgstr "Dados de sistema"
@@ -4419,6 +4482,3 @@ msgstr "Continuar do início?"
 
 msgid "Cannot fetch a local copy of /ftp://some.host/editme.txt"
 msgstr "Não é possível obter uma cópia local de /ftp://some.host/editme.txt"
-
-#~ msgid "Cannot parse command for pipe"
-#~ msgstr "Não é possível interpretar o comando para o pipe"
