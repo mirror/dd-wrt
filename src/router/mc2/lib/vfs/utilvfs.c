@@ -1,7 +1,7 @@
 /*
    Utilities for VFS modules.
 
-   Copyright (C) 1988-2016
+   Copyright (C) 1988-2017
    Free Software Foundation, Inc.
 
    Copyright (C) 1995, 1996 Miguel de Icaza
@@ -350,8 +350,7 @@ vfs_url_split (const char *path, int default_port, vfs_url_flags_t flags)
 
 /* --------------------------------------------------------------------------------------------- */
 
-void
-vfs_die (const char *m)
+void __attribute__ ((noreturn)) vfs_die (const char *m)
 {
     message (D_ERROR, _("Internal error:"), "%s", m);
     exit (EXIT_FAILURE);

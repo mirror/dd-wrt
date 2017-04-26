@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2016
+   Copyright (C) 1994-2017
    Free Software Foundation, Inc.
 
    Authors:
@@ -453,9 +453,6 @@ listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
 
     switch (msg)
     {
-    case MSG_INIT:
-        return MSG_HANDLED;
-
     case MSG_HOTKEY:
         {
             int pos;
@@ -573,6 +570,9 @@ listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn 
 
 /* --------------------------------------------------------------------------------------------- */
 
+/**
+ * Finds item by its label.
+ */
 int
 listbox_search_text (WListbox * l, const char *text)
 {
@@ -586,6 +586,31 @@ listbox_search_text (WListbox * l, const char *text)
             WLEntry *e = LENTRY (le->data);
 
             if (strcmp (e->text, text) == 0)
+                return i;
+        }
+    }
+
+    return (-1);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+/**
+ * Finds item by its 'data' slot.
+ */
+int
+listbox_search_data (WListbox * l, const void *data)
+{
+    if (!listbox_is_empty (l))
+    {
+        int i;
+        GList *le;
+
+        for (i = 0, le = g_queue_peek_head_link (l->list); le != NULL; i++, le = g_list_next (le))
+        {
+            WLEntry *e = LENTRY (le->data);
+
+            if (e->data == data)
                 return i;
         }
     }
@@ -762,11 +787,10 @@ listbox_remove_list (WListbox * l)
     {
         if (l->list != NULL)
         {
-            g_queue_foreach (l->list, (GFunc) listbox_entry_free, NULL);
-            g_queue_free (l->list);
+            g_queue_free_full (l->list, (GDestroyNotify) listbox_entry_free);
+            l->list = NULL;
         }
 
-        l->list = NULL;
         l->pos = l->top = 0;
     }
 }

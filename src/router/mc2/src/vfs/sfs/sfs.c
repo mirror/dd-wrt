@@ -1,7 +1,7 @@
 /*
    Single File fileSystem
 
-   Copyright (C) 1998-2016
+   Copyright (C) 1998-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -319,9 +319,16 @@ sfs_chown (const vfs_path_t * vpath, uid_t owner, gid_t group)
 /* --------------------------------------------------------------------------------------------- */
 
 static int
-sfs_utime (const vfs_path_t * vpath, struct utimbuf *times)
+sfs_utime (const vfs_path_t * vpath, mc_timesbuf_t * times)
 {
-    return utime (sfs_redirect (vpath), times);
+    int ret;
+
+#ifdef HAVE_UTIMENSAT
+    ret = utimensat (AT_FDCWD, sfs_redirect (vpath), *times, 0);
+#else
+    ret = utime (sfs_redirect (vpath), times);
+#endif
+    return ret;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -459,7 +466,7 @@ sfs_init (struct vfs_class *me)
         }
 
         c = semi + 1;
-        while (*c && (*c != ' ') && (*c != '\t'))
+        while (*c != '\0' && !whitespace (*c))
         {
             switch (*c)
             {

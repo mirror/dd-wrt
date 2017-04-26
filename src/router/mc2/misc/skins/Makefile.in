@@ -144,7 +144,9 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/m4.include/vfs/mc-vfs-samba.m4 \
 	$(top_srcdir)/m4.include/mc-version.m4 \
 	$(top_srcdir)/m4.include/mc-tests.m4 \
-	$(top_srcdir)/m4.include/mc-i18n.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4.include/mc-i18n.m4 \
+	$(top_srcdir)/m4.include/mc-assert.m4 \
+	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -455,7 +457,13 @@ skin_DATA = \
 	modarin256root.ini \
 	nicedark.ini \
 	sand256.ini \
-	xoria256.ini
+	seasons-autumn16M.ini \
+	seasons-spring16M.ini \
+	seasons-summer16M.ini \
+	seasons-winter16M.ini \
+	xoria256.ini \
+	yadt256-defbg.ini \
+	yadt256.ini
 
 EXTRA_DIST = \
     $(skin_DATA)

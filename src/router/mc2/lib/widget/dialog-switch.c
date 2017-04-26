@@ -3,7 +3,7 @@
 
    Original idea and code: Oleg "Olegarch" Konovalov <olegarch@linuxinside.com>
 
-   Copyright (C) 2009-2016
+   Copyright (C) 2009-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -114,12 +114,8 @@ dialog_switch_goto (GList * dlg)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-dlg_resize_cb (void *data, void *user_data)
+dialog_switch_resize (WDialog * d)
 {
-    WDialog *d = data;
-
-    (void) user_data;
-
     if (widget_get_state (WIDGET (d), WST_ACTIVE))
         send_message (d, NULL, MSG_RESIZE, 0, NULL);
     else
@@ -224,9 +220,8 @@ dialog_switch_list (void)
     const size_t dlg_num = g_list_length (mc_dialogs);
     int lines, cols;
     Listbox *listbox;
-    GList *h;
+    GList *h, *selected;
     int i = 0;
-    int rv;
 
     if (mc_global.midnight_shutdown || mc_current == NULL)
         return;
@@ -248,20 +243,14 @@ dialog_switch_list (void)
         else
             title = g_strdup ("");
 
-        listbox_add_item (listbox->list, LISTBOX_APPEND_BEFORE, get_hotkey (i++), title, NULL,
-                          FALSE);
+        listbox_add_item (listbox->list, LISTBOX_APPEND_BEFORE, get_hotkey (i++), title, h, FALSE);
 
         g_free (title);
     }
 
-    listbox_select_entry (listbox->list, dlg_num - 1 - g_list_position (mc_dialogs, mc_current));
-    rv = run_listbox (listbox);
-
-    if (rv >= 0)
-    {
-        h = g_list_nth (mc_dialogs, dlg_num - 1 - rv);
-        dialog_switch_goto (h);
-    }
+    selected = run_listbox_with_data (listbox, mc_current);
+    if (selected != NULL)
+        dialog_switch_goto (selected);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -366,6 +355,8 @@ mc_refresh (void)
 void
 dialog_change_screen_size (void)
 {
+    GList *d;
+
     mc_global.tty.winch_flag = 0;
 
     tty_change_screen_size ();
@@ -377,8 +368,10 @@ dialog_change_screen_size (void)
 
     /* Inform all suspending dialogs */
     dialog_switch_got_winch ();
-    /* Inform all running dialogs */
-    g_list_foreach (top_dlg, (GFunc) dlg_resize_cb, NULL);
+
+    /* Inform all running dialogs from first to last */
+    for (d = g_list_last (top_dlg); d != NULL; d = g_list_previous (d))
+        dialog_switch_resize (DIALOG (d->data));
 
     /* Now, force the redraw */
     repaint_screen ();

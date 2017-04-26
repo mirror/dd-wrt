@@ -51,6 +51,9 @@
 /* Define if the file command accepts the -L option */
 #undef FILE_L
 
+/* Define to disable assertions */
+#undef G_DISABLE_ASSERT
+
 /* Define to 1 if you have `alloca', as a function or macro. */
 #undef HAVE_ALLOCA
 
@@ -508,6 +511,9 @@
 /* Define to 1 if you have the `uselocale' function. */
 #undef HAVE_USELOCALE
 
+/* Define to 1 if you have the `utimensat' function. */
+#undef HAVE_UTIMENSAT
+
 /* Define to 1 if you have the <utime.h> header file. */
 #undef HAVE_UTIME_H
 
@@ -620,9 +626,6 @@
    list of mounted file systems, and there is a system header file that
    declares 'struct vmount'. (AIX) */
 #undef MOUNTED_VMOUNT
-
-/* Define to 1 if assertions should be disabled. */
-#undef NDEBUG
 
 /* Name of package */
 #undef PACKAGE

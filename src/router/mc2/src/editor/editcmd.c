@@ -1,7 +1,7 @@
 /*
    Editor high level editing commands
 
-   Copyright (C) 1996-2016
+   Copyright (C) 1996-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -35,11 +35,7 @@
 
 #include <config.h>
 
-#ifdef HAVE_ASSERT_H
-#include <assert.h>
-#endif
 #include <ctype.h>
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <sys/types.h>
@@ -88,10 +84,10 @@
 int search_create_bookmark = FALSE;
 
 /* queries on a save */
-int edit_confirm_save = 1;
+gboolean edit_confirm_save = TRUE;
 
 /* whether we need to drop selection on copy to buffer */
-int option_drop_selection_on_copy = 1;
+gboolean option_drop_selection_on_copy = TRUE;
 
 /*** file scope macro definitions ****************************************************************/
 
@@ -154,8 +150,8 @@ edit_save_mode_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm
 {
     switch (msg)
     {
-    case MSG_NOTIFY:
-        if (sender != NULL && sender->id == edit_save_mode_radio_id && parm == (int) MSG_FOCUS)
+    case MSG_CHANGED_FOCUS:
+        if (sender != NULL && sender->id == edit_save_mode_radio_id)
         {
             Widget *ww;
 
@@ -384,9 +380,8 @@ edit_save_file (WEdit * edit, const vfs_path_t * filename_vpath)
         vfs_path_t *tmp_vpath;
         gboolean ok;
 
-#ifdef HAVE_ASSERT_H
-        assert (option_backup_ext != NULL);
-#endif
+        g_assert (option_backup_ext != NULL);
+
         /* add backup extension to the path */
         tmp_vpath = vfs_path_clone (real_filename_vpath);
         last_vpath_element = (vfs_path_element_t *) vfs_path_get_by_index (tmp_vpath, -1);
@@ -873,8 +868,9 @@ editcmd_find (edit_search_status_msg_t * esm, gsize * len)
             if (ok && edit->search->normal_offset == search_start)
                 return TRUE;
 
-            /* Abort search. */
-            if (!ok && edit->search->error == MC_SEARCH_E_ABORT)
+            /* We abort the search in case of a pattern error, or if the user aborts
+               the search. In other words: in all cases except "string not found". */
+            if (!ok && edit->search->error != MC_SEARCH_E_NOTFOUND)
                 return FALSE;
 
             if ((edit->search_line_type & AT_START_LINE) != 0)
@@ -1629,16 +1625,14 @@ edit_save_mode_cmd (void)
         N_("&Do backups with following extension:")
     };
 
-#ifdef HAVE_ASSERT_H
-    assert (option_backup_ext != NULL);
-#endif
-
 #ifdef ENABLE_NLS
     size_t i;
 
     for (i = 0; i < 3; i++)
         str[i] = _(str[i]);
 #endif
+
+    g_assert (option_backup_ext != NULL);
 
     {
         quick_widget_t quick_widgets[] = {
@@ -2560,8 +2554,10 @@ edit_replace_cmd (WEdit * edit, gboolean again)
         g_free (tmp_inp1);
         g_free (tmp_inp2);
 
-        g_free (saved1), saved1 = g_strdup (input1);
-        g_free (saved2), saved2 = g_strdup (input2);
+        g_free (saved1);
+        saved1 = g_strdup (input1);
+        g_free (saved2);
+        saved2 = g_strdup (input2);
 
         mc_search_free (edit->search);
         edit->search = NULL;

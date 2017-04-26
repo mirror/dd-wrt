@@ -1,7 +1,7 @@
 /*
    Editor initialisation and callback handler.
 
-   Copyright (C) 1996-2016
+   Copyright (C) 1996-2017
    Free Software Foundation, Inc.
 
    Written by:
@@ -97,8 +97,8 @@ edit_dlg_init (void)
 {
     if (edit_dlg_init_refcounter == 0)
     {
-        edit_window_state_char = mc_skin_get ("editor", "window-state-char", "*");
-        edit_window_close_char = mc_skin_get ("editor", "window-close-char", "X");
+        edit_window_state_char = mc_skin_get ("widget-editor", "window-state-char", "*");
+        edit_window_close_char = mc_skin_get ("widget-editor", "window-close-char", "X");
 
 #ifdef HAVE_ASPELL
         aspell_init ();
@@ -319,13 +319,12 @@ get_hotkey (int n)
 static void
 edit_window_list (const WDialog * h)
 {
-    const size_t offset = 2;    /* skip menu and buttonbar */
-    const size_t dlg_num = g_list_length (h->widgets) - offset;
+    const size_t dlg_num = g_list_length (h->widgets) - 2;      /* 2 = skip menu and buttonbar */
     int lines, cols;
     Listbox *listbox;
     GList *w;
+    WEdit *selected;
     int i = 0;
-    int rv;
 
     lines = MIN ((size_t) (LINES * 2 / 3), dlg_num);
     cols = COLS * 2 / 3;
@@ -346,18 +345,13 @@ edit_window_list (const WDialog * h)
                                      vfs_path_as_str (e->filename_vpath));
 
             listbox_add_item (listbox->list, LISTBOX_APPEND_AT_END, get_hotkey (i++),
-                              str_term_trim (fname, WIDGET (listbox->list)->cols - 2), NULL, FALSE);
+                              str_term_trim (fname, WIDGET (listbox->list)->cols - 2), e, FALSE);
             g_free (fname);
         }
 
-    rv = g_list_position (h->widgets, h->current) - offset;
-    listbox_select_entry (listbox->list, rv);
-    rv = run_listbox (listbox);
-    if (rv >= 0)
-    {
-        w = g_list_nth (h->widgets, rv + offset);
-        widget_select (w->data);
-    }
+    selected = run_listbox_with_data (listbox, h->current->data);
+    if (selected != NULL)
+        widget_select (WIDGET (selected));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -895,7 +889,7 @@ edit_dialog_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
                     top = l;
 
             /* Handle fullscreen/close buttons in the top line */
-            x = w->cols - 5;
+            x = w->cols - 6;
 
             if (top != NULL && event->x >= x)
             {
@@ -917,7 +911,7 @@ edit_dialog_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
             }
 
             if (unhandled)
-                menubar_activate (b, drop_menus != 0, -1);
+                menubar_activate (b, drop_menus, -1);
         }
     }
 
@@ -1011,6 +1005,7 @@ edit_mouse_handle_move_resize (Widget * w, mouse_msg_t msg, mouse_event_t * even
     {
         /* Exit move/resize mode. */
         edit_execute_cmd (edit, CK_Enter, -1);
+        edit_update_screen (edit);      /* Paint the buttonbar over our possibly overlapping frame. */
         return;
     }
 
@@ -1062,7 +1057,7 @@ static void
 edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 {
     WEdit *edit = (WEdit *) w;
-    /* offset for top line */
+    /* buttons' distance from right edge */
     int dx = edit->fullscreen ? 0 : 2;
     /* location of 'Close' and 'Toggle fullscreen' pictograms */
     int close_x, toggle_fullscreen_x;
@@ -1077,6 +1072,16 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         return;
     }
 
+    /* If it's the last line on the screen, we abort the event to make the
+     * system channel it to the overlapping buttonbar instead. We have to do
+     * this because a WEdit has the WOP_TOP_SELECT flag, which makes it above
+     * the buttonbar in Z-order. */
+    if (msg == MSG_MOUSE_DOWN && (event->y + w->y == LINES - 1))
+    {
+        event->result.abort = TRUE;
+        return;
+    }
+
     switch (msg)
     {
     case MSG_MOUSE_DOWN:
@@ -1088,14 +1093,15 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         {
             if (event->y == 0)
             {
-                if (event->x == close_x)
+                if (event->x >= close_x - 1 && event->x <= close_x + 1)
                     ;           /* do nothing (see MSG_MOUSE_CLICK) */
-                else if (event->x == toggle_fullscreen_x)
+                else if (event->x >= toggle_fullscreen_x - 1 && event->x <= toggle_fullscreen_x + 1)
                     ;           /* do nothing (see MSG_MOUSE_CLICK) */
                 else
                 {
                     /* start window move */
                     edit_execute_cmd (edit, CK_WindowMove, -1);
+                    edit_update_screen (edit);  /* Paint the buttonbar over our possibly overlapping frame. */
                     edit->drag_state_start = event->x;
                 }
                 break;
@@ -1119,9 +1125,9 @@ edit_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
     case MSG_MOUSE_CLICK:
         if (event->y == 0)
         {
-            if (event->x == close_x)
+            if (event->x >= close_x - 1 && event->x <= close_x + 1)
                 send_message (w->owner, NULL, MSG_ACTION, CK_Close, NULL);
-            else if (event->x == toggle_fullscreen_x)
+            else if (event->x >= toggle_fullscreen_x - 1 && event->x <= toggle_fullscreen_x + 1)
                 edit_toggle_fullscreen (edit);
             else if (!edit->fullscreen && event->count == GPM_DOUBLE)
                 /* double click on top line (toggle fullscreen) */

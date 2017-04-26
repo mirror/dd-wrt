@@ -161,7 +161,6 @@ AC_CHECK_HEADERS([string.h memory.h limits.h malloc.h \
 	sys/select.h sys/ioctl.h stropts.h arpa/inet.h \
 	sys/socket.h])
 AC_HEADER_MAJOR
-AC_HEADER_ASSERT
 
 
 dnl ############################################################################
@@ -229,6 +228,9 @@ AC_CHECK_FUNCS([\
 	strncasecmp \
 	realpath
 ])
+
+dnl utimensat is supported since glibc 2.6 and specified in POSIX.1-2008
+AC_CHECK_FUNCS([utimensat])
 
 dnl getpt is a GNU Extension (glibc 2.1.x)
 AC_CHECK_FUNCS(posix_openpt, , [AC_CHECK_FUNCS(getpt)])
@@ -385,6 +387,8 @@ fi
 dnl ############################################################################
 dnl MC options
 dnl ############################################################################
+
+mc_ASSERT
 
 mc_WITH_INTERNAL_EDIT
 
@@ -624,8 +628,7 @@ intl/Makefile
 po/Makefile.in
 ])
 
-if test x$enable_tests != xno; then
-    AC_CONFIG_FILES([
+AC_CONFIG_FILES([
 tests/Makefile
 tests/lib/Makefile
 tests/lib/mcconfig/Makefile
@@ -637,8 +640,12 @@ tests/src/Makefile
 tests/src/filemanager/Makefile
 tests/src/editor/Makefile
 tests/src/editor/test-data.txt
+tests/src/vfs/Makefile
+tests/src/vfs/extfs/Makefile
+tests/src/vfs/extfs/helpers-list/Makefile
+tests/src/vfs/extfs/helpers-list/data/config.sh
+tests/src/vfs/extfs/helpers-list/misc/Makefile
 ])
-fi
 
 AC_OUTPUT
 
@@ -649,6 +656,8 @@ Configuration:
   Source code location:       ${srcdir}
   Compiler:                   ${CC}
   Compiler flags:             ${CFLAGS}
+  Assertions:                 ${enable_assert}
+  Unit tests:                 ${tests_msg}
   File system:                ${vfs_type}
                               ${vfs_flags}
   Screen library:             ${screen_msg}

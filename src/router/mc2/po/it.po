@@ -11,7 +11,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2016-10-02 19:48+0200\n"
+"POT-Creation-Date: 2017-03-04 18:55+0100\n"
 "PO-Revision-Date: 2016-05-08 19:38+0200\n"
 "Last-Translator: Marco Ciampa <ciampix@libero.it>\n"
 "Language-Team: Italian (http://www.transifex.com/projects/p/mc/language/"
@@ -102,6 +102,26 @@ msgstr ""
 "Le vecchie impostazioni sono state migrate da %s\n"
 "a %s\n"
 
+msgid ""
+"Number out of range (should be in byte range, 0 <= n <= 0xFF, expressed in "
+"hex)"
+msgstr ""
+
+#, fuzzy
+msgid "Invalid character"
+msgstr "Valore non valido"
+
+msgid "Unmatched quotes character"
+msgstr ""
+
+#, fuzzy, c-format
+msgid ""
+"Hex pattern error at position %d:\n"
+"%s."
+msgstr ""
+"Errore inatteso in waitpid():\n"
+"%s"
+
 msgid "Search string not found"
 msgstr " Stringa cercata non trovata "
 
@@ -146,6 +166,16 @@ msgstr ""
 "Impossibile analizzare il tema \"%s\".\n"
 "È stato caricato il tema predefinito"
 
+#, fuzzy, c-format
+msgid ""
+"Unable to use '%s' skin with true colors support:\n"
+"%s\n"
+"Default skin has been loaded"
+msgstr ""
+"Impossibile usare il tema \"%s\" con supporto a 256\n"
+"colori su terminale non a 256 colori.\n"
+"È stato caricato il tema predefinito"
+
 #, c-format
 msgid ""
 "Unable to use '%s' skin with 256 colors support\n"
@@ -155,6 +185,18 @@ msgstr ""
 "Impossibile usare il tema \"%s\" con supporto a 256\n"
 "colori su terminale non a 256 colori.\n"
 "È stato caricato il tema predefinito"
+
+msgid "True color not supported with ncurses."
+msgstr ""
+
+msgid "True color not supported in this slang version."
+msgstr ""
+
+msgid "Your terminal doesn't even seem to support 256 colors."
+msgstr ""
+
+msgid "Set COLORTERM=truecolor if your terminal really supports true colors."
+msgstr ""
 
 msgid "Escape"
 msgstr "Escape "
@@ -449,6 +491,27 @@ msgid ""
 msgstr ""
 "Schermo di dimensione %dx%d non supportato.\n"
 "Controllare la variabile ambiente TERM.\n"
+
+msgid "B"
+msgstr ""
+
+msgid "kB"
+msgstr ""
+
+msgid "KiB"
+msgstr ""
+
+msgid "MB"
+msgstr ""
+
+msgid "MiB"
+msgstr ""
+
+msgid "GB"
+msgstr ""
+
+msgid "GiB"
+msgstr ""
 
 msgid "Cannot create pipe descriptor"
 msgstr "Impossibile creare il descrittore pipe"
@@ -2446,8 +2509,9 @@ msgstr ""
 "Non posso leggere il collegamento sorgente \"%s\"\n"
 "%s"
 
+#, fuzzy
 msgid ""
-"Cannot make stable symlinks acrossnon-local filesystems:\n"
+"Cannot make stable symlinks across non-local filesystems:\n"
 "\n"
 "Option Stable Symlinks will be disabled"
 msgstr ""
@@ -2746,8 +2810,8 @@ msgstr ""
 "Impossibile spostare la directory \"%s\" in \"%s\"\n"
 "%s"
 
-#, c-format
-msgid "Directories: %zd, total size: %s"
+#, fuzzy, c-format
+msgid "Directories: %zu, total size: %s"
 msgstr "Directory: %zd, dim totale: %s"
 
 msgid "Cannot operate on \"..\"!"
@@ -2899,8 +2963,8 @@ msgid "&Edit - F4"
 msgstr "&Modifica - F4"
 
 #, c-format
-msgid "Found: %ld"
-msgstr "Trovato: %ld"
+msgid "Found: %lu"
+msgstr "Trovato: %lu"
 
 msgid "Malformed regular expression"
 msgstr "Espressione regolare malformata"
@@ -2948,9 +3012,9 @@ msgstr "Cercando in %s"
 msgid "Finished"
 msgstr "Terminato"
 
-#, c-format
-msgid "Finished (ignored %zd directory)"
-msgid_plural "Finished (ignored %zd directories)"
+#, fuzzy, c-format
+msgid "Finished (ignored %zu directory)"
+msgid_plural "Finished (ignored %zu directories)"
 msgstr[0] "Finito (ignorata %zd directory)"
 msgstr[1] "Finito (ignorate %zd directory)"
 
@@ -3111,9 +3175,9 @@ msgstr "Tipo dis.: major %lu, minor %lu"
 msgid "Size:       %s"
 msgstr "Dimensione:    %s"
 
-#, c-format
-msgid " (%ld block)"
-msgid_plural " (%ld blocks)"
+#, fuzzy, c-format
+msgid " (%lu block)"
+msgid_plural " (%lu blocks)"
 msgstr[0] " (%ld blocco)"
 msgstr[1] " (%ld blocchi)"
 
@@ -3346,9 +3410,9 @@ msgstr "FS &virtuale..."
 msgid "Panels:"
 msgstr "Pannelli:"
 
-#, c-format
-msgid "You have %zd opened screen. Quit anyway?"
-msgid_plural "You have %zd opened screens. Quit anyway?"
+#, fuzzy, c-format
+msgid "You have %zu opened screen. Quit anyway?"
+msgid_plural "You have %zu opened screens. Quit anyway?"
 msgstr[0] "È stato aperto %zd schermo. Uscire comunque?"
 msgstr[1] "Sono stati aperti %zd schermi. Uscire comunque?"
 
@@ -3492,12 +3556,6 @@ msgstr "SUB-DIR"
 
 msgid "<readlink failed>"
 msgstr "<readlink fallito>"
-
-#, c-format
-msgid "%s byte"
-msgid_plural "%s bytes"
-msgstr[0] "%s byte"
-msgstr[1] "%s byte"
 
 #, c-format
 msgid "%s in %d file"
@@ -3854,7 +3912,12 @@ msgstr "File System Virtuali:"
 msgid "Data types:"
 msgstr "Tipo dati:"
 
-msgid "Root directory:"
+#, fuzzy
+msgid "Home directory:"
+msgstr "Directory radice:"
+
+#, fuzzy
+msgid "Profile root directory:"
 msgstr "Directory radice:"
 
 msgid "System data"
@@ -4418,3 +4481,8 @@ msgstr "Impossibile ricevere copia locale di /ftp://un.host/modificami.txt"
 
 #~ msgid "Cannot parse command for pipe"
 #~ msgstr "Impossibile analizzare il comando per la pipe"
+
+#~ msgid "%s byte"
+#~ msgid_plural "%s bytes"
+#~ msgstr[0] "%s byte"
+#~ msgstr[1] "%s byte"
