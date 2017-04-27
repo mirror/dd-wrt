@@ -137,14 +137,18 @@ static int mv_cesa_add_algs(struct mv_cesa_dev *cesa)
 
 	for (i = 0; i < cesa->caps->ncipher_algs; i++) {
 		ret = crypto_register_alg(cesa->caps->cipher_algs[i]);
-		if (ret)
-			goto err_unregister_crypto;
+		if (ret) {
+			printk(KERN_EMERG "error registering CESA:%s (%d)\n", cesa->caps->cipher_algs[i]->cra_name,ret);
+		//	goto err_unregister_crypto;
+		}
 	}
 
 	for (i = 0; i < cesa->caps->nahash_algs; i++) {
 		ret = crypto_register_ahash(cesa->caps->ahash_algs[i]);
-		if (ret)
-			goto err_unregister_ahash;
+		if (ret) {
+			printk(KERN_EMERG "error registering CESA:%s (%d)\n", cesa->caps->ahash_algs[i]->halg.base.cra_name,ret);
+		//	goto err_unregister_ahash;
+		}
 	}
 
 	return 0;
