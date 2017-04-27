@@ -395,7 +395,9 @@ void start_sysinit(void)
 //      setWirelessLed(0, 14);
 	setWirelessLed(1, 14);
 #elif  HAVE_WR1043V2
+#ifndef HAVE_ONNET
 	setWirelessLed(0, 12);
+#endif
 #ifdef HAVE_WDR4900V2
 	setWirelessLed(1, 17);
 #endif
