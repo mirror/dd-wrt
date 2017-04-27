@@ -1530,7 +1530,7 @@ CONFIG_SCSI_LOWLEVEL=y
 CONFIG_ATA=m
 # CONFIG_ATA_NONSTANDARD is not set
 # CONFIG_ATA_VERBOSE_ERROR is not set
-# CONFIG_SATA_PMP is not set
+CONFIG_SATA_PMP=y
 
 #
 # Controllers with non-SFF native interface
