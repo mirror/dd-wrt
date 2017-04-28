@@ -284,6 +284,14 @@
 				#clock-cells = <1>;
 			};
 
+			cpuclk: clock-complex@18700 {
+                                #clock-cells = <1>;
+                                compatible = "marvell,armada-xp-cpu-clock",
+                                             "armada-380-cpu-clock";
+                                reg = <0x18700 0xA0>, <0x1c054 0x40>, <0xe4260 0x8>;
+                                clocks = <&coreclk 1>;
+                        };
+
 			mbusc: mbus-controller@20000 {
 				compatible = "marvell,mbus-controller";
 				reg = <0x20000 0x100>, <0x20180 0x20>;
