@@ -284,12 +284,13 @@
 				#clock-cells = <1>;
 			};
 
-			clockc: clock-complex@18700 {
-				#clock-cells = <0x1>;
-				compatible = "marvell,armada-xp-cpu-clock", "armada-380-cpu-clock";
-				reg = <0x18700 0xa0 0x1c054 0x40 0xe4260 0x8>;
-				clocks = <0x3 0x1>;
-			};
+			cpuclk: clock-complex@18700 {
+                                #clock-cells = <1>;
+                                compatible = "marvell,armada-xp-cpu-clock",
+                                             "armada-380-cpu-clock";
+                                reg = <0x18700 0xA0>, <0x1c054 0x40>, <0xe4260 0x8>;
+                                clocks = <&coreclk 1>;
+                        };
 
 			mbusc: mbus-controller@20000 {
 				compatible = "marvell,mbus-controller";
@@ -478,10 +479,7 @@
 
 			thermal@e8078 {
 				compatible = "marvell,armada380-thermal";
-				reg = <0xe4078 0x4>, <0xe4070 0x8>, <0xe4100 0x20>;
-				interrupts = <0x0 0x4e 0x4>;
-				threshold = <0x64>;
-				hysteresis = <0x2>;
+				reg = <0xe4078 0x4>, <0xe4074 0x4>;
 				status = "okay";
 			};
 
