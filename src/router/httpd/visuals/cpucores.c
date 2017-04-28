@@ -68,16 +68,25 @@ void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 #elif HAVE_MVEBU
 void ej_get_clkfreq(webs_t wp, int argc, char_t ** argv)
 {
-	FILE *fp = fopen("/sys/kernel/debug/clk/cpuclk/clk_rate", "rb");
+	FILE *fp = fopen("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq", "rb");
+	if (fp) {
+		int freq;
+		fscanf(fp, "%d", &freq);
+		fclose(fp);
+		websWrite(wp, "%d", freq / 1000);
+		return;
+	}
+	fp = fopen("/sys/kernel/debug/clk/cpuclk/clk_rate", "rb");
 	if (fp) {
 		int freq;
 		fscanf(fp, "%d", &freq);
 		fclose(fp);
 		websWrite(wp, "%d", freq / 1000000);
-	} else {
-		websWrite(wp, "1200");
-
+		return;
 	}
+
+	websWrite(wp, "1200");
+
 	return;
 }
 #elif HAVE_ALPINE
