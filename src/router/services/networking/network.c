@@ -3797,8 +3797,7 @@ void start_wan(int status)
 			}
 			if (nvram_matchi("3gnmvariant", 1)) {
 				fprintf(fp, "connect \"COMGTXDIAL='%s' /etc/comgt/connect.sh %s %s >/tmp/comgt.out 2>&1\"\n", dial, controldevice, nvram_safe_get("3gdata"));
-			}
-			else {
+			} else {
 				fprintf(fp, "connect \"COMGTDIAL='%s' /usr/sbin/comgt -s -d %s DIAL >/tmp/comgt.out 2>&1\"\n", dial, nvram_safe_get("3gdata"));
 			}
 			if (strlen(username))

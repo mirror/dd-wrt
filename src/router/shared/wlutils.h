@@ -159,6 +159,7 @@ extern int has_shortgi(char *interface);
 extern int has_greenfield(char *interface);
 #ifdef HAVE_ATH10K
 extern int has_vht160(char *interface);
+extern int has_vht80(char *interface);
 extern int has_vht80plus80(char *interface);
 int has_subeamforming(char *interface);
 int has_mubeamforming(char *interface);
