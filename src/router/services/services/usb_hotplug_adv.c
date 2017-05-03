@@ -437,11 +437,11 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	if ((fp = fopen(part_file, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
-			if (strlen(uuid) > 32 && strstr(line, uuid)) {
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
 				sprintf(mount_point, "/jffs");
 			}
 			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
-			if (strlen(uuid) > 32 && strstr(line, uuid)) {
+			if (strlen(uuid) > 15 && strstr(line, uuid)) {
 				sprintf(mount_point, "/opt");
 			}
 		}
