@@ -5490,6 +5490,7 @@ int led_control(int type, int act)
 #ifdef HAVE_WRT1900AC
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACS:
+	case ROUTER_WRT_3200ACM:
 	case ROUTER_WRT_1900ACV2:
 		usb_power = 0x032;
 	case ROUTER_WRT_1900AC:
