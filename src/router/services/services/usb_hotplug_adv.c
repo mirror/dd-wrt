@@ -315,6 +315,38 @@ static bool usb_load_modules(char *fs)
 	return 0;
 }
 
+static void do_mount(char *fs, char *path, char *mount_point, char *dev)
+{
+	int ret = 0;
+
+	/* lets start mounting */
+#ifdef HAVE_NTFS3G
+	if (!strcmp(fs, "ntfs")) {
+		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+	} else
+#endif
+	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
+		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
+	} else {
+		ret = eval("/bin/mount", "-t", fs, path, mount_point);
+	}
+
+	if (ret != 0) {		//give it another try
+#ifdef HAVE_NTFS3G
+		if (!strcmp(fs, "ntfs")) {
+			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
+		} else
+#endif
+			ret = eval("/bin/mount", path, mount_point);	//guess fs
+	}
+
+	if (!strcmp(fs, "swap")) {
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
+	} else {
+		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
+	}
+}
+
  /* 
   *   Mount partition 
   */
@@ -424,10 +456,10 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 	if ((fp = fopen(part_file, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (strstr(line, "Jffs") || strstr(line, "JFFS") || strstr(line, "\"jffs")) {
-				sprintf(mount_point, "/jffs");
+				do_mount(fs, path, "/jffs", dev);
 			}
 			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
-				sprintf(mount_point, "/opt");
+				do_mount(fs, path, "/opt", dev);
 			}
 		}
 		fclose(fp);
@@ -438,11 +470,11 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			sprintf(uuid, "%s", nvram_safe_get("usb_mntjffs"));
 			if (strlen(uuid) > 15 && strstr(line, uuid)) {
-				sprintf(mount_point, "/jffs");
+				do_mount(fs, path, "/jffs", dev);
 			}
 			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
 			if (strlen(uuid) > 15 && strstr(line, uuid)) {
-				sprintf(mount_point, "/opt");
+				do_mount(fs, path, "/opt", dev);
 			}
 		}
 		fclose(fp);
@@ -459,33 +491,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 		sprintf(sym_link, "%s/%s", dev_dir, part);
 		eval("ln", "-s", mount_point, sym_link);
 	}
-
-	/* lets start mounting */
-#ifdef HAVE_NTFS3G
-	if (!strcmp(fs, "ntfs")) {
-		ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
-	} else
-#endif
-	if (!strcmp(fs, "vfat") || !strcmp(fs, "exfat")) {
-		ret = eval("/bin/mount", "-t", fs, "-o", "iocharset=utf8", path, mount_point);
-	} else {
-		ret = eval("/bin/mount", "-t", fs, path, mount_point);
-	}
-
-	if (ret != 0) {		//give it another try
-#ifdef HAVE_NTFS3G
-		if (!strcmp(fs, "ntfs")) {
-			ret = eval("ntfs-3g", "-o", "compression,direct_io,big_writes", path, mount_point);
-		} else
-#endif
-			ret = eval("/bin/mount", path, mount_point);	//guess fs
-	}
-
-	if (!strcmp(fs, "swap")) {
-		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, "swap", dev);
-	} else {
-		sysprintf("echo \"<b>%s</b> mounted to <b>%s</b><hr>\"  >> /tmp/disk/%s", path, mount_point, dev);
-	}
+	do_mount(fs, path, mount_point, dev);
 
 	// now we will get a nice ordered dump of all partitions
 	sysprintf("cat /tmp/disk/sd* > %s", DUMPFILE);
