@@ -225,7 +225,7 @@ void start_dnsmasq(void)
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
 		fprintf(fp, "server=127.0.0.1#30\n");
-		if(nvram_matchi("ntp_done", 1))
+		if (nvram_matchi("ntp_done", 1))
 			fprintf(fp, "no-resolv\n");
 	}
 #endif
