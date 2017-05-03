@@ -955,8 +955,8 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
 	}
 	sprintf(macaddr, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1], hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-	if (!strncmp(ifname, "ath2", 4) && getRouterBrand() == ROUTER_WRT_3200ACM)
-		MAC_ADD(macaddr);
+//	if (!strncmp(ifname, "ath2", 4) && getRouterBrand() == ROUTER_WRT_3200ACM)
+//		MAC_ADD(macaddr);
 
 	if (!has_ad(maininterface)) {
 		fprintf(fp, "bssid=%s\n", macaddr);
