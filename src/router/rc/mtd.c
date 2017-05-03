@@ -274,6 +274,7 @@ int mtd_write(const char *path, const char *mtd)
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACV2:
 	case ROUTER_WRT_1900ACS:
+	case ROUTER_WRT_3200ACM:
 	case ROUTER_LINKSYS_EA8500:
 		part = getUEnv("boot_part");
 		if (part) {

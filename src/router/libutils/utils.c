@@ -2104,7 +2104,7 @@ int internal_getRouterBrand()
 	}
 	if (!strcmp(modelstr, "WRT3200ACM")) {
 		setRouter("Linksys WRT3200ACM");
-		return ROUTER_WRT_1900ACS;	// similar
+		return ROUTER_WRT_3200ACM;
 	}
 #elif HAVE_R9000
 	setRouter("Netgear Nighthawk X10");

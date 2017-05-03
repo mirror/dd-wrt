@@ -2728,7 +2728,7 @@ void start_firewall(void)
 	/*
 	 * Improve WAN<->LAN Performance on K26
 	 */
-	writeprocsysnet("core/netdev_max_backlog","120");
+	writeprocsysnet("core/netdev_max_backlog", "120");
 #endif
 	/*
 	 * Block obviously spoofed IP addresses 
