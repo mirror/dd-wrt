@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <bcmnvram.h>
 #include <wlutils.h>
+#include <cymac.h>
 #include <bcmutils.h>
 #include <shutils.h>
 #include <utils.h>
