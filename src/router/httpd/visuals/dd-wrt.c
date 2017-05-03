@@ -1232,12 +1232,13 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
-
 				memset(used, 0, sizeof(used));
 				memset(avail, 0, sizeof(avail));
 				memset(per, 0, sizeof(per));
 				memset(mp, 0, sizeof(mp));
 				if (sscanf(line, "%s %s %s %s", used, avail, per, mp) == 4) {
+					if (!strncmp(mp, "/dev", 4))
+						continue;
 					websWrite(wp, "<div class=\"setting\">");
 					websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
 					websWrite(wp, "<span id=\"usage\">");
