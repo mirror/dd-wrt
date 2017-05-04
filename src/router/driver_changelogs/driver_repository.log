@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3404 | brainslayer | 2017-05-04 15:01:36 +0200 (Thu, 04 May 2017) | 1 line
+
+update initscript
+------------------------------------------------------------------------
 r3403 | brainslayer | 2017-05-03 12:59:47 +0200 (Wed, 03 May 2017) | 1 line
 
 mwlwifi: Fixed problem: beacon won't be sent out sometimes.
