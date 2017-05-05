@@ -160,6 +160,8 @@ int main(int argc, char **argv)
 			return do_ipneigh(argc-2, argv+2);
 		if (matches(argv[1], "link") == 0)
 			return do_iplink(argc-2, argv+2);
+		if (matches(argv[1], "tuntap") == 0)
+			return do_iptuntap(argc-2, argv+2);
 		if (matches(argv[1], "tunnel") == 0 ||
 		    strcmp(argv[1], "tunl") == 0)
 			return do_iptunnel(argc-2, argv+2);
