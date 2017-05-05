@@ -4101,6 +4101,14 @@
 #define LN_aes_256_cbc_hmac_sha256              "aes-256-cbc-hmac-sha256"
 #define NID_aes_256_cbc_hmac_sha256             950
 
+#define SN_chacha20_poly1305            "CHACHA20-POLY1305"
+#define LN_chacha20_poly1305            "chacha20-poly1305"
+#define NID_chacha20_poly1305           958
+
+#define SN_chacha20_poly1305_draft              "CHACHA20-POLY1305-D"
+#define LN_chacha20_poly1305_draft              "chacha20-poly1305-draft"
+#define NID_chacha20_poly1305_draft             959
+
 #define SN_dhpublicnumber               "dhpublicnumber"
 #define LN_dhpublicnumber               "X9.42 DH"
 #define NID_dhpublicnumber              920

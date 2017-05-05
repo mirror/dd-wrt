@@ -967,3 +967,5 @@ aes_512_cfb1		966
 aes_512_cfb8		967
 aes_512_ctr		968
 aes_512_xts		969
++chacha20_poly1305		970
++chacha20_poly1305_draft		971

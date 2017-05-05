@@ -152,26 +152,26 @@ my $tlib="-lnsl -lsocket";
 my $bits1="THIRTY_TWO_BIT ";
 my $bits2="SIXTY_FOUR_BIT ";
 
-my $x86_asm="x86cpuid.o:bn-586.o co-586.o x86-mont.o x86-gf2m.o::des-586.o crypt586.o:aes-586.o vpaes-x86.o aesni-x86.o:bf-586.o:md5-586.o:sha1-586.o sha256-586.o sha512-586.o:cast-586.o:rc4-586.o:rmd-586.o:rc5-586.o:wp_block.o wp-mmx.o:cmll-x86.o:ghash-x86.o:";
+my $x86_asm="x86cpuid.o:bn-586.o co-586.o x86-mont.o x86-gf2m.o::des-586.o crypt586.o:aes-586.o vpaes-x86.o aesni-x86.o:bf-586.o:md5-586.o:sha1-586.o sha256-586.o sha512-586.o:cast-586.o:rc4-586.o:rmd-586.o:rc5-586.o:wp_block.o wp-mmx.o:cmll-x86.o:ghash-x86.o::";
 
 my $x86_elf_asm="$x86_asm:elf";
 
 
-my $x86_64_asm="x86_64cpuid.o:x86_64-gcc.o x86_64-mont.o x86_64-mont5.o x86_64-gf2m.o rsaz_exp.o rsaz-x86_64.o rsaz-avx2.o:ecp_nistz256.o ecp_nistz256-x86_64.o::aes-x86_64.o vpaes-x86_64.o bsaes-x86_64.o aesni-x86_64.o aesni-sha1-x86_64.o aesni-sha256-x86_64.o aesni-mb-x86_64.o::md5-x86_64.o:sha1-x86_64.o sha256-x86_64.o sha512-x86_64.o sha1-mb-x86_64.o sha256-mb-x86_64.o::rc4-x86_64.o rc4-md5-x86_64.o:::wp-x86_64.o:cmll-x86_64.o cmll_misc.o:ghash-x86_64.o aesni-gcm-x86_64.o:";
-my $ia64_asm="ia64cpuid.o:bn-ia64.o ia64-mont.o:::aes_core.o aes_cbc.o aes-ia64.o::md5-ia64.o:sha1-ia64.o sha256-ia64.o sha512-ia64.o::rc4-ia64.o rc4_skey.o:::::ghash-ia64.o::void";
-my $sparcv9_asm="sparcv9cap.o sparccpuid.o:bn-sparcv9.o sparcv9-mont.o sparcv9a-mont.o vis3-mont.o sparct4-mont.o sparcv9-gf2m.o::des_enc-sparc.o fcrypt_b.o dest4-sparcv9.o:aes_core.o aes_cbc.o aes-sparcv9.o aest4-sparcv9.o::md5-sparcv9.o:sha1-sparcv9.o sha256-sparcv9.o sha512-sparcv9.o::::::camellia.o cmll_misc.o cmll_cbc.o cmllt4-sparcv9.o:ghash-sparcv9.o::void";
-my $sparcv8_asm=":sparcv8.o::des_enc-sparc.o fcrypt_b.o:::::::::::::void";
-my $alpha_asm="alphacpuid.o:bn_asm.o alpha-mont.o::::::sha1-alpha.o:::::::ghash-alpha.o::void";
-my $mips64_asm=":bn-mips.o mips-mont.o:::aes_core.o aes_cbc.o aes-mips.o:::sha1-mips.o sha256-mips.o sha512-mips.o:::::::::";
+my $x86_64_asm="x86_64cpuid.o:x86_64-gcc.o x86_64-mont.o x86_64-mont5.o x86_64-gf2m.o rsaz_exp.o rsaz-x86_64.o rsaz-avx2.o:ecp_nistz256.o ecp_nistz256-x86_64.o::aes-x86_64.o vpaes-x86_64.o bsaes-x86_64.o aesni-x86_64.o aesni-sha1-x86_64.o aesni-sha256-x86_64.o aesni-mb-x86_64.o::md5-x86_64.o:sha1-x86_64.o sha256-x86_64.o sha512-x86_64.o sha1-mb-x86_64.o sha256-mb-x86_64.o::rc4-x86_64.o rc4-md5-x86_64.o:::wp-x86_64.o:cmll-x86_64.o cmll_misc.o:ghash-x86_64.o aesni-gcm-x86_64.o:chacha20_poly1305_x86_64.o poly1305_x86_64.o chacha20_x86_64.o:";
+my $ia64_asm="ia64cpuid.o:bn-ia64.o ia64-mont.o:::aes_core.o aes_cbc.o aes-ia64.o::md5-ia64.o:sha1-ia64.o sha256-ia64.o sha512-ia64.o::rc4-ia64.o rc4_skey.o:::::ghash-ia64.o:::void";
+my $sparcv9_asm="sparcv9cap.o sparccpuid.o:bn-sparcv9.o sparcv9-mont.o sparcv9a-mont.o vis3-mont.o sparct4-mont.o sparcv9-gf2m.o::des_enc-sparc.o fcrypt_b.o dest4-sparcv9.o:aes_core.o aes_cbc.o aes-sparcv9.o aest4-sparcv9.o::md5-sparcv9.o:sha1-sparcv9.o sha256-sparcv9.o sha512-sparcv9.o::::::camellia.o cmll_misc.o cmll_cbc.o cmllt4-sparcv9.o:ghash-sparcv9.o:::void";
+my $sparcv8_asm=":sparcv8.o::des_enc-sparc.o fcrypt_b.o::::::::::::::void";
+my $alpha_asm="alphacpuid.o:bn_asm.o alpha-mont.o::::::sha1-alpha.o:::::::ghash-alpha.o:::void";
+my $mips64_asm=":bn-mips.o mips-mont.o:::aes_core.o aes_cbc.o aes-mips.o:::sha1-mips.o sha256-mips.o sha512-mips.o::::::::::";
 my $mips32_asm=$mips64_asm; $mips32_asm =~ s/\s*sha512\-mips\.o//;
-my $s390x_asm="s390xcap.o s390xcpuid.o:bn-s390x.o s390x-mont.o s390x-gf2m.o:::aes-s390x.o aes-ctr.o aes-xts.o:::sha1-s390x.o sha256-s390x.o sha512-s390x.o::rc4-s390x.o:::::ghash-s390x.o:";
-my $armv4_asm="armcap.o armv4cpuid.o:bn_asm.o armv4-mont.o armv4-gf2m.o:::aes_core.o aes_cbc.o aes-armv4.o bsaes-armv7.o aesv8-armx.o:::sha1-armv4-large.o sha256-armv4.o sha512-armv4.o:::::::ghash-armv4.o ghashv8-armx.o::void";
-my $aarch64_asm="armcap.o arm64cpuid.o mem_clr.o::::aes_core.o aes_cbc.o aesv8-armx.o:::sha1-armv8.o sha256-armv8.o sha512-armv8.o:::::::ghashv8-armx.o:";
-my $parisc11_asm="pariscid.o:bn_asm.o parisc-mont.o:::aes_core.o aes_cbc.o aes-parisc.o:::sha1-parisc.o sha256-parisc.o sha512-parisc.o::rc4-parisc.o:::::ghash-parisc.o::32";
-my $parisc20_asm="pariscid.o:pa-risc2W.o parisc-mont.o:::aes_core.o aes_cbc.o aes-parisc.o:::sha1-parisc.o sha256-parisc.o sha512-parisc.o::rc4-parisc.o:::::ghash-parisc.o::64";
-my $ppc64_asm="ppccpuid.o ppccap.o:bn-ppc.o ppc-mont.o ppc64-mont.o:::aes_core.o aes_cbc.o aes-ppc.o vpaes-ppc.o aesp8-ppc.o:::sha1-ppc.o sha256-ppc.o sha512-ppc.o sha256p8-ppc.o sha512p8-ppc.o:::::::ghashp8-ppc.o:";
+my $s390x_asm="s390xcap.o s390xcpuid.o:bn-s390x.o s390x-mont.o s390x-gf2m.o:::aes-s390x.o aes-ctr.o aes-xts.o:::sha1-s390x.o sha256-s390x.o sha512-s390x.o::rc4-s390x.o:::::ghash-s390x.o::";
+my $armv4_asm="armcap.o armv4cpuid.o:bn_asm.o armv4-mont.o armv4-gf2m.o:::aes_core.o aes_cbc.o aes-armv4.o bsaes-armv7.o aesv8-armx.o:::sha1-armv4-large.o sha256-armv4.o sha512-armv4.o:::::::ghash-armv4.o ghashv8-armx.o:::void";
+my $aarch64_asm="armcap.o arm64cpuid.o mem_clr.o::::aes_core.o aes_cbc.o aesv8-armx.o:::sha1-armv8.o sha256-armv8.o sha512-armv8.o:::::::ghashv8-armx.o::";
+my $parisc11_asm="pariscid.o:bn_asm.o parisc-mont.o:::aes_core.o aes_cbc.o aes-parisc.o:::sha1-parisc.o sha256-parisc.o sha512-parisc.o::rc4-parisc.o:::::ghash-parisc.o:::32";
+my $parisc20_asm="pariscid.o:pa-risc2W.o parisc-mont.o:::aes_core.o aes_cbc.o aes-parisc.o:::sha1-parisc.o sha256-parisc.o sha512-parisc.o::rc4-parisc.o:::::ghash-parisc.o:::64";
+my $ppc64_asm="ppccpuid.o ppccap.o:bn-ppc.o ppc-mont.o ppc64-mont.o:::aes_core.o aes_cbc.o aes-ppc.o vpaes-ppc.o aesp8-ppc.o:::sha1-ppc.o sha256-ppc.o sha512-ppc.o sha256p8-ppc.o sha512p8-ppc.o:::::::ghashp8-ppc.o::";
 my $ppc32_asm=$ppc64_asm;
-my $no_asm="::::::::::::::::void";
+my $no_asm=":::::::::::::::::void";
 
 
 
@@ -184,7 +184,7 @@ my $no_asm="::::::::::::::::void";
 # seems to be sufficient?
 my $BSDthreads="-pthread -D_THREAD_SAFE -D_REENTRANT";
 
-#config-string	$cc : $cflags : $unistd : $thread_cflag : $sys_id : $lflags : $bn_ops : $cpuid_obj : $bn_obj : $ec_obj : $des_obj : $aes_obj : $bf_obj : $md5_obj : $sha1_obj : $cast_obj : $rc4_obj : $rmd160_obj : $rc5_obj : $wp_obj : $cmll_obj : $modes_obj : $engines_obj : $dso_scheme : $shared_target : $shared_cflag : $shared_ldflag : $shared_extension : $ranlib : $arflags : $multilib
+#config-string	$cc : $cflags : $unistd : $thread_cflag : $sys_id : $lflags : $bn_ops : $cpuid_obj : $bn_obj : $ec_obj : $des_obj : $aes_obj : $bf_obj : $md5_obj : $sha1_obj : $cast_obj : $rc4_obj : $rmd160_obj : $rc5_obj : $wp_obj : $cmll_obj : $modes_obj : $chapoly_obj : $engines_obj : $dso_scheme : $shared_target : $shared_cflag : $shared_ldflag : $shared_extension : $ranlib : $arflags : $multilib
 
 my %table=(
 # File 'TABLE' (created by 'make TABLE') contains the data from this list,
@@ -731,6 +731,7 @@ my $idx_rc5_obj = $idx++;
 my $idx_wp_obj = $idx++;
 my $idx_cmll_obj = $idx++;
 my $idx_modes_obj = $idx++;
+my $idx_chapoly_obj = $idx++;
 my $idx_engines_obj = $idx++;
 my $idx_perlasm_scheme = $idx++;
 my $idx_dso_scheme = $idx++;
@@ -1257,6 +1258,7 @@ my $rc5_obj = $fields[$idx_rc5_obj];
 my $wp_obj = $fields[$idx_wp_obj];
 my $cmll_obj = $fields[$idx_cmll_obj];
 my $modes_obj = $fields[$idx_modes_obj];
+my $chapoly_obj= $fields[$idx_chapoly_obj];
 my $engines_obj = $fields[$idx_engines_obj];
 my $perlasm_scheme = $fields[$idx_perlasm_scheme];
 my $dso_scheme = $fields[$idx_dso_scheme];
@@ -1425,7 +1427,8 @@ if ($no_asm)
 	{
 	$cpuid_obj=$bn_obj=$ec_obj=
 	$des_obj=$aes_obj=$bf_obj=$cast_obj=$rc4_obj=$rc5_obj=$cmll_obj=
-	$modes_obj=$sha1_obj=$md5_obj=$rmd160_obj=$wp_obj=$engines_obj="";
+	$modes_obj=$sha1_obj=$md5_obj=$rmd160_obj=$wp_obj=$engines_obj=
+	$chapoly_obj="";
 	}
 
 if (!$no_shared)
@@ -1640,6 +1643,10 @@ if ($ec_obj =~ /ecp_nistz256/)
 	{
 	$cflags.=" -DECP_NISTZ256_ASM";
 	}
+if ($chapoly_obj =~ /chacha20_poly1305/)
+	{
+	$cflags.=" -DCHAPOLY_ASM";
+	}
 
 # "Stringify" the C flags string.  This permits it to be made part of a string
 # and works as well on command lines.
@@ -1769,6 +1776,7 @@ while (<IN>)
 	s/^WP_ASM_OBJ=.*$/WP_ASM_OBJ= $wp_obj/;
 	s/^CMLL_ENC=.*$/CMLL_ENC= $cmll_obj/;
 	s/^MODES_ASM_OBJ.=*$/MODES_ASM_OBJ= $modes_obj/;
+	s/^CHAPOLY_ASM=.*$/CHAPOLY_ASM= $chapoly_obj/;
 	s/^ENGINES_ASM_OBJ.=*$/ENGINES_ASM_OBJ= $engines_obj/;
 	s/^PERLASM_SCHEME=.*$/PERLASM_SCHEME= $perlasm_scheme/;
 	s/^PROCESSOR=.*/PROCESSOR= $processor/;
@@ -1838,6 +1846,7 @@ print "SHA1_OBJ_ASM  =$sha1_obj\n";
 print "RMD160_OBJ_ASM=$rmd160_obj\n";
 print "CMLL_ENC      =$cmll_obj\n";
 print "MODES_OBJ     =$modes_obj\n";
+print "CHAPOLY_ASM   =$chapoly_obj\n";
 print "ENGINES_OBJ   =$engines_obj\n";
 print "PROCESSOR     =$processor\n";
 print "RANLIB        =$ranlib\n";
@@ -2241,7 +2250,7 @@ sub print_table_entry
 	my ($cc, $cflags, $unistd, $thread_cflag, $sys_id, $lflags,
 	    $bn_ops, $cpuid_obj, $bn_obj, $ec_obj, $des_obj, $aes_obj, $bf_obj,
 	    $md5_obj, $sha1_obj, $cast_obj, $rc4_obj, $rmd160_obj,
-	    $rc5_obj, $wp_obj, $cmll_obj, $modes_obj, $engines_obj,
+	    $rc5_obj, $wp_obj, $cmll_obj, $modes_obj, $chapoly_obj, $engines_obj,
 	    $perlasm_scheme, $dso_scheme, $shared_target, $shared_cflag,
 	    $shared_ldflag, $shared_extension, $ranlib, $arflags, $multilib)=
 	split(/\s*:\s*/,$table{$target} . ":" x 30 , -1);
@@ -2271,6 +2280,7 @@ sub print_table_entry
 \$wp_obj       = $wp_obj
 \$cmll_obj     = $cmll_obj
 \$modes_obj    = $modes_obj
+\$chapoly_obj  = $chapoly_obj
 \$engines_obj  = $engines_obj
 \$perlasm_scheme = $perlasm_scheme
 \$dso_scheme   = $dso_scheme
