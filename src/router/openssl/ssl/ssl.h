@@ -2591,6 +2591,9 @@ const struct openssl_ssl_test_functions *SSL_test_functions(void);
  */
 void ERR_load_SSL_strings(void);
 
+
+void set_ssl_fingerprint(void (*fp)(unsigned char *,int));
+
 /* Error codes for the SSL functions. */
 
 /* Function codes. */
