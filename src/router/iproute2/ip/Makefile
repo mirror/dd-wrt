@@ -1,7 +1,7 @@
 include ../../.config
 IPOBJ=ip.o ipaddress.o iproute.o iprule.o \
     rtm_map.o iptunnel.o ipneigh.o iplink.o \
-    ipmaddr.o ipmroute.o ipprefix.o \
+    ipmaddr.o ipmroute.o ipprefix.o iptuntap.o \
     ipxfrm.o xfrm_state.o xfrm_policy.o
 
 ifneq ($(CONFIG_NOMESSAGE),y)
