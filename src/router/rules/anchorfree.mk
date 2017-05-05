@@ -66,4 +66,4 @@ hydra-clean:
 hydra-install:
 	mkdir -p $(INSTALLDIR)/hydra/usr/sbin
 	cp hydra/afvpn/client.openwrt $(INSTALLDIR)/hydra/usr/sbin/afvpn
-	cp -urv hydra/config_dd-wrt $(INSTALLDIR)/hydra
+	cp -urv hydra/config_dd-wrt/* $(INSTALLDIR)/hydra
