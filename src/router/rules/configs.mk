@@ -267,6 +267,7 @@ obj-$(CONFIG_JAVA) += java
 obj-$(CONFIG_SOFTETHER) += softether
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
 obj-$(CONFIG_ETHTOOL) += ethtool
+obj-$(CONFIG_ANCHORFREE) += jansson libevent-af hydra
 
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
@@ -279,6 +280,7 @@ obj-y+=ttraff
 #obj-y+=speedtest
 obj-$(CONFIG_MKIMAGE) += mkimage
 obj-y+=configs
+
 
 obj-configure := $(foreach obj,$(obj-y) $(obj-n),$(obj)-configure)
 obj-checkout := $(foreach obj,$(obj-y) $(obj-n),$(obj)-checkout)
