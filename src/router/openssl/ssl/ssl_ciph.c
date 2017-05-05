@@ -164,11 +164,13 @@
 #define SSL_ENC_SEED_IDX        11
 #define SSL_ENC_AES128GCM_IDX   12
 #define SSL_ENC_AES256GCM_IDX   13
-#define SSL_ENC_NUM_IDX         14
+#define SSL_ENC_CHACHA20POLY1305_DRAFT_IDX  14
+#define SSL_ENC_CHACHA20POLY1305_IDX        15
+#define SSL_ENC_NUM_IDX         16
 
 static const EVP_CIPHER *ssl_cipher_methods[SSL_ENC_NUM_IDX] = {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-    NULL, NULL
+    NULL, NULL, NULL, NULL
 };
 
 #define SSL_COMP_NULL_IDX       0
@@ -315,6 +317,8 @@ static const SSL_CIPHER cipher_aliases[] = {
     {0, SSL_TXT_CAMELLIA256, 0, 0, 0, SSL_CAMELLIA256, 0, 0, 0, 0, 0, 0},
     {0, SSL_TXT_CAMELLIA, 0, 0, 0, SSL_CAMELLIA128 | SSL_CAMELLIA256, 0, 0, 0,
      0, 0, 0},
+    {0, SSL_TXT_CHACHA20_D, 0, 0, 0, SSL_CHACHA20POLY1305_D, 0, 0, 0, 0, 0, 0},
+    {0, SSL_TXT_CHACHA20, 0, 0, 0, SSL_CHACHA20POLY1305, 0, 0, 0, 0, 0, 0},
 
     /* MAC aliases */
     {0, SSL_TXT_MD5, 0, 0, 0, 0, SSL_MD5, 0, 0, 0, 0, 0},
@@ -430,6 +434,11 @@ void ssl_load_ciphers(void)
         EVP_get_cipherbyname(SN_aes_128_gcm);
     ssl_cipher_methods[SSL_ENC_AES256GCM_IDX] =
         EVP_get_cipherbyname(SN_aes_256_gcm);
+
+    ssl_cipher_methods[SSL_ENC_CHACHA20POLY1305_DRAFT_IDX] =
+        EVP_chacha20_poly1305_draft();
+    ssl_cipher_methods[SSL_ENC_CHACHA20POLY1305_IDX] =
+        EVP_chacha20_poly1305();
 
     ssl_digest_methods[SSL_MD_MD5_IDX] = EVP_get_digestbyname(SN_md5);
     ssl_mac_secret_size[SSL_MD_MD5_IDX] =
@@ -580,6 +589,12 @@ int ssl_cipher_get_evp(const SSL_SESSION *s, const EVP_CIPHER **enc,
         break;
     case SSL_AES256GCM:
         i = SSL_ENC_AES256GCM_IDX;
+        break;
+    case SSL_CHACHA20POLY1305_D:
+        i = SSL_ENC_CHACHA20POLY1305_DRAFT_IDX;
+        break;
+    case SSL_CHACHA20POLY1305:
+        i = SSL_ENC_CHACHA20POLY1305_IDX;
         break;
     default:
         i = -1;
@@ -805,6 +820,12 @@ static void ssl_cipher_get_disabled(unsigned long *mkey, unsigned long *auth,
         (ssl_cipher_methods[SSL_ENC_GOST89_IDX] ==
          NULL) ? SSL_eGOST2814789CNT : 0;
     *enc |= (ssl_cipher_methods[SSL_ENC_SEED_IDX] == NULL) ? SSL_SEED : 0;
+    *enc |=
+        (ssl_cipher_methods[SSL_ENC_CHACHA20POLY1305_DRAFT_IDX] ==
+         NULL) ? SSL_CHACHA20POLY1305_D : 0;
+    *enc |=
+        (ssl_cipher_methods[SSL_ENC_CHACHA20POLY1305_IDX] ==
+         NULL) ? SSL_CHACHA20POLY1305 : 0;
 
     *mac |= (ssl_digest_methods[SSL_MD_MD5_IDX] == NULL) ? SSL_MD5 : 0;
     *mac |= (ssl_digest_methods[SSL_MD_SHA1_IDX] == NULL) ? SSL_SHA1 : 0;
@@ -1823,6 +1844,12 @@ char *SSL_CIPHER_description(const SSL_CIPHER *cipher, char *buf, int len)
         break;
     case SSL_eGOST2814789CNT:
         enc = "GOST89(256)";
+        break;
+    case SSL_CHACHA20POLY1305_D:
+        enc = "ChaCha20-Poly1305-draft";
+        break;
+    case SSL_CHACHA20POLY1305:
+        enc = "ChaCha20-Poly1305";
         break;
     default:
         enc = "unknown";

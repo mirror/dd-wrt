@@ -29,7 +29,8 @@ LIBSRC= encode.c digest.c evp_enc.c evp_key.c evp_acnf.c evp_cnf.c \
 	c_all.c c_allc.c c_alld.c evp_lib.c bio_ok.c \
 	evp_pkey.c evp_pbe.c p5_crpt.c p5_crpt2.c \
 	e_old.c pmeth_lib.c pmeth_fn.c pmeth_gn.c m_sigver.c \
-	e_aes_cbc_hmac_sha1.c e_aes_cbc_hmac_sha256.c e_rc4_hmac_md5.c
+	e_aes_cbc_hmac_sha1.c e_aes_cbc_hmac_sha256.c e_rc4_hmac_md5.c \
+	e_chacha20_poly1305.c
 
 LIBOBJ=	encode.o digest.o evp_enc.o evp_key.o evp_acnf.o evp_cnf.o \
 	e_des.o e_bf.o e_idea.o e_des3.o e_camellia.o\
@@ -42,7 +43,8 @@ LIBOBJ=	encode.o digest.o evp_enc.o evp_key.o evp_acnf.o evp_cnf.o \
 	c_all.o c_allc.o c_alld.o evp_lib.o bio_ok.o \
 	evp_pkey.o evp_pbe.o p5_crpt.o p5_crpt2.o \
 	e_old.o pmeth_lib.o pmeth_fn.o pmeth_gn.o m_sigver.o \
-	e_aes_cbc_hmac_sha1.o e_aes_cbc_hmac_sha256.o e_rc4_hmac_md5.o
+	e_aes_cbc_hmac_sha1.o e_aes_cbc_hmac_sha256.o e_rc4_hmac_md5.o \
+	e_chacha20_poly1305.o
 
 SRC= $(LIBSRC)
 
@@ -793,3 +795,5 @@ pmeth_lib.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
 pmeth_lib.o: ../../include/openssl/symhacks.h ../../include/openssl/x509.h
 pmeth_lib.o: ../../include/openssl/x509_vfy.h ../asn1/asn1_locl.h ../cryptlib.h
 pmeth_lib.o: evp_locl.h pmeth_lib.c
+e_chacha20_poly1305.o: ../../include/openssl/chacha20poly1305.h
+e_chacha20_poly1305.o: e_chacha20_poly1305.c
