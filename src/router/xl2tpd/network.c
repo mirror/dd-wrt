@@ -136,7 +136,7 @@ int init_network (void)
     return 0;
 }
 
-inline void extract (void *buf, int *tunnel, int *call)
+static inline void extract (void *buf, int *tunnel, int *call)
 {
     /*
      * Extract the tunnel and call #'s, and fix the order of the 
@@ -156,7 +156,7 @@ inline void extract (void *buf, int *tunnel, int *call)
     }
 }
 
-inline void fix_hdr (void *buf)
+static inline void fix_hdr (void *buf)
 {
     /*
      * Fix the byte order of the header
