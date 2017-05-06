@@ -1,4 +1,4 @@
-util-linux-configure:
+util-linux-configure: ncurses
 	make -C util-linux clean
 	cd util-linux && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/tmp CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF" PKG_CONFIG="/tmp" NCURSES_CFLAGS="-I$(TOP)/ncurses/include" NCURSES_LIBS="-L$(TOP)/ncurses/lib -lncurses" \
 	--disable-rpath \
@@ -13,7 +13,7 @@ util-linux-configure:
 util-linux-clean:
 	make -C util-linux clean
 
-util-linux:
+util-linux: ncurses
 	make -C util-linux
 
 util-linux-install:
