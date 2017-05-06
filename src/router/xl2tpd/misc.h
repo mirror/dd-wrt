@@ -71,11 +71,36 @@ extern void l2tp_log (int level, const char *fmt, ...);
 #else
 #define l2tp_log(level,fmt,...) while(0) {}
 #endif
+static inline void swaps (void *buf_v, int len)
+{
+#ifdef __alpha
+    /* Reverse byte order alpha is little endian so lest save a step.
+       to make things work out easier */
+    int x;
+    unsigned char t1;
+    unsigned char *tmp = (_u16 *) buf_v;
+    for (x = 0; x < len; x += 2)
+    {
+        t1 = tmp[x];
+        tmp[x] = tmp[x + 1];
+        tmp[x + 1] = t1;
+    }
+#else
+
+    /* Reverse byte order (if proper to do so) 
+       to make things work out easier */
+    int x;
+	struct hw { unsigned short s; } __attribute__ ((packed)) *p = (struct hw *) buf_v;
+	for (x = 0; x < len / 2; x++, p++)
+		p->s = ntohs(p->s); 
+#endif
+}
+
+
 
 extern struct buffer *new_buf (int);
 extern void udppush_handler (int);
 extern int addfcs (struct buffer *buf);
-extern inline void swaps (void *, int);
 extern void do_packet_dump (struct buffer *);
 extern void status (const char *fmt, ...);
 extern void status_handler (int signal);
