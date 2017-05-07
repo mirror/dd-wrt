@@ -343,6 +343,42 @@ void set_gpio(int gpio, int value)
 
 	}
 
+	if (brand == ROUTER_WRT_WRT3200ACM) {
+		switch (gpio) {
+		case 0:	// power
+			sysprintf("echo %d > /sys/class/leds/rango\\:white\\:power/brightness", value);
+			break;
+		case 3:
+			sysprintf("echo %d > /sys/class/leds/rango\\:white\\:sata/brightness", value);
+			break;
+		case 4:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb3_1/brightness", value);
+			break;
+		case 5:	// 5G
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb2/brightness", value);
+			break;
+		case 6:	// power
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:wan/brightness", value);
+			break;
+		case 7:	// power
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:amber\\:wan/brightness", value);
+			break;
+		case 8:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb3_2/brightness", value);
+			break;
+		case 9:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:wps/brightness", value);
+			break;
+		case 10:
+			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:amber\\:wps/brightness", value);
+			break;
+		default:
+			set_linux_gpio(gpio, value);
+			break;
+		}
+
+	}
+
 }
 #elif HAVE_ALPINE
 
