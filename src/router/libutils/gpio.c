@@ -343,7 +343,7 @@ void set_gpio(int gpio, int value)
 
 	}
 
-	if (brand == ROUTER_WRT_WRT3200ACM) {
+	if (brand == ROUTER_WRT_3200ACM) {
 		switch (gpio) {
 		case 0:	// power
 			sysprintf("echo %d > /sys/class/leds/rango\\:white\\:power/brightness", value);
