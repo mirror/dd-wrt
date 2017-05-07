@@ -1,7 +1,7 @@
 /*
- * Device Tree include file for Armada 385 based Linksys boards
+ * Device Tree file for the Linksys WRT3200ACM (Rango)
  *
- * Copyright (C) 2015 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2016 Imre Kaloz <kaloz@openwrt.org>
  *
  *
  * This file is dual-licensed: you can use it either under the terms
@@ -37,13 +37,14 @@
  *     OTHER DEALINGS IN THE SOFTWARE.
  */
 
+/dts-v1/;
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/input/input.h>
 #include "armada-385.dtsi"
 
 / {
-	model = "Linksys boards based on Armada 385";
-	compatible = "linksys,armada385", "marvell,armada385",
+	model = "Linksys WRT3200ACM";
+	compatible = "linksys,rango", "linksys,armada385", "marvell,armada385",
 		     "marvell,armada380";
 
 	chosen {
@@ -63,6 +64,11 @@
 			  MBUS_ID(0x0c, 0x04) 0 0xf1200000 0x100000>;
 
 		internal-regs {
+
+			spi@10600 {
+				status = "disabled";
+			};
+
 			i2c@11000 {
 				pinctrl-names = "default";
 				pinctrl-0 = <&i2c0_pins>;
@@ -78,6 +84,41 @@
 					#size-cells = <0>;
 					compatible = "nxp,pca9635";
 					reg = <0x68>;
+
+					wan_amber@0 {
+						label = "rango:amber:wan";
+						reg = <0x0>;
+					};
+
+					wan_white@1 {
+						label = "rango:white:wan";
+						reg = <0x1>;
+					};
+
+					usb2@5 {
+						label = "rango:white:usb2";
+						reg = <0x5>;
+					};
+
+					usb3_1@6 {
+						label = "rango:white:usb3_1";
+						reg = <0x6>;
+					};
+
+					usb3_2@7 {
+						label = "rango:white:usb3_2";
+						reg = <0x7>;
+					};
+
+					wps_white@8 {
+						label = "rango:white:wps";
+						reg = <0x8>;
+					};
+
+					wps_amber@9 {
+						label = "rango:amber:wps";
+						reg = <0x9>;
+					};
 				};
 			};
 
@@ -122,6 +163,16 @@
 				status = "okay";
 			};
 
+			sdhci@d8000 {
+				pinctrl-names = "default";
+				pinctrl-0 = <&sdhci_pins>;
+				no-1-8-v;
+				broken-cd;
+				wp-inverted;
+				bus-width = <8>;
+				status = "okay";
+			};
+
 			/* USB part of the eSATA/USB 2.0 port */
 			usb@58000 {
 				status = "okay";
@@ -145,50 +196,56 @@
 					read-only;
 				};
 
-				partition@100000 {
+				partition@200000 {
 					label = "u_env";
-					reg = <0x200000 0x40000>;    /* 256KB */
+					reg = <0x200000 0x20000>;    /* 128KB */
 				};
 
-				partition@140000 {
+				partition@220000 {
 					label = "s_env";
-					reg = <0x240000 0x40000>;    /* 256KB */
+					reg = <0x220000 0x40000>;    /* 256KB */
 				};
 
-				partition@900000 {
+				partition@7e0000 {
 					label = "devinfo";
-					reg = <0x900000 0x100000>;   /* 1MB */
+					reg = <0x7e0000 0x40000>;   /* 256KB */
+					read-only;
+				};
+
+				partition@820000 {
+					label = "sysdiag";
+					reg = <0x820000 0x1e0000>;   /* 1920KB */
 					read-only;
 				};
 
 				/* kernel1 overlaps with rootfs1 by design */
 				partition@a00000 {
 					label = "kernel1";
-					reg = <0xa00000 0x2800000>;  /* 40MB */
+					reg = <0xa00000 0x5000000>;  /* 80MB */
 				};
 
 				partition@1000000 {
 					label = "rootfs1";
-					reg = <0x1000000 0x2200000>;  /* 34MB */
+					reg = <0x1000000 0x4a00000>;  /* 74MB */
 				};
 
 				/* kernel2 overlaps with rootfs2 by design */
-				partition@3200000 {
+				partition@5a00000 {
 					label = "kernel2";
-					reg = <0x3200000 0x2800000>; /* 40MB */
+					reg = <0x5a00000 0x5000000>; /* 80MB */
 				};
 
-				partition@3800000 {
+				partition@6000000 {
 					label = "rootfs2";
-					reg = <0x3800000 0x2200000>; /* 34MB */
+					reg = <0x6000000 0x4a00000>; /* 74MB */
 				};
 
 				/*
-				 * 38MB, last MB is for the BBT, not writable
+				 * 86MB, last MB is for the BBT, not writable
 				 */
-				partition@5a00000 {
+				partition@aa00000 {
 					label = "syscfg";
-					reg = <0x5a00000 0x2600000>;
+					reg = <0xaa00000 0x5600000>;
 				};
 
 				/*
@@ -199,7 +256,7 @@
 				 */
 				partition@180000 {
 					label = "unused_area";
-					reg = <0x280000 0x680000>;   /* 6.5MB */
+					reg = <0x260000 0x5c0000>;   /* 5.75MB */
 				};
 			};
 		};
@@ -212,13 +269,25 @@
 			status = "okay";
 
 			pcie@1,0 {
-				/* Marvell 88W8864, 5GHz-only */
+				/* Marvell 88W8964, 5GHz-only */
 				status = "okay";
+
+				mwlwifi {
+					marvell,2ghz = <0>;
+					marvell,chainmask = <4 4>;
+				};
+
 			};
 
 			pcie@2,0 {
-				/* Marvell 88W8864, 2GHz-only */
+				/* Marvell 88W8964, 2GHz-only */
 				status = "okay";
+
+				mwlwifi {
+					marvell,5ghz = <0>;
+					marvell,chainmask = <4 4>;
+				};
+
 			};
 		};
 	};
@@ -236,14 +305,14 @@
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
 		enable-active-high;
-		gpio = <&gpio1 18 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio1 15 GPIO_ACTIVE_HIGH>;
 	};
 
 	gpio_keys {
 		compatible = "gpio-keys";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		pinctrl-0 = <&keys_pin>;
+		pinctrl-0 = <&reset_key_pin &wps_key_pin>;
 		pinctrl-names = "default";
 
 		button@1 {
@@ -261,17 +330,29 @@
 
 	gpio-leds {
 		compatible = "gpio-leds";
-		pinctrl-0 = <&power_led_pin &sata_led_pin>;
+		pinctrl-0 = <&power_led_pin &sata_led_pin &wlan_2g_led_pin &wlan_5g_led_pin>;
 		pinctrl-names = "default";
 
-		power {
-			gpios = <&gpio1 23 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
+		sata {
+			label = "rango:white:sata";
+			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "disk-activity";
 		};
 
-		sata {
-			gpios = <&gpio1 22 GPIO_ACTIVE_LOW>;
-			default-state = "off";
+		wlan_2g {
+			label = "rango:white:wlan_2g";
+			gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+		};
+
+		wlan_5g {
+			label = "rango:white:wlan_5g";
+			gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+		};
+
+		power {
+			label = "rango:white:power";
+			gpios = <&gpio1 24 GPIO_ACTIVE_HIGH>;
+			default-state = "on";
 		};
 	};
 
@@ -323,7 +404,7 @@
 	mvsw61xx {
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "marvell,88e6176";
+		compatible = "marvell,88e6352";
 		status = "okay";
 		reg = <0x10>;
 
@@ -331,30 +412,42 @@
 		cpu-port-0 = <5>;
 		cpu-port-1 = <6>;
 	};
+
 };
 
 &pinctrl {
-	keys_pin: keys-pin {
-		marvell,pins = "mpp24", "mpp29";
-		marvell,function = "gpio";
-	};
-
-	power_led_pin: power-led-pin {
-		marvell,pins = "mpp55";
-		marvell,function = "gpio";
-	};
-
 	sata_led_pin: sata-led-pin {
-		marvell,pins = "mpp54";
+		marvell,pins = "mpp21";
+		marvell,function = "gpio";
+	};
+
+	wps_key_pin: wps-key-pin {
+		marvell,pins = "mpp24";
+		marvell,function = "gpio";
+	};
+
+	reset_key_pin: reset-key-pin {
+		marvell,pins = "mpp29";
+		marvell,function = "gpio";
+	};
+
+	wlan_2g_led_pin: wlan-2g-led-pin {
+		marvell,pins = "mpp45";
+		marvell,function = "gpio";
+	};
+
+	wlan_5g_led_pin: wlan-5g-led-pin {
+		marvell,pins = "mpp46";
 		marvell,function = "gpio";
 	};
 
 	xhci0_vbus_pins: xhci0-vbus-pins {
-		marvell,pins = "mpp50";
+		marvell,pins = "mpp47";
 		marvell,function = "gpio";
 	};
-};
 
-&spi0 {
-	status = "disabled";
+	power_led_pin: power-led-pin {
+		marvell,pins = "mpp56";
+		marvell,function = "gpio";
+	};
 };

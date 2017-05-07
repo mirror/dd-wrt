@@ -1106,8 +1106,6 @@ static int marvell_read_status_page(struct phy_device *phydev, int page)
 		if (adv < 0)
 			return adv;
 
-		lpa &= adv;
-
 		if (status & MII_M1011_PHY_STATUS_FULLDUPLEX)
 			phydev->duplex = DUPLEX_FULL;
 		else
@@ -1523,7 +1521,7 @@ static struct phy_driver marvell_drivers[] = {
 		.phy_id = MARVELL_PHY_ID_88E1111,
 		.phy_id_mask = MARVELL_PHY_ID_MASK,
 		.name = "Marvell 88E1111",
-		.features = PHY_GBIT_FEATURES,
+		.features = PHY_GBIT_FEATURES | SUPPORTED_Pause,
 		.flags = PHY_HAS_INTERRUPT,
 		.probe = marvell_probe,
 		.config_init = &m88e1111_config_init,
@@ -1671,7 +1669,8 @@ static struct phy_driver marvell_drivers[] = {
 		.phy_id = MARVELL_PHY_ID_88E1510,
 		.phy_id_mask = MARVELL_PHY_ID_MASK,
 		.name = "Marvell 88E1510",
-		.features = PHY_GBIT_FEATURES | SUPPORTED_FIBRE,
+		.features = PHY_GBIT_FEATURES | SUPPORTED_FIBRE |
+				SUPPORTED_Pause,
 		.flags = PHY_HAS_INTERRUPT,
 		.probe = marvell_probe,
 		.config_init = &m88e1510_config_init,
@@ -1690,7 +1689,7 @@ static struct phy_driver marvell_drivers[] = {
 		.phy_id = MARVELL_PHY_ID_88E1540,
 		.phy_id_mask = MARVELL_PHY_ID_MASK,
 		.name = "Marvell 88E1540",
-		.features = PHY_GBIT_FEATURES,
+		.features = PHY_GBIT_FEATURES | SUPPORTED_Pause,
 		.flags = PHY_HAS_INTERRUPT,
 		.probe = marvell_probe,
 		.config_init = &marvell_config_init,

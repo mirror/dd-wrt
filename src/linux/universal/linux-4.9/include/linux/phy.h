@@ -153,6 +153,7 @@ static inline const char *phy_modes(phy_interface_t interface)
 #define MII_ADDR_C45 (1<<30)
 
 struct device;
+struct phylink;
 struct sk_buff;
 
 /*
@@ -423,10 +424,12 @@ struct phy_device {
 
 	struct mutex lock;
 
+	struct phylink *phylink;
 	struct net_device *attached_dev;
 
 	u8 mdix;
 
+	void (*phy_link_change)(struct phy_device *, bool up, bool do_carrier);
 	void (*adjust_link)(struct net_device *dev);
 
 	/*
@@ -584,6 +587,30 @@ struct phy_driver {
 	 */
 	void (*link_change_notify)(struct phy_device *dev);
 
+	/*
+	 * Phy specific driver override for reading a MMD register.
+	 * This function is optional for PHY specific drivers.  When
+	 * not provided, the default MMD read function will be used
+	 * by phy_read_mmd(), which will use either a direct read for
+	 * Clause 45 PHYs or an indirect read for Clause 22 PHYs.
+	 *  devnum is the MMD device number within the PHY device,
+	 *  regnum is the register within the selected MMD device.
+	 */
+	int (*read_mmd)(struct phy_device *dev, int devnum, u16 regnum);
+
+	/*
+	 * Phy specific driver override for writing a MMD register.
+	 * This function is optional for PHY specific drivers.  When
+	 * not provided, the default MMD write function will be used
+	 * by phy_write_mmd(), which will use either a direct write for
+	 * Clause 45 PHYs, or an indirect write for Clause 22 PHYs.
+	 *  devnum is the MMD device number within the PHY device,
+	 *  regnum is the register within the selected MMD device.
+	 *  val is the value to be written.
+	 */
+	int (*write_mmd)(struct phy_device *dev, int devnum, u16 regnum,
+			 u16 val);
+
 	/* A function provided by a phy specific driver to override the
 	 * the PHY driver framework support for reading a MMD register
 	 * from the PHY. If not supported, return -1. This function is
@@ -632,6 +659,24 @@ struct phy_fixup {
 	int (*run)(struct phy_device *phydev);
 };
 
+const char *phy_speed_to_str(int speed);
+const char *phy_duplex_to_str(unsigned int duplex);
+
+/* A structure for mapping a particular speed and duplex
+ * combination to a particular SUPPORTED and ADVERTISED value
+ */
+struct phy_setting {
+	u32 speed;
+	u8 duplex;
+	u8 bit;
+};
+
+const struct phy_setting *
+phy_lookup_setting(int speed, int duplex, const unsigned long *mask,
+		   size_t maxbit, bool exact);
+size_t phy_speeds(unsigned int *speeds, size_t size,
+		  unsigned long *mask, size_t maxbit);
+
 /**
  * phy_read_mmd - Convenience function for reading a register
  * from an MMD on a given PHY.
@@ -641,14 +686,7 @@ struct phy_fixup {
  *
  * Same rules as for phy_read();
  */
-static inline int phy_read_mmd(struct phy_device *phydev, int devad, u32 regnum)
-{
-	if (!phydev->is_c45)
-		return -EOPNOTSUPP;
-
-	return mdiobus_read(phydev->mdio.bus, phydev->mdio.addr,
-			    MII_ADDR_C45 | (devad << 16) | (regnum & 0xffff));
-}
+int phy_read_mmd(struct phy_device *phydev, int devad, u32 regnum);
 
 /**
  * phy_read_mmd_indirect - reads data from the MMD registers
@@ -742,16 +780,7 @@ static inline bool phy_is_pseudo_fixed_link(struct phy_device *phydev)
  *
  * Same rules as for phy_write();
  */
-static inline int phy_write_mmd(struct phy_device *phydev, int devad,
-				u32 regnum, u16 val)
-{
-	if (!phydev->is_c45)
-		return -EOPNOTSUPP;
-
-	regnum = MII_ADDR_C45 | ((devad & 0x1f) << 16) | (regnum & 0xffff);
-
-	return mdiobus_write(phydev->mdio.bus, phydev->mdio.addr, regnum, val);
-}
+int phy_write_mmd(struct phy_device *phydev, int devad, u32 regnum, u16 val);
 
 
 /**
@@ -818,6 +847,8 @@ static inline const char *phydev_name(const struct phy_device *phydev)
 void phy_attached_print(struct phy_device *phydev, const char *fmt, ...)
 	__printf(2, 3);
 void phy_attached_info(struct phy_device *phydev);
+
+/* Clause 22 PHY */
 int genphy_config_init(struct phy_device *phydev);
 int genphy_setup_forced(struct phy_device *phydev);
 int genphy_restart_aneg(struct phy_device *phydev);
@@ -828,6 +859,16 @@ int genphy_read_status(struct phy_device *phydev);
 int genphy_suspend(struct phy_device *phydev);
 int genphy_resume(struct phy_device *phydev);
 int genphy_soft_reset(struct phy_device *phydev);
+
+/* Clause 45 PHY */
+int genphy_c45_restart_aneg(struct phy_device *phydev);
+int genphy_c45_aneg_done(struct phy_device *phydev);
+int genphy_c45_read_link(struct phy_device *phydev, u32 mmd_mask);
+int genphy_c45_read_lpa(struct phy_device *phydev);
+int genphy_c45_read_pma(struct phy_device *phydev);
+int genphy_c45_pma_setup_forced(struct phy_device *phydev);
+int genphy_c45_an_disable_aneg(struct phy_device *phydev);
+
 void phy_driver_unregister(struct phy_driver *drv);
 void phy_drivers_unregister(struct phy_driver *drv, int n);
 int phy_driver_register(struct phy_driver *new_driver, struct module *owner);
