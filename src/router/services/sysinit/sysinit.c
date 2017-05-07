@@ -2969,7 +2969,7 @@ void start_drivers(void)
 #endif
 		if (nvram_matchi("usb_storage", 1)) {
 			insmod("scsi_mod scsi_wait_scan sd_mod cdrom sr_mod usb-storage sata_mv ehci-orion");
-			insmod("libata libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx sdhci-pxav3");
+			insmod("libata libahci libahci_platform ahci ahci_platform ahci_platforms ahci_imx ahci_mvebu mmc_core pwrseq_emmc pwrseq_simple mmc_block sdhci sdhci-pltfm sdhci-esdhc-imx sdhci-pxav3");
 		}
 
 		if (nvram_matchi("usb_printer", 1)) {
