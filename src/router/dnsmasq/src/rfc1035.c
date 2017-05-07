@@ -1459,13 +1459,39 @@ size_t answer_request(struct dns_header *header, char *limit, size_t qlen,
 #endif
 		       (is_arpa == F_IPV4 && private_net(addr.addr.addr4, 1))))
 		{
-		  /* if not in cache, enabled and private IPV4 address, return NXDOMAIN */
-		  ans = 1;
-		  sec_data = 0;
-		  nxdomain = 1;
-		  if (!dryrun)
-		    log_query(F_CONFIG | F_REVERSE | is_arpa | F_NEG | F_NXDOMAIN, 
-			      name, &addr, NULL);
+		  struct server *serv;
+		  unsigned int namelen = strlen(name);
+		  char *nameend = name + namelen;
+
+		  /* see if have rev-server set */
+		  for (serv = daemon->servers; serv; serv = serv->next)
+		    {
+		      unsigned int domainlen;
+		      char *matchstart;
+
+		      if ((serv->flags & (SERV_HAS_DOMAIN | SERV_NO_ADDR)) != SERV_HAS_DOMAIN)
+		        continue;
+
+		      domainlen = strlen(serv->domain);
+		      if (domainlen == 0 || domainlen > namelen)
+		        continue;
+
+		      matchstart = nameend - domainlen;
+		      if (hostname_isequal(matchstart, serv->domain) &&
+		          (namelen == domainlen || *(matchstart-1) == '.' ))
+			break;
+		    }
+
+		  /* if no configured server, not in cache, enabled and private IPV4 address, return NXDOMAIN */
+		  if (!serv)
+		    {
+		      ans = 1;
+		      sec_data = 0;
+		      nxdomain = 1;
+		      if (!dryrun)
+			log_query(F_CONFIG | F_REVERSE | is_arpa | F_NEG | F_NXDOMAIN,
+				  name, &addr, NULL);
+		    }
 		}
 	    }
 	  

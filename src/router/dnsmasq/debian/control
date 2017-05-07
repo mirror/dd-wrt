@@ -5,12 +5,12 @@ Build-depends: gettext, libnetfilter-conntrack-dev [linux-any],
                libidn11-dev, libdbus-1-dev (>=0.61), libgmp-dev, 
                nettle-dev (>=2.4-3), libbsd-dev [!linux-any]
 Maintainer: Simon Kelley <simon@thekelleys.org.uk>
-Standards-Version: 3.9.5
+Standards-Version: 3.9.8
 
 Package: dnsmasq
 Architecture: all
 Depends: netbase, dnsmasq-base(>= ${binary:Version}),
-         init-system-helpers (>= 1.18~)
+         init-system-helpers (>= 1.18~), lsb-base (>= 3.0-6)
 Suggests: resolvconf
 Conflicts: resolvconf (<<1.15)
 Description: Small caching DNS proxy and DHCP/TFTP server

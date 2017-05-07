@@ -526,7 +526,14 @@ static int dhcp6_no_relay(struct state *state, int msg_type, void *inbuff, size_
       if (have_config(config, CONFIG_DISABLE))
 	ignore = 1;
     }
-
+  else if (state->clid &&
+	   find_config(daemon->dhcp_conf, NULL, state->clid, state->clid_len, state->mac, state->mac_len, state->mac_type, NULL))
+    {
+      known_id.net = "known-othernet";
+      known_id.next = state->tags;
+      state->tags = &known_id;
+    }
+  
 #ifdef OPTION6_PREFIX_CLASS
   /* OPTION_PREFIX_CLASS in ORO, send addresses in all prefix classes */
   if (daemon->prefix_classes && (msg_type == DHCP6SOLICIT || msg_type == DHCP6REQUEST))

@@ -413,14 +413,14 @@ static char *compile_opts =
      "no-"
 #  endif  
      "DHCPv6 "
-#  if !defined(HAVE_SCRIPT)
+#endif
+#if !defined(HAVE_SCRIPT)
      "no-scripts "
-#  else
-#    if !defined(HAVE_LUASCRIPT)
-       "no-"
-#    endif
-     "Lua "
+#else
+#  if !defined(HAVE_LUASCRIPT)
+     "no-"
 #  endif
+     "Lua "
 #endif
 #ifndef HAVE_TFTP
 "no-"

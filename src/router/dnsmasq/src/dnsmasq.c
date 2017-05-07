@@ -1302,6 +1302,7 @@ static void async_event(int pipe, time_t now)
 		daemon->tcp_pids[i] = 0;
 	break;
 	
+#if defined(HAVE_SCRIPT)	
       case EVENT_KILLED:
 	my_syslog(LOG_WARNING, _("script process killed by signal %d"), ev.data);
 	break;
@@ -1315,12 +1316,19 @@ static void async_event(int pipe, time_t now)
 		  daemon->lease_change_command, strerror(ev.data));
 	break;
 
+      case EVENT_SCRIPT_LOG:
+	my_syslog(MS_SCRIPT | LOG_DEBUG, "%s", msg ? msg : "");
+        free(msg);
+	msg = NULL;
+	break;
+
 	/* necessary for fatal errors in helper */
       case EVENT_USER_ERR:
       case EVENT_DIE:
       case EVENT_LUA_ERR:
 	fatal_event(&ev, msg);
 	break;
+#endif
 
       case EVENT_REOPEN:
 	/* Note: this may leave TCP-handling processes with the old file still open.
@@ -1367,7 +1375,7 @@ static void async_event(int pipe, time_t now)
 	/* update timestamp file on TERM if time is considered valid */
 	if (daemon->back_to_the_future)
 	  {
-	     if (utime(daemon->timestamp_file, NULL) == -1)
+	     if (utimes(daemon->timestamp_file, NULL) == -1)
 		my_syslog(LOG_ERR, _("failed to update mtime on %s: %s"), daemon->timestamp_file, strerror(errno));
 	  }
 #endif
@@ -1747,29 +1755,15 @@ int icmp_ping(struct in_addr addr)
 {
   /* Try and get an ICMP echo from a machine. */
 
-  /* Note that whilst in the three second wait, we check for 
-     (and service) events on the DNS and TFTP  sockets, (so doing that
-     better not use any resources our caller has in use...)
-     but we remain deaf to signals or further DHCP packets. */
-
-  /* There can be a problem using dnsmasq_time() to end the loop, since
-     it's not monotonic, and can go backwards if the system clock is
-     tweaked, leading to the code getting stuck in this loop and
-     ignoring DHCP requests. To fix this, we check to see if select returned
-     as a result of a timeout rather than a socket becoming available. We
-     only allow this to happen as many times as it takes to get to the wait time
-     in quarter-second chunks. This provides a fallback way to end loop. */ 
-
-  int fd, rc;
+  int fd;
   struct sockaddr_in saddr;
   struct { 
     struct ip ip;
     struct icmp icmp;
   } packet;
   unsigned short id = rand16();
-  unsigned int i, j, timeout_count;
+  unsigned int i, j;
   int gotreply = 0;
-  time_t start, now;
 
 #if defined(HAVE_LINUX_NETWORK) || defined (HAVE_SOLARIS_NETWORK)
   if ((fd = make_icmp_sock()) == -1)
@@ -1799,14 +1793,46 @@ int icmp_ping(struct in_addr addr)
   while (retry_send(sendto(fd, (char *)&packet.icmp, sizeof(struct icmp), 0, 
 			   (struct sockaddr *)&saddr, sizeof(saddr))));
   
-  for (now = start = dnsmasq_time(), timeout_count = 0; 
-       (difftime(now, start) < (float)PING_WAIT) && (timeout_count < PING_WAIT * 4);)
+  gotreply = delay_dhcp(dnsmasq_time(), PING_WAIT, fd, addr.s_addr, id);
+
+#if defined(HAVE_LINUX_NETWORK) || defined(HAVE_SOLARIS_NETWORK)
+  while (retry_send(close(fd)));
+#else
+  opt = 1;
+  setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));
+#endif
+
+  return gotreply;
+}
+
+int delay_dhcp(time_t start, int sec, int fd, uint32_t addr, unsigned short id)
+{
+  /* Delay processing DHCP packets for "sec" seconds counting from "start".
+     If "fd" is not -1 it will stop waiting if an ICMP echo reply is received
+     from "addr" with ICMP ID "id" and return 1 */
+
+  /* Note that whilst waiting, we check for
+     (and service) events on the DNS and TFTP  sockets, (so doing that
+     better not use any resources our caller has in use...)
+     but we remain deaf to signals or further DHCP packets. */
+
+  /* There can be a problem using dnsmasq_time() to end the loop, since
+     it's not monotonic, and can go backwards if the system clock is
+     tweaked, leading to the code getting stuck in this loop and
+     ignoring DHCP requests. To fix this, we check to see if select returned
+     as a result of a timeout rather than a socket becoming available. We
+     only allow this to happen as many times as it takes to get to the wait time
+     in quarter-second chunks. This provides a fallback way to end loop. */
+
+  int rc, timeout_count;
+  time_t now;
+
+  for (now = dnsmasq_time(), timeout_count = 0;
+       (difftime(now, start) <= (float)sec) && (timeout_count < sec * 4);)
     {
-      struct sockaddr_in faddr;
-      socklen_t len = sizeof(faddr);
-      
       poll_reset();
-      poll_listen(fd, POLLIN);
+      if (fd != -1)
+        poll_listen(fd, POLLIN);
       set_dns_listeners(now);
       set_log_writer();
       
@@ -1823,10 +1849,10 @@ int icmp_ping(struct in_addr addr)
 	timeout_count++;
 
       now = dnsmasq_time();
-
+      
       check_log_writer(0);
       check_dns_listeners(now);
-
+      
 #ifdef HAVE_DHCP6
       if (daemon->doing_ra && poll_check(daemon->icmp6fd, POLLIN))
 	icmp6_packet(now);
@@ -1836,27 +1862,26 @@ int icmp_ping(struct in_addr addr)
       check_tftp_listeners(now);
 #endif
 
-      if (poll_check(fd, POLLIN) &&
-	  recvfrom(fd, &packet, sizeof(packet), 0,
-		   (struct sockaddr *)&faddr, &len) == sizeof(packet) &&
-	  saddr.sin_addr.s_addr == faddr.sin_addr.s_addr &&
-	  packet.icmp.icmp_type == ICMP_ECHOREPLY &&
-	  packet.icmp.icmp_seq == 0 &&
-	  packet.icmp.icmp_id == id)
-	{
-	  gotreply = 1;
-	  break;
+      if (fd != -1)
+        {
+          struct {
+            struct ip ip;
+            struct icmp icmp;
+          } packet;
+          struct sockaddr_in faddr;
+          socklen_t len = sizeof(faddr);
+	  
+          if (poll_check(fd, POLLIN) &&
+	      recvfrom(fd, &packet, sizeof(packet), 0, (struct sockaddr *)&faddr, &len) == sizeof(packet) &&
+	      addr == faddr.sin_addr.s_addr &&
+	      packet.icmp.icmp_type == ICMP_ECHOREPLY &&
+	      packet.icmp.icmp_seq == 0 &&
+	      packet.icmp.icmp_id == id)
+	    return 1;
 	}
     }
-  
-#if defined(HAVE_LINUX_NETWORK) || defined(HAVE_SOLARIS_NETWORK)
-  while (retry_send(close(fd)));
-#else
-  opt = 1;
-  setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &opt, sizeof(opt));
-#endif
 
-  return gotreply;
+  return 0;
 }
 #endif
 

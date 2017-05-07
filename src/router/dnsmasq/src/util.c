@@ -503,7 +503,8 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
 			return -1;
 		      out[i] = strtol(&in[j*2], NULL, 16);
 		      mask = mask << 1;
-		      i++;
+		      if (i++ == maxlen)
+			break; 
 		      if (j < bytes - 1)
 			in[(j+1)*2] = sav;
 		    }
