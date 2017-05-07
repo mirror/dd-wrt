@@ -32,8 +32,9 @@ Remember each fingerprint must have:
 * <code>paths</code> - Table containing possible path locations of the target
 * <code>login_check</code> - Login function of the target
 
-In addition, a fingerprint may have:
+In addition, a fingerprint should have:
 * <code>target_check</code> - Target validation function. If defined, it will be called to validate the target before attempting any logins.
+* <code>cpe</code> - Official CPE Dictionary entry (see https://nvd.nist.gov/cpe.cfm)
 
 Default fingerprint file: /nselib/data/http-default-accounts-fingerprints.lua
 This script was based on http-enum.
@@ -367,5 +368,7 @@ action = function(host, port)
       end
     end
   end
-  return output, stdnse.format_output(true, text_output)
+  if #text_output > 0 then
+    return output, stdnse.format_output(true, text_output)
+  end
 end
