@@ -163,7 +163,7 @@
 				status = "okay";
 			};
 
-			sdhci@d8000 {
+/*			sdhci@d8000 {
 				pinctrl-names = "default";
 				pinctrl-0 = <&sdhci_pins>;
 				no-1-8-v;
@@ -171,7 +171,7 @@
 				wp-inverted;
 				bus-width = <8>;
 				status = "okay";
-			};
+			};*/
 
 			/* USB part of the eSATA/USB 2.0 port */
 			usb@58000 {
@@ -582,6 +582,14 @@
 		};
 	};
 
+	mvsdio@d4000 {
+		compatible = "marvell,orion-sdio";
+		pinctrl-0 = <&sdio_pins1>;
+		pinctrl-names = "default";
+		status = "okay";
+		broken-cd;
+	};
+
 	mvsw61xx {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -630,5 +638,10 @@
 	power_led_pin: power-led-pin {
 		marvell,pins = "mpp56";
 		marvell,function = "gpio";
+	};
+
+	sdio_pins1: sdio_pins1 {
+		marvell,pins = "mpp50", "mpp54", "mpp55", "mpp57", "mpp58", "mpp59";
+		marvell,function = "sd0";
 	};
 };
