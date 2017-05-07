@@ -203,7 +203,7 @@
 
 				partition@220000 {
 					label = "s_env";
-					reg = <0x220000 0x40000>;    /* 256KB */
+					reg = <0x220000 0x20000>;    /* 128KB */
 				};
 
 				partition@7e0000 {
@@ -211,54 +211,45 @@
 					reg = <0x7e0000 0x40000>;   /* 256KB */
 					read-only;
 				};
-
 				partition@820000 {
 					label = "sysdiag";
-					reg = <0x820000 0x1e0000>;   /* 1920KB */
+					reg = <0x820000 0x1e0000>;   /* blahMB */
 					read-only;
 				};
-
 				/* kernel1 overlaps with rootfs1 by design */
 				partition@a00000 {
-					label = "kernel1";
-					reg = <0xa00000 0x5000000>;  /* 80MB */
+					label = "linux";
+					reg = <0xa00000 0x5000000>;  /* 83MB */
 				};
 
 				partition@1000000 {
-					label = "rootfs1";
-					reg = <0x1000000 0x4a00000>;  /* 74MB */
+					label = "rootfs";
+					reg = <0x1000000 0x4a00000>;    /* 37MB */
 				};
 
 				/* kernel2 overlaps with rootfs2 by design */
 				partition@5a00000 {
-					label = "kernel2";
-					reg = <0x5a00000 0x5000000>; /* 80MB */
+					label = "linux2";
+					reg = <0x5a00000 0x5000000>; /* 40MB */
 				};
 
 				partition@6000000 {
 					label = "rootfs2";
-					reg = <0x6000000 0x4a00000>; /* 74MB */
+					reg = <0x6000000 0x4900000>; /* 34MB */
+				};
+
+				partition@a900000 {
+					label = "nvram";
+					reg = <0xa900000 0x40000>;
 				};
 
 				/*
-				 * 86MB, last MB is for the BBT, not writable
+				 * 38MB, last MB is for the BBT, not writable
 				 */
 				partition@aa00000 {
-					label = "syscfg";
+					label = "ddwrt";
 					reg = <0xaa00000 0x5600000>;
-				};
-
-				/*
-				 * Unused area between "s_env" and "devinfo".
-				 * Moved here because otherwise the renumbered
-				 * partitions would break the bootloader
-				 * supplied bootargs
-				 */
-				partition@180000 {
-					label = "unused_area";
-					reg = <0x260000 0x5c0000>;   /* 5.75MB */
-				};
-			};
+				};			};
 		};
 
 		bm-bppi {
