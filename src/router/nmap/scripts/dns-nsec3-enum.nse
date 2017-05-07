@@ -19,7 +19,7 @@ with salt and number of iterations used. This technique is known as
 "NSEC3 walking".
 
 That info should then be fed into an offline cracker, like
-<code>unhash</code> from http://dnscurve.org/nsec3walker.html, to
+<code>unhash</code> from https://dnscurve.org/nsec3walker.html, to
 bruteforce the actual names from the hashes. Assuming that the script
 output was written into a text file <code>hashes.txt</code> like:
 <code>
@@ -46,7 +46,7 @@ Use the <code>dns-nsec-enum</code> script to handle servers that use NSEC
 rather than NSEC3.
 
 References:
-* http://dnscurve.org/nsec3walker.html
+* https://dnscurve.org/nsec3walker.html
 ]]
 ---
 -- @usage
@@ -175,7 +175,7 @@ local function generate_hash(domain, iter, salt)
   for word in string.gmatch(random_domain, "[^%.]+") do
     packed_domain[#packed_domain+1] = bin.pack("p", word)
   end
-  salt = bin.pack("H", salt)
+  salt = stdnse.fromhex( salt)
   local to_hash = bin.pack("AxA", table.concat(packed_domain), salt)
   iter = iter - 1
   local hash = openssl.sha1(to_hash)
