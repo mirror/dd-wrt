@@ -46,6 +46,13 @@ do
 	    make oldconfig ARCH=arm
     fi
 
+    grep "CONFIG_ARCH_MVEBU=y" $i
+    if [ $? -eq 0 ] 
+	then 
+	    sed -i 's/\CONFIG_CPU_BIG_ENDIAN=y/# CONFIG_CPU_BIG_ENDIAN is not set/g' .config	    
+	    make oldconfig ARCH=arm
+    fi
+
     grep "CONFIG_PPC32=y" $i
     if [ $? -eq 0 ] 
 	then 
