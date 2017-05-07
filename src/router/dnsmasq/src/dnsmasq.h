@@ -117,7 +117,6 @@ typedef unsigned long long u64;
 #include <sys/uio.h>
 #include <syslog.h>
 #include <dirent.h>
-#include <utime.h>
 #ifndef HAVE_LINUX_NETWORK
 #  include <net/if_dl.h>
 #endif
@@ -145,30 +144,31 @@ struct event_desc {
   int event, data, msg_sz;
 };
 
-#define EVENT_RELOAD    1
-#define EVENT_DUMP      2
-#define EVENT_ALARM     3
-#define EVENT_TERM      4
-#define EVENT_CHILD     5
-#define EVENT_REOPEN    6
-#define EVENT_EXITED    7
-#define EVENT_KILLED    8
-#define EVENT_EXEC_ERR  9
-#define EVENT_PIPE_ERR  10
-#define EVENT_USER_ERR  11
-#define EVENT_CAP_ERR   12
-#define EVENT_PIDFILE   13
-#define EVENT_HUSER_ERR 14
-#define EVENT_GROUP_ERR 15
-#define EVENT_DIE       16
-#define EVENT_LOG_ERR   17
-#define EVENT_FORK_ERR  18
-#define EVENT_LUA_ERR   19
-#define EVENT_TFTP_ERR  20
-#define EVENT_INIT      21
-#define EVENT_NEWADDR   22
-#define EVENT_NEWROUTE  23
-#define EVENT_TIME_ERR  24
+#define EVENT_RELOAD     1
+#define EVENT_DUMP       2
+#define EVENT_ALARM      3
+#define EVENT_TERM       4
+#define EVENT_CHILD      5
+#define EVENT_REOPEN     6
+#define EVENT_EXITED     7
+#define EVENT_KILLED     8
+#define EVENT_EXEC_ERR   9
+#define EVENT_PIPE_ERR   10
+#define EVENT_USER_ERR   11
+#define EVENT_CAP_ERR    12
+#define EVENT_PIDFILE    13
+#define EVENT_HUSER_ERR  14
+#define EVENT_GROUP_ERR  15
+#define EVENT_DIE        16
+#define EVENT_LOG_ERR    17
+#define EVENT_FORK_ERR   18
+#define EVENT_LUA_ERR    19
+#define EVENT_TFTP_ERR   20
+#define EVENT_INIT       21
+#define EVENT_NEWADDR    22
+#define EVENT_NEWROUTE   23
+#define EVENT_TIME_ERR   24
+#define EVENT_SCRIPT_LOG 25
 
 /* Exit codes. */
 #define EC_GOOD        0
@@ -211,7 +211,7 @@ struct event_desc {
 #define OPT_TFTP_SECURE    26
 #define OPT_TFTP_NOBLOCK   27
 #define OPT_LOG_OPTS       28
-#define OPT_TFTP_APREF     29
+#define OPT_TFTP_APREF_IP  29
 #define OPT_NO_OVERRIDE    30
 #define OPT_NO_REBIND      31
 #define OPT_ADD_MAC        32
@@ -238,12 +238,14 @@ struct event_desc {
 #define OPT_SCRIPT_ARP     53
 #define OPT_MAC_B64        54
 #define OPT_MAC_HEX        55
-#define OPT_LAST           56
+#define OPT_TFTP_APREF_MAC 56
+#define OPT_LAST           57
 
 /* extra flags for my_syslog, we use a couple of facilities since they are known 
    not to occupy the same bits as priorities, no matter how syslog.h is set up. */
-#define MS_TFTP LOG_USER
-#define MS_DHCP LOG_DAEMON 
+#define MS_TFTP   LOG_USER
+#define MS_DHCP   LOG_DAEMON
+#define MS_SCRIPT LOG_MAIL
 
 struct all_addr {
   union {
@@ -704,6 +706,12 @@ struct tag_if {
   struct tag_if *next;
 };
 
+struct delay_config {
+  int delay;
+  struct dhcp_netid *netid;
+  struct delay_config *next;
+};
+
 struct hwaddr_config {
   int hwaddr_len, hwaddr_type;
   unsigned char hwaddr[DHCP_CHADDR_MAX];
@@ -832,7 +840,8 @@ struct prefix_class {
 
 struct ra_interface {
   char *name;
-  int interval, lifetime, prio;
+  char *mtu_name;
+  int interval, lifetime, prio, mtu;
   struct ra_interface *next;
 };
 
@@ -974,6 +983,7 @@ extern struct daemon {
   struct tag_if *tag_if; 
   struct addr_list *override_relays;
   struct dhcp_relay *relay4, *relay6;
+  struct delay_config *delay_conf;
   int override;
   int enable_pxe;
   int doing_ra, doing_dhcp6;
@@ -1292,6 +1302,8 @@ struct dhcp_context *address_available(struct dhcp_context *context,
 struct dhcp_context *narrow_context(struct dhcp_context *context, 
 				    struct in_addr taddr,
 				    struct dhcp_netid *netids);
+struct ping_result *do_icmp_ping(time_t now, struct in_addr addr,
+				 unsigned int hash);
 int address_allocate(struct dhcp_context *context,
 		     struct in_addr *addrp, unsigned char *hwaddr, int hw_len,
 		     struct dhcp_netid *netids, time_t now);
@@ -1343,7 +1355,7 @@ void lease_add_extradata(struct dhcp_lease *lease, unsigned char *data,
 /* rfc2131.c */
 #ifdef HAVE_DHCP
 size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
-		  size_t sz, time_t now, int unicast_dest, int *is_inform, int pxe_fd, struct in_addr fallback);
+		  size_t sz, time_t now, int unicast_dest, int *is_inform, int pxe_fd, struct in_addr fallback, time_t recvtime);
 unsigned char *extended_hwaddr(int hwtype, int hwlen, unsigned char *hwaddr, 
 			       int clid_len, unsigned char *clid, int *len_out);
 #endif
@@ -1352,6 +1364,7 @@ unsigned char *extended_hwaddr(int hwtype, int hwlen, unsigned char *hwaddr,
 #ifdef HAVE_DHCP
 int make_icmp_sock(void);
 int icmp_ping(struct in_addr addr);
+int delay_dhcp(time_t start, int sec, int fd, uint32_t addr, unsigned short id);
 #endif
 void queue_event(int event);
 void send_alarm(time_t event, time_t now);

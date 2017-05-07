@@ -159,6 +159,7 @@ struct myoption {
 #define LOPT_SCRIPT_ARP    347
 #define LOPT_DHCPTTL       348
 #define LOPT_TFTP_MTU      349
+#define LOPT_REPLY_DELAY   350
  
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -242,7 +243,7 @@ static const struct myoption opts[] =
     { "enable-tftp", 2, 0, LOPT_TFTP },
     { "tftp-secure", 0, 0, LOPT_SECURE },
     { "tftp-no-fail", 0, 0, LOPT_TFTP_NO_FAIL },
-    { "tftp-unique-root", 0, 0, LOPT_APREF },
+    { "tftp-unique-root", 2, 0, LOPT_APREF },
     { "tftp-root", 1, 0, LOPT_PREFIX },
     { "tftp-max", 1, 0, LOPT_TFTP_MAX },
     { "tftp-mtu", 1, 0, LOPT_TFTP_MTU },
@@ -323,6 +324,7 @@ static const struct myoption opts[] =
     { "dns-loop-detect", 0, 0, LOPT_LOOP_DETECT },
     { "script-arp", 0, 0, LOPT_SCRIPT_ARP },
     { "dhcp-ttl", 1, 0 , LOPT_DHCPTTL },
+    { "dhcp-reply-delay", 1, 0, LOPT_REPLY_DELAY },
     { NULL, 0, 0, 0 }
   };
 
@@ -430,7 +432,7 @@ static struct {
   { LOPT_OVERRIDE, OPT_NO_OVERRIDE, NULL, gettext_noop("Do NOT reuse filename and server fields for extra DHCP options."), NULL },
   { LOPT_TFTP, ARG_DUP, "[=<intr>[,<intr>]]", gettext_noop("Enable integrated read-only TFTP server."), NULL },
   { LOPT_PREFIX, ARG_DUP, "<dir>[,<iface>]", gettext_noop("Export files by TFTP only from the specified subtree."), NULL },
-  { LOPT_APREF, OPT_TFTP_APREF, NULL, gettext_noop("Add client IP address to tftp-root."), NULL },
+  { LOPT_APREF, ARG_DUP, "[=ip|mac]", gettext_noop("Add client IP or hardware address to tftp-root."), NULL },
   { LOPT_SECURE, OPT_TFTP_SECURE, NULL, gettext_noop("Allow access only to files owned by the user running dnsmasq."), NULL },
   { LOPT_TFTP_NO_FAIL, OPT_TFTP_NO_FAIL, NULL, gettext_noop("Do not terminate the service if TFTP directories are inaccessible."), NULL },
   { LOPT_TFTP_MAX, ARG_ONE, "<integer>", gettext_noop("Maximum number of concurrent TFTP transfers (defaults to %s)."), "#" },
@@ -486,7 +488,7 @@ static struct {
 #ifdef OPTION6_PREFIX_CLASS 
   { LOPT_PREF_CLSS, ARG_DUP, "set:tag,<class>", gettext_noop("Specify DHCPv6 prefix class"), NULL },
 #endif
-  { LOPT_RA_PARAM, ARG_DUP, "<iface>,[<prio>,]<intval>[,<lifetime>]", gettext_noop("Set priority, resend-interval and router-lifetime"), NULL },
+  { LOPT_RA_PARAM, ARG_DUP, "<iface>,[mtu:<value>|<interface>|off,][<prio>,]<intval>[,<lifetime>]", gettext_noop("Set MTU, priority, resend-interval and router-lifetime"), NULL },
   { LOPT_QUIET_DHCP, OPT_QUIET_DHCP, NULL, gettext_noop("Do not log routine DHCP."), NULL },
   { LOPT_QUIET_DHCP6, OPT_QUIET_DHCP6, NULL, gettext_noop("Do not log routine DHCPv6."), NULL },
   { LOPT_QUIET_RA, OPT_QUIET_RA, NULL, gettext_noop("Do not log RA."), NULL },
@@ -494,6 +496,7 @@ static struct {
   { LOPT_LOOP_DETECT, OPT_LOOP_DETECT, NULL, gettext_noop("Detect and remove DNS forwarding loops."), NULL },
   { LOPT_IGNORE_ADDR, ARG_DUP, "<ipaddr>", gettext_noop("Ignore DNS responses containing ipaddr."), NULL }, 
   { LOPT_DHCPTTL, ARG_ONE, "<ttl>", gettext_noop("Set TTL in DNS responses with DHCP-derived addresses."), NULL }, 
+  { LOPT_REPLY_DELAY, ARG_ONE, "<integer>", gettext_noop("Delay DHCP replies for at least number of seconds."), NULL },
   { 0, 0, NULL, NULL, NULL }
 }; 
 
@@ -757,6 +760,7 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
 {
   int source_port = 0, serv_port = NAMESERVER_PORT;
   char *portno, *source;
+  char *interface_opt = NULL;
 #ifdef HAVE_IPV6
   int scope_index = 0;
   char *scope_id;
@@ -782,6 +786,19 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
   scope_id = split_chr(arg, '%');
 #endif
   
+  if (source) {
+    interface_opt = split_chr(source, '@');
+
+    if (interface_opt)
+      {
+#if defined(SO_BINDTODEVICE)
+	strncpy(interface, interface_opt, IF_NAMESIZE - 1);
+#else
+	return _("interface binding not supported");
+#endif
+      }
+  }
+
   if (inet_pton(AF_INET, arg, &addr->in.sin_addr) > 0)
     {
       addr->in.sin_port = htons(serv_port);	
@@ -800,6 +817,9 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
 	  if (!(inet_pton(AF_INET, source, &source_addr->in.sin_addr) > 0))
 	    {
 #if defined(SO_BINDTODEVICE)
+	      if (interface_opt)
+		return _("interface can only be specified once");
+	      
 	      source_addr->in.sin_addr.s_addr = INADDR_ANY;
 	      strncpy(interface, source, IF_NAMESIZE - 1);
 #else
@@ -832,7 +852,10 @@ char *parse_server(char *arg, union mysockaddr *addr, union mysockaddr *source_a
 	  if (inet_pton(AF_INET6, source, &source_addr->in6.sin6_addr) == 0)
 	    {
 #if defined(SO_BINDTODEVICE)
-	      source_addr->in6.sin6_addr = in6addr_any; 
+	      if (interface_opt)
+		return _("interface can only be specified once");
+	      
+	      source_addr->in6.sin6_addr = in6addr_any;
 	      strncpy(interface, source, IF_NAMESIZE - 1);
 #else
 	      return _("interface binding not supported");
@@ -2697,6 +2720,15 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	} 
       
       break;
+
+    case LOPT_APREF: /* --tftp-unique-root */
+      if (!arg || strcasecmp(arg, "ip") == 0)
+        set_option_bool(OPT_TFTP_APREF_IP);
+      else if (strcasecmp(arg, "mac") == 0)
+        set_option_bool(OPT_TFTP_APREF_MAC);
+      else
+        ret_err(gen_err);
+      break;
 #endif
 	      
     case LOPT_BRIDGE:   /* --bridge-interface */
@@ -3288,11 +3320,43 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	break;
       }
 
+    case LOPT_REPLY_DELAY: /* --dhcp-reply-delay */
+      {
+	struct dhcp_netid *id = NULL;
+	while (is_tag_prefix(arg))
+	  {
+	    struct dhcp_netid *newid = opt_malloc(sizeof(struct dhcp_netid));
+	    newid->next = id;
+	    id = newid;
+	    comma = split(arg);
+	    newid->net = opt_string_alloc(arg+4);
+	    arg = comma;
+	  };
+	
+	if (!arg)
+	  ret_err(gen_err);
+	else
+	  {
+	    struct delay_config *new;
+	    int delay;
+	    if (!atoi_check(arg, &delay))
+              ret_err(gen_err);
+	    
+	    new = opt_malloc(sizeof(struct delay_config));
+	    new->delay = delay;
+	    new->netid = id;
+            new->next = daemon->delay_conf;
+            daemon->delay_conf = new;
+	  }
+	
+	break;
+      }
+      
     case LOPT_PXE_PROMT:  /* --pxe-prompt */
        {
 	 struct dhcp_opt *new = opt_malloc(sizeof(struct dhcp_opt));
 	 int timeout;
-
+	 
 	 new->netid = NULL;
 	 new->opt = 10; /* PXE_MENU_PROMPT */
 
@@ -3642,7 +3706,21 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	  struct ra_interface *new = opt_malloc(sizeof(struct ra_interface));
 	  new->lifetime = -1;
 	  new->prio = 0;
+	  new->mtu = 0;
+	  new->mtu_name = NULL;
 	  new->name = opt_string_alloc(arg);
+	  if (strcasestr(comma, "mtu:") == comma)
+	    {
+	      arg = comma + 4;
+	      if (!(comma = split(comma)))
+	        goto err;
+	      if (!strcasecmp(arg, "off"))
+	        new->mtu = -1;
+	      else if (!atoi_check(arg, &new->mtu))
+	        new->mtu_name = opt_string_alloc(arg);
+	      else if (new->mtu < 1280)
+	        goto err;
+	    }
 	  if (strcasestr(comma, "high") == comma || strcasestr(comma, "low") == comma)
 	    {
 	      if (*comma == 'l' || *comma == 'L')
@@ -3654,6 +3732,7 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	   arg = split(comma);
 	   if (!atoi_check(comma, &new->interval) || 
 	      (arg && !atoi_check(arg, &new->lifetime)))
+err:
 	    ret_err(_("bad RA-params"));
 	  
 	  new->next = daemon->ra_interfaces;
@@ -3769,9 +3848,12 @@ static int one_opt(int option, char *arg, char *errstr, char *gen_err, int comma
 	while (arg != last)
 	  {
 	    alias = canonicalise_opt(arg);
+
+	    if (!alias || !target)
+	      ret_err(_("bad CNAME"));
 	    
 	    for (new = daemon->cnames; new; new = new->next)
-	      if (hostname_isequal(new->alias, arg))
+	      if (hostname_isequal(new->alias, alias))
 		ret_err(_("duplicate CNAME"));
 	    new = opt_malloc(sizeof(struct cname));
 	    new->next = daemon->cnames;
