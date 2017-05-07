@@ -475,7 +475,7 @@ int setup_timestamp(void)
       if (difftime(timestamp_time, time(0)) <=  0)
 	{
 	  /* time already OK, update timestamp, and do key checking from the start. */
-	  if (utime(daemon->timestamp_file, NULL) == -1)
+	  if (utimes(daemon->timestamp_file, NULL) == -1)
 	    my_syslog(LOG_ERR, _("failed to update mtime on %s: %s"), daemon->timestamp_file, strerror(errno));
 	  daemon->back_to_the_future = 1;
 	  return 0;
@@ -489,12 +489,14 @@ int setup_timestamp(void)
       int fd = open(daemon->timestamp_file, O_WRONLY | O_CREAT | O_NONBLOCK | O_EXCL, 0666);
       if (fd != -1)
 	{
-	  struct utimbuf timbuf;
+	  struct timeval tv[2];
 
 	  close(fd);
 	  
-	  timestamp_time = timbuf.actime = timbuf.modtime = 1420070400; /* 1-1-2015 */
-	  if (utime(daemon->timestamp_file, &timbuf) == 0)
+	  timestamp_time = 1420070400; /* 1-1-2015 */
+	  tv[0].tv_sec = tv[1].tv_sec = timestamp_time;
+	  tv[0].tv_usec = tv[1].tv_usec = 0;
+	  if (utimes(daemon->timestamp_file, tv) == 0)
 	    goto check_and_exit;
 	}
     }
@@ -519,7 +521,7 @@ static int check_date_range(u32 date_start, u32 date_end)
     {
       if (daemon->back_to_the_future == 0 && difftime(timestamp_time, curtime) <= 0)
 	{
-	  if (utime(daemon->timestamp_file, NULL) != 0)
+	  if (utimes(daemon->timestamp_file, NULL) != 0)
 	    my_syslog(LOG_ERR, _("failed to update mtime on %s: %s"), daemon->timestamp_file, strerror(errno));
 	  
 	  my_syslog(LOG_INFO, _("system time considered valid, now checking DNSSEC signature timestamps."));

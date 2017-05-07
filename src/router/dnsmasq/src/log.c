@@ -289,7 +289,9 @@ void my_syslog(int priority, const char *format, ...)
     func = "-tftp";
   else if ((LOG_FACMASK & priority) == MS_DHCP)
     func = "-dhcp";
-      
+  else if ((LOG_FACMASK & priority) == MS_SCRIPT)
+    func = "-script";
+	    
 #ifdef LOG_PRI
   priority = LOG_PRI(priority);
 #else

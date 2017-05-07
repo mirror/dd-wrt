@@ -11,7 +11,7 @@
 
 package=dnsmasq-base
 
-dpkg_buildflags := DEB_BUILD_MAINT_OPTIONS="hardening=+all" dpkg-buildflags
+dpkg_buildflags := DEB_BUILD_MAINT_OPTIONS="hardening=+all,+pie,+bindnow" dpkg-buildflags
 
 CFLAGS = $(shell $(dpkg_buildflags) --get CFLAGS)
 CFLAGS += $(shell $(dpkg_buildflags) --get CPPFLAGS)
@@ -214,6 +214,7 @@ ifeq ($(DEB_HOST_ARCH_OS),linux)
 	gzip -9n debian/utils/usr/share/man/man1/dhcp_lease_time.1
 ifeq (,$(findstring nostrip,$(DEB_BUILD_OPTIONS)))
 	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/utils/usr/bin/dhcp_release
+	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/utils/usr/bin/dhcp_release6
 	$(DEB_HOST_GNU_TYPE)-strip -R .note -R .comment debian/utils/usr/bin/dhcp_lease_time
 endif	
 	cd debian/utils && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | LC_ALL=C sort -z | xargs -r0 md5sum > DEBIAN/md5sums

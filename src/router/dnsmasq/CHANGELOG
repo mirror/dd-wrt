@@ -74,12 +74,47 @@ version 2.77
 	    of "local addresses only" entries. Thanks to Hannu Nyman for
 	    the patch.
 
-            Implement RFC 6842. Thanks to Reddeiah Raju Konduru for
-            pointing out that this was missing.
-
 	    Make --bogus-priv apply to IPv6, for the prefixes specified
 	    in RFC6303. Thanks to Kevin Darbyshire-Bryant for work on this.
-	
+
+	    Allow use of MAC addresses with --tftp-unique-root. Thanks
+	    to Floris Bos for the patch.
+
+            Add --dhcp-reply-delay option. Thanks to Floris Bos
+	    for the patch.
+
+            Add mtu setting facility to --ra-param. Thanks to David
+	    Flamand for the patch.
+
+	    Capture STDOUT and STDERR output from dhcp-script and log
+	    it as part of the dnsmasq log stream. Makes life easier
+	    for diagnosing unexpected problems in scripts.
+	    Thanks to Petr Mensik for the patch.
+
+	    Generate fatal errors when failing to parse the output
+	    of the dhcp-script in "init" mode. Avoids strange errors
+            when the script accidentally emits error messages.
+	    Thanks to Petr Mensik for the patch.
+
+            Make --rev-server for an RFC1918 subnet work even in the
+            presence of the --bogus-priv flag. Thanks to
+	    Vladislav Grishenko for the patch.
+
+	    Extend --ra-param mtu: field to allow an interface name.
+	    This allows the MTU of a WAN interface to be advertised on
+   	    the internal interfaces of a router. Thanks to
+	    Vladislav Grishenko for the patch.
+
+            Do ICMP-ping check for address-in-use for DHCPv4 when
+	    the client specifies an address in DHCPDISCOVER, and when
+	    an address in configured locally. Thanks to Alin Năstac
+ 	    for spotting the problem.
+
+	    Add new DHCP tag "known-othernet" which is set when only a
+	    dhcp-host exists for another subnet. Can be used to ensure
+	    that privileged hosts are not given "guest" addresses by
+	    accident. Thanks to Todd Sanket for the suggestion.
+
 
 version 2.76
             Include 0.0.0.0/8 in DNS rebind checks. This range 
@@ -87,7 +122,7 @@ version 2.76
 	    least, 0.0.0.0 accesses the local host, so could
 	    be targets for DNS rebinding. See RFC 5735 section 3 
 	    for details. Thanks to Stephen Röttger for the bug report.
-
+ 
 	    Enhance --add-subnet to allow arbitrary subnet addresses.
             Thanks to Ed Barsley for the patch.
 

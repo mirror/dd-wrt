@@ -467,14 +467,14 @@ to make configuration files clearer in this case.
 IPv6 addresses may include a %interface scope-id, eg
 fe80::202:a412:4512:7bbf%eth0.
 
-The optional string after the @ character tells
-dnsmasq how to set the source of the queries to this
-nameserver. It should be an ip-address, which should belong to the machine on which
-dnsmasq is running otherwise this server line will be logged and then
-ignored, or an interface name. If an interface name is given, then
-queries to the server will be forced via that interface; if an
-ip-address is given then the source address of the queries will be set
-to that address.
+The optional string after the @ character tells dnsmasq how to set the source of
+the queries to this nameserver. It can either be an ip-address, an interface
+name or both. The ip-address should belong to the machine on which dnsmasq is
+running, otherwise this server line will be logged and then ignored. If an
+interface name is given, then queries to the server will be forced via that
+interface; if an ip-address is given then the source address of the queries will
+be set to that address; and if both are given then a combination of ip-address
+and interface name will be used to steer requests to the server.
 The query-port flag is ignored for any servers which have a
 source address specified but the port may be specified directly as
 part of the source address. Forcing queries to an interface is not
@@ -1020,6 +1020,8 @@ dhcp-host directive (or one implied by /etc/ethers) then the special
 tag "known" is set. This allows dnsmasq to be configured to
 ignore requests from unknown machines using
 .B --dhcp-ignore=tag:!known
+If the host matches only a dhcp-host directive which cannot
+be used because it specifies an address on different subnet, the tag "known-othernet" is set.
 Ethernet addresses (but not client-ids) may have
 wildcard bytes, so for example 
 .B --dhcp-host=00:20:e0:3b:13:*,ignore 
@@ -1576,8 +1578,8 @@ database.
 
 
 All file descriptors are
-closed except stdin, stdout and stderr which are open to /dev/null
-(except in debug mode).
+closed except stdin, which is open to /dev/null, and stdout and stderr which capture output for logging by dnsmasq. 
+(In debug mode, stdio, stdout and stderr file are left as those inherited from the invoker of dnsmasq).
 
 The script is not invoked concurrently: at most one instance
 of the script is ever running (dnsmasq waits for an instance of script to exit
@@ -1775,7 +1777,7 @@ the relevant link-local address of the machine running dnsmasq is sent
 as recursive DNS server. If provided, the DHCPv6 options dns-server and
 domain-search are used for the DNS server (RDNSS) and the domain search list (DNSSL).
 .TP
-.B --ra-param=<interface>,[high|low],[[<ra-interval>],<router lifetime>]
+.B --ra-param=<interface>,[mtu:<integer>|<interface>|off,][high,|low,]<ra-interval>[,<router lifetime>]
 Set non-default values for router advertisements sent via an
 interface. The priority field for the router may be altered from the
 default of medium with eg
@@ -1785,9 +1787,19 @@ The interval between router advertisements may be set (in seconds) with
 The lifetime of the route may be changed or set to zero, which allows
 a router to advertise prefixes but not a route via itself. 
 .B --ra-parm=eth0,0,0
-(A value of zero for the interval means the default value.) All three parameters may be set at once.
-.B --ra-param=low,60,1200
+(A value of zero for the interval means the default value.) All four parameters may be set at once.
+.B --ra-param=eth0,mtu:1280,low,60,1200
+
 The interface field may include a wildcard.
+
+The mtu: parameter may be an arbitrary interface name, in which case the MTU value for that interface is used. This is useful
+for (eg) advertising the MTU of a WAN interface on the other interfaces of a router.
+.TP
+.B --dhcp-reply-delay=[tag:<tag>,]<integer>
+Delays sending DHCPOFFER and proxydhcp replies for at least the specified number of seconds.
+This can be used as workaround for bugs in PXE boot firmware that does not function properly when
+receiving an instant reply.
+This option takes into account the time already spent waiting (e.g. performing ping check) if any.
 .TP
 .B --enable-tftp[=<interface>[,<interface>]]
 Enable the TFTP server function. This is deliberately limited to that
@@ -1807,12 +1819,16 @@ directory is only used for TFTP requests via that interface.
 .B --tftp-no-fail
 Do not abort startup if specified tftp root directories are inaccessible.
 .TP
-.B --tftp-unique-root
-Add the IP address of the TFTP client as a path component on the end
-of the TFTP-root (in standard dotted-quad format). Only valid if a
-tftp-root is set and the directory exists. For instance, if tftp-root is "/tftp" and client 
-1.2.3.4 requests file "myfile" then the effective path will be
-"/tftp/1.2.3.4/myfile" if /tftp/1.2.3.4 exists or /tftp/myfile otherwise.
+.B --tftp-unique-root[=ip|mac]
+Add the IP or hardware address of the TFTP client as a path component on the end
+of the TFTP-root. Only valid if a tftp-root is set and the directory exists.
+Defaults to adding IP address (in standard dotted-quad format).
+For instance, if tftp-root is "/tftp" and client 1.2.3.4 requests file "myfile"
+then the effective path will be "/tftp/1.2.3.4/myfile" if /tftp/1.2.3.4 exists or /tftp/myfile otherwise.
+When "=mac" is specified it will append the MAC address instead, using lowercase zero padded digits
+separated by dashes, e.g.: 01-02-03-04-aa-bb
+Note that resolving MAC addresses is only possible if the client is in the local network or obtained
+a DHCP lease from us.
 .TP
 .B --tftp-secure
 Enable TFTP secure mode: without this, any file which is readable by

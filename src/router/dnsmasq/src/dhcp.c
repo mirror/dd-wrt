@@ -149,8 +149,10 @@ void dhcp_packet(time_t now, int pxe_fd)
   int rcvd_iface_index;
   struct in_addr iface_addr;
   struct iface_param parm;
+  time_t recvtime = now;
 #ifdef HAVE_LINUX_NETWORK
   struct arpreq arp_req;
+  struct timeval tv;
 #endif
   
   union {
@@ -177,6 +179,9 @@ void dhcp_packet(time_t now, int pxe_fd)
     return;
     
   #if defined (HAVE_LINUX_NETWORK)
+  if (ioctl(fd, SIOCGSTAMP, &tv) == 0)
+    recvtime = tv.tv_sec;
+
   if (msg.msg_controllen >= sizeof(struct cmsghdr))
     for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
       if (cmptr->cmsg_level == IPPROTO_IP && cmptr->cmsg_type == IP_PKTINFO)
@@ -335,14 +340,14 @@ void dhcp_packet(time_t now, int pxe_fd)
 
       lease_prune(NULL, now); /* lose any expired leases */
       iov.iov_len = dhcp_reply(parm.current, ifr.ifr_name, iface_index, (size_t)sz, 
-			       now, unicast_dest, &is_inform, pxe_fd, iface_addr);
+			       now, unicast_dest, &is_inform, pxe_fd, iface_addr, recvtime);
       lease_update_file(now);
       lease_update_dns(0);
       
       if (iov.iov_len == 0)
 	return;
     }
-  
+
   msg.msg_name = &dest;
   msg.msg_namelen = sizeof(dest);
   msg.msg_control = NULL;
@@ -638,6 +643,66 @@ struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct i
   return NULL;
 }
 
+/* Check if and address is in use by sending ICMP ping.
+   This wrapper handles a cache and load-limiting.
+   Return is NULL is address in use, or a pointer to a cache entry
+   recording that it isn't. */
+struct ping_result *do_icmp_ping(time_t now, struct in_addr addr, unsigned int hash)
+{
+  static struct ping_result dummy;
+  struct ping_result *r, *victim = NULL;
+  int count, max = (int)(0.6 * (((float)PING_CACHE_TIME)/
+				((float)PING_WAIT)));
+
+  /* check if we failed to ping addr sometime in the last
+     PING_CACHE_TIME seconds. If so, assume the same situation still exists.
+     This avoids problems when a stupid client bangs
+     on us repeatedly. As a final check, if we did more
+     than 60% of the possible ping checks in the last 
+     PING_CACHE_TIME, we are in high-load mode, so don't do any more. */
+  for (count = 0, r = daemon->ping_results; r; r = r->next)
+    if (difftime(now, r->time) >  (float)PING_CACHE_TIME)
+      victim = r; /* old record */
+    else 
+      {
+	count++;
+	if (r->addr.s_addr == addr.s_addr)
+	  return r;
+      }
+  
+  /* didn't find cached entry */
+  if ((count >= max) || option_bool(OPT_NO_PING))
+    {
+      /* overloaded, or configured not to check, return "not in use" */
+      dummy.hash = 0;
+      return &dummy;
+    }
+  else if (icmp_ping(addr))
+    return NULL; /* address in use. */
+  else
+    {
+      /* at this point victim may hold an expired record */
+      if (!victim)
+	{
+	  if ((victim = whine_malloc(sizeof(struct ping_result))))
+	    {
+	      victim->next = daemon->ping_results;
+	      daemon->ping_results = victim;
+	    }
+	}
+      
+      /* record that this address is OK for 30s 
+	 without more ping checks */
+      if (victim)
+	{
+	  victim->addr = addr;
+	  victim->time = now;
+	  victim->hash = hash;
+	}
+      return victim;
+    }
+}
+
 int address_allocate(struct dhcp_context *context,
 		     struct in_addr *addrp, unsigned char *hwaddr, int hw_len, 
 		     struct dhcp_netid *netids, time_t now)   
@@ -655,6 +720,10 @@ int address_allocate(struct dhcp_context *context,
      dispersal even with similarly-valued "strings". */ 
   for (j = 0, i = 0; i < hw_len; i++)
     j = hwaddr[i] + (j << 6) + (j << 16) - j;
+
+  /* j == 0 is marker */
+  if (j == 0)
+    j = 1;
   
   for (pass = 0; pass <= 1; pass++)
     for (c = context; c; c = c->current)
@@ -692,69 +761,27 @@ int address_allocate(struct dhcp_context *context,
 		(!IN_CLASSC(ntohl(addr.s_addr)) || 
 		 ((ntohl(addr.s_addr) & 0xff) != 0xff && ((ntohl(addr.s_addr) & 0xff) != 0x0))))
 	      {
-		struct ping_result *r, *victim = NULL;
-		int count, max = (int)(0.6 * (((float)PING_CACHE_TIME)/
-					      ((float)PING_WAIT)));
+		struct ping_result *r;
 		
-		*addrp = addr;
-
-		/* check if we failed to ping addr sometime in the last
-		   PING_CACHE_TIME seconds. If so, assume the same situation still exists.
-		   This avoids problems when a stupid client bangs
-		   on us repeatedly. As a final check, if we did more
-		   than 60% of the possible ping checks in the last 
-		   PING_CACHE_TIME, we are in high-load mode, so don't do any more. */
-		for (count = 0, r = daemon->ping_results; r; r = r->next)
-		  if (difftime(now, r->time) >  (float)PING_CACHE_TIME)
-		    victim = r; /* old record */
-		  else 
-		    {
-		      count++;
-		      if (r->addr.s_addr == addr.s_addr)
-			{
-			  /* consec-ip mode: we offered this address for another client
-			     (different hash) recently, don't offer it to this one. */
-			  if (option_bool(OPT_CONSEC_ADDR) && r->hash != j)
-			    break;
-			  
-			  return 1;
-			}
-		    }
-
-		if (!r) 
-		  {
-		    if ((count < max) && !option_bool(OPT_NO_PING) && icmp_ping(addr))
+		if ((r = do_icmp_ping(now, addr, j)))
+ 		  {
+		    /* consec-ip mode: we offered this address for another client
+		       (different hash) recently, don't offer it to this one. */
+		    if (!option_bool(OPT_CONSEC_ADDR) || r->hash == j)
 		      {
-			/* address in use: perturb address selection so that we are
-			   less likely to try this address again. */
-			if (!option_bool(OPT_CONSEC_ADDR))
-			  c->addr_epoch++;
-		      }
-		    else
-		      {
-			/* at this point victim may hold an expired record */
-			if (!victim)
-			  {
-			    if ((victim = whine_malloc(sizeof(struct ping_result))))
-			      {
-				victim->next = daemon->ping_results;
-				daemon->ping_results = victim;
-			      }
-			  }
-			
-			/* record that this address is OK for 30s 
-			   without more ping checks */
-			if (victim)
-			  {
-			    victim->addr = addr;
-			    victim->time = now;
-			    victim->hash = j;
-			  }
+			*addrp = addr;
 			return 1;
 		      }
 		  }
+		else
+		  {
+		    /* address in use: perturb address selection so that we are
+		       less likely to try this address again. */
+		    if (!option_bool(OPT_CONSEC_ADDR))
+		      c->addr_epoch++;
+		  }
 	      }
-
+	    
 	    addr.s_addr = htonl(ntohl(addr.s_addr) + 1);
 	    
 	    if (addr.s_addr == htonl(ntohl(c->end.s_addr) + 1))
