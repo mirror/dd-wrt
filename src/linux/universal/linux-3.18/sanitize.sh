@@ -24,7 +24,7 @@ do
 	    make oldconfig ARCH=arm
     fi
 
-    grep "CONFIG_ARCH_IXP4XX" $i
+    grep "CONFIG_ARCH_IXP4XX=y" $i
     if [ $? -eq 0 ] 
 	then 
 	    sed -i 's/\# CONFIG_CPU_BIG_ENDIAN is not set/CONFIG_CPU_BIG_ENDIAN=y/g' .config	    
