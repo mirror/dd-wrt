@@ -6,3 +6,4 @@ obj-$(CONFIG_SMP)			+= platsmp.o headsmp.o cns3xxx_fiq.o
 obj-$(CONFIG_HOTPLUG_CPU)		+= hotplug.o
 #obj-$(CONFIG_LOCAL_TIMERS)		+= localtimer.o
 obj-$(CONFIG_CPU_FREQ_CNS3XXX)		+= econa_cpufreq.o
+CFLAGS_pcie.o				+= -Wframe-larger-than=1536 # override default 1024, this is safe here
