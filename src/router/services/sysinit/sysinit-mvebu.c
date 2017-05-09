@@ -105,11 +105,11 @@ void start_sysinit(void)
 	/*
 	 * network drivers 
 	 */
-	insmod("/lib/ath9k/compat.ko");
-	insmod("/lib/ath9k/cfg80211.ko");
-	insmod("/lib/ath9k/mac80211.ko");
-	insmod("/lib/ath9k/mwlwifi.ko");
-	insmod("/lib/ath9k/mwifiex.ko");
+	insmod("compat");
+	insmod("cfg80211");
+	insmod("mac80211");
+	insmod("mwlwifi");
+	insmod("mwifiex");
 
 	int s;
 	struct ifreq ifr;
