@@ -5503,7 +5503,7 @@ int led_control(int type, int act)
 		ses_gpio = 0x009;
 		break;
 	case ROUTER_WRT_3200ACM:
-		usb_power = 0x02f;
+//		usb_power = 0x02f;
 		power_gpio = 0x000;
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;

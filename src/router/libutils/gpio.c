@@ -67,6 +67,7 @@ static void set_linux_gpio(int pin, int value)
 	char str[32];
 	char strdir[64];
 	int fd;
+	int tries = 0;
 	snprintf(str, sizeof(str), "/sys/class/gpio/gpio%d/value", pin);
 	snprintf(strdir, sizeof(strdir), "/sys/class/gpio/gpio%d/direction", pin);
       new_try:;
@@ -74,7 +75,12 @@ static void set_linux_gpio(int pin, int value)
 	if (fd == -1) {
 		if (writeint("/sys/class/gpio/export", pin))
 			return;	//prevent deadlock
-		goto new_try;
+		if ((tries++) < 10)
+			goto new_try;
+		else {
+			fprintf(stderr, "gpio %d has a problem\n", pin);
+			return;
+		}
 	}
 	close(fd);
 	writestr(strdir, "out");
@@ -88,6 +94,7 @@ static int get_linux_gpio(int pin)
 	char strdir[64];
 	FILE *fp;
 	int fd;
+	int tries = 0;
 	int val = 0;
 	sprintf(str, "/sys/class/gpio/gpio%d/value", pin);
 	sprintf(strdir, "/sys/class/gpio/gpio%d/direction", pin);
@@ -96,7 +103,12 @@ static int get_linux_gpio(int pin)
 	if (!fp) {
 		if (writeint("/sys/class/gpio/export", pin))
 			return 0;	// prevent deadlock
-		goto new_try;
+		if ((tries++) < 10)
+			goto new_try;
+		else {
+			fprintf(stderr, "gpio %d has a problem\n", pin);
+			return 0;
+		}
 	}
 	fclose(fp);
 	writestr(strdir, "in");
