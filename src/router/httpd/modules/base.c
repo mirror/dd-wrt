@@ -453,9 +453,16 @@ static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, 
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
 		test[i] = rand() % 255;
-
-	if (!handler->send_headers)
-		send_headers(200, "Ok", handler->extra_header, handler->mime_type, filesize, "bigfile.bin");
+	if (!handler->send_headers) {
+		char *extra;
+		if (handler->extra_header)
+			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *\r\n%s",
+				 handler->extra_header);
+		else
+			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *");
+		send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
+		free(extra);
+	}
 	for (i = 0; i < filesize / 65536; i++) {
 		wfwrite(test, 65536, 1, stream);
 	}
