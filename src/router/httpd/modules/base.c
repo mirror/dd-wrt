@@ -435,7 +435,35 @@ static char *insert(char *ifname, char *index, char *filename)
 	return temp;
 }
 
-// and now the tricky part (more dirty as dirty)
+static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, char *query)
+{
+	char fs[32];
+	char *temp2;
+	memset(fs, 0, sizeof(fs));
+	int idx = indexof(path, '?');
+	if (idx > 0) {
+		temp2 = &path[idx + 1];
+		strncpy(fs, temp2, sizeof(fs));
+	} else {
+		return;
+	}
+	long filesize = atol(fs);
+	long i;
+	char *test = malloc(65536);
+	srand(time(NULL));
+	for (i = 0; i < 65536; i++)
+		test[i] = rand() % 255;
+
+	if (!handler->send_headers)
+		send_headers(200, "Ok", handler->extra_header, handler->mime_type, filesize, "bigfile.bin");
+	for (i = 0; i < filesize / 65536; i++) {
+		wfwrite(test, 65536, 1, stream);
+	}
+	wfwrite(test, filesize % 65536, 1, stream);
+
+	free(test);
+}
+
 static void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char ifname[32];
@@ -446,6 +474,7 @@ static void do_filtertable(struct mime_handler *handler, char *path, webs_t stre
 		temp2 = &path[idx + 1];
 		strncpy(ifname, temp2, sizeof(ifname));
 	}
+// and now the tricky part (more dirty as dirty)
 	char *temp3 = websGetVar(stream, "ifname", NULL);
 	if (temp3) {
 		if (strlen(temp3) > 0) {
@@ -2514,9 +2543,13 @@ struct mime_handler mime_handlers[] = {
 	{"test.bin**", "application/octet-stream", no_cache, NULL, do_file,
 	 do_auth, 0},
 
+	{"bigfile.bin*", "application/octet-stream", no_cache, NULL,
+	 do_bigfile, do_auth, 0},
+
 #ifdef HAVE_DDLAN
 	{"nvrambak.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out, do_auth2, 0},
+
 	{"nvrambak**.bin*", "application/octet-stream", no_cache, NULL,
 	 nv_file_out,
 	 do_auth2, 0},

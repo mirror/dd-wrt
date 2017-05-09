@@ -59,8 +59,8 @@
 #endif
 
 #ifdef HAVE_MATRIXSSL
-# include <matrixSsl.h>
-# include <matrixssl_xface.h>
+#include <matrixSsl.h>
+#include <matrixssl_xface.h>
 #endif
 
 #ifdef HAVE_POLARSSL
@@ -181,7 +181,7 @@ extern char *get_mac_from_ip(char *ip);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(char *user, char *pass, char *dirname, char *authorization);
 static void send_error(int status, char *title, char *extra_header, char *text);
-static void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
+void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
@@ -343,7 +343,7 @@ static void send_error(int status, char *title, char *extra_header, char *text)
 	(void)wfflush(conn_fp);
 }
 
-static void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
+void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
 {
 	time_t now;
 	char timebuf[100];
@@ -942,88 +942,20 @@ static void handle_request(void)
 	}
 #endif
 
-#if 0
-	if (strstr(file, "cgi-bin")) {
-
-		auth_fail = 0;
-		if (!do_auth(conn_fp, auth_userid, auth_passwd, auth_realm, authorization, auth_check))
-			auth_fail = 1;
-		query = NULL;
-		if (check_connect_type() < 0) {
-			send_error(401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
-			return;
-		}
-		if (auth_fail == 1) {
-			send_authenticate(auth_realm);
-			auth_fail = 0;
-			return;
-		}
-		if (strcasecmp(method, "post") == 0) {
-			query = safe_malloc(10000);
-			if ((count = wfread(query, 1, cl, conn_fp))) {
-				query[count] = '\0';;
-				cl -= strlen(query);
-			} else {
-				free(query);
-				query = NULL;
-			}
-#if defined(linux)
-#ifdef HAVE_HTTPS
-			if (!do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-				/* Read up to two more characters */
-				if (fgetc(conn_fp->fp) != EOF)
-					(void)fgetc(conn_fp->fp);
-				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-			}
-#else
-			if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-				/* Read up to two more characters */
-				if (fgetc(conn_fp->fp) != EOF)
-					(void)fgetc(conn_fp->fp);
-				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-			}
-#endif
-#endif
-
-		}
-		exec = fopen("/tmp/exec.tmp", "wb");
-		fprintf(exec, "export REQUEST_METHOD=\"%s\"\n", method);
-		if (query)
-			fprintf(exec, "/bin/sh %s/%s</tmp/exec.query\n", server_dir != NULL ? server_dir : "/www", file);
-		else
-			fprintf(exec, "/%s/%s\n", server_dir != NULL ? server_dir : "/www", file);
-		fclose(exec);
-
-		if (query) {
-			exec = fopen("/tmp/exec.query", "wb");
-			fprintf(exec, "%s\n", query);
-			free(query);
-			fclose(exec);
-		}
-
-		chmod("/tmp/exec.tmp", 0700);
-		system2("/tmp/exec.tmp>/tmp/shellout.asp");
-
-		do_ej(NULL, "/tmp/shellout.asp", conn_fp, "");
-		unlink("/tmp/shellout.asp");
-		unlink("/tmp/exec.tmp");
-		unlink("/tmp/exec.query");
-
-	} else
-#endif
 	{
-		/* extract url args if present */
-		query = strchr(file, '?');
-		if (query) {
-			//see token length in createpageToken
-			char token[16] = "0";
-			strncpy(token, &query[1], sizeof(token));
-			nvram_set("token", token);
-			*query++ = 0;
-		} else {
-			nvram_seti("token", 0);
+		if (strncmp(file, "bigfile.bin", 11)) {
+			/* extract url args if present */
+			query = strchr(file, '?');
+			if (query) {
+				//see token length in createpageToken
+				char token[16] = "0";
+				strncpy(token, &query[1], sizeof(token));
+				nvram_set("token", token);
+				*query++ = 0;
+			} else {
+				nvram_seti("token", 0);
+			}
 		}
-
 		int changepassword = 0;
 
 #ifdef HAVE_REGISTER
