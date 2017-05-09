@@ -15,7 +15,7 @@
 #include <string.h>
 
 #ifdef HAVE_MATRIXSSL
-# include <matrixSsl.h>
+#include <matrixSsl.h>
 #endif
 
 #define CA_LIST "/etc/root.pem"

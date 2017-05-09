@@ -1,7 +1,7 @@
 #include "common.h"
 
 #ifdef HAVE_OPENSSL
-# include <openssl/err.h>
+#include <openssl/err.h>
 BIO *bio_err = 0;
 #endif
 
