@@ -778,10 +778,11 @@ static int gic_notifier(struct notifier_block *self, unsigned long cmd,	void *v)
 			break;
 		}
 	}
-
+#ifdef CONFIG_ARCH_ALPINE
 	/*do not accept interrupt from main gic*/
 	if (cmd == CPU_PM_ENTER)
 		gic_cpu_mask(0);
+#endif
 
 	return NOTIFY_OK;
 }
