@@ -134,7 +134,7 @@ static void watchdog(void)
 		if (getRouterBrand() == ROUTER_WRT_1900AC) {
 			int cpu;
 			FILE *tempfp;
-			tempfp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
+			tempfp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
 			if (tempfp) {
 				fscanf(tempfp, "%d", &cpu);
 				fclose(tempfp);
@@ -145,7 +145,7 @@ static void watchdog(void)
 					target = 10000;
 				target *= 255;
 				target /= 10000;
-				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/pwm1", target);
+				sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon1/pwm1", target);
 			}
 
 		}
