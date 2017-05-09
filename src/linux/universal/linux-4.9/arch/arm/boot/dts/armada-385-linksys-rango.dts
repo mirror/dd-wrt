@@ -262,9 +262,8 @@
 			pcie@1,0 {
 				/* Marvell 88W8964, 5GHz-only */
 				status = "okay";
-
 				mwlwifi {
-					marvell,2ghz = <0>;
+					/* marvell,2ghz = <1>; */
 					marvell,chainmask = <4 4>;
 					marvell,powertable {
 						AU =
@@ -390,15 +389,12 @@
 							<165 0 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0x15 0 0xf>;
 					};
 				};
-
 			};
 
 			pcie@2,0 {
-				/* Marvell 88W8964, 2GHz-only */
 				status = "okay";
-
 				mwlwifi {
-					marvell,5ghz = <0>;
+					marvell,5ghz = <1>;
 					marvell,chainmask = <4 4>;
 					marvell,powertable {
 						AU =
@@ -468,6 +464,7 @@
 							<11 0 0x17 0x12 0x12 0x12 0x13 0x13 0x13 0x13 0xf 0xf 0xf 0xf 0x0 0x0 0x0 0x0 0 0xf>;
 					};
 				};
+
 
 			};
 		};
