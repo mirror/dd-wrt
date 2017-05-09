@@ -5490,10 +5490,20 @@ int led_control(int type, int act)
 #ifdef HAVE_WRT1900AC
 	case ROUTER_WRT_1200AC:
 	case ROUTER_WRT_1900ACS:
-	case ROUTER_WRT_3200ACM:
+
 	case ROUTER_WRT_1900ACV2:
 		usb_power = 0x032;
 	case ROUTER_WRT_1900AC:
+		power_gpio = 0x000;
+		diag_gpio = 0x100;
+		connected_gpio = 0x006;
+		disconnected_gpio = 0x007;
+		usb_gpio = 0x004;
+		usb_gpio1 = 0x005;
+		ses_gpio = 0x009;
+		break;
+	case ROUTER_WRT_3200ACM:
+		usb_power = 0x02f;
 		power_gpio = 0x000;
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;
