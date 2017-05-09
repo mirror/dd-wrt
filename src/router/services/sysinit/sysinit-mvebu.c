@@ -115,12 +115,12 @@ void start_sysinit(void)
 	insmod("mmc_block");
 	insmod("sdhci");
 	insmod("sdhci-pltfm");
-		insmod("sdhci-pxav3");
-		insmod("mvsdio");
-		insmod("mwifiex_sdio.ko");
-		insmod("bluetooth");
-		insmod("btmrvl");
-		insmod("btmrvl_sdio");
+	insmod("sdhci-pxav3");
+	insmod("mvsdio");
+	insmod("mwifiex_sdio.ko");
+	insmod("bluetooth");
+	insmod("btmrvl");
+	insmod("btmrvl_sdio");
 	int s;
 	struct ifreq ifr;
 	char *recovery = getUEnv("auto_recovery");
