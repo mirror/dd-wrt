@@ -3066,23 +3066,6 @@ void start_drivers(void)
 
 	}
 #endif
-#ifdef HAVE_MVEBU
-	insmod("mmc_core");
-	insmod("mmc_block");
-	insmod("sdhci");
-	insmod("sdhci-pltfm");
-	if (nvram_matchi("sdio_loaded", 0)) {
-		insmod("sdhci-pxav3");
-		sleep(2);
-		insmod("mvsdio");
-		sleep(2);
-		insmod("mwifiex_sdio.ko");
-		insmod("bluetooth");
-		insmod("btmrvl");
-		insmod("btmrvl_sdio");
-		nvram_seti("sdio_loaded", 1);
-	}
-#endif
 #ifdef HAVE_ALPINE
 	set_smp_affinity(261, 1);
 #endif

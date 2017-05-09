@@ -111,6 +111,16 @@ void start_sysinit(void)
 	insmod("mwlwifi");
 	insmod("mwifiex");
 
+	insmod("mmc_core");
+	insmod("mmc_block");
+	insmod("sdhci");
+	insmod("sdhci-pltfm");
+		insmod("sdhci-pxav3");
+		insmod("mvsdio");
+		insmod("mwifiex_sdio.ko");
+		insmod("bluetooth");
+		insmod("btmrvl");
+		insmod("btmrvl_sdio");
 	int s;
 	struct ifreq ifr;
 	char *recovery = getUEnv("auto_recovery");
@@ -170,12 +180,9 @@ void start_sysinit(void)
 		set_smp_affinity(90, 2);
 		set_smp_affinity(27, 2);
 	} else {
-		set_smp_affinity(65, 2);
-		set_smp_affinity(193, 1);
-		set_smp_affinity(194, 2);
-		set_smp_affinity(195, 2);
+		set_smp_affinity(36, 2);
+		set_smp_affinity(46, 2);
 	}
-	nvram_seti("sdio_loaded", 0);
 
 	return;
 	cprintf("done\n");
