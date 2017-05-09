@@ -119,7 +119,7 @@ void start_devinit(void)
 	}
 	// sprintf (dev, "/dev/discs/disc%d/part1", index);
 	// mount (dev, "/boot", "ext2", MS_MGC_VAL, NULL);
-	if (strlen(disc) == 7) //mmcblk0
+	if (strlen(disc) == 7)	//mmcblk0
 		sprintf(dev, "/dev/%sp3", disc);
 	else
 		sprintf(dev, "/dev/%s3", disc);
