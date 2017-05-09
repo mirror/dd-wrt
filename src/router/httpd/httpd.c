@@ -494,7 +494,7 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
+static void do_file_2(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
 {
 
 	size_t len;
@@ -524,16 +524,16 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 
 void
 //do_file(char *path, FILE *stream)
-do_file(struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
+do_file(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, query, NULL);
+	do_file_2(method, handler, path, stream, query, NULL);
 }
 
 void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, query, attachment);
+	do_file_2(NULL, handler, path, stream, query, attachment);
 }
 
 #ifdef HSIAB_SUPPORT
@@ -635,7 +635,7 @@ static void handle_request(void)
 	}
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
-	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4)) {
+	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
 		return;
 	}
 	method = path = line;
@@ -701,7 +701,7 @@ static void handle_request(void)
 		}
 	}
 
-	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0) {
+	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0 && strcasecmp(method, "options") != 0) {
 		send_error(501, "Not Implemented", (char *)0, "That method is not implemented.");
 		return;
 	}
@@ -1094,7 +1094,7 @@ static void handle_request(void)
 						}
 					}
 					if (handler->output && file_found) {
-						handler->output(handler, file, conn_fp, query);
+						handler->output(method, handler, file, conn_fp, query);
 					} else {
 						send_error(404, "Not Found", (char *)0, "File not found.");
 					}
