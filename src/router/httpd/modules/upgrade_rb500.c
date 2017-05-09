@@ -32,16 +32,16 @@ static int upgrade_ret;
 
 void
 // do_upgrade_cgi(char *url, FILE *stream)
-do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t streamm, char *query)	// jimmy,
+do_upgrade_cgi(char *method, struct mime_handler *handler, char *url, webs_t streamm, char *query)	// jimmy,
 								// https,
 								// 8/6/2003
 {
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
 	if (upgrade_ret)
-		do_ej(handler, "Fail_u_s.asp", stream, NULL);
+		do_ej(NULL, handler, "Fail_u_s.asp", stream, NULL);
 	else
-		do_ej(handler, "Success_u_s.asp", stream, NULL);
+		do_ej(NULL, handler, "Success_u_s.asp", stream, NULL);
 	fprintf(stderr, "websdone\n");
 
 	websDone(stream, 200);
@@ -55,7 +55,7 @@ do_upgrade_cgi(struct mime_handler *handler, char *url, webs_t streamm, char *qu
 		sys_reboot();
 	}
 #else
-	do_ej(handler, "Fail_u_s.asp", stream, NULL);
+	do_ej(NULL, handler, "Fail_u_s.asp", stream, NULL);
 	websDone(stream, 200);
 #endif
 }

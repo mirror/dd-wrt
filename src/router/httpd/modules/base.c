@@ -435,7 +435,7 @@ static char *insert(char *ifname, char *index, char *filename)
 	return temp;
 }
 
-static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_bigfile(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char fs[32];
 	char *temp2;
@@ -449,10 +449,6 @@ static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, 
 	}
 	long filesize = atol(fs);
 	long i;
-	char *test = malloc(65536);
-	srand(time(NULL));
-	for (i = 0; i < 65536; i++)
-		test[i] = rand() % 255;
 	if (!handler->send_headers) {
 		char *extra;
 		if (handler->extra_header)
@@ -463,6 +459,13 @@ static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, 
 		send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
 		free(extra);
 	}
+	if (!strncasecmp(method, "OPTIONS", 7))
+		return;
+
+	char *test = malloc(65536);
+	srand(time(NULL));
+	for (i = 0; i < 65536; i++)
+		test[i] = rand() % 255;
 	for (i = 0; i < filesize / 65536; i++) {
 		wfwrite(test, 65536, 1, stream);
 	}
@@ -471,7 +474,7 @@ static void do_bigfile(struct mime_handler *handler, char *path, webs_t stream, 
 	free(test);
 }
 
-static void do_filtertable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_filtertable(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char ifname[32];
 	char *temp2;
@@ -504,7 +507,7 @@ static void do_filtertable(struct mime_handler *handler, char *path, webs_t stre
 #ifdef HAVE_FREERADIUS
 #include <radiusdb.h>
 
-static void cert_file_out(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void cert_file_out(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '/');
 	if (idx < 0)
@@ -524,7 +527,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
-static void do_radiuscert(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_radiuscert(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -676,7 +679,7 @@ static void do_radiuscert(struct mime_handler *handler, char *path, webs_t strea
 #endif
 
 #ifdef HAVE_ATH9K
-static void do_spectral_scan(struct mime_handler *handler, char *p, webs_t stream, char *query)
+static void do_spectral_scan(char *method, struct mime_handler *handler, char *p, webs_t stream, char *query)
 {
 #define json_cache "/tmp/spectral_scan.json"
 #define json_cache_timeout 2
@@ -731,7 +734,7 @@ static void do_spectral_scan(struct mime_handler *handler, char *p, webs_t strea
 }
 #endif
 
-static void do_activetable(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_activetable(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char *temp2 = NULL;
 	char ifname[32];
@@ -759,7 +762,7 @@ static void do_activetable(struct mime_handler *handler, char *path, webs_t stre
 	free(temp);
 }
 
-static void do_wds(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wds(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -773,7 +776,7 @@ static void do_wds(struct mime_handler *handler, char *path, webs_t stream, char
 	free(temp);
 }
 
-static void do_wireless_adv(struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wireless_adv(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -1186,21 +1189,21 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 			sprintf(path, "%s.asp", submit_button);
 	}
 	if (!strncmp(path, "WL_FilterTable", 14))
-		do_filtertable(NULL, path, wp, NULL);	// refresh
+		do_filtertable(NULL, NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
 	else if (!strncmp(path, "FreeRadiusCert", 14))
-		do_radiuscert(NULL, path, wp, NULL);	// refresh
+		do_radiuscert(NULL, NULL, path, wp, NULL);	// refresh
 #endif
 	// #ifdef HAVE_MADWIFI
 	else if (!strncmp(path, "WL_ActiveTable", 14))
-		do_activetable(NULL, path, wp, NULL);	// refresh
+		do_activetable(NULL, NULL, path, wp, NULL);	// refresh
 	else if (!strncmp(path, "Wireless_WDS", 12))
-		do_wds(NULL, path, wp, NULL);	// refresh
+		do_wds(NULL, NULL, path, wp, NULL);	// refresh
 	// #endif
 	else if (!strncmp(path, "Wireless_Advanced", 17))
-		do_wireless_adv(NULL, path, wp, NULL);	// refresh
+		do_wireless_adv(NULL, NULL, path, wp, NULL);	// refresh
 	else
-		do_ej(NULL, path, wp, NULL);	// refresh
+		do_ej(NULL, NULL, path, wp, NULL);	// refresh
 	websDone(wp, 200);
 
 	nvram_seti("gozila_action", 0);
@@ -1502,7 +1505,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	/** GUI Logout **/// Experimental, not work yet ... 
 	else if (!strncmp(value, "Logout", 6)) {
-		do_ej(NULL, "Logout.asp", wp, NULL);
+		do_ej(NULL, NULL, "Logout.asp", wp, NULL);
 		websDone(wp, 200);
 		do_logout();
 		return 1;
@@ -1541,23 +1544,23 @@ footer:
 		}
 
 		if (!strncmp(path, "WL_FilterTable", 14))
-			do_filtertable(NULL, path, wp, NULL);	// refresh
+			do_filtertable(NULL, NULL, path, wp, NULL);	// refresh
 #ifdef HAVE_FREERADIUS
 		else if (!strncmp(path, "FreeRadiusCert", 14))
-			do_radiuscert(NULL, path, wp, NULL);	// refresh      
+			do_radiuscert(NULL, NULL, path, wp, NULL);	// refresh      
 #endif
 		else if (!strncmp(path, "WL_ActiveTable", 14))
-			do_activetable(NULL, path, wp, NULL);	// refresh      
+			do_activetable(NULL, NULL, path, wp, NULL);	// refresh      
 		else if (!strncmp(path, "Wireless_WDS", 12))
-			do_wds(NULL, path, wp, NULL);	// refresh
+			do_wds(NULL, NULL, path, wp, NULL);	// refresh
 		else if (!strncmp(path, "Wireless_Advanced", 17))
-			do_wireless_adv(NULL, path, wp, NULL);	// refresh
+			do_wireless_adv(NULL, NULL, path, wp, NULL);	// refresh
 		else
-			do_ej(NULL, path, wp, NULL);	// refresh
+			do_ej(NULL, NULL, path, wp, NULL);	// refresh
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
-		do_ej(NULL, "Reboot.asp", wp, NULL);
+		do_ej(NULL, NULL, "Reboot.asp", wp, NULL);
 		websDone(wp, 200);
 #endif
 		// sleep (5);
@@ -1671,7 +1674,7 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_cfebackup(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	system2("cat /dev/mtd/0 > /tmp/cfe.bin");
 	do_file_attach(handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin");
@@ -1680,7 +1683,7 @@ static void do_cfebackup(struct mime_handler *handler, char *url, webs_t stream,
 #endif
 
 #ifdef HAVE_PRIVOXY
-static void do_wpad(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_wpad(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	FILE *fp;
 
@@ -1702,7 +1705,7 @@ static void do_wpad(struct mime_handler *handler, char *url, webs_t stream, char
 #endif
 
 #ifdef HAVE_ROUTERSTYLE
-static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_stylecss(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char *style = nvram_get("router_style");
 
@@ -1816,7 +1819,7 @@ static void do_stylecss(struct mime_handler *handler, char *url, webs_t stream, 
 		  sdata[29], sdata[30], sdata[31], sdata[32]);
 }
 
-static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_stylecss_ie(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	websWrite(stream, ".submitFooter input {\npadding:.362em .453em;\n}\n"	//
 		  "fieldset {\npadding-top:0;\n}\nfieldset legend {\n"	//
@@ -1824,18 +1827,18 @@ static void do_stylecss_ie(struct mime_handler *handler, char *url, webs_t strea
 }
 #endif
 #ifdef HAVE_REGISTER
-static void do_trial_logo(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_trial_logo(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
-	do_file(handler, url, stream, query);
+	do_file(method, handler, url, stream, query);
 #else
 	if (!isregistered_real()) {
-		do_file(handler, "style/logo-trial.png", stream, query);
+		do_file(method, handler, "style/logo-trial.png", stream, query);
 	} else {
 		if (iscpe()) {
-			do_file(handler, "style/logo-cpe.png", stream, query);
+			do_file(method, handler, "style/logo-cpe.png", stream, query);
 		} else {
-			do_file(handler, url, stream, query);
+			do_file(method, handler, url, stream, query);
 		}
 	}
 #endif
@@ -1848,7 +1851,7 @@ static void do_trial_logo(struct mime_handler *handler, char *url, webs_t stream
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
  */
 
-static void do_mypage(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_mypage(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
@@ -1875,7 +1878,7 @@ static void do_mypage(struct mime_handler *handler, char *url, webs_t stream, ch
 
 }
 
-static void do_fetchif(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_fetchif(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	char line[256];
 	int i, llen;
@@ -2146,7 +2149,7 @@ char *live_translate(const char *tran)
 }
 
 #ifdef HAVE_STATUS_SYSLOG
-static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_syslog(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 
 	static const char filename[] = "/var/log/messages";
@@ -2197,7 +2200,7 @@ static void do_syslog(struct mime_handler *handler, char *url, webs_t stream, ch
 	return;
 }
 #endif
-static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_ttgraph(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 #define COL_WIDTH 16		/* single column width */
 
@@ -2331,7 +2334,7 @@ static void do_ttgraph(struct mime_handler *handler, char *url, webs_t stream, c
 
 }
 
-static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void ttraff_backup(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 	system2("echo TRAFF-DATA > /tmp/traffdata.bak");
 	system2("nvram show | grep traff- >> /tmp/traffdata.bak");
@@ -2339,7 +2342,7 @@ static void ttraff_backup(struct mime_handler *handler, char *url, webs_t stream
 	unlink("/tmp/traffdata.bak");
 }
 
-static void do_apply_cgi(struct mime_handler *handler, char *url, webs_t stream, char *q)
+static void do_apply_cgi(char *method, struct mime_handler *handler, char *url, webs_t stream, char *q)
 {
 	char *path, *query;
 
@@ -2364,7 +2367,7 @@ extern int getdevicecount(void);
 #endif
 
 #ifdef HAVE_LANGUAGE
-static void do_language(struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, 
+static void do_language(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, 
 	    // https, 
 	    // 8/4/2003
 {
@@ -2375,7 +2378,7 @@ static void do_language(struct mime_handler *handler, char *path, webs_t stream,
 	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
 
 	asprintf(&lang, "%s%s", prefix, langname);
-	do_file(handler, lang, stream, NULL);
+	do_file(method, handler, lang, stream, NULL);
 
 	free(lang);
 	free(prefix);
