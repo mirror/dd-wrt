@@ -465,10 +465,10 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	if (!handler->send_headers) {
 		char *extra;
 		if (handler->extra_header)
-			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *\r\n%s",
+			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *\r\n%s",
 				 handler->extra_header);
 		else
-			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *");
+			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *");
 		if (!strncasecmp(method, "OPTIONS", 7)) {
 			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);
 			free(extra);
