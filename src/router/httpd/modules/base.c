@@ -71,7 +71,7 @@ int debug_value = 0;
 
 char *live_translate(const char *tran);
 #ifdef HAVE_BUFFALO
-void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query);
+void do_vsp_page(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query);
 #endif
 /*
  * Deal with side effects before committing 
@@ -447,7 +447,20 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	} else {
 		return;
 	}
-	long filesize = atol(fs);
+	char *size = strstr(fs, "size=");
+	long long filesize = 0;
+	if (!size)
+		filesize = atoll(fs);
+	else {
+		fs = size + 5;	//skip size=
+		idx = indexof(fs, '&');
+		if (idx > 0)
+			fs[idx] = 0;
+		filesize = atoll(fs);
+	}
+
+	if (!filesize || filesize < 0)
+		return;
 	long i;
 	if (!handler->send_headers) {
 		char *extra;
@@ -466,8 +479,18 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
 		test[i] = rand() % 255;
-	for (i = 0; i < filesize / 65536; i++) {
-		wfwrite(test, 65536, 1, stream);
+	if (filesize / 65536 > (1 << 32)) {
+		long long i64;
+
+		long long sz = filesize / 65536;
+		for (i64 = 0; i64 < sz; i64++) {
+			wfwrite(test, 65536, 1, stream);
+		}
+	} else {
+		long sz = filesize / 65536;
+		for (i = 0; i < sz; i++) {
+			wfwrite(test, 65536, 1, stream);
+		}
 	}
 	wfwrite(test, filesize % 65536, 1, stream);
 
@@ -2678,7 +2701,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 }
 
 #ifdef HAVE_BUFFALO
-void do_vsp_page(struct mime_handler *handler, char *url, webs_t stream, char *query)
+void do_vsp_page(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
 /*
 #ifdef HAVE_MADWIFI
