@@ -30,7 +30,7 @@ libevent-af-configure:
 HYDRA_OPTS:= \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	LD="$(ARCH)-linux-uclibc-ld" \
-	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) -DNEED_PRINTF" \
+	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) -DNEED_PRINTF -fno-strict-aliasing" \
 	EXTRA_CFLAGS+="-I$(TOP)/jansson/src" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/include" \
 	EXTRA_CFLAGS+="-I$(TOP)/openssl/include" \
