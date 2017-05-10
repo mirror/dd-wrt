@@ -435,6 +435,7 @@ static char *insert(char *ifname, char *index, char *filename)
 	return temp;
 }
 
+/* bigfile.bin download method used for benchmarking. use http://x.x.x.x/bigfile.bin?size=FILESIZE to request any filesize you want */
 static void do_bigfile(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
 	char fs[32];
@@ -450,17 +451,17 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	}
 	char *size = strstr(fs, parameter);
 	long long filesize = 0;
-	if (!size)
+	if (!size)		// if no argument parameter has been supplied, just use the following argument as numeric value
 		filesize = atoll(fs);
 	else {
 		char *s_fs = size + strlen(parameter);	//skip size=
-		idx = indexof(s_fs, '&');
+		idx = indexof(s_fs, '&');	// skip any following parameter
 		if (idx > 0)
 			s_fs[idx] = 0;
 		filesize = atoll(s_fs);
 	}
 
-	if (!filesize || filesize < 0)
+	if (!filesize || filesize < 0)	//if argument is not numeric or invalid, just return with no action
 		return;
 	long i;
 	if (!handler->send_headers) {
@@ -474,15 +475,13 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 		else
 			asprintf(&extra, "%s", options);
 		if (!strncasecmp(method, "OPTIONS", 7)) {
-			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);
-			free(extra);
-			return;
+			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+			goto ret;
 		} else {
 			send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
-			free(extra);
 		}
 	}
-
+	// send body in 64kb chunks based on random values
 	char *test = malloc(65536);
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
@@ -493,8 +492,12 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 		wfwrite(test, 65536, 1, stream);
 	}
 	wfwrite(test, filesize % 65536, 1, stream);
-
 	free(test);
+
+      ret:;
+	free(extra);
+	return;
+
 }
 
 static void do_filtertable(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)
