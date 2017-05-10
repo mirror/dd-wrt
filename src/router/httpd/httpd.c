@@ -148,17 +148,6 @@ char *server_dir = NULL;
 #ifdef HAVE_HTTPS
 int do_ssl = 0;
 #endif
-#ifdef SAMBA_SUPPORT
-extern int smb_getlock;
-extern int httpd_fork;
-void smb_handler()
-{
-	printf("============child exit=====waitting ...====\n");
-	smb_getlock = 0;
-	wait(NULL);
-	printf("wait finish \n");
-}
-#endif
 
 //static FILE *conn_fp;
 static webs_t conn_fp = NULL;	// jimmy, https, 8/4/2003
@@ -494,7 +483,7 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static void do_file_2(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
+static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
 {
 
 	size_t len;
@@ -527,13 +516,13 @@ void
 do_file(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(method, handler, path, stream, query, NULL);
+	do_file_2(handler, path, stream, query, NULL);
 }
 
 void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(NULL, handler, path, stream, query, attachment);
+	do_file_2(handler, path, stream, query, attachment);
 }
 
 #ifdef HSIAB_SUPPORT
