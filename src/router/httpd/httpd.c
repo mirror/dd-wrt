@@ -325,7 +325,7 @@ static void send_error(int status, char *title, char *extra_header, char *text)
 {
 
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-	send_headers(status, title, extra_header, "text/html", 0, NULL);
+	send_headers(status, title, extra_header, "text/html", -1, NULL);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	(void)wfprintf(conn_fp, "%s\n", text);
 	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
@@ -353,7 +353,7 @@ void send_headers(int status, char *title, char *extra_header, char *mime_type, 
 		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
 	if (extra_header != (char *)0 && *extra_header)
 		wfprintf(conn_fp, "%s\r\n", extra_header);
-	if (length != 0)
+	if (length != -1)
 		wfprintf(conn_fp, "Content-Length: %ld\r\n", length);
 	wfprintf(conn_fp, "\r\n");
 }
@@ -859,7 +859,7 @@ static void handle_request(void)
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
-			send_headers(302, "Found", redirect_path, "", 0, NULL);
+			send_headers(302, "Found", redirect_path, "", -1, NULL);
 			return;
 
 		} else if (ias_detected == 1) {
@@ -1064,7 +1064,7 @@ static void handle_request(void)
 					} else {
 						if (handler->output != do_file)
 							if (handler->send_headers)
-								send_headers(200, "Ok", handler->extra_header, handler->mime_type, 0, NULL);
+								send_headers(200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
 					}
 					memdebug_leave_info("auth_output");
 				}
