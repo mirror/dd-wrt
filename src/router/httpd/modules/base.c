@@ -439,6 +439,7 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 {
 	char fs[32];
 	char *temp2;
+	char *parameter = "size=";
 	memset(fs, 0, sizeof(fs));
 	int idx = indexof(path, '?');
 	if (idx > 0) {
@@ -447,12 +448,12 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	} else {
 		return;
 	}
-	char *size = strstr(fs, "size=");
+	char *size = strstr(fs, parameter);
 	long long filesize = 0;
 	if (!size)
 		filesize = atoll(fs);
 	else {
-		char *s_fs = size + 5;	//skip size=
+		char *s_fs = size + strlen(parameter);	//skip size=
 		idx = indexof(s_fs, '&');
 		if (idx > 0)
 			s_fs[idx] = 0;
@@ -464,11 +465,14 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	long i;
 	if (!handler->send_headers) {
 		char *extra;
+		char *options = "Access-Control-Allow-Origin: *\r\n"	//
+		    "Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n"	//
+		    "Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *";	//
+
 		if (handler->extra_header)
-			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *\r\n%s",
-				 handler->extra_header);
+			asprintf(&extra, "%s\r\n%s", options, handler->extra_header);
 		else
-			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *");
+			asprintf(&extra, "%s", options);
 		if (!strncasecmp(method, "OPTIONS", 7)) {
 			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);
 			free(extra);
@@ -483,20 +487,10 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
 		test[i] = rand() % 255;
-	long long sdiv = 1;
-	sdiv <<= 32;
-	if (((long long)(filesize / 65536)) > sdiv) {
-		long long i64;
-
-		long long sz = filesize / 65536;
-		for (i64 = 0; i64 < sz; i64++) {
-			wfwrite(test, 65536, 1, stream);
-		}
-	} else {
-		long sz = filesize / 65536;
-		for (i = 0; i < sz; i++) {
-			wfwrite(test, 65536, 1, stream);
-		}
+	long long i64;
+	long long sz = filesize / 65536;
+	for (i64 = 0; i64 < sz; i64++) {
+		wfwrite(test, 65536, 1, stream);
 	}
 	wfwrite(test, filesize % 65536, 1, stream);
 
