@@ -469,18 +469,22 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 				 handler->extra_header);
 		else
 			asprintf(&extra, "Access-Control-Allow-Origin: *\r\nAccess-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range\r\nAccess-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *");
-		send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
-		free(extra);
+		if (!strncasecmp(method, "OPTIONS", 7)) {
+			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);
+			free(extra);
+			return;
+		} else {
+			send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
+			free(extra);
+		}
 	}
-	if (!strncasecmp(method, "OPTIONS", 7))
-		return;
 
 	char *test = malloc(65536);
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
 		test[i] = rand() % 255;
 	long long sdiv = 1;
-	sdiv <<=32;
+	sdiv <<= 32;
 	if (((long long)(filesize / 65536)) > sdiv) {
 		long long i64;
 
