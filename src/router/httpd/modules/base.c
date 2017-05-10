@@ -452,11 +452,11 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	if (!size)
 		filesize = atoll(fs);
 	else {
-		fs = size + 5;	//skip size=
-		idx = indexof(fs, '&');
+		char *s_fs = size + 5;	//skip size=
+		idx = indexof(s_fs, '&');
 		if (idx > 0)
-			fs[idx] = 0;
-		filesize = atoll(fs);
+			s_fs[idx] = 0;
+		filesize = atoll(s_fs);
 	}
 
 	if (!filesize || filesize < 0)
@@ -479,7 +479,9 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	srand(time(NULL));
 	for (i = 0; i < 65536; i++)
 		test[i] = rand() % 255;
-	if (filesize / 65536 > (1 << 32)) {
+	long long sdiv = 1;
+	sdiv <<=32;
+	if (((long long)(filesize / 65536)) > sdiv) {
 		long long i64;
 
 		long long sz = filesize / 65536;
