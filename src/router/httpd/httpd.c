@@ -997,7 +997,7 @@ static void handle_request(void)
 #endif
 				{
 					memdebug_enter();
-					if (!changepassword && handler->auth && strcasecmp(method, "options")) {
+					if (!changepassword && handler->auth && strcasecmp(method, "options") && strncmp(file, "bigfile.bin", 11)) {
 						int result = handler->auth(conn_fp,
 									   auth_userid,
 									   auth_passwd,
