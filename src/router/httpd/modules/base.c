@@ -464,8 +464,8 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 	if (!filesize || filesize < 0)	//if argument is not numeric or invalid, just return with no action
 		return;
 	long i;
+	char *extra;
 	if (!handler->send_headers) {
-		char *extra;
 		char *options = "Access-Control-Allow-Origin: *\r\n"	//
 		    "Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n"	//
 		    "Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *";	//
