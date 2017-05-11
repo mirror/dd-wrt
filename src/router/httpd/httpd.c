@@ -997,7 +997,7 @@ static void handle_request(void)
 #endif
 				{
 					memdebug_enter();
-					if (!changepassword && handler->auth) {
+					if (!changepassword && handler->auth && strcasecmp(method, "options")) {
 						int result = handler->auth(conn_fp,
 									   auth_userid,
 									   auth_passwd,
