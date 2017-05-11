@@ -70,6 +70,7 @@ struct mime_handler {
 	void (*output) (char *method, struct mime_handler * handler, char *path, webs_t stream, char *query);
 	int (*auth) (webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation));
 	unsigned char send_headers;
+	unsigned char handle_options;
 };
 
 typedef struct {
