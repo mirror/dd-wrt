@@ -1,4 +1,4 @@
-$Id: HISTORY,v 1.32 2006/06/05 07:57:51 chrisp Exp $   -*- text -*-
+$Id$   -*- text -*-
 
  disktype History
 ==================
@@ -102,6 +102,15 @@ Added other structures: Linux cloop (detection only), EFI GPT,
 Improved file systems: Amiga FS/FFS, Amiga PFS, Linux squashfs.
 Improved other structures: Amiga "Rigid Disk" partitioning, LILO,
   ISO9660 El Torito.
+
+
+Version 10 was released on Xxx x, 2009. It features the following
+improvements:
+
+Added file systems: ext4, btrfs.
+Added other structures: NetBSD boot loader.
+Improved file systems: -
+Improved other structures: -
 
 
 EOF
