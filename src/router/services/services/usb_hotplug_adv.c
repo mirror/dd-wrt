@@ -306,6 +306,9 @@ static bool usb_load_modules(char *fs)
 	if (!strcmp(fs, "xfs")) {
 		insmod("xfs");
 	}
+	if (!strcmp(fs, "f2fs")) {
+		insmod("libcrc32c crc32c_generic f2fs");
+	}
 	if (!strcmp(fs, "udf")) {
 		insmod("crc-itu-t udf");
 	}
@@ -418,6 +421,9 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 					usb_load_modules(fs);
 				} else if (strstr(line, "Btrfs")) {
 					fs = "btrfs";
+					usb_load_modules(fs);
+				} else if (strstr(line, "F2FS")) {
+					fs = "f2fs";
 					usb_load_modules(fs);
 				} else if (strstr(line, "HFS Plus")) {
 					fs = "hfsplus";
