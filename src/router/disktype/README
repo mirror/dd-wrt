@@ -1,7 +1,7 @@
-$Id: README,v 1.17 2006/06/05 07:57:51 chrisp Exp $   -*- text -*-
+$Id$   -*- text -*-
 
- disktype 9
-============
+ disktype 10
+=============
 
 The purpose of disktype is to detect the content format of a disk or
 disk image. It knows about common file systems, partition tables, and
@@ -56,11 +56,11 @@ for some example command lines.
 The following formats are recognized by this version of disktype.
 
 File systems: FAT12/FAT16/FAT32, NTFS, HPFS, MFS, HFS, HFS Plus,
-  ISO9660, ext2/ext3, Minix, ReiserFS, Reiser4, Linux romfs, Linux
-  cramfs, Linux squashfs, UFS (some variations), SysV FS (some
-  variations), JFS, XFS, Amiga FS/FFS, Amiga SFS, Amiga PFS, BeOS BFS,
-  QNX4 FS, UDF, 3DO CD-ROM file system, Veritas VxFS, Xbox DVD file
-  system.
+  ISO9660, ext2/ext3/ext4, btrfs, Minix, ReiserFS, Reiser4, Linux
+  romfs, Linux cramfs, Linux squashfs, UFS (some variations), SysV FS
+  (some variations), JFS, XFS, Amiga FS/FFS, Amiga SFS, Amiga PFS,
+  BeOS BFS, QNX4 FS, UDF, 3DO CD-ROM file system, Veritas VxFS, Xbox
+  DVD file system.
 
 Partitioning: DOS/PC style, EFI GPT, Apple, Amiga "Rigid Disk", ATARI
   ST (AHDI3), BSD disklabel, Linux RAID physical disks, Linux LVM1
@@ -72,9 +72,9 @@ Other structures: Debian split floppy header, Linux swap.
 Disk images: Raw CD image (.bin), Virtual PC hard disk image, Apple
   UDIF disk image (limited), Linux cloop (limited).
 
-Boot loaders: LILO, GRUB, SYSLINUX, ISOLINUX, Linux kernel, FreeBSD
-  loader, Windows/MS-DOS loader, BeOS loader, Haiku loader, Sega
-  Dreamcast.
+Boot loaders: LILO, GRUB, SYSLINUX, ISOLINUX, Linux kernel, FreeBSD,
+  OpenBSD, NetBSD, Windows/MS-DOS loader, BeOS loader, Haiku loader,
+  Sega Dreamcast.
 
 Compression formats: gzip, compress, bzip2.
 

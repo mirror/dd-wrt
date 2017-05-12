@@ -1,6 +1,6 @@
 # Seedfile for disktype
 
-package disktype 8;
+package disktype 9;
 
 binary disktype {
   source main.c lib.c
