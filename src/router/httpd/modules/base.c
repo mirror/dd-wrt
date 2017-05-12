@@ -474,7 +474,7 @@ static void do_bigfile(char *method, struct mime_handler *handler, char *path, w
 			asprintf(&extra, "%s\r\n%s", options, handler->extra_header);
 		else
 			asprintf(&extra, "%s", options);
-		if (!strncasecmp(method, "OPTIONS", 7)) {
+		if (method == METHOD_OPTIONS) {
 			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
 			goto ret;
 		} else {
