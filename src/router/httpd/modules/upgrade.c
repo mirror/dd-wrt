@@ -57,18 +57,18 @@ void set_upgrade_ret(int result)
 
 void
 // do_upgrade_cgi(char *url, FILE *stream)
-do_upgrade_cgi(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query)	// jimmy, https,
+do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)	// jimmy, https,
 							// 8/6/2003
 {
 #ifndef ANTI_FLASH
 
 	fprintf(stderr, "[UPGRADE] ret: %d\n", upgrade_ret);
 	if (upgrade_ret) {
-		do_ej(NULL, handler, "Fail_u_s.asp", stream, NULL);
+		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream, NULL);
 		killall("ledtool", SIGTERM);
 		led_control(LED_DIAG, LED_OFF);
 	} else {
-		do_ej(NULL, handler, "Success_u_s.asp", stream, NULL);
+		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream, NULL);
 	}
 	websDone(stream, 200);
 
@@ -81,7 +81,7 @@ do_upgrade_cgi(char *method, struct mime_handler *handler, char *url, webs_t str
 	}
 #else
 
-	do_ej(NULL, handler, "Fail_u_s.asp", stream, NULL);
+	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream, NULL);
 	websDone(stream, 200);
 
 #endif

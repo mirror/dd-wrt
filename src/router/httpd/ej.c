@@ -325,7 +325,7 @@ int getWebsFileLen(char *path)
 	return len;
 }
 
-void do_ej(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
+void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, https, 8/4/2003
 {
 	FILE *fp = NULL;
 	unsigned int len;

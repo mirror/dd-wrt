@@ -36,7 +36,7 @@ char *GOZILA_GET(webs_t wp, char *name);
 	BB = CC; \
 }
 
-extern void do_vsp_info_page(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query);
+extern void do_vsp_info_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query);
 /*
  * for dhcp 
  */
@@ -252,13 +252,13 @@ extern void filtersummary_onload(webs_t wp, char *arg);
  * for upgrade 
  */
 extern void do_upgrade_post(char *url, webs_t stream, int len, char *boundary);
-extern void do_upgrade_cgi(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query);
+extern void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query);
 extern int sys_restore(char *url, webs_t stream, int *total);
 extern void do_restore_post(char *url, webs_t stream, int len, char *boundary);
 extern void do_restore_cgi(char *url, webs_t stream);
 extern void macclone_onload(webs_t wp, char *arg);
 extern void do_olupgrade_post(char *url, webs_t stream, int len, char *boundary);
-extern void do_olupgrade_cgi(char *method, struct mime_handler *handler, char *url, webs_t stream, char *query);
+extern void do_olupgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query);
 /*
  * for filter 
  */
@@ -351,15 +351,15 @@ extern void validate_wl_net_mode(webs_t wp, char *value, struct variable *v);
  * for nvram save-restore 
  */
 extern void nv_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out(char *method, struct mime_handler *handler, char *path, webs_t wp, char *query);
-extern void sr_config_cgi(char *method, struct mime_handler *handler, char *path, webs_t wp, char *query);
+extern void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query);
+extern void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query);
 
 /*
  * for traff data save-restore 
  */
 extern void ttraff_erase(webs_t wp);
 extern void td_file_in(char *url, webs_t stream, int len, char *boundary);
-extern void td_config_cgi(char *method, struct mime_handler *handler, char *path, webs_t wp, char *query);
+extern void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query);
 
 /*
  * for ddns 
@@ -692,7 +692,7 @@ extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 extern struct wl_client_mac *Uwl_client_macs;
 
 #define wl_client_macs Uwl_client_macs
-extern void (*Udo_ej) (char *method, struct mime_handler * handler, char *path, webs_t stream, char *query);	// jimmy, 
+extern void (*Udo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);	// jimmy, 
 									// https, 
 									// 8/4/2003
 #define do_ej Udo_ej

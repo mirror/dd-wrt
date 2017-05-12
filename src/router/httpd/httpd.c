@@ -513,7 +513,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 
 void
 //do_file(char *path, FILE *stream)
-do_file(char *method, struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
+do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
 {
 
 	do_file_2(handler, path, stream, query, NULL);
