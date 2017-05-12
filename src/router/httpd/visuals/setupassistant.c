@@ -192,7 +192,7 @@ void ej_sas_nvem(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_sas_stage(webs_t wp, int argc, char_t ** argv)
 {
-	do_ej(NULL, NULL, "sas_stage_1.asp", wp, NULL);
+	do_ej(METHOD_GET, NULL, "sas_stage_1.asp", wp, NULL);
 }
 
 void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
@@ -204,7 +204,7 @@ void ej_show_sas_wan_setting(webs_t wp, int argc, char_t ** argv)
 		type = nvram_safe_get("wan_proto");
 	char ejname[32];
 	snprintf(ejname, 31, "sas_%s.asp", type);
-	do_ej(NULL, NULL, ejname, wp, NULL);
+	do_ej(METHOD_GET, NULL, ejname, wp, NULL);
 }
 
 char *ej_get_sas_stage(webs_t wp, int argc, char_t ** argv)
