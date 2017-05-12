@@ -611,6 +611,7 @@ static void handle_request(void)
 	struct mime_handler *handler;
 	int cl = 0, count, flags;
 	char line[LINE_LEN + 1];
+	long method_type;
 
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
@@ -689,8 +690,15 @@ static void handle_request(void)
 			cur = cp + strlen(cp) + 1;
 		}
 	}
+	method_type = METHOD_INVALID;
+	if (!strcasecmp(method, "get"))
+		method_type = METHOD_GET;
+	if (!strcasecmp(method, "post"))
+		method_type = METHOD_POST;
+	if (!strcasecmp(method, "options"))
+		method_type = METHOD_OPTIONS;
 
-	if (strcasecmp(method, "get") != 0 && strcasecmp(method, "post") != 0 && strcasecmp(method, "options") != 0) {
+	if (method_type == METHOD_INVALID) {
 		send_error(501, "Not Implemented", (char *)0, "That method is not implemented.");
 		return;
 	}
@@ -773,7 +781,7 @@ static void handle_request(void)
 	}
 #endif
 
-	if (!referer && strcasecmp(method, "post") == 0 && nodetect == 0) {
+	if (!referer && method_type == METHOD_POST && nodetect == 0) {
 		send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
 		return;
 	}
@@ -997,7 +1005,7 @@ static void handle_request(void)
 #endif
 				{
 					memdebug_enter();
-					if (!changepassword && handler->auth && (!handler->handle_options || strcasecmp(method, "options"))) {
+					if (!changepassword && handler->auth && (!handler->handle_options || method_type == METHOD_OPTIONS)) {
 						int result = handler->auth(conn_fp,
 									   auth_userid,
 									   auth_passwd,
@@ -1021,7 +1029,7 @@ static void handle_request(void)
 					memdebug_leave_info("auth");
 				}
 				post = 0;
-				if (strcasecmp(method, "post") == 0) {
+				if (method_type == METHOD_POST) {
 					post = 1;
 				}
 				{
@@ -1083,7 +1091,7 @@ static void handle_request(void)
 						}
 					}
 					if (handler->output && file_found) {
-						handler->output(method, handler, file, conn_fp, query);
+						handler->output(method_type, handler, file, conn_fp, query);
 					} else {
 						send_error(404, "Not Found", (char *)0, "File not found.");
 					}

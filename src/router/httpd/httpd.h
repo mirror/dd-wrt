@@ -73,6 +73,11 @@ struct mime_handler {
 	unsigned char handle_options;
 };
 
+#define METHOD_INVALID 0L
+#define METHOD_GET 1L
+#define METHOD_POST 2L
+#define METHOD_OPTIONS 3L
+
 typedef struct {
 	const char *path;	/* Web page URL path */
 	unsigned int size;	/* Size of web page in bytes */
