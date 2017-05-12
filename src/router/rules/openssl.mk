@@ -103,9 +103,9 @@ openssl-clean:
 
 
 OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
-					no-aes192 no-camellia no-ans1 no-krb5 no-whrlpool no-whirlpool no-seed no-jpake
+					no-aes192 no-camellia no-ans1 no-krb5
 
-OPENSSL_OPTIONS:= no-err threads no-ssl2 no-ssl3 zlib-dynamic no-ec2m no-heartbeats
+OPENSSL_OPTIONS:= no-err threads no-ssl2 no-ssl3 zlib-dynamic no-ec2m
 
 ifeq ($(CONFIG_XSCALE),y)
 OPENSSL_OPTIONS += no-err threads no-sse2 no-perlasm -DHAVE_CRYPTODEV
