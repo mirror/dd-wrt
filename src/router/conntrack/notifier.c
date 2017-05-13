@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <bcmnvram.h>
+#include <unistd.h>
 
 typedef struct linkedlist {
 	char *name;
@@ -79,34 +80,6 @@ void freeList(struct linkedlist *list)
 	}
 }
 
-void nextline(FILE * fp) // skip current line and goto next line
-{
-	while (1) {
-		int c = getc(fp);
-		if (c == 0xa)
-			return;
-		if (c == EOF)
-			return;
-	}
-}
-
-void getword(FILE * in, char *val) //read a word which is separated by spaces, so wait for the first non space character and end if the first occuring space
-{
-	int c = 0;
-	while (1) {
-		int v = getc(in);
-		if (v == EOF)
-			return;
-		if (v == 0xa)
-			break;
-		if (v == 0x20 && c == 0)
-			continue;
-		if (v == 0x20)
-			break;
-		val[c++] = v;
-	}
-	val[c++] = 0;
-}
 /*
  * sends a email with the detailed connection statistic per port. this requires a modified sendmail command from busybox. the original one is buggy and does not work with alot of email servers like exim, so we modified
  * it to support direct message sending and authentication with commandline parameters
@@ -182,36 +155,17 @@ int main(int argc, char *argv[])
 		nf = 1;
 	}
 	while (1) {
-		unsigned char proto[64];
-		unsigned char dummy[64];
-		unsigned char dummy2[64];
-		unsigned char p2[64];
-		unsigned char p3[64];
-		unsigned char state[64];
-		unsigned char src[64];
-		unsigned char dst[64];
-		unsigned char sport[64];
-		unsigned char dport[64];
+		char proto[64];
+		char state[64];
+		char src[64];
+		char dst[64];
+		char sport[64];
+		char dport[64];
 		if (nf) { //nf_conntrack has 2 fields more
-			getword(fp, dummy);
-			getword(fp, dummy2);
-			getword(fp, proto);
-			getword(fp, p2);
-			getword(fp, p3);
-			getword(fp, state);
-			getword(fp, src);
-			getword(fp, dst);
-			getword(fp, sport);
-			getword(fp, dport);
+			fscanf(fp,"%*s %*s %s %*s %*s %s %s %s %s %s",proto,state,src,dst,sport,dport);
 		} else {
-			getword(fp, proto);
-			getword(fp, p2);
-			getword(fp, p3);
-			getword(fp, state);
-			getword(fp, src);
-			getword(fp, dst);
-			getword(fp, sport);
-			getword(fp, dport);
+			fscanf(fp,"%s %*s %*s %s %s %s %s %s",proto,state,src,dst,sport,dport);
+
 		}
 		if (feof(fp))
 			break;
@@ -222,7 +176,6 @@ int main(int argc, char *argv[])
 			addEntry(&list, &state[4], &sport[6], 1);
 			addEntry(&total, &state[4], "0", 1);
 		}
-		nextline(fp);
 	}
 	fclose(fp);
 	struct linkedlist *entry = &total;
