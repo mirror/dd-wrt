@@ -2627,7 +2627,7 @@ void ej_dumparptable(webs_t wp, int argc, char_t ** argv)
 			/*
 			 * count open connections per IP 
 			 */
-			if ((conn = fopen("/proc/net/ip_conntrack", "r")) != NULL) {
+			if ((conn = fopen("/proc/net/ip_conntrack", "r")) || (conn = fopen("/proc/net/nf_conntrack", "r"))) {
 				strcpy(ip2, ip);
 				strcat(ip2, " ");
 
