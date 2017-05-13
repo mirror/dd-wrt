@@ -152,7 +152,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout
-		if (nf)
+		if (!nf)
 			sscanf(line, "%*s %*d %d", &timeout);
 		else
 			sscanf(line, "%*s %*d %*s %*d %d", &timeout);
