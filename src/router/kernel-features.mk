@@ -120,6 +120,9 @@ define kernelfeatures
 		echo "CONFIG_F2FS_CHECK_FS=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_F2FS_FAULT_INJECTION=y" >> $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_F2FS)" != "y" ]; then \
+		sed -i 's/\CONFIG_F2FS_FS=m/# CONFIG_F2FS_FS is not set/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
 	fi	
