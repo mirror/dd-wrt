@@ -11,6 +11,8 @@ libsodium-clean:
 libsodium-configure:
 	cd libsodium && ./configure --host=$(ARCH)-linux-uclibc  \
 	--disable-ssp \
+	--disable-shared \
+	--enable-static \
 	--enable-minimal \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -38,11 +40,11 @@ dnscrypt-clean:
 	-make -C dnscrypt clean
 
 dnscrypt-install: 
-	mkdir -p $(INSTALLDIR)/dnscrypt/usr/lib
+#	mkdir -p $(INSTALLDIR)/dnscrypt/usr/lib
 	mkdir -p $(INSTALLDIR)/dnscrypt/etc/dnscrypt
-	install -D libsodium/src/libsodium/.libs/libsodium.so $(INSTALLDIR)/dnscrypt/usr/lib/libsodium.so
-	cd $(INSTALLDIR)/dnscrypt/usr/lib/ && \
-		ln -sf libsodium.so libsodium.so.18
+#	install -D libsodium/src/libsodium/.libs/libsodium.so $(INSTALLDIR)/dnscrypt/usr/lib/libsodium.so
+#	cd $(INSTALLDIR)/dnscrypt/usr/lib/ && \
+#		ln -sf libsodium.so libsodium.so.18
 	install -D dnscrypt/src/proxy/.libs/dnscrypt-proxy $(INSTALLDIR)/dnscrypt/usr/sbin/dnscrypt-proxy
 	install -D dnscrypt/src/hostip/.libs/hostip $(INSTALLDIR)/dnscrypt/usr/sbin/hostip
 	install -D dnscrypt/dnscrypt-resolvers.csv $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
