@@ -45,8 +45,13 @@ dnscrypt-install:
 #	install -D libsodium/src/libsodium/.libs/libsodium.so $(INSTALLDIR)/dnscrypt/usr/lib/libsodium.so
 #	cd $(INSTALLDIR)/dnscrypt/usr/lib/ && \
 #		ln -sf libsodium.so libsodium.so.18
-	install -D dnscrypt/src/proxy/.libs/dnscrypt-proxy $(INSTALLDIR)/dnscrypt/usr/sbin/dnscrypt-proxy
-	install -D dnscrypt/src/hostip/.libs/hostip $(INSTALLDIR)/dnscrypt/usr/sbin/hostip
+#	install -D dnscrypt/src/proxy/.libs/dnscrypt-proxy $(INSTALLDIR)/dnscrypt/usr/sbin/dnscrypt-proxy
+#	install -D dnscrypt/src/hostip/.libs/hostip $(INSTALLDIR)/dnscrypt/usr/sbin/hostip
+	make -C dnscrypt install DESTDIR=$(INSTALLDIR)/dnscrypt
+	rm -rf $(INSTALLDIR)/dnscrypt/usr/etc
+	rm -rf $(INSTALLDIR)/dnscrypt/usr/include
+	rm -rf $(INSTALLDIR)/dnscrypt/usr/lib
+	rm -rf $(INSTALLDIR)/dnscrypt/usr/share
+
+
 	install -D dnscrypt/dnscrypt-resolvers.csv $(INSTALLDIR)/dnscrypt/etc/dnscrypt/
-	$(STRIP) -s $(INSTALLDIR)/dnscrypt/usr/sbin/dnscrypt-proxy
-	$(STRIP) -s $(INSTALLDIR)/dnscrypt/usr/sbin/hostip
