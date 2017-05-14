@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <netinet/in.h>
 #include "l2tp.h"
+#include "misc.h"
 
 #define AVP_MAX 39
 
