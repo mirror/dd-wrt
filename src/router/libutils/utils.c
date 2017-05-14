@@ -5495,8 +5495,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;
 		disconnected_gpio = 0x007;
-		usb_gpio = 0x004;
-		usb_gpio1 = 0x005;
+//		usb_gpio = 0x004;
+//		usb_gpio1 = 0x005;
 		ses_gpio = 0x009;
 		break;
 	case ROUTER_WRT_3200ACM:
@@ -5505,8 +5505,8 @@ int led_control(int type, int act)
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;
 		disconnected_gpio = 0x007;
-		usb_gpio = 0x004;
-		usb_gpio1 = 0x005;
+//		usb_gpio = 0x004;
+//		usb_gpio1 = 0x005;
 		ses_gpio = 0x009;
 		break;
 #endif
