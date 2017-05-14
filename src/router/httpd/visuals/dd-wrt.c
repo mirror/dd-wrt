@@ -5592,14 +5592,16 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 			}
 			name[i++] = 0;
 			int a, cnt = 0;
-			for (a = i; a < sizeof(fname); a++) {
-				if (line[a] == '"')
+			for (a = i; a < i + sizeof(fname); a++) {
+				if (line[a] == '"') {
 					cnt++;
+					continue;
+				}
 				if (cnt == 2)
 					break;
-				fname[a] = line[a];
+				fname[a-i] = line[a];
 			}
-			fname[a] = 0;
+			fname[a-i] = 0;
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
 		}
 		fclose(fp);
