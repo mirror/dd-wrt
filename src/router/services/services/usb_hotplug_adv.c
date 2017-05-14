@@ -307,7 +307,7 @@ static bool usb_load_modules(char *fs)
 		insmod("xfs");
 	}
 	if (!strcmp(fs, "f2fs")) {
-		insmod("libcrc32c crc32c_generic f2fs");
+		insmod("crc32 libcrc32c crc32c_generic crc32_generic f2fs");
 	}
 	if (!strcmp(fs, "udf")) {
 		insmod("crc-itu-t udf");
