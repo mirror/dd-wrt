@@ -1,0 +1,241 @@
+/**
+ * xattr.c
+ *
+ * Many parts of codes are copied from Linux kernel/fs/f2fs.
+ *
+ * Copyright (C) 2015 Huawei Ltd.
+ * Witten by:
+ *   Hou Pengyang <houpengyang@huawei.com>
+ *   Liu Shuoran <liushuoran@huawei.com>
+ *   Jaegeuk Kim <jaegeuk@kernel.org>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+#include "fsck.h"
+#include "node.h"
+#include "xattr.h"
+
+#define XATTR_CREATE 0x1
+#define XATTR_REPLACE 0x2
+
+static void *read_all_xattrs(struct f2fs_sb_info *sbi, struct f2fs_node *inode)
+{
+	struct f2fs_xattr_header *header;
+	void *txattr_addr;
+	u64 inline_size = inline_xattr_size(&inode->i);
+
+	txattr_addr = calloc(inline_size + BLOCK_SZ, 1);
+	ASSERT(txattr_addr);
+
+	if (inline_size)
+		memcpy(txattr_addr, inline_xattr_addr(&inode->i), inline_size);
+
+	/* Read from xattr node block. */
+	if (inode->i.i_xattr_nid) {
+		struct node_info ni;
+		int ret;
+
+		get_node_info(sbi, le32_to_cpu(inode->i.i_xattr_nid), &ni);
+		ret = dev_read_block(txattr_addr + inline_size, ni.blk_addr);
+		ASSERT(ret >= 0);
+	}
+
+	header = XATTR_HDR(txattr_addr);
+
+	/* Never been allocated xattrs */
+	if (le32_to_cpu(header->h_magic) != F2FS_XATTR_MAGIC) {
+		header->h_magic = cpu_to_le32(F2FS_XATTR_MAGIC);
+		header->h_refcount = cpu_to_le32(1);
+	}
+	return txattr_addr;
+}
+
+static struct f2fs_xattr_entry *__find_xattr(void *base_addr, int index,
+		size_t len, const char *name)
+{
+	struct f2fs_xattr_entry *entry;
+	list_for_each_xattr(entry, base_addr) {
+		if (entry->e_name_index != index)
+			continue;
+		if (entry->e_name_len != len)
+			continue;
+		if (!memcmp(entry->e_name, name, len))
+			break;
+	}
+	return entry;
+}
+
+static void write_all_xattrs(struct f2fs_sb_info *sbi,
+		struct f2fs_node *inode, __u32 hsize, void *txattr_addr)
+{
+	void *xattr_addr;
+	struct dnode_of_data dn;
+	struct node_info ni;
+	struct f2fs_node *xattr_node;
+	nid_t new_nid = 0;
+	block_t blkaddr;
+	nid_t xnid = le32_to_cpu(inode->i.i_xattr_nid);
+	u64 inline_size = inline_xattr_size(&inode->i);
+	int ret;
+
+	ASSERT(inode->i.i_inline & F2FS_INLINE_XATTR);
+	memcpy(inline_xattr_addr(&inode->i), txattr_addr, inline_size);
+
+	if (hsize <= inline_size)
+		return;
+
+	if (!xnid) {
+		f2fs_alloc_nid(sbi, &new_nid, 0);
+
+		set_new_dnode(&dn, inode, NULL, new_nid);
+		/* NAT entry would be updated by new_node_page. */
+		blkaddr = new_node_block(sbi, &dn, XATTR_NODE_OFFSET);
+		ASSERT(dn.node_blk);
+		xattr_node = dn.node_blk;
+		inode->i.i_xattr_nid = cpu_to_le32(new_nid);
+	} else {
+		set_new_dnode(&dn, inode, NULL, xnid);
+		get_node_info(sbi, xnid, &ni);
+		blkaddr = ni.blk_addr;
+		xattr_node = calloc(BLOCK_SZ, 1);
+		ASSERT(xattr_node);
+		ret = dev_read_block(xattr_node, ni.blk_addr);
+		ASSERT(ret >= 0);
+	}
+
+	/* write to xattr node block */
+	xattr_addr = (void *)xattr_node;
+	memcpy(xattr_addr, txattr_addr + inline_size,
+			PAGE_SIZE - sizeof(struct node_footer));
+
+	ret = dev_write_block(xattr_node, blkaddr);
+	ASSERT(ret >= 0);
+}
+
+int f2fs_setxattr(struct f2fs_sb_info *sbi, nid_t ino, int index, const char *name,
+		const void *value, size_t size, int flags)
+{
+	struct f2fs_node *inode;
+	void *base_addr;
+	struct f2fs_xattr_entry *here, *last;
+	struct node_info ni;
+	int error = 0;
+	int len;
+	int found, newsize;
+	__u32 new_hsize;
+	int ret;
+
+	if (name == NULL)
+		return -EINVAL;
+
+	if (value == NULL)
+		return -EINVAL;
+
+	len = strlen(name);
+
+	if (len > F2FS_NAME_LEN || size > MAX_VALUE_LEN)
+		return -ERANGE;
+
+	if (ino < 3)
+		return -EINVAL;
+
+	/* Now We just support selinux */
+	ASSERT(index == F2FS_XATTR_INDEX_SECURITY);
+
+	get_node_info(sbi, ino, &ni);
+	inode = calloc(BLOCK_SZ, 1);
+	ASSERT(inode);
+	ret = dev_read_block(inode, ni.blk_addr);
+	ASSERT(ret >= 0);
+
+	base_addr = read_all_xattrs(sbi, inode);
+	ASSERT(base_addr);
+
+	here = __find_xattr(base_addr, index, len, name);
+
+	found = IS_XATTR_LAST_ENTRY(here) ? 0 : 1;
+
+	if ((flags & XATTR_REPLACE) && !found) {
+		error = -ENODATA;
+		goto exit;
+	} else if ((flags & XATTR_CREATE) && found) {
+		error = -EEXIST;
+		goto exit;
+	}
+
+	last = here;
+	while (!IS_XATTR_LAST_ENTRY(last))
+		last = XATTR_NEXT_ENTRY(last);
+
+	newsize = XATTR_ALIGN(sizeof(struct f2fs_xattr_entry) + len + size);
+
+	/* 1. Check space */
+	if (value) {
+		int free;
+		/*
+		 * If value is NULL, it is remove operation.
+		 * In case of update operation, we calculate free.
+		 */
+		free = MIN_OFFSET - ((char *)last - (char *)base_addr);
+		if (found)
+			free = free + ENTRY_SIZE(here);
+		if (free < newsize) {
+			error = -ENOSPC;
+			goto exit;
+		}
+	}
+
+	/* 2. Remove old entry */
+	if (found) {
+		/*
+		 * If entry if sound, remove old entry.
+		 * If not found, remove operation is not needed
+		 */
+		struct f2fs_xattr_entry *next = XATTR_NEXT_ENTRY(here);
+		int oldsize = ENTRY_SIZE(here);
+
+		memmove(here, next, (char *)last - (char *)next);
+		last = (struct f2fs_xattr_entry *)((char *)last - oldsize);
+		memset(last, 0, oldsize);
+
+	}
+
+	new_hsize = (char *)last - (char *)base_addr;
+
+	/* 3. Write new entry */
+	if (value) {
+		char *pval;
+		/*
+		 * Before we come here, old entry is removed.
+		 * We just write new entry.
+		 */
+		memset(last, 0, newsize);
+		last->e_name_index = index;
+		last->e_name_len = len;
+		memcpy(last->e_name, name, len);
+		pval = last->e_name + len;
+		memcpy(pval, value, size);
+		last->e_value_size = cpu_to_le16(size);
+		new_hsize += newsize;
+	}
+
+	write_all_xattrs(sbi, inode, new_hsize, base_addr);
+
+	/* inode need update */
+	ret = dev_write_block(inode, ni.blk_addr);
+	ASSERT(ret >= 0);
+exit:
+	free(base_addr);
+	return error;
+}
+
+int inode_set_selinux(struct f2fs_sb_info *sbi, u32 ino, const char *secon)
+{
+	if (!secon)
+		return 0;
+
+	return f2fs_setxattr(sbi, ino, F2FS_XATTR_INDEX_SECURITY,
+			XATTR_SELINUX_SUFFIX, secon, strlen(secon), 1);
+}

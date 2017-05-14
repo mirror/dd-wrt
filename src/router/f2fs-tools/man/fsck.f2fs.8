@@ -1,0 +1,69 @@
+.\" Copyright (c) 2013 Samsung Electronics Co., Ltd.
+.\"
+.TH FSCK.F2FS 8
+.SH NAME
+fsck.f2fs \- check a Linux F2FS file system
+.SH SYNOPSIS
+.B fsck.f2fs
+[
+.B \-a
+.I enable auto fix
+]
+[
+.B \-f
+.I enable force fix
+]
+[
+.B \-p
+.I enable preen mode
+]
+[
+.B \-t
+.I show stored directory tree
+]
+[
+.B \-d
+.I debugging-level
+]
+.I device
+.SH DESCRIPTION
+.B fsck.f2fs
+is used to check an f2fs file system (usually in a disk partition).
+\fIdevice\fP is the special file corresponding to the device (e.g.
+\fI/dev/sdXX\fP).
+.PP
+The exit code returned by
+.B fsck.f2fs
+is 0 on success and -1 on failure.
+.SH OPTIONS
+.TP
+.BI \-a " enable auto fix"
+Enable to run file system check only if a bug was reported by the F2FS kernel
+module. It is disabled by default.
+.TP
+.BI \-f " enable force fix"
+Enable to fix all the inconsistency in the partition.
+.TP
+.BI \-p " enable preen mode"
+Same as "-a" to support general fsck convention.
+.TP
+.BI \-t " show stored directory tree"
+Enable to show every directory entries in the partition.
+.TP
+.BI \-d " debug-level"
+Specify the level of debugging options.
+The default number is 0, which shows basic debugging messages.
+.TP
+.SH AUTHOR
+Initial checking code was written by Byoung Geun Kim <bgbg.kim@samsung.com>.
+Jaegeuk Kim <jaegeuk@kernel.org> reworked most parts of the codes to support
+fixing any corrupted images.
+.SH AVAILABILITY
+.B fsck.f2fs
+is available from git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git.
+.SH SEE ALSO
+.BR mkfs.f2fs(8),
+.BR dump.f2fs(8),
+.BR defrag.f2fs(8),
+.BR resize.f2fs(8),
+.BR sload.f2fs(8).
