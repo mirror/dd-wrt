@@ -184,22 +184,36 @@ void start_sysinit(void)
 		set_smp_affinity(46, 2);
 	}
 	set_gpio(3, 0);		//disable sata led as initial value
+	set_gpio(4, 0);		//disable usb led as initial value
+	set_gpio(5, 0);		//disable usb led as initial value
 
 	if (brand == ROUTER_WRT_1900AC) {
 		sysprintf("echo disk-activity > /sys/class/leds/mamba\\:white\\:esata/trigger");
+		sysprintf("echo usb1-port1 > /sys/class/leds/mamba\\:white\\:usb2/trigger");
+		sysprintf("echo \"usb2-port1 usb3-port1\" > /sys/class/leds/mamba\\:white\\:usb3_1/trigger");
+		sysprintf("echo usb3-port2 > /sys/class/leds/mamba\\:white\\:usb3_2/trigger");
 	}
 
 	if (brand == ROUTER_WRT_1200AC) {
 		sysprintf("echo disk-activity > /sys/class/leds/caiman\\:white\\:sata/trigger");
+		sysprintf("echo usb1-port1 > /sys/class/leds/pca963x\\:caiman\\:white\\:usb2/trigger");
+		sysprintf("echo \"usb2-port1 usb3-port1\" > /sys/class/leds/pca963x\\:caiman\\:white\\:usb3_1/trigger");
+		sysprintf("echo usb3-port1 > /sys/class/leds/pca963x\\:caiman\\:white\\:usb3_2/trigger");
 	}
 
 	if (brand == ROUTER_WRT_1900ACV2) {
 		sysprintf("echo disk-activity > /sys/class/leds/cobra\\:white\\:sata/brightness");
+		sysprintf("echo usb1-port1 > /sys/class/leds/pca963x\\:cobra\\:white\\:usb2/trigger");
+		sysprintf("echo \"usb2-port1 usb3-port1\" > /sys/class/leds/pca963x\\:cobra\\:white\\:usb3_1/trigger");
+		sysprintf("echo usb3-port1 > /sys/class/leds/pca963x\\:cobra\\:white\\:usb3_2/trigger");
 
 	}
 
 	if (brand == ROUTER_WRT_1900ACS) {
 		sysprintf("echo disk-activity > /sys/class/leds/shelby\\:white\\:sata/brightness");
+		sysprintf("echo usb1-port1 > /sys/class/leds/pca963x\\:shelby\\:white\\:usb2/trigger");
+		sysprintf("echo \"usb2-port1 usb3-port1\" > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_1/trigger");
+		sysprintf("echo usb3-port1 > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_2/trigger");
 
 	}
 
