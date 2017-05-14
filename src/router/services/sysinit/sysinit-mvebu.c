@@ -45,19 +45,6 @@
 #include <utils.h>
 #include <cymac.h>
 
-static void set_led_usbport(char *led, char *ports)
-{
-	char word[256];
-	char *next;
-
-	sysprintf("echo usbport > /sys/class/leds/%s/trigger");
-
-	foreach(word, ports, next) {
-		sysprintf("echo 1 > /sys/class/leds/%s/ports/%s");
-	}
-
-}
-
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */
 #include <arpa/inet.h>
@@ -202,41 +189,23 @@ void start_sysinit(void)
 
 	if (brand == ROUTER_WRT_1900AC) {
 		sysprintf("echo disk-activity > /sys/class/leds/mamba\\:white\\:esata/trigger");
-		set_led_usbport("mamba\\:white\\:usb3_2", "usb3-port2");
-		set_led_usbport("mamba\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("mamba\\:white\\:usb2", "usb1-port1");
 	}
 
 	if (brand == ROUTER_WRT_1200AC) {
 		sysprintf("echo disk-activity > /sys/class/leds/caiman\\:white\\:sata/trigger");
-		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb3-port1");
-		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("pca963x\\:caiman\\:white\\:usb2", "usb1-port1");
 	}
 
 	if (brand == ROUTER_WRT_1900ACV2) {
 		sysprintf("echo disk-activity > /sys/class/leds/cobra\\:white\\:sata/brightness");
 
-		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_2", "usb3-port1");
-		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("pca963x\\:cobra\\:white\\:usb2", "usb1-port1");
 	}
 
 	if (brand == ROUTER_WRT_1900ACS) {
 		sysprintf("echo disk-activity > /sys/class/leds/shelby\\:white\\:sata/brightness");
-
-		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_2", "usb3-port1");
-		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("pca963x\\:shelby\\:white\\:usb2", "usb1-port1");
-
 	}
 
 	if (brand == ROUTER_WRT_3200ACM) {
 		sysprintf("echo disk-activity > /sys/class/leds/rango\\:white\\:sata/brightness");
-		set_led_usbport("pca963x\\:rango\\:white\\:usb3_2", "usb3-port1");
-		set_led_usbport("pca963x\\:rango\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("pca963x\\:rango\\:white\\:usb2", "usb1-port1");
-
 	}
 
 	return;
