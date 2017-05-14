@@ -5585,13 +5585,15 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 				continue;
 			}
 			int i;
+			memset(fname, 0, sizeof(fname));
+			memset(name, 0, sizeof(name));
+
 			for (i = 0; i < sizeof(name); i++) {
 				if (line[i] == ',')
 					break;
 				name[i] = line[i];
 			}
-			name[i++] = 0;
-			int a, cnt = 0;
+			int a, cnt = 0, c = 0;
 			for (a = i; a < i + sizeof(fname); a++) {
 				if (line[a] == '"') {
 					cnt++;
@@ -5599,9 +5601,8 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 				}
 				if (cnt == 2)
 					break;
-				fname[a-i] = line[a];
+				fname[c++] = line[a];
 			}
-			fname[a-i] = 0;
 			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", name, nvram_match("dns_crypt_resolver", name) ? "selected" : "", fname);
 		}
 		fclose(fp);
