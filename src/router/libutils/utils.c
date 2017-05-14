@@ -5270,10 +5270,7 @@ char *cpustring(void)
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
 		strcpy(buf, "Marvel Armada 370/XP");
 	} else {
-		if (nvram_match("DD_BOARD", "Linksys WRT3200ACM"))
-			strcpy(buf, "Marvel Armada 395");
-		else
-			strcpy(buf, "Marvel Armada 385");
+		strcpy(buf, "Marvel Armada 385");
 	}
 	return buf;
 #elif HAVE_ALPINE
