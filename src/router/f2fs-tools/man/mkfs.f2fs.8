@@ -1,0 +1,107 @@
+.\" Copyright (c) 2012 Samsung Electronics Co., Ltd.
+.\"             http://www.samsung.com/
+.\"  Written by Jaegeuk Kim <jaegeuk.kim@samsung.com>
+.\"
+.TH MKFS.F2FS 8
+.SH NAME
+mkfs.f2fs \- create an F2FS file system
+.SH SYNOPSIS
+.B mkfs.f2fs
+[
+.B \-a
+.I heap-based-allocation
+]
+[
+.B \-c
+.I device
+]
+[
+.B \-l
+.I volume-label
+]
+[
+.B \-o
+.I overprovision-ratio-percentage
+]
+[
+.B \-s
+.I #-of-segments-per-section
+]
+[
+.B \-z
+.I #-of-sections-per-zone
+]
+[
+.B \-e
+.I extenstion-list
+]
+[
+.B \-d
+.I debugging-level
+]
+.I device
+.I [sectors]
+.SH DESCRIPTION
+.B mkfs.f2fs
+is used to create a f2fs file system (usually in a disk partition).
+\fIdevice\fP is the special file corresponding to the device (e.g.
+\fI/dev/sdXX\fP).
+\fIsectors\fP is optionally given for specifing the filesystem size.
+.PP
+The exit code returned by
+.B mkfs.f2fs
+is 0 on success and 1 on failure.
+.SH OPTIONS
+.TP
+.BI \-a " heap-based-allocation"
+Specify 1 or 0 to enable/disable heap based block allocation policy.
+If the value is equal to 1, each of active log areas are initially
+assigned separately according to the whole volume size.
+The default value is 1.
+.TP
+.BI \-c " device"
+Build f2fs with this device additionally, so that user can see all
+the devices as one big volume.
+.TP
+.BI \-l " volume-label"
+Specify the volume label to the partition mounted as F2FS.
+.TP
+.BI \-o " overprovision-ratio-percentage"
+Specify the percentage over the volume size for overprovision area. This area
+is hidden to users, and utilized by F2FS cleaner. If not specified, the best
+number will be assigned automatically accoring to the partition size.
+.TP
+.BI \-s " #-of-segments-per-section"
+Specify the number of segments per section. A section consists of
+multiple consecutive segments, and is the unit of garbage collection.
+The default number is 1, which means one segment is assigned to a section.
+.TP
+.BI \-z " #-of-sections-per-zone"
+Specify the number of sections per zone. A zone consists of multiple sections.
+F2FS allocates segments for active logs with separated zones as much as possible.
+The default number is 1, which means a zone consists of one section.
+.TP
+.BI \-e " extension-list"
+Specify a file extension list in order f2fs to treat them as cold files.
+The data of files having those extensions will be stored to the cold log.
+The default list includes most of multimedia file extensions such as jpg, gif,
+mpeg, mkv, and so on.
+.TP
+.BI \-d " debug-level"
+Specify the level of debugging options.
+The default number is 0, which shows basic debugging messages.
+.TP
+.SH AUTHOR
+This version of
+.B mkfs.f2fs
+has been written by Jaegeuk Kim <jaegeuk.kim@samsung.com>.
+.SH AVAILABILITY
+.B mkfs.f2fs
+is available from git://git.kernel.org/pub/scm/linux/kernel/git/jaegeuk/f2fs-tools.git.
+.SH SEE ALSO
+.BR mkfs (8),
+.BR fsck.f2fs(8),
+.BR dump.f2fs(8),
+.BR defrag.f2fs(8),
+.BR resize.f2fs(8),
+.BR sload.f2fs(8).
