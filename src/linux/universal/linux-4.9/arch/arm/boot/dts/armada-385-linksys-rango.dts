@@ -513,7 +513,7 @@
 
 		sata {
 			label = "rango:white:sata";
-			gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+			gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "disk-activity";
 		};
 
