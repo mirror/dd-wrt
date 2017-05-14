@@ -2939,6 +2939,19 @@ void stop_drivers(void)
 	// dummy
 }
 
+static void set_led_usbport(char *led, char *ports)
+{
+	char word[256];
+	char *next;
+
+	sysprintf("echo usbport > /sys/class/leds/%s/trigger");
+
+	foreach(word, ports, next) {
+		sysprintf("echo 1 > /sys/class/leds/%s/ports/%s");
+	}
+
+}
+
 void start_drivers(void)
 {
 	/*
@@ -3072,6 +3085,43 @@ void start_drivers(void)
 #ifdef HAVE_NORTHSTAR
 	set_smp_affinity(111, 2);
 	set_smp_affinity(112, 2);
+#endif
+
+#ifdef HAVE_MVEBU
+	insmod("ledtrig-usbport");
+	if (brand == ROUTER_WRT_1900AC) {
+		set_led_usbport("mamba\\:white\\:usb3_2", "usb3-port2");
+		set_led_usbport("mamba\\:white\\:usb3_1", "usb2-port1 usb3-port1");
+		set_led_usbport("mamba\\:white\\:usb2", "usb1-port1");
+	}
+
+	if (brand == ROUTER_WRT_1200AC) {
+		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb3-port1");
+		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_1", "usb2-port1 usb3-port1");
+		set_led_usbport("pca963x\\:caiman\\:white\\:usb2", "usb1-port1");
+	}
+
+	if (brand == ROUTER_WRT_1900ACV2) {
+
+		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_2", "usb3-port1");
+		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_1", "usb2-port1 usb3-port1");
+		set_led_usbport("pca963x\\:cobra\\:white\\:usb2", "usb1-port1");
+	}
+
+	if (brand == ROUTER_WRT_1900ACS) {
+
+		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_2", "usb3-port1");
+		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_1", "usb2-port1 usb3-port1");
+		set_led_usbport("pca963x\\:shelby\\:white\\:usb2", "usb1-port1");
+
+	}
+
+	if (brand == ROUTER_WRT_3200ACM) {
+		set_led_usbport("pca963x\\:rango\\:white\\:usb3_2", "usb3-port1");
+		set_led_usbport("pca963x\\:rango\\:white\\:usb3_1", "usb2-port1 usb3-port1");
+		set_led_usbport("pca963x\\:rango\\:white\\:usb2", "usb1-port1");
+
+	}
 #endif
 }
 
