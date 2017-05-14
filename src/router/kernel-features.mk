@@ -75,6 +75,7 @@ define kernelfeatures
 		sed -i 's/\CONFIG_USB=m/# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_USB=y/# CONFIG_USB is not set/g' $(LINUXDIR)/.config; \
 	fi	
+
 	if [ "$(CONFIG_USB_ADVANCED)" != "y" ]; then \
 		sed -i 's/\CONFIG_JBD=m/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_JBD=y/# CONFIG_JBD is not set/g' $(LINUXDIR)/.config; \
@@ -111,6 +112,13 @@ define kernelfeatures
 		echo "# CONFIG_EXFAT_DELAYED_SYNC is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_KERNEL_DEBUG is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_EXFAT_DEBUG_MSG is not set" >> $(LINUXDIR)/.config; \
+	fi
+	if [ "$(CONFIG_F2FS)" = "y" ]; then \
+		sed -i 's/\# CONFIG_F2FS_FS is not set/CONFIG_F2FS_FS=m/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_F2FS_STAT_FS is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_F2FS_FS_XATTR is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_CHECK_FS=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_F2FS_FAULT_INJECTION=y" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_BONDING)" != "y" ]; then \
 		sed -i 's/\CONFIG_BONDING=m/# CONFIG_BONDING is not set/g' $(LINUXDIR)/.config; \
