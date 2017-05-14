@@ -86,8 +86,10 @@ int do_ntp(void)		// called from ntp_main and
 	update_timezone();
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
-	    || (*servers == 0))
-		servers = "216.239.35.4 216.239.35.8 216.239.35.12 pool.ntp.org";
+	    || (*servers == 0)
+	    || nvram_matchi("dns_crypt", 1)){
+		servers = "8.8.8.8 216.239.35.4 216.239.35.8 pool.ntp.org";
+	}
 
 	char *argv[] = { "ntpclient", servers, NULL };
 	if (_evalpid(argv, NULL, 20, NULL) != 0) {
