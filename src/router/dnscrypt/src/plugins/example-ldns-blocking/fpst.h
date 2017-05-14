@@ -4,8 +4,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#ifndef FPST_DEFINED
 /** A trie */
 typedef struct FPST FPST;
+#endif
 
 /** Type of the function pointer for `fpst_free()` */
 typedef void (*FPST_FreeFn)(const char *key, uint32_t val);

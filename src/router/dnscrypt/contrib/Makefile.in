@@ -13,6 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -102,6 +103,7 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+SCRIPTS = $(noinst_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -273,9 +275,14 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 EXTRA_DIST = \
+	dnscrypt-update-resolvers.sh.in \
+	domains-blacklist-local-additions.txt \
 	domains-blacklist.conf \
 	generate-domains-blacklist.py \
-	domains-blacklist-local-additions.txt
+	resolvers-check.sh
+
+noinst_SCRIPTS = \
+	dnscrypt-update-resolvers.sh
 
 all: all-am
 
@@ -354,7 +361,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile
+all-am: Makefile $(SCRIPTS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -468,6 +475,13 @@ uninstall-am:
 
 .PRECIOUS: Makefile
 
+
+dnscrypt-update-resolvers.sh: dnscrypt-update-resolvers.sh.in
+	$(SED) \
+	-e 's|[@]datadir@|$(datadir)|g' \
+	-e 's|[@]PACKAGE@|$(PACKAGE)|g' \
+	< dnscrypt-update-resolvers.sh.in > dnscrypt-update-resolvers.sh
+	chmod u+rwx,go+rx dnscrypt-update-resolvers.sh
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

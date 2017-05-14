@@ -1,9 +1,11 @@
 #! /bin/sh
 
 set -x
+cd $(dirname $(readlink -f "$0"))
 
 setup() {
 
+  pacman -Syu --noconfirm
   pacman -Sy --noconfirm \
     base-devel git libtool autoconf automake \
     mingw-w64-toolchain \
@@ -109,6 +111,7 @@ compile() {
       --host=$TARGET \
       --bindir="$RELEASE_DIR" \
       --datarootdir="$RELEASE_DIR" \
+      --docdir="${RELEASE_DIR}/doc" \
       --exec-prefix="$RELEASE_DIR" \
       --prefix="$RELEASE_DIR" \
       --sbindir="$RELEASE_DIR" \
@@ -121,6 +124,8 @@ compile() {
     rm -fr ${RELEASE_DIR}/lib
     rm -fr ${RELEASE_DIR}/man
     rm -fr ${RELEASE_DIR}/pkgconfig
+    cp README-WINDOWS.markdown "${RELEASE_DIR}/doc"
+    rm -f "${RELEASE_DIR}/doc/dnscrypt-proxy.conf"
     cp ${DEPS_DIR}/bin/*.dll $RELEASE_DIR
     rm ${RELEASE_DIR}/libtls-*.dll
     rm ${RELEASE_DIR}/libssl-*.dll

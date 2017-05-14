@@ -129,7 +129,7 @@ logger(struct ProxyContext_ * const context,
     assert(sizeof previous_line >= sizeof line);
     memcpy(previous_line, line, len);
     if (context == NULL || context->log_fp == NULL) {
-        log_fp = stdout;
+        log_fp = crit >= LOG_NOTICE ? stdout : stderr;
     } else {
         log_fp = context->log_fp;
     }

@@ -354,6 +354,10 @@ windows_build_command_line_from_registry(int * const argc_p,
         ("EphemeralKeys", &dword_value) == 0 && dword_value > (DWORD) 0) {
         err += cmdline_add_option(argc_p, argv_p, "--ephemeral-keys");
     }
+    if (windows_service_registry_read_dword
+        ("IgnoreTimestamps", &dword_value) == 0 && dword_value > (DWORD) 0) {
+        err += cmdline_add_option(argc_p, argv_p, "--ignore-timestamps");
+    }
     if (windows_service_registry_read_string
         ("ClientKeyFile", &string_value) == 0) {
         err += cmdline_add_option(argc_p, argv_p, "--client-key");
@@ -365,6 +369,13 @@ windows_build_command_line_from_registry(int * const argc_p,
         err += cmdline_add_option(argc_p, argv_p, "--logfile");
         err += cmdline_add_option(argc_p, argv_p, string_value);
         free(string_value);
+    }
+    if (windows_service_registry_read_dword
+        ("LogLevel", &dword_value) == 0) {
+        evutil_snprintf(dword_string, sizeof dword_string, "%ld",
+                        (long) dword_value);
+        err += cmdline_add_option(argc_p, argv_p, "--loglevel");
+        err += cmdline_add_option(argc_p, argv_p, dword_string);
     }
     windows_service_registry_read_multi_sz
         ("Plugins", & (WindowsServiceParseMultiSzCb) {

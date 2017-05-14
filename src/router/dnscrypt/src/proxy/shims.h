@@ -10,7 +10,9 @@
  * Debian Jessie ships an old version of libsodium that doesn't support
  * overlapping buffers. Use temporary buffers to work around this.
  */
-#if SODIUM_LIBRARY_VERSION_MAJOR < 7 || SODIUM_LIBRARY_VERSION_MINOR <= 2
+#if SODIUM_LIBRARY_VERSION_MAJOR < 7 || (SODIUM_LIBRARY_VERSION_MAJOR == 7 && SODIUM_LIBRARY_VERSION_MINOR <= 2)
+# warning The installed libsodium version is very old and will not be supported in the future.
+# warning Support for the XChaCha20 cipher will also not be available in that build.
 static int
 crypto_box_easy_nooverlap(unsigned char *c, const unsigned char *m,
                           unsigned long long mlen, const unsigned char *n,
@@ -57,7 +59,17 @@ crypto_box_detached_afternm(unsigned char *c, unsigned char *mac,
                             const unsigned char *m, unsigned long long mlen,
                             const unsigned char *n, const unsigned char *k)
 {
-    return crypto_secretbox_detached(c, mac, m, mlen, n, k);
+    unsigned char tmp[65536];
+
+    if (mlen > sizeof tmp) {
+        return -1;
+    }
+    if (crypto_secretbox_detached(tmp, mac, m, mlen, n, k) != 0) {
+        return -1;
+    }
+    memcpy(c, tmp, mlen);
+
+    return 0;
 }
 
 static int
@@ -79,7 +91,17 @@ crypto_box_open_detached_afternm(unsigned char *m, const unsigned char *c,
                                  const unsigned char *n,
                                  const unsigned char *k)
 {
-    return crypto_secretbox_open_detached(m, c, mac, clen, n, k);
+    unsigned char tmp[65536];
+
+    if (clen > sizeof tmp) {
+        return -1;
+    }
+    if (crypto_secretbox_open_detached(tmp, c, mac, clen, n, k) != 0) {
+        return -1;
+    }
+    memcpy(m, tmp, clen);
+
+    return 0;
 }
 
 static int
