@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-/Apple/DTD PLIST 1.0/EN" "http:/www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>org.dnscrypt.osx.DNSCryptProxy</string>
+    <key>KeepAlive</key>
+    <true/>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>ProgramArguments</key>
+    <array>
+      <!-- You might want to change this on iOS or if you installed the proxy in a specific location -->
+      <string>@sbindir@/dnscrypt-proxy</string>
+
+      <!-- You may want to change this on iOS or if you installed the proxy in a specific location -->
+      <!-- Also check the paths in that configuration file, especially the path to dnscrypt-resolvers.csv -->
+      <!-- You might also have to disable plugins (such as the LocalCache option) -->
+      <string>@sysconfdir@/dnscrypt-proxy.conf</string>
+    </array>
+    <key>StandardErrorPath</key>
+    <string>/dev/null</string>
+    <key>StandardOutPath</key>
+    <string>/dev/null</string>
+    <key>UserName</key>
+    <string>root</string>
+  </dict>
+</plist>
