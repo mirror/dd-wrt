@@ -176,7 +176,7 @@ void start_sysinit(void)
 		fclose(fp);
 	}
 
-	if (getRouterBrand() == ROUTER_WRT_1900AC) {
+	if (brand == ROUTER_WRT_1900AC) {
 		set_smp_affinity(27, 2);
 		set_smp_affinity(42, 2);
 	} else {
