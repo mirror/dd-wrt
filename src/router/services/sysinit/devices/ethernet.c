@@ -205,7 +205,7 @@ static int detect_driver(char **drivers, char *list)
 
 static int detect_drivers(char *enabled, char *list, char **driverset)
 {
-	static char word[256];
+	char word[256];
 	char *next, *wordlist;
 	int rcc = 0;
 	if (!nvram_match(enabled, "1")) {
