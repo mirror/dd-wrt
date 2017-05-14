@@ -2944,10 +2944,10 @@ static void set_led_usbport(char *led, char *ports)
 	char word[256];
 	char *next;
 
-	sysprintf("echo usbport > /sys/class/leds/%s/trigger");
+	sysprintf("echo usbport > /sys/class/leds/%s/trigger", led);
 
 	foreach(word, ports, next) {
-		sysprintf("echo 1 > /sys/class/leds/%s/ports/%s");
+		sysprintf("echo 1 > /sys/class/leds/%s/ports/%s", led, word);
 	}
 
 }
@@ -3088,6 +3088,7 @@ void start_drivers(void)
 #endif
 
 #ifdef HAVE_MVEBU
+	int brand = getRouterBrand();
 	insmod("ledtrig-usbport");
 	if (brand == ROUTER_WRT_1900AC) {
 		set_led_usbport("mamba\\:white\\:usb3_2", "usb3-port2");
