@@ -121,16 +121,28 @@ void detect_btrfs(SECTION *section, int level)
 }
 
 
+
 void detect_f2fs(SECTION *section, int level)
 {
   unsigned char *buf;
   char s[258];
 
-  if (get_buffer(section, 64 * 1024, 1024, (void **)&buf) < 1024)
+  if (get_buffer(section, 0x400, 1024, (void **)&buf) < 1024)
     return;
 
-   if (get_le_long(buf)==0xF2F52010)
-	print_line(level, "F2FS file system");
+   if (get_le_long(buf)==0xF2F52010) {
+	print_line(level, "F2FS file system v%d.%d",get_le_short(buf+4),get_le_short(buf+6));
+
+    format_utf16_le(buf + 108 + 16, 512, s);
+
+    if (s[0])
+      print_line(level + 1, "Volume name \"%s\"", s);
+
+
+   format_uuid(buf + 108, s);
+   print_line(level + 1, "E2FS %s", s);
+    }
+
 }
 
 /*
