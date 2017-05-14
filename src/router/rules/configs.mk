@@ -268,7 +268,7 @@ obj-$(CONFIG_SOFTETHER) += softether
 obj-$(CONFIG_ALPINE) += qca-ssdk qca-ssdk-shell
 obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_ANCHORFREE) += jansson libevent-af hydra
-
+obj-$(CONFIG_F2FS) += f2fs-tools
 obj-$(CONFIG_MTDUTILS) += mtd-utils
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
