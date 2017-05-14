@@ -110,6 +110,12 @@
 /* Define to 1 if you have the `ws2_32' library (-lws2_32). */
 #undef HAVE_LIBWS2_32
 
+/* Define to 1 if you have the <linux/filter.h> header file. */
+#undef HAVE_LINUX_FILTER_H
+
+/* Define to 1 if you have the <linux/random.h> header file. */
+#undef HAVE_LINUX_RANDOM_H
+
 /* Define this if a modern libltdl is already installed */
 #undef HAVE_LTDL
 

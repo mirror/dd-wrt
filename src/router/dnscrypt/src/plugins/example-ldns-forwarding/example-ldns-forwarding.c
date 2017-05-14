@@ -319,6 +319,8 @@ dcplugin_sync_pre_filter(DCPlugin *dcplugin, DCPluginDNSPacket *dcp_packet)
     ldns_rr_list             *questions;
     size_t                    response_wire_len;
     DCPluginSyncFilterResult  result = DCP_SYNC_FILTER_RESULT_OK;
+    int                       i;
+    _Bool                     has_reachable_ns = 0;
 
     query_wire = dcplugin_get_wire_data(dcp_packet);
     if (ldns_wire2pkt(&query, query_wire, dcplugin_get_wire_data_len(dcp_packet))
@@ -342,6 +344,18 @@ dcplugin_sync_pre_filter(DCPlugin *dcplugin, DCPluginDNSPacket *dcp_packet)
     }
     free(owner_str);
     owner_str = NULL;
+    /* If all nameservers have been marked as unreachable, reset them and try again */
+    for (i = 0; i < ldns_resolver_nameserver_count(forwarder->resolver); i++) {
+        if (ldns_resolver_nameserver_rtt(forwarder->resolver, i) != LDNS_RESOLV_RTT_INF) {
+            has_reachable_ns = 1;
+            break;
+        }
+    }
+    if (!has_reachable_ns) {
+        for (i = 0; i < ldns_resolver_nameserver_count(forwarder->resolver); i++) {
+            ldns_resolver_set_nameserver_rtt(forwarder->resolver, i, LDNS_RESOLV_RTT_MIN);
+        }
+    }
     if (ldns_send(&response, forwarder->resolver, query) != LDNS_STATUS_OK) {
         ldns_pkt_free(query);
         return DCP_SYNC_FILTER_RESULT_ERROR;

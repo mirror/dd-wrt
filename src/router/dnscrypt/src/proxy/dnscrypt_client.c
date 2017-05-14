@@ -226,18 +226,26 @@ int
 dnscrypt_client_init_resolver_publickey(DNSCryptClient * const client,
                                         const uint8_t resolver_publickey[crypto_box_PUBLICKEYBYTES])
 {
+    int res = -1;
+
 #if crypto_box_BEFORENMBYTES != crypto_box_PUBLICKEYBYTES
 # error crypto_box_BEFORENMBYTES != crypto_box_PUBLICKEYBYTES
 #endif
     if (client->ephemeral_keys == 0) {
-        if (crypto_box_beforenm(client->nmkey, resolver_publickey,
-                                client->secretkey) != 0) {
-            return -1;
+        if (client->cipher == CIPHER_XSALSA20POLY1305) {
+            res = crypto_box_beforenm
+                (client->nmkey, resolver_publickey, client->secretkey);
+#ifdef HAVE_XCHACHA20
+        } else if (client->cipher == CIPHER_XCHACHA20POLY1305) {
+            res = crypto_box_curve25519xchacha20poly1305_beforenm
+                (client->nmkey, resolver_publickey, client->secretkey);
+#endif
         }
     } else {
         memcpy(client->publickey, resolver_publickey, sizeof client->publickey);
+        res = 0;
     }
-    return 0;
+    return res;
 }
 
 int

@@ -13,13 +13,18 @@ export SODIUM_IOS_PREFIX="/tmp/libsodium-ios"
 export CPPFLAGS="$CPPFLAGS -I${SODIUM_IOS_PREFIX}/include"
 export LDFLAGS="$LDFLAGS -L${SODIUM_IOS_PREFIX}/lib"
 
-./configure --host=arm-apple-darwin10 \
-            --disable-shared \
-            --disable-plugins \
-            --prefix="$PREFIX" && \
+./configure \
+    --datadir="${PREFIX}/etc" \
+    --disable-plugins \
+    --disable-shared \
+    --enable-relaxed-plugins-permissions \
+    --host=arm-apple-darwin10 \
+    --prefix="${PREFIX}" \
+    --sysconfdir="${PREFIX}/etc/dnscrypt-proxy" && \
+make clean && \
 make -j3 install && \
-sed 's#/usr/local/#/usr/#g' < org.dnscrypt.osx.DNSCryptProxy.plist > \
-  "$PREFIX/org.dnscrypt.osx.DNSCryptProxy.plist" && \
-cp README-iOS.markdown "$PREFIX/" && \
-echo "dnscrypt-proxy has been installed into $PREFIX" && \
+rm -fr "${PREFIX}/include" "${PREFIX}/share" "${PREFIX}/man" && \
+install -m 644 org.dnscrypt.osx.DNSCryptProxy.plist "${PREFIX}/org.dnscrypt.osx.DNSCryptProxy.plist" && \
+cp README-iOS.markdown "${PREFIX}/" && \
+echo "dnscrypt-proxy has been installed into ${PREFIX}" && \
 echo 'Now, using codesign(1) to sign dnscrypt-proxy'

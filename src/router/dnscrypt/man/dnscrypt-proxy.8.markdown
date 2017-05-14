@@ -24,7 +24,8 @@ forwards them to the local stub resolver.
 ## OPTIONS (ignored when a configuration file is provided)
 
   * `-R`, `--resolver-name=<name>`: name of the resolver to use, from
-    the list of available resolvers (see `-L`).
+    the list of available resolvers (see `-L`). Or `random` for a random
+    resolver accessible over IPv4, that doesn't log and supports DNSSEC.
 
   * `-a`, `--local-address=<ip>[:port]`: what local IP the daemon will listen
     to, with an optional port. The default port is 53.

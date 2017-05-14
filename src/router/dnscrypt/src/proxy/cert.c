@@ -377,11 +377,11 @@ cert_query_cb(int result, char type, int count, int ttl,
     if (bincert == NULL) {
         logger_noformat(proxy_context, LOG_ERR,
                         "No useable certificates found");
-        cert_reschedule_query_after_failure(proxy_context);
         DNSCRYPT_PROXY_CERTS_UPDATE_ERROR_NOCERTS();
         if (proxy_context->test_only) {
             exit(DNSCRYPT_EXIT_CERT_NOCERTS);
         }
+        cert_reschedule_query_after_failure(proxy_context);
         return;
     }
     switch (bincert->version_major[1]) {
@@ -397,23 +397,33 @@ cert_query_cb(int result, char type, int count, int ttl,
         logger_noformat(proxy_context, LOG_ERR,
                         "Unsupported certificate version");
         cert_reschedule_query_after_failure(proxy_context);
-        DNSCRYPT_PROXY_CERTS_UPDATE_ERROR_NOCERTS();
-        if (proxy_context->test_only) {
-            exit(DNSCRYPT_EXIT_CERT_NOCERTS);
-        }
         return;
     }
     if (proxy_context->test_only != 0) {
         const uint32_t now_u32 = (uint32_t) time(NULL);
+        uint32_t       ts_begin;
         uint32_t       ts_end;
+        uint32_t       safe_end;
 
+        memcpy(&ts_begin, bincert->ts_begin, sizeof ts_begin);
+        ts_begin = htonl(ts_begin);
         memcpy(&ts_end, bincert->ts_end, sizeof ts_end);
-        ts_end = htonl(ts_end);
-
-        if (ts_end < (uint32_t) proxy_context->test_cert_margin ||
-            now_u32 > ts_end - (uint32_t) proxy_context->test_cert_margin) {
+        safe_end = ts_end = htonl(ts_end);
+        if (safe_end > (uint32_t) proxy_context->test_cert_margin) {
+            safe_end -= (uint32_t) proxy_context->test_cert_margin;
+        } else {
+            safe_end = ts_begin;
+        }
+        if (safe_end < ts_begin) {
             logger_noformat(proxy_context, LOG_WARNING,
-                            "The certificate is not valid for the given safety margin");
+                            "Safety margin wider than the certificate validity period");
+            safe_end = ts_begin;
+        }
+        if (now_u32 < ts_begin || now_u32 > safe_end) {
+            logger(proxy_context, LOG_WARNING,
+                   "The certificate is not valid for the given safety margin (%lu-%lu not within [%lu..%lu])",
+                   (unsigned long) now_u32, (unsigned long) proxy_context->test_cert_margin,
+                   (unsigned long) ts_begin, (unsigned long) safe_end);
             DNSCRYPT_PROXY_CERTS_UPDATE_ERROR_NOCERTS();
             exit(DNSCRYPT_EXIT_CERT_MARGIN);
         }

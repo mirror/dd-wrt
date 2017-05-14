@@ -1,4 +1,3 @@
-# dnscrypt ---------
 #! /bin/sh
 
 if [ -z "$NDK_PLATFORM" ]; then
@@ -7,6 +6,9 @@ if [ -z "$NDK_PLATFORM" ]; then
 else
   export NDK_PLATFORM_COMPAT="${NDK_PLATFORM_COMPAT:-${NDK_PLATFORM}}"
 fi
+
+export NDK_API_VERSION=$(echo "$NDK_PLATFORM" | sed 's/^android-//')
+export NDK_API_VERSION_COMPAT=$(echo "$NDK_PLATFORM_COMPAT" | sed 's/^android-//')
 
 if [ -z "$ANDROID_NDK_HOME" ]; then
   echo "You should probably set ANDROID_NDK_HOME to the directory containing"
@@ -24,7 +26,7 @@ if [ "x$TARGET_ARCH" = 'x' ] || [ "x$ARCH" = 'x' ] || [ "x$HOST_COMPILER" = 'x' 
   exit 1
 fi
 
-export MAKE_TOOLCHAIN="${ANDROID_NDK_HOME}/build/tools/make-standalone-toolchain.sh"
+export MAKE_TOOLCHAIN="${ANDROID_NDK_HOME}/build/tools/make_standalone_toolchain.py"
 
 export PREFIX="$(pwd)/dnscrypt-proxy-android-${TARGET_ARCH}"
 export TOOLCHAIN_DIR="$(pwd)/android-toolchain-${TARGET_ARCH}"
@@ -52,18 +54,20 @@ if [ ! -f "$UPDATE_BINARY" ]; then
   chmod 755 "$UPDATE_BINARY"
 fi
 
-bash $MAKE_TOOLCHAIN --platform="${NDK_PLATFORM:-android-16}" \
-    --arch="$ARCH" --install-dir="$TOOLCHAIN_DIR" && \
+env - PATH="$PATH" \
+    $MAKE_TOOLCHAIN --force --api="$NDK_API_VERSION_COMPAT" \
+    --unified-headers --arch="$ARCH" --install-dir="$TOOLCHAIN_DIR" && \
 ./configure \
     --bindir="${PREFIX}/system/xbin" \
     --datadir="${PREFIX}/system/etc" \
     --disable-soname-versions \
     --disable-plugins \
+    --disable-shared \
     --enable-relaxed-plugins-permissions \
     --host="${HOST_COMPILER}" \
     --prefix="${PREFIX}/system" \
     --sbindir="${PREFIX}/system/xbin" \
-    --sysconfdir="${PREFIX}/system/etc" \
+    --sysconfdir="${PREFIX}/system/etc/dnscrypt-proxy" \
     --with-sysroot="${TOOLCHAIN_DIR}/sysroot" && \
 make clean && \
 make -j3 install && \

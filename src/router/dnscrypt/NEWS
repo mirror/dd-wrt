@@ -1,10 +1,66 @@
 
+* Version 1.9.5
+ - The cache plugin didn't properly move cached entries between the
+recent and frequent lists, resulting is suboptimal performance and
+memory not being properly freed. This has been fixed.
+ - Many updates were made to the default list of resolvers.
+ - The forwarding plugin can now recover after all name servers have
+temporarily been unreachable.
+ - Compatibility with older versions of MacOS has been restored.
+ - Official precompiled packages for Linux are now available.
+
+* Version 1.9.4
+ - The default installation script in version 1.9.3 unconditionally replaced
+the configuration file with the example one. This has been fixed.
+ - The resolver name can be set to `random` in order to pick a random resolver.
+ - Paths are not hardcoded any more in the sample systemd and plist files.
+ - The `dnscrypt-update-resolvers.sh` and `resolvers-check.sh` scripts have been
+moved to the contrib/ directory.
+ - An `IPV4_ONLY` environment variable can be set to skip IPv6-only entries in
+`resolvers-check.sh`.
+ - Precompiled iOS/Android/Windows packages have become more consistent, and
+now include basic documentation.
+ - Tests are now run using random resolvers.
+
+* Version 1.9.3
+ - This version can be compiled on Linux distributions using the musl C
+library.
+ - Version 1.9.3 also restores compatibility with ancient Linux kernels that
+didn't support `SO_REUSEPORT`, without having to explicitly compile the package
+with `NO_REUSEPORT`.
+ - On Linux, the service now prints when the system doesn't have enough entropy
+to initialize the PRNG.
+
+* Version 1.9.2
+ - Compatibility with ancient libsodium versions (1.0.0, as still shipped
+in Debian Jessie) has been restored.
+ - With newer libsodium versions, the XChaCha20-Poly1305 can now actually
+be used on servers supporting this construction.
+ - The configuration file can now recursively include other configuration
+files, with the `Include` keyword.
+ - Error messages were improved.
+ - The generate-domains-blacklist.py script now supports whitelists in
+addition to blacklists, and provides more example feeds.
+ - The blocking plugin sometimes didn't match overlapping rules. This should
+have been fixed for good.
+ - The `IgnoreTimestamps` and `LogLevel` options can now be controlled using
+Windows registry keys.
+ - Log error messages whose level is lower than `LOG_NOTICE` now go to
+`stderr` instead of `stdout`.
+ - On Linux, a BPF filter is attached to the client-side UDP socket in order
+to drop invalid DNS queries right away.
+ - The `NO_REUSEPORT` preprocessor macro can be defined in order to avoid
+enabling `SO_REUSEPORT` on older linux-sunxi kernels.
+ - The package can be compiled on Debian 6.
+ - `--version` now reports useful information about the way the server was
+compiled.
+
 * Version 1.9.1
  - The blocking plugin introduced in version 1.9.0 didn't properly
 handle overlapping rules. This has been fixed.
  - The documentation and examples were updated.
- - The mimimum time to keep a record in cache can be specified in the
-cache plugin, with the `--with-ttl` option (config file: `with-ttl:...`).
+ - The minimum time to keep a record in cache can be specified in the
+cache plugin, with the `--min-ttl` option.
  - The example generate-domains-blacklist.py script produces a more
 optimized list, without overlapping names.
 

@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "DNSCRYPT\-PROXY" "8" "January 2017" "" ""
+.TH "DNSCRYPT\-PROXY" "8" "March 2017" "" ""
 .
 .SH "NAME"
 \fBdnscrypt\-proxy\fR \- A DNSCrypt forwarder
@@ -27,7 +27,7 @@ The proxy verifies the replies, decrypts them, and transparently forwards them t
 .SH "OPTIONS (ignored when a configuration file is provided)"
 .
 .IP "\(bu" 4
-\fB\-R\fR, \fB\-\-resolver\-name=<name>\fR: name of the resolver to use, from the list of available resolvers (see \fB\-L\fR)\.
+\fB\-R\fR, \fB\-\-resolver\-name=<name>\fR: name of the resolver to use, from the list of available resolvers (see \fB\-L\fR)\. Or \fBrandom\fR for a random resolver accessible over IPv4, that doesn\'t log and supports DNSSEC\.
 .
 .IP "\(bu" 4
 \fB\-a\fR, \fB\-\-local\-address=<ip>[:port]\fR: what local IP the daemon will listen to, with an optional port\. The default port is 53\.

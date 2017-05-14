@@ -8,6 +8,6 @@ TCP.
 would fit in a 512-bytes UDP packet, expect a forced fallback to TCP.
   
     Given a working server proxy on 212.47.228.136
-    And a running dnscrypt proxy with options "--edns-payload-size=4096 --tcp-only -R dnscrypt.org-fr"
+    And a running dnscrypt proxy with options "--edns-payload-size=4096 --tcp-only -R random"
     When a client asks dnscrypt-proxy for "test-ff.dnscrypt.org"
     Then dnscrypt-proxy returns "255.255.255.255"

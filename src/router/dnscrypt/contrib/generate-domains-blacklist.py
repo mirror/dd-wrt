@@ -1,5 +1,8 @@
 #! /usr/bin/env python
 
+# run with python generate-domains-blacklist.py > list.txt.tmp && mv -f list.txt.tmp list
+
+import argparse
 import re
 import sys
 import urllib2
@@ -7,6 +10,7 @@ import urllib2
 
 def parse_blacklist(content, trusted=False):
     rx_comment = re.compile(r'^(#|$)')
+    rx_inline_comment = re.compile(r'\s*#\s*[a-z0-9-].*$')
     rx_u = re.compile(r'^@*\|\|([a-z0-9.-]+[.][a-z]{2,})\^?(\$(popup|third-party))?$')
     rx_l = re.compile(r'^([a-z0-9.-]+[.][a-z]{2,})$')
     rx_h = re.compile(r'^[0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}[.][0-9]{1,3}\s+([a-z0-9.-]+[.][a-z]{2,})$')
@@ -22,6 +26,7 @@ def parse_blacklist(content, trusted=False):
         line = str.lower(str.strip(line))
         if rx_comment.match(line):
             continue
+        line = rx_inline_comment.sub('', line)
         for rx in rx_set:
             matches = rx.match(line)
             if not matches:
@@ -31,7 +36,7 @@ def parse_blacklist(content, trusted=False):
     return names
 
 
-def blacklist_from_url(url):
+def list_from_url(url):
     sys.stderr.write("Loading data from [{}]\n".format(url))
     req = urllib2.Request(url)
     trusted = False
@@ -41,19 +46,20 @@ def blacklist_from_url(url):
     try:
         response = urllib2.urlopen(req, timeout=10)
     except urllib2.URLError as err:
-        sys.stderr.write("[{}] could not be loaded: {}\n".format(err))
+        sys.stderr.write("[{}] could not be loaded: {}\n".format(url, err))
         exit(1)
     if trusted is False and response.getcode() != 200:
         sys.stderr.write("[{}] returned HTTP code {}\n".format(url, response.getcode()))
         exit(1)
     content = response.read()
+
     return parse_blacklist(content, trusted)
 
 
 def name_cmp(name):
-    parts = name.split('.')
+    parts = name.split(".")
     parts.reverse()
-    return str.join('.', parts)
+    return str.join(".", parts)
 
 
 def has_suffix(names, name):
@@ -66,10 +72,22 @@ def has_suffix(names, name):
     return False
 
 
-def blacklists_from_config_file(file):
+def whitelist_from_url(url):
+    if not url:
+        return set()
+
+    return list_from_url(url)
+
+
+def blacklists_from_config_file(file, whitelist):
     blacklists = {}
     all_names = set()
     unique_names = set()
+
+    if whitelist and not re.match(r'^[a-z0-9]+:', whitelist):
+        whitelist = "file:" + whitelist
+
+    whitelisted_names = whitelist_from_url(whitelist)
 
     with open(file) as fd:
         for line in fd:
@@ -77,17 +95,19 @@ def blacklists_from_config_file(file):
             if str.startswith(line, "#") or line == "":
                 continue
             url = line
-            names = blacklist_from_url(url)
+            names = list_from_url(url)
             blacklists[url] = names
             all_names |= names
 
     for url, names in blacklists.items():
         print("\n\n########## Blacklist from {} ##########\n".format(url))
-        ignored = 0
+        ignored, whitelisted = 0, 0
         list_names = list()
         for name in names:
             if has_suffix(all_names, name) or name in unique_names:
                 ignored = ignored + 1
+            elif has_suffix(whitelisted_names, name) or name in whitelisted_names:
+                whitelisted = whitelisted + 1
             else:
                 list_names.append(name)
                 unique_names.add(name)
@@ -95,8 +115,20 @@ def blacklists_from_config_file(file):
         list_names.sort(key=name_cmp)
         if ignored:
             print("# Ignored duplicates: {}\n".format(ignored))
+        if whitelisted:
+            print("# Ignored entries due to the whitelist: {}\n".format(whitelisted))
         for name in list_names:
             print(name)
 
 
-blacklists_from_config_file("domains-blacklist.conf")
+argp = argparse.ArgumentParser(description="Create a unified blacklist from a set of local and remote files")
+argp.add_argument("-c", "--config", default="domains-blacklist.conf",
+    help="file containing blacklist sources")
+argp.add_argument("-w", "--whitelist", default="domains-whitelist.txt",
+    help="file containing a set of names to exclude from the blacklist")
+args = argp.parse_args()
+
+conf = args.config
+whitelist = args.whitelist
+
+blacklists_from_config_file(conf, whitelist)

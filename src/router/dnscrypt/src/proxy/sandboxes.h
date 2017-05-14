@@ -5,4 +5,6 @@
 int sandboxes_app(void);
 int sandboxes_pidproc(void);
 
+int attach_udp_dnsq_bpf(int fd);
+
 #endif

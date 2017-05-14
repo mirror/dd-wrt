@@ -26,6 +26,7 @@
 #include "logger.h"
 #include "minicsv.h"
 #include "pid_file.h"
+#include "shims.h"
 #include "simpleconf.h"
 #include "simpleconf_dnscrypt.h"
 #include "utils.h"
@@ -87,7 +88,34 @@ static const char *getopt_options = "a:e:EhIk:K:L:l:m:n:r:R:t:u:N:TVX:";
 static void
 options_version(void)
 {
+#ifdef PACKAGE_VENDOR
+    puts(PACKAGE_STRING "-" PACKAGE_VENDOR);
+#else
     puts(PACKAGE_STRING);
+#endif
+    puts("");
+    printf("Compilation date: %s\n", __DATE__);
+#ifdef PLUGINS
+    puts("Support for plugins: present");
+#endif
+#if defined(PLUGINS_ROOT) && !defined(_WIN32)
+    printf("Plugins root directory: [%s]\n", PLUGINS_ROOT);
+#endif
+#ifdef ENABLE_PLUGINS_ROOT
+    puts("Plugins restricted to the default plugins directory: yes");
+#endif
+#ifdef RELAXED_PLUGINS_PERMISSIONS
+    puts("Relaxed plugins permissions: yes");
+#endif
+#ifdef USE_LDNS
+    puts("Support for ldns-based plugins: present");
+#endif
+#ifdef HAVE_LIBSYSTEMD
+    puts("Support for systemd socket activation: present");
+#endif
+#ifdef HAVE_XCHACHA20
+    puts("Support for the XChaCha20-Poly1305 cipher: present");
+#endif
 }
 
 static void
@@ -127,7 +155,7 @@ void options_init_with_default(AppContext * const app_context,
     proxy_context->log_file = NULL;
     proxy_context->pid_file = NULL;
     proxy_context->resolvers_list = DEFAULT_RESOLVERS_LIST;
-    proxy_context->resolver_name = DEFAULT_RESOLVER_NAME;
+    proxy_context->resolver_name = NULL;
     proxy_context->provider_name = NULL;
     proxy_context->provider_publickey_s = NULL;
     proxy_context->resolver_ip = NULL;
@@ -212,6 +240,48 @@ options_get_col(char * const * const headers, const size_t headers_count,
         i++;
     }
     return NULL;
+}
+
+static int
+options_parse_candidate(ProxyContext * const proxy_context,
+                        char * const * const headers, const size_t headers_count,
+                        char * const * const cols, const size_t cols_count,
+                        uint32_t * const candidate_count_p)
+{
+    const char *dnssec;
+    const char *nologs;
+    const char *resolver_ip;
+    const char *resolver_name;
+
+    resolver_name = options_get_col(headers, headers_count,
+                                    cols, cols_count, "Name");
+    if (resolver_name == NULL || *resolver_name == 0) {
+        return -1;
+    }
+    nologs = options_get_col(headers, headers_count,
+                             cols, cols_count, "No logs");
+    if (nologs == NULL || evutil_ascii_strcasecmp(nologs, "no") == 0) {
+        return 0;
+    }
+    dnssec = options_get_col(headers, headers_count,
+                             cols, cols_count, "DNSSEC validation");
+    if (dnssec == NULL || evutil_ascii_strcasecmp(dnssec, "no") == 0) {
+        return 0;
+    }
+    resolver_ip = options_get_col(headers, headers_count,
+                                  cols, cols_count, "Resolver address");
+    if (*resolver_ip == '[') {
+        return 0;
+    }
+    (*candidate_count_p)++;
+    if (randombytes_uniform(*candidate_count_p) > 0U) {
+        return 0;
+    }
+    free((void *) proxy_context->resolver_name);
+    if ((proxy_context->resolver_name = strdup(resolver_name)) == NULL) {
+        return -1;
+    }
+    return 1;
 }
 
 static int
@@ -313,6 +383,47 @@ options_parse_resolver(ProxyContext * const proxy_context,
 }
 
 static int
+options_pick_random_resolver(ProxyContext * const proxy_context, const char *buf_)
+{
+    char     *buf;
+    char     *buf_local;
+    char     *cols[OPTIONS_RESOLVERS_LIST_MAX_COLS];
+    char     *headers[OPTIONS_RESOLVERS_LIST_MAX_COLS];
+    size_t    cols_count;
+    size_t    headers_count;
+    uint32_t  candidate_count = 0U;
+
+    if ((buf_local = strdup(buf_)) == NULL) {
+        return -1;
+    }
+    buf = minicsv_parse_line(buf_local, headers, &headers_count,
+                             sizeof headers / sizeof headers[0]);
+    if (headers_count < 4U || headers_count > OPTIONS_RESOLVERS_LIST_MAX_COLS) {
+        free(buf_local);
+        return -1;
+    }
+    do {
+        buf = minicsv_parse_line(buf, cols, &cols_count,
+                                 sizeof cols / sizeof cols[0]);
+        if (cols_count < 4U || cols_count > OPTIONS_RESOLVERS_LIST_MAX_COLS) {
+            continue;
+        }
+        minicsv_trim_cols(cols, cols_count);
+        if (*cols[0] == 0 || *cols[0] == '#') {
+            continue;
+        }
+        if (options_parse_candidate(proxy_context, headers, headers_count,
+                                    cols, cols_count, &candidate_count) < 0) {
+            free(buf_local);
+            return -1;
+        }
+    } while (*buf != 0);
+    free(buf_local);
+
+    return 0;
+}
+
+static int
 options_parse_resolvers_list(ProxyContext * const proxy_context, char *buf)
 {
     char   *cols[OPTIONS_RESOLVERS_LIST_MAX_COLS];
@@ -361,6 +472,19 @@ options_use_resolver_name(ProxyContext * const proxy_context)
         logger(proxy_context, LOG_ERR, "Unable to read [%s]",
                resolvers_list_rebased);
         exit(1);
+    }
+    if (evutil_ascii_strcasecmp(proxy_context->resolver_name,
+                                OPTIONS_RESOLVERS_RANDOM) == 0) {
+        free((void *) proxy_context->resolver_name);
+        proxy_context->resolver_name = NULL;
+        options_pick_random_resolver(proxy_context, file_buf);
+        if (proxy_context->resolver_name == NULL) {
+            logger_noformat(proxy_context, LOG_ERR,
+                            "No suitable candidates found for a random selection");
+            exit(1);
+        }
+        logger(proxy_context, LOG_INFO, "Randomly chosen resolver: [%s]",
+               proxy_context->resolver_name);
     }
     assert(proxy_context->resolver_name != NULL);
     if (options_parse_resolvers_list(proxy_context, file_buf) < 0) {
@@ -513,20 +637,38 @@ options_apply(ProxyContext * const proxy_context)
     return 0;
 }
 
+static SimpleConfSpecialHandlerResult
+simpleconf_special_handler(void **output, const char *arg, void *user_data)
+{
+    char *file_name;
+
+    if ((file_name = strdup(arg)) == NULL) {
+        logger((ProxyContext *) user_data, LOG_EMERG, "Out of memory");
+        exit(1);
+    }
+    *output = (void *) file_name;
+
+    return SC_SPECIAL_HANDLER_RESULT_INCLUDE;
+}
+
 int
 options_parse(AppContext * const app_context,
               ProxyContext * const proxy_context, int *argc_p, char ***argv_p)
 {
-    const char *service_config_file = NULL;
-    int         opt_flag;
-    int         option_index = 0;
+    SimpleConfConfig  simpleconf_config = {
+        proxy_context, simpleconf_special_handler
+    };
+    const char       *service_config_file = NULL;
+    int               opt_flag;
+    int               option_index = 0;
 #ifdef _WIN32
-    _Bool       option_install = 0;
+    _Bool             option_install = 0;
 #endif
 
     options_init_with_default(app_context, proxy_context);
     if (*argc_p == 2 && *(*argv_p)[1] != '-') {
-        if (sc_build_command_line_from_file((*argv_p)[1], simpleconf_options,
+        if (sc_build_command_line_from_file((*argv_p)[1], &simpleconf_config,
+                                            simpleconf_options,
                                             (sizeof simpleconf_options) /
                                             (sizeof simpleconf_options[0]),
                                             *(argv_p)[0], argc_p, argv_p) != 0) {
@@ -593,7 +735,8 @@ options_parse(AppContext * const app_context,
             proxy_context->resolvers_list = optarg;
             break;
         case 'R':
-            proxy_context->resolver_name = optarg;
+            free((void *) proxy_context->resolver_name);
+            proxy_context->resolver_name = strdup(optarg);
             break;
 #ifndef _WIN32
         case 'S':
@@ -769,6 +912,8 @@ options_free(ProxyContext * const proxy_context)
     free(proxy_context->user_dir);
     proxy_context->user_dir = NULL;
 #endif
+    free((void *) proxy_context->resolver_name);
+    proxy_context->resolver_name = NULL;
     free((void *) proxy_context->provider_name);
     proxy_context->provider_name = NULL;
     free((void *) proxy_context->provider_publickey_s);

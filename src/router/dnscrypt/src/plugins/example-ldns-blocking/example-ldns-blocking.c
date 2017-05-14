@@ -618,6 +618,24 @@ apply_block_domains(DCPluginDNSPacket *dcp_packet, Blocking * const blocking,
                 block = 1;
                 break;
             }
+            if (found_key_len < owner_str_len) {
+                size_t owner_part_len = owner_str_len;
+
+                while (owner_part_len > 0U && rev[owner_part_len] != '.') {
+                    owner_part_len--;
+                }
+                rev[owner_part_len] = 0;
+                if (owner_part_len > 0U && fpst_starts_with_existing_key
+                    (blocking->domains_rev, rev, owner_part_len,
+                     &found_key, &found_block_type)) {
+                    const size_t found_key_len = strlen(found_key);
+                    if (found_key_len <= owner_part_len &&
+                        (rev[found_key_len] == 0 || rev[found_key_len] == '.')) {
+                        block = 1;
+                        break;
+                    }
+                }
+            }
         }
         if (fpst_starts_with_existing_key(blocking->domains,
                                           owner_str, owner_str_len,
