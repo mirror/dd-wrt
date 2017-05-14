@@ -229,7 +229,7 @@ replace_cache_entry(Cache * const cache,
                 make_space_for_cache_entry(cache, cache->cache_entries_frequent);
             }
             assert(last_cache_entry_parent->next == scanned_cache_entry);
-            last_cache_entry_parent->next = NULL;
+            last_cache_entry_parent->next = scanned_cache_entry->next;
             scanned_cache_entry->next = cache->cache_entries_frequent;
             cache->cache_entries_frequent = scanned_cache_entry;
         }

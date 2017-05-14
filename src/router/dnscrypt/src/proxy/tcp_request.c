@@ -10,6 +10,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <limits.h>
 #include <signal.h>
 #include <stdint.h>
@@ -558,18 +559,23 @@ tcp_listener_bind(ProxyContext * const proxy_context)
 # define LEV_OPT_DEFERRED_ACCEPT 0
 #endif
     if (proxy_context->tcp_listener_handle == -1) {
-        proxy_context->tcp_conn_listener =
-            evconnlistener_new_bind(proxy_context->event_loop,
-                                    tcp_connection_cb, proxy_context,
-                                    LEV_OPT_CLOSE_ON_FREE |
-                                    LEV_OPT_CLOSE_ON_EXEC |
-                                    LEV_OPT_REUSEABLE |
-                                    LEV_OPT_REUSEABLE_PORT |
-                                    LEV_OPT_DEFERRED_ACCEPT,
-                                    TCP_REQUEST_BACKLOG,
-                                    (struct sockaddr *)
-                                    &proxy_context->local_sockaddr,
-                                    (int) proxy_context->local_sockaddr_len);
+        unsigned int flags = LEV_OPT_CLOSE_ON_FREE | LEV_OPT_CLOSE_ON_EXEC |
+                             LEV_OPT_REUSEABLE | LEV_OPT_REUSEABLE_PORT |
+                             LEV_OPT_DEFERRED_ACCEPT;
+        for (;;) {
+            proxy_context->tcp_conn_listener =
+                evconnlistener_new_bind(proxy_context->event_loop,
+                                        tcp_connection_cb, proxy_context,
+                                        flags, TCP_REQUEST_BACKLOG,
+                                        (struct sockaddr *)
+                                        &proxy_context->local_sockaddr,
+                                        (int) proxy_context->local_sockaddr_len);
+            if (proxy_context->tcp_conn_listener != NULL ||
+                (flags & LEV_OPT_REUSEABLE_PORT) == 0U) {
+                break;
+            }
+            flags &= ~LEV_OPT_REUSEABLE_PORT;
+        }
     } else {
         evutil_make_socket_closeonexec(proxy_context->tcp_listener_handle);
         evutil_make_socket_nonblocking(proxy_context->tcp_listener_handle);
@@ -584,7 +590,9 @@ tcp_listener_bind(ProxyContext * const proxy_context)
                                proxy_context->tcp_listener_handle);
     }
     if (proxy_context->tcp_conn_listener == NULL) {
-        logger_noformat(proxy_context, LOG_ERR, "Unable to bind (TCP)");
+        logger(proxy_context, LOG_ERR, "Unable to bind (TCP): [%s]",
+               evutil_socket_error_to_string(evutil_socket_geterror(
+                   proxy_context->tcp_listener_handle)));
         return -1;
     }
 #ifdef TCP_FASTOPEN

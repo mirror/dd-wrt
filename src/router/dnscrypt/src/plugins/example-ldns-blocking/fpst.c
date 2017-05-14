@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "fpst.h"
-
 typedef struct FPST {
     struct FPST *children;
     const char  *key;
@@ -13,6 +11,9 @@ typedef struct FPST {
     uint16_t     bitmap;
     uint32_t     val;
 } FPST;
+
+#define FPST_DEFINED 1
+#include "fpst.h"
 
 #ifdef __GNUC__
 # define popcount(X) ((unsigned int) __builtin_popcount(X))
@@ -140,14 +141,14 @@ fpst_insert(FPST *trie, const char *key, size_t len, uint32_t val)
     for (;;) {
         lk = t->key;
         x = 0U;
-        for (; j < len; j++) {
+        for (; j <= len; j++) {
             x = ((unsigned char) lk[j]) ^ ((unsigned char) key[j]);
             if (x != 0U) {
                 break;
             }
         }
-        if (j == len && lk[j] == 0) {
-            assert(key[j] == 0);
+        if (j > len && lk[j - 1] == 0) {
+            assert(key[j - 1] == 0);
             t->val = val;
             return trie;
         }

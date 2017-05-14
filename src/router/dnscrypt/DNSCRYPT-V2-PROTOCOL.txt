@@ -177,7 +177,7 @@ same TCP connections are not allowed by this revision of the protocol.
 
 <client-nonce> ::= the nonce sent by the client in the related query.
 
-<client-pk> ::= the client's secret key.
+<client-pk> ::= the client's public key.
 
 <resolver-sk> ::= the resolver's public key.
 
@@ -362,11 +362,11 @@ public key. Two valid certificates cannot share the same <client-magic>.
 one certificates are valid, the client must prefer the certificate
 with a higher serial number.
 
-<ts-start> ::= the date the certificate is valid from, as a 4-byte
-unsigned Unix timestamp.
+<ts-start> ::= the date the certificate is valid from, as a big-endian
+4-byte unsigned Unix timestamp.
 
 <ts-end> ::= the date the certificate is valid until (inclusive), as a
-4-byte unsigned Unix timestamp.
+big-endian 4-byte unsigned Unix timestamp.
 
 <extensions> ::= empty in the current protocol version, but may
 contain additional data in future revisions, including minor versions.

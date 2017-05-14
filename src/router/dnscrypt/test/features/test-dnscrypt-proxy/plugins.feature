@@ -4,7 +4,7 @@ Feature: Plugins
 
   Scenario: start the proxy with the no-op plugin
 
-    When I run `dnscrypt-proxy --test=0 -R dnscrypt.org-fr --plugin=libdcplugin_example.la`
+    When I run `dnscrypt-proxy --test=0 -R random --plugin=libdcplugin_example.la`
     Then the output should contain:
     """
     A sample (useless) plugin for dnscrypt-proxy
@@ -13,7 +13,7 @@ Feature: Plugins
 
   Scenario: start the proxy with the ldns_aaaa_blocking plugin
 
-    When I run `dnscrypt-proxy --test=0 -R dnscrypt.org-fr --plugin=libdcplugin_example_ldns_aaaa_blocking.la`
+    When I run `dnscrypt-proxy --test=0 -R random --plugin=libdcplugin_example_ldns_aaaa_blocking.la`
     Then the output should contain:
     """
     Directly return an empty response to AAAA queries
