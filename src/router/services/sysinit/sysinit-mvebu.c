@@ -183,6 +183,7 @@ void start_sysinit(void)
 		set_smp_affinity(36, 2);
 		set_smp_affinity(46, 2);
 	}
+	set_gpio(3,0); //disable sata led as initial value
 
 	return;
 	cprintf("done\n");
