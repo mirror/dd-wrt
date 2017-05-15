@@ -27,10 +27,30 @@ libevent-af-configure:
 
 
 
+
+ifneq ($(CONFIG_MUSL),y)
 HYDRA_OPTS:= \
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	LD="$(ARCH)-linux-uclibc-ld" \
-	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) -DNEED_PRINTF -fno-strict-aliasing" \
+	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fno-strict-aliasing" \
+	EXTRA_CFLAGS+="-I$(TOP)/jansson/src" \
+	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/include" \
+	EXTRA_CFLAGS+="-I$(TOP)/openssl/include" \
+	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/compat" \
+	EXTRA_CFLAGS+="-I$(TOP)/zlib/include" \
+	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent.a" \
+	EXTRA_LDFLAGS+="$(TOP)/libevent2-anchorfree/.libs/libevent_pthreads.a" \
+	EXTRA_LDFLAGS+="$(TOP)/jansson/src/.libs/libjansson.a" \
+	EXTRA_LDFLAGS+="-L$(TOP)/zlib -lz" \
+	EXTRA_LDFLAGS+="-L$(TOP)/openssl -lssl -lcrypto -lpthread" \
+	EXTRA_LDFLAGS+="-Wl,--gc-sections" \
+	OPENWRT=yes \
+	PLATFORM=openwrt
+else
+HYDRA_OPTS:= \
+	CC="ccache $(ARCH)-linux-uclibc-gcc" \
+	LD="$(ARCH)-linux-uclibc-ld" \
+	EXTRA_CFLAGS+="-ffunction-sections -fdata-sections -DOPENWRT -DDISABLE_VIPER_BSS_RESET $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -fno-strict-aliasing" \
 	EXTRA_CFLAGS+="-I$(TOP)/jansson/src" \
 	EXTRA_CFLAGS+="-I$(TOP)/libevent2-anchorfree/include" \
 	EXTRA_CFLAGS+="-I$(TOP)/openssl/include" \
@@ -43,8 +63,9 @@ HYDRA_OPTS:= \
 	EXTRA_LDFLAGS+="-L$(TOP)/openssl -lssl -lcrypto" \
 	EXTRA_LDFLAGS+="-Wl,--gc-sections" \
 	OPENWRT=yes \
-	PLATFORM=openwrt 
+	PLATFORM=openwrt
 
+endif
 
 hydra: 
 	$(MAKE) -C hydra/tranceport $(HYDRA_OPTS)
