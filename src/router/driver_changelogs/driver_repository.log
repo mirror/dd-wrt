@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3426 | brainslayer | 2017-05-15 08:15:09 +0200 (Mon, 15 May 2017) | 1 line
+
+update mwldriver (Corrected the rx buffer size for 88W8964.)
+------------------------------------------------------------------------
 r3425 | brainslayer | 2017-05-15 00:54:23 +0200 (Mon, 15 May 2017) | 1 line
 
 fix wrong msghdr assignments
