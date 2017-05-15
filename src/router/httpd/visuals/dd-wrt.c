@@ -5594,6 +5594,7 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 				name[i] = line[i];
 			}
 			int a, cnt = 0, c = 0;
+			i++;
 			for (a = i; a < i + sizeof(fname); a++) {
 				if (line[a] == '"') {
 					cnt++;
