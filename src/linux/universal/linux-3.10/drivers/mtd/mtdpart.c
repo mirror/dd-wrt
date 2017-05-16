@@ -888,7 +888,7 @@ int add_mtd_partitions(struct mtd_info *master,
 			    {
 			    int retlen;
 			    mtd_read(master,offset,4, &retlen, (u_char *)&buf);
-			    if (SQUASHFS_MAGIC != le32_to_cpu(buf))
+			    if (SQUASHFS_MAGIC == le32_to_cpu(buf))
 				    {
 				    	printk(KERN_EMERG "\nfound squashfs at %X\n",offset);
 				    	struct mtd_partition part;
