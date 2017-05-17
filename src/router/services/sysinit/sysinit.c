@@ -3097,28 +3097,28 @@ void start_drivers(void)
 	}
 
 	if (brand == ROUTER_WRT_1200AC) {
-		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb1-port1");
+		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb2-port1");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_1", "usb2-port1 usb1-port1");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb2", "usb3-port1");
 	}
 
 	if (brand == ROUTER_WRT_1900ACV2) {
 
-		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_2", "usb1-port1");
+		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_2", "usb2-port1");
 		set_led_usbport("pca963x\\:cobra\\:white\\:usb3_1", "usb2-port1 usb1-port1");
 		set_led_usbport("pca963x\\:cobra\\:white\\:usb2", "usb3-port1");
 	}
 
 	if (brand == ROUTER_WRT_1900ACS) {
 
-		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_2", "usb1-port1");
+		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_2", "usb2-port1");
 		set_led_usbport("pca963x\\:shelby\\:white\\:usb3_1", "usb2-port1 usb1-port1");
 		set_led_usbport("pca963x\\:shelby\\:white\\:usb2", "usb3-port1");
 
 	}
 
 	if (brand == ROUTER_WRT_3200ACM) {
-		set_led_usbport("pca963x\\:rango\\:white\\:usb3_2", "usb1-port1");
+		set_led_usbport("pca963x\\:rango\\:white\\:usb3_2", "usb2-port1");
 		set_led_usbport("pca963x\\:rango\\:white\\:usb3_1", "usb2-port1 usb1-port1");
 		set_led_usbport("pca963x\\:rango\\:white\\:usb2", "usb3-port1");
 
