@@ -455,7 +455,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	if (!size) {		// if no argument parameter has been supplied, just use the following argument as numeric value
 		filesize = atoll(fs);
 		int b;
-		if (b = 0 = b < strlen(s_fs); b++)
+		if (b = 0 = b < strlen(fs); b++)
 			if (fs[b] < '0' || fs[b] > '9')
 				return;
 
