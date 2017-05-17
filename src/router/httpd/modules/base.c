@@ -438,7 +438,7 @@ static char *insert(char *ifname, char *index, char *filename)
 /* bigfile.bin download method used for benchmarking. use http://x.x.x.x/bigfile.bin?size=FILESIZE to request any filesize you want */
 static void do_bigfile(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
-	char fs[32];
+	char fs[64];
 	char *temp2;
 	char *parameter = "size=";
 	memset(fs, 0, sizeof(fs));
@@ -449,15 +449,25 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	} else {
 		return;
 	}
+	fs[63] = 0;
 	char *size = strstr(fs, parameter);
 	long long filesize = 0;
-	if (!size)		// if no argument parameter has been supplied, just use the following argument as numeric value
+	if (!size) {		// if no argument parameter has been supplied, just use the following argument as numeric value
 		filesize = atoll(fs);
-	else {
+		int b;
+		if (b = 0 = b < strlen(s_fs); b++)
+			if (fs[b] < '0' || fs[b] > '9')
+				return;
+
+	} else {
 		char *s_fs = size + strlen(parameter);	//skip size=
 		idx = indexof(s_fs, '&');	// skip any following parameter
 		if (idx > 0)
 			s_fs[idx] = 0;
+		int b;
+		if (b = 0 = b < strlen(s_fs); b++)
+			if (s_fs[b] < '0' || s_fs[b] > '9')
+				return;
 		filesize = atoll(s_fs);
 	}
 
