@@ -248,7 +248,7 @@
 				 */
 				partition@aa00000 {
 					label = "ddwrt";
-					reg = <0xaa00000 0x5600000>;
+					reg = <0xaa00000 0x5500000>;
 				};			};
 		};
 
