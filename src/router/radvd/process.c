@@ -255,7 +255,7 @@ static void process_ra(struct Interface *iface, unsigned char *msg, int len, str
 				struct AdvPrefix *prefix = iface->AdvPrefixList;
 				while (prefix) {
 					char prefix_str[INET6_ADDRSTRLEN];
-					if (prefix->enabled && (prefix->PrefixLen == pinfo->nd_opt_pi_prefix_len)
+					if ((prefix->PrefixLen == pinfo->nd_opt_pi_prefix_len)
 					    && addr_match(&prefix->Prefix, &pinfo->nd_opt_pi_prefix, prefix->PrefixLen)) {
 						addrtostr(&prefix->Prefix, prefix_str, sizeof(prefix_str));
 

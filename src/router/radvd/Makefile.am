@@ -148,12 +148,13 @@ EXTRA_DIST = \
 	radvd.8.man \
 	radvd.conf.5.man \
 	radvd.conf.example \
+	radvd.service.in \
 	radvdump.8.man \
+	redhat/radvd-tmpfs.conf \
 	redhat/radvd.conf.empty \
 	redhat/radvd.init \
 	redhat/radvd.spec \
 	redhat/radvd.sysconfig \
-	redhat/radvd-tmpfs.conf \
 	test/check.c \
 	test/print_safe_buffer.c \
 	test/print_safe_buffer.h \
@@ -269,3 +270,11 @@ check_all_LDADD = \
 	@CHECK_LIBS@ \
 	@CONDITIONAL_SOURCES@ \
 	libradvd-parser.a
+
+DISTCHECK_CONFIGURE_FLAGS = \
+  --with-systemdsystemunitdir=$$dc_install_base/$(systemdsystemunitdir)
+
+if HAVE_SYSTEMD
+systemdsystemunit_DATA = radvd.service
+endif
+

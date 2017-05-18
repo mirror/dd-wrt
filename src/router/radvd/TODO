@@ -51,13 +51,6 @@ The restrictions of the (privilege separation) master process could
 be restricted as currently it basically only needs to write to /proc,
 do some logging and nothing else.
 
-radvd does not support splitting up RAs to multiple packets (RFC4861 6.2.3
-last paragraph). In practise this limits advertising to ~45 prefixes on a 
-link, but there is no reason to be able to so.  In order to avoid
-fragmenting packets yet support receiving full-size frames, our hack is to
-have a bigger receive than send buffer. We could try using setsockopt
-IPV6_DONTFRAG, but at least Linux glibc doesn't appear to support it yet.
-
 Triggered by: https://bugzilla.redhat.com/show_bug.cgi?id=554125
 Known problems (probably can't do anything about these):
  - If interface MAC address changes, radvd will keep sending the old MAC

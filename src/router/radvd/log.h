@@ -19,6 +19,7 @@
 #define L_STDERR	2
 #define L_STDERR_SYSLOG	3
 #define L_LOGFILE	4
+#define L_STDERR_CLEAN	5
 
 #define LOG_TIME_FORMAT "%b %d %H:%M:%S"
 

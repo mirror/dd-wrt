@@ -25,6 +25,17 @@ START_TEST (test_safe_buffer)
 }
 END_TEST
 
+START_TEST (test_safe_buffer_resize)
+{
+	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	for(int i = 0; i < 5000; i += 17) {
+		safe_buffer_resize(&sb, i);
+		ck_assert_int_ge(sb.allocated, i);
+	}
+	safe_buffer_free(&sb);
+}
+END_TEST
+
 START_TEST (test_safe_buffer_append)
 {
 	struct safe_buffer sb = SAFE_BUFFER_INIT;
@@ -60,6 +71,38 @@ START_TEST (test_safe_buffer_pad)
 	ck_assert_int_eq(sb.used, 10+sizeof(array));
 	
 	safe_buffer_free(&sb);
+}
+END_TEST
+
+START_TEST (test_safe_buffer_list)
+{
+	struct safe_buffer_list *sbl = new_safe_buffer_list();
+	ck_assert_ptr_ne(0, sbl->sb);
+	ck_assert_ptr_eq(0, sbl->sb->buffer);
+	ck_assert_int_eq(0, sbl->sb->used);
+	ck_assert_ptr_eq(0, sbl->next);
+	safe_buffer_list_free(sbl);
+}
+END_TEST
+
+START_TEST (test_safe_buffer_list_to_safe_buffer)
+{
+	struct safe_buffer_list *sbl = new_safe_buffer_list();
+	struct safe_buffer sb = SAFE_BUFFER_INIT;
+	char array[] = {"This is a test"};
+
+	safe_buffer_append(sbl->sb, array, sizeof(array));
+	sbl->next = new_safe_buffer_list();
+	safe_buffer_append(sbl->next->sb, array, sizeof(array));
+
+	safe_buffer_list_to_safe_buffer(sbl, &sb);
+
+	ck_assert_str_eq(sb.buffer, array);
+	ck_assert_str_eq(sb.buffer + sizeof(array), array);
+	ck_assert_int_eq(sb.used, 2*sizeof(array));
+	
+	safe_buffer_free(&sb);
+	safe_buffer_list_free(sbl);
 }
 END_TEST
 
@@ -226,9 +269,14 @@ Suite * util_suite(void)
 {
 	TCase * tc_safe_buffer = tcase_create("safe_buffer");
 	tcase_add_test(tc_safe_buffer, test_safe_buffer);
+	tcase_add_test(tc_safe_buffer, test_safe_buffer_resize);
 	tcase_add_test(tc_safe_buffer, test_safe_buffer_append);
 	tcase_add_test(tc_safe_buffer, test_safe_buffer_append2);
 	tcase_add_test(tc_safe_buffer, test_safe_buffer_pad);
+	
+	TCase * tc_safe_buffer_list = tcase_create("safe_buffer_list");
+	tcase_add_test(tc_safe_buffer, test_safe_buffer_list);
+	tcase_add_test(tc_safe_buffer, test_safe_buffer_list_to_safe_buffer);
 
 	TCase * tc_str = tcase_create("str");
 	tcase_add_test(tc_str, test_addrtostr);
