@@ -1,0 +1,46 @@
+# It's not recommended to modify this file in-place, because it
+# will be overwritten during upgrades.  If you want to customize,
+# the best way is to use the "systemctl edit" command.
+
+[Unit]
+Description=Router advertisement daemon for IPv6
+Documentation=man:radvd(8)
+After=network.target
+
+[Service]
+Type=forking
+ExecStartPre=@SBINDIR@/radvd --logmethod stderr_clean --configtest
+ExecStart=@SBINDIR@/radvd --logmethod stderr_clean
+ExecReload=@SBINDIR@/radvd --logmethod stderr_clean --configtest
+ExecReload=/bin/kill -HUP $MAINPID
+PIDFile=@PATH_RADVD_PID@
+
+# Set the CPU scheduling policy to idle which is for running very low priority background jobs
+CPUSchedulingPolicy=idle
+
+# Allow for binding to low ports and doing raw network access
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE  CAP_NET_RAW
+
+# Set up a new file system namespace and mounts private /tmp and /var/tmp directories
+# so this service cannot access the global directories and other processes cannot
+# access this service's directories.
+PrivateTmp=yes
+
+# Sets up a new /dev namespace for the executed processes and only adds API pseudo devices
+# such as /dev/null, /dev/zero or /dev/random (as well as the pseudo TTY subsystem) to it,
+# but no physical devices such as /dev/sda.
+PrivateDevices=yes
+
+# Mounts the /usr, /boot, and /etc directories read-only for processes invoked by this unit.
+ProtectSystem=full
+
+# The directories /home, /root and /run/user are made inaccessible and empty for processes
+# invoked by this unit.
+ProtectHome=yes
+
+# Ensures that the service process and all its children can never gain new privileges
+NoNewPrivileges=yes
+
+[Install]
+WantedBy=multi-user.target
+
