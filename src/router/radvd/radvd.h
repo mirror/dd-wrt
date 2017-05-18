@@ -43,6 +43,10 @@ struct safe_buffer {
 
 #define SAFE_BUFFER_INIT (struct safe_buffer){.should_free = 0, .allocated = 0, .used = 0, .buffer = 0}
 
+struct safe_buffer_list {
+	struct safe_buffer *sb;
+	struct safe_buffer_list *next;
+};
 
 struct Interface {
 	struct Interface *next;
@@ -69,6 +73,8 @@ struct Interface {
 		struct in6_addr if_addr; /* the first link local addr */
 		struct in6_addr *if_addrs; /* all the addrs */
 		int addrs_count;
+		struct in6_addr *if_addr_rasrc; /* selected AdvRASrcAddress or NULL */
+		uint32_t max_ra_option_size;
 	} props;
 
 	struct ra_header_info {
@@ -94,6 +100,7 @@ struct Interface {
 	struct AdvDNSSL *AdvDNSSLList;
 
 	uint32_t AdvLinkMTU; /* XXX: sllao also has an if_maxmtu value...Why? */
+	uint32_t AdvRAMTU; /* MTU used for RA */
 
 	struct sllao {
 		uint8_t if_hwaddr[HWADDR_MAX];
@@ -116,6 +123,8 @@ struct Interface {
 
 	struct AdvLowpanCo *AdvLowpanCoList;
 	struct AdvAbro *AdvAbroList;
+
+	struct AdvRASrcAddress *AdvRASrcAddressList;
 
 	int lineno; /* On what line in the config file was this iface defined? */
 };
@@ -144,8 +153,6 @@ struct AdvPrefix {
 
 	/* 6to4 etc. extensions */
 	char if6to4[IFNAMSIZ];
-	int enabled;
-	int AutoSelected;
 
 	/* Select prefixes from this interface. */
 	char if6[IFNAMSIZ];
@@ -207,6 +214,12 @@ struct AdvAbro {
 	struct in6_addr LBRaddress;
 
 	struct AdvAbro *next;
+};
+
+struct AdvRASrcAddress {
+	struct in6_addr address;
+
+	struct AdvRASrcAddress *next;
 };
 
 /* Mobile IPv6 extensions */
@@ -310,17 +323,25 @@ void process(int sock, struct Interface *, unsigned char *, int, struct sockaddr
 int recv_rs_ra(int sock, unsigned char *, struct sockaddr_in6 *, struct in6_pktinfo **, int *, unsigned char*);
 
 /* util.c */
+int countbits(int b);
+int count_mask(struct sockaddr_in6 *m);
+struct in6_addr get_prefix6(struct in6_addr const *addr, struct in6_addr const *mask);
 char * strdupf(char const * format, ...) __attribute__ ((format(printf, 1, 2)));
 double rand_between(double, double);
 int check_dnssl_presence(struct AdvDNSSL *, const char *);
 int check_rdnss_presence(struct AdvRDNSS *, struct in6_addr *);
+void safe_buffer_resize(struct safe_buffer * sb, size_t new_capacity);
 size_t safe_buffer_append(struct safe_buffer * sb, void const * m, size_t count);
 size_t safe_buffer_pad(struct safe_buffer * sb, size_t count);
 ssize_t readn(int fd, void *buf, size_t count);
 ssize_t writen(int fd, const void *buf, size_t count);
 struct safe_buffer * new_safe_buffer(void);
-void addrtostr(struct in6_addr *, char *, size_t);
+void addrtostr(struct in6_addr const *, char *, size_t);
 void safe_buffer_free(struct safe_buffer * sb);
+struct safe_buffer_list * new_safe_buffer_list(void);
+void safe_buffer_list_free(struct safe_buffer_list * sbl);
+struct safe_buffer_list * safe_buffer_list_append(struct safe_buffer_list * sbl);
+void safe_buffer_list_to_safe_buffer(struct safe_buffer_list * sbl, struct safe_buffer *sb);
 
 /* privsep.c */
 int privsep_interface_curhlim(const char *iface, uint32_t hlim);

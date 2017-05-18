@@ -17,12 +17,18 @@
 #include "radvd.h"
 #include "defaults.h"
 #include "pathnames.h"
+#include "netlink.h"
 
 #ifndef IPV6_ADDR_LINKLOCAL
 #define IPV6_ADDR_LINKLOCAL   0x0020U
 #endif
 
+#ifndef ARPHRD_6LOWPAN
+#define ARPHRD_6LOWPAN	825	/* IPv6 over LoWPAN */
+#endif
+
 static char const *hwstr(unsigned short sa_family);
+uint32_t get_interface_linkmtu(const char *);
 
 /*
  * this function gets the hardware type and address of an interface,
@@ -42,6 +48,21 @@ int update_device_info(int sock, struct Interface *iface)
 
 	iface->sllao.if_maxmtu = ifr.ifr_mtu;
 	dlog(LOG_DEBUG, 3, "%s mtu: %d", iface->props.name, ifr.ifr_mtu);
+
+	/* RFC 2460: 5. Packet Size Issues */
+	/* Get the smallest MTU between the SIOCGIFMTU value and the protocol MTU
+	 * /proc/sys/net/ipv6/conf/eth0/mtu
+	 * Because the protocol MTU _may_ be different than the physical link MTU
+	 *
+	 * If Link-layer MTU <= 1280: use 1280 (enforced by iface->AdvRAMTU)
+	 * If Link-layer MTU > 1280: use the lower of:
+	 *   - RA MTU
+	 *   - link-layer MTU
+	 *   - per-protocol MTU
+	 */
+	iface->props.max_ra_option_size = iface->AdvRAMTU;
+	iface->props.max_ra_option_size = MIN(iface->props.max_ra_option_size, MAX(iface->sllao.if_maxmtu, RFC2460_MIN_MTU));
+	iface->props.max_ra_option_size = MIN(iface->props.max_ra_option_size, MAX(get_interface_linkmtu(iface->props.name), RFC2460_MIN_MTU));
 
 	if (ioctl(sock, SIOCGIFHWADDR, &ifr) < 0) {
 		flog(LOG_ERR, "ioctl(SIOCGIFHWADDR) failed on %s: %s", iface->props.name, strerror(errno));
@@ -65,11 +86,13 @@ int update_device_info(int sock, struct Interface *iface)
 			(unsigned char)ifr.ifr_hwaddr.sa_data[5]);
 		/* *INDENT-ON* */
 		dlog(LOG_DEBUG, 3, "%s hardware address: %s", iface->props.name, hwaddr);
+		iface->props.max_ra_option_size -= 14; /* RFC 2464 */
 		break;
 #ifdef ARPHRD_FDDI
 	case ARPHRD_FDDI:
 		iface->sllao.if_hwaddr_len = 48;
 		iface->sllao.if_prefix_len = 64;
+		iface->props.max_ra_option_size -= 22; /* RFC 2109 */
 		break;
 #endif				/* ARPHDR_FDDI */
 #ifdef ARPHRD_ARCNET
@@ -77,18 +100,35 @@ int update_device_info(int sock, struct Interface *iface)
 		iface->sllao.if_hwaddr_len = 8;
 		iface->sllao.if_prefix_len = -1;
 		iface->sllao.if_maxmtu = -1;
+		/* RFC1201: fragmentation handled at a lower layer.
+		 * native packet size is 256-512 bytes */
+		iface->props.max_ra_option_size -= 0;
 		break;
 #endif				/* ARPHDR_ARCNET */
-#ifdef ARPHRD_IEEE802154
-	case ARPHRD_IEEE802154:
-		iface->sllao.if_hwaddr_len = 64;
-		iface->sllao.if_prefix_len = 64;
-		break;
+	case ARPHRD_6LOWPAN:
+#ifdef HAVE_NETLINK
+		/* hwaddr length differs on some L2 type lets detect them */
+		iface->sllao.if_hwaddr_len = netlink_get_device_addr_len(iface);
+		if (iface->sllao.if_hwaddr_len != -1) {
+			iface->sllao.if_hwaddr_len *= 8;
+			iface->sllao.if_prefix_len = 64;
+		} else {
+			iface->sllao.if_prefix_len = -1;
+		}
+#else
+		iface->sllao.if_hwaddr_len = -1;
+		iface->sllao.if_prefix_len = -1;
 #endif
+		/* RFC4944: fragmentation handled at a lower layer.
+		 * native packet size maxes at 127 bytes */
+		iface->props.max_ra_option_size -= 0;
+		break;
 	default:
 		iface->sllao.if_hwaddr_len = -1;
 		iface->sllao.if_prefix_len = -1;
 		iface->sllao.if_maxmtu = -1;
+		/* Assume fragmentation handled at a lower layer. */
+		iface->props.max_ra_option_size -= 0;
 		break;
 	}
 
@@ -120,6 +160,10 @@ int update_device_info(int sock, struct Interface *iface)
 		prefix = prefix->next;
 	}
 
+	// Regardless of link-layer, every RA message will have an IPV6 header & RA header
+	iface->props.max_ra_option_size -= sizeof(struct ip6_hdr);
+	iface->props.max_ra_option_size -= sizeof(struct nd_router_advert);
+
 	return 0;
 }
 
@@ -143,6 +187,32 @@ int setup_allrouters_membership(int sock, struct Interface *iface)
 	}
 
 	return 0;
+}
+
+uint32_t get_interface_linkmtu(const char *iface)
+{
+	int value;
+	FILE *fp = NULL;
+	char proc_path[sizeof(PROC_SYS_IP6_LINKMTU) + IFNAMSIZ];
+
+	snprintf(proc_path, sizeof(PROC_SYS_IP6_LINKMTU) + IFNAMSIZ, PROC_SYS_IP6_LINKMTU, iface);
+
+	fp = fopen(proc_path, "r");
+	if (fp) {
+		int rc = fscanf(fp, "%d", &value);
+		if (rc != 1) {
+			flog(LOG_ERR, "cannot read value from %s: %s", proc_path, strerror(errno));
+			exit(1);
+		}
+		fclose(fp);
+	} else {
+		flog(LOG_DEBUG,
+		     "Correct IPv6 MTU entry not found, " "perhaps the procfs is disabled, "
+		     "or the kernel interface has changed?");
+		value = 1280; /* RFC2460: section 5 */
+	}
+
+	return value;
 }
 
 int set_interface_linkmtu(const char *iface, uint32_t mtu)
@@ -390,6 +460,11 @@ static char const *hwstr(unsigned short sa_family)
 		rc = "ARPHRD_IEEE802154_PHY";
 		break;
 #endif
+#ifdef ARPHRD_6LOWPAN
+	case ARPHRD_6LOWPAN:
+		rc = "ARPHRD_6LOWPAN";
+		break;
+#endif 
 #ifdef ARPHRD_VOID
 	case ARPHRD_VOID:
 		rc = "ARPHRD_VOID";

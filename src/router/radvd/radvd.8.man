@@ -168,4 +168,5 @@ Jim Paris	<jim@jtan.com>		- Privilege separation support
 Reuben Hawkins  <reubenhwk@gmail.com>   - current maintainer
 Pierre Ossman   <pierre@ossman.eu>      - RFC6106 (DNSSL) support
 Varka Bhadram 	<varkabhadram@gmail.com> - 6LoWPAN-ND (RFC6775) support
+Robin H. Johnson	<robbat2@gentoo.org>	- RA splitting per RFC 6980 & RFC4861#6.2.3
 .fi

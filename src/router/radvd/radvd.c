@@ -37,7 +37,8 @@ static char usage_str[] = {
 "  -f, --facility=NUM      Set the logging facility.\n"
 "  -h, --help              Show this help screen.\n"
 "  -l, --logfile=PATH      Set the log file.\n"
-"  -m, --logmethod=X       Set method to: syslog, stderr, stderr_syslog, logfile, or none.\n"
+"  -m, --logmethod=X       Set method to: syslog, stderr, stderr_syslog, logfile,\n"
+"                          stderr_clean, or none.\n"
 "  -n, --nodaemon          Prevent the daemonizing.\n"
 "  -p, --pidfile=PATH      Set the pid file.\n"
 "  -t, --chrootdir=PATH    Chroot to the specified path.\n"
@@ -231,6 +232,8 @@ int main(int argc, char *argv[])
 				log_method = L_STDERR_SYSLOG;
 			} else if (!strcmp(optarg, "stderr")) {
 				log_method = L_STDERR;
+			} else if (!strcmp(optarg, "stderr_clean")) {
+				log_method = L_STDERR_CLEAN;
 			} else if (!strcmp(optarg, "logfile")) {
 				log_method = L_LOGFILE;
 			} else if (!strcmp(optarg, "none")) {
@@ -289,7 +292,18 @@ int main(int argc, char *argv[])
 
 	if (configtest) {
 		set_debuglevel(1);
-		log_method = L_STDERR;
+		switch (log_method) {
+			case L_STDERR:
+			case L_STDERR_CLEAN:
+				break;
+			case L_STDERR_SYSLOG:
+			case L_NONE:
+			case L_SYSLOG:
+			case L_LOGFILE:
+			default:
+				log_method = L_STDERR;
+			break;
+		}
 	}
 
 	if (log_open(log_method, pname, logfile, facility) < 0) {

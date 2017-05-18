@@ -50,6 +50,7 @@ DNSSL			{ return T_DNSSL; }
 clients			{ return T_CLIENTS; }
 lowpanco		{ return T_LOWPANCO; }
 abro			{ return T_ABRO; }
+AdvRASrcAddress	{ return T_RASRCADDRESS; }
 
 IgnoreIfMissing		{ return T_IgnoreIfMissing; }
 AdvSendAdvert		{ return T_AdvSendAdvert; }
@@ -58,6 +59,7 @@ MinRtrAdvInterval	{ return T_MinRtrAdvInterval; }
 AdvManagedFlag		{ return T_AdvManagedFlag; }
 AdvOtherConfigFlag	{ return T_AdvOtherConfigFlag; }
 AdvLinkMTU		{ return T_AdvLinkMTU; }
+AdvRAMTU		{ return T_AdvRAMTU; }
 AdvReachableTime	{ return T_AdvReachableTime; }
 AdvRetransTimer		{ return T_AdvRetransTimer; }
 AdvCurHopLimit		{ return T_AdvCurHopLimit; }

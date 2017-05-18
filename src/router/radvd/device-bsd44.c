@@ -40,6 +40,10 @@ int update_device_info(int sock, struct Interface *iface)
 	dlog(LOG_DEBUG, 3, "mtu for %s is %d", iface->props.name, ifr.ifr_mtu);
 	iface->sllao.if_maxmtu = ifr.ifr_mtu;
 
+	/* RFC 2460: 5. Packet Size Issues */
+	iface->props.max_ra_option_size = iface->AdvRAMTU;
+	iface->props.max_ra_option_size = MIN(iface->props.max_ra_option_size, MAX(iface->sllao.if_maxmtu, RFC2460_MIN_MTU));
+
 	if (getifaddrs(&addresses) != 0) {
 		flog(LOG_ERR, "getifaddrs failed: %s(%d)", strerror(errno), errno);
 		goto ret;
@@ -69,13 +73,17 @@ int update_device_info(int sock, struct Interface *iface)
 		case IFT_ETHER:
 		case IFT_ISO88023:
 			iface->sllao.if_prefix_len = 64;
+			iface->props.max_ra_option_size -= 14; /* RFC 2464 */
 			break;
 		case IFT_FDDI:
 			iface->sllao.if_prefix_len = 64;
+			iface->props.max_ra_option_size -= 22; /* RFC 2109 */
 			break;
 		default:
 			iface->sllao.if_prefix_len = -1;
 			iface->sllao.if_maxmtu = -1;
+			/* Assume fragmentation handled at a lower layer. */
+			iface->props.max_ra_option_size -= 0;
 			break;
 		}
 
@@ -100,6 +108,9 @@ int update_device_info(int sock, struct Interface *iface)
 		}
 
 		freeifaddrs(addresses);
+		// Regardless of link-layer, every RA message will have an IPV6 header & RA header
+		iface->props.max_ra_option_size -= sizeof(struct ip6_hdr);
+		iface->props.max_ra_option_size -= sizeof(struct nd_router_advert);
 		return 0;
 	}
 

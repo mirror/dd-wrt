@@ -174,6 +174,26 @@ int setup_iface_addrs(struct Interface *iface)
 			addrtostr(&iface->props.if_addrs[i], addr_str, sizeof(addr_str));
 			dlog(LOG_DEBUG, 4, "%s address: %s", iface->props.name, addr_str);
 		}
+		/* AdvRASrcAddress: allow operator selection of RA source address */
+		if(iface->AdvRASrcAddressList != NULL) {
+			iface->props.if_addr_rasrc = NULL;
+			for (struct AdvRASrcAddress * current = iface->AdvRASrcAddressList; current; current = current->next) {
+				for (int i = 0; i < iface->props.addrs_count; i++) {
+					struct in6_addr cmp_addr = iface->props.if_addrs[i];
+					if (0 == memcmp(&cmp_addr, &current->address, sizeof(struct in6_addr))) {
+						addrtostr(&(cmp_addr), addr_str, sizeof(addr_str));
+						dlog(LOG_DEBUG, 4, "AdvRASrcAddress selecting: %s", addr_str);
+						iface->props.if_addr_rasrc = &iface->props.if_addrs[i];
+						break;
+					}
+				}
+				if(NULL != iface->props.if_addr_rasrc)
+					break;
+			}
+		} else {
+			/* AdvRASrcAddress default: Just take the first link-local */
+			iface->props.if_addr_rasrc = &iface->props.if_addr;
+		}
 	} else {
 		if (iface->IgnoreIfMissing)
 			dlog(LOG_DEBUG, 4, "no linklocal address configured on %s", iface->props.name);
