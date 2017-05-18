@@ -46,6 +46,22 @@ config ATA_VERBOSE_ERROR
 
 	  If unsure, say Y.
 
+config ARCH_WANT_LIBATA_LEDS
+	bool
+
+config ATA_LEDS
+	bool "support ATA port LED triggers"
+	depends on ARCH_WANT_LIBATA_LEDS
+	select NEW_LEDS
+	select LEDS_CLASS
+	select LEDS_TRIGGERS
+	default y
+	help
+	  This option adds a LED trigger for each registered ATA port.
+	  It is used to drive disk activity leds connected via GPIO.
+
+	  If unsure, say N.
+
 config ATA_ACPI
 	bool "ATA ACPI Support"
 	depends on ACPI
