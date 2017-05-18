@@ -31,8 +31,8 @@
 #include <linux/of_device.h>
 #include <linux/platform_data/mtd-nand-pxa3xx.h>
 
-#define	CHIP_DELAY_TIMEOUT	msecs_to_jiffies(2000)
-#define NAND_STOP_DELAY		msecs_to_jiffies(400)
+#define	CHIP_DELAY_TIMEOUT	msecs_to_jiffies(200)
+#define NAND_STOP_DELAY		msecs_to_jiffies(40)
 #define PAGE_CHUNK_SIZE		(2048)
 
 /*
