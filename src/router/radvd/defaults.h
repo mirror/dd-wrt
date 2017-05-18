@@ -22,6 +22,7 @@
 /* maximum message size for incoming and outgoing RSs and RAs */
 #define MSG_SIZE_RECV			1500
 #define MSG_SIZE_SEND			1452
+#define RFC2460_MIN_MTU			1280 /* RFC2460 5. Packet Size Issues: lowest valid MTU supported by IPv6 */
 
 #define MAX2(X,Y) ( (( X ) >=  ( Y )) ? ( X ) : ( Y ))
 
@@ -43,6 +44,7 @@
 #define DFLT_AdvDefaultLifetime(iface)	MAX2(1, (int)(3.0 * (iface)->MaxRtrAdvInterval))
 #define DFLT_MinDelayBetweenRAs		MIN_DELAY_BETWEEN_RAS
 #define DFLT_AdvDefaultPreference	0
+#define DFLT_AdvRAMTU			RFC2460_MIN_MTU
 
 /* Options sent with RA */
 
@@ -111,8 +113,11 @@
 #define MIN_AdvDefaultLifetime(iface)	(MAX2(1,(iface)->MaxRtrAdvInterval))
 #define MAX_AdvDefaultLifetime		9000
 
-#define	MIN_AdvLinkMTU			1280
+#define	MIN_AdvLinkMTU			RFC2460_MIN_MTU
 #define	MAX_AdvLinkMTU			131072
+
+#define MIN_AdvRAMTU			MIN_AdvLinkMTU
+#define MAX_AdvRAMTU			MAX_AdvLinkMTU
 
 #define MIN_AdvReachableTime		100
 #define MAX_AdvReachableTime		3600000	/* 1 hour in milliseconds */

@@ -35,6 +35,8 @@ int log_open(int method, char const *ident, char const *log, int facility)
 	case L_NONE:
 	case L_STDERR:
 		break;
+	case L_STDERR_CLEAN:
+		/* fallthrough */
 	case L_STDERR_SYSLOG:
 		/* fallthrough */
 	case L_SYSLOG:
@@ -90,6 +92,10 @@ static int vlog(int prio, char const *format, va_list ap)
 		(void)strftime(tstamp, sizeof(tstamp), LOG_TIME_FORMAT, tm);
 
 		fprintf(stderr, "[%s] %s (%d): %s\n", tstamp, log_ident, getpid(), buff);
+		fflush(stderr);
+		break;
+	case L_STDERR_CLEAN:
+		fprintf(stderr, "%s\n", buff);
 		fflush(stderr);
 		break;
 	case L_LOGFILE:

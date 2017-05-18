@@ -36,6 +36,68 @@
 #endif
 
 
+struct iplink_req {
+	struct nlmsghdr		n;
+	struct ifinfomsg	i;
+	char			buf[1024];
+};
+
+int netlink_get_device_addr_len(struct Interface *iface)
+{
+	struct iplink_req req = {};
+	struct iovec iov = { &req, sizeof(req) };
+	struct sockaddr_nl sa = {};
+	struct msghdr msg = { (void *)&sa, sizeof(sa), &iov, 1, NULL, 0, 0 };
+	int sock, len, addr_len = -1;
+	unsigned short type;
+	char answer[32768];
+	struct rtattr *tb;
+
+	/* nl_pid (for linux kernel) and nl_groups (unicast) should be zero */
+	sa.nl_family = AF_NETLINK;
+	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(struct ifinfomsg));
+	req.n.nlmsg_flags = NLM_F_REQUEST;
+	req.n.nlmsg_type = RTM_GETLINK;
+	req.i.ifi_index = iface->props.if_index;
+
+	sock = netlink_socket();
+	if (sock == -1)
+		return -1;
+
+	len = sendmsg(sock, &msg, 0);
+	if (len == -1) {
+		flog(LOG_ERR, "netlink: sendmsg for addr_len failed: %s", strerror(errno));
+		goto out;
+	}
+
+	iov.iov_base = answer;
+	iov.iov_len = sizeof(answer);
+	len = recvmsg(sock, &msg, 0);
+	if (len == -1) {
+		flog(LOG_ERR, "netlink: recvmsg for addr_len failed: %s", strerror(errno));
+		goto out;
+	}
+
+	if (len < NLMSG_LENGTH(sizeof(struct ifinfomsg)))
+		goto out;
+	len -= NLMSG_LENGTH(sizeof(struct ifinfomsg));
+
+	tb = (struct rtattr *)(answer + NLMSG_LENGTH(sizeof(struct ifinfomsg)));
+	while (RTA_OK(tb, len)) {
+		type = tb->rta_type & ~NLA_F_NESTED;
+		if (type == IFLA_ADDRESS) {
+			addr_len = RTA_PAYLOAD(tb);
+			break;
+		}
+		tb = RTA_NEXT(tb, len);
+	}
+
+out:
+	close(sock);
+
+	return addr_len;
+}
+
 void process_netlink_msg(int sock, struct Interface * ifaces)
 {
 	char buf[4096];
@@ -126,7 +188,7 @@ void process_netlink_msg(int sock, struct Interface * ifaces)
 				struct in6_addr *if_addrs = NULL;
 				int count = get_iface_addrs(iface->props.name, NULL, &if_addrs);
 
-				if (count != iface->props.addrs_count &&
+				if (count != iface->props.addrs_count ||
 					0 != memcmp(if_addrs, iface->props.if_addrs, count * sizeof(struct in6_addr))) {
 					dlog(LOG_DEBUG, 3, "netlink: %s, ifindex %d, addresses are different",
 						ifname, ifaddr->ifa_index);

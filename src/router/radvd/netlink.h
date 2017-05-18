@@ -17,5 +17,6 @@
 
 #include "radvd.h"
 
+int netlink_get_device_addr_len(struct Interface *iface);
 void process_netlink_msg(int sock, struct Interface * ifaces);
 int netlink_socket(void);
