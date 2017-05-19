@@ -2113,6 +2113,12 @@ void usb_disconnect(struct usb_device **pdev)
 		ap_usb_led_off();
 #endif
 
+	/*
+	 * Ensure that the pm runtime code knows that the USB device
+	 * is in the process of being disconnected.
+	 */
+	pm_runtime_barrier(&udev->dev);
+
 	usb_lock_device(udev);
 
 	hub_disconnect_children(udev);
