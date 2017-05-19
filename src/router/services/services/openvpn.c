@@ -279,10 +279,14 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 
-	if (nvram_matchi("use_crypto", 1))
+	if (nvram_matchi("use_crypto", 1)) {
+		insmod("cryptodev");
 		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--route-pre-down", "/tmp/openvpn/route-down.sh", "--daemon", "--engine", "cryptodev");
-	else
+
+	} else {
+		rmmod("cryptodev");
 		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--route-pre-down", "/tmp/openvpn/route-down.sh", "--daemon");
+	}
 
 //      eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
 //      eval("startservice", "wshaper");
