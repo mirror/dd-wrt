@@ -2339,6 +2339,7 @@ CONFIG_CRYPTO_JITTERENTROPY=m
 #
 # Certificates for signature checking
 #
+# CONFIG_CRYPTODEV is not set
 # CONFIG_BINARY_PRINTF is not set
 
 #
