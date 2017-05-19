@@ -1720,5 +1720,4 @@ source certs/Kconfig
 
 endif	# if CRYPTO
 
-#source "crypto/ocf/Kconfig"
 
