@@ -108,13 +108,19 @@ OPENSSL_NO_CIPHERS:= no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-smime \
 OPENSSL_OPTIONS:= no-err threads no-ssl2 no-ssl3 zlib-dynamic no-ec2m
 
 ifeq ($(CONFIG_XSCALE),y)
-OPENSSL_OPTIONS += no-err threads no-sse2 no-perlasm -DHAVE_CRYPTODEV
+OPENSSL_OPTIONS += no-perlasm -DHAVE_CRYPTODEV
 endif
 ifeq ($(CONFIG_STORM),y)
-OPENSSL_OPTIONS += no-err threads no-sse2 no-perlasm -DHAVE_CRYPTODEV
+OPENSSL_OPTIONS += no-perlasm -DHAVE_CRYPTODEV
 endif
 ifeq ($(CONFIG_VENTANA),y)
-OPENSSL_OPTIONS += no-err threads no-sse2 no-perlasm -DHAVE_CRYPTODEV
+OPENSSL_OPTIONS += no-perlasm -DHAVE_CRYPTODEV
+endif
+ifeq ($(CONFIG_MVEBU),y)
+OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
+endif
+ifeq ($(CONFIG_ALPINE,y)
+OPENSSL_OPTIONS += -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGEST
 endif
 
 
