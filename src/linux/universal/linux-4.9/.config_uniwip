@@ -3017,4 +3017,5 @@ CONFIG_CRYPTO_DEV_TALITOS=m
 #
 # Certificates for signature checking
 #
+# CONFIG_CRYPTODEV is not set
 # CONFIG_VIRTUALIZATION is not set
