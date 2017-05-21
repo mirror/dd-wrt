@@ -1,4 +1,4 @@
-radvd-configure:
+radvd-configure: nvram libutils
 	cd radvd && ./autogen.sh
 	cd radvd/libdaemon && ./configure --disable-nls --disable-shared --enable-static --disable-lynx --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections "  ac_cv_func_setpgrp_void=yes ; make
 	-cd radvd && aclocal && autoconf && automake -a && cd .. 
