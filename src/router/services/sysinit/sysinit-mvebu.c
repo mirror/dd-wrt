@@ -87,7 +87,7 @@ void start_sysinit(void)
 	//insmod("input-core");
 	//insmod("button-hotplug");
 	//insmod("gpio-button-hotplug");
-	insmod("leds-tlc59116");
+	insmod("leds-tlc591xx");
 	insmod("leds-pca963x");
 
 	insmod("hwmon");
