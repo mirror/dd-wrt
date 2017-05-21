@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.28 Kernel Configuration
+# Linux/mips 4.9.29 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2238,7 +2238,6 @@ CONFIG_LEDS_GPIO=y
 # CONFIG_LEDS_LT3593 is not set
 # CONFIG_LEDS_TCA6507 is not set
 # CONFIG_LEDS_TLC591XX is not set
-# CONFIG_LEDS_TLC59116 is not set
 # CONFIG_LEDS_LM355x is not set
 # CONFIG_LEDS_IS31FL319X is not set
 # CONFIG_LEDS_IS31FL32XX is not set
