@@ -537,14 +537,6 @@ config LEDS_MAX77693
 	  multifunction device. It has build in control for two leds in flash
 	  and torch mode.
 
-config LEDS_TLC59116
-	tristate "LED driver for TLC59116F controllers"
-	depends on LEDS_CLASS && I2C
-	select REGMAP_I2C
-	help
-	  This option enables support for Texas Instruments TLC59116F
-	  LED controller.
-
 config LEDS_MAX8997
 	tristate "LED support for MAX8997 PMIC"
 	depends on LEDS_CLASS && MFD_MAX8997

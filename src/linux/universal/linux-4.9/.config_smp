@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.28 Kernel Configuration
+# Linux/i386 4.9.29 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -3315,7 +3315,6 @@ CONFIG_LEDS_WRAP=m
 # CONFIG_LEDS_LT3593 is not set
 # CONFIG_LEDS_TCA6507 is not set
 # CONFIG_LEDS_TLC591XX is not set
-# CONFIG_LEDS_TLC59116 is not set
 # CONFIG_LEDS_LM355x is not set
 # CONFIG_LEDS_OT200 is not set
 # CONFIG_LEDS_IS31FL319X is not set
