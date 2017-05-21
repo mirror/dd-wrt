@@ -3091,9 +3091,9 @@ void start_drivers(void)
 	int brand = getRouterBrand();
 	insmod("ledtrig-usbport");
 	if (brand == ROUTER_WRT_1900AC) {
-		set_led_usbport("mamba\\:white\\:usb3_2", "usb3-port2");
-		set_led_usbport("mamba\\:white\\:usb3_1", "usb2-port1 usb3-port1");
-		set_led_usbport("mamba\\:white\\:usb2", "usb1-port1");
+		set_led_usbport("mamba\\:white\\:usb3_2", "usb2-port1");
+		set_led_usbport("mamba\\:white\\:usb3_1", "usb2-port1 usb1-port2");
+		set_led_usbport("mamba\\:white\\:usb2", "usb3-port1");
 	}
 
 	if (brand == ROUTER_WRT_1200AC) {
