@@ -818,8 +818,11 @@ ifneq ($(CONFIG_USB),y)
 	rm -f $(INSTALLDIR)/www/help/HUSB.asp
 endif
 
+ifneq ($(CONFIG_SPEEDCHECKER),y)
+	rm -f $(INSTALLDIR)/www/Speedchecker.asp
+endif
 ifneq ($(CONFIG_WEBSERVER),y)
-	rm -f $(INSTALLDIR)/www/Lighttpd.asp
+	rm -f $(INSTALLDIR)/www/Speedchecker.asp
 	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
 endif
 
