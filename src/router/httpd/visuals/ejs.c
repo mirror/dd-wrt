@@ -1501,7 +1501,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	static char *menu_t[8][13] = {
 		{"index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", ""},	// 
 		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
-		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Lighttpd.asp", ""},	//
+		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", ""},	//
 		{"Firewall.asp", "VPN.asp", "", "", "", "", "", "", "", "", "", ""},	//
 		{"Filters.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"ForwardSpec.asp", "Forward.asp", "Triggering.asp", "UPnP.asp", "DMZ.asp", "QoS.asp", "P2P.asp", "", "", "", "", ""},	//
@@ -1524,7 +1524,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		 "",		// place holder
 #endif
 		 "wirelessMac", "wirelessAdvanced", "wirelessWds", "", "", ""},	//
-		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesLighttpd", ""},	//
+		{"services", "servicesServices", "servicesRadius", "servicesPppoesrv", "servicesPptp", "servicesUSB", "servicesNAS", "servicesHotspot", "servicesNintendo", "servicesMilkfish", "servicesPrivoxy", "servicesSpeedchecker", ""},	//
 		{"security", "firwall", "vpn", "", "", "", "", "", "", "", "", "", ""},	// 
 		{"accrestriction", "webaccess", "", "", "", "", "", "", "", "", "", "", ""},	//
 		{"applications", "applicationspforwarding", "applicationsprforwarding", "applicationsptriggering", "applicationsUpnp", "applicationsDMZ", "applicationsQoS", "applicationsP2P", "", "", "", "", ""},	//
@@ -1784,8 +1784,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				if (!strcmp(menu[i][j], "Privoxy.asp"))
 					j++;
 #endif
-#ifndef HAVE_WEBSERVER
-				if (!strcmp(menu[i][j], "Lighttpd.asp"))
+#ifndef HAVE_SPEEDCHECKER
+				if (!strcmp(menu[i][j], "Speedchecker.asp"))
 					j++;
 #endif
 //#ifdef HAVE_ESPOD

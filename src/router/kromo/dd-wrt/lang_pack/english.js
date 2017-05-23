@@ -473,6 +473,7 @@ bmenu.servicesNintendo="Nintendo";
 bmenu.servicesMilkfish="SIP Proxy";
 bmenu.servicesPrivoxy="Adblocking";
 bmenu.servicesLighttpd="Webserver";
+bmenu.servicesSpeedchecker="SpeedChecker";
 //bmenu.servicesAnchorFree="My Ad Network";
 
 bmenu.statu="Status";
