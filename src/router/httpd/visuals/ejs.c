@@ -1538,14 +1538,20 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		for (y = 0; y < 14; y++) {
 			strcpy(&menuname[x][y][0], menuname_t[x][y]);
 			if (y < 13) {
-				strcpy(&menu[x][y][0], menu[x][y]);
+				strcpy(&menu[x][y][0], menu_t[x][y]);
 			}
 		}
 	}
 #if HAVE_ERC
 	if (!wp->userid) {
-		memcpy(menu, menu_s, 8 * 13 * 32);
-		memcpy(menuname, menuname_s, 8 * 14 * 32);
+		for (x = 0; x < 8; x++) {
+			for (y = 0; y < 14; y++) {
+				strcpy(&menuname[x][y][0], menuname_s[x][y]);
+				if (y < 13) {
+					strcpy(&menu[x][y][0], menu_s[x][y]);
+				}
+			}
+		}
 	}
 #endif
 #ifdef HAVE_IPR
