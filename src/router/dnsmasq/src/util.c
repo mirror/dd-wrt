@@ -24,7 +24,9 @@
 #include <sys/times.h>
 #endif
 
-#if defined(LOCALEDIR) || defined(HAVE_IDN)
+#if defined(HAVE_LIBIDN2)
+#include <idn2.h>
+#elif defined(HAVE_IDN)
 #include <idna.h>
 #endif
 
@@ -134,7 +136,7 @@ static int check_name(char *in)
       else if (isascii((unsigned char)c) && iscntrl((unsigned char)c)) 
 	/* iscntrl only gives expected results for ascii */
 	return 0;
-#if !defined(LOCALEDIR) && !defined(HAVE_IDN)
+#if !defined(HAVE_IDN) && !defined(HAVE_LIBIDN2)
       else if (!isascii((unsigned char)c))
 	return 0;
 #endif
@@ -184,7 +186,7 @@ int legal_hostname(char *name)
 char *canonicalise(char *in, int *nomem)
 {
   char *ret = NULL;
-#if defined(LOCALEDIR) || defined(HAVE_IDN)
+#if defined(HAVE_IDN) || defined(HAVE_LIBIDN2)
   int rc;
 #endif
 
@@ -194,8 +196,15 @@ char *canonicalise(char *in, int *nomem)
   if (!check_name(in))
     return NULL;
   
-#if defined(LOCALEDIR) || defined(HAVE_IDN)
-  if ((rc = idna_to_ascii_lz(in, &ret, 0)) != IDNA_SUCCESS)
+#if defined(HAVE_IDN) || defined(HAVE_LIBIDN2)
+#ifdef HAVE_LIBIDN2
+  rc = idn2_to_ascii_lz(in, &ret, IDN2_NONTRANSITIONAL);
+  if (rc == IDN2_DISALLOWED)
+    rc = idn2_to_ascii_lz(in, &ret, IDN2_TRANSITIONAL);
+#else
+  rc = idna_to_ascii_lz(in, &ret, 0);
+#endif
+  if (rc != IDNA_SUCCESS)
     {
       if (ret)
 	free(ret);
@@ -503,7 +512,7 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
 			return -1;
 		      out[i] = strtol(&in[j*2], NULL, 16);
 		      mask = mask << 1;
-		      if (i++ == maxlen)
+		      if (++i == maxlen)
 			break; 
 		      if (j < bytes - 1)
 			in[(j+1)*2] = sav;

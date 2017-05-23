@@ -94,10 +94,10 @@ HAVE_DBUS
    servers via DBus.
 
 HAVE_IDN
-   define this if you want international domain name support.
-   NOTE: for backwards compatibility, IDN support is automatically 
-         included when internationalisation support is built, using the 
-	 *-i18n makefile targets, even if HAVE_IDN is not explicitly set.
+   define this if you want international domain name 2003 support.
+   
+HAVE_LIBIDN2
+   define this if you want international domain name 2008 support.
 
 HAVE_CONNTRACK
    define this to include code which propagates conntrack marks from
@@ -181,6 +181,7 @@ RESOLVFILE
 /* #define HAVE_LUASCRIPT */
 /* #define HAVE_DBUS */
 /* #define HAVE_IDN */
+/* #define HAVE_LIBIDN2 */
 /* #define HAVE_CONNTRACK */
 /* #define HAVE_DNSSEC */
 
@@ -400,10 +401,14 @@ static char *compile_opts =
 "no-"
 #endif
 "i18n "
-#if !defined(LOCALEDIR) && !defined(HAVE_IDN)
+#if defined(HAVE_LIBIDN2)
+"IDN2 "
+#else
+ #if !defined(HAVE_IDN)
 "no-"
-#endif 
-"IDN "
+ #endif 
+"IDN " 
+#endif
 #ifndef HAVE_DHCP
 "no-"
 #endif
