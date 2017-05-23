@@ -1005,7 +1005,7 @@ static void handle_request(void)
 #endif
 				{
 					memdebug_enter();
-					if (!changepassword && handler->auth && (!handler->handle_options || method_type == METHOD_OPTIONS)) {
+					if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 						int result = handler->auth(conn_fp,
 									   auth_userid,
 									   auth_passwd,
