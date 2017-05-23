@@ -48,6 +48,10 @@ ifeq (,$(filter nodbus,$(DEB_BUILD_OPTIONS)))
      DEB_COPTS += -DHAVE_DBUS
 endif
 
+ifeq (,$(filter noidn, $(DEB_BUILD_OPTIONS)))
+	DEB_COPTS += -DHAVE_IDN
+endif
+
 ifeq (,$(filter noconntrack,$(DEB_BUILD_OPTIONS)))
 ifeq ($(DEB_HOST_ARCH_OS),linux)
      DEB_COPTS += -DHAVE_CONNTRACK
@@ -84,9 +88,6 @@ endif
 
 ifneq (,$(filter noi18n,$(DEB_BUILD_OPTIONS)))
      TARGET = install
-     ifeq (,$(filter noidn, $(DEB_BUILD_OPTIONS)))
-	DEB_COPTS += -DHAVE_IDN
-     endif	
 endif
 
 ifneq (,$(filter uselua,$(DEB_BUILD_OPTIONS)))

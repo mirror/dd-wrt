@@ -1303,10 +1303,10 @@ struct dhcp_context *narrow_context(struct dhcp_context *context,
 				    struct in_addr taddr,
 				    struct dhcp_netid *netids);
 struct ping_result *do_icmp_ping(time_t now, struct in_addr addr,
-				 unsigned int hash);
+				 unsigned int hash, int loopback);
 int address_allocate(struct dhcp_context *context,
 		     struct in_addr *addrp, unsigned char *hwaddr, int hw_len,
-		     struct dhcp_netid *netids, time_t now);
+		     struct dhcp_netid *netids, time_t now, int loopback);
 void dhcp_read_ethers(void);
 struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct in_addr addr);
 char *host_from_dns(struct in_addr addr);
@@ -1355,7 +1355,8 @@ void lease_add_extradata(struct dhcp_lease *lease, unsigned char *data,
 /* rfc2131.c */
 #ifdef HAVE_DHCP
 size_t dhcp_reply(struct dhcp_context *context, char *iface_name, int int_index,
-		  size_t sz, time_t now, int unicast_dest, int *is_inform, int pxe_fd, struct in_addr fallback, time_t recvtime);
+		  size_t sz, time_t now, int unicast_dest, int loopback,
+		  int *is_inform, int pxe_fd, struct in_addr fallback, time_t recvtime);
 unsigned char *extended_hwaddr(int hwtype, int hwlen, unsigned char *hwaddr, 
 			       int clid_len, unsigned char *clid, int *len_out);
 #endif
