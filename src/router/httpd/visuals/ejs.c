@@ -1468,7 +1468,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int wimaxwifi = 0;
 #endif
 #ifdef HAVE_ERC
-	static char *menu_s[8][13] = {
+	static char *menu_s[8][12] = {
 		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", ""},	//
 		{"Wireless_Basic.asp", "WL_WPATable.asp", "", "", "", "", "", "", "", "", "", ""},	//
 		{"ForwardSpec.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1482,7 +1482,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char *menuname_s[8][14] = {
+	static char *menuname_s[8][13] = {
 		{"setup", "setupbasic", "setupddns", "", "", "", "", "", "", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSecurity", "", "", "", "", "", "", "", "", "", ""},	//
 		{"applications", "applicationspforwarding", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1498,7 +1498,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-	static char *menu_t[8][13] = {
+	static char *menu_t[8][12] = {
 		{"index.asp", "IPV6.asp", "DDNS.asp", "WanMAC.asp", "Routing.asp", "Vlan.asp", "Networking.asp", "eop-tunnel.asp", "", "", "", ""},	// 
 		{"Wireless_Basic.asp", "SuperChannel.asp", "WiMAX.asp", "Wireless_radauth.asp", "WL_WPATable.asp", "AOSS.asp", "Wireless_MAC.asp", "Wireless_Advanced.asp", "Wireless_WDS.asp", "", "", ""},	//
 		{"Services.asp", "FreeRadius.asp", "PPPoE_Server.asp", "PPTP.asp", "USB.asp", "NAS.asp", "Hotspot.asp", "Nintendo.asp", "Milkfish.asp", "Privoxy.asp", "Speedchecker.asp", ""},	//
@@ -1511,7 +1511,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	/*
 	 * real name is bmenu.menuname[i][j] 
 	 */
-	static char *menuname_t[8][14] = {
+	static char *menuname_t[8][13] = {
 		{"setup", "setupbasic", "setupipv6", "setupddns", "setupmacclone", "setuprouting", "setupvlan", "networking", "setupeop", "", "", "", ""},	//
 		{"wireless", "wirelessBasic", "wirelessSuperchannel", "wimax", "wirelessRadius", "wirelessSecurity",	//
 #if defined(HAVE_AOSS) && defined(HAVE_WPS)
@@ -1535,19 +1535,19 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	char menuname[8][14][32];
 	int x, y;
 	for (x = 0; x < 8; x++) {
-		for (y = 0; y < 14; y++) {
+		for (y = 0; y < 13; y++) {
 			strcpy(&menuname[x][y][0], menuname_t[x][y]);
-			if (y < 13) {
+			if (y < 12) {
 				strcpy(&menu[x][y][0], menu_t[x][y]);
 			}
 		}
 	}
-#if HAVE_ERC
+#ifdef HAVE_ERC
 	if (!wp->userid) {
 		for (x = 0; x < 8; x++) {
-			for (y = 0; y < 14; y++) {
+			for (y = 0; y < 13; y++) {
 				strcpy(&menuname[x][y][0], menuname_s[x][y]);
-				if (y < 13) {
+				if (y < 12) {
 					strcpy(&menu[x][y][0], menu_s[x][y]);
 				}
 			}
