@@ -69,6 +69,9 @@ static int tap_add_ioctl(struct ifreq *ifr, uid_t uid, gid_t gid)
 		perror("ioctl(TUNSETOWNER)");
 		goto out;
 	}
+#ifndef TUNSETGROUP
+#define TUNSETGROUP   _IOW('T', 206, int)
+#endif
 	if (gid != -1 && ioctl(fd, TUNSETGROUP, gid)) {
 		perror("ioctl(TUNSETGROUP)");
 		goto out;
@@ -169,6 +172,9 @@ static int parse_args(int argc, char **argv, struct ifreq *ifr, uid_t *uid, gid_
 		} else if (matches(*argv, "one_queue") == 0) {
 			ifr->ifr_flags |= IFF_ONE_QUEUE;
 		} else if (matches(*argv, "vnet_hdr") == 0) {
+#ifndef IFF_VNET_HDR
+#define IFF_VNET_HDR	0x4000
+#endif
 			ifr->ifr_flags |= IFF_VNET_HDR;
 		} else if (matches(*argv, "multi_queue") == 0) {
 #ifndef IFF_MULTI_QUEUE
