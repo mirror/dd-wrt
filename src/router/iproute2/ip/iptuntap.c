@@ -171,6 +171,9 @@ static int parse_args(int argc, char **argv, struct ifreq *ifr, uid_t *uid, gid_
 		} else if (matches(*argv, "vnet_hdr") == 0) {
 			ifr->ifr_flags |= IFF_VNET_HDR;
 		} else if (matches(*argv, "multi_queue") == 0) {
+#ifndef IFF_MULTI_QUEUE
+#define IFF_MULTI_QUEUE 0x0100
+#endif  
 			ifr->ifr_flags |= IFF_MULTI_QUEUE;
 		} else if (matches(*argv, "dev") == 0) {
 			NEXT_ARG();
