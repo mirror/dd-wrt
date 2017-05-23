@@ -157,6 +157,9 @@ endif
 ifeq ($(CONFIG_NOAC),y)
 CFLAGS += -DHAVE_NOAC
 endif
+ifeq ($(CONFIG_SPEEDCHECKER),y)
+CFLAGS += -DHAVE_SPEEDCHECKER
+endif
 ifeq ($(CONFIG_WZRG450),y)
 CFLAGS += -DHAVE_WZRG450
 endif
