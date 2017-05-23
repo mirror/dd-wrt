@@ -35,6 +35,9 @@
 #define RTM_SETLINK (RTM_BASE+3)
 #endif
 
+#ifndef NLA_F_NESTED
+#define NLA_F_NESTED		(1 << 15)
+#endif
 
 struct iplink_req {
 	struct nlmsghdr		n;
