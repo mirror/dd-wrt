@@ -74,7 +74,7 @@ static int tap_add_ioctl(struct ifreq *ifr, uid_t uid, gid_t gid)
 #endif
 	if (gid != -1 && ioctl(fd, TUNSETGROUP, gid)) {
 		perror("ioctl(TUNSETGROUP)");
-		goto out;
+	//	goto out;
 	}
 	if (ioctl(fd, TUNSETPERSIST, 1)) {
 		perror("ioctl(TUNSETPERSIST)");
