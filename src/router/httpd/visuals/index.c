@@ -108,6 +108,6 @@ void ej_atmsettings(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_DSL_CPE_CONTROL
 	char ejname[32];
 	snprintf(ejname, 31, "index_%s_atm.asp", argv[0]);
-	do_ej(METHOD_GET, ejname, wp, NULL);
+	do_ej(METHOD_GET, NULL, ejname, wp, NULL);
 #endif
 }
