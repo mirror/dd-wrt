@@ -657,7 +657,7 @@ padlock_bswapl(void *key)
 #if defined(NID_aes_512_cfb128) && ! defined (NID_aes_512_cfb)
 #define NID_aes_512_cfb	NID_aes_512_cfb128
 #endif
-+
+
 #if defined(NID_aes_512_ofb128) && ! defined (NID_aes_512_ofb)
 #define NID_aes_512_ofb	NID_aes_512_ofb128
 #endif
