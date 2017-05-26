@@ -190,7 +190,8 @@ tor_addr_eq_ipv4h(const tor_addr_t *a, uint32_t u)
  */
 #define TOR_ADDR_BUF_LEN 48
 
-int tor_addr_lookup(const char *name, uint16_t family, tor_addr_t *addr_out);
+MOCK_DECL(int, tor_addr_lookup,(const char *name, uint16_t family,
+                                tor_addr_t *addr_out));
 char *tor_addr_to_str_dup(const tor_addr_t *addr) ATTR_MALLOC;
 
 /** Wrapper function of fmt_addr_impl(). It does not decorate IPv6
@@ -342,6 +343,8 @@ get_interface_address_list(int severity, int include_internal)
 }
 
 tor_addr_port_t *tor_addr_port_new(const tor_addr_t *addr, uint16_t port);
+int tor_addr_port_eq(const tor_addr_port_t *a,
+                     const tor_addr_port_t *b);
 
 #ifdef ADDRESS_PRIVATE
 MOCK_DECL(smartlist_t *,get_interface_addresses_raw,(int severity,

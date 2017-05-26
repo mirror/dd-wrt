@@ -9,6 +9,7 @@
 #define CONTROL_PRIVATE
 #define UTIL_PRIVATE
 #include "or.h"
+#include "buffers.h"
 #include "config.h"
 #include "control.h"
 #include "test.h"
@@ -1058,6 +1059,23 @@ test_util_time(void *arg)
   tt_int_op(-1,OP_EQ, parse_iso_time("2011-03-30 23:59", &t_res));
   tt_int_op(-1,OP_EQ, parse_iso_time("2004-08-04 00:48:22.100", &t_res));
   tt_int_op(-1,OP_EQ, parse_iso_time("2004-08-04 00:48:22XYZ", &t_res));
+
+  /* but... that _is_ acceptable if we aren't being strict. */
+  t_res = 0;
+  i = parse_iso_time_("2004-08-04 00:48:22XYZ", &t_res, 0, 0);
+  tt_int_op(0,OP_EQ, i);
+  tt_int_op(t_res,OP_EQ, (time_t)1091580502UL);
+
+  /* try nospace variant. */
+  t_res = 0;
+  i = parse_iso_time_nospace("2004-08-04T00:48:22", &t_res);
+  tt_int_op(0,OP_EQ, i);
+  tt_int_op(t_res,OP_EQ, (time_t)1091580502UL);
+
+  tt_int_op(-1,OP_EQ, parse_iso_time("2004-08-04T00:48:22", &t_res));
+  tt_int_op(-1,OP_EQ, parse_iso_time_nospace("2004-08-04 00:48:22", &t_res));
+  tt_int_op(-1,OP_EQ, parse_iso_time("2004-08-04x00:48:22", &t_res));
+  tt_int_op(-1,OP_EQ, parse_iso_time_nospace("2004-08-04x00:48:22", &t_res));
 
   /* Test tor_gettimeofday */
 
@@ -5074,7 +5092,8 @@ test_util_socket(void *arg)
 
   fd1 = tor_open_socket_with_extensions(domain, SOCK_STREAM, 0, 0, 0);
   int err = tor_socket_errno(fd1);
-  if (fd1 < 0 && err == SOCK_ERRNO(EPROTONOSUPPORT)) {
+  if (fd1 < 0 && (err == SOCK_ERRNO(EPROTONOSUPPORT) ||
+                  err == SOCK_ERRNO(EAFNOSUPPORT))) {
     /* Assume we're on an IPv4-only or IPv6-only system, and give up now. */
     goto done;
   }
@@ -5462,26 +5481,26 @@ test_util_calloc_check(void *arg)
 {
   (void) arg;
   /* Easy cases that are good. */
-  tt_assert(size_mul_check__(0,0));
-  tt_assert(size_mul_check__(0,100));
-  tt_assert(size_mul_check__(100,0));
-  tt_assert(size_mul_check__(100,100));
+  tt_assert(size_mul_check(0,0));
+  tt_assert(size_mul_check(0,100));
+  tt_assert(size_mul_check(100,0));
+  tt_assert(size_mul_check(100,100));
 
   /* Harder cases that are still good. */
-  tt_assert(size_mul_check__(SIZE_MAX, 1));
-  tt_assert(size_mul_check__(1, SIZE_MAX));
-  tt_assert(size_mul_check__(SIZE_MAX / 10, 9));
-  tt_assert(size_mul_check__(11, SIZE_MAX / 12));
+  tt_assert(size_mul_check(SIZE_MAX, 1));
+  tt_assert(size_mul_check(1, SIZE_MAX));
+  tt_assert(size_mul_check(SIZE_MAX / 10, 9));
+  tt_assert(size_mul_check(11, SIZE_MAX / 12));
   const size_t sqrt_size_max_p1 = ((size_t)1) << (sizeof(size_t) * 4);
-  tt_assert(size_mul_check__(sqrt_size_max_p1, sqrt_size_max_p1 - 1));
+  tt_assert(size_mul_check(sqrt_size_max_p1, sqrt_size_max_p1 - 1));
 
   /* Cases that overflow */
-  tt_assert(! size_mul_check__(SIZE_MAX, 2));
-  tt_assert(! size_mul_check__(2, SIZE_MAX));
-  tt_assert(! size_mul_check__(SIZE_MAX / 10, 11));
-  tt_assert(! size_mul_check__(11, SIZE_MAX / 10));
-  tt_assert(! size_mul_check__(SIZE_MAX / 8, 9));
-  tt_assert(! size_mul_check__(sqrt_size_max_p1, sqrt_size_max_p1));
+  tt_assert(! size_mul_check(SIZE_MAX, 2));
+  tt_assert(! size_mul_check(2, SIZE_MAX));
+  tt_assert(! size_mul_check(SIZE_MAX / 10, 11));
+  tt_assert(! size_mul_check(11, SIZE_MAX / 10));
+  tt_assert(! size_mul_check(SIZE_MAX / 8, 9));
+  tt_assert(! size_mul_check(sqrt_size_max_p1, sqrt_size_max_p1));
 
  done:
   ;
@@ -5612,6 +5631,33 @@ test_util_monotonic_time_ratchet(void *arg)
   ;
 }
 
+static void
+test_util_htonll(void *arg)
+{
+  (void)arg;
+#ifdef WORDS_BIGENDIAN
+  const uint64_t res_be = 0x8877665544332211;
+#else
+  const uint64_t res_le = 0x1122334455667788;
+#endif
+
+  tt_u64_op(0, OP_EQ, tor_htonll(0));
+  tt_u64_op(0, OP_EQ, tor_ntohll(0));
+  tt_u64_op(UINT64_MAX, OP_EQ, tor_htonll(UINT64_MAX));
+  tt_u64_op(UINT64_MAX, OP_EQ, tor_ntohll(UINT64_MAX));
+
+#ifdef WORDS_BIGENDIAN
+  tt_u64_op(res_be, OP_EQ, tor_htonll(0x8877665544332211));
+  tt_u64_op(res_be, OP_EQ, tor_ntohll(0x8877665544332211));
+#else
+  tt_u64_op(res_le, OP_EQ, tor_htonll(0x8877665544332211));
+  tt_u64_op(res_le, OP_EQ, tor_ntohll(0x8877665544332211));
+#endif
+
+ done:
+  ;
+}
+
 #define UTIL_LEGACY(name)                                               \
   { #name, test_util_ ## name , 0, NULL, NULL }
 
@@ -5705,6 +5751,7 @@ struct testcase_t util_tests[] = {
   UTIL_TEST(calloc_check, 0),
   UTIL_TEST(monotonic_time, 0),
   UTIL_TEST(monotonic_time_ratchet, TT_FORK),
+  UTIL_TEST(htonll, 0),
   END_OF_TESTCASES
 };
 

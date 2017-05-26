@@ -15,6 +15,7 @@
 #include "testsupport.h"
 
 MOCK_DECL(smartlist_t *, circuit_get_global_list, (void));
+smartlist_t *circuit_get_global_origin_circuit_list(void);
 const char *circuit_state_to_string(int state);
 const char *circuit_purpose_to_controller_string(uint8_t purpose);
 const char *circuit_purpose_to_controller_hs_state_string(uint8_t purpose);
@@ -45,11 +46,8 @@ origin_circuit_t *circuit_get_by_global_id(uint32_t id);
 origin_circuit_t *circuit_get_ready_rend_circ_by_rend_data(
   const rend_data_t *rend_data);
 origin_circuit_t *circuit_get_next_by_pk_and_purpose(origin_circuit_t *start,
-                                         const char *digest, uint8_t purpose);
-or_circuit_t *circuit_get_rendezvous(const uint8_t *cookie);
-or_circuit_t *circuit_get_intro_point(const uint8_t *digest);
-void circuit_set_rendezvous_cookie(or_circuit_t *circ, const uint8_t *cookie);
-void circuit_set_intro_point_digest(or_circuit_t *circ, const uint8_t *digest);
+                                     const uint8_t *digest, uint8_t purpose);
+origin_circuit_t *circuit_get_next_service_intro_circ(origin_circuit_t *start);
 origin_circuit_t *circuit_find_to_cannibalize(uint8_t purpose,
                                               extend_info_t *info, int flags);
 void circuit_mark_all_unused_circs(void);
@@ -76,6 +74,8 @@ void circuit_clear_testing_cell_stats(circuit_t *circ);
 void channel_note_destroy_pending(channel_t *chan, circid_t id);
 MOCK_DECL(void, channel_note_destroy_not_pending,
           (channel_t *chan, circid_t id));
+
+smartlist_t *circuit_find_circuits_to_upgrade_from_guard_wait(void);
 
 #ifdef CIRCUITLIST_PRIVATE
 STATIC void circuit_free(circuit_t *circ);

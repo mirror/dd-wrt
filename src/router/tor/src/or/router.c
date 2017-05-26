@@ -849,7 +849,12 @@ init_keys(void)
   if (init_keys_common() < 0)
     return -1;
   /* Make sure DataDirectory exists, and is private. */
-  if (check_private_dir(options->DataDirectory, CPD_CREATE, options->User)) {
+  cpd_check_t cpd_opts = CPD_CREATE;
+  if (options->DataDirectoryGroupReadable)
+    cpd_opts |= CPD_GROUP_READ;
+  if (check_private_dir(options->DataDirectory, cpd_opts, options->User)) {
+    log_err(LD_OR, "Can't create/check datadirectory %s",
+            options->DataDirectory);
     return -1;
   }
   /* Check the key directory. */
@@ -1178,9 +1183,9 @@ router_should_be_directory_server(const or_options_t *options, int dir_port)
   if (accounting_is_enabled(options) &&
     get_options()->AccountingRule != ACCT_IN) {
     /* Don't spend bytes for directory traffic if we could end up hibernating,
-     * but allow DirPort otherwise. Some people set AccountingMax because
-     * they're confused or to get statistics. Directory traffic has a much
-     * larger effect on output than input so there is no reason to turn it
+     * but allow DirPort otherwise. Some relay operators set AccountingMax
+     * because they're confused or to get statistics. Directory traffic has a
+     * much larger effect on output than input so there is no reason to turn it
      * off if using AccountingRule in. */
     int interval_length = accounting_get_interval_length();
     uint32_t effective_bw = get_effective_bwrate(options);
@@ -1312,8 +1317,15 @@ extend_info_from_router(const routerinfo_t *r)
   /* Make sure we don't need to check address reachability */
   tor_assert_nonfatal(router_skip_or_reachability(get_options(), 0));
 
+  const ed25519_public_key_t *ed_id_key;
+  if (r->cache_info.signing_key_cert)
+    ed_id_key = &r->cache_info.signing_key_cert->signing_key;
+  else
+    ed_id_key = NULL;
+
   router_get_prim_orport(r, &ap);
   return extend_info_new(r->nickname, r->cache_info.identity_digest,
+                         ed_id_key,
                          r->onion_pkey, r->onion_curve25519_pkey,
                          &ap.addr, ap.port);
 }
@@ -2206,7 +2218,7 @@ router_build_fresh_descriptor(routerinfo_t **r, extrainfo_t **e)
              log_warn(LD_CONFIG, "There is a router named \"%s\" in my "
                       "declared family, but that isn't a legal nickname. "
                       "Skipping it.", escaped(name));
-           smartlist_add(warned_nonexistent_family, tor_strdup(name));
+           smartlist_add_strdup(warned_nonexistent_family, name);
          }
          if (is_legal) {
            smartlist_add(ri->declared_family, name);
@@ -2881,7 +2893,7 @@ router_dump_router_to_string(routerinfo_t *router,
 
   /* Write the exit policy to the end of 's'. */
   if (!router->exit_policy || !smartlist_len(router->exit_policy)) {
-    smartlist_add(chunks, tor_strdup("reject *:*\n"));
+    smartlist_add_strdup(chunks, "reject *:*\n");
   } else if (router->exit_policy) {
     char *exit_policy = router_dump_exit_policy_to_string(router,1,0);
 
@@ -2903,12 +2915,12 @@ router_dump_router_to_string(routerinfo_t *router,
 
   if (decide_to_advertise_begindir(options,
                                    router->supports_tunnelled_dir_requests)) {
-    smartlist_add(chunks, tor_strdup("tunnelled-dir-server\n"));
+    smartlist_add_strdup(chunks, "tunnelled-dir-server\n");
   }
 
   /* Sign the descriptor with Ed25519 */
   if (emit_ed_sigs)  {
-    smartlist_add(chunks, tor_strdup("router-sig-ed25519 "));
+    smartlist_add_strdup(chunks, "router-sig-ed25519 ");
     crypto_digest_smartlist_prefix(digest, DIGEST256_LEN,
                                    ED_DESC_SIGNATURE_PREFIX,
                                    chunks, "", DIGEST_SHA256);
@@ -2924,7 +2936,7 @@ router_dump_router_to_string(routerinfo_t *router,
   }
 
   /* Sign the descriptor with RSA */
-  smartlist_add(chunks, tor_strdup("router-signature\n"));
+  smartlist_add_strdup(chunks, "router-signature\n");
 
   crypto_digest_smartlist(digest, DIGEST_LEN, chunks, "", DIGEST_SHA1);
 
@@ -2939,7 +2951,7 @@ router_dump_router_to_string(routerinfo_t *router,
   }
 
   /* include a last '\n' */
-  smartlist_add(chunks, tor_strdup("\n"));
+  smartlist_add_strdup(chunks, "\n");
 
   output = smartlist_join_strings(chunks, "", 0, NULL);
 
@@ -3197,13 +3209,13 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
   if (should_record_bridge_info(options) && write_stats_to_extrainfo) {
     const char *bridge_stats = geoip_get_bridge_stats_extrainfo(now);
     if (bridge_stats) {
-      smartlist_add(chunks, tor_strdup(bridge_stats));
+      smartlist_add_strdup(chunks, bridge_stats);
     }
   }
 
   if (emit_ed_sigs) {
     char sha256_digest[DIGEST256_LEN];
-    smartlist_add(chunks, tor_strdup("router-sig-ed25519 "));
+    smartlist_add_strdup(chunks, "router-sig-ed25519 ");
     crypto_digest_smartlist_prefix(sha256_digest, DIGEST256_LEN,
                                    ED_DESC_SIGNATURE_PREFIX,
                                    chunks, "", DIGEST_SHA256);
@@ -3218,7 +3230,7 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
     smartlist_add_asprintf(chunks, "%s\n", buf);
   }
 
-  smartlist_add(chunks, tor_strdup("router-signature\n"));
+  smartlist_add_strdup(chunks, "router-signature\n");
   s = smartlist_join_strings(chunks, "", 0, NULL);
 
   while (strlen(s) > MAX_EXTRAINFO_UPLOAD_SIZE - DIROBJ_MAX_SIG_LEN) {
@@ -3253,7 +3265,7 @@ extrainfo_dump_to_string(char **s_out, extrainfo_t *extrainfo,
                      "descriptor.");
     goto err;
   }
-  smartlist_add(chunks, tor_strdup(sig));
+  smartlist_add_strdup(chunks, sig);
   tor_free(s);
   s = smartlist_join_strings(chunks, "", 0, NULL);
 

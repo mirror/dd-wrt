@@ -64,7 +64,10 @@ void assert_buf_ok(buf_t *buf);
 #ifdef BUFFERS_PRIVATE
 STATIC int buf_find_string_offset(const buf_t *buf, const char *s, size_t n);
 STATIC void buf_pullup(buf_t *buf, size_t bytes);
+#ifdef TOR_UNIT_TESTS
 void buf_get_first_chunk_data(const buf_t *buf, const char **cp, size_t *sz);
+buf_t *buf_new_with_data(const char *cp, size_t sz);
+#endif
 STATIC size_t preferred_chunk_size(size_t target);
 
 #define DEBUG_CHUNK_ALLOC
@@ -95,6 +98,11 @@ struct buf_t {
   chunk_t *head; /**< First chunk in the list, or NULL for none. */
   chunk_t *tail; /**< Last chunk in the list, or NULL for none. */
 };
+#endif
+
+#ifdef BUFFERS_PRIVATE
+STATIC int buf_http_find_content_length(const char *headers, size_t headerlen,
+                                        size_t *result_out);
 #endif
 
 #endif

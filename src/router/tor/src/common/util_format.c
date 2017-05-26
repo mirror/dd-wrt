@@ -51,9 +51,10 @@ base32_encode(char *dest, size_t destlen, const char *src, size_t srclen)
 
   for (i=0,bit=0; bit < nbits; ++i, bit+=5) {
     /* set v to the 16-bit value starting at src[bits/8], 0-padded. */
-    v = ((uint8_t)src[bit/8]) << 8;
-    if (bit+5<nbits)
-      v += (uint8_t)src[(bit/8)+1];
+    size_t idx = bit / 8;
+    v = ((uint8_t)src[idx]) << 8;
+    if (idx+1 < srclen)
+      v += (uint8_t)src[idx+1];
     /* set u to the 5-bit value at the bit'th bit of buf. */
     u = (v >> (11-(bit%8))) & 0x1F;
     dest[i] = BASE32_CHARS[u];
@@ -398,7 +399,7 @@ base64_decode(char *dest, size_t destlen, const char *src, size_t srclen)
    * Number of bytes required to hold all bits == (srclen*6)/8.
    * Yes, we want to round down: anything that hangs over the end of a
    * byte is padding. */
-  if (destlen < (srclen*3)/4)
+  if (!size_mul_check(srclen, 3) || destlen < (srclen*3)/4)
     return -1;
   if (destlen > SIZE_T_CEILING)
     return -1;

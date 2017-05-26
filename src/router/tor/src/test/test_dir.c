@@ -23,6 +23,7 @@
 #include "directory.h"
 #include "dirserv.h"
 #include "dirvote.h"
+#include "entrynodes.h"
 #include "hibernate.h"
 #include "memarea.h"
 #include "networkstatus.h"
@@ -678,16 +679,16 @@ test_dir_parse_router_list(void *arg)
   routerinfo_t *ri = NULL;
   char d[DIGEST_LEN];
 
-  smartlist_add(chunks, tor_strdup(EX_RI_MINIMAL));     // ri 0
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_PORTS));   // bad ri 0
-  smartlist_add(chunks, tor_strdup(EX_EI_MAXIMAL));     // ei 0
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_SIG2));    // bad ei --
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_NICKNAME));// bad ei 0
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_SIG1));    // bad ri --
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_PUBLISHED));  // bad ei 1
-  smartlist_add(chunks, tor_strdup(EX_RI_MAXIMAL));     // ri 1
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_FAMILY));  // bad ri 1
-  smartlist_add(chunks, tor_strdup(EX_EI_MINIMAL));     // ei 1
+  smartlist_add_strdup(chunks, EX_RI_MINIMAL);     // ri 0
+  smartlist_add_strdup(chunks, EX_RI_BAD_PORTS);   // bad ri 0
+  smartlist_add_strdup(chunks, EX_EI_MAXIMAL);     // ei 0
+  smartlist_add_strdup(chunks, EX_EI_BAD_SIG2);    // bad ei --
+  smartlist_add_strdup(chunks, EX_EI_BAD_NICKNAME);// bad ei 0
+  smartlist_add_strdup(chunks, EX_RI_BAD_SIG1);    // bad ri --
+  smartlist_add_strdup(chunks, EX_EI_BAD_PUBLISHED);  // bad ei 1
+  smartlist_add_strdup(chunks, EX_RI_MAXIMAL);     // ri 1
+  smartlist_add_strdup(chunks, EX_RI_BAD_FAMILY);  // bad ri 1
+  smartlist_add_strdup(chunks, EX_EI_MINIMAL);     // ei 1
 
   list = smartlist_join_strings(chunks, "", 0, NULL);
 
@@ -812,19 +813,19 @@ test_dir_load_routers(void *arg)
 #define ADD(str)                                                        \
   do {                                                                  \
     tt_int_op(0,OP_EQ,router_get_router_hash(str, strlen(str), buf));      \
-    smartlist_add(wanted, tor_strdup(hex_str(buf, DIGEST_LEN)));        \
+    smartlist_add_strdup(wanted, hex_str(buf, DIGEST_LEN));        \
   } while (0)
 
   MOCK(router_get_dl_status_by_descriptor_digest, mock_router_get_dl_status);
 
   update_approx_time(1412510400);
 
-  smartlist_add(chunks, tor_strdup(EX_RI_MINIMAL));
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_FINGERPRINT));
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_SIG2));
-  smartlist_add(chunks, tor_strdup(EX_RI_MAXIMAL));
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_PORTS));
-  smartlist_add(chunks, tor_strdup(EX_RI_BAD_TOKENS));
+  smartlist_add_strdup(chunks, EX_RI_MINIMAL);
+  smartlist_add_strdup(chunks, EX_RI_BAD_FINGERPRINT);
+  smartlist_add_strdup(chunks, EX_RI_BAD_SIG2);
+  smartlist_add_strdup(chunks, EX_RI_MAXIMAL);
+  smartlist_add_strdup(chunks, EX_RI_BAD_PORTS);
+  smartlist_add_strdup(chunks, EX_RI_BAD_TOKENS);
 
   /* not ADDing MINIMIAL */
   ADD(EX_RI_MAXIMAL);
@@ -932,18 +933,18 @@ test_dir_load_extrainfo(void *arg)
 #define ADD(str)                                                        \
   do {                                                                  \
     tt_int_op(0,OP_EQ,router_get_extrainfo_hash(str, strlen(str), buf));   \
-    smartlist_add(wanted, tor_strdup(hex_str(buf, DIGEST_LEN)));        \
+    smartlist_add_strdup(wanted, hex_str(buf, DIGEST_LEN));        \
   } while (0)
 
   mock_ei_insert_list = smartlist_new();
   MOCK(router_get_by_extrainfo_digest, mock_get_by_ei_desc_digest);
   MOCK(extrainfo_insert, mock_ei_insert);
 
-  smartlist_add(chunks, tor_strdup(EX_EI_MINIMAL));
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_NICKNAME));
-  smartlist_add(chunks, tor_strdup(EX_EI_MAXIMAL));
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_PUBLISHED));
-  smartlist_add(chunks, tor_strdup(EX_EI_BAD_TOKENS));
+  smartlist_add_strdup(chunks, EX_EI_MINIMAL);
+  smartlist_add_strdup(chunks, EX_EI_BAD_NICKNAME);
+  smartlist_add_strdup(chunks, EX_EI_MAXIMAL);
+  smartlist_add_strdup(chunks, EX_EI_BAD_PUBLISHED);
+  smartlist_add_strdup(chunks, EX_EI_BAD_TOKENS);
 
   /* not ADDing MINIMIAL */
   ADD(EX_EI_MAXIMAL);
@@ -1493,6 +1494,15 @@ test_dir_param_voting(void *arg)
   tt_int_op(-8,OP_EQ, networkstatus_get_param(&vote4, "ab", -12, -100, -8));
   tt_int_op(0,OP_EQ, networkstatus_get_param(&vote4, "foobar", 0, -100, 8));
 
+  tt_int_op(100,OP_EQ, networkstatus_get_overridable_param(
+                                        &vote4, -1, "x-yz", 50, 0, 300));
+  tt_int_op(30,OP_EQ, networkstatus_get_overridable_param(
+                                        &vote4, 30, "x-yz", 50, 0, 300));
+  tt_int_op(0,OP_EQ, networkstatus_get_overridable_param(
+                                        &vote4, -101, "foobar", 0, -100, 8));
+  tt_int_op(-99,OP_EQ, networkstatus_get_overridable_param(
+                                        &vote4, -99, "foobar", 0, -100, 8));
+
   smartlist_add(votes, &vote1);
 
   /* Do the first tests without adding all the other votes, for
@@ -1872,6 +1882,249 @@ test_routerstatus_for_v3ns(routerstatus_t *rs, time_t now)
 
  done:
   return;
+}
+
+static void
+test_dir_networkstatus_compute_bw_weights_v10(void *arg)
+{
+  (void) arg;
+  smartlist_t *chunks = smartlist_new();
+  int64_t G, M, E, D, T, weight_scale;
+  int ret;
+  weight_scale = 10000;
+
+  /* no case. one or more of the values is 0 */
+  G = M = E = D = 0;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 0);
+  tt_int_op(smartlist_len(chunks), OP_EQ, 0);
+
+  /* case 1 */
+  /* XXX dir-spec not followed? See #20272. If it isn't closed, then this is
+   * testing current behavior, not spec. */
+  G = E = 10;
+  M = D = 1;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_int_op(smartlist_len(chunks), OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=3333 "
+    "Wbe=3000 Wbg=3000 Wbm=10000 Wdb=10000 Web=10000 Wed=3333 Wee=7000 "
+    "Weg=3333 Wem=7000 Wgb=10000 Wgd=3333 Wgg=7000 Wgm=7000 Wmb=10000 "
+    "Wmd=3333 Wme=3000 Wmg=3000 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 2a E scarce */
+  M = 100;
+  G = 20;
+  E = D = 5;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 Wbe=0 "
+    "Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=10000 Wee=10000 Weg=10000 "
+    "Wem=10000 Wgb=10000 Wgd=0 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=0 Wme=0 "
+    "Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 2a G scarce */
+  M = 100;
+  E = 20;
+  G = D = 5;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 Wbe=0 "
+    "Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=0 Wee=10000 Weg=0 Wem=10000 "
+    "Wgb=10000 Wgd=10000 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=0 Wme=0 Wmg=0 "
+    "Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 2b1 (Wgg=1, Wmd=Wgd) */
+  M = 10;
+  E = 30;
+  G = 10;
+  D = 100;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=4000 "
+    "Wbe=0 Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=2000 Wee=10000 Weg=2000 "
+    "Wem=10000 Wgb=10000 Wgd=4000 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=4000 "
+    "Wme=0 Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 2b2 */
+  M = 60;
+  E = 30;
+  G = 10;
+  D = 100;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=666 Wbe=0 "
+    "Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=3666 Wee=10000 Weg=3666 "
+    "Wem=10000 Wgb=10000 Wgd=5668 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=666 "
+    "Wme=0 Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 2b3 */
+  /* XXX I can't get a combination of values that hits this case without error,
+   * so this just tests that it fails. See #20285. Also see #20284 as 2b3 does
+   * not follow dir-spec. */
+  /* (E < T/3 && G < T/3) && (E+D>=G || G+D>=E) && (M > T/3) */
+  M = 80;
+  E = 30;
+  G = 30;
+  D = 30;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 0);
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 3a G scarce */
+  M = 10;
+  E = 30;
+  G = 10;
+  D = 5;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 "
+    "Wbe=3333 Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=0 Wee=6667 Weg=0 "
+    "Wem=6667 Wgb=10000 Wgd=10000 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=0 "
+    "Wme=3333 Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 3a E scarce */
+  M = 10;
+  E = 10;
+  G = 30;
+  D = 5;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 Wbe=0 "
+    "Wbg=3333 Wbm=10000 Wdb=10000 Web=10000 Wed=10000 Wee=10000 Weg=10000 "
+    "Wem=10000 Wgb=10000 Wgd=0 Wgg=6667 Wgm=6667 Wmb=10000 Wmd=0 Wme=0 "
+    "Wmg=3333 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 3bg */
+  M = 10;
+  E = 30;
+  G = 10;
+  D = 10;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 "
+    "Wbe=3334 Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=0 Wee=6666 Weg=0 "
+    "Wem=6666 Wgb=10000 Wgd=10000 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=0 "
+    "Wme=3334 Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case 3be */
+  M = 10;
+  E = 10;
+  G = 30;
+  D = 10;
+  T = G + M + E + D;
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_int_op(ret, OP_EQ, 1);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 Wbe=0 "
+    "Wbg=3334 Wbm=10000 Wdb=10000 Web=10000 Wed=10000 Wee=10000 Weg=10000 "
+    "Wem=10000 Wgb=10000 Wgd=0 Wgg=6666 Wgm=6666 Wmb=10000 Wmd=0 Wme=0 "
+    "Wmg=3334 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case from 21 Jul 2013 (3be) */
+  G = 5483409;
+  M = 1455379;
+  E = 980834;
+  D = 3385803;
+  T = 11305425;
+  tt_i64_op(G+M+E+D, OP_EQ, T);
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=883 Wbe=0 "
+    "Wbg=3673 Wbm=10000 Wdb=10000 Web=10000 Wed=8233 Wee=10000 Weg=8233 "
+    "Wem=10000 Wgb=10000 Wgd=883 Wgg=6327 Wgm=6327 Wmb=10000 Wmd=883 Wme=0 "
+    "Wmg=3673 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case from 04 Oct 2016 (3a E scarce) */
+  G=29322240;
+  M=4721546;
+  E=1522058;
+  D=9273571;
+  T=44839415;
+  tt_i64_op(G+M+E+D, OP_EQ, T);
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=0 Wbe=0 "
+    "Wbg=4194 Wbm=10000 Wdb=10000 Web=10000 Wed=10000 Wee=10000 Weg=10000 "
+    "Wem=10000 Wgb=10000 Wgd=0 Wgg=5806 Wgm=5806 Wmb=10000 Wmd=0 Wme=0 "
+    "Wmg=4194 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* case from 04 Sep 2013 (2b1) */
+  G=3091352;
+  M=1838837;
+  E=2109300;
+  D=2469369;
+  T=9508858;
+  tt_i64_op(G+M+E+D, OP_EQ, T);
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=317 "
+    "Wbe=5938 Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=9366 Wee=4061 "
+    "Weg=9366 Wem=4061 Wgb=10000 Wgd=317 Wgg=10000 Wgm=10000 Wmb=10000 "
+    "Wmd=317 Wme=5938 Wmg=0 Wmm=10000\n");
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_clear(chunks);
+
+  /* explicitly test initializing weights to 1*/
+  G=1;
+  M=1;
+  E=1;
+  D=1;
+  T=4;
+  tt_i64_op(G+M+E+D, OP_EQ, T);
+  ret = networkstatus_compute_bw_weights_v10(chunks, G, M, E, D, T,
+                                             weight_scale);
+  tt_str_op(smartlist_get(chunks, 0), OP_EQ, "bandwidth-weights Wbd=3333 "
+    "Wbe=0 Wbg=0 Wbm=10000 Wdb=10000 Web=10000 Wed=3333 Wee=10000 Weg=3333 "
+    "Wem=10000 Wgb=10000 Wgd=3333 Wgg=10000 Wgm=10000 Wmb=10000 Wmd=3333 "
+    "Wme=0 Wmg=0 Wmm=10000\n");
+
+ done:
+  SMARTLIST_FOREACH(chunks, char *, cp, tor_free(cp));
+  smartlist_free(chunks);
 }
 
 static authority_cert_t *mock_cert;
@@ -3253,14 +3506,85 @@ test_dir_http_handling(void *args)
 }
 
 static void
-test_dir_purpose_needs_anonymity(void *arg)
+test_dir_purpose_needs_anonymity_returns_true_by_default(void *arg)
 {
   (void)arg;
-  tt_int_op(1, ==, purpose_needs_anonymity(0, ROUTER_PURPOSE_BRIDGE));
-  tt_int_op(1, ==, purpose_needs_anonymity(0, ROUTER_PURPOSE_GENERAL));
-  tt_int_op(0, ==, purpose_needs_anonymity(DIR_PURPOSE_FETCH_MICRODESC,
-                                            ROUTER_PURPOSE_GENERAL));
+
+  tor_capture_bugs_(1);
+  setup_full_capture_of_logs(LOG_WARN);
+  tt_int_op(1, ==, purpose_needs_anonymity(0, 0, NULL));
+  tt_int_op(1, ==, smartlist_len(tor_get_captured_bug_log_()));
+  expect_single_log_msg_containing("Called with dir_purpose=0");
+
+  tor_end_capture_bugs_();
+ done:
+  tor_end_capture_bugs_();
+  teardown_capture_of_logs();
+}
+
+static void
+test_dir_purpose_needs_anonymity_returns_true_for_bridges(void *arg)
+{
+  (void)arg;
+
+  tt_int_op(1, ==, purpose_needs_anonymity(0, ROUTER_PURPOSE_BRIDGE, NULL));
+  tt_int_op(1, ==, purpose_needs_anonymity(0, ROUTER_PURPOSE_BRIDGE,
+                                           "foobar"));
+  tt_int_op(1, ==, purpose_needs_anonymity(DIR_PURPOSE_HAS_FETCHED_RENDDESC_V2,
+                                           ROUTER_PURPOSE_BRIDGE, NULL));
  done: ;
+}
+
+static void
+test_dir_purpose_needs_anonymity_returns_false_for_own_bridge_desc(void *arg)
+{
+  (void)arg;
+  tt_int_op(0, ==, purpose_needs_anonymity(DIR_PURPOSE_FETCH_SERVERDESC,
+                                           ROUTER_PURPOSE_BRIDGE,
+                                           "authority.z"));
+ done: ;
+}
+
+static void
+test_dir_purpose_needs_anonymity_returns_true_for_sensitive_purpose(void *arg)
+{
+  (void)arg;
+
+  tt_int_op(1, ==, purpose_needs_anonymity(
+                    DIR_PURPOSE_HAS_FETCHED_RENDDESC_V2,
+                    ROUTER_PURPOSE_GENERAL, NULL));
+  tt_int_op(1, ==, purpose_needs_anonymity(
+                    DIR_PURPOSE_UPLOAD_RENDDESC_V2, 0,  NULL));
+  tt_int_op(1, ==, purpose_needs_anonymity(
+                    DIR_PURPOSE_FETCH_RENDDESC_V2, 0, NULL));
+ done: ;
+}
+
+static void
+test_dir_purpose_needs_anonymity_ret_false_for_non_sensitive_conn(void *arg)
+{
+  (void)arg;
+
+  tt_int_op(0, ==, purpose_needs_anonymity(DIR_PURPOSE_UPLOAD_DIR,
+                                           ROUTER_PURPOSE_GENERAL, NULL));
+  tt_int_op(0, ==, purpose_needs_anonymity(DIR_PURPOSE_UPLOAD_VOTE, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_UPLOAD_SIGNATURES, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_STATUS_VOTE, 0, NULL));
+  tt_int_op(0, ==, purpose_needs_anonymity(
+                    DIR_PURPOSE_FETCH_DETACHED_SIGNATURES, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_CONSENSUS, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_CERTIFICATE, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_SERVERDESC, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_EXTRAINFO, 0, NULL));
+  tt_int_op(0, ==,
+            purpose_needs_anonymity(DIR_PURPOSE_FETCH_MICRODESC, 0, NULL));
+  done: ;
 }
 
 static void
@@ -4035,7 +4359,6 @@ test_dir_should_use_directory_guards(void *data)
   tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
   tt_int_op(CALLED(public_server_mode), OP_EQ, 1);
 
-  options->UseEntryGuardsAsDirGuards = 1;
   options->UseEntryGuards = 1;
   options->DownloadExtraInfo = 0;
   options->FetchDirInfoEarly = 0;
@@ -4049,29 +4372,24 @@ test_dir_should_use_directory_guards(void *data)
   tt_int_op(CALLED(public_server_mode), OP_EQ, 3);
   options->UseEntryGuards = 1;
 
-  options->UseEntryGuardsAsDirGuards = 0;
-  tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
-  tt_int_op(CALLED(public_server_mode), OP_EQ, 4);
-  options->UseEntryGuardsAsDirGuards = 1;
-
   options->DownloadExtraInfo = 1;
   tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
-  tt_int_op(CALLED(public_server_mode), OP_EQ, 5);
+  tt_int_op(CALLED(public_server_mode), OP_EQ, 4);
   options->DownloadExtraInfo = 0;
 
   options->FetchDirInfoEarly = 1;
   tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
-  tt_int_op(CALLED(public_server_mode), OP_EQ, 6);
+  tt_int_op(CALLED(public_server_mode), OP_EQ, 5);
   options->FetchDirInfoEarly = 0;
 
   options->FetchDirInfoExtraEarly = 1;
   tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
-  tt_int_op(CALLED(public_server_mode), OP_EQ, 7);
+  tt_int_op(CALLED(public_server_mode), OP_EQ, 6);
   options->FetchDirInfoExtraEarly = 0;
 
   options->FetchUselessDescriptors = 1;
   tt_int_op(should_use_directory_guards(options), OP_EQ, 0);
-  tt_int_op(CALLED(public_server_mode), OP_EQ, 8);
+  tt_int_op(CALLED(public_server_mode), OP_EQ, 7);
   options->FetchUselessDescriptors = 0;
 
   done:
@@ -4088,7 +4406,8 @@ directory_initiate_command_routerstatus, (const routerstatus_t *status,
                                           const char *resource,
                                           const char *payload,
                                           size_t payload_len,
-                                          time_t if_modified_since));
+                                          time_t if_modified_since,
+                                          circuit_guard_state_t *guardstate));
 
 static void
 test_dir_should_not_init_request_to_ourselves(void *data)
@@ -4195,7 +4514,8 @@ NS(directory_initiate_command_routerstatus)(const routerstatus_t *status,
                                             const char *resource,
                                             const char *payload,
                                             size_t payload_len,
-                                            time_t if_modified_since)
+                                            time_t if_modified_since,
+                                            circuit_guard_state_t *guardstate)
 {
   (void)status;
   (void)dir_purpose;
@@ -4205,6 +4525,7 @@ NS(directory_initiate_command_routerstatus)(const routerstatus_t *status,
   (void)payload;
   (void)payload_len;
   (void)if_modified_since;
+  (void)guardstate;
   CALLED(directory_initiate_command_routerstatus)++;
 }
 
@@ -5148,9 +5469,9 @@ listdir_mock(const char *dname)
   (void)dname;
 
   l = smartlist_new();
-  smartlist_add(l, tor_strdup("foo"));
-  smartlist_add(l, tor_strdup("bar"));
-  smartlist_add(l, tor_strdup("baz"));
+  smartlist_add_strdup(l, "foo");
+  smartlist_add_strdup(l, "bar");
+  smartlist_add_strdup(l, "baz");
 
   return l;
 }
@@ -5437,6 +5758,67 @@ test_dir_assumed_flags(void *arg)
   routerstatus_free(rs);
 }
 
+static void
+test_dir_post_parsing(void *arg)
+{
+  (void) arg;
+
+  /* Test the version parsing from an HS descriptor publish request. */
+  {
+    const char *end;
+    const char *prefix = "/tor/hs/";
+    int version = parse_hs_version_from_post("/tor/hs//publish", prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    version = parse_hs_version_from_post("/tor/hs/a/publish", prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    version = parse_hs_version_from_post("/tor/hs/3/publish", prefix, &end);
+    tt_int_op(version, OP_EQ, 3);
+    tt_str_op(end, OP_EQ, "/publish");
+    version = parse_hs_version_from_post("/tor/hs/42/publish", prefix, &end);
+    tt_int_op(version, OP_EQ, 42);
+    tt_str_op(end, OP_EQ, "/publish");
+    version = parse_hs_version_from_post("/tor/hs/18163/publish",prefix, &end);
+    tt_int_op(version, OP_EQ, 18163);
+    tt_str_op(end, OP_EQ, "/publish");
+    version = parse_hs_version_from_post("JUNKJUNKJUNK", prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    version = parse_hs_version_from_post("/tor/hs/3/publish", "blah", &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    /* Missing the '/' at the end of the prefix. */
+    version = parse_hs_version_from_post("/tor/hs/3/publish", "/tor/hs", &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    version = parse_hs_version_from_post("/random/blah/tor/hs/3/publish",
+                                         prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    version = parse_hs_version_from_post("/tor/hs/3/publish/random/junk",
+                                         prefix, &end);
+    tt_int_op(version, OP_EQ, 3);
+    tt_str_op(end, OP_EQ, "/publish/random/junk");
+    version = parse_hs_version_from_post("/tor/hs/-1/publish", prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+    /* INT_MAX */
+    version = parse_hs_version_from_post("/tor/hs/2147483647/publish",
+                                         prefix, &end);
+    tt_int_op(version, OP_EQ, INT_MAX);
+    tt_str_op(end, OP_EQ, "/publish");
+    /* INT_MAX + 1*/
+    version = parse_hs_version_from_post("/tor/hs/2147483648/publish",
+                                         prefix, &end);
+    tt_int_op(version, OP_EQ, -1);
+    tt_ptr_op(end, OP_EQ, NULL);
+  }
+
+ done:
+  ;
+}
+
 #define DIR_LEGACY(name)                             \
   { #name, test_dir_ ## name , TT_FORK, NULL, NULL }
 
@@ -5470,7 +5852,12 @@ struct testcase_t dir_tests[] = {
   DIR(fmt_control_ns, 0),
   DIR(dirserv_set_routerstatus_testing, 0),
   DIR(http_handling, 0),
-  DIR(purpose_needs_anonymity, 0),
+  DIR(purpose_needs_anonymity_returns_true_for_bridges, 0),
+  DIR(purpose_needs_anonymity_returns_false_for_own_bridge_desc, 0),
+  DIR(purpose_needs_anonymity_returns_true_by_default, 0),
+  DIR(purpose_needs_anonymity_returns_true_for_sensitive_purpose, 0),
+  DIR(purpose_needs_anonymity_ret_false_for_non_sensitive_conn, 0),
+  DIR(post_parsing, 0),
   DIR(fetch_type, 0),
   DIR(packages, 0),
   DIR(download_status_schedule, 0),
@@ -5491,6 +5878,7 @@ struct testcase_t dir_tests[] = {
   DIR_ARG(find_dl_schedule, TT_FORK, "cf"),
   DIR_ARG(find_dl_schedule, TT_FORK, "ca"),
   DIR(assumed_flags, 0),
+  DIR(networkstatus_compute_bw_weights_v10, 0),
   END_OF_TESTCASES
 };
 

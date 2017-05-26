@@ -8,6 +8,41 @@
  * \file relay.c
  * \brief Handle relay cell encryption/decryption, plus packaging and
  *    receiving from circuits, plus queuing on circuits.
+ *
+ * This is a core modules that makes Tor work. It's responsible for
+ * dealing with RELAY cells (the ones that travel more than one hop along a
+ * circuit), by:
+ *  <ul>
+ *   <li>constructing relays cells,
+ *   <li>encrypting relay cells,
+ *   <li>decrypting relay cells,
+ *   <li>demultiplexing relay cells as they arrive on a connection,
+ *   <li>queueing relay cells for retransmission,
+ *   <li>or handling relay cells that are for us to receive (as an exit or a
+ *   client).
+ *  </ul>
+ *
+ * RELAY cells are generated throughout the code at the client or relay side,
+ * using relay_send_command_from_edge() or one of the functions like
+ * connection_edge_send_command() that calls it.  Of particular interest is
+ * connection_edge_package_raw_inbuf(), which takes information that has
+ * arrived on an edge connection socket, and packages it as a RELAY_DATA cell
+ * -- this is how information is actually sent across the Tor network.  The
+ * cryptography for these functions is handled deep in
+ * circuit_package_relay_cell(), which either adds a single layer of
+ * encryption (if we're an exit), or multiple layers (if we're the origin of
+ * the circuit).  After construction and encryption, the RELAY cells are
+ * passed to append_cell_to_circuit_queue(), which queues them for
+ * transmission and tells the circuitmux (see circuitmux.c) that the circuit
+ * is waiting to send something.
+ *
+ * Incoming RELAY cells arrive at circuit_receive_relay_cell(), called from
+ * command.c.  There they are decrypted and, if they are for us, are passed to
+ * connection_edge_process_relay_cell(). If they're not for us, they're
+ * re-queued for retransmission again with append_cell_to_circuit_queue().
+ *
+ * The connection_edge_process_relay_cell() function handles all the different
+ * types of relay cells, launching requests or transmitting data as needed.
  **/
 
 #define RELAY_PRIVATE
@@ -25,6 +60,7 @@
 #include "connection_or.h"
 #include "control.h"
 #include "geoip.h"
+#include "hs_cache.h"
 #include "main.h"
 #include "networkstatus.h"
 #include "nodelist.h"
@@ -559,11 +595,11 @@ relay_command_to_string(uint8_t command)
  * If you can't send the cell, mark the circuit for close and return -1. Else
  * return 0.
  */
-int
-relay_send_command_from_edge_(streamid_t stream_id, circuit_t *circ,
-                              uint8_t relay_command, const char *payload,
-                              size_t payload_len, crypt_path_t *cpath_layer,
-                              const char *filename, int lineno)
+MOCK_IMPL(int,
+relay_send_command_from_edge_,(streamid_t stream_id, circuit_t *circ,
+                               uint8_t relay_command, const char *payload,
+                               size_t payload_len, crypt_path_t *cpath_layer,
+                               const char *filename, int lineno))
 {
   cell_t cell;
   relay_header_t rh;
@@ -575,14 +611,14 @@ relay_send_command_from_edge_(streamid_t stream_id, circuit_t *circ,
 
   memset(&cell, 0, sizeof(cell_t));
   cell.command = CELL_RELAY;
-  if (cpath_layer) {
+  if (CIRCUIT_IS_ORIGIN(circ)) {
+    tor_assert(cpath_layer);
     cell.circ_id = circ->n_circ_id;
     cell_direction = CELL_DIRECTION_OUT;
-  } else if (! CIRCUIT_IS_ORIGIN(circ)) {
+  } else {
+    tor_assert(! cpath_layer);
     cell.circ_id = TO_OR_CIRCUIT(circ)->p_circ_id;
     cell_direction = CELL_DIRECTION_IN;
-  } else {
-    return -1;
   }
 
   memset(&rh, 0, sizeof(rh));
@@ -2404,9 +2440,7 @@ cell_queues_check_size(void)
       if (rend_cache_total > get_options()->MaxMemInQueues / 5) {
         const size_t bytes_to_remove =
           rend_cache_total - (size_t)(get_options()->MaxMemInQueues / 10);
-        rend_cache_clean_v2_descs_as_dir(time(NULL), bytes_to_remove);
-        alloc -= rend_cache_total;
-        alloc += rend_cache_get_total_allocation();
+        alloc -= hs_cache_handle_oom(time(NULL), bytes_to_remove);
       }
       circuits_handle_oom(alloc);
       return 1;

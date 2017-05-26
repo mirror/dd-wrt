@@ -243,29 +243,19 @@ has_dns_init_failed(void)
 }
 
 /** Helper: Given a TTL from a DNS response, determine what TTL to give the
- * OP that asked us to resolve it. */
+ * OP that asked us to resolve it, and how long to cache that record
+ * ourselves. */
 uint32_t
 dns_clip_ttl(uint32_t ttl)
 {
-  if (ttl < MIN_DNS_TTL)
-    return MIN_DNS_TTL;
-  else if (ttl > MAX_DNS_TTL)
-    return MAX_DNS_TTL;
+  /* This logic is a defense against "DefectTor" DNS-based traffic
+   * confirmation attacks, as in https://nymity.ch/tor-dns/tor-dns.pdf .
+   * We only give two values: a "low" value and a "high" value.
+   */
+  if (ttl < MIN_DNS_TTL_AT_EXIT)
+    return MIN_DNS_TTL_AT_EXIT;
   else
-    return ttl;
-}
-
-/** Helper: Given a TTL from a DNS response, determine how long to hold it in
- * our cache. */
-STATIC uint32_t
-dns_get_expiry_ttl(uint32_t ttl)
-{
-  if (ttl < MIN_DNS_TTL)
-    return MIN_DNS_TTL;
-  else if (ttl > MAX_DNS_ENTRY_AGE)
-    return MAX_DNS_ENTRY_AGE;
-  else
-    return ttl;
+    return MAX_DNS_TTL_AT_EXIT;
 }
 
 /** Helper: free storage held by an entry in the DNS cache. */
@@ -336,7 +326,7 @@ cached_resolve_add_answer(cached_resolve_t *resolve,
       resolve->result_ipv4.err_ipv4 = dns_result;
       resolve->res_status_ipv4 = RES_STATUS_DONE_ERR;
     }
-
+    resolve->ttl_ipv4 = ttl;
   } else if (query_type == DNS_IPv6_AAAA) {
     if (resolve->res_status_ipv6 != RES_STATUS_INFLIGHT)
       return;
@@ -351,6 +341,7 @@ cached_resolve_add_answer(cached_resolve_t *resolve,
       resolve->result_ipv6.err_ipv6 = dns_result;
       resolve->res_status_ipv6 = RES_STATUS_DONE_ERR;
     }
+    resolve->ttl_ipv6 = ttl;
   }
 }
 
@@ -1317,7 +1308,7 @@ make_pending_resolve_cached(cached_resolve_t *resolve)
         resolve->ttl_hostname < ttl)
       ttl = resolve->ttl_hostname;
 
-    set_expiry(new_resolve, time(NULL) + dns_get_expiry_ttl(ttl));
+    set_expiry(new_resolve, time(NULL) + dns_clip_ttl(ttl));
   }
 
   assert_cache_ok();
@@ -1750,7 +1741,7 @@ wildcard_increment_answer(const char *id)
         "invalid addresses. Apparently they are hijacking DNS failures. "
         "I'll try to correct for this by treating future occurrences of "
         "\"%s\" as 'not found'.", id, *ip, id);
-      smartlist_add(dns_wildcard_list, tor_strdup(id));
+      smartlist_add_strdup(dns_wildcard_list, id);
     }
     if (!dns_wildcard_notice_given)
       control_event_server_status(LOG_NOTICE, "DNS_HIJACKED");
@@ -1774,7 +1765,7 @@ add_wildcarded_test_address(const char *address)
   n_test_addrs = get_options()->ServerDNSTestAddresses ?
     smartlist_len(get_options()->ServerDNSTestAddresses) : 0;
 
-  smartlist_add(dns_wildcarded_test_address_list, tor_strdup(address));
+  smartlist_add_strdup(dns_wildcarded_test_address_list, address);
   n = smartlist_len(dns_wildcarded_test_address_list);
   if (n > n_test_addrs/2) {
     tor_log(dns_wildcarded_test_address_notice_given ? LOG_INFO : LOG_NOTICE,

@@ -79,7 +79,7 @@
 #include <malloc/malloc.h>
 #endif
 #ifdef HAVE_MALLOC_H
-#if !defined(OPENBSD) && !defined(__FreeBSD__)
+#if !defined(OpenBSD) && !defined(__FreeBSD__)
 /* OpenBSD has a malloc.h, but for our purposes, it only exists in order to
  * scold us for being so stupid as to autodetect its presence.  To be fair,
  * they've done this since 1996, when autoconf was only 5 years old. */
@@ -187,8 +187,9 @@ tor_malloc_zero_(size_t size DMALLOC_PARAMS)
  * 0xfffe0001. */
 #define SQRT_SIZE_MAX_P1 (((size_t)1) << (sizeof(size_t)*4))
 
-/** Return non-zero if and only if the product of the arguments is exact. */
-static inline int
+/** Return non-zero if and only if the product of the arguments is exact,
+ * and cannot overflow. */
+int
 size_mul_check(const size_t x, const size_t y)
 {
   /* This first check is equivalent to
@@ -201,15 +202,6 @@ size_mul_check(const size_t x, const size_t y)
           y == 0 ||
           x <= SIZE_MAX / y);
 }
-
-#ifdef TOR_UNIT_TESTS
-/** Exposed for unit tests only */
-int
-size_mul_check__(const size_t x, const size_t y)
-{
-  return size_mul_check(x,y);
-}
-#endif
 
 /** Allocate a chunk of <b>nmemb</b>*<b>size</b> bytes of memory, fill
  * the memory with zero bytes, and return a pointer to the result.
@@ -706,6 +698,19 @@ tor_strisnonupper(const char *s)
 {
   while (*s) {
     if (TOR_ISUPPER(*s))
+      return 0;
+    s++;
+  }
+  return 1;
+}
+
+/** Return true iff every character in <b>s</b> is whitespace space; else
+ * return false. */
+int
+tor_strisspace(const char *s)
+{
+  while (*s) {
+    if (!TOR_ISSPACE(*s))
       return 0;
     s++;
   }
@@ -1803,17 +1808,26 @@ format_iso_time_nospace_usec(char *buf, const struct timeval *tv)
 /** Given an ISO-formatted UTC time value (after the epoch) in <b>cp</b>,
  * parse it and store its value in *<b>t</b>.  Return 0 on success, -1 on
  * failure.  Ignore extraneous stuff in <b>cp</b> after the end of the time
- * string, unless <b>strict</b> is set. */
+ * string, unless <b>strict</b> is set. If <b>nospace</b> is set,
+ * expect the YYYY-MM-DDTHH:MM:SS format. */
 int
-parse_iso_time_(const char *cp, time_t *t, int strict)
+parse_iso_time_(const char *cp, time_t *t, int strict, int nospace)
 {
   struct tm st_tm;
   unsigned int year=0, month=0, day=0, hour=0, minute=0, second=0;
   int n_fields;
-  char extra_char;
-  n_fields = tor_sscanf(cp, "%u-%2u-%2u %2u:%2u:%2u%c", &year, &month,
-                        &day, &hour, &minute, &second, &extra_char);
-  if (strict ? (n_fields != 6) : (n_fields < 6)) {
+  char extra_char, separator_char;
+  n_fields = tor_sscanf(cp, "%u-%2u-%2u%c%2u:%2u:%2u%c",
+                        &year, &month, &day,
+                        &separator_char,
+                        &hour, &minute, &second, &extra_char);
+  if (strict ? (n_fields != 7) : (n_fields < 7)) {
+    char *esc = esc_for_log(cp);
+    log_warn(LD_GENERAL, "ISO time %s was unparseable", esc);
+    tor_free(esc);
+    return -1;
+  }
+  if (separator_char != (nospace ? 'T' : ' ')) {
     char *esc = esc_for_log(cp);
     log_warn(LD_GENERAL, "ISO time %s was unparseable", esc);
     tor_free(esc);
@@ -1855,7 +1869,16 @@ parse_iso_time_(const char *cp, time_t *t, int strict)
 int
 parse_iso_time(const char *cp, time_t *t)
 {
-  return parse_iso_time_(cp, t, 1);
+  return parse_iso_time_(cp, t, 1, 0);
+}
+
+/**
+ * As parse_iso_time, but parses a time encoded by format_iso_time_nospace().
+ */
+int
+parse_iso_time_nospace(const char *cp, time_t *t)
+{
+  return parse_iso_time_(cp, t, 1, 1);
 }
 
 /** Given a <b>date</b> in one of the three formats allowed by HTTP (ugh),
@@ -2270,10 +2293,14 @@ check_private_dir,(const char *dirname, cpd_check_t check,
        * permissions on the directory will be checked again below.*/
       fd = open(sandbox_intern_string(dirname), O_NOFOLLOW);
 
-      if (fd == -1)
+      if (fd == -1) {
+        log_warn(LD_FS, "Could not reopen recently created directory %s: %s",
+                 dirname,
+                 strerror(errno));
         return -1;
-      else
+      } else {
         close(fd);
+      }
 
     } else if (!(check & CPD_CHECK)) {
       log_warn(LD_FS, "Directory %s does not exist.", dirname);
@@ -2601,19 +2628,20 @@ finish_writing_to_file_impl(open_file_t *file_data, int abort_write)
 
   if (file_data->rename_on_close) {
     tor_assert(file_data->tempname && file_data->filename);
+    if (!abort_write) {
+      tor_assert(strcmp(file_data->filename, file_data->tempname));
+      if (replace_file(file_data->tempname, file_data->filename)) {
+        log_warn(LD_FS, "Error replacing \"%s\": %s", file_data->filename,
+                 strerror(errno));
+        abort_write = r = -1;
+      }
+    }
     if (abort_write) {
       int res = unlink(file_data->tempname);
       if (res != 0) {
         /* We couldn't unlink and we'll leave a mess behind */
         log_warn(LD_FS, "Failed to unlink %s: %s",
                  file_data->tempname, strerror(errno));
-        r = -1;
-      }
-    } else {
-      tor_assert(strcmp(file_data->filename, file_data->tempname));
-      if (replace_file(file_data->tempname, file_data->filename)) {
-        log_warn(LD_FS, "Error replacing \"%s\": %s", file_data->filename,
-                 strerror(errno));
         r = -1;
       }
     }
@@ -3534,6 +3562,17 @@ smartlist_add_vasprintf(struct smartlist_t *sl, const char *pattern,
   smartlist_add(sl, str);
 }
 
+/** Append a copy of string to sl */
+void
+smartlist_add_strdup(struct smartlist_t *sl, const char *string)
+{
+  char *copy;
+
+  copy = tor_strdup(string);
+
+  smartlist_add(sl, copy);
+}
+
 /** Return a new list containing the filenames in the directory <b>dirname</b>.
  * Return NULL on error or if <b>dirname</b> is not a directory.
  */
@@ -3567,7 +3606,7 @@ tor_listdir, (const char *dirname))
 #endif
     if (strcmp(name, ".") &&
         strcmp(name, "..")) {
-      smartlist_add(result, tor_strdup(name));
+      smartlist_add_strdup(result, name);
     }
     if (!FindNextFile(handle, &findData)) {
       DWORD err;
@@ -3593,7 +3632,7 @@ tor_listdir, (const char *dirname))
     if (!strcmp(de->d_name, ".") ||
         !strcmp(de->d_name, ".."))
       continue;
-    smartlist_add(result, tor_strdup(de->d_name));
+    smartlist_add_strdup(result, de->d_name);
   }
   closedir(d);
 #endif
@@ -4864,7 +4903,7 @@ get_current_process_environment_variables(void)
 
   char **environ_tmp; /* Not const char ** ? Really? */
   for (environ_tmp = get_environment(); *environ_tmp; ++environ_tmp) {
-    smartlist_add(sl, tor_strdup(*environ_tmp));
+    smartlist_add_strdup(sl, *environ_tmp);
   }
 
   return sl;
@@ -5247,7 +5286,7 @@ tor_get_lines_from_handle, (FILE *handle,
       goto done;
 
     if (!lines) lines = smartlist_new();
-    smartlist_add(lines, tor_strdup(stdout_buf));
+    smartlist_add_strdup(lines, stdout_buf);
   }
 
  done:

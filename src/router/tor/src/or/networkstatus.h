@@ -66,6 +66,8 @@ const routerstatus_t *router_get_consensus_status_by_nickname(
                                    int warn_if_unnamed);
 const char *networkstatus_get_router_digest_by_nickname(const char *nickname);
 int networkstatus_nickname_is_unnamed(const char *nickname);
+int we_want_to_fetch_flavor(const or_options_t *options, int flavor);
+int we_want_to_fetch_unknown_auth_certs(const or_options_t *options);
 void networkstatus_consensus_download_failed(int status_code,
                                              const char *flavname);
 void update_consensus_networkstatus_fetch_time(time_t now);
@@ -79,6 +81,8 @@ MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus,(void));
 MOCK_DECL(networkstatus_t *,networkstatus_get_latest_consensus_by_flavor,
           (consensus_flavor_t f));
 MOCK_DECL(networkstatus_t *, networkstatus_get_live_consensus,(time_t now));
+int networkstatus_consensus_reasonably_live(networkstatus_t *consensus,
+                                            time_t now);
 networkstatus_t *networkstatus_get_reasonably_live_consensus(time_t now,
                                                              int flavor);
 MOCK_DECL(int, networkstatus_consensus_is_bootstrapping,(time_t now));
@@ -111,6 +115,11 @@ int32_t networkstatus_get_param(const networkstatus_t *ns,
                                 const char *param_name,
                                 int32_t default_val, int32_t min_val,
                                 int32_t max_val);
+int32_t networkstatus_get_overridable_param(const networkstatus_t *ns,
+                                            int32_t torrc_value,
+                                            const char *param_name,
+                                            int32_t default_val,
+                                            int32_t min_val, int32_t max_val);
 int getinfo_helper_networkstatus(control_connection_t *conn,
                                  const char *question, char **answer,
                                  const char **errmsg);
@@ -123,8 +132,9 @@ document_signature_t *document_signature_dup(const document_signature_t *sig);
 void networkstatus_free_all(void);
 int networkstatus_get_weight_scale_param(networkstatus_t *ns);
 
+void vote_routerstatus_free(vote_routerstatus_t *rs);
+
 #ifdef NETWORKSTATUS_PRIVATE
-STATIC void vote_routerstatus_free(vote_routerstatus_t *rs);
 #ifdef TOR_UNIT_TESTS
 STATIC int networkstatus_set_current_consensus_from_ns(networkstatus_t *c,
                                                 const char *flavor);

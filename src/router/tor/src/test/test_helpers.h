@@ -6,10 +6,19 @@
 
 const char *get_yesterday_date_str(void);
 
+circuit_t * dummy_origin_circuit_new(int num_cells);
+
 /* Number of descriptors contained in test_descriptors.txt. */
 #define HELPER_NUMBER_OF_DESCRIPTORS 8
 
 void helper_setup_fake_routerlist(void);
+
+#define GET(path) "GET " path " HTTP/1.0\r\n\r\n"
+void connection_write_to_buf_mock(const char *string, size_t len,
+                                  connection_t *conn, int zlib);
+
+int mock_tor_addr_lookup__fail_on_bad_addrs(const char *name,
+                                            uint16_t family, tor_addr_t *out);
 
 extern const char TEST_DESCRIPTORS[];
 
