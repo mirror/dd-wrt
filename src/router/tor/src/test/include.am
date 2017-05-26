@@ -8,7 +8,9 @@ TESTS_ENVIRONMENT = \
 	export builddir="$(builddir)"; \
 	export TESTING_TOR_BINARY="$(TESTING_TOR_BINARY)";
 
-TESTSCRIPTS = src/test/test_zero_length_keys.sh \
+TESTSCRIPTS = \
+	src/test/fuzz_static_testcases.sh \
+	src/test/test_zero_length_keys.sh \
 	src/test/test_workqueue_cancel.sh \
 	src/test/test_workqueue_efd.sh \
 	src/test/test_workqueue_efd2.sh \
@@ -80,6 +82,7 @@ src_test_test_SOURCES = \
 	src/test/test_checkdir.c \
 	src/test/test_circuitlist.c \
 	src/test/test_circuitmux.c \
+	src/test/test_circuituse.c \
 	src/test/test_compat_libevent.c \
 	src/test/test_config.c \
 	src/test/test_connection.c \
@@ -96,7 +99,11 @@ src_test_test_SOURCES = \
 	src/test/test_guardfraction.c \
 	src/test/test_extorport.c \
 	src/test/test_hs.c \
+	src/test/test_hs_service.c \
+	src/test/test_hs_intropoint.c \
 	src/test/test_handles.c \
+	src/test/test_hs_cache.c \
+	src/test/test_hs_descriptor.c \
 	src/test/test_introduce.c \
 	src/test/test_keypin.c \
 	src/test/test_link_handshake.c \
@@ -130,6 +137,7 @@ src_test_test_SOURCES = \
 	src/test/test_helpers.c \
 	src/test/test_dns.c \
 	src/test/testing_common.c \
+	src/test/testing_rsakeys.c \
 	src/ext/tinytest.c
 
 src_test_test_slow_SOURCES = \
@@ -137,6 +145,7 @@ src_test_test_slow_SOURCES = \
 	src/test/test_crypto_slow.c \
 	src/test/test_util_slow.c \
 	src/test/testing_common.c \
+	src/test/testing_rsakeys.c \
 	src/ext/tinytest.c
 
 src_test_test_memwipe_SOURCES = \
@@ -262,6 +271,7 @@ src_test_test_bt_cl_CPPFLAGS= $(src_test_AM_CPPFLAGS) $(TEST_CPPFLAGS)
 EXTRA_DIST += \
 	src/test/bt_test.py \
 	src/test/ntor_ref.py \
+	src/test/fuzz_static_testcases.sh \
 	src/test/slownacl_curve25519.py \
 	src/test/zero_length_keys.sh \
 	src/test/test_keygen.sh \

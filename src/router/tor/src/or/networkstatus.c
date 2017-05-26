@@ -6,12 +6,39 @@
 
 /**
  * \file networkstatus.c
- * \brief Functions and structures for handling network status documents as a
- * client or cache.
+ * \brief Functions and structures for handling networkstatus documents as a
+ * client or as a directory cache.
+ *
+ * A consensus networkstatus object is created by the directory
+ * authorities.  It authenticates a set of network parameters--most
+ * importantly, the list of all the relays in the network.  This list
+ * of relays is represented as an array of routerstatus_t objects.
+ *
+ * There are currently two flavors of consensus.  With the older "NS"
+ * flavor, each relay is associated with a digest of its router
+ * descriptor. Tor instances that use this consensus keep the list of
+ * router descriptors as routerinfo_t objects stored and managed in
+ * routerlist.c.  With the newer "microdesc" flavor, each relay is
+ * associated with a digest of the microdescriptor that the authorities
+ * made for it.  These are stored and managed in microdesc.c. Information
+ * about the router is divided between the the networkstatus and the
+ * microdescriptor according to the general rule that microdescriptors
+ * should hold information that changes much less frequently than the
+ * information in the networkstatus.
+ *
+ * Modern clients use microdescriptor networkstatuses.  Directory caches
+ * need to keep both kinds of networkstatus document, so they can serve them.
+ *
+ * This module manages fetching, holding, storing, updating, and
+ * validating networkstatus objects.  The download-and-validate process
+ * is slightly complicated by the fact that the keys you need to
+ * validate a consensus are stored in the authority certificates, which
+ * you might not have yet when you download the consensus.
  */
 
 #define NETWORKSTATUS_PRIVATE
 #include "or.h"
+#include "bridges.h"
 #include "channel.h"
 #include "circuitmux.h"
 #include "circuitmux_ewma.h"
@@ -216,7 +243,7 @@ router_reload_consensus_networkstatus(void)
 }
 
 /** Free all storage held by the vote_routerstatus object <b>rs</b>. */
-STATIC void
+void
 vote_routerstatus_free(vote_routerstatus_t *rs)
 {
   vote_microdesc_hash_t *h, *next;
@@ -788,8 +815,11 @@ networkstatus_nickname_is_unnamed(const char *nickname)
 #define NONAUTHORITY_NS_CACHE_INTERVAL (60*60)
 
 /** Return true iff, given the options listed in <b>options</b>, <b>flavor</b>
- *  is the flavor of a consensus networkstatus that we would like to fetch. */
-static int
+ *  is the flavor of a consensus networkstatus that we would like to fetch.
+ *
+ * For certificate fetches, use we_want_to_fetch_unknown_auth_certs, and
+ * for serving fetched documents, use directory_caches_dir_info. */
+int
 we_want_to_fetch_flavor(const or_options_t *options, int flavor)
 {
   if (flavor < 0 || flavor > N_CONSENSUS_FLAVORS) {
@@ -809,6 +839,29 @@ we_want_to_fetch_flavor(const or_options_t *options, int flavor)
   /* Otherwise, we want the flavor only if we want to use it to build
    * circuits. */
   return flavor == usable_consensus_flavor();
+}
+
+/** Return true iff, given the options listed in <b>options</b>, we would like
+ * to fetch and store unknown authority certificates.
+ *
+ * For consensus and descriptor fetches, use we_want_to_fetch_flavor, and
+ * for serving fetched certificates, use directory_caches_unknown_auth_certs.
+ */
+int
+we_want_to_fetch_unknown_auth_certs(const or_options_t *options)
+{
+  if (authdir_mode_v3(options) ||
+      directory_caches_unknown_auth_certs((options))) {
+    /* We want to serve all certs to others, regardless if we would use
+     * them ourselves. */
+    return 1;
+  }
+  if (options->FetchUselessDescriptors) {
+    /* Unknown certificates are definitely useless. */
+    return 1;
+  }
+  /* Otherwise, don't fetch unknown certificates. */
+  return 0;
 }
 
 /** How long will we hang onto a possibly live consensus for which we're
@@ -1325,6 +1378,24 @@ networkstatus_get_live_consensus,(time_t now))
     return NULL;
 }
 
+/** Determine if <b>consensus</b> is valid or expired recently enough that
+ * we can still use it.
+ *
+ * Return 1 if the consensus is reasonably live, or 0 if it is too old.
+ */
+int
+networkstatus_consensus_reasonably_live(networkstatus_t *consensus, time_t now)
+{
+#define REASONABLY_LIVE_TIME (24*60*60)
+  if (BUG(!consensus))
+    return 0;
+
+  if (now <= consensus->valid_until + REASONABLY_LIVE_TIME)
+    return 1;
+
+  return 0;
+}
+
 /* XXXX remove this in favor of get_live_consensus. But actually,
  * leave something like it for bridge users, who need to not totally
  * lose if they spend a while fetching a new consensus. */
@@ -1333,12 +1404,11 @@ networkstatus_get_live_consensus,(time_t now))
 networkstatus_t *
 networkstatus_get_reasonably_live_consensus(time_t now, int flavor)
 {
-#define REASONABLY_LIVE_TIME (24*60*60)
   networkstatus_t *consensus =
     networkstatus_get_latest_consensus_by_flavor(flavor);
   if (consensus &&
       consensus->valid_after <= now &&
-      now <= consensus->valid_until+REASONABLY_LIVE_TIME)
+      networkstatus_consensus_reasonably_live(consensus, now))
     return consensus;
   else
     return NULL;
@@ -1702,9 +1772,9 @@ networkstatus_set_current_consensus(const char *consensus,
   }
 
   if (flav != usable_consensus_flavor() &&
-      !directory_caches_dir_info(options)) {
-    /* This consensus is totally boring to us: we won't use it, and we won't
-     * serve it.  Drop it. */
+      !we_want_to_fetch_flavor(options, flav)) {
+    /* This consensus is totally boring to us: we won't use it, we didn't want
+     * it, and we won't serve it.  Drop it. */
     goto done;
   }
 
@@ -1906,7 +1976,7 @@ networkstatus_set_current_consensus(const char *consensus,
       download_status_failed(&consensus_dl_status[flav], 0);
   }
 
-  if (directory_caches_dir_info(options)) {
+  if (we_want_to_fetch_flavor(options, flav)) {
     dirserv_set_cached_consensus_networkstatus(consensus,
                                                flavor,
                                                &c->digests,
@@ -2277,6 +2347,25 @@ networkstatus_get_param(const networkstatus_t *ns, const char *param_name,
 }
 
 /**
+ * As networkstatus_get_param(), but check torrc_value before checking the
+ * consensus. If torrc_value is in-range, then return it instead of the
+ * value from the consensus.
+ */
+int32_t
+networkstatus_get_overridable_param(const networkstatus_t *ns,
+                                    int32_t torrc_value,
+                                    const char *param_name,
+                                    int32_t default_val,
+                                    int32_t min_val, int32_t max_val)
+{
+  if (torrc_value >= min_val && torrc_value <= max_val)
+    return torrc_value;
+  else
+    return networkstatus_get_param(
+                         ns, param_name, default_val, min_val, max_val);
+}
+
+/**
  * Retrieve the consensus parameter that governs the
  * fixed-point precision of our network balancing 'bandwidth-weights'
  * (which are themselves integer consensus values). We divide them
@@ -2355,14 +2444,10 @@ int
 client_would_use_router(const routerstatus_t *rs, time_t now,
                         const or_options_t *options)
 {
-  if (!rs->is_flagged_running && !options->FetchUselessDescriptors) {
+  (void) options; /* unused */
+  if (!rs->is_flagged_running) {
     /* If we had this router descriptor, we wouldn't even bother using it.
-     * But, if we want to have a complete list, fetch it anyway. */
-    return 0;
-  }
-  if (rs->published_on + options->TestingEstimatedDescriptorPropagationTime
-      > now) {
-    /* Most caches probably don't have this descriptor yet. */
+     * (Fetching and storing depends on by we_want_to_fetch_flavor().) */
     return 0;
   }
   if (rs->published_on + OLD_ROUTER_DESC_MAX_AGE < now) {

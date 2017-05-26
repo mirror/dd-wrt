@@ -289,11 +289,11 @@ protover_get_supported_protocols(void)
     "Cons=1-2 "
     "Desc=1-2 "
     "DirCache=1 "
-    "HSDir=1 "
-    "HSIntro=3 "
+    "HSDir=1-2 "
+    "HSIntro=3-4 "
     "HSRend=1-2 "
     "Link=1-4 "
-    "LinkAuth=1 "
+    "LinkAuth=1,3 "
     "Microdesc=1-2 "
     "Relay=1-2";
 }
@@ -348,7 +348,7 @@ encode_protocol_list(const smartlist_t *sl)
   const char *separator = "";
   smartlist_t *chunks = smartlist_new();
   SMARTLIST_FOREACH_BEGIN(sl, const proto_entry_t *, ent) {
-    smartlist_add(chunks, tor_strdup(separator));
+    smartlist_add_strdup(chunks, separator);
 
     proto_entry_encode_into(chunks, ent);
 
@@ -477,7 +477,7 @@ contract_protocol_list(const smartlist_t *proto_strings)
     smartlist_sort(lst, cmp_single_ent_by_version);
 
     if (! first_entry)
-      smartlist_add(chunks, tor_strdup(" "));
+      smartlist_add_strdup(chunks, " ");
 
     /* We're going to construct this entry from the ranges. */
     proto_entry_t *entry = tor_malloc_zero(sizeof(proto_entry_t));

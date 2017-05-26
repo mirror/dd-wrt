@@ -365,6 +365,16 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
             strmap_size(fingerprint_list->fp_by_name),
             digestmap_size(fingerprint_list->status_by_digest));
 
+  if (platform) {
+    tor_version_t ver_tmp;
+    if (tor_version_parse_platform(platform, &ver_tmp, 1) < 0) {
+      if (msg) {
+        *msg = "Malformed platform string.";
+      }
+      return FP_REJECT;
+    }
+  }
+
   /* Versions before Tor 0.2.4.18-rc are too old to support, and are
    * missing some important security fixes too. Disable them. */
   if (platform && !tor_version_as_new_as(platform,"0.2.4.18-rc")) {
@@ -948,7 +958,7 @@ list_server_status_v1(smartlist_t *routers, char **router_status_out,
       if (!node->is_running)
         *cp++ = '!';
       router_get_verbose_nickname(cp, ri);
-      smartlist_add(rs_entries, tor_strdup(name_buf));
+      smartlist_add_strdup(rs_entries, name_buf);
     } else if (ri->cache_info.published_on >= cutoff) {
       smartlist_add(rs_entries, list_single_server_status(ri,
                                                           node->is_running));
@@ -1069,8 +1079,10 @@ directory_fetches_dir_info_later(const or_options_t *options)
   return options->UseBridges != 0;
 }
 
-/** Return true iff we want to fetch and keep certificates for authorities
+/** Return true iff we want to serve certificates for authorities
  * that we don't acknowledge as authorities ourself.
+ * Use we_want_to_fetch_unknown_auth_certs to check if we want to fetch
+ * and keep these certificates.
  */
 int
 directory_caches_unknown_auth_certs(const or_options_t *options)
@@ -1078,11 +1090,14 @@ directory_caches_unknown_auth_certs(const or_options_t *options)
   return dir_server_mode(options) || options->BridgeRelay;
 }
 
-/** Return 1 if we want to keep descriptors, networkstatuses, etc around.
+/** Return 1 if we want to fetch and serve descriptors, networkstatuses, etc
  * Else return 0.
  * Check options->DirPort_set and directory_permits_begindir_requests()
  * to see if we are willing to serve these directory documents to others via
  * the DirPort and begindir-over-ORPort, respectively.
+ *
+ * To check if we should fetch documents, use we_want_to_fetch_flavor and
+ * we_want_to_fetch_unknown_auth_certs instead of this function.
  */
 int
 directory_caches_dir_info(const or_options_t *options)
@@ -1097,7 +1112,7 @@ directory_caches_dir_info(const or_options_t *options)
     should_refuse_unknown_exits(options);
 }
 
-/** Return 1 if we want to allow remote people to ask us directory
+/** Return 1 if we want to allow remote clients to ask us directory
  * requests via the "begin_dir" interface, which doesn't require
  * having any separate port open. */
 int
@@ -1949,7 +1964,7 @@ routerstatus_format_entry(const routerstatus_t *rs, const char *version,
                              vrs->status.guardfraction_percentage);
     }
 
-    smartlist_add(chunks, tor_strdup("\n"));
+    smartlist_add_strdup(chunks, "\n");
 
     if (desc) {
       summary = policy_summarize(desc->exit_policy, AF_INET);
@@ -1959,7 +1974,7 @@ routerstatus_format_entry(const routerstatus_t *rs, const char *version,
 
     if (format == NS_V3_VOTE && vrs) {
       if (tor_mem_is_zero((char*)vrs->ed25519_id, ED25519_PUBKEY_LEN)) {
-        smartlist_add(chunks, tor_strdup("id ed25519 none\n"));
+        smartlist_add_strdup(chunks, "id ed25519 none\n");
       } else {
         char ed_b64[BASE64_DIGEST256_LEN+1];
         digest256_to_base64(ed_b64, (const char*)vrs->ed25519_id);
@@ -2051,12 +2066,8 @@ get_possible_sybil_list(const smartlist_t *routers)
   int addr_count;
   /* Allow at most this number of Tor servers on a single IP address, ... */
   int max_with_same_addr = options->AuthDirMaxServersPerAddr;
-  /* ... unless it's a directory authority, in which case allow more. */
-  int max_with_same_addr_on_authority = options->AuthDirMaxServersPerAuthAddr;
   if (max_with_same_addr <= 0)
     max_with_same_addr = INT_MAX;
-  if (max_with_same_addr_on_authority <= 0)
-    max_with_same_addr_on_authority = INT_MAX;
 
   smartlist_add_all(routers_by_ip, routers);
   smartlist_sort(routers_by_ip, compare_routerinfo_by_ip_and_bw_);
@@ -2069,9 +2080,7 @@ get_possible_sybil_list(const smartlist_t *routers)
         last_addr = ri->addr;
         addr_count = 1;
       } else if (++addr_count > max_with_same_addr) {
-        if (!router_addr_is_trusted_dir(ri->addr) ||
-            addr_count > max_with_same_addr_on_authority)
-          digestmap_set(omit_as_sybil, ri->cache_info.identity_digest, ri);
+        digestmap_set(omit_as_sybil, ri->cache_info.identity_digest, ri);
       }
   } SMARTLIST_FOREACH_END(ri);
 
@@ -2231,15 +2240,19 @@ dirserv_set_routerstatus_testing(routerstatus_t *rs)
 }
 
 /** Routerstatus <b>rs</b> is part of a group of routers that are on
- * too narrow an IP-space. Clear out its flags: we don't want people
- * using it.
+ * too narrow an IP-space. Clear out its flags since we don't want it be used
+ * because of its Sybil-like appearance.
+ *
+ * Leave its BadExit flag alone though, since if we think it's a bad exit,
+ * we want to vote that way in case all the other authorities are voting
+ * Running and Exit.
  */
 static void
 clear_status_flags_on_sybil(routerstatus_t *rs)
 {
   rs->is_authority = rs->is_exit = rs->is_stable = rs->is_fast =
     rs->is_flagged_running = rs->is_named = rs->is_valid =
-    rs->is_hs_dir = rs->is_possible_guard = rs->is_bad_exit = 0;
+    rs->is_hs_dir = rs->is_v2_dir = rs->is_possible_guard = 0;
   /* FFFF we might want some mechanism to check later on if we
    * missed zeroing any flags: it's easy to add a new flag but
    * forget to add it to this clause. */
@@ -2968,7 +2981,7 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     config_line_t *cl;
     for (cl = get_options()->RecommendedPackages; cl; cl = cl->next) {
       if (validate_recommended_package_line(cl->value))
-        smartlist_add(v3_out->package_lines, tor_strdup(cl->value));
+        smartlist_add_strdup(v3_out->package_lines, cl->value);
     }
   }
 
@@ -2977,9 +2990,9 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
                 "Authority Exit Fast Guard Stable V2Dir Valid HSDir",
                 0, SPLIT_SKIP_SPACE|SPLIT_IGNORE_BLANK, 0);
   if (vote_on_reachability)
-    smartlist_add(v3_out->known_flags, tor_strdup("Running"));
+    smartlist_add_strdup(v3_out->known_flags, "Running");
   if (listbadexits)
-    smartlist_add(v3_out->known_flags, tor_strdup("BadExit"));
+    smartlist_add_strdup(v3_out->known_flags, "BadExit");
   smartlist_sort_strings(v3_out->known_flags);
 
   if (options->ConsensusParams) {
@@ -3171,7 +3184,8 @@ dirserv_get_routerdescs(smartlist_t *descs_out, const char *key,
 void
 dirserv_orconn_tls_done(const tor_addr_t *addr,
                         uint16_t or_port,
-                        const char *digest_rcvd)
+                        const char *digest_rcvd,
+                        const ed25519_public_key_t *ed_id_rcvd)
 {
   node_t *node = NULL;
   tor_addr_port_t orport;
@@ -3183,7 +3197,25 @@ dirserv_orconn_tls_done(const tor_addr_t *addr,
   node = node_get_mutable_by_id(digest_rcvd);
   if (node == NULL || node->ri == NULL)
     return;
+
   ri = node->ri;
+
+  if (get_options()->AuthDirTestEd25519LinkKeys &&
+      node_supports_ed25519_link_authentication(node) &&
+      ri->cache_info.signing_key_cert) {
+    /* We allow the node to have an ed25519 key if we haven't been told one in
+     * the routerinfo, but if we *HAVE* been told one in the routerinfo, it
+     * needs to match. */
+    const ed25519_public_key_t *expected_id =
+      &ri->cache_info.signing_key_cert->signing_key;
+    tor_assert(!ed25519_public_key_is_zero(expected_id));
+    if (! ed_id_rcvd || ! ed25519_pubkey_eq(ed_id_rcvd, expected_id)) {
+      log_info(LD_DIRSERV, "Router at %s:%d with RSA ID %s "
+               "did not present expected Ed25519 ID.",
+               fmt_addr(addr), or_port, hex_str(digest_rcvd, DIGEST_LEN));
+      return; /* Don't mark it as reachable. */
+    }
+  }
 
   tor_addr_copy(&orport.addr, addr);
   orport.port = or_port;
@@ -3192,7 +3224,7 @@ dirserv_orconn_tls_done(const tor_addr_t *addr,
     if (!authdir_mode_bridge(get_options()) ||
         ri->purpose == ROUTER_PURPOSE_BRIDGE) {
       char addrstr[TOR_ADDR_BUF_LEN];
-      /* This is a bridge or we're not a bridge authorititative --
+      /* This is a bridge or we're not a bridge authority --
          mark it as reachable.  */
       log_info(LD_DIRSERV, "Found router %s to be reachable at %s:%d. Yay.",
                router_describe(ri),
@@ -3240,21 +3272,31 @@ dirserv_should_launch_reachability_test(const routerinfo_t *ri,
 void
 dirserv_single_reachability_test(time_t now, routerinfo_t *router)
 {
+  const or_options_t *options = get_options();
   channel_t *chan = NULL;
-  node_t *node = NULL;
+  const node_t *node = NULL;
   tor_addr_t router_addr;
+  const ed25519_public_key_t *ed_id_key;
   (void) now;
 
   tor_assert(router);
-  node = node_get_mutable_by_id(router->cache_info.identity_digest);
+  node = node_get_by_id(router->cache_info.identity_digest);
   tor_assert(node);
+
+  if (options->AuthDirTestEd25519LinkKeys &&
+      node_supports_ed25519_link_authentication(node)) {
+    ed_id_key = &router->cache_info.signing_key_cert->signing_key;
+  } else {
+    ed_id_key = NULL;
+  }
 
   /* IPv4. */
   log_debug(LD_OR,"Testing reachability of %s at %s:%u.",
             router->nickname, fmt_addr32(router->addr), router->or_port);
   tor_addr_from_ipv4h(&router_addr, router->addr);
   chan = channel_tls_connect(&router_addr, router->or_port,
-                             router->cache_info.identity_digest);
+                             router->cache_info.identity_digest,
+                             ed_id_key);
   if (chan) command_setup_channel(chan);
 
   /* Possible IPv6. */
@@ -3266,7 +3308,8 @@ dirserv_single_reachability_test(time_t now, routerinfo_t *router)
               tor_addr_to_str(addrstr, &router->ipv6_addr, sizeof(addrstr), 1),
               router->ipv6_orport);
     chan = channel_tls_connect(&router->ipv6_addr, router->ipv6_orport,
-                               router->cache_info.identity_digest);
+                               router->cache_info.identity_digest,
+                               ed_id_key);
     if (chan) command_setup_channel(chan);
   }
 }
@@ -3615,8 +3658,14 @@ connection_dirserv_add_dir_bytes_to_outbuf(dir_connection_t *conn)
   if (bytes < 8192)
     bytes = 8192;
   remaining = conn->cached_dir->dir_z_len - conn->cached_dir_offset;
-  if (bytes > remaining)
+  if (BUG(remaining < 0)) {
+    remaining = 0;
+  }
+  if (bytes > remaining) {
     bytes = (ssize_t) remaining;
+    if (BUG(bytes < 0))
+      return -1;
+  }
 
   if (conn->zlib_state) {
     connection_write_to_buf_zlib(
@@ -3627,7 +3676,7 @@ connection_dirserv_add_dir_bytes_to_outbuf(dir_connection_t *conn)
                             bytes, TO_CONN(conn));
   }
   conn->cached_dir_offset += bytes;
-  if (conn->cached_dir_offset == (int)conn->cached_dir->dir_z_len) {
+  if (conn->cached_dir_offset >= (off_t)conn->cached_dir->dir_z_len) {
     /* We just wrote the last one; finish up. */
     connection_dirserv_finish_spooling(conn);
     cached_dir_decref(conn->cached_dir);

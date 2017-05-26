@@ -75,6 +75,8 @@
 const char *get_fname(const char *name);
 const char *get_fname_rnd(const char *name);
 struct crypto_pk_t *pk_generate(int idx);
+void init_pregenerated_keys(void);
+void free_pregenerated_keys(void);
 
 #define US2_CONCAT_2__(a, b) a ## __ ## b
 #define US_CONCAT_2__(a, b) a ## _ ## b
@@ -183,6 +185,7 @@ extern struct testcase_t channeltls_tests[];
 extern struct testcase_t checkdir_tests[];
 extern struct testcase_t circuitlist_tests[];
 extern struct testcase_t circuitmux_tests[];
+extern struct testcase_t circuituse_tests[];
 extern struct testcase_t compat_libevent_tests[];
 extern struct testcase_t config_tests[];
 extern struct testcase_t connection_tests[];
@@ -197,6 +200,10 @@ extern struct testcase_t entrynodes_tests[];
 extern struct testcase_t guardfraction_tests[];
 extern struct testcase_t extorport_tests[];
 extern struct testcase_t hs_tests[];
+extern struct testcase_t hs_cache[];
+extern struct testcase_t hs_descriptor[];
+extern struct testcase_t hs_service_tests[];
+extern struct testcase_t hs_intropoint_tests[];
 extern struct testcase_t introduce_tests[];
 extern struct testcase_t keypin_tests[];
 extern struct testcase_t link_handshake_tests[];

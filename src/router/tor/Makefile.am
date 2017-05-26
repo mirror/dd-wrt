@@ -9,6 +9,7 @@ noinst_LIBRARIES=
 EXTRA_DIST=
 noinst_HEADERS=
 bin_PROGRAMS=
+EXTRA_PROGRAMS=
 CLEANFILES=
 TESTS=
 noinst_PROGRAMS=
@@ -34,7 +35,8 @@ EXTRA_DIST+= \
 	LICENSE						\
 	Makefile.nmake					\
 	README						\
-	ReleaseNotes
+	ReleaseNotes					\
+	scripts/maint/checkSpace.pl
 
 ## This tells etags how to find mockable function definitions.
 AM_ETAGSFLAGS=--regex='{c}/MOCK_IMPL([^,]+,\W*\([a-zA-Z0-9_]+\)\W*,/\1/s'
@@ -51,6 +53,12 @@ else
 TEST_CFLAGS=
 TEST_CPPFLAGS=-DTOR_UNIT_TESTS
 TEST_NETWORK_FLAGS=--hs-multi-client 1
+endif
+TEST_NETWORK_WARNING_FLAGS=--quiet --only-warnings
+
+if LIBFUZZER_ENABLED
+TEST_CFLAGS += -fsanitize-coverage=trace-pc-guard,trace-cmp,trace-div
+# not "edge"
 endif
 
 TEST_NETWORK_ALL_LOG_DIR=$(top_builddir)/test_network_log
@@ -81,6 +89,8 @@ doxygen:
 
 test: all
 	$(top_builddir)/src/test/test
+
+check-local: check-spaces
 
 need-chutney-path:
 	@if test ! -d "$$CHUTNEY_PATH"; then \
@@ -126,6 +136,7 @@ test-network-all: need-chutney-path test-driver $(TESTING_TOR_BINARY) src/tools/
 	done; \
 	for f in $$flavors; do \
 		$(SHELL) $(top_srcdir)/test-driver --test-name $$f --log-file $(TEST_NETWORK_ALL_LOG_DIR)/$$f.log --trs-file $(TEST_NETWORK_ALL_LOG_DIR)/$$f.trs $(TEST_NETWORK_ALL_DRIVER_FLAGS) $(top_srcdir)/src/test/test-network.sh --flavor $$f $(TEST_NETWORK_FLAGS); \
+		$(top_srcdir)/src/test/test-network.sh $(TEST_NETWORK_WARNING_FLAGS); \
 	done; \
 	echo "Log and result files are available in $(TEST_NETWORK_ALL_LOG_DIR)."; \
 	! grep -q FAIL test_network_log/*.trs
@@ -181,11 +192,14 @@ coverage-html-full: all
 # Avoid strlcpy.c, strlcat.c, aes.c, OpenBSD_malloc_Linux.c, sha256.c,
 # tinytest*.[ch]
 check-spaces:
-	$(top_srcdir)/scripts/maint/checkSpace.pl -C \
+if USE_PERL
+	$(PERL) $(top_srcdir)/scripts/maint/checkSpace.pl -C \
 		$(top_srcdir)/src/common/*.[ch] \
 		$(top_srcdir)/src/or/*.[ch] \
 		$(top_srcdir)/src/test/*.[ch] \
+		$(top_srcdir)/src/test/*/*.[ch] \
 		$(top_srcdir)/src/tools/*.[ch]
+endif
 
 check-docs: all
 	$(PERL) $(top_builddir)/scripts/maint/checkOptionDocs.pl

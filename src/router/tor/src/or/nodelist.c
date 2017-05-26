@@ -10,6 +10,32 @@
  * \brief Structures and functions for tracking what we know about the routers
  *   on the Tor network, and correlating information from networkstatus,
  *   routerinfo, and microdescs.
+ *
+ * The key structure here is node_t: that's the canonical way to refer
+ * to a Tor relay that we might want to build a circuit through.  Every
+ * node_t has either a routerinfo_t, or a routerstatus_t from the current
+ * networkstatus consensus.  If it has a routerstatus_t, it will also
+ * need to have a microdesc_t before you can use it for circuits.
+ *
+ * The nodelist_t is a global singleton that maps identities to node_t
+ * objects.  Access them with the node_get_*() functions.  The nodelist_t
+ * is maintained by calls throughout the codebase
+ *
+ * Generally, other code should not have to reach inside a node_t to
+ * see what information it has.  Instead, you should call one of the
+ * many accessor functions that works on a generic node_t.  If there
+ * isn't one that does what you need, it's better to make such a function,
+ * and then use it.
+ *
+ * For historical reasons, some of the functions that select a node_t
+ * from the list of all usable node_t objects are in the routerlist.c
+ * module, since they originally selected a routerinfo_t. (TODO: They
+ * should move!)
+ *
+ * (TODO: Perhaps someday we should abstract the remaining ways of
+ * talking about a relay to also be node_t instances. Those would be
+ * routerstatus_t as used for directory requests, and dir_server_t as
+ * used for authorities and fallback directories.)
  */
 
 #include "or.h"
@@ -17,16 +43,19 @@
 #include "config.h"
 #include "control.h"
 #include "dirserv.h"
+#include "entrynodes.h"
 #include "geoip.h"
 #include "main.h"
 #include "microdesc.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "policies.h"
+#include "protover.h"
 #include "rendservice.h"
 #include "router.h"
 #include "routerlist.h"
 #include "routerset.h"
+#include "torcert.h"
 
 #include <string.h>
 
@@ -620,6 +649,73 @@ node_get_by_nickname,(const char *nickname, int warn_if_unnamed))
   }
 }
 
+/** Return the Ed25519 identity key for the provided node, or NULL if it
+ * doesn't have one. */
+const ed25519_public_key_t *
+node_get_ed25519_id(const node_t *node)
+{
+  if (node->ri) {
+    if (node->ri->cache_info.signing_key_cert) {
+      const ed25519_public_key_t *pk =
+        &node->ri->cache_info.signing_key_cert->signing_key;
+      if (BUG(ed25519_public_key_is_zero(pk)))
+        goto try_the_md;
+      return pk;
+    }
+  }
+ try_the_md:
+  if (node->md) {
+    if (node->md->ed25519_identity_pkey) {
+      return node->md->ed25519_identity_pkey;
+    }
+  }
+  return NULL;
+}
+
+/** Return true iff this node's Ed25519 identity matches <b>id</b>.
+ * (An absent Ed25519 identity matches NULL or zero.) */
+int
+node_ed25519_id_matches(const node_t *node, const ed25519_public_key_t *id)
+{
+  const ed25519_public_key_t *node_id = node_get_ed25519_id(node);
+  if (node_id == NULL || ed25519_public_key_is_zero(node_id)) {
+    return id == NULL || ed25519_public_key_is_zero(id);
+  } else {
+    return id && ed25519_pubkey_eq(node_id, id);
+  }
+}
+
+/** Return true iff <b>node</b> supports authenticating itself
+ * by ed25519 ID during the link handshake in a way that we can understand
+ * when we probe it. */
+int
+node_supports_ed25519_link_authentication(const node_t *node)
+{
+  /* XXXX Oh hm. What if some day in the future there are link handshake
+   * versions that aren't 3 but which are ed25519 */
+  if (! node_get_ed25519_id(node))
+    return 0;
+  if (node->ri) {
+    const char *protos = node->ri->protocol_list;
+    if (protos == NULL)
+      return 0;
+    return protocol_list_supports_protocol(protos, PRT_LINKAUTH, 3);
+  }
+  if (node->rs) {
+    return node->rs->supports_ed25519_link_handshake;
+  }
+  tor_assert_nonfatal_unreached_once();
+  return 0;
+}
+
+/** Return the RSA ID key's SHA1 digest for the provided node. */
+const uint8_t *
+node_get_rsa_id_digest(const node_t *node)
+{
+  tor_assert(node);
+  return (const uint8_t*)node->identity;
+}
+
 /** Return the nickname of <b>node</b>, or NULL if we can't find one. */
 const char *
 node_get_nickname(const node_t *node)
@@ -1031,6 +1127,9 @@ node_get_prim_orport(const node_t *node, tor_addr_port_t *ap_out)
   node_assert_ok(node);
   tor_assert(ap_out);
 
+  /* Check ri first, because rewrite_node_address_for_bridge() updates
+   * node->ri with the configured bridge address. */
+
   RETURN_IPV4_AP(node->ri, or_port, ap_out);
   RETURN_IPV4_AP(node->rs, or_port, ap_out);
   /* Microdescriptors only have an IPv6 address */
@@ -1061,9 +1160,11 @@ node_get_pref_ipv6_orport(const node_t *node, tor_addr_port_t *ap_out)
   node_assert_ok(node);
   tor_assert(ap_out);
 
-  /* Prefer routerstatus over microdesc for consistency with the
-   * fascist_firewall_* functions. Also check if the address or port are valid,
-   * and try another alternative if they are not. */
+  /* Check ri first, because rewrite_node_address_for_bridge() updates
+   * node->ri with the configured bridge address.
+   * Prefer rs over md for consistency with the fascist_firewall_* functions.
+   * Check if the address or port are valid, and try another alternative
+   * if they are not. */
 
   if (node->ri && tor_addr_port_is_valid(&node->ri->ipv6_addr,
                                          node->ri->ipv6_orport, 0)) {
@@ -1123,6 +1224,9 @@ node_get_prim_dirport(const node_t *node, tor_addr_port_t *ap_out)
   node_assert_ok(node);
   tor_assert(ap_out);
 
+  /* Check ri first, because rewrite_node_address_for_bridge() updates
+   * node->ri with the configured bridge address. */
+
   RETURN_IPV4_AP(node->ri, dir_port, ap_out);
   RETURN_IPV4_AP(node->rs, dir_port, ap_out);
   /* Microdescriptors only have an IPv6 address */
@@ -1155,8 +1259,11 @@ node_get_pref_ipv6_dirport(const node_t *node, tor_addr_port_t *ap_out)
   node_assert_ok(node);
   tor_assert(ap_out);
 
-  /* Check if the address or port are valid, and try another alternative if
-   * they are not. Note that microdescriptors have no dir_port. */
+  /* Check ri first, because rewrite_node_address_for_bridge() updates
+   * node->ri with the configured bridge address.
+   * Prefer rs over md for consistency with the fascist_firewall_* functions.
+   * Check if the address or port are valid, and try another alternative
+   * if they are not. */
 
   /* Assume IPv4 and IPv6 dirports are the same */
   if (node->ri && tor_addr_port_is_valid(&node->ri->ipv6_addr,
@@ -1543,8 +1650,8 @@ router_have_minimum_dir_info(void)
  * this can cause router_have_consensus_path() to be set to
  * CONSENSUS_PATH_EXIT, even if there are no nodes with accept exit policies.
  */
-consensus_path_type_t
-router_have_consensus_path(void)
+MOCK_IMPL(consensus_path_type_t,
+router_have_consensus_path, (void))
 {
   return have_consensus_path;
 }
@@ -1633,9 +1740,9 @@ count_usable_descriptors(int *num_present, int *num_usable,
  * If **<b>status_out</b> is present, allocate a new string and print the
  * available percentages of guard, middle, and exit nodes to it, noting
  * whether there are exits in the consensus.
- * If there are no guards in the consensus,
- * we treat the exit fraction as 100%.
- */
+ * If there are no exits in the consensus, we treat the exit fraction as 100%,
+ * but set router_have_consensus_path() so that we can only build internal
+ * paths. */
 static double
 compute_frac_paths_available(const networkstatus_t *consensus,
                              const or_options_t *options, time_t now,
@@ -1884,6 +1991,13 @@ update_router_have_minimum_dir_info(void)
   }
 
   using_md = consensus->flavor == FLAV_MICRODESC;
+
+  if (! entry_guards_have_enough_dir_info_to_build_circuits()) {
+    strlcpy(dir_info_status, "We're missing descriptors for some of our "
+            "primary entry guards", sizeof(dir_info_status));
+    res = 0;
+    goto done;
+  }
 
   /* Check fraction of available paths */
   {

@@ -1107,10 +1107,10 @@ crypto_pk_private_decrypt(crypto_pk_t *env, char *to,
  * <b>tolen</b> is the number of writable bytes in <b>to</b>, and must be
  * at least the length of the modulus of <b>env</b>.
  */
-int
-crypto_pk_public_checksig(const crypto_pk_t *env, char *to,
-                          size_t tolen,
-                          const char *from, size_t fromlen)
+MOCK_IMPL(int,
+crypto_pk_public_checksig,(const crypto_pk_t *env, char *to,
+                           size_t tolen,
+                           const char *from, size_t fromlen))
 {
   int r;
   tor_assert(env);
@@ -1134,9 +1134,10 @@ crypto_pk_public_checksig(const crypto_pk_t *env, char *to,
  * in <b>env</b>. Return 0 if <b>sig</b> is a correct signature for
  * SHA1(data).  Else return -1.
  */
-int
-crypto_pk_public_checksig_digest(crypto_pk_t *env, const char *data,
-                               size_t datalen, const char *sig, size_t siglen)
+MOCK_IMPL(int,
+crypto_pk_public_checksig_digest,(crypto_pk_t *env, const char *data,
+                                  size_t datalen, const char *sig,
+                                  size_t siglen))
 {
   char digest[DIGEST_LEN];
   char *buf;
@@ -1506,7 +1507,7 @@ crypto_pk_get_hashed_fingerprint(crypto_pk_t *pk, char *fp_out)
   if (crypto_pk_get_digest(pk, digest)) {
     return -1;
   }
-  if (crypto_digest(hashed_digest, digest, DIGEST_LEN)) {
+  if (crypto_digest(hashed_digest, digest, DIGEST_LEN) < 0) {
     return -1;
   }
   base16_encode(fp_out, FINGERPRINT_LEN + 1, hashed_digest, DIGEST_LEN);
@@ -1700,19 +1701,21 @@ crypto_cipher_decrypt_with_iv(const char *key,
 
 /** Compute the SHA1 digest of the <b>len</b> bytes on data stored in
  * <b>m</b>.  Write the DIGEST_LEN byte result into <b>digest</b>.
- * Return 0 on success, 1 on failure.
+ * Return 0 on success, -1 on failure.
  */
 int
 crypto_digest(char *digest, const char *m, size_t len)
 {
   tor_assert(m);
   tor_assert(digest);
-  return (SHA1((const unsigned char*)m,len,(unsigned char*)digest) == NULL);
+  if (SHA1((const unsigned char*)m,len,(unsigned char*)digest) == NULL)
+    return -1;
+  return 0;
 }
 
 /** Compute a 256-bit digest of <b>len</b> bytes in data stored in <b>m</b>,
  * using the algorithm <b>algorithm</b>.  Write the DIGEST_LEN256-byte result
- * into <b>digest</b>.  Return 0 on success, 1 on failure. */
+ * into <b>digest</b>.  Return 0 on success, -1 on failure. */
 int
 crypto_digest256(char *digest, const char *m, size_t len,
                  digest_algorithm_t algorithm)
@@ -1720,16 +1723,22 @@ crypto_digest256(char *digest, const char *m, size_t len,
   tor_assert(m);
   tor_assert(digest);
   tor_assert(algorithm == DIGEST_SHA256 || algorithm == DIGEST_SHA3_256);
+
+  int ret = 0;
   if (algorithm == DIGEST_SHA256)
-    return (SHA256((const uint8_t*)m,len,(uint8_t*)digest) == NULL);
+    ret = (SHA256((const uint8_t*)m,len,(uint8_t*)digest) != NULL);
   else
-    return (sha3_256((uint8_t *)digest, DIGEST256_LEN,(const uint8_t *)m, len)
-            == -1);
+    ret = (sha3_256((uint8_t *)digest, DIGEST256_LEN,(const uint8_t *)m, len)
+           > -1);
+
+  if (!ret)
+    return -1;
+  return 0;
 }
 
 /** Compute a 512-bit digest of <b>len</b> bytes in data stored in <b>m</b>,
  * using the algorithm <b>algorithm</b>.  Write the DIGEST_LEN512-byte result
- * into <b>digest</b>.  Return 0 on success, 1 on failure. */
+ * into <b>digest</b>.  Return 0 on success, -1 on failure. */
 int
 crypto_digest512(char *digest, const char *m, size_t len,
                  digest_algorithm_t algorithm)
@@ -1737,12 +1746,18 @@ crypto_digest512(char *digest, const char *m, size_t len,
   tor_assert(m);
   tor_assert(digest);
   tor_assert(algorithm == DIGEST_SHA512 || algorithm == DIGEST_SHA3_512);
+
+  int ret = 0;
   if (algorithm == DIGEST_SHA512)
-    return (SHA512((const unsigned char*)m,len,(unsigned char*)digest)
-            == NULL);
+    ret = (SHA512((const unsigned char*)m,len,(unsigned char*)digest)
+           != NULL);
   else
-    return (sha3_512((uint8_t*)digest, DIGEST512_LEN, (const uint8_t*)m, len)
-            == -1);
+    ret = (sha3_512((uint8_t*)digest, DIGEST512_LEN, (const uint8_t*)m, len)
+           > -1);
+
+  if (!ret)
+    return -1;
+  return 0;
 }
 
 /** Set the common_digests_t in <b>ds_out</b> to contain every digest on the
@@ -2107,6 +2122,35 @@ crypto_hmac_sha256(char *hmac_out,
   rv = HMAC(EVP_sha256(), key, (int)key_len, (unsigned char*)msg, (int)msg_len,
             (unsigned char*)hmac_out, NULL);
   tor_assert(rv);
+}
+
+/** Compute a MAC using SHA3-256 of <b>msg_len</b> bytes in <b>msg</b> using a
+ * <b>key</b> of length <b>key_len</b> and a <b>salt</b> of length
+ * <b>salt_len</b>. Store the result of <b>len_out</b> bytes in in
+ * <b>mac_out</b>. This function can't fail. */
+void
+crypto_mac_sha3_256(uint8_t *mac_out, size_t len_out,
+                    const uint8_t *key, size_t key_len,
+                    const uint8_t *msg, size_t msg_len)
+{
+  crypto_digest_t *digest;
+
+  const uint64_t key_len_netorder = tor_htonll(key_len);
+
+  tor_assert(mac_out);
+  tor_assert(key);
+  tor_assert(msg);
+
+  digest = crypto_digest256_new(DIGEST_SHA3_256);
+
+  /* Order matters here that is any subsystem using this function should
+   * expect this very precise ordering in the MAC construction. */
+  crypto_digest_add_bytes(digest, (const char *) &key_len_netorder,
+                          sizeof(key_len_netorder));
+  crypto_digest_add_bytes(digest, (const char *) key, key_len);
+  crypto_digest_add_bytes(digest, (const char *) msg, msg_len);
+  crypto_digest_get_digest(digest, (char *) mac_out, len_out);
+  crypto_digest_free(digest);
 }
 
 /** Internal state for a eXtendable-Output Function (XOF). */
@@ -2628,7 +2672,7 @@ crypto_expand_key_material_TAP(const uint8_t *key_in, size_t key_in_len,
   for (cp = key_out, i=0; cp < key_out+key_out_len;
        ++i, cp += DIGEST_LEN) {
     tmp[key_in_len] = i;
-    if (crypto_digest((char*)digest, (const char *)tmp, key_in_len+1))
+    if (crypto_digest((char*)digest, (const char *)tmp, key_in_len+1) < 0)
       goto exit;
     memcpy(cp, digest, MIN(DIGEST_LEN, key_out_len-(cp-key_out)));
   }
@@ -2852,7 +2896,7 @@ crypto_strongest_rand_fallback(uint8_t *out, size_t out_len)
   size_t n;
 
   for (i = 0; filenames[i]; ++i) {
-    log_debug(LD_FS, "Opening %s for entropy", filenames[i]);
+    log_debug(LD_FS, "Considering %s for entropy", filenames[i]);
     fd = open(sandbox_intern_string(filenames[i]), O_RDONLY, 0);
     if (fd<0) continue;
     log_info(LD_CRYPTO, "Reading entropy from \"%s\"", filenames[i]);

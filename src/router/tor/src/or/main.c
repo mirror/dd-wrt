@@ -8,12 +8,49 @@
  * \file main.c
  * \brief Toplevel module. Handles signals, multiplexes between
  * connections, implements main loop, and drives scheduled events.
+ *
+ * For the main loop itself; see run_main_loop_once().  It invokes the rest of
+ * Tor mostly through Libevent callbacks.  Libevent callbacks can happen when
+ * a timer elapses, a signal is received, a socket is ready to read or write,
+ * or an event is manually activated.
+ *
+ * Most events in Tor are driven from these callbacks:
+ *  <ul>
+ *   <li>conn_read_callback() and conn_write_callback() here, which are
+ *     invoked when a socket is ready to read or write respectively.
+ *   <li>signal_callback(), which handles incoming signals.
+ *  </ul>
+ * Other events are used for specific purposes, or for building more complex
+ * control structures.  If you search for usage of tor_libevent_new(), you
+ * will find all the events that we construct in Tor.
+ *
+ * Tor has numerous housekeeping operations that need to happen
+ * regularly. They are handled in different ways:
+ * <ul>
+ *   <li>The most frequent operations are handled after every read or write
+ *    event, at the end of connection_handle_read() and
+ *    connection_handle_write().
+ *
+ *   <li>The next most frequent operations happen after each invocation of the
+ *     main loop, in run_main_loop_once().
+ *
+ *   <li>Once per second, we run all of the operations listed in
+ *     second_elapsed_callback(), and in its child, run_scheduled_events().
+ *
+ *   <li>Once-a-second operations are handled in second_elapsed_callback().
+ *
+ *   <li>More infrequent operations take place based on the periodic event
+ *     driver in periodic.c .  These are stored in the periodic_events[]
+ *     table.
+ * </ul>
+ *
  **/
 
 #define MAIN_PRIVATE
 #include "or.h"
 #include "addressmap.h"
 #include "backtrace.h"
+#include "bridges.h"
 #include "buffers.h"
 #include "channel.h"
 #include "channeltls.h"
@@ -37,6 +74,8 @@
 #include "entrynodes.h"
 #include "geoip.h"
 #include "hibernate.h"
+#include "hs_cache.h"
+#include "hs_circuitmap.h"
 #include "keypin.h"
 #include "main.h"
 #include "microdesc.h"
@@ -325,7 +364,7 @@ connection_unlink(connection_t *conn)
   }
   if (conn->type == CONN_TYPE_OR) {
     if (!tor_digest_is_zero(TO_OR_CONN(conn)->identity_digest))
-      connection_or_remove_from_identity_map(TO_OR_CONN(conn));
+      connection_or_clear_identity(TO_OR_CONN(conn));
     /* connection_unlink() can only get called if the connection
      * was already on the closeable list, and it got there by
      * connection_mark_for_close(), which was called from
@@ -447,7 +486,7 @@ connection_check_event(connection_t *conn, struct event *ev)
      */
     bad = ev != NULL;
   } else {
-    /* Everytyhing else should have an underlying socket, or a linked
+    /* Everything else should have an underlying socket, or a linked
      * connection (which is also tracked with a read_event/write_event pair).
      */
     bad = ev == NULL;
@@ -941,7 +980,13 @@ directory_info_has_arrived(time_t now, int from_cache, int suppress_logs)
 
     /* if we have enough dir info, then update our guard status with
      * whatever we just learned. */
-    entry_guards_compute_status(options, now);
+    int invalidate_circs = guards_update_all();
+
+    if (invalidate_circs) {
+      circuit_mark_all_unused_circs();
+      circuit_mark_all_dirty_circs_as_unusable();
+    }
+
     /* Don't even bother trying to get extrainfo until the rest of our
      * directory info is up-to-date */
     if (options->DownloadExtraInfo)
@@ -1338,6 +1383,9 @@ run_scheduled_events(time_t now)
   /* 0c. If we've deferred log messages for the controller, handle them now */
   flush_pending_log_callbacks();
 
+  /* Maybe enough time elapsed for us to reconsider a circuit. */
+  circuit_upgrade_circuits_from_guard_wait();
+
   if (options->UseBridges && !options->DisableNetwork) {
     fetch_bridge_descriptors(options, now);
   }
@@ -1358,6 +1406,7 @@ run_scheduled_events(time_t now)
   /* (If our circuit build timeout can ever become lower than a second (which
    * it can't, currently), we should do this more often.) */
   circuit_expire_building();
+  circuit_expire_waiting_for_better_guard();
 
   /* 3b. Also look at pending streams and prune the ones that 'began'
    *     a long time ago but haven't gotten a 'connected' yet.
@@ -1389,7 +1438,7 @@ run_scheduled_events(time_t now)
   }
 
   /* 5. We do housekeeping for each connection... */
-  connection_or_set_bad_connections(NULL, 0);
+  channel_update_bad_for_new_circs(NULL, 0);
   int i;
   for (i=0;i<smartlist_len(connection_array);i++) {
     run_connection_housekeeping(i, now);
@@ -1423,13 +1472,13 @@ run_scheduled_events(time_t now)
     pt_configure_remaining_proxies();
 }
 
+/* Periodic callback: Every MIN_ONION_KEY_LIFETIME seconds, rotate the onion
+ * keys, shut down and restart all cpuworkers, and update our descriptor if
+ * necessary.
+ */
 static int
 rotate_onion_key_callback(time_t now, const or_options_t *options)
 {
-  /* 1a. Every MIN_ONION_KEY_LIFETIME seconds, rotate the onion keys,
-   *  shut down and restart all cpuworkers, and update the directory if
-   *  necessary.
-   */
   if (server_mode(options)) {
     time_t rotation_time = get_onion_key_set_at()+MIN_ONION_KEY_LIFETIME;
     if (rotation_time > now) {
@@ -1449,6 +1498,9 @@ rotate_onion_key_callback(time_t now, const or_options_t *options)
   return PERIODIC_EVENT_NO_UPDATE;
 }
 
+/* Periodic callback: Every 30 seconds, check whether it's time to make new
+ * Ed25519 subkeys.
+ */
 static int
 check_ed_keys_callback(time_t now, const or_options_t *options)
 {
@@ -1466,6 +1518,11 @@ check_ed_keys_callback(time_t now, const or_options_t *options)
   return PERIODIC_EVENT_NO_UPDATE;
 }
 
+/**
+ * Periodic callback: Every {LAZY,GREEDY}_DESCRIPTOR_RETRY_INTERVAL,
+ * see about fetching descriptors, microdescriptors, and extrainfo
+ * documents.
+ */
 static int
 launch_descriptor_fetches_callback(time_t now, const or_options_t *options)
 {
@@ -1480,6 +1537,10 @@ launch_descriptor_fetches_callback(time_t now, const or_options_t *options)
     return GREEDY_DESCRIPTOR_RETRY_INTERVAL;
 }
 
+/**
+ * Periodic event: Rotate our X.509 certificates and TLS keys once every
+ * MAX_SSL_KEY_LIFETIME_INTERNAL.
+ */
 static int
 rotate_x509_certificate_callback(time_t now, const or_options_t *options)
 {
@@ -1505,6 +1566,10 @@ rotate_x509_certificate_callback(time_t now, const or_options_t *options)
   return MAX_SSL_KEY_LIFETIME_INTERNAL;
 }
 
+/**
+ * Periodic callback: once an hour, grab some more entropy from the
+ * kernel and feed it to our CSPRNG.
+ **/
 static int
 add_entropy_callback(time_t now, const or_options_t *options)
 {
@@ -1521,6 +1586,10 @@ add_entropy_callback(time_t now, const or_options_t *options)
   return ENTROPY_INTERVAL;
 }
 
+/**
+ * Periodic callback: if we're an authority, make sure we test
+ * the routers on the network for reachability.
+ */
 static int
 launch_reachability_tests_callback(time_t now, const or_options_t *options)
 {
@@ -1532,6 +1601,10 @@ launch_reachability_tests_callback(time_t now, const or_options_t *options)
   return REACHABILITY_TEST_INTERVAL;
 }
 
+/**
+ * Periodic callback: if we're an authority, discount the stability
+ * information (and other rephist information) that's older.
+ */
 static int
 downrate_stability_callback(time_t now, const or_options_t *options)
 {
@@ -1543,6 +1616,10 @@ downrate_stability_callback(time_t now, const or_options_t *options)
   return safe_timer_diff(now, next);
 }
 
+/**
+ * Periodic callback: if we're an authority, record our measured stability
+ * information from rephist in an mtbf file.
+ */
 static int
 save_stability_callback(time_t now, const or_options_t *options)
 {
@@ -1555,6 +1632,10 @@ save_stability_callback(time_t now, const or_options_t *options)
   return SAVE_STABILITY_INTERVAL;
 }
 
+/**
+ * Periodic callback: if we're an authority, check on our authority
+ * certificate (the one that authenticates our authority signing key).
+ */
 static int
 check_authority_cert_callback(time_t now, const or_options_t *options)
 {
@@ -1567,12 +1648,15 @@ check_authority_cert_callback(time_t now, const or_options_t *options)
   return CHECK_V3_CERTIFICATE_INTERVAL;
 }
 
+/**
+ * Periodic callback: If our consensus is too old, recalculate whether
+ * we can actually use it.
+ */
 static int
 check_expired_networkstatus_callback(time_t now, const or_options_t *options)
 {
   (void)options;
-  /* 1f. Check whether our networkstatus has expired.
-   */
+  /* Check whether our networkstatus has expired. */
   networkstatus_t *ns = networkstatus_get_latest_consensus();
   /*XXXX RD: This value needs to be the same as REASONABLY_LIVE_TIME in
    * networkstatus_get_reasonably_live_consensus(), but that value is way
@@ -1586,6 +1670,9 @@ check_expired_networkstatus_callback(time_t now, const or_options_t *options)
   return CHECK_EXPIRED_NS_INTERVAL;
 }
 
+/**
+ * Periodic callback: Write statistics to disk if appropriate.
+ */
 static int
 write_stats_file_callback(time_t now, const or_options_t *options)
 {
@@ -1633,6 +1720,9 @@ write_stats_file_callback(time_t now, const or_options_t *options)
   return safe_timer_diff(now, next_time_to_write_stats_files);
 }
 
+/**
+ * Periodic callback: Write bridge statistics to disk if appropriate.
+ */
 static int
 record_bridge_stats_callback(time_t now, const or_options_t *options)
 {
@@ -1660,6 +1750,9 @@ record_bridge_stats_callback(time_t now, const or_options_t *options)
   return PERIODIC_EVENT_NO_UPDATE;
 }
 
+/**
+ * Periodic callback: Clean in-memory caches every once in a while
+ */
 static int
 clean_caches_callback(time_t now, const or_options_t *options)
 {
@@ -1667,12 +1760,16 @@ clean_caches_callback(time_t now, const or_options_t *options)
   rep_history_clean(now - options->RephistTrackTime);
   rend_cache_clean(now, REND_CACHE_TYPE_CLIENT);
   rend_cache_clean(now, REND_CACHE_TYPE_SERVICE);
-  rend_cache_clean_v2_descs_as_dir(now, 0);
+  hs_cache_clean_as_dir(now);
   microdesc_cache_rebuild(NULL, 0);
 #define CLEAN_CACHES_INTERVAL (30*60)
   return CLEAN_CACHES_INTERVAL;
 }
 
+/**
+ * Periodic callback: Clean the cache of failed hidden service lookups
+ * frequently.
+ */
 static int
 rend_cache_failure_clean_callback(time_t now, const or_options_t *options)
 {
@@ -1684,20 +1781,21 @@ rend_cache_failure_clean_callback(time_t now, const or_options_t *options)
   return 30;
 }
 
+/**
+ * Periodic callback: If we're a server and initializing dns failed, retry.
+ */
 static int
 retry_dns_callback(time_t now, const or_options_t *options)
 {
   (void)now;
 #define RETRY_DNS_INTERVAL (10*60)
-  /* If we're a server and initializing dns failed, retry periodically. */
   if (server_mode(options) && has_dns_init_failed())
     dns_init();
   return RETRY_DNS_INTERVAL;
 }
 
-  /* 2. Periodically, we consider force-uploading our descriptor
-   * (if we've passed our internal checks). */
-
+/** Periodic callback: consider rebuilding or and re-uploading our descriptor
+ * (if we've passed our internal checks). */
 static int
 check_descriptor_callback(time_t now, const or_options_t *options)
 {
@@ -1724,6 +1822,11 @@ check_descriptor_callback(time_t now, const or_options_t *options)
   return CHECK_DESCRIPTOR_INTERVAL;
 }
 
+/**
+ * Periodic callback: check whether we're reachable (as a relay), and
+ * whether our bandwidth has changed enough that we need to
+ * publish a new descriptor.
+ */
 static int
 check_for_reachability_bw_callback(time_t now, const or_options_t *options)
 {
@@ -1760,13 +1863,13 @@ check_for_reachability_bw_callback(time_t now, const or_options_t *options)
   return CHECK_DESCRIPTOR_INTERVAL;
 }
 
+/**
+ * Periodic event: once a minute, (or every second if TestingTorNetwork, or
+ * during client bootstrap), check whether we want to download any
+ * networkstatus documents. */
 static int
 fetch_networkstatus_callback(time_t now, const or_options_t *options)
 {
-  /* 2c. Every minute (or every second if TestingTorNetwork, or during
-   * client bootstrap), check whether we want to download any networkstatus
-   * documents. */
-
   /* How often do we check whether we should download network status
    * documents? */
   const int we_are_bootstrapping = networkstatus_consensus_is_bootstrapping(
@@ -1788,12 +1891,13 @@ fetch_networkstatus_callback(time_t now, const or_options_t *options)
   return networkstatus_dl_check_interval;
 }
 
+/**
+ * Periodic callback: Every 60 seconds, we relaunch listeners if any died. */
 static int
 retry_listeners_callback(time_t now, const or_options_t *options)
 {
   (void)now;
   (void)options;
-  /* 3d. And every 60 seconds, we relaunch listeners if any died. */
   if (!net_is_disabled()) {
     retry_all_listeners(NULL, NULL, 0);
     return 60;
@@ -1801,6 +1905,9 @@ retry_listeners_callback(time_t now, const or_options_t *options)
   return PERIODIC_EVENT_NO_UPDATE;
 }
 
+/**
+ * Periodic callback: as a server, see if we have any old unused circuits
+ * that should be expired */
 static int
 expire_old_ciruits_serverside_callback(time_t now, const or_options_t *options)
 {
@@ -1810,6 +1917,10 @@ expire_old_ciruits_serverside_callback(time_t now, const or_options_t *options)
   return 11;
 }
 
+/**
+ * Periodic event: if we're an exit, see if our DNS server is telling us
+ * obvious lies.
+ */
 static int
 check_dns_honesty_callback(time_t now, const or_options_t *options)
 {
@@ -1832,6 +1943,10 @@ check_dns_honesty_callback(time_t now, const or_options_t *options)
   return 12*3600 + crypto_rand_int(12*3600);
 }
 
+/**
+ * Periodic callback: if we're the bridge authority, write a networkstatus
+ * file to disk.
+ */
 static int
 write_bridge_ns_callback(time_t now, const or_options_t *options)
 {
@@ -1844,6 +1959,9 @@ write_bridge_ns_callback(time_t now, const or_options_t *options)
   return PERIODIC_EVENT_NO_UPDATE;
 }
 
+/**
+ * Periodic callback: poke the tor-fw-helper app if we're using one.
+ */
 static int
 check_fw_helper_app_callback(time_t now, const or_options_t *options)
 {
@@ -1867,7 +1985,9 @@ check_fw_helper_app_callback(time_t now, const or_options_t *options)
   return PORT_FORWARDING_CHECK_INTERVAL;
 }
 
-/** Callback to write heartbeat message in the logs. */
+/**
+ * Periodic callback: write the heartbeat message in the logs.
+ */
 static int
 heartbeat_callback(time_t now, const or_options_t *options)
 {
@@ -2291,6 +2411,9 @@ do_main_loop(void)
     }
   }
 
+  /* Initialize relay-side HS circuitmap */
+  hs_circuitmap_init();
+
   /* set up once-a-second callback. */
   if (! second_timer) {
     struct timeval one_second;
@@ -2373,19 +2496,26 @@ run_main_loop_once(void)
   /* Make it easier to tell whether libevent failure is our fault or not. */
   errno = 0;
 #endif
-  /* All active linked conns should get their read events activated. */
+
+  /* All active linked conns should get their read events activated,
+   * so that libevent knows to run their callbacks. */
   SMARTLIST_FOREACH(active_linked_connection_lst, connection_t *, conn,
                     event_active(conn->read_event, EV_READ, 1));
   called_loop_once = smartlist_len(active_linked_connection_lst) ? 1 : 0;
 
+  /* Make sure we know (about) what time it is. */
   update_approx_time(time(NULL));
 
-  /* poll until we have an event, or the second ends, or until we have
-   * some active linked connections to trigger events for. */
+  /* Here it is: the main loop.  Here we tell Libevent to poll until we have
+   * an event, or the second ends, or until we have some active linked
+   * connections to trigger events for.  Libevent will wait till one
+   * of these happens, then run all the appropriate callbacks. */
   loop_result = event_base_loop(tor_libevent_get_base(),
                                 called_loop_once ? EVLOOP_ONCE : 0);
 
-  /* let catch() handle things like ^c, and otherwise don't worry about it */
+  /* Oh, the loop failed.  That might be an error that we need to
+   * catch, but more likely, it's just an interrupted poll() call or something,
+   * and we should try again. */
   if (loop_result < 0) {
     int e = tor_socket_errno(-1);
     /* let the program survive things like ^z */
@@ -2408,9 +2538,17 @@ run_main_loop_once(void)
     }
   }
 
-  /* This will be pretty fast if nothing new is pending. Note that this gets
-   * called once per libevent loop, which will make it happen once per group
-   * of events that fire, or once per second. */
+  /* And here is where we put callbacks that happen "every time the event loop
+   * runs."  They must be very fast, or else the whole Tor process will get
+   * slowed down.
+   *
+   * Note that this gets called once per libevent loop, which will make it
+   * happen once per group of events that fire, or once per second. */
+
+  /* If there are any pending client connections, try attaching them to
+   * circuits (if we can.)  This will be pretty fast if nothing new is
+   * pending.
+   */
   connection_ap_attach_pending(0);
 
   return 1;
@@ -2788,6 +2926,7 @@ tor_init(int argc, char *argv[])
   rep_hist_init();
   /* Initialize the service cache. */
   rend_cache_init();
+  hs_cache_init();
   addressmap_init(); /* Init the client dns cache. Do it always, since it's
                       * cheap. */
 
@@ -2971,6 +3110,7 @@ tor_free_all(int postfork)
   rend_service_free_all();
   rend_cache_free_all();
   rend_service_authorization_free_all();
+  hs_cache_free_all();
   rep_hist_free_all();
   dns_free_all();
   clear_pending_onions();
@@ -2983,12 +3123,14 @@ tor_free_all(int postfork)
   connection_edge_free_all();
   scheduler_free_all();
   nodelist_free_all();
+  hs_circuitmap_free_all();
   microdesc_free_all();
   routerparse_free_all();
   ext_orport_free_all();
   control_free_all();
   sandbox_free_getaddrinfo_cache();
   protover_free_all();
+  bridges_free_all();
   if (!postfork) {
     config_free_all();
     or_state_free_all();
@@ -3443,6 +3585,7 @@ tor_main(int argc, char *argv[])
   update_approx_time(time(NULL));
   tor_threads_init();
   init_logging(0);
+  monotime_init();
 #ifdef USE_DMALLOC
   {
     /* Instruct OpenSSL to use our internal wrappers for malloc,
@@ -3475,8 +3618,6 @@ tor_main(int argc, char *argv[])
         (char*) sandbox_intern_string("/dev/urandom"));
 #endif
   }
-
-  monotime_init();
 
   switch (get_options()->command) {
   case CMD_RUN_TOR:

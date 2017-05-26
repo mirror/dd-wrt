@@ -10,8 +10,10 @@
 #include "orconfig.h"
 #include "or.h"
 
+#include "relay.h"
 #include "routerlist.h"
 #include "nodelist.h"
+#include "buffers.h"
 
 #include "test.h"
 #include "test_helpers.h"
@@ -22,6 +24,8 @@ DISABLE_GCC_WARNING(overlength-strings)
  * at large. */
 #endif
 #include "test_descriptors.inc"
+#include "or.h"
+#include "circuitlist.h"
 #ifdef HAVE_CFLAG_WOVERLENGTH_STRINGS
 ENABLE_GCC_WARNING(overlength-strings)
 #endif
@@ -90,5 +94,52 @@ helper_setup_fake_routerlist(void)
 
  done:
   UNMOCK(router_descriptor_is_older_than);
+}
+
+void
+connection_write_to_buf_mock(const char *string, size_t len,
+                             connection_t *conn, int zlib)
+{
+  (void) zlib;
+
+  tor_assert(string);
+  tor_assert(conn);
+
+  write_to_buf(string, len, conn->outbuf);
+}
+
+/* Set up a fake origin circuit with the specified number of cells,
+ * Return a pointer to the newly-created dummy circuit */
+circuit_t *
+dummy_origin_circuit_new(int n_cells)
+{
+  origin_circuit_t *circ = origin_circuit_new();
+  int i;
+  cell_t cell;
+
+  for (i=0; i < n_cells; ++i) {
+    crypto_rand((void*)&cell, sizeof(cell));
+    cell_queue_append_packed_copy(TO_CIRCUIT(circ),
+                                  &TO_CIRCUIT(circ)->n_chan_cells,
+                                  1, &cell, 1, 0);
+  }
+
+  TO_CIRCUIT(circ)->purpose = CIRCUIT_PURPOSE_C_GENERAL;
+  return TO_CIRCUIT(circ);
+}
+
+/** Mock-replacement. As tor_addr_lookup, but always fails on any
+ * address containing a !.  This is necessary for running the unit tests
+ * on networks where DNS hijackers think it's helpful to give answers
+ * for things like 1.2.3.4.5 or "invalidstuff!!"
+ */
+int
+mock_tor_addr_lookup__fail_on_bad_addrs(const char *name,
+                                        uint16_t family, tor_addr_t *out)
+{
+  if (name && strchr(name, '!')) {
+    return -1;
+  }
+  return tor_addr_lookup__real(name, family, out);
 }
 

@@ -59,10 +59,12 @@
 #define DIGEST256_LEN 32
 /** Length of the output of our 64-bit optimized message digests (SHA512). */
 #define DIGEST512_LEN 64
-/** Length of our symmetric cipher's keys. */
+/** Length of our symmetric cipher's keys of 128-bit. */
 #define CIPHER_KEY_LEN 16
-/** Length of our symmetric cipher's IV. */
+/** Length of our symmetric cipher's IV of 128-bit. */
 #define CIPHER_IV_LEN 16
+/** Length of our symmetric cipher's keys of 256-bit. */
+#define CIPHER256_KEY_LEN 32
 /** Length of our public keys. */
 #define PK_BYTES (1024/8)
 /** Length of our DH keys. */
@@ -178,10 +180,12 @@ int crypto_pk_public_encrypt(crypto_pk_t *env, char *to, size_t tolen,
 int crypto_pk_private_decrypt(crypto_pk_t *env, char *to, size_t tolen,
                               const char *from, size_t fromlen,
                               int padding, int warnOnFailure);
-int crypto_pk_public_checksig(const crypto_pk_t *env, char *to, size_t tolen,
-                              const char *from, size_t fromlen);
-int crypto_pk_public_checksig_digest(crypto_pk_t *env, const char *data,
-                               size_t datalen, const char *sig, size_t siglen);
+MOCK_DECL(int, crypto_pk_public_checksig,(const crypto_pk_t *env,
+                                          char *to, size_t tolen,
+                                          const char *from, size_t fromlen));
+MOCK_DECL(int, crypto_pk_public_checksig_digest,(crypto_pk_t *env,
+                                         const char *data, size_t datalen,
+                                         const char *sig, size_t siglen));
 int crypto_pk_private_sign(const crypto_pk_t *env, char *to, size_t tolen,
                            const char *from, size_t fromlen);
 int crypto_pk_private_sign_digest(crypto_pk_t *env, char *to, size_t tolen,
@@ -255,6 +259,10 @@ void crypto_digest_assign(crypto_digest_t *into,
 void crypto_hmac_sha256(char *hmac_out,
                         const char *key, size_t key_len,
                         const char *msg, size_t msg_len);
+void crypto_mac_sha3_256(uint8_t *mac_out, size_t len_out,
+                         const uint8_t *key, size_t key_len,
+                         const uint8_t *msg, size_t msg_len);
+
 crypto_xof_t *crypto_xof_new(void);
 void crypto_xof_add_bytes(crypto_xof_t *xof, const uint8_t *data, size_t len);
 void crypto_xof_squeeze_bytes(crypto_xof_t *xof, uint8_t *out, size_t len);

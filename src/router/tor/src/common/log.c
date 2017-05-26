@@ -682,7 +682,7 @@ tor_log_get_logfile_names(smartlist_t *out)
       continue;
     if (lf->filename == NULL)
       continue;
-    smartlist_add(out, tor_strdup(lf->filename));
+    smartlist_add_strdup(out, lf->filename);
   }
 
   UNLOCK_LOGS();
@@ -1177,7 +1177,7 @@ static const char *domain_list[] = {
   "GENERAL", "CRYPTO", "NET", "CONFIG", "FS", "PROTOCOL", "MM",
   "HTTP", "APP", "CONTROL", "CIRC", "REND", "BUG", "DIR", "DIRSERV",
   "OR", "EDGE", "ACCT", "HIST", "HANDSHAKE", "HEARTBEAT", "CHANNEL",
-  "SCHED", NULL
+  "SCHED", "GUARD", NULL
 };
 
 /** Return a bitmask for the log domain for which <b>domain</b> is the name,
@@ -1319,10 +1319,8 @@ parse_log_severity_config(const char **cfg_ptr,
     if (got_an_unqualified_range > 1)
       return -1;
 
-    space = strchr(cfg, ' ');
+    space = find_whitespace(cfg);
     dash = strchr(cfg, '-');
-    if (!space)
-      space = strchr(cfg, '\0');
     if (dash && dash < space) {
       sev_lo = tor_strndup(cfg, dash-cfg);
       sev_hi = tor_strndup(dash+1, space-(dash+1));
