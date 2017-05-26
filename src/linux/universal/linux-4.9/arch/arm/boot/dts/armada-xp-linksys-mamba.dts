@@ -369,8 +369,8 @@
 
 				/* Last MB is for the BBT, i.e. not writable */
 				partition@5a00000 {
-					label = "syscfg";
-					reg = <0x5a00000 0x2600000>;    /* 38MB */
+					label = "ddwrt";
+					reg = <0x5a00000 0x2500000>;    /* 38MB */
 				};
 			};
 		};
