@@ -1,4 +1,4 @@
-/* trunnel.c -- copied from Trunnel v1.4.6
+/* trunnel.c -- copied from Trunnel v1.5.1
  * https://gitweb.torproject.org/trunnel.git
  * You probably shouldn't edit this file.
  */
@@ -31,7 +31,7 @@
 #    define IS_LITTLE_ENDIAN
 #  endif
 #else
-# if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+# if defined(__FreeBSD__) || defined(__NetBSD__) || defined(OpenBSD)
 #  include <sys/endian.h>
 # else
 #  include <endian.h>

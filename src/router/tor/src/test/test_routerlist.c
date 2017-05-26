@@ -15,6 +15,7 @@
 #include "container.h"
 #include "directory.h"
 #include "dirvote.h"
+#include "entrynodes.h"
 #include "microdesc.h"
 #include "networkstatus.h"
 #include "nodelist.h"
@@ -335,30 +336,6 @@ test_router_pick_directory_server_impl(void *arg)
   node_router1->is_valid = 1;
   node_router3->is_valid = 1;
 
-  flags |= PDS_FOR_GUARD;
-  node_router1->using_as_guard = 1;
-  node_router2->using_as_guard = 1;
-  node_router3->using_as_guard = 1;
-  rs = router_pick_directory_server_impl(V3_DIRINFO, flags, NULL);
-  tt_assert(rs == NULL);
-  node_router1->using_as_guard = 0;
-  rs = router_pick_directory_server_impl(V3_DIRINFO, flags, NULL);
-  tt_assert(rs != NULL);
-  tt_assert(tor_memeq(rs->identity_digest, router1_id, DIGEST_LEN));
-  rs = NULL;
-  node_router2->using_as_guard = 0;
-  node_router3->using_as_guard = 0;
-
-  /* One not valid, one guard. This should leave one remaining */
-  node_router1->is_valid = 0;
-  node_router2->using_as_guard = 1;
-  rs = router_pick_directory_server_impl(V3_DIRINFO, flags, NULL);
-  tt_assert(rs != NULL);
-  tt_assert(tor_memeq(rs->identity_digest, router3_id, DIGEST_LEN));
-  rs = NULL;
-  node_router1->is_valid = 1;
-  node_router2->using_as_guard = 0;
-
   /* Manipulate overloaded */
 
   node_router2->rs->last_dir_503_at = now;
@@ -420,6 +397,7 @@ test_router_pick_directory_server_impl(void *arg)
 
  done:
   UNMOCK(usable_consensus_flavor);
+
   if (router1_id)
     tor_free(router1_id);
   if (router2_id)

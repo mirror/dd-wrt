@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
@@ -9,6 +10,16 @@
  *
  * \brief Back-end for parsing and generating key-value files, used to
  *   implement the torrc file format and the state file.
+ *
+ * This module is used by config.c to parse and encode torrc
+ * configuration files, and by statefile.c to parse and encode the
+ * $DATADIR/state file.
+ *
+ * To use this module, its callers provide an instance of
+ * config_format_t to describe the mappings from a set of configuration
+ * options to a number of fields in a C structure.  With this mapping,
+ * the functions here can convert back and forth between the C structure
+ * specified, and a linked list of key-value pairs.
  */
 
 #include "or.h"
@@ -20,6 +31,8 @@ static int config_parse_msec_interval(const char *s, int *ok);
 static int config_parse_interval(const char *s, int *ok);
 static void config_reset(const config_format_t *fmt, void *options,
                          const config_var_t *var, int use_defaults);
+static config_line_t *config_lines_dup_and_filter(const config_line_t *inp,
+                                                  const char *key);
 
 /** Allocate an empty configuration object of a given format type. */
 void *
@@ -624,9 +637,22 @@ config_value_needs_escape(const char *value)
 config_line_t *
 config_lines_dup(const config_line_t *inp)
 {
+  return config_lines_dup_and_filter(inp, NULL);
+}
+
+/** Return a newly allocated deep copy of the lines in <b>inp</b>,
+ * but only the ones that match <b>key</b>. */
+static config_line_t *
+config_lines_dup_and_filter(const config_line_t *inp,
+                            const char *key)
+{
   config_line_t *result = NULL;
   config_line_t **next_out = &result;
   while (inp) {
+    if (key && strcasecmpstart(inp->key, key)) {
+      inp = inp->next;
+      continue;
+    }
     *next_out = tor_malloc_zero(sizeof(config_line_t));
     (*next_out)->key = tor_strdup(inp->key);
     (*next_out)->value = tor_strdup(inp->value);
@@ -753,11 +779,11 @@ config_get_assigned_option(const config_format_t *fmt, const void *options,
       tor_free(result);
       return NULL;
     case CONFIG_TYPE_LINELIST_S:
-      log_warn(LD_CONFIG,
-               "Can't return context-sensitive '%s' on its own", key);
       tor_free(result->key);
       tor_free(result);
-      return NULL;
+      result = config_lines_dup_and_filter(*(const config_line_t **)value,
+                                           key);
+      break;
     case CONFIG_TYPE_LINELIST:
     case CONFIG_TYPE_LINELIST_V:
       tor_free(result->key);
@@ -1148,6 +1174,11 @@ config_dump(const config_format_t *fmt, const void *default_options,
       config_get_assigned_option(fmt, options, fmt->vars[i].name, 1);
 
     for (; line; line = line->next) {
+      if (!strcmpstart(line->key, "__")) {
+        /* This check detects "hidden" variables inside LINELIST_V structures.
+         */
+        continue;
+      }
       smartlist_add_asprintf(elements, "%s%s %s\n",
                    comment_option ? "# " : "",
                    line->key, line->value);
@@ -1213,6 +1244,8 @@ static struct unit_table_t memory_units[] = {
   { "gbits",     1<<27 },
   { "gbit",      1<<27 },
   { "tb",        U64_LITERAL(1)<<40 },
+  { "tbyte",     U64_LITERAL(1)<<40 },
+  { "tbytes",    U64_LITERAL(1)<<40 },
   { "terabyte",  U64_LITERAL(1)<<40 },
   { "terabytes", U64_LITERAL(1)<<40 },
   { "terabits",  U64_LITERAL(1)<<37 },

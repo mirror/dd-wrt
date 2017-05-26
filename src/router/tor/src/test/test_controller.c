@@ -3,12 +3,14 @@
 
 #define CONTROL_PRIVATE
 #include "or.h"
+#include "bridges.h"
 #include "control.h"
 #include "entrynodes.h"
 #include "networkstatus.h"
 #include "rendservice.h"
 #include "routerlist.h"
 #include "test.h"
+#include "test_helpers.h"
 
 static void
 test_add_onion_helper_keyarg(void *arg)
@@ -185,8 +187,10 @@ test_rend_service_parse_port_config(void *arg)
   tor_free(err_msg);
 
   /* bogus IP address */
-  cfg = rend_service_parse_port_config("100 1.2.3.4.5:9000",
+  MOCK(tor_addr_lookup, mock_tor_addr_lookup__fail_on_bad_addrs);
+  cfg = rend_service_parse_port_config("100 foo!!.example.com:9000",
                                        " ", &err_msg);
+  UNMOCK(tor_addr_lookup);
   tt_assert(!cfg);
   tt_str_op(err_msg, OP_EQ, "Unparseable address in hidden service port "
             "configuration.");

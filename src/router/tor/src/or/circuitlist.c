@@ -7,7 +7,48 @@
 /**
  * \file circuitlist.c
  *
- * \brief Manage the global circuit list, and looking up circuits within it.
+ * \brief Manage global structures that list and index circuits, and
+ *   look up circuits within them.
+ *
+ * One of the most frequent operations in Tor occurs every time that
+ * a relay cell arrives on a channel.  When that happens, we need to
+ * find which circuit it is associated with, based on the channel and the
+ * circuit ID in the relay cell.
+ *
+ * To handle that, we maintain a global list of circuits, and a hashtable
+ * mapping [channel,circID] pairs to circuits.  Circuits are added to and
+ * removed from this mapping using circuit_set_p_circid_chan() and
+ * circuit_set_n_circid_chan().  To look up a circuit from this map, most
+ * callers should use circuit_get_by_circid_channel(), though
+ * circuit_get_by_circid_channel_even_if_marked() is appropriate under some
+ * circumstances.
+ *
+ * We also need to allow for the possibility that we have blocked use of a
+ * circuit ID (because we are waiting to send a DESTROY cell), but the
+ * circuit is not there any more.  For that case, we allow placeholder
+ * entries in the table, using channel_mark_circid_unusable().
+ *
+ * To efficiently handle a channel that has just opened, we also maintain a
+ * list of the circuits waiting for channels, so we can attach them as
+ * needed without iterating through the whole list of circuits, using
+ * circuit_get_all_pending_on_channel().
+ *
+ * In this module, we also handle the list of circuits that have been
+ * marked for close elsewhere, and close them as needed.  (We use this
+ * "mark now, close later" pattern here and elsewhere to avoid
+ * unpredictable recursion if we closed every circuit immediately upon
+ * realizing it needed to close.)  See circuit_mark_for_close() for the
+ * mark function, and circuit_close_all_marked() for the close function.
+ *
+ * For hidden services, we need to be able to look up introduction point
+ * circuits and rendezvous circuits by cookie, key, etc.  These are
+ * currently handled with linear searches in
+ * circuit_get_ready_rend_circuit_by_rend_data(),
+ * circuit_get_next_by_pk_and_purpose(), and with hash lookups in
+ * circuit_get_rendezvous() and circuit_get_intro_point().
+ *
+ * This module is also the entry point for our out-of-memory handler
+ * logic, which was originally circuit-focused.
  **/
 #define CIRCUITLIST_PRIVATE
 #include "or.h"
@@ -22,7 +63,10 @@
 #include "connection_edge.h"
 #include "connection_or.h"
 #include "control.h"
+#include "entrynodes.h"
 #include "main.h"
+#include "hs_circuitmap.h"
+#include "hs_common.h"
 #include "networkstatus.h"
 #include "nodelist.h"
 #include "onion.h"
@@ -42,8 +86,16 @@
 /** A global list of all circuits at this hop. */
 static smartlist_t *global_circuitlist = NULL;
 
+/** A global list of all origin circuits. Every element of this is also
+ * an element of global_circuitlist. */
+static smartlist_t *global_origin_circuit_list = NULL;
+
 /** A list of all the circuits in CIRCUIT_STATE_CHAN_WAIT. */
 static smartlist_t *circuits_pending_chans = NULL;
+
+/** List of all the (origin) circuits whose state is
+ * CIRCUIT_STATE_GUARD_WAIT. */
+static smartlist_t *circuits_pending_other_guards = NULL;
 
 /** A list of all the circuits that have been marked with
  * circuit_mark_for_close and which are waiting for circuit_about_to_free. */
@@ -51,9 +103,6 @@ static smartlist_t *circuits_pending_close = NULL;
 
 static void circuit_free_cpath_node(crypt_path_t *victim);
 static void cpath_ref_decref(crypt_path_reference_t *cpath_ref);
-//static void circuit_set_rend_token(or_circuit_t *circ, int is_rend_circ,
-//                                   const uint8_t *token);
-static void circuit_clear_rend_token(or_circuit_t *circ);
 static void circuit_about_to_free_atexit(circuit_t *circ);
 static void circuit_about_to_free(circuit_t *circ);
 
@@ -386,8 +435,10 @@ circuit_set_state(circuit_t *circ, uint8_t state)
   tor_assert(circ);
   if (state == circ->state)
     return;
-  if (!circuits_pending_chans)
+  if (PREDICT_UNLIKELY(!circuits_pending_chans))
     circuits_pending_chans = smartlist_new();
+  if (PREDICT_UNLIKELY(!circuits_pending_other_guards))
+    circuits_pending_other_guards = smartlist_new();
   if (circ->state == CIRCUIT_STATE_CHAN_WAIT) {
     /* remove from waiting-circuit list. */
     smartlist_remove(circuits_pending_chans, circ);
@@ -396,7 +447,13 @@ circuit_set_state(circuit_t *circ, uint8_t state)
     /* add to waiting-circuit list. */
     smartlist_add(circuits_pending_chans, circ);
   }
-  if (state == CIRCUIT_STATE_OPEN)
+  if (circ->state == CIRCUIT_STATE_GUARD_WAIT) {
+    smartlist_remove(circuits_pending_other_guards, circ);
+  }
+  if (state == CIRCUIT_STATE_GUARD_WAIT) {
+    smartlist_add(circuits_pending_other_guards, circ);
+  }
+  if (state == CIRCUIT_STATE_GUARD_WAIT || state == CIRCUIT_STATE_OPEN)
     tor_assert(!circ->n_chan_create_cell);
   circ->state = state;
 }
@@ -452,6 +509,39 @@ circuit_count_pending_on_channel(channel_t *chan)
   return cnt;
 }
 
+/** Remove <b>origin_circ</b> from the global list of origin circuits.
+ * Called when we are freeing a circuit.
+ */
+static void
+circuit_remove_from_origin_circuit_list(origin_circuit_t *origin_circ)
+{
+  int origin_idx = origin_circ->global_origin_circuit_list_idx;
+  if (origin_idx < 0)
+    return;
+  origin_circuit_t *c2;
+  tor_assert(origin_idx <= smartlist_len(global_origin_circuit_list));
+  c2 = smartlist_get(global_origin_circuit_list, origin_idx);
+  tor_assert(origin_circ == c2);
+  smartlist_del(global_origin_circuit_list, origin_idx);
+  if (origin_idx < smartlist_len(global_origin_circuit_list)) {
+    origin_circuit_t *replacement =
+      smartlist_get(global_origin_circuit_list, origin_idx);
+    replacement->global_origin_circuit_list_idx = origin_idx;
+  }
+  origin_circ->global_origin_circuit_list_idx = -1;
+}
+
+/** Add <b>origin_circ</b> to the global list of origin circuits. Called
+ * when creating the circuit. */
+static void
+circuit_add_to_origin_circuit_list(origin_circuit_t *origin_circ)
+{
+  tor_assert(origin_circ->global_origin_circuit_list_idx == -1);
+  smartlist_t *lst = circuit_get_global_origin_circuit_list();
+  smartlist_add(lst, origin_circ);
+  origin_circ->global_origin_circuit_list_idx = smartlist_len(lst) - 1;
+}
+
 /** Detach from the global circuit list, and deallocate, all
  * circuits that have been marked for close.
  */
@@ -474,6 +564,11 @@ circuit_close_all_marked(void)
     }
     circ->global_circuitlist_idx = -1;
 
+    /* Remove it from the origin circuit list, if appropriate. */
+    if (CIRCUIT_IS_ORIGIN(circ)) {
+      circuit_remove_from_origin_circuit_list(TO_ORIGIN_CIRCUIT(circ));
+    }
+
     circuit_about_to_free(circ);
     circuit_free(circ);
   } SMARTLIST_FOREACH_END(circ);
@@ -481,13 +576,22 @@ circuit_close_all_marked(void)
   smartlist_clear(circuits_pending_close);
 }
 
-/** Return the head of the global linked list of circuits. */
+/** Return a pointer to the global list of circuits. */
 MOCK_IMPL(smartlist_t *,
 circuit_get_global_list,(void))
 {
   if (NULL == global_circuitlist)
     global_circuitlist = smartlist_new();
   return global_circuitlist;
+}
+
+/** Return a pointer to the global list of origin circuits. */
+smartlist_t *
+circuit_get_global_origin_circuit_list(void)
+{
+  if (NULL == global_origin_circuit_list)
+    global_origin_circuit_list = smartlist_new();
+  return global_origin_circuit_list;
 }
 
 /** Function to make circ-\>state human-readable */
@@ -499,6 +603,8 @@ circuit_state_to_string(int state)
     case CIRCUIT_STATE_BUILDING: return "doing handshakes";
     case CIRCUIT_STATE_ONIONSKIN_PENDING: return "processing the onion";
     case CIRCUIT_STATE_CHAN_WAIT: return "connecting to server";
+    case CIRCUIT_STATE_GUARD_WAIT: return "waiting to see how other "
+      "guards perform";
     case CIRCUIT_STATE_OPEN: return "open";
     default:
       log_warn(LD_BUG, "Unknown circuit state %d", state);
@@ -729,6 +835,10 @@ origin_circuit_new(void)
 
   init_circuit_base(TO_CIRCUIT(circ));
 
+  /* Add to origin-list. */
+  circ->global_origin_circuit_list_idx = -1;
+  circuit_add_to_origin_circuit_list(circ);
+
   circuit_build_times_update_last_circ(get_circuit_build_times_mutable());
 
   return circ;
@@ -786,12 +896,21 @@ circuit_free(circuit_t *circ)
     mem = ocirc;
     memlen = sizeof(origin_circuit_t);
     tor_assert(circ->magic == ORIGIN_CIRCUIT_MAGIC);
+
+    circuit_remove_from_origin_circuit_list(ocirc);
+
     if (ocirc->build_state) {
         extend_info_free(ocirc->build_state->chosen_exit);
         circuit_free_cpath_node(ocirc->build_state->pending_final_cpath);
         cpath_ref_decref(ocirc->build_state->service_pending_final_cpath_ref);
     }
     tor_free(ocirc->build_state);
+
+    /* Cancel before freeing, if we haven't already succeeded or failed. */
+    if (ocirc->guard_state) {
+      entry_guard_cancel(&ocirc->guard_state);
+    }
+    circuit_guard_state_free(ocirc->guard_state);
 
     circuit_clear_cpath(ocirc);
 
@@ -824,7 +943,9 @@ circuit_free(circuit_t *circ)
     crypto_cipher_free(ocirc->n_crypto);
     crypto_digest_free(ocirc->n_digest);
 
-    circuit_clear_rend_token(ocirc);
+    if (ocirc->hs_token) {
+      hs_circuitmap_remove_circuit(ocirc);
+    }
 
     if (ocirc->rend_splice) {
       or_circuit_t *other = ocirc->rend_splice;
@@ -925,11 +1046,17 @@ circuit_free_all(void)
   smartlist_free(lst);
   global_circuitlist = NULL;
 
+  smartlist_free(global_origin_circuit_list);
+  global_origin_circuit_list = NULL;
+
   smartlist_free(circuits_pending_chans);
   circuits_pending_chans = NULL;
 
   smartlist_free(circuits_pending_close);
   circuits_pending_close = NULL;
+
+  smartlist_free(circuits_pending_other_guards);
+  circuits_pending_other_guards = NULL;
 
   {
     chan_circid_circuit_map_t **elt, **next, *c;
@@ -1311,9 +1438,11 @@ circuit_get_ready_rend_circ_by_rend_data(const rend_data_t *rend_data)
     if (!circ->marked_for_close &&
         circ->purpose == CIRCUIT_PURPOSE_C_REND_READY) {
       origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
-      if (ocirc->rend_data &&
-          !rend_cmp_service_ids(rend_data->onion_address,
-                                ocirc->rend_data->onion_address) &&
+      if (ocirc->rend_data == NULL) {
+        continue;
+      }
+      if (!rend_cmp_service_ids(rend_data_get_address(rend_data),
+                                rend_data_get_address(ocirc->rend_data)) &&
           tor_memeq(ocirc->rend_data->rend_cookie,
                     rend_data->rend_cookie,
                     REND_COOKIE_LEN))
@@ -1324,14 +1453,50 @@ circuit_get_ready_rend_circ_by_rend_data(const rend_data_t *rend_data)
   return NULL;
 }
 
+/** Return the first service introduction circuit originating from the global
+ * circuit list after <b>start</b> or at the start of the list if <b>start</b>
+ * is NULL. Return NULL if no circuit is found.
+ *
+ * A service introduction point circuit has a purpose of either
+ * CIRCUIT_PURPOSE_S_ESTABLISH_INTRO or CIRCUIT_PURPOSE_S_INTRO. This does not
+ * return a circuit marked for close and its state must be open. */
+origin_circuit_t *
+circuit_get_next_service_intro_circ(origin_circuit_t *start)
+{
+  int idx = 0;
+  smartlist_t *lst = circuit_get_global_list();
+
+  if (start) {
+    idx = TO_CIRCUIT(start)->global_circuitlist_idx + 1;
+  }
+
+  for ( ; idx < smartlist_len(lst); ++idx) {
+    circuit_t *circ = smartlist_get(lst, idx);
+
+    /* Ignore a marked for close circuit or purpose not matching a service
+     * intro point or if the state is not open. */
+    if (circ->marked_for_close || circ->state != CIRCUIT_STATE_OPEN ||
+        (circ->purpose != CIRCUIT_PURPOSE_S_ESTABLISH_INTRO &&
+         circ->purpose != CIRCUIT_PURPOSE_S_INTRO)) {
+      continue;
+    }
+    /* The purposes we are looking for are only for origin circuits so the
+     * following is valid. */
+    return TO_ORIGIN_CIRCUIT(circ);
+  }
+  /* Not found. */
+  return NULL;
+}
+
 /** Return the first circuit originating here in global_circuitlist after
- * <b>start</b> whose purpose is <b>purpose</b>, and where
- * <b>digest</b> (if set) matches the rend_pk_digest field. Return NULL if no
- * circuit is found.  If <b>start</b> is NULL, begin at the start of the list.
+ * <b>start</b> whose purpose is <b>purpose</b>, and where <b>digest</b> (if
+ * set) matches the private key digest of the rend data associated with the
+ * circuit. Return NULL if no circuit is found. If <b>start</b> is NULL,
+ * begin at the start of the list.
  */
 origin_circuit_t *
 circuit_get_next_by_pk_and_purpose(origin_circuit_t *start,
-                                   const char *digest, uint8_t purpose)
+                                   const uint8_t *digest, uint8_t purpose)
 {
   int idx;
   smartlist_t *lst = circuit_get_global_list();
@@ -1343,190 +1508,25 @@ circuit_get_next_by_pk_and_purpose(origin_circuit_t *start,
 
   for ( ; idx < smartlist_len(lst); ++idx) {
     circuit_t *circ = smartlist_get(lst, idx);
+    origin_circuit_t *ocirc;
 
     if (circ->marked_for_close)
       continue;
     if (circ->purpose != purpose)
       continue;
+    /* At this point we should be able to get a valid origin circuit because
+     * the origin purpose we are looking for matches this circuit. */
+    if (BUG(!CIRCUIT_PURPOSE_IS_ORIGIN(circ->purpose))) {
+      break;
+    }
+    ocirc = TO_ORIGIN_CIRCUIT(circ);
     if (!digest)
-      return TO_ORIGIN_CIRCUIT(circ);
-    else if (TO_ORIGIN_CIRCUIT(circ)->rend_data &&
-             tor_memeq(TO_ORIGIN_CIRCUIT(circ)->rend_data->rend_pk_digest,
-                     digest, DIGEST_LEN))
-      return TO_ORIGIN_CIRCUIT(circ);
-  }
-  return NULL;
-}
-
-/** Map from rendezvous cookie to or_circuit_t */
-static digestmap_t *rend_cookie_map = NULL;
-
-/** Map from introduction point digest to or_circuit_t */
-static digestmap_t *intro_digest_map = NULL;
-
-/** Return the OR circuit whose purpose is <b>purpose</b>, and whose
- * rend_token is the REND_TOKEN_LEN-byte <b>token</b>. If <b>is_rend_circ</b>,
- * look for rendezvous point circuits; otherwise look for introduction point
- * circuits. */
-static or_circuit_t *
-circuit_get_by_rend_token_and_purpose(uint8_t purpose, int is_rend_circ,
-                                      const char *token)
-{
-  or_circuit_t *circ;
-  digestmap_t *map = is_rend_circ ? rend_cookie_map : intro_digest_map;
-
-  if (!map)
-    return NULL;
-
-  circ = digestmap_get(map, token);
-  if (!circ ||
-      circ->base_.purpose != purpose ||
-      circ->base_.marked_for_close)
-    return NULL;
-
-  if (!circ->rendinfo) {
-    char *t = tor_strdup(hex_str(token, REND_TOKEN_LEN));
-    log_warn(LD_BUG, "Wanted a circuit with %s:%d, but lookup returned a "
-             "circuit with no rendinfo set.",
-             safe_str(t), is_rend_circ);
-    tor_free(t);
-    return NULL;
-  }
-
-  if (! bool_eq(circ->rendinfo->is_rend_circ, is_rend_circ) ||
-      tor_memneq(circ->rendinfo->rend_token, token, REND_TOKEN_LEN)) {
-    char *t = tor_strdup(hex_str(token, REND_TOKEN_LEN));
-    log_warn(LD_BUG, "Wanted a circuit with %s:%d, but lookup returned %s:%d",
-             safe_str(t), is_rend_circ,
-             safe_str(hex_str(circ->rendinfo->rend_token, REND_TOKEN_LEN)),
-             (int)circ->rendinfo->is_rend_circ);
-    tor_free(t);
-    return NULL;
-  }
-
-  return circ;
-}
-
-/** Clear the rendezvous cookie or introduction point key digest that's
- * configured on <b>circ</b>, if any, and remove it from any such maps. */
-static void
-circuit_clear_rend_token(or_circuit_t *circ)
-{
-  or_circuit_t *found_circ;
-  digestmap_t *map;
-
-  if (!circ || !circ->rendinfo)
-    return;
-
-  map = circ->rendinfo->is_rend_circ ? rend_cookie_map : intro_digest_map;
-
-  if (!map) {
-    log_warn(LD_BUG, "Tried to clear rend token on circuit, but found no map");
-    return;
-  }
-
-  found_circ = digestmap_get(map, circ->rendinfo->rend_token);
-  if (found_circ == circ) {
-    /* Great, this is the right one. */
-    digestmap_remove(map, circ->rendinfo->rend_token);
-  } else if (found_circ) {
-    log_warn(LD_BUG, "Tried to clear rend token on circuit, but "
-             "it was already replaced in the map.");
-  } else {
-    log_warn(LD_BUG, "Tried to clear rend token on circuit, but "
-             "it not in the map at all.");
-  }
-
-  tor_free(circ->rendinfo); /* Sets it to NULL too */
-}
-
-/** Set the rendezvous cookie (if is_rend_circ), or the introduction point
- * digest (if ! is_rend_circ) of <b>circ</b> to the REND_TOKEN_LEN-byte value
- * in <b>token</b>, and add it to the appropriate map.  If it previously had a
- * token, clear it.  If another circuit previously had the same
- * cookie/intro-digest, mark that circuit and remove it from the map. */
-static void
-circuit_set_rend_token(or_circuit_t *circ, int is_rend_circ,
-                       const uint8_t *token)
-{
-  digestmap_t **map_p, *map;
-  or_circuit_t *found_circ;
-
-  /* Find the right map, creating it as needed */
-  map_p = is_rend_circ ? &rend_cookie_map : &intro_digest_map;
-
-  if (!*map_p)
-    *map_p = digestmap_new();
-
-  map = *map_p;
-
-  /* If this circuit already has a token, we need to remove that. */
-  if (circ->rendinfo)
-    circuit_clear_rend_token(circ);
-
-  if (token == NULL) {
-    /* We were only trying to remove this token, not set a new one. */
-    return;
-  }
-
-  found_circ = digestmap_get(map, (const char *)token);
-  if (found_circ) {
-    tor_assert(found_circ != circ);
-    circuit_clear_rend_token(found_circ);
-    if (! found_circ->base_.marked_for_close) {
-      circuit_mark_for_close(TO_CIRCUIT(found_circ), END_CIRC_REASON_FINISHED);
-      if (is_rend_circ) {
-        log_fn(LOG_PROTOCOL_WARN, LD_REND,
-               "Duplicate rendezvous cookie (%s...) used on two circuits",
-               hex_str((const char*)token, 4)); /* only log first 4 chars */
-      }
+      return ocirc;
+    if (rend_circuit_pk_digest_eq(ocirc, digest)) {
+      return ocirc;
     }
   }
-
-  /* Now set up the rendinfo */
-  circ->rendinfo = tor_malloc(sizeof(*circ->rendinfo));
-  memcpy(circ->rendinfo->rend_token, token, REND_TOKEN_LEN);
-  circ->rendinfo->is_rend_circ = is_rend_circ ? 1 : 0;
-
-  digestmap_set(map, (const char *)token, circ);
-}
-
-/** Return the circuit waiting for a rendezvous with the provided cookie.
- * Return NULL if no such circuit is found.
- */
-or_circuit_t *
-circuit_get_rendezvous(const uint8_t *cookie)
-{
-  return circuit_get_by_rend_token_and_purpose(
-                                     CIRCUIT_PURPOSE_REND_POINT_WAITING,
-                                     1, (const char*)cookie);
-}
-
-/** Return the circuit waiting for intro cells of the given digest.
- * Return NULL if no such circuit is found.
- */
-or_circuit_t *
-circuit_get_intro_point(const uint8_t *digest)
-{
-  return circuit_get_by_rend_token_and_purpose(
-                                     CIRCUIT_PURPOSE_INTRO_POINT, 0,
-                                     (const char *)digest);
-}
-
-/** Set the rendezvous cookie of <b>circ</b> to <b>cookie</b>.  If another
- * circuit previously had that cookie, mark it. */
-void
-circuit_set_rendezvous_cookie(or_circuit_t *circ, const uint8_t *cookie)
-{
-  circuit_set_rend_token(circ, 1, cookie);
-}
-
-/** Set the intro point key digest of <b>circ</b> to <b>cookie</b>.  If another
- * circuit previously had that intro point digest, mark it. */
-void
-circuit_set_intro_point_digest(or_circuit_t *circ, const uint8_t *digest)
-{
-  circuit_set_rend_token(circ, 0, digest);
+  return NULL;
 }
 
 /** Return a circuit that is open, is CIRCUIT_PURPOSE_C_GENERAL,
@@ -1539,6 +1539,14 @@ circuit_set_intro_point_digest(or_circuit_t *circ, const uint8_t *digest)
  * cannibalize.
  *
  * If !CIRCLAUNCH_NEED_UPTIME, prefer returning non-uptime circuits.
+ *
+ * To "cannibalize" a circuit means to extend it an extra hop, and use it
+ * for some other purpose than we had originally intended.  We do this when
+ * we want to perform some low-bandwidth task at a specific relay, and we
+ * would like the circuit to complete as soon as possible.  (If we were going
+ * to use a lot of bandwidth, we wouldn't want a circuit with an extra hop.
+ * If we didn't care about circuit completion latency, we would just build
+ * a new circuit.)
  */
 origin_circuit_t *
 circuit_find_to_cannibalize(uint8_t purpose, extend_info_t *info,
@@ -1611,6 +1619,37 @@ circuit_find_to_cannibalize(uint8_t purpose, extend_info_t *info,
   }
   SMARTLIST_FOREACH_END(circ_);
   return best;
+}
+
+/**
+ * Check whether any of the origin circuits that are waiting to see if
+ * their guard is good enough to use can be upgraded to "ready". If so,
+ * return a new smartlist containing them. Otherwise return NULL.
+ */
+smartlist_t *
+circuit_find_circuits_to_upgrade_from_guard_wait(void)
+{
+  /* Only if some circuit is actually waiting on an upgrade should we
+   * run the algorithm. */
+  if (! circuits_pending_other_guards ||
+      smartlist_len(circuits_pending_other_guards)==0)
+    return NULL;
+  /* Only if we have some origin circuits should we run the algorithm. */
+  if (!global_origin_circuit_list)
+    return NULL;
+
+  /* Okay; we can pass our circuit list to entrynodes.c.*/
+  smartlist_t *result = smartlist_new();
+  int circuits_upgraded  = entry_guards_upgrade_waiting_circuits(
+                                                 get_guard_selection_info(),
+                                                 global_origin_circuit_list,
+                                                 result);
+  if (circuits_upgraded && smartlist_len(result)) {
+    return result;
+  } else {
+    smartlist_free(result);
+    return NULL;
+  }
 }
 
 /** Return the number of hops in circuit's path. If circ has no entries,
@@ -1807,7 +1846,8 @@ circuit_about_to_free(circuit_t *circ)
    * module then.  If it isn't OPEN, we send it there now to remember which
    * links worked and which didn't.
    */
-  if (circ->state != CIRCUIT_STATE_OPEN) {
+  if (circ->state != CIRCUIT_STATE_OPEN &&
+      circ->state != CIRCUIT_STATE_GUARD_WAIT) {
     if (CIRCUIT_IS_ORIGIN(circ)) {
       origin_circuit_t *ocirc = TO_ORIGIN_CIRCUIT(circ);
       circuit_build_failed(ocirc); /* take actions if necessary */
@@ -1818,9 +1858,14 @@ circuit_about_to_free(circuit_t *circ)
     if (circuits_pending_chans)
       smartlist_remove(circuits_pending_chans, circ);
   }
+  if (circuits_pending_other_guards) {
+    smartlist_remove(circuits_pending_other_guards, circ);
+  }
   if (CIRCUIT_IS_ORIGIN(circ)) {
     control_event_circuit_status(TO_ORIGIN_CIRCUIT(circ),
-     (circ->state == CIRCUIT_STATE_OPEN)?CIRC_EVENT_CLOSED:CIRC_EVENT_FAILED,
+     (circ->state == CIRCUIT_STATE_OPEN ||
+      circ->state == CIRCUIT_STATE_GUARD_WAIT) ?
+                                 CIRC_EVENT_CLOSED:CIRC_EVENT_FAILED,
      orig_reason);
   }
 
@@ -1833,7 +1878,7 @@ circuit_about_to_free(circuit_t *circ)
     if (orig_reason != END_CIRC_REASON_IP_NOW_REDUNDANT) {
       /* treat this like getting a nack from it */
       log_info(LD_REND, "Failed intro circ %s to %s (awaiting ack). %s",
-          safe_str_client(ocirc->rend_data->onion_address),
+          safe_str_client(rend_data_get_address(ocirc->rend_data)),
           safe_str_client(build_state_get_exit_nickname(ocirc->build_state)),
           timed_out ? "Recording timeout." : "Removing from descriptor.");
       rend_client_report_intro_point_failure(ocirc->build_state->chosen_exit,
@@ -1850,7 +1895,7 @@ circuit_about_to_free(circuit_t *circ)
         log_info(LD_REND, "Failed intro circ %s to %s "
             "(building circuit to intro point). "
             "Marking intro point as possibly unreachable.",
-            safe_str_client(ocirc->rend_data->onion_address),
+            safe_str_client(rend_data_get_address(ocirc->rend_data)),
             safe_str_client(build_state_get_exit_nickname(
                                               ocirc->build_state)));
         rend_client_report_intro_point_failure(ocirc->build_state->chosen_exit,
@@ -2342,7 +2387,8 @@ assert_circuit_ok(const circuit_t *c)
 
   tor_assert(c->deliver_window >= 0);
   tor_assert(c->package_window >= 0);
-  if (c->state == CIRCUIT_STATE_OPEN) {
+  if (c->state == CIRCUIT_STATE_OPEN ||
+      c->state == CIRCUIT_STATE_GUARD_WAIT) {
     tor_assert(!c->n_chan_create_cell);
     if (or_circ) {
       tor_assert(or_circ->n_crypto);

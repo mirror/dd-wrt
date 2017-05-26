@@ -3,19 +3,25 @@
  * Copyright (c) 2007-2016, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
+#define DIRECTORY_PRIVATE
+
 #include "or.h"
 #include "backtrace.h"
+#include "bridges.h"
 #include "buffers.h"
 #include "circuitbuild.h"
 #include "config.h"
 #include "connection.h"
 #include "connection_edge.h"
 #include "control.h"
+#define DIRECTORY_PRIVATE
 #include "directory.h"
 #include "dirserv.h"
 #include "dirvote.h"
 #include "entrynodes.h"
 #include "geoip.h"
+#include "hs_cache.h"
+#include "hs_common.h"
 #include "main.h"
 #include "microdesc.h"
 #include "networkstatus.h"
@@ -33,16 +39,45 @@
 #include "shared_random.h"
 
 #if defined(EXPORTMALLINFO) && defined(HAVE_MALLOC_H) && defined(HAVE_MALLINFO)
-#ifndef OPENBSD
+#if !defined(OpenBSD)
 #include <malloc.h>
 #endif
 #endif
 
 /**
  * \file directory.c
- * \brief Code to send and fetch directories and router
- * descriptors via HTTP.  Directories use dirserv.c to generate the
- * results; clients use routers.c to parse them.
+ * \brief Code to send and fetch information from directory authorities and
+ * caches via HTTP.
+ *
+ * Directory caches and authorities use dirserv.c to generate the results of a
+ * query and stream them to the connection; clients use routerparse.c to parse
+ * them.
+ *
+ * Every directory request has a dir_connection_t on the client side and on
+ * the server side.  In most cases, the dir_connection_t object is a linked
+ * connection, tunneled through an edge_connection_t so that it can be a
+ * stream on the Tor network.  The only non-tunneled connections are those
+ * that are used to upload material (descriptors and votes) to authorities.
+ * Among tunneled connections, some use one-hop circuits, and others use
+ * multi-hop circuits for anonymity.
+ *
+ * Directory requests are launched by calling
+ * directory_initiate_command_rend() or one of its numerous variants. This
+ * launch the connection, will construct an HTTP request with
+ * directory_send_command(), send the and wait for a response.  The client
+ * later handles the response with connection_dir_client_reached_eof(),
+ * which passes the information received to another part of Tor.
+ *
+ * On the server side, requests are read in directory_handle_command(),
+ * which dispatches first on the request type (GET or POST), and then on
+ * the URL requested. GET requests are processed with a table-based
+ * dispatcher in url_table[].  The process of handling larger GET requests
+ * is complicated because we need to avoid allocating a copy of all the
+ * data to be sent to the client in one huge buffer.  Instead, we spool the
+ * data into the buffer using logic in connection_dirserv_flushed_some() in
+ * dirserv.c.  (TODO: If we extended buf.c to have a zero-copy
+ * reference-based buffer type, we could remove most of that code, at the
+ * cost of a bit more reference counting.)
  **/
 
 /* In-points to directory.c:
@@ -65,7 +100,6 @@ static void directory_send_command(dir_connection_t *conn,
                              int purpose, int direct, const char *resource,
                              const char *payload, size_t payload_len,
                              time_t if_modified_since);
-static int directory_handle_command(dir_connection_t *conn);
 static int body_is_plausible(const char *body, size_t body_len, int purpose);
 static char *http_get_header(const char *headers, const char *which);
 static void http_set_address_origin(const char *headers, connection_t *conn);
@@ -94,7 +128,8 @@ static void directory_initiate_command_rend(
                                           const char *payload,
                                           size_t payload_len,
                                           time_t if_modified_since,
-                                          const rend_data_t *rend_query);
+                                          const rend_data_t *rend_query,
+                                          circuit_guard_state_t *guard_state);
 
 static void connection_dir_close_consensus_fetches(
                    dir_connection_t *except_this_one, const char *resource);
@@ -120,29 +155,55 @@ static void connection_dir_close_consensus_fetches(
 
 /********* END VARIABLES ************/
 
-/** Return true iff the directory purpose <b>dir_purpose</b> (and if it's
- * fetching descriptors, it's fetching them for <b>router_purpose</b>)
- * must use an anonymous connection to a directory. */
+/** Return false if the directory purpose <b>dir_purpose</b>
+ * does not require an anonymous (three-hop) connection.
+ *
+ * Return true 1) by default, 2) if all directory actions have
+ * specifically been configured to be over an anonymous connection,
+ * or 3) if the router is a bridge */
 int
-purpose_needs_anonymity(uint8_t dir_purpose, uint8_t router_purpose)
+purpose_needs_anonymity(uint8_t dir_purpose, uint8_t router_purpose,
+                        const char *resource)
 {
   if (get_options()->AllDirActionsPrivate)
     return 1;
-  if (router_purpose == ROUTER_PURPOSE_BRIDGE)
+
+  if (router_purpose == ROUTER_PURPOSE_BRIDGE) {
+    if (dir_purpose == DIR_PURPOSE_FETCH_SERVERDESC
+        && resource && !strcmp(resource, "authority.z")) {
+      /* We are asking a bridge for its own descriptor. That doesn't need
+         anonymity. */
+      return 0;
+    }
+    /* Assume all other bridge stuff needs anonymity. */
     return 1; /* if no circuits yet, this might break bootstrapping, but it's
                * needed to be safe. */
-  if (dir_purpose == DIR_PURPOSE_UPLOAD_DIR ||
-      dir_purpose == DIR_PURPOSE_UPLOAD_VOTE ||
-      dir_purpose == DIR_PURPOSE_UPLOAD_SIGNATURES ||
-      dir_purpose == DIR_PURPOSE_FETCH_STATUS_VOTE ||
-      dir_purpose == DIR_PURPOSE_FETCH_DETACHED_SIGNATURES ||
-      dir_purpose == DIR_PURPOSE_FETCH_CONSENSUS ||
-      dir_purpose == DIR_PURPOSE_FETCH_CERTIFICATE ||
-      dir_purpose == DIR_PURPOSE_FETCH_SERVERDESC ||
-      dir_purpose == DIR_PURPOSE_FETCH_EXTRAINFO ||
-      dir_purpose == DIR_PURPOSE_FETCH_MICRODESC)
-    return 0;
-  return 1;
+  }
+
+  switch (dir_purpose)
+  {
+    case DIR_PURPOSE_UPLOAD_DIR:
+    case DIR_PURPOSE_UPLOAD_VOTE:
+    case DIR_PURPOSE_UPLOAD_SIGNATURES:
+    case DIR_PURPOSE_FETCH_STATUS_VOTE:
+    case DIR_PURPOSE_FETCH_DETACHED_SIGNATURES:
+    case DIR_PURPOSE_FETCH_CONSENSUS:
+    case DIR_PURPOSE_FETCH_CERTIFICATE:
+    case DIR_PURPOSE_FETCH_SERVERDESC:
+    case DIR_PURPOSE_FETCH_EXTRAINFO:
+    case DIR_PURPOSE_FETCH_MICRODESC:
+      return 0;
+    case DIR_PURPOSE_HAS_FETCHED_RENDDESC_V2:
+    case DIR_PURPOSE_UPLOAD_RENDDESC_V2:
+    case DIR_PURPOSE_FETCH_RENDDESC_V2:
+      return 1;
+    case DIR_PURPOSE_SERVER:
+    default:
+      log_warn(LD_BUG, "Called with dir_purpose=%d, router_purpose=%d",
+               dir_purpose, router_purpose);
+      tor_assert_nonfatal_unreached();
+      return 1; /* Assume it needs anonymity; better safe than sorry. */
+  }
 }
 
 /** Return a newly allocated string describing <b>auth</b>. Only describes
@@ -347,7 +408,7 @@ directory_post_to_dirservers(uint8_t dir_purpose, uint8_t router_purpose,
         log_info(LD_DIR, "Uploading an extrainfo too (length %d)",
                  (int) extrainfo_len);
       }
-      if (purpose_needs_anonymity(dir_purpose, router_purpose)) {
+      if (purpose_needs_anonymity(dir_purpose, router_purpose, NULL)) {
         indirection = DIRIND_ANONYMOUS;
       } else if (!fascist_firewall_allows_dir_server(ds,
                                                      FIREWALL_DIR_CONNECTION,
@@ -362,7 +423,8 @@ directory_post_to_dirservers(uint8_t dir_purpose, uint8_t router_purpose,
       directory_initiate_command_routerstatus(rs, dir_purpose,
                                               router_purpose,
                                               indirection,
-                                              NULL, payload, upload_len, 0);
+                                              NULL, payload, upload_len, 0,
+                                              NULL);
   } SMARTLIST_FOREACH_END(ds);
   if (!found) {
     char *s = authdir_type_to_string(type);
@@ -380,10 +442,9 @@ should_use_directory_guards(const or_options_t *options)
   /* Public (non-bridge) servers never use directory guards. */
   if (public_server_mode(options))
     return 0;
-  /* If guards are disabled, or directory guards are disabled, we can't
-   * use directory guards.
+  /* If guards are disabled, we can't use directory guards.
    */
-  if (!options->UseEntryGuards || !options->UseEntryGuardsAsDirGuards)
+  if (!options->UseEntryGuards)
     return 0;
   /* If we're configured to fetch directory info aggressively or of a
    * nonstandard type, don't use directory guards. */
@@ -398,7 +459,8 @@ should_use_directory_guards(const or_options_t *options)
  * information of type <b>type</b>, and return its routerstatus. */
 static const routerstatus_t *
 directory_pick_generic_dirserver(dirinfo_type_t type, int pds_flags,
-                                 uint8_t dir_purpose)
+                                 uint8_t dir_purpose,
+                                 circuit_guard_state_t **guard_state_out)
 {
   const routerstatus_t *rs = NULL;
   const or_options_t *options = get_options();
@@ -407,7 +469,7 @@ directory_pick_generic_dirserver(dirinfo_type_t type, int pds_flags,
     log_warn(LD_BUG, "Called when we have UseBridges set.");
 
   if (should_use_directory_guards(options)) {
-    const node_t *node = choose_random_dirguard(type);
+    const node_t *node = guards_choose_dirguard(guard_state_out);
     if (node)
       rs = node->rs;
   } else {
@@ -441,7 +503,8 @@ MOCK_IMPL(void, directory_get_from_dirserver, (
   int prefer_authority = (directory_fetches_from_authorities(options)
                           || want_authority == DL_WANT_AUTHORITY);
   int require_authority = 0;
-  int get_via_tor = purpose_needs_anonymity(dir_purpose, router_purpose);
+  int get_via_tor = purpose_needs_anonymity(dir_purpose, router_purpose,
+                                            resource);
   dirinfo_type_t type = dir_fetch_type(dir_purpose, router_purpose, resource);
   time_t if_modified_since = 0;
 
@@ -487,6 +550,7 @@ MOCK_IMPL(void, directory_get_from_dirserver, (
   if (!options->FetchServerDescriptors)
     return;
 
+  circuit_guard_state_t *guard_state = NULL;
   if (!get_via_tor) {
     if (options->UseBridges && !(type & BRIDGE_DIRINFO)) {
       /* We want to ask a running bridge for which we have a descriptor.
@@ -495,25 +559,34 @@ MOCK_IMPL(void, directory_get_from_dirserver, (
        * sort of dir fetch we'll be doing, so it won't return a bridge
        * that can't answer our question.
        */
-      const node_t *node = choose_random_dirguard(type);
+      const node_t *node = guards_choose_dirguard(&guard_state);
       if (node && node->ri) {
         /* every bridge has a routerinfo. */
         routerinfo_t *ri = node->ri;
         /* clients always make OR connections to bridges */
         tor_addr_port_t or_ap;
+        tor_addr_port_t nil_dir_ap;
         /* we are willing to use a non-preferred address if we need to */
         fascist_firewall_choose_address_node(node, FIREWALL_OR_CONNECTION, 0,
                                              &or_ap);
-        directory_initiate_command(&or_ap.addr, or_ap.port,
-                                   NULL, 0, /*no dirport*/
-                                   ri->cache_info.identity_digest,
-                                   dir_purpose,
-                                   router_purpose,
-                                   DIRIND_ONEHOP,
-                                   resource, NULL, 0, if_modified_since);
-      } else
+        tor_addr_make_null(&nil_dir_ap.addr, AF_INET);
+        nil_dir_ap.port = 0;
+        directory_initiate_command_rend(&or_ap,
+                                        &nil_dir_ap,
+                                        ri->cache_info.identity_digest,
+                                        dir_purpose,
+                                        router_purpose,
+                                        DIRIND_ONEHOP,
+                                        resource, NULL, 0, if_modified_since,
+                                        NULL, guard_state);
+      } else {
+        if (guard_state) {
+          entry_guard_cancel(&guard_state);
+        }
         log_notice(LD_DIR, "Ignoring directory request, since no bridge "
                            "nodes are available yet.");
+      }
+
       return;
     } else {
       if (prefer_authority || (type & BRIDGE_DIRINFO)) {
@@ -544,9 +617,9 @@ MOCK_IMPL(void, directory_get_from_dirserver, (
         }
       }
       if (!rs && !(type & BRIDGE_DIRINFO)) {
-        /* */
         rs = directory_pick_generic_dirserver(type, pds_flags,
-                                              dir_purpose);
+                                              dir_purpose,
+                                              &guard_state);
         if (!rs)
           get_via_tor = 1; /* last resort: try routing it via Tor */
       }
@@ -569,13 +642,14 @@ MOCK_IMPL(void, directory_get_from_dirserver, (
                                             router_purpose,
                                             indirection,
                                             resource, NULL, 0,
-                                            if_modified_since);
+                                            if_modified_since,
+                                            guard_state);
   } else {
     log_notice(LD_DIR,
                "While fetching directory info, "
                "no running dirservers known. Will try again later. "
                "(purpose %d)", dir_purpose);
-    if (!purpose_needs_anonymity(dir_purpose, router_purpose)) {
+    if (!purpose_needs_anonymity(dir_purpose, router_purpose, resource)) {
       /* remember we tried them all and failed. */
       directory_all_unreachable(time(NULL));
     }
@@ -603,7 +677,7 @@ directory_get_from_all_authorities(uint8_t dir_purpose,
       rs = &ds->fake_status;
       directory_initiate_command_routerstatus(rs, dir_purpose, router_purpose,
                                               DIRIND_ONEHOP, resource, NULL,
-                                              0, 0);
+                                              0, 0, NULL);
   } SMARTLIST_FOREACH_END(ds);
 }
 
@@ -714,7 +788,8 @@ directory_initiate_command_routerstatus_rend(const routerstatus_t *status,
                                              const char *payload,
                                              size_t payload_len,
                                              time_t if_modified_since,
-                                             const rend_data_t *rend_query)
+                                             const rend_data_t *rend_query,
+                                           circuit_guard_state_t *guard_state)
 {
   const or_options_t *options = get_options();
   const node_t *node;
@@ -769,7 +844,8 @@ directory_initiate_command_routerstatus_rend(const routerstatus_t *status,
                                   dir_purpose, router_purpose,
                                   indirection, resource,
                                   payload, payload_len, if_modified_since,
-                                  rend_query);
+                                  rend_query,
+                                  guard_state);
 }
 
 /** Launch a new connection to the directory server <b>status</b> to
@@ -794,13 +870,15 @@ MOCK_IMPL(void, directory_initiate_command_routerstatus,
                  const char *resource,
                  const char *payload,
                  size_t payload_len,
-                 time_t if_modified_since))
+                 time_t if_modified_since,
+                 circuit_guard_state_t *guard_state))
 {
   directory_initiate_command_routerstatus_rend(status, dir_purpose,
                                           router_purpose,
                                           indirection, resource,
                                           payload, payload_len,
-                                          if_modified_since, NULL);
+                                          if_modified_since, NULL,
+                                          guard_state);
 }
 
 /** Return true iff <b>conn</b> is the client side of a directory connection
@@ -828,6 +906,11 @@ directory_conn_is_self_reachability_test(dir_connection_t *conn)
 static void
 connection_dir_request_failed(dir_connection_t *conn)
 {
+  if (conn->guard_state) {
+    /* We haven't seen a success on this guard state, so consider it to have
+     * failed. */
+    entry_guard_failed(&conn->guard_state);
+  }
   if (directory_conn_is_self_reachability_test(conn)) {
     return; /* this was a test fetch. don't retry. */
   }
@@ -983,6 +1066,7 @@ directory_must_use_begindir(const or_options_t *options)
 
 /** Evaluate the situation and decide if we should use an encrypted
  * "begindir-style" connection for this directory request.
+ * 0) If there is no DirPort, yes.
  * 1) If or_port is 0, or it's a direct conn and or_port is firewalled
  *    or we're a dir mirror, no.
  * 2) If we prefer to avoid begindir conns, and we're not fetching or
@@ -993,15 +1077,22 @@ directory_must_use_begindir(const or_options_t *options)
  */
 static int
 directory_command_should_use_begindir(const or_options_t *options,
-                                      const tor_addr_t *addr,
-                                      int or_port, uint8_t router_purpose,
+                                      const tor_addr_t *or_addr, int or_port,
+                                      const tor_addr_t *dir_addr, int dir_port,
+                                      uint8_t router_purpose,
                                       dir_indirection_t indirection,
                                       const char **reason)
 {
   (void) router_purpose;
+  (void) dir_addr;
   tor_assert(reason);
   *reason = NULL;
 
+  /* Reasons why we must use begindir */
+  if (!dir_port) {
+    *reason = "(using begindir - directory with no DirPort)";
+    return 1; /* We don't know a DirPort -- must begindir. */
+  }
   /* Reasons why we can't possibly use begindir */
   if (!or_port) {
     *reason = "directory with unknown ORPort";
@@ -1014,7 +1105,7 @@ directory_command_should_use_begindir(const or_options_t *options,
   }
   if (indirection == DIRIND_ONEHOP) {
     /* We're firewalled and want a direct OR connection */
-    if (!fascist_firewall_allows_address_addr(addr, or_port,
+    if (!fascist_firewall_allows_address_addr(or_addr, or_port,
                                               FIREWALL_OR_CONNECTION, 0, 0)) {
       *reason = "ORPort not reachable";
       return 0;
@@ -1075,19 +1166,7 @@ directory_initiate_command(const tor_addr_t *or_addr, uint16_t or_port,
                              digest, dir_purpose,
                              router_purpose, indirection,
                              resource, payload, payload_len,
-                             if_modified_since, NULL);
-}
-
-/** Return non-zero iff a directory connection with purpose
- * <b>dir_purpose</b> reveals sensitive information about a Tor
- * instance's client activities.  (Such connections must be performed
- * through normal three-hop Tor circuits.) */
-int
-is_sensitive_dir_purpose(uint8_t dir_purpose)
-{
-  return ((dir_purpose == DIR_PURPOSE_HAS_FETCHED_RENDDESC_V2) ||
-          (dir_purpose == DIR_PURPOSE_UPLOAD_RENDDESC_V2) ||
-          (dir_purpose == DIR_PURPOSE_FETCH_RENDDESC_V2));
+                             if_modified_since, NULL, NULL);
 }
 
 /** Same as directory_initiate_command(), but accepts rendezvous data to
@@ -1102,7 +1181,8 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
                                 const char *resource,
                                 const char *payload, size_t payload_len,
                                 time_t if_modified_since,
-                                const rend_data_t *rend_query)
+                                const rend_data_t *rend_query,
+                                circuit_guard_state_t *guard_state)
 {
   tor_assert(or_addr_port);
   tor_assert(dir_addr_port);
@@ -1117,6 +1197,7 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
    * send our directory request)? */
   const int use_begindir = directory_command_should_use_begindir(options,
                                      &or_addr_port->addr, or_addr_port->port,
+                                     &dir_addr_port->addr, dir_addr_port->port,
                                      router_purpose, indirection,
                                      &begindir_reason);
   /* Will the connection go via a three-hop Tor circuit? Note that this
@@ -1137,7 +1218,7 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
 
   log_debug(LD_DIR, "Initiating %s", dir_conn_purpose_to_string(dir_purpose));
 
-  if (is_sensitive_dir_purpose(dir_purpose)) {
+  if (purpose_needs_anonymity(dir_purpose, router_purpose, resource)) {
     tor_assert(anonymized_connection ||
                rend_non_anonymous_mode_enabled(options));
   }
@@ -1163,9 +1244,9 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
   if (!port || tor_addr_is_null(&addr)) {
     static int logged_backtrace = 0;
     log_warn(LD_DIR,
-             "Cannot make an outgoing %sconnection without %sPort.",
+             "Cannot make an outgoing %sconnection without a remote %sPort.",
              use_begindir ? "begindir " : "",
-             use_begindir ? "an OR" : "a Dir");
+             use_begindir ? "OR" : "Dir");
     if (!logged_backtrace) {
       log_backtrace(LOG_INFO, LD_BUG, "Address came from");
       logged_backtrace = 1;
@@ -1203,6 +1284,11 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
       port = options->HTTPProxyPort;
     }
 
+    // In this case we should not have picked a directory guard.
+    if (BUG(guard_state)) {
+      entry_guard_cancel(&guard_state);
+    }
+
     switch (connection_connect(TO_CONN(conn), conn->base_.address, &addr,
                                port, &socket_error)) {
       case -1:
@@ -1238,6 +1324,14 @@ directory_initiate_command_rend(const tor_addr_port_t *or_addr_port,
       rep_hist_note_used_internal(time(NULL), 0, 1);
     else if (anonymized_connection && !use_begindir)
       rep_hist_note_used_port(time(NULL), conn->base_.port);
+
+    // In this case we should not have a directory guard; we'll
+    // get a regular guard later when we build the circuit.
+    if (BUG(anonymized_connection && guard_state)) {
+      entry_guard_cancel(&guard_state);
+    }
+
+    conn->guard_state = guard_state;
 
     /* make an AP connection
      * populate it and add it at the right state
@@ -1770,15 +1864,15 @@ body_is_plausible(const char *body, size_t len, int purpose)
   if (purpose == DIR_PURPOSE_FETCH_MICRODESC) {
     return (!strcmpstart(body,"onion-key"));
   }
-  if (1) {
-    if (!strcmpstart(body,"router") ||
-        !strcmpstart(body,"network-status"))
-      return 1;
-    for (i=0;i<32;++i) {
-      if (!TOR_ISPRINT(body[i]) && !TOR_ISSPACE(body[i]))
-        return 0;
-    }
+
+  if (!strcmpstart(body,"router") ||
+      !strcmpstart(body,"network-status"))
+    return 1;
+  for (i=0;i<32;++i) {
+    if (!TOR_ISPRINT(body[i]) && !TOR_ISSPACE(body[i]))
+      return 0;
   }
+
   return 1;
 }
 
@@ -1879,6 +1973,19 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
             conn->base_.address, conn->base_.port, status_code,
             escaped(reason),
             conn->base_.purpose);
+
+  if (conn->guard_state) {
+    /* we count the connection as successful once we can read from it.  We do
+     * not, however, delay use of the circuit here, since it's just for a
+     * one-hop directory request. */
+    /* XXXXprop271 note that this will not do the right thing for other
+     * waiting circuits that would be triggered by this circuit becoming
+     * complete/usable. But that's ok, I think.
+     */
+    entry_guard_succeeded(&conn->guard_state);
+    circuit_guard_state_free(conn->guard_state);
+    conn->guard_state = NULL;
+  }
 
   /* now check if it's got any hints for us about our IP address. */
   if (conn->dirconn_direct) {
@@ -2341,10 +2448,10 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
                                          conn->identity_digest, \
                                          reason) )
     #define SEND_HS_DESC_FAILED_CONTENT() ( \
-      control_event_hs_descriptor_content(conn->rend_data->onion_address, \
-                                          conn->requested_resource, \
-                                          conn->identity_digest, \
-                                          NULL) )
+  control_event_hs_descriptor_content(rend_data_get_address(conn->rend_data), \
+                                      conn->requested_resource,         \
+                                      conn->identity_digest,            \
+                                      NULL) )
     tor_assert(conn->rend_data);
     log_info(LD_REND,"Received rendezvous descriptor (size %d, status %d "
              "(%s))",
@@ -2417,7 +2524,7 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
     #define SEND_HS_DESC_UPLOAD_FAILED_EVENT(reason) ( \
       control_event_hs_descriptor_upload_failed( \
         conn->identity_digest, \
-        conn->rend_data->onion_address, \
+        rend_data_get_address(conn->rend_data), \
         reason) )
     log_info(LD_REND,"Uploaded rendezvous descriptor (status %d "
              "(%s))",
@@ -2431,7 +2538,7 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
                  "Uploading rendezvous descriptor: finished with status "
                  "200 (%s)", escaped(reason));
         control_event_hs_descriptor_uploaded(conn->identity_digest,
-                                             conn->rend_data->onion_address);
+                                    rend_data_get_address(conn->rend_data));
         rend_service_desc_has_uploaded(conn->rend_data);
         break;
       case 400:
@@ -2542,7 +2649,8 @@ connection_dir_about_to_close(dir_connection_t *dir_conn)
    * refetching is unnecessary.) */
   if (conn->purpose == DIR_PURPOSE_FETCH_RENDDESC_V2 &&
       dir_conn->rend_data &&
-      strlen(dir_conn->rend_data->onion_address) == REND_SERVICE_ID_LEN_BASE32)
+      strlen(rend_data_get_address(dir_conn->rend_data)) ==
+             REND_SERVICE_ID_LEN_BASE32)
     rend_client_refetch_v2_renddesc(dir_conn->rend_data);
 }
 
@@ -2762,8 +2870,8 @@ static int handle_get_descriptor(dir_connection_t *conn,
                                 const get_handler_args_t *args);
 static int handle_get_keys(dir_connection_t *conn,
                                 const get_handler_args_t *args);
-static int handle_get_rendezvous2(dir_connection_t *conn,
-                                const get_handler_args_t *args);
+static int handle_get_hs_descriptor_v2(dir_connection_t *conn,
+                                       const get_handler_args_t *args);
 static int handle_get_robots(dir_connection_t *conn,
                                 const get_handler_args_t *args);
 static int handle_get_networkstatus_bridges(dir_connection_t *conn,
@@ -2779,7 +2887,8 @@ static const url_table_ent_t url_table[] = {
   { "/tor/server/", 1, handle_get_descriptor },
   { "/tor/extra/", 1, handle_get_descriptor },
   { "/tor/keys/", 1, handle_get_keys },
-  { "/tor/rendezvous2/", 1, handle_get_rendezvous2 },
+  { "/tor/rendezvous2/", 1, handle_get_hs_descriptor_v2 },
+  { "/tor/hs/3/", 1, handle_get_hs_descriptor_v3 },
   { "/tor/robots.txt", 0, handle_get_robots },
   { "/tor/networkstatus-bridges", 0, handle_get_networkstatus_bridges },
   { NULL, 0, NULL },
@@ -2791,9 +2900,9 @@ static const url_table_ent_t url_table[] = {
  * conn-\>outbuf.  If the request is unrecognized, send a 404.
  * Return 0 if we handled this successfully, or -1 if we need to close
  * the connection. */
-STATIC int
-directory_handle_command_get(dir_connection_t *conn, const char *headers,
-                             const char *req_body, size_t req_body_len)
+MOCK_IMPL(STATIC int,
+directory_handle_command_get,(dir_connection_t *conn, const char *headers,
+                              const char *req_body, size_t req_body_len))
 {
   char *url, *url_mem, *header;
   time_t if_modified_since = 0;
@@ -2889,6 +2998,28 @@ handle_get_frontpage(dir_connection_t *conn, const get_handler_args_t *args)
   return 0;
 }
 
+/** Warn that the consensus <b>v</b> of type <b>flavor</b> is too old and will
+ * not be served to clients. Rate-limit the warning to avoid logging an entry
+ * on every request.
+ */
+static void
+warn_consensus_is_too_old(networkstatus_t *v, const char *flavor, time_t now)
+{
+#define TOO_OLD_WARNING_INTERVAL (60*60)
+  static ratelim_t warned = RATELIM_INIT(TOO_OLD_WARNING_INTERVAL);
+  char timestamp[ISO_TIME_LEN+1];
+  char *dupes;
+
+  if ((dupes = rate_limit_log(&warned, now))) {
+    format_local_iso_time(timestamp, v->valid_until);
+    log_warn(LD_DIRSERV, "Our %s%sconsensus is too old, so we will not "
+             "serve it to clients. It was valid until %s local time and we "
+             "continued to serve it for up to 24 hours after it expired.%s",
+             flavor ? flavor : "", flavor ? " " : "", timestamp, dupes);
+    tor_free(dupes);
+  }
+}
+
 /** Helper function for GET /tor/status-vote/current/consensus
  */
 static int
@@ -2904,54 +3035,61 @@ handle_get_current_consensus(dir_connection_t *conn,
     smartlist_t *dir_fps = smartlist_new();
     long lifetime = NETWORKSTATUS_CACHE_LIFETIME;
 
-    if (1) {
-      networkstatus_t *v;
-      time_t now = time(NULL);
-      const char *want_fps = NULL;
-      char *flavor = NULL;
-      int flav = FLAV_NS;
-      #define CONSENSUS_URL_PREFIX "/tor/status-vote/current/consensus/"
-      #define CONSENSUS_FLAVORED_PREFIX "/tor/status-vote/current/consensus-"
-      /* figure out the flavor if any, and who we wanted to sign the thing */
-      if (!strcmpstart(url, CONSENSUS_FLAVORED_PREFIX)) {
-        const char *f, *cp;
-        f = url + strlen(CONSENSUS_FLAVORED_PREFIX);
-        cp = strchr(f, '/');
-        if (cp) {
-          want_fps = cp+1;
-          flavor = tor_strndup(f, cp-f);
-        } else {
-          flavor = tor_strdup(f);
-        }
-        flav = networkstatus_parse_flavor_name(flavor);
-        if (flav < 0)
-          flav = FLAV_NS;
+    networkstatus_t *v;
+    time_t now = time(NULL);
+    const char *want_fps = NULL;
+    char *flavor = NULL;
+    int flav = FLAV_NS;
+#define CONSENSUS_URL_PREFIX "/tor/status-vote/current/consensus/"
+#define CONSENSUS_FLAVORED_PREFIX "/tor/status-vote/current/consensus-"
+    /* figure out the flavor if any, and who we wanted to sign the thing */
+    if (!strcmpstart(url, CONSENSUS_FLAVORED_PREFIX)) {
+      const char *f, *cp;
+      f = url + strlen(CONSENSUS_FLAVORED_PREFIX);
+      cp = strchr(f, '/');
+      if (cp) {
+        want_fps = cp+1;
+        flavor = tor_strndup(f, cp-f);
       } else {
-        if (!strcmpstart(url, CONSENSUS_URL_PREFIX))
-          want_fps = url+strlen(CONSENSUS_URL_PREFIX);
+        flavor = tor_strdup(f);
       }
-
-      v = networkstatus_get_latest_consensus_by_flavor(flav);
-
-      if (v && want_fps &&
-          !client_likes_consensus(v, want_fps)) {
-        write_http_status_line(conn, 404, "Consensus not signed by sufficient "
-                                          "number of requested authorities");
-        smartlist_free(dir_fps);
-        geoip_note_ns_response(GEOIP_REJECT_NOT_ENOUGH_SIGS);
-        tor_free(flavor);
-        goto done;
-      }
-
-      {
-        char *fp = tor_malloc_zero(DIGEST_LEN);
-        if (flavor)
-          strlcpy(fp, flavor, DIGEST_LEN);
-        tor_free(flavor);
-        smartlist_add(dir_fps, fp);
-      }
-      lifetime = (v && v->fresh_until > now) ? v->fresh_until - now : 0;
+      flav = networkstatus_parse_flavor_name(flavor);
+      if (flav < 0)
+        flav = FLAV_NS;
+    } else {
+      if (!strcmpstart(url, CONSENSUS_URL_PREFIX))
+        want_fps = url+strlen(CONSENSUS_URL_PREFIX);
     }
+
+    v = networkstatus_get_latest_consensus_by_flavor(flav);
+
+    if (v && !networkstatus_consensus_reasonably_live(v, now)) {
+      write_http_status_line(conn, 404, "Consensus is too old");
+      warn_consensus_is_too_old(v, flavor, now);
+      smartlist_free(dir_fps);
+      geoip_note_ns_response(GEOIP_REJECT_NOT_FOUND);
+      tor_free(flavor);
+      goto done;
+    }
+
+    if (v && want_fps &&
+        !client_likes_consensus(v, want_fps)) {
+      write_http_status_line(conn, 404, "Consensus not signed by sufficient "
+                             "number of requested authorities");
+      smartlist_free(dir_fps);
+      geoip_note_ns_response(GEOIP_REJECT_NOT_ENOUGH_SIGS);
+      tor_free(flavor);
+      goto done;
+    }
+
+    {
+      char *fp = tor_malloc_zero(DIGEST_LEN);
+      if (flavor)
+        strlcpy(fp, flavor, DIGEST_LEN);
+      tor_free(flavor);
+      smartlist_add(dir_fps, fp);
+    }
+    lifetime = (v && v->fresh_until > now) ? v->fresh_until - now : 0;
 
     if (!smartlist_len(dir_fps)) { /* we failed to create/cache cp */
       write_http_status_line(conn, 503, "Network status object unavailable");
@@ -2987,21 +3125,19 @@ handle_get_current_consensus(dir_connection_t *conn,
       goto done;
     }
 
-    if (1) {
-      tor_addr_t addr;
-      if (tor_addr_parse(&addr, (TO_CONN(conn))->address) >= 0) {
-        geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS,
-                               &addr, NULL,
-                               time(NULL));
-        geoip_note_ns_response(GEOIP_SUCCESS);
-        /* Note that a request for a network status has started, so that we
-         * can measure the download time later on. */
-        if (conn->dirreq_id)
-          geoip_start_dirreq(conn->dirreq_id, dlen, DIRREQ_TUNNELED);
-        else
-          geoip_start_dirreq(TO_CONN(conn)->global_identifier, dlen,
-                             DIRREQ_DIRECT);
-      }
+    tor_addr_t addr;
+    if (tor_addr_parse(&addr, (TO_CONN(conn))->address) >= 0) {
+      geoip_note_client_seen(GEOIP_CLIENT_NETWORKSTATUS,
+                             &addr, NULL,
+                             time(NULL));
+      geoip_note_ns_response(GEOIP_SUCCESS);
+      /* Note that a request for a network status has started, so that we
+       * can measure the download time later on. */
+      if (conn->dirreq_id)
+        geoip_start_dirreq(conn->dirreq_id, dlen, DIRREQ_TUNNELED);
+      else
+        geoip_start_dirreq(TO_CONN(conn)->global_identifier, dlen,
+                           DIRREQ_DIRECT);
     }
 
     write_http_response_header(conn, -1, compressed,
@@ -3347,7 +3483,8 @@ handle_get_keys(dir_connection_t *conn, const get_handler_args_t *args)
 /** Helper function for GET /tor/rendezvous2/
  */
 static int
-handle_get_rendezvous2(dir_connection_t *conn, const get_handler_args_t *args)
+handle_get_hs_descriptor_v2(dir_connection_t *conn,
+                            const get_handler_args_t *args)
 {
   const char *url = args->url;
   if (connection_dir_is_encrypted(conn)) {
@@ -3377,6 +3514,43 @@ handle_get_rendezvous2(dir_connection_t *conn, const get_handler_args_t *args)
     /* Not encrypted! */
     write_http_status_line(conn, 404, "Not found");
   }
+ done:
+  return 0;
+}
+
+/** Helper function for GET /tor/hs/3/<z>. Only for version 3.
+ */
+STATIC int
+handle_get_hs_descriptor_v3(dir_connection_t *conn,
+                            const get_handler_args_t *args)
+{
+  int retval;
+  const char *desc_str = NULL;
+  const char *pubkey_str = NULL;
+  const char *url = args->url;
+
+  /* Reject unencrypted dir connections */
+  if (!connection_dir_is_encrypted(conn)) {
+    write_http_status_line(conn, 404, "Not found");
+    goto done;
+  }
+
+  /* After the path prefix follows the base64 encoded blinded pubkey which we
+   * use to get the descriptor from the cache. Skip the prefix and get the
+   * pubkey. */
+  tor_assert(!strcmpstart(url, "/tor/hs/3/"));
+  pubkey_str = url + strlen("/tor/hs/3/");
+  retval = hs_cache_lookup_as_dir(HS_VERSION_THREE,
+                                  pubkey_str, &desc_str);
+  if (retval <= 0 || desc_str == NULL) {
+    write_http_status_line(conn, 404, "Not found");
+    goto done;
+  }
+
+  /* Found requested descriptor! Pass it to this nice client. */
+  write_http_response_header(conn, strlen(desc_str), 0, 0);
+  connection_write_to_buf(desc_str, strlen(desc_str), TO_CONN(conn));
+
  done:
   return 0;
 }
@@ -3436,14 +3610,98 @@ handle_get_robots(dir_connection_t *conn, const get_handler_args_t *args)
   return 0;
 }
 
+/* Given the <b>url</b> from a POST request, try to extract the version number
+ * using the provided <b>prefix</b>. The version should be after the prefix and
+ * ending with the seperator "/". For instance:
+ *      /tor/hs/3/publish
+ *
+ * On success, <b>end_pos</b> points to the position right after the version
+ * was found. On error, it is set to NULL.
+ *
+ * Return version on success else negative value. */
+STATIC int
+parse_hs_version_from_post(const char *url, const char *prefix,
+                           const char **end_pos)
+{
+  int ok;
+  unsigned long version;
+  const char *start;
+  char *end = NULL;
+
+  tor_assert(url);
+  tor_assert(prefix);
+  tor_assert(end_pos);
+
+  /* Check if the prefix does start the url. */
+  if (strcmpstart(url, prefix)) {
+    goto err;
+  }
+  /* Move pointer to the end of the prefix string. */
+  start = url + strlen(prefix);
+  /* Try this to be the HS version and if we are still at the separator, next
+   * will be move to the right value. */
+  version = tor_parse_long(start, 10, 0, INT_MAX, &ok, &end);
+  if (!ok) {
+    goto err;
+  }
+
+  *end_pos = end;
+  return (int) version;
+ err:
+  *end_pos = NULL;
+  return -1;
+}
+
+/* Handle the POST request for a hidden service descripror. The request is in
+ * <b>url</b>, the body of the request is in <b>body</b>. Return 200 on success
+ * else return 400 indicating a bad request. */
+STATIC int
+handle_post_hs_descriptor(const char *url, const char *body)
+{
+  int version;
+  const char *end_pos;
+
+  tor_assert(url);
+  tor_assert(body);
+
+  version = parse_hs_version_from_post(url, "/tor/hs/", &end_pos);
+  if (version < 0) {
+    goto err;
+  }
+
+  /* We have a valid version number, now make sure it's a publish request. Use
+   * the end position just after the version and check for the command. */
+  if (strcmpstart(end_pos, "/publish")) {
+    goto err;
+  }
+
+  switch (version) {
+  case HS_VERSION_THREE:
+    if (hs_cache_store_as_dir(body) < 0) {
+      goto err;
+    }
+    log_info(LD_REND, "Publish request for HS descriptor handled "
+                      "successfully.");
+    break;
+  default:
+    /* Unsupported version, return a bad request. */
+    goto err;
+  }
+
+  return 200;
+ err:
+  /* Bad request. */
+  return 400;
+}
+
 /** Helper function: called when a dirserver gets a complete HTTP POST
  * request.  Look for an uploaded server descriptor or rendezvous
  * service descriptor.  On finding one, process it and write a
  * response into conn-\>outbuf.  If the request is unrecognized, send a
  * 400.  Always return 0. */
-static int
-directory_handle_command_post(dir_connection_t *conn, const char *headers,
-                              const char *body, size_t body_len)
+MOCK_IMPL(STATIC int,
+directory_handle_command_post,(dir_connection_t *conn, const char *headers,
+                               const char *body, size_t body_len))
 {
   char *url = NULL;
   const or_options_t *options = get_options();
@@ -3477,6 +3735,21 @@ directory_handle_command_post(dir_connection_t *conn, const char *headers,
       write_http_status_line(conn, 200, "Service descriptor (v2) stored");
       log_info(LD_REND, "Handled v2 rendezvous descriptor post: accepted");
     }
+    goto done;
+  }
+
+  /* Handle HS descriptor publish request. */
+  /* XXX: This should be disabled with a consensus param until we want to
+   * the prop224 be deployed and thus use. */
+  if (connection_dir_is_encrypted(conn) && !strcmpstart(url, "/tor/hs/")) {
+    const char *msg = "HS descriptor stored successfully.";
+
+    /* We most probably have a publish request for an HS descriptor. */
+    int code = handle_post_hs_descriptor(url, body);
+    if (code != 200) {
+      msg = "Invalid HS descriptor. Rejected.";
+    }
+    write_http_status_line(conn, code, msg);
     goto done;
   }
 
@@ -3560,7 +3833,7 @@ directory_handle_command_post(dir_connection_t *conn, const char *headers,
  * from the inbuf, try to process it; otherwise, leave it on the
  * buffer.  Return a 0 on success, or -1 on error.
  */
-static int
+STATIC int
 directory_handle_command(dir_connection_t *conn)
 {
   char *headers=NULL, *body=NULL;
@@ -3861,7 +4134,7 @@ download_status_schedule_get_delay(download_status_t *dls,
       delay = *(int *)smartlist_get(schedule, smartlist_len(schedule) - 1);
   } else if (dls->backoff == DL_SCHED_RANDOM_EXPONENTIAL) {
     /* Check if we missed a reset somehow */
-    if (dls->last_backoff_position > dls_schedule_position) {
+    IF_BUG_ONCE(dls->last_backoff_position > dls_schedule_position) {
       dls->last_backoff_position = 0;
       dls->last_delay_used = 0;
     }

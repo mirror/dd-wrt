@@ -51,20 +51,23 @@ int ed25519_keypair_generate(ed25519_keypair_t *keypair_out, int extra_strong);
 int ed25519_sign(ed25519_signature_t *signature_out,
                  const uint8_t *msg, size_t len,
                  const ed25519_keypair_t *key);
-int ed25519_checksig(const ed25519_signature_t *signature,
-                     const uint8_t *msg, size_t len,
-                     const ed25519_public_key_t *pubkey);
+MOCK_DECL(int,ed25519_checksig,(const ed25519_signature_t *signature,
+                                const uint8_t *msg, size_t len,
+                                const ed25519_public_key_t *pubkey));
 
-int
-ed25519_sign_prefixed(ed25519_signature_t *signature_out,
-                      const uint8_t *msg, size_t len,
-                      const char *prefix_str,
-                      const ed25519_keypair_t *keypair);
+MOCK_DECL(int,
+ed25519_sign_prefixed,(ed25519_signature_t *signature_out,
+                       const uint8_t *msg, size_t len,
+                       const char *prefix_str,
+                       const ed25519_keypair_t *keypair));
+
 int
 ed25519_checksig_prefixed(const ed25519_signature_t *signature,
                           const uint8_t *msg, size_t len,
                           const char *prefix_str,
                           const ed25519_public_key_t *pubkey);
+
+int ed25519_public_key_is_zero(const ed25519_public_key_t *pubkey);
 
 /**
  * A collection of information necessary to check an Ed25519 signature. Used
@@ -81,9 +84,9 @@ typedef struct {
   size_t len;
 } ed25519_checkable_t;
 
-int ed25519_checksig_batch(int *okay_out,
-                           const ed25519_checkable_t *checkable,
-                           int n_checkable);
+MOCK_DECL(int, ed25519_checksig_batch,(int *okay_out,
+                                       const ed25519_checkable_t *checkable,
+                                       int n_checkable));
 
 int ed25519_keypair_from_curve25519_keypair(ed25519_keypair_t *out,
                                             int *signbit_out,
@@ -118,6 +121,8 @@ void ed25519_keypair_free(ed25519_keypair_t *kp);
 
 int ed25519_pubkey_eq(const ed25519_public_key_t *key1,
                       const ed25519_public_key_t *key2);
+void ed25519_pubkey_copy(ed25519_public_key_t *dest,
+                         const ed25519_public_key_t *src);
 
 void ed25519_set_impl_params(int use_donna);
 void ed25519_init(void);
@@ -125,6 +130,10 @@ void ed25519_init(void);
 #ifdef TOR_UNIT_TESTS
 void crypto_ed25519_testing_force_impl(const char *name);
 void crypto_ed25519_testing_restore_impl(void);
+#endif
+
+#ifdef CRYPTO_ED25519_PRIVATE
+MOCK_DECL(STATIC int, ed25519_impl_spot_check, (void));
 #endif
 
 #endif

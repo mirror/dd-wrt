@@ -1405,9 +1405,13 @@ test_channel_queue_impossible(void *arg)
 
   /* Let it drain and check that the bad entry is discarded */
   test_chan_accept_cells = 1;
+  tor_capture_bugs_(1);
   channel_change_state(ch, CHANNEL_STATE_OPEN);
   tt_assert(test_cells_written == old_count);
   tt_int_op(chan_cell_queue_len(&(ch->outgoing_queue)), ==, 0);
+
+  tt_int_op(smartlist_len(tor_get_captured_bug_log_()), ==, 1);
+  tor_end_capture_bugs_();
 
  done:
   free_fake_channel(ch);
@@ -1764,6 +1768,112 @@ test_channel_write(void *arg)
   return;
 }
 
+static void
+test_channel_id_map(void *arg)
+{
+  (void)arg;
+#define N_CHAN 6
+  char rsa_id[N_CHAN][DIGEST_LEN];
+  ed25519_public_key_t *ed_id[N_CHAN];
+  channel_t *chan[N_CHAN];
+  int i;
+  ed25519_public_key_t ed_zero;
+  memset(&ed_zero, 0, sizeof(ed_zero));
+
+  tt_assert(sizeof(rsa_id[0]) == DIGEST_LEN); // Do I remember C?
+
+  for (i = 0; i < N_CHAN; ++i) {
+    crypto_rand(rsa_id[i], DIGEST_LEN);
+    ed_id[i] = tor_malloc_zero(sizeof(*ed_id[i]));
+    crypto_rand((char*)ed_id[i]->pubkey, sizeof(ed_id[i]->pubkey));
+  }
+
+  /* For channel 3, have no Ed identity. */
+  tor_free(ed_id[3]);
+
+  /* Channel 2 and 4 have same ROSA identity */
+  memcpy(rsa_id[4], rsa_id[2], DIGEST_LEN);
+
+  /* Channel 2 and 4 and 5 have same RSA identity */
+  memcpy(rsa_id[4], rsa_id[2], DIGEST_LEN);
+  memcpy(rsa_id[5], rsa_id[2], DIGEST_LEN);
+
+  /* Channels 2 and 5 have same Ed25519 identity */
+  memcpy(ed_id[5], ed_id[2], sizeof(*ed_id[2]));
+
+  for (i = 0; i < N_CHAN; ++i) {
+    chan[i] = new_fake_channel();
+    channel_register(chan[i]);
+    channel_set_identity_digest(chan[i], rsa_id[i], ed_id[i]);
+  }
+
+  /* Lookup by RSA id only */
+  tt_ptr_op(chan[0], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[0], NULL));
+  tt_ptr_op(chan[1], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[1], NULL));
+  tt_ptr_op(chan[3], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[3], NULL));
+  channel_t *ch;
+  ch = channel_find_by_remote_identity(rsa_id[2], NULL);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == NULL);
+
+  /* As above, but with zero Ed25519 ID (meaning "any ID") */
+  tt_ptr_op(chan[0], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[0], &ed_zero));
+  tt_ptr_op(chan[1], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[1], &ed_zero));
+  tt_ptr_op(chan[3], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[3], &ed_zero));
+  ch = channel_find_by_remote_identity(rsa_id[2], &ed_zero);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == chan[2] || ch == chan[4] || ch == chan[5]);
+  ch = channel_next_with_rsa_identity(ch);
+  tt_assert(ch == NULL);
+
+  /* Lookup nonexistent RSA identity */
+  tt_ptr_op(NULL, OP_EQ,
+            channel_find_by_remote_identity("!!!!!!!!!!!!!!!!!!!!", NULL));
+
+  /* Look up by full identity pair */
+  tt_ptr_op(chan[0], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[0], ed_id[0]));
+  tt_ptr_op(chan[1], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[1], ed_id[1]));
+  tt_ptr_op(chan[3], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[3], ed_id[3] /*NULL*/));
+  tt_ptr_op(chan[4], OP_EQ,
+            channel_find_by_remote_identity(rsa_id[4], ed_id[4]));
+  ch = channel_find_by_remote_identity(rsa_id[2], ed_id[2]);
+  tt_assert(ch == chan[2] || ch == chan[5]);
+
+  /* Look up RSA identity with wrong ed25519 identity */
+  tt_ptr_op(NULL, OP_EQ,
+            channel_find_by_remote_identity(rsa_id[4], ed_id[0]));
+  tt_ptr_op(NULL, OP_EQ,
+            channel_find_by_remote_identity(rsa_id[2], ed_id[1]));
+  tt_ptr_op(NULL, OP_EQ,
+            channel_find_by_remote_identity(rsa_id[3], ed_id[1]));
+
+ done:
+  for (i = 0; i < N_CHAN; ++i) {
+    channel_clear_identity_digest(chan[i]);
+    channel_unregister(chan[i]);
+    free_fake_channel(chan[i]);
+    tor_free(ed_id[i]);
+  }
+#undef N_CHAN
+}
+
 struct testcase_t channel_tests[] = {
   { "dumpstats", test_channel_dumpstats, TT_FORK, NULL, NULL },
   { "flush", test_channel_flush, TT_FORK, NULL, NULL },
@@ -1776,6 +1886,7 @@ struct testcase_t channel_tests[] = {
   { "queue_incoming", test_channel_queue_incoming, TT_FORK, NULL, NULL },
   { "queue_size", test_channel_queue_size, TT_FORK, NULL, NULL },
   { "write", test_channel_write, TT_FORK, NULL, NULL },
+  { "id_map", test_channel_id_map, TT_FORK, NULL, NULL },
   END_OF_TESTCASES
 };
 

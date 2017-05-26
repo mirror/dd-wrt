@@ -155,6 +155,7 @@ static int filter_nopar_gen[] = {
 #ifdef __NR_getgid32
     SCMP_SYS(getgid32),
 #endif
+    SCMP_SYS(getpid),
 #ifdef __NR_getrlimit
     SCMP_SYS(getrlimit),
 #endif
@@ -1542,7 +1543,7 @@ sandbox_getaddrinfo(const char *name, const char *servname,
     return err;
   }
 
-  /* Otherwise, the sanbox is on.  If we have an item, yield its cached
+  /* Otherwise, the sandbox is on.  If we have an item, yield its cached
      result. */
   if (item) {
     *res = item->res;

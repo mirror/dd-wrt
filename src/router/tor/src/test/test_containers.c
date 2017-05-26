@@ -501,13 +501,13 @@ test_container_smartlist_pos(void *arg)
   (void) arg;
   smartlist_t *sl = smartlist_new();
 
-  smartlist_add(sl, tor_strdup("This"));
-  smartlist_add(sl, tor_strdup("is"));
-  smartlist_add(sl, tor_strdup("a"));
-  smartlist_add(sl, tor_strdup("test"));
-  smartlist_add(sl, tor_strdup("for"));
-  smartlist_add(sl, tor_strdup("a"));
-  smartlist_add(sl, tor_strdup("function"));
+  smartlist_add_strdup(sl, "This");
+  smartlist_add_strdup(sl, "is");
+  smartlist_add_strdup(sl, "a");
+  smartlist_add_strdup(sl, "test");
+  smartlist_add_strdup(sl, "for");
+  smartlist_add_strdup(sl, "a");
+  smartlist_add_strdup(sl, "function");
 
   /* Test string_pos */
   tt_int_op(smartlist_string_pos(NULL, "Fred"), ==, -1);
@@ -830,7 +830,7 @@ test_container_strmap(void *arg)
   found_keys = smartlist_new();
   while (!strmap_iter_done(iter)) {
     strmap_iter_get(iter,&k,&v);
-    smartlist_add(found_keys, tor_strdup(k));
+    smartlist_add_strdup(found_keys, k);
     tt_ptr_op(v,OP_EQ, strmap_get(map, k));
 
     if (!strcmp(k, "K2")) {
@@ -880,6 +880,46 @@ test_container_strmap(void *arg)
   tor_free(v103);
   tor_free(v104);
   tor_free(v105);
+}
+
+static void
+test_container_smartlist_remove(void *arg)
+{
+  (void) arg;
+  int array[5];
+  smartlist_t *sl = smartlist_new();
+  int i,j;
+
+  for (j=0; j < 2; ++j)
+    for (i=0; i < 5; ++i)
+      smartlist_add(sl, &array[i]);
+
+  smartlist_remove(sl, &array[0]);
+  smartlist_remove(sl, &array[3]);
+  smartlist_remove(sl, &array[4]);
+  tt_assert(! smartlist_contains(sl, &array[0]));
+  tt_assert(smartlist_contains(sl, &array[1]));
+  tt_assert(smartlist_contains(sl, &array[2]));
+  tt_assert(! smartlist_contains(sl, &array[3]));
+  tt_assert(! smartlist_contains(sl, &array[4]));
+  tt_int_op(smartlist_len(sl), OP_EQ, 4);
+
+  smartlist_clear(sl);
+  for (j=0; j < 2; ++j)
+    for (i=0; i < 5; ++i)
+      smartlist_add(sl, &array[i]);
+
+  smartlist_remove_keeporder(sl, &array[0]);
+  smartlist_remove_keeporder(sl, &array[3]);
+  smartlist_remove_keeporder(sl, &array[4]);
+  tt_int_op(smartlist_len(sl), OP_EQ, 4);
+  tt_ptr_op(smartlist_get(sl, 0), OP_EQ, &array[1]);
+  tt_ptr_op(smartlist_get(sl, 1), OP_EQ, &array[2]);
+  tt_ptr_op(smartlist_get(sl, 2), OP_EQ, &array[1]);
+  tt_ptr_op(smartlist_get(sl, 3), OP_EQ, &array[2]);
+
+ done:
+  smartlist_free(sl);
 }
 
 /** Run unit tests for getting the median of a list. */
@@ -1239,6 +1279,7 @@ struct testcase_t container_tests[] = {
   CONTAINER_LEGACY(smartlist_digests),
   CONTAINER_LEGACY(smartlist_join),
   CONTAINER_LEGACY(smartlist_pos),
+  CONTAINER(smartlist_remove, 0),
   CONTAINER(smartlist_ints_eq, 0),
   CONTAINER_LEGACY(bitarray),
   CONTAINER_LEGACY(digestset),

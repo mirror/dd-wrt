@@ -186,6 +186,7 @@ void tor_strlower(char *s) ATTR_NONNULL((1));
 void tor_strupper(char *s) ATTR_NONNULL((1));
 int tor_strisprint(const char *s) ATTR_NONNULL((1));
 int tor_strisnonupper(const char *s) ATTR_NONNULL((1));
+int tor_strisspace(const char *s);
 int strcmp_opt(const char *s1, const char *s2);
 int strcmpstart(const char *s1, const char *s2) ATTR_NONNULL((1,2));
 int strcmp_len(const char *s1, const char *s2, size_t len) ATTR_NONNULL((1,2));
@@ -239,6 +240,7 @@ void smartlist_add_asprintf(struct smartlist_t *sl, const char *pattern, ...)
 void smartlist_add_vasprintf(struct smartlist_t *sl, const char *pattern,
                              va_list args)
   CHECK_PRINTF(2, 0);
+void smartlist_add_strdup(struct smartlist_t *sl, const char *string);
 
 /* Time helpers */
 long tv_udiff(const struct timeval *start, const struct timeval *end);
@@ -254,8 +256,9 @@ void format_local_iso_time(char *buf, time_t t);
 void format_iso_time(char *buf, time_t t);
 void format_iso_time_nospace(char *buf, time_t t);
 void format_iso_time_nospace_usec(char *buf, const struct timeval *tv);
-int parse_iso_time_(const char *cp, time_t *t, int strict);
+int parse_iso_time_(const char *cp, time_t *t, int strict, int nospace);
 int parse_iso_time(const char *buf, time_t *t);
+int parse_iso_time_nospace(const char *cp, time_t *t);
 int parse_http_time(const char *buf, struct tm *tm);
 int format_time_interval(char *out, size_t out_len, long interval);
 
@@ -551,9 +554,7 @@ STATIC int format_helper_exit_status(unsigned char child_state,
 
 #endif
 
-#ifdef TOR_UNIT_TESTS
-int size_mul_check__(const size_t x, const size_t y);
-#endif
+int size_mul_check(const size_t x, const size_t y);
 
 #define ARRAY_LENGTH(x) ((sizeof(x)) / sizeof(x[0]))
 

@@ -45,6 +45,9 @@ MOCK_DECL(addr_policy_t *, router_parse_addr_policy_item_from_string,
          (const char *s, int assume_action, int *malformed_list));
 version_status_t tor_version_is_obsolete(const char *myversion,
                                          const char *versionlist);
+int tor_version_parse_platform(const char *platform,
+                               tor_version_t *version_out,
+                               int strict);
 int tor_version_as_new_as(const char *platform, const char *cutoff);
 int tor_version_parse(const char *s, tor_version_t *out);
 int tor_version_compare(tor_version_t *a, tor_version_t *b);
@@ -110,7 +113,6 @@ STATIC int routerstatus_parse_guardfraction(const char *guardfraction_str,
 MOCK_DECL(STATIC dumped_desc_t *, dump_desc_populate_one_file,
     (const char *dirname, const char *f));
 STATIC void dump_desc_populate_fifo_from_directory(const char *dirname);
-STATIC void dump_desc(const char *desc, const char *type);
 STATIC void dump_desc_fifo_cleanup(void);
 struct memarea_t;
 STATIC routerstatus_t *routerstatus_parse_entry_from_string(
@@ -120,6 +122,12 @@ STATIC routerstatus_t *routerstatus_parse_entry_from_string(
                                      vote_routerstatus_t *vote_rs,
                                      int consensus_method,
                                      consensus_flavor_t flav);
+MOCK_DECL(STATIC void,dump_desc,(const char *desc, const char *type));
+MOCK_DECL(STATIC int, router_compute_hash_final,(char *digest,
+                           const char *start, size_t len,
+                           digest_algorithm_t alg));
+MOCK_DECL(STATIC int, signed_digest_equals,
+          (const uint8_t *d1, const uint8_t *d2, size_t len));
 #endif
 
 #define ED_DESC_SIGNATURE_PREFIX "Tor router descriptor signature v1"

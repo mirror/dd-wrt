@@ -136,6 +136,7 @@ static void tor_tls_context_decref(tor_tls_context_t *ctx);
 static void tor_tls_context_incref(tor_tls_context_t *ctx);
 
 static int check_cert_lifetime_internal(int severity, const X509 *cert,
+                                   time_t now,
                                    int past_tolerance, int future_tolerance);
 
 /** Global TLS contexts. We keep them here because nobody else needs
@@ -482,8 +483,22 @@ MOCK_IMPL(STATIC X509 *,
    * then we might pick a time where we're about to expire. Lastly, be
    * sure to start on a day boundary. */
   time_t now = time(NULL);
-  start_time = crypto_rand_time_range(now - cert_lifetime, now) + 2*24*3600;
-  start_time -= start_time % (24*3600);
+  /* Our certificate lifetime will be cert_lifetime no matter what, but if we
+   * start cert_lifetime in the past, we'll have 0 real lifetime.  instead we
+   * start up to (cert_lifetime - min_real_lifetime - start_granularity) in
+   * the past. */
+  const time_t min_real_lifetime = 24*3600;
+  const time_t start_granularity = 24*3600;
+  time_t earliest_start_time = now - cert_lifetime + min_real_lifetime
+    + start_granularity;
+  /* Don't actually start in the future! */
+  if (earliest_start_time >= now)
+    earliest_start_time = now - 1;
+  start_time = crypto_rand_time_range(earliest_start_time, now);
+  /* Round the start time back to the start of a day. */
+  start_time -= start_time % start_granularity;
+
+  end_time = start_time + cert_lifetime;
 
   tor_assert(rsa);
   tor_assert(cname);
@@ -517,12 +532,12 @@ MOCK_IMPL(STATIC X509 *,
 
   if (!X509_time_adj(X509_get_notBefore(x509),0,&start_time))
     goto error;
-  end_time = start_time + cert_lifetime;
   if (!X509_time_adj(X509_get_notAfter(x509),0,&end_time))
     goto error;
   if (!X509_set_pubkey(x509, pkey))
     goto error;
-  if (!X509_sign(x509, sign_pkey, EVP_sha1()))
+
+  if (!X509_sign(x509, sign_pkey, EVP_sha256()))
     goto error;
 
   goto done;
@@ -583,6 +598,12 @@ static const char UNRESTRICTED_SERVER_CIPHER_LIST[] =
 #ifdef TLS1_TXT_DHE_RSA_WITH_AES_128_GCM_SHA256
        TLS1_TXT_DHE_RSA_WITH_AES_128_GCM_SHA256 ":"
 #endif
+#ifdef TLS1_TXT_DHE_RSA_WITH_AES_256_CCM
+       TLS1_TXT_DHE_RSA_WITH_AES_256_CCM ":"
+#endif
+#ifdef TLS1_TXT_DHE_RSA_WITH_AES_128_CCM
+       TLS1_TXT_DHE_RSA_WITH_AES_128_CCM ":"
+#endif
 #ifdef TLS1_TXT_DHE_RSA_WITH_AES_256_SHA256
        TLS1_TXT_DHE_RSA_WITH_AES_256_SHA256 ":"
 #endif
@@ -592,8 +613,14 @@ static const char UNRESTRICTED_SERVER_CIPHER_LIST[] =
        /* Required */
        TLS1_TXT_DHE_RSA_WITH_AES_256_SHA ":"
        /* Required */
-       TLS1_TXT_DHE_RSA_WITH_AES_128_SHA
-       ;
+       TLS1_TXT_DHE_RSA_WITH_AES_128_SHA ":"
+#ifdef TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305
+       TLS1_TXT_ECDHE_RSA_WITH_CHACHA20_POLY1305 ":"
+#endif
+#ifdef TLS1_TXT_DHE_RSA_WITH_CHACHA20_POLY1305
+       TLS1_TXT_DHE_RSA_WITH_CHACHA20_POLY1305
+#endif
+  ;
 
 /* Note: to set up your own private testing network with link crypto
  * disabled, set your Tors' cipher list to
@@ -675,6 +702,13 @@ MOCK_IMPL(STATIC tor_x509_cert_t *,
   }
 
   return cert;
+}
+
+/** Return a copy of <b>cert</b> */
+tor_x509_cert_t *
+tor_x509_cert_dup(const tor_x509_cert_t *cert)
+{
+  return tor_x509_cert_new(X509_dup(cert->cert));
 }
 
 /** Read a DER-encoded X509 cert, of length exactly <b>certificate_len</b>,
@@ -769,8 +803,8 @@ tor_tls_context_decref(tor_tls_context_t *ctx)
 /** Set *<b>link_cert_out</b> and *<b>id_cert_out</b> to the link certificate
  * and ID certificate that we're currently using for our V3 in-protocol
  * handshake's certificate chain.  If <b>server</b> is true, provide the certs
- * that we use in server mode; otherwise, provide the certs that we use in
- * client mode. */
+ * that we use in server mode (auth, ID); otherwise, provide the certs that we
+ * use in client mode. (link, ID) */
 int
 tor_tls_get_my_certs(int server,
                      const tor_x509_cert_t **link_cert_out,
@@ -800,7 +834,7 @@ tor_tls_get_my_client_auth_key(void)
 
 /**
  * Return a newly allocated copy of the public key that a certificate
- * certifies.  Return NULL if the cert's key is not RSA.
+ * certifies. Watch out! This returns NULL if the cert's key is not RSA.
  */
 crypto_pk_t *
 tor_tls_cert_get_key(tor_x509_cert_t *cert)
@@ -855,6 +889,7 @@ int
 tor_tls_cert_is_valid(int severity,
                       const tor_x509_cert_t *cert,
                       const tor_x509_cert_t *signing_cert,
+                      time_t now,
                       int check_rsa_1024)
 {
   check_no_tls_errors();
@@ -874,7 +909,7 @@ tor_tls_cert_is_valid(int severity,
 
   /* okay, the signature checked out right.  Now let's check the check the
    * lifetime. */
-  if (check_cert_lifetime_internal(severity, cert->cert,
+  if (check_cert_lifetime_internal(severity, cert->cert, now,
                                    48*60*60, 30*24*60*60) < 0)
     goto bad;
 
@@ -1019,6 +1054,8 @@ tor_tls_context_init_one(tor_tls_context_t **ppcontext,
 /** The group we should use for ecdhe when none was selected. */
 #define  NID_tor_default_ecdhe_group NID_X9_62_prime256v1
 
+#define RSA_LINK_KEY_BITS 2048
+
 /** Create a new TLS context for use with Tor TLS handshakes.
  * <b>identity</b> should be set to the identity key used to sign the
  * certificate.
@@ -1044,7 +1081,7 @@ tor_tls_context_new(crypto_pk_t *identity, unsigned int key_lifetime,
   /* Generate short-term RSA key for use with TLS. */
   if (!(rsa = crypto_pk_new()))
     goto error;
-  if (crypto_pk_generate_key(rsa)<0)
+  if (crypto_pk_generate_key_with_bits(rsa, RSA_LINK_KEY_BITS)<0)
     goto error;
   if (!is_client) {
     /* Generate short-term RSA key for use in the in-protocol ("v3")
@@ -2023,13 +2060,13 @@ tor_tls_get_peer_cert,(tor_tls_t *tls))
 
 /** Warn that a certificate lifetime extends through a certain range. */
 static void
-log_cert_lifetime(int severity, const X509 *cert, const char *problem)
+log_cert_lifetime(int severity, const X509 *cert, const char *problem,
+                  time_t now)
 {
   BIO *bio = NULL;
   BUF_MEM *buf;
   char *s1=NULL, *s2=NULL;
   char mytime[33];
-  time_t now = time(NULL);
   struct tm tm;
   size_t n;
 
@@ -2177,6 +2214,7 @@ tor_tls_verify(int severity, tor_tls_t *tls, crypto_pk_t **identity_key)
  */
 int
 tor_tls_check_lifetime(int severity, tor_tls_t *tls,
+                       time_t now,
                        int past_tolerance, int future_tolerance)
 {
   X509 *cert;
@@ -2185,7 +2223,7 @@ tor_tls_check_lifetime(int severity, tor_tls_t *tls,
   if (!(cert = SSL_get_peer_certificate(tls->ssl)))
     goto done;
 
-  if (check_cert_lifetime_internal(severity, cert,
+  if (check_cert_lifetime_internal(severity, cert, now,
                                    past_tolerance, future_tolerance) < 0)
     goto done;
 
@@ -2201,24 +2239,24 @@ tor_tls_check_lifetime(int severity, tor_tls_t *tls,
 
 /** Helper: check whether <b>cert</b> is expired give or take
  * <b>past_tolerance</b> seconds, or not-yet-valid give or take
- * <b>future_tolerance</b> seconds.  If it is live, return 0.  If it is not
- * live, log a message and return -1. */
+ * <b>future_tolerance</b> seconds.  (Relative to the current time
+ * <b>now</b>.)  If it is live, return 0.  If it is not live, log a message
+ * and return -1. */
 static int
 check_cert_lifetime_internal(int severity, const X509 *cert,
+                             time_t now,
                              int past_tolerance, int future_tolerance)
 {
-  time_t now, t;
-
-  now = time(NULL);
+  time_t t;
 
   t = now + future_tolerance;
   if (X509_cmp_time(X509_get_notBefore_const(cert), &t) > 0) {
-    log_cert_lifetime(severity, cert, "not yet valid");
+    log_cert_lifetime(severity, cert, "not yet valid", now);
     return -1;
   }
   t = now - past_tolerance;
   if (X509_cmp_time(X509_get_notAfter_const(cert), &t) < 0) {
-    log_cert_lifetime(severity, cert, "already expired");
+    log_cert_lifetime(severity, cert, "already expired", now);
     return -1;
   }
 
@@ -2441,6 +2479,28 @@ tor_tls_get_tlssecrets,(tor_tls_t *tls, uint8_t *secrets_out))
   tor_free(master_key);
 
   return 0;
+}
+
+/** Using the RFC5705 key material exporting construction, and the
+ * provided <b>context</b> (<b>context_len</b> bytes long) and
+ * <b>label</b> (a NUL-terminated string), compute a 32-byte secret in
+ * <b>secrets_out</b> that only the parties to this TLS session can
+ * compute.  Return 0 on success and -1 on failure.
+ */
+MOCK_IMPL(int,
+tor_tls_export_key_material,(tor_tls_t *tls, uint8_t *secrets_out,
+                             const uint8_t *context,
+                             size_t context_len,
+                             const char *label))
+{
+  tor_assert(tls);
+  tor_assert(tls->ssl);
+
+  int r = SSL_export_keying_material(tls->ssl,
+                                     secrets_out, DIGEST256_LEN,
+                                     label, strlen(label),
+                                     context, context_len, 1);
+  return (r == 1) ? 0 : -1;
 }
 
 /** Examine the amount of memory used and available for buffers in <b>tls</b>.

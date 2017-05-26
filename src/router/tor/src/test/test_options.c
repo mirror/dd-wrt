@@ -18,6 +18,7 @@
 #include "sandbox.h"
 #include "memarea.h"
 #include "policies.h"
+#include "test_helpers.h"
 
 #define NS_MODULE test_options
 
@@ -332,7 +333,8 @@ fixed_get_uname(void)
   "VirtualAddrNetworkIPv4 127.192.0.0/10\n"                             \
   "VirtualAddrNetworkIPv6 [FE80::]/10\n"                                \
   "SchedulerHighWaterMark__ 42\n"                                       \
-  "SchedulerLowWaterMark__ 10\n"
+  "SchedulerLowWaterMark__ 10\n"                                        \
+  "UseEntryGuards 1\n"
 
 typedef struct {
   or_options_t *old_opt;
@@ -650,16 +652,18 @@ test_options_validate__authdir(void *ignored)
   setup_capture_of_logs(LOG_INFO);
   options_test_data_t *tdata = get_options_test_data(
                                  "AuthoritativeDirectory 1\n"
-                                 "Address this.should.not_exist.example.org");
+                                 "Address this.should.not!exist!.example.org");
 
   sandbox_disable_getaddrinfo_cache();
 
+  MOCK(tor_addr_lookup, mock_tor_addr_lookup__fail_on_bad_addrs);
   ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  UNMOCK(tor_addr_lookup);
   tt_int_op(ret, OP_EQ, -1);
   tt_str_op(msg, OP_EQ, "Failed to resolve/guess local address. See logs for"
             " details.");
   expect_log_msg("Could not resolve local Address "
-            "'this.should.not_exist.example.org'. Failing.\n");
+            "'this.should.not!exist!.example.org'. Failing.\n");
   tor_free(msg);
 
   free_options_test_data(tdata);
@@ -1018,7 +1022,7 @@ test_options_validate__transproxy(void *ignored)
   ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
   tt_int_op(ret, OP_EQ, -1);
 
-#if !defined(__OpenBSD__) && !defined( DARWIN )
+#if !defined(OpenBSD) && !defined( DARWIN )
   tt_str_op(msg, OP_EQ,
           "pf-divert is a OpenBSD-specific and OS X/Darwin-specific feature.");
 #else
@@ -1087,7 +1091,7 @@ test_options_validate__transproxy(void *ignored)
   if (msg) {
     TT_DIE(("Expected NULL but got '%s'", msg));
   }
-#elif defined(__OpenBSD__)
+#elif defined(OpenBSD)
   tdata = get_options_test_data("TransProxyType pf-divert\n"
                                 "TransPort 127.0.0.1:123\n");
   ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
@@ -1794,14 +1798,6 @@ test_options_validate__reachable_addresses(void *ignored)
 
   /* Test IPv4-only clients setting IPv6 preferences */
 
-#define WARN_PLEASE_USE_IPV6_OR_LOG_MSG \
-        "ClientPreferIPv6ORPort 1 is ignored unless tor is using IPv6. " \
-        "Please set ClientUseIPv6 1, ClientUseIPv4 0, or configure bridges.\n"
-
-#define WARN_PLEASE_USE_IPV6_DIR_LOG_MSG \
-        "ClientPreferIPv6DirPort 1 is ignored unless tor is using IPv6. " \
-        "Please set ClientUseIPv6 1, ClientUseIPv4 0, or configure bridges.\n"
-
   free_options_test_data(tdata);
   tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
                                 "ClientUseIPv4 1\n"
@@ -1811,7 +1807,6 @@ test_options_validate__reachable_addresses(void *ignored)
 
   ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
   tt_int_op(ret, OP_EQ, 0);
-  expect_log_msg(WARN_PLEASE_USE_IPV6_OR_LOG_MSG);
   tor_free(msg);
 
   free_options_test_data(tdata);
@@ -1823,7 +1818,6 @@ test_options_validate__reachable_addresses(void *ignored)
 
   ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
   tt_int_op(ret, OP_EQ, 0);
-  expect_log_msg(WARN_PLEASE_USE_IPV6_DIR_LOG_MSG);
   tor_free(msg);
 
   /* Now test an IPv4/IPv6 client setting IPv6 preferences */
@@ -1939,6 +1933,19 @@ test_options_validate__use_bridges(void *ignored)
   tt_int_op(ret, OP_EQ, -1);
   tt_str_op(msg, OP_EQ,
             "If you set UseBridges, you must specify at least one bridge.");
+  tor_free(msg);
+
+  free_options_test_data(tdata);
+  tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
+                                "UseBridges 1\n"
+                                "Bridge 10.0.0.1\n"
+                                "UseEntryGuards 0\n"
+                                );
+
+  ret = options_validate(tdata->old_opt, tdata->opt, tdata->def_opt, 0, &msg);
+  tt_int_op(ret, OP_EQ, -1);
+  tt_str_op(msg, OP_EQ,
+            "Setting UseBridges requires also setting UseEntryGuards.");
   tor_free(msg);
 
   free_options_test_data(tdata);
@@ -2819,8 +2826,8 @@ test_options_validate__single_onion(void *ignored)
   tt_int_op(ret, OP_EQ, -1);
   tt_str_op(msg, OP_EQ, "HiddenServiceNonAnonymousMode is incompatible with "
             "using Tor as an anonymous client. Please set "
-            "Socks/Trans/NATD/DNSPort to 0, or HiddenServiceNonAnonymousMode "
-            "to 0, or use the non-anonymous Tor2webMode.");
+            "Socks/Trans/NATD/DNSPort to 0, or revert "
+            "HiddenServiceNonAnonymousMode to 0.");
   tor_free(msg);
   free_options_test_data(tdata);
 
@@ -3037,6 +3044,7 @@ test_options_validate__proxy(void *ignored)
   options_test_data_t *tdata = NULL;
   sandbox_disable_getaddrinfo_cache();
   setup_capture_of_logs(LOG_WARN);
+  MOCK(tor_addr_lookup, mock_tor_addr_lookup__fail_on_bad_addrs);
 
   free_options_test_data(tdata);
   tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
@@ -3057,6 +3065,7 @@ test_options_validate__proxy(void *ignored)
   tor_free(msg);
 
   free_options_test_data(tdata);
+
   tdata = get_options_test_data(TEST_OPTIONS_DEFAULT_VALUES
                                 "HttpProxy not_so_valid!\n"
                                 );
@@ -3357,6 +3366,7 @@ test_options_validate__proxy(void *ignored)
   policies_free_all();
   // sandbox_free_getaddrinfo_cache();
   tor_free(msg);
+  UNMOCK(tor_addr_lookup);
 }
 
 static void

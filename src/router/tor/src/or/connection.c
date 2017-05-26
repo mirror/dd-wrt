@@ -34,7 +34,7 @@
  * they become able to read or write register the fact with the event main
  * loop by calling connection_watch_events(), connection_start_reading(), or
  * connection_start_writing().  When they no longer want to read or write,
- * they call connection_stop_reading() or connection_start_writing().
+ * they call connection_stop_reading() or connection_stop_writing().
  *
  * To queue data to be written on a connection, call
  * connection_write_to_buf().  When data arrives, the
@@ -56,6 +56,7 @@
 
 #define CONNECTION_PRIVATE
 #include "or.h"
+#include "bridges.h"
 #include "buffers.h"
 /*
  * Define this so we get channel internal functions, since we're implementing
@@ -82,6 +83,7 @@
 #include "ext_orport.h"
 #include "geoip.h"
 #include "main.h"
+#include "hs_common.h"
 #include "nodelist.h"
 #include "policies.h"
 #include "reasons.h"
@@ -132,6 +134,8 @@ static int connection_read_https_proxy_response(connection_t *conn);
 static void connection_send_socks5_connect(connection_t *conn);
 static const char *proxy_type_to_string(int proxy_type);
 static int get_proxy_type(void);
+const tor_addr_t *conn_get_outbound_address(sa_family_t family,
+                  const or_options_t *options, unsigned int conn_type);
 
 /** The last addresses that our network interface seemed to have been
  * binding to.  We use this as one way to detect when our IP changes.
@@ -632,6 +636,11 @@ connection_free_(connection_t *conn)
 
     cached_dir_decref(dir_conn->cached_dir);
     rend_data_free(dir_conn->rend_data);
+    if (dir_conn->guard_state) {
+      /* Cancel before freeing, if it's still there. */
+      entry_guard_cancel(&dir_conn->guard_state);
+    }
+    circuit_guard_state_free(dir_conn->guard_state);
   }
 
   if (SOCKET_OK(conn->s)) {
@@ -643,7 +652,7 @@ connection_free_(connection_t *conn)
   if (conn->type == CONN_TYPE_OR &&
       !tor_digest_is_zero(TO_OR_CONN(conn)->identity_digest)) {
     log_warn(LD_BUG, "called on OR conn with non-zeroed identity_digest");
-    connection_or_remove_from_identity_map(TO_OR_CONN(conn));
+    connection_or_clear_identity(TO_OR_CONN(conn));
   }
   if (conn->type == CONN_TYPE_OR || conn->type == CONN_TYPE_EXT_OR) {
     connection_or_remove_from_ext_or_id_map(TO_OR_CONN(conn));
@@ -674,7 +683,7 @@ connection_free,(connection_t *conn))
   }
   if (connection_speaks_cells(conn)) {
     if (!tor_digest_is_zero(TO_OR_CONN(conn)->identity_digest)) {
-      connection_or_remove_from_identity_map(TO_OR_CONN(conn));
+      connection_or_clear_identity(TO_OR_CONN(conn));
     }
   }
   if (conn->type == CONN_TYPE_CONTROL) {
@@ -1764,7 +1773,7 @@ connection_connect_sockaddr,(connection_t *conn,
 
   /*
    * We've got the socket open; give the OOS handler a chance to check
-   * against configuured maximum socket number, but tell it no exhaustion
+   * against configured maximum socket number, but tell it no exhaustion
    * failure.
    */
   connection_check_oos(get_n_open_sockets(), 0);
@@ -1883,6 +1892,55 @@ connection_connect_log_client_use_ip_version(const connection_t *conn)
   }
 }
 
+/** Retrieve the outbound address depending on the protocol (IPv4 or IPv6)
+ * and the connection type (relay, exit, ...)
+ * Return a socket address or NULL in case nothing is configured.
+ **/
+const tor_addr_t *
+conn_get_outbound_address(sa_family_t family,
+             const or_options_t *options, unsigned int conn_type)
+{
+  const tor_addr_t *ext_addr = NULL;
+
+  int fam_index;
+  switch (family) {
+    case AF_INET:
+      fam_index = 0;
+      break;
+    case AF_INET6:
+      fam_index = 1;
+      break;
+    default:
+      return NULL;
+  }
+
+  // If an exit connection, use the exit address (if present)
+  if (conn_type == CONN_TYPE_EXIT) {
+    if (!tor_addr_is_null(
+        &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT][fam_index])) {
+      ext_addr = &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT]
+                 [fam_index];
+    } else if (!tor_addr_is_null(
+                 &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT_AND_OR]
+                 [fam_index])) {
+      ext_addr = &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT_AND_OR]
+                 [fam_index];
+    }
+  } else { // All non-exit connections
+    if (!tor_addr_is_null(
+           &options->OutboundBindAddresses[OUTBOUND_ADDR_OR][fam_index])) {
+      ext_addr = &options->OutboundBindAddresses[OUTBOUND_ADDR_OR]
+                 [fam_index];
+    } else if (!tor_addr_is_null(
+                 &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT_AND_OR]
+                 [fam_index])) {
+      ext_addr = &options->OutboundBindAddresses[OUTBOUND_ADDR_EXIT_AND_OR]
+                 [fam_index];
+    }
+  }
+  return ext_addr;
+}
+
 /** Take conn, make a nonblocking socket; try to connect to
  * addr:port (port arrives in *host order*). If fail, return -1 and if
  * applicable put your best guess about errno into *<b>socket_error</b>.
@@ -1904,26 +1962,15 @@ connection_connect(connection_t *conn, const char *address,
   struct sockaddr *bind_addr = NULL;
   struct sockaddr *dest_addr;
   int dest_addr_len, bind_addr_len = 0;
-  const or_options_t *options = get_options();
-  int protocol_family;
 
   /* Log if we didn't stick to ClientUseIPv4/6 or ClientPreferIPv6OR/DirPort
    */
   connection_connect_log_client_use_ip_version(conn);
 
-  if (tor_addr_family(addr) == AF_INET6)
-    protocol_family = PF_INET6;
-  else
-    protocol_family = PF_INET;
-
   if (!tor_addr_is_loopback(addr)) {
     const tor_addr_t *ext_addr = NULL;
-    if (protocol_family == AF_INET &&
-        !tor_addr_is_null(&options->OutboundBindAddressIPv4_))
-      ext_addr = &options->OutboundBindAddressIPv4_;
-    else if (protocol_family == AF_INET6 &&
-             !tor_addr_is_null(&options->OutboundBindAddressIPv6_))
-      ext_addr = &options->OutboundBindAddressIPv6_;
+    ext_addr = conn_get_outbound_address(tor_addr_family(addr), get_options(),
+                                         conn->type);
     if (ext_addr) {
       memset(&bind_addr_ss, 0, sizeof(bind_addr_ss));
       bind_addr_len = tor_addr_to_sockaddr(ext_addr, 0,
@@ -4129,12 +4176,12 @@ connection_get_by_type_state_rendquery(int type, int state,
          (type == CONN_TYPE_DIR &&
           TO_DIR_CONN(conn)->rend_data &&
           !rend_cmp_service_ids(rendquery,
-                                TO_DIR_CONN(conn)->rend_data->onion_address))
+                    rend_data_get_address(TO_DIR_CONN(conn)->rend_data)))
          ||
               (CONN_IS_EDGE(conn) &&
                TO_EDGE_CONN(conn)->rend_data &&
                !rend_cmp_service_ids(rendquery,
-                            TO_EDGE_CONN(conn)->rend_data->onion_address))
+                    rend_data_get_address(TO_EDGE_CONN(conn)->rend_data)))
          ));
 }
 
