@@ -36,6 +36,27 @@
 
 #ifdef HAVE_OPENVPN
 
+static void run_openvpn(char *prg, char *path)
+{
+	char *conf;
+	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
+	char *routeup;
+	asprintf(&routeup, "/tmp/%s/route-up.sh", path);
+	char *routedown;
+	asprintf(&routedown, "/tmp/%s/route-down.sh", path);
+
+	if (nvram_matchi("use_crypto", 1)) {
+		insmod("cryptodev");
+		eval(prg, "--config", conf, "--route-up", routeup, "--route-pre-down", routedown, "--daemon", "--engine", "cryptodev");
+	} else {
+		rmmod("cryptodev");
+		eval(prg, "--config", conf, "--route-up", routeup, "--route-pre-down", routedown, "--daemon");
+	}
+	free(routedown);
+	free(routeup);
+	free(conf);
+}
+
 void start_openvpnserver(void)
 {
 	int jffs = 0;
@@ -279,14 +300,7 @@ void start_openvpnserver(void)
 	chmod("/tmp/openvpn/route-down.sh", 0700);
 	eval("ln", "-s", "/usr/sbin/openvpn", "/tmp/openvpnserver");
 
-	if (nvram_matchi("use_crypto", 1)) {
-		insmod("cryptodev");
-		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--route-pre-down", "/tmp/openvpn/route-down.sh", "--daemon", "--engine", "cryptodev");
-
-	} else {
-		rmmod("cryptodev");
-		eval("/tmp/openvpnserver", "--config", "/tmp/openvpn/openvpn.conf", "--route-up", "/tmp/openvpn/route-up.sh", "--route-pre-down", "/tmp/openvpn/route-down.sh", "--daemon");
-	}
+	run_openvpn("/tmp/openvpnserver", "openvpn");
 
 //      eval("stopservice", "wshaper"); disable wshaper, causes fw race condition
 //      eval("startservice", "wshaper");
@@ -578,14 +592,7 @@ void start_openvpn(void)
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
 
-	if (nvram_matchi("use_crypto", 1))
-		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf", "--route-up", "/tmp/openvpncl/route-up.sh", "--route-pre-down", "/tmp/openvpncl/route-down.sh", "--daemon", "--engine", "cryptodev");
-	else
-		eval("openvpn", "--config", "/tmp/openvpncl/openvpn.conf", "--route-up", "/tmp/openvpncl/route-up.sh", "--route-pre-down", "/tmp/openvpncl/route-down.sh", "--daemon");
-/*	if (nvram_matchi("wshaper_enable",1)) { disable wshaper, causes fw race condition
-		eval("stopservice", "wshaper");
-		eval("startservice", "wshaper");
-	}*/
+	run_openvpn("openvpn", "openvpncl");
 
 	return;
 }
