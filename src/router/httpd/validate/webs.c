@@ -2189,7 +2189,7 @@ void add_vifs_single(char *prefix, int device)
 #endif
 		nvram_set(v2, getUEnv(v3));
 
-		add_mdhcpd(v, 20, 200, 3600);
+		add_mdhcpd(v, 20, 200, 1440);
 		//required to use mdhcpd
 		nvram_seti("dhcp_dnsmasq", 1);
 

@@ -151,7 +151,7 @@ void start_anchorfree(void)
 			nvram_set("wl0.1_ipaddr", "172.45.0.1");
 			nvram_set("wl0.1_netmask", "255.255.255.0");
 			nvram_seti("mdhcpd_count", 1);
-			nvram_set("mdhcpd", "wl0.1>On>100>50>3600");
+			nvram_set("mdhcpd", "wl0.1>On>100>50>1440");
 #else
 			nvram_set("ath0_vifs", "ath0.1");
 			nvram_set("ath0.1_ssid", nvram_safe_get("af_ssid_name"));
@@ -159,7 +159,7 @@ void start_anchorfree(void)
 			nvram_set("ath0.1_ipaddr", "172.45.0.1");
 			nvram_set("ath0.1_netmask", "255.255.255.0");
 			nvram_seti("mdhcpd_count", 1);
-			nvram_set("mdhcpd", "ath0.1>On>100>50>3600");
+			nvram_set("mdhcpd", "ath0.1>On>100>50>1440");
 #endif
 			need_commit = 1;
 			stop_lan();
