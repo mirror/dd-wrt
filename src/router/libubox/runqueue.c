@@ -145,7 +145,7 @@ __runqueue_task_timeout(struct uloop_timeout *timeout)
 		runqueue_task_cancel(t, t->cancel_type);
 }
 
-void runqueue_task_add(struct runqueue *q, struct runqueue_task *t, bool running)
+static void _runqueue_task_add(struct runqueue *q, struct runqueue_task *t, bool running, bool first)
 {
 	struct safe_list *head;
 
@@ -166,13 +166,26 @@ void runqueue_task_add(struct runqueue *q, struct runqueue_task *t, bool running
 
 	t->timeout.cb = __runqueue_task_timeout;
 	t->q = q;
-	safe_list_add(&t->list, head);
+	if (first)
+		safe_list_add_first(&t->list, head);
+	else
+		safe_list_add(&t->list, head);
 	t->cancelled = false;
 	t->queued = true;
 	t->running = running;
 	q->empty = false;
 
 	runqueue_start_next(q);
+}
+
+void runqueue_task_add(struct runqueue *q, struct runqueue_task *t, bool running)
+{
+	_runqueue_task_add(q, t, running, 0);
+}
+
+void runqueue_task_add_first(struct runqueue *q, struct runqueue_task *t, bool running)
+{
+	_runqueue_task_add(q, t, running, 1);
 }
 
 void runqueue_task_kill(struct runqueue_task *t)
@@ -186,8 +199,6 @@ void runqueue_task_kill(struct runqueue_task *t)
 	runqueue_task_complete(t);
 	if (running && t->type->kill)
 		t->type->kill(q, t);
-	if (t->complete)
-		t->complete(q, t);
 
 	runqueue_start_next(q);
 }
@@ -205,16 +216,22 @@ void runqueue_resume(struct runqueue *q)
 
 void runqueue_task_complete(struct runqueue_task *t)
 {
+	struct runqueue *q = t->q;
+
 	if (!t->queued)
 		return;
 
 	if (t->running)
 		t->q->running_tasks--;
 
+	uloop_timeout_cancel(&t->timeout);
+
 	safe_list_del(&t->list);
 	t->queued = false;
 	t->running = false;
 	t->cancelled = false;
+	if (t->complete)
+		t->complete(q, t);
 	runqueue_start_next(t->q);
 }
 

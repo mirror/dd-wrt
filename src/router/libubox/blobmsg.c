@@ -20,6 +20,7 @@ static const int blob_type[__BLOBMSG_TYPE_LAST] = {
 	[BLOBMSG_TYPE_INT16] = BLOB_ATTR_INT16,
 	[BLOBMSG_TYPE_INT32] = BLOB_ATTR_INT32,
 	[BLOBMSG_TYPE_INT64] = BLOB_ATTR_INT64,
+	[BLOBMSG_TYPE_DOUBLE] = BLOB_ATTR_DOUBLE,
 	[BLOBMSG_TYPE_STRING] = BLOB_ATTR_STRING,
 	[BLOBMSG_TYPE_UNSPEC] = BLOB_ATTR_BINARY,
 };
@@ -62,11 +63,12 @@ bool blobmsg_check_attr(const struct blob_attr *attr, bool name)
 	return blob_check_type(data, len, blob_type[id]);
 }
 
-bool blobmsg_check_attr_list(const struct blob_attr *attr, int type)
+int blobmsg_check_array(const struct blob_attr *attr, int type)
 {
 	struct blob_attr *cur;
 	bool name;
 	int rem;
+	int size = 0;
 
 	switch (blobmsg_type(attr)) {
 	case BLOBMSG_TYPE_TABLE:
@@ -76,22 +78,29 @@ bool blobmsg_check_attr_list(const struct blob_attr *attr, int type)
 		name = false;
 		break;
 	default:
-		return false;
+		return -1;
 	}
 
 	blobmsg_for_each_attr(cur, attr, rem) {
-		if (blobmsg_type(cur) != type)
-			return false;
+		if (type != BLOBMSG_TYPE_UNSPEC && blobmsg_type(cur) != type)
+			return -1;
 
 		if (!blobmsg_check_attr(cur, name))
-			return false;
+			return -1;
+
+		size++;
 	}
 
-	return true;
+	return size;
+}
+
+bool blobmsg_check_attr_list(const struct blob_attr *attr, int type)
+{
+	return blobmsg_check_array(attr, type) >= 0;
 }
 
 int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
-			struct blob_attr **tb, void *data, int len)
+			struct blob_attr **tb, void *data, unsigned int len)
 {
 	struct blob_attr *attr;
 	int i = 0;
@@ -118,7 +127,7 @@ int blobmsg_parse_array(const struct blobmsg_policy *policy, int policy_len,
 
 
 int blobmsg_parse(const struct blobmsg_policy *policy, int policy_len,
-                  struct blob_attr **tb, void *data, int len)
+                  struct blob_attr **tb, void *data, unsigned int len)
 {
 	struct blobmsg_hdr *hdr;
 	struct blob_attr *attr;
@@ -181,6 +190,7 @@ blobmsg_new(struct blob_buf *buf, int type, const char *name, int payload_len, v
 	if (!attr)
 		return NULL;
 
+	attr->id_len |= be32_to_cpu(BLOB_ATTR_EXTENDED);
 	hdr = blob_data(attr);
 	hdr->namelen = cpu_to_be16(namelen);
 	strcpy((char *) hdr->name, (const char *)name);
@@ -195,14 +205,14 @@ blobmsg_new(struct blob_buf *buf, int type, const char *name, int payload_len, v
 static inline int
 attr_to_offset(struct blob_buf *buf, struct blob_attr *attr)
 {
-	return (char *)attr - (char *) buf->buf;
+	return (char *)attr - (char *) buf->buf + BLOB_COOKIE;
 }
 
 
 void *
 blobmsg_open_nested(struct blob_buf *buf, const char *name, bool array)
 {
-	struct blob_attr *head = buf->head;
+	struct blob_attr *head;
 	int type = array ? BLOBMSG_TYPE_ARRAY : BLOBMSG_TYPE_TABLE;
 	unsigned long offset = attr_to_offset(buf, buf->head);
 	void *data;
@@ -211,38 +221,49 @@ blobmsg_open_nested(struct blob_buf *buf, const char *name, bool array)
 		name = "";
 
 	head = blobmsg_new(buf, type, name, 0, &data);
+	if (!head)
+		return NULL;
 	blob_set_raw_len(buf->head, blob_pad_len(buf->head) - blobmsg_hdrlen(strlen(name)));
 	buf->head = head;
 	return (void *)offset;
 }
 
-void
+int
 blobmsg_vprintf(struct blob_buf *buf, const char *name, const char *format, va_list arg)
 {
 	va_list arg2;
 	char cbuf;
-	int len;
+	char *sbuf;
+	int len, ret;
 
 	va_copy(arg2, arg);
 	len = vsnprintf(&cbuf, sizeof(cbuf), format, arg2);
 	va_end(arg2);
 
-	vsprintf(blobmsg_alloc_string_buffer(buf, name, len + 1), format, arg);
+	sbuf = blobmsg_alloc_string_buffer(buf, name, len + 1);
+	if (!sbuf)
+		return -1;
+	ret = vsprintf(sbuf, format, arg);
 	blobmsg_add_string_buffer(buf);
+
+	return ret;
 }
 
-void
+int
 blobmsg_printf(struct blob_buf *buf, const char *name, const char *format, ...)
 {
 	va_list ap;
+	int ret;
 
 	va_start(ap, format);
-	blobmsg_vprintf(buf, name, format, ap);
+	ret = blobmsg_vprintf(buf, name, format, ap);
 	va_end(ap);
+
+	return ret;
 }
 
 void *
-blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen)
+blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, unsigned int maxlen)
 {
 	struct blob_attr *attr;
 	void *data_dest;
@@ -251,7 +272,6 @@ blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen)
 	if (!attr)
 		return NULL;
 
-	data_dest = blobmsg_data(attr);
 	blob_set_raw_len(buf->head, blob_pad_len(buf->head) - blob_pad_len(attr));
 	blob_set_raw_len(attr, blob_raw_len(attr) - maxlen);
 
@@ -259,16 +279,17 @@ blobmsg_alloc_string_buffer(struct blob_buf *buf, const char *name, int maxlen)
 }
 
 void *
-blobmsg_realloc_string_buffer(struct blob_buf *buf, int maxlen)
+blobmsg_realloc_string_buffer(struct blob_buf *buf, unsigned int maxlen)
 {
 	struct blob_attr *attr = blob_next(buf->head);
-	int offset = attr_to_offset(buf, blob_next(buf->head)) + blob_pad_len(attr);
+	int offset = attr_to_offset(buf, blob_next(buf->head)) + blob_pad_len(attr) - BLOB_COOKIE;
 	int required = maxlen - (buf->buflen - offset);
 
 	if (required <= 0)
 		goto out;
 
-	blob_buf_grow(buf, required);
+	if (!blob_buf_grow(buf, required))
+		return NULL;
 	attr = blob_next(buf->head);
 
 out:
@@ -293,7 +314,7 @@ blobmsg_add_string_buffer(struct blob_buf *buf)
 
 int
 blobmsg_add_field(struct blob_buf *buf, int type, const char *name,
-                  const void *data, int len)
+                  const void *data, unsigned int len)
 {
 	struct blob_attr *attr;
 	void *data_dest;

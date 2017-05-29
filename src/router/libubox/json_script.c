@@ -32,6 +32,7 @@ struct json_handler {
 
 static int json_process_expr(struct json_call *call, struct blob_attr *cur);
 static int json_process_cmd(struct json_call *call, struct blob_attr *cur);
+static int eval_string(struct json_call *call, struct blob_buf *buf, const char *name, const char *pattern);
 
 struct json_script_file *
 json_script_file_from_blobmsg(const char *name, void *data, int len)
@@ -44,6 +45,9 @@ json_script_file_from_blobmsg(const char *name, void *data, int len)
 		name_len = strlen(name) + 1;
 
 	f = calloc_a(sizeof(*f) + len, &new_name, name_len);
+	if (!f)
+		return NULL;
+
 	memcpy(f->data, data, len);
 	if (name)
 		f->avl.key = strcpy(new_name, name);
@@ -333,12 +337,40 @@ static int handle_expr_or(struct json_call *call, struct blob_attr *expr)
 static int handle_expr_not(struct json_call *call, struct blob_attr *expr)
 {
 	struct blob_attr *tb[3];
+	int ret;
 
 	json_get_tuple(expr, tb, BLOBMSG_TYPE_ARRAY, 0);
 	if (!tb[1])
 		return -1;
 
-	return json_process_expr(call, tb[1]);
+	ret = json_process_expr(call, tb[1]);
+	if (ret < 0)
+		return ret;
+	return !ret;
+}
+
+static int handle_expr_isdir(struct json_call *call, struct blob_attr *expr)
+{
+	static struct blob_buf b;
+	struct blob_attr *tb[3];
+	const char *pattern, *path;
+	struct stat s;
+	int ret;
+
+	json_get_tuple(expr, tb, BLOBMSG_TYPE_STRING, 0);
+	if (!tb[1] || blobmsg_type(tb[1]) != BLOBMSG_TYPE_STRING)
+		return -1;
+	pattern = blobmsg_data(tb[1]);
+
+	blob_buf_init(&b, 0);
+	ret = eval_string(call, &b, NULL, pattern);
+	if (ret < 0)
+		return ret;
+	path = blobmsg_data(blob_data(b.head));
+	ret = stat(path, &s);
+	if (ret < 0)
+		return 0;
+	return S_ISDIR(s.st_mode);
 }
 
 static const struct json_handler expr[] = {
@@ -348,6 +380,7 @@ static const struct json_handler expr[] = {
 	{ "and", handle_expr_and },
 	{ "or", handle_expr_or },
 	{ "not", handle_expr_not },
+	{ "isdir", handle_expr_isdir },
 };
 
 static int
@@ -388,21 +421,23 @@ static int json_process_expr(struct json_call *call, struct blob_attr *cur)
 	return ret;
 }
 
-static int cmd_add_string(struct json_call *call, const char *pattern)
+static int eval_string(struct json_call *call, struct blob_buf *buf, const char *name, const char *pattern)
 {
-	struct json_script_ctx *ctx = call->ctx;
 	char *dest, *next, *str;
 	int len = 0;
 	bool var = false;
 	char c = '%';
 
-	dest = blobmsg_alloc_string_buffer(&ctx->buf, NULL, 1);
+	dest = blobmsg_alloc_string_buffer(buf, name, 1);
+	if (!dest)
+		return -1;
+
 	next = alloca(strlen(pattern) + 1);
 	strcpy(next, pattern);
 
 	for (str = next; str; str = next) {
 		const char *cur;
-		char *end;
+		char *end, *new_buf;
 		int cur_len = 0;
 		bool cur_var = var;
 
@@ -417,7 +452,7 @@ static int cmd_add_string(struct json_call *call, const char *pattern)
 		}
 
 		if (cur_var) {
-			if (next > str) {
+			if (end > str) {
 				cur = msg_find_var(call, str);
 				if (!cur)
 					continue;
@@ -435,17 +470,42 @@ static int cmd_add_string(struct json_call *call, const char *pattern)
 			cur_len = end - str;
 		}
 
-		dest = blobmsg_realloc_string_buffer(&ctx->buf, cur_len + 1);
+		new_buf = blobmsg_realloc_string_buffer(buf, len + cur_len + 1);
+		if (!new_buf) {
+			/* Make eval_string return -1 */
+			var = true;
+			break;
+		}
+
+		dest = new_buf;
 		memcpy(dest + len, cur, cur_len);
 		len += cur_len;
 	}
 
+	dest[len] = 0;
+	blobmsg_add_string_buffer(buf);
+
 	if (var)
 		return -1;
 
-	dest[len] = 0;
-	blobmsg_add_string_buffer(&ctx->buf);
 	return 0;
+}
+
+static int cmd_add_string(struct json_call *call, const char *pattern)
+{
+	return eval_string(call, &call->ctx->buf, NULL, pattern);
+}
+
+int json_script_eval_string(struct json_script_ctx *ctx, struct blob_attr *vars,
+			    struct blob_buf *buf, const char *name,
+			    const char *pattern)
+{
+	struct json_call call = {
+		.ctx = ctx,
+		.vars = vars,
+	};
+
+	return eval_string(&call, buf, name, pattern);
 }
 
 static int cmd_process_strings(struct json_call *call, struct blob_attr *attr)
@@ -463,8 +523,8 @@ static int cmd_process_strings(struct json_call *call, struct blob_attr *attr)
 			continue;
 
 		if (blobmsg_type(cur) != BLOBMSG_TYPE_STRING) {
-			ctx->handle_error(ctx, "Invalid argument in command", attr);
-			return -1;
+			blobmsg_add_blob(&ctx->buf, cur);
+			continue;
 		}
 
 		ret = cmd_add_string(call, blobmsg_data(cur));
@@ -520,6 +580,9 @@ static int json_process_cmd(struct json_call *call, struct blob_attr *block)
 	}
 
 	blobmsg_for_each_attr(cur, block, rem) {
+		if (ctx->abort)
+			break;
+
 		switch(blobmsg_type(cur)) {
 		case BLOBMSG_TYPE_STRING:
 			if (!i)
@@ -536,10 +599,9 @@ static int json_process_cmd(struct json_call *call, struct blob_attr *block)
 	return 0;
 }
 
-void json_script_run(struct json_script_ctx *ctx, const char *name,
-		     struct blob_attr *vars)
+void json_script_run_file(struct json_script_ctx *ctx, struct json_script_file *file,
+			  struct blob_attr *vars)
 {
-	struct json_script_file *file;
 	static unsigned int _seq = 0;
 	struct json_call call = {
 		.ctx = ctx,
@@ -551,19 +613,34 @@ void json_script_run(struct json_script_ctx *ctx, const char *name,
 	if (!call.seq)
 		call.seq = ++_seq;
 
-	file = json_script_get_file(ctx, name);
-	if (!file)
-		return;
+	ctx->abort = false;
 
 	__json_script_run(&call, file, NULL);
 }
 
-static void __json_script_file_free(struct json_script_ctx *ctx, struct json_script_file *f)
+void json_script_run(struct json_script_ctx *ctx, const char *name,
+		     struct blob_attr *vars)
+{
+	struct json_script_file *file;
+
+	file = json_script_get_file(ctx, name);
+	if (!file)
+		return;
+
+	json_script_run_file(ctx, file, vars);
+}
+
+static void __json_script_file_free(struct json_script_file *f)
 {
 	struct json_script_file *next;
 
-	for (next = f->next; f; f = next, next = f->next)
-		free(f);
+	if (!f)
+		return;
+
+	next = f->next;
+	free(f);
+
+	__json_script_file_free(next);
 }
 
 void
@@ -572,7 +649,7 @@ json_script_free(struct json_script_ctx *ctx)
 	struct json_script_file *f, *next;
 
 	avl_remove_all_elements(&ctx->files, f, avl, next)
-		__json_script_file_free(ctx, f);
+		__json_script_file_free(f);
 
 	blob_buf_free(&ctx->buf);
 }

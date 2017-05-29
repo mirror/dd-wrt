@@ -62,7 +62,7 @@ struct avl_node {
    * this must be the first element of an avl_node to
    * make casting for lists easier
    */
-  struct list_entity list;
+  struct list_head list;
 
   /**
    * Pointer to parent node in tree, NULL if root node
@@ -113,7 +113,7 @@ struct avl_tree {
    * Head of linked list node for supporting easy iteration
    * and multiple elments with the same key.
    */
-  struct list_entity list_head;
+  struct list_head list_head;
 
   /**
    * pointer to the root node of the avl tree, NULL if tree is empty
@@ -153,6 +153,18 @@ enum avl_find_mode {
   AVL_FIND_LESSEQUAL,
   AVL_FIND_GREATEREQUAL
 };
+
+#define AVL_TREE_INIT(_name, _comp, _allow_dups, _cmp_ptr)	\
+	{							\
+		.list_head = LIST_HEAD_INIT(_name.list_head),	\
+		.comp = _comp,					\
+		.allow_dups = _allow_dups,			\
+		.cmp_ptr = _cmp_ptr				\
+	}
+
+#define AVL_TREE(_name, _comp, _allow_dups, _cmp_ptr)		\
+	struct avl_tree _name =					\
+		AVL_TREE_INIT(_name, _comp, _allow_dups, _cmp_ptr)
 
 void EXPORT(avl_init)(struct avl_tree *, avl_tree_comp, bool, void *);
 struct avl_node *EXPORT(avl_find)(const struct avl_tree *, const void *);
@@ -534,7 +546,7 @@ __avl_find_element(const struct avl_tree *tree, const void *key, size_t offset, 
 #define avl_remove_all_elements(tree, element, node_member, ptr) \
   for (element = avl_first_element(tree, element, node_member), \
        ptr = avl_next_element(element, node_member), \
-       list_init_head(&(tree)->list_head), \
+       INIT_LIST_HEAD(&(tree)->list_head), \
        (tree)->root = NULL; \
        (tree)->count > 0; \
        element = ptr, ptr = avl_next_element(ptr, node_member), (tree)->count--)

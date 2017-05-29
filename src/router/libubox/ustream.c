@@ -65,6 +65,9 @@ static int ustream_alloc_default(struct ustream *s, struct ustream_buf_list *l)
 		return -1;
 
 	buf = malloc(sizeof(*buf) + l->buffer_len + s->string_data);
+	if (!buf)
+		return -1;
+
 	ustream_init_buf(buf, l->buffer_len);
 	ustream_add_buf(l, buf);
 
@@ -94,9 +97,6 @@ void ustream_free(struct ustream *s)
 	uloop_timeout_cancel(&s->state_change);
 	ustream_free_buffers(&s->r);
 	ustream_free_buffers(&s->w);
-	s->write_error = false;
-	s->eof = false;
-	s->read_blocked = 0;
 }
 
 static void ustream_state_change_cb(struct uloop_timeout *t)
@@ -131,6 +131,16 @@ void ustream_init_defaults(struct ustream *s)
 #undef DEFAULT_SET
 
 	s->state_change.cb = ustream_state_change_cb;
+	s->write_error = false;
+	s->eof = false;
+	s->eof_write_done = false;
+	s->read_blocked = 0;
+
+	s->r.buffers = 0;
+	s->r.data_bytes = 0;
+
+	s->w.buffers = 0;
+	s->w.data_bytes = 0;
 }
 
 static bool ustream_should_move(struct ustream_buf_list *l, struct ustream_buf *buf, int len)
@@ -138,21 +148,26 @@ static bool ustream_should_move(struct ustream_buf_list *l, struct ustream_buf *
 	int maxlen;
 	int offset;
 
+	/* nothing to squeeze */
 	if (buf->data == buf->head)
 		return false;
 
 	maxlen = buf->end - buf->head;
 	offset = buf->data - buf->head;
 
+	/* less than half is available */
 	if (offset > maxlen / 2)
 		return true;
 
+	/* less than 32 bytes data but takes more than 1/4 space */
 	if (buf->tail - buf->data < 32 && offset > maxlen / 4)
 		return true;
 
+	/* more buf is already in list or can be allocated */
 	if (buf != l->tail || ustream_can_alloc(l))
 		return false;
 
+	/* no need to move if len is available at the tail */
 	return (buf->end - buf->tail < len);
 }
 
@@ -248,13 +263,14 @@ static bool ustream_prepare_buf(struct ustream *s, struct ustream_buf_list *l, i
 			if (l == &s->r)
 				ustream_fixup_string(s, buf);
 		}
+		/* some chunks available at the tail */
 		if (buf->tail != buf->end)
 			return true;
-	}
-
-	if (buf && buf->next) {
-		l->data_tail = buf->next;
-		return true;
+		/* next buf available */
+		if (buf->next) {
+			l->data_tail = buf->next;
+			return true;
+		}
 	}
 
 	if (!ustream_can_alloc(l))
@@ -269,7 +285,7 @@ static bool ustream_prepare_buf(struct ustream *s, struct ustream_buf_list *l, i
 
 char *ustream_reserve(struct ustream *s, int len, int *maxlen)
 {
-	struct ustream_buf *buf = s->r.head;
+	struct ustream_buf *buf;
 
 	if (!ustream_prepare_buf(s, &s->r, len)) {
 		__ustream_set_read_blocked(s, s->read_blocked | READ_BLOCKED_FULL);
@@ -311,21 +327,39 @@ void ustream_fill_read(struct ustream *s, int len)
 
 char *ustream_get_read_buf(struct ustream *s, int *buflen)
 {
-	char *data;
-	int len;
+	char *data = NULL;
+	int len = 0;
 
 	if (s->r.head) {
 		len = s->r.head->tail - s->r.head->data;
-		data = s->r.head->data;
-	} else {
-		len = 0;
-		data = NULL;
+		if (len > 0)
+			data = s->r.head->data;
 	}
 
 	if (buflen)
 		*buflen = len;
 
 	return data;
+}
+
+int ustream_read(struct ustream *s, char *buf, int buflen)
+{
+	char *chunk;
+	int chunk_len;
+	int len = 0;
+
+	do {
+		chunk = ustream_get_read_buf(s, &chunk_len);
+		if (!chunk)
+			break;
+		if (chunk_len > buflen - len)
+			chunk_len = buflen - len;
+		memcpy(buf + len, chunk, chunk_len);
+		ustream_consume(s, chunk_len);
+		len += chunk_len;
+	} while (len < buflen);
+
+	return len;
 }
 
 static void ustream_write_error(struct ustream *s)
@@ -459,6 +493,8 @@ int ustream_vprintf(struct ustream *s, const char *format, va_list arg)
 			return ustream_write_buffered(s, buf, maxlen, wr);
 		} else {
 			buf = malloc(maxlen + 1);
+			if (!buf)
+				return 0;
 			wr = vsnprintf(buf, maxlen + 1, format, arg);
 			wr = ustream_write(s, buf, wr, false);
 			free(buf);
@@ -486,6 +522,8 @@ int ustream_vprintf(struct ustream *s, const char *format, va_list arg)
 		return wr;
 
 	buf = malloc(maxlen + 1);
+	if (!buf)
+		return wr;
 	maxlen = vsnprintf(buf, maxlen + 1, format, arg);
 	wr = ustream_write_buffered(s, buf + wr, maxlen - wr, wr);
 	free(buf);

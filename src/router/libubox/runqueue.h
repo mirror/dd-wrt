@@ -90,6 +90,15 @@ struct runqueue_process {
 	struct uloop_process proc;
 };
 
+#define RUNQUEUE_INIT(_name, _max_running) { \
+		.tasks_active = SAFE_LIST_INIT(_name.tasks_active), \
+		.tasks_inactive = SAFE_LIST_INIT(_name.tasks_inactive), \
+		.max_running_tasks = _max_running \
+	}
+
+#define RUNQUEUE(_name, _max_running) \
+	struct runqueue _name = RUNQUEUE_INIT(_name, _max_running)
+
 void runqueue_init(struct runqueue *q);
 void runqueue_cancel(struct runqueue *q);
 void runqueue_cancel_active(struct runqueue *q);
@@ -100,6 +109,7 @@ void runqueue_stop(struct runqueue *q);
 void runqueue_resume(struct runqueue *q);
 
 void runqueue_task_add(struct runqueue *q, struct runqueue_task *t, bool running);
+void runqueue_task_add_first(struct runqueue *q, struct runqueue_task *t, bool running);
 void runqueue_task_complete(struct runqueue_task *t);
 
 void runqueue_task_cancel(struct runqueue_task *t, int type);

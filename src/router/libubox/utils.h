@@ -22,6 +22,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <stdint.h>
+#include <stdbool.h>
+#include <unistd.h>
 #include <time.h>
 
 /*
@@ -55,12 +57,14 @@ extern int __BUILD_BUG_ON_CONDITION_FAILED;
 #define BUILD_BUG_ON __BUILD_BUG_ON
 #endif
 
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(CLOCK_MONOTONIC)
+#define LIBUBOX_COMPAT_CLOCK_GETTIME
 
-#define CLOCK_REALTIME	0
-#define CLOCK_MONOTONIC	1
+#include <mach/clock_types.h>
+#define CLOCK_REALTIME	CALENDAR_CLOCK
+#define CLOCK_MONOTONIC	SYSTEM_CLOCK
 
-void clock_gettime(int type, struct timespec *tv);
+int clock_gettime(int type, struct timespec *tv);
 
 #endif
 
@@ -99,7 +103,10 @@ void clock_gettime(int type, struct timespec *tv);
 #define __LITTLE_ENDIAN LITTLE_ENDIAN
 #endif
 
-#define __u_bswap16(x) ({ uint16_t val = (x); ((uint16_t)(((val >> 8) & 0xffu) | ((val & 0xffu) << 8))); })
+static inline uint16_t __u_bswap16(uint16_t val)
+{
+	return ((val >> 8) & 0xffu) | ((val & 0xffu) << 8);
+}
 
 #if _GNUC_MIN_VER(4, 2)
 #define __u_bswap32(x) __builtin_bswap32(x)
@@ -150,5 +157,60 @@ void clock_gettime(int type, struct timespec *tv);
 #ifndef __packed
 #define __packed __attribute__((packed))
 #endif
+
+#ifndef __constructor
+#define __constructor __attribute__((constructor))
+#endif
+
+#ifndef __destructor
+#define __destructor __attribute__((destructor))
+#endif
+
+#ifndef __hidden
+#define __hidden __attribute__((visibility("hidden")))
+#endif
+
+#ifndef BITS_PER_LONG
+#define BITS_PER_LONG (8 * sizeof(unsigned long))
+#endif
+
+#define BITFIELD_SIZE(_n) (((_n) + (BITS_PER_LONG - 1)) / BITS_PER_LONG)
+
+static inline void bitfield_set(unsigned long *bits, int bit)
+{
+	bits[bit / BITS_PER_LONG] |= (1UL << (bit % BITS_PER_LONG));
+}
+
+static inline bool bitfield_test(unsigned long *bits, int bit)
+{
+	return !!(bits[bit / BITS_PER_LONG] & (1UL << (bit % BITS_PER_LONG)));
+}
+
+int b64_encode(const void *src, size_t src_len,
+	       void *dest, size_t dest_len);
+
+int b64_decode(const void *src, void *dest, size_t dest_len);
+
+#define B64_ENCODE_LEN(_len)	((((_len) + 2) / 3) * 4 + 1)
+#define B64_DECODE_LEN(_len)	(((_len) / 4) * 3 + 1)
+
+static inline unsigned int cbuf_order(unsigned int x)
+{
+	return 32 - __builtin_clz(x - 1);
+}
+
+static inline unsigned long cbuf_size(int order)
+{
+	unsigned long page_size = sysconf(_SC_PAGESIZE);
+	unsigned long ret = 1ULL << order;
+
+	if (ret < page_size)
+		ret = page_size;
+
+	return ret;
+}
+
+void *cbuf_alloc(unsigned int order);
+void cbuf_free(void *ptr, unsigned int order);
 
 #endif
