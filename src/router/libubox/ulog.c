@@ -16,6 +16,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifdef NEED_PRINTF
 #include "ulog.h"
 
 #include <stdio.h>
@@ -172,3 +173,4 @@ void ulog(int priority, const char *fmt, ...)
 		va_end(ap);
 	}
 }
+#endif
