@@ -23,7 +23,7 @@ static void handle_command(struct json_script_ctx *ctx, const char *name,
 }
 
 static struct json_script_file *
-handle_file(struct json_script_ctx *ctx, const char *filename)
+handle_file(struct json_script_ctx *ctx, char *filename)
 {
 	json_object *obj;
 
