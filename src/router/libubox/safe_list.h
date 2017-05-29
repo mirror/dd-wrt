@@ -42,6 +42,7 @@ int safe_list_for_each(struct safe_list *list,
 		       void *ctx);
 
 void safe_list_add(struct safe_list *list, struct safe_list *head);
+void safe_list_add_first(struct safe_list *list, struct safe_list *head);
 void safe_list_del(struct safe_list *list);
 
 #define INIT_SAFE_LIST(_head) \

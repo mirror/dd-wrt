@@ -21,12 +21,15 @@
 static bool
 blob_buffer_grow(struct blob_buf *buf, int minlen)
 {
+	struct blob_buf *new;
 	int delta = ((minlen / 256) + 1) * 256;
-	buf->buflen += delta;
-	buf->buf = realloc(buf->buf, buf->buflen);
-	if (buf->buf)
-		memset(buf->buf + buf->buflen - delta, 0, delta);
-	return !!buf->buf;
+	new = realloc(buf->buf, buf->buflen + delta);
+	if (new) {
+		buf->buf = new;
+		memset(buf->buf + buf->buflen, 0, delta);
+		buf->buflen += delta;
+	}
+	return !!new;
 }
 
 static void
@@ -40,36 +43,38 @@ blob_init(struct blob_attr *attr, int id, unsigned int len)
 static inline struct blob_attr *
 offset_to_attr(struct blob_buf *buf, int offset)
 {
-	void *ptr = (char *)buf->buf + offset;
+	void *ptr = (char *)buf->buf + offset - BLOB_COOKIE;
 	return ptr;
 }
 
 static inline int
 attr_to_offset(struct blob_buf *buf, struct blob_attr *attr)
 {
-	return (char *)attr - (char *) buf->buf;
+	return (char *)attr - (char *) buf->buf + BLOB_COOKIE;
 }
 
-void
+bool
 blob_buf_grow(struct blob_buf *buf, int required)
 {
 	int offset_head = attr_to_offset(buf, buf->head);
 
 	if (!buf->grow || !buf->grow(buf, required))
-		return;
+		return false;
 
 	buf->head = offset_to_attr(buf, offset_head);
+	return true;
 }
 
 static struct blob_attr *
 blob_add(struct blob_buf *buf, struct blob_attr *pos, int id, int payload)
 {
 	int offset = attr_to_offset(buf, pos);
-	int required = (offset + sizeof(struct blob_attr) + payload) - buf->buflen;
+	int required = (offset - BLOB_COOKIE + sizeof(struct blob_attr) + payload) - buf->buflen;
 	struct blob_attr *attr;
 
 	if (required > 0) {
-		blob_buf_grow(buf, required);
+		if (!blob_buf_grow(buf, required))
+			return NULL;
 		attr = offset_to_attr(buf, offset);
 	} else {
 		attr = pos;
@@ -115,10 +120,9 @@ blob_fill_pad(struct blob_attr *attr)
 void
 blob_set_raw_len(struct blob_attr *attr, unsigned int len)
 {
-	int id = blob_id(attr);
 	len &= BLOB_ATTR_LEN_MASK;
-	len |= (id << BLOB_ATTR_ID_SHIFT) & BLOB_ATTR_ID_MASK;
-	attr->id_len = cpu_to_be32(len);
+	attr->id_len &= ~cpu_to_be32(BLOB_ATTR_LEN_MASK);
+	attr->id_len |= cpu_to_be32(len);
 }
 
 struct blob_attr *
@@ -135,7 +139,23 @@ blob_new(struct blob_buf *buf, int id, int payload)
 }
 
 struct blob_attr *
-blob_put(struct blob_buf *buf, int id, const void *ptr, int len)
+blob_put_raw(struct blob_buf *buf, const void *ptr, unsigned int len)
+{
+	struct blob_attr *attr;
+
+	if (len < sizeof(struct blob_attr) || !ptr)
+		return NULL;
+
+	attr = blob_add(buf, blob_next(buf->head), 0, len - sizeof(struct blob_attr));
+	if (!attr)
+		return NULL;
+	blob_set_raw_len(buf->head, blob_pad_len(buf->head) + len);
+	memcpy(attr, ptr, len);
+	return attr;
+}
+
+struct blob_attr *
+blob_put(struct blob_buf *buf, int id, const void *ptr, unsigned int len)
 {
 	struct blob_attr *attr;
 
@@ -153,6 +173,8 @@ blob_nest_start(struct blob_buf *buf, int id)
 {
 	unsigned long offset = attr_to_offset(buf, buf->head);
 	buf->head = blob_new(buf, id, 0);
+	if (!buf->head)
+		return NULL;
 	return (void *) offset;
 }
 
@@ -170,10 +192,11 @@ static const int blob_type_minlen[BLOB_ATTR_LAST] = {
 	[BLOB_ATTR_INT16] = sizeof(uint16_t),
 	[BLOB_ATTR_INT32] = sizeof(uint32_t),
 	[BLOB_ATTR_INT64] = sizeof(uint64_t),
+	[BLOB_ATTR_DOUBLE] = sizeof(double),
 };
 
 bool
-blob_check_type(const void *ptr, int len, int type)
+blob_check_type(const void *ptr, unsigned int len, int type)
 {
 	const char *data = ptr;
 
@@ -223,7 +246,7 @@ blob_parse(struct blob_attr *attr, struct blob_attr **data, const struct blob_at
 			if (info[id].maxlen && len > info[id].maxlen)
 				continue;
 
-			if (info[id].validate && !info[id].validate(&info[id], attr))
+			if (info[id].validate && !info[id].validate(&info[id], pos))
 				continue;
 		}
 

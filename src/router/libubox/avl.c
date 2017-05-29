@@ -47,10 +47,6 @@
 #include "avl.h"
 #include "list.h"
 
-#define list_merge(_head, _list) list_merge(_list, _head)
-#define list_is_last(_head, _list) list_is_last(_list, _head)
-#define list_is_first(_head, _list) list_is_first(_list, _head)
-
 /**
  * internal type save inline function to calculate the maximum of
  * to integers without macro implementation.
@@ -94,12 +90,17 @@ static void avl_remove(struct avl_tree *tree, struct avl_node *node);
 void
 avl_init(struct avl_tree *tree, avl_tree_comp comp, bool allow_dups, void *ptr)
 {
-  list_init_head(&tree->list_head);
+  INIT_LIST_HEAD(&tree->list_head);
   tree->root = NULL;
   tree->count = 0;
   tree->comp = comp;
   tree->allow_dups = allow_dups;
   tree->cmp_ptr = ptr;
+}
+
+static inline struct avl_node *avl_next(struct avl_node *node)
+{
+    return list_entry(node->list.next, struct avl_node, list);
 }
 
 /**
@@ -143,7 +144,7 @@ avl_find_lessequal(const struct avl_tree *tree, const void *key) {
 
   /* go left as long as key<node.key */
   while (diff < 0) {
-    if (list_is_first(&tree->list_head, &node->list)) {
+    if (list_is_first(&node->list, &tree->list_head)) {
       return NULL;
     }
 
@@ -155,7 +156,7 @@ avl_find_lessequal(const struct avl_tree *tree, const void *key) {
   next = node;
   while (diff >= 0) {
     node = next;
-    if (list_is_last(&tree->list_head, &node->list)) {
+    if (list_is_last(&node->list, &tree->list_head)) {
       break;
     }
 
@@ -185,7 +186,7 @@ avl_find_greaterequal(const struct avl_tree *tree, const void *key) {
 
   /* go right as long as key>node.key */
   while (diff > 0) {
-    if (list_is_last(&tree->list_head, &node->list)) {
+    if (list_is_last(&node->list, &tree->list_head)) {
       return NULL;
     }
 
@@ -197,7 +198,7 @@ avl_find_greaterequal(const struct avl_tree *tree, const void *key) {
   next = node;
   while (diff <= 0) {
     node = next;
-    if (list_is_first(&tree->list_head, &node->list)) {
+    if (list_is_first(&node->list, &tree->list_head)) {
       break;
     }
 
@@ -229,7 +230,7 @@ avl_insert(struct avl_tree *tree, struct avl_node *new)
   new->leader = true;
 
   if (tree->root == NULL) {
-    list_add_head(&tree->list_head, &new->list);
+    list_add(&new->list, &tree->list_head);
     tree->root = new;
     tree->count = 1;
     return 0;
@@ -239,8 +240,8 @@ avl_insert(struct avl_tree *tree, struct avl_node *new)
 
   last = node;
 
-  while (!list_is_last(&tree->list_head, &last->list)) {
-    next = list_next_element(last, list);
+  while (!list_is_last(&last->list, &tree->list_head)) {
+    next = avl_next(last);
     if (next->leader) {
       break;
     }
@@ -310,8 +311,8 @@ avl_delete(struct avl_tree *tree, struct avl_node *node)
   struct avl_node *right;
   if (node->leader) {
     if (tree->allow_dups
-        && !list_is_last(&tree->list_head, &node->list)
-        && !(next = list_next_element(node, list))->leader) {
+        && !list_is_last(&node->list, &tree->list_head)
+        && !(next = avl_next(node))->leader) {
       next->leader = true;
       next->balance = node->balance;
 
@@ -488,21 +489,21 @@ post_insert(struct avl_tree *tree, struct avl_node *node)
 static void
 avl_insert_before(struct avl_tree *tree, struct avl_node *pos_node, struct avl_node *node)
 {
-  list_add_before(&pos_node->list, &node->list);
+  list_add_tail(&node->list, &pos_node->list);
   tree->count++;
 }
 
 static void
 avl_insert_after(struct avl_tree *tree, struct avl_node *pos_node, struct avl_node *node)
 {
-  list_add_after(&pos_node->list, &node->list);
+  list_add(&node->list, &pos_node->list);
   tree->count++;
 }
 
 static void
 avl_remove(struct avl_tree *tree, struct avl_node *node)
 {
-  list_remove(&node->list);
+  list_del(&node->list);
   tree->count--;
 }
 

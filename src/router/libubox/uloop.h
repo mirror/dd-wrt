@@ -44,9 +44,16 @@ typedef void (*uloop_process_handler)(struct uloop_process *c, int ret);
 #define ULOOP_WRITE		(1 << 1)
 #define ULOOP_EDGE_TRIGGER	(1 << 2)
 #define ULOOP_BLOCKING		(1 << 3)
+
+#define ULOOP_EVENT_MASK	(ULOOP_READ | ULOOP_WRITE)
+
+/* internal flags */
+#define ULOOP_EVENT_BUFFERED	(1 << 4)
 #ifdef USE_KQUEUE
-#define ULOOP_EDGE_DEFER	(1 << 4)
+#define ULOOP_EDGE_DEFER	(1 << 5)
 #endif
+
+#define ULOOP_ERROR_CB		(1 << 6)
 
 struct uloop_fd
 {
@@ -55,9 +62,7 @@ struct uloop_fd
 	bool eof;
 	bool error;
 	bool registered;
-#ifdef USE_KQUEUE
-	bool flags;
-#endif
+	uint8_t flags;
 };
 
 struct uloop_timeout
@@ -92,13 +97,15 @@ int uloop_timeout_remaining(struct uloop_timeout *timeout);
 int uloop_process_add(struct uloop_process *p);
 int uloop_process_delete(struct uloop_process *p);
 
+bool uloop_cancelling(void);
+
 static inline void uloop_end(void)
 {
 	uloop_cancelled = true;
 }
 
 int uloop_init(void);
-void uloop_run(void);
+int uloop_run(void);
 void uloop_done(void);
 
 #endif

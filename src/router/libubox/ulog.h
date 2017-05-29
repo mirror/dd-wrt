@@ -1,5 +1,7 @@
 /*
- * Copyright (C) 2012 Felix Fietkau <nbd@openwrt.org>
+ * ulog - simple logging functions
+ *
+ * Copyright (C) 2015 Jo-Philipp Wich <jow@openwrt.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -13,25 +15,28 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <string.h>
-#include "avl-cmp.h"
-#include "blob.h"
 
-static inline int _min(int v1, int v2)
-{
-	return v1 < v2 ? v1 : v2;
-}
+#ifndef __LIBUBOX_ULOG_H
+#define __LIBUBOX_ULOG_H
 
-int
-avl_strcmp(const void *k1, const void *k2, void *ptr)
-{
-	return strcmp(k1, k2);
-}
+#include <syslog.h>
 
-int
-avl_blobcmp(const void *k1, const void *k2, void *ptr)
-{
-	int len = _min(blob_raw_len(k1), blob_raw_len(k2));
+enum {
+	ULOG_KMSG   = (1 << 0),
+	ULOG_SYSLOG = (1 << 1),
+	ULOG_STDIO  = (1 << 2)
+};
 
-	return memcmp(k1, k2, len);
-}
+void ulog_open(int channels, int facility, const char *ident);
+void ulog_close(void);
+
+void ulog_threshold(int threshold);
+
+void ulog(int priority, const char *fmt, ...);
+
+#define ULOG_INFO(fmt, ...) ulog(LOG_INFO, fmt, ## __VA_ARGS__)
+#define ULOG_NOTE(fmt, ...) ulog(LOG_NOTICE, fmt, ## __VA_ARGS__)
+#define ULOG_WARN(fmt, ...) ulog(LOG_WARNING, fmt, ## __VA_ARGS__)
+#define ULOG_ERR(fmt, ...) ulog(LOG_ERR, fmt, ## __VA_ARGS__)
+
+#endif

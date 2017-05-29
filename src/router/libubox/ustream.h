@@ -143,6 +143,11 @@ void ustream_free(struct ustream *s);
 /* ustream_consume: remove data from the head of the read buffer */
 void ustream_consume(struct ustream *s, int len);
 
+/*
+ * ustream_read: read and consume data in read buffer into caller-specified
+ * area.  Return length of data read.
+ */
+int ustream_read(struct ustream *s, char *buf, int buflen);
 /* ustream_write: add data to the write buffer */
 int ustream_write(struct ustream *s, const char *buf, int len, bool more);
 int ustream_printf(struct ustream *s, const char *format, ...);
