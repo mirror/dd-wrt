@@ -56,7 +56,7 @@ json_script_file_from_blobmsg(const char *name, void *data, int len)
 }
 
 static struct json_script_file *
-json_script_get_file(struct json_script_ctx *ctx, const char *filename)
+json_script_get_file(struct json_script_ctx *ctx, char *filename)
 {
 	struct json_script_file *f;
 
@@ -618,7 +618,7 @@ void json_script_run_file(struct json_script_ctx *ctx, struct json_script_file *
 	__json_script_run(&call, file, NULL);
 }
 
-void json_script_run(struct json_script_ctx *ctx, const char *name,
+void json_script_run(struct json_script_ctx *ctx, char *name,
 		     struct blob_attr *vars)
 {
 	struct json_script_file *file;
@@ -675,7 +675,7 @@ __default_handle_expr(struct json_script_ctx *ctx, const char *name,
 }
 
 static struct json_script_file *
-__default_handle_file(struct json_script_ctx *ctx, const char *name)
+__default_handle_file(struct json_script_ctx *ctx, char *name)
 {
 	return NULL;
 }
