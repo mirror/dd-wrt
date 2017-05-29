@@ -27,6 +27,7 @@ enum {
 	ULOG_STDIO  = (1 << 2)
 };
 
+#ifdef NEED_PRINTF
 void ulog_open(int channels, int facility, const char *ident);
 void ulog_close(void);
 
@@ -38,5 +39,20 @@ void ulog(int priority, const char *fmt, ...);
 #define ULOG_NOTE(fmt, ...) ulog(LOG_NOTICE, fmt, ## __VA_ARGS__)
 #define ULOG_WARN(fmt, ...) ulog(LOG_WARNING, fmt, ## __VA_ARGS__)
 #define ULOG_ERR(fmt, ...) ulog(LOG_ERR, fmt, ## __VA_ARGS__)
+#else
 
+
+#define ulog_open(channels, facility, ident) do { } while(0);
+#define ulog_close() do { } while(0);
+
+#define ulog_threshold(threshold) do { } while(0);
+
+#define ulog(priority, fmt, ...) do { } while(0);
+
+#define ULOG_INFO(fmt, ...) ulog(LOG_INFO, fmt, ## __VA_ARGS__)
+#define ULOG_NOTE(fmt, ...) ulog(LOG_NOTICE, fmt, ## __VA_ARGS__)
+#define ULOG_WARN(fmt, ...) ulog(LOG_WARNING, fmt, ## __VA_ARGS__)
+#define ULOG_ERR(fmt, ...) ulog(LOG_ERR, fmt, ## __VA_ARGS__)
+
+#endif
 #endif
