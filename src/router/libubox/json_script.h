@@ -28,6 +28,7 @@ struct json_script_ctx {
 	struct blob_buf buf;
 
 	uint32_t run_seq;
+	bool abort;
 
 	/*
 	 * handle_command: handle a command that was not recognized by the
@@ -96,6 +97,30 @@ void json_script_free(struct json_script_ctx *ctx);
  */
 void json_script_run(struct json_script_ctx *ctx, const char *filename,
 		     struct blob_attr *vars);
+
+void json_script_run_file(struct json_script_ctx *ctx, struct json_script_file *file,
+			  struct blob_attr *vars);
+
+/*
+ * json_script_abort - abort current json script run
+ *
+ * to be called from a script context callback
+ */
+static inline void
+json_script_abort(struct json_script_ctx *ctx)
+{
+	ctx->abort = true;
+}
+
+/*
+ * json_script_eval_string - evaluate a string and store the result
+ *
+ * Can be used to process variable references outside of a script
+ * in a same way that they would be interpreted in the script context.
+ */
+int json_script_eval_string(struct json_script_ctx *ctx, struct blob_attr *vars,
+			    struct blob_buf *buf, const char *name,
+			    const char *pattern);
 
 struct json_script_file *
 json_script_file_from_blobmsg(const char *name, void *data, int len);

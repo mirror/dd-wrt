@@ -33,7 +33,7 @@ vlist_delete(struct vlist_tree *tree, struct vlist_node *node)
 }
 
 void
-vlist_add(struct vlist_tree *tree, struct vlist_node *node, void *key)
+vlist_add(struct vlist_tree *tree, struct vlist_node *node, const void *key)
 {
 	struct vlist_node *old_node = NULL;
 	struct avl_node *anode;

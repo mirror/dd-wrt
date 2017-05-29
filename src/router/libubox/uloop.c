@@ -1,7 +1,7 @@
 /*
  * uloop - event loop implementation
  *
- * Copyright (C) 2010-2013 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2010-2016 Felix Fietkau <nbd@openwrt.org>
  *
  * Permission to use, copy, modify, and/or distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -38,6 +38,19 @@
 #endif
 #include <sys/wait.h>
 
+struct uloop_fd_event {
+	struct uloop_fd *fd;
+	unsigned int events;
+};
+
+struct uloop_fd_stack {
+	struct uloop_fd_stack *next;
+	struct uloop_fd *fd;
+	unsigned int events;
+};
+
+static struct uloop_fd_stack *fd_stack = NULL;
+
 #define ULOOP_MAX_EVENTS 10
 
 static struct list_head timeouts = LIST_HEAD_INIT(timeouts);
@@ -45,260 +58,146 @@ static struct list_head processes = LIST_HEAD_INIT(processes);
 
 static int poll_fd = -1;
 bool uloop_cancelled = false;
-bool uloop_handle_sigchld = true;
+static int uloop_status = 0;
 static bool do_sigchld = false;
+
+static struct uloop_fd_event cur_fds[ULOOP_MAX_EVENTS];
 static int cur_fd, cur_nfds;
+static int uloop_run_depth = 0;
+
+int uloop_fd_add(struct uloop_fd *sock, unsigned int flags);
 
 #ifdef USE_KQUEUE
-
-int uloop_init(void)
-{
-	struct timespec timeout = { 0, 0 };
-	struct kevent ev = {};
-
-	if (poll_fd >= 0)
-		return 0;
-
-	poll_fd = kqueue();
-	if (poll_fd < 0)
-		return -1;
-
-	EV_SET(&ev, SIGCHLD, EVFILT_SIGNAL, EV_ADD, 0, 0, 0);
-	kevent(poll_fd, &ev, 1, NULL, 0, &timeout);
-
-	return 0;
-}
-
-
-static uint16_t get_flags(unsigned int flags, unsigned int mask)
-{
-	uint16_t kflags = 0;
-
-	if (!(flags & mask))
-		return EV_DELETE;
-
-	kflags = EV_ADD;
-	if (flags & ULOOP_EDGE_TRIGGER)
-		kflags |= EV_CLEAR;
-
-	return kflags;
-}
-
-static struct kevent events[ULOOP_MAX_EVENTS];
-
-static int register_kevent(struct uloop_fd *fd, unsigned int flags)
-{
-	struct timespec timeout = { 0, 0 };
-	struct kevent ev[2];
-	int nev = 0;
-	unsigned int fl = 0;
-	unsigned int changed;
-	uint16_t kflags;
-
-	if (flags & ULOOP_EDGE_DEFER)
-		flags &= ~ULOOP_EDGE_TRIGGER;
-
-	changed = flags ^ fd->flags;
-	if (changed & ULOOP_EDGE_TRIGGER)
-		changed |= flags;
-
-	if (changed & ULOOP_READ) {
-		kflags = get_flags(flags, ULOOP_READ);
-		EV_SET(&ev[nev++], fd->fd, EVFILT_READ, kflags, 0, 0, fd);
-	}
-
-	if (changed & ULOOP_WRITE) {
-		kflags = get_flags(flags, ULOOP_WRITE);
-		EV_SET(&ev[nev++], fd->fd, EVFILT_WRITE, kflags, 0, 0, fd);
-	}
-
-	if (!flags)
-		fl |= EV_DELETE;
-
-	fd->flags = flags;
-	if (kevent(poll_fd, ev, nev, NULL, fl, &timeout) == -1)
-		return -1;
-
-	return 0;
-}
-
-static int register_poll(struct uloop_fd *fd, unsigned int flags)
-{
-	if (flags & ULOOP_EDGE_TRIGGER)
-		flags |= ULOOP_EDGE_DEFER;
-	else
-		flags &= ~ULOOP_EDGE_DEFER;
-
-	return register_kevent(fd, flags);
-}
-
-int uloop_fd_delete(struct uloop_fd *sock)
-{
-	int i;
-
-	for (i = cur_fd + 1; i < cur_nfds; i++) {
-		if (events[i].udata != sock)
-			continue;
-
-		events[i].udata = NULL;
-	}
-
-	sock->registered = false;
-	return register_poll(sock, 0);
-}
-
-static void uloop_run_events(int timeout)
-{
-	struct timespec ts;
-	int nfds, n;
-
-	if (timeout >= 0) {
-		ts.tv_sec = timeout / 1000;
-		ts.tv_nsec = (timeout % 1000) * 1000000;
-	}
-
-	nfds = kevent(poll_fd, NULL, 0, events, ARRAY_SIZE(events), timeout >= 0 ? &ts : NULL);
-	for(n = 0; n < nfds; ++n)
-	{
-		struct uloop_fd *u = events[n].udata;
-		unsigned int ev = 0;
-
-		if (!u)
-			continue;
-
-		if (events[n].flags & EV_ERROR) {
-			u->error = true;
-			uloop_fd_delete(u);
-		}
-
-		if(events[n].filter == EVFILT_READ)
-			ev |= ULOOP_READ;
-		else if (events[n].filter == EVFILT_WRITE)
-			ev |= ULOOP_WRITE;
-
-		if (events[n].flags & EV_EOF)
-			u->eof = true;
-		else if (!ev)
-			continue;
-
-		if (u->cb) {
-			cur_fd = n;
-			cur_nfds = nfds;
-			u->cb(u, ev);
-			if (u->flags & ULOOP_EDGE_DEFER) {
-				u->flags &= ~ULOOP_EDGE_DEFER;
-				register_kevent(u, u->flags);
-			}
-		}
-	}
-	cur_nfds = 0;
-}
-
+#include "uloop-kqueue.c"
 #endif
 
 #ifdef USE_EPOLL
-
-/**
- * FIXME: uClibc < 0.9.30.3 does not define EPOLLRDHUP for Linux >= 2.6.17
- */
-#ifndef EPOLLRDHUP
-#define EPOLLRDHUP 0x2000
+#include "uloop-epoll.c"
 #endif
 
-int uloop_init(void)
+static void waker_consume(struct uloop_fd *fd, unsigned int events)
 {
-	if (poll_fd >= 0)
+	char buf[4];
+
+	while (read(fd->fd, buf, 4) > 0)
+		;
+}
+
+static int waker_pipe = -1;
+static struct uloop_fd waker_fd = {
+	.fd = -1,
+	.cb = waker_consume,
+};
+
+static void waker_init_fd(int fd)
+{
+	fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC);
+	fcntl(fd, F_SETFL, fcntl(fd, F_GETFL) | O_NONBLOCK);
+}
+
+static int waker_init(void)
+{
+	int fds[2];
+
+	if (waker_pipe >= 0)
 		return 0;
 
-	poll_fd = epoll_create(32);
-	if (poll_fd < 0)
+	if (pipe(fds) < 0)
 		return -1;
 
-	fcntl(poll_fd, F_SETFD, fcntl(poll_fd, F_GETFD) | FD_CLOEXEC);
+	waker_init_fd(fds[0]);
+	waker_init_fd(fds[1]);
+	waker_pipe = fds[1];
+
+	waker_fd.fd = fds[0];
+	waker_fd.cb = waker_consume;
+	uloop_fd_add(&waker_fd, ULOOP_READ);
+
 	return 0;
 }
 
-static int register_poll(struct uloop_fd *fd, unsigned int flags)
+int uloop_init(void)
 {
-	struct epoll_event ev;
-	int op = fd->registered ? EPOLL_CTL_MOD : EPOLL_CTL_ADD;
+	if (uloop_init_pollfd() < 0)
+		return -1;
 
-	memset(&ev, 0, sizeof(struct epoll_event));
+	if (waker_init() < 0) {
+		uloop_done();
+		return -1;
+	}
 
-	if (flags & ULOOP_READ)
-		ev.events |= EPOLLIN | EPOLLRDHUP;
-
-	if (flags & ULOOP_WRITE)
-		ev.events |= EPOLLOUT;
-
-	if (flags & ULOOP_EDGE_TRIGGER)
-		ev.events |= EPOLLET;
-
-	ev.data.fd = fd->fd;
-	ev.data.ptr = fd;
-
-	return epoll_ctl(poll_fd, op, fd->fd, &ev);
+	return 0;
 }
 
-static struct epoll_event events[ULOOP_MAX_EVENTS];
-
-int uloop_fd_delete(struct uloop_fd *sock)
+static bool uloop_fd_stack_event(struct uloop_fd *fd, int events)
 {
-	int i;
+	struct uloop_fd_stack *cur;
 
-	if (!sock->registered)
-		return 0;
+	/*
+	 * Do not buffer events for level-triggered fds, they will keep firing.
+	 * Caller needs to take care of recursion issues.
+	 */
+	if (!(fd->flags & ULOOP_EDGE_TRIGGER))
+		return false;
 
-	for (i = cur_fd + 1; i < cur_nfds; i++) {
-		if (events[i].data.ptr != sock)
+	for (cur = fd_stack; cur; cur = cur->next) {
+		if (cur->fd != fd)
 			continue;
 
-		events[i].data.ptr = NULL;
+		if (events < 0)
+			cur->fd = NULL;
+		else
+			cur->events |= events | ULOOP_EVENT_BUFFERED;
+
+		return true;
 	}
-	sock->registered = false;
-	return epoll_ctl(poll_fd, EPOLL_CTL_DEL, sock->fd, 0);
+
+	return false;
 }
 
 static void uloop_run_events(int timeout)
 {
-	int n, nfds;
+	struct uloop_fd_event *cur;
+	struct uloop_fd *fd;
 
-	nfds = epoll_wait(poll_fd, events, ARRAY_SIZE(events), timeout);
-	for(n = 0; n < nfds; ++n)
-	{
-		struct uloop_fd *u = events[n].data.ptr;
-		unsigned int ev = 0;
-
-		if (!u)
-			continue;
-
-		if(events[n].events & (EPOLLERR|EPOLLHUP)) {
-			u->error = true;
-			uloop_fd_delete(u);
-		}
-
-		if(!(events[n].events & (EPOLLRDHUP|EPOLLIN|EPOLLOUT|EPOLLERR|EPOLLHUP)))
-			continue;
-
-		if(events[n].events & EPOLLRDHUP)
-			u->eof = true;
-
-		if(events[n].events & EPOLLIN)
-			ev |= ULOOP_READ;
-
-		if(events[n].events & EPOLLOUT)
-			ev |= ULOOP_WRITE;
-
-		if(u->cb) {
-			cur_fd = n;
-			cur_nfds = nfds;
-			u->cb(u, ev);
-		}
+	if (!cur_nfds) {
+		cur_fd = 0;
+		cur_nfds = uloop_fetch_events(timeout);
+		if (cur_nfds < 0)
+			cur_nfds = 0;
 	}
-	cur_nfds = 0;
-}
 
-#endif
+	while (cur_nfds > 0) {
+		struct uloop_fd_stack stack_cur;
+		unsigned int events;
+
+		cur = &cur_fds[cur_fd++];
+		cur_nfds--;
+
+		fd = cur->fd;
+		events = cur->events;
+		if (!fd)
+			continue;
+
+		if (!fd->cb)
+			continue;
+
+		if (uloop_fd_stack_event(fd, cur->events))
+			continue;
+
+		stack_cur.next = fd_stack;
+		stack_cur.fd = fd;
+		fd_stack = &stack_cur;
+		do {
+			stack_cur.events = 0;
+			fd->cb(fd, events);
+			events = stack_cur.events & ULOOP_EVENT_MASK;
+		} while (stack_cur.fd && events);
+		fd_stack = stack_cur.next;
+
+		return;
+	}
+}
 
 int uloop_fd_add(struct uloop_fd *sock, unsigned int flags)
 {
@@ -320,9 +219,29 @@ int uloop_fd_add(struct uloop_fd *sock, unsigned int flags)
 
 	sock->registered = true;
 	sock->eof = false;
+	sock->error = false;
 
 out:
 	return ret;
+}
+
+int uloop_fd_delete(struct uloop_fd *fd)
+{
+	int i;
+
+	for (i = 0; i < cur_nfds; i++) {
+		if (cur_fds[cur_fd + i].fd != fd)
+			continue;
+
+		cur_fds[cur_fd + i].fd = NULL;
+	}
+
+	if (!fd->registered)
+		return 0;
+
+	fd->registered = false;
+	uloop_fd_stack_event(fd, -1);
+	return __uloop_fd_delete(fd);
 }
 
 static int tv_diff(struct timeval *t1, struct timeval *t2)
@@ -369,14 +288,14 @@ int uloop_timeout_set(struct uloop_timeout *timeout, int msecs)
 	if (timeout->pending)
 		uloop_timeout_cancel(timeout);
 
-	uloop_gettime(&timeout->time);
+	uloop_gettime(time);
 
 	time->tv_sec += msecs / 1000;
 	time->tv_usec += (msecs % 1000) * 1000;
 
 	if (time->tv_usec > 1000000) {
 		time->tv_sec++;
-		time->tv_usec %= 1000000;
+		time->tv_usec -= 1000000;
 	}
 
 	return uloop_timeout_add(timeout);
@@ -447,6 +366,9 @@ static void uloop_handle_processes(void)
 
 	while (1) {
 		pid = waitpid(-1, &ret, WNOHANG);
+		if (pid < 0 && errno == EINTR)
+			continue;
+
 		if (pid <= 0)
 			return;
 
@@ -464,29 +386,85 @@ static void uloop_handle_processes(void)
 
 }
 
+static void uloop_signal_wake(void)
+{
+	do {
+		if (write(waker_pipe, "w", 1) < 0) {
+			if (errno == EINTR)
+				continue;
+		}
+		break;
+	} while (1);
+}
+
 static void uloop_handle_sigint(int signo)
 {
+	uloop_status = signo;
 	uloop_cancelled = true;
+	uloop_signal_wake();
 }
 
 static void uloop_sigchld(int signo)
 {
 	do_sigchld = true;
+	uloop_signal_wake();
 }
 
-static void uloop_setup_signals(void)
+static void uloop_install_handler(int signum, void (*handler)(int), struct sigaction* old, bool add)
 {
 	struct sigaction s;
+	struct sigaction *act;
 
-	memset(&s, 0, sizeof(struct sigaction));
-	s.sa_handler = uloop_handle_sigint;
-	s.sa_flags = 0;
-	sigaction(SIGINT, &s, NULL);
+	act = NULL;
+	sigaction(signum, NULL, &s);
 
-	if (uloop_handle_sigchld) {
-		s.sa_handler = uloop_sigchld;
-		sigaction(SIGCHLD, &s, NULL);
+	if (add) {
+		if (s.sa_handler == SIG_DFL) { /* Do not override existing custom signal handlers */
+			memcpy(old, &s, sizeof(struct sigaction));
+			s.sa_handler = handler;
+			s.sa_flags = 0;
+			act = &s;
+		}
 	}
+	else if (s.sa_handler == handler) { /* Do not restore if someone modified our handler */
+			act = old;
+	}
+
+	if (act != NULL)
+		sigaction(signum, act, NULL);
+}
+
+static void uloop_ignore_signal(int signum, bool ignore)
+{
+	struct sigaction s;
+	void *new_handler = NULL;
+
+	sigaction(signum, NULL, &s);
+
+	if (ignore) {
+		if (s.sa_handler == SIG_DFL) /* Ignore only if there isn't any custom handler */
+			new_handler = SIG_IGN;
+	} else {
+		if (s.sa_handler == SIG_IGN) /* Restore only if noone modified our SIG_IGN */
+			new_handler = SIG_DFL;
+	}
+
+	if (new_handler) {
+		s.sa_handler = new_handler;
+		s.sa_flags = 0;
+		sigaction(signum, &s, NULL);
+	}
+}
+
+static void uloop_setup_signals(bool add)
+{
+	static struct sigaction old_sigint, old_sigchld, old_sigterm;
+
+	uloop_install_handler(SIGINT, uloop_handle_sigint, &old_sigint, add);
+	uloop_install_handler(SIGTERM, uloop_handle_sigint, &old_sigterm, add);
+	uloop_install_handler(SIGCHLD, uloop_sigchld, &old_sigchld, add);
+
+	uloop_ignore_signal(SIGPIPE, add);
 }
 
 static int uloop_get_next_timeout(struct timeval *tv)
@@ -537,31 +515,58 @@ static void uloop_clear_processes(void)
 		uloop_process_delete(p);
 }
 
-void uloop_run(void)
+bool uloop_cancelling(void)
+{
+	return uloop_run_depth > 0 && uloop_cancelled;
+}
+
+int uloop_run(void)
 {
 	struct timeval tv;
 
-	uloop_setup_signals();
-	while(!uloop_cancelled)
+	/*
+	 * Handlers are only updated for the first call to uloop_run() (and restored
+	 * when this call is done).
+	 */
+	if (!uloop_run_depth++)
+		uloop_setup_signals(true);
+
+	uloop_status = 0;
+	uloop_cancelled = false;
+	while (!uloop_cancelled)
 	{
 		uloop_gettime(&tv);
 		uloop_process_timeouts(&tv);
-		if (uloop_cancelled)
-			break;
 
 		if (do_sigchld)
 			uloop_handle_processes();
+
+		if (uloop_cancelled)
+			break;
+
+		uloop_gettime(&tv);
 		uloop_run_events(uloop_get_next_timeout(&tv));
 	}
+
+	if (!--uloop_run_depth)
+		uloop_setup_signals(false);
+
+	return uloop_status;
 }
 
 void uloop_done(void)
 {
-	if (poll_fd < 0)
-		return;
+	if (poll_fd >= 0) {
+		close(poll_fd);
+		poll_fd = -1;
+	}
 
-	close(poll_fd);
-	poll_fd = -1;
+	if (waker_pipe >= 0) {
+		uloop_fd_delete(&waker_fd);
+		close(waker_pipe);
+		close(waker_fd.fd);
+		waker_pipe = -1;
+	}
 
 	uloop_clear_timeouts();
 	uloop_clear_processes();

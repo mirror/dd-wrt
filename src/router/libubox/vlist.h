@@ -41,6 +41,19 @@ struct vlist_node {
 	int version;
 };
 
+#define VLIST_TREE_INIT(_name, _comp, _update, _keep_old, _no_delete)	\
+	{								\
+		.avl = AVL_TREE_INIT(_name.avl, _comp, false, NULL),	\
+		.update = _update,					\
+		.version = 1,						\
+		.keep_old = _keep_old,					\
+		.no_delete = _no_delete,				\
+	}
+
+#define VLIST_TREE(_name, ...)						\
+	struct vlist_tree _name =					\
+		VLIST_TREE_INIT(_name, __VA_ARGS__)
+
 void vlist_init(struct vlist_tree *tree, avl_tree_comp cmp, vlist_update_cb update);
 
 #define vlist_find(tree, name, element, node_member) \
@@ -51,7 +64,7 @@ static inline void vlist_update(struct vlist_tree *tree)
 	tree->version++;
 }
 
-void vlist_add(struct vlist_tree *tree, struct vlist_node *node, void *key);
+void vlist_add(struct vlist_tree *tree, struct vlist_node *node, const void *key);
 void vlist_delete(struct vlist_tree *tree, struct vlist_node *node);
 void vlist_flush(struct vlist_tree *tree);
 void vlist_flush_all(struct vlist_tree *tree);

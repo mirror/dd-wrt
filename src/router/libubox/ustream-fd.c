@@ -25,7 +25,7 @@ static void ustream_fd_set_uloop(struct ustream *s, bool write)
 {
 	struct ustream_fd *sf = container_of(s, struct ustream_fd, stream);
 	struct ustream_buf *buf;
-	unsigned int flags = ULOOP_EDGE_TRIGGER;
+	unsigned int flags = ULOOP_EDGE_TRIGGER | ULOOP_ERROR_CB;
 
 	if (!s->read_blocked && !s->eof)
 		flags |= ULOOP_READ;
@@ -50,6 +50,9 @@ static void ustream_fd_read_pending(struct ustream_fd *sf, bool *more)
 	char *buf;
 
 	do {
+		if (s->read_blocked)
+			break;
+
 		buf = ustream_reserve(s, 1, &buflen);
 		if (!buf)
 			break;
@@ -59,7 +62,7 @@ static void ustream_fd_read_pending(struct ustream_fd *sf, bool *more)
 			if (errno == EINTR)
 				continue;
 
-			if (errno == EAGAIN)
+			if (errno == EAGAIN || errno == ENOTCONN)
 				return;
 
 			len = 0;
@@ -93,7 +96,7 @@ static int ustream_fd_write(struct ustream *s, const char *buf, int buflen, bool
 			if (errno == EINTR)
 				continue;
 
-			if (errno == EAGAIN || errno == EWOULDBLOCK)
+			if (errno == EAGAIN || errno == EWOULDBLOCK || errno == ENOTCONN)
 				break;
 
 			return -1;
@@ -119,8 +122,15 @@ static bool __ustream_fd_poll(struct ustream_fd *sf, unsigned int events)
 		ustream_fd_read_pending(sf, &more);
 
 	if (events & ULOOP_WRITE) {
-		if (!ustream_write_pending(s))
+		bool no_more = ustream_write_pending(s);
+		if (no_more)
 			ustream_fd_set_uloop(s, false);
+	}
+
+	if (sf->fd.error && !s->write_error) {
+		ustream_state_change(s);
+		s->write_error = true;
+		ustream_fd_set_uloop(s, false);
 	}
 
 	return more;
