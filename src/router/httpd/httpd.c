@@ -369,7 +369,7 @@ void send_headers(int status, char *title, char *extra_header, char *mime_type, 
 ** Then the 6-bit values are represented using the characters "A-Za-z0-9+/".
 */
 
-static const char b64_decode_table[256] = {
+static const int b64_decode_table[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	/* 00-0F */
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,	/* 10-1F */
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63,	/* 20-2F */
