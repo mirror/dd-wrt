@@ -19,6 +19,7 @@ squid-configure:
 	--datadir=/usr/lib/squid \
 	--libexecdir=/usr/libexec/squid \
 	--sysconfdir=/etc/squid \
+	--disable-strict-error-checking \
 	--enable-shared \
 	--enable-static \
 	--enable-x-accelerator-vary \
