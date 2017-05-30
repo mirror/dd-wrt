@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -101,10 +101,11 @@ DiskdFile::create(int flags, mode_t, RefCount<IORequestor> callback)
                      NULL);
 
     if (x < 0) {
+        int xerrno = errno;
         ioCompleted();
         errorOccured = true;
         //        IO->shm.put (shm_offset);
-        debugs(79, DBG_IMPORTANT, "storeDiskdSend CREATE: " << xstrerror());
+        debugs(79, DBG_IMPORTANT, "storeDiskdSend CREATE: " << xstrerr(xerrno));
         notifyClient();
         ioRequestor = NULL;
         return;
@@ -130,10 +131,11 @@ DiskdFile::read(ReadRequest *aRead)
                      aRead);
 
     if (x < 0) {
+        int xerrno = errno;
         ioCompleted();
         errorOccured = true;
         //        IO->shm.put (shm_offset);
-        debugs(79, DBG_IMPORTANT, "storeDiskdSend READ: " << xstrerror());
+        debugs(79, DBG_IMPORTANT, "storeDiskdSend READ: " << xstrerr(xerrno));
         notifyClient();
         ioRequestor = NULL;
         return;
@@ -157,9 +159,10 @@ DiskdFile::close()
                      NULL);
 
     if (x < 0) {
+        int xerrno = errno;
         ioCompleted();
         errorOccured = true;
-        debugs(79, DBG_IMPORTANT, "storeDiskdSend CLOSE: " << xstrerror());
+        debugs(79, DBG_IMPORTANT, "storeDiskdSend CLOSE: " << xstrerr(xerrno));
         notifyClient();
         ioRequestor = NULL;
         return;
@@ -294,9 +297,10 @@ DiskdFile::write(WriteRequest *aRequest)
                      aRequest);
 
     if (x < 0) {
+        int xerrno = errno;
         ioCompleted();
         errorOccured = true;
-        debugs(79, DBG_IMPORTANT, "storeDiskdSend WRITE: " << xstrerror());
+        debugs(79, DBG_IMPORTANT, "storeDiskdSend WRITE: " << xstrerr(xerrno));
         //        IO->shm.put (shm_offset);
         notifyClient();
         ioRequestor = NULL;

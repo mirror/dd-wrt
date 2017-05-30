@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,6 @@
 #define SQUID_CLIENT_DB_H_
 
 #include "anyp/ProtocolType.h"
-//#include "enums.h"
 #include "ip/Address.h"
 #include "LogTags.h"
 

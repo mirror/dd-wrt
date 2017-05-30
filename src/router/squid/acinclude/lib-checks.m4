@@ -1,36 +1,9 @@
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
-
-dnl checks whether dbopen needs -ldb to be added to libs
-dnl sets ac_cv_dbopen_libdb to either "yes" or "no"
-
-AC_DEFUN([SQUID_CHECK_DBOPEN_NEEDS_LIBDB],[
-  AC_CACHE_CHECK(if dbopen needs -ldb,ac_cv_dbopen_libdb, [
-    SQUID_STATE_SAVE(dbopen_libdb)
-    LIBS="$LIBS -ldb"
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
-#if HAVE_SYS_TYPES_H
-#include <sys/types.h>
-#endif
-#if HAVE_LIMITS_H
-#include <limits.h>
-#endif
-#if HAVE_DB_185_H
-#include <db_185.h>
-#elif HAVE_DB_H
-#include <db.h>
-#endif]], 
-[[dbopen("", 0, 0, DB_HASH, (void *)0L)]])],
-    [ac_cv_dbopen_libdb="yes"],
-    [ac_cv_dbopen_libdb="no"])
-    SQUID_STATE_ROLLBACK(dbopen_libdb)
-  ])
-])
-
 
 dnl check whether regex works by actually compiling one
 dnl sets squid_cv_regex_works to either yes or no
@@ -93,7 +66,11 @@ AC_DEFUN([SQUID_CHECK_OPENSSL_GETCERTIFICATE_WORKS],[
     ],
     [
     SSLeay_add_ssl_algorithms();
-    SSL_CTX *sslContext = SSL_CTX_new(SSLv3_method());
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+    SSL_CTX *sslContext = SSL_CTX_new(TLS_method());
+#else
+    SSL_CTX *sslContext = SSL_CTX_new(SSLv23_method());
+#endif
     SSL *ssl = SSL_new(sslContext);
     X509* cert = SSL_get_certificate(ssl);
     return 0;
@@ -120,7 +97,11 @@ AC_DEFUN([SQUID_CHECK_OPENSSL_GETCERTIFICATE_WORKS],[
     ],
     [
     SSLeay_add_ssl_algorithms();
-    SSL_CTX *sslContext = SSL_CTX_new(SSLv3_method());
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+    SSL_CTX *sslContext = SSL_CTX_new(TLS_method());
+#else
+    SSL_CTX *sslContext = SSL_CTX_new(SSLv23_method());
+#endif
     X509 ***pCert = (X509 ***)sslContext->cert;
     X509 *sslCtxCert = pCert && *pCert ? **pCert : (X509 *)0x1;
     if (sslCtxCert != NULL)
@@ -289,11 +270,12 @@ AC_DEFUN([SQUID_CHECK_OPENSSL_HELLO_OVERWRITE_HACK],[
     ssl->init_num = 0;
     ssl->s3->wpend_ret = 0;
     ssl->s3->wpend_tot = 0;
+    SSL_CIPHER *cipher = 0;
+    assert(SSL_CIPHER_get_id(cipher));
     ])
   ],
   [
-   AC_DEFINE(SQUID_USE_OPENSSL_HELLO_OVERWRITE_HACK, 1)
-   AC_MSG_RESULT([yes])
+   AC_MSG_RESULT([possibly; to try, set SQUID_USE_OPENSSL_HELLO_OVERWRITE_HACK macro value to 1])
   ],
   [
    AC_MSG_RESULT([no])

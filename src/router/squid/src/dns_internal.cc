@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 
 #include "squid.h"
 #include "base/InstanceId.h"
+#include "base/RunnersRegistry.h"
 #include "comm.h"
 #include "comm/Connection.h"
 #include "comm/ConnOpener.h"
@@ -208,6 +209,22 @@ struct _ns {
     bool mDNSResolver;
     nsvc *vc;
 };
+
+namespace Dns
+{
+
+/// manage DNS internal component
+class ConfigRr : public RegisteredRunner
+{
+public:
+    /* RegisteredRunner API */
+    virtual void startReconfigure() override;
+    virtual void endingShutdown() override;
+};
+
+RunnerRegistrationEntry(ConfigRr);
+
+} // namespace Dns
 
 struct _sp {
     char domain[NS_MAXDNAME];
@@ -433,8 +450,9 @@ idnsParseResolvConf(void)
 #if !_SQUID_WINDOWS_
     FILE *fp = fopen(_PATH_RESCONF, "r");
 
-    if (fp == NULL) {
-        debugs(78, DBG_IMPORTANT, "" << _PATH_RESCONF << ": " << xstrerror());
+    if (!fp) {
+        int xerrno = errno;
+        debugs(78, DBG_IMPORTANT, "" << _PATH_RESCONF << ": " << xstrerr(xerrno));
         return false;
     }
 
@@ -902,7 +920,7 @@ nsvc::~nsvc()
 {
     delete queue;
     delete msg;
-    if (ns < nns) // XXX: Dns::Shutdown may have freed nameservers[]
+    if (ns < nns) // XXX: idnsShutdownAndFreeState may have freed nameservers[]
         nameservers[ns].vc = NULL;
 }
 
@@ -961,6 +979,13 @@ idnsSendQueryVC(idns_query * q, int nsn)
 static void
 idnsSendQuery(idns_query * q)
 {
+    // XXX: DNS sockets get closed during reconfigure produces a race between
+    // any already active connections (or ones received between closing DNS
+    // sockets and server listening sockets) and the reconfigure completing
+    // (Runner syncConfig() being run). Transactions which loose this race will
+    // produce DNS timeouts (or whatever the caller set) as their queries never
+    // get queued to be re-tried after the DNS socekts are re-opened.
+
     if (DnsSocketA < 0 && DnsSocketB < 0) {
         debugs(78, DBG_IMPORTANT, "WARNING: idnsSendQuery: Can't send query, no DNS socket!");
         return;
@@ -994,15 +1019,16 @@ idnsSendQuery(idns_query * q)
             else if (DnsSocketA >= 0)
                 x = comm_udp_sendto(DnsSocketA, nameservers[nsn].S, q->buf, q->sz);
         }
+        int xerrno = errno;
 
         ++ q->nsends;
 
         q->sent_t = current_time;
 
         if (y < 0 && nameservers[nsn].S.isIPv6())
-            debugs(50, DBG_IMPORTANT, "idnsSendQuery: FD " << DnsSocketB << ": sendto: " << xstrerror());
+            debugs(50, DBG_IMPORTANT, MYNAME << "FD " << DnsSocketB << ": sendto: " << xstrerr(xerrno));
         if (x < 0 && nameservers[nsn].S.isIPv4())
-            debugs(50, DBG_IMPORTANT, "idnsSendQuery: FD " << DnsSocketA << ": sendto: " << xstrerror());
+            debugs(50, DBG_IMPORTANT, MYNAME << "FD " << DnsSocketA << ": sendto: " << xstrerr(xerrno));
 
     } while ( (x<0 && y<0) && q->nsends % nns != 0);
 
@@ -1350,7 +1376,8 @@ idnsRead(int fd, void *)
             break;
 
         if (len < 0) {
-            if (ignoreErrno(errno))
+            int xerrno = errno;
+            if (ignoreErrno(xerrno))
                 break;
 
 #if _SQUID_LINUX_
@@ -1358,10 +1385,9 @@ idnsRead(int fd, void *)
              * return ECONNREFUSED when sendto() fails and generates an ICMP
              * port unreachable message. */
             /* or maybe an EHOSTUNREACH "No route to host" message */
-            if (errno != ECONNREFUSED && errno != EHOSTUNREACH)
+            if (xerrno != ECONNREFUSED && xerrno != EHOSTUNREACH)
 #endif
-
-                debugs(50, DBG_IMPORTANT, "idnsRead: FD " << fd << " recvfrom: " << xstrerror());
+                debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << " recvfrom: " << xstrerr(xerrno));
 
             break;
         }
@@ -1624,7 +1650,6 @@ Dns::Init(void)
     }
 
     if (!init) {
-        memDataInit(MEM_IDNS_QUERY, "idns_query", sizeof(idns_query), 0);
         memset(RcodeMatrix, '\0', sizeof(RcodeMatrix));
         idns_lookup_hash = hash_create((HASHCMP *) strcmp, 103, hash_string);
         ++init;
@@ -1640,11 +1665,13 @@ Dns::Init(void)
     Mgr::RegisterAction("idns", "Internal DNS Statistics", idnsStats, 0, 1);
 }
 
-void
-Dns::Shutdown(void)
+static void
+idnsShutdownAndFreeState(const char *reason)
 {
     if (DnsSocketA < 0 && DnsSocketB < 0)
         return;
+
+    debugs(78, 2, reason << ": Closing DNS sockets");
 
     if (DnsSocketA >= 0 ) {
         comm_close(DnsSocketA);
@@ -1666,6 +1693,18 @@ Dns::Shutdown(void)
     // XXX: vcs are not closed/freed yet and may try to access nameservers[]
     idnsFreeNameservers();
     idnsFreeSearchpath();
+}
+
+void
+Dns::ConfigRr::endingShutdown()
+{
+    idnsShutdownAndFreeState("Shutdown");
+}
+
+void
+Dns::ConfigRr::startReconfigure()
+{
+    idnsShutdownAndFreeState("Reconfigure");
 }
 
 static int

@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -11,6 +11,8 @@
 SUBSTITUTE=sed "\
 	s%@DEFAULT_ERROR_DIR@%$(DEFAULT_ERROR_DIR)%g;\
 	s%@DEFAULT_MIME_TABLE@%$(DEFAULT_MIME_TABLE)%g;\
+	s%@DEFAULT_SSL_CRTD@%$(DEFAULT_SSL_CRTD)%g;\
+	s%@DEFAULT_SSL_DB_DIR@%$(DEFAULT_SSL_DB_DIR)%g;\
 	s%@""PACKAGE_STRING""@%$(PACKAGE_STRING)%g;\
 	s%@SYSCONFDIR@%$(sysconfdir)%g;\
 	"

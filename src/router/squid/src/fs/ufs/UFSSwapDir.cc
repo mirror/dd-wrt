@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,11 +13,11 @@
 #include "squid.h"
 #include "cache_cf.h"
 #include "ConfigOption.h"
-#include "disk.h"
 #include "DiskIO/DiskIOModule.h"
 #include "DiskIO/DiskIOStrategy.h"
 #include "fde.h"
 #include "FileMap.h"
+#include "fs_io.h"
 #include "globals.h"
 #include "Parsing.h"
 #include "RebuildState.h"
@@ -88,7 +88,7 @@ UFSCleanLog::write(StoreEntry const &e)
     s.timestamp = e.timestamp;
     s.lastref = e.lastref;
     s.expires = e.expires;
-    s.lastmod = e.lastmod;
+    s.lastmod = e.lastModified();
     s.swap_file_sz = e.swap_file_sz;
     s.refcount = e.refcount;
     s.flags = e.flags;
@@ -100,9 +100,10 @@ UFSCleanLog::write(StoreEntry const &e)
 
     if (outbuf_offset + ss >= CLEAN_BUF_SZ) {
         if (FD_WRITE_METHOD(fd, outbuf, outbuf_offset) < 0) {
+            int xerrno = errno;
             /* XXX This error handling should probably move up to the caller */
-            debugs(50, DBG_CRITICAL, HERE << newLog << ": write: " << xstrerror());
-            debugs(50, DBG_CRITICAL, HERE << "Current swap logfile not replaced.");
+            debugs(50, DBG_CRITICAL, MYNAME << newLog << ": write: " << xstrerr(xerrno));
+            debugs(50, DBG_CRITICAL, MYNAME << "Current swap logfile not replaced.");
             file_close(fd);
             fd = -1;
             unlink(newLog);
@@ -293,7 +294,7 @@ Fs::Ufs::UFSSwapDir::init()
         started_clean_event = 1;
     }
 
-    (void) storeDirGetBlkSize(path, &fs.blksize);
+    (void) fsBlockSize(path, &fs.blksize);
 }
 
 void
@@ -316,7 +317,8 @@ Fs::Ufs::UFSSwapDir::UFSSwapDir(char const *aType, const char *anIOType) :
     currentIOOptions(new ConfigOptionVector()),
     ioType(xstrdup(anIOType)),
     cur_size(0),
-    n_disk_objects(0)
+    n_disk_objects(0),
+    rebuilding_(false)
 {
     /* modulename is only set to disk modules that are built, by configure,
      * so the Find call should never return NULL here.
@@ -383,7 +385,7 @@ Fs::Ufs::UFSSwapDir::statfs(StoreEntry & sentry) const
     storeAppendPrintf(&sentry, "Filemap bits in use: %d of %d (%d%%)\n",
                       map->numFilesInMap(), map->capacity(),
                       Math::intPercent(map->numFilesInMap(), map->capacity()));
-    x = storeDirGetUFSStats(path, &totl_kb, &free_kb, &totl_in, &free_in);
+    x = fsStats(path, &totl_kb, &free_kb, &totl_in, &free_in);
 
     if (0 == x) {
         storeAppendPrintf(&sentry, "Filesystem Space in use: %d/%d KB (%d%%)\n",
@@ -530,7 +532,7 @@ Fs::Ufs::UFSSwapDir::reference(StoreEntry &e)
 }
 
 bool
-Fs::Ufs::UFSSwapDir::dereference(StoreEntry & e, bool)
+Fs::Ufs::UFSSwapDir::dereference(StoreEntry & e)
 {
     debugs(47, 3, HERE << "dereferencing " << &e << " " <<
            e.swap_dirn << "/" << e.swap_filen);
@@ -617,8 +619,8 @@ Fs::Ufs::UFSSwapDir::createDirectory(const char *aPath, int should_exist)
         debugs(47, (should_exist ? DBG_IMPORTANT : 3), aPath << " created");
         created = 1;
     } else {
-        fatalf("Failed to make swap directory %s: %s",
-               aPath, xstrerror());
+        int xerrno = errno;
+        fatalf("Failed to make swap directory %s: %s", aPath, xstrerr(xerrno));
     }
 
     return created;
@@ -631,7 +633,8 @@ Fs::Ufs::UFSSwapDir::pathIsDirectory(const char *aPath)const
     struct stat sb;
 
     if (::stat(aPath, &sb) < 0) {
-        debugs(47, DBG_CRITICAL, "ERROR: " << aPath << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(47, DBG_CRITICAL, "ERROR: " << aPath << ": " << xstrerr(xerrno));
         return false;
     }
 
@@ -723,23 +726,26 @@ Fs::Ufs::UFSSwapDir::logFile(char const *ext) const
 void
 Fs::Ufs::UFSSwapDir::openLog()
 {
+    assert(NumberOfUFSDirs || !UFSDirToGlobalDirMapping);
+    ++NumberOfUFSDirs;
+    assert(NumberOfUFSDirs <= Config.cacheSwap.n_configured);
+
+    if (rebuilding_) { // we did not close the temporary log used for rebuilding
+        assert(swaplog_fd >= 0);
+        return;
+    }
+
     char *logPath;
     logPath = logFile();
     swaplog_fd = file_open(logPath, O_WRONLY | O_CREAT | O_BINARY);
 
     if (swaplog_fd < 0) {
-        debugs(50, DBG_IMPORTANT, "ERROR opening swap log " << logPath << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "ERROR opening swap log " << logPath << ": " << xstrerr(xerrno));
         fatal("UFSSwapDir::openLog: Failed to open swap log.");
     }
 
     debugs(50, 3, HERE << "Cache Dir #" << index << " log opened on FD " << swaplog_fd);
-
-    if (0 == NumberOfUFSDirs)
-        assert(NULL == UFSDirToGlobalDirMapping);
-
-    ++NumberOfUFSDirs;
-
-    assert(NumberOfUFSDirs <= Config.cacheSwap.n_configured);
 }
 
 void
@@ -748,18 +754,19 @@ Fs::Ufs::UFSSwapDir::closeLog()
     if (swaplog_fd < 0) /* not open */
         return;
 
+    --NumberOfUFSDirs;
+    assert(NumberOfUFSDirs >= 0);
+    if (!NumberOfUFSDirs)
+        safe_free(UFSDirToGlobalDirMapping);
+
+    if (rebuilding_) // we cannot close the temporary log used for rebuilding
+        return;
+
     file_close(swaplog_fd);
 
     debugs(47, 3, "Cache Dir #" << index << " log closed on FD " << swaplog_fd);
 
     swaplog_fd = -1;
-
-    --NumberOfUFSDirs;
-
-    assert(NumberOfUFSDirs >= 0);
-
-    if (0 == NumberOfUFSDirs)
-        safe_free(UFSDirToGlobalDirMapping);
 }
 
 bool
@@ -801,7 +808,7 @@ Fs::Ufs::UFSSwapDir::addDiskRestore(const cache_key * key,
     e->lastref = lastref;
     e->timestamp = timestamp;
     e->expires = expires;
-    e->lastmod = lastmod;
+    e->lastModified(lastmod);
     e->refcount = refcount;
     e->flags = newFlags;
     EBIT_CLR(e->flags, RELEASE_REQUEST);
@@ -839,6 +846,9 @@ Fs::Ufs::UFSSwapDir::rebuild()
 void
 Fs::Ufs::UFSSwapDir::closeTmpSwapLog()
 {
+    assert(rebuilding_);
+    rebuilding_ = false;
+
     char *swaplog_path = xstrdup(logFile(NULL)); // where the swaplog should be
     char *tmp_path = xstrdup(logFile(".new")); // the temporary file we have generated
     int fd;
@@ -851,7 +861,8 @@ Fs::Ufs::UFSSwapDir::closeTmpSwapLog()
     fd = file_open(swaplog_path, O_WRONLY | O_CREAT | O_BINARY);
 
     if (fd < 0) {
-        debugs(50, DBG_IMPORTANT, "ERROR: " << swaplog_path << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "ERROR: " << swaplog_path << ": " << xstrerr(xerrno));
         fatalf("Failed to open swap log %s", swaplog_path);
     }
 
@@ -864,6 +875,8 @@ Fs::Ufs::UFSSwapDir::closeTmpSwapLog()
 FILE *
 Fs::Ufs::UFSSwapDir::openTmpSwapLog(int *clean_flag, int *zero_flag)
 {
+    assert(!rebuilding_);
+
     char *swaplog_path = xstrdup(logFile(NULL));
     char *clean_path = xstrdup(logFile(".last-clean"));
     char *new_path = xstrdup(logFile(".new"));
@@ -892,11 +905,13 @@ Fs::Ufs::UFSSwapDir::openTmpSwapLog(int *clean_flag, int *zero_flag)
     fd = file_open(new_path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY);
 
     if (fd < 0) {
-        debugs(50, DBG_IMPORTANT, "ERROR: while opening swap log" << new_path << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "ERROR: while opening swap log" << new_path << ": " << xstrerr(xerrno));
         fatalf("Failed to open swap log %s", new_path);
     }
 
     swaplog_fd = fd;
+    rebuilding_ = true;
 
     {
         const StoreSwapLogHeader header;
@@ -913,8 +928,9 @@ Fs::Ufs::UFSSwapDir::openTmpSwapLog(int *clean_flag, int *zero_flag)
     /* open a read-only stream of the old log */
     fp = fopen(swaplog_path, "rb");
 
-    if (fp == NULL) {
-        debugs(50, DBG_CRITICAL, "ERROR: while opening " << swaplog_path << ": " << xstrerror());
+    if (!fp) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "ERROR: while opening " << swaplog_path << ": " << xstrerr(xerrno));
         fatalf("Failed to open swap log for reading %s", swaplog_path);
     }
 
@@ -1002,8 +1018,9 @@ Fs::Ufs::UFSSwapDir::writeCleanDone()
     state->walker->Done(state->walker);
 
     if (FD_WRITE_METHOD(state->fd, state->outbuf, state->outbuf_offset) < 0) {
-        debugs(50, DBG_CRITICAL, HERE << state->newLog << ": write: " << xstrerror());
-        debugs(50, DBG_CRITICAL, HERE << "Current swap logfile not replaced.");
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << state->newLog << ": write: " << xstrerr(xerrno));
+        debugs(50, DBG_CRITICAL, MYNAME << "Current swap logfile not replaced.");
         file_close(state->fd);
         state->fd = -1;
         ::unlink(state->newLog);
@@ -1053,18 +1070,17 @@ Fs::Ufs::UFSSwapDir::writeCleanDone()
     cleanLog = NULL;
 }
 
-void
-Fs::Ufs::UFSSwapDir::CleanEvent(void *)
+/// safely cleans a few unused files if possible
+int
+Fs::Ufs::UFSSwapDir::HandleCleanEvent()
 {
     static int swap_index = 0;
     int i;
     int j = 0;
     int n = 0;
-    /*
-     * Assert that there are UFS cache_dirs configured, otherwise
-     * we should never be called.
-     */
-    assert(NumberOfUFSDirs);
+
+    if (!NumberOfUFSDirs)
+        return 0; // probably in the middle of reconfiguration
 
     if (NULL == UFSDirToGlobalDirMapping) {
         SwapDir *sd;
@@ -1108,6 +1124,13 @@ Fs::Ufs::UFSSwapDir::CleanEvent(void *)
         ++swap_index;
     }
 
+    return n;
+}
+
+void
+Fs::Ufs::UFSSwapDir::CleanEvent(void *)
+{
+    const int n = HandleCleanEvent();
     eventAdd("storeDirClean", CleanEvent, NULL,
              15.0 * exp(-0.25 * n), 1);
 }
@@ -1200,6 +1223,9 @@ Fs::Ufs::UFSSwapDir::unlink(StoreEntry & e)
     replacementRemove(&e);
     mapBitReset(e.swap_filen);
     UFSSwapDir::unlinkFile(e.swap_filen);
+    e.swap_filen = -1;
+    e.swap_dirn = -1;
+    e.swap_status = SWAPOUT_NONE;
 }
 
 void
@@ -1212,12 +1238,10 @@ Fs::Ufs::UFSSwapDir::replacementAdd(StoreEntry * e)
 void
 Fs::Ufs::UFSSwapDir::replacementRemove(StoreEntry * e)
 {
-    StorePointer SD;
-
     if (e->swap_dirn < 0)
         return;
 
-    SD = INDEXSD(e->swap_dirn);
+    SwapDirPointer SD = INDEXSD(e->swap_dirn);
 
     assert (dynamic_cast<UFSSwapDir *>(SD.getRaw()) == this);
 
@@ -1273,25 +1297,21 @@ Fs::Ufs::UFSSwapDir::swappedOut(const StoreEntry &e)
     ++n_disk_objects;
 }
 
-StoreSearch *
-Fs::Ufs::UFSSwapDir::search(String const url, HttpRequest *)
-{
-    if (url.size())
-        fatal ("Cannot search by url yet\n");
-
-    return new Fs::Ufs::StoreSearchUFS (this);
-}
-
 void
 Fs::Ufs::UFSSwapDir::logEntry(const StoreEntry & e, int op) const
 {
+    if (swaplog_fd < 0) {
+        debugs(36, 5, "cannot log " << e << " in the middle of reconfiguration");
+        return;
+    }
+
     StoreSwapLogData *s = new StoreSwapLogData;
     s->op = (char) op;
     s->swap_filen = e.swap_filen;
     s->timestamp = e.timestamp;
     s->lastref = e.lastref;
     s->expires = e.expires;
-    s->lastmod = e.lastmod;
+    s->lastmod = e.lastModified();
     s->swap_file_sz = e.swap_file_sz;
     s->refcount = e.refcount;
     s->flags = e.flags;
@@ -1335,14 +1355,15 @@ Fs::Ufs::UFSSwapDir::DirClean(int swap_index)
     debugs(36, 3, HERE << "Cleaning directory " << p1);
     dir_pointer = opendir(p1);
 
-    if (dir_pointer == NULL) {
-        if (errno == ENOENT) {
-            debugs(36, DBG_CRITICAL, HERE << "WARNING: Creating " << p1);
+    if (!dir_pointer) {
+        int xerrno = errno;
+        if (xerrno == ENOENT) {
+            debugs(36, DBG_CRITICAL, MYNAME << "WARNING: Creating " << p1);
             if (mkdir(p1, 0777) == 0)
                 return 0;
         }
 
-        debugs(50, DBG_CRITICAL, HERE << p1 << ": " << xstrerror());
+        debugs(50, DBG_CRITICAL, MYNAME << p1 << ": " << xstrerr(xerrno));
         safeunlink(p1, 1);
         return 0;
     }

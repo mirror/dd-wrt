@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -86,15 +86,15 @@ fde::DumpStats (StoreEntry *dumpEntry)
 char const *
 fde::remoteAddr() const
 {
-    LOCAL_ARRAY(char, buf, MAX_IPSTRLEN );
+    static char buf[MAX_IPSTRLEN+7]; // 7 = length of ':port' strings
 
     if (type != FD_SOCKET)
         return null_string;
 
     if ( *ipaddr )
-        snprintf( buf, MAX_IPSTRLEN, "%s:%d", ipaddr, (int)remote_port);
+        snprintf(buf, sizeof(buf), "%s:%u", ipaddr, remote_port);
     else
-        local_addr.toUrl(buf,MAX_IPSTRLEN); // toHostStr does not include port.
+        local_addr.toUrl(buf, sizeof(buf)); // toHostStr does not include port.
 
     return buf;
 }

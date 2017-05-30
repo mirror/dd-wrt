@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -350,7 +350,7 @@ main(int argc, char *argv[])
     hash = hash_create(fsCmp, 1 << 4, fsHash);
     assert(hash);
     if (fcntl(0, F_SETFL, SQUID_NONBLOCK) < 0) {
-        perror(xstrerror());
+        perror(xstrerr(errno));
         return 1;
     }
     memset(&sa, '\0', sizeof(sa));

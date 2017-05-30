@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,8 +9,11 @@
 #ifndef SQUID_SSL_BIO_H
 #define SQUID_SSL_BIO_H
 
+#if USE_OPENSSL
+
+#include "FadingCounter.h"
 #include "fd.h"
-#include "SBuf.h"
+#include "security/Handshake.h"
 
 #include <iosfwd>
 #include <list>
@@ -18,6 +21,7 @@
 #include <openssl/bio.h>
 #endif
 #include <string>
+#include <type_traits>
 
 namespace Ssl
 {
@@ -26,65 +30,6 @@ namespace Ssl
 class Bio
 {
 public:
-    enum Type {
-        BIO_TO_CLIENT = 6000,
-        BIO_TO_SERVER
-    };
-
-    /// Class to store SSL connection features
-    class sslFeatures
-    {
-    public:
-        sslFeatures();
-        bool get(const SSL *ssl); ///< Retrieves the features from SSL object
-        /// Retrieves features from raw SSL Hello message.
-        /// \param record  whether to store Message to the helloMessage member
-        bool get(const MemBuf &, bool record = true);
-        /// Parses a v3 ClientHello message
-        bool parseV3Hello(const unsigned char *hello, size_t helloSize);
-        /// Parses a v23 ClientHello message
-        bool parseV23Hello(const unsigned char *hello, size_t helloSize);
-        /// Parses a v3 ServerHello message.
-        bool parseV3ServerHello(const unsigned char *hello, size_t helloSize);
-        /// Prints to os stream a human readable form of sslFeatures object
-        std::ostream & print(std::ostream &os) const;
-        /// Converts to the internal squid SSL version form the sslVersion
-        int toSquidSSLVersion() const;
-        /// Configure the SSL object with the SSL features of the sslFeatures object
-        void applyToSSL(SSL *ssl, Ssl::BumpMode bumpMode) const;
-        /// Parses an SSL Message header. It returns the ssl Message size.
-        /// \retval >0 if the hello size is retrieved
-        /// \retval 0 if the contents of the buffer are not enough
-        /// \retval <0 if the contents of buf are not SSLv3 or TLS hello message
-        int parseMsgHead(const MemBuf &);
-        /// Parses msg buffer and return true if one of the Change Cipher Spec
-        /// or New Session Ticket messages found
-        bool checkForCcsOrNst(const unsigned char *msg, size_t size);
-    public:
-        int sslVersion; ///< The requested/used SSL version
-        int compressMethod; ///< The requested/used compressed  method
-        int helloMsgSize; ///< the hello message size
-        mutable SBuf serverName; ///< The SNI hostname, if any
-        std::string clientRequestedCiphers; ///< The client requested ciphers
-        bool unknownCiphers; ///< True if one or more ciphers are unknown
-        std::string ecPointFormatList;///< tlsExtension ecPointFormatList
-        std::string ellipticCurves; ///< tlsExtension ellipticCurveList
-        std::string opaquePrf; ///< tlsExtension opaquePrf
-        bool doHeartBeats;
-        bool tlsTicketsExtension; ///< whether TLS tickets extension is enabled
-        bool hasTlsTicket; ///< whether a TLS ticket is included
-        bool tlsStatusRequest; ///< whether the TLS status request extension is set
-        SBuf tlsAppLayerProtoNeg; ///< The value of the TLS application layer protocol extension if it is enabled
-        /// whether Change Cipher Spec message included in ServerHello
-        /// handshake message
-        bool hasCcsOrNst;
-        /// The client random number
-        unsigned char client_random[SSL3_RANDOM_SIZE];
-        SBuf sessionId;
-        std::list<int> extensions;
-        SBuf helloMessage;
-        bool initialized_;
-    };
     explicit Bio(const int anFd);
     virtual ~Bio();
 
@@ -106,20 +51,14 @@ public:
 
     /// Creates a low-level BIO table, creates a high-level Ssl::Bio object
     /// for a given socket, and then links the two together via BIO_C_SET_FD.
-    static BIO *Create(const int fd, Type type);
+    static BIO *Create(const int fd, Security::Io::Type type);
     /// Tells ssl connection to use BIO and monitor state via stateChanged()
     static void Link(SSL *ssl, BIO *bio);
 
-    /// Prepare the rbuf buffer to accept hello data
-    void prepReadBuf();
-
-    /// Reads data from socket and record them to a buffer
-    int readAndBuffer(char *buf, int size, BIO *table, const char *description);
-
-    const MemBuf &rBufData() {return rbuf;}
+    const SBuf &rBufData() {return rbuf;} ///< The buffered input data
 protected:
     const int fd_; ///< the SSL socket we are reading and writing
-    MemBuf rbuf;  ///< Used to buffer input data.
+    SBuf rbuf;  ///< Used to buffer input data.
 };
 
 /// BIO node to handle socket IO for squid client side
@@ -128,9 +67,7 @@ protected:
 class ClientBio: public Bio
 {
 public:
-    /// The ssl hello message read states
-    typedef enum {atHelloNone = 0, atHelloStarted, atHelloReceived} HelloReadState;
-    explicit ClientBio(const int anFd): Bio(anFd), holdRead_(false), holdWrite_(false), helloState(atHelloNone), helloSize(0), wrongProtocol(false) {}
+    explicit ClientBio(const int anFd);
 
     /// The ClientBio version of the Ssl::Bio::stateChanged method
     /// When the client hello message retrieved, fill the
@@ -142,24 +79,27 @@ public:
     /// If the holdRead flag is true then it does not write any data
     /// to socket and sets the "read retry" flag of the BIO to true
     virtual int read(char *buf, int size, BIO *table);
-    /// Return true if the client hello message received and analized
-    bool gotHello() { return (helloState == atHelloReceived); }
-    /// Return the SSL features requested by SSL client
-    const Bio::sslFeatures &getFeatures() const {return features;}
     /// Prevents or allow writting on socket.
     void hold(bool h) {holdRead_ = holdWrite_ = h;}
-    /// True if client does not looks like an SSL client
-    bool noSslClient() {return wrongProtocol;}
+
+    /// Sets the buffered input data (Bio::rbuf).
+    /// Used to pass payload data (normally client HELLO data) retrieved
+    /// by the caller.
+    void setReadBufData(SBuf &data) {rbuf = data;}
 private:
-    /// True if the SSL state corresponds to a hello message
-    bool isClientHello(int state);
-    /// The futures retrieved from client SSL hello message
-    Bio::sslFeatures features;
+    /// approximate size of a time window for computing client-initiated renegotiation rate (in seconds)
+    static const time_t RenegotiationsWindow = 10;
+
+    /// the maximum tolerated number of client-initiated renegotiations in RenegotiationsWindow
+    static const int RenegotiationsLimit = 5;
+
     bool holdRead_; ///< The read hold state of the bio.
     bool holdWrite_;  ///< The write hold state of the bio.
-    HelloReadState helloState; ///< The SSL hello read state
     int helloSize; ///< The SSL hello message sent by client size
-    bool wrongProtocol; ///< true if client SSL hello parsing failed
+    FadingCounter renegotiations; ///< client requested renegotiations limit control
+
+    /// why we should terminate the connection during next TLS operation (or nil)
+    const char *abortReason;
 };
 
 /// BIO node to handle socket IO for squid server side
@@ -180,7 +120,8 @@ private:
 class ServerBio: public Bio
 {
 public:
-    explicit ServerBio(const int anFd): Bio(anFd), helloMsgSize(0), helloBuild(false), allowSplice(false), allowBump(false), holdWrite_(false), record_(false), bumpMode_(bumpNone) {}
+    explicit ServerBio(const int anFd);
+
     /// The ServerBio version of the Ssl::Bio::stateChanged method
     virtual void stateChanged(const SSL *ssl, int where, int ret);
     /// The ServerBio version of the Ssl::Bio::write method
@@ -195,13 +136,18 @@ public:
     /// Flushes any buffered data
     virtual void flush(BIO *table);
     /// Sets the random number to use in client SSL HELLO message
-    void setClientFeatures(const sslFeatures &features);
+    void setClientFeatures(Security::TlsDetails::Pointer const &details, SBuf const &hello);
 
     bool resumingSession();
+
     /// The write hold state
     bool holdWrite() const {return holdWrite_;}
     /// Enables or disables the write hold state
     void holdWrite(bool h) {holdWrite_ = h;}
+    /// The read hold state
+    bool holdRead() const {return holdRead_;}
+    /// Enables or disables the read hold state
+    void holdRead(bool h) {holdRead_ = h;}
     /// Enables or disables the input data recording, for internal analysis.
     void recordInput(bool r) {record_ = r;}
     /// Whether we can splice or not the SSL stream
@@ -211,26 +157,59 @@ public:
     /// The bumping mode
     void mode(Ssl::BumpMode m) {bumpMode_ = m;}
     Ssl::BumpMode bumpMode() {return bumpMode_;} ///< return the bumping mode
+
+    /// \retval true if the Server hello message received
+    bool gotHello() const { return (parsedHandshake && !parseError); }
+
+    /// Return true if the Server Hello parsing failed
+    bool gotHelloFailed() const { return (parsedHandshake && parseError); }
+
+    /// \return the server certificates list if received and parsed correctly
+    const Security::CertList &serverCertificatesIfAny() { return parser_.serverCertificates; }
+
+    /// \return the TLS Details advertised by TLS server.
+    const Security::TlsDetails::Pointer &receivedHelloDetails() const {return parser_.details;}
+
 private:
-    sslFeatures clientFeatures; ///< SSL client features extracted from ClientHello message or SSL object
-    sslFeatures serverFeatures; ///< SSL server features extracted from ServerHello message
+    int readAndGive(char *buf, const int size, BIO *table);
+    int readAndParse(char *buf, const int size, BIO *table);
+    int readAndBuffer(BIO *table);
+    int giveBuffered(char *buf, const int size);
+
+    /// SSL client features extracted from ClientHello message or SSL object
+    Security::TlsDetails::Pointer clientTlsDetails;
+    /// TLS client hello message, used to adapt our tls Hello message to the server
+    SBuf clientSentHello;
     SBuf helloMsg; ///< Used to buffer output data.
     mb_size_t  helloMsgSize;
     bool helloBuild; ///< True if the client hello message sent to the server
     bool allowSplice; ///< True if the SSL stream can be spliced
     bool allowBump;  ///< True if the SSL stream can be bumped
     bool holdWrite_;  ///< The write hold state of the bio.
+    bool holdRead_;  ///< The read hold state of the bio.
     bool record_; ///< If true the input data recorded to rbuf for internal use
+    bool parsedHandshake; ///< whether we are done parsing TLS Hello
+    bool parseError; ///< error while parsing server hello message
     Ssl::BumpMode bumpMode_;
-};
 
-inline
-std::ostream &operator <<(std::ostream &os, Ssl::Bio::sslFeatures const &f)
-{
-    return f.print(os);
-}
+    /// The size of data stored in rbuf which passed to the openSSL
+    size_t rbufConsumePos;
+    Security::HandshakeParser parser_; ///< The TLS/SSL messages parser.
+};
 
 } // namespace Ssl
 
+void
+applyTlsDetailsToSSL(SSL *ssl, Security::TlsDetails::Pointer const &details, Ssl::BumpMode bumpMode);
+
+#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+// OpenSSL v1.0 bio compatibility functions
+inline void *BIO_get_data(BIO *table) { return table->ptr; }
+inline void BIO_set_data(BIO *table, void *data) { table->ptr = data; }
+inline int BIO_get_init(BIO *table) { return table->init; }
+inline void BIO_set_init(BIO *table, int init) { table->init = init; }
+#endif
+
+#endif /* USE_OPENSSL */
 #endif /* SQUID_SSL_BIO_H */
 

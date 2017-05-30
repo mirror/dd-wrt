@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,12 +11,12 @@
 #include "squid.h"
 #include "base/RunnersRegistry.h"
 #include "base/TextException.h"
-#include "disk.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/IpcIo/IpcIoFile.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
 #include "fd.h"
+#include "fs_io.h"
 #include "globals.h"
 #include "ipc/mem/Pages.h"
 #include "ipc/Messages.h"
@@ -24,7 +24,7 @@
 #include "ipc/Queue.h"
 #include "ipc/StrandSearch.h"
 #include "ipc/UdsOp.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
 #include "StatCounters.h"

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -80,22 +80,22 @@ storeKeyHashHash(const void *key, unsigned int n)
 }
 
 const cache_key *
-storeKeyPrivate(const char *url, const HttpRequestMethod& method, int id)
+storeKeyPrivate()
 {
-    static cache_key digest[SQUID_MD5_DIGEST_LENGTH];
-    SquidMD5_CTX M;
-    assert(id > 0);
-    debugs(20, 3, "storeKeyPrivate: " << method << " " << url);
-    SquidMD5Init(&M);
-    SquidMD5Update(&M, (unsigned char *) &id, sizeof(id));
-    SquidMD5Update(&M, (unsigned char *) &method, sizeof(method));
-    SquidMD5Update(&M, (unsigned char *) url, strlen(url));
-    SquidMD5Final(digest, &M);
-    return digest;
+    // only the count field is required
+    // others just simplify searching for keys in a multi-process cache.log
+    static struct {
+        uint64_t count;
+        pid_t pid;
+        int32_t kid;
+    } key = { 0, getpid(), KidIdentifier };
+    assert(sizeof(key) == SQUID_MD5_DIGEST_LENGTH);
+    ++key.count;
+    return reinterpret_cast<cache_key*>(&key);
 }
 
 const cache_key *
-storeKeyPublic(const char *url, const HttpRequestMethod& method)
+storeKeyPublic(const char *url, const HttpRequestMethod& method, const KeyScope keyScope)
 {
     static cache_key digest[SQUID_MD5_DIGEST_LENGTH];
     unsigned char m = (unsigned char) method.id();
@@ -103,18 +103,20 @@ storeKeyPublic(const char *url, const HttpRequestMethod& method)
     SquidMD5Init(&M);
     SquidMD5Update(&M, &m, sizeof(m));
     SquidMD5Update(&M, (unsigned char *) url, strlen(url));
+    if (keyScope)
+        SquidMD5Update(&M, &keyScope, sizeof(keyScope));
     SquidMD5Final(digest, &M);
     return digest;
 }
 
 const cache_key *
-storeKeyPublicByRequest(HttpRequest * request)
+storeKeyPublicByRequest(HttpRequest * request, const KeyScope keyScope)
 {
-    return storeKeyPublicByRequestMethod(request, request->method);
+    return storeKeyPublicByRequestMethod(request, request->method, keyScope);
 }
 
 const cache_key *
-storeKeyPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& method)
+storeKeyPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& method, const KeyScope keyScope)
 {
     static cache_key digest[SQUID_MD5_DIGEST_LENGTH];
     unsigned char m = (unsigned char) method.id();
@@ -123,9 +125,11 @@ storeKeyPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& me
     SquidMD5Init(&M);
     SquidMD5Update(&M, &m, sizeof(m));
     SquidMD5Update(&M, (unsigned char *) url.rawContent(), url.length());
+    if (keyScope)
+        SquidMD5Update(&M, &keyScope, sizeof(keyScope));
 
-    if (request->vary_headers) {
-        SquidMD5Update(&M, (unsigned char *) request->vary_headers, strlen(request->vary_headers));
+    if (!request->vary_headers.isEmpty()) {
+        SquidMD5Update(&M, request->vary_headers.rawContent(), request->vary_headers.length());
         debugs(20, 3, "updating public key by vary headers: " << request->vary_headers << " for: " << url);
     }
 

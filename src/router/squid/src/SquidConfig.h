@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 
 #include "acl/forward.h"
 #include "base/RefCount.h"
+#include "base/YesNoNone.h"
 #include "ClientDelayConfig.h"
 #include "DelayConfig.h"
 #include "helper/ChildConfig.h"
@@ -19,7 +20,10 @@
 #include "Notes.h"
 #include "security/forward.h"
 #include "SquidTime.h"
-#include "YesNoNone.h"
+#if USE_OPENSSL
+#include "ssl/support.h"
+#endif
+#include "store/forward.h"
 
 #if USE_OPENSSL
 class sslproxy_cert_sign;
@@ -37,11 +41,22 @@ class external_acl;
 class HeaderManglers;
 class RefreshPattern;
 class RemovalPolicySettings;
-class SwapDir;
 
 namespace AnyP
 {
 class PortCfg;
+}
+
+namespace Store {
+class DiskConfig {
+public:
+    RefCount<SwapDir> *swapDirs;
+    int n_allocated;
+    int n_configured;
+    /// number of disk processes required to support all cache_dirs
+    int n_strands;
+};
+#define INDEXSD(i) (Config.cacheSwap.swapDirs[i].getRaw())
 }
 
 /// the representation of the configuration. POD.
@@ -57,6 +72,7 @@ public:
     } Swap;
 
     YesNoNone memShared; ///< whether the memory cache is shared among workers
+    YesNoNone shmLocking; ///< shared_memory_locking
     size_t memMaxSize;
 
     struct {
@@ -289,7 +305,6 @@ public:
         int digest_generation;
 #endif
 
-        int ie_refresh;
         int vary_ignore_expire;
         int surrogate_is_remote;
         int request_entities;
@@ -320,7 +335,12 @@ public:
         int hostStrictVerify;
         int client_dst_passthru;
         int dns_mdns;
+#if USE_OPENSSL
+        bool logTlsServerHelloDetails;
+#endif
     } onoff;
+
+    int64_t collapsed_forwarding_shared_entries_limit;
 
     int pipeline_max_prefetch;
 
@@ -376,6 +396,7 @@ public:
         acl_access *ftp_epsv;
 
         acl_access *forceRequestBodyContinuation;
+        acl_access *serverPconnForNonretriable;
     } accessList;
     AclDenyInfoList *denyInfoList;
 
@@ -392,17 +413,7 @@ public:
     } Ftp;
     RefreshPattern *Refresh;
 
-    struct _cacheSwap {
-        RefCount<SwapDir> *swapDirs;
-        int n_allocated;
-        int n_configured;
-        /// number of disk processes required to support all cache_dirs
-        int n_strands;
-    } cacheSwap;
-    /*
-     * I'm sick of having to keep doing this ..
-     */
-#define INDEXSD(i)   (Config.cacheSwap.swapDirs[(i)].getRaw())
+    Store::DiskConfig cacheSwap;
 
     struct {
         char *directory;
@@ -454,6 +465,8 @@ public:
     HeaderManglers *reply_header_access;
     ///request_header_add access list
     HeaderWithAclList *request_header_add;
+    ///reply_header_add access list
+    HeaderWithAclList *reply_header_add;
     ///note
     Notes notes;
     char *coredump_dir;
@@ -479,8 +492,6 @@ public:
     } SSL;
 #endif
 
-    wordlist *ext_methods;
-
     struct {
         int high_rptm;
         int high_pf;
@@ -494,6 +505,7 @@ public:
     struct {
         Security::ContextPointer sslContext;
 #if USE_OPENSSL
+        char *foreignIntermediateCertsPath;
         acl_access *cert_error;
         sslproxy_cert_sign *cert_sign;
         sslproxy_cert_adapt *cert_adapt;
@@ -533,12 +545,15 @@ extern SquidConfig Config;
 class SquidConfig2
 {
 public:
+    void clear() {
+        *this = SquidConfig2();
+    }
+
     struct {
-        int enable_purge;
-        int mangle_request_headers;
+        int enable_purge = 0;
     } onoff;
-    uid_t effectiveUserID;
-    gid_t effectiveGroupID;
+    uid_t effectiveUserID = 0;
+    gid_t effectiveGroupID = 0;
 };
 
 extern SquidConfig2 Config2;

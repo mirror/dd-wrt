@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -187,12 +187,7 @@ Auth::Digest::UserRequest::authenticate(HttpRequest * request, ConnStateData *, 
     auth_user->credentials(Auth::Ok);
 
     /* password was checked and did match */
-    debugs(29, 4, HERE << "user '" << auth_user->username() << "' validated OK");
-
-    /* auth_user is now linked, we reset these values
-     * after external auth occurs anyway */
-    auth_user->expiretime = current_time.tv_sec;
-    return;
+    debugs(29, 4, "user '" << auth_user->username() << "' validated OK");
 }
 
 Auth::Direction

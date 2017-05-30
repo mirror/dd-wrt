@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,7 +18,6 @@
 #include "http/RequestMethod.h"
 #include "MemBuf.h"
 #include "SquidConfig.h"
-#include "testHttp1Parser.h"
 #include "testHttp1Parser.h"
 #include "unitTestMain.h"
 
@@ -40,8 +39,6 @@ testHttp1Parser::globalSetup()
     Config.maxRequestHeaderSize = 1024; // XXX: unit test the RequestParser handling of this limit
 }
 
-#if __cplusplus >= 201103L
-
 struct resultSet {
     bool parsed;
     bool needsMore;
@@ -53,21 +50,65 @@ struct resultSet {
     AnyP::ProtocolVersion version;
 };
 
+// define SQUID_DEBUG_TESTS to see exactly which test sub-cases fail and where
+#ifdef SQUID_DEBUG_TESTS
+// not optimized for runtime use
+static void
+Replace(SBuf &where, const SBuf &what, const SBuf &with)
+{
+    // prevent infinite loops
+    if (!what.length() || with.find(what) != SBuf::npos)
+        return;
+
+    SBuf::size_type pos = 0;
+    while ((pos = where.find(what, pos)) != SBuf::npos) {
+        SBuf buf = where.substr(0, pos);
+        buf.append(with);
+        buf.append(where.substr(pos+what.length()));
+        where = buf;
+        pos += with.length();
+    }
+}
+
+static SBuf Pretty(SBuf raw)
+{
+    Replace(raw, SBuf("\r"), SBuf("\\r"));
+    Replace(raw, SBuf("\n"), SBuf("\\n"));
+    return raw;
+}
+#endif
+
 static void
 testResults(int line, const SBuf &input, Http1::RequestParser &output, struct resultSet &expect)
 {
-#if WHEN_TEST_DEBUG_IS_NEEDED
-    printf("TEST @%d, in=%u: " SQUIDSBUFPH "\n", line, input.length(), SQUIDSBUFPRINT(input));
+#ifdef SQUID_DEBUG_TESTS
+    std::cerr << "TEST @" << line << ", in=" << Pretty(input) << "\n";
+#endif
+
+    const bool parsed = output.parse(input);
+
+#ifdef SQUID_DEBUG_TESTS
+    if (expect.parsed != parsed)
+        std::cerr << "\tparse-FAILED: " << expect.parsed << "!=" << parsed << "\n";
+    else if (parsed && expect.method != output.method_)
+        std::cerr << "\tmethod-FAILED: " << expect.method << "!=" << output.method_ << "\n";
+    if (expect.status != output.parseStatusCode)
+        std::cerr << "\tscode-FAILED: " << expect.status << "!=" << output.parseStatusCode << "\n";
+    if (expect.suffixSz != output.buf_.length())
+        std::cerr << "\tsuffixSz-FAILED: " << expect.suffixSz << "!=" << output.buf_.length() << "\n";
 #endif
 
     // runs the parse
-    CPPUNIT_ASSERT_EQUAL(expect.parsed, output.parse(input));
+    CPPUNIT_ASSERT_EQUAL(expect.parsed, parsed);
 
-    // check easily visible field outputs
-    CPPUNIT_ASSERT_EQUAL(expect.method, output.method_);
-    if (expect.uri != NULL)
-        CPPUNIT_ASSERT_EQUAL(0, output.uri_.cmp(expect.uri));
-    CPPUNIT_ASSERT_EQUAL(expect.version, output.msgProtocol_);
+    // if parsing was successful, check easily visible field outputs
+    if (parsed) {
+        CPPUNIT_ASSERT_EQUAL(expect.method, output.method_);
+        if (expect.uri != NULL)
+            CPPUNIT_ASSERT_EQUAL(0, output.uri_.cmp(expect.uri));
+        CPPUNIT_ASSERT_EQUAL(expect.version, output.msgProtocol_);
+    }
+
     CPPUNIT_ASSERT_EQUAL(expect.status, output.parseStatusCode);
 
     // check more obscure states
@@ -76,7 +117,6 @@ testResults(int line, const SBuf &input, Http1::RequestParser &output, struct re
         CPPUNIT_ASSERT_EQUAL(expect.parserState, output.parsingStage_);
     CPPUNIT_ASSERT_EQUAL(expect.suffixSz, output.buf_.length());
 }
-#endif /* __cplusplus >= 200103L */
 
 void
 testHttp1Parser::testParserConstruct()
@@ -146,7 +186,7 @@ testHttp1Parser::testParseRequestLineProtocols()
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
             .status = Http::scBadRequest,
-            .suffixSz = 3,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_POST),
             .uri = NULL,
             .version = AnyP::ProtocolVersion()
@@ -192,7 +232,7 @@ testHttp1Parser::testParseRequestLineProtocols()
         input.clear();
     }
 
-    // RFC 7230 : future version full-request
+    // RFC 7230 : future 1.x version full-request
     {
         input.append("GET / HTTP/1.2\r\n", 16);
         struct resultSet expect = {
@@ -210,36 +250,56 @@ testHttp1Parser::testParseRequestLineProtocols()
         input.clear();
     }
 
-    // RFC 7230 : future versions do not use request-line syntax
+    // RFC 7230 : future versions do not use 1.x message syntax.
+    // However, it is still valid syntax for the single-digit forms
+    // to appear. The parser we are testing should accept them.
     {
         input.append("GET / HTTP/2.0\r\n", 16);
         struct resultSet expectA = {
-            .parsed = false,
+            .parsed = true,
             .needsMore = false,
-            .parserState = Http1::HTTP_PARSE_MIME,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .parserState = Http1::HTTP_PARSE_DONE,
+            .status = Http::scOkay,
+            .suffixSz = 0,
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
-            .version = AnyP::ProtocolVersion()
+            .version = AnyP::ProtocolVersion(AnyP::PROTO_HTTP,2,0)
         };
         output.clear();
         testResults(__LINE__, input, output, expectA);
         input.clear();
 
-        input.append("GET / HTTP/10.12\r\n", 18);
+        input.append("GET / HTTP/9.9\r\n", 16);
         struct resultSet expectB = {
+            .parsed = true,
+            .needsMore = false,
+            .parserState = Http1::HTTP_PARSE_DONE,
+            .status = Http::scOkay,
+            .suffixSz = 0,
+            .method = HttpRequestMethod(Http::METHOD_GET),
+            .uri = "/",
+            .version = AnyP::ProtocolVersion(AnyP::PROTO_HTTP,9,9)
+        };
+        output.clear();
+        testResults(__LINE__, input, output, expectB);
+        input.clear();
+    }
+
+    // RFC 7230 : future versions >= 10.0 are invalid syntax
+    {
+        input.append("GET / HTTP/10.12\r\n", 18);
+        struct resultSet expect = {
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_MIME,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
         };
         output.clear();
-        testResults(__LINE__, input, output, expectB);
+        testResults(__LINE__, input, output, expect);
         input.clear();
     }
 
@@ -250,8 +310,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -268,8 +328,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -286,8 +346,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -304,8 +364,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -322,8 +382,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -340,8 +400,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -358,8 +418,8 @@ testHttp1Parser::testParseRequestLineProtocols()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
             .method = HttpRequestMethod(Http::METHOD_GET),
             .uri = "/",
             .version = AnyP::ProtocolVersion()
@@ -403,8 +463,8 @@ testHttp1Parser::testParseRequestLineStrange()
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
             .status = Http::scBadRequest,
-            .suffixSz = input.length()-4,
-            .method = HttpRequestMethod(Http::METHOD_GET),
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
             .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
@@ -435,9 +495,9 @@ testHttp1Parser::testParseRequestLineStrange()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported, // version being "o/ HTTP/1.1"
-            .suffixSz = 13,
-            .method = HttpRequestMethod(Http::METHOD_GET),
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
             .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
@@ -498,10 +558,10 @@ testHttp1Parser::testParseRequestLineTerminators()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = 9,
-            .method = HttpRequestMethod(Http::METHOD_GET),
-            .uri = "/",
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
+            .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
         output.clear();
@@ -533,10 +593,10 @@ testHttp1Parser::testParseRequestLineTerminators()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = 10,
-            .method = HttpRequestMethod(Http::METHOD_GET),
-            .uri = "/",
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
+            .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
         output.clear();
@@ -552,10 +612,10 @@ testHttp1Parser::testParseRequestLineTerminators()
             .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scHttpVersionNotSupported,
-            .suffixSz = input.length()-6,
-            .method = HttpRequestMethod(Http::METHOD_GET),
-            .uri = "/",
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
+            .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
         output.clear();
@@ -645,6 +705,7 @@ testHttp1Parser::testParseRequestLineMethods()
         input.clear();
     }
 
+#if 0
     // too-long method (over 16 bytes)
     {
         input.append("HELLOSTRANGEWORLD / HTTP/1.1\r\n", 31);
@@ -662,6 +723,7 @@ testHttp1Parser::testParseRequestLineMethods()
         testResults(__LINE__, input, output, expect);
         input.clear();
     }
+#endif
 
     // method-only
     {
@@ -882,9 +944,9 @@ testHttp1Parser::testParseRequestLineInvalid()
         input.clear();
     }
 
-    // binary code in method (invalid)
+    // binary code after method (invalid)
     {
-        input.append("GET\x0A / HTTP/1.1\r\n", 17);
+        input.append("GET\x16 / HTTP/1.1\r\n", 17);
         struct resultSet expect = {
             .parsed = false,
             .needsMore = false,
@@ -900,7 +962,7 @@ testHttp1Parser::testParseRequestLineInvalid()
         input.clear();
     }
 
-    // binary code NUL! in method (always invalid)
+    // binary code NUL! after method (always invalid)
     {
         input.append("GET\0 / HTTP/1.1\r\n", 17);
         struct resultSet expect = {
@@ -918,20 +980,20 @@ testHttp1Parser::testParseRequestLineInvalid()
         input.clear();
     }
 
-    // no URL (grammer invalid, ambiguous with RFC 1945 HTTP/0.9 simple-request)
+    // Either an RFC 1945 HTTP/0.9 simple-request for an "HTTP/1.1" URI or
+    // an invalid (no URI) HTTP/1.1 request. We treat this as latter, naturally.
     {
         input.append("GET  HTTP/1.1\r\n", 15);
-        // RFC 7230 tolerance allows sequence of SP to make this ambiguous
         Config.onoff.relaxed_header_parser = 1;
         struct resultSet expect = {
-            .parsed = true,
+            .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scOkay,
-            .suffixSz = 0,
-            .method = HttpRequestMethod(Http::METHOD_GET),
-            .uri = "HTTP/1.1",
-            .version = AnyP::ProtocolVersion(AnyP::PROTO_HTTP,0,9)
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
+            .uri = NULL,
+            .version = AnyP::ProtocolVersion()
         };
         output.clear();
         testResults(__LINE__, input, output, expect);
@@ -942,8 +1004,8 @@ testHttp1Parser::testParseRequestLineInvalid()
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
             .status = Http::scBadRequest,
-            .suffixSz = 11,
-            .method = HttpRequestMethod(Http::METHOD_GET),
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
             .uri = NULL,
             .version = AnyP::ProtocolVersion()
         };
@@ -952,18 +1014,19 @@ testHttp1Parser::testParseRequestLineInvalid()
         input.clear();
     }
 
-    // no URL (grammer invalid, ambiguous with RFC 1945 HTTP/0.9 simple-request)
+    // Either an RFC 1945 HTTP/0.9 simple-request for an "HTTP/1.1" URI or
+    // an invalid (no URI) HTTP/1.1 request. We treat this as latter, naturally.
     {
         input.append("GET HTTP/1.1\r\n", 14);
         struct resultSet expect = {
-            .parsed = true,
+            .parsed = false,
             .needsMore = false,
             .parserState = Http1::HTTP_PARSE_DONE,
-            .status = Http::scOkay,
-            .suffixSz = 0,
-            .method = HttpRequestMethod(Http::METHOD_GET),
-            .uri = "HTTP/1.1",
-            .version = AnyP::ProtocolVersion(AnyP::PROTO_HTTP,0,9)
+            .status = Http::scBadRequest,
+            .suffixSz = input.length(),
+            .method = HttpRequestMethod(),
+            .uri = NULL,
+            .version = AnyP::ProtocolVersion()
         };
         output.clear();
         testResults(__LINE__, input, output, expect);
@@ -1036,9 +1099,7 @@ testHttp1Parser::testDripFeed()
     data.append("\n\n\n\n\n\n\n\n\n\n\n\n", 12);
     SBuf::size_type garbageEnd = data.length();
     data.append("GET ", 4);
-    SBuf::size_type methodEnd = data.length()-1;
     data.append("http://example.com/ ", 20);
-    SBuf::size_type uriEnd = data.length()-1;
     data.append("HTTP/1.1\r\n", 10);
     SBuf::size_type reqLineEnd = data.length() - 1;
     data.append("Host: example.com\r\n\r\n", 21);
@@ -1090,19 +1151,6 @@ testHttp1Parser::testDripFeed()
             // all points after garbage start to see accumulated bytes looking for end of current section
             if (pos >= garbageEnd)
                 expect.suffixSz = ioBuf.length();
-
-            // at end of request line expect to see method details
-            if (pos == methodEnd) {
-                expect.suffixSz = 0; // and a checkpoint buffer reset
-                expect.method = HttpRequestMethod(Http::METHOD_GET);
-            }
-
-            // at end of URI strict expects to see method, URI details
-            // relaxed must wait to end of line for whitespace tolerance
-            if (pos == uriEnd && !Config.onoff.relaxed_header_parser) {
-                expect.suffixSz = 0; // and a checkpoint buffer reset
-                expect.uri = "http://example.com/";
-            }
 
             // at end of request line expect to see method, URI, version details
             // and switch to seeking Mime header section

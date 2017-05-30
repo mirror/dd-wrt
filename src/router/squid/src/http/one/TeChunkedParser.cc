@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,6 +14,7 @@
 #include "http/ProtocolVersion.h"
 #include "MemBuf.h"
 #include "Parsing.h"
+#include "SquidConfig.h"
 
 Http::One::TeChunkedParser::TeChunkedParser()
 {
@@ -116,6 +117,11 @@ Http::One::TeChunkedParser::parseChunkSize(Http1::Tokenizer &tok)
 bool
 Http::One::TeChunkedParser::parseChunkExtension(Http1::Tokenizer &tok, bool skipKnown)
 {
+    // Bug 4492: IBM_HTTP_Server sends SP padding
+    if (auto n = tok.skipAll(CharacterSet::SP)) {
+        debugs(94, 3, "skipping " << n << " spurious whitespace at start of chunk extension");
+    }
+
     SBuf ext;
     SBuf value;
     while (tok.skip(';') && tok.prefix(ext, CharacterSet::TCHAR)) {
@@ -147,9 +153,6 @@ Http::One::TeChunkedParser::parseChunkExtension(Http1::Tokenizer &tok, bool skip
             buf_ = tok.remaining(); // parse checkpoint (unless there might be more token name)
     }
 
-    if (tok.atEnd())
-        return false;
-
     if (skipLineTerminator(tok)) {
         buf_ = tok.remaining(); // checkpoint
         // non-0 chunk means data, 0-size means optional Trailer follows
@@ -157,26 +160,25 @@ Http::One::TeChunkedParser::parseChunkExtension(Http1::Tokenizer &tok, bool skip
         return true;
     }
 
-    throw TexcHere("corrupted chunk extension value");
     return false;
 }
 
 bool
 Http::One::TeChunkedParser::parseChunkBody(Http1::Tokenizer &tok)
 {
-    Must(theLeftBodySize > 0); // Should, really
+    if (theLeftBodySize > 0) {
+        buf_ = tok.remaining(); // sync buffers before buf_ use
 
-    buf_ = tok.remaining(); // sync buffers before buf_ use
+        // TODO fix type mismatches and casting for these
+        const size_t availSize = min(theLeftBodySize, (uint64_t)buf_.length());
+        const size_t safeSize = min(availSize, (size_t)theOut->potentialSpaceSize());
 
-    // TODO fix type mismatches and casting for these
-    const size_t availSize = min(theLeftBodySize, (uint64_t)buf_.length());
-    const size_t safeSize = min(availSize, (size_t)theOut->potentialSpaceSize());
+        theOut->append(buf_.rawContent(), safeSize);
+        buf_.consume(safeSize);
+        theLeftBodySize -= safeSize;
 
-    theOut->append(buf_.rawContent(), safeSize);
-    buf_.consume(safeSize);
-    theLeftBodySize -= safeSize;
-
-    tok.reset(buf_); // sync buffers after consume()
+        tok.reset(buf_); // sync buffers after consume()
+    }
 
     if (theLeftBodySize == 0)
         return parseChunkEnd(tok);
@@ -196,9 +198,6 @@ Http::One::TeChunkedParser::parseChunkEnd(Http1::Tokenizer &tok)
         theChunkSize = 0; // done with the current chunk
         parsingStage_ = Http1::HTTP_PARSE_CHUNK_SZ;
         return true;
-
-    } else if (!tok.atEnd()) {
-        throw TexcHere("found data between chunk end and CRLF");
     }
 
     return false;

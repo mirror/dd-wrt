@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,7 +9,6 @@
 #ifndef _SQUID_FORMAT_TOKEN_H
 #define _SQUID_FORMAT_TOKEN_H
 
-//#include "format/TokenTableEntry.h"
 #include "format/ByteCode.h"
 
 /*

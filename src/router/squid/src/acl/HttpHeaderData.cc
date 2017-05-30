@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,7 +17,8 @@
 #include "ConfigParser.h"
 #include "Debug.h"
 #include "HttpHeaderTools.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
+#include "sbuf/StringConvert.h"
 
 /* Construct an ACLHTTPHeaderData that uses an ACLRegex rule with the value of the
  * selected header from a given request.
@@ -51,7 +52,7 @@ ACLHTTPHeaderData::match(HttpHeader* hdr)
             return false;
     }
 
-    SBuf cvalue(value);
+    auto cvalue = StringToSBuf(value);
     return regex_rule->match(cvalue.c_str());
 }
 
@@ -74,9 +75,21 @@ void
 ACLHTTPHeaderData::parse()
 {
     char* t = ConfigParser::strtokFile();
-    assert (t != NULL);
-    hdrName = t;
-    hdrId = Http::HeaderLookupTable.lookup(hdrName).id;
+    if (!t) {
+        debugs(28, DBG_CRITICAL, "ERROR: " << cfg_filename << " line " << config_lineno << ": " << config_input_line);
+        debugs(28, DBG_CRITICAL, "ERROR: Missing header name in ACL");
+        return;
+    }
+
+    if (hdrName.isEmpty()) {
+        hdrName = t;
+        hdrId = Http::HeaderLookupTable.lookup(hdrName).id;
+    } else if (hdrName.caseCmp(t) != 0) {
+        debugs(28, DBG_CRITICAL, "ERROR: " << cfg_filename << " line " << config_lineno << ": " << config_input_line);
+        debugs(28, DBG_CRITICAL, "ERROR: ACL cannot match both " << hdrName << " and " << t << " headers. Use 'anyof' ACL instead.");
+        return;
+    }
+
     regex_rule->parse();
 }
 

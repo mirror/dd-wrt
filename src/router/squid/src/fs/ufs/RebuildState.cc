@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,11 +9,12 @@
 /* DEBUG: section 47    Store Directory Routines */
 
 #include "squid.h"
-#include "disk.h"
+#include "fs_io.h"
 #include "globals.h"
 #include "RebuildState.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
+#include "store/Disks.h"
 #include "store_key_md5.h"
 #include "store_rebuild.h"
 #include "StoreSwapLogData.h"
@@ -90,9 +91,11 @@ void
 Fs::Ufs::RebuildState::RebuildStep(void *data)
 {
     RebuildState *rb = (RebuildState *)data;
-    rb->rebuildStep();
+    if (!reconfiguring)
+        rb->rebuildStep();
 
-    if (!rb->isDone())
+    // delay storeRebuildComplete() when reconfiguring to protect storeCleanup()
+    if (!rb->isDone() || reconfiguring)
         eventAdd("storeRebuild", RebuildStep, rb, 0.01, 1);
     else {
         -- StoreController::store_dirs_rebuilding;
@@ -168,7 +171,8 @@ Fs::Ufs::RebuildState::rebuildFromDirectory()
     ++n_read;
 
     if (fstat(fd, &sb) < 0) {
-        debugs(47, DBG_IMPORTANT, HERE << "fstat(FD " << fd << "): " << xstrerror());
+        int xerrno = errno;
+        debugs(47, DBG_IMPORTANT, MYNAME << "fstat(FD " << fd << "): " << xstrerr(xerrno));
         file_close(fd);
         --store_open_disk_fd;
         fd = -1;
@@ -215,7 +219,7 @@ Fs::Ufs::RebuildState::rebuildFromDirectory()
                                     tmpe.expires,
                                     tmpe.timestamp,
                                     tmpe.lastref,
-                                    tmpe.lastmod,
+                                    tmpe.lastModified(),
                                     tmpe.refcount,  /* refcount */
                                     tmpe.flags,     /* flags */
                                     (int) flags.clean));
@@ -342,10 +346,10 @@ Fs::Ufs::RebuildState::rebuildFromSwapLog()
             currentEntry()->lastref = swapData.timestamp;
             currentEntry()->timestamp = swapData.timestamp;
             currentEntry()->expires = swapData.expires;
-            currentEntry()->lastmod = swapData.lastmod;
+            currentEntry()->lastModified(swapData.lastmod);
             currentEntry()->flags = swapData.flags;
             currentEntry()->refcount += swapData.refcount;
-            sd->dereference(*currentEntry(), false);
+            sd->dereference(*currentEntry());
         } else {
             debug_trap("commonUfsDirRebuildFromSwapLog: bad condition");
             debugs(47, DBG_IMPORTANT, HERE << "bad condition");
@@ -459,7 +463,7 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
         }
 
         if (0 == in_dir) {  /* we need to read in a new directory */
-            snprintf(fullpath, MAXPATHLEN, "%s/%02X/%02X",
+            snprintf(fullpath, sizeof(fullpath), "%s/%02X/%02X",
                      sd->path,
                      curlvl1, curlvl2);
 
@@ -470,8 +474,9 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
 
             ++dirs_opened;
 
-            if (td == NULL) {
-                debugs(47, DBG_IMPORTANT, HERE << "error in opendir (" << fullpath << "): " << xstrerror());
+            if (!td) {
+                int xerrno = errno;
+                debugs(47, DBG_IMPORTANT, MYNAME << "error in opendir (" << fullpath << "): " << xstrerr(xerrno));
             } else {
                 entry = readdir(td);    /* skip . and .. */
                 entry = readdir(td);
@@ -504,14 +509,15 @@ Fs::Ufs::RebuildState::getNextFile(sfileno * filn_p, int *)
                 continue;
             }
 
-            snprintf(fullfilename, MAXPATHLEN, "%s/%s",
+            snprintf(fullfilename, sizeof(fullfilename), "%s/%s",
                      fullpath, entry->d_name);
             debugs(47, 3, HERE << "Opening " << fullfilename);
             fd = file_open(fullfilename, O_RDONLY | O_BINARY);
 
-            if (fd < 0)
-                debugs(47, DBG_IMPORTANT, HERE << "error opening " << fullfilename << ": " << xstrerror());
-            else
+            if (fd < 0) {
+                int xerrno = errno;
+                debugs(47, DBG_IMPORTANT, MYNAME << "error opening " << fullfilename << ": " << xstrerr(xerrno));
+            } else
                 ++store_open_disk_fd;
 
             continue;

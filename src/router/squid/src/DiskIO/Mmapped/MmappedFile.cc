@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,11 +10,11 @@
 
 #include "squid.h"
 #include "Debug.h"
-#include "disk.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/Mmapped/MmappedFile.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
+#include "fs_io.h"
 #include "globals.h"
 
 #include <cerrno>
@@ -78,11 +78,12 @@ MmappedFile::open(int flags, mode_t, RefCount<IORequestor> callback)
     ioRequestor = callback;
 
     if (fd < 0) {
-        debugs(79,3, HERE << "open error: " << xstrerror());
+        int xerrno = errno;
+        debugs(79,3, "open error: " << xstrerr(xerrno));
         error_ = true;
     } else {
         ++store_open_disk_fd;
-        debugs(79,3, HERE << "FD " << fd);
+        debugs(79,3, "FD " << fd);
 
         // setup mapping boundaries
         struct stat sb;

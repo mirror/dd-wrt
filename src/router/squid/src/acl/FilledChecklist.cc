@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "comm/Connection.h"
 #include "comm/forward.h"
 #include "ExternalACLEntry.h"
+#include "http/Stream.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "SquidConfig.h"
@@ -70,7 +71,7 @@ static void
 showDebugWarning(const char *msg)
 {
     static uint16_t count = 0;
-    if (count > 100)
+    if (count > 10)
         return;
 
     ++count;
@@ -102,9 +103,9 @@ ACLFilledChecklist::syncAle() const
             HTTPMSGLOCK(al->adapted_request);
         }
 
-        if (!al->url) {
+        if (al->url.isEmpty()) {
             showDebugWarning("URL");
-            al->url = xstrdup(request->url.absolute().c_str());
+            al->url = request->url.absolute();
         }
     }
 
@@ -125,7 +126,7 @@ ACLFilledChecklist::syncAle() const
 ConnStateData *
 ACLFilledChecklist::conn() const
 {
-    return  conn_;
+    return cbdataReferenceValid(conn_) ? conn_ : nullptr;
 }
 
 void
@@ -140,13 +141,15 @@ ACLFilledChecklist::conn(ConnStateData *aConn)
 int
 ACLFilledChecklist::fd() const
 {
-    return (conn_ != NULL && conn_->clientConnection != NULL) ? conn_->clientConnection->fd : fd_;
+    const auto c = conn();
+    return (c && c->clientConnection) ? c->clientConnection->fd : fd_;
 }
 
 void
 ACLFilledChecklist::fd(int aDescriptor)
 {
-    assert(!conn() || conn()->clientConnection == NULL || conn()->clientConnection->fd == aDescriptor);
+    const auto c = conn();
+    assert(!c || !c->clientConnection || c->clientConnection->fd == aDescriptor);
     fd_ = aDescriptor;
 }
 

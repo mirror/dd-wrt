@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -44,38 +44,23 @@ typedef enum {
     MEM_16K_BUF,
     MEM_32K_BUF,
     MEM_64K_BUF,
-    MEM_ACL_DENY_INFO_LIST,
-    MEM_ACL_NAME_LIST,
-#if USE_CACHE_DIGESTS
-    MEM_CACHE_DIGEST,
-#endif
-    MEM_CLIENT_INFO,
-    MEM_LINK_LIST,
-    MEM_DLINK_NODE,
     MEM_DREAD_CTRL,
     MEM_DWRITE_Q,
-    MEM_HTTP_HDR_CONTENT_RANGE,
     MEM_MD5_DIGEST,
-    MEM_NETDBENTRY,
-    MEM_NET_DB_NAME,
-    // IMPORTANT: leave this here. pools above are initialized early with memInit()
-    MEM_DONTFREE,
-    // following pools are initialized late by their component if needed (or never)
-    MEM_FQDNCACHE_ENTRY,
-    MEM_FWD_SERVER,
-    MEM_IDNS_QUERY,
-    MEM_IPCACHE_ENTRY,
     MEM_MAX
 } mem_type;
 
+/// Main cleanup handler.
 void memClean(void);
 void memInitModule(void);
 void memCleanModule(void);
 void memConfigure(void);
+/// Allocate one element from the typed pool
 void *memAllocate(mem_type);
 void *memAllocString(size_t net_size, size_t * gross_size);
 void *memAllocBuf(size_t net_size, size_t * gross_size);
 void *memReallocBuf(void *buf, size_t net_size, size_t * gross_size);
+/// Free a element allocated by memAllocate()
 void memFree(void *, int type);
 void memFreeString(size_t size, void *);
 void memFreeBuf(size_t size, void *);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -420,6 +420,7 @@ Adaptation::Ecap::XactionRep::useAdapted(const libecap::shared_ptr<libecap::Mess
     Must(proxyingAb == opUndecided);
 
     HttpMsg *msg = answer().header;
+    updateSources(msg);
     if (!theAnswerRep->body()) { // final, bodyless answer
         proxyingAb = opNever;
         updateHistory(msg);
@@ -726,10 +727,16 @@ Adaptation::Ecap::XactionRep::status() const
             buf.append(" A?", 3);
     }
 
-    buf.appendf(" %s%u]", id.Prefix, id.value);
+    buf.appendf(" %s%u]", id.prefix(), id.value);
 
     buf.terminate();
 
     return buf.content();
+}
+
+void
+Adaptation::Ecap::XactionRep::updateSources(HttpMsg *adapted)
+{
+    adapted->sources |= service().cfg().connectionEncryption ? HttpMsg::srcEcaps : HttpMsg::srcEcap;
 }
 

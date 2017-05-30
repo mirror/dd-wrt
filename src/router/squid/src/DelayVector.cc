@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,20 +14,6 @@
 #include "comm/Connection.h"
 #include "CommRead.h"
 #include "DelayVector.h"
-
-void *
-DelayVector::operator new(size_t size)
-{
-    DelayPools::MemoryUsed += sizeof (DelayVector);
-    return ::operator new (size);
-}
-
-void
-DelayVector::operator delete (void *address)
-{
-    DelayPools::MemoryUsed -= sizeof (DelayVector);
-    ::operator delete (address);
-}
 
 DelayVector::DelayVector()
 {
@@ -93,20 +79,6 @@ void
 DelayVector::push_back(CompositePoolNode::Pointer aNode)
 {
     pools.push_back(aNode);
-}
-
-void *
-DelayVector::Id::operator new(size_t size)
-{
-    DelayPools::MemoryUsed += sizeof (Id);
-    return ::operator new (size);
-}
-
-void
-DelayVector::Id::operator delete (void *address)
-{
-    DelayPools::MemoryUsed -= sizeof (Id);
-    ::operator delete (address);
 }
 
 DelayVector::Id::Id(DelayVector::Pointer aDelayVector, CompositeSelectionDetails &details) : theVector(aDelayVector)

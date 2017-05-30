@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,6 +19,7 @@
 #include "fde.h"
 #include "format/Token.h"
 #include "globals.h"
+#include "http/Stream.h"
 #include "HttpRequest.h"
 #include "IoStats.h"
 #include "mem/Pool.h"
@@ -78,7 +79,6 @@ public:
 
 /* LOCALS */
 static const char *describeStatuses(const StoreEntry *);
-static const char *describeTimestamps(const StoreEntry *);
 static void statAvgTick(void *notused);
 static void statAvgDump(StoreEntry *, int minutes, int hours);
 #if STAT_GRAPHS
@@ -287,8 +287,8 @@ storeEntryFlags(const StoreEntry * entry)
     if (EBIT_TEST(flags, ENTRY_SPECIAL))
         strcat(buf, "SPECIAL,");
 
-    if (EBIT_TEST(flags, ENTRY_REVALIDATE))
-        strcat(buf, "REVALIDATE,");
+    if (EBIT_TEST(flags, ENTRY_REVALIDATE_ALWAYS))
+        strcat(buf, "REVALIDATE_ALWAYS,");
 
     if (EBIT_TEST(flags, DELAY_SENDING))
         strcat(buf, "DELAY_SENDING,");
@@ -298,6 +298,9 @@ storeEntryFlags(const StoreEntry * entry)
 
     if (EBIT_TEST(flags, REFRESH_REQUEST))
         strcat(buf, "REFRESH_REQUEST,");
+
+    if (EBIT_TEST(flags, ENTRY_REVALIDATE_STALE))
+        strcat(buf, "REVALIDATE_STALE,");
 
     if (EBIT_TEST(flags, ENTRY_DISPATCHED))
         strcat(buf, "DISPATCHED,");
@@ -326,18 +329,6 @@ storeEntryFlags(const StoreEntry * entry)
     return buf;
 }
 
-static const char *
-describeTimestamps(const StoreEntry * entry)
-{
-    LOCAL_ARRAY(char, buf, 256);
-    snprintf(buf, 256, "LV:%-9d LU:%-9d LM:%-9d EX:%-9d",
-             (int) entry->timestamp,
-             (int) entry->lastref,
-             (int) entry->lastmod,
-             (int) entry->expires);
-    return buf;
-}
-
 static void
 statStoreEntry(MemBuf * mb, StoreEntry * e)
 {
@@ -345,7 +336,7 @@ statStoreEntry(MemBuf * mb, StoreEntry * e)
     mb->appendf("KEY %s\n", e->getMD5Text());
     mb->appendf("\t%s\n", describeStatuses(e));
     mb->appendf("\t%s\n", storeEntryFlags(e));
-    mb->appendf("\t%s\n", describeTimestamps(e));
+    mb->appendf("\t%s\n", e->describeTimestamps());
     mb->appendf("\t%d locks, %d clients, %d refs\n", (int) e->locks(), storePendingNClients(e), (int) e->refcount);
     mb->appendf("\tSwap Dir %d, File %#08X\n", e->swap_dirn, e->swap_filen);
 
@@ -409,7 +400,7 @@ statObjectsStart(StoreEntry * sentry, STOBJFLT * filter)
     state->filter = filter;
 
     sentry->lock("statObjects");
-    state->theSearch = Store::Root().search(NULL, NULL);
+    state->theSearch = Store::Root().search();
 
     eventAdd("statObjects", statObjects, state, 0.0, 1);
 }
@@ -1857,13 +1848,12 @@ statClientRequests(StoreEntry * s)
                               fd_table[fd].bytes_read, fd_table[fd].bytes_written);
             storeAppendPrintf(s, "\tFD desc: %s\n", fd_table[fd].desc);
             storeAppendPrintf(s, "\tin: buf %p, used %ld, free %ld\n",
-                              conn->in.buf.c_str(), (long int) conn->in.buf.length(), (long int) conn->in.buf.spaceSize());
+                              conn->inBuf.rawContent(), (long int) conn->inBuf.length(), (long int) conn->inBuf.spaceSize());
             storeAppendPrintf(s, "\tremote: %s\n",
                               conn->clientConnection->remote.toUrl(buf,MAX_IPSTRLEN));
             storeAppendPrintf(s, "\tlocal: %s\n",
                               conn->clientConnection->local.toUrl(buf,MAX_IPSTRLEN));
-            storeAppendPrintf(s, "\tnrequests: %d\n",
-                              conn->nrequests);
+            storeAppendPrintf(s, "\tnrequests: %u\n", conn->pipeline.nrequests);
         }
 
         storeAppendPrintf(s, "uri %s\n", http->uri);
@@ -1890,10 +1880,8 @@ statClientRequests(StoreEntry * s)
             p = conn->clientConnection->rfc931;
 
 #if USE_OPENSSL
-
         if (!p && conn != NULL && Comm::IsConnOpen(conn->clientConnection))
-            p = sslGetUserEmail(fd_table[conn->clientConnection->fd].ssl);
-
+            p = sslGetUserEmail(fd_table[conn->clientConnection->fd].ssl.get());
 #endif
 
         if (!p)

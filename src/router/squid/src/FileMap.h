@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,7 +11,7 @@
 #ifndef FILEMAP_H_
 #define FILEMAP_H_
 
-#include "fs/forward.h"
+#include "store/forward.h"
 
 /** A bitmap used for managing UFS StoreEntry "file numbers".
  *

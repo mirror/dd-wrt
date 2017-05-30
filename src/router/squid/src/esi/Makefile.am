@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -14,13 +14,13 @@ ESI_PARSER_SOURCES = \
 	CustomParser.cc \
 	CustomParser.h
 
-if HAVE_LIBEXPAT
+if ENABLE_LIBEXPAT
 ESI_PARSER_SOURCES += \
 	ExpatParser.cc \
 	ExpatParser.h
 endif
 
-if HAVE_LIBXML2
+if ENABLE_LIBXML2
 ESI_PARSER_SOURCES += \
 	Libxml2Parser.cc \
 	Libxml2Parser.h

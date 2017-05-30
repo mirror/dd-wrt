@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,22 +12,25 @@
 #define SQUID_STORE_KEY_MD5_H_
 
 #include "hash.h"
+#include "store/forward.h"
 
 class HttpRequestMethod;
 class HttpRequest;
 
-/* MD5 cache keys */
-typedef unsigned char cache_key;
+typedef enum {
+    ksDefault = 0,
+    ksRevalidation
+} KeyScope;
 
 cache_key *storeKeyDup(const cache_key *);
 cache_key *storeKeyCopy(cache_key *, const cache_key *);
 void storeKeyFree(const cache_key *);
 const cache_key *storeKeyScan(const char *);
 const char *storeKeyText(const cache_key *);
-const cache_key *storeKeyPublic(const char *, const HttpRequestMethod&);
-const cache_key *storeKeyPublicByRequest(HttpRequest *);
-const cache_key *storeKeyPublicByRequestMethod(HttpRequest *, const HttpRequestMethod&);
-const cache_key *storeKeyPrivate(const char *, const HttpRequestMethod&, int);
+const cache_key *storeKeyPublic(const char *, const HttpRequestMethod&, const KeyScope keyScope = ksDefault);
+const cache_key *storeKeyPublicByRequest(HttpRequest *, const KeyScope keyScope = ksDefault);
+const cache_key *storeKeyPublicByRequestMethod(HttpRequest *, const HttpRequestMethod&, const KeyScope keyScope = ksDefault);
+const cache_key *storeKeyPrivate();
 int storeKeyHashBuckets(int);
 int storeKeyNull(const cache_key *);
 void storeKeyInit(void);

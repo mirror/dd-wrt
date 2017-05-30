@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -21,6 +21,9 @@
 #include "comm/Connection.h"
 #include "fatal.h"
 #include "format/Format.h"
+#include "helper.h"
+#include "helper/Reply.h"
+#include "http/Stream.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "MemBuf.h"
@@ -117,13 +120,13 @@ Auth::UserRequest::setDenyMessage(char const *aString)
 }
 
 char const *
-Auth::UserRequest::getDenyMessage()
+Auth::UserRequest::getDenyMessage() const
 {
     return message;
 }
 
 char const *
-Auth::UserRequest::denyMessage(char const * const default_message)
+Auth::UserRequest::denyMessage(char const * const default_message) const
 {
     if (getDenyMessage() == NULL)
         return default_message;
@@ -561,5 +564,17 @@ Auth::UserRequest::helperRequestKeyExtras(HttpRequest *request, AccessLogEntry::
         return mb.content();
     }
     return NULL;
+}
+
+void
+Auth::UserRequest::denyMessageFromHelper(const char *proto, const Helper::Reply &reply)
+{
+    static SBuf messageNote;
+    messageNote = SBuf(reply.notes.find("message"));
+    if (messageNote.isEmpty()) {
+        messageNote.append(proto);
+        messageNote.append(" Authentication denied with no reason given");
+    }
+    setDenyMessage(messageNote.c_str());
 }
 

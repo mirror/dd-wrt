@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "base/EnumIterator.h"
 #include "base64.h"
 #include "globals.h"
+#include "http/ContentLengthInterpreter.h"
 #include "HttpHdrCc.h"
 #include "HttpHdrContRange.h"
 #include "HttpHdrScTarget.h" // also includes HttpHdrSc.h
@@ -23,8 +24,8 @@
 #include "mgr/Registration.h"
 #include "profiler/Profiler.h"
 #include "rfc1123.h"
+#include "sbuf/StringConvert.h"
 #include "SquidConfig.h"
-//#include "SquidString.h" // pulled by HttpHdrCc.h
 #include "StatHist.h"
 #include "Store.h"
 #include "StrList.h"
@@ -155,7 +156,7 @@ HttpHeader::HttpHeader(const http_hdr_owner_type anOwner): owner(anOwner), len(0
 HttpHeader::HttpHeader(const HttpHeader &other): owner(other.owner), len(other.len), conflictingContentLength_(false)
 {
     httpHeaderMaskInit(&mask, 0);
-    update(&other, NULL); // will update the mask as well
+    update(&other); // will update the mask as well
 }
 
 HttpHeader::~HttpHeader()
@@ -170,7 +171,7 @@ HttpHeader::operator =(const HttpHeader &other)
         // we do not really care, but the caller probably does
         assert(owner == other.owner);
         clean();
-        update(&other, NULL); // will update the mask as well
+        update(&other); // will update the mask as well
         len = other.len;
         conflictingContentLength_ = other.conflictingContentLength_;
     }
@@ -238,18 +239,62 @@ HttpHeader::append(const HttpHeader * src)
     }
 }
 
-void
-HttpHeader::update (HttpHeader const *fresh, HttpHeaderMask const *denied_mask)
+/// check whether the fresh header has any new/changed updatable fields
+bool
+HttpHeader::needUpdate(HttpHeader const *fresh) const
 {
-    const HttpHeaderEntry *e;
+    for (const auto e: fresh->entries) {
+        if (!e || skipUpdateHeader(e->id))
+            continue;
+        String value;
+        const char *name = e->name.termedBuf();
+        if (!getByNameIfPresent(name, strlen(name), value) ||
+                (value != fresh->getByName(name)))
+            return true;
+    }
+    return false;
+}
+
+void
+HttpHeader::updateWarnings()
+{
+    int count = 0;
     HttpHeaderPos pos = HttpHeaderInitPos;
+
+    // RFC 7234, section 4.3.4: delete 1xx warnings and retain 2xx warnings
+    while (HttpHeaderEntry *e = getEntry(&pos)) {
+        if (e->id == Http::HdrType::WARNING && (e->getInt()/100 == 1) )
+            delAt(pos, count);
+    }
+}
+
+bool
+HttpHeader::skipUpdateHeader(const Http::HdrType id) const
+{
+    // RFC 7234, section 4.3.4: use fields other from Warning for update
+    return id == Http::HdrType::WARNING;
+}
+
+bool
+HttpHeader::update(HttpHeader const *fresh)
+{
     assert(fresh);
     assert(this != fresh);
+
+    // Optimization: Finding whether a header field changed is expensive
+    // and probably not worth it except for collapsed revalidation needs.
+    if (Config.onoff.collapsed_forwarding && !needUpdate(fresh))
+        return false;
+
+    updateWarnings();
+
+    const HttpHeaderEntry *e;
+    HttpHeaderPos pos = HttpHeaderInitPos;
 
     while ((e = fresh->getEntry(&pos))) {
         /* deny bad guys (ok to check for Http::HdrType::OTHER) here */
 
-        if (denied_mask && CBIT_TEST(*denied_mask, e->id))
+        if (skipUpdateHeader(e->id))
             continue;
 
         if (e->id != Http::HdrType::OTHER)
@@ -262,13 +307,14 @@ HttpHeader::update (HttpHeader const *fresh, HttpHeaderMask const *denied_mask)
     while ((e = fresh->getEntry(&pos))) {
         /* deny bad guys (ok to check for Http::HdrType::OTHER) here */
 
-        if (denied_mask && CBIT_TEST(*denied_mask, e->id))
+        if (skipUpdateHeader(e->id))
             continue;
 
         debugs(55, 7, "Updating header '" << Http::HeaderLookupTable.lookup(e->id).name << "' in cached entry");
 
         addEntry(e->clone());
     }
+    return true;
 }
 
 int
@@ -276,7 +322,6 @@ HttpHeader::parse(const char *header_start, size_t hdrLen)
 {
     const char *field_ptr = header_start;
     const char *header_end = header_start + hdrLen; // XXX: remove
-    HttpHeaderEntry *e, *e2;
     int warnOnError = (Config.onoff.relaxed_header_parser <= 0 ? DBG_IMPORTANT : 2);
 
     PROF_start(HttpHeaderParse);
@@ -294,6 +339,7 @@ HttpHeader::parse(const char *header_start, size_t hdrLen)
         return 0;
     }
 
+    Http::ContentLengthInterpreter clen(warnOnError);
     /* common format headers are "<name>:[ws]<value>" lines delimited by <CRLF>.
      * continuation lines start with a (single) space or tab */
     while (field_ptr < header_end) {
@@ -375,6 +421,7 @@ HttpHeader::parse(const char *header_start, size_t hdrLen)
             break;      /* terminating blank line */
         }
 
+        HttpHeaderEntry *e;
         if ((e = HttpHeaderEntry::parse(field_start, field_end)) == NULL) {
             debugs(55, warnOnError, "WARNING: unparseable HTTP header field {" <<
                    getStringPrefix(field_start, field_end-field_start) << "}");
@@ -388,45 +435,15 @@ HttpHeader::parse(const char *header_start, size_t hdrLen)
             return 0;
         }
 
-        // XXX: RFC 7230 Section 3.3.3 item #4 requires sending a 502 error in
-        // several cases that we do not yet cover. TODO: Rewrite to cover more.
-        if (e->id == Http::HdrType::CONTENT_LENGTH && (e2 = findEntry(e->id)) != nullptr) {
-            if (e->value != e2->value) {
-                int64_t l1, l2;
-                debugs(55, warnOnError, "WARNING: found two conflicting content-length headers in {" <<
-                       getStringPrefix(header_start, hdrLen) << "}");
+        if (e->id == Http::HdrType::CONTENT_LENGTH && !clen.checkField(e->value)) {
+            delete e;
 
-                if (!Config.onoff.relaxed_header_parser) {
-                    delete e;
-                    PROF_stop(HttpHeaderParse);
-                    clean();
-                    return 0;
-                }
+            if (Config.onoff.relaxed_header_parser)
+                continue; // clen has printed any necessary warnings
 
-                if (!httpHeaderParseOffset(e->value.termedBuf(), &l1)) {
-                    debugs(55, DBG_IMPORTANT, "WARNING: Unparseable content-length '" << e->value << "'");
-                    delete e;
-                    continue;
-                } else if (!httpHeaderParseOffset(e2->value.termedBuf(), &l2)) {
-                    debugs(55, DBG_IMPORTANT, "WARNING: Unparseable content-length '" << e2->value << "'");
-                    delById(e2->id);
-                } else {
-                    if (l1 != l2)
-                        conflictingContentLength_ = true;
-                    delete e;
-                    continue;
-                }
-            } else {
-                debugs(55, warnOnError, "NOTICE: found double content-length header");
-                delete e;
-
-                if (Config.onoff.relaxed_header_parser)
-                    continue;
-
-                PROF_stop(HttpHeaderParse);
-                clean();
-                return 0;
-            }
+            PROF_stop(HttpHeaderParse);
+            clean();
+            return 0;
         }
 
         if (e->id == Http::HdrType::OTHER && stringHasWhitespace(e->name.termedBuf())) {
@@ -444,14 +461,29 @@ HttpHeader::parse(const char *header_start, size_t hdrLen)
         addEntry(e);
     }
 
+    if (clen.headerWideProblem) {
+        debugs(55, warnOnError, "WARNING: " << clen.headerWideProblem <<
+               " Content-Length field values in" <<
+               Raw("header", header_start, hdrLen));
+    }
+
     if (chunked()) {
         // RFC 2616 section 4.4: ignore Content-Length with Transfer-Encoding
+        // RFC 7230 section 3.3.3 #3: Transfer-Encoding overwrites Content-Length
         delById(Http::HdrType::CONTENT_LENGTH);
-        // RFC 7230 section 3.3.3 #4: ignore Content-Length conflicts with Transfer-Encoding
-        conflictingContentLength_ = false;
-    } else if (conflictingContentLength_) {
-        // ensure our callers do not see the conflicting Content-Length value
+        // and clen state becomes irrelevant
+    } else if (clen.sawBad) {
+        // ensure our callers do not accidentally see bad Content-Length values
         delById(Http::HdrType::CONTENT_LENGTH);
+        conflictingContentLength_ = true; // TODO: Rename to badContentLength_.
+    } else if (clen.needsSanitizing) {
+        // RFC 7230 section 3.3.2: MUST either reject or ... [sanitize];
+        // ensure our callers see a clean Content-Length value or none at all
+        delById(Http::HdrType::CONTENT_LENGTH);
+        if (clen.sawGood) {
+            putInt64(Http::HdrType::CONTENT_LENGTH, clen.value);
+            debugs(55, 5, "sanitized Content-Length to be " << clen.value);
+        }
     }
 
     PROF_stop(HttpHeaderParse);
@@ -595,21 +627,17 @@ HttpHeader::delById(Http::HdrType id)
 {
     debugs(55, 8, this << " del-by-id " << id);
     assert(any_registered_header(id));
-    int count=0;
 
     if (!CBIT_TEST(mask, id))
         return 0;
 
-    //replace matching items with nil and count them
-    std::replace_if(entries.begin(), entries.end(),
-    [&](const HttpHeaderEntry *e) {
-        if (e && e->id == id) {
-            ++count;
-            return true;
-        }
-        return false;
-    },
-    nullptr);
+    int count = 0;
+
+    HttpHeaderPos pos = HttpHeaderInitPos;
+    while (HttpHeaderEntry *e = getEntry(&pos)) {
+        if (e->id == id)
+            delAt(pos, count); // deletes e
+    }
 
     CBIT_CLR(mask, id);
     assert(count);
@@ -855,7 +883,7 @@ HttpHeader::getByNameIfPresent(const char *name, int namelen, String &result) co
     /* Sorry, an unknown header name. Do linear search */
     bool found = false;
     while ((e = getEntry(&pos))) {
-        if (e->id == Http::HdrType::OTHER && e->name.caseCmp(name) == 0) {
+        if (e->id == Http::HdrType::OTHER && e->name.size() == static_cast<String::size_type>(namelen) && e->name.caseCmp(name, namelen) == 0) {
             found = true;
             strListAdd(&result, e->value.termedBuf(), ',');
         }
@@ -927,6 +955,32 @@ HttpHeader::has(Http::HdrType id) const
     assert(any_registered_header(id));
     debugs(55, 9, this << " lookup for " << id);
     return CBIT_TEST(mask, id);
+}
+
+void
+HttpHeader::addVia(const AnyP::ProtocolVersion &ver, const HttpHeader *from)
+{
+    // TODO: do not add Via header for messages where Squid itself
+    // generated the message (i.e., Downloader or ESI) there should be no Via header added at all.
+
+    if (Config.onoff.via) {
+        SBuf buf;
+        // RFC 7230 section 5.7.1.: protocol-name is omitted when
+        // the received protocol is HTTP.
+        if (ver.protocol > AnyP::PROTO_NONE && ver.protocol < AnyP::PROTO_UNKNOWN &&
+                ver.protocol != AnyP::PROTO_HTTP && ver.protocol != AnyP::PROTO_HTTPS)
+            buf.appendf("%s/", AnyP::ProtocolType_str[ver.protocol]);
+        buf.appendf("%d.%d %s", ver.major, ver.minor, ThisCache);
+        const HttpHeader *hdr = from ? from : this;
+        SBuf strVia = StringToSBuf(hdr->getList(Http::HdrType::VIA));
+        if (!strVia.isEmpty())
+            strVia.append(", ", 2);
+        strVia.append(buf);
+        // XXX: putStr() still suffers from String size limits
+        Must(strVia.length() < String::SizeMaxXXX());
+        delById(Http::HdrType::VIA);
+        putStr(Http::HdrType::VIA, strVia.c_str());
+    }
 }
 
 void
@@ -1439,12 +1493,9 @@ int64_t
 HttpHeaderEntry::getInt64() const
 {
     int64_t val = -1;
-    int ok = httpHeaderParseOffset(value.termedBuf(), &val);
-    httpHeaderNoteParsedEntry(id, value, ok == 0);
-    /* XXX: Should we check ok - ie
-     * return ok ? -1 : value;
-     */
-    return val;
+    const bool ok = httpHeaderParseOffset(value.termedBuf(), &val);
+    httpHeaderNoteParsedEntry(id, value, !ok);
+    return val; // remains -1 if !ok (XXX: bad method API)
 }
 
 static void

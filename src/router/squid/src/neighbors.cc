@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -762,7 +762,7 @@ peerDigestLookup(CachePeer * p, HttpRequest * request)
     assert(p->digest->cd);
     /* does digest predict a hit? */
 
-    if (!cacheDigestTest(p->digest->cd, key))
+    if (!p->digest->cd->contains(key))
         return LOOKUP_MISS;
 
     debugs(15, 5, "peerDigestLookup: peer " << p->host << " says HIT!");

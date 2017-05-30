@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,6 +20,7 @@
 #include "fde.h"
 #include "globals.h"
 #include "http/RegisteredHeaders.h"
+#include "http/Stream.h"
 #include "HttpHdrContRange.h"
 #include "HttpHeader.h"
 #include "HttpHeaderFieldInfo.h"
@@ -39,6 +40,7 @@
 #include <string>
 
 static void httpHeaderPutStrvf(HttpHeader * hdr, Http::HdrType id, const char *fmt, va_list vargs);
+static void httpHdrAdd(HttpHeader *heads, HttpRequest *request, const AccessLogEntryPointer &al, HeaderWithAclList &headersAdd);
 
 void
 httpHeaderMaskInit(HttpHeaderMask * mask, int value)
@@ -76,36 +78,30 @@ httpHeaderAddContRange(HttpHeader * hdr, HttpHdrRangeSpec spec, int64_t ent_len)
     assert(hdr && ent_len >= 0);
     httpHdrContRangeSet(cr, spec, ent_len);
     hdr->putContRange(cr);
-    httpHdrContRangeDestroy(cr);
+    delete cr;
 }
 
 /**
- * return true if a given directive is found in at least one of
- * the "connection" header-fields note: if Http::HdrType::PROXY_CONNECTION is
- * present we ignore Http::HdrType::CONNECTION.
+ * \return true if a given directive is found in the Connection header field-value.
+ *
+ * \note if no Connection header exists we may check the Proxy-Connection header
  */
-int
+bool
 httpHeaderHasConnDir(const HttpHeader * hdr, const char *directive)
 {
     String list;
-    int res;
+
     /* what type of header do we have? */
+    if (hdr->getList(Http::HdrType::CONNECTION, &list))
+        return strListIsMember(&list, directive, ',') != 0;
 
 #if USE_HTTP_VIOLATIONS
-    if (hdr->has(Http::HdrType::PROXY_CONNECTION))
-        list = hdr->getList(Http::HdrType::PROXY_CONNECTION);
-    else
+    if (hdr->getList(Http::HdrType::PROXY_CONNECTION, &list))
+        return strListIsMember(&list, directive, ',') != 0;
 #endif
-        if (hdr->has(Http::HdrType::CONNECTION))
-            list = hdr->getList(Http::HdrType::CONNECTION);
-        else
-            return 0;
 
-    res = strListIsMember(&list, directive, ',');
-
-    list.clean();
-
-    return res;
+    // else, no connection header for it to exist in
+    return false;
 }
 
 /** handy to printf prefixes of potentially very long buffers */
@@ -136,18 +132,29 @@ httpHeaderParseInt(const char *start, int *value)
     return 1;
 }
 
-int
-httpHeaderParseOffset(const char *start, int64_t * value)
+bool
+httpHeaderParseOffset(const char *start, int64_t *value, char **endPtr)
 {
+    char *end = nullptr;
     errno = 0;
-    int64_t res = strtoll(start, NULL, 10);
-    if (!res && EINVAL == errno) {   /* maybe not portable? */
-        debugs(66, 7, "failed to parse offset in " << start);
-        return 0;
+    const int64_t res = strtoll(start, &end, 10);
+    if (errno && !res) {
+        debugs(66, 7, "failed to parse malformed offset in " << start);
+        return false;
+    }
+    if (errno == ERANGE && (res == LLONG_MIN || res == LLONG_MAX)) { // no overflow
+        debugs(66, 7, "failed to parse huge offset in " << start);
+        return false;
+    }
+    if (start == end) {
+        debugs(66, 7, "failed to parse empty offset");
+        return false;
     }
     *value = res;
+    if (endPtr)
+        *endPtr = end;
     debugs(66, 7, "offset " << start << " parsed as " << res);
-    return 1;
+    return true;
 }
 
 /**
@@ -266,28 +273,11 @@ httpHeaderQuoteString(const char *raw)
  * \retval 1    Header has no access controls to test
  */
 static int
-httpHdrMangle(HttpHeaderEntry * e, HttpRequest * request, int req_or_rep)
+httpHdrMangle(HttpHeaderEntry * e, HttpRequest * request, HeaderManglers *hms)
 {
     int retval;
 
-    /* check with anonymizer tables */
-    HeaderManglers *hms = NULL;
     assert(e);
-
-    if (ROR_REQUEST == req_or_rep) {
-        hms = Config.request_header_access;
-    } else if (ROR_REPLY == req_or_rep) {
-        hms = Config.reply_header_access;
-    } else {
-        /* error. But let's call it "request". */
-        hms = Config.request_header_access;
-    }
-
-    /* manglers are not configured for this message kind */
-    if (!hms) {
-        debugs(66, 7, "no manglers configured for message kind " << req_or_rep);
-        return 1;
-    }
 
     const headerMangler *hm = hms->find(*e);
 
@@ -322,18 +312,40 @@ httpHdrMangle(HttpHeaderEntry * e, HttpRequest * request, int req_or_rep)
 
 /** Mangles headers for a list of headers. */
 void
-httpHdrMangleList(HttpHeader * l, HttpRequest * request, int req_or_rep)
+httpHdrMangleList(HttpHeader *l, HttpRequest *request, const AccessLogEntryPointer &al, req_or_rep_t req_or_rep)
 {
     HttpHeaderEntry *e;
     HttpHeaderPos p = HttpHeaderInitPos;
 
-    int headers_deleted = 0;
-    while ((e = l->getEntry(&p)))
-        if (0 == httpHdrMangle(e, request, req_or_rep))
-            l->delAt(p, headers_deleted);
+    /* check with anonymizer tables */
+    HeaderManglers *hms = nullptr;
+    HeaderWithAclList *headersAdd = nullptr;
 
-    if (headers_deleted)
-        l->refreshMask();
+    switch (req_or_rep) {
+    case ROR_REQUEST:
+        hms = Config.request_header_access;
+        headersAdd = Config.request_header_add;
+        break;
+    case ROR_REPLY:
+        hms = Config.reply_header_access;
+        headersAdd = Config.reply_header_add;
+        break;
+    }
+
+    if (hms) {
+        int headers_deleted = 0;
+        while ((e = l->getEntry(&p))) {
+            if (0 == httpHdrMangle(e, request, hms))
+                l->delAt(p, headers_deleted);
+        }
+
+        if (headers_deleted)
+            l->refreshMask();
+    }
+
+    if (headersAdd && !headersAdd->empty()) {
+        httpHdrAdd(l, request, al, *headersAdd);
+    }
 }
 
 static

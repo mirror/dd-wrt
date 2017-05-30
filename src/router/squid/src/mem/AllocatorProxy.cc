@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -41,7 +41,7 @@ Mem::AllocatorProxy::inUseCount() const
     if (!theAllocator)
         return 0;
     else
-        return memPoolInUseCount(theAllocator);
+        return theAllocator->inUseCount();
 }
 
 void

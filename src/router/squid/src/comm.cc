@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -31,7 +31,7 @@
 #include "ip/tools.h"
 #include "pconn.h"
 #include "profiler/Profiler.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 #include "SquidConfig.h"
 #include "StatCounters.h"
 #include "StoreIOBuffer.h"
@@ -110,7 +110,7 @@ comm_empty_os_read_buffers(int fd)
 
     /* prevent those nasty RST packets */
     char buf[SQUID_TCP_SO_RCVBUF];
-    if (fd_table[fd].flags.nonblocking) {
+    if (fd_table[fd].flags.nonblocking && fd_table[fd].type != FD_MSGHDR) {
         while (FD_READ_METHOD(fd, buf, SQUID_TCP_SO_RCVBUF) > 0) {};
     }
 #endif
@@ -181,7 +181,8 @@ comm_local_port(int fd)
     Ip::Address::InitAddr(addr);
 
     if (getsockname(fd, addr->ai_addr, &(addr->ai_addrlen)) ) {
-        debugs(50, DBG_IMPORTANT, "comm_local_port: Failed to retrieve TCP/UDP port number for socket: FD " << fd << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "Failed to retrieve TCP/UDP port number for socket: FD " << fd << ": " << xstrerr(xerrno));
         Ip::Address::FreeAddr(addr);
         return 0;
     }
@@ -206,11 +207,11 @@ commBind(int s, struct addrinfo &inaddr)
     ++ statCounter.syscalls.sock.binds;
 
     if (bind(s, inaddr.ai_addr, inaddr.ai_addrlen) == 0) {
-        debugs(50, 6, "commBind: bind socket FD " << s << " to " << fd_table[s].local_addr);
+        debugs(50, 6, "bind socket FD " << s << " to " << fd_table[s].local_addr);
         return Comm::OK;
     }
-
-    debugs(50, 0, "commBind: Cannot bind socket FD " << s << " to " << fd_table[s].local_addr << ": " << xstrerror());
+    int xerrno = errno;
+    debugs(50, DBG_CRITICAL, MYNAME << "Cannot bind socket FD " << s << " to " << fd_table[s].local_addr << ": " << xstrerr(xerrno));
 
     return Comm::COMM_ERROR;
 }
@@ -271,10 +272,11 @@ comm_set_v6only(int fd, int tos)
 {
 #ifdef IPV6_V6ONLY
     if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char *) &tos, sizeof(int)) < 0) {
-        debugs(50, DBG_IMPORTANT, "comm_open: setsockopt(IPV6_V6ONLY) " << (tos?"ON":"OFF") << " for FD " << fd << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "setsockopt(IPV6_V6ONLY) " << (tos?"ON":"OFF") << " for FD " << fd << ": " << xstrerr(xerrno));
     }
 #else
-    debugs(50, 0, "WARNING: comm_open: setsockopt(IPV6_V6ONLY) not supported on this platform");
+    debugs(50, DBG_CRITICAL, MYNAME << "WARNING: setsockopt(IPV6_V6ONLY) not supported on this platform");
 #endif /* sockopt */
 }
 
@@ -311,7 +313,8 @@ comm_set_transparent(int fd)
 #if defined(soLevel) && defined(soFlag)
     int tos = 1;
     if (setsockopt(fd, soLevel, soFlag, (char *) &tos, sizeof(int)) < 0) {
-        debugs(50, DBG_IMPORTANT, "comm_open: setsockopt(TPROXY) on FD " << fd << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "setsockopt(TPROXY) on FD " << fd << ": " << xstrerr(xerrno));
     } else {
         /* mark the socket as having transparent options */
         fd_table[fd].flags.transparent = true;
@@ -347,6 +350,7 @@ comm_openex(int sock_type,
     debugs(50, 3, "comm_openex: Attempt open socket for: " << addr );
 
     new_socket = socket(AI->ai_family, AI->ai_socktype, AI->ai_protocol);
+    int xerrno = errno;
 
     /* under IPv6 there is the possibility IPv6 is present but disabled. */
     /* try again as IPv4-native if possible */
@@ -357,9 +361,9 @@ comm_openex(int sock_type,
         addr.getAddrInfo(AI);
         AI->ai_socktype = sock_type;
         AI->ai_protocol = proto;
-        debugs(50, 3, "comm_openex: Attempt fallback open socket for: " << addr );
+        debugs(50, 3, "Attempt fallback open socket for: " << addr );
         new_socket = socket(AI->ai_family, AI->ai_socktype, AI->ai_protocol);
-        debugs(50, 2, HERE << "attempt open " << note << " socket on: " << addr);
+        debugs(50, 2, "attempt open " << note << " socket on: " << addr);
     }
 
     if (new_socket < 0) {
@@ -368,15 +372,16 @@ comm_openex(int sock_type,
          * limits the number of simultaneous clients */
 
         if (limitError(errno)) {
-            debugs(50, DBG_IMPORTANT, "comm_open: socket failure: " << xstrerror());
+            debugs(50, DBG_IMPORTANT, MYNAME << "socket failure: " << xstrerr(xerrno));
             fdAdjustReserved();
         } else {
-            debugs(50, DBG_CRITICAL, "comm_open: socket failure: " << xstrerror());
+            debugs(50, DBG_CRITICAL, MYNAME << "socket failure: " << xstrerr(xerrno));
         }
 
         Ip::Address::FreeAddr(AI);
 
         PROF_stop(comm_open);
+        errno = xerrno; // restore for caller
         return -1;
     }
 
@@ -404,6 +409,7 @@ comm_openex(int sock_type,
 
     // XXX transition only. prevent conn from closing the new FD on function exit.
     conn->fd = -1;
+    errno = xerrno; // restore for caller
     return new_socket;
 }
 
@@ -737,12 +743,11 @@ static void
 commLingerClose(int fd, void *unused)
 {
     LOCAL_ARRAY(char, buf, 1024);
-    int n;
-    n = FD_READ_METHOD(fd, buf, 1024);
-
-    if (n < 0)
-        debugs(5, 3, "commLingerClose: FD " << fd << " read: " << xstrerror());
-
+    int n = FD_READ_METHOD(fd, buf, 1024);
+    if (n < 0) {
+        int xerrno = errno;
+        debugs(5, 3, "FD " << fd << " read: " << xstrerr(xerrno));
+    }
     comm_close(fd);
 }
 
@@ -759,10 +764,7 @@ commLingerTimeout(const FdeCbParams &params)
 void
 comm_lingering_close(int fd)
 {
-#if USE_OPENSSL
-    if (fd_table[fd].ssl)
-        ssl_shutdown_method(fd_table[fd].ssl);
-#endif
+    Security::SessionSendGoodbye(fd_table[fd].ssl);
 
     if (shutdown(fd, 1) < 0) {
         comm_close(fd);
@@ -798,9 +800,10 @@ comm_reset_close(const Comm::ConnectionPointer &conn)
     L.l_onoff = 1;
     L.l_linger = 0;
 
-    if (setsockopt(conn->fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0)
-        debugs(50, DBG_CRITICAL, "ERROR: Closing " << conn << " with TCP RST: " << xstrerror());
-
+    if (setsockopt(conn->fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "ERROR: Closing " << conn << " with TCP RST: " << xstrerr(xerrno));
+    }
     conn->close();
 }
 
@@ -812,37 +815,25 @@ old_comm_reset_close(int fd)
     L.l_onoff = 1;
     L.l_linger = 0;
 
-    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0)
-        debugs(50, DBG_CRITICAL, "ERROR: Closing FD " << fd << " with TCP RST: " << xstrerror());
-
+    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "ERROR: Closing FD " << fd << " with TCP RST: " << xstrerr(xerrno));
+    }
     comm_close(fd);
 }
 
-#if USE_OPENSSL
 void
-commStartSslClose(const FdeCbParams &params)
+commStartTlsClose(const FdeCbParams &params)
 {
-    assert(fd_table[params.fd].ssl != NULL);
-    ssl_shutdown_method(fd_table[params.fd].ssl);
+    Security::SessionSendGoodbye(fd_table[params.fd].ssl);
 }
-#endif
 
 void
 comm_close_complete(const FdeCbParams &params)
 {
-#if USE_OPENSSL
     fde *F = &fd_table[params.fd];
-
-    if (F->ssl) {
-        SSL_free(F->ssl);
-        F->ssl = NULL;
-    }
-
-    if (F->dynamicSslContext) {
-        SSL_CTX_free(F->dynamicSslContext);
-        F->dynamicSslContext = NULL;
-    }
-#endif
+    F->ssl.reset();
+    F->dynamicTlsContext.reset();
     fd_close(params.fd);        /* update fdstat */
     close(params.fd);
 
@@ -893,15 +884,13 @@ _comm_close(int fd, char const *file, int line)
 
     F->flags.close_request = true;
 
-#if USE_OPENSSL
     if (F->ssl) {
-        AsyncCall::Pointer startCall=commCbCall(5,4, "commStartSslClose",
-                                                FdeCbPtrFun(commStartSslClose, NULL));
+        AsyncCall::Pointer startCall=commCbCall(5,4, "commStartTlsClose",
+                                                FdeCbPtrFun(commStartTlsClose, nullptr));
         FdeCbParams &startParams = GetCommParams<FdeCbParams>(startCall);
         startParams.fd = fd;
         ScheduleCallHere(startCall);
     }
-#endif
 
     // a half-closed fd may lack a reader, so we stop monitoring explicitly
     if (commHasHalfClosedMonitor(fd))
@@ -959,24 +948,26 @@ comm_udp_sendto(int fd,
     struct addrinfo *AI = NULL;
     to_addr.getAddrInfo(AI, fd_table[fd].sock_family);
     int x = sendto(fd, buf, len, 0, AI->ai_addr, AI->ai_addrlen);
+    int xerrno = errno;
     Ip::Address::FreeAddr(AI);
 
     PROF_stop(comm_udp_sendto);
 
-    if (x >= 0)
+    if (x >= 0) {
+        errno = xerrno; // restore for caller to use
         return x;
+    }
 
 #if _SQUID_LINUX_
-
-    if (ECONNREFUSED != errno)
+    if (ECONNREFUSED != xerrno)
 #endif
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ", (family=" << fd_table[fd].sock_family << ") " << to_addr << ": " << xstrerr(xerrno));
 
-        debugs(50, DBG_IMPORTANT, "comm_udp_sendto: FD " << fd << ", (family=" << fd_table[fd].sock_family << ") " << to_addr << ": " << xstrerror());
-
+    errno = xerrno; // restore for caller to use
     return Comm::COMM_ERROR;
 }
 
-void
+AsyncCall::Pointer
 comm_add_close_handler(int fd, CLCB * handler, void *data)
 {
     debugs(5, 5, "comm_add_close_handler: FD " << fd << ", handler=" <<
@@ -985,6 +976,7 @@ comm_add_close_handler(int fd, CLCB * handler, void *data)
     AsyncCall::Pointer call=commCbCall(5,4, "SomeCloseHandler",
                                        CommCloseCbPtrFun(handler, data));
     comm_add_close_handler(fd, call);
+    return call;
 }
 
 void
@@ -1054,9 +1046,10 @@ commSetNoLinger(int fd)
     L.l_onoff = 0;      /* off */
     L.l_linger = 0;
 
-    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0)
-        debugs(50, 0, "commSetNoLinger: FD " << fd << ": " << xstrerror());
-
+    if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char *) &L, sizeof(L)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+    }
     fd_table[fd].flags.nolinger = true;
 }
 
@@ -1064,21 +1057,28 @@ static void
 commSetReuseAddr(int fd)
 {
     int on = 1;
-
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) < 0)
-        debugs(50, DBG_IMPORTANT, "commSetReuseAddr: FD " << fd << ": " << xstrerror());
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+    }
 }
 
 static void
 commSetTcpRcvbuf(int fd, int size)
 {
-    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(size)) < 0)
-        debugs(50, DBG_IMPORTANT, "commSetTcpRcvbuf: FD " << fd << ", SIZE " << size << ": " << xstrerror());
-    if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(size)) < 0)
-        debugs(50, DBG_IMPORTANT, "commSetTcpRcvbuf: FD " << fd << ", SIZE " << size << ": " << xstrerror());
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, (char *) &size, sizeof(size)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ", SIZE " << size << ": " << xstrerr(xerrno));
+    }
+    if (setsockopt(fd, SOL_SOCKET, SO_SNDBUF, (char *) &size, sizeof(size)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ", SIZE " << size << ": " << xstrerr(xerrno));
+    }
 #ifdef TCP_WINDOW_CLAMP
-    if (setsockopt(fd, SOL_TCP, TCP_WINDOW_CLAMP, (char *) &size, sizeof(size)) < 0)
-        debugs(50, DBG_IMPORTANT, "commSetTcpRcvbuf: FD " << fd << ", SIZE " << size << ": " << xstrerror());
+    if (setsockopt(fd, SOL_TCP, TCP_WINDOW_CLAMP, (char *) &size, sizeof(size)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ", SIZE " << size << ": " << xstrerr(xerrno));
+    }
 #endif
 }
 
@@ -1089,7 +1089,8 @@ commSetNonBlocking(int fd)
     int nonblocking = TRUE;
 
     if (ioctl(fd, FIONBIO, &nonblocking) < 0) {
-        debugs(50, 0, "commSetNonBlocking: FD " << fd << ": " << xstrerror() << " " << fd_table[fd].type);
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": " << xstrerr(xerrno) << " " << fd_table[fd].type);
         return Comm::COMM_ERROR;
     }
 
@@ -1098,12 +1099,14 @@ commSetNonBlocking(int fd)
     int dummy = 0;
 
     if ((flags = fcntl(fd, F_GETFL, dummy)) < 0) {
-        debugs(50, 0, "FD " << fd << ": fcntl F_GETFL: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": fcntl F_GETFL: " << xstrerr(xerrno));
         return Comm::COMM_ERROR;
     }
 
     if (fcntl(fd, F_SETFL, flags | SQUID_NONBLOCK) < 0) {
-        debugs(50, 0, "commSetNonBlocking: FD " << fd << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
         return Comm::COMM_ERROR;
     }
 #endif
@@ -1124,13 +1127,15 @@ commUnsetNonBlocking(int fd)
     int dummy = 0;
 
     if ((flags = fcntl(fd, F_GETFL, dummy)) < 0) {
-        debugs(50, 0, "FD " << fd << ": fcntl F_GETFL: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": fcntl F_GETFL: " << xstrerr(xerrno));
         return Comm::COMM_ERROR;
     }
 
     if (fcntl(fd, F_SETFL, flags & (~SQUID_NONBLOCK)) < 0) {
 #endif
-        debugs(50, 0, "commUnsetNonBlocking: FD " << fd << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
         return Comm::COMM_ERROR;
     }
 
@@ -1146,12 +1151,15 @@ commSetCloseOnExec(int fd)
     int dummy = 0;
 
     if ((flags = fcntl(fd, F_GETFD, dummy)) < 0) {
-        debugs(50, 0, "FD " << fd << ": fcntl F_GETFD: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": fcntl F_GETFD: " << xstrerr(xerrno));
         return;
     }
 
-    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0)
-        debugs(50, 0, "FD " << fd << ": set close-on-exec failed: " << xstrerror());
+    if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, MYNAME << "FD " << fd << ": set close-on-exec failed: " << xstrerr(xerrno));
+    }
 
     fd_table[fd].flags.close_on_exec = true;
 
@@ -1164,8 +1172,10 @@ commSetTcpNoDelay(int fd)
 {
     int on = 1;
 
-    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0)
-        debugs(50, DBG_IMPORTANT, "commSetTcpNoDelay: FD " << fd << ": " << xstrerror());
+    if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *) &on, sizeof(on)) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+    }
 
     fd_table[fd].flags.nodelay = true;
 }
@@ -1179,24 +1189,32 @@ commSetTcpKeepalive(int fd, int idle, int interval, int timeout)
 #ifdef TCP_KEEPCNT
     if (timeout && interval) {
         int count = (timeout + interval - 1) / interval;
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(on)) < 0)
-            debugs(5, DBG_IMPORTANT, "commSetKeepalive: FD " << fd << ": " << xstrerror());
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &count, sizeof(on)) < 0) {
+            int xerrno = errno;
+            debugs(5, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+        }
     }
 #endif
 #ifdef TCP_KEEPIDLE
     if (idle) {
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(on)) < 0)
-            debugs(5, DBG_IMPORTANT, "commSetKeepalive: FD " << fd << ": " << xstrerror());
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(on)) < 0) {
+            int xerrno = errno;
+            debugs(5, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+        }
     }
 #endif
 #ifdef TCP_KEEPINTVL
     if (interval) {
-        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(on)) < 0)
-            debugs(5, DBG_IMPORTANT, "commSetKeepalive: FD " << fd << ": " << xstrerror());
+        if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &interval, sizeof(on)) < 0) {
+            int xerrno = errno;
+            debugs(5, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+        }
     }
 #endif
-    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char *) &on, sizeof(on)) < 0)
-        debugs(5, DBG_IMPORTANT, "commSetKeepalive: FD " << fd << ": " << xstrerror());
+    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (char *) &on, sizeof(on)) < 0) {
+        int xerrno = errno;
+        debugs(5, DBG_IMPORTANT, MYNAME << "FD " << fd << ": " << xstrerr(xerrno));
+    }
 }
 
 void
@@ -1742,7 +1760,7 @@ DeferredReadManager::popHead(CbDataListContainer<DeferredRead> &deferredReads)
     //       amount of time. We must re-validate that it is active and usable.
 
     // If the connection has been closed already. Cancel this read.
-    if (!Comm::IsConnOpen(read.theRead.conn)) {
+    if (!fd_table || !Comm::IsConnOpen(read.theRead.conn)) {
         if (read.closer != NULL) {
             read.closer->cancel("Connection closed before.");
             read.closer = NULL;
@@ -1876,15 +1894,16 @@ comm_open_uds(int sock_type,
     debugs(50, 3, HERE << "Attempt open socket for: " << addr->sun_path);
 
     if ((new_socket = socket(AI.ai_family, AI.ai_socktype, AI.ai_protocol)) < 0) {
+        int xerrno = errno;
         /* Increase the number of reserved fd's if calls to socket()
          * are failing because the open file table is full.  This
          * limits the number of simultaneous clients */
 
-        if (limitError(errno)) {
-            debugs(50, DBG_IMPORTANT, HERE << "socket failure: " << xstrerror());
+        if (limitError(xerrno)) {
+            debugs(50, DBG_IMPORTANT, MYNAME << "socket failure: " << xstrerr(xerrno));
             fdAdjustReserved();
         } else {
-            debugs(50, DBG_CRITICAL, HERE << "socket failure: " << xstrerror());
+            debugs(50, DBG_CRITICAL, MYNAME << "socket failure: " << xstrerr(xerrno));
         }
 
         PROF_stop(comm_open);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -32,6 +32,7 @@
 #include "http.h"
 #include "http/one/ResponseParser.h"
 #include "http/one/TeChunkedParser.h"
+#include "http/Stream.h"
 #include "HttpControlMsg.h"
 #include "HttpHdrCc.h"
 #include "HttpHdrContRange.h"
@@ -40,7 +41,6 @@
 #include "HttpHeaderTools.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
-#include "HttpStateFlags.h"
 #include "log/access_log.h"
 #include "MemBuf.h"
 #include "MemObject.h"
@@ -81,9 +81,7 @@ static const char *const crlf = "\r\n";
 
 static void httpMaybeRemovePublic(StoreEntry *, Http::StatusCode);
 static void copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, const String strConnection, const HttpRequest * request,
-        HttpHeader * hdr_out, const int we_do_ranges, const HttpStateFlags &);
-//Declared in HttpHeaderTools.cc
-void httpHdrAdd(HttpHeader *heads, HttpRequest *request, const AccessLogEntryPointer &al, HeaderWithAclList &headers_add);
+        HttpHeader * hdr_out, const int we_do_ranges, const Http::StateFlags &);
 
 HttpStateData::HttpStateData(FwdState *theFwdState) :
     AsyncJob("HttpStateData"),
@@ -91,7 +89,8 @@ HttpStateData::HttpStateData(FwdState *theFwdState) :
     lastChunk(0),
     httpChunkDecoder(NULL),
     payloadSeen(0),
-    payloadTruncated(0)
+    payloadTruncated(0),
+    sawDateGoBack(false)
 {
     debugs(11,5,HERE << "HttpStateData " << this << " created");
     ignoreCacheControl = false;
@@ -152,6 +151,7 @@ void
 HttpStateData::httpStateConnClosed(const CommCloseCbParams &params)
 {
     debugs(11, 5, "httpStateFree: FD " << params.fd << ", httpState=" << params.data);
+    doneWithFwd = "httpStateConnClosed()"; // assume FwdState is monitoring too
     mustStop("HttpStateData::httpStateConnClosed");
 }
 
@@ -164,7 +164,16 @@ HttpStateData::httpTimeout(const CommTimeoutCbParams &)
         fwd->fail(new ErrorState(ERR_READ_TIMEOUT, Http::scGatewayTimeout, fwd->request));
     }
 
-    serverConnection->close();
+    closeServer();
+    mustStop("HttpStateData::httpTimeout");
+}
+
+static StoreEntry *
+findPreviouslyCachedEntry(StoreEntry *newEntry) {
+    assert(newEntry->mem_obj);
+    return newEntry->mem_obj->request ?
+           storeGetPublicByRequest(newEntry->mem_obj->request) :
+           storeGetPublic(newEntry->mem_obj->storeId(), newEntry->mem_obj->method);
 }
 
 /// Remove an existing public store entry if the incoming response (to be
@@ -174,11 +183,16 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
 {
     int remove = 0;
     int forbidden = 0;
-    StoreEntry *pe;
 
     // If the incoming response already goes into a public entry, then there is
     // nothing to remove. This protects ready-for-collapsing entries as well.
     if (!EBIT_TEST(e->flags, KEY_PRIVATE))
+        return;
+
+    // If the new/incoming response cannot be stored, then it does not
+    // compete with the old stored response for the public key, and the
+    // old stored response should be left as is.
+    if (e->mem_obj->request && !e->mem_obj->request->flags.cachable)
         return;
 
     switch (status) {
@@ -192,6 +206,8 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
     case Http::scMovedPermanently:
 
     case Http::scFound:
+
+    case Http::scSeeOther:
 
     case Http::scGone:
 
@@ -233,12 +249,7 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
     if (!remove && !forbidden)
         return;
 
-    assert(e->mem_obj);
-
-    if (e->mem_obj->request)
-        pe = storeGetPublicByRequest(e->mem_obj->request);
-    else
-        pe = storeGetPublic(e->mem_obj->storeId(), e->mem_obj->method);
+    StoreEntry *pe = findPreviouslyCachedEntry(e);
 
     if (pe != NULL) {
         assert(e != pe);
@@ -326,6 +337,13 @@ HttpStateData::cacheableReply()
 
     if (EBIT_TEST(entry->flags, RELEASE_REQUEST)) {
         debugs(22, 3, "NO because " << *entry << " has been released.");
+        return 0;
+    }
+
+    // RFC 7234 section 4: a cache MUST use the most recent response
+    // (as determined by the Date header field)
+    if (sawDateGoBack) {
+        debugs(22, 3, "NO because " << *entry << " has an older date header.");
         return 0;
     }
 
@@ -570,35 +588,27 @@ HttpStateData::cacheableReply()
     /* NOTREACHED */
 }
 
-/*
- * For Vary, store the relevant request headers as
- * virtual headers in the reply
- * Returns false if the variance cannot be stored
- */
-const char *
-httpMakeVaryMark(HttpRequest * request, HttpReply const * reply)
+/// assemble a variant key (vary-mark) from the given Vary header and HTTP request
+static void
+assembleVaryKey(String &vary, SBuf &vstr, const HttpRequest &request)
 {
-    String vary, hdr;
-    const char *pos = NULL;
-    const char *item;
-    const char *value;
-    int ilen;
-    static String vstr;
-
-    vstr.clean();
-    vary = reply->header.getList(Http::HdrType::VARY);
+    static const SBuf asterisk("*");
+    const char *pos = nullptr;
+    const char *item = nullptr;
+    int ilen = 0;
 
     while (strListGetItem(&vary, ',', &item, &ilen, &pos)) {
-        static const SBuf asterisk("*");
         SBuf name(item, ilen);
         if (name == asterisk) {
-            vstr.clean();
+            vstr = asterisk;
             break;
         }
         name.toLower();
-        strListAdd(&vstr, name.c_str(), ',');
-        hdr = request->header.getByName(name);
-        value = hdr.termedBuf();
+        if (!vstr.isEmpty())
+            vstr.append(", ", 2);
+        vstr.append(name);
+        String hdr(request.header.getByName(name));
+        const char *value = hdr.termedBuf();
         if (value) {
             value = rfc1738_escape_part(value);
             vstr.append("=\"", 2);
@@ -608,37 +618,30 @@ httpMakeVaryMark(HttpRequest * request, HttpReply const * reply)
 
         hdr.clean();
     }
+}
 
-    vary.clean();
+/*
+ * For Vary, store the relevant request headers as
+ * virtual headers in the reply
+ * Returns an empty SBuf if the variance cannot be stored
+ */
+SBuf
+httpMakeVaryMark(HttpRequest * request, HttpReply const * reply)
+{
+    SBuf vstr;
+    String vary;
+
+    vary = reply->header.getList(Http::HdrType::VARY);
+    assembleVaryKey(vary, vstr, *request);
+
 #if X_ACCELERATOR_VARY
-
-    pos = NULL;
-    vary = reply->header.getList(Http::HdrType::HDR_X_ACCELERATOR_VARY);
-
-    while (strListGetItem(&vary, ',', &item, &ilen, &pos)) {
-        char *name = (char *)xmalloc(ilen + 1);
-        xstrncpy(name, item, ilen + 1);
-        Tolower(name);
-        strListAdd(&vstr, name, ',');
-        hdr = request->header.getByName(name);
-        safe_free(name);
-        value = hdr.termedBuf();
-
-        if (value) {
-            value = rfc1738_escape_part(value);
-            vstr.append("=\"", 2);
-            vstr.append(value);
-            vstr.append("\"", 1);
-        }
-
-        hdr.clean();
-    }
-
     vary.clean();
+    vary = reply->header.getList(Http::HdrType::HDR_X_ACCELERATOR_VARY);
+    assembleVaryKey(vary, vstr, *request);
 #endif
 
-    debugs(11, 3, "httpMakeVaryMark: " << vstr);
-    return vstr.termedBuf();
+    debugs(11, 3, vstr);
+    return vstr;
 }
 
 void
@@ -723,16 +726,14 @@ HttpStateData::processReplyHeader()
             }
         }
 
-        flags.headers_parsed = true;
-
         if (!parsedOk) {
             // unrecoverable parsing error
+            // TODO: Use Raw! XXX: inBuf no longer has the [beginning of the] malformed header.
             debugs(11, 3, "Non-HTTP-compliant header:\n---------\n" << inBuf << "\n----------");
+            flags.headers_parsed = true;
             HttpReply *newrep = new HttpReply;
-            newrep->sline.set(Http::ProtocolVersion(), hp->messageStatus());
-            HttpReply *vrep = setVirginReply(newrep);
-            entry->replaceHttpReply(vrep);
-            // XXX: close the server connection ?
+            newrep->sline.set(Http::ProtocolVersion(), hp->parseStatusCode);
+            setVirginReply(newrep);
             ctx_exit(ctx);
             return;
         }
@@ -769,6 +770,8 @@ HttpStateData::processReplyHeader()
 
     // done with Parser, now process using the HttpReply
     hp = NULL;
+
+    newrep->sources |= request->url.getScheme() == AnyP::PROTO_HTTPS ? HttpMsg::srcHttps : HttpMsg::srcHttp;
 
     newrep->removeStaleWarnings();
 
@@ -857,13 +860,9 @@ HttpStateData::proceedAfter1xx()
 /**
  * returns true if the peer can support connection pinning
 */
-bool HttpStateData::peerSupportsConnectionPinning() const
+bool
+HttpStateData::peerSupportsConnectionPinning() const
 {
-    const HttpReply *rep = entry->mem_obj->getReply();
-    const HttpHeader *hdr = &rep->header;
-    bool rc;
-    String header;
-
     if (!_peer)
         return true;
 
@@ -872,6 +871,8 @@ bool HttpStateData::peerSupportsConnectionPinning() const
      */
     if (!_peer->connection_auth)
         return false;
+
+    const HttpReply *rep = entry->mem_obj->getReply();
 
     /*The peer supports connection pinning and the http reply status
       is not unauthorized, so the related connection can be pinned
@@ -905,14 +906,10 @@ bool HttpStateData::peerSupportsConnectionPinning() const
       reply and has in its list the "Session-Based-Authentication"
       which means that the peer supports connection pinning.
      */
-    if (!hdr->has(Http::HdrType::PROXY_SUPPORT))
-        return false;
+    if (rep->header.hasListMember(Http::HdrType::PROXY_SUPPORT, "Session-Based-Authentication", ','))
+        return true;
 
-    header = hdr->getStrOrList(Http::HdrType::PROXY_SUPPORT);
-    /* XXX This ought to be done in a case-insensitive manner */
-    rc = (strstr(header.termedBuf(), "Session-Based-Authentication") != NULL);
-
-    return rc;
+    return false;
 }
 
 // Called when we parsed (and possibly adapted) the headers but
@@ -930,7 +927,10 @@ HttpStateData::haveParsedReplyHeaders()
     /* Check if object is cacheable or not based on reply code */
     debugs(11, 3, "HTTP CODE: " << rep->sline.status());
 
-    if (neighbors_do_private_keys)
+    if (const StoreEntry *oldEntry = findPreviouslyCachedEntry(entry))
+        sawDateGoBack = rep->olderThan(oldEntry->getReply());
+
+    if (neighbors_do_private_keys && !sawDateGoBack)
         httpMaybeRemovePublic(entry, rep->sline.status());
 
     bool varyFailure = false;
@@ -939,15 +939,21 @@ HttpStateData::haveParsedReplyHeaders()
             || rep->header.has(Http::HdrType::HDR_X_ACCELERATOR_VARY)
 #endif
        ) {
-        const char *vary = httpMakeVaryMark(request, rep);
+        const SBuf vary(httpMakeVaryMark(request, rep));
 
-        if (!vary) {
+        if (vary.isEmpty()) {
             entry->makePrivate();
             if (!fwd->reforwardableStatus(rep->sline.status()))
                 EBIT_CLR(entry->flags, ENTRY_FWD_HDR_WAIT);
             varyFailure = true;
         } else {
-            entry->mem_obj->vary_headers = xstrdup(vary);
+            entry->mem_obj->vary_headers = vary;
+
+            // RFC 7231 section 7.1.4
+            // Vary:* can be cached, but has mandatory revalidation
+            static const SBuf asterisk("*");
+            if (vary == asterisk)
+                EBIT_SET(entry->flags, ENTRY_REVALIDATE_ALWAYS);
         }
     }
 
@@ -1002,8 +1008,10 @@ HttpStateData::haveParsedReplyHeaders()
             // CC:private (yes, these can sometimes be stored)
             const bool ccPrivate = rep->cache_control->hasPrivate();
 
-            if (ccMustRevalidate || ccNoCacheNoParams || ccSMaxAge || ccPrivate)
-                EBIT_SET(entry->flags, ENTRY_REVALIDATE);
+            if (ccNoCacheNoParams || ccPrivate)
+                EBIT_SET(entry->flags, ENTRY_REVALIDATE_ALWAYS);
+            else if (ccMustRevalidate || ccSMaxAge)
+                EBIT_SET(entry->flags, ENTRY_REVALIDATE_STALE);
         }
 #if USE_HTTP_VIOLATIONS // response header Pragma::no-cache is undefined in HTTP
         else {
@@ -1013,7 +1021,7 @@ HttpStateData::haveParsedReplyHeaders()
              * but servers like "Active Imaging Webcast/2.0" sure do use it */
             if (rep->header.has(Http::HdrType::PRAGMA) &&
                     rep->header.hasListMember(Http::HdrType::PRAGMA,"no-cache",','))
-                EBIT_SET(entry->flags, ENTRY_REVALIDATE);
+                EBIT_SET(entry->flags, ENTRY_REVALIDATE_ALWAYS);
         }
 #endif
     }
@@ -1120,7 +1128,6 @@ HttpStateData::persistentConnStatus() const
     return statusIfComplete();
 }
 
-#if USE_DELAY_POOLS
 static void
 readDelayed(void *context, CommRead const &)
 {
@@ -1128,7 +1135,6 @@ readDelayed(void *context, CommRead const &)
     state->flags.do_next_read = true;
     state->maybeReadVirginBody();
 }
-#endif
 
 void
 HttpStateData::readReply(const CommIoCbParams &io)
@@ -1163,23 +1169,13 @@ HttpStateData::readReply(const CommIoCbParams &io)
     CommIoCbParams rd(this); // will be expanded with ReadNow results
     rd.conn = io.conn;
     rd.size = entry->bytesWanted(Range<size_t>(0, inBuf.spaceSize()));
-#if USE_DELAY_POOLS
-    if (rd.size < 1) {
+
+    if (rd.size <= 0) {
         assert(entry->mem_obj);
-
-        /* read ahead limit */
-        /* Perhaps these two calls should both live in MemObject */
         AsyncCall::Pointer nilCall;
-        if (!entry->mem_obj->readAheadPolicyCanRead()) {
-            entry->mem_obj->delayRead(DeferredRead(readDelayed, this, CommRead(io.conn, NULL, 0, nilCall)));
-            return;
-        }
-
-        /* delay id limit */
-        entry->mem_obj->mostBytesAllowed().delayRead(DeferredRead(readDelayed, this, CommRead(io.conn, NULL, 0, nilCall)));
+        entry->mem_obj->delayRead(DeferredRead(readDelayed, this, CommRead(io.conn, NULL, 0, nilCall)));
         return;
     }
-#endif
 
     switch (Comm::ReadNow(rd, inBuf)) {
     case Comm::INPROGRESS:
@@ -1232,8 +1228,8 @@ HttpStateData::readReply(const CommIoCbParams &io)
         err->xerrno = rd.xerrno;
         fwd->fail(err);
         flags.do_next_read = false;
-        io.conn->close();
-
+        closeServer();
+        mustStop("HttpStateData::readReply");
         return;
     }
 
@@ -1333,7 +1329,8 @@ HttpStateData::continueAfterParsingHeader()
     entry->reset();
     fwd->fail(new ErrorState(error, Http::scBadGateway, fwd->request));
     flags.do_next_read = false;
-    serverConnection->close();
+    closeServer();
+    mustStop("HttpStateData::continueAfterParsingHeader");
     return false; // quit on error
 }
 
@@ -1444,8 +1441,11 @@ HttpStateData::processReplyBody()
             writeReplyBody();
     }
 
+    // storing/sending methods like earlier adaptOrFinalizeReply() or
+    // above writeReplyBody() may release/abort the store entry.
     if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
-        // The above writeReplyBody() call may have aborted the store entry.
+        // TODO: In some cases (e.g., 304), we should keep persistent conn open.
+        // Detect end-of-reply (and, hence, pool our idle pconn) earlier (ASAP).
         abortTransaction("store entry aborted while storing reply");
         return;
     } else
@@ -1597,7 +1597,8 @@ HttpStateData::wroteLast(const CommIoCbParams &io)
         ErrorState *err = new ErrorState(ERR_WRITE_ERROR, Http::scBadGateway, fwd->request);
         err->xerrno = io.xerrno;
         fwd->fail(err);
-        serverConnection->close();
+        closeServer();
+        mustStop("HttpStateData::wroteLast");
         return;
     }
 
@@ -1625,7 +1626,6 @@ HttpStateData::sendComplete()
     request->hier.peer_http_request_sent = current_time;
 }
 
-// Close the HTTP server connection. Used by serverComplete().
 void
 HttpStateData::closeServer()
 {
@@ -1649,7 +1649,7 @@ HttpStateData::doneWithServer() const
  * Fixup authentication request headers for special cases
  */
 static void
-httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHeader * hdr_out, const HttpStateFlags &flags)
+httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHeader * hdr_out, const Http::StateFlags &flags)
 {
     Http::HdrType header = flags.originpeer ? Http::HdrType::AUTHORIZATION : Http::HdrType::PROXY_AUTHORIZATION;
 
@@ -1723,10 +1723,15 @@ httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHe
     if (strncmp(request->peer_login, "NEGOTIATE",strlen("NEGOTIATE")) == 0) {
         char *Token=NULL;
         char *PrincipalName=NULL,*p;
+        int negotiate_flags = 0;
+
         if ((p=strchr(request->peer_login,':')) != NULL ) {
             PrincipalName=++p;
         }
-        Token = peer_proxy_negotiate_auth(PrincipalName, request->peer_host);
+        if (request->flags.auth_no_keytab) {
+            negotiate_flags |= PEER_PROXY_NEGOTIATE_NOKEYTAB;
+        }
+        Token = peer_proxy_negotiate_auth(PrincipalName, request->peer_host, negotiate_flags);
         if (Token) {
             httpHeaderPutStrf(hdr_out, header, "Negotiate %s",Token);
         }
@@ -1750,7 +1755,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
                                       StoreEntry * entry,
                                       const AccessLogEntryPointer &al,
                                       HttpHeader * hdr_out,
-                                      const HttpStateFlags &flags)
+                                      const Http::StateFlags &flags)
 {
     /* building buffer for complex strings */
 #define BBUF_SZ (MAX_URL+32)
@@ -1790,17 +1795,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
         request->flags.isRanged = false;
     }
 
-    /* append Via */
-    if (Config.onoff.via) {
-        String strVia;
-        strVia = hdr_in->getList(Http::HdrType::VIA);
-        snprintf(bbuf, BBUF_SZ, "%d.%d %s",
-                 request->http_ver.major,
-                 request->http_ver.minor, ThisCache);
-        strListAdd(&strVia, bbuf, ',');
-        hdr_out->putStr(Http::HdrType::VIA, strVia.termedBuf());
-        strVia.clean();
-    }
+    hdr_out->addVia(request->http_ver, hdr_in);
 
     if (request->flags.accelerated) {
         /* Append Surrogate-Capabilities */
@@ -1819,7 +1814,8 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
 
         String strFwd = hdr_in->getList(Http::HdrType::X_FORWARDED_FOR);
 
-        if (strFwd.size() > 65536/2) {
+        // if we cannot double strFwd size, then it grew past 50% of the limit
+        if (!strFwd.canGrowBy(strFwd.size())) {
             // There is probably a forwarding loop with Via detection disabled.
             // If we do nothing, String will assert on overflow soon.
             // TODO: Terminate all transactions with huge XFF?
@@ -1929,11 +1925,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
     }
 
     /* Now mangle the headers. */
-    if (Config2.onoff.mangle_request_headers)
-        httpHdrMangleList(hdr_out, request, ROR_REQUEST);
-
-    if (Config.request_header_add && !Config.request_header_add->empty())
-        httpHdrAdd(hdr_out, request, al, *Config.request_header_add);
+    httpHdrMangleList(hdr_out, request, al, ROR_REQUEST);
 
     strConnection.clean();
 }
@@ -1943,7 +1935,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
  * to our outgoing fetch request.
  */
 void
-copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, const String strConnection, const HttpRequest * request, HttpHeader * hdr_out, const int we_do_ranges, const HttpStateFlags &flags)
+copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, const String strConnection, const HttpRequest * request, HttpHeader * hdr_out, const int we_do_ranges, const Http::StateFlags &flags)
 {
     debugs(11, 5, "httpBuildRequestHeader: " << e->name << ": " << e->value );
 
@@ -2418,7 +2410,8 @@ HttpStateData::handleMoreRequestBodyAvailable()
             debugs(11, DBG_IMPORTANT, "http handleMoreRequestBodyAvailable: Likely proxy abuse detected '" << request->client_addr << "' -> '" << entry->url() << "'" );
 
             if (virginReply()->sline.status() == Http::scInvalidHeader) {
-                serverConnection->close();
+                closeServer();
+                mustStop("HttpStateData::handleMoreRequestBodyAvailable");
                 return;
             }
         }
@@ -2456,21 +2449,11 @@ HttpStateData::sentRequestBody(const CommIoCbParams &io)
     Client::sentRequestBody(io);
 }
 
-// Quickly abort the transaction
-// TODO: destruction should be sufficient as the destructor should cleanup,
-// including canceling close handlers
 void
-HttpStateData::abortTransaction(const char *reason)
+HttpStateData::abortAll(const char *reason)
 {
     debugs(11,5, HERE << "aborting transaction for " << reason <<
            "; " << serverConnection << ", this " << this);
-
-    if (Comm::IsConnOpen(serverConnection)) {
-        serverConnection->close();
-        return;
-    }
-
-    fwd->handleUnregisteredServerEnd();
-    mustStop("HttpStateData::abortTransaction");
+    mustStop(reason);
 }
 

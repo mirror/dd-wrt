@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -31,6 +31,10 @@ Http::StatusCodeString(const Http::StatusCode status)
 
     case Http::scProcessing:
         return "Processing";
+        break;
+
+    case Http::scEarlyHints: // 103
+        return "Early Hints";
         break;
 
     // 200-299
@@ -210,6 +214,10 @@ Http::StatusCodeString(const Http::StatusCode status)
 
     case Http::scRequestHeaderFieldsTooLarge:
         return "Request Header Fields Too Large";
+        break;
+
+    case scUnavailableForLegalReasons:
+        return "Unavailable For Legal Reasons";
         break;
 
     // 500-599

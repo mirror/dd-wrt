@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,11 +10,11 @@
 #define SQUID_IPC_STORE_MAP_H
 
 #include "Debug.h"
-#include "fs/forward.h"
 #include "ipc/mem/FlexibleArray.h"
 #include "ipc/mem/Pointer.h"
 #include "ipc/ReadWriteLock.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
+#include "store/forward.h"
 #include "store_key_md5.h"
 #include "tools.h"
 
@@ -124,7 +124,6 @@ protected:
 
     const SBuf path; ///< cache_dir path, used for logging
     Mem::Pointer<Shared> shared;
-    int ttl;
 
 private:
     int slotIndexByKey(const cache_key *const key) const;

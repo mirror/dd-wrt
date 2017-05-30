@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,6 +19,7 @@
 #include "errorpage.h"
 #include "fd.h"
 #include "ftp/Parsing.h"
+#include "http/Stream.h"
 #include "ip/tools.h"
 #include "SquidConfig.h"
 #include "SquidString.h"
@@ -313,6 +314,11 @@ Ftp::Client::scheduleReadControlReply(int buffered_ok)
         /* We've already read some reply data */
         handleControlReply();
     } else {
+
+        if (!Comm::IsConnOpen(ctrl.conn)) {
+            debugs(9, 3, "cannot read without ctrl " << ctrl.conn);
+            return;
+        }
         /*
          * Cancel the timeout on the Data socket (if any) and
          * establish one on the control socket.
@@ -350,8 +356,8 @@ Ftp::Client::readControlReply(const CommIoCbParams &io)
         return;
 
     if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
-        abortTransaction("entry aborted during control reply read");
-        return;
+        if (abortOnData("entry aborted during control reply read"))
+            return;
     }
 
     assert(ctrl.offset < ctrl.size);
@@ -381,7 +387,7 @@ Ftp::Client::readControlReply(const CommIoCbParams &io)
         }
 
         /* XXX this may end up having to be serverComplete() .. */
-        abortTransaction("zero control reply read");
+        abortAll("zero control reply read");
         return;
     }
 
@@ -436,6 +442,11 @@ Ftp::Client::handlePasvReply(Ip::Address &srvAddr)
     char *buf;
     debugs(9, 3, status());
 
+    if (!Comm::IsConnOpen(ctrl.conn)) {
+        debugs(9, 5, "The control connection to the remote end is closed");
+        return false;
+    }
+
     if (code != 227) {
         debugs(9, 2, "PASV not supported by remote end");
         return false;
@@ -466,6 +477,11 @@ Ftp::Client::handleEpsvReply(Ip::Address &remoteAddr)
     int code = ctrl.replycode;
     char *buf;
     debugs(9, 3, status());
+
+    if (!Comm::IsConnOpen(ctrl.conn)) {
+        debugs(9, 5, "The control connection to the remote end is closed");
+        return false;
+    }
 
     if (code != 229 && code != 522) {
         if (code == 200) {
@@ -729,6 +745,11 @@ Ftp::Client::sendPassive()
 void
 Ftp::Client::connectDataChannel()
 {
+    if (!Comm::IsConnOpen(ctrl.conn)) {
+        debugs(9, 5, "The control connection to the remote end is closed");
+        return;
+    }
+
     safe_free(ctrl.last_command);
 
     safe_free(ctrl.last_reply);
@@ -840,6 +861,7 @@ Ftp::Client::ctrlClosed(const CommCloseCbParams &)
 {
     debugs(9, 4, status());
     ctrl.clear();
+    doneWithFwd = "ctrlClosed()"; // assume FwdState is monitoring too
     mustStop("Ftp::Client::ctrlClosed");
 }
 
@@ -915,7 +937,7 @@ Ftp::Client::dataRead(const CommIoCbParams &io)
     assert(io.fd == data.conn->fd);
 
     if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
-        abortTransaction("entry aborted during dataRead");
+        abortOnData("entry aborted during dataRead");
         return;
     }
 
@@ -992,24 +1014,12 @@ Ftp::Client::dataComplete()
     scheduleReadControlReply(1);
 }
 
-/**
- * Quickly abort the transaction
- *
- \todo destruction should be sufficient as the destructor should cleanup,
- * including canceling close handlers
- */
 void
-Ftp::Client::abortTransaction(const char *reason)
+Ftp::Client::abortAll(const char *reason)
 {
     debugs(9, 3, "aborting transaction for " << reason <<
            "; FD " << (ctrl.conn!=NULL?ctrl.conn->fd:-1) << ", Data FD " << (data.conn!=NULL?data.conn->fd:-1) << ", this " << this);
-    if (Comm::IsConnOpen(ctrl.conn)) {
-        ctrl.conn->close();
-        return;
-    }
-
-    fwd->handleUnregisteredServerEnd();
-    mustStop("Ftp::Client::abortTransaction");
+    mustStop(reason);
 }
 
 /**

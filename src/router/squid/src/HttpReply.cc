@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,39 +24,6 @@
 #include "SquidTime.h"
 #include "Store.h"
 #include "StrList.h"
-
-/* local constants */
-
-/* If we receive a 304 from the origin during a cache revalidation, we must
- * update the headers of the existing entry. Specifically, we need to update all
- * end-to-end headers and not any hop-by-hop headers (rfc2616 13.5.3).
- *
- * This is not the whole story though: since it is possible for a faulty/malicious
- * origin server to set headers it should not in a 304, we must explicitly ignore
- * these too. Specifically all entity-headers except those permitted in a 304
- * (rfc2616 10.3.5) must be ignored.
- *
- * The list of headers we don't update is made up of:
- *     all hop-by-hop headers
- *     all entity-headers except Expires and Content-Location
- *
- * These headers are now stored in RegisteredHeadersHash.gperf and accessible
- * as Http::HeaderLookupTable.lookup(id).denied304
- */
-static HttpHeaderMask Denied304HeadersMask;
-
-/* module initialization */
-void
-httpReplyInitModule(void)
-{
-    assert(Http::scNone == 0); // HttpReply::parse() interface assumes that
-    httpHeaderMaskInit(&Denied304HeadersMask, 0);
-
-    for (auto id : WholeEnum<Http::HdrType>()) {
-        if (Http::HeaderLookupTable.lookup(id).denied304)
-            CBIT_SET(Denied304HeadersMask, id);
-    }
-}
 
 HttpReply::HttpReply() : HttpMsg(hoReply), date (0), last_modified (0),
     expires (0), surrogate_control (NULL), content_range (NULL), keep_alive (0),
@@ -116,7 +83,7 @@ HttpReply::packHeadersInto(Packable * p) const
 }
 
 void
-HttpReply::packInto(Packable * p)
+HttpReply::packInto(Packable * p) const
 {
     packHeadersInto(p);
     body.packInto(p);
@@ -124,7 +91,7 @@ HttpReply::packInto(Packable * p)
 
 /* create memBuf, create mem-based packer, pack, destroy packer, return MemBuf */
 MemBuf *
-HttpReply::pack()
+HttpReply::pack() const
 {
     MemBuf *mb = new MemBuf;
     mb->init();
@@ -146,7 +113,6 @@ HttpReply::make304() const
     rv->last_modified = last_modified;
     rv->expires = expires;
     rv->content_type = content_type;
-    /* rv->cache_control */
     /* rv->content_range */
     /* rv->keep_alive */
     rv->sline.set(Http::ProtocolVersion(), Http::scNotModified, NULL);
@@ -156,12 +122,14 @@ HttpReply::make304() const
             rv->header.addEntry(e->clone());
     }
 
+    rv->putCc(cache_control);
+
     /* rv->body */
     return rv;
 }
 
 MemBuf *
-HttpReply::packed304Reply()
+HttpReply::packed304Reply() const
 {
     /* Not as efficient as skipping the header duplication,
      * but easier to maintain
@@ -267,20 +235,23 @@ HttpReply::validatorsMatch(HttpReply const * otherRep) const
     return 1;
 }
 
-void
+bool
 HttpReply::updateOnNotModified(HttpReply const * freshRep)
 {
     assert(freshRep);
 
+    /* update raw headers */
+    if (!header.update(&freshRep->header))
+        return false;
+
     /* clean cache */
     hdrCacheClean();
-    /* update raw headers */
-    header.update(&freshRep->header,
-                  (const HttpHeaderMask *) &Denied304HeadersMask);
 
     header.compact();
     /* init cache */
     hdrCacheInit();
+
+    return true;
 }
 
 /* internal routines */
@@ -374,7 +345,7 @@ HttpReply::hdrCacheClean()
     }
 
     if (content_range) {
-        httpHdrContRangeDestroy(content_range);
+        delete content_range;
         content_range = NULL;
     }
 }
@@ -588,6 +559,7 @@ bool HttpReply::inheritProperties(const HttpMsg *aMsg)
     if (!aRep)
         return false;
     keep_alive = aRep->keep_alive;
+    sources = aRep->sources;
     return true;
 }
 
@@ -653,5 +625,13 @@ String HttpReply::removeStaleWarningValues(const String &value)
     }
 
     return newValue;
+}
+
+bool
+HttpReply::olderThan(const HttpReply *them) const
+{
+    if (!them || !them->date || !date)
+        return false;
+    return date < them->date;
 }
 

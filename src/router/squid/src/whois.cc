@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -105,6 +105,7 @@ WhoisState::setReplyToOK(StoreEntry *sentry)
     HttpReply *reply = new HttpReply;
     sentry->buffer();
     reply->setHeaders(Http::scOkay, "Gatewaying", "text/plain", -1, -1, -2);
+    reply->sources |= HttpMsg::srcWhois;
     sentry->replaceHttpReply(reply);
 }
 
@@ -120,9 +121,9 @@ WhoisState::readReply(const Comm::ConnectionPointer &conn, char *aBuffer, size_t
     debugs(75, 5, "{" << aBuffer << "}");
 
     if (flag != Comm::OK) {
-        debugs(50, 2, HERE  << conn << ": read failure: " << xstrerror() << ".");
+        debugs(50, 2, conn << ": read failure: " << xstrerr(xerrno));
 
-        if (ignoreErrno(errno)) {
+        if (ignoreErrno(xerrno)) {
             AsyncCall::Pointer call = commCbCall(5,4, "whoisReadReply",
                                                  CommIoCbPtrFun(whoisReadReply, this));
             comm_read(conn, aBuffer, BUFSIZ, call);

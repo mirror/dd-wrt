@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -394,7 +394,7 @@ bool
 ACLChecklist::bannedAction(const allow_t &action) const
 {
     const bool found = std::find(bannedActions_.begin(), bannedActions_.end(), action) != bannedActions_.end();
-    debugs(28, 5, "Action '" << action << "/" << action.kind << (found ? " is " : "is not") << " banned");
+    debugs(28, 5, "Action '" << action << "/" << action.kind << (found ? "' is " : "' is not") << " banned");
     return found;
 }
 

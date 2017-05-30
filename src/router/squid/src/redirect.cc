@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,11 +20,12 @@
 #include "globals.h"
 #include "helper.h"
 #include "helper/Reply.h"
+#include "http/Stream.h"
 #include "HttpRequest.h"
 #include "mgr/Registration.h"
 #include "redirect.h"
 #include "rfc1738.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 #include "SquidConfig.h"
 #include "Store.h"
 #if USE_AUTH
@@ -93,25 +94,28 @@ redirectHandleReply(void *data, const Helper::Reply &reply)
         // * trim all but the first word off the response.
         // * warn once every 50 responses that this will stop being fixed-up soon.
         //
-        if (const char * res = reply.other().content()) {
+        if (reply.other().hasContent()) {
+            const char * res = reply.other().content();
+            size_t replySize = 0;
             if (const char *t = strchr(res, ' ')) {
                 static int warn = 0;
                 debugs(61, (!(warn++%50)? DBG_CRITICAL:2), "UPGRADE WARNING: URL rewriter reponded with garbage '" << t <<
                        "'. Future Squid will treat this as part of the URL.");
-                const mb_size_t garbageLength = reply.other().contentSize() - (t-res);
-                reply.modifiableOther().truncate(garbageLength);
-            }
-            if (reply.other().hasContent() && *res == '\0')
-                reply.modifiableOther().clean(); // drop the whole buffer of garbage.
+                replySize = t - res;
+            } else
+                replySize = reply.other().contentSize();
 
             // if we still have anything in other() after all that
             // parse it into status=, url= and rewrite-url= keys
-            if (reply.other().hasContent()) {
+            if (replySize) {
                 /* 2012-06-28: This cast is due to urlParse() truncating too-long URLs itself.
                  * At this point altering the helper buffer in that way is not harmful, but annoying.
                  * When Bug 1961 is resolved and urlParse has a const API, this needs to die.
                  */
-                char * result = reply.modifiableOther().content();
+                MemBuf replyBuffer;
+                replyBuffer.init(replySize, replySize);
+                replyBuffer.append(reply.other().content(), reply.other().contentSize());
+                char * result = replyBuffer.content();
 
                 Helper::Reply newReply;
                 // BACKWARD COMPATIBILITY 2012-06-15:
@@ -291,7 +295,9 @@ redirectStart(ClientHttpRequest * http, HLPCB * handler, void *data)
     assert(handler);
     debugs(61, 5, "redirectStart: '" << http->uri << "'");
 
-    if (Config.onoff.redirector_bypass && redirectors->queueFull()) {
+    // TODO: Deprecate Config.onoff.redirector_bypass in favor of either
+    // onPersistentOverload or a new onOverload option that applies to all helpers.
+    if (Config.onoff.redirector_bypass && redirectors->willOverload()) {
         /* Skip redirector if the queue is full */
         ++redirectorBypassed;
         Helper::Reply bypassReply;
@@ -315,7 +321,7 @@ storeIdStart(ClientHttpRequest * http, HLPCB * handler, void *data)
     assert(handler);
     debugs(61, 5, "storeIdStart: '" << http->uri << "'");
 
-    if (Config.onoff.store_id_bypass && storeIds->queueFull()) {
+    if (Config.onoff.store_id_bypass && storeIds->willOverload()) {
         /* Skip StoreID Helper if the queue is full */
         ++storeIdBypassed;
         Helper::Reply bypassReply;
@@ -389,11 +395,13 @@ redirectInit(void)
     }
 
     if (Config.redirector_extras) {
+        delete redirectorExtrasFmt;
         redirectorExtrasFmt = new ::Format::Format("url_rewrite_extras");
         (void)redirectorExtrasFmt->parse(Config.redirector_extras);
     }
 
     if (Config.storeId_extras) {
+        delete storeIdExtrasFmt;
         storeIdExtrasFmt = new ::Format::Format("store_id_extras");
         (void)storeIdExtrasFmt->parse(Config.storeId_extras);
     }
@@ -408,9 +416,6 @@ redirectShutdown(void)
      * When and if needed for more helpers a separated shutdown
      * method will be added for each of them.
      */
-    if (!storeIds && !redirectors)
-        return;
-
     if (redirectors)
         helperShutdown(redirectors);
 

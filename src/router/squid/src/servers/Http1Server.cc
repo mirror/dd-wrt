@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,6 +15,7 @@
 #include "client_side_request.h"
 #include "comm/Write.h"
 #include "http/one/RequestParser.h"
+#include "http/Stream.h"
 #include "HttpHeaderTools.h"
 #include "profiler/Profiler.h"
 #include "servers/Http1Server.h"
@@ -70,7 +71,7 @@ Http::One::Server::noteMoreBodySpaceAvailable(BodyPipe::Pointer)
     readSomeData();
 }
 
-ClientSocketContext *
+Http::Stream *
 Http::One::Server::parseOneRequest()
 {
     PROF_start(HttpServer_parseOneRequest);
@@ -79,20 +80,20 @@ Http::One::Server::parseOneRequest()
     // a) dont have one already
     // b) have completed the previous request parsing already
     if (!parser_ || !parser_->needsMoreData())
-        parser_ = new Http1::RequestParser();
+        parser_ = new Http1::RequestParser(mayTunnelUnsupportedProto());
 
     /* Process request */
-    ClientSocketContext *context = parseHttpRequest(this, parser_);
+    Http::Stream *context = parseHttpRequest(this, parser_);
 
     PROF_stop(HttpServer_parseOneRequest);
     return context;
 }
 
 void clientProcessRequestFinished(ConnStateData *conn, const HttpRequest::Pointer &request);
-bool clientTunnelOnError(ConnStateData *conn, ClientSocketContext *context, HttpRequest *request, const HttpRequestMethod& method, err_type requestError, Http::StatusCode errStatusCode, const char *requestErrorBytes);
+bool clientTunnelOnError(ConnStateData *conn, Http::StreamPointer &context, HttpRequest::Pointer &request, const HttpRequestMethod& method, err_type requestError);
 
 bool
-Http::One::Server::buildHttpRequest(ClientSocketContext *context)
+Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
 {
     HttpRequest::Pointer request;
     ClientHttpRequest *http = context->http;
@@ -121,8 +122,9 @@ Http::One::Server::buildHttpRequest(ClientSocketContext *context)
         }
         // setLogUri should called before repContext->setReplyToError
         setLogUri(http, http->uri, true);
-        const char * requestErrorBytes = in.buf.c_str();
-        if (!clientTunnelOnError(this, context, request.getRaw(), parser_->method(), errPage, parser_->parseStatusCode, requestErrorBytes)) {
+        const char * requestErrorBytes = inBuf.c_str();
+        if (!clientTunnelOnError(this, context, request, parser_->method(), errPage)) {
+            setReplyError(context, request, parser_->method(), errPage, parser_->parseStatusCode, requestErrorBytes);
             // HttpRequest object not build yet, there is no reason to call
             // clientProcessRequestFinished method
         }
@@ -130,13 +132,14 @@ Http::One::Server::buildHttpRequest(ClientSocketContext *context)
         return false;
     }
 
-    if ((request = HttpRequest::CreateFromUrlAndMethod(http->uri, parser_->method())) == NULL) {
+    if ((request = HttpRequest::CreateFromUrl(http->uri, parser_->method())) == NULL) {
         debugs(33, 5, "Invalid URL: " << http->uri);
         // setLogUri should called before repContext->setReplyToError
         setLogUri(http, http->uri, true);
 
-        const char * requestErrorBytes = in.buf.c_str();
-        if (!clientTunnelOnError(this, context, request.getRaw(), parser_->method(), ERR_INVALID_URL, Http::scBadRequest, requestErrorBytes)) {
+        const char * requestErrorBytes = inBuf.c_str();
+        if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_INVALID_URL)) {
+            setReplyError(context, request, parser_->method(), ERR_INVALID_URL, Http::scBadRequest, requestErrorBytes);
             // HttpRequest object not build yet, there is no reason to call
             // clientProcessRequestFinished method
         }
@@ -154,7 +157,8 @@ Http::One::Server::buildHttpRequest(ClientSocketContext *context)
         setLogUri(http, http->uri,  true);
 
         const char * requestErrorBytes = NULL; //HttpParserHdrBuf(parser_);
-        if (!clientTunnelOnError(this, context, request.getRaw(), parser_->method(), ERR_UNSUP_HTTPVERSION, Http::scHttpVersionNotSupported, requestErrorBytes)) {
+        if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_UNSUP_HTTPVERSION)) {
+            setReplyError(context, request, parser_->method(), ERR_UNSUP_HTTPVERSION, Http::scHttpVersionNotSupported, requestErrorBytes);
             clientProcessRequestFinished(this, request);
         }
         return false;
@@ -166,10 +170,21 @@ Http::One::Server::buildHttpRequest(ClientSocketContext *context)
         // setLogUri should called before repContext->setReplyToError
         setLogUri(http, http->uri, true);
         const char * requestErrorBytes = NULL; //HttpParserHdrBuf(parser_);
-        if (!clientTunnelOnError(this, context, request.getRaw(), parser_->method(), ERR_INVALID_REQ, Http::scBadRequest, requestErrorBytes)) {
+        if (!clientTunnelOnError(this, context, request, parser_->method(), ERR_INVALID_REQ)) {
+            setReplyError(context, request, parser_->method(), ERR_INVALID_REQ, Http::scBadRequest, requestErrorBytes);
             clientProcessRequestFinished(this, request);
         }
         return false;
+    }
+
+    // when absolute-URI is provided Host header should be ignored. However
+    // some code still uses Host directly so normalize it using the previously
+    // sanitized URL authority value.
+    // For now preserve the case where Host is completely absent. That matters.
+    if (const auto x = request->header.delById(Http::HOST)) {
+        debugs(33, 5, "normalize " << x << " Host header using " << request->url.authority());
+        SBuf tmp(request->url.authority());
+        request->header.putStr(Http::HOST, tmp.c_str());
     }
 
     http->request = request.getRaw();
@@ -179,14 +194,33 @@ Http::One::Server::buildHttpRequest(ClientSocketContext *context)
 }
 
 void
-Http::One::Server::proceedAfterBodyContinuation(ClientSocketContext::Pointer context)
+Http::One::Server::setReplyError(Http::StreamPointer &context, HttpRequest::Pointer &request, const HttpRequestMethod& method, err_type requestError, Http::StatusCode errStatusCode, const char *requestErrorBytes)
+{
+    quitAfterError(request.getRaw());
+    if (!context->connRegistered()) {
+        debugs(33, 2, "Client stream deregister it self, nothing to do");
+        clientConnection->close();
+        return;
+    }
+    clientStreamNode *node = context->getClientReplyContext();
+    clientReplyContext *repContext = dynamic_cast<clientReplyContext *>(node->data.getRaw());
+    assert (repContext);
+
+    repContext->setReplyToError(requestError, errStatusCode, method, context->http->uri, clientConnection->remote, nullptr, requestErrorBytes, nullptr);
+
+    assert(context->http->out.offset == 0);
+    context->pullData();
+}
+
+void
+Http::One::Server::proceedAfterBodyContinuation(Http::StreamPointer context)
 {
     debugs(33, 5, "Body Continuation written");
     clientProcessRequest(this, parser_, context.getRaw());
 }
 
 void
-Http::One::Server::processParsedRequest(ClientSocketContext *context)
+Http::One::Server::processParsedRequest(Http::StreamPointer &context)
 {
     if (!buildHttpRequest(context))
         return;
@@ -221,14 +255,14 @@ Http::One::Server::processParsedRequest(ClientSocketContext *context)
                 HttpReply::Pointer rep = new HttpReply;
                 rep->sline.set(Http::ProtocolVersion(), Http::scContinue);
 
-                typedef UnaryMemFunT<Http1::Server, ClientSocketContext::Pointer> CbDialer;
-                const AsyncCall::Pointer cb = asyncCall(11, 3,  "Http1::Server::proceedAfterBodyContinuation", CbDialer(this, &Http1::Server::proceedAfterBodyContinuation, ClientSocketContext::Pointer(context)));
+                typedef UnaryMemFunT<Http1::Server, Http::StreamPointer> CbDialer;
+                const AsyncCall::Pointer cb = asyncCall(11, 3,  "Http1::Server::proceedAfterBodyContinuation", CbDialer(this, &Http1::Server::proceedAfterBodyContinuation, Http::StreamPointer(context)));
                 sendControlMsg(HttpControlMsg(rep, cb));
                 return;
             }
         }
     }
-    clientProcessRequest(this, parser_, context);
+    clientProcessRequest(this, parser_, context.getRaw());
 }
 
 void
@@ -242,8 +276,8 @@ void
 Http::One::Server::handleReply(HttpReply *rep, StoreIOBuffer receivedData)
 {
     // the caller guarantees that we are dealing with the current context only
-    ClientSocketContext::Pointer context = getCurrentContext();
-    Must(context != NULL);
+    Http::StreamPointer context = pipeline.front();
+    Must(context != nullptr);
     const ClientHttpRequest *http = context->http;
     Must(http != NULL);
 
@@ -257,12 +291,12 @@ Http::One::Server::handleReply(HttpReply *rep, StoreIOBuffer receivedData)
                                           !receivedData.data &&
                                           !receivedData.length;
     if (responseFinishedOrFailed && !mustSendLastChunk) {
-        context->writeComplete(context->clientConnection, NULL, 0, Comm::OK);
+        context->writeComplete(0);
         return;
     }
 
     if (!context->startOfOutput()) {
-        context->sendBody(rep, receivedData);
+        context->sendBody(receivedData);
         return;
     }
 
@@ -272,23 +306,36 @@ Http::One::Server::handleReply(HttpReply *rep, StoreIOBuffer receivedData)
     context->sendStartOfMessage(rep, receivedData);
 }
 
-void
-Http::One::Server::writeControlMsgAndCall(ClientSocketContext *context, HttpReply *rep, AsyncCall::Pointer &call)
+bool
+Http::One::Server::writeControlMsgAndCall(HttpReply *rep, AsyncCall::Pointer &call)
 {
+    Http::StreamPointer context = pipeline.front();
+    Must(context != nullptr);
+
+    // Ignore this late control message if we have started sending a
+    // reply to the user already (e.g., after an error).
+    if (context->reply) {
+        debugs(11, 2, "drop 1xx made late by " << context->reply);
+        return false;
+    }
+
+    const ClientHttpRequest *http = context->http;
+
     // apply selected clientReplyContext::buildReplyHeader() mods
     // it is not clear what headers are required for control messages
     rep->header.removeHopByHopEntries();
     rep->header.putStr(Http::HdrType::CONNECTION, "keep-alive");
-    httpHdrMangleList(&rep->header, getCurrentContext()->http->request, ROR_REPLY);
+    httpHdrMangleList(&rep->header, http->request, http->al, ROR_REPLY);
 
     MemBuf *mb = rep->pack();
 
     debugs(11, 2, "HTTP Client " << clientConnection);
     debugs(11, 2, "HTTP Client CONTROL MSG:\n---------\n" << mb->buf << "\n----------");
 
-    Comm::Write(context->clientConnection, mb, call);
+    Comm::Write(clientConnection, mb, call);
 
     delete mb;
+    return true;
 }
 
 ConnStateData *

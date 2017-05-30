@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -126,9 +126,10 @@ int64_t
 GetInteger64(void)
 {
     char *token = ConfigParser::NextToken();
-
-    if (token == NULL)
+    if (!token) {
         self_destruct();
+        return -1; // not reachable
+    }
 
     return xatoll(token, 10);
 }
@@ -143,8 +144,10 @@ GetInteger(void)
     char *token = ConfigParser::NextToken();
     int i;
 
-    if (token == NULL)
+    if (!token) {
         self_destruct();
+        return -1; // not reachable
+    }
 
     // The conversion must honor 0 and 0x prefixes, which are important for things like umask
     int64_t ret = xatoll(token, 0);
@@ -163,15 +166,17 @@ GetInteger(void)
  * the percentage symbol (%) and we check whether the value is in the range
  * of [0, 100]
  * So, we accept two types of input: 1. XX% or 2. XX , 0<=XX<=100
+ * unless the limit parameter is set to false.
  */
-int
-GetPercentage(void)
+double
+GetPercentage(bool limit)
 {
     char *token = ConfigParser::NextToken();
 
     if (!token) {
-        debugs(0, DBG_PARSE_NOTE(DBG_IMPORTANT), "ERROR: A percentage value is missing.");
+        debugs(3, DBG_CRITICAL, "FATAL: A percentage value is missing.");
         self_destruct();
+        return 0.0; // not reachable
     }
 
     //if there is a % in the end of the digits, we remove it and go on.
@@ -182,21 +187,22 @@ GetPercentage(void)
 
     int p = xatoi(token);
 
-    if (p < 0 || p > 100) {
-        debugs(0, DBG_PARSE_NOTE(DBG_IMPORTANT), "ERROR: The value '" << token << "' is out of range. A percentage should be within [0, 100].");
+    if (p < 0 || (limit && p > 100)) {
+        debugs(3, DBG_CRITICAL, "FATAL: The value '" << token << "' is out of range. A percentage should be within [0, 100].");
         self_destruct();
     }
 
-    return p;
+    return static_cast<double>(p) / 100.0;
 }
 
 unsigned short
 GetShort(void)
 {
     char *token = ConfigParser::NextToken();
-
-    if (token == NULL)
+    if (!token) {
         self_destruct();
+        return 0; // not reachable
+    }
 
     return xatos(token);
 }

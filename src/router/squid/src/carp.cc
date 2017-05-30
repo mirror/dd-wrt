@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -167,7 +167,7 @@ carpSelectParent(HttpRequest * request)
             // this code follows URI syntax pattern.
             // corner cases should use the full effective request URI
             if (tp->options.carp_key.scheme) {
-                key.append(request->url.getScheme().c_str());
+                key.append(request->url.getScheme().image());
                 if (key.length()) //if the scheme is not empty
                     key.append("://");
             }

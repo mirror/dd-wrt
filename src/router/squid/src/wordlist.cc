@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -29,28 +29,6 @@ wordlistAdd(wordlist ** list, const char *key)
 
     *list = new wordlist(key);
     return (*list)->key;
-}
-
-void
-wordlistJoin(wordlist ** list, wordlist ** wl)
-{
-    while (*list)
-        list = &(*list)->next;
-
-    *list = *wl;
-
-    *wl = NULL;
-}
-
-void
-wordlistAddWl(wordlist ** list, wordlist * wl)
-{
-    while (*list)
-        list = &(*list)->next;
-
-    for (; wl; wl = wl->next, list = &(*list)->next) {
-        *list = new wordlist(wl->key);
-    }
 }
 
 void

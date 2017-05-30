@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,16 +14,19 @@
 #include "acl/FilledChecklist.h"
 #include "client_side.h"
 #include "dns/LookupDetails.h"
+#include "Downloader.h"
 #include "err_detail_type.h"
 #include "globals.h"
 #include "gopher.h"
 #include "http.h"
 #include "http/one/RequestParser.h"
+#include "http/Stream.h"
 #include "HttpHdrCc.h"
 #include "HttpHeaderRange.h"
 #include "HttpRequest.h"
 #include "log/Config.h"
 #include "MemBuf.h"
+#include "sbuf/StringConvert.h"
 #include "SquidConfig.h"
 #include "Store.h"
 #include "URL.h"
@@ -41,13 +44,13 @@ HttpRequest::HttpRequest() :
     init();
 }
 
-HttpRequest::HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aUrlpath) :
+HttpRequest::HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aSchemeImg, const char *aUrlpath) :
     HttpMsg(hoRequest)
 {
     static unsigned int id = 1;
     debugs(93,7, HERE << "constructed, this=" << this << " id=" << ++id);
     init();
-    initHTTP(aMethod, aProtocol, aUrlpath);
+    initHTTP(aMethod, aProtocol, aSchemeImg, aUrlpath);
 }
 
 HttpRequest::~HttpRequest()
@@ -57,10 +60,10 @@ HttpRequest::~HttpRequest()
 }
 
 void
-HttpRequest::initHTTP(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aUrlpath)
+HttpRequest::initHTTP(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aSchemeImg, const char *aUrlpath)
 {
     method = aMethod;
-    url.setScheme(aProtocol);
+    url.setScheme(aProtocol, aSchemeImg);
     url.path(aUrlpath);
 }
 
@@ -87,7 +90,7 @@ HttpRequest::init()
     peer_login = NULL;      // not allocated/deallocated by this class
     peer_domain = NULL;     // not allocated/deallocated by this class
     peer_host = NULL;
-    vary_headers = NULL;
+    vary_headers = SBuf();
     myportname = null_string;
     tag = null_string;
 #if USE_AUTH
@@ -119,8 +122,7 @@ HttpRequest::clean()
 #if USE_AUTH
     auth_user_request = NULL;
 #endif
-    safe_free(vary_headers);
-
+    vary_headers.clear();
     url.clear();
 
     header.clean();
@@ -178,11 +180,7 @@ HttpRequest::clone() const
     copy->pstate = pstate; // TODO: should we assert a specific state here?
     copy->body_pipe = body_pipe;
 
-    copy->url.setScheme(url.getScheme());
-    copy->url.userInfo(url.userInfo());
-    copy->url.host(url.host());
-    copy->url.port(url.port());
-    copy->url.path(url.path());
+    copy->url = url;
 
     // range handled in hdrCacheInit()
     copy->ims = ims;
@@ -195,7 +193,7 @@ HttpRequest::clone() const
 
     copy->lastmod = lastmod;
     copy->etag = etag;
-    copy->vary_headers = vary_headers ? xstrdup(vary_headers) : NULL;
+    copy->vary_headers = vary_headers;
     // XXX: what to do with copy->peer_domain?
 
     copy->tag = tag;
@@ -249,7 +247,11 @@ HttpRequest::inheritProperties(const HttpMsg *aMsg)
     // main property is which connection the request was received on (if any)
     clientConnectionManager = aReq->clientConnectionManager;
 
+    downloader = aReq->downloader;
+
     notes = aReq->notes;
+
+    sources = aReq->sources;
     return true;
 }
 
@@ -347,7 +349,7 @@ HttpRequest::swapOut(StoreEntry * e)
 
 /* packs request-line and headers, appends <crlf> terminator */
 void
-HttpRequest::pack(Packable * p)
+HttpRequest::pack(Packable * p) const
 {
     assert(p);
     /* pack request-line */
@@ -516,20 +518,9 @@ HttpRequest::expectingBody(const HttpRequestMethod &, int64_t &theSize) const
  * If the request cannot be created cleanly, NULL is returned
  */
 HttpRequest *
-HttpRequest::CreateFromUrlAndMethod(char * url, const HttpRequestMethod& method)
+HttpRequest::CreateFromUrl(char * url, const HttpRequestMethod& method)
 {
     return urlParse(method, url, NULL);
-}
-
-/*
- * Create a Request from a URL.
- *
- * If the request cannot be created cleanly, NULL is returned
- */
-HttpRequest *
-HttpRequest::CreateFromUrl(char * url)
-{
-    return urlParse(Http::METHOD_GET, url, NULL);
 }
 
 /**
@@ -552,8 +543,13 @@ HttpRequest::maybeCacheable()
         if (!method.respMaybeCacheable())
             return false;
 
-        // XXX: this would seem the correct place to detect request cache-controls
-        //      no-store, private and related which block cacheability
+        // RFC 7234 section 5.2.1.5:
+        // "cache MUST NOT store any part of either this request or any response to it"
+        //
+        // NP: refresh_pattern ignore-no-store only applies to response messages
+        //     this test is handling request message CC header.
+        if (!flags.ignoreCc && cache_control && cache_control->noStore())
+            return false;
         break;
 
     case AnyP::PROTO_GOPHER:
@@ -657,7 +653,7 @@ HttpRequest::storeId()
 {
     if (store_id.size() != 0) {
         debugs(73, 3, "sent back store_id: " << store_id);
-        return SBuf(store_id);
+        return StringToSBuf(store_id);
     }
     debugs(73, 3, "sent back effectiveRequestUrl: " << effectiveRequestUri());
     return effectiveRequestUri();
@@ -666,7 +662,7 @@ HttpRequest::storeId()
 const SBuf &
 HttpRequest::effectiveRequestUri() const
 {
-    if (method.id() == Http::METHOD_CONNECT)
+    if (method.id() == Http::METHOD_CONNECT || url.getScheme() == AnyP::PROTO_AUTHORITY_FORM)
         return url.authority(true); // host:port
     return url.absolute();
 }

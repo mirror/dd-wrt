@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -51,7 +51,7 @@ protected:
     /// Comm::ConnOpener calls this when done opening a connection for us
     void handleOpenedConnection(const CommConnectCbParams &params);
 
-    /// Ssl::PeerConnector callback
+    /// Security::PeerConnector callback
     void handleSecuredPeer(Security::EncryptorAnswer &answer);
 
     /// called when the connection we are trying to secure is closed by a 3rd party

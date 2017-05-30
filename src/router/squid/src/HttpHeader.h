@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,11 +9,13 @@
 #ifndef SQUID_HTTPHEADER_H
 #define SQUID_HTTPHEADER_H
 
+#include "anyp/ProtocolVersion.h"
 #include "base/LookupTable.h"
 #include "http/RegisteredHeaders.h"
 /* because we pass a spec by value */
 #include "HttpHeaderMask.h"
 #include "mem/forward.h"
+#include "sbuf/forward.h"
 #include "SquidString.h"
 
 #include <vector>
@@ -24,7 +26,6 @@ class HttpHdrContRange;
 class HttpHdrRange;
 class HttpHdrSc;
 class Packable;
-class SBuf;
 
 /** Possible owners of http header */
 typedef enum {
@@ -81,7 +82,7 @@ public:
     /* Interface functions */
     void clean();
     void append(const HttpHeader * src);
-    void update (HttpHeader const *fresh, HttpHeaderMask const *denied_mask);
+    bool update(HttpHeader const *fresh);
     void compact();
     int parse(const char *header_start, size_t len);
     void packInto(Packable * p, bool mask_sensitive_info=false) const;
@@ -108,6 +109,9 @@ public:
     String getByNameListMember(const char *name, const char *member, const char separator) const;
     String getListMember(Http::HdrType id, const char *member, const char separator) const;
     int has(Http::HdrType id) const;
+    /// Appends "this cache" information to VIA header field.
+    /// Takes the initial VIA value from "from" parameter, if provided.
+    void addVia(const AnyP::ProtocolVersion &ver, const HttpHeader *from = 0);
     void putInt(Http::HdrType id, int number);
     void putInt64(Http::HdrType id, int64_t number);
     void putTime(Http::HdrType id, time_t htime);
@@ -145,6 +149,9 @@ public:
 protected:
     /** \deprecated Public access replaced by removeHopByHopEntries() */
     void removeConnectionHeaderEntries();
+    bool needUpdate(const HttpHeader *fresh) const;
+    bool skipUpdateHeader(const Http::HdrType id) const;
+    void updateWarnings();
 
 private:
     HttpHeaderEntry *findLastEntry(Http::HdrType id) const;

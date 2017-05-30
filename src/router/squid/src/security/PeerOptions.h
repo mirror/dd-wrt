@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,9 +9,9 @@
 #ifndef SQUID_SRC_SECURITY_PEEROPTIONS_H
 #define SQUID_SRC_SECURITY_PEEROPTIONS_H
 
+#include "base/YesNoNone.h"
 #include "ConfigParser.h"
-#include "SBuf.h"
-#include "security/forward.h"
+#include "security/KeyData.h"
 
 class Packable;
 
@@ -22,9 +22,12 @@ namespace Security
 class PeerOptions
 {
 public:
-    PeerOptions() : parsedOptions(0), parsedFlags(0), sslVersion(0), encryptTransport(false) {}
-    PeerOptions(const PeerOptions &);
-    virtual ~PeerOptions() = default;
+    PeerOptions();
+    PeerOptions(const PeerOptions &) = default;
+    PeerOptions &operator =(const PeerOptions &) = default;
+    PeerOptions(PeerOptions &&) = default;
+    PeerOptions &operator =(PeerOptions &&) = default;
+    virtual ~PeerOptions() {}
 
     /// parse a TLS squid.conf option
     virtual void parse(const char *);
@@ -32,11 +35,17 @@ public:
     /// reset the configuration details to default
     virtual void clear() {*this = PeerOptions();}
 
+    /// generate an unset security context object
+    virtual Security::ContextPointer createBlankContext() const;
+
     /// generate a security client-context from these configured options
     Security::ContextPointer createClientContext(bool setOptions);
 
     /// sync the context options with tls-min-version=N configuration
     void updateTlsVersionLimits();
+
+    /// setup the NPN extension details for the given context
+    void updateContextNpn(Security::ContextPointer &);
 
     /// setup the CA details for the given context
     void updateContextCa(Security::ContextPointer &);
@@ -44,17 +53,18 @@ public:
     /// setup the CRL details for the given context
     void updateContextCrl(Security::ContextPointer &);
 
+    /// setup any library-specific options that can be set for the given session
+    void updateSessionOptions(Security::SessionPointer &);
+
     /// output squid.conf syntax with 'pfx' prefix on parameters for the stored settings
     virtual void dumpCfg(Packable *, const char *pfx) const;
 
 private:
-    long parseOptions();
+    void parseOptions(); ///< parsed value of sslOptions
     long parseFlags();
     void loadCrlFile();
 
 public:
-    SBuf certFile;       ///< path of file containing PEM format X509 certificate
-    SBuf privateKeyFile; ///< path of file containing private key in PEM format
     SBuf sslOptions;     ///< library-specific options string
     SBuf caDir;          ///< path of directory containing a set of trusted Certificate Authorities
     SBuf crlFile;        ///< path of file containing Certificate Revoke List
@@ -65,26 +75,50 @@ public:
 
     SBuf tlsMinVersion;  ///< version label for minimum TLS version to permit
 
-    long parsedOptions; ///< parsed value of sslOptions
-    long parsedFlags;   ///< parsed value of sslFlags
+    Security::ParsedOptions parsedOptions; ///< parsed value of sslOptions
+    long parsedFlags = 0;   ///< parsed value of sslFlags
 
+    std::list<Security::KeyData> certs; ///< details from the cert= and file= config parameters
     std::list<SBuf> caFiles;  ///< paths of files containing trusted Certificate Authority
     Security::CertRevokeList parsedCrl; ///< CRL to use when verifying the remote end certificate
 
-private:
-    int sslVersion;
+protected:
+    template<typename T>
+    Security::ContextPointer convertContextFromRawPtr(T ctx) const {
+#if USE_OPENSSL
+        return ContextPointer(ctx, [](SSL_CTX *p) {
+            debugs(83, 5, "SSL_free ctx=" << (void*)p);
+            SSL_CTX_free(p);
+        });
+#elif USE_GNUTLS
+        return Security::ContextPointer(ctx, [](gnutls_certificate_credentials_t p) {
+            debugs(83, 5, "gnutls_certificate_free_credentials ctx=" << (void*)p);
+            gnutls_certificate_free_credentials(p);
+        });
+#else
+        assert(!ctx);
+        return Security::ContextPointer();
+#endif
+    }
+
+    int sslVersion = 0;
 
     /// flags governing Squid internal TLS operations
     struct flags_ {
-        flags_() : noDefaultCa(false) {}
+        flags_() : tlsDefaultCa(true), tlsNpn(true) {}
+        flags_(const flags_ &) = default;
+        flags_ &operator =(const flags_ &) = default;
 
-        /// do not use the system default Trusted CA when verifying the remote end certificate
-        bool noDefaultCa;
+        /// whether to use the system default Trusted CA when verifying the remote end certificate
+        YesNoNone tlsDefaultCa;
+
+        /// whether to use the TLS NPN extension on these connections
+        bool tlsNpn;
     } flags;
 
 public:
     /// whether transport encryption (TLS/SSL) is to be used on connections to the peer
-    bool encryptTransport;
+    bool encryptTransport = false;
 };
 
 /// configuration options for DIRECT server access

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,7 +11,7 @@
 
 /*
  * From discussions it was chosen to push compat code as far down as possible.
- * That means we can have a seperate compat for most
+ * That means we can have a separate compat for most
  *  compatability and portability hacks and resolutions.
  *
  * This file is meant to collate all those hacks files together and
@@ -28,19 +28,6 @@
 /* NP: this MUST come first within compat.h           */
 /******************************************************/
 #include "compat/osdetect.h"
-
-/* ugly hack. But we need to set this REALLY soon in the header */
-#if _SQUID_SOLARIS_ && !defined(__GNUC__) && !defined(__GNUG__)
-#ifndef __EXTENSIONS__
-#define __EXTENSIONS__ 1
-#endif
-#ifndef _XOPEN_SOURCE
-#define _XOPEN_SOURCE 1
-#endif
-#ifndef _XOPEN_SOURCE_EXTENDED
-#define _XOPEN_SOURCE_EXTENDED 1
-#endif
-#endif
 
 /* Solaris 10 has a broken definition for minor_t in IPFilter compat.
  * We must pre-define before doing anything with OS headers so the OS
