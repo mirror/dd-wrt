@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,6 +15,7 @@
 #include "acl/ServerName.h"
 #include "client_side.h"
 #include "fde.h"
+#include "http/Stream.h"
 #include "HttpRequest.h"
 #include "ipcache.h"
 #include "SquidString.h"
@@ -30,7 +31,7 @@ aclHostDomainCompare( char *const &a, char * const &b)
     const char *h = static_cast<const char *>(a);
     const char *d = static_cast<const char *>(b);
     debugs(28, 7, "Match:" << h << " <>  " << d);
-    return matchDomainName(h, d, true);
+    return matchDomainName(h, d, mdnHonorWildcards);
 }
 
 bool
@@ -90,27 +91,29 @@ ACLServerNameStrategy::match (ACLData<MatchType> * &data, ACLFilledChecklist *ch
 {
     assert(checklist != NULL && checklist->request != NULL);
 
-    if (checklist->conn() && checklist->conn()->serverBump()) {
-        if (X509 *peer_cert = checklist->conn()->serverBump()->serverCert.get()) {
-            if (Ssl::matchX509CommonNames(peer_cert, (void *)data, check_cert_domain<MatchType>))
-                return 1;
+    const char *serverName = nullptr;
+    SBuf serverNameKeeper; // because c_str() is not constant
+    if (ConnStateData *conn = checklist->conn()) {
+
+        if (conn->serverBump()) {
+            if (X509 *peer_cert = conn->serverBump()->serverCert.get())
+                return Ssl::matchX509CommonNames(peer_cert, (void *)data, check_cert_domain<MatchType>);
+        }
+
+        if (conn->sslCommonName().isEmpty()) {
+            const char *host = checklist->request->url.host();
+            if (host && *host) // paranoid first condition: host() is never nil
+                serverName = host;
+        } else {
+            serverNameKeeper = conn->sslCommonName();
+            serverName = serverNameKeeper.c_str();
         }
     }
 
-    const char *serverName = NULL;
-    if (checklist->conn() && !checklist->conn()->sslCommonName().isEmpty()) {
-        SBuf scn = checklist->conn()->sslCommonName();
-        serverName = scn.c_str();
-    }
+    if (!serverName)
+        serverName = "none";
 
-    if (serverName == NULL)
-        serverName = checklist->request->url.host();
-
-    if (serverName && data->match(serverName)) {
-        return 1;
-    }
-
-    return data->match("none");
+    return data->match(serverName);
 }
 
 ACLServerNameStrategy *

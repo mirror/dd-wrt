@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,16 +15,16 @@ bool
 HttpHdrCc::isSet(HttpHdrCcType id) const
 {
     assert(id < HttpHdrCcType::CC_ENUM_END);
-    return EBIT_TEST(mask,id);
+    return EBIT_TEST(mask, static_cast<long>(id));
 }
 
 void
 HttpHdrCc::setMask(HttpHdrCcType id, bool newval)
 {
     if (newval)
-        EBIT_SET(mask,id);
+        EBIT_SET(mask,static_cast<long>(id));
     else
-        EBIT_CLR(mask,id);
+        EBIT_CLR(mask, static_cast<long>(id));
 }
 
 /// set a data member to a new value, and set the corresponding mask-bit.

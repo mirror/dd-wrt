@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,11 +27,6 @@
 #define s6_addr32 __u6_addr.__u6_addr32
 
 #include "compat/cmsg.h"
-
-// MacOS GCC 4.0.1 and 4.2.1 supply __GNUC_GNU_INLINE__ but do not actually define  __attribute__((gnu_inline))
-#if defined(__cplusplus) && !defined(_SQUID_EXTERNNEW_)
-#define _SQUID_EXTERNNEW_ extern inline
-#endif
 
 #endif /* _SQUID_APPLE_ */
 #endif /* SQUID_OS_MACOSX_H */

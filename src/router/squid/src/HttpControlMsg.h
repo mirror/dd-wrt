@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "base/AsyncCall.h"
 #include "HttpReply.h"
 
+class CommIoCbParams;
 class HttpControlMsg;
 
 /*
@@ -31,6 +32,14 @@ public:
 
     /// called to send the 1xx message and notify the Source
     virtual void sendControlMsg(HttpControlMsg msg) = 0;
+
+    virtual void doneWithControlMsg();
+
+    /// callback to handle Comm::Write completion
+    void wroteControlMsg(const CommIoCbParams &);
+
+    /// Call to schedule when the control msg has been sent
+    AsyncCall::Pointer cbControlMsgSent;
 };
 
 /// bundles HTTP 1xx reply and the "successfully forwarded" callback

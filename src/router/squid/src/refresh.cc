@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -174,13 +174,8 @@ refreshStaleness(const StoreEntry * entry, time_t check_time, const time_t age, 
     }
 
     // 3. If there is a Last-Modified header, try the last-modified factor algorithm.
-    if (entry->lastmod > -1 && entry->timestamp > entry->lastmod) {
-
-        /* lastmod_delta is the difference between the last-modified date of the response
-         * and the time we cached it. It's how "old" the response was when we got it.
-         */
-        time_t lastmod_delta = entry->timestamp - entry->lastmod;
-
+    const time_t lastmod_delta = entry->timestamp - entry->lastModified();
+    if (lastmod_delta > 0) {
         /* stale_age is the age of the response when it became/becomes stale according to
          * the last-modified factor algorithm. It's how long we can consider the response
          * fresh from the time we cached it.
@@ -332,10 +327,12 @@ refreshCheck(const StoreEntry * entry, HttpRequest * request, time_t delta)
 
     debugs(22, 3, "Staleness = " << staleness);
 
+    const auto *reply = (entry->mem_obj && entry->mem_obj->getReply() ? entry->mem_obj->getReply() : nullptr);
+
     // stale-if-error requires any failure be passed thru when its period is over.
-    if (request && entry->mem_obj && entry->mem_obj->getReply() && entry->mem_obj->getReply()->cache_control &&
-            entry->mem_obj->getReply()->cache_control->hasStaleIfError() &&
-            entry->mem_obj->getReply()->cache_control->staleIfError() < staleness) {
+    if (request && reply && reply->cache_control &&
+            reply->cache_control->hasStaleIfError() &&
+            reply->cache_control->staleIfError() < staleness) {
 
         debugs(22, 3, "stale-if-error period expired. Will produce error if validation fails.");
         request->flags.failOnValidationError = true;
@@ -346,8 +343,12 @@ refreshCheck(const StoreEntry * entry, HttpRequest * request, time_t delta)
      *   Cache-Control: proxy-revalidate
      * the spec says the response must always be revalidated if stale.
      */
-    if (EBIT_TEST(entry->flags, ENTRY_REVALIDATE) && staleness > -1) {
-        debugs(22, 3, "YES: Must revalidate stale object (origin set must-revalidate, proxy-revalidate, no-cache, s-maxage, or private)");
+    const bool revalidateAlways = EBIT_TEST(entry->flags, ENTRY_REVALIDATE_ALWAYS);
+    if (revalidateAlways || (staleness > -1 &&
+                             EBIT_TEST(entry->flags, ENTRY_REVALIDATE_STALE))) {
+        debugs(22, 3, "YES: Must revalidate stale object (origin set " <<
+               (revalidateAlways ? "no-cache or private" :
+                "must-revalidate, proxy-revalidate or s-maxage") << ")");
         if (request)
             request->flags.failOnValidationError = true;
         return STALE_MUST_REVALIDATE;
@@ -416,18 +417,21 @@ refreshCheck(const StoreEntry * entry, HttpRequest * request, time_t delta)
 
             // max-age directive
             if (cc->hasMaxAge()) {
+
+                // draft-mcmanus-immutable-00: reply contains CC:immutable then ignore client CC:max-age=N
+                if (reply && reply->cache_control && reply->cache_control->Immutable()) {
+                    debugs(22, 3, "MAYBE: Ignoring client CC:max-age=" << cc->maxAge() << " request - 'Cache-Control: immutable'");
+
 #if USE_HTTP_VIOLATIONS
-                // Ignore client "Cache-Control: max-age=0" header
-                if (R->flags.ignore_reload && cc->maxAge() == 0) {
+                    // Ignore of client "Cache-Control: max-age=0" header
+                } else if (R->flags.ignore_reload && cc->maxAge() == 0) {
                     debugs(22, 3, "MAYBE: Ignoring client reload request - trying to serve from cache (ignore-reload option)");
-                } else
 #endif
-                {
+
                     // Honour client "Cache-Control: max-age=x" header
-                    if (age > cc->maxAge() || cc->maxAge() == 0) {
-                        debugs(22, 3, "YES: Revalidating object - client 'Cache-Control: max-age=" << cc->maxAge() << "'");
-                        return STALE_EXCEEDS_REQUEST_MAX_AGE_VALUE;
-                    }
+                } else if (age > cc->maxAge() || cc->maxAge() == 0) {
+                    debugs(22, 3, "YES: Revalidating object - client 'Cache-Control: max-age=" << cc->maxAge() << "'");
+                    return STALE_EXCEEDS_REQUEST_MAX_AGE_VALUE;
                 }
             }
 
@@ -536,8 +540,8 @@ refreshIsCachable(const StoreEntry * entry)
         /* Does not need refresh. This is certainly cachable */
         return true;
 
-    if (entry->lastmod < 0)
-        /* Last modified is needed to do a refresh */
+    if (entry->lastModified() < 0)
+        /* We should know entry's modification time to do a refresh */
         return false;
 
     if (entry->mem_obj == NULL)

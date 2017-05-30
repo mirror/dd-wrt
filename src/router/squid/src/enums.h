@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -67,11 +67,11 @@ typedef enum {
  */
 enum {
     ENTRY_SPECIAL,
-    ENTRY_REVALIDATE,
+    ENTRY_REVALIDATE_ALWAYS,
     DELAY_SENDING,
     RELEASE_REQUEST,
     REFRESH_REQUEST,
-    ENTRY_CACHABLE_RESERVED_FOR_FUTURE_USE,
+    ENTRY_REVALIDATE_STALE,
     ENTRY_DISPATCHED,
     KEY_PRIVATE,
     ENTRY_FWD_HDR_WAIT,
@@ -178,12 +178,6 @@ typedef enum {
     DIGEST_READ_MASK,
     DIGEST_READ_DONE
 } digest_read_state_t;
-
-/* Distinguish between Request and Reply (for header mangling) */
-enum {
-    ROR_REQUEST,
-    ROR_REPLY
-};
 
 /* CygWin & Windows NT Port */
 #if _SQUID_WINDOWS_

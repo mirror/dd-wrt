@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,6 +8,8 @@
 
 #ifndef __AUTH_NTLM_H__
 #define __AUTH_NTLM_H__
+
+#if HAVE_AUTH_MODULE_NTLM
 
 #include "auth/Config.h"
 #include "auth/Gadgets.h"
@@ -48,5 +50,6 @@ public:
 
 extern statefulhelper *ntlmauthenticators;
 
+#endif /* HAVE_AUTH_MODULE_NTLM */
 #endif
 

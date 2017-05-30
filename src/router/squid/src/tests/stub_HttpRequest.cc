@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,10 +16,10 @@
 // void httpRequestPack(void *obj, Packable *p);
 
 HttpRequest::HttpRequest() : HttpMsg(hoRequest) {STUB}
-HttpRequest::HttpRequest(const HttpRequestMethod &, AnyP::ProtocolType, const char *) : HttpMsg(hoRequest) {STUB}
+HttpRequest::HttpRequest(const HttpRequestMethod &, AnyP::ProtocolType, const char *, const char *) : HttpMsg(hoRequest) {STUB}
 HttpRequest::~HttpRequest() STUB
 void HttpRequest::reset() STUB
-void HttpRequest::initHTTP(const HttpRequestMethod &, AnyP::ProtocolType, const char *) STUB
+void HttpRequest::initHTTP(const HttpRequestMethod &, AnyP::ProtocolType, const char *, const char *) STUB
 HttpRequest * HttpRequest::clone() const STUB_RETVAL(NULL)
 bool HttpRequest::maybeCacheable() STUB_RETVAL(false)
 bool HttpRequest::conditional() const STUB_RETVAL(false)
@@ -45,10 +45,9 @@ bool HttpRequest::expectingBody(const HttpRequestMethod &, int64_t &) const STUB
 bool HttpRequest::bodyNibbled() const STUB_RETVAL(false)
 int HttpRequest::prefixLen() const STUB_RETVAL(0)
 void HttpRequest::swapOut(StoreEntry *) STUB
-void HttpRequest::pack(Packable *) STUB
+void HttpRequest::pack(Packable *) const STUB
 void HttpRequest::httpRequestPack(void *, Packable *) STUB
-HttpRequest * HttpRequest::CreateFromUrlAndMethod(char *, const HttpRequestMethod &) STUB_RETVAL(NULL)
-HttpRequest * HttpRequest::CreateFromUrl(char *) STUB_RETVAL(NULL)
+HttpRequest * HttpRequest::CreateFromUrl(char *, const HttpRequestMethod &) STUB_RETVAL(NULL)
 ConnStateData *HttpRequest::pinnedConnection() STUB_RETVAL(NULL)
 const SBuf HttpRequest::storeId() STUB_RETVAL(SBuf("."))
 void HttpRequest::ignoreRange(const char *) STUB

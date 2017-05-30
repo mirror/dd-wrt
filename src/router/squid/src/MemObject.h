@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,6 +13,8 @@
 #include "dlink.h"
 #include "http/RequestMethod.h"
 #include "RemovalPolicy.h"
+#include "sbuf/SBuf.h"
+#include "SquidString.h"
 #include "stmem.h"
 #include "StoreIOBuffer.h"
 #include "StoreIOState.h"
@@ -169,7 +171,7 @@ public:
     unsigned int chksum;
 #endif
 
-    const char *vary_headers;
+    SBuf vary_headers;
 
     void delayRead(DeferredRead const &);
     void kickReads();

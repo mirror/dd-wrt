@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 #include "squid.h"
 #include "Debug.h"
 #include "http/one/Parser.h"
+#include "HttpHdrCc.h"
 #include "HttpHeaderTools.h"
 #include "HttpMsg.h"
 #include "MemBuf.h"
@@ -24,12 +25,32 @@ HttpMsg::HttpMsg(http_hdr_owner_type owner):
     cache_control(NULL),
     hdr_sz(0),
     content_length(0),
-    pstate(psReadyToParseStartLine)
+    pstate(psReadyToParseStartLine),
+    sources(0)
 {}
 
 HttpMsg::~HttpMsg()
 {
     assert(!body_pipe);
+}
+
+void
+HttpMsg::putCc(const HttpHdrCc *otherCc)
+{
+    // get rid of the old CC, if any
+    if (cache_control) {
+        delete cache_control;
+        cache_control = nullptr;
+        if (!otherCc)
+            header.delById(Http::HdrType::CACHE_CONTROL);
+        // else it will be deleted inside putCc() below
+    }
+
+    // add new CC, if any
+    if (otherCc) {
+        cache_control = new HttpHdrCc(*otherCc);
+        header.putCc(cache_control);
+    }
 }
 
 HttpMsgParseState &operator++ (HttpMsgParseState &aState)
@@ -293,6 +314,8 @@ HttpMsg::parseHeader(Http1::Parser &hp)
         return false;
     }
 
+    // XXX: we are just parsing HTTP headers, not the whole message prefix here
+    hdr_sz = hp.messageHeaderSize();
     pstate = psParsed;
     hdrCacheInit();
     return true;

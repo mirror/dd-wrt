@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -31,8 +31,7 @@ void
 testPackableStream::testGetStream()
 {
     /* Setup a store root so we can create a StoreEntry */
-    StorePointer aStore (new TestStore);
-    Store::Root(aStore);
+    Store::Init();
 
     CapturingStoreEntry * anEntry = new CapturingStoreEntry();
     {
@@ -57,6 +56,6 @@ testPackableStream::testGetStream()
         CPPUNIT_ASSERT_EQUAL(String("12345677.7 some text   !."), anEntry->_appended_text);
     }
     delete anEntry; // does the unlock()
-    Store::Root(NULL);
+    Store::FreeMemory();
 }
 

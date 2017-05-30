@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,7 @@
 #include "HttpRequest.h"
 #include "mgr/Registration.h"
 #include "rfc2617.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 #include "SquidTime.h"
 #include "Store.h"
 #include "StrList.h"
@@ -215,7 +215,7 @@ authenticateDigestNonceSetup(void)
     if (!digest_nonce_cache) {
         digest_nonce_cache = hash_create((HASHCMP *) strcmp, 7921, hash_string);
         assert(digest_nonce_cache);
-        eventAdd("Digest none cache maintenance", authenticateDigestNonceCacheCleanup, NULL, static_cast<Auth::Digest::Config*>(Auth::Config::Find("digest"))->nonceGCInterval, 1);
+        eventAdd("Digest nonce cache maintenance", authenticateDigestNonceCacheCleanup, NULL, static_cast<Auth::Digest::Config*>(Auth::Config::Find("digest"))->nonceGCInterval, 1);
     }
 }
 
@@ -279,7 +279,7 @@ authenticateDigestNonceCacheCleanup(void *)
     debugs(29, 3, "Finished cleaning the nonce cache.");
 
     if (static_cast<Auth::Digest::Config*>(Auth::Config::Find("digest"))->active())
-        eventAdd("Digest none cache maintenance", authenticateDigestNonceCacheCleanup, NULL, static_cast<Auth::Digest::Config*>(Auth::Config::Find("digest"))->nonceGCInterval, 1);
+        eventAdd("Digest nonce cache maintenance", authenticateDigestNonceCacheCleanup, NULL, static_cast<Auth::Digest::Config*>(Auth::Config::Find("digest"))->nonceGCInterval, 1);
 }
 
 static void
@@ -1064,6 +1064,10 @@ Auth::Digest::Config::decode(char const *proxy_auth, const char *aRequestRealm)
          * the user agent won't change user name without warning.
          */
         authDigestUserLinkNonce(digest_user, nonce);
+
+        /* auth_user is now linked, we reset these values
+         * after external auth occurs anyway */
+        auth_user->expiretime = current_time.tv_sec;
     } else {
         debugs(29, 9, "Found user '" << username << "' in the user cache as '" << auth_user << "'");
         digest_user = static_cast<Auth::Digest::User *>(auth_user.getRaw());

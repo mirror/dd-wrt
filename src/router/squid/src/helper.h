@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,14 +18,29 @@
 #include "dlink.h"
 #include "helper/ChildConfig.h"
 #include "helper/forward.h"
+#include "helper/Reply.h"
+#include "helper/Request.h"
 #include "ip/Address.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 
 #include <list>
 #include <map>
+#include <queue>
 
 class Packable;
 class wordlist;
+
+namespace Helper
+{
+/// Holds the  required data to serve a helper request.
+class Xaction {
+    MEMPROXY_CLASS(Helper::Xaction);
+public:
+    Xaction(HLPCB *c, void *d, const char *b): request(c, d, b) {}
+    Helper::Request request;
+    Helper::Reply reply;
+};
+}
 
 /**
  * Managers a set of individual helper processes with a common queue of requests.
@@ -34,13 +49,13 @@ class wordlist;
  *   idle:   no processes are working on requests (and no requests are queued);
  *   normal: some, but not all processes are working (and no requests are queued);
  *   busy:   all processes are working (and some requests are possibly queued);
- *   full:   all processes are working and at least 2*#processes requests are queued.
+ *   overloaded: a busy helper with more than queue-size requests in the queue.
  *
- * A "busy" helper queues new requests and issues a WARNING every 10 minutes or so.
- * A "full" helper either drops new requests or keeps queuing them, depending on
+ * A busy helper queues new requests and issues a WARNING every 10 minutes or so.
+ * An overloaded helper either drops new requests or keeps queuing them, depending on
  *   whether the caller can handle dropped requests (trySubmit vs helperSubmit APIs).
- * An attempt to use a "full" helper that has been "full" for 3+ minutes kills worker.
- *   Given enough load, all helpers except for external ACL will make such attempts.
+ * If an overloaded helper has been overloaded for 3+ minutes, an attempt to use
+ *   it results in on-persistent-overload action, which may kill worker.
  */
 class helper
 {
@@ -51,7 +66,8 @@ public:
         cmdline(NULL),
         id_name(name),
         ipc_type(0),
-        full_time(0),
+        droppedRequests(0),
+        overloadStart(0),
         last_queue_warn(0),
         last_restart(0),
         timeout(0),
@@ -62,28 +78,32 @@ public:
     }
     ~helper();
 
-    ///< whether at least one more request can be successfully submitted
-    bool queueFull() const;
+    /// \returns next request in the queue, or nil.
+    Helper::Xaction *nextRequest();
 
-    ///< If not full, submit request. Otherwise, either kill Squid or return false.
+    /// If possible, submit request. Otherwise, either kill Squid or return false.
     bool trySubmit(const char *buf, HLPCB * callback, void *data);
 
     /// Submits a request to the helper or add it to the queue if none of
     /// the servers is available.
-    void submitRequest(Helper::Request *r);
+    void submitRequest(Helper::Xaction *r);
 
     /// Dump some stats about the helper state to a Packable object
     void packStatsInto(Packable *p, const char *label = NULL) const;
+    /// whether the helper will be in "overloaded" state after one more request
+    /// already overloaded helpers return true
+    bool willOverload() const;
 
 public:
     wordlist *cmdline;
     dlink_list servers;
-    dlink_list queue;
+    std::queue<Helper::Xaction *> queue;
     const char *id_name;
     Helper::ChildConfig childs;    ///< Configuration settings for number running.
     int ipc_type;
     Ip::Address addr;
-    time_t full_time; ///< when a full helper became full (zero for non-full helpers)
+    unsigned int droppedRequests; ///< requests not sent during helper overload
+    time_t overloadStart; ///< when the helper became overloaded (zero if it is not)
     time_t last_queue_warn;
     time_t last_restart;
     time_t timeout; ///< Requests timeout
@@ -102,7 +122,10 @@ public:
 
 protected:
     friend void helperSubmit(helper * hlp, const char *buf, HLPCB * callback, void *data);
-    void prepSubmit();
+    bool queueFull() const;
+    bool overloaded() const;
+    void syncQueueStats();
+    bool prepSubmit();
     void submit(const char *buf, HLPCB * callback, void *data);
 };
 
@@ -120,6 +143,7 @@ public:
 private:
     friend void helperStatefulSubmit(statefulhelper * hlp, const char *buf, HLPCB * callback, void *data, helper_stateful_server * lastserver);
     void submit(const char *buf, HLPCB * callback, void *data, helper_stateful_server *lastserver);
+    bool trySubmit(const char *buf, HLPCB * callback, void *data, helper_stateful_server *lastserver);
 };
 
 /**
@@ -169,7 +193,7 @@ public:
         bool reserved;
     } flags;
 
-    typedef std::list<Helper::Request *> Requests;
+    typedef std::list<Helper::Xaction *> Requests;
     Requests requests; ///< requests in order of submission/expiration
 
     struct {
@@ -197,9 +221,24 @@ public:
 
     helper *parent;
 
+    /// The helper request Xaction object for the current reply .
+    /// A helper reply may be distributed to more than one of the retrieved
+    /// packets from helper. This member stores the Xaction object as long as
+    /// the end-of-message for current reply is not retrieved.
+    Helper::Xaction *replyXaction;
+
+    /// Whether to ignore current message, because it is timed-out or other reason
+    bool ignoreToEom;
+
     // STL says storing std::list iterators is safe when changing the list
     typedef std::map<uint64_t, Requests::iterator> RequestIndex;
     RequestIndex requestsIndex; ///< maps request IDs to requests
+
+    /// Search in queue for the request with requestId, return the related
+    /// Xaction object and remove it from queue.
+    /// If concurrency is disabled then the requestId is ignored and the
+    /// Xaction of the next request in queue is retrieved.
+    Helper::Xaction *popRequest(int requestId);
 
     /// Run over the active requests lists and forces a retry, or timedout reply
     /// or the configured "on timeout response" for timedout requests.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,11 +24,10 @@ class StoreEntry;
 /// \ingroup DelayPoolsAPI
 class CompositePoolNode : public RefCountable, public Updateable
 {
+    MEMPROXY_CLASS(CompositePoolNode);
 
 public:
     typedef RefCount<CompositePoolNode> Pointer;
-    void *operator new(size_t);
-    void operator delete (void *);
     virtual ~CompositePoolNode() {}
 
     virtual void stats(StoreEntry * sentry) =0;

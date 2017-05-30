@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -121,6 +121,7 @@ public:
         return Initiator::doneAll() &&
                BodyConsumer::doneAll() && false;
     }
+    virtual void callException(const std::exception &ex);
 #endif
 
 private:
@@ -148,6 +149,7 @@ public:
 
 public:
     void startAdaptation(const Adaptation::ServiceGroupPointer &g);
+    bool requestSatisfactionMode() const { return request_satisfaction_mode; }
 
 private:
     /// Handles an adaptation client request failure.

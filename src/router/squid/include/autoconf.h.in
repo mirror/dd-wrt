@@ -699,6 +699,9 @@
 /* Define to 1 if you have the <openssl/bio.h> header file. */
 #undef HAVE_OPENSSL_BIO_H
 
+/* Define to 1 if you have the <openssl/crypto.h> header file. */
+#undef HAVE_OPENSSL_CRYPTO_H
+
 /* Define to 1 if you have the <openssl/engine.h> header file. */
 #undef HAVE_OPENSSL_ENGINE_H
 
@@ -1205,12 +1208,14 @@
    module search path. */
 #undef LT_MODULE_PATH_VAR
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define to the shared library suffix, say, ".dylib". */
 #undef LT_SHARED_EXT
+
+/* Define to the shared archive member specification, say "(shr.o)". */
+#undef LT_SHARED_LIB_MEMBER
 
 /* If MAXPATHLEN has not been defined */
 #undef MAXPATHLEN
@@ -1220,9 +1225,6 @@
 
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -1365,7 +1367,7 @@
 /* DiskIO modules are expected to be available. */
 #undef USE_DISKIO
 
-/* Disable eCAP support */
+/* Whether to use eCAP support */
 #undef USE_ECAP
 
 /* Use epoll() for the IO loop */
@@ -1456,7 +1458,7 @@
    code uses API initially defined in 4.4-BSD. */
 #undef USE_SQUID_EUI
 
-/* Use ssl_crtd daemon */
+/* Use ssl-crtd daemon */
 #undef USE_SSL_CRTD
 
 /* Enable extensions on AIX 3, Interix.  */
@@ -1569,7 +1571,7 @@
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 
-/* Define to a type to use for `error_t' if it is not otherwise available. */
+/* Define to a type to use for 'error_t' if it is not otherwise available. */
 #undef error_t
 
 /* Define to `int' if <sys/types.h> doesn't define. */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,6 +37,7 @@
 #include "helper.h"
 #include "helper/Reply.h"
 #include "http.h"
+#include "http/Stream.h"
 #include "HttpHdrCc.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
@@ -168,16 +169,18 @@ ClientHttpRequest::ClientHttpRequest(ConnStateData * aConn) :
     setConn(aConn);
     al = new AccessLogEntry;
     al->cache.start_time = current_time;
-    al->tcpClient = clientConnection = aConn->clientConnection;
-    al->cache.port = aConn->port;
-    al->cache.caddr = aConn->log_addr;
+    if (aConn) {
+        al->tcpClient = clientConnection = aConn->clientConnection;
+        al->cache.port = aConn->port;
+        al->cache.caddr = aConn->log_addr;
 
 #if USE_OPENSSL
-    if (aConn->clientConnection != NULL && aConn->clientConnection->isOpen()) {
-        if (auto ssl = fd_table[aConn->clientConnection->fd].ssl)
-            al->cache.sslClientCert.reset(SSL_get_peer_certificate(ssl));
-    }
+        if (aConn->clientConnection != NULL && aConn->clientConnection->isOpen()) {
+            if (auto ssl = fd_table[aConn->clientConnection->fd].ssl.get())
+                al->cache.sslClientCert.resetWithoutLocking(SSL_get_peer_certificate(ssl));
+        }
 #endif
+    }
     dlinkAdd(this, &active, &ClientActiveRequests);
 }
 
@@ -343,7 +346,7 @@ clientBeginRequest(const HttpRequestMethod& method, char const *url, CSCB * stre
     http->uri = (char *)xcalloc(url_sz, 1);
     strcpy(http->uri, url);
 
-    if ((request = HttpRequest::CreateFromUrlAndMethod(http->uri, method)) == NULL) {
+    if ((request = HttpRequest::CreateFromUrl(http->uri, method)) == NULL) {
         debugs(85, 5, "Invalid URL: " << http->uri);
         return -1;
     }
@@ -354,7 +357,7 @@ clientBeginRequest(const HttpRequestMethod& method, char const *url, CSCB * stre
      * correctness.
      */
     if (header)
-        request->header.update(header, NULL);
+        request->header.update(header);
 
     http->log_uri = xstrdup(urlCanonicalClean(request));
 
@@ -573,7 +576,8 @@ ClientRequestContext::hostHeaderVerifyFailed(const char *A, const char *B)
 
     debugs(85, DBG_IMPORTANT, "SECURITY ALERT: Host header forgery detected on " <<
            http->getConn()->clientConnection << " (" << A << " does not match " << B << ")");
-    debugs(85, DBG_IMPORTANT, "SECURITY ALERT: By user agent: " << http->request->header.getStr(Http::HdrType::USER_AGENT));
+    if (const char *ua = http->request->header.getStr(Http::HdrType::USER_AGENT))
+        debugs(85, DBG_IMPORTANT, "SECURITY ALERT: By user agent: " << ua);
     debugs(85, DBG_IMPORTANT, "SECURITY ALERT: on URL: " << http->request->effectiveRequestUri());
 
     // IP address validation for Host: failed. reject the connection.
@@ -851,7 +855,7 @@ ClientHttpRequest::noteAdaptationAclCheckDone(Adaptation::ServiceGroupPointer g)
             ih->rfc931 = getConn()->clientConnection->rfc931;
 #if USE_OPENSSL
             if (getConn()->clientConnection->isOpen()) {
-                ih->ssluser = sslGetUserEmail(fd_table[getConn()->clientConnection->fd].ssl);
+                ih->ssluser = sslGetUserEmail(fd_table[getConn()->clientConnection->fd].ssl.get());
             }
 #endif
         }
@@ -881,8 +885,7 @@ clientRedirectAccessCheckDone(allow_t answer, void *data)
     if (answer == ACCESS_ALLOWED)
         redirectStart(http, clientRedirectDoneWrapper, context);
     else {
-        Helper::Reply nilReply;
-        nilReply.result = Helper::Error;
+        Helper::Reply const nilReply(Helper::Error);
         context->clientRedirectDone(nilReply);
     }
 }
@@ -914,8 +917,7 @@ clientStoreIdAccessCheckDone(allow_t answer, void *data)
         storeIdStart(http, clientStoreIdDoneWrapper, context);
     else {
         debugs(85, 3, "access denied expected ERR reply handling: " << answer);
-        Helper::Reply nilReply;
-        nilReply.result = Helper::Error;
+        Helper::Reply const nilReply(Helper::Error);
         context->clientStoreIdDone(nilReply);
     }
 }
@@ -1052,7 +1054,6 @@ clientInterpretRequestHeaders(ClientHttpRequest * http)
     HttpRequest *request = http->request;
     HttpHeader *req_hdr = &request->header;
     bool no_cache = false;
-    const char *str;
 
     request->imslen = -1;
     request->ims = req_hdr->getTime(Http::HdrType::IF_MODIFIED_SINCE);
@@ -1068,28 +1069,6 @@ clientInterpretRequestHeaders(ClientHttpRequest * http)
             // RFC 2616: treat Pragma:no-cache as if it was Cache-Control:no-cache when Cache-Control is missing
         } else if (req_hdr->has(Http::HdrType::PRAGMA))
             no_cache = req_hdr->hasListMember(Http::HdrType::PRAGMA,"no-cache",',');
-
-        /*
-        * Work around for supporting the Reload button in IE browsers when Squid
-        * is used as an accelerator or transparent proxy, by turning accelerated
-        * IMS request to no-cache requests. Now knows about IE 5.5 fix (is
-        * actually only fixed in SP1, but we can't tell whether we are talking to
-        * SP1 or not so all 5.5 versions are treated 'normally').
-        */
-        if (Config.onoff.ie_refresh) {
-            if (http->flags.accel && request->flags.ims) {
-                if ((str = req_hdr->getStr(Http::HdrType::USER_AGENT))) {
-                    if (strstr(str, "MSIE 5.01") != NULL)
-                        no_cache=true;
-                    else if (strstr(str, "MSIE 5.0") != NULL)
-                        no_cache=true;
-                    else if (strstr(str, "MSIE 4.") != NULL)
-                        no_cache=true;
-                    else if (strstr(str, "MSIE 3.") != NULL)
-                        no_cache=true;
-                }
-            }
-        }
     }
 
     if (request->method == Http::METHOD_OTHER) {
@@ -1420,7 +1399,10 @@ void
 ClientRequestContext::checkNoCacheDone(const allow_t &answer)
 {
     acl_checklist = NULL;
-    http->request->flags.cachable = (answer == ACCESS_ALLOWED);
+    if (answer == ACCESS_DENIED) {
+        http->request->flags.noCache = true; // dont read reply from cache
+        http->request->flags.cachable = false; // dont store reply into cache
+    }
     http->doCallouts();
 }
 
@@ -1428,6 +1410,16 @@ ClientRequestContext::checkNoCacheDone(const allow_t &answer)
 bool
 ClientRequestContext::sslBumpAccessCheck()
 {
+    if (!http->getConn()) {
+        http->al->ssl.bumpMode = Ssl::bumpEnd; // SslBump does not apply; log -
+        return false;
+    }
+
+    if (http->request->flags.forceTunnel) {
+        debugs(85, 5, "not needed; already decided to tunnel " << http->getConn());
+        return false;
+    }
+
     // If SSL connection tunneling or bumping decision has been made, obey it.
     const Ssl::BumpMode bumpMode = http->getConn()->sslBumpMode;
     if (bumpMode != Ssl::bumpEnd) {
@@ -1457,6 +1449,13 @@ ClientRequestContext::sslBumpAccessCheck()
     if (error && error->httpStatus == Http::scProxyAuthenticationRequired) {
         http->al->ssl.bumpMode = Ssl::bumpEnd; // SslBump does not apply; log -
         debugs(85, 5, HERE << "no SslBump during proxy authentication");
+        return false;
+    }
+
+    if (error) {
+        debugs(85, 5, "SslBump applies. Force bump action on error " << errorTypeName(error->type));
+        http->sslBumpNeed(Ssl::bumpBump);
+        http->al->ssl.bumpMode = Ssl::bumpBump;
         return false;
     }
 
@@ -1506,13 +1505,17 @@ ClientHttpRequest::processRequest()
 {
     debugs(85, 4, request->method << ' ' << uri);
 
-    if (request->method == Http::METHOD_CONNECT && !redirect.status) {
+    const bool untouchedConnect = request->method == Http::METHOD_CONNECT && !redirect.status;
+
 #if USE_OPENSSL
-        if (sslBumpNeeded()) {
-            sslBumpStart();
-            return;
-        }
+    if (untouchedConnect && sslBumpNeeded()) {
+        assert(!request->flags.forceTunnel);
+        sslBumpStart();
+        return;
+    }
 #endif
+
+    if (untouchedConnect || request->flags.forceTunnel) {
         getConn()->stopReading(); // tunnels read for themselves
         tunnelStart(this);
         return;
@@ -1722,7 +1725,6 @@ ClientHttpRequest::doCallouts()
 
         if (!calloutContext->redirect_done) {
             calloutContext->redirect_done = true;
-            assert(calloutContext->redirect_state == REDIRECT_NONE);
 
             if (Config.Program.redirect) {
                 debugs(83, 3, HERE << "Doing calloutContext->clientRedirectStart()");
@@ -1741,7 +1743,6 @@ ClientHttpRequest::doCallouts()
 
         if (!calloutContext->store_id_done) {
             calloutContext->store_id_done = true;
-            assert(calloutContext->store_id_state == REDIRECT_NONE);
 
             if (Config.Program.store_id) {
                 debugs(83, 3,"Doing calloutContext->clientStoreIdStart()");
@@ -1793,8 +1794,9 @@ ClientHttpRequest::doCallouts()
     }
 
 #if USE_OPENSSL
-    // We need to check for SslBump even if the calloutContext->error is set
-    // because bumping may require delaying the error until after CONNECT.
+    // Even with calloutContext->error, we call sslBumpAccessCheck() to decide
+    // whether SslBump applies to this transaction. If it applies, we will
+    // attempt to bump the client to serve the error.
     if (!calloutContext->sslBumpCheckDone) {
         calloutContext->sslBumpCheckDone = true;
         if (calloutContext->sslBumpAccessCheck())
@@ -1805,14 +1807,15 @@ ClientHttpRequest::doCallouts()
 
     if (calloutContext->error) {
         // XXX: prformance regression. c_str() reallocates
-        SBuf storeUri(request->storeId());
-        StoreEntry *e = storeCreateEntry(storeUri.c_str(), storeUri.c_str(), request->flags, request->method);
+        SBuf storeUriBuf(request->storeId());
+        const char *storeUri = storeUriBuf.c_str();
+        StoreEntry *e = storeCreateEntry(storeUri, storeUri, request->flags, request->method);
 #if USE_OPENSSL
         if (sslBumpNeeded()) {
             // We have to serve an error, so bump the client first.
             sslBumpNeed(Ssl::bumpClientFirst);
             // set final error but delay sending until we bump
-            Ssl::ServerBump *srvBump = new Ssl::ServerBump(request, e);
+            Ssl::ServerBump *srvBump = new Ssl::ServerBump(request, e, Ssl::bumpClientFirst);
             errorAppendEntry(e, calloutContext->error);
             calloutContext->error = NULL;
             getConn()->setServerBump(srvBump);
@@ -1827,7 +1830,7 @@ ClientHttpRequest::doCallouts()
             repContext->setReplyToStoreEntry(e, "immediate SslBump error");
             errorAppendEntry(e, calloutContext->error);
             calloutContext->error = NULL;
-            if (calloutContext->readNextRequest)
+            if (calloutContext->readNextRequest && getConn())
                 getConn()->flags.readMore = true; // resume any pipeline reads.
             node = (clientStreamNode *)client_stream.tail->data;
             clientStreamRead(node, this, node->readBuffer);
@@ -2074,6 +2077,21 @@ ClientHttpRequest::handleAdaptationFailure(int errDetail, bool bypassable)
         doCallouts();
 }
 
+void
+ClientHttpRequest::callException(const std::exception &ex)
+{
+    if (const auto clientConn = getConn() ? getConn()->clientConnection : nullptr) {
+        if (Comm::IsConnOpen(clientConn)) {
+            debugs(85, 3, "closing after exception: " << ex.what());
+            clientConn->close(); // initiate orderly top-to-bottom cleanup
+            return;
+        }
+    }
+    debugs(85, DBG_IMPORTANT, "ClientHttpRequest exception without connection. Ignoring " << ex.what());
+    // XXX: Normally, we mustStop() but we cannot do that here because it is
+    // likely to leave Http::Stream and ConnStateData with a dangling http
+    // pointer. See r13480 or XXX in Http::Stream class description.
+}
 #endif
 
 // XXX: modify and use with ClientRequestContext::clientAccessCheckDone too.

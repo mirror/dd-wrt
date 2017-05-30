@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,7 +35,6 @@
 static time_t peerDigestIncDelay(const PeerDigest * pd);
 static time_t peerDigestNewDelay(const StoreEntry * e);
 static void peerDigestSetCheck(PeerDigest * pd, time_t delay);
-static void peerDigestClean(PeerDigest *);
 static EVH peerDigestCheck;
 static void peerDigestRequest(PeerDigest * pd);
 static STCB peerDigestHandleReply;
@@ -84,17 +83,6 @@ peerDigestInit(PeerDigest * pd, CachePeer * p)
     pd->host = p->host;
 
     pd->times.initialized = squid_curtime;
-}
-
-static void
-peerDigestClean(PeerDigest * pd)
-{
-    assert(pd);
-
-    if (pd->cd)
-        cacheDigestDestroy(pd->cd);
-
-    pd->host.clean();
 }
 
 CBDATA_CLASS_INIT(PeerDigest);
@@ -171,7 +159,8 @@ peerDigestDestroy(PeerDigest * pd)
     if (cbdataReferenceValidDone(peerTmp, &p))
         peerNoteDigestGone((CachePeer *)p);
 
-    peerDigestClean(pd);
+    delete pd->cd;
+    pd->host.clean();
 
     delete pd;
 }
@@ -200,10 +189,8 @@ peerDigestDisable(PeerDigest * pd)
     pd->times.next_check = -1;  /* never */
     pd->flags.usable = 0;
 
-    if (pd->cd) {
-        cacheDigestDestroy(pd->cd);
-        pd->cd = NULL;
-    }
+    delete pd->cd
+    pd->cd = nullptr;
 
     /* we do not destroy the pd itself to preserve its "history" and stats */
 }
@@ -351,7 +338,7 @@ peerDigestRequest(PeerDigest * pd)
             p->login[0] != '*' &&
             strcmp(p->login, "PASS") != 0 &&
             strcmp(p->login, "PASSTHRU") != 0 &&
-            strcmp(p->login, "NEGOTIATE") != 0 &&
+            strncmp(p->login, "NEGOTIATE",9) != 0 &&
             strcmp(p->login, "PROXYPASS") != 0) {
         req->url.userInfo(SBuf(p->login)); // XXX: performance regression make peer login SBuf as well.
     }
@@ -383,7 +370,7 @@ peerDigestRequest(PeerDigest * pd)
     /* set lastmod to trigger IMS request if possible */
 
     if (old_e)
-        e->lastmod = old_e->lastmod;
+        e->lastModified(old_e->lastModified());
 
     /* push towards peer cache */
     debugs(72, 3, "peerDigestRequest: forwarding to fwdStart...");
@@ -550,11 +537,7 @@ peerDigestFetchReply(void *data, char *buf, ssize_t size)
 
             assert(fetch->old_entry->mem_obj->request);
 
-            HttpReply *old_rep = (HttpReply *) fetch->old_entry->getReply();
-
-            old_rep->updateOnNotModified(reply);
-
-            fetch->old_entry->timestampsSet();
+            Store::Root().updateOnNotModified(fetch->old_entry, *fetch->entry);
 
             /* get rid of 304 reply */
             storeUnregister(fetch->sc, fetch->entry, fetch);
@@ -763,7 +746,7 @@ peerDigestFetchedEnough(DigestFetchState * fetch, char *buf, ssize_t size, const
     if (!reason && !size) {
         if (!pd->cd)
             reason = "null digest?!";
-        else if (fetch->mask_offset != (int)pd->cd->mask_size)
+        else if (fetch->mask_offset != pd->cd->mask_size)
             reason = "premature end of digest?!";
         else if (!peerDigestUseful(pd))
             reason = "useless digest";
@@ -861,10 +844,8 @@ peerDigestPDFinish(DigestFetchState * fetch, int pcb_valid, int err)
     if (err) {
         debugs(72, DBG_IMPORTANT, "" << (pcb_valid ? "temporary " : "" ) << "disabling (" << pd->req_result << ") digest from " << host);
 
-        if (pd->cd) {
-            cacheDigestDestroy(pd->cd);
-            pd->cd = NULL;
-        }
+        delete pd->cd;
+        pd->cd = nullptr;
 
         pd->flags.usable = false;
 
@@ -937,8 +918,8 @@ peerDigestFetchSetStats(DigestFetchState * fetch)
     debugs(72, 3, "peerDigestFetchFinish: expires: " <<
            (long int) fetch->expires << " (" << std::showpos <<
            (int) (fetch->expires - squid_curtime) << "), lmt: " <<
-           std::noshowpos << (long int) fetch->entry->lastmod << " (" <<
-           std::showpos << (int) (fetch->entry->lastmod - squid_curtime) <<
+           std::noshowpos << (long int) fetch->entry->lastModified() << " (" <<
+           std::showpos << (int) (fetch->entry->lastModified() - squid_curtime) <<
            ")");
 
 }
@@ -992,10 +973,10 @@ peerDigestSetCBlock(PeerDigest * pd, const char *buf)
     }
 
     /* check consistency further */
-    if ((size_t)cblock.mask_size != cacheDigestCalcMaskSize(cblock.capacity, cblock.bits_per_entry)) {
+    if ((size_t)cblock.mask_size != CacheDigest::CalcMaskSize(cblock.capacity, cblock.bits_per_entry)) {
         debugs(72, DBG_CRITICAL, host << " digest cblock is corrupted " <<
                "(mask size mismatch: " << cblock.mask_size << " ? " <<
-               cacheDigestCalcMaskSize(cblock.capacity, cblock.bits_per_entry)
+               CacheDigest::CalcMaskSize(cblock.capacity, cblock.bits_per_entry)
                << ").");
         return 0;
     }
@@ -1015,14 +996,14 @@ peerDigestSetCBlock(PeerDigest * pd, const char *buf)
         debugs(72, 2, host << " digest changed size: " << cblock.mask_size <<
                " -> " << pd->cd->mask_size);
         freed_size = pd->cd->mask_size;
-        cacheDigestDestroy(pd->cd);
-        pd->cd = NULL;
+        delete pd->cd;
+        pd->cd = nullptr;
     }
 
     if (!pd->cd) {
         debugs(72, 2, "creating " << host << " digest; size: " << cblock.mask_size << " (" <<
                std::showpos <<  (int) (cblock.mask_size - freed_size) << ") bytes");
-        pd->cd = cacheDigestCreate(cblock.capacity, cblock.bits_per_entry);
+        pd->cd = new CacheDigest(cblock.capacity, cblock.bits_per_entry);
 
         if (cblock.mask_size >= freed_size)
             statCounter.cd.memory += (cblock.mask_size - freed_size);
@@ -1039,12 +1020,11 @@ static int
 peerDigestUseful(const PeerDigest * pd)
 {
     /* TODO: we should calculate the prob of a false hit instead of bit util */
-    const int bit_util = cacheDigestBitUtil(pd->cd);
+    const auto bit_util = pd->cd->usedMaskPercent();
 
-    if (bit_util > 65) {
+    if (bit_util > 65.0) {
         debugs(72, DBG_CRITICAL, "Warning: " << pd->host <<
-               " peer digest has too many bits on (" << bit_util << "%%).");
-
+               " peer digest has too many bits on (" << bit_util << "%).");
         return 0;
     }
 

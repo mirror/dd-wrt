@@ -1,5 +1,5 @@
 ##
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -32,6 +32,7 @@ STUB_SOURCE= tests/STUB.h \
 	tests/stub_helper.cc \
 	tests/stub_HelperChildConfig.cc \
 	tests/stub_http.cc \
+	tests/stub_HttpControlMsg.cc \
 	tests/stub_HttpReply.cc \
 	tests/stub_HttpRequest.cc \
 	tests/stub_icp.cc \
@@ -47,6 +48,7 @@ STUB_SOURCE= tests/STUB.h \
 	tests/stub_libeui.cc \
 	tests/stub_libformat.cc \
 	tests/stub_libicmp.cc \
+	tests/stub_liblog.cc \
 	tests/stub_libmem.cc \
 	tests/stub_libmgr.cc \
 	tests/stub_libsecurity.cc \

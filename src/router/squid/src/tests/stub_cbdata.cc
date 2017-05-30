@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,9 +13,14 @@
 #include "tests/STUB.h"
 
 void cbdataRegisterWithCacheManager(void) STUB
-
-void *cbdataInternalAlloc(cbdata_type type, const char *, int) STUB_RETVAL(NULL)
-void *cbdataInternalFree(void *p, const char *, int) STUB_RETVAL(NULL)
+void *cbdataInternalAlloc(cbdata_type type, const char *, int sz) {
+//STUB_RETVAL(NULL)
+    return xcalloc(1, sz);
+}
+void *cbdataInternalFree(void *p, const char *, int) {
+    xfree(p);
+    return nullptr;
+}
 #if USE_CBDATA_DEBUG
 void cbdataInternalLockDbg(const void *p, const char *, int) STUB
 void cbdataInternalUnlockDbg(const void *p, const char *, int) STUB

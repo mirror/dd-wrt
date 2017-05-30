@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -25,7 +25,7 @@
 #if HAVE_DISKIO_MODULE_IPCIO
 #include "DiskIO/IpcIo/IpcIoDiskIOModule.h"
 #endif
-#if HAVE_DISKIO_MODULE_DISKTHREADS
+#if HAVE_DISKIO_MODULE_MMAPPED
 #include "DiskIO/Mmapped/MmappedDiskIOModule.h"
 #endif
 

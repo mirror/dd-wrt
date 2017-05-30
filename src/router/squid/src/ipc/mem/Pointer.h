@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -165,7 +165,7 @@ Object<Class>::Object(const char *const id): theSegment(id)
     theSegment.open();
     Must(theSegment.mem());
     theObject = reinterpret_cast<Class*>(theSegment.mem());
-    Must(static_cast<off_t>(theObject->sharedMemorySize()) == theSegment.size());
+    Must(static_cast<off_t>(theObject->sharedMemorySize()) <= theSegment.size());
 }
 
 template <class Class>

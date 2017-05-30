@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -57,6 +57,11 @@ public:
 
     /* Reconfiguration events */
 
+    /// Called after receiving a reconfigure request and before parsing squid.conf.
+    /// Meant for modules that need to prepare for their configuration being changed
+    /// [outside their control]. The changes end with the syncConfig() event.
+    virtual void startReconfigure() {}
+
     /// Called after parsing squid.conf during reconfiguration.
     /// Meant for adjusting the module state based on configuration changes.
     virtual void syncConfig() {}
@@ -77,23 +82,32 @@ public:
     /// Called after stopping the main loop and before releasing memory.
     /// Meant for quick/basic cleanup that does not require any other modules.
     virtual ~RegisteredRunner() {}
-    /// exists to simplify caller interface; override the destructor instead
-    void finishShutdown() { delete this; }
+
+    /// Meant for cleanup of services needed by the already destroyed objects.
+    virtual void finishShutdown() {}
 
     /// a pointer to one of the above notification methods
     typedef void (RegisteredRunner::*Method)();
 
 };
 
-/// registers a given runner with the given registry and returns registry count
-int RegisterRunner(RegisteredRunner *rr);
-
-/// de-registers a given runner with the given registry and returns registry count
-int DeregisterRunner(RegisteredRunner *rr);
+/// registers a given runner with the given registry and returns true on success
+bool RegisterRunner(RegisteredRunner *rr);
 
 /// Calls a given method of all runners.
 /// All runners are destroyed after the finishShutdown() call.
 void RunRegistered(const RegisteredRunner::Method &m);
+
+/// A RegisteredRunner with lifetime determined by forces outside the Registry.
+class IndependentRunner: public RegisteredRunner
+{
+public:
+    virtual ~IndependentRunner() { unregisterRunner(); }
+
+protected:
+    void registerRunner();
+    void unregisterRunner(); ///< unregisters self; safe to call multiple times
+};
 
 /// convenience macro to describe/debug the caller and the method being called
 #define RunRegisteredHere(m) \

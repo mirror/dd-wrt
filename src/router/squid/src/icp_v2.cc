@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,7 +39,6 @@
 #include "StatCounters.h"
 #include "Store.h"
 #include "store_key_md5.h"
-#include "SwapDir.h"
 #include "tools.h"
 #include "wordlist.h"
 
@@ -601,7 +600,8 @@ icpHandleUdp(int sock, void *)
             break;
 
         if (len < 0) {
-            if (ignoreErrno(errno))
+            int xerrno = errno;
+            if (ignoreErrno(xerrno))
                 break;
 
 #if _SQUID_LINUX_
@@ -609,10 +609,9 @@ icpHandleUdp(int sock, void *)
              * return ECONNREFUSED when sendto() fails and generates an ICMP
              * port unreachable message. */
             /* or maybe an EHOSTUNREACH "No route to host" message */
-            if (errno != ECONNREFUSED && errno != EHOSTUNREACH)
+            if (xerrno != ECONNREFUSED && xerrno != EHOSTUNREACH)
 #endif
-
-                debugs(50, DBG_IMPORTANT, "icpHandleUdp: FD " << sock << " recvfrom: " << xstrerror());
+                debugs(50, DBG_IMPORTANT, "icpHandleUdp: FD " << sock << " recvfrom: " << xstrerr(xerrno));
 
             break;
         }

@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -25,6 +25,7 @@ libbase_la_SOURCES = \
 	CharacterSet.h \
 	CharacterSet.cc \
 	EnumIterator.h \
+	HardFun.h \
 	InstanceId.h \
 	Lock.h \
 	LookupTable.h \
@@ -38,4 +39,4 @@ libbase_la_SOURCES = \
 	Subscription.h \
 	TextException.cc \
 	TextException.h \
-	TidyPointer.h
+	YesNoNone.h

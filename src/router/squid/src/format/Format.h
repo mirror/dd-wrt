@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,7 @@
 
 #include "base/RefCount.h"
 #include "ConfigParser.h"
+#include "sbuf/SBuf.h"
 
 /*
  * Squid configuration allows users to define custom formats in
@@ -31,6 +32,8 @@ class StoreEntry;
 
 namespace Format
 {
+
+extern const SBuf Dash;
 
 class Token;
 

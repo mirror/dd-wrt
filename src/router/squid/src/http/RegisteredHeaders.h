@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,9 +9,10 @@
 #ifndef SQUID_HTTP_REGISTEREDHEADERS_H
 #define SQUID_HTTP_REGISTEREDHEADERS_H
 
-#include <vector>
 #include "base/LookupTable.h"
+
 #include <iosfwd>
+#include <vector>
 
 namespace Http
 {

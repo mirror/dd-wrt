@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -104,6 +104,8 @@ private:
     Comm::Flag oldAccept(Comm::ConnectionPointer &details);
     void setListen();
     void handleClosure(const CommCloseCbParams &io);
+    /// whether we are listening on one of the squid.conf *ports
+    bool intendedForUserConnections() const { return bool(listenPort_); }
 };
 
 } // namespace Comm

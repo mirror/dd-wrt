@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -21,8 +21,8 @@
 #include "ip/Address.h"
 #include "md5.h"
 #include "Parsing.h"
+#include "SquidConfig.h"
 #include "Store.h"
-#include "SwapDir.h"
 
 #if HAVE_NETDB_H
 #include <netdb.h>
@@ -979,8 +979,10 @@ wccp2ConnectionOpen(void)
 #if defined(IP_MTU_DISCOVER) && defined(IP_PMTUDISC_DONT)
     {
         int i = IP_PMTUDISC_DONT;
-        if (setsockopt(theWccp2Connection, SOL_IP, IP_MTU_DISCOVER, &i, sizeof i) < 0)
-            debugs(80, 2, "WARNING: Path MTU discovery could not be disabled on FD " << theWccp2Connection << ": " << xstrerror());
+        if (setsockopt(theWccp2Connection, SOL_IP, IP_MTU_DISCOVER, &i, sizeof i) < 0) {
+            int xerrno = errno;
+            debugs(80, 2, "WARNING: Path MTU discovery could not be disabled on FD " << theWccp2Connection << ": " << xstrerr(xerrno));
+        }
     }
 
 #endif
@@ -1584,9 +1586,10 @@ wccp2HereIam(void *)
                                 &service_list_ptr->wccp_packet,
                                 service_list_ptr->wccp_packet_size);
             } else {
-                errno = 0;
-                if (send(theWccp2Connection, &service_list_ptr->wccp_packet, service_list_ptr->wccp_packet_size, 0) < static_cast<int>(service_list_ptr->wccp_packet_size))
-                    debugs(80, 2, "ERROR: failed to send WCCPv2 HERE_I_AM packet to " << router << " : " << xstrerror());
+                if (send(theWccp2Connection, &service_list_ptr->wccp_packet, service_list_ptr->wccp_packet_size, 0) < static_cast<int>(service_list_ptr->wccp_packet_size)) {
+                    int xerrno = errno;
+                    debugs(80, 2, "ERROR: failed to send WCCPv2 HERE_I_AM packet to " << router << " : " << xstrerr(xerrno));
+                }
             }
         }
 
@@ -1968,9 +1971,10 @@ wccp2AssignBuckets(void *)
                                     &wccp_packet,
                                     offset);
                 } else {
-                    errno = 0;
-                    if (send(theWccp2Connection, &wccp_packet, offset, 0) < static_cast<int>(offset))
-                        debugs(80, 2, "ERROR: failed to send WCCPv2 HERE_I_AM packet to " << tmp_rtr << " : " << xstrerror());
+                    if (send(theWccp2Connection, &wccp_packet, offset, 0) < static_cast<int>(offset)) {
+                        int xerrno = errno;
+                        debugs(80, 2, "ERROR: failed to send WCCPv2 HERE_I_AM packet to " << tmp_rtr << " : " << xstrerr(xerrno));
+                    }
                 }
             }
             safe_free(weight);

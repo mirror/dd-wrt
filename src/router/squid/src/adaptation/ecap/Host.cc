@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -137,7 +137,7 @@ SquidLogLevel(libecap::LogVerbosity lv)
         return DBG_DATA; // is it a good idea to ignore other flags?
 
     if (lv.application())
-        return DBG_IMPORTANT; // is it a good idea to ignore other flags?
+        return lv.normal() ? DBG_IMPORTANT : 2;
 
     return 2 + 2*lv.debugging() + 3*lv.operation() + 2*lv.xaction();
 }
@@ -147,18 +147,16 @@ Adaptation::Ecap::Host::openDebug(libecap::LogVerbosity lv)
 {
     const int squidLevel = SquidLogLevel(lv);
     const int squidSection = 93; // XXX: this should be a global constant
-    // XXX: Debug.h should provide this to us
-    if ((Debug::level = squidLevel) <= Debug::Levels[squidSection])
-        return &Debug::getDebugOut();
-    else
-        return NULL;
+    return Debug::Enabled(squidSection, squidLevel) ?
+           &Debug::Start(squidSection, squidLevel) :
+           nullptr;
 }
 
 void
 Adaptation::Ecap::Host::closeDebug(std::ostream *debug)
 {
     if (debug)
-        Debug::finishDebug();
+        Debug::Finish();
 }
 
 Adaptation::Ecap::Host::MessagePtr

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -31,6 +31,7 @@
 #include "gopher.h"
 #include "hier_code.h"
 #include "http.h"
+#include "http/Stream.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
 #include "icmp/net_db.h"
@@ -44,8 +45,10 @@
 #include "pconn.h"
 #include "PeerPoolMgr.h"
 #include "PeerSelectState.h"
+#include "security/BlindPeerConnector.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
+#include "ssl/PeekingPeerConnector.h"
 #include "Store.h"
 #include "StoreClient.h"
 #include "urn.h"
@@ -55,7 +58,6 @@
 #include "ssl/Config.h"
 #include "ssl/ErrorDetail.h"
 #include "ssl/helper.h"
-#include "ssl/PeerConnector.h"
 #include "ssl/ServerBump.h"
 #include "ssl/support.h"
 #else
@@ -76,8 +78,7 @@ static int FwdReplyCodes[MAX_FWD_STATS_IDX + 1][Http::scInvalidHeader + 1];
 static PconnPool *fwdPconnPool = new PconnPool("server-peers", NULL);
 CBDATA_CLASS_INIT(FwdState);
 
-#if USE_OPENSSL
-class FwdStatePeerAnswerDialer: public CallDialer, public Ssl::PeerConnector::CbDialer
+class FwdStatePeerAnswerDialer: public CallDialer, public Security::PeerConnector::CbDialer
 {
 public:
     typedef void (FwdState::*Method)(Security::EncryptorAnswer &);
@@ -92,7 +93,7 @@ public:
         os << '(' << fwd_.get() << ", " << answer_ << ')';
     }
 
-    /* Ssl::PeerConnector::CbDialer API */
+    /* Security::PeerConnector::CbDialer API */
     virtual Security::EncryptorAnswer &answer() { return answer_; }
 
 private:
@@ -100,7 +101,6 @@ private:
     CbcPointer<FwdState> fwd_;
     Security::EncryptorAnswer answer_;
 };
-#endif
 
 void
 FwdState::abort(void* d)
@@ -121,7 +121,8 @@ void
 FwdState::closeServerConnection(const char *reason)
 {
     debugs(17, 3, "because " << reason << "; " << serverConn);
-    comm_remove_close_handler(serverConn->fd, fwdServerClosedWrapper, this);
+    comm_remove_close_handler(serverConn->fd, closeHandler);
+    closeHandler = NULL;
     fwdPconnPool->noteUses(fd_table[serverConn->fd].pconn.uses);
     serverConn->close();
 }
@@ -161,7 +162,10 @@ void FwdState::start(Pointer aSelf)
     // We hope that either the store entry aborts or peer is selected.
     // Otherwise we are going to leak our object.
 
-    entry->registerAbort(FwdState::abort, this);
+    // Ftp::Relay needs to preserve control connection on data aborts
+    // so it registers its own abort handler that calls ours when needed.
+    if (!request->flags.ftpNative)
+        entry->registerAbort(FwdState::abort, this);
 
 #if STRICT_ORIGINAL_DST
     // Bug 3243: CVE 2009-0801
@@ -400,7 +404,7 @@ FwdState::startConnectionOrFail()
         // Done here before anything else so the errors get logged for
         // this server link regardless of what happens when connecting to it.
         // IF sucessfuly connected this top destination will become the serverConnection().
-        request->hier.note(serverDestinations[0], request->url.host());
+        syncHierNote(serverDestinations[0], request->url.host());
         request->clearError();
 
         connectStart();
@@ -451,7 +455,8 @@ FwdState::unregister(Comm::ConnectionPointer &conn)
     debugs(17, 3, HERE << entry->url() );
     assert(serverConnection() == conn);
     assert(Comm::IsConnOpen(conn));
-    comm_remove_close_handler(conn->fd, fwdServerClosedWrapper, this);
+    comm_remove_close_handler(conn->fd, closeHandler);
+    closeHandler = NULL;
     serverConn = NULL;
 }
 
@@ -582,14 +587,7 @@ FwdState::checkRetry()
     return true;
 }
 
-/*
- * FwdState::checkRetriable
- *
- * Return TRUE if this is the kind of request that can be retried
- * after a failure.  If the request is not retriable then we don't
- * want to risk sending it on a persistent connection.  Instead we'll
- * force it to go on a new HTTP connection.
- */
+/// Whether we may try sending this request again after a failure.
 bool
 FwdState::checkRetriable()
 {
@@ -680,20 +678,14 @@ FwdState::connectDone(const Comm::ConnectionPointer &conn, Comm::Flag status, in
     }
 
     serverConn = conn;
-    flags.connected_okay = true;
-
     debugs(17, 3, HERE << serverConnection() << ": '" << entry->url() << "'" );
 
-    comm_add_close_handler(serverConnection()->fd, fwdServerClosedWrapper, this);
+    closeHandler = comm_add_close_handler(serverConnection()->fd, fwdServerClosedWrapper, this);
 
-    if (serverConnection()->getPeer())
-        peerConnectSucceded(serverConnection()->getPeer());
-
-#if USE_OPENSSL
     if (!request->flags.pinned) {
         const CachePeer *p = serverConnection()->getPeer();
         const bool peerWantsTls = p && p->secure.encryptTransport;
-        // userWillSslToPeerForUs assumes CONNECT == HTTPS
+        // userWillTlsToPeerForUs assumes CONNECT == HTTPS
         const bool userWillTlsToPeerForUs = p && p->options.originserver &&
                                             request->method == Http::METHOD_CONNECT;
         const bool needTlsToPeer = peerWantsTls && !userWillTlsToPeerForUs;
@@ -705,13 +697,17 @@ FwdState::connectDone(const Comm::ConnectionPointer &conn, Comm::Flag status, in
                                                     FwdStatePeerAnswerDialer(&FwdState::connectedToPeer, this));
             // Use positive timeout when less than one second is left.
             const time_t sslNegotiationTimeout = max(static_cast<time_t>(1), timeLeft());
-            Ssl::PeekingPeerConnector *connector =
-                new Ssl::PeekingPeerConnector(requestPointer, serverConnection(), clientConn, callback, sslNegotiationTimeout);
+            Security::PeerConnector *connector = nullptr;
+#if USE_OPENSSL
+            if (request->flags.sslPeek)
+                connector = new Ssl::PeekingPeerConnector(requestPointer, serverConnection(), clientConn, callback, al, sslNegotiationTimeout);
+            else
+#endif
+                connector = new Security::BlindPeerConnector(requestPointer, serverConnection(), callback, al, sslNegotiationTimeout);
             AsyncJob::Start(connector); // will call our callback
             return;
         }
     }
-#endif
 
     // if not encrypting just run the post-connect actions
     Security::EncryptorAnswer nil;
@@ -724,7 +720,19 @@ FwdState::connectedToPeer(Security::EncryptorAnswer &answer)
     if (ErrorState *error = answer.error.get()) {
         fail(error);
         answer.error.clear(); // preserve error for errorSendComplete()
-        self = NULL;
+        if (CachePeer *p = serverConnection()->getPeer())
+            peerConnectFailed(p);
+        serverConnection()->close();
+        return;
+    }
+
+    if (answer.tunneled) {
+        // TODO: When ConnStateData establishes tunnels, its state changes
+        // [in ways that may affect logging?]. Consider informing
+        // ConnStateData about our tunnel or otherwise unifying tunnel
+        // establishment [side effects].
+        unregister(serverConn); // async call owns it now
+        complete(); // destroys us
         return;
     }
 
@@ -732,6 +740,10 @@ FwdState::connectedToPeer(Security::EncryptorAnswer &answer)
     CallJobHere1(17, 4, request->clientConnectionManager, ConnStateData,
                  ConnStateData::notePeerConnection, serverConnection());
 
+    if (serverConnection()->getPeer())
+        peerConnectSucceded(serverConnection()->getPeer());
+
+    flags.connected_okay = true;
     dispatch();
 }
 
@@ -780,6 +792,30 @@ FwdState::timeLeft() const
         return (time_t)ctimeout;
 }
 
+/// called when serverConn is set to an _open_ to-peer connection
+void
+FwdState::syncWithServerConn(const char *host)
+{
+    if (Ip::Qos::TheConfig.isAclTosActive())
+        Ip::Qos::setSockTos(serverConn, GetTosToServer(request));
+
+#if SO_MARK
+    if (Ip::Qos::TheConfig.isAclNfmarkActive())
+        Ip::Qos::setSockNfmark(serverConn, GetNfmarkToServer(request));
+#endif
+
+    syncHierNote(serverConn, host);
+}
+
+void
+FwdState::syncHierNote(const Comm::ConnectionPointer &server, const char *host)
+{
+    if (request)
+        request->hier.note(server, host);
+    if (al)
+        al->hier.note(server, host);
+}
+
 /**
  * Called after forwarding path selection (via peer select) has taken place
  * and whenever forwarding needs to attempt a new connection (routing failover).
@@ -811,38 +847,25 @@ FwdState::connectStart()
         ConnStateData *pinned_connection = request->pinnedConnection();
         debugs(17,7, "pinned peer connection: " << pinned_connection);
         // pinned_connection may become nil after a pconn race
-        if (pinned_connection)
-            serverConn = pinned_connection->borrowPinnedConnection(request, serverDestinations[0]->getPeer());
-        else
-            serverConn = NULL;
+        serverConn = pinned_connection ? pinned_connection->borrowPinnedConnection(request, serverDestinations[0]->getPeer()) : nullptr;
         if (Comm::IsConnOpen(serverConn)) {
-            pinned_connection->stopPinnedConnectionMonitoring();
             flags.connected_okay = true;
             ++n_tries;
             request->flags.pinned = true;
-            request->hier.note(serverConn, pinned_connection->pinning.host);
+
             if (pinned_connection->pinnedAuth())
                 request->flags.auth = true;
-            comm_add_close_handler(serverConn->fd, fwdServerClosedWrapper, this);
 
-            /* Update server side TOS and Netfilter mark on the connection. */
-            if (Ip::Qos::TheConfig.isAclTosActive()) {
-                debugs(17, 3, HERE << "setting tos for pinned connection to " << (int)serverConn->tos );
-                serverConn->tos = GetTosToServer(request);
-                Ip::Qos::setSockTos(serverConn, serverConn->tos);
-            }
-#if SO_MARK
-            if (Ip::Qos::TheConfig.isAclNfmarkActive()) {
-                serverConn->nfmark = GetNfmarkToServer(request);
-                Ip::Qos::setSockNfmark(serverConn, serverConn->nfmark);
-            }
-#endif
+            closeHandler = comm_add_close_handler(serverConn->fd,  fwdServerClosedWrapper, this);
+
+            syncWithServerConn(pinned_connection->pinning.host);
 
             // the server may close the pinned connection before this request
             pconnRace = racePossible;
             dispatch();
             return;
         }
+
         // Pinned connection failure.
         debugs(17,2,HERE << "Pinned connection failed: " << pinned_connection);
         ErrorState *anErr = new ErrorState(ERR_ZERO_SIZE_OBJECT, Http::scServiceUnavailable, request);
@@ -873,19 +896,9 @@ FwdState::connectStart()
         debugs(17, 3, HERE << "reusing pconn " << serverConnection());
         ++n_tries;
 
-        comm_add_close_handler(serverConnection()->fd, fwdServerClosedWrapper, this);
+        closeHandler = comm_add_close_handler(serverConnection()->fd,  fwdServerClosedWrapper, this);
 
-        /* Update server side TOS and Netfilter mark on the connection. */
-        if (Ip::Qos::TheConfig.isAclTosActive()) {
-            const tos_t tos = GetTosToServer(request);
-            Ip::Qos::setSockTos(temp, tos);
-        }
-#if SO_MARK
-        if (Ip::Qos::TheConfig.isAclNfmarkActive()) {
-            const nfmark_t nfmark = GetNfmarkToServer(request);
-            Ip::Qos::setSockNfmark(temp, nfmark);
-        }
-#endif
+        syncWithServerConn(request->url.host());
 
         dispatch();
         return;
@@ -971,19 +984,19 @@ FwdState::dispatch()
         ++ serverConnection()->getPeer()->stats.fetches;
         request->peer_login = serverConnection()->getPeer()->login;
         request->peer_domain = serverConnection()->getPeer()->domain;
+        request->flags.auth_no_keytab = serverConnection()->getPeer()->options.auth_no_keytab;
         httpStart(this);
     } else {
         assert(!request->flags.sslPeek);
         request->peer_login = NULL;
         request->peer_domain = NULL;
+        request->flags.auth_no_keytab = 0;
 
         switch (request->url.getScheme()) {
-#if USE_OPENSSL
 
         case AnyP::PROTO_HTTPS:
             httpStart(this);
             break;
-#endif
 
         case AnyP::PROTO_HTTP:
             httpStart(this);
@@ -1162,9 +1175,14 @@ FwdState::pconnPush(Comm::ConnectionPointer &conn, const char *domain)
 Comm::ConnectionPointer
 FwdState::pconnPop(const Comm::ConnectionPointer &dest, const char *domain)
 {
+    bool retriable = checkRetriable();
+    if (!retriable && Config.accessList.serverPconnForNonretriable) {
+        ACLFilledChecklist ch(Config.accessList.serverPconnForNonretriable, request, NULL);
+        retriable = (ch.fastCheck() == ACCESS_ALLOWED);
+    }
     // always call shared pool first because we need to close an idle
     // connection there if we have to use a standby connection.
-    Comm::ConnectionPointer conn = fwdPconnPool->pop(dest, domain, checkRetriable());
+    Comm::ConnectionPointer conn = fwdPconnPool->pop(dest, domain, retriable);
     if (!Comm::IsConnOpen(conn)) {
         // either there was no pconn to pop or this is not a retriable xaction
         if (CachePeer *peer = dest->getPeer()) {

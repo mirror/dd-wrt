@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,14 +11,15 @@
 #include "squid.h"
 
 #if USE_UNLINKD
-#include "disk.h"
 #include "fd.h"
 #include "fde.h"
+#include "fs_io.h"
 #include "globals.h"
+#include "SquidConfig.h"
 #include "SquidIpc.h"
 #include "SquidTime.h"
 #include "StatCounters.h"
-#include "SwapDir.h"
+#include "store/Disk.h"
 #include "tools.h"
 #include "xusleep.h"
 
@@ -106,7 +107,8 @@ unlinkdUnlink(const char *path)
     bytes_written = write(unlinkd_wfd, buf, l);
 
     if (bytes_written < 0) {
-        debugs(2, DBG_IMPORTANT, "unlinkdUnlink: write FD " << unlinkd_wfd << " failed: " << xstrerror());
+        int xerrno = errno;
+        debugs(2, DBG_IMPORTANT, "unlinkdUnlink: write FD " << unlinkd_wfd << " failed: " << xstrerr(xerrno));
         safeunlink(path, 0);
         return;
     } else if (bytes_written != l) {

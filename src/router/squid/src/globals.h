@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,13 +9,12 @@
 #ifndef SQUID_GLOBALS_H
 #define SQUID_GLOBALS_H
 
-#include "acl/AclDenyInfoList.h"
 #include "CacheDigest.h"
 #include "defines.h"
 #include "hash.h"
 #include "IoStats.h"
 #include "rfc2181.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 
 extern char *ConfigFile;    /* NULL */
 extern char *IcpOpcodeStr[];
@@ -48,6 +47,7 @@ extern int config_lineno;   /* 0 */
 extern int opt_reuseaddr;   /* 1 */
 extern int neighbors_do_private_keys;   /* 1 */
 extern int opt_catch_signals;   /* 1 */
+extern int opt_foreground;    /* 0 */
 extern int opt_foreground_rebuild;  /* 0 */
 extern char *opt_forwarded_for; /* NULL */
 extern int opt_reload_hit_only; /* 0 */
@@ -60,8 +60,6 @@ extern int DnsSocketA;      /* -1 */
 extern int DnsSocketB;      /* -1 */
 extern int n_disk_objects;  /* 0 */
 extern IoStats IOStats;
-
-extern AclDenyInfoList *DenyInfoList;   /* NULL */
 
 extern struct timeval squid_start;
 extern int starting_up; /* 1 */

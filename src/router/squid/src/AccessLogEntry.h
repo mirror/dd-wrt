@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -21,6 +21,7 @@
 #include "LogTags.h"
 #include "MessageSizes.h"
 #include "Notes.h"
+#include "sbuf/SBuf.h"
 #if ICAP_CLIENT
 #include "adaptation/icap/Elements.h"
 #endif
@@ -42,7 +43,6 @@ public:
     AccessLogEntry() :
         url(nullptr),
         lastAclName(nullptr),
-        lastAclData(nullptr),
         reply(nullptr),
         request(nullptr),
         adapted_request(nullptr)
@@ -57,7 +57,7 @@ public:
     /// Fetch the transaction method string (ICP opcode, HTCP opcode or HTTP method)
     SBuf getLogMethod() const;
 
-    const char *url;
+    SBuf url;
 
     /// TCP/IP level details about the client connection
     Comm::ConnectionPointer tcpClient;
@@ -207,7 +207,7 @@ public:
 #endif
 
     const char *lastAclName; ///< string for external_acl_type %ACL format code
-    const char *lastAclData; ///< string for external_acl_type %DATA format code
+    SBuf lastAclData; ///< string for external_acl_type %DATA format code
 
     HierarchyLogEntry hier;
     HttpReply *reply;

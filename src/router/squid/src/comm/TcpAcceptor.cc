@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,6 +9,7 @@
 /* DEBUG: section 05    Listener Socket Handler */
 
 #include "squid.h"
+#include "acl/FilledChecklist.h"
 #include "anyp/PortCfg.h"
 #include "base/TextException.h"
 #include "client_db.h"
@@ -24,6 +25,7 @@
 #include "globals.h"
 #include "ip/Intercept.h"
 #include "ip/QosConfig.h"
+#include "log/access_log.h"
 #include "MasterXaction.h"
 #include "profiler/Profiler.h"
 #include "SquidConfig.h"
@@ -163,14 +165,18 @@ Comm::TcpAcceptor::setListen()
         bzero(&afa, sizeof(afa));
         debugs(5, DBG_IMPORTANT, "Installing accept filter '" << Config.accept_filter << "' on " << conn);
         xstrncpy(afa.af_name, Config.accept_filter, sizeof(afa.af_name));
-        if (setsockopt(conn->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0)
-            debugs(5, DBG_CRITICAL, "WARNING: SO_ACCEPTFILTER '" << Config.accept_filter << "': '" << xstrerror());
+        if (setsockopt(conn->fd, SOL_SOCKET, SO_ACCEPTFILTER, &afa, sizeof(afa)) < 0) {
+            int xerrno = errno;
+            debugs(5, DBG_CRITICAL, "WARNING: SO_ACCEPTFILTER '" << Config.accept_filter << "': '" << xstrerr(xerrno));
+        }
 #elif defined(TCP_DEFER_ACCEPT)
         int seconds = 30;
         if (strncmp(Config.accept_filter, "data=", 5) == 0)
             seconds = atoi(Config.accept_filter + 5);
-        if (setsockopt(conn->fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &seconds, sizeof(seconds)) < 0)
-            debugs(5, DBG_CRITICAL, "WARNING: TCP_DEFER_ACCEPT '" << Config.accept_filter << "': '" << xstrerror());
+        if (setsockopt(conn->fd, IPPROTO_TCP, TCP_DEFER_ACCEPT, &seconds, sizeof(seconds)) < 0) {
+            int xerrno = errno;
+            debugs(5, DBG_CRITICAL, "WARNING: TCP_DEFER_ACCEPT '" << Config.accept_filter << "': '" << xstrerr(xerrno));
+        }
 #else
         debugs(5, DBG_CRITICAL, "WARNING: accept_filter not supported on your OS");
 #endif
@@ -181,13 +187,11 @@ Comm::TcpAcceptor::setListen()
     // Set TOS if needed.
     // To correctly implement TOS values on listening sockets, probably requires
     // more work to inherit TOS values to created connection objects.
-    if (conn->tos &&
-            Ip::Qos::setSockTos(conn->fd, conn->tos, conn->remote.isIPv4() ? AF_INET : AF_INET6) < 0)
-        conn->tos = 0;
+    if (conn->tos)
+        Ip::Qos::setSockTos(conn, conn->tos)
 #if SO_MARK
-    if (conn->nfmark &&
-            Ip::Qos::setSockNfmark(conn->fd, conn->nfmark) < 0)
-        conn->nfmark = 0;
+        if (conn->nfmark)
+            Ip::Qos::setSockNfmark(conn, conn->nfmark);
 #endif
 #endif
 
@@ -254,6 +258,18 @@ Comm::TcpAcceptor::okToAccept()
     return false;
 }
 
+static void
+logAcceptError(const Comm::ConnectionPointer &conn)
+{
+    AccessLogEntry::Pointer al = new AccessLogEntry;
+    al->tcpClient = conn;
+    al->url = "error:accept-client-connection";
+    ACLFilledChecklist ch(nullptr, nullptr, nullptr);
+    ch.src_addr = conn->remote;
+    ch.my_addr = conn->local;
+    accessLogLog(al, &ch);
+}
+
 void
 Comm::TcpAcceptor::acceptOne()
 {
@@ -279,6 +295,8 @@ Comm::TcpAcceptor::acceptOne()
 
         // A non-recoverable error; notify the caller */
         debugs(5, 5, HERE << "non-recoverable error:" << status() << " handler Subscription: " << theCallSub);
+        if (intendedForUserConnections())
+            logAcceptError(newConnDetails);
         notify(flag, newConnDetails);
         mustStop("Listener socket closed");
         return;
@@ -346,14 +364,14 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
 
         PROF_stop(comm_accept);
 
-        if (ignoreErrno(errno)) {
-            debugs(50, 5, HERE << status() << ": " << xstrerror());
+        if (ignoreErrno(errcode)) {
+            debugs(50, 5, status() << ": " << xstrerr(errcode));
             return Comm::NOMESSAGE;
         } else if (ENFILE == errno || EMFILE == errno) {
-            debugs(50, 3, HERE << status() << ": " << xstrerror());
+            debugs(50, 3, status() << ": " << xstrerr(errcode));
             return Comm::COMM_ERROR;
         } else {
-            debugs(50, DBG_IMPORTANT, HERE << status() << ": " << xstrerror());
+            debugs(50, DBG_IMPORTANT, MYNAME << status() << ": " << xstrerr(errcode));
             return Comm::COMM_ERROR;
         }
     }
@@ -375,7 +393,8 @@ Comm::TcpAcceptor::oldAccept(Comm::ConnectionPointer &details)
     Ip::Address::InitAddr(gai);
     details->local.setEmpty();
     if (getsockname(sock, gai->ai_addr, &gai->ai_addrlen) != 0) {
-        debugs(50, DBG_IMPORTANT, "ERROR: getsockname() failed to locate local-IP on " << details << ": " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "ERROR: getsockname() failed to locate local-IP on " << details << ": " << xstrerr(xerrno));
         Ip::Address::FreeAddr(gai);
         PROF_stop(comm_accept);
         return Comm::COMM_ERROR;

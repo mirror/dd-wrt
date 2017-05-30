@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -170,6 +170,8 @@ void
 Adaptation::Ecap::ServiceRep::finalize()
 {
     Adaptation::Service::finalize();
+    if (!cfg().connectionEncryption.configured())
+        writeableCfg().connectionEncryption.defaultTo(true);
     theService = FindAdapterService(cfg().uri);
     if (theService) {
         try {
@@ -234,7 +236,7 @@ bool Adaptation::Ecap::ServiceRep::probed() const
 
 bool Adaptation::Ecap::ServiceRep::up() const
 {
-    return theService;
+    return bool(theService);
 }
 
 bool Adaptation::Ecap::ServiceRep::wantsUrl(const SBuf &urlPath) const

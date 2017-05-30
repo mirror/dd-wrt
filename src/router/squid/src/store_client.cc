@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -41,7 +41,6 @@ static StoreIOState::STRCB storeClientReadHeader;
 static void storeClientCopy2(StoreEntry * e, store_client * sc);
 static EVH storeClientCopyEvent;
 static bool CheckQuickAbortIsReasonable(StoreEntry * entry);
-static void CheckQuickAbort(StoreEntry * entry);
 
 CBDATA_CLASS_INIT(store_client);
 
@@ -525,28 +524,24 @@ storeClientReadBody(void *data, const char *buf, ssize_t len, StoreIOState::Poin
 bool
 store_client::unpackHeader(char const *buf, ssize_t len)
 {
+    int xerrno = errno; // FIXME: where does errno come from?
     debugs(90, 3, "store_client::unpackHeader: len " << len << "");
 
     if (len < 0) {
-        debugs(90, 3, "WARNING: unpack error: " << xstrerror());
+        debugs(90, 3, "WARNING: unpack error: " << xstrerr(xerrno));
         return false;
     }
 
     int swap_hdr_sz = 0;
-    StoreMetaUnpacker aBuilder(buf, len, &swap_hdr_sz);
-
-    if (!aBuilder.isBufferSane()) {
-        /* oops, bad disk file? */
-        debugs(90, DBG_IMPORTANT, "WARNING: swapfile header inconsistent with available data");
+    tlv *tlv_list = nullptr;
+    try {
+        StoreMetaUnpacker aBuilder(buf, len, &swap_hdr_sz);
+        tlv_list = aBuilder.createStoreMeta();
+    } catch (const std::exception &e) {
+        debugs(90, DBG_IMPORTANT, "WARNING: failed to unpack metadata because " << e.what());
         return false;
     }
-
-    tlv *tlv_list = aBuilder.createStoreMeta ();
-
-    if (tlv_list == NULL) {
-        debugs(90, DBG_IMPORTANT, "WARNING: failed to unpack meta data");
-        return false;
-    }
+    assert(tlv_list);
 
     /*
      * Check the meta data and make sure we got the right object.
@@ -696,11 +691,11 @@ storeUnregister(store_client * sc, StoreEntry * e, void *data)
 
     assert(e->locked());
     // An entry locked by others may be unlocked (and destructed) by others, so
-    // we must lock again to safely dereference e after CheckQuickAbort().
+    // we must lock again to safely dereference e after CheckQuickAbortIsReasonable().
     e->lock("storeUnregister");
 
-    if (mem->nclients == 0)
-        CheckQuickAbort(e);
+    if (CheckQuickAbortIsReasonable(e))
+        e->abort();
     else
         mem->kickReads();
 
@@ -759,9 +754,32 @@ storePendingNClients(const StoreEntry * e)
 static bool
 CheckQuickAbortIsReasonable(StoreEntry * entry)
 {
+    assert(entry);
+    debugs(90, 3, "entry=" << *entry);
+
+    if (storePendingNClients(entry) > 0) {
+        debugs(90, 3, "quick-abort? NO storePendingNClients() > 0");
+        return false;
+    }
+
+    if (!shutting_down && Store::Root().transientReaders(*entry)) {
+        debugs(90, 3, "quick-abort? NO still have one or more transient readers");
+        return false;
+    }
+
+    if (entry->store_status != STORE_PENDING) {
+        debugs(90, 3, "quick-abort? NO store_status != STORE_PENDING");
+        return false;
+    }
+
+    if (EBIT_TEST(entry->flags, ENTRY_SPECIAL)) {
+        debugs(90, 3, "quick-abort? NO ENTRY_SPECIAL");
+        return false;
+    }
+
     MemObject * const mem = entry->mem_obj;
     assert(mem);
-    debugs(90, 3, "entry=" << entry << ", mem=" << mem);
+    debugs(90, 3, "mem=" << mem);
 
     if (mem->request && !mem->request->flags.cachable) {
         debugs(90, 3, "quick-abort? YES !mem->request->flags.cachable");
@@ -821,31 +839,6 @@ CheckQuickAbortIsReasonable(StoreEntry * entry)
 
     debugs(90, 3, "quick-abort? YES default");
     return true;
-}
-
-/// Aborts a swapping-out entry if nobody needs it any more _and_
-/// continuing swap out is not reasonable per CheckQuickAbortIsReasonable().
-static void
-CheckQuickAbort(StoreEntry * entry)
-{
-    assert (entry);
-
-    if (storePendingNClients(entry) > 0)
-        return;
-
-    if (!shutting_down && Store::Root().transientReaders(*entry))
-        return;
-
-    if (entry->store_status != STORE_PENDING)
-        return;
-
-    if (EBIT_TEST(entry->flags, ENTRY_SPECIAL))
-        return;
-
-    if (!CheckQuickAbortIsReasonable(entry))
-        return;
-
-    entry->abort();
 }
 
 void

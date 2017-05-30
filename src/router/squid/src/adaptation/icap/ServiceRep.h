@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -111,9 +111,7 @@ public: // treat these as private, they are for callbacks only
     virtual void noteAdaptationAnswer(const Answer &answer);
 
     Security::ContextPointer sslContext;
-#if USE_OPENSSL
-    SSL_SESSION *sslSession;
-#endif
+    Security::SessionStatePointer sslSession;
 
 private:
     // stores Prepare() callback info

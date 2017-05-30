@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,12 +8,11 @@
 
 #include "squid.h"
 #include "base/CharacterSet.h"
-#include "SBuf.h"
-#include "SBufAlgos.h"
-#include "SBufFindTest.h"
-#include "SBufStream.h"
-#include "SquidString.h"
-#include "testSBuf.h"
+#include "sbuf/Algorithms.h"
+#include "sbuf/SBuf.h"
+#include "sbuf/Stream.h"
+#include "tests/SBufFindTest.h"
+#include "tests/testSBuf.h"
 #include "unitTestMain.h"
 
 #include <iostream>
@@ -116,13 +115,6 @@ testSBuf::testSBufConstructDestruct()
         CPPUNIT_ASSERT_EQUAL(s4,s3);
     }
 
-    // TEST: go via SquidString adapters.
-    {
-        String str(fox);
-        SBuf s1(str);
-        CPPUNIT_ASSERT_EQUAL(literal,s1);
-    }
-
     // TEST: go via std::string adapter.
     {
         std::string str(fox);
@@ -159,9 +151,22 @@ testSBuf::testEqualityTest()
 void
 testSBuf::testAppendSBuf()
 {
-    SBuf s1(fox1),s2(fox2);
-    s1.append(s2);
-    CPPUNIT_ASSERT_EQUAL(s1,literal);
+    const SBuf appendix(fox1);
+    const char * const rawAppendix = appendix.rawContent();
+
+    // check whether the optimization that prevents copying when append()ing to
+    // default-constructed SBuf actually works
+    SBuf s0;
+    s0.append(appendix);
+    CPPUNIT_ASSERT_EQUAL(s0.rawContent(), appendix.rawContent());
+    CPPUNIT_ASSERT_EQUAL(s0, appendix);
+
+    // paranoid: check that the above code can actually detect copies
+    SBuf s1(fox1);
+    s1.append(appendix);
+    CPPUNIT_ASSERT(s1.rawContent() != appendix.rawContent());
+    CPPUNIT_ASSERT(s1 != appendix);
+    CPPUNIT_ASSERT_EQUAL(rawAppendix, appendix.rawContent());
 }
 
 void
@@ -762,22 +767,6 @@ testSBuf::testSBufLength()
 }
 
 void
-testSBuf::testScanf()
-{
-    SBuf s1;
-    char s[128];
-    int i;
-    float f;
-    int rv;
-    s1.assign("string , 123 , 123.50");
-    rv=s1.scanf("%s , %d , %f",s,&i,&f);
-    CPPUNIT_ASSERT_EQUAL(3,rv);
-    CPPUNIT_ASSERT_EQUAL(0,strcmp(s,"string"));
-    CPPUNIT_ASSERT_EQUAL(123,i);
-    CPPUNIT_ASSERT_EQUAL(static_cast<float>(123.5),f);
-}
-
-void
 testSBuf::testCopy()
 {
     char buf[40]; //shorter than literal()
@@ -818,6 +807,49 @@ testSBuf::testGrow()
     t.append(literal).append(literal).append(literal).append(literal).append(literal);
     t.append(t).append(t).append(t).append(t).append(t);
     CPPUNIT_ASSERT_EQUAL(ref,match);
+}
+
+void
+testSBuf::testReserve()
+{
+    SBufReservationRequirements requirements;
+    // use unusual numbers to ensure we dont hit a lucky boundary situation
+    requirements.minSpace = 10;
+    requirements.idealSpace = 82;
+    requirements.maxCapacity = 259;
+    requirements.allowShared = true;
+
+    // for each possible starting buffer length within the capacity
+    for (SBuf::size_type startLength = 0; startLength <= requirements.maxCapacity; ++startLength) {
+        std::cerr << ".";
+        SBuf b;
+        b.reserveCapacity(startLength);
+        CPPUNIT_ASSERT_EQUAL(b.length(), static_cast<unsigned int>(0));
+        CPPUNIT_ASSERT_EQUAL(b.spaceSize(), startLength);
+
+        // check that it never grows outside capacity.
+        // do 5 excess cycles to check that.
+        for (SBuf::size_type filled = 0; filled < requirements.maxCapacity +5; ++filled) {
+            CPPUNIT_ASSERT_EQUAL(b.length(), min(filled, requirements.maxCapacity));
+            auto x = b.reserve(requirements);
+            // the amount of space advertized must not cause users to exceed capacity
+            CPPUNIT_ASSERT(x <= requirements.maxCapacity - filled);
+            CPPUNIT_ASSERT(b.spaceSize() <= requirements.maxCapacity - filled);
+            // the total size of buffer must not cause users to exceed capacity
+            CPPUNIT_ASSERT(b.length() + b.spaceSize() <= requirements.maxCapacity);
+            if (x > 0)
+                b.append('X');
+        }
+    }
+
+    // the minimal space requirement should overwrite idealSpace preferences
+    requirements.minSpace = 10;
+    for (const int delta: {-1,0,+1}) {
+        requirements.idealSpace = requirements.minSpace + delta;
+        SBuf buffer;
+        buffer.reserve(requirements);
+        CPPUNIT_ASSERT(buffer.spaceSize() >= requirements.minSpace);
+    }
 }
 
 void

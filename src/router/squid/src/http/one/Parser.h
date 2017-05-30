@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,7 @@
 #include "anyp/ProtocolVersion.h"
 #include "http/one/forward.h"
 #include "http/StatusCode.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 
 namespace Http {
 namespace One {
@@ -91,6 +91,11 @@ public:
     /// the remaining unprocessed section of buffer
     const SBuf &remaining() const {return buf_;}
 
+#if USE_HTTP_VIOLATIONS
+    /// the right debugs() level for parsing HTTP violation messages
+    int violationLevel() const;
+#endif
+
     /**
      * HTTP status code resulting from the parse process.
      * to be used on the invalid message handling.
@@ -101,9 +106,19 @@ public:
      */
     Http::StatusCode parseStatusCode;
 
+    /// the characters which are to be considered valid whitespace
+    /// (WSP / BSP / OWS)
+    static const CharacterSet &DelimiterCharacters();
+
 protected:
-    /// detect and skip the CRLF or (if tolerant) LF line terminator
-    /// consume from the tokenizer and return true only if found
+    /**
+     * detect and skip the CRLF or (if tolerant) LF line terminator
+     * consume from the tokenizer.
+     *
+     * throws if non-terminator is detected.
+     * \retval true only if line terminator found.
+     * \retval false incomplete or missing line terminator, need more data.
+     */
     bool skipLineTerminator(Http1::Tokenizer &tok) const;
 
     /**
@@ -134,6 +149,10 @@ protected:
 
     /// Whether the invalid HTTP as HTTP/0.9 hack expects a mime header block
     bool hackExpectsMime_;
+
+private:
+    void cleanMimePrefix();
+    void unfoldMime();
 };
 
 } // namespace One

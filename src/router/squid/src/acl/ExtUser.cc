@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,6 +17,7 @@
 #include "acl/RegexData.h"
 #include "acl/UserData.h"
 #include "client_side.h"
+#include "http/Stream.h"
 
 ACLExtUser::~ACLExtUser()
 {
@@ -45,8 +46,6 @@ ACLExtUser::typeString() const
 void
 ACLExtUser::parse()
 {
-    debugs(28, 3, "aclParseUserList: current is null. Creating");
-    data = new ACLUserData;
     data->parse();
 }
 

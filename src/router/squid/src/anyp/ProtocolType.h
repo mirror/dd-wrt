@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -36,6 +36,9 @@ typedef enum {
     PROTO_URN,
     PROTO_WHOIS,
     PROTO_ICY,
+    PROTO_TLS,
+    PROTO_SSL,
+    PROTO_AUTHORITY_FORM,
     PROTO_UNKNOWN,
     PROTO_MAX
 } ProtocolType;

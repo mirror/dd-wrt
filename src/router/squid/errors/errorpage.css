@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -71,12 +71,11 @@ p {
 }
 
 pre {
-    font-family:sans-serif;
 }
 
 /* special event: FTP / Gopher directory listing */
 #dirmsg {
-    font-family: courier;
+    font-family: courier, monospace;
     color: black;
     font-size: 10pt;
 }

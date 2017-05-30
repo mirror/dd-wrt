@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,15 +11,17 @@
 
 #if USE_DELAY_POOLS
 
-class ClientHttpRequest;
 #include "DelayIdComposite.h"
+
+class ClientHttpRequest;
+class HttpReply;
 
 /// \ingroup DelayPoolsAPI
 class DelayId
 {
 
 public:
-    static DelayId DelayClient (ClientHttpRequest *);
+    static DelayId DelayClient(ClientHttpRequest *, HttpReply *reply = nullptr);
     DelayId ();
     DelayId (unsigned short);
     ~DelayId ();

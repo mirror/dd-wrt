@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -137,23 +137,10 @@ Transients::reference(StoreEntry &)
 }
 
 bool
-Transients::dereference(StoreEntry &, bool)
+Transients::dereference(StoreEntry &)
 {
     // no need to keep e in the global store_table for us; we have our own map
     return false;
-}
-
-int
-Transients::callback()
-{
-    return 0;
-}
-
-StoreSearch *
-Transients::search(String const, HttpRequest *)
-{
-    fatal("not implemented");
-    return NULL;
 }
 
 StoreEntry *
@@ -197,7 +184,8 @@ Transients::copyFromShm(const sfileno index)
     e->mem_obj->xitTable.io = MemObject::ioReading;
     e->mem_obj->xitTable.index = index;
 
-    e->setPublicKey();
+    // TODO: Support collapsed revalidation for SMP-aware caches.
+    e->setPublicKey(ksDefault);
     assert(e->key);
 
     // How do we know its SMP- and not just locally-collapsed? A worker gets
@@ -210,13 +198,6 @@ Transients::copyFromShm(const sfileno index)
     // e is tied to us via mem_obj so we will know when it is destructed.
     locals->at(index) = e;
     return e;
-}
-
-void
-Transients::get(String const, STOREGETCLIENT, void *)
-{
-    // XXX: not needed but Store parent forces us to implement this
-    fatal("Transients::get(key,callback,data) should not be called");
 }
 
 StoreEntry *
@@ -355,6 +336,12 @@ Transients::readers(const StoreEntry &e) const
 void
 Transients::markForUnlink(StoreEntry &e)
 {
+    unlink(e);
+}
+
+void
+Transients::unlink(StoreEntry &e)
+{
     if (e.mem_obj && e.mem_obj->xitTable.io == MemObject::ioWriting)
         abandon(e);
 }
@@ -384,7 +371,7 @@ Transients::EntryLimit()
     if (!UsingSmp() || !Config.onoff.collapsed_forwarding)
         return 0; // no SMP collapsed forwarding possible or needed
 
-    return 16*1024; // TODO: make configurable?
+    return Config.collapsed_forwarding_shared_entries_limit;
 }
 
 /// initializes shared memory segment used by Transients

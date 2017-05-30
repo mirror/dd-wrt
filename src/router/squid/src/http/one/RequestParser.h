@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,7 @@ namespace One {
 class RequestParser : public Http1::Parser
 {
 public:
-    RequestParser();
+    explicit RequestParser(bool preserveParsed = false);
     virtual ~RequestParser() {}
 
     /* Http::One::Parser API */
@@ -44,12 +44,24 @@ public:
     /// the request-line URI if this is a request message, or an empty string.
     const SBuf &requestUri() const {return uri_;}
 
+    /// the accumulated parsed bytes
+    const SBuf &parsed() const { Must(preserveParsed_); return parsed_; }
+
 private:
     void skipGarbageLines();
     int parseRequestFirstLine();
-    int parseMethodField(Http1::Tokenizer &, const CharacterSet &);
-    int parseUriField(Http1::Tokenizer &);
-    int parseHttpVersionField(Http1::Tokenizer &);
+    /// called from parse() to do the parsing
+    bool doParse(const SBuf &aBuf);
+
+    /* all these return false and set parseStatusCode on parsing failures */
+    bool parseMethodField(Http1::Tokenizer &);
+    bool parseUriField(Http1::Tokenizer &);
+    bool parseHttpVersionField(Http1::Tokenizer &);
+    bool skipDelimiter(const size_t count, const char *where);
+    bool skipTrailingCrs(Http1::Tokenizer &tok);
+
+    bool http0() const {return !msgProtocol_.major;}
+    static const CharacterSet &RequestTargetCharacters();
 
     /// what request method has been found on the first line
     HttpRequestMethod method_;
@@ -57,9 +69,10 @@ private:
     /// raw copy of the original client request-line URI field
     SBuf uri_;
 
-    /// amount of garbage bytes tolerantly skipped inside the request-line
-    /// may be -1 if sender only omitted CR on terminator
-    int64_t firstLineGarbage_;
+    /// all parsed bytes (i.e., input prefix consumed by parse() calls)
+    /// meaningless unless preserveParsed_ is true
+    SBuf parsed_;
+    bool preserveParsed_; ///< whether to accumulate parsed bytes (in parsed_)
 };
 
 } // namespace One

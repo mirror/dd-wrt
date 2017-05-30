@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -69,8 +69,19 @@ Adaptation::ServiceConfig::parse()
 {
     key = ConfigParser::NextToken();
     String method_point = ConfigParser::NextToken();
+    if (!method_point.size()) {
+        debugs(3, DBG_CRITICAL, "ERROR: " << cfg_filename << ':' << config_lineno << ": " <<
+               "Missing vectoring point in adaptation service definition");
+        return false;
+    }
+
     method = parseMethod(method_point.termedBuf());
     point = parseVectPoint(method_point.termedBuf());
+    if (method == Adaptation::methodNone && point == Adaptation::pointNone) {
+        debugs(3, DBG_CRITICAL, "ERROR: " << cfg_filename << ':' << config_lineno << ": " <<
+               "Unknown vectoring point '" << method_point << "' in adaptation service definition");
+        return false;
+    }
 
     // reset optional parameters in case we are reconfiguring
     bypass = routing = false;
@@ -105,7 +116,7 @@ Adaptation::ServiceConfig::parse()
 
         // Check if option is set twice
         if (options.find(name) != options.end()) {
-            debugs(3, DBG_CRITICAL, cfg_filename << ':' << config_lineno << ": " <<
+            debugs(3, DBG_CRITICAL, "ERROR: " << cfg_filename << ':' << config_lineno << ": " <<
                    "Duplicate option \"" << name << "\" in adaptation service definition");
             return false;
         }
@@ -127,6 +138,10 @@ Adaptation::ServiceConfig::parse()
         else if (strcmp(name, "on-overload") == 0) {
             grokked = grokOnOverload(onOverload, value);
             onOverloadSet = true;
+        } else if (strcmp(name, "connection-encryption") == 0) {
+            bool encrypt = false;
+            grokked = grokBool(encrypt, name, value);
+            connectionEncryption.configure(encrypt);
         } else if (strncmp(name, "ssl", 3) == 0 || strncmp(name, "tls-", 4) == 0) {
 #if !USE_OPENSSL
             debugs(3, DBG_PARSE_NOTE(DBG_IMPORTANT), "WARNING: adaptation option '" << name << "' requires --with-openssl. ICAP service option ignored.");
@@ -149,9 +164,14 @@ Adaptation::ServiceConfig::parse()
     if (!onOverloadSet)
         onOverload = bypass ? srvBypass : srvWait;
 
+    // disable the TLS NPN extension if encrypted.
+    // Squid advertises "http/1.1", which is wrong for ICAPS.
+    if (secure.encryptTransport)
+        secure.parse("no-npn");
+
     // is the service URI set?
     if (!grokkedUri) {
-        debugs(3, DBG_CRITICAL, cfg_filename << ':' << config_lineno << ": " <<
+        debugs(3, DBG_CRITICAL, "ERROR: " << cfg_filename << ':' << config_lineno << ": " <<
                "No \"uri\" option in adaptation service definition");
         return false;
     }

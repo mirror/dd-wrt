@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -162,8 +162,8 @@ main(int argc, char *argv[])
         for_each(*metadata, dumper);
 
         return 0;
-    } catch (std::runtime_error error) {
-        std::cout << "Failed : " << error.what() << std::endl;
+    } catch (const std::exception &e) {
+        std::cout << "Failed : " << e.what() << std::endl;
 
         if (fd >= 0)
             close(fd);

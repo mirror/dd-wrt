@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,6 +16,7 @@
 #include "DiskIO/DiskIOStrategy.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
+#include "fs/rock/RockHeaderUpdater.h"
 #include "fs/rock/RockIoRequests.h"
 #include "fs/rock/RockIoState.h"
 #include "fs/rock/RockRebuild.h"
@@ -49,19 +50,6 @@ Rock::SwapDir::~SwapDir()
     delete io;
     delete map;
     safe_free(filePath);
-}
-
-StoreSearch *
-Rock::SwapDir::search(String const, HttpRequest *)
-{
-    assert(false);
-    return NULL; // XXX: implement
-}
-
-void
-Rock::SwapDir::get(String const key, STOREGETCLIENT cb, void *data)
-{
-    ::SwapDir::get(key, cb, data);
 }
 
 // called when Squid core needs a StoreEntry with a given key
@@ -134,7 +122,7 @@ Rock::SwapDir::anchorEntry(StoreEntry &e, const sfileno filen, const Ipc::StoreM
     e.lastref = basics.lastref;
     e.timestamp = basics.timestamp;
     e.expires = basics.expires;
-    e.lastmod = basics.lastmod;
+    e.lastModified(basics.lastmod);
     e.refcount = basics.refcount;
     e.flags = basics.flags;
 
@@ -303,8 +291,9 @@ Rock::SwapDir::create()
 void
 Rock::SwapDir::createError(const char *const msg)
 {
+    int xerrno = errno; // XXX: where does errno come from?
     debugs(47, DBG_CRITICAL, "ERROR: Failed to initialize Rock Store db in " <<
-           filePath << "; " << msg << " error: " << xstrerror());
+           filePath << "; " << msg << " error: " << xstrerr(xerrno));
     fatal("Rock Store db creation error");
 }
 
@@ -615,7 +604,9 @@ Rock::SwapDir::rebuild()
 bool
 Rock::SwapDir::canStore(const StoreEntry &e, int64_t diskSpaceNeeded, int &load) const
 {
-    if (!::SwapDir::canStore(e, sizeof(DbCellHeader)+diskSpaceNeeded, load))
+    if (diskSpaceNeeded >= 0)
+        diskSpaceNeeded += sizeof(DbCellHeader);
+    if (!::SwapDir::canStore(e, diskSpaceNeeded, load))
         return false;
 
     if (!theFile || !theFile->canWrite())
@@ -676,6 +667,33 @@ Rock::SwapDir::createStoreIO(StoreEntry &e, StoreIOState::STFNCB *cbFile, StoreI
     sio->file(theFile);
 
     trackReferences(e);
+    return sio;
+}
+
+StoreIOState::Pointer
+Rock::SwapDir::createUpdateIO(const Ipc::StoreMapUpdate &update, StoreIOState::STFNCB *cbFile, StoreIOState::STIOCB *cbIo, void *data)
+{
+    if (!theFile || theFile->error()) {
+        debugs(47,4, theFile);
+        return nullptr;
+    }
+
+    Must(update.fresh);
+    Must(update.fresh.fileNo >= 0);
+
+    Rock::SwapDir::Pointer self(this);
+    IoState *sio = new IoState(self, update.entry, cbFile, cbIo, data);
+
+    sio->swap_dirn = index;
+    sio->swap_filen = update.fresh.fileNo;
+    sio->writeableAnchor_ = update.fresh.anchor;
+
+    debugs(47,5, "dir " << index << " updating filen " <<
+           std::setfill('0') << std::hex << std::uppercase << std::setw(8) <<
+           sio->swap_filen << std::dec << " starting at " <<
+           diskOffset(sio->swap_filen));
+
+    sio->file(theFile);
     return sio;
 }
 
@@ -799,9 +817,11 @@ Rock::SwapDir::ioCompletedNotification()
     if (!theFile)
         fatalf("Rock cache_dir failed to initialize db file: %s", filePath);
 
-    if (theFile->error())
+    if (theFile->error()) {
+        int xerrno = errno; // XXX: where does errno come from
         fatalf("Rock cache_dir at %s failed to open db file: %s", filePath,
-               xstrerror());
+               xstrerr(xerrno));
+    }
 
     debugs(47, 2, "Rock cache_dir[" << index << "] limits: " <<
            std::setw(12) << maxSize() << " disk bytes, " <<
@@ -845,6 +865,8 @@ Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
         return;
     }
 
+    debugs(79, 7, "errflag=" << errflag << " rlen=" << request->len << " eof=" << request->eof);
+
     // TODO: Fail if disk dropped one of the previous write requests.
 
     if (errflag == DISK_OK) {
@@ -859,35 +881,59 @@ Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
         if (request->eof) {
             assert(sio.e);
             assert(sio.writeableAnchor_);
-            sio.e->swap_file_sz = sio.writeableAnchor_->basics.swap_file_sz =
-                                      sio.offset_;
+            if (sio.touchingStoreEntry()) {
+                sio.e->swap_file_sz = sio.writeableAnchor_->basics.swap_file_sz =
+                                          sio.offset_;
 
-            // close, the entry gets the read lock
-            map->closeForWriting(sio.swap_filen, true);
+                // close, the entry gets the read lock
+                map->closeForWriting(sio.swap_filen, true);
+            }
             sio.writeableAnchor_ = NULL;
+            sio.splicingPoint = request->sidCurrent;
             sio.finishedWriting(errflag);
         }
     } else {
         noteFreeMapSlice(request->sidNext);
 
-        writeError(*sio.e);
+        writeError(sio);
         sio.finishedWriting(errflag);
         // and hope that Core will call disconnect() to close the map entry
     }
 
-    CollapsedForwarding::Broadcast(*sio.e);
+    if (sio.touchingStoreEntry())
+        CollapsedForwarding::Broadcast(*sio.e);
 }
 
 void
-Rock::SwapDir::writeError(StoreEntry &e)
+Rock::SwapDir::writeError(StoreIOState &sio)
 {
     // Do not abortWriting here. The entry should keep the write lock
     // instead of losing association with the store and confusing core.
-    map->freeEntry(e.swap_filen); // will mark as unusable, just in case
+    map->freeEntry(sio.swap_filen); // will mark as unusable, just in case
 
-    Store::Root().transientsAbandon(e);
+    if (sio.touchingStoreEntry())
+        Store::Root().transientsAbandon(*sio.e);
+    // else noop: a fresh entry update error does not affect stale entry readers
 
     // All callers must also call IoState callback, to propagate the error.
+}
+
+void
+Rock::SwapDir::updateHeaders(StoreEntry *updatedE)
+{
+    if (!map)
+        return;
+
+    Ipc::StoreMapUpdate update(updatedE);
+    if (!map->openForUpdating(update, updatedE->swap_filen))
+        return;
+
+    try {
+        AsyncJob::Start(new HeaderUpdater(this, update));
+    } catch (const std::exception &ex) {
+        debugs(20, 2, "error starting to update entry " << *updatedE << ": " << ex.what());
+        map->abortUpdating(update);
+    }
 }
 
 bool
@@ -924,7 +970,7 @@ Rock::SwapDir::reference(StoreEntry &e)
 }
 
 bool
-Rock::SwapDir::dereference(StoreEntry &e, bool)
+Rock::SwapDir::dereference(StoreEntry &e)
 {
     debugs(47, 5, HERE << &e << ' ' << e.swap_dirn << ' ' << e.swap_filen);
     if (repl && repl->Dereferenced)

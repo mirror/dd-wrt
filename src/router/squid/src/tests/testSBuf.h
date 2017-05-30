@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,7 +11,7 @@
 
 #include <cppunit/extensions/HelperMacros.h>
 
-#include "OutOfBoundsException.h"
+#include "sbuf/OutOfBoundsException.h"
 
 /*
  * test the SBuf functionalities
@@ -45,10 +45,10 @@ class testSBuf : public CPPUNIT_NS::TestFixture
     CPPUNIT_TEST( testFindFirstOf );
     CPPUNIT_TEST( testFindFirstNotOf );
     CPPUNIT_TEST( testPrintf );
-    CPPUNIT_TEST( testScanf );
     CPPUNIT_TEST( testCopy );
     CPPUNIT_TEST( testStringOps );
     CPPUNIT_TEST( testGrow );
+    CPPUNIT_TEST( testReserve );
     CPPUNIT_TEST( testSBufStream );
     CPPUNIT_TEST( testAutoFind );
     CPPUNIT_TEST( testStdStringOps );
@@ -66,7 +66,6 @@ protected:
     void testAppendStdString();
     void testAppendf();
     void testPrintf();
-    void testScanf();
     void testSubscriptOp();
     void testSubscriptOpFail();
     void testDumpStats();
@@ -87,6 +86,7 @@ protected:
     void testCopy();
     void testStringOps();
     void testGrow();
+    void testReserve();
     void testStartsWith();
     void testSBufStream();
     void testFindFirstOf();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -478,11 +478,13 @@ gen_default(const EntryList &head, std::ostream &fout)
     fout << "static void" << std::endl <<
          "default_line(const char *s)" << std::endl <<
          "{" << std::endl <<
-         "    LOCAL_ARRAY(char, tmp_line, BUFSIZ);" << std::endl <<
-         "    xstrncpy(tmp_line, s, BUFSIZ);" << std::endl <<
-         "    xstrncpy(config_input_line, s, BUFSIZ);" << std::endl <<
+         "    char *tmp_line = xstrdup(s);" << std::endl <<
+         "    int len = strlen(tmp_line);" << std::endl <<
+         "    ProcessMacros(tmp_line, len);" << std::endl <<
+         "    xstrncpy(config_input_line, tmp_line, sizeof(config_input_line));" << std::endl <<
          "    config_lineno++;" << std::endl <<
          "    parse_line(tmp_line);" << std::endl <<
+         "    xfree(tmp_line);" << std::endl <<
          "}" << std::endl << std::endl;
     fout << "static void" << std::endl <<
          "default_all(void)" << std::endl <<

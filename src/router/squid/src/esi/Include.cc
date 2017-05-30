@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,6 +17,7 @@
 #include "esi/Include.h"
 #include "esi/VarState.h"
 #include "fatal.h"
+#include "http/Stream.h"
 #include "HttpReply.h"
 #include "log/access_log.h"
 
@@ -277,7 +278,7 @@ ESIInclude::ESIInclude(ESIInclude const &old) :
 void
 ESIInclude::prepareRequestHeaders(HttpHeader &tempheaders, ESIVarState *vars)
 {
-    tempheaders.update (&vars->header(), NULL);
+    tempheaders.update(&vars->header());
     tempheaders.removeHopByHopEntries();
 }
 

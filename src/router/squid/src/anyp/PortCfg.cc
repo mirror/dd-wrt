@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,9 +19,6 @@
 #include <limits>
 
 AnyP::PortCfgPointer HttpPortList;
-#if USE_OPENSSL
-AnyP::PortCfgPointer HttpsPortList;
-#endif
 AnyP::PortCfgPointer FtpPortList;
 
 int NHttpSockets = 0;
@@ -47,9 +44,8 @@ AnyP::PortCfg::PortCfg() :
     ,
     clientca(NULL),
     sslContextSessionId(NULL),
-    generateHostCertificates(false),
-    dynamicCertMemCacheSize(std::numeric_limits<size_t>::max()),
-    staticSslContext(),
+    generateHostCertificates(true),
+    dynamicCertMemCacheSize(4*1024*1024), // 4 MB
     signingCert(),
     signPkey(),
     certsToChain(),
@@ -119,8 +115,10 @@ AnyP::PortCfg::clone() const
 void
 AnyP::PortCfg::configureSslServerContext()
 {
-    if (!secure.certFile.isEmpty())
-        Ssl::readCertChainAndPrivateKeyFromFiles(signingCert, signPkey, certsToChain, secure.certFile.c_str(), secure.privateKeyFile.c_str());
+    if (!secure.certs.empty()) {
+        Security::KeyData &keys = secure.certs.front();
+        Ssl::readCertChainAndPrivateKeyFromFiles(signingCert, signPkey, certsToChain, keys.certFile.c_str(), keys.privateKeyFile.c_str());
+    }
 
     if (!signingCert) {
         char buf[128];
@@ -145,13 +143,9 @@ AnyP::PortCfg::configureSslServerContext()
         }
     }
 
-    secure.updateTlsVersionLimits();
-
-    staticSslContext.reset(sslCreateServerContext(*this));
-
-    if (!staticSslContext) {
+    if (!secure.createStaticServerContext(*this)) {
         char buf[128];
-        fatalf("%s_port %s initialization error", AnyP::ProtocolType_str[transport.protocol],  s.toUrl(buf, sizeof(buf)));
+        fatalf("%s_port %s initialization error", AnyP::ProtocolType_str[transport.protocol], s.toUrl(buf, sizeof(buf)));
     }
 }
 #endif

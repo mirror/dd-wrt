@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,7 +16,8 @@
 #include "ipc/mem/Page.h"
 #include "ipc/mem/PageStack.h"
 #include "ipc/StoreMap.h"
-#include "SwapDir.h"
+#include "store/Disk.h"
+#include <vector>
 
 class DiskIOStrategy;
 class ReadRequest;
@@ -37,9 +38,7 @@ public:
 
     /* public ::SwapDir API */
     virtual void reconfigure();
-    virtual StoreSearch *search(String const url, HttpRequest *);
     virtual StoreEntry *get(const cache_key *key);
-    virtual void get(String const, STOREGETCLIENT, void * cbdata);
     virtual void markForUnlink(StoreEntry &e);
     virtual void disconnect(StoreEntry &e);
     virtual uint64_t currentSize() const;
@@ -48,6 +47,7 @@ public:
     virtual void swappedOut(const StoreEntry &e);
     virtual void create();
     virtual void parse(int index, char *path);
+    virtual bool smpAware() const { return true; }
 
     // temporary path to the shared memory map of first slots of cached entries
     SBuf inodeMapPath() const;
@@ -68,7 +68,7 @@ public:
 
     int64_t diskOffset(Ipc::Mem::PageId &pageId) const;
     int64_t diskOffset(int filen) const;
-    void writeError(StoreEntry &e);
+    void writeError(StoreIOState &sio);
 
     /* StoreMapCleaner API */
     virtual void noteFreeMapSlice(const Ipc::StoreMapSliceId fileno);
@@ -91,7 +91,8 @@ protected:
     virtual void maintain();
     virtual void diskFull();
     virtual void reference(StoreEntry &e);
-    virtual bool dereference(StoreEntry &e, bool);
+    virtual bool dereference(StoreEntry &e);
+    virtual void updateHeaders(StoreEntry *e);
     virtual bool unlinkdUseful() const;
     virtual void unlink(StoreEntry &e);
     virtual void statfs(StoreEntry &e) const;
@@ -119,11 +120,15 @@ protected:
 
     int64_t diskOffsetLimit() const;
 
+    void updateHeadersOrThrow(Ipc::StoreMapUpdate &update);
+    StoreIOState::Pointer createUpdateIO(const Ipc::StoreMapUpdate &update, StoreIOState::STFNCB *, StoreIOState::STIOCB *, void *);
+
     void anchorEntry(StoreEntry &e, const sfileno filen, const Ipc::StoreMapAnchor &anchor);
     bool updateCollapsedWith(StoreEntry &collapsed, const Ipc::StoreMapAnchor &anchor);
 
     friend class Rebuild;
     friend class IoState;
+    friend class HeaderUpdater;
     const char *filePath; ///< location of cache storage file inside path/
     DirMap *map; ///< entry key/sfileno to MaxExtras/inode mapping
 
