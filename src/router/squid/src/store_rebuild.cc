@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,11 +16,11 @@
 #include "SquidTime.h"
 #include "StatCounters.h"
 #include "Store.h"
+#include "store/Disk.h"
 #include "store_digest.h"
 #include "store_key_md5.h"
 #include "store_rebuild.h"
 #include "StoreSearch.h"
-#include "SwapDir.h"
 // for tvSubDsec() which should be in SquidTime.h
 #include "util.h"
 
@@ -56,7 +56,7 @@ storeCleanup(void *)
     static int seen = 0;
 
     if (currentSearch == NULL || currentSearch->isDone())
-        currentSearch = Store::Root().search(NULL, NULL);
+        currentSearch = Store::Root().search();
 
     size_t statCount = 500;
 
@@ -256,7 +256,7 @@ struct InitStoreEntry : public unary_function<StoreMeta, void> {
             what->timestamp = tmp->timestamp;
             what->lastref = tmp->lastref;
             what->expires = tmp->expires;
-            what->lastmod = tmp->lastmod;
+            what->lastModified(tmp->lastmod);
             what->swap_file_sz = tmp->swap_file_sz;
             what->refcount = tmp->refcount;
             what->flags = tmp->flags;
@@ -309,17 +309,14 @@ storeRebuildParseEntry(MemBuf &buf, StoreEntry &tmpe, cache_key *key,
         return false;
     }
 
-    if (!aBuilder.isBufferSane()) {
-        debugs(47, DBG_IMPORTANT, "WARNING: Ignoring malformed cache entry.");
+    StoreMeta *tlv_list = nullptr;
+    try {
+        tlv_list = aBuilder.createStoreMeta();
+    } catch (const std::exception &e) {
+        debugs(47, DBG_IMPORTANT, "WARNING: Ignoring store entry because " << e.what());
         return false;
     }
-
-    StoreMeta *tlv_list = aBuilder.createStoreMeta();
-    if (!tlv_list) {
-        debugs(47, DBG_IMPORTANT, "WARNING: Ignoring cache entry with invalid " <<
-               "meta data");
-        return false;
-    }
+    assert(tlv_list);
 
     // TODO: consume parsed metadata?
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,12 +8,11 @@
 
 #include "squid.h"
 #include "mgr/ActionPasswordList.h"
-#include "wordlist.h"
+#include "sbuf/List.h"
 
 Mgr::ActionPasswordList::~ActionPasswordList()
 {
-    safe_free(passwd);
-    wordlistDestroy(&actions);
-    delete next;
+    xfree(passwd);
+    delete next; // recurse, these lists are usually not long
 }
 

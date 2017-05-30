@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,7 +13,5 @@
 #include "tests/STUB.h"
 
 const char *wordlistAdd(wordlist **, const char *) STUB_RETVAL(NULL)
-void wordlistAddWl(wordlist **, wordlist *) STUB
-void wordlistJoin(wordlist **, wordlist **) STUB
 void wordlistDestroy(wordlist **) STUB
 

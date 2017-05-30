@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,9 +18,10 @@
 #include "MemObject.h"
 #include "SquidConfig.h"
 #include "StatCounters.h"
+#include "store/Disk.h"
+#include "store/Disks.h"
 #include "store_log.h"
 #include "swap_log_op.h"
-#include "SwapDir.h"
 
 static void storeSwapOutStart(StoreEntry * e);
 static StoreIOState::STIOCB storeSwapOutFileClosed;
@@ -299,12 +300,12 @@ storeSwapOutFileClosed(void *data, int errflag, StoreIOState::Pointer self)
             /* FIXME: this should be handle by the link from store IO to
              * Store, rather than being a top level API call.
              */
-            e->store()->diskFull();
+            e->disk().diskFull();
             storeConfigure();
         }
 
         if (e->swap_filen >= 0)
-            e->unlink();
+            e->disk().unlink(*e);
 
         assert(e->swap_status == SWAPOUT_NONE);
 
@@ -319,7 +320,7 @@ storeSwapOutFileClosed(void *data, int errflag, StoreIOState::Pointer self)
 
         e->swap_file_sz = e->objectLen() + mem->swap_hdr_sz;
         e->swap_status = SWAPOUT_DONE;
-        e->store()->swappedOut(*e);
+        e->disk().swappedOut(*e);
 
         // XXX: For some Stores, it is pointless to re-check cachability here
         // and it leads to double counts in store_check_cachable_hist. We need
@@ -426,20 +427,11 @@ StoreEntry::mayStartSwapOut()
 
         // prevent final default swPossible answer for yet unknown length
         if (expectedEnd < 0 && store_status != STORE_OK) {
-            const int64_t maxKnownSize = mem_obj->availableForSwapOut();
-            debugs(20, 7, HERE << "maxKnownSize= " << maxKnownSize);
-            /*
-             * NOTE: the store_maxobjsize here is the global maximum
-             * size of object cacheable in any of Squid cache stores
-             * both disk and memory stores.
-             *
-             * However, I am worried that this
-             * deferance may consume a lot of memory in some cases.
-             * Should we add an option to limit this memory consumption?
-             */
-            debugs(20, 5,  HERE << "Deferring swapout start for " <<
-                   (store_maxobjsize - maxKnownSize) << " bytes");
-            return true; // may still fit, but no final decision yet
+            const int64_t more = Store::Root().accumulateMore(*this);
+            if (more > 0) {
+                debugs(20, 5, "got " << currentEnd << "; defer decision for " << more << " more bytes");
+                return true; // may still fit, but no final decision yet
+            }
         }
     }
 

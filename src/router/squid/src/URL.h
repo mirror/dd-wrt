@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,7 @@
 #include "anyp/UriScheme.h"
 #include "ip/Address.h"
 #include "rfc2181.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 
 #include <iosfwd>
 
@@ -28,6 +28,20 @@ class URL
 public:
     URL() : hostIsNumeric_(false), port_(0) {*host_=0;}
     URL(AnyP::UriScheme const &aScheme);
+    URL(const URL &other) {
+        this->operator =(other);
+    }
+    URL &operator =(const URL &o) {
+        scheme_ = o.scheme_;
+        userInfo_ = o.userInfo_;
+        memcpy(host_, o.host_, sizeof(host_));
+        hostIsNumeric_ = o.hostIsNumeric_;
+        hostAddr_ = o.hostAddr_;
+        port_ = o.port_;
+        path_ = o.path_;
+        touch();
+        return *this;
+    }
 
     void clear() {
         scheme_=AnyP::PROTO_NONE;
@@ -42,7 +56,10 @@ public:
     AnyP::UriScheme const & getScheme() const {return scheme_;}
 
     /// convert the URL scheme to that given
-    void setScheme(const AnyP::ProtocolType &p) {scheme_=p; touch();}
+    void setScheme(const AnyP::ProtocolType &p, const char *str) {
+        scheme_ = AnyP::UriScheme(p, str);
+        touch();
+    }
 
     void userInfo(const SBuf &s) {userInfo_=s; touch();}
     const SBuf &userInfo() const {return userInfo_;}
@@ -131,9 +148,17 @@ private:
 inline std::ostream &
 operator <<(std::ostream &os, const URL &url)
 {
-    if (const char *sc = url.getScheme().c_str())
-        os << sc << ":";
-    os << "//" << url.authority() << url.path();
+    // none means explicit empty string for scheme.
+    if (url.getScheme() != AnyP::PROTO_NONE)
+        os << url.getScheme().image();
+    os << ":";
+
+    // no authority section on URN
+    if (url.getScheme() != AnyP::PROTO_URN)
+        os << "//" << url.authority();
+
+    // path is what it is - including absent
+    os << url.path();
     return os;
 }
 
@@ -149,23 +174,29 @@ char *urlMakeAbsolute(const HttpRequest *, const char *);
 char *urlRInternal(const char *host, unsigned short port, const char *dir, const char *name);
 char *urlInternal(const char *dir, const char *name);
 
+enum MatchDomainNameFlags {
+    mdnNone = 0,
+    mdnHonorWildcards = 1 << 0,
+    mdnRejectSubsubDomains = 1 << 1
+};
+
 /**
- * matchDomainName() compares a hostname (usually extracted from traffic)
- * with a domainname (usually from an ACL) according to the following rules:
+ * matchDomainName() matches a hostname (usually extracted from traffic)
+ * with a domainname when mdnNone or mdnRejectSubsubDomains flags are used
+ * according to the following rules:
  *
- *    HOST      |   DOMAIN    |   MATCH?
- * -------------|-------------|------
- *    foo.com   |   foo.com   |     YES
- *   .foo.com   |   foo.com   |     YES
- *  x.foo.com   |   foo.com   |     NO
- *    foo.com   |  .foo.com   |     YES
- *   .foo.com   |  .foo.com   |     YES
- *  x.foo.com   |  .foo.com   |     YES
+ *    HOST      |   DOMAIN    |   mdnNone | mdnRejectSubsubDomains
+ * -------------|-------------|-----------|-----------------------
+ *      foo.com |   foo.com   |     YES   |   YES
+ *     .foo.com |   foo.com   |     YES   |   YES
+ *    x.foo.com |   foo.com   |     NO    |   NO
+ *      foo.com |  .foo.com   |     YES   |   YES
+ *     .foo.com |  .foo.com   |     YES   |   YES
+ *    x.foo.com |  .foo.com   |     YES   |   YES
+ *   .x.foo.com |  .foo.com   |     YES   |   NO
+ *  y.x.foo.com |  .foo.com   |     YES   |   NO
  *
- *  We strip leading dots on hosts (but not domains!) so that
- *  ".foo.com" is always the same as "foo.com".
- *
- * if honorWildcards is true then the matchDomainName() also accepts
+ * if mdnHonorWildcards flag is set then the matchDomainName() also accepts
  * optional wildcards on hostname:
  *
  *    HOST      |    DOMAIN    |  MATCH?
@@ -175,11 +206,14 @@ char *urlInternal(const char *dir, const char *name);
  *    *.foo.com |    .foo.com  |   YES
  *    *.foo.com |     foo.com  |   NO
  *
+ * The combination of mdnHonorWildcards and mdnRejectSubsubDomains flags is
+ * supported.
+ *
  * \retval 0 means the host matches the domain
  * \retval 1 means the host is greater than the domain
  * \retval -1 means the host is less than the domain
  */
-int matchDomainName(const char *host, const char *domain, bool honorWildcards = false);
+int matchDomainName(const char *host, const char *domain, uint flags = mdnNone);
 int urlCheckRequest(const HttpRequest *);
 char *urlHostname(const char *url);
 void urlExtMethodConfigure(void);

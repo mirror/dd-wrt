@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,7 +15,7 @@
 #include "HttpHeaderFieldStat.h"
 #include "HttpHeaderStat.h"
 #include "HttpHeaderTools.h"
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 #include "StatHist.h"
 #include "Store.h"
 #include "StrList.h"
@@ -40,6 +40,7 @@ static LookupTable<HttpHdrCcType>::Record CcAttrs[] = {
     {"min-fresh", HttpHdrCcType::CC_MIN_FRESH},
     {"only-if-cached", HttpHdrCcType::CC_ONLY_IF_CACHED},
     {"stale-if-error", HttpHdrCcType::CC_STALE_IF_ERROR},
+    {"immutable", HttpHdrCcType::CC_IMMUTABLE},
     {"Other,", HttpHdrCcType::CC_OTHER}, /* ',' will protect from matches */
     {nullptr, HttpHdrCcType::CC_ENUM_END}
 };
@@ -202,6 +203,9 @@ HttpHdrCc::parse(const String & str)
         case HttpHdrCcType::CC_ONLY_IF_CACHED:
             onlyIfCached(true);
             break;
+        case HttpHdrCcType::CC_IMMUTABLE:
+            Immutable(true);
+            break;
 
         case HttpHdrCcType::CC_OTHER:
             if (other.size())
@@ -238,6 +242,25 @@ HttpHdrCc::packInto(Packable * p) const
 
             /* for all options having values, "=value" after the name */
             switch (flag) {
+            case HttpHdrCcType::CC_PUBLIC:
+                break;
+            case HttpHdrCcType::CC_PRIVATE:
+                if (Private().size())
+                    p->appendf("=\"" SQUIDSTRINGPH "\"", SQUIDSTRINGPRINT(Private()));
+                break;
+
+            case HttpHdrCcType::CC_NO_CACHE:
+                if (noCache().size())
+                    p->appendf("=\"" SQUIDSTRINGPH "\"", SQUIDSTRINGPRINT(noCache()));
+                break;
+            case HttpHdrCcType::CC_NO_STORE:
+                break;
+            case HttpHdrCcType::CC_NO_TRANSFORM:
+                break;
+            case HttpHdrCcType::CC_MUST_REVALIDATE:
+                break;
+            case HttpHdrCcType::CC_PROXY_REVALIDATE:
+                break;
             case HttpHdrCcType::CC_MAX_AGE:
                 p->appendf("=%d", maxAge());
                 break;
@@ -253,8 +276,16 @@ HttpHdrCc::packInto(Packable * p) const
             case HttpHdrCcType::CC_MIN_FRESH:
                 p->appendf("=%d", minFresh());
                 break;
-            default:
-                /* do nothing, directive was already printed */
+            case HttpHdrCcType::CC_ONLY_IF_CACHED:
+                break;
+            case HttpHdrCcType::CC_STALE_IF_ERROR:
+                p->appendf("=%d", staleIfError());
+                break;
+            case HttpHdrCcType::CC_IMMUTABLE:
+                break;
+            case HttpHdrCcType::CC_OTHER:
+            case HttpHdrCcType::CC_ENUM_END:
+                // done below after the loop
                 break;
             }
 
@@ -281,7 +312,7 @@ httpHdrCcStatDumper(StoreEntry * sentry, int, double val, double, int count)
 {
     extern const HttpHeaderStat *dump_stat; /* argh! */
     const int id = static_cast<int>(val);
-    const bool valid_id = id < HttpHdrCcType::CC_ENUM_END;
+    const bool valid_id = id >= 0 && id < static_cast<int>(HttpHdrCcType::CC_ENUM_END);
     const char *name = valid_id ? CcAttrs[id].name : "INVALID";
 
     if (count || valid_id)

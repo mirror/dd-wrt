@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,7 +11,7 @@
 #define STUB_API "SBuf.cc"
 #include "tests/STUB.h"
 
-#include "SBuf.h"
+#include "sbuf/SBuf.h"
 
 InstanceIdDefinitions(SBuf, "SBuf");
 
@@ -19,7 +19,6 @@ SBufStats SBuf::stats;
 const SBuf::size_type SBuf::npos;
 const SBuf::size_type SBuf::maxSize;
 
-SBufStats::SBufStats() {}
 std::ostream& SBufStats::dump(std::ostream &os) const STUB_RETVAL(os)
 SBufStats& SBufStats::operator +=(const SBufStats&) STUB_RETVAL(*this)
 
@@ -27,7 +26,6 @@ SBuf::SBuf() {}
 SBuf::SBuf(const SBuf &S) {}
 SBuf::SBuf(const char *S, size_type n) {}
 SBuf::SBuf(const char *S) {}
-SBuf::SBuf(const String &S) {}
 SBuf::SBuf(const std::string &s) {}
 SBuf::~SBuf() {}
 SBuf& SBuf::assign(const SBuf &S) STUB_RETVAL(*this)
@@ -54,6 +52,7 @@ char *SBuf::rawSpace(size_type minSize) STUB_RETVAL(NULL)
 void SBuf::forceSize(size_type newSize) STUB
 const char* SBuf::c_str() STUB_RETVAL("")
 void SBuf::reserveCapacity(size_type minCapacity) STUB
+SBuf::size_type SBuf::reserve(const SBufReservationRequirements &) STUB_RETVAL(0)
 SBuf& SBuf::chop(size_type pos, size_type n) STUB_RETVAL(*this)
 SBuf& SBuf::trim(const SBuf &toRemove, bool atBeginning, bool atEnd) STUB_RETVAL(*this)
 SBuf SBuf::substr(size_type pos, size_type n) const STUB_RETVAL(*this)
@@ -63,8 +62,6 @@ SBuf::size_type SBuf::rfind(char c, size_type endPos) const STUB_RETVAL(SBuf::np
 SBuf::size_type SBuf::rfind(const SBuf &str, size_type endPos) const STUB_RETVAL(SBuf::npos)
 SBuf::size_type SBuf::findFirstOf(const CharacterSet &set, size_type startPos) const STUB_RETVAL(SBuf::npos)
 SBuf::size_type SBuf::findFirstNotOf(const CharacterSet &set, size_type startPos) const STUB_RETVAL(SBuf::npos)
-int SBuf::scanf(const char *format, ...) STUB_RETVAL(-1)
 void SBuf::toLower() STUB
 void SBuf::toUpper() STUB
-String SBuf::toString() const STUB_RETVAL(String(""))
 

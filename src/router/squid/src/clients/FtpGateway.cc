@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -154,8 +154,8 @@ public:
     virtual void timeout(const CommTimeoutCbParams &io);
     void ftpAcceptDataConnection(const CommAcceptCbParams &io);
 
-    static HttpReply *ftpAuthRequired(HttpRequest * request, const char *realm);
-    const char *ftpRealm(void);
+    static HttpReply *ftpAuthRequired(HttpRequest * request, SBuf &realm);
+    SBuf ftpRealm();
     void loginFailed(void);
 
     virtual void haveParsedReplyHeaders();
@@ -189,7 +189,7 @@ typedef struct {
     char *link;
 } ftpListParts;
 
-#define CTRL_BUFLEN 1024
+#define CTRL_BUFLEN 16*1024
 static char cbuf[CTRL_BUFLEN];
 
 /*
@@ -209,7 +209,9 @@ static FTPSM ftpSendMdtm;
 static FTPSM ftpReadMdtm;
 static FTPSM ftpSendSize;
 static FTPSM ftpReadSize;
+#if 0
 static FTPSM ftpSendEPRT;
+#endif
 static FTPSM ftpReadEPRT;
 static FTPSM ftpSendPORT;
 static FTPSM ftpReadPORT;
@@ -443,6 +445,11 @@ Ftp::Gateway::loginParser(const SBuf &login, bool escaped)
 void
 Ftp::Gateway::listenForDataChannel(const Comm::ConnectionPointer &conn)
 {
+    if (!Comm::IsConnOpen(ctrl.conn)) {
+        debugs(9, 5, "The control connection to the remote end is closed");
+        return;
+    }
+
     assert(!Comm::IsConnOpen(data.conn));
 
     typedef CommCbMemFunT<Gateway, CommAcceptCbParams> AcceptDialer;
@@ -989,7 +996,7 @@ Ftp::Gateway::processReplyBody()
          * probably was aborted because content length exceeds one
          * of the maximum size limits.
          */
-        abortTransaction("entry aborted after calling appendSuccessHeader()");
+        abortAll("entry aborted after calling appendSuccessHeader()");
         return;
     }
 
@@ -1156,7 +1163,8 @@ Ftp::Gateway::start()
 {
     if (!checkAuth(&request->header)) {
         /* create appropriate reply */
-        HttpReply *reply = ftpAuthRequired(request, ftpRealm());
+        SBuf realm(ftpRealm()); // local copy so SBuf wont disappear too early
+        HttpReply *reply = ftpAuthRequired(request, realm);
         entry->replaceHttpReply(reply);
         serverComplete();
         return;
@@ -1164,7 +1172,7 @@ Ftp::Gateway::start()
 
     checkUrlpath();
     buildTitleUrl();
-    debugs(9, 5, "FD " << ctrl.conn->fd << " : host=" << request->url.host() <<
+    debugs(9, 5, "FD " << (ctrl.conn ? ctrl.conn->fd : -1) << " : host=" << request->url.host() <<
            ", path=" << request->url.path() << ", user=" << user << ", passwd=" << password);
     state = BEGIN;
     Ftp::Client::start();
@@ -1257,7 +1265,9 @@ Ftp::Gateway::loginFailed()
 
 #if HAVE_AUTH_MODULE_BASIC
     /* add Authenticate header */
-    newrep->header.putAuth("Basic", ftpRealm());
+    // XXX: performance regression. c_str() may reallocate
+    SBuf realm(ftpRealm()); // local copy so SBuf wont disappear too early
+    newrep->header.putAuth("Basic", realm.c_str());
 #endif
 
     // add it to the store entry for response....
@@ -1265,18 +1275,19 @@ Ftp::Gateway::loginFailed()
     serverComplete();
 }
 
-const char *
+SBuf
 Ftp::Gateway::ftpRealm()
 {
-    static char realm[8192];
+    SBuf realm;
 
     /* This request is not fully authenticated */
-    if (!request) {
-        snprintf(realm, 8192, "FTP %s unknown", user);
-    } else if (request->url.port() == 21) {
-        snprintf(realm, 8192, "FTP %s %s", user, request->url.host());
-    } else {
-        snprintf(realm, 8192, "FTP %s %s port %d", user, request->url.host(), request->url.port());
+    realm.appendf("FTP %s ", user);
+    if (!request)
+        realm.append("unknown", 7);
+    else {
+        realm.append(request->url.host());
+        if (request->url.port() != 21)
+            realm.appendf(" port %d", request->url.port());
     }
     return realm;
 }
@@ -1697,7 +1708,7 @@ Ftp::Gateway::processHeadResponse()
      * trying to write to the client.
      */
     if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
-        abortTransaction("entry aborted while processing HEAD");
+        abortAll("entry aborted while processing HEAD");
         return;
     }
 
@@ -1719,7 +1730,9 @@ ftpReadPasv(Ftp::Gateway * ftpState)
     if (ftpState->handlePasvReply(srvAddr))
         ftpState->connectDataChannel();
     else {
-        ftpSendEPRT(ftpState);
+        ftpFail(ftpState);
+        // Currently disabled, does not work correctly:
+        // ftpSendEPRT(ftpState);
         return;
     }
 }
@@ -1735,7 +1748,7 @@ Ftp::Gateway::dataChannelConnected(const CommConnectCbParams &io)
 
         // ABORT on timeouts. server may be waiting on a broken TCP link.
         if (io.xerrno == Comm::TIMEOUT)
-            writeCommand("ABOR");
+            writeCommand("ABOR\r\n");
 
         // try another connection attempt with some other method
         ftpSendPassive(this);
@@ -1759,6 +1772,11 @@ ftpOpenListenSocket(Ftp::Gateway * ftpState, int fallback)
     }
     safe_free(ftpState->data.host);
 
+    if (!Comm::IsConnOpen(ftpState->ctrl.conn)) {
+        debugs(9, 5, "The control connection to the remote end is closed");
+        return;
+    }
+
     /*
      * Set up a listen socket on the same local address as the
      * control connection.
@@ -1775,8 +1793,9 @@ ftpOpenListenSocket(Ftp::Gateway * ftpState, int fallback)
         errno = 0;
         if (setsockopt(ftpState->ctrl.conn->fd, SOL_SOCKET, SO_REUSEADDR,
                        (char *) &on, sizeof(on)) == -1) {
+            int xerrno = errno;
             // SO_REUSEADDR is only an optimization, no need to be verbose about error
-            debugs(9, 4, "setsockopt failed: " << xstrerror());
+            debugs(9, 4, "setsockopt failed: " << xstrerr(xerrno));
         }
         ftpState->ctrl.conn->flags |= COMM_REUSEADDR;
         temp->flags |= COMM_REUSEADDR;
@@ -1849,9 +1868,14 @@ ftpReadPORT(Ftp::Gateway * ftpState)
     ftpRestOrList(ftpState);
 }
 
+#if 0
 static void
 ftpSendEPRT(Ftp::Gateway * ftpState)
 {
+    /* check the server control channel is still available */
+    if (!ftpState || !ftpState->haveControlChannel("ftpSendEPRT"))
+        return;
+
     if (Config.Ftp.epsv_all && ftpState->flags.epsv_all_sent) {
         debugs(9, DBG_IMPORTANT, "FTP does not allow EPRT method after 'EPSV ALL' has been sent.");
         return;
@@ -1887,6 +1911,7 @@ ftpSendEPRT(Ftp::Gateway * ftpState)
     ftpState->writeCommand(cbuf);
     ftpState->state = Ftp::Client::SENT_EPRT;
 }
+#endif
 
 static void
 ftpReadEPRT(Ftp::Gateway * ftpState)
@@ -1913,10 +1938,8 @@ Ftp::Gateway::ftpAcceptDataConnection(const CommAcceptCbParams &io)
 {
     debugs(9, 3, HERE);
 
-    if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
-        abortTransaction("entry aborted when accepting data conn");
-        data.listenConn->close();
-        data.listenConn = NULL;
+    if (!Comm::IsConnOpen(ctrl.conn)) { /*Close handlers will cleanup*/
+        debugs(9, 5, "The control connection to the remote end is closed");
         return;
     }
 
@@ -1926,6 +1949,14 @@ Ftp::Gateway::ftpAcceptDataConnection(const CommAcceptCbParams &io)
         debugs(9, DBG_IMPORTANT, "FTP AcceptDataConnection: " << io.conn << ": " << xstrerr(io.xerrno));
         /** \todo Need to send error message on control channel*/
         ftpFail(this);
+        return;
+    }
+
+    if (EBIT_TEST(entry->flags, ENTRY_ABORTED)) {
+        abortAll("entry aborted when accepting data conn");
+        data.listenConn->close();
+        data.listenConn = NULL;
+        io.conn->close();
         return;
     }
 
@@ -2589,6 +2620,7 @@ Ftp::Gateway::appendSuccessHeader()
     if (mime_enc)
         reply->header.putStr(Http::HdrType::CONTENT_ENCODING, mime_enc);
 
+    reply->sources |= HttpMsg::srcFtp;
     setVirginReply(reply);
     adaptOrFinalizeReply();
 }
@@ -2615,13 +2647,14 @@ Ftp::Gateway::haveParsedReplyHeaders()
 }
 
 HttpReply *
-Ftp::Gateway::ftpAuthRequired(HttpRequest * request, const char *realm)
+Ftp::Gateway::ftpAuthRequired(HttpRequest * request, SBuf &realm)
 {
     ErrorState err(ERR_CACHE_ACCESS_DENIED, Http::scUnauthorized, request);
     HttpReply *newrep = err.BuildHttpReply();
 #if HAVE_AUTH_MODULE_BASIC
     /* add Authenticate header */
-    newrep->header.putAuth("Basic", realm);
+    // XXX: performance regression. c_str() may reallocate
+    newrep->header.putAuth("Basic", realm.c_str());
 #endif
     return newrep;
 }
@@ -2680,8 +2713,8 @@ void
 Ftp::Gateway::completeForwarding()
 {
     if (fwd == NULL || flags.completed_forwarding) {
-        debugs(9, 3, HERE << "completeForwarding avoids " <<
-               "double-complete on FD " << ctrl.conn->fd << ", Data FD " << data.conn->fd <<
+        debugs(9, 3, "avoid double-complete on FD " <<
+               (ctrl.conn ? ctrl.conn->fd : -1) << ", Data FD " << data.conn->fd <<
                ", this " << this << ", fwd " << fwd);
         return;
     }

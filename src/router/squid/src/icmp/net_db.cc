@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,9 +19,9 @@
 #include "squid.h"
 #include "CachePeer.h"
 #include "cbdata.h"
-#include "disk.h"
 #include "event.h"
 #include "fde.h"
+#include "fs_io.h"
 #include "FwdState.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
@@ -33,10 +33,10 @@
 #include "mgr/Registration.h"
 #include "mime_header.h"
 #include "neighbors.h"
+#include "SquidConfig.h"
 #include "SquidTime.h"
 #include "Store.h"
 #include "StoreClient.h"
-#include "SwapDir.h"
 #include "tools.h"
 #include "URL.h"
 #include "wordlist.h"
@@ -150,30 +150,35 @@ netdbHashDelete(const char *key)
     hash_remove_link(addr_table, hptr);
 }
 
+net_db_name::net_db_name(const char *hostname, netdbEntry *e) :
+    next(e ? e->hosts : nullptr),
+    net_db_entry(e)
+{
+    hash.key = xstrdup(hostname);
+    if (e) {
+        e->hosts = this;
+        ++ e->link_count;
+    }
+}
+
 static void
 netdbHostInsert(netdbEntry * n, const char *hostname)
 {
-    net_db_name *x = (net_db_name *)memAllocate(MEM_NET_DB_NAME);
-    x->hash.key = xstrdup(hostname);
-    x->next = n->hosts;
-    n->hosts = x;
-    x->net_db_entry = n;
+    net_db_name *x = new net_db_name(hostname, n);
     assert(hash_lookup(host_table, hostname) == NULL);
     hash_join(host_table, &x->hash);
-    ++ n->link_count;
 }
 
 static void
 netdbHostDelete(const net_db_name * x)
 {
-    netdbEntry *n;
-    net_db_name **X;
     assert(x != NULL);
     assert(x->net_db_entry != NULL);
-    n = x->net_db_entry;
+
+    netdbEntry *n = x->net_db_entry;
     -- n->link_count;
 
-    for (X = &n->hosts; *X; X = &(*X)->next) {
+    for (auto **X = &n->hosts; *X; X = &(*X)->next) {
         if (*X == x) {
             *X = x->next;
             break;
@@ -181,8 +186,7 @@ netdbHostDelete(const net_db_name * x)
     }
 
     hash_remove_link(host_table, (hash_link *) x);
-    xfree(x->hash.key);
-    memFree((void *) x, MEM_NET_DB_NAME);
+    delete x;
 }
 
 static netdbEntry *
@@ -211,7 +215,7 @@ netdbRelease(netdbEntry * n)
 
     if (n->link_count == 0) {
         netdbHashDelete(n->network);
-        memFree(n, MEM_NETDBENTRY);
+        delete n;
     }
 }
 
@@ -238,11 +242,11 @@ netdbPurgeLRU(void)
     int k = 0;
     int list_count = 0;
     int removed = 0;
-    list = (netdbEntry **)xcalloc(memInUse(MEM_NETDBENTRY), sizeof(netdbEntry *));
+    list = (netdbEntry **)xcalloc(netdbEntry::UseCount(), sizeof(netdbEntry *));
     hash_first(addr_table);
 
     while ((n = (netdbEntry *) hash_next(addr_table))) {
-        assert(list_count < memInUse(MEM_NETDBENTRY));
+        assert(list_count < netdbEntry::UseCount());
         *(list + list_count) = n;
         ++list_count;
     }
@@ -253,7 +257,7 @@ netdbPurgeLRU(void)
           netdbLRU);
 
     for (k = 0; k < list_count; ++k) {
-        if (memInUse(MEM_NETDBENTRY) < Config.Netdb.low)
+        if (netdbEntry::UseCount() < Config.Netdb.low)
             break;
 
         netdbRelease(*(list + k));
@@ -280,11 +284,11 @@ netdbAdd(Ip::Address &addr)
 {
     netdbEntry *n;
 
-    if (memInUse(MEM_NETDBENTRY) > Config.Netdb.high)
+    if (netdbEntry::UseCount() > Config.Netdb.high)
         netdbPurgeLRU();
 
     if ((n = netdbLookupAddr(addr)) == NULL) {
-        n = (netdbEntry *)memAllocate(MEM_NETDBENTRY);
+        n = new netdbEntry;
         netdbHashInsert(n, addr);
     }
 
@@ -499,8 +503,9 @@ netdbSaveState(void *foo)
     unlink(Config.netdbFilename);
     lf = logfileOpen(Config.netdbFilename, 4096, 0);
 
-    if (NULL == lf) {
-        debugs(50, DBG_IMPORTANT, "netdbSaveState: " << Config.netdbFilename << ": " << xstrerror());
+    if (lf) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, MYNAME << Config.netdbFilename << ": " << xstrerr(xerrno));
         return;
     }
 
@@ -637,7 +642,7 @@ netdbReloadState(void)
 
         N.last_use_time = (time_t) atoi(q);
 
-        n = (netdbEntry *)memAllocate(MEM_NETDBENTRY);
+        n = new netdbEntry;
 
         memcpy(n, &N, sizeof(netdbEntry));
 
@@ -678,15 +683,14 @@ netdbFreeNetdbEntry(void *data)
 {
     netdbEntry *n = (netdbEntry *)data;
     safe_free(n->peers);
-    memFree(n, MEM_NETDBENTRY);
+    delete n;
 }
 
 static void
 netdbFreeNameEntry(void *data)
 {
     net_db_name *x = (net_db_name *)data;
-    xfree(x->hash.key);
-    memFree(x, MEM_NET_DB_NAME);
+    delete x;
 }
 
 static void
@@ -884,12 +888,6 @@ netdbExchangeHandleReply(void *data, StoreIOBuffer receivedData)
     }
 }
 
-static void
-netdbRegisterWithCacheManager(void)
-{
-    Mgr::RegisterAction("netdb", "Network Measurement Database", netdbDump, 0, 1);
-}
-
 #endif /* USE_ICMP */
 
 /* PUBLIC FUNCTIONS */
@@ -898,14 +896,12 @@ void
 netdbInit(void)
 {
 #if USE_ICMP
-    int n;
-
-    netdbRegisterWithCacheManager();
+    Mgr::RegisterAction("netdb", "Network Measurement Database", netdbDump, 0, 1);
 
     if (addr_table)
         return;
 
-    n = hashPrime(Config.Netdb.high / 4);
+    int n = hashPrime(Config.Netdb.high / 4);
 
     addr_table = hash_create((HASHCMP *) strcmp, n, hash_string);
 
@@ -999,7 +995,7 @@ netdbDump(StoreEntry * sentry)
                       "RTT",
                       "Hops",
                       "Hostnames");
-    list = (netdbEntry **)xcalloc(memInUse(MEM_NETDBENTRY), sizeof(netdbEntry *));
+    list = (netdbEntry **)xcalloc(netdbEntry::UseCount(), sizeof(netdbEntry *));
     i = 0;
     hash_first(addr_table);
 
@@ -1008,9 +1004,9 @@ netdbDump(StoreEntry * sentry)
         ++i;
     }
 
-    if (i != memInUse(MEM_NETDBENTRY))
+    if (i != netdbEntry::UseCount())
         debugs(38, DBG_CRITICAL, "WARNING: netdb_addrs count off, found " << i <<
-               ", expected " << memInUse(MEM_NETDBENTRY));
+               ", expected " << netdbEntry::UseCount());
 
     qsort((char *) list,
           i,

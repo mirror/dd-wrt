@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,6 +20,8 @@
 #include "MemObject.h"
 #include "Range.h"
 #include "RemovalPolicy.h"
+#include "store/Controller.h"
+#include "store/forward.h"
 #include "store_key_md5.h"
 #include "StoreIOBuffer.h"
 #include "StoreStats.h"
@@ -33,18 +35,11 @@
 class AsyncCall;
 class HttpRequest;
 class RequestFlags;
-class StoreClient;
-class StoreSearch;
-class SwapDir;
 
 extern StoreIoStats store_io_stats;
 
-/// maximum number of entries per cache_dir
-enum { SwapFilenMax = 0xFFFFFF }; // keep in sync with StoreEntry::swap_filen
-
 class StoreEntry : public hash_link, public Packable
 {
-    MEMPROXY_CLASS(StoreEntry);
 
 public:
     static DeferredRead::DeferrableRead DeferReader;
@@ -87,10 +82,13 @@ public:
     void swapOutDecision(const MemObject::SwapOut::Decision &decision);
 
     void abort();
-    void unlink();
-    void makePublic();
+    void makePublic(const KeyScope keyScope = ksDefault);
     void makePrivate();
-    void setPublicKey();
+    void setPublicKey(const KeyScope keyScope = ksDefault);
+    /// Resets existing public key to a public key with default scope,
+    /// releasing the old default-scope entry (if any).
+    /// Does nothing if the existing public key already has default scope.
+    void clearPublicKeyScope();
     void setPrivateKey();
     void expireNow();
     void releaseRequest();
@@ -125,7 +123,7 @@ public:
     void registerAbort(STABH * cb, void *);
     void reset();
     void setMemStatus(mem_status_t);
-    void timestampsSet();
+    bool timestampsSet();
     void unregisterAbort();
     void destroyMemObject();
     int checkTooSmall();
@@ -133,7 +131,16 @@ public:
     void delayAwareRead(const Comm::ConnectionPointer &conn, char *buf, int len, AsyncCall::Pointer callback);
 
     void setNoDelay (bool const);
-    bool modifiedSince(HttpRequest * request) const;
+    void lastModified(const time_t when) { lastModified_ = when; }
+    /// \returns entry's 'effective' modification time
+    time_t lastModified() const {
+        // may still return -1 if timestamp is not set
+        return lastModified_ < 0 ? timestamp : lastModified_;
+    }
+    /// \returns a formatted string with entry's timestamps
+    const char *describeTimestamps() const;
+    // TODO: consider removing currently unsupported imslen parameter
+    bool modifiedSince(const time_t ims, const int imslen = -1) const;
     /// has ETag matching at least one of the If-Match etags
     bool hasIfMatchEtag(const HttpRequest &request) const;
     /// has ETag matching at least one of the If-None-Match etags
@@ -141,8 +148,8 @@ public:
     /// whether this entry has an ETag; if yes, puts ETag value into parameter
     bool hasEtag(ETag &etag) const;
 
-    /** What store does this entry belong too ? */
-    virtual RefCount<SwapDir> store() const;
+    /// the disk this entry is [being] cached on; asserts for entries w/o a disk
+    Store::Disk &disk() const;
 
     MemObject *mem_obj;
     RemovalPolicyNode repl;
@@ -150,7 +157,9 @@ public:
     time_t timestamp;
     time_t lastref;
     time_t expires;
-    time_t lastmod;
+private:
+    time_t lastModified_; ///< received Last-Modified value or -1; use lastModified()
+public:
     uint64_t swap_file_sz;
     uint16_t refcount;
     uint16_t flags;
@@ -179,6 +188,8 @@ public:
         return false;
     };
 
+    void *operator new(size_t byteCount);
+    void operator delete(void *address);
     void setReleaseFlag();
 #if USE_SQUID_ESI
 
@@ -221,6 +232,9 @@ protected:
 
 private:
     bool checkTooBig() const;
+    void forcePublicKey(const cache_key *newkey);
+    void adjustVary();
+    const cache_key *calcPublicKey(const KeyScope keyScope);
 
     static MemAllocator *pool;
 
@@ -272,163 +286,10 @@ private:
 /// \ingroup StoreAPI
 typedef void (*STOREGETCLIENT) (StoreEntry *, void *cbdata);
 
-/**
- \ingroup StoreAPI
- * Abstract base class that will replace the whole store and swapdir interface.
- */
-class Store : public RefCountable
-{
-
-public:
-    /** The root store */
-    static Store &Root() {
-        if (CurrentRoot == NULL)
-            fatal("No Store Root has been set");
-        return *CurrentRoot;
-    }
-    static void Root(Store *);
-    static void Root(RefCount<Store>);
-    static void Stats(StoreEntry * output);
-    static void Maintain(void *unused);
-
-    virtual ~Store() {}
-
-    /** Handle pending callbacks - called by the event loop. */
-    virtual int callback() = 0;
-
-    /** create the resources needed for this store to operate */
-    virtual void create();
-
-    /**
-     * Notify this store that its disk is full.
-     \todo XXX move into a protected api call between store files and their stores, rather than a top level api call
-     */
-    virtual void diskFull();
-
-    /** Retrieve a store entry from the store */
-    virtual StoreEntry * get(const cache_key *) = 0;
-
-    /** \todo imeplement the async version */
-    virtual void get(String const key , STOREGETCLIENT callback, void *cbdata) = 0;
-
-    /* prepare the store for use. The store need not be usable immediately,
-     * it should respond to readable() and writable() with true as soon
-     * as it can provide those services
-     */
-    virtual void init() = 0;
-
-    /**
-     * The maximum size the store will support in normal use. Inaccuracy is permitted,
-     * but may throw estimates for memory etc out of whack.
-     */
-    virtual uint64_t maxSize() const = 0;
-
-    /** The minimum size the store will shrink to via normal housekeeping */
-    virtual uint64_t minSize() const = 0;
-
-    /** current store size */
-    virtual uint64_t currentSize() const = 0;
-
-    /** the total number of objects stored */
-    virtual uint64_t currentCount() const = 0;
-
-    /** the maximum object size that can be stored, -1 if unlimited */
-    virtual int64_t maxObjectSize() const = 0;
-
-    /// collect cache storage-related statistics
-    virtual void getStats(StoreInfoStats &stats) const = 0;
-
-    /**
-     * Output stats to the provided store entry.
-     \todo make these calls asynchronous
-     */
-    virtual void stat(StoreEntry &) const = 0;
-
-    /** Sync the store prior to shutdown */
-    virtual void sync();
-
-    /** remove a Store entry from the store */
-    virtual void unlink (StoreEntry &);
-
-    /* search in the store */
-    virtual StoreSearch *search(String const url, HttpRequest *) = 0;
-
-    /* pulled up from SwapDir for migration.... probably do not belong here */
-    virtual void reference(StoreEntry &) = 0;   /* Reference this object */
-
-    /// Undo reference(), returning false iff idle e should be destroyed
-    virtual bool dereference(StoreEntry &, bool wantsLocalMemory) = 0;
-
-    virtual void maintain() = 0; /* perform regular maintenance should be private and self registered ... */
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// informs stores that this entry will be eventually unlinked
-    virtual void markForUnlink(StoreEntry &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // because test cases use non-StoreController derivatives as Root
-    /// called when the entry is no longer needed by any transaction
-    virtual void handleIdleEntry(StoreEntry &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // because test cases use non-StoreController derivatives as Root
-    /// called to get rid of no longer needed entry data in RAM, if any
-    virtual void memoryOut(StoreEntry &, const bool /*preserveSwappable*/) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// makes the entry available for collapsing future requests
-    virtual void allowCollapsing(StoreEntry *, const RequestFlags &, const HttpRequestMethod &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// marks the entry completed for collapsed requests
-    virtual void transientsCompleteWriting(StoreEntry &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// Update local intransit entry after changes made by appending worker.
-    virtual void syncCollapsed(const sfileno) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// calls Root().transients->abandon() if transients are tracked
-    virtual void transientsAbandon(StoreEntry &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// number of the transient entry readers some time ago
-    virtual int transientReaders(const StoreEntry &) const { return 0; }
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// disassociates the entry from the intransit table
-    virtual void transientsDisconnect(MemObject &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// removes the entry from the memory cache
-    virtual void memoryUnlink(StoreEntry &) {}
-
-    // XXX: This method belongs to Store::Root/StoreController, but it is here
-    // to avoid casting Root() to StoreController until Root() API is fixed.
-    /// disassociates the entry from the memory cache, preserving cached data
-    virtual void memoryDisconnect(StoreEntry &) {}
-
-    /// If the entry is not found, return false. Otherwise, return true after
-    /// tying the entry to this cache and setting inSync to updateCollapsed().
-    virtual bool anchorCollapsed(StoreEntry &, bool &/*inSync*/) { return false; }
-
-    /// update a local collapsed entry with fresh info from this cache (if any)
-    virtual bool updateCollapsed(StoreEntry &) { return false; }
-
-private:
-    static RefCount<Store> CurrentRoot;
+namespace Store {
+void Stats(StoreEntry *output);
+void Maintain(void *unused);
 };
-
-/// \ingroup StoreAPI
-typedef RefCount<Store> StorePointer;
 
 /// \ingroup StoreAPI
 size_t storeEntryInUse();
@@ -443,10 +304,10 @@ void storeEntryReplaceObject(StoreEntry *, HttpReply *);
 StoreEntry *storeGetPublic(const char *uri, const HttpRequestMethod& method);
 
 /// \ingroup StoreAPI
-StoreEntry *storeGetPublicByRequest(HttpRequest * request);
+StoreEntry *storeGetPublicByRequest(HttpRequest * request, const KeyScope keyScope = ksDefault);
 
 /// \ingroup StoreAPI
-StoreEntry *storeGetPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& method);
+StoreEntry *storeGetPublicByRequestMethod(HttpRequest * request, const HttpRequestMethod& method, const KeyScope keyScope = ksDefault);
 
 /// \ingroup StoreAPI
 /// Like storeCreatePureEntry(), but also locks the entry and sets entry key.
@@ -477,7 +338,6 @@ void storeAppendVPrintf(StoreEntry *, const char *, va_list ap);
 /// \ingroup StoreAPI
 int storeTooManyDiskFilesOpen(void);
 
-class SwapDir;
 /// \ingroup StoreAPI
 void storeHeapPositionUpdate(StoreEntry *, SwapDir *);
 

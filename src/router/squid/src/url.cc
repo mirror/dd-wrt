@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,6 +18,7 @@
 
 static HttpRequest *urlParseFinish(const HttpRequestMethod& method,
                                    const AnyP::ProtocolType protocol,
+                                   const char *const protoStr,
                                    const char *const urlpath,
                                    const char *const host,
                                    const SBuf &login,
@@ -96,6 +97,7 @@ urlInitialize(void)
     assert(0 == matchDomainName("foo.com", ".foo.com"));
     assert(0 == matchDomainName(".foo.com", ".foo.com"));
     assert(0 == matchDomainName("x.foo.com", ".foo.com"));
+    assert(0 == matchDomainName("y.x.foo.com", ".foo.com"));
     assert(0 != matchDomainName("x.foo.com", "foo.com"));
     assert(0 != matchDomainName("foo.com", "x.foo.com"));
     assert(0 != matchDomainName("bar.com", "foo.com"));
@@ -108,6 +110,17 @@ urlInitialize(void)
     assert(0 < matchDomainName("bfoo.com", "afoo.com"));
     assert(0 > matchDomainName("afoo.com", "bfoo.com"));
     assert(0 < matchDomainName("x-foo.com", ".foo.com"));
+
+    assert(0 == matchDomainName(".foo.com", ".foo.com", mdnRejectSubsubDomains));
+    assert(0 == matchDomainName("x.foo.com", ".foo.com", mdnRejectSubsubDomains));
+    assert(0 != matchDomainName("y.x.foo.com", ".foo.com", mdnRejectSubsubDomains));
+    assert(0 != matchDomainName(".x.foo.com", ".foo.com", mdnRejectSubsubDomains));
+
+    assert(0 == matchDomainName("*.foo.com", "x.foo.com", mdnHonorWildcards));
+    assert(0 == matchDomainName("*.foo.com", ".x.foo.com", mdnHonorWildcards));
+    assert(0 == matchDomainName("*.foo.com", ".foo.com", mdnHonorWildcards));
+    assert(0 != matchDomainName("*.foo.com", "foo.com", mdnHonorWildcards));
+
     /* more cases? */
 }
 
@@ -156,6 +169,9 @@ urlParseProtocol(const char *b)
 
     if (strncasecmp(b, "whois", len) == 0)
         return AnyP::PROTO_WHOIS;
+
+    if (len > 0)
+        return AnyP::PROTO_UNKNOWN;
 
     return AnyP::PROTO_NONE;
 }
@@ -214,8 +230,8 @@ urlParse(const HttpRequestMethod& method, char *url, HttpRequest *request)
     } else if ((method == Http::METHOD_OPTIONS || method == Http::METHOD_TRACE) &&
                URL::Asterisk().cmp(url) == 0) {
         protocol = AnyP::PROTO_HTTP;
-        port = AnyP::UriScheme(protocol).defaultPort();
-        return urlParseFinish(method, protocol, url, host, SBuf(), port, request);
+        port = 80; // or the slow way ...  AnyP::UriScheme(protocol,"http").defaultPort();
+        return urlParseFinish(method, protocol, "http", url, host, SBuf(), port, request);
     } else if (!strncmp(url, "urn:", 4)) {
         return urnParse(method, url, request);
     } else {
@@ -287,6 +303,8 @@ urlParse(const HttpRequestMethod& method, char *url, HttpRequest *request)
             *t = 0;
             strncpy((char *) host, t + 1, sizeof(host)-1);
             host[sizeof(host)-1] = '\0';
+            // Bug 4498: URL-unescape the login info after extraction
+            rfc1738_unescape(login);
         }
 
         /* Is there any host information? (we should eventually parse it above) */
@@ -420,7 +438,7 @@ urlParse(const HttpRequestMethod& method, char *url, HttpRequest *request)
         }
     }
 
-    return urlParseFinish(method, protocol, urlpath, host, SBuf(login), port, request);
+    return urlParseFinish(method, protocol, proto, urlpath, host, SBuf(login), port, request);
 }
 
 /**
@@ -431,6 +449,7 @@ urlParse(const HttpRequestMethod& method, char *url, HttpRequest *request)
 static HttpRequest *
 urlParseFinish(const HttpRequestMethod& method,
                const AnyP::ProtocolType protocol,
+               const char *const protoStr, // for unknown protocols
                const char *const urlpath,
                const char *const host,
                const SBuf &login,
@@ -438,9 +457,9 @@ urlParseFinish(const HttpRequestMethod& method,
                HttpRequest *request)
 {
     if (NULL == request)
-        request = new HttpRequest(method, protocol, urlpath);
+        request = new HttpRequest(method, protocol, protoStr, urlpath);
     else {
-        request->initHTTP(method, protocol, urlpath);
+        request->initHTTP(method, protocol, protoStr, urlpath);
     }
 
     request->url.host(host);
@@ -454,11 +473,11 @@ urnParse(const HttpRequestMethod& method, char *urn, HttpRequest *request)
 {
     debugs(50, 5, "urnParse: " << urn);
     if (request) {
-        request->initHTTP(method, AnyP::PROTO_URN, urn + 4);
+        request->initHTTP(method, AnyP::PROTO_URN, "urn", urn + 4);
         return request;
     }
 
-    return new HttpRequest(method, AnyP::PROTO_URN, urn + 4);
+    return new HttpRequest(method, AnyP::PROTO_URN, "urn", urn + 4);
 }
 
 void
@@ -494,7 +513,8 @@ URL::absolute() const
         // TODO: most URL will be much shorter, avoid allocating this much
         absolute_.reserveCapacity(MAX_URL);
 
-        absolute_.appendf("%s:", getScheme().c_str());
+        absolute_.append(getScheme().image());
+        absolute_.append(":",1);
         if (getScheme() != AnyP::PROTO_URN) {
             absolute_.append("//", 2);
             const bool omitUserInfo = getScheme() == AnyP::PROTO_HTTP ||
@@ -618,8 +638,9 @@ urlMakeAbsolute(const HttpRequest * req, const char *relUrl)
     }
 
     SBuf authorityForm = req->url.authority(); // host[:port]
-    size_t urllen = snprintf(urlbuf, MAX_URL, "%s://" SQUIDSBUFPH "%s" SQUIDSBUFPH,
-                             req->url.getScheme().c_str(),
+    const SBuf &scheme = req->url.getScheme().image();
+    size_t urllen = snprintf(urlbuf, MAX_URL, SQUIDSBUFPH "://" SQUIDSBUFPH "%s" SQUIDSBUFPH,
+                             SQUIDSBUFPRINT(scheme),
                              SQUIDSBUFPRINT(req->url.userInfo()),
                              !req->url.userInfo().isEmpty() ? "@" : "",
                              SQUIDSBUFPRINT(authorityForm));
@@ -658,15 +679,19 @@ urlMakeAbsolute(const HttpRequest * req, const char *relUrl)
 }
 
 int
-matchDomainName(const char *h, const char *d, bool honorWildcards)
+matchDomainName(const char *h, const char *d, uint flags)
 {
     int dl;
     int hl;
 
+    const bool hostIncludesSubdomains = (*h == '.');
     while ('.' == *h)
         ++h;
 
     hl = strlen(h);
+
+    if (hl == 0)
+        return -1;
 
     dl = strlen(d);
 
@@ -705,9 +730,20 @@ matchDomainName(const char *h, const char *d, bool honorWildcards)
              * is a leading '.'.
              */
 
-            if ('.' == d[0])
-                return 0;
-            else
+            if ('.' == d[0]) {
+                if (flags & mdnRejectSubsubDomains) {
+                    // Check for sub-sub domain and reject
+                    while(--hl >= 0 && h[hl] != '.');
+                    if (hl < 0) {
+                        // No sub-sub domain found, but reject if there is a
+                        // leading dot in given host string (which is removed
+                        // before the check is started).
+                        return hostIncludesSubdomains ? 1 : 0;
+                    } else
+                        return 1; // sub-sub domain, reject
+                } else
+                    return 0;
+            } else
                 return 1;
         }
     }
@@ -719,7 +755,7 @@ matchDomainName(const char *h, const char *d, bool honorWildcards)
     // If the h has a form of "*.foo.com" and d has a form of "x.foo.com"
     // then the h[hl] points to '*', h[hl+1] to '.' and d[dl] to 'x'
     // The following checks are safe, the "h[hl + 1]" in the worst case is '\0'.
-    if (honorWildcards && h[hl] == '*' && h[hl + 1] == '.')
+    if ((flags & mdnHonorWildcards) && h[hl] == '*' && h[hl + 1] == '.')
         return 0;
 
     /*
@@ -795,11 +831,9 @@ urlCheckRequest(const HttpRequest * r)
 
     case AnyP::PROTO_HTTPS:
 #if USE_OPENSSL
-
         rc = 1;
-
-        break;
-
+#elif USE_GNUTLS
+        rc = 1;
 #else
         /*
         * Squid can't originate an SSL connection, so it should
@@ -807,8 +841,8 @@ urlCheckRequest(const HttpRequest * r)
         * CONNECT instead.
         */
         rc = 0;
-
 #endif
+        break;
 
     default:
         break;

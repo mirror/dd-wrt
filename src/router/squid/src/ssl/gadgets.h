@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,20 +9,24 @@
 #ifndef SQUID_SSL_GADGETS_H
 #define SQUID_SSL_GADGETS_H
 
+#include "base/HardFun.h"
 #include "security/forward.h"
 #include "ssl/crtd_message.h"
 
 #if HAVE_OPENSSL_TXT_DB_H
 #include <openssl/txt_db.h>
 #endif
+#if HAVE_OPENSSL_X509V3_H
+#include <openssl/x509v3.h>
+#endif
 #include <string>
 
 namespace Ssl
 {
 /**
- \defgroup SslCrtdSslAPI ssl_crtd SSL api.
+ \defgroup SslCrtdSslAPI SSL certificate generator API
  These functions must not depend on Squid runtime code such as debug()
- because they are used by ssl_crtd.
+ because they are used by security_file_certgen helper.
  */
 
 #if SQUID_USE_CONST_SSL_METHOD
@@ -36,44 +40,44 @@ typedef SSL_METHOD * ContextMethod;
 #endif
 
 /**
- \ingroup SslCrtdSslAPI
- * TidyPointer typedefs for  common SSL objects
+ * std::unique_ptr typedefs for common SSL objects
  */
-sk_free_wrapper(sk_X509, STACK_OF(X509) *, X509_free)
-typedef TidyPointer<STACK_OF(X509), sk_X509_free_wrapper> X509_STACK_Pointer;
+sk_dtor_wrapper(sk_X509, STACK_OF(X509) *, X509_free);
+typedef std::unique_ptr<STACK_OF(X509), sk_X509_free_wrapper> X509_STACK_Pointer;
 
 CtoCpp1(EVP_PKEY_free, EVP_PKEY *)
-typedef Security::LockingPointer<EVP_PKEY, EVP_PKEY_free_cpp, CRYPTO_LOCK_EVP_PKEY> EVP_PKEY_Pointer;
+#if defined(CRYPTO_LOCK_EVP_PKEY) // OpenSSL 1.0
+inline int EVP_PKEY_up_ref(EVP_PKEY *t) {if (t) CRYPTO_add(&t->references, 1, CRYPTO_LOCK_EVP_PKEY); return 0;}
+#endif
+typedef Security::LockingPointer<EVP_PKEY, EVP_PKEY_free_cpp, HardFun<int, EVP_PKEY *, EVP_PKEY_up_ref> > EVP_PKEY_Pointer;
 
-CtoCpp1(BN_free, BIGNUM *)
-typedef TidyPointer<BIGNUM, BN_free_cpp> BIGNUM_Pointer;
+typedef std::unique_ptr<BIGNUM, HardFun<void, BIGNUM*, &BN_free>> BIGNUM_Pointer;
 
-CtoCpp1(BIO_free, BIO *)
-typedef TidyPointer<BIO, BIO_free_cpp> BIO_Pointer;
+typedef std::unique_ptr<BIO, HardFun<void, BIO*, &BIO_vfree>> BIO_Pointer;
 
-CtoCpp1(ASN1_INTEGER_free, ASN1_INTEGER *)
-typedef TidyPointer<ASN1_INTEGER, ASN1_INTEGER_free_cpp> ASN1_INT_Pointer;
+typedef std::unique_ptr<ASN1_INTEGER, HardFun<void, ASN1_INTEGER*, &ASN1_INTEGER_free>> ASN1_INT_Pointer;
 
-CtoCpp1(TXT_DB_free, TXT_DB *)
-typedef TidyPointer<TXT_DB, TXT_DB_free_cpp> TXT_DB_Pointer;
+typedef std::unique_ptr<ASN1_OCTET_STRING, HardFun<void, ASN1_OCTET_STRING*, &ASN1_OCTET_STRING_free>> ASN1_OCTET_STRING_Pointer;
 
-CtoCpp1(X509_NAME_free, X509_NAME *)
-typedef TidyPointer<X509_NAME, X509_NAME_free_cpp> X509_NAME_Pointer;
+typedef std::unique_ptr<TXT_DB, HardFun<void, TXT_DB*, &TXT_DB_free>> TXT_DB_Pointer;
 
-CtoCpp1(RSA_free, RSA *)
-typedef TidyPointer<RSA, RSA_free_cpp> RSA_Pointer;
+typedef std::unique_ptr<X509_NAME, HardFun<void, X509_NAME*, &X509_NAME_free>> X509_NAME_Pointer;
 
-CtoCpp1(X509_REQ_free, X509_REQ *)
-typedef TidyPointer<X509_REQ, X509_REQ_free_cpp> X509_REQ_Pointer;
+typedef std::unique_ptr<RSA, HardFun<void, RSA*, &RSA_free>> RSA_Pointer;
 
-CtoCpp1(SSL_CTX_free, SSL_CTX *)
-typedef TidyPointer<SSL_CTX, SSL_CTX_free_cpp> SSL_CTX_Pointer;
+typedef std::unique_ptr<X509_REQ, HardFun<void, X509_REQ*, &X509_REQ_free>> X509_REQ_Pointer;
 
-CtoCpp1(SSL_free, SSL *)
-typedef TidyPointer<SSL, SSL_free_cpp> SSL_Pointer;
+sk_dtor_wrapper(sk_X509_NAME, STACK_OF(X509_NAME) *, X509_NAME_free);
+typedef std::unique_ptr<STACK_OF(X509_NAME), sk_X509_NAME_free_wrapper> X509_NAME_STACK_Pointer;
 
-sk_free_wrapper(sk_X509_NAME, STACK_OF(X509_NAME) *, X509_NAME_free)
-typedef TidyPointer<STACK_OF(X509_NAME), sk_X509_NAME_free_wrapper> X509_NAME_STACK_Pointer;
+typedef std::unique_ptr<AUTHORITY_KEYID, HardFun<void, AUTHORITY_KEYID*, &AUTHORITY_KEYID_free>> AUTHORITY_KEYID_Pointer;
+
+sk_dtor_wrapper(sk_GENERAL_NAME, STACK_OF(GENERAL_NAME) *, GENERAL_NAME_free);
+typedef std::unique_ptr<STACK_OF(GENERAL_NAME), sk_GENERAL_NAME_free_wrapper> GENERAL_NAME_STACK_Pointer;
+
+typedef std::unique_ptr<GENERAL_NAME, HardFun<void, GENERAL_NAME*, &GENERAL_NAME_free>> GENERAL_NAME_Pointer;
+
+typedef std::unique_ptr<X509_EXTENSION, HardFun<void, X509_EXTENSION*, &X509_EXTENSION_free>> X509_EXTENSION_Pointer;
 
 /**
  \ingroup SslCrtdSslAPI

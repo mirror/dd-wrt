@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,9 +17,10 @@
 #include "RequestFlags.h"
 #include "SquidConfig.h"
 #include "Store.h"
+#include "store/Disk.h"
+#include "store/Disks.h"
 #include "StoreFileSystem.h"
 #include "StoreSearch.h"
-#include "SwapDir.h"
 #include "testRock.h"
 #include "testStoreSupport.h"
 #include "unitTestMain.h"
@@ -32,7 +33,7 @@
 #include <unistd.h>
 #endif
 
-#define TESTDIR "testRock_Store"
+#define TESTDIR "tr"
 
 CPPUNIT_TEST_SUITE_REGISTRATION( testRock );
 
@@ -56,12 +57,15 @@ testRock::setUp()
     if (0 > system ("rm -rf " TESTDIR))
         throw std::runtime_error("Failed to clean test work directory");
 
+    Config.memShared.defaultTo(false);
+    Config.shmLocking.defaultTo(false);
+
     // use current directory for shared segments (on path-based OSes)
     Ipc::Mem::Segment::BasePath = getcwd(cwd,MAXPATHLEN);
     if (Ipc::Mem::Segment::BasePath == NULL)
         Ipc::Mem::Segment::BasePath = ".";
 
-    Store::Root(new StoreController);
+    Store::Init();
 
     store = new Rock::SwapDir();
 
@@ -94,7 +98,7 @@ testRock::tearDown()
 {
     CPPUNIT_NS::TestFixture::tearDown();
 
-    Store::Root(NULL);
+    Store::FreeMemory();
 
     store = NULL;
 
@@ -141,8 +145,6 @@ testRock::commonInit()
     comm_init();
 
     httpHeaderInitModule(); /* must go before any header processing (e.g. the one in errorInitialize) */
-
-    httpReplyInitModule();  /* must go before accepting replies */
 
     mem_policy = createRemovalPolicy(Config.replPolicy);
 

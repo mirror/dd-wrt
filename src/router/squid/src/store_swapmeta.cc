@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -39,10 +39,8 @@ storeSwapMetaBuild(StoreEntry * e)
 {
     tlv *TLV = NULL;        /* we'll return this */
     tlv **T = &TLV;
-    const char *vary;
     assert(e->mem_obj != NULL);
     const int64_t objsize = e->mem_obj->expectedReplySize();
-    assert(e->swap_status == SWAPOUT_WRITING);
 
     // e->mem_obj->request may be nil in this context
     SBuf url;
@@ -88,10 +86,10 @@ storeSwapMetaBuild(StoreEntry * e)
     }
 
     T = StoreMeta::Add(T, t);
-    vary = e->mem_obj->vary_headers;
+    SBuf vary(e->mem_obj->vary_headers);
 
-    if (vary) {
-        t =StoreMeta::Factory(STORE_META_VARY_HEADERS, strlen(vary) + 1, vary);
+    if (!vary.isEmpty()) {
+        t = StoreMeta::Factory(STORE_META_VARY_HEADERS, vary.length(), vary.c_str());
 
         if (!t) {
             storeSwapTLVFree(TLV);

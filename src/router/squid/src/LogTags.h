@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -25,8 +25,10 @@ typedef enum {
     LOG_TCP_REFRESH_FAIL_OLD,   // refresh from origin failed, stale reply sent
     LOG_TCP_REFRESH_FAIL_ERR,   // refresh from origin failed, error forwarded
     LOG_TCP_REFRESH_MODIFIED,   // refresh from origin replaced existing entry
+    LOG_TCP_REFRESH,            // refresh from origin started, but still pending
     LOG_TCP_CLIENT_REFRESH_MISS,
     LOG_TCP_IMS_HIT,
+    LOG_TCP_INM_HIT,
     LOG_TCP_SWAPFAIL_MISS,
     LOG_TCP_NEGATIVE_HIT,
     LOG_TCP_MEM_HIT,
@@ -48,6 +50,8 @@ class LogTags
 {
 public:
     LogTags(LogTags_ot t) : oldType(t) {assert(oldType < LOG_TYPE_MAX);}
+    // XXX: this operator does not reset flags
+    // TODO: either replace with a category-only setter or remove
     LogTags &operator =(const LogTags_ot &t) {assert(t < LOG_TYPE_MAX); oldType = t; return *this;}
 
     /// compute the status access.log field
@@ -56,12 +60,16 @@ public:
     /// determine if the log tag code indicates a cache HIT
     bool isTcpHit() const;
 
-    /// error states terminating the transaction
-    struct Errors {
-        Errors() : timedout(false), aborted(false) {}
+    /// Things that may happen to a transaction while it is being
+    /// processed according to its LOG_* category. Logged as _SUFFIX(es).
+    /// Unlike LOG_* categories, these flags may not be mutually exclusive.
+    class Errors {
+    public:
+        Errors() : ignored(false), timedout(false), aborted(false) {}
 
-        bool timedout; ///< tag: TIMEDOUT - terminated due to a lifetime or I/O timeout
-        bool aborted;  ///< tag: ABORTED  - other abnormal termination (e.g., I/O error)
+        bool ignored; ///< _IGNORED: the response was not used for anything
+        bool timedout; ///< _TIMEDOUT: terminated due to a lifetime or I/O timeout
+        bool aborted;  ///< _ABORTED: other abnormal termination (e.g., I/O error)
     } err;
 
 private:

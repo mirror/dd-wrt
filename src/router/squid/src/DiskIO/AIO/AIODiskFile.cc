@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,12 +22,12 @@
 
 #include "squid.h"
 #include "Debug.h"
-#include "disk.h"
 #include "DiskIO/AIO/AIODiskFile.h"
 #include "DiskIO/AIO/AIODiskIOStrategy.h"
 #include "DiskIO/IORequestor.h"
 #include "DiskIO/ReadRequest.h"
 #include "DiskIO/WriteRequest.h"
+#include "fs_io.h"
 #include "globals.h"
 
 #include <cerrno>
@@ -132,8 +132,9 @@ AIODiskFile::read(ReadRequest *request)
 
     /* Initiate aio */
     if (aio_read(&qe->aq_e_aiocb) < 0) {
-        fatalf("Aiee! aio_read() returned error (%d)  FIXME and wrap file_read !\n", errno);
-        debugs(79, DBG_IMPORTANT, "WARNING: aio_read() returned error: " << xstrerror());
+        int xerrno = errno;
+        fatalf("Aiee! aio_read() returned error (%d)  FIXME and wrap file_read !\n", xerrno);
+        debugs(79, DBG_IMPORTANT, "WARNING: aio_read() returned error: " << xstrerr(xerrno));
         /* fall back to blocking method */
         //        file_read(fd, request->buf, request->len, request->offset, callback, data);
     }
@@ -190,8 +191,9 @@ AIODiskFile::write(WriteRequest *request)
 
     /* Initiate aio */
     if (aio_write(&qe->aq_e_aiocb) < 0) {
-        fatalf("Aiee! aio_write() returned error (%d) FIXME and wrap file_write !\n", errno);
-        debugs(79, DBG_IMPORTANT, "WARNING: aio_write() returned error: " << xstrerror());
+        int xerrno = errno;
+        fatalf("Aiee! aio_write() returned error (%d) FIXME and wrap file_write !\n", xerrno);
+        debugs(79, DBG_IMPORTANT, "WARNING: aio_write() returned error: " << xstrerr(xerrno));
         /* fall back to blocking method */
         //       file_write(fd, offset, buf, len, callback, data, freefunc);
     }

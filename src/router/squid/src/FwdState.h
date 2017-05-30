@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -120,6 +120,9 @@ private:
     /// stops monitoring server connection for closure and updates pconn stats
     void closeServerConnection(const char *reason);
 
+    void syncWithServerConn(const char *host);
+    void syncHierNote(const Comm::ConnectionPointer &server, const char *host);
+
 public:
     StoreEntry *entry;
     HttpRequest *request;
@@ -149,6 +152,8 @@ private:
     Comm::ConnectionList serverDestinations;
 
     Comm::ConnectionPointer serverConn; ///< a successfully opened connection to a server.
+
+    AsyncCall::Pointer closeHandler; ///< The serverConn close handler
 
     /// possible pconn race states
     typedef enum { raceImpossible, racePossible, raceHappened } PconnRace;

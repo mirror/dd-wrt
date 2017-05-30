@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -341,6 +341,14 @@ verifyTlsCertificate(gnutls_session_t session)
 }
 #endif
 
+#if USE_GNUTLS
+static void
+gnutlsDebugHandler(int level, const char *msg)
+{
+    debugVerbose(level, "GnuTLS: " << msg);
+}
+#endif
+
 void
 Transport::InitTls()
 {
@@ -348,11 +356,17 @@ Transport::InitTls()
     debugVerbose(3, "Initializing TLS library...");
     // NP: gnutls init is re-entrant and lock-counted with deinit but not thread safe.
     if (gnutls_global_init() != GNUTLS_E_SUCCESS) {
-        std::cerr << "FATAL ERROR: TLS Initialize failed: " << xstrerror() << std::endl;
+        int xerrno = errno;
+        std::cerr << "FATAL ERROR: TLS Initialize failed: " << xstrerr(xerrno) << std::endl;
         exit(1);
     }
 
     Config.tlsEnabled = true;
+
+#if USE_GNUTLS
+    gnutls_global_set_log_function(&gnutlsDebugHandler);
+    gnutls_global_set_log_level(scParams.verbosityLevel);
+#endif
 
     // Initialize for anonymous TLS
     gnutls_anon_allocate_client_credentials(&Config.anonCredentials);

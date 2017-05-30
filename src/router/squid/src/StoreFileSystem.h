@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,6 +9,7 @@
 #ifndef SQUID_STOREFILESYSTEM_H
 #define SQUID_STOREFILESYSTEM_H
 
+#include "store/forward.h"
 #include <vector>
 
 /* ****** DOCUMENTATION ***** */
@@ -47,7 +48,7 @@
  \par
  * configure will take a list of storage types through the
  * --enable-store-io parameter. This parameter takes a list of
- * space seperated storage types. For example,
+ * space separated storage types. For example,
  * --enable-store-io="ufs aufs" .
  *
  \par
@@ -78,8 +79,6 @@
  *    candidate SwapDirs to find out whether it wants to store a
  *    given StoreEntry. A maxobjsize of -1 means 'any size'.
  */
-
-class SwapDir;
 
 /**
  \ingroup FileSystems

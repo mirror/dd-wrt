@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,7 +11,7 @@
 
 #include "globals.h"
 #include "profiler/Profiler.h"
-#include "SBufList.h"
+#include "sbuf/List.h"
 
 /** A list of C-strings
  *
@@ -48,21 +48,9 @@ const char *wordlistAdd(wordlist **, const char *);
 
 /** Concatenate a wordlist
  *
- * \deprecated use SBufListContainerJoin(SBuf()) from SBufAlgos.h instead
+ * \deprecated use SBufListContainerJoin(SBuf()) from sbuf/Algorithms.h instead
  */
 void wordlistCat(const wordlist *, MemBuf *);
-
-/** append a wordlist to another
- *
- * \deprecated use SBufList.merge(otherwordlist) instead
- */
-void wordlistAddWl(wordlist **, wordlist *);
-
-/** Concatenate the words in a wordlist
- *
- * \deprecated use SBufListContainerJoin(SBuf()) from SBufAlgos.h instead
- */
-void wordlistJoin(wordlist **, wordlist **);
 
 /// destroy a wordlist
 void wordlistDestroy(wordlist **);

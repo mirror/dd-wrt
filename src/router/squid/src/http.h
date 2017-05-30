@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,8 @@
 #include "clients/Client.h"
 #include "comm.h"
 #include "http/forward.h"
-#include "HttpStateFlags.h"
+#include "http/StateFlags.h"
+#include "sbuf/SBuf.h"
 
 class FwdState;
 class HttpHeader;
@@ -29,7 +30,7 @@ public:
                                        StoreEntry * entry,
                                        const AccessLogEntryPointer &al,
                                        HttpHeader * hdr_out,
-                                       const HttpStateFlags &flags);
+                                       const Http::StateFlags &flags);
 
     virtual const Comm::ConnectionPointer & dataConnection() const;
     /* should be private */
@@ -45,7 +46,7 @@ public:
     CachePeer *_peer;       /* CachePeer request made to */
     int eof;            /* reached end-of-object? */
     int lastChunk;      /* reached last chunk of a chunk-encoded reply */
-    HttpStateFlags flags;
+    Http::StateFlags flags;
     size_t read_sz;
     SBuf inBuf;                ///< I/O buffer for receiving server responses
     bool ignoreCacheControl;
@@ -84,8 +85,10 @@ private:
     virtual bool getMoreRequestBody(MemBuf &buf);
     virtual void closeServer(); // end communication with the server
     virtual bool doneWithServer() const; // did we end communication?
-    virtual void abortTransaction(const char *reason); // abnormal termination
+    virtual void abortAll(const char *reason); // abnormal termination
     virtual bool mayReadVirginReplyBody() const;
+
+    void abortTransaction(const char *reason) { abortAll(reason); } // abnormal termination
 
     /**
      * determine if read buffer can have space made available
@@ -126,11 +129,15 @@ private:
     int64_t payloadSeen;
     /// positive when we read more than we wanted
     int64_t payloadTruncated;
+
+    /// Whether we received a Date header older than that of a matching
+    /// cached response.
+    bool sawDateGoBack;
 };
 
 int httpCachable(const HttpRequestMethod&);
 void httpStart(FwdState *);
-const char *httpMakeVaryMark(HttpRequest * request, HttpReply const * reply);
+SBuf httpMakeVaryMark(HttpRequest * request, HttpReply const * reply);
 
 #endif /* SQUID_HTTP_H */
 

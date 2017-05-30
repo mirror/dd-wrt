@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,10 +12,12 @@
 #include "anyp/PortCfg.h"
 #include "base/Subscription.h"
 #include "client_side.h"
-#include "disk.h"
+#include "fatal.h"
 #include "fde.h"
 #include "fqdncache.h"
+#include "fs_io.h"
 #include "htcp.h"
+#include "http/Stream.h"
 #include "ICP.h"
 #include "ip/Intercept.h"
 #include "ip/QosConfig.h"
@@ -26,7 +28,7 @@
 #include "SquidConfig.h"
 #include "SquidMath.h"
 #include "SquidTime.h"
-#include "SwapDir.h"
+#include "store/Disks.h"
 #include "tools.h"
 #include "wordlist.h"
 
@@ -387,9 +389,11 @@ sigusr2_handle(int sig)
     }
 
 #if !HAVE_SIGACTION
-    if (signal(sig, sigusr2_handle) == SIG_ERR) /* reinstall */
-        debugs(50, DBG_CRITICAL, "signal: sig=" << sig << " func=sigusr2_handle: " << xstrerror());
-
+    /* reinstall */
+    if (signal(sig, sigusr2_handle) == SIG_ERR) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "signal: sig=" << sig << " func=sigusr2_handle: " << xstrerr(xerrno));
+    }
 #endif
 }
 
@@ -421,13 +425,6 @@ getMyHostname(void)
     if (HttpPortList != NULL && sa.isAnyAddr())
         sa = HttpPortList->s;
 
-#if USE_OPENSSL
-
-    if (HttpsPortList != NULL && sa.isAnyAddr())
-        sa = HttpsPortList->s;
-
-#endif
-
     /*
      * If the first http_port address has a specific address, try a
      * reverse DNS lookup on it.
@@ -455,7 +452,8 @@ getMyHostname(void)
 
     // still no host. fallback to gethostname()
     if (gethostname(host, SQUIDHOSTNAMELEN) < 0) {
-        debugs(50, DBG_IMPORTANT, "WARNING: gethostname failed: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "WARNING: gethostname failed: " << xstrerr(xerrno));
     } else {
         /* Verify that the hostname given resolves properly */
         struct addrinfo hints;
@@ -474,10 +472,11 @@ getMyHostname(void)
 
             return host;
         }
+        int xerrno = errno;
 
         if (AI)
             freeaddrinfo(AI);
-        debugs(50, DBG_IMPORTANT, "WARNING: '" << host << "' rDNS test failed: " << xstrerror());
+        debugs(50, DBG_IMPORTANT, "WARNING: '" << host << "' rDNS test failed: " << xstrerr(xerrno));
     }
 
     /* throw a configuration error when the Host/IP given has bad DNS/rDNS. */
@@ -505,16 +504,14 @@ leave_suid(void)
     debugs(21, 3, "leave_suid: PID " << getpid() << " called");
 
     if (Config.effectiveGroup) {
-
 #if HAVE_SETGROUPS
-
         setgroups(1, &Config2.effectiveGroupID);
-
 #endif
 
-        if (setgid(Config2.effectiveGroupID) < 0)
-            debugs(50, DBG_CRITICAL, "ALERT: setgid: " << xstrerror());
-
+        if (setgid(Config2.effectiveGroupID) < 0) {
+            int xerrno = errno;
+            debugs(50, DBG_CRITICAL, "ALERT: setgid: " << xstrerr(xerrno));
+        }
     }
 
     if (geteuid() != 0)
@@ -528,8 +525,10 @@ leave_suid(void)
 
     if (!Config.effectiveGroup) {
 
-        if (setgid(Config2.effectiveGroupID) < 0)
-            debugs(50, DBG_CRITICAL, "ALERT: setgid: " << xstrerror());
+        if (setgid(Config2.effectiveGroupID) < 0) {
+            int xerrno = errno;
+            debugs(50, DBG_CRITICAL, "ALERT: setgid: " << xstrerr(xerrno));
+        }
 
         if (initgroups(Config.effectiveUser, Config2.effectiveGroupID) < 0) {
             debugs(50, DBG_CRITICAL, "ALERT: initgroups: unable to set groups for User " <<
@@ -539,19 +538,22 @@ leave_suid(void)
     }
 
 #if HAVE_SETRESUID
-
-    if (setresuid(Config2.effectiveUserID, Config2.effectiveUserID, 0) < 0)
-        debugs(50, DBG_CRITICAL, "ALERT: setresuid: " << xstrerror());
+    if (setresuid(Config2.effectiveUserID, Config2.effectiveUserID, 0) < 0) {
+        const auto xerrno = errno;
+        fatalf("FATAL: setresuid: %s", xstrerr(xerrno));
+    }
 
 #elif HAVE_SETEUID
-
-    if (seteuid(Config2.effectiveUserID) < 0)
-        debugs(50, DBG_CRITICAL, "ALERT: seteuid: " << xstrerror());
+    if (seteuid(Config2.effectiveUserID) < 0) {
+        const auto xerrno = errno;
+        fatalf("FATAL: seteuid: %s", xstrerr(xerrno));
+    }
 
 #else
-
-    if (setuid(Config2.effectiveUserID) < 0)
-        debugs(50, DBG_CRITICAL, "ALERT: setuid: " << xstrerror());
+    if (setuid(Config2.effectiveUserID) < 0) {
+        const auto xerrno = errno;
+        fatalf("FATAL: setuid: %s", xstrerr(xerrno));
+    }
 
 #endif
 
@@ -559,9 +561,10 @@ leave_suid(void)
 
 #if HAVE_PRCTL && defined(PR_SET_DUMPABLE)
     /* Set Linux DUMPABLE flag */
-    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0)
-        debugs(50, 2, "ALERT: prctl: " << xstrerror());
-
+    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0) {
+        int xerrno = errno;
+        debugs(50, 2, "ALERT: prctl: " << xstrerr(xerrno));
+    }
 #endif
 }
 
@@ -571,8 +574,10 @@ enter_suid(void)
 {
     debugs(21, 3, "enter_suid: PID " << getpid() << " taking root privileges");
 #if HAVE_SETRESUID
-    if (setresuid((uid_t)-1, 0, (uid_t)-1) < 0)
-        debugs (21, 3, "enter_suid: setresuid failed: " << xstrerror ());
+    if (setresuid((uid_t)-1, 0, (uid_t)-1) < 0) {
+        const auto xerrno = errno;
+        debugs (21, 3, "enter_suid: setresuid failed: " << xstrerr(xerrno));
+    }
 #else
 
     setuid(0);
@@ -580,9 +585,10 @@ enter_suid(void)
 #if HAVE_PRCTL && defined(PR_SET_DUMPABLE)
     /* Set Linux DUMPABLE flag */
 
-    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0)
-        debugs(50, 2, "ALERT: prctl: " << xstrerror());
-
+    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0) {
+        int xerrno = errno;
+        debugs(50, 2, "ALERT: prctl: " << xstrerr(xerrno));
+    }
 #endif
 }
 
@@ -597,19 +603,24 @@ no_suid(void)
     uid = geteuid();
     debugs(21, 3, "no_suid: PID " << getpid() << " giving up root priveleges forever");
 
-    if (setuid(0) < 0)
-        debugs(50, DBG_IMPORTANT, "WARNING: no_suid: setuid(0): " << xstrerror());
+    if (setuid(0) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "WARNING: no_suid: setuid(0): " << xstrerr(xerrno));
+    }
 
-    if (setuid(uid) < 0)
-        debugs(50, DBG_IMPORTANT, "ERROR: no_suid: setuid(" << uid << "): " << xstrerror());
+    if (setuid(uid) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_IMPORTANT, "ERROR: no_suid: setuid(" << uid << "): " << xstrerr(xerrno));
+    }
 
     restoreCapabilities(false);
 
 #if HAVE_PRCTL && defined(PR_SET_DUMPABLE)
     /* Set Linux DUMPABLE flag */
-    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0)
-        debugs(50, 2, "ALERT: prctl: " << xstrerror());
-
+    if (Config.coredump_dir && prctl(PR_SET_DUMPABLE, 1) != 0) {
+        int xerrno = errno;
+        debugs(50, 2, "ALERT: prctl: " << xstrerr(xerrno));
+    }
 #endif
 }
 
@@ -707,6 +718,8 @@ writePidFile(void)
     mode_t old_umask;
     char buf[32];
 
+    debugs(50, DBG_IMPORTANT, "creating PID file: " << Config.pidFilename);
+
     if ((f = Config.pidFilename) == NULL)
         return;
 
@@ -718,14 +731,15 @@ writePidFile(void)
     old_umask = umask(022);
 
     fd = open(f, O_WRONLY | O_CREAT | O_TRUNC | O_TEXT, 0644);
+    int xerrno = errno;
 
     umask(old_umask);
 
     leave_suid();
 
     if (fd < 0) {
-        debugs(50, DBG_CRITICAL, "" << f << ": " << xstrerror());
-        debug_trap("Could not write pid file");
+        debugs(50, DBG_CRITICAL, "" << f << ": " << xstrerr(xerrno));
+        debug_trap("Could not open PID file for write");
         return;
     }
 
@@ -739,6 +753,7 @@ void
 removePidFile()
 {
     if (Config.pidFilename && strcmp(Config.pidFilename, "none") != 0) {
+        debugs(50, DBG_IMPORTANT, "removing PID file: " << Config.pidFilename);
         enter_suid();
         safeunlink(Config.pidFilename, 0);
         leave_suid();
@@ -755,7 +770,7 @@ readPidFile(void)
     int i;
 
     if (f == NULL || !strcmp(Config.pidFilename, "none")) {
-        fprintf(stderr, APP_SHORTNAME ": ERROR: No pid file name defined\n");
+        fprintf(stderr, APP_SHORTNAME ": ERROR: No PID file name defined\n");
         exit(1);
     }
 
@@ -766,9 +781,7 @@ readPidFile(void)
         f = chroot_f;
     }
 
-    pid_fp = fopen(f, "r");
-
-    if (pid_fp != NULL) {
+    if ((pid_fp = fopen(f, "r"))) {
         pid = 0;
 
         if (fscanf(pid_fp, "%d", &i) == 1)
@@ -776,9 +789,10 @@ readPidFile(void)
 
         fclose(pid_fp);
     } else {
-        if (errno != ENOENT) {
-            fprintf(stderr, APP_SHORTNAME ": ERROR: Could not read pid file\n");
-            fprintf(stderr, "\t%s: %s\n", f, xstrerror());
+        int xerrno = errno;
+        if (xerrno != ENOENT) {
+            fprintf(stderr, APP_SHORTNAME ": ERROR: Could not open PID file for read\n");
+            fprintf(stderr, "\t%s: %s\n", f, xstrerr(xerrno));
             exit(1);
         }
     }
@@ -810,7 +824,8 @@ setMaxFD(void)
 #endif
 
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
-        debugs(50, DBG_CRITICAL, "setrlimit: RLIMIT_NOFILE: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_NOFILE: " << xstrerr(xerrno));
     } else if (Config.max_filedescriptors > 0) {
 #if USE_SELECT || USE_SELECT_WIN32
         /* select() breaks if this gets set too big */
@@ -823,16 +838,19 @@ setMaxFD(void)
         if (rl.rlim_cur > rl.rlim_max)
             rl.rlim_max = rl.rlim_cur;
         if (setrlimit(RLIMIT_NOFILE, &rl)) {
-            debugs(50, DBG_CRITICAL, "ERROR: setrlimit: RLIMIT_NOFILE: " << xstrerror());
+            int xerrno = errno;
+            debugs(50, DBG_CRITICAL, "ERROR: setrlimit: RLIMIT_NOFILE: " << xstrerr(xerrno));
             getrlimit(RLIMIT_NOFILE, &rl);
             rl.rlim_cur = rl.rlim_max;
             if (setrlimit(RLIMIT_NOFILE, &rl)) {
-                debugs(50, DBG_CRITICAL, "ERROR: setrlimit: RLIMIT_NOFILE: " << xstrerror());
+                xerrno = errno;
+                debugs(50, DBG_CRITICAL, "ERROR: setrlimit: RLIMIT_NOFILE: " << xstrerr(xerrno));
             }
         }
     }
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
-        debugs(50, DBG_CRITICAL, "ERROR: getrlimit: RLIMIT_NOFILE: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "ERROR: getrlimit: RLIMIT_NOFILE: " << xstrerr(xerrno));
     } else {
         Squid_MaxFD = rl.rlim_cur;
     }
@@ -856,11 +874,13 @@ setSystemLimits(void)
 #endif
 
     if (getrlimit(RLIMIT_NOFILE, &rl) < 0) {
-        debugs(50, DBG_CRITICAL, "setrlimit: RLIMIT_NOFILE: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_NOFILE: " << xstrerr(xerrno));
     } else {
         rl.rlim_cur = Squid_MaxFD;
         if (setrlimit(RLIMIT_NOFILE, &rl) < 0) {
-            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_NOFILE: %s", xstrerror());
+            int xerrno = errno;
+            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_NOFILE: %s", xstrerr(xerrno));
             fatal_dump(tmp_error_buf);
         }
     }
@@ -868,12 +888,14 @@ setSystemLimits(void)
 
 #if HAVE_SETRLIMIT && defined(RLIMIT_DATA) && !_SQUID_CYGWIN_
     if (getrlimit(RLIMIT_DATA, &rl) < 0) {
-        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_DATA: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_DATA: " << xstrerr(xerrno));
     } else if (rl.rlim_max > rl.rlim_cur) {
         rl.rlim_cur = rl.rlim_max;  /* set it to the max */
 
         if (setrlimit(RLIMIT_DATA, &rl) < 0) {
-            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_DATA: %s", xstrerror());
+            int xerrno = errno;
+            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_DATA: %s", xstrerr(xerrno));
             fatal_dump(tmp_error_buf);
         }
     }
@@ -884,12 +906,14 @@ setSystemLimits(void)
 
 #if HAVE_SETRLIMIT && defined(RLIMIT_VMEM) && !_SQUID_CYGWIN_
     if (getrlimit(RLIMIT_VMEM, &rl) < 0) {
-        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_VMEM: " << xstrerror());
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "getrlimit: RLIMIT_VMEM: " << xstrerr(xerrno));
     } else if (rl.rlim_max > rl.rlim_cur) {
         rl.rlim_cur = rl.rlim_max;  /* set it to the max */
 
         if (setrlimit(RLIMIT_VMEM, &rl) < 0) {
-            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_VMEM: %s", xstrerror());
+            int xerrno = errno;
+            snprintf(tmp_error_buf, ERROR_BUF_SZ, "setrlimit: RLIMIT_VMEM: %s", xstrerr(xerrno));
             fatal_dump(tmp_error_buf);
         }
     }
@@ -906,9 +930,10 @@ squid_signal(int sig, SIGHDLR * func, int flags)
     sa.sa_flags = flags;
     sigemptyset(&sa.sa_mask);
 
-    if (sigaction(sig, &sa, NULL) < 0)
-        debugs(50, DBG_CRITICAL, "sigaction: sig=" << sig << " func=" << func << ": " << xstrerror());
-
+    if (sigaction(sig, &sa, NULL) < 0) {
+        int xerrno = errno;
+        debugs(50, DBG_CRITICAL, "sigaction: sig=" << sig << " func=" << func << ": " << xstrerr(xerrno));
+    }
 #else
 #if _SQUID_WINDOWS_
     /*
@@ -974,22 +999,22 @@ debugObj(int section, int level, const char *label, void *obj, ObjPackMethod pm)
 void
 parseEtcHosts(void)
 {
-    FILE *fp;
     char buf[1024];
     char buf2[512];
     char *nt = buf;
     char *lt = buf;
 
-    if (NULL == Config.etcHostsPath)
+    if (!Config.etcHostsPath)
         return;
 
     if (0 == strcmp(Config.etcHostsPath, "none"))
         return;
 
-    fp = fopen(Config.etcHostsPath, "r");
+    FILE *fp = fopen(Config.etcHostsPath, "r");
 
-    if (fp == NULL) {
-        debugs(1, DBG_IMPORTANT, "parseEtcHosts: " << Config.etcHostsPath << ": " << xstrerror());
+    if (!fp) {
+        int xerrno = errno;
+        debugs(1, DBG_IMPORTANT, "parseEtcHosts: '" << Config.etcHostsPath << "' : " << xstrerr(xerrno));
         return;
     }
 
@@ -998,8 +1023,6 @@ parseEtcHosts(void)
 #endif
 
     while (fgets(buf, 1024, fp)) {  /* for each line */
-        wordlist *hosts = NULL;
-        char *addr;
 
         if (buf[0] == '#')  /* MS-windows likes to add comments */
             continue;
@@ -1008,7 +1031,7 @@ parseEtcHosts(void)
 
         lt = buf;
 
-        addr = buf;
+        char *addr = buf;
 
         debugs(1, 5, "etc_hosts: line is '" << buf << "'");
 
@@ -1022,6 +1045,8 @@ parseEtcHosts(void)
         debugs(1, 5, "etc_hosts: address is '" << addr << "'");
 
         lt = nt + 1;
+
+        SBufList hosts;
 
         while ((nt = strpbrk(lt, w_space))) {
             char *host = NULL;
@@ -1048,19 +1073,16 @@ parseEtcHosts(void)
 
             if (ipcacheAddEntryFromHosts(host, addr) != 0) {
                 /* invalid address, continuing is useless */
-                wordlistDestroy(&hosts);
-                hosts = NULL;
+                hosts.clear();
                 break;
             }
-            wordlistAdd(&hosts, host);
+            hosts.emplace_back(SBuf(host));
 
             lt = nt + 1;
         }
 
-        if (hosts) {
+        if (!hosts.empty())
             fqdncacheAddEntryFromHosts(addr, hosts);
-            wordlistDestroy(&hosts);
-        }
     }
 
     fclose (fp);
@@ -1077,16 +1099,6 @@ getMyPort(void)
         if (p != NULL)
             return p->s.port();
     }
-
-#if USE_OPENSSL
-    if ((p = HttpsPortList) != NULL) {
-        // skip any special interception ports
-        while (p != NULL && p->flags.isIntercepted())
-            p = p->next;
-        if (p != NULL)
-            return p->s.port();
-    }
-#endif
 
     if ((p = FtpPortList) != NULL) {
         // skip any special interception ports
@@ -1214,7 +1226,7 @@ WaitForOnePid(pid_t pid, PidStatus &status, int flags)
 #if _SQUID_NEXT_
     if (pid < 0)
         return wait3(&status, flags, NULL);
-    return wait4(cpid, &status, flags, NULL);
+    return wait4(pid, &status, flags, NULL);
 #elif _SQUID_WINDOWS_
     return 0; // function not used on Windows
 #else

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,42 +17,25 @@
 namespace Ssl
 {
 /**
-  \ingroup ServerProtocolSSLAPI
- * Converts user-friendly error "name" into an Ssl::Errors list.
- * The resulting list may have one or more elements, and needs to be
- * released by the caller.
+ * Converts user-friendly error "name" into an Security::ErrorCode
+ * and adds it to the provided container (using emplace).
  * This function can handle numeric error numbers as well as names.
  */
-Ssl::Errors *ParseErrorString(const char *name);
+bool ParseErrorString(const char *name, Security::Errors &);
 
-/**
-   \ingroup ServerProtocolSSLAPI
-  * The ssl_error_t code of the error described by  "name".
-  */
-ssl_error_t GetErrorCode(const char *name);
+/// The Security::ErrorCode code of the error described by  "name".
+Security::ErrorCode GetErrorCode(const char *name);
 
-/**
-   \ingroup ServerProtocolSSLAPI
- * The string representation of the SSL error "value"
- */
-const char *GetErrorName(ssl_error_t value);
+/// The string representation of the TLS error "value"
+const char *GetErrorName(Security::ErrorCode value);
 
-/**
-   \ingroup ServerProtocolSSLAPI
- * A short description of the SSL error "value"
- */
-const char *GetErrorDescr(ssl_error_t value);
+/// A short description of the TLS error "value"
+const char *GetErrorDescr(Security::ErrorCode value);
 
-/**
-   \ingroup ServerProtocolSSLAPI
-   * Return true if the SSL error is optional and may not supported
-   * by current squid version
- */
-
+/// \return true if the TLS error is optional and may not be supported by current squid version
 bool ErrorIsOptional(const char *name);
 
 /**
-   \ingroup ServerProtocolSSLAPI
  * Used to pass SSL error details to the error pages returned to the
  * end user.
  */
@@ -60,14 +43,14 @@ class ErrorDetail
 {
 public:
     // if broken certificate is nil, the peer certificate is broken
-    ErrorDetail(ssl_error_t err_no, X509 *peer, X509 *broken, const char *aReason = NULL);
+    ErrorDetail(Security::ErrorCode err_no, X509 *peer, X509 *broken, const char *aReason = NULL);
     ErrorDetail(ErrorDetail const &);
     const String &toString() const;  ///< An error detail string to embed in squid error pages
     void useRequest(HttpRequest *aRequest) { if (aRequest != NULL) request = aRequest;}
     /// The error name to embed in squid error pages
     const char *errorName() const {return err_code();}
     /// The error no
-    ssl_error_t errorNo() const {return error_no;}
+    Security::ErrorCode errorNo() const {return error_no;}
     ///Sets the low-level error returned by OpenSSL ERR_get_error()
     void setLibError(unsigned long lib_err_no) {lib_error_no = lib_err_no;}
     /// the peer certificate
@@ -100,7 +83,7 @@ private:
     void buildDetail() const;
 
     mutable String errDetailStr; ///< Caches the error detail message
-    ssl_error_t error_no;   ///< The error code
+    Security::ErrorCode error_no;   ///< The error code
     unsigned long lib_error_no; ///< low-level error returned by OpenSSL ERR_get_error(3SSL)
     Security::CertPointer peer_cert; ///< A pointer to the peer certificate
     Security::CertPointer broken_cert; ///< A pointer to the broken certificate (peer or intermediate)

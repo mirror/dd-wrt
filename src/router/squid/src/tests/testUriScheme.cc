@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -112,9 +112,9 @@ testUriScheme::testConstructprotocol_t()
 void
 testUriScheme::testC_str()
 {
-    String lhs("wais");
+    SBuf lhs("wais");
     AnyP::UriScheme wais(AnyP::PROTO_WAIS);
-    String rhs(wais.c_str());
+    SBuf rhs(wais.image());
     CPPUNIT_ASSERT_EQUAL(lhs, rhs);
 }
 

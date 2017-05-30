@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -412,18 +412,19 @@ Comm::DoSelect(int msec)
             PROF_start(comm_poll_normal);
             ++ statCounter.syscalls.selects;
             num = poll(pfds, nfds, msec);
+            int xerrno = errno;
             ++ statCounter.select_loops;
             PROF_stop(comm_poll_normal);
 
             if (num >= 0 || npending > 0)
                 break;
 
-            if (ignoreErrno(errno))
+            if (ignoreErrno(xerrno))
                 continue;
 
-            debugs(5, DBG_CRITICAL, "comm_poll: poll failure: " << xstrerror());
+            debugs(5, DBG_CRITICAL, MYNAME << "poll failure: " << xstrerr(xerrno));
 
-            assert(errno != EINVAL);
+            assert(xerrno != EINVAL);
 
             return Comm::COMM_ERROR;
 

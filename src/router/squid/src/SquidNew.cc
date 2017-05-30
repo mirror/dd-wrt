@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,29 +8,45 @@
 
 /* DEBUG: none          Memory Allocation */
 
-#define _SQUID_EXTERNNEW_
-
 #include "squid.h"
 
-#ifdef __SUNPRO_CC
+#if !defined(__clang__) && !defined(__SUNPRO_CC)
 
 #include <new>
-void *operator new(size_t size) throw (std::bad_alloc)
+
+void *operator new(size_t size)
 {
     return xmalloc(size);
 }
-void operator delete (void *address) throw()
+void operator delete(void *address)
 {
-    xfree (address);
+    xfree(address);
 }
-void *operator new[] (size_t size) throw (std::bad_alloc)
+void *operator new[](size_t size)
 {
     return xmalloc(size);
 }
-void operator delete[] (void *address) throw()
+void operator delete[](void *address)
 {
-    xfree (address);
+    xfree(address);
 }
 
-#endif /* __SUNPRO_CC */
+void *operator new(size_t size, const std::nothrow_t &tag)
+{
+    return xmalloc(size);
+}
+void operator delete(void *address, const std::nothrow_t &tag)
+{
+    xfree(address);
+}
+void *operator new[](size_t size, const std::nothrow_t &tag)
+{
+    return xmalloc(size);
+}
+void operator delete[](void *address, const std::nothrow_t &tag)
+{
+    xfree(address);
+}
+
+#endif /* !defined(__clang__) */
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -197,8 +197,10 @@ Comm::SelectLoopInit(void)
 
     /* attempt to open /dev/poll device */
     devpoll_fd = open("/dev/poll", O_RDWR);
-    if (devpoll_fd < 0)
-        fatalf("comm_select_init: can't open /dev/poll: %s\n", xstrerror());
+    if (devpoll_fd < 0) {
+        int xerrno = errno;
+        fatalf("comm_select_init: can't open /dev/poll: %s\n", xstrerr(xerrno));
+    }
 
     fd_open(devpoll_fd, FD_UNKNOWN, "devpoll ctl");
 
@@ -241,6 +243,9 @@ Comm::SetSelect(int fd, unsigned int type, PF * handler, void *client_data, time
 
     if ( type & COMM_SELECT_READ ) {
         if ( handler != NULL ) {
+            // Hack to keep the events flowing if there is data immediately ready
+            if (F->flags.read_pending)
+                state_new |= POLLOUT;
             /* we want to POLLIN */
             state_new |= POLLIN;
         } else {

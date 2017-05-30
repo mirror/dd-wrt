@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2017 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -27,10 +27,10 @@ EXTRA_DIST = \
 ESI_ALL_TESTS = \
 	ESIExpressions
 
-if USE_ESI
+if ENABLE_ESI
   ESI_TESTS = $(ESI_ALL_TESTS)
 else
-  ESI_TESTS = 
+  ESI_TESTS =
 endif
 
 ## Sort by dependencies - test lowest layers first

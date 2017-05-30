@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,8 +10,10 @@
 #define SQUID_ANYP_URISCHEME_H
 
 #include "anyp/ProtocolType.h"
+#include "sbuf/SBuf.h"
 
 #include <iosfwd>
+#include <vector>
 
 namespace AnyP
 {
@@ -22,28 +24,46 @@ namespace AnyP
 class UriScheme
 {
 public:
+    typedef std::vector<SBuf> LowercaseSchemeNames;
+
     UriScheme() : theScheme_(AnyP::PROTO_NONE) {}
-    UriScheme(AnyP::ProtocolType const aScheme) : theScheme_(aScheme) {}
+    /// \param img Explicit scheme representation for unknown/none schemes.
+    UriScheme(AnyP::ProtocolType const aScheme, const char *img = nullptr);
+    UriScheme(const AnyP::UriScheme &o) : theScheme_(o.theScheme_), image_(o.image_) {}
+    UriScheme(AnyP::UriScheme &&) = default;
     ~UriScheme() {}
 
-    operator AnyP::ProtocolType() const { return theScheme_; }
+    AnyP::UriScheme& operator=(const AnyP::UriScheme &o) {
+        theScheme_ = o.theScheme_;
+        image_ = o.image_;
+        return *this;
+    }
+    AnyP::UriScheme& operator=(AnyP::UriScheme &&) = default;
 
+    operator AnyP::ProtocolType() const { return theScheme_; }
+    // XXX: does not account for comparison of unknown schemes (by image)
     bool operator != (AnyP::ProtocolType const & aProtocol) const { return theScheme_ != aProtocol; }
 
     /** Get a char string representation of the scheme.
-     * Does not include the ':' or '://" terminators.
-     *
-     * An upper bound length of BUFSIZ bytes converted. Remainder will be truncated.
-     * The result of this call will remain usable only until any subsequest call
-     * and must be copied if persistence is needed.
+     * Does not include the ':' or "://" terminators.
      */
-    char const *c_str() const;
+    SBuf image() const {return image_;}
 
     unsigned short defaultPort() const;
 
+    /// initializes down-cased protocol scheme names array
+    static void Init();
+
 private:
+    /// optimization: stores down-cased protocol scheme names, copied from
+    /// AnyP::ProtocolType_str
+    static LowercaseSchemeNames LowercaseSchemeNames_;
+
     /// This is a typecode pointer into the enum/registry of protocols handled.
     AnyP::ProtocolType theScheme_;
+
+    /// the string representation
+    SBuf image_;
 };
 
 } // namespace AnyP
@@ -51,7 +71,7 @@ private:
 inline std::ostream &
 operator << (std::ostream &os, AnyP::UriScheme const &scheme)
 {
-    os << scheme.c_str();
+    os << scheme.image();
     return os;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,6 +8,8 @@
 
 #ifndef _SQUID_AUTH_NTLM_USER_H
 #define _SQUID_AUTH_NTLM_USER_H
+
+#if HAVE_AUTH_MODULE_NTLM
 
 #include "auth/User.h"
 
@@ -39,5 +41,6 @@ public:
 } // namespace Ntlm
 } // namespace Auth
 
+#endif /* HAVE_AUTH_MODULE_NTLM */
 #endif /* _SQUID_AUTH_NTLM_USER_H */
 

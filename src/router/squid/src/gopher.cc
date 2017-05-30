@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -122,6 +122,7 @@ public:
     char *buf;          /* pts to a 4k page */
     Comm::ConnectionPointer serverConn;
     FwdState::Pointer fwd;
+    HttpReply::Pointer reply_;
     char replybuf[BUFSIZ];
 };
 
@@ -249,6 +250,7 @@ gopherMimeCreate(GopherStateData * gopherState)
         reply->header.putStr(Http::HdrType::CONTENT_ENCODING, mime_enc);
 
     entry->replaceHttpReply(reply);
+    gopherState->reply_ = reply;
 }
 
 /**
@@ -772,14 +774,17 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm
         ++IOStats.Gopher.read_hist[bin];
 
         HttpRequest *req = gopherState->fwd->request;
-        if (req->hier.bodyBytesRead < 0)
+        if (req->hier.bodyBytesRead < 0) {
             req->hier.bodyBytesRead = 0;
+            // first bytes read, update Reply flags:
+            gopherState->reply_->sources |= HttpMsg::srcGopher;
+        }
 
         req->hier.bodyBytesRead += len;
     }
 
     if (flag != Comm::OK) {
-        debugs(50, DBG_IMPORTANT, "gopherReadReply: error reading: " << xstrerror());
+        debugs(50, DBG_IMPORTANT, MYNAME << "error reading: " << xstrerr(xerrno));
 
         if (ignoreErrno(xerrno)) {
             AsyncCall::Pointer call = commCbCall(5,4, "gopherReadReply",
@@ -821,7 +826,7 @@ gopherReadReply(const Comm::ConnectionPointer &conn, char *buf, size_t len, Comm
  * This will be called when request write is complete. Schedule read of reply.
  */
 static void
-gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, Comm::Flag errflag, int xerrno, void *data)
+gopherSendComplete(const Comm::ConnectionPointer &conn, char *, size_t size, Comm::Flag errflag, int xerrno, void *data)
 {
     GopherStateData *gopherState = (GopherStateData *) data;
     StoreEntry *entry = gopherState->entry;
@@ -841,10 +846,6 @@ gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, 
         err->url = xstrdup(entry->url());
         gopherState->fwd->fail(err);
         gopherState->serverConn->close();
-
-        if (buf)
-            memFree(buf, MEM_4K_BUF);   /* Allocated by gopherSendRequest. */
-
         return;
     }
 
@@ -886,9 +887,6 @@ gopherSendComplete(const Comm::ConnectionPointer &conn, char *buf, size_t size, 
     AsyncCall::Pointer call =  commCbCall(5,5, "gopherReadReply",
                                           CommIoCbPtrFun(gopherReadReply, gopherState));
     entry->delayAwareRead(conn, gopherState->replybuf, BUFSIZ, call);
-
-    if (buf)
-        memFree(buf, MEM_4K_BUF);   /* Allocated by gopherSendRequest. */
 }
 
 /**
@@ -898,32 +896,31 @@ static void
 gopherSendRequest(int, void *data)
 {
     GopherStateData *gopherState = (GopherStateData *)data;
-    char *buf = (char *)memAllocate(MEM_4K_BUF);
+    MemBuf mb;
+    mb.init();
 
     if (gopherState->type_id == GOPHER_CSO) {
         const char *t = strchr(gopherState->request, '?');
 
-        if (t != NULL)
+        if (t)
             ++t;        /* skip the ? */
         else
             t = "";
 
-        snprintf(buf, 4096, "query %s\r\nquit\r\n", t);
-    } else if (gopherState->type_id == GOPHER_INDEX) {
-        char *t = strchr(gopherState->request, '?');
-
-        if (t != NULL)
-            *t = '\t';
-
-        snprintf(buf, 4096, "%s\r\n", gopherState->request);
+        mb.appendf("query %s\r\nquit", t);
     } else {
-        snprintf(buf, 4096, "%s\r\n", gopherState->request);
+        if (gopherState->type_id == GOPHER_INDEX) {
+            if (char *t = strchr(gopherState->request, '?'))
+                *t = '\t';
+        }
+        mb.append(gopherState->request, strlen(gopherState->request));
     }
+    mb.append("\r\n", 2);
 
-    debugs(10, 5, HERE << gopherState->serverConn);
+    debugs(10, 5, gopherState->serverConn);
     AsyncCall::Pointer call = commCbCall(5,5, "gopherSendComplete",
                                          CommIoCbPtrFun(gopherSendComplete, gopherState));
-    Comm::Write(gopherState->serverConn, buf, strlen(buf), call, NULL);
+    Comm::Write(gopherState->serverConn, &mb, call);
 
     gopherState->entry->makePublic();
 }

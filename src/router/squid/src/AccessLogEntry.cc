@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,13 +30,16 @@ AccessLogEntry::getLogClientIp(char *buf, size_t bufsz) const
         log_ip = request->indirect_client_addr;
     else
 #endif
-        if (tcpClient != NULL)
+        if (tcpClient)
             log_ip = tcpClient->remote;
-        else if (cache.caddr.isNoAddr()) { // e.g., ICAP OPTIONS lack client
-            strncpy(buf, "-", bufsz);
-            return;
-        } else
+        else
             log_ip = cache.caddr;
+
+    // internally generated requests (and some ICAP) lack client IP
+    if (log_ip.isNoAddr()) {
+        strncpy(buf, "-", bufsz);
+        return;
+    }
 
     // Apply so-called 'privacy masking' to IPv4 clients
     // - localhost IP is always shown in full
@@ -76,7 +79,6 @@ AccessLogEntry::~AccessLogEntry()
     HTTPMSGUNLOCK(adapted_request);
 
     safe_free(lastAclName);
-    safe_free(lastAclData);
 
     HTTPMSGUNLOCK(reply);
     HTTPMSGUNLOCK(request);

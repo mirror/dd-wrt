@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 
 #include "client_side.h"
 #include "FwdState.h"
+#include "http/Stream.h"
 #include "ssl/ServerBump.h"
 #include "Store.h"
 #include "StoreClient.h"
@@ -21,7 +22,6 @@ CBDATA_NAMESPACED_CLASS_INIT(Ssl, ServerBump);
 
 Ssl::ServerBump::ServerBump(HttpRequest *fakeRequest, StoreEntry *e, Ssl::BumpMode md):
     request(fakeRequest),
-    sslErrors(NULL),
     step(bumpStep1)
 {
     debugs(33, 4, "will peek at " << request->url.authority(true));
@@ -33,8 +33,9 @@ Ssl::ServerBump::ServerBump(HttpRequest *fakeRequest, StoreEntry *e, Ssl::BumpMo
         entry->lock("Ssl::ServerBump");
     } else {
         // XXX: Performance regression. c_str() reallocates
-        SBuf uri(request->effectiveRequestUri());
-        entry = storeCreateEntry(uri.c_str(), uri.c_str(), request->flags, request->method);
+        SBuf uriBuf(request->effectiveRequestUri());
+        const char *uri = uriBuf.c_str();
+        entry = storeCreateEntry(uri, uri, request->flags, request->method);
     }
     // We do not need to be a client because the error contents will be used
     // later, but an entry without any client will trim all its contents away.
@@ -49,6 +50,24 @@ Ssl::ServerBump::~ServerBump()
         storeUnregister(sc, entry, this);
         entry->unlock("Ssl::ServerBump");
     }
-    cbdataReferenceDone(sslErrors);
+}
+
+void
+Ssl::ServerBump::attachServerSession(const Security::SessionPointer &s)
+{
+    if (serverSession)
+        return;
+
+    serverSession = s;
+}
+
+const Security::CertErrors *
+Ssl::ServerBump::sslErrors() const
+{
+    if (!serverSession)
+        return NULL;
+
+    const Security::CertErrors *errs = static_cast<const Security::CertErrors*>(SSL_get_ex_data(serverSession.get(), ssl_ex_index_ssl_errors));
+    return errs;
 }
 

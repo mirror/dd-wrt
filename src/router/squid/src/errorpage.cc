@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,10 +13,10 @@
 #include "clients/forward.h"
 #include "comm/Connection.h"
 #include "comm/Write.h"
-#include "disk.h"
 #include "err_detail_type.h"
 #include "errorpage.h"
 #include "fde.h"
+#include "fs_io.h"
 #include "html_quote.h"
 #include "HttpHeaderTools.h"
 #include "HttpReply.h"
@@ -330,15 +330,17 @@ TemplateFile::loadFromFile(const char *path)
 
     if (fd < 0) {
         /* with dynamic locale negotiation we may see some failures before a success. */
-        if (!silent && templateCode < TCP_RESET)
-            debugs(4, DBG_CRITICAL, HERE << "'" << path << "': " << xstrerror());
+        if (!silent && templateCode < TCP_RESET) {
+            int xerrno = errno;
+            debugs(4, DBG_CRITICAL, MYNAME << "'" << path << "': " << xstrerr(xerrno));
+        }
         wasLoaded = false;
         return wasLoaded;
     }
 
     while ((len = FD_READ_METHOD(fd, buf, sizeof(buf))) > 0) {
         if (!parse(buf, len, false)) {
-            debugs(4, DBG_CRITICAL, HERE << " parse error while reading template file: " << path);
+            debugs(4, DBG_CRITICAL, MYNAME << "parse error while reading template file: " << path);
             wasLoaded = false;
             return wasLoaded;
         }
@@ -346,7 +348,8 @@ TemplateFile::loadFromFile(const char *path)
     parse(buf, 0, true);
 
     if (len < 0) {
-        debugs(4, DBG_CRITICAL, HERE << "failed to fully read: '" << path << "': " << xstrerror());
+        int xerrno = errno;
+        debugs(4, DBG_CRITICAL, MYNAME << "ERROR: failed to fully read: '" << path << "': " << xstrerr(xerrno));
     }
 
     file_close(fd);
@@ -358,7 +361,6 @@ TemplateFile::loadFromFile(const char *path)
 bool strHdrAcptLangGetItem(const String &hdr, char *lang, int langLen, size_t &pos)
 {
     while (pos < hdr.size()) {
-        char *dt = lang;
 
         /* skip any initial whitespace. */
         while (pos < hdr.size() && xisspace(hdr[pos]))
@@ -372,6 +374,7 @@ bool strHdrAcptLangGetItem(const String &hdr, char *lang, int langLen, size_t &p
          *    with preference given to an exact match.
          */
         bool invalid_byte = false;
+        char *dt = lang;
         while (pos < hdr.size() && hdr[pos] != ';' && hdr[pos] != ',' && !xisspace(hdr[pos]) && dt < (lang + (langLen -1)) ) {
             if (!invalid_byte) {
 #if USE_HTTP_VIOLATIONS
@@ -391,7 +394,6 @@ bool strHdrAcptLangGetItem(const String &hdr, char *lang, int langLen, size_t &p
             ++pos;
         }
         *dt = '\0'; // nul-terminated the filename content string before system use.
-        ++dt;
 
         // if we terminated the tag on garbage or ';' we need to skip to the next ',' or end of header.
         while (pos < hdr.size() && hdr[pos] != ',')
@@ -400,7 +402,7 @@ bool strHdrAcptLangGetItem(const String &hdr, char *lang, int langLen, size_t &p
         if (pos < hdr.size() && hdr[pos] == ',')
             ++pos;
 
-        debugs(4, 9, HERE << "STATE: dt='" << dt << "', lang='" << lang << "', pos=" << pos << ", buf='" << ((pos < hdr.size()) ? hdr.substr(pos,hdr.size()) : "") << "'");
+        debugs(4, 9, "STATE: lang=" << lang << ", pos=" << pos << ", buf='" << ((pos < hdr.size()) ? hdr.substr(pos,hdr.size()) : "") << "'");
 
         /* if we found anything we might use, try it. */
         if (*lang != '\0' && !invalid_byte)
@@ -924,6 +926,9 @@ ErrorState::Convert(char token, bool building_deny_info_url, bool allowRecursion
             p = "[unknown method]";
         break;
 
+    case 'O':
+        if (!building_deny_info_url)
+            do_quote = 0;
     case 'o':
         p = request ? request->extacl_message.termedBuf() : external_acl_message;
         if (!p && !building_deny_info_url)
@@ -940,7 +945,8 @@ ErrorState::Convert(char token, bool building_deny_info_url, bool allowRecursion
 
     case 'P':
         if (request) {
-            p = request->url.getScheme().c_str();
+            const SBuf &m = request->url.getScheme().image();
+            mb.append(m.rawContent(), m.length());
         } else if (!building_deny_info_url) {
             p = "[unknown protocol]";
         }

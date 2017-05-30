@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,22 +11,41 @@
 #include "squid.h"
 #include "anyp/UriScheme.h"
 
-char const *
-AnyP::UriScheme::c_str() const
+AnyP::UriScheme::LowercaseSchemeNames AnyP::UriScheme::LowercaseSchemeNames_;
+
+AnyP::UriScheme::UriScheme(AnyP::ProtocolType const aScheme, const char *img) :
+    theScheme_(aScheme)
 {
-    if (theScheme_ == AnyP::PROTO_UNKNOWN)
-        return "(unknown)";
+    // RFC 3986 section 3.1: schemes are case-insensitive.
 
-    static char out[BUFSIZ];
-    int p = 0;
+    // To improve diagnostic, remember exactly how an unsupported scheme looks like.
+    // XXX: Object users may rely on toLower() canonicalization that we refuse to provide.
+    if (img && theScheme_ == AnyP::PROTO_UNKNOWN)
+        image_ = img;
 
-    if (theScheme_ > AnyP::PROTO_NONE && theScheme_ < AnyP::PROTO_MAX) {
-        const char *in = AnyP::ProtocolType_str[theScheme_];
-        for (; p < (BUFSIZ-1) && in[p] != '\0'; ++p)
-            out[p] = xtolower(in[p]);
+    // XXX: A broken caller supplies an image of an absent scheme?
+    // XXX: We assume that the caller is using a lower-case image.
+    else if (img && theScheme_ == AnyP::PROTO_NONE)
+        image_ = img;
+
+    else if (theScheme_ > AnyP::PROTO_NONE && theScheme_ < AnyP::PROTO_MAX)
+        image_ = LowercaseSchemeNames_.at(theScheme_);
+    // else, the image remains empty (e.g., "://example.com/")
+    // hopefully, theScheme_ is PROTO_NONE here
+}
+
+void
+AnyP::UriScheme::Init()
+{
+    if (LowercaseSchemeNames_.empty()) {
+        LowercaseSchemeNames_.reserve(sizeof(SBuf) * AnyP::PROTO_MAX);
+        // TODO: use base/EnumIterator.h if possible
+        for (int i = AnyP::PROTO_NONE; i < AnyP::PROTO_MAX; ++i) {
+            SBuf image(ProtocolType_str[i]);
+            image.toLower();
+            LowercaseSchemeNames_.emplace_back(image);
+        }
     }
-    out[p] = '\0';
-    return out;
 }
 
 unsigned short

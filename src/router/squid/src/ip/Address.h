@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,8 @@
 
 #ifndef _SQUID_SRC_IP_ADDRESS_H
 #define _SQUID_SRC_IP_ADDRESS_H
+
+#include "ip/forward.h"
 
 #include <iosfwd>
 #include <ostream>
@@ -31,10 +33,6 @@
 
 namespace Ip
 {
-
-/// Length of buffer that needs to be allocated to old a null-terminated IP-string
-// Yuck. But there are still structures that need it to be an 'integer constant'.
-#define MAX_IPSTRLEN  75
 
 /**
  * Holds and manipulates IPv4, IPv6, and Socket Addresses.

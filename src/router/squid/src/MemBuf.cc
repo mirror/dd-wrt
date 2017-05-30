@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -154,7 +154,7 @@ MemBuf::reset()
  * Unfortunate hack to test if the buffer has been Init()ialized
  */
 int
-MemBuf::isNull()
+MemBuf::isNull() const
 {
     if (!buf && !max_capacity && !capacity && !size)
         return 1;       /* is null (not initialized) */

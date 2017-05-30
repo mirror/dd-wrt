@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,8 +18,10 @@ const char * LogTags::Str_[] = {
     "TCP_REFRESH_FAIL_OLD",
     "TCP_REFRESH_FAIL_ERR",
     "TCP_REFRESH_MODIFIED",
+    "TCP_REFRESH",
     "TCP_CLIENT_REFRESH_MISS",
     "TCP_IMS_HIT",
+    "TCP_INM_HIT",
     "TCP_SWAPFAIL_MISS",
     "TCP_NEGATIVE_HIT",
     "TCP_MEM_HIT",
@@ -54,6 +56,9 @@ LogTags::c_str() const
     else
         pos += snprintf(buf, sizeof(buf), "NONE");
 
+    if (err.ignored)
+        pos += snprintf(buf+pos,sizeof(buf)-pos, "_IGNORED");
+
     // error tags
     if (err.timedout)
         pos += snprintf(buf+pos,sizeof(buf)-pos, "_TIMEDOUT");
@@ -69,6 +74,7 @@ LogTags::isTcpHit() const
     return
         (oldType == LOG_TCP_HIT) ||
         (oldType == LOG_TCP_IMS_HIT) ||
+        (oldType == LOG_TCP_INM_HIT) ||
         (oldType == LOG_TCP_REFRESH_FAIL_OLD) ||
         (oldType == LOG_TCP_REFRESH_UNMODIFIED) ||
         (oldType == LOG_TCP_NEGATIVE_HIT) ||

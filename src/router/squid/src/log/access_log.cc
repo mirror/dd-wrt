@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,8 +16,6 @@
 #endif
 #include "CachePeer.h"
 #include "err_detail_type.h"
-#include "errorpage.h"
-#include "errorpage.h"
 #include "errorpage.h"
 #include "format/Token.h"
 #include "globals.h"
@@ -76,8 +74,8 @@ void
 accessLogLogTo(CustomLog* log, AccessLogEntry::Pointer &al, ACLChecklist * checklist)
 {
 
-    if (al->url == NULL)
-        al->url = dash_str;
+    if (al->url.isEmpty())
+        al->url = Format::Dash;
 
     if (!al->http.content_type || *al->http.content_type == '\0')
         al->http.content_type = dash_str;
@@ -160,8 +158,8 @@ accessLogLog(AccessLogEntry::Pointer &al, ACLChecklist * checklist)
     else {
         unsigned int ibuf[365];
         size_t isize;
-        xstrncpy((char *) ibuf, al->url, 364 * sizeof(int));
-        isize = ((strlen(al->url) + 8) / 8) * 2;
+        xstrncpy((char *) ibuf, al->url.c_str(), 364 * sizeof(int));
+        isize = ((al->url.length() + 8) / 8) * 2;
 
         if (isize > 364)
             isize = 364;

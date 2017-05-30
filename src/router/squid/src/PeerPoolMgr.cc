@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -7,6 +7,7 @@
  */
 
 #include "squid.h"
+#include "AccessLogEntry.h"
 #include "base/AsyncJobCalls.h"
 #include "base/RunnersRegistry.h"
 #include "CachePeer.h"
@@ -20,29 +21,23 @@
 #include "neighbors.h"
 #include "pconn.h"
 #include "PeerPoolMgr.h"
+#include "security/BlindPeerConnector.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
-#if USE_OPENSSL
-#include "ssl/PeerConnector.h"
-#else
-#include "security/EncryptorAnswer.h"
-#endif
 
 CBDATA_CLASS_INIT(PeerPoolMgr);
 
-#if USE_OPENSSL
-/// Gives Ssl::PeerConnector access to Answer in the PeerPoolMgr callback dialer.
+/// Gives Security::PeerConnector access to Answer in the PeerPoolMgr callback dialer.
 class MyAnswerDialer: public UnaryMemFunT<PeerPoolMgr, Security::EncryptorAnswer, Security::EncryptorAnswer&>,
-    public Ssl::PeerConnector::CbDialer
+    public Security::PeerConnector::CbDialer
 {
 public:
     MyAnswerDialer(const JobPointer &aJob, Method aMethod):
         UnaryMemFunT<PeerPoolMgr, Security::EncryptorAnswer, Security::EncryptorAnswer&>(aJob, aMethod, Security::EncryptorAnswer()) {}
 
-    /* Ssl::PeerConnector::CbDialer API */
+    /* Security::PeerConnector::CbDialer API */
     virtual Security::EncryptorAnswer &answer() { return arg1; }
 };
-#endif
 
 PeerPoolMgr::PeerPoolMgr(CachePeer *aPeer): AsyncJob("PeerPoolMgr"),
     peer(cbdataReference(aPeer)),
@@ -66,7 +61,7 @@ PeerPoolMgr::start()
 
     // ErrorState, getOutgoingAddress(), and other APIs may require a request.
     // We fake one. TODO: Optionally send this request to peers?
-    request = new HttpRequest(Http::METHOD_OPTIONS, AnyP::PROTO_HTTP, "*");
+    request = new HttpRequest(Http::METHOD_OPTIONS, AnyP::PROTO_HTTP, "http", "*");
     request->url.host(peer->host);
 
     checkpoint("peer initialized");
@@ -113,8 +108,7 @@ PeerPoolMgr::handleOpenedConnection(const CommConnectCbParams &params)
 
     Must(params.conn != NULL);
 
-#if USE_OPENSSL
-    // Handle SSL peers.
+    // Handle TLS peers.
     if (peer->secure.encryptTransport) {
         typedef CommCbMemFunT<PeerPoolMgr, CommCloseCbParams> CloserDialer;
         closer = JobCallback(48, 3, CloserDialer, this,
@@ -129,12 +123,10 @@ PeerPoolMgr::handleOpenedConnection(const CommConnectCbParams &params)
         const int timeUsed = squid_curtime - params.conn->startTime();
         // Use positive timeout when less than one second is left for conn.
         const int timeLeft = max(1, (peerTimeout - timeUsed));
-        Ssl::BlindPeerConnector *connector =
-            new Ssl::BlindPeerConnector(request, params.conn, securer, timeLeft);
+        auto *connector = new Security::BlindPeerConnector(request, params.conn, securer, nullptr, timeLeft);
         AsyncJob::Start(connector); // will call our callback
         return;
     }
-#endif
 
     pushNewConnection(params.conn);
 }

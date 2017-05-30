@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,6 +20,7 @@
 #include "globals.h"
 #include "helper.h"
 #include "helper/Reply.h"
+#include "http/Stream.h"
 #include "HttpHeaderTools.h"
 #include "HttpReply.h"
 #include "HttpRequest.h"
@@ -306,11 +307,11 @@ Auth::Negotiate::UserRequest::HandleReply(void *data, const Helper::Reply &reply
             const char *tokenNote = reply.notes.findFirst("token");
             lm_request->server_blob = xstrdup(tokenNote);
             auth_user_request->user()->credentials(Auth::Handshake);
-            auth_user_request->denyMessage("Authentication in progress");
+            auth_user_request->setDenyMessage("Authentication in progress");
             debugs(29, 4, HERE << "Need to challenge the client with a server token: '" << tokenNote << "'");
         } else {
             auth_user_request->user()->credentials(Auth::Failed);
-            auth_user_request->denyMessage("Negotiate authentication requires a persistent connection");
+            auth_user_request->setDenyMessage("Negotiate authentication requires a persistent connection");
         }
         break;
 
@@ -326,7 +327,7 @@ Auth::Negotiate::UserRequest::HandleReply(void *data, const Helper::Reply &reply
 
         /* we're finished, release the helper */
         auth_user_request->user()->username(userNote);
-        auth_user_request->denyMessage("Login successful");
+        auth_user_request->setDenyMessage("Login successful");
         safe_free(lm_request->server_blob);
         lm_request->server_blob = xstrdup(tokenNote);
         lm_request->releaseAuthServer();
@@ -355,47 +356,37 @@ Auth::Negotiate::UserRequest::HandleReply(void *data, const Helper::Reply &reply
     }
     break;
 
-    case Helper::Error: {
-        const char *messageNote = reply.notes.find("message");
-        const char *tokenNote = reply.notes.findFirst("token");
-
+    case Helper::Error:
         /* authentication failure (wrong password, etc.) */
-        if (messageNote != NULL)
-            auth_user_request->denyMessage(messageNote);
-        else
-            auth_user_request->denyMessage("Negotiate Authentication denied with no reason given");
+        auth_user_request->denyMessageFromHelper("Negotiate", reply);
         auth_user_request->user()->credentials(Auth::Failed);
         safe_free(lm_request->server_blob);
-        if (tokenNote != NULL)
+        if (const char *tokenNote = reply.notes.findFirst("token"))
             lm_request->server_blob = xstrdup(tokenNote);
         lm_request->releaseAuthServer();
         debugs(29, 4, "Failed validating user via Negotiate. Result: " << reply);
-    }
-    break;
+        break;
 
     case Helper::Unknown:
         debugs(29, DBG_IMPORTANT, "ERROR: Negotiate Authentication Helper '" << reply.whichServer << "' crashed!.");
     /* continue to the next case */
 
     case Helper::TimedOut:
-    case Helper::BrokenHelper: {
+    case Helper::BrokenHelper:
         /* TODO kick off a refresh process. This can occur after a YR or after
          * a KK. If after a YR release the helper and resubmit the request via
          * Authenticate Negotiate start.
          * If after a KK deny the user's request w/ 407 and mark the helper as
          * Needing YR. */
-        const char *errNote = reply.notes.find("message");
         if (reply.result == Helper::Unknown)
-            auth_user_request->denyMessage("Internal Error");
-        else if (errNote != NULL)
-            auth_user_request->denyMessage(errNote);
+            auth_user_request->setDenyMessage("Internal Error");
         else
-            auth_user_request->denyMessage("Negotiate Authentication failed with no reason given");
+            auth_user_request->denyMessageFromHelper("Negotiate", reply);
         auth_user_request->user()->credentials(Auth::Failed);
         safe_free(lm_request->server_blob);
         lm_request->releaseAuthServer();
         debugs(29, DBG_IMPORTANT, "ERROR: Negotiate Authentication validating user. Result: " << reply);
-    } // break;
+        break;
     }
 
     if (lm_request->request) {

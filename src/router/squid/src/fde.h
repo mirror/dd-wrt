@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -120,7 +120,7 @@ public:
     READ_HANDLER *read_method;
     WRITE_HANDLER *write_method;
     Security::SessionPointer ssl;
-    Security::ContextPointer dynamicSslContext; ///< cached and then freed when fd is closed
+    Security::ContextPointer dynamicTlsContext; ///< cached and then freed when fd is closed
 #if _SQUID_WINDOWS_
     struct {
         long handle;
@@ -137,7 +137,6 @@ public:
                                             connection, whereas nfmarkToServer is the value to set on packets
                                             *leaving* Squid.   */
 
-private:
     /** Clear the fde class back to NULL equivalent. */
     inline void clear() {
         type = 0;
@@ -168,8 +167,8 @@ private:
         halfClosedReader = NULL;
         read_method = NULL;
         write_method = NULL;
-        ssl = NULL;
-        dynamicSslContext = NULL;
+        ssl.reset();
+        dynamicTlsContext.reset();
 #if _SQUID_WINDOWS_
         win32.handle = (long)NULL;
 #endif

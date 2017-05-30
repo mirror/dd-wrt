@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -75,9 +75,6 @@ Http::One::ResponseParser::parseResponseStatusAndReason(Http1::Tokenizer &tok, c
         // NOTE: any whitespace after the single SP is part of the reason phrase.
     }
 
-    if (tok.atEnd())
-        return 0; // need more to be sure we have it all
-
     /* RFC 7230 says we SHOULD ignore the reason phrase content
      * but it has a definite valid vs invalid character set.
      * We interpret the SHOULD as ignoring absence and syntax, but
@@ -89,17 +86,18 @@ Http::One::ResponseParser::parseResponseStatusAndReason(Http1::Tokenizer &tok, c
     // if we got here we are still looking for reason-phrase bytes
     static const CharacterSet phraseChars = CharacterSet::WSP + CharacterSet::VCHAR + CharacterSet::OBSTEXT;
     (void)tok.prefix(reasonPhrase_, phraseChars); // optional, no error if missing
-    if (skipLineTerminator(tok)) {
-        debugs(74, DBG_DATA, "parse remaining buf={length=" << tok.remaining().length() << ", data='" << tok.remaining() << "'}");
-        buf_ = tok.remaining(); // resume checkpoint
-        return 1;
-    }
-    reasonPhrase_.clear();
-
-    if (tok.atEnd())
+    try {
+        if (skipLineTerminator(tok)) {
+            debugs(74, DBG_DATA, "parse remaining buf={length=" << tok.remaining().length() << ", data='" << tok.remaining() << "'}");
+            buf_ = tok.remaining(); // resume checkpoint
+            return 1;
+        }
+        reasonPhrase_.clear();
         return 0; // need more to be sure we have it all
 
-    debugs(74, 6, "invalid status-line. garbage in reason phrase.");
+    } catch (const std::exception &ex) {
+        debugs(74, 6, "invalid status-line: " << ex.what());
+    }
     return -1;
 }
 
@@ -219,7 +217,7 @@ Http::One::ResponseParser::parse(const SBuf &aBuf)
         const int retcode = parseResponseFirstLine();
 
         // first-line (or a look-alike) found successfully.
-        if (retcode > 0)
+        if (retcode > 0 && parsingStage_ == HTTP_PARSE_FIRST)
             parsingStage_ = HTTP_PARSE_MIME;
         debugs(74, 5, "status-line: retval " << retcode);
         debugs(74, 5, "status-line: proto " << msgProtocol_);
@@ -231,7 +229,7 @@ Http::One::ResponseParser::parse(const SBuf &aBuf)
         // syntax errors already
         if (retcode < 0) {
             parsingStage_ = HTTP_PARSE_DONE;
-            statusCode_ = Http::scInvalidHeader;
+            parseStatusCode = Http::scInvalidHeader;
             return false;
         }
     }

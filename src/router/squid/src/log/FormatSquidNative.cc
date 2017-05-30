@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -50,7 +50,7 @@ Log::Format::SquidNative(const AccessLogEntry::Pointer &al, Logfile * logfile)
 
     const SBuf method(al->getLogMethod());
 
-    logfilePrintf(logfile, "%9ld.%03d %6ld %s %s/%03d %" PRId64 " " SQUIDSBUFPH " %s %s %s%s/%s %s%s",
+    logfilePrintf(logfile, "%9ld.%03d %6ld %s %s/%03d %" PRId64 " " SQUIDSBUFPH " " SQUIDSBUFPH " %s %s%s/%s %s%s",
                   (long int) current_time.tv_sec,
                   (int) current_time.tv_usec / 1000,
                   tvToMsec(al->cache.trTime),
@@ -59,7 +59,7 @@ Log::Format::SquidNative(const AccessLogEntry::Pointer &al, Logfile * logfile)
                   al->http.code,
                   al->http.clientReplySz.messageTotal(),
                   SQUIDSBUFPRINT(method),
-                  al->url,
+                  SQUIDSBUFPRINT(al->url),
                   user ? user : dash_str,
                   al->hier.ping.timedout ? "TIMEOUT_" : "",
                   hier_code_str[al->hier.code],

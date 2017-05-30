@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -29,10 +29,10 @@ public:
 
 protected:
     /* ConnStateData API */
-    virtual ClientSocketContext *parseOneRequest();
-    virtual void processParsedRequest(ClientSocketContext *context);
+    virtual Http::Stream *parseOneRequest();
+    virtual void processParsedRequest(Http::StreamPointer &context);
     virtual void handleReply(HttpReply *rep, StoreIOBuffer receivedData);
-    virtual void writeControlMsgAndCall(ClientSocketContext *context, HttpReply *rep, AsyncCall::Pointer &call);
+    virtual bool writeControlMsgAndCall(HttpReply *rep, AsyncCall::Pointer &call);
     virtual time_t idleTimeout() const;
 
     /* BodyPipe API */
@@ -42,17 +42,19 @@ protected:
     /* AsyncJob API */
     virtual void start();
 
-    void proceedAfterBodyContinuation(ClientSocketContext::Pointer context);
+    void proceedAfterBodyContinuation(Http::StreamPointer context);
 
 private:
-    void processHttpRequest(ClientSocketContext *const context);
+    void processHttpRequest(Http::Stream *const context);
     void handleHttpRequestData();
 
     /// Handles parsing results. May generate and deliver an error reply
     /// to the client if parsing is failed, or parses the url and build the
     /// HttpRequest object using parsing results.
     /// Return false if parsing is failed, true otherwise.
-    bool buildHttpRequest(ClientSocketContext *context);
+    bool buildHttpRequest(Http::StreamPointer &context);
+
+    void setReplyError(Http::StreamPointer &context, HttpRequest::Pointer &request, const HttpRequestMethod& method, err_type requestError, Http::StatusCode errStatusCode, const char *requestErrorBytes);
 
     Http1::RequestParserPointer parser_;
     HttpRequestMethod method_; ///< parsed HTTP method

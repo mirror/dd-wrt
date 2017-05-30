@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -8,6 +8,8 @@
 
 #ifndef SQUID_AUTH_DIGEST_SCHEME_H
 #define SQUID_AUTH_DIGEST_SCHEME_H
+
+#if HAVE_AUTH_MODULE_DIGEST
 
 #include "auth/Scheme.h"
 
@@ -43,5 +45,6 @@ private:
 } // namespace Digest
 } // namespace Auth
 
+#endif /* HAVE_AUTH_MODULE_DIGEST */
 #endif /* SQUID_AUTH_DIGEST_SCHEME_H */
 

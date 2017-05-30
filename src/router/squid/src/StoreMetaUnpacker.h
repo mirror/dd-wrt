@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,8 +18,9 @@ class StoreMetaUnpacker
 public:
     StoreMetaUnpacker (const char *buf, ssize_t bufferLength, int *hdrlen);
     StoreMeta *createStoreMeta();
-    bool isBufferZero(); ///< all-zeros buffer, implies !isBufferSane
-    bool isBufferSane();
+    bool isBufferZero(); ///< all-zeros buffer, checkBuffer() would throw
+    /// validates buffer sanity and throws if validation fails
+    void checkBuffer();
 
 private:
     static int const MinimumBufferLength;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -55,35 +55,6 @@ Acl::Tree::add(ACL *rule)
     // either all rules have actions or none
     assert(actions.empty());
     InnerNode::add(rule);
-}
-
-SBufList
-Acl::Tree::treeDump(const char *prefix, const ActionToString &convert) const
-{
-    SBufList text;
-    Actions::const_iterator action = actions.begin();
-    typedef Nodes::const_iterator NCI;
-    for (NCI node = nodes.begin(); node != nodes.end(); ++node) {
-
-        text.push_back(SBuf(prefix));
-
-        if (action != actions.end()) {
-            const char *act = convert ? convert[action->kind] :
-                              (*action == ACCESS_ALLOWED ? "allow" : "deny");
-            text.push_back(act?SBuf(act):SBuf("???"));
-            ++action;
-        }
-
-#if __cplusplus >= 201103L
-        text.splice(text.end(), (*node)->dump());
-#else
-        // temp is needed until c++11 move constructor
-        SBufList temp = (*node)->dump();
-        text.splice(text.end(), temp);
-#endif
-        text.push_back(SBuf("\n"));
-    }
-    return text;
 }
 
 bool

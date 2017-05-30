@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -34,6 +34,7 @@
 #endif
 
 class ConnStateData;
+class Downloader;
 
 /*  Http Request */
 void httpRequestPack(void *obj, Packable *p);
@@ -48,11 +49,11 @@ public:
     typedef RefCount<HttpRequest> Pointer;
 
     HttpRequest();
-    HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aUrlpath);
+    HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *schemeImage, const char *aUrlpath);
     ~HttpRequest();
     virtual void reset();
 
-    void initHTTP(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aUrlpath);
+    void initHTTP(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *schemeImage, const char *aUrlpath);
 
     virtual HttpRequest *clone() const;
 
@@ -148,7 +149,8 @@ public:
 
     time_t lastmod;     /* Used on refreshes */
 
-    const char *vary_headers;   /* Used when varying entities are detected. Changes how the store key is calculated */
+    /// The variant second-stage cache key. Generated from Vary header pattern for this request.
+    SBuf vary_headers;
 
     char *peer_domain;      /* Configured peer forceddomain */
 
@@ -189,13 +191,11 @@ public:
 
     void swapOut(StoreEntry * e);
 
-    void pack(Packable * p);
+    void pack(Packable * p) const;
 
     static void httpRequestPack(void *obj, Packable *p);
 
-    static HttpRequest * CreateFromUrlAndMethod(char * url, const HttpRequestMethod& method);
-
-    static HttpRequest * CreateFromUrl(char * url);
+    static HttpRequest * CreateFromUrl(char * url, const HttpRequestMethod &method = Http::METHOD_GET);
 
     ConnStateData *pinnedConnection();
 
@@ -212,6 +212,9 @@ public:
      * ie 1xx forwarding or connection pinning state changes
      */
     CbcPointer<ConnStateData> clientConnectionManager;
+
+    /// The Downloader object which initiated the HTTP request if any
+    CbcPointer<Downloader> downloader;
 
     /// forgets about the cached Range header (for a reason)
     void ignoreRange(const char *reason);

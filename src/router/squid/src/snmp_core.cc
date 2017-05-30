@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -368,7 +368,8 @@ snmpHandleUdp(int sock, void *)
         xfree(snmp_rq->outbuf);
         xfree(snmp_rq);
     } else {
-        debugs(49, DBG_IMPORTANT, "snmpHandleUdp: FD " << sock << " recvfrom: " << xstrerror());
+        int xerrno = errno;
+        debugs(49, DBG_IMPORTANT, "snmpHandleUdp: FD " << sock << " recvfrom: " << xstrerr(xerrno));
     }
 }
 

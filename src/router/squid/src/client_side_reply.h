@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2015 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2017 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -115,7 +115,7 @@ private:
     bool alwaysAllowResponse(Http::StatusCode sline) const;
     int checkTransferDone();
     void processOnlyIfCachedMiss();
-    void processConditional(StoreIOBuffer &result);
+    bool processConditional(StoreIOBuffer &result);
     void cacheHit(StoreIOBuffer result);
     void handleIMSReply(StoreIOBuffer result);
     void sendMoreData(StoreIOBuffer result);
@@ -133,6 +133,14 @@ private:
     StoreEntry *old_entry;
     store_client *old_sc;   /* ... for entry to be validated */
     bool deleting;
+
+    typedef enum {
+        crNone = 0, ///< collapsed revalidation is not allowed for this context
+        crInitiator, ///< we initiated collapsed revalidation request
+        crSlave ///< we collapsed on the existing revalidation request
+    } CollapsedRevalidation;
+
+    CollapsedRevalidation collapsedRevalidation;
 };
 
 #endif /* SQUID_CLIENTSIDEREPLY_H */
