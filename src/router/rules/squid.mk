@@ -11,8 +11,8 @@ LIB_ATOMIC=-latomic
 CONFIG_LIBATOMIC=y
 endif
 squid-configure:
-	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) -DNEED_PRINTF -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
-	CC="$(ARCH)-linux-uclibc-gcc $(COPTS)" \
+	cd squid && ./configure --target=$(ARCH)-linux --host=$(ARCH)-linux --prefix=/usr --libdir=/usr/lib CFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -lssl -lcrypto -pthread $(LIB_ATOMIC)" CPPFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl -lcrypto -lssl $(LIB_ATOMIC)" CXXFLAGS="$(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections -pthread -L$(TOP)/openssl  $(LIB_ATOMIC)" \
+	CC="$(ARCH)-linux-uclibc-gcc $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	ac_cv_header_linux_netfilter_ipv4_h=yes \
 	ac_cv_epoll_works=yes \
 	squid_cv_gnu_atomics=$(GNU_ATOMICS) \
