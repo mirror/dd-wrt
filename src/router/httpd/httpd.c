@@ -172,7 +172,7 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
-static void handle_request(webs_t conn_fp);
+static void *handle_request(void *conn_fp);
 
 static int initialize_listen_socket(usockaddr * usaP)
 {
@@ -526,8 +526,9 @@ int ias_sid_valid();
 #endif
 
 #define LINE_LEN 10000
-static void handle_request(webs_t conn_fp)
+static void *handle_request(void *arg)
 {
+	webs_t conn_fp = (webs_t)arg;
 	char *query;
 	char *cur;
 	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent, *language;
@@ -1023,6 +1024,7 @@ static void handle_request(webs_t conn_fp)
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	free(conn_fp);
+	return NULL;
 
 }
 
@@ -1463,7 +1465,10 @@ int main(int argc, char **argv)
 
 		memdebug_enter();
 
-		handle_request(conn_fp);
+		pthread_t *thread = malloc(sizeof(pthread_t));
+
+		if (pthread_create(thread, NULL, handle_request, conn_fp) != 0)
+			fprintf(stderr, "Failed to create thread\n");
 
 		memdebug_leave_info("handle_request");
 
