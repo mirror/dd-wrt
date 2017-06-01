@@ -485,10 +485,10 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 		else
 			asprintf(&extra, "%s", options);
 		if (method == METHOD_OPTIONS) {
-			send_headers(200, "Ok", extra, handler->mime_type, 0, NULL);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+			send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
 			goto ret;
 		} else {
-			send_headers(200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
+			send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
 		}
 	}
 	// send body in 64kb chunks based on random values
@@ -1364,10 +1364,10 @@ static int getFileLen(FILE * in)
 	return len;
 }
 
-static void do_logout(void)	// static functions are not exportable,
+static void do_logout(webs_t conn_fp)	// static functions are not exportable,
 				// additionally this is no ej function
 {
-	send_authenticate(auth_realm);
+	send_authenticate(conn_fp, auth_realm);
 }
 
 static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
@@ -1546,7 +1546,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	else if (!strncmp(value, "Logout", 6)) {
 		do_ej(METHOD_GET, NULL, "Logout.asp", wp, NULL);
 		websDone(wp, 200);
-		do_logout();
+		do_logout(wp);
 		return 1;
 	}
 
@@ -1619,7 +1619,7 @@ footer:
 }
 
 //int auth_check( char *dirname, char *authorization )
-int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	strncpy(userid, nvram_safe_get("http_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
@@ -1627,25 +1627,25 @@ int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisat
 #if defined(HAVE_ERC) || defined(HAVE_IPR)
 	strncpy(realm, "LOGIN", AUTH_MAX);
 	wp->userid = 0;
-	if (auth_check(userid, passwd, realm, authorisation))
+	if (auth_check(wp, userid, passwd, realm, authorisation))
 		return 1;
 	wp->userid = 1;
 	char passout[MD5_OUT_BUFSIZE];
 	strncpy(userid, zencrypt("SuperAdmin", passout), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
-	if (auth_check(userid, passwd, realm, authorisation))
+	if (auth_check(wp, userid, passwd, realm, authorisation))
 		return 1;
 	userid = 0;
 #else
 	wp->userid = 0;
 	strncpy(realm, nvram_safe_get("router_name"), AUTH_MAX);
-	if (auth_check(userid, passwd, realm, authorisation))
+	if (auth_check(wp, userid, passwd, realm, authorisation))
 		return 1;
 #endif
 	return 0;
 }
 
-static int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (nvram_matchi("info_passwd", 0))
 		return 1;
@@ -1653,7 +1653,7 @@ static int do_cauth(webs_t wp, char *userid, char *passwd, char *realm, char *au
 }
 
 #ifdef HAVE_REGISTER
-static int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	if (!isregistered())
 		return 1;
@@ -1664,7 +1664,7 @@ static int do_auth_reg(webs_t wp, char *userid, char *passwd, char *realm, char 
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-static int do_auth2(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation))
+static int do_auth2(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation))
 {
 	strncpy(userid, nvram_safe_get("http2_username"), AUTH_MAX);
 	strncpy(passwd, nvram_safe_get("http2_passwd"), AUTH_MAX);

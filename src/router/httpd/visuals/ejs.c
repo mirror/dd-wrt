@@ -1534,10 +1534,10 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int x, y;
 	for (x = 0; x < 8; x++) {
 		for (y = 0; y < 14; y++) {
-//			fprintf(stderr,"copy %s %d %d\n",menuname_t[x][y],x,y);
+//                      fprintf(stderr,"copy %s %d %d\n",menuname_t[x][y],x,y);
 			strcpy(&menuname[x][y][0], menuname_t[x][y]);
 			if (y < 13) {
-//			fprintf(stderr,"copy menu %s\n",menu_t[x][y]);
+//                      fprintf(stderr,"copy menu %s\n",menu_t[x][y]);
 				strcpy(&menu[x][y][0], menu_t[x][y]);
 			}
 		}
