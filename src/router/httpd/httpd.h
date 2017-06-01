@@ -36,6 +36,7 @@ extern BIO *bio_err;
 typedef struct {
 	FILE *fp;
 	int userid;
+	int conn_fd;
 } webs;
 
 typedef webs *webs_t;
