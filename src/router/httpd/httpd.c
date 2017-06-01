@@ -1055,8 +1055,8 @@ static void handle_request(webs_t conn_fp)
 
       out:;
 	wfclose(conn_fp);
+	close(conn_fp->conn_fd);
 	free(conn_fp);
-	close(conn_fd);
 
 }
 
@@ -1489,6 +1489,7 @@ int main(int argc, char **argv)
 				return errno;
 			}
 		}
+		conn_fp->conn_fd = conn_fd;	// store for release
 
 		memdebug_enter();
 		get_client_ip_mac(conn_fd);
