@@ -582,18 +582,18 @@ static void handle_request(webs_t conn_fp)
 	/* Parse the first line of the request. */
 	if (wfgets(line, LINE_LEN, conn_fp) == (char *)0) {	//jimmy,https,8/4/2003
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
-		return;
+		goto out;
 	}
 
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
-		return;
+		goto out;
 	}
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
-		return;
+		goto out;
 	}
 	while (*path == ' ')
 		path++;
@@ -601,7 +601,7 @@ static void handle_request(webs_t conn_fp)
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
-		return;
+		goto out;
 	}
 	while (*protocol == ' ')
 		protocol++;
@@ -661,17 +661,17 @@ static void handle_request(webs_t conn_fp)
 
 	if (method_type == METHOD_INVALID) {
 		send_error(conn_fp, 501, "Not Implemented", (char *)0, "That method is not implemented.");
-		return;
+		goto out;
 	}
 	if (path[0] != '/') {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Bad filename.");
-		return;
+		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != (char *)0 || strcmp(&(file[len - 3]), "/..") == 0) {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Illegal filename.");
-		return;
+		goto out;
 	}
 	int nodetect = 0;
 	if (nvram_matchi("status_auth", 0) && endswith(file, "Info.htm"))
@@ -744,7 +744,7 @@ static void handle_request(webs_t conn_fp)
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
-		return;
+		goto out;
 	}
 	if (referer && host && nodetect == 0) {
 		int i;
@@ -771,11 +771,11 @@ static void handle_request(webs_t conn_fp)
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
 					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
-					return;
+					goto out;
 				}
 				if (host[c++] != referer[a]) {
 					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
-					return;
+					goto out;
 				}
 				if (c == hlen) {
 					a++;
@@ -784,7 +784,7 @@ static void handle_request(webs_t conn_fp)
 			}
 			if (c != hlen || referer[a] != '/') {
 				send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
-				return;
+				goto out;
 			}
 		}
 
@@ -829,7 +829,7 @@ static void handle_request(webs_t conn_fp)
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
 			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL);
-			return;
+			goto out;
 
 		} else if (ias_detected == 1) {
 			fprintf(stderr, "[HTTP PATH] %s redirected\n", file);
@@ -980,7 +980,7 @@ static void handle_request(webs_t conn_fp)
 #endif
 							auth_fail = 0;
 							send_authenticate(conn_fp, auth_realm);
-							return;
+							goto out;
 						}
 					}
 					memdebug_leave_info("auth");
@@ -1013,14 +1013,14 @@ static void handle_request(webs_t conn_fp)
 				memdebug_enter();
 				if (check_connect_type() < 0) {
 					send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
-					return;
+					goto out;
 				}
 				memdebug_leave_info("connect");
 				memdebug_enter();
 				if (auth_fail == 1) {
 					send_authenticate(conn_fp, auth_realm);
 					auth_fail = 0;
-					return;
+					goto out;
 				} else {
 					if (handler->output != do_file)
 						if (handler->send_headers)
@@ -1052,6 +1052,12 @@ static void handle_request(webs_t conn_fp)
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 		}
 	}
+
+      out:;
+	wfclose(conn_fp);
+	free(conn_fp);
+	close(conn_fd);
+
 }
 
 void				// add by honor 2003-04-16
@@ -1493,11 +1499,6 @@ int main(int argc, char **argv)
 		handle_request(conn_fp);
 
 		memdebug_leave_info("handle_request");
-
-		wfclose(conn_fp);	// jimmy, https, 8/4/2003
-		free(conn_fp);
-		conn_fp = NULL;
-		close(conn_fd);
 
 		showmemdebugstat();
 	}
