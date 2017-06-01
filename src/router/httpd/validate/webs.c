@@ -4090,7 +4090,7 @@ void ddns_save_value(webs_t wp)
 		}
 	} else
 		nvram_set(_hostname, hostname);
-	
+
 	nvram_set(_dyndnstype, dyndnstype);
 	nvram_set(_wildcard, wildcard);
 	nvram_set(_custom, custom);
@@ -4590,21 +4590,21 @@ void nintendo_save(webs_t wp)
 }
 #endif
 #ifdef HAVE_SPEEDCHECKER
-void speedchecker_save(webs_t wp) {
+void speedchecker_save(webs_t wp)
+{
 
 	if (!strcmp(websGetVar(wp, "speedchecker_enable", "0"), "1")) {
-		char uuid[38]="";
-		FILE *fd=fopen("/proc/sys/kernel/random/uuid","r");
+		char uuid[38] = "";
+		FILE *fd = fopen("/proc/sys/kernel/random/uuid", "r");
 		if (fd != NULL) {
-			fgets(uuid,37,fd);
+			fgets(uuid, 37, fd);
 			fclose(fd);
 			nvram_seti("speedchecker_enable", 1);
 			nvram_default_get("speedchecker_uuid", uuid);
 			eval("startstop", "speedchecker");
-		    }
+		}
 
-	}
-	else {
+	} else {
 		nvram_seti("speedchecker_enable", 0);
 	}
 }

@@ -59,7 +59,7 @@ extern int do_ssl;
 #define AUTH_MAX 64
 
 extern char auth_realm[AUTH_MAX];
-extern void send_authenticate(char *realm);
+extern void send_authenticate(webs_t conn_fp, char *realm);
 
 /* Generic MIME type handler */
 struct mime_handler {
@@ -68,7 +68,7 @@ struct mime_handler {
 	char *extra_header;
 	void (*input) (char *path, webs_t stream, int len, char *boundary);
 	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);
-	int (*auth) (webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation));
+	int (*auth) (webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation));
 	unsigned char send_headers;
 	unsigned char handle_options;
 };
@@ -96,6 +96,7 @@ extern int count_cgi();
 /* Regular file handler */
 extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query);
 extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment);
+extern void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 
 /* GoAhead 2.1 compatibility */
 //typedef FILE * webs_t;
@@ -156,7 +157,7 @@ extern void do_ej_buffer(char *buffer, webs_t stream);
 extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
 #endif
-int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (char *userid, char *passwd, char *dirname, char *authorisation));
+int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation));
 void Initnvramtab(void);
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 
