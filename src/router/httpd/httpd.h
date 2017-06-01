@@ -37,6 +37,7 @@ typedef struct {
 	FILE *fp;
 	int userid;
 	int conn_fd;
+	char *request_url;
 } webs;
 
 typedef webs *webs_t;
@@ -134,7 +135,6 @@ struct Webenvironment {
 	char *(*Plive_translate) (const char *tran);
 	void (*Pvalidate_cgi) (webs_t fp);
 	websRomPageIndexType *PwebsRomPageIndex;
-	char *Prequest_url;
 #ifdef HAVE_HTTPS
 	int Pdo_ssl;
 #endif
