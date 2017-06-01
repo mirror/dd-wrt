@@ -149,15 +149,6 @@ char *server_dir = NULL;
 int do_ssl = 0;
 #endif
 
-static char auth_userid[AUTH_MAX];
-static char auth_passwd[AUTH_MAX];
-char auth_realm[AUTH_MAX];
-char curr_page[32];
-
-//#ifdef GET_POST_SUPPORT
-int post;
-
-//#endif
 int auth_fail = 0;
 int httpd_level;
 
@@ -166,7 +157,7 @@ extern char *get_mac_from_ip(char *ip);
 
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
-static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, char *authorization);
+static int auth_check(webs_t conn_fp, char *authorization);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
 void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
@@ -206,20 +197,19 @@ static int initialize_listen_socket(usockaddr * usaP)
 	return listen_fd;
 }
 
-static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, char *authorization)
+static int auth_check(webs_t conn_fp, char *authorization)
 {
 	unsigned char authinfo[500];
 	unsigned char *authpass;
 	int l;
 
 	/* Is this directory unprotected? */
-	if (!strlen(pass))
+	if (!strlen(conn_fp->auth_passwd))
 		/* Yes, let the request go through. */
 		return 1;
 
 	/* Basic authorization info? */
 	if (!authorization || strncmp(authorization, "Basic ", 6) != 0) {
-		//send_authenticate( dirname );
 		ct_syslog(LOG_INFO, httpd_level, "Authentication fail");
 		return 0;
 	}
@@ -231,7 +221,6 @@ static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, cha
 	authpass = strchr((char *)authinfo, ':');
 	if (authpass == (unsigned char *)0) {
 		/* No colon?  Bogus auth info. */
-		//send_authenticate( dirname );
 		return 0;
 	}
 	*authpass++ = '\0';
@@ -243,14 +232,14 @@ static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, cha
 	char *enc1;
 	char *enc2;
 	memdebug_enter();
-	enc1 = crypt(authinfo, (unsigned char *)user);
+	enc1 = crypt(authinfo, (unsigned char *)conn_fp->auth_userid);
 
-	if (strcmp(enc1, user)) {
+	if (strcmp(enc1, conn_fp->auth_userid)) {
 		return 0;
 	}
 	char dummy[128];
-	enc2 = crypt(authpass, (unsigned char *)pass);
-	if (strcmp(enc2, pass)) {
+	enc2 = crypt(authpass, (unsigned char *)conn_fp->auth_passwd);
+	if (strcmp(enc2, conn_fp->auth_passwd)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 			//fprintf(stderr, "flushing %s\n", dummy);
@@ -262,7 +251,7 @@ static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, cha
 	return 1;
 }
 
-void send_authenticate(webs_t conn_fp, char *realm)
+void send_authenticate(webs_t conn_fp)
 {
 	u_int64_t auth_time = (u_int64_t)(atoll(nvram_safe_get("auth_time")));
 	u_int64_t curr_time = (u_int64_t)time(NULL);
@@ -271,7 +260,7 @@ void send_authenticate(webs_t conn_fp, char *realm)
 
 	char header[10000];
 
-	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
+	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
 	send_error(conn_fp, 401, "Unauthorized", header,
 #if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
 		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
@@ -917,8 +906,6 @@ static void *handle_request(void *arg)
 		FILE *fp;
 		int file_found = 1;
 
-		strncpy(curr_page, file, sizeof(curr_page));
-
 		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 			if (match(handler->pattern, file)) {
 #ifdef HAVE_REGISTER
@@ -927,10 +914,8 @@ static void *handle_request(void *arg)
 				{
 					memdebug_enter();
 					if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
+	
 						int result = handler->auth(conn_fp,
-									   auth_userid,
-									   auth_passwd,
-									   auth_realm,
 									   authorization,
 									   auth_check);
 
@@ -943,15 +928,15 @@ static void *handle_request(void *arg)
 						if (!result) {
 #endif
 							auth_fail = 0;
-							send_authenticate(conn_fp, auth_realm);
+							send_authenticate(conn_fp);
 							goto out;
 						}
 					}
 					memdebug_leave_info("auth");
 				}
-				post = 0;
+				conn_fp->post = 0;
 				if (method_type == METHOD_POST) {
-					post = 1;
+					conn_fp->post = 1;
 				}
 				memdebug_enter();
 				if (handler->input)
@@ -982,7 +967,7 @@ static void *handle_request(void *arg)
 				memdebug_leave_info("connect");
 				memdebug_enter();
 				if (auth_fail == 1) {
-					send_authenticate(conn_fp, auth_realm);
+					send_authenticate(conn_fp);
 					auth_fail = 0;
 					goto out;
 				} else {
@@ -1021,7 +1006,10 @@ static void *handle_request(void *arg)
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)
-	    free(conn_fp->request_url);
+		free(conn_fp->request_url);
+	if (conn_fp->post_buf)
+		free(conn_fp->post_buf);
+	memset(conn_fp, 0, sizeof(webs)); // erase to delete any traces of stored passwords or usernames
 	free(conn_fp);
 	return NULL;
 
@@ -1392,6 +1380,7 @@ int main(int argc, char **argv)
 				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 				continue;
 			}
+			memset(conn_fp, 0, sizeof(webs));
 
 			conn_fp->fp = (FILE *) initsslbuffer(ssl);
 
@@ -1402,6 +1391,8 @@ int main(int argc, char **argv)
 				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 				continue;
 			}
+			memset(conn_fp, 0, sizeof(webs));
+
 			conn_fp->fp = (FILE *) conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
@@ -1434,6 +1425,8 @@ int main(int argc, char **argv)
 				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 				continue;
 			}
+			memset(conn_fp, 0, sizeof(webs));
+
 			conn_fp->fp = (webs_t)(&ssl);
 #endif
 		} else
@@ -1450,6 +1443,7 @@ int main(int argc, char **argv)
 				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 				continue;
 			}
+			memset(conn_fp, 0, sizeof(webs));
 
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
