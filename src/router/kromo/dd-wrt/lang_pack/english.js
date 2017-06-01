@@ -2842,6 +2842,14 @@ ias.hl_client_access="For Client Access";
 ias.hl_for_conf="For Configuration";
 ias.hl_guest_card="Guest Card";
 
+// ** Speedchecker.asp **//
+var speedchecker=new Object();
+speedchecker.titl="Speedchecker";
+speedchecker.legend="Speedchecker";
+speedchecker.server="Speedchecker Service";
+speedchecker.regtitle="Please share Informations with us:";
+speedchecker.savemessage="Please save or apply";
+
 
 // ************		OLD PAGES 		*******************************//
 // *********************** DHCPTable.asp *****************************//
