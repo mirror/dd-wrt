@@ -1146,6 +1146,9 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
 #endif
 #endif
+#ifdef HAVE_SPEEDCHECKER
+	{"Speedchecker", "speedchecker", "", 0, REFRESH, "speedchecker_save"},
+#endif
 };
 
 static struct gozila_action *handle_gozila_action(char *name, char *type)
