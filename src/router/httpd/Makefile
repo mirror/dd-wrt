@@ -72,6 +72,9 @@ endif
 
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless
+ifneq ($(CONFIG_MICRO),y)
+LDFLAGS += -lpthread
+endif
 #LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless -L$(TOP)/jansson/src/.libs/ -ljansson
 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
