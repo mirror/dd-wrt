@@ -53,3 +53,6 @@ endif
 ifeq ($(CONFIG_E200),y)
 CFLAGS += -DHAVE_E200
 endif
+ifeq ($(CONFIG_SPEEDCHECKER),y)
+CFLAGS += -DHAVE_SPEEDCHECKER
+endif
