@@ -839,11 +839,6 @@ CFLAGS += -DHAVE_SUPERCHANNEL
 REGOBJS = $(TOP)/register/register.c
 REGOBJS2 = $(TOP)/register/register_vis.o
 endif
-#ifeq ($(HSIAB_SUPPORT),1)
-#CFLAGS += -I$(TOP)/hsiab
-#LDFLAGS += -L$(TOP)/openssl -L$(TOP)/hsiab -lcrypto -lssl -lhsiab
-#OBJS += hsiab.o
-#endif
 #ifeq ($(HTTPS_SUPPORT),1)
 #CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
 #LDFLAGS += -L$(TOP)/openssl -L../openssl -lcrypto -lssl

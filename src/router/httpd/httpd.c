@@ -486,40 +486,6 @@ void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, cha
 	do_file_2(handler, path, stream, query, attachment);
 }
 
-#ifdef HSIAB_SUPPORT
-static char *			// add by jimmy 2003-5-13
-get_aaa_url(int inout_mode, char *client_ip)
-{
-	static char line[MAX_BUF_LEN];
-	char cmd[MAX_BUF_LEN];
-
-	strcpy(line, "");
-	if (inout_mode == 0)
-		snprintf(cmd, sizeof(cmd), "GET aaa_login_url %s", client_ip);
-	else
-		snprintf(cmd, sizeof(cmd), "GET aaa_logout_url %s", client_ip);
-
-	send_command(cmd, line);
-
-	return line;
-}
-
-char *				// add by honor 2003-04-16, modify by jimmy 2003-05-13
-get_client_ip(int cfp)
-{
-	struct sockaddr_in sa;
-	int len = sizeof(struct sockaddr_in);
-	static char ip[20];
-
-	getpeername(cfp, (struct sockaddr *)&sa, &len);
-	char client[32];
-	char *peer = inet_ntop(AF_INET, &sa.sin_addr, client, 16);
-
-	strcpy(ip, peer);
-	return (ip);
-}
-#endif
-
 static int check_connect_type(void)
 {
 	struct wl_assoc_mac *wlmac = NULL;
