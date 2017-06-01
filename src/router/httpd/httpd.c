@@ -149,8 +149,6 @@ char *server_dir = NULL;
 int do_ssl = 0;
 #endif
 
-//static FILE *conn_fp;
-static webs_t conn_fp = NULL;	// jimmy, https, 8/4/2003
 static char auth_userid[AUTH_MAX];
 static char auth_passwd[AUTH_MAX];
 char auth_realm[AUTH_MAX];
@@ -168,13 +166,13 @@ extern char *get_mac_from_ip(char *ip);
 
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
-static int auth_check(char *user, char *pass, char *dirname, char *authorization);
-static void send_error(int status, char *title, char *extra_header, char *text);
-void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
+static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, char *authorization);
+static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
+void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
-static void handle_request(void);
+static void handle_request(webs_t conn_fp);
 
 static int initialize_listen_socket(usockaddr * usaP)
 {
@@ -208,7 +206,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 	return listen_fd;
 }
 
-static int auth_check(char *user, char *pass, char *dirname, char *authorization)
+static int auth_check(webs_t conn_fp, char *user, char *pass, char *dirname, char *authorization)
 {
 	unsigned char authinfo[500];
 	unsigned char *authpass;
@@ -261,47 +259,10 @@ static int auth_check(char *user, char *pass, char *dirname, char *authorization
 	}
 	memdebug_leave();
 
-#if 0				//ndef HAVE_IAS
-	u_int64_t auth_time = (u_int64_t)(atoll(nvram_safe_get("auth_time")));
-	u_int64_t curr_time = (u_int64_t)time(NULL);
-	char s_curr_time[24];
-	sprintf(s_curr_time, "%llu", curr_time);
-	if (nvram_get("ias_startup") && nvram_geti("ias_startup") > 0) {
-		fprintf(stderr, "IAS ignore\n");
-		return 1;
-	}
-
-	int submittedtoken = nvram_geti("token");
-	int currenttoken = nvram_geti("ptoken");
-
-	//protect config changes
-	if (!strcmp(curr_page, "apply.cgi") || !strcmp(curr_page, "nvram.cgi") || !strcmp(curr_page, "upgrade.cgi")) {
-		//if token does not match ask for auth again, every page that does submit data in POST must send correct token
-		if (currenttoken != 0)
-			if ((submittedtoken != currenttoken)) {
-				//empty read buffer or send_authenticate will fail
-				while (wfgets(dummy, 64, conn_fp) > 0) {
-					//fprintf(stderr, "flushing %s\n", dummy);
-				}
-				return 0;
-			}
-	}
-
-	if (((curr_time - auth_time) > atoll(nvram_safe_get("auth_limit")))) {
-		//empty read buffer or send_authenticate will fail
-		while (wfgets(dummy, 64, conn_fp) > 0) {
-			//fprintf(stderr, "flushing %s\n", dummy);
-		}
-		return 0;
-	}
-
-	nvram_set("auth_time", s_curr_time);
-#endif
-
 	return 1;
 }
 
-void send_authenticate(char *realm)
+void send_authenticate(webs_t conn_fp, char *realm)
 {
 	u_int64_t auth_time = (u_int64_t)(atoll(nvram_safe_get("auth_time")));
 	u_int64_t curr_time = (u_int64_t)time(NULL);
@@ -311,7 +272,7 @@ void send_authenticate(char *realm)
 	char header[10000];
 
 	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", realm);
-	send_error(401, "Unauthorized", header,
+	send_error(conn_fp, 401, "Unauthorized", header,
 #if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
 		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
 #else
@@ -321,18 +282,18 @@ void send_authenticate(char *realm)
 	nvram_set("auth_time", s_curr_time);
 }
 
-static void send_error(int status, char *title, char *extra_header, char *text)
+static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text)
 {
 
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-	send_headers(status, title, extra_header, "text/html", -1, NULL);
+	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	(void)wfprintf(conn_fp, "%s\n", text);
 	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
 	(void)wfflush(conn_fp);
 }
 
-void send_headers(int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
+void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
 {
 	time_t now;
 	char timebuf[100];
@@ -500,7 +461,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		len = getWebsFileLen(path);
 	}
 	if (!handler->send_headers)
-		send_headers(200, "Ok", handler->extra_header, handler->mime_type, len, attach);
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach);
 	char *buffer = malloc(4096);
 	while (len) {
 		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
@@ -544,13 +505,13 @@ get_aaa_url(int inout_mode, char *client_ip)
 }
 
 char *				// add by honor 2003-04-16, modify by jimmy 2003-05-13
-get_client_ip(int conn_fp)
+get_client_ip(int cfp)
 {
 	struct sockaddr_in sa;
 	int len = sizeof(struct sockaddr_in);
 	static char ip[20];
 
-	getpeername(conn_fp, (struct sockaddr *)&sa, &len);
+	getpeername(cfp, (struct sockaddr *)&sa, &len);
 	char client[32];
 	char *peer = inet_ntop(AF_INET, &sa.sin_addr, client, 16);
 
@@ -599,7 +560,7 @@ int ias_sid_valid();
 #endif
 
 #define LINE_LEN 10000
-static void handle_request(void)
+static void handle_request(webs_t conn_fp)
 {
 	char *query;
 	char *cur;
@@ -620,7 +581,7 @@ static void handle_request(void)
 	memset(line, 0, LINE_LEN);
 	/* Parse the first line of the request. */
 	if (wfgets(line, LINE_LEN, conn_fp) == (char *)0) {	//jimmy,https,8/4/2003
-		send_error(400, "Bad Request", (char *)0, "No request found.");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
 		return;
 	}
 
@@ -631,7 +592,7 @@ static void handle_request(void)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(400, "Bad Request", (char *)0, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
 		return;
 	}
 	while (*path == ' ')
@@ -639,7 +600,7 @@ static void handle_request(void)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(400, "Bad Request", (char *)0, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
 		return;
 	}
 	while (*protocol == ' ')
@@ -699,17 +660,17 @@ static void handle_request(void)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(501, "Not Implemented", (char *)0, "That method is not implemented.");
+		send_error(conn_fp, 501, "Not Implemented", (char *)0, "That method is not implemented.");
 		return;
 	}
 	if (path[0] != '/') {
-		send_error(400, "Bad Request", (char *)0, "Bad filename.");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "Bad filename.");
 		return;
 	}
 	file = &(path[1]);
 	len = strlen(file);
 	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != (char *)0 || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(400, "Bad Request", (char *)0, "Illegal filename.");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "Illegal filename.");
 		return;
 	}
 	int nodetect = 0;
@@ -782,7 +743,7 @@ static void handle_request(void)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
-		send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
+		send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
 		return;
 	}
 	if (referer && host && nodetect == 0) {
@@ -809,11 +770,11 @@ static void handle_request(void)
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
 					return;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
 					return;
 				}
 				if (c == hlen) {
@@ -822,7 +783,7 @@ static void handle_request(void)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(400, "Bad Request", (char *)0, "Cross Site Action detected!");
+				send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
 				return;
 			}
 		}
@@ -867,7 +828,7 @@ static void handle_request(void)
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
-			send_headers(302, "Found", redirect_path, "", -1, NULL);
+			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL);
 			return;
 
 		} else if (ias_detected == 1) {
@@ -915,27 +876,23 @@ static void handle_request(void)
 #endif
 	if (file[0] == '\0' || file[len - 1] == '/') {
 
+		if (server_dir != NULL && strcmp(server_dir, "/www"))	// to allow to use router as a WEB server
 		{
-			if (server_dir != NULL && strcmp(server_dir, "/www"))	// to allow to use router as a WEB server
-			{
-				file = "index.htm";
-			} else {
+			file = "index.htm";
+		} else {
 #ifdef HAVE_IAS
-				file = "index.asp";
+			file = "index.asp";
 #else
-				if (nvram_invmatchi("status_auth", 0))
-					file = "Info.htm";
-				else
-					file = "index.asp";
+			if (nvram_invmatchi("status_auth", 0))
+				file = "Info.htm";
+			else
+				file = "index.asp";
 #endif
-			}
 		}
 	} else {
-		{
-			if (nvram_invmatchi("status_auth", 1))
-				if (strcmp(file, "Info.htm") == 0)
-					file = "index.asp";
-		}
+		if (nvram_invmatchi("status_auth", 1))
+			if (strcmp(file, "Info.htm") == 0)
+				file = "index.asp";
 	}
 #endif
 
@@ -1022,7 +979,7 @@ static void handle_request(void)
 						if (!result) {
 #endif
 							auth_fail = 0;
-							send_authenticate(auth_realm);
+							send_authenticate(conn_fp, auth_realm);
 							return;
 						}
 					}
@@ -1032,12 +989,10 @@ static void handle_request(void)
 				if (method_type == METHOD_POST) {
 					post = 1;
 				}
-				{
-					memdebug_enter();
-					if (handler->input)
-						handler->input(file, conn_fp, cl, boundary);
-					memdebug_leave_info("input");
-				}
+				memdebug_enter();
+				if (handler->input)
+					handler->input(file, conn_fp, cl, boundary);
+				memdebug_leave_info("input");
 #if defined(linux)
 #ifdef HAVE_HTTPS
 				if (!do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -1055,53 +1010,46 @@ static void handle_request(void)
 				}
 #endif
 #endif
-				{
-					memdebug_enter();
-					if (check_connect_type() < 0) {
-						send_error(401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
-						return;
-					}
-					memdebug_leave_info("connect");
+				memdebug_enter();
+				if (check_connect_type() < 0) {
+					send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+					return;
 				}
-				{
-					memdebug_enter();
-					if (auth_fail == 1) {
-						send_authenticate(auth_realm);
-						auth_fail = 0;
-						return;
-					} else {
-						if (handler->output != do_file)
-							if (handler->send_headers)
-								send_headers(200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
-					}
-					memdebug_leave_info("auth_output");
+				memdebug_leave_info("connect");
+				memdebug_enter();
+				if (auth_fail == 1) {
+					send_authenticate(conn_fp, auth_realm);
+					auth_fail = 0;
+					return;
+				} else {
+					if (handler->output != do_file)
+						if (handler->send_headers)
+							send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
 				}
-
-				{
-					memdebug_enter();
-					// check for do_file handler and check if file exists
-					file_found = 1;
-					if (handler->output == do_file) {
-						if (getWebsFileLen(file) == 0) {
-							if (!(fp = fopen(file, "rb"))) {
-								file_found = 0;
-							} else {
-								fclose(fp);
-							}
+				memdebug_leave_info("auth_output");
+				memdebug_enter();
+				// check for do_file handler and check if file exists
+				file_found = 1;
+				if (handler->output == do_file) {
+					if (getWebsFileLen(file) == 0) {
+						if (!(fp = fopen(file, "rb"))) {
+							file_found = 0;
+						} else {
+							fclose(fp);
 						}
 					}
-					if (handler->output && file_found) {
-						handler->output(method_type, handler, file, conn_fp, query);
-					} else {
-						send_error(404, "Not Found", (char *)0, "File not found.");
-					}
-					break;
-					memdebug_leave_info("output");
 				}
+				if (handler->output && file_found) {
+					handler->output(method_type, handler, file, conn_fp, query);
+				} else {
+					send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
+				}
+				break;
+				memdebug_leave_info("output");
 			}
 
 			if (!handler->pattern)
-				send_error(404, "Not Found", (char *)0, "File not found.");
+				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 		}
 	}
 }
@@ -1397,21 +1345,19 @@ int main(int argc, char **argv)
 		exit(errno);
 	}
 #if !defined(DEBUG)
-	{
-		FILE *pid_fp;
+	FILE *pid_fp;
 
-		/* Daemonize and log PID */
-		if (daemon(1, 1) == -1) {
-			perror("daemon");
-			exit(errno);
-		}
-		if (!(pid_fp = fopen(pid_file, "w"))) {
-			perror(pid_file);
-			return errno;
-		}
-		fprintf(pid_fp, "%d", getpid());
-		fclose(pid_fp);
+	/* Daemonize and log PID */
+	if (daemon(1, 1) == -1) {
+		perror("daemon");
+		exit(errno);
 	}
+	if (!(pid_fp = fopen(pid_file, "w"))) {
+		perror(pid_file);
+		return errno;
+	}
+	fprintf(pid_fp, "%d", getpid());
+	fclose(pid_fp);
 #endif
 
 	/* Loop forever handling requests */
@@ -1430,6 +1376,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
+		webs_t conn_fp;
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
 			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
@@ -1467,15 +1414,21 @@ int main(int argc, char **argv)
 				continue;
 			}
 
-			if (!conn_fp)
-				conn_fp = safe_malloc(sizeof(webs));
+			conn_fp = safe_malloc(sizeof(webs));
+			if (!conn_fp) {
+				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+				continue;
+			}
 
 			conn_fp->fp = (FILE *) initsslbuffer(ssl);
 
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fd);
-			if (!conn_fp)
-				conn_fp = safe_malloc(sizeof(webs));
+			conn_fp = safe_malloc(sizeof(webs));
+			if (!conn_fp) {
+				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+				continue;
+			}
 			conn_fp->fp = (FILE *) conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
@@ -1503,8 +1456,11 @@ int main(int argc, char **argv)
 				close(conn_fd);
 				continue;
 			}
-			if (!conn_fp)
-				conn_fp = safe_malloc(sizeof(webs));
+			conn_fp = safe_malloc(sizeof(webs));
+			if (!conn_fp) {
+				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+				continue;
+			}
 			conn_fp->fp = (webs_t)(&ssl);
 #endif
 		} else
@@ -1516,25 +1472,28 @@ int main(int argc, char **argv)
 				return -1;
 			}
 #endif
-			if (!conn_fp)
-				conn_fp = safe_malloc(sizeof(webs));
+			conn_fp = safe_malloc(sizeof(webs));
+			if (!conn_fp) {
+				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+				continue;
+			}
+
 			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
 				perror("fdopen");
 				return errno;
 			}
 		}
-		{
-			memdebug_enter();
-			get_client_ip_mac(conn_fd);
-			memdebug_leave_info("get_client_ip_mac");
-		}
-		{
-			memdebug_enter();
 
-			handle_request();
+		memdebug_enter();
+		get_client_ip_mac(conn_fd);
+		memdebug_leave_info("get_client_ip_mac");
 
-			memdebug_leave_info("handle_request");
-		}
+		memdebug_enter();
+
+		handle_request(conn_fp);
+
+		memdebug_leave_info("handle_request");
+
 		wfclose(conn_fp);	// jimmy, https, 8/4/2003
 		free(conn_fp);
 		conn_fp = NULL;
