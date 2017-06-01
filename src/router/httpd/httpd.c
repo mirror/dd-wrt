@@ -1465,11 +1465,15 @@ int main(int argc, char **argv)
 
 		memdebug_enter();
 
+#ifndef HAVE_MICRO
 		pthread_t *thread = malloc(sizeof(pthread_t));
 
 		if (pthread_create(thread, NULL, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 
+#else
+		handle_request(conn_fp);
+#endif
 		memdebug_leave_info("handle_request");
 
 		showmemdebugstat();
