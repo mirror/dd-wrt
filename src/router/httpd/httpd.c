@@ -516,7 +516,6 @@ static int check_connect_type(void)
 static char *last_log_ip = NULL;
 static int registered = -1;
 static int registered_real = -1;
-char *request_url = NULL;
 #ifdef HAVE_IAS
 char ias_sid[20];
 char ias_http_client_mac[20];
@@ -768,9 +767,7 @@ static void *handle_request(void *arg)
 #endif
 
 	// save the originally requested url
-	if (request_url)	// ahm, we should check for null
-		free(request_url);
-	request_url = strdup(file);
+	conn_fp->request_url = strdup(file);
 
 #ifdef HAVE_SKYTRON
 	if (file[0] == '\0' || file[len - 1] == '/') {
@@ -1023,6 +1020,8 @@ static void *handle_request(void *arg)
       out:;
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
+	if (conn_fp->request_url)
+	    free(conn_fp->request_url);
 	free(conn_fp);
 	return NULL;
 
