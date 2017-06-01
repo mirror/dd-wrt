@@ -33,11 +33,18 @@ extern BIO *bio_err;
 
 #include <bcmnvram.h>
 
+#define AUTH_MAX 64
+
 typedef struct {
 	FILE *fp;
 	int userid;
 	int conn_fd;
+	int post;
+	char *post_buf;
 	char *request_url;
+	char auth_realm[AUTH_MAX];
+	char auth_userid[AUTH_MAX];
+	char auth_passwd[AUTH_MAX];
 } webs;
 
 typedef webs *webs_t;
@@ -58,10 +65,8 @@ extern int wfputs(char *buf, webs_t fp);
 extern int do_ssl;
 #endif
 /* Basic authorization userid and passwd limit */
-#define AUTH_MAX 64
 
-extern char auth_realm[AUTH_MAX];
-extern void send_authenticate(webs_t conn_fp, char *realm);
+extern void send_authenticate(webs_t conn_fp);
 
 /* Generic MIME type handler */
 struct mime_handler {
@@ -70,7 +75,7 @@ struct mime_handler {
 	char *extra_header;
 	void (*input) (char *path, webs_t stream, int len, char *boundary);
 	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);
-	int (*auth) (webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation));
+	int (*auth) (webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation));
 	unsigned char send_headers;
 	unsigned char handle_options;
 };
@@ -158,7 +163,7 @@ extern void do_ej_buffer(char *buffer, webs_t stream);
 extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
 #endif
-int do_auth(webs_t wp, char *userid, char *passwd, char *realm, char *authorisation, int (*auth_check) (webs_t conn_fp, char *userid, char *passwd, char *dirname, char *authorisation));
+int do_auth(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation));
 void Initnvramtab(void);
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 
