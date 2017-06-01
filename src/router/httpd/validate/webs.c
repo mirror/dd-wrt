@@ -4589,3 +4589,23 @@ void nintendo_save(webs_t wp)
 	applytake(value);
 }
 #endif
+#ifdef HAVE_SPEEDCHECKER
+void speedchecker_save(webs_t wp) {
+
+	if (!strcmp(websGetVar(wp, "speedchecker_enable", "0"), "1")) {
+		char uuid[38]="";
+		FILE *fd=fopen("/proc/sys/kernel/random/uuid","r");
+		if (fd != NULL) {
+			fgets(uuid,37,fd);
+			fclose(fd);
+			nvram_seti("speedchecker_enable", 1);
+			nvram_default_get("speedchecker_uuid", uuid);
+			eval("startstop", "speedchecker");
+		    }
+
+	}
+	else {
+		nvram_seti("speedchecker_enable", 0);
+	}
+}
+#endif
