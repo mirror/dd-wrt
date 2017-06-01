@@ -69,9 +69,6 @@ char *(*live_translate) (const char *tran) = NULL;
 websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
-
-char *request_url;
-
 #ifdef HAVE_HTTPS
 int do_ssl;
 #endif
@@ -95,7 +92,6 @@ void initWeb(struct Webenvironment *env)
 	live_translate = env->Plive_translate;
 	GOZILA_GET = env->PGOZILA_GET;
 	validate_cgi = env->Pvalidate_cgi;
-	request_url = env->Prequest_url;
 }
 
 struct onload onloads[] = {
@@ -1944,7 +1940,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n");
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
-	if (get_wl_instances() == 3 && (startswith(request_url, "Wireless") || startswith(request_url, "WL_WPA")))
+	if (get_wl_instances() == 3 && (startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")))
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
 #ifdef HAVE_WIKINGS
 	websWrite(wp, "\t\t<title>:::: Excel Networks ::::");
@@ -2881,9 +2877,9 @@ void ej_show_upgrade_options(webs_t wp, int argc, char_t ** argv)
 void ej_getsetuppage(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_BUFFALO
-	if (endswith(request_url, ".asp") || endswith(request_url, ".htm")
-	    || endswith(request_url, ".html")) {
-		websWrite(wp, "%s", request_url);
+	if (endswith(wp->request_url, ".asp") || endswith(wp->request_url, ".htm")
+	    || endswith(wp->request_url, ".html")) {
+		websWrite(wp, "%s", wp->request_url);
 	} else {
 		websWrite(wp, "SetupAssistant.asp");
 	}
