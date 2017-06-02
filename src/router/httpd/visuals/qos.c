@@ -152,7 +152,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			  "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n"	// 
 			  "</td>\n"	//
 			  "<td><em>%s</em></td>\n"	//
-			  "<td>\n", i, i, ip, getNetworkLabel(wp,ip));	//
+			  "<td>\n", i, i, ip, getNetworkLabel(wp, ip));	//
 		websWrite(wp, "<select name=\"svqos_devprio%d\"> \n"	//
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");\n"	//
 			  "document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");\n"	//
@@ -225,7 +225,7 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			  "<input type=\"checkbox\" name=\"svqos_devdel%d\" />\n"	//
 			  "<input type=\"hidden\" name=\"svqos_dev%d\" value=\"%s\" />\n"	//
 			  "</td>\n", i, i, ip);
-		websWrite(wp, "	<td><em>%s</em></td>\n", getNetworkLabel(wp,ip));
+		websWrite(wp, "	<td><em>%s</em></td>\n", getNetworkLabel(wp, ip));
 
 		websWrite(wp, "	<td nowrap>\n" "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
 			  "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");

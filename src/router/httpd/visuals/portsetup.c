@@ -46,7 +46,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, "<option value=\"\" %s ><script type=\"text/javascript\">Capture(share.disabled);</script></option>\n", strlen(wanifname) == 0 ? "selected=\"selected\"" : "");
 		foreach(var, eths, next) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(wanifname, var) ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, !strcmp(wanifname, var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
 		websWrite(wp, "</select></div>\n");
 	}
@@ -74,7 +74,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		sprintf(ssid, "%s_bridged", var);
 		// nvram_nset("0", "%s_bridged", var);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp,var));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.network)</script> %s</legend>\n", getNetworkLabel(wp, var));
 		// label here
 		websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(idx.label)</script></div>\n");
 		websWrite(wp, "<input maxlength=\"32\" size=\"25\" name=\"%s_label\" value=\"%s\" /></div>\n", var, nvram_nget("%s_label", var));

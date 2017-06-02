@@ -412,16 +412,12 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		}
 
 		char *iface;
-/*#ifdef HAVE_ATH9K
-		iface = ifname;
-		sysprintf("wl_atheros -i %s %s > %s", iface,
-			  ASSOCLIST_CMD, ASSOCLIST_TMP);
-#elif HAVE_MADWIFI*/
+		char cmd[64];
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
-		iface = ifname;
-		sysprintf("wl_atheros -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
+		iface = ifname sprintf(cmd, "wl_atheros -i %s %s", iface, ASSOCLIST_CMD);
 #elif HAVE_RT2880
-		sysprintf("wl_rt2880 -i %s %s > %s", ifname, ASSOCLIST_CMD, ASSOCLIST_TMP);
+		sprintf(cmd, "wl_rt2880 -i %s %s", ifname, ASSOCLIST_CMD);
 #else
 		if (!strcmp(ifname, "wl0"))
 			iface = get_wl_instance_name(0);
@@ -431,10 +427,10 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 			iface = get_wl_instance_name(2);
 		else
 			iface = nvram_safe_get("wl0_ifname");
-		sysprintf("wl -i %s %s > %s", iface, ASSOCLIST_CMD, ASSOCLIST_TMP);
+		sprintf(cmd, "wl -i %s %s", iface, ASSOCLIST_CMD);
 #endif
 
-		if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
+		if ((fp = popen(cmd, "r"))) {
 			while (fgets(line, sizeof(line), fp) != NULL) {
 				int match = 0;
 
@@ -461,7 +457,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 					nv_count++;
 				}
 			}
-			fclose(fp);
+			pclose(fp);
 		}
 		if (!strcmp(type, "online")) {
 			dhcp_table_count = dhcp_lease_table_init();	// init dhcp
@@ -679,10 +675,10 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 	char list[2][20];
 	FILE *fp;
 	int count = 0;
+	char cmd[64];
+	sprintf(cmd, "wl %s > %s", ASSOCLIST_CMD);
 
-	sysprintf("wl %s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-
-	if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
+	if ((fp = popen(cmd, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			strcpy(list[0], "");
 			strcpy(list[1], "");
@@ -694,7 +690,7 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "%c'%s'", count ? ',' : ' ', list[1]);
 			count++;
 		}
-		fclose(fp);
+		pclose(fp);
 	}
 
 	return;
