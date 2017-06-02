@@ -914,7 +914,7 @@ static void *handle_request(void *arg)
 				{
 					memdebug_enter();
 					if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
-	
+
 						int result = handler->auth(conn_fp,
 									   authorization,
 									   auth_check);
@@ -1009,9 +1009,9 @@ static void *handle_request(void *arg)
 		free(conn_fp->request_url);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
-	memset(conn_fp, 0, sizeof(webs)); // erase to delete any traces of stored passwords or usernames
+	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 	free(conn_fp);
-	fprintf(stderr, "destroy thread %d\n",conn_fp->threadid);
+	fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
 	numthreads--;
 
 	return NULL;
@@ -1324,21 +1324,28 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		if ((conn_fd = accept(listen_fd, &usa.sa, &sz)) < 0) {
+		webs_t conn_fp;
+		conn_fp = safe_malloc(sizeof(webs));
+		if (!conn_fp) {
+			ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
+			continue;
+		}
+		memset(conn_fp, 0, sizeof(webs));
+
+		if ((conn_fp->conn_fd = accept(listen_fd, &usa.sa, &sz)) < 0) {
 			perror("accept");
 			return errno;
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
-		settimeouts(conn_fd, timeout);
-		fcntl(conn_fd, F_SETFD, fcntl(conn_fd, F_GETFD) | FD_CLOEXEC);
+		settimeouts(conn_fp->conn_fd, timeout);
+		fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
 
 		if (check_action() == ACT_TFTP_UPGRADE ||	// We don't want user to use web during tftp upgrade.
 		    check_action() == ACT_SW_RESTORE || check_action() == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
-		webs_t conn_fp;
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
 			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
@@ -1364,43 +1371,30 @@ int main(int argc, char **argv)
 			// Enforce our desired cipher order, disable obsolete protocols
 			SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
-			SSL_set_fd(ssl, conn_fd);
+			SSL_set_fd(ssl, conn_fp->conn_fd);
 			r = SSL_accept(ssl);
 			if (r <= 0) {
 				//berr_exit("SSL accept error");
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
-				close(conn_fd);
+				close(conn_fp->conn_fd);
 				SSL_free(ssl);
 				continue;
 			}
 
-			conn_fp = safe_malloc(sizeof(webs));
-			if (!conn_fp) {
-				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
-				continue;
-			}
-			memset(conn_fp, 0, sizeof(webs));
-
 			conn_fp->fp = (FILE *) initsslbuffer(ssl);
 
 #elif defined(HAVE_MATRIXSSL)
-			matrixssl_new_session(conn_fd);
-			conn_fp = safe_malloc(sizeof(webs));
-			if (!conn_fp) {
-				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
-				continue;
-			}
-			memset(conn_fp, 0, sizeof(webs));
+			matrixssl_new_session(conn_fp->conn_fd);
 
-			conn_fp->fp = (FILE *) conn_fd;
+			conn_fp->fp = (FILE *) conn_fp->conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
 			ssl_free(&ssl);
 			if ((ret = ssl_init(&ssl)) != 0) {
 				printf("ssl_init failed\n");
-				close(conn_fd);
+				close(conn_fp->conn_fd);
 				continue;
 			}
 			ssl_set_endpoint(&ssl, SSL_IS_SERVER);
@@ -1408,7 +1402,7 @@ int main(int argc, char **argv)
 			ssl_set_rng(&ssl, ctr_drbg_random, &ctr_drbg);
 			ssl_set_ca_chain(&ssl, srvcert.next, NULL, NULL);
 
-			ssl_set_bio(&ssl, net_recv, &conn_fd, net_send, &conn_fd);
+			ssl_set_bio(&ssl, net_recv, &conn_fp->conn_fd, net_send, &conn_fp->conn_fd);
 			ssl_set_ciphersuites(&ssl, my_ciphers);
 			ssl_set_own_cert(&ssl, &srvcert, &rsa);
 
@@ -1418,15 +1412,9 @@ int main(int argc, char **argv)
 			ret = ssl_handshake(&ssl);
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
-				close(conn_fd);
+				close(conn_fp->conn_fd);
 				continue;
 			}
-			conn_fp = safe_malloc(sizeof(webs));
-			if (!conn_fp) {
-				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
-				continue;
-			}
-			memset(conn_fp, 0, sizeof(webs));
 
 			conn_fp->fp = (webs_t)(&ssl);
 #endif
@@ -1439,27 +1427,20 @@ int main(int argc, char **argv)
 				return -1;
 			}
 #endif
-			conn_fp = safe_malloc(sizeof(webs));
-			if (!conn_fp) {
-				ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
-				continue;
-			}
-			memset(conn_fp, 0, sizeof(webs));
 
-			if (!(conn_fp->fp = fdopen(conn_fd, "r+"))) {
+			if (!(conn_fp->fp = fdopen(conn_fp->conn_fd, "r+"))) {
 				perror("fdopen");
 				return errno;
 			}
 		}
-		conn_fp->conn_fd = conn_fd;	// store for release
 
 		memdebug_enter();
-		get_client_ip_mac(conn_fd);
+		get_client_ip_mac(conn_fp->conn_fd);
 		memdebug_leave_info("get_client_ip_mac");
 
 		memdebug_enter();
 		numthreads++;
-		fprintf(stderr, "create thread %d\n",numthreads);
+		fprintf(stderr, "create thread %d\n", numthreads);
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
 		pthread_t *thread = malloc(sizeof(pthread_t));
