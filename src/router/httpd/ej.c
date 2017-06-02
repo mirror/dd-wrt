@@ -156,42 +156,37 @@ static int decompress(webs_t stream, char *pattern, int len, int last)
 #error "no endian type"
 #endif
 
-static FILE *s_fp;
-static unsigned char *s_filebuffer;
-static int s_filecount;
-static int s_filelen;
-
-static int buffer_get(void)
+static int buffer_get(webs_t wp)
 {
 	unsigned char c;
-	c = s_filebuffer[s_filecount++];
+	c = wp->s_filebuffer[wp->s_filecount++];
 	if (!c)
 		return EOF;
 	return c;
 }
 
-static int file_get(void)
+static int file_get(webs_t wp)
 {
-	if (s_filecount >= s_filelen)
+	if (wp->s_filecount >= wp->s_filelen)
 		return EOF;
-	s_filecount++;
-	return getc(s_fp);
+	wp->s_filecount++;
+	return getc(wp->s_fp);
 }
 
 static void *global_handle = NULL;
-static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
+static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
 {
 	int c, ret;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	memdebug_enter();
-	FILE *backup_fp = s_fp;
-	int backup_filecount = s_filecount;
-	unsigned char *backup_filebuffer = s_filebuffer;
-	unsigned int backup_filelen = s_filelen;
+	FILE *backup_fp = stream->s_fp;
+	int backup_filecount = stream->s_filecount;
+	unsigned char *backup_filebuffer = stream->s_filebuffer;
+	unsigned int backup_filelen = stream->s_filelen;
 
 	pattern = (char *)safe_malloc(PATTERN_BUFFER + 1);
-	while ((c = get()) != EOF) {
+	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
 		pattern[len++] = c;
 		pattern[len] = '\0';
@@ -235,13 +230,13 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 						break;
 					*end++ = '\0';
 					/* Call function */
-					backup_filecount = s_filecount;
+					backup_filecount = stream->s_filecount;
 					global_handle = call(global_handle, func, stream);
 					// restore pointers
-					s_fp = backup_fp;
-					s_filebuffer = backup_filebuffer;
-					s_filecount = backup_filecount;
-					s_filelen = backup_filelen;
+					stream->s_fp = backup_fp;
+					stream->s_filebuffer = backup_filebuffer;
+					stream->s_filecount = backup_filecount;
+					stream->s_filelen = backup_filelen;
 				}
 				asp = NULL;
 				len = 0;
@@ -268,16 +263,16 @@ static void do_ej_s(int (*get) (void), webs_t stream)	// jimmy, https, 8/4/2003
 
 void do_ej_buffer(char *buffer, webs_t stream)
 {
-	s_filecount = 0;
-	s_filebuffer = (unsigned char *)buffer;
+	stream->s_filecount = 0;
+	stream->s_filebuffer = (unsigned char *)buffer;
 	do_ej_s(&buffer_get, stream);
 }
 
 void do_ej_file(FILE * fp, int len, webs_t stream)
 {
-	s_fp = fp;
-	s_filecount = 0;
-	s_filelen = len;
+	stream->s_fp = fp;
+	stream->s_filecount = 0;
+	stream->s_filelen = len;
 	do_ej_s(&file_get, stream);
 }
 
@@ -288,7 +283,7 @@ void do_ej_file(FILE * fp, int len, webs_t stream)
 
 FILE *getWebsFile(char *path)
 {
-	static FILE *web = NULL;
+	FILE *web = NULL;
 	cprintf("opening %s\n", path);
 	int i = 0;
 	unsigned int curoffset = 0;

@@ -49,6 +49,12 @@ typedef struct {
 	char auth_realm[AUTH_MAX];
 	char auth_userid[AUTH_MAX];
 	char auth_passwd[AUTH_MAX];
+
+//internal vars only
+	FILE *s_fp;
+	unsigned char *s_filebuffer;
+	int s_filecount;
+	int s_filelen;
 } webs;
 
 typedef webs *webs_t;
