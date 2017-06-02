@@ -268,7 +268,7 @@ char *foreach_last(char *next, char *word);
 #define FORKWAIT(func) \
 { \
     int forkpid; \
-    int forstatus; \
+    int forkstatus; \
     switch ( forkpid = fork(  ) ) \
     { \
 	case -1: \
