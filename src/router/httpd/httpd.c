@@ -109,7 +109,6 @@ FILE *debout;
 #endif
 
 #ifdef HAVE_POLARSSL
-ssl_context ssl;
 int my_ciphers[] = {
 	TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
 	TLS_DHE_RSA_WITH_AES_256_CBC_SHA,
