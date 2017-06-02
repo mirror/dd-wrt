@@ -219,7 +219,7 @@
 				/* kernel1 overlaps with rootfs1 by design */
 				partition@a00000 {
 					label = "linux";
-					reg = <0xa00000 0x5000000>;  /* 83MB */
+					reg = <0xa00000 0x4900000>;  /* 83MB */
 				};
 
 				partition@1000000 {
@@ -230,7 +230,7 @@
 				/* kernel2 overlaps with rootfs2 by design */
 				partition@5a00000 {
 					label = "linux2";
-					reg = <0x5a00000 0x5000000>; /* 40MB */
+					reg = <0x5a00000 0x4900000>; /* 40MB */
 				};
 
 				partition@6000000 {
