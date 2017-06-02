@@ -1135,6 +1135,11 @@ static int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
 
 #endif
 
+
+#ifdef HAVE_MATRIXSSL
+	sslKeys_t *keys;
+#endif
+
 int main(int argc, char **argv)
 {
 	usockaddr usa;
