@@ -260,6 +260,31 @@ char *foreach_last(char *next, char *word);
 }
 #endif
 
+
+
+#ifdef HAVE_MICRO
+#define FORKWAIT(a) a;
+#else
+#define FORKWAIT(func) \
+{ \
+    int forkpid; \
+    int forstatus; \
+    switch ( forkpid = fork(  ) ) \
+    { \
+	case -1: \
+	    break; \
+	case 0: \
+	    ( void )setsid(  ); \
+	    func; \
+	    exit(0); \
+	    break; \
+	default: \
+	waitpid(forkpid, &forkstatus, 0); \
+	break; \
+    } \
+}
+#endif
+
 #ifdef vxworks
 
 #include <inetLib.h>
