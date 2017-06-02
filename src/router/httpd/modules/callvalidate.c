@@ -168,9 +168,6 @@ static int initWeb(void *handle)
 	env.Pwl_client_macs = wl_client_macs;
 	env.Pdo_ej_buffer = do_ej_buffer;
 	env.Pdo_ej = do_ej;
-#ifdef HAVE_HTTPS
-	env.Pdo_ssl = do_ssl;
-#endif
 	env.PejArgs = ejArgs;
 	env.PgetWebsFile = getWebsFile;
 	env.Pwfputs = wfputs;

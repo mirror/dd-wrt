@@ -69,9 +69,6 @@ char *(*live_translate) (const char *tran) = NULL;
 websRomPageIndexType *PwebsRomPageIndex = NULL;
 char *(*GOZILA_GET) (webs_t wp, char *name) = NULL;
 void (*validate_cgi) (webs_t fp) = NULL;
-#ifdef HAVE_HTTPS
-int do_ssl;
-#endif
 
 void initWeb(struct Webenvironment *env)
 {
@@ -82,9 +79,6 @@ void initWeb(struct Webenvironment *env)
 	websWrite = env->PwebsWrite;
 	do_ej_buffer = env->Pdo_ej_buffer;
 	do_ej = env->Pdo_ej;
-#ifdef HAVE_HTTPS
-	do_ssl = env->Pdo_ssl;
-#endif
 	ejArgs = env->PejArgs;
 	getWebsFile = env->PgetWebsFile;
 	wfputs = env->Pwfputs;
@@ -791,14 +785,14 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_HTTPS
 	char *https_enable = websGetVar(wp, "https_enable", NULL);
 
-	if (do_ssl && http_enable == NULL && https_enable == NULL) {
+	if (wp->do_ssl && http_enable == NULL && https_enable == NULL) {
 		strcpy(http, "https");
-	} else if (do_ssl && http_enable && https_enable) {
+	} else if (wp->do_ssl && http_enable && https_enable) {
 		if (atoi(https_enable))
 			strcpy(http, "https");
 		else
 			strcpy(http, "http");
-	} else if (!do_ssl && http_enable && https_enable) {
+	} else if (!wp->do_ssl && http_enable && https_enable) {
 		if (atoi(https_enable) && !atoi(http_enable))
 			strcpy(http, "https");
 		else
@@ -1856,7 +1850,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 				}
 #ifdef HAVE_HTTPS		// until https will allow upgrade and backup
 #ifdef HAVE_MATRIXSSL
-				else if ((strlen(menu[i][j]) != 0) && (do_ssl)
+				else if ((strlen(menu[i][j]) != 0) && (wp->do_ssl)
 					 && ((!strcmp(menu[i][j], "Upgrade.asp")
 					      || (!strcmp(menu[i][j], "config.asp"))))) {
 					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
