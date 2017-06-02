@@ -123,7 +123,7 @@ int system2(char *command)
 {
 
 	int forkpid;
-	int forstatus;
+	int forkstatus;
 	switch (forkpid = fork()) {
 	case -1:
 
@@ -159,7 +159,7 @@ int sysprintf(const char *fmt, ...)
 {
 
 	int forkpid;
-	int forstatus;
+	int forkstatus;
 	char *varbuf;
 	va_list args;
 
