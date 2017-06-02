@@ -44,6 +44,17 @@ typedef struct {
 #ifdef HAVE_HTTPS
 	int do_ssl;
 #endif
+#ifdef HAVE_OPENSSL
+	SSL *ssl;
+#endif
+#ifdef HAVE_POLARSSL
+	ssl_context ssl;
+#endif
+#ifdef HAVE_MATRIXSSL
+	extern ssl_t *ssl;
+	extern sslKeys_t *keys;
+#endif
+
 	char *post_buf;
 	char *request_url;
 	char auth_realm[AUTH_MAX];
