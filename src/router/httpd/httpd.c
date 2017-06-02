@@ -97,10 +97,6 @@ typedef union {
 } usockaddr;
 
 /* Globals. */
-#ifdef HAVE_OPENSSL
-static SSL *ssl;
-#endif
-
 #ifdef FILTER_DEBUG
 FILE *debout;
 #endif
@@ -110,11 +106,6 @@ FILE *debout;
 #define DEFAULT_HTTPS_PORT 443
 #define CERT_FILE "/etc/cert.pem"
 #define KEY_FILE "/etc/key.pem"
-#endif
-
-#ifdef HAVE_MATRIXSSL
-extern ssl_t *ssl;
-extern sslKeys_t *keys;
 #endif
 
 #ifdef HAVE_POLARSSL
@@ -1050,7 +1041,7 @@ static void handle_server_sig_int(int sig)
 static void handle_server_sig_sys(int sig)
 {
 	ct_syslog(LOG_INFO, httpd_level, "sigint");
-//	exit(0);
+//      exit(0);
 }
 
 void settimeouts(int sock, int secs)
@@ -1106,7 +1097,7 @@ static void sslbufferflush(struct sslbuffer *buffer)
 static void sslbufferfree(struct sslbuffer *buffer)
 {
 	free(buffer->sslbuffer);
-	int sockfd = SSL_get_fd(ssl);
+	int sockfd = SSL_get_fd(buffer->ssl);
 	SSL_shutdown(buffer->ssl);
 	close(sockfd);
 	SSL_free(buffer->ssl);
@@ -1366,7 +1357,7 @@ int main(int argc, char **argv)
 #ifdef HAVE_OPENSSL
 			const char *allowedCiphers =
 			    "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA";
-			ssl = SSL_new(ctx);
+			conn_fp->ssl = SSL_new(ctx);
 
 #ifdef NID_X9_62_prime256v1
 			EC_KEY *ecdh = NULL;
@@ -1382,19 +1373,19 @@ int main(int argc, char **argv)
 			// Enforce our desired cipher order, disable obsolete protocols
 			SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3 | SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_SAFARI_ECDHE_ECDSA_BUG);
 
-			SSL_set_fd(ssl, conn_fp->conn_fd);
-			r = SSL_accept(ssl);
+			SSL_set_fd(conn_fp->ssl, conn_fp->conn_fd);
+			r = SSL_accept(conn_fp->ssl);
 			if (r <= 0) {
 				//berr_exit("SSL accept error");
 //                              ERR_print_errors_fp(stderr);
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				close(conn_fp->conn_fd);
-				SSL_free(ssl);
+				SSL_free(conn_fp->ssl);
 				continue;
 			}
 
-			conn_fp->fp = (FILE *) initsslbuffer(ssl);
+			conn_fp->fp = (FILE *) initsslbuffer(conn_fp->ssl);
 
 #elif defined(HAVE_MATRIXSSL)
 			matrixssl_new_session(conn_fp->conn_fd);
@@ -1402,25 +1393,25 @@ int main(int argc, char **argv)
 			conn_fp->fp = (FILE *) conn_fp->conn_fd;
 #endif
 #ifdef HAVE_POLARSSL
-			ssl_free(&ssl);
-			if ((ret = ssl_init(&ssl)) != 0) {
+			ssl_free(&conn_fp->ssl);
+			if ((ret = ssl_init(&conn_fp->ssl)) != 0) {
 				printf("ssl_init failed\n");
 				close(conn_fp->conn_fd);
 				continue;
 			}
-			ssl_set_endpoint(&ssl, SSL_IS_SERVER);
-			ssl_set_authmode(&ssl, SSL_VERIFY_NONE);
-			ssl_set_rng(&ssl, ctr_drbg_random, &ctr_drbg);
-			ssl_set_ca_chain(&ssl, srvcert.next, NULL, NULL);
+			ssl_set_endpoint(&conn_fp->ssl, SSL_IS_SERVER);
+			ssl_set_authmode(&conn_fp->ssl, SSL_VERIFY_NONE);
+			ssl_set_rng(&conn_fp->ssl, ctr_drbg_random, &ctr_drbg);
+			ssl_set_ca_chain(&conn_fp->ssl, srvcert.next, NULL, NULL);
 
-			ssl_set_bio(&ssl, net_recv, &conn_fp->conn_fd, net_send, &conn_fp->conn_fd);
-			ssl_set_ciphersuites(&ssl, my_ciphers);
-			ssl_set_own_cert(&ssl, &srvcert, &rsa);
+			ssl_set_bio(&conn_fp->ssl, net_recv, &conn_fp->conn_fd, net_send, &conn_fp->conn_fd);
+			ssl_set_ciphersuites(&conn_fp->ssl, my_ciphers);
+			ssl_set_own_cert(&conn_fp->ssl, &srvcert, &rsa);
 
 			//              ssl_set_sidtable(&ssl, session_table);
-			ssl_set_dh_param(&ssl, dhm_P, dhm_G);
+			ssl_set_dh_param(&conn_fp->ssl, dhm_P, dhm_G);
 
-			ret = ssl_handshake(&ssl);
+			ret = ssl_handshake(&conn_fp->ssl);
 			if (ret != 0) {
 				printf("ssl_server_start failed\n");
 				close(conn_fp->conn_fd);
@@ -1453,7 +1444,7 @@ int main(int argc, char **argv)
 		numthreads++;
 		fprintf(stderr, "create thread %d\n", numthreads);
 		while (numthreads > 15) {
-		    sleep(1);
+			sleep(1);
 		}
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
