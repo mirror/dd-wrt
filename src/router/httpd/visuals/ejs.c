@@ -1334,7 +1334,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 					goto skip;
 				}
 			}
-			snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(var));
+			snprintf(name, sizeof(name), "LAN (%s)", getNetworkLabel(wp,var));
 			show_bwif(wp, var, name);
 		}
 	      skip:;
@@ -1342,9 +1342,9 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			snprintf(name, sizeof(name), "%s WAN (%s)", live_translate("share.wireless"), getNetworkLabel(get_wan_face()));
+			snprintf(name, sizeof(name), "%s WAN (%s)", live_translate("share.wireless"), getNetworkLabel(wp,get_wan_face()));
 		} else
-			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(get_wan_face()));
+			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp,get_wan_face()));
 
 		show_bwif(wp, get_wan_face(), name);
 
@@ -1365,14 +1365,14 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(dev, "ath%d", i);
 
-		snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(dev));
+		snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp,dev));
 		show_bwif(wp, dev, name);
 		char *vifs = nvram_nget("%s_vifs", dev);
 
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
-			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(var));
+			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp,var));
 			show_bwif(wp, var, name);
 		}
 		int s;
@@ -1385,7 +1385,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
-			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wdsdev));
+			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp,wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
 #ifdef HAVE_ATH9K

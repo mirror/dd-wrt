@@ -55,6 +55,8 @@ typedef struct {
 	unsigned char *s_filebuffer;
 	int s_filecount;
 	int s_filelen;
+	int auth_fail;
+	char label[64];
 } webs;
 
 typedef webs *webs_t;
