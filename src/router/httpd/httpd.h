@@ -51,8 +51,7 @@ typedef struct {
 	ssl_context ssl;
 #endif
 #ifdef HAVE_MATRIXSSL
-	extern ssl_t *ssl;
-	extern sslKeys_t *keys;
+	ssl_t *ssl;
 #endif
 
 	char *post_buf;
