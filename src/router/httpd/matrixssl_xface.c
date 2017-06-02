@@ -13,7 +13,7 @@
 
 int no_matrixssl_sessions = 0;
 matrixssl_buf *bufs[MAX_MATRIXSSL_SESSIONS];
-sslKeys_t *keys = NULL;
+extern sslKeys_t *keys;
 
 int MATRIXSSL_ADDSBUF(size_t x, matrixssl_buf * y, unsigned char *z)
 {
