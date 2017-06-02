@@ -1443,11 +1443,14 @@ int main(int argc, char **argv)
 		fprintf(stderr, "create thread %d\n", numthreads);
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 		pthread_t *thread = malloc(sizeof(pthread_t));
 		conn_fp->do_ssl = do_ssl;
-		if (pthread_create(thread, NULL, handle_request, conn_fp) != 0)
+		if (pthread_create(thread, &attr, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
-
+		pthread_attr_destroy(&attr);
 #else
 		handle_request(conn_fp);
 #endif
