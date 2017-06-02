@@ -1166,7 +1166,6 @@ static struct gozila_action *handle_gozila_action(char *name, char *type)
 	return NULL;
 }
 
-static char my_next_page[30] = "";
 static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
 {
 	char *submit_button, *submit_type, *next_page;
@@ -1175,7 +1174,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	struct gozila_action *act;
 
 	nvram_seti("gozila_action", 1);
-	my_next_page[0] = '\0';
+	wp->my_next_page[0] = '\0';
 	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html 
 								 * must have
 								 * the name */
@@ -1218,8 +1217,8 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		sys_restart();
 	}
 
-	if (my_next_page[0] != '\0') {
-		sprintf(path, "%s", my_next_page);
+	if (wp->my_next_page[0] != '\0') {
+		sprintf(path, "%s", wp->my_next_page);
 	} else {
 		next_page = websGetVar(wp, "next_page", NULL);
 		if (next_page)
@@ -1572,8 +1571,8 @@ footer:
 	}
 
 	if (action != REBOOT) {
-		if (my_next_page[0] != '\0')
-			sprintf(path, "%s", my_next_page);
+		if (wp->my_next_page[0] != '\0')
+			sprintf(path, "%s", wp->my_next_page);
 		else {
 			next_page = websGetVar(wp, "next_page", NULL);
 			if (next_page)
@@ -2126,7 +2125,7 @@ static void clear_translationcache(void)
 
 }
 
-char *live_translate(const char *tran)
+char *live_translate(const char *tran) // todo: add locking to be thread safe
 {
 	if (!tran || strlen(tran) == 0)
 		return "Error";
