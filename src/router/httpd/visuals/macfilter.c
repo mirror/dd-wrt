@@ -22,7 +22,7 @@
 static void show_macfilter_if(webs_t wp, char *ifname)
 {
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n", getNetworkLabel(wp,IFMAP(ifname)), nvram_nget("%s_ssid", ifname), live_translate("wl_mac.legend"));
+	websWrite(wp, "<legend>%s SSID [%s] - %s</legend>\n", getNetworkLabel(wp, IFMAP(ifname)), nvram_nget("%s_ssid", ifname), live_translate("wl_mac.legend"));
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("wl_mac.label"));
 	char macmode[32];
