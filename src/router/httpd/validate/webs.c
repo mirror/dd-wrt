@@ -1124,13 +1124,15 @@ void diag_ping_start(webs_t wp)
 		return;
 #endif
 	char cmd[128];
-	sprintf(cmd, "alias ping=\'ping -c 3\'; eval \"%s\" 2>&1 &", ip);
-	FILE *fp = popen(cmd, "rb");
+	sprintf(cmd, "alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip,PING_TMP);
+	FORK(system(cmd));
+
+/*	FILE *fp = popen(cmd, "rb");
 	FILE *out = fopen(PING_TMP, "wb");
 	while (!feof(fp))
 		putc(getc(fp), out);
 	fclose(out);
-	pclose(fp);
+	pclose(fp);*/
 
 	return;
 }
