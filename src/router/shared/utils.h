@@ -1129,7 +1129,11 @@ int searchfor(FILE * fp, char *str, int scansize);
 int insmod(char *module);
 void rmmod(char *module);
 
+int writeint(char *path, int a);
+int writestr(char *path, char *a);
+
 int nvram_backup(char *filename);
+
 
 int nvram_restore(char *filename);
 

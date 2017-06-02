@@ -681,14 +681,12 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			free(output);
 			free(serial);
 		}
-		sprintf(exec,
-			"cd /jffs/etc/freeradius/certs && ./doclientcert \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\" \"%s\"",
-			expiration_days,
-			nvram_safe_get("radius_country"),
-			nvram_safe_get("radius_state"),
-			nvram_safe_get("radius_locality"),
-			nvram_safe_get("radius_organisation"), nvram_safe_get("radius_email"), db->users[radiusindex].user, db->users[radiusindex].passwd, nvram_safe_get("radius_passphrase"));
-		system2(exec);
+		eval("/jffs/etc/freeradius/certs/doclientcert",
+		     expiration_days,
+		     nvram_safe_get("radius_country"),
+		     nvram_safe_get("radius_state"),
+		     nvram_safe_get("radius_locality"),
+		     nvram_safe_get("radius_organisation"), nvram_safe_get("radius_email"), db->users[radiusindex].user, db->users[radiusindex].passwd, nvram_safe_get("radius_passphrase"));
 	}
 	char *argv[] = {
 		"freeradius.clientcert"
@@ -730,22 +728,32 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 #endif
 		asprintf(&path, "/sys/kernel/debug/ieee80211/phy%d/ath9k", phy);
 
-	sysprintf("echo %s > %s/spectral_count", nvram_default_get("spectral_count", "1"), path);
-	sysprintf("cat %s/spectral_scan0 > /dev/null", path);
+	char dest[64];
+	sprintf(dest, "%s/spectral_count", path);
+	writestr(dest, nvram_default_get("spectral_count", "1"));
+	sprintf(dest, "%s/spectral_scan0", path);
+	FILE *fp = fopen(dest, "rb");
+	while (!feof(fp))
+		getc(fp);
+	fclose(fp);
 #ifdef HAVE_ATH10K
 	if (is_ath10k(ifname)) {
-		sysprintf("echo 64 > %s/spectral_bins", path);
-		sysprintf("echo manual > %s/spectral_scan_ctl", path);
-		sysprintf("echo trigger > %s/spectral_scan_ctl", path);
+		sprintf(dest, "%s/spectral_bins", path);
+		writestr(dest, "64");
+		sprintf(dest, "%s/spectral_scan_ctl", path);
+		writestr(dest, "manual");
+		writestr(dest, "trigger");
 	} else
 #endif
-		sysprintf("echo chanscan > %s/spectral_scan_ctl", path);
-	sysprintf("iw %s scan 2> /dev/null", ifname);
+	{
+		sprintf(dest, "%s/spectral_scan_ctl", path);
+		writestr(dest, "chanscan");
+	}
+	eval("iw", ifname, "scan");
 	char *exec;
-//      sysprintf("fft_eval %s/spectral_scan0 2> /dev/null > %s", path,json_cache);
 	asprintf(&exec, "fft_eval \"%s/spectral_scan0\"", path);
 
-	FILE *fp = popen(exec, "rb");
+	fp = popen(exec, "rb");
 //      FILE *fp = fopen(json_cache, "rb");
 	free(exec);
 	if (!fp)
@@ -761,7 +769,9 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 		websWrite(stream, "%s", buffer);
 	}
 	pclose(fp);
-	sysprintf("echo disable > %s/spectral_scan_ctl", path);
+	sprintf(dest, "%s/spectral_scan_ctl", path);
+	writestr(dest, "disable");
+
 	free(buffer);
 	free(path);
 
@@ -2125,7 +2135,7 @@ static void clear_translationcache(void)
 
 }
 
-char *live_translate(const char *tran) // todo: add locking to be thread safe
+char *live_translate(const char *tran)	// todo: add locking to be thread safe
 {
 	if (!tran || strlen(tran) == 0)
 		return "Error";

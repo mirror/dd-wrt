@@ -2424,8 +2424,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	char *buffer = malloc(4096);
 	int len;
 
-	system2("/etc/openvpnstate.sh > /tmp/.temp");
-	FILE *in = fopen("/tmp/.temp", "r");
+	FILE *in = popen("/etc/openvpnstate.sh", "r");
 
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;
@@ -2436,11 +2435,10 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 		wfputs(buffer, wp);
 	}
 
-	fclose(in);
+	pclose(in);
 	websWrite(wp, "</fieldset><br />");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(share.statu)</script></legend>\n");
-	system2("/etc/openvpnstatus.sh > /tmp/.temp");
-	in = fopen("/tmp/.temp", "r");
+	in = popen("/etc/openvpnstatus.sh", "r");
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;
 		wfputs(buffer, wp);
@@ -2449,11 +2447,10 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 		buffer[len] = 0;
 		wfputs(buffer, wp);
 	}
-	fclose(in);
+	pclose(in);
 	websWrite(wp, "</fieldset><br />");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
-	system2("/etc/openvpnlog.sh > /tmp/.temp");
-	in = fopen("/tmp/.temp", "r");
+	in = fopen("/etc/openvpnlog.sh", "r");
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;
 		wfputs(buffer, wp);
@@ -2462,7 +2459,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 		buffer[len] = 0;
 		wfputs(buffer, wp);
 	}
-	fclose(in);
+	pclose(in);
 	free(buffer);
 	websWrite(wp, "</fieldset><br />");
 
