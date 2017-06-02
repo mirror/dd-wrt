@@ -77,14 +77,6 @@ void start_hotplug_usb(void)
 /* Optimize performance */
 #define READ_AHEAD_KB_BUF	"1024"
 #define READ_AHEAD_CONF	"/sys/block/%s/queue/read_ahead_kb"
-static void writestr(char *path, char *a)
-{
-	int fd = open(path, O_WRONLY);
-	if (fd < 0)
-		return;
-	write(fd, a, strlen(a));
-	close(fd);
-}
 
 static void optimize_block_device(char *devname)
 {
