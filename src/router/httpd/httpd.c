@@ -148,10 +148,6 @@ int server_port;
 char pid_file[80];
 char *server_dir = NULL;
 
-#ifdef HAVE_HTTPS
-int do_ssl = 0;
-#endif
-
 int auth_fail = 0;
 int httpd_level;
 
@@ -948,7 +944,7 @@ static void *handle_request(void *arg)
 				memdebug_leave_info("input");
 #if defined(linux)
 #ifdef HAVE_HTTPS
-				if (!do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+				if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 					/* Read up to two more characters */
 					if (fgetc(conn_fp->fp) != EOF)
 						(void)fgetc(conn_fp->fp);
@@ -1043,11 +1039,7 @@ get_client_ip_mac(int conn_fp)
 
 static void handle_server_sig_int(int sig)
 {
-#ifdef HAVE_HTTPS
-	ct_syslog(LOG_INFO, httpd_level, "httpd server %sshutdown", do_ssl ? "(ssl support) " : "");
-#else
 	ct_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
-#endif
 	exit(0);
 }
 
@@ -1154,7 +1146,9 @@ int main(int argc, char **argv)
 
 	set_sigchld_handler();
 	nvram_seti("gozila_action", 0);
-
+#ifdef HAVE_HTTPS
+	int do_ssl;
+#endif
 /* SEG addition */
 	Initnvramtab();
 #ifdef HAVE_OPENSSL
@@ -1469,7 +1463,7 @@ int main(int argc, char **argv)
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
 		pthread_t *thread = malloc(sizeof(pthread_t));
-
+		conn_fp->do_ssl = do_ssl;
 		if (pthread_create(thread, NULL, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 
@@ -1492,7 +1486,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
-	if (do_ssl) {
+	if (wp->do_ssl) {
 		int eof = 1;
 		int i;
 		char c;
@@ -1515,13 +1509,13 @@ char *wfgets(char *buf, int len, webs_t wp)
 
 	} else
 #elif defined(HAVE_MATRIXSSL)
-	if (do_ssl)
+	if (wp->do_ssl)
 		return (char *)matrixssl_gets(fp, buf, len);
 	else
 #elif defined(HAVE_POLARSSL)
 
 	fprintf(stderr, "ssl read %d\n", len);
-	if (do_ssl) {
+	if (wp->do_ssl) {
 		int ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
 		fprintf(stderr, "returns %d\n", ret);
 		return (char *)buf;
@@ -1535,7 +1529,7 @@ int wfputs(char *buf, webs_t wp)
 {
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
-	if (do_ssl)
+	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
 
@@ -1564,7 +1558,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
 #ifdef HAVE_HTTPS
-	if (do_ssl)
+	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
@@ -1597,7 +1591,7 @@ int websWrite(webs_t wp, char *fmt, ...)
 	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
 #ifdef HAVE_HTTPS
-	if (do_ssl)
+	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
@@ -1622,7 +1616,7 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 {
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
-	if (do_ssl)
+	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
 		return sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
@@ -1645,7 +1639,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
-	if (do_ssl) {
+	if (wp->do_ssl) {
 #ifdef HAVE_OPENSSL
 		return sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
@@ -1676,7 +1670,7 @@ int wfflush(webs_t wp)
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
-	if (do_ssl) {
+	if (wp->do_ssl) {
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
 		sslbufferflush((struct sslbuffer *)fp);
@@ -1697,7 +1691,7 @@ int wfclose(webs_t wp)
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
-	if (do_ssl) {
+	if (wp->do_ssl) {
 #ifdef HAVE_OPENSSL
 		sslbufferflush((struct sslbuffer *)fp);
 		sslbufferfree((struct sslbuffer *)fp);
