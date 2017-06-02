@@ -1226,10 +1226,8 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	if (!nvram_matchi("usb_automnt", 1))
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
-	sysprintf("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3 > /tmp/df");
 
-	if ((fp = fopen("/tmp/df", "r"))) {
-
+	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3","rb"))) {
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 				memset(used, 0, sizeof(used));
@@ -1249,7 +1247,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 			}
 		}
 		websWrite(wp, "<hr><br>");
-		fclose(fp);
+		pclose(fp);
 	}
 	websWrite(wp, "<div class=\"setting\">");
 	if ((fp = fopen("/tmp/disktype.dump", "r"))) {
