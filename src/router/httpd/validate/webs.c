@@ -2234,7 +2234,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 	sprintf(filename, "/tmp/.nvram_%s", svif);
 	sprintf(command, "nvram show | grep %s_ > /tmp/.nvram_%s", svif, svif);
 	//fprintf(stderr, "[VIFS] %s\n", command);
-	system(command);
+	system2(command);
 
 	FILE *fp;
 	char line[80];

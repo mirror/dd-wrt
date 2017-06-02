@@ -688,7 +688,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			nvram_safe_get("radius_state"),
 			nvram_safe_get("radius_locality"),
 			nvram_safe_get("radius_organisation"), nvram_safe_get("radius_email"), db->users[radiusindex].user, db->users[radiusindex].passwd, nvram_safe_get("radius_passphrase"));
-		system(exec);
+		system2(exec);
 	}
 	char *argv[] = {
 		"freeradius.clientcert"
