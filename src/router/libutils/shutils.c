@@ -122,31 +122,70 @@ static void flog(const char *fmt, ...)
 int system2(char *command)
 {
 
+	int forkpid;
+	int forstatus;
+	switch (forkpid = fork()) {
+	case -1:
+
+		break;
+	case 0:
+		(void)setsid();
 #if !defined(HAVE_X86) && !defined(HAVE_RB600)	//we must disable this on x86 since nvram is not available at startup
 
-	if (nvram_matchi("console_debug", 1)) {
-		fprintf(stderr, "system: %s\n", command);
-		flog("system: %s\n", command);
-	}
+		if (nvram_matchi("console_debug", 1)) {
+			fprintf(stderr, "system: %s\n", command);
+			flog("system: %s\n", command);
+		}
 #endif
 
 #ifndef HAVE_SILENCE
-	fprintf(stderr, "system: %s\n", command);
+		fprintf(stderr, "system: %s\n", command);
 #endif
-	return system(command);
+
+		system(command);
+		exit(0);
+		break;
+	default:
+		waitpid(forkpid, &forkstatus, 0);
+		if (WIFEXITED(forkstatus))
+			return WEXITSTATUS(forkstatus);
+		else
+			return forkstatus;
+		break;
+	}
 }
 
 int sysprintf(const char *fmt, ...)
 {
+
+	int forkpid;
+	int forstatus;
 	char *varbuf;
 	va_list args;
 
 	va_start(args, (char *)fmt);
 	vasprintf(&varbuf, fmt, args);
 	va_end(args);
-	int ret = system2(varbuf);
-	free(varbuf);
-	return ret;
+	switch (forkpid = fork()) {
+	case -1:
+
+		break;
+	case 0:
+		(void)setsid();
+		system2(varbuf);
+		free(varbuf);
+		exit(0);
+		break;
+	default:
+		waitpid(forkpid, &forkstatus, 0);
+		if (WIFEXITED(forkstatus))
+			return WEXITSTATUS(forkstatus);
+		else
+			return forkstatus;
+		break;
+	}
+
+	return forkstatus;
 }
 
 int eval_va(const char *cmd, ...)
