@@ -24,8 +24,10 @@
 
 static int mysystem(char *cmd)
 {
+	FILE *fp = popen(cmd, "rb");
+	pclose(fp);
 	cprintf("cmd: [%s]\n", cmd);
-	return system2(cmd);
+	return 0;
 }
 
 void ej_wl_packet_get(webs_t wp, int argc, char_t ** argv)

@@ -40,28 +40,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-static int writeint(char *path, int a)
-{
-	int fd = open(path, O_WRONLY);
-	if (fd == -1)
-		return -1;
-	char strval[32];
-	snprintf(strval, sizeof(strval), "%d", a);
-	write(fd, strval, strlen(strval));
-	close(fd);
-	return 0;
-}
-
-static int writestr(char *path, char *a)
-{
-	int fd = open(path, O_WRONLY);
-	if (fd == -1)
-		return -1;
-	write(fd, a, strlen(a));
-	close(fd);
-	return 0;
-}
-
 static void set_linux_gpio(int pin, int value)
 {
 	char str[32];

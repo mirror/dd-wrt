@@ -643,7 +643,6 @@ err:
 		fclose(fifo2);
 	unlink(upload_fifo);
 	if (brand == ROUTER_ASROCK_G10) {
-//              sysprintf("cat /dev/mtdblock/%d > /tmp/parttemp", getMTD("linux"));
 		fprintf(stderr, "write secondary partition for asrock-g10\n");
 		eval("mtd", "-e", "linux2", "-f", "write", "/tmp/parttemp", "linux2");
 	}

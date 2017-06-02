@@ -65,7 +65,7 @@ void radius_generate_certificate(webs_t wp)
 	unlink("/jffs/etc/freeradius/certs/ca.der");
 	unlink("/jffs/etc/freeradius/certs/index.txt");
 	unlink("/jffs/etc/freeradius/certs/serial");
-	system2("rm -rf /jffs/etc/freeradius/certs/clients");	//delete client certificates since they will become invalid
+	unlink("/jffs/etc/freeradius/certs/clients");	//delete client certificates since they will become invalid
 	eval("startservice", "gen_radius_cert", "-f");
 }
 
