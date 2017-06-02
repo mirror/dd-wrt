@@ -96,7 +96,7 @@ static void *call(void *handle, char *func, webs_t stream)	//jimmy, https, 8/4/2
 	return call_ej(func, handle, stream, argc, argv);
 }
 
-static int decompress(webs_t stream, char *pattern, int len, int last)
+static inline int decompress(webs_t stream, char *pattern, int len, int last)
 {
 	struct DECODE {
 		char src;
@@ -159,9 +159,9 @@ static int decompress(webs_t stream, char *pattern, int len, int last)
 static int buffer_get(webs_t wp)
 {
 	unsigned char c;
-	c = wp->s_filebuffer[wp->s_filecount++];
-	if (!c)
+	if (wp->s_filecount >= wp->s_filelen)
 		return EOF;
+	c = wp->s_filebuffer[wp->s_filecount++];
 	return c;
 }
 
@@ -257,16 +257,26 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 void do_ej_buffer(char *buffer, webs_t stream)
 {
 	stream->s_filecount = 0;
+	stream->s_filelen = strlen(buffer);
 	stream->s_filebuffer = (unsigned char *)buffer;
 	do_ej_s(&buffer_get, stream);
 }
 
 void do_ej_file(FILE * fp, int len, webs_t stream)
 {
+#ifndef HAVE_MICRO
+	stream->s_filebuffer = (unsigned char *)malloc(len);
+	stream->s_filelen = len;
+	stream->s_filecount = 0;
+	fread(stream->s_filebuffer, 1, len, fp);
+	do_ej_s(&buffer_get, stream);
+	free(stream->s_filebuffer);
+#else
 	stream->s_fp = fp;
 	stream->s_filecount = 0;
 	stream->s_filelen = len;
 	do_ej_s(&file_get, stream);
+#endif
 }
 
 #define WEBS_PAGE_ROM
