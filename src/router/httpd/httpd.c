@@ -1002,7 +1002,7 @@ static void *handle_request(void *arg)
 		free(conn_fp->request_url);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
-	fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
+//	fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
 
 	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
@@ -1444,8 +1444,8 @@ int main(int argc, char **argv)
 
 		memdebug_enter();
 		numthreads++;
-		fprintf(stderr, "create thread %d\n", numthreads);
 		while (numthreads > 15) {
+			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
 			sleep(1);
 		}
 		conn_fp->threadid = numthreads;
