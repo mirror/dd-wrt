@@ -793,8 +793,9 @@ static void *handle_request(void *arg)
 		if (!strcmp(hostname, nvram_get("lan_ipaddr"))) {
 
 			nvram_unset("ias_dnsresp");
-
-			sysprintf("iptables -t nat -D PREROUTING -i br0 -p udp --dport 53 -j DNAT --to %s:55300", nvram_get("lan_ipaddr"));
+			char cmd[64];
+			sprintf(cmd, "%s:55300", nvram_get("lan_ipaddr"));
+			eval("iptables", "-t", "nat", "-D", "PREROUTING", "-i", "br0", "-p", "udp", "--dport", "53", "-j", "DNAT", "--to", cmd);
 
 			char buf[128];
 			char call[64];
@@ -1007,9 +1008,7 @@ static void *handle_request(void *arg)
 
 	free(conn_fp);
 	numthreads--;
-
 	return NULL;
-
 }
 
 void				// add by honor 2003-04-16
@@ -1134,9 +1133,8 @@ static int sslbufferwrite(struct sslbuffer *buffer, char *data, int datalen)
 
 #endif
 
-
 #ifdef HAVE_MATRIXSSL
-	sslKeys_t *keys;
+sslKeys_t *keys;
 #endif
 
 int main(int argc, char **argv)
@@ -1452,6 +1450,7 @@ int main(int argc, char **argv)
 		}
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
+
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -1460,6 +1459,9 @@ int main(int argc, char **argv)
 		if (pthread_create(thread, &attr, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 		pthread_attr_destroy(&attr);
+
+//              conn_fp->do_ssl = do_ssl;
+//              FORK(handle_request(conn_fp));
 #else
 		handle_request(conn_fp);
 #endif

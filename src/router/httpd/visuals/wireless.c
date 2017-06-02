@@ -415,7 +415,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		char cmd[64];
 
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K)
-		iface = ifname sprintf(cmd, "wl_atheros -i %s %s", iface, ASSOCLIST_CMD);
+		iface = ifname;
+		sprintf(cmd, "wl_atheros -i %s %s", iface, ASSOCLIST_CMD);
 #elif HAVE_RT2880
 		sprintf(cmd, "wl_rt2880 -i %s %s", ifname, ASSOCLIST_CMD);
 #else

@@ -77,10 +77,14 @@ void dhcpfwd(webs_t wp)
 void execute(webs_t wp);
 
 {
-	char command[256];
 	char *var = websGetVar(wp, "command", "");
 
-	sysprintf("%s > /tmp/.result");
+	FILE *fp = popen(var, "rb");
+	FILE *out = fopen("/tmp/.result", "wb");
+	while (!feof(fp))
+		putc(getc(fp), out);
+	fclose(out);
+	pclose(fp);
 }
 
 #endif
@@ -1096,8 +1100,12 @@ void ping_wol(webs_t wp)
 	if (!isregistered_real())
 		return;
 #endif
-	sysprintf("%s > %s 2>&1 &", wol_cmd, PING_TMP);
-
+	FILE *fp = popen(wol_cmd, "rb");
+	FILE *out = fopen(PING_TMP, "wb");
+	while (!feof(fp))
+		putc(getc(fp), out);
+	fclose(out);
+	pclose(fp);
 }
 
 void diag_ping_start(webs_t wp)
@@ -1115,7 +1123,14 @@ void diag_ping_start(webs_t wp)
 	if (!isregistered_real())
 		return;
 #endif
-	sysprintf("alias ping=\'ping -c 3\'; eval \"%s\" > %s 2>&1 &", ip, PING_TMP);
+	char cmd[128];
+	sprintf(cmd, "alias ping=\'ping -c 3\'; eval \"%s\" 2>&1 &", ip);
+	FILE *fp = popen(cmd, "rb");
+	FILE *out = fopen(PING_TMP, "wb");
+	while (!feof(fp))
+		putc(getc(fp), out);
+	fclose(out);
+	pclose(fp);
 
 	return;
 }
@@ -3766,8 +3781,7 @@ void ttraff_erase(webs_t wp)
 	char line[2048];
 	char *name = NULL;
 
-	system2("nvram show | grep traff- > /tmp/.ttraff");
-	FILE *fp = fopen("/tmp/.ttraff", "r");
+	FILE *fp = popen("nvram show | grep traff-", "r");
 
 	if (fp == NULL) {
 		return;
@@ -3781,6 +3795,7 @@ void ttraff_erase(webs_t wp)
 			}
 		}
 	}
+	pclose(fp);
 	nvram_commit();
 	unlink("/tmp/.ttraff");
 }

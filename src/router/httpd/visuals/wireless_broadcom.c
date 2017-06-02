@@ -577,15 +577,18 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 			}
 		}
 
-		sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
+		char cmd[64];
+		sprintf(cmd, "wl -i %s rssi \"%s\"", iface, mac);
 
-		fp2 = fopen(RSSI_TMP, "r");
-		if (fgets(line, sizeof(line), fp2) != NULL) {
+		fp2 = popen(RSSI_TMP, "r");
+		if (fp2) {
+			if (fgets(line, sizeof(line), fp2) != NULL) {
 
-			// get rssi
-			if (sscanf(line, "%d", &rssi) != 1)
-				continue;
-			fclose(fp2);
+				// get rssi
+				if (sscanf(line, "%d", &rssi) != 1)
+					continue;
+				pclose(fp2);
+			}
 		}
 		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
