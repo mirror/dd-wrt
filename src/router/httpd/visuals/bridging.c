@@ -192,15 +192,13 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 {
 
 	FILE *f;
-	char buf[128];
+	char buf[512];
 	char brname[32];
 	char brstp[8];
 	char brif[16];
 	int count = 0;
 
-	system2("brctl show > /tmp/.brtable");
-
-	if ((f = fopen("/tmp/.brtable", "r")) != NULL) {
+	if ((f = popen("brctl show", "r")) != NULL) {
 
 		while (fgets(buf, sizeof(buf), f)) {
 
@@ -220,13 +218,14 @@ void ej_show_bridgetable(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "%s ", brif);
 				}
 			}
+
 			count++;
 		}
 
 		websWrite(wp, "\'");	// close
-		fclose(f);
-		unlink("/tmp/.brtable");
+		pclose(f);
 	}
+
 	return;
 }
 

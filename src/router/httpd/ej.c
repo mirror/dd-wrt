@@ -180,11 +180,6 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	memdebug_enter();
-	FILE *backup_fp = stream->s_fp;
-	int backup_filecount = stream->s_filecount;
-	unsigned char *backup_filebuffer = stream->s_filebuffer;
-	unsigned int backup_filelen = stream->s_filelen;
-
 	pattern = (char *)safe_malloc(PATTERN_BUFFER + 1);
 	while ((c = get(stream)) != EOF) {
 		/* Add to pattern space */
@@ -230,13 +225,11 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 						break;
 					*end++ = '\0';
 					/* Call function */
-					backup_filecount = stream->s_filecount;
-					global_handle = call(global_handle, func, stream);
+					webs_t clone = (webs_t)malloc(sizeof(webs));
+					memcpy(clone,stream,sizeof(webs));
+					global_handle = call(global_handle, func, clone);
+					free(clone);
 					// restore pointers
-					stream->s_fp = backup_fp;
-					stream->s_filebuffer = backup_filebuffer;
-					stream->s_filecount = backup_filecount;
-					stream->s_filelen = backup_filelen;
 				}
 				asp = NULL;
 				len = 0;

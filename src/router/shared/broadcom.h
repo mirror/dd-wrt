@@ -607,7 +607,7 @@ extern void ej_show_meminfo(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_wiviz_data(webs_t wp, int argc, char_t ** argv);
 extern void ej_get_url(webs_t wp, int argc, char_t ** argv);
-extern char *getNetworkLabel(char *var);
+extern char *getNetworkLabel(webs_t wp,char *var);
 
 #ifdef FBNFW
 extern void ej_list_fbn(webs_t wp, int argc, char_t ** argv);

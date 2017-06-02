@@ -148,7 +148,6 @@ int server_port;
 char pid_file[80];
 char *server_dir = NULL;
 
-int auth_fail = 0;
 int httpd_level;
 
 char http_client_ip[20];
@@ -204,13 +203,15 @@ static int auth_check(webs_t conn_fp, char *authorization)
 	int l;
 
 	/* Is this directory unprotected? */
-	if (!strlen(conn_fp->auth_passwd))
+	if (!strlen(conn_fp->auth_passwd)) {
 		/* Yes, let the request go through. */
 		return 1;
+	}
 
 	/* Basic authorization info? */
 	if (!authorization || strncmp(authorization, "Basic ", 6) != 0) {
 		ct_syslog(LOG_INFO, httpd_level, "Authentication fail");
+
 		return 0;
 	}
 
@@ -258,15 +259,16 @@ void send_authenticate(webs_t conn_fp)
 	char s_curr_time[24];
 	sprintf(s_curr_time, "%llu", curr_time);
 
-	char header[10000];
+	char *header;
 
-	(void)snprintf(header, sizeof(header), "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
+	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
 	send_error(conn_fp, 401, "Unauthorized", header,
 #if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
 		   "Authorization required. please note that the default username is \"admin\" in all newer releases");
 #else
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
 #endif
+	free(header);
 	/* init these after a successful auth */
 	nvram_set("auth_time", s_curr_time);
 }
@@ -539,7 +541,6 @@ static void *handle_request(void *arg)
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
 		goto out;
 	}
-
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
 		goto out;
@@ -567,6 +568,7 @@ static void *handle_request(void *arg)
 
 	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
 	{
+
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
@@ -927,7 +929,7 @@ static void *handle_request(void *arg)
 #else
 						if (!result) {
 #endif
-							auth_fail = 0;
+							conn_fp->auth_fail = 0;
 							send_authenticate(conn_fp);
 							goto out;
 						}
@@ -966,9 +968,9 @@ static void *handle_request(void *arg)
 				}
 				memdebug_leave_info("connect");
 				memdebug_enter();
-				if (auth_fail == 1) {
+				if (conn_fp->auth_fail == 1) {
 					send_authenticate(conn_fp);
-					auth_fail = 0;
+					conn_fp->auth_fail = 0;
 					goto out;
 				} else {
 					if (handler->output != do_file)
@@ -1009,9 +1011,11 @@ static void *handle_request(void *arg)
 		free(conn_fp->request_url);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
-	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
-	free(conn_fp);
 	fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
+
+	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
+
+	free(conn_fp);
 	numthreads--;
 
 	return NULL;
@@ -1041,6 +1045,12 @@ static void handle_server_sig_int(int sig)
 {
 	ct_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
 	exit(0);
+}
+
+static void handle_server_sig_sys(int sig)
+{
+	ct_syslog(LOG_INFO, httpd_level, "sigint");
+//	exit(0);
 }
 
 void settimeouts(int sock, int secs)
@@ -1147,7 +1157,7 @@ int main(int argc, char **argv)
 	set_sigchld_handler();
 	nvram_seti("gozila_action", 0);
 #ifdef HAVE_HTTPS
-	int do_ssl;
+	int do_ssl = 0;
 #endif
 /* SEG addition */
 	Initnvramtab();
@@ -1223,6 +1233,7 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
+	signal(SIGINT, handle_server_sig_sys);	// kill
 
 	if (server_dir && stat(server_dir, &stat_dir) == 0)
 		chdir(server_dir);
@@ -1441,6 +1452,9 @@ int main(int argc, char **argv)
 		memdebug_enter();
 		numthreads++;
 		fprintf(stderr, "create thread %d\n", numthreads);
+		while (numthreads > 15) {
+		    sleep(1);
+		}
 		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
 		pthread_attr_t attr;
