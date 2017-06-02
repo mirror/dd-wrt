@@ -59,6 +59,7 @@ typedef struct {
 	char auth_realm[AUTH_MAX];
 	char auth_userid[AUTH_MAX];
 	char auth_passwd[AUTH_MAX];
+	char *authorization;
 
 //internal vars only
 	FILE *s_fp;
@@ -95,7 +96,7 @@ struct mime_handler {
 	char *extra_header;
 	void (*input) (char *path, webs_t stream, int len, char *boundary);
 	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);
-	int (*auth) (webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation));
+	int (*auth) (webs_t wp, int (*auth_check) (webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
 };
@@ -180,7 +181,7 @@ extern void do_ej_buffer(char *buffer, webs_t stream);
 extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
 #endif
-int do_auth(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation));
+int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp));
 void Initnvramtab(void);
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv);
 

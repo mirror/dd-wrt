@@ -145,7 +145,7 @@ extern char *get_mac_from_ip(char *ip);
 
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
-static int auth_check(webs_t conn_fp, char *authorization);
+static int auth_check(webs_t conn_fp);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
 void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 static int b64_decode(const char *str, unsigned char *space, int size);
@@ -186,7 +186,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 	return listen_fd;
 }
 
-static int auth_check(webs_t conn_fp, char *authorization)
+static int auth_check(webs_t conn_fp)
 {
 	char authinfo[500];
 	unsigned char *authpass;
@@ -199,14 +199,14 @@ static int auth_check(webs_t conn_fp, char *authorization)
 	}
 
 	/* Basic authorization info? */
-	if (!authorization || strncmp(authorization, "Basic ", 6) != 0) {
+	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
 		ct_syslog(LOG_INFO, httpd_level, "Authentication fail");
 
 		return 0;
 	}
 
 	/* Decode it. */
-	l = b64_decode(&(authorization[6]), (unsigned char *)authinfo, sizeof(authinfo));
+	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, sizeof(authinfo));
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
@@ -857,7 +857,6 @@ static void *handle_request(void *arg)
 			}
 		}
 		int changepassword = 0;
-
 #ifdef HAVE_REGISTER
 		if (!registered_real) {
 			if (endswith(file, "About.htm"))
@@ -907,10 +906,8 @@ static void *handle_request(void *arg)
 				{
 					memdebug_enter();
 					if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
-
-						int result = handler->auth(conn_fp,
-									   authorization,
-									   auth_check);
+						conn_fp->authorization = authorization;
+						int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
 						if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
@@ -1002,7 +999,7 @@ static void *handle_request(void *arg)
 		free(conn_fp->request_url);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
-//	fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
+//      fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
 
 	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
