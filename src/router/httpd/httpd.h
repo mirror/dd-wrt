@@ -37,6 +37,7 @@ extern BIO *bio_err;
 
 typedef struct {
 	FILE *fp;
+	int threadid;
 	int userid;
 	int conn_fd;
 	int post;

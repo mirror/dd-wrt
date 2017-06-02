@@ -81,6 +81,9 @@
 #ifdef HAVE_IAS
 #include <sys/sysinfo.h>
 #endif
+#ifndef HAVE_MICRO
+#include <pthread.h>
+#endif
 
 #define SERVER_NAME "httpd"
 #define PROTOCOL "HTTP/1.0"
@@ -164,6 +167,7 @@ static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
 static void *handle_request(void *conn_fp);
+static int numthreads = 0;
 
 static int initialize_listen_socket(usockaddr * usaP)
 {
@@ -199,7 +203,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 static int auth_check(webs_t conn_fp, char *authorization)
 {
-	unsigned char authinfo[500];
+	char authinfo[500];
 	unsigned char *authpass;
 	int l;
 
@@ -215,7 +219,7 @@ static int auth_check(webs_t conn_fp, char *authorization)
 	}
 
 	/* Decode it. */
-	l = b64_decode(&(authorization[6]), authinfo, sizeof(authinfo));
+	l = b64_decode(&(authorization[6]), (unsigned char *)authinfo, sizeof(authinfo));
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
@@ -232,13 +236,13 @@ static int auth_check(webs_t conn_fp, char *authorization)
 	char *enc1;
 	char *enc2;
 	memdebug_enter();
-	enc1 = crypt(authinfo, (unsigned char *)conn_fp->auth_userid);
+	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
 
 	if (strcmp(enc1, conn_fp->auth_userid)) {
 		return 0;
 	}
 	char dummy[128];
-	enc2 = crypt(authpass, (unsigned char *)conn_fp->auth_passwd);
+	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
 	if (strcmp(enc2, conn_fp->auth_passwd)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		while (wfgets(dummy, 64, conn_fp) > 0) {
@@ -1011,6 +1015,9 @@ static void *handle_request(void *arg)
 		free(conn_fp->post_buf);
 	memset(conn_fp, 0, sizeof(webs)); // erase to delete any traces of stored passwords or usernames
 	free(conn_fp);
+	fprintf(stderr, "destroy thread %d\n",conn_fp->threadid);
+	numthreads--;
+
 	return NULL;
 
 }
@@ -1457,7 +1464,9 @@ int main(int argc, char **argv)
 		memdebug_leave_info("get_client_ip_mac");
 
 		memdebug_enter();
-
+		numthreads++;
+		fprintf(stderr, "create thread %d\n",numthreads);
+		conn_fp->threadid = numthreads;
 #ifndef HAVE_MICRO
 		pthread_t *thread = malloc(sizeof(pthread_t));
 
