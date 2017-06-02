@@ -137,16 +137,16 @@ void set_gpio(int gpio, int value)
 {
 	switch (gpio) {
 	case 0:		// system
-		sysprintf("echo %d > /sys/devices/platform/leds/leds/tp-link\\:blue\\:system/brightness", value);
+		writeint("/sys/devices/platform/leds/leds/tp-link\\:blue\\:system/brightness", value);
 		break;
 	case 1:		// usb1
-		sysprintf("echo %d > /sys/devices/platform/leds/leds/tp-link\\:green\\:usb1/brightness", value);
+		writeint("/sys/devices/platform/leds/leds/tp-link\\:green\\:usb1/brightness", value);
 		break;
 	case 2:		// usb2
-		sysprintf("echo %d > /sys/devices/platform/leds/leds/tp-link\\:green\\:usb2/brightness", value);
+		writeint("/sys/devices/platform/leds/leds/tp-link\\:green\\:usb2/brightness", value);
 		break;
 	case 3:		// usbpower
-		sysprintf("echo %d > /sys/devices/platform/leds/leds/tp-link\\:usb\\:power/brightness", value);
+		writeint("/sys/devices/platform/leds/leds/tp-link\\:usb\\:power/brightness", value);
 		break;
 
 	}
@@ -191,37 +191,37 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1900AC) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_2g/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:wlan_2g/brightness", value);
 			break;
 		case 2:	// 5G
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wlan_5g/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:	// 5G
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:esata/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:esata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb3_1/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:usb3_1/brightness", value);
 			break;
 		case 5:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb2/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:usb2/brightness", value);
 			break;
 		case 6:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:wan/brightness", value);
 			break;
 		case 7:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:amber\\:wan/brightness", value);
+			writeint("/sys/class/leds/mamba\\:amber\\:wan/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:usb3_2/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:usb3_2/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/mamba\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/mamba\\:amber\\:wps/brightness", value);
+			writeint("/sys/class/leds/mamba\\:amber\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -232,37 +232,37 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1200AC) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/caiman\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wlan_2g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:wlan_2g/brightness", value);
 			break;
 		case 2:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wlan_5g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/caiman\\:white\\:sata/brightness", value);
+			writeint("/sys/class/leds/caiman\\:white\\:sata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:usb3_1/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:usb3_1/brightness", value);
 			break;
 		case 5:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:usb2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:usb2/brightness", value);
 			break;
 		case 6:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:wan/brightness", value);
 			break;
 		case 7:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:amber\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:amber\\:wan/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:usb3_2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:usb3_2/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:caiman\\:amber\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:caiman\\:amber\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -274,37 +274,37 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1900ACV2) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/cobra\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wlan_2g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:wlan_2g/brightness", value);
 			break;
 		case 2:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wlan_5g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/cobra\\:white\\:sata/brightness", value);
+			writeint("/sys/class/leds/cobra\\:white\\:sata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:usb3_1/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:usb3_1/brightness", value);
 			break;
 		case 5:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:usb2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:usb2/brightness", value);
 			break;
 		case 6:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:wan/brightness", value);
 			break;
 		case 7:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:amber\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:amber\\:wan/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:usb3_2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:usb3_2/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:cobra\\:amber\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:cobra\\:amber\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -316,37 +316,37 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_1900ACS) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/shelby\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/shelby\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wlan_2g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:wlan_2g/brightness", value);
 			break;
 		case 2:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wlan_5g/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:wlan_5g/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/shelby\\:white\\:sata/brightness", value);
+			writeint("/sys/class/leds/shelby\\:white\\:sata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_1/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:usb3_1/brightness", value);
 			break;
 		case 5:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:usb2/brightness", value);
 			break;
 		case 6:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:wan/brightness", value);
 			break;
 		case 7:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:amber\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:amber\\:wan/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:usb3_2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:usb3_2/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:shelby\\:amber\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:shelby\\:amber\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -358,31 +358,31 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_WRT_3200ACM) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/rango\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/rango\\:white\\:power/brightness", value);
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/rango\\:white\\:sata/brightness", value);
+			writeint("/sys/class/leds/rango\\:white\\:sata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb3_1/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:white\\:usb3_1/brightness", value);
 			break;
 		case 5:	// 5G
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:white\\:usb2/brightness", value);
 			break;
 		case 6:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:white\\:wan/brightness", value);
 			break;
 		case 7:	// power
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:amber\\:wan/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:amber\\:wan/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:usb3_2/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:white\\:usb3_2/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/pca963x\\:rango\\:amber\\:wps/brightness", value);
+			writeint("/sys/class/leds/pca963x\\:rango\\:amber\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -421,35 +421,35 @@ void set_gpio(int gpio, int value)
 	if (brand == ROUTER_NETGEAR_R7500 || brand == ROUTER_NETGEAR_R7500V2 || brand == ROUTER_NETGEAR_R7800) {
 		switch (gpio) {
 		case 0:	// power
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:power/brightness", value);
 			break;
 		case 1:	// 2G
 			break;
 		case 2:	// 5G
 			break;
 		case 3:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:esata/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:esata/brightness", value);
 			break;
 		case 4:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:usb1/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:amber\\:usb1/brightness", value);
 			break;
 		case 5:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:usb3/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:amber\\:usb3/brightness", value);
 			break;
 		case 6:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:wan/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:wan/brightness", value);
 			break;
 		case 7:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:internet/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:internet/brightness", value);
 			break;
 		case 8:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:rfkill/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:rfkill/brightness", value);
 			break;
 		case 9:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:white\\:wps/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:white\\:wps/brightness", value);
 			break;
 		case 10:
-			sysprintf("echo %d > /sys/class/leds/r7X00\\:amber\\:status/brightness", value);
+			writeint("/sys/class/leds/r7X00\\:amber\\:status/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -458,13 +458,13 @@ void set_gpio(int gpio, int value)
 	} else if (brand == ROUTER_LINKSYS_EA8500) {
 		switch (gpio) {
 		case 0:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:white\\:power/brightness", value);
+			writeint("/sys/class/leds/ea8500\\:white\\:power/brightness", value);
 			break;
 		case 1:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:green\\:wifi/brightness", value);
+			writeint("/sys/class/leds/ea8500\\:green\\:wifi/brightness", value);
 			break;
 		case 2:
-			sysprintf("echo %d > /sys/class/leds/ea8500\\:green\\:wps/brightness", value);
+			writeint("/sys/class/leds/ea8500\\:green\\:wps/brightness", value);
 			break;
 		default:
 			set_linux_gpio(gpio, value);
@@ -516,8 +516,6 @@ void set_gpio(int gpio, int value)
 	}
 
 	writeint(buf, value);
-
-//      sysprintf("echo %d > %s", value, buf);
 }
 
 int get_gpio(int gpio)
@@ -1295,7 +1293,7 @@ void set_gpio(int pin, int value)
 	int fd;
 	switch (pin) {
 	case 16:		// main LED
-		sysprintf("echo %d > /sys/devices/platform/leds-gpio/leds/user1/brightness", value);
+		writeint("/sys/devices/platform/leds-gpio/leds/user1/brightness", value);
 		break;
 	default:
 		set_linux_gpio(pin, value);
@@ -1306,7 +1304,6 @@ void set_gpio(int pin, int value)
 int get_gpio(int pin)
 {
 	return get_linux_gpio(pin);
-
 }
 
 #elif HAVE_VENTANA
@@ -1314,16 +1311,16 @@ void set_gpio(int pin, int value)
 {
 	switch (pin) {
 	case 102:
-		sysprintf("echo none > /sys/class/leds/user1/trigger");
-		sysprintf("echo %d > /sys/class/leds/user1/brightness", value ? 255 : 0);
+		writestr("/sys/class/leds/user1/trigger", "none");
+		writeint("/sys/class/leds/user1/brightness", value ? 255 : 0);
 		break;
 	case 103:
-		sysprintf("echo none > /sys/class/leds/user2/trigger");
-		sysprintf("echo %d > /sys/class/leds/user2/brightness", value ? 255 : 0);
+		writestr("/sys/class/leds/user2/trigger", "none");
+		writeint("/sys/class/leds/user2/brightness", value ? 255 : 0);
 		break;
 	case 111:
-		sysprintf("echo none > /sys/class/leds/user3/trigger");
-		sysprintf("echo %d > /sys/class/leds/user3/brightness", value ? 255 : 0);
+		writestr("/sys/class/leds/user3/trigger", "none");
+		writeint("/sys/class/leds/user3/brightness", value ? 255 : 0);
 		break;
 	default:
 		set_linux_gpio(pin, value);
