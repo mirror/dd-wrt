@@ -217,11 +217,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 				sprintf(rxrate, "%dM", rx);
 		} else {
 #endif
+			char cmd[64];
 			if (strcmp(mode, "ap") && strcmp(mode, "apsta")
 			    && strcmp(mode, "apstawet"))
-				sysprintf("wl -i %s rssi > %s", iface, RSSI_TMP);
+				sprintf(cmd, "wl -i %s rssi", iface);
 			else
-				sysprintf("wl -i %s rssi \"%s\" > %s", iface, mac, RSSI_TMP);
+				sprintf(cmd, "wl -i %s rssi \"%s\"", iface, mac);
 
 			// get noise value if not ap mode
 			// if (strcmp (mode, "ap"))
@@ -229,7 +230,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			// RSSI_TMP);
 			// system2 (cmd); // get RSSI value for mac
 
-			fp2 = fopen(RSSI_TMP, "r");
+			fp2 = popen(cmd, "r");
 			if (fgets(line, sizeof(line), fp2) != NULL) {
 
 				// get rssi
@@ -242,7 +243,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 				 */
 				// get noise for client/wet mode
 
-				fclose(fp2);
+				pclose(fp2);
 			}
 #ifdef HAVE_QTN
 		}

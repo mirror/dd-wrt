@@ -340,16 +340,14 @@ void ej_active_wireless2(webs_t wp, int argc, char_t ** argv)
 	char mac[30];
 	char list[2][30];
 	char line[80];
-
 	unlink(ASSOCLIST_TMP);
 	unlink(RSSI_TMP);
 
 	mode = nvram_safe_get("wl_mode");
-	sysprintf("%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
 
 	int connected = 0;
 
-	if ((fp = fopen(ASSOCLIST_TMP, "r"))) {
+	if ((fp = popen(ASSOCLIST_CMD, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			if (sscanf(line, "%s %s", list[0], mac) != 2)	// assoclist
 				// 00:11:22:33:44:55
@@ -360,29 +358,36 @@ void ej_active_wireless2(webs_t wp, int argc, char_t ** argv)
 
 			rssi = 0;
 			noise = 0;
+			char rssicmd[64];
 			// get rssi value
 			if (strcmp(mode, "ap"))
-				sysprintf("%s > %s", RSSI_CMD, RSSI_TMP);
+				sprintf(rssicmd, "%s", RSSI_CMD);
 			else
-				sysprintf("%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP);
+				sprintf(rssicmd, "%s \"%s\"", RSSI_CMD, mac);
 
-			// get noise value if not ap mode
-			if (strcmp(mode, "ap"))
-				sysprintf("%s >> %s", NOISE_CMD, RSSI_TMP);
-
-			fp2 = fopen(RSSI_TMP, "r");
+			fp2 = popen(rssicmd, "r");
 			if (fgets(line, sizeof(line), fp2) != NULL) {
 
 				// get rssi
 				if (sscanf(line, "%s %s %d", list[0], list[1], &rssi) != 3)
 					continue;
 
+				pclose(fp2);
+			}
+			// get noise value if not ap mode
+			if (strcmp(mode, "ap"))
+				sprintf(rssicmd, "%s", NOISE_CMD);
+
+			fp2 = popen(rssicmd, "r");
+			if (fgets(line, sizeof(line), fp2) != NULL) {
+
 				// get noise for client/wet mode
 				if (strcmp(mode, "ap") && fgets(line, sizeof(line), fp2) != NULL && sscanf(line, "%s %s %d", list[0], list[1], &noise) != 3)
 					continue;
 
-				fclose(fp2);
+				pclose(fp2);
 			}
+
 			if (nvram_matchi("maskmac", 1)) {
 				mac[0] = 'x';
 				mac[1] = 'x';
@@ -416,7 +421,7 @@ void ej_active_wireless2(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</tr>\n");
 			}
 		}
-		fclose(fp);
+		pclose(fp);
 	}
 
 	unlink(ASSOCLIST_TMP);
@@ -855,7 +860,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wpa.h2)</script> %s</h2>\n", prefix);
 	websWrite(wp, "<fieldset>\n");
 	// cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", getNetworkLabel(wp,IFMAP(prefix)));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(prefix)));
 	tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 	// contains html tag
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(mac));
@@ -869,7 +874,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 		sprintf(ssid, "%s_ssid", var);
 		websWrite(wp, "<fieldset>\n");
 		// cprintf("getting %s %s\n", ssid,nvram_safe_get(ssid));
-		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp,IFMAP(var)));
+		websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
 		sprintf(mac, "%s_hwaddr", var);
@@ -888,7 +893,7 @@ static void ej_show_security_single(webs_t wp, int argc, char_t ** argv, char *p
 
 			sprintf(ssid, "%s_ssid", var);
 			websWrite(wp, "<fieldset>\n");
-			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp,IFMAP(var)));
+			websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(var)));
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
 			sprintf(mac, "%s_hwaddr", var);
@@ -1063,16 +1068,16 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < count; i++) {
 		sprintf(var, "ath%d", i);
 		if (has_ad(var))
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		else
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		char *names = nvram_nget("ath%d_vifs", i);
 
 		foreach(var, names, next) {
 			if (has_ad(var))
-				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", "giwifi") ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 			else
-				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 		}
 	}
 	websWrite(wp, "</select>\n");
@@ -1095,7 +1100,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < count; i++) {
 		sprintf(var, "wl%d", i);
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "</select>\n");
 	websWrite(wp, "</div>\n");
@@ -1168,7 +1173,7 @@ static void showIfOptions(webs_t wp, char *propname, char *names, char *select)
 	websWrite(wp, "<select name=\"%s\">\n", propname);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 	foreach(var, names, next) {
-		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", getNetworkLabel(wp,var));
+		websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", var, !strcmp(var, select) ? "selected=\\\"selected\\\"" : "", getNetworkLabel(wp, var));
 	}
 	websWrite(wp, "//]]>\n</script>\n</select>\n");
 }
@@ -1227,7 +1232,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 		return;
 	//exclude proftpd bind mount points and don't display the first 3 lines which are header and rootfs
 
-	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3","rb"))) {
+	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3", "rb"))) {
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
 				memset(used, 0, sizeof(used));
@@ -2189,7 +2194,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 #endif
 		sprintf(ssid, "%s_ssid", var);
-		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp,IFMAP(var)));
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(var)));
 		tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 		// contains html tag
 		char wl_macaddr[18];
@@ -2414,7 +2419,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 			gpfound = 1;
 
 			sprintf(ssid, "%s_ssid", var);
-			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp,IFMAP(var)));
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(share.vintrface)</script> %s SSID [", getNetworkLabel(wp, IFMAP(var)));
 			tf_webWriteESCNV(wp, ssid);	// fix for broken html page if ssid
 			// contains html tag
 			char wl_macaddr[18];
@@ -2600,7 +2605,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	// wireless mode
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script> %s%s</h2>\n", prefix, frequencies);
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", getNetworkLabel(wp,IFMAP(prefix)));
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(share.pintrface)</script> %s - SSID [", getNetworkLabel(wp, IFMAP(prefix)));
 	tf_webWriteESCNV(wp, wl_ssid);	// fix 
 	sprintf(wl_macaddr, "%s_hwaddr", prefix);
 	websWrite(wp, "] HWAddr [%s]</legend>\n", nvram_safe_get(wl_macaddr));
@@ -5672,7 +5677,7 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 		if (nvram_nmatch("1", "%s_bridged", var)
 		    && !isbridge(var))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "", getNetworkLabel(wp,var));
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match(ifname, var) ? "selected" : "", getNetworkLabel(wp, var));
 	}
 
 	websWrite(wp, "</select>\n");
@@ -5696,7 +5701,7 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<option value=\"%s\">LAN &amp; WLAN</option>\n", var);
 			continue;
 		}
-		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(wp,var));
+		websWrite(wp, "<option value=\"%s\" >%s</option>\n", var, getNetworkLabel(wp, var));
 	}
 }
 
@@ -5715,7 +5720,7 @@ void ej_show_rflowif(webs_t wp, int argc, char_t ** argv)
 			continue;
 		if (!ifexists(var))
 			continue;
-		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("rflow_if", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp,var));
+		websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", var, nvram_match("rflow_if", var) ? "selected=\"selected\"" : "", getNetworkLabel(wp, var));
 	}
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	int cnt = get_wl_instances();
