@@ -369,11 +369,12 @@ int nvram2file(char *varname, char *filename)
 
 int nvram_used(int *space)
 {
-	char *name, buf[NVRAMSPACE];
+	char *name, *buf;
 
 	*space = NVRAMSPACE;
-
-	nvram_getall(buf, sizeof(buf));
+	
+	buf = malloc(NVRAMSPACE);
+	nvram_getall(buf, NVRAMSPACE);
 
 	name = buf;
 
@@ -381,8 +382,9 @@ int nvram_used(int *space)
 		name += strlen(name) + 1;
 	}
 
-	return (sizeof(struct nvram_header) + (long)name - (long)buf);
-
+	int used = (sizeof(struct nvram_header) + (long)name - (long)buf);
+	free(buf);
+	return used;
 }
 
 #include "nvram_generics.h"
