@@ -1628,7 +1628,7 @@ footer:
 }
 
 //int auth_check( char *dirname, char *authorization )
-int do_auth(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation))
+int do_auth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
 	strncpy(wp->auth_userid, nvram_safe_get("http_username"), AUTH_MAX);
 	strncpy(wp->auth_passwd, nvram_safe_get("http_passwd"), AUTH_MAX);
@@ -1642,44 +1642,44 @@ int do_auth(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, c
 	char passout[MD5_OUT_BUFSIZE];
 	strncpy(wp->auth_userid, zencrypt("SuperAdmin", passout), AUTH_MAX);
 	strncpy(wp->auth_passwd, nvram_safe_get("newhttp_passwd"), AUTH_MAX);
-	if (auth_check(wp, authorisation))
+	if (auth_check(wp))
 		return 1;
 	userid = 0;
 #else
 	wp->userid = 0;
 	strncpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX);
-	if (auth_check(wp, authorisation))
+	if (auth_check(wp))
 		return 1;
 #endif
 	return 0;
 }
 
-static int do_cauth(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation))
+static int do_cauth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
 	if (nvram_matchi("info_passwd", 0))
 		return 1;
-	return do_auth(wp, authorisation, auth_check);
+	return do_auth(wp, auth_check);
 }
 
 #ifdef HAVE_REGISTER
-static int do_auth_reg(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation))
+static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
 	if (!isregistered())
 		return 1;
-	return do_auth(wp, authorisation, auth_check);
+	return do_auth(wp, auth_check);
 }
 #endif
 
 #undef HAVE_DDLAN
 
 #ifdef HAVE_DDLAN
-static int do_auth2(webs_t wp, char *authorisation, int (*auth_check) (webs_t conn_fp, char *authorisation))
+static int do_auth2(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
 	strncpy(wp->auth_userid, nvram_safe_get("http2_username"), AUTH_MAX);
 	strncpy(wp->auth_passwd, nvram_safe_get("http2_passwd"), AUTH_MAX);
 	// strncpy(realm, MODEL_NAME, AUTH_MAX);
 	strncpy(wp->auth_realm, nvram_safe_get("router_name"), AUTH_MAX);
-	if (auth_check(wp, authorisation))
+	if (auth_check(wp))
 		return 1;
 	return 0;
 }
