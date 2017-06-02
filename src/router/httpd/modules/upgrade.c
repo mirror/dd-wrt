@@ -202,7 +202,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	// diag_led(DIAG, START_LED); // blink the diag led
 	C_led(1);
 #ifdef HAVE_HTTPS
-	if (do_ssl)
+	if (stream->do_ssl)
 		ACTION("ACT_WEBS_UPGRADE");
 	else
 #endif
@@ -213,7 +213,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	 * Set nonblock on the socket so we can timeout 
 	 */
 #ifdef HAVE_HTTPS
-	if (!do_ssl) {
+	if (!stream->do_ssl) {
 #endif
 		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 || fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
@@ -249,7 +249,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	int lastblock = 0;
 	while (total && *total) {
 #ifdef HAVE_HTTPS
-		if (do_ssl) {
+		if (stream->do_ssl) {
 			if (size > *total)
 				size = *total;
 			count = wfread(buf, 1, size, stream);
@@ -621,7 +621,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	waitpid(pid, &ret, 0);
 	cprintf("done\n");
 #ifdef HAVE_HTTPS
-	if (!do_ssl) {
+	if (!stream->do_ssl) {
 #endif
 		/*
 		 * Reset nonblock on the socket 

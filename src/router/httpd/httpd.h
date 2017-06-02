@@ -41,6 +41,9 @@ typedef struct {
 	int userid;
 	int conn_fd;
 	int post;
+#ifdef HAVE_HTTPS
+	int do_ssl;
+#endif
 	char *post_buf;
 	char *request_url;
 	char auth_realm[AUTH_MAX];
@@ -61,9 +64,6 @@ extern int wfflush(webs_t fp);
 
 extern int wfputs(char *buf, webs_t fp);
 #endif
-#endif
-#ifdef HAVE_HTTPS
-extern int do_ssl;
 #endif
 /* Basic authorization userid and passwd limit */
 
@@ -141,9 +141,6 @@ struct Webenvironment {
 	char *(*Plive_translate) (const char *tran);
 	void (*Pvalidate_cgi) (webs_t fp);
 	websRomPageIndexType *PwebsRomPageIndex;
-#ifdef HAVE_HTTPS
-	int Pdo_ssl;
-#endif
 };
 
 #define websSetVar(wp, var, value) set_cgi(var, value)
