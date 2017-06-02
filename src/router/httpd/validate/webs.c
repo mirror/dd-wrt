@@ -2244,14 +2244,9 @@ void add_vifs(webs_t wp)
 void move_vif(char *prefix, char *svif, char *tvif)
 {
 
-	char filename[32];
 	char command[64];
 
-	//fprintf(stderr, "[VIFS] move %s -> %s\n", svif, tvif);
-	sprintf(filename, "/tmp/.nvram_%s", svif);
-	sprintf(command, "nvram show | grep %s_ > /tmp/.nvram_%s", svif, svif);
-	//fprintf(stderr, "[VIFS] %s\n", command);
-	system2(command);
+	sprintf(command, "nvram show | grep %s_", svif);
 
 	FILE *fp;
 	char line[80];
@@ -2266,7 +2261,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 	strcpy(tvifx, tvif);
 	rep(tvifx, '.', 'X');
 
-	if ((fp = fopen(filename, "r"))) {
+	if ((fp = popen(command, "r"))) {
 		while (fgets(line, sizeof(line), fp)) {
 			pos = strcspn(line, "=");
 			if (pos) {
@@ -2286,8 +2281,7 @@ void move_vif(char *prefix, char *svif, char *tvif)
 				nvram_set(nvram_var, nvram_val);
 			}
 		}
-		fclose(fp);
-		unlink(filename);
+		pclose(fp);
 	}
 }
 #endif
@@ -3799,7 +3793,6 @@ void ttraff_erase(webs_t wp)
 	}
 	pclose(fp);
 	nvram_commit();
-	unlink("/tmp/.ttraff");
 }
 
 void changepass(webs_t wp)
