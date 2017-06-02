@@ -46,8 +46,6 @@
 #define NVRAMSPACE NVRAM_SPACE
 #endif
 
-
-
 /* Globals */
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
@@ -55,7 +53,7 @@ static char *nvram_buf = NULL;
 int nvram_init(void *unused)
 {
 	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0) {
-		fprintf(stderr,"cannot open /dev/nvram\n");
+		fprintf(stderr, "cannot open /dev/nvram\n");
 		goto err;
 	}
 
@@ -83,7 +81,7 @@ void lock(void)
 		fclose(in);
 		lockwait++;
 		if (lockwait == 30) {
-			fprintf(stderr,"removing lockfile\n");
+			fprintf(stderr, "removing lockfile\n");
 			unlink("/tmp/.nvlock");	//something crashed, we fix it
 			break;
 		}
@@ -275,11 +273,15 @@ int nvram_commit(void)
 		return 1;
 	}
 #if defined(HAVE_WZRHPG300NH) || defined(HAVE_WHRHPGN) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_DIR825) || defined(HAVE_TEW632BRP) || defined(HAVE_TG2521) || defined(HAVE_WR1043)  || defined(HAVE_WRT400) || defined(HAVE_WZRHPAG300NH) || defined(HAVE_WZRG450) || defined(HAVE_DANUBE) || defined(HAVE_WR741) || defined(HAVE_NORTHSTAR) || defined(HAVE_DIR615I) || defined(HAVE_WDR4900) || defined(HAVE_VENTANA) || defined(HAVE_UBNTM)
-	system("/sbin/ledtool 1");
+	FILE *fp = popen("/sbin/ledtool 1", "rb");
+	if (fp)
+		pclose(fp);
 #elif HAVE_LSX
 	//nothing
 #else
-	system("/sbin/ledtool 1");
+	FILE *fp = popen("/sbin/ledtool 1", "rb");
+	if (fp)
+		pclose(fp);
 #endif
 	lock();
 	int ret;
@@ -305,6 +307,7 @@ int nvram_commit(void)
 int file2nvram(char *filename, char *varname)
 {
 	FILE *fp;
+
 	int c, count;
 	int i = 0, j = 0;
 	char mem[10000], buf[30000];
@@ -381,6 +384,5 @@ int nvram_used(int *space)
 	return (sizeof(struct nvram_header) + (long)name - (long)buf);
 
 }
-
 
 #include "nvram_generics.h"
