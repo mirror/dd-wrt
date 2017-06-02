@@ -1,4 +1,5 @@
 #!/bin/sh
+cd /jffs/etc/freeradius/certs
 export RANDFILE=/jffs/etc/freeradius/certs/.rnd
 export DEFDAYS=$1
 export CC_COUNTRY=$2
