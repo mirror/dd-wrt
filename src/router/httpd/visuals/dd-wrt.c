@@ -424,8 +424,6 @@ void ej_active_wireless2(webs_t wp, int argc, char_t ** argv)
 		pclose(fp);
 	}
 
-	unlink(ASSOCLIST_TMP);
-	unlink(RSSI_TMP);
 	if (!connected) {
 		connected = 1;
 		websWrite(wp, "<tr>\n");

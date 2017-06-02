@@ -169,7 +169,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	macmask = atoi(argv[0]);
 	if (strcmp(iface, "qtn") && !ifexists(iface))
 		return cnt;
-	unlink(RSSI_TMP);
 	char wlmode[32];
 	char *displayname = iface;
 	if (!strncmp(displayname, "eth", 3))
@@ -417,7 +416,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
 	}
 
-	unlink(RSSI_TMP);
 
 	return cnt;
 }
@@ -542,7 +540,6 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 	int macmask;
 
 	ejArgs(argc, argv, "%d", &macmask);
-	unlink(WDS_RSSI_TMP);
 
 	mode = nvram_nget("wl%d_mode", instance);
 
@@ -580,7 +577,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 		char cmd[64];
 		sprintf(cmd, "wl -i %s rssi \"%s\"", iface, mac);
 
-		fp2 = popen(RSSI_TMP, "r");
+		fp2 = popen(cmd, "r");
 		if (fp2) {
 			if (fgets(line, sizeof(line), fp2) != NULL) {
 
@@ -608,7 +605,6 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 		websWrite(wp, "\"%s\",\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"", mac, iface, desc, rssi, noise, rssi - noise);
 	}
 
-	unlink(WDS_RSSI_TMP);
 	return cnt;
 }
 

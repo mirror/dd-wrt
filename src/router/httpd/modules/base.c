@@ -1721,9 +1721,19 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
 static void do_cfebackup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
-	system2("cat /dev/mtd/0 > /tmp/cfe.bin");
-	do_file_attach(handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin");
-	unlink("/tmp/cfe.bin");
+	FILE *fp = fopen("/dev/mtd/0", "rb");
+	if (fp) {
+		FILE *out = fopen("/tmp/cfe.bin", "wb");
+		fseek(fp, 0, SEEK_END);
+		size_t len = ftell(fp);
+		int i;
+		for (i = 0; i < len; i++)
+			putc(getc(fp), out);
+		fclose(out);
+		fclose(fp);
+		do_file_attach(handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin");
+		unlink("/tmp/cfe.bin");
+	}
 }
 #endif
 
@@ -1911,8 +1921,12 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
-			strcat(sname, " > /tmp/mypage.tmp");
-			system2(sname);
+			FILE *fp = popen(sname, "rb");
+			FILE *out = fopen("/tmp/mypage.tmp", "wb");
+			while (!feof(fp))
+				putc(getc(fp), out);
+			fclose(out);
+			pclose(fp);
 			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
@@ -2381,8 +2395,13 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 
 static void ttraff_backup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
-	system2("echo TRAFF-DATA > /tmp/traffdata.bak");
-	system2("nvram show | grep traff- >> /tmp/traffdata.bak");
+	FILE *out = fopen("/tmp/traffdata.bak", "wb");
+	fprintf(out, "TRAFF-DATA\n");
+	FILE *fp = popen("nvram show | grep traff-", "rb");
+	while (!feof(fp))
+		putc(getc(fp), out);
+	pclose(fp);
+	fclose(out);
 	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL, "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
 }
