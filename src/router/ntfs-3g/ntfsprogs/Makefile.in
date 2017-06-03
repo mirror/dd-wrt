@@ -105,6 +105,7 @@ DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(srcdir)/ntfsundelete.8.in $(srcdir)/ntfsdecrypt.8.in \
 	$(srcdir)/ntfswipe.8.in $(srcdir)/ntfstruncate.8.in \
 	$(srcdir)/ntfsfallocate.8.in $(srcdir)/ntfsrecover.8.in \
+	$(srcdir)/ntfsusermap.8.in $(srcdir)/ntfssecaudit.8.in \
 	$(top_srcdir)/depcomp
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/libtool.m4 \
@@ -118,12 +119,15 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES = mkntfs.8 ntfscat.8 ntfsclone.8 ntfscluster.8 \
 	ntfscmp.8 ntfscp.8 ntfsfix.8 ntfsinfo.8 ntfslabel.8 ntfsls.8 \
 	ntfsprogs.8 ntfsresize.8 ntfsundelete.8 ntfsdecrypt.8 \
-	ntfswipe.8 ntfstruncate.8 ntfsfallocate.8 ntfsrecover.8
+	ntfswipe.8 ntfstruncate.8 ntfsfallocate.8 ntfsrecover.8 \
+	ntfsusermap.8 ntfssecaudit.8
 CONFIG_CLEAN_VPATH_FILES =
 @ENABLE_CRYPTO_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_1 = ntfsdecrypt$(EXEEXT)
 @ENABLE_NTFSPROGS_TRUE@am__EXEEXT_2 = ntfswipe$(EXEEXT) \
 @ENABLE_NTFSPROGS_TRUE@	ntfstruncate$(EXEEXT) \
-@ENABLE_NTFSPROGS_TRUE@	ntfsrecover$(EXEEXT) $(am__EXEEXT_1)
+@ENABLE_NTFSPROGS_TRUE@	ntfsrecover$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfsusermap$(EXEEXT) \
+@ENABLE_NTFSPROGS_TRUE@	ntfssecaudit$(EXEEXT) $(am__EXEEXT_1)
 @ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@am__EXEEXT_3 =  \
 @ENABLE_EXTRAS_TRUE@@ENABLE_NTFSPROGS_TRUE@	$(am__EXEEXT_2)
 @ENABLE_NTFSPROGS_TRUE@am__EXEEXT_4 = ntfsdump_logfile$(EXEEXT) \
@@ -302,6 +306,15 @@ ntfsresize_OBJECTS = $(am_ntfsresize_OBJECTS)
 ntfsresize_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(ntfsresize_LDFLAGS) $(LDFLAGS) -o $@
+am__ntfssecaudit_SOURCES_DIST = ntfssecaudit.c utils.c utils.h
+@ENABLE_NTFSPROGS_TRUE@am_ntfssecaudit_OBJECTS =  \
+@ENABLE_NTFSPROGS_TRUE@	ntfssecaudit.$(OBJEXT) utils.$(OBJEXT)
+ntfssecaudit_OBJECTS = $(am_ntfssecaudit_OBJECTS)
+@ENABLE_NTFSPROGS_TRUE@ntfssecaudit_DEPENDENCIES =  \
+@ENABLE_NTFSPROGS_TRUE@	$(am__DEPENDENCIES_2)
+ntfssecaudit_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(ntfssecaudit_LDFLAGS) $(LDFLAGS) -o $@
 am__ntfstruncate_SOURCES_DIST = attrdef.c ntfstruncate.c utils.c \
 	utils.h
 @ENABLE_NTFSPROGS_TRUE@am_ntfstruncate_OBJECTS = attrdef.$(OBJEXT) \
@@ -322,6 +335,15 @@ ntfsundelete_OBJECTS = $(am_ntfsundelete_OBJECTS)
 ntfsundelete_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(ntfsundelete_LDFLAGS) $(LDFLAGS) -o $@
+am__ntfsusermap_SOURCES_DIST = ntfsusermap.c utils.c utils.h
+@ENABLE_NTFSPROGS_TRUE@am_ntfsusermap_OBJECTS = ntfsusermap.$(OBJEXT) \
+@ENABLE_NTFSPROGS_TRUE@	utils.$(OBJEXT)
+ntfsusermap_OBJECTS = $(am_ntfsusermap_OBJECTS)
+@ENABLE_NTFSPROGS_TRUE@ntfsusermap_DEPENDENCIES =  \
+@ENABLE_NTFSPROGS_TRUE@	$(am__DEPENDENCIES_2)
+ntfsusermap_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(ntfsusermap_LDFLAGS) $(LDFLAGS) -o $@
 am__ntfswipe_SOURCES_DIST = ntfswipe.c ntfswipe.h utils.c utils.h
 @ENABLE_NTFSPROGS_TRUE@am_ntfswipe_OBJECTS = ntfswipe.$(OBJEXT) \
 @ENABLE_NTFSPROGS_TRUE@	utils.$(OBJEXT)
@@ -368,7 +390,8 @@ SOURCES = $(mkntfs_SOURCES) $(ntfscat_SOURCES) $(ntfsck_SOURCES) \
 	$(ntfsfix_SOURCES) $(ntfsinfo_SOURCES) $(ntfslabel_SOURCES) \
 	$(ntfsls_SOURCES) $(ntfsmftalloc_SOURCES) $(ntfsmove_SOURCES) \
 	$(ntfsrecover_SOURCES) $(ntfsresize_SOURCES) \
-	$(ntfstruncate_SOURCES) $(ntfsundelete_SOURCES) \
+	$(ntfssecaudit_SOURCES) $(ntfstruncate_SOURCES) \
+	$(ntfsundelete_SOURCES) $(ntfsusermap_SOURCES) \
 	$(ntfswipe_SOURCES)
 DIST_SOURCES = $(am__mkntfs_SOURCES_DIST) $(am__ntfscat_SOURCES_DIST) \
 	$(am__ntfsck_SOURCES_DIST) $(am__ntfsclone_SOURCES_DIST) \
@@ -380,8 +403,10 @@ DIST_SOURCES = $(am__mkntfs_SOURCES_DIST) $(am__ntfscat_SOURCES_DIST) \
 	$(am__ntfsls_SOURCES_DIST) $(am__ntfsmftalloc_SOURCES_DIST) \
 	$(am__ntfsmove_SOURCES_DIST) $(am__ntfsrecover_SOURCES_DIST) \
 	$(am__ntfsresize_SOURCES_DIST) \
+	$(am__ntfssecaudit_SOURCES_DIST) \
 	$(am__ntfstruncate_SOURCES_DIST) \
-	$(am__ntfsundelete_SOURCES_DIST) $(am__ntfswipe_SOURCES_DIST)
+	$(am__ntfsundelete_SOURCES_DIST) \
+	$(am__ntfsusermap_SOURCES_DIST) $(am__ntfswipe_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -475,6 +500,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LD = @LD@
 LDCONFIG = @LDCONFIG@
 LDFLAGS = @LDFLAGS@
+LIBDL = @LIBDL@
 LIBFUSE_LITE_CFLAGS = @LIBFUSE_LITE_CFLAGS@
 LIBFUSE_LITE_LIBS = @LIBFUSE_LITE_LIBS@
 LIBGCRYPT_CFLAGS = @LIBGCRYPT_CFLAGS@
@@ -596,7 +622,8 @@ top_srcdir = @top_srcdir@
 # Workaround to make REALLYSTATIC work with automake 1.5.
 LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@EXTRA_PROGRAM_NAMES = ntfswipe ntfstruncate \
-@ENABLE_NTFSPROGS_TRUE@	ntfsrecover $(am__append_1)
+@ENABLE_NTFSPROGS_TRUE@	ntfsrecover ntfsusermap ntfssecaudit \
+@ENABLE_NTFSPROGS_TRUE@	$(am__append_1)
 @ENABLE_NTFSPROGS_TRUE@QUARANTINED_PROGRAM_NAMES = ntfsdump_logfile ntfsmftalloc ntfsmove ntfsck \
 @ENABLE_NTFSPROGS_TRUE@			   ntfsfallocate
 
@@ -604,7 +631,8 @@ LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@			  ntfsundelete.8 ntfsresize.8 ntfsprogs.8 ntfsls.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfsclone.8 ntfscluster.8 ntfscat.8 ntfscp.8 \
 @ENABLE_NTFSPROGS_TRUE@			  ntfscmp.8 ntfswipe.8 ntfstruncate.8 \
-@ENABLE_NTFSPROGS_TRUE@			  ntfsdecrypt.8 ntfsfallocate.8 ntfsrecover.8
+@ENABLE_NTFSPROGS_TRUE@			  ntfsdecrypt.8 ntfsfallocate.8 ntfsrecover.8 \
+@ENABLE_NTFSPROGS_TRUE@			  ntfsusermap.8 ntfssecaudit.8
 
 @ENABLE_NTFSPROGS_TRUE@EXTRA_MANS = 
 @ENABLE_NTFSPROGS_TRUE@CLEANFILES = $(EXTRA_PROGRAMS)
@@ -655,6 +683,12 @@ LINK = $(STATIC_LINK) $(LIBTOOL_LINK)
 @ENABLE_NTFSPROGS_TRUE@ntfsrecover_SOURCES = playlog.c ntfsrecover.c utils.c utils.h ntfsrecover.h
 @ENABLE_NTFSPROGS_TRUE@ntfsrecover_LDADD = $(AM_LIBS) $(NTFSRECOVER_LIBS)
 @ENABLE_NTFSPROGS_TRUE@ntfsrecover_LDFLAGS = $(AM_LFLAGS)
+@ENABLE_NTFSPROGS_TRUE@ntfsusermap_SOURCES = ntfsusermap.c utils.c utils.h
+@ENABLE_NTFSPROGS_TRUE@ntfsusermap_LDADD = $(AM_LIBS) $(NTFSRECOVER_LIBS)
+@ENABLE_NTFSPROGS_TRUE@ntfsusermap_LDFLAGS = $(AM_LFLAGS)
+@ENABLE_NTFSPROGS_TRUE@ntfssecaudit_SOURCES = ntfssecaudit.c utils.c utils.h
+@ENABLE_NTFSPROGS_TRUE@ntfssecaudit_LDADD = $(AM_LIBS) $(NTFSRECOVER_LIBS)
+@ENABLE_NTFSPROGS_TRUE@ntfssecaudit_LDFLAGS = $(AM_LFLAGS)
 
 # We don't distribute these
 @ENABLE_NTFSPROGS_TRUE@ntfstruncate_SOURCES = attrdef.c ntfstruncate.c utils.c utils.h
@@ -748,6 +782,10 @@ ntfstruncate.8: $(top_builddir)/config.status $(srcdir)/ntfstruncate.8.in
 ntfsfallocate.8: $(top_builddir)/config.status $(srcdir)/ntfsfallocate.8.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 ntfsrecover.8: $(top_builddir)/config.status $(srcdir)/ntfsrecover.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ntfsusermap.8: $(top_builddir)/config.status $(srcdir)/ntfsusermap.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+ntfssecaudit.8: $(top_builddir)/config.status $(srcdir)/ntfssecaudit.8.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -920,6 +958,10 @@ ntfsresize$(EXEEXT): $(ntfsresize_OBJECTS) $(ntfsresize_DEPENDENCIES) $(EXTRA_nt
 	@rm -f ntfsresize$(EXEEXT)
 	$(AM_V_CCLD)$(ntfsresize_LINK) $(ntfsresize_OBJECTS) $(ntfsresize_LDADD) $(LIBS)
 
+ntfssecaudit$(EXEEXT): $(ntfssecaudit_OBJECTS) $(ntfssecaudit_DEPENDENCIES) $(EXTRA_ntfssecaudit_DEPENDENCIES) 
+	@rm -f ntfssecaudit$(EXEEXT)
+	$(AM_V_CCLD)$(ntfssecaudit_LINK) $(ntfssecaudit_OBJECTS) $(ntfssecaudit_LDADD) $(LIBS)
+
 ntfstruncate$(EXEEXT): $(ntfstruncate_OBJECTS) $(ntfstruncate_DEPENDENCIES) $(EXTRA_ntfstruncate_DEPENDENCIES) 
 	@rm -f ntfstruncate$(EXEEXT)
 	$(AM_V_CCLD)$(ntfstruncate_LINK) $(ntfstruncate_OBJECTS) $(ntfstruncate_LDADD) $(LIBS)
@@ -927,6 +969,10 @@ ntfstruncate$(EXEEXT): $(ntfstruncate_OBJECTS) $(ntfstruncate_DEPENDENCIES) $(EX
 ntfsundelete$(EXEEXT): $(ntfsundelete_OBJECTS) $(ntfsundelete_DEPENDENCIES) $(EXTRA_ntfsundelete_DEPENDENCIES) 
 	@rm -f ntfsundelete$(EXEEXT)
 	$(AM_V_CCLD)$(ntfsundelete_LINK) $(ntfsundelete_OBJECTS) $(ntfsundelete_LDADD) $(LIBS)
+
+ntfsusermap$(EXEEXT): $(ntfsusermap_OBJECTS) $(ntfsusermap_DEPENDENCIES) $(EXTRA_ntfsusermap_DEPENDENCIES) 
+	@rm -f ntfsusermap$(EXEEXT)
+	$(AM_V_CCLD)$(ntfsusermap_LINK) $(ntfsusermap_OBJECTS) $(ntfsusermap_LDADD) $(LIBS)
 
 ntfswipe$(EXEEXT): $(ntfswipe_OBJECTS) $(ntfswipe_DEPENDENCIES) $(EXTRA_ntfswipe_DEPENDENCIES) 
 	@rm -f ntfswipe$(EXEEXT)
@@ -963,8 +1009,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsmove.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsrecover.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsresize.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfssecaudit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfstruncate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsundelete.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfsusermap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ntfswipe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/playlog.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
