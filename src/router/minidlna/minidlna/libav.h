@@ -57,6 +57,8 @@
 #include <avformat.h>
 #endif
 
+#define USE_CODECPAR LIBAVFORMAT_VERSION_INT >= ((57<<16)+(50<<8)+100)
+
 #ifndef FF_PROFILE_H264_BASELINE
 #define FF_PROFILE_H264_BASELINE 66
 #endif
@@ -166,7 +168,7 @@ lav_get_interlaced(AVStream *s)
 #endif
 }
 
-#if LIBAVCODEC_VERSION_MAJOR >= 57
+#if USE_CODECPAR
 #define lav_codec_id(s) s->codecpar->codec_id
 #define lav_codec_type(s) s->codecpar->codec_type
 #define lav_codec_tag(s) s->codecpar->codec_tag
@@ -195,7 +197,7 @@ lav_get_interlaced(AVStream *s)
 static inline uint8_t *
 lav_codec_extradata(AVStream *s)
 {
-#if LIBAVCODEC_VERSION_MAJOR >= 57
+#if USE_CODECPAR
 	if (!s->codecpar->extradata_size)
 		return NULL;
 	return s->codecpar->extradata;
