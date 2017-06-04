@@ -1,5 +1,5 @@
 /* MiniDLNA media server
- * Copyright (C) 2008-2009  Justin Maggard
+ * Copyright (C) 2008-2017  Justin Maggard
  *
  * This file is part of MiniDLNA.
  *
@@ -46,6 +46,7 @@
 #include "albumart.h"
 #include "containers.h"
 #include "log.h"
+#include "monitor.h"
 
 #if SCANDIR_CONST
 typedef const struct dirent scan_filter;
@@ -94,12 +95,12 @@ insert_container(const char *item, const char *rootParent, const char *refID, co
 	int ret = 0;
 
 	result = sql_get_text_field(db, "SELECT OBJECT_ID from OBJECTS o "
-	                                "left join DETAILS d on (o.DETAIL_ID = d.ID)"
-	                                " where o.PARENT_ID = '%s'"
-			                " and o.NAME like '%q'"
-			                " and d.ARTIST %s %Q"
-	                                " and o.CLASS = 'container.%s' limit 1",
-	                                rootParent, item, artist?"like":"is", artist, class);
+					"left join DETAILS d on (o.DETAIL_ID = d.ID)"
+					" where o.PARENT_ID = '%s'"
+					" and o.NAME like '%q'"
+					" and d.ARTIST %s %Q"
+					" and o.CLASS = 'container.%s' limit 1",
+					rootParent, item, artist?"like":"is", artist, class);
 	if( result )
 	{
 		base = strrchr(result, '$');
@@ -397,7 +398,7 @@ insert_directory(const char *name, const char *path, const char *base, const cha
 		char id_buf[64], parent_buf[64], refID[64];
 		char *dir_buf, *dir;
 
- 		dir_buf = strdup(path);
+		dir_buf = strdup(path);
 		dir = dirname(dir_buf);
 		snprintf(refID, sizeof(refID), "%s%s$%X", BROWSEDIR_ID, parentID, objectID);
 		snprintf(id_buf, sizeof(id_buf), "%s%s$%X", base, parentID, objectID);
@@ -466,7 +467,7 @@ insert_file(char *name, const char *path, const char *parentID, int object, medi
 	}
 	else if( (types & TYPE_VIDEO) && is_video(name) )
 	{
- 		orig_name = strdup(name);
+		orig_name = strdup(name);
 		strcpy(base, VIDEO_DIR_ID);
 		strcpy(class, "item.videoItem");
 		detailID = GetVideoMetadata(path, name);
@@ -840,6 +841,68 @@ _notify_stop(void)
 #endif
 }
 
+/* rescan functions added by shrimpkin@sourceforge.net */
+static int
+cb_orphans(void *args, int argc, char **argv, char **azColName)
+{
+	const char *path = argv[0];
+	const char *mime = argv[1];
+
+	/* If we can't access the path, remove it */
+	if (access(path, R_OK) != 0)
+	{
+		DPRINTF(E_DEBUG, L_SCANNER, "Removing %s [%s]\n", path, mime ? "file" : "dir");
+		if (mime)
+			monitor_remove_file(path);
+		else
+			monitor_remove_directory(0, path);
+	}
+
+	return 0;
+}
+
+void
+start_rescan(void)
+{
+	struct media_dir_s *media_path;
+	char *esc_name = NULL;
+	char *zErrMsg;
+	const char *sql_files = "SELECT path, mime FROM details WHERE path NOT NULL AND mime IS NOT NULL;";
+	const char *sql_dir = "SELECT path, mime FROM details WHERE path NOT NULL AND mime IS NULL;";
+	int ret;
+
+	DPRINTF(E_INFO, L_SCANNER, "Starting rescan\n");
+
+	/* Find and remove any dead directory links */
+	ret = sqlite3_exec(db, sql_dir, cb_orphans, NULL, &zErrMsg);
+	if (ret != SQLITE_OK)
+	{
+		DPRINTF(E_MAXDEBUG, L_SCANNER, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql_dir);
+		sqlite3_free(zErrMsg);
+	}
+
+	/* Find and remove any dead file links */
+	ret = sqlite3_exec(db, sql_files, cb_orphans, NULL, &zErrMsg);
+	if (ret != SQLITE_OK)
+	{
+		DPRINTF(E_MAXDEBUG, L_SCANNER, "SQL error: %s\nBAD SQL: %s\n", zErrMsg, sql_files);
+		sqlite3_free(zErrMsg);
+	}
+
+	/* Rescan media_paths for new and/or modified files */
+	for (media_path = media_dirs; media_path != NULL; media_path = media_path->next)
+	{
+		char path[MAXPATHLEN], buf[MAXPATHLEN];
+		strncpyt(path, media_path->path, sizeof(path));
+		strncpyt(buf, media_path->path, sizeof(buf));
+		esc_name = escape_tag(basename(buf), 1);
+		monitor_insert_directory(0, esc_name, path);
+		free(esc_name);
+	}
+	DPRINTF(E_INFO, L_SCANNER, "Rescan completed\n");
+}
+/* end rescan functions */
+
 void
 start_scanner()
 {
@@ -848,12 +911,17 @@ start_scanner()
 
 	if (setpriority(PRIO_PROCESS, 0, 15) == -1)
 		DPRINTF(E_WARN, L_INOTIFY,  "Failed to reduce scanner thread priority\n");
-	_notify_start();
 
 	setlocale(LC_COLLATE, "");
 
 	av_register_all();
 	av_log_set_level(AV_LOG_PANIC);
+	if( rescan_db )
+	{
+		start_rescan();
+		return;
+	}
+	_notify_start();
 	for( media_path = media_dirs; media_path != NULL; media_path = media_path->next )
 	{
 		int64_t id;

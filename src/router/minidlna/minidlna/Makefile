@@ -14,7 +14,7 @@
 #CFLAGS = -Wall -g -Os -D_GNU_SOURCE
 
 LDFLAGS+= -Wl,--gc-sections
-CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H \
+CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D__sparc__ -DHAVE_LIBAVUTIL_AVUTIL_H -DHAVE_LIBAVCODEC_AVCODEC_H -DHAVE_LIBAVFORMAT_AVFORMAT_H -DHAVE_VORBISFILE -DNEED_OGG\
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1 \
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavcodec \
          -I$(MINI_DLNA_PATH)/ffmpeg-3.1/libavformat \
@@ -25,8 +25,11 @@ CFLAGS = -Wall $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -D_GNU
          -I$(MINI_DLNA_PATH)/libogg-1.3.0/include/ \
          -I$(MINI_DLNA_PATH)/libvorbis-1.3.3/include/ \
          -I$(MINI_DLNA_PATH)/jpeg-8 \
+         -I$(MINI_DLNA_PATH)/minidlna/avahi/ \
          -I$(MINI_DLNA_PATH)/flac-1.2.1/include/ \
          -L$(MINI_DLNA_PATH)/lib \
+         -L$(MINI_DLNA_PATH)/minidlna/avahi/avahi-core/.libs \
+         -L$(MINI_DLNA_PATH)/minidlna/avahi/avahi-common/.libs \
          -L$(TOP)/zlib/
 
 
@@ -43,21 +46,23 @@ BASEOBJS = minidlna.o upnphttp.o upnpdescgen.o upnpsoap.o \
            upnpreplyparse.o minixml.o clients.o \
            getifaddr.o process.o upnpglobalvars.o \
            options.o minissdp.o uuid.o upnpevents.o \
-           sql.o utils.o metadata.o scanner.o inotify.o \
+           sql.o utils.o metadata.o scanner.o monitor.o \
            tivo_utils.o tivo_beacon.o tivo_commands.o \
            playlist.o image_utils.o albumart.o log.o \
-           containers.o tagutils/tagutils.o
+           containers.o avahi.o tagutils/tagutils.o
 
 ALLOBJS = $(BASEOBJS) $(LNXOBJS)
 
-LIBS = -lpthread -lm -lexif -ljpeg -lsqlite3 -lavformat -lavcodec -lavutil -lid3tag -lFLAC -lvorbis -logg  -lz
+LIBS = -lpthread -lm -lexif -ljpeg -lsqlite3 -lavformat -lavcodec -lavutil -lid3tag -lFLAC -lvorbis -logg  -lz 
+#-lavahi-common -lavahi-client
 #STATIC_LINKING: LIBS = -lvorbis -logg -lm -lsqlite3 -lpthread -lexif -ljpeg -lFLAC -lm -lid3tag -lz -lavformat -lavutil -lavcodec -lm
 
-#TESTUPNPDESCGENOBJS = testupnpdescgen.o upnpdescgen.o
+#TESTUPNPDESCGENOBJS = testupnpdescgen.o upnpdescgen
 
 EXECUTABLES = minidlna
 
 .PHONY:	all clean distclean install depend
+
 
 all:	$(EXECUTABLES)
 
@@ -77,7 +82,11 @@ install-conf:
 	$(INSTALL) -d $(ETCINSTALLDIR)
 	$(INSTALL) --mode=0644 minidlna.conf $(ETCINSTALLDIR)
 
-minidlna:	$(BASEOBJS) $(LNXOBJS)
+#avhi:
+#	cd avahi && ./configure --host=$(ARCH)-linux --prefix=/usr --disable-qt3 --disable-qt4 --disable-gtk --disable-shared --disable-gtk3 --disable-dbus --disable-gdbm --disable-libdaemon CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections" --with-distro=none --with-xml=none --disable-glib --disable-gobject 
+#	make -C avahi
+
+minidlna: $(BASEOBJS) $(LNXOBJS)
 	@echo Linking $@
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS) -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
 #	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(BASEOBJS) $(LNXOBJS)  -Wl,--rpath -Wl,$(MINI_DLNA_PATH)/lib/ $(LIBS)
