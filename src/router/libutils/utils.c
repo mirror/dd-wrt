@@ -5100,21 +5100,6 @@ void strtrim_right(char *p, int c)
 	return;
 }
 
-static int gstrcmp(char *str1, char *str2)
-{
-	int l1 = strlen(str1);
-	int l2 = strlen(str2);
-	int maxlen = l1 > l2 ? l2 : l1;
-	int i;
-	for (i = 0; i < maxlen; i++) {
-		if (str1[i] > str2[i])
-			return 1;
-		if (str1[i] < str2[i])
-			return -1;
-	}
-	return 0;
-}
-
 int getIfList(char *buffer, const char *ifprefix)
 {
 	return getIfListB(buffer, ifprefix, 0, 0);
@@ -5122,7 +5107,7 @@ int getIfList(char *buffer, const char *ifprefix)
 
 static int ifcompare(const void *a, const void *b)
 {
-	return gstrcmp(*(const char **)a, *(const char **)b);
+	return strcmp(*(const char **)a, *(const char **)b);
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
@@ -5203,6 +5188,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 	if (!nosort) {
 		qsort(sort, count, sizeof(char *), ifcompare);
 	}
+	int i;
 	for (i = 0; i < count; i++) {
 		strcat(buffer, sort[i]);
 		strcat(buffer, " ");
