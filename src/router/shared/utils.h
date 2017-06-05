@@ -1055,7 +1055,7 @@ extern int pidof(const char *name);
 extern int killall(const char *name, int sig);
 extern int getifcount(const char *ifprefix);
 extern int getIfList(char *buffer, const char *ifprefix);
-extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly);
+extern int getIfListB(char *buffer, const char *ifprefix, int bridgesonly,int nosort);
 extern void getIfLists(char *eths, int size);
 extern int ifexists(const char *ifname);
 extern void getinterfacelist(const char *ifprefix, char *buffer);
