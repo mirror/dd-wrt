@@ -545,6 +545,8 @@ extern int find_match_pattern(char *name, size_t mlen, const char *data, const c
 
 extern int find_each(char *name, int len, char *data, char *token, int which, char *def);
 
+char *tran_string(char *buf, char *str);
+
 /*
  * set type to 1 to replace ' ' with "&nbsp;" and ':' with "&semi;"
  * set type to 2 to replace "&nbsp;" with ' ' and "&semi;" with ':'
