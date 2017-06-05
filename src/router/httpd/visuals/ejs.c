@@ -1270,7 +1270,8 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 
 void show_bwif(webs_t wp, char *ifname, char *name)
 {
-	websWrite(wp, "<h2>%s - %s</h2>\n", live_translate("status_band.h2"), name);
+	char buf[128];
+	websWrite(wp, "<h2>%s - %s</h2>\n", tran_string(buf, "status_band.h2"), name);
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<iframe src=\"/graph_if.svg?%s\" width=\"555\" height=\"275\" frameborder=\"0\" type=\"image/svg+xml\">\n", ifname);
 	websWrite(wp, "</iframe>\n");
@@ -1339,10 +1340,10 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		}
 	      skip:;
 	}
-
+	char buf[128];
 	if (!nvram_match("wan_proto", "disabled")) {
 		if (getSTA()) {
-			snprintf(name, sizeof(name), "%s WAN (%s)", live_translate("share.wireless"), getNetworkLabel(wp, get_wan_face()));
+			snprintf(name, sizeof(name), "%s WAN (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, get_wan_face()));
 		} else
 			snprintf(name, sizeof(name), "WAN (%s)", getNetworkLabel(wp, get_wan_face()));
 
@@ -1365,14 +1366,14 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(dev, "ath%d", i);
 
-		snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp, dev));
+		snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, dev));
 		show_bwif(wp, dev, name);
 		char *vifs = nvram_nget("%s_vifs", dev);
 
 		if (vifs == NULL)
 			continue;
 		foreach(var, vifs, next) {
-			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp, var));
+			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, var));
 			show_bwif(wp, var, name);
 		}
 		int s;
@@ -1385,7 +1386,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				continue;
 			if (nvram_nmatch("0", "%s_wds%d_enable", dev, s))
 				continue;
-			snprintf(name, sizeof(name), "%s (%s)", live_translate("share.wireless"), getNetworkLabel(wp, wdsdev));
+			snprintf(name, sizeof(name), "%s (%s)", tran_string(buf, "share.wireless"), getNetworkLabel(wp, wdsdev));
 			show_bwif(wp, wdsdev, name);
 		}
 #ifdef HAVE_ATH9K
@@ -1398,7 +1399,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
 				if (!ifname)
 					continue;
-				sprintf(name, "%s (%s)", live_translate("share.wireless"), ifname + 1);
+				sprintf(name, "%s (%s)", tran_string(buf, "share.wireless"), ifname + 1);
 				show_bwif(wp, ifname + 1, name);
 			}
 			globfree(&globbuf);
@@ -1408,13 +1409,13 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 #else
 	for (c = 0; c < cnt; c++) {
-		snprintf(name, sizeof(name), "%s (wl%d)", live_translate("share.wireless"), c);
+		snprintf(name, sizeof(name), "%s (wl%d)", tran_string(buf, "share.wireless"), c);
 		show_bwif(wp, get_wl_instance_name(c), name);
 	}
 #endif
 #ifdef HAVE_WAVESAT
 
-	sprintf(name, "%s", live_translate("wl_wimax.titl"));
+	sprintf(name, "%s", tran_string(buf, "wl_wimax.titl"));
 	show_bwif(wp, "ofdm", name);
 #endif
 }
@@ -1897,7 +1898,6 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	char *style = nvram_get("router_style");
 	char *style_dark = nvram_get("router_style_dark");
 	static char *charset = NULL;
-	static char *title = NULL;
 	if (!charset)
 		charset = strdup(live_translate("lang_charset.set"));
 
@@ -1938,9 +1938,9 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
 #endif
-
+	char buf[128];
 	if (strlen(argv[0]) != 0) {
-		websWrite(wp, " - %s", live_translate(argv[0]));
+		websWrite(wp, " - %s", tran_string(buf, argv[0]));
 	}
 	websWrite(wp, "</title>\n");
 
@@ -1949,7 +1949,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle;
-
+	char buf[128];
 	ejArgs(argc, argv, "%s", &htitle);
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only"))
@@ -1963,8 +1963,8 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"), SVN_REVISION);
-	websWrite(wp, " - %s</title>\n", live_translate(htitle));
+	websWrite(wp, "\t\t<title>%s (build %s)", tran_string(buf, "share.help"), SVN_REVISION);
+	websWrite(wp, " - %s</title>\n", tran_string(buf, htitle));
 	websWrite(wp, "\t</head>\n");
 
 }
@@ -1992,10 +1992,12 @@ void ej_show_wanipinfo(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *wan_ipaddr;
 	int wan_link;
-
+	static char *disabled;
+	if (!disabled)
+		disabled = live_translate("share.disabled");
 	if (getWET() || nvram_match("wan_proto", "disabled")
 	    || nvram_match("wan_proto", "bridge")) {
-		websWrite(wp, ": %s", live_translate("share.disabled"));
+		websWrite(wp, ": %s", disabled);
 		return;
 	}
 
@@ -2111,11 +2113,16 @@ void ej_getrebootflags(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
+char *tran_string(char *buf, char *str)
+{
+	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	return buf;
+}
+
 void ej_tran(webs_t wp, int argc, char_t ** argv)
 {
-
-	websWrite(wp, "<script type=\"text/javascript\">Capture(%s)</script>", argv[0]);
-	return;
+	char buf[128];
+	websWrite(wp, "%s", tran_string(buf, argv[0]));
 }
 
 /*
@@ -2174,30 +2181,31 @@ void ej_make_time_list(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_service_state(webs_t wp, int argc, char_t ** argv)
 {
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.dhcp_legend2"));
+	char buf[128];
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, "service.dhcp_legend2"));
 	if (nvram_match("lan_proto", "dhcp")) {
-		websWrite(wp, "%s", live_translate("share.enabled"));
+		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
 		if (pidof("dnsmasq") > 0 || pidof("udhcpd") > 0) {
-			websWrite(wp, " - %s", live_translate("diag.running"));
+			websWrite(wp, " - %s", tran_string(buf, "diag.running"));
 		} else {
-			websWrite(wp, " - %s", live_translate("diag.stopped"));
+			websWrite(wp, " - %s", tran_string(buf, "diag.stopped"));
 		}
 	} else {
-		websWrite(wp, "%s", live_translate("share.disabled"));
+		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
 	}
 	websWrite(wp, "&nbsp;</div>");
 
 #ifdef HAVE_SAMBA_SERVER
-	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", live_translate("service.samba3_srv"));
+	websWrite(wp, "<div class=\"setting\"><div class=\"label\">%s</div>", tran_string(buf, "service.samba3_srv"));
 	if (nvram_matchi("samba3_enable", 1)) {
-		websWrite(wp, "%s", live_translate("share.enabled"));
+		websWrite(wp, "%s", tran_string(buf, "share.enabled"));
 		if (pidof("smbd") > 0) {
-			websWrite(wp, " - %s", live_translate("diag.running"));
+			websWrite(wp, " - %s", tran_string(buf, "diag.running"));
 		} else {
-			websWrite(wp, " - %s", live_translate("diag.stopped"));
+			websWrite(wp, " - %s", tran_string(buf, "diag.stopped"));
 		}
 	} else {
-		websWrite(wp, "%s", live_translate("share.disabled"));
+		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
 	}
 	websWrite(wp, "&nbsp;</div>");
 #endif
@@ -2252,13 +2260,14 @@ void ej_get_txpower(webs_t wp, int argc, char_t ** argv)
 	char m[32];
 	int txpower;
 	char mode[32];
+	char buf[128];
 
 	strncpy(m, nvram_safe_get("wifi_display"), 4);
 	m[4] = 0;
 	sprintf(mode, "%s_net_mode", m);
 	if (nvram_match(mode, "disabled")) {
 		txpower = 0;
-		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
 	} else {
 
 		sprintf(txpwr, "%s_txpwr", m);
@@ -2513,6 +2522,7 @@ void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 {
 	int radiooff = -1;
+	char buf[128];
 	char *wifi = nvram_safe_get("wifi_display");
 #ifdef HAVE_MADWIFI
 	char *ifname = wifi;
@@ -2522,18 +2532,18 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 		switch (state) {
 		case 1:
-			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
+			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
 			break;
 		case -1:
-			websWrite(wp, "%s", live_translate("share.unknown"));
+			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 			break;
 		default:	// 1: software disabled, 2: hardware
 			// disabled, 3: both are disabled
-			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
 			break;
 		}
 	} else {
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 	}
 #elif HAVE_RT2880
 
@@ -2541,14 +2551,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 	switch (state) {
 	case 1:
-		websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
+		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
 		break;
 	case -1:
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 		break;
 	default:		// 1: software disabled, 2: hardware
 		// disabled, 3: both are disabled
-		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
 		break;
 	}
 #else
@@ -2556,14 +2566,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	if (!strcmp(wifi, "wl1")) {
 		char status[16];
 		if (!rpc_qtn_ready()) {
-			websWrite(wp, "%s", live_translate("share.unknown"));
+			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 			return;
 		}
 		qcsapi_interface_get_status("wifi0", status);
 		if (!strcmp(status, "Up"))
-			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
+			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
 		else
-			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
 		return;
 	}
 #endif
@@ -2577,14 +2587,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 	switch ((radiooff & WL_RADIO_SW_DISABLE)) {
 	case 0:
-		websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
+		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
 		break;
 	case -1:
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 		break;
 	default:		// 1: software disabled, 2: hardware
 		// disabled, 3: both are disabled
-		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
+		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
 		break;
 	}
 #endif

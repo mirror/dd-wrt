@@ -28,6 +28,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 	char eths[256];
 	char bword[256];
 	char bufferif[512];
+	char buf[128];
 
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(idx.portsetup)</script></h2>\n");
 	websWrite(wp, "<fieldset>\n");
@@ -81,7 +82,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// qlen here
 
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("idx.txqlen"));
+		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "idx.txqlen"));
 		char txq[32];
 		sprintf(txq, "%s_txq", var);
 		websWrite(wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_range(this,0,10000,idx.txqlen)\" size=\"5\" name=\"%s\" value=\"%s\" />\n", txq, nvram_default_get(txq, getTXQ(var)));
@@ -103,7 +104,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div id=\"%s_idnet\">\n", layer);
 		}
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("idx.mtu"));
+		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "idx.mtu"));
 		char mtu[32];
 		sprintf(mtu, "%s_mtu", var);
 		websWrite(wp, "<input class=\"num\" maxlength=\"4\" onblur=\"valid_mtu(this)\" size=\"5\" name=\"%s\" value=\"%s\" />\n", mtu, nvram_default_get(mtu, "1500"));

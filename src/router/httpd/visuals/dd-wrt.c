@@ -1223,6 +1223,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	char avail[32];
 	char per[16];
 	char mp[128];
+	char buf[128];
 	char *pos;
 	FILE *fp;
 	int mounted = 0;
@@ -1241,7 +1242,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 					if (!strncmp(mp, "/dev", 4))
 						continue;
 					websWrite(wp, "<div class=\"setting\">");
-					websWrite(wp, "<div class=\"label\">%s %s</div>", live_translate("usb.usb_diskspace"), mp);
+					websWrite(wp, "<div class=\"label\">%s %s</div>", tran_string(buf, "usb.usb_diskspace"), mp);
 					websWrite(wp, "<span id=\"usage\">");
 					websWrite(wp, "<div class=\"meter\"><div class=\"bar\" style=\"width:%s;\"></div>", per);
 					websWrite(wp, "<div class=\"text\">%s</div></div>", per);
@@ -1272,7 +1273,7 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "</div>");
 
 	if (!mounted)
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
 
 	return;
 }
@@ -1294,7 +1295,7 @@ void ej_show_mmc_cardinfo(webs_t wp, int argc, char_t ** argv)
 		}
 		fclose(fp);
 	} else
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		websWrite(wp, "%s", tran_string(buff, "status_router.notavail"));
 
 	return;
 }
@@ -5165,6 +5166,13 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 
 }
 
+#ifndef FSHIFT
+# define FSHIFT 16		/* nr of bits of precision */
+#endif
+#define FIXED_1      (1 << FSHIFT)	/* 1.0 as fixed-point */
+#define LOAD_INT(x)  (unsigned)((x) >> FSHIFT)
+#define LOAD_FRAC(x) LOAD_INT(((x) & (FIXED_1 - 1)) * 100)
+
 /* copied from busybox */
 void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 {
@@ -5178,10 +5186,10 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 
 	sysinfo(&info);
 
-	printf(" %02u:%02u:%02u up ", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
+	websWrite(wp, " %02u:%02u:%02u up ", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
 	updays = (unsigned)info.uptime / (unsigned)(60 * 60 * 24);
 	if (updays)
-		printf("%u day%s, ", updays, (updays != 1) ? "s" : "");
+		websWrite(wp, "%u day%s, ", updays, (updays != 1) ? "s" : "");
 	upminutes = (unsigned)info.uptime / (unsigned)60;
 	uphours = (upminutes / (unsigned)60) % (unsigned)24;
 	upminutes %= 60;
@@ -5208,15 +5216,16 @@ void ej_get_wan_uptime(webs_t wp, int argc, char_t ** argv)
 	unsigned uptime;
 	int days, minutes;
 	FILE *fp, *fp2;
+	char buf[128];
 
 	if (nvram_match("wan_proto", "disabled"))
 		return;
 	if (nvram_match("wan_ipaddr", "0.0.0.0")) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
 		return;
 	}
 	if (!(fp = fopen("/tmp/.wanuptime", "r"))) {
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
 		return;
 	}
 	if (!feof(fp) && fscanf(fp, "%u", &uptime) == 1) {
@@ -5348,7 +5357,7 @@ void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 
 	if (argc == 1) {
 		getHostName(buf, argument);
-		websWrite(wp, "%s", strcmp(buf, "unknown") ? buf : live_translate("share.unknown"));
+		websWrite(wp, "%s", strcmp(buf, "unknown") ? buf : tran_string(buf, "share.unknown"));
 	}
 
 	return;

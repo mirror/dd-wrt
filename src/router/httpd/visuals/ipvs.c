@@ -29,18 +29,19 @@ void ej_show_ipvsassignments(webs_t wp, int argc, char_t ** argv)
 	char *tnext, *twordlist;
 	char *ipvsname, *targetip, *targetport, *targetweight, *targetnat;
 	char ipvs_name[32];
+	char buf[128];
 
 	if (strlen(nvram_safe_get("ipvs"))) {
 		int realcount = nvram_default_geti("ipvstarget_count", 0);
 		websWrite(wp, "<fieldset>\n");
-		websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_targets"));
+		websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.ipvs_targets"));
 
 		websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvstargets\" id=\"ipvstarget_table\" class=\"table center\"><tr>\n");
-		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
-		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetip"));
-		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_targetport"));
-		websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_weight"));
-		websWrite(wp, "<th>%s</th>\n", live_translate("wl_basic.masquerade"));
+		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_name"));
+		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_targetip"));
+		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_targetport"));
+		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_weight"));
+		websWrite(wp, "<th>%s</th>\n", tran_string(buf, "wl_basic.masquerade"));
 		websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 		wordlist = nvram_safe_get("ipvstarget");
@@ -142,25 +143,25 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 	char *next, *wordlist;
 	char *ipvsname, *sourceip, *sourceport, *scheduler, *sourceproto;
 	char ipvs_name[32];
-
+	char buf[128];
 	char *schedulers[] = { "wrr", "lc", "wlc", "fo", "ovf", "lblc", "lblcr", "dh", "sh", "sed", "nq", NULL };
 
 	int realcount = nvram_default_geti("ipvs_count", 0);
 
-	websWrite(wp, "<h2>%s</h2>\n", live_translate("networking.ipvs"));
+	websWrite(wp, "<h2>%s</h2>\n", tran_string(buf, "networking.ipvs"));
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.ipvs_config"));
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.ipvs_config"));
 	showOptionsLabel(wp, "networking.ipvs_role", "ipvsrole", "Master Backup", nvram_default_match("ipvs_role", "master", "master") ? "Master" : "Backup");
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<fieldset>\n");
-	websWrite(wp, "<legend>%s</legend>\n", live_translate("networking.create_ipvs"));
+	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.create_ipvs"));
 
 	websWrite(wp, "<table cellspacing=\"5\" summary=\"ipvs\" id=\"ipvs_table\" class=\"table center\"><tr>\n");
-	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_name"));
-	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_sourceip"));
-	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_sourceport"));
-	websWrite(wp, "<th>%s</th>\n", live_translate("share.proto"));
-	websWrite(wp, "<th>%s</th>\n", live_translate("networking.ipvs_scheduler"));
+	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_name"));
+	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_sourceip"));
+	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_sourceport"));
+	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "share.proto"));
+	websWrite(wp, "<th>%s</th>\n", tran_string(buf, "networking.ipvs_scheduler"));
 	websWrite(wp, "<th>&nbsp;</th></tr>\n");
 
 	wordlist = nvram_safe_get("ipvs");
@@ -201,7 +202,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			char translate[32];
 			char *sched = schedulers[scount++];
 			sprintf(translate, "networking.%s", sched);
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, scheduler) ? "selected=\\\"selected\\\"" : "", live_translate(translate));
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, scheduler) ? "selected=\\\"selected\\\"" : "", tran_string(buf, translate));
 		}
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</td>");
@@ -236,7 +237,7 @@ void ej_show_ipvs(webs_t wp, int argc, char_t ** argv)
 			char translate[32];
 			char *sched = schedulers[scount++];
 			sprintf(translate, "networking.%s", sched);
-			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, "wrr") ? "selected=\\\"selected\\\"" : "", live_translate(translate));
+			websWrite(wp, "document.write(\"<option value=\\\"%s\\\" %s >%s</option>\");\n", sched, !strcmp(sched, "wrr") ? "selected=\\\"selected\\\"" : "", tran_string(buf, translate));
 		}
 		websWrite(wp, "//]]>\n</script>\n</select>\n");
 		websWrite(wp, "</td>");
