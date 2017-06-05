@@ -51,7 +51,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	strcat(bufferif, buffer);
 #endif
 	memset(buffer, 0, 256);
-	getIfListB(buffer, NULL, 1);
+	getIfListB(buffer, NULL, 1, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 
