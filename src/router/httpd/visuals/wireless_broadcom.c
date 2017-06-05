@@ -416,7 +416,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 		websWrite(wp, "'%s','%s','%s','%s','%s','%s','%d','%d','%d','%d'", mac, displayname, time, txrate, rxrate, info, rssi, noise, rssi - noise, qual);
 	}
 
-
 	return cnt;
 }
 
