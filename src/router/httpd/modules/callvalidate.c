@@ -43,6 +43,7 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/time.h>
 #include <sys/klog.h>
 #include <sys/wait.h>
 #include <cyutils.h>
@@ -291,12 +292,13 @@ void *start_validator_nofree(char *name, void *handle, webs_t wp, char *value, s
 
 void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 {
+	struct timeval before, after, r;
 
 	if (nvram_matchi("console_debug", 1)) {
-		fprintf(stderr, "call_ej %s\n", name);
+		fprintf(stderr, "call_ej %s", name);
 		int i = 0;
 		for (i = 0; i < argc; i++)
-			fprintf(stderr, "argument %s\n", argv[i]);
+			fprintf(stderr, " %s", argv[i]);
 	}
 	char service[64];
 	int nohandle = 0;
@@ -330,13 +332,22 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 	}
 	cprintf("resolving %s\n", service);
 	fptr = (void (*)(webs_t wp, int argc, char_t ** argv))dlsym(handle, service);
+
 	cprintf("found. pointer is %p\n", fptr);
 	{
 		memdebug_enter();
-		if (fptr)
+		if (fptr) {
+			gettimeofday(&before, NULL);
+
 			(*fptr) (wp, argc, argv);
-		else if (nvram_matchi("console_debug", 1))
-			fprintf(stderr, "function %s not found \n", service);
+			gettimeofday(&after, NULL);
+			timersub(&after, &before, &r);
+			if (nvram_matchi("console_debug", 1)) {
+				fprintf(stderr, " duration %ld.%06ld\n", (long int)r.tv_sec, (long int)r.tv_usec);
+			}
+
+		} else if (nvram_matchi("console_debug", 1))
+			fprintf(stderr, " function %s not found \n", service);
 		memdebug_leave_info(service);
 	}
 	cprintf("start_sevice_nofree done()\n");
