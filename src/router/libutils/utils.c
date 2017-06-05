@@ -5060,7 +5060,7 @@ int getifcount(const char *ifprefix)
 	 */
 	char *iflist = calloc(256, 1);
 
-	int c = getIfList(iflist, ifprefix);
+	int c = getIfListB(iflist, ifprefix, 0, 1);
 
 	free(iflist);
 	return c;
@@ -5117,12 +5117,17 @@ static int gstrcmp(char *str1, char *str2)
 
 int getIfList(char *buffer, const char *ifprefix)
 {
-	return getIfListB(buffer, ifprefix, 0);
+	return getIfListB(buffer, ifprefix, 0, 0);
+}
+
+static int ifcompare(const void *a, const void *b)
+{
+	return gstrcmp(*(const char **)a, *(const char **)b);
 }
 
 // returns a physical interfacelist filtered by ifprefix. if ifprefix is
 // NULL, all valid interfaces will be returned
-int getIfListB(char *buffer, const char *ifprefix, int bridgesonly)
+int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 {
 	FILE *in = fopen("/proc/net/dev", "rb");
 	char ifname[32];
@@ -5195,16 +5200,8 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly)
 			ifname[ifcount++] = c;
 	}
       sort:;
-	int i;
-	int a;
-	for (a = 0; a < count; a++) {
-		for (i = 0; i < count - 1; i++) {
-			if (gstrcmp(sort[i], sort[i + 1]) > 0) {
-				char *temp = sort[i + 1];
-				sort[i + 1] = sort[i];
-				sort[i] = temp;
-			}
-		}
+	if (!nosort) {
+		qsort(sort, count, sizeof(char *), ifcompare);
 	}
 	for (i = 0; i < count; i++) {
 		strcat(buffer, sort[i]);
@@ -5495,18 +5492,18 @@ int led_control(int type, int act)
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;
 		disconnected_gpio = 0x007;
-//		usb_gpio = 0x004;
-//		usb_gpio1 = 0x005;
+//              usb_gpio = 0x004;
+//              usb_gpio1 = 0x005;
 		ses_gpio = 0x009;
 		break;
 	case ROUTER_WRT_3200ACM:
-//		usb_power = 0x02f;
+//              usb_power = 0x02f;
 		power_gpio = 0x000;
 		diag_gpio = 0x100;
 		connected_gpio = 0x006;
 		disconnected_gpio = 0x007;
-//		usb_gpio = 0x004;
-//		usb_gpio1 = 0x005;
+//              usb_gpio = 0x004;
+//              usb_gpio1 = 0x005;
 		ses_gpio = 0x009;
 		break;
 #endif
@@ -7431,7 +7428,6 @@ static struct wifidevices wdevices[] = {
 	{"88W8897 802.11ac", 0x11ab, 0x2b38},
 	{"WIL6210 802.11ad", 0x1ae9, 0x0310},
 	{"SD8887 802.11ac", 0x02df, 0x9135},
-
 
 };
 
