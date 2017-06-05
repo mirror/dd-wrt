@@ -5165,6 +5165,7 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 
 }
 
+/* copied from busybox */
 void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned updays, uphours, upminutes;
@@ -5190,11 +5191,13 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%u min", upminutes);
 
 #ifdef HAVE_ESPOD
-
 	websWrite(wp, "<br>");
+
+#else
+	websWrite(wp, ",  ");
+
 #endif
-	websWrite(wp, ",  load average: %u.%02u, %u.%02u, %u.%02u",
-		  LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]), LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]), LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
+	websWrite(wp, "load average: %u.%02u, %u.%02u, %u.%02u", LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]), LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]), LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
 
 	return;
 }
