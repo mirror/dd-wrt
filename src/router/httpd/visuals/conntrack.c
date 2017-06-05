@@ -124,6 +124,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 	int dum2;
 	int nf = 0;
 	char *lanip = nvram_get("lan_ipaddr");
+	char buf[128];
 
 	fp = fopen("/proc/net/ip_conntrack", "rb");
 	if (fp == NULL) {
@@ -148,7 +149,7 @@ void ej_ip_conntrack_table(webs_t wp, int argc, char_t ** argv)
 		else if (string_search(line, "icmp"))
 			sprintf(protocol, "ICMP");
 		else
-			sprintf(protocol, live_translate("share.unknown"));
+			sprintf(protocol, tran_string(buf, "share.unknown"));
 		websWrite(wp, "<td>%s</td>", protocol);
 
 		// Timeout

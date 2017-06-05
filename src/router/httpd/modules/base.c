@@ -565,6 +565,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 
 static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
 {
+	char buf[128];
 	int idx = indexof(path, '-');
 	if (idx < 0)
 		return;
@@ -598,7 +599,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 			  "Error: please specify a value username and password\n"
 			  "<div class=\"submitFooter\">\n"
 			  "<script type=\"text/javascript\">\n"
-			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", live_translate("freeradius.clientcert"));
+			  "//<![CDATA[\n" "submitFooterButton(0,0,0,0,0,1);\n" "//]]>\n" "</script>\n" "</div>\n" "</div>\n" "</div>\n" "</body>\n" "</html>\n", tran_string(buf, "freeradius.clientcert"));
 		goto out;
 	}
 	char filename[128];
@@ -692,7 +693,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 		"freeradius.clientcert"
 	};
 	call_ej("do_pagehead", NULL, wp, 1, argv);	// thats dirty
-	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", live_translate("freeradius.clientcert"));
+	websWrite(wp, "</head>\n" "<body>\n" "<div id=\"main\">\n" "<div id=\"contentsInfo\">\n" "<h2>%s</h2>\n", tran_string(buf, "freeradius.clientcert"));
 	sprintf(filename, "%s-cert.pem", db->users[radiusindex].user);
 	show_certfield(wp, "Certificate PEM", filename);
 	sprintf(filename, "%s-cert.p12", db->users[radiusindex].user);
@@ -2212,7 +2213,9 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 {
 
 	static const char filename[] = "/var/log/messages";
-
+	static char *charset = NULL;
+	if (!charset)
+		charset = live_translate("lang_charset.set");
 	int offset = 0;
 	int count = 0;
 	if (sscanf(query, "%d", &offset) != 1)
@@ -2222,7 +2225,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
 		  "<style type=\"text/css\">\n body { font: 9px Tahoma, Arial, sans-serif; font-size: small; color: #666; } \n"	//
 		  " fieldset { border: 1px solid #333; border-radius: 4px; border-width: 1px;}\n</style>\n"	//
-		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", live_translate("lang_charset.set"));
+		  "</head>\n<body>\n<fieldset><legend>System Log</legend>", charset);
 
 	if (nvram_matchi("syslogd_enable", 1)) {
 		FILE *fp = fopen(filename, "r");
@@ -2259,8 +2262,19 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 	return;
 }
 #endif
+char *tran_string(char *buf, char *str)
+{
+	sprintf(buf, "<script type=\"text/javascript\">Capture(%s)</script>", str);
+	return buf;
+}
+
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
 {
+	char buf[128];
+	static char *charset = NULL;
+	if (!charset)
+		charset = live_translate("lang_charset.set");
+
 #define COL_WIDTH 16		/* single column width */
 
 	char *next;
@@ -2330,15 +2344,15 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		f = f * 10;
 	}
 
-	char incom[32];
+	char incom[128];
 
-	snprintf(incom, 32, "%s", live_translate("status_inet.traffin"));
-	char outcom[32];
+	tran_string(incom, "status_inet.traffin");
+	char outcom[128];
 
-	snprintf(outcom, 32, "%s", live_translate("status_inet.traffout"));
-	char monthname[32];
+	tran_string(outcom, "status_inet.traffout");
+	char monthname[128];
 
-	snprintf(monthname, 32, "%s", live_translate(months[month - 1]));
+	tran_string(monthname, months[month - 1]);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
 		  "<html>\n" "<head>\n" "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n"	//
@@ -2360,7 +2374,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 		  "#t-graph li.bar {width: 4px; border: 1px solid; border-bottom: none; color: #000;}\n"	//
 		  "#t-graph li.bar p {margin: 5px 0 0; padding: 0;}\n"	//
 		  "#t-graph li.rcvd {left: 3px; background: #228B22;}\n"	//
-		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n", live_translate("lang_charset.set"), days * COL_WIDTH, COL_WIDTH);
+		  "#t-graph li.sent {left: 8px; background: #CD0000;}\n", charset, days * COL_WIDTH, COL_WIDTH);
 
 	for (i = 0; i < days - 1; i++) {
 		websWrite(stream, "#t-graph #d%d {left: %dpx;}\n", i + 1, i * COL_WIDTH);
