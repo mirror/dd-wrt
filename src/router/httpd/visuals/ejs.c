@@ -1896,12 +1896,14 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *style = nvram_get("router_style");
 	char *style_dark = nvram_get("router_style_dark");
-	static char *charset=NULL;
-	static char *title=NULL;
+	static char *charset = NULL;
+	static char *title = NULL;
 	if (!charset)
-	    charset = strdup(live_translate("lang_charset.set"));
+		charset = strdup(live_translate("lang_charset.set"));
 
-	 websWrite(wp,"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n", charset);
+	websWrite(wp,
+		  "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n<html>\n\t<head>\n\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+		  charset);
 #ifndef HAVE_MICRO
 	websWrite(wp, "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
 #endif
@@ -1913,7 +1915,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #ifdef HAVE_FREECWMP
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"lang_pack/freecwmp-english.js\"></script>\n");
 #endif
-	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style,style);
+	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style,
+		  style);
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
@@ -1921,7 +1924,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 		}
 	}
 #ifdef HAVE_PWC
-	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
+	websWrite(wp,
+		  "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
 #endif
 	if ((startswith(wp->request_url, "Wireless") || startswith(wp->request_url, "WL_WPA")) && get_wl_instances() == 3)
 		websWrite(wp, "\t\t<style type=\"text/css\">#header { height: 11.5em; }</style>\n");
