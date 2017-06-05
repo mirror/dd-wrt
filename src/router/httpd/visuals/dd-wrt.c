@@ -5167,25 +5167,35 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 {
-	char line[256];
-	FILE *fp;
+	unsigned updays, uphours, upminutes;
+	struct sysinfo info;
+	struct tm *current_time;
+	time_t current_secs;
 
-	if ((fp = popen("uptime", "r"))) {
-		fgets(line, sizeof(line), fp);
-		line[strlen(line) - 1] = '\0';	// replace new line with null
+	time(&current_secs);
+	current_time = localtime(&current_secs);
+
+	sysinfo(&info);
+
+	printf(" %02u:%02u:%02u up ", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
+	updays = (unsigned)info.uptime / (unsigned)(60 * 60 * 24);
+	if (updays)
+		printf("%u day%s, ", updays, (updays != 1) ? "s" : "");
+	upminutes = (unsigned)info.uptime / (unsigned)60;
+	uphours = (upminutes / (unsigned)60) % (unsigned)24;
+	upminutes %= 60;
+	if (uphours)
+		websWrite(wp, "%2u:%02u", uphours, upminutes);
+	else
+		websWrite(wp, "%u min", upminutes);
+
 #ifdef HAVE_ESPOD
-		char *p;
-		p = strtok(line, ",");
-		if (p != NULL) {
-			websWrite(wp, "%s<br>\n", p);
-			p = strtok(NULL, "\0");
-			websWrite(wp, "%s", p);
-		}
-#else
-		websWrite(wp, "%s", line);
+
+	websWrite(wp, "<br>");
 #endif
-		pclose(fp);
-	}
+	websWrite(wp, ",  load average: %u.%02u, %u.%02u, %u.%02u",
+		  LOAD_INT(info.loads[0]), LOAD_FRAC(info.loads[0]), LOAD_INT(info.loads[1]), LOAD_FRAC(info.loads[1]), LOAD_INT(info.loads[2]), LOAD_FRAC(info.loads[2]));
+
 	return;
 }
 
