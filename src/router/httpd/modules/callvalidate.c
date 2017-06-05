@@ -338,12 +338,11 @@ void *call_ej(char *name, void *handle, webs_t wp, int argc, char_t ** argv)
 		memdebug_enter();
 		if (fptr) {
 			gettimeofday(&before, NULL);
-
 			(*fptr) (wp, argc, argv);
 			gettimeofday(&after, NULL);
 			timersub(&after, &before, &r);
 			if (nvram_matchi("console_debug", 1)) {
-				fprintf(stderr, " duration %ld.%06ld\n", (long int)r.tv_sec, (long int)r.tv_usec);
+				fprintf(stderr, " %s duration %ld.%06ld\n", service, (long int)r.tv_sec, (long int)r.tv_usec);
 			}
 
 		} else if (nvram_matchi("console_debug", 1))
