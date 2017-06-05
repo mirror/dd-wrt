@@ -92,7 +92,8 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 	char *buff;
 	struct lease_t lease;
 	struct in_addr addr;
-	char *ipaddr, mac[32] = "", expires_time[50] = "";
+	char tbuf[128];
+	char *ipaddr, mac[32] = "", expires_time[256] = "";
 
 	cprintf("entry dumpleases\n");
 	if (argc < 1) {
@@ -154,8 +155,9 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					}
 					cprintf("entry dumpleases:%d\n", __LINE__);
 					websWrite(wp,
-						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic")
-																					   : dhcp_reltime(buf, expires)), p + 1);
+						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : tran_string(tbuf, "share.unknown")), ip, mac,
+						  ((expires == 0) ? tran_string(tbuf, "share.sttic")
+						   : dhcp_reltime(buf, expires)), p + 1);
 					cprintf("entry dumpleases:%d\n", __LINE__);
 					++count;
 				}
@@ -192,7 +194,8 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				}
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				websWrite(wp, "%c'%s','%s','%s','%s','%s'",
-					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic") : dhcp_reltime(buf, expires)), p + 1);
+					  (count ? ',' : ' '), (hostname[0] ? hostname : tran_string(tbuf, "share.unknown")), ip, mac, ((expires == 0) ? tran_string(tbuf, "share.sttic") : dhcp_reltime(buf, expires)),
+					  p + 1);
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				++count;
 			}
@@ -254,9 +257,9 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				if (!expires) {
 					continue;
-					strcpy(expires_time, live_translate("share.expired"));
+					strcpy(expires_time, tran_string(tbuf, "share.expired"));
 				} else if (expires == (long)EXPIRES_NEVER) {
-					strcpy(expires_time, live_translate("share.never"));
+					strcpy(expires_time, tran_string(tbuf, "share.never"));
 				} else {
 					if (expires > 86400)	// 60 * 60 * 24
 					{

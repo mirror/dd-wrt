@@ -69,6 +69,7 @@ char *rfctime(const time_t * timep, char *s)
 void ej_localtime(webs_t wp, int argc, char_t ** argv)
 {
 	time_t tm;
+	char buf[128];
 
 	time(&tm);
 
@@ -78,7 +79,7 @@ void ej_localtime(webs_t wp, int argc, char_t ** argv)
 
 		websWrite(wp, rfctime(&tm, t));
 	} else
-		websWrite(wp, "%s", live_translate("status_router.notavail"));
+		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
 	// websWrite (wp, "<script
 	// type=\"text/javascript\">Capture(status_router.notavail)</script>\n");
 }
@@ -111,6 +112,7 @@ void ej_dhcp_remaining_time(webs_t wp, int argc, char_t ** argv)
 void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
+	char buf[128];
 	char *wan_ipaddr, *wan_netmask, *wan_gateway;
 	char *status1 = "", *status2 = "", *hidden1, *hidden2, *button1 = "";
 	char *wan_proto = nvram_safe_get("wan_proto");
@@ -213,7 +215,7 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 
 	if (!strcmp(type, "wan_ipaddr")) {
 		if (getWET() || !strcmp(wan_proto, "disabled")) {
-			websWrite(wp, "%s", live_translate("share.disabled"));
+			websWrite(wp, "%s", tran_string(buf, "share.disabled"));
 		} else
 			websWrite(wp, "%s", wan_ipaddr);
 	} else if (!strcmp(type, "wan_netmask"))
@@ -230,12 +232,12 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		if (dns_list)
 			websWrite(wp, "%s", dns_list->dns_server[2]);
 	} else if (!strcmp(type, "status1"))
-		websWrite(wp, "%s", live_translate(status1));
+		websWrite(wp, "%s", tran_string(buf, status1));
 	else if (!strcmp(type, "status2"))
-		websWrite(wp, "%s", live_translate(status2));
+		websWrite(wp, "%s", tran_string(buf, status2));
 	else if (!strcmp(type, "button1")) {
 		if (trans)
-			websWrite(wp, "%s", live_translate(button1));
+			websWrite(wp, "%s", tran_string(buf, button1));
 		else
 			websWrite(wp, "%s", button1);
 	} else if (!strcmp(type, "hidden1"))

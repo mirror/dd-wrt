@@ -392,8 +392,9 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_acktiming(webs_t wp, int argc, char_t ** argv)
 {
+	char buf[128];
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s</div>\n", live_translate("share.acktiming"));
+	websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "share.acktiming"));
 	websWrite(wp, "<span id=\"wl_ack\">\n");
 	ej_update_acktiming(wp, argc, argv);
 	websWrite(wp, "</span> &nbsp;\n");
@@ -411,9 +412,9 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	char mode[32];
 	char *ifname = nvram_safe_get("wifi_display");
 	int state = get_radiostate(ifname);
-
+	char buf[128];
 	if (state == 0 || state == -1) {
-		websWrite(wp, "%s", live_translate("share.disabled"));
+		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
 		return;
 	}
 	long long rate = wifi_getrate(ifname);
@@ -443,17 +444,18 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		else
 			websWrite(wp, "%lld %cb/s", rate / divisor, scale);
 	} else
-		websWrite(wp, "%s", live_translate("share.auto"));
+		websWrite(wp, "%s", tran_string(buf, "share.auto"));
 }
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
+	char buf[128];
 	char *prefix = nvram_safe_get("wifi_display");
 	int channel = wifi_getchannel(prefix);
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
 		if (!interface) {
-			websWrite(wp, "%s", live_translate("share.unknown"));
+			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 			return;
 		}
 
@@ -499,7 +501,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		free(interface);
 
 	} else
-		websWrite(wp, "%s", live_translate("share.unknown"));
+		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
 	return;
 }
 

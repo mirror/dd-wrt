@@ -843,11 +843,12 @@ void ej_spectral_scan(webs_t wp, int argc, char_t ** argv)
 
 void ej_getchipset(webs_t wp, int argc, char_t ** argv)
 {
+	char buf[128];
 	char *chipset = getWifiDeviceName(nvram_safe_get("wifi_display"));
 	if (!chipset)
 		return;
 	websWrite(wp, "<div class=\"setting\">\n");
-	websWrite(wp, "<div class=\"label\">%s:</div>\n", live_translate("wl_basic.chipset"));
+	websWrite(wp, "<div class=\"label\">%s:</div>\n", tran_string(buf, "wl_basic.chipset"));
 	websWrite(wp, "%s&nbsp;\n", chipset);
 	websWrite(wp, "</div>\n");
 }
