@@ -1903,8 +1903,7 @@ static void filter_input(void)
 	 */
 #ifdef HAVE_OPENVPN
 	//check if ovpn server is running
-	if (nvram_matchi("openvpn_enable", 1)
-	    && nvram_matchi("openvpn_switch", 1)) {
+	if (nvram_matchi("openvpn_enable", 1)) {
 		save2file("-A INPUT -p %s --dport %s -j %s\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"), log_accept);
 		if (nvram_match("openvpn_tuntap", "tun")) {
 //                      if (strlen(nvram_safe_get("openvpn_ccddef")) = 0) {
