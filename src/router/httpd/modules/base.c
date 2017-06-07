@@ -2108,7 +2108,6 @@ struct cacheentry {
 };
 static int cachecount = 0;
 static struct cacheentry *translationcache = NULL;
-static char *cur_language = NULL;
 static char *private_live_translate(const char *tran)
 {
 
@@ -2152,6 +2151,7 @@ static void clear_translationcache(void)
 
 char *live_translate(const char *tran)	// todo: add locking to be thread safe
 {
+	static char *cur_language = NULL;                                                         
 	if (!tran || strlen(tran) == 0)
 		return "Error";
 	if (!cur_language) {
