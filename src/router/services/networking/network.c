@@ -4919,6 +4919,11 @@ void start_wan_done(char *wan_ifname)
 	start_ipvs();
 #endif
 
+#ifdef HAVE_SPEEDCHECKER
+	stop_speedchecker();
+	start_speedchecker();
+#endif
+
 #ifdef HAVE_MICRO
 	br_shutdown();
 #endif
