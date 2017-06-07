@@ -850,7 +850,6 @@ static void *handle_request(void *arg)
 				file = "index.asp";
 	}
 #endif
-
 	if (strncmp(file, "bigfile.bin", 11)) {
 		/* extract url args if present */
 		query = strchr(file, '?');
@@ -997,6 +996,7 @@ static void *handle_request(void *arg)
 			if (handler->locked) {
 				pthread_mutex_unlock(&singleton_mutex);
 			}
+			break;
 
 		}
 

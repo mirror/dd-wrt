@@ -2561,7 +2561,7 @@ struct mime_handler mime_handlers[] = {
 	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0, 0},
-	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,0, 0, 0},
+	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0, 0, 0},
