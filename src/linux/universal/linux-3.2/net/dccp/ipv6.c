@@ -499,6 +499,9 @@ static struct sock *dccp_v6_request_recv_sock(struct sock *sk,
 		newsk->sk_backlog_rcv = dccp_v4_do_rcv;
 		newnp->pktoptions  = NULL;
 		newnp->opt	   = NULL;
+		newnp->ipv6_mc_list = NULL;
+		newnp->ipv6_ac_list = NULL;
+		newnp->ipv6_fl_list = NULL;
 		newnp->mcast_oif   = inet6_iif(skb);
 		newnp->mcast_hops  = ipv6_hdr(skb)->hop_limit;
 
@@ -574,6 +577,9 @@ static struct sock *dccp_v6_request_recv_sock(struct sock *sk,
 	/* Clone RX bits */
 	newnp->rxopt.all = np->rxopt.all;
 
+	newnp->ipv6_mc_list = NULL;
+	newnp->ipv6_ac_list = NULL;
+	newnp->ipv6_fl_list = NULL;
 	/* Clone pktoptions received with SYN */
 	newnp->pktoptions = NULL;
 	if (ireq6->pktopts != NULL) {
@@ -1157,9 +1163,15 @@ static void __net_exit dccp_v6_exit_net(struct net *net)
 	inet_ctl_sock_destroy(net->dccp.v6_ctl_sk);
 }
 
+static void __net_exit dccp_v6_exit_batch(struct list_head *net_exit_list)
+{
+	inet_twsk_purge(&dccp_hashinfo, &dccp_death_row, AF_INET6);
+}
+
 static struct pernet_operations dccp_v6_ops = {
 	.init   = dccp_v6_init_net,
 	.exit   = dccp_v6_exit_net,
+	.exit_batch = dccp_v6_exit_batch,
 };
 
 static int __init dccp_v6_init(void)
