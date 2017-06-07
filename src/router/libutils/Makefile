@@ -170,18 +170,20 @@ endif
 ifeq ($(CONFIG_DIST),"micro")
 ATH9KCFLAGS +=  -DHAVE_MICRO
 ATH9KCFLAGS += -DNEED_NOPRINTF
-
-else
-ATH9KLDFLAGS += -lpthread
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
 ATH9KCFLAGS +=  -DHAVE_MICRO
 ATH9KCFLAGS += -DNEED_NOPRINTF
-else
-ATH9KLDFLAGS += -lpthread
+endif
 endif
 
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+ATH9KLDFLAGS += -lpthread
 endif
+endif
+
+
 
 ifeq ($(CONFIG_ATH10K),y)
 ATH9KCFLAGS += -DHAVE_ATH10K
