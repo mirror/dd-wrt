@@ -1938,9 +1938,8 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #else
 	websWrite(wp, "\t\t<title>%s (build %s)", nvram_get("router_name"), SVN_REVISION);
 #endif
-	char buf[128];
 	if (strlen(argv[0]) != 0) {
-		websWrite(wp, " - %s", tran_string(buf, argv[0]));
+		websWrite(wp, " - %s", live_translate(argv[0]));
 	}
 	websWrite(wp, "</title>\n");
 
@@ -1949,7 +1948,6 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
 	char *htitle;
-	char buf[128];
 	ejArgs(argc, argv, "%s", &htitle);
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only"))
@@ -1963,8 +1961,8 @@ void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 	websWrite(wp, "\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">\n");
-	websWrite(wp, "\t\t<title>%s (build %s)", tran_string(buf, "share.help"), SVN_REVISION);
-	websWrite(wp, " - %s</title>\n", tran_string(buf, htitle));
+	websWrite(wp, "\t\t<title>%s (build %s)", live_translate("share.help"), SVN_REVISION);
+	websWrite(wp, " - %s</title>\n", live_translate(htitle));
 	websWrite(wp, "\t</head>\n");
 
 }
@@ -2522,7 +2520,6 @@ void ej_radio_on(webs_t wp, int argc, char_t ** argv)
 void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 {
 	int radiooff = -1;
-	char buf[128];
 	char *wifi = nvram_safe_get("wifi_display");
 #ifdef HAVE_MADWIFI
 	char *ifname = wifi;
