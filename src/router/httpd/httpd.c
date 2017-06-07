@@ -154,6 +154,10 @@ static int match_one(const char *pattern, int patternlen, const char *string);
 static void *handle_request(void *conn_fp);
 static int numthreads = 0;
 
+#ifndef HAVE_MICRO
+pthread_mutex_t httpd_mutex;
+#endif
+
 static int initialize_listen_socket(usockaddr * usaP)
 {
 	int listen_fd;
@@ -1000,11 +1004,13 @@ static void *handle_request(void *arg)
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
 //      fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
-
 	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);
+	pthread_mutex_lock(&httpd_mutex);
 	numthreads--;
+	pthread_mutex_unlock(&httpd_mutex);
+
 	return NULL;
 }
 
@@ -1163,7 +1169,9 @@ int main(int argc, char **argv)
 	ctr_drbg_context ctr_drbg;
 	const char *pers = "ssl_server";
 #endif
-
+#ifndef HAVE_MICRO
+	pthread_mutex_init(&httpd_mutex);
+#endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
 
@@ -1440,13 +1448,15 @@ int main(int argc, char **argv)
 		memdebug_leave_info("get_client_ip_mac");
 
 		memdebug_enter();
+#ifndef HAVE_MICRO
+		pthread_mutex_lock(&httpd_mutex);
 		numthreads++;
 		while (numthreads > 15) {
 			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
 			sleep(1);
 		}
 		conn_fp->threadid = numthreads;
-#ifndef HAVE_MICRO
+		pthread_mutex_unlock(&httpd_mutex);
 
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
