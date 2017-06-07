@@ -156,6 +156,7 @@ static int numthreads = 0;
 
 #ifndef HAVE_MICRO
 pthread_mutex_t httpd_mutex;
+pthread_mutex_t singleton_mutex;
 #endif
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -852,157 +853,161 @@ static void *handle_request(void *arg)
 	}
 #endif
 
+	if (strncmp(file, "bigfile.bin", 11)) {
+		/* extract url args if present */
+		query = strchr(file, '?');
+		if (query) {
+			//see token length in createpageToken
+			char token[16] = "0";
+			strncpy(token, &query[1], sizeof(token));
+			nvram_set("token", token);
+			*query++ = 0;
+		} else {
+			nvram_seti("token", 0);
+		}
+	}
+	int changepassword = 0;
+#ifdef HAVE_REGISTER
+	if (!registered_real) {
+		if (endswith(file, "About.htm"))
+			file = "register.asp";
+	}
+	if (!registered) {
+		if (endswith(file, ".asp"))
+			file = "register.asp";
+		else if (endswith(file, ".htm"))
+			file = "register.asp";
+		else if (endswith(file, ".html"))
+			file = "register.asp";
+	} else
+#endif
 	{
-		if (strncmp(file, "bigfile.bin", 11)) {
-			/* extract url args if present */
-			query = strchr(file, '?');
-			if (query) {
-				//see token length in createpageToken
-				char token[16] = "0";
-				strncpy(token, &query[1], sizeof(token));
-				nvram_set("token", token);
-				*query++ = 0;
-			} else {
-				nvram_seti("token", 0);
-			}
-		}
-		int changepassword = 0;
-#ifdef HAVE_REGISTER
-		if (!registered_real) {
-			if (endswith(file, "About.htm"))
-				file = "register.asp";
-		}
-		if (!registered) {
+		if (((nvram_match("http_username", DEFAULT_USER)
+		      && nvram_match("http_passwd", DEFAULT_PASS))
+		     || nvram_match("http_username", "")
+		     || nvram_match("http_passwd", "admin"))
+		    && !endswith(file, "register.asp")
+		    && !endswith(file, "vsp.html")) {
+			changepassword = 1;
 			if (endswith(file, ".asp"))
-				file = "register.asp";
-			else if (endswith(file, ".htm"))
-				file = "register.asp";
+				file = "changepass.asp";
+			else if (endswith(file, ".htm")
+				 && !endswith(file, "About.htm"))
+				file = "changepass.asp";
 			else if (endswith(file, ".html"))
-				file = "register.asp";
-		} else
-#endif
-		{
-			if (((nvram_match("http_username", DEFAULT_USER)
-			      && nvram_match("http_passwd", DEFAULT_PASS))
-			     || nvram_match("http_username", "")
-			     || nvram_match("http_passwd", "admin"))
-			    && !endswith(file, "register.asp")
-			    && !endswith(file, "vsp.html")) {
-				changepassword = 1;
-				if (endswith(file, ".asp"))
-					file = "changepass.asp";
-				else if (endswith(file, ".htm")
-					 && !endswith(file, "About.htm"))
-					file = "changepass.asp";
-				else if (endswith(file, ".html"))
-					file = "changepass.asp";
-			} else {
-				if (endswith(file, "changepass.asp")) {
-					if (nvram_invmatchi("status_auth", 0))
-						file = "Info.htm";
-					else
-						file = "index.asp";
-				}
+				file = "changepass.asp";
+		} else {
+			if (endswith(file, "changepass.asp")) {
+				if (nvram_invmatchi("status_auth", 0))
+					file = "Info.htm";
+				else
+					file = "index.asp";
 			}
 		}
-		FILE *fp;
-		int file_found = 1;
+	}
+	FILE *fp;
+	int file_found = 1;
 
-		for (handler = &mime_handlers[0]; handler->pattern; handler++) {
-			if (match(handler->pattern, file)) {
+	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
+		if (match(handler->pattern, file)) {
+			if (handler->locked) {
+				pthread_mutex_lock(&singleton_mutex);
+			}
 #ifdef HAVE_REGISTER
-				if (registered)
+			if (registered)
 #endif
-				{
-					memdebug_enter();
-					if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
-						conn_fp->authorization = authorization;
-						int result = handler->auth(conn_fp, auth_check);
+			{
+				memdebug_enter();
+				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
+					conn_fp->authorization = authorization;
+					int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
-						if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
-								 && strstr(useragent, "Android")
-								 && ias_sid_valid())) {
-							fprintf(stderr, "[AUTH FAIL]: %s", useragent);
+					if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
+							 && strstr(useragent, "Android")
+							 && ias_sid_valid())) {
+						fprintf(stderr, "[AUTH FAIL]: %s", useragent);
 #else
-						if (!result) {
+					if (!result) {
 #endif
-							conn_fp->auth_fail = 0;
-							send_authenticate(conn_fp);
-							goto out;
-						}
+						conn_fp->auth_fail = 0;
+						send_authenticate(conn_fp);
+						goto out;
 					}
-					memdebug_leave_info("auth");
 				}
-				conn_fp->post = 0;
-				if (method_type == METHOD_POST) {
-					conn_fp->post = 1;
-				}
-				memdebug_enter();
-				if (handler->input)
-					handler->input(file, conn_fp, cl, boundary);
-				memdebug_leave_info("input");
+				memdebug_leave_info("auth");
+			}
+			conn_fp->post = 0;
+			if (method_type == METHOD_POST) {
+				conn_fp->post = 1;
+			}
+			memdebug_enter();
+			if (handler->input)
+				handler->input(file, conn_fp, cl, boundary);
+			memdebug_leave_info("input");
 #if defined(linux)
 #ifdef HAVE_HTTPS
-				if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-					/* Read up to two more characters */
-					if (fgetc(conn_fp->fp) != EOF)
-						(void)fgetc(conn_fp->fp);
-					fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-				}
+			if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+				/* Read up to two more characters */
+				if (fgetc(conn_fp->fp) != EOF)
+					(void)fgetc(conn_fp->fp);
+				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
+			}
 #else
-				if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-					/* Read up to two more characters */
-					if (fgetc(conn_fp->fp) != EOF)
-						(void)fgetc(conn_fp->fp);
-					fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-				}
+			if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+				/* Read up to two more characters */
+				if (fgetc(conn_fp->fp) != EOF)
+					(void)fgetc(conn_fp->fp);
+				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
+			}
 #endif
 #endif
-				memdebug_enter();
-				if (check_connect_type() < 0) {
-					send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
-					goto out;
-				}
-				memdebug_leave_info("connect");
-				memdebug_enter();
-				if (conn_fp->auth_fail == 1) {
-					send_authenticate(conn_fp);
-					conn_fp->auth_fail = 0;
-					goto out;
-				} else {
-					if (handler->output != do_file)
-						if (handler->send_headers)
-							send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
-				}
-				memdebug_leave_info("auth_output");
-				memdebug_enter();
-				// check for do_file handler and check if file exists
-				file_found = 1;
-				if (handler->output == do_file) {
-					if (getWebsFileLen(file) == 0) {
-						if (!(fp = fopen(file, "rb"))) {
-							file_found = 0;
-						} else {
-							fclose(fp);
-						}
+			memdebug_enter();
+			if (check_connect_type() < 0) {
+				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+				goto out;
+			}
+			memdebug_leave_info("connect");
+			memdebug_enter();
+			if (conn_fp->auth_fail == 1) {
+				send_authenticate(conn_fp);
+				conn_fp->auth_fail = 0;
+				goto out;
+			} else {
+				if (handler->output != do_file)
+					if (handler->send_headers)
+						send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
+			}
+			memdebug_leave_info("auth_output");
+			memdebug_enter();
+			// check for do_file handler and check if file exists
+			file_found = 1;
+			if (handler->output == do_file) {
+				if (getWebsFileLen(file) == 0) {
+					if (!(fp = fopen(file, "rb"))) {
+						file_found = 0;
+					} else {
+						fclose(fp);
 					}
 				}
-				if (handler->output && file_found) {
-					handler->output(method_type, handler, file, conn_fp, query);
-				} else {
-					send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
-				}
-				break;
-				memdebug_leave_info("output");
+			}
+			if (handler->output && file_found) {
+				handler->output(method_type, handler, file, conn_fp, query);
+			} else {
+				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
 
-			if (!handler->pattern)
-				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
+			memdebug_leave_info("output");
 		}
+
+		if (!handler->pattern)
+			send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 	}
 
       out:;
+	if (handler && handler->pattern && handler->locked) {
+		pthread_mutex_unlock(&singleton_mutex);
+	}
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)
@@ -1171,6 +1176,7 @@ int main(int argc, char **argv)
 #endif
 #ifndef HAVE_MICRO
 	pthread_mutex_init(&httpd_mutex, NULL);
+	pthread_mutex_init(&singleton_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
