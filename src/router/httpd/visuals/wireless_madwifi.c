@@ -412,9 +412,8 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	char mode[32];
 	char *ifname = nvram_safe_get("wifi_display");
 	int state = get_radiostate(ifname);
-	char buf[128];
 	if (state == 0 || state == -1) {
-		websWrite(wp, "%s", tran_string(buf, "share.disabled"));
+		websWrite(wp, "%s", live_translate"share.disabled"));
 		return;
 	}
 	long long rate = wifi_getrate(ifname);
@@ -444,7 +443,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		else
 			websWrite(wp, "%lld %cb/s", rate / divisor, scale);
 	} else
-		websWrite(wp, "%s", tran_string(buf, "share.auto"));
+		websWrite(wp, "%s", live_translate("share.auto"));
 }
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
