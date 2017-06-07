@@ -2466,49 +2466,49 @@ struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
 	// do_ezconfig_asp, do_auth },
 #ifdef HAVE_SKYTRON
-	{"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
+	{"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
 #endif
 #ifdef HAVE_POKER
-	{"PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 0},
+	{"PokerEdit.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 1},
 #endif
 #ifdef HAVE_DDLAN
-	{"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
+	{"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Management*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Services*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Log*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"config*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
 #endif
 
-	{"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 0},
+	{"changepass.asp", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 1},
 #ifdef HAVE_REGISTER
-	{"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1, 0, 0},
+	{"register.asp", "text/html", no_cache, NULL, do_ej, do_auth_reg, 1, 0, 1},
 #endif
 	{"WL_FilterTable*", "text/html", no_cache, NULL, do_filtertable,
-	 do_auth, 1, 0, 0},
+	 do_auth, 1, 0, 1},
 #ifdef HAVE_FREERADIUS
 	{"FreeRadiusCert*", "text/html", no_cache, NULL, do_radiuscert, do_auth,
-	 1, 0, 0},
+	 1, 0, 1},
 	{"freeradius-certs/*", "application/octet-stream", no_cache, NULL,
-	 cert_file_out, do_auth, 0, 0, 0},
+	 cert_file_out, do_auth, 0, 0, 1},
 #endif
 	// #endif
 	// #ifdef HAVE_MADWIFI
-	{"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0, 0},
+	{"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0, 1},
 	{"WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable,
-	 do_auth, 1, 0, 0},
+	 do_auth, 1, 0, 1},
 	{"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv,
-	 do_auth, 1, 0, 0},
+	 do_auth, 1, 0, 1},
 	// #endif
-	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0, 0},
-	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0, 0},
+	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0, 1},
+	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0, 1},
 	{"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL, 0, 0, 0},
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0},
 	{"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0, 0},
@@ -2520,19 +2520,19 @@ struct mime_handler mime_handlers[] = {
 	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0, 0},
 	{"intatstart/js/intatstart.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0, 0},
 	{"intatstart/js/mdetect.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0, 0},
-	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1, 0, 0},
+	{"vsp.html", "text/plain", no_cache, NULL, do_vsp_page, NULL, 1, 0, 1},
 #endif
-	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1, 0, 0},
+	{"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth, 1, 0, 1},
 #ifdef HAVE_SKYTRON
-	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0, 0},
-	{"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
-	{"**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 0},
+	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0, 1},
+	{"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
+	{"**.html", "text/html", no_cache, NULL, do_ej, do_auth2, 1, 0, 1},
 #else
-	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0, 0},
-	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0, 0},
-	{"**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 0},
-	{"**.html", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 0},
+	{"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0, 1},
+	{"Info.live.htm", "text/html", no_cache, NULL, do_ej, do_cauth, 1, 0, 1},
+	{"**.htm", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 1},
+	{"**.html", "text/html", no_cache, NULL, do_ej, NULL, 1, 0, 1},
 
 #endif
 #ifdef HAVE_ROUTERSTYLE
