@@ -413,7 +413,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	char *ifname = nvram_safe_get("wifi_display");
 	int state = get_radiostate(ifname);
 	if (state == 0 || state == -1) {
-		websWrite(wp, "%s", live_translate"share.disabled"));
+		websWrite(wp, "%s", live_translate("share.disabled"));
 		return;
 	}
 	long long rate = wifi_getrate(ifname);
