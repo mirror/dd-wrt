@@ -533,12 +533,10 @@ static void *handle_request(void *arg)
 	char *str;
 	for (cnt = 0; cnt < 10; cnt++) {
 		str = wfgets(line, LINE_LEN, conn_fp);
-		if (str)
-			break;
-		if (!str && strlen(line) > 0)
+		if (strlen(line) > 0)
 			break;
 	}
-	if (!str && !strlen(line)) {
+	if (!strlen(line)) {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
 		goto out;
 	}
@@ -1047,12 +1045,6 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-static void handle_server_sig_sys(int sig)
-{
-	ct_syslog(LOG_INFO, httpd_level, "sigint");
-//      exit(0);
-}
-
 void settimeouts(int sock, int secs)
 {
 	struct timeval tv;
@@ -1239,7 +1231,6 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
-	signal(SIGINT, handle_server_sig_sys);	// kill
 
 	if (server_dir && stat(server_dir, &stat_dir) == 0)
 		chdir(server_dir);
