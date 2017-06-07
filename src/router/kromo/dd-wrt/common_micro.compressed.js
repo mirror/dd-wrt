@@ -749,7 +749,7 @@ this.start=function(){
 if((!window.XMLHttpRequest&&!window.ActiveXObject)||_44==0){
 return false;
 }
-if(document.getElementsByName("refresh_button")){
+if(document.getElementsByName("refresh_button").length){
 document.getElementsByName("refresh_button")[0].disabled=true;
 }
 _43=setTimeout(me.doUpdate,_44);
@@ -757,7 +757,7 @@ return true;
 };
 this.stop=function(){
 clearTimeout(_43);
-if(document.getElementsByName("refresh_button")){
+if(document.getElementsByName("refresh_button").length){
 document.getElementsByName("refresh_button")[0].disabled=false;
 }
 _42=null;
