@@ -2215,7 +2215,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 	static const char filename[] = "/var/log/messages";
 	static char *charset = NULL;
 	if (!charset)
-		charset = live_translate("lang_charset.set");
+		charset = strdup(live_translate("lang_charset.set"));
 	int offset = 0;
 	int count = 0;
 	if (sscanf(query, "%d", &offset) != 1)
@@ -2273,7 +2273,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	char buf[128];
 	static char *charset = NULL;
 	if (!charset)
-		charset = live_translate("lang_charset.set");
+		charset = strdup(live_translate("lang_charset.set"));
 
 #define COL_WIDTH 16		/* single column width */
 
