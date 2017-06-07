@@ -1170,7 +1170,7 @@ int main(int argc, char **argv)
 	const char *pers = "ssl_server";
 #endif
 #ifndef HAVE_MICRO
-	pthread_mutex_init(&httpd_mutex);
+	pthread_mutex_init(&httpd_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
