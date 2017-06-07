@@ -24,6 +24,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <pthread.h>
 
 #include "unl.h"
 #include "mac80211regulatory.h"
@@ -85,7 +86,7 @@ typedef uint32_t u32;
 
 #ifndef HAVE_MICRO
 pthread_mutex_t mutex_unl;
-#define mutex_init() pthread_init_mutex(&mutex_unl,NULL);
+#define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
 #define lock() pthread_mutex_lock(&mutex_unl);
 #define unlock() pthread_mutex_unlock(&mutex_unl);
 #else
