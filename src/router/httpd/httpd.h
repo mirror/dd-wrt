@@ -69,6 +69,9 @@ typedef struct {
 	int auth_fail;
 	char label[64];
 	char my_next_page[30];
+
+/* CGI hash table */
+	struct hsearch_data htab;
 } webs;
 
 typedef webs *webs_t;
@@ -116,10 +119,9 @@ typedef struct {
 extern struct mime_handler mime_handlers[];
 
 /* CGI helper functions */
-extern void init_cgi(char *query);
-extern char *get_cgi(char *name);
-extern void set_cgi(char *name, char *value);
-extern int count_cgi();
+extern void init_cgi(webs_t wp, char *query);
+extern char *get_cgi(webs_t wp, char *name);
+extern void set_cgi(webs_t wp, char *name, char *value);
 
 /* Regular file handler */
 extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query);
@@ -163,7 +165,7 @@ struct Webenvironment {
 	websRomPageIndexType *PwebsRomPageIndex;
 };
 
-#define websSetVar(wp, var, value) set_cgi(var, value)
+#define websSetVar(wp, var, value) set_cgi(wp, var, value)
 #define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(METHOD_GET, path, wp,""); fflush(wp); 1; })
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = wfwrite(buf, 1, nChars, wp); wfflush(wp); TMPVAR; })
 #define websWriteDataNonBlock websWriteData
