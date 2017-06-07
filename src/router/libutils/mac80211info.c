@@ -814,7 +814,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 	u32 cap;
 	char *capstring = NULL;
 	int phy;
-	int has5ghz = has5ghz(interface);
+	int has5ghz = has_5ghz(interface);
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
