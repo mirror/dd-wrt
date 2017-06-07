@@ -23,7 +23,6 @@
 
 #include "httpd.h"
 
-
 static void unescape(char *s)
 {
 	unsigned int c;

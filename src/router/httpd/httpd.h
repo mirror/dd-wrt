@@ -38,7 +38,6 @@ extern BIO *bio_err;
 #include <search.h>
 #endif
 
-
 #define AUTH_MAX 64
 
 typedef struct {
