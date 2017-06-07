@@ -72,9 +72,6 @@ endif
 
 #CFLAGS += -Ilzma
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless
-ifneq ($(CONFIG_MICRO),y)
-LDFLAGS += -lpthread
-endif
 #LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(TOP)/libutils -lcrypt -ldl -lutils -lwireless -L$(TOP)/jansson/src/.libs/ -ljansson
 
 BCFLAGS += -DLINUX -ffunction-sections -fdata-sections -Wl,--gc-sections
@@ -86,6 +83,12 @@ ifneq ($(CONFIG_DIST),"micro-special")
 BCFLAGS += -DNEED_NOPRINTF
 endif
 
+
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+LDFLAGS += -lpthread
+endif
+endif
 
 CFLAGS = $(BCFLAGS) -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
