@@ -1451,12 +1451,12 @@ int main(int argc, char **argv)
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
 		numthreads++;
+		pthread_mutex_unlock(&httpd_mutex);
 		while (numthreads > 15) {
 			fprintf(stderr, "thread limit of %d reached, waiting for release\n", numthreads);
 			sleep(1);
 		}
 		conn_fp->threadid = numthreads;
-		pthread_mutex_unlock(&httpd_mutex);
 
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
