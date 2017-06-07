@@ -527,14 +527,22 @@ static void *handle_request(void *arg)
 
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
-	bzero(line, sizeof line);
-
-	memset(line, 0, LINE_LEN);
+	bzero(line, sizeof(line));
 	/* Parse the first line of the request. */
-	if (wfgets(line, LINE_LEN, conn_fp) == (char *)0) {	//jimmy,https,8/4/2003
+	int cnt = 0;
+	char *str;
+	for (cnt = 0; cnt < 10; cnt++) {
+		str = wfgets(line, LINE_LEN, conn_fp);
+		if (str)
+			break;
+		if (!str && strlen(line) > 0)
+			break;
+	}
+	if (!str && !strlen(line)) {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
 		goto out;
 	}
+
 	/* To prevent http receive https packets, cause http crash (by honor 2003/09/02) */
 	if (strncasecmp(line, "GET", 3) && strncasecmp(line, "POST", 4) && strncasecmp(line, "OPTIONS", 7)) {
 		goto out;
