@@ -5166,7 +5166,7 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef FSHIFT
-# define FSHIFT 16		/* nr of bits of precision */
+#define FSHIFT 16		/* nr of bits of precision */
 #endif
 #define FIXED_1      (1 << FSHIFT)	/* 1.0 as fixed-point */
 #define LOAD_INT(x)  (unsigned)((x) >> FSHIFT)
