@@ -25,6 +25,7 @@
 #include <shutils.h>
 #include <utils.h>
 #include <pthread.h>
+#include <errno.h>
 
 #include "unl.h"
 #include "mac80211regulatory.h"
@@ -86,13 +87,29 @@ typedef uint32_t u32;
 
 #ifndef HAVE_MICRO
 pthread_mutex_t mutex_unl;
+//char *lastlock;
+//char *lastunlock;
 #define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
+/*#define lock() { \
+		    int m_result; \
+		    int m_cnt=0; \
+		while ((m_result=pthread_mutex_trylock(&mutex_unl)) ==EBUSY) { \
+			m_cnt++; \
+			usleep(100 * 1000); \
+			if (m_cnt==10) { \
+			    dd_syslog(LOG_INFO, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
+			    break; \
+			} \
+		} \
+		lastlock = __func__; \
+}
+*/
 #define lock() pthread_mutex_lock(&mutex_unl);
 #define unlock() pthread_mutex_unlock(&mutex_unl);
 #else
 #define mutex_init()
-#define lock();
-#define unlock();
+#define lock() 
+#define unlock() 
 #endif
 
 struct unl unl;
@@ -695,14 +712,18 @@ char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 	u16 cap;
 	char *capstring = NULL;
 	int phy;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
+		unlock();
 		return strdup("");
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return "";
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -729,6 +750,7 @@ char *mac80211_get_caps(char *interface, int shortgi, int greenfield)
 out:
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	if (!capstring)
 		return strdup("");
 	return capstring;
@@ -792,6 +814,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 	u32 cap;
 	char *capstring = NULL;
 	int phy;
+	int has5ghz = has5ghz(interface);
 	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
@@ -813,8 +836,8 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			continue;
 		cap = nla_get_u32(caps);
 		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s[MAX-A-MPDU-LEN-EXP%d]%s%s%s%s%s%s", (cap & VHT_CAP_RXLDPC ? "[RXLDPC]" : "")
-			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has_5ghz(interface) && vht80) ? "[SHORT-GI-80]" : "")
-			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has_5ghz(interface) && vht160) ? "[SHORT-GI-160]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_80) && shortgi && has5ghz && vht80) ? "[SHORT-GI-80]" : "")
+			 , (((cap & VHT_CAP_SHORT_GI_160) && shortgi && has5ghz && vht160) ? "[SHORT-GI-160]" : "")
 			 , (cap & VHT_CAP_TXSTBC ? "[TX-STBC-2BY1]" : "")
 			 , (((cap >> 8) & 0x7) == 1 ? "[RX-STBC-1]" : "")
 			 , (((cap >> 8) & 0x7) == 2 ? "[RX-STBC-12]" : "")
@@ -828,8 +851,8 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 			 , (cap & VHT_CAP_TX_ANTENNA_PATTERN ? "[TX-ANTENNA-PATTERN]" : "")
 			 , ((cap & 3) == 1 ? "[MAX-MPDU-7991]" : "")
 			 , ((cap & 3) == 2 ? "[MAX-MPDU-11454]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has_5ghz(interface) && vht160) ? "[VHT160]" : "")
-			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has_5ghz(interface) && (vht8080 || vht160)) ? "[VHT160-80PLUS80]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160MHZ) && has5ghz && vht160) ? "[VHT160]" : "")
+			 , (((cap & VHT_CAP_SUPP_CHAN_WIDTH_160_80PLUS80MHZ) && has5ghz && (vht8080 || vht160)) ? "[VHT160-80PLUS80]" : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_UNSOL_MFB) ? "[VHT-LINK-ADAPT2]" : "") : "")
 			 , ((cap & VHT_CAP_HTC_VHT) ? ((cap & VHT_CAP_VHT_LINK_ADAPTATION_VHT_MRQ_MFB) ? "[VHT-LINK-ADAPT3]" : "") : "")
 			 , ((cap >> 23) & 7)
