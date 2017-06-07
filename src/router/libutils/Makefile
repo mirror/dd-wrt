@@ -102,18 +102,18 @@ ifeq ($(CONFIG_RB600),y)
 CFLAGS += -fpic
 endif
 ifeq ($(CONFIG_DIST),"micro")
+CFLAGS +=  -DHAVE_MICRO
 CFLAGS += -DNEED_NOPRINTF
 endif
 ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS +=  -DHAVE_MICRO
 CFLAGS += -DNEED_NOPRINTF
 endif
 
 ifneq ($(CONFIG_DIST),"micro")
-CFLAGS +=  -DHAVE_MICRO
 LDFLAGS += -lpthread
 endif
 ifneq ($(CONFIG_DIST),"micro-special")
-CFLAGS +=  -DHAVE_MICRO
 LDFLAGS += -lpthread
 endif
 
@@ -163,6 +163,24 @@ ATH9KCFLAGS	+= -fPIC
 ATH9KOBJS += wl_ath9k.o list_sort.o mac80211info.o mac80211regulatory.o mac80211autochannel.o
 ATH9KFILES += wl_ath9k.c list_sort.c mac80211info.c mac80211regulatory.c mac80211autochannel.c
 ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
+ifeq ($(CONFIG_SYSLOG),y)
+ATH9KCFLAGS += -DHAVE_SYSLOG
+endif
+
+ifeq ($(CONFIG_DIST),"micro")
+ATH9KCFLAGS +=  -DHAVE_MICRO
+ATH9KCFLAGS += -DNEED_NOPRINTF
+
+else
+ATH9KLDFLAGS += -lpthread
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+ATH9KCFLAGS +=  -DHAVE_MICRO
+ATH9KCFLAGS += -DNEED_NOPRINTF
+else
+ATH9KLDFLAGS += -lpthread
+endif
+
 endif
 
 ifeq ($(CONFIG_ATH10K),y)
