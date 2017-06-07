@@ -50,30 +50,32 @@
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-int nvram_init(void *unused)
-{
-	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0) {
-		fprintf(stderr, "cannot open /dev/nvram\n");
-		goto err;
-	}
 
-	/* Map kernel string buffer into user space */
-	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
-	if (nvram_buf == MAP_FAILED) {
-		close(nvram_fd);
-		fprintf(stderr, "nvram_init(): failed\n");
-		nvram_fd = -1;
-		goto err;
-	}
-	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
-
-	return 0;
-
-err:
-	return errno;
+#ifndef HAVE_MICRO
+#include <pthread.h>
+pthread_mutex_t mutex_unl;
+//char *lastlock;
+//char *lastunlock;
+#define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
+/*#define lock() { \
+		    int m_result; \
+		    int m_cnt=0; \
+		while ((m_result=pthread_mutex_trylock(&mutex_unl)) ==EBUSY) { \
+			m_cnt++; \
+			usleep(100 * 1000); \
+			if (m_cnt==10) { \
+			    dd_syslog(LOG_INFO, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
+			    break; \
+			} \
+		} \
+		lastlock = __func__; \
 }
-
-void lock(void)
+*/
+#define lock() pthread_mutex_lock(&mutex_unl);
+#define unlock() pthread_mutex_unlock(&mutex_unl);
+#else
+#define mutex_init()
+static void lock(void)
 {
 	FILE *in;
 	int lockwait = 0;
@@ -94,14 +96,41 @@ void lock(void)
 	}
 }
 
-void unlock(void)
+static void unlock(void)
 {
 	unlink("/tmp/.nvlock");
 }
+#endif
+
+int nvram_init(void *unused)
+{
+	mutex_init();
+
+	if ((nvram_fd = open(PATH_DEV_NVRAM, O_RDWR)) < 0) {
+		fprintf(stderr, "cannot open /dev/nvram\n");
+		goto err;
+	}
+	/* Map kernel string buffer into user space */
+	nvram_buf = mmap(NULL, NVRAMSPACE, PROT_READ, MAP_SHARED, nvram_fd, 0);
+	if (nvram_buf == MAP_FAILED) {
+		close(nvram_fd);
+		fprintf(stderr, "nvram_init(): failed\n");
+		nvram_fd = -1;
+		goto err;
+	}
+	fcntl(nvram_fd, F_SETFD, FD_CLOEXEC);
+
+	return 0;
+
+err:
+	return errno;
+}
+
+
+
 
 char *nvram_get(const char *name)
 {
-	lock();
 	size_t count = strlen(name) + 1;
 	char *value;
 	unsigned long *off;
@@ -120,6 +149,8 @@ char *nvram_get(const char *name)
 			return NULL;
 		}
 	}
+	lock();
+
 	if (!(off = malloc(count))) {
 		unlock();
 		return NULL;
@@ -186,7 +217,6 @@ void nvram_close(void)		//dummy
 
 static int _nvram_set(const char *name, const char *value)
 {
-	lock();
 	size_t count = strlen(name) + 1;
 	char *buf;
 	int ret;
@@ -196,6 +226,7 @@ static int _nvram_set(const char *name, const char *value)
 			unlock();
 			return ret;
 		}
+	lock();
 
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
 	if (strlen(name) > 64) {
@@ -283,7 +314,6 @@ int nvram_commit(void)
 	if (fp)
 		pclose(fp);
 #endif
-	lock();
 	int ret;
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL))) {
@@ -292,14 +322,16 @@ int nvram_commit(void)
 			return ret;
 		}
 	}
+	lock();
+
 	ret = ioctl(nvram_fd, NVRAM_MAGIC, NULL);
 
 	if (ret < 0) {
 		fprintf(stderr, "nvram_commit(): failed\n");
 		perror(PATH_DEV_NVRAM);
 	}
-	unlock();
 	sync();
+	unlock();
 	return ret;
 }
 
