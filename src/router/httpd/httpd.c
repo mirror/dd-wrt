@@ -227,7 +227,6 @@ static int auth_check(webs_t conn_fp)
 	char buf2[36];
 	char *enc1;
 	char *enc2;
-	memdebug_enter();
 	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
 
 	if (strcmp(enc1, conn_fp->auth_userid)) {
@@ -242,7 +241,6 @@ static int auth_check(webs_t conn_fp)
 		}
 		return 0;
 	}
-	memdebug_leave();
 
 	return 1;
 }
@@ -917,7 +915,6 @@ static void *handle_request(void *arg)
 			if (registered)
 #endif
 			{
-				memdebug_enter();
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 					conn_fp->authorization = authorization;
 					int result = handler->auth(conn_fp, auth_check);
@@ -935,16 +932,13 @@ static void *handle_request(void *arg)
 						goto out;
 					}
 				}
-				memdebug_leave_info("auth");
 			}
 			conn_fp->post = 0;
 			if (method_type == METHOD_POST) {
 				conn_fp->post = 1;
 			}
-			memdebug_enter();
 			if (handler->input)
 				handler->input(file, conn_fp, cl, boundary);
-			memdebug_leave_info("input");
 #if defined(linux)
 #ifdef HAVE_HTTPS
 			if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -962,13 +956,10 @@ static void *handle_request(void *arg)
 			}
 #endif
 #endif
-			memdebug_enter();
 			if (check_connect_type() < 0) {
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
 				goto out;
 			}
-			memdebug_leave_info("connect");
-			memdebug_enter();
 			if (conn_fp->auth_fail == 1) {
 				send_authenticate(conn_fp);
 				conn_fp->auth_fail = 0;
@@ -978,8 +969,6 @@ static void *handle_request(void *arg)
 					if (handler->send_headers)
 						send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
 			}
-			memdebug_leave_info("auth_output");
-			memdebug_enter();
 			// check for do_file handler and check if file exists
 			file_found = 1;
 			if (handler->output == do_file) {
@@ -997,7 +986,6 @@ static void *handle_request(void *arg)
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
 
-			memdebug_leave_info("output");
 		}
 
 		if (!handler->pattern)
@@ -1448,11 +1436,8 @@ int main(int argc, char **argv)
 			}
 		}
 
-		memdebug_enter();
 		get_client_ip_mac(conn_fp->conn_fd);
-		memdebug_leave_info("get_client_ip_mac");
 
-		memdebug_enter();
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
 		numthreads++;
@@ -1477,9 +1462,7 @@ int main(int argc, char **argv)
 #else
 		handle_request(conn_fp);
 #endif
-		memdebug_leave_info("handle_request");
 
-		showmemdebugstat();
 	}
 
 	shutdown(listen_fd, 2);
