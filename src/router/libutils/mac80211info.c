@@ -228,7 +228,6 @@ static void getNoise_mac80211_internal(char *interface, struct mac80211_info *ma
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
 	unlock();
-	nlmsg_free(msg);
 	return;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -248,7 +247,6 @@ int getNoise_mac80211(char *interface)
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
 	unlock();
-	nlmsg_free(msg);
 	return mac80211_info.noise;
 
 nla_put_failure:
@@ -423,7 +421,6 @@ int getFrequency_mac80211(char *interface)
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
 	unlock();
-	nlmsg_free(msg);
 	return mac80211_info.frequency;
 nla_put_failure:
 	nlmsg_free(msg);
@@ -1021,8 +1018,8 @@ int mac80211_check_band(char *interface, int checkband)
 	return bandfound;
 out:
 nla_put_failure:
-	unlock();
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -1747,7 +1744,6 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
-	nlmsg_free(msg);
 	unlock();
 	return;
       nla_put_failure:nlmsg_free(msg);
@@ -1797,8 +1793,8 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 	unlock();
 	return ret;
 nla_put_failure:
-	unlock();
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
