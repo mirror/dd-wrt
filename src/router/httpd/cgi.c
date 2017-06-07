@@ -21,11 +21,8 @@
 #include <features.h>
 #define assert(a)
 
-#if defined(linux)
-/* Use SVID search */
-#define __USE_GNU
-#include <search.h>
-#endif
+#include "httpd.h"
+
 
 static void unescape(char *s)
 {
@@ -107,7 +104,7 @@ void init_cgi(webs_t wp, char *query)
 	nel = 1;
 	while (strsep(&q, "&;"))
 		nel++;
-	hcreate_r(nel, &WP->htab);
+	hcreate_r(nel, &wp->htab);
 	//cprintf("\nIn init_cgi(), nel = %d\n", nel);
 
 	for (q = query; q < (query + len);) {

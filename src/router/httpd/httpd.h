@@ -32,6 +32,12 @@ extern BIO *bio_err;
 #endif
 
 #include <bcmnvram.h>
+#if defined(linux)
+/* Use SVID search */
+#define __USE_GNU
+#include <search.h>
+#endif
+
 
 #define AUTH_MAX 64
 
