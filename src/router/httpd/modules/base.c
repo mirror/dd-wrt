@@ -1715,7 +1715,7 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 		char *buf = malloc(len);
 		wfgets(buf, len, stream);
 		free(buf);
-		init_cgi(stream->post_buf);
+		init_cgi(stream, stream->post_buf);
 	}
 }
 
@@ -2424,14 +2424,14 @@ static void do_apply_cgi(unsigned char method, struct mime_handler *handler, cha
 	} else {
 		query = url;
 		path = strsep(&query, "?") ? : url;
-		init_cgi(query);
+		init_cgi(stream, query);
 	}
 
 	if (!query)
 		return;
 
 	apply_cgi(stream, NULL, NULL, 0, url, path, query);
-	init_cgi(NULL);
+	init_cgi(stream, NULL);
 }
 
 #ifdef HAVE_MADWIFI
