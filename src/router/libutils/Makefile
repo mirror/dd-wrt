@@ -103,10 +103,17 @@ CFLAGS += -fpic
 endif
 ifeq ($(CONFIG_DIST),"micro")
 CFLAGS += -DNEED_NOPRINTF
+endif
+ifeq ($(CONFIG_DIST),"micro-special")
+CFLAGS += -DNEED_NOPRINTF
+endif
+
+ifneq ($(CONFIG_DIST),"micro")
+CFLAGS +=  -DHAVE_MICRO
 LDFLAGS += -lpthread
 endif
 ifneq ($(CONFIG_DIST),"micro-special")
-CFLAGS += -DNEED_NOPRINTF
+CFLAGS +=  -DHAVE_MICRO
 LDFLAGS += -lpthread
 endif
 
