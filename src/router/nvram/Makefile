@@ -124,6 +124,12 @@ endif
 ifeq ($(CONFIG_DIST),"micro-special")
 CFLAGS += -DHAVE_MICRO
 endif
+ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_DIST),"micro-special")
+LDFLAGS += -lpthread
+endif
+endif
+
 ifeq ($(CONFIG_WZRG300NH),y)
 CFLAGS += -DHAVE_WZRG300NH
 endif
@@ -171,7 +177,7 @@ clean:
 	rm -f *.o *.a *.so nvram
 
 libnvram.so: nvram_linux.o nvram_convert.o backup.o
-	$(CC) $(CFLAGS) -shared -o $@ $^
+	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 	$(AR) cr libnvram.a $^
 
 convertnvram: convertnvram.o
