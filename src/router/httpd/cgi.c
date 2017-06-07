@@ -27,10 +27,6 @@
 #include <search.h>
 #endif
 
-/* CGI hash table */
-static struct hsearch_data htab;
-static int htab_count;
-
 static void unescape(char *s)
 {
 	unsigned int c;
@@ -48,63 +44,60 @@ static void unescape(char *s)
 	}
 }
 
-char *get_cgi(char *name)
+char *get_cgi(webs_t wp, char *name)
 {
 	ENTRY e, *ep;
 
 #if defined(__UCLIBC__) || defined(__GLIBC__)
-	if (!htab.table)
+	if (!wp->htab.table)
 		return NULL;
 #else
-	if (!htab.__tab)
+	if (!wp->htab.__tab)
 		return NULL;
 #endif
 	e.key = name;
-	hsearch_r(e, FIND, &ep, &htab);
+	hsearch_r(e, FIND, &ep, &wp->htab);
 
 	return ep ? ep->data : NULL;
 }
 
-void set_cgi(char *name, char *value)
+void set_cgi(webs_t wp, char *name, char *value)
 {
 	ENTRY e, *ep;
 
 	//cprintf("\nIn set_cgi(), name = %s, value = %s\n", name, value);
 
 #if defined(__UCLIBC__) || defined(__GLIBC__)
-	if (!htab.table)
+	if (!wp->htab.table)
 		return;
 #else
-	if (!htab.__tab)
+	if (!wp->htab.__tab)
 		return;
 #endif
 
 	e.key = name;
-	hsearch_r(e, FIND, &ep, &htab);
+	hsearch_r(e, FIND, &ep, &wp->htab);
 	if (ep) {
 		//cprintf("\nIn set_cgi(), ep = %s\n", ep);
 		ep->data = value;
 	} else {
 		//cprintf("\nIn set_cgi(), ep = %s(NULL)\n", ep);
 		e.data = value;
-		hsearch_r(e, ENTER, &ep, &htab);
-		htab_count++;
+		hsearch_r(e, ENTER, &ep, &wp->htab);
 	}
 	assert(ep);
 }
 
-void init_cgi(char *query)
+void init_cgi(webs_t wp, char *query)
 {
 	int len, nel;
 	char *q, *name, *value;
-
-	htab_count = 0;
 
 	//cprintf("\nIn init_cgi(), query = %s\n", query);
 
 	/* Clear variables */
 	if (!query) {
-		hdestroy_r(&htab);
+		hdestroy_r(&wp->htab);
 		return;
 	}
 
@@ -114,7 +107,7 @@ void init_cgi(char *query)
 	nel = 1;
 	while (strsep(&q, "&;"))
 		nel++;
-	hcreate_r(nel, &htab);
+	hcreate_r(nel, &WP->htab);
 	//cprintf("\nIn init_cgi(), nel = %d\n", nel);
 
 	for (q = query; q < (query + len);) {
@@ -127,12 +120,7 @@ void init_cgi(char *query)
 		/* Assign variable */
 		name = strsep(&value, "=");
 		if (value)
-			set_cgi(name, value);
+			set_cgi(wp, name, value);
 	}
 	//cprintf("\nIn init_cgi(), AFTER PROCESS query = %s\n", query);
-}
-
-int count_cgi()
-{
-	return htab_count;
 }

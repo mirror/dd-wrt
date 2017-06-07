@@ -93,7 +93,7 @@
 int websWrite(webs_t wp, char *fmt, ...);
 char *websGetVar(webs_t wp, char *var, char *d)
 {
-	return get_cgi(var) ? : d;
+	return get_cgi(wp, var) ? : d;
 }
 
 char *GOZILA_GET(webs_t wp, char *name)
