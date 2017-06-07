@@ -6,7 +6,7 @@ then
 	PORT=14
 fi
 /bin/echo -e "Serverlog: <br>"
-/bin/echo "log 500" | /usr/bin/nc 127.0.0.1 ${PORT }| /bin/grep -v "^>" | /usr/bin/awk -F "," '{
+/bin/echo "log 500" | /usr/bin/nc 127.0.0.1 ${PORT}| /bin/grep -v "^>" | /usr/bin/awk -F "," '{
 	printf strftime("%Y%m%d %H:%M:%S ",$1);
 	for (i=2;i<=NF;i++)
 		printf $i" "
