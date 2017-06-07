@@ -448,13 +448,12 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 {
-	char buf[128];
 	char *prefix = nvram_safe_get("wifi_display");
 	int channel = wifi_getchannel(prefix);
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
 		if (!interface) {
-			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+			websWrite(wp, "%s", live_translate("share.unknown"));
 			return;
 		}
 
@@ -500,7 +499,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		free(interface);
 
 	} else
-		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+		websWrite(wp, "%s", live_translate("share.unknown"));
 	return;
 }
 
