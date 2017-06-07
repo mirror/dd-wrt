@@ -1281,7 +1281,7 @@ void show_bwif(webs_t wp, char *ifname, char *name)
 
 void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
-	char name[32];
+	char name[180];
 	char *next, *bnext;
 	char var[80];
 	char eths[256];
