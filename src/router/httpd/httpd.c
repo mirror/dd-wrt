@@ -929,6 +929,9 @@ static void *handle_request(void *arg)
 #endif
 						conn_fp->auth_fail = 0;
 						send_authenticate(conn_fp);
+						if (handler->locked) {
+							pthread_mutex_unlock(&singleton_mutex);
+						}
 						goto out;
 					}
 				}
@@ -958,11 +961,17 @@ static void *handle_request(void *arg)
 #endif
 			if (check_connect_type() < 0) {
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+				if (handler->locked) {
+					pthread_mutex_unlock(&singleton_mutex);
+				}
 				goto out;
 			}
 			if (conn_fp->auth_fail == 1) {
 				send_authenticate(conn_fp);
 				conn_fp->auth_fail = 0;
+				if (handler->locked) {
+					pthread_mutex_unlock(&singleton_mutex);
+				}
 				goto out;
 			} else {
 				if (handler->output != do_file)
@@ -985,6 +994,9 @@ static void *handle_request(void *arg)
 			} else {
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
+			if (handler->locked) {
+				pthread_mutex_unlock(&singleton_mutex);
+			}
 
 		}
 
@@ -993,9 +1005,6 @@ static void *handle_request(void *arg)
 	}
 
       out:;
-	if (handler && handler->pattern && handler->locked) {
-		pthread_mutex_unlock(&singleton_mutex);
-	}
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)

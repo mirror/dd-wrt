@@ -2502,10 +2502,8 @@ struct mime_handler mime_handlers[] = {
 	// #endif
 	// #ifdef HAVE_MADWIFI
 	{"Wireless_WDS*", "text/html", no_cache, NULL, do_wds, do_auth, 1, 0, 1},
-	{"WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable,
-	 do_auth, 1, 0, 1},
-	{"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv,
-	 do_auth, 1, 0, 1},
+	{"WL_ActiveTable*", "text/html", no_cache, NULL, do_activetable, do_auth, 1, 0, 1},
+	{"Wireless_Advanced*", "text/html", no_cache, NULL, do_wireless_adv, do_auth, 1, 0, 1},
 	// #endif
 	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0, 1},
 	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0, 1},
@@ -2557,14 +2555,13 @@ struct mime_handler mime_handlers[] = {
 	{"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0, 0, 0},
 #endif
 	{"**.css", "text/css", NULL, NULL, do_file, NULL, 0, 0, 0},
-	{"**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 0},
+	{"**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
 	{"**.gif", "image/gif", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.png", "image/png", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0, 0},
-	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,
-	 0, 0, 0},
+	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL,0, 0, 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.mp3", "audio/mpeg3", NULL, NULL, do_file, NULL, 0, 0, 0},
