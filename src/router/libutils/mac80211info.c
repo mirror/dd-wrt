@@ -83,8 +83,19 @@ typedef uint32_t u32;
 #define VHT_CAP_RX_ANTENNA_PATTERN                  ((u32) BIT(28))
 #define VHT_CAP_TX_ANTENNA_PATTERN                  ((u32) BIT(29))
 
+#ifndef HAVE_MICRO
+pthread_mutex_t mutex_unl;
+#define mutex_init() pthread_init_mutex(&mutex_unl,NULL);
+#define lock() pthread_mutex_lock(&mutex_unl);
+#define unlock() pthread_mutex_unlock(&mutex_unl);
+#else
+#define mutex_init()
+#define lock();
+#define unlock();
+#endif
+
 struct unl unl;
-bool bunl;
+bool bunl = false;
 
 static void print_wifi_clients(struct wifi_client_info *wci);
 void free_wifi_clients(struct wifi_client_info *wci);
@@ -93,6 +104,7 @@ static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 
 static void __attribute__((constructor)) mac80211_init(void)
 {
+	mutex_init();
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
 		bunl = 1;
@@ -207,20 +219,25 @@ out:
 
 static void getNoise_mac80211_internal(char *interface, struct mac80211_info *mac80211_info)
 {
+	lock();
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
+	unlock();
+	nlmsg_free(msg);
 	return;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return;
 }
 
 int getNoise_mac80211(char *interface)
 {
+	lock();
 	struct nl_msg *msg;
 	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
@@ -229,10 +246,13 @@ int getNoise_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	unlock();
+	nlmsg_free(msg);
 	return mac80211_info.noise;
 
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return (-199);
 }
 
@@ -393,6 +413,7 @@ unsigned int get_ath10kdistance(char *ifname)
 #if 0
 int getFrequency_mac80211(char *interface)
 {
+	lock();
 	struct nl_msg *msg;
 	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
@@ -400,9 +421,12 @@ int getFrequency_mac80211(char *interface)
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);
+	unlock();
+	nlmsg_free(msg);
 	return mac80211_info.frequency;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return (0);
 }
 #endif
@@ -413,24 +437,33 @@ int mac80211_get_coverageclass(char *interface)
 	struct genlmsghdr *gnlh;
 	int phy;
 	unsigned char coverage = 0;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
-	if (phy == -1)
+	if (phy == -1) {
+		unlock();
 		return 0;
+	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
-	if (!msg)
+	}
+	if (!msg) {
+		unlock();
 		return 0;
+	}
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]) {
 		coverage = nla_get_u8(tb[NL80211_ATTR_WIPHY_COVERAGE_CLASS]);
 	}
 	nlmsg_free(msg);
+	unlock();
 	return coverage;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -761,14 +794,18 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 	u32 cap;
 	char *capstring = NULL;
 	int phy;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
+		unlock();
 		return strdup("");
 	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return "";
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -810,6 +847,7 @@ char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, 
 out:
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	if (!capstring)
 		return strdup("");
 	return capstring;
@@ -944,15 +982,19 @@ int mac80211_check_band(char *interface, int checkband)
 	int rem, rem2, freq_mhz;
 	int phy;
 	int bandfound = 0;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
 	if (phy == -1) {
+		unlock();
 		return 0;
 	}
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -974,9 +1016,11 @@ int mac80211_check_band(char *interface, int checkband)
 		}
 	}
 	nlmsg_free(msg);
+	unlock();
 	return bandfound;
 out:
 nla_put_failure:
+	unlock();
 	nlmsg_free(msg);
 	return 0;
 }
@@ -1032,14 +1076,14 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			if (chan->freq == -1)
 				break;
 			if (chan->luu && !isinlist(list, chan->freq, chan->freq - (distance << a), bw)) {
-			//	fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
+				//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40minus / luu / ul\n", chan->freq, debugstr[a], chan->freq - (distance << a));
 				chan->luu = 0;
 				chan->lul = 0;
 				chan->llu = 0;
 				chan->lll = 0;
 			}
 			if (chan->ull && !isinlist(list, chan->freq, chan->freq + (distance << a), bw)) {
-			//	fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
+				//      fprintf(stderr, "freq %d has no %s parent at %d, disable ht40plus / ull /lu\n", chan->freq, debugstr[a], chan->freq + (distance << a));
 				chan->ull = 0;
 				chan->ulu = 0;
 				chan->uul = 0;
@@ -1078,13 +1122,13 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			}
 			if (a == 2) {
 				if (chan->lul && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1))), bw)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable lul / ll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1))));
 					chan->lul = 0;
 					chan->llu = 0;
 					chan->lll = 0;
 				}
 				if (chan->ulu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1))), bw)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable ulu / uu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1))));
 					chan->ulu = 0;
 					chan->uul = 0;
 					chan->uuu = 0;
@@ -1092,21 +1136,21 @@ static void check_validchannels(struct wifi_channels *list, int bw)
 			}
 			if (a == 3) {
 				if (chan->llu && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 2))), 160)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable llu\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->llu = 0;
 					chan->lll = 0;
 				}
 				if (chan->uul && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 2))), 160)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable uul\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uul = 0;
 					chan->uuu = 0;
 				}
 				if (chan->lll && !isinlist(list, chan->freq, chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable lll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable lll\n", chan->freq, debugstr[a - 1], chan->freq - ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->lll = 0;
 				}
 				if (chan->uuu && !isinlist(list, chan->freq, chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))), 160)) {
-				//	fprintf(stderr, "freq %d has no %s parent at %d, disable uuu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
+					//      fprintf(stderr, "freq %d has no %s parent at %d, disable uuu\n", chan->freq, debugstr[a - 1], chan->freq + ((distance << a) + (distance << (a - 1)) + (distance << (a - 2))));
 					chan->uuu = 0;
 
 				}
@@ -1148,9 +1192,12 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 	if (has_ad(interface)) {
 		return ghz60channels;
 	}
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
-	if (phy == -1)
+	if (phy == -1) {
+		unlock();
 		return NULL;
+	}
 #ifdef HAVE_SUPERCHANNEL
 	sprintf(sc, "%s_regulatory", interface);
 	if (issuperchannel()
@@ -1161,16 +1208,23 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 #endif
 	rd = mac80211_get_regdomain(country);
 	// for now just leave 
-	if (rd == NULL)
+	if (rd == NULL) {
+		unlock();
 		return list;
+	}
+
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return NULL;
+	}
+
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands) {
 		goto out;
 	}
+
 	for (run = 0; run < 2; run++) {
 		if (run == 1) {
 			list = (struct wifi_channels *)calloc(sizeof(struct wifi_channels) * (chancount + 1), 1);
@@ -1178,19 +1232,15 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 		nla_for_each_nested(band, bands, rem) {
 
 			nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(band), nla_len(band), NULL);
-
 			if (tb_band[NL80211_BAND_ATTR_HT_CAPA]) {
 				__u16 cap = nla_get_u16(tb_band[NL80211_BAND_ATTR_HT_CAPA]);
-
 				if (cap & BIT(1))
 					width_40 = true;
 			}
 
 			if (tb_band[NL80211_BAND_ATTR_VHT_CAPA]) {
 				__u32 capa;
-
 				width_80 = true;
-
 				capa = nla_get_u32(tb_band[NL80211_BAND_ATTR_VHT_CAPA]);
 				switch ((capa >> 2) & 3) {
 				case 2:
@@ -1219,10 +1269,8 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 					range = max_bandwidth_khz / 2;
 				freq_mhz = (int)nla_get_u32(tb[NL80211_FREQUENCY_ATTR_FREQ]);
 				int eirp = 0;
-
 				if (tb[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] && !tb[NL80211_FREQUENCY_ATTR_DISABLED])
 					eirp = nla_get_u32(tb[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]);
-
 				if (skip == 0)
 					rrdcount = 1;
 				else
@@ -1257,7 +1305,6 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 						starthighbound = 5350000;
 						stophighbound = 5350000;
 						stoplowbound = 2700000;
-
 						break;
 					case 2:
 						startlowbound = 5350000;
@@ -1311,12 +1358,10 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 								continue;
 							if (checkband == 5 && freq_mhz < 4000)
 								continue;
-
 							if (max_bandwidth_khz > regmaxbw)
 								continue;
 							list[count].channel = ieee80211_mhz2ieee(freq_mhz);
 							list[count].freq = freq_mhz;
-
 							// todo: wenn wir das ueberhaupt noch verwenden
 							list[count].noise = 0;
 							list[count].max_eirp = regpower.max_eirp / 100;
@@ -1399,15 +1444,18 @@ struct wifi_channels *mac80211_get_channels(char *interface, char *country, int 
 			}
 		}
 	}
+
 	list[count].freq = -1;
 	if (rd)
 		free(rd);
 	nlmsg_free(msg);
 	check_validchannels(list, max_bandwidth_khz);
+	unlock();
 	return list;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return NULL;
 }
 
@@ -1485,7 +1533,7 @@ static int get_max_mcs_index(const __u8 *mcs)
 		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
-		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
 		if (!mcs_rate_idx_set)
 			continue;
 		if (prev_bit != mcs_bit - 1) {
@@ -1508,10 +1556,10 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
+	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	if (tx_mcs_set_defined) {
 		if (tx_mcs_set_equal) {
@@ -1562,13 +1610,18 @@ int mac80211_get_maxrate(char *interface)
 					       .type = NLA_U32},[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = {
 													     .type = NLA_FLAG},
 	};
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
-	if (phy == -1)
+	if (phy == -1) {
+		unlock();
 		return 0;
+	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -1584,10 +1637,12 @@ int mac80211_get_maxrate(char *interface)
 		}
 	}
 	nlmsg_free(msg);
+	unlock();
 	return maxrate;
 out:
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -1599,13 +1654,18 @@ int mac80211_get_maxmcs(char *interface)
 	int rem;
 	int phy;
 	int maxmcs = 0;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
-	if (phy == -1)
+	if (phy == -1) {
+		unlock();
 		return 0;
+	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -1616,11 +1676,14 @@ int mac80211_get_maxmcs(char *interface)
 			maxmcs = get_ht_mcs(nla_data(tb[NL80211_BAND_ATTR_HT_MCS_SET]));
 	}
 	nlmsg_free(msg);
+	unlock();
 	return maxmcs;
 out:
+	unlock();
 	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -1632,13 +1695,18 @@ int mac80211_get_maxvhtmcs(char *interface)
 	int rem;
 	int phy;
 	int maxmcs = -1;
+	lock();
 	phy = mac80211_get_phyidx_by_vifname(interface);
-	if (phy == -1)
+	if (phy == -1) {
+		unlock();
 		return 0;
+	}
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
+	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
 		goto out;
@@ -1648,11 +1716,14 @@ int mac80211_get_maxvhtmcs(char *interface)
 			maxmcs = get_vht_mcs(nla_get_u32(tb[NL80211_BAND_ATTR_VHT_CAPA]), nla_data(tb[NL80211_BAND_ATTR_VHT_MCS_SET]));
 	}
 	nlmsg_free(msg);
+	unlock();
 	return maxmcs;
 out:
+	unlock();
 	return 0;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return 0;
 }
 
@@ -1661,9 +1732,12 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	struct nl_msg *msg;
 	if (tx_ant == 0 || rx_ant == 0)
 		return;
+	lock();
 	msg = unl_genl_msg(&unl, NL80211_CMD_SET_WIPHY, false);
-	if (!msg)
+	if (!msg) {
+		unlock();
 		return;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (isap8x() && tx_ant == 5)
 		tx_ant = 3;
@@ -1672,8 +1746,11 @@ void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_TX, tx_ant);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_ANTENNA_RX, rx_ant);
 	unl_genl_request(&unl, msg, NULL, NULL);
+	nlmsg_free(msg);
+	unlock();
 	return;
       nla_put_failure:nlmsg_free(msg);
+	unlock();
 	return;
 }
 
@@ -1683,12 +1760,17 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
 	int ret = 0;
+	lock();
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_WIPHY, false);
-	if (!msg)
+	if (!msg) {
+		unlock();
 		return 0;
+	}
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return 0;
+	}
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
 	if (which == 0 && direction == 0) {
@@ -1711,8 +1793,10 @@ static int mac80211_get_antennas(int phy, int which, int direction)
 			ret = ((int)nla_get_u32(tb[NL80211_ATTR_WIPHY_ANTENNA_RX]));
 	}
 	nlmsg_free(msg);
+	unlock();
 	return ret;
 nla_put_failure:
+	unlock();
 	nlmsg_free(msg);
 	return 0;
 }
@@ -1754,33 +1838,35 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 	struct genlmsghdr *gnlh;
 	int ret = 0;
 	struct wifi_interface *interface = NULL;
+	lock();
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_INTERFACE, false);
-	if (!msg)
+	if (!msg) {
+		unlock();
 		return NULL;
+	}
 	if (has_ad(dev))
 		dev = "giwifi";
 	int devidx = if_nametoindex(dev);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, devidx);
-	if (unl_genl_request_single(&unl, msg, &msg) < 0)
+	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
+		unlock();
 		return NULL;
+	}
 
 	gnlh = nlmsg_data(nlmsg_hdr(msg));
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-
 	if (tb_msg[NL80211_ATTR_WIPHY_FREQ]) {
 		interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
 		interface->freq = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_FREQ]);
 		interface->width = 2;
 		interface->center1 = -1;
 		interface->center2 = -1;
-
 		if (tb_msg[NL80211_ATTR_CHANNEL_WIDTH]) {
 
 			if (tb_msg[NL80211_ATTR_CENTER_FREQ1])
 				interface->center1 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ1]);
 			if (tb_msg[NL80211_ATTR_CENTER_FREQ2])
 				interface->center2 = nla_get_u32(tb_msg[NL80211_ATTR_CENTER_FREQ2]);
-
 			switch (nla_get_u32(tb_msg[NL80211_ATTR_CHANNEL_WIDTH])) {
 			case NL80211_CHAN_WIDTH_20_NOHT:
 				interface->width = 2;
@@ -1816,7 +1902,6 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 
 		} else if (tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]) {
 			enum nl80211_channel_type channel_type;
-
 			channel_type = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY_CHANNEL_TYPE]);
 			switch (channel_type) {
 			case NL80211_CHAN_NO_HT:
@@ -1840,9 +1925,11 @@ struct wifi_interface *mac80211_get_interface(char *dev)
 
 	}
 	nlmsg_free(msg);
+	unlock();
 	return interface;
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return interface;
 }
 

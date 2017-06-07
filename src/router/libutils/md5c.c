@@ -36,10 +36,10 @@ void FAST_FUNC md5_begin(md5_ctx_t * ctx)
  * (as found in Colin Plumbs public domain implementation).
  * #define FF(b, c, d) ((b & c) | (~b & d))
  */
-# define FF(b, c, d) (d ^ (b & (c ^ d)))
-# define FG(b, c, d) FF (d, b, c)
-# define FH(b, c, d) (b ^ c ^ d)
-# define FI(b, c, d) (c ^ (b | ~d))
+#define FF(b, c, d) (d ^ (b & (c ^ d)))
+#define FG(b, c, d) FF (d, b, c)
+#define FH(b, c, d) (b ^ c ^ d)
+#define FI(b, c, d) (c ^ (b | ~d))
 
 /* Hash a single block, 64 bytes long and 4-byte aligned. */
 static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
@@ -47,7 +47,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	uint32_t correct_words[16];
 	const uint32_t *words = buffer;
 
-# if MD5_SIZE_VS_SPEED > 0
+#if MD5_SIZE_VS_SPEED > 0
 	static const uint32_t C_array[] = {
 		/* round 1 */
 		0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
@@ -72,23 +72,23 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	};
 
 	static const char P_array[] ALIGN1 = {
-#  if MD5_SIZE_VS_SPEED > 1
+#if MD5_SIZE_VS_SPEED > 1
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,	/* 1 */
-#  endif			/* MD5_SIZE_VS_SPEED > 1 */
+#endif				/* MD5_SIZE_VS_SPEED > 1 */
 		1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12,	/* 2 */
 		5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2,	/* 3 */
 		0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9	/* 4 */
 	};
 
-#  if MD5_SIZE_VS_SPEED > 1
+#if MD5_SIZE_VS_SPEED > 1
 	static const char S_array[] ALIGN1 = {
 		7, 12, 17, 22,
 		5, 9, 14, 20,
 		4, 11, 16, 23,
 		6, 10, 15, 21
 	};
-#  endif			/* MD5_SIZE_VS_SPEED > 1 */
-# endif
+#endif				/* MD5_SIZE_VS_SPEED > 1 */
+#endif
 
 	uint32_t A = ctx->A;
 	uint32_t B = ctx->B;
@@ -103,8 +103,8 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	uint32_t C_save = C;
 	uint32_t D_save = D;
 
-# if MD5_SIZE_VS_SPEED > 1
-#  define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
+#if MD5_SIZE_VS_SPEED > 1
+#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
 
 	const uint32_t *pc;
 	const char *pp;
@@ -117,7 +117,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	}
 	words += 16;
 
-#  if MD5_SIZE_VS_SPEED > 2
+#if MD5_SIZE_VS_SPEED > 2
 	pc = C_array;
 	pp = P_array;
 	ps = S_array - 4;
@@ -147,7 +147,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 		C = B;
 		B = temp;
 	}
-#  else
+#else
 	pc = C_array;
 	pp = P_array;
 	ps = S_array;
@@ -193,8 +193,8 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 		B = temp;
 	}
 
-#  endif			/* MD5_SIZE_VS_SPEED > 2 */
-# else
+#endif				/* MD5_SIZE_VS_SPEED > 2 */
+#else
 	/* First round: using the given function, the context and a constant
 	   the next context is computed.  Because the algorithms processing
 	   unit is a 32-bit word and it is determined to work on words in
@@ -202,7 +202,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	   before the computation.  To reduce the work for the next steps
 	   we store the swapped words in the array CORRECT_WORDS.  */
 
-#  define OP(a, b, c, d, s, T) \
+#define OP(a, b, c, d, s, T) \
 	do { \
 		a += FF (b, c, d) + (*cwp++ = SWAP_LE32(*words)) + T; \
 		++words; \
@@ -213,7 +213,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	/* It is unfortunate that C does not provide an operator for
 	   cyclic rotation.  Hope the C compiler is smart enough.  */
 	/* gcc 2.95.4 seems to be --aaronl */
-#  define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
+#define CYCLIC(w, s) (w = (w << s) | (w >> (32 - s)))
 
 	/* Before we start, one word to the strange constants.
 	   They are defined in RFC 1321 as
@@ -221,14 +221,14 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	   T[i] = (int) (4294967296.0 * fabs (sin (i))), i=1..64
 	 */
 
-#  if MD5_SIZE_VS_SPEED == 1
+#if MD5_SIZE_VS_SPEED == 1
 	const uint32_t *pc;
 	const char *pp;
 	int i;
-#  endif			/* MD5_SIZE_VS_SPEED */
+#endif				/* MD5_SIZE_VS_SPEED */
 
 	/* Round 1.  */
-#  if MD5_SIZE_VS_SPEED == 1
+#if MD5_SIZE_VS_SPEED == 1
 	pc = C_array;
 	for (i = 0; i < 4; i++) {
 		OP(A, B, C, D, 7, *pc++);
@@ -236,7 +236,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 		OP(C, D, A, B, 17, *pc++);
 		OP(B, C, D, A, 22, *pc++);
 	}
-#  else
+#else
 	OP(A, B, C, D, 7, 0xd76aa478);
 	OP(D, A, B, C, 12, 0xe8c7b756);
 	OP(C, D, A, B, 17, 0x242070db);
@@ -253,13 +253,13 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	OP(D, A, B, C, 12, 0xfd987193);
 	OP(C, D, A, B, 17, 0xa679438e);
 	OP(B, C, D, A, 22, 0x49b40821);
-#  endif			/* MD5_SIZE_VS_SPEED == 1 */
+#endif				/* MD5_SIZE_VS_SPEED == 1 */
 
 	/* For the second to fourth round we have the possibly swapped words
 	   in CORRECT_WORDS.  Redefine the macro to take an additional first
 	   argument specifying the function to use.  */
-#  undef OP
-#  define OP(f, a, b, c, d, k, s, T) \
+#undef OP
+#define OP(f, a, b, c, d, k, s, T) \
 	do { \
 		a += f (b, c, d) + correct_words[k] + T; \
 		CYCLIC (a, s); \
@@ -267,7 +267,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	} while (0)
 
 	/* Round 2.  */
-#  if MD5_SIZE_VS_SPEED == 1
+#if MD5_SIZE_VS_SPEED == 1
 	pp = P_array;
 	for (i = 0; i < 4; i++) {
 		OP(FG, A, B, C, D, (int)(*pp++), 5, *pc++);
@@ -275,7 +275,7 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 		OP(FG, C, D, A, B, (int)(*pp++), 14, *pc++);
 		OP(FG, B, C, D, A, (int)(*pp++), 20, *pc++);
 	}
-#  else
+#else
 	OP(FG, A, B, C, D, 1, 5, 0xf61e2562);
 	OP(FG, D, A, B, C, 6, 9, 0xc040b340);
 	OP(FG, C, D, A, B, 11, 14, 0x265e5a51);
@@ -292,17 +292,17 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	OP(FG, D, A, B, C, 2, 9, 0xfcefa3f8);
 	OP(FG, C, D, A, B, 7, 14, 0x676f02d9);
 	OP(FG, B, C, D, A, 12, 20, 0x8d2a4c8a);
-#  endif			/* MD5_SIZE_VS_SPEED == 1 */
+#endif				/* MD5_SIZE_VS_SPEED == 1 */
 
 	/* Round 3.  */
-#  if MD5_SIZE_VS_SPEED == 1
+#if MD5_SIZE_VS_SPEED == 1
 	for (i = 0; i < 4; i++) {
 		OP(FH, A, B, C, D, (int)(*pp++), 4, *pc++);
 		OP(FH, D, A, B, C, (int)(*pp++), 11, *pc++);
 		OP(FH, C, D, A, B, (int)(*pp++), 16, *pc++);
 		OP(FH, B, C, D, A, (int)(*pp++), 23, *pc++);
 	}
-#  else
+#else
 	OP(FH, A, B, C, D, 5, 4, 0xfffa3942);
 	OP(FH, D, A, B, C, 8, 11, 0x8771f681);
 	OP(FH, C, D, A, B, 11, 16, 0x6d9d6122);
@@ -319,17 +319,17 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	OP(FH, D, A, B, C, 12, 11, 0xe6db99e5);
 	OP(FH, C, D, A, B, 15, 16, 0x1fa27cf8);
 	OP(FH, B, C, D, A, 2, 23, 0xc4ac5665);
-#  endif			/* MD5_SIZE_VS_SPEED == 1 */
+#endif				/* MD5_SIZE_VS_SPEED == 1 */
 
 	/* Round 4.  */
-#  if MD5_SIZE_VS_SPEED == 1
+#if MD5_SIZE_VS_SPEED == 1
 	for (i = 0; i < 4; i++) {
 		OP(FI, A, B, C, D, (int)(*pp++), 6, *pc++);
 		OP(FI, D, A, B, C, (int)(*pp++), 10, *pc++);
 		OP(FI, C, D, A, B, (int)(*pp++), 15, *pc++);
 		OP(FI, B, C, D, A, (int)(*pp++), 21, *pc++);
 	}
-#  else
+#else
 	OP(FI, A, B, C, D, 0, 6, 0xf4292244);
 	OP(FI, D, A, B, C, 7, 10, 0x432aff97);
 	OP(FI, C, D, A, B, 14, 15, 0xab9423a7);
@@ -346,8 +346,8 @@ static void md5_hash_block(const void *buffer, md5_ctx_t * ctx)
 	OP(FI, D, A, B, C, 11, 10, 0xbd3af235);
 	OP(FI, C, D, A, B, 2, 15, 0x2ad7d2bb);
 	OP(FI, B, C, D, A, 9, 21, 0xeb86d391);
-#  endif			/* MD5_SIZE_VS_SPEED == 1 */
-# endif				/* MD5_SIZE_VS_SPEED > 1 */
+#endif				/* MD5_SIZE_VS_SPEED == 1 */
+#endif				/* MD5_SIZE_VS_SPEED > 1 */
 
 	/* Add the starting values of the context.  */
 	A += A_save;
