@@ -2532,18 +2532,18 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 		switch (state) {
 		case 1:
-			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 			break;
 		case -1:
-			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+			websWrite(wp, "%s", live_translate("share.unknown"));
 			break;
 		default:	// 1: software disabled, 2: hardware
 			// disabled, 3: both are disabled
-			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
 			break;
 		}
 	} else {
-		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+		websWrite(wp, "%s", live_translate("share.unknown"));
 	}
 #elif HAVE_RT2880
 
@@ -2551,14 +2551,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 	switch (state) {
 	case 1:
-		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
+		websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 		break;
 	case -1:
-		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+		websWrite(wp, "%s", live_translate("share.unknown"));
 		break;
 	default:		// 1: software disabled, 2: hardware
 		// disabled, 3: both are disabled
-		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
+		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
 		break;
 	}
 #else
@@ -2566,14 +2566,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 	if (!strcmp(wifi, "wl1")) {
 		char status[16];
 		if (!rpc_qtn_ready()) {
-			websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+			websWrite(wp, "%s", live_translate("share.unknown"));
 			return;
 		}
 		qcsapi_interface_get_status("wifi0", status);
 		if (!strcmp(status, "Up"))
-			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 		else
-			websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
+			websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
 		return;
 	}
 #endif
@@ -2587,14 +2587,14 @@ void ej_get_radio_state(webs_t wp, int argc, char_t ** argv)
 
 	switch ((radiooff & WL_RADIO_SW_DISABLE)) {
 	case 0:
-		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_on"));
+		websWrite(wp, "%s", live_translate("wl_basic.radio_on"));
 		break;
 	case -1:
-		websWrite(wp, "%s", tran_string(buf, "share.unknown"));
+		websWrite(wp, "%s", live_translate("share.unknown"));
 		break;
 	default:		// 1: software disabled, 2: hardware
 		// disabled, 3: both are disabled
-		websWrite(wp, "%s", tran_string(buf, "wl_basic.radio_off"));
+		websWrite(wp, "%s", live_translate("wl_basic.radio_off"));
 		break;
 	}
 #endif
