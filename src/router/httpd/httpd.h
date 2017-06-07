@@ -108,6 +108,7 @@ struct mime_handler {
 	int (*auth) (webs_t wp, int (*auth_check) (webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
+	unsigned char locked;
 };
 
 #define METHOD_INVALID 0
