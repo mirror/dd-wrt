@@ -37,13 +37,13 @@ extern struct unl unl;
 extern bool bunl;
 #ifndef HAVE_MICRO
 extern pthread_mutex_t mutex_unl;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
-#define lock() pthread_mutex_lock(&mutex_unl);
-#define unlock() pthread_mutex_unlock(&mutex_unl);
+#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
 #else
 #define mutex_init()
-#define lock();
-#define unlock();
+#define lock()
+#define unlock()
 #endif
 
 
