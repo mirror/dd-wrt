@@ -2450,7 +2450,7 @@ void ej_show_openvpn_status(webs_t wp, int argc, char_t ** argv)
 	pclose(in);
 	websWrite(wp, "</fieldset><br />");
 	websWrite(wp, "<fieldset>\n<legend><script type=\"text/javascript\">Capture(log.legend)</script></legend>\n");
-	in = fopen("/etc/openvpnlog.sh", "r");
+	in = popen("/etc/openvpnlog.sh", "r");
 	while ((len = fread(buffer, 1, 4095, in)) == 4095) {
 		buffer[len] = 0;
 		wfputs(buffer, wp);
