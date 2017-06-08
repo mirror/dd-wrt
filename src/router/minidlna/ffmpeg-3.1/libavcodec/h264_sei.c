@@ -28,7 +28,7 @@
 #include "avcodec.h"
 #include "get_bits.h"
 #include "golomb.h"
-#include "h264.h"
+#include "h264_ps.h"
 #include "h264_sei.h"
 #include "internal.h"
 
@@ -45,6 +45,7 @@ void ff_h264_sei_uninit(H264SEIContext *h)
     h->picture_timing.dpb_output_delay  = 0;
     h->picture_timing.cpb_removal_delay = -1;
 
+    h->picture_timing.present      = 0;
     h->buffering_period.present    = 0;
     h->frame_packing.present       = 0;
     h->display_orientation.present = 0;
@@ -119,6 +120,8 @@ static int decode_picture_timing(H264SEIPictureTiming *h, GetBitContext *gb,
         av_log(logctx, AV_LOG_DEBUG, "ct_type:%X pic_struct:%d\n",
                h->ct_type, h->pic_struct);
     }
+
+    h->present = 1;
     return 0;
 }
 
@@ -278,7 +281,7 @@ static int decode_buffering_period(H264SEIBufferingPeriod *h, GetBitContext *gb,
 {
     unsigned int sps_id;
     int sched_sel_idx;
-    SPS *sps;
+    const SPS *sps;
 
     sps_id = get_ue_golomb_31(gb);
     if (sps_id > 31 || !ps->sps_list[sps_id]) {
@@ -286,7 +289,7 @@ static int decode_buffering_period(H264SEIBufferingPeriod *h, GetBitContext *gb,
                "non-existing SPS %d referenced in buffering period\n", sps_id);
         return sps_id > 31 ? AVERROR_INVALIDDATA : AVERROR_PS_NOT_FOUND;
     }
-    sps = (SPS*)ps->sps_list[sps_id]->data;
+    sps = (const SPS*)ps->sps_list[sps_id]->data;
 
     // NOTE: This is really so duplicated in the standard... See H.264, D.1.1
     if (sps->nal_hrd_parameters_present_flag) {

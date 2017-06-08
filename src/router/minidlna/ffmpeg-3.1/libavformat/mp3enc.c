@@ -111,6 +111,8 @@ typedef struct MP3Context {
     uint64_t bag[XING_NUM_BAGS];
     int initial_bitrate;
     int has_variable_bitrate;
+    int delay;
+    int padding;
 
     /* index of the audio stream */
     int audio_stream_idx;
@@ -142,7 +144,7 @@ static int mp3_write_xing(AVFormatContext *s)
     int ver = 0;
     int bytes_needed;
 
-    if (!s->pb->seekable || !mp3->write_xing)
+    if (!(s->pb->seekable & AVIO_SEEKABLE_NORMAL) || !mp3->write_xing)
         return 0;
 
     for (i = 0; i < FF_ARRAY_ELEMS(avpriv_mpa_freq_tab); i++) {
@@ -247,12 +249,7 @@ static int mp3_write_xing(AVFormatContext *s)
     ffio_fill(dyn_ctx, 0, 8); // empty replaygain fields
     avio_w8(dyn_ctx, 0);      // unknown encoding flags
     avio_w8(dyn_ctx, 0);      // unknown abr/minimal bitrate
-
-    // encoder delay
-    if (par->initial_padding - 528 - 1 >= 1 << 12) {
-        av_log(s, AV_LOG_WARNING, "Too many samples of initial padding.\n");
-    }
-    avio_wb24(dyn_ctx, FFMAX(par->initial_padding - 528 - 1, 0)<<12);
+    avio_wb24(dyn_ctx, 0);    // empty encoder delay/padding
 
     avio_w8(dyn_ctx,   0); // misc
     avio_w8(dyn_ctx,   0); // mp3gain
@@ -322,7 +319,7 @@ static int mp3_write_audio_packet(AVFormatContext *s, AVPacket *pkt)
             if ((mpah.bit_rate == 0) || (mp3->initial_bitrate != mpah.bit_rate))
                 mp3->has_variable_bitrate = 1;
         } else {
-            av_log(s, AV_LOG_WARNING, "Audio packet of size %d (starting with %08X...) "
+            av_log(s, AV_LOG_WARNING, "Audio packet of size %d (starting with %08"PRIX32"...) "
                    "is invalid, writing it anyway.\n", pkt->size, h);
         }
 
@@ -345,10 +342,24 @@ static int mp3_write_audio_packet(AVFormatContext *s, AVPacket *pkt)
 #endif
 
         if (mp3->xing_offset) {
+            uint8_t *side_data = NULL;
+            int side_data_size = 0;
+
             mp3_xing_add_frame(mp3, pkt);
             mp3->audio_size += pkt->size;
             mp3->audio_crc   = av_crc(av_crc_get_table(AV_CRC_16_ANSI_LE),
                                       mp3->audio_crc, pkt->data, pkt->size);
+
+            side_data = av_packet_get_side_data(pkt,
+                                                AV_PKT_DATA_SKIP_SAMPLES,
+                                                &side_data_size);
+            if (side_data && side_data_size >= 10) {
+                mp3->padding = FFMAX(AV_RL32(side_data + 4) + 528 + 1, 0);
+                if (!mp3->delay)
+                    mp3->delay =  FFMAX(AV_RL32(side_data) - 528 - 1, 0);
+            } else {
+                mp3->padding = 0;
+            }
         }
     }
 
@@ -422,6 +433,17 @@ static void mp3_update_xing(AVFormatContext *s)
         }
     }
 
+    /* write encoder delay/padding */
+    if (mp3->delay >= 1 << 12) {
+        mp3->delay = (1 << 12) - 1;
+        av_log(s, AV_LOG_WARNING, "Too many samples of initial padding.\n");
+    }
+    if (mp3->padding >= 1 << 12) {
+        mp3->padding = (1 << 12) - 1;
+        av_log(s, AV_LOG_WARNING, "Too many samples of trailing padding.\n");
+    }
+    AV_WB24(mp3->xing_frame + mp3->xing_offset + 141, (mp3->delay << 12) + mp3->padding);
+
     AV_WB32(mp3->xing_frame + mp3->xing_offset + XING_SIZE - 8, mp3->audio_size);
     AV_WB16(mp3->xing_frame + mp3->xing_offset + XING_SIZE - 4, mp3->audio_crc);
 
@@ -467,21 +489,6 @@ static int query_codec(enum AVCodecID id, int std_compliance)
     }
     return -1;
 }
-
-#if CONFIG_MP2_MUXER
-AVOutputFormat ff_mp2_muxer = {
-    .name              = "mp2",
-    .long_name         = NULL_IF_CONFIG_SMALL("MP2 (MPEG audio layer 2)"),
-    .mime_type         = "audio/mpeg",
-    .extensions        = "mp2,m2a,mpa",
-    .audio_codec       = AV_CODEC_ID_MP2,
-    .video_codec       = AV_CODEC_ID_NONE,
-    .write_packet      = ff_raw_write_packet,
-    .flags             = AVFMT_NOTIMESTAMPS,
-};
-#endif
-
-#if CONFIG_MP3_MUXER
 
 static const AVOption options[] = {
     { "id3v2_version", "Select ID3v2 version to write. Currently 3 and 4 are supported.",
@@ -630,4 +637,3 @@ AVOutputFormat ff_mp3_muxer = {
     .flags             = AVFMT_NOTIMESTAMPS,
     .priv_class        = &mp3_muxer_class,
 };
-#endif

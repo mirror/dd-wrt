@@ -226,6 +226,7 @@ typedef struct OMXCodecContext {
     int output_buf_size;
 
     int input_zerocopy;
+    int profile;
 } OMXCodecContext;
 
 static void append_buffer(pthread_mutex_t *mutex, pthread_cond_t *cond,
@@ -352,12 +353,12 @@ static av_cold int find_component(OMXContext *omx_context, void *logctx,
         av_log(logctx, AV_LOG_WARNING, "No component for role %s found\n", role);
         return AVERROR_ENCODER_NOT_FOUND;
     }
-    components = av_mallocz(sizeof(char*) * num);
+    components = av_mallocz_array(num, sizeof(*components));
     if (!components)
         return AVERROR(ENOMEM);
     for (i = 0; i < num; i++) {
         components[i] = av_mallocz(OMX_MAX_STRINGNAME_SIZE);
-        if (!components) {
+        if (!components[i]) {
             ret = AVERROR(ENOMEM);
             goto end;
         }
@@ -523,6 +524,19 @@ static av_cold int omx_component_init(AVCodecContext *avctx, const char *role)
         CHECK(err);
         avc.nBFrames = 0;
         avc.nPFrames = avctx->gop_size - 1;
+        switch (s->profile == FF_PROFILE_UNKNOWN ? avctx->profile : s->profile) {
+        case FF_PROFILE_H264_BASELINE:
+            avc.eProfile = OMX_VIDEO_AVCProfileBaseline;
+            break;
+        case FF_PROFILE_H264_MAIN:
+            avc.eProfile = OMX_VIDEO_AVCProfileMain;
+            break;
+        case FF_PROFILE_H264_HIGH:
+            avc.eProfile = OMX_VIDEO_AVCProfileHigh;
+            break;
+        default:
+            break;
+        }
         err = OMX_SetParameter(s->handle, OMX_IndexParamVideoAvc, &avc);
         CHECK(err);
     }
@@ -703,7 +717,7 @@ static av_cold int omx_encode_init(AVCodecContext *avctx)
                          nals[avctx->extradata[i + 4] & 0x1f]++;
                      }
                 }
-                if (nals[NAL_SPS] && nals[NAL_PPS])
+                if (nals[H264_NAL_SPS] && nals[H264_NAL_PPS])
                     break;
             } else {
                 if (avctx->extradata_size > 0)
@@ -761,7 +775,10 @@ static int omx_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
             } else {
                 // If not, we need to allocate a new buffer with the right
                 // size and copy the input frame into it.
-                uint8_t *buf = av_malloc(av_image_get_buffer_size(avctx->pix_fmt, s->stride, s->plane_size, 1));
+                uint8_t *buf = NULL;
+                int image_buffer_size = av_image_get_buffer_size(avctx->pix_fmt, s->stride, s->plane_size, 1);
+                if (image_buffer_size >= 0)
+                    buf = av_malloc(image_buffer_size);
                 if (!buf) {
                     // Return the buffer to the queue so it's not lost
                     append_buffer(&s->input_mutex, &s->input_cond, &s->num_free_in_buffers, s->free_in_buffers, buffer);
@@ -881,6 +898,10 @@ static const AVOption options[] = {
     { "omx_libname", "OpenMAX library name", OFFSET(libname), AV_OPT_TYPE_STRING, { 0 }, 0, 0, VDE },
     { "omx_libprefix", "OpenMAX library prefix", OFFSET(libprefix), AV_OPT_TYPE_STRING, { 0 }, 0, 0, VDE },
     { "zerocopy", "Try to avoid copying input frames if possible", OFFSET(input_zerocopy), AV_OPT_TYPE_INT, { .i64 = 0 }, 0, 1, VE },
+    { "profile",  "Set the encoding profile", OFFSET(profile), AV_OPT_TYPE_INT,   { .i64 = FF_PROFILE_UNKNOWN },       FF_PROFILE_UNKNOWN, FF_PROFILE_H264_HIGH, VE, "profile" },
+    { "baseline", "",                         0,               AV_OPT_TYPE_CONST, { .i64 = FF_PROFILE_H264_BASELINE }, 0, 0, VE, "profile" },
+    { "main",     "",                         0,               AV_OPT_TYPE_CONST, { .i64 = FF_PROFILE_H264_MAIN },     0, 0, VE, "profile" },
+    { "high",     "",                         0,               AV_OPT_TYPE_CONST, { .i64 = FF_PROFILE_H264_HIGH },     0, 0, VE, "profile" },
     { NULL }
 };
 

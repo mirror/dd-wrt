@@ -182,6 +182,11 @@ int av_parser_parse2(AVCodecParserContext *s, AVCodecContext *avctx,
     index = s->parser->parser_parse(s, avctx, (const uint8_t **) poutbuf,
                                     poutbuf_size, buf, buf_size);
     av_assert0(index > -0x20000000); // The API does not allow returning AVERROR codes
+#define FILL(name) if(s->name > 0 && avctx->name <= 0) avctx->name = s->name
+    if (avctx->codec_type == AVMEDIA_TYPE_VIDEO) {
+        FILL(field_order);
+    }
+
     /* update the file pointer */
     if (*poutbuf_size) {
         /* fill the data for the current frame */
@@ -246,7 +251,7 @@ int ff_combine_frame(ParseContext *pc, int next,
                      const uint8_t **buf, int *buf_size)
 {
     if (pc->overread) {
-        ff_dlog(NULL, "overread %d, state:%X next:%d index:%d o_index:%d\n",
+        ff_dlog(NULL, "overread %d, state:%"PRIX32" next:%d index:%d o_index:%d\n",
                 pc->overread, pc->state, next, pc->index, pc->overread_index);
         ff_dlog(NULL, "%X %X %X %X\n",
                 (*buf)[0], (*buf)[1], (*buf)[2], (*buf)[3]);
@@ -309,7 +314,7 @@ int ff_combine_frame(ParseContext *pc, int next,
     }
 
     if (pc->overread) {
-        ff_dlog(NULL, "overread %d, state:%X next:%d index:%d o_index:%d\n",
+        ff_dlog(NULL, "overread %d, state:%"PRIX32" next:%d index:%d o_index:%d\n",
                 pc->overread, pc->state, next, pc->index, pc->overread_index);
         ff_dlog(NULL, "%X %X %X %X\n",
                 (*buf)[0], (*buf)[1], (*buf)[2], (*buf)[3]);

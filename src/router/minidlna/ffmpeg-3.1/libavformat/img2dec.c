@@ -726,6 +726,7 @@ static int jpeg_probe(AVProbeData *p)
                 return 0;
             state = EOI;
             break;
+        case DQT:
         case APP0:
         case APP1:
         case APP2:
@@ -754,6 +755,8 @@ static int jpeg_probe(AVProbeData *p)
 
     if (state == EOI)
         return AVPROBE_SCORE_EXTENSION + 1;
+    if (state == SOS)
+        return AVPROBE_SCORE_EXTENSION / 2;
     return AVPROBE_SCORE_EXTENSION / 8;
 }
 
@@ -773,7 +776,7 @@ static int pcx_probe(AVProbeData *p)
     if (   p->buf_size < 128
         || b[0] != 10
         || b[1] > 5
-        || b[2] != 1
+        || b[2] > 1
         || av_popcount(b[3]) != 1 || b[3] > 8
         || AV_RL16(&b[4]) > AV_RL16(&b[8])
         || AV_RL16(&b[6]) > AV_RL16(&b[10])
@@ -819,6 +822,34 @@ static int png_probe(AVProbeData *p)
     if (AV_RB64(b) == 0x89504e470d0a1a0a)
         return AVPROBE_SCORE_MAX - 1;
     return 0;
+}
+
+static int psd_probe(AVProbeData *p)
+{
+    const uint8_t *b = p->buf;
+    int ret = 0;
+    uint16_t color_mode;
+
+    if (AV_RL32(b) == MKTAG('8','B','P','S')) {
+        ret += 1;
+    } else {
+        return 0;
+    }
+
+    if ((b[4] == 0) && (b[5] == 1)) {/* version 1 is PSD, version 2 is PSB */
+        ret += 1;
+    } else {
+        return 0;
+    }
+
+    if ((AV_RL32(b+6) == 0) && (AV_RL16(b+10) == 0))/* reserved must be 0 */
+        ret += 1;
+
+    color_mode = AV_RB16(b+24);
+    if ((color_mode <= 9) && (color_mode != 5) && (color_mode != 6))
+        ret += 1;
+
+    return AVPROBE_SCORE_EXTENSION + ret;
 }
 
 static int sgi_probe(AVProbeData *p)
@@ -912,6 +943,15 @@ static int pam_probe(AVProbeData *p)
     return pnm_magic_check(p, 7) ? pnm_probe(p) : 0;
 }
 
+static int xpm_probe(AVProbeData *p)
+{
+    const uint8_t *b = p->buf;
+
+    if (AV_RB64(b) == 0x2f2a2058504d202a && *(b+8) == '/')
+        return AVPROBE_SCORE_MAX - 1;
+    return 0;
+}
+
 #define IMAGEAUTO_DEMUXER(imgname, codecid)\
 static const AVClass imgname ## _class = {\
     .class_name = AV_STRINGIFY(imgname) " demuxer",\
@@ -946,8 +986,10 @@ IMAGEAUTO_DEMUXER(pgmyuv,  AV_CODEC_ID_PGMYUV)
 IMAGEAUTO_DEMUXER(pictor,  AV_CODEC_ID_PICTOR)
 IMAGEAUTO_DEMUXER(png,     AV_CODEC_ID_PNG)
 IMAGEAUTO_DEMUXER(ppm,     AV_CODEC_ID_PPM)
+IMAGEAUTO_DEMUXER(psd,     AV_CODEC_ID_PSD)
 IMAGEAUTO_DEMUXER(qdraw,   AV_CODEC_ID_QDRAW)
 IMAGEAUTO_DEMUXER(sgi,     AV_CODEC_ID_SGI)
 IMAGEAUTO_DEMUXER(sunrast, AV_CODEC_ID_SUNRAST)
 IMAGEAUTO_DEMUXER(tiff,    AV_CODEC_ID_TIFF)
 IMAGEAUTO_DEMUXER(webp,    AV_CODEC_ID_WEBP)
+IMAGEAUTO_DEMUXER(xpm,     AV_CODEC_ID_XPM)

@@ -33,7 +33,6 @@
 #include "bswapdsp.h"
 #include "bytestream.h"
 #include "put_bits.h"
-#include "huffyuvencdsp.h"
 #include "mathops.h"
 #include "utvideo.h"
 #include "huffman.h"
@@ -77,6 +76,7 @@ static av_cold int utvideo_encode_init(AVCodecContext *avctx)
         c->planes        = 4;
         avctx->codec_tag = MKTAG('U', 'L', 'R', 'A');
         original_format  = UTVIDEO_RGBA;
+        avctx->bits_per_coded_sample = 32;
         break;
     case AV_PIX_FMT_YUV420P:
         if (avctx->width & 1 || avctx->height & 1) {
@@ -104,6 +104,14 @@ static av_cold int utvideo_encode_init(AVCodecContext *avctx)
             avctx->codec_tag = MKTAG('U', 'L', 'Y', '2');
         original_format  = UTVIDEO_422;
         break;
+    case AV_PIX_FMT_YUV444P:
+        c->planes        = 3;
+        if (avctx->colorspace == AVCOL_SPC_BT709)
+            avctx->codec_tag = MKTAG('U', 'L', 'H', '4');
+        else
+            avctx->codec_tag = MKTAG('U', 'L', 'Y', '4');
+        original_format  = UTVIDEO_444;
+        break;
     default:
         av_log(avctx, AV_LOG_ERROR, "Unknown pixel format: %d\n",
                avctx->pix_fmt);
@@ -111,7 +119,7 @@ static av_cold int utvideo_encode_init(AVCodecContext *avctx)
     }
 
     ff_bswapdsp_init(&c->bdsp);
-    ff_huffyuvencdsp_init(&c->hdsp);
+    ff_llvidencdsp_init(&c->llvidencdsp);
 
 #if FF_API_PRIVATE_OPT
 FF_DISABLE_DEPRECATION_WARNINGS
@@ -234,8 +242,9 @@ FF_ENABLE_DEPRECATION_WARNINGS
     return 0;
 }
 
-static void mangle_rgb_planes(uint8_t *dst[4], int dst_stride, uint8_t *src,
-                              int step, int stride, int width, int height)
+static void mangle_rgb_planes(uint8_t *dst[4], ptrdiff_t dst_stride,
+                              uint8_t *src, int step, ptrdiff_t stride,
+                              int width, int height)
 {
     int i, j;
     int k = 2 * dst_stride;
@@ -268,7 +277,7 @@ static void mangle_rgb_planes(uint8_t *dst[4], int dst_stride, uint8_t *src,
 }
 
 /* Write data to a plane with left prediction */
-static void left_predict(uint8_t *src, uint8_t *dst, int stride,
+static void left_predict(uint8_t *src, uint8_t *dst, ptrdiff_t stride,
                          int width, int height)
 {
     int i, j;
@@ -284,9 +293,12 @@ static void left_predict(uint8_t *src, uint8_t *dst, int stride,
     }
 }
 
+#undef A
+#undef B
+
 /* Write data to a plane with median prediction */
-static void median_predict(UtvideoContext *c, uint8_t *src, uint8_t *dst, int stride,
-                           int width, int height)
+static void median_predict(UtvideoContext *c, uint8_t *src, uint8_t *dst,
+                           ptrdiff_t stride, int width, int height)
 {
     int i, j;
     int A, B;
@@ -312,7 +324,7 @@ static void median_predict(UtvideoContext *c, uint8_t *src, uint8_t *dst, int st
 
     /* Rest of the coded part uses median prediction */
     for (j = 1; j < height; j++) {
-        c->hdsp.sub_hfyu_median_pred(dst, src - stride, src, width, &A, &B);
+        c->llvidencdsp.sub_median_pred(dst, src - stride, src, width, &A, &B);
         dst += width;
         src += stride;
     }
@@ -387,7 +399,7 @@ static int write_huff_codes(uint8_t *src, uint8_t *dst, int dst_size,
 }
 
 static int encode_plane(AVCodecContext *avctx, uint8_t *src,
-                        uint8_t *dst, int stride, int plane_no,
+                        uint8_t *dst, ptrdiff_t stride, int plane_no,
                         int width, int height, PutByteContext *pb)
 {
     UtvideoContext *c        = avctx->priv_data;
@@ -579,6 +591,17 @@ static int utvideo_encode_frame(AVCodecContext *avctx, AVPacket *pkt,
             }
         }
         break;
+    case AV_PIX_FMT_YUV444P:
+        for (i = 0; i < c->planes; i++) {
+            ret = encode_plane(avctx, pic->data[i], c->slice_buffer[0],
+                               pic->linesize[i], i, width, height, &pb);
+
+            if (ret) {
+                av_log(avctx, AV_LOG_ERROR, "Error encoding plane %d.\n", i);
+                return ret;
+            }
+        }
+        break;
     case AV_PIX_FMT_YUV422P:
         for (i = 0; i < c->planes; i++) {
             ret = encode_plane(avctx, pic->data[i], c->slice_buffer[0],
@@ -668,6 +691,6 @@ AVCodec ff_utvideo_encoder = {
     .capabilities   = AV_CODEC_CAP_FRAME_THREADS | AV_CODEC_CAP_INTRA_ONLY,
     .pix_fmts       = (const enum AVPixelFormat[]) {
                           AV_PIX_FMT_RGB24, AV_PIX_FMT_RGBA, AV_PIX_FMT_YUV422P,
-                          AV_PIX_FMT_YUV420P, AV_PIX_FMT_NONE
+                          AV_PIX_FMT_YUV420P, AV_PIX_FMT_YUV444P, AV_PIX_FMT_NONE
                       },
 };

@@ -26,18 +26,98 @@
 #include "avcodec.h"
 #include "libavutil/opt.h"
 #include "libavutil/avassert.h"
-#include "libavutil/atomic.h"
 #include "libavutil/avstring.h"
 #include "libavcodec/avcodec.h"
 #include "libavutil/pixdesc.h"
 #include "internal.h"
 #include <pthread.h>
+#include "h264.h"
+#include "h264_sei.h"
+#include <dlfcn.h>
 
-#if !CONFIG_VT_BT2020
-# define kCVImageBufferColorPrimaries_ITU_R_2020   CFSTR("ITU_R_2020")
-# define kCVImageBufferTransferFunction_ITU_R_2020 CFSTR("ITU_R_2020")
-# define kCVImageBufferYCbCrMatrix_ITU_R_2020      CFSTR("ITU_R_2020")
-#endif
+//These symbols may not be present
+static struct{
+    CFStringRef kCVImageBufferColorPrimaries_ITU_R_2020;
+    CFStringRef kCVImageBufferTransferFunction_ITU_R_2020;
+    CFStringRef kCVImageBufferYCbCrMatrix_ITU_R_2020;
+
+    CFStringRef kVTCompressionPropertyKey_H264EntropyMode;
+    CFStringRef kVTH264EntropyMode_CAVLC;
+    CFStringRef kVTH264EntropyMode_CABAC;
+
+    CFStringRef kVTProfileLevel_H264_Baseline_4_0;
+    CFStringRef kVTProfileLevel_H264_Baseline_4_2;
+    CFStringRef kVTProfileLevel_H264_Baseline_5_0;
+    CFStringRef kVTProfileLevel_H264_Baseline_5_1;
+    CFStringRef kVTProfileLevel_H264_Baseline_5_2;
+    CFStringRef kVTProfileLevel_H264_Baseline_AutoLevel;
+    CFStringRef kVTProfileLevel_H264_Main_4_2;
+    CFStringRef kVTProfileLevel_H264_Main_5_1;
+    CFStringRef kVTProfileLevel_H264_Main_5_2;
+    CFStringRef kVTProfileLevel_H264_Main_AutoLevel;
+    CFStringRef kVTProfileLevel_H264_High_3_0;
+    CFStringRef kVTProfileLevel_H264_High_3_1;
+    CFStringRef kVTProfileLevel_H264_High_3_2;
+    CFStringRef kVTProfileLevel_H264_High_4_0;
+    CFStringRef kVTProfileLevel_H264_High_4_1;
+    CFStringRef kVTProfileLevel_H264_High_4_2;
+    CFStringRef kVTProfileLevel_H264_High_5_1;
+    CFStringRef kVTProfileLevel_H264_High_5_2;
+    CFStringRef kVTProfileLevel_H264_High_AutoLevel;
+
+    CFStringRef kVTCompressionPropertyKey_RealTime;
+
+    CFStringRef kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder;
+    CFStringRef kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder;
+} compat_keys;
+
+#define GET_SYM(symbol, defaultVal)                                     \
+do{                                                                     \
+    CFStringRef cfstr = *(CFStringRef*)dlsym(RTLD_DEFAULT, #symbol);    \
+    if(!cfstr)                                                          \
+        compat_keys.symbol = CFSTR(defaultVal);                         \
+    else                                                                \
+        compat_keys.symbol = cfstr;                                     \
+}while(0)
+
+static pthread_once_t once_ctrl = PTHREAD_ONCE_INIT;
+
+static void loadVTEncSymbols(){
+    GET_SYM(kCVImageBufferColorPrimaries_ITU_R_2020,   "ITU_R_2020");
+    GET_SYM(kCVImageBufferTransferFunction_ITU_R_2020, "ITU_R_2020");
+    GET_SYM(kCVImageBufferYCbCrMatrix_ITU_R_2020,      "ITU_R_2020");
+
+    GET_SYM(kVTCompressionPropertyKey_H264EntropyMode, "H264EntropyMode");
+    GET_SYM(kVTH264EntropyMode_CAVLC, "CAVLC");
+    GET_SYM(kVTH264EntropyMode_CABAC, "CABAC");
+
+    GET_SYM(kVTProfileLevel_H264_Baseline_4_0,       "H264_Baseline_4_0");
+    GET_SYM(kVTProfileLevel_H264_Baseline_4_2,       "H264_Baseline_4_2");
+    GET_SYM(kVTProfileLevel_H264_Baseline_5_0,       "H264_Baseline_5_0");
+    GET_SYM(kVTProfileLevel_H264_Baseline_5_1,       "H264_Baseline_5_1");
+    GET_SYM(kVTProfileLevel_H264_Baseline_5_2,       "H264_Baseline_5_2");
+    GET_SYM(kVTProfileLevel_H264_Baseline_AutoLevel, "H264_Baseline_AutoLevel");
+    GET_SYM(kVTProfileLevel_H264_Main_4_2,           "H264_Main_4_2");
+    GET_SYM(kVTProfileLevel_H264_Main_5_1,           "H264_Main_5_1");
+    GET_SYM(kVTProfileLevel_H264_Main_5_2,           "H264_Main_5_2");
+    GET_SYM(kVTProfileLevel_H264_Main_AutoLevel,     "H264_Main_AutoLevel");
+    GET_SYM(kVTProfileLevel_H264_High_3_0,           "H264_High_3_0");
+    GET_SYM(kVTProfileLevel_H264_High_3_1,           "H264_High_3_1");
+    GET_SYM(kVTProfileLevel_H264_High_3_2,           "H264_High_3_2");
+    GET_SYM(kVTProfileLevel_H264_High_4_0,           "H264_High_4_0");
+    GET_SYM(kVTProfileLevel_H264_High_4_1,           "H264_High_4_1");
+    GET_SYM(kVTProfileLevel_H264_High_4_2,           "H264_High_4_2");
+    GET_SYM(kVTProfileLevel_H264_High_5_1,           "H264_High_5_1");
+    GET_SYM(kVTProfileLevel_H264_High_5_2,           "H264_High_5_2");
+    GET_SYM(kVTProfileLevel_H264_High_AutoLevel,     "H264_High_AutoLevel");
+
+    GET_SYM(kVTCompressionPropertyKey_RealTime, "RealTime");
+
+    GET_SYM(kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder,
+            "EnableHardwareAcceleratedVideoEncoder");
+    GET_SYM(kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder,
+            "RequireHardwareAcceleratedVideoEncoder");
+}
 
 typedef enum VT_H264Profile {
     H264_PROF_AUTO,
@@ -55,8 +135,14 @@ typedef enum VTH264Entropy{
 
 static const uint8_t start_code[] = { 0, 0, 0, 1 };
 
+typedef struct ExtraSEI {
+  void *data;
+  size_t size;
+} ExtraSEI;
+
 typedef struct BufNode {
     CMSampleBufferRef cm_buffer;
+    ExtraSEI *sei;
     struct BufNode* next;
     int error;
 } BufNode;
@@ -94,6 +180,7 @@ typedef struct VTEncContext {
     bool flushing;
     bool has_b_frames;
     bool warned_color_range;
+    bool a53_cc;
 } VTEncContext;
 
 static int vtenc_populate_extradata(AVCodecContext   *avctx,
@@ -136,7 +223,12 @@ static void set_async_error(VTEncContext *vtctx, int err)
     pthread_mutex_unlock(&vtctx->lock);
 }
 
-static int vtenc_q_pop(VTEncContext *vtctx, bool wait, CMSampleBufferRef *buf)
+static void clear_frame_queue(VTEncContext *vtctx)
+{
+    set_async_error(vtctx, 0);
+}
+
+static int vtenc_q_pop(VTEncContext *vtctx, bool wait, CMSampleBufferRef *buf, ExtraSEI **sei)
 {
     BufNode *info;
 
@@ -173,6 +265,12 @@ static int vtenc_q_pop(VTEncContext *vtctx, bool wait, CMSampleBufferRef *buf)
     pthread_mutex_unlock(&vtctx->lock);
 
     *buf = info->cm_buffer;
+    if (sei && *buf) {
+        *sei = info->sei;
+    } else if (info->sei) {
+        if (info->sei->data) av_free(info->sei->data);
+        av_free(info->sei);
+    }
     av_free(info);
 
     vtctx->frame_ct_out++;
@@ -180,7 +278,7 @@ static int vtenc_q_pop(VTEncContext *vtctx, bool wait, CMSampleBufferRef *buf)
     return 0;
 }
 
-static void vtenc_q_push(VTEncContext *vtctx, CMSampleBufferRef buffer)
+static void vtenc_q_push(VTEncContext *vtctx, CMSampleBufferRef buffer, ExtraSEI *sei)
 {
     BufNode *info = av_malloc(sizeof(BufNode));
     if (!info) {
@@ -190,6 +288,7 @@ static void vtenc_q_push(VTEncContext *vtctx, CMSampleBufferRef buffer)
 
     CFRetain(buffer);
     info->cm_buffer = buffer;
+    info->sei = sei;
     info->next = NULL;
 
     pthread_mutex_lock(&vtctx->lock);
@@ -420,6 +519,7 @@ static void vtenc_output_callback(
 {
     AVCodecContext *avctx = ctx;
     VTEncContext   *vtctx = avctx->priv_data;
+    ExtraSEI *sei = sourceFrameCtx;
 
     if (vtctx->async_error) {
         if(sample_buffer) CFRelease(sample_buffer);
@@ -440,7 +540,7 @@ static void vtenc_output_callback(
         }
     }
 
-    vtenc_q_push(vtctx, sample_buffer);
+    vtenc_q_push(vtctx, sample_buffer, sei);
 }
 
 static int get_length_code_size(
@@ -498,47 +598,66 @@ static bool get_vt_profile_level(AVCodecContext *avctx,
 
         case H264_PROF_BASELINE:
             switch (vtctx->level) {
-                case  0: *profile_level_val = kVTProfileLevel_H264_Baseline_AutoLevel; break;
+                case  0: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_AutoLevel; break;
                 case 13: *profile_level_val = kVTProfileLevel_H264_Baseline_1_3;       break;
                 case 30: *profile_level_val = kVTProfileLevel_H264_Baseline_3_0;       break;
                 case 31: *profile_level_val = kVTProfileLevel_H264_Baseline_3_1;       break;
                 case 32: *profile_level_val = kVTProfileLevel_H264_Baseline_3_2;       break;
-                case 40: *profile_level_val = kVTProfileLevel_H264_Baseline_4_0;       break;
+                case 40: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_4_0;       break;
                 case 41: *profile_level_val = kVTProfileLevel_H264_Baseline_4_1;       break;
-                case 42: *profile_level_val = kVTProfileLevel_H264_Baseline_4_2;       break;
-                case 50: *profile_level_val = kVTProfileLevel_H264_Baseline_5_0;       break;
-                case 51: *profile_level_val = kVTProfileLevel_H264_Baseline_5_1;       break;
-                case 52: *profile_level_val = kVTProfileLevel_H264_Baseline_5_2;       break;
+                case 42: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_4_2;       break;
+                case 50: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_5_0;       break;
+                case 51: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_5_1;       break;
+                case 52: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Baseline_5_2;       break;
             }
             break;
 
         case H264_PROF_MAIN:
             switch (vtctx->level) {
-                case  0: *profile_level_val = kVTProfileLevel_H264_Main_AutoLevel; break;
+                case  0: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Main_AutoLevel; break;
                 case 30: *profile_level_val = kVTProfileLevel_H264_Main_3_0;       break;
                 case 31: *profile_level_val = kVTProfileLevel_H264_Main_3_1;       break;
                 case 32: *profile_level_val = kVTProfileLevel_H264_Main_3_2;       break;
                 case 40: *profile_level_val = kVTProfileLevel_H264_Main_4_0;       break;
                 case 41: *profile_level_val = kVTProfileLevel_H264_Main_4_1;       break;
-                case 42: *profile_level_val = kVTProfileLevel_H264_Main_4_2;       break;
+                case 42: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Main_4_2;       break;
                 case 50: *profile_level_val = kVTProfileLevel_H264_Main_5_0;       break;
-                case 51: *profile_level_val = kVTProfileLevel_H264_Main_5_1;       break;
-                case 52: *profile_level_val = kVTProfileLevel_H264_Main_5_2;       break;
+                case 51: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Main_5_1;       break;
+                case 52: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_Main_5_2;       break;
             }
             break;
 
         case H264_PROF_HIGH:
             switch (vtctx->level) {
-                case  0: *profile_level_val = kVTProfileLevel_H264_High_AutoLevel; break;
-                case 30: *profile_level_val = kVTProfileLevel_H264_High_3_0;       break;
-                case 31: *profile_level_val = kVTProfileLevel_H264_High_3_1;       break;
-                case 32: *profile_level_val = kVTProfileLevel_H264_High_3_2;       break;
-                case 40: *profile_level_val = kVTProfileLevel_H264_High_4_0;       break;
-                case 41: *profile_level_val = kVTProfileLevel_H264_High_4_1;       break;
-                case 42: *profile_level_val = kVTProfileLevel_H264_High_4_2;       break;
+                case  0: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_AutoLevel; break;
+                case 30: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_3_0;       break;
+                case 31: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_3_1;       break;
+                case 32: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_3_2;       break;
+                case 40: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_4_0;       break;
+                case 41: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_4_1;       break;
+                case 42: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_4_2;       break;
                 case 50: *profile_level_val = kVTProfileLevel_H264_High_5_0;       break;
-                case 51: *profile_level_val = kVTProfileLevel_H264_High_5_1;       break;
-                case 52: *profile_level_val = kVTProfileLevel_H264_High_5_2;       break;
+                case 51: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_5_1;       break;
+                case 52: *profile_level_val =
+                                  compat_keys.kVTProfileLevel_H264_High_5_2;       break;
             }
             break;
     }
@@ -679,7 +798,7 @@ static int get_cv_color_primaries(AVCodecContext *avctx,
             break;
 
         case AVCOL_PRI_BT2020:
-            *primaries = kCVImageBufferColorPrimaries_ITU_R_2020;
+            *primaries = compat_keys.kCVImageBufferColorPrimaries_ITU_R_2020;
             break;
 
         default:
@@ -726,7 +845,7 @@ static int get_cv_transfer_function(AVCodecContext *avctx,
 
         case AVCOL_TRC_BT2020_10:
         case AVCOL_TRC_BT2020_12:
-            *transfer_fnc = kCVImageBufferTransferFunction_ITU_R_2020;
+            *transfer_fnc = compat_keys.kCVImageBufferTransferFunction_ITU_R_2020;
             break;
 
         default:
@@ -757,7 +876,7 @@ static int get_cv_ycbcr_matrix(AVCodecContext *avctx, CFStringRef *matrix) {
             break;
 
         case AVCOL_SPC_BT2020_NCL:
-            *matrix = kCVImageBufferYCbCrMatrix_ITU_R_2020;
+            *matrix = compat_keys.kCVImageBufferYCbCrMatrix_ITU_R_2020;
             break;
 
         default:
@@ -778,7 +897,14 @@ static int vtenc_create_encoder(AVCodecContext   *avctx,
 {
     VTEncContext *vtctx = avctx->priv_data;
     SInt32       bit_rate = avctx->bit_rate;
+    SInt32       max_rate = avctx->rc_max_rate;
     CFNumberRef  bit_rate_num;
+    CFNumberRef  bytes_per_second;
+    CFNumberRef  one_second;
+    CFArrayRef   data_rate_limits;
+    int64_t      bytes_per_second_value = 0;
+    int64_t      one_second_value = 0;
+    void         *nums[2];
 
     int status = VTCompressionSessionCreate(kCFAllocatorDefault,
                                             avctx->width,
@@ -818,13 +944,52 @@ static int vtenc_create_encoder(AVCodecContext   *avctx,
         return AVERROR_EXTERNAL;
     }
 
+    bytes_per_second_value = max_rate >> 3;
+    bytes_per_second = CFNumberCreate(kCFAllocatorDefault,
+                                      kCFNumberSInt64Type,
+                                      &bytes_per_second_value);
+    if (!bytes_per_second) {
+        return AVERROR(ENOMEM);
+    }
+    one_second_value = 1;
+    one_second = CFNumberCreate(kCFAllocatorDefault,
+                                kCFNumberSInt64Type,
+                                &one_second_value);
+    if (!one_second) {
+        CFRelease(bytes_per_second);
+        return AVERROR(ENOMEM);
+    }
+    nums[0] = bytes_per_second;
+    nums[1] = one_second;
+    data_rate_limits = CFArrayCreate(kCFAllocatorDefault,
+                                     nums,
+                                     2,
+                                     &kCFTypeArrayCallBacks);
+
+    if (!data_rate_limits) {
+        CFRelease(bytes_per_second);
+        CFRelease(one_second);
+        return AVERROR(ENOMEM);
+    }
+    status = VTSessionSetProperty(vtctx->session,
+                                  kVTCompressionPropertyKey_DataRateLimits,
+                                  data_rate_limits);
+
+    CFRelease(bytes_per_second);
+    CFRelease(one_second);
+    CFRelease(data_rate_limits);
+
+    if (status) {
+        av_log(avctx, AV_LOG_ERROR, "Error setting max bitrate property: %d\n", status);
+        return AVERROR_EXTERNAL;
+    }
+
     if (profile_level) {
         status = VTSessionSetProperty(vtctx->session,
                                       kVTCompressionPropertyKey_ProfileLevel,
                                       profile_level);
         if (status) {
             av_log(avctx, AV_LOG_ERROR, "Error setting profile/level property: %d\n", status);
-            return AVERROR_EXTERNAL;
         }
     }
 
@@ -990,22 +1155,21 @@ static int vtenc_create_encoder(AVCodecContext   *avctx,
 
     if (vtctx->entropy != VT_ENTROPY_NOT_SET) {
         CFStringRef entropy = vtctx->entropy == VT_CABAC ?
-                                kVTH264EntropyMode_CABAC:
-                                kVTH264EntropyMode_CAVLC;
+                                compat_keys.kVTH264EntropyMode_CABAC:
+                                compat_keys.kVTH264EntropyMode_CAVLC;
 
         status = VTSessionSetProperty(vtctx->session,
-                                      kVTCompressionPropertyKey_H264EntropyMode,
+                                      compat_keys.kVTCompressionPropertyKey_H264EntropyMode,
                                       entropy);
 
         if (status) {
             av_log(avctx, AV_LOG_ERROR, "Error setting entropy property: %d\n", status);
-            return AVERROR_EXTERNAL;
         }
     }
 
     if (vtctx->realtime) {
         status = VTSessionSetProperty(vtctx->session,
-                                      kVTCompressionPropertyKey_RealTime,
+                                      compat_keys.kVTCompressionPropertyKey_RealTime,
                                       kCFBooleanTrue);
 
         if (status) {
@@ -1032,6 +1196,8 @@ static av_cold int vtenc_init(AVCodecContext *avctx)
     CFBooleanRef           has_b_frames_cfbool;
     CFNumberRef            gamma_level = NULL;
     int                    status;
+
+    pthread_once(&once_ctrl, loadVTEncSymbols);
 
     codec_type = get_cm_codec_type(avctx->codec_id);
     if (!codec_type) {
@@ -1065,9 +1231,13 @@ static av_cold int vtenc_init(AVCodecContext *avctx)
 
 #if !TARGET_OS_IPHONE
     if (!vtctx->allow_sw) {
-        CFDictionarySetValue(enc_info, kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder, kCFBooleanTrue);
+        CFDictionarySetValue(enc_info,
+                             compat_keys.kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder,
+                             kCFBooleanTrue);
     } else {
-        CFDictionarySetValue(enc_info, kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder,  kCFBooleanTrue);
+        CFDictionarySetValue(enc_info,
+                             compat_keys.kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder,
+                             kCFBooleanTrue);
     }
 #endif
 
@@ -1161,14 +1331,194 @@ static void vtenc_get_frame_info(CMSampleBufferRef buffer, bool *is_key_frame)
     }
 }
 
+static int is_post_sei_nal_type(int nal_type){
+    return nal_type != H264_NAL_SEI &&
+           nal_type != H264_NAL_SPS &&
+           nal_type != H264_NAL_PPS &&
+           nal_type != H264_NAL_AUD;
+}
+
+/*
+ * Finds the sei message start/size of type find_sei_type.
+ * If more than one of that type exists, the last one is returned.
+ */
+static int find_sei_end(AVCodecContext *avctx,
+                        uint8_t        *nal_data,
+                        size_t          nal_size,
+                        uint8_t       **sei_end)
+{
+    int nal_type;
+    size_t sei_payload_size = 0;
+    int sei_payload_type = 0;
+    *sei_end = NULL;
+    uint8_t *nal_start = nal_data;
+
+    if (!nal_size)
+        return 0;
+
+    nal_type = *nal_data & 0x1F;
+    if (nal_type != H264_NAL_SEI)
+        return 0;
+
+    nal_data++;
+    nal_size--;
+
+    if (nal_data[nal_size - 1] == 0x80)
+        nal_size--;
+
+    while (nal_size > 0 && *nal_data > 0) {
+        do{
+            sei_payload_type += *nal_data;
+            nal_data++;
+            nal_size--;
+        } while (nal_size > 0 && *nal_data == 0xFF);
+
+        if (!nal_size) {
+            av_log(avctx, AV_LOG_ERROR, "Unexpected end of SEI NAL Unit parsing type.\n");
+            return AVERROR_INVALIDDATA;
+        }
+
+        do{
+            sei_payload_size += *nal_data;
+            nal_data++;
+            nal_size--;
+        } while (nal_size > 0 && *nal_data == 0xFF);
+
+        if (nal_size < sei_payload_size) {
+            av_log(avctx, AV_LOG_ERROR, "Unexpected end of SEI NAL Unit parsing size.\n");
+            return AVERROR_INVALIDDATA;
+        }
+
+        nal_data += sei_payload_size;
+        nal_size -= sei_payload_size;
+    }
+
+    *sei_end = nal_data;
+
+    return nal_data - nal_start + 1;
+}
+
+/**
+ * Copies the data inserting emulation prevention bytes as needed.
+ * Existing data in the destination can be taken into account by providing
+ * dst with a dst_offset > 0.
+ *
+ * @return The number of bytes copied on success. On failure, the negative of
+ *         the number of bytes needed to copy src is returned.
+ */
+static int copy_emulation_prev(const uint8_t *src,
+                               size_t         src_size,
+                               uint8_t       *dst,
+                               ssize_t        dst_offset,
+                               size_t         dst_size)
+{
+    int zeros = 0;
+    int wrote_bytes;
+    uint8_t* dst_start;
+    uint8_t* dst_end = dst + dst_size;
+    const uint8_t* src_end = src + src_size;
+    int start_at = dst_offset > 2 ? dst_offset - 2 : 0;
+    int i;
+    for (i = start_at; i < dst_offset && i < dst_size; i++) {
+        if (!dst[i])
+            zeros++;
+        else
+            zeros = 0;
+    }
+
+    dst += dst_offset;
+    dst_start = dst;
+    for (; src < src_end; src++, dst++) {
+        if (zeros == 2) {
+            int insert_ep3_byte = *src <= 3;
+            if (insert_ep3_byte) {
+                if (dst < dst_end)
+                    *dst = 3;
+                dst++;
+            }
+
+            zeros = 0;
+        }
+
+        if (dst < dst_end)
+            *dst = *src;
+
+        if (!*src)
+            zeros++;
+        else
+            zeros = 0;
+    }
+
+    wrote_bytes = dst - dst_start;
+
+    if (dst > dst_end)
+        return -wrote_bytes;
+
+    return wrote_bytes;
+}
+
+static int write_sei(const ExtraSEI *sei,
+                     int             sei_type,
+                     uint8_t        *dst,
+                     size_t          dst_size)
+{
+    uint8_t *sei_start = dst;
+    size_t remaining_sei_size = sei->size;
+    size_t remaining_dst_size = dst_size;
+    int header_bytes;
+    int bytes_written;
+    ssize_t offset;
+
+    if (!remaining_dst_size)
+        return AVERROR_BUFFER_TOO_SMALL;
+
+    while (sei_type && remaining_dst_size != 0) {
+        int sei_byte = sei_type > 255 ? 255 : sei_type;
+        *dst = sei_byte;
+
+        sei_type -= sei_byte;
+        dst++;
+        remaining_dst_size--;
+    }
+
+    if (!dst_size)
+        return AVERROR_BUFFER_TOO_SMALL;
+
+    while (remaining_sei_size && remaining_dst_size != 0) {
+        int size_byte = remaining_sei_size > 255 ? 255 : remaining_sei_size;
+        *dst = size_byte;
+
+        remaining_sei_size -= size_byte;
+        dst++;
+        remaining_dst_size--;
+    }
+
+    if (remaining_dst_size < sei->size)
+        return AVERROR_BUFFER_TOO_SMALL;
+
+    header_bytes = dst - sei_start;
+
+    offset = header_bytes;
+    bytes_written = copy_emulation_prev(sei->data,
+                                        sei->size,
+                                        sei_start,
+                                        offset,
+                                        dst_size);
+    if (bytes_written < 0)
+        return AVERROR_BUFFER_TOO_SMALL;
+
+    bytes_written += header_bytes;
+    return bytes_written;
+}
+
 /**
  * Copies NAL units and replaces length codes with
  * H.264 Annex B start codes. On failure, the contents of
  * dst_data may have been modified.
  *
  * @param length_code_size Byte length of each length code
- * @param src_data NAL units prefixed with length codes.
- * @param src_size Length of buffer, excluding any padding.
+ * @param sample_buffer NAL units prefixed with length codes.
+ * @param sei Optional A53 closed captions SEI data.
  * @param dst_data Must be zeroed before calling this function.
  *                 Contains the copied NAL units prefixed with
  *                 start codes when the function returns
@@ -1184,6 +1534,7 @@ static int copy_replace_length_codes(
     AVCodecContext *avctx,
     size_t        length_code_size,
     CMSampleBufferRef sample_buffer,
+    ExtraSEI      *sei,
     uint8_t       *dst_data,
     size_t        dst_size)
 {
@@ -1191,8 +1542,10 @@ static int copy_replace_length_codes(
     size_t remaining_src_size = src_size;
     size_t remaining_dst_size = dst_size;
     size_t src_offset = 0;
+    int wrote_sei = 0;
     int status;
     uint8_t size_buf[4];
+    uint8_t nal_type;
     CMBlockBufferRef block = CMSampleBufferGetDataBuffer(sample_buffer);
 
     if (length_code_size > 4) {
@@ -1216,9 +1569,55 @@ static int copy_replace_length_codes(
             return AVERROR_EXTERNAL;
         }
 
+        status = CMBlockBufferCopyDataBytes(block,
+                                            src_offset + length_code_size,
+                                            1,
+                                            &nal_type);
+
+        if (status) {
+            av_log(avctx, AV_LOG_ERROR, "Cannot copy type: %d\n", status);
+            return AVERROR_EXTERNAL;
+        }
+
+        nal_type &= 0x1F;
+
         for (i = 0; i < length_code_size; i++) {
             box_len <<= 8;
             box_len |= size_buf[i];
+        }
+
+        if (sei && !wrote_sei && is_post_sei_nal_type(nal_type)) {
+            //No SEI NAL unit - insert.
+            int wrote_bytes;
+
+            memcpy(dst_data, start_code, sizeof(start_code));
+            dst_data += sizeof(start_code);
+            remaining_dst_size -= sizeof(start_code);
+
+            *dst_data = H264_NAL_SEI;
+            dst_data++;
+            remaining_dst_size--;
+
+            wrote_bytes = write_sei(sei,
+                                    SEI_TYPE_USER_DATA_REGISTERED,
+                                    dst_data,
+                                    remaining_dst_size);
+
+            if (wrote_bytes < 0)
+                return wrote_bytes;
+
+            remaining_dst_size -= wrote_bytes;
+            dst_data += wrote_bytes;
+
+            if (remaining_dst_size <= 0)
+                return AVERROR_BUFFER_TOO_SMALL;
+
+            *dst_data = 0x80;
+
+            dst_data++;
+            remaining_dst_size--;
+
+            wrote_sei = 1;
         }
 
         curr_src_len = box_len + length_code_size;
@@ -1245,6 +1644,35 @@ static int copy_replace_length_codes(
             return AVERROR_EXTERNAL;
         }
 
+        if (sei && !wrote_sei && nal_type == H264_NAL_SEI) {
+            //Found SEI NAL unit - append.
+            int wrote_bytes;
+            int old_sei_length;
+            int extra_bytes;
+            uint8_t *new_sei;
+            old_sei_length = find_sei_end(avctx, dst_box, box_len, &new_sei);
+            if (old_sei_length < 0)
+                return status;
+
+            wrote_bytes = write_sei(sei,
+                                    SEI_TYPE_USER_DATA_REGISTERED,
+                                    new_sei,
+                                    remaining_dst_size - old_sei_length);
+            if (wrote_bytes < 0)
+                return wrote_bytes;
+
+            if (new_sei + wrote_bytes >= dst_data + remaining_dst_size)
+                return AVERROR_BUFFER_TOO_SMALL;
+
+            new_sei[wrote_bytes++] = 0x80;
+            extra_bytes = wrote_bytes - (dst_box + box_len - new_sei);
+
+            dst_data += extra_bytes;
+            remaining_dst_size -= extra_bytes;
+
+            wrote_sei = 1;
+        }
+
         src_offset += curr_src_len;
         dst_data += curr_dst_len;
 
@@ -1255,10 +1683,32 @@ static int copy_replace_length_codes(
     return 0;
 }
 
+/**
+ * Returns a sufficient number of bytes to contain the sei data.
+ * It may be greater than the minimum required.
+ */
+static int get_sei_msg_bytes(const ExtraSEI* sei, int type){
+    int copied_size;
+    if (sei->size == 0)
+        return 0;
+
+    copied_size = -copy_emulation_prev(sei->data,
+                                       sei->size,
+                                       NULL,
+                                       0,
+                                       0);
+
+    if ((sei->size % 255) == 0) //may result in an extra byte
+        copied_size++;
+
+    return copied_size + sei->size / 255 + 1 + type / 255 + 1;
+}
+
 static int vtenc_cm_to_avpacket(
     AVCodecContext    *avctx,
     CMSampleBufferRef sample_buffer,
-    AVPacket          *pkt)
+    AVPacket          *pkt,
+    ExtraSEI          *sei)
 {
     VTEncContext *vtctx = avctx->priv_data;
 
@@ -1269,6 +1719,7 @@ static int vtenc_cm_to_avpacket(
     size_t  header_size = 0;
     size_t  in_buf_size;
     size_t  out_buf_size;
+    size_t  sei_nalu_size = 0;
     int64_t dts_delta;
     int64_t time_base_num;
     int nalu_count;
@@ -1298,9 +1749,17 @@ static int vtenc_cm_to_avpacket(
     if(status)
         return status;
 
+    if (sei) {
+        size_t msg_size = get_sei_msg_bytes(sei,
+                                            SEI_TYPE_USER_DATA_REGISTERED);
+
+        sei_nalu_size = sizeof(start_code) + 1 + msg_size + 1;
+    }
+
     in_buf_size = CMSampleBufferGetTotalSampleSize(sample_buffer);
     out_buf_size = header_size +
                    in_buf_size +
+                   sei_nalu_size +
                    nalu_count * ((int)sizeof(start_code) - (int)length_code_size);
 
     status = ff_alloc_packet2(avctx, pkt, out_buf_size, out_buf_size);
@@ -1316,12 +1775,13 @@ static int vtenc_cm_to_avpacket(
         avctx,
         length_code_size,
         sample_buffer,
+        sei,
         pkt->data + header_size,
         pkt->size - header_size
     );
 
     if (status) {
-        av_log(avctx, AV_LOG_ERROR, "Error copying packet data: %d", status);
+        av_log(avctx, AV_LOG_ERROR, "Error copying packet data: %d\n", status);
         return status;
     }
 
@@ -1707,6 +2167,8 @@ static int vtenc_send_frame(AVCodecContext *avctx,
     CMTime time;
     CFDictionaryRef frame_dict;
     CVPixelBufferRef cv_img = NULL;
+    AVFrameSideData *side_data = NULL;
+    ExtraSEI *sei = NULL;
     int status = create_cv_pixel_buffer(avctx, frame, &cv_img);
 
     if (status) return status;
@@ -1717,6 +2179,21 @@ static int vtenc_send_frame(AVCodecContext *avctx,
         return status;
     }
 
+    side_data = av_frame_get_side_data(frame, AV_FRAME_DATA_A53_CC);
+    if (vtctx->a53_cc && side_data && side_data->size) {
+        sei = av_mallocz(sizeof(*sei));
+        if (!sei) {
+            av_log(avctx, AV_LOG_ERROR, "Not enough memory for closed captions, skipping\n");
+        } else {
+            int ret = ff_alloc_a53_sei(frame, 0, &sei->data, &sei->size);
+            if (ret < 0) {
+                av_log(avctx, AV_LOG_ERROR, "Not enough memory for closed captions, skipping\n");
+                av_free(sei);
+                sei = NULL;
+            }
+        }
+    }
+
     time = CMTimeMake(frame->pts * avctx->time_base.num, avctx->time_base.den);
     status = VTCompressionSessionEncodeFrame(
         vtctx->session,
@@ -1724,7 +2201,7 @@ static int vtenc_send_frame(AVCodecContext *avctx,
         time,
         kCMTimeInvalid,
         frame_dict,
-        NULL,
+        sei,
         NULL
     );
 
@@ -1749,6 +2226,7 @@ static av_cold int vtenc_frame(
     bool get_frame;
     int status;
     CMSampleBufferRef buf = NULL;
+    ExtraSEI *sei = NULL;
 
     if (frame) {
         status = vtenc_send_frame(avctx, vtctx, frame);
@@ -1785,11 +2263,15 @@ static av_cold int vtenc_frame(
         goto end_nopkt;
     }
 
-    status = vtenc_q_pop(vtctx, !frame, &buf);
+    status = vtenc_q_pop(vtctx, !frame, &buf, &sei);
     if (status) goto end_nopkt;
     if (!buf)   goto end_nopkt;
 
-    status = vtenc_cm_to_avpacket(avctx, buf, pkt);
+    status = vtenc_cm_to_avpacket(avctx, buf, pkt, sei);
+    if (sei) {
+        if (sei->data) av_free(sei->data);
+        av_free(sei);
+    }
     CFRelease(buf);
     if (status) goto end_nopkt;
 
@@ -1878,7 +2360,7 @@ static int vtenc_populate_extradata(AVCodecContext   *avctx,
     if (status)
         goto pe_cleanup;
 
-    status = vtenc_q_pop(vtctx, 0, &buf);
+    status = vtenc_q_pop(vtctx, 0, &buf, NULL);
     if (status) {
         av_log(avctx, AV_LOG_ERROR, "popping: %d\n", status);
         goto pe_cleanup;
@@ -1909,6 +2391,9 @@ static av_cold int vtenc_close(AVCodecContext *avctx)
 
     if(!vtctx->session) return 0;
 
+    VTCompressionSessionCompleteFrames(vtctx->session,
+                                       kCMTimeIndefinite);
+    clear_frame_queue(vtctx);
     pthread_cond_destroy(&vtctx->cv_sample_sent);
     pthread_mutex_destroy(&vtctx->lock);
     CFRelease(vtctx->session);
@@ -1975,6 +2460,8 @@ static const AVOption options[] = {
         OFFSET(frames_before), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, VE },
     { "frames_after", "Other frames will come after the frames in this session. This helps smooth concatenation issues.",
         OFFSET(frames_after), AV_OPT_TYPE_BOOL, { .i64 = 0 }, 0, 1, VE },
+
+    { "a53cc", "Use A53 Closed Captions (if available)", OFFSET(a53_cc), AV_OPT_TYPE_BOOL, {.i64 = 1}, 0, 1, VE },
 
     { NULL },
 };

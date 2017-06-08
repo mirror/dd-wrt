@@ -98,6 +98,7 @@ struct playlist {
     int index;
     AVFormatContext *ctx;
     AVPacket pkt;
+    int has_noheader_flag;
 
     /* main demuxer streams associated with this playlist
      * indexed by the subdemuxer stream indexes */
@@ -203,6 +204,7 @@ typedef struct HLSContext {
     char *http_proxy;                    ///< holds the address of the HTTP proxy server
     AVDictionary *avio_opts;
     int strict_std_compliance;
+    char *allowed_extensions;
 } HLSContext;
 
 static int read_chomp_line(AVIOContext *s, char *buf, int maxlen)
@@ -416,10 +418,10 @@ static struct segment *new_init_section(struct playlist *pls,
     }
 
     if (info->byterange[0]) {
-        sec->size = atoi(info->byterange);
+        sec->size = strtoll(info->byterange, NULL, 10);
         ptr = strchr(info->byterange, '@');
         if (ptr)
-            sec->url_offset = atoi(ptr+1);
+            sec->url_offset = strtoll(ptr+1, NULL, 10);
     } else {
         /* the entire file is the init section */
         sec->size = -1;
@@ -617,8 +619,19 @@ static int open_url(AVFormatContext *s, AVIOContext **pb, const char *url,
         return AVERROR_INVALIDDATA;
 
     // only http(s) & file are allowed
-    if (!av_strstart(proto_name, "http", NULL) && !av_strstart(proto_name, "file", NULL))
+    if (av_strstart(proto_name, "file", NULL)) {
+        if (strcmp(c->allowed_extensions, "ALL") && !av_match_ext(url, c->allowed_extensions)) {
+            av_log(s, AV_LOG_ERROR,
+                "Filename extension of \'%s\' is not a common multimedia extension, blocked for security reasons.\n"
+                "If you wish to override this adjust allowed_extensions, you can set it to \'ALL\' to allow all\n",
+                url);
+            return AVERROR_INVALIDDATA;
+        }
+    } else if (av_strstart(proto_name, "http", NULL)) {
+        ;
+    } else
         return AVERROR_INVALIDDATA;
+
     if (!strncmp(proto_name, url, strlen(proto_name)) && url[strlen(proto_name)] == ':')
         ;
     else if (av_strstart(url, "crypto", NULL) && !strncmp(proto_name, url + 7, strlen(proto_name)) && url[7 + strlen(proto_name)] == ':')
@@ -629,8 +642,16 @@ static int open_url(AVFormatContext *s, AVIOContext **pb, const char *url,
     ret = s->io_open(s, pb, url, AVIO_FLAG_READ, &tmp);
     if (ret >= 0) {
         // update cookies on http response with setcookies.
-        void *u = (s->flags & AVFMT_FLAG_CUSTOM_IO) ? NULL : s->pb;
-        update_options(&c->cookies, "cookies", u);
+        char *new_cookies = NULL;
+
+        if (!(s->flags & AVFMT_FLAG_CUSTOM_IO))
+            av_opt_get(*pb, "cookies", AV_OPT_SEARCH_CHILDREN, (uint8_t**)&new_cookies);
+
+        if (new_cookies) {
+            av_free(c->cookies);
+            c->cookies = new_cookies;
+        }
+
         av_dict_set(&opts, "cookies", c->cookies, 0);
     }
 
@@ -669,7 +690,7 @@ static int parse_playlist(HLSContext *c, const char *url,
         av_dict_set(&opts, "seekable", "0", 0);
 
         // broker prior HTTP options that should be consistent across requests
-        av_dict_set(&opts, "user-agent", c->user_agent, 0);
+        av_dict_set(&opts, "user_agent", c->user_agent, 0);
         av_dict_set(&opts, "cookies", c->cookies, 0);
         av_dict_set(&opts, "headers", c->headers, 0);
         av_dict_set(&opts, "http_proxy", c->http_proxy, 0);
@@ -731,7 +752,7 @@ static int parse_playlist(HLSContext *c, const char *url,
             ret = ensure_playlist(c, &pls, url);
             if (ret < 0)
                 goto fail;
-            pls->target_duration = atoi(ptr) * AV_TIME_BASE;
+            pls->target_duration = strtoll(ptr, NULL, 10) * AV_TIME_BASE;
         } else if (av_strstart(line, "#EXT-X-MEDIA-SEQUENCE:", &ptr)) {
             ret = ensure_playlist(c, &pls, url);
             if (ret < 0)
@@ -760,10 +781,10 @@ static int parse_playlist(HLSContext *c, const char *url,
             is_segment = 1;
             duration   = atof(ptr) * AV_TIME_BASE;
         } else if (av_strstart(line, "#EXT-X-BYTERANGE:", &ptr)) {
-            seg_size = atoi(ptr);
+            seg_size = strtoll(ptr, NULL, 10);
             ptr = strchr(ptr, '@');
             if (ptr)
-                seg_offset = atoi(ptr+1);
+                seg_offset = strtoll(ptr+1, NULL, 10);
         } else if (av_strstart(line, "#", NULL)) {
             continue;
         } else if (line[0]) {
@@ -1083,7 +1104,7 @@ static int open_input(HLSContext *c, struct playlist *pls, struct segment *seg)
     int is_http = 0;
 
     // broker prior HTTP options that should be consistent across requests
-    av_dict_set(&opts, "user-agent", c->user_agent, 0);
+    av_dict_set(&opts, "user_agent", c->user_agent, 0);
     av_dict_set(&opts, "cookies", c->cookies, 0);
     av_dict_set(&opts, "headers", c->headers, 0);
     av_dict_set(&opts, "http_proxy", c->http_proxy, 0);
@@ -1348,25 +1369,6 @@ reload:
     goto restart;
 }
 
-static int playlist_in_multiple_variants(HLSContext *c, struct playlist *pls)
-{
-    int variant_count = 0;
-    int i, j;
-
-    for (i = 0; i < c->n_variants && variant_count < 2; i++) {
-        struct variant *v = c->variants[i];
-
-        for (j = 0; j < v->n_playlists; j++) {
-            if (v->playlists[j] == pls) {
-                variant_count++;
-                break;
-            }
-        }
-    }
-
-    return variant_count >= 2;
-}
-
 static void add_renditions_to_variant(HLSContext *c, struct variant *var,
                                       enum AVMediaType type, const char *group_id)
 {
@@ -1520,11 +1522,115 @@ static int nested_io_open(AVFormatContext *s, AVIOContext **pb, const char *url,
     return AVERROR(EPERM);
 }
 
+static void add_stream_to_programs(AVFormatContext *s, struct playlist *pls, AVStream *stream)
+{
+    HLSContext *c = s->priv_data;
+    int i, j;
+    int bandwidth = -1;
+
+    for (i = 0; i < c->n_variants; i++) {
+        struct variant *v = c->variants[i];
+
+        for (j = 0; j < v->n_playlists; j++) {
+            if (v->playlists[j] != pls)
+                continue;
+
+            av_program_add_stream_index(s, i, stream->index);
+
+            if (bandwidth < 0)
+                bandwidth = v->bandwidth;
+            else if (bandwidth != v->bandwidth)
+                bandwidth = -1; /* stream in multiple variants with different bandwidths */
+        }
+    }
+
+    if (bandwidth >= 0)
+        av_dict_set_int(&stream->metadata, "variant_bitrate", bandwidth, 0);
+}
+
+static int set_stream_info_from_input_stream(AVStream *st, struct playlist *pls, AVStream *ist)
+{
+    int err;
+
+    err = avcodec_parameters_copy(st->codecpar, ist->codecpar);
+    if (err < 0)
+        return err;
+
+    if (pls->is_id3_timestamped) /* custom timestamps via id3 */
+        avpriv_set_pts_info(st, 33, 1, MPEG_TIME_BASE);
+    else
+        avpriv_set_pts_info(st, ist->pts_wrap_bits, ist->time_base.num, ist->time_base.den);
+
+    st->internal->need_context_update = 1;
+
+    return 0;
+}
+
+/* add new subdemuxer streams to our context, if any */
+static int update_streams_from_subdemuxer(AVFormatContext *s, struct playlist *pls)
+{
+    int err;
+
+    while (pls->n_main_streams < pls->ctx->nb_streams) {
+        int ist_idx = pls->n_main_streams;
+        AVStream *st = avformat_new_stream(s, NULL);
+        AVStream *ist = pls->ctx->streams[ist_idx];
+
+        if (!st)
+            return AVERROR(ENOMEM);
+
+        st->id = pls->index;
+        dynarray_add(&pls->main_streams, &pls->n_main_streams, st);
+
+        add_stream_to_programs(s, pls, st);
+
+        err = set_stream_info_from_input_stream(st, pls, ist);
+        if (err < 0)
+            return err;
+    }
+
+    return 0;
+}
+
+static void update_noheader_flag(AVFormatContext *s)
+{
+    HLSContext *c = s->priv_data;
+    int flag_needed = 0;
+    int i;
+
+    for (i = 0; i < c->n_playlists; i++) {
+        struct playlist *pls = c->playlists[i];
+
+        if (pls->has_noheader_flag) {
+            flag_needed = 1;
+            break;
+        }
+    }
+
+    if (flag_needed)
+        s->ctx_flags |= AVFMTCTX_NOHEADER;
+    else
+        s->ctx_flags &= ~AVFMTCTX_NOHEADER;
+}
+
+static int hls_close(AVFormatContext *s)
+{
+    HLSContext *c = s->priv_data;
+
+    free_playlist_list(c);
+    free_variant_list(c);
+    free_rendition_list(c);
+
+    av_dict_free(&c->avio_opts);
+
+    return 0;
+}
+
 static int hls_read_header(AVFormatContext *s)
 {
     void *u = (s->flags & AVFMT_FLAG_CUSTOM_IO) ? NULL : s->pb;
     HLSContext *c = s->priv_data;
-    int ret = 0, i, j;
+    int ret = 0, i;
     int highest_cur_seq_no = 0;
 
     c->ctx                = s;
@@ -1537,7 +1643,7 @@ static int hls_read_header(AVFormatContext *s)
 
     if (u) {
         // get the previous user agent & set back to null if string size is zero
-        update_options(&c->user_agent, "user-agent", u);
+        update_options(&c->user_agent, "user_agent", u);
 
         // get the previous cookies & set back to null if string size is zero
         update_options(&c->cookies, "cookies", u);
@@ -1598,6 +1704,17 @@ static int hls_read_header(AVFormatContext *s)
             add_renditions_to_variant(c, var, AVMEDIA_TYPE_VIDEO, var->video_group);
         if (var->subtitles_group[0])
             add_renditions_to_variant(c, var, AVMEDIA_TYPE_SUBTITLE, var->subtitles_group);
+    }
+
+    /* Create a program for each variant */
+    for (i = 0; i < c->n_variants; i++) {
+        struct variant *v = c->variants[i];
+        AVProgram *program;
+
+        program = av_new_program(s, i);
+        if (!program)
+            goto fail;
+        av_dict_set_int(&program->metadata, "variant_bitrate", v->bandwidth, 0);
     }
 
     /* Select the starting segments */
@@ -1664,6 +1781,7 @@ static int hls_read_header(AVFormatContext *s)
         }
         pls->ctx->pb       = &pls->pb;
         pls->ctx->io_open  = nested_io_open;
+        pls->ctx->flags   |= s->flags;
 
         if ((ret = ff_copy_whiteblacklists(pls->ctx, s)) < 0)
             goto fail;
@@ -1679,71 +1797,38 @@ static int hls_read_header(AVFormatContext *s)
             pls->id3_deferred_extra = NULL;
         }
 
-        pls->ctx->ctx_flags &= ~AVFMTCTX_NOHEADER;
-        ret = avformat_find_stream_info(pls->ctx, NULL);
-        if (ret < 0)
-            goto fail;
-
         if (pls->is_id3_timestamped == -1)
             av_log(s, AV_LOG_WARNING, "No expected HTTP requests have been made\n");
 
-        /* Create new AVStreams for each stream in this playlist */
-        for (j = 0; j < pls->ctx->nb_streams; j++) {
-            AVStream *st = avformat_new_stream(s, NULL);
-            AVStream *ist = pls->ctx->streams[j];
-            if (!st) {
-                ret = AVERROR(ENOMEM);
+        /*
+         * For ID3 timestamped raw audio streams we need to detect the packet
+         * durations to calculate timestamps in fill_timing_for_id3_timestamped_stream(),
+         * but for other streams we can rely on our user calling avformat_find_stream_info()
+         * on us if they want to.
+         */
+        if (pls->is_id3_timestamped) {
+            ret = avformat_find_stream_info(pls->ctx, NULL);
+            if (ret < 0)
                 goto fail;
-            }
-            st->id = i;
-
-            avcodec_parameters_copy(st->codecpar, pls->ctx->streams[j]->codecpar);
-
-            if (pls->is_id3_timestamped) /* custom timestamps via id3 */
-                avpriv_set_pts_info(st, 33, 1, MPEG_TIME_BASE);
-            else
-                avpriv_set_pts_info(st, ist->pts_wrap_bits, ist->time_base.num, ist->time_base.den);
-
-            dynarray_add(&pls->main_streams, &pls->n_main_streams, st);
         }
+
+        pls->has_noheader_flag = !!(pls->ctx->ctx_flags & AVFMTCTX_NOHEADER);
+
+        /* Create new AVStreams for each stream in this playlist */
+        ret = update_streams_from_subdemuxer(s, pls);
+        if (ret < 0)
+            goto fail;
 
         add_metadata_from_renditions(s, pls, AVMEDIA_TYPE_AUDIO);
         add_metadata_from_renditions(s, pls, AVMEDIA_TYPE_VIDEO);
         add_metadata_from_renditions(s, pls, AVMEDIA_TYPE_SUBTITLE);
     }
 
-    /* Create a program for each variant */
-    for (i = 0; i < c->n_variants; i++) {
-        struct variant *v = c->variants[i];
-        AVProgram *program;
-
-        program = av_new_program(s, i);
-        if (!program)
-            goto fail;
-        av_dict_set_int(&program->metadata, "variant_bitrate", v->bandwidth, 0);
-
-        for (j = 0; j < v->n_playlists; j++) {
-            struct playlist *pls = v->playlists[j];
-            int is_shared = playlist_in_multiple_variants(c, pls);
-            int k;
-
-            for (k = 0; k < pls->n_main_streams; k++) {
-                struct AVStream *st = pls->main_streams[k];
-
-                av_program_add_stream_index(s, i, st->index);
-
-                /* Set variant_bitrate for streams unique to this variant */
-                if (!is_shared && v->bandwidth)
-                    av_dict_set_int(&st->metadata, "variant_bitrate", v->bandwidth, 0);
-            }
-        }
-    }
+    update_noheader_flag(s);
 
     return 0;
 fail:
-    free_playlist_list(c);
-    free_variant_list(c);
-    free_rendition_list(c);
+    hls_close(s);
     return ret;
 }
 
@@ -1909,6 +1994,21 @@ static int hls_read_packet(AVFormatContext *s, AVPacket *pkt)
     /* If we got a packet, return it */
     if (minplaylist >= 0) {
         struct playlist *pls = c->playlists[minplaylist];
+        AVStream *ist;
+        AVStream *st;
+
+        ret = update_streams_from_subdemuxer(s, pls);
+        if (ret < 0) {
+            av_packet_unref(&pls->pkt);
+            reset_packet(&pls->pkt);
+            return ret;
+        }
+
+        /* check if noheader flag has been cleared by the subdemuxer */
+        if (pls->has_noheader_flag && !(pls->ctx->ctx_flags & AVFMTCTX_NOHEADER)) {
+            pls->has_noheader_flag = 0;
+            update_noheader_flag(s);
+        }
 
         if (pls->pkt.stream_index >= pls->n_main_streams) {
             av_log(s, AV_LOG_ERROR, "stream index inconsistency: index %d, %d main streams, %d subdemuxer streams\n",
@@ -1918,31 +2018,31 @@ static int hls_read_packet(AVFormatContext *s, AVPacket *pkt)
             return AVERROR_BUG;
         }
 
+        ist = pls->ctx->streams[pls->pkt.stream_index];
+        st = pls->main_streams[pls->pkt.stream_index];
+
         *pkt = pls->pkt;
-        pkt->stream_index = pls->main_streams[pls->pkt.stream_index]->index;
+        pkt->stream_index = st->index;
         reset_packet(&c->playlists[minplaylist]->pkt);
 
         if (pkt->dts != AV_NOPTS_VALUE)
             c->cur_timestamp = av_rescale_q(pkt->dts,
-                                            pls->ctx->streams[pls->pkt.stream_index]->time_base,
+                                            ist->time_base,
                                             AV_TIME_BASE_Q);
+
+        /* There may be more situations where this would be useful, but this at least
+         * handles newly probed codecs properly (i.e. request_probe by mpegts). */
+        if (ist->codecpar->codec_id != st->codecpar->codec_id) {
+            ret = set_stream_info_from_input_stream(st, pls, ist);
+            if (ret < 0) {
+                av_packet_unref(pkt);
+                return ret;
+            }
+        }
 
         return 0;
     }
     return AVERROR_EOF;
-}
-
-static int hls_close(AVFormatContext *s)
-{
-    HLSContext *c = s->priv_data;
-
-    free_playlist_list(c);
-    free_variant_list(c);
-    free_rendition_list(c);
-
-    av_dict_free(&c->avio_opts);
-
-    return 0;
 }
 
 static int hls_read_seek(AVFormatContext *s, int stream_index,
@@ -2046,6 +2146,10 @@ static int hls_probe(AVProbeData *p)
 static const AVOption hls_options[] = {
     {"live_start_index", "segment index to start live streams at (negative values are from the end)",
         OFFSET(live_start_index), AV_OPT_TYPE_INT, {.i64 = -3}, INT_MIN, INT_MAX, FLAGS},
+    {"allowed_extensions", "List of file extensions that hls is allowed to access",
+        OFFSET(allowed_extensions), AV_OPT_TYPE_STRING,
+        {.str = "3gp,aac,avi,flac,mkv,m3u8,m4a,m4s,m4v,mpg,mov,mp2,mp3,mp4,mpeg,mpegts,ogg,ogv,oga,ts,vob,wav"},
+        INT_MIN, INT_MAX, FLAGS},
     {NULL}
 };
 
