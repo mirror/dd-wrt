@@ -157,6 +157,7 @@ static int numthreads = 0;
 #ifndef HAVE_MICRO
 pthread_mutex_t httpd_mutex;
 pthread_mutex_t singleton_mutex;
+pthread_mutex_t socket_mutex;
 #endif
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -908,9 +909,11 @@ static void *handle_request(void *arg)
 
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
+#ifndef HAVE_MICRO
 			if (handler->locked) {
 				pthread_mutex_lock(&singleton_mutex);
 			}
+#endif
 #ifdef HAVE_REGISTER
 			if (registered)
 #endif
@@ -929,9 +932,11 @@ static void *handle_request(void *arg)
 #endif
 						conn_fp->auth_fail = 0;
 						send_authenticate(conn_fp);
+#ifndef HAVE_MICRO
 						if (handler->locked) {
 							pthread_mutex_unlock(&singleton_mutex);
 						}
+#endiuf
 						goto out;
 					}
 				}
@@ -961,17 +966,21 @@ static void *handle_request(void *arg)
 #endif
 			if (check_connect_type() < 0) {
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+#ifndef HAVE_MICRO
 				if (handler->locked) {
 					pthread_mutex_unlock(&singleton_mutex);
 				}
+#endif
 				goto out;
 			}
 			if (conn_fp->auth_fail == 1) {
 				send_authenticate(conn_fp);
 				conn_fp->auth_fail = 0;
+#ifndef HAVE_MICRO
 				if (handler->locked) {
 					pthread_mutex_unlock(&singleton_mutex);
 				}
+#endif
 				goto out;
 			} else {
 				if (handler->output != do_file)
@@ -994,9 +1003,11 @@ static void *handle_request(void *arg)
 			} else {
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
+#ifndef HAVE_MICRO
 			if (handler->locked) {
 				pthread_mutex_unlock(&singleton_mutex);
 			}
+#endif
 			break;
 
 		}
@@ -1019,10 +1030,11 @@ static void *handle_request(void *arg)
 	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);
+#ifndef HAVE_MICRO
 	pthread_mutex_lock(&httpd_mutex);
 	numthreads--;
 	pthread_mutex_unlock(&httpd_mutex);
-
+#endif
 	return NULL;
 }
 
@@ -1178,6 +1190,7 @@ int main(int argc, char **argv)
 #ifndef HAVE_MICRO
 	pthread_mutex_init(&httpd_mutex, NULL);
 	pthread_mutex_init(&singleton_mutex, NULL);
+	pthread_mutex_init(&socket_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
@@ -1486,6 +1499,7 @@ int main(int argc, char **argv)
 
 char *wfgets(char *buf, int len, webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
@@ -1493,8 +1507,10 @@ char *wfgets(char *buf, int len, webs_t wp)
 		int eof = 1;
 		int i;
 		char c;
-		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0)
+		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0) {
+			pthread_mutex_unlock(&socket_mutex);
 			return NULL;
+		}
 		for (i = 0; i < len; i++) {
 			c = buf[i];
 			if (c == '\n' || c == 0) {
@@ -1502,57 +1518,91 @@ char *wfgets(char *buf, int len, webs_t wp)
 				break;
 			}
 		}
-		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0)
+		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0) {
+			pthread_mutex_unlock(&socket_mutex);
 			return NULL;
+		}
 		if (!eof) {
 			buf[i + 1] = 0;
+			pthread_mutex_unlock(&socket_mutex);
 			return buf;
-		} else
+		} else {
+			pthread_mutex_unlock(&socket_mutex);
+
 			return NULL;
+		}
 
 	} else
 #elif defined(HAVE_MATRIXSSL)
-	if (wp->do_ssl)
-		return (char *)matrixssl_gets(fp, buf, len);
-	else
+	if (wp->do_ssl) {
+		char *ret = (char *)matrixssl_gets(fp, buf, len);
+		pthread_mutex_unlock(&socket_mutex);
+
+		return ret;
+	} else
 #elif defined(HAVE_POLARSSL)
 
 	fprintf(stderr, "ssl read %d\n", len);
 	if (wp->do_ssl) {
 		int ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
 		fprintf(stderr, "returns %d\n", ret);
+		pthread_mutex_unlock(&socket_mutex);
 		return (char *)buf;
 	} else
 #endif
 #endif
-		return fgets(buf, len, fp);
+	{
+		char *ret = fgets(buf, len, fp);
+		pthread_mutex_unlock(&socket_mutex);
+
+		return ret;
+	}
 }
 
 int wfputs(char *buf, webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
+
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
+		int ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
+		pthread_mutex_unlock(&socket_mutex);
 
-		return sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
+		return ret;
 	}
 #elif defined(HAVE_MATRIXSSL)
-		return matrixssl_puts(fp, buf);
+	{
+		int ret = matrixssl_puts(fp, buf);
+		pthread_mutex_unlock(&socket_mutex);
+
+		return ret;
+	}
 #elif defined(HAVE_POLARSSL)
 	{
+		int ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "ssl write str %d\n", strlen(buf));
-		return ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
+		pthread_mutex_unlock(&socket_mutex);
+
+		return ret;
 	}
 #endif
 	else
 #endif
-		return fputs(buf, fp);
+	{
+		int ret = fputs(buf, fp);
+		pthread_mutex_unlock(&socket_mutex);
+
+		return ret;
+	}
 }
 
 int wfprintf(webs_t wp, char *fmt, ...)
 {
+	pthread_mutex_lock(&socket_mutex);
+
 	FILE *fp = wp->fp;
 	va_list args;
 	char *buf;
@@ -1564,6 +1614,7 @@ int wfprintf(webs_t wp, char *fmt, ...)
 	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
+
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 	}
 #elif defined(HAVE_MATRIXSSL)
@@ -1579,16 +1630,21 @@ int wfprintf(webs_t wp, char *fmt, ...)
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
+	pthread_mutex_unlock(&socket_mutex);
+
 	return ret;
 }
 
 int websWrite(webs_t wp, char *fmt, ...)
 {
+
 	va_list args;
 	char *buf;
 	int ret;
 	if (!wp || !fmt)
 		return -1;
+	pthread_mutex_lock(&socket_mutex);
+
 	FILE *fp = wp->fp;
 
 	va_start(args, fmt);
@@ -1612,39 +1668,49 @@ int websWrite(webs_t wp, char *fmt, ...)
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
+	pthread_mutex_unlock(&socket_mutex);
+
 	return ret;
 }
 
 size_t wfwrite(char *buf, int size, int n, webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
+
 	FILE *fp = wp->fp;
+	size_t ret;
 #ifdef HAVE_HTTPS
 	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		return sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
+		ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
 	}
 #elif defined(HAVE_MATRIXSSL)
-		return matrixssl_write(fp, (unsigned char *)buf, n * size);
+		ret = matrixssl_write(fp, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
 	{
 		fprintf(stderr, "ssl write buf %d\n", n * size);
-		return ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
+		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
 	}
 #endif
 	else
 #endif
-		return fwrite(buf, size, n, fp);
+		ret = fwrite(buf, size, n, fp);
+	pthread_mutex_unlock(&socket_mutex);
+
+	return ret;
 }
 
 size_t wfread(char *buf, int size, int n, webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
+	size_t ret;
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
 	if (wp->do_ssl) {
 #ifdef HAVE_OPENSSL
-		return sslbufferread((struct sslbuffer *)fp, buf, n * size);
+		ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
 		//do it in chains
 		int cnt = (size * n) / 0x4000;
@@ -1657,19 +1723,23 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 		}
 		len += matrixssl_read(fp, buf, (size * n) % 0x4000);
 
-		return len;
+		ret = len;
 #elif defined(HAVE_POLARSSL)
 		int len = n * size;
 		fprintf(stderr, "read ssl %d\n", len);
-		return ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
+		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
 	} else
 #endif
-		return fread(buf, size, n, fp);
+		ret = fread(buf, size, n, fp);
+	pthread_mutex_unlock(&socket_mutex);
+	return ret;
 }
 
 int wfflush(webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
+	int ret;
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
@@ -1677,20 +1747,25 @@ int wfflush(webs_t wp)
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
 		sslbufferflush((struct sslbuffer *)fp);
-		return 1;
+		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		return matrixssl_flush(fp);
+		ret = matrixssl_flush(fp);
 #elif defined(HAVE_POLARSSL)
 		ssl_flush_output((ssl_context *) fp);
-		return 1;
+		ret = 1;
 #endif
 	} else
 #endif
-		return fflush(fp);
+		ret = fflush(fp);
+
+	pthread_mutex_unlock(&socket_mutex);
+	return ret;
 }
 
 int wfclose(webs_t wp)
 {
+	pthread_mutex_lock(&socket_mutex);
+	int ret;
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
@@ -1698,21 +1773,23 @@ int wfclose(webs_t wp)
 #ifdef HAVE_OPENSSL
 		sslbufferflush((struct sslbuffer *)fp);
 		sslbufferfree((struct sslbuffer *)fp);
-		return 1;
+		ret = 1;
 #elif defined(HAVE_MATRIXSSL)
-		return matrixssl_free_session(fp);
+		ret = matrixssl_free_session(fp);
 #elif defined(HAVE_POLARSSL)
 		ssl_close_notify((ssl_context *) fp);
 		ssl_free((ssl_context *) fp);
-		return 1;
+		ret = 1;
 #endif
 	} else
 #endif
 	{
 		int ret = fclose(fp);
 		wp->fp = NULL;
-		return ret;
 	}
+	pthread_mutex_unlock(&socket_mutex);
+
+	return ret;
 }
 
 #ifdef HAVE_IAS
