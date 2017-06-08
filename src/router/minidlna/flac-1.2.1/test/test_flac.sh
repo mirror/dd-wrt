@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/sh -e
 
 #  FLAC - Free Lossless Audio Codec
-#  Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2001-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
-#  components distributed under difference licenses.  The codec libraries
+#  components distributed under different licenses.  The codec libraries
 #  are distributed under Xiph.Org's BSD-like license (see the file
 #  COPYING.Xiph in this distribution).  All other programs, libraries, and
 #  plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -17,79 +18,48 @@
 #  restrictive of those mentioned above.  See the file COPYING.Xiph in this
 #  distribution.
 
-die ()
-{
-	echo $* 1>&2
-	exit 1
-}
+. ./common.sh
+
+# we use '.' as decimal separator in --skip/--until tests
+export LANG=C LC_ALL=C
 
 dddie="die ERROR: creating files with dd"
 
-if [ x = x"$1" ] ; then
-	BUILD=debug
-else
-	BUILD="$1"
-fi
-
-# change to 'false' to show flac output (useful for debugging)
-if true ; then
-	SILENT='--silent'
-	TOTALLY_SILENT='--totally-silent'
-else
-	SILENT=''
-	TOTALLY_SILENT=''
-fi
-
-LD_LIBRARY_PATH=`pwd`/../src/libFLAC/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/grabbag/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/getopt/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/replaygain_analysis/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/replaygain_synthesis/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/utf8/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../obj/$BUILD/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH
 PATH=`pwd`/../src/flac:$PATH
 PATH=`pwd`/../src/metaflac:$PATH
 PATH=`pwd`/../src/test_streams:$PATH
-PATH=`pwd`/../obj/$BUILD/bin:$PATH
+PATH=`pwd`/../objs/$BUILD/bin:$PATH
 
-flac --help 1>/dev/null 2>/dev/null || die "ERROR can't find flac executable"
+flac${EXE} --help 1>/dev/null 2>/dev/null || die "ERROR can't find flac executable"
 
 run_flac ()
 {
 	if [ x"$FLAC__TEST_WITH_VALGRIND" = xyes ] ; then
-		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=100 flac $*" >>test_flac.valgrind.log
-		valgrind --leak-check=yes --show-reachable=yes --num-callers=100 --log-fd=4 flac $* 4>>test_flac.valgrind.log
+		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=50 flac $*" >>test_flac.valgrind.log
+		valgrind --leak-check=yes --show-reachable=yes --num-callers=50 --log-fd=4 flac${EXE} $TOTALLY_SILENT --no-error-on-compression-fail $* 4>>test_flac.valgrind.log
 	else
-		flac $*
+		flac${EXE} $TOTALLY_SILENT --no-error-on-compression-fail $*
 	fi
 }
 
 run_metaflac ()
 {
 	if [ x"$FLAC__TEST_WITH_VALGRIND" = xyes ] ; then
-		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=100 metaflac $*" >>test_flac.valgrind.log
-		valgrind --leak-check=yes --show-reachable=yes --num-callers=100 --log-fd=4 metaflac $* 4>>test_flac.valgrind.log
+		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=50 metaflac $*" >>test_flac.valgrind.log
+		valgrind --leak-check=yes --show-reachable=yes --num-callers=50 --log-fd=4 metaflac${EXE} $* 4>>test_flac.valgrind.log
 	else
-		metaflac $*
+		metaflac${EXE} $*
 	fi
 }
 
 md5cmp ()
 {
-	#n=`( [ -f "$1" ] && [ -f "$2" ] && metaflac --show-md5sum --no-filename "$1" "$2" 2>/dev/null || die "ERROR: comparing FLAC files $1 and $2 by MD5 sum" ) | uniq | wc -l`
-	n=`( [ -f "$1" ] && [ -f "$2" ] && metaflac --show-md5sum --no-filename "$1" "$2" 2>/dev/null || exit 1 ) | uniq | wc -l`
+	n=`( [ -f "$1" ] && [ -f "$2" ] && metaflac${EXE} --show-md5sum --no-filename "$1" "$2" 2>/dev/null || exit 1 ) | uniq | wc -l`
 	[ "$n" != "" ] && [ $n = 1 ]
 }
 
-if [ `env | grep -ic '^comspec='` != 0 ] ; then
-	is_win=yes
-else
-	is_win=no
-fi
-
 echo "Checking for --ogg support in flac..."
-if flac --ogg $SILENT --force-raw-format --endian=little --sign=signed --channels=1 --bps=8 --sample-rate=44100 -c $0 1>/dev/null 2>&1 ; then
+if flac${EXE} --ogg $TOTTALY_SILENT --force-raw-format --endian=little --sign=signed --channels=1 --bps=8 --sample-rate=44100 -c $0 1>/dev/null 2>&1 ; then
 	has_ogg=yes;
 	echo "flac --ogg works"
 else
@@ -109,28 +79,28 @@ fi
 echo "Try encoding to a file that exists; should fail"
 cp wacky1.wav exist.wav
 touch exist.flac
-if run_flac $TOTALLY_SILENT -0 exist.wav ; then
+if run_flac -0 exist.wav ; then
 	die "ERROR: it should have failed but didn't"
 else
 	echo "OK, it failed as it should"
 fi
 
 echo "Try encoding with -f to a file that exists; should succeed"
-if run_flac $TOTALLY_SILENT -0 --force exist.wav ; then
+if run_flac -0 --force exist.wav ; then
 	echo "OK, it succeeded as it should"
 else
 	die "ERROR: it should have succeeded but didn't"
 fi
 
 echo "Try decoding to a file that exists; should fail"
-if run_flac $TOTALLY_SILENT -d exist.flac ; then
+if run_flac -d exist.flac ; then
 	die "ERROR: it should have failed but didn't"
 else
 	echo "OK, it failed as it should"
 fi
 
 echo "Try decoding with -f to a file that exists; should succeed"
-if run_flac $TOTALLY_SILENT -d -f exist.flac ; then
+if run_flac -d -f exist.flac ; then
 	echo "OK, it succeeded as it should"
 else
 	die "ERROR: it should have succeeded but didn't"
@@ -147,11 +117,11 @@ test_fractional ()
 	blocksize=$1
 	samples=$2
 	dd if=noise.raw ibs=4 count=$samples of=pbs.raw 2>/dev/null || $dddie
-	echo -n "fractional block size test (blocksize=$blocksize samples=$samples) encode... "
-	run_flac $SILENT --force --verify --force-raw-format --endian=little --sign=signed --sample-rate=44100 --bps=16 --channels=2 --blocksize=$blocksize --no-padding --lax -o pbs.flac pbs.raw || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --force-raw-format --endian=little --sign=signed -o pbs.cmp pbs.flac || die "ERROR"
-	echo -n "compare... "
+	echo $ECHO_N "fractional block size test (blocksize=$blocksize samples=$samples) encode... " $ECHO_C
+	run_flac --force --verify --force-raw-format --endian=little --sign=signed --sample-rate=44100 --bps=16 --channels=2 --blocksize=$blocksize --no-padding --lax -o pbs.flac pbs.raw || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --force-raw-format --endian=little --sign=signed -o pbs.cmp pbs.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp pbs.raw pbs.cmp || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f pbs.raw pbs.flac pbs.cmp
@@ -183,13 +153,16 @@ done
 rt_test_raw ()
 {
 	f="$1"
+	extra="$2"
 	channels=`echo $f | awk -F- '{print $2}'`
 	bps=`echo $f | awk -F- '{print $3}'`
-	echo -n "round-trip test ($f) encode... "
-	run_flac $SILENT --force --verify --force-raw-format --endian=little --sign=signed --sample-rate=44100 --bps=$bps --channels=$channels --no-padding --lax -o rt.flac $f || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --force-raw-format --endian=little --sign=signed -o rt.raw rt.flac || die "ERROR"
-	echo -n "compare... "
+	sign=`echo $f | awk -F- '{print $4}'`
+
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --force-raw-format --endian=little --sign=$sign --sample-rate=44100 --bps=$bps --channels=$channels --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --force-raw-format --endian=little --sign=$sign -o rt.raw $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp $f rt.raw || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f rt.flac rt.raw
@@ -198,24 +171,54 @@ rt_test_raw ()
 rt_test_wav ()
 {
 	f="$1"
-	echo -n "round-trip test ($f) encode... "
-	run_flac $SILENT --force --verify --channel-map=none --no-padding --lax -o rt.flac $f || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --channel-map=none -o rt.wav rt.flac || die "ERROR"
-	echo -n "compare... "
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.wav $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp $f rt.wav || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f rt.flac rt.wav
 }
 
+rt_test_w64 ()
+{
+	f="$1"
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.w64 $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
+	cmp $f rt.w64 || die "ERROR: file mismatch"
+	echo "OK"
+	rm -f rt.flac rt.w64
+}
+
+rt_test_rf64 ()
+{
+	f="$1"
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.rf64 $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
+	cmp $f rt.rf64 || die "ERROR: file mismatch"
+	echo "OK"
+	rm -f rt.flac rt.rf64
+}
+
 rt_test_aiff ()
 {
 	f="$1"
-	echo -n "round-trip test ($f) encode... "
-	run_flac $SILENT --force --verify --channel-map=none --no-padding --lax -o rt.flac $f || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --channel-map=none -o rt.aiff rt.flac || die "ERROR"
-	echo -n "compare... "
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.aiff $extra rt.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp $f rt.aiff || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f rt.flac rt.aiff
@@ -225,13 +228,14 @@ rt_test_aiff ()
 rt_test_flac ()
 {
 	f="$1"
-	echo -n "round-trip test ($f->flac->flac->wav) encode... "
-	run_flac $SILENT --force --verify --channel-map=none --no-padding --lax -o rt.flac $f || die "ERROR"
-	echo -n "re-encode... "
-	run_flac $SILENT --force --verify --lax -o rt2.flac rt.flac || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --channel-map=none -o rt.wav rt2.flac || die "ERROR"
-	echo -n "compare... "
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f->flac->flac->wav) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.flac $extra $f || die "ERROR"
+	echo $ECHO_N "re-encode... " $ECHO_C
+	run_flac --force --verify --lax -o rt2.flac rt.flac || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.wav $extra rt2.flac || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp $f rt.wav || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f rt.wav rt.flac rt2.flac
@@ -241,13 +245,14 @@ rt_test_flac ()
 rt_test_ogg_flac ()
 {
 	f="$1"
-	echo -n "round-trip test ($f->oggflac->oggflac->wav) encode... "
-	run_flac $SILENT --force --verify --channel-map=none --no-padding --lax -o rt.oga --ogg $f || die "ERROR"
-	echo -n "re-encode... "
-	run_flac $SILENT --force --verify --lax -o rt2.oga --ogg rt.oga || die "ERROR"
-	echo -n "decode... "
-	run_flac $SILENT --force --decode --channel-map=none -o rt.wav rt2.oga || die "ERROR"
-	echo -n "compare... "
+	extra="$2"
+	echo $ECHO_N "round-trip test ($f->oggflac->oggflac->wav) encode... " $ECHO_C
+	run_flac --force --verify --channel-map=none --no-padding --lax -o rt.oga --ogg $extra $f || die "ERROR"
+	echo $ECHO_N "re-encode... " $ECHO_C
+	run_flac --force --verify --lax -o rt2.oga --ogg rt.oga || die "ERROR"
+	echo $ECHO_N "decode... " $ECHO_C
+	run_flac --force --decode --channel-map=none -o rt.wav $extra rt2.oga || die "ERROR"
+	echo $ECHO_N "compare... " $ECHO_C
 	cmp $f rt.wav || die "ERROR: file mismatch"
 	echo "OK"
 	rm -f rt.wav rt.oga rt2.oga
@@ -258,6 +263,12 @@ for f in rt-*.raw ; do
 done
 for f in rt-*.wav ; do
 	rt_test_wav $f
+done
+for f in rt-*.w64 ; do
+	rt_test_w64 $f
+done
+for f in rt-*.rf64 ; do
+	rt_test_rf64 $f
 done
 for f in rt-*.aiff ; do
 	rt_test_aiff $f
@@ -296,8 +307,8 @@ dd if=master.raw ibs=1 skip=10 count=30 of=50c.skip10.until40.raw 2>/dev/null ||
 dd if=master.raw ibs=1 skip=20 count=10 of=50c.skip20.until30.raw 2>/dev/null || $dddie
 dd if=master.raw ibs=1 skip=20 count=20 of=50c.skip20.until40.raw 2>/dev/null || $dddie
 
-wav_eopt="$SILENT --force --verify --no-padding --lax"
-wav_dopt="$SILENT --force --decode"
+wav_eopt="--force --verify --no-padding --lax"
+wav_dopt="--force --decode"
 
 raw_eopt="$wav_eopt --force-raw-format --endian=big --sign=signed --sample-rate=10 --bps=8 --channels=1"
 raw_dopt="$wav_dopt --force-raw-format --endian=big --sign=signed"
@@ -405,25 +416,26 @@ test_skip_until ()
 
 	desc="($in_fmt<->$out_fmt)"
 
-	echo -n "testing --skip=# (encode) $desc... "
+	echo $ECHO_N "testing --skip=# (encode) $desc... " $ECHO_C
 	run_flac $eopt --skip=10 -o z50c.skip10.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.$in_fmt z50c.skip10.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.$in_fmt z50c.skip10.$in_fmt || die "ERROR: file mismatch for --skip=10 (encode) $desc"
 	rm -f z50c.skip10.$out_fmt z50c.skip10.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=mm:ss (encode) $desc... "
-	run_flac $eopt --skip=0:01 -o z50c.skip0:01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip0:01.$in_fmt z50c.skip0:01.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.$in_fmt z50c.skip0:01.$in_fmt || die "ERROR: file mismatch for --skip=0:01 (encode) $desc"
-	rm -f z50c.skip0:01.$out_fmt z50c.skip0:01.$in_fmt
+	echo $ECHO_N "testing --skip=mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=0:01 -o z50c.skip0_01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip0_01.$in_fmt z50c.skip0_01.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.$in_fmt z50c.skip0_01.$in_fmt || die "ERROR: file mismatch for --skip=0:01 (encode) $desc"
+	rm -f z50c.skip0_01.$out_fmt z50c.skip0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=mm:ss.sss (encode) $desc... "
-	run_flac $eopt --skip=0:01.1001 -o z50c.skip0:01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip0:01.1001.$in_fmt z50c.skip0:01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip11.$in_fmt z50c.skip0:01.1001.$in_fmt || die "ERROR: file mismatch for --skip=0:01.1001 (encode) $desc"
-	rm -f z50c.skip0:01.1001.$out_fmt z50c.skip0:01.1001.$in_fmt
+	echo $ECHO_N "testing --skip=mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=0:01.1001 -o z50c.skip0_01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip0_01.1001.$in_fmt z50c.skip0_01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip11.$in_fmt z50c.skip0_01.1001.$in_fmt || die "ERROR: file mismatch for --skip=0:01.1001 (encode) $desc"
+	rm -f z50c.skip0_01.1001.$out_fmt z50c.skip0_01.1001.$in_fmt
 	echo OK
 
 	#
@@ -432,22 +444,22 @@ test_skip_until ()
 
 	if [ $in_fmt != $out_fmt ] ; then run_flac $eopt -o z50c.$out_fmt 50c.$in_fmt ; else cp -f 50c.$in_fmt z50c.$out_fmt ; fi || die "ERROR generating FLAC file $desc"
 
-	echo -n "testing --skip=# (decode) $desc... "
+	echo $ECHO_N "testing --skip=# (decode) $desc... " $ECHO_C
 	run_flac $dopt --skip=10 -o z50c.skip10.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.$in_fmt z50c.skip10.$in_fmt || die "ERROR: file mismatch for --skip=10 (decode) $desc"
 	rm -f z50c.skip10.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=mm:ss (decode) $desc... "
-	run_flac $dopt --skip=0:01 -o z50c.skip0:01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.$in_fmt z50c.skip0:01.$in_fmt || die "ERROR: file mismatch for --skip=0:01 (decode) $desc"
-	rm -f z50c.skip0:01.$in_fmt
+	echo $ECHO_N "testing --skip=mm:ss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=0:01 -o z50c.skip0_01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.$in_fmt z50c.skip0_01.$in_fmt || die "ERROR: file mismatch for --skip=0:01 (decode) $desc"
+	rm -f z50c.skip0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=mm:ss.sss (decode) $desc... "
-	run_flac $dopt --skip=0:01.1001 -o z50c.skip0:01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip11.$in_fmt z50c.skip0:01.1001.$in_fmt || die "ERROR: file mismatch for --skip=0:01.1001 (decode) $desc"
-	rm -f z50c.skip0:01.1001.$in_fmt
+	echo $ECHO_N "testing --skip=mm:ss.sss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=0:01.1001 -o z50c.skip0_01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip11.$in_fmt z50c.skip0_01.1001.$in_fmt || die "ERROR: file mismatch for --skip=0:01.1001 (decode) $desc"
+	rm -f z50c.skip0_01.1001.$in_fmt
 	echo OK
 
 	rm -f z50c.$out_fmt
@@ -456,46 +468,46 @@ test_skip_until ()
 	# test --until when encoding
 	#
 
-	echo -n "testing --until=# (encode) $desc... "
+	echo $ECHO_N "testing --until=# (encode) $desc... " $ECHO_C
 	run_flac $eopt --until=40 -o z50c.until40.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until40.$in_fmt z50c.until40.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.until40.$in_fmt || die "ERROR: file mismatch for --until=40 (encode) $desc"
 	rm -f z50c.until40.$out_fmt z50c.until40.$in_fmt
 	echo OK
 
-	echo -n "testing --until=mm:ss (encode) $desc... "
-	run_flac $eopt --until=0:04 -o z50c.until0:04.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until0:04.$in_fmt z50c.until0:04.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until40.$in_fmt z50c.until0:04.$in_fmt || die "ERROR: file mismatch for --until=0:04 (encode) $desc"
-	rm -f z50c.until0:04.$out_fmt z50c.until0:04.$in_fmt
+	echo $ECHO_N "testing --until=mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --until=0:04 -o z50c.until0_04.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until0_04.$in_fmt z50c.until0_04.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until40.$in_fmt z50c.until0_04.$in_fmt || die "ERROR: file mismatch for --until=0:04 (encode) $desc"
+	rm -f z50c.until0_04.$out_fmt z50c.until0_04.$in_fmt
 	echo OK
 
-	echo -n "testing --until=mm:ss.sss (encode) $desc... "
-	run_flac $eopt --until=0:03.9001 -o z50c.until0:03.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until0:03.9001.$in_fmt z50c.until0:03.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until39.$in_fmt z50c.until0:03.9001.$in_fmt || die "ERROR: file mismatch for --until=0:03.9001 (encode) $desc"
-	rm -f z50c.until0:03.9001.$out_fmt z50c.until0:03.9001.$in_fmt
+	echo $ECHO_N "testing --until=mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --until=0:03.9001 -o z50c.until0_03.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until0_03.9001.$in_fmt z50c.until0_03.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until39.$in_fmt z50c.until0_03.9001.$in_fmt || die "ERROR: file mismatch for --until=0:03.9001 (encode) $desc"
+	rm -f z50c.until0_03.9001.$out_fmt z50c.until0_03.9001.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-# (encode) $desc... "
+	echo $ECHO_N "testing --until=-# (encode) $desc... " $ECHO_C
 	run_flac $eopt --until=-10 -o z50c.until-10.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until-10.$in_fmt z50c.until-10.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.until-10.$in_fmt || die "ERROR: file mismatch for --until=-10 (encode) $desc"
 	rm -f z50c.until-10.$out_fmt z50c.until-10.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-mm:ss (encode) $desc... "
-	run_flac $eopt --until=-0:01 -o z50c.until-0:01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until-0:01.$in_fmt z50c.until-0:01.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until40.$in_fmt z50c.until-0:01.$in_fmt || die "ERROR: file mismatch for --until=-0:01 (encode) $desc"
-	rm -f z50c.until-0:01.$out_fmt z50c.until-0:01.$in_fmt
+	echo $ECHO_N "testing --until=-mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --until=-0:01 -o z50c.until-0_01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until-0_01.$in_fmt z50c.until-0_01.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until40.$in_fmt z50c.until-0_01.$in_fmt || die "ERROR: file mismatch for --until=-0:01 (encode) $desc"
+	rm -f z50c.until-0_01.$out_fmt z50c.until-0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-mm:ss.sss (encode) $desc... "
-	run_flac $eopt --until=-0:01.1001 -o z50c.until-0:01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until-0:01.1001.$in_fmt z50c.until-0:01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until39.$in_fmt z50c.until-0:01.1001.$in_fmt || die "ERROR: file mismatch for --until=-0:01.1001 (encode) $desc"
-	rm -f z50c.until-0:01.1001.$out_fmt z50c.until-0:01.1001.$in_fmt
+	echo $ECHO_N "testing --until=-mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --until=-0:01.1001 -o z50c.until-0_01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.until-0_01.1001.$in_fmt z50c.until-0_01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until39.$in_fmt z50c.until-0_01.1001.$in_fmt || die "ERROR: file mismatch for --until=-0:01.1001 (encode) $desc"
+	rm -f z50c.until-0_01.1001.$out_fmt z50c.until-0_01.1001.$in_fmt
 	echo OK
 
 	#
@@ -504,40 +516,40 @@ test_skip_until ()
 
 	if [ $in_fmt != $out_fmt ] ; then run_flac $eopt -o z50c.$out_fmt 50c.$in_fmt ; else cp -f 50c.$in_fmt z50c.$out_fmt ; fi || die "ERROR generating FLAC file $desc"
 
-	echo -n "testing --until=# (decode) $desc... "
+	echo $ECHO_N "testing --until=# (decode) $desc... " $ECHO_C
 	run_flac $dopt --until=40 -o z50c.until40.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.until40.$in_fmt || die "ERROR: file mismatch for --until=40 (decode) $desc"
 	rm -f z50c.until40.$in_fmt
 	echo OK
 
-	echo -n "testing --until=mm:ss (decode) $desc... "
-	run_flac $dopt --until=0:04 -o z50c.until0:04.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until40.$in_fmt z50c.until0:04.$in_fmt || die "ERROR: file mismatch for --until=0:04 (decode) $desc"
-	rm -f z50c.until0:04.$in_fmt
+	echo $ECHO_N "testing --until=mm:ss (decode) $desc... " $ECHO_C
+	run_flac $dopt --until=0:04 -o z50c.until0_04.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until40.$in_fmt z50c.until0_04.$in_fmt || die "ERROR: file mismatch for --until=0:04 (decode) $desc"
+	rm -f z50c.until0_04.$in_fmt
 	echo OK
 
-	echo -n "testing --until=mm:ss.sss (decode) $desc... "
-	run_flac $dopt --until=0:03.9001 -o z50c.until0:03.9001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until39.$in_fmt z50c.until0:03.9001.$in_fmt || die "ERROR: file mismatch for --until=0:03.9001 (decode) $desc"
-	rm -f z50c.until0:03.9001.$in_fmt
+	echo $ECHO_N "testing --until=mm:ss.sss (decode) $desc... " $ECHO_C
+	run_flac $dopt --until=0:03.9001 -o z50c.until0_03.9001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until39.$in_fmt z50c.until0_03.9001.$in_fmt || die "ERROR: file mismatch for --until=0:03.9001 (decode) $desc"
+	rm -f z50c.until0_03.9001.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-# (decode) $desc... "
+	echo $ECHO_N "testing --until=-# (decode) $desc... " $ECHO_C
 	run_flac $dopt --until=-10 -o z50c.until-10.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.until-10.$in_fmt || die "ERROR: file mismatch for --until=-10 (decode) $desc"
 	rm -f z50c.until-10.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-mm:ss (decode) $desc... "
-	run_flac $dopt --until=-0:01 -o z50c.until-0:01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until40.$in_fmt z50c.until-0:01.$in_fmt || die "ERROR: file mismatch for --until=-0:01 (decode) $desc"
-	rm -f z50c.until-0:01.$in_fmt
+	echo $ECHO_N "testing --until=-mm:ss (decode) $desc... " $ECHO_C
+	run_flac $dopt --until=-0:01 -o z50c.until-0_01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until40.$in_fmt z50c.until-0_01.$in_fmt || die "ERROR: file mismatch for --until=-0:01 (decode) $desc"
+	rm -f z50c.until-0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --until=-mm:ss.sss (decode) $desc... "
-	run_flac $dopt --until=-0:01.1001 -o z50c.until-0:01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.until39.$in_fmt z50c.until-0:01.1001.$in_fmt || die "ERROR: file mismatch for --until=-0:01.1001 (decode) $desc"
-	rm -f z50c.until-0:01.1001.$in_fmt
+	echo $ECHO_N "testing --until=-mm:ss.sss (decode) $desc... " $ECHO_C
+	run_flac $dopt --until=-0:01.1001 -o z50c.until-0_01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.until39.$in_fmt z50c.until-0_01.1001.$in_fmt || die "ERROR: file mismatch for --until=-0:01.1001 (decode) $desc"
+	rm -f z50c.until-0_01.1001.$in_fmt
 	echo OK
 
 	rm -f z50c.$out_fmt
@@ -546,67 +558,67 @@ test_skip_until ()
 	# test --skip and --until when encoding
 	#
 
-	echo -n "testing --skip=10 --until=# (encode) $desc... "
+	echo $ECHO_N "testing --skip=10 --until=# (encode) $desc... " $ECHO_C
 	run_flac $eopt --skip=10 --until=40 -o z50c.skip10.until40.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until40.$in_fmt z50c.skip10.until40.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until40.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=40 (encode) $desc"
 	rm -f z50c.skip10.until40.$out_fmt z50c.skip10.until40.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=mm:ss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=0:04 -o z50c.skip10.until0:04.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until0:04.$in_fmt z50c.skip10.until0:04.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until0:04.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:04 (encode) $desc"
-	rm -f z50c.skip10.until0:04.$out_fmt z50c.skip10.until0:04.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=0:04 -o z50c.skip10.until0_04.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until0_04.$in_fmt z50c.skip10.until0_04.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until0_04.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:04 (encode) $desc"
+	rm -f z50c.skip10.until0_04.$out_fmt z50c.skip10.until0_04.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=mm:ss.sss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=0:03.9001 -o z50c.skip10.until0:03.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until0:03.9001.$in_fmt z50c.skip10.until0:03.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until0:03.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:03.9001 (encode) $desc"
-	rm -f z50c.skip10.until0:03.9001.$out_fmt z50c.skip10.until0:03.9001.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=0:03.9001 -o z50c.skip10.until0_03.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until0_03.9001.$in_fmt z50c.skip10.until0_03.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until0_03.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:03.9001 (encode) $desc"
+	rm -f z50c.skip10.until0_03.9001.$out_fmt z50c.skip10.until0_03.9001.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=+# (encode) $desc... "
+	echo $ECHO_N "testing --skip=10 --until=+# (encode) $desc... " $ECHO_C
 	run_flac $eopt --skip=10 --until=+30 -o z50c.skip10.until+30.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until+30.$in_fmt z50c.skip10.until+30.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until+30.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=+30 (encode) $desc"
 	rm -f z50c.skip10.until+30.$out_fmt z50c.skip10.until+30.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=+mm:ss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=+0:03 -o z50c.skip10.until+0:03.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until+0:03.$in_fmt z50c.skip10.until+0:03.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until+0:03.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=+0:03 (encode) $desc"
-	rm -f z50c.skip10.until+0:03.$out_fmt z50c.skip10.until+0:03.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=+mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=+0:03 -o z50c.skip10.until+0_03.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until+0_03.$in_fmt z50c.skip10.until+0_03.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until+0_03.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=+0:03 (encode) $desc"
+	rm -f z50c.skip10.until+0_03.$out_fmt z50c.skip10.until+0_03.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=+mm:ss.sss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=+0:02.9001 -o z50c.skip10.until+0:02.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until+0:02.9001.$in_fmt z50c.skip10.until+0:02.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until+0:02.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=+0:02.9001 (encode) $desc"
-	rm -f z50c.skip10.until+0:02.9001.$out_fmt z50c.skip10.until+0:02.9001.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=+mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=+0:02.9001 -o z50c.skip10.until+0_02.9001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until+0_02.9001.$in_fmt z50c.skip10.until+0_02.9001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until+0_02.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=+0:02.9001 (encode) $desc"
+	rm -f z50c.skip10.until+0_02.9001.$out_fmt z50c.skip10.until+0_02.9001.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-# (encode) $desc... "
+	echo $ECHO_N "testing --skip=10 --until=-# (encode) $desc... " $ECHO_C
 	run_flac $eopt --skip=10 --until=-10 -o z50c.skip10.until-10.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
 	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until-10.$in_fmt z50c.skip10.until-10.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-10.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-10 (encode) $desc"
 	rm -f z50c.skip10.until-10.$out_fmt z50c.skip10.until-10.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-mm:ss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=-0:01 -o z50c.skip10.until-0:01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until-0:01.$in_fmt z50c.skip10.until-0:01.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-0:01.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01 (encode) $desc"
-	rm -f z50c.skip10.until-0:01.$out_fmt z50c.skip10.until-0:01.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=-mm:ss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=-0:01 -o z50c.skip10.until-0_01.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until-0_01.$in_fmt z50c.skip10.until-0_01.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-0_01.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01 (encode) $desc"
+	rm -f z50c.skip10.until-0_01.$out_fmt z50c.skip10.until-0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-mm:ss.sss (encode) $desc... "
-	run_flac $eopt --skip=10 --until=-0:01.1001 -o z50c.skip10.until-0:01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
-	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until-0:01.1001.$in_fmt z50c.skip10.until-0:01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until-0:01.1001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01.1001 (encode) $desc"
-	rm -f z50c.skip10.until-0:01.1001.$out_fmt z50c.skip10.until-0:01.1001.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=-mm:ss.sss (encode) $desc... " $ECHO_C
+	run_flac $eopt --skip=10 --until=-0:01.1001 -o z50c.skip10.until-0_01.1001.$out_fmt 50c.$in_fmt || die "ERROR generating FLAC file $desc"
+	[ $in_fmt = $out_fmt ] || run_flac $dopt -o z50c.skip10.until-0_01.1001.$in_fmt z50c.skip10.until-0_01.1001.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until-0_01.1001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01.1001 (encode) $desc"
+	rm -f z50c.skip10.until-0_01.1001.$out_fmt z50c.skip10.until-0_01.1001.$in_fmt
 	echo OK
 
 	#
@@ -616,40 +628,40 @@ test_skip_until ()
 	if [ $in_fmt != $out_fmt ] ; then run_flac $eopt -o z50c.$out_fmt 50c.$in_fmt ; else cp -f 50c.$in_fmt z50c.$out_fmt ; fi || die "ERROR generating FLAC file $desc"
 
 
-	echo -n "testing --skip=10 --until=# (decode) $desc... "
+	echo $ECHO_N "testing --skip=10 --until=# (decode) $desc... " $ECHO_C
 	run_flac $dopt --skip=10 --until=40 -o z50c.skip10.until40.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until40.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=40 (decode) $desc"
 	rm -f z50c.skip10.until40.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=mm:ss (decode) $desc... "
-	run_flac $dopt --skip=10 --until=0:04 -o z50c.skip10.until0:04.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until0:04.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:04 (decode) $desc"
-	rm -f z50c.skip10.until0:04.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=mm:ss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=10 --until=0:04 -o z50c.skip10.until0_04.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until0_04.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:04 (decode) $desc"
+	rm -f z50c.skip10.until0_04.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=mm:ss.sss (decode) $desc... "
-	run_flac $dopt --skip=10 --until=0:03.9001 -o z50c.skip10.until0:03.9001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until0:03.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:03.9001 (decode) $desc"
-	rm -f z50c.skip10.until0:03.9001.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=mm:ss.sss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=10 --until=0:03.9001 -o z50c.skip10.until0_03.9001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until0_03.9001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=0:03.9001 (decode) $desc"
+	rm -f z50c.skip10.until0_03.9001.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-# (decode) $desc... "
+	echo $ECHO_N "testing --skip=10 --until=-# (decode) $desc... " $ECHO_C
 	run_flac $dopt --skip=10 --until=-10 -o z50c.skip10.until-10.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-10.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-10 (decode) $desc"
 	rm -f z50c.skip10.until-10.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-mm:ss (decode) $desc... "
-	run_flac $dopt --skip=10 --until=-0:01 -o z50c.skip10.until-0:01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-0:01.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01 (decode) $desc"
-	rm -f z50c.skip10.until-0:01.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=-mm:ss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=10 --until=-0:01 -o z50c.skip10.until-0_01.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until40.$in_fmt z50c.skip10.until-0_01.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01 (decode) $desc"
+	rm -f z50c.skip10.until-0_01.$in_fmt
 	echo OK
 
-	echo -n "testing --skip=10 --until=-mm:ss.sss (decode) $desc... "
-	run_flac $dopt --skip=10 --until=-0:01.1001 -o z50c.skip10.until-0:01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
-	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until-0:01.1001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01.1001 (decode) $desc"
-	rm -f z50c.skip10.until-0:01.1001.$in_fmt
+	echo $ECHO_N "testing --skip=10 --until=-mm:ss.sss (decode) $desc... " $ECHO_C
+	run_flac $dopt --skip=10 --until=-0:01.1001 -o z50c.skip10.until-0_01.1001.$in_fmt z50c.$out_fmt || die "ERROR decoding FLAC file $desc"
+	$CMP 50c.skip10.until39.$in_fmt z50c.skip10.until-0_01.1001.$in_fmt || die "ERROR: file mismatch for --skip=10 --until=-0:01.1001 (decode) $desc"
+	rm -f z50c.skip10.until-0_01.1001.$in_fmt
 	echo OK
 
 	rm -f z50c.$out_fmt
@@ -675,7 +687,7 @@ fi
 
 echo "testing seek extremes:"
 
-run_flac --verify --force $SILENT --no-padding --force-raw-format --endian=big --sign=signed --sample-rate=44100 --bps=16 --channels=2 --blocksize=576 noise.raw || die "ERROR generating FLAC file"
+run_flac --verify --force --no-padding --force-raw-format --endian=big --sign=signed --sample-rate=44100 --bps=16 --channels=2 --blocksize=576 noise.raw || die "ERROR generating FLAC file"
 
 if [ $is_win = no ] ; then
 	total_noise_cdda_samples=`run_metaflac --show-total-samples noise.flac`
@@ -687,19 +699,18 @@ else
 	total_noise_cdda_samples=393216
 fi
 
-echo -n "testing --skip=0... "
+echo $ECHO_N "testing --skip=0... " $ECHO_C
 run_flac $wav_dopt --skip=0 -o z.wav noise.flac || die "ERROR decoding FLAC file noise.flac"
 echo OK
 
 for delta in 2 1 ; do
 	n=`expr $total_noise_cdda_samples - $delta`
-	echo -n "testing --skip=$n... "
+	echo $ECHO_N "testing --skip=$n... " $ECHO_C
 	run_flac $wav_dopt --skip=$n -o z.wav noise.flac || die "ERROR decoding FLAC file noise.flac"
 	echo OK
 done
 
 rm noise.flac z.wav
-
 
 ############################################################################
 # test --input-size
@@ -707,7 +718,7 @@ rm noise.flac z.wav
 
 #@@@ cat will not work on old cygwin, need to fix
 if [ $is_win = no ] ; then
-	echo -n "testing --input-size=50 --skip=10... "
+	echo $ECHO_N "testing --input-size=50 --skip=10... " $ECHO_C
 	cat 50c.raw | run_flac $raw_eopt --input-size=50 --skip=10 -o z50c.skip10.flac - || die "ERROR generating FLAC file"
 	run_flac $raw_dopt -o z50c.skip10.raw z50c.skip10.flac || die "ERROR decoding FLAC file"
 	cmp 50c.skip10.raw z50c.skip10.raw || die "ERROR: file mismatch for --input-size=50 --skip=10"
@@ -780,103 +791,103 @@ test_cue ()
 	# TRACK 02, INDEX 01 : 0:03.00 -> sample 30
 	# TRACK 04, INDEX 01 : 0:04.00 -> sample 40
 	#
-	echo -n "testing --cue=- $desc... "
+	echo $ECHO_N "testing --cue=- $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=- z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=- $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.0 $desc... "
+	echo $ECHO_N "testing --cue=1.0 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.0 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.0 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.0- $desc... "
+	echo $ECHO_N "testing --cue=1.0- $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.0- z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.0- $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.1 $desc... "
+	echo $ECHO_N "testing --cue=1.1 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.1 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.1 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.1- $desc... "
+	echo $ECHO_N "testing --cue=1.1- $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.1- z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.1- $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.2 $desc... "
+	echo $ECHO_N "testing --cue=1.2 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.2 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.2 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.2- $desc... "
+	echo $ECHO_N "testing --cue=1.2- $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.2- z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.2- $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.4 $desc... "
+	echo $ECHO_N "testing --cue=1.4 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.4 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip20.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.4 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.4- $desc... "
+	echo $ECHO_N "testing --cue=1.4- $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.4- z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip20.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.4- $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=-5.0 $desc... "
+	echo $ECHO_N "testing --cue=-5.0 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=-5.0 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=-5.0 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=-4.1 $desc... "
+	echo $ECHO_N "testing --cue=-4.1 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=-4.1 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=-4.1 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=-3.1 $desc... "
+	echo $ECHO_N "testing --cue=-3.1 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=-3.1 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until40.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=-3.1 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=-1.4 $desc... "
+	echo $ECHO_N "testing --cue=-1.4 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=-1.4 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.until30.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=-1.4 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.0-5.0 $desc... "
+	echo $ECHO_N "testing --cue=1.0-5.0 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.0-5.0 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.0-5.0 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.1-5.0 $desc... "
+	echo $ECHO_N "testing --cue=1.1-5.0 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.1-5.0 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.1-5.0 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.2-4.1 $desc... "
+	echo $ECHO_N "testing --cue=1.2-4.1 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.2-4.1 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip10.until40.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.2-4.1 $desc"
 	rm -f z50c.cued.$in_fmt
 	echo OK
 
-	echo -n "testing --cue=1.4-2.0 $desc... "
+	echo $ECHO_N "testing --cue=1.4-2.0 $desc... " $ECHO_C
 	run_flac $dopt -o z50c.cued.$in_fmt --cue=1.4-2.0 z50c.cue.$out_fmt || die "ERROR decoding FLAC file $desc"
 	$CMP 50c.skip20.until30.$in_fmt z50c.cued.$in_fmt || die "ERROR: file mismatch for --cue=1.4-2.0 $desc"
 	rm -f z50c.cued.$in_fmt
@@ -909,12 +920,12 @@ fi
 # decoder go back and fix up the chunk headers
 ############################################################################
 
-echo -n "WAVE fixup test... "
+echo $ECHO_N "WAVE fixup test... " $ECHO_C
 
-echo -n "prepare... "
+echo $ECHO_N "prepare... " $ECHO_C
 convert_to_wav noise "$raw_eopt" "$wav_dopt" || die "ERROR creating reference WAVE"
 
-echo -n "encode... "
+echo $ECHO_N "encode... " $ECHO_C
 # the pipe from 'cat' to 'flac' does not work on cygwin because of the EOF/
 # binary-mode stdin problem, so we use an undocumented option to metaflac to
 # set the total sample count to 0
@@ -925,21 +936,21 @@ else
 	cat noise.raw | run_flac $raw_eopt - -c > fixup.flac || die "ERROR generating FLAC file"
 fi
 
-echo -n "decode... "
+echo $ECHO_N "decode... " $ECHO_C
 run_flac $wav_dopt fixup.flac -o fixup.wav || die "ERROR decoding FLAC file"
 
-echo -n "compare... "
+echo $ECHO_N "compare... " $ECHO_C
 cmp noise.wav fixup.wav || die "ERROR: file mismatch"
 
 echo OK
 rm -f noise.wav fixup.wav fixup.flac
 
-echo -n "AIFF fixup test... "
+echo $ECHO_N "AIFF fixup test... " $ECHO_C
 
-echo -n "prepare... "
+echo $ECHO_N "prepare... " $ECHO_C
 convert_to_aiff noise "$raw_eopt" "$wav_dopt" || die "ERROR creating reference AIFF"
 
-echo -n "encode... "
+echo $ECHO_N "encode... " $ECHO_C
 # the pipe from 'cat' to 'flac' does not work on cygwin because of the EOF/
 # binary-mode stdin problem, so we use an undocumented option to metaflac to
 # set the total sample count to 0
@@ -950,10 +961,10 @@ else
 	cat noise.raw | run_flac $raw_eopt - -c > fixup.flac || die "ERROR generating FLAC file"
 fi
 
-echo -n "decode... "
+echo $ECHO_N "decode... " $ECHO_C
 run_flac $wav_dopt fixup.flac -o fixup.aiff || die "ERROR decoding FLAC file"
 
-echo -n "compare... "
+echo $ECHO_N "compare... " $ECHO_C
 cmp noise.aiff fixup.aiff || die "ERROR: file mismatch"
 
 echo OK
@@ -968,10 +979,10 @@ echo "Generating multiple input files from noise..."
 multifile_format_decode="--endian=big --sign=signed"
 multifile_format_encode="$multifile_format_decode --sample-rate=44100 --bps=16 --channels=2 --no-padding"
 short_noise_cdda_samples=`expr $total_noise_cdda_samples / 8`
-run_flac --verify --force $SILENT --force-raw-format $multifile_format_encode --until=$short_noise_cdda_samples -o shortnoise.flac noise.raw || die "ERROR generating FLAC file"
-run_flac --decode --force $SILENT shortnoise.flac -o shortnoise.raw --force-raw-format $multifile_format_decode || die "ERROR generating RAW file"
-run_flac --decode --force $SILENT shortnoise.flac || die "ERROR generating WAVE file"
-run_flac --decode --force $SILENT shortnoise.flac -o shortnoise.aiff || die "ERROR generating AIFF file"
+run_flac --verify --force --force-raw-format $multifile_format_encode --until=$short_noise_cdda_samples -o shortnoise.flac noise.raw || die "ERROR generating FLAC file"
+run_flac --decode --force shortnoise.flac -o shortnoise.raw --force-raw-format $multifile_format_decode || die "ERROR generating RAW file"
+run_flac --decode --force shortnoise.flac || die "ERROR generating WAVE file"
+run_flac --decode --force shortnoise.flac -o shortnoise.aiff || die "ERROR generating AIFF file"
 cp shortnoise.flac file0.flac
 cp shortnoise.flac file1.flac
 cp shortnoise.flac file2.flac
@@ -1013,13 +1024,13 @@ dd if=/dev/zero ibs=4 count=$file2_remainder of=z.raw 2>/dev/null || $dddie
 cat z.raw >> file2s.raw || die "ERROR: cat-ing sector-aligned files"
 rm -f z.raw
 
-convert_to_wav file0s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
-convert_to_wav file1s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
-convert_to_wav file2s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
+convert_to_wav file0s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
+convert_to_wav file1s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
+convert_to_wav file2s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned WAVE"
 
-convert_to_aiff file0s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
-convert_to_aiff file1s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
-convert_to_aiff file2s "$multifile_format_encode --force" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
+convert_to_aiff file0s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
+convert_to_aiff file1s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
+convert_to_aiff file2s "$multifile_format_encode --force --force-raw-format" "$SILENT --force --decode" || die "ERROR creating authoritative sector-aligned AIFF"
 
 test_multifile ()
 {
@@ -1117,12 +1128,27 @@ done
 
 
 ############################################################################
+# test --keep-foreign-metadata
+############################################################################
+
+echo "Testing --keep-foreign-metadata..."
+
+rt_test_wav wacky1.wav '--keep-foreign-metadata'
+rt_test_wav wacky2.wav '--keep-foreign-metadata'
+rt_test_w64 wacky1.w64 '--keep-foreign-metadata'
+rt_test_w64 wacky2.w64 '--keep-foreign-metadata'
+rt_test_rf64 wacky1.rf64 '--keep-foreign-metadata'
+rt_test_rf64 wacky2.rf64 '--keep-foreign-metadata'
+
+
+############################################################################
 # test the metadata-handling properties of flac-to-flac encoding
 ############################################################################
 
 echo "Testing the metadata-handling properties of flac-to-flac encoding..."
 
-testdir="flac-to-flac-metadata-test-files"
+testdatadir=${top_srcdir}/test/flac-to-flac-metadata-test-files
+
 filter ()
 {
 	# minor danger, changing vendor strings might change the length of the
@@ -1132,19 +1158,20 @@ filter ()
 }
 flac2flac ()
 {
-	file="$1"
-	case="$2"
+	file="$testdatadir/$1"
+	case="$testdatadir/$2"
 	args="$3"
 	expect="$case-expect.meta"
-	echo -n "$case... "
-	run_flac $SILENT -f -o out.flac $args $file || die "ERROR encoding FLAC file"
+	echo $ECHO_N "$2... " $ECHO_C
+	# The 'make distcheck' target needs this.
+	chmod u+w $file
+	run_flac -f -o out.flac $args $file || die "ERROR encoding FLAC file"
 	run_metaflac --list out.flac | filter > out.meta || die "ERROR listing metadata of output FLAC file"
 	diff -q -w $expect out.meta 2>/dev/null || die "ERROR: metadata does not match expected $expect"
 	echo OK
 }
 
 #filter=', stream_offset.*|^  vendor string: |^  length: |^  m..imum .....size: '
-cd $testdir || die "ERROR changing to directory $testdir"
 
 # case 00a: no alterations on a file with all metadata types, keep all metadata, in same order
 flac2flac input-SCVAUP.flac case00a ""
@@ -1163,13 +1190,13 @@ flac2flac input-SCPAP.flac case02a ""
 # case 02b: on file with no VORBIS_COMMENT block and --tag, add new VORBIS_COMMENT with tags
 flac2flac input-SCPAP.flac case02b "--tag=artist=0"
 # case 02c: on file with VORBIS_COMMENT block and --tag, replace existing VORBIS_COMMENT with new tags
-flac2flac input-SCVAUP.flac case02c "$TOTALLY_SILENT --tag=artist=0"
+flac2flac input-SCVAUP.flac case02c "--tag=artist=0"
 # case 03a: on file with no CUESHEET block and --cuesheet specified, add it
-flac2flac input-SVAUP.flac case03a "--cuesheet=input0.cue"
+flac2flac input-SVAUP.flac case03a "--cuesheet=$testdatadir/input0.cue"
 # case 03b: on file with CUESHEET block and --cuesheet specified, overwrite existing CUESHEET
-flac2flac input-SCVAUP.flac case03b "$TOTALLY_SILENT --cuesheet=input0.cue"
+flac2flac input-SCVAUP.flac case03b "--cuesheet=$testdatadir/input0.cue"
 # case 03c: on file with CUESHEET block and size-changing option specified, drop existing CUESHEET
-flac2flac input-SCVAUP.flac case03c "$TOTALLY_SILENT --skip=1"
+flac2flac input-SCVAUP.flac case03c "--skip=1"
 # case 04a: on file with no SEEKTABLE block and --no-seektable specified, no SEEKTABLE
 flac2flac input-VA.flac case04a "--no-padding --no-seektable"
 # case 04b: on file with no SEEKTABLE block and -S specified, new SEEKTABLE
@@ -1179,7 +1206,7 @@ flac2flac input-VA.flac case04c "--no-padding"
 # case 04d: on file with SEEKTABLE block and --no-seektable specified, drop existing SEEKTABLE
 flac2flac input-SCVA.flac case04d "--no-padding --no-seektable"
 # case 04e: on file with SEEKTABLE block and -S specified, overwrite existing SEEKTABLE
-flac2flac input-SCVA.flac case04e "$TOTALLY_SILENT --no-padding -S 5x"
+flac2flac input-SCVA.flac case04e "--no-padding -S 5x"
 # case 04f: on file with SEEKTABLE block and size-changing option specified, drop existing SEEKTABLE, new SEEKTABLE with default points
 #(already covered by case03c)
 

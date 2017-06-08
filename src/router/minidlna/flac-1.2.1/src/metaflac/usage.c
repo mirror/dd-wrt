@@ -1,5 +1,6 @@
 /* metaflac - Command-line FLAC metadata editor
- * Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2001-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,12 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
@@ -24,12 +25,14 @@
 #include "FLAC/format.h"
 #include <stdarg.h>
 #include <stdio.h>
+#include "share/compat.h"
 
 static void usage_header(FILE *out)
 {
 	fprintf(out, "==============================================================================\n");
 	fprintf(out, "metaflac - Command-line FLAC metadata editor version %s\n", FLAC__VERSION_STRING);
-	fprintf(out, "Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson\n");
+	fprintf(out, "Copyright (C) 2001-2009  Josh Coalson\n");
+	fprintf(out, "Copyright (C) 2011-2016  Xiph.Org Foundation\n");
 	fprintf(out, "\n");
 	fprintf(out, "This program is free software; you can redistribute it and/or\n");
 	fprintf(out, "modify it under the terms of the GNU General Public License\n");
@@ -41,9 +44,9 @@ static void usage_header(FILE *out)
 	fprintf(out, "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n");
 	fprintf(out, "GNU General Public License for more details.\n");
 	fprintf(out, "\n");
-	fprintf(out, "You should have received a copy of the GNU General Public License\n");
-	fprintf(out, "along with this program; if not, write to the Free Software\n");
-	fprintf(out, "Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\n");
+	fprintf(out, "You should have received a copy of the GNU General Public License along\n");
+	fprintf(out, "with this program; if not, write to the Free Software Foundation, Inc.,\n");
+	fprintf(out, "51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.\n");
 	fprintf(out, "==============================================================================\n");
 }
 
@@ -83,9 +86,9 @@ int short_usage(const char *message, ...)
 
 	}
 	usage_header(stderr);
-	fprintf(stderr, "\n");
-	fprintf(stderr, "This is the short help; for full help use 'metaflac --help'\n");
-	fprintf(stderr, "\n");
+	flac_fprintf(stderr, "\n");
+	flac_fprintf(stderr, "This is the short help; for full help use 'metaflac --help'\n");
+	flac_fprintf(stderr, "\n");
 	usage_summary(stderr);
 
 	return message? 1 : 0;
@@ -120,7 +123,7 @@ int long_usage(const char *message, ...)
 	fprintf(out, "--show-total-samples  Show the total # of samples from the STREAMINFO block.\n");
 	fprintf(out, "\n");
 	fprintf(out, "--show-vendor-tag     Show the vendor string from the VORBIS_COMMENT block.\n");
-	fprintf(out, "--show-tag=NAME       Show all tags where the the field name matches 'NAME'.\n");
+	fprintf(out, "--show-tag=NAME       Show all tags where the field name matches 'NAME'.\n");
 	fprintf(out, "--remove-tag=NAME     Remove all tags whose field name is 'NAME'.\n");
 	fprintf(out, "--remove-first-tag=NAME  Remove first tag whose field name is 'NAME'.\n");
 	fprintf(out, "--remove-all-tags     Remove all tags, leaving only the vendor string.\n");
@@ -215,6 +218,8 @@ int long_usage(const char *message, ...)
 	fprintf(out, "                      must have the same resolution, sample rate, and number\n");
 	fprintf(out, "                      of channels.  The sample rate must be one of 8, 11.025,\n");
 	fprintf(out, "                      12, 16, 22.05, 24, 32, 44.1, or 48 kHz.\n");
+	fprintf(out, "--scan-replay-gain    Like --add-replay-gain, but only analyzes the files\n");
+	fprintf(out, "                      rather than writing them to tags.\n");
 	fprintf(out, "--remove-replay-gain  Removes the ReplayGain tags.\n");
 	fprintf(out, "--add-seekpoint={#|X|#x|#s}  Add seek points to a SEEKTABLE block\n");
 	fprintf(out, "       #  : a specific sample number for a seek point\n");

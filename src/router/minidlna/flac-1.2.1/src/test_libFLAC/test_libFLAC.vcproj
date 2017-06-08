@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\obj\debug\bin"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)objs\$(ConfigurationName)\bin"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			>
 			<Tool
@@ -40,7 +40,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=".;..\libFLAC\include;..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;FLAC__NO_DLL;DEBUG"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;FLAC__NO_DLL;DEBUG;CPU_IS_LITTLE_ENDIAN=1"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\obj\release\lib\ogg_static.lib"
+				AdditionalDependencies="$(SolutionDir)objs\$(ConfigurationName)\lib\libogg_static.lib"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="uuid.lib"
 				GenerateDebugInformation="true"
@@ -88,17 +88,15 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\obj\release\bin"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(SolutionDir)objs\$(ConfigurationName)\bin"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -122,7 +120,7 @@
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".;..\libFLAC\include;..\..\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;FLAC__NO_DLL"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE;FLAC__NO_DLL;CPU_IS_LITTLE_ENDIAN=1"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
@@ -143,7 +141,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\obj\release\lib\ogg_static.lib"
+				AdditionalDependencies="$(SolutionDir)objs\$(ConfigurationName)\lib\libogg_static.lib"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="uuid.lib"
 				GenerateDebugInformation="true"
@@ -172,9 +170,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -200,7 +195,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\endswap.h"
+				>
+			</File>
+			<File
 				RelativePath=".\format.h"
+				>
+			</File>
+			<File
+				RelativePath=".\md5.h"
 				>
 			</File>
 			<File
@@ -226,11 +229,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\endswap.c"
+				>
+			</File>
+			<File
 				RelativePath=".\format.c"
 				>
 			</File>
 			<File
 				RelativePath=".\main.c"
+				>
+			</File>
+			<File
+				RelativePath=".\md5.c"
 				>
 			</File>
 			<File

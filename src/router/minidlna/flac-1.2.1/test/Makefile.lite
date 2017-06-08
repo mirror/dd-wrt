@@ -1,8 +1,9 @@
 #  FLAC - Free Lossless Audio Codec
-#  Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2001-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
-#  components distributed under difference licenses.  The codec libraries
+#  components distributed under different licenses.  The codec libraries
 #  are distributed under Xiph.Org's BSD-like license (see the file
 #  COPYING.Xiph in this distribution).  All other programs, libraries, and
 #  plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -26,6 +27,7 @@ DEFAULT_CONFIG = release
 CONFIG = $(DEFAULT_CONFIG)
 
 all: clean
+	sed 's|@top_srcdir@|$(topdir)|;s|@EXEEXT@| |' common.sh.in > common.sh
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_libFLAC.sh $(CONFIG)
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_libFLAC++.sh $(CONFIG)
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_grabbag.sh $(CONFIG)
@@ -33,7 +35,6 @@ all: clean
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_metaflac.sh $(CONFIG)
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_seeking.sh $(CONFIG)
 	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_streams.sh $(CONFIG)
-	$(FLAC__TEST_LEVEL) $(FLAC__TEST_WITH_VALGRIND) ./test_bins.sh $(CONFIG)
 
 debug   : FLAC__TEST_LEVEL=FLAC__TEST_LEVEL=2
 valgrind: FLAC__TEST_LEVEL=FLAC__TEST_LEVEL=1
@@ -52,4 +53,4 @@ valgrind: all
 release : all
 
 clean:
-	rm -f *.raw *.flac *.oga *.ogg *.cmp *.aiff *.wav *.diff *.log *.cue core flac-to-flac-metadata-test-files/out.* metaflac-test-files/out.*
+	rm -f *.raw *.flac *.oga *.ogg *.cmp *.aiff *.wav *.w64 *.rf64 *.diff *.log *.cue core flac-to-flac-metadata-test-files/out.* metaflac-test-files/out.*

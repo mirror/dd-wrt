@@ -1,5 +1,6 @@
 /* metaflac - Command-line FLAC metadata editor
- * Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2001-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,12 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
@@ -27,6 +28,7 @@
 #include "FLAC/metadata.h"
 #include "share/alloc.h"
 #include "share/grabbag.h"
+#include "share/compat.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -42,7 +44,7 @@ static FLAC__bool do_major_operation__remove_all(FLAC__Metadata_Chain *chain, co
 static FLAC__bool do_shorthand_operations(const CommandLineOptions *options);
 static FLAC__bool do_shorthand_operations_on_file(const char *filename, const CommandLineOptions *options);
 static FLAC__bool do_shorthand_operation(const char *filename, FLAC__bool prefix_with_filename, FLAC__Metadata_Chain *chain, const Operation *operation, FLAC__bool *needs_write, FLAC__bool utf8_convert);
-static FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned num_files, FLAC__bool preserve_modtime);
+static FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned num_files, FLAC__bool preserve_modtime, FLAC__bool scan);
 static FLAC__bool do_shorthand_operation__add_padding(const char *filename, FLAC__Metadata_Chain *chain, unsigned length, FLAC__bool *needs_write);
 
 static FLAC__bool passes_filter(const CommandLineOptions *options, const FLAC__StreamMetadata *block, unsigned block_number);
@@ -186,7 +188,7 @@ FLAC__bool do_major_operation__list(const char *filename, FLAC__Metadata_Chain *
 		block = FLAC__metadata_iterator_get_block(iterator);
 		ok &= (0 != block);
 		if(!ok)
-			fprintf(stderr, "%s: ERROR: couldn't get block from chain\n", filename);
+			flac_fprintf(stderr, "%s: ERROR: couldn't get block from chain\n", filename);
 		else if(passes_filter(options, FLAC__metadata_iterator_get_block(iterator), block_number))
 			write_metadata(filename, block, block_number, !options->utf8_convert, options->application_data_format_is_hexdump);
 		block_number++;
@@ -200,7 +202,7 @@ FLAC__bool do_major_operation__list(const char *filename, FLAC__Metadata_Chain *
 FLAC__bool do_major_operation__append(FLAC__Metadata_Chain *chain, const CommandLineOptions *options)
 {
 	(void) chain, (void) options;
-	fprintf(stderr, "ERROR: --append not implemented yet\n");
+	flac_fprintf(stderr, "ERROR: --append not implemented yet\n");
 	return false;
 }
 
@@ -264,7 +266,9 @@ FLAC__bool do_shorthand_operations(const CommandLineOptions *options)
 	if(ok && options->num_files > 0) {
 		for(i = 0; i < options->ops.num_operations; i++) {
 			if(options->ops.operations[i].type == OP__ADD_REPLAY_GAIN)
-				ok = do_shorthand_operation__add_replay_gain(options->filenames, options->num_files, options->preserve_modtime);
+				ok = do_shorthand_operation__add_replay_gain(options->filenames, options->num_files, options->preserve_modtime, false);
+			else if(options->ops.operations[i].type == OP__SCAN_REPLAY_GAIN)
+				ok = do_shorthand_operation__add_replay_gain(options->filenames, options->num_files, options->preserve_modtime, true);
 		}
 	}
 
@@ -373,7 +377,8 @@ FLAC__bool do_shorthand_operation(const char *filename, FLAC__bool prefix_with_f
 			ok = do_shorthand_operation__add_seekpoints(filename, chain, operation->argument.add_seekpoint.specification, needs_write);
 			break;
 		case OP__ADD_REPLAY_GAIN:
-			/* this command is always executed last */
+		case OP__SCAN_REPLAY_GAIN:
+			/* these commands are always executed last */
 			ok = true;
 			break;
 		case OP__ADD_PADDING:
@@ -388,7 +393,7 @@ FLAC__bool do_shorthand_operation(const char *filename, FLAC__bool prefix_with_f
 	return ok;
 }
 
-FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned num_files, FLAC__bool preserve_modtime)
+FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned num_files, FLAC__bool preserve_modtime, FLAC__bool scan)
 {
 	FLAC__StreamMetadata streaminfo;
 	float *title_gains = 0, *title_peaks = 0;
@@ -405,7 +410,7 @@ FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned nu
 	for(i = 0; i < num_files; i++) {
 		FLAC__ASSERT(0 != filenames[i]);
 		if(!FLAC__metadata_get_streaminfo(filenames[i], &streaminfo)) {
-			fprintf(stderr, "%s: ERROR: can't open file or get STREAMINFO block\n", filenames[i]);
+			flac_fprintf(stderr, "%s: ERROR: can't open file or get STREAMINFO block\n", filenames[i]);
 			return false;
 		}
 		if(first) {
@@ -416,24 +421,24 @@ FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned nu
 		}
 		else {
 			if(sample_rate != streaminfo.data.stream_info.sample_rate) {
-				fprintf(stderr, "%s: ERROR: sample rate of %u Hz does not match previous files' %u Hz\n", filenames[i], streaminfo.data.stream_info.sample_rate, sample_rate);
+				flac_fprintf(stderr, "%s: ERROR: sample rate of %u Hz does not match previous files' %u Hz\n", filenames[i], streaminfo.data.stream_info.sample_rate, sample_rate);
 				return false;
 			}
 			if(bits_per_sample != streaminfo.data.stream_info.bits_per_sample) {
-				fprintf(stderr, "%s: ERROR: resolution of %u bps does not match previous files' %u bps\n", filenames[i], streaminfo.data.stream_info.bits_per_sample, bits_per_sample);
+				flac_fprintf(stderr, "%s: ERROR: resolution of %u bps does not match previous files' %u bps\n", filenames[i], streaminfo.data.stream_info.bits_per_sample, bits_per_sample);
 				return false;
 			}
 			if(channels != streaminfo.data.stream_info.channels) {
-				fprintf(stderr, "%s: ERROR: # channels (%u) does not match previous files' (%u)\n", filenames[i], streaminfo.data.stream_info.channels, channels);
+				flac_fprintf(stderr, "%s: ERROR: # channels (%u) does not match previous files' (%u)\n", filenames[i], streaminfo.data.stream_info.channels, channels);
 				return false;
 			}
 		}
 		if(!grabbag__replaygain_is_valid_sample_frequency(sample_rate)) {
-			fprintf(stderr, "%s: ERROR: sample rate of %u Hz is not supported\n", filenames[i], sample_rate);
+			flac_fprintf(stderr, "%s: ERROR: sample rate of %u Hz is not supported\n", filenames[i], sample_rate);
 			return false;
 		}
 		if(channels != 1 && channels != 2) {
-			fprintf(stderr, "%s: ERROR: # of channels (%u) is not supported, must be 1 or 2\n", filenames[i], channels);
+			flac_fprintf(stderr, "%s: ERROR: # of channels (%u) is not supported, must be 1 or 2\n", filenames[i], channels);
 			return false;
 		}
 	}
@@ -442,19 +447,19 @@ FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned nu
 	if(!grabbag__replaygain_init(sample_rate)) {
 		FLAC__ASSERT(0);
 		/* double protection */
-		fprintf(stderr, "internal error\n");
+		flac_fprintf(stderr, "internal error\n");
 		return false;
 	}
 
 	if(
-		0 == (title_gains = (float*)safe_malloc_mul_2op_(sizeof(float), /*times*/num_files)) ||
-		0 == (title_peaks = (float*)safe_malloc_mul_2op_(sizeof(float), /*times*/num_files))
+		0 == (title_gains = safe_malloc_mul_2op_(sizeof(float), /*times*/num_files)) ||
+		0 == (title_peaks = safe_malloc_mul_2op_(sizeof(float), /*times*/num_files))
 	)
 		die("out of memory allocating space for title gains/peaks");
 
 	for(i = 0; i < num_files; i++) {
 		if(0 != (error = grabbag__replaygain_analyze_file(filenames[i], title_gains+i, title_peaks+i))) {
-			fprintf(stderr, "%s: ERROR: during analysis (%s)\n", filenames[i], error);
+			flac_fprintf(stderr, "%s: ERROR: during analysis (%s)\n", filenames[i], error);
 			free(title_gains);
 			free(title_peaks);
 			return false;
@@ -463,11 +468,15 @@ FLAC__bool do_shorthand_operation__add_replay_gain(char **filenames, unsigned nu
 	grabbag__replaygain_get_album(&album_gain, &album_peak);
 
 	for(i = 0; i < num_files; i++) {
-		if(0 != (error = grabbag__replaygain_store_to_file(filenames[i], album_gain, album_peak, title_gains[i], title_peaks[i], preserve_modtime))) {
-			fprintf(stderr, "%s: ERROR: writing tags (%s)\n", filenames[i], error);
-			free(title_gains);
-			free(title_peaks);
-			return false;
+		if(!scan) {
+			if(0 != (error = grabbag__replaygain_store_to_file(filenames[i], album_gain, album_peak, title_gains[i], title_peaks[i], preserve_modtime))) {
+				flac_fprintf(stderr, "%s: ERROR: writing tags (%s)\n", filenames[i], error);
+				free(title_gains);
+				free(title_peaks);
+				return false;
+			}
+		} else {
+			flac_fprintf(stdout, "%s: %f %f %f %f\n", filenames[i], album_gain, album_peak, title_gains[i], title_peaks[i]);
 		}
 	}
 
@@ -550,7 +559,7 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 	unsigned i, j;
 
 /*@@@ yuck, should do this with a varargs function or something: */
-#define PPR if(filename)printf("%s:",filename);
+#define PPR if(filename) { if(raw) printf("%s:",filename); else flac_printf("%s:",filename); }
 	PPR; printf("METADATA block #%u\n", block_number);
 	PPR; printf("  type: %u (%s)\n", (unsigned)block->type, block->type < FLAC__METADATA_TYPE_UNDEFINED? FLAC__MetadataTypeString[block->type] : "UNKNOWN");
 	PPR; printf("  is last: %s\n", block->is_last? "true":"false");
@@ -565,11 +574,7 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 			PPR; printf("  sample_rate: %u Hz\n", block->data.stream_info.sample_rate);
 			PPR; printf("  channels: %u\n", block->data.stream_info.channels);
 			PPR; printf("  bits-per-sample: %u\n", block->data.stream_info.bits_per_sample);
-#ifdef _MSC_VER
-			PPR; printf("  total samples: %I64u\n", block->data.stream_info.total_samples);
-#else
-			PPR; printf("  total samples: %llu\n", (unsigned long long)block->data.stream_info.total_samples);
-#endif
+			PPR; printf("  total samples: %" PRIu64 "\n", block->data.stream_info.total_samples);
 			PPR; printf("  MD5 signature: ");
 			for(i = 0; i < 16; i++) {
 				printf("%02x", (unsigned)block->data.stream_info.md5sum[i]);
@@ -596,11 +601,7 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 			PPR; printf("  seek points: %u\n", block->data.seek_table.num_points);
 			for(i = 0; i < block->data.seek_table.num_points; i++) {
 				if(block->data.seek_table.points[i].sample_number != FLAC__STREAM_METADATA_SEEKPOINT_PLACEHOLDER) {
-#ifdef _MSC_VER
-					PPR; printf("    point %u: sample_number=%I64u, stream_offset=%I64u, frame_samples=%u\n", i, block->data.seek_table.points[i].sample_number, block->data.seek_table.points[i].stream_offset, block->data.seek_table.points[i].frame_samples);
-#else
-					PPR; printf("    point %u: sample_number=%llu, stream_offset=%llu, frame_samples=%u\n", i, (unsigned long long)block->data.seek_table.points[i].sample_number, (unsigned long long)block->data.seek_table.points[i].stream_offset, block->data.seek_table.points[i].frame_samples);
-#endif
+					PPR; printf("    point %u: sample_number=%" PRIu64 ", stream_offset=%" PRIu64 ", frame_samples=%u\n", i, block->data.seek_table.points[i].sample_number, block->data.seek_table.points[i].stream_offset, block->data.seek_table.points[i].frame_samples);
 				}
 				else {
 					PPR; printf("    point %u: PLACEHOLDER\n", i);
@@ -618,11 +619,7 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 			break;
 		case FLAC__METADATA_TYPE_CUESHEET:
 			PPR; printf("  media catalog number: %s\n", block->data.cue_sheet.media_catalog_number);
-#ifdef _MSC_VER
-			PPR; printf("  lead-in: %I64u\n", block->data.cue_sheet.lead_in);
-#else
-			PPR; printf("  lead-in: %llu\n", (unsigned long long)block->data.cue_sheet.lead_in);
-#endif
+			PPR; printf("  lead-in: %" PRIu64 "\n", block->data.cue_sheet.lead_in);
 			PPR; printf("  is CD: %s\n", block->data.cue_sheet.is_cd? "true":"false");
 			PPR; printf("  number of tracks: %u\n", block->data.cue_sheet.num_tracks);
 			for(i = 0; i < block->data.cue_sheet.num_tracks; i++) {
@@ -630,11 +627,7 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 				const FLAC__bool is_last = (i == block->data.cue_sheet.num_tracks-1);
 				const FLAC__bool is_leadout = is_last && track->num_indices == 0;
 				PPR; printf("    track[%u]\n", i);
-#ifdef _MSC_VER
-				PPR; printf("      offset: %I64u\n", track->offset);
-#else
-				PPR; printf("      offset: %llu\n", (unsigned long long)track->offset);
-#endif
+				PPR; printf("      offset: %" PRIu64 "\n", track->offset);
 				if(is_last) {
 					PPR; printf("      number: %u (%s)\n", (unsigned)track->number, is_leadout? "LEAD-OUT" : "INVALID");
 				}
@@ -647,14 +640,10 @@ void write_metadata(const char *filename, FLAC__StreamMetadata *block, unsigned 
 					PPR; printf("      pre-emphasis: %s\n", track->pre_emphasis? "true":"false");
 					PPR; printf("      number of index points: %u\n", track->num_indices);
 					for(j = 0; j < track->num_indices; j++) {
-						const FLAC__StreamMetadata_CueSheet_Index *index = track->indices+j;
+						const FLAC__StreamMetadata_CueSheet_Index *indx = track->indices+j;
 						PPR; printf("        index[%u]\n", j);
-#ifdef _MSC_VER
-						PPR; printf("          offset: %I64u\n", index->offset);
-#else
-						PPR; printf("          offset: %llu\n", (unsigned long long)index->offset);
-#endif
-						PPR; printf("          number: %u\n", (unsigned)index->number);
+						PPR; printf("          offset: %" PRIu64 "\n", indx->offset);
+						PPR; printf("          number: %u\n", (unsigned)indx->number);
 					}
 				}
 			}

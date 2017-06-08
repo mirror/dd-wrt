@@ -1,5 +1,6 @@
 /* test_libFLAC++ - Unit tester for libFLAC++
- * Copyright (C) 2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2002-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,10 +12,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "encoders.h"
 #include "FLAC/assert.h"
@@ -28,6 +33,12 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "share/compat.h"
+
+#ifdef _MSC_VER
+// warning C4800: 'int' : forcing to bool 'true' or 'false' (performance warning)
+#pragma warning ( disable : 4800 )
+#endif
 
 typedef enum {
 	LAYER_STREAM = 0, /* FLAC__stream_encoder_init_stream() without seeking */
@@ -100,6 +111,9 @@ public:
 	::FLAC__StreamEncoderSeekStatus seek_callback(FLAC__uint64 absolute_byte_offset);
 	::FLAC__StreamEncoderTellStatus tell_callback(FLAC__uint64 *absolute_byte_offset);
 	void metadata_callback(const ::FLAC__StreamMetadata *metadata);
+private:
+	StreamEncoder(const StreamEncoder&);
+	StreamEncoder&operator=(const StreamEncoder&);
 };
 
 ::FLAC__StreamEncoderReadStatus StreamEncoder::read_callback(FLAC__byte buffer[], size_t *bytes)
@@ -131,7 +145,7 @@ public:
 {
 	if(layer_==LAYER_STREAM)
 		return ::FLAC__STREAM_ENCODER_SEEK_STATUS_UNSUPPORTED;
-	else if(fseek(file_, (long)absolute_byte_offset, SEEK_SET) < 0)
+	else if(fseeko(file_, (FLAC__off_t)absolute_byte_offset, SEEK_SET) < 0)
 		return FLAC__STREAM_ENCODER_SEEK_STATUS_ERROR;
 	else
 		return FLAC__STREAM_ENCODER_SEEK_STATUS_OK;
@@ -139,10 +153,10 @@ public:
 
 ::FLAC__StreamEncoderTellStatus StreamEncoder::tell_callback(FLAC__uint64 *absolute_byte_offset)
 {
-	long pos;
+	FLAC__off_t pos;
 	if(layer_==LAYER_STREAM)
 		return ::FLAC__STREAM_ENCODER_TELL_STATUS_UNSUPPORTED;
-	else if((pos = ftell(file_)) < 0)
+	else if((pos = ftello(file_)) < 0)
 		return FLAC__STREAM_ENCODER_TELL_STATUS_ERROR;
 	else {
 		*absolute_byte_offset = (FLAC__uint64)pos;
@@ -309,7 +323,7 @@ static bool test_stream_encoder(Layer layer, bool is_ogg)
 
 	if(layer < LAYER_FILENAME) {
 		printf("opening file for FLAC output... ");
-		file = ::fopen(flacfilename(is_ogg), "w+b");
+		file = ::flac_fopen(flacfilename(is_ogg), "w+b");
 		if(0 == file) {
 			printf("ERROR (%s)\n", strerror(errno));
 			return false;
@@ -478,11 +492,7 @@ static bool test_stream_encoder(Layer layer, bool is_ogg)
 
 	printf("testing get_total_samples_estimate()... ");
 	if(encoder->get_total_samples_estimate() != streaminfo_.data.stream_info.total_samples) {
-#ifdef _MSC_VER
-		printf("FAILED, expected %I64u, got %I64u\n", streaminfo_.data.stream_info.total_samples, encoder->get_total_samples_estimate());
-#else
-		printf("FAILED, expected %llu, got %llu\n", (unsigned long long)streaminfo_.data.stream_info.total_samples, (unsigned long long)encoder->get_total_samples_estimate());
-#endif
+		printf("FAILED, expected %" PRIu64 ", got %" PRIu64 "\n", streaminfo_.data.stream_info.total_samples, encoder->get_total_samples_estimate());
 		return false;
 	}
 	printf("OK\n");
@@ -503,7 +513,7 @@ static bool test_stream_encoder(Layer layer, bool is_ogg)
 
 	printf("testing finish()... ");
 	if(!encoder->finish()) {
-		FLAC::Encoder::Stream::State state = encoder->get_state();
+		state = encoder->get_state();
 		printf("FAILED, returned false, state = %u (%s)\n", (unsigned)((::FLAC__StreamEncoderState)state), state.as_cstring());
 		return false;
 	}

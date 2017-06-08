@@ -1,5 +1,6 @@
 /* plugin_common - Routines common to several plugins
- * Copyright (C) 2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2002-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * dithering routine derived from (other GPLed source):
  * mad - MPEG audio decoder
@@ -15,12 +16,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
@@ -54,7 +55,7 @@ typedef struct {
 	FLAC__int32 random;
 } dither_state;
 
-static FLaC__INLINE FLAC__int32 linear_dither(unsigned source_bps, unsigned target_bps, FLAC__int32 sample, dither_state *dither, const FLAC__int32 MIN, const FLAC__int32 MAX)
+static FLAC__int32 linear_dither(unsigned source_bps, unsigned target_bps, FLAC__int32 sample, dither_state *dither, const FLAC__int32 MIN, const FLAC__int32 MAX)
 {
 	unsigned scalebits;
 	FLAC__int32 output, mask, random;
@@ -127,7 +128,7 @@ size_t FLAC__plugin_common__pack_pcm_signed_big_endian(FLAC__byte *data, const F
 		const FLAC__int32 MAX = ~MIN; /*(1L << (source_bps-1)) - 1 */
 
 		for(channel = 0; channel < channels; channel++) {
-			
+
 			samples = wide_samples;
 			data = start + bytes_per_sample * channel;
 			input_ = input[channel];
@@ -208,7 +209,7 @@ size_t FLAC__plugin_common__pack_pcm_signed_little_endian(FLAC__byte *data, cons
 		const FLAC__int32 MAX = ~MIN; /*(1L << (source_bps-1)) - 1 */
 
 		for(channel = 0; channel < channels; channel++) {
-			
+
 			samples = wide_samples;
 			data = start + bytes_per_sample * channel;
 			input_ = input[channel];
