@@ -89,7 +89,7 @@ typedef uint32_t u32;
 pthread_mutex_t mutex_unl;
 //char *lastlock;
 //char *lastunlock;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
+#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
 /*#define lock() { \
 		    int m_result; \
 		    int m_cnt=0; \
@@ -104,8 +104,8 @@ pthread_mutex_t mutex_unl;
 		lastlock = __func__; \
 }
 */
-#define lock() pthread_mutex_lock(&mutex_unl);
-#define unlock() pthread_mutex_unlock(&mutex_unl);
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
 #else
 #define mutex_init()
 #define lock() 
