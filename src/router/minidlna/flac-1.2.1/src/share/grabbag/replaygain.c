@@ -1,5 +1,6 @@
 /* grabbag - Convenience lib for various routines common to several tools
- * Copyright (C) 2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2002-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,15 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
-#include "share/grabbag.h"
-#include "share/replaygain_analysis.h"
-#include "FLAC/assert.h"
-#include "FLAC/metadata.h"
-#include "FLAC/stream_decoder.h"
 #include <locale.h>
 #include <math.h>
 #include <stdio.h>
@@ -34,6 +30,13 @@
 #include <io.h> /* for chmod() */
 #endif
 #include <sys/stat.h> /* for stat(), maybe chmod() */
+
+#include "FLAC/assert.h"
+#include "FLAC/metadata.h"
+#include "FLAC/stream_decoder.h"
+#include "share/grabbag.h"
+#include "share/replaygain_analysis.h"
+#include "share/safe_str.h"
 
 #ifdef local_min
 #undef local_min
@@ -67,19 +70,19 @@ const FLAC__byte * const GRABBAG__REPLAYGAIN_TAG_ALBUM_GAIN = (const FLAC__byte 
 const FLAC__byte * const GRABBAG__REPLAYGAIN_TAG_ALBUM_PEAK = (const FLAC__byte * const)"REPLAYGAIN_ALBUM_PEAK";
 
 
-static FLAC__bool get_file_stats_(const char *filename, struct stat *stats)
+static FLAC__bool get_file_stats_(const char *filename, struct flac_stat_s *stats)
 {
 	FLAC__ASSERT(0 != filename);
 	FLAC__ASSERT(0 != stats);
-	return (0 == stat(filename, stats));
+	return (0 == flac_stat(filename, stats));
 }
 
-static void set_file_stats_(const char *filename, struct stat *stats)
+static void set_file_stats_(const char *filename, struct flac_stat_s *stats)
 {
 	FLAC__ASSERT(0 != filename);
 	FLAC__ASSERT(0 != stats);
 
-	(void)chmod(filename, stats->st_mode);
+	(void)flac_chmod(filename, stats->st_mode);
 }
 
 static FLAC__bool append_tag_(FLAC__StreamMetadata *block, const char *format, const FLAC__byte *name, float value)
@@ -102,11 +105,7 @@ static FLAC__bool append_tag_(FLAC__StreamMetadata *block, const char *format, c
 	if (0 == saved_locale)
 		return false;
 	setlocale(LC_ALL, "C");
-#if defined _MSC_VER || defined __MINGW32__
-	_snprintf(buffer, sizeof(buffer)-1, format, name, value);
-#else
-	snprintf(buffer, sizeof(buffer)-1, format, name, value);
-#endif
+	flac_snprintf(buffer, sizeof(buffer), format, name, value);
 	setlocale(LC_ALL, saved_locale);
 	free(saved_locale);
 
@@ -118,25 +117,7 @@ static FLAC__bool append_tag_(FLAC__StreamMetadata *block, const char *format, c
 
 FLAC__bool grabbag__replaygain_is_valid_sample_frequency(unsigned sample_frequency)
 {
-	static const unsigned valid_sample_rates[] = {
-		8000,
-		11025,
-		12000,
-		16000,
-		22050,
-		24000,
-		32000,
-		44100,
-		48000
-	};
-	static const unsigned n_valid_sample_rates = sizeof(valid_sample_rates) / sizeof(valid_sample_rates[0]);
-
-	unsigned i;
-
-	for(i = 0; i < n_valid_sample_rates; i++)
-		if(sample_frequency == valid_sample_rates[i])
-			return true;
-	return false;
+	return ValidGainFrequency( sample_frequency );
 }
 
 FLAC__bool grabbag__replaygain_init(unsigned sample_frequency)
@@ -148,7 +129,7 @@ FLAC__bool grabbag__replaygain_init(unsigned sample_frequency)
 FLAC__bool grabbag__replaygain_analyze(const FLAC__int32 * const input[], FLAC__bool is_stereo, unsigned bps, unsigned samples)
 {
 	/* using a small buffer improves data locality; we'd like it to fit easily in the dcache */
-	static Float_t lbuffer[2048], rbuffer[2048];
+	static flac_float_t lbuffer[2048], rbuffer[2048];
 	static const unsigned nbuffer = sizeof(lbuffer) / sizeof(lbuffer[0]);
 	FLAC__int32 block_peak = 0, s;
 	unsigned i, j;
@@ -169,12 +150,12 @@ FLAC__bool grabbag__replaygain_analyze(const FLAC__int32 * const input[], FLAC__
 				const unsigned n = local_min(samples, nbuffer);
 				for(i = 0; i < n; i++, j++) {
 					s = input[0][j];
-					lbuffer[i] = (Float_t)s;
+					lbuffer[i] = (flac_float_t)s;
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 
 					s = input[1][j];
-					rbuffer[i] = (Float_t)s;
+					rbuffer[i] = (flac_float_t)s;
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 				}
@@ -189,7 +170,7 @@ FLAC__bool grabbag__replaygain_analyze(const FLAC__int32 * const input[], FLAC__
 				const unsigned n = local_min(samples, nbuffer);
 				for(i = 0; i < n; i++, j++) {
 					s = input[0][j];
-					lbuffer[i] = (Float_t)s;
+					lbuffer[i] = (flac_float_t)s;
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 				}
@@ -212,12 +193,12 @@ FLAC__bool grabbag__replaygain_analyze(const FLAC__int32 * const input[], FLAC__
 				const unsigned n = local_min(samples, nbuffer);
 				for(i = 0; i < n; i++, j++) {
 					s = input[0][j];
-					lbuffer[i] = (Float_t)(scale * (double)s);
+					lbuffer[i] = (flac_float_t)(scale * (double)s);
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 
 					s = input[1][j];
-					rbuffer[i] = (Float_t)(scale * (double)s);
+					rbuffer[i] = (flac_float_t)(scale * (double)s);
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 				}
@@ -232,7 +213,7 @@ FLAC__bool grabbag__replaygain_analyze(const FLAC__int32 * const input[], FLAC__
 				const unsigned n = local_min(samples, nbuffer);
 				for(i = 0; i < n; i++, j++) {
 					s = input[0][j];
-					lbuffer[i] = (Float_t)(scale * (double)s);
+					lbuffer[i] = (flac_float_t)(scale * (double)s);
 					s = abs(s);
 					block_peak = local_max(block_peak, s);
 				}
@@ -498,15 +479,17 @@ static const char *store_to_file_pre_(const char *filename, FLAC__Metadata_Chain
 
 static const char *store_to_file_post_(const char *filename, FLAC__Metadata_Chain *chain, FLAC__bool preserve_modtime)
 {
-	struct stat stats;
+	struct flac_stat_s stats;
 	const FLAC__bool have_stats = get_file_stats_(filename, &stats);
 
 	(void)grabbag__file_change_stats(filename, /*read_only=*/false);
 
 	FLAC__metadata_chain_sort_padding(chain);
 	if(!FLAC__metadata_chain_write(chain, /*use_padding=*/true, preserve_modtime)) {
+		const char *error;
+		error = FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(chain)];
 		FLAC__metadata_chain_delete(chain);
-		return FLAC__Metadata_ChainStatusString[FLAC__metadata_chain_status(chain)];
+		return error;
 	}
 
 	FLAC__metadata_chain_delete(chain);
@@ -520,7 +503,7 @@ static const char *store_to_file_post_(const char *filename, FLAC__Metadata_Chai
 const char *grabbag__replaygain_store_to_file(const char *filename, float album_gain, float album_peak, float title_gain, float title_peak, FLAC__bool preserve_modtime)
 {
 	FLAC__Metadata_Chain *chain;
-	FLAC__StreamMetadata *block;
+	FLAC__StreamMetadata *block = NULL;
 	const char *error;
 
 	if(0 != (error = store_to_file_pre_(filename, &chain, &block)))
@@ -540,7 +523,7 @@ const char *grabbag__replaygain_store_to_file(const char *filename, float album_
 const char *grabbag__replaygain_store_to_file_reference(const char *filename, FLAC__bool preserve_modtime)
 {
 	FLAC__Metadata_Chain *chain;
-	FLAC__StreamMetadata *block;
+	FLAC__StreamMetadata *block = NULL;
 	const char *error;
 
 	if(0 != (error = store_to_file_pre_(filename, &chain, &block)))
@@ -560,7 +543,7 @@ const char *grabbag__replaygain_store_to_file_reference(const char *filename, FL
 const char *grabbag__replaygain_store_to_file_album(const char *filename, float album_gain, float album_peak, FLAC__bool preserve_modtime)
 {
 	FLAC__Metadata_Chain *chain;
-	FLAC__StreamMetadata *block;
+	FLAC__StreamMetadata *block = NULL;
 	const char *error;
 
 	if(0 != (error = store_to_file_pre_(filename, &chain, &block)))
@@ -580,7 +563,7 @@ const char *grabbag__replaygain_store_to_file_album(const char *filename, float 
 const char *grabbag__replaygain_store_to_file_title(const char *filename, float title_gain, float title_peak, FLAC__bool preserve_modtime)
 {
 	FLAC__Metadata_Chain *chain;
-	FLAC__StreamMetadata *block;
+	FLAC__StreamMetadata *block = NULL;
 	const char *error;
 
 	if(0 != (error = store_to_file_pre_(filename, &chain, &block)))
@@ -611,8 +594,7 @@ static FLAC__bool parse_double_(const FLAC__StreamMetadata_VorbisComment_Entry *
 	if(0 == q)
 		return false;
 	q++;
-	memset(s, 0, sizeof(s)-1);
-	strncpy(s, q, local_min(sizeof(s)-1, entry->length - (q-p)));
+	safe_strncpy(s, q, local_min(sizeof(s), (size_t) (entry->length - (q-p))));
 
 	v = strtod(s, &end);
 	if(end == s)
@@ -625,6 +607,8 @@ static FLAC__bool parse_double_(const FLAC__StreamMetadata_VorbisComment_Entry *
 FLAC__bool grabbag__replaygain_load_from_vorbiscomment(const FLAC__StreamMetadata *block, FLAC__bool album_mode, FLAC__bool strict, double *reference, double *gain, double *peak)
 {
 	int reference_offset, gain_offset, peak_offset;
+	char *saved_locale;
+	FLAC__bool res = true;
 
 	FLAC__ASSERT(0 != block);
 	FLAC__ASSERT(0 != reference);
@@ -637,20 +621,36 @@ FLAC__bool grabbag__replaygain_load_from_vorbiscomment(const FLAC__StreamMetadat
 	 */
 	*reference = ReplayGainReferenceLoudness;
 
+	/*
+	 * We need to save the old locale and switch to "C" because the locale
+	 * influences the behaviour of strtod and we want it a certain way.
+	 */
+	saved_locale = strdup(setlocale(LC_ALL, 0));
+	if (0 == saved_locale)
+		return false;
+	setlocale(LC_ALL, "C");
+
 	if(0 <= (reference_offset = FLAC__metadata_object_vorbiscomment_find_entry_from(block, /*offset=*/0, (const char *)GRABBAG__REPLAYGAIN_TAG_REFERENCE_LOUDNESS)))
 		(void)parse_double_(block->data.vorbis_comment.comments + reference_offset, reference);
 
 	if(0 > (gain_offset = FLAC__metadata_object_vorbiscomment_find_entry_from(block, /*offset=*/0, (const char *)(album_mode? GRABBAG__REPLAYGAIN_TAG_ALBUM_GAIN : GRABBAG__REPLAYGAIN_TAG_TITLE_GAIN))))
-		return !strict && grabbag__replaygain_load_from_vorbiscomment(block, !album_mode, /*strict=*/true, reference, gain, peak);
+		res = false;
 	if(0 > (peak_offset = FLAC__metadata_object_vorbiscomment_find_entry_from(block, /*offset=*/0, (const char *)(album_mode? GRABBAG__REPLAYGAIN_TAG_ALBUM_PEAK : GRABBAG__REPLAYGAIN_TAG_TITLE_PEAK))))
-		return !strict && grabbag__replaygain_load_from_vorbiscomment(block, !album_mode, /*strict=*/true, reference, gain, peak);
+		res = false;
 
-	if(!parse_double_(block->data.vorbis_comment.comments + gain_offset, gain))
-		return !strict && grabbag__replaygain_load_from_vorbiscomment(block, !album_mode, /*strict=*/true, reference, gain, peak);
-	if(!parse_double_(block->data.vorbis_comment.comments + peak_offset, peak))
-		return !strict && grabbag__replaygain_load_from_vorbiscomment(block, !album_mode, /*strict=*/true, reference, gain, peak);
+	if(res && !parse_double_(block->data.vorbis_comment.comments + gain_offset, gain))
+		res = false;
+	if(res && !parse_double_(block->data.vorbis_comment.comments + peak_offset, peak))
+		res = false;
 
-	return true;
+	setlocale(LC_ALL, saved_locale);
+	free(saved_locale);
+
+	/* something failed; retry with strict */
+	if (!res && !strict)
+		res = grabbag__replaygain_load_from_vorbiscomment(block, !album_mode, /*strict=*/true, reference, gain, peak);
+
+	return res;
 }
 
 double grabbag__replaygain_compute_scale_factor(double peak, double gain, double preamp, FLAC__bool prevent_clipping)

@@ -1,5 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<!-- Copyright (c) 2000,2001,2002,2003,2004,2005,2006,2007  Josh Coalson -->
+<!-- Copyright (c) 2000-2009  Josh Coalson -->
+<!-- Copyright (c) 2011-2016  Xiph.Org Foundation -->
 <!-- Permission is granted to copy, distribute and/or modify this document -->
 <!-- under the terms of the GNU Free Documentation License, Version 1.1 -->
 <!-- or any later version published by the Free Software Foundation; -->
@@ -19,7 +20,7 @@
 <body>
 
 <div class="logo">
-	<a href="http://flac.sourceforge.net/"><img src="images/logo130.gif" alt="FLAC Logo" align="middle" border="0" hspace="0" /></a>
+	<a href="index.html"><img src="images/logo130.gif" alt="FLAC Logo" align="middle" border="0" hspace="0" /></a>
 </div>
 
 <div class="above_nav"></div>
@@ -27,18 +28,10 @@
 <div class="navbar">
 	&nbsp;<a href="index.html">home</a>&nbsp;&nbsp;|
 	&nbsp;<a href="faq.html">faq</a>&nbsp;&nbsp;|
-	&nbsp;<a href="news.html">news</a>&nbsp;&nbsp;|
-	&nbsp;<a href="download.html">download</a>&nbsp;&nbsp;|
 	&nbsp;<a href="documentation.html">documentation</a>&nbsp;&nbsp;|
-	&nbsp;<a href="comparison.html">comparison</a>&nbsp;&nbsp;|
+	&nbsp;<a href="developers.html">developers</a>&nbsp;&nbsp;|
 	&nbsp;<a href="changelog.html">changelog</a>&nbsp;&nbsp;|
-	&nbsp;<a href="links.html">links</a>&nbsp;&nbsp;|
-	&nbsp;<a href="developers.html">developers</a>&nbsp;
-</div>
-
-<div class="langbar">
-	&nbsp;english&nbsp;&nbsp;|
-	&nbsp;<a href="ru/documentation.html">russian</a>&nbsp;
+	&nbsp;<a href="http://xiph.org/flac">more</a>
 </div>
 
 <div class="below_nav"></div>
@@ -63,9 +56,9 @@
 		</ul>
 		<a name="usage"><font size="+1"><b><u>General Usage</u></b></font></a><br />
 		<br />
-		<span class="commandname">flac</span> is the command-line file encoder/decoder.  The encoder currently supports as input RIFF WAVE, AIFF, FLAC or Ogg FLAC format, or raw interleaved samples.  The decoder currently can output to RIFF WAVE or AIFF format, or raw interleaved samples.  <span class="commandname">flac</span> only supports linear PCM samples (in other words, no A-LAW, uLAW, etc.), and the input must be between 4 and 24 bits per sample.  This is not a limitation of the FLAC format, just the reference encoder/decoder.<br />
+		<span class="commandname">flac</span> is the command-line file encoder/decoder.  The encoder currently supports as input RIFF WAVE, Wave64, RF64, AIFF, FLAC or Ogg FLAC format, or raw interleaved samples.  The decoder currently can output to RIFF WAVE, Wave64, RF64, or AIFF format, or raw interleaved samples.  <span class="commandname">flac</span> only supports linear PCM samples (in other words, no A-LAW, uLAW, etc.), and the input must be between 4 and 24 bits per sample.  This is not a limitation of the FLAC format, just the reference encoder/decoder.<br />
 		<br />
-		<span class="commandname">flac</span> assumes that files ending in ".wav" or that have the RIFF WAVE header present are WAVE files, files ending in ".aif" or ".aiff" or have the AIFF header present are AIFF files, and files ending in ".flac" or have the FLAC header present are FLAC files.  This assumption may be overridden with a command-line option.  It also assumes that files ending in ".oga" or ".ogg" or have the Ogg FLAC header present are Ogg FLAC files.  Other than this, <span class="commandname">flac</span> makes no assumptions about file extensions, though the convention is that FLAC files have the extension ".flac" (or ".fla" on ancient "8.3" file systems like FAT-16).<br />
+		<span class="commandname">flac</span> assumes that files ending in ".wav" or that have the RIFF WAVE header present are WAVE files, files ending in ".w64" or have the Wave64 header present are Wave64 files, files ending in ".rf64" or have the RF64 header present are RF64 files, files ending in ".aif" or ".aiff" or have the AIFF header present are AIFF files, and files ending in ".flac" or have the FLAC header present are FLAC files.  This assumption may be overridden with a command-line option.  It also assumes that files ending in ".oga" or ".ogg" or have the Ogg FLAC header present are Ogg FLAC files.  Other than this, <span class="commandname">flac</span> makes no assumptions about file extensions, though the convention is that FLAC files have the extension ".flac" (or ".fla" on ancient "8.3" file systems like FAT-16).<br />
 		<br />
 		Before going into the full command-line description, a few other things help to sort it out: 1) <span class="commandname">flac</span> encodes by default, so you must use <b>-d</b> to decode; 2) the options <span class="argument">-0</span> .. <span class="argument">-8</span> (or <span class="argument">--fast</span> and <span class="argument">--best</span>) that control the compression level actually are just synonyms for different groups of specific encoding options (described later) and you can get the same effect by using the same options; 3) <span class="commandname">flac</span> behaves similarly to gzip in the way it handles input and output files.<br />
 		<br />
@@ -116,7 +109,7 @@
 				<span class="code">flac -V -- -01-filename.wav</span>
 			</li>
 		</ul>
-		The encoding options affect the compression ratio and encoding speed.  The format options are used to tell <span class="commandname">flac</span> the arrangement of samples if the input file (or output file when decoding) is a raw file.  If it is a RIFF WAVE or AIFF file the format options are not needed since they are read from the AIFF/WAVE header.<br />
+		The encoding options affect the compression ratio and encoding speed.  The format options are used to tell <span class="commandname">flac</span> the arrangement of samples if the input file (or output file when decoding) is a raw file.  If it is a RIFF WAVE, Wave64, RF64, or AIFF file the format options are not needed since they are read from the file's header.<br />
 		<br />
 		In test mode, <span class="commandname">flac</span> acts just like in decode mode, except no output file is written.  Both decode and test modes detect errors in the stream, but they also detect when the MD5 signature of the decoded audio does not match the stored MD5 signature, even when the bitstream is valid.<br />
 		<br />
@@ -156,6 +149,12 @@
 		<tt><b>flac abc.aiff</b></tt><br />
 		Encode <tt>abc.aiff</tt> to <tt>abc.flac</tt>.<br />
 		<br />
+		<tt><b>flac abc.rf64</b></tt><br />
+		Encode <tt>abc.rf64</tt> to <tt>abc.flac</tt>.<br />
+		<br />
+		<tt><b>flac abc.w64</b></tt><br />
+		Encode <tt>abc.w64</tt> to <tt>abc.flac</tt>.<br />
+		<br />
 		<tt><b>flac abc.flac <a href="#flac_options_force">--force</a></b></tt><br />
 		This one's a little tricky: notice that <span class="commandname">flac</span> is in encode mode by default (you have to specify <span class="argument">-d</span> to decode) so this command actually recompresses <tt>abc.flac</tt> back to <tt>abc.flac</tt>.  <span class="argument"><a href="#flac_options_force">--force</a></span> is needed to make sure you really want to overwrite <tt>abc.flac</tt> with a new version.  Why would you want to do this?  It allows you to recompress an existing FLAC file with (usually) higher compression options or a newer version of FLAC and preserve all the metadata like tags too.<br />
 		<br />
@@ -168,6 +167,14 @@
 		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_force_aiff_format">--force-aiff-format</a> abc.flac</b></tt><br />
 		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_output_name">-o</a> abc.aiff abc.flac</b></tt><br />
 		Two different ways of decoding <tt>abc.flac</tt> to <tt>abc.aiff</tt> (AIFF format).  <tt>abc.flac</tt> is not deleted.<br />
+		<br />
+		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_force_rf64_format">--force-rf64-format</a> abc.flac</b></tt><br />
+		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_output_name">-o</a> abc.rf64 abc.flac</b></tt><br />
+		Two different ways of decoding <tt>abc.flac</tt> to <tt>abc.rf64</tt> (RF64 format).  <tt>abc.flac</tt> is not deleted.<br />
+		<br />
+		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_force_wave64_format">--force-wave64-format</a> abc.flac</b></tt><br />
+		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_output_name">-o</a> abc.w64 abc.flac</b></tt><br />
+		Two different ways of decoding <tt>abc.flac</tt> to <tt>abc.w64</tt> (Wave64 format).  <tt>abc.flac</tt> is not deleted.<br />
 		<br />
 		<tt><b>flac <a href="#flac_options_decode">-d</a> <a href="#flac_options_decode_through_errors">-F</a> abc.flac</b></tt><br />
 		Decode <tt>abc.flac</tt> to <tt>abc.wav</tt> and don't abort if errors are found (useful for recovering as much as possible from corrupted files).<br />
@@ -319,19 +326,28 @@
 			</tr>
 			<tr>
 				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
+					<a name="flac_options_preserve_modtime" />
+					<span class="argument">--preserve-modtime</span>
+				</td>
+				<td>
+					Output files have their timestamps/permissions set to match those of their inputs (this is default).  Use <span class="argument">--no-preserve-modtime</span> to make output files have the current time and default permissions.
+				</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
 					<a name="flac_options_keep_foreign_metadata" />
 					<span class="argument">--keep-foreign-metadata</span>
 				</td>
 				<td>
-					If encoding, save WAVE or AIFF non-audio chunks in FLAC metadata.  If decoding, restore any saved non-audio chunks from FLAC metadata when writing the decoded file.  Foreign metadata cannot be transcoded, e.g. WAVE chunks saved in a FLAC file cannot be restored when decoding to AIFF.  Input and output must be regular files (not stdin or stdout).<br />
+					If encoding, save WAVE, Wave64, RF64, or AIFF non-audio chunks in FLAC metadata.  If decoding, restore any saved non-audio chunks from FLAC metadata when writing the decoded file.  Foreign metadata cannot be transcoded, e.g. WAVE chunks saved in a FLAC file cannot be restored when decoding to AIFF.  Input and output must be regular files (not stdin or stdout).<br />
 <!--
 					<br />
-					Using this option for both encoding then decoding in most cases will yield the exact same WAVE file as the original, metadata and all.  Because there are multiple ways to represent the same data in WAVE and AIFF, there are currently a few corner cases where the restoration process may not match exactly (but could with some improvement).  The cases are:<br />
+					Using this option for both encoding then decoding in most cases will yield the exact same WAVE file as the original, metadata and all.  Because there are multiple ways to represent the same data in WAVE, Wave64, RF64, and AIFF, there are currently a few corner cases where the restoration process may not match exactly (but could with some improvement).  The cases are:<br />
 					<ul>
-						<li>The original WAVE had more than 2 channels and needed remapping to FLAC order</li>
-						<li>The original WAVE is not spec compliant, e.g. 20 bps in WAVEFORMATEX; restored file will still be a compliant WAVEFORMATEXTENSIBLE</li>
-						<li>Other wierd corner cases where the "fmt" chunk is not exactly identical due to there being multiple ways to represent the same thing</li>
-						<li>The original WAIV is in AIFF-C form with compression type "sowt" or "NONE"; currently the restored file will always be in AIFF (uncompressed) form</li>
+						<li>The original WAVE/Wave64/RF64 had more than 2 channels and needed remapping to FLAC order</li>
+						<li>The original WAVE/Wave64/RF64 is not spec compliant, e.g. 20 bps in WAVEFORMATEX; restored file will still be a compliant WAVEFORMATEXTENSIBLE</li>
+						<li>Other weird corner cases where the "fmt" chunk is not exactly identical due to there being multiple ways to represent the same thing</li>
+						<li>The original AIFF is in AIFF-C form with compression type "sowt" or "NONE"; currently the restored file will always be in AIFF (uncompressed) form</li>
 					</ul>
 -->
 				</td>
@@ -339,29 +355,35 @@
 			<tr>
 				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
 					<a name="flac_options_skip" />
-					<span class="argument">--skip={#|mm:ss.ss}</span>
+					<span class="argument">--skip={#|mm:ss.ss}<br />--skip={#|mm:ss,ss}</span>
 				</td>
 				<td>
 					Skip over the first # of samples of the input.  This works for both encoding and decoding, but not testing.  The alternative form <span class="argument">mm:ss.ss</span> can be used to specify minutes, seconds, and fractions of a second.<br />
 					<br />
+					Note that the use of either a dot or a comma depends on the locale used for the system.<br />
+					<br />
 					Examples:<br />
 					<br />
 					<span class="argument">--skip=123</span> : skip the first 123 samples of the input<br />
-					<span class="argument">--skip=1:23.45</span> : skip the first 1 minute and 23.45 seconds of the input
+					<span class="argument">--skip=1:23.45</span> : skip the first 1 minute and 23.45 seconds of the input, with a locale using the point as decimal separator<br />
+					<span class="argument">--skip=1:23,45</span> : skip the first 1 minute and 23.45 seconds of the input, with a locale using the comma as decimal separator
 				</td>
 			</tr>
 			<tr>
 				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
 					<a name="flac_options_until" />
-					<span class="argument">--until={#|[+|-]mm:ss.ss}</span>
+					<span class="argument">--until={#|[+|-]mm:ss.ss}<br />--until={#|[+|-]mm:ss,ss}</span>
 				</td>
 				<td>
 					Stop at the given sample number for each input file.  This works for both encoding and decoding, but not testing.  The given sample number is not included in the decoded output.  The alternative form <span class="argument">mm:ss.ss</span> can be used to specify minutes, seconds, and fractions of a second.  If a <span class="argument">+</span> sign is at the beginning, the <span class="argument">--until</span> point is relative to the <span class="argument">--skip</span> point.  If a <span class="argument">-</span> sign is at the beginning, the <span class="argument">--until</span> point is relative to end of the audio.<br />
+					<br />
+					Note that the use of either a dot or a comma depends on the locale used for the system.<br />
 					<br />
 					Examples:<br />
 					<br />
 					<span class="argument">--until=123</span> : decode only the first 123 samples of the input (samples 0-122, stopping at 123)<br />
 					<span class="argument">--until=1:23.45</span> : decode only the first 1 minute and 23.45 seconds of the input<br />
+					<span class="argument">--until=1:23,45</span> : decode only the first 1 minute and 23.45 seconds of the input, if your locale setting uses a comma as decimal separator<br />
 					<span class="argument">--skip=1:00 --until=+1:23.45</span> : decode 1:00.00 to 2:23.45<br />
 					<span class="argument">--until=-1:23.45</span> : decode everything except the last 1 minute and 23.45 seconds<br />
 					<span class="argument">--until=-0:00</span> : decode until the end of the input (the same as not specifying <span class="argument">--until</span>)
@@ -458,11 +480,10 @@
 					By default <span class="commandname">flac</span> stops decoding with an error and removes the partially decoded file if it encounters a bitstream error.  With <span class="argument">-F</span>, errors are still printed but <span class="commandname">flac</span> will continue decoding to completion.  Note that errors may cause the decoded audio to be missing some samples or have silent sections.
 				</td>
 			</tr>
-			<!-- @@@ undocumented, also not in the man page yet
 			<tr>
 				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
 					<a name="flac_options_apply_replaygain_which_is_not_lossless" />
-					<span class="argument">-@@@-apply-replaygain-which-is-not-lossless[=&lt;specification&gt;]</span>
+					<span class="argument">--apply-replaygain-which-is-not-lossless[=&lt;specification&gt;]</span>
 				</td>
 				<td>
 					Applies ReplayGain values while decoding.<br />
@@ -494,12 +515,11 @@
 					</ul>
 					For example, the default of <span class="argument">0aLn1</span> means 0dB preamp, use album gain, 6dB hard limit, low noise shaping.<br />
 					<br />
-					<span class="argument">-@@@-apply-replaygain-which-is-not-lossless=3</span> means 3dB preamp, use album gain, no limiting, no noise shaping.<br />
+					<span class="argument">--apply-replaygain-which-is-not-lossless=3</span> means 3dB preamp, use album gain, no limiting, no noise shaping.<br />
 					<br />
 					<span class="commandname">flac</span> uses the ReplayGain tags for the calculation.  If a stream does not have the required tags or they can't be parsed, decoding will continue with a warning, and no ReplayGain is applied to that stream.
 				</td>
 			</tr>
-			-->
 		</table>
 		</td></tr></table>
 
@@ -536,7 +556,7 @@
 					<span class="argument">--replay-gain</span>
 				</td>
 				<td>
-					Calculate <a href="http://www.replaygain.org/">ReplayGain</a> values and store them as FLAC tags, similar to <a href="http://packages.qa.debian.org/v/vorbisgain.html">VorbisGain</a>.  Title gains/peaks will be computed for each input file, and an album gain/peak will be computed for all files.  All input files must have the same resolution, sample rate, and number of channels.  Only mono and stereo files are allowed, and the sample rate must be one of 8, 11.025, 12, 16, 22.05, 24, 32, 44.1, or 48 kHz.  Also note that this option may leave a few extra bytes in a <span class="code">PADDING</span> block as the exact size of the tags is not known until all files are processed.<br />
+					Calculate <a href="http://wiki.hydrogenaud.io/index.php?title=ReplayGain_specification">ReplayGain</a> values and store them as FLAC tags, similar to <a href="http://packages.qa.debian.org/v/vorbisgain.html">VorbisGain</a>.  Title gains/peaks will be computed for each input file, and an album gain/peak will be computed for all files.  All input files must have the same resolution, sample rate, and number of channels.  Only mono and stereo files are allowed, and the sample rate must be one of 8, 11.025, 12, 16, 22.05, 24, 32, 44.1, or 48 kHz.  Also note that this option may leave a few extra bytes in a <span class="code">PADDING</span> block as the exact size of the tags is not known until all files are processed.<br />
 					<br />
 					Note that this option cannot be used when encoding to standard output (stdout).
 				</td>
@@ -611,7 +631,21 @@
 					<br />
 					This option will have no effect if the files are already aligned (as is the normally the case with WAVE files ripped from a CD).  <span class="commandname">flac</span> can only align a set of files given in one invocation of <span class="commandname">flac</span>.<br />
 					<br />
-					<b>WARNING:</b> The ordering of files is important!  If you give a command like '<span class="code">flac --sector-align *.wav</span>' the shell may not expand the wildcard to the order you expect.  To be safe you should '<span class="code">echo *.wav</span>' first to confirm the order, or be explicit like '<span class="code">flac --sector-align 8.wav 9.wav 10.wav</span>'.
+					<b>WARNING:</b> The ordering of files is important!  If you give a command like '<span class="code">flac --sector-align *.wav</span>' the shell may not expand the wildcard to the order you expect.  To be safe you should '<span class="code">echo *.wav</span>' first to confirm the order, or be explicit like '<span class="code">flac --sector-align 8.wav 9.wav 10.wav</span>'.<br />
+					<br />
+					<b>NOTE:</b>This option is DEPRECATED and may not exist in future version of <span class="commandname">flac</span>.  <a href="http://www.etree.org/shnutils/shntool/">shntool</a> provides similar functionality.
+				</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
+					<a name="flac_options_ignore_chunk_sizes" />
+					<span class="argument">--ignore-chunk-sizes</span>
+				</td>
+				<td>
+					When encoding to <span class="commandname">flac</span>, ignore the file size headers in WAV and AIFF files to attempt to work around problems with over-sized or malformed files.<br />
+					<br />
+					WAV and AIFF files both have an unsigned 32 bit numbers in the file header which specifes the length of audio data. Since this number is unsigned 32 bits, that limits the size of a valid file to being just over 4 Gigabytes. Files larger than this are mal-formed, but should be read correctly using this option. <br />
+					<br />
 				</td>
 			</tr>
 			<tr>
@@ -764,7 +798,7 @@
 					<span class="argument">-6</span>, <span class="argument">--compression-level-6</span>
 				</td>
 				<td>
-					Synonymous with <span class="argument">-l 8 -b 4096 -m -r 6</span>
+					Synonymous with <span class="argument">-l 8 -b 4096 -m -r 6 -A tukey(0.5);partial_tukey(2)</span>
 				</td>
 			</tr>
 			<tr>
@@ -773,7 +807,7 @@
 					<span class="argument">-7</span>, <span class="argument">--compression-level-7</span>
 				</td>
 				<td>
-					Synonymous with <span class="argument">-l 8 -b 4096 -m -e -r 6</span>
+					Synonymous with <span class="argument">-l 12 -b 4096 -m -r 6 -A tukey(0.5);partial_tukey(2)</span>
 				</td>
 			</tr>
 			<tr>
@@ -782,7 +816,7 @@
 					<span class="argument">-8</span>, <span class="argument">--compression-level-8</span>
 				</td>
 				<td>
-					Synonymous with <span class="argument">-l 12 -b 4096 -m -e -r 6</span>
+					Synonymous with <span class="argument">-l 12 -b 4096 -m -r 6 -A tukey(0.5);partial_tukey(2);punchout_tukey(3)</span>
 				</td>
 			</tr>
 			<tr>
@@ -818,9 +852,11 @@
 					<span class="argument">-A "function"</span>, <span class="argument">--apodization="function"</span>
 				</td>
 				<td>
-					Window audio data with given the apodization function.  The functions are: bartlett, bartlett_hann, blackman, blackman_harris_4term_92db, connes, flattop, gauss(STDDEV), hamming, hann, kaiser_bessel, nuttall, rectangle, triangle, tukey(P), welch.<br />
+					Window audio data with given the apodization function.  The functions are: bartlett, bartlett_hann, blackman, blackman_harris_4term_92db, connes, flattop, gauss(STDDEV), hamming, hann, kaiser_bessel, nuttall, rectangle, triangle, tukey(P), partial_tukey(n[/ov[/P]]), punchout_tukey(n[/ov[/P]]), welch.<br />
 					For gauss(STDDEV), STDDEV is the standard deviation (0&lt;STDDEV&lt;=0.5).<br />
 					For tukey(P), P specifies the fraction of the window that is tapered (0&lt;=P&lt;=1; P=0 corresponds to "rectangle" and P=1 corresponds to "hann").<br />
+					For partial_tukey(n) and punchout_tukey(n), n apodization functions are added that span different parts of each block. Values of 2 to 6 seem to yield sane results. If necessary, an overlap can be specified, as can be the taper parameter, for example partial_tukey(2/0.2) or partial_tukey(2/0.2/0.5). ov should be smaller than 1 and can be negative.<br />
+					Please note that P, STDDEV and ov are locale specific, so a comma as decimal separator might be required instead of a dot.<br />
 					More than one -A option (up to 32) may be used.  Any function that is specified erroneously is silently dropped.  The encoder chooses suitable defaults in the absence of any -A options; any -A option specified replaces the default(s).<br />
 					When more than one function is specified, then for every subframe the encoder will try each of them separately and choose the window that results in the smallest compressed subframe.  Multiple functions can greatly increase the encoding time.<br />
 				</td>
@@ -860,7 +896,7 @@
 				<td>
 					Set the [min,]max residual partition order.  The min value defaults to 0 if unspecified.<br />
 					<br />
-					By default the encoder uses a single Rice parameter for the subframe's entire residual.  With this option, the residual is iteratively partitioned into 2^min# .. 2^max# pieces, each with its own Rice parameter.  Higher values of max# yield diminishing returns.  The most bang for the buck is usually with <span class="argument">-r 2,2</span> (more for higher block sizes).  This usually shaves off about 1.5%.  The technique tends to peak out about when blocksize/(2^n)=128.  Use <span class="argument">-r 0,16</span> to force the highest degree of optimization.
+					By default the encoder uses a single Rice parameter for the subframe's entire residual.  With this option, the residual is iteratively partitioned into 2^min# .. 2^max# pieces, each with its own Rice parameter.  Higher values of max# yield diminishing returns.  The most bang for the buck is usually with <span class="argument">-r 2,2</span> (more for higher block sizes).  This usually shaves off about 1.5%.  The technique tends to peak out about when blocksize/(2^n)=128.  Use <span class="argument">-r 0,15</span> to force the highest degree of optimization.
 				</td>
 			</tr>
 		</table>
@@ -926,16 +962,7 @@
 					<span class="argument">--input-size=#</span>
 				</td>
 				<td>
-					Specify the size of the raw input in bytes.  If you are encoding raw samples from stdin, you must set this option in order to be able to use --skip, --until, --cue-sheet, or other options that need to know the size of the input beforehand.  If the size given is greater than what is found in the input stream, the encoder will complain about an unexpected end-of-file.  If the size given is less, samples will be truncated.
-				</td>
-			</tr>
-			<tr>
-				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
-					<a name="flac_options_force_aiff_format" />
-					<span class="argument">--force-aiff-format</span>
-				</td>
-				<td>
-					Force the decoder to output AIFF format.  This option is not needed if the output filename (as set by -o) ends with .aiff.  Also, this option has no effect when encoding since input AIFF is auto-detected.
+					Specify the size of the raw input in bytes.  If you are encoding raw samples from stdin, you must set this option in order to be able to use --skip, --until, --cuesheet, or other options that need to know the size of the input beforehand.  If the size given is greater than what is found in the input stream, the encoder will complain about an unexpected end-of-file.  If the size given is less, samples will be truncated.
 				</td>
 			</tr>
 			<tr>
@@ -945,6 +972,33 @@
 				</td>
 				<td>
 					Treat the input file (or output file if decoding) as a raw file, regardless of the extension.
+				</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
+					<a name="flac_options_force_aiff_format" />
+					<span class="argument">--force-aiff-format</span>
+				</td>
+				<td>
+					Force the decoder to output AIFF format.  This option is not needed if the output filename (as set by -o) ends with .aif or .aiff.  Also, this option has no effect when encoding since input AIFF is auto-detected.
+				</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
+					<a name="flac_options_force_rf64_format" />
+					<span class="argument">--force-rf64-format</span>
+				</td>
+				<td>
+					Force the decoder to output RF64 format.  This option is not needed if the output filename (as set by -o) ends with .rf64.  Also, this option has no effect when encoding since input RF64 is auto-detected.
+				</td>
+			</tr>
+			<tr>
+				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
+					<a name="flac_options_force_wave64_format" />
+					<span class="argument">--force-wave64-format</span>
+				</td>
+				<td>
+					Force the decoder to output Wave64 format.  This option is not needed if the output filename (as set by -o) ends with .w64.  Also, this option has no effect when encoding since input Wave64 is auto-detected.
 				</td>
 			</tr>
 		</table>
@@ -962,15 +1016,18 @@
 			<tr>
 				<td nowrap="nowrap" align="right" valign="top" bgcolor="#F4F4CC">
 					<span class="argument">--no-adaptive-mid-side</span><br />
+					<span class="argument">--no-cued-seekpoints</span><br />
 					<span class="argument">--no-decode-through-errors</span><br />
 					<span class="argument">--no-delete-input-file</span><br />
 					<span class="argument">--no-escape-coding</span><br />
 					<span class="argument">--no-exhaustive-model-search</span><br />
+					<span class="argument">--no-ignore-chunk-sizes</span><br />
 					<span class="argument">--no-lax</span><br />
 					<span class="argument">--no-mid-side</span><br />
 					<span class="argument">--no-ogg</span><br />
 					<span class="argument">--no-padding</span><br />
-					<span class="argument">--no-qlp-coeff-precision-search</span><br />
+					<span class="argument">--no-preserve-modtime</span><br />
+					<span class="argument">--no-qlp-coeff-prec-search</span><br />
 					<span class="argument">--no-residual-gnuplot</span><br />
 					<span class="argument">--no-residual-text</span><br />
 					<span class="argument">--no-sector-align</span><br />
@@ -989,122 +1046,126 @@
 		<br />
 		<a name="option_index"><font size="+1"><b><u>Option Index</u></b></font></a><br />
 		<br />
-		<a href="#flac_options_level_0" /><span class="argument">-0</span></a><br />
-		<a href="#flac_options_level_1" /><span class="argument">-1</span></a><br />
-		<a href="#flac_options_level_2" /><span class="argument">-2</span></a><br />
-		<a href="#flac_options_level_3" /><span class="argument">-3</span></a><br />
-		<a href="#flac_options_level_4" /><span class="argument">-4</span></a><br />
-		<a href="#flac_options_level_5" /><span class="argument">-5</span></a><br />
-		<a href="#flac_options_level_6" /><span class="argument">-6</span></a><br />
-		<a href="#flac_options_level_7" /><span class="argument">-7</span></a><br />
-		<a href="#flac_options_level_8" /><span class="argument">-8</span></a><br />
-		<a href="#flac_options_apodization" /><span class="argument">-A</span></a><br />
-		<a href="#flac_options_analyze" /><span class="argument">-a</span></a><br />
-		<a href="#flac_options_adaptive_mid_side" /><span class="argument">--adaptive-mid-side</span></a><br />
-		<a href="#flac_options_analyze" /><span class="argument">--analyze</span></a><br />
-		<a href="#flac_options_apodization" /><span class="argument">--apodization</span></a><br />
-		<!-- @@@ undocumented, also not in the man page yet
-		<a href="#flac_options_apply_replaygain_which_is_not_lossless" /><span class="argument">-@@@-apply-replaygain-which-is-not-lossless</span></a><br />
-		-->
-		<a href="#flac_options_blocksize" /><span class="argument">-b</span></a><br />
-		<a href="#flac_options_best" /><span class="argument">--best</span></a><br />
-		<a href="#flac_options_blocksize" /><span class="argument">--blocksize</span></a><br />
-		<a href="#flac_options_bps" /><span class="argument">--bps</span></a><br />
-		<a href="#flac_options_stdout" /><span class="argument">-c</span></a><br />
-		<a href="#flac_options_channels" /><span class="argument">--channels</span></a><br />
-		<a href="#flac_options_level_0" /><span class="argument">--compression-level-0</span></a><br />
-		<a href="#flac_options_level_1" /><span class="argument">--compression-level-1</span></a><br />
-		<a href="#flac_options_level_2" /><span class="argument">--compression-level-2</span></a><br />
-		<a href="#flac_options_level_3" /><span class="argument">--compression-level-3</span></a><br />
-		<a href="#flac_options_level_4" /><span class="argument">--compression-level-4</span></a><br />
-		<a href="#flac_options_level_5" /><span class="argument">--compression-level-5</span></a><br />
-		<a href="#flac_options_level_6" /><span class="argument">--compression-level-6</span></a><br />
-		<a href="#flac_options_level_7" /><span class="argument">--compression-level-7</span></a><br />
-		<a href="#flac_options_level_8" /><span class="argument">--compression-level-8</span></a><br />
-		<a href="#flac_options_cue" /><span class="argument">--cue</span></a><br />
-		<a href="#flac_options_cuesheet" /><span class="argument">--cuesheet</span></a><br />
-		<a href="#flac_options_decode" /><span class="argument">-d</span></a><br />
-		<a href="#flac_options_decode" /><span class="argument">--decode</span></a><br />
-		<a href="#flac_options_decode_through_errors" /><span class="argument">--decode-through-errors</span></a><br />
-		<a href="#flac_options_delete_input_file" /><span class="argument">--delete-input-file</span></a><br />
-		<a href="#flac_options_exhaustive_model_search" /><span class="argument">-e</span></a><br />
-		<a href="#flac_options_endian" /><span class="argument">--endian</span></a><br />
-		<a href="#flac_options_exhaustive_model_search" /><span class="argument">--exhaustive-model-search</span></a><br />
-		<a href="#flac_options_explain" /><span class="argument">--explain</span></a><br />
-		<a href="#flac_options_decode_through_errors" /><span class="argument">-F</span></a><br />
-		<a href="#flac_options_force" /><span class="argument">-f</span></a><br />
-		<a href="#flac_options_fast" /><span class="argument">--fast</span></a><br />
-		<a href="#flac_options_force_aiff_format" /><span class="argument">--force-aiff-format</span></a><br />
-		<a href="#flac_options_force_raw_format" /><span class="argument">--force-raw-format</span></a><br />
-		<a href="#flac_options_force" /><span class="argument">--force</span></a><br />
-		<a href="#flac_options_explain" /><span class="argument">-H</span></a><br />
-		<a href="#flac_options_help" /><span class="argument">-h</span></a><br />
-		<a href="#flac_options_help" /><span class="argument">--help</span></a><br />
-		<a href="#flac_options_input_size" /><span class="argument">--input-size</span></a><br />
-		<a href="#flac_options_keep_foreign_metadata" /><span class="argument">--keep-foreign-metadata</span></a><br />
-		<a href="#flac_options_max_lpc_order" /><span class="argument">-l</span></a><br />
-		<a href="#flac_options_lax" /><span class="argument">--lax</span></a><br />
-		<a href="#flac_options_adaptive_mid_side" /><span class="argument">-M</span></a><br />
-		<a href="#flac_options_mid_side" /><span class="argument">-m</span></a><br />
-		<a href="#flac_options_max_lpc_order" /><span class="argument">--max-lpc-order</span></a><br />
-		<a href="#flac_options_mid_side" /><span class="argument">--mid-side</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-adaptive-mid-side</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-decode-through-errors</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-delete-input-file</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-escape-coding</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-exhaustive-model-search</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-lax</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-mid-side</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-ogg</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-padding</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-qlp-coeff-precision-search</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-residual-gnuplot</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-residual-text</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-sector-align</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-seektable</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-silent</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-verify</span></a><br />
-		<a href="#negative_options" /><span class="argument">--no-warnings-as-errors</span></a><br />
-		<a href="#flac_options_no_utf8_convert" /><span class="argument">--no-utf8-convert</span></a><br />
-		<a href="#flac_options_output_name" /><span class="argument">-o</span></a><br />
-		<a href="#flac_options_ogg" /><span class="argument">--ogg</span></a><br />
-		<a href="#flac_options_output_name" /><span class="argument">--output-name</span></a><br />
-		<a href="#flac_options_output_prefix" /><span class="argument">--output-prefix</span></a><br />
-		<a href="#flac_options_padding" /><span class="argument">-P</span></a><br />
-		<a href="#flac_options_qlp_coeff_precision_search" /><span class="argument">-p</span></a><br />
-		<a href="#flac_options_padding" /><span class="argument">--padding</span></a><br />
-		<a href="#flac_options_picture" /><span class="argument">--picture</span></a><br />
-		<a href="#flac_options_qlp_coeff_precision" /><span class="argument">-q</span></a><br />
-		<a href="#flac_options_qlp_coeff_precision" /><span class="argument">--qlp-coeff-precision</span></a><br />
-		<a href="#flac_options_qlp_coeff_precision_search" /><span class="argument">--qlp-coeff-precision-search</span></a><br />
-		<a href="#flac_options_rice_partition_order" /><span class="argument">-r</span></a><br />
-		<a href="#flac_options_replay_gain" /><span class="argument">--replay-gain</span></a><br />
-		<a href="#flac_options_residual_gnuplot" /><span class="argument">--residual-gnuplot</span></a><br />
-		<a href="#flac_options_residual_text" /><span class="argument">--residual-text</span></a><br />
-		<a href="#flac_options_rice_partition_order" /><span class="argument">--rice-partition-order</span></a><br />
-		<a href="#flac_options_seekpoint" /><span class="argument">-S</span></a><br />
-		<a href="#flac_options_silent" /><span class="argument">-s</span></a><br />
-		<a href="#flac_options_sample_rate" /><span class="argument">--sample-rate</span></a><br />
-		<a href="#flac_options_sector_align" /><span class="argument">--sector-align</span></a><br />
-		<a href="#flac_options_seekpoint" /><span class="argument">--seekpoint</span></a><br />
-		<a href="#flac_options_serial_number" /><span class="argument">--serial-number</span></a><br />
-		<a href="#flac_options_sign" /><span class="argument">--sign</span></a><br />
-		<a href="#flac_options_silent" /><span class="argument">--silent</span></a><br />
-		<a href="#flac_options_skip" /><span class="argument">--skip</span></a><br />
-		<a href="#flac_options_stdout" /><span class="argument">--stdout</span></a><br />
-		<a href="#flac_options_tag" /><span class="argument">-T</span></a><br />
-		<a href="#flac_options_test" /><span class="argument">-t</span></a><br />
-		<a href="#flac_options_tag" /><span class="argument">--tag</span></a><br />
-		<a href="#flac_options_tag_from_file" /><span class="argument">--tag-from-file</span></a><br />
-		<a href="#flac_options_test" /><span class="argument">--test</span></a><br />
-		<a href="#flac_options_totally_silent" /><span class="argument">--totally-silent</span></a><br />
-		<a href="#flac_options_until" /><span class="argument">--until</span></a><br />
-		<a href="#flac_options_verify" /><span class="argument">-V</span></a><br />
-		<a href="#flac_options_version" /><span class="argument">-v</span></a><br />
-		<a href="#flac_options_verify" /><span class="argument">--verify</span></a><br />
-		<a href="#flac_options_warnings_as_errors" /><span class="argument">-w</span></a><br />
-		<a href="#flac_options_warnings_as_errors" /><span class="argument">--warnings-as-errors</span></a><br />
-		<a href="#flac_options_version" /><span class="argument">--version</span></a><br />
+		<a href="#flac_options_level_0"><span class="argument">-0</span></a><br />
+		<a href="#flac_options_level_1"><span class="argument">-1</span></a><br />
+		<a href="#flac_options_level_2"><span class="argument">-2</span></a><br />
+		<a href="#flac_options_level_3"><span class="argument">-3</span></a><br />
+		<a href="#flac_options_level_4"><span class="argument">-4</span></a><br />
+		<a href="#flac_options_level_5"><span class="argument">-5</span></a><br />
+		<a href="#flac_options_level_6"><span class="argument">-6</span></a><br />
+		<a href="#flac_options_level_7"><span class="argument">-7</span></a><br />
+		<a href="#flac_options_level_8"><span class="argument">-8</span></a><br />
+		<a href="#flac_options_apodization"><span class="argument">-A</span></a><br />
+		<a href="#flac_options_analyze"><span class="argument">-a</span></a><br />
+		<a href="#flac_options_adaptive_mid_side"><span class="argument">--adaptive-mid-side</span></a><br />
+		<a href="#flac_options_analyze"><span class="argument">--analyze</span></a><br />
+		<a href="#flac_options_apodization"><span class="argument">--apodization</span></a><br />
+		<a href="#flac_options_apply_replaygain_which_is_not_lossless"><span class="argument">--apply-replaygain-which-is-not-lossless</span></a><br />
+		<a href="#flac_options_blocksize"><span class="argument">-b</span></a><br />
+		<a href="#flac_options_best"><span class="argument">--best</span></a><br />
+		<a href="#flac_options_blocksize"><span class="argument">--blocksize</span></a><br />
+		<a href="#flac_options_bps"><span class="argument">--bps</span></a><br />
+		<a href="#flac_options_stdout"><span class="argument">-c</span></a><br />
+		<a href="#flac_options_channels"><span class="argument">--channels</span></a><br />
+		<a href="#flac_options_level_0"><span class="argument">--compression-level-0</span></a><br />
+		<a href="#flac_options_level_1"><span class="argument">--compression-level-1</span></a><br />
+		<a href="#flac_options_level_2"><span class="argument">--compression-level-2</span></a><br />
+		<a href="#flac_options_level_3"><span class="argument">--compression-level-3</span></a><br />
+		<a href="#flac_options_level_4"><span class="argument">--compression-level-4</span></a><br />
+		<a href="#flac_options_level_5"><span class="argument">--compression-level-5</span></a><br />
+		<a href="#flac_options_level_6"><span class="argument">--compression-level-6</span></a><br />
+		<a href="#flac_options_level_7"><span class="argument">--compression-level-7</span></a><br />
+		<a href="#flac_options_level_8"><span class="argument">--compression-level-8</span></a><br />
+		<a href="#flac_options_cue"><span class="argument">--cue</span></a><br />
+		<a href="#flac_options_cuesheet"><span class="argument">--cuesheet</span></a><br />
+		<a href="#flac_options_decode"><span class="argument">-d</span></a><br />
+		<a href="#flac_options_decode"><span class="argument">--decode</span></a><br />
+		<a href="#flac_options_decode_through_errors"><span class="argument">--decode-through-errors</span></a><br />
+		<a href="#flac_options_delete_input_file"><span class="argument">--delete-input-file</span></a><br />
+		<a href="#flac_options_exhaustive_model_search"><span class="argument">-e</span></a><br />
+		<a href="#flac_options_endian"><span class="argument">--endian</span></a><br />
+		<a href="#flac_options_exhaustive_model_search"><span class="argument">--exhaustive-model-search</span></a><br />
+		<a href="#flac_options_explain"><span class="argument">--explain</span></a><br />
+		<a href="#flac_options_decode_through_errors"><span class="argument">-F</span></a><br />
+		<a href="#flac_options_force"><span class="argument">-f</span></a><br />
+		<a href="#flac_options_fast"><span class="argument">--fast</span></a><br />
+		<a href="#flac_options_force_raw_format"><span class="argument">--force-raw-format</span></a><br />
+		<a href="#flac_options_force_aiff_format"><span class="argument">--force-aiff-format</span></a><br />
+		<a href="#flac_options_force_rf64_format"><span class="argument">--force-rf64-format</span></a><br />
+		<a href="#flac_options_force_wave64_format"><span class="argument">--force-wave64-format</span></a><br />
+		<a href="#flac_options_force"><span class="argument">--force</span></a><br />
+		<a href="#flac_options_explain"><span class="argument">-H</span></a><br />
+		<a href="#flac_options_help"><span class="argument">-h</span></a><br />
+		<a href="#flac_options_help"><span class="argument">--help</span></a><br />
+		<a href="#flac_options_ignore_chunk_sizes"><span class="argument">--ignore-chunk-sizes</span></a><br />
+		<a href="#flac_options_input_size"><span class="argument">--input-size</span></a><br />
+		<a href="#flac_options_keep_foreign_metadata"><span class="argument">--keep-foreign-metadata</span></a><br />
+		<a href="#flac_options_max_lpc_order"><span class="argument">-l</span></a><br />
+		<a href="#flac_options_lax"><span class="argument">--lax</span></a><br />
+		<a href="#flac_options_adaptive_mid_side"><span class="argument">-M</span></a><br />
+		<a href="#flac_options_mid_side"><span class="argument">-m</span></a><br />
+		<a href="#flac_options_max_lpc_order"><span class="argument">--max-lpc-order</span></a><br />
+		<a href="#flac_options_mid_side"><span class="argument">--mid-side</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-adaptive-mid-side</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-cued-seekpoints</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-decode-through-errors</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-delete-input-file</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-escape-coding</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-exhaustive-model-search</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-keep-foreign-metadata</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-lax</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-mid-side</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-ogg</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-padding</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-preserve-modtime</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-qlp-coeff-prec-search</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-residual-gnuplot</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-residual-text</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-sector-align</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-seektable</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-silent</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-verify</span></a><br />
+		<a href="#negative_options"><span class="argument">--no-warnings-as-errors</span></a><br />
+		<a href="#flac_options_no_utf8_convert"><span class="argument">--no-utf8-convert</span></a><br />
+		<a href="#flac_options_output_name"><span class="argument">-o</span></a><br />
+		<a href="#flac_options_ogg"><span class="argument">--ogg</span></a><br />
+		<a href="#flac_options_output_name"><span class="argument">--output-name</span></a><br />
+		<a href="#flac_options_output_prefix"><span class="argument">--output-prefix</span></a><br />
+		<a href="#flac_options_padding"><span class="argument">-P</span></a><br />
+		<a href="#flac_options_qlp_coeff_precision_search"><span class="argument">-p</span></a><br />
+		<a href="#flac_options_padding"><span class="argument">--padding</span></a><br />
+		<a href="#flac_options_picture"><span class="argument">--picture</span></a><br />
+		<a href="#flac_options_qlp_coeff_precision"><span class="argument">-q</span></a><br />
+		<a href="#flac_options_qlp_coeff_precision"><span class="argument">--qlp-coeff-precision</span></a><br />
+		<a href="#flac_options_qlp_coeff_precision_search"><span class="argument">--qlp-coeff-precision-search</span></a><br />
+		<a href="#flac_options_rice_partition_order"><span class="argument">-r</span></a><br />
+		<a href="#flac_options_replay_gain"><span class="argument">--replay-gain</span></a><br />
+		<a href="#flac_options_residual_gnuplot"><span class="argument">--residual-gnuplot</span></a><br />
+		<a href="#flac_options_residual_text"><span class="argument">--residual-text</span></a><br />
+		<a href="#flac_options_rice_partition_order"><span class="argument">--rice-partition-order</span></a><br />
+		<a href="#flac_options_seekpoint"><span class="argument">-S</span></a><br />
+		<a href="#flac_options_silent"><span class="argument">-s</span></a><br />
+		<a href="#flac_options_sample_rate"><span class="argument">--sample-rate</span></a><br />
+		<a href="#flac_options_sector_align"><span class="argument">--sector-align</span></a><br />
+		<a href="#flac_options_seekpoint"><span class="argument">--seekpoint</span></a><br />
+		<a href="#flac_options_serial_number"><span class="argument">--serial-number</span></a><br />
+		<a href="#flac_options_sign"><span class="argument">--sign</span></a><br />
+		<a href="#flac_options_silent"><span class="argument">--silent</span></a><br />
+		<a href="#flac_options_skip"><span class="argument">--skip</span></a><br />
+		<a href="#flac_options_stdout"><span class="argument">--stdout</span></a><br />
+		<a href="#flac_options_tag"><span class="argument">-T</span></a><br />
+		<a href="#flac_options_test"><span class="argument">-t</span></a><br />
+		<a href="#flac_options_tag"><span class="argument">--tag</span></a><br />
+		<a href="#flac_options_tag_from_file"><span class="argument">--tag-from-file</span></a><br />
+		<a href="#flac_options_test"><span class="argument">--test</span></a><br />
+		<a href="#flac_options_totally_silent"><span class="argument">--totally-silent</span></a><br />
+		<a href="#flac_options_until"><span class="argument">--until</span></a><br />
+		<a href="#flac_options_verify"><span class="argument">-V</span></a><br />
+		<a href="#flac_options_version"><span class="argument">-v</span></a><br />
+		<a href="#flac_options_verify"><span class="argument">--verify</span></a><br />
+		<a href="#flac_options_warnings_as_errors"><span class="argument">-w</span></a><br />
+		<a href="#flac_options_warnings_as_errors"><span class="argument">--warnings-as-errors</span></a><br />
+		<a href="#flac_options_version"><span class="argument">--version</span></a><br />
 
 	</div>
 	<div class="box_footer"></div>
@@ -1116,13 +1177,9 @@
 	<table>
 		<tr>
 			<td align="left">
-				Copyright (c) 2000,2001,2002,2003,2004,2005,2006,2007  Josh Coalson
-			</td>
-			<td width="1%" align="right">
-				<a href="http://sourceforge.net"><img src="http://sflogo.sourceforge.net/sflogo.php?group_id=13478&amp;type=1" width="88" height="31" border="0" alt="SourceForge.net Logo" /></a>
-			</td>
-			<td width="1%" align="right">
-				<a href="http://www.eff.org/cafe/"><img src="images/cafebug.gif" alt="CAFE Logo" border="0" /></a><br />
+				Copyright (c) 2000-2009  Josh Coalson
+				<br/>
+				Copyright (c) 2011-2016  Xiph.Org Foundation
 			</td>
 			<td width="1%" align="right">
 				<a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xhtml10" alt="Valid XHTML 1.0!" height="31" width="88" border="0" hspace="0" /></a>

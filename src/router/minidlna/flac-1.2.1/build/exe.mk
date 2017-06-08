@@ -1,8 +1,9 @@
 #  FLAC - Free Lossless Audio Codec
-#  Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2001-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
-#  components distributed under difference licenses.  The codec libraries
+#  components distributed under different licenses.  The codec libraries
 #  are distributed under Xiph.Org's BSD-like license (see the file
 #  COPYING.Xiph in this distribution).  All other programs, libraries, and
 #  plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -21,16 +22,21 @@
 
 include $(topdir)/build/config.mk
 
-ifeq ($(DARWIN_BUILD),yes)
-CC          = cc
-CCC         = c++
+ifeq ($(OS),Darwin)
+    CC          = cc
+    CCC         = c++
 else
-CC          = gcc
-CCC         = g++
+ifeq ($(OS),FreeBSD)
+    CC          = cc
+    CCC         = c++
+else
+    CC          = gcc
+    CCC         = g++
+endif
 endif
 NASM        = nasm
 LINK        = $(CC) $(LINKAGE)
-OBJPATH     = $(topdir)/obj
+OBJPATH     = $(topdir)/objs
 BINPATH     = $(OBJPATH)/$(BUILD)/bin
 LIBPATH     = $(OBJPATH)/$(BUILD)/lib
 DEBUG_BINPATH   = $(OBJPATH)/debug/bin
@@ -41,14 +47,31 @@ PROGRAM         = $(BINPATH)/$(PROGRAM_NAME)
 DEBUG_PROGRAM   = $(DEBUG_BINPATH)/$(PROGRAM_NAME)
 RELEASE_PROGRAM = $(RELEASE_BINPATH)/$(PROGRAM_NAME)
 
-debug   : CFLAGS = -g -O0 -DDEBUG $(CONFIG_CFLAGS) $(DEBUG_CFLAGS) -W -Wall -Wmissing-prototypes -Wstrict-prototypes -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
-valgrind: CFLAGS = -g -O0 -DDEBUG $(CONFIG_CFLAGS) $(DEBUG_CFLAGS) -DFLAC__VALGRIND_TESTING -W -Wall -Wmissing-prototypes -Wstrict-prototypes -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
-release : CFLAGS = -O3 -fomit-frame-pointer -funroll-loops -finline-functions -DNDEBUG $(CONFIG_CFLAGS) $(RELEASE_CFLAGS) -W -Wall -Wmissing-prototypes -Wstrict-prototypes -Winline -DFLaC__INLINE=__inline__ -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
+BASE_CFLAGS = -Wall -Wextra $(CONFIG_CFLAGS) -DVERSION=$(VERSION) $(DEFINES) $(INCLUDES)
 
-LFLAGS  = -L$(LIBPATH)
+ifeq ($(DEFAULT_BUILD),debug)
+CFLAGS   := -g -O0 -DDEBUG $(CFLAGS) $(BASE_CFLAGS) -Wmissing-prototypes -Wstrict-prototypes
+CXXFLAGS := -g -O0 -DDEBUG $(CXXFLAGS) $(BASE_CFLAGS)
+endif
+
+ifeq ($(DEFAULT_BUILD),valgrind)
+CFLAGS   := -g -O0 -DDEBUG  -DDEBUG -DFLAC__VALGRIND_TESTING $(CFLAGS) $(BASE_CFLAGS) -Wmissing-prototypes -Wstrict-prototypes
+CXXFLAGS := -g -O0 -DDEBUG -DDEBUG -DFLAC__VALGRIND_TESTING $(CXXFLAGS) $(BASE_CFLAGS)
+endif
+
+ifeq ($(DEFAULT_BUILD),release)
+CFLAGS   := -O3 -fomit-frame-pointer -funroll-loops -finline-functions -DFLaC__INLINE=__inline__ -DNDEBUG $(CFLAGS) $(BASE_CFLAGS) -Wmissing-prototypes -Wstrict-prototypes
+CXXFLAGS := -O3 -fomit-frame-pointer -funroll-loops -finline-functions -DFLaC__INLINE=__inline__ -DNDEBUG $(CXXFLAGS) $(BASE_CFLAGS)
+endif
+
+LFLAGS   = -L$(LIBPATH)
 
 DEBUG_OBJS = $(SRCS_C:%.c=%.debug.o) $(SRCS_CC:%.cc=%.debug.o) $(SRCS_CPP:%.cpp=%.debug.o) $(SRCS_NASM:%.nasm=%.debug.o)
 RELEASE_OBJS = $(SRCS_C:%.c=%.release.o) $(SRCS_CC:%.cc=%.release.o) $(SRCS_CPP:%.cpp=%.release.o) $(SRCS_NASM:%.nasm=%.release.o)
+ifeq ($(PROC),x86_64)
+DEBUG_PIC_OBJS = $(SRCS_C:%.c=%.debug.pic.o) $(SRCS_CC:%.cc=%.debug.pic.o) $(SRCS_CPP:%.cpp=%.debug.pic.o) $(SRCS_NASM:%.nasm=%.debug.pic.o)
+RELEASE_PIC_OBJS = $(SRCS_C:%.c=%.release.pic.o) $(SRCS_CC:%.cc=%.release.pic.o) $(SRCS_CPP:%.cpp=%.release.pic.o) $(SRCS_NASM:%.nasm=%.release.pic.o)
+endif
 
 debug   : $(DEBUG_PROGRAM)
 valgrind: $(DEBUG_PROGRAM)
@@ -56,41 +79,25 @@ release : $(RELEASE_PROGRAM)
 
 # by default on OS X we link with static libs as much as possible
 
-$(DEBUG_PROGRAM) : $(DEBUG_OBJS)
-ifeq ($(DARWIN_BUILD),yes)
+$(DEBUG_PROGRAM) : $(DEBUG_OBJS) $(DEBUG_PIC_OBJS)
+ifeq ($(OS),Darwin)
 	$(LINK) -o $@ $(DEBUG_OBJS) $(EXPLICIT_LIBS)
 else
 	$(LINK) -o $@ $(DEBUG_OBJS) $(LFLAGS) $(LIBS)
 endif
 
-$(RELEASE_PROGRAM) : $(RELEASE_OBJS)
-ifeq ($(DARWIN_BUILD),yes)
+$(RELEASE_PROGRAM) : $(RELEASE_OBJS) $(RELEASE_PIC_OBJS)
+ifeq ($(OS),Darwin)
 	$(LINK) -o $@ $(RELEASE_OBJS) $(EXPLICIT_LIBS)
 else
 	$(LINK) -o $@ $(RELEASE_OBJS) $(LFLAGS) $(LIBS)
 endif
 
-%.debug.o %.release.o : %.c
-	$(CC) $(CFLAGS) -c $< -o $@
-%.debug.o %.release.o : %.cc
-	$(CCC) $(CFLAGS) -c $< -o $@
-%.debug.o %.release.o : %.cpp
-	$(CCC) $(CFLAGS) -c $< -o $@
-%.debug.i %.release.i : %.c
-	$(CC) $(CFLAGS) -E $< -o $@
-%.debug.i %.release.i : %.cc
-	$(CCC) $(CFLAGS) -E $< -o $@
-%.debug.i %.release.i : %.cpp
-	$(CCC) $(CFLAGS) -E $< -o $@
-
-%.debug.o : %.nasm
-	$(NASM) -f elf -d OBJ_FORMAT_elf -i ia32/ -g $< -o $@
-%.release.o : %.nasm
-	$(NASM) -f elf -d OBJ_FORMAT_elf -i ia32/ $< -o $@
+include $(topdir)/build/compile.mk
 
 .PHONY : clean
 clean :
-	-rm -f $(DEBUG_OBJS) $(RELEASE_OBJS) $(OBJPATH)/*/bin/$(PROGRAM_NAME)
+	-rm -f $(DEBUG_OBJS) $(RELEASE_OBJS) $(DEBUG_PIC_OBJS) $(RELEASE_PIC_OBJS) $(OBJPATH)/*/bin/$(PROGRAM_NAME)
 
 .PHONY : depend
 depend:

@@ -1,8 +1,9 @@
 /* FLAC - Free Lossless Audio Codec
- * Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2001-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This file is part the FLAC project.  FLAC is comprised of several
- * components distributed under difference licenses.  The codec libraries
+ * components distributed under different licenses.  The codec libraries
  * are distributed under Xiph.Org's BSD-like license (see the file
  * COPYING.Xiph in this distribution).  All other programs, libraries, and
  * plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -16,11 +17,27 @@
  * distribution.
  */
 
+Current FLAC maintainer: Erik de Castro Lopo <erikd@mega-nerd.com>
 
-FLAC (http://flac.sourceforge.net/) is an Open Source lossless audio
-codec developed by Josh Coalson <jcoalson@users.sourceforge.net>.
+Original author: Josh Coalson <jcoalson@users.sourceforge.net>
+
+Website : https://www.xiph.org/flac/
+
+FLAC is an Open Source lossless audio codec originally developed by Josh Coalson
+between 2001 and 2009. From 2009 to 2012 FLAC was basically unmaintained. In
+2012 the Erik de Castro Lopo became the chief maintainer as part of the
+Xiph.Org Foundation.
 
 Other major contributors and their contributions:
+
+"lvqcl" <lvqcl@users.sourceforge.net>
+* Visual Studio build system.
+* Optimisations in the encoder and decoder.
+
+"Janne Hyvärinen" <cse@sci.fi>
+* Visual Studio build system.
+* Unicode handling on Windows.
+
 "Andrey Astafiev" <andrei@tvcell.ru>
 * Russian translation of the HTML documentation
 

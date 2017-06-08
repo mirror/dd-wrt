@@ -4,7 +4,7 @@
   <!ENTITY dhfirstname "<firstname>Matt</firstname>">
   <!ENTITY dhsurname   "<surname>Zimmerman</surname>">
   <!-- Please adjust the date whenever revising the manpage. -->
-  <!ENTITY dhdate      "<date>Nov 4, 2006</date>">
+  <!ENTITY dhdate      "<date>2013/09/18</date>">
   <!-- SECTION should be 1-8, maybe w/ subsection other parameters are
        allowed: see man(7), man(1). -->
   <!ENTITY dhsection   "<manvolnum>1</manvolnum>">
@@ -27,7 +27,7 @@
       &dhsurname;
     </author>
     <copyright>
-      <year>2002,2003,2004,2005</year>
+      <year>2002-2005, 2011-2013</year>
       <holder>&dhusername;</holder>
     </copyright>
     &dhdate;
@@ -48,6 +48,7 @@
       <arg choice=opt><replaceable>OPTIONS</replaceable></arg>
       <group rep=repeat>
 	<arg><replaceable>infile.wav</replaceable></arg>
+	<arg><replaceable>infile.rf64</replaceable></arg>
 	<arg><replaceable>infile.aiff</replaceable></arg>
 	<arg><replaceable>infile.raw</replaceable></arg>
 	<arg><replaceable>infile.flac</replaceable></arg>
@@ -206,10 +207,18 @@
 	</varlistentry>
 
 	<varlistentry>
+	  <term><option>--preserve-modtime</option>
+	  </term>
+	  <listitem>
+	    <para>Output files have their timestamps/permissions set to match those of their inputs (this is default).  Use --no-preserve-modtime to make output files have the current time and default permissions.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
 	  <term><option>--keep-foreign-metadata</option>
 	  </term>
 	  <listitem>
-	    <para>If encoding, save WAVE or AIFF non-audio chunks in FLAC metadata.  If decoding, restore any saved non-audio chunks from FLAC metadata when writing the decoded file.  Foreign metadata cannot be transcoded, e.g. WAVE chunks saved in a FLAC file cannot be restored when decoding to AIFF.  Input and output must be regular files (not stdin or stdout).</para>
+	    <para>If encoding, save WAVE, RF64, or AIFF non-audio chunks in FLAC metadata.  If decoding, restore any saved non-audio chunks from FLAC metadata when writing the decoded file.  Foreign metadata cannot be transcoded, e.g. WAVE chunks saved in a FLAC file cannot be restored when decoding to AIFF.  Input and output must be regular files (not stdin or stdout).</para>
 	  </listitem>
 	</varlistentry>
 
@@ -289,6 +298,52 @@
 	  </listitem>
 	</varlistentry>
 
+	<varlistentry>
+	  <term><option>--apply-replaygain-which-is-not-lossless[=&lt;specification&gt;]</option>
+	  </term>
+	  <listitem>
+            <para>Applies ReplayGain values while decoding.</para>
+            <para>WARNING: THIS IS NOT LOSSLESS.  DECODED AUDIO WILL NOT BE IDENTICAL TO THE ORIGINAL WITH THIS OPTION.</para>
+            <para>The equals sign and &lt;specification&gt; is optional.  If omitted, the default is 0aLn1.</para>
+            <para>The &lt;specification&gt; is a shorthand notation for describing how to apply ReplayGain.  All components are optional but order is important.  '[]' means 'optional'.  '|' means 'or'.  '{}' means required.  The format is:</para>
+            <para>[&lt;preamp&gt;][a|t][l|L][n{0|1|2|3}]</para>
+
+            <variablelist>
+              <varlistentry>
+                <term><option>preamp</option></term>
+                <listitem>
+                  <para>A floating point number in dB.  This is added to the existing gain value.</para>
+                </listitem>
+              </varlistentry>
+
+              <varlistentry>
+                <term><option>a|t</option></term>
+                <listitem>
+                  <para>Specify 'a' to use the album gain, or 't' to use the track gain.  If tags for the preferred kind (album/track) do not exist but tags for the other (track/album) do, those will be used instead.</para>
+                </listitem>
+              </varlistentry>
+
+              <varlistentry>
+                <term><option>l|L</option></term>
+                <listitem>
+                  <para>Specify 'l' to peak-limit the output, so that the ReplayGain peak value is full-scale.  Specify 'L' to use a 6dB hard limiter that kicks in when the signal approaches full-scale.</para>
+                </listitem>
+              </varlistentry>
+
+              <varlistentry>
+                <term><option>n{0|1|2|3}</option></term>
+                <listitem>
+                  <para>Specify the amount of noise shaping.  ReplayGain synthesis happens in floating point; the result is dithered before converting back to integer.  This quantization adds noise.  Noise shaping tries to move the noise where you won't hear it as much.  0 means no noise shaping, 1 means 'low', 2 means 'medium', 3 means 'high'.</para>
+                </listitem>
+              </varlistentry>
+
+            </variablelist>
+
+            <para>For example, the default of 0aLn1 means 0dB preamp, use album gain, 6dB hard limit, low noise shaping.</para>
+            <para>--apply-replaygain-which-is-not-lossless=3 means 3dB preamp, use album gain, no limiting, no noise shaping.</para>
+            <para>flac uses the ReplayGain tags for the calculation.  If a stream does not have the required tags or they can't be parsed, decoding will continue with a warning, and no ReplayGain is applied to that stream.</para>
+	  </listitem>
+	</varlistentry>
       </variablelist>
     </refsect2>
 
@@ -376,7 +431,16 @@
 	  <term><option>--sector-align</option></term>
 
 	  <listitem>
-	    <para>Align encoding of multiple CD format files on sector boundaries.  See the HTML documentation for more information.</para>
+	    <para>Align encoding of multiple CD format files on sector boundaries.  See the HTML documentation for more information.  This option is DEPRECATED and may not exist in future versions of flac.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>--ignore-chunk-sizes</option></term>
+
+	  <listitem>
+		<para>When encoding to flac, ignore the file size headers in WAV and AIFF files to attempt to work around problems with over-sized or malformed files.</para>
+		<para>WAV and AIFF files both have an unsigned 32 bit numbers in the file header which specifes the length of audio data. Since this number is unsigned 32 bits, that limits the size of a valid file to being just over 4 Gigabytes. Files larger than this are mal-formed, but should be read correctly using this option.</para>
 	  </listitem>
 	</varlistentry>
 
@@ -495,7 +559,7 @@
 		<term><option>-6</option>, <option>--compression-level-6</option></term>
 
 		<listitem>
-		  <para>Synonymous with -l 8 -b 4096 -m -r 6</para>
+		  <para>Synonymous with -l 8 -b 4096 -m -r 6 -A tukey(0.5) -A partial_tukey(2)</para>
 		</listitem>
 	      </varlistentry>
 
@@ -503,7 +567,7 @@
 		<term><option>-7</option>, <option>--compression-level-7</option></term>
 
 		<listitem>
-		  <para>Synonymous with -l 8 -b 4096 -m -e -r 6</para>
+		  <para>Synonymous with -l 8 -b 4096 -m -e -r 6 -A tukey(0.5) -A partial_tukey(2)</para>
 		</listitem>
 	      </varlistentry>
 
@@ -511,7 +575,7 @@
 		<term><option>-8</option>, <option>--compression-level-8</option></term>
 
 		<listitem>
-		  <para>Synonymous with -l 12 -b 4096 -m -e -r 6</para>
+		  <para>Synonymous with -l 12 -b 4096 -m -e -r 6 -A tukey(0.5) -A partial_tukey(2) -A punchout_tukey(3)</para>
 		</listitem>
 	      </varlistentry>
 	    </variablelist>
@@ -548,9 +612,11 @@
 	  <term><option>-A</option> <replaceable>function</replaceable>, <option>--apodization</option>=<replaceable>function</replaceable></term>
 
 	  <listitem>
-	    <para>Window audio data with given the apodization function.  The functions are: bartlett, bartlett_hann, blackman, blackman_harris_4term_92db, connes, flattop, gauss(STDDEV), hamming, hann, kaiser_bessel, nuttall, rectangle, triangle, tukey(P), welch.</para>
+	    <para>Window audio data with given the apodization function.  The functions are: bartlett, bartlett_hann, blackman, blackman_harris_4term_92db, connes, flattop, gauss(STDDEV), hamming, hann, kaiser_bessel, nuttall, rectangle, triangle, tukey(P), partial_tukey(n[/ov[/P]]), punchout_tukey(n[/ov[/P]]), welch.</para>
 	    <para>For gauss(STDDEV), STDDEV is the standard deviation (0&lt;STDDEV&lt;=0.5).</para>
 	    <para>For tukey(P), P specifies the fraction of the window that is tapered (0&lt;=P&lt;=1; P=0 corresponds to "rectangle" and P=1 corresponds to "hann").</para>
+	    <para>For partial_tukey(n) and punchout_tukey(n), n apodization functions are added that span different parts of each block. Values of 2 to 6 seem to yield sane results. If necessary, an overlap can be specified, as can be the taper parameter, for example partial_tukey(2/0.2) or partial_tukey(2/0.2/0.5). ov should be smaller than 1 and can be negative.</para>
+	    <para>Please note that P, STDDEV and ov are locale specific, so a comma as decimal separator might be required instead of a dot.</para>
 	    <para>More than one -A option (up to 32) may be used.  Any function that is specified erroneously is silently dropped.  The encoder chooses suitable defaults in the absence of any -A options; any -A option specified replaces the default(s).</para>
 	    <para>When more than one function is specified, then for every subframe the encoder will try each of them separately and choose the window that results in the smallest compressed subframe.  Multiple functions can greatly increase the encoding time.</para>
 	  </listitem>
@@ -584,7 +650,7 @@
 	  <term><option>-r</option> [<replaceable>#</replaceable>,]<replaceable>#</replaceable>, <option>--rice-partition-order</option>=[<replaceable>#</replaceable>,]<replaceable>#</replaceable></term>
 
 	  <listitem>
-	    <para>Set the [min,]max residual partition order (0..16). min defaults to 0 if unspecified.  Default is -r 5.</para>
+	    <para>Set the [min,]max residual partition order (0..15). min defaults to 0 if unspecified.  Default is -r 5.</para>
 	  </listitem>
 	</varlistentry>
 
@@ -639,15 +705,7 @@
 	  <term><option>--input-size</option>=<replaceable>#</replaceable></term>
 
 	  <listitem>
-	    <para>Specify the size of the raw input in bytes.  If you are encoding raw samples from stdin, you must set this option in order to be able to use --skip, --until, --cue-sheet, or other options that need to know the size of the input beforehand.  If the size given is greater than what is found in the input stream, the encoder will complain about an unexpected end-of-file.  If the size given is less, samples will be truncated.</para>
-	  </listitem>
-	</varlistentry>
-
-	<varlistentry>
-	  <term><option>--force-aiff-format</option></term>
-
-	  <listitem>
-	    <para>Force the decoder to output AIFF format.  This option is not needed if the output filename (as set by -o) ends with <filename>.aiff</filename>.  Also, this option has no effect when encoding since input AIFF is auto-detected.</para>
+	    <para>Specify the size of the raw input in bytes.  If you are encoding raw samples from stdin, you must set this option in order to be able to use --skip, --until, --cuesheet, or other options that need to know the size of the input beforehand.  If the size given is greater than what is found in the input stream, the encoder will complain about an unexpected end-of-file.  If the size given is less, samples will be truncated.</para>
 	  </listitem>
 	</varlistentry>
 
@@ -656,6 +714,30 @@
 
 	  <listitem>
 	    <para>Force input (when encoding) or output (when decoding) to be treated as raw samples (even if filename ends in <filename>.wav</filename>).</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>--force-aiff-format</option></term>
+
+	  <listitem>
+	    <para>Force the decoder to output AIFF format.  This option is not needed if the output filename (as set by -o) ends with <filename>.aif</filename> or <filename>.aiff</filename>.  Also, this option has no effect when encoding since input AIFF is auto-detected.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>--force-rf64-format</option></term>
+
+	  <listitem>
+	    <para>Force the decoder to output RF64 format.  This option is not needed if the output filename (as set by -o) ends with <filename>.rf64</filename>.  Also, this option has no effect when encoding since input RF64 is auto-detected.</para>
+	  </listitem>
+	</varlistentry>
+
+	<varlistentry>
+	  <term><option>--force-wave64-format</option></term>
+
+	  <listitem>
+	    <para>Force the decoder to output Wave64 format.  This option is not needed if the output filename (as set by -o) ends with <filename>.w64</filename>.  Also, this option has no effect when encoding since input Wave64 is auto-detected.</para>
 	  </listitem>
 	</varlistentry>
 
@@ -668,14 +750,19 @@
       <variablelist>
 	<varlistentry>
 	  <term><option>--no-adaptive-mid-side</option></term>
+	  <term><option>--no-cued-seekpoints</option></term>
 	  <term><option>--no-decode-through-errors</option></term>
 	  <term><option>--no-delete-input-file</option></term>
+	  <term><option>--no-preserve-modtime</option></term>
+	  <term><option>--no-keep-foreign-metadata</option></term>
 	  <term><option>--no-exhaustive-model-search</option></term>
+	  <term><option>--no-force</option></term>
 	  <term><option>--no-lax</option></term>
 	  <term><option>--no-mid-side</option></term>
 	  <term><option>--no-ogg</option></term>
 	  <term><option>--no-padding</option></term>
-	  <term><option>--no-qlp-coeff-precision-search</option></term>
+	  <term><option>--no-qlp-coeff-prec-search</option></term>
+	  <term><option>--no-replay-gain</option></term>
 	  <term><option>--no-residual-gnuplot</option></term>
 	  <term><option>--no-residual-text</option></term>
 	  <term><option>--no-sector-align</option></term>
@@ -695,14 +782,14 @@
   <refsect1>
     <title>SEE ALSO</title>
 
-    <para>metaflac(1).</para>
+    <para>metaflac(1)</para>
 
-    <para>The programs are documented fully by HTML format documentation, available in <filename>/usr/share/doc/flac/html</filename> on &debian; systems.</para>
+    <para>The programs are documented fully by HTML format documentation, available in <filename>/usr/share/doc/libflac-doc/html</filename> on &debian; systems.</para>
   </refsect1>
   <refsect1>
     <title>AUTHOR</title>
 
-    <para>This manual page was written by &dhusername; &dhemail; for the &debian; system (but may be used by others).</para>
+    <para>This manual page was initially written by &dhusername; &dhemail; for the &debian; system (but may be used by others). It has been kept up-to-date by the Xiph.org Foundation.</para>
 
     <!-- <para>Permission is granted to copy, distribute and/or modify this document under the terms of the <acronym>GNU</acronym> Free Documentation License, Version 1.1 or any later version published by the Free Software Foundation; with no Invariant Sections, no Front-Cover Texts and no Back-Cover Texts.  A copy of the license can be found under <filename>/usr/share/common-licenses/FDL</filename>.</para> -->
 
