@@ -43,13 +43,13 @@
 
 enum { L_FAIL, L_ERROR, L_UPGRADE, L_ESTABLISHED, L_SUCCESS };
 
-# define LOG(str, args...) do { printf("DEBUG, "); \
+#define LOG(str, args...) do { printf("DEBUG, "); \
                                 printf(str, ## args); \
                                 printf("\n"); } while(0)
 
-# define DEBUG(args...) do {;} while(0)
+#define DEBUG(args...) do {;} while(0)
 
-# define DEBUG1(args...) do {;} while(0)
+#define DEBUG1(args...) do {;} while(0)
 
 struct iphdr {
 	u_int8_t version;
