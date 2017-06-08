@@ -12,14 +12,14 @@
 
 = WHAT'S HERE =
 
-This source distribution includes libogg and nothing else. Other modules 
+This source distribution includes libogg and nothing else. Other modules
 (eg, the modules libvorbis, vorbis-tools for the Vorbis music codec,
 libtheora for the Theora video codec) contain the codec libraries for
 use with Ogg bitstreams.
 
 Directory:
 
-./src  		The source for libogg, a BSD-license inplementation of 
+./src  		The source for libogg, a BSD-license inplementation of
 		the public domain Ogg bitstream format
 
 ./include       Library API headers
@@ -61,7 +61,7 @@ BUILDING FROM REPOSITORY SOURCE:
 A standard svn build should consist of nothing more than:
 
 ./autogen.sh
-make 
+make
 
 and as root if desired :
 
@@ -94,4 +94,4 @@ your system:
 (Build instructions for Ogg codecs such as vorbis are similar and may
 be found in those source modules' README files)
 
-$Id: README 18048 2011-08-04 17:36:32Z giles $
+$Id: README 18096 2011-09-22 23:32:51Z giles $
