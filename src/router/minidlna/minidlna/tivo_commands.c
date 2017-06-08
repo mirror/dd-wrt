@@ -253,7 +253,7 @@ callback(void *args, int argc, char **argv, char **azColName)
 	{
 		int count;
 		/* Determine the number of children */
-#ifdef __sparc__ /* Adding filters on large containers can take a long time on slow processors */
+#if 1  /* Adding filters on large containers can take a long time on slow processors */
 		count = sql_get_int_field(db, "SELECT count(*) from OBJECTS where PARENT_ID = '%s'", id);
 #else
 		count = sql_get_int_field(db, "SELECT count(*) from OBJECTS o left join DETAILS d on (d.ID = o.DETAIL_ID) where PARENT_ID = '%s' and "
