@@ -209,8 +209,9 @@ static int auth_check(webs_t conn_fp)
 		return 0;
 	}
 	authinfo = malloc(500);
+	bzero(authinfo, 500);
 	/* Decode it. */
-	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, 500);
+	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, 499);
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
@@ -240,7 +241,7 @@ static int auth_check(webs_t conn_fp)
 		goto out;
 	}
 	ret = 1;
-	out:;
+      out:;
 	free(authinfo);
 
 	return 1;
@@ -451,8 +452,8 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	while (len) {
 		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 		if (!ret) {
-		    dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
-		    break; // deadlock prevention
+			dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
+			break;	// deadlock prevention
 		}
 		len -= ret;
 		wfwrite(buffer, ret, 1, stream);
@@ -927,7 +928,7 @@ static void *handle_request(void *arg)
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
 
 					if (authorization)
-					conn_fp->authorization = strdup(authorization);
+						conn_fp->authorization = strdup(authorization);
 
 					int result = handler->auth(conn_fp, auth_check);
 
@@ -1646,7 +1647,6 @@ int websWrite(webs_t wp, char *fmt, ...)
 size_t wfwrite(char *buf, int size, int n, webs_t wp)
 {
 
-
 	FILE *fp = wp->fp;
 	size_t ret;
 #ifdef HAVE_HTTPS
@@ -1666,7 +1666,6 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	else
 #endif
 		ret = fwrite(buf, size, n, fp);
-
 
 	return ret;
 }
