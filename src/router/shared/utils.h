@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <syslog.h>
 #include <typedefs.h>
 
 #define sys_reboot() eval("sync"); eval("event","3","1","15")
@@ -889,7 +890,7 @@ typedef enum { ACT_IDLE,
 	ACT_ERASE_NVRAM,
 	ACT_NVRAM_COMMIT,
 	ACT_UNKNOWN
-} ACTION;
+} WEBACTION;
 
 enum { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
