@@ -5,15 +5,14 @@ dnl Initialization and Versioning
 dnl ------------------------------------------------
 
 
-AC_INIT([libvorbis],[1.3.3],[vorbis-dev@xiph.org])
+AC_INIT([libvorbis],[1.3.5],[vorbis-dev@xiph.org])
 
 AC_CONFIG_SRCDIR([lib/mdct.c])
 
 AC_CANONICAL_TARGET([])
 
-AM_INIT_AUTOMAKE($PACKAGE_NAME,$PACKAGE_VERSION)
+AM_INIT_AUTOMAKE
 AM_MAINTAINER_MODE
-AM_CONFIG_HEADER([config.h])
 
 dnl Add parameters for aclocal
 AC_SUBST(ACLOCAL_AMFLAGS, "-I m4")
@@ -25,15 +24,15 @@ dnl - interfaces added -> increment AGE
 dnl - interfaces removed -> AGE = 0
 
 V_LIB_CURRENT=4
-V_LIB_REVISION=6
+V_LIB_REVISION=8
 V_LIB_AGE=4
 
 VF_LIB_CURRENT=6
-VF_LIB_REVISION=5
+VF_LIB_REVISION=7
 VF_LIB_AGE=3
 
 VE_LIB_CURRENT=2
-VE_LIB_REVISION=9
+VE_LIB_REVISION=11
 VE_LIB_AGE=0
 
 AC_SUBST(V_LIB_CURRENT)
@@ -160,7 +159,7 @@ else
  AC_MSG_WARN([* machine.  Upgrading to glibc 2.1.3 is strongly urged *])
  AC_MSG_WARN([* to correct the problem.  Note that upgrading glibc   *])
  AC_MSG_WARN([* will not fix any previously built programs; this is  *])
- AC_MSG_WARN([* a compile-time time bug.                             *])
+ AC_MSG_WARN([* a compile-time bug.                                  *])
  AC_MSG_WARN([* To work around the problem for this build of Ogg,    *])
  AC_MSG_WARN([* autoconf is disabling all math inlining.  This will  *])
  AC_MSG_WARN([* hurt Ogg performace but is necessary for an Ogg that *])
@@ -272,7 +271,7 @@ dnl The following line causes the libtool distributed with the source
 dnl to be replaced if the build system has a more recent version.
 AC_SUBST(LIBTOOL_DEPS)
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 m4/Makefile
 lib/Makefile
@@ -295,3 +294,6 @@ vorbis-uninstalled.pc
 vorbisenc-uninstalled.pc
 vorbisfile-uninstalled.pc
 ])
+AC_CONFIG_HEADERS([config.h])
+
+AC_OUTPUT

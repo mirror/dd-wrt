@@ -135,5 +135,10 @@ span.footnote-mark sup.textsuperscript, span.footnote-mark a sup.textsuperscript
 .figure img.graphics {margin-left:10%;}
 P.fancyvrb {white-space: nowrap; margin:0em;}
 dt.enumerate-enumitem{float:left; clear:left; margin-left:1em; margin-right:1em;}
+.uline{ text-decoration:underline; }
+.uuline{ text-decoration:underline; }
+span.sout {text-decoration: line-through }
+span.xout {text-decoration: line-through }
+span.uwave {text-decoration:underline }
 /* end css.sty */
 
