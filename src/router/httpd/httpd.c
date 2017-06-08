@@ -157,7 +157,6 @@ static int numthreads = 0;
 #ifndef HAVE_MICRO
 pthread_mutex_t httpd_mutex;
 pthread_mutex_t singleton_mutex;
-pthread_mutex_t socket_mutex;
 #endif
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -197,7 +196,7 @@ static int auth_check(webs_t conn_fp)
 	char *authinfo;
 	unsigned char *authpass;
 	int l;
-
+	int ret = 0;
 	/* Is this directory unprotected? */
 	if (!strlen(conn_fp->auth_passwd)) {
 		/* Yes, let the request go through. */
@@ -212,14 +211,13 @@ static int auth_check(webs_t conn_fp)
 	}
 	authinfo = malloc(500);
 	/* Decode it. */
-	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, sizeof(authinfo));
+	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, 500);
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
 	if (authpass == (unsigned char *)0) {
 		/* No colon?  Bogus auth info. */
-		free(authinfo);
-		return 0;
+		goto out;
 	}
 	*authpass++ = '\0';
 
@@ -230,9 +228,8 @@ static int auth_check(webs_t conn_fp)
 	char *enc1;
 	char *enc2;
 	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
-	free(authinfo);
 	if (strcmp(enc1, conn_fp->auth_userid)) {
-		return 0;
+		goto out;
 	}
 	char dummy[128];
 	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
@@ -241,8 +238,11 @@ static int auth_check(webs_t conn_fp)
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 			//fprintf(stderr, "flushing %s\n", dummy);
 		}
-		return 0;
+		goto out;
 	}
+	ret = 1;
+	out:;
+	free(authinfo);
 
 	return 1;
 }
@@ -451,6 +451,10 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	char *buffer = malloc(4096);
 	while (len) {
 		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+		if (!ret) {
+		    syslog_dd(LOG_INFO, "%s: cannot ret from stream %s\n", strerror(errno));
+		    break; // deadlock prevention
+		}
 		len -= ret;
 		wfwrite(buffer, ret, 1, stream);
 	}
@@ -528,15 +532,18 @@ static void *handle_request(void *arg)
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
-	bzero(line, sizeof(line));
+	bzero(line, LINE_LEN);
+
 	/* Parse the first line of the request. */
 	int cnt = 0;
 	char *str;
+
 	for (cnt = 0; cnt < 10; cnt++) {
 		str = wfgets(line, LINE_LEN, conn_fp);
 		if (strlen(line) > 0)
 			break;
 	}
+
 	if (!strlen(line)) {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
 		goto out;
@@ -562,6 +569,7 @@ static void *handle_request(void *arg)
 	}
 	while (*protocol == ' ')
 		protocol++;
+
 	cp = protocol;
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
@@ -621,6 +629,7 @@ static void *handle_request(void *arg)
 		send_error(conn_fp, 501, "Not Implemented", (char *)0, "That method is not implemented.");
 		goto out;
 	}
+
 	if (path[0] != '/') {
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Bad filename.");
 		goto out;
@@ -631,6 +640,7 @@ static void *handle_request(void *arg)
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Illegal filename.");
 		goto out;
 	}
+
 	int nodetect = 0;
 	if (nvram_matchi("status_auth", 0) && endswith(file, "Info.htm"))
 		nodetect = 1;
@@ -704,6 +714,7 @@ static void *handle_request(void *arg)
 		send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
 		goto out;
 	}
+
 	if (referer && host && nodetect == 0) {
 		int i;
 		int hlen = strlen(host);
@@ -831,6 +842,7 @@ static void *handle_request(void *arg)
 	}
 #endif
 #endif
+
 	if (file[0] == '\0' || file[len - 1] == '/') {
 
 		if (server_dir != NULL && strcmp(server_dir, "/www"))	// to allow to use router as a WEB server
@@ -909,6 +921,7 @@ static void *handle_request(void *arg)
 
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
+			handler->locked = 0;
 #ifndef HAVE_MICRO
 			if (handler->locked) {
 				pthread_mutex_lock(&singleton_mutex);
@@ -919,7 +932,10 @@ static void *handle_request(void *arg)
 #endif
 			{
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
+
+					if (authorization)
 					conn_fp->authorization = strdup(authorization);
+
 					int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
@@ -1190,7 +1206,6 @@ int main(int argc, char **argv)
 #ifndef HAVE_MICRO
 	pthread_mutex_init(&httpd_mutex, NULL);
 	pthread_mutex_init(&singleton_mutex, NULL);
-	pthread_mutex_init(&socket_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
@@ -1499,7 +1514,6 @@ int main(int argc, char **argv)
 
 char *wfgets(char *buf, int len, webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
@@ -1508,7 +1522,6 @@ char *wfgets(char *buf, int len, webs_t wp)
 		int i;
 		char c;
 		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0) {
-			pthread_mutex_unlock(&socket_mutex);
 			return NULL;
 		}
 		for (i = 0; i < len; i++) {
@@ -1519,15 +1532,12 @@ char *wfgets(char *buf, int len, webs_t wp)
 			}
 		}
 		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0) {
-			pthread_mutex_unlock(&socket_mutex);
 			return NULL;
 		}
 		if (!eof) {
 			buf[i + 1] = 0;
-			pthread_mutex_unlock(&socket_mutex);
 			return buf;
 		} else {
-			pthread_mutex_unlock(&socket_mutex);
 
 			return NULL;
 		}
@@ -1536,7 +1546,6 @@ char *wfgets(char *buf, int len, webs_t wp)
 #elif defined(HAVE_MATRIXSSL)
 	if (wp->do_ssl) {
 		char *ret = (char *)matrixssl_gets(fp, buf, len);
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	} else
@@ -1546,14 +1555,12 @@ char *wfgets(char *buf, int len, webs_t wp)
 	if (wp->do_ssl) {
 		int ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
 		fprintf(stderr, "returns %d\n", ret);
-		pthread_mutex_unlock(&socket_mutex);
 		return (char *)buf;
 	} else
 #endif
 #endif
 	{
 		char *ret = fgets(buf, len, fp);
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	}
@@ -1561,7 +1568,6 @@ char *wfgets(char *buf, int len, webs_t wp)
 
 int wfputs(char *buf, webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
 
 	FILE *fp = wp->fp;
 #ifdef HAVE_HTTPS
@@ -1569,14 +1575,12 @@ int wfputs(char *buf, webs_t wp)
 #ifdef HAVE_OPENSSL
 	{
 		int ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	}
 #elif defined(HAVE_MATRIXSSL)
 	{
 		int ret = matrixssl_puts(fp, buf);
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	}
@@ -1584,7 +1588,6 @@ int wfputs(char *buf, webs_t wp)
 	{
 		int ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "ssl write str %d\n", strlen(buf));
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	}
@@ -1593,7 +1596,6 @@ int wfputs(char *buf, webs_t wp)
 #endif
 	{
 		int ret = fputs(buf, fp);
-		pthread_mutex_unlock(&socket_mutex);
 
 		return ret;
 	}
@@ -1601,7 +1603,6 @@ int wfputs(char *buf, webs_t wp)
 
 int wfprintf(webs_t wp, char *fmt, ...)
 {
-	pthread_mutex_lock(&socket_mutex);
 
 	FILE *fp = wp->fp;
 	va_list args;
@@ -1630,7 +1631,6 @@ int wfprintf(webs_t wp, char *fmt, ...)
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
-	pthread_mutex_unlock(&socket_mutex);
 
 	return ret;
 }
@@ -1643,7 +1643,6 @@ int websWrite(webs_t wp, char *fmt, ...)
 	int ret;
 	if (!wp || !fmt)
 		return -1;
-	pthread_mutex_lock(&socket_mutex);
 
 	FILE *fp = wp->fp;
 
@@ -1668,14 +1667,13 @@ int websWrite(webs_t wp, char *fmt, ...)
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
-	pthread_mutex_unlock(&socket_mutex);
 
 	return ret;
 }
 
 size_t wfwrite(char *buf, int size, int n, webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
+
 
 	FILE *fp = wp->fp;
 	size_t ret;
@@ -1696,14 +1694,13 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	else
 #endif
 		ret = fwrite(buf, size, n, fp);
-	pthread_mutex_unlock(&socket_mutex);
+
 
 	return ret;
 }
 
 size_t wfread(char *buf, int size, int n, webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
 	size_t ret;
 	FILE *fp = wp->fp;
 
@@ -1732,13 +1729,11 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 	} else
 #endif
 		ret = fread(buf, size, n, fp);
-	pthread_mutex_unlock(&socket_mutex);
 	return ret;
 }
 
 int wfflush(webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
 	int ret;
 	FILE *fp = wp->fp;
 
@@ -1758,13 +1753,11 @@ int wfflush(webs_t wp)
 #endif
 		ret = fflush(fp);
 
-	pthread_mutex_unlock(&socket_mutex);
 	return ret;
 }
 
 int wfclose(webs_t wp)
 {
-	pthread_mutex_lock(&socket_mutex);
 	int ret;
 	FILE *fp = wp->fp;
 
@@ -1787,7 +1780,6 @@ int wfclose(webs_t wp)
 		int ret = fclose(fp);
 		wp->fp = NULL;
 	}
-	pthread_mutex_unlock(&socket_mutex);
 
 	return ret;
 }
