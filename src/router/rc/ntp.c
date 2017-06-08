@@ -87,7 +87,7 @@ int do_ntp(void)		// called from ntp_main and
 
 	if (((servers = nvram_get("ntp_server")) == NULL)
 	    || (*servers == 0)
-	    || nvram_matchi("dns_crypt", 1)){
+	    || nvram_matchi("dns_crypt", 1)) {
 		servers = "8.8.8.8 216.239.35.4 216.239.35.8 pool.ntp.org";
 	}
 
@@ -96,9 +96,9 @@ int do_ntp(void)		// called from ntp_main and
 		// fprintf (stderr, "ntp returned a error\n");
 		return 1;
 	}
-	
+
 	nvram_set("ntp_done", "1");
-	
+
 #if defined(HAVE_VENTANA) || defined(HAVE_LAGUNA) || defined(HAVE_STORM) || (defined(HAVE_GATEWORX) && !defined(HAVE_NOP8670))
 	eval("hwclock", "-w");
 #endif
