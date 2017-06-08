@@ -1,8 +1,9 @@
 #  FLAC - Free Lossless Audio Codec
-#  Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2001-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
-#  components distributed under difference licenses.  The codec libraries
+#  components distributed under different licenses.  The codec libraries
 #  are distributed under Xiph.Org's BSD-like license (see the file
 #  COPYING.Xiph in this distribution).  All other programs, libraries, and
 #  plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -15,16 +16,10 @@
 #  restrictive of those mentioned above.  See the file COPYING.Xiph in this
 #  distribution.
 
-AUTOMAKE_OPTIONS = foreign
-
-SUBDIRS = hw
-
 docdir = $(datadir)/doc/$(PACKAGE)-$(VERSION)/html/images
 
 doc_DATA = \
-	1x1.gif \
-	cafebug.gif \
-	logo100.gif \
+	logo.svg \
 	logo130.gif
 
 EXTRA_DIST = $(doc_DATA)

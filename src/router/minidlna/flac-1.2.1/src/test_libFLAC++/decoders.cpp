@@ -1,5 +1,6 @@
 /* test_libFLAC++ - Unit tester for libFLAC++
- * Copyright (C) 2002,2003,2004,2005,2006,2007  Josh Coalson
+ * Copyright (C) 2002-2009  Josh Coalson
+ * Copyright (C) 2011-2016  Xiph.Org Foundation
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -11,12 +12,12 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
@@ -24,17 +25,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined _MSC_VER || defined __MINGW32__
-#if _MSC_VER <= 1600 /* @@@ [2G limit] */
-#define fseeko fseek
-#define ftello ftell
-#endif
-#endif
 #include "decoders.h"
 #include "FLAC/assert.h"
 #include "FLAC/metadata.h" // for ::FLAC__metadata_object_is_equal()
 #include "FLAC++/decoder.h"
 #include "share/grabbag.h"
+#include "share/compat.h"
 extern "C" {
 #include "test_libs_common/file_utils_flac.h"
 #include "test_libs_common/metadata_utils.h"
@@ -62,7 +58,7 @@ static const char * const LayerString[] = {
 static ::FLAC__StreamMetadata streaminfo_, padding_, seektable_, application1_, application2_, vorbiscomment_, cuesheet_, picture_, unknown_;
 static ::FLAC__StreamMetadata *expected_metadata_sequence_[9];
 static unsigned num_expected_;
-static off_t flacfilesize_;
+static FLAC__off_t flacfilesize_;
 
 static const char *flacfilename(bool is_ogg)
 {
@@ -129,6 +125,7 @@ public:
 	bool error_occurred_;
 
 	DecoderCommon(Layer layer): layer_(layer), current_metadata_number_(0), ignore_errors_(false), error_occurred_(false) { }
+	virtual ~DecoderCommon(void) { }
 	::FLAC__StreamDecoderWriteStatus common_write_callback_(const ::FLAC__Frame *frame);
 	void common_metadata_callback_(const ::FLAC__StreamMetadata *metadata);
 	void common_error_callback_(::FLAC__StreamDecoderErrorStatus status);
@@ -197,6 +194,9 @@ public:
 	void error_callback(::FLAC__StreamDecoderErrorStatus status);
 
 	bool test_respond(bool is_ogg);
+private:
+	StreamDecoder(const StreamDecoder&);
+	StreamDecoder&operator=(const StreamDecoder&);
 };
 
 ::FLAC__StreamDecoderReadStatus StreamDecoder::read_callback(FLAC__byte buffer[], size_t *bytes)
@@ -234,7 +234,7 @@ public:
 	if(error_occurred_)
 		return ::FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 
-	if(fseeko(file_, (off_t)absolute_byte_offset, SEEK_SET) < 0) {
+	if(fseeko(file_, (FLAC__off_t)absolute_byte_offset, SEEK_SET) < 0) {
 		error_occurred_ = true;
 		return ::FLAC__STREAM_DECODER_SEEK_STATUS_ERROR;
 	}
@@ -250,7 +250,7 @@ public:
 	if(error_occurred_)
 		return ::FLAC__STREAM_DECODER_TELL_STATUS_ERROR;
 
-	off_t offset = ftello(file_);
+	FLAC__off_t offset = ftello(file_);
 	*absolute_byte_offset = (FLAC__uint64)offset;
 
 	if(offset < 0) {
@@ -384,7 +384,7 @@ bool FileDecoder::test_respond(bool is_ogg)
 		case LAYER_FILE:
 			{
 				printf("opening %sFLAC file... ", is_ogg? "Ogg ":"");
-				FILE *file = ::fopen(flacfilename(is_ogg), "rb");
+				FILE *file = ::flac_fopen(flacfilename(is_ogg), "rb");
 				if(0 == file) {
 					printf("ERROR (%s)\n", strerror(errno));
 					return false;
@@ -504,6 +504,7 @@ static bool test_stream_decoder(Layer layer, bool is_ogg)
 			break;
 		default:
 			die_("internal error 006");
+			delete decoder;
 			return false;
 	}
 	if(init_status != ::FLAC__STREAM_DECODER_INIT_STATUS_OK)
@@ -551,7 +552,7 @@ static bool test_stream_decoder(Layer layer, bool is_ogg)
 		case LAYER_STREAM:
 		case LAYER_SEEKABLE_STREAM:
 			printf("opening %sFLAC file... ", is_ogg? "Ogg ":"");
-			dynamic_cast<StreamDecoder*>(decoder)->file_ = ::fopen(flacfilename(is_ogg), "rb");
+			dynamic_cast<StreamDecoder*>(decoder)->file_ = ::flac_fopen(flacfilename(is_ogg), "rb");
 			if(0 == dynamic_cast<StreamDecoder*>(decoder)->file_) {
 				printf("ERROR (%s)\n", strerror(errno));
 				return false;
@@ -564,7 +565,7 @@ static bool test_stream_decoder(Layer layer, bool is_ogg)
 		case LAYER_FILE:
 			{
 				printf("opening FLAC file... ");
-				FILE *file = ::fopen(flacfilename(is_ogg), "rb");
+				FILE *file = ::flac_fopen(flacfilename(is_ogg), "rb");
 				if(0 == file) {
 					printf("ERROR (%s)\n", strerror(errno));
 					return false;
@@ -723,7 +724,7 @@ static bool test_stream_decoder(Layer layer, bool is_ogg)
 
 	printf("testing finish()... ");
 	if(!decoder->finish()) {
-		FLAC::Decoder::Stream::State state = decoder->get_state();
+		state = decoder->get_state();
 		printf("FAILED, returned false, state = %u (%s)\n", (unsigned)((::FLAC__StreamDecoderState)state), state.as_cstring());
 		return false;
 	}

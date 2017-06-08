@@ -6,7 +6,7 @@
 	of code with the ELIDE_CODE #define is not accurate enough on systems
 	that are POSIX but not glibc.  If someone has a patch that works on
 	GNU/Linux, Darwin, AND Solaris please submit it on the project page:
-		http://sourceforge.net/projects/flac
+		https://sourceforge.net/p/flac/patches/
 
 	In the meantime I have munged the global symbols and removed gates
 	around code, while at the same time trying to touch the original as
@@ -32,8 +32,8 @@
 
    You should have received a copy of the GNU Library General Public
    License along with the GNU C Library; see the file COPYING.LIB.  If not,
-   write to the Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
+   write to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02110-1301, USA.  */
 
 /* This tells Alpha OSF/1 not to define a getopt prototype in <stdio.h>.
    Ditto for AIX 3.2 and <stdlib.h>.  */
@@ -41,7 +41,7 @@
 # define _NO_PROTO
 #endif
 
-#if HAVE_CONFIG_H
+#ifdef HAVE_CONFIG_H
 #  include <config.h>
 #endif
 
@@ -220,13 +220,11 @@ static char *posixly_correct;
    whose names are inconsistent.  */
 
 #ifndef getenv
-extern char *getenv ();
+extern char *getenv (const char * name);
 #endif
 
 static char *
-my_index (str, chr)
-     const char *str;
-     int chr;
+my_index (const char *str, int chr)
 {
   while (*str)
     {
@@ -447,7 +445,7 @@ share___getopt_initialize (argc, argv, optstring)
 	      if (nonoption_flags_max_len < argc)
 		nonoption_flags_max_len = argc;
 	      __getopt_nonoption_flags =
-		(char *) malloc (nonoption_flags_max_len);
+		malloc (nonoption_flags_max_len);
 	      if (__getopt_nonoption_flags == NULL)
 		nonoption_flags_max_len = -1;
 	      else

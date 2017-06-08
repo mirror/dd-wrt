@@ -17,8 +17,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="..\..\obj\debug\lib"
-			IntermediateDirectory="Debug_dynamic"
+			OutputDirectory="$(SolutionDir)objs\$(ConfigurationName)\lib"
+			IntermediateDirectory="$(ConfigurationName)_dynamic"
 			ConfigurationType="2"
 			>
 			<Tool
@@ -38,9 +38,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D &quot;_USE_MATH_DEFINES&quot;"
 				Optimization="0"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories=".\include;..\..\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FLAC_API_EXPORTS;FLAC__HAS_OGG;FLAC__CPU_IA32;FLAC__HAS_NASM;FLAC__USE_3DNOW;VERSION=\&quot;1.2.0\&quot;;DEBUG;FLAC__OVERFLOW_DETECT"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FLAC_API_EXPORTS;FLAC__HAS_OGG;FLAC__CPU_IA32;FLAC__HAS_NASM;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION=\&quot;1.3.2\&quot;;DEBUG;FLAC__OVERFLOW_DETECT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -62,7 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\obj\release\lib\ogg_static.lib"
+				AdditionalDependencies="$(SolutionDir)objs\$(ConfigurationName)\lib\libogg_static.lib"
 				LinkIncremental="2"
 				IgnoreDefaultLibraryNames="uuid.lib"
 				GenerateDebugInformation="true"
@@ -88,17 +90,15 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="..\..\obj\release\lib"
-			IntermediateDirectory="Release_dynamic"
+			OutputDirectory="$(SolutionDir)objs\$(ConfigurationName)\lib"
+			IntermediateDirectory="$(ConfigurationName)_dynamic"
 			ConfigurationType="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -117,12 +117,13 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/D &quot;_USE_MATH_DEFINES&quot;"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
 				OmitFramePointers="true"
 				WholeProgramOptimization="true"
 				AdditionalIncludeDirectories=".\include;..\..\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FLAC_API_EXPORTS;FLAC__HAS_OGG;FLAC__CPU_IA32;FLAC__HAS_NASM;FLAC__USE_3DNOW;VERSION=\&quot;1.2.0\&quot;"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FLAC_API_EXPORTS;FLAC__HAS_OGG;FLAC__CPU_IA32;FLAC__HAS_NASM;FLAC__HAS_X86INTRIN;FLAC__ALIGN_MALLOC_DATA;PACKAGE_VERSION=\&quot;1.3.2\&quot;;FLaC__INLINE=_inline"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="false"
 				UsePrecompiledHeader="0"
@@ -143,7 +144,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="..\..\obj\release\lib\ogg_static.lib"
+				AdditionalDependencies="$(SolutionDir)objs\$(ConfigurationName)\lib\libogg_static.lib"
 				LinkIncremental="1"
 				IgnoreDefaultLibraryNames="uuid.lib"
 				GenerateDebugInformation="true"
@@ -172,9 +173,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -188,11 +186,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\include\private\all.h"
+				RelativePath=".\include\protected\all.h"
 				>
 			</File>
 			<File
-				RelativePath=".\include\protected\all.h"
+				RelativePath=".\include\private\all.h"
 				>
 			</File>
 			<File
@@ -268,6 +266,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\include\private\stream_encoder.h"
+				>
+			</File>
+			<File
 				RelativePath=".\include\protected\stream_encoder.h"
 				>
 			</File>
@@ -310,6 +312,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\fixed_intrin_sse2.c"
+				>
+			</File>
+			<File
+				RelativePath=".\fixed_intrin_ssse3.c"
+				>
+			</File>
+			<File
 				RelativePath=".\float.c"
 				>
 			</File>
@@ -319,6 +329,18 @@
 			</File>
 			<File
 				RelativePath=".\lpc.c"
+				>
+			</File>
+			<File
+				RelativePath=".\lpc_intrin_sse.c"
+				>
+			</File>
+			<File
+				RelativePath=".\lpc_intrin_sse2.c"
+				>
+			</File>
+			<File
+				RelativePath=".\lpc_intrin_sse41.c"
 				>
 			</File>
 			<File
@@ -366,7 +388,19 @@
 				>
 			</File>
 			<File
+				RelativePath=".\stream_encoder_intrin_sse2.c"
+				>
+			</File>
+			<File
+				RelativePath=".\stream_encoder_intrin_ssse3.c"
+				>
+			</File>
+			<File
 				RelativePath=".\window.c"
+				>
+			</File>
+			<File
+				RelativePath=".\windows_unicode_filenames.c"
 				>
 			</File>
 		</Filter>
@@ -378,11 +412,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\include\share\alloc.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\include\FLAC\assert.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\include\FLAC\callback.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\share\compat.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\share\endswap.h"
 				>
 			</File>
 			<File
@@ -394,11 +440,23 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\include\share\macros.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\include\FLAC\metadata.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\include\FLAC\ordinals.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\share\private.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\include\share\safe_str.h"
 				>
 			</File>
 			<File
@@ -409,35 +467,11 @@
 				RelativePath="..\..\include\FLAC\stream_encoder.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\include\share\windows_unicode_filenames.h"
+				>
+			</File>
 		</Filter>
-		<File
-			RelativePath=".\ia32\bitreader_asm.nasm"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/bitreader_asm.nasm -o ia32/bitreader_asm.obj&#x0D;&#x0A;"
-					AdditionalDependencies="ia32/bitreader_asm.nasm;ia32/nasm.h"
-					Outputs="ia32/bitreader_asm.obj"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/bitreader_asm.nasm -o ia32/bitreader_asm.obj&#x0D;&#x0A;"
-					AdditionalDependencies="ia32/bitreader_asm.nasm;ia32/nasm.h"
-					Outputs="ia32/bitreader_asm.obj"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath=".\release_static\BuildLog.htm"
-			>
-		</File>
 		<File
 			RelativePath=".\ia32\cpu_asm.nasm"
 			>
@@ -446,7 +480,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/cpu_asm.nasm -o ia32/cpu_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/cpu_asm.nasm -o ia32/cpu_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/cpu_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/cpu_asm.obj"
 				/>
@@ -456,7 +490,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/cpu_asm.nasm -o ia32/cpu_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/cpu_asm.nasm -o ia32/cpu_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/cpu_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/cpu_asm.obj"
 				/>
@@ -470,7 +504,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/fixed_asm.nasm -o ia32/fixed_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/fixed_asm.nasm -o ia32/fixed_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/fixed_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/fixed_asm.obj"
 				/>
@@ -480,7 +514,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/fixed_asm.nasm -o ia32/fixed_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/fixed_asm.nasm -o ia32/fixed_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/fixed_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/fixed_asm.obj"
 				/>
@@ -494,7 +528,7 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/lpc_asm.nasm -o ia32/lpc_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/lpc_asm.nasm -o ia32/lpc_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/lpc_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/lpc_asm.obj"
 				/>
@@ -504,33 +538,9 @@
 				>
 				<Tool
 					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/lpc_asm.nasm -o ia32/lpc_asm.obj&#x0D;&#x0A;"
+					CommandLine="nasm.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/lpc_asm.nasm -o ia32/lpc_asm.obj&#x0D;&#x0A;"
 					AdditionalDependencies="ia32/lpc_asm.nasm;ia32/nasm.h"
 					Outputs="ia32/lpc_asm.obj"
-				/>
-			</FileConfiguration>
-		</File>
-		<File
-			RelativePath=".\ia32\stream_encoder_asm.nasm"
-			>
-			<FileConfiguration
-				Name="Debug|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/stream_encoder_asm.nasm -o ia32/stream_encoder_asm.obj&#x0D;&#x0A;"
-					AdditionalDependencies="ia32/stream_encoder_asm.nasm;ia32/nasm.h"
-					Outputs="ia32/stream_encoder_asm.obj"
-				/>
-			</FileConfiguration>
-			<FileConfiguration
-				Name="Release|Win32"
-				>
-				<Tool
-					Name="VCCustomBuildTool"
-					CommandLine="nasmw.exe -f win32 -d OBJ_FORMAT_win32 -i ia32/ ia32/stream_encoder_asm.nasm -o ia32/stream_encoder_asm.obj&#x0D;&#x0A;"
-					AdditionalDependencies="ia32/stream_encoder_asm.nasm;ia32/nasm.h"
-					Outputs="ia32/stream_encoder_asm.obj"
 				/>
 			</FileConfiguration>
 		</File>

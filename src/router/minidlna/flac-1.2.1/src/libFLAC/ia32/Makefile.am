@@ -1,5 +1,6 @@
 #  libFLAC - Free Lossless Audio Codec library
-#  Copyright (C) 2001,2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2001-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions
@@ -31,15 +32,13 @@
 SUFFIXES = .nasm .lo
 
 STRIP_NON_ASM = sh $(top_srcdir)/strip_non_asm_libtool_args.sh
-
+AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/include -I$(top_srcdir)/include
 .nasm.lo:
 	$(LIBTOOL) --tag=CC --mode=compile $(STRIP_NON_ASM) $(NASM) -f $(OBJ_FORMAT) -d OBJ_FORMAT_$(OBJ_FORMAT) -i$(srcdir)/ $< -o $@
 
 noinst_LTLIBRARIES = libFLAC-asm.la
 libFLAC_asm_la_SOURCES = \
-	bitreader_asm.nasm \
 	cpu_asm.nasm \
 	fixed_asm.nasm \
 	lpc_asm.nasm \
-	nasm.h \
-	stream_encoder_asm.nasm
+	nasm.h

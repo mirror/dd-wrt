@@ -1,10 +1,11 @@
-#!/bin/sh
+#!/bin/sh -e
 
 #  FLAC - Free Lossless Audio Codec
-#  Copyright (C) 2002,2003,2004,2005,2006,2007  Josh Coalson
+#  Copyright (C) 2002-2009  Josh Coalson
+#  Copyright (C) 2011-2016  Xiph.Org Foundation
 #
 #  This file is part the FLAC project.  FLAC is comprised of several
-#  components distributed under difference licenses.  The codec libraries
+#  components distributed under different licenses.  The codec libraries
 #  are distributed under Xiph.Org's BSD-like license (see the file
 #  COPYING.Xiph in this distribution).  All other programs, libraries, and
 #  plugins are distributed under the GPL (see COPYING.GPL).  The documentation
@@ -17,38 +18,11 @@
 #  restrictive of those mentioned above.  See the file COPYING.Xiph in this
 #  distribution.
 
-die ()
-{
-	echo $* 1>&2
-	exit 1
-}
+. ./common.sh
 
-if [ x = x"$1" ] ; then
-	BUILD=debug
-else
-	BUILD="$1"
-fi
-
-# change to 'false' to show all flac/metaflac output (useful for debugging)
-if true ; then
-	SILENT='--silent'
-	TOTALLY_SILENT='--totally-silent'
-else
-	SILENT=''
-	TOTALLY_SILENT=''
-fi
-
-LD_LIBRARY_PATH=`pwd`/../src/libFLAC/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/grabbag/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/getopt/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/replaygain_analysis/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/replaygain_synthesis/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../src/share/utf8/.libs:$LD_LIBRARY_PATH
-LD_LIBRARY_PATH=`pwd`/../obj/$BUILD/lib:$LD_LIBRARY_PATH
-export LD_LIBRARY_PATH
 PATH=`pwd`/../src/flac:$PATH
 PATH=`pwd`/../src/metaflac:$PATH
-PATH=`pwd`/../obj/$BUILD/bin:$PATH
+PATH=`pwd`/../objs/$BUILD/bin:$PATH
 
 if echo a | (grep -E '(a|b)') >/dev/null 2>&1
 	then EGREP='grep -E'
@@ -58,26 +32,26 @@ fi
 testdir="metaflac-test-files"
 flacfile="metaflac.flac"
 
-flac --help 1>/dev/null 2>/dev/null || die "ERROR can't find flac executable"
-metaflac --help 1>/dev/null 2>/dev/null || die "ERROR can't find metaflac executable"
+flac${EXE} --help 1>/dev/null 2>/dev/null || die "ERROR can't find flac executable"
+metaflac${EXE} --help 1>/dev/null 2>/dev/null || die "ERROR can't find metaflac executable"
 
 run_flac ()
 {
 	if [ x"$FLAC__TEST_WITH_VALGRIND" = xyes ] ; then
-		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=100 flac $*" >>test_metaflac.valgrind.log
-		valgrind --leak-check=yes --show-reachable=yes --num-callers=100 --log-fd=4 flac $* 4>>test_metaflac.valgrind.log
+		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=50 flac $*" >>test_metaflac.valgrind.log
+		valgrind --leak-check=yes --show-reachable=yes --num-callers=50 --log-fd=4 flac${EXE} ${TOTALLY_SILENT} --no-error-on-compression-fail $* 4>>test_metaflac.valgrind.log
 	else
-		flac $*
+		flac${EXE} ${TOTALLY_SILENT} --no-error-on-compression-fail $*
 	fi
 }
 
 run_metaflac ()
 {
 	if [ x"$FLAC__TEST_WITH_VALGRIND" = xyes ] ; then
-		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=100 metaflac $*" >>test_metaflac.valgrind.log
-		valgrind --leak-check=yes --show-reachable=yes --num-callers=100 --log-fd=4 metaflac $* 4>>test_metaflac.valgrind.log
+		echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=50 metaflac $*" >>test_metaflac.valgrind.log
+		valgrind --leak-check=yes --show-reachable=yes --num-callers=50 --log-fd=4 metaflac${EXE} $* 4>>test_metaflac.valgrind.log
 	else
-		metaflac $*
+		metaflac${EXE} $*
 	fi
 }
 
@@ -87,10 +61,10 @@ run_metaflac_silent ()
 		run_metaflac $*
 	else
 		if [ x"$FLAC__TEST_WITH_VALGRIND" = xyes ] ; then
-			echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=100 metaflac $*" >>test_metaflac.valgrind.log
-			valgrind --leak-check=yes --show-reachable=yes --num-callers=100 --log-fd=4 metaflac $* 2>/dev/null 4>>test_metaflac.valgrind.log
+			echo "valgrind --leak-check=yes --show-reachable=yes --num-callers=50 metaflac $*" >>test_metaflac.valgrind.log
+			valgrind --leak-check=yes --show-reachable=yes --num-callers=50 --log-fd=4 metaflac${EXE} $* 2>/dev/null 4>>test_metaflac.valgrind.log
 		else
-			metaflac $* 2>/dev/null
+			metaflac${EXE} $* 2>/dev/null
 		fi
 	fi
 }
@@ -102,7 +76,7 @@ check_flac ()
 
 echo "Generating stream..."
 bytes=80000
-if dd if=/dev/zero ibs=1 count=$bytes | flac --force --verify -0 --input-size=$bytes --output-name=$flacfile --force-raw-format --endian=big --sign=signed --channels=1 --bps=8 --sample-rate=8000 - ; then
+if dd if=/dev/zero ibs=1 count=$bytes 2>/dev/null | flac${EXE} ${TOTALLY_SILENT} --force --verify -0 --input-size=$bytes --output-name=$flacfile --force-raw-format --endian=big --sign=signed --channels=1 --bps=8 --sample-rate=8000 - ; then
 	chmod +w $flacfile
 else
 	die "ERROR during generation"
@@ -110,7 +84,7 @@ fi
 
 check_flac
 
-echo
+testdatadir=${top_srcdir}/test/metaflac-test-files
 
 filter ()
 {
@@ -125,13 +99,14 @@ filter ()
 }
 metaflac_test ()
 {
-	case="$1"
+	case="$testdatadir/$1"
 	desc="$2"
 	args="$3"
-	expect="$testdir/$case-expect.meta"
-	echo -n "test $case: $desc... "
+	expect="$case-expect.meta"
+	echo $ECHO_N "test $1: $desc... " $ECHO_C
 	run_metaflac $args $flacfile | filter > $testdir/out.meta || die "ERROR running metaflac"
 	diff -w $expect $testdir/out.meta > /dev/null 2>&1 || die "ERROR: metadata does not match expected $expect"
+	# To blindly accept (and check later): cp -f $testdir/out.meta $expect
 	echo OK
 }
 
@@ -300,8 +275,12 @@ run_metaflac --remove-replay-gain $flacfile
 check_flac
 metaflac_test case42 "--remove-replay-gain" "--list"
 
+run_metaflac --scan-replay-gain $flacfile
+check_flac
+metaflac_test case42 "--scan-replay-gain" "--list"
+
 # CUESHEET blocks
-cs_in=cuesheets/good.000.cue
+cs_in=${top_srcdir}/test/cuesheets/good.000.cue
 cs_out=metaflac.cue
 cs_out2=metaflac2.cue
 run_metaflac --import-cuesheet-from="$cs_in" $flacfile
@@ -328,7 +307,7 @@ for f in \
 	1.gif \
 	2.gif \
 ; do
-	run_metaflac --import-picture-from="|image/gif|$f||pictures/$f" $flacfile
+	run_metaflac --import-picture-from="|image/gif|$f||${top_srcdir}/test/pictures/$f" $flacfile
 	check_flac
 	metaflac_test "case$ncase" "--import-picture-from" "--list"
 	ncase=`expr $ncase + 1`
@@ -337,7 +316,7 @@ for f in \
 	0.jpg \
 	4.jpg \
 ; do
-	run_metaflac --import-picture-from="4|image/jpeg|$f||pictures/$f" $flacfile
+	run_metaflac --import-picture-from="4|image/jpeg|$f||${top_srcdir}/test/pictures/$f" $flacfile
 	check_flac
 	metaflac_test "case$ncase" "--import-picture-from" "--list"
 	ncase=`expr $ncase + 1`
@@ -353,7 +332,7 @@ for f in \
 	7.png \
 	8.png \
 ; do
-	run_metaflac --import-picture-from="5|image/png|$f||pictures/$f" $flacfile
+	run_metaflac --import-picture-from="5|image/png|$f||${top_srcdir}/test/pictures/$f" $flacfile
 	check_flac
 	metaflac_test "case$ncase" "--import-picture-from" "--list"
 	ncase=`expr $ncase + 1`
@@ -361,37 +340,33 @@ done
 [ $ncase = 60 ] || die "expected case# to be 60"
 
 fn=export-picture-check
-echo -n "Testing --export-picture-to... "
+echo $ECHO_N "Testing --export-picture-to... " $ECHO_C
 run_metaflac --export-picture-to=$fn $flacfile
 check_flac
-cmp $fn pictures/0.gif || die "ERROR, exported picture file and original differ"
+cmp $fn ${top_srcdir}/test/pictures/0.gif || die "ERROR, exported picture file and original differ"
 echo OK
 rm -f $fn
-echo -n "Testing --block-number --export-picture-to... "
+echo $ECHO_N "Testing --block-number --export-picture-to... " $ECHO_C
 run_metaflac --block-number=9 --export-picture-to=$fn $flacfile
 check_flac
-cmp $fn pictures/0.png || die "ERROR, exported picture file and original differ"
+cmp $fn ${top_srcdir}/test/pictures/0.png || die "ERROR, exported picture file and original differ"
 echo OK
 rm -f $fn
 
 run_metaflac --remove --block-type=PICTURE $flacfile
 check_flac
 metaflac_test case60 "--remove --block-type=PICTURE" "--list"
-run_metaflac --import-picture-from="1|image/png|standard_icon|32x32x24|pictures/0.png" $flacfile
+run_metaflac --import-picture-from="1|image/png|standard_icon|32x32x24|${top_srcdir}/test/pictures/0.png" $flacfile
 check_flac
 metaflac_test case61 "--import-picture-from" "--list"
-run_metaflac --import-picture-from="2|image/png|icon|64x64x24|pictures/1.png" $flacfile
+run_metaflac --import-picture-from="2|image/png|icon|64x64x24|${top_srcdir}/test/pictures/1.png" $flacfile
 check_flac
 metaflac_test case62 "--import-picture-from" "--list"
 
 # UNKNOWN blocks
-echo -n "Testing FLAC file with unknown metadata... "
-cp -p metaflac.flac.in $flacfile
+echo $ECHO_N "Testing FLAC file with unknown metadata... " $ECHO_C
+cp -p ${top_srcdir}/test/metaflac.flac.in $flacfile
 # remove the VORBIS_COMMENT block so vendor string changes don't interfere with the comparison:
 run_metaflac --remove --block-type=VORBIS_COMMENT --dont-use-padding $flacfile
-cmp $flacfile metaflac.flac.ok || die "ERROR, $flacfile and metaflac.flac.ok differ"
+cmp $flacfile ${top_srcdir}/test/metaflac.flac.ok || die "ERROR, $flacfile and metaflac.flac.ok differ"
 echo OK
-
-rm -f $testdir/out.flac $testdir/out.meta
-
-exit 0
