@@ -193,7 +193,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 static int auth_check(webs_t conn_fp)
 {
-	char authinfo[500];
+	char *authinfo;
 	unsigned char *authpass;
 	int l;
 
@@ -209,7 +209,7 @@ static int auth_check(webs_t conn_fp)
 
 		return 0;
 	}
-
+	authinfo = malloc(500);
 	/* Decode it. */
 	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, sizeof(authinfo));
 	authinfo[l] = '\0';
@@ -217,6 +217,7 @@ static int auth_check(webs_t conn_fp)
 	authpass = strchr((char *)authinfo, ':');
 	if (authpass == (unsigned char *)0) {
 		/* No colon?  Bogus auth info. */
+		free(authinfo);
 		return 0;
 	}
 	*authpass++ = '\0';
@@ -228,7 +229,7 @@ static int auth_check(webs_t conn_fp)
 	char *enc1;
 	char *enc2;
 	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
-
+	free(authinfo);
 	if (strcmp(enc1, conn_fp->auth_userid)) {
 		return 0;
 	}
@@ -521,9 +522,9 @@ static void *handle_request(void *arg)
 	int len;
 	struct mime_handler *handler;
 	int cl = 0, count, flags;
-	char line[LINE_LEN + 1];
+	char *line;
 	long method_type;
-
+	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
 	bzero(line, sizeof(line));
@@ -915,7 +916,7 @@ static void *handle_request(void *arg)
 #endif
 			{
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
-					conn_fp->authorization = authorization;
+					conn_fp->authorization = strdup(authorization);
 					int result = handler->auth(conn_fp, auth_check);
 
 #ifdef HAVE_IAS
@@ -1005,10 +1006,13 @@ static void *handle_request(void *arg)
 	}
 
       out:;
+	free(line);
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
 	if (conn_fp->request_url)
 		free(conn_fp->request_url);
+	if (conn_fp->authorization)
+		free(conn_fp->authorization);
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
 //      fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
