@@ -9,7 +9,6 @@ static_docs = \
 	rfc5215.xml \
 	rfc5215.txt \
 	eightphase.png \
-	evenlsp.png \
 	fish_xiph_org.png \
 	floor1_inverse_dB_table.html \
 	floorval.png \
@@ -17,8 +16,6 @@ static_docs = \
 	framing.html \
 	helper.html \
 	index.html \
-	lspmap.png \
-	oddlsp.png \
 	oggstream.html \
 	programming.html \
 	squarepolar.png \
@@ -27,15 +24,12 @@ static_docs = \
 	v-comment.html \
 	vorbis-clip.txt \
 	vorbis-errors.txt \
-	vorbis-fidelity.html \
-	vorbis.html \
-	vorbisword2.png \
-	wait.png \
-	white-xifish.png
+	vorbis-fidelity.html
 
 # bits needed by the spec
 SPEC_PNG = \
 	components.png \
+	fish_xiph_org.png \
 	floor1-1.png \
 	floor1-2.png \
 	floor1-3.png \
@@ -46,10 +40,6 @@ SPEC_PNG = \
 	residue2.png \
 	window1.png \
 	window2.png
-SPEC_PDF = xifish.pdf
-
-# FIXME: also needed here
-#	white-xifish.png 
 
 SPEC_TEX = \
 	Vorbis_I_spec.tex \
@@ -88,19 +78,16 @@ CLEANFILES = $(SPEC_TEX:%.tex=%.aux) \
 	     Vorbis_I_spec.out Vorbis_I_spec.tmp \
 	     Vorbis_I_spec.toc Vorbis_I_spec.xref \
 	     Vorbis_I_spec*.png \
-	     zzVorbis_I_spec.ps xifish.png
+	     zzVorbis_I_spec.ps
 DISTCLEANFILES = $(built_docs)
 
 
 # explicit rules for generating docs
 if BUILD_DOCS
-xifish.png: white-xifish.png
-	cp $< $@
-
-Vorbis_I_spec.html Vorbis_I_spec.css: $(SPEC_TEX) $(SPEC_PNG) xifish.png
+Vorbis_I_spec.html Vorbis_I_spec.css: $(SPEC_TEX) $(SPEC_PNG)
 	htlatex $<
 
-Vorbis_I_spec.pdf: $(SPEC_TEX) $(SPEC_PNG) xifish.png
+Vorbis_I_spec.pdf: $(SPEC_TEX) $(SPEC_PNG)
 	pdflatex $<
 	pdflatex $<
 	pdflatex $<

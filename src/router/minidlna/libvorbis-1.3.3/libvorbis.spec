@@ -1,5 +1,5 @@
 Name:		libvorbis
-Version:	1.3.3
+Version:	1.3.5
 Release:	0.xiph.1
 Summary:	The Vorbis General Audio Compression Codec.
 
