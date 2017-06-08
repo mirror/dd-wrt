@@ -1488,6 +1488,7 @@ int main(int argc, char **argv)
 char *wfgets(char *buf, int len, webs_t wp)
 {
 	FILE *fp = wp->fp;
+	char *ret = NULL;
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
 	if (wp->do_ssl) {
@@ -1495,7 +1496,7 @@ char *wfgets(char *buf, int len, webs_t wp)
 		int i;
 		char c;
 		if (sslbufferpeek((struct sslbuffer *)fp, buf, len) <= 0) {
-			return NULL;
+			goto out;
 		}
 		for (i = 0; i < len; i++) {
 			c = buf[i];
@@ -1505,73 +1506,69 @@ char *wfgets(char *buf, int len, webs_t wp)
 			}
 		}
 		if (sslbufferread((struct sslbuffer *)fp, buf, i + 1) <= 0) {
-			return NULL;
+			goto out;
 		}
 		if (!eof) {
 			buf[i + 1] = 0;
-			return buf;
+			ret = buf;
+			goto out;
 		} else {
 
-			return NULL;
+			goto out;
 		}
 
 	} else
 #elif defined(HAVE_MATRIXSSL)
 	if (wp->do_ssl) {
-		char *ret = (char *)matrixssl_gets(fp, buf, len);
-
-		return ret;
+		ret = (char *)matrixssl_gets(fp, buf, len);
 	} else
 #elif defined(HAVE_POLARSSL)
 
 	fprintf(stderr, "ssl read %d\n", len);
 	if (wp->do_ssl) {
-		int ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
-		fprintf(stderr, "returns %d\n", ret);
-		return (char *)buf;
+		int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
+		fprintf(stderr, "returns %d\n", r);
+		ret = buf;
 	} else
 #endif
 #endif
 	{
-		char *ret = fgets(buf, len, fp);
-
-		return ret;
+		ret = fgets(buf, len, fp);
 	}
+      out:;
+	return ret;
 }
 
 int wfputs(char *buf, webs_t wp)
 {
 
 	FILE *fp = wp->fp;
+	int ret;
 #ifdef HAVE_HTTPS
 	if (wp->do_ssl)
 #ifdef HAVE_OPENSSL
 	{
-		int ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
+		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 
-		return ret;
 	}
 #elif defined(HAVE_MATRIXSSL)
 	{
-		int ret = matrixssl_puts(fp, buf);
+		ret = matrixssl_puts(fp, buf);
 
-		return ret;
 	}
 #elif defined(HAVE_POLARSSL)
 	{
-		int ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
+		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "ssl write str %d\n", strlen(buf));
 
-		return ret;
 	}
 #endif
 	else
 #endif
 	{
-		int ret = fputs(buf, fp);
-
-		return ret;
+		ret = fputs(buf, fp);
 	}
+	return ret;
 }
 
 int wfprintf(webs_t wp, char *fmt, ...)
