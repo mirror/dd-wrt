@@ -286,7 +286,7 @@ void do_ej_file(FILE * fp, int len, webs_t stream)
 
 FILE *getWebsFile(char *path)
 {
-	FILE *web = NULL;
+	FILE *web;
 	cprintf("opening %s\n", path);
 	int i = 0;
 	unsigned int curoffset = 0;
