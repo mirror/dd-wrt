@@ -936,7 +936,7 @@ static void *handle_request(void *arg)
 						if (handler->locked) {
 							pthread_mutex_unlock(&singleton_mutex);
 						}
-#endiuf
+#endif
 						goto out;
 					}
 				}
