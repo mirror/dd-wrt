@@ -156,7 +156,6 @@ static int numthreads = 0;
 
 #ifndef HAVE_MICRO
 pthread_mutex_t httpd_mutex;
-pthread_mutex_t singleton_mutex;
 #endif
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -921,12 +920,6 @@ static void *handle_request(void *arg)
 
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
-			handler->locked = 0;
-#ifndef HAVE_MICRO
-			if (handler->locked) {
-				pthread_mutex_lock(&singleton_mutex);
-			}
-#endif
 #ifdef HAVE_REGISTER
 			if (registered)
 #endif
@@ -948,11 +941,6 @@ static void *handle_request(void *arg)
 #endif
 						conn_fp->auth_fail = 0;
 						send_authenticate(conn_fp);
-#ifndef HAVE_MICRO
-						if (handler->locked) {
-							pthread_mutex_unlock(&singleton_mutex);
-						}
-#endif
 						goto out;
 					}
 				}
@@ -982,21 +970,11 @@ static void *handle_request(void *arg)
 #endif
 			if (check_connect_type() < 0) {
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
-#ifndef HAVE_MICRO
-				if (handler->locked) {
-					pthread_mutex_unlock(&singleton_mutex);
-				}
-#endif
 				goto out;
 			}
 			if (conn_fp->auth_fail == 1) {
 				send_authenticate(conn_fp);
 				conn_fp->auth_fail = 0;
-#ifndef HAVE_MICRO
-				if (handler->locked) {
-					pthread_mutex_unlock(&singleton_mutex);
-				}
-#endif
 				goto out;
 			} else {
 				if (handler->output != do_file)
@@ -1019,11 +997,6 @@ static void *handle_request(void *arg)
 			} else {
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
-#ifndef HAVE_MICRO
-			if (handler->locked) {
-				pthread_mutex_unlock(&singleton_mutex);
-			}
-#endif
 			break;
 
 		}
@@ -1205,7 +1178,6 @@ int main(int argc, char **argv)
 #endif
 #ifndef HAVE_MICRO
 	pthread_mutex_init(&httpd_mutex, NULL);
-	pthread_mutex_init(&singleton_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
