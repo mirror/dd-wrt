@@ -1,52 +1,322 @@
 Entries are sorted chronologically from oldest to youngest within each release,
 releases are sorted from youngest to oldest.
 
-version <next>:
+
+version 3.3.2:
+- avcodec/mpeg4videodec: Fix runtime error: signed integer overflow: 53098 * 40448 cannot be represented in type 'int'
+- avcodec/pafvideo: Fix assertion failure
+- avcodec/takdec: Fix multiple runtime error: signed integer overflow: 637072 * 4096 cannot be represented in type 'int'
+- avcodec/mjpegdec: Check that reference frame matches the current frame
+- avcodec/tiff: Avoid loosing allocated geotag values
+- avcodec/cavs: Fix runtime error: signed integer overflow: -12648062 * 256 cannot be represented in type 'int'
+- avformat/hls: Check local file extensions
+- avcodec/qdrw: Fix null pointer dereference
+- avutil/softfloat: Fix sign error in and improve documentation of av_int2sf()
+- avcodec/hevc_ps: Fix runtime error: index 32 out of bounds for type 'uint8_t [32]'
+- avcodec/dxv: Check remaining bytes in dxv_decompress_raw()
+- avcodec/pafvideo: Check packet size and frame code before ff_reget_buffer()
+- avcodec/ac3dec_fixed: Fix runtime error: left shift of 419 by 23 places cannot be represented in type 'int'
+- avformat/options: log filename on open
+- avcodec/aacps: Fix runtime error: left shift of 1073741824 by 1 places cannot be represented in type 'INTFLOAT' (aka 'int')
+- avcodec/wavpack: Fix runtime error: shift exponent 32 is too large for 32-bit type 'int'
+- avcodec/cfhd: Fix runtime error: signed integer overflow: 65280 * 65288 cannot be represented in type 'int'
+- avcodec/wavpack: Fix runtime error: signed integer overflow: 2013265955 - -134217694 cannot be represented in type 'int'
+- avcodec/cinepak: Check input packet size before frame reallocation
+- avcodec/hevc_ps: Fix runtime error: signed integer overflow: 2147483628 + 256 cannot be represented in type 'int'
+- avcodec/ra144: Fixes runtime error: signed integer overflow: 7160 * 327138 cannot be represented in type 'int'
+- avcodec/pnm: Use ff_set_dimensions()
+- avcodec/cavsdec: Fix runtime error: signed integer overflow: 59 + 2147483600 cannot be represented in type 'int'
+- avcodec/nvenc: fix hw accelerated transcode with bframes
+- libavformat/hls: Observe Set-Cookie headers
+- libavformat/http: Ignore expired cookies
+- avformat/avidec: Limit formats in gab2 to srt and ass/ssa
+- avcodec/acelp_pitch_delay: Fix runtime error: value 4.83233e+39 is outside the range of representable values of type 'float'
+- avcodec/wavpack: Check float_shift
+- avcodec/wavpack: Fix runtime error: signed integer overflow: 24 * -2147483648 cannot be represented in type 'int'
+- avcodec/ansi: Fix frame memleak
+- avcodec/dds: Fix runtime error: left shift of 145 by 24 places cannot be represented in type 'int'
+- avcodec/jpeg2000dec: Use ff_set_dimensions()
+- avcodec/truemotion2: Fix passing null pointer to memset()
+- avcodec/truemotion2: Fix runtime error: left shift of 1 by 31 places cannot be represented in type 'int'
+- avcodec/ra144: Fix runtime error: signed integer overflow: -2449 * 1398101 cannot be represented in type 'int'
+- avcodec/ra144: Fix runtime error: signed integer overflow: 11184810 * 404 cannot be represented in type 'int'
+- avcodec/aac_defines: Add missing () to AAC_HALF_SUM() macro
+- avcodec/webp: Fixes null pointer dereference
+- avcodec/aacdec_fixed: Fix runtime error: left shift of 1 by 31 places cannot be represented in type 'int'
+- avcodec/ylc: Check count in build_vlc()
+- avcodec/snow: Fix runtime error: signed integer overflow: 1086573993 + 1086573994 cannot be represented in type 'int'
+- avcodec/jpeg2000: Fix runtime error: signed integer overflow: 4185 + 2147483394 cannot be represented in type 'int'
+- avcodec/jpeg2000dec: Check tile offsets more completely
+- avcodec/sheervideo: Check input buffer size before allocating and decoding
+- avcodec/aacdec_fixed: Fix multiple runtime error: shift exponent 127 is too large for 32-bit type 'int'
+- avcodec/wnv1: More strict buffer size check
+- avcodec/libfdk-aacdec: Correct buffer_size parameter
+- avcodec/sbrdsp_template: Fix: runtime error: signed integer overflow: 849815297 + 1315389781 cannot be represented in type 'int'
+- avcodec/ivi_dsp: Fix runtime error: left shift of negative value -2
+- doc/filters: Clarify scale2ref example
+- avcodec/mlpdec: Do not leave invalid values in matrix_out_ch[] on error
+- avcodec/ra144dec: Fix runtime error: left shift of negative value -17
+- avcodec/pixlet: Fix runtime error: signed integer overflow: 2147483647 + 32 cannot be represented in type 'int'
+- avformat/mux: Fix copy an paste typo
+- avutil/internal: Do not enable CHECKED with DEBUG
+- avcodec/clearvideo: Check buf_size before decoding frame
+- avcodec/aacdec_fixed: Fix runtime error: signed integer overflow: -2147483648 * -1 cannot be represented in type 'int'
+- avcodec/smc: Check remaining input
+- avcodec/diracdec: Fix off by 1 error in quant check
+- avcodec/jpeg2000dec: Fix copy and paste error
+- avcodec/jpeg2000dec: Check tile offsets
+- avcodec/sanm: Fix uninitialized reference frames
+- avcodec/jpeglsdec: Check get_bits_left() before decoding a picture
+- avcodec/fmvc: Fix use of uninitialized memory when the first frame is not a keyframe
+- avcodec/ivi_dsp: Fix multiple runtime error: left shift of negative value -71
+- avcodec/mjpegdec: Fix runtime error: signed integer overflow: -32767 * 130560 cannot be represented in type 'int'
+- avcodec/aacdec_fixed: Fix runtime error: shift exponent 34 is too large for 32-bit type 'int'
+- avcodec/mpeg4videodec: Check for multiple VOL headers
+- avcodec/vp9block: fix runtime error: signed integer overflow: 196675 * 20670 cannot be represented in type 'int'
+- avcodec/vmnc: Check location before use
+- avcodec/takdec: Fix runtime error: signed integer overflow: 8192 * 524308 cannot be represented in type 'int'
+- avcodec/aac_defines: Fix: runtime error: left shift of negative value -2
+- avcodec/takdec: Fix runtime error: left shift of negative value -63
+- avcodec/mlpdsp: Fix runtime error: signed integer overflow: -24419392 * 128 cannot be represented in type 'int'
+- avcodec/sbrdsp_fixed: fix runtime error: left shift of 1 by 31 places cannot be represented in type 'int'
+- avcodec/aacsbr_fixed: Fix multiple runtime error: shift exponent 170 is too large for 32-bit type 'int'
+- avcodec/mlpdec: Do not leave a invalid num_primitive_matrices in the context
+- avcodec/aacsbr_fixed: Fix multiple runtime error: shift exponent 150 is too large for 32-bit type 'int'
+- avcodec/mimic: Use ff_set_dimensions() to set the dimensions
+- avcodec/fic: Fix multiple runtime error: signed integer overflow: 5793 * 419752 cannot be represented in type 'int'
+- avcodec/pixlet: Fix reading invalid numbers of bits
+- avcodec/mlpdec: Fix: runtime error: left shift of negative value -8
+- avcodec/dfa: Fix: runtime error: signed integer overflow: -14202 * 196877 cannot be represented in type 'int'
+- avcodec/aacdec: Fix runtime error: signed integer overflow: 2147483520 + 255 cannot be represented in type 'int'
+- avcodec/aacdec_template: Fix fixed point scale in decode_cce()
+- avcodec/fmvc: Fix off by 1 error
+- avcodec/flicvideo: Check frame_size before decrementing
+- avcodec/mlpdec: Fix runtime error: left shift of negative value -1
+- avcodec/takdec: Fix  runtime error: left shift of negative value -42
+- avcodec/hq_hqa: Fix: runtime error: signed integer overflow: -255 * 10180917 cannot be represented in type 'int'
+- avcodec/scpr: mask bits to prevent out of array read
+- avcodec/truemotion1: Fix multiple runtime error: signed integer overflow: 1246906962 * 2 cannot be represented in type 'int'
+- avcodec/svq3: Fix runtime error: left shift of negative value -6
+- avcodec/tiff: reset sampling[] if its invalid
+- configure: Fix the msvcrt version check for mingw32
+- lavf/mov: make invalid m{d,v}hd time_scale default to 1 instead of erroring out
+- lavc/ffjni: add missing '\n'
+- lavc/mediacodec_wrapper: do not declare JNIAMedia{Codec,CodecList,Format}Fields on the stack
+- lavc/mediacodec_wrapper: fix local reference leaks
+- avcodec/nvenc: remove unnecessary alignment
+- Use AVOnce as a static variable consistently
+- avfilter: take_samples: do not directly return frame when samples are skipped
+- avutil/hwcontext_dxva2: Don't improperly free IDirect3DSurface9 objects
+
+version 3.3.1:
+- libswscale/tests/swscale: Fix uninitialized variables
+- avcodec/ffv1dec: Fix runtime error: signed integer overflow: 1550964438 + 1550964438 cannot be represented in type 'int'
+- avcodec/webp: Fix signedness in prefix_code check
+- avcodec/svq3: Fix runtime error: signed integer overflow: 169 * 12717677 cannot be represented in type 'int'
+- avcodec/mlpdec: Check that there is enough data for headers
+- avcodec/ac3dec: Keep track of band structure
+- avcodec/webp: Add missing input padding
+- avcodec/aacdec_fixed: Fix runtime error: left shift of negative value -1
+- avcodec/aacsbr_template: Do not change bs_num_env before its checked
+- avcodec/scpr: Fix multiple runtime error: index 256 out of bounds for type 'unsigned int [256]'
+- avcodec/mlp: Fix multiple runtime error: left shift of negative value -1
+- avcodec/xpmdec: Fix multiple pointer/memory issues
+- avcodec/vp8dsp: vp7_luma_dc_wht_c: Fix multiple runtime error: signed integer overflow: -1366381240 + -1262413604 cannot be represented in type 'int'
+- avcodec/avcodec: Limit the number of side data elements per packet
+- avcodec/texturedsp: Fix runtime error: left shift of 255 by 24 places cannot be represented in type 'int'
+- avcodec/g723_1dec: Fix runtime error: left shift of negative value -1
+- avcodec/wmv2dsp: Fix runtime error: signed integer overflow: 181 * -17047030 cannot be represented in type 'int'
+- avcodec/diracdec: Fix Assertion frame->buf[0] failed at libavcodec/decode.c:610
+- avcodec/msmpeg4dec: Check for cbpy VLC errors
+- avcodec/cllc: Check num_bits
+- avcodec/cllc: Factor VLC_BITS/DEPTH out, do not use repeated literal numbers
+- avcodec/scpr: Check y in first line loop in decompress_i()
+- avcodec/dvbsubdec: Check entry_id
+- avcodec/aacdec_fixed: Fix multiple shift exponent 33 is too large for 32-bit type 'int'
+- avcodec/mpeg12dec: Fixes runtime error: division by zero
+- avcodec/pixlet: Fix runtime error: signed integer overflow: 436207616 * -5160230545260541 cannot be represented in type 'long'
+- avcodec/webp: Always set pix_fmt
+- avfilter/vf_uspp: Fix currently unused input frame dimensions
+- avcodec/truemotion1: Fix multiple runtime error: left shift of negative value -1
+- avcodec/eatqi: Fix runtime error: signed integer overflow: 4466147 * 1075 cannot be represented in type 'int'
+- avcodec/dss_sp: Fix runtime error: signed integer overflow: 2147481189 + 4096 cannot be represented in type 'int'
+- avformat/wavdec: Check chunk_size
+- avcodec/cavs: Check updated MV
+- avcodec/y41pdec: Fix width in input buffer size check
+- avcodec/svq3: Fix multiple runtime error: signed integer overflow: -237341 * 24552 cannot be represented in type 'int'
+- avcodec/texturedsp: Fix runtime error: left shift of 218 by 24 places cannot be represented in type 'int'
+- avcodec/lagarith: Check scale_factor
+- avcodec/lagarith: Fix runtime error: left shift of negative value -1
+- avcodec/takdec: Fix multiple  runtime error: left shift of negative value -1
+- avcodec/indeo2: Check for invalid VLCs
+- avcodec/g723_1dec: Fix several integer related cases of undefined behaviour
+- avcodec/htmlsubtitles: Check for string truncation and return error
+- avcodec/bmvvideo: Fix runtime error: left shift of 137 by 24 places cannot be represented in type 'int'
+- avcodec/dss_sp: Fix multiple runtime error: signed integer overflow: -15699 * -164039 cannot be represented in type 'int'
+- avcodec/dvbsubdec: check region dimensions
+- avcodec/vp8dsp: Fixes: runtime error: signed integer overflow: 1330143360 - -1023040530 cannot be represented in type 'int'
+- avcodec/hqxdsp: Fix multiple runtime error: signed integer overflow: 248220 * 21407 cannot be represented in type 'int' in idct_col()
+- avcodec/cavsdec: Check sym_factor
+- avcodec/cdxl: Check format for BGR24
+- avcodec/ffv1dec: Fix copying planes of paletted formats
+- avcodec/wmv2dsp: Fix runtime error: signed integer overflow: 181 * -12156865 cannot be represented in type 'int'
+- avcodec/xwddec: Check bpp more completely
+- avcodec/aacdec_template: Do not decode 2nd PCE if it will lead to failure
+- avcodec/s302m: Fix left shift of 8 by 28 places cannot be represented in type 'int'
+- avcodec/eamad: Fix runtime error: signed integer overflow: 49674 * 49858 cannot be represented in type 'int'
+- avcodec/g726: Fix runtime error: left shift of negative value -2
+- avcodec/magicyuv: Check len to be supported
+- avcodec/ra144: Fix runtime error: left shift of negative value -798
+- avcodec/mss34dsp: Fix multiple signed integer overflow
+- avcodec/targa_y216dec: Fix width type
+- avcodec/texturedsp: Fix multiple runtime error: left shift of 255 by 24 places cannot be represented in type 'int'
+- avcodec/ivi_dsp: Fix multiple left shift of negative value -2
+- avcodec/svq3: Fix multiple runtime error: signed integer overflow: 44161 * 61694 cannot be represented in type 'int'
+- avcodec/msmpeg4dec: Correct table depth
+- avcodec/dds: Fix runtime error: left shift of 1 by 31 places cannot be represented in type 'int'
+- avcodec/cdxl: Check format parameter
+- avutil/softfloat: Fix overflow in av_div_sf()
+- avcodec/hq_hqa: Fix runtime error: left shift of negative value -207
+- avcodec/mss3: Change types in rac_get_model_sym() to match the types they are initialized from
+- avcodec/shorten: Check k in get_uint()
+- avcodec/webp: Fix null pointer dereference
+- avcodec/dfa: Fix signed integer overflow: -2147483648 - 1 cannot be represented in type 'int'
+- avcodec/g723_1: Fix multiple runtime error: left shift of negative value
+- avcodec/mimic: Fix runtime error: left shift of negative value -1
+- avcodec/clearvideo: Fix multiple runtime error: left shift of negative value -1024
+- avcodec/fic: Fix multiple left shift of negative value -15
+- avcodec/mlpdec: Fix runtime error: left shift of negative value -22
+- avcodec/snowdec: Check qbias
+- avutil/softfloat: Fix multiple runtime error: left shift of negative value -8
+- avcodec/aacsbr_template: Do not leave bs_num_env invalid
+- avcodec/mdec: Fix signed integer overflow: 28835400 * 83 cannot be represented in type 'int'
+- avcodec/dfa: Fix off by 1 error
+- avcodec/nellymoser: Fix multiple left shift of negative value -8591
+- avcodec/cdxl: Fix signed integer overflow: 14243456 * 164 cannot be represented in type 'int'
+- avcodec/g722: Fix multiple runtime error: left shift of negative value -1
+- avcodec/dss_sp: Fix multiple left shift of negative value -466
+- avcodec/wnv1: Fix runtime error: left shift of negative value -1
+- avcodec/tiertexseqv: set the fixed dimenasions, do not depend on the demuxer doing so
+- avcodec/mjpegdec: Fix runtime error: signed integer overflow: -24543 * 2031616 cannot be represented in type 'int'
+- avcodec/cavsdec: Fix undefined behavior from integer overflow
+- avcodec/dvdsubdec: Fix runtime error: left shift of 242 by 24 places cannot be represented in type 'int'
+- libavcodec/mpeg4videodec: Convert sprite_offset to 64bit
+- avcodec/pngdec: Use ff_set_dimensions()
+- avcodec/msvideo1: Check buffer size before re-getting the frame
+- avcodec/h264_cavlc: Fix undefined behavior on qscale overflow
+- avcodec/dcadsp: Fix runtime error: signed integer overflow
+- avcodec/svq3: Reject dx/dy beyond 16bit
+- avcodec/svq3: Increase offsets to prevent integer overflows
+- avcodec/indeo2: Check remaining bits in ir2_decode_plane()
+- avcodec/vp3: Check remaining bits in unpack_dct_coeffs()
+- doc/developer: Add terse documentation of assumed C implementation defined behavior
+- avcodec/bmp: Use ff_set_dimensions()
+- avcodec/mdec: Fix runtime error: left shift of negative value -127
+- avcodec/x86/vc1dsp_init: Fix build failure with --disable-optimizations and clang
+- libavcodec/exr : fix float to uint16 conversion for negative float value
+- avformat/webmdashenc: Validate the 'streams' adaptation sets parameter
+- avformat/webmdashenc: Require the 'adaptation_sets' option to be set
+- lavfi/avfiltergraph: only return EOF in avfilter_graph_request_oldest if all sinks EOFed
+- ffmpeg: check for unconnected outputs
+- avformat/utils: free AVStream.codec properly in free_stream()
+- avcodec/options: do a more thorough clean up in avcodec_copy_context()
+- avcodec/options: factorize avcodec_copy_context() cleanup code
+- ffmpeg: count packets when queued
+- avformat/concatdec: fix the h264 annexb extradata check
+- avcodec/dnxhd_parser: fix parsing interlaced video, simplify code
+- ffmpeg; check return code of avcodec_send_frame when flushing encoders
+- avcodec/g723_1dec: Fix LCG type
+- avcodec/hqxdsp: Fix runtime error: signed integer overflow: -196264 * 11585 cannot be represented in type 'int'
+- avcodec/ac3dec: Fix: runtime error: index -1 out of bounds for type 'INTFLOAT [2]'
+- avcodec/mpeg4videodec: Clear sprite wraping on unsupported cases in VOP decode
+- avcodec/pixlet: Fixes: runtime error: signed integer overflow: 9203954323419769657 + 29897660706736950 cannot be represented in type 'long'
+- avcodec/dds: Fix runtime error: left shift of 210 by 24 places cannot be represented in type 'int'
+- avcodec/rscc: Check pixel_size for overflow
+- avcodec/fmvc: Check nb_blocks
+- avcodec/cllc: Check prefix
+- avcodec/webp: Factor update_canvas_size() out
+- avcodec/webp: Update canvas size in vp8_lossy_decode_frame() as in vp8_lossless_decode_frame()
+- avcodec/snowdec: Check width
+- avcodec/flacdec: Return error code instead of 0 for failures
+- avcodec/opus_silk: Fix integer overflow and out of array read
+- avcodec/aacps: Fix undefined behavior
+- avcodec/pixlet: Fix shift exponent 4294967268 is too large for 32-bit type 'int'
+- doc/general: fix project name after 2b1a6b1ae
 
 
-version 3.1.2:
-- cmdutils: remove the current working directory from the DLL search path on win32
-- avcodec/rawdec: Fix palette handling with changing palettes
-- avcodec/raw: Fix decoding of ilacetest.mov
-- avformat/mov: Enable mp3 parsing if a packet needs it
-- avformat/hls: Use an array instead of stream offset for stream mapping
-- avformat/hls: Sync starting segment across variants on live streams
-- avformat/hls: Fix regression with ranged media segments
-- avcodec/ffv1enc: Fix assertion failure with non zero bits per sample
-- avfilter/af_hdcd: small fix in af_hdcd.c where gain was not being adjusted for "attenuate slowly"
-- avformat/oggdec: Fix integer overflow with invalid pts
-- ffplay: Fix invalid array index
-- avcodec/alacenc: allocate bigger packets (cherry picked from commit 82b84c71b009884c8d041361027718b19922c76d)
-- libavcodec/dnxhd: Enable 12-bit DNxHR support.
-- lavc/vaapi_encode_h26x: Fix a crash if "." is not the decimal separator.
-- jni: Return ENOSYS on unsupported platforms
-- lavu/hwcontext_vaapi: Fix compilation if VA_FOURCC_ABGR is not defined.
-- avcodec/vp9_parser: Check the input frame sizes for being consistent
-- avformat/flvdec: parse keyframe before a\v stream was created add_keyframes_index() when stream created or keyframe parsed
-- avformat/flvdec: splitting add_keyframes_index() out from parse_keyframes_index()
-- libavformat/rtpdec_asf: zero initialize the AVIOContext struct
-- libavutil/opt: Small bugfix in example.
-- libx264: Increase x264 opts character limit to 4096
-- avcodec/h264_parser: Set sps/pps_ref
-- librtmp: Avoid an infiniloop setting connection arguments
-- avformat/oggparsevp8: fix pts calculation on pages ending with an invisible frame
-- lavc/Makefile: Fix standalone compilation of the svq3 decoder.
-- lavf/vplayerdec: Improve auto-detection.
-- lavc/mediacodecdec_h264: properly convert extradata to annex-b
-- Revert "configure: Enable GCC vectorization on ≥4.9 on x86"
+version 3.3:
+- CrystalHD decoder moved to new decode API
+- add internal ebur128 library, remove external libebur128 dependency
+- Pro-MPEG CoP #3-R2 FEC protocol
+- premultiply video filter
+- Support for spherical videos
+- configure now fails if autodetect-libraries are requested but not found
+- PSD Decoder
+- 16.8 floating point pcm decoder
+- 24.0 floating point pcm decoder
+- Apple Pixlet decoder
+- QDMC audio decoder
+- NewTek SpeedHQ decoder
+- MIDI Sample Dump Standard demuxer
+- readeia608 filter
+- Sample Dump eXchange demuxer
+- abitscope multimedia filter
+- Scenarist Closed Captions demuxer and muxer
+- threshold filter
+- midequalizer filter
+- Optimal Huffman tables for (M)JPEG encoding
+- VAAPI-accelerated MPEG-2 and VP8 encoding
+- FM Screen Capture Codec decoder
+- native Opus encoder
+- ScreenPressor decoder
+- incomplete ClearVideo decoder
+- Intel QSV video scaling and deinterlacing filters
+- Support MOV with multiple sample description tables
+- XPM decoder
+- Removed the legacy X11 screen grabber, use XCB instead
+- MPEG-7 Video Signature filter
+- Removed asyncts filter (use af_aresample instead)
+- Intel QSV-accelerated VP8 video decoding
 
-version 3.1.1:
-- doc/APIchanges: document the lavu/lavf field moves
-- avformat/avformat: Move new field to the end of AVStream
-- avformat/utils: update deprecated AVStream->codec when the context is updated
-- avutil/frame: Move new field to the end of AVFrame
-- libavcodec/exr : fix decoding piz float file.
-- avformat/mov: Check sample size
-- lavfi: Move new field to the end of AVFilterContext
-- lavfi: Move new field to the end of AVFilterLink
-- ffplay: Fix usage of private lavfi API
-- lavc/mediacodecdec_h264: add missing NAL headers to SPS/PPS buffers
-- lavc/pnm_parser: disable parsing for text based PNMs
+
+version 3.2:
+- libopenmpt demuxer
+- tee protocol
+- Changed metadata print option to accept general urls
+- Alias muxer for Ogg Video (.ogv)
+- VP8 in Ogg muxing
+- curves filter doesn't automatically insert points at x=0 and x=1 anymore
+- 16-bit support in curves filter and selectivecolor filter
+- OpenH264 decoder wrapper
+- MediaCodec H.264/HEVC/MPEG-4/VP8/VP9 hwaccel
+- True Audio (TTA) muxer
+- crystalizer audio filter
+- acrusher audio filter
+- bitplanenoise video filter
+- floating point support in als decoder
+- fifo muxer
+- maskedclamp filter
+- hysteresis filter
+- lut2 filter
+- yuvtestsrc filter
+- CUDA CUVID H.263/VP8/VP9/10 bit HEVC (Dithered) Decoding
+- vaguedenoiser filter
+- added threads option per filter instance
+- weave filter
+- gblur filter
+- avgblur filter
+- sobel and prewitt filter
+- MediaCodec HEVC/MPEG-4/VP8/VP9 decoding
+- Meridian Lossless Packing (MLP) / TrueHD encoder
+- Non-Local Means (nlmeans) denoising filter
+- sdl2 output device and ffplay support
+- sdl1 output device and sdl1 support removed
+- extended mov edit list support
+- libfaac encoder removed
+- Matroska muxer now writes CRC32 elements by default in all Level 1 elements
+- sidedata video and asidedata audio filter
+- Changed mapping of rtp MIME type G726 to codec g726le.
+- spec compliant VAAPI/DXVA2 VC-1 decoding of slices in frame-coded images
 
 
 version 3.1:

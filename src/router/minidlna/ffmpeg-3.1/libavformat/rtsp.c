@@ -834,7 +834,8 @@ int ff_rtsp_open_transport_ctx(AVFormatContext *s, RTSPStream *rtsp_st)
 
     if (!rtsp_st->transport_priv) {
          return AVERROR(ENOMEM);
-    } else if (CONFIG_RTPDEC && rt->transport == RTSP_TRANSPORT_RTP) {
+    } else if (CONFIG_RTPDEC && rt->transport == RTSP_TRANSPORT_RTP &&
+               s->iformat) {
         RTPDemuxContext *rtpctx = rtsp_st->transport_priv;
         rtpctx->ssrc = rtsp_st->ssrc;
         if (rtsp_st->dynamic_handler) {
@@ -1339,8 +1340,7 @@ static int rtsp_send_cmd_with_content_async(AVFormatContext *s,
     ffurl_write(rt->rtsp_hd_out, out_buf, strlen(out_buf));
     if (send_content_length > 0 && send_content) {
         if (rt->control_transport == RTSP_MODE_TUNNEL) {
-            av_log(s, AV_LOG_ERROR, "tunneling of RTSP requests "
-                                    "with content data not supported\n");
+            avpriv_report_missing_feature(s, "Tunneling of RTSP requests with content data");
             return AVERROR_PATCHWELCOME;
         }
         ffurl_write(rt->rtsp_hd_out, send_content, send_content_length);
@@ -1751,6 +1751,14 @@ redirect:
                  "Cache-Control: no-cache\r\n",
                  sessioncookie);
         av_opt_set(rt->rtsp_hd->priv_data, "headers", headers, 0);
+
+        if (!rt->rtsp_hd->protocol_whitelist && s->protocol_whitelist) {
+            rt->rtsp_hd->protocol_whitelist = av_strdup(s->protocol_whitelist);
+            if (!rt->rtsp_hd->protocol_whitelist) {
+                err = AVERROR(ENOMEM);
+                goto fail;
+            }
+        }
 
         /* complete the connection */
         if (ffurl_connect(rt->rtsp_hd, NULL)) {

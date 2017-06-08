@@ -111,7 +111,7 @@ static int cine_read_header(AVFormatContext *avctx)
     compression = avio_rl16(pb);
     version     = avio_rl16(pb);
     if (version != 1) {
-        avpriv_request_sample(avctx, "uknown version %i", version);
+        avpriv_request_sample(avctx, "unknown version %i", version);
         return AVERROR_INVALIDDATA;
     }
 
@@ -307,7 +307,7 @@ static int cine_read_seek(AVFormatContext *avctx, int stream_index, int64_t time
     if ((flags & AVSEEK_FLAG_FRAME) || (flags & AVSEEK_FLAG_BYTE))
         return AVERROR(ENOSYS);
 
-    if (!avctx->pb->seekable)
+    if (!(avctx->pb->seekable & AVIO_SEEKABLE_NORMAL))
         return AVERROR(EIO);
 
     cine->pts = timestamp;

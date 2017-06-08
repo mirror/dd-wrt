@@ -199,8 +199,11 @@ static int detect_stream_specific(AVFormatContext *avf, int idx)
     AVBitStreamFilterContext *bsf;
     int ret;
 
-    if (cat->auto_convert && st->codecpar->codec_id == AV_CODEC_ID_H264 &&
-        (st->codecpar->extradata_size < 4 || AV_RB32(st->codecpar->extradata) != 1)) {
+    if (cat->auto_convert && st->codecpar->codec_id == AV_CODEC_ID_H264) {
+        if (!st->codecpar->extradata_size                                                ||
+            (st->codecpar->extradata_size >= 3 && AV_RB24(st->codecpar->extradata) == 1) ||
+            (st->codecpar->extradata_size >= 4 && AV_RB32(st->codecpar->extradata) == 1))
+            return 0;
         av_log(cat->avf, AV_LOG_INFO,
                "Auto-inserting h264_mp4toannexb bitstream filter\n");
         if (!(bsf = av_bitstream_filter_init("h264_mp4toannexb"))) {
@@ -322,6 +325,7 @@ static int open_file(AVFormatContext *avf, unsigned fileno)
     if (!cat->avf)
         return AVERROR(ENOMEM);
 
+    cat->avf->flags |= avf->flags;
     cat->avf->interrupt_callback = avf->interrupt_callback;
 
     if ((ret = ff_copy_whiteblacklists(cat->avf, avf)) < 0)
@@ -689,7 +693,7 @@ static int try_seek(AVFormatContext *avf, int stream,
 }
 
 static int real_seek(AVFormatContext *avf, int stream,
-                     int64_t min_ts, int64_t ts, int64_t max_ts, int flags)
+                     int64_t min_ts, int64_t ts, int64_t max_ts, int flags, AVFormatContext *cur_avf)
 {
     ConcatContext *cat = avf->priv_data;
     int ret, left, right;
@@ -711,13 +715,19 @@ static int real_seek(AVFormatContext *avf, int stream,
             left  = mid;
     }
 
-    if ((ret = open_file(avf, left)) < 0)
-        return ret;
+    if (cat->cur_file != &cat->files[left]) {
+        if ((ret = open_file(avf, left)) < 0)
+            return ret;
+    } else {
+        cat->avf = cur_avf;
+    }
 
     ret = try_seek(avf, stream, min_ts, ts, max_ts, flags);
     if (ret < 0 &&
         left < cat->nb_files - 1 &&
         cat->files[left + 1].start_time < max_ts) {
+        if (cat->cur_file == &cat->files[left])
+            cat->avf = NULL;
         if ((ret = open_file(avf, left + 1)) < 0)
             return ret;
         ret = try_seek(avf, stream, min_ts, ts, max_ts, flags);
@@ -738,13 +748,17 @@ static int concat_seek(AVFormatContext *avf, int stream,
     if (flags & (AVSEEK_FLAG_BYTE | AVSEEK_FLAG_FRAME))
         return AVERROR(ENOSYS);
     cat->avf = NULL;
-    if ((ret = real_seek(avf, stream, min_ts, ts, max_ts, flags)) < 0) {
-        if (cat->avf)
-            avformat_close_input(&cat->avf);
+    if ((ret = real_seek(avf, stream, min_ts, ts, max_ts, flags, cur_avf_saved)) < 0) {
+        if (cat->cur_file != cur_file_saved) {
+            if (cat->avf)
+                avformat_close_input(&cat->avf);
+        }
         cat->avf      = cur_avf_saved;
         cat->cur_file = cur_file_saved;
     } else {
-        avformat_close_input(&cur_avf_saved);
+        if (cat->cur_file != cur_file_saved) {
+            avformat_close_input(&cur_avf_saved);
+        }
         cat->eof = 0;
     }
     return ret;

@@ -32,7 +32,7 @@
 #include "libavutil/opt.h"
 #include "libavutil/log.h"
 
-#ifndef __MAC_10_11
+#if __MAC_OS_X_VERSION_MIN_REQUIRED < 101100
 #define kAudioFormatEnhancedAC3 'ec-3'
 #endif
 
@@ -554,7 +554,12 @@ static int ffat_decode(AVCodecContext *avctx, void *data,
         ffat_copy_samples(avctx, frame);
         *got_frame_ptr = 1;
         if (at->last_pts != AV_NOPTS_VALUE) {
+            frame->pts = at->last_pts;
+#if FF_API_PKT_PTS
+FF_DISABLE_DEPRECATION_WARNINGS
             frame->pkt_pts = at->last_pts;
+FF_ENABLE_DEPRECATION_WARNINGS
+#endif
             at->last_pts = avpkt->pts;
         }
     } else if (ret && ret != 1) {

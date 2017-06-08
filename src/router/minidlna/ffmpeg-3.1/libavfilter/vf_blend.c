@@ -352,7 +352,7 @@ static int filter_slice(AVFilterContext *ctx, void *arg, int jobnr, int nb_jobs)
     uint8_t *dst    = td->dst->data[td->plane];
     double values[VAR_VARS_NB];
 
-    values[VAR_N]  = td->inlink->frame_count;
+    values[VAR_N]  = td->inlink->frame_count_out;
     values[VAR_T]  = td->dst->pts == AV_NOPTS_VALUE ? NAN : td->dst->pts * av_q2d(td->inlink->time_base);
     values[VAR_W]  = td->w;
     values[VAR_H]  = td->h;
@@ -393,7 +393,7 @@ static AVFrame *blend_frame(AVFilterContext *ctx, AVFrame *top_buf,
                           .w = outw, .h = outh, .param = param, .plane = plane,
                           .inlink = inlink };
 
-        ctx->internal->execute(ctx, filter_slice, &td, NULL, FFMIN(outh, ctx->graph->nb_threads));
+        ctx->internal->execute(ctx, filter_slice, &td, NULL, FFMIN(outh, ff_filter_get_nb_threads(ctx)));
     }
 
     if (!s->tblend)

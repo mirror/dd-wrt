@@ -49,13 +49,13 @@ static int aac_adtstoasc_filter(AVBSFContext *bsfc, AVPacket *out)
     if (ret < 0)
         return ret;
 
+    if (bsfc->par_in->extradata && in->size >= 2 && (AV_RB16(in->data) >> 4) != 0xfff)
+        goto finish;
+
     if (in->size < AAC_ADTS_HEADER_SIZE)
         goto packet_too_small;
 
     init_get_bits(&gb, in->data, AAC_ADTS_HEADER_SIZE * 8);
-
-    if (bsfc->par_in->extradata && show_bits(&gb, 12) != 0xfff)
-        goto finish;
 
     if (avpriv_aac_parse_header(&gb, &hdr) < 0) {
         av_log(bsfc, AV_LOG_ERROR, "Error parsing ADTS frame header!\n");
@@ -136,8 +136,16 @@ fail:
 
 static int aac_adtstoasc_init(AVBSFContext *ctx)
 {
-    av_freep(&ctx->par_out->extradata);
-    ctx->par_out->extradata_size = 0;
+    /* Validate the extradata if the stream is already MPEG-4 AudioSpecificConfig */
+    if (ctx->par_in->extradata) {
+        MPEG4AudioConfig mp4ac;
+        int ret = avpriv_mpeg4audio_get_config(&mp4ac, ctx->par_in->extradata,
+                                               ctx->par_in->extradata_size * 8, 1);
+        if (ret < 0) {
+            av_log(ctx, AV_LOG_ERROR, "Error parsing AudioSpecificConfig extradata!\n");
+            return ret;
+        }
+    }
 
     return 0;
 }

@@ -20,12 +20,15 @@
  */
 
 #include "libavutil/crc.h"
+
+#define BITSTREAM_READER_LE
 #include "libavcodec/tak.h"
+
+#include "apetag.h"
 #include "avformat.h"
 #include "avio_internal.h"
 #include "internal.h"
 #include "rawdec.h"
-#include "apetag.h"
 
 typedef struct TAKDemuxContext {
     int     mlast_frame;
@@ -125,7 +128,7 @@ static int tak_read_header(AVFormatContext *s)
         case TAK_METADATA_END: {
             int64_t curpos = avio_tell(pb);
 
-            if (pb->seekable) {
+            if (pb->seekable & AVIO_SEEKABLE_NORMAL) {
                 ff_ape_parse_tag(s);
                 avio_seek(pb, curpos, SEEK_SET);
             }

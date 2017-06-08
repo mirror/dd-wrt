@@ -19,11 +19,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#include "avcodec.h"
-#include "internal.h"
-
 #define BITSTREAM_READER_LE
+#include "avcodec.h"
 #include "get_bits.h"
+#include "internal.h"
 
 typedef union MacroBlock {
     uint16_t pixels[4];
@@ -250,6 +249,10 @@ static int escape124_decode_frame(AVCodecContext *avctx,
                 // This codebook can be cut off at places other than
                 // powers of 2, leaving some of the entries undefined.
                 cb_size = get_bits_long(&gb, 20);
+                if (!cb_size) {
+                    av_log(avctx, AV_LOG_ERROR, "Invalid codebook size 0.\n");
+                    return AVERROR_INVALIDDATA;
+                }
                 cb_depth = av_log2(cb_size - 1) + 1;
             } else {
                 cb_depth = get_bits(&gb, 4);

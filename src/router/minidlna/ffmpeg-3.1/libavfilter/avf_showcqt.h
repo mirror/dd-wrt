@@ -71,12 +71,14 @@ typedef struct {
     float               *rcp_h_buf;
     float               *sono_v_buf;
     float               *bar_v_buf;
+    float               cmatrix[3][3];
+    float               cscheme_v[6];
     /* callback */
     void                (*cqt_calc)(FFTComplex *dst, const FFTComplex *src, const Coeffs *coeffs,
                                     int len, int fft_len);
     void                (*permute_coeffs)(float *v, int len);
     void                (*draw_bar)(AVFrame *out, const float *h, const float *rcp_h,
-                                    const ColorFloat *c, int bar_h);
+                                    const ColorFloat *c, int bar_h, float bar_t);
     void                (*draw_axis)(AVFrame *out, AVFrame *axis, const ColorFloat *c, int off);
     void                (*draw_sono)(AVFrame *out, AVFrame *sono, int off, int idx);
     void                (*update_sono)(AVFrame *sono, const ColorFloat *c, int idx);
@@ -100,6 +102,7 @@ typedef struct {
     char                *bar_v;
     float               sono_g;
     float               bar_g;
+    float               bar_t;
     double              timeclamp;
     double              basefreq;
     double              endfreq;
@@ -108,9 +111,12 @@ typedef struct {
     int                 count;
     int                 fcount;
     char                *fontfile;
+    char                *font;
     char                *fontcolor;
     char                *axisfile;
     int                 axis;
+    int                 csp;
+    char                *cscheme;
 } ShowCQTContext;
 
 void ff_showcqt_init_x86(ShowCQTContext *s);

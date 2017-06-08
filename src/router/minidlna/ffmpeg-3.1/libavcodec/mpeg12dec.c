@@ -497,7 +497,7 @@ static inline int mpeg2_decode_block_intra(MpegEncContext *s,
     dc  = s->last_dc[component];
     dc += diff;
     s->last_dc[component] = dc;
-    block[0] = dc << (3 - s->intra_dc_precision);
+    block[0] = dc * (1 << (3 - s->intra_dc_precision));
     ff_tlog(s->avctx, "dc=%d\n", block[0]);
     mismatch = block[0] ^ 1;
     i = 0;
@@ -865,8 +865,8 @@ static int mpeg_decode_mb(MpegEncContext *s, int16_t block[12][64])
                                                    s->last_mv[i][0][1]);
                             /* full_pel: only for MPEG-1 */
                             if (s->full_pel[i]) {
-                                s->mv[i][0][0] <<= 1;
-                                s->mv[i][0][1] <<= 1;
+                                s->mv[i][0][0] *= 2;
+                                s->mv[i][0][1] *= 2;
                             }
                         }
                     }
@@ -948,8 +948,8 @@ static int mpeg_decode_mb(MpegEncContext *s, int16_t block[12][64])
                         dmy = get_dmv(s);
 
 
-                        s->last_mv[i][0][1] = my << my_shift;
-                        s->last_mv[i][1][1] = my << my_shift;
+                        s->last_mv[i][0][1] = my * (1 << my_shift);
+                        s->last_mv[i][1][1] = my * (1 << my_shift);
 
                         s->mv[i][0][0] = mx;
                         s->mv[i][0][1] = my;
@@ -994,7 +994,7 @@ static int mpeg_decode_mb(MpegEncContext *s, int16_t block[12][64])
 
             cbp = get_vlc2(&s->gb, ff_mb_pat_vlc.table, MB_PAT_VLC_BITS, 1);
             if (mb_block_count > 6) {
-                cbp <<= mb_block_count - 6;
+                cbp *= 1 << mb_block_count - 6;
                 cbp  |= get_bits(&s->gb, mb_block_count - 6);
                 s->bdsp.clear_blocks(s->block[6]);
             }
@@ -1242,7 +1242,8 @@ static int mpeg_decode_postinit(AVCodecContext *avctx)
 
     if (avctx->codec_id == AV_CODEC_ID_MPEG1VIDEO) {
         // MPEG-1 aspect
-        avctx->sample_aspect_ratio = av_d2q(1.0 / ff_mpeg1_aspect[s->aspect_ratio_info], 255);
+        AVRational aspect_inv = av_d2q(ff_mpeg1_aspect[s->aspect_ratio_info], 255);
+        avctx->sample_aspect_ratio = (AVRational) { aspect_inv.den, aspect_inv.num };
     } else { // MPEG-2
         // MPEG-2 aspect
         if (s->aspect_ratio_info > 1) {
@@ -1655,7 +1656,6 @@ static int mpeg_field_start(MpegEncContext *s, const uint8_t *buf, int buf_size)
             if (sd)
                 memcpy(sd->data, s1->a53_caption, s1->a53_caption_size);
             av_freep(&s1->a53_caption);
-            avctx->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
         }
 
         if (s1->has_stereo3d) {
@@ -2258,11 +2258,36 @@ static int mpeg_decode_a53_cc(AVCodecContext *avctx,
             s1->a53_caption      = av_malloc(s1->a53_caption_size);
             if (s1->a53_caption)
                 memcpy(s1->a53_caption, p + 7, s1->a53_caption_size);
+            avctx->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
         }
         return 1;
     } else if (buf_size >= 11 &&
                p[0] == 'C' && p[1] == 'C' && p[2] == 0x01 && p[3] == 0xf8) {
-        /* extract DVD CC data */
+        /* extract DVD CC data
+         *
+         * uint32_t   user_data_start_code        0x000001B2    (big endian)
+         * uint16_t   user_identifier             0x4343 "CC"
+         * uint8_t    user_data_type_code         0x01
+         * uint8_t    caption_block_size          0xF8
+         * uint8_t
+         *   bit 7    caption_odd_field_first     1=odd field (CC1/CC2) first  0=even field (CC3/CC4) first
+         *   bit 6    caption_filler              0
+         *   bit 5:1  caption_block_count         number of caption blocks (pairs of caption words = frames). Most DVDs use 15 per start of GOP.
+         *   bit 0    caption_extra_field_added   1=one additional caption word
+         *
+         * struct caption_field_block {
+         *   uint8_t
+         *     bit 7:1 caption_filler             0x7F (all 1s)
+         *     bit 0   caption_field_odd          1=odd field (this is CC1/CC2)  0=even field (this is CC3/CC4)
+         *   uint8_t   caption_first_byte
+         *   uint8_t   caption_second_byte
+         * } caption_block[(caption_block_count * 2) + caption_extra_field_added];
+         *
+         * Some DVDs encode caption data for both fields with caption_field_odd=1. The only way to decode the fields
+         * correctly is to start on the field indicated by caption_odd_field_first and count between odd/even fields.
+         * Don't assume that the first caption word is the odd field. There do exist MPEG files in the wild that start
+         * on the even field. There also exist DVDs in the wild that encode an odd field count and the
+         * caption_extra_field_added/caption_odd_field_first bits change per packet to allow that. */
         int cc_count = 0;
         int i;
         // There is a caption count field in the data, but it is often
@@ -2289,6 +2314,7 @@ static int mpeg_decode_a53_cc(AVCodecContext *avctx,
                     p += 6;
                 }
             }
+            avctx->properties |= FF_CODEC_PROPERTY_CLOSED_CAPTIONS;
         }
         return 1;
     }
@@ -2389,7 +2415,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
 #endif
 
     s->closed_gop = get_bits1(&s->gb);
-    /* broken_link indicate that after editing the
+    /* broken_link indicates that after editing the
      * reference frames of the first B-Frames after GOP I-Frame
      * are missing (open gop) */
     broken_link = get_bits1(&s->gb);
@@ -2635,6 +2661,8 @@ static int decode_chunks(AVCodecContext *avctx, AVFrame *picture,
                     if (s2->pict_type == AV_PICTURE_TYPE_B) {
                         if (!s2->closed_gop) {
                             skip_frame = 1;
+                            av_log(s2->avctx, AV_LOG_DEBUG,
+                                   "Skipping B slice due to open GOP\n");
                             break;
                         }
                     }
@@ -2646,6 +2674,8 @@ static int decode_chunks(AVCodecContext *avctx, AVFrame *picture,
                      * we have an invalid header. */
                     if (s2->pict_type == AV_PICTURE_TYPE_P && !s->sync) {
                         skip_frame = 1;
+                        av_log(s2->avctx, AV_LOG_DEBUG,
+                               "Skipping P slice due to !sync\n");
                         break;
                     }
                 }
@@ -2784,6 +2814,7 @@ static int mpeg_decode_frame(AVCodecContext *avctx, void *data,
                             avctx->extradata, avctx->extradata_size);
         if (*got_output) {
             av_log(avctx, AV_LOG_ERROR, "picture in extradata\n");
+            av_frame_unref(picture);
             *got_output = 0;
         }
         s->extradata_decoded = 1;
@@ -2843,6 +2874,7 @@ AVCodec ff_mpeg1video_decoder = {
     .capabilities          = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 |
                              AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY |
                              AV_CODEC_CAP_SLICE_THREADS,
+    .caps_internal         = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
     .flush                 = flush,
     .max_lowres            = 3,
     .update_thread_context = ONLY_IF_THREADS_ENABLED(mpeg_decode_update_thread_context)
@@ -2860,6 +2892,7 @@ AVCodec ff_mpeg2video_decoder = {
     .capabilities   = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 |
                       AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY |
                       AV_CODEC_CAP_SLICE_THREADS,
+    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
     .flush          = flush,
     .max_lowres     = 3,
     .profiles       = NULL_IF_CONFIG_SMALL(ff_mpeg2_video_profiles),
@@ -2876,6 +2909,7 @@ AVCodec ff_mpegvideo_decoder = {
     .close          = mpeg_decode_end,
     .decode         = mpeg_decode_frame,
     .capabilities   = AV_CODEC_CAP_DRAW_HORIZ_BAND | AV_CODEC_CAP_DR1 | AV_CODEC_CAP_TRUNCATED | AV_CODEC_CAP_DELAY | AV_CODEC_CAP_SLICE_THREADS,
+    .caps_internal  = FF_CODEC_CAP_SKIP_FRAME_FILL_PARAM,
     .flush          = flush,
     .max_lowres     = 3,
 };
