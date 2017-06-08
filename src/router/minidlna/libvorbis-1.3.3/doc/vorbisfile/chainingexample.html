@@ -76,7 +76,7 @@ libvorbisfile not to close stdin later during cleanup.<p>
 <tr bgcolor=#cccccc>
         <td>
 <pre><b>
-  if(ov_open_callbacks(stdin,&ov,NULL,-1,OV_CALLBACKS_NOCLOSE)<0){
+  if(ov_open_callbacks(stdin,&amp;ov,NULL,-1,OV_CALLBACKS_NOCLOSE)&lt;0){
     printf("Could not open input as an OggVorbis file.\n\n");
     exit(1);
   }

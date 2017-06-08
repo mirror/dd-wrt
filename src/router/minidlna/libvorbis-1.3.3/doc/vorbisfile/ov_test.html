@@ -19,9 +19,12 @@
 
 <p>
 This partially opens a vorbis file to test for Vorbis-ness.  It loads
-the headers for the first chain and tests for seekability (but does not seek).
-Use <a href="ov_test_open.html">ov_test_open()</a> to finish opening the file
-or <a href="ov_clear.html">ov_clear</a> to close/free it.
+the headers for the first chain and tests for seekability (but does
+not seek).  Use <a href="ov_test_open.html">ov_test_open()</a> to
+finish opening the file or <a href="ov_clear.html">ov_clear</a> to
+close/free it.  Note that vorbisfile does <b>not</b> take ownership of
+the file if the call fails; the calling applicaiton is responsible for
+closing the file if this call returns an error.
 <p>
 
 <p><em><b> WARNING for Windows developers: </b> Do not use ov_test()
