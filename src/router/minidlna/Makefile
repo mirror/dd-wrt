@@ -209,7 +209,7 @@ clean:
 	-rm ./lib/minidlna
 copy: 
 	cp ./libvorbis-1.3.3/lib/.libs/libvorbis.a	./lib/libvorbis.a && \
-	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC.a		./lib/libFLAC.a && \
+	cp ./flac-1.2.1/src/libFLAC/.libs/libFLAC-static.a		./lib/libFLAC.a && \
 	cp ./libexif-0.6.19/libexif/.libs/libexif.a 		./lib/libexif.a  && \
 	cp ./libogg-1.3.0/src/.libs/libogg.a		./lib/libogg.a && \
 	cp ./ffmpeg-$(FFMPEG_VER)/libavutil/libavutil.a		./lib/libavutil.a && \
