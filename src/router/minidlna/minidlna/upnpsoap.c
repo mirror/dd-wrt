@@ -72,7 +72,7 @@
 #include "sql.h"
 #include "log.h"
 
-#ifdef __sparc__ /* Sorting takes too long on slow processors with very large containers */
+#if 1 /* Sorting takes too long on slow processors with very large containers */
 # define __SORT_LIMIT if( totalMatches < 10000 )
 #else
 # define __SORT_LIMIT
