@@ -33,11 +33,10 @@
 #include "cabac_functions.h"
 #include "error_resilience.h"
 #include "avcodec.h"
-#include "h264.h"
+#include "h264dec.h"
 #include "h264data.h"
 #include "h264chroma.h"
 #include "h264_mvpred.h"
-#include "golomb.h"
 #include "mathops.h"
 #include "mpegutils.h"
 #include "rectangle.h"
@@ -71,8 +70,8 @@ int ff_h264_ref_picture(H264Context *h, H264Picture *dst, H264Picture *src)
 
     av_assert0(!dst->f->buf[0]);
     av_assert0(src->f->buf[0]);
+    av_assert0(src->tf.f == src->f);
 
-    src->tf.f = src->f;
     dst->tf.f = dst->f;
     ret = ff_thread_ref_frame(&dst->tf, &src->tf);
     if (ret < 0)
@@ -110,7 +109,6 @@ int ff_h264_ref_picture(H264Context *h, H264Picture *dst, H264Picture *src)
     dst->poc           = src->poc;
     dst->frame_num     = src->frame_num;
     dst->mmco_reset    = src->mmco_reset;
-    dst->pic_id        = src->pic_id;
     dst->long_ref      = src->long_ref;
     dst->mbaff         = src->mbaff;
     dst->field_picture = src->field_picture;
@@ -165,7 +163,7 @@ int ff_h264_field_end(H264Context *h, H264SliceContext *sl, int in_setup)
 
     if (in_setup || !(avctx->active_thread_type & FF_THREAD_FRAME)) {
         if (!h->droppable) {
-            err = ff_h264_execute_ref_pic_marking(h, h->mmco, h->mmco_index);
+            err = ff_h264_execute_ref_pic_marking(h);
             h->poc.prev_poc_msb = h->poc.poc_msb;
             h->poc.prev_poc_lsb = h->poc.poc_lsb;
         }

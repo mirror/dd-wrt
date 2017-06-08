@@ -30,10 +30,11 @@
 #include "h2645_parse.h"
 
 int ff_h2645_extract_rbsp(const uint8_t *src, int length,
-                          H2645NAL *nal)
+                          H2645NAL *nal, int small_padding)
 {
     int i, si, di;
     uint8_t *dst;
+    int64_t padding = small_padding ? 0 : MAX_MBPAIR_SIZE;
 
     nal->skipped_bytes = 0;
 #define STARTCODE_TEST                                                  \
@@ -81,16 +82,17 @@ int ff_h2645_extract_rbsp(const uint8_t *src, int length,
     }
 #endif /* HAVE_FAST_UNALIGNED */
 
-    if (i >= length - 1) { // no escaped 0
+    if (i >= length - 1 && small_padding) { // no escaped 0
         nal->data     =
         nal->raw_data = src;
         nal->size     =
         nal->raw_size = length;
         return length;
-    }
+    } else if (i > length)
+        i = length;
 
-    av_fast_malloc(&nal->rbsp_buffer, &nal->rbsp_buffer_size,
-                   length + AV_INPUT_BUFFER_PADDING_SIZE);
+    av_fast_padded_malloc(&nal->rbsp_buffer, &nal->rbsp_buffer_size,
+                          length + padding);
     if (!nal->rbsp_buffer)
         return AVERROR(ENOMEM);
 
@@ -148,31 +150,31 @@ nsc:
 static const char *nal_unit_name(int nal_type)
 {
     switch(nal_type) {
-    case NAL_TRAIL_N    : return "TRAIL_N";
-    case NAL_TRAIL_R    : return "TRAIL_R";
-    case NAL_TSA_N      : return "TSA_N";
-    case NAL_TSA_R      : return "TSA_R";
-    case NAL_STSA_N     : return "STSA_N";
-    case NAL_STSA_R     : return "STSA_R";
-    case NAL_RADL_N     : return "RADL_N";
-    case NAL_RADL_R     : return "RADL_R";
-    case NAL_RASL_N     : return "RASL_N";
-    case NAL_RASL_R     : return "RASL_R";
-    case NAL_BLA_W_LP   : return "BLA_W_LP";
-    case NAL_BLA_W_RADL : return "BLA_W_RADL";
-    case NAL_BLA_N_LP   : return "BLA_N_LP";
-    case NAL_IDR_W_RADL : return "IDR_W_RADL";
-    case NAL_IDR_N_LP   : return "IDR_N_LP";
-    case NAL_CRA_NUT    : return "CRA_NUT";
-    case NAL_VPS        : return "VPS";
-    case NAL_SPS        : return "SPS";
-    case NAL_PPS        : return "PPS";
-    case NAL_AUD        : return "AUD";
-    case NAL_EOS_NUT    : return "EOS_NUT";
-    case NAL_EOB_NUT    : return "EOB_NUT";
-    case NAL_FD_NUT     : return "FD_NUT";
-    case NAL_SEI_PREFIX : return "SEI_PREFIX";
-    case NAL_SEI_SUFFIX : return "SEI_SUFFIX";
+    case HEVC_NAL_TRAIL_N    : return "TRAIL_N";
+    case HEVC_NAL_TRAIL_R    : return "TRAIL_R";
+    case HEVC_NAL_TSA_N      : return "TSA_N";
+    case HEVC_NAL_TSA_R      : return "TSA_R";
+    case HEVC_NAL_STSA_N     : return "STSA_N";
+    case HEVC_NAL_STSA_R     : return "STSA_R";
+    case HEVC_NAL_RADL_N     : return "RADL_N";
+    case HEVC_NAL_RADL_R     : return "RADL_R";
+    case HEVC_NAL_RASL_N     : return "RASL_N";
+    case HEVC_NAL_RASL_R     : return "RASL_R";
+    case HEVC_NAL_BLA_W_LP   : return "BLA_W_LP";
+    case HEVC_NAL_BLA_W_RADL : return "BLA_W_RADL";
+    case HEVC_NAL_BLA_N_LP   : return "BLA_N_LP";
+    case HEVC_NAL_IDR_W_RADL : return "IDR_W_RADL";
+    case HEVC_NAL_IDR_N_LP   : return "IDR_N_LP";
+    case HEVC_NAL_CRA_NUT    : return "CRA_NUT";
+    case HEVC_NAL_VPS        : return "VPS";
+    case HEVC_NAL_SPS        : return "SPS";
+    case HEVC_NAL_PPS        : return "PPS";
+    case HEVC_NAL_AUD        : return "AUD";
+    case HEVC_NAL_EOS_NUT    : return "EOS_NUT";
+    case HEVC_NAL_EOB_NUT    : return "EOB_NUT";
+    case HEVC_NAL_FD_NUT     : return "FD_NUT";
+    case HEVC_NAL_SEI_PREFIX : return "SEI_PREFIX";
+    case HEVC_NAL_SEI_SUFFIX : return "SEI_SUFFIX";
     default : return "?";
     }
 }
@@ -247,7 +249,7 @@ static int h264_parse_nal_header(H2645NAL *nal, void *logctx)
 
 int ff_h2645_packet_split(H2645Packet *pkt, const uint8_t *buf, int length,
                           void *logctx, int is_nalff, int nal_length_size,
-                          enum AVCodecID codec_id)
+                          enum AVCodecID codec_id, int small_padding)
 {
     int consumed, ret = 0;
     const uint8_t *next_avc = is_nalff ? buf : buf + length;
@@ -258,19 +260,21 @@ int ff_h2645_packet_split(H2645Packet *pkt, const uint8_t *buf, int length,
         int extract_length = 0;
         int skip_trailing_zeros = 1;
 
-        if (buf >= next_avc) {
-            int i;
-            for (i = 0; i < nal_length_size; i++)
-                extract_length = (extract_length << 8) | buf[i];
+        if (buf == next_avc) {
+            int i = 0;
+            extract_length = get_nalsize(nal_length_size,
+                                         buf, length, &i, logctx);
+            if (extract_length < 0)
+                return extract_length;
+
             buf    += nal_length_size;
             length -= nal_length_size;
 
-            if (extract_length > length) {
-                av_log(logctx, AV_LOG_ERROR, "Invalid NAL unit size.\n");
-                return AVERROR_INVALIDDATA;
-            }
             next_avc = buf + extract_length;
         } else {
+            if (buf > next_avc)
+                av_log(logctx, AV_LOG_WARNING, "Exceeded next NALFF position, re-syncing.\n");
+
             /* search start code */
             while (buf[0] != 0 || buf[1] != 0 || buf[2] != 1) {
                 ++buf;
@@ -290,7 +294,7 @@ int ff_h2645_packet_split(H2645Packet *pkt, const uint8_t *buf, int length,
 
             buf           += 3;
             length        -= 3;
-            extract_length = length;
+            extract_length = FFMIN(length, next_avc - buf);
 
             if (buf >= next_avc) {
                 /* skip to the start of the next NAL */
@@ -322,7 +326,7 @@ int ff_h2645_packet_split(H2645Packet *pkt, const uint8_t *buf, int length,
         }
         nal = &pkt->nals[pkt->nb_nals];
 
-        consumed = ff_h2645_extract_rbsp(buf, extract_length, nal);
+        consumed = ff_h2645_extract_rbsp(buf, extract_length, nal, small_padding);
         if (consumed < 0)
             return consumed;
 

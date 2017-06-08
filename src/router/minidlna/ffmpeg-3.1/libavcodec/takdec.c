@@ -27,13 +27,15 @@
 
 #include "libavutil/internal.h"
 #include "libavutil/samplefmt.h"
-#include "tak.h"
-#include "takdsp.h"
+
+#define BITSTREAM_READER_LE
 #include "audiodsp.h"
 #include "thread.h"
 #include "avcodec.h"
 #include "internal.h"
 #include "unary.h"
+#include "tak.h"
+#include "takdsp.h"
 
 #define MAX_SUBFRAMES     8                         ///< max number of subframes per channel
 #define MAX_PREDICTORS  256
@@ -265,11 +267,11 @@ static int decode_segment(TAKDecContext *s, int8_t mode, int32_t *decoded, int l
     code = xcodes[mode - 1];
 
     for (i = 0; i < len; i++) {
-        int x = get_bits_long(gb, code.init);
+        unsigned x = get_bits_long(gb, code.init);
         if (x >= code.escape && get_bits1(gb)) {
             x |= 1 << code.init;
             if (x >= code.aescape) {
-                int scale = get_unary(gb, 1, 9);
+                unsigned scale = get_unary(gb, 1, 9);
                 if (scale == 9) {
                     int scale_bits = get_bits(gb, 3);
                     if (scale_bits > 0) {
@@ -431,19 +433,19 @@ static int decode_subframe(TAKDecContext *s, int32_t *decoded,
 
     s->predictors[0] = get_sbits(gb, 10);
     s->predictors[1] = get_sbits(gb, 10);
-    s->predictors[2] = get_sbits(gb, size) << (10 - size);
-    s->predictors[3] = get_sbits(gb, size) << (10 - size);
+    s->predictors[2] = get_sbits(gb, size) * (1 << (10 - size));
+    s->predictors[3] = get_sbits(gb, size) * (1 << (10 - size));
     if (filter_order > 4) {
         int tmp = size - get_bits1(gb);
 
         for (i = 4; i < filter_order; i++) {
             if (!(i & 3))
                 x = tmp - get_bits(gb, 2);
-            s->predictors[i] = get_sbits(gb, x) << (10 - size);
+            s->predictors[i] = get_sbits(gb, x) * (1 << (10 - size));
         }
     }
 
-    tfilter[0] = s->predictors[0] << 6;
+    tfilter[0] = s->predictors[0] * 64;
     for (i = 1; i < filter_order; i++) {
         int32_t *p1 = &tfilter[0];
         int32_t *p2 = &tfilter[i - 1];
@@ -455,7 +457,7 @@ static int decode_subframe(TAKDecContext *s, int32_t *decoded,
             p2--;
         }
 
-        tfilter[i] = s->predictors[i] << 6;
+        tfilter[i] = s->predictors[i] * 64;
     }
 
     x = 1 << (32 - (15 - filter_quant));
@@ -489,7 +491,7 @@ static int decode_subframe(TAKDecContext *s, int32_t *decoded,
                      s->residues[i + j + 1] * s->filter[j + 1] +
                      s->residues[i + j    ] * s->filter[j    ];
             }
-            v = (av_clip_intp2(v >> filter_quant, 13) << dshift) - *decoded;
+            v = (av_clip_intp2(v >> filter_quant, 13) * (1 << dshift)) - *decoded;
             *decoded++ = v;
             s->residues[filter_order + i] = v >> dshift;
         }
@@ -700,7 +702,7 @@ static int tak_decode_frame(AVCodecContext *avctx, void *data,
 
     if (s->ti.codec != TAK_CODEC_MONO_STEREO &&
         s->ti.codec != TAK_CODEC_MULTICHANNEL) {
-        av_log(avctx, AV_LOG_ERROR, "unsupported codec: %d\n", s->ti.codec);
+        avpriv_report_missing_feature(avctx, "TAK codec type %d", s->ti.codec);
         return AVERROR_PATCHWELCOME;
     }
     if (s->ti.data_type) {
@@ -860,7 +862,7 @@ static int tak_decode_frame(AVCodecContext *avctx, void *data,
 
             if (s->sample_shift[chan] > 0)
                 for (i = 0; i < s->nb_samples; i++)
-                    decoded[i] <<= s->sample_shift[chan];
+                    decoded[i] *= 1U << s->sample_shift[chan];
         }
     }
 
@@ -902,7 +904,7 @@ static int tak_decode_frame(AVCodecContext *avctx, void *data,
         for (chan = 0; chan < avctx->channels; chan++) {
             int32_t *samples = (int32_t *)frame->extended_data[chan];
             for (i = 0; i < s->nb_samples; i++)
-                samples[i] <<= 8;
+                samples[i] *= 1U << 8;
         }
         break;
     }

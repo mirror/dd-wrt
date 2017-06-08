@@ -106,11 +106,11 @@ FF_ENABLE_DEPRECATION_WARNINGS
         if (!avctx->stats_out)
             return AVERROR(ENOMEM);
     }
-    if((avctx->flags&AV_CODEC_FLAG_PASS2) || !(avctx->flags&CODEC_FLAG_QSCALE)){
+    if((avctx->flags&AV_CODEC_FLAG_PASS2) || !(avctx->flags&AV_CODEC_FLAG_QSCALE)){
         if(ff_rate_control_init(&s->m) < 0)
             return -1;
     }
-    s->pass1_rc= !(avctx->flags & (AV_CODEC_FLAG_QSCALE|CODEC_FLAG_PASS2));
+    s->pass1_rc= !(avctx->flags & (AV_CODEC_FLAG_QSCALE|AV_CODEC_FLAG_PASS2));
 
     switch(avctx->pix_fmt){
     case AV_PIX_FMT_YUV444P:
@@ -1640,6 +1640,7 @@ static int encode_frame(AVCodecContext *avctx, AVPacket *pkt,
                                     s->current_picture->linesize[2], w>>s->chroma_h_shift, h>>s->chroma_v_shift,
                                     EDGE_WIDTH>>s->chroma_h_shift, EDGE_WIDTH>>s->chroma_v_shift, EDGE_TOP | EDGE_BOTTOM);
         }
+        emms_c();
     }
 
     ff_snow_frame_start(s);
@@ -1856,6 +1857,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
         }
 
     }
+    emms_c();
 
     update_last_header_values(s);
 

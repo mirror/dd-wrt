@@ -942,7 +942,7 @@ static void stereo_processing(PSContext *ps, INTFLOAT (*l)[32][2], INTFLOAT (*r)
             int stop  = ps->border_position[e+1];
             INTFLOAT width = Q30(1.f) / ((stop - start) ? (stop - start) : 1);
 #if USE_FIXED
-            width <<= 1;
+            width = FFMIN(2U*width, INT_MAX);
 #endif
             b = k_to_i[k];
             h[0][0] = H11[0][e][b];
@@ -975,7 +975,7 @@ static void stereo_processing(PSContext *ps, INTFLOAT (*l)[32][2], INTFLOAT (*r)
                 h_step[1][3] = AAC_MSUB31_V3(H22[1][e+1][b], h[1][3], width);
             }
             ps->dsp.stereo_interpolate[!PS_BASELINE && ps->enable_ipdopd](
-                l[k] + start + 1, r[k] + start + 1,
+                l[k] + 1 + start, r[k] + 1 + start,
                 h, h_step, stop - start);
         }
     }

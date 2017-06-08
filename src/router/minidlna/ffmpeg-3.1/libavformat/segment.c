@@ -87,8 +87,8 @@ typedef struct SegmentContext {
     int64_t clocktime_offset; //< clock offset for cutting the segments at regular clock time
     int64_t clocktime_wrap_duration; //< wrapping duration considered for starting a new segment
     int64_t last_val;      ///< remember last time for wrap around detection
-    int64_t last_cut;      ///< remember last cut
     int cut_pending;
+    int header_written;    ///< whether we've already called avformat_write_header
 
     char *entry_prefix;    ///< prefix to add to list entry filenames
     int list_type;         ///< set the list type
@@ -260,6 +260,7 @@ static int segment_start(AVFormatContext *s, int write_header)
     if (write_header) {
         AVDictionary *options = NULL;
         av_dict_copy(&options, seg->format_options, 0);
+        av_dict_set(&options, "fflags", "-autobsf", 0);
         err = avformat_write_header(oc, &options);
         av_dict_free(&options);
         if (err < 0)
@@ -351,6 +352,9 @@ static int segment_end(AVFormatContext *s, int write_trailer, int is_last)
     char buf[AV_TIMECODE_STR_SIZE];
     int i;
     int err;
+
+    if (!oc || !oc->pb)
+        return AVERROR(EINVAL);
 
     av_write_frame(oc, NULL); /* Flush any buffered data (fragmented mp4) */
     if (write_trailer)
@@ -627,8 +631,9 @@ static int select_reference_stream(AVFormatContext *s)
     return 0;
 }
 
-static void seg_free_context(SegmentContext *seg)
+static void seg_free(AVFormatContext *s)
 {
+    SegmentContext *seg = s->priv_data;
     ff_format_io_close(seg->avf, &seg->list_pb);
     avformat_free_context(seg->avf);
     seg->avf = NULL;
@@ -649,6 +654,11 @@ static int seg_init(AVFormatContext *s)
     if (seg->header_filename) {
         seg->write_header_trailer = 1;
         seg->individual_header_trailer = 0;
+    }
+
+    if (seg->initial_offset > 0) {
+        av_log(s, AV_LOG_WARNING, "NOTE: the option initial_offset is deprecated,"
+               "you can use output_ts_offset instead of it\n");
     }
 
     if (!!seg->time_str + !!seg->times_str + !!seg->frames_str > 1) {
@@ -688,7 +698,7 @@ static int seg_init(AVFormatContext *s)
         if (ret < 0) {
             av_log(s, AV_LOG_ERROR, "Could not parse format options list '%s'\n",
                    seg->format_options_str);
-            goto fail;
+            return ret;
         }
     }
 
@@ -702,9 +712,9 @@ static int seg_init(AVFormatContext *s)
         }
         if (!seg->list_size && seg->list_type != LIST_TYPE_M3U8) {
             if ((ret = segment_list_open(s)) < 0)
-                goto fail;
+                return ret;
         } else {
-            const char *proto = avio_find_protocol_name(s->filename);
+            const char *proto = avio_find_protocol_name(seg->list);
             seg->use_rename = proto && !strcmp(proto, "file");
         }
     }
@@ -713,29 +723,26 @@ static int seg_init(AVFormatContext *s)
         av_log(s, AV_LOG_WARNING, "'ext' list type option is deprecated in favor of 'csv'\n");
 
     if ((ret = select_reference_stream(s)) < 0)
-        goto fail;
+        return ret;
     av_log(s, AV_LOG_VERBOSE, "Selected stream id:%d type:%s\n",
            seg->reference_stream_index,
            av_get_media_type_string(s->streams[seg->reference_stream_index]->codecpar->codec_type));
 
     seg->oformat = av_guess_format(seg->format, s->filename, NULL);
 
-    if (!seg->oformat) {
-        ret = AVERROR_MUXER_NOT_FOUND;
-        goto fail;
-    }
+    if (!seg->oformat)
+        return AVERROR_MUXER_NOT_FOUND;
     if (seg->oformat->flags & AVFMT_NOFILE) {
         av_log(s, AV_LOG_ERROR, "format %s not supported.\n",
                seg->oformat->name);
-        ret = AVERROR(EINVAL);
-        goto fail;
+        return AVERROR(EINVAL);
     }
 
     if ((ret = segment_mux_init(s)) < 0)
-        goto fail;
+        return ret;
 
     if ((ret = set_segment_filename(s)) < 0)
-        goto fail;
+        return ret;
     oc = seg->avf;
 
     if (seg->write_header_trailer) {
@@ -743,31 +750,40 @@ static int seg_init(AVFormatContext *s)
                               seg->header_filename ? seg->header_filename : oc->filename,
                               AVIO_FLAG_WRITE, NULL)) < 0) {
             av_log(s, AV_LOG_ERROR, "Failed to open segment '%s'\n", oc->filename);
-            goto fail;
+            return ret;
         }
         if (!seg->individual_header_trailer)
             oc->pb->seekable = 0;
     } else {
         if ((ret = open_null_ctx(&oc->pb)) < 0)
-            goto fail;
+            return ret;
     }
 
     av_dict_copy(&options, seg->format_options, 0);
-    ret = avformat_write_header(oc, &options);
+    av_dict_set(&options, "fflags", "-autobsf", 0);
+    ret = avformat_init_output(oc, &options);
     if (av_dict_count(options)) {
         av_log(s, AV_LOG_ERROR,
                "Some of the provided format options in '%s' are not recognized\n", seg->format_options_str);
-        ret = AVERROR(EINVAL);
-        goto fail;
+        av_dict_free(&options);
+        return AVERROR(EINVAL);
     }
+    av_dict_free(&options);
 
     if (ret < 0) {
         ff_format_io_close(oc, &oc->pb);
-        goto fail;
+        return ret;
     }
     seg->segment_frame_count = 0;
 
     av_assert0(s->nb_streams == oc->nb_streams);
+    if (ret == AVSTREAM_INIT_IN_WRITE_HEADER) {
+        ret = avformat_write_header(oc, NULL);
+        if (ret < 0)
+            return ret;
+        seg->header_written = 1;
+    }
+
     for (i = 0; i < s->nb_streams; i++) {
         AVStream *inner_st  = oc->streams[i];
         AVStream *outer_st = s->streams[i];
@@ -777,6 +793,38 @@ static int seg_init(AVFormatContext *s)
     if (oc->avoid_negative_ts > 0 && s->avoid_negative_ts < 0)
         s->avoid_negative_ts = 1;
 
+    return ret;
+}
+
+static int seg_write_header(AVFormatContext *s)
+{
+    SegmentContext *seg = s->priv_data;
+    AVFormatContext *oc = seg->avf;
+    int ret, i;
+
+    if (!seg->header_written) {
+        for (i = 0; i < s->nb_streams; i++) {
+            AVStream *st = oc->streams[i];
+            AVCodecParameters *ipar, *opar;
+
+            ipar = s->streams[i]->codecpar;
+            opar = oc->streams[i]->codecpar;
+            avcodec_parameters_copy(opar, ipar);
+            if (!oc->oformat->codec_tag ||
+                av_codec_get_id (oc->oformat->codec_tag, ipar->codec_tag) == opar->codec_id ||
+                av_codec_get_tag(oc->oformat->codec_tag, ipar->codec_id) <= 0) {
+                opar->codec_tag = ipar->codec_tag;
+            } else {
+                opar->codec_tag = 0;
+            }
+            st->sample_aspect_ratio = s->streams[i]->sample_aspect_ratio;
+            st->time_base = s->streams[i]->time_base;
+        }
+        ret = avformat_write_header(oc, NULL);
+        if (ret < 0)
+            return ret;
+    }
+
     if (!seg->write_header_trailer || seg->header_filename) {
         if (seg->header_filename) {
             av_write_frame(oc, NULL);
@@ -785,17 +833,12 @@ static int seg_init(AVFormatContext *s)
             close_null_ctxp(&oc->pb);
         }
         if ((ret = oc->io_open(oc, &oc->pb, oc->filename, AVIO_FLAG_WRITE, NULL)) < 0)
-            goto fail;
+            return ret;
         if (!seg->individual_header_trailer)
             oc->pb->seekable = 0;
     }
 
-fail:
-    av_dict_free(&options);
-    if (ret < 0)
-        seg_free_context(seg);
-
-    return ret;
+    return 0;
 }
 
 static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
@@ -809,7 +852,7 @@ static int seg_write_packet(AVFormatContext *s, AVPacket *pkt)
     int64_t usecs;
     int64_t wrapped_val;
 
-    if (!seg->avf)
+    if (!seg->avf || !seg->avf->pb)
         return AVERROR(EINVAL);
 
 calc_times:
@@ -826,10 +869,8 @@ calc_times:
             localtime_r(&sec, &ti);
             usecs = (int64_t)(ti.tm_hour * 3600 + ti.tm_min * 60 + ti.tm_sec) * 1000000 + (avgt % 1000000);
             wrapped_val = (usecs + seg->clocktime_offset) % seg->time;
-            if (seg->last_cut != usecs && wrapped_val < seg->last_val && wrapped_val < seg->clocktime_wrap_duration) {
+            if (wrapped_val < seg->last_val && wrapped_val < seg->clocktime_wrap_duration)
                 seg->cut_pending = 1;
-                seg->last_cut = usecs;
-            }
             seg->last_val = wrapped_val;
         } else {
             end_pts = seg->time * (seg->segment_count + 1);
@@ -907,9 +948,6 @@ fail:
         seg->frame_count++;
         seg->segment_frame_count++;
     }
-
-    if (ret < 0)
-        seg_free_context(seg);
 
     return ret;
 }
@@ -1035,8 +1073,10 @@ AVOutputFormat ff_segment_muxer = {
     .priv_data_size = sizeof(SegmentContext),
     .flags          = AVFMT_NOFILE|AVFMT_GLOBALHEADER,
     .init           = seg_init,
+    .write_header   = seg_write_header,
     .write_packet   = seg_write_packet,
     .write_trailer  = seg_write_trailer,
+    .deinit         = seg_free,
     .check_bitstream = seg_check_bitstream,
     .priv_class     = &seg_class,
 };
@@ -1054,8 +1094,10 @@ AVOutputFormat ff_stream_segment_muxer = {
     .priv_data_size = sizeof(SegmentContext),
     .flags          = AVFMT_NOFILE,
     .init           = seg_init,
+    .write_header   = seg_write_header,
     .write_packet   = seg_write_packet,
     .write_trailer  = seg_write_trailer,
+    .deinit         = seg_free,
     .check_bitstream = seg_check_bitstream,
     .priv_class     = &sseg_class,
 };

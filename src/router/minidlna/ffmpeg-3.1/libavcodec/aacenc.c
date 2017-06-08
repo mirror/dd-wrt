@@ -520,13 +520,13 @@ static int aac_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
     int chan_el_counter[4];
     FFPsyWindowInfo windows[AAC_MAX_CHANNELS];
 
-    if (s->last_frame == 2)
-        return 0;
-
     /* add current frame to queue */
     if (frame) {
         if ((ret = ff_af_queue_add(&s->afq, frame)) < 0)
             return ret;
+    } else {
+        if (!s->afq.remaining_samples || (!s->afq.frame_alloc && !s->afq.frame_count))
+            return 0;
     }
 
     copy_input_samples(s, frame);
@@ -622,8 +622,8 @@ static int aac_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
             }
 
             for (k = 0; k < 1024; k++) {
-                if (!isfinite(cpe->ch[ch].coeffs[k])) {
-                    av_log(avctx, AV_LOG_ERROR, "Input contains NaN/+-Inf\n");
+                if (!(fabs(cpe->ch[ch].coeffs[k]) < 1E16)) { // Ensure headroom for energy calculation
+                    av_log(avctx, AV_LOG_ERROR, "Input contains (near) NaN/+-Inf\n");
                     return AVERROR(EINVAL);
                 }
             }
@@ -769,7 +769,7 @@ static int aac_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
             start_ch += chans;
         }
 
-        if (avctx->flags & CODEC_FLAG_QSCALE) {
+        if (avctx->flags & AV_CODEC_FLAG_QSCALE) {
             /* When using a constant Q-scale, don't mess with lambda */
             break;
         }
@@ -840,9 +840,6 @@ static int aac_encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
 
     s->lambda_sum += s->lambda;
     s->lambda_count++;
-
-    if (!frame)
-        s->last_frame++;
 
     ff_af_queue_remove(&s->afq, avctx->frame_size, &avpkt->pts,
                        &avpkt->duration);
@@ -999,9 +996,9 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
 
     /* Coder limitations */
     s->coder = &ff_aac_coders[s->options.coder];
-    if (s->options.coder != AAC_CODER_TWOLOOP) {
+    if (s->options.coder == AAC_CODER_ANMR) {
         ERROR_IF(avctx->strict_std_compliance > FF_COMPLIANCE_EXPERIMENTAL,
-                 "Coders other than twoloop require -strict -2 and some may be removed in the future\n");
+                 "The ANMR coder is considered experimental, add -strict -2 to enable!\n");
         s->options.intensity_stereo = 0;
         s->options.pns = 0;
     }
@@ -1031,7 +1028,13 @@ static av_cold int aac_encode_init(AVCodecContext *avctx)
         goto fail;
     s->psypp = ff_psy_preprocess_init(avctx);
     ff_lpc_init(&s->lpc, 2*avctx->frame_size, TNS_MAX_ORDER, FF_LPC_TYPE_LEVINSON);
-    av_lfg_init(&s->lfg, 0x72adca55);
+    s->random_state = 0x1f2e3d4c;
+
+    s->abs_pow34   = abs_pow34_v;
+    s->quant_bands = quantize_bands;
+
+    if (ARCH_X86)
+        ff_aac_dsp_init_x86(s);
 
     if (HAVE_MIPSDSP)
         ff_aac_coder_init_mips(s);
