@@ -452,7 +452,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	while (len) {
 		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
 		if (!ret) {
-		    syslog_dd(LOG_INFO, "%s: cannot ret from stream %s\n", strerror(errno));
+		    dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
 		    break; // deadlock prevention
 		}
 		len -= ret;
