@@ -1672,18 +1672,18 @@ man_new_connection_post(struct management *man, const char *description)
 #endif
 
 #if UNIX_SOCK_SUPPORT
-    if (man->settings.flags & MF_UNIX_SOCK)
-    {
-        msg(D_MANAGEMENT, "MANAGEMENT: %s %s",
-            description,
-            sockaddr_unix_name(&man->settings.local_unix, "NULL"));
-    }
-    else
+//    if (man->settings.flags & MF_UNIX_SOCK)
+//    {
+//        msg(D_MANAGEMENT, "MANAGEMENT: %s %s",
+//            description,
+//            sockaddr_unix_name(&man->settings.local_unix, "NULL"));
+//    }
+//    else
 #endif
-    msg(D_MANAGEMENT, "MANAGEMENT: %s %s",
-        description,
+/*    msg(D_MANAGEMENT, "MANAGEMENT: %s %s",
+           description,
         print_sockaddr(man->settings.local->ai_addr, &gc));
-
+*/
     buffer_list_reset(man->connection.out);
 
     if (!man_password_needed(man))
@@ -1763,7 +1763,7 @@ man_accept(struct management *man)
 #endif
         }
 
-        man_new_connection_post(man, "Client connected from");
+//        man_new_connection_post(man, "Client connected from");
     }
 }
 
@@ -1917,7 +1917,7 @@ man_reset_client_socket(struct management *man, const bool exiting)
 #ifdef MANAGEMENT_IN_EXTRA
         in_extra_reset(&man->connection, IER_RESET);
 #endif
-        msg(D_MANAGEMENT, "MANAGEMENT: Client disconnected");
+//        msg(D_MANAGEMENT, "MANAGEMENT: Client disconnected");
     }
     if (!exiting)
     {
@@ -1970,14 +1970,14 @@ man_process_command(struct management *man, const char *line)
     else
     {
         nparms = parse_line(line, parms, MAX_PARMS, "TCP", 0, M_CLIENT, &gc);
-        if (parms[0] && streq(parms[0], "password"))
+/*        if (parms[0] && streq(parms[0], "password"))
         {
             msg(D_MANAGEMENT_DEBUG, "MANAGEMENT: CMD 'password [...]'");
         }
         else if (!streq(line, "load-stats"))
         {
             msg(D_MANAGEMENT_DEBUG, "MANAGEMENT: CMD '%s'", line);
-        }
+        }*/
 
 #if 0
         /* DEBUGGING -- print args */
@@ -3879,10 +3879,10 @@ log_entry_print(const struct log_entry *e, unsigned int flags, struct gc_arena *
     {
         buf_printf(&out, ",%s", print_in6_addr(e->local_ip6, IA_EMPTY_IF_UNDEF, gc));
     }
-    if (flags & LOG_ECHO_TO_LOG)
+/*    if (flags & LOG_ECHO_TO_LOG)
     {
         msg(D_MANAGEMENT, "MANAGEMENT: %s", BSTR(&out));
-    }
+    }*/
     if (flags & LOG_PRINT_CRLF)
     {
         buf_printf(&out, "\r\n");
