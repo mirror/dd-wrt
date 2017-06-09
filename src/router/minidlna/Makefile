@@ -139,7 +139,7 @@ ffmpeg:
 
 libogg:
 	if [ ! -f ./libogg-1.3.0/Makefile ];then \
-	cd libogg-1.3.0 && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
+	cd libogg-1.3.0 && aclocal && libtoolize && (./configure --host=$(HOST)  CC="ccache $(CROSS_COMPILE)gcc"  CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections"); \
 	fi
 
 libexif:
