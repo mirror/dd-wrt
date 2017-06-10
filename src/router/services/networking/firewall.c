@@ -1538,7 +1538,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s\n", seq, wordlist, log_reject);
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+#if !defined(ARCH_broadcom) && !defined(HAVE_RTG32) || defined(HAVE_BCMMODERN) 
 		char var[256];
 		char *next;
 		foreach(var, wordlist, next) {
@@ -1557,7 +1557,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s\n", seq, wordlist, log_reject);
-#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN) && !defined(HAVE_RTG32)
 		char var[256];
 		char *next;
 		foreach(var, wordlist, next) {
