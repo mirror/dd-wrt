@@ -17,7 +17,13 @@ ifeq ($(CONFIG_OPENDPI),y)
 PF_EXT_SLIB += opendpi
 CFLAGS += -DOPENDPI_NETFILTER_MODULE -D__NDPI_MAIN_INCLUDE_FILE__ -I$(TOP)/opendpi/opendpi/include -I$(TOP)/opendpi/src
 endif
-
+ifneq ($(ARCHITECTURE),broadcom)
+PF_EXT_SLIB+= string
+else
+ifeq ($(CONFIG_BCMMODERN),y)
+PF_EXT_SLIB+= string
+endif
+endif
 ifeq ($(CONFIG_HOTPLUG2),y)
 PF_EXT_SLIB += CT
 endif
