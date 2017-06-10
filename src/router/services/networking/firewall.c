@@ -753,7 +753,7 @@ static void nat_prerouting(void)
 	count = 1;
 
 	if (has_gateway()) {
-		writeprocsysnet("netfilter/nf_conntrack_helper", "1");  // kerne 4.7 uses 0 as new default which disables several nat helpers
+		writeprocsysnet("netfilter/nf_conntrack_helper", "1");	// kerne 4.7 uses 0 as new default which disables several nat helpers
 
 		/*
 		 * Port forwarding 
@@ -1538,6 +1538,17 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file("-A advgrp_%d -p tcp -m webstr --host \"%s\" -j %s\n", seq, wordlist, log_reject);
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+		char var[256];
+		char *next;
+		foreach(var, wordlist, next) {
+			int offset = 0;
+			if (strstr(var, "https://"))
+				offset = 8;
+			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, var[offset], log_reject);
+		}
+#endif
+
 	}
 	/*
 	 * filter_web_url3=hello<&nbsp;>world<&nbsp;>friend 
@@ -1546,6 +1557,17 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 	if (wordlist && strcmp(wordlist, "")) {
 		insmod("ipt_webstr");
 		save2file("-A advgrp_%d -p tcp -m webstr --url \"%s\" -j %s\n", seq, wordlist, log_reject);
+#if !defined(ARCH_broadcom) || defined(HAVE_BCMMODERN)
+		char var[256];
+		char *next;
+		foreach(var, wordlist, next) {
+			int offset = 0;
+			if (strstr(var, "https://"))
+				offset = 8;
+			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, var[offset], log_reject);
+		}
+#endif
+
 	}
 	/*
 	 * Others will be accepted 
