@@ -75,7 +75,6 @@ static void show_temp(webs_t wp, char *fmt)
 
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
-	char buf[128];
 	int i, cpufound = 0;
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
@@ -160,7 +159,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 	if (!present[0] && !present[1] && !present[2] && cputemp)
-		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));	// no 
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 	else {
 		for (i = 0; i < cc; i++) {
 			if (present[i]) {
@@ -265,11 +264,11 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 	if (!found && !cpufound)
-		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));
+		websWrite(wp, "%s", live_translate("status_router.notavail"));
 	else
 #endif
 	if (!cpufound && fp2 == NULL)
-		websWrite(wp, "%s", tran_string(buf, "status_router.notavail"));	// no 
+		websWrite(wp, "%s", live_translate("status_router.notavail"));	// no 
 
 #endif
 }
