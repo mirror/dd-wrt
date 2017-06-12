@@ -1545,7 +1545,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, &var[offset], log_reject);
 		}
 #endif
 
@@ -1564,7 +1564,7 @@ static void advgrp_chain(int seq, unsigned int mark, int urlenable)
 			int offset = 0;
 			if (strstr(var, "https://"))
 				offset = 8;
-			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, var[offset], log_reject);
+			save2file("-A advgrp_%d -p tcp -m string \"%s\" --algo bm --from 1 --to 600 -j %s\n", seq, &var[offset], log_reject);
 		}
 #endif
 
