@@ -50,6 +50,7 @@ static struct option opts[] = {
 	{ "algo", 1, 0, '3' },
 	{ "string", 1, 0, '4' },
 	{ "hex-string", 1, 0, '5' },
+	{ "icase", 1, 0, '6' },
 	{0}
 };
 
@@ -165,6 +166,7 @@ parse_hex_string(const char *s, struct ipt_string_info *info)
 #define ALGO   0x2
 #define FROM   0x4
 #define TO     0x8
+#define ICASE     0x10
 
 /* Function which parses command options; returns true if it
    ate an option */
@@ -175,6 +177,7 @@ parse(int c, char **argv, int invert, unsigned int *flags,
       struct ipt_entry_match **match)
 {
 	struct ipt_string_info *stringinfo = (struct ipt_string_info *)(*match)->data;
+	const unsigned int revision = (*match)->u.user.revision;
 
 	switch (c) {
 	case '1':
@@ -204,8 +207,12 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 				   "Can't specify multiple --string");
 		check_inverse(optarg, &invert, &optind, 0);
 		parse_string(argv[optind-1], stringinfo);
-		if (invert)
-			stringinfo->u.v0.invert = 1;
+		if (invert) {
+			if (revision == 0)
+				stringinfo->u.v0.invert = 1;
+			else
+				stringinfo->u.v1.flags |= XT_STRING_FLAG_INVERT;
+		}
 		stringinfo->patlen=strlen((char *)&stringinfo->pattern);
 		*flags |= STRING;
 		break;
@@ -214,14 +221,23 @@ parse(int c, char **argv, int invert, unsigned int *flags,
 		if (*flags & STRING)
 			exit_error(PARAMETER_PROBLEM,
 				   "Can't specify multiple --hex-string");
-
 		check_inverse(optarg, &invert, &optind, 0);
 		parse_hex_string(argv[optind-1], stringinfo);  /* sets length */
-		if (invert)
-			stringinfo->u.v0.invert = 1;
+		if (invert) {
+			if (revision == 0)
+				stringinfo->u.v0.invert = 1;
+			else
+				stringinfo->u.v1.flags |= XT_STRING_FLAG_INVERT;
+		}
 		*flags |= STRING;
 		break;
+	case '6':
+		if (revision == 0)
+			exit_error(VERSION_PROBLEM,
+				   "Kernel doesn't support --icase");
 
+		stringinfo->u.v1.flags |= XT_STRING_FLAG_IGNORECASE;
+		break;
 	default:
 		return 0;
 	}
@@ -296,11 +312,15 @@ print(const struct ipt_ip *ip,
 	const struct ipt_string_info *info =
 	    (const struct ipt_string_info*) match->data;
 
+	const int revision = match->u.user.revision;
+	int invert = (revision == 0 ? info->u.v0.invert :
+				    info->u.v1.flags & XT_STRING_FLAG_INVERT);
+
 	if (is_hex_string(info->pattern, info->patlen)) {
-		printf("STRING match %s", (info->u.v0.invert) ? "!" : "");
+		printf("STRING match %s", invert ? "!" : "");
 		print_hex_string(info->pattern, info->patlen);
 	} else {
-		printf("STRING match %s", (info->u.v0.invert) ? "!" : "");
+		printf("STRING match %s", invert ? "!" : "");
 		print_string(info->pattern, info->patlen);
 	}
 	printf("ALGO name %s ", info->algo);
@@ -308,6 +328,9 @@ print(const struct ipt_ip *ip,
 		printf("FROM %u ", info->from_offset);
 	if (info->to_offset != 0)
 		printf("TO %u", info->to_offset);
+	if (revision > 0 && info->u.v1.flags & XT_STRING_FLAG_IGNORECASE)
+		printf(" ICASE");
+
 }
 
 
@@ -335,6 +358,22 @@ save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 
 static struct iptables_match string = {
     .name		= "string",
+    .revision		= 0,
+    .version		= IPTABLES_VERSION,
+    .size		= IPT_ALIGN(sizeof(struct ipt_string_info)),
+    .userspacesize	= offsetof(struct ipt_string_info, config),
+//    .help		= help,
+    .init		= init,
+    .parse		= parse,
+    .final_check	= final_check,
+    .print		= print,
+    .save		= save,
+    .extra_opts		= opts
+};
+
+static struct iptables_match string_v1 = {
+    .name		= "string",
+    .revision		= 1,
     .version		= IPTABLES_VERSION,
     .size		= IPT_ALIGN(sizeof(struct ipt_string_info)),
     .userspacesize	= offsetof(struct ipt_string_info, config),
@@ -351,4 +390,5 @@ static struct iptables_match string = {
 void _init(void)
 {
 	register_match(&string);
+	register_match(&string_v1);
 }
