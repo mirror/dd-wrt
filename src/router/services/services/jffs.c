@@ -36,6 +36,11 @@ void start_jffs2(void)
 	char *rwpart = "ddwrt";
 	int itworked = 0;
 	char dev[64];
+#if defined(HAVE_R9000)
+	int mtd = getMTD("plex");
+#elif defined(HAVE_MVEBU)
+	int mtd = getMTD("ddwrt");
+#endif
 
 	if (nvram_matchi("sys_enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
@@ -45,23 +50,17 @@ void start_jffs2(void)
 #if defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_R9000)
-			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
+#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) 
+			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubidetach", "-p", dev);
-			itworked = eval("mtd", "erase", "plex");
-			itworked = eval("ubiattach", "-p", dev);
-			itworked = eval("ubimkvol", "/dev/ubi1", "-N", "ddwrt", "-m");
-#elif defined(HAVE_MVEBU)
-			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
-			itworked = eval("ubidetach", "-p", dev);
-			itworked = eval("mtd", "erase", "ddwrt");
+			itworked = eval("mtd", "erase", dev);
 			itworked = eval("ubiattach", "-p", dev);
 			itworked = eval("ubimkvol", "/dev/ubi1", "-N", "ddwrt", "-m");
 #else
 			itworked = eval("mtd", "erase", rwpart);
 #endif
 
-#if defined(HAVE_R9000)
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU)
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
@@ -74,12 +73,8 @@ void start_jffs2(void)
 			}
 
 		} else {
-#if defined(HAVE_R9000)
-			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
-			itworked = eval("ubiattach", "-p", dev);
-			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
-#elif defined(HAVE_MVEBU)
-			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
+#if defined(HAVE_R9000) || defined(HAVE_MVEBU)
+			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubiattach", "-p", dev);
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #else
