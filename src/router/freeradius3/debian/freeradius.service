@@ -1,0 +1,18 @@
+[Unit]
+Description=FreeRADIUS multi-protocol policy server
+After=network.target
+Documentation=man:radiusd(8) man:radiusd.conf(5) http://wiki.freeradius.org/ http://networkradius.com/doc/
+
+[Service]
+Type=forking
+PIDFile=/run/freeradius/freeradius.pid
+EnvironmentFile=-/etc/default/freeradius
+ExecStartPre=/usr/sbin/freeradius $FREERADIUS_OPTIONS -Cxm -lstdout
+ExecStart=/usr/sbin/freeradius $FREERADIUS_OPTIONS
+Restart=on-failure
+RestartSec=5
+ExecReload=/usr/sbin/freeradius $FREERADIUS_OPTIONS -Cxm -lstdout
+ExecReload=/bin/kill -HUP $MAINPID
+
+[Install]
+WantedBy=multi-user.target

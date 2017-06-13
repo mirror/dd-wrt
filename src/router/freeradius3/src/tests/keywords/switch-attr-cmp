@@ -1,0 +1,36 @@
+#
+#  PRE: switch
+#
+update request {
+	Tmp-String-0 := &User-Name
+}
+
+#
+#  A switch statement where we compare two attributes
+#
+switch &User-Name {
+	case &Tmp-String-0 {
+		update reply {
+			Filter-Id := "filter"
+		}
+	}
+
+	case "bob" {
+		update reply {
+			Filter-Id := "failed 0"
+		}
+	}
+
+	case "doug" {
+		update reply {
+			Filter-Id := "failed 1"
+		}
+	}
+
+	case {
+		update reply {
+			Filter-Id := "failed 2"
+		}
+	}
+
+}
