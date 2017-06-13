@@ -192,7 +192,7 @@ struct radiusclientdb *loadradiusclientdb(void)
 	struct radiusclientdb *db;
 	if (feof(fp))
 		return NULL;
-	db = safe_malloc(sizeof(struct radiusclientdb));
+	db = malloc(sizeof(struct radiusclientdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
 		db->users = safe_malloc(db->usercount * sizeof(struct radiusclient));
@@ -263,13 +263,16 @@ void freeradiusclientdb(struct radiusclientdb *db)
 {
 	unsigned int i;
 	for (i = 0; i < db->usercount; i++) {
-		if (db->users[i].passwd && db->users[i].passwordsize)
+		if (db->users[i].passwd && db->users[i].passwordsize) {
 			free(db->users[i].passwd);
-		if (db->users[i].client && db->users[i].clientsize)
+		}
+		if (db->users[i].client && db->users[i].clientsize) {
 			free(db->users[i].client);
+		}
 	}
-	if (db->users)
+	if (db->users) {
 		free(db->users);
+	}
 	free(db);
 }
 

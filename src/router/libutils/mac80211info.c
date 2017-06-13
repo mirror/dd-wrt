@@ -108,8 +108,8 @@ pthread_mutex_t mutex_unl;
 #define unlock() pthread_mutex_unlock(&mutex_unl)
 #else
 #define mutex_init()
-#define lock() 
-#define unlock() 
+#define lock()
+#define unlock()
 #endif
 
 struct unl unl;
