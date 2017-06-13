@@ -168,7 +168,7 @@ obj-$(CONFIG_IPERF) += iperf
 obj-$(CONFIG_NTPD) += ntpd
 obj-$(CONFIG_GPSD) += gpsd
 obj-$(CONFIG_PHP5) += php7
-obj-$(CONFIG_FREERADIUS) += talloc freeradius3
+obj-$(CONFIG_FREERADIUS) += libtalloc freeradius3
 #obj-$(CONFIG_FREERADIUS3) += talloc freeradius3
 #obj-$(CONFIG_EAD) += ead
 

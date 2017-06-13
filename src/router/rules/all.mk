@@ -146,7 +146,7 @@ include rules/brcm_nas.mk
 include rules/tftpd.mk
 include rules/cron.mk
 include rules/pptp-client.mk
-include rules/talloc.mk
+include rules/libtalloc.mk
 include rules/freeradius3.mk
 include rules/netstatnat.mk
 include rules/pppd.mk

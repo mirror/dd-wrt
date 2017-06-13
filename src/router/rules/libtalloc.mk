@@ -40,14 +40,14 @@ TALLOCCROSS = " \
 LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUXDIR)/include/config/kernel.release))
 
 
-talloc-configure:
+libtalloc-configure:
 	(cd libtalloc; \
 		echo -e >cache.txt $(TALLOCCROSS) " \
 			\nChecking uname machine type: \"$(ARCH)\" \
 			\nChecking uname release type: \"$(KERNELRELEASE)\" \
 			\nChecking uname sysname type: \"Linux\" \
 			\nChecking uname version type: \"$(LINUX_UNAME_VERSION)\" \
-		\n" ; CFLAGS="$(COPTS) $(MIPS16_OPT)"\
+		\n" ; CFLAGS="$(COPTS) $(MIPS16_OPT)" CC="ccache $(ARCH)-linux-uclibc-gcc" \
 		./buildtools/bin/waf configure \
 			--prefix=/usr \
 			--sysconfdir=/etc \
@@ -61,9 +61,9 @@ talloc-configure:
 
 #	cd libtalloc && ./configure --hostcc=gcc --prefix=/usr CFLAGS="$(COPTS) $(MIPS16_OPT)"
 
-talloc:
+libtalloc:
 	make -C libtalloc
 	
-talloc-install:
+libtalloc-install:
 	mkdir -p $(INSTALLDIR)/talloc/usr/lib
 	cp libtalloc/bin/default/libtalloc.so $(INSTALLDIR)/talloc/usr/lib/libtalloc.so.2
