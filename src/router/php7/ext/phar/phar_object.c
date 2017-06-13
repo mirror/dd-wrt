@@ -573,7 +573,18 @@ PHP_METHOD(Phar, webPhar)
 	}
 
 	/* retrieve requested file within phar */
-	if (!(SG(request_info).request_method && SG(request_info).request_uri && (!strcmp(SG(request_info).request_method, "GET") || !strcmp(SG(request_info).request_method, "POST")))) {
+	if (!(SG(request_info).request_method
+          && SG(request_info).request_uri
+          && (!strcmp(SG(request_info).request_method, "GET")
+           || !strcmp(SG(request_info).request_method, "POST")
+           || !strcmp(SG(request_info).request_method, "DELETE")
+           || !strcmp(SG(request_info).request_method, "HEAD")
+           || !strcmp(SG(request_info).request_method, "OPTIONS")
+           || !strcmp(SG(request_info).request_method, "PATCH")
+           || !strcmp(SG(request_info).request_method, "PUT")
+          )
+         )
+      ) {
 		return;
 	}
 
@@ -5134,7 +5145,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_phar_webPhar, 0, 0, 0)
 	ZEND_ARG_INFO(0, rewrites)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_phar_running, 0, 0, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_phar_running, 0, 0, 0)
 	ZEND_ARG_INFO(0, retphar)
 ZEND_END_ARG_INFO()
 

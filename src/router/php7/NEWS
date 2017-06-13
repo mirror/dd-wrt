@@ -1,5 +1,120 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+7 Jun 2017, PHP 7.1.6
+
+- Core:
+  . Fixed bug #74600 (crash (SIGSEGV) in _zend_hash_add_or_update_i).
+    (Laruence)
+  . Fixed bug #74546 (SIGILL in ZEND_FETCH_CLASS_CONSTANT_SPEC_CONST_CONST).
+    (Laruence)
+  . Fixed bug #74589 (__DIR__ wrong for unicode character). (Anatol)
+
+- intl:
+  . Fixed bug #74468 (wrong reflection on Collator::sortWithSortKeys). (villfa)
+
+- MySQLi:
+  . Fixed bug #74547 (mysqli::change_user() doesn't accept null as $database
+    argument w/strict_types). (Anatol)
+
+- Opcache:
+  . Fixed bug #74596 (SIGSEGV with opcache.revalidate_path enabled). (Laruence)
+
+- phar:
+  . Fixed bug #51918 (Phar::webPhar() does not handle requests sent through PUT
+    and DELETE method). (Christian Weiske)
+
+- Readline:
+  . Fixed bug #74490 (readline() moves the cursor to the beginning of the line).
+    (Anatol)
+
+- Standard:
+  . Fixed bug #74510 (win32/sendmail.c anchors CC header but not BCC).
+    (Damian Wadley, Anatol)
+
+- xmlreader:
+  . Fixed bug #74457 (Wrong reflection on XMLReader::expand). (villfa)
+
+11 May 2017, PHP 7.1.5
+
+- Core:
+  . Fixed bug #74408 (Endless loop bypassing execution time limit). (Laruence)
+  . Fixed bug #74353 (Segfault when killing within bash script trap code).
+    (Laruence)
+  . Fixed bug #74340 (Magic function __get has different behavior in php 7.1.x).
+    (Nikita)
+  . Fixed bug #74188 (Null coalescing operator fails for undeclared static
+    class properties). (tpunt)
+  . Fixed bug #74444 (multiple catch freezes in some cases). (David Matějka)
+  . Fixed bug #74410 (stream_select() is broken on Windows Nanoserver).
+    (Matt Ficken)
+  . Fixed bug #74337 (php-cgi.exe crash on facebook callback).
+    (Anton Serbulov)
+  . Patch for bug #74216 was reverted. (Anatol)
+
+- Date:
+  . Fixed bug #74404 (Wrong reflection on DateTimeZone::getTransitions).
+    (krakjoe)
+  . Fixed bug #74080 (add constant for RFC7231 format datetime). (duncan3dc)
+
+- DOM:
+  . Fixed bug #74416 (Wrong reflection on DOMNode::cloneNode).
+    (Remi, Fabien Villepinte)
+
+- Fileinfo:
+  . Fixed bug #74379 (syntax error compile error in libmagic/apprentice.c).
+    (Laruence)
+
+- GD:
+  . Fixed bug #74343 (compile fails on solaris 11 with system gd2 library).
+    (krakjoe)
+
+- MySQLi:
+  . Fixed bug #74432 (mysqli_connect adding ":3306" to $host if $port parameter
+    not given). (Anatol)
+
+- MySQLnd:
+  . Fixed bug #74376 (Invalid free of persistent results on error/connection
+    loss). (Yussuf Khalil)
+
+- Intl:
+  . Fixed bug #65683 (Intl does not support DateTimeImmutable). (Ben Scholzen)
+  . Fixed bug #74298 (IntlDateFormatter->format() doesn't return
+    microseconds/fractions). (Andrew Nester)
+  . Fixed bug #74433 (wrong reflection for Normalizer methods). (villfa)
+  . Fixed bug #74439 (wrong reflection for Locale methods). (villfa)
+
+- Opcache:
+  . Fixed bug #74456 (Segmentation error while running a script in CLI mode).
+    (Laruence)
+  . Fixed bug #74431 (foreach infinite loop). (Nikita)
+  . Fixed bug #74442 (Opcached version produces a nested array). (Nikita)
+
+- OpenSSL:
+  . Fixed bug #73833 (null character not allowed in openssl_pkey_get_private).
+    (Jakub Zelenka)
+  . Fixed bug #73711 (Segfault in openssl_pkey_new when generating DSA or DH
+    key). (Jakub Zelenka)
+  . Fixed bug #74341 (openssl_x509_parse fails to parse ASN.1 UTCTime without
+    seconds). (Moritz Fain)
+  . Fixed bug #73808 (iv length warning too restrictive for aes-128-ccm).
+    (Jakub Zelenka)
+
+- phar:
+  . Fixed bug #74383 (phar method parameters reflection correction). 
+    (mhagstrand)
+
+- Readline:
+  . Fixed bug #74489 (readline() immediately returns false in interactive
+    console mode). (Anatol)
+
+- Standard:
+  . Fixed bug #72071 (setcookie allows max-age to be negative). (Craig Duncan)
+  . Fixed bug #74361 (Compaction in array_rand() violates COW). (Nikita)
+
+- Streams:
+  . Fixed bug #74429 (Remote socket URI with unique persistence identifier
+    broken). (Sara)
+
 13 Apr 2017, PHP 7.1.4
 
 - Core:
@@ -26,6 +141,9 @@ PHP                                                                        NEWS
 
 - iconv:
   . Fixed bug #74230 (iconv fails to fail on surrogates). (Anatol)
+
+- OCI8:
+  . Fixed uninitialized data causing random crash. (Dmitry)
 
 - Opcache:
   . Fixed bug #74250 (OPcache compilation performance regression in PHP 5.6/7
@@ -96,6 +214,7 @@ PHP                                                                        NEWS
     (Andrew Nester, Nikita)
 
 - Opcache:
+  . Fixed bug #74152 (if statement says true to a null variable). (Laruence)
   . Fixed bug #74019 (Segfault with list). (Laruence)
 
 - OpenSSL:
@@ -107,6 +226,10 @@ PHP                                                                        NEWS
 
 - PDO_OCI:
   . Fixed bug #54379 (PDO_OCI: UTF-8 output gets truncated). (gureedo / Oracle)
+
+- SQLite3:
+  . Fixed bug #74413 (incorrect reflection for SQLite3::enableExceptions).
+    (krakjoe)
 
 - Standard:
   . Fixed bug #74005 (mail.add_x_header causes RFC-breaking lone line feed).

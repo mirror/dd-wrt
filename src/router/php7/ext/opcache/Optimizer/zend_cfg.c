@@ -765,7 +765,7 @@ static void swap_blocks(block_info *a, block_info *b) {
 int zend_cfg_identify_loops(const zend_op_array *op_array, zend_cfg *cfg, uint32_t *flags) /* {{{ */
 {
 	int i, j, k, n;
-	int depth, time;
+	int time;
 	zend_basic_block *blocks = cfg->blocks;
 	int *entry_times, *exit_times;
 	zend_worklist work;
@@ -855,7 +855,10 @@ int zend_cfg_identify_loops(const zend_op_array *op_array, zend_cfg *cfg, uint32
 		}
 		while (zend_worklist_len(&work)) {
 			j = zend_worklist_pop(&work);
-			if (blocks[j].loop_header < 0 && j != i) {
+			while (blocks[j].loop_header >= 0) {
+				j = blocks[j].loop_header;
+			}
+			if (j != i) {
 				blocks[j].loop_header = i;
 				for (k = 0; k < blocks[j].predecessors_count; k++) {
 					zend_worklist_push(&work, cfg->predecessors[blocks[j].predecessor_offset + k]);

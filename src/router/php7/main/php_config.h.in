@@ -1341,6 +1341,9 @@
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
 
+/* Define to 1 if you have the <poll.h> header file. */
+#undef HAVE_POLL_H
+
 /* do we have port framework? */
 #undef HAVE_PORT
 

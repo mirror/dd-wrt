@@ -389,10 +389,17 @@ function conf_process_args()
 				} else {
 					/* we matched the non-default arg */
 					if (argval == null) {
-						argval = arg.defval == "no" ? "yes" : "no";
+						if (arg.defval == "no") {
+							argval = "yes";
+						} else if (arg.defval == "no,shared") {
+							argval = "yes,shared";
+							shared = true;
+						} else {
+							argval = "no";
+						}
 					}
 				}
-				
+
 				arg.argval = argval;
 				eval("PHP_" + arg.symval + " = argval;");
 				eval("PHP_" + arg.symval + "_SHARED = shared;");
@@ -2852,6 +2859,10 @@ function toolset_setup_project_tools()
 
 		RE2CVERS = probe_binary(RE2C, "version");
 		STDOUT.WriteLine('  Detected re2c version ' + RE2CVERS);
+
+		if (RE2CVERS.match(/^\d+.\d+$/)) {
+			RE2CVERS += ".0";
+		}
 
 		intvers = RE2CVERS.replace(pattern, '') - 0;
 		intmin = MINRE2C.replace(pattern, '') - 0;
