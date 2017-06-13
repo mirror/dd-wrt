@@ -140,15 +140,15 @@ void add_radius_client(webs_t wp)
 {
 	nvram_set("radius_enabled", websGetVar(wp, "radius_enabled", "0"));
 	struct radiusclientdb *db = loadradiusclientdb();
-	if (db == NULL) {
-		db = safe_malloc(sizeof(struct radiusclientdb));
+	if (!db) {
+		db = malloc(sizeof(struct radiusclientdb));
+		db->users = malloc(sizeof(struct radiusclient));
 		db->usercount = 0;
-		db->users = safe_malloc(sizeof(struct radiusclient));
 	} else {
 		db->users = realloc(db->users, sizeof(struct radiusclient) * (db->usercount + 1));
 	}
-	memset(&db->users[db->usercount], 0, sizeof(struct radiususer));
-	db->users[db->usercount].fieldlen = sizeof(struct radiususer) - (sizeof(char *) * 2);
+	bzero(&db->users[db->usercount], sizeof(struct radiusclient));
+	db->users[db->usercount].fieldlen = sizeof(struct radiusclient) - (sizeof(char *) * 2);
 	db->usercount++;
 	writeradiusclientdb(db);
 	freeradiusclientdb(db);
