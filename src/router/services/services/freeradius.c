@@ -93,8 +93,6 @@ void start_freeradius(void)
 #ifndef HAVE_WDR4900
 #if defined(HAVE_X86) || defined(HAVE_RB600)
 	system("mount --bind /usr/local /jffs");
-#elif HAVE_R9000
-	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:netgear", "/jffs");
 #elif HAVE_IPQ806X
 	eval("mount", "-t", "ubifs", "-o", "sync", "ubi0:rootfs_data", "/jffs");
 #else
@@ -142,6 +140,7 @@ void start_freeradius(void)
 		if (db) {
 			fp = fopen("/jffs/etc/freeradius/mods-config/files/authorize", "wb");
 			system("touch /jffs/etc/freeradius/users.manual");
+			system("touch /jffs/etc/freeradius/mods-config/files/clients.manual");
 			fprintf(fp, "$INCLUDE users.manual\n");
 			fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n" "\tSession-Timeout := 3600,\n" "\tUser-Name := \"%%{User-Name}\",\n" "\tAcct-Interim-Interval := 300,\n" "\tFall-Through = Yes\n\n");
 			time_t tm;
