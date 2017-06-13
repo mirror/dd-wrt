@@ -771,7 +771,7 @@ eap {
 		#  the virtual server that processed the
 		#  outer requests.
 		#
-	#	virtual_server = "inner-tunnel"
+		virtual_server = "inner-tunnel"
 
 		# This option enables support for MS-SoH
 		# see doc/SoH.txt for more info.
