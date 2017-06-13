@@ -14,12 +14,12 @@ private_key		= $dir/ca.key
 RANDFILE		= $dir/.rand
 name_opt		= ca_default
 cert_opt		= ca_default
-default_days		= 60
+default_days		= 365
 default_crl_days	= 30
 default_md		= sha256
 preserve		= no
 policy			= policy_match
-crlDistributionPoints	= URI:http://www.example.org/example_ca.crl
+crlDistributionPoints	= URI:http://www.example.com/example_ca.crl
 
 [ policy_match ]
 countryName		= match
@@ -51,12 +51,12 @@ countryName		= FR
 stateOrProvinceName	= Radius
 localityName		= Somewhere
 organizationName	= Example Inc.
-emailAddress		= admin@example.org
+emailAddress		= admin@example.com
 commonName		= "Example Certificate Authority"
 
 [v3_ca]
 subjectKeyIdentifier	= hash
 authorityKeyIdentifier	= keyid:always,issuer:always
-basicConstraints	= critical,CA:true
-crlDistributionPoints	= URI:http://www.example.org/example_ca.crl
+basicConstraints	= CA:true
+crlDistributionPoints	= URI:http://www.example.com/example_ca.crl
 

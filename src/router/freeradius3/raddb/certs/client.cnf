@@ -1,5 +1,5 @@
 [ ca ]
-default_ca		= CA_default
+default_days            = $ENV::DEFDAYS
 
 [ CA_default ]
 dir			= ./
@@ -14,7 +14,7 @@ private_key		= $dir/ca.key
 RANDFILE		= $dir/.rand
 name_opt		= ca_default
 cert_opt		= ca_default
-default_days		= 60
+default_days		= 365
 default_crl_days	= 30
 default_md		= sha256
 preserve		= no
@@ -41,13 +41,13 @@ emailAddress		= optional
 prompt			= no
 distinguished_name	= client
 default_bits		= 2048
-input_password		= whatever
-output_password		= whatever
+input_password		= $ENV::CC_SERVERPASS
+output_password		= $ENV::CC_PASS
 
 [client]
-countryName		= FR
-stateOrProvinceName	= Radius
-localityName		= Somewhere
-organizationName	= Example Inc.
-emailAddress		= user@example.org
-commonName		= user@example.org
+countryName             = $ENV::CC_COUNTRY
+stateOrProvinceName     = $ENV::CC_STATE
+localityName            = $ENV::CC_LOCALITY
+organizationName        = $ENV::CC_ORGANISATION
+emailAddress            = $ENV::CC_EMAIL
+commonName              = $ENV::CC_COMMONNAME 
