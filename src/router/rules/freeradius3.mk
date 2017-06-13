@@ -3,7 +3,7 @@ freeradius3-configure: talloc openssl
 	cd freeradius3 && autoconf && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
 	sys_lib_search_path_spec="$(ARCH)-uclibc" \
-	MYSQL_CONFIG="no" \
+	MYSQL_CONFIG="no" CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	ac_cv_lib_readline=no \
 	ac_cv_lib_ssl_SSL_new=yes \
 	ac_cv_lib_crypto_DH_new=yes \
