@@ -297,7 +297,7 @@ authorize {
 	#
 	#  It takes care of processing the 'raddb/mods-config/preprocess/hints' 
 	#  and the 'raddb/mods-config/preprocess/huntgroups' files.
-	preprocess
+#	preprocess
 
 	#  If you intend to use CUI and you require that the Operator-Name
 	#  be set for CUI generation and you want to generate CUI also
@@ -319,7 +319,7 @@ authorize {
 	#
 	#  The chap module will set 'Auth-Type := CHAP' if we are
 	#  handling a CHAP request and Auth-Type has not already been set
-	chap
+#	chap
 
 	#
 	#  If the users are logging in with an MS-CHAP-Challenge
@@ -333,7 +333,7 @@ authorize {
 	#  If you have a Cisco SIP server authenticating against
 	#  FreeRADIUS, uncomment the following line, and the 'digest'
 	#  line in the 'authenticate' section.
-	digest
+#	digest
 
 	#
 	#  The WiMAX specification says that the Calling-Station-Id
@@ -356,7 +356,7 @@ authorize {
 	#  Otherwise, when the first style of realm doesn't match,
 	#  the other styles won't be checked.
 	#
-	suffix
+#	suffix
 #	ntdomain
 
 	#
@@ -419,8 +419,8 @@ authorize {
 #	daily
 
 	#
-	expiration
-	logintime
+#	expiration
+#	logintime
 
 	#
 	#  If no other module has claimed responsibility for
@@ -552,8 +552,8 @@ authenticate {
 #
 #  Pre-accounting.  Decide which accounting type to use.
 #
-preacct {
-	preprocess
+#preacct {
+#	preprocess
 
 	#
 	#  Merge Acct-[Input|Output]-Gigawords and Acct-[Input-Output]-Octets
@@ -584,7 +584,7 @@ preacct {
 	#
 	#  Ensure that we have a semi-unique identifier for every
 	#  request, and many NAS boxes are broken.
-	acct_unique
+#	acct_unique
 
 	#
 	#  Look for IPASS-style 'realm/', and if not found, look for
@@ -594,13 +594,13 @@ preacct {
 	#  Accounting requests are generally proxied to the same
 	#  home server as authentication requests.
 #	IPASS
-	suffix
+#	suffix
 #	ntdomain
 
 	#
 	#  Read the 'acct_users' file
-	files
-}
+#	files
+#}
 
 #
 #  Accounting.  Log the accounting data.
@@ -614,7 +614,7 @@ accounting {
 	#  Create a 'detail'ed log of the packets.
 	#  Note that accounting requests which are proxied
 	#  are also logged in the detail file.
-	detail
+#	detail
 #	daily
 
 	#  Update the wtmp file
@@ -660,7 +660,7 @@ accounting {
 	exec
 
 	#  Filter attributes from the accounting response.
-	attr_filter.accounting_response
+#	attr_filter.accounting_response
 
 	#
 	#  See "Autz-Type Status-Server" for how this works.
@@ -686,7 +686,7 @@ session {
 #  Post-Authentication
 #  Once we KNOW that the user has been authenticated, there are
 #  additional steps we can take.
-post-auth {
+#post-auth {
 	#
 	#  If you need to have a State attribute, you can
 	#  add it here.  e.g. for later CoA-Request with
@@ -707,9 +707,9 @@ post-auth {
 	#  The session-state attributes are automatically deleted after
 	#  an Access-Reject or Access-Accept is sent.
 	#
-	update {
-		&reply: += &session-state:
-	}
+#	update {
+#		&reply: += &session-state:
+#	}
 
 	#  Get an address from the IP Pool.
 #	main_pool
@@ -729,7 +729,7 @@ post-auth {
 	#  After authenticating the user, do another SQL query.
 	#
 	#  See "Authentication Logging Queries" in mods-available/sql
-	-sql
+#	-sql
 
 	#
 	#  Un-comment the following if you want to modify the user's object
@@ -738,7 +738,7 @@ post-auth {
 #	ldap
 
 	# For Exec-Program and Exec-Program-Wait
-	exec
+#	exec
 
 	#
 	#  Calculate the various WiMAX keys.  In order for this to work,
@@ -815,7 +815,7 @@ post-auth {
 #	}
 
 	#  Remove reply message if the response contains an EAP-Message
-	remove_reply_message_if_eap
+#	remove_reply_message_if_eap
 
 	#
 	#  Access-Reject packets are sent through the REJECT sub-section of the
@@ -826,29 +826,29 @@ post-auth {
 	#
 	#  The "session-state" attributes are not available here.
 	#
-	Post-Auth-Type REJECT {
-		# log failed authentications in SQL, too.
-		-sql
-		attr_filter.access_reject
-
-		# Insert EAP-Failure message if the request was
-		# rejected by policy instead of because of an
-		# authentication failure
-		eap
-
-		#  Remove reply message if the response contains an EAP-Message
-		remove_reply_message_if_eap
-	}
+#	Post-Auth-Type REJECT {
+#		# log failed authentications in SQL, too.
+#		-sql
+#		attr_filter.access_reject
+#
+#		# Insert EAP-Failure message if the request was
+#		# rejected by policy instead of because of an
+#		# authentication failure
+#		eap
+#
+#		#  Remove reply message if the response contains an EAP-Message
+#		remove_reply_message_if_eap
+#	}
 
 	#
 	#  Filter access challenges.
 	#
-	Post-Auth-Type Challenge {
+#	Post-Auth-Type Challenge {
 #		remove_reply_message_if_eap
 #		attr_filter.access_challenge.post-auth
-	}
+#	}
 
-}
+#}
 
 #
 #  When the server decides to proxy a request to a home server,
@@ -858,7 +858,7 @@ post-auth {
 #
 #  Only a few modules currently have this method.
 #
-pre-proxy {
+#pre-proxy {
 	# Before proxing the request add an Operator-Name attribute identifying
 	# if the operator-name is found for this client.
 	# No need to uncomment this if you have already enabled this in
@@ -883,14 +883,14 @@ pre-proxy {
 	#  server, un-comment the following line, and the
 	#  'detail pre_proxy_log' section, above.
 #	pre_proxy_log
-}
+#}
 
 #
 #  When the server receives a reply to a request it proxied
 #  to a home server, the request may be massaged here, in the
 #  post-proxy stage.
 #
-post-proxy {
+#post-proxy {
 
 	#  If you want to have a log of replies from a home server,
 	#  un-comment the following line, and the 'detail post_proxy_log'
@@ -912,7 +912,7 @@ post-proxy {
 	#  hidden inside of the EAP packet, and the end server will
 	#  reject the EAP request.
 	#
-	eap
+#	eap
 
 	#
 	#  If the server tries to proxy a request and fails, then the
@@ -934,5 +934,5 @@ post-proxy {
 #	Post-Proxy-Type Fail-Accounting {
 #			detail
 #	}
-}
+#}
 }
