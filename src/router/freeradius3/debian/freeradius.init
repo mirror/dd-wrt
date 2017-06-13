@@ -1,0 +1,119 @@
+#!/bin/sh
+# Start/stop the FreeRADIUS daemon.
+
+### BEGIN INIT INFO
+# Provides:          freeradius
+# Required-Start:    $remote_fs $network $syslog
+# Should-Start:      $time mysql slapd postgresql samba krb5-kdc
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Radius Daemon
+# Description:       Extensible, configurable radius daemon
+### END INIT INFO
+
+PROG="freeradius"
+PROGRAM="/usr/sbin/freeradius"
+PIDFILE="/var/run/freeradius/freeradius.pid"
+DESCR="FreeRADIUS daemon"
+
+set -e
+
+. /lib/lsb/init-functions
+
+configtest() {
+    log_action_begin_msg "Checking $DESCR configuration"
+
+    out=`$PROGRAM -Cxl stdout $FREERADIUS_OPTIONS`; ret=$?
+    out=`echo "${out}" | tail -n 1 | sed 's/^\s*ERROR:\s*\(.*\)\s*$/\1/'`
+    log_action_end_msg $ret "$out"
+    return $ret
+}
+
+if [ -r /etc/default/$PROG ]; then
+    . /etc/default/$PROG
+fi
+
+test -f $PROGRAM || exit 0
+
+# /var/run may be a tmpfs
+if [ ! -d /var/run/freeradius ]; then
+    mkdir -p /var/run/freeradius
+    chown freerad:freerad /var/run/freeradius
+fi
+
+if [ -d "$FREERADIUS_CONF_LOCAL" -a -z "$FREERADIUS_OPTIONS" ]; then
+  FREERADIUS_OPTIONS="-d $FREERADIUS_CONF_LOCAL"
+fi
+
+export PATH="${PATH:+$PATH:}/usr/sbin:/sbin"
+
+ret=0
+
+case "$1" in
+    start)
+        log_daemon_msg "Starting $DESCR" "$PROG"
+
+        # eval allows quoted arguments (config directories for example) to be passed in $FREERADIUS_OPTIONS
+        eval "start_daemon -p '$PIDFILE' '$PROGRAM' $FREERADIUS_OPTIONS" || ret=$?
+        log_end_msg $ret
+        ;;
+
+    stop)
+        log_daemon_msg "Stopping $DESCR" "$PROG"
+
+        killproc -p "$PIDFILE" || ret=$?
+        log_end_msg $ret
+        ;;
+
+    restart|force-reload)
+        configtest || exit 150
+
+        $0 stop
+        $0 start
+        ;;
+
+    reload)
+        configtest || exit 150
+
+        if status_of_proc -p "$PIDFILE" "$PROG" "$DESCR"; then
+            log_daemon_msg "Reloading $DESCR" "$PROG"
+
+            start-stop-daemon --stop --signal HUP --quiet --pidfile $PIDFILE || ret=$?
+            log_end_msg $ret
+        fi
+        ;;
+
+    configtest|testconfig)
+        configtest || exit 150
+        ;;
+
+    debug)
+        $0 status
+        if [ $? -eq 0 ]; then
+            echo "$PROGRAM already running; for live debugging see raddebug(8)"
+            exit 151
+        fi
+        $PROGRAM -X $FREERADIUS_OPTIONS || exit $?
+        ;;
+
+    debug-threaded)
+        $0 status
+        if [ $? -eq 0 ]; then
+            echo "$PROGRAM already running; for live debugging see raddebug(8)"
+            exit 151
+        fi
+        $PROGRAM -f -xx -l stdout $FREERADIUS_OPTIONS || exit $?
+        ;;
+
+    status)
+        status_of_proc -p "$PIDFILE" "$PROGRAM" "$PROG" && exit 0 || exit $?
+        ;;
+
+    *)
+        echo "Usage: $0 start|stop|restart|force-reload|reload|configtest|debug|debug-threaded|status"
+        exit 1
+        ;;
+esac
+
+exit $ret

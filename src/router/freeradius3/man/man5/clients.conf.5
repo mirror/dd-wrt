@@ -1,0 +1,46 @@
+.TH clients.conf 5 "13 June 2005" "" "FreeRADIUS client configuration"
+.SH NAME
+clients.conf \- FreeRADIUS client configuration
+.SH DESCRIPTION
+The 
+.I clients.conf
+file contains definitions of RADIUS clients.
+.PP
+The information in this file overrides any information provided in
+the deprecated 
+.BR clients
+and 
+.BR naslist
+files.
+.PP
+The file format is the same as that used for
+.I radiusd.conf.
+See 
+.BR radiusd.conf (5)
+for more details.
+.PP
+Each RADIUS client entry has the following basic form:
+.IP
+.nf
+client <short-name> {
+       <attribute> = <value>
+ }
+.fi
+.PP
+Clients have many configuration parameters. Most are documented in the file
+itself as comments. This page documents only the format of the file. Please
+read the \fBclients.conf\fP file itself for more information.
+
+The old-style format from 1.x is still accepted by the server, but
+that form is deprecated.
+.SH FILES
+.I /etc/raddb/clients.conf
+
+.I /etc/raddb/radiusd.conf
+.SH "SEE ALSO"
+.BR radiusd (8),
+.BR radiusd.conf (5)
+
+.SH AUTHOR
+FreeRADIUS is authored by the FreeRADIUS team. 
+http://freeradius.org/

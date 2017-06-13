@@ -1,0 +1,22 @@
+#! /bin/sh
+
+set -e
+
+case "$1" in
+  configure)
+        if [ -z "$2" ]; then
+          # On a fresh install, add the necessary user and group
+          adduser --quiet --system --no-create-home --home /etc/freeradius --group --disabled-password freerad
+
+          # Put user freerad in group shadow, so the daemon can auth locally
+          # Only do this on fresh install as the admin may not want freerad in shadow
+          # group if authenticating by another mechanism
+          adduser --quiet freerad shadow
+        fi
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0
+

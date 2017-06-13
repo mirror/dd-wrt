@@ -1,0 +1,85 @@
+#
+#  PRE: update
+#
+
+#
+#  Set it.
+#
+update request {
+	NAS-Port := 1000
+}
+
+#
+#  Enforce it.
+#
+update request {
+	NAS-Port == 1000
+}
+
+if (NAS-Port != 1000) {
+	update reply {
+		Filter-Id += "fail 1"
+	}
+}
+
+#
+#  Enforce to new lower value.
+#
+update request {
+	NAS-Port <= 500
+}
+
+if (NAS-Port != 500) {
+	update reply {
+		Filter-Id += "fail 2 - expected 500, got %{NAS-Port}"
+	}
+}
+
+#
+#  Enforce to new higher value
+#
+update request {
+	NAS-Port >= 2000
+}
+
+if (NAS-Port != 2000) {
+	update reply {
+		Filter-Id += "fail 3 - expected 2000, got %{NAS-Port}"
+	}
+}
+
+#
+#  Enforce value which previously didn't exist.
+#
+update request {
+	Idle-Timeout >= 14400
+}
+
+if (&request:Idle-Timeout != 14400) {
+	update reply {
+		Filter-Id += "fail Idle-Timeout >= 14400"
+	}
+}
+
+# non-existent attribute
+update request {
+       Class -= 0xabcdef
+}
+
+update request {
+       Class -= &Class
+}
+
+update request {
+       NAS-Port -= &NAS-Port
+}
+
+if (!reply:Filter-Id) {
+	update control {
+		Cleartext-Password := 'hello'
+	}
+
+	update reply {
+		Filter-Id := "filter"
+	}
+}

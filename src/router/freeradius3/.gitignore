@@ -1,0 +1,67 @@
+*~
+*.o
+*.a
+*.lo
+*.loT
+*.la
+*.so
+*.lai
+*.bz2
+*.gz
+*.sig
+*.orig
+*.rej
+.libs
+.depends
+*.log
+*.substvars
+*-stamp
+*.swp
+*.cache
+*.dist
+*.dylib
+*.rej
+*.orig
+*.dSYM
+*.patch
+.pc
+
+# Editor projects
+*.kdev4
+*.cproject
+*.project
+*.bbprojectd
+
+# Exuberant ctags
+tags
+
+# Local icon files
+icon.png
+
+# OS specific cruft
+.DS_Store
+
+# Certificates and signing requests
+*.pem
+*.der
+*.csr
+*.key
+
+# Autoconf and libtool output
+build
+config.status
+*confdefs.h
+*conftest*
+*confcache
+Make.inc
+libtool
+autom4te.cache
+config.guess
+config.sub
+config.h
+src/main/radattr
+src/modules/lib/
+warnings.txt
+
+# Analyzer output
+/*.plist

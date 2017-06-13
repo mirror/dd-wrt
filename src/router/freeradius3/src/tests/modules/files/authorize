@@ -1,0 +1,23 @@
+#
+#  Test if the "users" file works
+#
+bob	Cleartext-Password := "hello"
+	Filter-Id := "success"
+
+doug	Cleartext-Password := "goodbye"
+	Filter-Id := "success"
+
+famous	Cleartext-Password := "bradpitt"
+	Fall-Through = yes
+
+unused	Cleartext-Password := "jabberwocky"
+	Filter-Id := "fail"
+
+famous	
+	Filter-Id := "success"
+
+user	Cleartext-Password := "hello" # comment!
+
+
+user2   # comment!
+	Filter-Id := "24"

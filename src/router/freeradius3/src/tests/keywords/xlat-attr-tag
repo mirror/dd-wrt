@@ -1,0 +1,225 @@
+#
+# PRE: update
+#
+#  Remove all attributes in a list
+#
+update {
+	control:Cleartext-Password := 'hello'
+	reply:Filter-Id := 'filter'
+}
+
+update request {
+	Tunnel-Server-Endpoint   := '192.0.1.1'	# Should not be tagged
+	Tunnel-Server-Endpoint:0 += '192.0.1.2'	# Should not be tagged
+	Tunnel-Server-Endpoint:1 := '192.0.2.1'
+	Tunnel-Server-Endpoint:1 += '192.0.2.2'
+	Tunnel-Server-Endpoint:2 := '192.0.3.1'
+	Tunnel-Server-Endpoint:2 += '192.0.3.2'
+}
+
+update request {
+	Tmp-Integer-0 := "%{debug_attr:request:}"
+}
+
+# Check the tag printing xlat works correctly
+if ("%{tag:Tunnel-Server-Endpoint[0]}" != '') {
+	update {
+		reply:Filter-Id += 'fail 0a'
+	}
+}
+
+if ("%{tag:Tunnel-Server-Endpoint[1]}" != '') {
+	update {
+		reply:Filter-Id += 'fail 0b'
+	}
+}
+
+
+if ("%{tag:Tunnel-Server-Endpoint[2]}" != '1') {
+	update {
+		reply:Filter-Id += 'fail 0c'
+	}
+}
+
+if ("%{tag:Tunnel-Server-Endpoint[5]}" != '2') {
+	update {
+		reply:Filter-Id += 'fail 0d'
+	}
+}
+
+if ("%{tag:Tunnel-Server-Endpoint[6]}" != '') {
+	update {
+		reply:Filter-Id += 'fail 0e'
+	}
+}
+
+if ("%{tag:control:Cleartext-Password}" != '') {
+	update {
+		reply:Filter-Id += 'fail 0f'
+	}
+}
+
+# Check that access attributes by tag works first
+if ("%{Tunnel-Server-Endpoint:2}" != '192.0.3.1') {
+	update {
+		reply:Filter-Id += 'fail 1'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:2}" == '192.0.3.2') {
+	update {
+		reply:Filter-Id += 'fail 2'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:1}" != '192.0.2.1') {
+	update {
+		reply:Filter-Id += 'fail 3'
+	}
+}
+
+# Get the first instance of Tunnel-Server-Endpoint:2
+if ("%{Tunnel-Server-Endpoint:2[0]}" != '192.0.3.1') {
+	update {
+		reply:Filter-Id += 'fail 4'
+	}
+}
+
+# Get the first instance of Tunnel-Server-Endpoint:2
+if ("%{Tunnel-Server-Endpoint:2[1]}" != '192.0.3.2') {
+	update {
+		reply:Filter-Id += 'fail 5'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:0[2]}" != '') {
+	update {
+		reply:Filter-Id += 'fail 6'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:0[0]}" != '192.0.1.1') {
+	update {
+		reply:Filter-Id += 'fail 7'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:0[1]}" != '192.0.1.2') {
+	update {
+		reply:Filter-Id += 'fail 8'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint:0[2]}" != '') {
+	update {
+		reply:Filter-Id += 'fail 9'
+	}
+}
+
+#
+# Selecting on attributes with no tag specified (should match all of that type)
+#
+if ("%{Tunnel-Server-Endpoint[0]}" != '192.0.1.1') {
+	update {
+		reply:Filter-Id += 'fail 10'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint[1]}" != '192.0.1.2') {
+	update {
+		reply:Filter-Id += 'fail 11'
+	}
+}
+
+if ("%{Tunnel-Server-Endpoint[2]}" != '192.0.2.1') {
+	update {
+		reply:Filter-Id += 'fail 12'
+	}
+}
+
+#
+# Assignment (xlat)
+#
+update request {
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:2}"		#0
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:2}"		#1
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:1}"		#2
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:2[0]}"	#3
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:2[1]}"	#4
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:0[0]}"	#5
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:0[1]}"	#6
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint:0[2]}"	#7
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint[0]}"		#8
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint[1]}"		#9
+	Tmp-String-0 += "%{Tunnel-Server-Endpoint[2]}"		#10
+}
+
+# Check that access attributes by tag works first
+if (Tmp-String-0[0] != '192.0.3.1') {
+	update {
+		reply:Filter-Id += 'fail 13'
+	}
+}
+
+if (Tmp-String-0[1] == '192.0.3.2') {
+	update {
+		reply:Filter-Id += 'fail 14'
+	}
+}
+
+if (Tmp-String-0[2] != '192.0.2.1') {
+	update {
+		reply:Filter-Id += 'fail 15'
+	}
+}
+
+# Get the first instance of Tunnel-Server-Endpoint:2
+if (Tmp-String-0[3] != '192.0.3.1') {
+	update {
+		reply:Filter-Id += 'fail 16'
+	}
+}
+
+# Get the first instance of Tunnel-Server-Endpoint:2
+if (Tmp-String-0[4] != '192.0.3.2') {
+	update {
+		reply:Filter-Id += 'fail 17'
+	}
+}
+
+# Now check the assignment
+if (Tmp-String-0[5] != '192.0.1.1') {
+	update {
+		reply:Filter-Id += 'fail 18'
+	}
+}
+
+if (Tmp-String-0[6] != '192.0.1.2') {
+	update {
+		reply:Filter-Id += 'fail 19'
+	}
+}
+
+if (Tmp-String-0[7] != '') {
+	update {
+		reply:Filter-Id += 'fail 20'
+	}
+}
+
+if (Tmp-String-0[8] != '192.0.1.1') {
+	update {
+		reply:Filter-Id += 'fail 21'
+	}
+}
+
+if (Tmp-String-0[9] != '192.0.1.2') {
+	update {
+		reply:Filter-Id += 'fail 22'
+	}
+}
+
+if (Tmp-String-0[10] != '192.0.2.1') {
+	update {
+		reply:Filter-Id += 'fail 23'
+	}
+}
