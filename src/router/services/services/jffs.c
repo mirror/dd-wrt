@@ -42,16 +42,16 @@ void start_jffs2(void)
 		if (nvram_matchi("sys_clean_jffs2", 1)) {
 			nvram_seti("sys_clean_jffs2", 0);
 			nvram_commit();
-#ifdef HAVE_WNDR3700V4
+#if defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif HAVE_R9000
+#elif defined(HAVE_R9000)
 			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", "plex");
 			itworked = eval("ubiattach", "-p", dev);
 			itworked = eval("ubimkvol", "/dev/ubi1", "-N", "ddwrt", "-m");
-#elif HAVE_MVEBU
+#elif defined(HAVE_MVEBU)
 			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", "ddwrt");
@@ -61,7 +61,7 @@ void start_jffs2(void)
 			itworked = eval("mtd", "erase", rwpart);
 #endif
 
-#ifdef HAVE_R9000
+#if defined(HAVE_R9000)
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
 #else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
@@ -74,11 +74,11 @@ void start_jffs2(void)
 			}
 
 		} else {
-#ifdef HAVE_R9000
+#if defined(HAVE_R9000)
 			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
 			itworked = eval("ubiattach", "-p", dev);
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
-#else	/* HAVE_MVEBU */
+#elif defined(HAVE_MVEBU)
 			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
 			itworked = eval("ubiattach", "-p", dev);
 			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
