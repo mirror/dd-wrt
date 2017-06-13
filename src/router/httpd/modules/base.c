@@ -2345,7 +2345,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	}
 
 	char *incom = live_translate("status_inet.traffin");
-	char *outcom = live_translate("statis_inet.traffout");
+	char *outcom = live_translate("status_inet.traffout");
 	char *monthname = live_translate(months[month - 1]);
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
