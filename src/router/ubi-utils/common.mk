@@ -12,8 +12,8 @@ WFLAGS := -Wall \
 	$(call cc-option,-Wextra) \
 	$(call cc-option,-Wwrite-strings) \
 	$(call cc-option,-Wno-sign-compare)
-CFLAGS += $(WFLAGS) -I $(TOP)/e2fsprogs/lib -I$(TOP)/lzo/include -I $(TOP)/zlib -DNEED_PRINTF
-SECTION_CFLAGS := $(call cc-option,-ffunction-sections -fdata-sections -Wl$(comma)--gc-sections)
+CFLAGS += $(WFLAGS) -I $(TOP)/e2fsprogs/lib -I$(TOP)/lzo/include -I $(TOP)/zlib -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) 
+SECTION_CFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
 CFLAGS += $(SECTION_CFLAGS)
 LDFLAGS += -L$(TOP)/e2fsprogs/lib -L$(TOP)/zlib -L$(TOP)/lzo/src/.libs
 
