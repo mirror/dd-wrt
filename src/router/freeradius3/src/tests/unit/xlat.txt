@@ -1,0 +1,142 @@
+#
+#  Tests for xlat expansion
+#
+
+xlat %{foo: bar}
+data ERROR offset 2 'Unknown module'
+
+xlat %{test:bar}
+data %{test:bar}
+
+xlat %{1}
+data %{1}
+
+xlat %{33}
+data ERROR offset 2 'Invalid regex reference.  Must be in range 0-32'
+
+xlat %{%{foo}:-%{bar}}
+data ERROR offset 4 'Unknown attribute'
+
+xlat %{%{User-Name}:-%{bar}}
+data ERROR offset 18 'Unknown attribute'
+
+xlat %{%{User-Name}:-bar}
+data %{%{User-Name}:-bar}
+
+xlat %{%{test:bar}:-%{User-Name}}
+data %{%{test:bar}:-%{User-Name}}
+
+xlat %{%{test:bar}:-%{%{User-Name}:-bar}}
+data %{%{test:bar}:-%{%{User-Name}:-bar}}
+
+xlat %{Tunnel-Password}
+data %{Tunnel-Password}
+
+xlat %{Tunnel-Password:1}
+data %{Tunnel-Password:1}
+
+xlat %{Tunnel-Password:1[3]}
+data %{Tunnel-Password:1[3]}
+
+xlat %{Tunnel-Password:1[*]}
+data %{Tunnel-Password:1[*]}
+
+xlat %{Tunnel-Password:1[#]}
+data %{Tunnel-Password:1[#]}
+
+xlat %{reply:Tunnel-Password}
+data %{reply:Tunnel-Password}
+
+xlat %{reply:Tunnel-Password:1}
+data %{reply:Tunnel-Password:1}
+
+xlat %{reply:Tunnel-Password:1[3]}
+data %{reply:Tunnel-Password:1[3]}
+
+xlat %{reply:Tunnel-Password:1[*]}
+data %{reply:Tunnel-Password:1[*]}
+
+xlat %{reply:Tunnel-Password:1[#]}
+data %{reply:Tunnel-Password:1[#]}
+
+xlat %{User-Name[3]}
+data %{User-Name[3]}
+
+xlat %{User-Name[*]}
+data %{User-Name[*]}
+
+xlat %{User-Name[#]}
+data %{User-Name[#]}
+
+xlat %{request:User-Name[3]}
+data %{User-Name[3]}
+
+xlat %{request:User-Name[*]}
+data %{User-Name[*]}
+
+xlat %{request:User-Name[#]}
+data %{User-Name[#]}
+
+xlat %{coa:User-Name[#]}
+data %{coa:User-Name[#]}
+
+xlat %{coaX:User-Name[#]}
+data ERROR offset 2 'Unknown module'
+
+xlat %{3GPP-SGSN-Address}
+data %{3GPP-SGSN-Address}
+
+xlat %{%{Operator-Name}:-}
+data %{%{Operator-Name}:-}
+
+xlat %{%{}:-}
+data ERROR offset 4 'Empty expression is invalid'
+
+xlat %{%{}:-foo}
+data ERROR offset 4 'Empty expression is invalid'
+
+xlat %{}
+data ERROR offset 2 'Empty expression is invalid'
+
+xlat %{ }
+data ERROR offset 2 'Invalid attribute name'
+
+xlat %{%{User-Name}:-}
+data %{%{User-Name}:-}
+
+xlat "Hello %S goo"
+data "Hello %S goo"
+
+xlat "%{Foreach-Variable-0}"
+data "%{Foreach-Variable-0}"
+
+#
+#  3GPP stuff, to distinguish "list:3GPP" from
+#  "attribute:tag"
+#
+xlat "%{request:3GPP-IMSI}"
+data "%{3GPP-IMSI}"
+
+xlat "%{reply:3GPP-IMSI}"
+data "%{reply:3GPP-IMSI}"
+
+xlat "%{reply:3GPP-IMSI[2]}"
+data "%{reply:3GPP-IMSI[2]}"
+
+xlat /([A-Z0-9\-]*)_%{Calling-Station-Id}/
+data /([A-Z0-9\-]*)_%{Calling-Station-Id}/
+
+xlat %{length:1 + 2
+data ERROR offset 14 'Missing closing brace at end of string'
+
+xlat "%t\tfoo"
+data "%t\tfoo"
+
+xlat "%t\t%{Client-IP-Address}"
+data "%t\t%{Client-IP-Address}"
+
+xlat "foo %{test}"
+data ERROR offset 11 'Missing content in expansion'
+
+xlat "foo %{test:foo}"
+data "foo %{test:foo}"

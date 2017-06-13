@@ -1,0 +1,21 @@
+# Autoconf headers
+autoconf.h
+autoconf.sed
+
+# Dynamically generated headers
+attributes.h
+rfc*.h
+missing.h
+tls.h
+features.h
+radpaths.h
+vqp.h
+freeradius.h
+
+# Headers from v3.1.x
+freeradius.snmp.h
+util
+
+# Build scripts
+build-radpaths-h
+stamp-h

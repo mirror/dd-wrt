@@ -1,0 +1,89 @@
+language: c
+compiler:
+  - clang
+  - gcc
+sudo: false
+env:
+  global:
+    - PANIC_ACTION="gdb -batch -x raddb/panic.gdb %e %p 1>&0 2>&0"
+    - secure: "H+uQeyOgsIyXtIPPG2VzAG8S/8KYGHlHaWhdiNuz1LM3SMcEKoPqG6o/P+HO8HVvYnA6nelyGuEryV90UfuwGY9YC6A/pqPQvx/gXSso63Zt66XSaiZjulCSm9OV8EB3wyWF7VSQ/ZHcn+L01hIlsQXTqLprMaC33cM0FYPr9fY="
+  matrix:
+    - DO_BUILD=yes LIBS_OPTIONAL=no LIBS_SHARED=yes BUILD_CFLAGS="-DWITH_EVAL_DEBUG"
+    - DO_BUILD=yes LIBS_OPTIONAL=yes LIBS_SHARED=yes BUILD_CFLAGS="-DWITH_EVAL_DEBUG"
+    - DO_BUILD=yes LIBS_OPTIONAL=yes LIBS_SHARED=yes BUILD_CFLAGS="-DWITH_EVAL_DEBUG -O2 -g3"
+    - DO_BUILD=no
+addons:
+  coverity_scan:
+    project:
+      name: FreeRADIUS/freeradius-server
+      version: v3.0.x
+      description: The FreeRADIUS server project
+    notification_email: freeradius-devel@lists.freeradius.org
+    build_command_prepend: ./configure
+    build_command: make
+    branch_pattern: coverity_scan
+  apt:
+    sources:
+      - couchbase-precise
+    packages:
+      - autoconf
+      - build-essential
+      - debhelper
+      - devscripts
+      - dh-make
+      - doxygen
+      - fakeroot
+      - gdb
+      - graphviz
+      - lintian
+      - pbuilder
+      - python-dev
+      - quilt
+      - libruby
+      - ruby-dev
+      - libcollectdclient-dev
+      - firebird-dev
+      - freetds-dev
+      - libcap-dev
+      - libcouchbase2-libevent
+      - libcouchbase-dev
+      - libcurl4-openssl-dev
+      - libgdbm-dev
+      - libhiredis-dev
+      - libidn11-dev
+      - libiodbc2-dev libiodbc2
+      - libjson0
+      - libjson0-dev
+      - libkrb5-dev
+      - libldap2-dev
+      - libmemcached-dev
+      - libmysqlclient-dev
+      - libpam0g-dev
+      - libpcap-dev
+      - libpcre3-dev
+      - libperl-dev
+      - libpq-dev
+      - libreadline-dev
+      - libsnmp-dev
+      - libssl-dev
+      - libtalloc-dev
+      - libtalloc2-dbg
+      - libunbound-dev
+      - libwbclient-dev
+      - libykclient-dev
+      - libyubikey-dev
+before_install:
+  - $CC --version
+before_script:
+# Configure the server
+  - if [ "${DO_BUILD}" = 'yes' ]; then CFLAGS="${BUILD_CFLAGS}" ./configure -C --enable-werror --prefix=$HOME/freeradius --with-shared-libs=$LIBS_SHARED --with-threads=$LIBS_OPTIONAL --with-udpfromto=$LIBS_OPTIONAL --with-openssl=$LIBS_OPTIONAL --with-pcre=$LIBS_OPTIONAL; fi
+  - if [ "${DO_BUILD}" = 'no' ]; then ./configure -C --without-modules; fi
+# Build the server
+  - if [ "${DO_BUILD}" = 'yes' ]; then make -j8; fi
+# Run CLANG analyzer if we're building with CLANG
+  - if [ "${DO_BUILD}" = 'yes' -a "${COVERITY_SCAN_BRANCH}" != 1 -a ${CC} = 'clang' ]; then make -j8 scan && [ "$(find build/plist/ -name *.html)" = '' ]; fi
+script:
+  - if [ "${DO_BUILD}" = 'yes' -a "${COVERITY_SCAN_BRANCH}" != 1 ]; then make travis-test; fi
+#  - if [ "${DO_BUILD}" = 'no' ]; then make deb; fi
+# Build the doxygen documentation
+  - if [ "${DO_BUILD}" = 'no' ]; then cd doc/source; doxygen 3>&1 1>&2 2>&3 | grep -iv '^warning:' | tee doxygen_stderr.log && [ ! -n "$(cat doxygen_stderr.log)" ]; fi
