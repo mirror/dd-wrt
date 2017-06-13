@@ -62,7 +62,7 @@ void start_gen_radius_cert(void)
 	nvram_seti("cert_running", 1);
 	//this takes a long time (depending from the cpu speed)
 	system("cd /jffs/etc/freeradius/certs && ./bootstrap");
-	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf", nvram_safe_get("radius_passphrase"));
+	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/mods-available/eap > /jffs/etc/freeradius/mods-available/eap", nvram_safe_get("radius_passphrase"));
 	nvram_seti("cert_running", 0);
 }
 
@@ -105,8 +105,8 @@ void start_freeradius(void)
 #endif
 #endif
 	prep();
-	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/radiusd.conf > /jffs/etc/freeradius/radiusd.conf", nvram_safe_get("radius_port"));
-	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/eap.conf > /jffs/etc/freeradius/eap.conf", nvram_safe_get("radius_passphrase"));
+	sysprintf("sed \"s/port = 0/port = %s/g\" /etc/freeradius/sites-available/default > /jffs/etc/freeradius/sites-available/default", nvram_safe_get("radius_port"));
+	sysprintf("sed \"s/private_key_password = whatever/private_key_password = %s/g\" /etc/freeradius/mods-available/eap > /jffs/etc/freeradius/mods-available/eap", nvram_safe_get("radius_passphrase"));
 
 	if (!f_exists("/jffs/etc/freeradius/certs/server.pem")) {
 		//prepare certificates
@@ -140,7 +140,7 @@ void start_freeradius(void)
 	{
 		struct radiusdb *db = loadradiusdb();
 		if (db) {
-			fp = fopen("/jffs/etc/freeradius/users", "wb");
+			fp = fopen("/jffs/etc/freeradius/mods-config/files/authorize", "wb");
 			system("touch /jffs/etc/freeradius/users.manual");
 			fprintf(fp, "$INCLUDE users.manual\n");
 			fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n" "\tSession-Timeout := 3600,\n" "\tUser-Name := \"%%{User-Name}\",\n" "\tAcct-Interim-Interval := 300,\n" "\tFall-Through = Yes\n\n");
