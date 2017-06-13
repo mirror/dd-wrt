@@ -53,7 +53,7 @@ authorize {
 	#
 	#  See policy.d/filter for the definition of the filter_username policy.
 	#
-	filter_username
+#	filter_username
 
 	#
 	#  Do checks on outer / inner User-Name, so that users
