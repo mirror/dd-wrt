@@ -162,8 +162,12 @@ static void zend_ssa_remove_nops(zend_op_array *op_array, zend_ssa *ssa)
 				zend_op *opline;
 				zend_op *new_opline;
 
-				opline = op_array->opcodes + end - 1;
 				b->len = target - b->start;
+				opline = op_array->opcodes + end - 1;
+				if (opline->opcode == ZEND_NOP) {
+					continue;
+				}
+
 				new_opline = op_array->opcodes + target - 1;
 				switch (new_opline->opcode) {
 					case ZEND_JMP:
@@ -360,6 +364,13 @@ static zend_bool opline_supports_assign_contraction(
 		/* INIT_ARRAY initializes the result array before reading key/value. */
 		return (opline->op1_type != IS_CV || opline->op1.var != cv_var)
 			&& (opline->op2_type != IS_CV || opline->op2.var != cv_var);
+	}
+
+	if (opline->opcode == ZEND_CAST
+			&& (opline->extended_value == IS_ARRAY || opline->extended_value == IS_OBJECT)) {
+		/* CAST to array/object may initialize the result to an empty array/object before
+		 * reading the expression. */
+		return opline->op1_type != IS_CV || opline->op1.var != cv_var;
 	}
 
 	return 1;
