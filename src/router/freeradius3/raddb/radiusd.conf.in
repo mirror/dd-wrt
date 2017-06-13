@@ -68,7 +68,7 @@ confdir = ${raddbdir}
 modconfdir = ${confdir}/mods-config
 certdir = ${confdir}/certs
 cadir   = ${confdir}/certs
-run_dir = ${localstatedir}/run/${name}
+run_dir = ${localstatedir}/run
 
 # Should likely be ${localstatedir}/lib/radiusd
 db_dir = ${raddbdir}
@@ -265,7 +265,7 @@ log {
 	#  The command-line option "-X" over-rides this option, and forces
 	#  logging to go to stdout.
 	#
-	destination = files
+	destination = syslog
 
 	#
 	#  Highlight important messages sent to stderr and stdout.
@@ -282,7 +282,7 @@ log {
 	#  If the server is running in debugging mode, this file is
 	#  NOT used.
 	#
-	file = ${logdir}/radius.log
+#	file = ${logdir}/radius.log
 
 	#
 	#  If this configuration parameter is set, then log messages for
@@ -334,13 +334,13 @@ log {
 	#
 	# allowed values: {no, yes}
 	#
-	stripped_names = no
+	stripped_names = yes
 
 	#  Log authentication requests to the log file.
 	#
 	#  allowed values: {no, yes}
 	#
-	auth = no
+	auth = yes
 
 	#  Log passwords with the authentication requests.
 	#  auth_badpass  - logs password if it's rejected
@@ -348,7 +348,7 @@ log {
 	#
 	#  allowed values: {no, yes}
 	#
-	auth_badpass = no
+	auth_badpass = yes
 	auth_goodpass = no
 
 	#  Log additional text at the end of the "Login OK" messages.
@@ -369,7 +369,7 @@ log {
 }
 
 #  The program to execute to do concurrency checks.
-checkrad = ${sbindir}/checkrad
+#checkrad = ${sbindir}/checkrad
 
 # SECURITY CONFIGURATION
 #
@@ -518,8 +518,8 @@ security {
 #
 #  allowed values: {no, yes}
 #
-proxy_requests  = yes
-$INCLUDE proxy.conf
+#proxy_requests  = yes
+#$INCLUDE proxy.conf
 
 
 # CLIENTS CONFIGURATION
@@ -782,9 +782,9 @@ instantiate {
 #  If policy A calls policy B, then B MUST be defined before A.
 #
 ######################################################################
-policy {
-	$INCLUDE policy.d/
-}
+#policy {
+#	$INCLUDE policy.d/
+#}
 
 ######################################################################
 #

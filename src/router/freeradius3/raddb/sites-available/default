@@ -133,7 +133,7 @@ listen {
 	#  If your system does not support this feature, you will
 	#  get an error if you try to use it.
 	#
-#	interface = eth0
+#	interface = br0
 
 	#  Per-socket lists of clients.  This is a very useful feature.
 	#
@@ -190,15 +190,15 @@ listen {
 #  This second "listen" section is for listening on the accounting
 #  port, too.
 #
-listen {
-	ipaddr = *
+#listen {
+#	ipaddr = *
 #	ipv6addr = ::
-	port = 0
-	type = acct
+#	port = 0
+#	type = acct
 #	interface = eth0
 #	clients = per_socket_clients
 
-	limit {
+#	limit {
 		#  The number of packets received can be rate limited via the
 		#  "max_pps" configuration item.  When it is set, the server
 		#  tracks the total number of packets received in the previous
@@ -227,8 +227,8 @@ listen {
 #		idle_timeout = 0
 #		lifetime = 0
 #		max_connections = 0
-	}
-}
+#	}
+#}
 
 # IPv6 versions of the above - read their full config to understand options
 listen {

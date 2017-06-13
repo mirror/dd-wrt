@@ -16,7 +16,7 @@ DEFAULT_MODULES :=	always attr_filter cache_eap chap date \
 LOCAL_MODULES :=	$(addprefix raddb/mods-enabled/,$(DEFAULT_MODULES))
 
 LOCAL_CERT_FILES :=	Makefile README xpextensions \
-			ca.cnf server.cnf client.cnf bootstrap
+			ca.cnf server.cnf client.cnf bootstrap doclientcert
 
 #
 #  We don't create the installed certs if we're building a package,
@@ -134,6 +134,10 @@ $(R)$(raddbdir)/certs/bootstrap:
 	@echo INSTALL $(patsubst $(R)$(raddbdir)/%,raddb/%,$@)
 	@$(INSTALL) -m 750 $(patsubst $(R)$(raddbdir)/%,raddb/%,$@) $@
 endif
+
+$(R)$(raddbdir)/certs/doclientcert:
+	@echo INSTALL $(patsubst $(R)$(raddbdir)/%,raddb/%,$@)
+	@$(INSTALL) -m 750 $(patsubst $(R)$(raddbdir)/%,raddb/%,$@) $@
 
 #  List directories before the file targets.
 #  It's not clear why GNU Make doesn't deal well with this.
