@@ -1,4 +1,4 @@
-freeradius3-configure: openssl
+freeradius3-configure: talloc openssl
 	cd freeradius3 && mkdir -p build/make; gcc scripts/jlibtool.c -o build/make/jlibtool
 	cd freeradius3 && autoconf && \
 	sys_lib_dlsearch_path_spec="$(ARCH)-uclibc" \
