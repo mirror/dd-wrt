@@ -2028,7 +2028,7 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     if (id < 193 || id > 255) {
         SSLerr(SSL_F_SSL_COMP_ADD_COMPRESSION_METHOD,
                SSL_R_COMPRESSION_ID_NOT_WITHIN_PRIVATE_RANGE);
-        return 0;
+        return 1;
     }
 
     MemCheck_off();
@@ -2040,6 +2040,7 @@ int SSL_COMP_add_compression_method(int id, COMP_METHOD *cm)
     }
     comp->id = id;
     comp->method = cm;
+    comp->name = cm->name;
     load_builtin_compressions();
     if (ssl_comp_methods && sk_SSL_COMP_find(ssl_comp_methods, comp) >= 0) {
         OPENSSL_free(comp);
