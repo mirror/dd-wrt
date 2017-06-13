@@ -3,8 +3,8 @@
 
 #include <linux/types.h>
 
-#define XT_STRING_MAX_PATTERN_SIZE 128
-#define XT_STRING_MAX_ALGO_NAME_SIZE 16
+#define IPT_STRING_MAX_PATTERN_SIZE 128
+#define IPT_STRING_MAX_ALGO_NAME_SIZE 16
 
 enum {
 	XT_STRING_FLAG_INVERT		= 0x01,
@@ -14,8 +14,8 @@ enum {
 struct ipt_string_info {
 	__u16 from_offset;
 	__u16 to_offset;
-	char	  algo[XT_STRING_MAX_ALGO_NAME_SIZE];
-	char 	  pattern[XT_STRING_MAX_PATTERN_SIZE];
+	char	  algo[IPT_STRING_MAX_ALGO_NAME_SIZE];
+	char 	  pattern[IPT_STRING_MAX_PATTERN_SIZE];
 	__u8  patlen;
 	union {
 		struct {
