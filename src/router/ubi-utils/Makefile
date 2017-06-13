@@ -23,8 +23,8 @@ MISC_BINS = \
 	flash_unlock flash_otp_info flash_otp_dump flash_otp_lock \
 	flash_otp_write flashcp
 UBI_BINS = \
-	ubiupdatevol ubimkvol ubirmvol ubicrc32 ubinfo ubiattach \
-	ubidetach ubinize ubiformat ubirename mtdinfo ubirsvol ubiblock
+	ubiupdatevol ubimkvol ubirmvol ubiattach \
+	ubidetach ubinize ubiformat ubirsvol
 UBIFS_BINS = \
 	mkfs.ubifs/mkfs.ubifs
 JFFSX_BINS = \
@@ -34,13 +34,13 @@ NAND_BINS = \
 NOR_BINS = \
 	rfddump rfdformat
 
-BINS = $(addprefix misc-utils/,$(MISC_BINS))
-BINS += $(addprefix ubi-utils/,$(UBI_BINS))
-BINS += $(addprefix ubifs-utils/,$(UBIFS_BINS))
-BINS += $(addprefix jffsX-utils/,$(JFFSX_BINS))
-BINS += $(addprefix nand-utils/,$(NAND_BINS))
-BINS += $(addprefix nor-utils/,$(NOR_BINS))
-SCRIPTS = $(addprefix misc-utils/,flash_eraseall)
+#BINS += $(addprefix misc-utils/,$(MISC_BINS))
+BINS = $(addprefix ubi-utils/,$(UBI_BINS))
+#BINS += $(addprefix ubifs-utils/,$(UBIFS_BINS))
+#BINS += $(addprefix jffsX-utils/,$(JFFSX_BINS))
+#BINS += $(addprefix nand-utils/,$(NAND_BINS))
+#BINS += $(addprefix nor-utils/,$(NOR_BINS))
+#SCRIPTS = $(addprefix misc-utils/,flash_eraseall)
 
 TARGETS = $(BINS)
 TARGETS += lib/libmtd.a
