@@ -178,7 +178,7 @@ freeradius3-install:
 	rm -f $(INSTALLDIR)/freeradius3/usr/sbin/checkrad
 	rm -f $(INSTALLDIR)/freeradius3/usr/bin/dhcpclient
 	rm -f $(INSTALLDIR)/freeradius3/usr/bin/map_unit
-	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radaddr
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radattr
 	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radcrypt
 	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radlast
 	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radsqlrelay
