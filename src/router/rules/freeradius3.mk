@@ -20,7 +20,7 @@ freeradius3-configure: talloc openssl
 	ac_cv_lib_collectdclient_lcc_connect=no \
 	ac_cv_lib_execinfo_backtrace_symbols=no \
 	ac_cv_host=$(ARCH)-uclibc-linux \
-	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/openssl/include " CPPFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
+	./configure  --target=$(ARCH)-linux --host=$(ARCH) CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -I$(TOP)/openssl/include -D_GNU_SOURCE" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -D_GNU_SOURCE -fPIC -I$(TOP)/openssl/include " LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl" --enable-shared \
 	--program-prefix="" \
 	--program-suffix="" \
 	--prefix=/usr \
@@ -172,5 +172,16 @@ freeradius3-install:
 	rm -f $(INSTALLDIR)/freeradius3/etc/sql
 	mkdir -p $(INSTALLDIR)/freeradius3/etc/config
 	cp freeradius3/config/freeradius.nvramconfig $(INSTALLDIR)/freeradius3/etc/config
-	
-
+	rm -f $(INSTALLDIR)/freeradius3/usr/sbin/rc.radiusd
+	rm -f $(INSTALLDIR)/freeradius3/usr/sbin/radmin
+	rm -f $(INSTALLDIR)/freeradius3/usr/sbin/raddebug
+	rm -f $(INSTALLDIR)/freeradius3/usr/sbin/checkrad
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/dhcpclient
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/map_unit
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radaddr
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radcrypt
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radlast
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radsqlrelay
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radtest
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/radzap
+	rm -f $(INSTALLDIR)/freeradius3/usr/bin/smbencrypt
