@@ -46,7 +46,6 @@ extern pthread_mutex_t mutex_unl;
 #define unlock()
 #endif
 
-
 #if 0
 static void __attribute__((constructor)) mac80211_init(void)
 {
