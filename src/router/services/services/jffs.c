@@ -35,6 +35,7 @@ void start_jffs2(void)
 {
 	char *rwpart = "ddwrt";
 	int itworked = 0;
+	char dev[64];
 
 	if (nvram_matchi("sys_enable_jffs2", 1)) {
 		insmod("crc32 lzma_compress lzma_decompress lzo_compress lzo_decompress jffs2");
@@ -44,14 +45,28 @@ void start_jffs2(void)
 #ifdef HAVE_WNDR3700V4
 			itworked = eval("erase", rwpart);
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
+#elif HAVE_R9000
+			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
+			itworked = eval("ubidetach", "-p", dev);
+			itworked = eval("mtd", "erase", "plex");
+			itworked = eval("ubiattach", "-p", dev);
+			itworked = eval("ubimkvol", "/dev/ubi1", "-N", "ddwrt", "-m");
+#elif HAVE_MVEBU
+			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
+			itworked = eval("ubidetach", "-p", dev);
+			itworked = eval("mtd", "erase", "ddwrt");
+			itworked = eval("ubiattach", "-p", dev);
+			itworked = eval("ubimkvol", "/dev/ubi1", "-N", "ddwrt", "-m");
 #else
 			itworked = eval("mtd", "erase", rwpart);
 #endif
 
-			char dev[64];
-
+#ifdef HAVE_R9000
+			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
+#else
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
 			} else {
@@ -59,11 +74,19 @@ void start_jffs2(void)
 			}
 
 		} else {
+#ifdef HAVE_R9000
+			sprintf(dev, "/dev/mtd%d", getMTD("plex"));
+			itworked = eval("ubiattach", "-p", dev);
+			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
+#else	/* HAVE_MVEBU */
+			sprintf(dev, "/dev/mtd%d", getMTD("ddwrt"));
+			itworked = eval("ubiattach", "-p", dev);
+			itworked += mount("ubi1:ddwrt", "/jffs", "ubifs", MS_MGC_VAL, NULL);
+#else
 			itworked = eval("mtd", "unlock", rwpart);
-			char dev[64];
-
 			sprintf(dev, "/dev/mtdblock/%d", getMTD("ddwrt"));
 			itworked += mount(dev, "/jffs", "jffs2", MS_MGC_VAL, NULL);
+#endif
 			if (itworked) {
 				nvram_seti("jffs_mounted", 0);
 			} else {
