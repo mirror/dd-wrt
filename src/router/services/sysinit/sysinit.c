@@ -3079,7 +3079,7 @@ void start_drivers(void)
 
 	}
 #endif
-#ifdef HAVE_ALPINE
+#ifdef HAVE_R9000
 	set_smp_affinity(261, 1);
 #endif
 #ifdef HAVE_NORTHSTAR
