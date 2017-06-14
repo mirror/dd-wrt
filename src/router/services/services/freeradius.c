@@ -126,7 +126,7 @@ void start_freeradius(void)
 					continue;
 				if (!db->users[i].client || !strlen(db->users[i].client))
 					continue;
-				fprintf(fp, "client %s {\n" "\tsecret = %s\n" "\tshortname = DD-WRT-RADIUS\n}\n", db->users[i].client, db->users[i].passwd);
+				fprintf(fp, "client %s {\n" "\tipaddr = %s\n" "\tsecret = %s\n" "\tshortname = DD-WRT-RADIUS\n}\n", db->users[i].client, db->users[i].client, db->users[i].passwd);
 			}
 
 			fclose(fp);
