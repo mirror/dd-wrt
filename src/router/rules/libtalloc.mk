@@ -66,4 +66,4 @@ libtalloc:
 	
 libtalloc-install:
 	mkdir -p $(INSTALLDIR)/talloc/usr/lib
-	cp libtalloc/bin/default/libtalloc.so $(INSTALLDIR)/talloc/usr/lib/libtalloc.so.2
+	cp libtalloc/bin/default/libtalloc.so $(INSTALLDIR)/libtalloc/usr/lib/libtalloc.so.2
