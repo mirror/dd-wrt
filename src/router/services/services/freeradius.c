@@ -140,7 +140,7 @@ void start_freeradius(void)
 		if (db) {
 			fp = fopen("/jffs/etc/freeradius/mods-config/files/authorize", "wb");
 			system("touch /jffs/etc/freeradius/users.manual");
-			system("touch /jffs/etc/freeradius/mods-config/files/clients.manual");
+			system("touch /jffs/etc/freeradius/mods-config/files/users.manual");
 			fprintf(fp, "$INCLUDE users.manual\n");
 			fprintf(fp, "DEFAULT FreeRADIUS-Proxied-To == 127.0.0.1\n" "\tSession-Timeout := 3600,\n" "\tUser-Name := \"%%{User-Name}\",\n" "\tAcct-Interim-Interval := 300,\n" "\tFall-Through = Yes\n\n");
 			time_t tm;
