@@ -129,21 +129,27 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: scan_engine.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: scan_engine.h 36742 2017-04-26 18:55:16Z dmiller $ */
 
 #ifndef SCAN_ENGINE_H
 #define SCAN_ENGINE_H
 
-#include "nmap.h" /* stype */
+#include "scan_lists.h"
 
 #include <dnet.h>
 
 #include "timing.h"
-#include "tcpip.h"
+
+#ifndef IPPROTO_SCTP
+#include "libnetutil/netutil.h"
+#endif
+
+#include <pcap.h>
 #include <list>
 #include <vector>
 #include <set>
 #include <algorithm>
+class Target;
 
 struct probespec_tcpdata {
   u16 dport;

@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_proxy.c 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: ncat_proxy.c 36697 2017-04-04 16:26:08Z dmiller $ */
 
 #include "base64.h"
 #include "http.h"
@@ -196,8 +196,6 @@ int ncat_http_server(void)
     int listen_socket[NUM_LISTEN_ADDRS];
     socklen_t sslen;
     union sockaddr_u conn;
-    struct timeval tv;
-    struct timeval *tvp = NULL;
     unsigned int num_sockets;
 
 #ifndef WIN32
@@ -248,9 +246,6 @@ int ncat_http_server(void)
             bye("Unable to open any listening sockets.");
     }
 
-    if (o.idletimeout > 0)
-        tvp = &tv;
-
     for (;;) {
         fd_set read_fds;
 
@@ -262,10 +257,7 @@ int ncat_http_server(void)
             logdebug("selecting, fdmax %d\n", listen_fdlist.fdmax);
         read_fds = listen_fds;
 
-        if (o.idletimeout > 0)
-            ms_to_timeval(tvp, o.idletimeout);
-
-        int fds_ready = fselect(listen_fdlist.fdmax + 1, &read_fds, NULL, NULL, tvp);
+        int fds_ready = fselect(listen_fdlist.fdmax + 1, &read_fds, NULL, NULL, NULL);
 
         if (o.debug > 1)
             logdebug("select returned %d fds ready\n", fds_ready);

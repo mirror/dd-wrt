@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_winconfig.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: nbase_winconfig.h 36586 2017-02-25 00:47:30Z nnposter $ */
 
 #ifndef NBASE_WINCONFIG_H
 #define NBASE_WINCONFIG_H
@@ -218,6 +218,7 @@ typedef signed __int64 int64_t;
 #endif
 
 #define HAVE_OPENSSL 1
+#define HAVE_SSL_SET_TLSEXT_HOST_NAME 1
 /* Apparently __func__ isn't yet supported */
 #define __func__ __FUNCTION__
 

@@ -129,17 +129,17 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: tcpip.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: tcpip.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include "nmap.h"
 
 #include "nbase.h"
-#include "portreasons.h"
 #include <dnet.h>
 #include "tcpip.h"
 #include "NmapOps.h"
 #include "Target.h"
 #include "utils.h"
+#include "nmap_error.h"
 #include "libnetutil/netutil.h"
 
 #include "struct_ip.h"

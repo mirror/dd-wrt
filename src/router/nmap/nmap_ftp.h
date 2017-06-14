@@ -127,11 +127,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_ftp.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: nmap_ftp.h 36713 2017-04-19 04:14:43Z dmiller $ */
 
 #ifndef NMAP_FTP_H
 #define NMAP_FTP_H
 
+#include "scan_lists.h"
 #include "nbase.h" /* u16 */
 class Target;
 

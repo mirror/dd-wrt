@@ -52,6 +52,7 @@
 
 local bin = require "bin"
 local bit = require "bit"
+local ipOps = require "ipOps"
 local math = require "math"
 local msrpctypes = require "msrpctypes"
 local netbios = require "netbios"
@@ -199,8 +200,10 @@ local UUID2EXE = {
 --@return status true or false
 --@return smbstate if status is true, or an error message.
 function start_smb(host, path, disable_extended, overrides)
+  local sharename
   overrides = overrides or {}
-  return smb.start_ex(host, true, true, "IPC$", path, disable_extended, overrides)
+  _, sharename = smb.get_fqpn(host, "IPC$")
+  return smb.start_ex(host, true, true, sharename, path, disable_extended, overrides)
 end
 
 --- A wrapper around the <code>smb.stop</code> function.
@@ -662,10 +665,17 @@ end
 --@return (status, result) If status is false, result is an error message. Otherwise, result is a table of values, the most
 --        useful one being 'shares', which is a list of the system's shares.
 function srvsvc_netsharegetinfo(smbstate, server, share, level)
-  local status, result
+  stdnse.debug2("Calling NetShareGetInfo(%s, %s, %d)", server, share, level)
+  local status, result, sharename
   local arguments
   local pos, align
 
+  --NetGetShareInfo seems to reject FQPN and reads the server value from the request
+  --If any function called this function using a FQPN, this should take care of it.
+  _, _, sharename = string.find(share, "\\\\.*\\(.*)")
+  if sharename then
+    share = sharename
+  end
   --    [in]   [string,charset(UTF16)] uint16 *server_unc,
   arguments = msrpctypes.marshall_unicode_ptr("\\\\" .. server, true)
 
@@ -1266,9 +1276,9 @@ function epmapper_lookup(smbstate,handle)
         elseif address_type == 0x08 then
           pos,lookup_response.udp_port = bin.unpack(">S",data,pos)
         elseif address_type == 0x09 then
-          local i1,i2,i3,i4
-          pos,i1,i2,i3,i4 = bin.unpack("CCCC",data,pos)
-          lookup_response.ip_addr = string.format("%d.%d.%d.%d",i1,i2,i3,i4)
+          local ip
+          ip, pos = string.unpack("c4", data, pos)
+          lookup_response.ip_addr = ipOps.str_to_ip(ip)
         elseif address_type == 0x0f then
           lookup_response.ncacn_np = string.sub(data,pos,pos+address_len-2)
           floor_len = floor_len + address_len - 2
@@ -4704,8 +4714,18 @@ function get_share_info(host, name)
   end
 
   -- Call NetShareGetInfo
+  
   local status, netsharegetinfo_result = srvsvc_netsharegetinfo(smbstate, host.ip, name, 2)
+  stdnse.debug2("NetShareGetInfo status:%s result:%s", status, netsharegetinfo_result)
   if(status == false) then
+    if(string.find(netsharegetinfo_result, "NT_STATUS_WERR_ACCESS_DENIED")) then
+      stdnse.debug2("Calling NetShareGetInfo with information level 1")
+      status, netsharegetinfo_result = srvsvc_netsharegetinfo(smbstate, host.ip, name, 1)
+      if status then
+        smb.stop(smbstate)
+        return true, netsharegetinfo_result
+      end
+    end
     smb.stop(smbstate)
     return false, netsharegetinfo_result
   end

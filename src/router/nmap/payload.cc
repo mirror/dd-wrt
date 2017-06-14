@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: payload.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: payload.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include "nmap.h"
 
@@ -143,6 +143,7 @@
 #include "nbase.h"
 #include "payload.h"
 #include "utils.h"
+#include "nmap_error.h"
 
 extern NmapOps o;
 
