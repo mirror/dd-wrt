@@ -191,10 +191,6 @@
     #include <sys/param.h> /* Defines MAXHOSTNAMELEN on BSD*/
 #endif
 
-#if HAVE_RPC_TYPES_H
-    #include <rpc/types.h>
-#endif
-
 #if HAVE_SYS_SOCKET_H
     #include <sys/socket.h>
 #endif
@@ -346,7 +342,7 @@
 /* General tunable defines  **************************************************/
 #define NPING_NAME "Nping"
 #define NPING_URL "https://nmap.org/nping"
-#define NPING_VERSION "0.7.40"
+#define NPING_VERSION "0.7.50"
 
 
 #define DEFAULT_VERBOSITY VB_0

@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.h 36500 2016-12-18 04:07:01Z dmiller $ */
+/* $Id: nmap.h 36785 2017-06-07 02:33:14Z dmiller $ */
 
 #ifndef NMAP_H
 #define NMAP_H
@@ -166,16 +166,6 @@
 #include <sys/param.h> /* Defines MAXHOSTNAMELEN on BSD*/
 #endif
 
-#if HAVE_RPC_TYPES_H
-/* Is this needed any more since rpcgrind was converted to NSE? */
-#include <rpc/types.h>
-#endif
-
-/* For systems without SCTP in netinet/in.h, such as MacOS X */
-#ifndef IPPROTO_SCTP
-#define IPPROTO_SCTP 132
-#endif
-
 /* Keep assert() defined for security reasons */
 #undef NDEBUG
 
@@ -200,13 +190,13 @@
 #ifndef NMAP_VERSION
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
-#define NMAP_VERSION "7.40"
-#define NMAP_NUM_VERSION "7.0.40.0"
+#define NMAP_VERSION "7.50"
+#define NMAP_NUM_VERSION "7.0.50.0"
 #endif
 /* The version number of updates retrieved by the nmap-update
    program. It can be different (but should always be the same or
    earlier) than NMAP_VERSION. */
-#define NMAP_UPDATE_CHANNEL "7.30"
+#define NMAP_UPDATE_CHANNEL "7.40"
 
 #define NMAP_XMLOUTPUTVERSION "1.04"
 
@@ -236,8 +226,6 @@
                                                  if unspecified by user */
 
 #define MAX_DECOYS 128 /* How many decoys are allowed? */
-
-#define MAXFALLBACKS 20 /* How many comma separated fallbacks are allowed in the service-probes file? */
 
 /* TCP Options for TCP SYN probes: MSS 1460 */
 #define TCP_SYN_PROBE_OPTIONS "\x02\x04\x05\xb4"
@@ -341,61 +329,12 @@
 #  define recvfrom6_t int
 #endif
 
-/***********************STRUCTURES**********************************/
-
-/* The various kinds of port/protocol scans we can have
- * Each element is to point to an array of port/protocol numbers
- */
-struct scan_lists {
-        /* The "synprobes" are also used when doing a connect() ping */
-        unsigned short *syn_ping_ports;
-        unsigned short *ack_ping_ports;
-        unsigned short *udp_ping_ports;
-        unsigned short *sctp_ping_ports;
-        unsigned short *proto_ping_ports;
-        int syn_ping_count;
-        int ack_ping_count;
-        int udp_ping_count;
-        int sctp_ping_count;
-        int proto_ping_count;
-        //the above fields are only used for host discovery
-        //the fields below are only used for port scanning
-        unsigned short *tcp_ports;
-        int tcp_count;
-        unsigned short *udp_ports;
-        int udp_count;
-        unsigned short *sctp_ports;
-        int sctp_count;
-        unsigned short *prots;
-        int prot_count;
-};
-
-typedef enum { STYPE_UNKNOWN, HOST_DISCOVERY, ACK_SCAN, SYN_SCAN, FIN_SCAN, XMAS_SCAN, UDP_SCAN, CONNECT_SCAN, NULL_SCAN, WINDOW_SCAN, SCTP_INIT_SCAN, SCTP_COOKIE_ECHO_SCAN, MAIMON_SCAN, IPPROT_SCAN, PING_SCAN, PING_SCAN_ARP, IDLE_SCAN, BOUNCE_SCAN, SERVICE_SCAN, OS_SCAN, SCRIPT_PRE_SCAN, SCRIPT_SCAN, SCRIPT_POST_SCAN, TRACEROUTE, PING_SCAN_ND }stype;
-
 /***********************PROTOTYPES**********************************/
-
-/* print Interactive usage information */
-void printinteractiveusage();
-
-/* port manipulators */
-void getpts(const char *expr, struct scan_lists * ports); /* someone stole the name getports()! */
-void getpts_simple(const char *origexpr, int range_type,
-                   unsigned short **list, int *count);
-void removepts(const char *expr, struct scan_lists * ports);
-void free_scan_lists(struct scan_lists *ports);
 
 /* Renamed main so that interactive mode could preprocess when necessary */
 int nmap_main(int argc, char *argv[]);
 
-void nmap_free_mem();
-
-/* general helper functions */
-const char *statenum2str(int state);
-const char *scantype2str(stype scantype);
-void reaper(int signo);
-
 int nmap_fetchfile(char *filename_returned, int bufferlen, const char *file);
-int nmap_fileexistsandisreadable(const char* pathname);
 int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv);
 
 #endif /* NMAP_H */

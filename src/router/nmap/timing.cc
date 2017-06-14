@@ -130,11 +130,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: timing.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: timing.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include "timing.h"
 #include "NmapOps.h"
 #include "utils.h"
+#include "nmap_error.h"
 #include "xml.h"
 
 #include <math.h>

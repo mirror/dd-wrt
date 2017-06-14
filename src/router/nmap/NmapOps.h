@@ -128,12 +128,13 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: NmapOps.h 36713 2017-04-19 04:14:43Z dmiller $ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
 
-#include "nmap.h"
+#include "nmap.h" /* MAX_DECOYS */
+#include "scan_lists.h"
 #include "output.h"
 #include <nsock.h>
 #include <string>

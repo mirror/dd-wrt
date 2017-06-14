@@ -130,7 +130,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_winconfig.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: nmap_winconfig.h 36586 2017-02-25 00:47:30Z nnposter $ */
 
 #ifndef NMAP_WINCONFIG_H
 #define NMAP_WINCONFIG_H
@@ -143,6 +143,7 @@
 #define NMAPDATADIR "c:\\nmap" /* FIXME: I really need to make this dynamic */
 
 #define HAVE_OPENSSL 1
+#define HAVE_SSL_SET_TLSEXT_HOST_NAME 1
 
 #define LUA_INCLUDED 1
 #undef PCAP_INCLUDED

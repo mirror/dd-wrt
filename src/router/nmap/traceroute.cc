@@ -176,8 +176,13 @@ individually.
 #include "timing.h"
 #include "NmapOps.h"
 #include "Target.h"
+#include "tcpip.h"
 
 #include "struct_ip.h"
+
+#ifndef IPPROTO_SCTP
+#include "libnetutil/netutil.h"
+#endif
 
 #include <dnet.h>
 

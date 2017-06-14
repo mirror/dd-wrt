@@ -193,7 +193,6 @@ Entry { filename = "http-gitweb-projects-enum.nse", categories = { "discovery", 
 Entry { filename = "http-google-malware.nse", categories = { "discovery", "external", "malware", "safe", } }
 Entry { filename = "http-grep.nse", categories = { "discovery", "safe", } }
 Entry { filename = "http-headers.nse", categories = { "discovery", "safe", } }
-Entry { filename = "http-hsts-verify.nse", categories = { "discovery", "safe", } }
 Entry { filename = "http-huawei-hg5xx-vuln.nse", categories = { "exploit", "vuln", } }
 Entry { filename = "http-icloud-findmyiphone.nse", categories = { "discovery", "external", "safe", } }
 Entry { filename = "http-icloud-sendmsg.nse", categories = { "discovery", "external", "safe", } }
@@ -224,6 +223,7 @@ Entry { filename = "http-rfi-spider.nse", categories = { "intrusive", } }
 Entry { filename = "http-robots.txt.nse", categories = { "default", "discovery", "safe", } }
 Entry { filename = "http-robtex-reverse-ip.nse", categories = { "discovery", "external", "safe", } }
 Entry { filename = "http-robtex-shared-ns.nse", categories = { "discovery", "external", "safe", } }
+Entry { filename = "http-security-headers.nse", categories = { "discovery", "safe", } }
 Entry { filename = "http-server-header.nse", categories = { "version", } }
 Entry { filename = "http-shellshock.nse", categories = { "exploit", "intrusive", "vuln", } }
 Entry { filename = "http-sitemap-generator.nse", categories = { "discovery", "intrusive", } }
@@ -262,6 +262,7 @@ Entry { filename = "http-vuln-cve2014-3704.nse", categories = { "exploit", "intr
 Entry { filename = "http-vuln-cve2014-8877.nse", categories = { "exploit", "intrusive", "vuln", } }
 Entry { filename = "http-vuln-cve2015-1427.nse", categories = { "intrusive", "vuln", } }
 Entry { filename = "http-vuln-cve2015-1635.nse", categories = { "safe", "vuln", } }
+Entry { filename = "http-vuln-cve2017-1001000.nse", categories = { "safe", "vuln", } }
 Entry { filename = "http-vuln-cve2017-5638.nse", categories = { "vuln", } }
 Entry { filename = "http-vuln-cve2017-5689.nse", categories = { "auth", "exploit", "vuln", } }
 Entry { filename = "http-vuln-misfortune-cookie.nse", categories = { "intrusive", "vuln", } }
@@ -462,12 +463,14 @@ Entry { filename = "smb-security-mode.nse", categories = { "default", "discovery
 Entry { filename = "smb-server-stats.nse", categories = { "discovery", "intrusive", } }
 Entry { filename = "smb-system-info.nse", categories = { "discovery", "intrusive", } }
 Entry { filename = "smb-vuln-conficker.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
+Entry { filename = "smb-vuln-cve-2017-7494.nse", categories = { "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-cve2009-3103.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-ms06-025.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-ms07-029.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-ms08-067.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-ms10-054.nse", categories = { "dos", "intrusive", "vuln", } }
 Entry { filename = "smb-vuln-ms10-061.nse", categories = { "intrusive", "vuln", } }
+Entry { filename = "smb-vuln-ms17-010.nse", categories = { "safe", "vuln", } }
 Entry { filename = "smb-vuln-regsvc-dos.nse", categories = { "dos", "exploit", "intrusive", "vuln", } }
 Entry { filename = "smbv2-enabled.nse", categories = { "default", "safe", } }
 Entry { filename = "smtp-brute.nse", categories = { "brute", "intrusive", } }

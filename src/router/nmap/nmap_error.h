@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_error.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: nmap_error.h 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #ifndef NMAP_ERROR_H
 #define NMAP_ERROR_H
@@ -169,6 +169,10 @@ NORETURN void pfatal(const char *err, ...)
      __attribute__ ((format (printf, 1, 2)));
 void gh_perror(const char *err, ...)
      __attribute__ ((format (printf, 1, 2)));
+
+#ifndef HAVE_STRERROR
+char *strerror(int errnum);
+#endif
 
 #ifdef __cplusplus
 }

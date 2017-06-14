@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: Target.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: Target.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"
@@ -140,7 +140,6 @@
 #include <dnet.h>
 #include "nbase.h"
 #include "NmapOps.h"
-#include "utils.h"
 #include "nmap.h"
 #include "nmap_error.h"
 

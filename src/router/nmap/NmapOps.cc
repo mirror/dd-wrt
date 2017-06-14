@@ -128,12 +128,11 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 36489 2016-12-15 21:01:36Z dmiller $ */
+/* $Id: NmapOps.cc 36727 2017-04-19 19:06:47Z dmiller $ */
 #include "nmap.h"
 #include "nbase.h"
 #include "NmapOps.h"
 #include "osscan.h"
-#include "services.h"
 #include "nmap_error.h"
 #ifdef WIN32
 #include "winfix.h"

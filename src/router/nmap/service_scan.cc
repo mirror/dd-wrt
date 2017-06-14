@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: service_scan.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: service_scan.cc 36742 2017-04-26 18:55:16Z dmiller $ */
 
 
 #include "service_scan.h"
@@ -138,7 +138,9 @@
 #include "nsock.h"
 #include "Target.h"
 #include "utils.h"
+#include "nmap_error.h"
 #include "protocols.h"
+#include "scan_lists.h"
 
 #include "nmap_tty.h"
 
@@ -164,6 +166,10 @@
 # else
 #  include <time.h>
 # endif
+#endif
+
+#ifndef IPPROTO_SCTP
+#include "libnetutil/netutil.h"
 #endif
 
 #include <algorithm>
