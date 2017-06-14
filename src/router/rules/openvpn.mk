@@ -27,6 +27,7 @@ endif
 CONFIGURE_ARGS_OVPN += \
 	--host=$(ARCH)-linux \
 	CPPFLAGS="-I$(TOP)/lzo/include -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs" \
+	--prefix=/usr \
 	--disable-selinux \
 	--disable-systemd \
 	--disable-debug \
