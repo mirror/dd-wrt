@@ -4264,6 +4264,36 @@ if (!strcmp(prefix, "wl2"))
 #endif				// end BUFFALO
 	websWrite(wp, "</fieldset>\n");
 	websWrite(wp, "<br />\n");
+
+#ifdef HAVE_ATH9K
+	int inst;
+	char radio_timer[32];
+	sscanf(prefix, "ath%d", &inst);
+	sprintf(radio_timer,"radio%d_timer_enable", inst);
+	websWrite(wp, "<fieldset>\n");
+	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.legend2)</script></legend>\n");
+	websWrite(wp, "<div class=\"setting\">\n");
+	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.radiotimer)</script></div>\n");
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', true)\" />",  inst,nvram_match(radio_timer, "1") ? "checked=\"checked\"" : "",inst);
+	websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp\n");
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', false)\" />", inst,nvram_match(radio_timer, "0") ? "checked=\"checked\"" : "",inst);
+	websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "<div id=\"radio%d\">\n", inst);
+	websWrite(wp, "<table id=\"radio%d_table\"></table>",inst);
+	websWrite(wp, "<br />\n");
+	websWrite(wp, "<div class=\"center\">\n");
+	websWrite(wp, "<script type=\"text/javascript\">\n");
+	websWrite(wp, "//<![CDATA[\n");
+	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"Always On\\\"  onclick=\\\"setWlTimer('all',true, %d);\\\" />\");\n", inst);
+	websWrite(wp, "	document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"Always Off\\\" onclick=\\\"setWlTimer('all',false, %d);\\\" />\");\n", inst);
+	websWrite(wp, "//]]>\n");
+	websWrite(wp, "</script>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</div>\n");
+	websWrite(wp, "</fieldset><br/>\n");
+#endif
+
 #ifdef HAVE_REGISTER
 	if (!iscpe())
 #endif
