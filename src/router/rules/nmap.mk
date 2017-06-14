@@ -8,7 +8,7 @@ nmap-configure:
 		--with-libdnet=included \
 		--with-libpcre=included \
 		--with-libpcap="../libpcap" \
-		--without-liblua \
+		--with-liblua=included \
 		--without-zenmap \
 		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
