@@ -345,21 +345,173 @@ function submitcheck(F) {
 
 function to_submit(F)
 {
-if (submitcheck(F))
-    apply(F);
+    if (submitcheck(F)){
+	
+	<% ifndef("HAVE_ATH9K", "/*"); %>
+	F.radio0_on_time.value = computeWlTimer(0);
+	F.radio1_on_time.value = computeWlTimer(1);
+	<% ifndef("HAVE_ATH9K", "*/"); %>
+	apply(F);
+    }
 }
 function to_apply(F)
 {
-if (submitcheck(F))
-    applytake(F);
+    if (submitcheck(F)){
+	
+	<% ifndef("HAVE_ATH9K", "/*"); %>
+	F.radio0_on_time.value = computeWlTimer(0);
+	F.radio1_on_time.value = computeWlTimer(1);
+	<% ifndef("HAVE_ATH9K", "*/"); %>
+	applytake(F);
+    }
 }
 
+function initWlTimer(radio_on_time, radio )
+{
+	var color_red='#CD0000';
+	var color_green='#228B22';
+	
+	for(var i = 0; i < radio_on_time.length; i++){
+		if(radio_on_time.charAt(i)==1){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+		if(ie4 || op){
+			eval("document.all.td"+ radio + "_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+			eval("document.all.td"+ radio + "_" + i + ".value = '" + val + "'");
+		}
+		if(ns4) {
+			eval("document.td"+ radio + "_" + i + ".backgroundColor = '" + bgcolor + "'");
+			eval("document.td"+ radio + "_" + i + ".value = '" + val + "'");
+		}
+		if(ns6) {
+			eval("document.getElementById('td"+ radio + "_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+			eval("document.getElementById('td"+ radio + "_" + i + "').value = '" + val + "'");
+		}
+	}
+}
+
+function setWlTimer(id, state, radio)
+{
+	var color_red='#CD0000';
+	var color_green='#228B22';
+	
+	if(id=='all'){
+		if(state){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+			
+		for(var i = 0; i < 24; i++) {
+			if(ie4 || op){
+				eval("document.all.td"+ radio + "_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+				eval("document.all.td"+ radio + "_" + i + ".value = '" + val + "'");
+			}
+			if(ns4){
+				eval("document.td"+ radio + "_" + i + ".backgroundColor = '" + bgcolor + "'");
+				eval("document.td"+ radio + "_" + i + ".value = '" + val + "'");
+			}
+			if(ns6){
+				eval("document.getElementById('td"+ radio + "_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+				eval("document.getElementById('td"+ radio + "_" + i + "').value = '" + val + "'");
+			}
+		}
+	} else {
+		if(ie4 || op){
+			if(eval("document.all." + id + ".value")=='1'){
+				eval("document.all." + id + ".style.backgroundColor = '" + color_red + "'");
+				eval("document.all." + id + ".value = '0'");
+			}else{
+				eval("document.all." + id + ".style.backgroundColor = '" + color_green + "'");
+				eval("document.all." + id + ".value = '1'");
+			}
+		}
+		if(ns4){
+			if(eval("document." + id + ".value")=='1'){
+				eval("document." + id + ".backgroundColor = '" + color_red + "'");
+				eval("document." + id + ".value = '0'");
+			}else{
+				eval("document." + id + ".backgroundColor = '" + color_green + "'");
+				eval("document." + id + ".value = '1'");
+			}
+		}
+		if(ns6){
+			if(eval("document.getElementById('" + id + "').value")=='1'){
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_red + "'");
+				eval("document.getElementById('" + id + "').value = '0'");
+			}else{
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_green + "'");
+				eval("document.getElementById('" + id + "').value = '1'");
+			}
+		}
+	}
+}
+
+function computeWlTimer(radio)
+{
+	var radio_on_time='';
+	
+	for(var i = 0; i < 24; i++){
+		if(ie4 || op){
+			radio_on_time+=eval("document.all.td"+ radio + "_" + i + ".value");
+		}
+		if(ns4) {
+			radio_on_time+=eval("document.td"+ radio + "_" + i + ".value");
+		}
+		if(ns6) {
+			radio_on_time+=eval("document.getElementById('td"+ radio + "_" + i + "').value");
+		}
+	}
+
+	return radio_on_time;
+}
+
+function setRadioTable(radio){
+	if(radio){
+		var table = document.getElementById("radio1_table");
+	} else {
+		var table = document.getElementById("radio0_table");
+	}
+	cleanTable(table);
+	
+	var row1 = table.insertRow(-1);
+	var row2 = table.insertRow(-1);
+	row2.style.cursor = "pointer";
+	
+	for(var i = 0; i < 24; i++){
+		
+		var cell_label = row1.insertCell(-1);
+		cell_label.innerHTML = i;
+				
+		var cell_timer = row2.insertCell(-1);
+		cell_timer.style.width = "4%";
+		cell_timer.id = "td"+ radio + "_" + i;
+		cell_timer.title = i + "h - " + eval(i+1) + "h";
+		cell_timer.innerHTML = "&nbsp;";
+		cell_timer.onclick=function(){setWlTimer(this.id, true, radio);};
+
+	}
+}
 
 var update;
 
 addEvent(window, "load", function() {
 	
-<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
+	<% ifndef("HAVE_ATH9K", "/*"); %>
+	setRadioTable(0);
+	setRadioTable(1);
+	initWlTimer('<% nvg("radio0_on_time"); %>',0);
+	initWlTimer('<% nvg("radio1_on_time"); %>',1);
+	show_layer_ext(document.wireless.radio0_timer_enable, 'radio0', <% nvem("radio0_timer_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.wireless.radio1_timer_enable, 'radio1', <% nvem("radio1_timer_enable", "1", "1", "0"); %> == 1);
+	<% ifndef("HAVE_ATH9K", "*/"); %>
+	<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
 	var wl0_mode = "<% nvg("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
 	{
@@ -378,7 +530,7 @@ addEvent(window, "load", function() {
 	    if (wl2_phytype == 'n' || wl2_phytype == 'h' || wl2_phytype == 'v' || wl2_phytype == 's')
 		InitBW2('<% nvg("wl2_nbw"); %>' ,document.wireless);
 	}
-		
+
 	update = new StatusbarUpdate();
 	update.start();
 	
@@ -514,7 +666,8 @@ function initChannelProperties() {
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
 				  	<input type="hidden" name="submit_type" value="save" />
-
+				  	<input type="hidden" name="radio0_on_time">
+				  	<input type="hidden" name="radio1_on_time">
 				  	<input type="hidden" name="wl0_nctrlsb" />
 				  	<input type="hidden" name="wl1_nctrlsb" /> 
 				  	<input type="hidden" name="wl2_nctrlsb" /> 
