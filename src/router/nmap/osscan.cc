@@ -129,15 +129,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: osscan.cc 36727 2017-04-19 19:06:47Z dmiller $ */
 
 #include "osscan.h"
-#include "timing.h"
 #include "NmapOps.h"
-#include "nmap_tty.h"
 #include "charpool.h"
 #include "FingerPrintResults.h"
-#include "Target.h"
 #include "nmap_error.h"
 
 #include <errno.h>

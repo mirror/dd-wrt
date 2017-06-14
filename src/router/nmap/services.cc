@@ -128,9 +128,9 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: services.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: services.cc 36713 2017-04-19 04:14:43Z dmiller $ */
 
-#include "nmap.h"
+#include "scan_lists.h"
 #include "services.h"
 #include "NmapOps.h"
 #include "charpool.h"

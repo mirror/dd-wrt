@@ -129,13 +129,13 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: service_scan.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: service_scan.h 36721 2017-04-19 18:18:38Z dmiller $ */
 
 #ifndef SERVICE_SCAN_H
 #define SERVICE_SCAN_H
 
 #include "portlist.h"
-#include "nmap.h"
+#include "scan_lists.h"
 
 #include <vector>
 
@@ -145,12 +145,17 @@
 # include <pcre.h>
 #endif
 
+#undef NDEBUG
+#include <assert.h>
+
 /**********************  DEFINES/ENUMS ***********************************/
 #define DEFAULT_SERVICEWAITMS 5000
 #define DEFAULT_TCPWRAPPEDMS 2000   // connections closed after this timeout are not considered "tcpwrapped"
 #define DEFAULT_CONNECT_TIMEOUT 5000
 #define DEFAULT_CONNECT_SSL_TIMEOUT 8000  // includes connect() + ssl negotiation
 #define SERVICEMATCH_REGEX 1
+#define MAXFALLBACKS 20 /* How many comma separated fallbacks are allowed in the service-probes file? */
+
 // #define SERVICEMATCH_STATIC 2 -- no longer supported
 
 /**********************  STRUCTURES  ***********************************/

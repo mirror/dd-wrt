@@ -129,14 +129,16 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: osscan2.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include "osscan.h"
 #include "osscan2.h"
 #include "timing.h"
 #include "NmapOps.h"
+#include "tcpip.h"
 #include "Target.h"
 #include "utils.h"
+#include "nmap_error.h"
 #include "FPEngine.h"
 #include "FingerPrintResults.h"
 #include <dnet.h>

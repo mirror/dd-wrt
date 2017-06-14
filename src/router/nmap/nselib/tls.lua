@@ -176,12 +176,15 @@ HashAlgorithms = {
   sha256 = 4,
   sha384 = 5,
   sha512 = 6,
+  intrinsic = 8,
 }
 SignatureAlgorithms = {
   anonymous = 0,
   rsa = 1,
   dsa = 2,
   ecdsa = 3,
+  ed25519 = 7,
+  ed448 = 8,
 }
 
 ---
@@ -212,6 +215,10 @@ EXTENSIONS = {
   ["client_certificate_type"] = 19,
   ["server_certificate_type"] = 20,
   ["padding"] = 21, -- Temporary, expires 2015-03-12
+  ["encrypt_then_mac"] = 22, -- rfc7366
+  ["extended_master_secret"] = 23, -- rfc7627
+  ["token_binding"] = 24, -- Temporary, expires 2018-02-04
+  ["cached_info"] = 25, -- rfc7924
   ["SessionTicket TLS"] = 35,
   ["next_protocol_negotiation"] = 13172,
   ["renegotiation_info"] = 65281,
@@ -1180,6 +1187,20 @@ handshake_parse = {
 
         return b, j
       end,
+
+      NewSessionTicket = function (buffer, j, msg_end, protocol)
+        -- Need 4 bytes for parsing.
+        local have = #buffer - j + 1
+        if have < 4 then
+          return nil, j, 4
+        end
+
+        local b = {}
+        -- Parse body.
+        b.ticket_lifetime_hint, b.ticket, j = unpack(">I4 s2", buffer, j)
+
+        return b, j
+      end,
 }
 
 message_parse = {
@@ -1274,11 +1295,13 @@ end
 ---
 -- Read a SSL/TLS record
 -- @param buffer   The read buffer
--- @param i        The position in the buffer to start reading
+-- @param i        The position in the buffer to start reading (default: 1)
 -- @param fragment Message fragment left over from previous record (nil if none)
 -- @return The current position in the buffer
 -- @return The record that was read, as a table
 function record_read(buffer, i, fragment)
+  i = i or 1
+
   -- Ensure we have enough data for the header.
   if #buffer - i < TLS_RECORD_HEADER_LENGTH then
     return i, nil
@@ -1368,7 +1391,8 @@ end
 -- Build a client_hello message
 --
 -- The options table has the following keys:
--- * <code>"protocol"</code> - The TLS protocol version string
+-- * <code>"protocol"</code> - The TLS protocol version string for the client_hello. This indicates the highest protocol version supported.
+-- * <code>"record_protocol"</code> - The TLS protocol version string for the TLS record. This indicates the lowest protocol version supported.
 -- * <code>"ciphers"</code> - a table containing the cipher suite names. Defaults to the NULL cipher
 -- * <code>"compressors"</code> - a table containing the compressor names. Default: NULL
 -- * <code>"extensions"</code> - a table containing the extension names. Default: no extensions
@@ -1395,7 +1419,8 @@ function client_hello(t)
   table.insert(b, stdnse.generate_random_string(28))
 
   -- Set the session ID.
-  table.insert(b, '\0')
+  local sid = t["session_id"] or ""
+  table.insert(b, pack(">s1", sid))
 
   -- Cipher suites.
   ciphers = {}
@@ -1470,7 +1495,7 @@ function client_hello(t)
   table.insert(h, pack(">s3", b))
 
   -- Record layer version should be SSLv3 (lowest compatible record version)
-  return record_write("handshake", "SSLv3", table.concat(h))
+  return record_write("handshake", t.record_protocol or "SSLv3", table.concat(h))
 end
 
 local function read_atleast(s, n)

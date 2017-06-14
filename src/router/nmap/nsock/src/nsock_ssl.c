@@ -55,7 +55,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_ssl.c 35761 2016-04-04 15:38:44Z dmiller $ */
+/* $Id: nsock_ssl.c 36570 2017-02-07 20:10:02Z dmiller $ */
 
 
 #include "nsock.h"
@@ -84,8 +84,10 @@ extern struct timeval nsock_tod;
 static SSL_CTX *ssl_init_common() {
   SSL_CTX *ctx;
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined LIBRESSL_VERSION_NUMBER
   SSL_load_error_strings();
   SSL_library_init();
+#endif
 
   ctx = SSL_CTX_new(SSLv23_client_method());
   if (!ctx) {

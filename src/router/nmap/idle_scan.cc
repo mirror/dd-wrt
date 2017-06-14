@@ -132,7 +132,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: idle_scan.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: idle_scan.cc 36715 2017-04-19 13:53:57Z dmiller $ */
 
 /* IPv6 fragment ID sequence algorithms. http://seclists.org/nmap-dev/2013/q3/369.
         Android 4.1 (Linux 3.0.15) | Per host, incremental (1)
@@ -164,11 +164,13 @@
 #include "timing.h"
 #include "osscan2.h"
 #include "nmap.h"
+#include "scan_lists.h"
 #include "NmapOps.h"
 #include "services.h"
 #include "Target.h"
 #include "nmap_error.h"
 #include "output.h"
+#include "tcpip.h"
 
 #include "struct_ip.h"
 

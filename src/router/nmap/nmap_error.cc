@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_error.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: nmap_error.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include "nmap_error.h"
 #include "output.h"
@@ -142,6 +142,14 @@ extern NmapOps o;
 #include <windows.h>
 #endif /* WIN32 */
 
+
+#ifndef HAVE_STRERROR
+char *strerror(int errnum) {
+  static char buf[1024];
+  sprintf(buf, "your system is too old for strerror of errno %d\n", errnum);
+  return buf;
+}
+#endif
 
 void fatal(const char *fmt, ...) {
   time_t timep;

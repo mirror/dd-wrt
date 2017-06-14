@@ -128,13 +128,14 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: main.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: main.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 #include <signal.h>
 
 #include "nmap.h"
 #include "NmapOps.h"
 #include "utils.h"
+#include "nmap_error.h"
 
 #ifdef MTRACE
 #include "mcheck.h"

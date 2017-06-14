@@ -129,19 +129,20 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: targets.cc 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: targets.cc 36730 2017-04-20 22:39:08Z dmiller $ */
 
 
 #include "nbase/nbase_addrset.h"
 #include "targets.h"
 #include "timing.h"
+#include "tcpip.h"
 #include "NmapOps.h"
 #include "TargetGroup.h"
 #include "Target.h"
 #include "scan_engine.h"
 #include "nmap_dns.h"
-#include "nmap_tty.h"
 #include "utils.h"
+#include "nmap_error.h"
 #include "xml.h"
 
 extern NmapOps o;

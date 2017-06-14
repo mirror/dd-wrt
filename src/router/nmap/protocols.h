@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: protocols.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: protocols.h 36742 2017-04-26 18:55:16Z dmiller $ */
 
 #ifndef PROTOCOLS_H
 #define PROTOCOLS_H
@@ -137,6 +137,10 @@
 
 #if HAVE_NETDB_H
 #include <netdb.h>
+#endif
+
+#ifndef IPPROTO_SCTP
+#include "libnetutil/netutil.h"
 #endif
 
 #define PROTOCOL_TABLE_SIZE 256
