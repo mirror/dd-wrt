@@ -4269,18 +4269,20 @@ if (!strcmp(prefix, "wl2"))
 	int inst;
 	char radio_timer[32];
 	sscanf(prefix, "ath%d", &inst);
-	sprintf(radio_timer,"radio%d_timer_enable", inst);
+	sprintf(radio_timer, "radio%d_timer_enable", inst);
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(wl_basic.legend2)</script></legend>\n");
 	websWrite(wp, "<div class=\"setting\">\n");
 	websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.radiotimer)</script></div>\n");
-	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', true)\" />",  inst,nvram_match(radio_timer, "1") ? "checked=\"checked\"" : "",inst);
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', true)\" />", inst,
+		  nvram_match(radio_timer, "1") ? "checked=\"checked\"" : "", inst);
 	websWrite(wp, "<script type=\"text/javascript\">Capture(share.enable)</script>&nbsp\n");
-	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', false)\" />", inst,nvram_match(radio_timer, "0") ? "checked=\"checked\"" : "",inst);
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"radio%d_timer_enable\" %s onclick=\"show_layer_ext(this, 'radio%d', false)\" />", inst,
+		  nvram_match(radio_timer, "0") ? "checked=\"checked\"" : "", inst);
 	websWrite(wp, "<script type=\"text/javascript\">Capture(share.disable)</script>\n");
 	websWrite(wp, "</div>\n");
 	websWrite(wp, "<div id=\"radio%d\">\n", inst);
-	websWrite(wp, "<table id=\"radio%d_table\"></table>",inst);
+	websWrite(wp, "<table id=\"radio%d_table\"></table>", inst);
 	websWrite(wp, "<br />\n");
 	websWrite(wp, "<div class=\"center\">\n");
 	websWrite(wp, "<script type=\"text/javascript\">\n");
@@ -4301,7 +4303,43 @@ if (!strcmp(prefix, "wl2"))
 		show_virtualssid(wp, prefix);
 }
 
-void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
+void ej_gen_timer_compute(webs_t wp int argc, char_t ** argv)
+{
+#ifdef HAVE_ATH9K
+	int c = getdevicecount();
+	int i;
+	for (i = 0; i < c; i++) {
+		websWrite(wp, "F.radio%d_on_time.value = computeWlTimer(0);\n", i);
+	}
+#endif
+}
+
+void ej_gen_init_timer(webs_t wp int argc, char_t ** argv)
+{
+
+#ifdef HAVE_ATH9K
+	int c = getdevicecount();
+	int i;
+	for (i = 0; i < c; i++) {
+		websWrite(wp, "setRadioTable(%d):\n", i);
+		websWrite(wp, "initWlTimer('%s',%d);\n", nvram_nget("radio%d_on_time", i), i);
+		websWrite(wp, "show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d", i, i, nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
+	}
+#endif
+}
+
+void ej_gen_timer_fields(webs_t wp int argc, char_t ** argv)
+{
+#ifdef HAVE_ATH9K
+	int c = getdevicecount();
+	int i;
+	for (i = 0; i < c; i++) {
+		websWrite(wp, "<input type=\"hidden\" name=\"radio%d_on_time\">\n", i);
+	}
+#endif
+}
+
+<input type = "hidden" name = "radio0_on_time" > void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	if (!nvram_matchi("nocountrysel", 1)) {
