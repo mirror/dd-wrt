@@ -109,7 +109,7 @@ else
 obj-$(CONFIG_MMC) += mmc-fonera
 endif
 obj-$(CONFIG_ZEROIP) += shat
-obj-$(CONFIG_KAID) += kaid
+#obj-$(CONFIG_KAID) += kaid
 obj-$(CONFIG_ROBOCFG) += robocfg
 obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_UDPXY) += udpxy
