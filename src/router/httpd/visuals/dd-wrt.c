@@ -4303,7 +4303,7 @@ if (!strcmp(prefix, "wl2"))
 		show_virtualssid(wp, prefix);
 }
 
-void ej_gen_timer_compute(webs_t wp int argc, char_t ** argv)
+void ej_gen_timer_compute(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_ATH9K
 	int c = getdevicecount();
@@ -4314,7 +4314,7 @@ void ej_gen_timer_compute(webs_t wp int argc, char_t ** argv)
 #endif
 }
 
-void ej_gen_init_timer(webs_t wp int argc, char_t ** argv)
+void ej_gen_init_timer(webs_t wp, int argc, char_t ** argv)
 {
 
 #ifdef HAVE_ATH9K
@@ -4328,7 +4328,7 @@ void ej_gen_init_timer(webs_t wp int argc, char_t ** argv)
 #endif
 }
 
-void ej_gen_timer_fields(webs_t wp int argc, char_t ** argv)
+void ej_gen_timer_fields(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_ATH9K
 	int c = getdevicecount();
