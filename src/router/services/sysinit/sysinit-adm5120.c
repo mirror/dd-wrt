@@ -227,7 +227,7 @@ void start_sysinit(void)
 		char eabuf[32];
 		char mtdpath[32];
 
-		memset(mac, 0, 6);
+		bzero(mac, 6);
 		FILE *fp;
 		int mtd = getMTD("boot");
 		int foundmac = 0;

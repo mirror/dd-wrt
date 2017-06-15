@@ -376,7 +376,7 @@ static void aqos_tables(void)
 
 	char *qos_devs = nvram_safe_get("svqos_devs");
 	do {
-		memset(proto, 0, sizeof(proto));
+		bzero(proto, sizeof(proto));
 		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
@@ -452,18 +452,18 @@ static void aqos_tables(void)
 	qos_devs = nvram_safe_get("svqos_devs");
 	int oldbase = base;
 	do {
-		memset(proto, 0, sizeof(proto));
+		bzero(proto, sizeof(proto));
 		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
-			memset(proto, 0, sizeof(proto));
+			bzero(proto, sizeof(proto));
 		}
 
-		memset(proto1, 0, sizeof(proto1));
-		memset(proto2, 0, sizeof(proto2));
-		memset(proto3, 0, sizeof(proto3));
-		memset(proto4, 0, sizeof(proto4));
+		bzero(proto1, sizeof(proto1));
+		bzero(proto2, sizeof(proto2));
+		bzero(proto3, sizeof(proto3));
+		bzero(proto4, sizeof(proto4));
 
 		qos_svcs = nvram_safe_get("svqos_svcs");
 		add_client_classes(base, level, level2, level3, prio);
@@ -527,7 +527,7 @@ static void aqos_tables(void)
 	qos_devs = nvram_safe_get("svqos_devs");
 	base = oldbase;
 	do {
-		memset(proto, 0, sizeof(proto));
+		bzero(proto, sizeof(proto));
 		ret = sscanf(qos_devs, "%31s %d %d %d %d %31s |", data, &level, &level2, &level3, &prio, proto);
 		if (ret < 5)
 			break;
@@ -538,7 +538,7 @@ static void aqos_tables(void)
 		sprintf(chainname_out, "FILTER_%s_OUT", data);
 
 		if (!strcmp(proto, "|") || !strcmp(proto, "none")) {
-			memset(proto, 0, sizeof(proto));
+			bzero(proto, sizeof(proto));
 			eval("iptables", "-t", "mangle", "-D", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 			eval("iptables", "-t", "mangle", "-D", chainname_out, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
 			eval("iptables", "-t", "mangle", "-A", chainname_in, "-m", "mark", "--mark", nullmask, "-j", "MARK", "--set-mark", qos_nfmark(base + 3));
@@ -1125,48 +1125,48 @@ void stop_wshaper(void)
 
 	char eths2[512];
 	char eths[512];
-	memset(eths, 0, 512);
-	memset(eths2, 0, 512);
-	memset(eths, 0, 512);
+	bzero(eths, 512);
+	bzero(eths2, 512);
+	bzero(eths, 512);
 	getIfList(eths, "ixp");
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "eth");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "imq");
 
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "ppp");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "tap");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "vlan");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "ath");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "wl");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "ra");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 512);
+	bzero(eths2, 512);
 	getIfList(eths2, "rb");
 	strcat(eths, " ");
 	strcat(eths, eths2);

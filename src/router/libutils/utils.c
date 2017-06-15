@@ -254,7 +254,7 @@ char *getTXQ(char *ifname)
 	if (!txq || strlen(txq) == 0) {
 		int s;
 		struct ifreq ifr;
-		memset(&ifr, 0, sizeof(ifr));
+		bzero(&ifr, sizeof(ifr));
 		if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 			return "0";
 		strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
@@ -587,8 +587,8 @@ char *get_tcfmark(uint32 mark)
 	char nfmark[24];
 	char *ntoken = NULL;
 
-	memset(&tcfmark, 0, sizeof(tcfmark));
-	memset(&nfmark, 0, sizeof(nfmark));
+	bzero(&tcfmark, sizeof(tcfmark));
+	bzero(&nfmark, sizeof(nfmark));
 
 	strcpy(nfmark, qos_nfmark(mark));
 
@@ -4240,7 +4240,7 @@ int check_wan_link(int num)
 					struct ifreq ifr;
 					if ((sock = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
 						break;
-					memset(&ifr, 0, sizeof(struct ifreq));
+					bzero(&ifr, sizeof(struct ifreq));
 					snprintf(ifr.ifr_name, IFNAMSIZ, "iph0");
 					ioctl(sock, SIOCGIFFLAGS, &ifr);
 					if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP))
@@ -4358,7 +4358,7 @@ void *getUEnv(char *name)
 #endif
 //      static char res[64];
 	static char res[256];
-	memset(res, 0, sizeof(res));
+	bzero(res, sizeof(res));
 	//fprintf(stderr,"[u-boot env]%s\n",name);
 #if defined(HAVE_WMBR_G300NH) || defined(HAVE_DIR810L)
 	FILE *fp = fopen("/dev/mtdblock/1", "rb");
@@ -4492,7 +4492,7 @@ int C_led_4702(int i)
 	char string[10];
 	int flg;
 
-	memset(string, 0, 10);
+	bzero(string, 10);
 	/*
 	 * get diag before set 
 	 */
@@ -4507,7 +4507,7 @@ int C_led_4702(int i)
 	else
 		flg = atoi(string) & 0xef;
 
-	memset(string, 0, 10);
+	bzero(string, 10);
 	sprintf(string, "%d", flg);
 	writeprocsys("diag", string);
 
@@ -5177,7 +5177,7 @@ int getIfListB(char *buffer, const char *ifprefix, int bridgesonly, int nosort)
 			}
 			skip = 0;
 			ifcount = 0;
-			memset(ifname, 0, 32);
+			bzero(ifname, 32);
 			skipline(in);
 			continue;
 		}
@@ -7032,7 +7032,7 @@ int file_to_buf(char *path, char *buf, int len)
 {
 	FILE *fp;
 
-	memset(buf, 0, len);
+	bzero(buf, len);
 
 	if ((fp = fopen(path, "r"))) {
 		fgets(buf, len, fp);
@@ -7859,7 +7859,7 @@ static inline void setup_garp_broadcast(struct arph *arp, char *paddr)
 {
 	arp->opcode = htons(ARPOP_BROADCAST);
 
-	memset(arp->dest_add, 0, ETH_ALEN);
+	bzero(arp->dest_add, ETH_ALEN);
 	memcpy(arp->dest_ip, paddr, IP_ALEN);
 }
 
@@ -7910,7 +7910,7 @@ static int send_garp(char *iface)
 		goto out;
 
 	/* set link layer information for driver */
-	memset(&link, 0, sizeof(link));
+	bzero(&link, sizeof(link));
 	link.sll_family = AF_PACKET;
 	link.sll_ifindex = if_nametoindex(iface);
 
@@ -7979,7 +7979,7 @@ static struct NF_MASKS service_masks[] = {
 char *get_NFServiceMark(char *service, uint32 mark)
 {
 	static char buffer[24];
-	memset(&buffer, 0, sizeof(buffer));
+	bzero(&buffer, sizeof(buffer));
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 // no mask support possible in kernel 2.4
@@ -8156,7 +8156,7 @@ u_int64_t freediskSpace(char *path)
 	struct statfs sizefs;
 
 	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368)) {
-		memset(&sizefs, 0, sizeof(sizefs));
+		bzero(&sizefs, sizeof(sizefs));
 	}
 
 	return (u_int64_t)sizefs.f_bsize * (u_int64_t)sizefs.f_bfree;
@@ -8286,7 +8286,7 @@ int isbridge(char *name)
 {
 	char path[64];
 	struct stat st;
-	memset(&st, 0, sizeof(struct stat));
+	bzero(&st, sizeof(struct stat));
 	sprintf(path, "/sys/class/net/%s/bridge", name);
 	return (stat(path, &st) == 0) && (S_ISDIR(st.st_mode));
 
@@ -8318,7 +8318,7 @@ char *getdisc(void)		// works only for squashfs
 		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
 			fclose(in);
 			// filesystem detected
-			memset(ret, 0, 8);
+			bzero(ret, 8);
 			if (strlen(disks[i]) == 4)
 				strncpy(ret, disks[i], 3);
 			else

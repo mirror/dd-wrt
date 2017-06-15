@@ -94,7 +94,7 @@ int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort po
 	do {
 
 		// make sure this interface is capable of MULTICAST...
-		memset(&ifreq, 0, sizeof(ifreq));
+		bzero(&ifreq, sizeof(ifreq));
 		strcpy(ifreq.ifr_name, pif->ifname);
 		if (ioctl(fd, SIOCGIFFLAGS, (int)&ifreq))
 			break;
@@ -106,7 +106,7 @@ int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort po
 		flag = 1;
 		setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&flag, sizeof(flag));
 
-		memset(&mcaddr, 0, sizeof(mcaddr));
+		bzero(&mcaddr, sizeof(mcaddr));
 		// memcpy(&mcaddr.sin_addr, &pif->inaddr, sizeof(mcaddr.sin_addr));
 		mcaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 		mcaddr.sin_family = AF_INET;
@@ -115,12 +115,12 @@ int osl_join_multicast(struct iface *pif, int fd, unsigned int ipaddr, ushort po
 			break;
 
 		// join the multicast group.
-		memset(&ifreq, 0, sizeof(ifreq));
+		bzero(&ifreq, sizeof(ifreq));
 		strcpy(ifreq.ifr_name, pif->ifname);
 		if (ioctl(fd, SIOCGIFINDEX, &ifreq))
 			break;
 
-		memset(&mcreqn, 0, sizeof(mcreqn));
+		bzero(&mcreqn, sizeof(mcreqn));
 		mcreqn.imr_multiaddr.s_addr = ipaddr;
 		// mcreqn.imr_interface.s_addr = mcaddr.sin_addr.s_addr;
 		// if we get to use struct ip_mreqn, delete the previous line and

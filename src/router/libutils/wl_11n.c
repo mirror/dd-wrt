@@ -60,7 +60,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			fprintf(stderr, "unable to get active channel list\n");
 			return NULL;
 		}
-		memset(&achans, 0, sizeof(achans));
+		bzero(&achans, sizeof(achans));
 		for (i = 0; i < chans.ic_nchans; i++) {
 			c = &chans.ic_chans[i];
 			if (isset(active, c->ic_ieee) || allchans)
@@ -214,7 +214,7 @@ int getassoclist_11n(char *ifname, unsigned char *list)
 		mincount = 1;
 		return mincount;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
@@ -271,7 +271,7 @@ int getRssi_11n(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
@@ -290,7 +290,7 @@ int getRssi_11n(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 
@@ -329,7 +329,7 @@ int getUptime_11n(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
@@ -347,7 +347,7 @@ int getUptime_11n(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 
@@ -387,7 +387,7 @@ int getNoise_11n(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
@@ -406,7 +406,7 @@ int getNoise_11n(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 

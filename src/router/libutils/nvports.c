@@ -158,7 +158,7 @@ PORT_ATTRIBS nvGetSwitchPortAttribs(uint portno)
 {
 	PORT_ATTRIBS retval;
 
-	memset(&retval, 0, sizeof(retval));
+	bzero(&retval, sizeof(retval));
 	if (nvExistsPortAttrib("native", portno))
 		retval.native = 1;
 	if (!nvExistsPortAttrib("noan", portno))

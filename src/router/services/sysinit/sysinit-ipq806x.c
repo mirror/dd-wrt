@@ -294,7 +294,7 @@ void start_bootprimary(void)
 void *get_deviceinfo(char *var)
 {
 	static char res[256];
-	memset(res, 0, sizeof(res));
+	bzero(res, sizeof(res));
 	FILE *fp = fopen("/dev/mtdblock/12", "rb");
 	if (!fp)
 		return NULL;
@@ -320,7 +320,7 @@ void *get_deviceinfo(char *var)
 void *get_deviceinfo_g10(char *var)
 {
 	static char res[256];
-	memset(res, 0, sizeof(res));
+	bzero(res, sizeof(res));
 	FILE *fp = fopen("/dev/mtdblock/9", "rb");
 	if (!fp)
 		return NULL;
@@ -358,7 +358,7 @@ static void setasrockcountry(void)
 	fread(buf, 1, 18, fp);
 	pclose(fp);
 	buf[strlen(defstr) + 2] = 0;
-	memset(c, 0, sizeof(c));
+	bzero(c, sizeof(c));
 	strncpy(c, &buf[strlen(defstr)], 2);
 //      fprintf(stderr,"isostr %s\n",buf);
 	fprintf(stderr, "iso %s\n", c);

@@ -258,7 +258,7 @@ int getNoise_mac80211(char *interface)
 	struct nl_msg *msg;
 	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
-	memset(&mac80211_info, 0, sizeof(mac80211_info));
+	bzero(&mac80211_info, sizeof(mac80211_info));
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
@@ -433,7 +433,7 @@ int getFrequency_mac80211(char *interface)
 	struct nl_msg *msg;
 	struct mac80211_info mac80211_info;
 	int wdev = if_nametoindex(interface);
-	memset(&mac80211_info, 0, sizeof(mac80211_info));
+	bzero(&mac80211_info, sizeof(mac80211_info));
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, &mac80211_info);

@@ -92,7 +92,7 @@ static void setdlinkcountry(void)
 	fread(buf, 1, 27, fp);
 	pclose(fp);
 	buf[27] = 0;
-	memset(c, 0, sizeof(c));
+	bzero(c, sizeof(c));
 	strncpy(c, &buf[12], 2);
 	if (!strlen(c))
 		return;

@@ -83,7 +83,7 @@ bool get_autofw_port(int which, netconf_app_t * app)
 	char *out_proto, *out_start, *out_end, *in_proto, *in_start, *in_end, *to_start, *to_end;
 	char *enable, *desc;
 
-	memset(app, 0, sizeof(netconf_app_t));
+	bzero(app, sizeof(netconf_app_t));
 
 	/*
 	 * Parse
@@ -364,7 +364,7 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 	char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
 	char *enable, *desc;
 
-	memset(nat, 0, sizeof(netconf_nat_t));
+	bzero(nat, sizeof(netconf_nat_t));
 
 	/*
 	 * Parse

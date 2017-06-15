@@ -60,7 +60,7 @@ static void ipv6netmask(unsigned prefix_length, struct sockaddr_in6 *sa)
 	unsigned bits = prefix_length % 8;
 	unsigned nullbytes = 16 - onebytes;
 	memset(hb, -1, onebytes);
-	memset(hb + onebytes, 0, nullbytes);
+	bzero(hb + onebytes, nullbytes);
 	if (bits) {
 		unsigned char x = -1;
 		x <<= 8 - bits;

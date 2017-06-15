@@ -415,7 +415,7 @@ void *FAST_FUNC md5_end(void *resbuf, md5_ctx_t * ctx)
 	/* Pad data to block size.  */
 
 	buf[ctx->buflen++] = 0x80;
-	memset(buf + ctx->buflen, 0, 128 - ctx->buflen);
+	bzero(buf + ctx->buflen, 128 - ctx->buflen);
 
 	/* Put the 64-bit file length in *bits* at the end of the buffer.  */
 	ctx->total <<= 3;

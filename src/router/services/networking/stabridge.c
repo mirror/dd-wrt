@@ -54,7 +54,7 @@ void start_stabridge(void)
 			//sprintf(debug_string, " -dd >/tmp/%s_relayd.log 2>&1", getWET());
 			sprintf(debug_string, " -dd 2>&1 |/usr/bin/logger");
 		} else {
-			memset(debug_string, 0, sizeof(debug_string));
+			bzero(debug_string, sizeof(debug_string));
 		}
 		if (nvram_matchi(label, 0)) {
 			sprintf(label, "%s_relayd_gw_ipaddr", getWET());

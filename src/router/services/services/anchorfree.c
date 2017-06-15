@@ -118,7 +118,7 @@ void start_anchorfree(void)
 		char devid[256];
 
 		if (nvram_get("af_hash") == NULL) {
-			memset(devid, 0, 256);
+			bzero(devid, 256);
 			deviceID(devid);
 			nvram_set("af_hash", devid);
 			nvram_commit();
@@ -285,7 +285,7 @@ void start_anchorfree(void)
 			nvram_commit();
 			return;
 		}
-		memset(status, 0, 32);
+		bzero(status, 32);
 		fscanf(response, "sid: %s\n", status);
 		if (r != 1) {
 			fprintf(stderr, "registration failed (bad sid)\n");
@@ -297,10 +297,10 @@ void start_anchorfree(void)
 		}
 		fprintf(stderr, "configuring service id %s\n", status);
 		nvram_set("af_serviceid", status);
-		memset(status, 0, 32);
+		bzero(status, 32);
 		fscanf(response, "host: %s\n", status);
 		nvram_set("af_dnathost", status);
-		memset(status, 0, 32);
+		bzero(status, 32);
 		fscanf(response, "port: %s\n", status);
 		nvram_set("af_dnatport", status);
 		fclose(response);
