@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.29 Kernel Configuration
+# Linux/mips 4.9.32 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -2002,7 +2002,7 @@ CONFIG_VFAT_FS=m
 CONFIG_FAT_DEFAULT_CODEPAGE=437
 CONFIG_FAT_DEFAULT_IOCHARSET="iso8859-1"
 # CONFIG_FAT_DEFAULT_UTF8 is not set
- 
+# CONFIG_EXFAT_FS is not set
 # CONFIG_NTFS_FS is not set
 
 #

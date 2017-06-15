@@ -976,7 +976,12 @@ static int al_nand_probe(struct platform_device *pdev)
 		mtd->oobsize,
 		dev_ext_props.eccIsEnabled,
 		(nand_dat->ecc_config.spareAreaOffset - dev_ext_props.pageSize));
-
+	ret = mtd_ooblayout_count_freebytes(mtd);
+	printk(KERN_INFO "oobavail %d\n",ret);
+	if (ret < 0)
+		ret = 0;
+	
+	mtd->oobavail = ret;
 	if (0 != al_nand_dev_config(
 				&nand_dat->nand_obj,
 				&device_properties,

@@ -6,6 +6,9 @@ do
     cp $i .config
     sed -i 's/\CONFIG_EXFAT_FS=m/ /g' .config	    
     echo "# CONFIG_EXFAT_FS is not set" >> .config
+    sed -i 's/\CONFIG_IP_VS=m/# CONFIG_IP_VS is not set/g' .config	    
+    sed -i 's/\CONFIG_USBIP_CORE=m/# CONFIG_USBIP_CORE is not set/g' .config	    
+
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
@@ -136,6 +139,5 @@ do
 	    sed -i 's/\CONFIG_AP120C=y/ /g' .config	    
 	    sed -i 's/\CONFIG_WILLY=y/ /g' .config	    
     fi
-    sed -i 's/\# CONFIG_EXFAT_FS is not set/ /g' .config	    
     cp .config $i
 done
