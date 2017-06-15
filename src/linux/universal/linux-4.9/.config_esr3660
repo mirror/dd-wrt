@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.29 Kernel Configuration
+# Linux/mips 4.9.32 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1967,7 +1967,7 @@ CONFIG_FUSE_FS=m
 #
 # CONFIG_MSDOS_FS is not set
 # CONFIG_VFAT_FS is not set
- 
+# CONFIG_EXFAT_FS is not set
 # CONFIG_NTFS_FS is not set
 
 #
