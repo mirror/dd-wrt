@@ -130,6 +130,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <pthreadcc.h>
+#include <sys/select.h>
 
 extern "C++"
 {
