@@ -111,7 +111,7 @@ int find_each(char *name, int len, char *data, char *token, int which, char *def
 	int maxlen;
 	char *str;
 
-	memset(name, 0, len);
+	bzero(name, len);
 
 	for (i = 0;; i++) {
 		str = strstr(data, token);

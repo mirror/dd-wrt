@@ -28,9 +28,9 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 	char *next, *wordlist;
 
-	memset(buffer, 0, 256);
-	memset(bondnames, 0, 256);
-	memset(bufferif, 0, 512);
+	bzero(buffer, 256);
+	bzero(bondnames, 256);
+	bzero(bufferif, 512);
 	websWrite(wp, "<h2><script type=\"text/javascript\">Capture(networking.bonding)</script></h2>\n");
 	websWrite(wp, "<fieldset>\n");
 	websWrite(wp, "<legend><script type=\"text/javascript\">Capture(networking.bonding)</script></legend>\n");
@@ -45,17 +45,17 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 #ifdef HAVE_XSCALE
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, "ixp");
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 #endif
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfListB(buffer, NULL, 1, 1);
 	strcat(bufferif, " ");
 	strcat(bufferif, buffer);
 
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, "vlan");
 
 	strcat(bufferif, " ");

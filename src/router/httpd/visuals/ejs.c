@@ -1295,19 +1295,19 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	show_bwif(wp, nvram_safe_get("lan_ifname"), "LAN");
-	memset(eths, 0, sizeof(eths));
+	bzero(eths, sizeof(eths));
 	getIfLists(eths, sizeof(eths));
 	//add ppp interfacs
-	memset(eths2, 0, sizeof(eths2));
+	bzero(eths2, sizeof(eths2));
 	getIfList(eths2, "ppp");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 	//add tun interfaces
-	memset(eths2, 0, sizeof(eths2));
+	bzero(eths2, sizeof(eths2));
 	getIfList(eths2, "tun");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(bufferif, 0, 256);
+	bzero(bufferif, 256);
 	getIfListB(bufferif, NULL, 1, 1);
 
 #ifndef HAVE_MADWIFI

@@ -71,12 +71,12 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 	if (!ifname)
 		ifname = "br0";
 	strcpy(ifnamecopy, ifname);
-	memset(bufferif, 0, 512);
+	bzero(bufferif, 512);
 	getIfList(bufferif, NULL);
 	websWrite(wp, "<option value=\"lan\" %s >LAN &amp; WLAN</option>\n", nvram_match("lan_ifname", ifname) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"wan\" %s >WAN</option>\n", nvram_match("wan_ifname", ifname) ? "selected=\"selected\"" : "");
 	websWrite(wp, "<option value=\"any\" %s >ANY</option>\n", strcmp("any", ifnamecopy) == 0 ? "selected=\"selected\"" : "");
-	memset(word, 0, 256);
+	bzero(word, 256);
 	next = NULL;
 	foreach(word, bufferif, next) {
 		if (nvram_match("lan_ifname", word))

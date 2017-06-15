@@ -9,7 +9,7 @@ void ej_show_mdhcp(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "<h2>%s</h2>\n<fieldset>\n", tran_string(buf, "networking.h5"));
 	websWrite(wp, "<legend>%s</legend>\n", tran_string(buf, "networking.legend5"));
 
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("mdhcpd_count", 0);
