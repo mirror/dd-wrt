@@ -3650,12 +3650,6 @@ static void save_prefix(webs_t wp, char *prefix)
 	}
 	copytonv(wp, "wl_regdomain");
 #endif
-#ifdef HAVE_ATH9K
-	copytonv(wp, "radio0_timer_enable");
-	copytonv(wp, "radio1_timer_enable");
-	copytonv(wp, "radio0_on_time");
-	copytonv(wp, "radio1_on_time");
-#endif
 }
 
 void wireless_join(webs_t wp)
@@ -3712,6 +3706,10 @@ void wireless_save(webs_t wp)
 		foreach(var, vifs, next) {
 			save_prefix(wp, var);
 		}
+#ifdef HAVE_ATH9K
+		copytonv(wp, "radio%d_timer_enable", i);
+		copytonv(wp, "radio%d_on_time", i);
+#endif
 	}
 
 #ifdef HAVE_ERC
