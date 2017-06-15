@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.29 Kernel Configuration
+# Linux/arm 4.9.32 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -1938,12 +1938,7 @@ CONFIG_USB_STORAGE=m
 #
 # CONFIG_USB_MDC800 is not set
 # CONFIG_USB_MICROTEK is not set
-CONFIG_USBIP_CORE=m
-CONFIG_USBIP_VHCI_HCD=m
-CONFIG_USBIP_VHCI_HC_PORTS=8
-CONFIG_USBIP_VHCI_NR_HCS=1
-CONFIG_USBIP_HOST=m
-# CONFIG_USBIP_DEBUG is not set
+# CONFIG_USBIP_CORE is not set
 # CONFIG_USB_MUSB_HDRC is not set
 # CONFIG_USB_DWC3 is not set
 # CONFIG_USB_DWC2 is not set
@@ -2239,7 +2234,7 @@ CONFIG_VFAT_FS=m
 CONFIG_FAT_DEFAULT_CODEPAGE=437
 CONFIG_FAT_DEFAULT_IOCHARSET="iso8859-1"
 # CONFIG_FAT_DEFAULT_UTF8 is not set
- 
+# CONFIG_EXFAT_FS is not set
 # CONFIG_NTFS_FS is not set
 
 #
