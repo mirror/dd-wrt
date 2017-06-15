@@ -37,7 +37,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 
 	if (strlen(wanifname) == 0)
 		wanifname = nvram_safe_get("wan_ifname");
-	memset(eths, 0, 256);
+	bzero(eths, 256);
 	getIfLists(eths, 256);
 	if (strlen(wanifname) > 0) {
 
@@ -51,7 +51,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, "</select></div>\n");
 	}
-	memset(bufferif, 0, 256);
+	bzero(bufferif, 256);
 	getIfListB(bufferif, NULL, 1, 1);
 	foreach(var, eths, next) {
 		int isbridge = 0;
@@ -169,7 +169,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>ZCM Bridge</div>\n");
 			websWrite(wp, "<select name=\"nld_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
-			memset(bufferif, 0, 256);
+			bzero(bufferif, 256);
 			getIfListB(bufferif, NULL, 1, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {
@@ -197,7 +197,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">/*Capture(idx.wanport)*/</script>L2Mesh Bridge</div>\n");
 			websWrite(wp, "<select name=\"bat_%s_bridge\">\n", var);
 			websWrite(wp, "  <option value=\"\">none</option>\n");
-			memset(bufferif, 0, 256);
+			bzero(bufferif, 256);
 			getIfListB(bufferif, NULL, 1, 1);
 			foreach(word, bufferif, next) {
 				// if( strcmp( word, "br0" ) ) {

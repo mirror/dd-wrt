@@ -1233,10 +1233,10 @@ void ej_show_usb_diskinfo(webs_t wp, int argc, char_t ** argv)
 	if ((fp = popen("df -P -h | grep -v proftpd | awk '{ print $3 \" \" $4 \" \" $5 \" \" $6}' | tail -n +3", "rb"))) {
 		while (!feof(fp) && fgets(line, sizeof(line), fp)) {
 			if (strlen(line) > 2) {
-				memset(used, 0, sizeof(used));
-				memset(avail, 0, sizeof(avail));
-				memset(per, 0, sizeof(per));
-				memset(mp, 0, sizeof(mp));
+				bzero(used, sizeof(used));
+				bzero(avail, sizeof(avail));
+				bzero(per, sizeof(per));
+				bzero(mp, sizeof(mp));
 				if (sscanf(line, "%s %s %s %s", used, avail, per, mp) == 4) {
 					if (!strncmp(mp, "/dev", 4))
 						continue;
@@ -5554,7 +5554,7 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 
 	if ((statfs(argv[0], &sizefs) != 0)
 	    || (sizefs.f_type == 0x73717368))
-		memset(&sizefs, 0, sizeof(sizefs));
+		bzero(&sizefs, sizeof(sizefs));
 
 	websWrite(wp, "var %s = {\nfree: %llu,\nused: %llu,\nsize: %llu\n};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_bfree), ((uint64_t) sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)),
 		  ((uint64_t) sizefs.f_bsize * sizefs.f_blocks));
@@ -5674,8 +5674,8 @@ void ej_show_dnscrypt(webs_t wp, int argc, char_t ** argv)
 				continue;
 			}
 			int i;
-			memset(fname, 0, sizeof(fname));
-			memset(name, 0, sizeof(name));
+			bzero(fname, sizeof(fname));
+			bzero(name, sizeof(name));
 
 			for (i = 0; i < sizeof(name); i++) {
 				if (line[i] == ',')
@@ -5750,9 +5750,9 @@ void ej_show_ifselect(webs_t wp, int argc, char_t ** argv)
 	char var[80];
 	char eths[256];
 	char eth2[256];
-	memset(eths, 0, 256);
+	bzero(eths, 256);
 	getIfLists(eths, 256);
-	memset(eth2, 0, 256);
+	bzero(eth2, 256);
 	getIfList(eth2, "ppp");
 	strcat(eths, " ");
 	strcat(eths, eth2);
@@ -5775,7 +5775,7 @@ void ej_show_iflist(webs_t wp, int argc, char_t ** argv)
 	char *next;
 	char var[80];
 	char buffer[256];
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 
 	foreach(var, buffer, next) {

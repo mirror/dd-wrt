@@ -163,7 +163,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 	int listen_fd;
 	int i;
 
-	memset(usaP, 0, sizeof(usockaddr));
+	bzero(usaP, sizeof(usockaddr));
 	usaP->sa.sa_family = AF_INET;
 	usaP->sa_in.sin_addr.s_addr = htonl(INADDR_ANY);
 	usaP->sa_in.sin_port = htons(server_port);
@@ -1017,7 +1017,7 @@ static void *handle_request(void *arg)
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
 //      fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
-	memset(conn_fp, 0, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
+	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);
 #ifndef HAVE_MICRO
@@ -1074,7 +1074,7 @@ static void set_sigchld_handler(void)
 {
 	struct sigaction act;
 
-	memset(&act, 0, sizeof(act));
+	bzero(&act, sizeof(act));
 	act.sa_handler = sigchld;
 	sigaction(SIGCHLD, &act, 0);
 }
@@ -1283,8 +1283,8 @@ int main(int argc, char **argv)
 			fprintf(stderr, " failed\n  ! ctr_drbg_init returned %d\n", ret);
 		}
 
-		memset(&ssl, 0, sizeof(ssl));
-		memset(&srvcert, 0, sizeof(x509_crt));
+		bzero(&ssl, sizeof(ssl));
+		bzero(&srvcert, sizeof(x509_crt));
 		x509_crt_init(&srvcert);
 		ret = x509_crt_parse_file(&srvcert, CERT_FILE);
 		if (ret != 0) {
@@ -1346,7 +1346,7 @@ int main(int argc, char **argv)
 			ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 			continue;
 		}
-		memset(conn_fp, 0, sizeof(webs));
+		bzero(conn_fp, sizeof(webs));
 
 		if ((conn_fp->conn_fd = accept(listen_fd, &usa.sa, &sz)) < 0) {
 			perror("accept");

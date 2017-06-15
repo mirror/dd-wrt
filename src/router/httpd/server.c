@@ -10,7 +10,7 @@ int tcp_listen()
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		err_exit("Couldn't make socket");
 
-	memset(&sin, 0, sizeof(sin));
+	bzero(&sin, sizeof(sin));
 	sin.sin_addr.s_addr = INADDR_ANY;
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(PORT);

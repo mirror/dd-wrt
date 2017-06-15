@@ -24,8 +24,8 @@ static char *UPTIME(int uptime)
 	int days, minutes;
 	static char str[64] = { 0 };
 	char str2[64] = { 0 };
-	memset(str, 0, 64);
-	memset(str2, 0, 64);
+	bzero(str, 64);
+	bzero(str2, 64);
 	days = uptime / (60 * 60 * 24);
 	if (days)
 		sprintf(str2, "%d day%s, ", days, (days == 1 ? "" : "s"));

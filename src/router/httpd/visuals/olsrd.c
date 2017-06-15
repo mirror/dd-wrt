@@ -125,7 +125,7 @@ void ej_show_olsrd(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(route.olsrd_newiface)</script></div>\n");
 		char buffer[256];
 
-		memset(buffer, 0, 256);
+		bzero(buffer, 256);
 		getIfList(buffer, NULL);
 		showIfOptions(wp, "olsrd_ifname", buffer, "");
 		websWrite(wp, "&nbsp;&nbsp;");

@@ -30,7 +30,7 @@ void ej_show_bridgenames(webs_t wp, int argc, char_t ** argv)
 	char *bridge, *prio, *mtu, *mcast, *mac;
 	char bridge_name[32];
 
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 	int realcount = nvram_default_geti("bridges_count", 0);
 
@@ -237,8 +237,8 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	int c = 0;
 	char word[256];
 	char *next, *wordlist;
-	memset(bufferif, 0, 512);
-	memset(finalbuffer, 0, 512);
+	bzero(bufferif, 512);
+	bzero(finalbuffer, 512);
 	getIfList(bufferif, NULL);
 	foreach(word, bufferif, next) {
 		if (!isbridge(word) && strcmp(word, "lo") && !contains(word, ':')) {
@@ -249,7 +249,7 @@ void ej_show_bridgeifnames(webs_t wp, int argc, char_t ** argv)
 	strcpy(bufferif, finalbuffer);
 	int i;
 
-	memset(finalbuffer, 0, 512);
+	bzero(finalbuffer, 512);
 	getIfListB(finalbuffer, NULL, 1, 1);
 	char *checkbuffer = calloc(strlen(finalbuffer) + 6, 1);
 	strcpy(checkbuffer, "none ");
