@@ -1716,7 +1716,7 @@ void getIPFromName(char *name, char *ip)
 				break;
 		}
 		res_init();
-		bzero(&hint[11], sizeof(hint));
+		bzero(&hint, sizeof(hint));
 		hint.ai_family = AF_INET;
 		hint.ai_socktype = SOCK_STREAM;
 		hint.ai_flags = DIE_ON_ERROR;
