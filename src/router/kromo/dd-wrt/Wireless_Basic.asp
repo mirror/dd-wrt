@@ -339,29 +339,20 @@ function submitcheck(F) {
 	}
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
+	<% gen_timer_compute() %>
 	return true;
 }
 
 
 function to_submit(F)
 {
-    if (submitcheck(F)){
-	
-	<% ifndef("HAVE_ATH9K", "/*"); %>
-	F.radio0_on_time.value = computeWlTimer(0);
-	F.radio1_on_time.value = computeWlTimer(1);
-	<% ifndef("HAVE_ATH9K", "*/"); %>
+    if (submitcheck(F)){	
 	apply(F);
     }
 }
 function to_apply(F)
 {
     if (submitcheck(F)){
-	
-	<% ifndef("HAVE_ATH9K", "/*"); %>
-	F.radio0_on_time.value = computeWlTimer(0);
-	F.radio1_on_time.value = computeWlTimer(1);
-	<% ifndef("HAVE_ATH9K", "*/"); %>
 	applytake(F);
     }
 }
@@ -503,14 +494,7 @@ var update;
 
 addEvent(window, "load", function() {
 	
-	<% ifndef("HAVE_ATH9K", "/*"); %>
-	setRadioTable(0);
-	setRadioTable(1);
-	initWlTimer('<% nvg("radio0_on_time"); %>',0);
-	initWlTimer('<% nvg("radio1_on_time"); %>',1);
-	show_layer_ext(document.wireless.radio0_timer_enable, 'radio0', <% nvem("radio0_timer_enable", "1", "1", "0"); %> == 1);
-	show_layer_ext(document.wireless.radio1_timer_enable, 'radio1', <% nvem("radio1_timer_enable", "1", "1", "0"); %> == 1);
-	<% ifndef("HAVE_ATH9K", "*/"); %>
+	<% gen_init_timer(); %>
 	<% ifdef("HAVE_ATH9K", "initChannelProperties();"); %>
 	var wl0_mode = "<% nvg("wl0_mode"); %>";
 	   if (wl0_mode=="ap" || wl0_mode=="infra")
@@ -666,8 +650,7 @@ function initChannelProperties() {
 				  	<input type="hidden" name="action" value="Apply" />
 				  	<input type="hidden" name="change_action" value="gozila_cgi" />
 				  	<input type="hidden" name="submit_type" value="save" />
-				  	<input type="hidden" name="radio0_on_time">
-				  	<input type="hidden" name="radio1_on_time">
+					<% gen_timer_fields(); %>
 				  	<input type="hidden" name="wl0_nctrlsb" />
 				  	<input type="hidden" name="wl1_nctrlsb" /> 
 				  	<input type="hidden" name="wl2_nctrlsb" /> 
