@@ -992,7 +992,7 @@ char *getCountryList(void)
 		}
 		count++;
 		countries = safe_malloc(count);
-		memset(countries, 0, count);
+		bzero(countries, count);
 		for (i = 0; i < N(allCountries); i++) {
 #ifdef HAVE_BUFFALO
 			sprintf(country, "%s", allCountries[i].isoName);

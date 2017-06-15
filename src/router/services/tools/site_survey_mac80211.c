@@ -593,7 +593,7 @@ static int print_bss_handler(struct nl_msg *msg, void *arg)
 	};
 	struct scan_params *params = arg;
 	rate_count = 0;
-	memset(site_survey_lists[sscount].ENCINFO, 0, 128);
+	bzero(site_survey_lists[sscount].ENCINFO, 128);
 	int show = params->show_both_ie_sets ? 2 : 1;
 
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
@@ -1473,7 +1473,7 @@ void mac80211_scan(char *interface)
 	int wdev;
 	wdev = if_nametoindex(interface);
 	lgetnoise(wdev);
-	memset(&scan_params, 0, sizeof(scan_params));
+	bzero(&scan_params, sizeof(scan_params));
 	scan_params.type = PRINT_SCAN;
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SCAN, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);

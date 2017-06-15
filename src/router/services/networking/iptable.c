@@ -157,7 +157,7 @@ char *range(char *start, char *end, char *range_buf)
 
 	cprintf("start=[%s] end=[%s]\n", start, end);
 
-	memset(range_buf, 0, 1024);
+	bzero(range_buf, 1024);
 
 	retcount = sscanf(start, "%u.%u.%u.%u", &startip[0], &startip[1], &startip[2], &startip[3]);
 

@@ -1100,7 +1100,7 @@ struct wl_assoc_mac *get_wl_assoc_mac(int instance, int *c)
 
 				wlmac = realloc(wlmac, sizeof(struct wl_assoc_mac) * (count + 1));
 
-				memset(&wlmac[count], 0, sizeof(struct wl_assoc_mac));
+				bzero(&wlmac[count], sizeof(struct wl_assoc_mac));
 				strncpy(wlmac[count].mac, list[1], sizeof(wlmac[0].mac));
 				count++;
 			}
@@ -1241,7 +1241,7 @@ int wds_dev_config(int dev, int up)
 	fp = fopen("/tmp/.wds_debug.log", "a");
 #endif
 
-	memset(&ifr, 0, sizeof(struct ifreq));
+	bzero(&ifr, sizeof(struct ifreq));
 
 	snprintf(wds_var, 31, "wl_wds%d", dev);
 	snprintf(wds_enable_var, 31, "%s_enable", wds_var);
@@ -1449,7 +1449,7 @@ int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char 
 	/*
 	 * Fill in rtentry 
 	 */
-	memset(&rt, 0, sizeof(rt));
+	bzero(&rt, sizeof(rt));
 	if (dst)
 		inet_aton(dst, &sin_addr(&rt.rt_dst));
 	if (gateway)
@@ -1502,8 +1502,8 @@ void getIfLists(char *eths, int size)
 {
 	char eths2[256];
 
-	memset(eths, 0, size);
-	memset(eths2, 0, 256);
+	bzero(eths, size);
+	bzero(eths2, 256);
 #ifdef HAVE_XSCALE
 	getIfList(eths, "ixp");
 	getIfList(eths2, "eth");
@@ -1512,46 +1512,46 @@ void getIfLists(char *eths, int size)
 #else
 	getIfList(eths, "eth");
 #endif
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "vlan");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #ifdef HAVE_MADWIFI
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "ath");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #elif defined(HAVE_RT2880) || defined(HAVE_RT61)
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "ra");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "apcli");
 	strcat(eths, " ");
 	strcat(eths, eths2);
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "wds");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #else
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "wl");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #endif
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "br");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "oet");
 	strcat(eths, " ");
 	strcat(eths, eths2);
 #ifdef HAVE_WAVESAT
-	memset(eths2, 0, 256);
+	bzero(eths2, 256);
 	getIfList(eths2, "ofdm");
 	strcat(eths, " ");
 	strcat(eths, eths2);
@@ -1716,7 +1716,7 @@ void getIPFromName(char *name, char *ip)
 				break;
 		}
 		res_init();
-		memset(&hint, 0, sizeof(hint));
+		bzero(&hint[11], sizeof(hint));
 		hint.ai_family = AF_INET;
 		hint.ai_socktype = SOCK_STREAM;
 		hint.ai_flags = DIE_ON_ERROR;

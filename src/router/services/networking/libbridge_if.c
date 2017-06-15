@@ -44,7 +44,7 @@ static int old_foreach_port(const char *brname, int (*iterator) (const char *br,
 		(unsigned long)ifindices, MAX_PORTS, 0
 	};
 
-	memset(ifindices, 0, sizeof(ifindices));
+	bzero(ifindices, sizeof(ifindices));
 	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
 	ifr.ifr_data = (char *)&args;
 
@@ -331,7 +331,7 @@ static int get_portno(const char *brname, const char *ifname)
 	if (ifindex <= 0)
 		goto error;
 
-	memset(ifindices, 0, sizeof(ifindices));
+	bzero(ifindices, sizeof(ifindices));
 	strncpy(ifr.ifr_name, brname, IFNAMSIZ);
 	ifr.ifr_data = (char *)&args;
 
@@ -439,7 +439,7 @@ static int old_get_bridge_info(const char *bridge, struct bridge_info *info)
 		(unsigned long)&i, 0, 0
 	};
 
-	memset(info, 0, sizeof(*info));
+	bzero(info, sizeof(*info));
 	strncpy(ifr.ifr_name, bridge, IFNAMSIZ);
 	ifr.ifr_data = (char *)&args;
 
@@ -496,7 +496,7 @@ static int br_get_bridge_info(const char *bridge, struct bridge_info *info)
 		goto fallback;
 	}
 
-	memset(info, 0, sizeof(*info));
+	bzero(info, sizeof(*info));
 	fetch_id(dev, BRIDGEATTR("root_id"), &info->designated_root);
 	fetch_id(dev, BRIDGEATTR("bridge_id"), &info->bridge_id);
 	info->root_path_cost = fetch_int(dev, BRIDGEATTR("root_path_cost"));

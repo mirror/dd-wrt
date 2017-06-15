@@ -29,7 +29,7 @@
 #define __USE_GNU
 
 #include <stdlib.h>		// for malloc, free, etc.
-#include <string.h>		// for memset, strncasecmp, etc.
+#include <string.h>		// for bzero, strncasecmp, etc.
 #include <assert.h>		// for assert, of course.
 #include <signal.h>		// for sigemptyset, etc.
 #include <stdio.h>		// for printf, etc.
@@ -151,7 +151,7 @@ void init_event_queue(int n)
 	tv.it_value.tv_sec = 0;
 	tv.it_value.tv_usec = 0;
 	setitimer(ITIMER_REAL, &tv, 0);
-	memset(&tv_empty, 0, sizeof(tv_empty));
+	bzero(&tv_empty, sizeof(tv_empty));
 	setitimer(ITIMER_REAL, &tv_empty, &tv);
 	g_granularity = tv.it_interval.tv_usec;
 	if (g_granularity < 1)

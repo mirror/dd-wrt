@@ -939,7 +939,7 @@ void configure_single_11n(int count)
 	sprintf(ssid, "ath%d_ssid", count);
 	sprintf(broadcast, "ath%d_closed", count);
 
-	memset(var, 0, 80);
+	bzero(var, 80);
 
 	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT

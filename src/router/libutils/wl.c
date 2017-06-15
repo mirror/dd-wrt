@@ -244,7 +244,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	struct iwreq wrq;
 	int freq;
 
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
+	(void)bzero(&wrq, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
@@ -270,7 +270,7 @@ long long wifi_getrate(char *ifname)
 {
 	struct iwreq wrq;
 
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
+	(void)bzero(&wrq, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWRATE, &wrq);
 	closesocket();
@@ -400,7 +400,7 @@ STAINFO *getRaStaInfo(char *ifname)
 		return NULL;
 	}
 	if (G_bRadio && ConnectStatus == 1) {
-		memset(&BssidQuery, 0x00, sizeof(BssidQuery));
+		bzero(&BssidQuery, sizeof(BssidQuery));
 		OidQueryInformation(OID_802_11_BSSID, s, ifn, &BssidQuery, sizeof(BssidQuery));
 		long RSSI;
 		int nNoiseDbm;
@@ -448,7 +448,7 @@ int getassoclist(char *ifname, unsigned char *list)
 		if (s < 0) {
 			ignore = 1;
 		}
-		(void)memset(&iwr, 0, sizeof(struct iwreq));
+		(void)bzero(&iwr, sizeof(struct iwreq));
 		(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
 
 		iwr.u.data.pointer = (caddr_t) & table;
@@ -503,7 +503,7 @@ int getRssi(char *ifname, unsigned char *mac)
 		if (s < 0) {
 			ignore = 1;
 		}
-		(void)memset(&iwr, 0, sizeof(struct iwreq));
+		(void)bzero(&iwr, sizeof(struct iwreq));
 		(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
 		iwr.u.data.pointer = (caddr_t) & table;
@@ -752,7 +752,7 @@ int getchannels(unsigned int *retlist, char *ifname)
 	char abbrev[WLC_CNTRY_BUF_SZ] = "";	/* default.. current locale */
 	wl_uint32_list_t *list;
 
-	memset(buf, 0, WLC_IOCTL_MAXLEN);
+	bzero(buf, WLC_IOCTL_MAXLEN);
 	strcpy(buf, "chanspecs");
 	buflen = strlen(buf) + 1;
 
@@ -931,7 +931,7 @@ int wifi_getchannel(char *ifn)
 	sprintf(name, "%s_ifname", ifn);
 	char *ifname = nvram_safe_get(name);
 
-	memset(&ci, 0, sizeof(ci));
+	bzero(&ci, sizeof(ci));
 	wl_ioctl(ifname, WLC_GET_CHANNEL, &ci, sizeof(ci));
 	if (ci.scan_channel > 0) {
 		return ci.scan_channel;
@@ -976,13 +976,13 @@ int getassoclist(char *name, unsigned char *list)
 	// char buf[WLC_IOCTL_MAXLEN];
 	/*
 	 * wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
-	 * memset(buf,0,WLC_IOCTL_MAXLEN); if (wl_ioctl(name, WLC_GET_BSS_INFO,
+	 * bzero(buf,WLC_IOCTL_MAXLEN); if (wl_ioctl(name, WLC_GET_BSS_INFO,
 	 * bss_info, WLC_IOCTL_MAXLEN)<0)return 0; struct maclist *l = (struct
 	 * maclist*)list; 
 	 */
 	/*
 	 * sta_info_t *sta_info = (sta_info_t *) buf;
-	 * memset(buf,0,WLC_IOCTL_MAXLEN); if (wl_ioctl(name, WLC_GET_VAR,
+	 * bzero(buf,WLC_IOCTL_MAXLEN); if (wl_ioctl(name, WLC_GET_VAR,
 	 * sta_info, WLC_IOCTL_MAXLEN)<0)return 0;
 	 * 
 	 * struct maclist *l = (struct maclist*)list; l->count=1;
@@ -1018,7 +1018,7 @@ int getNoise(char *ifname, unsigned char *macname)
 
 	/*
 	 * wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
-	 * memset(buf,0,WLC_IOCTL_MAXLEN);
+	 * bzero(buf,WLC_IOCTL_MAXLEN);
 	 * 
 	 * wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN); if
 	 * ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) { if
@@ -1081,7 +1081,7 @@ static int set80211priv(struct iwreq *iwr, const char *ifname, int op, void *dat
 {
 #define	N(a)	(sizeof(a)/sizeof(a[0]))
 
-	memset(iwr, 0, sizeof(struct iwreq));
+	bzero(iwr, sizeof(struct iwreq));
 	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
 	if (len < IFNAMSIZ) {
 		/*
@@ -1147,7 +1147,7 @@ long long wifi_getrate(char *ifname)
 #if defined(HAVE_ATH9K) && !defined(HAVE_MVEBU)
 	if (is_ath9k(ifname)) {
 		char physical[32];
-		memset(physical, 0, sizeof(physical));
+		bzero(physical, sizeof(physical));
 		strncpy(physical, ifname, 4);
 		if (nvram_nmatch("b-only", "%s_net_mode", physical))
 			return 11000 * KILO;
@@ -1206,7 +1206,7 @@ long long wifi_getrate(char *ifname)
 
 		struct iwreq wrq;
 
-		(void)memset(&wrq, 0, sizeof(struct iwreq));
+		(void)bzero(&wrq, sizeof(struct iwreq));
 		strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 		ioctl(getsocket(), SIOCGIWRATE, &wrq);
 		return wrq.u.bitrate.value;
@@ -1392,7 +1392,7 @@ int wifi_gettxpower(char *ifname)
 	int poweroffset = wifi_gettxpoweroffset(ifname);
 	struct iwreq wrq;
 
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
+	(void)bzero(&wrq, sizeof(struct iwreq));
 
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 
@@ -1615,7 +1615,7 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 #ifdef HAVE_ATH9K
 	if (has_ad(ifname)) {
 		struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-		memset(interface, 0, sizeof(struct wifi_interface));
+		bzero(interface, sizeof(struct wifi_interface));
 		interface->freq = atoi(nvram_safe_get("ath2_channel"));
 		interface->center1 = -1;
 		interface->center2 = -1;
@@ -1626,12 +1626,12 @@ struct wifi_interface *wifi_getfreq(char *ifname)
 	}
 #endif
 
-	(void)memset(&wrq, 0, sizeof(struct iwreq));
+	(void)bzero(&wrq, sizeof(struct iwreq));
 	strncpy(wrq.ifr_name, ifname, IFNAMSIZ);
 	ioctl(getsocket(), SIOCGIWFREQ, &wrq);
 	closesocket();
 	struct wifi_interface *interface = (struct wifi_interface *)malloc(sizeof(struct wifi_interface));
-	memset(interface, 0, sizeof(struct wifi_interface));
+	bzero(interface, sizeof(struct wifi_interface));
 	interface->freq = wrqfreq_to_int(&wrq);
 	interface->center1 = -1;
 	interface->center2 = -1;
@@ -1859,7 +1859,7 @@ static struct wifi_channels *list_channelsext(const char *ifname, int allchans)
 			fprintf(stderr, "unable to get active channel list\n");
 			return NULL;
 		}
-		memset(&achans, 0, sizeof(achans));
+		bzero(&achans, sizeof(achans));
 		for (i = 0; i < chans.ic_nchans; i++) {
 			c = &chans.ic_chans[i];
 			if (isset(active, c->ic_ieee) || allchans)
@@ -1988,7 +1988,7 @@ int getRssi(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
@@ -2007,7 +2007,7 @@ int getRssi(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 
@@ -2056,7 +2056,7 @@ int getUptime(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
@@ -2075,7 +2075,7 @@ int getUptime(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 
@@ -2125,7 +2125,7 @@ int getNoise(char *ifname, unsigned char *mac)
 		free(buf);
 		return 0;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 24 * 1024;
@@ -2144,7 +2144,7 @@ int getNoise(char *ifname, unsigned char *mac)
 	cp = buf;
 	char maccmp[6];
 
-	memset(maccmp, 0, 6);
+	bzero(maccmp, 6);
 	do {
 		struct ieee80211req_sta_info *si;
 
@@ -2217,7 +2217,7 @@ int getassoclist(char *ifname, unsigned char *list)
 		mincount = 1;
 		return mincount;
 	}
-	(void)memset(&iwr, 0, sizeof(iwr));
+	(void)bzero(&iwr, sizeof(iwr));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 	iwr.u.data.pointer = (void *)buf;
 	iwr.u.data.length = 1024 * 24;
@@ -2708,7 +2708,7 @@ int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len
 	if (len > (int)sizeof(smbuf)) {
 		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, outbuf, len);
 	} else {
-		memset(smbuf, 0, sizeof(smbuf));
+		bzero(smbuf, sizeof(smbuf));
 		err = wl_bssiovar_getbuf(ifname, iovar, bssidx, NULL, 0, smbuf, sizeof(smbuf));
 		if (err == 0)
 			memcpy(outbuf, smbuf, len);

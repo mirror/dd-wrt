@@ -152,7 +152,7 @@ int wl_get_dev_type(char *name, void *buf, int len)
 	}
 
 	/* get device type */
-	memset(&info, 0, sizeof(info));
+	bzero(&info, sizeof(info));
 	info.cmd = ETHTOOL_GDRVINFO;
 	ifr.ifr_data = (caddr_t) & info;
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);

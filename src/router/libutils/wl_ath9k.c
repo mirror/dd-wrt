@@ -139,7 +139,7 @@ static struct wifi_channels *list_channelsext_ath9k(const char *ifname, char cou
 	struct wifi_channels *list =
 	    (struct wifi_channels *)safe_malloc(sizeof(struct wifi_channels) *
 					   (13+1+166-36+1));
-	(void)memset(list, 0, (sizeof(struct wifi_channels)*(3+1+166-36+1)));
+	(void)bzero(list, (sizeof(struct wifi_channels)*(3+1+166-36+1)));
 	for (i=0;i<13;i++) {
 		list[count].channel = i+1;
 		list[count].freq = 5*(i+1)+2407;

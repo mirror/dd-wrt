@@ -278,8 +278,8 @@ void start_setup_vlans(void)
 	if (strstr(asttemp, "7u"))
 		ast = 7;
 
-	memset(&portsettings[0][0], 0, 16 * 64);
-	memset(&tagged[0], 0, 16);
+	bzero(&portsettings[0][0], 16 * 64);
+	bzero(&tagged[0], 16);
 	for (i = 0; i < 6; i++) {
 		vlans = nvram_nget("port%dvlans", i);
 		int use = vlanmap[i];
@@ -375,7 +375,7 @@ void start_setup_vlans(void)
 		char port[64];
 
 		strcpy(port, &portsettings[i][0]);
-		memset(&portsettings[i][0], 0, 64);
+		bzero(&portsettings[i][0], 64);
 		foreach(vlan, port, next) {
 			if (atoi(vlan) < 5 && atoi(vlan) >= 0 && tagged[atoi(vlan)]) {
 				strcat(&portsettings[i][0], " ");
