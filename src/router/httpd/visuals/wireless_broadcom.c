@@ -177,7 +177,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	mode = nvram_safe_get(wlmode);
 	unsigned char buf[WLC_IOCTL_MAXLEN];
 
-	memset(buf, 0, WLC_IOCTL_MAXLEN);	// get_wdev
+	bzero(buf, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
 #ifdef HAVE_QTN
 	if (has_qtn(iface))
@@ -482,7 +482,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	wl_bss_info_t *bi;
 	char buf[WLC_IOCTL_MAXLEN + 4];
 	*(unsigned int *)&buf[0] = WLC_IOCTL_MAXLEN;
-	memset(&ci, 0, sizeof(ci));
+	bzero(&ci, sizeof(ci));
 	wl_ioctl(ifname, WLC_GET_CHANNEL, &ci, sizeof(ci));
 	wl_ioctl(ifname, WLC_GET_BSS_INFO, &buf[0], WLC_IOCTL_MAXLEN);
 	bi = (wl_bss_info_t *) (&buf[4]);
@@ -562,7 +562,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 		ether_etoa((uint8 *) & maclist->ea[e], mac);
 
 		rssi = 0;
-		memset(desc, 0, 30);
+		bzero(desc, 30);
 		for (i = 1; i <= 10; i++) {
 			snprintf(wdsvar, 30, "wl%d_wds%d_hwaddr", instance, i);
 			if (nvram_match(wdsvar, mac)) {

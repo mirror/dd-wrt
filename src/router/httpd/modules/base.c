@@ -441,7 +441,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	char fs[64];
 	char *temp2;
 	char *parameter = "size=";
-	memset(fs, 0, sizeof(fs));
+	bzero(fs, sizeof(fs));
 	int idx = indexof(path, '?');
 	if (idx > 0) {
 		temp2 = &path[idx + 1];
@@ -514,7 +514,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 {
 	char ifname[32];
 	char *temp2;
-	memset(ifname, 0, sizeof(ifname));
+	bzero(ifname, sizeof(ifname));
 	int idx = indexof(path, '-');
 	if (idx > 0) {
 		temp2 = &path[idx + 1];
@@ -785,7 +785,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 {
 	char *temp2 = NULL;
 	char ifname[32];
-	memset(ifname, 0, sizeof(ifname));
+	bzero(ifname, sizeof(ifname));
 	int idx = indexof(path, '-');
 	if (idx > 0) {
 		char *temp2 = &path[idx + 1];
@@ -1769,7 +1769,7 @@ static void do_stylecss(unsigned char method, struct mime_handler *handler, char
 		style = query;
 
 	unsigned int sdata[33];
-	memset(sdata, 0, sizeof(sdata));
+	bzero(sdata, sizeof(sdata));
 	unsigned int blue[33] = {
 		0x36f, 0xfff, 0x68f, 0x24d, 0x24d, 0x68f,
 		0x57f, 0xccf, 0x78f, 0x35d, 0x35c, 0x78f,

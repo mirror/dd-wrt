@@ -26,7 +26,7 @@ void ej_show_vlantagging(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 	char *next, *wordlist;
 
-	memset(buffer, 0, 256);
+	bzero(buffer, 256);
 	getIfList(buffer, NULL);
 	int totalcount = 0;
 	int realcount = nvram_default_geti("vlan_tagcount", 0);

@@ -352,11 +352,11 @@ int do_matrixssl_recv(FILE * fp)
 
 		in.start = in.end = in.buf = in_buf;
 		in.size = in_buf_size;
-		memset(in.buf, 0, in_buf_size);
+		bzero(in.buf, in_buf_size);
 
 		out.buf = out.start = out.end = out_buf;
 		out.size = out_buf_size;
-		memset(out.buf, 0, out_buf_size);
+		bzero(out.buf, out_buf_size);
 
 		ret = recv((int)fp, in.end, (int)((in.buf + in.size) - in.end), 0);
 #ifdef DEBUG_MATRIXSSL
@@ -444,7 +444,7 @@ int do_matrixssl_recv(FILE * fp)
 
 			out.buf = out.start = out.end = out_buf;
 			out.size = out_buf_size;
-			memset(out.buf, 0, out_buf_size);
+			bzero(out.buf, out_buf_size);
 			goto decodeMore;
 
 /*

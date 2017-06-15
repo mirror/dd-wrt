@@ -1296,7 +1296,7 @@ void qos_add_svc(webs_t wp)
 	if (!add_svc)
 		return;
 
-	memset(new_svcs, 0, sizeof(new_svcs));
+	bzero(new_svcs, sizeof(new_svcs));
 
 	if (get_svc(add_svc, protocol, ports))
 		return;
@@ -1379,7 +1379,7 @@ void qos_add_ip(webs_t wp)
 	if (!svqos_ips || !add_ip0 || !add_ip1 || !add_ip2 || !add_ip3 || !add_nm)
 		return;
 
-	memset(new_ip, 0, sizeof(new_ip));
+	bzero(new_ip, sizeof(new_ip));
 
 	snprintf(add_ip, 19, "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3, add_nm);
 
@@ -1417,7 +1417,7 @@ void qos_add_mac(webs_t wp)
 	if (!svqos_macs || !add_mac0 || !add_mac1 || !add_mac2 || !add_mac3 || !add_mac4 || !add_mac5)
 		return;
 
-	memset(new_mac, 0, sizeof(new_mac));
+	bzero(new_mac, sizeof(new_mac));
 
 	snprintf(add_mac, 18, "%s:%s:%s:%s:%s:%s", add_mac0, add_mac1, add_mac2, add_mac3, add_mac4, add_mac5);
 
@@ -1481,7 +1481,7 @@ void qos_save(webs_t wp)
 	/*
 	 * tcp-packet flags
 	 */
-	memset(svqos_pktstr, 0, sizeof(svqos_pktstr));
+	bzero(svqos_pktstr, sizeof(svqos_pktstr));
 
 	pktopt = websGetVar(wp, "svqos_pktack", NULL);
 	if (pktopt)
@@ -1501,13 +1501,13 @@ void qos_save(webs_t wp)
 	/*
 	 * services priorities 
 	 */
-	memset(svqos_var, 0, sizeof(svqos_var));
+	bzero(svqos_var, sizeof(svqos_var));
 
 	for (i = 0; i < no_svcs; i++) {
 		char protocol[100], ports[100];
 
-		memset(protocol, 0, 100);
-		memset(ports, 0, 10);
+		bzero(protocol, 100);
+		bzero(ports, 10);
 
 		snprintf(field, 31, "svqos_svcdel%d", i);
 		delete = websGetVar(wp, field, NULL);
@@ -1555,7 +1555,7 @@ void qos_save(webs_t wp)
 
 	nvram_set("svqos_svcs", svqos_var);
 	// nvram_commit ();
-	memset(svqos_var, 0, sizeof(svqos_var));
+	bzero(svqos_var, sizeof(svqos_var));
 
 	/*
 	 * DEV priorities 
@@ -1626,7 +1626,7 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("svqos_devs", svqos_var);
-	memset(svqos_var, 0, sizeof(svqos_var));
+	bzero(svqos_var, sizeof(svqos_var));
 
 	/*
 	 * IP priorities 
@@ -1686,7 +1686,7 @@ void qos_save(webs_t wp)
 
 	nvram_set("svqos_ips", svqos_var);
 	// nvram_commit ();
-	memset(svqos_var, 0, sizeof(svqos_var));
+	bzero(svqos_var, sizeof(svqos_var));
 
 	/*
 	 * MAC priorities 
@@ -2597,7 +2597,7 @@ void save_networking(webs_t wp)
 	// save vlan stuff
 	char buffer[1024];
 
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 	for (i = 0; i < vlancount; i++) {
 		char *ifname, *tag, *prio;
 		char var[32];
@@ -2624,7 +2624,7 @@ void save_networking(webs_t wp)
 	}
 	nvram_set("vlan_tags", buffer);
 	// save bonds
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 #ifdef HAVE_BONDING
 	char *bondingnumber = websGetVar(wp, "bonding_number", NULL);
 
@@ -2653,7 +2653,7 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 	}
 	nvram_set("bondings", buffer);
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 #endif
 #ifdef HAVE_IPVS
 	{
@@ -2718,7 +2718,7 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 	}
 	nvram_set("ipvs", buffer);
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 
 	for (i = 0; i < ipvstargetcount; i++) {
 		char *ipvsname;
@@ -2769,7 +2769,7 @@ void save_networking(webs_t wp)
 			strcat(buffer, " ");
 	}
 	nvram_set("ipvstarget", buffer);
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 
 #endif
 
@@ -2782,8 +2782,8 @@ void save_networking(webs_t wp)
 		char netmask[32];
 		char n[32];
 
-		memset(ipaddr, 0, 32);
-		memset(netmask, 0, 32);
+		bzero(ipaddr, 32);
+		bzero(netmask, 32);
 		sprintf(var, "bridgename%d", i);
 		ifname = websGetVar(wp, var, NULL);
 		if (!ifname)
@@ -2845,7 +2845,7 @@ void save_networking(webs_t wp)
 	}
 	nvram_set("bridges", buffer);
 	// save bridge assignment
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 	for (i = 0; i < bridgesifcount; i++) {
 		char *ifname, *tag, *prio;
 		char var[32];
@@ -2875,7 +2875,7 @@ void save_networking(webs_t wp)
 	nvram_set("bridgesif", buffer);
 #ifdef HAVE_MDHCP
 	// save multipe dhcp-servers
-	memset(buffer, 0, 1024);
+	bzero(buffer, 1024);
 	// if (!interface || !start || !dhcpon || !max || !leasetime)
 	for (i = 0; i < mdhcpd_count; i++) {
 		char *mdhcpinterface, *mdhcpon, *mdhcpstart, *mdhcpmax, *mdhcpleasetime;

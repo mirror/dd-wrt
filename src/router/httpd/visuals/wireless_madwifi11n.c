@@ -113,7 +113,7 @@ int ej_active_wireless_if_11n(webs_t wp, int argc, char_t ** argv, char *ifname,
 		fprintf(stderr, "socket(SOCK_DRAGM)\n");
 		return cnt;
 	}
-	(void)memset(&iwr, 0, sizeof(struct iwreq));
+	(void)bzero(&iwr, sizeof(struct iwreq));
 	(void)strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 
 	iwr.u.data.pointer = (void *)&madbuf[0];

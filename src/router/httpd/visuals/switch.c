@@ -110,7 +110,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		for (a = 0; a < 5; a++) {
 			snprintf(portstatus, sizeof(portstatus), "/proc/switch/%s/port/%d/status", ifname, vlanmap[a]);
 			char cstatus[32];
-			memset(cstatus, 0, 32);
+			bzero(cstatus, 32);
 			FILE *fp = fopen(portstatus, "rb");
 			if (fp) {
 				fgets(cstatus, 31, fp);

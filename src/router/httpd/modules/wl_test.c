@@ -308,7 +308,7 @@ int Check_TSSI(webs_t wp, char *value)
 
 	dprintf("wl_atten_bb=[%s], wl_atten_radio=[%s], wl_atten_ctl=[%s]\n", wl_atten_bb, wl_atten_radio, wl_atten_ctl);
 
-	memset(buf, 0, sizeof(buf));
+	bzero(buf, sizeof(buf));
 	sprintf(buf, "wl atten %s %s %s", value, wl_atten_radio, wl_atten_ctl);
 	mysystem(buf);
 
@@ -320,9 +320,9 @@ int Check_TSSI(webs_t wp, char *value)
 		sleep(idelay);
 
 	mysystem("wl tssi > /tmp/get_tssi");
-	memset(buf, 0, sizeof(buf));
-	memset(cck, 0, sizeof(cck));
-	memset(cck, 0, sizeof(ofdm));
+	bzero(buf, sizeof(buf));
+	bzero(cck, sizeof(cck));
+	bzero(cck, sizeof(ofdm));
 	if ((fp = fopen("/tmp/get_tssi", "r"))) {
 		fgets(buf, sizeof(buf), fp);
 		strcpy(ori, buf);
@@ -330,19 +330,19 @@ int Check_TSSI(webs_t wp, char *value)
 	} else
 		dprintf("\nFile error!\n");
 
-	memset(buf2, 0, sizeof(buf2));
+	bzero(buf2, sizeof(buf2));
 	strcpy(buf2, strtok(buf, ","));
-	memset(buf3, 0, sizeof(buf3));
+	bzero(buf3, sizeof(buf3));
 	strcpy(buf3, strtok(buf2, "CCK"));
 	strcpy(buf3, strtok(NULL, "CCK"));
 	dprintf("CCK:[%s]\n", buf3);
 	strcpy(cck, buf3);
 	icck = atoi(buf3);
 
-	memset(buf2, 0, sizeof(buf2));
+	bzero(buf2, sizeof(buf2));
 	strcpy(buf2, strtok(ori, ","));
 	strcpy(buf2, strtok(NULL, ","));
-	memset(buf3, 0, sizeof(buf3));
+	bzero(buf3, sizeof(buf3));
 	strcpy(buf3, strtok(buf2, "OFDM"));
 	strcpy(buf3, strtok(NULL, "OFDM"));
 	dprintf("OFDM:[%s]\n", buf3);
@@ -381,8 +381,8 @@ int Get_TSSI(char *value)
 
 	dprintf("init, Get_TSSI=[%s]\n", value);
 
-	memset(cck, 0, sizeof(cck));
-	memset(ofdm, 0, sizeof(ofdm));
+	bzero(cck, sizeof(cck));
+	bzero(ofdm, sizeof(ofdm));
 
 	strcpy(cck, nvram_safe_get("wl_cck"));
 	strcpy(ofdm, nvram_safe_get("wl_ofdm"));
@@ -412,7 +412,7 @@ int Enable_TSSI(char *value)
 	 * atten_radio=nvram_geti("wl_atten_radio"));
 	 * atten_ctl=nvram_geti("wl_atten_ctl"));
 	 * 
-	 * memset(buf,0,sizeof(buf)); sprintf(buf,"wl atten %d %d
+	 * bzero(buf,sizeof(buf)); sprintf(buf,"wl atten %d %d
 	 * %d",atten_bb,atten_radio,atten_ctl); mysystem(buf); } 
 	 */
 	return ret;

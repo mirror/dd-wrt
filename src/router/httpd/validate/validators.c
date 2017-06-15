@@ -1200,7 +1200,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 	char ifname[32];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
-	memset(buf, 0, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
+	bzero(buf, 19 * WL_FILTER_MAC_NUM * WL_FILTER_MAC_PAGE);
 	if (ifname == NULL) {
 		free(buf);
 		return;
@@ -2294,8 +2294,8 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 	 */
 	if (nvram_matchi(enabled_var, 1)) {
 
-		memset(ipaddr, 0, sizeof(ipaddr));
-		memset(netmask, 0, sizeof(netmask));
+		bzero(ipaddr, sizeof(ipaddr));
+		bzero(netmask, sizeof(netmask));
 
 		// disable until validated
 		nvram_seti(enabled_var, 0);
@@ -2338,8 +2338,8 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		nvram_seti(enabled_var, 0);
 
 	for (h = 1; h <= MAX_WDS_DEVS; h++) {
-		memset(hwaddr, 0, sizeof(hwaddr));
-		memset(desc, 0, sizeof(desc));
+		bzero(hwaddr, sizeof(hwaddr));
+		bzero(desc, sizeof(desc));
 		snprintf(wds, 31, "%s_wds%d", interface, h);
 		snprintf(enabled_var, 31, "%s_enable", wds);
 
@@ -2390,8 +2390,8 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 
 		if (nvram_matchi(enabled_var, 1)) {
 
-			memset(ipaddr, 0, sizeof(ipaddr));
-			memset(netmask, 0, sizeof(netmask));
+			bzero(ipaddr, sizeof(ipaddr));
+			bzero(netmask, sizeof(netmask));
 
 			// disable until validated
 			nvram_seti(enabled_var, 0);
@@ -2851,7 +2851,7 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 	sof = (count * 46) + 1;
 	buf = (char *)safe_malloc(sof);
 	cur = buf;
-	memset(buf, 0, sof);
+	bzero(buf, sof);
 
 	for (i = 0; i < count; i++) {
 
@@ -3032,8 +3032,8 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	old_name = safe_malloc(STATIC_ROUTE_PAGE * 60 + 1);
 	buf[0] = 0;
 	buf_name[0] = 0;
-	memset(old, 0, STATIC_ROUTE_PAGE * 60 + 1);
-	memset(old_name, 0, STATIC_ROUTE_PAGE * 60 + 1);
+	bzero(old, STATIC_ROUTE_PAGE * 60 + 1);
+	bzero(old_name, STATIC_ROUTE_PAGE * 60 + 1);
 	cur = buf;
 	cur_name = buf_name;
 
@@ -3208,7 +3208,7 @@ write_nvram:
 	if (!tmp) {
 		if (strlen(backuproute) > 0) {
 			addDeletion(backuproute);
-			memset(backuproute, 0, strlen(backuproute));
+			bzero(backuproute, strlen(backuproute));
 		}
 
 		snprintf(&old[atoi(page) * STATIC_ROUTE_PAGE], 60, "%s", "");

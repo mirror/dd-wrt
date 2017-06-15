@@ -246,7 +246,7 @@ static void DisplayLastTxRxRateFor11n(char *ifname, int s, int nID, int *fLastTx
 	unsigned long lHTSetting;
 	HTTRANSMIT_SETTING HTSetting;
 	OidQueryInformation(nID, s, ifname, &lHTSetting, sizeof(lHTSetting));
-	memset(&HTSetting, 0x00, sizeof(HTSetting));
+	bzero(&HTSetting, sizeof(HTSetting));
 	memcpy(&HTSetting, &lHTSetting, sizeof(HTSetting));
 	TxRxRateFor11n(&HTSetting, fLastTxRxRate);
 }
@@ -274,7 +274,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 	if (s < 0) {
 		return cnt;
 	}
-	(void)memset(&iwr, 0, sizeof(struct iwreq));
+	(void)bzero(&iwr, sizeof(struct iwreq));
 	(void)strncpy(iwr.ifr_name, getRADev(ifname), sizeof(iwr.ifr_name));
 
 	iwr.u.data.pointer = (caddr_t) & table;
@@ -315,12 +315,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *ifname, int
 				int rate = 1;
 				char rx[32];
 				char tx[32];
-				memset(&HTSetting, 0x00, sizeof(HTSetting));
+				bzero(&HTSetting, sizeof(HTSetting));
 				memcpy(&HTSetting, &table.Entry[i].TxRate, sizeof(HTSetting));
 				TxRxRateFor11n(&HTSetting, &rate);
 				snprintf(tx, 8, "%d.%d", rate / 1000, rate % 1000);
 
-				memset(&HTSetting, 0x00, sizeof(HTSetting));
+				bzero(&HTSetting, sizeof(HTSetting));
 				HTSetting.field.MCS = table.Entry[i].LastRxRate & 0x7F;
 				HTSetting.field.BW = (table.Entry[i].LastRxRate >> 7) & 0x1;
 				HTSetting.field.ShortGI = (table.Entry[i].LastRxRate >> 8) & 0x1;
