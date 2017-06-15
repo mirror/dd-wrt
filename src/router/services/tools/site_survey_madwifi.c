@@ -143,7 +143,7 @@ static int __inline ismtikoui(const unsigned char *frm)
 static int fillenc(char *encinfo, unsigned char *vp, int ielen)
 {
 	int r = 0;
-	memset(encinfo, 0, 128);
+	bzero(encinfo, 128);
 	while (ielen > 0) {
 		switch (vp[0]) {
 		case IEEE80211_ELEMID_VENDOR:
@@ -216,7 +216,7 @@ int site_survey_main(int argc, char *argv[])
 	if (!buf)
 		return -1;
 	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
-	memset(buf, 0, 24 * 1024);
+	bzero(buf, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);
 	if (len == -1) {
@@ -238,7 +238,7 @@ int site_survey_main(int argc, char *argv[])
 
 		sr = (struct ieee80211req_scan_result *)cp;
 		vp = (u_int8_t *)(sr + 1);
-		memset(ssid, 0, sizeof(ssid));
+		bzero(ssid, sizeof(ssid));
 		strncpy(site_survey_lists[i].SSID, vp, sr->isr_ssid_len);
 		strcpy(site_survey_lists[i].BSSID, ieee80211_ntoa(sr->isr_bssid));
 		site_survey_lists[i].channel = ieee80211_mhz2ieee(sr->isr_freq);

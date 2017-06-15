@@ -325,8 +325,8 @@ void table_clear(void)
 	char v[2][13];
 	char *argv[4];
 
-	memset(argv, 0, sizeof(v));
-	memset(argv, 0, sizeof(argv));
+	bzero(argv, sizeof(v));
+	bzero(argv, sizeof(argv));
 
 	reg_write(REG_ESW_TABLE_SEARCH, 0x1);
 	for (i = 0; i < 0x400; i++) {

@@ -167,7 +167,7 @@ static void optimize_block_device(char *devname)
 	char read_ahead_conf[64] = { 0 };
 	int err;
 
-	memset(blkdev, 0, sizeof(blkdev));
+	bzero(blkdev, sizeof(blkdev));
 	strncpy(blkdev, devname, 3);
 	sprintf(read_ahead_conf, READ_AHEAD_CONF, blkdev);
 	writestr(read_ahead_conf, READ_AHEAD_KB_BUF);

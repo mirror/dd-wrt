@@ -2834,7 +2834,7 @@ void start_lan(void)
 			 */
 			if (ifr.ifr_flags & IFF_UP) {
 				ifrdata = ifr.ifr_data;
-				memset(&info, 0, sizeof(info));
+				bzero(&info, sizeof(info));
 				info.cmd = ETHTOOL_GDRVINFO;
 				ifr.ifr_data = (caddr_t) & info;
 				if (ioctl(s, SIOCETHTOOL, &ifr) >= 0) {
@@ -3404,7 +3404,7 @@ void start_wan(int status)
 	/*
 	 * Set WAN hardware address before bringing interface up 
 	 */
-	memset(ifr.ifr_hwaddr.sa_data, 0, ETHER_ADDR_LEN);
+	bzero(ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
 	ifconfig(ethname, 0, NULL, NULL);
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
@@ -5244,7 +5244,7 @@ void start_hotplug_net(void)
 	// try to parse
 	char ifname[32];
 
-	memset(ifname, 0, 32);
+	bzero(ifname, 32);
 	int index = indexof(interface, '.');
 
 	if (index == -1)
@@ -5255,9 +5255,9 @@ void start_hotplug_net(void)
 	}
 	char nr[32];
 
-	memset(nr, 0, 32);
+	bzero(nr, 32);
 	strcpy(nr, ((char *)&ifname[0]) + 3);
-	memset(ifname, 0, 32);
+	bzero(ifname, 32);
 	strncpy(ifname, interface, index);
 	char bridged[32];
 

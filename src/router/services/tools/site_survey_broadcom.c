@@ -83,7 +83,7 @@ static int wl_rsn_ie_parse_info(uint8 * rsn_buf, uint len, rsn_parse_info_t * rs
 {
 	uint16 count;
 
-	memset(rsn, 0, sizeof(rsn_parse_info_t));
+	bzero(rsn, sizeof(rsn_parse_info_t));
 
 	/* version */
 	if (len < sizeof(uint16))
@@ -297,7 +297,7 @@ static char *wl_dump_wpa_rsn_ies(uint8 * cp, uint len)
 	uint8 *wpaie;
 	uint8 *rsnie;
 	static char sum[128] = { 0 };
-	memset(sum, 0, sizeof(sum));
+	bzero(sum, sizeof(sum));
 
 	while ((wpaie = wlu_parse_tlvs(parse, parse_len, DOT11_MNG_WPA_ID)))
 		if (wlu_is_wpa_ie(&wpaie, &parse, &parse_len))
@@ -395,7 +395,7 @@ int site_survey_main(int argc, char *argv[])
 	int ap = 0, oldap = 0;
 	wl_scan_params_t params;
 
-	memset(&params, 0, sizeof(params));
+	bzero(&params, sizeof(params));
 
 	/*
 	 * use defaults (same parameters as wl scan) 

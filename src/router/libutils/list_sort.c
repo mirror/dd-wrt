@@ -106,7 +106,7 @@ void list_sort(void *priv, struct list_head *head, int (*cmp) (void *priv, struc
 	if (list_empty(head))
 		return;
 
-	memset(part, 0, sizeof(part));
+	bzero(part, sizeof(part));
 
 	head->prev->next = NULL;
 	list = head->next;

@@ -426,7 +426,7 @@ int ether_atoe(const char *a, char *e)
 	char *c = (char *)a;
 	int i = 0;
 
-	memset(e, 0, ETHER_ADDR_LEN);
+	bzero(e, ETHER_ADDR_LEN);
 	for (;;) {
 		e[i++] = (unsigned char)strtoul(c, &c, 16);
 		if (!*c++ || i == ETHER_ADDR_LEN)
@@ -589,7 +589,7 @@ int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_
 	char varname[NVRAM_MAX_PARAM_LEN];
 	char *ptr;
 
-	memset(osifname_buf, 0, osifname_buf_len);
+	bzero(osifname_buf, osifname_buf_len);
 
 	/*
 	 * Bail if we get a NULL or empty string 
@@ -644,7 +644,7 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 		return -1;
 	}
 
-	memset(nvifname_buf, 0, nvifname_buf_len);
+	bzero(nvifname_buf, nvifname_buf_len);
 
 	if (strstr(osifname, "wl")) {
 		strncpy(nvifname_buf, osifname, nvifname_buf_len);
@@ -782,7 +782,7 @@ char *psname(int pid, char *buffer, int maxlen)
 int f_exists(const char *path)	// note: anything but a directory
 {
 	struct stat st;
-	memset(&st, 0, sizeof(struct stat));
+	bzero(&st, sizeof(struct stat));
 
 	return (stat(path, &st) == 0) && (!S_ISDIR(st.st_mode));
 }

@@ -1928,14 +1928,14 @@ static void configure_single(int count)
 #if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
 		else {
 			char cellidtemp[5];
-			memset(cellidtemp, 0, 5);
+			bzero(cellidtemp, 5);
 			strncpy(cellidtemp, nvram_safe_get(ssid), 5);
 			sysprintf("iwconfig %s ap 02:%02x:%02x:%02x:%02x:%02x", dev, cellidtemp[0], cellidtemp[1], cellidtemp[2], cellidtemp[3], cellidtemp[4]);
 		}
 #endif
 	}
 
-	memset(var, 0, 80);
+	bzero(var, 80);
 
 	cprintf("set ssid\n");
 #ifdef HAVE_MAKSAT

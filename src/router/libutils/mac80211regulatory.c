@@ -93,7 +93,7 @@ struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_re
 	if (!rd)
 		return NULL;
 
-	memset(rd, 0, size_of_rd);
+	bzero(rd, size_of_rd);
 
 	rd->alpha2[0] = country->alpha2[0];
 	rd->alpha2[1] = country->alpha2[1];

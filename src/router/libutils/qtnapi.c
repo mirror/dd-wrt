@@ -86,7 +86,7 @@ int file_lock(char *tag)
 		}
 	}
 
-	memset(&lock, 0, sizeof(lock));
+	bzero(&lock, sizeof(lock));
 	lock.l_type = F_WRLCK;
 	lock.l_pid = pid;
 
@@ -1122,7 +1122,7 @@ void rpc_set_radio(int unit, int subunit, int on)
 				return;
 			}
 
-			memset(&wl_macaddr, 0, sizeof(wl_macaddr));
+			bzero(&wl_macaddr, sizeof(wl_macaddr));
 			ret = qcsapi_interface_get_mac_addr(WIFINAME, (uint8_t *) wl_macaddr);
 			if (ret < 0)
 				dbG("Qcsapi qcsapi_interface_get_mac_addr %s error, return: %d\n", WIFINAME, ret);
@@ -1131,7 +1131,7 @@ void rpc_set_radio(int unit, int subunit, int on)
 			macvalue = strtoll(macbuf, (char **)NULL, 16);
 			macvalue += subunit;
 			macp = (unsigned char *)&macvalue;
-			memset(macaddr_str, 0, sizeof(macaddr_str));
+			bzero(macaddr_str, sizeof(macaddr_str));
 			sprintf(macaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", *(macp + 5), *(macp + 4), *(macp + 3), *(macp + 2), *(macp + 1), *(macp + 0));
 			ether_atoe(macaddr_str, wl_macaddr);
 
@@ -1546,7 +1546,7 @@ void rpc_update_mbss(const char *name, const char *value)
 				return;
 			}
 
-			memset(&wl_macaddr, 0, sizeof(wl_macaddr));
+			bzero(&wl_macaddr, sizeof(wl_macaddr));
 			ret = qcsapi_interface_get_mac_addr(WIFINAME, (uint8_t *) wl_macaddr);
 			if (ret < 0)
 				dbG("Qcsapi qcsapi_interface_get_mac_addr %s error, return: %d\n", WIFINAME, ret);
@@ -1555,7 +1555,7 @@ void rpc_update_mbss(const char *name, const char *value)
 			macvalue = strtoll(macbuf, (char **)NULL, 16);
 			macvalue += subunit;
 			macp = (unsigned char *)&macvalue;
-			memset(macaddr_str, 0, sizeof(macaddr_str));
+			bzero(macaddr_str, sizeof(macaddr_str));
 			sprintf(macaddr_str, "%02X:%02X:%02X:%02X:%02X:%02X", *(macp + 5), *(macp + 4), *(macp + 3), *(macp + 2), *(macp + 1), *(macp + 0));
 			ether_atoe(macaddr_str, wl_macaddr);
 
@@ -1648,7 +1648,7 @@ char *getWPSAuthMode_qtn()
 	if (!rpc_qtn_ready())
 		return "";
 
-	memset(&current_beacon_type, 0, sizeof(current_beacon_type));
+	bzero(&current_beacon_type, sizeof(current_beacon_type));
 	ret = rpc_qcsapi_get_beacon_type(WIFINAME, (char *)&current_beacon_type);
 	if (ret < 0)
 		dbG("rpc_qcsapi_get_beacon_type %s error, return: %d\n", WIFINAME, ret);
@@ -1673,7 +1673,7 @@ char *getWPSEncrypType_qtn()
 	if (!rpc_qtn_ready())
 		return "";
 
-	memset(&encryption_mode, 0, sizeof(encryption_mode));
+	bzero(&encryption_mode, sizeof(encryption_mode));
 	ret = rpc_qcsapi_get_WPA_encryption_modes(WIFINAME, (char *)&encryption_mode);
 	if (ret < 0)
 		dbG("rpc_qcsapi_get_WPA_encryption_modes %s error, return: %d\n", WIFINAME, ret);

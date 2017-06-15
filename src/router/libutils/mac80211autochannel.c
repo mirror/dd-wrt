@@ -455,7 +455,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		survey(&unl, wdev, freq_add_stats);
 	}
 	unlock();
-	memset(&sdata, 0, sizeof(sdata));
+	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->clear_count) {
 			f->clear /= f->clear_count;
