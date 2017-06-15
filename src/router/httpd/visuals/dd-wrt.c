@@ -4339,7 +4339,7 @@ void ej_gen_timer_fields(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-<input type = "hidden" name = "radio0_on_time" > void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
+void ej_show_wireless(webs_t wp, int argc, char_t ** argv)
 {
 #if defined(HAVE_NORTHSTAR) || defined(HAVE_80211AC) && !defined(HAVE_BUFFALO)
 	if (!nvram_matchi("nocountrysel", 1)) {
