@@ -7,7 +7,7 @@ VERSION		= 7.0.0.7
 PLATFORM    	= linux
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS     += -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\" $(STATIC)
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Wall -Ipthreadcc/src -Isocketcc/src -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\"" $(COPTS) -DNEED_PRINTF -D_GNU_SOURCE
 
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT

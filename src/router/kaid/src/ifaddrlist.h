@@ -24,6 +24,8 @@
 #ifndef KAIUI__H
 #define KAIUI__H
 
+#include <sys/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
