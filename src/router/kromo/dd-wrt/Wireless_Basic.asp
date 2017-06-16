@@ -339,7 +339,7 @@ function submitcheck(F) {
 	}
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-	<% gen_timer_compute() %>
+	<% gen_timer_compute(); %>
 	return true;
 }
 
