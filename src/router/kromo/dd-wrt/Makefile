@@ -85,6 +85,10 @@ endif
 	$(TOP)/tools/jsformat $(INSTALLDIR)/www/lang_pack/*.js
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
+ifeq ($(CONFIG_SPEEDCHECKER_DEBUG),y)
+	ln -s ../tmp/Speedchecker-dev.asp $(INSTALLDIR)/www/Speedchecker-dev.asp
+endif
+
 ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
