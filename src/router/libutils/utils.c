@@ -8151,11 +8151,12 @@ void getPortMapping(int *vlanmap)
 
 }
 
+
 u_int64_t freediskSpace(char *path)
 {
 	struct statfs sizefs;
 
-	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368)) {
+	if ((statfs(path, &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174)) {
 		bzero(&sizefs, sizeof(sizefs));
 	}
 
