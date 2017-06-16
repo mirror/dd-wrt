@@ -5554,8 +5554,7 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 	if (argc != 2)
 		return;
 
-	if ((statfs(argv[0], &sizefs) != 0)
-	    || (sizefs.f_type == 0x73717368))
+	if ((statfs(argv[0], &sizefs) != 0) || (sizefs.f_type == 0x73717368) || (sizefs.f_type == 0x74717368) || (sizefs.f_type == 0x68737174))
 		bzero(&sizefs, sizeof(sizefs));
 
 	websWrite(wp, "var %s = {\nfree: %llu,\nused: %llu,\nsize: %llu\n};\n", argv[1], ((uint64_t) sizefs.f_bsize * sizefs.f_bfree), ((uint64_t) sizefs.f_bsize * (sizefs.f_blocks - sizefs.f_bfree)),
