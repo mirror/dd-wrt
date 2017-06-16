@@ -4321,9 +4321,9 @@ void ej_gen_init_timer(webs_t wp, int argc, char_t ** argv)
 	int c = getdevicecount();
 	int i;
 	for (i = 0; i < c; i++) {
-		websWrite(wp, "setRadioTable(%d):\n", i);
+		websWrite(wp, "setRadioTable(%d);\n", i);
 		websWrite(wp, "initWlTimer('%s',%d);\n", nvram_nget("radio%d_on_time", i), i);
-		websWrite(wp, "show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d", i, i, nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
+		websWrite(wp, "show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d);", i, i, nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
 	}
 #endif
 }
