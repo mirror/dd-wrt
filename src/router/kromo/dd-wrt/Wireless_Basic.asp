@@ -116,8 +116,9 @@ function InitBW0(num,F) {
 		if(F.wl0_wchannel) create_wchannel0_auto(F)
 	
 	}
-	else
+	else {
 		SelBW0(num,F);
+	}
 }
 
 function InitBW1(num,F) {
@@ -128,8 +129,9 @@ function InitBW1(num,F) {
 		if(F.wl1_wchannel) create_wchannel1_auto(F)
 	
 	}
-	else
+	else {
 		SelBW1(num,F);
+	}
 }
 
 function InitBW2(num,F) {
@@ -140,8 +142,9 @@ function InitBW2(num,F) {
 		if(F.wl2_wchannel) create_wchannel2_auto(F)
 	
 	}
-	else
+	else {
 		SelBW2(num,F);
+	}
 }
 
 function SelBW0(num,F) {
