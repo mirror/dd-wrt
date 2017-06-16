@@ -467,11 +467,7 @@ function computeWlTimer(radio)
 }
 
 function setRadioTable(radio){
-	if(radio){
-		var table = document.getElementById("radio1_table");
-	} else {
-		var table = document.getElementById("radio0_table");
-	}
+	var table = document.getElementById("radio" + radio + "_table");
 	cleanTable(table);
 	
 	var row1 = table.insertRow(-1);
