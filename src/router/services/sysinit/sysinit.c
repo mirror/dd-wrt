@@ -3100,7 +3100,7 @@ void start_drivers(void)
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb2-port2");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_1", "usb2-port2 usb1-port1");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb2", "usb3-port1");
-	}
+	} 
 
 	if (brand == ROUTER_WRT_1900ACV2) {
 
