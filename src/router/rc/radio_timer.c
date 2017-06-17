@@ -76,12 +76,15 @@ static int radio_timer_main(int argc, char **argv)
 					case 0:
 						break;	// do nothing, radio0 timer disabled
 					case 1:	// 01 - turn radio on
-						syslog(LOG_DEBUG, "Turning radio %d on\n", i);
-						char on[32];
-						start_service_force(on);
-#ifdef HAVE_ATH9K
-						start_service_force("lan");
-#endif
+						if (!firsttime[i]) {
+							//on first time call the radio is already on, no need to reinit it a second time
+							syslog(LOG_DEBUG, "Turning radio %d on\n", i);
+							char on[32];
+							start_service_force(on);
+							char dev[32];
+							sprintf(dev, "ath%d", i);
+							eval("ifconfig", dev, "up");
+						}
 						break;
 					case 2:	// 10 - turn radio off
 						syslog(LOG_DEBUG, "Turning radio %d off\n", i);
