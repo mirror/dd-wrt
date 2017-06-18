@@ -1,6 +1,4 @@
-<!-- $Id: mod_lang.html,v 1.12 2012-10-10 01:26:33 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_lang.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_lang</title>
@@ -30,25 +28,23 @@ be seen <a href="#Usage">here</a>.
 
 <p>
 The most current version of <code>mod_lang</code> can be found in the
-ProFTPD source distribution:
-<pre>
-  <a href="http://www.proftpd.org/">http://www.proftpd.org/</a>
-</pre>
+ProFTPD source distribution.
 
 <h2>Directives</h2>
 <ul>
   <li><a href="#LangDefault">LangDefault</a>
   <li><a href="#LangEngine">LangEngine</a>
+  <li><a href="#LangOptions">LangOptions</a>
   <li><a href="#LangPath">LangPath</a>
   <li><a href="#UseEncoding">UseEncoding</a>
 </ul>
 
 <p>
 <hr>
-<h2><a name="LangDefault">LangDefault</a></h2>
+<h3><a name="LangDefault">LangDefault</a></h3>
 <strong>Syntax:</strong> LangDefault <em>language</em><br>
 <strong>Default:</strong> LangDefault en_US<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_lang<br>
 <strong>Compatibility:</strong> 1.3.1rc1
 
@@ -71,10 +67,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="LangEngine">LangEngine</a></h2>
+<h3><a name="LangEngine">LangEngine</a></h3>
 <strong>Syntax:</strong> LangEngine <em>on|off</em><br>
 <strong>Default:</strong> LangEngine on<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_lang<br>
 <strong>Compatibility:</strong> 1.3.1rc1
 
@@ -93,10 +89,51 @@ and not <code>UseUTF8</code>, which controls the appearance of "UTF8".
 
 <p>
 <hr>
-<h2><a name="LangPath">LangPath</a></h2>
+<h3><a name="LangOptions">LangOptions</a></h3>
+<strong>Syntax:</strong> LangOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_lang<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>LangOptions</code> directive is used to configure various optional
+behavior of <code>mod_lang</code>.
+
+<p>
+Example:
+<pre>
+  LangOptions PreferServerEncoding
+</pre>
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>PreferServerEncoding</code><br>
+    <p>
+    This option will cause <code>mod_lang</code> to refuse any
+    <code>OPTS UTF8</code> commands used by clients; these commands are
+    used to change the server's handling of UTF8 encoded filenames.
+
+    <p>
+    <b>Note</b> that this option replaces the previous "strict" keyword
+    supported by the <code>UseEncoding</code> directive, in older versions
+    of <code>mod_lang</code>.
+
+  <p>
+  <li><code>RequireValidEncoding</code><br>
+    <p>
+    This option will cause <code>proftpd</code> to <b>reject</b> commands
+    on filenames if those filenames, as sent by the client, are not properly
+    encoded in the expected character set.
+</ul>
+
+<p>
+<hr>
+<h3><a name="LangPath">LangPath</a></h3>
 <strong>Syntax:</strong> LangPath <em>path</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_lang<br>
 <strong>Compatibility:</strong> 1.3.1rc1
 
@@ -124,10 +161,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="UseEncoding">UseEncoding</a></h2>
-<strong>Syntax:</strong> UseEncoding <em>on|off|local-charset client-charset [&quot;strict&quot;]</em><br>
+<h3><a name="UseEncoding">UseEncoding</a></h3>
+<strong>Syntax:</strong> UseEncoding <em>on|off|local-charset client-charset</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_lang<br>
 <strong>Compatibility:</strong> 1.3.2rc1
 
@@ -137,10 +174,7 @@ character sets should be used for encoding.  By default, the
 <code>mod_lang</code> module will automatically discover the local character
 set, and will use UTF-8 for the client character set.  The module will also
 allow the use of UTF-8 encoding to be changed by clients using the
-<code>OPTS UTF8</code> command (as per RFC 2640).  However, if the
-<code>UseEncoding</code> directive is explicitly used to indicate the character
-sets to use (or not use) <b>and</b> the <em>&quot;strict&quot;</em> keyword
-is used, then any OPTS UTF8 commands used by clients will be refused.
+<code>OPTS UTF8</code> command (as per RFC 2640).
 
 <p>
 For example, to disable all use of encoding, use the following in your
@@ -167,7 +201,8 @@ encoding to UTF-8 via the <code>OPTS UTF8</code> command.  If, however, you
 wished to prevent clients from changing the encoding to UTF-8, the above
 configuration would instead look like:
 <pre>
-  UseEncoding koi8-r cp1251 strict
+  LangOptions PreferServerEncoding
+  UseEncoding koi8-r cp1251
 </pre>
 
 <p>
@@ -183,9 +218,9 @@ The <code>mod_lang</code> module is distributed with ProFTPD.  To enable use
 of NLS (Natural Language Support) in your <code>proftpd</code> daemon, use the
 <code>--enable-nls</code> configure option:
 <pre>
-  ./configure --enable-nls
-  make
-  make install
+  $ ./configure --enable-nls
+  $ make
+  $ make install
 </pre>
 This option causes <code>mod_lang</code> to be compiled into
 <code>proftpd</code>.
@@ -204,11 +239,11 @@ mandates that the Telnet control codes be supported in FTP implementations.
 
 <p>
 The <code>mod_lang</code> module, however, can be used to deal with this
-situation.  <b><i>If</i></b> the <a href="#UseEncoding">UseEncoding</code></a>
-directive is used to translate between local and client character sets,
-<i>and</i> the client character set is one of the known Cyrillic character
-sets, then <code>proftpd</code> will disable support of the Telnet control
-codes.
+situation.  <b><i>If</i></b> the
+<a href="#UseEncoding"><code>UseEncoding</code></a> directive is used to
+translate between local and client character sets, <i>and</i> the client
+character set is one of the known Cyrillic character sets, then
+<code>proftpd</code> will disable support of the Telnet control codes.
 
 <p>
 To make a long explanation short, if you want to use Cyrillic characters
@@ -300,19 +335,12 @@ error like this:
 Both of these conditions <b>must</b> be true, otherwise you will see the
 "not a supported language" error.
 
-<p>
-<hr><br>
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2012-10-10 01:26:33 $</i><br>
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2006-2012 TJ Saunders<br>
+&copy; Copyright 2006-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 
-<hr><br>
-
+<hr>
 </body>
 </html>
-

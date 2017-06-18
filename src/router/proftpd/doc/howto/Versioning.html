@@ -1,15 +1,13 @@
-<!-- $Id: Versioning.html,v 1.2 2010-02-25 00:51:40 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Versioning.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD Release Versioning</title>
+<title>ProFTPD: Release Versioning</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD Release Versioning</b></h2></center>
+<center><h2><b>ProFTPD: Release Versioning</b></h2></center>
 <hr>
 
 <p>
@@ -79,7 +77,7 @@ The -V option shows the various build-time options used for your
 <code>proftpd</code>; the version information is at the very beginning of that
 output:
 <pre>
-  # proftpd -V 
+  $ proftpd -V
   Compile-time Settings:
     Version: 1.3.2rc1 (devel)
 </pre>
@@ -94,7 +92,7 @@ name.  Release candidates always use a "devel" version label.
 <p>
 If you are running a stable release, then you would see:
 <pre>
-  # proftpd -V 
+  $ proftpd -V
   Compile-time Settings:
     Version: 1.3.2 (stable)
 </pre>
@@ -103,7 +101,7 @@ The version label for stable releases is always "stable", obviously.
 For completeness, here is what the -V output for a maintenance release
 looks like:
 <pre>
-  # proftpd -V 
+  $ proftpd -V
   Compile-time Settings:
     Version: 1.3.2a (maint)
 </pre>
@@ -111,13 +109,13 @@ The version label for a maintenance is "maint".
 
 <p>
 Finally, for developers and users who use the latest and greatest code from
-the trunk in CVS, you will see something like:
+the master branch on GitHub, you will see something like:
 <pre>
-  # proftpd -V 
+  $ proftpd -V
   Compile-time Settings:
-    Version: 1.3.3rc1 (CVS)
+    Version: 1.3.6rc1 (git)
 </pre>
-All code obtained from CVS reports a version label of "CVS".
+All code obtained from GitHub reports a version label of "git".
 
 <p><a name="FAQ"><b>Frequently Asked Questions</b>
 
@@ -132,7 +130,11 @@ newer, supported versions of ProFTPD instead of in the unsupported branches.
 
 <p>
 <hr>
-<i>$Date: 2010-02-25 00:51:40 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

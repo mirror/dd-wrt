@@ -1,15 +1,13 @@
-<!-- $Id: Testing.html,v 1.6 2011-05-19 18:26:42 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Testing.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Testing</title>
+<title>ProFTPD: Testsuite</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD Testsuite</b></h2></center>
+<center><h2><b>ProFTPD: Testsuite</b></h2></center>
 <hr>
 
 <p>
@@ -25,7 +23,7 @@ In order to run the testsuite, you must configure your proftpd build so that
 the testsuite is prepared.  You do this by using the <code>--enable-tests</code>
 configure option, along with your other build options, <i>e.g.</i>:
 <pre>
-  # ./configure --enable-tests ...
+  $ ./configure --enable-tests ...
 </pre>
 
 <p>
@@ -50,12 +48,12 @@ locations of the <code>libcheck</code> headers and libraries.
 <p>
 To run the testsuite, use the <code>make check</code> target:
 <pre>
-  # ./configure --enable-tests ...
-  # make
+  $ ./configure --enable-tests ...
+  $ make
     ...
-  # make check
+  $ make check
     ...
-  ./api-tests
+  $ ./api-tests
   Running suite(s): pool
    array
    str
@@ -78,7 +76,6 @@ To run the testsuite, use the <code>make check</code> target:
 </pre>
 The <code>make check</code> will also go on to run the integration tests,
 if the API tests all pass.
-</pre>
 
 <p>
 If one of the API tests fails, you will see an error message like:
@@ -133,15 +130,15 @@ The current integration tests are written in Perl, and rely on the
 which version of <code>Test-Unit</code> you have, if at all?  Run the following
 command:
 <pre>
-  # perl -MTest::Unit -e 'print $Test::Unit::VERSION, "\n";'
+  $ perl -MTest::Unit -e 'print $Test::Unit::VERSION, "\n";'
   0.14
 </pre>
 
 <p>
 To run the integration tests manually, use the <code>tests.pl</code> script:
 <pre>
-  # cd tests/
-  # perl tests.pl
+  $ cd tests/
+  $ perl tests.pl
   t/logins.....................ok                                              
   t/commands/user..............ok                                              
   t/commands/pass..............ok                                              
@@ -203,9 +200,9 @@ just the test cases associated with a particular suite, such as <i>env</i> or
 <i>pool</i>.  Only <b>one</b> suite can be specified using the
 <code>PR_TEST_SUITE</code> environment variable:
 <pre>
-  # make check
-  # cd tests/
-  # PR_TEST_SUITE=pool ./api-tests
+  $ make check
+  $ cd tests/
+  $ PR_TEST_SUITE=pool ./api-tests
   Running suite(s): pool
   100%: Checks: 5, Failures: 0, Errors: 0
 </pre>
@@ -215,7 +212,10 @@ to run your changes.
 
 <p>
 <hr>
-Last updated: <i>$Date: 2011-05-19 18:26:42 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

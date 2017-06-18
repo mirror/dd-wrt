@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keyboard-interactive driver mgmt
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@
 #include "kbdint.h"
 
 #define SFTP_KBDINT_MAX_RESPONSES	500
+
+extern pr_response_t *resp_list, *resp_err_list;
 
 struct kbdint_driver {
   struct kbdint_driver *next, *prev;
@@ -277,6 +279,10 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
     destroy_pool(pkt->pool);
     return res;
   }
+
+  pr_response_clear(&resp_list);
+  pr_response_clear(&resp_err_list);
+  pr_response_set_pool(pkt->pool);
 
   mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
   if (mesg_type != SFTP_SSH2_MSG_USER_AUTH_INFO_RESP) {

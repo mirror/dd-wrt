@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2014 The ProFTPD Project team
+ * Copyright (c) 2004-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Display of files
- * $Id: display.c,v 1.32 2013-10-07 05:51:30 castaglia Exp $
- */
+/* Display of files */
 
 #include "conf.h"
 
@@ -34,14 +32,17 @@ static const char *prev_msg = NULL;
 
 /* Note: The size provided by pr_fs_getsize2() is in KB, not bytes. */
 static void format_size_str(char *buf, size_t buflen, off_t size) {
-  char *units[] = {"K", "M", "G", "T", "P"};
-  unsigned int nunits = 5;
+  char *units[] = {"K", "M", "G", "T", "P", "E", "Z", "Y"};
+  unsigned int nunits = 8;
   register unsigned int i = 0;
   int res;
 
-  /* Determine the appropriate units label to use. */
+  /* Determine the appropriate units label to use. Do not exceed the max
+   * possible unit support (yottabytes), by ensuring that i maxes out at
+   * index 7 (of 8 possible units).
+   */
   while (size > 1024 &&
-         i < nunits) {
+         i < (nunits - 1)) {
     pr_signals_handle();
 
     size /= 1024;
@@ -136,39 +137,39 @@ static int display_flush_lines(pool *p, const char *resp_code, int flags) {
   return 0;
 }
 
-static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
+static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
     int flags) {
   struct stat st;
   char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   int len, res;
-  unsigned int *current_clients = NULL;
-  unsigned int *max_clients = NULL;
+  const unsigned int *current_clients = NULL;
+  const unsigned int *max_clients = NULL;
   off_t fs_size = 0;
   pool *p;
-  void *v;
+  const void *v;
   xaset_t *s;
   config_rec *c = NULL;
+  const char *mg_time, *outs = NULL, *rfc1413_ident = NULL, *user;
   const char *serverfqdn = main_server->ServerFQDN;
-  char *outs, mg_size[12] = {'\0'}, mg_size_units[12] = {'\0'},
+  char mg_size[12] = {'\0'}, mg_size_units[12] = {'\0'},
     mg_max[12] = "unlimited";
   char total_files_in[12] = {'\0'}, total_files_out[12] = {'\0'},
     total_files_xfer[12] = {'\0'};
   char mg_class_limit[12] = {'\0'}, mg_cur[12] = {'\0'},
     mg_xfer_bytes[12] = {'\0'}, mg_cur_class[12] = {'\0'};
-  char mg_xfer_units[12] = {'\0'}, *user;
-  const char *mg_time;
-  char *rfc1413_ident = NULL;
+  char mg_xfer_units[12] = {'\0'};
 
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
-  pr_fsio_fstat(fh, &st);
-  fh->fh_iosz = st.st_blksize;
+  if (pr_fsio_fstat(fh, &st) == 0) {
+    fh->fh_iosz = st.st_blksize;
+  }
 
   /* Note: The size provided by pr_fs_getsize() is in KB, not bytes. */
   res = pr_fs_fgetsize(fh->fh_fd, &fs_size);
   if (res < 0 &&
       errno != ENOSYS) {
-    pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
+      pr_log_debug(DEBUG7, "error getting filesystem size for '%s': %s",
       fh->fh_path, strerror(errno));
     fs_size = 0;
   }
@@ -186,20 +187,21 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   max_clients = get_param_ptr(s, "MaxClients", FALSE);
 
   v = pr_table_get(session.notes, "client-count", NULL);
-  if (v) {
+  if (v != NULL) {
     current_clients = v;
   }
 
-  snprintf(mg_cur, sizeof(mg_cur), "%u", current_clients ? *current_clients: 1);
+  snprintf(mg_cur, sizeof(mg_cur), "%u",
+    current_clients ? *current_clients : 1);
 
   if (session.conn_class != NULL &&
       session.conn_class->cls_name != NULL) {
-    unsigned int *class_clients = NULL;
+    const unsigned int *class_clients = NULL;
     config_rec *maxc = NULL;
     unsigned int maxclients = 0;
 
     v = pr_table_get(session.notes, "class-client-count", NULL);
-    if (v) {
+    if (v != NULL) {
       class_clients = v;
     }
 
@@ -214,7 +216,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
     maxc = find_config(main_server->conf, CONF_PARAM, "MaxClientsPerClass",
       FALSE);
 
-    while (maxc) {
+    while (maxc != NULL) {
       pr_signals_handle();
 
       if (strcmp(maxc->argv[0], session.conn_class->cls_name) != 0) {
@@ -229,9 +231,9 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
 
     if (maxclients == 0) {
       maxc = find_config(main_server->conf, CONF_PARAM, "MaxClients", FALSE);
-
-      if (maxc)
+      if (maxc != NULL) {
         maxclients = *((unsigned int *) maxc->argv[0]);
+      }
     }
 
     snprintf(mg_class_limit, sizeof(mg_class_limit), "%u", maxclients);
@@ -263,13 +265,21 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
   snprintf(mg_max, sizeof(mg_max), "%u", max_clients ? *max_clients : 0);
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-  if (user == NULL)
+  if (user == NULL) {
     user = "";
+  }
 
   c = find_config(main_server->conf, CONF_PARAM, "MasqueradeAddress", FALSE);
-  if (c) {
-    pr_netaddr_t *masq_addr = (pr_netaddr_t *) c->argv[0];
-    serverfqdn = pr_netaddr_get_dnsstr(masq_addr);
+  if (c != NULL) {
+    pr_netaddr_t *masq_addr = NULL;
+
+    if (c->argv[0] != NULL) {
+      masq_addr = c->argv[0];
+    }
+
+    if (masq_addr != NULL) {
+      serverfqdn = pr_netaddr_get_dnsstr(masq_addr);
+    }
   }
 
   /* "Stringify" the file number for this session. */
@@ -333,15 +343,17 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
       if (strncmp(key, "%{time:", 7) == 0) {
         char time_str[128], *fmt;
         time_t now;
-        struct tm *time_info;
+        struct tm *tm;
 
         fmt = pstrndup(p, key + 7, strlen(key) - 8);
 
-        now = time(NULL);
-        time_info = pr_localtime(NULL, &now);
-
+        time(&now);
         memset(time_str, 0, sizeof(time_str));
-        strftime(time_str, sizeof(time_str), fmt, time_info);
+
+        tm = pr_localtime(NULL, &now);
+        if (tm != NULL) {
+          strftime(time_str, sizeof(time_str), fmt, tm);
+        }
 
         val = pstrdup(p, time_str);
 
@@ -406,38 +418,40 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *code,
        * response chains to be flushed, which won't work (i.e. DisplayConnect
        * and DisplayQuit).
        */
-      display_add_line(p, code, outs);
+      display_add_line(p, resp_code, outs);
 
     } else {
-      pr_response_add(code, "%s", outs);
+      pr_response_add(resp_code, "%s", outs);
     }
   }
 
   if (flags & PR_DISPLAY_FL_SEND_NOW) {
-    display_flush_lines(p, code, flags);
+    display_flush_lines(p, resp_code, flags);
   }
 
   destroy_pool(p);
   return 0;
 }
 
-int pr_display_fh(pr_fh_t *fh, const char *fs, const char *code, int flags) {
-  if (!fh || !code) {
+int pr_display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
+    int flags) {
+  if (fh == NULL ||
+      resp_code == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  return display_fh(fh, fs, code, flags);
+  return display_fh(fh, fs, resp_code, flags);
 }
 
-int pr_display_file(const char *path, const char *fs, const char *code,
+int pr_display_file(const char *path, const char *fs, const char *resp_code,
     int flags) {
   pr_fh_t *fh = NULL;
   int res, xerrno;
   struct stat st;
 
   if (path == NULL ||
-      code == NULL) {
+      resp_code == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -449,7 +463,11 @@ int pr_display_file(const char *path, const char *fs, const char *code,
 
   res = pr_fsio_fstat(fh, &st);
   if (res < 0) {
+    xerrno = errno;
+
     pr_fsio_close(fh);
+
+    errno = xerrno;
     return -1;
   }
 
@@ -459,7 +477,7 @@ int pr_display_file(const char *path, const char *fs, const char *code,
     return -1;
   }
 
-  res = display_fh(fh, fs, code, flags);
+  res = display_fh(fh, fs, resp_code, flags);
   xerrno = errno;
 
   pr_fsio_close(fh);

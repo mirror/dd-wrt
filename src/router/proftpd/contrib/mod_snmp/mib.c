@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp MIB support
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,6 @@
 #include "mib.h"
 #include "smi.h"
 #include "db.h"
-#include "stacktrace.h"
 
 /* This table maps the OIDs in the PROFTPD-MIB to the database field where
  * that value is stored.
@@ -1134,7 +1133,7 @@ int snmp_mib_get_max_idx(void) {
 }
 
 struct snmp_mib *snmp_mib_get_by_idx(unsigned int mib_idx) {
-  if (mib_idx > snmp_mib_get_max_idx()) {
+  if (mib_idx > (unsigned int) snmp_mib_get_max_idx()) {
     errno = EINVAL;
     return NULL;
   }

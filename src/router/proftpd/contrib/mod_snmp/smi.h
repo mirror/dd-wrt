@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp SMI routines
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,13 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: smi.h,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
-
-#include "mod_snmp.h"
-#include "asn1.h"
 
 #ifndef MOD_SNMP_SMI_H
 #define MOD_SNMP_SMI_H
+
+#include "mod_snmp.h"
+#include "asn1.h"
 
 /* RFC1902 Structure of Management Information (SMI) for SNMPv2 */
 #define SNMP_SMI_INTEGER	SNMP_ASN1_TYPE_INTEGER
@@ -112,4 +110,4 @@ int snmp_smi_write_vars(pool *p, unsigned char **buf, size_t *buflen,
 unsigned int snmp_smi_util_add_list_var(struct snmp_var **head,
   struct snmp_var **tail, struct snmp_var *var);
 
-#endif
+#endif /* MOD_SNMP_SMI_H */

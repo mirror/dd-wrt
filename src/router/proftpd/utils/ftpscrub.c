@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source distribution.
  */
 
-/* "Scrubs" the scoreboard file, clearing it of old/stale entries.
- * $Id: ftpscrub.c,v 1.3 2011-05-23 20:46:20 castaglia Exp $
- */
+/* "Scrubs" the scoreboard file, clearing it of old/stale entries. */
 
 #include "utils.h"
 
@@ -33,8 +31,9 @@ static const char *config_filename = PR_CONFIG_FILE_PATH;
 static int check_scoreboard_file(void) {
   struct stat st;
 
-  if (stat(util_get_scoreboard(), &st) < 0)
+  if (stat(util_get_scoreboard(), &st) < 0) {
     return -1;
+  }
 
   return 0;
 }
@@ -69,10 +68,12 @@ static void show_usage(const char *progname, int exit_code) {
 #else /* HAVE_GETOPT_LONG */
     printf("  %s\n", h->short_opt);
 #endif
-    if (!h->desc)
+    if (h->desc == NULL) {
       printf("    display %s usage\n", progname);
-    else
+
+    } else {
       printf("    %s\n", h->desc);
+    }
   }
 
   exit(exit_code);
@@ -99,6 +100,7 @@ int main(int argc, char **argv) {
     switch (c) {
       case 'h':
         show_usage(progname, 0);
+        break;
 
       case 'f':
         util_set_scoreboard(optarg);
@@ -115,6 +117,7 @@ int main(int argc, char **argv) {
       case '?':
         fprintf(stderr, "unknown option: %c\n", (char) optopt);
         show_usage(progname, 1);
+        break;
     }
   }
 

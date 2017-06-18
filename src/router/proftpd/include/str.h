@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2013 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* String manipulation functions
- * $Id: str.h,v 1.11 2013-11-24 00:45:29 castaglia Exp $
- */
+/* String manipulation functions */
 
 #ifndef PR_STR_H
 #define PR_STR_H
@@ -32,8 +30,14 @@
 /* Default maximum number of replacements that will do in a given string. */
 #define PR_STR_MAX_REPLACEMENTS                 8
 
+/* Per RFC959, directory responses for MKD and PWD should be "dir_name" (with
+ * quotes).  For directories that CONTAIN quotes, the additional quotes must
+ * be duplicated.
+ */
+const char *quote_dir(pool *p, char *dir);
+
 char *sstrcat(char *, const char *, size_t);
-char *sreplace(pool *, char *, ...);
+const char *sreplace(pool *, const char *, ...);
 
 char *pdircat(pool *, ...);
 char *pstrcat(pool *, ...);
@@ -52,10 +56,13 @@ char *pstrndup(pool *, const char *, size_t);
 int pr_strnrstr(const char *s, size_t slen, const char *suffix,
   size_t suffixlen, int flags);
 
+/* Returns a quoted version of the given string. */
+const char *pr_str_quote(pool *p, const char *str);
+
 /* Newer version of sreplace(), with more control and better error reporting. */
-char *pr_str_replace(pool *, unsigned int, char *, ...);
-char *pr_str_strip(pool *, char *);
-char *pr_str_strip_end(char *, char *);
+const char *pr_str_replace(pool *, unsigned int, const char *, ...);
+const char *pr_str_strip(pool *, const char *);
+char *pr_str_strip_end(char *, const char *);
 int pr_str_get_nbytes(const char *, const char *, off_t *);
 char *pr_str_get_word(char **, int);
 
@@ -66,6 +73,50 @@ char *pr_str_get_word(char **, int);
  * A "time string" is formatted as "hh:mm:ss".
  */
 int pr_str_get_duration(const char *str, int *duration);
+
+/* Encode the given buffer of binary data as a hex string.  The flags indicate
+ * whether to use uppercase or lowercase hex values; the default is to use
+ * lowercase values.
+ *
+ * Returns NULL on error, or the successfully encoded string, allocated out of
+ * the given pool, on success.
+ */
+char *pr_str_bin2hex(pool *p, const unsigned char *buf, size_t len, int flags);
+#define PR_STR_FL_HEX_USE_UC			0x0001
+#define PR_STR_FL_HEX_USE_LC			0x0002
+
+/* Decodes the given buffer of hex-encoded data into binary data. */
+unsigned char *pr_str_hex2bin(pool *p, const unsigned char *hex, size_t hex_len,
+  size_t *len);
+
+/* Obtain the Levenshtein distance between the two strings.  The various
+ * operations (swap, substitution, insertion, deletion) can be weighted.
+ */
+int pr_str_levenshtein(pool *p, const char *a, const char *b,
+  int swap_cost, int subst_cost, int insert_cost, int del_cost, int flags);
+
+/* Given a string and a list of possibly similar candidates, return an
+ * array of the candidates, sorted in order of Levenshtein distance (ascending).
+ * A maximum edit distance can be used to return the most relevant subset of
+ * the candidates; if a max distance of zero is used, the default max distance
+ * value will be used.
+ */
+array_header *pr_str_get_similars(pool *p, const char *s,
+  array_header *candidates, int max_distance, int flags);
+#define PR_STR_DEFAULT_MAX_EDIT_DISTANCE		7
+
+/* Given a string delimited by a character (such as comma or pipe), return
+ * an array of each item.
+ */
+array_header *pr_str_text_to_array(pool *p, const char *text, char delimiter);
+
+/* Converts a string to a uid_t/gid_t, respectively. */
+int pr_str2uid(const char *, uid_t *);
+int pr_str2gid(const char *, gid_t *);
+
+/* Converts a uid_t/gid_t to a string, respectively */
+const char *pr_uid2str(pool *, uid_t);
+const char *pr_gid2str(pool *, gid_t);
 
 #define PR_STR_FL_PRESERVE_COMMENTS		0x0001
 #define PR_STR_FL_PRESERVE_WHITESPACE		0x0002

@@ -59,40 +59,9 @@ sub list_tests {
 sub readme_login_path {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
   if (open(my $fh, "> $readme_file")) {
     print $fh "Hello, mod_readme users!\n";
 
@@ -105,14 +74,14 @@ sub readme_login_path {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -125,7 +94,8 @@ sub readme_login_path {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -143,7 +113,7 @@ sub readme_login_path {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -152,23 +122,23 @@ sub readme_login_path {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file (.*?)\/README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(3);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
@@ -181,7 +151,7 @@ sub readme_login_path {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -191,64 +161,29 @@ sub readme_login_path {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub readme_login_path_nonexistent {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -261,7 +196,8 @@ sub readme_login_path_nonexistent {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -279,7 +215,7 @@ sub readme_login_path_nonexistent {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -288,11 +224,11 @@ sub readme_login_path_nonexistent {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(2);
       $self->assert(!defined($resp_msg),
@@ -309,7 +245,7 @@ sub readme_login_path_nonexistent {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -319,54 +255,19 @@ sub readme_login_path_nonexistent {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub readme_login_pattern {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
   if (open(my $fh, "> $readme_file")) {
     print $fh "Hello, mod_readme users!\n";
 
@@ -379,14 +280,14 @@ sub readme_login_pattern {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -399,7 +300,8 @@ sub readme_login_pattern {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -417,7 +319,7 @@ sub readme_login_pattern {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -426,23 +328,23 @@ sub readme_login_pattern {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(3);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
@@ -455,7 +357,7 @@ sub readme_login_pattern {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -465,54 +367,19 @@ sub readme_login_pattern {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub readme_cwd_pattern {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
   if (open(my $fh, "> $readme_file")) {
     print $fh "Hello, mod_readme users!\n";
 
@@ -524,7 +391,7 @@ sub readme_cwd_pattern {
     die("Can't open $readme_file: $!");
   }
 
-  my $subdir = File::Spec->rel2abs("$home_dir/subdir.d");
+  my $subdir = File::Spec->rel2abs("$setup->{home_dir}/subdir.d");
   mkpath($subdir);
 
   $readme_file = File::Spec->rel2abs("$subdir/README");
@@ -540,14 +407,14 @@ sub readme_cwd_pattern {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -560,7 +427,8 @@ sub readme_cwd_pattern {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -578,7 +446,7 @@ sub readme_cwd_pattern {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -587,23 +455,23 @@ sub readme_cwd_pattern {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(3);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->cwd('subdir.d');
 
@@ -612,23 +480,23 @@ sub readme_cwd_pattern {
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "CWD command successful";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(1);
 
       $expected = " Please read the file README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(2);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
@@ -641,7 +509,7 @@ sub readme_cwd_pattern {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -651,54 +519,19 @@ sub readme_cwd_pattern {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub readme_cwd_pattern_multiple_matches {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
   if (open(my $fh, "> $readme_file")) {
     print $fh "Hello, mod_readme users!\n";
 
@@ -710,7 +543,7 @@ sub readme_cwd_pattern_multiple_matches {
     die("Can't open $readme_file: $!");
   }
 
-  my $subdir = File::Spec->rel2abs("$home_dir/subdir.d");
+  my $subdir = File::Spec->rel2abs("$setup->{home_dir}/subdir.d");
   mkpath($subdir);
 
   $readme_file = File::Spec->rel2abs("$subdir/README");
@@ -738,14 +571,14 @@ sub readme_cwd_pattern_multiple_matches {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -758,7 +591,8 @@ sub readme_cwd_pattern_multiple_matches {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -776,7 +610,7 @@ sub readme_cwd_pattern_multiple_matches {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -785,23 +619,23 @@ sub readme_cwd_pattern_multiple_matches {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
-      $expected = "User $user logged in";
+      $expected = "User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(2);
 
       $expected = "Please read the file README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(3);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->cwd('subdir.d');
 
@@ -810,35 +644,35 @@ sub readme_cwd_pattern_multiple_matches {
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "CWD command successful";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(1);
 
       $expected = " Please read the file README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(2);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(3);
 
       $expected = " Please read the file READMETOO";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(4);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
@@ -851,7 +685,7 @@ sub readme_cwd_pattern_multiple_matches {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -861,54 +695,19 @@ sub readme_cwd_pattern_multiple_matches {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub readme_login_path_displaylogin_bug3605 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'readme');
 
-  my $config_file = "$tmpdir/readme.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/readme.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/readme.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/readme.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/readme.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
-  my $login_file = File::Spec->rel2abs("$home_dir/.welcome");
+  my $login_file = File::Spec->rel2abs("$setup->{home_dir}/.welcome");
   if (open(my $fh, "> $login_file")) {
     print $fh "\nWelcome to my FTP server, %U.\n";
     print $fh "You are user number %N out of\n";
@@ -923,7 +722,7 @@ sub readme_login_path_displaylogin_bug3605 {
     die("Can't open $login_file: $!");
   }
 
-  my $readme_file = File::Spec->rel2abs("$home_dir/README");
+  my $readme_file = File::Spec->rel2abs("$setup->{home_dir}/README");
   if (open(my $fh, "> $readme_file")) {
     print $fh "Hello, mod_readme users!\n";
 
@@ -936,14 +735,14 @@ sub readme_login_path_displaylogin_bug3605 {
   }
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
-    TraceLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
     Trace => 'response:10',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     DisplayLogin => $login_file,
 
@@ -958,7 +757,8 @@ sub readme_login_path_displaylogin_bug3605 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -976,7 +776,7 @@ sub readme_login_path_displaylogin_bug3605 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
 
       my $resp_code = $client->response_code();
       my $resp_msg = $client->response_msg(0);
@@ -985,25 +785,25 @@ sub readme_login_path_displaylogin_bug3605 {
 
       $expected = 230;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $resp_msg = $client->response_msg(6);
 
-      $expected = " User $user logged in";
+      $expected = " User $setup->{user} logged in";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
  
       $resp_msg = $client->response_msg(8);
 
       $expected = "Please read the file (.*?)\/README";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $resp_msg = $client->response_msg(9);
 
       $expected = "it was last modified on (.*?) \- 0 days ago";
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
     };
@@ -1016,7 +816,7 @@ sub readme_login_path_displaylogin_bug3605 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1026,15 +826,11 @@ sub readme_login_path_displaylogin_bug3605 {
   }
 
   # Stop server
-  server_stop($pid_file);
+  server_stop($setup->{pid_file});
 
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

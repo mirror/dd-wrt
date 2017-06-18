@@ -123,7 +123,7 @@ sub smtp_session {
     eval {
       sleep(1);
 
-      # To reproduce Bug#XXXX, we only need to connect to the server,
+      # To reproduce Bug#4143, we only need to connect to the server,
       # then issue an SMTP command.
 
       my $client = Net::SMTP->new('127.0.0.1',

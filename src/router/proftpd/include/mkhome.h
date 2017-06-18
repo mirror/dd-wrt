@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Home-on-demand support
- * $Id: mkhome.h,v 1.3 2012-09-05 16:40:58 castaglia Exp $
- */
+/* Home-on-demand support */
 
 #ifndef PR_MKHOME_H
 #define PR_MKHOME_H

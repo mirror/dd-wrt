@@ -12,7 +12,7 @@ sub new {
   my $class = shift;
   my ($addr, $port, $use_port, $conn_timeout, $cmd_timeout) = @_;
   $use_port = 0 unless defined($use_port);
-  $conn_timeout = 10 unless defined($conn_timeout);
+  $conn_timeout = 2 unless defined($conn_timeout);
  
   my $ftp;
 
@@ -1630,7 +1630,7 @@ sub stat {
   }
 }
 
-# From the FTP HOST command RFCXXXX (currently in Draft form)
+# From the FTP HOST command RFC 7151
 sub host {
   my $self = shift;
   my $host = shift;
@@ -1645,6 +1645,32 @@ sub host {
 
   if ($code == 4 || $code == 5) {
     croak("HOST command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
+sub clnt {
+  my $self = shift;
+  my $info = shift;
+  $info = 'ProFTPD::TestSuite::FTP' unless defined($info);
+  my $code;
+
+  $code = $self->{ftp}->quot('CLNT', $info);
+  unless ($code) {
+    croak("CLNT command failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("CLNT command failed: " .  $self->{ftp}->code . ' ' .
       $self->response_msg());
   }
 

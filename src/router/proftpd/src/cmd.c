@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2012 The ProFTPD Project team
+ * Copyright (c) 2009-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: cmd.c,v 1.12 2012-12-28 17:40:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -108,6 +106,7 @@ static struct cmd_entry cmd_ids[] = {
   { C_MFF,	3 },	/* PR_CMD_MFF_ID (56) */
   { C_MFMT,	4 },	/* PR_CMD_MFMT_ID (57) */
   { C_HOST,	4 },	/* PR_CMD_HOST_ID (58) */
+  { C_CLNT,	4 },	/* PR_CMD_CLNT_ID (59) */
 
   { NULL,	0 }
 };
@@ -144,9 +143,12 @@ static struct cmd_entry smtp_ids[] = {
   { NULL,	0 }
 };
 
-cmd_rec *pr_cmd_alloc(pool *p, int argc, ...) { 
+static const char *trace_channel = "command";
+
+cmd_rec *pr_cmd_alloc(pool *p, unsigned int argc, ...) {
   pool *newpool = NULL;
   cmd_rec *cmd = NULL;
+  int *xerrno = NULL;
   va_list args;
 
   if (p == NULL) {
@@ -160,21 +162,22 @@ cmd_rec *pr_cmd_alloc(pool *p, int argc, ...) {
   cmd = pcalloc(newpool, sizeof(cmd_rec));
   cmd->argc = argc;
   cmd->stash_index = -1;
+  cmd->stash_hash = 0;
   cmd->pool = newpool;
   cmd->tmp_pool = make_sub_pool(cmd->pool);
   pr_pool_tag(cmd->tmp_pool, "cmd_rec tmp pool");
 
-  if (argc) {
+  if (argc > 0) {
     register unsigned int i = 0;
 
     cmd->argv = pcalloc(newpool, sizeof(void *) * (argc + 1));
     va_start(args, argc);
 
-    for (i = 0; i < argc; i++)
-      cmd->argv[i] = (void *) va_arg(args, char *);
+    for (i = 0; i < argc; i++) {
+      cmd->argv[i] = va_arg(args, void *);
+    }
 
     va_end(args);
-
     cmd->argv[argc] = NULL;
   }
 
@@ -182,6 +185,11 @@ cmd_rec *pr_cmd_alloc(pool *p, int argc, ...) {
    * of chains should suffice.
    */
   cmd->notes = pr_table_nalloc(cmd->pool, 0, 8);
+
+  /* Initialize the "errno" note to be zero, so that it is always present. */
+  xerrno = palloc(cmd->pool, sizeof(int));
+  *xerrno = 0;
+  (void) pr_table_add(cmd->notes, "errno", xerrno, sizeof(int));
 
   return cmd;
 }
@@ -197,6 +205,7 @@ int pr_cmd_clear_cache(cmd_rec *cmd) {
    */
 
   (void) pr_table_remove(cmd->notes, "displayable-str", NULL);
+  (void) pr_cmd_set_errno(cmd, 0);
 
   return 0;
 }
@@ -228,6 +237,44 @@ int pr_cmd_cmp(cmd_rec *cmd, int cmd_id) {
   }
 
   return cmd->cmd_id < cmd_id ? -1 : 1;
+}
+
+int pr_cmd_get_errno(cmd_rec *cmd) {
+  void *v;
+  int *xerrno;
+
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  v = (void *) pr_table_get(cmd->notes, "errno", NULL);
+  if (v == NULL) {
+    errno = ENOENT;
+    return -1;
+  }
+
+  xerrno = v;
+  return *xerrno;
+}
+
+int pr_cmd_set_errno(cmd_rec *cmd, int xerrno) {
+  void *v;
+
+  if (cmd == NULL ||
+      cmd->notes == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  v = (void *) pr_table_get(cmd->notes, "errno", NULL);
+  if (v == NULL) {
+    errno = ENOENT;
+    return -1;
+  }
+
+  *((int *) v) = xerrno;
+  return 0;
 }
 
 int pr_cmd_set_name(cmd_rec *cmd, const char *cmd_name) {
@@ -279,10 +326,10 @@ int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {
   return strncmp(cmd->argv[0], cmd_name, cmd_namelen + 1);
 }
 
-char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
-  char *res;
-  int argc;
-  char **argv;
+const char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
+  const char *res;
+  unsigned int argc;
+  void **argv;
   pool *p;
 
   if (cmd == NULL) {
@@ -291,7 +338,7 @@ char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
   }
 
   res = pr_table_get(cmd->notes, "displayable-str", NULL);
-  if (res) {
+  if (res != NULL) {
     if (str_len != NULL) {
       *str_len = strlen(res);
     }
@@ -322,9 +369,13 @@ char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
     }
   }
 
-  /* XXX Check for errors here */
-  pr_table_add(cmd->notes, pstrdup(cmd->pool, "displayable-str"),
-    pstrdup(cmd->pool, res), 0);
+  if (pr_table_add(cmd->notes, pstrdup(cmd->pool, "displayable-str"),
+      pstrdup(cmd->pool, res), 0) < 0) {
+    if (errno != EEXIST) {
+      pr_trace_msg(trace_channel, 4,
+        "error setting 'displayable-str' command note: %s", strerror(errno));
+    }
+  }
 
   if (str_len != NULL) {
     *str_len = strlen(res);
@@ -405,6 +456,14 @@ int pr_cmd_is_http(cmd_rec *cmd) {
     return -1;
   }
 
+  if (cmd->cmd_id == 0) {
+    cmd->cmd_id = pr_cmd_get_id(cmd_name);
+  }
+
+  if (cmd->cmd_id >= 0) {
+    return FALSE;
+  }
+
   cmd_namelen = strlen(cmd_name);
   return is_known_cmd(http_ids, cmd_name, cmd_namelen);
 }
@@ -424,6 +483,44 @@ int pr_cmd_is_smtp(cmd_rec *cmd) {
     return -1;
   }
 
+  if (cmd->cmd_id == 0) {
+    cmd->cmd_id = pr_cmd_get_id(cmd_name);
+  }
+
+  if (cmd->cmd_id >= 0) {
+    return FALSE;
+  }
+
   cmd_namelen = strlen(cmd_name);
   return is_known_cmd(smtp_ids, cmd_name, cmd_namelen);
+}
+
+int pr_cmd_is_ssh2(cmd_rec *cmd) {
+  const char *cmd_name;
+
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  cmd_name = cmd->argv[0];
+  if (cmd_name == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (cmd->cmd_id == 0) {
+    cmd->cmd_id = pr_cmd_get_id(cmd_name);
+  }
+
+  if (cmd->cmd_id >= 0) {
+    return FALSE;
+  }
+
+  if (strncmp(cmd_name, "SSH-2.0-", 8) == 0 ||
+      strncmp(cmd_name, "SSH-1.99-", 9) == 0) {
+    return TRUE;
+  }
+
+  return FALSE;
 }

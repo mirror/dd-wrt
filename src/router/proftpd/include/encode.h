@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2011 The ProFTPD Project team
+ * Copyright (c) 2006-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* UTF8/charset encoding/decoding
- * $Id: encode.h,v 1.4 2011-05-23 20:35:35 castaglia Exp $
- */
+/* UTF8/charset encoding/decoding */
 
 #ifndef PR_ENCODE_H
 #define PR_ENCODE_H
@@ -48,6 +46,15 @@ void pr_encode_disable_encoding(void);
  * that set.
  */
 int pr_encode_enable_encoding(const char *encoding);
+
+unsigned long pr_encode_get_policy(void);
+int pr_encode_set_policy(unsigned long policy);
+
+/* Determines whether the Encode API will disconnect the client if the
+ * charset conversion fails, i.e. the client is using an illegal/unsupported
+ * encoding.
+ */
+#define PR_ENCODE_POLICY_FL_REQUIRE_VALID_ENCODING		0x001
 
 /* Returns string describing the current charset being used. */
 const char *pr_encode_get_charset(void);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Expression API tests
- * $Id: expr.c,v 1.4 2011-12-11 02:14:43 castaglia Exp $
- */
+/* Expression API tests */
 
 #include "tests.h"
 
@@ -49,7 +47,7 @@ static void tear_down(void) {
 
 START_TEST (expr_create_test) {
   array_header *res;
-  int expr_argc = 2;
+  unsigned int expr_argc = 2;
   char *expr_argv[4] = { NULL, NULL, NULL, NULL };
   char **elts;
 
@@ -77,7 +75,7 @@ START_TEST (expr_create_test) {
   fail_unless(res == NULL, "Failed to handle empty argv argument");
   fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
 
-  expr_argc = -1;
+  expr_argc = 0;
   expr_argv[0] = "foo";
   expr_argv[1] = "bar";
 
@@ -393,7 +391,6 @@ Suite *tests_get_expr_suite(void) {
   suite = suite_create("expr");
 
   testcase = tcase_create("base");
-
   tcase_add_checked_fixture(testcase, set_up, tear_down);
 
   tcase_add_test(testcase, expr_create_test);
@@ -405,6 +402,5 @@ Suite *tests_get_expr_suite(void) {
   tcase_add_test(testcase, expr_eval_user_or_test);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

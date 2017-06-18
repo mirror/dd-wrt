@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_shaper -- a module implementing daemon-wide rate throttling
  *                        via IPC
- *
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +24,6 @@
  *
  * This is mod_shaper, contrib software for proftpd 1.2 and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_shaper.c,v 1.18 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -212,6 +209,8 @@ static int shaper_get_queue(const char *path) {
 static int shaper_remove_queue(void) {
   struct msqid_ds ds;
   int res;
+
+  memset(&ds, 0, sizeof(ds));
 
   res = msgctl(shaper_qid, IPC_RMID, &ds);
   if (res < 0) {
@@ -968,6 +967,14 @@ static int shaper_table_send(void) {
       sess_list[i].sess_upincr);
   }
 
+  if (total_downshares == 0) {
+    total_downshares = 1;
+  }
+
+  if (total_upshares == 0) {
+    total_upshares = 1;
+  }
+
   (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
     "total session shares: %u down, %u up", total_downshares, total_upshares);
 
@@ -1005,8 +1012,9 @@ static int shaper_table_sess_add(pid_t sess_pid, unsigned int prio,
     int downincr, int upincr) {
   struct shaper_sess *sess;
 
-  if (shaper_table_lock(LOCK_EX) < 0)
+  if (shaper_table_lock(LOCK_EX) < 0) {
     return -1;
+  }
 
   if (shaper_table_refresh() < 0) {
     int xerrno = errno;
@@ -1019,7 +1027,14 @@ static int shaper_table_sess_add(pid_t sess_pid, unsigned int prio,
   shaper_tab.nsessions++;
   sess = push_array(shaper_tab.sess_list);
   sess->sess_pid = sess_pid;
-  sess->sess_prio = (prio != (unsigned int) -1) ? prio : shaper_tab.def_prio;
+
+  if (prio != (unsigned int) -1) {
+    sess->sess_prio = prio;
+
+  } else {
+    sess->sess_prio = shaper_tab.def_prio;
+  }
+
   sess->sess_downincr = downincr;
   sess->sess_downrate = 0.0;
   sess->sess_upincr = upincr;
@@ -1216,10 +1231,12 @@ static int shaper_table_sess_remove(pid_t sess_pid) {
  */
 static int shaper_handle_all(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i;
+  register int i;
   int send_tab = TRUE;
 
-  if (reqargc < 2 || reqargc > 14 || reqargc % 2 != 0) {
+  if (reqargc < 2 ||
+      reqargc > 14 ||
+      reqargc % 2 != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
     return -1;
   }
@@ -1499,11 +1516,13 @@ static int shaper_handle_info(pr_ctrls_t *ctrl, int reqargc,
  */
 static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i;
+  register int i;
   int adjusted = FALSE, send_tab = TRUE;
   int prio = -1, downincr = 0, upincr = 0;
 
-  if (reqargc < 4 || reqargc > 6 || reqargc % 2 != 0) {
+  if (reqargc < 4 ||
+      reqargc > 6 ||
+      reqargc % 2 != 0) {
     pr_ctrls_add_response(ctrl, "wrong number of parameters");
     return -1;
   }
@@ -1620,7 +1639,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
 
-    while ((score = pr_scoreboard_read_entry()) != NULL) {
+    while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
 
       if (strcmp(score->sce_user, user) == 0) {
@@ -1642,10 +1661,10 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
   } else if (strcmp(reqargv[0], "host") == 0) {
     pr_scoreboard_entry_t *score;
     const char *addr;
-    pr_netaddr_t *na;
+    const pr_netaddr_t *na;
 
     na = pr_netaddr_get_addr(ctrl->ctrls_tmp_pool, reqargv[1], NULL);
-    if (!na) {
+    if (na == NULL) {
       pr_ctrls_add_response(ctrl, "error resolving '%s': %s", reqargv[1],
         strerror(errno));
       return -1;
@@ -1657,7 +1676,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
 
-    while ((score = pr_scoreboard_read_entry()) != NULL) {
+    while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
 
       if (strcmp(score->sce_client_addr, addr) == 0) {
@@ -1669,8 +1688,9 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
           pr_ctrls_add_response(ctrl, "error adjusting pid %u: %s",
             (unsigned int) score->sce_pid, strerror(errno));
 
-        } else
+        } else {
           adjusted = TRUE;
+        }
       }
     }
 
@@ -1684,7 +1704,7 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
       (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
         "error rewinding scoreboard: %s", strerror(errno));
 
-    while ((score = pr_scoreboard_read_entry()) != NULL) {
+    while ((score = pr_scoreboard_entry_read()) != NULL) {
       pr_signals_handle();
 
       if (strcmp(score->sce_class, class) == 0) {
@@ -1696,8 +1716,9 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
           pr_ctrls_add_response(ctrl, "error adjusting pid %u: %s",
             (unsigned int) score->sce_pid, strerror(errno));
 
-        } else
+        } else {
           adjusted = TRUE;
+        }
       }
     }
 
@@ -1709,8 +1730,9 @@ static int shaper_handle_sess(pr_ctrls_t *ctrl, int reqargc,
     return -1;
   }
 
-  if (adjusted)
+  if (adjusted) {
     pr_ctrls_add_response(ctrl, "sessions adjusted");
+  }
 
   return 0;
 }
@@ -1943,53 +1965,68 @@ MODRET set_shapersession(cmd_rec *cmd) {
 
   register unsigned int i;
 
-  if (cmd->argc-1 < 2 || cmd->argc-1 > 8 || (cmd->argc-1) % 2 != 0)
+  if (cmd->argc-1 < 2 ||
+      cmd->argc-1 > 8 ||
+      (cmd->argc-1) % 2 != 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
   for (i = 1; i < cmd->argc;) {
     if (strcmp(cmd->argv[i], "downshares") == 0) {
-      if (*cmd->argv[i+1] != '+' &&
-          *cmd->argv[i+1] != '-')
-        CONF_ERROR(cmd, "downshares parameter must start with '+' or '-'");
+      char *shareno;
 
-      downshares = atoi(cmd->argv[i+1]);
+      shareno = cmd->argv[i+1];
+      if (*shareno != '+' &&
+          *shareno != '-') {
+        CONF_ERROR(cmd, "downshares parameter must start with '+' or '-'");
+      }
+
+      downshares = atoi(shareno);
       i += 2;
 
     } else if (strcmp(cmd->argv[i], "priority") == 0) {
       prio = atoi(cmd->argv[i+1]);
-
-      if (prio < 0)
+      if (prio < 0) {
         CONF_ERROR(cmd, "priority must be greater than 0");
+      }
 
       i += 2;
 
     } else if (strcmp(cmd->argv[i], "shares") == 0) {
-      if (*cmd->argv[i+1] != '+' &&
-          *cmd->argv[i+1] != '-')
+      char *shareno;
+
+      shareno = cmd->argv[i+1];
+      if (*shareno != '+' &&
+          *shareno != '-') {
         CONF_ERROR(cmd, "shares parameter must start with '+' or '-'");
+      }
 
-      downshares = upshares = atoi(cmd->argv[i+1]);
-
+      downshares = upshares = atoi(shareno);
       i += 2;
 
     } else if (strcmp(cmd->argv[i], "upshares") == 0) {
-      if (*cmd->argv[i+1] != '+' &&
-          *cmd->argv[i+1] != '-')
-        CONF_ERROR(cmd, "upshares parameter must start with '+' or '-'");
+      char *shareno;
 
-      upshares = atoi(cmd->argv[i+1]);
+      shareno = cmd->argv[i+1];
+      if (*shareno != '+' &&
+          *shareno != '-') {
+        CONF_ERROR(cmd, "upshares parameter must start with '+' or '-'");
+      }
+
+      upshares = atoi(shareno);
       i += 2;
 
-    } else
+    } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown option: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
+    }
   }
 
   c = add_config_param(cmd->argv[0], 3, NULL, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[0]) = prio;
+  *((unsigned int *) c->argv[0]) = (unsigned int) prio;
   c->argv[1] = pcalloc(c->pool, sizeof(int));
   *((int *) c->argv[1]) = downshares;
   c->argv[2] = pcalloc(c->pool, sizeof(int));
@@ -2004,8 +2041,9 @@ MODRET set_shapertable(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (pr_fs_valid_path(cmd->argv[1]) < 0)
+  if (pr_fs_valid_path(cmd->argv[1]) < 0) {
     CONF_ERROR(cmd, "must be an absolute path");
+  }
 
   shaper_tab_path = pstrdup(shaper_pool, cmd->argv[1]);
   return PR_HANDLED(cmd);
@@ -2040,11 +2078,11 @@ MODRET shaper_post_pass(cmd_rec *cmd) {
   unsigned int prio = -1;
 
   c = find_config(TOPLEVEL_CONF, CONF_PARAM, "ShaperEngine", FALSE);
-  if (c && *((unsigned char *) c->argv[0]) == TRUE)
+  if (c != NULL &&
+      *((unsigned char *) c->argv[0]) == TRUE) {
     shaper_engine = TRUE;
 
-  else {
-
+  } else {
     /* Don't need the ShaperTable open anymore. */
     close(shaper_tabfd);
     shaper_tabfd = -1;
@@ -2085,9 +2123,10 @@ MODRET shaper_post_pass(cmd_rec *cmd) {
   }
 
   /* Update the ShaperTable, adding a new entry for the current session. */
-  if (shaper_table_sess_add(getpid(), prio, downincr, upincr) < 0)
+  if (shaper_table_sess_add(getpid(), prio, downincr, upincr) < 0) {
     (void) pr_log_writefile(shaper_logfd, MOD_SHAPER_VERSION,
       "error adding session to ShaperTable: %s", strerror(errno));
+  }
 
   return PR_DECLINED(cmd);
 }
@@ -2118,7 +2157,10 @@ static void shaper_shutdown_ev(const void *event_data, void *user_data) {
     }
 
     if (shaper_tab_path) {
-      pr_fsio_unlink(shaper_tab_path);
+      if (pr_fsio_unlink(shaper_tab_path) < 0) {
+        pr_log_debug(DEBUG9, MOD_SHAPER_VERSION
+          ": error unlinking '%s': %s", shaper_tab_path, strerror(errno));
+      }
     }
   }
 

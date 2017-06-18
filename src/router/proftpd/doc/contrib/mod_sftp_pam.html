@@ -1,6 +1,4 @@
-<!-- $Id: mod_sftp_pam.html,v 1.5 2013-10-03 05:21:56 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_sftp_pam.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_sftp_pam</title>
@@ -46,10 +44,10 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="SFTPPAMEngine">SFTPPAMEngine</a></h2>
+<h3><a name="SFTPPAMEngine">SFTPPAMEngine</a></h3>
 <strong>Syntax:</strong> SFTPPAMEngine <em>on|off</em><br>
 <strong>Default:</strong> On<br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sftp_pam<br>
 <strong>Compatibility:</strong> 1.3.2rc2 and later
 
@@ -60,10 +58,10 @@ By default <code>mod_sftp_pam</code> is enabled.
 
 <p>
 <hr>
-<h2><a name="SFTPPAMOptions">SFTPPAMOptions</a></h2>
+<h3><a name="SFTPPAMOptions">SFTPPAMOptions</a></h3>
 <strong>Syntax:</strong> SFTPPAMOptions <em>opt1 opt2 ... optN</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sftp_pam<br>
 <strong>Compatibility:</strong> 1.3.2rc2 and later
 
@@ -98,10 +96,10 @@ The currently supported options are:
 
 <p>
 <hr>
-<h2><a name="SFTPPAMServiceName">SFTPPAMServiceName</a></h2>
+<h3><a name="SFTPPAMServiceName">SFTPPAMServiceName</a></h3>
 <strong>Syntax:</strong> SFTPPAMServiceName <em>service</em><br>
 <strong>Default:</strong> SFTPPAMServiceName sshd<br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sftp_pam<br>
 <strong>Compatibility:</strong> 1.3.2rc2 and later
 
@@ -127,20 +125,20 @@ The <code>SFTPPAMServiceName</code> directive is directly analogous to
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_sftp_pam</code> module is distributed with ProFTPD.  Simply follow
-the normal steps for using third-party modules in proftpd:
+the normal steps for using third-party modules in ProFTPD:
 <pre>
-  ./configure --with-modules=mod_sftp:mod_sftp_pam ...
-  make
-  make install
+  $ ./configure --with-modules=mod_sftp:mod_sftp_pam ...
+  $ make
+  $ make install
 </pre>
 Alternatively, <code>mod_sftp_pam</code> can be built as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_sftp_pam ...
+  $ ./configure --enable-dso --with-shared=mod_sftp_pam ...
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
@@ -148,7 +146,7 @@ For those with an existing ProFTPD installation, you can use the
 <code>prxs</code> tool to add <code>mod_sftp_pam</code>, as a DSO module, to
 your existing server:
 <pre>
-  # prxs -c -i -d mod_sftp_pam.c
+  $ prxs -c -i -d mod_sftp_pam.c
 </pre>
 
 <p>
@@ -167,20 +165,12 @@ service name as the <code>mod_auth_pam</code> module; this allows you to have
 different PAM configurations for FTP versus SSH2 logins.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-10-03 05:21:56 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2008-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

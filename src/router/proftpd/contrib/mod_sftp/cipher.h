@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp cipher mgmt
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,15 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: cipher.h,v 1.4 2013-01-29 07:29:22 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_CIPHER_H
 #define MOD_SFTP_CIPHER_H
+
+#include "mod_sftp.h"
+
+int sftp_cipher_init(void);
+int sftp_cipher_free(void);
 
 /* Returns the cipher block size, or 8, whichever is larger. This value is
  * used when reading in the first bytes of a packet in order to determine
@@ -39,14 +40,14 @@ void sftp_cipher_set_block_size(size_t);
 const char *sftp_cipher_get_read_algo(void);
 int sftp_cipher_set_read_algo(const char *);
 int sftp_cipher_set_read_key(pool *, const EVP_MD *, const BIGNUM *,
-  const char *, uint32_t);
+  const char *, uint32_t, int);
 int sftp_cipher_read_data(pool *, unsigned char *, uint32_t,
   unsigned char **, uint32_t *);
 
 const char *sftp_cipher_get_write_algo(void);
 int sftp_cipher_set_write_algo(const char *);
 int sftp_cipher_set_write_key(pool *, const EVP_MD *, const BIGNUM *,
-  const char *, uint32_t);
+  const char *, uint32_t, int);
 int sftp_cipher_write_data(struct ssh2_packet *, unsigned char *, size_t *);
 
-#endif
+#endif /* MOD_SFTP_CIPHER_H */

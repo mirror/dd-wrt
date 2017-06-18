@@ -1,6 +1,4 @@
-<!-- $Id: mod_sql_sqlite.html,v 1.4 2009-06-29 17:10:22 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_sql_sqlite.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_sql_sqlite</title>
@@ -44,26 +42,26 @@ The <code>mod_sql_sqlite</code> modules requires that SQLite be installed.
 
 <p>
 After installing SQLite, follow the usual steps for using contrib modules in
-proftpd, making sure to list <code>mod_sql</code>:
+ProFTPD, making sure to list <code>mod_sql</code>:
 <pre>
-  ./configure --with-modules=mod_sql:mod_sql_sqlite
-  make
-  make install
+  $ ./configure --with-modules=mod_sql:mod_sql_sqlite
+  $ make
+  $ make install
 </pre>
 You may need to specify the location of the SQLite header and library files in
 your <code>configure</code> command, <i>e.g.</i>:
 <pre>
-  ./configure --with-modules=mod_sql:mod_sql_sqlite \
+  $ ./configure --with-modules=mod_sql:mod_sql_sqlite \
     --with-includes=/usr/local/sqlite/include \
     --with-libraries=/usr/local/sqlite/lib
 </pre>
 
 <p>
-Alternatively, if your proftpd was compiled with DSO support, you can
-use the <code>prxs</code> tool to build <code>mod_sql_sqlite</code> as
+Alternatively, if your <code>proftpd</code> was compiled with DSO support, you
+can use the <code>prxs</code> tool to build <code>mod_sql_sqlite</code> as
 a shared module:
 <pre>
-  prxs -c -i -d mod_sql_sqlite.c
+  $ prxs -c -i -d mod_sql_sqlite.c
 </pre>
 
 <p>
@@ -84,7 +82,7 @@ For example:
 </pre>
 
 <p>
-Note that due to the way that <code>mod_sql_sqlite<code> implements database
+Note that due to the way that <code>mod_sql_sqlite</code> implements database
 transactions (e.g. <code>INSERT</code> and <code>UPDATE</code> SQL statements
 for <code>SQLLog</code> directives), SQLite-3.6.5 or later is <b>required</b>
 in order for <code>mod_sql_sqlite</code> to support <code>SQLLog</code>
@@ -94,20 +92,12 @@ needed for supporting the <code>SQLLog</code> directives in a chrooted
 process.)
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009-06-29 17:10:22 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2004-2009 TJ Saunders<br>
+&copy; Copyright 2004-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Unix authentication module for ProFTPD
- * $Id: mod_auth_unix.c,v 1.61 2013-10-13 17:34:01 castaglia Exp $
- */
+/* Unix authentication module for ProFTPD */
 
 #include "conf.h"
 
@@ -97,21 +95,20 @@ extern void cygwin_set_impersonation_token (const HANDLE);
 
 #include "privs.h"
 
-static const char *pwdfname = "/etc/passwd";
-static const char *grpfname = "/etc/group";
-
 #ifdef HAVE__PW_STAYOPEN
 extern int _pw_stayopen;
 #endif
 
 module auth_unix_module;
 
-static const char *trace_channel = "auth";
-
+static const char *pwdfname = "/etc/passwd";
 static FILE *pwdf = NULL;
+
+static const char *grpfname = "/etc/group";
 static FILE *grpf = NULL;
 
 static int unix_persistent_passwd = FALSE;
+static const char *trace_channel = "auth.unix";
 
 #undef PASSWD
 #define PASSWD		pwdfname
@@ -131,6 +128,8 @@ static int unix_persistent_passwd = FALSE;
 #define AUTH_UNIX_OPT_AIX_NO_RLOGIN		0x0001
 #define AUTH_UNIX_OPT_NO_GETGROUPLIST		0x0002
 #define AUTH_UNIX_OPT_MAGIC_TOKEN_CHROOT	0x0004
+#define AUTH_UNIX_OPT_NO_INITGROUPS		0x0008
+#define AUTH_UNIX_OPT_AIX_NO_AUTHENTICATE	0x0010
 
 static unsigned long auth_unix_opts = 0UL;
 
@@ -139,7 +138,7 @@ static void auth_unix_exit_ev(const void *, void *);
 static int auth_unix_sess_init(void);
 
 static void p_setpwent(void) {
-  if (pwdf) {
+  if (pwdf != NULL) {
     rewind(pwdf);
 
   } else {
@@ -152,14 +151,14 @@ static void p_setpwent(void) {
 }
 
 static void p_endpwent(void) {
-  if (pwdf) {
+  if (pwdf != NULL) {
     fclose(pwdf);
     pwdf = NULL;
   }
 }
 
 static RETSETGRENTTYPE p_setgrent(void) {
-  if (grpf) {
+  if (grpf != NULL) {
     rewind(grpf);
 
   } else {
@@ -176,44 +175,47 @@ static RETSETGRENTTYPE p_setgrent(void) {
 }
 
 static void p_endgrent(void) {
-  if (grpf) {
+  if (grpf != NULL) {
     fclose(grpf);
     grpf = NULL;
   }
 }
 
 static struct passwd *p_getpwent(void) {
-  if (!pwdf)
+  if (pwdf == NULL) {
     p_setpwent();
+  }
 
-  if (!pwdf)
+  if (pwdf == NULL) {
     return NULL;
+  }
 
   return fgetpwent(pwdf);
 }
 
 static struct group *p_getgrent(void) {
-  struct group *gr = NULL;
-
-  if (!grpf)
+  if (grpf == NULL) {
     p_setgrent();
+  }
 
-  if (!grpf)
+  if (grpf == NULL) {
     return NULL;
+  }
 
-  gr = fgetgrent(grpf);
-
-  return gr;
+  return fgetgrent(grpf);
 }
 
 static struct passwd *p_getpwnam(const char *name) {
   struct passwd *pw = NULL;
+  size_t name_len;
 
   p_setpwent();
+  name_len = strlen(name);
+
   while ((pw = p_getpwent()) != NULL) {
     pr_signals_handle();
 
-    if (strcmp(name, pw->pw_name) == 0) {
+    if (strncmp(name, pw->pw_name, name_len + 1) == 0) {
       break;
     }
   }
@@ -228,8 +230,9 @@ static struct passwd *p_getpwuid(uid_t uid) {
   while ((pw = p_getpwent()) != NULL) {
     pr_signals_handle();
 
-    if (pw->pw_uid == uid)
+    if (pw->pw_uid == uid) {
       break;
+    }
   }
 
   return pw;
@@ -237,13 +240,17 @@ static struct passwd *p_getpwuid(uid_t uid) {
 
 static struct group *p_getgrnam(const char *name) {
   struct group *gr = NULL;
+  size_t name_len;
 
   p_setgrent();
+  name_len = strlen(name);
+
   while ((gr = p_getgrent()) != NULL) {
     pr_signals_handle();
 
-    if (strcmp(name, gr->gr_name) == 0)
+    if (strncmp(name, gr->gr_name, name_len + 1) == 0) {
       break;
+    }
   }
 
   return gr;
@@ -256,8 +263,9 @@ static struct group *p_getgrgid(gid_t gid) {
   while ((gr = p_getgrent()) != NULL) {
     pr_signals_handle();
 
-    if (gr->gr_gid == gid)
+    if (gr->gr_gid == gid) {
       break;
+    }
   }
 
   return gr;
@@ -478,7 +486,7 @@ MODRET pw_getgrgid(cmd_rec *cmd) {
 }
 
 #ifdef PR_USE_SHADOW
-static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
+static char *get_pwd_info(pool *p, const char *u, time_t *lstchg, time_t *min,
     time_t *max, time_t *warn, time_t *inact, time_t *expire) {
   struct spwd *sp;
   char *cpw = NULL;
@@ -586,7 +594,7 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
 
 #else /* PR_USE_SHADOW */
 
-static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
+static char *get_pwd_info(pool *p, const char *u, time_t *lstchg, time_t *min,
     time_t *max, time_t *warn, time_t *inact, time_t *expire) {
   char *cpw = NULL;
 #if defined(HAVE_GETPRPWENT) || defined(COMSEC)
@@ -705,6 +713,7 @@ static char *_get_pw_info(pool *p, const char *u, time_t *lstchg, time_t *min,
  */
 
 MODRET pw_auth(cmd_rec *cmd) {
+  int res;
   time_t now;
   char *cpw;
   time_t lstchg = -1, max = -1, inact = -1, disable = -1;
@@ -713,15 +722,15 @@ MODRET pw_auth(cmd_rec *cmd) {
   name = cmd->argv[0];
   time(&now);
 
-  cpw = _get_pw_info(cmd->tmp_pool, name, &lstchg, NULL, &max, NULL, &inact,
+  cpw = get_pwd_info(cmd->tmp_pool, name, &lstchg, NULL, &max, NULL, &inact,
     &disable);
-
-  if (!cpw) {
+  if (cpw == NULL) {
     return PR_DECLINED(cmd);
   }
 
-  if (pr_auth_check(cmd->tmp_pool, cpw, cmd->argv[0], cmd->argv[1])) {
-    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  res = pr_auth_check(cmd->tmp_pool, cpw, cmd->argv[0], cmd->argv[1]);
+  if (res < PR_AUTH_OK) {
+    return PR_ERROR_INT(cmd, res);
   }
 
   if (lstchg > (time_t) 0 &&
@@ -742,65 +751,67 @@ MODRET pw_auth(cmd_rec *cmd) {
 }
 
 MODRET pw_authz(cmd_rec *cmd) {
-
-#ifdef HAVE_LOGINRESTRICTIONS
-  int code = 0, mode = S_RLOGIN;
-  char *reason = NULL;
-#endif
-
   /* XXX Any other implementations here? */
 
 #ifdef HAVE_LOGINRESTRICTIONS
+  if (!(auth_unix_opts & AUTH_UNIX_OPT_AIX_NO_RLOGIN)) {
+    int res, xerrno, code = 0;
+    char *user = NULL, *reason = NULL;
 
-  if (auth_unix_opts & AUTH_UNIX_OPT_AIX_NO_RLOGIN) {
-    mode = 0;
-  }
+    user = cmd->argv[0];
 
-  /* Check for account login restrictions and such using AIX-specific
-   * functions.
-   */
-  PRIVS_ROOT
-  if (loginrestrictions(cmd->argv[0], mode, NULL, &reason) != 0) {
+    /* Check for account login restrictions and such using AIX-specific
+     * functions.
+     */
+    PRIVS_ROOT
+    res = loginrestrictions(user, S_RLOGIN, NULL, &reason);
+    xerrno = errno;
     PRIVS_RELINQUISH
 
-    if (reason &&
-        *reason) {
-      pr_log_auth(LOG_WARNING, "login restricted for user '%s': %.100s",
-        cmd->argv[0], reason);
+    if (res != 0) {
+      if (reason != NULL &&
+          *reason) {
+        pr_trace_msg(trace_channel, 9,
+          "AIX loginrestrictions() failed for user '%s': %.100s", user, reason);
+        pr_log_auth(LOG_WARNING, "login restricted for user '%s': %.100s",
+          user, reason);
+      }
+
+      pr_log_auth(LOG_NOTICE,
+        "AIX loginrestrictions() failed for user '%s': %s", user,
+        strerror(xerrno));
+
+      return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
     }
 
-    pr_log_debug(DEBUG2, "AIX loginrestrictions() failed for user '%s': %s",
-      cmd->argv[0], strerror(errno));
+    PRIVS_ROOT
+    code = passwdexpired(user, &reason);
+    PRIVS_RELINQUISH
 
-    return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
-  }
+    switch (code) {
+      case 0:
+        /* Password not expired for user */
+        break;
 
-  code = passwdexpired(cmd->argv[0], &reason);
-  PRIVS_RELINQUISH
+      case 1:
+        /* Password expired and needs to be changed */
+        pr_log_auth(LOG_WARNING, "password expired for user '%s': %.100s",
+          cmd->argv[0], reason);
+        return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
 
-  switch (code) {
-    case 0:
-      /* Password not expired for user */
-      break;
+      case 2:
+        /* Password expired, requires sysadmin to change it */
+        pr_log_auth(LOG_WARNING,
+          "password expired for user '%s', requires sysadmin intervention: "
+          "%.100s", user, reason);
+        return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
 
-    case 1:
-      /* Password expired and needs to be changed */
-      pr_log_auth(LOG_WARNING, "password expired for user '%s': %.100s",
-        cmd->argv[0], reason);
-      return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
-
-    case 2:
-      /* Password expired, requires sysadmin to change it */
-      pr_log_auth(LOG_WARNING,
-        "password expired for user '%s', requires sysadmin intervention: "
-        "%.100s", cmd->argv[0], reason);
-      return PR_ERROR_INT(cmd, PR_AUTH_AGEPWD);
-
-    default:
-      /* Other error */
-      pr_log_auth(LOG_WARNING, "AIX passwdexpired() failed for user '%s': "
-        "%.100s", cmd->argv[0], reason);
-      return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
+      default:
+        /* Other error */
+        pr_log_auth(LOG_WARNING, "AIX passwdexpired() failed for user '%s': "
+          "%.100s", user, reason);
+        return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
+    }
   }
 #endif /* !HAVE_LOGINRESTRICTIONS */
 
@@ -930,12 +941,56 @@ MODRET pw_check(cmd_rec *cmd) {
   } else {
 # endif /* CYGWIN */
 
+#ifdef HAVE_AUTHENTICATE
+  if (!(auth_unix_opts & AUTH_UNIX_OPT_AIX_NO_AUTHENTICATE)) {
+    int res, xerrno, reenter = 0;
+    char *user, *passwd, *msg = NULL;
+
+    user = cmd->argv[1];
+    passwd = cmd->argv[2];
+
+    pr_trace_msg(trace_channel, 9, "calling AIX authenticate() for user '%s'",
+      user);
+
+    PRIVS_ROOT
+    do {
+      res = authenticate(user, passwd, &reenter, &msg);
+      xerrno = errno;
+
+      pr_trace_msg(trace_channel, 9,
+        "AIX authenticate result: %d (msg '%.100s')", res, msg);
+
+    } while (reenter != 0);
+    PRIVS_RELINQUISH
+
+    /* AIX indicates failure with a return value of 1. */
+    if (res != 0) {
+      pr_log_auth(LOG_WARNING,
+       "AIX authenticate failed for user '%s': %.100s", user, msg);
+
+      if (xerrno == ENOENT) {
+        return PR_ERROR_INT(cmd, PR_AUTH_NOPWD);
+      }
+
+      return PR_ERROR_INT(cmd, PR_AUTH_DISABLEDPWD);
+    }
+  }
+#endif /* HAVE_AUTHENTICATE */
+
   /* Call pw_authz here, to make sure the user is authorized to login. */
 
-  if (cmd2 == NULL)
+  if (cmd2 == NULL) {
     cmd2 = pr_cmd_alloc(cmd->tmp_pool, 1, cmd->argv[1]);
+  }
 
   mr = pw_authz(cmd2);
+  if (MODRET_ISERROR(mr)) {
+    int err_code;
+
+    err_code = MODRET_ERROR(mr);
+    return PR_ERROR_INT(cmd, err_code);
+  }
+
   if (MODRET_ISDECLINED(mr)) {
     return PR_DECLINED(cmd);
   }
@@ -1035,17 +1090,311 @@ MODRET pw_name2gid(cmd_rec *cmd) {
   return gr ? mod_create_data(cmd, (void *) &gr->gr_gid) : PR_DECLINED(cmd);
 }
 
+static int get_groups_by_getgrset(const char *user, gid_t primary_gid,
+    array_header *gids, array_header *groups,
+    struct group *(*my_getgrgid)(gid_t)) {
+  int res;
+#ifdef HAVE_GETGRSET
+  gid_t group_ids[NGROUPS_MAX];
+  unsigned int ngroups = 0;
+  register unsigned int i;
+  char *grgid, *grouplist, *ptr;
+
+  pr_trace_msg("auth", 4,
+    "using getgrset(3) to look up group membership");
+
+  grouplist = getgrset(user);
+  if (grouplist == NULL) {
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING, "getgrset(3) error: %s", strerror(xerrno));
+
+    errno = xerrno;
+    return -1;
+  }
+
+  ptr = grouplist;
+  memset(group_ids, 0, sizeof(group_ids));
+
+  /* The getgrset(3) function returns a string which is a comma-delimited
+   * list of group IDs.
+   */
+  grgid = strsep(&grouplist, ",");
+  while (grgid != NULL) {
+    gid_t gid;
+
+    pr_signals_handle();
+
+    if (ngroups >= sizeof(group_ids)) {
+      /* Reached capacity of the group_ids array. */
+      break;
+    }
+
+    pr_str2gid(grgid, &gid);
+
+    /* Skip the primary group. */
+    if (gid == primary_gid) {
+      grgid = strsep(&grouplist, ",");
+      continue;
+    }
+
+    group_ids[ngroups] = gid;
+    ngroups++;
+
+    grgid = strsep(&grouplist, ",");
+  }
+
+  for (i = 0; i < ngroups; i++) {
+    struct group *gr;
+
+    gr = my_getgrgid(group_ids[i]);
+    if (gr != NULL) {
+      if (gids != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((gid_t *) push_array(gids)) = gr->gr_gid;
+      }
+
+      if (groups != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((char **) push_array(groups)) = pstrdup(session.pool,
+          gr->gr_name);
+      }
+    }
+  }
+
+  free(ptr);
+  res = 0;
+
+#else
+  errno = ENOSYS;
+  res = -1;
+#endif /* HAVE_GETGRSET */
+
+  return res;
+}
+
+static int get_groups_by_getgrouplist(const char *user, gid_t primary_gid,
+    array_header *gids, array_header *groups,
+    struct group *(*my_getgrgid)(gid_t)) {
+  int res;
+#ifdef HAVE_GETGROUPLIST
+  int use_getgrouplist = TRUE;
+  gid_t group_ids[NGROUPS_MAX];
+  int ngroups = NGROUPS_MAX;
+  register int i;
+
+  /* Determine whether to use getgrouplist(3), if available.  Older glibc
+   * versions (i.e. 2.2.4 and older) had buggy getgrouplist() implementations
+   * which allowed for buffer overflows (see CVS-2003-0689); do not use
+   * getgrouplist() on such glibc versions.
+   */
+
+# if defined(__GLIBC__) && \
+     defined(__GLIBC_MINOR__) && \
+     __GLIBC__ <= 2 && \
+     __GLIBC_MINOR__ < 3
+  use_getgrouplist = FALSE;
+# endif
+
+  /* Use of getgrouplist(3) might have been disabled via the "NoGetgrouplist"
+   * AuthUnixOption as well.
+   */
+  if (auth_unix_opts & AUTH_UNIX_OPT_NO_GETGROUPLIST) {
+    use_getgrouplist = FALSE;
+  }
+
+  if (use_getgrouplist == FALSE) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  pr_trace_msg("auth", 4,
+    "using getgrouplist(3) to look up group membership");
+
+  memset(group_ids, 0, sizeof(group_ids));
+  if (getgrouplist(user, primary_gid, group_ids, &ngroups) < 0) {
+    int xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING, "getgrouplist(3) error: %s", strerror(xerrno));
+
+    errno = xerrno;
+    return -1;
+  }
+
+  for (i = 0; i < ngroups; i++) {
+    struct group *gr;
+
+    gr = my_getgrgid(group_ids[i]);
+    if (gr != NULL) {
+      if (gids != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((gid_t *) push_array(gids)) = gr->gr_gid;
+      }
+
+      if (groups != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((char **) push_array(groups)) = pstrdup(session.pool,
+          gr->gr_name);
+      }
+    }
+  }
+
+  res = 0;
+#else
+  errno = ENOSYS;
+  res = -1;
+#endif /* HAVE_GETGROUPLIST */
+
+  return res;
+}
+
+static int get_groups_by_getgrent(const char *user, gid_t primary_gid,
+    array_header *gids, array_header *groups,
+    struct group *(*my_getgrent)(void)) {
+  struct group *gr;
+  size_t user_len;
+
+  /* This is where things get slow, expensive, and ugly.  Loop through
+   * everything, checking to make sure we haven't already added it.
+   */
+  user_len = strlen(user);
+  while ((gr = my_getgrent()) != NULL &&
+         gr->gr_mem != NULL) {
+    char **gr_member = NULL;
+
+    pr_signals_handle();
+
+    /* Loop through each member name listed */
+    for (gr_member = gr->gr_mem; *gr_member; gr_member++) {
+
+     /* If it matches the given username... */
+      if (strncmp(*gr_member, user, user_len + 1) == 0) {
+
+        if (gids != NULL &&
+            primary_gid != gr->gr_gid) {
+          *((gid_t *) push_array(gids)) = gr->gr_gid;
+        }
+
+        if (groups != NULL &&
+            primary_gid != gr->gr_gid) {
+          *((char **) push_array(groups)) = pstrdup(session.pool,
+            gr->gr_name);
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+
+static int get_groups_by_initgroups(const char *user, gid_t primary_gid,
+    array_header *gids, array_header *groups,
+    struct group *(*my_getgrgid)(gid_t)) {
+  int res;
+#if defined(HAVE_INITGROUPS) && defined(HAVE_GETGROUPS)
+  gid_t group_ids[NGROUPS_MAX+1];
+  int ngroups, use_initgroups = TRUE, xerrno;
+  register int i;
+
+  /* On Mac OSX, the getgroups(2) man page has this unsettling tidbit:
+   *
+   *  Calling initgroups(3) to opt-in for supplementary groups will cause
+   *  getgroups() to return a single entry, the GID that was passed to
+   *  initgroups(3).
+   *
+   * But in our case, we WANT all of those groups.  Thus on Mac OSX, we
+   * will skip the use of initgroups(3) in favor of other mechanisms
+   * (e.g. getgrouplist(3)).
+   */
+# if defined(DARWIN10) || \
+     defined(DARWIN11) || \
+     defined(DARWIN12) || \
+     defined(DARWIN13) || \
+     defined(DARWIN14) || \
+     defined(DARWIN15)
+  use_initgroups = FALSE;
+# endif /* Mac OSX */
+
+  /* Use of initgroups(3) might have been disabled via the "NoInitgroups"
+   * AuthUnixOption as well.
+   */
+  if (auth_unix_opts & AUTH_UNIX_OPT_NO_INITGROUPS) {
+    use_initgroups = FALSE;
+  }
+
+  /* If we are not root, then initgroups(3) will most likely fail. */
+  if (geteuid() != PR_ROOT_UID) {
+    use_initgroups = FALSE;
+  }
+
+  if (use_initgroups == FALSE) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  pr_trace_msg("auth", 4,
+    "using initgroups(3) to look up group membership");
+
+  PRIVS_ROOT
+  res = initgroups(user, primary_gid);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (res < 0) {
+    pr_log_pri(PR_LOG_WARNING, "initgroups(3) error: %s", strerror(xerrno));
+
+    errno = xerrno;
+    return -1;
+  }
+
+  ngroups = getgroups(NGROUPS_MAX+1, group_ids);
+  if (ngroups < 0) {
+    xerrno = errno;
+
+    pr_log_pri(PR_LOG_WARNING, "getgroups(2) error: %s", strerror(xerrno));
+
+    errno = xerrno;
+    return -1;
+  }
+
+  for (i = 0; i < ngroups; i++) {
+    struct group *gr;
+
+    gr = my_getgrgid(group_ids[i]);
+    if (gr != NULL) {
+      if (gids != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((gid_t *) push_array(gids)) = gr->gr_gid;
+      }
+
+      if (groups != NULL &&
+          primary_gid != gr->gr_gid) {
+        *((char **) push_array(groups)) = pstrdup(session.pool,
+          gr->gr_name);
+      }
+    }
+  }
+
+  res = 0;
+
+#else
+  errno = ENOSYS;
+  res = -1;
+#endif /* HAVE_INITGROUPS and HAVE_GETGROUPS */
+
+  return res;
+}
+
 /* cmd->argv[0] = name
  * cmd->argv[1] = (array_header **) group_ids
  * cmd->argv[2] = (array_header **) group_names
  */
-
 MODRET pw_getgroups(cmd_rec *cmd) {
+  int res;
   struct passwd *pw = NULL;
   struct group *gr = NULL;
   array_header *gids = NULL, *groups = NULL;
-  char *name = NULL;
-  int use_getgrouplist = FALSE;
+  const char *name = NULL;
 
   /* Function pointers for which lookup functions to use */
   struct passwd *(*my_getpwnam)(const char *) = NULL;
@@ -1067,212 +1416,64 @@ MODRET pw_getgroups(cmd_rec *cmd) {
     my_setgrent = setgrent;
   }
 
-#ifdef HAVE_GETGROUPLIST
-  /* Determine whether to use getgrouplist(3), if available.  Older glibc
-   * versions (i.e. 2.2.4 and older) had buggy getgrouplist() implementations
-   * which allowed for buffer overflows (see CVS-2003-0689); do not use
-   * getgrouplist() on such glibc versions.
-   */
-  use_getgrouplist = TRUE;
+  name = cmd->argv[0];
 
-# if defined(__GLIBC__) && \
-     defined(__GLIBC_MINOR__) && \
-     __GLIBC__ <= 2 && \
-     __GLIBC_MINOR__ < 3
-  use_getgrouplist = FALSE;
-# endif
-#endif /* !HAVE_GETGROUPLIST */
-
-  /* Use of getgrouplist(3) might have been disabled via the "noGetgrouplist"
-   * AuthUnixOption as well.
-   */
-  if (auth_unix_opts & AUTH_UNIX_OPT_NO_GETGROUPLIST) {
-    use_getgrouplist = FALSE;
+  if (cmd->argv[1] != NULL) {
+    gids = (array_header *) cmd->argv[1];
   }
 
-  name = (char *) cmd->argv[0];
-
-  /* Check for NULL values. */
-  if (cmd->argv[1])
-    gids = (array_header *) cmd->argv[1];
-
-  if (cmd->argv[2])
+  if (cmd->argv[2] != NULL) {
     groups = (array_header *) cmd->argv[2];
+  }
 
   /* Retrieve the necessary info. */
-  if (!name || !(pw = my_getpwnam(name)))
+  if (name == NULL ||
+      !(pw = my_getpwnam(name))) {
     return PR_DECLINED(cmd);
+  }
 
   /* Populate the first group ID and name. */
-  if (gids)
+  if (gids != NULL) {
     *((gid_t *) push_array(gids)) = pw->pw_gid;
+  }
 
-  if (groups && (gr = my_getgrgid(pw->pw_gid)) != NULL)
+  if (groups != NULL &&
+      (gr = my_getgrgid(pw->pw_gid)) != NULL) {
     *((char **) push_array(groups)) = pstrdup(session.pool, gr->gr_name);
+  }
 
   my_setgrent();
 
-  if (use_getgrouplist) {
-#ifdef HAVE_GETGROUPLIST
-    gid_t group_ids[NGROUPS_MAX];
-    int ngroups = NGROUPS_MAX;
-    register unsigned int i;
+  /* Myriad are the ways of obtaining the group membership of a user. */
 
-    pr_trace_msg("auth", 4,
-      "using getgrouplist(3) to look up group membership");
-
-    memset(group_ids, 0, sizeof(group_ids));
-    if (getgrouplist(pw->pw_name, pw->pw_gid, group_ids, &ngroups) < 0) {
-      int xerrno = errno;
-
-      pr_log_pri(PR_LOG_WARNING, "getgrouplist error: %s", strerror(xerrno));
-
-      errno = xerrno;
-      return PR_DECLINED(cmd);
-    }
-
-    for (i = 0; i < ngroups; i++) {
-      gr = my_getgrgid(group_ids[i]);
-      if (gr) {
-        if (gids && pw->pw_gid != gr->gr_gid)
-          *((gid_t *) push_array(gids)) = gr->gr_gid;
-
-        if (groups && pw->pw_gid != gr->gr_gid) {
-          *((char **) push_array(groups)) = pstrdup(session.pool,
-            gr->gr_name);
-        }
-      }
-    }
-#endif /* !HAVE_GETGROUPLIST */
-
-  } else {
-#ifdef HAVE_GETGRSET
-    gid_t group_ids[NGROUPS_MAX];
-    unsigned int ngroups = 0;
-    register unsigned int i;
-    char *grgid, *grouplist, *ptr;
-
-    pr_trace_msg("auth", 4,
-      "using getgrset(3) to look up group membership");
-
-    grouplist = getgrset(pw->pw_name);
-    if (grouplist == NULL) {
-      int xerrno = errno;
-
-      pr_log_pri(PR_LOG_WARNING, "getgrset error: %s", strerror(xerrno));
-
-      errno = xerrno;
-      return PR_DECLINED(cmd);
-    }
-
-    ptr = grouplist;
-    memset(group_ids, 0, sizeof(group_ids));
-
-    /* The getgrset(3) function returns a string which is a comma-delimited
-     * list of group IDs.
-     */
-    grgid = strsep(&grouplist, ",");
-    while (grgid) {
-      long gid;
-
-      pr_signals_handle();
-
-      if (ngroups >= sizeof(group_ids)) {
-        /* Reached capacity of the group_ids array. */
-        break;
-      }
-
-      /* XXX Should we use strtoul(3) or even strtoull(3) here? */
-      gid = strtol(grgid, NULL, 10);
-
-      /* Skip the primary group. */
-      if ((gid_t) gid == pw->pw_gid) {
-        grgid = strsep(&grouplist, ",");
-        continue;
-      }
-
-      group_ids[ngroups] = (gid_t) gid;
-      ngroups++;
-
-      grgid = strsep(&grouplist, ",");
-    }
-
-    for (i = 0; i < ngroups; i++) {
-      gr = my_getgrgid(group_ids[i]);
-      if (gr) {
-        if (gids && pw->pw_gid != gr->gr_gid)
-          *((gid_t *) push_array(gids)) = gr->gr_gid;
-
-        if (groups && pw->pw_gid != gr->gr_gid) {
-          *((char **) push_array(groups)) = pstrdup(session.pool,
-            gr->gr_name);
-        }
-      }
-    }
-
-    free(ptr);
-#else
-    char **gr_member = NULL;
-    size_t pw_namelen;
-
-    /* This is where things get slow, expensive, and ugly.  Loop through
-     * everything, checking to make sure we haven't already added it.
-     */
-    pw_namelen = strlen(pw->pw_name);
-    while ((gr = my_getgrent()) != NULL && gr->gr_mem) {
-      pr_signals_handle();
-
-      /* Loop through each member name listed */
-      for (gr_member = gr->gr_mem; *gr_member; gr_member++) {
-
-        /* If it matches the given username... */
-        if (strncmp(*gr_member, pw->pw_name, pw_namelen + 1) == 0) {
-
-          /* ...add the GID and name */
-          if (gids)
-            *((gid_t *) push_array(gids)) = gr->gr_gid;
-
-          if (groups && pw->pw_gid != gr->gr_gid) {
-            *((char **) push_array(groups)) = pstrdup(session.pool,
-              gr->gr_name);
-          }
-        }
-      }
-    }
-#endif /* !HAVE_GETGRSET */
+  res = get_groups_by_initgroups(name, pw->pw_gid, gids, groups, my_getgrgid);
+  if (res < 0 &&
+      errno == ENOSYS) {
+    res = get_groups_by_getgrouplist(name, pw->pw_gid, gids, groups,
+      my_getgrgid);
   }
 
-  if (gids &&
+  if (res < 0 &&
+      errno == ENOSYS) {
+    res = get_groups_by_getgrset(name, pw->pw_gid, gids, groups, my_getgrgid);
+  }
+
+  if (res < 0 &&
+      errno == ENOSYS) {
+    res = get_groups_by_getgrent(name, pw->pw_gid, gids, groups, my_getgrent);
+  }
+
+  if (res < 0) {
+    return PR_DECLINED(cmd);
+  }
+
+  if (gids != NULL &&
       gids->nelts > 0) {
     return mod_create_data(cmd, (void *) &gids->nelts);
 
-  } else if (groups &&
+  } else if (groups != NULL &&
              groups->nelts > 0) {
     return mod_create_data(cmd, (void *) &groups->nelts);
-  }
-
-  return PR_DECLINED(cmd);
-}
-
-/* Command handlers
- */
-
-MODRET auth_unix_post_host(cmd_rec *cmd) {
-
-  /* If the HOST command changed the main_server pointer, reinitialize
-   * ourselves.
-   */
-  if (session.prev_server != NULL) {
-    int res;
-
-    pr_event_unregister(&auth_unix_module, "core.exit", auth_unix_exit_ev);
-    auth_unix_opts = 0UL;
-
-    res = auth_unix_sess_init();
-    if (res < 0) {
-      pr_session_disconnect(&auth_unix_module,
-        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
-    }
   }
 
   return PR_DECLINED(cmd);
@@ -1296,14 +1497,20 @@ MODRET set_authunixoptions(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
 
   for (i = 1; i < cmd->argc; i++) {
-    if (strcmp(cmd->argv[i], "aixNoRLogin") == 0) {
+    if (strcasecmp(cmd->argv[i], "AIXNoRLogin") == 0) {
       opts |= AUTH_UNIX_OPT_AIX_NO_RLOGIN;
 
-    } else if (strcmp(cmd->argv[i], "noGetgrouplist") == 0) {
+    } else if (strcasecmp(cmd->argv[i], "NoGetgrouplist") == 0) {
       opts |= AUTH_UNIX_OPT_NO_GETGROUPLIST;
 
-    } else if (strcmp(cmd->argv[i], "magicTokenChroot") == 0) {
+    } else if (strcasecmp(cmd->argv[i], "NoInitgroups") == 0) {
+      opts |= AUTH_UNIX_OPT_NO_INITGROUPS;
+
+    } else if (strcasecmp(cmd->argv[i], "MagicTokenChroot") == 0) {
       opts |= AUTH_UNIX_OPT_MAGIC_TOKEN_CHROOT;
+
+    } else if (strcasecmp(cmd->argv[i], "AIXNoAuthenticate") == 0) {
+      opts |= AUTH_UNIX_OPT_AIX_NO_AUTHENTICATE;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown AuthUnixOption '",
@@ -1342,8 +1549,24 @@ MODRET set_persistentpasswd(cmd_rec *cmd) {
 static void auth_unix_exit_ev(const void *event_data, void *user_data) {
   pr_auth_endpwent(session.pool);
   pr_auth_endgrent(session.pool);
+}
 
-  return;
+static void auth_unix_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&auth_unix_module, "core.exit", auth_unix_exit_ev);
+  pr_event_unregister(&auth_unix_module, "core.session-reinit",
+    auth_unix_sess_reinit_ev);
+  auth_unix_opts = 0UL;
+  unix_persistent_passwd = FALSE;
+
+  res = auth_unix_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&auth_unix_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
 }
 
 /* Initialization routines
@@ -1362,6 +1585,8 @@ static int auth_unix_sess_init(void) {
   config_rec *c;
 
   pr_event_register(&auth_unix_module, "core.exit", auth_unix_exit_ev, NULL);
+  pr_event_register(&auth_unix_module, "core.session-reinit",
+    auth_unix_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "AuthUnixOptions", FALSE);
   if (c) {
@@ -1383,11 +1608,6 @@ static conftable auth_unix_conftab[] = {
   { "AuthUnixOptions",		set_authunixoptions,		NULL },
   { "PersistentPasswd",		set_persistentpasswd,		NULL },
   { NULL,			NULL,				NULL }
-};
-
-static cmdtable auth_unix_cmdtab[] = {
-  { POST_CMD,	C_HOST,	G_NONE,	auth_unix_post_host,	FALSE, FALSE },
-  { 0, NULL }
 };
 
 static authtable auth_unix_authtab[] = {
@@ -1425,7 +1645,7 @@ module auth_unix_module = {
   auth_unix_conftab,
 
   /* Module command handler table */
-  auth_unix_cmdtab,
+  NULL,
 
   /* Module authentication handler table */
   auth_unix_authtab,

@@ -71,3 +71,6 @@ depend:
 	$(RM) module_glue.c
 	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
 	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
+
+distclean: clean
+	-$(RM) *.gcda *.gcno

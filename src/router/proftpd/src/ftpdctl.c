@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* ProFTPD Controls command-line client
- * $Id: ftpdctl.c,v 1.20 2013-07-16 21:36:49 castaglia Exp $
- */
+/* ProFTPD Controls command-line client */
 
 #include "conf.h"
 #include "privs.h"
@@ -67,6 +65,9 @@ int pr_event_listening(const char *event) {
   return -1;
 }
 
+void pr_fs_fadvise(int fd, off_t off, off_t len, int advice) {
+}
+
 int pr_fs_get_usable_fd(int fd) {
   return -1;
 }
@@ -93,7 +94,7 @@ pr_table_t *pr_table_alloc(pool *p, int flags) {
   return NULL;
 }
 
-int pr_table_add(pr_table_t *tab, const char *k, void *v, size_t sz) {
+int pr_table_add(pr_table_t *tab, const char *k, const void *v, size_t sz) {
   errno = EPERM;
   return -1;
 }
@@ -118,12 +119,17 @@ int pr_table_free(pr_table_t *tab) {
   return -1;
 }
 
-void *pr_table_get(pr_table_t *tab, const char *k, size_t *sz) {
+const void *pr_table_get(pr_table_t *tab, const char *k, size_t *sz) {
   errno = EPERM;
   return NULL;
 }
 
-int pr_table_set(pr_table_t *tab, const char *k, void *v, size_t sz) {
+const void *pr_table_remove(pr_table_t *tab, const char *k, size_t *sz) {
+  errno = EPERM;
+  return NULL;
+}
+
+int pr_table_set(pr_table_t *tab, const char *k, const void *v, size_t sz) {
   errno = EPERM;
   return -1;
 }
@@ -169,7 +175,7 @@ static RETSIGTYPE sig_pipe(int sig) {
 }
 
 static void usage(void) {
-  fprintf(stdout, "usage: %s [options]\n", program);
+  fprintf(stdout, "usage: %s [options] action [...]\n", program);
   fprintf(stdout, "  -h\tdisplays this message\n");
   fprintf(stdout, "  -s\tspecify an alternate local socket\n");
   fprintf(stdout, "  -v\tdisplays more verbose information\n");
@@ -188,12 +194,6 @@ int main(int argc, char *argv[]) {
   unsigned int reqargc = 0;
   pool *ctl_pool = NULL;
   array_header *reqargv = NULL;
-
-  /* Make sure we were called with at least one argument. */
-  if (argc-1 < 1) {
-    fprintf(stdout, "%s: missing required arguments\n", program);
-    exit(1);
-  }
 
   /* Set the POSIXLY_CORRECT environment variable, so that control handlers
    * can themselves have optional flags.
@@ -229,6 +229,12 @@ int main(int argc, char *argv[]) {
         fprintf(stdout, "%s: unknown option: %c\n", program, (char) optopt);
         break;
     }
+  }
+
+  /* Make sure we were called with at least one argument. */
+  if (argv[optind] == NULL) {
+    fprintf(stdout, "%s: missing required action\n", program);
+    exit(1);
   }
 
   signal(SIGPIPE, sig_pipe);

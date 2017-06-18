@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_sql_sqlite -- Support for connecting to SQLite databases
- *
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,7 @@
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
  *
- * $Id: mod_sql_sqlite.c,v 1.24 2013-10-07 05:51:29 castaglia Exp $
- * $Libraries: -lsqlite3 $
+ * $Libraries: -lsqlite3$
  */
 
 #define MOD_SQL_SQLITE_VERSION		"mod_sql_sqlite/0.4"
@@ -34,8 +32,8 @@
 #include <sqlite3.h>
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030001
-# error "ProFTPD 1.3.0rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 module sql_sqlite_module;
@@ -70,7 +68,18 @@ typedef struct conn_entry_struct {
 static pool *conn_pool = NULL;
 static array_header *conn_cache = NULL;
 
+#define SQLITE_TRACE_LEVEL	12
+static const char *trace_channel = "sql.sqlite";
+
 MODRET sql_sqlite_close(cmd_rec *);
+
+static void db_err(void *user_data, int err_code, const char *err_msg) {
+  pr_trace_msg(trace_channel, 1, "(sqlite3): [error %d] %s", err_code, err_msg);
+}
+
+static void db_trace(void *user_data, const char *trace_msg) {
+  pr_trace_msg(trace_channel, SQLITE_TRACE_LEVEL, "(sqlite3): %s", trace_msg);
+}
 
 static conn_entry_t *sql_sqlite_get_conn(char *name) {
   register unsigned int i = 0;
@@ -110,9 +119,10 @@ static int sql_sqlite_timer_cb(CALLBACK_FRAME) {
   register unsigned int i = 0;
  
   for (i = 0; i < conn_cache->nelts; i++) {
-    conn_entry_t *entry = ((conn_entry_t **) conn_cache->elts)[i];
+    conn_entry_t *entry;
 
-    if (entry->timer == p2) {
+    entry = ((conn_entry_t **) conn_cache->elts)[i];
+    if ((unsigned long) entry->timer == p2) {
       cmd_rec *cmd = NULL;
 
       sql_log(DEBUG_INFO, "timer expired for connection '%s'", entry->name);
@@ -136,7 +146,7 @@ static array_header *result_list = NULL;
 
 static int exec_cb(void *n, int ncols, char **cols,
     char **colnames) {
-  register unsigned int i;
+  register int i;
   char ***row;
   cmd_rec *cmd = n;
 
@@ -241,8 +251,9 @@ static modret_t *sql_sqlite_get_data(cmd_rec *cmd) {
   char **data;
   sql_data_t *sd = pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
 
-  if (result_list == NULL)
+  if (result_list == NULL) {
     return mod_create_data(cmd, sd);
+  }
 
   sd->rnum = result_list->nelts;
   sd->fnum = result_ncols;
@@ -250,11 +261,13 @@ static modret_t *sql_sqlite_get_data(cmd_rec *cmd) {
   data = pcalloc(cmd->tmp_pool, sizeof(char *) * (count + 1));
 
   for (i = 0; i < result_list->nelts; i++) {
-    register unsigned int j;
-    char **row = ((char ***) result_list->elts)[i];
+    register int j;
+    char **row;
 
-    for (j = 0; j < result_ncols; j++)
+    row = ((char ***) result_list->elts)[i];
+    for (j = 0; j < result_ncols; j++) {
       data[k++] = pstrdup(cmd->tmp_pool, row[j]);
+    }
   }
 
   data[k] = NULL;
@@ -272,7 +285,9 @@ static modret_t *sql_sqlite_get_data(cmd_rec *cmd) {
 MODRET sql_sqlite_open(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
+  const char *stmt = NULL;
   int res;
+  unsigned int nretries = 0;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_open");
 
@@ -297,8 +312,9 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   if (entry->nconn > 0) {
     entry->nconn++;
 
-    if (entry->timer)
+    if (entry->timer) {
       pr_timer_reset(entry->timer, &sql_sqlite_module);
+    }
 
     sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
       entry->nconn);
@@ -321,13 +337,43 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION, errstr);
   }
 
+  if (pr_trace_get_level(trace_channel) >= SQLITE_TRACE_LEVEL) {
+    sqlite3_trace(conn->dbh, db_trace, NULL);
+  }
+
   /* Tell SQLite to only use in-memory journals.  This is necessary for
    * mod_sql_sqlite to work properly, for SQLLog statements, when a chroot
    * is used.  Note that the MEMORY journal mode of SQLite is supported
    * only for SQLite-3.6.5 and later.
    */
-  res = sqlite3_exec(conn->dbh, "PRAGMA journal_mode = MEMORY;", NULL, NULL,
-    NULL);
+  stmt = "PRAGMA journal_mode = MEMORY;";
+  res = sqlite3_exec(conn->dbh, stmt, NULL, NULL, NULL);
+
+  /* Make sure we handle contention here, just like any other statement
+   * (Issue#385).
+   */
+  while (res != SQLITE_OK) {
+    if (res == SQLITE_BUSY) {
+      struct timeval tv;
+
+      nretries++;
+      sql_log(DEBUG_FUNC, "attempt #%u, database busy, trying '%s' again",
+        nretries, stmt);
+
+      /* Sleep for short bit, then try again. */
+      tv.tv_sec = 0;
+      tv.tv_usec = 500000L;
+
+      if (select(0, NULL, NULL, NULL, &tv) < 0) {
+        if (errno == EINTR) {
+          pr_signals_handle();
+        }
+      }
+
+      res = sqlite3_exec(conn->dbh, stmt, NULL, NULL, NULL);
+    }
+  }
+
   if (res != SQLITE_OK) {
     sql_log(DEBUG_FUNC, "error setting MEMORY journal mode: %s",
       sqlite3_errmsg(conn->dbh));
@@ -366,6 +412,7 @@ MODRET sql_sqlite_open(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "'%s' connection opened", entry->name);
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
     entry->nconn);
+  pr_event_generate("mod_sql.db.connection-opened", &sql_sqlite_module);
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_open");
   return PR_HANDLED(cmd);
@@ -424,6 +471,7 @@ MODRET sql_sqlite_close(cmd_rec *cmd) {
     }
 
     sql_log(DEBUG_INFO, "'%s' connection closed", entry->name);
+    pr_event_generate("mod_sql.db.connection-closed", &sql_sqlite_module);
   }
 
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
@@ -448,13 +496,15 @@ MODRET sql_sqlite_def_conn(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tsqlite cmd_defineconnection");
 
-  if (cmd->argc < 4 || cmd->argc > 5 || !cmd->argv[0]) {
+  if (cmd->argc < 4 ||
+      cmd->argc > 10 ||
+      !cmd->argv[0]) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tsqlite cmd_defineconnection");
     return PR_ERROR_MSG(cmd, MOD_SQL_SQLITE_VERSION, "badly formed request");
   }
 
-  if (!conn_pool) {
-    pr_log_pri(PR_LOG_WARNING, "warning: the mod_sql_sqlite module has not "
+  if (conn_pool == NULL) {
+    pr_log_pri(PR_LOG_WARNING, "WARNING: the mod_sql_sqlite module has not "
       "been properly intialized.  Please make sure your --with-modules "
       "configure option lists mod_sql *before* mod_sql_sqlite, and recompile.");
 
@@ -481,7 +531,7 @@ MODRET sql_sqlite_def_conn(cmd_rec *cmd) {
       "named connection already exists");
   }
 
-  if (cmd->argc == 5) {
+  if (cmd->argc >= 5) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
@@ -977,7 +1027,7 @@ MODRET sql_sqlite_checkauth(cmd_rec *cmd) {
     "SQLite does not support the 'Backend' SQLAuthType");
 }
 
-MODRET sql_sqlite_identify(cmd_rec * cmd) {
+MODRET sql_sqlite_identify(cmd_rec *cmd) {
   sql_data_t *sd = NULL;
 
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
@@ -1052,13 +1102,17 @@ static int sql_sqlite_init(void) {
   pr_event_register(&sql_sqlite_module, "core.module-unload",
     sql_sqlite_mod_unload_ev, NULL);
 
+#if defined(SQLITE_CONFIG_LOG)
+  sqlite3_config(SQLITE_CONFIG_LOG, db_err, NULL);
+#endif /* SQLite_CONFIG_LOG */
+
   /* Check that the SQLite headers used match the version of the SQLite
    * library used.
    *
    * For now, we only log if there is a difference.
    */
   if (strcmp(sqlite3_libversion(), SQLITE_VERSION) != 0) {
-    pr_log_pri(PR_LOG_WARNING, MOD_SQL_SQLITE_VERSION
+    pr_log_pri(PR_LOG_INFO, MOD_SQL_SQLITE_VERSION
       ": compiled using SQLite version '%s' headers, but linked to "
       "SQLite version '%s' library", SQLITE_VERSION, sqlite3_libversion());
   }

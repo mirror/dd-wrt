@@ -1,6 +1,4 @@
-<!-- $Id: mod_facl.html,v 1.1 2006-10-11 16:47:15 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_facl.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_facl</title>
@@ -42,7 +40,7 @@ ProFTPD source distribution:
 </ul>
 
 <hr>
-<h2><a name="FACLEngine">FACLEngine</a></h2>
+<h3><a name="FACLEngine">FACLEngine</a></h3>
 <strong>Syntax:</strong> FACLEngine <em>on|off</em><br>
 <strong>Default:</strong> on<br>
 <strong>Context:</strong> server config<br>
@@ -59,24 +57,31 @@ runtime checking of POSIX ACLs.  Use this directive to disable the module.
 To use the <code>mod_facl</code> module, configure <code>proftpd</code>
 using the following:
 <pre>
-  ./configure --enable-facl --with-modules=mod_facl ...
+  $ ./configure --enable-facl --with-modules=mod_facl ...
 </pre>
 
 <p>
-<hr><br>
+<b>Logging</b><br>
+The <code>mod_facl</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>facl
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace facl:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2006-10-11 16:47:15 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2006 TJ Saunders<br>
+&copy; Copyright 2000-2014 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

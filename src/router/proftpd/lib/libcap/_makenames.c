@@ -1,6 +1,4 @@
 /*
- * $Id: _makenames.c,v 1.1 2003-01-03 02:16:17 jwm Exp $
- *
  * Copyright (c) 1997-8 Andrew G. Morgan <morgan@linux.kernel.org>
  *
  * This is a file to make the capability <-> string mappings for

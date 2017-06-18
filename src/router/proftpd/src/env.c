@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2007-2013 The ProFTPD Project team
+ * Copyright (c) 2007-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,13 @@
  * OpenSSL in the source distribution.
  */
 
-/* Environment management
- * $Id: env.c,v 1.11 2013-10-07 01:29:05 castaglia Exp $
- */
+/* Environment management */
 
 #include "conf.h"
 
 char *pr_env_get(pool *p, const char *key) {
-  if (!p || !key) {
+  if (p == NULL ||
+      key == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -51,7 +50,9 @@ int pr_env_set(pool *p, const char *key, const char *value) {
   const char *str;
 #endif /* !HAVE_SETENV and !HAVE_PUTENV */
 
-  if (!p || !key || !value) {
+  if (p == NULL ||
+      key == NULL ||
+      value == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -68,23 +69,8 @@ int pr_env_set(pool *p, const char *key, const char *value) {
    */
 
 #if defined(HAVE_SETENV)
-# ifdef PR_USE_DEVEL
-  k = strdup(key);
-  if (k == NULL) {
-    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
-    exit(1);
-  }
-
-  v = strdup(value);
-  if (v == NULL) {
-    pr_log_pri(PR_LOG_ALERT, "Out of memory!");
-    exit(1);
-  }
-
-# else
   k = key;
   v = value;
-# endif /* PR_USE_DEVEL */
   return setenv(k, v, 1);
 
 #elif defined(HAVE_PUTENV)
@@ -110,7 +96,8 @@ int pr_env_unset(pool *p, const char *key) {
   char *res;
 #endif /* !HAVE_UNSETENV */
 
-  if (!p || !key) {
+  if (p == NULL ||
+      key == NULL) {
     errno = EINVAL;
     return -1;
   }

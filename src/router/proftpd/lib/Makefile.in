@@ -35,12 +35,13 @@ lib: libsupp.a $(LIB_DEPS)
 install:
 
 clean:
-	rm -f *.o libsupp.a
+	$(RM) -f *.o libsupp.a
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) clean)
 
 depend:
 	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
 	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
 
-distclean:
+distclean: clean
+	-$(RM) *.gcda *.gcno
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) distclean)

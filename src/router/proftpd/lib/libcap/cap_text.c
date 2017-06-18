@@ -1,6 +1,4 @@
 /*
- * $Id: cap_text.c,v 1.2 2003-05-15 00:49:13 castaglia Exp $
- *
  * Copyright (c) 1997-8 Andrew G Morgan <morgan@linux.kernel.org>
  * Copyright (c) 1997 Andrew Main <zefram@dcs.warwick.ac.uk>
  *

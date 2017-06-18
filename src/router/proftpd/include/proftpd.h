@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* General options
- * $Id: proftpd.h,v 1.75 2012-04-15 18:04:14 castaglia Exp $
- */
+/* General options */
 
 #ifndef PR_PROFTPD_H
 #define PR_PROFTPD_H
@@ -111,7 +109,7 @@ typedef struct {
   uid_t fsuid;				/* Saved file UID */
   gid_t fsgid;				/* Saved file GID */
 
-  char *user,*group;			/* Username/groupname after login */
+  const char *user, *group;		/* Username/groupname after login */
   uid_t login_uid;                      /* UID after login, but before
                                          * session.uid is changed
                                          */
@@ -121,8 +119,8 @@ typedef struct {
 
   pr_table_t *notes;			/* Session notes table */
 
-  pr_class_t *conn_class;		/* Session class */
-  char *proc_prefix;			/* The "prefix" of our process name */
+  const pr_class_t *conn_class;		/* Session class */
+  const char *proc_prefix;		/* The "prefix" of our process name */
 
   int wtmp_log;				/* Are we logging to wtmp? */
   int multiline_rfc2228;		/* Are we using RFC2228-style multiline responses ? */
@@ -132,12 +130,12 @@ typedef struct {
 
   int hide_password;			/* Hide password in logs/ps listing */
 
-  char *chroot_path;			/* Chroot directory */
+  const char *chroot_path;		/* Chroot directory */
 
   struct config_struc *anon_config;	/* Anonymous FTP configuration */
-  char *anon_user;			/* E-mail address sent to us */
+  const char *anon_user;		/* Email address sent to us */
 
-  char *curr_cmd;                       /* Current FTP command */
+  const char *curr_cmd;			/* Current FTP command */
   int curr_cmd_id;			/* Current FTP command ID */
   struct cmd_struc *curr_cmd_rec;       /* Current command */
 
@@ -154,17 +152,17 @@ typedef struct {
 
     int xfer_type;     /* xfer session attributes, default/append/hidden */
     int direction;
-    char *filename;			/* As shown to user */
-    char *path;				/* As used in transfer */
-    char *path_hidden;			/* As used in hidden stor */
+    const char *filename;		/* As shown to user */
+    const char *path;			/* As used in transfer */
+    const char *path_hidden;		/* As used in hidden stor */
 
-    unsigned int bufsize,buflen;
+    unsigned int bufsize, buflen;
 
     struct timeval start_time;		/* Time current transfer started */
     off_t file_size;			/* Total size of file (if known) */
     off_t total_bytes;			/* Total bytes transfered */
 
-    char *bufstart,*buf;
+    char *bufstart, *buf;
   } xfer;
 
   /* Total number of bytes uploaded in this session. */
@@ -204,6 +202,9 @@ typedef struct {
 
   /* Module which disconnected/ended the session */
   struct module_struc *disconnect_module;
+
+  /* Start/connect time of the session, in milliseconds since epoch. */
+  uint64_t connect_time_ms;
 
 } session_t;
 
@@ -259,7 +260,7 @@ extern char ServerType;
 #define RECEIVED_SIG_SEGV	0x0008
 #define RECEIVED_SIG_TERMINATE	0x0010
 #define RECEIVED_SIG_XCPU	0x0020
-#define RECEIVED_SIG_TERM_OTHER	0x0040
+#define RECEIVED_SIG_XFSZ	0x0040
 #define RECEIVED_SIG_ABORT	0x0080
 #define RECEIVED_SIG_EVENT	0x0100
 #define RECEIVED_SIG_CHLD	0x0200
@@ -295,7 +296,6 @@ extern char ServerType;
 #endif /* PR_DEVEL_TIMING */
 
 /* Misc Prototypes */
-void pr_signals_handle(void);
 void session_exit(int, void *, int, void *);
 void set_daemon_rlimits(void);
 void set_session_rlimits(void);

@@ -18,7 +18,7 @@ CC=@CC@
 PLATFORM=@OSREL@ @OSTYPE@
 LDFLAGS=@LDFLAGS@ @LIBDIRS@
 LIBEXECDIR=@LIBEXECDIR@
-LIBS=@LIBS@ @LIBRARIES@
+LIBS=@LIBS@ @LIBRARIES@ @LIBADD_DL@
 LIBTOOL=@LIBTOOL@
 MAKEDEPEND=makedepend -Y
 RANLIB=@RANLIB@
@@ -63,23 +63,25 @@ DEFINES=$(PLATFORM)
 # options.
 MODULE_LIBS_FILE=$(top_builddir)/module-libs.txt
 
-OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o dirtree.o \
-     expr.o support.o netaddr.o inet.o child.o parser.o log.o lastlog.o \
-     xferlog.o bindings.o netacl.o class.o scoreboard.o help.o feat.o netio.o \
-     cmd.o response.o data.o modules.o stash.o display.o auth.o fsio.o \
-     mkhome.o ctrls.o event.o var.o throttle.o session.o trace.o encode.o \
-     proctitle.o filter.o pidfile.o env.o version.o rlimit.o wtmp.o memcache.o
+OBJS=main.o timers.o sets.o pool.o privs.o str.o table.o regexp.o configdb.o \
+     dirtree.o expr.o signals.o support.o netaddr.o inet.o child.o parser.o \
+     log.o lastlog.o xferlog.o bindings.o netacl.o class.o scoreboard.o help.o \
+     feat.o netio.o cmd.o response.o ascii.o data.o modules.o stash.o \
+     display.o auth.o fsio.o mkhome.o ctrls.o event.o var.o throttle.o \
+     session.o trace.o encode.o proctitle.o filter.o pidfile.o env.o version.o \
+     rlimit.o wtmp.o json.o memcache.o redis.o
 
 BUILD_OBJS=src/main.o src/timers.o src/sets.o src/pool.o src/privs.o src/str.o \
-           src/table.o src/regexp.o src/dirtree.o src/expr.o src/support.o \
-           src/netaddr.o src/inet.o src/child.o src/parser.o src/log.o \
-           src/lastlog.o src/xferlog.o src/bindings.o src/netacl.o src/class.o \
-           src/scoreboard.o src/help.o src/feat.o src/netio.o src/cmd.o \
-           src/response.o src/data.o src/modules.o src/stash.o src/display.o \
-           src/auth.o src/fsio.o src/mkhome.o src/ctrls.o src/event.o \
-           src/var.o src/throttle.o src/session.o src/trace.o src/encode.o \
-           src/proctitle.o src/filter.o src/pidfile.o src/env.o src/version.o \
-           src/rlimit.o src/wtmp.o src/memcache.o
+           src/table.o src/regexp.o src/configdb.o src/dirtree.o src/expr.o \
+           src/signals.o src/support.o src/netaddr.o src/inet.o src/child.o \
+           src/parser.o src/log.o src/lastlog.o src/xferlog.o src/bindings.o \
+           src/netacl.o src/class.o src/scoreboard.o src/help.o src/feat.o \
+           src/netio.o src/cmd.o src/response.o src/ascii.o src/data.o \
+           src/modules.o src/stash.o src/display.o src/auth.o src/fsio.o \
+           src/mkhome.o src/ctrls.o src/event.o src/var.o src/throttle.o \
+           src/session.o src/trace.o src/encode.o src/proctitle.o src/filter.o \
+           src/pidfile.o src/env.o src/version.o src/rlimit.o src/wtmp.o \
+           src/json.o src/memcache.o src/redis.o
 
 SHARED_MODULE_DIRS=@SHARED_MODULE_DIRS@
 SHARED_MODULE_LIBS=@SHARED_MODULE_LIBS@

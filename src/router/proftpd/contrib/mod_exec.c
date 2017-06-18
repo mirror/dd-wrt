@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_exec -- a module for executing external scripts
- *
- * Copyright (c) 2002-2014 TJ Saunders
+ * Copyright (c) 2002-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +22,6 @@
  *
  * This is mod_exec, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_exec.c,v 1.40 2014-05-02 21:13:33 castaglia Exp $
  */
 
 #include "conf.h"
@@ -34,7 +31,7 @@
 # include <sys/resource.h>
 #endif
 
-#define MOD_EXEC_VERSION	"mod_exec/0.9.12"
+#define MOD_EXEC_VERSION	"mod_exec/0.9.14"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -42,6 +39,8 @@
 #endif
 
 module exec_module;
+
+#define EXEC_MAX_FD_COUNT		1024
 
 static pool *exec_pool = NULL;
 static int exec_engine = FALSE;
@@ -84,13 +83,14 @@ struct exec_event_data {
 
 /* Prototypes */
 static void exec_any_ev(const void *, void *);
-static char *exec_subst_var(pool *, char *, cmd_rec *);
+static const char *exec_subst_var(pool *, const char *, cmd_rec *);
 static int exec_log(const char *, ...)
 #ifdef __GNUC__
       __attribute__ ((format (printf, 1, 2)));
 #else
       ;
 #endif
+static int exec_sess_init(void);
 
 /* Support routines
  */
@@ -104,6 +104,18 @@ static int exec_closelog(void) {
   }
 
   return 0;
+}
+
+static int exec_enabled(void) {
+  config_rec *c;
+  int enabled = TRUE;
+
+  c = find_config(CURRENT_CONF, CONF_PARAM, "ExecEnable", FALSE);
+  if (c) {
+    enabled = *((int *) c->argv[0]);
+  }
+
+  return enabled;
 }
 
 static char *exec_get_cmd(char **list) {
@@ -312,17 +324,21 @@ static void exec_prepare_fds(int stdin_fd, int stdout_fd, int stderr_fd) {
 # elif defined(RLIMIT_OFILE)
   if (getrlimit(RLIMIT_OFILE, &rlim) < 0) {
 # endif
-    exec_log("getrlimit() error: %s", strerror(errno));
+    /* Ignore ENOSYS (and EPERM, since some libc's use this as ENOSYS). */
+    if (errno != ENOSYS &&
+        errno != EPERM) {
+      exec_log("getrlimit() error: %s", strerror(errno));
+    }
 
     /* Pick some arbitrary high number. */
-    nfiles = 1024;
+    nfiles = EXEC_MAX_FD_COUNT;
 
   } else {
     nfiles = rlim.rlim_max;
   }
 
 #else /* no RLIMIT_NOFILE or RLIMIT_OFILE */
-   nfiles = 1024;
+   nfiles = EXEC_MAX_FD_COUNT;
 #endif
 
   /* Yes, using a long for the nfiles variable is not quite kosher; it should
@@ -336,8 +352,9 @@ static void exec_prepare_fds(int stdin_fd, int stdout_fd, int stderr_fd) {
    * mod_exec's forked processes never return/exit.)
    */
 
-  if (nfiles < 0) {
-    nfiles = 1024;
+  if (nfiles < 0 ||
+      nfiles > EXEC_MAX_FD_COUNT) {
+    nfiles = EXEC_MAX_FD_COUNT;
   }
 
   /* Close the "non-standard" file descriptors. */
@@ -458,21 +475,21 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
     /* Child process */
     char **env = NULL, *path = NULL, *ptr = NULL;
     register unsigned int i = 0;
+
+    /* Note: there is no need to clean up this temporary pool, as we've
+     * forked.  If the exec call succeeds, this child process will exit
+     * normally, and its process space recovered by the OS.  If the exec
+     * call fails, we still exit, and the process space is recovered by
+     * the OS.  Either way, the memory will be cleaned up without need for
+     * us to do it explicitly (unless one wanted to be pedantic about it,
+     * of course).
+     */
+    pool *tmp_pool = cmd ? cmd->tmp_pool : make_sub_pool(session.pool);
  
     /* Don't forget to update the PID. */
     session.pid = getpid();
 
     if (!(exec_opts & EXEC_OPT_USE_STDIN)) {
-
-      /* Note: there is no need to clean up this temporary pool, as we've
-       * forked.  If the exec call succeeds, this child process will exit
-       * normally, and its process space recovered by the OS.  If the exec
-       * call fails, we still exit, and the process space is recovered by
-       * the OS.  Either way, the memory will be cleaned up without need for
-       * us to do it explicitly (unless one wanted to be pedantic about it,
-       * of course).
-       */
-      pool *tmp_pool = cmd ? cmd->tmp_pool : make_sub_pool(session.pool);
 
       /* Prepare the environment. */
       env = exec_prepare_environ(tmp_pool, cmd);
@@ -480,8 +497,12 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
       /* Perform any required substitution on the command arguments. */
       for (i = 3; i < c->argc; i++) {
         pr_signals_handle();
-        c->argv[i] = exec_subst_var(tmp_pool, c->argv[i], cmd);
+        c->argv[i] = (void *) exec_subst_var(tmp_pool, c->argv[i], cmd);
       }
+
+    } else {
+      /* Make sure that env is at least a NULL-terminated array. */
+      env = pcalloc(tmp_pool, sizeof(char **));
     }
 
     /* Restore previous signal actions. */
@@ -525,10 +546,10 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
       PRIVS_REVOKE
     }
 
-    exec_log("preparing to execute '%s' with uid %lu (euid %lu), "
-      "gid %lu (egid %lu)", (const char *) c->argv[2],
-      (unsigned long) getuid(), (unsigned long) geteuid(),
-      (unsigned long) getgid(), (unsigned long) getegid());
+    exec_log("preparing to execute '%s' with uid %s (euid %s), "
+      "gid %s (egid %s)", (const char *) c->argv[2],
+      pr_uid2str(tmp_pool, getuid()), pr_uid2str(tmp_pool, geteuid()),
+      pr_gid2str(tmp_pool, getgid()), pr_gid2str(tmp_pool, getegid()));
 
     path = c->argv[2];
 
@@ -616,7 +637,7 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
       for (i = 3; i < c->argc && c->argv[i] != NULL; i++) {
         pr_signals_handle();
 
-        c->argv[i] = exec_subst_var(tmp_pool, c->argv[i], cmd);
+        c->argv[i] = (void *) exec_subst_var(tmp_pool, c->argv[i], cmd);
 
         /* Write the argument to stdin, terminated by a newline. */
         if (write(exec_stdin_pipe[1], c->argv[i], strlen(c->argv[i])) < 0) {
@@ -665,6 +686,7 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
       fd_set readfds;
       struct timeval tv;
       time_t start_time = time(NULL);
+      pool *tmp_pool = cmd ? cmd->tmp_pool : make_sub_pool(session.pool);
 
       /* We set the result value to zero initially, so that at least one
        * pass through the stdout/stderr reading code happens.
@@ -741,15 +763,17 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
         }
 
         if (fds >= 0) {
-          int buflen;
-          char buf[PIPE_BUF];
+          long buflen, bufsz;
+          char *buf;
+
+          buf = pr_fsio_getpipebuf(tmp_pool, exec_stdout_pipe[0], &bufsz);
 
           /* The child sent us something.  How thoughtful. */
 
           if (FD_ISSET(exec_stdout_pipe[0], &readfds)) {
-            memset(buf, '\0', sizeof(buf));
+            memset(buf, '\0', bufsz);
 
-            buflen = read(exec_stdout_pipe[0], buf, sizeof(buf)-1);
+            buflen = read(exec_stdout_pipe[0], buf, bufsz-1);
             if (buflen > 0) {
               if (exec_opts & EXEC_OPT_SEND_STDOUT) {
 
@@ -796,9 +820,9 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
           }
 
           if (FD_ISSET(exec_stderr_pipe[0], &readfds)) {
-            memset(buf, '\0', sizeof(buf));
+            memset(buf, '\0', bufsz);
 
-            buflen = read(exec_stderr_pipe[0], buf, sizeof(buf)-1);
+            buflen = read(exec_stderr_pipe[0], buf, bufsz-1);
             if (buflen > 0) {
 
               /* Trim trailing CRs and LFs. */
@@ -831,6 +855,10 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
         }
 
         res = waitpid(pid, &status, WNOHANG);
+      }
+
+      if (cmd == NULL) {
+        destroy_pool(tmp_pool);
       }
 
     } else {
@@ -897,23 +925,26 @@ static int exec_ssystem(cmd_rec *cmd, config_rec *c, int flags) {
 }
 
 /* Perform any substitution of "magic cookie" values. */
-static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
+static const char *exec_subst_var(pool *tmp_pool, const char *varstr,
+    cmd_rec *cmd) {
   char *ptr = NULL;
 
-  if (!varstr)
+  if (varstr == NULL) {
     return NULL;
+  }
 
   ptr = strstr(varstr, "%a");
   if (ptr != NULL) {
-    pr_netaddr_t *remote_addr = pr_netaddr_get_sess_remote_addr();
+    const pr_netaddr_t *remote_addr;
 
-    varstr = sreplace(tmp_pool, varstr, "%a", remote_addr ?
-        pr_netaddr_get_ipstr(remote_addr) : "", NULL);
+    remote_addr = pr_netaddr_get_sess_remote_addr();
+    varstr = sreplace(tmp_pool, varstr, "%a",
+      remote_addr ? pr_netaddr_get_ipstr(remote_addr) : "", NULL);
   }
 
   ptr = strstr(varstr, "%A");
   if (ptr != NULL) {
-    char *anon_pass;
+    const char *anon_pass;
 
     anon_pass = pr_table_get(session.notes, "mod_auth.anon-passwd", NULL);
     if (anon_pass == NULL) {
@@ -936,7 +967,8 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
   }
 
   ptr = strstr(varstr, "%F");
-  if (ptr != NULL) {
+  if (ptr != NULL &&
+      cmd != NULL) {
     if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
       char *path;
 
@@ -977,7 +1009,8 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
   }
 
   ptr = strstr(varstr, "%f");
-  if (ptr != NULL) {
+  if (ptr != NULL &&
+      cmd != NULL) {
 
     if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
       char *path;
@@ -1034,49 +1067,49 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
 
   ptr = strstr(varstr, "%h");
   if (ptr != NULL) {
-    const char *remote_name = pr_netaddr_get_sess_remote_name();
+    const char *remote_name;
 
-    varstr = sreplace(tmp_pool, varstr, "%h", 
+    remote_name = pr_netaddr_get_sess_remote_name();
+    varstr = sreplace(tmp_pool, varstr, "%h",
       remote_name ? remote_name : "", NULL);
   }
 
   ptr = strstr(varstr, "%l");
   if (ptr != NULL) {
-    char *rfc1413_ident = pr_table_get(session.notes, "mod_ident.rfc1413-ident",
-      NULL);
+    const char *rfc1413_ident;
 
-    if (rfc1413_ident == NULL)
+    rfc1413_ident = pr_table_get(session.notes, "mod_ident.rfc1413-ident",
+      NULL);
+    if (rfc1413_ident == NULL) {
       rfc1413_ident = "UNKNOWN";
+    }
 
     varstr = sreplace(tmp_pool, varstr, "%l", rfc1413_ident, NULL);
   }
 
   ptr = strstr(varstr, "%m");
   if (ptr != NULL) {
-    varstr = sreplace(tmp_pool, varstr, "%m", cmd ? cmd->argv[0] : "",
-      NULL);
+    varstr = sreplace(tmp_pool, varstr, "%m", cmd ? cmd->argv[0] : "", NULL);
   }
 
   ptr = strstr(varstr, "%r");
-  if (ptr != NULL) {
-    if (cmd) {
-      if (pr_cmd_cmp(cmd, PR_CMD_PASS_ID) == 0 &&
-          session.hide_password) {
-        varstr = sreplace(tmp_pool, varstr, "%r", "PASS (hidden)", NULL);
+  if (ptr != NULL &&
+      cmd != NULL) {
+    if (pr_cmd_cmp(cmd, PR_CMD_PASS_ID) == 0 &&
+        session.hide_password) {
+      varstr = sreplace(tmp_pool, varstr, "%r", "PASS (hidden)", NULL);
 
-      } else {
-        varstr = sreplace(tmp_pool, varstr, "%r",
-          pr_cmd_get_displayable_str(cmd, NULL), NULL);
-      }
+    } else {
+      varstr = sreplace(tmp_pool, varstr, "%r",
+        pr_cmd_get_displayable_str(cmd, NULL), NULL);
     }
   }
 
   ptr = strstr(varstr, "%U");
   if (ptr != NULL) {
-    char *user;
+    const char *user;
 
     user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-
     varstr = sreplace(tmp_pool, varstr, "%U",
       user ? user : "", NULL);
   }
@@ -1100,13 +1133,15 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
   }
 
   ptr = strstr(varstr, "%w");
-  if (ptr != NULL) {
-    char *rnfr_path = "-";
+  if (ptr != NULL &&
+      cmd != NULL) {
+    const char *rnfr_path = "-";
 
     if (pr_cmd_cmp(cmd, PR_CMD_RNTO_ID) == 0) {
       rnfr_path = pr_table_get(session.notes, "mod_core.rnfr-path", NULL);
-      if (rnfr_path == NULL)
+      if (rnfr_path == NULL) {
         rnfr_path = "-";
+      }
     }
 
     varstr = sreplace(tmp_pool, varstr, "%w", rnfr_path, NULL);
@@ -1141,15 +1176,17 @@ static char *exec_subst_var(pool *tmp_pool, char *varstr, cmd_rec *cmd) {
     if (strncmp(key, "%{time:", 7) == 0) {
       char time_str[128], *fmt;
       time_t now;
-      struct tm *time_info;
+      struct tm *tm;
 
       fmt = pstrndup(tmp_pool, key + 7, strlen(key) - 8);
 
       now = time(NULL);
-      time_info = pr_localtime(NULL, &now);
-
       memset(time_str, 0, sizeof(time_str));
-      strftime(time_str, sizeof(time_str), fmt, time_info);
+
+      tm = pr_localtime(NULL, &now);
+      if (tm != NULL) {
+        strftime(time_str, sizeof(time_str), fmt, tm);
+      }
 
       val = pstrdup(tmp_pool, time_str);
 
@@ -1189,8 +1226,13 @@ MODRET exec_pre_cmd(cmd_rec *cmd) {
   config_rec *c = NULL;
   array_header *seen_execs = NULL;
 
-  if (!exec_engine)
+  if (!exec_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (!exec_enabled()) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Create an array that will contain the IDs of the Execs we've
    * already processed.
@@ -1229,11 +1271,11 @@ MODRET exec_pre_cmd(cmd_rec *cmd) {
     if (exec_match_cmd(cmd, c->argv[1])) {
       int res = exec_ssystem(cmd, c, EXEC_FL_NO_SEND);
       if (res != 0) {
-        exec_log("%s ExecBeforeCommand '%s' failed: %s", cmd->argv[0],
+        exec_log("%s ExecBeforeCommand '%s' failed: %s", (char *) cmd->argv[0],
           (const char *) c->argv[2], strerror(res));
 
       } else {
-        exec_log("%s ExecBeforeCommand '%s' succeeded", cmd->argv[0],
+        exec_log("%s ExecBeforeCommand '%s' succeeded", (char *) cmd->argv[0],
           (const char *) c->argv[2]);
       }
     }
@@ -1248,8 +1290,13 @@ MODRET exec_post_cmd(cmd_rec *cmd) {
   config_rec *c = NULL;
   array_header *seen_execs = NULL;
 
-  if (!exec_engine)
+  if (!exec_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (!exec_enabled()) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Create an array that will contain the IDs of the Execs we've
    * already processed.
@@ -1287,11 +1334,11 @@ MODRET exec_post_cmd(cmd_rec *cmd) {
     if (exec_match_cmd(cmd, c->argv[1])) {
       int res = exec_ssystem(cmd, c, 0);
       if (res != 0) {
-        exec_log("%s ExecOnCommand '%s' failed: %s", cmd->argv[0],
+        exec_log("%s ExecOnCommand '%s' failed: %s", (char *) cmd->argv[0],
           (const char *) c->argv[2], strerror(res));
 
       } else {
-        exec_log("%s ExecOnCommand '%s' succeeded", cmd->argv[0],
+        exec_log("%s ExecOnCommand '%s' succeeded", (char *) cmd->argv[0],
           (const char *) c->argv[2]);
       }
     }
@@ -1306,8 +1353,13 @@ MODRET exec_post_cmd_err(cmd_rec *cmd) {
   config_rec *c = NULL;
   array_header *seen_execs = NULL;
 
-  if (!exec_engine)
+  if (!exec_engine) {
     return PR_DECLINED(cmd);
+  }
+
+  if (!exec_enabled()) {
+    return PR_DECLINED(cmd);
+  }
 
   /* Create an array that will contain the IDs of the Execs we've
    * already processed.
@@ -1347,11 +1399,11 @@ MODRET exec_post_cmd_err(cmd_rec *cmd) {
 
       res = exec_ssystem(cmd, c, 0);
       if (res != 0) {
-        exec_log("%s ExecOnError '%s' failed: %s", cmd->argv[0],
+        exec_log("%s ExecOnError '%s' failed: %s", (char *) cmd->argv[0],
           (const char *) c->argv[2], strerror(res));
 
       } else {
-        exec_log("%s ExecOnError '%s' succeeded", cmd->argv[0],
+        exec_log("%s ExecOnError '%s' succeeded", (char *) cmd->argv[0],
           (const char *) c->argv[2]);
       }
     }
@@ -1369,29 +1421,54 @@ MODRET exec_post_cmd_err(cmd_rec *cmd) {
 MODRET set_execbeforecommand(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 2)
+  if (cmd->argc-1 < 2) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR);
 
-  if (*cmd->argv[2] != '/')
+  path = cmd->argv[2];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
 
   exec_parse_cmds(c, cmd->argv[1]);
 
-  for (i = 2; i < cmd->argc; i++)
+  for (i = 2; i < cmd->argc; i++) {
     c->argv[i] = pstrdup(c->pool, cmd->argv[i]);
+  }
 
   c->flags |= CF_MERGEDOWN_MULTI;
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: ExecEnable on|off */
+MODRET set_execenable(cmd_rec *cmd) {
+  int enable = -1;
+  config_rec *c;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ANON|CONF_DIR|CONF_DYNDIR);
+
+  enable = get_boolean(cmd, 1);
+  if (enable == -1) {
+    CONF_ERROR(cmd, "expected Boolean parameter");
+  }
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = enable;
 
   return PR_HANDLED(cmd);
 }
@@ -1423,17 +1500,24 @@ MODRET set_execengine(cmd_rec *cmd) {
 MODRET set_execenviron(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *key;
 
   CHECK_ARGS(cmd, 2);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   c = add_config_param_str(cmd->argv[0], 2, NULL, cmd->argv[2]);
 
-  /* Make sure the given environment variable name is uppercased. */
-  for (i = 0; i < strlen(cmd->argv[1]); i++)
-    (cmd->argv[1])[i] = toupper((cmd->argv[1])[i]);
-  c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
+  /* Make sure the given environment variable name is uppercased.
+   * NOTE: Are there cases where this SHOULD NOT happen?  Why should
+   * environment variable names always be uppercased?
+   */
+  key = cmd->argv[1];
 
+  for (i = 0; i < strlen(key); i++) {
+    key[i] = toupper(key[i]);
+  }
+
+  c->argv[0] = pstrdup(c->pool, key);
   return PR_HANDLED(cmd);
 }
 
@@ -1450,30 +1534,34 @@ MODRET set_execlog(cmd_rec *cmd) {
 MODRET set_execoncommand(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 2)
+  if (cmd->argc-1 < 2) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR);
 
-  if (*cmd->argv[2] != '/')
+  path = cmd->argv[2];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
 
   exec_parse_cmds(c, cmd->argv[1]);
 
-  for (i = 2; i < cmd->argc; i++)
+  for (i = 2; i < cmd->argc; i++) {
     c->argv[i] = pstrdup(c->pool, cmd->argv[i]);
+  }
 
   c->flags |= CF_MERGEDOWN_MULTI;
-
   return PR_HANDLED(cmd);
 }
 
@@ -1481,20 +1569,24 @@ MODRET set_execoncommand(cmd_rec *cmd) {
 MODRET set_execonconnect(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 1)
+  if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (*cmd->argv[1] != '/')
+  path = cmd->argv[1];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
 
   /* Add one for the terminating NULL. */
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1)); 
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1)); 
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
@@ -1510,30 +1602,34 @@ MODRET set_execonconnect(cmd_rec *cmd) {
 MODRET set_execonerror(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 2)
+  if (cmd->argc-1 < 2) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON|
     CONF_DIR); 
 
-  if (*cmd->argv[2] != '/')
+  path = cmd->argv[2];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
 
   exec_parse_cmds(c, cmd->argv[1]);
   
-  for (i = 2; i < cmd->argc; i++) 
+  for (i = 2; i < cmd->argc; i++) {
     c->argv[i] = pstrdup(c->pool, cmd->argv[i]);
+  }
 
   c->flags |= CF_MERGEDOWN_MULTI;
-
   return PR_HANDLED(cmd);
 }
 
@@ -1541,25 +1637,33 @@ MODRET set_execonerror(cmd_rec *cmd) {
 MODRET set_execonevent(cmd_rec *cmd) {
   register unsigned int i;
   unsigned int flags = EXEC_FL_CLEAR_GROUPS|EXEC_FL_NO_SEND;
+  char *event_name, *path;
+  size_t event_namelen;
   config_rec *c;
   struct exec_event_data *eed;
 
-  if (cmd->argc-1 < 2)
+  if (cmd->argc-1 < 2) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (cmd->argv[1][strlen(cmd->argv[1])-1] == '*') {
+  event_name = cmd->argv[1];
+  event_namelen = strlen(event_name);
+
+  if (event_name[event_namelen-1] == '*') {
     flags |= EXEC_FL_RUN_AS_ROOT;
-    cmd->argv[1][strlen(cmd->argv[1])-1] = '\0';
-  }
+    event_name[event_namelen-1] = '\0';
+    event_namelen--;
 
-  if (cmd->argv[1][strlen(cmd->argv[1])-1] == '~') {
+  } else if (event_name[event_namelen-1] == '~') {
     flags |= EXEC_FL_RUN_AS_USER;
-    cmd->argv[1][strlen(cmd->argv[1])-1] = '\0';
+    event_name[event_namelen-1] = '\0';
+    event_namelen--;
   }
 
-  if (*cmd->argv[2] != '/') {
+  path = cmd->argv[2];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
   }
 
@@ -1567,7 +1671,7 @@ MODRET set_execonevent(cmd_rec *cmd) {
   c->pool = make_sub_pool(cmd->server->pool);
   pr_pool_tag(c->pool, cmd->argv[0]);
   c->argc = cmd->argc + 1;
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   /* Unused for event config_recs. */
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
@@ -1579,7 +1683,7 @@ MODRET set_execonevent(cmd_rec *cmd) {
 
   eed = pcalloc(c->pool, sizeof(struct exec_event_data));
   eed->flags = flags;
-  eed->event = pstrdup(c->pool, cmd->argv[1]);
+  eed->event = pstrdup(c->pool, event_name);
   eed->c = c;
 
   if (strncasecmp(eed->event, "MaxConnectionRate", 18) == 0) {
@@ -1601,26 +1705,31 @@ MODRET set_execonevent(cmd_rec *cmd) {
 MODRET set_execonexit(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 1)
+  if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (*cmd->argv[1] != '/')
+  path = cmd->argv[1];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
 
   /* Add one for the terminating NULL. */
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
 
-  for (i = 1; i < cmd->argc; i++)
+  for (i = 1; i < cmd->argc; i++) {
     c->argv[i+1] = pstrdup(c->pool, cmd->argv[i]);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1629,26 +1738,31 @@ MODRET set_execonexit(cmd_rec *cmd) {
 MODRET set_execonrestart(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
+  char *path;
 
-  if (cmd->argc-1 < 1)
+  if (cmd->argc-1 < 1) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (*cmd->argv[1] != '/')
+  path = cmd->argv[1];
+  if (*path != '/') {
     CONF_ERROR(cmd, "path to program must be a full path");
+  }
 
   c = add_config_param(cmd->argv[0], 0);
   c->argc = cmd->argc + 1;
 
   /* Add one for the terminating NULL. */
-  c->argv = pcalloc(c->pool, sizeof(char *) * (c->argc + 1));
+  c->argv = pcalloc(c->pool, sizeof(void *) * (c->argc + 1));
 
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
   *((unsigned int *) c->argv[0]) = exec_nexecs++;
 
-  for (i = 1; i < cmd->argc; i++) 
+  for (i = 1; i < cmd->argc; i++) {
     c->argv[i+1] = pstrdup(c->pool, cmd->argv[i]);
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1659,8 +1773,9 @@ MODRET set_execoptions(cmd_rec *cmd) {
   register unsigned int i;
   unsigned int opts = 0U;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -1681,7 +1796,7 @@ MODRET set_execoptions(cmd_rec *cmd) {
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown ExecOption: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
   }
 
@@ -1739,7 +1854,6 @@ static void exec_exit_ev(const void *event_data, void *user_data) {
     return;
 
   c = find_config(main_server->conf, CONF_PARAM, "ExecOnExit", FALSE);
-
   while (c) {
     int res;
 
@@ -1834,6 +1948,29 @@ static void exec_restart_ev(const void *event_data, void *user_data) {
   return;
 }
 
+static void exec_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&exec_module, "core.exit", exec_exit_ev);
+  pr_event_unregister(&exec_module, "core.session-reinit", exec_sess_reinit_ev);
+
+  exec_engine = FALSE;
+  exec_opts = 0U;
+  exec_timeout = 0;
+
+  (void) close(exec_logfd);
+  exec_logfd = -1;
+  exec_logname = NULL;
+
+  res = exec_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&exec_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization routines
  */
 
@@ -1841,6 +1978,9 @@ static int exec_sess_init(void) {
   int *use_exec = NULL;
   config_rec *c = NULL;
   const char *proto;
+
+  pr_event_register(&exec_module, "core.session-reinit", exec_sess_reinit_ev,
+    NULL);
 
   use_exec = get_param_ptr(main_server->conf, "ExecEngine", FALSE);
   if (use_exec != NULL &&
@@ -1852,7 +1992,6 @@ static int exec_sess_init(void) {
     return 0;
   }
 
-  /* Register a "core.exit" event handler. */
   pr_event_register(&exec_module, "core.exit", exec_exit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "ExecOptions", FALSE);
@@ -1898,7 +2037,6 @@ static int exec_sess_init(void) {
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "ExecOnConnect", FALSE);
-
   while (c) {
     int res;
 
@@ -1939,6 +2077,7 @@ static int exec_init(void) {
 
 static conftable exec_conftab[] = {
   { "ExecBeforeCommand",set_execbeforecommand,	NULL },
+  { "ExecEnable",	set_execenable,		NULL },
   { "ExecEngine",	set_execengine,		NULL },
   { "ExecEnviron",	set_execenviron,	NULL },
   { "ExecLog",		set_execlog,		NULL },

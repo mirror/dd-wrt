@@ -23,8 +23,6 @@
  *
  * The file size to encode 294,903 of 48-bit fingerprints is just 1.3 MB,
  * which corresponds to less than 4.5 bytes per fingerprint.
- *
- * $Id: blacklist.c,v 1.6 2012-03-13 20:15:25 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -51,6 +49,11 @@ struct blacklist_header {
   uint8_t shift[2];
 
 };
+
+/* Set a maximum number of records we expect to find in the blacklist file.
+ * The blacklist.dat file shipped with mod_sftp contains 294903 records.
+ */
+#define SFTP_BLACKLIST_MAX_RECORDS	300000
 
 static const char *blacklist_path = PR_CONFIG_DIR "/blacklist.dat";
 
@@ -98,10 +101,17 @@ static int validate_blacklist(int fd, unsigned int *bytes,
   *bytes = (hdr.record_bits >> 3) - 2;
 
   *records = (((hdr.records[0] << 8) + hdr.records[1]) << 8) + hdr.records[2];
+  if (*records > SFTP_BLACKLIST_MAX_RECORDS) {
+    pr_trace_msg(trace_channel, 2,
+      "SFTPKeyBlacklist '%s' contains %u records > max %u records",
+      blacklist_path, *records, (unsigned int) SFTP_BLACKLIST_MAX_RECORDS);
+    *records = SFTP_BLACKLIST_MAX_RECORDS;
+  }
+
   *shift = (hdr.shift[0] << 8) + hdr.shift[1];
 
   expected = sizeof(hdr) + 0x20000 + (*records) * (*bytes);
-  if (st.st_size != expected) {
+  if (st.st_size != (off_t) expected) {
     pr_trace_msg(trace_channel, 4,
       "unexpected SFTPKeyBlacklist '%s' file size: expected %lu, found %lu",
       blacklist_path, (unsigned long) expected, (unsigned long) st.st_size);
@@ -224,6 +234,11 @@ int sftp_blacklist_reject_key(pool *p, unsigned char *key_data,
   const char *fp;
   char *digest_name = "none", *hex, *ptr;
   size_t hex_len, hex_maxlen;
+
+  if (key_data == NULL ||
+      key_datalen == 0) {
+    return FALSE;
+  }
 
   if (blacklist_path == NULL) {
     /* No key blacklist configured, nothing to do. */

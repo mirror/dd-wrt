@@ -1,6 +1,4 @@
-<!-- $Id: mod_log.html,v 1.17 2014-01-02 16:43:54 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_log.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_log</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>mod_log.c</code> file for
 ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
@@ -27,7 +26,7 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 </ul>
 
 <hr>
-<h2><a name="AllowLogSymlinks">AllowLogSymlinks</a></h2>
+<h3><a name="AllowLogSymlinks">AllowLogSymlinks</a></h3>
 <strong>Syntax:</strong> AllowLogSymlinks <em>on|off</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -52,8 +51,8 @@ warned.</i>
 
 <p>
 <hr>
-<h2><a name="ExtendedLog">ExtendedLog</a></h2>
-<strong>Syntax:</strong> ExtendedLog <em>path [cmd-classes [format-nickname]]</em><br>
+<h3><a name="ExtendedLog">ExtendedLog</a></h3>
+<strong>Syntax:</strong> ExtendedLog <em>path [cmd-classes [format-name]]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
 <strong>Module:</strong> mod_log<br>
@@ -88,7 +87,7 @@ level at which to log the data.  For example:
 <p>
 This table shows the supported command classes:
 <p>
-<table border=1>
+<table border=1 summary="Command Classes">
   <tr>
     <td><b>Command Class</b></td>
     <td><b>FTP Commands</b></td>
@@ -164,7 +163,7 @@ This table shows the supported command classes:
 </table>
 
 <p>
-If a <em>format-nickname</em> parameter is used, <code>ExtendedLog</code> will
+If a <em>format-name</em> parameter is used, <code>ExtendedLog</code> will
 use the named <a href="#LogFormat"><code>LogFormat</code></a>. Otherwise, the
 default format of "%h %l %u %t \"%r\" %s %b" is used.
 
@@ -174,6 +173,12 @@ For example, to log all read and write operations to
 <pre>
   ExtendedLog /var/log/ftp.log READ,WRITE
 </pre>
+and to log all read and write operations to <code>/var/log/ftp.log</code>
+using your own <code>LogFormat</code> named "custom", use:
+<pre>
+  LogFormat custom ...
+  ExtendedLog /var/log/ftp.log READ,WRITE custom
+</pre>
 
 <p>
 See also: <a href="#AllowLogSymlinks"><code>AllowLogSymlinks</code></a>,
@@ -182,8 +187,8 @@ See also: <a href="#AllowLogSymlinks"><code>AllowLogSymlinks</code></a>,
 
 <p>
 <hr>
-<h2><a name="LogFormat">LogFormat</a></h2>
-<strong>Syntax:</strong> LogFormat <em>format-nickname format-string</em><br>
+<h3><a name="LogFormat">LogFormat</a></h3>
+<strong>Syntax:</strong> LogFormat <em>format-name format-string</em><br>
 <strong>Default:</strong> LogFormat default "%h %l %u %t \"%r\" %s %b"<br>
 <strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_log<br>
@@ -193,7 +198,7 @@ See also: <a href="#AllowLogSymlinks"><code>AllowLogSymlinks</code></a>,
 The <code>LogFormat</code> directive can be used to create a custom logging
 format for use with the <a href="#ExtendedLog"><code>ExtendedLog</code></a>
 directive.  Once created, the format can be referenced by the specified
-<em>format-nickname</em>. The <em>format-string</em> parameter can consist of
+<em>format-name</em>. The <em>format-string</em> parameter can consist of
 any combination of letters, numbers and symbols. The special character '%' is
 used to start a meta sequence/variable (see below). To insert a literal '%'
 character, use "%%".
@@ -210,7 +215,7 @@ The following meta sequences/variables are available and are replaced as
 indicated when logging.
 
 <p>
-<table border=1>
+<table border=1 summary="LogFormat Variables">
   <tr>
     <td><b>Variable</b></td>
     <td><b>Value</b></td>
@@ -280,6 +285,11 @@ indicated when logging.
   <tr>
     <td>&nbsp;<code>%{file-modified}</code>&nbsp;</td>
     <td>Indicates whether a file is modified (<i>i.e.</i> already exists): "true" or "false"</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{file-size}</code>&nbsp;</td>
+    <td>Indicates the file size <b>after</b> data transfer, or "-" if not applicable</td>
   </tr>
 
   <tr>
@@ -369,6 +379,16 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%R</code>&nbsp;</td>
+    <td>Response time, in milliseconds</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{remote-port}</code>&nbsp;</td>
+    <td>Remote client port</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%s</code>&nbsp;</td>
     <td>Numeric FTP response code (status); see <a href="http://www.faqs.org/rfcs/rfc959.html">RFC 959</a> Section 4.2.1</td>
   </tr>
@@ -390,7 +410,7 @@ indicated when logging.
 
   <tr>
     <td>&nbsp;<code>%T</code>&nbsp;</td>
-    <td>Time taken to send/receive file, in seconds</td>
+    <td>Time taken to transfer file, in seconds</td>
   </tr>
 
   <tr>
@@ -399,8 +419,18 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{transfer-millisecs}</code>&nbsp;</td>
+    <td>Time taken to transfer file, in milliseconds</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%{transfer-status}</code>&nbsp;</td>
     <td>Status of data transfer: "success", "failed", "cancelled", "timeout", or "-"</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<code>%{transfer-type}</code>&nbsp;</td>
+    <td>Data transfer type: "binary" or "ASCII" (if applicable), or "-"</td>
   </tr>
 
   <tr>
@@ -445,7 +475,7 @@ See also: <a href="#ExtendedLog"><code>ExtendedLog</code></a>,
 
 <p>
 <hr>
-<h2><a name="ServerLog">ServerLog</a></h2>
+<h3><a name="ServerLog">ServerLog</a></h3>
 <strong>Syntax:</strong> ServerLog <em>path</em>|"none"<br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -464,7 +494,7 @@ this can be used to override a global <code>ServerLog</code> setting.
 
 <p>
 <hr>
-<h2><a name="SystemLog">SystemLog</a></h2>
+<h3><a name="SystemLog">SystemLog</a></h3>
 <strong>Syntax:</strong> SystemLog <em>path</em>|"none"<br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -477,7 +507,8 @@ The <code>SystemLog</code> directive disables <code>proftpd</code>'s use of the
 specified <em>path</em>.  The <em>path</em> should contain an absolute path,
 and should not be to a file in a nonexistent directory, in a world-writable
 directory, or be a symbolic link (unless
-<a href="#AllowLogSymlinks">AllowLogSymlinks</code></a> is set to <em>on</em>).
+<a href="#AllowLogSymlinks"><code>AllowLogSymlinks</code></a> is set to
+<em>on</em>).
 
 <p>
 Use of this directive overrides any facility set by the
@@ -493,19 +524,81 @@ A <em>path</em> value of "none" will disable logging for the entire daemon.
 The <code>mod_log</code> module is compiled by default.
 
 <p>
-<hr><br>
+<hr>
+<h2><a name="Usage">Usage</a></h2>
+<p>
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2014-01-02 16:43:54 $</i><br>
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
 
-<br><hr>
+<p>
+<font color=red>Question</font>: I have configured ProFTPD to use DNS names
+in my <code>proftpd.conf</code> using:
+<pre>
+  UseReverseDNS on
+</pre>
+But in my <code>ExtendedLog</code>, I still see IP addresses rather than the
+DNS names I expect to see.  How can that happen?<br>
+<font color=blue>Answer</font>: The
+<a href="#LogFormat"><code>LogFormat</code></a> <code>%h</code> is what is used
+to log DNS names.  The logged value might be an IP address if ProFTPD cannot
+properly verify that the client IP address resolves to a DNS name.
 
+<p>
+"Properly verifying" an IP address, in this case, means resolving the DNS name
+for an IP address <em>and then resolving that DNS name back to its IP
+addresses</em>:
+<pre>
+  $ host 10.1.2.3
+  3.2.1.10.in-addr.arpa domain name pointer host.domain.example.com.
+  $ host host.domain.example.com
+  host.domain.example.com has address 10.4.5.6
+</pre>
+In this example, the IP address 10.1.2.3 does not resolve back to itself via
+DNS, but rather to a <i>different</i> IP address.
+
+<p>
+If the DNS name does not resolve back to the original IP address, then that
+DNS name is <b>not used</b>, as that DNS name is considered "unreliable"; only
+<em>reliable</em> information is logged (and used elsewhere).  Thus ProFTPD
+resorts to logging just the client IP address for the <code>%h</code> variable,
+rather than the DNS name, in these situations.
+
+<p>
+<font color=red>Question</font>: How can I get the reason a client was
+disconnected, for whatever reason, logged to my <code>ExtendedLog</code>?<br>
+<font color=blue>Answer</font>: You can use the <code>%E</code>
+<a href="#LogFormat"><code>LogFormat</code></a> variable for this, <b>in
+conjunction with</b> the <code>EXIT</code> log class.
+
+<p>
+For example, assume you have configured the following:
+<pre>
+  MaxConnectionsPerUser 2
+</pre>
+and you would like your <code>ExtendedLog</code> to record when this limit
+is reached.  To do this, you would use something like the following:
+<pre>
+  LogFormat eos "%a: user=%U disconnect_reason=\"%E\""
+  ExtendedLog /var/log/proftpd/ext.log EXIT eos
+</pre>
+Of course, you can include other logging classes than just <code>EXIT</code>;
+the above is just an example.
+
+<p>
+With the above, when the <code>MaxConnectionsPerUser</code> is reached,
+your log would have a line like:
+<pre>
+  127.0.0.1: user=tj disconnect_reason="Denied by MaxConnectionsPerUser"
+</pre>
+
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2014<br>
+&copy; Copyright 2002-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 
-<hr><br>
-
+<hr>
 </body>
 </html>

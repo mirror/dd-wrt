@@ -1,9 +1,7 @@
-<!-- $Id: BCP.html,v 1.2 2004-05-25 17:41:34 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/BCP.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Best Common Practices</title>
+<title>ProFTPD: Best Common Practices</title>
 </head>
 
 <body bgcolor=white>
@@ -96,19 +94,35 @@ There are also several third-party modules that can add various resource
 limiting abilities to a <code>proftpd</code> server:
 <ul>
   <li><a href="http://www.castaglia.org/proftpd/modules/mod_diskuse.html">mod_diskuse</a>
-  <li><a href="http://www.castaglia.org/proftpd/modules/mod_load.html">mod_load</a>
-  <li><a href="http://www.castaglia.org/proftpd/modules/mod_quotatab.html">mod_quotatab</a>
+  <li><a href="../contrib/mod_load.html">mod_load</a>
+  <li><a href="../contrib/mod_quotatab.html">mod_quotatab</a>
 </ul>
 
 <p><a name="AccessControls"></a>
 <b>Access Controls</b><br>
 ProFTPD provides a <a href="Limit.html"><code>&lt;Limit&gt;</code></a>
 directive for configuring fine-grained access controls that can be applied to
-logins as well as FTP commands.  The contributed <code>mod_wrap</code> module
+logins as well as FTP commands.  The contributed
+<a href="../contrib/mod_wrap.html"><code>mod_wrap</code></a> module
 allows a <code>proftpd</code> daemon to use the standard
 <code>/etc/hosts.allow</code> and <code>/etc/hosts.deny</code> access control
 files.  Of interest to some is the next generation of this module,
-<a href="http://www.castaglia.org/proftpd/modules/mod_wrap-2.0.html"><code>mod_wrap-2.0</code></a>, which allows for storing access control rules in SQL tables.
+<a href="../contrib/mod_wrap2.html"><code>mod_wrap2</code></a>, which allows
+for storing access control rules in SQL tables.
+
+<p>
+On systems which support the /proc filesystem, such as Linux and several others,
+it is <b>highly recommended</b> that the /proc filesystem be guarded, especially
+for non-chroot sessions.  Malicious clients can read or write to that filesystem
+and cause quite a bit of damage.  Thus we encourge administrators to use
+the following in their <code>proftpd.conf</code>:
+<pre>
+  &lt;Directory /proc&gt;
+    &lt;Limit ALL&gt;
+      DenyAll
+    &lt;/Limit&gt;
+  &lt;/Directory&gt;
+</pre>
 
 <p><a name="PerformanceTuning"></a>
 <b>Performance Tuning</b><br>
@@ -205,8 +219,8 @@ log files.
 If your <code>proftpd</code> server is on a high-bandwidth Internet link,
 it may benefit from tuning the size of <b>kernel</b>-level (as opposed
 to <b>application</b>-level) socket buffers used when transferring data.
-The <a href="http://www.proftpd.org/docs/directives/linked/config_ref_SocketOptions.html"><code>SocketOptions</code></a> configuration directive can be used
-to specify larger buffer sizes:
+The
+<a href="../modules/mod_core.html#SocketOptions"><code>SocketOptions</code></a> configuration directive can be used to specify larger buffer sizes:
 <pre>
   # The 'sndbuf' parameter tunes the size of the buffer used for sending
   # files to clients; the 'rcvbuf' tunes the buffer used for receiving
@@ -262,25 +276,29 @@ situation.  First, the daemon administrator can make sure that any
 after the <code>Include</code>, in the main <code>proftpd.conf</code>.
 
 <p>
-The <a href="http://www.castaglia.org/proftpd/modules/mod_auth_file.html"><code>mod_auth_file</code></a> module, now part of the core distribution, was
-developed specifically to provide finer control over the contents of
-<code>AuthUserFile</code> and <code>AuthGroupFile</code> files.  It does so by
-enhancing these configuration directives to support optional
-&quot;filters&quot; that restrict the UIDs, GIDs, user names, and/or home
-directories in such files.
+The <a href="../modules/mod_auth_file.html"><code>mod_auth_file</code></a>
+module, now part of the core distribution, was developed specifically to
+provide finer control over the contents of <code>AuthUserFile</code> and
+<code>AuthGroupFile</code> files.  It does so by enhancing these configuration
+directives to support optional &quot;filters&quot; that restrict the UIDs, GIDs,
+user names, and/or home directories in such files.
 
 <p><a name="Miscellaneous"></a>
 <b>Miscellaneous</b><br>
 For the security-wary administrator, there are a few more directives that
-may be of interest: <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AnonRejectPasswords.html"><code>AnonRejectPasswords</code></a>,
+may be of interest: <a href="../modules/mod_auth.html#AnonRejectPasswords"><code>AnonRejectPasswords</code></a>,
 which configures a regular expression that matches and blocks scripted FTP
 clients that try to find and exploit ill-configured anonymous FTP sites, and
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_RootRevoke.html"><code>RootRevoke</code></a>, which causes <code>proftpd</code> to
-drop root privileges completely (read the description for details).
+<a href="../modules/mod_auth.html#RootRevoke"><code>RootRevoke</code></a>,
+which causes <code>proftpd</code> to drop root privileges completely (read the
+description for details).
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2004-05-25 17:41:34 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

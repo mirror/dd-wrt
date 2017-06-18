@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_sql -- a mod_quotatab sub-module for managing quota
  *                              data via SQL-based tables
  *
- * Copyright (c) 2002-2013 TJ Saunders
+ * Copyright (c) 2002-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +21,6 @@
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
- *
- * $Id: mod_quotatab_sql.c,v 1.17 2013-01-21 19:59:59 castaglia Exp $
  */
 
 #include "mod_quotatab.h"
@@ -32,10 +30,10 @@
 
 module quotatab_sql_module;
 
-static cmd_rec *sqltab_cmd_create(pool *parent_pool, int argc, ...) {
+static cmd_rec *sqltab_cmd_create(pool *parent_pool, unsigned int argc, ...) {
+  register unsigned int i = 0;
   pool *cmd_pool = NULL;
   cmd_rec *cmd = NULL;
-  register unsigned int i = 0;
   va_list argp;
 
   cmd_pool = make_sub_pool(parent_pool);
@@ -43,14 +41,15 @@ static cmd_rec *sqltab_cmd_create(pool *parent_pool, int argc, ...) {
   cmd->pool = cmd_pool;
 
   cmd->argc = argc;
-  cmd->argv = (char **) pcalloc(cmd->pool, argc * sizeof(char *));
+  cmd->argv = pcalloc(cmd->pool, argc * sizeof(void *));
 
   /* Hmmm... */
   cmd->tmp_pool = cmd->pool;
 
   va_start(argp, argc);
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     cmd->argv[i] = va_arg(argp, char *);
+  }
   va_end(argp);
 
   return cmd;
@@ -62,14 +61,15 @@ static char *sqltab_get_name(pool *p, char *name) {
   modret_t *res;
 
   /* Find the cmdtable for the sql_escapestr command. */
-  cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_escapestr", NULL, NULL);
+  cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_escapestr", NULL, NULL, NULL);
   if (cmdtab == NULL) {
     quotatab_log("error: unable to find SQL hook symbol 'sql_escapestr'");
     return name;
   }
 
-  if (strlen(name) == 0)
+  if (strlen(name) == 0) {
     return name;
+  }
 
   cmd = sqltab_cmd_create(p, 1, pr_str_strip(p, name));
 
@@ -176,7 +176,8 @@ static int sqltab_create(quota_table_t *sqltab, void *ptr) {
     tally_files_in, tally_files_out, tally_files_xfer);
 
   /* Find the cmdtable for the sql_change command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_change", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_change", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     quotatab_log("error: unable to find SQL hook symbol 'sql_change'");
     destroy_pool(tmp_pool);
@@ -219,7 +220,8 @@ static unsigned char sqltab_lookup(quota_table_t *sqltab, void *ptr,
   }
 
   /* Find the cmdtable for the sql_lookup command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_lookup", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     quotatab_log("error: unable to find SQL hook symbol 'sql_lookup'");
     destroy_pool(tmp_pool);
@@ -526,7 +528,8 @@ static int sqltab_write(quota_table_t *sqltab, void *ptr) {
     sqltab_get_name(tmp_pool, tally->name), tally_quota_type);
 
   /* Find the cmdtable for the sql_change command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_change", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_change", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     quotatab_log("error: unable to find SQL hook symbol 'sql_change'");
     destroy_pool(tmp_pool);

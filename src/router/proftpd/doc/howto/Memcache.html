@@ -1,15 +1,13 @@
-<!-- $Id: Memcache.html,v 1.2 2013-05-09 05:28:28 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Memcache.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD and Memcache</title>
+<title>ProFTPD: Memcache</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD and Memcache</b></h2></center>
+<center><h2><b>ProFTPD: Memcache</b></h2></center>
 <hr>
 
 <p>
@@ -87,7 +85,7 @@ up your memcached servers for ProFTPD, you can enable trace logging for the
 
 <p>
 <b>Using Memcache for Shared Storage</b><br>
-You have now compiled support for memcached into proftpd, and you have told the
+You have now compiled support for memcached into ProFTPD, and you have told the
 <code>mod_memcache</code> module where to find your <code>memcached</code>
 servers.  Is that all you need to do?  No.  Now you need to tell
 <code>proftpd</code> modules which bits of data to store in your
@@ -135,7 +133,7 @@ can be quite beneficial.
 
 <p>
 To use <code>memcached</code> for SSL/TLS session caching, then, you use the
-<code><a href="../contrib/mod_tls.html#TLSSessionCache">TLSSessionCache</code></a> directive of the <code>mod_tls</code> module, using something like this
+<a href="../contrib/mod_tls.html#TLSSessionCache"><code>TLSSessionCache</code></a> directive of the <code>mod_tls</code> module, using something like this
 in your <code>proftpd.conf</code>:
 <pre>
   &lt;IfModule mod_tls.c&gt;
@@ -159,14 +157,14 @@ knows how to talk to the <code>memcached</code> servers using
 <font color=red>Question</font>: If I don't use memcache, are there other
 ways for sharing data (such as ban lists) among different <code>proftpd</code>
 instances?<br>
-<font color=blue>Answer</font>: Not really.  It might be possible using
-<code>mod_sql</code> and some <code>SQLLogInfo</code> directives, but that
-would only work for very specific information.  For sharing things like ban
-lists and SSL/TLS sessions across a cluster of <code>proftpd</code> servers,
-memcache support is <b>required</b>.
+<font color=blue>Answer</font>: It might be possible using <code>mod_sql</code>
+and some <code>SQLLogInfo</code> directives, but that would only work for very
+specific information.  For sharing things like ban lists and SSL/TLS sessions
+across a cluster of <code>proftpd</code> servers, Memcache (or
+<a href="Redis.html">Redis</a>) support is <em>recommended</em>.
 
 <p>
-<font color=red>Question</font>: Can I use <code>mod_memcache</code> to cache rerequently accessed files, similar to <code><a href="http://wiki.nginx.org/HttpMemcachedModule">nginx+memcache</a></code>?<br>
+<font color=red>Question</font>: Can I use <code>mod_memcache</code> to cache frequently accessed files, similar to <code><a href="http://wiki.nginx.org/HttpMemcachedModule">nginx+memcache</a></code>?<br>
 <font color=blue>Answer</font>: No.  And in reality, caching of files like that
 will probably not give you the same performance gain for FTP transfers as it
 can for HTTP transfers.
@@ -192,7 +190,7 @@ yourself in this situation, and we will see what can be done to help.
 <font color=red>Question</font>: Why do I see the following error when
 <code>proftpd</code> starts up?<br>
 <pre>
-mod_tls_memcache/0.1: notice: unable to register 'memcache' SSL session cache: Memcache support not enabled  
+  mod_tls_memcache/0.1: notice: unable to register 'memcache' SSL session cache: Memcache support not enabled
 </pre>
 <font color=blue>Answer</font>: This message means that your
 <code>proftpd</code> server has <code>mod_tls_memcache</code> built and
@@ -206,7 +204,11 @@ some of your modules want to use a feature that was not enabled.
 
 <p>
 <hr>
-<i>$Date: 2013-05-09 05:28:28 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

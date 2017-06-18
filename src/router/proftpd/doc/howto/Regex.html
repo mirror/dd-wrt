@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>Regular Expressions Tutorial</title>
@@ -5,15 +6,15 @@
 
 <body bgcolor=white>
 
-<table width=100% border=0>
+<table width=100% border=0 summary="">
   <tr>
     <td align="center">
-      <h4>Found at: http://publish.ez.no/article/articleprint/11/</h3>
+      <h4>Found at: http://publish.ez.no/article/articleprint/11/</h4>
     </td>
   </tr>
 </table>
 
-<table width=100% border=0>
+<table width=100% border=0 summary="">
   <tr>
     <td>
       <h1>Regular Expressions Explained</h1>
@@ -24,7 +25,7 @@
 <hr noshade="noshade" size=4>
 
 <br>
-<table width=100% border=0>
+<table width=100% border=0 summary="">
   <tr>
     <td>
       <p class="byline">Author: Jan Borsodi</p>
@@ -92,7 +93,7 @@ The contents of an expression are, as explained earlier, a combination of
 alphanumeric characters and metacharacters. An alphanumeric character is either
 a letter from the alphabet:
 <p>
-<table width=100% border=0>
+<table width=100% border=0 summary="Alphabetic Quantifiers">
   <tr>
     <td bgcolor="#f0f0f0">
       <code>abc</code>
@@ -102,7 +103,7 @@ a letter from the alphabet:
 <p>
 or a number:
 <p>
-<table width=100% border=0>
+<table width=100% border=0 summary="Numeric Quantifiers">
   <tr>
     <td bgcolor="#f0f0f0">
       <code>123</code>
@@ -118,7 +119,7 @@ very special character is the backslash <b>\</b>, as this turns any
 metacharacters into literal characters, and alphanumeric characters into a
 sort of metacharacter or sequence. The metacharacters are:
 <p>
-<table width=100% border=0>
+<table width=100% border=0 summary="Metacharacters">
   <tr>
     <td bgcolor="#f0f0f0">
       <code>\ | ( ) [  {  ^ $ * + ? . < ></code>
@@ -139,7 +140,7 @@ decimal in a floating number, will lead to strange results. As explained above,
 you need to backslashify it to get the literal meaning. For instance take this
 expression:
 <p>
-<table width=100% border=0>
+<table width=100% border=0 summary="Punctuation Marks">
   <tr>
     <td bgcolor="#f0f0f0">
       <code>1.23</code>
@@ -150,7 +151,7 @@ expression:
 will match the number 1.23 in a text as you might have guessed, but it will
 <b>also</b> match these next lines:
 <p>
-<table width=100% border=0>
+<table width=100% border=0 summary="Punction Marks">
   <tr>
     <td bgcolor="#f0f0f0">
       <code>1x23</code><br>
@@ -645,7 +646,7 @@ versions for commonly used sequences, they are:
 <table width=100% border=0>
   <tr>
     <td bgcolor="#f0f0f0">
-      <code>\d<code>, a digit (<code>[0-9]</code>)<br>
+      <code>\d</code>, a digit (<code>[0-9]</code>)<br>
       <code>\D</code>, a non-digit (<code>[^0-9]</code>)<br>
       <code>\w</code>, a word (alphanumeric) (<code>[a-zA-Z0-9]</code>)<br>
       <code>\W</code>, a non-word (<code>[^a-zA-Z0-9]</code>)<br>

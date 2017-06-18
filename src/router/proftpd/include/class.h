@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Class definitions
- * $Id: class.h,v 1.4 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Class definitions */
 
 #ifndef PR_CLASS_H
 #define PR_CLASS_H
@@ -36,6 +34,7 @@ typedef struct pr_class_t {
   char *cls_name;
   unsigned int cls_satisfy;
   array_header *cls_acls;
+  pr_table_t *cls_notes;
 
   struct pr_class_t *cls_next;
 } pr_class_t;
@@ -46,19 +45,19 @@ typedef struct pr_class_t {
 /* Returns the class object associated with the given name, or NULL if
  * there is no matching class object.
  */
-pr_class_t *pr_class_find(const char *);
+const pr_class_t *pr_class_find(const char *);
 
 /* Iterate through the Class list, returning the next class.  Returns NULL
  * once the end of the list is reached.  If prev is NULL, the iterator
  * restarts at the beginning of the list.
  */
-pr_class_t *pr_class_get(pr_class_t *prev);
+const pr_class_t *pr_class_get(const pr_class_t *prev);
 
 /* Returns the class object for which the given address matches every rule.
  * If multiple classes exist that might match the given address, the first
  * defined class matches.
  */
-pr_class_t *pr_class_match_addr(pr_netaddr_t *);
+const pr_class_t *pr_class_match_addr(const pr_netaddr_t *);
 
 /* Start a new class object, allocated from the given pool, with the given
  * name.
@@ -72,14 +71,16 @@ int pr_class_open(pool *, const char *);
  */
 int pr_class_close(void);
 
-/* Add the given ACL object to the currently opened class object.
- */
-int pr_class_add_acl(pr_netacl_t *);
+/* Add the given ACL object to the currently opened class object. */
+int pr_class_add_acl(const pr_netacl_t *);
 
-/* Set the Satisfy flag on the currently opened class object.
- */
+/* Set the Satisfy flag on the currently opened class object. */
 int pr_class_set_satisfy(int);
 
+/* Set a note on the currently opened class object. */
+int pr_class_add_note(const char *, void *, size_t);
+
+/* For internal use only. */
 void init_class(void);
 
 #endif /* PR_CLASS_H */

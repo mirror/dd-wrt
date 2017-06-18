@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp notification routines
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,7 +94,7 @@ static oid_t *get_notify_oid(pool *p, unsigned int notify_id,
 }
 
 static struct snmp_packet *get_notify_pkt(pool *p, const char *community,
-    pr_netaddr_t *dst_addr, unsigned int notify_id,
+    const pr_netaddr_t *dst_addr, unsigned int notify_id,
     struct snmp_var **head_var, struct snmp_var **tail_var) {
   struct snmp_packet *pkt = NULL;
   struct snmp_mib *mib = NULL;
@@ -333,7 +333,8 @@ static int get_notify_varlist(pool *p, unsigned int notify_id,
 }
 
 int snmp_notify_generate(pool *p, int sockfd, const char *community,
-    pr_netaddr_t *src_addr, pr_netaddr_t *dst_addr, unsigned int notify_id) {
+    const pr_netaddr_t *src_addr, const pr_netaddr_t *dst_addr,
+    unsigned int notify_id) {
   const char *notify_str;
   struct snmp_packet *pkt;
   struct snmp_var *notify_varlist = NULL, *head_var = NULL, *tail_var = NULL,

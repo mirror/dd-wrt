@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2014 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,79 +53,34 @@ static struct testsuite_info suites[] = {
   { "response",		tests_get_response_suite },
   { "fsio",		tests_get_fsio_suite },
   { "netio",		tests_get_netio_suite },
+  { "trace",		tests_get_trace_suite },
+  { "parser",		tests_get_parser_suite },
+  { "pidfile",		tests_get_pidfile_suite },
+  { "config",		tests_get_config_suite },
+  { "auth",		tests_get_auth_suite },
+  { "filter",		tests_get_filter_suite },
+  { "inet",		tests_get_inet_suite },
+  { "data",		tests_get_data_suite },
+  { "ascii",		tests_get_ascii_suite },
+  { "help",		tests_get_help_suite },
+  { "rlimit",		tests_get_rlimit_suite },
+  { "encode",		tests_get_encode_suite },
+  { "privs",		tests_get_privs_suite },
+  { "display",		tests_get_display_suite },
+  { "misc",		tests_get_misc_suite },
+  { "json",		tests_get_json_suite },
+  { "redis",		tests_get_redis_suite },
 
   { NULL, NULL }
 };
 
 static Suite *tests_get_suite(const char *suite) { 
-  if (strcmp(suite, "pool") == 0) { 
-    return tests_get_pool_suite();
- 
-  } else if (strcmp(suite, "array") == 0) {
-    return tests_get_array_suite(); 
+  register unsigned int i;
 
-  } else if (strcmp(suite, "str") == 0) {
-    return tests_get_str_suite(); 
-
-  } else if (strcmp(suite, "sets") == 0) {
-    return tests_get_sets_suite(); 
-
-  } else if (strcmp(suite, "timers") == 0) {
-    return tests_get_timers_suite(); 
-
-  } else if (strcmp(suite, "table") == 0) {
-    return tests_get_table_suite(); 
-
-  } else if (strcmp(suite, "var") == 0) {
-    return tests_get_var_suite(); 
-
-  } else if (strcmp(suite, "event") == 0) {
-    return tests_get_event_suite(); 
-
-  } else if (strcmp(suite, "version") == 0) {
-    return tests_get_version_suite(); 
-
-  } else if (strcmp(suite, "env") == 0) {
-    return tests_get_env_suite(); 
-
-  } else if (strcmp(suite, "feat") == 0) {
-    return tests_get_feat_suite(); 
-
-  } else if (strcmp(suite, "netaddr") == 0) {
-    return tests_get_netaddr_suite(); 
-
-  } else if (strcmp(suite, "netacl") == 0) {
-    return tests_get_netacl_suite();
-
-  } else if (strcmp(suite, "class") == 0) {
-    return tests_get_class_suite();
-
-  } else if (strcmp(suite, "regexp") == 0) {
-    return tests_get_regexp_suite();
-
-  } else if (strcmp(suite, "expr") == 0) {
-    return tests_get_expr_suite();
-
-  } else if (strcmp(suite, "scoreboard") == 0) {
-    return tests_get_scoreboard_suite();
-
-  } else if (strcmp(suite, "stash") == 0) {
-    return tests_get_stash_suite();
-
-  } else if (strcmp(suite, "modules") == 0) {
-    return tests_get_modules_suite();
-
-  } else if (strcmp(suite, "cmd") == 0) {
-    return tests_get_cmd_suite();
-
-  } else if (strcmp(suite, "response") == 0) {
-    return tests_get_response_suite();
-
-  } else if (strcmp(suite, "fsio") == 0) {
-    return tests_get_fsio_suite();
-
-  } else if (strcmp(suite, "netio") == 0) {
-    return tests_get_netio_suite();
+  for (i = 0; suites[i].name != NULL; i++) {
+    if (strcmp(suite, suites[i].name) == 0) {
+      return (*suites[i].get_suite)();
+    }
   }
 
   return NULL;
@@ -171,9 +126,17 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  /* Configure the Trace API to write to stderr. */
+  pr_trace_use_stderr(TRUE);
+
   requested = getenv("PR_TEST_NOFORK");
   if (requested) {
     srunner_set_fork_status(runner, CK_NOFORK);
+  } else {
+    requested = getenv("CK_DEFAULT_TIMEOUT");
+    if (requested == NULL) {
+      setenv("CK_DEFAULT_TIMEOUT", "60", 1);
+    }
   }
 
   srunner_run_all(runner, CK_NORMAL);

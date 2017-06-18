@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Command response routines
- * $Id: response.h,v 1.9 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Command response routines */
 
 #ifndef PR_RESPONSE_H
 #define PR_RESPONSE_H
@@ -33,8 +31,8 @@
 
 typedef struct resp_struc {
   struct resp_struc *next;
-  char *num;
-  char *msg;
+  const char *num;
+  const char *msg;
 } pr_response_t;
 
 /* Utilize gcc's __attribute__ pragma for signalling that it should perform
@@ -63,7 +61,8 @@ void pr_response_flush(pr_response_t **);
  * sent/added for flushing to the client.  The strings for the values are
  * allocated out of the given pool.
  */
-int pr_response_get_last(pool *, char **resp_code, char **response_msg);
+int pr_response_get_last(pool *, const char **resp_code,
+  const char **response_msg);
 
 void pr_response_send(const char *, const char *, ...)
 #ifdef __GNUC__

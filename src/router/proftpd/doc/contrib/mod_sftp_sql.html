@@ -1,6 +1,4 @@
-<!-- $Id: mod_sftp_sql.html,v 1.5 2010-03-02 19:03:55 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_sftp_sql.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_sftp_sql</title>
@@ -15,11 +13,11 @@
 <hr><br>
 
 <p>
-The <a href="http://www.castaglia.org/proftpd/modules/mod_sftp.html"><code>mod_sftp</code></a> module for ProFTPD can support different storage formats for
-its user- and host-based authorized keys.  By default, the <code>mod_sftp</code>
-module supports storing authorized keys in flats.  This
-<code>mod_sftp_sql</code> module allows for authorized SSH keys to be stored
-in SQL tables.
+The <a href="../contrib/mod_sftp.html"><code>mod_sftp</code></a> module for
+ProFTPD can support different storage formats for its user- and host-based
+authorized keys.  By default, the <code>mod_sftp</code> module supports storing
+authorized keys in flat files.  This <code>mod_sftp_sql</code> module allows
+for authorized SSH keys to be stored in SQL tables.
 
 <p>
 This module is contained in the <code>mod_sftp_sql.c</code> file for
@@ -45,20 +43,15 @@ questions, concerns, or suggestions regarding this module.
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-To install <code>mod_sftp_sql</code>, copy the <code>mod_sftp_sql.c</code> file
-into:
-<pre>
-  <i>proftpd-dir</i>/contrib/
-</pre>
-after unpacking the latest proftpd-1.3.<i>x</i> source code.  Then follow the
-usual steps for using third-party modules in proftpd, making sure to include
-the <code>mod_sftp</code> and <code>mod_sql</code> modules, which
+To build <code>mod_sftp_sql</code>, follow the usual steps for using
+third-party modules in ProFTPD, making sure to include the
+<code>mod_sftp</code> and <code>mod_sql</code> modules, which
 <code>mod_sftp_sql</code> requires.  For example, if you use MySQL as your
 SQL database, then you might use:
 <pre>
-  ./configure --with-modules=mod_sql:mod_sql_mysql:mod_sftp:mod_sftp_sql ...
-  make
-  make install
+  $ ./configure --with-modules=mod_sql:mod_sql_mysql:mod_sftp:mod_sftp_sql ...
+  $ make
+  $ make install
 </pre>
 
 <p>
@@ -134,14 +127,14 @@ recommended.
 An example MySQL schema looks like:
 <pre>
   CREATE TABLE sftpuserkeys (
-    name VARCHAR(255) NOT NULL,
-    key VARCHAR(255) NOT NULL
+    name TEXT(8192) NOT NULL,
+    key TEXT(8192) NOT NULL
   );
   CREATE INDEX sftpuserkeys_idx ON sftpuserkeys (name);
 
   CREATE TABLE sftphostkeys (
-    host VARCHAR(255) NOT NULL,
-    key VARCHAR(255) NOT NULL
+    host TEXT(8192) NOT NULL,
+    key TEXT(8192) NOT NULL
   );
   CREATE INDEX sftphostkeys_idx ON sftphostkeys (host);
 </pre>
@@ -162,20 +155,20 @@ bulk data loading tools which can also be used to load a CSV file containing
 keys into your SQL tables, for use via <code>mod_sftp_sql</code>.
 
 <p>
-<hr><br>
+<b>Note</b> that the newlines which are part of the RFC 4716 formatted key
+data <b>are important</b>.  Use of the wrong data type in your SQL schema
+could lead to unexpected parsing issues, which will be logged as:
+<pre>
+  mod_sftp_sql/0.4[16284]: error base64-decoding raw key data from database
+</pre>
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010-03-02 19:03:55 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2010 TJ Saunders<br>
+&copy; Copyright 2009-2016 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

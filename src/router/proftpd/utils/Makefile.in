@@ -7,7 +7,6 @@ VPATH=@srcdir@
 
 include ../Make.rules
 
-
 all:
 	@echo "Running make from top level directory."
 	cd ../; $(MAKE) all
@@ -22,8 +21,11 @@ Makefile: Makefile.in ../config.status
 utils: $(FTPCOUNT_OBJS) $(FTPSCRUB_OBJS) $(FTPSHUT_OBJS) $(FTPTOP_OBJS) $(FTPWHO_OBJS)
 
 clean:
-	rm -f *.o
+	$(RM) -f *.o
 
 depend:
 	$(MAKEDEPEND) $(CPPFLAGS) *.c 2>/dev/null
 	$(MAKEDEPEND) $(CPPFLAGS) -fMakefile.in *.c 2>/dev/null
+
+distclean: clean
+	-$(RM) *.gcda *.gcno

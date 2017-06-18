@@ -2967,14 +2967,14 @@ sub showsymlinks_off_mlst_rel_symlinked_dir {
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       if ($^O eq 'darwin') {
         # MacOSX-specific hack, to compensate for how it handles tmp files
         $test_symlink = ('/private' . $test_symlink);
       }
 
-      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=file;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_symlink . '$';
+      $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=dir;unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_symlink . '$';
       $self->assert(qr/$expected/, $resp_msg,
         test_msg("Expected '$expected', got '$resp_msg'"));
     };
@@ -3556,9 +3556,9 @@ sub showsymlinks_off_stat_rel_symlinked_file {
 
       my $expected;
 
-      $expected = 211;
+      $expected = 213;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       unless ($resp_msg =~ /^\s+(\S+)\s+\d+\s+\S+\s+\S+\s+.*?\s+(\S+)$/) {
         die("Response '$resp_msg' does not match expected pattern");
@@ -3718,9 +3718,9 @@ sub showsymlinks_on_stat_rel_symlinked_file {
 
       my $expected;
 
-      $expected = 211;
+      $expected = 213;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       unless ($resp_msg =~ /^\s+(\S+)\s+\d+\s+\S+\s+\S+\s+.*?\s+\d{2}:\d{2}\s+(.*)?$/) {
         die("Response '$resp_msg' does not match expected pattern");
@@ -3885,9 +3885,9 @@ sub showsymlinks_off_stat_rel_symlinked_dir {
 
       my $expected;
 
-      $expected = 211;
+      $expected = 212;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       unless ($resp_msg =~ /^\s+(\S+)\s+\d+\s+\S+\s+\S+\s+.*?\s+(\S+)$/) {
         die("Response '$resp_msg' does not match expected pattern");
@@ -4038,9 +4038,9 @@ sub showsymlinks_on_stat_rel_symlinked_dir {
 
       my $expected;
 
-      $expected = 211;
+      $expected = 212;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       # XXX Possible bug; this should return info on the symlink, rather
       # than trying to list the contents of the symlink target directory.

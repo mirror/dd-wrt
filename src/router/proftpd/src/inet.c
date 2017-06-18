@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,10 +72,15 @@ int pr_inet_set_default_family(pool *p, int family) {
 
 /* Find a service and return its port number. */
 int pr_inet_getservport(pool *p, const char *serv, const char *proto) {
-  struct servent *servent = getservbyname(serv, proto);
+  struct servent *servent;
+
+  servent = getservbyname(serv, proto);
+  if (servent == NULL) {
+    return -1;
+  }
 
   /* getservbyname returns the port in network byte order. */
-  return (servent ? ntohs(servent->s_port) : -1);
+  return ntohs(servent->s_port);
 }
 
 static void conn_cleanup_cb(void *cv) {
@@ -118,8 +123,14 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
   conn_t *res = NULL;
   pool *sub_pool = NULL;
 
+  if (p == NULL ||
+      c == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   sub_pool = make_sub_pool(p);
-  pr_pool_tag(sub_pool, "pr_inet_copy_conn() subpool");
+  pr_pool_tag(sub_pool, "inet_copy_conn pool");
 
   res = (conn_t *) pcalloc(sub_pool, sizeof(conn_t));
 
@@ -127,30 +138,35 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
   res->pool = sub_pool;
   res->instrm = res->outstrm = NULL;
 
-  if (c->local_addr) {
-    res->local_addr = pr_netaddr_alloc(res->pool);
+  if (c->local_addr != NULL) {
+    pr_netaddr_t *local_addr;
 
-    if (pr_netaddr_set_family(res->local_addr,
+    local_addr = pr_netaddr_alloc(res->pool);
+
+    if (pr_netaddr_set_family(local_addr,
         pr_netaddr_get_family(c->local_addr)) < 0) {
       destroy_pool(res->pool);
       return NULL;
     }
 
-    pr_netaddr_set_sockaddr(res->local_addr,
-      pr_netaddr_get_sockaddr(c->local_addr));
+    pr_netaddr_set_sockaddr(local_addr, pr_netaddr_get_sockaddr(c->local_addr));
+    res->local_addr = local_addr;
   }
 
-  if (c->remote_addr) {
-    res->remote_addr = pr_netaddr_alloc(res->pool);
+  if (c->remote_addr != NULL) {
+    pr_netaddr_t *remote_addr;
 
-    if (pr_netaddr_set_family(res->remote_addr,
+    remote_addr = pr_netaddr_alloc(res->pool);
+
+    if (pr_netaddr_set_family(remote_addr,
         pr_netaddr_get_family(c->remote_addr)) < 0) {
       destroy_pool(res->pool);
       return NULL;
     }
 
-    pr_netaddr_set_sockaddr(res->remote_addr,
+    pr_netaddr_set_sockaddr(remote_addr,
       pr_netaddr_get_sockaddr(c->remote_addr));
+    res->remote_addr = remote_addr;
   }
 
   if (c->remote_name) {
@@ -164,13 +180,18 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
 /* Initialize a new connection record, also creates a new subpool just for the
  * new connection.
  */
-static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
+static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     int port, int retry_bind, int reporting) {
   pool *sub_pool = NULL;
   conn_t *c;
   pr_netaddr_t na;
   int addr_family;
   int res = 0, one = 1, hold_errno;
+
+  if (p == NULL) {
+    errno = inet_errno = EINVAL;
+    return NULL;
+  }
 
   if (!inet_pool) {
     inet_pool = make_sub_pool(permanent_pool);
@@ -181,7 +202,7 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
   pr_netaddr_clear(&na);
 
   sub_pool = make_sub_pool(p);
-  pr_pool_tag(sub_pool, "init_conn() subpool");
+  pr_pool_tag(sub_pool, "init_conn pool");
 
   c = (conn_t *) pcalloc(sub_pool, sizeof(conn_t));
   c->pool = sub_pool;
@@ -236,7 +257,7 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
-    defined(DARWIN12) || \
+    defined(DARWIN12) || defined(DARWIN13) || defined(DARWIN14) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
@@ -261,7 +282,7 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(DARWIN6) || defined(DARWIN7) || defined(DARWIN8) || \
     defined(DARWIN9) || defined(DARWIN10) || defined(DARWIN11) || \
-    defined(DARWIN12) || \
+    defined(DARWIN12) || defined(DARWIN13) || defined(DARWIN14) || \
     defined(SCO3) || defined(CYGWIN) || defined(SYSV4_2MP) || \
     defined(SYSV5SCO_SV6) || defined(SYSV5UNIXWARE7)
 # ifdef SOLARIS2
@@ -276,7 +297,6 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
     }
 
     if (fd == -1) {
-
       /* On failure, destroy the connection and return NULL. */
       if (reporting) {
         pr_log_pri(PR_LOG_WARNING,
@@ -303,9 +323,25 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
         strerror(errno));
     }
 
+#if defined(IP_FREEBIND)
+    /* Allow binding to an as-yet-nonexistent address. */
+    if (setsockopt(fd, SOL_IP, IP_FREEBIND, (void *) &one,
+        sizeof(one)) < 0) {
+      if (errno != ENOSYS) {
+        pr_log_pri(PR_LOG_INFO, "error setting IP_FREEBIND: %s",
+          strerror(errno));
+      }
+    }
+#endif /* IP_FREEBIND */
+
     memset(&na, 0, sizeof(na));
     if (pr_netaddr_set_family(&na, addr_family) < 0) {
+      int xerrno = errno;
+
       destroy_pool(c->pool);
+      (void) close(fd);
+
+      errno = xerrno;
       return NULL;
     }
 
@@ -454,13 +490,22 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
 
     salen = pr_netaddr_get_sockaddr_len(&na);
     if (getsockname(fd, pr_netaddr_get_sockaddr(&na), &salen) == 0) {
-      if (c->local_addr == NULL) {
-        c->local_addr = pr_netaddr_alloc(c->pool);
+      pr_netaddr_t *local_addr;
+
+      if (c->local_addr != NULL) {
+        local_addr = (pr_netaddr_t *) c->local_addr;
+
+      } else {
+        local_addr = pr_netaddr_alloc(c->pool);
       }
 
-      pr_netaddr_set_family(c->local_addr, pr_netaddr_get_family(&na));
-      pr_netaddr_set_sockaddr(c->local_addr, pr_netaddr_get_sockaddr(&na));
+      pr_netaddr_set_family(local_addr, pr_netaddr_get_family(&na));
+      pr_netaddr_set_sockaddr(local_addr, pr_netaddr_get_sockaddr(&na));
       c->local_port = ntohs(pr_netaddr_get_port(&na));
+
+      if (c->local_addr == NULL) {
+        c->local_addr = local_addr;
+      }
 
     } else {
       pr_log_debug(DEBUG3, "getsockname error on socket %d: %s", fd,
@@ -483,7 +528,7 @@ static conn_t *init_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
   return c;
 }
 
-conn_t *pr_inet_create_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
+conn_t *pr_inet_create_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     int port, int retry_bind) {
   conn_t *c = NULL;
 
@@ -498,12 +543,23 @@ conn_t *pr_inet_create_conn(pool *p, int fd, pr_netaddr_t *bind_addr,
 /* Attempt to create a connection bound to a given port range, returns NULL
  * if unable to bind to any port in the range.
  */
-conn_t *pr_inet_create_conn_portrange(pool *p, pr_netaddr_t *bind_addr,
+conn_t *pr_inet_create_conn_portrange(pool *p, const pr_netaddr_t *bind_addr,
     int low_port, int high_port) {
   int range_len, i;
   int *range, *ports;
   int attempt, random_index;
   conn_t *c = NULL;
+
+  if (low_port < 0 ||
+      high_port < 0) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (low_port >= high_port) {
+    errno = EPERM;
+    return NULL;
+  }
 
   /* Make sure the temporary inet work pool exists. */
   if (!inet_pool) {
@@ -516,16 +572,15 @@ conn_t *pr_inet_create_conn_portrange(pool *p, pr_netaddr_t *bind_addr,
   ports = (int *) pcalloc(inet_pool, range_len * sizeof(int));
 
   i = range_len;
-  while (i--)
+  while (i--) {
     range[i] = low_port + i;
+  }
 
   for (attempt = 3; attempt > 0 && !c; attempt--) {
     for (i = range_len - 1; i >= 0 && !c; i--) {
-
       /* If this is the first attempt through the range, randomize
        * the order of the port numbers used.
        */
-
       if (attempt == 3) {
 	/* Obtain a random index into the port array range. */
 	random_index = (int) ((1.0 * i * rand()) / (RAND_MAX+1.0));
@@ -538,7 +593,6 @@ conn_t *pr_inet_create_conn_portrange(pool *p, pr_netaddr_t *bind_addr,
 	/* Move non-selected numbers down so that the next randomly chosen
 	 * port will be from the range of as-yet untried ports.
 	 */
-
 	while (++random_index <= i) {
 	  range[random_index-1] = range[random_index];
         }
@@ -570,21 +624,30 @@ void pr_inet_close(pool *p, conn_t *c) {
    * Simply destroy the pool and all the dirty work gets done.
    */
 
-  destroy_pool(c->pool);
+  if (c->pool != NULL) {
+    destroy_pool(c->pool);
+    c->pool = NULL;
+  }
 }
 
 /* Perform shutdown/read on streams */
 void pr_inet_lingering_close(pool *p, conn_t *c, long linger) {
-  pr_inet_set_block(p, c);
+  if (c == NULL) {
+    return;
+  }
 
-  if (c->outstrm)
+  (void) pr_inet_set_block(p, c);
+
+  if (c->outstrm) {
     pr_netio_lingering_close(c->outstrm, linger);
+  }
 
   /* Only close the input stream if it is actually a different stream than
    * the output stream.
    */
-  if (c->instrm != c->outstrm)
+  if (c->instrm != c->outstrm) {
     pr_netio_close(c->instrm);
+  }
 
   c->outstrm = NULL;
   c->instrm = NULL;
@@ -594,10 +657,15 @@ void pr_inet_lingering_close(pool *p, conn_t *c, long linger) {
 
 /* Similar to a lingering close, perform a lingering abort. */
 void pr_inet_lingering_abort(pool *p, conn_t *c, long linger) {
-  pr_inet_set_block(p, c);
+  if (c == NULL) {
+    return;
+  }
 
-  if (c->instrm)
+  (void) pr_inet_set_block(p, c);
+
+  if (c->instrm) {
     pr_netio_lingering_abort(c->instrm, linger);
+  }
 
   /* Only close the output stream if it is actually a different stream
    * than the input stream.
@@ -606,8 +674,9 @@ void pr_inet_lingering_abort(pool *p, conn_t *c, long linger) {
    * since doing so would result in two 426 responses sent; we only
    * want and need one.
    */
-  if (c->outstrm != c->instrm)
+  if (c->outstrm != c->instrm) {
     pr_netio_close(c->outstrm);
+  }
 
   c->instrm = NULL;
   c->outstrm = NULL;
@@ -655,10 +724,16 @@ int pr_inet_set_proto_nodelay(pool *p, conn_t *conn, int nodelay) {
   int tcp_level = tcp_proto;
 # endif /* SOL_TCP */
 
+  if (conn == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (conn->rfd != -1) {
     res = setsockopt(conn->rfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
       sizeof(nodelay));
-    if (res < 0) {
+    if (res < 0 &&
+        errno != EBADF) {
       pr_log_pri(PR_LOG_NOTICE, "error setting read fd %d TCP_NODELAY %d: %s",
        conn->rfd, nodelay, strerror(errno));
     }
@@ -667,7 +742,9 @@ int pr_inet_set_proto_nodelay(pool *p, conn_t *conn, int nodelay) {
   if (conn->wfd != -1) {
     res = setsockopt(conn->wfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
       sizeof(nodelay));
-    if (res < 0) {
+    if (res < 0 &&
+        errno != EBADF &&
+        errno != EINVAL) {
       pr_log_pri(PR_LOG_NOTICE, "error setting write fd %d TCP_NODELAY %d: %s",
        conn->wfd, nodelay, strerror(errno));
     }
@@ -697,39 +774,54 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
 #else
   int tcp_level = tcp_proto;
 #endif /* SOL_TCP */
+  unsigned char *no_delay = NULL;
 
   /* Some of these setsockopt() calls may fail when they operate on IPv6
    * sockets, rather than on IPv4 sockets.
    */
 
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
 #ifdef TCP_NODELAY
-  unsigned char *no_delay = get_param_ptr(main_server->conf, "tcpNoDelay",
-    FALSE);
 
-  if (!no_delay ||
+  /* Note: main_server might be null when those code runs in the testsuite. */
+  if (main_server != NULL) {
+    no_delay = get_param_ptr(main_server->conf, "TCPNoDelay", FALSE);
+  }
+
+  if (no_delay == NULL ||
       *no_delay == TRUE) {
-
     if (c->rfd != -1) {
       if (setsockopt(c->rfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
           sizeof(nodelay)) < 0) {
-        pr_log_pri(PR_LOG_NOTICE, "error setting read fd %d TCP_NODELAY: %s",
-          c->rfd, strerror(errno));
+        if (errno != EBADF) {
+          pr_log_pri(PR_LOG_NOTICE, "error setting read fd %d TCP_NODELAY: %s",
+            c->rfd, strerror(errno));
+        }
       }
     }
 
     if (c->wfd != -1) {
       if (setsockopt(c->wfd, tcp_level, TCP_NODELAY, (void *) &nodelay,
           sizeof(nodelay)) < 0) {
-        pr_log_pri(PR_LOG_NOTICE, "error setting write fd %d TCP_NODELAY: %s",
-          c->wfd, strerror(errno));
+        if (errno != EBADF) {
+          pr_log_pri(PR_LOG_NOTICE, "error setting write fd %d TCP_NODELAY: %s",
+            c->wfd, strerror(errno));
+        }
       }
     }
 
     if (c->listen_fd != -1) {
       if (setsockopt(c->listen_fd, tcp_level, TCP_NODELAY, (void *) &nodelay,
           sizeof(nodelay)) < 0) {
-        pr_log_pri(PR_LOG_NOTICE, "error setting listen fd %d TCP_NODELAY: %s",
-          c->listen_fd, strerror(errno));
+        if (errno != EBADF) {
+          pr_log_pri(PR_LOG_NOTICE,
+            "error setting listen fd %d TCP_NODELAY: %s",
+            c->listen_fd, strerror(errno));
+        }
       }
     }
   }
@@ -737,7 +829,7 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
 
 #ifdef TCP_MAXSEG
   if (c->listen_fd != -1 &&
-      mss) {
+      mss > 0) {
     if (setsockopt(c->listen_fd, tcp_level, TCP_MAXSEG, &mss,
         sizeof(mss)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting listen fd TCP_MAXSEG(%d): %s",
@@ -770,6 +862,7 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
         res = setsockopt(c->listen_fd, level, IPV6_TCLASS, (void *) &tos,
           sizeof(tos));
         if (res < 0
+            && errno != EINVAL
 #ifdef ENOPROTOOPT
             && errno != ENOPROTOOPT
 #endif /* !ENOPROTOOPT */
@@ -795,6 +888,11 @@ int pr_inet_set_proto_opts(pool *p, conn_t *c, int mss, int nodelay,
 /* Set socket options on a connection.  */
 int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
     struct tcp_keepalive *tcp_keepalive) {
+
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   /* Linux and "most" newer networking OSes probably use a highly adaptive
    * window size system, which generally wouldn't require user-space
@@ -892,24 +990,30 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 
     if (sndbuf > 0) {
       len = sizeof(csndbuf);
-      getsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &csndbuf, &len);
+      if (getsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &csndbuf,
+          &len) == 0) {
+        if (sndbuf > csndbuf) {
+          if (setsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &sndbuf,
+              sizeof(sndbuf)) < 0) {
+            pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_SNDBUF: %s",
+              strerror(errno));
 
-      if (sndbuf > csndbuf) {
-        if (setsockopt(c->listen_fd, SOL_SOCKET, SO_SNDBUF, (void *) &sndbuf,
-            sizeof(sndbuf)) < 0) {
-          pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_SNDBUF: %s",
-            strerror(errno));
+          } else {
+            pr_trace_msg("data", 8,
+              "set socket sndbuf of %lu bytes", (unsigned long) sndbuf);
+          }
 
         } else {
           pr_trace_msg("data", 8,
-            "set socket sndbuf of %lu bytes", (unsigned long) sndbuf);
+            "socket %d has sndbuf of %lu bytes, ignoring "
+            "requested %lu bytes sndbuf", c->listen_fd, (unsigned long) csndbuf,
+            (unsigned long) sndbuf);
         }
 
       } else {
-        pr_trace_msg("data", 8,
-          "socket %d has sndbuf of %lu bytes, ignoring "
-          "requested %lu bytes sndbuf", c->listen_fd, (unsigned long) csndbuf,
-          (unsigned long) sndbuf);
+        pr_trace_msg("data", 3,
+          "error getting SO_SNDBUF on listen fd %d: %s", c->listen_fd,
+          strerror(errno));
       }
     }
 
@@ -917,24 +1021,30 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 
     if (rcvbuf > 0) {
       len = sizeof(crcvbuf);
-      getsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &crcvbuf, &len);
+      if (getsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &crcvbuf,
+          &len) == 0) {
+        if (rcvbuf > crcvbuf) {
+          if (setsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &rcvbuf,
+              sizeof(rcvbuf)) < 0) {
+            pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_RCVFBUF: %s",
+              strerror(errno));
 
-      if (rcvbuf > crcvbuf) {
-        if (setsockopt(c->listen_fd, SOL_SOCKET, SO_RCVBUF, (void *) &rcvbuf,
-            sizeof(rcvbuf)) < 0) {
-          pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_RCVFBUF: %s",
-            strerror(errno));
+          } else {
+            pr_trace_msg("data", 8,
+              "set socket rcvbuf of %lu bytes", (unsigned long) rcvbuf);
+          }
 
         } else {
           pr_trace_msg("data", 8,
-            "set socket rcvbuf of %lu bytes", (unsigned long) rcvbuf);
+           "socket %d has rcvbuf of %lu bytes, ignoring "
+            "requested %lu bytes rcvbuf", c->listen_fd, (unsigned long) crcvbuf,
+            (unsigned long) rcvbuf);
         }
 
       } else {
-        pr_trace_msg("data", 8,
-          "socket %d has rcvbuf of %lu bytes, ignoring "
-          "requested %lu bytes rcvbuf", c->listen_fd, (unsigned long) crcvbuf,
-          (unsigned long) rcvbuf);
+        pr_trace_msg("data", 3,
+          "error getting SO_RCVBUF on listen fd %d: %s", c->listen_fd,
+          strerror(errno));
       }
     }
 
@@ -947,42 +1057,57 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 #ifdef SO_OOBINLINE
 static void set_oobinline(int fd) {
   int on = 1;
-  if (fd != -1)
-    if (setsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (void*)&on, sizeof(on)) < 0)
+  if (fd >= 0) {
+    if (setsockopt(fd, SOL_SOCKET, SO_OOBINLINE, (void*)&on, sizeof(on)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_OOBINLINE: %s",
         strerror(errno));
+    }
+  }
 }
 #endif
 
 #ifdef F_SETOWN
-static void set_owner(int fd) {
-  if (fd != -1)
-    fcntl(fd, F_SETOWN, session.pid ? session.pid : getpid());
+static void set_socket_owner(int fd) {
+  if (fd >= 0) {
+    pid_t pid;
+
+    pid = session.pid ? session.pid : getpid();
+    if (fcntl(fd, F_SETOWN, pid) < 0) {
+      pr_trace_msg(trace_channel, 3,
+        "failed to SETOWN PID %lu on socket fd %d: %s", (unsigned long) pid,
+        fd, strerror(errno));
+    }
+  }
 }
 #endif
 
 /* Put a socket in async mode (so SIGURG is raised on OOB)
  */
 int pr_inet_set_async(pool *p, conn_t *c) {
+  if (p == NULL ||
+      c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
 #ifdef SO_OOBINLINE
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for listening socket %d",  c->listen_fd);
+    "setting SO_OOBINLINE for listening socket %d", c->listen_fd);
   set_oobinline(c->listen_fd);
 
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for reading socket %d",  c->rfd);
+    "setting SO_OOBINLINE for reading socket %d", c->rfd);
   set_oobinline(c->rfd);
 
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for writing socket %d",  c->wfd);
+    "setting SO_OOBINLINE for writing socket %d", c->wfd);
   set_oobinline(c->wfd);
 #endif
 
 #ifdef F_SETOWN
-  set_owner(c->listen_fd);
-  set_owner(c->rfd);
-  set_owner(c->wfd);
+  set_socket_owner(c->listen_fd);
+  set_socket_owner(c->rfd);
+  set_socket_owner(c->wfd);
 #endif
 
   return 0;
@@ -994,22 +1119,44 @@ int pr_inet_set_nonblock(pool *p, conn_t *c) {
   int flags;
   int res = -1;
 
+  (void) p;
+
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   errno = EBADF;		/* Default */
 
   if (c->mode == CM_LISTEN ||
       c->mode == CM_CONNECT) {
     flags = fcntl(c->listen_fd, F_GETFL);
-    res = fcntl(c->listen_fd, F_SETFL, flags|O_NONBLOCK);
+    if (flags >= 0) {
+      res = fcntl(c->listen_fd, F_SETFL, flags|O_NONBLOCK);
+
+    } else {
+      res = flags;
+    }
 
   } else {
     if (c->rfd != -1) {
       flags = fcntl(c->rfd, F_GETFL);
-      res = fcntl(c->rfd, F_SETFL, flags|O_NONBLOCK);
+      if (flags >= 0) {
+        res = fcntl(c->rfd, F_SETFL, flags|O_NONBLOCK);
+
+      } else {
+        res = flags;
+      }
     }
 
     if (c->wfd != -1) {
       flags = fcntl(c->wfd, F_GETFL);
-      res = fcntl(c->wfd, F_SETFL, flags|O_NONBLOCK);
+      if (flags >= 0) {
+        res = fcntl(c->wfd, F_SETFL, flags|O_NONBLOCK);
+
+      } else {
+        res = flags;
+      }
     }
   }
 
@@ -1020,36 +1167,64 @@ int pr_inet_set_block(pool *p, conn_t *c) {
   int flags;
   int res = -1;
 
+  (void) p;
+
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   errno = EBADF;		/* Default */
 
   if (c->mode == CM_LISTEN ||
       c->mode == CM_CONNECT) {
     flags = fcntl(c->listen_fd, F_GETFL);
-    res = fcntl(c->listen_fd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+    if (flags >= 0) {
+      res = fcntl(c->listen_fd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+
+    } else {
+      res = flags;
+    }
 
   } else {
     if (c->rfd != -1) {
       flags = fcntl(c->rfd, F_GETFL);
-      res = fcntl(c->rfd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+      if (flags >= 0) {
+        res = fcntl(c->rfd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+
+      } else {
+        res = flags;
+      }
     }
 
     if (c->wfd != -1) {
       flags = fcntl(c->wfd, F_GETFL);
-      res = fcntl(c->wfd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+      if (flags >= 0) {
+        res = fcntl(c->wfd, F_SETFL, flags & (U32BITS ^ O_NONBLOCK));
+
+      } else {
+        res = flags;
+      }
     }
   }
 
   return res;
 }
 
-/* Put a connection in listen mode
- */
+/* Put a connection in listen mode */
 int pr_inet_listen(pool *p, conn_t *c, int backlog, int flags) {
-  if (!c || c->mode == CM_LISTEN)
+  if (c == NULL) {
+    errno = EINVAL;
     return -1;
+  }
+
+  if (c->mode == CM_LISTEN) {
+    errno = EPERM;
+    return -1;
+  }
 
   while (TRUE) {
-    if (listen(c->listen_fd, backlog) == -1) {
+    if (listen(c->listen_fd, backlog) < 0) {
       int xerrno = errno;
 
       if (xerrno == EINTR) {
@@ -1066,10 +1241,9 @@ int pr_inet_listen(pool *p, conn_t *c, int backlog, int flags) {
 
       errno = xerrno;
       return -1;
-
-    } else {
-      break;
     }
+
+    break;
   }
 
   c->mode = CM_LISTEN;
@@ -1080,14 +1254,29 @@ int pr_inet_listen(pool *p, conn_t *c, int backlog, int flags) {
  * for safety.
  */
 int pr_inet_resetlisten(pool *p, conn_t *c) {
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   c->mode = CM_LISTEN;
-  pr_inet_set_block(c->pool, c);
+  if (pr_inet_set_block(c->pool, c) < 0) {
+    c->xerrno = errno;
+    return -1;
+  }
+
   return 0;
 }
 
-int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
+int pr_inet_connect(pool *p, conn_t *c, const pr_netaddr_t *addr, int port) {
   pr_netaddr_t remote_na;
   int res = 0;
+
+  if (c == NULL ||
+      addr == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   c->mode = CM_CONNECT;
   if (pr_inet_set_block(p, c) < 0) {
@@ -1104,16 +1293,18 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   pr_netaddr_set_port(&remote_na, htons(port));
 
   while (TRUE) {
-    if ((res = connect(c->listen_fd, pr_netaddr_get_sockaddr(&remote_na),
-        pr_netaddr_get_sockaddr_len(&remote_na))) == -1 && errno == EINTR) {
+    res = connect(c->listen_fd, pr_netaddr_get_sockaddr(&remote_na),
+      pr_netaddr_get_sockaddr_len(&remote_na));
+    if (res < 0 &&
+        errno == EINTR) {
       pr_signals_handle();
       continue;
+    }
 
-    } else
-      break;
+    break;
   }
 
-  if (res == -1) {
+  if (res < 0) {
     c->mode = CM_ERROR;
     c->xerrno = errno;
     return -1;
@@ -1127,7 +1318,6 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
     return -1;
   }
 
-  pr_inet_set_block(c->pool, c);
   return 1;
 }
 
@@ -1135,8 +1325,15 @@ int pr_inet_connect(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
  * 0 if not connected, or -1 if error.  Only needs to be called once, and can
  * then be selected for writing.
  */
-int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
+int pr_inet_connect_nowait(pool *p, conn_t *c, const pr_netaddr_t *addr,
+    int port) {
   pr_netaddr_t remote_na;
+
+  if (c == NULL ||
+      addr == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
   c->mode = CM_CONNECT;
   if (pr_inet_set_nonblock(p, c) < 0) {
@@ -1154,11 +1351,12 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 
   if (connect(c->listen_fd, pr_netaddr_get_sockaddr(&remote_na),
       pr_netaddr_get_sockaddr_len(&remote_na)) == -1) {
-    if (errno != EINPROGRESS && errno != EALREADY) {
+    if (errno != EINPROGRESS &&
+        errno != EALREADY) {
       c->mode = CM_ERROR;
       c->xerrno = errno;
 
-      pr_inet_set_block(c->pool, c);
+      (void) pr_inet_set_block(c->pool, c);
 
       errno = c->xerrno;
       return -1;
@@ -1172,12 +1370,16 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
   if (pr_inet_get_conn_info(c, c->listen_fd) < 0) {
     c->xerrno = errno;
 
-    pr_inet_set_block(c->pool, c);
+    (void) pr_inet_set_block(c->pool, c);
     errno = c->xerrno;
     return -1;
   }
 
-  pr_inet_set_block(c->pool, c);
+  if (pr_inet_set_block(c->pool, c) < 0) {
+    c->xerrno = errno;
+    return -1;
+  }
+
   return 1;
 }
 
@@ -1190,9 +1392,17 @@ int pr_inet_connect_nowait(pool *p, conn_t *c, pr_netaddr_t *addr, int port) {
 int pr_inet_accept_nowait(pool *p, conn_t *c) {
   int fd;
 
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (c->mode == CM_LISTEN) {
     if (pr_inet_set_nonblock(c->pool, c) < 0) {
-      return -1;
+      if (errno != EBADF) {
+        pr_trace_msg(trace_channel, 3,
+          "error making connection nonblocking: %s", strerror(errno));
+      }
     }
   }
 
@@ -1207,8 +1417,9 @@ int pr_inet_accept_nowait(pool *p, conn_t *c) {
     fd = accept(c->listen_fd, NULL, NULL);
 
     if (fd == -1) {
-      if (errno == EINTR)
+      if (errno == EINTR) {
         continue;
+      }
 
       if (errno != EWOULDBLOCK) {
         c->mode = CM_ERROR;
@@ -1227,7 +1438,12 @@ int pr_inet_accept_nowait(pool *p, conn_t *c) {
   /* Leave the connection in CM_ACCEPT mode, so others can see
    * our state.  Re-enable blocking mode, however.
    */
-  pr_inet_set_block(c->pool, c);
+  if (pr_inet_set_block(c->pool, c) < 0) {
+    if (errno != EBADF) {
+      pr_trace_msg(trace_channel, 3,
+        "error making connection blocking: %s", strerror(errno));
+    }
+  }
 
   return fd;
 }
@@ -1238,11 +1454,16 @@ int pr_inet_accept_nowait(pool *p, conn_t *c) {
 conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
     unsigned char resolve) {
   conn_t *res = NULL;
-  unsigned char *allow_foreign_addr = NULL;
-  int fd = -1;
-
+  unsigned char *foreign_addr = NULL;
+  int fd = -1, allow_foreign_address = FALSE;
   pr_netaddr_t na;
   socklen_t nalen;
+
+  if (c == NULL ||
+      d == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   /* Initialize the netaddr. */
   pr_netaddr_clear(&na);
@@ -1252,8 +1473,10 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
 
   d->mode = CM_ACCEPT;
 
-  allow_foreign_addr = get_param_ptr(TOPLEVEL_CONF,
-    "AllowForeignAddress", FALSE);
+  foreign_addr = get_param_ptr(TOPLEVEL_CONF, "AllowForeignAddress", FALSE);
+  if (foreign_addr != NULL) {
+    allow_foreign_address = *foreign_addr;
+  }
 
   /* A directive could enforce only IPv4 or IPv6 connections here, by
    * actually using a sockaddr argument to accept(2), and checking the
@@ -1264,30 +1487,44 @@ conn_t *pr_inet_accept(pool *p, conn_t *d, conn_t *c, int rfd, int wfd,
     pr_signals_handle();
 
     fd = accept(d->listen_fd, pr_netaddr_get_sockaddr(&na), &nalen);
-    if (fd != -1) {
-      if ((!allow_foreign_addr || *allow_foreign_addr == FALSE) &&
-          (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) != -1)) {
-
-        if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
-          pr_log_pri(PR_LOG_NOTICE,
-            "SECURITY VIOLATION: Passive connection from %s rejected.",
-            pr_netaddr_get_ipstr(&na));
-          close(fd);
-          continue;
-        }
-      }
-
-      d->mode = CM_OPEN;
-      res = pr_inet_openrw(p, d, NULL, PR_NETIO_STRM_DATA, fd, rfd, wfd,
-        resolve);
-
-    } else {
-      if (errno == EINTR)
+    if (fd < 0) {
+      if (errno == EINTR) {
         continue;
+      }
 
       d->mode = CM_ERROR;
       d->xerrno = errno;
+      break;
     }
+
+    if (allow_foreign_address == FALSE) {
+      /* If foreign addresses (i.e. IP addresses that do not match the
+       * control connection's remote IP address) are not allowed, we
+       * need to see just what our remote address IS.
+       */
+      if (getpeername(fd, pr_netaddr_get_sockaddr(&na), &nalen) < 0) {
+        /* If getpeername(2) fails, should we still allow this connection?
+         * Caution (and the AllowForeignAddress setting say "no".
+         */
+        pr_log_pri(PR_LOG_DEBUG, "rejecting passive connection; "
+          "failed to get address of remote peer: %s", strerror(errno));
+        (void) close(fd);
+        continue;
+      }
+
+      if (pr_netaddr_cmp(&na, c->remote_addr) != 0) {
+        pr_log_pri(PR_LOG_NOTICE, "SECURITY VIOLATION: Passive connection "
+          "from foreign IP address %s rejected (does not match client "
+          "IP address %s).", pr_netaddr_get_ipstr(&na),
+          pr_netaddr_get_ipstr(c->remote_addr));
+        (void) close(fd);
+        continue;
+      }
+    }
+
+    d->mode = CM_OPEN;
+    res = pr_inet_openrw(p, d, NULL, PR_NETIO_STRM_DATA, fd, rfd, wfd,
+      resolve);
 
     break;
   }
@@ -1299,7 +1536,11 @@ int pr_inet_get_conn_info(conn_t *c, int fd) {
   pr_netaddr_t na;
   socklen_t nalen;
 
-  /* Sanity check. */
+  if (c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (fd < 0) {
     errno = EBADF;
     return -1;
@@ -1321,20 +1562,35 @@ int pr_inet_get_conn_info(conn_t *c, int fd) {
   nalen = pr_netaddr_get_sockaddr_len(&na);
 
   if (getsockname(fd, pr_netaddr_get_sockaddr(&na), &nalen) == 0) {
-    if (!c->local_addr)
-      c->local_addr = pr_netaddr_alloc(c->pool);
+    pr_netaddr_t *local_addr;
+
+    if (c->local_addr != NULL) {
+      local_addr = (pr_netaddr_t *) c->local_addr;
+
+    } else {
+      local_addr = pr_netaddr_alloc(c->pool);
+    }
 
     /* getsockname(2) will read the local socket information into the struct
      * sockaddr * given.  Which means that the address family of the local
      * socket can be found in struct sockaddr *->sa_family, and not (yet)
      * via pr_netaddr_get_family().
      */
-    pr_netaddr_set_family(c->local_addr,
-      pr_netaddr_get_sockaddr(&na)->sa_family);
-    pr_netaddr_set_sockaddr(c->local_addr, pr_netaddr_get_sockaddr(&na));
+    pr_netaddr_set_family(local_addr, pr_netaddr_get_sockaddr(&na)->sa_family);
+    pr_netaddr_set_sockaddr(local_addr, pr_netaddr_get_sockaddr(&na));
     c->local_port = ntohs(pr_netaddr_get_port(&na));
 
+    if (c->local_addr == NULL) {
+      c->local_addr = local_addr;
+    }
+
   } else {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 3,
+      "getsockname(2) error on fd %d: %s", fd, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -1357,16 +1613,26 @@ int pr_inet_get_conn_info(conn_t *c, int fd) {
       c->remote_addr = pr_netaddr_v6tov4(c->pool, &na);
 
     } else {
-      c->remote_addr = pr_netaddr_alloc(c->pool);
+      pr_netaddr_t *remote_addr;
 
-      pr_netaddr_set_family(c->remote_addr,
+      remote_addr = pr_netaddr_alloc(c->pool);
+
+      pr_netaddr_set_family(remote_addr,
         pr_netaddr_get_sockaddr(&na)->sa_family);
-      pr_netaddr_set_sockaddr(c->remote_addr, pr_netaddr_get_sockaddr(&na));
+      pr_netaddr_set_sockaddr(remote_addr, pr_netaddr_get_sockaddr(&na));
+
+      c->remote_addr = remote_addr;
     }
 
     c->remote_port = ntohs(pr_netaddr_get_port(&na));
 
   } else {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 3,
+      "getpeername(2) error on fd %d: %s", fd, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -1388,12 +1654,21 @@ int pr_inet_get_conn_info(conn_t *c, int fd) {
  * Important, do not call any log_* functions from inside of pr_inet_openrw()
  * or any functions it calls, as the possibility for fd overwriting occurs.
  */
-conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
-    int fd, int rfd, int wfd, int resolve) {
+conn_t *pr_inet_openrw(pool *p, conn_t *c, const pr_netaddr_t *addr,
+    int strm_type, int fd, int rfd, int wfd, int resolve) {
   conn_t *res = NULL;
   int close_fd = TRUE;
 
   res = pr_inet_copy_conn(p, c);
+  if (res == NULL) {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 3,
+      "error copying connection: %s", strerror(xerrno));
+
+    errno = xerrno;
+    return NULL;
+  }
 
   res->listen_fd = -1;
 
@@ -1404,18 +1679,22 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
    */
   if (pr_inet_get_conn_info(res, fd) < 0 &&
       errno != EBADF) {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 3,
+      "error getting info for connection on fd %d: %s", fd, strerror(xerrno));
+
+    errno = xerrno;
     return NULL;
   }
 
-  if (addr) {
-    if (!res->remote_addr) {
-      res->remote_addr = pr_netaddr_alloc(res->pool);
+  if (addr != NULL) {
+    if (res->remote_addr == NULL) {
+      res->remote_addr = pr_netaddr_dup(res->pool, addr);
     }
-
-    memcpy(res->remote_addr, addr, sizeof(pr_netaddr_t));
   }
 
-  if (resolve &&
+  if (resolve == TRUE &&
       res->remote_addr != NULL) {
     res->remote_name = pr_netaddr_get_dnsstr(res->remote_addr);
   }
@@ -1423,9 +1702,16 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
   if (res->remote_name == NULL) {
     res->remote_name = pr_netaddr_get_ipstr(res->remote_addr);
     if (res->remote_name == NULL) {
+      int xerrno = errno;
+
       /* If we can't even get the IP address as a string, then something
        * is very wrong, and we should not contine to handle this connection.
        */
+
+      pr_trace_msg(trace_channel, 3,
+        "error getting IP address for client: %s", strerror(xerrno));
+ 
+      errno = xerrno;
       return NULL;
     }
   }
@@ -1435,7 +1721,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
     fd = c->listen_fd;
   }
 
-  if (rfd != -1) {
+  if (rfd > -1) {
     if (fd != rfd) {
       dup2(fd, rfd);
 
@@ -1444,10 +1730,13 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
     }
 
   } else {
-    rfd = dup(fd);
+    /* dup(2) cannot take a negative value. */
+    if (fd >= 0) {
+      rfd = dup(fd);
+    }
   }
 
-  if (wfd != -1) {
+  if (wfd > -1) {
     if (fd != wfd) {
       if (wfd == STDOUT_FILENO) {
         fflush(stdout);
@@ -1460,12 +1749,15 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
     }
 
   } else {
-    wfd = dup(fd);
+    /* dup(2) cannot take a negative value. */
+    if (fd >= 0) {
+      wfd = dup(fd);
+    }
   }
 
   /* Now discard the original socket */
-  if (rfd != -1 &&
-      wfd != -1 &&
+  if (rfd > -1 &&
+      wfd > -1 &&
       close_fd) {
     (void) close(fd);
   }
@@ -1478,7 +1770,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
 
   /* Set options on the sockets. */
   pr_inet_set_socket_opts(res->pool, res, 0, 0, NULL);
-  pr_inet_set_block(res->pool, res);
+  (void) pr_inet_set_block(res->pool, res);
 
   res->mode = CM_OPEN;
 
@@ -1504,7 +1796,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, pr_netaddr_t *addr, int strm_type,
 }
 
 int pr_inet_generate_socket_event(const char *event, server_rec *s,
-    pr_netaddr_t *addr, int fd) {
+    const pr_netaddr_t *addr, int fd) {
   pool *p;
   struct socket_ctx *sc;
 
@@ -1525,7 +1817,6 @@ int pr_inet_generate_socket_event(const char *event, server_rec *s,
 
   return 0;
 }
-
 
 void init_inet(void) {
   struct protoent *pr = NULL;

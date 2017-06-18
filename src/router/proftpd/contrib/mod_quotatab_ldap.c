@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_ldap -- a mod_quotatab sub-module for obtaining
  *                               quota information from an LDAP directory.
  *
- * Copyright (c) 2002-2009 TJ Saunders
+ * Copyright (c) 2002-2014 TJ Saunders
  * Copyright (c) 2002-3 John Morrissey
  *
  * This program is free software; you can redistribute it and/or modify
@@ -51,7 +51,9 @@ static unsigned char ldaptab_lookup(quota_table_t *ldaptab, void *ptr,
   }
 
   /* Find the cmdtable for the ldap_quota_lookup command. */
-  if ((ldap_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "ldap_quota_lookup", NULL, NULL)) == NULL) {
+  ldap_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "ldap_quota_lookup", NULL,
+    NULL, NULL);
+  if (ldap_cmdtab == NULL) {
     quotatab_log("error: unable to find LDAP hook symbol 'ldap_quota_lookup'");
     return FALSE;
   }

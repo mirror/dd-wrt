@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2012 The ProFTPD Project team
+ * Copyright (c) 2009-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,15 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: cmd.h,v 1.7 2012-12-27 22:30:58 castaglia Exp $
  */
 
 #ifndef PR_CMD_H
 #define PR_CMD_H
 
-cmd_rec *pr_cmd_alloc(pool *, int, ...);
-int pr_cmd_clear_cache(cmd_rec *);
-char *pr_cmd_get_displayable_str(cmd_rec *, size_t *);
+cmd_rec *pr_cmd_alloc(pool *p, unsigned int, ...);
+int pr_cmd_clear_cache(cmd_rec *cmd);
+const char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *len);
+int pr_cmd_get_errno(cmd_rec *cmd);
 
 int pr_cmd_cmp(cmd_rec *cmd, int cmd_id);
 int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name);
@@ -101,6 +100,8 @@ int pr_cmd_get_id(const char *name_name);
 #define PR_CMD_PROT_ID		55
 #define PR_CMD_MFF_ID		56
 #define PR_CMD_MFMT_ID		57
+#define PR_CMD_HOST_ID		58
+#define PR_CMD_CLNT_ID		59
 
 /* The minimum and maximum command name lengths. */
 #define PR_CMD_MIN_NAMELEN	3
@@ -109,22 +110,28 @@ int pr_cmd_get_id(const char *name_name);
 /* Returns TRUE if the given command is a known HTTP method, FALSE if not
  * a known HTTP method, and -1 if there is an error.
  */
-int pr_cmd_is_http(cmd_rec *c);
+int pr_cmd_is_http(cmd_rec *cmd);
 
 /* Returns TRUE if the given command is a known SMTP method, FALSE if not
  * a known SMTP method, and -1 if there is an error.
  */
-int pr_cmd_is_smtp(cmd_rec *c);
+int pr_cmd_is_smtp(cmd_rec *cmd);
 
-int pr_cmd_set_name(cmd_rec *, const char *);
+/* Returns TRUE if the given command appears to be an SSH2 request, FALSE
+ * if not, and -1 if there was an error.
+ */
+int pr_cmd_is_ssh2(cmd_rec *cmd);
+
+int pr_cmd_set_errno(cmd_rec *cmd, int xerrno);
+int pr_cmd_set_name(cmd_rec *cmd, const char *name);
 
 /* Implemented in main.c */
-int pr_cmd_read(cmd_rec **);
-int pr_cmd_dispatch(cmd_rec *);
-int pr_cmd_dispatch_phase(cmd_rec *, int, int);
+int pr_cmd_read(cmd_rec **cmd);
+int pr_cmd_dispatch(cmd_rec *cmd);
+int pr_cmd_dispatch_phase(cmd_rec *cmd, int, int);
 #define PR_CMD_DISPATCH_FL_SEND_RESPONSE	0x001
 #define PR_CMD_DISPATCH_FL_CLEAR_RESPONSE	0x002
 
-void pr_cmd_set_handler(void (*)(server_rec *, conn_t *));
+void pr_cmd_set_handler(void (*)(server_rec *s, conn_t *conn));
 
 #endif /* PR_CMD_H */

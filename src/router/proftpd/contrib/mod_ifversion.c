@@ -2,7 +2,7 @@
  * ProFTPD: mod_ifversion -- a module supporting conditional configuration
  *                           depending on the proftpd server version
  *
- * Copyright (c) 2009-2013 TJ Saunders
+ * Copyright (c) 2009-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
  *
  * This is mod_ifversion, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_ifversion.c,v 1.5 2013-02-15 22:46:42 castaglia Exp $
  */
 
 #include "conf.h"
@@ -34,8 +32,8 @@
 #define MOD_IFVERSION_VERSION	"mod_ifversion/0.1"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030101
-# error "ProFTPD 1.3.1rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 /* Support routines
@@ -443,12 +441,13 @@ MODRET start_ifversion(cmd_rec *cmd) {
   if ((matched && !negated) ||
       (!matched && negated)) {
     pr_log_debug(DEBUG3, "%s: using '%s %s' section at line %u",
-      cmd->argv[0], cmd->argv[1], cmd->argv[2], pr_parser_get_lineno());
-      return PR_HANDLED(cmd);
+      (char *) cmd->argv[0], (char *) cmd->argv[1], (char *) cmd->argv[2],
+      pr_parser_get_lineno()); return PR_HANDLED(cmd);
   }
 
   pr_log_debug(DEBUG3, "%s: skipping '%s %s' section at line %u",
-    cmd->argv[0], cmd->argv[1], cmd->argv[2], pr_parser_get_lineno());
+    (char *) cmd->argv[0], (char *) cmd->argv[1], (char *) cmd->argv[2],
+    pr_parser_get_lineno());
 
   while (ifversion_ctx_count > 0 &&
          (config_line = pr_parser_read_line(buf, sizeof(buf))) != NULL) {

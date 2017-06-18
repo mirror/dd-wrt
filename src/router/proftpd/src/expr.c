@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,15 +22,13 @@
  * OpenSSL in the source distribution.
  */
 
-/* Expression API implementation
- * $Id: expr.c,v 1.6 2011-12-11 02:14:43 castaglia Exp $
- */
+/* Expression API implementation */
 
 #include "conf.h"
 
-array_header *pr_expr_create(pool *p, int *argc, char **argv) {
+array_header *pr_expr_create(pool *p, unsigned int *argc, char **argv) {
   array_header *acl = NULL;
-  int cnt;
+  unsigned int cnt;
   char *s, *ent;
 
   if (p == NULL ||
@@ -56,8 +54,9 @@ array_header *pr_expr_create(pool *p, int *argc, char **argv) {
         while ((ent = pr_str_get_token(&s, sep)) != NULL) {
           pr_signals_handle();
 
-          if (*ent)
+          if (*ent) {
             *((char **) push_array(acl)) = ent;
+          }
         }
 
       } else {

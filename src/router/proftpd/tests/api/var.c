@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Var API tests
- * $Id: var.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
- */
+/* Var API tests */
 
 #include "tests.h"
 
@@ -296,7 +294,6 @@ Suite *tests_get_var_suite(void) {
   TCase *testcase;
 
   suite = suite_create("var");
-
   testcase = tcase_create("base");
 
   tcase_add_checked_fixture(testcase, set_up, tear_down);
@@ -309,6 +306,5 @@ Suite *tests_get_var_suite(void) {
   tcase_add_test(testcase, var_rewind_test);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

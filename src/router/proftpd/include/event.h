@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Event management
- * $Id: event.h,v 1.6 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Event management */
 
 #ifndef PR_EVENT_H
 #define PR_EVENT_H

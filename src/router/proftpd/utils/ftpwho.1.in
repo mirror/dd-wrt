@@ -30,10 +30,9 @@ must either be recompiled, or this option must be used in order to find
 proftpd's scoreboard.
 .TP
 .BI \-o,\--outform " format"
-Specify an output format.  Currently, two "formats" are supported: \fBcompat\fP
-and \fBoneline\fP.  The \fBcompat\fP format is used for backward compatibility.
-The \fBoneline\fP format causes all of the fields for a session to be displayed
-on a single line, for ease of line-based searches (e.g. grep).
+Specify an output format.  Currently, three formats are supported: \fBcompat\fP,\fBoneline\fP and \fBjson\fP.  The \fBcompat\fP format is used for backward
+compatibility.  The \fBoneline\fP format causes all of the fields for a session
+to be displayed on a single line, for ease of line-based searches (e.g. grep).  The \fBjson\fP format emits all of the information as a JSON object.
 .TP
 .B \-v,\--verbose
 Reports additional information for each connection, such as the remote

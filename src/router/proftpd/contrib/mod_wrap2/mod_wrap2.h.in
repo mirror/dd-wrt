@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- *
- * Copyright (c) 2000-2011 TJ Saunders
+ * Copyright (c) 2000-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: mod_wrap2.h.in,v 1.10 2011-11-06 21:56:12 castaglia Exp $
  */
 
 #ifndef MOD_WRAP2_H
@@ -31,7 +28,7 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_WRAP2_VERSION 	"mod_wrap2/2.0.6"
+#define MOD_WRAP2_VERSION 	"mod_wrap2/2.0.7"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -83,7 +80,8 @@ int wrap2_log(const char *, ...)
        ;
 #endif
 
-int wrap2_register(const char *, wrap2_table_t *(*tab_open)(pool *, char *));
+int wrap2_register(const char *,
+  wrap2_table_t *(*tab_open)(pool *, const char *));
 int wrap2_unregister(const char *);
 
 char *wrap2_strsplit(char *, int);

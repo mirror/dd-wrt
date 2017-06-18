@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD Logging: Log Messages</title>
@@ -185,7 +186,7 @@ on addresses/ports, or necessary cryptographics keys/certs are unusable.
     The configured <a href="AuthFiles.html">AuthUserFile/AuthGroupFile</a>
     has a line which is not in the necessary format.  The most common cause
     for this is when one of the file fields is missing, or if there an extra
-    colon (':') character in a field (<i>e.g.</i> in name field).
+    colon (':') character in a field (<i>e.g.</i> in the name field).
   </li>
 </ul>
 
@@ -236,7 +237,7 @@ idle connections are dropped, <i>etc</i>.
 
 <p><a name="DEBUG">
 <b><code>DEBUG</code> Log Messages</b><br>
-There are many <code>EMERG</code>-level messages logged by
+There are many <code>DEBUG</code>-level messages logged by
 <code>proftpd</code>.  This section will be filled, over time, with the
 ones most commonly seen/asked about by users.
 
@@ -249,10 +250,10 @@ The table below lists the reason strings you may commonly see, with a fuller
 description of what it means.
 
 <p>
-<table border=1>
+<table border=1 summary="Error Messages">
   <tr>
     <td><b>Message</b></td>
-    <td><b>Code<b></td>
+    <td><b>Code</b></td>
     <td><b>Details</b></td>
   </tr>
 
@@ -366,15 +367,11 @@ description of what it means.
 
 <p>
 <hr>
-Last Updated:<i>$Date: 2013-11-10 02:34:15 $</i><br>
-
-<hr>
 <font size=2><b><i>
-&copy; Copyright 2013 The ProFTPD Project<br>
+&copy; Copyright 2013-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

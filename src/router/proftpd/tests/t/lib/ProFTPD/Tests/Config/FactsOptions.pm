@@ -519,7 +519,7 @@ sub factsoptions_use_slink_mlst_rel_symlinked_file {
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       if ($^O eq 'darwin') {
         # MacOSX-specific hack, due to how it handles tmp files
@@ -528,7 +528,7 @@ sub factsoptions_use_slink_mlst_rel_symlinked_file {
 
       $expected = 'modify=\d+;perm=adfr(w)?;size=\d+;type=OS\.unix=slink:(\S+);unique=\S+;UNIX.group=\d+;UNIX.mode=\d+;UNIX.owner=\d+; ' . $test_symlink . '$';
       $self->assert(qr/$expected/, $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {

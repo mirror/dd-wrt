@@ -61,13 +61,15 @@ $usage_file = "/var/log/xferlog";
 # Edit the following lines for default report settings.
 # Entries defined here will be over-ridden by the command line.
 
+$opt_a = 0;
 $opt_h = 0; 
 $opt_d = 0;
 $opt_t = 1;
 $opt_l = 3;
+$opt_r = 0;
 
-require 'getopts.pl';
-&Getopts('f:rahdD:l:s:A:iotu:e');
+use Getopt::Std;
+getopts('f:rahdD:l:s:A:iotu:e');
 
 if ($opt_r) { $real = 1;}
 if ($opt_a) { $anon = 1;}
@@ -209,21 +211,17 @@ line: while (<LOG>) {
 }
 close LOG;
 
-@syslist = keys(systemfiles);
-@dates = sort datecompare keys(xferbytes);
+@syslist = keys(%systemfiles);
+@dates = sort datecompare keys(%xferbytes);
 
 if ($xferfiles == 0) {die "There was no data to process.\n";}
-
 
 print "TOTALS FOR SUMMARY PERIOD ", $dates[0], " TO ", $dates[$#dates], "\n\n";
 printf ("Files Transmitted During Summary Period  %12.0f\n", $xferfiles);
 printf ("Bytes Transmitted During Summary Period  %12.0f\n", $xferbytes); 
 printf ("Systems Using Archives                   %12.0f\n\n", $#syslist+1);
-
-printf ("Average Files Transmitted Daily          %12.0f\n",
-   $xferfiles / ($#dates + 1));
-printf ("Average Bytes Transmitted Daily          %12.0f\n",
-   $xferbytes / ($#dates + 1));
+printf ("Average Files Transmitted Daily          %12.0f\n", $xferfiles / ($#dates + 1));
+printf ("Average Bytes Transmitted Daily          %12.0f\n", $xferbytes / ($#dates + 1));
 
 format top1 =
 
@@ -242,9 +240,8 @@ $date,           $nfiles,    $nbytes,     $avgrate,   $pctfiles,  $pctbytes
 $^ = top1;
 $~ = line1;
 
-# sort daily traffic by bytes sendt
-#foreach $date ( sort datecompare keys(nbytes) ) {
-foreach $date ( sort datecompare keys(xferbytes) ) {
+# sort daily traffic by bytes sent
+foreach $date (sort datecompare keys(%xferbytes)) {
 
    $nfiles = $xferfiles{$date};
    $nbytes = $xferbytes{$date};
@@ -263,14 +260,14 @@ format top2 =
 
 Total Transfers from each Archive Section (By bytes)
 
-                                                 ---- Percent  Of ----
-     Archive Section      Files Sent Bytes Sent  Files Sent Bytes Sent
-------------------------- ---------- ----------- ---------- ----------
+                                                   ---- Percent  Of ----
+     Archive Section      Files Sent Bytes Sent    Files Sent Bytes Sent
+------------------------- ---------- ------------- ---------- ----------
 .
 
 format line2 =
-@<<<<<<<<<<<<<<<<<<<<<<<< @>>>>>>>>> @>>>>>>>>>> @>>>>>>>   @>>>>>>>
-$section,                 $files,    $bytes,     $pctfiles, $pctbytes
+@<<<<<<<<<<<<<<<<<<<<<<<< @>>>>>>>>> @>>>>>>>>>>>> @>>>>>>>   @>>>>>>>
+$section,                 $files,    $bytes,       $pctfiles, $pctbytes
 .
 
 $| = 1;
@@ -279,7 +276,7 @@ $^ = top2;
 $~ = line2;
 
 # sort total transfer for each archive by # files transfered
-foreach $section ( sort bytecompare keys(groupfiles) ) {
+foreach $section (sort bytecompare keys(%groupfiles)) {
 
    $files = $groupfiles{$section};
    $bytes = $groupbytes{$section};
@@ -311,7 +308,7 @@ $^ = top3;
 $~ = line3;
 
 # sort amount per domain by files
-foreach $domain ( sort domnamcompare keys(domainfiles) ) {
+foreach $domain (sort domnamcompare keys(%domainfiles)) {
 
    $files = $domainfiles{$domain};
    $bytes = $domainbytes{$domain};
@@ -353,7 +350,7 @@ $^ = top8;
 $~ = line8;
 
 # sort hourly transmission by sent bytes
-foreach $time ( sort keys(xfertbytes) ) {
+foreach $time (sort keys(%xfertbytes)) {
 
    $nfiles   = $xfertfiles{$time};
    $nbytes   = $xfertbytes{$time};

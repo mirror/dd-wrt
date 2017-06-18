@@ -3,7 +3,7 @@
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2002-2013 The ProFTPD Project
+ * Copyright (c) 2002-2015 The ProFTPD Project
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,6 @@
  * holders give permission to link this program with OpenSSL, and distribute
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
- *
- * $Id: mod_sql.h,v 1.12 2013-09-04 20:32:25 castaglia Exp $
  */
 
 #ifndef MOD_SQL_H
@@ -32,7 +30,7 @@
 
 /* mod_sql helper functions */
 int sql_log(int, const char *, ...);
-cmd_rec *_sql_make_cmd(pool * cp, int argc, ...);
+cmd_rec *sql_make_cmd(pool *p, int argc, ...);
 int sql_register_backend(const char *, cmdtable *);
 int sql_unregister_backend(const char *);
 
@@ -73,18 +71,16 @@ typedef struct sql_data_struct sql_data_t;
 
 /* API versions */
 
-/* MOD_SQL_API_V2: guarantees to correctly implement cmd_open, cmd_close,
+/* MOD_SQL_API_V1: guarantees to correctly implement cmd_open, cmd_close,
  *  cmd_defineconnection, cmd_select, cmd_insert, cmd_update, cmd_escapestring,
  *  cmd_query, cmd_checkauth, and cmd_identify.  Also guarantees to
  *  perform proper registration of the cmdtable.
  */
-
 #define MOD_SQL_API_V1 "mod_sql_api_v1"
 
 /* MOD_SQL_API_V2: MOD_SQL_API_V1 && guarantees to correctly implement 
  *  cmd_procedure.
  */
-
 #define MOD_SQL_API_V2 "mod_sql_api_v2"
 
 /* SQLOption values */
@@ -104,5 +100,3 @@ extern unsigned int pr_sql_conn_policy;
 #define SQL_CONN_POLICY_PERCONN		4
 
 #endif /* MOD_SQL_H */
-
-

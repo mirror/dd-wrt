@@ -162,7 +162,7 @@ sub test_http_req {
     eval {
       sleep(1);
 
-      # To reproduce Bug#XXXX, we only need to connect to the server,
+      # To reproduce Bug#4143, we only need to connect to the server,
       # then issue an HTTP request.
 
       my $client = LWP::UserAgent->new(
@@ -173,9 +173,6 @@ sub test_http_req {
 
       my $req = HTTP::Request->new($req => "http://127.0.0.1:$port/path/to/some/file");
       my $resp = $client->request($req);
-
-use Data::Dumper;
-print STDERR "resp: ", Dumper($resp), "\n";
 
       if ($ENV{TEST_VERBOSE}) {
         print STDERR "# response: ", $resp->as_string, "\n";

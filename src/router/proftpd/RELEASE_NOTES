@@ -1,25 +1,473 @@
-                    1.3.5 Release Notes
+                    1.3.6 Release Notes
                   ------------------------
 
 This file contains a description of the major changes to ProFTPD for the
-1.3.5 release cycle, from the 1.3.5rc1 release to the 1.3.5 maintenance
+1.3.6 release cycle, from the 1.3.6rc1 release to the 1.3.6 maintenance
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
-1.3.5b
+1.3.6
+---------
+
+  + Support for using Redis for caching, logging; see the doc/howto/Redis.html
+    documentation.
+  + Fixed mod_sql_postgres SSL support (Issue #415).
+  + Support building against LibreSSL instead of OpenSSL (Issue #361).
+  + Better support on AIX for login restraictions (Bug #4285).
+  + TimeoutLogin (and other timeouts) were not working properly for SFTP
+    connections (Bug#4299).
+  + Handling of the SIGILL and SIGINT signals, by the daemon process, now causes
+    the child processes to be terminated as well (Issue #461).
+  + RPM .spec file naming changed to conform to Fedora guidelines.
+  + Fix for "AllowChrootSymlinks off" checking each component for symlinks
+    (CVE-2017-7418).
+
+
+  + New Modules:
+
+    mod_redis, mod_tls_redis, mod_wrap2_redis
+      With Redis now supported as a caching mechanism, similar to Memcache,
+      there are now Redis-using modules: mod_redis (for configuring the Redis
+      connection information), mod_tls_redis (for caching SSL sessions and
+      OCSP information using Redis), and mod_wrap2_redis (for using ACLs stored
+      in Redis).
+
+      See the respective module documentation for details:
+        doc/modules/mod_redis.html, doc/contrib/mod_tls_redis.html, and
+        doc/contrib/mod_wrap2_redis.html.
+
+
+  + Changed Modules:
+
+    mod_ban
+      The mod_ban module's BanCache directive can now use Redis-based caching;
+      see doc/contrib/mod_ban.html#BanCache.
+
+
+  + New Configuration Directives
+
+    SQLPasswordArgon2, SQLPasswordScrypt
+      The key lengths for Argon2 and Scrypt-based passwords are now configurable
+      via these new directives; previously, the key length had been hardcoded
+      to be 32 bytes, which is not interoperable with all other implementations
+      (Issue #454).
+
+      See doc/contrib/mod_sql_passwd.html#SQLPasswordArgon2,
+        doc/contrib/mod_sql_passwd.html#SQLPasswordScrypt for details.
+
+
+  + Changed Configuration Directives
+
+    AllowChrootSymlinks
+      When "AllowChrootSymlinks off" was used, only the last portion of the
+      DefaultRoot path would be checked to see if it was a symlink.  Now,
+      each component of the DefaultRoot path will be checked to see if it is
+      a symlink when "AllowChrootSymlinks off" is used.
+
+    Include
+      The Include directive can now be used within a <Limit> section, e.g.:
+
+        <Limit LOGIN>
+          Include /path/to/allowed.txt
+          DenyAll
+        </Limit>
+
+
+  + API Changes
+
+    A new JSON API has been added, for use by third-party modules.
+
+
+1.3.6rc4
+---------
+
+  + Fixed regression where all normal FTP users were handled as anonymous
+    users.
+
+
+1.3.6rc3
+---------
+
+  + Support for OpenSSL 1.1.x API changes.
+  + mod_sftp uses SHA256 for publickey fingerprints by default, rather than
+    SHA1 or MD5.
+  + mod_sql_passwd supports Scrypt and Argon2 password hashing algorithms
+    when libsodium is detected in the header/library directories.
+  + mod_sftp now supports extended attributes (xattrs) via SFTP.
+  + Fixed bug in filesystem free space calculation causing ALLO to fail
+    unexpectedly.
+  + Default FTP/SSH2 banner changed to no longer include version information.
+  + New -X command-line option for disabling forking, to aid debugging.
+  + Logging of stacktraces now enabled by default; this also means that the
+    installed executables do not have symbols stripped at install time.
+  + Fixed memory leak when the mod_facl module is used.
+  + Support for UNIX.ownername and UNIX.groupname MLSD/MLST facts.
+  + Use initgroups(3) for group membership discovery by default, as it is
+    faster/more performant on most systems.  For the previous behavior, use
+    the NoInitgroups AuthUnixOption.
+
+
+  + Changed Modules:
+
+    mod_ctrls_admin
+      The mod_ctrls_admin module supports a new "config" ftpdctl action, which
+      can be used to dynamically change configuration directives in the
+      running daemon.  See doc/contrib/mod_ctrls_admin.html#config for more
+      details.
+  
+
+  + New Configuration Directives:
+
+    CopyOptions
+      The mod_copy module now supports a CopyOptions directive, for tweaking
+      particular behaviors such as how to handle copy failures.  See the
+      documentation at doc/contrib/mod_copy.html#CopyOptions for details.
+
+    DigestDefaultAlgorithm
+      The mod_digest module uses the SHA1 algorithm for digests by default.
+      Use the DigestDefaultAlgorithm to change this default as needed; see
+      doc/contrib/mod_digest.html#DigestDefaultAlgorithm.
+
+    FSOptions
+      The --enable-xattr compile option enables support for extended attributes.
+      There will be cases where this support needs to be disabled at runtime;
+      use this option for doing so.  See doc/modules/mod_core.html#FSOptions
+      for more information.
+
+    IncludeOptions
+      The Include directive now supports wildcarded directory names.  However,
+      this behavior may not be desirable or have other consequences.  Use
+      the new IncludeOptions directive for altering this behavior, such as
+      ignoring temporary files:
+
+        IncludeOptions IgnoreTempFiles
+
+      For other options, see the documentation at
+      doc/modules/mod_core.html#IncludeOptions.
+
+    MaxPasswordSize
+      A denial-of-service attack can be mounted by causing excessive CPU
+      usage via very long passwords processed via the crypt(3) function.
+      To mitigate such resource consumption attacks, ProFTPD now imposes
+      a maximum limit on the password length; that limit can be configured
+      via this directive, documented at
+      doc/modules/mod_auth.html#MaxPasswordSize.
+
+    SFTPKeyLimits
+      As cryptographic attacks grow more sophisticated, shorter keys become
+      more at risk of compromise.  The SFTPKeyLimits directive provides the
+      administrator a way to set stronger policies by imposing a minimum key
+      length for the various types of keys: RSA, DSA, ECC.  For more
+      information, see doc/contrib/mod_sftp.html#SFTPKeyLimits.
+
+    SQLPasswordCost
+      When libsodium support is detected by the build system, memory-hard
+      algorithms such as scrypt and Argon2 are supported by the mod_sql_passwd
+      module.  These algorithms have tunable "costs"; the new SQLPasswordCost
+      directive is for such tunings; see
+      doc/contrib/mod_sql_passwd.html#SQLPasswordCost.
+
+
+  + Changed Configuration Directives:
+
+    AuthUnixOption
+      ProFTPD will now try to use the initgroups(3) library function for
+      group discovery by default.  If this change of behavior leads to
+      issues, the previous behavior can be restored using this new
+      NoInitgroups AuthUnixOption.  See
+      doc/modules/mod_auth_unix.html#AuthUnixOptions for details.
+
+    CapabilitiesEngine
+      The CapabilitiesEngine directive of the mod_cap module was not being
+      properly honored when used within <IfUser> or <IfGroup> sections; this
+      has now been fixed.
+
+    FactsOptions
+      The MLSD/MLST responses now include the UNIX.ownername and UNIX.groupname
+      facts, for providing the textual labels.  Some FTP clients may not
+      handle these facts; use this new NoNames FactsOption value to have
+      these new name facts not included in the MLSD/MLST responses by default.
+      The documentation at doc/modules/mod_facts.html#FactsOptions contains
+      more information.
+
+    GeoIPAllowFilter, GeoIPDenyFilter
+      The GeoIPAllowFilter and GeoIPDenyFilter directives of the mod_geoip
+      module now support reading the filter data on a per-user basis, and
+      support reading the filter data from SQL databases via a SQLNamedQuery.
+      See the doc/contrib/mod_geoip.html#GeoIPAllowFilter documentation for
+      details and examples.
+
+    Include
+      The Include directive now supported wildcarded directory names, e.g.:
+
+        Include /path/to/sites/*/proftpd.conf
+
+      Previously wildcards were only allowed as part of the filename.  For
+      more details, see doc/modules/mod_core.html#Include.
+
+    ListOptions
+      The mod_ls module returns file names for the NLST command in the order
+      in which the names are provided by the underlying filesystem via the
+      readdir(2) function.  For many filesystems, the names are not ordered.
+      However, some legacy FTP applications may assume/expect that the NLST
+      names are orded.  For such cases, use the new SortedNLST ListOption; see
+      doc/modules/mod_ls.html#ListOptions.
+
+    MasqueradeAddress
+      The MasqueradeAddress directive is now allowed in <Global> sections,
+      to ease configuration for name-based virtual hosts.
+
+    SFTPKeyExchanges
+      The mod_sftp module now supports the "curve25519-sha256@libssh.org"
+      SSH key exchange algorithm, when compiled with the libsodium library.
+
+      In addition, the following key exchange algorithms are supported:
+
+        diffie-hellman-group14-sha256
+        diffie-hellman-group16-sha512
+        diffie-hellman-group18-sha512
+
+    SFTPOptions
+      There are several new SFTPOptions supported:
+
+        IgnoreFIFOs
+        IgnoreSFTPSetExtendedAttributes
+        IgnoreSFTPUploadExtendedAttributes
+
+      The doc/contrib/mod_sftp.html#SFTPOptions documentation covers these
+      new options in greater detail.
+
+
+  + API Changes
+
+    Many of the core API have been const-ified.  This will cause build
+    warnings in many existing third-party modules.
+
+
+1.3.6rc2
 ---------
 
   + SSH RSA hostkeys smaller than 2048 bits now work properly.
   + MLSD response lines are now properly CRLF terminated.
+  + Faster/more efficient FTP ASCII mode conversion code.
+  + Support for OCSP stapling.
+  + Support for the common CLNT FTP command.
+  + Fixed selection of DH groups from TLSDHParamFile.
+
+  + New Modules:
+
+    mod_auth_otp
+      The mod_auth_otp module supports one-time passwords using the HOTP and
+      TOTP algorithms.  This OTP support is compatible with e.g. Google
+      Authenticator and other implementations.  The mod_auth_otp module can
+      thus be used to provide multi-factor authentication (MFA, 2FA) for
+      both FTP and SFTP logins.  For more information, see the module
+      documentation at doc/contrib/mod_auth_otp.html.
+
+    mod_digest
+      The mod_digest module implements the HASH FTP command, per the IETF
+      Draft.  This module also implements previous FTP commands that achieve
+      similar functionality, e.g. XCRC, XMD5, XSHA1, and others.  See the
+      full module documentation at doc/contrib/mod_digest.html.
+
+    mod_statcache
+      Some sites often act as "mirrors", and/or have clients which perform
+      numerous, repeated, and expensive directory listings.  These directory
+      listings cause repetitive (and often redundant) lookups of the per-file
+      details via the stat(2) and lstat(2) system calls.  The mod_statcache
+      module caches this "stat" information, such that the cached data can
+      be shared/reused across multiple FTP sessions.  See
+      doc/contrib/mod_statcache.html for details.
 
 
-1.3.5a
----------
+  + New Configuration Directives:
 
-  + Fixed "stalled" SSL/TLS handshakes for data transfers.
-  + Fixed handling of SSH keys with overlong Comment headers in mod_sftp_sql.
+    AllowEmptyPasswords
+      By default, proftpd allows for empty passwords to be used for
+      authentication.  Some sites may wish to enforce the requirement that
+      passwords not be empty; this can now be accomplished via the
+      AllowEmptyPasswords directive, e.g.:
+
+        # Require non-empty passwords
+        AllowEmptyPasswords on
+
+      See doc/modules/mod_auth.html#AllowEmptyPasswords for details.
+      Note that this applies to mod_sftp password-based logins as well.
+
+    AnonAllowRobots
+      Some web crawlers, notably Google, will automatically index any
+      FTP sites with anonymous logins.  This behavior is now automatically
+      prohibited, using auto-generated robots.txt files for <Anonymous>
+      logins.  Use the new AnonAllowRobots directive to allow indexing again;
+      see doc/modules/mod_auth.html#AnonAllowRobots for details.
+
+    SQLODBCVersion
+      The mod_sql_odbc module defaults to using ODBC API version 3.  However,
+      some ODBC drivers may themselves expect older versions of the ODBC
+      API.  This can now be configured using e.g. "SQLODBCVersion ODBCv2";
+      see doc/contrib/mod_sql_odbc.html#SQLODBCVersion for more information.
+
+    TLSSessionTickets
+      The mod_tls module now supports TLS session tickets, per RFC 5077.
+      See doc/contrib/mod_tls.html#TLSSessionTicketKeys for more details.
+
+    TLSStapling
+      The mod_tls module now supports OCSP stapling by caching OCSP responses
+      for server certificates, and stapling those OCSP responses in the
+      SSL/TLS handshake data.  This OCSP stapling functionality is configuring
+      using new directives:
+
+        TLSStaplingCache
+        TLSStaplingOptions
+        TLSStaplingResponder
+        TLSStaplingTimeout
+
+      See the doc/contrib/mod_tls.html documentation for more information.
+
 
   + Changed Modules
+
+    The mod_sftp module now supports the LINK_COUNT attribute in SFTP STAT
+    requests, for clients using SFTP protocol version 6.  It also supports the
+    "hardlink@openssh.com" SFTP extension.
+
+    The mod_tls_memcache and mod_tls_shmcache modules now provide OCSP
+    responder caches.
+
+
+  + Changed Configuration Directives:
+
+    BanCacheOptions
+      When storing ban rules in memcached, the mod_ban module can now
+      format the rules as JSON, allowing for better interoperability with
+      other applications interested in those ban rules.  To use JSON,
+      use "BanCacheOptions UseJSON"; see
+      doc/contrib/mod_ban.html#BanCacheOptions for more information.
+
+    BanOnEvent
+      The mod_ban module can now be configured to ban clients which attempt
+      to use empty passwords, when the new AllowEmptyPasswords directive is
+      set to "false", via the new EmptyPassword BanOnEvent rule.  See
+      doc/contrib/mod_ban.html#BanOnEvent for more information.
+
+    LogFormat
+      The mod_log module supports several new LogFormat variables.  The
+      %R variable can be used for logging command response time, in
+      milliseconds, which is useful for measuring response time/latency.
+      Data transfer durations are separately tracked using the new
+      %{transfer-millisecs} variable.  For logging the size of the file
+      after data transfer (e.g. after upload), use the %{file-size} variable.
+      And for logging whether the file transfer used binary or ASCII mode,
+      use the %{transfer-type} variable.
+
+    MasqueradeAddress
+      Sometimes the DNS name configured for MasqueradeAddress directives
+      cannot be resolved when ProFTPD starts up, such as when the network
+      interface on the host machine has not yet come up.  This would cause
+      ProFTPD to fail to start.
+
+      The MasqueradeAddress directive now handles these resolution errors,
+      and will attempt to resolve the DNS name later, when clients connect;
+      this allows ProFTPD to start up properly in such cases.
+
+    SFTPAuthMethods
+      The mod_sftp module now supports requiring multiple authentication
+      methods for a single login.  Some sites, for example, wish for clients
+      to authenticate via publickey AND password.  This is supported via
+      the SFTPAuthMethods directive, e.g.:
+
+        # Require both publickey and password authentication, in any order
+        SFTPAuthMethods publickey+password password+publickey
+
+      The doc/contrib/mod_sftp.html#SFTPAuthMethods documentation has more
+      information.
+
+    SFTPExtensions
+      The mod_sftp module now supports the "hardlink@openssh.com" SFTP
+      extension.  To disable support for this extension, use:
+
+        SFTPExtensions -hardlink
+
+      See doc/contrib/mod_sftp.html#SFTPExtensions for details.
+
+    SQLConnectInfo, SQLNamedConnectInfo
+      The mod_sql module can now support using SSL/TLS for connections to
+      backend databases, if supported by the database-specific module,
+      by configuring the necessary SSL/TLS details using the SQLConnectInfo
+      and SQLNamedConnectInfo directives.  See their respective documentation,
+      doc/contrib/mod_sql.html#SQLConnectInfo and
+      doc/contrib/mod_sql.html#SQLNamedConnectInfo for more information.
+
+    TLSOptions
+      The NoCertRequest TLSOption is now deprecated.  The mod_tls module,
+      rather than requesting client certificates every time, will only do
+      so if "TLSVerifyClient on" or "TLSVerifyClient optional" is configured.
+      This brings the mod_tls behavior more in line with Apache behavior,
+      and slightly reduces the SSL/TLS handshake latency.
+
+    TLSProtocol
+      The mod_tls module now supports excluding of particular SSL/TLS
+      versions via the TLSProtocol directive, e.g.:
+
+        # Support all TLS versions except SSLv3
+        TLSProtocol ALL -SSLv3
+
+      The doc/contrib/mod_tls.html#TLSProtocol documentation has more
+      details.
+
+    TLSSessionCache
+      When storing SSL session data in memcached, the mod_tls module can now
+      format the session data using JSON, allowing for better interoperability
+      with other applications interested in that session data.  To use JSON,
+      use "TLSSessionCache memcache:/json".  See
+      doc/contrib/mod_tls_memcache.html for more information.
+
+    UseEncoding
+      Different users/clients may wish to use different filename encodings
+      for their files.  The UseEncoding directive can now be set
+      per-user/group/class, by now working with mod_ifsession sections as
+      expected.
+
+
+1.3.6rc1
+---------
+
+  + Support the HOST command (see RFC 7151).
+  + Changed the default SyslogLevel to be NOTICE, rather than DEBUG.
+  + Fixed "stalled" SSL/TLS handshakes for data transfers.
+  + ftpwho now supports JSON output format.
+  + Fixed handling of SSH keys with overlong Comment headers in mod_sftp_sql.
+  + Changed handling of logging of SFTP sessions to ExtendedLogs; see the
+    notes below on the ExtendedLog directive.
+
+  + Changed Modules
+
+    mod_facl
+      The mod_facl module now supports the MacOSX flavour of POSIX ACLs.
+
+    mod_radius
+      The mod_radius module has added support for the following RADIUS
+      attributes:
+
+        Acct-Terminate-Cause
+        Event-Timestamp
+        Idle-Timeout
+        Message-Authenticator
+        Reply-Message
+        Session-Timeout
+
+    mod_site_misc
+      The SITE UTIME command now supports the 3-timestamp variant:
+
+        SITE UTIME path atime mtime ctime
+
+      where each timestamp is expressed as "YYYYMMDDhhmmss".
+
+    mod_sql
+      The mod_sql module would previously only support 32-bit UID/GID
+      values, due to its use of the atoi(3) C library function for parsing
+      result set values into IDs.  This has been fixed; mod_sql now
+      properly supports 64-bit UID/GID values.
 
     mod_tls
       By default, mod_tls will no longer support SSLv3 connections.  In
@@ -28,8 +476,10 @@ ChangeLog files.
 
         TLSProtocol SSLv3 TLSv1 ...
 
+      In addition, mod_tls will no longer support EXPORT ciphers.
 
-  + New Configuration Directives
+
+  + New Configuration Directives:
 
     CopyEngine
       The mod_copy module is enabled by default; there may be cases where
@@ -37,8 +487,121 @@ ChangeLog files.
       server.  Thus mod_copy now supports a CopyEngine directive; see
       doc/contrib/mod_copy.html#CopyEngine.
 
+    DelayOnEvent
+      There are sites which wish to use mod_delay for administratively
+      adding delays to connections as e.g. brute force attack deterrents.
+      To support these use cases, the mod_delay module has a new DelayOnEvent
+      directive.  Using this directive, sites can configure something like
+      the following, for forcing a minimum login delay and a failed login
+      delay:
+
+        <IfModule mod_delay.c>
+          # Configure successful logins to be delayed by 2 secs
+          DelayOnEvent PASS 2000ms
+
+          # Configure failed logins to be delayed by 5 secs
+          DelayOnEvent FailedLogin 5s
+        </IfModule>
+
+      See doc/modules/mod_delay.html#DelayOnEvent for more information.
+
+    ExecEnable
+      Some sites using mod_exec need to configure a command to be executed,
+      but wish to "blacklist" certain directories where that command should
+      not be executed.  To handle configurations like this, the mod_exec
+      module has a new ExecEnable directive; see
+      doc/contrib/mod_exec.html#ExecEnable for details.
+
+    FSCachePolicy
+      ProFTPD has long maintained a cache of the last stat data for a file.
+      However, for performance reasons, this cache size needs to be larger,
+      and to be enhanced to handle expiration, etc.  To tune the size
+      and expiration settings of this filesystem data cache, use the new
+      FSCachePolicy directive; see doc/modules/mod_core.html#FSCachePolicy
+      for details.
+
+    LangOptions
+      Currently proftpd tries to cope with various filename/character
+      encodings used by FTP clients; if it cannot decode the filename, it
+      will use the sent filename as-is.  This behavior can cause problems
+      for downstream resources that then attempt to deal with these
+      filenames, and fail.  To make proftpd be more strict about the
+      encoding it accepts, use the new LangOption directive:
+
+        LangOptions RequireValidEncoding
+
+      See doc/modules/mod_lang.html#LangOptions.
+
+    RadiusOptions
+      The mod_radius module now supports/handles additional RADIUS
+      attributes.  Some of these attribute may need to be ignore for
+      some sites; others may wish to e.g. enforce stronger security by
+      requiring the use of the Message-Authenticator attribute.  Thus
+      mod_radius has a new RadiusOptions directive; see
+      doc/contrib/mod_radius.html#RadiusOptions for details.
+
+    ServerAlias
+      Supporting true name-based virtual hosting means needing to associate
+      names with the IP-based virtual hosts.  The ServerAlias directive is
+      used to do this association; see doc/modules/mod_core.html#ServerAlias
+      for details.
+
+    SQLPasswordSaltEncoding
+      In order to handle binary data for salts, the mod_sql_password module
+      now supports handling of this data as base64- or hex-encoded data
+      via the new SQLPasswordSaltEncoding directive; see
+      doc/contrib/mod_sql_passwd.html#SQLPasswordSaltEncoding for details.
+
+    TLSECDHCurve
+      When an FTPS client uses an ECDHE cipher, mod_tls currently will use
+      the X9.62 <code>prime256v1</code> curve.  Some sites may, however,
+      wish to use other curves for ECDHE ciphers.  These sites may now use
+      the new TLSECDHCurve directive to configure the curve; see
+      doc/contrib/mod_tls.html#TLSECDHCurve for details.
+
+    TLSNextProtocol
+      Newer TLS clients use the ALPN (Application Layer Protocol Negotiation)
+      extension (or its earlier incarnation NPN (Next Protocol Negotiation)
+      for determining the protocol that will be used over the SSL/TLS
+      session.  The support for these extensions can be used by clients for
+      enabling other behaviors/optimizations, such as TLS False Start.
+      This directive can be used to disable mod_tls' use of the ALPN/NPN
+      extensions as needed; see doc/contrib/mod_tls.html#TLSNextProtocol
+      for more details.
+
+    TLSPreSharedKey
+      Some sites may find that using pre-shared keys (PSK) is preferable
+      for their TLS needs.  TLS clients in embedded or low power environments
+      may find PSK to be less computationally expensive.  The mod_tls module
+      now supports pre-shared keys via its TLSPreSharedKey directive; see
+      doc/contrib/mod_tls.html#TLSPreSharedKey for details.
+
+    TransferOptions
+      There are some broken (<i>e.g.</i> old/mainframe) FTP clients that
+      will upload files, containing CRLF sequences, as ASCII data, but
+      these clients expect these CRLF sequences to be left as-is by the
+      FTP server.  To handle these broken clients, there is a new
+      TransferOptions directive; see doc/modules/mod_xfer.html#TransferOptions
+      for more information.
+
 
   + Changed Configuration Directives
+
+    BanOnEvent BadProtocol
+      Some clients (malicious or unintentional) may send HTTP or SMTP commands
+      to ProFTPD.  ProFTPD now detects these "bad protocol" messages, and
+      mod_ban can now ban clients that repeatedly do this via its BanOnEvent
+      rules.  See doc/contrib/mod_ban.html#BanOnEvent for details.
+
+    DelayTable none
+      If the mod_delay module is used to enforce minimum delays, and not
+      use its DelayTable for "learning" the best delay, then the DelayTable
+      is not needed/used to all.  The DelayTable directive can now be used
+      to tell mod_delay to not even open/lock on that table, using:
+
+        DelayTable none
+
+      See doc/modules/mod_delay.html#DelayTable.
 
     DeleteAbortedStores
       The DeleteAbortedStores directive, for Bug#3917, was meant to be
@@ -48,570 +611,116 @@ ChangeLog files.
       DeleteAbortedStores only when HiddenStores is in effect, has been
       properly implemented now.
 
+    ExtendedLog
+      When an ExtendedLog is used for logging mod_sftp requests, the log
+      file will contain both the SFTP requests AND the internal FTP commands
+      to which mod_sftp will map the SFTP requests; this can lead to some
+      VERY verbose log files.
 
-1.3.5
----------
+      For greater control over SFTP logging, the ExtendedLog directive now
+      supports two new log classes: SSH, and SFTP.  In addition, it supports
+      the '!' prefix, for excluding certain log classes from a given
+      ExtendedLog.  For example:
 
-  + TLS 1.1/1.2 configuration now works properly.
+        LogFormat ftp "..." ALL,EXIT,!SSH,!SFTP
+        ExtendedLog /path/to/extended-ftp.log ftp
 
-  + New Configuration Directives
+        LogFormat sftp "..." SSH,SFTP
+        ExtendedLog /path/to/extended-sftp.log sftp
 
-    RLimitChroot
-      When proftpd chroots a session (e.g. via DefaultRoot or <Anonymous>),
-      certain attacks become possible, such as the "Roaring Beast" attack:
+      NOTE that existing ExtendedLogs that expect to see the SFTP requests will
+      no longer do so; adding the "SFTP" logging class to such ExtendedLogs is
+      now necessary.
 
-        http://auscert.org.au/15286
-        https://auscert.org.au/15526
+    HiddenStores
+      Some sites may experience HiddenStores filename collisions when
+      uploading FTP clients get disconnected, and/or use multiple concurrent
+      sessions for uploading.  To help avoid collisions, the HiddenStores
+      directive now supports the %P variable, for adding the session PID
+      to the generated HiddenStore name.
 
-      To help mitigate these attacks, proftpd now rejects any attempt to do
-      a write of any kind to paths under /etc and /lib, when the session is
-      chrooted to a path other than "/".
+      In other cases, some sites may have FTP clients that want to use the
+      APPE FTP command, but cannot do so when HiddenStores is in effect.
+      These FTP clients are often outside of the site's control, and not
+      easily changed.  ProFTPD now automatically disables the HiddenStores
+      functionality when an APPE FTP command is used; the APPE command
+      can only function on an existing file anyway, and thus there is no
+      loss of functionality with this policy change.
 
-      If these restrictions cause problems for any sites, this guard can be
-      disabled via the new RLimitChroot directive, e.g.:
+    ListOptions
+      When ProFTPD generates a directory listing for FTP commands such as
+      LIST or NLST, it will automatically sort the names lexicographically.
+      For very wide directories, this can cause more memory/CPU usage, in
+      order to sort all of these names.  This sorting can now be disabled
+      via ListOptions, using:
 
-        RLimitChroot off
+        ListOptions -U
 
-      See doc/modules/mod_rlimit.html#RLimitChroot for more information.
+      See doc/modules/mod_ls.html#ListOptions for more information.
 
+    SFTPDigests
+      The mod_sftp module now supports the umac-128@openssh.com MAC
+      algorithm; see doc/contrib/mod_sftp.html#SFTPDigests.
 
-  + Changed Configuration Directives
+    SFTPHostKey
+      Large hosting sites often use a <Global> section for centralizing
+      configuration of a large number of <VirtualHost> sections in their
+      proftpd.conf.  Sometimes, such sites will want to disable use of
+      particular SSH hostkeys for a given <VirtualHost>.  To support this
+      use case, the SFTPHostKey directive can be used to ignore any
+      globally-configured RSA, DSA, or ECDSA SSH hostkey, e.g.:
 
-    SFTPOptions AllowInsecureLogin
-      Some SFTP clients may wish to use the 'none' cipher, and/or 'none' digest,
-      for testing purposes.  For example, disabling the cipher and digest can
-      be used for testing the raw transfer speed over SFTP.
+        SFTPHostKey NoRSA
+        SFTPHostKey NoDSA
 
-      mod_sftp, by default, will not allow connections which attempt to use the
-      'none' cipher or 'none' digest, even if these are explicitly enabled via
-      the SFTPCiphers and SFTPDigests directive, as use of these algorithms
-      disables the security protections on the transferred data (such as
-      username/password).
+      See doc/contrib/mod_sftp.html#SFTPHostKey for details.
 
-      Thus to explicitly allow usage for these insecure algorithms, use:
+    SFTPOptions
+      Some OS distributions insist that their SSH hostkeys be group-readable.
+      In order to allow mod_sftp, which has more strict SSH hostkey permission
+      policies, to use those SSH hostkeys, the SFTPOptions directive can
+      now be used to relax this permission policy as needed:
 
-        SFTPOptions AllowInsecureLogin
+        SFTPOptions InsecureHostKeyPerms
 
       See doc/contrib/mod_sftp.html#SFTPOptions for details.
 
-    SQLPasswordPBKDF2 sql://
-      The mod_sql_passwd module now supports retrieval of PBKDF2 parameters,
-      such as algorithm, iteration count, and output length, on a per-user
-      basis, via a SQLNamedQuery, in addition to staticly configured
-      parameters.
+      Small Diffie-Hellman groups are subject to cryptographic weaknesses;
+      see https://weakdh.org.  Thus mod_sftp now avoids the use of weak
+      DH groups by default; the AllowWeakDH SFTPOption is used to re-enable
+      such support for clients that require it.
+      See doc/contrib/mod_sftp.html#SFTPOptions.
 
-      See doc/contrib/mod_sql_passwd.html#SQLPasswordPBKDF2 for details.
+    SNMPAgent
+      Some sites may wish to have mod_snmp listening on multiple
+      addresses (e.g. on multi-homed servers), including IPv6 addresses.
+      The SNMPAgent directive now supports this, e.g.:
 
-
-1.3.5rc4
----------
-
-  + Fixed mod_sftp/mod_sftp_pam memory allocation (CVE-2013-4359).
-  + Added support for SSCN FTP command, for secure site-to-site (FXP) transfers.
-  + Added support for Elliptic Curve (EC) suites to mod_tls.
-  + Fixed handling of LDFLAGS settings for module builds
-  + Changed log levels on many log messages, in order to have more consistently
-    applied log levels when logging.
-
-  + New Modules
-
-    mod_dnsbl
-      The mod_dnsbl module can be used to provide connection access control
-      using DNS "blacklists", i.e. denying connections from clients which
-      are known "bad" addresses/networks.  See doc/contrib/mod_dnsbl.html
-      for more information.
-
-
-  + New Configuration Directives
-
-    LDAPLog
-      The mod_ldap module now supports the LDAPLog directive, for directing
-      all of the mod_ldap logging to a file.  More details can be found at
-      doc/contrib/mod_ldap.html#LDAPLog.
-
-    TLSECCertificateFile, TLSECCertificateKeyFile
-      The mod_tls module now supports Elliptic Curve (EC) cryptography.
-      These ciphers and algorithms require an EC certificate/key, which
-      are configured with these new directives.  See the
-      doc/contrib/mod_tls.html#TLSECCertificateFile and
-      doc/contrib/mod_tls.html#TLSECCertificateKeyFile for more information.
-
-    TLSVerifyServer
-      The mod_tls module now supports secure FXP (site-to-site) transfers
-      via the SSCN FTP command.  Since mod_tls now acts as a client for
-      part of these transfers, there is a new TLSVerifyServer directive
-      that controls how mod_tls will verify the certificate of the remote
-      server.  See doc/contrib/mod_tls.html#TLSVerifyServer for details.
-
-
-  + Changed Configuration Directives
-
-    CapabilitiesSet
-      Some sites use directories with the SGID bit set, and to preserve the
-      SGID bit on directories created in these directories, on Linux systems,
-      the mod_cap module either needs to be disabled, OR it needs to support
-      the CAP_FSETID capability.
-
-      The CapabilitiesSet directive now handles the CAP_FSETID capability,
-      which is not enabled by default.  To enable its use, you would use the
-      following in your proftpd.conf:
-
-        <IfModule mod_cap.c>
-          CapabilitiesSet +CAP_FSETID
+        <IfModule mod_snmp.c>
+          SNMPAgent master 127.0.0.1:1161 10.0.1.2:1161 [::]
         </IfModule>
 
-      See doc/contrib/mod_cap.html#CapabilitiesSet for more information.
-
-    ExecOnEvent
-      Executed commands can now be executed with the privileges of the
-      logged-in user using the '~' notation in the ExecOnEvent directive;
-      see doc/contrib/mod_exec.html#ExecOnEvent for details.
-
-      The ExecOnEvent directive is now supported in the <VirtualHost>
-      and <Global> contexts, as well as the "server config" default context.
-
-    LogFormat, SQLLog
-      The %s LogFormat variable is now properly resolved for SFTP transfers.
-
-      The %D/%d LogFormat variables are now properly resolved for directory
-      listings, for both FTP and SFTP sessions.
-
-      There is a new LogFormat variable, %{basename}, for logging the last
-      component of a path, <i>i.e.</i> just the file/directory name.
-
-    PersistentPasswd 
-      The PersistentPasswd directive now defaults to 'off'.  See
-      doc/modules/mod_auth_unix.html#PersistentPasswd for more information.
-
-    SFTPOptions
-      To prevent users from changing the timestamp of their files
-      uploaded via SCP, the SFTPOptions directive
-      (doc/contrib/mod_sftp.html#SFTPOptions) now supports an
-      IgnoreSCPUploadTimes parameter.
-
-    SQLOptions
-      In some environments (e.g. those with very strict policies such as
-      SELinux, or perhaps memory-constrained environments), mod_sql needs
-      to be told to not try to read any database-specific configuration
-      files.  For this, the SQLOptions directive now supports the
-      IgnoreConfigFile parameter; see doc/contrib/mod_sql.html#SQLOptions.
-
-
-  + Changed Utilities
-
-    ftpasswd
-      The ftpasswd utility has two new command-line options, --lock and
-      --unlock, for "administratively" locking/unlocking specific accounts,
-      akin to the functionality offered by passwd(1).
-
-      The ftpasswd utility also now checks for concurrent modifications:
-      only one process can be modifying the target files at a time.
-
-
-  + New Documentation
-
-    We went through ProFTPD source code with an eye toward logged messages,
-    wanting to make sure that similar types of messages were consistently
-    logged at the same level.  With this, we can now provide documentation
-    which describes the messages logged at each log level, along with
-    a catalog of the most common log messages and what they mean.  See
-    doc/howto/LogLevels.html and doc/howto/LogMessages.html, respsectively.
-
-    A new howto for the mod_radius module, including some example FreeRADIUS
-    configurations, has been added; see doc/howto/Radius.html.
-
- 
-1.3.5rc3
----------
-
-  + Fixed mod_sql "SQLAuthType Backend" MySQL issues
-  + HideUser/HideGroup now work as expected for virtual users
-
-  + New Modules
-
-    mod_snmp
-      The mod_snmp module is intended to collect various state information
-      and expose them via SNMP counters and gauges.  Currently only
-      SNMPv1/SNMPv2 are supported.  See doc/contrib/mod_snmp.html for more
-      information.
-
-
-  + New Configuration Directives
-
-    SQLUserPrimaryKey, SQLGroupPrimaryKey
-      The mod_sql module now has directives for specifying primary key
-      columns for user/group data; these can be used for storing user/group
-      values in tables which require foreign key constraints.  See
-      doc/howto/SQL.html#SQLPrimaryKeys for a more detailed description
-      and use cases for these directives.
-
-    SQLPasswordPBKDF2
-      The mod_sql_passwd module now supports handling passwords encrypted
-      using the PBKDF2 algorithm.  See
-      doc/contrib/mod_sql_passwd.html#SQLPasswordPBKDF2 for more information.
-
-
-  + Changed Configuration Directives
-
-    DeleteAbortedStores
-      To preserve the principle of least surprise, the behavior of the
-      DeleteAbortedStores directive has been changed slightly.  Specifically,
-      DeleteAbortedStores is automatically enabled now whenever
-      "HiddenStores on" is configured.
-
-    LogFormat, SQLLog
-      The LogFormat and SQLLog directives now supports a %g variable, for
-      logging the name of the primary group of the logged-in user.
-      See doc/modules/mod_log.html#LogFormat.
-
-    SFTPDigests
-      The mod_sftp module now supports UMAC as an SSH digest algorithm,
-      using the digest name as used by OpenSSH, i.e. "umac-64@openssh".
-      Support for this digest is automatically enabled where supported.
-      See doc/contrib/mod_sftp.html#SFTPDigests for details.
-
-    SFTPExtensions fsync
-      The mod_sftp module now supports the custom "fsync@openssh"
-      SFTP extension, for handling fsync requests from SFTP clients that
-      need to ensure that any buffered uploaded data has been flushed out
-      to the backing store on the server.  See
-      doc/contrib/mod_sftp.html#SFTPExtensions for details.    
-
-
-1.3.5rc2
----------
-
-  + New Modules
-
-    mod_log_forensic
-      The mod_log_forensic module is intended to collect logging information
-      while a session runs, but only to write that log information out to
-      a file when certain conditions happen, and thus to avoid logging
-      redundant information for "normal" sessions.  See
-      doc/contrib/mod_log_forensic.html for more information.
-
-    mod_rlimit
-      The handling of the RLimitCPU, RLimitMemory, and RLimitOpenFiles
-      directives were refactored into a new mod_rlimit module.  This module
-      also automatically sets the RLIMIT_NPROC resource limit for session
-      processes (as a protective measure).  See doc/modules/mod_rlimit.html
-      for details.
-
-
-  + New Configuration Directives
-
-    GeoIPPolicy
-      The GeoIPPolicy directive for the mod_geoip module is used to configure
-      the default allow/deny policy of the module, when evaluating any
-      configured GeoIPFilters.  See doc/contrib/mod_geoip.html#GeoIPPolicy.
-
-    TLSMasqueradeAddress
-      There are particular situations where MasqueradeAddress functionality
-      is needed, but *only for FTPS connections*.  For these situations,
-      use the new TLSMasqueradeAddress directive; see
-      doc/contrib/mod_tls.html#TLSMasqueradeAddress for details.
-
-    TLSUserName
-      The mod_tls module can now be configured to authenticate users based
-      on contents of a client-provided certificate (assuming the client
-      provided one).  By using:
-
-       TLSVerifyClient on
-
-      and the new TLSUserName directive, mod_tls may verify the user
-      without requiring a password.  See doc/contrib/mod_tls.html#TLSUserName.
-
-
-  + Changed Configuration Directives
-
-    AuthUserFile, AuthGroupFile
-      The mod_auth_file module is now more strict about the permissions
-      on configured AuthUserFile and AuthGroupFile, and about the permissions
-      of the directories containing these files.  These restrictions are to
-      prevent accidental (or malicious) altering of these files by any
-      user on the system.  See
-      doc/modules/mod_auth_file.html#AuthFilePermissions for a discussion
-      of these new restrictions.
-
-    BanOnEvent TLSHandshake
-      There is a particular type of Denial-of-Service attack where malicious
-      clients request just enough of an SSL/TLS handshake to cause the server
-      to perform the expensive decryption operations; if this happens
-      frequently enough, the server will consume much of its CPU, thus
-      starving other clients.  See:
-
-        http://vincent.bernat.im/en/blog/2011-ssl-dos-mitigation.html
-        http://www.thc.org/thc-ssl-dos/
-
-      The BanOnEvent directive now supports a TLSHandshake rule, to impose
-      bans on such clients.
-
-    HiddenStores
-      The default "." suffix used for HiddenStores filenames can now be
-      customised.  See doc/modules/mod_xfer.html#HiddenStores.
-
-    LogFormat
-      The LogFormat directive now supports variables for timestamps with
-      millisecond and microsecond granularity, via %{millisecs} and
-      %{microsecs}, respectively.  In addition, a new shorthand variable,
-      %{iso8601}, is supported.  See doc/modules/mod_log.html#LogFormat.
-
-      Important note: the new %{iso8601} timestamp format is *also* now the
-      timestamp format used for the default system logging that proftpd uses.
-
-    TLSProtocol
-      Almost all of the mod_tls configuration directives can be configured
-      on a per-<VirtualHost> basis, except for the TLSProtocol directive.
-      This has now been corrected, such that TLSProtocol can be set on
-      a per-<VirtualHost> basis (and is also allowed in <Global> sections).
-
-    TLSSessionCache
-      The default SSL session cache timeout, when no explicit timeout has
-      been configured, has been increased to be slightly longer than the
-      default control channel renegotiation timeout.  This means that the
-      out-of-the-box mod_tls behavior will be better for FTPS clients that
-      have long-lived (i.e. on the order of multiple hours) sessions.
-
-
-  + Logging Format changes
-
-    Note that the logging format for SystemLog, TraceLog, and all per-module
-    log files has changed.  Specifically, the log lines now have an ISO-8601
-    timestamp format, so that they now look like:
-
-      2013-01-31 15:33:03,832
-
-    instead of:
-
-      Jan 31 15:33:03
-
-    The new format does not use textual month abbreviations, and includes
-    milliseconds in the timestamp, for finer-grained logging granularity.
-
-    NOTE: This WILL have impact on sites using DenyHosts, banhosts, fail2ban,
-    depending on the configured log recognition patterns used by those
-    applications.
-
-
-1.3.5rc1
----------
-
-  + Added support for SHA-256, SHA-512 password hashes to the ftpasswd tool
-  + Many mod_sftp bugfixes
-  + Added Japanese and Spanish translations
-
-  + New Modules
-
-    mod_geoip
-      The mod_geoip module provides lookup of geographic information based
-      on the IP address of the connecting client.  This information can
-      be logged, and used to drop the connection if necessary.  See
-      doc/contrib/mod_geoip.html for complete information.
-
-
-  + Changed Modules
-
-    mod_sftp
-      The mod_sftp module now supports use of Elliptic Curve Cryptography
-      (ECC).  This includes ECDSA host keys and user keys, and the ECDH
-      key exchange method.
-
-      Improved FIPS support in mod_sftp.
-
-      The mod_sftp module now honors the MaxStoreFileSize directive.
-
-
-  + New Configuration Directives:
-
-    AllowChrootSymlinks
-      By default, when chrooting a process (via the DefaultRoot directive
-      or for <Anonymous> logins), proftpd will follow a symlink.  Some sites
-      wish to restrict this; for these sites, there is the new
-      AllowChrootSymlinks directive.  See
-      doc/modules/mod_auth.html#AllowChrootSymlinks for details.
-
-    CapabilitiesRootRevoke
-      The mod_cap module now completely drops root privileges; the retained
-      Linux capabilities should suffice.  To revert to the previous behavior,
-      use this new CapabilitiesRootRevoke directive; see
-      doc/modules/mod_cap.html#CapabilitiesRootRevoke.
-
-    <IfAuthenticated>
-      There are times when a site might wish to have directives that apply
-      <b>only</b> to sessions once the user has been authenticated, and not
-      before then.  The mod_ifsession module now provides this ability via
-      the <IfAuthenticated> section; see
-      doc/contrib/mod_ifsession.html#IfAuthenticated.
-
-    FactsOptions
-      The FactsOptions directive is used to tweak the outputs used by
-      the mod_facts module for the MLSD/MLST output.  One such option is
-      UseSlink, which provides better compatibility with the output expected
-      e.g. by FileZilla.  The doc/modules/mod_facts.html#FactsOptions
-      description has more details.
-
-    QuotaDefault
-      The QuotaDefault directive is used to provide a "default" quota,
-      via the mod_quotatab module, if mod_quotatab is unable to find a
-      quota for the logging-in user.  See
-      doc/contrib/mod_quotatab.html#QuotaDefault for details.
-
-    RewriteMaxReplace
-      The RewriteMaxReplace directive is used to change the number of
-      replacements that mod_rewrite will do when rewriting commands.  See
-      doc/contrib/mod_rewrite.html#RewriteMaxReplace for more details.
-
-    TLSServerCipherPreference
-      This directive can be used to configure mod_tls so that the server
-      ciphersuites are preferred, rather than preferring the client
-      ciphersuites.  See doc/contrib/mod_tls.html#TLSServerCipherPreference
-      for more information.
-
-
-  + Changed Configuration Directives
-
-    AllowFilter, DenyFilter
-      The "[NC]" (or "[nocase]") case-insensitive flags for the PathAllowFilter
-      and PathDenyFilter directives have now been extended to apply to the
-      AllowFilter and DenyFilter directives as well.  For example:
-
-        AllowFilter \.html [NC]
-        DenyFilter \.jpg$ [nocase]
-
-    CreateHome
-      When creating a home directory via the CreateHome directive, proftpd
-      will automatically use root privileges, in order to create the
-      necessary directories with configured ownership and permissions.
-      However, for some sites which use e.g. NFS, use of root privileges
-      will cause problems.  For such situations, the CreateHome directive
-      now supports a NoRootPrivs parameter; see doc/howto/CreateHome.html
-      for examples.
-
-    ListOptions
-      The mod_ls module now supports the -1 option (list one file per line),
-      which can also be configured via the ListOptions directive.
-
-      The ListOptions directive now supports new "LISTOnly" and "NLSTOnly"
-      keywords, for applying the restrictions only to the LIST (or NLST)
-      FTP commands.
-
-    LogFormat
-      The LogFormat directive can now handle logging variables of the format
-      %{note:<name>}, where <name> refers to an internal "note" name.  The
-      supported names vary depending on the various modules.  In most cases,
-      these note names are not useful for general purpose logging, however.
-
-    RewriteCondition, RewriteRule
-      The RewriteCondition and RewriteRule directives of the mod_rewrite
-      module now support time-related variables; see
-      doc/contrib/mod_rewrite.html#RewriteCondition for more information.
-
-    RootRevoke
-      The RootRevoke directive now supports a "UseNonCompliantActiveTransfers"
-      parameter, for dropping root privileges BUT still allowing active
-      data transfers by using a non-standard source port for the active
-      transfer.  See doc/modules/mod_auth.html#RootRevoke for more information.
-
-    ScoreboardFile
-      Some sites have found that maintaining the ScoreboardFile can lead to
-      a fair amount of overhead.  Those sites who wish to remove this overhead
-      can now disable use of the ScoreboardFile altogether by using:
-
-        ScoreboardFile off
-
-      Note that doing so means that certain configuration directives (e.g.
-      MaxClients) and certain tools (e.g. ftptop, ftpwho, ftpcount) will no
-      longer work.  See doc/modules/mod_core.html#ScoreboardFile for details.
-
-    ServerIdent
-      The ServerIdent directive is now honored by the mod_sftp module.
-      For example, you can configure mod_sftp to not provide any version
-      information at all, or to provide a different server name/token
-      altogether; see doc/contrib/mod_sftp.html#SFTPVersionId.
-
-    SFTPDigests
-      The SFTPDigests directive (see doc/contrib/mod_sftp.html#SFTPDigests)
-      now handles/supports the SHA-256 and SHA-512 digest algorithms.
-
-    SFTPHostKey
-      The mod_sftp module can now load its host keys from an SSH agent
-      process such as OpenSSH ssh-agent(1) tool; see
-      doc/contrib/mod_sftp.html#SFTPHostKey for details.
-
-    SFTPOptions
-      To prevent users from changing the ownership of their files via SFTP,
-      the SFTPOptions directive (doc/contrib/mod_sftp.html#SFTPOptions) now
-      supports an IgnoreSFTPSetOwners parameter.
-
-    SocketOptions
-      The SocketOptions directive (see doc/modules/mod_core.html#SocketOptions)
-      now supports a new "keepalive" parameter, for tuning the TCP keepalive
-      behavior.  A more detailed explanation of TCP keepalives, and other
-      forms of keepalive, is provided in doc/howto/KeepAlives.html.
-
-    SQLLog, LogFormat
-      The LogFormat and SQLLog directives support two new logging variables:
-      %{transfer-status} and %{transfer-failure}.  The %{transfer-status}
-      variable indicates the status of a data transfer: "success", "failed",
-      "cancelled", "timeout", or "-" (if not applicable).  The
-      %{transfer-failure} variable indicates the reason for the data transfer
-      failure, or "-" if there was no failure.
-
-    SystemLog
-      The SystemLog can now be disabled via <IfClass>, e.g. for disabling
-      logging for specific clients.
-
-    TLSCipherSuite
-      The default SSL/TLS ciphersuites offered/used by mod_tls have changed
-      from "ALL:!ADH" to a more secure ordering of "DEFAULT:!ADH:!EXPORT:!DES".
-
-    TLSProtocol
-      When compiled using OpenSSL 1.0.1 or later, the TLSProtocol directive
-      can be used to specify TLS versionf "TLSv1.1" and "TLSv1.2".
-
-    UseEncoding
-      When the UseEncoding directive (doc/modules/mod_lang.html#UseEncoding)
-      is used to specify encodings, it used to require that the client use
-      these encodings, and not allow clients to request different encodings.
-      This requirement is now related.  To preserve the old behavior, a
-      new "strict" keyword is supported; the directive documentation covers
-      this in more details.
-
-    <VirtualHost>, MasqueradeAddress, DefaultAddress
-      All of these directives can now take an interface name, in addition
-      to DNS names or IP addresses, to be resolved to an IP address.  This
-      is useful in cases where the same proftpd.conf needs to be deployed or
-      shared across a cluster; each machine has the same interface name which
-      handles different IP addresses.
-
-      Examples:
-
-        DefaultAddress lo0
-        MasqueradeAddress eth0
-
-        <VirtualHost eth0>
-          ...
-        </VirtualHost>
+      See doc/contrib/mod_snmp.html#SNMPAgent for more information.
+
+    TLSOptions
+      Small Diffie-Hellman groups are subject to cryptographic weaknesses;
+      see https://weakdh.org.  Thus mod_tls now avoids the use of weak
+      DH groups by default; the AllowWeakDH TLSOption is used to re-enable
+      such support for clients that require it.
+      See doc/contrib/mod_tls.html#TLSOptions.
 
 
   + Changed Command Handling
 
-    PORT/EPRT
-      When handling PORT and EPRT FTP commands from clients, proftpd now
-      checks for RFC 1918 addresses in those commands; these are non-publicly
-      routable IP addresses, and should NOT be being sent by clients.  When
-      proftpd detects these RFC1918 addresses being used for a WAN server
-      address, then proftpd will ignore the RFC1918 address, and instead
-      use the IP address of the connecting client.  This change should help
-      interoperability of data transfers for some FTP clients.
+    When handling the STAT FTP command, ProFTPD now follows RFC 959 more
+    closely, and will use the 213 response code for STAT commands on files,
+    and the 212 response code for STAT commands on directories.  Previously,
+    ProFTPD would respond to all STAT commands using the 211 response code.
 
 
-  + API Changes
+  + Changed Utilities
 
-    The session.class struct member has been renamed to session.conn_class.
-    This was done to allow for support of C++ modules.  Similarly, the
-    cmd_rec.class struct member has been renamed to cmd_rec.cmd_class,
-    and cmdtable.class renamed to cmdtable.cmd_class.  See Bug#3079 for
-    details.
+    The ftpwho command-line utility can now emit its data as JSON,
+    for easier parsing/reuse in other utilities.  To request JSON, use:
 
-Last Updated: $Date: 2014-05-09 14:52:12 $
+      $ ftpwho -o json

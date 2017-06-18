@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp Display files
- * Copyright (c) 2010-2013 TJ Saunders
+ * Copyright (c) 2010-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,23 +22,26 @@
  * source distribution.
  */
 
-/* Display of files
- * $Id: display.c,v 1.12 2013-09-25 16:08:50 castaglia Exp $
- */
+/* Display of files */
 
 #include "mod_sftp.h"
 #include "display.h"
 #include "packet.h"
 #include "msg.h"
 
+/* Note: The size provided by pr_fs_getsize2() is in KB, not bytes. */
 static void format_size_str(char *buf, size_t buflen, off_t size) {
-  char *units[] = {"", "K", "M", "G", "T", "P"};
-  unsigned int nunits = 6;
+  char *units[] = {"K", "M", "G", "T", "P", "E", "Z", "Y"};
+  unsigned int nunits = 8;
   register unsigned int i = 0;
+  int res;
 
-  /* Determine the appropriate units label to use. */
+  /* Determine the appropriate units label to use. Do not exceed the max
+   * possible unit support (yottabytes), by ensuring that i maxes out at
+   * index 7 (of 8 possible units).
+   */
   while (size > 1024 &&
-         i < nunits) {
+         i < (nunits - 1)) {
     pr_signals_handle();
 
     size /= 1024;
@@ -46,29 +49,38 @@ static void format_size_str(char *buf, size_t buflen, off_t size) {
   }
 
   /* Now, prepare the buffer. */
-  snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
+  res = snprintf(buf, buflen, "%.3" PR_LU "%sB", (pr_off_t) size, units[i]);
+
+  if (res > 2) {
+    /* Check for leading zeroes; it's an aethetic choice. */
+    if (buf[0] == '0' && buf[1] != '.') {
+      memmove(&buf[0], &buf[1], res-1);
+      buf[res-1] = '\0';
+    }
+  }
 }
 
 const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
   struct stat st;
   char buf[PR_TUNABLE_BUFFER_SIZE], *msg = "";
   int len, res;
-  unsigned int *current_clients = NULL;
-  unsigned int *max_clients = NULL;
+  const unsigned int *current_clients = NULL;
+  const unsigned int *max_clients = NULL;
   off_t fs_size = 0;
-  void *v;
+  const void *v;
+  const char *outs, *rfc1413_ident, *user;
   const char *serverfqdn = main_server->ServerFQDN;
-  char *outs, mg_size[12] = {'\0'}, mg_size_units[12] = {'\0'},
+  char mg_size[12] = {'\0'}, mg_size_units[12] = {'\0'},
     mg_max[12] = "unlimited";
   char mg_class_limit[12] = {'\0'}, mg_cur[12] = {'\0'},
     mg_cur_class[12] = {'\0'};
   const char *mg_time;
-  char *rfc1413_ident = NULL, *user = NULL;
 
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
-  pr_fsio_fstat(fh, &st);
-  fh->fh_iosz = st.st_blksize;
+  if (pr_fsio_fstat(fh, &st) == 0) {
+    fh->fh_iosz = st.st_blksize;
+  }
 
   res = pr_fs_fgetsize(fh->fh_fd, &fs_size);
   if (res < 0 &&
@@ -87,7 +99,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
   max_clients = get_param_ptr(main_server->conf, "MaxClients", FALSE);
 
   v = pr_table_get(session.notes, "client-count", NULL);
-  if (v) {
+  if (v != NULL) {
     current_clients = v;
   }
 
@@ -95,12 +107,12 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
 
   if (session.conn_class != NULL &&
       session.conn_class->cls_name) {
-    unsigned int *class_clients = NULL;
+    const unsigned int *class_clients = NULL;
     config_rec *maxc = NULL;
     unsigned int maxclients = 0;
 
     v = pr_table_get(session.notes, "class-client-count", NULL);
-    if (v) {
+    if (v != NULL) {
       class_clients = v;
     }
 
@@ -114,8 +126,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
 
     maxc = find_config(main_server->conf, CONF_PARAM, "MaxClientsPerClass",
       FALSE);
-
-    while (maxc) {
+    while (maxc != NULL) {
       pr_signals_handle();
 
       if (strcmp(maxc->argv[0], session.conn_class->cls_name) != 0) {
@@ -130,9 +141,9 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
 
     if (maxclients == 0) {
       maxc = find_config(main_server->conf, CONF_PARAM, "MaxClients", FALSE);
-
-      if (maxc)
+      if (maxc) {
         maxclients = *((unsigned int *) maxc->argv[0]);
+      }
     }
 
     snprintf(mg_class_limit, sizeof(mg_class_limit), "%u", maxclients);
@@ -146,8 +157,9 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
   snprintf(mg_max, sizeof(mg_max), "%u", max_clients ? *max_clients : 0);
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-  if (user == NULL)
+  if (user == NULL) {
     user = "";
+  }
 
   rfc1413_ident = pr_table_get(session.notes, "mod_ident.rfc1413-ident", NULL);
   if (rfc1413_ident == NULL) {
@@ -203,15 +215,17 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
       if (strncmp(key, "%{time:", 7) == 0) {
         char time_str[128], *fmt;
         time_t now;
-        struct tm *time_info;
+        struct tm *tm;
 
         fmt = pstrndup(p, key + 7, strlen(key) - 8);
 
         now = time(NULL);
-        time_info = pr_localtime(NULL, &now);
-
         memset(time_str, 0, sizeof(time_str));
-        strftime(time_str, sizeof(time_str), fmt, time_info);
+
+        tm = pr_localtime(NULL, &now);
+        if (tm != NULL) {
+          strftime(time_str, sizeof(time_str), fmt, tm);
+        }
 
         val = pstrdup(p, time_str);
 

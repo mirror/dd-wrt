@@ -1,6 +1,4 @@
-<!-- $Id: mod_geoip.html,v 1.6 2013-12-12 16:52:28 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_geoip.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_geoip</title>
@@ -51,10 +49,10 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="GeoIPAllowFilter">GeoIPAllowFilter</a></h2>
-<strong>Syntax:</strong> GeoIPAllowFilter <em>filter</em> <em>pattern</em><br>
+<h3><a name="GeoIPAllowFilter">GeoIPAllowFilter</a></h3>
+<strong>Syntax:</strong> GeoIPAllowFilter <em>filter1 pattern1 [filter2 pattern2 ...]</em><br>
 <strong>Default:</strong> <em>none</em><br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_geoip<br>
 <strong>Compatibility:</strong> 1.3.3rc1 and later
 
@@ -96,6 +94,13 @@ The <em>pattern</em> parameter is <b>case-insensitive</b> regular expression
 that will be applied to the specified <em>filter</em> value, if available.
 
 <p>
+Note that as of <code>proftpd-1.3.6rc3</code> and later, the
+<code>GeoIPAllowFilter</code> directive can also take a <em>single</em>
+parameter which specifies a SQL query (via <code>mod_sql</code>'s
+<a href="mod_sql.html#SQLNamedQuery"><code>SQLNamedQuery</code></a>), which
+will be used to retrieve the <em>filter</em> and <em>pattern</em> values to use.
+
+<p>
 Examples:
 <pre>
   # Allow clients with high-speed connections
@@ -104,13 +109,48 @@ Examples:
   # Reject clients connecting from North America or South America
   GeoIPDenyFilter Continent (NA|SA)
 </pre>
+The following more complex configuration demonstrates what can be done using
+SQL querires:
+<pre>
+  &lt;IfModule mod_sql.c&gt;
+    ...
+    SQLNamedQuery get-geo-allowed SELECT "filter_name, pattern FROM allowed_user_geo WHERE user_name = '%u'"
+    SQLNamedQuery get-geo-denied SELECT "filter_name, pattern FROM denied_user_geo WHERE user_name = '%u'"
+  &lt;/IfModule&gt;
+
+  &lt;IfModule mod_geoip.c&gt;
+    GeoIPEngine on
+
+    GeoIPAllowFilter sql:/get-geo-allowed
+    GeoIPDenyFilter sql:/get-geo-denied
+  &lt;/IfModule&gt;
+</pre>
+The above assumes SQL tables with schema similar to the following (expressed
+using SQLite syntax):
+<pre>
+  CREATE TABLE allowed_user_geo (
+    user_name TEXT,
+    filter_name TEXT,
+    pattern TEXT
+  );
+
+  CREATE TABLE denied_user_geo (
+    user_name TEXT,
+    filter_name TEXT,
+    pattern TEXT
+  );
+
+  # Note that we create separate indexes, to allow for multiple rows per user
+  CREATE INDEX allowed_user_geo_name_idx ON allowed_user_geo (user_name);
+  CREATE INDEX denied_user_geo_name_idx ON denied_user_geo (user_name);
+</pre>
 
 <p>
 <hr>
-<h2><a name="GeoIPDenyFilter">GeoIPDenyFilter</a></h2>
-<strong>Syntax:</strong> GeoIPDenyFilter <em>filter</em> <em>pattern</em><br>
+<h3><a name="GeoIPDenyFilter">GeoIPDenyFilter</a></h3>
+<strong>Syntax:</strong> GeoIPDenyFilter <em>filter1 pattern1 [filter2 pattern2 ...]</em><br>
 <strong>Default:</strong> <em>none</em><br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_geoip<br>
 <strong>Compatibility:</strong> 1.3.3rc1 and later
 
@@ -124,15 +164,22 @@ supported; if <b>any</b> filter matches the connecting client, the connection
 will be rejected.
 
 <p>
+Note that as of <code>proftpd-1.3.6rc3</code> and later, the
+<code>GeoIPDenyFilter</code> directive can also take a <em>single</em>
+parameter which specifies a SQL query (via <code>mod_sql</code>'s
+<a href="mod_sql.html#SQLNamedQuery"><code>SQLNamedQuery</code></a>), which
+will be used to retrieve the <em>filter</em> and <em>pattern</em> values to use.
+
+<p>
 See <a href="#GeoIPAllowFilter"><code>GeoIPAllowFilter</code></a> for
 a description of the directive syntax and parameters.
 
 <p>
 <hr>
-<h2><a name="GeoIPEngine">GeoIPEngine</a></h2>
+<h3><a name="GeoIPEngine">GeoIPEngine</a></h3>
 <strong>Syntax:</strong> GeoIPEngine <em>on|off</em><br>
 <strong>Default:</strong> <em>off</em><br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_geoip<br>
 <strong>Compatibility:</strong> 1.3.3rc1 and later
 
@@ -143,10 +190,10 @@ enforcement of any configured ACLs.
 
 <p>
 <hr>
-<h2><a name="GeoIPLog">GeoIPLog</a></h2>
+<h3><a name="GeoIPLog">GeoIPLog</a></h3>
 <strong>Syntax:</strong> GeoIPLog <em>file|"none"</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_geoip<br>
 <strong>Compatibility:</strong> 1.3.3rc1 and later
 
@@ -162,7 +209,7 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 <hr>
-<h2><a name="GeoIPPolicy">GeoIPPolicy</a></h2>
+<h3><a name="GeoIPPolicy">GeoIPPolicy</a></h3>
 <strong>Syntax:</strong> GeoIPPolicy <em>"allow,deny"|"deny,allow"</em><br>
 <strong>Default:</strong> GeoIPPolicy allow,deny<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -187,10 +234,10 @@ the <code>mod_geoip</code> module will <b>reject</b> any connection,
 
 <p>
 <hr>
-<h2><a name="GeoIPTable">GeoIPTable</a></h2>
+<h3><a name="GeoIPTable">GeoIPTable</a></h3>
 <strong>Syntax:</strong> GeoIPTable <em>path</em> <em>[flags]</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_geoip<br>
 <strong>Compatibility:</strong> 1.3.3rc1 and later
 
@@ -272,43 +319,33 @@ Examples:
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_geoip</code> module requires that the GeoIP library be installed.
-
-<p>
-After installing GeoIP, follow the usual steps for using contrib modules in
-proftpd:
-To install <code>mod_geoip</code>, copy the <code>mod_geoip.c</code>
-file into:
+For including <code>mod_geoip</code> as a staticly linked module:
 <pre>
-  cp mod_geoip.c <i>proftpd-dir</i>/contrib/
-</pre>
-after unpacking the latest proftpd-1.3.<i>x</i> source code.  For including
-<code>mod_geoip</code> as a staticly linked module:
-<pre>
-  ./configure --with-modules=mod_geoip
+  $ ./configure --with-modules=mod_geoip
 </pre>
 Alternatively, <code>mod_geoip</code> could be built as a DSO module:
 <pre>
-  ./configure --with-shared=mod_geoip
+  $ ./configure --with-shared=mod_geoip
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 You may need to specify the location of the GeoIP header and library files in
 your <code>configure</code> command, <i>e.g.</i>:
 <pre>
-  ./configure --with-modules=mod_geoip \
+  $ ./configure --with-modules=mod_geoip \
     --with-includes=/usr/local/geoip/include \
     --with-libraries=/usr/local/geoip/lib
 </pre>
 
 <p>
-Alternatively, if your proftpd was compiled with DSO support, you can
-use the <code>prxs</code> tool to build <code>mod_geoip</code> as a shared
+Alternatively, if your <code>proftpd</code> was compiled with DSO support, you
+can use the <code>prxs</code> tool to build <code>mod_geoip</code> as a shared
 module:
 <pre>
-  prxs -c -i -d mod_geoip.c
+  $ prxs -c -i -d mod_geoip.c
 </pre>
 
 <p>
@@ -385,9 +422,12 @@ under keys of the names above.
 <b>Logging</b><br>
 The <code>mod_geoip</code> module supports different forms of logging.  The
 main module logging is done via the <code>GeoIPLog</code> directive.
-For debugging purposes, the module also uses <a href="http://www.proftpd.org/docs/howto/Tracing.html">trace logging</a>, via the module-specific "geoip" log
-channel.  Thus for trace logging, to aid in debugging, you
-would use the following in your <code>proftpd.conf</code>:
+For debugging purposes, the module also uses <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>geoip
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
 <pre>
   TraceLog /path/to/ftpd/trace.log
   Trace geoip:20
@@ -435,21 +475,36 @@ according to need, demand, inclination, and time:
   &lt;/IfClass&gt;
 </pre>
 
+<p><a name="GeoIPMultipleRules">
+<font color=red>Question</font>: How I can require that a connection match
+multiple rules, <i>e.g.</i> both a <code>RegionCode</code> <i>and</i> a
+<code>CountryCode</code>?<br>
+<font color=blue>Answer</font>: In a given <code>GeoIPAllowFilter</code> or
+<code>GeoIPDenyFilter</code>, you can configure a <i>list</i> of
+filters/patterns.  And <b>all</b> of these filters <b>must</b> be matched,
+in order for that <code>GeoIPAllowFilter</code> or <code>GeoIPDenyFilter</code>
+to be matched.  Thus you can use:
+<pre>
+  # Deny all connections, unless they are explicitly allowed
+  GeoIPPolicy deny,allow
+
+  # Allow only connections from TX, US
+  GeoIPAllowFilter RegionCode TX CountryCode US
+</pre>
+
+<p><a name="GeoIPIPv6">
+<font color=red>Question</font>: Does <code>mod_geoip</code> support IPv6?<br>
+<font color=blue>Answer</font>: Yes, <em>assuming</em> that the IPv6
+MaxMind tables are configured via <code>GeoIPTable</code>.  You can find
+the free IPv6 country and city "legacy" files; see this MaxMind <a href="https://www.maxmind.com/en/ipv6-information-and-faq">IPv6 FAQ</a> for details.
+
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-12-12 16:52:28 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2010-2013 TJ Saunders<br>
+&copy; Copyright 2010-2016 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

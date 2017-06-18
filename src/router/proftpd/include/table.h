@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2012 The ProFTPD Project team
+ * Copyright (c) 2004-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Table management
- * $Id: table.h,v 1.12 2012-01-26 17:55:07 castaglia Exp $
- */
+/* Table management */
 
 #ifndef PR_TABLE_H
 #define PR_TABLE_H
@@ -33,7 +31,7 @@
 
 typedef struct tab_key {
   struct tab_key *next;
-  void *key_data;
+  const void *key_data;
   size_t key_datasz;
   unsigned int hash;
   unsigned nents;
@@ -44,7 +42,7 @@ typedef struct tab_entry {
   struct tab_entry *next, *prev;
   unsigned int idx;
   pr_table_key_t *key;
-  void *value_data;
+  const void *value_data;
   size_t value_datasz;
 
 } pr_table_entry_t;
@@ -56,15 +54,15 @@ typedef struct table_rec pr_table_t;
  * If value_datasz is 0, value_data is assumed to be a NUL-terminated string
  * and strlen() is called on it.
  */
-int pr_table_add(pr_table_t *tab, const char *key_data, void *value_data,
+int pr_table_add(pr_table_t *tab, const char *key_data, const void *value_data,
   size_t value_datasz);
 
 /* Add an entry in the table under the given key, making a duplicate of
  * the given value from the table's pool.  If value_datasz is 0, value_data
  * is assumed to be a NUL-terminated string and strlen() is called on it.
  */
-int pr_table_add_dup(pr_table_t *tab, const char *key_data, void *value_data,
-  size_t value_datasz);
+int pr_table_add_dup(pr_table_t *tab, const char *key_data,
+  const void *value_data, size_t value_datasz);
 
 /* Allocates a new table from the given pool.  flags can be used to
  * determine the table behavior, e.g. will it allow multiple entries under
@@ -91,8 +89,8 @@ int pr_table_count(pr_table_t *tab);
  * to halt the iteration, unless PR_TABLE_DO_FL_ALL is used.
  */
 int pr_table_do(pr_table_t *tab, int cb(const void *key_data,
-  size_t key_datasz, void *value_data, size_t value_datasz, void *user_data),
-  void *user_data, int flags);
+  size_t key_datasz, const void *value_data, size_t value_datasz,
+  void *user_data), void *user_data, int flags);
 #define PR_TABLE_DO_FL_ALL			0x0010
 
 /* Remove all entries from the table, emptying it.
@@ -114,19 +112,19 @@ int pr_table_free(pr_table_t *tab);
  * entry in the table for the given key.  If value_datasz is not NULL,
  * the size of the returned value will be stored in it.
  */
-void *pr_table_get(pr_table_t *tab, const char *key_data,
+const void *pr_table_get(pr_table_t *tab, const char *key_data,
   size_t *value_datasz);
 
 /* Retrieve the next key, for iterating over the entire table.  Returns
  * NULL when the end of the table has been reached.
  */
-void *pr_table_next(pr_table_t *tab);
+const void *pr_table_next(pr_table_t *tab);
 
 /* Returns the value stored under the given key, and removes that entry from
  * the table.  If value_datasz is not NULL, the size of the returned value
  * will be stored in it.
  */
-void *pr_table_remove(pr_table_t *tab, const char *key_data,
+const void *pr_table_remove(pr_table_t *tab, const char *key_data,
   size_t *value_datasz);
 
 /* Rewind to the start of the table before iterating using pr_table_next().
@@ -139,8 +137,8 @@ int pr_table_rewind(pr_table_t *tab);
  * multiple times in order to set all entries under that key; call
  * pr_table_exists() to find the number of entries to change.
  */
-int pr_table_set(pr_table_t *tab, const char *key_data, void *value_data,
-  size_t value_datasz);
+int pr_table_set(pr_table_t *tab, const char *key_data,
+  const void *value_data, size_t value_datasz);
 
 /* Change some of the characteristics of an allocated table tab via
  * the control cmd.  pr_table_ctl() can only be called on an empty table.
@@ -249,7 +247,7 @@ void pr_table_dump(void (*)(const char *, ...), pr_table_t *tab);
  * function must provide the size of the given value_data.
  */
 int pr_table_kadd(pr_table_t *tab, const void *key_data, size_t key_datasz,
-  void *value_data, size_t value_datasz);
+  const void *value_data, size_t value_datasz);
 
 /* Same as pr_table_exists(), except that the key data to use is treated as
  * an opaque memory region of size key_datasz.  This function should be
@@ -257,18 +255,23 @@ int pr_table_kadd(pr_table_t *tab, const void *key_data, size_t key_datasz,
  */
 int pr_table_kexists(pr_table_t *tab, const void *key_data, size_t key_datasz);
 
+/* Same as pr_table_next(), except that the size of the key is also provided.
+ * This function should be used if the lookup key is not a string.
+ */
+const void *pr_table_knext(pr_table_t *tab, size_t *key_datasz);
+
 /* Same as pr_table_get(), except that the key data to use is treated as
  * an opaque memory region of size key_datasz.  This function should be
  * used if the lookup key is not a string.
  */
-void *pr_table_kget(pr_table_t *tab, const void *key_data,
+const void *pr_table_kget(pr_table_t *tab, const void *key_data,
   size_t key_datasz, size_t *value_datasz);
 
 /* Same as pr_table_remove(), except that the key data to use is treated as
  * an opaque memory region of size key_datasz.  This function should be
  * used if the lookup key is not a string.
  */
-void *pr_table_kremove(pr_table_t *tab, const void *key_data,
+const void *pr_table_kremove(pr_table_t *tab, const void *key_data,
   size_t key_datasz, size_t *value_datasz);
 
 /* Same as pr_table_set(), except that the key data to use is treated as
@@ -276,7 +279,7 @@ void *pr_table_kremove(pr_table_t *tab, const void *key_data,
  * used if the lookup key is not a string.
  */
 int pr_table_kset(pr_table_t *tab, const void *key_data, size_t key_datasz,
-  void *value_data, size_t value_datasz);
+  const void *value_data, size_t value_datasz);
 
 /* Similar to pr_table_alloc(), except that the number of chains can
  * be explicitly configured.

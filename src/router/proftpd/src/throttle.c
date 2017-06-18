@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source distribution.
  */
 
-/* TransferRate throttling
- * $Id: throttle.c,v 1.12 2012-12-28 02:56:32 castaglia Exp $
- */
+/* TransferRate throttling */
 
 #include "conf.h"
 

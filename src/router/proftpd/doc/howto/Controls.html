@@ -1,15 +1,13 @@
-<!-- $Id: Controls.html,v 1.5 2013-01-09 20:53:43 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Controls.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Controls</title>
+<title>ProFTPD: Controls</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Controls and <code>mod_ctrls</code></b></h2></center>
+<center><h2><b>ProFTPD: Controls and <code>mod_ctrls</code></b></h2></center>
 <hr>
 
 <p>
@@ -28,12 +26,12 @@ The functionality involves a client and a server communicating over a Unix
 domain socket, using a simple text-based protocol.  A new program,
 <code>ftpdctl</code>, is distributed with ProFTPD; <code>ftpdctl</code> is a
 Controls client.  The server side of the Controls functionality is the
-<a href="http://www.proftpd.org/docs/modules/mod_ctrls.html"><code>mod_ctrls</code></a> module, which is compiled into a <code>proftpd</code> daemon when
-the <em>--enable-ctrls</em> configure option is used.  Note, however, that
-the Controls functionality only works for <code>proftpd</code> daemons
-whose <code>ServerType</code> is <code>standalone</code>; <code>proftpd</code>
-daemons run via inetd/xinetd cannot support Controls and the
-<code>ftpdctl</code> program.
+<a href="../modules/mod_ctrls.html"><code>mod_ctrls</code></a> module, which is
+compiled into a <code>proftpd</code> daemon when the <em>--enable-ctrls</em>
+configure option is used.  Note, however, that the Controls functionality only
+works for <code>proftpd</code> daemons whose <code>ServerType</code> is
+<code>standalone</code>; <code>proftpd</code> daemons run via inetd/xinetd
+cannot support Controls and the <code>ftpdctl</code> program.
 
 <p>
 <b>Configuring <code>mod_ctrls</code></b><br>
@@ -259,7 +257,7 @@ and useful control actions, including:
 </ul>
 These actions provide basis administrative control over the running
 <code>proftpd</code> daemon; see the <code>mod_ctrls_admin</code>
-<a href="http://www.proftpd.org/docs/contrib/mod_ctrls_admin.html">documentation</a> for more information.
+<a href="../contrib/mod_ctrls_admin.html">documentation</a> for more details.
 
 <p>
 A basic <code>mod_ctrls_admin</code> configuration is:
@@ -309,7 +307,10 @@ If either allows access, the client can use that control action.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2013-01-09 20:53:43 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

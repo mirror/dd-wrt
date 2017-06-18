@@ -4,6 +4,7 @@ use lib qw(t/lib);
 use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
+use File::Copy;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
@@ -70,6 +71,16 @@ my $TESTS = {
   ifgroup_dir_allow_stor_bug3881_sftp => {
     order => ++$order,
     test_class => [qw(bug forking mod_sftp rootprivs)],
+  },
+
+  ifclass_global_no_logging => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  ifuser_no_pass_bug4199 => {
+    order => ++$order,
+    test_class => [qw(bug mod_tls forking)],
   },
 
 };
@@ -1766,6 +1777,373 @@ EOC
 
       $sftp = undef;
       $ssh2->disconnect();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+# Regression test for issues described in:
+#   https://forums.proftpd.org/smf/index.php/topic,11572.0.html
+sub ifclass_global_no_logging {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/ifsess.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/ifsess.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ifsess.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/ifsess.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/ifsess.group");
+
+  my $ext_log = File::Spec->rel2abs("$tmpdir/ext.log");
+  my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd'; 
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'directory:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+    
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Append the mod_ifsession config to the end of the config file
+  if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = $home_dir;
+    if ($^O eq 'darwin') {
+      $limit_dir = ('/private' . $home_dir);
+    }
+
+    print $fh <<EOC;
+
+ExtendedLog $ext_log ALL default
+TransferLog $xfer_log
+
+<Class local>
+  From 127.0.0.1
+</Class>
+
+<Global>
+  <IfClass local>
+    ExtendedLog $ext_log NONE
+    TransferLog none
+  </IfClass>
+</Global>
+EOC
+    unless (close($fh)) {
+      die("Can't write $config_file: $!");
+    }
+
+  } else {
+    die("Can't open $config_file: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->mkd('foo');
+      $client->retr($config_file);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $ext_log")) {
+      my $ok = 1;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+        $ok = 0;
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "+ ExtendedLog: $line\n";
+        }
+      }
+      close($fh);
+
+      $self->assert($ok, test_msg("Saw ExtendedLog messages unexpectedly"));
+
+    } else {
+      die("Can't read $ext_log: $!");
+    }
+
+    if (open(my $fh, "< $xfer_log")) {
+      close($fh);
+      $self->assert(0, test_msg("Saw TransferLog unexpectedly"));
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub ifuser_no_pass_bug4199 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/ifsess.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/ifsess.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/ifsess.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/ifsess.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/ifsess.group");
+
+  my $test_file = File::Spec->rel2abs($config_file);
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd'; 
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $server_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $client_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/client-cert.pem');
+  my $ca_cert = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $tlslogin_file = File::Spec->rel2abs("$tmpdir/.tlslogin");
+  unless (copy($client_cert, $tlslogin_file)) {
+    die("Can't copy $client_cert to $tlslogin_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'directory:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $log_file,
+        TLSProtocol => 'SSLv3 TLSv1',
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $server_cert,
+        TLSCACertificateFile => $ca_cert,
+
+        TLSOptions => 'AllowDotLogin',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Append the mod_ifsession config to the end of the config file
+  if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = $home_dir;
+    if ($^O eq 'darwin') {
+      # MacOSX hack
+      $limit_dir = ('/private' . $home_dir);
+    }
+
+    print $fh <<EOC;
+<Directory />
+  <Limit ALL>
+    DenyAll
+  </Limit>
+</Directory>
+
+<IfUser $user>
+  <Directory $limit_dir>
+    <Limit MKD>
+      AllowAll
+    </Limit>
+  </Directory>
+</IfUser>
+EOC
+    unless (close($fh)) {
+      die("Can't write $config_file: $!");
+    }
+
+  } else {
+    die("Can't open $config_file: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      # IO::Socket::SSL options
+      my $ssl_opts = {
+        SSL_use_cert => 1,
+        SSL_cert_file => $client_cert,
+        SSL_key_file => $client_cert,
+      };
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Croak => 1,
+        Encryption => 'E',
+        Port => $port,
+        SSL_Client_Certificate => $ssl_opts,
+      );
+
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      unless ($client->_user($user)) {
+        die("USER error: " . $client->last_message());
+      }
+
+      my $expected = "232 User $user logged in";
+      my $resp = $client->last_message();
+      $self->assert($expected eq $resp,
+        test_msg("Expected response '$expected', got '$resp'"));
+
+      unless ($client->mkdir('foo')) {
+        die("MKD error: " . $client->last_message());
+      }
+
+      $client->quit();
     };
 
     if ($@) {

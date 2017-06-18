@@ -1,15 +1,13 @@
-<!-- $Id: Radius.html,v 1.1 2014-01-27 01:28:21 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Radius.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD and RADIUS</title>
+<title>ProFTPD: RADIUS</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD and RADIUS</b></h2></center>
+<center><h2><b>ProFTPD: RADIUS</b></h2></center>
 <hr>
 Some sites use the <a href="http://en.wikipedia.org/wiki/RADIUS">RADIUS</a>
 protocol for authenticating users.  For these sites, there is the
@@ -56,6 +54,8 @@ packet to the RADIUS server, which will include the following attributes:
   NAS-Port <em>server-port</em>
   NAS-Port-Type 5 (<i>i.e.</i> Virtual)
   Calling-Station-Id <em>client-ip-address</em>
+  Acct-Session-Id <em>session-pid</em>
+  Message-Authenticator <em>mac</em>
 </pre>
 If the RADIUS server responds with an <code>Access-Accept</code> packet, then
 the login succeeds, and the FTP session is establish.  If, on the other hand,
@@ -91,6 +91,7 @@ which includes:
   <b>Acct-Status-Type 1</b> (<i>i.e.</i> Start)
   Acct-Session-Id <em>session-pid</em>
   Acct-Authentic 1 (<i>i.e.</i> Local)
+  Event-Timestamp <em>timestamp</em>
 </pre>
 Then, when the client disconnects, <code>mod_radius</code> sends another
 <code>Accounting-Request</code> packet, this time with a lot of information
@@ -103,6 +104,9 @@ about the just-ended session:
   Acct-Session-Time <em>session-duration</em>
   Acct-Input-Octets <em>bytes-in</em>
   Acct-Output-Octets <em>bytes-out</em>
+  Acct-Terminate-Cause <em>cause</em>
+  Event-Timestamp <em>timestamp</em>
+  Class <em>class</em> (if provided in <code>Access-Accept</code>)
 </pre>
 
 <p>
@@ -150,6 +154,8 @@ different <code>Service-Type</code> attribute.  Now the packet will look like:
   NAS-Port <em>server-port</em>
   NAS-Port-Type 5 (<i>i.e.</i> Virtual)
   Calling-Station-Id <em>client-ip-address</em>
+  Acct-Session-Id <em>session-pid</em>
+  Message-Authenticator <em>mac</em>
 </pre>
 
 <p>
@@ -170,7 +176,7 @@ With this background, we can explain the <code>RadiusUserInfo</code> and
 <code>mod_radius</code> the vendor ID to look for, using the
 <a href="../contrib/mod_radius.html#RadiusVendor"><code>RadiusVendor</code></a>
 directive:
-</pre>
+<pre>
   RadiusVendor Unix 4
 </pre>
 The above is actually not necessary; <code>mod_radius</code> will look for
@@ -273,7 +279,7 @@ directives:
 </pre>
 which match up with our <code>RadiusUserInfo</code> parameters:
 <pre>
-  RadiusUserInfo $(<b><i>10</i></b>:1000) $(<b></i>11</i></b>:1000) $(<b><i>12</i></b>:/tmp) $(<b><i>13</i></b>:/bin/bash)
+  RadiusUserInfo $(<b><i>10</i></b>:1000) $(<b><i>11</i></b>:1000) $(<b><i>12</i></b>:/tmp) $(<b><i>13</i></b>:/bin/bash)
 </pre>
 
 <p>
@@ -408,7 +414,10 @@ using <code>mod_radius</code>.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2014-01-27 01:28:21 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

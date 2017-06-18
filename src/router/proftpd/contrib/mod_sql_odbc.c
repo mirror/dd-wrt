@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_sql_odbc -- Support for connecting to databases via ODBC
- *
- * Copyright (c) 2003-2013 TJ Saunders
+ * Copyright (c) 2003-2017 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,18 +19,16 @@
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
- *
- * $Id: mod_sql_odbc.c,v 1.15 2013-09-25 04:25:54 castaglia Exp $
  */
 
 #include "conf.h"
 #include "mod_sql.h"
 
-#define MOD_SQL_ODBC_VERSION    "mod_sql_odbc/0.3.3"
+#define MOD_SQL_ODBC_VERSION    "mod_sql_odbc/0.3.4"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030001
-# error "ProFTPD 1.3.0rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 #include "sql.h"
@@ -74,6 +71,8 @@ typedef struct conn_entry_struct {
 
 static pool *conn_pool = NULL;
 static array_header *conn_cache = NULL;
+static int odbc_version = SQL_OV_ODBC3;
+static const char *odbc_version_str = "ODBCv3";
 
 /* Default to using the LIMIT clause.  Some database drivers prefer
  * ROWNUM (e.g. Oracle), and others prefer TOP (e.g. TDS).
@@ -198,7 +197,7 @@ static void sqlodbc_escape_string(char *to, const char *from, size_t fromlen) {
         break;
 
       case '\'':
-        *to++ = '\\';
+        *to++ = '\'';
         *to++ = '\'';
         break;
 
@@ -832,10 +831,10 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
     }
 
     res = SQLSetEnvAttr(conn->envh, SQL_ATTR_ODBC_VERSION,
-      (SQLPOINTER) SQL_OV_ODBC3, 0);
+      (SQLPOINTER) odbc_version, 0);
     if (res != SQL_SUCCESS) {
-      sql_log(DEBUG_WARN, "error setting SQL_ATTR_ODBC_VERSION ODBC3: %s",
-        sqlodbc_strerror(res));
+      sql_log(DEBUG_WARN, "error setting SQL_ATTR_ODBC_VERSION %s: %s",
+        odbc_version_str, sqlodbc_strerror(res));
       sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
       return sqlodbc_get_error(cmd, SQL_HANDLE_ENV, conn->envh);
     }
@@ -989,6 +988,7 @@ MODRET sqlodbc_open(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "'%s' connection opened", entry->name);
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
     entry->nconn);
+  pr_event_generate("mod_sql.db.connection-opened", &sql_odbc_module);
 
   sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_open");
   return PR_HANDLED(cmd);
@@ -1059,6 +1059,7 @@ MODRET sqlodbc_close(cmd_rec *cmd) {
     }
 
     sql_log(DEBUG_INFO, "'%s' connection closed", entry->name);
+    pr_event_generate("mod_sql.db.connection-closed", &sql_odbc_module);
   }
 
   sql_log(DEBUG_INFO, "'%s' connection count is now %u", entry->name,
@@ -1075,7 +1076,9 @@ MODRET sqlodbc_def_conn(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \todbc cmd_defineconnection");
 
-  if (cmd->argc < 4 || cmd->argc > 5 || !cmd->argv[0]) {
+  if (cmd->argc < 4 ||
+      cmd->argc > 10 ||
+      !cmd->argv[0]) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_defineconnection");
     return PR_ERROR_MSG(cmd, MOD_SQL_ODBC_VERSION, "badly formed request");
   }
@@ -1095,7 +1098,7 @@ MODRET sqlodbc_def_conn(cmd_rec *cmd) {
       "named connection already exists");
   }
 
-  if (cmd->argc == 5) { 
+  if (cmd->argc >= 5) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
@@ -1568,7 +1571,6 @@ MODRET sqlodbc_query(cmd_rec *cmd) {
 
 MODRET sqlodbc_quote(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
-  db_conn_t *conn = NULL;
   modret_t *mr = NULL;
   char *unescaped = NULL;
   char *escaped = NULL;
@@ -1594,8 +1596,6 @@ MODRET sqlodbc_quote(cmd_rec *cmd) {
     sql_log(DEBUG_FUNC, "%s", "exiting \todbc cmd_escapestring");
     return mr;
   }
-
-  conn = (db_conn_t *) entry->data;
 
   unescaped = cmd->argv[1];
   escaped = (char *) pcalloc(cmd->tmp_pool, sizeof(char) * 
@@ -1646,7 +1646,7 @@ MODRET sqlodbc_checkauth(cmd_rec *cmd) {
   return PR_ERROR(cmd);
 }
 
-MODRET sqlodbc_identify(cmd_rec * cmd) {
+MODRET sqlodbc_identify(cmd_rec *cmd) {
   sql_data_t *sd = NULL;
 
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
@@ -1678,6 +1678,53 @@ static cmdtable sqlodbc_cmdtable[] = {
 
   { 0, NULL }
 };
+
+/* Configuration handlers
+ */
+
+/* usage: SQLODBCVersion version */
+MODRET set_sqlodbcversion(cmd_rec *cmd) {
+  int version = -1;
+  const char *version_str;
+  config_rec *c;
+
+  CHECK_ARGS(cmd, 1);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_GLOBAL|CONF_VIRTUAL);
+
+  if (strcasecmp(cmd->argv[1], "2") == 0 ||
+      strcasecmp(cmd->argv[1], "odbcv2") == 0) {
+#if defined(SQL_OV_ODBC2)
+    version = SQL_OV_ODBC2;
+    version_str = "ODBCv2";
+#endif /* ODBCv2 */
+
+  } else if (strcasecmp(cmd->argv[1], "3") == 0 ||
+             strcasecmp(cmd->argv[1], "odbcv3") == 0) {
+#if defined(SQL_OV_ODBC3)
+    version = SQL_OV_ODBC3;
+    version_str = "ODBCv3";
+#endif /* ODBCv3 */
+
+  } else if (strcasecmp(cmd->argv[1], "3.80") == 0 ||
+             strcasecmp(cmd->argv[1], "odbcv3.80") == 0) {
+#if defined(SQL_OV_ODBC3_80)
+    version = SQL_OV_ODBC3_80;
+    version_str = "ODBCv3.80";
+#endif /* ODBCv3.80 */
+  }
+
+  if (version < 0) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+      "unknown/supported ODBC API version: ", cmd->argv[1], NULL));
+  }
+
+  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = version;
+  c->argv[1] = pstrdup(c->pool, version_str);
+
+  return PR_HANDLED(cmd);
+}
 
 /* Event handlers
  */
@@ -1718,6 +1765,8 @@ static int sqlodbc_init(void) {
 }
 
 static int sqlodbc_sess_init(void) {
+  config_rec *c;
+
   if (conn_pool == NULL) {
     conn_pool = make_sub_pool(session.pool);
     pr_pool_tag(conn_pool, "ODBC connection pool");
@@ -1757,11 +1806,22 @@ static int sqlodbc_sess_init(void) {
 
   pr_proctitle_set("[accepting connections]");
 
+  c = find_config(main_server->conf, CONF_PARAM, "SQLODBCVersion", FALSE);
+  if (c != NULL) {
+    odbc_version = *((int *) c->argv[0]);
+    odbc_version_str = c->argv[1];
+  }
+
   return 0;
 }
 
 /* Module API tables
  */
+
+static conftable sqlodbc_conftab[] = {
+  { "SQLODBCVersion",	set_sqlodbcversion,	NULL },
+  { NULL, NULL, NULL }
+};
 
 module sql_odbc_module = {
   NULL, NULL,
@@ -1773,7 +1833,7 @@ module sql_odbc_module = {
   "sql_odbc",
 
   /* Module configuration directive table */
-  NULL,
+  sqlodbc_conftab,
 
   /* Module command handler table */
   NULL,

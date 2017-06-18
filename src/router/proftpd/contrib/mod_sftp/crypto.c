@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp OpenSSL interface
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: crypto.c,v 1.33 2014-01-28 17:26:17 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -97,11 +95,19 @@ static struct sftp_cipher ciphers[] = {
   { "aes128-cbc",	"aes-128-cbc",	0,	EVP_aes_128_cbc, TRUE, TRUE },
 #endif
 
+#if !defined(OPENSSL_NO_BF)
   { "blowfish-ctr",	NULL,		0,	NULL,	TRUE, FALSE },
   { "blowfish-cbc",	"bf-cbc",	0,	EVP_bf_cbc, TRUE, FALSE },
+#endif /* !OPENSSL_NO_BF */
+
+#if !defined(OPENSSL_NO_CAST)
   { "cast128-cbc",	"cast5-cbc",	0,	EVP_cast5_cbc, TRUE, FALSE },
+#endif /* !OPENSSL_NO_CAST */
+
+#if !defined(OPENSSL_NO_RC4)
   { "arcfour256",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
   { "arcfour128",	"rc4",		1536,	EVP_rc4, TRUE, FALSE },
+#endif /* !OPENSSL_NO_RC4 */
 
 #if 0
   /* This cipher is explicitly NOT supported because it does not discard
@@ -114,8 +120,11 @@ static struct sftp_cipher ciphers[] = {
   { "arcfour",		"rc4",		0,	EVP_rc4, FALSE, FALSE },
 #endif
 
+#if !defined(OPENSSL_NO_DES)
   { "3des-ctr",		NULL,		0,	NULL, TRUE, TRUE },
   { "3des-cbc",		"des-ede3-cbc",	0,	EVP_des_ede3_cbc, TRUE, TRUE },
+#endif /* !OPENSSL_NO_DES */
+
   { "none",		"null",		0,	EVP_enc_null, FALSE, TRUE },
   { NULL, NULL, 0, NULL, FALSE, FALSE }
 };
@@ -157,9 +166,12 @@ static struct sftp_digest digests[] = {
   { "hmac-sha1-96",	"sha1",		EVP_sha1,	12,	TRUE, TRUE },
   { "hmac-md5",		"md5",		EVP_md5,	0,	TRUE, FALSE },
   { "hmac-md5-96",	"md5",		EVP_md5,	12,	TRUE, FALSE },
+#if !defined(OPENSSL_NO_RIPEMD)
   { "hmac-ripemd160",	"rmd160",	EVP_ripemd160,	0,	TRUE, FALSE },
+#endif /* !OPENSSL_NO_RIPEMD */
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
   { "umac-64@openssh.com", NULL,	NULL,		8,	TRUE, FALSE },
+  { "umac-128@openssh.com", NULL,	NULL,		16,	TRUE, FALSE },
 #endif /* OpenSSL-0.9.7 or later */
   { "none",		"null",		EVP_md_null,	0,	FALSE, TRUE },
   { NULL, NULL, NULL, 0, FALSE, FALSE }
@@ -168,7 +180,11 @@ static struct sftp_digest digests[] = {
 static const char *trace_channel = "ssh2";
 
 static void ctr_incr(unsigned char *ctr, size_t len) {
-  register unsigned int i;
+  register int i;
+
+  if (len == 0) {
+    return;
+  }
 
   for (i = len - 1; i >= 0; i--) {
     /* If we haven't overflowed, we're done. */
@@ -178,6 +194,7 @@ static void ctr_incr(unsigned char *ctr, size_t len) {
   }
 }
 
+#if !defined(OPENSSL_NO_BF)
 /* Blowfish CTR mode implementation */
 
 struct bf_ctr_ex {
@@ -298,6 +315,21 @@ static int do_bf_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
 }
 
 static const EVP_CIPHER *get_bf_ctr_cipher(void) {
+  EVP_CIPHER *cipher;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  /* XXX TODO: At some point, we also need to call EVP_CIPHER_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  cipher = EVP_CIPHER_meth_new(NID_bf_cbc, BF_BLOCK, 32);
+  EVP_CIPHER_meth_set_iv_length(cipher, BF_BLOCK);
+  EVP_CIPHER_meth_set_init(cipher, init_bf_ctr);
+  EVP_CIPHER_meth_set_cleanup(cipher, cleanup_bf_ctr);
+  EVP_CIPHER_meth_set_do_cipher(cipher, do_bf_ctr);
+  EVP_CIPHER_meth_set_flags(cipher, EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV);
+
+#else
   static EVP_CIPHER bf_ctr_cipher;
 
   memset(&bf_ctr_cipher, 0, sizeof(EVP_CIPHER));
@@ -312,11 +344,16 @@ static const EVP_CIPHER *get_bf_ctr_cipher(void) {
 
   bf_ctr_cipher.flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
 
-  return &bf_ctr_cipher;
+  cipher = &bf_ctr_cipher;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return cipher;
 }
+#endif /* !OPENSSL_NO_BF */
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
 
+# if !defined(OPENSSL_NO_DES)
 /* 3DES CTR mode implementation */
 
 struct des3_ctr_ex {
@@ -447,6 +484,29 @@ static int do_des3_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
 }
 
 static const EVP_CIPHER *get_des3_ctr_cipher(void) {
+  EVP_CIPHER *cipher;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  unsigned long flags;
+
+  /* XXX TODO: At some point, we also need to call EVP_CIPHER_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  cipher = EVP_CIPHER_meth_new(NID_des_ede3_ecb, 8, 24);
+  EVP_CIPHER_meth_set_iv_length(cipher, 8);
+  EVP_CIPHER_meth_set_init(cipher, init_des3_ctr);
+  EVP_CIPHER_meth_set_cleanup(cipher, cleanup_des3_ctr);
+  EVP_CIPHER_meth_set_do_cipher(cipher, do_des3_ctr);
+
+  flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
+#ifdef OPENSSL_FIPS
+  flags |= EVP_CIPH_FLAG_FIPS;
+#endif /* OPENSSL_FIPS */
+
+  EVP_CIPHER_meth_set_flags(cipher, flags);
+
+#else
   static EVP_CIPHER des3_ctr_cipher;
 
   memset(&des3_ctr_cipher, 0, sizeof(EVP_CIPHER));
@@ -464,8 +524,12 @@ static const EVP_CIPHER *get_des3_ctr_cipher(void) {
   des3_ctr_cipher.flags |= EVP_CIPH_FLAG_FIPS;
 #endif /* OPENSSL_FIPS */
 
-  return &des3_ctr_cipher;
+  cipher = &des3_ctr_cipher;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return cipher;
 }
+# endif /* !OPENSSL_NO_DES */
 
 /* AES CTR mode implementation */
 struct aes_ctr_ex {
@@ -530,7 +594,8 @@ static int cleanup_aes_ctr(EVP_CIPHER_CTX *ctx) {
 static int do_aes_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
     const unsigned char *src, size_t len) {
   struct aes_ctr_ex *ace;
-# if OPENSSL_VERSION_NUMBER <= 0x0090704fL
+# if OPENSSL_VERSION_NUMBER <= 0x0090704fL || \
+     OPENSSL_VERSION_NUMBER >= 0x10100000L
   unsigned int n;
   unsigned char buf[AES_BLOCK_SIZE];
 # endif
@@ -542,7 +607,8 @@ static int do_aes_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
   if (ace == NULL)
     return 0;
 
-# if OPENSSL_VERSION_NUMBER <= 0x0090704fL
+# if OPENSSL_VERSION_NUMBER <= 0x0090704fL || \
+     OPENSSL_VERSION_NUMBER >= 0x10100000L
   /* In OpenSSL-0.9.7d and earlier, the AES CTR code did not properly handle
    * the IV as big-endian; this would cause the dreaded "Incorrect MAC
    * received on packet" error when using clients e.g. PuTTy.  To see
@@ -552,6 +618,8 @@ static int do_aes_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
    *    openssl-0.9.7e/crypto/aes/aes_ctr.c
    *
    * This change is not documented in OpenSSL's CHANGES file.  Sigh.
+   *
+   * And in OpenSSL-1.1.0 and later, the AES CTR code was removed entirely.
    *
    * Thus for these versions, we have to use our own AES CTR code.
    */
@@ -580,29 +648,29 @@ static int do_aes_ctr(EVP_CIPHER_CTX *ctx, unsigned char *dst,
   return 1;
 }
 
-static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
-  static EVP_CIPHER aes_ctr_cipher;
-
-  memset(&aes_ctr_cipher, 0, sizeof(EVP_CIPHER));
+static int get_aes_ctr_cipher_nid(int key_len) {
+  int nid;
 
 #ifdef OPENSSL_FIPS
   /* Set the NID depending on the key len. */
   switch (key_len) {
     case 16:
-      aes_ctr_cipher.nid = NID_aes_128_cbc;
+      nid = NID_aes_128_cbc;
       break;
 
     case 24:
-      aes_ctr_cipher.nid = NID_aes_192_cbc;
+      nid = NID_aes_192_cbc;
       break;
 
     case 32:
-      aes_ctr_cipher.nid = NID_aes_256_cbc;
+      nid = NID_aes_256_cbc;
       break;
 
     default:
-      aes_ctr_cipher.nid = NID_undef;
+      nid = NID_undef;
+      break;
   }
+
 #else
   /* Setting this nid member to something other than NID_undef causes
    * interesting problems on an OpenSolaris system, using the provided
@@ -630,9 +698,42 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
    *  debug1: Calling cleanup 0x807cc14(0x0)
    *  Couldn't read packet: Error 0
    */
-  aes_ctr_cipher.nid = NID_undef;
+  nid = NID_undef;
 #endif /* OPENSSL_FIPS */
 
+  return nid;
+}
+
+static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
+  EVP_CIPHER *cipher;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  unsigned long flags;
+
+  /* XXX TODO: At some point, we also need to call EVP_CIPHER_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  cipher = EVP_CIPHER_meth_new(get_aes_ctr_cipher_nid(key_len), AES_BLOCK_SIZE,
+    key_len);
+  EVP_CIPHER_meth_set_iv_length(cipher, AES_BLOCK_SIZE);
+  EVP_CIPHER_meth_set_init(cipher, init_aes_ctr);
+  EVP_CIPHER_meth_set_cleanup(cipher, cleanup_aes_ctr);
+  EVP_CIPHER_meth_set_do_cipher(cipher, do_aes_ctr);
+
+  flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
+#ifdef OPENSSL_FIPS
+  flags |= EVP_CIPH_FLAG_FIPS;
+#endif /* OPENSSL_FIPS */
+
+  EVP_CIPHER_meth_set_flags(cipher, flags);
+
+#else
+  static EVP_CIPHER aes_ctr_cipher;
+
+  memset(&aes_ctr_cipher, 0, sizeof(EVP_CIPHER));
+
+  aes_ctr_cipher.nid = get_aes_ctr_cipher_nid(key_len);
   aes_ctr_cipher.block_size = AES_BLOCK_SIZE;
   aes_ctr_cipher.iv_len = AES_BLOCK_SIZE;
   aes_ctr_cipher.key_len = key_len;
@@ -641,65 +742,214 @@ static const EVP_CIPHER *get_aes_ctr_cipher(int key_len) {
   aes_ctr_cipher.do_cipher = do_aes_ctr;
 
   aes_ctr_cipher.flags = EVP_CIPH_CBC_MODE|EVP_CIPH_VARIABLE_LENGTH|EVP_CIPH_ALWAYS_CALL_INIT|EVP_CIPH_CUSTOM_IV;
-#ifdef OPENSSL_FIPS
+# ifdef OPENSSL_FIPS
   aes_ctr_cipher.flags |= EVP_CIPH_FLAG_FIPS;
-#endif /* OPENSSL_FIPS */
+# endif /* OPENSSL_FIPS */
 
-  return &aes_ctr_cipher;
+  cipher = &aes_ctr_cipher;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return cipher;
 }
 
-static int update_umac(EVP_MD_CTX *ctx, const void *data, size_t len) {
+static int update_umac64(EVP_MD_CTX *ctx, const void *data, size_t len) {
   int res;
+  void *md_data;
 
-  if (ctx->md_data == NULL) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+  if (md_data == NULL) {
     struct umac_ctx *umac;
+    void **ptr;
 
     umac = umac_new((unsigned char *) data);
     if (umac == NULL) {
       return 0;
     }
 
-    ctx->md_data = umac;
+    ptr = &md_data;
+    *ptr = umac;
     return 1;
   }
 
-  res = umac_update(ctx->md_data, (unsigned char *) data, (long) len);
+  res = umac_update(md_data, (unsigned char *) data, (long) len);
   return res;
 }
 
-static int final_umac(EVP_MD_CTX *ctx, unsigned char *md) {
+static int update_umac128(EVP_MD_CTX *ctx, const void *data, size_t len) {
+  int res;
+  void *md_data;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  if (md_data == NULL) {
+    struct umac_ctx *umac;
+    void **ptr;
+
+    umac = umac128_new((unsigned char *) data);
+    if (umac == NULL) {
+      return 0;
+    }
+
+    ptr = &md_data;
+    *ptr = umac;
+    return 1;
+  }
+
+  res = umac128_update(md_data, (unsigned char *) data, (long) len);
+  return res;
+}
+
+static int final_umac64(EVP_MD_CTX *ctx, unsigned char *md) {
   unsigned char nonce[8];
   int res;
+  void *md_data;
 
-  res = umac_final(ctx->md_data, md, nonce);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  res = umac_final(md_data, md, nonce);
   return res;
 }
 
-static int delete_umac(EVP_MD_CTX *ctx) {
-  struct umac_ctx *umac;
+static int final_umac128(EVP_MD_CTX *ctx, unsigned char *md) {
+  unsigned char nonce[8];
+  int res;
+  void *md_data;
 
-  umac = ctx->md_data;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  res = umac128_final(md_data, md, nonce);
+  return res;
+}
+
+static int delete_umac64(EVP_MD_CTX *ctx) {
+  struct umac_ctx *umac;
+  void *md_data, **ptr;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  umac = md_data;
   umac_delete(umac);
-  ctx->md_data = NULL;
+
+  ptr = &md_data;
+  *ptr = NULL;
 
   return 1;
 }
 
-static const EVP_MD *get_umac_digest(void) {
-  static EVP_MD umac_digest;
+static int delete_umac128(EVP_MD_CTX *ctx) {
+  struct umac_ctx *umac;
+  void *md_data, **ptr;
 
-  memset(&umac_digest, 0, sizeof(EVP_MD));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  md_data = EVP_MD_CTX_md_data(ctx);
+#else
+  md_data = ctx->md_data;
+#endif /* prior to OpenSSL-1.1.0 */
 
-  umac_digest.type = NID_undef;
-  umac_digest.pkey_type = NID_undef;
-  umac_digest.md_size = 8;
-  umac_digest.flags = 0UL;
-  umac_digest.update = update_umac;
-  umac_digest.final = final_umac;
-  umac_digest.cleanup = delete_umac;
-  umac_digest.block_size = 32;
+  umac = md_data;
+  umac128_delete(umac);
 
-  return &umac_digest;
+  ptr = &md_data;
+  *ptr = NULL;
+
+  return 1;
+}
+
+static const EVP_MD *get_umac64_digest(void) {
+  EVP_MD *md;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  /* XXX TODO: At some point, we also need to call EVP_MD_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  md = EVP_MD_meth_new(NID_undef, NID_undef);
+  EVP_MD_meth_set_input_blocksize(md, 32);
+  EVP_MD_meth_set_result_size(md, 8);
+  EVP_MD_meth_set_flags(md, 0UL);
+  EVP_MD_meth_set_update(md, update_umac64);
+  EVP_MD_meth_set_final(md, final_umac64);
+  EVP_MD_meth_set_cleanup(md, delete_umac64);
+#else
+  static EVP_MD umac64_digest;
+
+  memset(&umac64_digest, 0, sizeof(EVP_MD));
+
+  umac64_digest.type = NID_undef;
+  umac64_digest.pkey_type = NID_undef;
+  umac64_digest.md_size = 8;
+  umac64_digest.flags = 0UL;
+  umac64_digest.update = update_umac64;
+  umac64_digest.final = final_umac64;
+  umac64_digest.cleanup = delete_umac64;
+  umac64_digest.block_size = 32;
+
+  md = &umac64_digest;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return md;
+}
+
+static const EVP_MD *get_umac128_digest(void) {
+  EVP_MD *md;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  /* XXX TODO: At some point, we also need to call EVP_MD_meth_free() on
+   * this, to avoid a resource leak.
+   */
+  md = EVP_MD_meth_new(NID_undef, NID_undef);
+  EVP_MD_meth_set_input_blocksize(md, 64);
+  EVP_MD_meth_set_result_size(md, 16);
+  EVP_MD_meth_set_flags(md, 0UL);
+  EVP_MD_meth_set_update(md, update_umac128);
+  EVP_MD_meth_set_final(md, final_umac128);
+  EVP_MD_meth_set_cleanup(md, delete_umac128);
+
+#else
+  static EVP_MD umac128_digest;
+
+  memset(&umac128_digest, 0, sizeof(EVP_MD));
+
+  umac128_digest.type = NID_undef;
+  umac128_digest.pkey_type = NID_undef;
+  umac128_digest.md_size = 16;
+  umac128_digest.flags = 0UL;
+  umac128_digest.update = update_umac128;
+  umac128_digest.final = final_umac128;
+  umac128_digest.cleanup = delete_umac128;
+  umac128_digest.block_size = 64;
+
+  md = &umac128_digest;
+#endif /* prior to OpenSSL-1.1.0 */
+
+  return md;
 }
 #endif /* OpenSSL older than 0.9.7 */
 
@@ -712,11 +962,25 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
       const EVP_CIPHER *cipher;
 
       if (strncmp(name, "blowfish-ctr", 13) == 0) {
+#if !defined(OPENSSL_NO_BF)
         cipher = get_bf_ctr_cipher();
+#else
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "'%s' cipher unsupported", name);
+        errno = ENOENT;
+        return NULL;
+#endif /* !OPENSSL_NO_BF */
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
       } else if (strncmp(name, "3des-ctr", 9) == 0) {
+# if !defined(OPENSSL_NO_DES)
         cipher = get_des3_ctr_cipher();
+# else
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "'%s' cipher unsupported", name);
+        errno = ENOENT;
+        return NULL;
+# endif /* !OPENSSL_NO_DES */
 
       } else if (strncmp(name, "aes256-ctr", 11) == 0) {
         cipher = get_aes_ctr_cipher(32);
@@ -745,8 +1009,9 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
         }
       }
 
-      if (discard_len)
+      if (discard_len) {
         *discard_len = ciphers[i].discard_len;
+      }
 
       return cipher;
     }
@@ -754,6 +1019,7 @@ const EVP_CIPHER *sftp_crypto_get_cipher(const char *name, size_t *key_len,
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
     "no cipher matching '%s' found", name);
+  errno = ENOENT;
   return NULL;
 }
 
@@ -766,7 +1032,10 @@ const EVP_MD *sftp_crypto_get_digest(const char *name, uint32_t *mac_len) {
 
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
       if (strncmp(name, "umac-64@openssh.com", 12) == 0) {
-        digest = get_umac_digest();
+        digest = get_umac64_digest();
+
+      } else if (strncmp(name, "umac-128@openssh.com", 13) == 0) {
+        digest = get_umac128_digest();
 #else
       if (FALSE) {
 #endif /* OpenSSL older than 0.9.7 */
@@ -923,7 +1192,7 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
    */
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPDigests", FALSE);
-  if (c) {
+  if (c != NULL) {
     register unsigned int i;
 
     for (i = 0; i < c->argc; i++) {
@@ -952,8 +1221,9 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
                 pstrdup(p, digests[j].name), NULL);
 
             } else {
-              /* The umac-64 digest is a special case. */
-              if (strncmp(digests[j].name, "umac-64@openssh.com", 12) == 0) {
+              /* The umac-64/umac-128 digests are special cases. */
+              if (strncmp(digests[j].name, "umac-64@openssh.com", 12) == 0 ||
+                  strncmp(digests[j].name, "umac-128@openssh.com", 13) == 0) {
                 res = pstrcat(p, res, *res ? "," : "",
                   pstrdup(p, digests[j].name), NULL);
 
@@ -998,8 +1268,9 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
               pstrdup(p, digests[i].name), NULL);
 
           } else {
-            /* The umac-64 digest is a special case. */
-            if (strncmp(digests[i].name, "umac-64@openssh.com", 12) == 0) {
+            /* The umac-64/umac-128 digests are special cases. */
+            if (strncmp(digests[i].name, "umac-64@openssh.com", 12) == 0 ||
+                strncmp(digests[i].name, "umac-128@openssh.com", 13) == 0) {
               res = pstrcat(p, res, *res ? "," : "",
                 pstrdup(p, digests[i].name), NULL);
 
@@ -1027,33 +1298,46 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *p) {
 
 const char *sftp_crypto_get_errors(void) {
   unsigned int count = 0;
-  unsigned long e = ERR_get_error();
+  unsigned long error_code;
   BIO *bio = NULL;
   char *data = NULL;
   long datalen;
-  const char *str = "(unknown)";
+  const char *error_data = NULL, *str = "(unknown)";
+  int error_flags = 0;
 
   /* Use ERR_print_errors() and a memory BIO to build up a string with
    * all of the error messages from the error queue.
    */
 
-  if (e)
+  error_code = ERR_get_error_line_data(NULL, NULL, &error_data, &error_flags);
+  if (error_code) {
     bio = BIO_new(BIO_s_mem());
+  }
 
-  while (e) {
-    pr_signals_handle();
-    BIO_printf(bio, "\n  (%u) %s", ++count, ERR_error_string(e, NULL));
-    e = ERR_get_error();
+  while (error_code) {
+    if (error_flags & ERR_TXT_STRING) {
+      BIO_printf(bio, "\n  (%u) %s [%s]", ++count,
+        ERR_error_string(error_code, NULL), error_data);
+
+    } else {
+      BIO_printf(bio, "\n  (%u) %s", ++count,
+        ERR_error_string(error_code, NULL));
+    }
+
+    error_data = NULL;
+    error_flags = 0;
+    error_code = ERR_get_error_line_data(NULL, NULL, &error_data, &error_flags);
   }
 
   datalen = BIO_get_mem_data(bio, &data);
-  if (data) {
+  if (data != NULL) {
     data[datalen] = '\0';
     str = pstrdup(sftp_pool, data);
   }
 
-  if (bio)
+  if (bio) {
     BIO_free(bio);
+  }
 
   return str;
 }
@@ -1076,10 +1360,13 @@ void sftp_crypto_free(int flags) {
    * and other modules want to use OpenSSL, we may be depriving those modules
    * of OpenSSL functionality.
    *
-   * At the moment, the modules known to use OpenSSL are mod_ldap,
+   * At the moment, the modules known to use OpenSSL are mod_ldap, mod_radius,
    * mod_sftp, mod_sql, and mod_sql_passwd, and mod_tls.
    */
-  if (pr_module_get("mod_ldap.c") == NULL &&
+  if (pr_module_get("mod_auth_otp.c") == NULL &&
+      pr_module_get("mod_digest.c") == NULL &&
+      pr_module_get("mod_ldap.c") == NULL &&
+      pr_module_get("mod_radius.c") == NULL &&
       pr_module_get("mod_sql.c") == NULL &&
       pr_module_get("mod_sql_passwd.c") == NULL &&
       pr_module_get("mod_tls.c") == NULL) {

@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_load -- a module for refusing connections based on system load
- *
- * Copyright (c) 2001-2013 TJ Saunders
+ * Copyright (c) 2001-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,8 +29,6 @@
  *
  *   Copyright (C) 1985, 86, 87, 88, 89, 91, 92, 93, 1994, 1995, 1997
  *     Free Software Foundation, Inc.
- * 
- * $Id: mod_load.c,v 1.8 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"

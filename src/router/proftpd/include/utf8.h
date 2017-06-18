@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006 The ProFTPD Project team
+ * Copyright (c) 2006-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* UTF8 encoding/decoding
- * $Id: utf8.h,v 1.1 2006-05-25 16:55:34 castaglia Exp $
- */
+/* UTF8 encoding/decoding */
 
 #ifndef PR_UTF8_H
 #define PR_UTF8_H

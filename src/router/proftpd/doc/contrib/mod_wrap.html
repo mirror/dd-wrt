@@ -1,6 +1,4 @@
-<!-- $Id: mod_wrap.html,v 1.4 2009-12-23 23:46:35 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_wrap.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_wrap</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>contrib/mod_wrap.c</code> file for
 ProFTPD 1.2.x, and is not compiled by default.  It enables the daemon to
 use the common tcpwrappers access control library while in
@@ -37,10 +36,8 @@ and use of this module will allow a ProFTPD daemon running in
 is attempted, it will add hosts to the <code>/etc/hosts.deny</code> file.
 
 <p>
-The most current version of <code>mod_wrap</code> can be found at:
-<pre>
-  <a href="http://www.castaglia.org/proftpd/">http://www.castaglia.org/proftpd/</a>
-</pre>
+The most current version of <code>mod_wrap</code> is distributed with the
+ProFTPD source code.
 
 <h2>Author</h2>
 <p>
@@ -82,7 +79,7 @@ for pointing out the issue with passwords not being properly hidden
 </ul>
 
 <hr>
-<h2><a name="TCPAccessFiles">TCPAccessFiles</a></h2>
+<h3><a name="TCPAccessFiles">TCPAccessFiles</a></h3>
 <strong>Syntax:</strong> TCPAccessFiles <em>allow-filename deny-filename</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
@@ -139,7 +136,7 @@ See also:
 
 <p>
 <hr>
-<h2><a name="TCPAccessSyslogLevels">TCPAccessSyslogLevels</a></h2>
+<h3><a name="TCPAccessSyslogLevels">TCPAccessSyslogLevels</a></h3>
 <strong>Syntax:</strong> TCPAccessSyslogLevels <em>allow-level deny-level</em><br>
 <strong>Default:</strong> <code>TCPAccessSyslogLevels info warn</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
@@ -165,7 +162,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="#TCPGroupAccessFiles">TCPGroupAccessFiles</a></h2>
+<h3><a name="#TCPGroupAccessFiles">TCPGroupAccessFiles</a></h3>
 <strong>Syntax:</strong> TCPGroupAccessFiles <em>group-expression allow-filename deny-filename</em><br>
 <strong>Default:</strong> <em>None</em><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -199,7 +196,7 @@ See Also: <a href="#TCPAccessFiles">TCPAccessFiles</a>
 
 <p>
 <hr>
-<h2><a name="TCPServiceName">TCPServiceName</a></h2>
+<h3><a name="TCPServiceName">TCPServiceName</a></h3>
 <strong>Syntax:</strong> TCPServiceName <em>name</em><br>
 <strong>Default:</strong> <code>TCPServiceName proftpd</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -215,10 +212,10 @@ such as &quot;ftpd&quot;; use this directive for such needs.
 
 <p>
 <hr>
-<h2><a name="TCPUserAccessFiles">TCPUserAccessFiles</a></h2>
+<h3><a name="TCPUserAccessFiles">TCPUserAccessFiles</a></h3>
 <strong>Syntax:</strong> TCPUserAccessFiles <em>user-expression allow-filename deny-filename</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> server config, virtual host<BR>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_wrap<br>
 <strong>Compatibility:</strong> 1.2.1 and later
 
@@ -311,27 +308,20 @@ In FreeBSD and Mac OSX, these functions are implemented in <code>libc</code>.
 
 <p>
 Then, you need simply follow the normal steps for using third-party modules in
-proftpd:
+ProFTPD:
 <pre>
-  ./configure --with-modules=mod_wrap
-  make
-  make install
+  $ ./configure --with-modules=mod_wrap
+  $ make
+  $ make install
 </pre>
 
 <p>
 <hr>
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2009-12-23 23:46:35 $</i><br>
-
-<br><hr>
-
 <font size=2><b><i>
 &copy; Copyright 2000-2009 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

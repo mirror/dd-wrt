@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Generic set manipulation
- * $Id: sets.c,v 1.16 2011-05-23 21:22:24 castaglia Exp $
- */
+/* Generic set manipulation */
 
 #include "conf.h"
 

@@ -11,10 +11,10 @@ SHARED_LDFLAGS=-avoid-version -export-dynamic -module
 VPATH=@srcdir@
 
 MODULE_NAME=mod_snmp
-MODULE_OBJS=mod_snmp.o stacktrace.o asn1.o smi.o pdu.o msg.o db.o mib.o \
-  packet.o uptime.o notify.o
-SHARED_MODULE_OBJS=mod_snmp.lo stacktrace.lo asn1.lo smi.lo pdu.lo msg.lo \
-  db.lo mib.lo packet.lo uptime.lo notify.lo
+MODULE_OBJS=mod_snmp.o asn1.o smi.o pdu.o msg.o db.o mib.o packet.o \
+  uptime.o notify.o
+SHARED_MODULE_OBJS=mod_snmp.lo asn1.lo smi.lo pdu.lo msg.lo db.lo mib.lo \
+  packet.lo uptime.lo notify.lo
 
 # Necessary redefinitions
 INCLUDES=-I. -I../.. -I../../include @INCLUDES@
@@ -46,5 +46,5 @@ clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 
 dist: clean
-	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log
+	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log *.gcda *.gcno
 	-$(RM) -r .git/ CVS/ RCS/

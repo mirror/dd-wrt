@@ -54,6 +54,9 @@ if (scalar(@ARGV) > 0) {
 
 } else {
   $test_files = [qw(
+    t/http.t
+    t/smtp.t
+    t/ssh2.t
     t/logins.t
     t/commands/user.t
     t/commands/pass.t
@@ -95,6 +98,7 @@ if (scalar(@ARGV) > 0) {
     t/commands/mfmt.t
     t/commands/opts.t
     t/commands/host.t
+    t/commands/clnt.t
     t/commands/site/chgrp.t
     t/commands/site/chmod.t
     t/config/accessdenymsg.t
@@ -136,6 +140,7 @@ if (scalar(@ARGV) > 0) {
     t/config/ifdefine.t
     t/config/include.t
     t/config/listoptions.t
+    t/config/loginpasswordprompt.t
     t/config/masqueradeaddress.t
     t/config/maxclients.t
     t/config/maxclientsperclass.t
@@ -145,8 +150,11 @@ if (scalar(@ARGV) > 0) {
     t/config/maxconnectionsperhost.t
     t/config/maxinstances.t
     t/config/maxloginattempts.t
+    t/config/maxpasswordsize.t
     t/config/maxretrievefilesize.t
     t/config/maxstorefilesize.t
+    t/config/maxtransfersperhost.t
+    t/config/maxtransfersperuser.t
     t/config/multilinerfc2228.t
     t/config/order.t
     t/config/passiveports.t
@@ -181,6 +189,7 @@ if (scalar(@ARGV) > 0) {
     t/config/userowner.t
     t/config/userpassword.t
     t/config/usesendfile.t
+    t/config/virtualhost.t
     t/config/directory/limits.t
     t/config/directory/umask.t
     t/config/ftpaccess/dele.t
@@ -218,6 +227,16 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_auth_file)],
     },
 
+    't/modules/mod_auth_otp.t' => {
+      order => ++$order,
+      test_class => [qw(mod_auth_otp mod_sql mod_sql_sqlite)],
+    },
+
+    't/modules/mod_auth_otp/sftp.t' => {
+      order => ++$order,
+      test_class => [qw(mod_auth_otp mod_sftp mod_sql mod_sql_sqlite)],
+    },
+
     't/modules/mod_ban.t' => {
       order => ++$order,
       test_class => [qw(mod_ban)],
@@ -253,6 +272,16 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_delay)],
     },
 
+    't/modules/mod_digest.t' => {
+      order => ++$order,
+      test_class => [qw(mod_digest)],
+    },
+
+    't/modules/mod_dynmasq.t' => {
+      order => ++$order,
+      test_class => [qw(mod_dynmasq)],
+    },
+
     't/modules/mod_exec.t' => {
       order => ++$order,
       test_class => [qw(mod_exec)],
@@ -261,6 +290,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_geoip.t' => {
       order => ++$order,
       test_class => [qw(mod_geoip)],
+    },
+
+    't/modules/mod_geoip/sql.t' => {
+      order => ++$order,
+      test_class => [qw(mod_geoip mod_sql mod_sql_sqlite)],
     },
 
     't/modules/mod_ifversion.t' => {
@@ -317,6 +351,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_rewrite.t' => {
       order => ++$order,
       test_class => [qw(mod_rewrite)],
+    },
+
+    't/modules/mod_rlimit.t' => {
+      order => ++$order,
+      test_class => [qw(mod_rlimit)],
     },
 
     't/modules/mod_sftp.t' => {
@@ -409,9 +448,19 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_sql_sqlite)],
     },
 
+    't/modules/mod_statcache.t' => {
+      order => ++$order,
+      test_class => [qw(mod_statcache)],
+    },
+
     't/modules/mod_tls.t' => {
       order => ++$order,
       test_class => [qw(mod_tls)],
+    },
+
+    't/modules/mod_tls_fscache.t' => {
+      order => ++$order,
+      test_class => [qw(mod_tls_fscache)],
     },
 
     't/modules/mod_tls_memcache.t' => {
@@ -437,6 +486,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_wrap2_file.t' => {
       order => ++$order,
       test_class => [qw(mod_wrap2_file)],
+    },
+
+    't/modules/mod_wrap2_redis.t' => {
+      order => ++$order,
+      test_class => [qw(mod_redis mod_wrap2_redis)],
     },
 
     't/modules/mod_wrap2_sql.t' => {

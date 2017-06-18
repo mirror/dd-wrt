@@ -1,15 +1,13 @@
-<!-- $Id: SQL.html,v 1.18 2014-01-22 17:14:30 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/SQL.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - SQL and mod_sql</title>
+<title>ProFTPD: SQL and mod_sql</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>SQL and <code>mod_sql</code></b></h2></center>
+<center><h2><b>ProFTPD: SQL and <code>mod_sql</code></b></h2></center>
 <hr>
 
 <p>
@@ -30,7 +28,7 @@ daemon to use <code>mod_sql</code>, use the <code>--with-modules</code> option
 of the <code>configure</code> script, specifying both <code>mod_sql</code> and
 the backed module, <i>e.g.</i>:
 <pre>
-  ./configure --with-modules=mod_sql:mod_sql_mysql
+  $ ./configure --with-modules=mod_sql:mod_sql_mysql
 </pre>
 Sometimes the necessary header and library files for building in SQL support
 are in non-standard locations; the <code>configure</code> script needs to be
@@ -49,7 +47,7 @@ and the path the library was:
 </pre>
 then, the above <code>configure</code> line would be changed to look like:
 <pre>
-  ./configure \
+  $ ./configure \
     --with-modules=mod_sql:mod_sql_mysql \
     --with-includes=/usr/local/mysql/include/mysql \
     --with-libraries=/usr/local/mysql/lib/mysql
@@ -66,7 +64,7 @@ encrypting passwords stored in database tables.  The <code>configure</code>
 options for building an OpenSSL-capable <code>mod_sql</code> might look
 something like this:
 <pre>
-  CFLAGS=-DHAVE_OPENSSL LIBS=-lcrypto ./configure \
+  $ CFLAGS=-DHAVE_OPENSSL LIBS=-lcrypto ./configure \
     --with-modules=mod_sql:mod_sql_mysql \
     --with-includes=/usr/local/mysql/include/mysql:/usr/local/openssl/include \
     --with-libraries=/usr/local/mysql/lib/mysql:/usr/local/openssl/lib
@@ -86,7 +84,7 @@ be provided is described below.
 
 <p>
 <b>User Information Table</b><sub>1</sub>
-<table border=1>
+<table border=1 summary="User Information Table">
   <tr>
     <td><i>Column</i></td>
     <td><i>Type</i></td>
@@ -153,7 +151,7 @@ be provided is described below.
 
 <p>
 <i>Notes</i>:
-<ol type=number>
+<ol>
   <li>The user table <b>MUST</b> exist.
 
   <p>
@@ -171,7 +169,7 @@ be provided is described below.
 
 <p>
 <b>Group Information Table</b><sub>1</sub>
-<table border=1>
+<table border=1 summary="Group Information Table">
   <tr>
     <td><i>Column</i></td>
     <td><i>Type</i></td>
@@ -207,7 +205,7 @@ be provided is described below.
 
 <p>
 <i>Notes</i>:
-<ol type=number>
+<ol>
   <li><code>mod_sql</code> will normally concatenate all matching group rows;
     you can have multiple rows for each group with only one member per group,
     or have a single row with multiple groups, or a mixing of the two.  However,
@@ -592,12 +590,12 @@ is the base64-encoded value of the digested password string.  To get a list
 of the message digest algorithms supported by your OpenSSL installation, you
 can execute the following command:
 <pre>
-  openssl list-message-digest-commands
+  $ openssl list-message-digest-commands
 </pre>
 To generate the string to put into the SQL tables, using MD5 as the digest
 algorithm and &quot;password&quot; as the password:
 <pre>
-  /bin/echo &quot;{md5}&quot;`/bin/echo -n &quot;password&quot; | openssl dgst -binary -md5 | openssl enc -base64`
+  $ /bin/echo &quot;{md5}&quot;`/bin/echo -n &quot;password&quot; | openssl dgst -binary -md5 | openssl enc -base64`
 </pre>
 The &quot;{md5}&quot; prefix is necessary, so that <code>mod_sql</code> knows
 what digest algorithm was used.
@@ -606,7 +604,7 @@ what digest algorithm was used.
 Here's a quick and dirty example of generating database-ready strings using
 every digest algorithm supported by the installed OpenSSL:
 <pre>
-  for c in `openssl list-message-digest-commands`; do
+  $ for c in `openssl list-message-digest-commands`; do
     /bin/echo "{$c}"`/bin/echo -n "password" | openssl dgst -binary -$c | openssl enc -base64`
   done
 </pre>
@@ -646,6 +644,169 @@ Or if you're using Python, you might try the following:
 If this prefixed format is not sufficient for your needs, you can also
 use the <a href="../contrib/mod_sql_passwd.html"><code>mod_sql_passwd</code></a>
 module, which knows how to handle "raw" MD5, SHA1, and other encoding schemes.
+
+<p><a name="SQLBackendSQLAuthType"></a>
+<font color=red>Question</font>: I've upgraded to MySQL 5.7, and now I am unable
+to login using my MySQL users.  The <code>SQLLogFile</code> shows something like
+this:
+<pre>
+  mod_sql/4.3[9097]: checking password using SQLAuthType 'Backend'
+  mod_sql/4.3[9097]: entering     mysql cmd_checkauth
+  mod_sql/4.3[9097]: MySQL client library used MySQL SHA256 password format, and Backend SQLAuthType cannot succeed; consider using MD5/SHA1/SHA256 SQLAuthType using mod_sql_passwd
+  mod_sql/4.3[9097]: MySQL server used MySQL 4.1 password format for PASSWORD() value
+  mod_sql/4.3[9097]: password mismatch
+</pre>
+and my <code>mod_sql</code> configuration has not changed; it uses:
+<pre>
+  SQLAuthTypes Backend
+</pre>
+Is this a bug?<br>
+<p>
+<font color=blue>Answer</font>: The short answer is that no, it is not a bug.
+But it <b>is</b> a regression caused by changes in the MySQL API, and the only
+fix is to change the password values stored in your MySQL tables.
+
+<p>
+First, the background.  The "Backend" <code>SQLAuthType</code> is <b>only</b>
+implemented by <code>mod_sql_mysql</code>, for MySQL databases; Postgres,
+SQLite, <i>et al</i> do not have an equivalent.  And in MySQL, the "Backend"
+<code>SQLAuthType</code> is there specifically for the use case where an admin
+uses MySQL's <code>PASSWORD()</code> function to generate the hashed value
+stored in the <code>users</code> table for ProFTPD users.  The way that the
+"Backend" <code>SQLAuthType</code> is implemented is that
+<code>mod_sql_mysql</code> gets the hashed value stored in the row from the
+MySQL server, and then <code>mod_sql_mysql</code> uses a function in the
+<code>libmysqlclient</code> library to try to generate the same hash (using the
+password from the client); it then compares the two hashes to see if they match.
+
+<p>
+MySQL has had <a href="http://dev.mysql.com/doc/refman/5.7/en/encryption-functions.html#function_password">issues</a> with its <code>PASSWORD()</code>
+generated format over the years.  They initially generated a 16 byte string,
+but this was deemed insecure in MySQL 4.1, and changed to a 41 byte string.
+But even that 41 byte string was found to be vulnerable to <i>e.g.</i>
+<a href="https://en.wikipedia.org/wiki/Rainbow_table">rainbow table</a> attacks,
+and thus the format was changed again to be much longer, to use SHA256,
+<b>and</b> (importantly for us) to <i>always include a randomly generated
+salt</i>.  (It is this salt which mitigates the rainbow table attack scenario.)
+This sequence of events means that a MySQL database table used by
+<code>mod_sql_mysql</code> might contain a <code>PASSWORD()</code>-generated
+hashed value that is in the pre-4.1 format (16 bytes), the 4.1 format
+(41 bytes), and/or the sha256 format.
+
+<p>
+For the pre-4.1 and 4.1 hashed value formats, the MySQL <code>PASSWORD()</code>
+function and the <code>libmysqlclient</code> library functions used by
+<code>mod_sql_mysql</code> would generate the <b>same hashed value</b> for the
+<b>same password</b>, and thus worked as expected.  <em>But</em> for sha256
+hashed value formats, <code>PASSWORD()</code> and the <code>libmysqlcient</code>
+library functions will <b><i>not</i></b> generate the same hashed value for
+the same password.  Why not?  Each time those functions are called, they
+<i>internally</i> generate and use a random salt value; there is no way to
+explicitly <i>provide</i> the salt value to the function.  This means that the
+sha256 hashed value <b><i>will</i></b> be different, each time.  If
+<code>PASSWORD()</code> is used to generate an sha256 formatted hashed value in
+the database table using password "test", <b>and</b> if the
+<code>libmysqlclient</code> library function is called to generate an sha256
+formatted hashed using password "test", those functions will generate
+<b><i>different</i></b> hashed values.  Calling those functions again will
+generate different hashes, each and every time; this means that they
+<b>cannot</b> be compared/matched.
+
+<p>
+If sha256 hashed values are different each time, how can MySQL use them to
+authenticate?  The process used for authenticating the client
+(the database client, <code>mod_sql_mysql</code>, not the FTP client connecting
+to ProFTPD) is all internal to MySQL, and is slightly different; it assumes
+that the client being authenticated is defined in the <code>mysql.users</code>
+system table, and <b>only</b> there.  That internal support does <b>not</b>
+extend to any other table which might have used the <code>PASSWORD()</code>
+function for its columns.  (This is why that <code>PASSWORD()</code> function is
+<a href="http://dev.mysql.com/doc/refman/5.7/en/encryption-functions.html#function_password">slated for deprecation</a>, as of MySQL 5.7, and later removal.)
+This means that you can use sha256 formatted hashed values for authenticating
+<i><code>mod_sql_mysql</code></i>, but <b>not</b> for authenticating the
+ProFTPD users stored in the MySQL database tables.
+
+<p>
+Why is it only recently (as of late 2016) that users are encountering this
+issue?  MySQL 5.5 (the default MySQL version for Debian/Ubuntu for a while) did
+not support the sha256 formatted hashed values, only the pre-4.1 and 4.1
+formatted hashed values.  So no issue with the "Backend"
+<code>SQLAuthType</code> there.  The introduction/use of sha256 formatted
+hashed values started in MySQL 5.6.
+
+<p>
+But ProFTPD users using MySQL 5.6 did not encounter this problem, either.  Why
+not?  Turns out that the <code>libmysqlclient</code> library in 5.6 had a
+couple of <em>different</em> functions for making hashed values (of different
+formats).  The <code>mod_sql_mysql</code> module would try all of those
+different functions, for backward compatibility.  And it worked, as one of the
+older <code>libmysqlclient</code> library functions (the
+<code>make_scrambled_password()</code> function, specifically) <em>would</em>
+generate the 4.1 formatted hash value, which would match the values stored
+for ProFTPD users in the <code>users</code> table successfully.
+
+<p>
+However, in MySQL 5.7, those older <code>libmysqlclient</code> library
+functions were <b>removed</b> (they had been deprecated for a while anyway),
+so now, the <b>only</b> <code>libmysqlclient</code> library function for
+generating hashed values is the sha256 one.  And that, as mentioned above,
+uses an internally-generated random salt each time, and its output is not
+consistent/repeatable.  And that means that starting with MySQL 5.7, the
+"Backend" <code>SQLAuthType</code> will no longer work.  As mentioned by the
+log message in the <code>SQLLogFile</code>.
+
+<p>
+The alternatives are to use <em>different</em> <code>SQLAuthTypes</code>;
+this <b>will</b> require that you change the <code>users.passwd</code> value
+for your ProFTPD users.  First, make sure that the <a href="../contrib/mod_sql_passwd.html"><code>mod_sql_passwd</code></a> module is compiled/loaded into your
+ProFTPD.  If you are building from source:
+<pre>
+  $ ./configure --enable-dso --with-shared=mod_sql:mod_sql_mysql:mod_sql_passwd ...
+  $ make
+  $ make install
+</pre>
+And in your <code>proftpd.conf</code>:
+<pre>
+  # Make sure that mod_sql_passwd is loaded, if available
+  LoadModule mod_sql_passwd.c
+
+  &lt;IfModule mod_sql.c&gt;
+    SQLBackend mysql
+
+    &lt;IfModule !mod_sql_passwd.c&gt;
+      # If mod_sql_passwd is not available, then consider using the OpenSSL
+      # SQLAuthType
+      SQLAuthTypes OpenSSL Backend
+    &lt;/IfModule&gt;
+
+    &lt;IfModule mod_sql_passwd.c&gt;
+      # If mod_sql_passwd is available, try other SQLAuthTypes, too
+      SQLPasswordEngine on
+
+      # MySQL uses lowercase hex-encoded strings for MD5() et al
+      SQLPasswordEncoding hex
+
+      SQLBackend SHA256 SHA1 MD5 Backend
+    &lt;/IfModule&gt;
+  &lt;/IfModule&gt;
+</pre>
+When populating the <code>users.passwd</code> field for your users, you can
+use MD5 passwords:
+<pre>
+  mysql&gt; UPDATE users SET passwd = MD5('password') WHERE userid = 'myuser';
+</pre>
+or SHA1 passwords:
+<pre>
+  mysql&gt; UPDATE users SET passwd = SHA1('password') WHERE userid = 'myuser';
+</pre>
+or SHA256 passwords:
+<pre>
+  mysql&gt; UPDATE users SET passwd = SHA2('password', 256) WHERE userid = 'myuser';
+</pre>
+And the <code>SQLAuthTypes</code> configuration will try <b>all</b> of those
+types.  The "Plaintext" and "Empty" <code>SQLAuthTypes</code> should <b>never
+be used</b> <em>except</em> for debugging/development; they are too insecure
+for production systems.
 
 <p><a name="SQLScoreboardError"></a>
 <font color=red>Question</font>: Why do I see &quot;error deleting scoreboard entry: Invalid argument&quot;?<br>
@@ -749,7 +910,10 @@ compiled with SSL support.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2014-01-22 17:14:30 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

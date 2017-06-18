@@ -1,15 +1,13 @@
-<!-- $Id: DNS.html,v 1.2 2009-02-12 22:41:32 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/DNS.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - DNS</title>
+<title>ProFTPD: DNS</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD and DNS</b></h2></center>
+<center><h2><b>ProFTPD: DNS</b></h2></center>
 <hr>
 
 <p>
@@ -58,8 +56,9 @@ resolve the hostname of the server on which the daemon is running, <i>i.e.</i>
 the name displayed by typing <code>`hostname`</code>.  Why does
 <code>proftpd</code> need to know this?  There is always at least one
 server that <code>proftpd</code> will handle: the &quot;server config&quot;
-server (see the <a href="http://www.castaglia.org/proftpd/doc/contrib/ProFTPD-mini-HOWTO-Vhost.html">virtual host</a> howto).  This &quot;server config&quot;
-server defaults to the IP address of the hostname of the machine.
+server (see the <a href="Vhost.html">virtual host</a> howto).  This
+&quot;server config&quot; server defaults to the IP address of the hostname of
+the machine.
 
 <p>
 Once <code>proftpd</code> has the complete list of IP addresses with which
@@ -146,12 +145,12 @@ the host machine, this approach does not work.
 To specify the desired IP address, use <code>-S</code> when starting
 <code>proftpd</code>, <i>e.g.</i>:
 <pre>
-  /usr/local/sbin/proftpd -S 1.2.3.4 ...
+  $ /usr/local/sbin/proftpd -S 1.2.3.4 ...
 </pre>
 And if you want <code>proftpd</code> to listen on all interfaces, you can
 specify a wildcard socket using an IP address of 0.0.0.0:
 <pre>
-  /usr/local/sbin/proftpd -S 0.0.0.0 ...
+  $ /usr/local/sbin/proftpd -S 0.0.0.0 ...
 </pre>
 
 <p>
@@ -161,7 +160,11 @@ not DNS names.
 
 <p>
 <hr>
-<i>$Date: 2009-02-12 22:41:32 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

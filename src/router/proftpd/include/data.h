@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,12 +24,15 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Data connection management prototypes
- * $Id: data.h,v 1.23 2013-01-30 22:37:04 castaglia Exp $
- */
+/* Data connection management prototypes */
 
-#ifndef PR_DATACONN_H
-#define PR_DATACONN_H
+#ifndef PR_DATA_H
+#define PR_DATA_H
+
+/* Toggles whether to actually perform ASCII translation during the data
+ * transfer.
+ */
+int pr_data_ignore_ascii(int);
 
 void pr_data_init(char *, int);
 void pr_data_cleanup(void);
@@ -54,18 +57,20 @@ void pr_data_set_timeout(int, int);
 #ifdef HAVE_SENDFILE
 typedef
 
-#if defined(HAVE_AIX_SENDFILE) || defined(HAVE_HPUX_SENDFILE) || \
+# if defined(HAVE_AIX_SENDFILE) || defined(HAVE_HPUX_SENDFILE) || \
     defined(HAVE_LINUX_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
 ssize_t
-#elif defined(HAVE_BSD_SENDFILE) || defined(HAVE_MACOSX_SENDFILE)
+# elif defined(HAVE_BSD_SENDFILE) || defined(HAVE_MACOSX_SENDFILE)
 off_t
-#else
-#error "You have an unknown sendfile implementation."
-#endif
+# else
+#  error "You have an unknown sendfile implementation."
+# endif
 
 pr_sendfile_t;
-
-pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count);
+#else
+typedef ssize_t pr_sendfile_t;
 #endif /* HAVE_SENDFILE */
 
-#endif /* PR_DATACONN_H */
+pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count);
+
+#endif /* PR_DATA_H */

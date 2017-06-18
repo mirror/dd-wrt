@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013 The ProFTPD Project team
+ * Copyright (c) 2013-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* ASCII character checks
- * $Id: ascii.h,v 1.1 2013-02-15 22:33:23 castaglia Exp $
- */
+/* ASCII character checks/conversions */
 
 #ifndef PR_ASCII_H
 #define PR_ASCII_H
@@ -40,5 +38,26 @@
 #define PR_ISPRINT(c)		(isascii((int) (c)) && isprint((int) (c)))
 #define PR_ISSPACE(c)		(isascii((int) (c)) && isspace((int) (c)))
 #define PR_ISXDIGIT(c)		(isascii((int) (c)) && isxdigit((int) (c)))
+
+/* For FTP's ASCII conversion rules. */
+void pr_ascii_ftp_reset(void);
+
+/* Converts the given `in' buffer, character by character, writing the data into
+ * the given `out' buffer, converting any CRLF sequences found into LF
+ * sequences.  The amount of data written into the `out' buffer is returned
+ * via the `outlen' argument.
+ * 
+ * Returns the number of "carry over" CRs on success, and -1 on error, setting
+ * errno appropriately.
+ */
+int pr_ascii_ftp_from_crlf(pool *p, char *in, size_t inlen, char **out,
+  size_t *outlen);
+
+/*
+ * Returns the number N on success, and -1 on error, setting errno
+ * appropriately.
+ */
+int pr_ascii_ftp_to_crlf(pool *p, char *in, size_t inlen, char **out,
+  size_t *outlen);
 
 #endif /* PR_ASCII_H */

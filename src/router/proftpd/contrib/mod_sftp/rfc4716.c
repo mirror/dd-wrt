@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp RFC4716 keystore
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: rfc4716.c,v 1.19 2013-06-06 16:45:55 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -190,6 +188,13 @@ static char *filestore_getline(sftp_keystore_t *store, pool *p) {
 
         continue;
 
+      } else if (linelen < sizeof(linebuf)) {
+        /* No CR or LF terminator; maybe a badly formatted file?  Try to
+         * work with the data, if we can.
+         */
+        line = pstrcat(p, line, linebuf, NULL);
+        return line;
+
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "line too long (%lu) on line %u of '%s'", (unsigned long) linelen,
@@ -285,7 +290,7 @@ static struct filestore_key *filestore_get_key(sftp_keystore_t *store,
 
         if (data != NULL &&
             datalen > 0) {
-          key->key_data = pcalloc(p, datalen + 1);
+          key->key_data = palloc(p, datalen);
           key->key_datalen = datalen;
           memcpy(key->key_data, data, datalen);
 
@@ -390,6 +395,7 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
     const char *user, unsigned char *key_data, uint32_t key_len) {
   struct filestore_key *key = NULL;
   struct filestore_data *store_data = store->keystore_data;
+  unsigned int count = 0;
 
   int res = -1;
 
@@ -407,6 +413,7 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
     int ok;
 
     pr_signals_handle();
+    count++;
 
     ok = sftp_keys_compare_keys(p, key_data, key_len, key->key_data,
       key->key_datalen);
@@ -415,10 +422,14 @@ static int filestore_verify_user_key(sftp_keystore_t *store, pool *p,
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "error comparing keys from '%s': %s", store_data->path,
           strerror(errno));
+
+      } else {
+        pr_trace_msg(trace_channel, 10,
+          "failed to match key #%u from file '%s'", count, store_data->path);
       }
 
     } else {
-      /* If we are configured to check for Subject headers, and If the file key
+      /* If we are configured to check for Subject headers, and if the file key
        * has a Subject header, and that header value does not match the
        * logging in user, then continue looking.
        */
@@ -513,14 +524,31 @@ static sftp_keystore_t *filestore_open(pool *parent_pool,
     return NULL;
   }
 
-  pr_fsio_set_block(fh);
+  if (pr_fsio_set_block(fh) < 0) {
+   xerrno = errno;
+
+    destroy_pool(filestore_pool);
+    (void) pr_fsio_close(fh);
+
+    errno = xerrno;
+    return NULL;
+  }
 
   /* Stat the opened file to determine the optimal buffer size for IO. */
   memset(&st, 0, sizeof(st));
-  pr_fsio_fstat(fh, &st);
+  if (pr_fsio_fstat(fh, &st) < 0) {
+    xerrno = errno;
+
+    destroy_pool(filestore_pool);
+    (void) pr_fsio_close(fh);
+
+    errno = xerrno;
+    return NULL;
+  }
+
   if (S_ISDIR(st.st_mode)) {
     destroy_pool(filestore_pool);
-    pr_fsio_close(fh);
+    (void) pr_fsio_close(fh);
 
     errno = EISDIR;
     return NULL;

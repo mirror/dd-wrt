@@ -1,11 +1,12 @@
-# $Id: proftpd.spec,v 1.90 2014-05-15 15:53:13 castaglia Exp $
-
 # Module List:
 #
 # Dynamic modules with no/minimal additional build or runtime dependencies, always built
 #   mod_auth_pam
 #   mod_ban
 #   mod_ctrls_admin
+#   mod_deflate
+#   mod_dnsbl
+#   mod_dynmasq
 #   mod_exec
 #   mod_facl
 #   mod_ifsession
@@ -20,22 +21,30 @@
 #   mod_rewrite
 #   mod_shaper
 #   mod_site_misc
+#   mod_snmp
 #   mod_sql
 #   mod_sql_passwd
 #   mod_wrap2
 #   mod_wrap2_file
+#   mod_wrap2_redis
 #   mod_wrap2_sql
+#   mod_unique_id
 #
 # Dynamic modules with additional build or runtime dependencies, not built by default
 #
+#   mod_auth_otp (needs openssl [--with ssl])
+#   mod_digest (needs openssl [--with ssl])
+#   mod_geoip (needs geoip [--with geoip])
 #   mod_ldap (needs openldap [--with ldap])
 #   mod_quotatab_ldap (needs openldap [--with ldap])
 #   mod_sftp (needs openssl [--with ssl])
 #   mod_sftp_pam (needs openssl [--with ssl])
 #   mod_sftp_sql (needs openssl [--with ssl])
 #   mod_sql_mysql (needs mysql client libraries [--with mysql])
+#   mod_sql_sqlite (needs sqlite libraries [--with sqlite])
 #   mod_sql_postgres (needs postgresql client libraries [--with postgresql])
 #   mod_tls (needs openssl [--with ssl])
+#   mod_tls_fscache (needs openssl [--with ssl])
 #   mod_tls_shmcache (needs openssl [--with ssl])
 #   mod_wrap (needs tcp_wrappers [--with wrap])
 #
@@ -43,19 +52,28 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version           1.3.5
+%global proftpd_version			1.3.6
 
-# When doing a stable or maint release, this line is to be commented out.
-# When doing an RC, define it to be e.g. 'rc2'.
-#
-# NOTE: rpmbuild is really bloody stupid, and CANNOT handle a leading '#'
-# character followed by a '%' character.  
-%global release_cand_version      b
+# rc_version should be incremented for each RC release, and reset back to 1
+# AFTER each stable release.
+%global rc_version			5
 
-%global usecvsversion             0%{?_with_cvs:1}
+# release_version should be incremented for each maint release, and reset back
+# to 1 BEFORE starting new release cycle.
+%global release_version			1
 
-%global proftpd_cvs_version_main  1.3.5
-%global proftpd_cvs_version_date  20150527
+%if %(echo %{proftpd_version} | grep rc >/dev/null 2>&1 && echo 1 || echo 0)
+%global rpm_version %(echo %{proftpd_version} | sed -e 's/rc.*//')
+%global rpm_release 0.%{rc_version}.%(echo %{proftpd_version} | sed -e 's/.*rc/rc/')
+%else
+%global rpm_version %{proftpd_version}
+%global rpm_release %{release_version}
+%endif
+
+%global usecvsversion             	0%{?_with_cvs:1}
+
+%global proftpd_cvs_version_main	1.3.6
+%global proftpd_cvs_version_date  	20150527
 
 # Spec default assumes that a gzipped tarball is used, since nightly CVS builds,
 # release candidates and stable/maint releases are all available in that form;
@@ -69,6 +87,7 @@
 # --with rhel5 inhibits features not available on RHEL5 and clones
 # --with rhel6 inhibits features not available on RHEL6 and clones
 %if 0%{?_with_everything:1}
+%global _with_geoip 1
 %global _with_ldap 1
 %if 0%{!?_with_rhel5:1} && 0%{!?_with_rhel6:1}
 %global _with_memcache 1
@@ -77,9 +96,16 @@
 %if 0%{!?_with_rhel5:1}
 %global _with_pcre 1
 %endif
+%global _with_redis 1
+%global _with_sqlite 1
 %global _with_postgresql 1
 %global _with_ssl 1
 %global _with_wrap 1
+%endif
+#
+# --with geoip (for mod_geoip)
+%if 0%{?_with_geoip:1}
+BuildRequires: geoip-devel
 %endif
 #
 # --with ldap (for mod_ldap, mod_quotatab_ldap)
@@ -107,9 +133,18 @@ BuildRequires: pcre-devel >= 7.0
 BuildRequires: postgresql-devel
 %endif
 #
-# --with ssl (for mod_sftp, mod_sftp_pam, mod_sftp_sql, mod_sql_passwd, mod_tls, mod_tls_shmcache)
+# --with redis (for mod_redis, mod_tls_redis)
+%if 0%{?_with_redis:1}
+BuildRequires: hiredis
+%endif
+# --with ssl (for mod_auth_otp, mod_digest, mod_sftp, mod_sftp_pam, mod_sftp_sql, mod_sql_passwd, mod_tls, mod_tls_fscache, mod_tls_shmcache)
 %if 0%{?_with_ssl:1}
 BuildRequires: openssl-devel
+%endif
+#
+# --with-sqlite (for mod_sql_sqlite)
+%if 0%{?_with_sqlite:1}
+BuildRequires: sqlite-devel
 %endif
 #
 # --with wrap (for mod_wrap)
@@ -118,8 +153,8 @@ BuildRequires: openssl-devel
 BuildRequires: /usr/include/tcpd.h
 %endif
 
-# Assume init is systemd if /run/lock exists, else SysV
-%global use_systemd %([ -d /run/lock ] && echo 1 || echo 0)
+# Assume init is systemd if /run/console exists, else SysV
+%global use_systemd %([ -d /run/console ] && echo 1 || echo 0)
 
 # rundir is /run/proftpd under systemd, else %%{_localstatedir}/run/proftpd
 %if %{use_systemd}
@@ -140,9 +175,9 @@ Version:                %{proftpd_cvs_version_main}
 Release:                0.1.cvs%{proftpd_cvs_version_date}%{?dist}
 Source0:                ftp://ftp.proftpd.org/devel/source/proftpd-cvs-%{proftpd_cvs_version_date}.tar%{srcext}
 %else
-Version:                %{proftpd_version}
-Release:                %{?release_cand_version:0.}1%{?release_cand_version:.%{release_cand_version}}%{?dist}
-Source0:                ftp://ftp.proftpd.org/distrib/source/proftpd-%{version}%{?release_cand_version}.tar%{srcext}
+Version:                %{rpm_version}
+Release:                %{rpm_release}%{?dist}
+Source0:                ftp://ftp.proftpd.org/distrib/source/proftpd-%{proftpd_version}.tar%{srcext}
 %endif
 BuildRoot:              %{_tmppath}/%{name}-%{version}-root
 Requires:               pam >= 0.99, /sbin/chkconfig
@@ -178,6 +213,16 @@ Modules requiring additional dependencies such as mod_sql_mysql, mod_ldap,
 etc. are in separate sub-packages so as not to inconvenience users that
 do not need that functionality.
 
+%if 0%{?_with_geoip:1}
+%package geoip
+Summary:        ProFTPD - Modules relying on GeoIP
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
+
+%description geoip
+This optional package contains the modules using GeoIP.
+%endif
+
 %if 0%{?_with_ldap:1}
 %package ldap
 Summary:        ProFTPD - Modules relying on LDAP
@@ -196,6 +241,16 @@ Requires:       proftpd = %{version}-%{release}
 
 %description mysql
 This optional package contains the modules using MySQL.
+%endif
+
+%if 0%{?_with_sqlite:1}
+%package sqlite
+Summary:        ProFTPD - Modules relying on SQLite
+Group:          System Environment/Daemons
+Requires:       proftpd = %{version}-%{release}
+
+%description sqlite
+This optional package contains the modules using SQLite.
 %endif
 
 %if 0%{?_with_postgresql:1}
@@ -231,12 +286,15 @@ Requires:       pkgconfig
 Requires:       pam-devel
 Requires:       ncurses-devel
 Requires:       zlib-devel
+%{?_with_geoip:Requires:      geoip-devel}
 %{?_with_ldap:Requires:       openldap-devel}
 %{?_with_memcache:Requires:   libmemcached-devel >= 0.41}
 %{?_with_mysql:Requires:      mysql-devel}
 %{?_with_pcre:Requires:       pcre-devel >= 7.0}
 %{?_with_postgresql:Requires: postgresql-devel}
+%{?_with_redis:Requires:      hiredis}
 %{?_with_ssl:Requires:        openssl-devel}
+%{?_with_sqlite:Requires:     sqlite-devel}
 %{?_with_wrap:Requires:       /usr/include/tcpd.h}
 
 %description devel
@@ -262,7 +320,7 @@ ProFTPD server:
 %if %{usecvsversion}
 %setup -q -n %{name}-%{proftpd_cvs_version_main}
 %else
-%setup -q -n %{name}-%{version}%{?release_cand_version}
+%setup -q -n %{name}-%{proftpd_version}
 %endif
 
 # Avoid documentation name conflicts
@@ -283,6 +341,9 @@ fi
 STANDARD_MODULE_LIST="  mod_auth_pam            \
                         mod_ban                 \
                         mod_ctrls_admin         \
+                        mod_deflate             \
+                        mod_dnsbl               \
+                        mod_dynmasq             \
                         mod_exec                \
                         mod_facl                \
                         mod_load                \
@@ -296,12 +357,18 @@ STANDARD_MODULE_LIST="  mod_auth_pam            \
                         mod_rewrite             \
                         mod_shaper              \
                         mod_site_misc           \
+                        mod_snmp                \
                         mod_sql                 \
                         mod_wrap2               \
                         mod_wrap2_file          \
-                        mod_wrap2_sql           "
+                        mod_wrap2_redis         \
+                        mod_wrap2_sql           \
+                        mod_unique_id           "
 
 OPTIONAL_MODULE_LIST="                          \
+%{?_with_ssl:           mod_auth_otp}           \
+%{?_with_ssl:           mod_digest}             \
+%{?_with_geoip:         mod_geoip}              \
 %{?_with_ldap:          mod_ldap}               \
 %{?_with_ldap:          mod_quotatab_ldap}      \
 %{?_with_ssl:           mod_sftp}               \
@@ -309,10 +376,13 @@ OPTIONAL_MODULE_LIST="                          \
 %{?_with_ssl:           mod_sftp_sql}           \
 %{?_with_mysql:         mod_sql_mysql}          \
 %{?_with_ssl:           mod_sql_passwd}         \
+%{?_with_sqlite:        mod_sql_sqlite}         \
 %{?_with_postgresql:    mod_sql_postgres}       \
 %{?_with_ssl:           mod_tls}                \
+%{?_with_ssl:           mod_tls_fscache}        \
 %{?_with_ssl:           mod_tls_shmcache}       \
 %{?_with_ssl:%{?_with_memcache:mod_tls_memcache}} \
+%{?_with_ssl:%{?_with_redis:mod_tls_redis}}     \
 %{?_with_wrap:          mod_wrap}               "
 
 MODULE_LIST=$(echo ${STANDARD_MODULE_LIST} ${OPTIONAL_MODULE_LIST} mod_ifsession | tr -s '[:space:]' ':' | sed 's/:$//')
@@ -328,6 +398,7 @@ MODULE_LIST=$(echo ${STANDARD_MODULE_LIST} ${OPTIONAL_MODULE_LIST} mod_ifsession
         --enable-nls \
         %{?_with_memcache:--enable-memcache} \
         %{?_with_pcre:--enable-pcre} \
+        %{?_with_redis:--enable-redis} \
         %{?_with_ssl:--enable-openssl} \
         --enable-shadow \
         --with-lastlog \
@@ -354,10 +425,14 @@ install -p -m 644 contrib/dist/rpm/proftpd.pam %{buildroot}/etc/pam.d/proftpd
 install -m 644 contrib/dist/rpm/basic-pam.conf %{buildroot}/etc/proftpd.conf
 
 %if %{use_systemd}
-# Systemd unit file
+# Systemd unit files
 mkdir -p %{buildroot}%{_unitdir}
 install -p -m 644 contrib/dist/rpm/proftpd.service \
     %{buildroot}%{_unitdir}/proftpd.service
+install -p -m 644 contrib/dist/systemd/proftpd@.service \
+    %{buildroot}%{_unitdir}/proftpd@.service
+install -p -m 644 contrib/dist/systemd/proftpd.socket \
+    %{buildroot}%{_unitdir}/proftpd.socket
 # Ensure /run/proftpd exists
 mkdir -p %{buildroot}%{_sysconfdir}/tmpfiles.d
 install -p -m 644 contrib/dist/rpm/proftpd-tmpfs.conf \
@@ -442,16 +517,23 @@ rm -rf %{_builddir}/%{name}-%{version}
 
 %files -f proftpd.lang
 %{_bindir}/ftpdctl
+%{?_with_ssl:%{_sbindir}/auth-otp}
 %{_sbindir}/ftpscrub
 %{_sbindir}/ftpshut
 %{_sbindir}/in.proftpd
 %{_sbindir}/proftpd
 %dir %{_libexecdir}/proftpd/
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_auth_otp.so}
 %{_libexecdir}/proftpd/mod_auth_pam.so
 %{_libexecdir}/proftpd/mod_ban.so
 %{_libexecdir}/proftpd/mod_ctrls_admin.so
+%{_libexecdir}/proftpd/mod_deflate.so
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_digest.so}
+%{_libexecdir}/proftpd/mod_dnsbl.so
+%{_libexecdir}/proftpd/mod_dynmasq.so
 %{_libexecdir}/proftpd/mod_exec.so
 %{_libexecdir}/proftpd/mod_facl.so
+%{?_with_geoip:%{_libexecdir}/proftpd/mod_geoip.so}
 %{_libexecdir}/proftpd/mod_ifsession.so
 %{_libexecdir}/proftpd/mod_load.so
 %{_libexecdir}/proftpd/mod_quotatab.so
@@ -467,14 +549,19 @@ rm -rf %{_builddir}/%{name}-%{version}
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_sftp_sql.so}
 %{_libexecdir}/proftpd/mod_shaper.so
 %{_libexecdir}/proftpd/mod_site_misc.so
+%{_libexecdir}/proftpd/mod_snmp.so
 %{_libexecdir}/proftpd/mod_sql.so
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_sql_passwd.so}
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_tls.so}
+%{?_with_ssl:%{_libexecdir}/proftpd/mod_tls_fscache.so}
 %{?_with_ssl:%{?_with_memcache:%{_libexecdir}/proftpd/mod_tls_memcache.so}}
+%{?_with_ssl:%{?_with_redis:%{_libexecdir}/proftpd/mod_tls_redis.so}}
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_tls_shmcache.so}
 %{_libexecdir}/proftpd/mod_wrap2.so
 %{_libexecdir}/proftpd/mod_wrap2_file.so
+%{_libexecdir}/proftpd/mod_wrap2_redis.so
 %{_libexecdir}/proftpd/mod_wrap2_sql.so
+%{_libexecdir}/proftpd/mod_unique_id.so
 %exclude %{_libexecdir}/proftpd/*.a
 %exclude %{_libexecdir}/proftpd/*.la
 %dir %{rundir}/
@@ -482,6 +569,8 @@ rm -rf %{_builddir}/%{name}-%{version}
 %dir %{_localstatedir}/ftp/pub/
 %if %{use_systemd}
 %{_unitdir}/proftpd.service
+%{_unitdir}/proftpd@.service
+%{_unitdir}/proftpd.socket
 %{_sysconfdir}/tmpfiles.d/proftpd.conf
 %else
 %{_sysconfdir}/rc.d/init.d/proftpd
@@ -492,11 +581,13 @@ rm -rf %{_builddir}/%{name}-%{version}
 %config(noreplace) %{_sysconfdir}/pam.d/proftpd
 %config(noreplace) %{_sysconfdir}/logrotate.d/proftpd
 %config(noreplace) %{_sysconfdir}/xinetd.d/proftpd
+%config(noreplace) %{_sysconfdir}/PROFTPD-MIB.txt
 
-%doc COPYING CREDITS ChangeLog NEWS README RELEASE_NOTES
+%doc COPYING CREDITS ChangeLog NEWS README.md RELEASE_NOTES
 %doc README.DSO README.modules README.IPv6 README.PAM
 %doc README.capabilities README.classes README.controls README.facl
 %doc contrib/README.contrib contrib/README.ratio
+%doc contrib/dist/systemd/README.systemd
 %doc doc/* sample-configurations/
 %{_mandir}/man5/proftpd.conf.5*
 %{_mandir}/man5/xferlog.5*
@@ -504,6 +595,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 %{_mandir}/man8/ftpscrub.8*
 %{_mandir}/man8/ftpshut.8*
 %{_mandir}/man8/proftpd.8*
+%{?_with_ssl:%{_mandir}/man8/auth-otp.8*}
 
 %if 0%{?_with_ldap:1}
 %files ldap
@@ -520,6 +612,11 @@ rm -rf %{_builddir}/%{name}-%{version}
 %if 0%{?_with_postgresql:1}
 %files postgresql
 %{_libexecdir}/proftpd/mod_sql_postgres.so
+%endif
+
+%if 0%{?_with_sqlite:1}
+%files sqlite
+%{_libexecdir}/proftpd/mod_sql_sqlite.so
 %endif
 
 %if 0%{?_with_wrap:1}
@@ -548,6 +645,12 @@ rm -rf %{_builddir}/%{name}-%{version}
 %{_mandir}/man1/ftpwho.1*
 
 %changelog
+* Fri Dec 11 2015 Paul Howarth <paul@city-fan.org>
+- Include systemd unit files for native inetd operation (bug 3661)
+- Use /run/console rather than /run/lock for systemd detection, because the
+  'mock' build tool may create /run/lock itself
+- Fix bogus dates in spec changelog
+
 * Fri Jun 28 2013 Paul Howarth <paul@city-fan.org>
 - Support arbitrary tarball compression types using %%{srcext} macro
 - Package proftpd.conf manpage
@@ -575,7 +678,7 @@ rm -rf %{_builddir}/%{name}-%{version}
   - Create new utils subpackage
   - Lots of minor fixes
 
-* Mon Sep 11 2007 Philip Prindeville <philipp_subx@redfish-solutions.com>
+* Mon Sep 10 2007 Philip Prindeville <philipp_subx@redfish-solutions.com>
 - Cleaned up the .spec file to work with more recent releases of RPM.  Moved
   header files into separate component.
 
@@ -619,16 +722,16 @@ rm -rf %{_builddir}/%{name}-%{version}
   For details see http://bugs.proftpd.org/show_bug.cgi?id=1048
 - release: 1.2.1-2
 
-* Wed Mar 01 2001 Daniel Roesen <droesen@entire-systems.com>
+* Thu Mar 01 2001 Daniel Roesen <droesen@entire-systems.com>
 - Update to 1.2.1
 - release: 1.2.1-1
 
-* Wed Feb 27 2001 Daniel Roesen <droesen@entire-systems.com>
+* Tue Feb 27 2001 Daniel Roesen <droesen@entire-systems.com>
 - added "Obsoletes: proftpd-core" to make migration to new RPMs easier.
   Thanks to Sébastien Prud'homme <prudhomme@easy-flying.com> for the hint.
 - release: 1.2.0-3
 
-* Wed Feb 26 2001 Daniel Roesen <droesen@entire-systems.com>
+* Mon Feb 26 2001 Daniel Roesen <droesen@entire-systems.com>
 - cleaned up .spec formatting (cosmetics)
 - fixed CFLAGS (fixes /etc/shadow support)
 - included COPYING, CREDITS, ChangeLog and NEWS
@@ -641,7 +744,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 - removed /ftp/ftpusers from package management. Deinstalling ProFTPD
   should _not_ result in removal of this file.
 
-* Thu Oct 03 1999 O.Elliyasa <osman@Cable.EU.org>
+* Sun Oct 03 1999 O.Elliyasa <osman@Cable.EU.org>
 - Multi package creation.
   Created core, standalone, inetd (&doc) package creations.
   Added startup script for init.d

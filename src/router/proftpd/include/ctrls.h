@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Controls API definitions
- * $Id: ctrls.h,v 1.9 2013-02-04 06:46:22 castaglia Exp $
- */
+/* Controls API definitions */
 
 #ifndef PR_CTRLS_H
 #define PR_CTRLS_H

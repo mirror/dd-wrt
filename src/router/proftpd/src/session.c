@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2013 The ProFTPD Project team
+ * Copyright (c) 2009-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: session.c,v 1.16 2013-08-25 21:16:39 castaglia Exp $
  */
 
 #include "conf.h"
@@ -95,6 +93,7 @@ static void sess_cleanup(int flags) {
 
 void pr_session_disconnect(module *m, int reason_code,
     const char *details) {
+  int flags = 0;
 
   session.disconnect_reason = reason_code;
   session.disconnect_module = m;
@@ -113,7 +112,11 @@ void pr_session_disconnect(module *m, int reason_code,
     }
   }
 
-  pr_session_end(0);
+  if (reason_code == PR_SESS_DISCONNECT_SEGFAULT) {
+    flags |= PR_SESS_END_FL_ERROR;
+  }
+
+  pr_session_end(flags);
 }
 
 void pr_session_end(int flags) {
@@ -123,6 +126,10 @@ void pr_session_end(int flags) {
 
   if (flags & PR_SESS_END_FL_NOEXIT) {
     return;
+  }
+
+  if (flags & PR_SESS_END_FL_ERROR) {
+    exitcode = 1;
   }
 
 #ifdef PR_USE_DEVEL
@@ -146,7 +153,7 @@ void pr_session_end(int flags) {
 #endif /* PR_DEVEL_PROFILE */
 }
 
-const char *pr_session_get_disconnect_reason(char **details) {
+const char *pr_session_get_disconnect_reason(const char **details) {
   const char *reason_str = NULL;
 
   switch (session.disconnect_reason) {
@@ -257,8 +264,37 @@ void pr_session_send_banner(server_rec *s, int flags) {
 
   masq = find_config(s->conf, CONF_PARAM, "MasqueradeAddress", FALSE);
   if (masq != NULL) {
-    pr_netaddr_t *masq_addr = (pr_netaddr_t *) masq->argv[0];
-    serveraddress = pr_netaddr_get_ipstr(masq_addr);
+    const pr_netaddr_t *masq_addr = NULL;
+
+    if (masq->argv[0] != NULL) {
+      masq_addr = masq->argv[0];
+
+    } else {
+      const char *name;
+
+      /* Here we do a delayed lookup, to see if the configured name
+       * can be resolved yet (e.g. the network is now up); see Bug#4104.
+       */
+
+      name = masq->argv[1];
+
+      pr_log_debug(DEBUG10,
+        "performing delayed resolution of MasqueradeAddress '%s'", name);
+      masq_addr = pr_netaddr_get_addr(session.pool, name, NULL);
+      if (masq_addr != NULL) {
+        /* Stash the resolved pr_netaddr_t in the config_rec, so that other
+         * code paths will find it (within this session process).
+         */
+        masq->argv[0] = (void *) masq_addr;
+
+      } else {
+        pr_log_debug(DEBUG5, "unable to resolve '%s'", name);
+      }
+    }
+
+    if (masq_addr != NULL) {
+      serveraddress = pr_netaddr_get_ipstr(masq_addr);
+    }
   }
 
   c = find_config(s->conf, CONF_PARAM, "ServerIdent", FALSE);
@@ -270,7 +306,9 @@ void pr_session_send_banner(server_rec *s, int flags) {
 
     if (c &&
         c->argc > 1) {
-      char *server_ident = c->argv[1];
+      const char *server_ident;
+
+      server_ident = c->argv[1];
 
       if (strstr(server_ident, "%L") != NULL) {
         server_ident = sreplace(session.pool, server_ident, "%L",
@@ -287,6 +325,11 @@ void pr_session_send_banner(server_rec *s, int flags) {
           main_server->ServerName, NULL);
       }
 
+      if (strstr(server_ident, "%{version}") != NULL) {
+        server_ident = sreplace(session.pool, server_ident, "%{version}",
+          PROFTPD_VERSION_TEXT, NULL);
+      }
+
       if (flags & PR_DISPLAY_FL_SEND_NOW) {
         pr_response_send(R_220, "%s", server_ident);
 
@@ -298,22 +341,20 @@ void pr_session_send_banner(server_rec *s, int flags) {
                *defer_welcome == TRUE) {
 
       if (flags & PR_DISPLAY_FL_SEND_NOW) {
-        pr_response_send(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
-          " Server ready.");
+        pr_response_send(R_220, _("ProFTPD Server ready."));
 
       } else {
-        pr_response_add(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
-          " Server ready.");
+        pr_response_add(R_220, _("ProFTPD Server ready."));
       }
 
     } else {
       if (flags & PR_DISPLAY_FL_SEND_NOW) {
-        pr_response_send(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
-          " Server (%s) [%s]", s->ServerName, serveraddress);
+        pr_response_send(R_220, _("ProFTPD Server (%s) [%s]"), s->ServerName,
+          serveraddress);
 
       } else {
-        pr_response_add(R_220, "ProFTPD " PROFTPD_VERSION_TEXT
-          " Server (%s) [%s]", s->ServerName, serveraddress);
+        pr_response_add(R_220, _("ProFTPD Server (%s) [%s]"), s->ServerName,
+          serveraddress);
       }
     }
 
@@ -328,7 +369,7 @@ void pr_session_send_banner(server_rec *s, int flags) {
 }
 
 int pr_session_set_idle(void) {
-  char *user = NULL;
+  const char *user = NULL;
 
   pr_scoreboard_entry_update(session.pid,
     PR_SCORE_BEGIN_IDLE, time(NULL),
@@ -349,7 +390,7 @@ int pr_session_set_idle(void) {
 }
 
 int pr_session_set_protocol(const char *sess_proto) {
-  int count, res;
+  int count, res, xerrno;
 
   if (sess_proto == NULL) {
     errno = EINVAL;
@@ -360,25 +401,24 @@ int pr_session_set_protocol(const char *sess_proto) {
   if (count > 0) {
     res = pr_table_set(session.notes, pstrdup(session.pool, "protocol"),
       pstrdup(session.pool, sess_proto), 0);
+    xerrno = errno;
 
-    if (res == 0) {
-      /* Update the scoreboard entry for this session with the protocol. */
-      pr_scoreboard_entry_update(session.pid, PR_SCORE_PROTOCOL, sess_proto,
-        NULL);
-    }
+    /* Update the scoreboard entry for this session with the protocol. */
+    pr_scoreboard_entry_update(session.pid, PR_SCORE_PROTOCOL, sess_proto,
+      NULL);
 
+    errno = xerrno;
     return res;
   }
 
   res = pr_table_add(session.notes, pstrdup(session.pool, "protocol"),
     pstrdup(session.pool, sess_proto), 0);
+  xerrno = errno;
 
-  if (res == 0) {
-    /* Update the scoreboard entry for this session with the protocol. */
-    pr_scoreboard_entry_update(session.pid, PR_SCORE_PROTOCOL, sess_proto,
-      NULL);
-  }
+  /* Update the scoreboard entry for this session with the protocol. */
+  pr_scoreboard_entry_update(session.pid, PR_SCORE_PROTOCOL, sess_proto, NULL);
 
+  errno = xerrno;
   return res;
 }
 
