@@ -1,15 +1,13 @@
-<!-- $Id: KeepAlives.html,v 1.2 2013-03-15 00:05:39 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/KeepAlives.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD KeepAlives</title>
+<title>ProFTPD: KeepAlives</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD KeepAlives</b></h2></center>
+<center><h2><b>ProFTPD: KeepAlives</b></h2></center>
 <hr>
 
 <p>
@@ -26,7 +24,7 @@ Protocols may be layered over the top of another protocol; for example, HTTPS
 consists of HTTP layered over SSL/TLS, itself layered over TCP/IP.  Each
 protocol layer may have its own form of such keepalive functionality.
 
-<p><a name="TCPKeepAlive">
+<p><a name="TCPKeepAlive"></a>
 <b>TCP KeepAlive</b><br>
 For TCP, the definitive specification for keepalive functionality is
 <a href="http://www.faqs.org/rfcs/rfc1122.html">RFC 1122</a>, Section
@@ -43,7 +41,7 @@ connection needlessly.
 OK, so you want to use the TCP keepalive functionality in your program.  The
 question is "How exactly does the TCP keepalive feature work?"  Good question.
 Answering this requires three different numeric values: the <i>idle time</i>,
-the number of probes to send (the probe </i>count</i>), and the <i>interval
+the number of probes to send (the probe <i>count</i>), and the <i>interval
 time</i> between each probe.  Remember, though, that the
 <code>SO_KEEPALIVE</code> TCP socket option <b>must</b> be enabled on the socket
 in order for the TCP keepalive feature to be used.
@@ -382,7 +380,11 @@ and NATs.)
 
 <p>
 <hr>
-<i>$Date: 2013-03-15 00:05:39 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

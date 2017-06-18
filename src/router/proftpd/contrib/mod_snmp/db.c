@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp database storage
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1081,7 +1081,7 @@ int snmp_db_get_value(pool *p, unsigned int field, int32_t *int_value,
       return 0;
 
     case SNMP_DB_CONN_F_USER_NAME: {
-      char *orig_user;
+      const char *orig_user;
 
       orig_user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
       if (orig_user == NULL) {
@@ -1089,7 +1089,7 @@ int snmp_db_get_value(pool *p, unsigned int field, int32_t *int_value,
         return -1;
       }
     
-      *str_value = orig_user;
+      *str_value = (char *) orig_user;
       *str_valuelen = strlen(*str_value);  
 
       pr_trace_msg(trace_channel, 19,
@@ -1131,7 +1131,7 @@ int snmp_db_get_value(pool *p, unsigned int field, int32_t *int_value,
       return 0;
 
     case SNMP_DB_DAEMON_F_ADMIN:
-      *str_value = main_server->ServerAdmin; 
+      *str_value = (char *) main_server->ServerAdmin;
       *str_valuelen = strlen(*str_value);
 
       pr_trace_msg(trace_channel, 19,

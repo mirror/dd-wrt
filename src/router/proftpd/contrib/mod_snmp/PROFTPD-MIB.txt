@@ -2,8 +2,6 @@
 
 PROFTPD-MIB DEFINITIONS ::= BEGIN
 --
--- $Id: PROFTPD-MIB.txt,v 1.1 2013-05-15 15:20:25 castaglia Exp $
---
 
 IMPORTS
         enterprises, Integer32, Unsigned32, TimeTicks, Gauge32, Counter32,

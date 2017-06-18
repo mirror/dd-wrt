@@ -1,6 +1,4 @@
-<!-- $Id: mod_site_misc.html,v 1.5 2014-05-04 19:49:57 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_site_misc.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_site_misc</title>
@@ -53,12 +51,12 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="SiteMiscEngine">SiteMiscEngine</a></h2>
+<h3><a name="SiteMiscEngine">SiteMiscEngine</a></h3>
 <strong>Syntax:</strong> SiteMiscEngine <em>on|off</em><br>
 <strong>Default:</strong> on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_site_misc<br>
-<strong>Compatibility:</strong> 1.3.3c and later</a>
+<strong>Compatibility:</strong> 1.3.3c and later
 
 <p>
 The <code>SiteMiscEngine</code> directive enables or disables the module's
@@ -68,7 +66,7 @@ directive to disable the module.
 
 <p>
 <hr>
-<h2><a name="SITE_MKDIR">SITE MKDIR</a></h2>
+<h3><a name="SITE_MKDIR">SITE MKDIR</a></h3>
 This <code>SITE</code> command allows the creation of a full directory
 path, similar to <code>mkdir -p /path/to/dir</code>.  It is primarily for
 convenience, instead of having to use a loop of <code>MKD</code> and
@@ -83,7 +81,7 @@ The syntax for <code>SITE MKDIR</code> is:
 
 <p>
 Use of this <code>SITE</code> command can be controlled via
-<code>&lt;Limit&gt;<code> sections, <i>e.g.</i>:
+<code>&lt;Limit&gt;</code> sections, <i>e.g.</i>:
 <pre>
   &lt;Limit SITE_MKDIR&gt;
     AllowUser alex
@@ -93,7 +91,7 @@ Use of this <code>SITE</code> command can be controlled via
 
 <p>
 <hr>
-<h2><a name="SITE_RMDIR">SITE RMDIR</a></h2>
+<h3><a name="SITE_RMDIR">SITE RMDIR</a></h3>
 This <code>SITE</code> command allows the deletion of a full directory
 path, similar to <code>rm -fr /path/to/dir</code>.  It recursively deletes all
 of the files and directories under the given path.  This command is
@@ -111,7 +109,7 @@ The syntax for <code>SITE RMDIR</code> is:
 
 <p>
 Use of this <code>SITE</code> command can be controlled via
-<code>&lt;Limit&gt;<code> sections, <i>e.g.</i>:
+<code>&lt;Limit&gt;</code> sections, <i>e.g.</i>:
 <pre>
   &lt;Limit SITE_RMDIR&gt;
     AllowUser alex
@@ -121,7 +119,7 @@ Use of this <code>SITE</code> command can be controlled via
 
 <p>
 <hr>
-<h2><a name="SITE_SYMLINK">SITE SYMLINK</a></h2>
+<h3><a name="SITE_SYMLINK">SITE SYMLINK</a></h3>
 This <code>SITE</code> command allows the creation of symbolic links, similar
 to <code>ln -s</code>.
 
@@ -133,7 +131,7 @@ The syntax for <code>SITE SYMLINK</code> is:
 
 <p>
 Use of this <code>SITE</code> command can be controlled via
-<code>&lt;Limit&gt;<code> sections, <i>e.g.</i>:
+<code>&lt;Limit&gt;</code> sections, <i>e.g.</i>:
 <pre>
   &lt;Limit SITE_SYMLINK&gt;
     AllowUser alex
@@ -143,7 +141,7 @@ Use of this <code>SITE</code> command can be controlled via
 
 <p>
 <hr>
-<h2><a name="SITE_UTIME">SITE UTIME</a></h2>
+<h3><a name="SITE_UTIME">SITE UTIME</a></h3>
 This <code>SITE</code> command allows for setting the access and modification
 timestamps on files, similar to the <code>touch /path/to/file</code> command.
 This allows sites to have the often-requested ability to set the modification
@@ -159,8 +157,17 @@ For example:
   SITE UTIME 200402240836 file.txt
   SITE UTIME 20040224083655 file.txt
 </pre>
-would set the access <b>and</b> modification timestamps on <code>file.txt</code>
 to 8:36 AM, Febrary 24, 2004 (or 8:36:55 AM, Febrary 24, 2004, respectively).
+
+<p>
+Another variant syntax is also supported:
+<pre>
+  SITE UTIME <i>path</i> <i>YYYYMMDDhhmm[ss]</i> <i>YYYYMMDDhhmm[ss]</i> <i>YYYYMMDDhhmm[ss]</i> UTC
+</pre>
+For example:
+<pre>
+  SITE UTIME file.txt 20040224083655 20040224083655 20040224083655 UTC
+</pre>
 
 <p>
 The timestamp specified is treated as being in GMT/UTC, rather than in the
@@ -168,7 +175,7 @@ local timezone.
 
 <p>
 Use of this <code>SITE</code> command can be controlled via
-<code>&lt;Limit&gt;<code> sections, <i>e.g.</i>:
+<code>&lt;Limit&gt;</code> sections, <i>e.g.</i>:
 <pre>
   &lt;Limit SITE_UTIME&gt;
     AllowUser alex
@@ -182,41 +189,33 @@ Use of this <code>SITE</code> command can be controlled via
 The <code>mod_site_misc</code> module is distributed with ProFTPD.  Simply
 follow the normal steps for using third-party modules in proftpd:
 <pre>
-  ./configure --with-modules=mod_site_misc
+  $ ./configure --with-modules=mod_site_misc
 </pre>
 To build <code>mod_site_misc</code> as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_site_misc
+  $ ./configure --enable-dso --with-shared=mod_site_misc
 </pre>
 Then follow the usual steps:
 <pre>
-  make 
-  make install
+  $ make 
+  $ make install
 </pre>
 
 <p>
-Alternatively, if your proftpd was compiled with DSO support, you can
-use the <code>prxs</code> tool to build <code>mod_site_misc</code> as a shared
-module:
+Alternatively, if your <code>proftpd</code> was compiled with DSO support, you
+can use the <code>prxs</code> tool to build <code>mod_site_misc</code> as a
+shared module:
 <pre>
-  prxs -c -i -d mod_site_misc.c
+  $ prxs -c -i -d mod_site_misc.c
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2014-05-04 19:49:57 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2004-2014 TJ Saunders<br>
+&copy; Copyright 2004-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2013 The ProFTPD Project team
+ * Copyright (c) 2006-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,7 @@
  * in the source distribution.
  */
 
-/* Trace functions
- * $Id: trace.c,v 1.46 2013-02-25 19:40:43 castaglia Exp $
- */
-
+/* Trace functions. */
 
 #include "conf.h"
 #include "privs.h"
@@ -59,6 +56,8 @@ static const char *trace_channels[] = {
   "ident",
   "inet",
   "lock",
+  "log",
+  "module",
   "netacl",
   "netio",
   "pam",
@@ -93,13 +92,14 @@ static void trace_restart_ev(const void *event_data, void *user_data) {
 
 static int trace_write(const char *channel, int level, const char *msg,
     int discard) {
-  char buf[PR_TUNABLE_BUFFER_SIZE];
+  char buf[PR_TUNABLE_BUFFER_SIZE * 2];
   size_t buflen, len;
   struct tm *tm;
   int use_conn_ips = FALSE;
 
-  if (trace_logfd < 0)
+  if (trace_logfd < 0) {
     return 0;
+  }
 
   memset(buf, '\0', sizeof(buf));
 
@@ -168,7 +168,11 @@ static int trace_write(const char *channel, int level, const char *msg,
     buflen++;
 
   } else {
-    buf[sizeof(buf)-2] = '\n';
+    buf[sizeof(buf)-5] = '.';
+    buf[sizeof(buf)-4] = '.';
+    buf[sizeof(buf)-3] = '.';
+    buf[sizeof(buf)-2] = '.';
+    buflen = sizeof(buf)-1;
   }
 
   pr_log_event_generate(PR_LOG_TYPE_TRACELOG, trace_logfd, level, buf, buflen);
@@ -186,16 +190,16 @@ static int trace_write(const char *channel, int level, const char *msg,
 }
 
 pr_table_t *pr_trace_get_table(void) {
-  if (!trace_tab) {
-    errno = EPERM;
+  if (trace_tab == NULL) {
+    errno = ENOENT;
     return NULL;
   }
 
   return trace_tab;
 }
 
-static struct trace_levels *trace_get_levels(const char *channel) {
-  void *value;
+static const struct trace_levels *trace_get_levels(const char *channel) {
+  const void *value;
 
   if (channel == NULL) {
     errno = EINVAL;
@@ -222,21 +226,23 @@ int pr_trace_get_level(const char *channel) {
 }
 
 int pr_trace_get_max_level(const char *channel) {
-  struct trace_levels *levels;
+  const struct trace_levels *levels;
 
   levels = trace_get_levels(channel);
-  if (levels == NULL)
+  if (levels == NULL) {
     return -1;
+  }
 
   return levels->max_level;
 }
 
 int pr_trace_get_min_level(const char *channel) {
-  struct trace_levels *levels;
+  const struct trace_levels *levels;
 
   levels = trace_get_levels(channel);
-  if (levels == NULL)
+  if (levels == NULL) {
     return -1;
+  }
 
   return levels->min_level;
 }
@@ -259,6 +265,11 @@ int pr_trace_parse_levels(char *str, int *min_level, int *max_level) {
   }
 
   /* Check for a value range. */
+  if (*str == '-') {
+    errno = EINVAL;
+    return -1;
+  }
+
   ptr = strchr(str, '-');
   if (ptr == NULL) {
     /* Just a single value. */
@@ -315,15 +326,20 @@ int pr_trace_parse_levels(char *str, int *min_level, int *max_level) {
     return -1;
   }
 
+  if (high < low) {
+    errno = EINVAL;
+    return -1;
+  }
+
   *min_level = low;
   *max_level = high;
   return 0;
 }
 
 int pr_trace_set_file(const char *path) {
-  int res;
+  int res, xerrno;
 
-  if (!path) {
+  if (path == NULL) {
     if (trace_logfd < 0) {
       errno = EINVAL;
       return -1;
@@ -337,23 +353,27 @@ int pr_trace_set_file(const char *path) {
   pr_signals_block();
   PRIVS_ROOT
   res = pr_log_openfile(path, &trace_logfd, 0660);
+  xerrno = errno;
   PRIVS_RELINQUISH
   pr_signals_unblock();
 
   if (res < 0) {
     if (res == -1) {
       pr_log_debug(DEBUG1, "unable to open TraceLog '%s': %s", path,
-        strerror(errno));
+        strerror(xerrno));
+      errno = xerrno;
 
     } else if (res == PR_LOG_WRITABLE_DIR) {
       pr_log_debug(DEBUG1,
         "unable to open TraceLog '%s': parent directory is world-writable",
         path);
+      errno = EPERM;
 
     } else if (res == PR_LOG_SYMLINK) {
       pr_log_debug(DEBUG1,
         "unable to open TraceLog '%s': cannot log to a symbolic link",
         path);
+      errno = EPERM;
     }
 
     return res;
@@ -365,15 +385,7 @@ int pr_trace_set_file(const char *path) {
 int pr_trace_set_levels(const char *channel, int min_level, int max_level) {
 
   if (channel == NULL) {
-    void *v;
-
     if (trace_tab == NULL) {
-      errno = EINVAL;
-      return -1;
-    }
-
-    v = pr_table_remove(trace_tab, channel, NULL);
-    if (v == NULL) {
       errno = EINVAL;
       return -1;
     }
@@ -464,6 +476,10 @@ int pr_trace_use_stderr(int use_stderr) {
     /* Avoid a file descriptor leak by closing any existing fd. */
     (void) close(trace_logfd);
     trace_logfd = res;
+
+  } else {
+    (void) close(trace_logfd);
+    trace_logfd = -1;
   }
 
   return 0;
@@ -472,6 +488,19 @@ int pr_trace_use_stderr(int use_stderr) {
 int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
   int res;
   va_list msg;
+
+  if (channel == NULL ||
+      fmt == NULL ||
+      level <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* If no one's listening... */
+  if (trace_logfd < 0 &&
+      pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
+    return 0;
+  }
 
   va_start(msg, fmt);
   res = pr_trace_vmsg(channel, level, fmt, msg);
@@ -482,10 +511,10 @@ int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
 
 int pr_trace_vmsg(const char *channel, int level, const char *fmt,
     va_list msg) {
-  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
+  char buf[PR_TUNABLE_BUFFER_SIZE * 2];
   size_t buflen;
-  struct trace_levels *levels;
-  int discard = FALSE;
+  const struct trace_levels *levels;
+  int discard = FALSE, listening;
 
   /* Writing a trace message at level zero is NOT helpful; this makes it
    * impossible to quell messages to that trace channel by setting the level
@@ -505,12 +534,19 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
     return -1;
   }
 
+  /* If no one's listening... */
+  if (trace_logfd < 0) {
+    return 0;
+  }
+
+  listening = pr_log_event_listening(PR_LOG_TYPE_TRACELOG);
+
   levels = trace_get_levels(channel);
   if (levels == NULL) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
-      return -1;
+    if (listening <= 0) {
+      return 0;
     }
   }
 
@@ -518,7 +554,7 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
       level < levels->min_level) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
+    if (listening <= 0) {
       return 0;
     }
   }
@@ -527,15 +563,25 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
       level > levels->max_level) {
     discard = TRUE;
 
-    if (pr_log_event_listening(PR_LOG_TYPE_TRACELOG) <= 0) {
+    if (listening <= 0) {
       return 0;
     }
   }
 
-  buflen = vsnprintf(buf, sizeof(buf), fmt, msg);
+  buflen = vsnprintf(buf, sizeof(buf)-1, fmt, msg);
 
   /* Always make sure the buffer is NUL-terminated. */
   buf[sizeof(buf)-1] = '\0';
+
+  if (buflen < sizeof(buf)) {
+    buf[buflen] = '\0';
+
+  } else {
+    /* Note that vsnprintf() returns the number of characters _that would have
+     * been printed if buffer were unlimited_.  Be careful of this.
+     */
+    buflen = sizeof(buf)-1; 
+  }
 
   /* Trim trailing newlines. */
   while (buflen >= 1 &&

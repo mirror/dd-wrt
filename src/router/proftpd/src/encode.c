@@ -22,7 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* UTF8/charset encoding/decoding */
+/* UTF8/charset encoding/decoding. */
 
 #include "conf.h"
 
@@ -40,6 +40,7 @@
 static iconv_t decode_conv = (iconv_t) -1;
 static iconv_t encode_conv = (iconv_t) -1;
 
+static unsigned long encoding_policy = 0UL;
 static const char *local_charset = NULL;
 static const char *encoding = "UTF-8";
 static int supports_telnet_iac = TRUE;
@@ -245,8 +246,9 @@ char *pr_decode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
 
   outbuflen = sizeof(outbuf);
 
-  if (str_convert(decode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0)
+  if (str_convert(decode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     return NULL;
+  }
 
   *outlen = sizeof(outbuf) - outbuflen;
 
@@ -299,8 +301,9 @@ char *pr_encode_str(pool *p, const char *in, size_t inlen, size_t *outlen) {
 
   outbuflen = sizeof(outbuf);
 
-  if (str_convert(encode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0)
+  if (str_convert(encode_conv, inbuf, &inbuflen, outbuf, &outbuflen) < 0) {
     return NULL;
+  }
 
   *outlen = sizeof(outbuf) - outbuflen;
 
@@ -374,6 +377,15 @@ int pr_encode_enable_encoding(const char *codeset) {
   errno = ENOSYS;
   return -1;
 #endif /* !HAVE_ICONV_H */
+}
+
+unsigned long pr_encode_get_policy(void) {
+  return encoding_policy;
+}
+
+int pr_encode_set_policy(unsigned long policy) {
+  encoding_policy = policy;
+  return 0;
 }
 
 const char *pr_encode_get_local_charset(void) {
@@ -469,11 +481,15 @@ int pr_encode_set_charset_encoding(const char *charset, const char *codeset) {
 
   res = encode_init();
   if (res < 0) {
+    int xerrno = errno;
+
     pr_trace_msg(trace_channel, 1,
       "failed to initialize encoding for local charset %s, encoding %s, "
       "disabling encoding", charset, codeset);
     local_charset = NULL;
     encoding = NULL;
+
+    errno = xerrno;
   }
 
   return res;

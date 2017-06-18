@@ -1,6 +1,4 @@
-<!-- $Id: ftpasswd.html,v 1.2 2011-03-03 22:17:29 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/utils/ftpasswd.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ftpasswd: tool for ProFTPD's AuthUserFile, AuthGroupFile, UserPassword </title>
@@ -8,12 +6,13 @@
 
 <body bgcolor=white>
 
-<hr><br>
+<hr>
 <center>
 <h2><b><code>ftpasswd</code>: tool for ProFTPD's <code>AuthUserFile</code>, <code>AuthGroupFile</code>, <code>UserPassword</code></b></h2>
 </center>
-<hr><br>
+<hr>
 
+<p>
 This program is used to create and manage files, correctly formatted, suitable
 for use with ProFTPD's <a href="../modules/mod_auth_file.html#AuthUserFile"><code>AuthUserFile</code></a> and <a href="../modules/mod_auth_file.html#AuthGroupFile"><code>AuthGroupFile</code></a> configuration directives.  It can also
 generate password hashes for ProFTPD's <a href="../modules/mod_auth.html#UserPassword"><code>UserPassword</code></a> directive.
@@ -67,20 +66,20 @@ include <code>--gid</code> (defaults to the given <code>--uid</code> argument
 when not provided) and <code>--gecos</code> (not used by <code>proftpd</code>
 at all).  For example:
 <pre>
-  ftpasswd --passwd --name=bob --uid=1001 --home=/home/bob --shell=/bin/false
+  $ ftpasswd --passwd --name=bob --uid=1001 --home=/home/bob --shell=/bin/false
 </pre>
 creates an account for user <code>bob</code>.  To create a file with a name or
 location other than the default (which, for <code>--passwd</code> mode is
 <code>ftpd.passwd</code>), use the <code>--file</code> option.  For example, to create the alternate password file in <code>/usr/local/etc/ftpd/passwd</code>:
 <pre>
-  ftpasswd --passwd --file=/usr/local/etc/ftpd/passwd --name=bob --uid=1001 --home=/home/bob \
+  $ ftpasswd --passwd --file=/usr/local/etc/ftpd/passwd --name=bob --uid=1001 --home=/home/bob \
     --shell=/bin/false
 </pre>
 
 <p>
 For <code>AuthGroupFile</code>s, use <code>--group</code>:
 <pre>
-  ftpasswd --group --name=<i>group-name</i> --gid=<i>group-id</i> --member=<i>user-member1</i>  \
+  $ ftpasswd --group --name=<i>group-name</i> --gid=<i>group-id</i> --member=<i>user-member1</i>  \
     --member=<i>user-member2</i> ... --member=<i>user-memberN</i>
 </pre>
 
@@ -89,7 +88,7 @@ The most common change to these files is made to <code>AuthUserFile</code>s, to
 change a user's password.  The <code>--change-password</code> option was
 provided just for this scenario:
 <pre>
-  ftpasswd --passwd --name=<i>user</i> --change-password
+  $ ftpasswd --passwd --name=<i>user</i> --change-password
 </pre>
 
 <p>
@@ -100,7 +99,7 @@ One could generate a file using <code>--passwd</code> and then extract the
 password hash from the file.  Easier, though, is to use <code>ftpasswd</code>'s
 <code>--hash</code> option:
 <pre>
-  ftpasswd --hash
+  $ ftpasswd --hash
 </pre>
 The password will either be prompted for, or it can be given on standard in
 using <code>--stdin</code>.
@@ -123,7 +122,7 @@ user/group, password matched system password and the
 option is <code>--stdin</code>: this allows scripts to provide a password to
 <code>ftpasswd</code> without prompting for a password.  For example:
 <pre>
-  echo <i>passwd-variable</i> | ftpasswd <i>opts</i> --stdin
+  $ echo <i>passwd-variable</i> | ftpasswd <i>opts</i> --stdin
 </pre>
 Note that the <code>--stdin</code> option does <b>not</b> allow passwords to
 be passed to the script on the command line, but on <code>stdin</code>.  This
@@ -211,6 +210,21 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 requests that a new password be given if the entered password
                 is the same as the current password.
 
+    --delete-user
+
+                Remove the entry for the given user name from the file.
+
+    -l          Lock the password of the named account.  This option disables a
+    --lock      password by changing it to a value which matches no possible
+                encrypted value (it adds a '!' at the beginning of the
+                password).
+
+    --not-previous-password
+
+                Double-checks the given password against the previous password
+                for the user, and requests that a new password be given if
+                the entered password is the same as the previous password.
+
     --not-system-password
 
                 Double-checks the given password against the system password
@@ -219,10 +233,18 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 helps to enforce different passwords for different types of
                 access.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
                 automate use of ftpasswd.
+
+    -u          Unlock the password of the named account.  This option
+    --unlock    re-enables a password by changing the password back to its
+                previous value (to the value before using the -l option).
 
     --use-cracklib
                 Causes ftpasswd to use Alec Muffet's cracklib routines in
@@ -241,6 +263,10 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
   By default, using --group will write output to "./ftpd.group".
 
   Options:
+
+    --delete-group
+
+                Remove the entry for the given group name from the file.
 
     --enable-group-passwd
 
@@ -272,6 +298,10 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
                 the specified output-file, an entry will be created for them.
                 Otherwise, the given fields will be updated.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
@@ -300,6 +330,10 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
     --md5       Use the MD5 algorithm for encrypting passwords.  This is the
                 default.
 
+    --sha256    Use the SHA-256 algorithm for encrypting passwords.
+
+    --sha512    Use the SHA-512 algorithm for encrypting passwords.
+
     --stdin
                 Read the password directly from standard in rather than
                 prompting for it.  This is useful for writing scripts that
@@ -315,18 +349,11 @@ usage: ftpasswd [--help] [--hash|--group|--passwd]
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011-03-03 22:17:29 $</i><br>
-
 <br><hr>
-
 <font size=2><b><i>
-&copy; Copyright 2000-2011 TJ Saunders<br>
+&copy; Copyright 2000-2016 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
 <hr><br>
 
 </body>

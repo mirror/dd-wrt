@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +25,6 @@
 
 /* Simple utility to create the proftpd shutdown message file, allowing
  * an admin to configure the shutdown, deny, disconnect times and messages.
- *
- * $Id: ftpshut.c,v 1.10 2013-02-15 22:39:01 castaglia Exp $
  */
 
 #include "conf.h"
@@ -43,8 +41,10 @@ static int isnumeric(char *str) {
     str++;
   }
 
-  if (!str || !*str)
+  if (str == NULL ||
+      !*str) {
     return 0;
+  }
 
   for (; str && *str; str++) {
     if (!PR_ISDIGIT(*str)) {
@@ -88,16 +88,19 @@ int main(int argc, char *argv[]) {
 	  show_usage(progname);
         }
 
-        if (c == 'd')
+        if (c == 'd') {
 	  disc = atoi(optarg);
 
-        else if (c == 'l')
+        } else if (c == 'l') {
 	  deny = atoi(optarg);
+        }
 
         break;
 
       case '?':
         fprintf(stderr, "%s: unknown option '%c'\n", progname, (char)optopt);
+        show_usage(progname);
+        break;
 
       case 'h':
       default:
@@ -106,28 +109,31 @@ int main(int argc, char *argv[]) {
   }
 
   /* Everything left on the command line is the message */
-  if (optind >= argc)
+  if (optind >= argc) {
     show_usage(progname);
+  }
 
   shut = argv[optind++];
 
-  if(optind < argc)
+  if (optind < argc) {
     msg = argv[optind];
-  else
+
+  } else {
     msg = "going down at %s";
+  }
 
   time(&now);
   tm = localtime(&now);
 
   /* shut must be either 'now', '+number' or 'HHMM' */
-  if(strcasecmp(shut,"now") != 0) {
-    if(*shut == '+') {
+  if (strcasecmp(shut,"now") != 0) {
+    if (*shut == '+') {
       shut++;
       while (shut && *shut && PR_ISSPACE(*shut)) shut++;
 
       if (!isnumeric(shut)) {
-	fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
-	show_usage(progname);
+        fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
+        show_usage(progname);
       }
 
       now += (60 * atoi(shut));
@@ -135,31 +141,29 @@ int main(int argc, char *argv[]) {
 
     } else {
       if ((strlen(shut) != 4 && strlen(shut) != 2) || !isnumeric(shut)) {
-	fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
-	show_usage(progname);
+        fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
+        show_usage(progname);
       }
 
-      if(strlen(shut) > 2) {
+      if (strlen(shut) > 2) {
         mn = atoi((shut + strlen(shut) - 2));
-
-	if(mn > 59) {
-	  fprintf(stderr, "%s: Invalid time interval specified.\n",
-		  progname);
-	  show_usage(progname);
-	}
+        if (mn > 59) {
+          fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
+          show_usage(progname);
+        }
 
         *(shut + strlen(shut) - 2) = '\0';
       }
 
       hr = atoi(shut);
-
-      if(hr > 23) {
-	fprintf(stderr, "%s: Invalid time interval specified.\n",
-		progname);
-	show_usage(progname);
+      if (hr > 23) {
+        fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
+        show_usage(progname);
       }
 
-      if(hr < tm->tm_hour || (hr == tm->tm_hour && mn <= tm->tm_min)) {
+      if (hr < tm->tm_hour ||
+          (hr == tm->tm_hour &&
+           mn <= tm->tm_min)) {
         now += 86400;		/* one day forward */
         tm = localtime(&now);
       }
@@ -169,19 +173,21 @@ int main(int argc, char *argv[]) {
   }
 
   umask(022);
-  if ((outf = fopen(PR_SHUTMSG_PATH, "w")) == NULL) {
+
+  outf = fopen(PR_SHUTMSG_PATH, "w");
+  if (outf == NULL) {
     fprintf(stderr,"%s: error opening '" PR_SHUTMSG_PATH "': %s\n", progname,
       strerror(errno));
     exit(1);
   }
 
-  fprintf(outf,"%d %d %d %d %d %d",
+  fprintf(outf, "%d %d %d %d %d %d",
           tm->tm_year+1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour,
           tm->tm_min, tm->tm_sec);
-  fprintf(outf," %02d%02d %02d%02d\n",
-          (deny / 60),(deny % 60),
-          (disc / 60),(disc % 60));
-  fprintf(outf,"%s\n",msg);
+  fprintf(outf, " %02d%02d %02d%02d\n",
+          (deny / 60), (deny % 60),
+          (disc / 60), (disc % 60));
+  fprintf(outf, "%s\n", msg);
   fclose(outf);
   return 0;
 }

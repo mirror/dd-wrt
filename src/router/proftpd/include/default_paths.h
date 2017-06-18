@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +26,6 @@
 /* ProFTPD default path configuration.  Normally, Makefiles generated
  * by the top-level configuration script define the PR_RUN_DIR and
  * PR_CONFIG_FILE_PATH macros, so the two below are typically not used.
- * $Id: default_paths.h,v 1.12 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PROFTPD_PATHS_H
@@ -63,14 +62,18 @@
 /* The location of your `shells' file; a newline delimited list of
  * valid shells on your system.
  */
-#define PR_VALID_SHELL_PATH	"/etc/shells"
+#ifndef PR_VALID_SHELL_PATH
+# define PR_VALID_SHELL_PATH	"/etc/shells"
+#endif
 
 /* Where your log files are kept.  The "wu-ftpd style" xferlog is
  * stored here, as well as "extended" (not yet available) transfer
  * log files.  These can be overridden in the configuration file via
  * "TransferLog" and "ExtendedLog".
  */
-#define PR_XFERLOG_PATH		"/var/log/xferlog"
+#ifndef PR_XFERLOG_PATH
+# define PR_XFERLOG_PATH	"/var/log/xferlog"
+#endif
 
 /* Location of the file that tells proftpd to discontinue servicing
  * requests.
@@ -80,6 +83,8 @@
 /* Location of the file containing users that *cannot* use ftp
  * services (odd, eh?)
  */
-#define PR_FTPUSERS_PATH	"/etc/ftpusers"
+#ifndef PR_FTPUSERS_PATH
+# define PR_FTPUSERS_PATH	"/etc/ftpusers"
+#endif
 
 #endif /* PROFTPD_PATHS_H */

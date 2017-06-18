@@ -40,12 +40,11 @@
 #include "libsupp.h"
 
 /* "safe" strncpy, saves room for \0 at end of dest, and refuses to copy
- * more than "n" bytes.
+ * more than "n" bytes.  Returns the number of bytes copied, or -1 if there
+ * was an error.
  */
 int sstrncpy(char *dst, const char *src, size_t n) {
-#ifndef HAVE_STRLCPY
-  register char *d = dst;
-#endif /* HAVE_STRLCPY */
+  register char *d;
   int res = 0;
 
   if (dst == NULL) {
@@ -67,15 +66,7 @@ int sstrncpy(char *dst, const char *src, size_t n) {
     return n;
   }
 
-#ifdef HAVE_STRLCPY
-  strlcpy(dst, src, n);
-
-  /* We want the returned length to be the number of bytes copied as
-   * requested by the caller, not the total length of the src string.
-   */
-  res = n;
-
-#else
+  d = dst;
   if (src && *src) {
     for (; *src && n > 1; n--) {
       *d++ = *src++;
@@ -84,8 +75,5 @@ int sstrncpy(char *dst, const char *src, size_t n) {
   }
 
   *d = '\0';
-#endif /* HAVE_STRLCPY */
-
   return res;
 }
-

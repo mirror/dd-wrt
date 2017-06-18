@@ -60,9 +60,6 @@
 /* Define if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
-/* Define if you already have a typedef for timer_t */
-#undef HAVE_TIMER_T
-
 /* Define if your struct utmp has ut_host */
 #undef HAVE_UT_UT_HOST
 

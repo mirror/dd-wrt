@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_ident -- a module for performing identd lookups [RFC1413]
- *
- * Copyright (c) 2008-2013 The ProFTPD Project
+ * Copyright (c) 2008-2016 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: mod_ident.c,v 1.11 2013-02-15 22:50:54 castaglia Exp $
  */
 
 #include "conf.h"
@@ -64,13 +61,13 @@ static int ident_timeout_cb(CALLBACK_FRAME) {
 static char *ident_lookup(pool *p, conn_t *conn) {
   conn_t *ident_conn = NULL, *ident_io = NULL;
   char buf[256], *ident = NULL;
-  int timerno, res = 0;
-  int ident_port = pr_inet_getservport(p, "ident", "tcp");
-  pr_netaddr_t *bind_addr;
+  int ident_port, timerno, res = 0;
+  const pr_netaddr_t *bind_addr;
 
   ident_nstrm = NULL;
   ident_timeout_triggered = FALSE;
   
+  ident_port = pr_inet_getservport(p, "ident", "tcp");
   if (ident_port == -1) {
     return NULL;
   }
@@ -292,29 +289,6 @@ static char *ident_lookup(pool *p, conn_t *conn) {
   return pstrdup(p, ident);
 }
 
-/* Command handlers
- */
-
-MODRET ident_post_host(cmd_rec *cmd) {
-
-  /* If the HOST command changed the main_server pointer, reinitialize
-   * ourselves.
-   */
-  if (session.prev_server != NULL) {
-    int res;
-
-    ident_engine = FALSE;
-
-    res = ident_sess_init();
-    if (res < 0) {
-      pr_session_disconnect(&ident_module,
-        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
-    }
-  }
-
-  return PR_DECLINED(cmd);
-}
-
 /* Configuration handlers
  */
 
@@ -337,6 +311,26 @@ MODRET set_identlookups(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* Event listeners
+ */
+
+static void ident_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&ident_module, "core.session-reinit",
+    ident_sess_reinit_ev);
+
+  ident_engine = FALSE;
+
+  res = ident_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&ident_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization functions
  */
 
@@ -344,6 +338,9 @@ static int ident_sess_init(void) {
   pool *tmp_pool = NULL;
   config_rec *c;
   char *ident = NULL;
+
+  pr_event_register(&ident_module, "core.session-reinit", ident_sess_reinit_ev,
+    NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "IdentLookups", FALSE);
   if (c != NULL) {
@@ -364,6 +361,7 @@ static int ident_sess_init(void) {
   }
 
   tmp_pool = make_sub_pool(session.pool);
+  pr_pool_tag(tmp_pool, "IdentLookup pool");
 
   /* Perform the RFC1413 lookup */
   pr_log_debug(DEBUG6, MOD_IDENT_VERSION ": performing ident lookup");
@@ -401,11 +399,6 @@ static conftable ident_conftab[] = {
   { NULL }
 };
 
-static cmdtable ident_cmdtab[] = {
-  { POST_CMD,	C_HOST,	G_NONE,	ident_post_host,	FALSE,	FALSE },
-  { 0, NULL }
-};
-
 module ident_module = {
   NULL, NULL,
 
@@ -419,7 +412,7 @@ module ident_module = {
   ident_conftab,
 
   /* Module command handler table */
-  ident_cmdtab,
+  NULL,
 
   /* Module authentication handler table */
   NULL,

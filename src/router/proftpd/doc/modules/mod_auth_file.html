@@ -1,6 +1,4 @@
-<!-- $Id: mod_auth_file.html,v 1.6 2014-01-22 04:18:09 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_auth_file.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_auth_file</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>mod_auth_file.c</code> file for
 ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
@@ -24,7 +23,7 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 </ul>
 
 <hr>
-<h2><a name="AuthGroupFile">AuthGroupFile</a></h2>
+<h3><a name="AuthGroupFile">AuthGroupFile</a></h3>
 <strong>Syntax:</strong> AuthGroupFile <em>path [id min-max] [name regex]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -77,7 +76,7 @@ will be logged on server startup/restart.
 
 <p>
 <hr>
-<h2><a name="AuthUserFile">AuthUserFile</a></h2>
+<h3><a name="AuthUserFile">AuthUserFile</a></h3>
 <strong>Syntax:</strong> AuthUserFile <em>path [id min-max] [home regex] [name regex]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -136,6 +135,21 @@ will be logged on server startup/restart.
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_auth_file</code> module is compiled by default.
 
+<p>
+<b>Logging</b><br>
+The <code>mod_auth_file</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>auth.file
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace auth.file:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
+
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
@@ -175,7 +189,7 @@ or:
 <code>AuthGroupFile</code> is world-writable, then <b>any user on the system
 can edit that file</b>.  They can create new users, or change the entries
 for existing users such that those users have different privileges, perhaps
-even root privileges.  In short, having <code>AuthUserFile<code> or
+even root privileges.  In short, having <code>AuthUserFile</code> or
 <code>AuthGroupFile</code> with world-writable permissions is an unsafe
 configuration, and now <code>mod_auth_file</code> prevents this.
 
@@ -195,19 +209,12 @@ directory would allow <b>any system user to delete the <code>AuthUserFile</code>
 unsafe configuration against which <code>mod_auth_file</code> now guards.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2014-01-22 04:18:09 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2014<br>
+&copy; Copyright 2002-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

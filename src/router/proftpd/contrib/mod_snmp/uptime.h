@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp uptime 
- * Copyright (c) 2012 TJ Saunders
+ * Copyright (c) 2012-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,13 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: uptime.h,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
-
-#include "mod_snmp.h"
 
 #ifndef MOD_SNMP_UPTIME_H
 #define MOD_SNMP_UPTIME_H
 
+#include "mod_snmp.h"
+
 int snmp_uptime_get(pool *p, struct timeval *tv);
 
-#endif
+#endif /* MOD_SNMP_UPTIME_H */

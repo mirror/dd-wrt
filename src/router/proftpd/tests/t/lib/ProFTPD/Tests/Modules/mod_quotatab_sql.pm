@@ -66,6 +66,16 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  quotatab_stor_ok_user_default_with_group_limit => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  quotatab_stor_ok_user_default_with_no_group_limit => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
   quotatab_stor_ok_group_limit => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -82,6 +92,11 @@ my $TESTS = {
   },
 
   quotatab_stor_ok_group_limit_files_in_exceeded => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  quotatab_stor_ok_group_limit_with_default => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -211,6 +226,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  quotatab_sql_odbc => {
+    order => ++$order,
+    test_class => [qw(forking mod_sql_odbc)],
+  },
+
 };
 
 sub new {
@@ -314,7 +334,7 @@ sub quotatab_stor_ok_user_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -325,14 +345,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -346,7 +366,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -545,7 +565,7 @@ sub quotatab_appe_ok_user_limit_bytes_in_exceeded_soft_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -556,14 +576,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -577,7 +597,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -765,7 +785,7 @@ sub quotatab_appe_ok_user_limit_bytes_in_exceeded_hard_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -776,14 +796,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -797,7 +817,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'hard', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -982,7 +1002,7 @@ sub quotatab_retr_ok_user_limit_bytes_out_exceeded {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -993,14 +1013,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -1014,7 +1034,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 0, 5, 0, 0, 3, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -1211,7 +1231,7 @@ sub quotatab_retr_ok_user_limit_files_out_exceeded {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -1222,14 +1242,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -1243,7 +1263,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 0, 0, 0, 0, 1, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -1422,7 +1442,7 @@ sub quotatab_stor_ok_user_limit_bytes_in_exceeded_soft_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -1433,14 +1453,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -1454,7 +1474,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -1631,7 +1651,7 @@ sub quotatab_stor_ok_user_limit_bytes_in_exceeded_hard_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -1642,14 +1662,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -1663,7 +1683,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'hard', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -1837,7 +1857,7 @@ sub quotatab_stor_ok_user_default_limit_bytes_in_exceeded_soft_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -1848,14 +1868,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -1868,7 +1888,7 @@ CREATE TABLE quotalimits (
 );
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -1922,7 +1942,7 @@ EOS
         'QuotaLimitTable sql:/get-quota-limit',
         'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
 
-        'QuotaDefault user false soft 5 0 0 3 0 0',
+        'QuotaDefault group false soft 5 0 0 3 0 0',
       ],
 
       'mod_sql.c' => {
@@ -2047,7 +2067,7 @@ sub quotatab_stor_ok_user_default_limit_bytes_in_exceeded_hard_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -2058,14 +2078,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -2078,7 +2098,7 @@ CREATE TABLE quotalimits (
 );
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -2254,7 +2274,7 @@ sub quotatab_stor_ok_user_limit_files_in_exceeded {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -2265,14 +2285,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -2286,7 +2306,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 1, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -2437,6 +2457,544 @@ EOS
   unlink($log_file);
 }
 
+sub quotatab_stor_ok_user_default_with_group_limit {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user1 = 'proftpd';
+  my $group = 'ftpd';
+  my $passwd = 'test';
+  my $home_dir1 = File::Spec->rel2abs("$tmpdir/foo");
+  mkpath($home_dir1);
+
+  my $uid1 = 500;
+  my $gid = 500;
+
+  my $user2 = 'proftpd2';
+  my $home_dir2 = File::Spec->rel2abs("$tmpdir/bar");
+  mkpath($home_dir2);
+
+  my $uid2 = 1000;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT PRIMARY KEY,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '$passwd', $uid1, $gid, '$home_dir1', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT PRIMARY KEY,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+INSERT INTO quotatallies (name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used) VALUES ('$group', 'group', 32, 0, 0, 2, 0, 0);
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+        'QuotaDefault user false hard 0 1 0 3 0 0',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+        SQLNamedQuery => 'get-user-info SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE userid=\'%U\'"',
+        SQLUserInfo => 'custom:/get-user-info',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client1 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+
+      # Login as user1, and upload a file
+      $client1->login($user1, $passwd);
+
+      # These uploads should fail because they encounter the configured
+      # group limits/tallies in the database, despite the presence of a
+      # user QuotaDefault in the config; the group limits/tallies should
+      # take precedence over the config default.
+
+      my $conn = $client1->stor_raw('test.txt');
+      if ($conn) {
+        die("STOR test.txt succeeded unexpectedly");
+      }
+
+      my $resp_code = $client1->response_code();
+      my $resp_msg = $client1->response_msg();
+
+      my $expected = 552;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      ($resp_code, $resp_msg) = $client1->quit();
+
+      $expected = 221;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      my $client2 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+
+      # Login as user2, and upload a file
+      $client2->login($user2, $passwd);
+
+      $conn = $client2->stor_raw('test.txt');
+      if ($conn) {
+        die("STOR test.txt succeeded unexpectedly");
+      }
+
+      $resp_code = $client2->response_code();
+      $resp_msg = $client2->response_msg();
+
+      $expected = 552;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $client2->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$group\'");
+
+    my $expected = 'group';
+    $self->assert($expected eq $quota_type,
+      test_msg("Expected '$expected', got '$quota_type'"));
+
+    $expected = '^(32.0|32)$';
+    $self->assert(qr/$expected/, $bytes_in_used,
+      test_msg("Expected $expected, got $bytes_in_used"));
+
+    $expected = '^(0.0|0)$';
+    $self->assert(qr/$expected/, $bytes_out_used,
+      test_msg("Expected $expected, got $bytes_out_used"));
+
+    $expected = '^(0.0|0)$';
+    $self->assert(qr/$expected/, $bytes_xfer_used,
+      test_msg("Expected $expected, got $bytes_xfer_used"));
+
+    $expected = 2;
+    $self->assert($expected == $files_in_used,
+      test_msg("Expected $expected, got $files_in_used"));
+
+    $expected = 0;
+    $self->assert($expected == $files_out_used,
+      test_msg("Expected $expected, got $files_out_used"));
+
+    $expected = 0;
+    $self->assert($expected == $files_xfer_used,
+      test_msg("Expected $expected, got $files_xfer_used"));
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub quotatab_stor_ok_user_default_with_no_group_limit {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user1 = 'proftpd';
+  my $group = 'ftpd';
+  my $passwd = 'test';
+  my $home_dir1 = File::Spec->rel2abs("$tmpdir/foo");
+  mkpath($home_dir1);
+
+  my $uid1 = 500;
+  my $gid = 500;
+
+  my $user2 = 'proftpd2';
+  my $home_dir2 = File::Spec->rel2abs("$tmpdir/bar");
+  mkpath($home_dir2);
+
+  my $uid2 = 1000;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT PRIMARY KEY,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '$passwd', $uid1, $gid, '$home_dir1', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT PRIMARY KEY,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+        'QuotaDefault user false hard 0 1 0 3 0 0',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+        SQLNamedQuery => 'get-user-info SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE userid=\'%U\'"',
+        SQLUserInfo => 'custom:/get-user-info',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client1 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+
+      # Login as user1, and upload a file
+      $client1->login($user1, $passwd);
+
+      # These uploads should fail because they encounter the configured
+      # group limits/tallies in the database, despite the presence of a
+      # user QuotaDefault in the config; the group limits/tallies should
+      # take precedence over the config default.
+
+      my $conn = $client1->stor_raw('test.txt');
+      unless ($conn) {
+        die("STOR test.txt failed: " . $client1->response_code() . " " .
+          $client1->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client1->response_code();
+      my $resp_msg = $client1->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      ($resp_code, $resp_msg) = $client1->quit();
+
+      my $expected = 221;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      my $client2 = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+
+      # Login as user2, and upload a file
+      $client2->login($user2, $passwd);
+
+      $conn = $client2->stor_raw('test.txt');
+      unless ($conn) {
+        die("STOR test.txt failed: " . $client2->response_code() . " " .
+          $client2->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client2->response_code();
+      my $resp_msg = $client2->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      $client2->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$user1\'");
+
+    my $expected = 'user';
+    $self->assert($expected eq $quota_type,
+      test_msg("Expected '$expected', got '$quota_type'"));
+
+    $expected = '^(0.0|0)$';
+    $self->assert(qr/$expected/, $bytes_in_used,
+      test_msg("Expected $expected, got $bytes_in_used"));
+
+    $expected = '^(0.0|0)$';
+    $self->assert(qr/$expected/, $bytes_out_used,
+      test_msg("Expected $expected, got $bytes_out_used"));
+
+    $expected = '^(0.0|0)$';
+    $self->assert(qr/$expected/, $bytes_xfer_used,
+      test_msg("Expected $expected, got $bytes_xfer_used"));
+
+    $expected = 1;
+    $self->assert($expected == $files_in_used,
+      test_msg("Expected $expected, got $files_in_used"));
+
+    $expected = 0;
+    $self->assert($expected == $files_out_used,
+      test_msg("Expected $expected, got $files_out_used"));
+
+    $expected = 0;
+    $self->assert($expected == $files_xfer_used,
+      test_msg("Expected $expected, got $files_xfer_used"));
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
 sub quotatab_stor_ok_group_limit {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -2470,7 +3028,7 @@ sub quotatab_stor_ok_group_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -2482,14 +3040,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -2503,7 +3061,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -2564,6 +3122,8 @@ EOS
         SQLConnectInfo => $db_file,
         SQLLogFile => $log_file,
         SQLMinID => '0',
+        SQLNamedQuery => 'get-user-info SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE userid=\'%U\'"',
+        SQLUserInfo => 'custom:/get-user-info',
       },
     },
   };
@@ -2725,7 +3285,7 @@ sub quotatab_stor_ok_group_limit_bytes_in_exceeded_soft_limit  {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -2737,14 +3297,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -2758,7 +3318,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'soft', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -2952,7 +3512,7 @@ sub quotatab_stor_ok_group_limit_bytes_in_exceeded_hard_limit  {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -2964,14 +3524,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -2985,7 +3545,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'hard', 20, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -3186,7 +3746,7 @@ sub quotatab_stor_ok_group_limit_files_in_exceeded  {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -3198,14 +3758,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -3219,7 +3779,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'soft', 32, 0, 0, 1, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -3376,6 +3936,264 @@ EOS
   unlink($log_file);
 }
 
+sub quotatab_stor_ok_group_limit_with_default {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/quotatab.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/quotatab.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/quotatab.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $user1 = 'proftpd';
+  my $group = 'ftpd';
+  my $passwd = 'test';
+  my $home_dir1 = File::Spec->rel2abs("$tmpdir/foo");
+  mkpath($home_dir1);
+
+  my $uid1 = 500;
+  my $gid = 500;
+
+  my $user2 = 'proftpd2';
+  my $home_dir2 = File::Spec->rel2abs("$tmpdir/bar");
+  mkpath($home_dir2);
+
+  my $uid2 = 1000;
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT PRIMARY KEY,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '$passwd', $uid1, $gid, '$home_dir1', '/bin/bash');
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT PRIMARY KEY,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user1,$user2');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$group', 'group', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $log_file",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+        'QuotaDefault group false hard 0 1 0 3 0 0',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $log_file,
+        SQLMinID => '0',
+        SQLNamedQuery => 'get-user-info SELECT "userid, passwd, uid, gid, homedir, shell FROM users WHERE userid=\'%U\'"',
+        SQLUserInfo => 'custom:/get-user-info',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      # Login as user1, and upload a file
+      $client->login($user1, $passwd);
+
+      my $conn = $client->stor_raw('test.txt');
+      unless ($conn) {
+        die("Failed to STOR test.txt: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+
+      $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      # Login as user2, and upload a file
+      $client->login($user2, $passwd);
+
+      $conn = $client->stor_raw('test.txt');
+      unless ($conn) {
+        die("Failed to STOR test.txt: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  my ($quota_type, $bytes_in_used, $bytes_out_used, $bytes_xfer_used, $files_in_used, $files_out_used, $files_xfer_used) = get_tally($db_file, "name = \'$group\'");
+
+  my $expected;
+
+  $expected = 'group';
+  $self->assert($expected eq $quota_type,
+    test_msg("Expected '$expected', got '$quota_type'"));
+
+  $expected = '^(26.0|26)$';
+  $self->assert(qr/$expected/, $bytes_in_used,
+    test_msg("Expected $expected, got $bytes_in_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_out_used,
+    test_msg("Expected $expected, got $bytes_out_used"));
+
+  $expected = '^(0.0|0)$';
+  $self->assert(qr/$expected/, $bytes_xfer_used,
+    test_msg("Expected $expected, got $bytes_xfer_used"));
+
+  $expected = 2;
+  $self->assert($expected == $files_in_used,
+    test_msg("Expected $expected, got $files_in_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_out_used,
+    test_msg("Expected $expected, got $files_out_used"));
+
+  $expected = 0;
+  $self->assert($expected == $files_xfer_used,
+    test_msg("Expected $expected, got $files_xfer_used"));
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
 sub quotatab_stor_ok_class_limit {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -3411,7 +4229,7 @@ sub quotatab_stor_ok_class_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -3423,14 +4241,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -3444,7 +4262,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$class', 'class', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -3674,7 +4492,7 @@ sub quotatab_stor_ok_class_limit_bytes_in_exceeded_soft_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -3686,14 +4504,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -3707,7 +4525,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$class', 'class', 'false', 'soft', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -3909,7 +4727,7 @@ sub quotatab_stor_ok_class_limit_bytes_in_exceeded_hard_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -3921,14 +4739,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -3942,7 +4760,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$class', 'class', 'false', 'hard', 20, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -4153,7 +4971,7 @@ sub quotatab_stor_ok_class_limit_files_in_exceeded {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -4165,14 +4983,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -4186,7 +5004,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$class', 'class', 'false', 'hard', 32, 0, 0, 1, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -4382,7 +5200,7 @@ sub quotatab_stor_ok_all_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -4394,14 +5212,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -4415,7 +5233,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('', 'all', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -4637,7 +5455,7 @@ sub quotatab_stor_ok_all_limit_bytes_in_exceeded_soft_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -4649,14 +5467,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -4670,7 +5488,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('', 'all', 'false', 'soft', 5, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -4864,7 +5682,7 @@ sub quotatab_stor_ok_all_limit_bytes_in_exceeded_hard_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -4876,14 +5694,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -4897,7 +5715,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('', 'all', 'false', 'hard', 20, 0, 0, 3, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -5100,7 +5918,7 @@ sub quotatab_stor_ok_all_limit_files_in_exceeded {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -5112,14 +5930,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user1', '
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user2', '$passwd', $uid2, $gid, '$home_dir2', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -5133,7 +5951,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('', 'all', 'false', 'hard', 32, 0, 0, 1, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -5315,7 +6133,7 @@ sub quotatab_stor_bug3164 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -5326,14 +6144,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -5347,7 +6165,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -5559,7 +6377,7 @@ sub quotatab_dele_ok_user_limit {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -5570,14 +6388,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -5591,7 +6409,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 32, 3, 0, 3);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -5811,7 +6629,7 @@ sub quotatab_dele_user_owner_bug3161 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -5823,14 +6641,14 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$other_user', '$passwd', 777, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user,$other_user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -5845,7 +6663,7 @@ INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_ava
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$other_user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -6100,7 +6918,7 @@ sub quotatab_dele_group_owner_bug3161 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -6112,7 +6930,7 @@ INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$other_user', '$passwd', 777, 777, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
@@ -6120,7 +6938,7 @@ INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 INSERT INTO groups (groupname, gid, members) VALUES ('$other_group', 777, '$other_user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -6135,7 +6953,7 @@ INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_ava
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$other_group', 'group', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -6387,7 +7205,7 @@ sub quotatab_new_tally_lock_bug3086 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -6398,14 +7216,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -6419,7 +7237,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -6602,7 +7420,7 @@ sub quotatab_config_exclude_filter_bug3298 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -6613,14 +7431,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -6634,7 +7452,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -6839,7 +7657,7 @@ sub quotatab_config_exclude_filter_chrooted_bug3298 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -6850,14 +7668,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -6871,7 +7689,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -7062,7 +7880,7 @@ sub quotatab_config_exclude_filter_bug3878 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -7073,14 +7891,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -7094,7 +7912,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'hard', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -7289,7 +8107,7 @@ sub quotatab_config_opt_scanonlogin {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -7300,14 +8118,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -7321,7 +8139,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -7541,7 +8359,7 @@ sub quotatab_config_opt_scanonlogin_chrooted {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -7552,14 +8370,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -7573,7 +8391,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -7793,7 +8611,7 @@ sub quotatab_config_opt_scanonlogin_new_tally_bug3440 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -7804,14 +8622,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -7825,7 +8643,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -8044,7 +8862,7 @@ sub quotatab_site_bug3483 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -8055,14 +8873,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -8076,7 +8894,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -8261,7 +9079,7 @@ sub quotatab_dele_failed_bug3517 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -8272,14 +9090,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -8293,7 +9111,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -8504,7 +9322,7 @@ sub quotatab_sql_dele_bug3524 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -8515,14 +9333,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -8536,7 +9354,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 32, 3, 0, 3);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -8774,7 +9592,7 @@ sub quotatab_stor_deleteabortedstores_conn_abor_bug3621 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -8785,14 +9603,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -8806,7 +9624,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -8998,7 +9816,7 @@ sub quotatab_stor_deleteabortedstores_cmd_abor_bug3621 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -9009,14 +9827,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', $uid, $gid, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', $gid, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -9030,7 +9848,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -9234,7 +10052,7 @@ sub quotatab_sql_addl_query_columns_bug3879 {
   if (open(my $fh, "> $db_script")) {
     print $fh <<EOS;
 CREATE TABLE users (
-  userid TEXT,
+  userid TEXT PRIMARY KEY,
   passwd TEXT,
   uid INTEGER,
   gid INTEGER,
@@ -9245,14 +10063,14 @@ CREATE TABLE users (
 INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$user', '$passwd', 500, 500, '$home_dir', '/bin/bash');
 
 CREATE TABLE groups (
-  groupname TEXT,
+  groupname TEXT PRIMARY KEY,
   gid INTEGER,
   members TEXT
 );
 INSERT INTO groups (groupname, gid, members) VALUES ('$group', 500, '$user');
 
 CREATE TABLE quotalimits (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   per_session TEXT NOT NULL,
   limit_type TEXT NOT NULL,
@@ -9267,7 +10085,7 @@ CREATE TABLE quotalimits (
 INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail, ip_addr) VALUES ('$user', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0, '127.0.0.1');
 
 CREATE TABLE quotatallies (
-  name TEXT NOT NULL,
+  name TEXT NOT NULL PRIMARY KEY,
   quota_type TEXT NOT NULL,
   bytes_in_used REAL NOT NULL,
   bytes_out_used REAL NOT NULL,
@@ -9432,6 +10250,188 @@ EOS
   }
 
   unlink($log_file);
+}
+
+# See:
+#  https://forums.proftpd.org/smf/index.php/topic,11862.0.html
+#
+# Note that this is more for diagnosing ODBC issues than quotatab issues.
+sub quotatab_sql_odbc {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'quotatab');
+
+  my $odbcini_path = File::Spec->rel2abs("t/etc/modules/mod_sql_odbc/odbc.ini");
+  my $odbcinst_path = File::Spec->rel2abs("t/etc/modules/mod_sql_odbc/odbcinst.ini");
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$setup->{user}', 'user', 'false', 'soft', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL PRIMARY KEY,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    AuthOrder => 'mod_auth_file.c',
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $setup->{log_file}",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        SQLAuthenticate => 'off',
+        SQLEngine => 'on',
+        SQLBackend => 'odbc',
+        SQLConnectInfo => "mysql proftpd developer PERCONNECTION",
+        SQLLogFile => $setup->{log_file},
+        SQLOptions => 'NoDisconnectOnError',
+      },
+
+      'mod_sql_odbc.c' => {
+        SQLODBCVersion => '2',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+# Necessary ODBC environment variables
+SetEnv ODBCINST $odbcinst_path
+SetEnv ODBCINI $odbcini_path
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->stor_raw('test.txt');
+      unless ($conn) {
+        die("Failed to STOR test.txt: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Hello, World\n";
+      $conn->write($buf, length($buf), 25);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

@@ -51,7 +51,15 @@
 /* --- User Switches ---------------------------------------------------- */
 /* ---------------------------------------------------------------------- */
 
-#define UMAC_OUTPUT_LEN     8  /* Alowable: 4, 8, 12, 16                  */
+#ifndef UMAC_OUTPUT_LEN
+# define UMAC_OUTPUT_LEN       8  /* Alowable: 4, 8, 12, 16               */
+#endif
+
+#if UMAC_OUTPUT_LEN != 4 && UMAC_OUTPUT_LEN != 8 && \
+    UMAC_OUTPUT_LEN != 12 && UMAC_OUTPUT_LEN != 16
+# error UMAC_OUTPUT_LEN must be defined to 4, 8, 12 or 16
+#endif
+
 /* #define FORCE_C_ONLY        1  ANSI C and 64-bit integers req'd        */
 /* #define AES_IMPLEMENTAION   1  1 = OpenSSL, 2 = Barreto, 3 = Gladman   */
 /* #define SSE2                0  Is SSE2 is available?                   */
@@ -995,49 +1003,6 @@ static void uhash_init(uhash_ctx_t ahc, aes_int_key prf_key)
 
 /* ---------------------------------------------------------------------- */
 
-#if 0
-static uhash_ctx_t uhash_alloc(unsigned char key[])
-{
-/* Allocate memory and force to a 16-byte boundary. */
-    uhash_ctx_t ctx;
-    unsigned char bytes_to_add;
-    aes_int_key prf_key;
-    
-    ctx = (uhash_ctx_t)malloc(sizeof(uhash_ctx)+ALLOC_BOUNDARY);
-    if (ctx) {
-        if (ALLOC_BOUNDARY) {
-            bytes_to_add = ALLOC_BOUNDARY -
-                              ((ptrdiff_t)ctx & (ALLOC_BOUNDARY -1));
-            ctx = (uhash_ctx_t)((unsigned char *)ctx + bytes_to_add);
-            *((unsigned char *)ctx - 1) = bytes_to_add;
-        }
-        aes_key_setup(key,prf_key);
-        uhash_init(ctx, prf_key);
-    }
-    return (ctx);
-}
-#endif
-
-/* ---------------------------------------------------------------------- */
-
-#if 0
-static int uhash_free(uhash_ctx_t ctx)
-{
-/* Free memory allocated by uhash_alloc */
-    unsigned char bytes_to_sub;
-    
-    if (ctx) {
-        if (ALLOC_BOUNDARY) {
-            bytes_to_sub = *((unsigned char *)ctx - 1);
-            ctx = (uhash_ctx_t)((unsigned char *)ctx - bytes_to_sub);
-        }
-        free(ctx);
-    }
-    return (1);
-}
-#endif
-/* ---------------------------------------------------------------------- */
-
 static int uhash_update(uhash_ctx_t ctx, unsigned char *input, long len)
 /* Given len bytes of data, we parse it into L1_KEY_LEN chunks and
  * hash each one with NH, calling the polyhash on each NH output.
@@ -1115,55 +1080,6 @@ static int uhash_final(uhash_ctx_t ctx, unsigned char *res)
 }
 
 /* ---------------------------------------------------------------------- */
-
-#if 0
-static int uhash(uhash_ctx_t ahc, unsigned char *msg, long len, unsigned char *res)
-/* assumes that msg is in a writable buffer of length divisible by */
-/* L1_PAD_BOUNDARY. Bytes beyond msg[len] may be zeroed.           */
-{
-    UINT8 nh_result[STREAMS*sizeof(UINT64)];
-    UINT32 nh_len;
-    int extra_zeroes_needed;
-        
-    /* If the message to be hashed is no longer than L1_HASH_LEN, we skip
-     * the polyhash.
-     */
-    if (len <= L1_KEY_LEN) {
-    	if (len == 0)                  /* If zero length messages will not */
-    		nh_len = L1_PAD_BOUNDARY;  /* be seen, comment out this case   */ 
-    	else
-        	nh_len = ((len + (L1_PAD_BOUNDARY - 1)) & ~(L1_PAD_BOUNDARY - 1));
-        extra_zeroes_needed = nh_len - len;
-        zero_pad((UINT8 *)msg + len, extra_zeroes_needed);
-        nh(&ahc->hash, (UINT8 *)msg, nh_len, len, nh_result);
-        ip_short(ahc,nh_result, res);
-    } else {
-        /* Otherwise, we hash each L1_KEY_LEN chunk with NH, passing the NH
-         * output to poly_hash().
-         */
-        do {
-            nh(&ahc->hash, (UINT8 *)msg, L1_KEY_LEN, L1_KEY_LEN, nh_result);
-            poly_hash(ahc,(UINT32 *)nh_result);
-            len -= L1_KEY_LEN;
-            msg += L1_KEY_LEN;
-        } while (len >= L1_KEY_LEN);
-        if (len) {
-            nh_len = ((len + (L1_PAD_BOUNDARY - 1)) & ~(L1_PAD_BOUNDARY - 1));
-            extra_zeroes_needed = nh_len - len;
-            zero_pad((UINT8 *)msg + len, extra_zeroes_needed);
-            nh(&ahc->hash, (UINT8 *)msg, nh_len, len, nh_result);
-            poly_hash(ahc,(UINT32 *)nh_result);
-        }
-
-        ip_long(ahc, res);
-    }
-    
-    uhash_reset(ahc);
-    return 1;
-}
-#endif
-
-/* ---------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------- */
 /* ----- Begin UMAC Section --------------------------------------------- */
 /* ---------------------------------------------------------------------- */
@@ -1179,7 +1095,7 @@ struct umac_ctx {
     uhash_ctx hash;          /* Hash function for message compression    */
     pdf_ctx pdf;             /* PDF for hashed output                    */
     void *free_ptr;          /* Address to free this struct via          */
-} umac_ctx;
+};
 
 /* ---------------------------------------------------------------------- */
 
@@ -1204,10 +1120,6 @@ int umac_delete(struct umac_ctx *ctx)
 }
 
 /* ---------------------------------------------------------------------- */
-
-size_t umac_ctx_size(void) {
-  return sizeof(struct umac_ctx);
-}
 
 struct umac_ctx *umac_alloc(void) {
     struct umac_ctx *ctx, *octx;
@@ -1275,7 +1187,7 @@ int umac_update(struct umac_ctx *ctx, unsigned char *input, long len)
 
 struct umac_ctx {
     void *free_ptr;          /* Address to free this struct via          */
-} umac_ctx;
+};
 
 int umac_reset(struct umac_ctx *ctx)
 /* Reset the hash function to begin a new authentication.        */
@@ -1292,10 +1204,6 @@ int umac_delete(struct umac_ctx *ctx)
 }
 
 /* ---------------------------------------------------------------------- */
-
-size_t umac_ctx_size(void) {
-  return sizeof(struct umac_ctx);
-}
 
 struct umac_ctx *umac_alloc(void) {
     return (NULL);
@@ -1330,21 +1238,6 @@ int umac_update(struct umac_ctx *ctx, unsigned char *input, long len)
 }
 
 #endif /* OpenSSL-0.9.7 or later */
-
-/* ---------------------------------------------------------------------- */
-
-#if 0
-int umac(struct umac_ctx *ctx, unsigned char *input, 
-         long len, unsigned char tag[],
-         unsigned char nonce[8])
-/* All-in-one version simply calls umac_update() and umac_final().        */
-{
-    uhash(&ctx->hash, input, len, (unsigned char *)tag);
-    pdf_gen_xor(&ctx->pdf, (UINT8 *)nonce, (UINT8 *)tag);
-    
-    return (1);
-}
-#endif
 
 /* ---------------------------------------------------------------------- */
 /* ---------------------------------------------------------------------- */

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: packet.c,v 1.46 2013-03-08 16:22:18 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -85,11 +83,15 @@ static unsigned int client_alive_max = 0, client_alive_count = 0;
 static unsigned int client_alive_interval = 0;
 
 static const char *trace_channel = "ssh2";
+static const char *timing_channel = "timing";
+
+#define MAX_POLL_TIMEOUTS	3
 
 static int packet_poll(int sockfd, int io) {
   fd_set rfds, wfds;
   struct timeval tv;
   int res, timeout, using_client_alive = FALSE;
+  unsigned int ntimeouts = 0;
 
   if (poll_timeout == -1) {
     /* If we have "client alive" timeout interval configured, use that --
@@ -117,8 +119,9 @@ static int packet_poll(int sockfd, int io) {
   tv.tv_usec = 0;
 
   pr_trace_msg(trace_channel, 19,
-    "waiting for max of %lu secs while polling socket %d using select(2)",
-    (unsigned long) tv.tv_sec, sockfd);
+    "waiting for max of %lu secs while polling socket %d for %s "
+    "using select(2)", (unsigned long) tv.tv_sec, sockfd,
+    io == SFTP_PACKET_IO_RD ? "reading" : "writing");
 
   while (1) {
     pr_signals_handle();
@@ -162,16 +165,29 @@ static int packet_poll(int sockfd, int io) {
       tv.tv_sec = timeout;
       tv.tv_usec = 0;
 
+      ntimeouts++;
+
+      if (ntimeouts > MAX_POLL_TIMEOUTS) {
+        pr_trace_msg(trace_channel, 18,
+          "polling on socket %d timed out after %lu sec, failing", sockfd,
+          (unsigned long) tv.tv_sec);
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "polling on socket %d timed out after %lu sec, failing", sockfd,
+          (unsigned long) tv.tv_sec);
+        errno = ETIMEDOUT;
+        return -1;
+      }
+
       if (using_client_alive) {
         is_client_alive();
 
       } else {
         pr_trace_msg(trace_channel, 18,
-          "polling on socket %d timed out after %lu sec, trying again", sockfd,
-          (unsigned long) tv.tv_sec);
+          "polling on socket %d timed out after %lu sec, trying again "
+          "(timeout #%u)", sockfd, (unsigned long) tv.tv_sec, ntimeouts);
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "polling on socket %d timed out after %lu sec, trying again", sockfd,
-          (unsigned long) tv.tv_sec);
+          "polling on socket %d timed out after %lu sec, trying again "
+          "(timeout #%u)", sockfd, (unsigned long) tv.tv_sec, ntimeouts);
       }
 
       continue;
@@ -216,13 +232,13 @@ int sftp_ssh2_packet_sock_read(int sockfd, void *buf, size_t reqlen,
      * EAGAIN/EWOULDBLOCK errors.
      */
     res = read(sockfd, ptr, remainlen);
-
     while (res <= 0) {
       if (res < 0) {
         int xerrno = errno;
 
         if (xerrno == EINTR) {
           pr_signals_handle();
+          res = read(sockfd, ptr, remainlen);
           continue;
         }
 
@@ -286,8 +302,9 @@ int sftp_ssh2_packet_sock_read(int sockfd, void *buf, size_t reqlen,
     session.total_raw_in += reqlen;
     time(&last_recvd);
 
-    if (res == remainlen)
+    if ((size_t) res == remainlen) {
       break;
+    }
 
     if (flags & SFTP_PACKET_READ_FL_PESSIMISTIC) {
       pr_trace_msg(trace_channel, 20, "read %lu bytes, expected %lu bytes; "
@@ -906,8 +923,9 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
 
     if (pkt->packet_len < 5) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "packet length too long (%lu), less than minimum packet length (5)",
+        "packet length too short (%lu), less than minimum packet length (5)",
         (unsigned long) pkt->packet_len);
+      read_packet_discard(sockfd);
       return -1;
     }
 
@@ -915,6 +933,7 @@ int sftp_ssh2_packet_read(int sockfd, struct ssh2_packet *pkt) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "packet length too long (%lu), exceeds maximum packet length (%lu)",
         (unsigned long) pkt->packet_len, (unsigned long) SFTP_MAX_PACKET_LEN);
+      read_packet_discard(sockfd);
       return -1;
     }
 
@@ -1074,7 +1093,21 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   unsigned char buf[SFTP_MAX_PACKET_LEN * 2], mesg_type;
   size_t buflen = 0, bufsz = SFTP_MAX_PACKET_LEN;
   uint32_t packet_len = 0;
-  int res, write_len = 0;
+  int res, write_len = 0, block_alarms = FALSE;
+
+  /* No interruptions, please.  If, for example, we are interrupted here
+   * by the SFTPRekey timer, that timer will cause this same function to
+   * be called -- but the packet_iov/packet_niov values will be different.
+   * Which in turn leads to malformed packets, and thus badness (Bug#4216).
+   */
+
+  if (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH) {
+    block_alarms = TRUE;
+  }
+
+  if (block_alarms == TRUE) {
+    pr_alarms_block();
+  }
 
   /* Clear the iovec array before sending the data, if possible. */
   if (packet_niov == 0) {
@@ -1084,10 +1117,22 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   mesg_type = peek_mesg_type(pkt);
 
   if (sftp_compress_write_data(pkt) < 0) {
+    int xerrno = errno;
+
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
+    errno = xerrno;
     return -1;
   }
 
   if (write_packet_padding(pkt) < 0) {
+    int xerrno = errno;
+
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
+    errno = xerrno;
     return -1;
   }
 
@@ -1098,6 +1143,12 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   pkt->seqno = packet_server_seqno;
 
   if (sftp_mac_write_data(pkt) < 0) {
+    int xerrno = errno;
+
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
+    errno = xerrno;
     return -1;
   }
 
@@ -1105,6 +1156,12 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
   buflen = bufsz;
 
   if (sftp_cipher_write_data(pkt, buf, &buflen) < 0) {
+    int xerrno = errno;
+
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
+    errno = xerrno;
     return -1;
   }
 
@@ -1180,6 +1237,9 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
     memset(packet_iov, 0, sizeof(packet_iov));
     packet_niov = 0;
 
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
     errno = xerrno;
     return -1;
   }
@@ -1212,6 +1272,10 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
         xerrno == ECONNABORTED ||
         xerrno == EPIPE) {
 
+      if (block_alarms == TRUE) {
+        pr_alarms_unblock();
+      }
+
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "disconnecting client (%s)", strerror(xerrno));
       pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BY_APPLICATION,
@@ -1222,6 +1286,9 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
     memset(packet_iov, 0, sizeof(packet_iov));
     packet_niov = 0;
 
+    if (block_alarms == TRUE) {
+      pr_alarms_unblock();
+    }
     errno = xerrno;
     return -1;
   }
@@ -1242,6 +1309,14 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
 
   packet_server_seqno++;
 
+  pr_trace_msg(trace_channel, 3, "sent %s (%d) packet (%d bytes)",
+    sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type, res);
+
+  if (block_alarms == TRUE) {
+    /* Now that we've written out the packet, we can be interrupted again. */
+    pr_alarms_unblock();
+  }
+
   if (rekey_size > 0) {
     rekey_server_len += pkt->packet_len;
 
@@ -1261,9 +1336,6 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
     sftp_kex_rekey();
   }
 
-  pr_trace_msg(trace_channel, 3, "sent %s (%d) packet (%d bytes)",
-    sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type, res);
- 
   return 0;
 }
 
@@ -1414,6 +1486,7 @@ int sftp_ssh2_packet_handle(void) {
 
   pr_response_clear(&resp_list);
   pr_response_clear(&resp_err_list);
+  pr_response_set_pool(pkt->pool);
 
   /* Note: Some of the SSH messages will be handled regardless of the
    * sftp_sess_state flags; this is intentional, and is the way that
@@ -1448,12 +1521,29 @@ int sftp_ssh2_packet_handle(void) {
       sftp_ssh2_packet_handle_unimplemented(pkt);
       break;
 
-    case SFTP_SSH2_MSG_KEXINIT:
+    case SFTP_SSH2_MSG_KEXINIT: {
+      uint64_t start_ms;
+
+      if (pr_trace_get_level(timing_channel) > 0) {
+        pr_gettimeofday_millis(&start_ms);
+      }
+
       /* The client might be initiating a rekey; watch for this. */
-      if (sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) {
-        sftp_sess_state |= SFTP_SESS_STATE_REKEYING;
+      if (!(sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX)) {
+        if (pr_trace_get_level(timing_channel)) {
+          unsigned long elapsed_ms;
+          uint64_t finish_ms;
+
+          pr_gettimeofday_millis(&finish_ms);
+          elapsed_ms = (unsigned long) (finish_ms - session.connect_time_ms);
+
+          pr_trace_msg(timing_channel, 4,
+            "Time before first SSH key exchange: %lu ms", elapsed_ms);
+        }
       }
  
+      sftp_sess_state |= SFTP_SESS_STATE_REKEYING;
+
       /* Clear any current "have KEX" state. */
       sftp_sess_state &= ~SFTP_SESS_STATE_HAVE_KEX;
 
@@ -1464,6 +1554,17 @@ int sftp_ssh2_packet_handle(void) {
 
       sftp_sess_state |= SFTP_SESS_STATE_HAVE_KEX;
 
+      if (pr_trace_get_level(timing_channel)) {
+        unsigned long elapsed_ms;
+        uint64_t finish_ms;
+
+        pr_gettimeofday_millis(&finish_ms);
+        elapsed_ms = (unsigned long) (finish_ms - start_ms);
+
+        pr_trace_msg(timing_channel, 4,
+          "SSH key exchange duration: %lu ms", elapsed_ms);
+      }
+
       /* If we just finished rekeying, drain any of the pending channel
        * data which may have built up during the rekeying exchange.
        */
@@ -1472,6 +1573,7 @@ int sftp_ssh2_packet_handle(void) {
         sftp_channel_drain_data();
       }
       break;
+    }
 
     case SFTP_SSH2_MSG_SERVICE_REQUEST:
       if (sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) {
@@ -1549,6 +1651,7 @@ int sftp_ssh2_packet_handle(void) {
         "Unsupported protocol sequence");
   }
 
+  pr_response_set_pool(NULL);
   return 0;
 }
 

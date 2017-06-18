@@ -1,6 +1,4 @@
-<!-- $Id: mod_dso.html,v 1.7 2013-05-09 03:58:40 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_dso.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_dso</title>
@@ -101,10 +99,10 @@ ProFTPD source distribution:
 
 <p>
 <hr>
-<h2><a name="LoadFile">LoadFile</a></h2>
+<h3><a name="LoadFile">LoadFile</a></h3>
 <strong>Syntax:</strong> LoadFile <em>path</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_dso<br>
 <strong>Compatibility:</strong> 1.3.0rc1 and later
 
@@ -127,10 +125,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="LoadModule">LoadModule</a></h2>
+<h3><a name="LoadModule">LoadModule</a></h3>
 <strong>Syntax:</strong> LoadModule <em>name</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_dso<br>
 <strong>Compatibility:</strong> 1.3.0rc1 and later
 
@@ -146,10 +144,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="ModuleControlsACLs">ModuleControlsACLs</a></h2>
+<h3><a name="ModuleControlsACLs">ModuleControlsACLs</a></h3>
 <strong>Syntax:</strong> ModuleControlsACLs <em>actions|all allow|deny user|group list</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_dso<br>
 <strong>Compatibility:</strong> 1.3.0rc1 and later
 
@@ -183,10 +181,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="ModuleOrder">ModuleOrder</a></h2>
+<h3><a name="ModuleOrder">ModuleOrder</a></h3>
 <strong>Syntax:</strong> ModuleOrder <em>...</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_dso<br>
 <strong>Compatibility:</strong> 1.3.0rc1 and later
 
@@ -220,10 +218,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="ModulePath">ModulePath</a></h2>
+<h3><a name="ModulePath">ModulePath</a></h3>
 <strong>Syntax:</strong> ModulePath <em>path</em><br>
 <strong>Default:</strong> None<br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_dso<br>
 <strong>Compatibility:</strong> 1.3.0rc1 and later
 
@@ -249,7 +247,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="insmod"><code>insmod</code></a></h2>
+<h3><a name="insmod"><code>insmod</code></a></h3>
 <strong>Syntax:</strong> ftpdctl insmod <em>module</em><br>
 <strong>Purpose:</strong> Load a DSO module
 
@@ -269,7 +267,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="lsmod"><code>lsmod</code></a></h2>
+<h3><a name="lsmod"><code>lsmod</code></a></h3>
 <strong>Syntax:</strong> ftpdctl lsmod<br>
 <strong>Purpose:</strong> Display list of all loaded modules
 
@@ -298,7 +296,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="rmmod"><code>rmmod</code></a></h2>
+<h3><a name="rmmod"><code>rmmod</code></a></h3>
 <strong>Syntax:</strong> ftpdctl rmmod <em>module</em><br>
 <strong>Purpose:</strong> Unload a DSO module
 
@@ -329,12 +327,27 @@ your <code>proftpd</code> has been compiled with Controls support.
 The <code>mod_dso</code> module is distributed with ProFTPD.  To enable use
 of DSO modules, use the <code>--enable-dso</code> configure option:
 <pre>
-  ./configure --enable-dso
-  make
-  make install
+  $ ./configure --enable-dso
+  $ make
+  $ make install
 </pre>
 This option causes <code>mod_dso</code> to be compiled into
 <code>proftpd</code>.
+
+<p>
+<b>Logging</b><br>
+The <code>mod_dso</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>dso
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace dso:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
@@ -423,8 +436,8 @@ a few such modules with this special handling:
 All of these modules would appear in the <code>`proftpd -l'</code> static
 module list.
 
-<p><a name="DSOLoadingStaticModule">
-<font color=red>Question</font>: If I use <code><a href="../utils/prxs.html">prxs</a></code> to compile a module like <code>mod_ldap</code>, which is already
+<p><a name="DSOLoadingStaticModule"></a>
+<font color=red>Question</font>: If I use <a href="../utils/prxs.html"><code>prxs</code></a> to compile a module like <code>mod_ldap</code>, which is already
 built into my <code>proftpd</code> as a static module, and then I use:
 <pre>
   LoadModule mod_ldap.c
@@ -441,21 +454,35 @@ whether that module is already loaded -- and if so, the module will
 "already loaded".  This means that your <code>mod_ldap</code> shared module
 code would not be loaded, and thus would not override the static module.
 
+<p><a name="DSOModulePathWorldWritable">
+<font color=red>Question</font>: I try to start my <code>proftpd</code>
+instance, but it fails to start with this error:
+<pre>
+  Fatal: ModulePath: <i>/usr/lib/proftpd</i> is world-writable on line <i>7</i> of <i>'/etc/proftpd/modules.conf'</i>
+</pre>
+Why?<br>
+<font color=blue>Answer</font>: The <code>mod_dso</code> module, used by
+ProFTPD for DSO/shared modules, ensures that the
+<a href="#ModulePath"><code>ModulePath</code></a> directory is secure.  DSO
+modules are code that are loaded directly into <code>proftpd</code>; loading
+these modules from a world-writable directory means that <b>any</b> system user
+could inject/replace any of those DSO modules with their own code, and get
+<code>proftpd</code> to do whatever they wanted.  Thus <code>mod_dso</code>
+will <b>refuse</b> to use a world-writable directory for loading of modules.
+
 <p>
-<hr><br>
+To fix this, you simply need to ensure that the <code>ModulePath</code> directory is not world-writable, <i>e.g.</i>:
+<pre>
+  $ chmod o-w /usr/lib/proftpd
+</pre>
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-05-09 03:58:40 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2004-2013 TJ Saunders<br>
+&copy; Copyright 2004-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

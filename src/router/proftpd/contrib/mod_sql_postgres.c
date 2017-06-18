@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql_postgres -- Support for connecting to Postgres databases.
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,8 +23,7 @@
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
  *
- * $Id: mod_sql_postgres.c,v 1.56 2013-10-09 04:57:13 castaglia Exp $
- * $Libraries: -lm -lpq $
+ * $Libraries: -lm -lpq$
  */
 
 /* Internal define used for debug and logging.  All backends are encouraged
@@ -38,6 +37,14 @@
 #include "../contrib/mod_sql.h"
 
 #include <libpq-fe.h>
+#if defined(HAVE_POSTGRES_PQGETSSL) && defined(PR_USE_OPENSSL)
+# include <openssl/ssl.h>
+
+/* Define if you have the LibreSSL library.  */
+# if defined(LIBRESSL_VERSION_NUMBER)
+#   define HAVE_LIBRESSL	1
+# endif
+#endif /* HAVE_POSTGRES_PQGETSSL and PR_USE_OPENSSL */
 
 /* For the pg_encoding_to_char() function, used for NLS support, we need
  * to include the <mb/pg_wchar.h> file.  It's OK; the function has been
@@ -59,6 +66,8 @@ extern const char *pg_encoding_to_char(int encoding);
 static const char *get_postgres_encoding(const char *encoding);
 #endif
 
+static const char *trace_channel = "sql.postgres";
+
 /* 
  * timer-handling code adds the need for a couple of forward declarations
  */
@@ -73,14 +82,18 @@ module sql_postgres_module;
 struct db_conn_struct {
 
   /* Postgres-specific members */
+  const char *host;
+  const char *user;
+  const char *pass;
+  const char *db;
+  const char *port;
 
-  char *host;
-  char *user;
-  char *pass;
-  char *db;
-  char *port;
+  /* For configuring the SSL/TLS session to the Postgres server. */
+  const char *ssl_cert_file;
+  const char *ssl_key_file;
+  const char *ssl_ca_file;
 
-  char *connectstring;
+  const char *connect_string;
 
   PGconn *postgres;
   PGresult *result;
@@ -88,23 +101,19 @@ struct db_conn_struct {
 
 typedef struct db_conn_struct db_conn_t;
 
-/*
- * This struct is a wrapper for whatever backend data is needed to access 
+/* This struct is a wrapper for whatever backend data is needed to access
  * the database, and supports named connections, connection counting, and 
  * timer handling.  
  */
-
 struct conn_entry_struct {
-  char *name;
+  const char *name;
   void *data;
 
-  /* timer handling */
-
+  /* Iimer handling */
   int timer;
   int ttl;
 
-  /* connection handling */
-
+  /* Connection handling */
   unsigned int connections;
 };
 
@@ -115,63 +124,66 @@ typedef struct conn_entry_struct conn_entry_t;
 static pool *conn_pool = NULL;
 static array_header *conn_cache = NULL;
 
-/*
- *  _sql_get_connection: walks the connection cache looking for the named
+/*  sql_get_connection: walks the connection cache looking for the named
  *   connection.  Returns NULL if unsuccessful, a pointer to the conn_entry_t
  *   if successful.
  */
-static conn_entry_t *_sql_get_connection(char *name)
-{
-  conn_entry_t *entry = NULL;
-  int cnt;
+static conn_entry_t *sql_get_connection(const char *conn_name) {
+  register unsigned int i;
 
-  if (name == NULL) return NULL;
+  if (conn_name == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
 
-  /* walk the array looking for our entry */
-  for (cnt=0; cnt < conn_cache->nelts; cnt++) {
-    entry = ((conn_entry_t **) conn_cache->elts)[cnt];
-    if (!strcmp(name, entry->name)) {
+  for (i = 0; i < conn_cache->nelts; i++) {
+    conn_entry_t *entry;
+
+    entry = ((conn_entry_t **) conn_cache->elts)[i];
+    if (strcmp(conn_name, entry->name) == 0) {
       return entry;
     }
   }
 
+  errno = ENOENT;
   return NULL;
 }
 
-/* 
- * _sql_add_connection: internal helper function to maintain a cache of 
- *  connections.  Since we expect the number of named connections to
- *  be small, simply use an array header to hold them.  We don't allow 
- *  duplicate connection names.
+/* sql_add_connection: internal helper function to maintain a cache of
+ *  connections.  Since we expect the number of named connections to be small,
+ *  simply use an array header to hold them.  We don't allow duplicate
+ *  connection names.
  *
  * Returns: NULL if the insertion was unsuccessful, a pointer to the 
  *  conn_entry_t that was created if successful.
  */
-static void *_sql_add_connection(pool *p, char *name, db_conn_t *conn)
-{
+static void *sql_add_connection(pool *p, const char *name, db_conn_t *conn) {
   conn_entry_t *entry = NULL;
 
-  if ((!name) || (!conn) || (!p)) return NULL;
+  if (p == NULL ||
+      name == NULL ||
+      conn == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
   
-  if (_sql_get_connection(name)) {
-    /* duplicated name */
+  if (sql_get_connection(name) != NULL) {
+    errno = EEXIST;
     return NULL;
   }
 
   entry = (conn_entry_t *) pcalloc(p, sizeof(conn_entry_t));
-  entry->name = name;
+  entry->name = pstrdup(p, name);
   entry->data = conn;
 
   *((conn_entry_t **) push_array(conn_cache)) = entry;
-
   return entry;
 }
 
-/* _sql_check_cmd: tests to make sure the cmd_rec is valid and is 
- *  properly filled in.  If not, it's grounds for the daemon to
- *  shutdown.
+/* sql_check_cmd: tests to make sure the cmd_rec is valid and is properly
+ *   filled in.  If not, it's grounds for the daemon to shutdown.
  */
-static void _sql_check_cmd(cmd_rec *cmd, char *msg) {
+static void sql_check_cmd(cmd_rec *cmd, char *msg) {
   if (cmd == NULL ||
       cmd->tmp_pool == NULL) {
     pr_log_pri(PR_LOG_ERR, MOD_SQL_POSTGRES_VERSION
@@ -190,17 +202,18 @@ static void _sql_check_cmd(cmd_rec *cmd, char *msg) {
  * This function makes assumptions about the db_conn_t members.
  */
 static int sql_timer_cb(CALLBACK_FRAME) {
-  conn_entry_t *entry = NULL;
-  int i = 0;
-  cmd_rec *cmd = NULL;
- 
-  for (i = 0; i < conn_cache->nelts; i++) {
-    entry = ((conn_entry_t **) conn_cache->elts)[i];
+  register unsigned int i;
 
-    if (entry->timer == p2) {
+  for (i = 0; i < conn_cache->nelts; i++) {
+    conn_entry_t *entry = NULL;
+
+    entry = ((conn_entry_t **) conn_cache->elts)[i];
+    if ((unsigned long) entry->timer == p2) {
+      cmd_rec *cmd = NULL;
+
       sql_log(DEBUG_INFO, "timer expired for connection '%s'", entry->name);
-      cmd = _sql_make_cmd( conn_pool, 2, entry->name, "1" );
-      cmd_close( cmd );
+      cmd = sql_make_cmd(conn_pool, 2, entry->name, "1");
+      cmd_close(cmd);
       SQL_FREE_CMD(cmd);
       entry->timer = 0;
     }
@@ -209,35 +222,34 @@ static int sql_timer_cb(CALLBACK_FRAME) {
   return 0;
 }
 
-/* 
- * _build_error: constructs a modret_t filled with error information;
- *  mod_sql_postgres calls this function and returns the resulting mod_ret_t
+/* build_error: constructs a modret_t filled with error information;
+ *  mod_sql_postgres calls this function and returns the resulting modret_t
  *  whenever a call to the database results in an error.
  */
-static modret_t *_build_error(cmd_rec *cmd, db_conn_t *conn) {
-  if (!conn)
+static modret_t *build_error(cmd_rec *cmd, db_conn_t *conn) {
+  if (conn == NULL) {
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
+  }
 
   return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
-    PQerrorMessage(conn->postgres));
+    pstrdup(cmd->pool, PQerrorMessage(conn->postgres)));
 }
 
-/*
- * _build_data: both cmd_select and cmd_procedure potentially
+/* build_data: both cmd_select and cmd_procedure potentially
  *  return data to mod_sql; this function builds a modret to return
  *  that data.  This is Postgres specific; other backends may choose 
  *  to do things differently.
  */
-static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
+static modret_t *build_data(cmd_rec *cmd, db_conn_t *conn) {
   PGresult *result = NULL;
   sql_data_t *sd = NULL;
   char **data = NULL;
-  int index = 0;
-  int field = 0;
-  int row =0;
+  int idx = 0;
+  unsigned long row;
 
-  if (!conn) 
+  if (conn == NULL) {
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
+  }
 
   result = conn->result;
 
@@ -245,19 +257,21 @@ static modret_t *_build_data(cmd_rec *cmd, db_conn_t *conn) {
   sd->rnum = (unsigned long) PQntuples(result);
   sd->fnum = (unsigned long) PQnfields(result);
 
-  data = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) * 
-			    ((sd->rnum * sd->fnum) + 1));
-  
+  data = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) *
+    ((sd->rnum * sd->fnum) + 1));
+
   for (row = 0; row < sd->rnum; row++) {
+    unsigned long field;
+
     for (field = 0; field < sd->fnum; field++) {
-      data[index++] = pstrdup(cmd->tmp_pool, PQgetvalue(result, row, field));
+      data[idx++] = pstrdup(cmd->tmp_pool, PQgetvalue(result, row, field));
     }
   }
-  data[index] = NULL;
+  data[idx] = NULL;
 
   sd->data = data;
 
-  return mod_create_data( cmd, (void *) sd );
+  return mod_create_data(cmd, (void *) sd);
 }
 
 #ifdef PR_USE_NLS
@@ -364,16 +378,15 @@ MODRET cmd_open(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_open");
 
-  _sql_check_cmd(cmd, "cmd_open" );
+  sql_check_cmd(cmd, "cmd_open");
 
   if (cmd->argc < 1) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }    
 
-  /* get the named connection */
-
-  if (!(entry = _sql_get_connection(cmd->argv[0]))) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -458,12 +471,20 @@ MODRET cmd_open(cmd_rec *cmd) {
   }
 
   /* make sure we have a new conn struct */
-  conn->postgres = PQconnectdb(conn->connectstring);
-  
+  conn->postgres = PQconnectdb(conn->connect_string);
   if (PQstatus(conn->postgres) == CONNECTION_BAD) {
-    /* if it didn't work, return an error */
+    modret_t *mr = NULL;
+
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
-    return _build_error( cmd, conn );
+    mr = build_error(cmd, conn);
+
+    /* Since we failed to connect here, avoid a memory leak by freeing up the
+     * postgres conn struct.
+     */
+    PQfinish(conn->postgres);
+    conn->postgres = NULL;
+
+    return mr;
   }
 
 #if defined(PG_VERSION_STR)
@@ -475,7 +496,7 @@ MODRET cmd_open(cmd_rec *cmd) {
     sql_log(DEBUG_FUNC, "Postgres server version: %s", server_version);
   }
 
-#ifdef PR_USE_NLS
+#if defined(PR_USE_NLS)
   if (pr_encode_get_encoding() != NULL) {
     const char *encoding;
 
@@ -483,9 +504,8 @@ MODRET cmd_open(cmd_rec *cmd) {
 
     /* Configure the connection for the current local character set. */
     if (PQsetClientEncoding(conn->postgres, encoding) < 0) {
-      /* if it didn't work, return an error */
       sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
-      return _build_error(cmd, conn);
+      return build_error(cmd, conn);
     }
 
     sql_log(DEBUG_FUNC, "Postgres connection character set now '%s' "
@@ -493,6 +513,23 @@ MODRET cmd_open(cmd_rec *cmd) {
       pr_encode_get_encoding());
   }
 #endif /* !PR_USE_NLS */
+
+#if defined(HAVE_POSTGRES_PQGETSSL)
+  if (PQgetssl(conn->postgres) != NULL) {
+# if defined(PR_USE_OPENSSL)
+    SSL *ssl;
+
+    ssl = PQgetssl(conn->postgres);
+    sql_log(DEBUG_FUNC, "%s", "Postgres SSL connection: true");
+    sql_log(DEBUG_FUNC, "%s", "Postgres SSL cipher: %s",
+      SSL_get_cipher_name(ssl));
+# else
+    sql_log(DEBUG_FUNC, "%s", "Postgres SSL connection: true");
+# endif /* PR_USE_OPENSSL */
+  } else {
+    sql_log(DEBUG_FUNC, "%s", "Postgres SSL connection: false");
+  }
+#endif /* HAVE_POSTGRES_PQGETSSL */
 
   /* bump connections */
   entry->connections++;
@@ -523,9 +560,9 @@ MODRET cmd_open(cmd_rec *cmd) {
 
   /* return HANDLED */
   sql_log(DEBUG_INFO, "connection '%s' opened", entry->name);
-
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
     entry->connections);
+  pr_event_generate("mod_sql.db.connection-opened", &sql_postgres_module);
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_open");
   return PR_HANDLED(cmd);
@@ -561,15 +598,16 @@ MODRET cmd_close(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_close");
 
-  _sql_check_cmd(cmd, "cmd_close");
+  sql_check_cmd(cmd, "cmd_close");
 
-  if ((cmd->argc < 1) || (cmd->argc > 2)) {
+  if (cmd->argc < 1 ||
+      cmd->argc > 2) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_close");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  if (!(entry = _sql_get_connection(cmd->argv[0]))) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_close");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -590,9 +628,11 @@ MODRET cmd_close(cmd_rec *cmd) {
    * close the connection, explicitly set the counter to 0, and remove any
    * timers.
    */
-  if (((--entry->connections) == 0 ) || ((cmd->argc == 2) && (cmd->argv[1]))) {
-    PQfinish(conn->postgres);
-    conn->postgres = NULL;
+  if (((--entry->connections) == 0) || ((cmd->argc == 2) && (cmd->argv[1]))) {
+    if (conn->postgres != NULL) {
+      PQfinish(conn->postgres);
+      conn->postgres = NULL;
+    }
     entry->connections = 0;
 
     if (entry->timer) {
@@ -602,6 +642,7 @@ MODRET cmd_close(cmd_rec *cmd) {
     }
 
     sql_log(DEBUG_INFO, "connection '%s' closed", entry->name);
+    pr_event_generate("mod_sql.db.connection-closed", &sql_postgres_module);
   }
 
   sql_log(DEBUG_INFO, "connection '%s' count is now %d", entry->name,
@@ -611,8 +652,7 @@ MODRET cmd_close(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/*
- * cmd_defineconnection: takes all information about a database
+/* cmd_defineconnection: takes all information about a database
  *  connection and stores it for later use.
  *
  * Inputs:
@@ -620,8 +660,14 @@ MODRET cmd_close(cmd_rec *cmd) {
  *  cmd->argv[1]: username portion of the SQLConnectInfo directive
  *  cmd->argv[2]: password portion of the SQLConnectInfo directive
  *  cmd->argv[3]: info portion of the SQLConnectInfo directive
+ *
  * Optional:
  *  cmd->argv[4]: time-to-live in seconds
+ *  cmd->argv[5]: SSL client cert file
+ *  cmd->argv[6]: SSL client key file
+ *  cmd->argv[7]: SSL CA file
+ *  cmd->argv[8]: SSL CA directory
+ *  cmd->argv[9]: SSL ciphers
  *
  * Returns:
  *  either a properly filled error modret_t if the connection could not
@@ -635,31 +681,26 @@ MODRET cmd_close(cmd_rec *cmd) {
  *  associated timer.
  */
 MODRET cmd_defineconnection(cmd_rec *cmd) {
-  char *info = NULL;
-  char *name = NULL;
-
-  char *db = NULL;
-  char *host = NULL;
-  char *port = NULL;
-
-  char *havehost = NULL;
-  char *haveport = NULL;
-  
-  char *connectstring = NULL;
+  char *have_host = NULL, *have_port = NULL, *info = NULL, *name = NULL;
+  const char *db = NULL, *host = NULL, *port = NULL, *connect_string = NULL;
+  const char *ssl_cert_file = NULL, *ssl_key_file = NULL, *ssl_ca_file = NULL;
+  const char *ssl_ciphers = NULL;
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL; 
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_defineconnection");
 
-  _sql_check_cmd(cmd, "cmd_defineconnection");
+  sql_check_cmd(cmd, "cmd_defineconnection");
 
-  if ((cmd->argc < 4) || (cmd->argc > 5) || (!cmd->argv[0])) {
+  if (cmd->argc < 4 ||
+      cmd->argc > 10 ||
+      !cmd->argv[0]) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_defineconnection");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  if (!conn_pool) {
-    pr_log_pri(PR_LOG_WARNING, "warning: the mod_sql_postgres module has not "
+  if (conn_pool == NULL) {
+    pr_log_pri(PR_LOG_WARNING, "WARNING: the mod_sql_postgres module has not "
       "been properly initialized.  Please make sure your --with-modules "
       "configure option lists mod_sql *before* mod_sql_postgres, and "
       "recompile.");
@@ -673,7 +714,6 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
   }
 
   conn = (db_conn_t *) pcalloc(conn_pool, sizeof(db_conn_t));
-
   name = pstrdup(conn_pool, cmd->argv[0]);
   conn->user = pstrdup(conn_pool, cmd->argv[1]);
   conn->pass = pstrdup(conn_pool, cmd->argv[2]);
@@ -682,50 +722,101 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
 
   db = pstrdup(cmd->tmp_pool, info);
 
-  havehost = strchr(db, '@');
-  haveport = strchr(db, ':');
+  have_host = strchr(db, '@');
+  have_port = strchr(db, ':');
 
-  /*
-   * if haveport, parse it, otherwise default it. 
-   * if haveport, set it to '\0'
+  /* If have_port, parse it, otherwise default it.
+   * If have_port, set it to '\0'
    *
-   * if havehost, parse it, otherwise default it.
-   * if havehost, set it to '\0'
+   * If have_host, parse it, otherwise default it.
+   * If have_host, set it to '\0'
    */
 
-  if (haveport) {
-    port = haveport + 1;
-    *haveport = '\0';
+  if (have_port != NULL) {
+    port = have_port + 1;
+    *have_port = '\0';
+
   } else {
     port = _POSTGRES_PORT;
   }
 
-  if (havehost) {
-    host = havehost + 1;
-    *havehost = '\0';
+  if (have_host) {
+    host = have_host + 1;
+    *have_host = '\0';
+
   } else {
     host = "localhost";
   }
 
+  /* SSL parameters, if configured. */
+  if (cmd->argc >= 6) {
+    ssl_cert_file = cmd->argv[5];
+  }
+
+  if (cmd->argc >= 7) {
+    ssl_key_file = cmd->argv[6];
+  }
+
+  if (cmd->argc >= 8) {
+    ssl_ca_file = cmd->argv[7];
+  }
+
+  /* Ignore the ssl_ca_dir parameter, for now. */
+  if (cmd->argc >= 10) {
+    ssl_ciphers = cmd->argv[9];
+  }
+
   conn->host = pstrdup(conn_pool, host);
-  conn->db   = pstrdup(conn_pool, db);
+  conn->db = pstrdup(conn_pool, db);
   conn->port = pstrdup(conn_pool, port);
+  conn->ssl_cert_file = pstrdup(conn_pool, ssl_cert_file);
+  conn->ssl_key_file = pstrdup(conn_pool, ssl_key_file);
+  conn->ssl_ca_file = pstrdup(conn_pool, ssl_ca_file);
 
-  /* setup the connect string the way postgres likes it */
-  connectstring = pstrcat(cmd->tmp_pool, "host='", conn->host, "' port='",
-			  conn->port,"' dbname='", conn->db, "' user='",
-			  conn->user,"' password='", conn->pass, "'", NULL);
-  conn->connectstring = pstrdup(conn_pool, connectstring);
+  /* Set up the connect string the way postgres likes it */
+  connect_string = pstrcat(cmd->tmp_pool, "host='", conn->host, "' port='",
+    conn->port,"' dbname='", conn->db, "' user='", conn->user,"' password='",
+    conn->pass, "'", NULL);
 
+  /* XXX Should we set the sslmode keyword to "prefer" explicitly, or
+   * "require", when SSL parameters have been set?
+   */
+
+  if (ssl_ciphers != NULL ||
+      ssl_cert_file != NULL ||
+      ssl_key_file != NULL ||
+      ssl_ca_file != NULL) {
+    connect_string = pstrcat(cmd->tmp_pool, connect_string,
+      " sslmode='prefer'", NULL);
+  }
+
+  if (conn->ssl_cert_file != NULL) {
+    connect_string = pstrcat(cmd->tmp_pool, connect_string, " sslcert='",
+      conn->ssl_cert_file, "'", NULL);
+  }
+
+  if (conn->ssl_key_file != NULL) {
+    connect_string = pstrcat(cmd->tmp_pool, connect_string, " sslkey='",
+      conn->ssl_key_file, "'", NULL);
+  }
+
+  if (conn->ssl_ca_file != NULL) {
+    connect_string = pstrcat(cmd->tmp_pool, connect_string, " sslrootcert='",
+      conn->ssl_ca_file, "'", NULL);
+  }
+
+  pr_trace_msg(trace_channel, 17, "using connect string '%s'", connect_string);
+  conn->connect_string = pstrdup(conn_pool, connect_string);
 
   /* insert the new conn_info into the connection hash */
-  if (!(entry = _sql_add_connection(conn_pool, name, (void *) conn))) {
+  entry = sql_add_connection(conn_pool, name, (void *) conn);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_defineconnection");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "named connection already exists");
   }
 
-  if (cmd->argc == 5) { 
+  if (cmd->argc >= 5) {
     entry->ttl = (int) strtol(cmd->argv[4], (char **) NULL, 10);
     if (entry->ttl >= 1) {
       pr_sql_conn_policy = SQL_CONN_POLICY_TIMER;
@@ -744,6 +835,18 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
   sql_log(DEBUG_INFO, "   db: '%s'", conn->db);
   sql_log(DEBUG_INFO, " port: '%s'", conn->port);
   sql_log(DEBUG_INFO, "  ttl: '%d'", entry->ttl);
+
+  if (conn->ssl_cert_file != NULL) {
+    sql_log(DEBUG_INFO, "   ssl: client cert = '%s'", conn->ssl_cert_file);
+  }
+
+  if (conn->ssl_key_file != NULL) {
+    sql_log(DEBUG_INFO, "   ssl: client key = '%s'", conn->ssl_key_file);
+  }
+
+  if (conn->ssl_ca_file != NULL) {
+    sql_log(DEBUG_INFO, "   ssl: CA file = '%s'", conn->ssl_ca_file);
+  }
 
   sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_defineconnection");
   return PR_HANDLED(cmd);
@@ -764,10 +867,13 @@ static modret_t *cmd_exit(cmd_rec *cmd) {
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_exit");
 
   for (i = 0; i < conn_cache->nelts; i++) {
-    conn_entry_t *entry = ((conn_entry_t **) conn_cache->elts)[i];
+    conn_entry_t *entry;
 
+    entry = ((conn_entry_t **) conn_cache->elts)[i];
     if (entry->connections > 0) {
-      cmd_rec *close_cmd = _sql_make_cmd(conn_pool, 2, entry->name, "1");
+      cmd_rec *close_cmd;
+
+      close_cmd = sql_make_cmd(conn_pool, 2, entry->name, "1");
       cmd_close(close_cmd);
       destroy_pool(close_cmd->pool);
     }
@@ -830,21 +936,20 @@ MODRET cmd_select(cmd_rec *cmd) {
   modret_t *cmr = NULL;
   modret_t *dmr = NULL;
   char *query = NULL;
-  int cnt = 0;
+  unsigned long cnt = 0;
   cmd_rec *close_cmd;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_select");
 
-  _sql_check_cmd(cmd, "cmd_select");
+  sql_check_cmd(cmd, "cmd_select");
 
   if (cmd->argc < 2) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_select");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_select");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -861,29 +966,34 @@ MODRET cmd_select(cmd_rec *cmd) {
   /* construct the query string */
   if (cmd->argc == 2) {
     query = pstrcat(cmd->tmp_pool, "SELECT ", cmd->argv[1], NULL);
-  } else {
-    query = pstrcat( cmd->tmp_pool, cmd->argv[2], " FROM ", 
-		     cmd->argv[1], NULL );
-    if ((cmd->argc > 3) && (cmd->argv[3]))
-      query = pstrcat( cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL );
-    if ((cmd->argc > 4) && (cmd->argv[4]))
-      query = pstrcat( cmd->tmp_pool, query, " LIMIT ", cmd->argv[4], NULL );
-    if (cmd->argc > 5) {
 
-      /* handle the optional arguments -- they're rare, so in this case
+  } else {
+    query = pstrcat(cmd->tmp_pool, cmd->argv[2], " FROM ", cmd->argv[1], NULL);
+    if (cmd->argc > 3 &&
+        cmd->argv[3]) {
+      query = pstrcat(cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL);
+    }
+
+    if (cmd->argc > 4 &&
+        cmd->argv[4]) {
+      query = pstrcat(cmd->tmp_pool, query, " LIMIT ", cmd->argv[4], NULL);
+    }
+
+    if (cmd->argc > 5) {
+      /* Handle the optional arguments -- they're rare, so in this case
        * we'll play with the already constructed query string, but in 
        * general we should probably take optional arguments into account 
        * and put the query string together later once we know what they are.
        */
     
-      for (cnt=5; cnt < cmd->argc; cnt++) {
-	if ((cmd->argv[cnt]) && !strcasecmp("DISTINCT",cmd->argv[cnt])) {
-	  query = pstrcat( cmd->tmp_pool, "DISTINCT ", query, NULL);
+      for (cnt = 5; cnt < cmd->argc; cnt++) {
+	if ((cmd->argv[cnt]) && !strcasecmp("DISTINCT", cmd->argv[cnt])) {
+	  query = pstrcat(cmd->tmp_pool, "DISTINCT ", query, NULL);
 	}
       }
     }
 
-    query = pstrcat( cmd->tmp_pool, "SELECT ", query, NULL);    
+    query = pstrcat(cmd->tmp_pool, "SELECT ", query, NULL);
   }
 
   /* log the query string */
@@ -894,11 +1004,13 @@ MODRET cmd_select(cmd_rec *cmd) {
    */
   if (!(conn->result = PQexec(conn->postgres, query)) ||
       (PQresultStatus(conn->result) != PGRES_TUPLES_OK)) {
-    dmr = _build_error( cmd, conn );
+    dmr = build_error(cmd, conn);
 
-    if (conn->result) PQclear(conn->result);
+    if (conn->result != NULL) {
+      PQclear(conn->result);
+    }
 
-    close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+    close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
 
@@ -909,14 +1021,14 @@ MODRET cmd_select(cmd_rec *cmd) {
   /* get the data. if it doesn't work, log the error, close the
    * connection then return the error from the data processing.
    */
-  dmr = _build_data( cmd, conn );
+  dmr = build_data(cmd, conn);
 
   PQclear(conn->result);
 
   if (MODRET_ERROR(dmr)) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_select");
 
-    close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+    close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
 
@@ -924,7 +1036,7 @@ MODRET cmd_select(cmd_rec *cmd) {
   }    
 
   /* close the connection, return the data. */
-  close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+  close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
 
@@ -973,16 +1085,16 @@ MODRET cmd_insert(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_insert");
 
-  _sql_check_cmd(cmd, "cmd_insert");
+  sql_check_cmd(cmd, "cmd_insert");
 
-  if ((cmd->argc != 2) && (cmd->argc != 4)) {
+  if (cmd->argc != 2 &&
+      cmd->argc != 4) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_insert");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_insert");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -999,13 +1111,12 @@ MODRET cmd_insert(cmd_rec *cmd) {
   /* construct the query string */
   if (cmd->argc == 2) {
     query = pstrcat(cmd->tmp_pool, "INSERT ", cmd->argv[1], NULL);
+
   } else {
-    query = pstrcat( cmd->tmp_pool, "INSERT INTO ", cmd->argv[1], " (",
-		     cmd->argv[2], ") VALUES (", cmd->argv[3], ")",
-		     NULL );
+    query = pstrcat(cmd->tmp_pool, "INSERT INTO ", cmd->argv[1], " (",
+      cmd->argv[2], ") VALUES (", cmd->argv[3], ")", NULL);
   }
 
-  /* log the query string */
   sql_log(DEBUG_INFO, "query \"%s\"", query);
 
   /* perform the query.  if it doesn't work, log the error, close the
@@ -1013,11 +1124,13 @@ MODRET cmd_insert(cmd_rec *cmd) {
    */
   if (!(conn->result = PQexec(conn->postgres, query)) ||
       (PQresultStatus(conn->result) != PGRES_COMMAND_OK)) {
-    dmr = _build_error( cmd, conn );
+    dmr = build_error(cmd, conn);
 
-    if (conn->result) PQclear(conn->result);
+    if (conn->result != NULL) {
+      PQclear(conn->result);
+    }
 
-    close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+    close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
 
@@ -1028,7 +1141,7 @@ MODRET cmd_insert(cmd_rec *cmd) {
   PQclear(conn->result);
 
   /* close the connection and return HANDLED. */
-  close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+  close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
 
@@ -1076,16 +1189,16 @@ MODRET cmd_update(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_update");
 
-  _sql_check_cmd(cmd, "cmd_update");
+  sql_check_cmd(cmd, "cmd_update");
 
-  if ((cmd->argc < 2) || (cmd->argc > 4)) {
+  if (cmd->argc < 2 ||
+      cmd->argc > 4) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_update");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_update");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -1101,15 +1214,16 @@ MODRET cmd_update(cmd_rec *cmd) {
 
   if (cmd->argc == 2) {
     query = pstrcat(cmd->tmp_pool, "UPDATE ", cmd->argv[1], NULL);
+
   } else {
-    /* construct the query string */
-    query = pstrcat( cmd->tmp_pool, "UPDATE ", cmd->argv[1], " SET ",
-		     cmd->argv[2], NULL );
-    if ((cmd->argc > 3) && (cmd->argv[3]))
-      query = pstrcat( cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL );
+    query = pstrcat(cmd->tmp_pool, "UPDATE ", cmd->argv[1], " SET ",
+      cmd->argv[2], NULL);
+    if (cmd->argc > 3 &&
+        cmd->argv[3]) {
+      query = pstrcat(cmd->tmp_pool, query, " WHERE ", cmd->argv[3], NULL);
+    }
   }
 
-  /* log the query string */
   sql_log(DEBUG_INFO, "query \"%s\"", query);
 
   /* perform the query.  if it doesn't work, log the error, close the
@@ -1117,11 +1231,13 @@ MODRET cmd_update(cmd_rec *cmd) {
    */
   if (!(conn->result = PQexec(conn->postgres, query)) ||
       (PQresultStatus(conn->result) != PGRES_COMMAND_OK)) {
-    dmr = _build_error( cmd, conn );
+    dmr = build_error(cmd, conn);
 
-    if (conn->result) PQclear(conn->result);
+    if (conn->result != NULL) {
+      PQclear(conn->result);
+    }
 
-    close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+    close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
 
@@ -1132,7 +1248,7 @@ MODRET cmd_update(cmd_rec *cmd) {
   PQclear(conn->result);
 
   /* close the connection, return HANDLED.  */
-  close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+  close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
 
@@ -1161,7 +1277,7 @@ MODRET cmd_update(cmd_rec *cmd) {
 MODRET cmd_procedure(cmd_rec *cmd) {
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_procedure");
 
-  _sql_check_cmd(cmd, "cmd_procedure");
+  sql_check_cmd(cmd, "cmd_procedure");
 
   if (cmd->argc != 3) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_procedure");
@@ -1205,16 +1321,15 @@ MODRET cmd_query(cmd_rec *cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_query");
 
-  _sql_check_cmd(cmd, "cmd_query");
+  sql_check_cmd(cmd, "cmd_query");
 
   if (cmd->argc != 2) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_query");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_query");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -1230,8 +1345,7 @@ MODRET cmd_query(cmd_rec *cmd) {
 
   query = pstrcat(cmd->tmp_pool, cmd->argv[1], NULL);
 
-  /* log the query string */
-  sql_log( DEBUG_INFO, "query \"%s\"", query); 
+  sql_log(DEBUG_INFO, "query \"%s\"", query);
 
   /* perform the query.  if it doesn't work, log the error, close the
    * connection then return the error from the query processing.
@@ -1239,11 +1353,13 @@ MODRET cmd_query(cmd_rec *cmd) {
   if (!(conn->result = PQexec(conn->postgres, query)) ||
       ((PQresultStatus(conn->result) != PGRES_TUPLES_OK) &&
        (PQresultStatus(conn->result) != PGRES_COMMAND_OK))) {
-    dmr = _build_error( cmd, conn );
+    dmr = build_error(cmd, conn);
 
-    if (conn->result) PQclear(conn->result);
+    if (conn->result != NULL) {
+      PQclear(conn->result);
+    }
 
-    close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+    close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
     cmd_close(close_cmd);
     SQL_FREE_CMD(close_cmd);
 
@@ -1255,20 +1371,20 @@ MODRET cmd_query(cmd_rec *cmd) {
    * connection then return the error from the data processing.
    */
 
-  if ( PQresultStatus( conn->result ) == PGRES_TUPLES_OK ) {
-    dmr = _build_data( cmd, conn );
+  if (PQresultStatus(conn->result) == PGRES_TUPLES_OK) {
+    dmr = build_data(cmd, conn);
 
     PQclear(conn->result);
 
     if (MODRET_ERROR(dmr)) {
       sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_query");
     }
+
   } else {
     dmr = PR_HANDLED(cmd);
   }
 
-  /* close the connection, return the data. */
-  close_cmd = _sql_make_cmd( cmd->tmp_pool, 1, entry->name );
+  close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
 
@@ -1302,7 +1418,7 @@ MODRET cmd_query(cmd_rec *cmd) {
  *  copying the data from argv[0] into the data field of the modret allows
  *  for possible SQL injection attacks when this backend is used.
  */
-MODRET cmd_escapestring(cmd_rec * cmd) {
+MODRET cmd_escapestring(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
   db_conn_t *conn = NULL;
   modret_t *cmr = NULL;
@@ -1316,16 +1432,15 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_escapestring");
 
-  _sql_check_cmd(cmd, "cmd_escapestring");
+  sql_check_cmd(cmd, "cmd_escapestring");
 
   if (cmd->argc != 2) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_escapestring");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION, "badly formed request");
   }
 
-  /* get the named connection */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_escapestring");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -1349,13 +1464,13 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
   PQescapeStringConn(conn->postgres, escaped, unescaped, unescaped_len, &pgerr);
   if (pgerr != 0) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_escapestring");
-    return _build_error(cmd, conn);
+    return build_error(cmd, conn);
   }
 #else
   PQescapeString(escaped, unescaped, unescaped_len);
 #endif
 
-  close_cmd = _sql_make_cmd(cmd->tmp_pool, 1, entry->name);
+  close_cmd = sql_make_cmd(cmd->tmp_pool, 1, entry->name);
   cmd_close(close_cmd);
   SQL_FREE_CMD(close_cmd);
 
@@ -1385,12 +1500,12 @@ MODRET cmd_escapestring(cmd_rec * cmd) {
  *  If this backend does not provide this functionality, this cmd *must*
  *  return ERROR.
  */
-MODRET cmd_checkauth(cmd_rec * cmd) {
+MODRET cmd_checkauth(cmd_rec *cmd) {
   conn_entry_t *entry = NULL;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_checkauth");
 
-  _sql_check_cmd(cmd, "cmd_checkauth");
+  sql_check_cmd(cmd, "cmd_checkauth");
 
   if (cmd->argc != 3) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_checkauth");
@@ -1398,8 +1513,8 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
   }
 
   /* get the named connection -- not used in this case, but for consistency */
-  entry = _sql_get_connection(cmd->argv[0]);
-  if (!entry) {
+  entry = sql_get_connection(cmd->argv[0]);
+  if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_checkauth");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
       "unknown named connection");
@@ -1435,10 +1550,10 @@ MODRET cmd_checkauth(cmd_rec * cmd) {
  * Notes:
  *  See mod_sql.h for currently accepted APIs.
  */
-MODRET cmd_identify(cmd_rec * cmd) {
+MODRET cmd_identify(cmd_rec *cmd) {
   sql_data_t *sd = NULL;
 
-  _sql_check_cmd(cmd, "cmd_identify");
+  sql_check_cmd(cmd, "cmd_identify");
 
   sd = (sql_data_t *) pcalloc(cmd->tmp_pool, sizeof(sql_data_t));
   sd->data = (char **) pcalloc(cmd->tmp_pool, sizeof(char *) * 2);
@@ -1534,14 +1649,49 @@ static void sql_postgres_mod_unload_ev(const void *event_data,
 /* Initialization routines
  */
 
-static int sql_postgres_init(void) {
+static void sql_postgres_ssl_init(void) {
+#ifdef HAVE_POSTGRES_PQINITOPENSSL
+  int init_ssl = TRUE, init_crypto = TRUE;
 
+  /* If any of the OpenSSL-using modules are loaded, tell Postgres to NOT
+   * initialize OpenSSL itself.  Note that there are nuances to this; some
+   * of the other modules may only use the crypto libs.
+   */
+  if (pr_module_exists("mod_auth_otp.c") == TRUE ||
+      pr_module_exists("mod_digest.c") == TRUE ||
+      pr_module_exists("mod_sftp.c") == TRUE ||
+      pr_module_exists("mod_sql_passwd.c") == TRUE) {
+    init_crypto = FALSE;
+  }
+
+  if (pr_module_exists("mod_tls.c") == TRUE) {
+    init_ssl = FALSE;
+    init_crypto = FALSE;
+  }
+
+# if defined(HAVE_LIBRESSL)
+  /* However, if we are using LibreSSL, then the above modules will NOT be
+   * properly initializing OpenSSL.  Thus Postgres should do such
+   * initializations itself.
+   */
+  init_ssl = init_crypto = TRUE;
+# endif
+
+  pr_trace_msg(trace_channel, 18,
+    "telling Postgres about OpenSSL initialization: ssl = %s, crypto = %s",
+    init_ssl ? "yes" : "no", init_crypto ? "yes" : "no");
+  PQinitOpenSSL(init_ssl, init_crypto);
+#endif /* HAVE_POSTGRES_PQINITOPENSSL */
+}
+
+static int sql_postgres_init(void) {
   /* Register listeners for the load and unload events. */
   pr_event_register(&sql_postgres_module, "core.module-load",
     sql_postgres_mod_load_ev, NULL);
   pr_event_register(&sql_postgres_module, "core.module-unload",
     sql_postgres_mod_unload_ev, NULL);
 
+  sql_postgres_ssl_init();
   return 0;
 }
 

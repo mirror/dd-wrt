@@ -1,6 +1,4 @@
-<!-- $Id: mod_readme.html,v 1.2 2013-08-14 21:40:18 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_readme.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_readme</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>mod_readme.c</code> file for
 ProFTPD 1.3.<i>x</i>, and is not compiled by default.  Installation
 instructions are discussed <a href="#Installation">here</a>.
@@ -28,7 +27,7 @@ ProFTPD source code.
 </ul>
 
 <hr>
-<h2><a name="DisplayReadme">DisplayReadme</a></h2>
+<h3><a name="DisplayReadme">DisplayReadme</a></h3>
 <strong>Syntax:</strong> DisplayReadme <em>path|pattern</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
@@ -71,18 +70,18 @@ might result in the following being sent to the client:
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 To install <code>mod_readme</code>, follow the usual steps for using
-third-party modules in <code>proftpd</code>:
+third-party modules in ProFTPD:
 <pre>
-  ./configure --with-modules=mod_readme ...
+  $ ./configure --with-modules=mod_readme ...
 </pre>
 To build <code>mod_readme</code> as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_readme
+  # ./configure --enable-dso --with-shared=mod_readme
 </pre>
 Then follow the usual steps:
 <pre>
-  make 
-  make install
+  $ make 
+  $ make install
 </pre>
 
 <p>
@@ -90,24 +89,16 @@ Alternatively, if your <code>proftpd</code> was compiled with DSO support,
 you can use the <code>prxs</code> tool to build <code>mod_readme</code> as
 a shared module:
 <pre>
-  prxs -c -i -d mod_readme.c
+  $ prxs -c -i -d mod_readme.c
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-08-14 21:40:18 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2011-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

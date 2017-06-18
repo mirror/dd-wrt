@@ -8,7 +8,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,9 +30,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* sample module for ProFTPD
- * $Id: mod_sample.c,v 1.11 2011-05-23 21:08:34 castaglia Exp $
- */
+/* Sample module for ProFTPD */
 
 #include "conf.h"
 

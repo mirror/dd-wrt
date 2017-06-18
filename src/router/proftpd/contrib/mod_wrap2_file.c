@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_wrap2_file -- a mod_wrap2 sub-module for supplying IP-based
  *                            access control data via file-based tables
- *
- * Copyright (c) 2002-2014 TJ Saunders
+ * Copyright (c) 2002-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,6 @@
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
- *
- * $Id: mod_wrap2_file.c,v 1.14 2013-12-19 23:19:50 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
@@ -149,10 +146,10 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
 
       ptr = strpbrk(res, ", \t");
       if (ptr != NULL) {
-        char *dup = pstrdup(filetab->tab_pool, res);
-        char *word;
+        char *dup_opts, *word;
 
-        while ((word = pr_str_get_token(&dup, ", \t")) != NULL) {
+        dup_opts = pstrdup(filetab->tab_pool, res);
+        while ((word = pr_str_get_token(&dup_opts, ", \t")) != NULL) {
           size_t wordlen;
 
           pr_signals_handle();
@@ -165,15 +162,16 @@ static void filetab_parse_table(wrap2_table_t *filetab) {
           /* Remove any trailing comma */
           if (word[wordlen-1] == ',') {
             word[wordlen-1] = '\0';
+            wordlen--;
           }
 
           *((char **) push_array(filetab_clients_list)) = word;
 
           /* Skip redundant whitespaces */
-          while (*dup == ' ' ||
-                 *dup == '\t') {
+          while (*dup_opts == ' ' ||
+                 *dup_opts == '\t') {
             pr_signals_handle();
-            dup++;
+            dup_opts++;
           }
         }
 
@@ -242,7 +240,7 @@ static array_header *filetab_fetch_options_cb(wrap2_table_t *filetab,
   return filetab_options_list;
 }
 
-static wrap2_table_t *filetab_open_cb(pool *parent_pool, char *srcinfo) {
+static wrap2_table_t *filetab_open_cb(pool *parent_pool, const char *srcinfo) {
   struct stat st;
   wrap2_table_t *tab = NULL;
   pool *tab_pool = make_sub_pool(parent_pool);
@@ -273,11 +271,11 @@ static wrap2_table_t *filetab_open_cb(pool *parent_pool, char *srcinfo) {
 
   /* If the path contains a %U variable, interpolate it. */
   if (strstr(srcinfo, "%U") != NULL) {
-    char *orig_user;
+    const char *orig_user;
 
     orig_user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
     if (orig_user != NULL) {
-      char *interp_path;
+      const char *interp_path;
 
       interp_path = sreplace(tab_pool, srcinfo, "%U", orig_user, NULL);
       if (interp_path != NULL) {

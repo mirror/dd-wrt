@@ -52,7 +52,7 @@ sub rmd_unremovable_subdir {
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/domain.com/web/special");
   mkpath($sub_dir);
- 
+
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
@@ -69,6 +69,12 @@ sub rmd_unremovable_subdir {
     '/bin/bash');
   auth_group_write($auth_group_file, 'ftpd', $gid, $user);
 
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $home_dir = '/private' . $home_dir;
+    $sub_dir = '/private' . $sub_dir;
+  }
+ 
   my $config = {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
@@ -144,53 +150,51 @@ EOC
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
 
-      my ($resp_code, $resp_msg);
-
       # We should be able to create and delete a directory under web/.
       # We should be able to create and delete a directory under web/special/.
       # We should NOT be able to delete the web/special/ directory.
 
-      ($resp_code, $resp_msg) = $client->mkd('domain.com/web/foo');
+      my ($resp_code, $resp_msg) = $client->mkd('domain.com/web/foo');
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "\"$home_dir/domain.com/web/foo\" - Directory successfully created";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->rmd('domain.com/web/foo');
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "RMD command successful";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->mkd('domain.com/web/special/foo');
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "\"$home_dir/domain.com/web/special/foo\" - Directory successfully created";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       ($resp_code, $resp_msg) = $client->rmd('domain.com/web/special/foo');
 
       $expected = 250;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "RMD command successful";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       eval { $client->rmd('domain.com/web/special') };
       unless ($@) {
@@ -202,11 +206,11 @@ EOC
 
       $expected = 550;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "domain.com/web/special: Permission denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: filter.c,v 1.8 2011-12-20 22:56:48 castaglia Exp $
  */
 
 #include "conf.h"
@@ -33,10 +31,16 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
   pr_regex_t *pre;
   int res;
 
+  if (set == NULL ||
+      path == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   /* Check any relevant PathAllowFilter first. */
 
   pre = get_param_ptr(set, "PathAllowFilter", FALSE);
-  if (pre) {
+  if (pre != NULL) {
     res = pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0);
     if (res != 0) {
       return PR_FILTER_ERR_FAILS_ALLOW_FILTER;
@@ -48,8 +52,8 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
 
   /* Next check any applicable PathDenyFilter. */
 
-  pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
-  if (pre) {
+  pre = get_param_ptr(set, "PathDenyFilter", FALSE);
+  if (pre != NULL) {
     res = pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0);
     if (res == 0) {
       return PR_FILTER_ERR_FAILS_DENY_FILTER;
@@ -66,14 +70,18 @@ int pr_filter_allow_path(xaset_t *set, const char *path) {
 }
 
 int pr_filter_parse_flags(pool *p, const char *flags_str) {
+  size_t flags_len;
+
   if (p == NULL ||
       flags_str == NULL) {
     errno = EINVAL;
     return -1;
   }
 
+  flags_len = strlen(flags_str);
+
   if (flags_str[0] != '[' ||
-      flags_str[strlen(flags_str)-1] != ']') {
+      flags_str[flags_len-1] != ']') {
     errno = EINVAL;
     return -1;
   }

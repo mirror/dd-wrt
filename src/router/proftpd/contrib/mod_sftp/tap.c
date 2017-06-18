@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: tap.c,v 1.12 2012-02-15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -71,7 +69,8 @@ static struct sftp_tap_policy curr_policy = { NULL, 0, 0, 0, 0, 0, 0, 0 };
 static int check_packet_times_cb(CALLBACK_FRAME) {
   time_t last_recvd, last_sent, now;
   unsigned long since_recvd, since_sent;
-  int chance;
+  unsigned int chance;
+  int rnd;
 
   /* Always return 1 so that this timer is rescheduled. */
 
@@ -104,12 +103,13 @@ static int check_packet_times_cb(CALLBACK_FRAME) {
 
   /* Otherwise, pick a random number, see if it's time to send a packet. */
   if (curr_policy.chance_max != 1) {
-    chance = (int) (rand() / (RAND_MAX / curr_policy.chance_max + 1));
+    rnd = (int) (rand() / (RAND_MAX / curr_policy.chance_max + 1));
 
   } else {
-    chance = 1;
+    rnd = 1;
   }
 
+  chance = rnd;
   if (chance == curr_policy.chance) {
     pr_trace_msg(trace_channel, 15, "perhaps too inactive, attempting to send "
       "a TAP packet");
@@ -174,7 +174,8 @@ int sftp_tap_have_policy(const char *policy) {
 }
 
 int sftp_tap_send_packet(void) {
-  int chance;
+  int rnd;
+  unsigned int chance;
 
   if (!sftp_interop_supports_feature(SFTP_SSH2_FEAT_IGNORE_MSG)) {
     pr_trace_msg(trace_channel, 3,
@@ -191,12 +192,13 @@ int sftp_tap_send_packet(void) {
    * policy.
    */
   if (curr_policy.chance_max != 1) {
-    chance = (int) (rand() / (RAND_MAX / curr_policy.chance_max + 1));
+    rnd = (int) (rand() / (RAND_MAX / curr_policy.chance_max + 1));
 
   } else {
-    chance = 1;
+    rnd = 1;
   }
 
+  chance = rnd;
   if (chance == curr_policy.chance) {
     unsigned char *buf, *ptr, *rand_data;
     uint32_t bufsz, buflen, rand_datalen;
@@ -220,10 +222,7 @@ int sftp_tap_send_packet(void) {
 
     rand_data = palloc(pkt->pool, rand_datalen);
 
-    /* We don't need cryptographically secure random bytes here, just
-     * pseudo-random data.
-     */
-    RAND_pseudo_bytes(rand_data, rand_datalen);
+    RAND_bytes(rand_data, rand_datalen);
 
     sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_IGNORE);
     sftp_msg_write_data(&buf, &buflen, rand_data, rand_datalen, TRUE);

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp miscellaneous
- * Copyright (c) 2010-2012 TJ Saunders
+ * Copyright (c) 2010-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,15 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: misc.h,v 1.3 2012-03-23 05:35:48 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_MISC_H
 #define MOD_SFTP_MISC_H
 
-int sftp_misc_chown_file(pr_fh_t *);
-int sftp_misc_chown_path(const char *);
+#include "mod_sftp.h"
+
+int sftp_misc_chown_file(pool *, pr_fh_t *);
+int sftp_misc_chown_path(pool *, const char *);
+const char *sftp_misc_namelist_shared(pool *, const char *, const char *);
 
 #endif /* MOD_SFTP_MISC_H */

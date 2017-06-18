@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
- *
- * Copyright (c) 2004-2011 The ProFTPD Project
+ * Copyright (c) 2004-2017 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,17 +20,20 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: mod_site_misc.c,v 1.21 2011-12-11 02:33:14 castaglia Exp $
  */
 
 #include "conf.h"
 
-#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.5"
+#define MOD_SITE_MISC_VERSION		"mod_site_misc/1.6"
 
 extern pr_response_t *resp_list, *resp_err_list;
 
+module site_misc_module;
+
 static unsigned int site_misc_engine = TRUE;
+
+/* Necessary prototypes */
+static int site_misc_sess_init(void);
 
 static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
 #ifdef PR_USE_REGEX
@@ -59,8 +61,7 @@ static int site_misc_create_dir(const char *dir) {
   struct stat st;
   int res;
 
-  pr_fs_clear_cache();
-
+  pr_fs_clear_cache2(dir);
   res = pr_fsio_stat(dir, &st);
   if (res < 0 &&
       errno != ENOENT) {
@@ -95,10 +96,10 @@ static int site_misc_create_path(pool *p, const char *path) {
   struct stat st;
   char *curr_path, *tmp_path;
 
-  pr_fs_clear_cache();
-
-  if (pr_fsio_stat(path, &st) == 0)
+  pr_fs_clear_cache2(path);
+  if (pr_fsio_stat(path, &st) == 0) {
     return 0;
+  }
 
   /* The given path should already be canonicalized; we do not need to worry
    * if it is relative to the current working directory or not.
@@ -220,6 +221,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       cmd->arg = pstrdup(cmd->pool, file);
       cmd->cmd_class = CL_WRITE;
 
+      pr_response_block(TRUE);
       res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
       if (res < 0) {
         int xerrno = errno;
@@ -231,6 +233,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
         pr_response_clear(&resp_err_list);
+        pr_response_block(FALSE);
 
         destroy_pool(sub_pool);
         pr_fsio_closedir(dirh);
@@ -248,6 +251,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
         pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
         pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
         pr_response_clear(&resp_err_list);
+        pr_response_block(FALSE);
 
         destroy_pool(sub_pool);
         pr_fsio_closedir(dirh);
@@ -256,10 +260,12 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
         return -1;
       }
 
+      pr_response_add(R_250, _("%s command successful"), (char *) cmd->argv[0]);
       pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
       pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
       pr_response_clear(&resp_list);
       destroy_pool(sub_pool);
+      pr_response_block(FALSE);
     }
   }
 
@@ -272,6 +278,7 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
   cmd->arg = pstrdup(cmd->pool, dir);
   cmd->cmd_class = CL_DIRS|CL_WRITE;
 
+  pr_response_block(TRUE);
   res = pr_cmd_dispatch_phase(cmd, PRE_CMD, 0);
   if (res < 0) {
     int xerrno = errno;
@@ -280,9 +287,11 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
       ": removing directory '%s' blocked by RMD handler: %s", dir,
       strerror(xerrno));
 
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
     pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
     pr_response_clear(&resp_err_list);
+    pr_response_block(FALSE);
 
     destroy_pool(sub_pool);
 
@@ -294,18 +303,23 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
   if (res < 0) {
     int xerrno = errno;
 
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
     pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
     pr_response_clear(&resp_err_list);
+    pr_response_block(FALSE);
 
     destroy_pool(sub_pool);
     errno = xerrno;
     return -1;
   }
 
+  pr_response_add(R_257, _("\"%s\" - Directory successfully created"),
+    quote_dir(cmd->tmp_pool, (char *) dir));
   pr_cmd_dispatch_phase(cmd, POST_CMD, 0);
   pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
   pr_response_clear(&resp_list);
+  pr_response_block(FALSE);
   destroy_pool(sub_pool);
 
   return 0;
@@ -314,10 +328,10 @@ static int site_misc_delete_dir(pool *p, const char *dir) {
 static int site_misc_delete_path(pool *p, const char *path) {
   struct stat st;
 
-  pr_fs_clear_cache();
-
-  if (pr_fsio_stat(path, &st) < 0)
+  pr_fs_clear_cache2(path);
+  if (pr_fsio_stat(path, &st) < 0) {
     return -1;
+  }
 
   if (!S_ISDIR(st.st_mode)) {
     errno = EINVAL;
@@ -325,6 +339,119 @@ static int site_misc_delete_path(pool *p, const char *path) {
   }
 
   return site_misc_delete_dir(p, path);
+}
+
+/* Parse a timestamp string of the form "YYYYMMDDhhmm[ss]" into its
+ * individual components.
+ *
+ * We assume that the caller has already ensured that the given timestamp
+ * string is long enough, i.e. 12 or 14 characters long.
+ */
+static int site_misc_parsetime(char *timestamp, size_t timestamp_len,
+    unsigned int *year, unsigned int *month, unsigned int *day,
+    unsigned int *hour, unsigned int *min, unsigned int *sec) {
+  register unsigned int i;
+  char c, *ptr;
+  int have_secs = FALSE, valid_timestamp = TRUE;
+
+  /* Make sure the timestamp is comprised of all digits. */
+  for (i = 0; i < timestamp_len; i++) {
+    if (PR_ISDIGIT((int) timestamp[i]) == 0) {
+      valid_timestamp = FALSE;
+      break;
+    }
+  }
+
+  if (!valid_timestamp) {
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": timestamp '%s' contains non-digits", timestamp);
+    errno = EINVAL;
+    return -1;
+  }
+ 
+  if (timestamp_len == 14) {
+    have_secs = TRUE;
+  }
+  
+  ptr = timestamp;
+  c = timestamp[4];
+  timestamp[4] = '\0';
+  *year = atoi(ptr);
+  timestamp[4] = c; 
+
+  ptr = &(timestamp[4]);
+  c = timestamp[6];
+  timestamp[6] = '\0';
+  *month = atoi(ptr);
+  timestamp[6] = c; 
+
+  if (*month > 12) {
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": bad number of months in '%s' (%u)", timestamp, *month);
+    errno = EINVAL;
+    return -1;
+  }
+
+  ptr = &(timestamp[6]);
+  c = timestamp[8];
+  timestamp[8] = '\0';
+  *day = atoi(ptr);
+  timestamp[8] = c;
+
+  if (*day > 31) {
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": bad number of days in '%s' (%u)", timestamp, *day);
+    errno = EINVAL;
+    return -1;
+  }
+
+  ptr = &(timestamp[8]);
+  c = timestamp[10];
+  timestamp[10] = '\0';
+  *hour = atoi(ptr);
+  timestamp[10] = c;
+
+  if (*hour > 24) {
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": bad number of hours in '%s' (%u)", timestamp, *hour);
+    errno = EINVAL;
+    return -1;
+  }
+
+  ptr = &(timestamp[10]);
+
+  /* Handle optional seconds. */
+  if (have_secs) {
+    c = timestamp[12];
+    timestamp[12] = '\0';
+  }
+
+  *min = atoi(ptr);
+
+  if (have_secs) {
+    timestamp[12] = c;
+  }
+
+  if (*min > 60) {
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": bad number of minutes in '%s' (%u)", timestamp, *min);
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (have_secs) {
+    ptr = &(timestamp[12]);
+    *sec = atoi(ptr);
+
+    if (*sec > 60) {
+      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+        ": bad number of seconds in '%s' (%u)", timestamp, *sec);
+      errno = EINVAL;
+      return -1;
+    }
+  }
+
+  return 0;
 }
 
 static time_t site_misc_mktime(unsigned int year, unsigned int month,
@@ -430,37 +557,56 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 
   if (cmd->argc < 2) {
     pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
-      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+      "%s : wrong number of parameters (%d)", (char *) cmd->argv[0], cmd->argc);
     return PR_DECLINED(cmd);
   }
 
   if (strncasecmp(cmd->argv[1], "MKDIR", 6) == 0) {
     register unsigned int i;
-    char *cmd_name, *path = "";
+    char *cmd_name, *decoded_path, *path = "";
     unsigned char *authenticated;
 
-    if (cmd->argc < 3)
+    if (cmd->argc < 3) {
       return PR_DECLINED(cmd);
+    }
 
     authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
-
-    if (!authenticated ||
+    if (authenticated == NULL ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
-      errno = EACCES;
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
-    for (i = 2; i < cmd->argc; i++)
+    for (i = 2; i < cmd->argc; i++) {
       path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", cmd->argv[i], NULL);
+    }
 
-    path = pr_fs_decode_path(cmd->tmp_pool, path);
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+        strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), path);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    path = decoded_path;
 
     if (site_misc_check_filters(cmd, path) < 0) {
       int xerrno = EPERM;
 
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -471,6 +617,7 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -483,9 +630,10 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
-        ": %s command denied by <Limit>", cmd->argv[0]);
+        ": %s command denied by <Limit>", (char *) cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -496,11 +644,13 @@ MODRET site_misc_mkdir(cmd_rec *cmd) {
 
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
 
-    pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[1]);
+    pr_response_add(R_200, _("SITE %s command successful"),
+      (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
   }
 
@@ -518,13 +668,13 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
   if (cmd->argc < 2) {
     pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
-      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+      "%s : wrong number of parameters (%d)", (char *) cmd->argv[0], cmd->argc);
     return PR_DECLINED(cmd);
   }
 
   if (strncasecmp(cmd->argv[1], "RMDIR", 6) == 0) {
     register unsigned int i;
-    char *cmd_name, *path = "";
+    char *cmd_name, *decoded_path, *path = "";
     unsigned char *authenticated;
 
     if (cmd->argc < 3)
@@ -535,21 +685,38 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
     if (!authenticated ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
-      errno = EACCES;
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
-    for (i = 2; i < cmd->argc; i++)
+    for (i = 2; i < cmd->argc; i++) {
       path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", cmd->argv[i], NULL);
+    }
 
-    path = pr_fs_decode_path(cmd->tmp_pool, path);
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
 
-    path = dir_canonical_path(cmd->tmp_pool, path);
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+        strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), path);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    path = dir_canonical_path(cmd->tmp_pool, decoded_path);
     if (path == NULL) {
       int xerrno = EINVAL;
 
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -562,9 +729,10 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
-        ": %s command denied by <Limit>", cmd->argv[0]);
+        ": %s command denied by <Limit>", (char *) cmd->argv[0]);
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -575,11 +743,13 @@ MODRET site_misc_rmdir(cmd_rec *cmd) {
 
       pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
 
-    pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[1]);
+    pr_response_add(R_200, _("SITE %s command successful"),
+      (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
   } 
 
@@ -597,14 +767,14 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
 
   if (cmd->argc < 2) {
     pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
-      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+      "%s : wrong number of parameters (%d)", (char *) cmd->argv[0], cmd->argc);
     return PR_DECLINED(cmd);
   }
 
   if (strncasecmp(cmd->argv[1], "SYMLINK", 8) == 0) {
     struct stat st;
     int res;
-    char *cmd_name, *src, *dst;
+    char *cmd_name, *decoded_path, *src, *dst;
     unsigned char *authenticated;
 
     if (cmd->argc < 4)
@@ -615,12 +785,28 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
     if (!authenticated ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
-      errno = EACCES;
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
-    src = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[2]);
-    src = dir_canonical_path(cmd->tmp_pool, src);
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[2],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[2], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), (char *) cmd->argv[2]);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    src = dir_canonical_path(cmd->tmp_pool, decoded_path);
     if (src == NULL) {
       int xerrno = EINVAL;
 
@@ -638,15 +824,30 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
-        ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[2], strerror(xerrno));
+        ": %s command denied by <Limit>", (char *) cmd->argv[0]);
+      pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[2],
+        strerror(xerrno));
 
       errno = xerrno;
       return PR_ERROR(cmd);
     }
 
-    dst = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[3]);
-    dst = dir_canonical_path(cmd->tmp_pool, dst);
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[3],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[3], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), (char *) cmd->argv[3]);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    dst = dir_canonical_path(cmd->tmp_pool, decoded_path);
     if (dst == NULL) {
       int xerrno = EINVAL;
 
@@ -662,8 +863,9 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
       cmd->argv[0] = cmd_name;
 
       pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
-        ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(xerrno));
+        ": %s command denied by <Limit>", (char *) cmd->argv[0]);
+      pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[3],
+        strerror(xerrno));
 
       errno = xerrno;
       return PR_ERROR(cmd);
@@ -685,7 +887,7 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
      * in the filesystem.
      */
        
-    pr_fs_clear_cache();
+    pr_fs_clear_cache2(src);
     res = pr_fsio_stat(src, &st);
     if (res < 0) {
       int xerrno = errno;
@@ -705,7 +907,8 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
       return PR_ERROR(cmd);
     }
 
-    pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[1]);
+    pr_response_add(R_200, _("SITE %s command successful"),
+      (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
   } 
 
@@ -716,6 +919,309 @@ MODRET site_misc_symlink(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Handle: SITE UTIME mtime path-with-spaces */
+MODRET site_misc_utime_mtime(cmd_rec *cmd) {
+  register unsigned int i;
+  char *cmd_name, *decoded_path, *path = "";
+  size_t timestamp_len;
+  unsigned int year, month, day, hour, min, sec = 0;
+  struct timeval tvs[2];
+  struct stat st;
+
+  /* Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss' formats. */
+  timestamp_len = strlen(cmd->argv[2]);
+  if (timestamp_len != 12 &&
+      timestamp_len != 14) {
+    int xerrno = EINVAL;
+
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": wrong number of digits in timestamp argument '%s' (%lu)",
+      (char *) cmd->argv[2], (unsigned long) timestamp_len);
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  for (i = 3; i < cmd->argc; i++) {
+    path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", cmd->argv[i], NULL);
+  }
+
+  decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+    FSIO_DECODE_FL_TELL_ERRORS);
+  if (decoded_path == NULL) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+      strerror(xerrno));
+    pr_response_add_err(R_550, _("%s: Illegal character sequence in filename"),
+      path);
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (pr_fsio_lstat(decoded_path, &st) == 0) {
+    if (S_ISLNK(st.st_mode)) {
+      char link_path[PR_TUNABLE_PATH_MAX];
+      int len;
+
+      memset(link_path, '\0', sizeof(link_path));
+      len = dir_readlink(cmd->tmp_pool, decoded_path, link_path,
+        sizeof(link_path)-1, PR_DIR_READLINK_FL_HANDLE_REL_PATH);
+      if (len > 0) {
+        link_path[len] = '\0';
+        decoded_path = pstrdup(cmd->tmp_pool, link_path);
+      }
+    }
+  }
+
+  path = dir_canonical_path(cmd->tmp_pool, decoded_path);
+  if (path == NULL) {
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  cmd_name = cmd->argv[0];
+  cmd->argv[0] = "SITE_UTIME";
+  if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+    int xerrno = EPERM;
+
+    cmd->argv[0] = cmd_name;
+
+    pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+      ": %s command denied by <Limit>", (char *) cmd->argv[0]);
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+  cmd->argv[0] = cmd_name;
+
+  if (site_misc_check_filters(cmd, path) < 0) {
+    int xerrno = EPERM;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (site_misc_parsetime(cmd->argv[2], timestamp_len, &year, &month, &day,
+      &hour, &min, &sec) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  tvs[0].tv_usec = tvs[1].tv_usec = 0;
+  tvs[0].tv_sec = tvs[1].tv_sec = site_misc_mktime(year, month, day, hour,
+    min, sec);
+
+  if (pr_fsio_utimes_with_root(path, tvs) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+ 
+  pr_response_add(R_200, _("SITE %s command successful"),
+    (char *) cmd->argv[1]);
+  return PR_HANDLED(cmd);
+}
+
+/* Handle: SITE UTIME path-with-spaces atime mtime ctime UTC */
+MODRET site_misc_utime_atime_mtime_ctime(cmd_rec *cmd) {
+  register unsigned int i;
+  char *cmd_name, *decoded_path, *path = "", *timestamp;
+  size_t timestamp_len;
+  unsigned int year, month, day, hour, min, sec = 0;
+  time_t parsed_atime, parsed_mtime, parsed_ctime;
+  struct timeval tvs[2];
+
+  for (i = 2; i < cmd->argc-4; i++) {
+    path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", cmd->argv[i], NULL);
+  }
+
+  decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+    FSIO_DECODE_FL_TELL_ERRORS);
+  if (decoded_path == NULL) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+      strerror(xerrno));
+    pr_response_add_err(R_550, _("%s: Illegal character sequence in filename"),
+      path);
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  path = dir_canonical_path(cmd->tmp_pool, decoded_path);
+  if (path == NULL) {
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  cmd_name = cmd->argv[0];
+  cmd->argv[0] = "SITE_UTIME";
+  if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
+    int xerrno = EPERM;
+
+    cmd->argv[0] = cmd_name;
+
+    pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
+      ": %s command denied by <Limit>", (char *) cmd->argv[0]);
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+  cmd->argv[0] = cmd_name;
+
+  if (site_misc_check_filters(cmd, path) < 0) {
+    int xerrno = EPERM;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  /* Handle the atime. Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss'
+   * formats.
+   */
+  timestamp = cmd->argv[cmd->argc-4];
+  timestamp_len = strlen(timestamp);
+  if (timestamp_len != 12 &&
+      timestamp_len != 14) {
+    int xerrno = EINVAL;
+
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": wrong number of digits in timestamp argument '%s' (%lu)",
+      timestamp, (unsigned long) timestamp_len);
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (site_misc_parsetime(timestamp, timestamp_len, &year, &month, &day,
+      &hour, &min, &sec) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  parsed_atime = site_misc_mktime(year, month, day, hour, min, sec);
+
+  /* Handle the mtime. Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss'
+   * formats.
+   */
+
+  sec = 0;
+  timestamp = cmd->argv[cmd->argc-3];
+  timestamp_len = strlen(timestamp);
+  if (timestamp_len != 12 &&
+      timestamp_len != 14) {
+    int xerrno = EINVAL;
+
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": wrong number of digits in timestamp argument '%s' (%lu)",
+      timestamp, (unsigned long) timestamp_len);
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (site_misc_parsetime(timestamp, timestamp_len, &year, &month, &day,
+      &hour, &min, &sec) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  parsed_mtime = site_misc_mktime(year, month, day, hour, min, sec);
+
+  /* Handle the ctime. Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss'
+   * formats.
+   */
+
+  sec = 0;
+  timestamp = cmd->argv[cmd->argc-2];
+  timestamp_len = strlen(timestamp);
+  if (timestamp_len != 12 &&
+      timestamp_len != 14) {
+    int xerrno = EINVAL;
+
+    pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
+      ": wrong number of digits in timestamp argument '%s' (%lu)",
+      timestamp, (unsigned long) timestamp_len);
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  if (site_misc_parsetime(timestamp, timestamp_len, &year, &month, &day,
+      &hour, &min, &sec) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+
+  /* Unix filesystems typically do not allow changing/setting the creation
+   * timestamp.  Thus we parse the timestamp provided by the client, but
+   * do nothing but log it.
+   */
+  parsed_ctime = site_misc_mktime(year, month, day, hour, min, sec);
+  pr_trace_msg("command", 9,
+    "SITE UTIME command sent ctime timestamp of %lu secs",
+    (unsigned long) parsed_ctime);
+
+  tvs[0].tv_usec = tvs[1].tv_usec = 0;
+  tvs[0].tv_sec = parsed_atime;
+  tvs[1].tv_sec = parsed_mtime;
+
+  if (pr_fsio_utimes_with_root(path, tvs) < 0) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
+ 
+  pr_response_add(R_200, _("SITE %s command successful"),
+    (char *) cmd->argv[1]);
+  return PR_HANDLED(cmd);
+}
+
 MODRET site_misc_utime(cmd_rec *cmd) {
   if (!site_misc_engine) {
     return PR_DECLINED(cmd);
@@ -723,198 +1229,45 @@ MODRET site_misc_utime(cmd_rec *cmd) {
 
   if (cmd->argc < 2) {
     pr_log_debug(DEBUG5, MOD_SITE_MISC_VERSION
-      "%s : wrong number of arguments (%d)", cmd->argv[0], cmd->argc);
+      "%s : wrong number of parameters (%d)", (char *) cmd->argv[0], cmd->argc);
     return PR_DECLINED(cmd);
   }
 
   if (strncasecmp(cmd->argv[1], "UTIME", 6) == 0) {
-    register unsigned int i;
-    char c, *cmd_name, *p, *path = "";
-    unsigned int year, month, day, hour, min, sec = 0;
-    struct timeval tvs[2];
     unsigned char *authenticated;
-    int have_secs_value = FALSE;
-
-    if (cmd->argc < 4)
-      return PR_DECLINED(cmd);
 
     authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
-
-    if (!authenticated ||
+    if (authenticated == NULL ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
       errno = EACCES;
       return PR_ERROR(cmd);
     }
 
-    /* Accept both 'YYYYMMDDhhmm' and 'YYYYMMDDhhmmss' formats. */
-    if (strlen(cmd->argv[2]) != 12 &&
-        strlen(cmd->argv[2]) != 14) {
-      int xerrno = EINVAL;
+    /* Now try to determine whether we are dealing with the mtime-only
+     * SITE UTIME variant (one timestamp only), or with the atime/mtime/ctime
+     * variant (three timestamps).  What makes this trickier is making sure
+     * to handle filenames that contain spaces.
+     */
 
-      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-        ": wrong number of digits in timestamp argument '%s' (%lu)",
-        cmd->argv[2], (unsigned long) strlen(cmd->argv[2]));
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
+    if (cmd->argc < 4) {
+      /* Not enough arguments for any SITE UTIME variant. */
+      pr_log_debug(DEBUG9, MOD_SITE_MISC_VERSION
+        ": SITE UTIME command has wrong number of parameters (%d), ignoring",
+        cmd->argc);
+      return PR_DECLINED(cmd);
     }
 
-    if (strlen(cmd->argv[2]) == 14) {
-      have_secs_value = TRUE;
+    /* If we have at least 7 parameters, AND the last paramter is "UTC"
+     * (case-insensitive), then it's a candidate for the atime/mtime/ctime
+     * variant.
+     */
+    if (cmd->argc >= 7 &&
+        strncasecmp(cmd->argv[cmd->argc-1], "UTC", 4) == 0) {
+      return site_misc_utime_atime_mtime_ctime(cmd);
     }
 
-    for (i = 3; i < cmd->argc; i++)
-      path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", cmd->argv[i], NULL);
-
-    path = pr_fs_decode_path(cmd->tmp_pool, path);
-
-    path = dir_canonical_path(cmd->tmp_pool, path);
-    if (path == NULL) {
-      int xerrno = EINVAL;
-
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    cmd_name = cmd->argv[0];
-    cmd->argv[0] = "SITE_UTIME";
-    if (!dir_check_canon(cmd->tmp_pool, cmd, G_WRITE, path, NULL)) {
-      int xerrno = EPERM;
-
-      cmd->argv[0] = cmd_name;
-
-      pr_log_debug(DEBUG4, MOD_SITE_MISC_VERSION
-        ": %s command denied by <Limit>", cmd->argv[0]);
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-    cmd->argv[0] = cmd_name;
-
-    if (site_misc_check_filters(cmd, path) < 0) {
-      int xerrno = EPERM;
-
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    p = cmd->argv[2];
-    c = cmd->argv[2][4];
-    cmd->argv[2][4] = '\0';
-    year = atoi(p);
-
-    cmd->argv[2][4] = c;
-    p = &(cmd->argv[2][4]);
-    c = cmd->argv[2][6];
-    cmd->argv[2][6] = '\0';
-    month = atoi(p);
-
-    if (month > 12) {
-      int xerrno = EINVAL;
-
-      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-        ": bad number of months in '%s' (%d)", cmd->argv[2], month);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    cmd->argv[2][6] = c;
-    p = &(cmd->argv[2][6]);
-    c = cmd->argv[2][8];
-    cmd->argv[2][8] = '\0';
-    day = atoi(p);
-
-    if (day > 31) {
-      int xerrno = EINVAL;
-
-      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-        ": bad number of days in '%s' (%d)", cmd->argv[2], day);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    cmd->argv[2][8] = c;
-    p = &(cmd->argv[2][8]);
-    c = cmd->argv[2][10];
-    cmd->argv[2][10] = '\0';
-    hour = atoi(p);
-
-    if (hour > 24) {
-      int xerrno = EINVAL;
-
-      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-        ": bad number of hours in '%s' (%d)", cmd->argv[2], hour);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    cmd->argv[2][10] = c;
-    p = &(cmd->argv[2][10]);
-
-    /* Handle a 'YYYYMMDDhhmmss' argument. */
-    if (have_secs_value) {
-      c = cmd->argv[2][12];
-      cmd->argv[2][12] = '\0';
-    }
-
-    min = atoi(p);
-
-    if (min > 60) {
-      int xerrno = EINVAL;
-
-      pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-        ": bad number of minutes in '%s' (%d)", cmd->argv[2], min);
-      pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
-
-    if (have_secs_value) {
-      cmd->argv[2][12] = c;
-      p = &(cmd->argv[2][12]);
-      sec = atoi(p);
-
-      if (sec > 60) {
-        int xerrno = EINVAL;
-
-        pr_log_debug(DEBUG7, MOD_SITE_MISC_VERSION
-          ": bad number of seconds in '%s' (%d)", cmd->argv[2], sec);
-        pr_response_add_err(R_500, "%s: %s", cmd->arg, strerror(xerrno));
-
-        errno = xerrno;
-        return PR_ERROR(cmd);
-      }
-    }
-
-    tvs[0].tv_usec = tvs[1].tv_usec = 0;
-    tvs[0].tv_sec = tvs[1].tv_sec = site_misc_mktime(year, month, day, hour,
-      min, sec);
-
-    if (pr_fsio_utimes(path, tvs) < 0) {
-      int xerrno = errno;
-
-      pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
-
-      errno = xerrno;
-      return PR_ERROR(cmd);
-    }
- 
-    pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[1]);
-    return PR_HANDLED(cmd);
+    return site_misc_utime_mtime(cmd);
   }
 
   if (strncasecmp(cmd->argv[1], "HELP", 5) == 0) {
@@ -924,11 +1277,38 @@ MODRET site_misc_utime(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Event listeners
+ */
+
+static void site_misc_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&site_misc_module, "core.session-reinit",
+    site_misc_sess_reinit_ev);
+
+  site_misc_engine = TRUE;
+  pr_feat_remove("SITE MKDIR");
+  pr_feat_remove("SITE RMDIR");
+  pr_feat_remove("SITE SYMLINK");
+  pr_feat_remove("SITE UTIME");
+
+  res = site_misc_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&site_misc_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization functions
  */
 
 static int site_misc_sess_init(void) {
   config_rec *c;
+
+  pr_event_register(&site_misc_module, "core.session-reinit",
+    site_misc_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "SiteMiscEngine", FALSE);
   if (c) {

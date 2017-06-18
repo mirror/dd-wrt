@@ -36,7 +36,7 @@ install:
 	fi
 
 clean:
-	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
+	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.gnco *.lo .libs/*.o
 
 dist: clean
 	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log

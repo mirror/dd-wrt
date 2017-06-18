@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006 The ProFTPD Project team
+ * Copyright (c) 2006-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Lastlog API
- * $Id: lastlog.h,v 1.1 2006-06-22 20:37:07 castaglia Exp $
- */
+/* Lastlog API */
 
 #ifndef PR_LASTLOG_H
 #define PR_LASTLOG_H
@@ -54,7 +52,7 @@
 #endif
 
 int log_lastlog(uid_t uid, const char *user_name, const char *tty,
-  pr_netaddr_t *remote_addr);
+  const pr_netaddr_t *remote_addr);
 #endif /* PR_USE_LASTLOG */
 
 #endif /* PR_LASTLOG_H */

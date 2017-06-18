@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2011 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Network ACL definitions
- * $Id: netacl.h,v 1.5 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Network ACL definitions */
 
 #ifndef PR_NETACL_H
 #define PR_NETACL_H
@@ -49,24 +47,26 @@ typedef enum {
 pr_netacl_t *pr_netacl_create(pool *, char *);
 
 /* Returns a duplicate of the given netacl allocated from the pool. */
-pr_netacl_t *pr_netacl_dup(pool *, pr_netacl_t *);
+pr_netacl_t *pr_netacl_dup(pool *, const pr_netacl_t *);
 
 /* Returns 1 if the given netaddr explicitly matches the ACL, -1 if the
  * netaddr explicitly does not match the ACL (e.g. "none"), and 0 if there is
  * no match.
  */
-int pr_netacl_match(pr_netacl_t *, pr_netaddr_t *);
+int pr_netacl_match(const pr_netacl_t *, const pr_netaddr_t *);
 
 /* Returns TRUE if the given netacl is negated, FALSE if it is not negated,
  * and -1 if there was an error.  If -1 is returned, errno will be set
  * appropriately.
  */
-int pr_netacl_get_negated(pr_netacl_t *);
+int pr_netacl_get_negated(const pr_netacl_t *);
 
 /* Returns the ACL type. */
-pr_netacl_type_t pr_netacl_get_type(pr_netacl_t *);
+pr_netacl_type_t pr_netacl_get_type(const pr_netacl_t *);
 
 /* Returns a string describing the given NetACL. */
-const char *pr_netacl_get_str(pool *, pr_netacl_t *);
+const char *pr_netacl_get_str(pool *p, const pr_netacl_t *acl);
+const char *pr_netacl_get_str2(pool *p, const pr_netacl_t *acl, int flags);
+#define PR_NETACL_FL_STR_NO_DESC	0x0001
 
 #endif /* PR_NETACL_H */

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2007 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/*
- * Ident (RFC1413) protocol support
- * $Id: ident.c,v 1.23 2007-10-22 18:09:18 castaglia Exp $
- */
+/* Ident (RFC1413) protocol support */
 
 #include "conf.h"
 

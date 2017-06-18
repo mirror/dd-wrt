@@ -72,7 +72,7 @@ FCT (pattern, string, string_end, no_leading_period, flags, ends)
 {
   register const CHAR *p = pattern, *n = string;
   register UCHAR c;
-  int is_seqval;
+  int is_seqval = 0;
 #ifdef _LIBC
 # if WIDE_CHAR_VERSION
   const char *collseq = (const char *)

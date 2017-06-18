@@ -10,33 +10,47 @@ SHARED_CFLAGS=-DPR_SHARED_MODULE
 SHARED_LDFLAGS=-avoid-version -export-dynamic -module
 VPATH=@srcdir@
 
+MODULE_LIBS=@MODULE_LIBS@
+
 MODULE_NAME=mod_sftp
-MODULE_OBJS=mod_sftp.o msg.o packet.o cipher.o mac.o umac.o \
+MODULE_OBJS=mod_sftp.o msg.o packet.o cipher.o mac.o umac.o umac128.o \
   compress.o kex.o keys.o crypto.o utf8.o session.o service.o kbdint.o \
   auth-hostbased.o auth-kbdint.o auth-password.o auth-publickey.o auth.o \
   disconnect.o rfc4716.o keystore.o channel.o blacklist.o agent.o \
   interop.o tap.o fxp.o scp.o display.o misc.o date.o
 SHARED_MODULE_OBJS=mod_sftp.lo msg.lo packet.lo cipher.lo mac.lo umac.lo \
-  compress.lo kex.lo keys.lo crypto.lo utf8.lo session.lo service.lo kbdint.lo \
-  auth-hostbased.lo auth-kbdint.lo auth-password.lo auth-publickey.lo auth.lo \
-  disconnect.lo rfc4716.lo keystore.lo channel.lo blacklist.lo agent.lo \
-  interop.lo tap.lo fxp.lo scp.lo display.lo misc.lo date.lo
+  umac128.lo compress.lo kex.lo keys.lo crypto.lo utf8.lo session.lo \
+  service.lo kbdint.lo auth-hostbased.lo auth-kbdint.lo auth-password.lo \
+  auth-publickey.lo auth.lo disconnect.lo rfc4716.lo keystore.lo channel.lo \
+  blacklist.lo agent.lo interop.lo tap.lo fxp.lo scp.lo display.lo misc.lo \
+  date.lo
 
 # Necessary redefinitions
 INCLUDES=-I. -I../.. -I../../include @INCLUDES@
 CPPFLAGS= $(ADDL_CPPFLAGS) -DHAVE_CONFIG_H $(DEFAULT_PATHS) $(PLATFORM) $(INCLUDES)
 LDFLAGS=-L../../lib @LDFLAGS@
 
-.c.o:
+# We special-case the building of umac128.o in order to use preprocessor
+# tricks to get the implementation, rather than making it be all in runtime.
+UMAC128_CPPFLAGS=-DUMAC_OUTPUT_LEN=16 -Dumac_alloc=umac128_alloc -Dumac_init=umac128_init -Dumac_new=umac128_new -Dumac_update=umac128_update -Dumac_final=umac128_final -Dumac_delete=umac128_delete -Dumac_reset=umac128_reset
+
+umac128.o: umac.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.o -c umac.c
+
+%.o: %.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
-.c.lo:
+umac128.lo: umac.c
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) $(UMAC128_CPPFLAGS) -o umac128.lo -c umac.c
+
+%.lo: %.c
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $<
 
 shared: $(SHARED_MODULE_OBJS)
-	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) `cat $(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $(MODULE_NAME).la $(SHARED_MODULE_OBJS) -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(MODULE_LIBS) $(SHARED_MODULE_LIBS) `cat $(MODULE_NAME).c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 static: $(MODULE_OBJS)
+	test -z "$(MODULE_LIBS)" || echo "$(MODULE_LIBS)" >> $(MODULE_LIBS_FILE)
 	$(AR) rc $(MODULE_NAME).a $(MODULE_OBJS)
 	$(RANLIB) $(MODULE_NAME).a
 
@@ -53,5 +67,5 @@ clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 
 dist: clean
-	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log
+	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log *.gcda *.gcno
 	-$(RM) -r CVS/ RCS/

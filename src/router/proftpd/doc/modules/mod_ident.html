@@ -1,6 +1,4 @@
-<!-- $Id: mod_ident.html,v 1.1 2008-01-05 01:22:20 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_ident.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_ident</title>
@@ -41,10 +39,10 @@ ProFTPD source distribution:
 
 <p>
 <hr>
-<h2><a name="IdentLookups">IdentLookups</a></h2>
+<h3><a name="IdentLookups">IdentLookups</a></h3>
 <strong>Syntax:</strong> IdentLookups <em>on|off</em><br>
 <strong>Default:</strong> IdentLookups on<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ident<br>
 <strong>Compatibility:</strong> 1.3.2rc1
 
@@ -53,35 +51,52 @@ The <code>IdentLookups</code> directive enables or disables the module's lookup
 of an "authenticated" user identity using RFC1413.
 
 <p>
+Normally, when a client initially connects to ProFTPD, the
+<code>mod_ident</code> will attempt to use the ident protocol (RFC1413) to
+identify the remote username.  This behavior can be disabled via this directive:
+<pre>
+  IdentLookups off
+</pre>
+<b>Not</b> that this lookup can cause delays (and reports of "slow logins")
+when clients connect to ProFTPD.
+
+<p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_ident</code> module is compiled into <code>proftpd</code> by
 default.  To build a <code>proftpd</code> which does not include the
 <code>mod_ident</code> module, use:
 <pre>
-  ./configure --disable-ident ...
+  $ ./configure --disable-ident ...
 </pre>
 Note that the <code>mod_ident</code> module can also be built as a shared
 module, rather than be statically linked into <code>proftpd</code>:
 <pre>
-  ./configure --enable-dso --with-shared=mod_ident ...
+  $ ./configure --enable-dso --with-shared=mod_ident ...
 </pre>
 
 <p>
-<hr><br>
+<b>Logging</b><br>
+The <code>mod_ident</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>ident
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace ident:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2008-01-05 01:22:20 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2008 TJ Saunders<br>
+&copy; Copyright 2008-2016 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

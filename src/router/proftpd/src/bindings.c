@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,16 +22,9 @@
  * OpenSSL in the source distribution.
  */
 
-/* Routines to work with ProFTPD bindings */
+/* Routines to work with ProFTPD bindings. */
 
 #include "conf.h"
-
-/* Some convenience macros */
-#define PR_CLOSE_NAMEBIND(n, a, p) \
-  if ((res = pr_namebind_close((n), (a), (p))) < 0) \
-    pr_log_pri(PR_LOG_NOTICE, \
-      "%s:%d: notice, unable to close namebind '%s': %s", \
-      __FILE__, __LINE__, (n), strerror(errno))
 
 /* From src/dirtree.c */
 extern xaset_t *server_list;
@@ -52,7 +45,7 @@ static void server_cleanup_cb(void *conn) {
 /* The hashing function for the hash table of bindings.  This algorithm
  * is stolen from Apache's http_vhost.c
  */
-static unsigned int ipbind_hash_addr(pr_netaddr_t *addr) {
+static unsigned int ipbind_hash_addr(const pr_netaddr_t *addr) {
   size_t offset;
   unsigned int key;
 
@@ -74,14 +67,14 @@ struct listener_rec {
   struct listener_rec *next, *prev;
 
   pool *pool;
-  pr_netaddr_t *addr;
+  const pr_netaddr_t *addr;
   unsigned int port;
   conn_t *conn;
   int claimed;
 };
 
-conn_t *pr_ipbind_get_listening_conn(server_rec *server, pr_netaddr_t *addr,
-    unsigned int port) {
+conn_t *pr_ipbind_get_listening_conn(server_rec *server,
+    const pr_netaddr_t *addr, unsigned int port) {
   conn_t *l;
   pool *p;
   struct listener_rec *lr;
@@ -180,12 +173,8 @@ conn_t *pr_ipbind_accept_conn(fd_set *readfds, int *listenfd) {
   conn_t **listeners = listener_list->elts;
   register unsigned int i = 0;
 
-  if (!readfds) {
-    errno = EINVAL;
-    return NULL;
-  }
-
-  if (!listenfd) {
+  if (readfds == NULL ||
+      listenfd == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -199,15 +188,26 @@ conn_t *pr_ipbind_accept_conn(fd_set *readfds, int *listenfd) {
       int fd = pr_inet_accept_nowait(listener->pool, listener);
 
       if (fd == -1) {
+        int xerrno = errno;
+
         /* Handle errors gracefully.  If we're here, then
          * ipbind->ib_server->listen contains either error information, or
          * we just got caught in a blocking condition.
          */
         if (listener->mode == CM_ERROR) {
-          pr_log_pri(PR_LOG_ERR, "error: unable to accept an incoming "
-            "connection: %s", strerror(listener->xerrno));
+
+          /* Ignore ECONNABORTED, as they tend to be health checks/probes by
+           * e.g. load balancers and other naive TCP clients.
+           */
+          if (listener->xerrno != ECONNABORTED) {
+            pr_log_pri(PR_LOG_ERR, "error: unable to accept an incoming "
+              "connection: %s", strerror(listener->xerrno));
+          }
+
           listener->xerrno = 0;
           listener->mode = CM_LISTEN;
+
+          errno = xerrno;
           return NULL;
         }
       }
@@ -225,13 +225,15 @@ int pr_ipbind_add_binds(server_rec *serv) {
   int res = 0;
   config_rec *c = NULL;
   conn_t *listen_conn = NULL;
-  pr_netaddr_t *addr = NULL;
+  const pr_netaddr_t *addr = NULL;
 
-  if (!serv)
+  if (serv == NULL) {
+    errno = EINVAL;
     return -1;
+  }
 
   c = find_config(serv->conf, CONF_PARAM, "_bind_", FALSE);
-  while (c) {
+  while (c != NULL) {
     listen_conn = NULL;
 
     pr_signals_handle();
@@ -269,9 +271,8 @@ int pr_ipbind_add_binds(server_rec *serv) {
   return 0;
 }
 
-int pr_ipbind_close(pr_netaddr_t *addr, unsigned int port,
+int pr_ipbind_close(const pr_netaddr_t *addr, unsigned int port,
     unsigned char close_namebinds) {
-  int res = 0;
   register unsigned int i = 0;
 
   if (addr) {
@@ -338,17 +339,17 @@ int pr_ipbind_close(pr_netaddr_t *addr, unsigned int port,
       for (j = 0; j < ipbind->ib_namebinds->nelts; j++) {
         pr_namebind_t *nb = namebinds[j];
 
-        PR_CLOSE_NAMEBIND(nb->nb_name, nb->nb_server->addr,
-          nb->nb_server->ServerPort);
+        if (pr_namebind_close(nb->nb_name, nb->nb_server->addr) < 0) {
+          pr_trace_msg(trace_channel, 7,
+            "notice: error closing namebind '%s' for address %s: %s",
+            nb->nb_name, pr_netaddr_get_ipstr(nb->nb_server->addr),
+            strerror(errno));
+        }
       }
     }
 
   } else {
-
-    /* A NULL addr has a special meaning: close _all_ ipbinds in the
-     * list.
-     */
-
+    /* A NULL addr has a special meaning: close _all_ ipbinds in the list. */
     for (i = 0; i < PR_BINDINGS_TABLE_SIZE; i++) {
       pr_ipbind_t *ipbind = NULL;
       for (ipbind = ipbind_table[i]; ipbind; ipbind = ipbind->ib_next) {
@@ -372,8 +373,12 @@ int pr_ipbind_close(pr_netaddr_t *addr, unsigned int port,
           for (j = 0; j < ipbind->ib_namebinds->nelts; j++) {
             pr_namebind_t *nb = namebinds[j];
 
-            PR_CLOSE_NAMEBIND(nb->nb_name, nb->nb_server->addr,
-              nb->nb_server->ServerPort);
+            if (pr_namebind_close(nb->nb_name, nb->nb_server->addr) < 0) {
+              pr_trace_msg(trace_channel, 7,
+                "notice: error closing namebind '%s' for address %s: %s",
+                nb->nb_name, pr_netaddr_get_ipstr(nb->nb_server->addr),
+               strerror(errno));
+            }
           }
         }
       }
@@ -407,7 +412,7 @@ int pr_ipbind_close_listeners(void) {
   return 0;
 }
 
-int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
+int pr_ipbind_create(server_rec *server, const pr_netaddr_t *addr,
     unsigned int port) {
   pr_ipbind_t *ipbind = NULL;
   register unsigned int i = 0;
@@ -461,23 +466,74 @@ int pr_ipbind_create(server_rec *server, pr_netaddr_t *addr,
   return 0;
 }
 
-pr_ipbind_t *pr_ipbind_find(pr_netaddr_t *addr, unsigned int port,
+/* Returns the LAST matching ipbind for the given port, if any.  If provided,
+ * the match_count pointer will contain the number of ipbinds found that
+ * matched that port.
+ */
+static pr_ipbind_t *ipbind_find_port(unsigned int port,
+    unsigned char skip_inactive, unsigned int *match_count) {
+  register unsigned int i;
+  pr_ipbind_t *matched_ipbind = NULL;
+
+  for (i = 0; i < PR_BINDINGS_TABLE_SIZE; i++) {
+    pr_ipbind_t *ipbind;
+
+    for (ipbind = ipbind_table[i]; ipbind; ipbind = ipbind->ib_next) {
+      pr_signals_handle();
+
+      if (skip_inactive &&
+          !ipbind->ib_isactive) {
+        continue;
+      }
+
+      if (ipbind->ib_port == port) {
+        if (match_count != NULL) {
+          (*match_count)++;
+        }
+
+        matched_ipbind = ipbind;
+      }
+    }
+  }
+
+  if (matched_ipbind == NULL) {
+    errno = ENOENT;
+    return NULL;
+  }
+
+  return matched_ipbind;
+}
+
+pr_ipbind_t *pr_ipbind_find(const pr_netaddr_t *addr, unsigned int port,
     unsigned char skip_inactive) {
+  register unsigned int i;
   pr_ipbind_t *ipbind = NULL;
-  register unsigned int i = ipbind_hash_addr(addr);
+
+  if (addr == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  i = ipbind_hash_addr(addr);
 
   for (ipbind = ipbind_table[i]; ipbind; ipbind = ipbind->ib_next) {
+    pr_signals_handle();
 
     if (skip_inactive &&
         !ipbind->ib_isactive) {
       continue;
     }
 
-    if (pr_netaddr_cmp(ipbind->ib_addr, addr) == 0 &&
-        (!ipbind->ib_port || ipbind->ib_port == port))
-      return ipbind;
+    if (pr_netaddr_cmp(ipbind->ib_addr, addr) == 0) {
+      if (ipbind->ib_port == 0 ||
+          port == 0 ||
+          ipbind->ib_port == port) {
+        return ipbind;
+      }
+    }
   }
 
+  errno = ENOENT;
   return NULL;
 }
 
@@ -487,14 +543,17 @@ pr_ipbind_t *pr_ipbind_get(pr_ipbind_t *prev) {
   if (prev) {
 
     /* If there's another ipbind in this chain, simply return that. */
-    if (prev->ib_next)
+    if (prev->ib_next) {
       return prev->ib_next;
+    }
 
     /* If the increment is at the maximum size, return NULL (no more chains
      * to be examined).
      */
-    if (i == PR_BINDINGS_TABLE_SIZE)
+    if (i == PR_BINDINGS_TABLE_SIZE) {
+      errno = ENOENT;
       return NULL;
+    }
 
     /* Increment the index. At this point, we know that the given pointer is
      * the last in the chain, and that there are more chains in the table
@@ -502,30 +561,35 @@ pr_ipbind_t *pr_ipbind_get(pr_ipbind_t *prev) {
      */
     i++;
 
-  } else
+  } else {
     /* Reset the index if prev is NULL. */
     i = 0;
+  }
 
   /* Search for the next non-empty chain in the table. */
   for (; i < PR_BINDINGS_TABLE_SIZE; i++) {
-    if (ipbind_table[i])
+    if (ipbind_table[i]) {
       return ipbind_table[i];
+    }
   }
 
+  errno = ENOENT;
   return NULL;
 }
 
-server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
+server_rec *pr_ipbind_get_server(const pr_netaddr_t *addr, unsigned int port) {
   pr_ipbind_t *ipbind = NULL;
   pr_netaddr_t wildcard_addr;
   int addr_family;
+  unsigned int match_count = 0;
 
   /* If we've got a binding configured for this exact address, return it
    * straightaway.
    */
   ipbind = pr_ipbind_find(addr, port, TRUE);
-  if (ipbind != NULL)
+  if (ipbind != NULL) {
     return ipbind->ib_server;
+  }
 
   /* Look for a vhost bound to the wildcard address (i.e. INADDR_ANY).
    *
@@ -553,11 +617,12 @@ server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
     if (addr_family == AF_INET6 &&
         pr_netaddr_use_ipv6()) {
 
-      /* The pr_ipbind_find() probably returned NULL because there aren't
-       * any <VirtualHost> sections configured explicitly for the wildcard
-       * IPv6 address of "::", just the IPv4 wildcard "0.0.0.0" address.
+      /* The pr_ipbind_find() probably returned NULL because there aren't any
+       * <VirtualHost> sections configured explicitly for the wildcard IPv6
+       * address of "::", just the IPv4 wildcard "0.0.0.0" address.
        *
-       * So try the pr_ipbind_find() again, this time using the IPv4 wildcard.
+       * So try the pr_ipbind_find() again, this time using the IPv4
+       * wildcard.
        */
       pr_netaddr_clear(&wildcard_addr);
       pr_netaddr_set_family(&wildcard_addr, AF_INET);
@@ -572,6 +637,18 @@ server_rec *pr_ipbind_get_server(pr_netaddr_t *addr, unsigned int port) {
       }
     }
 #endif /* PR_USE_IPV6 */
+  }
+
+  /* Check for any bindings that match the port.  IF there is only one ONE
+   * vhost which matches the requested port, use that (Bug#4251).
+   */
+  ipbind = ipbind_find_port(port, TRUE, &match_count);
+  if (ipbind != NULL) {
+    pr_trace_msg(trace_channel, 18, "found %u possible %s for port %u",
+      match_count, match_count != 1 ? "ipbinds" : "ipbind", port);
+    if (match_count == 1) {
+      return ipbind->ib_server;
+    }
   }
 
   /* Use the default server, if set. */
@@ -599,12 +676,14 @@ int pr_ipbind_listen(fd_set *readfds) {
   register unsigned int i = 0;
 
   /* sanity check */
-  if (!readfds)
+  if (readfds == NULL) {
+    errno = EINVAL;
     return -1;
+  }
 
   FD_ZERO(readfds);
 
-  if (!binding_pool) {
+  if (binding_pool == NULL) {
     binding_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(binding_pool, "Bindings Pool");
   }
@@ -641,7 +720,13 @@ int pr_ipbind_listen(fd_set *readfds) {
         }
 
         if (ipbind->ib_listener->mode == CM_ACCEPT) {
-          pr_inet_resetlisten(ipbind->ib_listener->pool, ipbind->ib_listener);
+          if (pr_inet_resetlisten(ipbind->ib_listener->pool,
+              ipbind->ib_listener) < 0) {
+            pr_trace_msg(trace_channel, 3,
+              "error resetting %s#%u for listening: %s",
+              pr_netaddr_get_ipstr(ipbind->ib_addr), ipbind->ib_port,
+              strerror(errno));
+          }
         }
 
         if (ipbind->ib_listener->mode == CM_LISTEN) {
@@ -659,8 +744,8 @@ int pr_ipbind_listen(fd_set *readfds) {
   return maxfd;
 }
 
-int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
-    unsigned char isdefault, unsigned char islocalhost,
+int pr_ipbind_open(const pr_netaddr_t *addr, unsigned int port,
+    conn_t *listen_conn, unsigned char isdefault, unsigned char islocalhost,
     unsigned char open_namebinds) {
   int res = 0;
   pr_ipbind_t *ipbind = NULL;
@@ -714,8 +799,7 @@ int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
     for (i = 0; i < ipbind->ib_namebinds->nelts; i++) {
       pr_namebind_t *nb = namebinds[i];
 
-      res = pr_namebind_open(nb->nb_name, nb->nb_server->addr,
-        nb->nb_server->ServerPort);
+      res = pr_namebind_open(nb->nb_name, nb->nb_server->addr);
       if (res < 0) {
         pr_trace_msg(trace_channel, 2,
           "notice: unable to open namebind '%s': %s", nb->nb_name,
@@ -730,16 +814,17 @@ int pr_ipbind_open(pr_netaddr_t *addr, unsigned int port, conn_t *listen_conn,
   return 0;
 }
 
-int pr_namebind_close(const char *name, pr_netaddr_t *addr,
-    unsigned int port) {
+int pr_namebind_close(const char *name, const pr_netaddr_t *addr) {
   pr_namebind_t *namebind = NULL;
+  unsigned int port;
 
-  if (!name ||
-      !addr) {
+  if (name == NULL||
+      addr == NULL) {
     errno = EINVAL;
     return -1;
   }
 
+  port = ntohs(pr_netaddr_get_port(addr));
   namebind = pr_namebind_find(name, addr, port, FALSE);
   if (namebind == NULL) {
     errno = ENOENT;
@@ -751,9 +836,10 @@ int pr_namebind_close(const char *name, pr_netaddr_t *addr,
 }
 
 int pr_namebind_create(server_rec *server, const char *name,
-    pr_netaddr_t *addr, unsigned int port) {
+    const pr_netaddr_t *addr, unsigned int server_port) {
   pr_ipbind_t *ipbind = NULL;
   pr_namebind_t *namebind = NULL, **namebinds = NULL;
+  unsigned int port;
 
   if (server == NULL ||
       name == NULL) {
@@ -762,7 +848,14 @@ int pr_namebind_create(server_rec *server, const char *name,
   }
 
   /* First, find the ipbind to hold this namebind. */
+  port = ntohs(pr_netaddr_get_port(addr));
+  if (port == 0) {
+    port = server_port;
+  }
   ipbind = pr_ipbind_find(addr, port, FALSE);
+  pr_trace_msg(trace_channel, 19,
+    "found ipbind %p for namebind (name '%s', addr %s, port %u)", ipbind, name,
+    pr_netaddr_get_ipstr(addr), port);
 
   if (ipbind == NULL) {
     pr_netaddr_t wildcard_addr;
@@ -789,6 +882,10 @@ int pr_namebind_create(server_rec *server, const char *name,
       ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
     }
 #endif /* PR_USE_IPV6 */
+
+    pr_trace_msg(trace_channel, 19,
+      "found wildcard ipbind %p for namebind (name '%s', addr %s, port %u)",
+      ipbind, name, pr_netaddr_get_ipstr(addr), port);
   }
 
   if (ipbind == NULL) {
@@ -878,7 +975,7 @@ int pr_namebind_create(server_rec *server, const char *name,
   return 0;
 }
 
-pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
+pr_namebind_t *pr_namebind_find(const char *name, const pr_netaddr_t *addr,
     unsigned int port, unsigned char skip_inactive) {
   pr_ipbind_t *ipbind = NULL;
   pr_namebind_t *namebind = NULL;
@@ -889,9 +986,8 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
     return NULL;
   }
 
-  /* First, find an active ipbind for the given addr/port */
+  /* First, find an active ipbind for the given address. */
   ipbind = pr_ipbind_find(addr, port, skip_inactive);
-
   if (ipbind == NULL) {
     pr_netaddr_t wildcard_addr;
     int addr_family;
@@ -917,6 +1013,10 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
       ipbind = pr_ipbind_find(&wildcard_addr, port, FALSE);
     }
 #endif /* PR_USE_IPV6 */
+  } else {
+    pr_trace_msg(trace_channel, 17,
+      "found ipbind %p (server %p) for %s#%u", ipbind, ipbind->ib_server,
+      pr_netaddr_get_ipstr(addr), port);
   }
 
   if (ipbind == NULL) {
@@ -924,20 +1024,32 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
     return NULL;
   }
 
-  if (!ipbind->ib_namebinds) {
+  if (ipbind->ib_namebinds == NULL) {
+    pr_trace_msg(trace_channel, 17,
+      "ipbind %p (server %p) for %s#%u has no namebinds", ipbind,
+      ipbind->ib_server, pr_netaddr_get_ipstr(addr), port);
     return NULL;
 
   } else {
     register unsigned int i = 0;
     pr_namebind_t **namebinds = (pr_namebind_t **) ipbind->ib_namebinds->elts;
 
+    pr_trace_msg(trace_channel, 17,
+      "ipbind %p (server %p) for %s#%u has namebinds (%d)", ipbind,
+      ipbind->ib_server, pr_netaddr_get_ipstr(addr), port,
+      ipbind->ib_namebinds->nelts);
+
     for (i = 0; i < ipbind->ib_namebinds->nelts; i++) {
       namebind = namebinds[i];
+      if (namebind == NULL) {
+        continue;
+      }
 
       /* Skip inactive namebinds */
       if (skip_inactive == TRUE &&
-          namebind != NULL &&
           namebind->nb_isactive == FALSE) {
+        pr_trace_msg(trace_channel, 17,
+          "namebind #%u: %s is inactive, skipping", i, namebind->nb_name);
         continue;
       }
 
@@ -947,11 +1059,12 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
        * that scheme, however, is specific to DNS; should any other naming
        * scheme be desired, that sort of matching will be unnecessary.
        */
-      if (namebind != NULL &&
-          namebind->nb_name != NULL) {
+      if (namebind->nb_name != NULL) {
+        pr_trace_msg(trace_channel, 17,
+          "namebind #%u: %s", i, namebind->nb_name);
 
         if (namebind->nb_iswildcard == FALSE) {
-          if (strcasecmp(namebind->nb_name, name) == 0)
+          if (strcasecmp(namebind->nb_name, name) == 0) {
             return namebind;
           }
 
@@ -969,26 +1082,47 @@ pr_namebind_t *pr_namebind_find(const char *name, pr_netaddr_t *addr,
             "failed to match name '%s' against pattern '%s'", name,
             namebind->nb_name);
         }
+      }
     }
   }
 
   return NULL;
 }
 
-server_rec *pr_namebind_get_server(const char *name, pr_netaddr_t *addr,
+server_rec *pr_namebind_get_server(const char *name, const pr_netaddr_t *addr,
     unsigned int port) {
   pr_namebind_t *namebind = NULL;
 
   /* Basically, just a wrapper around pr_namebind_find() */
+
   namebind = pr_namebind_find(name, addr, port, TRUE);
-  if (namebind == NULL)
+  if (namebind == NULL) {
     return NULL;
+  }
 
   return namebind->nb_server;
 }
 
-int pr_namebind_open(const char *name, pr_netaddr_t *addr, unsigned int port) {
+unsigned int pr_namebind_count(server_rec *srv) {
+  unsigned int count = 0;
+  pr_ipbind_t *ipbind = NULL;
+
+  if (srv == NULL) {
+    return 0;
+  }
+
+  ipbind = pr_ipbind_find(srv->addr, srv->ServerPort, FALSE); 
+  if (ipbind != NULL &&
+      ipbind->ib_namebinds != NULL) {
+    count = ipbind->ib_namebinds->nelts; 
+  }
+
+  return count;
+}
+
+int pr_namebind_open(const char *name, const pr_netaddr_t *addr) {
   pr_namebind_t *namebind = NULL;
+  unsigned int port;
 
   if (name == NULL ||
       addr == NULL) {
@@ -996,6 +1130,7 @@ int pr_namebind_open(const char *name, pr_netaddr_t *addr, unsigned int port) {
     return -1;
   }
 
+  port = ntohs(pr_netaddr_get_port(addr));
   namebind = pr_namebind_find(name, addr, port, FALSE);
   if (namebind == NULL) {
     errno = ENOENT;
@@ -1172,18 +1307,20 @@ static int init_standalone_bindings(void) {
       if (res == 0) {
         is_namebind = TRUE;
 
-        res = pr_namebind_open(c->argv[0], serv->addr, serv->ServerPort);
+        res = pr_namebind_open(c->argv[0], serv->addr);
         if (res < 0) {
-          pr_trace_msg(trace_channel, 2, 
+          pr_trace_msg(trace_channel, 2,
             "notice: unable to open namebind '%s': %s", (char *) c->argv[0],
             strerror(errno));
         }
 
       } else {
-        pr_trace_msg(trace_channel, 2,
-          "unable to create namebind for '%s' to %s#%u: %s",
-          (char *) c->argv[0], pr_netaddr_get_ipstr(serv->addr),
-          serv->ServerPort, strerror(errno));
+        if (errno != ENOENT) {
+          pr_trace_msg(trace_channel, 3,
+            "unable to create namebind for '%s' to %s#%u: %s",
+            (char *) c->argv[0], pr_netaddr_get_ipstr(serv->addr),
+            serv->ServerPort, strerror(errno));
+        }
       }
 
       c = find_config_next(c, c->next, CONF_PARAM, "ServerAlias", FALSE);

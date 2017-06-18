@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Event management code
- * $Id: event.c,v 1.28 2013-02-24 16:46:42 castaglia Exp $
- */
+/* Event management code */
 
 #include "conf.h"
 
@@ -160,13 +158,8 @@ int pr_event_register(module *m, const char *event,
 
         } else {
           /* Core event listeners go at the end. */
-          if (evhl != NULL) {
-            evhl->next = evh;
-            evh->prev = evhl;
-
-          } else {
-            evl->handlers = evh;
-          }
+          evhl->next = evh;
+          evh->prev = evhl;
         }
 
       } else {

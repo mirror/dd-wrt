@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'publickey' user authentication
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: auth-publickey.c,v 1.13 2012-07-10 00:52:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -34,6 +32,14 @@
 #include "keystore.h"
 #include "interop.h"
 #include "blacklist.h"
+
+/* This array tracks the fingerprints of publickeys that have been
+ * successfully verified.  In any given session, the same publickey CANNOT
+ * be used twice for authentication; this supports authentication chains
+ * like "publickey+publickey", requiring clients to authenticate using multiple
+ * different publickeys.
+ */
+static array_header *publickey_fps = NULL;
 
 static const char *trace_channel = "ssh2";
 
@@ -76,18 +82,23 @@ static int send_pubkey_ok(const char *algo, const unsigned char *pubkey_data,
 int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     const char *orig_user, const char *user, const char *service,
     unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
-  int have_signature, res;
+  register unsigned int i;
+  int fp_algo_id = 0, have_signature, res;
   enum sftp_key_type_e pubkey_type;
   unsigned char *pubkey_data;
   char *pubkey_algo = NULL;
-  const char *fp = NULL;
+  const char *fp = NULL, *fp_algo = NULL;
   uint32_t pubkey_len;
   struct passwd *pw;
 
   if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "authentication request for user '%s' blocked by '%s' handler",
-      orig_user, pass_cmd->argv[0]);
+      orig_user, (char *) pass_cmd->argv[0]);
+
+    pr_log_auth(PR_LOG_NOTICE,
+      "USER %s (Login failed): blocked by '%s' handler", orig_user,
+      (char *) pass_cmd->argv[0]);
 
     pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
@@ -145,6 +156,10 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
       "unsupported public key algorithm '%s' requested, rejecting request",
       pubkey_algo);
 
+    pr_log_auth(PR_LOG_NOTICE,
+      "USER %s (Login failed): unsupported public key algorithm '%s' requested",
+      user, pubkey_algo);
+
     *send_userauth_fail = TRUE;
     errno = EINVAL;
     return 0;
@@ -172,32 +187,75 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
 #ifdef OPENSSL_FIPS
   if (FIPS_mode()) {
+# if defined(HAVE_SHA256_OPENSSL)
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA256;
+    fp_algo = "SHA256";
+# else
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA1;
+    fp_algo = "SHA1";
+# endif /* HAVE_SHA256_OPENSSL */
+
     fp = sftp_keys_get_fingerprint(pkt->pool, pubkey_data, pubkey_len,
-      SFTP_KEYS_FP_DIGEST_SHA1);
+      fp_algo_id);
     if (fp != NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "public key SHA1 fingerprint: %s", fp);
+        "public key %s fingerprint: %s", fp_algo, fp);
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error obtaining public key SHA1 fingerprint: %s", strerror(errno));
+        "error obtaining public key %s fingerprint: %s", fp_algo,
+        strerror(errno));
+      fp_algo = NULL;
     }
 
   } else {
 #endif /* OPENSSL_FIPS */
+#if defined(HAVE_SHA256_OPENSSL)
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA256;
+    fp_algo = "SHA256";
+#else
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_MD5;
+    fp_algo = "MD5";
+#endif /* HAVE_SHA256_OPENSSL */
+
     fp = sftp_keys_get_fingerprint(pkt->pool, pubkey_data, pubkey_len,
-      SFTP_KEYS_FP_DIGEST_MD5);
+      fp_algo_id);
     if (fp != NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "public key MD5 fingerprint: %s", fp);
+        "public key %s fingerprint: %s", fp_algo, fp);
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error obtaining public key MD5 fingerprint: %s", strerror(errno));
+        "error obtaining public key %s fingerprint: %s", fp_algo,
+        strerror(errno));
+      fp_algo = NULL;
     }
 #ifdef OPENSSL_FIPS
   }
 #endif /* OPENSSL_FIPS */
+
+  if (fp != NULL) {
+    const char *k, *v;
+
+    /* Log the fingerprint (and fingerprinting algorithm used), for
+     * debugging/auditing; make it available via environment variable as well.
+     */
+
+    k = pstrdup(session.pool, "SFTP_USER_PUBLICKEY_ALGO");
+    v = pstrdup(session.pool, pubkey_algo);
+    pr_env_unset(session.pool, k);
+    pr_env_set(session.pool, k, v);
+
+    k = pstrdup(session.pool, "SFTP_USER_PUBLICKEY_FINGERPRINT");
+    v = pstrdup(session.pool, fp);
+    pr_env_unset(session.pool, k);
+    pr_env_set(session.pool, k, v);
+
+    k = pstrdup(session.pool, "SFTP_USER_PUBLICKEY_FINGERPRINT_ALGO");
+    v = pstrdup(session.pool, fp_algo);
+    pr_env_unset(session.pool, k);
+    pr_env_set(session.pool, k, v);
+  }
 
   pw = pr_auth_getpwnam(pkt->pool, user);
   if (pw == NULL) {
@@ -236,6 +294,9 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
      */
 
     if (sftp_blacklist_reject_key(pkt->pool, pubkey_data, pubkey_len)) {
+      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): requested public "
+        "key is blacklisted", user);
+
       *send_userauth_fail = TRUE;
       errno = EPERM;
       return 0;
@@ -261,6 +322,9 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
     if (sftp_keystore_verify_user_key(pkt->pool, user, pubkey_data,
         pubkey_len) < 0) {
+      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): authentication "
+        "via '%s' public key failed", user, pubkey_algo);
+
       *send_userauth_fail = TRUE;
       errno = EACCES;
       return 0;
@@ -304,6 +368,10 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "failed to verify '%s' signature on public key auth request for "
         "user '%s'", pubkey_algo, orig_user);
+
+      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
+        "verification of '%s' public key failed", user, pubkey_algo);
+
       *send_userauth_fail = TRUE;
       errno = EACCES;
       return 0;
@@ -325,5 +393,35 @@ int sftp_auth_publickey(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     return 0;
   }
 
+  /* Check the key fingerprint against any previously used keys, to see if the
+   * same key is being reused.
+   */
+  for (i = 0; i < publickey_fps->nelts; i++) {
+    char *fpi;
+
+    fpi = ((char **) publickey_fps->elts)[i];
+    if (strcmp(fp, fpi) == 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "publickey request reused previously verified publickey "
+        "(fingerprint %s), rejecting", fp);
+
+      pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): public key request "
+       "reused previously verified public key (fingerprint %s)", user, fp);
+
+      *send_userauth_fail = TRUE;
+      errno = EACCES;
+      return 0;
+    }
+  }
+
+  /* Store the fingerprint for future checking. */
+  *((char **) push_array(publickey_fps)) = pstrdup(sftp_pool, fp);
+
   return 1;
+}
+
+int sftp_auth_publickey_init(pool *p) {
+  publickey_fps = make_array(p, 0, sizeof(char *));
+
+  return 0;
 }

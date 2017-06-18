@@ -1,6 +1,4 @@
-<!-- $Id: mod_quotatab_sql.html,v 1.2 2013-08-14 21:40:18 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_quotatab_sql.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_quotatab_sql</title>
@@ -119,7 +117,7 @@ And, for the <code>QuotaTallyTable</code> directive:
 Also note that SQL-based tally tables have an issue with proper synchronization
 of updates, especially when multiple sessions involving the same tally
 are ocurring.  In order to prevent the tally table from becoming out of
-sync, you are <b>strongly</b> encouraged to define a <a href="http://www.castaglia.org/proftpd/modules/mod_quotatab.html#QuotaLock"><code>QuotaLock</code></a>
+sync, you are <b>strongly</b> encouraged to define a <a href="../contrib/mod_quotatab.html#QuotaLock"><code>QuotaLock</code></a>
 file.
 
 <p>
@@ -237,7 +235,6 @@ Here are some example table schema for SQL-based quota tables:
     );
 </pre>
   </li>
-  <br>
 
   <li><b><i>Tally table</i></b><br>
     <i>MySQL example</i>:
@@ -279,19 +276,12 @@ Here are some example table schema for SQL-based quota tables:
 calculations. NULL values should be avoided whenever possible.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-08-14 21:40:18 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2003 TJ Saunders<br>
+&copy; Copyright 2000-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

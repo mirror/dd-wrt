@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp traffic analysis protection
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: tap.h,v 1.6 2011-05-23 20:40:13 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_TAP_H
 #define MOD_SFTP_TAP_H
+
+#include "mod_sftp.h"
 
 int sftp_tap_have_policy(const char *);
 
@@ -65,4 +63,4 @@ int sftp_tap_send_packet(void);
  */
 int sftp_tap_set_policy(const char *);
 
-#endif
+#endif /* MOD_SFTP_TAP_H */

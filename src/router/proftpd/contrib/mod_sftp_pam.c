@@ -2,7 +2,7 @@
  * ProFTPD: mod_sftp_pam -- a module which provides an SSH2
  *                          "keyboard-interactive" driver using PAM
  *
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,8 @@
  * This is mod_sftp_pam, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_sftp_pam.c,v 1.20 2013-10-07 01:29:04 castaglia Exp $
- * $Libraries: -lpam $
+ * -----DO NOT EDIT BELOW THIS LINE-----
+ * $Libraries: -lpam$
  */
 
 #include "conf.h"
@@ -117,7 +117,7 @@ static const char *trace_channel = "ssh2";
 
 static int sftppam_converse(int nmsgs, PR_PAM_CONST struct pam_message **msgs,
     struct pam_response **resps, void *app_data) {
-  register unsigned int i = 0, j = 0;
+  register int i = 0, j = 0;
   array_header *list;
   uint32_t recvd_count = 0;
   const char **recvd_responses = NULL;
@@ -352,12 +352,12 @@ static int sftppam_driver_open(sftp_kbdint_driver_t *driver, const char *user) {
 
   res = pam_start(sftppam_service, sftppam_user, &sftppam_conv, &sftppam_pamh);
   if (res != PAM_SUCCESS) {
+    PRIVS_RELINQUISH
+    pr_signals_unblock();
+
     free(sftppam_user);
     sftppam_user = NULL;
     sftppam_userlen = 0;
-
-    PRIVS_RELINQUISH
-    pr_signals_unblock();
 
     switch (res) {
       case PAM_SYSTEM_ERR:
@@ -440,6 +440,9 @@ static int sftppam_driver_authenticate(sftp_kbdint_driver_t *driver,
 
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
       "PAM authentication error (%d) for user '%s': %s", res, user,
+      pam_strerror(sftppam_pamh, res));
+    (void) pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_PAM_VERSION
+      ": PAM authentication error (%d) for user '%s': %s", res, user,
       pam_strerror(sftppam_pamh, res));
 
     PRIVS_RELINQUISH
@@ -584,8 +587,9 @@ MODRET sftppam_auth(cmd_rec *cmd) {
   }
 
   if (sftppam_auth_code != PR_AUTH_OK) {
-    if (sftppam_authoritative)
+    if (sftppam_authoritative) {
       return PR_ERROR_INT(cmd, sftppam_auth_code);
+    }
 
     return PR_DECLINED(cmd);
   }
@@ -600,20 +604,20 @@ MODRET sftppam_auth(cmd_rec *cmd) {
 
 /* usage: SFTPPAMEngine on|off */
 MODRET set_sftppamengine(cmd_rec *cmd) {
-  int bool = -1;
+  int engine = -1;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  bool = get_boolean(cmd, 1);
-  if (bool == -1) {
+  engine = get_boolean(cmd, 1);
+  if (engine == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
   }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
-  *((int *) c->argv[0]) = bool;
+  *((int *) c->argv[0]) = engine;
 
   return PR_HANDLED(cmd);
 }
@@ -666,26 +670,26 @@ MODRET set_sftppamservicename(cmd_rec *cmd) {
  */
 
 static void sftppam_exit_ev(const void *event_data, void *user_data) {
-  int res;
 
   /* Close the PAM session */
 
-  if (sftppam_pamh == NULL)
-    return;
+  if (sftppam_pamh != NULL) {
+    int res;
 
 #ifdef PAM_CRED_DELETE
-  res = pam_setcred(sftppam_pamh, PAM_CRED_DELETE);
+    res = pam_setcred(sftppam_pamh, PAM_CRED_DELETE);
 #else
-  res = pam_setcred(sftppam_pamh, PAM_DELETE_CRED);
+    res = pam_setcred(sftppam_pamh, PAM_DELETE_CRED);
 #endif
-  if (res != PAM_SUCCESS) {
-    pr_trace_msg(trace_channel, 9, "PAM error setting PAM_DELETE_CRED: %s",
-      pam_strerror(sftppam_pamh, res));
-  }
+    if (res != PAM_SUCCESS) {
+      pr_trace_msg(trace_channel, 9, "PAM error setting PAM_DELETE_CRED: %s",
+        pam_strerror(sftppam_pamh, res));
+    }
 
-  res = pam_close_session(sftppam_pamh, PAM_SILENT);
-  pam_end(sftppam_pamh, res);
-  sftppam_pamh = NULL;
+    res = pam_close_session(sftppam_pamh, PAM_SILENT);
+    pam_end(sftppam_pamh, res);
+    sftppam_pamh = NULL;
+  }
 
   if (sftppam_user != NULL) {
     free(sftppam_user);
@@ -726,9 +730,13 @@ static int sftppam_init(void) {
 
   /* Register ourselves with mod_sftp. */
   if (sftp_kbdint_register_driver("pam", &sftppam_driver) < 0) {
+    int xerrno = errno;
+
     pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_PAM_VERSION
       ": notice: error registering 'keyboard-interactive' driver: %s",
-      strerror(errno));
+      strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
@@ -739,11 +747,11 @@ static int sftppam_sess_init(void) {
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPPAMEngine", FALSE);
-  if (c) {
+  if (c != NULL) {
     int engine;
 
     engine = *((int *) c->argv[0]);
-    if (!engine) {
+    if (engine == FALSE) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
         "disabled by SFTPPAMEngine setting, unregistered 'pam' driver");
       sftp_kbdint_unregister_driver("pam");
@@ -751,8 +759,24 @@ static int sftppam_sess_init(void) {
     }
   }
 
+  /* To preserve the principle of least surprise, also check for the AuthPAM
+   * directive.
+   */
+  c = find_config(main_server->conf, CONF_PARAM, "AuthPAM", FALSE);
+  if (c != NULL) {
+    unsigned char auth_pam;
+
+    auth_pam = *((unsigned char *) c->argv[0]);
+    if (auth_pam == FALSE) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_PAM_VERSION,
+        "disabled by AuthPAM setting, unregistered 'pam' driver");
+      sftp_kbdint_unregister_driver("pam");
+      return 0;
+    }
+  }
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPPAMServiceName", FALSE);
-  if (c) {
+  if (c != NULL) {
     sftppam_service = c->argv[0];
   }
 

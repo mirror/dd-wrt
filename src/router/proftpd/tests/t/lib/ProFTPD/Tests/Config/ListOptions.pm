@@ -51,6 +51,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  listoptions_sortednlst_bug4267 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   listoptions_maxfiles => {
     order => ++$order,
     test_class => [qw(forking slow)],
@@ -180,8 +185,11 @@ sub listoptions_opt_t {
           $client->response_msg());
       }
 
-      my $buf;
-      $conn->read($buf, 16384, 25);
+      my $buf = '';
+      my $tmp;
+      while ($conn->read($tmp, 8192, 25)) {
+        $buf .= $tmp;
+      }
       eval { $conn->close() };
 
       my $resp_code = $client->response_code();
@@ -1396,6 +1404,154 @@ sub listoptions_nlstonly {
   }
 
   unlink($log_file);
+}
+
+sub listoptions_sortednlst_bug4267 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $test_files = [];
+  my $nfiles = 1000;
+  for (my $i = 0; $i < $nfiles; $i++) {
+    my $fileno = sprintf("%04d", $i);
+    push(@$test_files, "$fileno.dat");
+  }
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "# Writing out files..."
+  }
+
+  my $count = scalar(@$test_files);
+  foreach my $test_file (@$test_files) {
+    my $path = File::Spec->rel2abs("$test_dir/$test_file");
+    if (open(my $fh, "> $path")) {
+      print $fh "Hello, World!\n";
+      unless (close($fh)) {
+        die("Can't write $path: $!");
+      }
+
+    } else {
+      die("Can't open $path: $!");
+    }
+  }
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "done\n";
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    TimeoutLinger => 1,
+
+    ListOptions => '"" SortedNLST',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->cwd('test.d');
+
+      my $conn = $client->nlst_raw();
+      unless ($conn) {
+        die("Failed to NLST: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my ($buf, $tmp);
+      my $res = $conn->read($tmp, 8192, 5);
+      while ($res) {
+        $buf .= $tmp;
+        $tmp = '';
+        $res = $conn->read($tmp, 8192, 5);
+      }
+      eval { $conn->close() };
+      sleep(2);
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "buf:\n$buf\n";
+      }
+
+      # Do NOT sort the results; we expect them to match the expected list.
+      my $res = [];
+      my $lines = [split(/\n/, $buf)];
+      foreach my $line (@$lines) {
+        push(@$res, $line);
+      }
+
+      my $expected = [@$test_files];
+      my $nexpected = scalar(@$expected);
+      my $nres = scalar(@$res);
+
+      $self->assert($nexpected == $nres,
+        test_msg("Expected $nexpected items, got $nres"));
+      for (my $i = 0; $i < $nexpected; $i++) {
+        $self->assert($expected->[$i] eq $res->[$i],
+          test_msg("Expected '$expected->[$i]' at index $i, got '$res->[$i]'"));
+      }
+
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, 180) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub listoptions_maxfiles {

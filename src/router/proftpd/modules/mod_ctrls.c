@@ -3,7 +3,7 @@
  *          server, as well as several utility functions for other Controls
  *          modules
  *
- * Copyright (c) 2000-2013 TJ Saunders
+ * Copyright (c) 2000-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,10 +24,8 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * This is mod_ctrls, contrib software for proftpd 1.2 and above.
+ * This is mod_ctrls, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_ctrls.c,v 1.59 2013-12-05 00:11:01 castaglia Exp $
  */
 
 #include "conf.h"
@@ -256,6 +254,8 @@ static void ctrls_cls_read(void) {
   pr_ctrls_cl_t *cl = cl_list;
 
   while (cl) {
+    pr_signals_handle();
+
     if (pr_ctrls_recv_request(cl) < 0) {
 
       if (errno == EOF) {
@@ -264,18 +264,21 @@ static void ctrls_cls_read(void) {
       } else if (errno == EINVAL) {
 
         /* Unsupported action requested */
-        if (!cl->cl_flags)
+        if (!cl->cl_flags) {
           cl->cl_flags = PR_CTRLS_CL_NOACTION;
+        }
 
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "recvd from %s/%s client: (invalid action)", cl->cl_user,
           cl->cl_group);
 
-      } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+      } else if (errno == EAGAIN ||
+                 errno == EWOULDBLOCK) {
 
         /* Malicious/blocked client */
-        if (!cl->cl_flags)
+        if (!cl->cl_flags) {
           cl->cl_flags = PR_CTRLS_CL_BLOCKED;
+        }
 
       } else {
         pr_ctrls_log(MOD_CTRLS_VERSION,
@@ -289,18 +292,20 @@ static void ctrls_cls_read(void) {
       /* Request successfully read.  Flag this client as being in such a
        * state.
        */
-      if (!cl->cl_flags)
+      if (!cl->cl_flags) {
         cl->cl_flags = PR_CTRLS_CL_HAVEREQ;
+      }
 
       if (ctrl->ctrls_cb_args) {
-        int reqargc = ctrl->ctrls_cb_args->nelts;
+        unsigned int reqargc = ctrl->ctrls_cb_args->nelts;
         char **reqargv = ctrl->ctrls_cb_args->elts;
 
         /* Reconstruct the original request string from the client for
          * logging.
          */
-        while (reqargc--)
+        while (reqargc--) {
           request = pstrcat(cl->cl_pool, request, " ", *reqargv++, NULL);
+        }
 
         pr_ctrls_log(MOD_CTRLS_VERSION,
           "recvd from %s/%s client: '%s'", cl->cl_user, cl->cl_group,
@@ -325,6 +330,8 @@ static int ctrls_cls_write(void) {
      * the list is being modified.
      */
     pr_ctrls_cl_t *tmpcl = cl->cl_next;
+
+    pr_signals_handle();
 
     /* This client has something to hear */
     if (cl->cl_flags == PR_CTRLS_CL_NOACCESS) {
@@ -370,51 +377,48 @@ static int ctrls_cls_write(void) {
 
     } else if (cl->cl_flags == PR_CTRLS_CL_HAVEREQ) {
 
-      if (cl->cl_ctrls->nelts > 0) {
-        register int i = 0;
+      if (cl->cl_ctrls != NULL &&
+          cl->cl_ctrls->nelts > 0) {
+        register unsigned int i = 0;
         pr_ctrls_t **ctrlv = NULL;
 
         ctrlv = (pr_ctrls_t **) cl->cl_ctrls->elts;
 
-        if (cl->cl_ctrls) {
-          for (i = 0; i < cl->cl_ctrls->nelts; i++) {
-            if ((ctrlv[i])->ctrls_cb_retval < 1) {
+        for (i = 0; i < cl->cl_ctrls->nelts; i++) {
+          if ((ctrlv[i])->ctrls_cb_retval < 1) {
 
-              /* Make sure the callback(s) added responses */
-              if ((ctrlv[i])->ctrls_cb_resps) {
-                if (pr_ctrls_send_msg(cl->cl_fd, (ctrlv[i])->ctrls_cb_retval,
-                    (ctrlv[i])->ctrls_cb_resps->nelts,
-                    (char **) (ctrlv[i])->ctrls_cb_resps->elts) < 0) {
-                  pr_ctrls_log(MOD_CTRLS_VERSION,
-                    "error: unable to send response to %s/%s "
-                    "client: %s", cl->cl_user, cl->cl_group, strerror(errno));
-
-                } else {
-
-                  /* For logging/accounting purposes */
-                  register int j = 0;
-                  int respval = (ctrlv[i])->ctrls_cb_retval;
-                  int respargc = (ctrlv[i])->ctrls_cb_resps->nelts;
-                  char **respargv = (ctrlv[i])->ctrls_cb_resps->elts;
-
-                  pr_ctrls_log(MOD_CTRLS_VERSION,
-                    "sent to %s/%s client: return value: %d",
-                    cl->cl_user, cl->cl_group, respval);
-
-                  for (j = 0; j < respargc; j++) {
-                    pr_ctrls_log(MOD_CTRLS_VERSION,
-                      "sent to %s/%s client: '%s'", cl->cl_user, cl->cl_group,
-                      respargv[j]);
-                  }
-                }
+            /* Make sure the callback(s) added responses */
+            if ((ctrlv[i])->ctrls_cb_resps) {
+              if (pr_ctrls_send_msg(cl->cl_fd, (ctrlv[i])->ctrls_cb_retval,
+                  (ctrlv[i])->ctrls_cb_resps->nelts,
+                  (char **) (ctrlv[i])->ctrls_cb_resps->elts) < 0) {
+                pr_ctrls_log(MOD_CTRLS_VERSION,
+                  "error: unable to send response to %s/%s "
+                  "client: %s", cl->cl_user, cl->cl_group, strerror(errno));
 
               } else {
+                /* For logging/accounting purposes */
+                register unsigned int j = 0;
+                int respval = (ctrlv[i])->ctrls_cb_retval;
+                unsigned int respargc = (ctrlv[i])->ctrls_cb_resps->nelts;
+                char **respargv = (ctrlv[i])->ctrls_cb_resps->elts;
 
-                /* No responses added by callbacks */
                 pr_ctrls_log(MOD_CTRLS_VERSION,
-                  "notice: no responses given for %s/%s client: "
-                  "check controls handlers", cl->cl_user, cl->cl_group);
+                  "sent to %s/%s client: return value: %d",
+                  cl->cl_user, cl->cl_group, respval);
+
+                for (j = 0; j < respargc; j++) {
+                  pr_ctrls_log(MOD_CTRLS_VERSION,
+                    "sent to %s/%s client: '%s'", cl->cl_user, cl->cl_group,
+                    respargv[j]);
+                }
               }
+
+            } else {
+              /* No responses added by callbacks */
+              pr_ctrls_log(MOD_CTRLS_VERSION,
+                "notice: no responses given for %s/%s client: "
+                "check controls handlers", cl->cl_user, cl->cl_group);
             }
           }
         }
@@ -451,9 +455,10 @@ static int ctrls_listen(const char *sock_file, int flags) {
     int xerrno = errno;
 
     pr_signals_unblock();
+    pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      ": error: unable to create local socket: %s", strerror(xerrno));
+
     errno = xerrno;
-    pr_ctrls_log(MOD_CTRLS_VERSION,
-      "error: unable to create local socket: %s", strerror(errno));
     return -1;
   }
 
@@ -489,7 +494,6 @@ static int ctrls_listen(const char *sock_file, int flags) {
 
     (void) close(sockfd);
     errno = xerrno;
-
     return -1;
   }
 
@@ -518,8 +522,8 @@ static int ctrls_listen(const char *sock_file, int flags) {
     (void) close(sockfd);
 
     errno = xerrno;
-    pr_ctrls_log(MOD_CTRLS_VERSION,
-      "error: unable to bind to local socket: %s", strerror(xerrno));
+    pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      ": error: unable to bind to local socket: %s", strerror(xerrno));
     pr_trace_msg(trace_channel, 1, "unable to bind to local socket: %s",
       strerror(xerrno));
 
@@ -535,8 +539,8 @@ static int ctrls_listen(const char *sock_file, int flags) {
     (void) close(sockfd);
 
     errno = xerrno;
-    pr_ctrls_log(MOD_CTRLS_VERSION,
-      "error: unable to listen on local socket '%s': %s", sock.sun_path,
+    pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      ": error: unable to listen on local socket '%s': %s", sock.sun_path,
       strerror(xerrno));
     pr_trace_msg(trace_channel, 1, "unable to listen on local socket '%s': %s",
       sock.sun_path, strerror(xerrno));
@@ -548,9 +552,10 @@ static int ctrls_listen(const char *sock_file, int flags) {
 #if !defined(SO_PEERCRED) && !defined(HAVE_GETPEEREID) && \
     !defined(HAVE_GETPEERUCRED) && defined(LOCAL_CREDS)
   /* Set the LOCAL_CREDS socket option. */
-  if (setsockopt(sockfd, 0, LOCAL_CREDS, &opt, optlen) < 0)
-    pr_ctrls_log(MOD_CTRLS_VERSION, "error enabling LOCAL_CREDS: %s",
+  if (setsockopt(sockfd, 0, LOCAL_CREDS, &opt, optlen) < 0) {
+    pr_log_debug(DEBUG0, MOD_CTRLS_VERSION ": error enabling LOCAL_CREDS: %s",
       strerror(errno));
+  }
 #endif /* !LOCAL_CREDS */
 
   /* Change the permissions on the socket, so that users can connect */
@@ -561,8 +566,8 @@ static int ctrls_listen(const char *sock_file, int flags) {
     (void) close(sockfd);
 
     errno = xerrno;
-    pr_ctrls_log(MOD_CTRLS_VERSION,
-      "error: unable to chmod local socket: %s", strerror(xerrno));
+    pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
+      ": error: unable to chmod local socket: %s", strerror(xerrno));
     pr_trace_msg(trace_channel, 1, "unable to chmod local socket: %s",
       strerror(xerrno));
 
@@ -727,7 +732,8 @@ static int ctrls_timer_cb(CALLBACK_FRAME) {
     PRIVS_ROOT
     if (chown(ctrls_sock_file, ctrls_sock_uid, ctrls_sock_gid) < 0) {
       pr_log_pri(PR_LOG_NOTICE, MOD_CTRLS_VERSION
-        ": unable to chown local socket: %s", strerror(errno));
+        ": unable to chown local socket %s: %s", ctrls_sock_file,
+        strerror(errno));
     }
     PRIVS_RELINQUISH
 
@@ -981,11 +987,11 @@ MODRET set_ctrlsauthfreshness(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT);
 
   freshness = atoi(cmd->argv[1]);
-  if (freshness <= 0)
+  if (freshness <= 0) {
     CONF_ERROR(cmd, "must be a positive number");
+  }
 
   ctrls_cl_freshness = freshness;
-
   return PR_HANDLED(cmd);
 }
 
@@ -996,8 +1002,9 @@ MODRET set_ctrlsengine(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   ctrls_engine = bool;
   return PR_HANDLED(cmd);
@@ -1011,8 +1018,9 @@ MODRET set_ctrlsinterval(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT);
 
   nsecs = atoi(cmd->argv[1]);
-  if (nsecs <= 0)
+  if (nsecs <= 0) {
     CONF_ERROR(cmd, "must be a positive number");
+  }
 
   /* Remove the existing timer, and re-install it with this new interval. */
   ctrls_interval = nsecs;
@@ -1034,13 +1042,15 @@ MODRET set_ctrlslog(cmd_rec *cmd) {
 
   res = ctrls_openlog();
   if (res < 0) {
-    if (res == -1)
+    if (res == -1) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to open '",
-        cmd->argv[1], "': ", strerror(errno), NULL));
+        (char *) cmd->argv[1], "': ", strerror(errno), NULL));
+    }
 
-    if (res == -2)
+    if (res == -2) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
         "unable to log to a world-writable directory", NULL));
+    }
   }
 
   return PR_HANDLED(cmd);
@@ -1054,8 +1064,9 @@ MODRET set_ctrlsmaxclients(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT);
 
   nclients = atoi(cmd->argv[1]);
-  if (nclients <= 0)
+  if (nclients <= 0) {
     CONF_ERROR(cmd, "must be a positive number");
+  }
 
   cl_maxlistlen = nclients;
   return PR_HANDLED(cmd);
@@ -1063,11 +1074,15 @@ MODRET set_ctrlsmaxclients(cmd_rec *cmd) {
 
 /* Default: var/run/proftpd.sock */
 MODRET set_ctrlssocket(cmd_rec *cmd) {
+  char *path;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (*cmd->argv[1] != '/')
+  path = cmd->argv[1];
+  if (*path != '/') {
     CONF_ERROR(cmd, "must be an absolute path");
+  }
 
   /* Close the socket. */
   if (ctrls_sockfd >= 0) {
@@ -1079,8 +1094,8 @@ MODRET set_ctrlssocket(cmd_rec *cmd) {
   }
 
   /* Change the path. */
-  if (strcmp(cmd->argv[1], ctrls_sock_file) != 0) {
-    ctrls_sock_file = pstrdup(ctrls_pool, cmd->argv[1]);
+  if (strcmp(path, ctrls_sock_file) != 0) {
+    ctrls_sock_file = pstrdup(ctrls_pool, path);
   }
 
   return PR_HANDLED(cmd);
@@ -1125,29 +1140,33 @@ MODRET set_ctrlssocketowner(cmd_rec *cmd) {
 
   uid = pr_auth_name2uid(cmd->tmp_pool, cmd->argv[1]);
   if (uid == (uid_t) -1) {
-    if (errno != EINVAL)
-      pr_log_debug(DEBUG0, "%s: %s has UID of -1", cmd->argv[0],
-        cmd->argv[1]);
+    if (errno != EINVAL) {
+      pr_log_debug(DEBUG0, "%s: %s has UID of -1", (char *) cmd->argv[0],
+        (char *) cmd->argv[1]);
 
-    else
-      pr_log_debug(DEBUG0, "%s: no such user '%s'", cmd->argv[0],
-        cmd->argv[1]);
+    } else {
+      pr_log_debug(DEBUG0, "%s: no such user '%s'", (char *) cmd->argv[0],
+        (char *) cmd->argv[1]);
+    }
 
-  } else
+  } else {
     ctrls_sock_uid = uid;
+  }
 
   gid = pr_auth_name2gid(cmd->tmp_pool, cmd->argv[2]);
   if (gid == (gid_t) -1) {
-    if (errno != EINVAL)
-      pr_log_debug(DEBUG0, "%s: %s has GID of -1", cmd->argv[0],
-        cmd->argv[2]);
+    if (errno != EINVAL) {
+      pr_log_debug(DEBUG0, "%s: %s has GID of -1", (char *) cmd->argv[0],
+        (char *) cmd->argv[2]);
 
-    else
-      pr_log_debug(DEBUG0, "%s: no such group '%s'", cmd->argv[0],
-        cmd->argv[2]);
+    } else {
+      pr_log_debug(DEBUG0, "%s: no such group '%s'", (char *) cmd->argv[0],
+        (char *) cmd->argv[2]);
+    }
 
-  } else
+  } else {
     ctrls_sock_gid = gid;
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1164,12 +1183,14 @@ static void ctrls_shutdown_ev(const void *event_data, void *user_data) {
     pr_ctrls_cl_t *cl = NULL;
 
     for (cl = cl_list; cl; cl = cl->cl_next) {
-      close(cl->cl_fd);
-      cl->cl_fd = -1;
+      if (cl->cl_fd >= 0) {
+        (void) close(cl->cl_fd);
+        cl->cl_fd = -1;
+      }
     }
   }
 
-  close(ctrls_sockfd);
+  (void) close(ctrls_sockfd);
   ctrls_sockfd = -1;
 
   /* Remove the local socket path as well */
@@ -1205,8 +1226,10 @@ static void ctrls_restart_ev(const void *event_data, void *user_data) {
     pr_ctrls_cl_t *cl = NULL;
 
     for (cl = cl_list; cl; cl = cl->cl_next) {
-      close(cl->cl_fd);
-      cl->cl_fd = -1;
+      if (cl->cl_fd >= 0) {
+        (void) close(cl->cl_fd);
+        cl->cl_fd = -1;
+      }
     }
   }
 

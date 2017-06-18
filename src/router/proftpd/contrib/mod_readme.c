@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -43,26 +43,40 @@ static void readme_add_path(pool *p, const char *path) {
   struct stat st;
   
   if (pr_fsio_stat(path, &st) == 0) {
-    int days;
+    int days = 0;
     time_t now;
-    struct tm *tm = NULL;
-    char *ptr = NULL;
+    struct tm *now_tm = NULL;
     char time_str[32] = {'\0'};
 
     (void) time(&now);
 
-    tm = pr_gmtime(p, &now);
-    days = (int) (365.25 * tm->tm_year) + tm->tm_yday;
+    now_tm = pr_gmtime(p, &now);
+    if (now_tm != NULL) {
+      struct tm *mtime_tm = NULL;
+      char *ptr = NULL;
 
-    tm = pr_gmtime(p, &st.st_mtime);
-    days -= (int) (365.25 * tm->tm_year) + tm->tm_yday;
+      days = (int) (365.25 * now_tm->tm_year) + now_tm->tm_yday;
 
-    memset(time_str, '\0', sizeof(time_str));
-    snprintf(time_str, sizeof(time_str)-1, "%.26s", ctime(&st.st_mtime));
+      mtime_tm = pr_gmtime(p, &st.st_mtime);
+      if (mtime_tm != NULL) {
+        days -= (int) (365.25 * mtime_tm->tm_year) + mtime_tm->tm_yday;
+
+      } else {
+        pr_log_debug(DEBUG3, MOD_README_VERSION
+          ": error obtaining GMT timestamp: %s", strerror(errno));
+      }
+
+      memset(time_str, '\0', sizeof(time_str));
+      snprintf(time_str, sizeof(time_str)-1, "%.26s", ctime(&st.st_mtime));
     
-    ptr = strchr(time_str, '\n');
-    if (ptr != NULL) {
-      *ptr = '\0';
+      ptr = strchr(time_str, '\n');
+      if (ptr != NULL) {
+        *ptr = '\0';
+      }
+
+    } else {
+      pr_log_debug(DEBUG3, MOD_README_VERSION
+        ": error obtaining GMT timestamp: %s", strerror(errno));
     }
 
     /* As a format nicety, if we're handling the PASS command, automatically
@@ -75,8 +89,10 @@ static void readme_add_path(pool *p, const char *path) {
     }
 
     pr_response_add(R_DUP, _("Please read the file %s"), path);
-    pr_response_add(R_DUP, _("   it was last modified on %.26s - %i %s ago"),
-      time_str, days, days == 1 ? _("day") : _("days"));
+    if (now_tm != NULL) {
+      pr_response_add(R_DUP, _("   it was last modified on %.26s - %i %s ago"),
+        time_str, days, days == 1 ? _("day") : _("days"));
+    }
   }
 }
 
@@ -147,7 +163,8 @@ MODRET set_displayreadme(cmd_rec *cmd) {
   c = add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
   c->flags |= CF_MERGEDOWN;
   
-  pr_log_debug(DEBUG5, "Added pattern %s to readme list", cmd->argv[1]);
+  pr_log_debug(DEBUG5, "Added pattern %s to readme list",
+    (char *) cmd->argv[1]);
   return PR_HANDLED(cmd);
 }
 

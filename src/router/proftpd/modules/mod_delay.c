@@ -2,7 +2,7 @@
  * ProFTPD: mod_delay -- a module for adding arbitrary delays to the FTP
  *                       session lifecycle
  *
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +23,8 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * This is mod_delay, contrib software for proftpd 1.2.10 and above.
+ * This is mod_delay, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_delay.c,v 1.73 2014-02-09 20:42:23 castaglia Exp $
  */
 
 #include "conf.h"
@@ -117,6 +115,7 @@ struct delay_rec {
 };
 
 struct {
+  int dt_enabled;
   const char *dt_path;
   int dt_fd;
   size_t dt_size;
@@ -127,8 +126,19 @@ struct {
 static unsigned int delay_engine = TRUE;
 static unsigned int delay_nuser = 0;
 static unsigned int delay_npass = 0;
+static unsigned long delay_user_delayed = 0L;
+static unsigned long delay_pass_delayed = 0L;
 static pool *delay_pool = NULL;
 static struct timeval delay_tv;
+
+/* DelayOnEvent events */
+#define DELAY_EVENT_USER_CMD		1
+#define DELAY_EVENT_PASS_CMD		2
+#define DELAY_EVENT_FAILED_LOGIN	3
+
+static unsigned long delay_failed_login_min_delay = 0UL;
+static unsigned long delay_pass_min_delay = 0UL;
+static unsigned long delay_user_min_delay = 0UL;
 
 static int delay_sess_init(void);
 static void delay_table_reset(void);
@@ -143,7 +153,7 @@ static const char *trace_channel = "delay";
 static long delay_select_k(unsigned long k, array_header *values) {
   unsigned long l, ir, tmp = 0;
   long *elts = (long *) values->elts;
-  int nelts = values->nelts;
+  unsigned int nelts = values->nelts;
 
   /* This is from "Numeric Recipes in C", Ch. 8.5, as the select()
    * algorithm, an in-place sorting algorithm for finding the Kth
@@ -155,41 +165,50 @@ static long delay_select_k(unsigned long k, array_header *values) {
   ir = values->nelts - 1;
 
   while (TRUE) {
+    pr_signals_handle();
+
     if (ir <= l+1) {
       if (ir == l+1 &&
-          elts[ir] < elts[l])
+          elts[ir] < elts[l]) {
         delay_swap(elts[l], elts[ir]);
+      }
 
       return elts[k];
 
     } else {
-      unsigned long i, j;
+      unsigned int i, j;
       long p;
       unsigned long mid = (l + ir) >> 1;
 
       delay_swap(elts[mid], elts[l+1]);
-      if (elts[l] > elts[ir])
+      if (elts[l] > elts[ir]) {
         delay_swap(elts[l], elts[ir]);
+      }
 
-      if (elts[l+1] > elts[ir])
+      if (elts[l+1] > elts[ir]) {
         delay_swap(elts[l+1], elts[ir]);
+      }
 
-      if (elts[l] > elts[l+1])
+      if (elts[l] > elts[l+1]) {
         delay_swap(elts[l], elts[l+1]);
+      }
 
       i = l + 1;
       j = ir;
       p = elts[l+1];
 
       while (TRUE) {
+        pr_signals_handle();
+
         do i++;
           while (i < nelts && elts[i] < p);
 
         do j--;
-          while (j >= 0 && elts[j] > p);
+          while (elts[j] > p);
 
-        if (j < i)
+        if (j < i) {
           break;
+        }
 
         delay_swap(elts[i], elts[j]);
       }
@@ -197,15 +216,18 @@ static long delay_select_k(unsigned long k, array_header *values) {
       elts[l+1] = elts[j];
       elts[j] = p;
 
-      if (p >= k)
+      if ((unsigned long) p >= k) {
         ir = j - 1;
+      }
 
-      if (p <= k)
+      if ((unsigned long) p <= k) {
         l = i;
+      }
 
       if (l >= (nelts - 1) ||
-          ir >= nelts)
+          ir >= nelts) {
         break;
+      }
     }
   }
 
@@ -284,8 +306,9 @@ static long delay_get_median(pool *p, unsigned int rownum, const char *protocol,
   return median;
 }
 
-static void delay_mask_signals(unsigned char block) {
+static int delay_mask_signals(unsigned char block) {
   static sigset_t mask_sigset;
+  int res = -1;
 
   if (block) {
     sigemptyset(&mask_sigset);
@@ -302,37 +325,32 @@ static void delay_mask_signals(unsigned char block) {
 #endif
     sigaddset(&mask_sigset, SIGHUP);
 
-    sigprocmask(SIG_BLOCK, &mask_sigset, NULL);
+    res = sigprocmask(SIG_BLOCK, &mask_sigset, NULL);
 
   } else {
-    sigprocmask(SIG_UNBLOCK, &mask_sigset, NULL);
+    res = sigprocmask(SIG_UNBLOCK, &mask_sigset, NULL);
   }
+
+  return res;
 }
 
 static void delay_signals_block(void) {
-  delay_mask_signals(TRUE);
+  if (delay_mask_signals(TRUE) < 0) {
+    pr_trace_msg(trace_channel, 1,
+      "error blocking signals: %s", strerror(errno));
+  }   
 }
 
 static void delay_signals_unblock(void) {
-  delay_mask_signals(FALSE);
+  if (delay_mask_signals(FALSE) < 0) {
+    pr_trace_msg(trace_channel, 1,
+      "error unblocking signals: %s", strerror(errno));
+  }
 }
 
-static void delay_delay(long interval) {
+static unsigned long delay_delay(unsigned long interval) {
   struct timeval tv;
-  long rand_usec;
   int res, xerrno;
-
-  /* Add an additional delay of a random number of usecs, with a 
-   * maximum of half of the given interval.
-   */
-  rand_usec = ((interval / 2.0) * rand()) / RAND_MAX;
-  pr_trace_msg(trace_channel, 8, "additional random delay of %ld usecs added",
-    (long int) rand_usec);
-  interval += rand_usec;
-
-  if (interval > DELAY_MAX_DELAY_USECS) {
-    interval = DELAY_MAX_DELAY_USECS;
-  }
 
   tv.tv_sec = interval / 1000000;
   tv.tv_usec = interval % 1000000;
@@ -351,6 +369,128 @@ static void delay_delay(long interval) {
     /* If we were interrupted, handle the interrupting signal. */
     pr_signals_handle();
   }
+
+  return interval;
+}
+
+static unsigned long delay_delay_with_jitter(long interval) {
+  long rand_usec;
+
+  /* Add an additional delay of a random number of usecs, with a
+   * maximum of half of the given interval.
+   */
+  rand_usec = ((interval / 2.0) * rand()) / RAND_MAX;
+  pr_trace_msg(trace_channel, 8, "additional random delay of %ld usecs added",
+    (long int) rand_usec);
+  interval += rand_usec;
+
+  if (interval > DELAY_MAX_DELAY_USECS) {
+    interval = DELAY_MAX_DELAY_USECS;
+  }
+
+  return delay_delay(interval);
+}
+
+/* Similar to the pr_str_get_duration() function, but parses millisecond
+ * values, not seconds.
+ */
+static int delay_str_get_duration_ms(const char *str, long *duration) {
+  unsigned int mins, secs;
+  long msecs;
+  int flags = PR_STR_FL_IGNORE_CASE, has_suffix = FALSE;
+  size_t len;
+  char *ptr = NULL;
+
+  if (str == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (sscanf(str, "%2u:%2u.%4lu", &mins, &secs, &msecs) == 3) {
+    if (mins > INT_MAX ||
+        secs > INT_MAX ||
+        msecs > INT_MAX) {
+      errno = ERANGE;
+      return -1;
+    }
+
+    if (duration != NULL) {
+      *duration = (mins * 60 * 1000) + (secs * 1000) + msecs;
+    }
+
+    return 0;
+  }
+
+  len = strlen(str);
+  if (len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  has_suffix = pr_strnrstr(str, len, "ms", 2, flags);
+  if (has_suffix == TRUE) {
+    /* Parse millisecs */
+
+    if (sscanf(str, "%ld", &msecs) == 1) {
+      if (msecs > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+      }
+
+      if (duration != NULL) {
+        *duration = msecs;
+      }
+
+      return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  has_suffix = pr_strnrstr(str, len, "s", 1, flags);
+  if (has_suffix == FALSE) {
+    has_suffix = pr_strnrstr(str, len, "sec", 3, flags);
+  }
+  if (has_suffix == TRUE) {
+    /* Parse seconds */
+
+    if (sscanf(str, "%u", &secs) == 1) {
+      if (secs > INT_MAX) {
+        errno = ERANGE;
+        return -1;
+      }
+
+      if (duration != NULL) {
+        *duration = (secs * 1000);
+      }
+
+      return 0;
+    }
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Use strtol(3) here, check for trailing garbage, etc. */
+  msecs = strtol(str, &ptr, 10);
+  if (ptr && *ptr) {
+    /* Not a bare number, but a string with non-numeric characters. */
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (msecs < 0 ||
+      msecs > INT_MAX) {
+    errno = ERANGE;
+    return -1;
+  }
+
+  if (duration != NULL) {
+    *duration = msecs;
+  }
+
+  return 0;
 }
 
 /* There are two rows (USER and PASS) for each server ID (SID).
@@ -575,7 +715,10 @@ static int delay_table_init(void) {
     lock.l_type = F_UNLCK;
 
     pr_trace_msg(trace_channel, 8, "unlocking DelayTable '%s'", fh->fh_path);
-    fcntl(fh->fh_fd, F_SETLK, &lock);
+    if (fcntl(fh->fh_fd, F_SETLK, &lock) < 0) {
+      pr_trace_msg(trace_channel, 3,
+        "error unlocking fd %d: %s", fh->fh_fd, strerror(errno));
+    }
   }
 
   delay_tab.dt_fd = fh->fh_fd;
@@ -724,7 +867,10 @@ static int delay_table_init(void) {
     lock.l_type = F_UNLCK;
 
     pr_trace_msg(trace_channel, 8, "unlocking DelayTable '%s'", fh->fh_path);
-    fcntl(fh->fh_fd, F_SETLK, &lock);
+    if (fcntl(fh->fh_fd, F_SETLK, &lock) < 0) {
+      pr_trace_msg(trace_channel, 3,
+        "error unlocking fd %d: %s", fh->fh_fd, strerror(errno));
+    }
   }
 
   /* Done */
@@ -1192,7 +1338,10 @@ static int delay_handle_reset(pr_ctrls_t *ctrl, int reqargc,
   }
 
   lock.l_type = F_UNLCK;
-  fcntl(fh->fh_fd, F_SETLK, &lock);
+  if (fcntl(fh->fh_fd, F_SETLK, &lock) < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error unlocking fd %d: %s", fh->fh_fd, strerror(errno));
+  }
 
   if (pr_fsio_close(fh) < 0) {
     pr_ctrls_add_response(ctrl,
@@ -1207,6 +1356,11 @@ static int delay_handle_reset(pr_ctrls_t *ctrl, int reqargc,
 
 static int delay_handle_delay(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
+
+  if (delay_tab.dt_enabled == FALSE) {
+    pr_ctrls_add_response(ctrl, "delay: DelayTable disabled");
+    return -1;
+  }
 
   if (reqargc == 0 ||
       reqargv == NULL) {
@@ -1293,20 +1447,144 @@ MODRET set_delayengine(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: DelayTable path */
+/* usage: DelayOnEvent event delay-millis */
+MODRET set_delayonevent(cmd_rec *cmd) {
+  config_rec *c;
+  long delay_ms = -1;
+  int event;
+
+  CHECK_ARGS(cmd, 2);
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  if (strcmp(cmd->argv[1], "USER") == 0) {
+    event = DELAY_EVENT_USER_CMD;
+
+  } else if (strcmp(cmd->argv[1], "PASS") == 0) {
+    event = DELAY_EVENT_PASS_CMD;
+
+  } else if (strcmp(cmd->argv[1], "FailedLogin") == 0) {
+    event = DELAY_EVENT_FAILED_LOGIN;
+
+  } else {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown/unsupported event: ",
+      cmd->argv[1], NULL));
+  }
+
+  if (delay_str_get_duration_ms(cmd->argv[2], &delay_ms) < 0) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error parsing delay parameter '",
+      cmd->argv[2], "': ", strerror(errno), NULL));
+  }
+
+  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
+  c->argv[0] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[0]) = event;
+  c->argv[1] = palloc(c->pool, sizeof(unsigned long));
+
+  /* Note: Even though we parsed the delay parameter in millisec, we
+   * need to use microsecs internally, as that is the implemented interface.
+   */
+  *((unsigned long *) c->argv[1]) = (delay_ms * 1000);
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: DelayTable path|"none" */
 MODRET set_delaytable(cmd_rec *cmd) {
+  const char *table = NULL;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (pr_fs_valid_path(cmd->argv[1]) < 0)
-    CONF_ERROR(cmd, "must be an absolute path");
+  if (pr_fs_valid_path(cmd->argv[1]) < 0) {
+    if (strcasecmp(cmd->argv[1], "none") != 0) {
+      CONF_ERROR(cmd, "must be an absolute path");
+    }
 
-  add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+  } else {
+    table = cmd->argv[1];
+  }
+
+  add_config_param_str(cmd->argv[0], 1, table);
   return PR_HANDLED(cmd);
 }
 
 /* Command handlers
  */
+
+MODRET delay_log_pass(cmd_rec *cmd) {
+  if (delay_engine == FALSE) {
+    return PR_DECLINED(cmd);
+  }
+
+  if (delay_pass_min_delay > 0) {
+    unsigned long interval = 0L;
+
+    if (delay_pass_delayed < delay_pass_min_delay) {
+      interval = delay_pass_min_delay - delay_pass_delayed;
+    }
+
+    if (interval > 0) {
+      pr_trace_msg(trace_channel, 9,
+        "enforcing minimum PASS delay (%lu usec), adding %ld usec delay",
+        delay_pass_min_delay, interval);
+      delay_delay(interval);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
+MODRET delay_log_pass_err(cmd_rec *cmd) {
+  if (delay_engine == FALSE) { 
+    return PR_DECLINED(cmd);
+  }
+  
+  if (delay_failed_login_min_delay > 0 ||
+      delay_pass_min_delay > 0) {
+    unsigned long interval = 0L, min_delay;
+
+    min_delay = delay_failed_login_min_delay;
+    if (delay_pass_min_delay > min_delay) {
+      min_delay = delay_pass_min_delay;
+    }
+      
+    if (delay_pass_delayed < min_delay) {
+      interval = min_delay - delay_pass_delayed;
+    }
+
+    if (interval > 0) {
+      pr_trace_msg(trace_channel, 9,
+        "enforcing minimum failed login delay (%lu usec), adding %ld usec "
+        "delay", delay_failed_login_min_delay, interval);
+      delay_delay(interval);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
+
+MODRET delay_log_user(cmd_rec *cmd) {
+  if (delay_engine == FALSE) { 
+    return PR_DECLINED(cmd);
+  }
+
+  if (delay_user_min_delay > 0) {
+    long interval = 0L;
+
+    if (delay_user_delayed < delay_user_min_delay) {
+      interval = delay_user_min_delay - delay_user_delayed;
+    }
+
+    if (interval > 0) {
+      pr_trace_msg(trace_channel, 9,
+        "enforcing minimum USER delay (%lu usec), adding %ld usec delay",
+        delay_user_min_delay, interval);
+      delay_delay(interval);
+    }
+  }
+
+  return PR_DECLINED(cmd);
+}
 
 MODRET delay_post_pass(cmd_rec *cmd) {
   struct timeval tv;
@@ -1315,7 +1593,8 @@ MODRET delay_post_pass(cmd_rec *cmd) {
   const char *proto;
   unsigned char *authenticated;
 
-  if (delay_engine == FALSE) {
+  if (delay_engine == FALSE ||
+      delay_tab.dt_enabled == FALSE) {
     return PR_DECLINED(cmd);
   }
 
@@ -1399,7 +1678,7 @@ MODRET delay_post_pass(cmd_rec *cmd) {
       pr_trace_msg(trace_channel, 9,
         "interval (%ld usecs) less than selected median (%ld usecs), delaying",
         interval, median);
-      delay_delay(median - interval);
+      delay_pass_delayed = delay_delay_with_jitter(median - interval);
     }
 
   } else {
@@ -1411,35 +1690,14 @@ MODRET delay_post_pass(cmd_rec *cmd) {
 }
 
 MODRET delay_pre_pass(cmd_rec *cmd) {
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return PR_DECLINED(cmd);
-
-  gettimeofday(&delay_tv, NULL);
-  return PR_DECLINED(cmd);
-}
-
-MODRET delay_post_host(cmd_rec *cmd) {
-
-  /* If the HOST command changed the main_server pointer, reinitialize
-   * ourselves.
-   */
-  if (session.prev_server != NULL) {
-    int res;
-
-    delay_engine = TRUE;
-
-    if (delay_tab.dt_fd > 0) {
-      close(delay_tab.dt_fd);
-      delay_tab.dt_fd = -1;
-    }
-
-    res = delay_sess_init();
-    if (res < 0) {
-      pr_session_disconnect(&delay_module,
-        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
-    }
   }
 
+  /* Always reset the USER delayed value. */
+  delay_pass_delayed = 0L;
+
+  gettimeofday(&delay_tv, NULL);
   return PR_DECLINED(cmd);
 }
 
@@ -1450,7 +1708,8 @@ MODRET delay_post_user(cmd_rec *cmd) {
   const char *proto;
   unsigned char *authenticated;
 
-  if (delay_engine == FALSE) {
+  if (delay_engine == FALSE ||
+      delay_tab.dt_enabled == FALSE) {
     return PR_DECLINED(cmd);
   }
 
@@ -1536,7 +1795,7 @@ MODRET delay_post_user(cmd_rec *cmd) {
       pr_trace_msg(trace_channel, 9,
         "interval (%ld usecs) less than selected median (%ld usecs), delaying",
         interval, median);
-      delay_delay(median - interval);
+      delay_user_delayed = delay_delay_with_jitter(median - interval);
     }
 
   } else {
@@ -1548,8 +1807,12 @@ MODRET delay_post_user(cmd_rec *cmd) {
 }
 
 MODRET delay_pre_user(cmd_rec *cmd) {
-  if (!delay_engine)
+  if (delay_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
+
+  /* Always reset the USER delayed value. */
+  delay_user_delayed = 0L;
 
   gettimeofday(&delay_tv, NULL);
   return PR_DECLINED(cmd);
@@ -1585,12 +1848,23 @@ static void delay_postparse_ev(const void *event_data, void *user_data) {
     return;
   }
 
+  delay_tab.dt_enabled = FALSE;
+
   c = find_config(main_server->conf, CONF_PARAM, "DelayTable", FALSE);
   if (c != NULL) {
-    delay_tab.dt_path = c->argv[0];
+    const char *table = NULL;
+
+    table = c->argv[0];
+    if (table != NULL) {
+      delay_tab.dt_enabled = TRUE;
+      delay_tab.dt_path = table;
+    }
   }
 
-  (void) delay_table_init();
+  if (delay_tab.dt_enabled) {
+    (void) delay_table_init();
+  }
+
   return;
 }
 
@@ -1601,6 +1875,7 @@ static void delay_restart_ev(const void *event_data, void *user_data) {
 
   delay_tab.dt_path = PR_RUN_DIR "/proftpd.delay";
   delay_tab.dt_data = NULL;
+  delay_tab.dt_enabled = TRUE;
 
   if (delay_pool) {
     destroy_pool(delay_pool);
@@ -1619,14 +1894,41 @@ static void delay_restart_ev(const void *event_data, void *user_data) {
   return;
 }
 
+static void delay_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&delay_module, "core.session-reinit",
+    delay_sess_reinit_ev);
+
+  delay_engine = TRUE;
+
+  if (delay_tab.dt_fd > 0) {
+    close(delay_tab.dt_fd);
+    delay_tab.dt_fd = -1;
+  }
+
+  delay_nuser = 0;
+  delay_npass = 0;
+
+  res = delay_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&delay_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 static void delay_shutdown_ev(const void *event_data, void *user_data) {
-  pr_fh_t *fh;
-  char *data;
-  size_t datalen;
+  pr_fh_t *fh = NULL;
+  char *data = NULL;
+  size_t datalen = 0;
   int xerrno = 0;
 
-  if (!delay_engine)
+  if (delay_engine == FALSE ||
+      delay_tab.dt_enabled == FALSE) {
     return;
+  }
 
   /* Write out the DelayTable to the filesystem, thus updating the
    * file metadata.
@@ -1665,7 +1967,10 @@ static void delay_shutdown_ev(const void *event_data, void *user_data) {
 
   datalen = delay_tab.dt_size;
   data = palloc(delay_pool, datalen);
-  memcpy(data, delay_tab.dt_data, datalen);
+  if (data != NULL &&
+      datalen > 0) {
+    memcpy(data, delay_tab.dt_data, datalen);
+  }
 
   if (delay_table_unload(TRUE) < 0) {
     pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
@@ -1673,10 +1978,13 @@ static void delay_shutdown_ev(const void *event_data, void *user_data) {
       delay_tab.dt_path, strerror(errno));
   }
 
-  if (pr_fsio_write(fh, data, datalen) < 0) {
-    pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
-      ": error updating DelayTable '%s': %s", delay_tab.dt_path,
-      strerror(errno));
+  if (data != NULL &&
+      datalen > 0) {
+    if (pr_fsio_write(fh, data, datalen) < 0) {
+      pr_log_pri(PR_LOG_WARNING, MOD_DELAY_VERSION
+        ": error updating DelayTable '%s': %s", delay_tab.dt_path,
+        strerror(errno));
+    }
   }
 
   delay_tab.dt_fd = -1;
@@ -1729,7 +2037,10 @@ static int delay_init(void) {
 static int delay_sess_init(void) {
   pr_fh_t *fh;
   config_rec *c;
-  int xerrno = errno;
+  int xerrno;
+
+  pr_event_register(&delay_module, "core.session-reinit", delay_sess_reinit_ev,
+    NULL);
 
   if (delay_engine == FALSE) {
     return 0;
@@ -1745,6 +2056,45 @@ static int delay_sess_init(void) {
   }
 
   if (delay_engine == FALSE) {
+    return 0;
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "DelayOnEvent", FALSE);
+  while (c != NULL) {
+    int event;
+    unsigned long delay_usec;
+
+    pr_signals_handle();
+
+    event = *((int *) c->argv[0]);
+    delay_usec = *((unsigned long *) c->argv[1]);
+
+    switch (event) {
+      case DELAY_EVENT_USER_CMD:
+        delay_user_min_delay = delay_usec;
+        break;
+
+      case DELAY_EVENT_PASS_CMD:
+        delay_pass_min_delay = delay_usec;
+        break;
+
+      case DELAY_EVENT_FAILED_LOGIN:
+        delay_failed_login_min_delay = delay_usec;
+        break;
+    }
+
+    c = find_config_next(c, c->next, CONF_PARAM, "DelayOnEvent", FALSE);
+  }
+
+  if (delay_tab.dt_enabled == FALSE) {
+    /* If the DelayTable has been disabled (but not DelayEngine), AND there
+     * are not DelayOnEvent rules set, log a warning since mod_delay will not
+     * be doing much; it's probably an unintentional misconfiguration.
+     */
+
+    pr_log_debug(DEBUG0, MOD_DELAY_VERSION
+      ": no DelayOnEvent rules configured with \"DelayTable none\" in effect, "
+      "disabling module");
     return 0;
   }
 
@@ -1802,6 +2152,7 @@ static ctrls_acttab_t delay_acttab[] = {
 static conftable delay_conftab[] = {
   { "DelayControlsACLs",set_delayctrlsacls,	NULL },
   { "DelayEngine",	set_delayengine,	NULL },
+  { "DelayOnEvent",	set_delayonevent,	NULL },
   { "DelayTable",	set_delaytable,		NULL },
   { NULL }
 };
@@ -1813,7 +2164,10 @@ static cmdtable delay_cmdtab[] = {
   { PRE_CMD,		C_USER,	G_NONE,	delay_pre_user,		FALSE, FALSE },
   { POST_CMD,		C_USER,	G_NONE,	delay_post_user,	FALSE, FALSE },
   { POST_CMD_ERR,	C_USER,	G_NONE,	delay_post_user,	FALSE, FALSE },
-  { POST_CMD,		C_HOST,	G_NONE, delay_post_host,	FALSE, FALSE },
+  { LOG_CMD,		C_USER,	G_NONE,	delay_log_user,		FALSE, FALSE },
+  { LOG_CMD_ERR,	C_USER,	G_NONE,	delay_log_user,		FALSE, FALSE },
+  { LOG_CMD,		C_PASS,	G_NONE,	delay_log_pass,		FALSE, FALSE },
+  { LOG_CMD_ERR,	C_PASS,	G_NONE,	delay_log_pass_err,	FALSE, FALSE },
   { 0, NULL }
 };
 

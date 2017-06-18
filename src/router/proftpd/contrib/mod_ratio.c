@@ -2,7 +2,7 @@
  * ProFTPD: mod_ratio -- Support upload/download ratios.
  * Portions Copyright (c) 1998-1999 Johnie Ingram.
  * Copyright (c) 2002 James Dogopoulos.
- * Copyright (c) 2008-2013 The ProFTPD Project team
+ * Copyright (c) 2008-2014 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,13 +144,15 @@ _dispatch_ratio (cmd_rec * cmd, char *match)
   authtable *m;
   modret_t *mr = NULL;
 
-  m = pr_stash_get_symbol (PR_SYM_AUTH, match, NULL, &cmd->stash_index);
+  m = pr_stash_get_symbol2 (PR_SYM_AUTH, match, NULL, &cmd->stash_index,
+    &cmd->stash_hash);
   while (m)
     {
       mr = pr_module_call (m->m, m->handler, cmd);
       if (MODRET_ISHANDLED (mr) || MODRET_ISERROR (mr))
 	break;
-      m = pr_stash_get_symbol (PR_SYM_AUTH, match, m, &cmd->stash_index);
+      m = pr_stash_get_symbol2 (PR_SYM_AUTH, match, m, &cmd->stash_index,
+        &cmd->stash_hash);
     }
 
   if (MODRET_ISERROR(mr))

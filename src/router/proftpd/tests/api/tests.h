@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2014 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Testsuite management
- * $Id: tests.h,v 1.7 2014-01-06 06:58:23 castaglia Exp $
- */
+/* Testsuite management */
 
 #ifndef PR_TESTS_H
 #define PR_TESTS_H
@@ -37,6 +35,9 @@
 #else
 # error "Missing Check installation; necessary for ProFTPD testsuite"
 #endif
+
+int tests_stubs_set_main_server(server_rec *);
+int tests_stubs_set_next_cmd(cmd_rec *);
 
 Suite *tests_get_pool_suite(void);
 Suite *tests_get_array_suite(void);
@@ -61,6 +62,23 @@ Suite *tests_get_cmd_suite(void);
 Suite *tests_get_response_suite(void);
 Suite *tests_get_fsio_suite(void);
 Suite *tests_get_netio_suite(void);
+Suite *tests_get_trace_suite(void);
+Suite *tests_get_parser_suite(void);
+Suite *tests_get_pidfile_suite(void);
+Suite *tests_get_config_suite(void);
+Suite *tests_get_auth_suite(void);
+Suite *tests_get_filter_suite(void);
+Suite *tests_get_inet_suite(void);
+Suite *tests_get_data_suite(void);
+Suite *tests_get_ascii_suite(void);
+Suite *tests_get_help_suite(void);
+Suite *tests_get_rlimit_suite(void);
+Suite *tests_get_encode_suite(void);
+Suite *tests_get_privs_suite(void);
+Suite *tests_get_display_suite(void);
+Suite *tests_get_misc_suite(void);
+Suite *tests_get_json_suite(void);
+Suite *tests_get_redis_suite(void);
 
 /* Temporary hack/placement for this variable, until we get to testing
  * the Signals API.

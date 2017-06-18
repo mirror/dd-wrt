@@ -621,65 +621,39 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
-  my $config_file = "$tmpdir/config.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-
   my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
   my $home_dir = File::Spec->rel2abs("$tmpdir/home.d/symlinks/$user");
   my $uid = 500;
   my $gid = 500;
 
-  my $intermed_dir = File::Spec->rel2abs("$tmpdir/home.d/symlinks");
-  mkpath($intermed_dir);
-
-  my $symlink_dst = File::Spec->rel2abs("$tmpdir/real/$user");
-  mkpath($symlink_dst);
+  my $symlink_dst = File::Spec->rel2abs("$tmpdir/real");
 
   my $cwd = getcwd();
 
-  unless (chdir($intermed_dir)) {
-    die("Can't chdir to $intermed_dir: $!");
+  unless (chdir($tmpdir)) {
+    die("Can't chdir to $tmpdir: $!");
   }
 
-  unless (symlink("../../real/$user", "./$user")) {
-    die("Can't symlink '../../real/$user' to './$user': $!");
+  unless (symlink("./real", "./home.d")) {
+    die("Can't symlink './real' to './home.d': $!");
   }
 
   unless (chdir($cwd)) {
     die("Can't chdir to $cwd: $!");
   }
 
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $symlink_dst)) {
-      die("Can't set perms on $symlink_dst to 0755: $!");
-    }
+  mkpath(File::Spec->rel2abs("$tmpdir/real/symlinks/$user"));
 
-    unless (chown($uid, $gid, $symlink_dst)) {
-      die("Can't set owner of $symlink_dst to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
+  my $setup = test_setup($tmpdir, 'config', $user, undef, undef, $uid, $gid,
+    $home_dir);
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     AllowChrootSymlinks => 'off',
     DefaultRoot => '~',
@@ -691,7 +665,8 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -709,7 +684,7 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      eval { $client->login($user, $passwd) };
+      eval { $client->login($user, $setup->{passwd}) };
       unless ($@) {
         die("Login succeeded unexpectedly");
       }
@@ -721,13 +696,12 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected response code $expected, got $resp_code"));
+        "Expected response code $expected, got $resp_code");
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected response message '$expected', got '$resp_msg'"));
+        "Expected response message '$expected', got '$resp_msg'");
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -736,7 +710,7 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -746,18 +720,10 @@ sub defaultroot_allowchrootsymlinks_bug3852 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

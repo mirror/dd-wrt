@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp MIB
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
  * source distribution.
  */
 
-#include "mod_snmp.h"
-#include "asn1.h"
-
 #ifndef MOD_SNMP_MIB_H
 #define MOD_SNMP_MIB_H
+
+#include "mod_snmp.h"
+#include "asn1.h"
 
 /* SNMPv2-MIB
  *
@@ -758,4 +758,4 @@ int snmp_mib_reset_counters(void);
 /* Initialize the MIB. */
 int snmp_mib_init(void);
 
-#endif
+#endif /* MOD_SNMP_MIB_H */

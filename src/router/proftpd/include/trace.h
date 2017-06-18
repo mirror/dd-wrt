@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2013 The ProFTPD Project team
+ * Copyright (c) 2006-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source distribution.
  */
 
-/* Trace API
- * $Id: trace.h,v 1.8 2013-01-31 20:35:54 castaglia Exp $
- */
+/* Trace API */
 
 #ifndef PR_TRACE_H
 #define PR_TRACE_H

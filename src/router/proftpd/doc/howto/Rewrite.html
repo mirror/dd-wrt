@@ -1,15 +1,13 @@
-<!-- $Id: Rewrite.html,v 1.9 2013-01-08 00:20:44 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Rewrite.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Using mod_rewrite</title>
+<title>ProFTPD: Using mod_rewrite</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Using the <code>mod_rewrite</code> Module</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Using the <code>mod_rewrite</code> Module</i></b></h2></center>
 <hr>
 
 <p>
@@ -157,7 +155,7 @@ The following <code>mod_rewrite</code> configuration should do the trick:
     # Use the replaceall internal RewriteMap
     RewriteMap replace int:replaceall
 
-    RewriteRule (.*) "${replace:!$1!\\\\!/}"'
+    RewriteRule (.*) "${replace:!$1!\\\\!/}"
   &lt;/IfModule&gt;
 </pre>
 Yes, you will need the four consecutive backslashes there, in order to make it
@@ -358,7 +356,7 @@ handle non-ASCII characters well; it displays them as <code>?</code>.
 
 <p>
 Here's an example, using Perl, to replace "&auml;" with "ae" in uploaded file
-names.  Note that "&auml" in hex notation is <code>0xE4</code>:
+names.  Note that "&auml;" in hex notation is <code>0xE4</code>:
 <pre>
   my $rewrite_rule = 'RewriteRule (.*) ${replace:/$1/' . chr(0xE4) . '/ae}';
 
@@ -453,6 +451,13 @@ any other time than during January 2013, then the
 <code>mod_rewrite</code>-rewritten path will not match the name of the file
 on disk, and the download will fail.
 
+<p>
 <hr>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
+
 </body>
 </html>

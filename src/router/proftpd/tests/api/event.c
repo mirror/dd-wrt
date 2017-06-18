@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2013 The ProFTPD Project team
+ * Copyright (c) 2008-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Event API tests
- * $Id: event.c,v 1.3 2013-01-05 03:36:39 castaglia Exp $
- */
+/* Event API tests */
 
 #include "tests.h"
 
@@ -43,8 +41,7 @@ static void set_up(void) {
 static void tear_down(void) {
   if (p) {
     destroy_pool(p);
-    p = NULL;
-    permanent_pool = NULL;
+    p = permanent_pool = NULL;
   } 
 }
 
@@ -57,6 +54,9 @@ static void event_cb(const void *event_data, void *user_data) {
 }
 
 static void event_cb2(const void *event_data, void *user_data) {
+}
+
+static void event_cb3(const void *event_data, void *user_data) {
 }
 
 static unsigned int event_dumped = 0;
@@ -72,6 +72,7 @@ static void event_dump(const char *fmt, ...) {
 START_TEST (event_register_test) {
   int res;
   const char *event = "foo";
+  module m;
 
   res = pr_event_register(NULL, NULL, NULL, NULL);
   fail_unless(res == -1, "Failed to handle null arguments");
@@ -91,6 +92,23 @@ START_TEST (event_register_test) {
   res = pr_event_register(NULL, event, event_cb, NULL);
   fail_unless(res == -1, "Failed to handle duplicate registration");
   fail_unless(errno == EEXIST, "Failed to set errno to EEXIST");
+
+  memset(&m, 0, sizeof(m));
+  m.name = "testsuite";
+
+  (void) pr_event_unregister(NULL, event, NULL);
+
+  res = pr_event_register(&m, event, event_cb, NULL);
+  fail_unless(res == 0, "Failed to register event with module: %s",
+    strerror(errno));
+
+  res = pr_event_register(&m, event, event_cb2, NULL);
+  fail_unless(res == 0, "Failed to register event with module: %s",
+    strerror(errno));
+
+  pr_event_unregister(&m, event, event_cb2);
+  pr_event_unregister(&m, event, event_cb);
+  pr_event_unregister(&m, NULL, NULL);
 }
 END_TEST
 
@@ -126,6 +144,58 @@ START_TEST (event_unregister_test) {
 
   res = pr_event_unregister(NULL, NULL, NULL);
   fail_unless(res == 0, "Failed to unregister event: %s", strerror(errno));
+}
+END_TEST
+
+START_TEST (event_listening_test) {
+  const char *event = "foo", *event2 = "bar";
+  int res;
+
+  res = pr_event_listening(NULL);
+  fail_unless(res < 0, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+
+  res = pr_event_listening(event);
+  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+    strerror(errno));
+
+  res = pr_event_register(NULL, event, event_cb2, NULL);
+  fail_unless(res == 0, "Failed to register event '%s: %s", event,
+    strerror(errno));
+
+  res = pr_event_register(NULL, event2, event_cb2, NULL);
+  fail_unless(res == 0, "Failed to register event '%s: %s", event2,
+    strerror(errno));
+
+  res = pr_event_listening(event);
+  fail_unless(res == 1, "Expected 1 listener, got %d", res);
+
+  res = pr_event_register(NULL, event, event_cb3, NULL);
+  fail_unless(res == 0, "Failed to register event '%s: %s", event,
+    strerror(errno));
+
+  res = pr_event_listening(event);
+  fail_unless(res == 2, "Expected 2 listeners, got %d", res);
+
+  /* Unregister our listener, and make sure that the API indicates there
+   * are no more listeners.
+   */
+  res = pr_event_unregister(NULL, event, NULL);
+  fail_unless(res == 0, "Failed to unregister event '%s': %s", event,
+    strerror(errno));
+
+  res = pr_event_listening(event);
+  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+    strerror(errno));
+
+  res = pr_event_unregister(NULL, event2, NULL);
+  fail_unless(res == 0, "Failed to unregister event '%s': %s", event2,
+    strerror(errno));
+
+  res = pr_event_listening(event);
+  fail_unless(res == 0, "Failed to check for '%s' listeners: %s", event,
+    strerror(errno));
 }
 END_TEST
 
@@ -168,6 +238,7 @@ END_TEST
 START_TEST (event_dump_test) {
   int res;
   const char *event = "foo";
+  module m;
 
   pr_event_dump(NULL);
   fail_unless(event_dumped == 0, "Expected dumped count of %u, got %u",
@@ -177,7 +248,9 @@ START_TEST (event_dump_test) {
   fail_unless(event_dumped == 0, "Expected dumped count of %u, got %u",
     0, event_dumped);
 
-  res = pr_event_register(NULL, event, event_cb, NULL);
+  memset(&m, 0, sizeof(m));
+  m.name = "testsuite";
+  res = pr_event_register(&m, event, event_cb, NULL);
   fail_unless(res == 0, "Failed to register event '%s', callback %p: %s",
     event, event_cb, strerror(errno));
 
@@ -208,10 +281,11 @@ Suite *tests_get_event_suite(void) {
   suite = suite_create("event");
 
   testcase = tcase_create("base");
-
   tcase_add_checked_fixture(testcase, set_up, tear_down);
+
   tcase_add_test(testcase, event_register_test);
   tcase_add_test(testcase, event_unregister_test);
+  tcase_add_test(testcase, event_listening_test);
   tcase_add_test(testcase, event_generate_test);
   tcase_add_test(testcase, event_dump_test);
 

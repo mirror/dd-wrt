@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2012 The ProFTPD Project team
+ * Copyright (c) 2009-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,12 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: session.h,v 1.8 2012-04-15 18:04:14 castaglia Exp $
  */
 
 #ifndef PR_SESSION_H
 #define PR_SESSION_H
 
-/* List of disconnect/end-of-session reason codes.
- */
+/* List of disconnect/end-of-session reason codes. */
 
 /* Unknown/unspecified reason for disconnection */
 #define PR_SESS_DISCONNECT_UNSPECIFIED		0
@@ -75,11 +72,14 @@
 /* Disconnected due to wrong protocol used (e.g. HTTP/SMTP). */
 #define PR_SESS_DISCONNECT_BAD_PROTOCOL		14
 
+/* Disconnected due to segfault. */
+#define PR_SESS_DISCONNECT_SEGFAULT		15
+
 /* Returns a string describing the reason the client was disconnected or
  * the session ended.  If a pointer to a char * was provided, any extra
  * disconnect details will be provided.
  */
-const char *pr_session_get_disconnect_reason(char **details);
+const char *pr_session_get_disconnect_reason(const char **details);
 
 /* Returns the current protocol name in use.
  *
@@ -102,6 +102,7 @@ void pr_session_disconnect(module *m, int reason_code, const char *details);
 void pr_session_end(int flags);
 #define PR_SESS_END_FL_NOEXIT		0x01
 #define PR_SESS_END_FL_SYNTAX_CHECK	0x02
+#define PR_SESS_END_FL_ERROR		0x04
 
 /* Returns a so-called "tty name" suitable for use via PAM, and in WtmpLog
  * logging.

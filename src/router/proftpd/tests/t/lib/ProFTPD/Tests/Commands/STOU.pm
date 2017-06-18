@@ -31,6 +31,16 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  stou_file_umask_bug4223 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  stou_file_umask_chrooted_bug4223 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
   stou_fails_login_required => {
     order => ++$order,
     test_class => [qw(forking)],
@@ -118,7 +128,7 @@ sub stou_ok_raw_active {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1, 1);
       $client->login($user, $passwd);
 
       my $conn = $client->stou_raw('bar');
@@ -246,7 +256,7 @@ sub stou_ok_raw_passive {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
 
       $client->login($user, $passwd);
 
@@ -444,6 +454,199 @@ sub stou_ok_file {
   }
 
   unlink($log_file);
+}
+
+sub stou_file_umask_bug4223 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    AllowOverwrite => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->stou_raw('bar');
+      unless ($conn) {
+        die("STOU failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Foo!\n";
+      $conn->write($buf, length($buf), 30);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      my $uniq_file = $client->response_uniq();
+      $self->assert($uniq_file, test_msg("Expected non-null unique file"));
+
+      my $test_file = File::Spec->rel2abs("$setup->{home_dir}/$uniq_file");
+
+      my $expected = -s $test_file;
+      my $size = length($buf);
+      $self->assert($expected == $size,
+        test_msg("Expected size $expected, got $size"));
+
+      my $perms = sprintf("%04o", ((stat($test_file))[2] & 07777));
+      $expected = '0644';
+      $self->assert($expected eq $perms,
+        test_msg("Expected perms '$expected', got '$perms'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub stou_file_umask_chrooted_bug4223 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    AllowOverwrite => 'on',
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->stou_raw('/bar');
+      unless ($conn) {
+        die("STOU failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf = "Foo!\n";
+      $conn->write($buf, length($buf), 30);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      my $uniq_file = $client->response_uniq();
+      $self->assert($uniq_file, test_msg("Expected non-null unique file"));
+
+      my $test_file = File::Spec->rel2abs("$setup->{home_dir}/$uniq_file");
+
+      my $expected = -s $test_file;
+      my $size = length($buf);
+      $self->assert($expected == $size,
+        test_msg("Expected size $expected, got $size"));
+
+      my $perms = sprintf("%04o", ((stat($test_file))[2] & 07777));
+      $expected = '0644';
+      $self->assert($expected eq $perms,
+        test_msg("Expected perms '$expected', got '$perms'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub stou_fails_login_required {

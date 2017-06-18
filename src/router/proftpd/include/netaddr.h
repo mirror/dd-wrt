@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Network address API
- * $Id: netaddr.h,v 1.36 2013-12-23 17:53:42 castaglia Exp $
- */
+/* Network address API */
 
 #ifndef PR_NETADDR_H
 #define PR_NETADDR_H
@@ -215,7 +213,7 @@ int pr_inet_pton(int, const char *, void *);
 pr_netaddr_t *pr_netaddr_alloc(pool *);
 
 /* Duplicate a netaddr using the given pool. */
-pr_netaddr_t *pr_netaddr_dup(pool *, pr_netaddr_t *);
+pr_netaddr_t *pr_netaddr_dup(pool *, const pr_netaddr_t *);
 
 /* Initialize the given netaddr. */
 void pr_netaddr_clear(pr_netaddr_t *);
@@ -230,10 +228,10 @@ void pr_netaddr_clear(pr_netaddr_t *);
  * If there is a failure in resolving the given name to its address(es),
  * NULL will be return, and an error logged.
  */
-pr_netaddr_t *pr_netaddr_get_addr(pool *, const char *, array_header **);
+const pr_netaddr_t *pr_netaddr_get_addr(pool *, const char *, array_header **);
 
 /* Like pr_netaddr_get_addr(), with the ability to specify lookup flags. */
-pr_netaddr_t *pr_netaddr_get_addr2(pool *, const char *, array_header **,
+const pr_netaddr_t *pr_netaddr_get_addr2(pool *, const char *, array_header **,
   unsigned int);
 #define PR_NETADDR_GET_ADDR_FL_INCL_DEVICE	0x001
 #define PR_NETADDR_GET_ADDR_FL_EXCL_DNS		0x002
@@ -264,7 +262,7 @@ int pr_netaddr_ncmp(const pr_netaddr_t *, const pr_netaddr_t *, unsigned int);
  * the netaddr or pattern are NULL.  Otherwise, TRUE is returned if the address
  * is matched by the pattern, or FALSE if is not matched.
  */
-int pr_netaddr_fnmatch(pr_netaddr_t *, const char *, int);
+int pr_netaddr_fnmatch(const pr_netaddr_t *, const char *, int);
 #define PR_NETADDR_MATCH_DNS		0x001
 #define PR_NETADDR_MATCH_IP		0x002
 
@@ -340,18 +338,18 @@ int pr_netaddr_set_reverse_dns(int);
  * lookups have been disabled, the returned string will be the IP address.
  * Returns NULL if there was an error.
  */
-const char *pr_netaddr_get_dnsstr(pr_netaddr_t *);
+const char *pr_netaddr_get_dnsstr(const pr_netaddr_t *);
 
 /* Returns the list of DNS names associated with the given pr_netaddr_t.
  * If DNS lookups have been disabled, an empty list will be returned.
  * NULL is returned if there is an error.
  */
-array_header *pr_netaddr_get_dnsstr_list(pool *, pr_netaddr_t *);
+array_header *pr_netaddr_get_dnsstr_list(pool *, const pr_netaddr_t *);
 
 /* Returns the IP address associated with the given pr_netaddr_t.  Returns
  * NULL if there was an error.
  */
-const char *pr_netaddr_get_ipstr(pr_netaddr_t *);
+const char *pr_netaddr_get_ipstr(const pr_netaddr_t *);
 
 /* Returns the name of the local host, as returned by gethostname(2).  The
  * returned string will be dup'd from the given pool, if any.
@@ -397,10 +395,15 @@ int pr_netaddr_is_v6(const char *);
 int pr_netaddr_is_v4mappedv6(const pr_netaddr_t *);
 
 /* Given an IPv4-mapped IPv6 netaddr, returns an IPv4 netaddr allocated from
- * the given pool.  Returns -1 if the given netaddr is not an IPv4-mapped
+ * the given pool.  Returns NULL if the given netaddr is not an IPv4-mapped
  * IPv6 address.
  */
-pr_netaddr_t *pr_netaddr_v6tov4(pool *p, const pr_netaddr_t *);
+pr_netaddr_t *pr_netaddr_v6tov4(pool *p, const pr_netaddr_t *addr);
+
+/* Given an IPv4 netaddr, return an IPv4-mapped IPv6 netaddr allocated from
+ * the given pool.  Returns NULL if the given netaddr is not an IPv4 address.
+ */
+pr_netaddr_t *pr_netaddr_v4tov6(pool *p, const pr_netaddr_t *addr);
 
 /* Returns TRUE if IPv6 support is enabled, FALSE otherwise. */
 unsigned char pr_netaddr_use_ipv6(void);
@@ -415,13 +418,19 @@ void pr_netaddr_enable_ipv6(void);
  * netaddr information for the sesssion.  DO NOT MODIFY the pointed-to
  * memory!  Returns NULL if no such session information exists.
  */
-pr_netaddr_t *pr_netaddr_get_sess_local_addr(void);
-pr_netaddr_t *pr_netaddr_get_sess_remote_addr(void);
+const pr_netaddr_t *pr_netaddr_get_sess_local_addr(void);
+const pr_netaddr_t *pr_netaddr_get_sess_remote_addr(void);
 const char *pr_netaddr_get_sess_remote_name(void);
 void pr_netaddr_set_sess_addrs(void);
 
-/* Clears the cache of netaddr objects. */
+/* Clears the cache of ALL netaddr objects. */
 void pr_netaddr_clear_cache(void);
+
+/* Clears the cached DNS names, given an IP address string. */
+void pr_netaddr_clear_dnscache(const char *ip_addr);
+
+/* Clears the cached IP addresses, given a DNS name. */
+void pr_netaddr_clear_ipcache(const char *name);
 
 /* Validates the DNS name returned. */
 char *pr_netaddr_validate_dns_str(char *);

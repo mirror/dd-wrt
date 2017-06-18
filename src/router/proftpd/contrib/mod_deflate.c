@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_deflate -- a module for supporting on-the-fly compression
- *
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +24,7 @@
  * This is mod_deflate, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
  *
- * $Id: mod_deflate.c,v 1.14 2014-01-03 07:19:01 castaglia Exp $
- * $Libraries: -lz $
+ * $Libraries: -lz$
  */
 
 #include <zlib.h>
@@ -42,6 +40,8 @@
 #endif
 
 module deflate_module;
+
+static int deflate_sess_init(void);
 
 static int deflate_enabled = FALSE;
 static int deflate_engine = FALSE;
@@ -139,7 +139,7 @@ static int deflate_netio_close_cb(pr_netio_stream_t *nstrm) {
   if (nstrm->strm_type == PR_NETIO_STRM_DATA) {
     z_stream *zstrm;
 
-    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
+    zstrm = (z_stream *) pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       return 0;
     }
@@ -307,7 +307,7 @@ static int deflate_netio_read_cb(pr_netio_stream_t *nstrm, char *buf,
     size_t copylen = 0;
     z_stream *zstrm;
 
-    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
+    zstrm = (z_stream *) pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       pr_trace_msg(trace_channel, 2,
         "no zstream found in stream data for reading");
@@ -523,7 +523,7 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
     int res = 0;
     z_stream *zstrm;
 
-    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
+    zstrm = (z_stream *) pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       return 0;
     }
@@ -584,7 +584,7 @@ static int deflate_netio_shutdown_cb(pr_netio_stream_t *nstrm, int how) {
           session.total_raw_out += res;
 
           /* Watch out for short writes. */
-          if (res == datalen) {
+          if ((size_t) res == datalen) {
             break;
           }
 
@@ -612,7 +612,7 @@ static int deflate_netio_write_cb(pr_netio_stream_t *nstrm, char *buf,
     size_t datalen, offset = 0;
     z_stream *zstrm;
 
-    zstrm = pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
+    zstrm = (z_stream *) pr_table_get(nstrm->notes, DEFLATE_NETIO_NOTE, NULL);
     if (zstrm == NULL) {
       pr_trace_msg(trace_channel, 2,
         "no zstream found in stream data for writing");
@@ -684,7 +684,7 @@ static int deflate_netio_write_cb(pr_netio_stream_t *nstrm, char *buf,
         (unsigned long) datalen, nstrm->strm_fd);
 
       /* Watch out for short writes */
-      if (res == datalen) {
+      if ((size_t) res == datalen) {
         zstrm->next_out = deflate_zbuf;
         zstrm->avail_out = deflate_zbufsz;
         break;
@@ -728,8 +728,9 @@ MODRET set_deflateengine(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   bool = get_boolean(cmd, 1);
-  if (bool == -1)
+  if (bool == -1) {
     CONF_ERROR(cmd, "expected Boolean parameter");
+  }
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(unsigned int));
@@ -740,14 +741,18 @@ MODRET set_deflateengine(cmd_rec *cmd) {
 
 /* usage: DeflateLog path|"none" */
 MODRET set_deflatelog(cmd_rec *cmd) {
+  char *path;
+
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (pr_fs_valid_path(cmd->argv[1]) < 0)
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": ", cmd->argv[1],
-      " is not a valid path", NULL));
+  path = cmd->argv[1];
+  if (pr_fs_valid_path(path) < 0) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": ", path, " is not a valid path",
+      NULL));
+  }
 
-  add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+  add_config_param_str(cmd->argv[0], 1, path);
   return PR_HANDLED(cmd);
 }
 
@@ -775,7 +780,7 @@ MODRET deflate_opts(cmd_rec *cmd) {
       deflate_strategy = MOD_DEFLATE_DEFAULT_STRATEGY;
       deflate_window_bits = MOD_DEFLATE_DEFAULT_WINDOW_BITS;
 
-      pr_response_add(R_200, _("%s OK"), cmd->argv[0]);
+      pr_response_add(R_200, _("%s OK"), (char *) cmd->argv[0]);
       return PR_HANDLED(cmd);
 
     } else {
@@ -783,23 +788,38 @@ MODRET deflate_opts(cmd_rec *cmd) {
 
       if (cmd->argc % 2 != 0) {
         pr_response_add_err(R_501, _("Bad number of parameters"));
+
+        pr_cmd_set_errno(cmd, EINVAL);
+        errno = EINVAL;
         return PR_ERROR(cmd);
       }
 
       for (i = 2; i < cmd->argc; i += 2) {
-        if (strcasecmp(cmd->argv[i], "blocksize") == 0 ||
-            strcasecmp(cmd->argv[i], "engine") == 0) {
+        char *key, *val;
+
+        key = cmd->argv[i];
+        val = cmd->argv[i+1];
+
+        if (strcasecmp(key, "blocksize") == 0 ||
+            strcasecmp(key, "engine") == 0) {
           pr_response_add_err(R_501, _("%s: unsupported MODE Z option: %s"),
-            cmd->argv[0], cmd->argv[i]);
+            (char *) cmd->argv[0], key);
+
+          pr_cmd_set_errno(cmd, ENOSYS);
+          errno = ENOSYS;
           return PR_ERROR(cmd);
 
-        } else if (strcasecmp(cmd->argv[i], "level") == 0) {
-          int level = atoi(cmd->argv[i+1]);
+        } else if (strcasecmp(key, "level") == 0) {
+          int level;
 
+          level = atoi(val);
           if (level < 0 ||
               level > 9) {
             pr_response_add_err(R_501, _("%s: bad MODE Z option value: %s %s"),
-              cmd->argv[0], cmd->argv[i], cmd->argv[i+1]);
+              (char *) cmd->argv[0], key, val);
+
+            pr_cmd_set_errno(cmd, EINVAL);
+            errno = EINVAL;
             return PR_ERROR(cmd);
           }
 
@@ -807,7 +827,10 @@ MODRET deflate_opts(cmd_rec *cmd) {
 
         } else {
           pr_response_add_err(R_501, _("%s: unknown MODE Z option: %s"),
-            cmd->argv[0], cmd->argv[i]);
+            (char *) cmd->argv[0], key);
+
+          pr_cmd_set_errno(cmd, EINVAL);
+          errno = EINVAL;
           return PR_ERROR(cmd);
         }
       }
@@ -821,19 +844,22 @@ MODRET deflate_opts(cmd_rec *cmd) {
 }
 
 MODRET deflate_mode(cmd_rec *cmd) {
+  char *mode;
+
   if (!deflate_engine) {
     return PR_DECLINED(cmd);
   }
 
   if (cmd->argc != 2) {
     (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-      "declining MODE Z (wrong number of arguments: %d)", cmd->argc);
+      "declining MODE Z (wrong number of parameters: %d)", cmd->argc);
     return PR_DECLINED(cmd);
   }
 
-  cmd->argv[1][0] = toupper(cmd->argv[1][0]);
+  mode = cmd->argv[1];
+  mode[0] = toupper(mode[0]);
 
-  if (cmd->argv[1][0] == 'Z') {
+  if (mode[0] == 'Z') {
     if (session.rfc2228_mech) {
       (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
         "declining MODE Z (RFC2228 mechanism '%s' in effect)",
@@ -843,6 +869,9 @@ MODRET deflate_mode(cmd_rec *cmd) {
         session.rfc2228_mech);
 
       pr_response_add_err(R_504, _("Unable to handle MODE Z at this time"));
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
@@ -855,7 +884,7 @@ MODRET deflate_mode(cmd_rec *cmd) {
      * compression.
      */
 
-    deflate_netio = pr_alloc_netio2(session.pool, &deflate_module);
+    deflate_netio = pr_alloc_netio2(session.pool, &deflate_module, NULL);
     deflate_netio->close = deflate_netio_close_cb;
     deflate_netio->open = deflate_netio_open_cb;
     deflate_netio->read = deflate_netio_read_cb;
@@ -890,7 +919,8 @@ MODRET deflate_mode(cmd_rec *cmd) {
 
       } else {
         (void) pr_log_writefile(deflate_logfd, MOD_DEFLATE_VERSION,
-          "%s %s: unregistered netio", cmd->argv[0], cmd->argv[1]);
+          "%s %s: unregistered netio", (char *) cmd->argv[0],
+          (char *) cmd->argv[1]);
       }
 
       if (deflate_netio) {
@@ -905,11 +935,42 @@ MODRET deflate_mode(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Event listeners
+ */
+
+static void deflate_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&deflate_module, "core.session-reinit",
+    deflate_sess_reinit_ev);
+
+  deflate_engine = FALSE;
+  pr_feat_remove("MODE Z");
+  (void) close(deflate_logfd);
+  deflate_logfd = -1;
+
+  res = deflate_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&deflate_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization functions
  */
 
+static int deflate_init(void) {
+  pr_log_debug(DEBUG5, MOD_DEFLATE_VERSION ": using zlib " ZLIB_VERSION);
+  return 0;
+}
+
 static int deflate_sess_init(void) {
   config_rec *c;
+
+  pr_event_register(&deflate_module, "core.session-reinit",
+    deflate_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "DeflateEngine", FALSE);
   if (c &&
@@ -963,19 +1024,18 @@ static int deflate_sess_init(void) {
    * Look up the optimal transfer buffer size, and use a factor of 8.
    * Later, if needed, a larger buffer will be allocated when necessary.
    */
-  deflate_zbufsz = pr_config_get_xfer_bufsz() * 8;
-  deflate_zbuf_ptr = deflate_zbuf = pcalloc(session.pool, deflate_zbufsz);
-  deflate_zbuflen = 0;
+  if (deflate_zbuf == NULL) {
+    deflate_zbufsz = pr_config_get_xfer_bufsz() * 8;
+    deflate_zbuf_ptr = deflate_zbuf = pcalloc(session.pool, deflate_zbufsz);
+    deflate_zbuflen = 0;
+  }
 
-  deflate_rbufsz = pr_config_get_xfer_bufsz();
-  deflate_rbuf = palloc(session.pool, deflate_rbufsz);
-  deflate_rbuflen = 0;
+  if (deflate_rbuf == NULL) {
+    deflate_rbufsz = pr_config_get_xfer_bufsz();
+    deflate_rbuf = palloc(session.pool, deflate_rbufsz);
+    deflate_rbuflen = 0;
+  }
 
-  return 0;
-}
-
-static int deflate_init(void) {
-  pr_log_debug(DEBUG5, MOD_DEFLATE_VERSION ": using zlib " ZLIB_VERSION);
   return 0;
 }
 

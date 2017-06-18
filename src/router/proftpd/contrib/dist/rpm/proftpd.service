@@ -8,6 +8,8 @@ PIDFile = /run/proftpd/proftpd.pid
 Environment = PROFTPD_OPTIONS=
 EnvironmentFile = -/etc/sysconfig/proftpd
 ExecStart = /usr/sbin/proftpd $PROFTPD_OPTIONS
+ExecStartPost = touch /var/lock/subsys/proftpd
+ExecStopPost = rm -f /var/lock/subsys/proftpd
 ExecReload = /bin/kill -HUP $MAINPID
 
 [Install]

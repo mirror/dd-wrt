@@ -30,6 +30,11 @@ my $TESTS = {
     test_class => [qw(bug forking os_linux)],
   },
 
+  ctrls_intvl_timeoutlogin_bug4298 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -400,6 +405,104 @@ sub ctrls_sighup_bug3756 {
   }
 
   unlink($log_file);
+}
+
+sub ctrls_intvl_timeoutlogin_bug4298 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'ctrls');
+
+  my $ctrls_sock = File::Spec->rel2abs("$tmpdir/ctrls.sock");
+
+  my ($user, $group) = config_get_identity();
+  my $poll_interval = 2;
+
+  # Try to reproduce Bug#4298 by having the TimeoutLogin be a multiple of
+  # the Controls Interval.
+  my $timeout_login = ($poll_interval * 4);
+  my $timeout_idle = 30;
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'ctrls:20 event:10 timers:20',
+
+    TimeoutIdle => $timeout_idle,
+    TimeoutLogin => $timeout_login,
+
+    IfModules => {
+      'mod_ctrls.c' => {
+        ControlsEngine => 'on',
+        ControlsLog => $setup->{log_file},
+        ControlsSocket => $ctrls_sock,
+        ControlsACLs => "all allow user *",
+        ControlsSocketACL => "allow user *",
+        ControlsInterval => $poll_interval,
+      },
+
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+
+      # Wait for one second longer than the TimeoutLogin
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Delaying for ", ($timeout_login + 1), " secs\n";
+      }
+
+      sleep($timeout_login + 1);
+
+      eval { $client->login($setup->{user}, $setup->{passwd}) };
+      unless ($@) {
+        $client->quit();
+        die("Login succeeded unexpectedly");
+      }
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, $timeout_idle + 3) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

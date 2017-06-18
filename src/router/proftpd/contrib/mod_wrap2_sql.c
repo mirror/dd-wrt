@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_wrap2_sql -- a mod_wrap2 sub-module for supplying IP-based
  *                           access control data via SQL tables
- *
- * Copyright (c) 2002-2012 TJ Saunders
+ * Copyright (c) 2002-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +20,6 @@
  * As a special exemption, TJ Saunders gives permission to link this program
  * with OpenSSL, and distribute the resulting executable, without including
  * the source code for OpenSSL in the source distribution.
- *
- * $Id: mod_wrap2_sql.c,v 1.12 2012-05-01 21:31:48 castaglia Exp $
  */
 
 #include "mod_wrap2.h"
@@ -36,10 +33,10 @@
 
 module wrap2_sql_module;
 
-static cmd_rec *sql_cmd_create(pool *parent_pool, int argc, ...) {
+static cmd_rec *sql_cmd_create(pool *parent_pool, unsigned int argc, ...) {
+  register unsigned int i = 0;
   pool *cmd_pool = NULL;
   cmd_rec *cmd = NULL;
-  register unsigned int i = 0;
   va_list argp;
 
   cmd_pool = make_sub_pool(parent_pool);
@@ -47,14 +44,15 @@ static cmd_rec *sql_cmd_create(pool *parent_pool, int argc, ...) {
   cmd->pool = cmd_pool;
 
   cmd->argc = argc;
-  cmd->argv = (char **) pcalloc(cmd->pool, argc * sizeof(char *));
+  cmd->argv = pcalloc(cmd->pool, argc * sizeof(void *));
 
   /* Hmmm... */
   cmd->tmp_pool = cmd->pool;
 
   va_start(argp, argc);
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     cmd->argv[i] = va_arg(argp, char *);
+  }
   va_end(argp);
 
   return cmd;
@@ -81,7 +79,8 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
   query = ((char **) sqltab->tab_data)[WRAP2_SQL_CLIENT_QUERY_IDX];
 
   /* Find the cmdtable for the sql_lookup command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_lookup", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     wrap2_log("error: unable to find SQL hook symbol 'sql_lookup': "
       "perhaps your proftpd.conf needs 'LoadModule mod_sql.c'?");
@@ -137,29 +136,32 @@ static array_header *sqltab_fetch_clients_cb(wrap2_table_t *sqltab,
 
     ptr = strpbrk(vals[i], ", \t");
     if (ptr != NULL) {
-      char *dup = pstrdup(sqltab->tab_pool, vals[i]);
-      char *word;
+      char *dup_opts, *word;
 
-      while ((word = pr_str_get_token(&dup, ", \t")) != NULL) {
+      dup_opts = pstrdup(sqltab->tab_pool, vals[i]);
+      while ((word = pr_str_get_token(&dup_opts, ", \t")) != NULL) {
         size_t wordlen;
 
         pr_signals_handle();
 
         wordlen = strlen(word);
-        if (wordlen == 0)
+        if (wordlen == 0) {
           continue;
+        }
 
         /* Remove any trailing comma */
-        if (word[wordlen-1] == ',')
+        if (word[wordlen-1] == ',') {
           word[wordlen-1] = '\0';
+          wordlen--;
+        }
 
         *((char **) push_array(clients_list)) = word;
 
         /* Skip redundant whitespaces */
-        while (*dup == ' ' ||
-               *dup == '\t') {
+        while (*dup_opts == ' ' ||
+               *dup_opts == '\t') {
           pr_signals_handle();
-          dup++;
+          dup_opts++;
         }
       }
 
@@ -205,7 +207,8 @@ static array_header *sqltab_fetch_options_cb(wrap2_table_t *sqltab,
   }
 
   /* Find the cmdtable for the sql_lookup command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_lookup", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     wrap2_log("error: unable to find SQL hook symbol 'sql_lookup': "
       "perhaps your proftpd.conf needs 'LoadModule mod_sql.c'?");
@@ -267,13 +270,13 @@ static array_header *sqltab_fetch_options_cb(wrap2_table_t *sqltab,
   return options_list;
 }
 
-static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
+static wrap2_table_t *sqltab_open_cb(pool *parent_pool, const char *srcinfo) {
   wrap2_table_t *tab = NULL;
   pool *tab_pool = make_sub_pool(parent_pool),
     *tmp_pool = make_sub_pool(parent_pool);
   config_rec *c = NULL;
   char *start = NULL, *finish = NULL, *query = NULL, *clients_query = NULL,
-    *options_query = NULL;
+    *options_query = NULL, *info;
 
   tab = (wrap2_table_t *) pcalloc(tab_pool, sizeof(wrap2_table_t));
   tab->tab_pool = tab_pool;
@@ -286,7 +289,8 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
    *  "/<clients-named-query>[/<options-named-query>]"
    */
 
-  start = strchr(srcinfo, '/');
+  info = pstrdup(tmp_pool, srcinfo);
+  start = strchr(info, '/');
   if (start == NULL) {
     wrap2_log("error: badly formatted source info '%s'", srcinfo);
     destroy_pool(tab_pool);
@@ -297,9 +301,9 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
 
   /* Find the next slash. */
   finish = strchr(++start, '/');
-
-  if (finish)
+  if (finish != NULL) {
     *finish = '\0';
+  }
 
   clients_query = pstrdup(tab->tab_pool, start);
 
@@ -322,7 +326,7 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
   }
 
   /* Handle the options-query, if present. */
-  if (finish) {
+  if (finish != NULL) {
     options_query = pstrdup(tab->tab_pool, ++finish);
 
     query = pstrcat(tmp_pool, "SQLNamedQuery_", options_query, NULL);
@@ -338,7 +342,7 @@ static wrap2_table_t *sqltab_open_cb(pool *parent_pool, char *srcinfo) {
     }
   }
 
-  tab->tab_name = pstrcat(tab->tab_pool, "SQL(", srcinfo, ")", NULL);
+  tab->tab_name = pstrcat(tab->tab_pool, "SQL(", info, ")", NULL);
 
   tab->tab_data = pcalloc(tab->tab_pool, WRAP2_SQL_NSLOTS * sizeof(char *));
   ((char **) tab->tab_data)[WRAP2_SQL_CLIENT_QUERY_IDX] =

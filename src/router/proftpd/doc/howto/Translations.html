@@ -1,15 +1,13 @@
-<!-- $Id: Translations.html,v 1.1 2008-10-08 16:55:34 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Translations.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Translations</title>
+<title>ProFTPD: Translations</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Translations</b></h2></center>
+<center><h2><b>ProFTPD: Translations</b></h2></center>
 <hr>
 
 <p>
@@ -28,15 +26,15 @@ if the language in question already has a translation.  ProFTPD's translations
 are kept, in the source distribution, under the <code>locale/</code> directory,
 <i>e.g.</i>:
 <pre>
-  ls /path/to/proftpd-<i>version</i>/locale/*.po
+  $ ls /path/to/proftpd-<i>version</i>/locale/*.po
 </pre>
 
 <p>
 To create a new translation, you first initialize a <code>.po</code> file
 for your translation using the template PO file (<code>proftpd.pot</code>):
 <pre>
-  cd proftpd-<i>version</i>/locale/
-  msginit -i proftpd.pot -o <i>lang</i>.po -l <i>lang</i>
+  $ cd proftpd-<i>version</i>/locale/
+  $ msginit -i proftpd.pot -o <i>lang</i>.po -l <i>lang</i>
 </pre>
 Then you simply use an editor to edit the generated <code><i>lang</i>.po</code>
 file, adding in the translated versions of the English messages.  There are
@@ -55,8 +53,8 @@ the template <code>.pot</code> file to see if you translated all of the
 messages in the template.  This is accomplished using the <code>msgcmp</code>
 command:
 <pre>
-  cd proftpd-<i>version</i>/locale/
-  msgcmp <i>lang</i>.po proftpd.pot
+  $ cd proftpd-<i>version</i>/locale/
+  $ msgcmp <i>lang</i>.po proftpd.pot
 </pre>
 
 <p>
@@ -64,7 +62,7 @@ Finally, compile your <code>.po</code> file into the machine-specific
 <code>.mo</code> file; this is what the <code>gettext</code> library uses
 in the running code:
 <pre>
-  msgfmt --check-format <i>lang</i>.po -o <i>lang</i>.mo
+  $ msgfmt --check-format <i>lang</i>.po -o <i>lang</i>.mo
 </pre>
 The <code>--check-format</code> option checks that your <code>.po</code> is
 properly formatted, and can be compiled without errors.
@@ -86,8 +84,8 @@ Note that as ProFTPD is developed, new messages may be added to the template
 It is important to keep ProFTPD's translations up-to-date.  You can help
 by periodically checking the existing translations:
 <pre>
-  cd proftpd-<i>version</i>/locale/
-  make check
+  $ cd proftpd-<i>version</i>/locale/
+  $ make check
 </pre>
 If you see that a language translation is out of date and you can help,
 simply update the <code>.po</code> file that language, and open a bug request
@@ -95,7 +93,11 @@ and attach the diff, or send the diff to the ProFTPD developers mailing list.
 
 <p>
 <hr>
-<i>$Date: 2008-10-08 16:55:34 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

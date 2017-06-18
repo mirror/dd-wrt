@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp agent
- * Copyright (c) 2012 TJ Saunders
+ * Copyright (c) 2012-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: agent.c,v 1.5 2012-04-06 16:53:52 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -85,6 +83,7 @@ static unsigned char *agent_request(pool *p, int fd, const char *path,
     unsigned char *req, uint32_t reqlen, uint32_t *resplen) {
   unsigned char msg[AGENT_REQUEST_MSGSZ], *buf, *ptr;
   uint32_t bufsz, buflen;
+  size_t write_len;
   int res;
 
   bufsz = buflen = sizeof(msg);
@@ -94,7 +93,8 @@ static unsigned char *agent_request(pool *p, int fd, const char *path,
 
   /* Send the message length to the agent. */
 
-  res = write(fd, ptr, (bufsz - buflen));
+  write_len = bufsz - buflen;
+  res = write(fd, ptr, write_len);
   if (res < 0) {
     int xerrno = errno;
 
@@ -107,10 +107,10 @@ static unsigned char *agent_request(pool *p, int fd, const char *path,
   }
 
   /* Handle short writes. */
-  if (res != (bufsz - buflen)) {
+  if ((size_t) res != write_len) {
     pr_trace_msg(trace_channel, 3,
       "short write (%d of %lu bytes sent) when talking to SSH agent at '%s'",
-      res, (unsigned long) (bufsz - buflen), path);
+      res, (unsigned long) (write_len), path);
     errno = EIO;
     return NULL;
   }
@@ -130,7 +130,7 @@ static unsigned char *agent_request(pool *p, int fd, const char *path,
   }
 
   /* Handle short writes. */
-  if (res != reqlen) {
+  if ((uint32_t) res != reqlen) {
     pr_trace_msg(trace_channel, 3,
       "short write (%d of %lu bytes sent) when talking to SSH agent at '%s'",
       res, (unsigned long) reqlen, path);
@@ -219,7 +219,11 @@ static int agent_connect(const char *path) {
     return -1;
   }
 
-  fcntl(fd, F_SETFD, FD_CLOEXEC);
+  if (fcntl(fd, F_SETFD, FD_CLOEXEC) < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error setting CLOEXEC on fd %d for talking to SSH agent: %s",
+      fd, strerror(errno));
+  }
 
   PRIVS_ROOT
   res = connect(fd, (struct sockaddr *) &sock, len);

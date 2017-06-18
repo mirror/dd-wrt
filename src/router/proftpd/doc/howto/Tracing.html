@@ -1,15 +1,13 @@
-<!-- $Id: Tracing.html,v 1.15 2012-09-27 17:52:36 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Tracing.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD Tracing</title>
+<title>ProFTPD: Tracing</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD Tracing</b></h2></center>
+<center><h2><b>ProFTPD: Tracing</b></h2></center>
 <hr>
 
 <p>
@@ -96,6 +94,8 @@ keyword:
   <li>ident
   <li>inet
   <li>lock
+  <li>log
+  <li>module
   <li>netacl
   <li>netio
   <li>pam
@@ -208,7 +208,7 @@ proftpd with the updated <code>proftpd.conf</code>.  Later, while proftpd is
 running, you can tune the tracing using the
 <a href="Controls.html"><code>ftpdctl</code></a> utility, like this:
 <pre>
-  # ftpdctl trace lock:10 scoreboard:5
+  $ ftpdctl trace lock:10 scoreboard:5
 </pre>
 which dynamically changes the 'lock' trace channel level to 10, and the
 'scoreboard' trace channel level to 5.  Once you have gathered the necessary
@@ -216,7 +216,7 @@ information in the <code>TraceLog</code> file, you then use <code>ftpdctl</code>
 again and restore the trace levels back to zero, effectively turning off
 trace logging once more:
 <pre>
-  # ftpdctl trace DEFAULT:0
+  $ ftpdctl trace DEFAULT:0
 </pre>
 Note that the changed settings will only apply to <b>new</b> sessions; this
 does <b>not</b> change the trace logging for <i>existing</i> sessions.
@@ -250,7 +250,11 @@ sections as well.
 
 <p>
 <hr>
-<i>$Date: 2012-09-27 17:52:36 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

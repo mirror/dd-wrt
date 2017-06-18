@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SSH2 constants
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: ssh2.h,v 1.7 2013-01-29 07:08:05 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_SSH2_H
@@ -108,4 +106,4 @@
 #define SFTP_SSH2_DISCONNECT_NO_MORE_AUTH_METHODS_AVAILABLE	14
 #define SFTP_SSH2_DISCONNECT_ILLEGAL_USER_NAME			15
 
-#endif
+#endif /* MOD_SFTP_SSH2_H */

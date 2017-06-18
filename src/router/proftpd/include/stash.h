@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2010-2012 The ProFTPD Project team
+ * Copyright (c) 2010-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * the source distribution.
  */
 
-/* ProFTPD symbol table hash ("stash")
- * $Id: stash.h,v 1.3 2012-04-24 23:27:38 castaglia Exp $
- */
+/* ProFTPD symbol table hash ("stash") */
 
 #ifndef PR_STASH_H
 #define PR_STASH_H
@@ -36,9 +34,22 @@ typedef enum {
   PR_SYM_HOOK
 } pr_stash_type_t;
 
-int pr_stash_add_symbol(pr_stash_type_t, void *);
-void *pr_stash_get_symbol(pr_stash_type_t, const char *, void *, int *);
-int pr_stash_remove_symbol(pr_stash_type_t, const char *, module *);
+int pr_stash_add_symbol(pr_stash_type_t stash_type, void *sym);
+void *pr_stash_get_symbol(pr_stash_type_t stash_type, const char *name,
+  void *prev_sym, int *);
+void *pr_stash_get_symbol2(pr_stash_type_t stash_type, const char *name,
+  void *prev_sym, int *, unsigned int *);
+int pr_stash_remove_symbol(pr_stash_type_t stash_type, const char *name,
+  module *m);
+
+/* These functions are similar to pr_stash_remove_symbol(), except that they
+ * allow for providing type-specific criteria.
+ */
+int pr_stash_remove_conf(const char *directive_name, module *m);
+int pr_stash_remove_cmd(const char *cmd_name, module *m,
+  unsigned char cmd_type, const char *cmd_group, int cmd_class);
+int pr_stash_remove_auth(const char *api_name, module *m);
+int pr_stash_remove_hook(const char *hook_name, module *m);
 
 void pr_stash_dump(void (*)(const char *, ...));
 

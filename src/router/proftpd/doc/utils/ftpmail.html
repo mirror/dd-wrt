@@ -1,6 +1,4 @@
-<!-- $Id: ftpmail.html,v 1.2 2012-12-04 19:59:36 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/utils/ftpmail.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ftpmail: Automated Email Notifications of Uploads</title>
@@ -68,7 +66,7 @@ starting <code>proftpd</code>.  For example, you might do:
        --recipient='tj@castaglia.org' \
        --smtp-server=mail.domain.com \
        --attach-file \
-       --log=/var/proftpd/log/transfer.log &
+       --log=/var/proftpd/log/transfer.log &amp;
 </pre>
 The key is to make <code>ftpmail</code> run in the background, so that it is
 constantly running.  If the <code>ftpmail</code> process dies, then
@@ -91,7 +89,7 @@ the <code>proftpd</code> daemon was started.
 
 <p>
 <b>Options</b><br>
-The following shows the full list of <code>ftpmail<code> options; this
+The following shows the full list of <code>ftpmail</code> options; this
 can also be obtained by running:
 <pre>
   # ftpmail --help
@@ -194,19 +192,12 @@ Then start instances of <code>ftpmail</code> running, but only for the
 <code>TransferLog</code> files of the domains/virtual servers to be monitored.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2012-12-04 19:59:36 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2008-2012 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

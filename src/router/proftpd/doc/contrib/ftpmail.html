@@ -1,6 +1,4 @@
-<!-- $Id: ftpmail.html,v 1.4 2013-02-27 05:40:07 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/ftpmail.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ftpmail: Automated Email Notifications of Uploads</title>
@@ -41,8 +39,8 @@ First, you have the following Perl modules installed:
 </ul>
 You can easily determine if your Perl has these modules present, using:
 <pre>
-  # perl -MMail::Sendmail -e0
-  # perl -MTime::HiRes -e0
+  $ perl -MMail::Sendmail -e0
+  $ perl -MTime::HiRes -e0
 </pre>
 If you see an error similar to:
 <pre>
@@ -62,13 +60,13 @@ for this.
 After that, you need to start <code>ftpmail</code> running, <i>before</i>
 starting <code>proftpd</code>.  For example, you might do:
 <pre>
-   # ./ftpmail \
+   $ ./ftpmail \
        --fifo=/var/proftpd/log/transfer.fifo \
        --from='tj@castaglia.org' \
        --recipient='tj@castaglia.org' \
        --smtp-server=mail.domain.com \
        --attach-file \
-       --log=/var/proftpd/log/transfer.log &
+       --log=/var/proftpd/log/transfer.log &amp;
 </pre>
 The key is to make <code>ftpmail</code> run in the background, so that it is
 constantly running.  If the <code>ftpmail</code> process dies, then
@@ -91,10 +89,10 @@ the <code>proftpd</code> daemon was started.
 
 <p>
 <b>Options</b><br>
-The following shows the full list of <code>ftpmail<code> options; this
+The following shows the full list of <code>ftpmail</code> options; this
 can also be obtained by running:
 <pre>
-  # ftpmail --help
+  $ ftpmail --help
 
   usage: ftpmail [--help] [--fifo $path] [--from $addr] [--log $path]
     [--recipient $addrs] [--upload-recipient \$addrs]
@@ -206,19 +204,12 @@ Then start instances of <code>ftpmail</code> running, but only for the
 <code>TransferLog</code> files of the domains/virtual servers to be monitored.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-02-27 05:40:07 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2008-2013 TJ Saunders<br>
+&copy; Copyright 2008-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

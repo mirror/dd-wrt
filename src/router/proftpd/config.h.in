@@ -52,7 +52,10 @@
 /* Define if you have Linux sendfile() semantics. */
 #undef HAVE_LINUX_SENDFILE
 
-/* Define if you have Mac OSX sendfile() semantics.  */
+/* Define if you have MacOSX POSIX ACLs. */
+#undef HAVE_MACOSX_POSIX_ACL
+
+/* Define if you have MacOSX sendfile() semantics.  */
 #undef HAVE_MACOSX_SENDFILE
 
 /* Define if you have Solaris POSIX ACLs. */
@@ -117,9 +120,6 @@
 
 /* Define if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
-
-/* Define if you already have a typedef for timer_t */
-#undef HAVE_TIMER_T
 
 /* Define if you have the tzname global variable.  */
 #undef HAVE_TZNAME
@@ -252,6 +252,15 @@
 /* The number of bytes in a pointer to a void.  */
 #undef SIZEOF_VOID_P
 
+/* The number of bytes in a uid_t.  */
+#undef SIZEOF_UID_T
+
+/* The number of bytes in a gid_t.  */
+#undef SIZEOF_GID_T
+
+/* Define if you have the authenticate function.  */
+#undef HAVE_AUTHENTICATE
+
 /* Define if you have the backtrace function.  */
 #undef HAVE_BACKTRACE
 
@@ -269,6 +278,18 @@
 
 /* Define if you have the endprotoent function.  */
 #undef HAVE_ENDPROTOENT
+
+/* Define if you have the extattr_delete_link function.  */
+#undef HAVE_EXTATTR_DELETE_LINK
+
+/* Define if you have the extattr_delete_link function.  */
+#undef HAVE_EXTATTR_GET_LINK
+
+/* Define if you have the extattr_delete_link function.  */
+#undef HAVE_EXTATTR_LIST_LINK
+
+/* Define if you have the extattr_delete_link function.  */
+#undef HAVE_EXTATTR_SET_LINK
 
 /* Define if you have the fconvert function.  */
 #undef HAVE_FCONVERT
@@ -297,6 +318,9 @@
 /* Define if you have the freeaddrinfo function.  */
 #undef HAVE_FREEADDRINFO
 
+/* Define if you have the fsync function.  */
+#undef HAVE_FSYNC
+
 /* Define if you have the futimes function.  */
 #undef HAVE_FUTIMES
 
@@ -314,6 +338,9 @@
 
 /* Define if you have the getgrouplist function.  */
 #undef HAVE_GETGROUPLIST
+
+/* Define if you have the getgroups function.  */
+#undef HAVE_GETGROUPS
 
 /* Define if you have the getgrset function.  */
 #undef HAVE_GETGRSET
@@ -369,14 +396,38 @@
 /* Define if you have the inet_pton function.  */
 #undef HAVE_INET_PTON
 
+/* Define if you have the initgroups function.  */
+#undef HAVE_INITGROUPS
+
+/* Define if you have the lgetxattr function.  */
+#undef HAVE_LGETXATTR
+
+/* Define if you have the llistxattr function.  */
+#undef HAVE_LLISTXATTR
+
+/* Define if you have the loginfailed function.  */
+#undef HAVE_LOGINFAILED
+
 /* Define if you have the loginrestrictions function.  */
 #undef HAVE_LOGINRESTRICTIONS
 
+/* Define if you have the loginsuccess function.  */
+#undef HAVE_LOGINSUCCESS
+
+/* Define if you have the lremovexattr function.  */
+#undef HAVE_LREMOVEXATTR
+
+/* Define if you have the lsetxattr function.  */
+#undef HAVE_LSETXATTR
+
 /* Define if you have the memcpy function.  */
-#undef HAVE_MEMCPY
+//#undef HAVE_MEMCPY
 
 /* Define if you have the mempcpy function.  */
-//#undef HAVE_MEMPCPY
+#undef HAVE_MEMPCPY
+
+/* Define if you have the memset_s function.  */
+#undef HAVE_MEMSET_S
 
 /* Define if you have the mkdir function.  */
 #undef HAVE_MKDIR
@@ -399,6 +450,9 @@
 /* Define if you have the munlockall function.  */
 #undef HAVE_MUNLOCKALL
 
+/* Define if you have the mysql_get_option function.  */
+#undef HAVE_MYSQL_GET_OPTION
+
 /* Define if you have the MySQL make_scrambled_password function.  */
 #undef HAVE_MYSQL_MAKE_SCRAMBLED_PASSWORD
 
@@ -411,17 +465,38 @@
 /* Define if you have the MySQL my_make_scrambled_password_323 function.  */
 #undef HAVE_MYSQL_MY_MAKE_SCRAMBLED_PASSWORD_323
 
+/* Define if you have the MySQL mysql_get_ssl_cipher function.  */
+#undef HAVE_MYSQL_MYSQL_GET_SSL_CIPHER
+
+/* Define if you have the MySQL mysql_ssl_set function.  */
+#undef HAVE_MYSQL_MYSQL_SSL_SET
+
 /* Define if you have the nl_langinfo function.  */
 #undef HAVE_NL_LANGINFO
 
 /* Define if you have the pathconf function.  */
 #undef HAVE_PATHCONF
 
+/* Define if you have the PCRE pcre_free_study function.  */
+#undef HAVE_PCRE_PCRE_FREE_STUDY
+
 /* Define if you have the perm_copy_fd function.  */
 #undef HAVE_PERM_COPY_FD
 
+/* Define if you have the posix_fadvise function.  */
+#undef HAVE_POSIX_FADVISE
+
 /* Define if you have the Postgres PQescapeStringConn function.  */
 #undef HAVE_POSTGRES_PQESCAPESTRINGCONN
+
+/* Define if you have the Postgres PQgetssl function.  */
+#undef HAVE_POSTGRES_PQGETSSL
+
+/* Define if you have the Postgres PQinitOpenSSL function.  */
+#undef HAVE_POSTGRES_PQINITOPENSSL
+
+/* Define if you have the prctl function.  */
+#undef HAVE_PRCTL
 
 /* Define if you have the pstat function.  */
 #undef HAVE_PSTAT
@@ -513,6 +588,9 @@
 /* Define if you have the strtol function.  */
 #undef HAVE_STRTOL
 
+/* Define if you have the strtoll function.  */
+#undef HAVE_STRTOLL
+
 /* Define if you have the strtoull function.  */
 #undef HAVE_STRTOULL
 
@@ -533,6 +611,9 @@
 
 /* Define if you have the <arpa/inet.h> header file.  */
 #undef HAVE_ARPA_INET_H
+
+/* Define if you have the <attr/xattr.h> header file.  */
+#undef HAVE_ATTR_XATTR_H
 
 /* Define if you have the <bstring.h> header file.  */
 #undef HAVE_BSTRING_H
@@ -596,6 +677,9 @@
 
 /* Define if you have the <linux/capability.h> header file.  */
 #undef HAVE_LINUX_CAPABILITY_H
+
+/* Define if you have the <linux/prctl.h> header file.  */
+#undef HAVE_LINUX_PRCTL_H
 
 /* Define if you have the <locale.h> header file.  */
 #undef HAVE_LOCALE_H
@@ -663,6 +747,9 @@
 /* Define if you have the <signal.h> header file.  */
 #undef HAVE_SIGNAL_H
 
+/* Define if you have the <sodium.h> header file.  */
+#undef HAVE_SODIUM_H
+
 /* Define if you have the <string.h> header file.  */
 #undef HAVE_STRING_H
 
@@ -675,8 +762,14 @@
 /* Define if you have the <sys/acl.h> header file.  */
 #undef HAVE_SYS_ACL_H
 
+/* Define if you have the <sys/audit.h> header file.  */
+#undef HAVE_SYS_AUDIT_H
+
 /* Define if you have the <sys/dir.h> header file.  */
 #undef HAVE_SYS_DIR_H
+
+/* Define if you have the <sys/extattr.h> header file.  */
+#undef HAVE_SYS_EXTATTR_H
 
 /* Define if you have the <sys/file.h> header file.  */
 #undef HAVE_SYS_FILE_H
@@ -749,6 +842,9 @@
 
 /* Define if you have <sys/wait.h> that is POSIX.1 compatible.  */
 #undef HAVE_SYS_WAIT_H
+
+/* Define if you have the <sys/xattr.h> header file.  */
+#undef HAVE_SYS_XATTR_H
 
 /* Define if you have the <termios.h> header file.  */
 #undef HAVE_TERMIOS_H
@@ -936,8 +1032,11 @@
 /* Define if largefile support is desired.  */
 #undef PR_USE_LARGEFILES
 
-/* Define if memcache support is desired.. */
+/* Define if Memcache support is desired.. */
 #undef PR_USE_MEMCACHE
+
+/* Define if Redis support is desired.. */
+#undef PR_USE_REDIS
 
 /* Define if the %llu format should be used.  */
 #undef HAVE_LLU
@@ -960,8 +1059,16 @@
 /* Define if using nonblocking open of log files.  */
 #undef PR_USE_NONBLOCKING_LOG_OPEN
 
+/* Define if Sodiumm support, if available, should be used.  */
+#undef PR_USE_SODIUM
+
 /* Define if OpenSSL support, if available, should be used.  */
 #undef PR_USE_OPENSSL
+
+/* Define if OpenSSL Application Layer Protocol Negotiation (ALPN) support,
+ * if available, should be used.
+ */
+#undef PR_USE_OPENSSL_ALPN
 
 /* Define if OpenSSL Elliptic Curve Cryptography (ECC) support, if available,
  * should be used.
@@ -972,6 +1079,14 @@
  * used.
  */
 #undef PR_USE_OPENSSL_FIPS
+
+/* Define if OpenSSL Next Protocol Negotiation (NPN) support, if available,
+ * should be used.
+ */
+#undef PR_USE_OPENSSL_NPN
+
+/* Define if OpenSSL OCSP support, if available, should be used.  */
+#undef PR_USE_OPENSSL_OCSP
 
 /* Define if using PCRE support.  */
 #undef PR_USE_PCRE
@@ -993,6 +1108,9 @@
 
 /* Define if using trace support.  */
 #undef PR_USE_TRACE
+
+/* Define if using xattr support.  */
+#undef PR_USE_XATTR
 
 /* Tunable parameters */
 #undef PR_TUNABLE_BUFFER_SIZE

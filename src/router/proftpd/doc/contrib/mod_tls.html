@@ -1,6 +1,4 @@
-<!-- $Id: mod_tls.html,v 1.43 2013-12-09 23:15:16 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_tls.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_tls</title>
@@ -14,6 +12,10 @@
 </center>
 <hr><br>
 
+<p>
+The <code>mod_tls</code> module implements FTP over SSL/TLS, known as FTPS.
+
+<p>
 This module is contained in the <code>mod_tls.c</code> file for ProFTPD
 1.3.<i>x</i>, and is not compiled by default.  Installation
 instructions are discussed <a href="#Installation">here</a>.
@@ -57,12 +59,15 @@ is based.  His module can be found here:
   <li><a href="#TLSDSACertificateKeyFile">TLSDSACertificateKeyFile</a>
   <li><a href="#TLSECCertificateFile">TLSECACertificateFile</a>
   <li><a href="#TLSECCertificateKeyFile">TLSECCertificateKeyFile</a>
+  <li><a href="#TLSECDHCurve">TLSECDHCurve</a>
   <li><a href="#TLSEngine">TLSEngine</a>
   <li><a href="#TLSLog">TLSLog</a>
   <li><a href="#TLSMasqueradeAddress">TLSMasqueradeAddress</a>
+  <li><a href="#TLSNextProtocol">TLSNextProtocol</a>
   <li><a href="#TLSOptions">TLSOptions</a>
   <li><a href="#TLSPKCS12File">TLSPKCS12File</a>
   <li><a href="#TLSPassPhraseProvider">TLSPassPhraseProvider</a>
+  <li><a href="#TLSPreSharedKey">TLSPreSharedKey</a>
   <li><a href="#TLSProtocol">TLSProtocol</a>
   <li><a href="#TLSRandomSeed">TLSRandomSeed</a>
   <li><a href="#TLSRenegotiate">TLSRenegotiate</a>
@@ -70,7 +75,15 @@ is based.  His module can be found here:
   <li><a href="#TLSRSACertificateFile">TLSRSACertificateFile</a>
   <li><a href="#TLSRSACertificateKeyFile">TLSRSACertificateKeyFile</a>
   <li><a href="#TLSServerCipherPreference">TLSServerCipherPreference</a>
+  <li><a href="#TLSServerInfoFile">TLSServerInfoFile</a>
   <li><a href="#TLSSessionCache">TLSSessionCache</a>
+  <li><a href="#TLSSessionTicketKeys">TLSSessionTicketKeys</a>
+  <li><a href="#TLSSessionTickets">TLSSessionTickets</a>
+  <li><a href="#TLSStapling">TLSStapling</a>
+  <li><a href="#TLSStaplingCache">TLSStaplingCache</a>
+  <li><a href="#TLSStaplingOptions">TLSStaplingOptions</a>
+  <li><a href="#TLSStaplingResponder">TLSStaplingResponder</a>
+  <li><a href="#TLSStaplingTimeout">TLSStaplingTimeout</a>
   <li><a href="#TLSTimeoutHandshake">TLSTimeoutHandshake</a>
   <li><a href="#TLSUserName">TLSUserName</a>
   <li><a href="#TLSVerifyClient">TLSVerifyClient</a>
@@ -87,7 +100,7 @@ is based.  His module can be found here:
 </ul>
 
 <hr>
-<h2><a name="TLSCACertificateFile">TLSCACertificateFile</a></h2>
+<h3><a name="TLSCACertificateFile">TLSCACertificateFile</a></h3>
 <strong>Syntax:</strong> TLSCACertificateFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -127,7 +140,7 @@ See also: <a href="#TLSCACertificatePath"><code>TLSCACertificatePath</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSCACertificatePath">TLSCACertificatePath</a></h2>
+<h3><a name="TLSCACertificatePath">TLSCACertificatePath</a></h3>
 <strong>Syntax:</strong> TLSCACertificatePath <em>directory</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -169,7 +182,7 @@ See also: <a href="#TLSCACertificateFile"><code>TLSCACertificateFile</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSCARevocationFile">TLSCARevocationFile</a></h2>
+<h3><a name="TLSCARevocationFile">TLSCARevocationFile</a></h3>
 <strong>Syntax:</strong> TLSCARevocationFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -195,7 +208,7 @@ See also: <a href="#TLSCARevocationPath"><code>TLSCARevocationPath</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSCARevocationPath">TLSCARevocationPath</a></h2>
+<h3><a name="TLSCARevocationPath">TLSCARevocationPath</a></h3>
 <strong>Syntax:</strong> TLSCARevocationPath <em>directory</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -227,7 +240,7 @@ See also: <a href="#TLSCARevocationFile"><code>TLSCARevocationFile</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSCertificateChainFile">TLSCertificateChainFile</a></h2>
+<h3><a name="TLSCertificateChainFile">TLSCertificateChainFile</a></h3>
 <strong>Syntax:</strong> TLSCertificateChainFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -273,23 +286,16 @@ Example:
 </pre>
 
 <p>
-<b>Note</b>: If you use the <code>NoCertRequest</code>
-<a href="#TLSOptions"><code>TLSOption</code></a>, then any configured
-<code>TLSCertificateChainFile</code> directive will be ignored.  It is a waste
-of time to construct a certificate chain to send to the client if the server
-does not request that the client send a certificate to be verified.
-
-<p>
 <hr>
-<h2><a name="TLSCipherSuite">TLSCipherSuite</a></h2>
+<h3><a name="TLSCipherSuite">TLSCipherSuite</a></h3>
 <strong>Syntax:</strong> TLSCipherSuite <em>cipher-list</em><br>
-<strong>Default:</strong> DEFAULT:!EXPORT:!DES<br>
+<strong>Default:</strong> DEFAULT:!ADH:!EXPORT:!DES<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
 <strong>Compatibility:</strong> 1.2.7rc1 and later
 
 <p>
-Default cipher list is &quot;DEFAULT:!EXPORT:!DES&quot;.
+Default cipher list is &quot;DEFAULT:!ADH:!EXPORT:!DES&quot;.
 
 <p>
 How to put together a <em>cipher list</em> parameter:
@@ -317,12 +323,17 @@ How to put together a <em>cipher list</em> parameter:
   MAC Digest Algorithm:
     "MD5"       MD5 hash function
     "SHA1"      SHA1 hash function
+    "SHA256"    SHA-256 hash function
+    "SHA384"    SHA-384 hash function
+    "SHA512"    SHA-512 hash function
     "SHA"       SHA hash function (should not be used)
 
   Aliases:
     "ALL"       all ciphers
     "SSLv2"     all SSL version 2.0 ciphers (should not be used)
     "SSLv3"     all SSL version 3.0 ciphers
+    "TLSv1"     all TLS version 1.0 ciphers
+    "ECDH"      all ciphers using Elliptic Curve Diffie-Hellman key exchange
     "EXP"       all export ciphers (40-bit)
     "EXPORT56"  all export ciphers (56-bit)
     "LOW"       all low strength ciphers (no export)
@@ -366,14 +377,14 @@ All algorithms including ADH and export but excluding patented algorithms:
 <p>
 The OpenSSL command
 <pre>
-  openssl ciphers -v <em>&lt;list of ciphers&gt;</em>
+  $ openssl ciphers -v <em>&lt;list of ciphers&gt;</em>
 </pre>
 may be used to list all of the ciphers and the order described by a specific
 <em>&lt;list of ciphers&gt;</em>.
 
 <p>
 <hr>
-<h2><a name="TLSControlsACLs">TLSControlsACLs</a></h2>
+<h3><a name="TLSControlsACLs">TLSControlsACLs</a></h3>
 <strong>Syntax:</strong> TLSControlsACLs <em>actions|&quot;all&quot; &quot;allow&quot;|&quot;deny&quot; &quot;user&quot;|&quot;group&quot; list</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -409,7 +420,7 @@ Examples:
 
 <p>
 <hr>
-<h2><a name="TLSCryptoDevice">TLSCryptoDevice</a></h2>
+<h3><a name="TLSCryptoDevice">TLSCryptoDevice</a></h3>
 <strong>Syntax:</strong> TLSCryptoDevice <em>driver|"all"|"none"</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -438,13 +449,13 @@ the default engine to use, specify the engine name, <i>e.g.</i>:
 <p>
 The OpenSSL command
 <pre>
-  openssl engine
+  $ openssl engine
 </pre>
 may be used to list all of the engine drivers supported by OpenSSL.
 
 <p>
 <hr>
-<h2><a name="TLSDHParamFile">TLSDHParamFile</a></h2>
+<h3><a name="TLSDHParamFile">TLSDHParamFile</a></h3>
 <strong>Syntax:</strong> TLSDHParamFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -465,9 +476,9 @@ stored in a <code>TLSDHParamFile</code>.  The <code>dhparam</code> utility
 that comes with OpenSSL may be used to generate an appropriate file for this
 directive:
 <pre>
-  # openssl dhparam -outform PEM -2 <i>nbits</i> &gt;&gt; dhparams.pem
-  # openssl dhparam -outform PEM -5 <i>nbits</i> &gt;&gt; dhparams.pem
-<pre>
+  $ openssl dhparam -outform PEM -2 <i>nbits</i> &gt;&gt; dhparams.pem
+  $ openssl dhparam -outform PEM -5 <i>nbits</i> &gt;&gt; dhparams.pem
+</pre>
 Using either -2 or -5 as the generator is fine. The <em>nbits</em> value used
 should vary between 512 and 4096, inclusive.
 
@@ -475,8 +486,16 @@ should vary between 512 and 4096, inclusive.
 The <em>file</em> parameter must be an absolute path.
 
 <p>
+<b>Note</b> that as of <code>proftpd-1.3.6rc1</code> and later, for
+Diffie-Hellman key exchanges, <code>mod_tls</code> will generate DH parameters
+that match the size of the server certificate's RSA/DSA key.  Some clients,
+such as Java 7 (and earlier) code, cannot handle DH parameter lengths greater
+than 1024 bits; see this <a href="#TLSJavaDH">FAQ</a> for a workaround for such
+clients.
+
+<p>
 <hr>
-<h2><a name="TLSDSACertficateFile">TLSDSACertficateFile</a></h2>
+<h3><a name="TLSDSACertficateFile">TLSDSACertficateFile</a></h3>
 <strong>Syntax:</strong> TLSDSACertificateFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -502,7 +521,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSDSACertificateKeyFile">TLSDSACertificateKeyFile</a></h2>
+<h3><a name="TLSDSACertificateKeyFile">TLSDSACertificateKeyFile</a></h3>
 <strong>Syntax:</strong> TLSDSACertificateKeyFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -532,7 +551,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSECCertficateFile">TLSECCertficateFile</a></h2>
+<h3><a name="TLSECCertficateFile">TLSECCertficateFile</a></h3>
 <strong>Syntax:</strong> TLSECCertificateFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -558,7 +577,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSECCertificateKeyFile">TLSECCertificateKeyFile</a></h2>
+<h3><a name="TLSECCertificateKeyFile">TLSECCertificateKeyFile</a></h3>
 <strong>Syntax:</strong> TLSECCertificateKeyFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -588,7 +607,24 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSEngine">TLSEngine</a></h2>
+<h3><a name="TLSECDHCurve">TLSECDHCurve</a></h3>
+<strong>Syntax:</strong> TLSECDHCurve <em>curve</em><br>
+<strong>Default:</strong> TLSECDHCurve prime256v1<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>TLSECDHCurve</code> directive specifies the EC curve to use for
+ECDHE ciphers.  To see the full list of curves supported by your OpenSSL
+library, use:
+<pre>
+  $ openssl ecparam -list_curves
+</pre>
+
+<p>
+<hr>
+<h3><a name="TLSEngine">TLSEngine</a></h3>
 <strong>Syntax:</strong> TLSEngine <em>on|off</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -604,7 +640,7 @@ the main server and all configured virtual hosts.
 
 <p>
 <hr>
-<h2><a name="TLSLog">TLSLog</a></h2>
+<h3><a name="TLSLog">TLSLog</a></h3>
 <strong>Syntax:</strong> TLSLog <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -623,7 +659,7 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 <hr>
-<h2><a name="TLSMasqueradeAddress">TLSMasqueradeAddress</a></h2>
+<h3><a name="TLSMasqueradeAddress">TLSMasqueradeAddress</a></h3>
 <strong>Syntax:</strong> TLSMasqueradeAddress <em>ip-address|dns-name|device-name</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
@@ -683,7 +719,30 @@ but only for FTPS sessions.
 
 <p>
 <hr>
-<h2><a name="TLSOptions">TLSOptions</a></h2>
+<h3><a name="TLSNextProtocol">TLSNextProtocol</a></h3>
+<strong>Syntax:</strong> TLSNextProtocol <em>on|off</em><br>
+<strong>Default:</strong> TLSNextProtocol on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>TLSNextProtocol</code> directive toggles <code>mod_tls</code>' support
+for the <a href="http://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation">ALPN</a> (and NPN) TLS extensions.  These extensions are used to negotiate
+the "next protocol" that will be once the SSL/TLS session is established; in
+the case of <code>mod_tls</code>, that "next protocol" is <b>always</b> "ftp".
+
+<p>
+Some FTPS clients use the support of ALPN/NPN as a heuristic for knowing when
+to use <a href="https://technotes.googlecode.com/git/falsestart.html">TLS False Start</a>, which can reduce the SSL/TLS handshake network latency.  Initially
+TLS clients used TLS False Start for any/all sites, but encountered
+<a href="https://www.imperialviolet.org/2012/04/11/falsestart.html">issues</a>;
+these clients (<i>e.g.</i> Chrome, Firefox, perhaps others) now only use
+the TLS False Start optimization for ALPN/NPN-enabled SSL/TLS servers.
+
+<p>
+<hr>
+<h3><a name="TLSOptions">TLSOptions</a></h3>
 <strong>Syntax:</strong> TLSOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -692,10 +751,7 @@ but only for FTPS sessions.
 
 <p>
 The <code>TLSOptions</code> directive is used to configure various optional
-behavior of <code>mod_tls</code>.  <b>Note</b>: all of the configured
-<code>TLSOptions</code> parameters <b>must</b> appear on the same line in
-the configuration; only the first <code>TLSOptions</code> directive that
-appears in the configuration is used.
+behavior of <code>mod_tls</code>.
 
 <p>
 Example:
@@ -767,6 +823,20 @@ The currently implemented options are:
     <code>AllowPerUser</code> option.
 
   <p>
+  <li><code>AllowWeakDH</code><br>
+    <p>
+    The <code>mod_tls</code> will not use Diffie-Hellman groups of less
+    than 1024 bits, due to <a href="https://www.weakdh.org">weaknesses</a>
+    that can downgrade the security of an SSL/TLS session.  If for any reason
+    your FTPS clients <b>require</b> smaller Diffie-Hellman groups, then
+    use this option.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.6rc1</code>.
+  </li>
+
+  <p>
   <li><code>CommonNameRequired</code><br>
     <p>
     This option will cause <code>mod_tls</code> to perform checks on a client's
@@ -791,7 +861,7 @@ The currently implemented options are:
     <p>
     Sets the following environment variables, if applicable.  Note that
     doing so increases the memory size of the process quite a bit:
-    <table border=1>
+    <table border=1 summary="TLS Environment Variables">
       <tr>
         <td><code>TLS_SERVER_CERT</code></td>
         <td>Server certificate, PEM-encoded</td>
@@ -809,17 +879,32 @@ The currently implemented options are:
     </table>
 
   <p>
+  <li><code>NoAutoECDH</code><br>
+    <p>
+    If OpenSSL-1.0.2 or later is used, then <code>mod_tls</code> will
+    attempt to automatically negotiate the best EC curve to use, when needed.
+    Use this option to disable that automatic behavior for any reason.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.6rc1</code>.
+  </li>
+
+  <p>
   <li><code>NoCertRequest</code><br>
     <p>
-    Some FTP clients are known to be buggy when handling a server's certificate
-    request.  This option causes the server to <b>not</b> send such a request
-    during an SSL handshake.
+    <b>Note</b>: As of <code>proftpd-1.3.6rc2</code>, this option is deprecated
+    and thus ignored.  By default, <code>mod_tls</code> will not send the
+    <code>CertificateRequest</code> message to TLS clients during the handshake;
+    that message is only sent when client certificates will be verified
+    via the <a href="#TLSVerifyClient"><code>TLSVerifyClient</code></a>
+    directive.
 
   <p>
   <li><code>NoEmptyFragments</code><br>
     <p>
     In order to prevent certain attacks (<i>e.g.</i> the so-called
-    <a href="http://www.kb.cert.org/vuls/id/864643">&quotBEAST&quot;
+    <a href="http://www.kb.cert.org/vuls/id/864643">&quot;BEAST&quot;
     attack</a>), the <code>mod_tls</code> module was changed to use OpenSSL's
     builtin countermeasure of inserting <a href="http://www.openssl.org/~bodo/tls-cbc.txt">empty fragments</a>.  However, some browsers/clients may not handle
     such empty fragments well.  Use this <code>NoEmptyFragaments</code>
@@ -858,7 +943,7 @@ The currently implemented options are:
     Sets the following environment variables, if applicable.  These environment
     variables are then avaiable for use, such as in <code>LogFormat</code>s.
     Note that doing so may increase the memory size of the process quite a bit:
-    <table border=1>
+    <table border=1 summary="Standard Environment Variables">
       <tr>
         <td><code>FTPS</code></td>
         <td>Present if FTP over SSL/TLS is being used</td>
@@ -915,7 +1000,7 @@ The currently implemented options are:
       </tr>
 
       <tr>
-        <td><code>TLS_CLIENT_S_DN_</code><i>x509<i></td>
+        <td><code>TLS_CLIENT_S_DN_</code><i>x509</i></td>
         <td>Component of client certificate's Subject DN, where <i>x509</i> is
           a component of a X509 DN:<br>
           C,CN,D,I,G,L,O,OU,S,ST,T,UID,Email</td>
@@ -971,6 +1056,11 @@ The currently implemented options are:
       <tr>
         <td><code>TLS_SERVER_M_SERIAL</code></td>
         <td>Server certificate serial number</td>
+      </tr>
+
+      <tr>
+        <td><code>TLS_SERVER_NAME</code></td>
+        <td>Server name requested via Server Name Indication (SNI), if present</td>
       </tr>
 
       <tr>
@@ -1078,7 +1168,7 @@ The currently implemented options are:
 
 <p>
 <hr>
-<h2><a name="TLSPKCS12File">TLSPKCS12File</a></h2>
+<h3><a name="TLSPKCS12File">TLSPKCS12File</a></h3>
 <strong>Syntax:</strong> TLSPKCS12File <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1103,7 +1193,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSPassPhraseProvider">TLSPassPhraseProvider</a></h2>
+<h3><a name="TLSPassPhraseProvider">TLSPassPhraseProvider</a></h3>
 <strong>Syntax:</strong> TLSPassPhraseProvider <em>path</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -1139,9 +1229,54 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSProtocol">TLSProtocol</a></h2>
+<h3><a name="TLSPreSharedKey">TLSPreSharedKey</a></h3>
+<strong>Syntax:</strong> TLSPreSharedKey <em>identity</em> <em>key-info</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>TLSPreSharedKey</code> directive is used to configure a <em>pre-shared
+key</em> (PSK), for use in
+<a href="http://en.wikipedia.org/wiki/TLS-PSK">TLS-PSK</a> ciphersuites.  Each
+PSK has an <em>identity</em> (a string/name used by clients to request the use
+of that PSK), and the actual key data.  The key data may be encoded in different
+ways; the <code>TLSPreSharedKey</code> directive requires that the data be
+hex-encoded, as indicated in the <em>key-info</em> parameter.
+
+<p>
+The <em>key-info</em> parameter is comprised of: the type of encoding used for
+the key data, and the full path to the key file.  Only "hex" encoding is
+supported right now.  Thus an example <code>TLSPreSharedKey</code> directive
+would be:
+<pre>
+  TLSPreSharedKey psk-name hex:/path/to/psk.key
+</pre>
+The configured file <b>cannot be world-readable or world-writable</b>; the
+<code>mod_tls</code> module will skip/ignore such insecure permissions.
+
+<p>
+To generate this shared key (which is just a randomly generated bit of data),
+you can use:
+<pre>
+  $ openssl rand 80 -out /path/to/identity.key -hex
+</pre>
+Note that <code>TLSPreSharedKey</code> requires at least 20 bytes of key data.
+Have generated the random key data, tell <code>mod_tls</code> to use it via:
+<pre>
+  TLSPreSharedKey identity hex:/path/to/identity.key
+</pre>
+
+<p>
+Multiple <code>TLSPreSharedKey</code> directives can be used to configure
+different PSKs for different identity names.
+
+<p>
+<hr>
+<h3><a name="TLSProtocol">TLSProtocol</a></h3>
 <strong>Syntax:</strong> TLSProtocol <em>protocol1</em> ... <em>protocolN</em><br>
-<strong>Default:</strong> SSLv3 TLSv1<br>
+<strong>Default:</strong> TLSv1<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
 <strong>Compatibility:</strong> 1.2.7rc1 and later
@@ -1160,7 +1295,7 @@ in the &quot;server config&quot; context.
 <p>
 The allowed protocols are:
 <p>
-<table>
+<table summary="TLS Protocol Versions">
   <tr>
     <td><code>SSLv3</code></td>
     <td>Allow only SSLv3</td>
@@ -1193,11 +1328,26 @@ Note that the parameter "SSLv23" is supported as a legacy style for saying
 "all versions".
 
 <p>
-All use of SSLv2 is disabled.  SSLv2 <b>should not</b> be used.
+All use of SSLv2 is disabled.  SSLv2 <b>should not</b> be used.  As of
+<code>proftpd-1.3.6rc1</code>, SSLv3 support has been disabled as well.
+
+<p>
+In <code>proftpd-1.3.6rc2</code> and later, you can use the
+<code>TLSProtocol</code> directive in a different manner, to <em>add</em>
+or <em>subtract</em> protocol support.  For example, to enable all protocols
+<b>except</b> SSLv3, you can use:
+<pre>
+  TLSProtocol ALL -SSLv3
+</pre>
+Using the directive in this manner requires that "ALL" be the <b>first</b>
+parameter, <i>and</i> that all protocols have either a <code>+</code>
+(<em>add</em>) or <code>-</code> (<em>subtract</em>) prefix.  "ALL" will
+always be expanded to all of the supported SSL/TLS protocols known by
+<code>mod_tls</code> and supported by <code>OpenSSL</code>.
 
 <p>
 <hr>
-<h2><a name="TLSRandomSeed">TLSRandomSeed</a></h2>
+<h3><a name="TLSRandomSeed">TLSRandomSeed</a></h3>
 <strong>Syntax:</strong> TLSRandomSeed <em>seed</em><br>
 <strong>Default:</strong> <i>openssl-dir</i><code>/.rnd</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1229,7 +1379,7 @@ speed up entropy gathering when the daemon starts up again.
 
 <p>
 <hr>
-<h2><a name="TLSRenegotiate">TLSRenegotiate</a></h2>
+<h3><a name="TLSRenegotiate">TLSRenegotiate</a></h3>
 <strong>Syntax:</strong> TLSRenegotiate <em>[&quot;ctrl&quot; secs] [&quot;data&quot; Kbytes] [&quot;timeout&quot; secs]|[&quot;required&quot; on|off]|&quot;none&quot;</em><br>
 <strong>Default:</strong> ctrl 14400 data 25165824 required true <i>(for OpenSSL 0.9.7 or greater)</i><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1292,7 +1442,7 @@ Examples:
 
 <p>
 <hr>
-<h2><a name="TLSRequired">TLSRequired</a></h2>
+<h3><a name="TLSRequired">TLSRequired</a></h3>
 <strong>Syntax:</strong> TLSRequired <em>on|off|ctrl|[!]data|auth|auth+[!]data</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
@@ -1368,7 +1518,7 @@ the following:
 
 <p>
 <hr>
-<h2><a name="TLSRSACertificateFile">TLSRSACertificateFile</a></h2>
+<h3><a name="TLSRSACertificateFile">TLSRSACertificateFile</a></h3>
 <strong>Syntax:</strong> TLSRSACertificateFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1394,7 +1544,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSRSACertificateKeyFile">TLSRSACertificateKeyFile</a></h2>
+<h3><a name="TLSRSACertificateKeyFile">TLSRSACertificateKeyFile</a></h3>
 <strong>Syntax:</strong> TLSRSACertificateKeyFile <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1424,7 +1574,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSServerCipherPreference">TLSServerCipherPreference</a></h2>
+<h3><a name="TLSServerCipherPreference">TLSServerCipherPreference</a></h3>
 <strong>Syntax:</strong> TLSServerCipherPreference <em>on|off</em><br>
 <strong>Default:</strong> Off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1445,7 +1595,20 @@ For example:
 
 <p>
 <hr>
-<h2><a name="TLSSessionCache">TLSSessionCache</a></h2>
+<h3><a name="TLSServerInfoFile">TLSServerInfoFile</a></h3>
+<strong>Syntax:</strong> TLSServerInfoFile <em>file</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSServerInfoFile</code> directive uses the configured <em>file</em>
+as custom TLS extensions.  See the OpenSSL documentation for the <a href="https://www.openssl.org/docs/man1.0.2/ssl/SSL_CTX_use_serverinfo_file.html"><code>SSL_CTX_use_serverinfo_file()</code></a> for more information.
+
+<p>
+<hr>
+<h3><a name="TLSSessionCache">TLSSessionCache</a></h3>
 <strong>Syntax:</strong> TLSSessionCache <em>"off"|type:/info [timeout]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -1454,7 +1617,7 @@ For example:
 
 <p>
 The <code>TLSSessionCache</code> directive configures an external SSL session
-cache, which can be used for storing and shared SSL sessions across multiple
+cache, which can be used for storing and sharing SSL sessions across multiple
 processes.  An external SSL session cache is an optional facility which speeds
 up parallel FTPS session connections.
 
@@ -1494,7 +1657,10 @@ for using a shared memory external SSL session cache, see the
 The optional <em>timeout</em> parameters sets the time-to-live, in seconds, for
 the SSL session datal stored in the external SSL session cache.  It can be set
 as low as 15 for testing, but should be set to higher values like 600 in real
-life.  The default timeout is 1800 seconds (30 minutes).
+life.  The default timeout is 1800 seconds (30 minutes).  <b>Note</b> that to
+ensure that the session cache is <em>aggressively</em> pruned of expired
+sessions, <b>each</b> FTP session, upon ending, will flush <b>any</b> expired
+sessions from the session cache.
 
 <p>
 Use of SSL session caching can be disabled entirely by using:
@@ -1504,7 +1670,188 @@ Use of SSL session caching can be disabled entirely by using:
 
 <p>
 <hr>
-<h2><a name="TLSTimeoutHandshake">TLSTimeoutHandshake</a></h2>
+<h3><a name="TLSSessionTicketKeys">TLSSessionTicketKeys</a></h3>
+<strong>Syntax:</strong> TLSSessionTicketKeys [age <em>secs</em>] [count <em>number</em>]<br>
+<strong>Default:</strong> TLSSessionTicketKeys age 12h count 25<br>
+<strong>Context:</strong> server config</br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSSessionTicketKeys</code> directive can be used to control how
+often <code>mod_tls</code> generates new session ticket keys (assuming that
+<a href="#TLSSessionTickets"><code>TLSSessionTickets</code></a> is enabled),
+and how many ticket keys will be kept in one time in memory.
+
+<p>
+By default, <code>mod_tls</code> expires a session ticket key after 12 hours;
+this can be changed using the <em>age</em> parameter, to specify a maximum
+age.  <b>Note</b> that the <i>minimum</i> key age is 60 seconds.
+
+<p>
+Only a maximum of 25 session ticket keys will be kept in memory by default;
+older/expired keys will be destroyed.  This maximum count of keys can
+be changed using the <em>count</em> parameter.  <b>Note</b> that there is a
+minimum count (1) of ticket keys; attemping to specify a smaller <em>count</em>
+is a configuration error.
+
+<p>
+<hr>
+<h3><a name="TLSSessionTickets">TLSSessionTickets</a></h3>
+<strong>Syntax:</strong> TLSSessionTickets <em>on|off</em><br>
+<strong>Default:</strong> off<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSSessionTickets</code> directive enables the use of TLS
+"session tickets" (see <a href="http://www.faqs.org/rfcs/rfc5077.html">RFC 5077</a>), which allow for session resumption, similar to TLS session caching.
+
+<p>
+The <code>mod_tls</code> module does <b>not</b> support configuration/use of
+a static session ticket <em>key</em>, unlike Apache or nginx.  Instead,
+<code>mod_tls</code> <i>always</i> randomly generates its own session ticket
+keys.  These keys are only kept in memory, and are automatically generated
+on a schedule; older keys are destroyed automatically.
+
+<p>
+When a session is resumed using a session ticket encrypted with an older
+session ticket key (which has not yet expired), the <code>mod_tls</code> will
+honor that session ticket, <i>but</i> will also <b>renew</b> the encryption
+of the session ticket using a newer session ticket key.  Session tickets
+encrypted with keys which have expired will not be honored, and a full TLS
+handshake will occur.
+
+<p>
+For control over the key expiration and generation schedule, use the
+<a href="#TLSSessionTicketKeys"><code>TLSSessionTicketKeys</code></a>
+directive.
+
+<p>
+<hr>
+<h3><a name="TLSStapling">TLSStapling</a></h3>
+<strong>Syntax:</strong> TLStapling <em>on|off</em><br>
+<strong>Default:</strong> off<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSStapling</code> directive enables
+<a href="https://en.wikipedia.org/wiki/OCSP_stapling">OCSP stapling</a>,
+as defined by the "Certificate Status Request" TLS extension
+(<a href="http://www.faqs.org/rfcs/rfc6066.html">RFC 6066</a>).  If
+<code>TLSStapling</code> is enabled, <b>and</b> the certificate status request
+extension is used by the SSL/TLS client, then <code>mod_tls</code> will
+include an OCSP response for the server certificate, in the TLS handshake.
+
+<p>
+By default, <code>TLSStapling</code> is <em>off</em>, but will automatically
+be enabled if a <a href="#TLSStaplingCache"><code>TLSStaplingCache</code></a>
+is configured.
+
+<p>
+See also: <a href="#TLSStaplingCache"><code>TLSStaplingCache</code></a>,
+<a href="#TLSStaplingOptions"><code>TLSStaplingOptions</code></a>,
+<a href="#TLSStaplingResponder"><code>TLSStaplingResponder</code></a>, and
+<a href="#TLSStaplingTimeout"><code>TLSStaplingTimeout</code></a>
+
+<p>
+<hr>
+<h3><a name="TLSStaplingCache">TLSStaplingCache</a></h3>
+<strong>Syntax:</strong> TLStaplingCache <em>type:/info</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config<br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSStaplingCache</code> directive configures an external OCSP response
+cache, which can be used for storing and sharing OCSP responses across multiple
+processes.  An external OCSP response cache is an optional facility which
+speeds up TLS handshakes when
+<a href="#TLSStapling"><code>TLSStapling</code></a> is enabled.
+
+<p>
+The <em>type</em> and <em>info</em> parameters all depend on the module
+implementing the external OCSP response cache being configured.  For example,
+for using a filesystem-based external OCSP response cache, see the
+<a href="mod_tls_fscache.html"><code>mod_tls_fscache</code></a> documentation,
+or see <a href="mod_tls_shmcache.html"><code>mod_tls_shmcache</code></a> for
+a shared memory-based OCSP response cache, or
+<a href="mod_tls_memcache.html"><code>mod_tls_memcache</code></a> for using
+memcached servers as an OCSP response cache.
+
+<p>
+<hr>
+<h3><a name="TLSStaplingOptions">TLSStaplingOptions</a></h3>
+<strong>Syntax:</strong> TLStaplingOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSStaplingOptions</code> directive configures various optional
+behaviors of <code>mod_tls</code> when querying OCSP responders.
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>NoNonce</code><br>
+    <p>
+    To defend against replay attacks of OCSP responses, the protocol allows
+    for a nonce to be included in the request; this nonce is then expected
+    to be in the OCSP response.  However, many OCSP responders pre-generate
+    the OCSP responses, as it less computationally expensive to do so.  Thus
+    to tell <code>mod_tls</code> to not include a nonce in its OCSP request
+    (and not expect to see that nonce in the OCSP response), use this option:
+    <pre>
+  # Many OCSP responders pregenerate their responses, and thus cannot
+  # include nonces in the response.
+  TLSStaplingOptions NoNonce
+    </pre>
+  </li>
+</ul>
+
+<p>
+<hr>
+<h3><a name="TLSStaplingResponder">TLSStaplingResponder</a></h3>
+<strong>Syntax:</strong> TLStaplingResponder <em>url</em><br>
+<strong>Default:</strong> none<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSStaplingResponder</code> directive overrides the URL of the OCSP
+responder specified in the "Authority Information Access" certificate extension.
+
+<p>
+Example:
+<pre>
+  # Use our own custom OCSP responder
+  TLSStaplingResponder http://gw.example.com/ocsp/
+</pre>
+
+<p>
+<hr>
+<h3><a name="TLSStaplingTimeout">TLSStaplingTimeout</a></h3>
+<strong>Syntax:</strong> TLStaplingTimeout <em>secs</em><br>
+<strong>Default:</strong> 10s<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_tls<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>TLSStaplingTimeout</code> directive sets the timeout for queries
+to OCSP responders when <code>TLSStapling</code> is enabled, and
+<code>mod_tls</code> is querying a responder for OCSP stapling purposes.
+
+<p>
+<hr>
+<h3><a name="TLSTimeoutHandshake">TLSTimeoutHandshake</a></h3>
 <strong>Syntax:</strong> TLSTimeoutHandshake <em>seconds</em><br>
 <strong>Default:</strong> 300<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1519,7 +1866,7 @@ default is 300 seconds (five minutes).
 
 <p>
 <hr>
-<h2><a name="TLSUserName">TLSUserName</a></h2>
+<h3><a name="TLSUserName">TLSUserName</a></h3>
 <strong>Syntax:</strong> TLSUserName <em>attribute</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1558,7 +1905,7 @@ Note that for the <code>TLSUserName</code> directive to be effective,
 certificates, <i>i.e.</i>:
 <pre>
   # Verify clients
-  TLSVerifyClient on
+  TLSVerifyClient optional
 
   # and possibly verify the user based on the client certs
   TLSUserName CommonName
@@ -1569,8 +1916,8 @@ See also: <a href="#TLSVerifyClient"><code>TLSVerifyClient</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSVerifyClient">TLSVerifyClient</a></h2>
-<strong>Syntax:</strong> TLSVerifyClient <em>on|off</em><br>
+<h3><a name="TLSVerifyClient">TLSVerifyClient</a></h3>
+<strong>Syntax:</strong> TLSVerifyClient <em>on|off|optional</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_tls<br>
@@ -1579,19 +1926,19 @@ See also: <a href="#TLSVerifyClient"><code>TLSVerifyClient</code></a>
 <p>
 The <code>TLSVerifyClient</code> directive configures how <code>mod_tls</code>
 handles certificates presented by clients.  If <em>off</em>, the module
-will accept the certificate and establish an SSL/TLS session, but will not
-verify the certificate.  If <em>on</em>, the module will verify a client's
-certificate and, furthermore, will fail all SSL handshake attempts <b>unless</b>
-the client presents a certificate when the server requests one.  Note that the
-server can be configured to <i>not</i> request a client certificate via
-the <code>TLSOptions</code> directive's &quot;NoCertRequest&quot; parameter.
+will not request the client certificate while establishing an SSL/TLS session.
+If <em>on</em>, the module will verify a client's certificate and, furthermore,
+will fail all SSL handshake attempts <b>unless</b> the client presents a
+certificate when the server requests one.  If <em>optional</em>, then
+<code>mod_tls</code> will <i>request</i> that a client send its certificate,
+but will not fail the handshake if the client fails to provide a certificate.
 
 <p>
 See also: <a href="#TLSOptions"><code>TLSOptions</code></a>
 
 <p>
 <hr>
-<h2><a name="TLSVerifyDepth">TLSVerifyDepth</a></h2>
+<h3><a name="TLSVerifyDepth">TLSVerifyDepth</a></h3>
 <strong>Syntax:</strong> TLSVerifyDepth <em>depth</em><br>
 <strong>Default:</strong> 9<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1617,7 +1964,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="TLSVerifyOrder">TLSVerifyOrder</a></h2>
+<h3><a name="TLSVerifyOrder">TLSVerifyOrder</a></h3>
 <strong>Syntax:</strong> TLSVerifyOrder <em>crl|ocsp</em><br>
 <strong>Default:</strong> crl<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1663,7 +2010,7 @@ See also: <a href="#TLSCARevocationFile"><code>TLSCARevocationFile</code></a>,
 
 <p>
 <hr>
-<h2><a name="TLSVerifyServer">TLSVerifyServer</a></h2>
+<h3><a name="TLSVerifyServer">TLSVerifyServer</a></h3>
 <strong>Syntax:</strong> TLSVerifyServer <em>on|off|NoReverseDNS</em><br>
 <strong>Default:</strong> on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -1791,7 +2138,7 @@ See also: <a href="#TLSSessionCache"><code>TLSSessionCache</code></a>
 Much of the documentation for Apache's <code>mod_ssl</code>, concerning
 certificates, OpenSSL usage, <i>etc</i> applies to this module as well:
 <pre>
-  <a href="http://www.modssl.org/docs/2.7/">http://www.modssl.org/docs/2.7/</a>
+  <a href="http://httpd.apache.org/docs/2.4/mod/mod_ssl.html">http://httpd.apache.org/docs/2.4/mod/mod_ssl.html</a>
 </pre>
 The OpenSSL documentation, and its
 <a href="http://www.openssl.org/support/faq.cgi">FAQ</a>, are recommended as
@@ -1812,47 +2159,94 @@ A copy of the Draft describing FTP over SSL/TLS is included with the source
 code for this module.
 
 <p>
+<b>Logging</b><br>
+The <code>mod_tls</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>tls
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace tls:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
+
+<p><a name="FAQ">
+<b>Frequently Asked Questions</b><br>
+
+<p><a name="TLSJavaDH">
+<font color=red>Question</font>: When I use a Java client to connect to my
+<code>proftpd</code> server using FTPS, it fails with exceptions such as:
+<pre>
+  java.lang.RuntimeException: Could not generate DH keypair and java.security.InvalidAlgorithmParameterException: Prime size must be multiple of 64, and can only range from 512 to 1024 (inclusive)
+</pre>
+How can I fix this?<br>
+<font color=blue>Answer</font>: This happens because <code>mod_tls</code> tries
+to use longer DH parameter lengths when it can, but not all clients support
+longer DH parameter lengths.
+
+<p>
+To address this, you need to configure a custom 1024-bit DH parameter via the
+<a href="#TLSDHParamFile"><code>TLSDHParamFile</code></a> directive.  You
+can generate a custom DH parameter using <code>openssl dhparam</code>,
+<i>e.g.</i>:
+<pre>
+  $ openssl dhparam -outform PEM -5 1024 &gt; dh1024.pem
+</pre>
+Alternatively, you can append the following standard 1024-bit DH parameters
+from <a href="http://www.faqs.org/rfcs/rfc2409">RFC 2409</a>, section 6.2,
+into a <code>dh1024.pem</code> file:
+<pre>
+-----BEGIN DH PARAMETERS-----
+MIGHAoGBAP//////////yQ/aoiFowjTExmKLgNwc0SkCTgiKZ8x0Agu+pjsTmyJR
+Sgh5jjQE3e+VGbPNOkMbMCsKbfJfFDdP4TVtbVHCReSFtXZiXn7G9ExC6aY37WsL
+/1y29Aa37e44a/taiZ+lrp8kEXxLH+ZJKGZR7OZTgf//////////AgEC
+-----END DH PARAMETERS-----
+</pre>
+Then tell <code>mod_tls</code> to use that DH parameter:
+<pre>
+  # Use 1024-bit DH parameters for the Java clients
+  TLSDHParamFile /path/to/dh1024.pem
+</pre>
+
+<p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_tls</code> module is distributed with ProFTPD.  Simply follow
-the normal steps for using third-party modules in proftpd: 
+the normal steps for using third-party modules in ProFTPD: 
 <pre>
-  ./configure --with-modules=mod_tls
-  make
-  make install
+  $ ./configure --with-modules=mod_tls
+  $ make
+  $ make install
 </pre>
 Alternatively, <code>mod_tls</code> can be built as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_tls ...
+  $ ./configure --enable-dso --with-shared=mod_tls ...
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
 You may need to specify the location of the OpenSSL header and library files
-in your <code>configure</i> command, <i>e.g.</i>:
+in your <code>configure</code> command, <i>e.g.</i>:
 <pre>
- ./configure --with-modules=mod_tls \
+ $ ./configure --with-modules=mod_tls \
     --with-includes=/usr/local/openssl \
     --with-libraries=/usr/local/openssl
 </pre>
 
 <p>
-<hr><br>
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-12-09 23:15:16 $</i><br>
-
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2013 TJ Saunders<br>
+&copy; Copyright 2002-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

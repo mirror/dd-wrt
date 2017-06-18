@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: channel.h,v 1.14 2012-02-15 23:50:51 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_CHANNEL_H
 #define MOD_SFTP_CHANNEL_H
 
+#include "mod_sftp.h"
 #include "packet.h"
 
 #define SFTP_SSH2_CHANNEL_OPEN_ADMINISTRATIVELY_PROHIBITED	1
@@ -91,4 +88,4 @@ int sftp_channel_write_ext_data_stderr(pool *, uint32_t, unsigned char *,
  */
 unsigned int sftp_channel_opened(uint32_t *);
 
-#endif
+#endif /* MOD_SFTP_CHANNEL_H */

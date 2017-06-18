@@ -1,6 +1,4 @@
-<!-- $Id: mod_ctrls.html,v 1.6 2013-05-17 15:04:43 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_ctrls.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_ctrls</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>mod_ctrls.c</code> and
 <code>mod_ctrls.h</code> files for ProFTPD 1.2, and is not compiled by default.
 Installation instructions are discussed <a href="#Installation">here</a>.
@@ -65,7 +64,7 @@ questions, concerns, or suggestions regarding this module.
 
 <p>
 <hr>
-<h2><a name="ControlsACLs">ControlsACLs</a></h2>
+<h3><a name="ControlsACLs">ControlsACLs</a></h3>
 <strong>Syntax:</strong> ControlsACLs <em>actions|all allow|deny user|group list</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -89,7 +88,7 @@ ACLs for different control actions, and for both users and groups.
 
 <p>
 <hr>
-<h2><a name="ControlsAuthFreshness">ControlsAuthFreshness</a></h2>
+<h3><a name="ControlsAuthFreshness">ControlsAuthFreshness</a></h3>
 <strong>Syntax:</strong> ControlsAuthFreshness <em>seconds</em><br>
 <strong>Default:</strong> ControlsAuthFreshness 10<br>
 <strong>Context:</strong> server config<br>
@@ -103,7 +102,7 @@ is older than the configured age, the connection is denied.
 
 <p>
 <hr>
-<h2><a name="ControlsEngine">ControlsEngine</a></h2>
+<h3><a name="ControlsEngine">ControlsEngine</a></h3>
 <strong>Syntax:</strong> ControlsEngine <em>on|off</em><br>
 <strong>Default:</strong> ControlsEngine on<br>
 <strong>Context:</strong> server config<br>
@@ -117,7 +116,7 @@ requests.
 
 <p>
 <hr>
-<h2><a name="ControlsInterval">ControlsInterval</a></h2>
+<h3><a name="ControlsInterval">ControlsInterval</a></h3>
 <strong>Syntax:</strong> ControlsInterval <em>seconds</em><br>
 <strong>Default:</strong> ControlsInterval 10<br>
 <strong>Context:</strong> server config<br>
@@ -132,7 +131,7 @@ must be a positive number.
 
 <p>
 <hr>
-<h2><a name="ControlsLog">ControlsLog</a></h2>
+<h3><a name="ControlsLog">ControlsLog</a></h3>
 <strong>Syntax:</strong> ControlsLog <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -146,7 +145,7 @@ configured <em>file</em> must be an absolute path.
 
 <p>
 <hr>
-<h2><a name="ControlsMaxClients">ControlsMaxClients</a></h2>
+<h3><a name="ControlsMaxClients">ControlsMaxClients</a></h3>
 <strong>Syntax:</strong> ControlsMaxClients <em>number</em><br>
 <strong>Default:</strong> ControlsMaxClients 5<br>
 <strong>Context:</strong> server config<br>
@@ -160,7 +159,7 @@ checks the socket.  <em>number</em> must be a positive number.
 
 <p>
 <hr>
-<h2><a name="ControlsSocket">ControlsSocket</a></h2>
+<h3><a name="ControlsSocket">ControlsSocket</a></h3>
 <strong>Syntax:</strong> ControlsSocket <em>file</em><br>
 <strong>Default:</strong> ControlsSocket var/run/proftpd.sock<br>
 <strong>Context:</strong> server config<br>
@@ -175,7 +174,7 @@ option will also need to be used.
 
 <p>
 <hr>
-<h2><a name="ControlsSocketACL">ControlsSocketACL</a></h2>
+<h3><a name="ControlsSocketACL">ControlsSocketACL</a></h3>
 <strong>Syntax:</strong> ControlsSocketACL <em>allow|deny user|group list</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config<br>
@@ -199,7 +198,7 @@ and one using &quot;group&quot; may be used simultaneously.
 
 <p>
 <hr>
-<h2><a name="ControlsSocketOwner">ControlsSocketOwner</a></h2>
+<h3><a name="ControlsSocketOwner">ControlsSocketOwner</a></h3>
 <strong>Syntax:</strong> ControlsSocketOwner <em>user group</em><br>
 <strong>Default:</strong> ControlsSocketOwner <em>root root</em><br>
 <strong>Context:</strong> server config<br>
@@ -218,7 +217,7 @@ access control.
 
 <p>
 <hr>
-<h2><a name="help"><code>help</code></a></h2>
+<h3><a name="help"><code>help</code></a></h3>
 <strong>Syntax:</strong> ftpdctl help<br>
 <strong>Purpose:</strong> Display a sorted list of active controls and their descriptions
 
@@ -228,7 +227,7 @@ active control actions, and their descriptions.
 
 <p>
 <hr>
-<h2><a name="insctrl"><code>insctrl</code></a></h2>
+<h3><a name="insctrl"><code>insctrl</code></a></h3>
 <strong>Syntax:</strong> ftpdctl insctrl <em>action|all [module]</em><br>
 <strong>Purpose:</strong> Enable control actions
 
@@ -248,7 +247,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="lsctrl"><code>lsctrl</code></a></h2>
+<h3><a name="lsctrl"><code>lsctrl</code></a></h3>
 <strong>Syntax:</strong> ftpdctl lsctrl<br>
 <strong>Purpose:</strong> Display a sorted list of all active control actions
 
@@ -259,7 +258,7 @@ the module that implements that action.
 
 <p>
 <hr>
-<h2><a name="rmctrl"><code>rmctrl</code></a></h2>
+<h3><a name="rmctrl"><code>rmctrl</code></a></h3>
 <strong>Syntax:</strong> ftpdctl rmctrl <em>action|all [module]</em><br>
 <strong>Purpose:</strong> Disable control actions
 
@@ -298,31 +297,40 @@ but portably obtaining them is next to impossible.  On some flavors of Unix
 it simply cannot be done.  Stevens' method is the next best thing right now.
 
 <p>
+<b>Logging</b><br>
+The <code>mod_ctrls</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>ctrls
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace ctrls:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
+
+<p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_ctrls</code> module is distributed with ProFTPD.  To enable
 use of Controls, use the <code>--enable-ctrls</code> configure option:
 <pre>
-  ./configure --enable-ctrls
-  make
-  make install
+  $ ./configure --enable-ctrls
+  $ make
+  $ make install
 </pre>
 This option causes <code>mod_ctrls</code> to be compiled into
 <code>proftpd</code>.
 
 <p>
 <hr>
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-05-17 15:04:43 $</i><br>
-
-<br><hr>
-
 <font size=2><b><i>
-&copy; Copyright 2000-2011 TJ Saunders<br>
+&copy; Copyright 2000-2016 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

@@ -1,15 +1,13 @@
-<!-- $Id: AuthFiles.html,v 1.1 2006-01-11 13:55:37 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/AuthFiles.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Using AuthUserFiles</title>
+<title>ProFTPD: Using AuthUserFiles</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Using <code>AuthUserFile</code>s</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Using <code>AuthUserFile</code>s</i></b></h2></center>
 <hr>
 
 <p>
@@ -46,12 +44,11 @@ Any configured <code>AuthUserFile</code> is used <b>in addition to</b>
 <code>/etc/passwd</code>, not <b>instead of</b> it (prior to 1.2.8rc1, however,
 an <code>AuthUserFile</code> was used instead of <code>/etc/passwd</code>);
 similarly for <code>AuthGroupFile</code> and <code>/etc/group</code>.  The
-<a href="http://www.castaglia.org/proftpd/doc/contrib/ProFTPD-mini-HOWTO-Authentication.html#order"><code>AuthOrder</code></a> directive can be used if
-you want <code>proftpd</code> to use only the <code>AuthUserFile</code>. The
-format of an <code>AuthUserFile</code> is the same as <code>/etc/passwd</code>
-(<code>man passwd(5)</code>), and the format of an <code>AuthGroupFile</code>
-is the same as <code>/etc/group</code> (<code>man group(5)</code>).  There is
-an <a href="http://www.castaglia.org/proftpd/contrib/ftpasswd.html"><code>ftpasswd</code></a> script available that can be used to create and update
+<a href="Authentication.html#order"><code>AuthOrder</code></a> directive can be used if you want <code>proftpd</code> to use only the <code>AuthUserFile</code>.
+The format of an <code>AuthUserFile</code> is the same as
+<code>/etc/passwd</code> (<code>man passwd(5)</code>), and the format of an
+<code>AuthGroupFile</code> is the same as <code>/etc/group</code> (<code>man
+group(5)</code>).  There is an <a href="../contrib/ftpasswd.html"><code>ftpasswd</code></a> script available that can be used to create and update
 these files.
 
 <p>
@@ -71,7 +68,8 @@ and that <code>AuthGroupFile</code>s have this format:
 <pre>
   groupname:grouppasswd:gid:member1,member2,...member<i>N</i>
 </pre>
-The <a href="http://www.castaglia.org/proftpd/contrib/ftpasswd.html"><code>ftpasswd</code></a> script mentioned creates files in these required formats.
+The <a href="../contrib/ftpasswd.html"><code>ftpasswd</code></a> script
+mentioned creates files in these required formats.
 
 <p>
 <b>Choice of IDs</b><br>
@@ -180,5 +178,11 @@ can help in situations like this.
 
 <p>
 <hr>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
+
 </body>
 </html>

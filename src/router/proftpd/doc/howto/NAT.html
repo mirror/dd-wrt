@@ -1,15 +1,13 @@
-<!-- $Id -->
-<!-- $Source -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Firewalls, Routers, and NAT</title>
+<title>ProFTPD: Firewalls, Routers, and NAT</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Firewalls, Routers, and NAT</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Firewalls, Routers, and NAT</i></b></h2></center>
 <hr>
 
 <p>
@@ -42,7 +40,7 @@ or search for information concerning your OS of choice.
 <b>Configuring ProFTPD behind NAT</b><br>
 First configure your installed <code>proftpd</code> so that it works correctly
 from inside the NAT. There are example configuration files included with the
-source.  Then add the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_MasqueradeAddress.html"><code>MasqueradeAddress</code></a> directive
+source.  Then add the <a href="../modules/mod_core.html#MasqueradeAddress"><code>MasqueradeAddress</code></a> directive
 to your <code>proftpd.conf</code> file to define the public name or IP address
 of the NAT.  For example:
 <pre>
@@ -61,7 +59,7 @@ For a good description of active versus passive FTP data transfers, see:
 <pre>
   <a href="http://slacksite.com/other/ftp.html">http://slacksite.com/other/ftp.html</a>
 </pre>
-To resolve this, simply use the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PassivePorts.html"><code>PassivePorts</code></a> directive
+To resolve this, simply use the <a href="../modules/mod_core.html#PassivePorts"><code>PassivePorts</code></a> directive
 in your <code>proftpd.conf</code> to control what ports <code>proftpd</code>
 will use for its passive data transfers:
 <pre>
@@ -90,21 +88,21 @@ that your FTP server has local address <code>192.168.1.2</code>.
 <p>
 First we need to enable NAT for our FTP server. As <code>root</code>:
 <pre>
-  echo "1"&gt;/proc/sys/net/ipv4/ip_forward
-  ipchains -P forward DENY
-  ipchains -I forward -s 192.168.1.2 -j MASQ
+  $ echo "1"&gt;/proc/sys/net/ipv4/ip_forward
+  $ ipchains -P forward DENY
+  $ ipchains -I forward -s 192.168.1.2 -j MASQ
 </pre>
 Now we load the <code>autofw</code> kernel module and forward ports 20 and 21
 to the FTP server:
 <pre>
-  insmod ip_masq_autofw
-  ipmasqadm autofw -A -r tcp 20 21 -h 192.168.1.2
+  $ insmod ip_masq_autofw
+  $ ipmasqadm autofw -A -r tcp 20 21 -h 192.168.1.2
 </pre>
 Then we forward ports for passive FTP transfers. In our
 <code>proftpd.conf</code> file we restricted passive transfers to ports
 60000-65535, so that is what we use here as well:
 <pre>
-  ipmasqadm autofw -A -r tcp 60000 65535 -h 192.168.1.2
+  $ ipmasqadm autofw -A -r tcp 60000 65535 -h 192.168.1.2
 </pre>
 
 <p>
@@ -117,7 +115,7 @@ like the following.  First, update your <code>ipf.conf</code> with:
 </pre>
 Then make sure that the changes take effect by using:
 <pre>
-  ipf -Fa -f /path/to/ipf.conf
+  $ ipf -Fa -f /path/to/ipf.conf
 </pre>
 
 <p>
@@ -129,7 +127,7 @@ you are still able to setup relatively tight firewalling rules.  To be sure
 that you have no other processes listening on the ports you have specified
 for passive transfers, use a port scanner such as <code>nmap</code>:
 <pre>
-  nmap -sT -I -p 60000-65535 localhost
+  $ nmap -sT -I -p 60000-65535 localhost
 </pre>
 If the result says something like:
 <pre>
@@ -272,8 +270,15 @@ For those that need to see a concrete example configuration of this:
 <p>
 <hr>
 Contributor: Tobias Ekbom &lt;tobias <i>at</i> vallcom <i>dot</i>com&gt;<br>
-Last Updated: <i>$Date: 2012-05-22 16:31:39 $</i>
 <hr>
 
-<body>
+<p>
+<hr>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
+
+</body>
 </html>

@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,9 +23,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Module handling routines
- * $Id: modules.c,v 1.64 2013-10-07 05:51:30 castaglia Exp $
- */
+/* Module handling routines */
 
 #include "conf.h"
 
@@ -37,6 +35,8 @@ module *curr_module = NULL;
   
 /* Used to track the priority for loaded modules. */
 static unsigned int curr_module_pri = 0;
+
+static const char *trace_channel = "module";
   
 modret_t *pr_module_call(module *m, modret_t *(*func)(cmd_rec *),
     cmd_rec *cmd) {
@@ -50,7 +50,7 @@ modret_t *pr_module_call(module *m, modret_t *(*func)(cmd_rec *),
     return NULL;
   }
 
-  if (!cmd->tmp_pool) {
+  if (cmd->tmp_pool == NULL) {
     cmd->tmp_pool = make_sub_pool(cmd->pool);
     pr_pool_tag(cmd->tmp_pool, "Module call tmp_pool");
   }
@@ -68,24 +68,35 @@ modret_t *pr_module_call(module *m, modret_t *(*func)(cmd_rec *),
 modret_t *mod_create_data(cmd_rec *cmd, void *d) {
   modret_t *res;
 
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   res = pcalloc(cmd->tmp_pool, sizeof(modret_t));
   res->data = d;
 
   return res;
 }
 
-modret_t *mod_create_ret(cmd_rec *cmd, unsigned char err, char *n, char *m) {
+modret_t *mod_create_ret(cmd_rec *cmd, unsigned char err, const char *n,
+    const char *m) {
   modret_t *res;
+
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   res = pcalloc(cmd->tmp_pool, sizeof(modret_t));
   res->mr_handler_module = curr_module;
   res->mr_error = err;
 
-  if (n) {
+  if (n != NULL) {
     res->mr_numeric = pstrdup(cmd->tmp_pool, n);
   }
 
-  if (m) {
+  if (m != NULL) {
     res->mr_message = pstrdup(cmd->tmp_pool, m);
   }
 
@@ -94,6 +105,11 @@ modret_t *mod_create_ret(cmd_rec *cmd, unsigned char err, char *n, char *m) {
 
 modret_t *mod_create_error(cmd_rec *cmd, int mr_errno) {
   modret_t *res;
+
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
 
   res = pcalloc(cmd->tmp_pool, sizeof(modret_t));
   res->mr_handler_module = curr_module;
@@ -109,11 +125,18 @@ int modules_session_init(void) {
   module *prev_module = curr_module, *m;
 
   for (m = loaded_modules; m; m = m->next) {
-    if (m && m->sess_init) {
+    if (m->sess_init) {
       curr_module = m;
+
+      pr_trace_msg(trace_channel, 12,
+        "invoking sess_init callback on mod_%s.c", m->name);
       if (m->sess_init() < 0) {
+        int xerrno = errno;
+
         pr_log_pri(PR_LOG_WARNING, "mod_%s.c: error initializing session: %s",
-          m->name, strerror(errno));
+          m->name, strerror(xerrno));
+
+        errno = xerrno;
         return -1;
       }
     }
@@ -123,13 +146,15 @@ int modules_session_init(void) {
   return 0;
 }
 
-unsigned char command_exists(char *name) {
+unsigned char command_exists(const char *name) {
   int idx = -1;
-  cmdtable *cmdtab = pr_stash_get_symbol(PR_SYM_CMD, name, NULL, &idx);
+  unsigned int hash = 0;
+  cmdtable *cmdtab;
 
+  cmdtab = pr_stash_get_symbol2(PR_SYM_CMD, name, NULL, &idx, &hash);
   while (cmdtab && cmdtab->cmd_type != CMD) {
     pr_signals_handle();
-    cmdtab = pr_stash_get_symbol(PR_SYM_CMD, name, cmdtab, &idx);
+    cmdtab = pr_stash_get_symbol2(PR_SYM_CMD, name, cmdtab, &idx, &hash);
   }
 
   return (cmdtab ? TRUE : FALSE);
@@ -143,7 +168,7 @@ module *pr_module_get(const char *name) {
   char buf[80] = {'\0'};
   module *m;
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -154,57 +179,69 @@ module *pr_module_get(const char *name) {
     snprintf(buf, sizeof(buf), "mod_%s.c", m->name);
     buf[sizeof(buf)-1] = '\0';
 
-    if (strcmp(buf, name) == 0)
+    if (strcmp(buf, name) == 0) {
       return m;
+    }
   }
 
   errno = ENOENT;
   return NULL;
 }
 
-void modules_list(int flags) {
+void modules_list2(int (*listf)(const char *, ...), int flags) {
+  if (listf == NULL) {
+    listf = printf;
+  }
 
   if (flags & PR_MODULES_LIST_FL_SHOW_STATIC) {
     register unsigned int i = 0;
 
-    printf("Compiled-in modules:\n");
+    listf("Compiled-in modules:\n");
     for (i = 0; static_modules[i]; i++) {
       module *m = static_modules[i];
 
       if (flags & PR_MODULES_LIST_FL_SHOW_VERSION) {
-        char *version = m->module_version;
-        if (version) {
-          printf("  %s\n", version);
+        const char *version;
+
+        version = m->module_version;
+        if (version != NULL) {
+          listf("  %s\n", version);
 
         } else {
-          printf("  mod_%s.c\n", m->name);
+          listf("  mod_%s.c\n", m->name);
         }
 
       } else {
-        printf("  mod_%s.c\n", m->name);
+        listf("  mod_%s.c\n", m->name);
       }
     }
 
   } else {
     module *m;
 
-    printf("Loaded modules:\n");
+    listf("Loaded modules:\n");
     for (m = loaded_modules; m; m = m->next) {
 
       if (flags & PR_MODULES_LIST_FL_SHOW_VERSION) {
-        char *version = m->module_version;
-        if (version) {
-          printf("  %s\n", version);
+        const char *version;
+
+        version = m->module_version;
+        if (version != NULL) {
+          listf("  %s\n", version);
 
         } else {  
-          printf("  mod_%s.c\n", m->name);
+          listf("  mod_%s.c\n", m->name);
         }
 
       } else {
-        printf("  mod_%s.c\n", m->name);
+        listf("  mod_%s.c\n", m->name);
       }
     }
   }
+}
+
+void modules_list(int flags) {
+  modules_list2(NULL, flags);
 }
 
 int pr_module_load_authtab(module *m) {

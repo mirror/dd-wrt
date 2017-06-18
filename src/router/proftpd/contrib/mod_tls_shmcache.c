@@ -1,8 +1,8 @@
 /*
- * ProFTPD: mod_tls_shmcache -- a module which provides a shared SSL session
- *                              cache using SysV shared memory
- *
- * Copyright (c) 2009-2013 TJ Saunders
+ * ProFTPD: mod_tls_shmcache -- a module which provides shared SSL session
+ *                              and OCSP response caches using SysV shared
+ *                              memory segments
+ * Copyright (c) 2009-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,10 +25,6 @@
  *
  * This is mod_tls_shmcache, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- *  --- DO NOT DELETE BELOW THIS LINE ----
- *  $Id: mod_tls_shmcache.c,v 1.15 2013-11-05 21:37:16 castaglia Exp $
- *  $Libraries: -lssl -lcrypto$
  */
 
 #include "conf.h"
@@ -42,16 +38,21 @@
 # include <sys/mman.h>
 #endif
 
-#define MOD_TLS_SHMCACHE_VERSION		"mod_tls_shmcache/0.1"
+/* Define if you have the LibreSSL library.  */
+#if defined(LIBRESSL_VERSION_NUMBER)
+# define HAVE_LIBRESSL	1
+#endif
+
+#define MOD_TLS_SHMCACHE_VERSION		"mod_tls_shmcache/0.2"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030301
-# error "ProFTPD 1.3.3rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 module tls_shmcache_module;
 
-#define TLS_SHMCACHE_PROJ_ID	247
+#define TLS_SHMCACHE_SESS_PROJECT_ID		247
 
 /* Assume a maximum SSL session (serialized) length of 10K.  Note that this
  * is different from the SSL_MAX_SSL_SESSION_ID_LENGTH provided by OpenSSL.
@@ -73,7 +74,7 @@ module tls_shmcache_module;
  * bytes (500KB).
  */
 
-struct shmcache_entry {
+struct sesscache_entry {
   time_t expires;
   unsigned int sess_id_len;
   unsigned char sess_id[SSL_MAX_SSL_SESSION_ID_LENGTH];
@@ -81,24 +82,24 @@ struct shmcache_entry {
   unsigned char sess_data[TLS_MAX_SSL_SESSION_SIZE];
 };
 
-/* The difference between shmcache_entry and shmcache_large_entry is that the
+/* The difference between sesscache_entry and sesscache_large_entry is that the
  * buffers in the latter are dynamically allocated from the heap, not
  * allocated out of the shm segment.  The large_entry struct is used for
  * storing sessions which don't fit into the normal entry struct; this also
  * means that these large entries are NOT shared across processes.
  */
-struct shmcache_large_entry {
+struct sesscache_large_entry {
   time_t expires;
   unsigned int sess_id_len;
-  unsigned char *sess_id;
+  const unsigned char *sess_id;
   unsigned int sess_datalen;
-  unsigned char *sess_data;
+  const unsigned char *sess_data;
 };
 
 /* The number of entries in the list is determined at run-time, based on
  * the maximum desired size of the shared memory segment.
  */
-struct shmcache_data {
+struct sesscache_data {
 
   /* Cache metadata. */
   unsigned int nhits;
@@ -127,41 +128,125 @@ struct shmcache_data {
   unsigned int sd_listlen, sd_listsz;
 
   /* It is important that this field be the last in the struct! */
-  struct shmcache_entry *sd_entries;
+  struct sesscache_entry *sd_entries;
 };
 
-static tls_sess_cache_t shmcache;
+static tls_sess_cache_t sess_cache;
+static struct sesscache_data *sesscache_data = NULL;
+static size_t sesscache_datasz = 0;
+static int sesscache_shmid = -1;
+static pr_fh_t *sesscache_fh = NULL;
+static array_header *sesscache_sess_list = NULL;
 
-static struct shmcache_data *shmcache_data = NULL;
-static size_t shmcache_datasz = 0;
-static int shmcache_shmid = -1;
-static pr_fh_t *shmcache_fh = NULL;
+#if defined(PR_USE_OPENSSL_OCSP)
+# define TLS_SHMCACHE_OCSP_PROJECT_ID		249
 
-static array_header *shmcache_sess_list = NULL;
+/* Assume a maximum OCSP response (serialized) length of 4K.
+ */
+# ifndef TLS_MAX_OCSP_RESPONSE_SIZE
+#  define TLS_MAX_OCSP_RESPONSE_SIZE		1024 * 4
+# endif
+
+struct ocspcache_entry {
+  time_t age;
+  unsigned int fingerprint_len;
+  unsigned char fingerprint[EVP_MAX_MD_SIZE];
+  unsigned int resp_derlen;
+  unsigned char resp_der[TLS_MAX_OCSP_RESPONSE_SIZE];
+};
+
+/* The difference between ocspcache_entry and ocspcache_large_entry is that the
+ * buffers in the latter are dynamically allocated from the heap, not
+ * allocated out of the shm segment.  The large_entry struct is used for
+ * storing sessions which don't fit into the normal entry struct; this also
+ * means that these large entries are NOT shared across processes.
+ */
+struct ocspcache_large_entry {
+  time_t age;
+  unsigned int fingerprint_len;
+  unsigned char *fingerprint;
+  unsigned int resp_derlen;
+  unsigned char *resp_der;
+};
+
+/* The number of entries in the list is determined at run-time, based on
+ * the maximum desired size of the shared memory segment.
+ */
+struct ocspcache_data {
+
+  /* Cache metadata. */
+  unsigned int nhits;
+  unsigned int nmisses;
+
+  unsigned int nstored;
+  unsigned int ndeleted;
+  unsigned int nexpired;
+  unsigned int nerrors;
+
+  /* This tracks the number of sessions that could not be added because
+   * they exceeded TLS_MAX_OCSP_RESPONSE_SIZE.
+   */
+  unsigned int nexceeded;
+  unsigned int exceeded_maxsz;
+
+  /* These listlen/listsz track the number of entries in the cache and total
+   * entries possible, and thus can be used for determining the fullness of
+   * the cache.
+   */
+  unsigned int od_listlen, od_listsz;
+
+  /* It is important that this field be the last in the struct! */
+  struct ocspcache_entry *od_entries;
+};
+
+static tls_ocsp_cache_t ocsp_cache;
+static struct ocspcache_data *ocspcache_data = NULL;
+static size_t ocspcache_datasz = 0;
+static int ocspcache_shmid = -1;
+static pr_fh_t *ocspcache_fh = NULL;
+static array_header *ocspcache_resp_list = NULL;
+#endif /* PR_USE_OPENSSL_OCSP */
 
 static const char *trace_channel = "tls.shmcache";
 
-static int shmcache_close(tls_sess_cache_t *);
+static int sess_cache_close(tls_sess_cache_t *);
+#if defined(PR_USE_OPENSSL_OCSP)
+static int ocsp_cache_close(tls_ocsp_cache_t *);
+#endif /* PR_USE_OPENSSL_OCSP */
 
-static const char *shmcache_get_crypto_errors(void) {
+static const char *shmcache_get_errors(void) {
   unsigned int count = 0;
-  unsigned long e = ERR_get_error();
+  unsigned long error_code;
   BIO *bio = NULL;
   char *data = NULL;
   long datalen;
-  const char *str = "(unknown)";
+  const char *error_data = NULL, *str = "(unknown)";
+  int error_flags = 0;
 
   /* Use ERR_print_errors() and a memory BIO to build up a string with
    * all of the error messages from the error queue.
    */
 
-  if (e)
+  error_code = ERR_get_error_line_data(NULL, NULL, &error_data, &error_flags);
+  if (error_code) {
     bio = BIO_new(BIO_s_mem());
+  }
 
-  while (e) {
+  while (error_code) {
     pr_signals_handle();
-    BIO_printf(bio, "\n  (%u) %s", ++count, ERR_error_string(e, NULL));
-    e = ERR_get_error();
+
+    if (error_flags & ERR_TXT_STRING) {
+      BIO_printf(bio, "\n  (%u) %s [%s]", ++count,
+        ERR_error_string(error_code, NULL), error_data);
+
+    } else {
+      BIO_printf(bio, "\n  (%u) %s", ++count,
+        ERR_error_string(error_code, NULL));
+    }
+
+    error_data = NULL;
+    error_flags = 0;
+    error_code = ERR_get_error_line_data(NULL, NULL, &error_data, &error_flags);
   }
 
   datalen = BIO_get_mem_data(bio, &data);
@@ -170,8 +255,9 @@ static const char *shmcache_get_crypto_errors(void) {
     str = pstrdup(permanent_pool, data);
   }
 
-  if (bio)
+  if (bio != NULL) {
     BIO_free(bio);
+  }
 
   return str;
 }
@@ -204,7 +290,7 @@ static const char *shmcache_get_lock_desc(int lock_type) {
  * if the process dies tragically.  Could possibly deal with this in an
  * exit event handler, though.  Something to keep in mind.
  */
-static int shmcache_lock_shm(int lock_type) {
+static int shmcache_lock_shm(pr_fh_t *fh, int lock_type) {
   const char *lock_desc;
   int fd;
   struct flock lock;
@@ -215,10 +301,10 @@ static int shmcache_lock_shm(int lock_type) {
   lock.l_start = 0;
   lock.l_len = 0;
 
-  fd = PR_FH_FD(shmcache_fh);
+  fd = PR_FH_FD(fh);
   lock_desc = shmcache_get_lock_desc(lock_type);
 
-  pr_trace_msg(trace_channel, 9, "attempting to %s shmcache fd %d", lock_desc,
+  pr_trace_msg(trace_channel, 19, "attempting to %s shmcache fd %d", lock_desc,
     fd);
 
   while (fcntl(fd, F_SETLK, &lock) < 0) {
@@ -262,25 +348,24 @@ static int shmcache_lock_shm(int lock_type) {
     return -1;
   }
 
-  pr_trace_msg(trace_channel, 9, "%s of shmcache fd %d succeeded", lock_desc,
+  pr_trace_msg(trace_channel, 19, "%s of shmcache fd %d succeeded", lock_desc,
     fd);
   return 0;
 }
 
-/* Use a hash function to hash the given lookup key to a slot in the
- * sd_entries list.  This hash, module the number of entries, is the initial
- * iteration start point.  This will hopefully avoid having to do many linear
- * scans for the add/get/delete operations.
+/* Use a hash function to hash the given lookup key to a slot in the entries
+ * list.  This hash, module the number of entries, is the initial iteration
+ * start point.  This will hopefully avoid having to do many linear scans for
+ * the add/get/delete operations.
  *
  * Use Perl's hashing algorithm.
  */
-static unsigned int shmcache_hash(unsigned char *sess_id,
-    unsigned int sess_id_len) {
+static unsigned int shmcache_hash(const unsigned char *id, unsigned int len) {
   unsigned int i = 0;
-  size_t sz = sess_id_len;
+  size_t sz = len;
 
   while (sz--) {
-    const unsigned char *k = sess_id;
+    const unsigned char *k = id;
     unsigned int c = *k;
     k++;
 
@@ -293,33 +378,13 @@ static unsigned int shmcache_hash(unsigned char *sess_id,
   return i;
 }
 
-static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
-    size_t requested_size) {
-  int rem, shmid, xerrno = 0;
-  int shm_existed = FALSE;
-  struct shmcache_data *data = NULL;
-  size_t shm_size;
-  unsigned int shm_sess_max = 0;
+static void *shmcache_get_shm(pr_fh_t *fh, size_t *shm_size, int project_id,
+    int *shm_id) {
+  int rem, shm_existed = FALSE, xerrno = 0;
   key_t key;
+  void *data = NULL;
 
-  /* Calculate the size to allocate.  First, calculate the maximum number
-   * of sessions we can cache, given the configured size.  Then
-   * calculate the shm segment size to allocate to hold that number of
-   * sessions.  Round the segment size up to the nearest SHMLBA boundary.
-   */
-  shm_sess_max = (requested_size - sizeof(struct shmcache_data)) /
-    (sizeof(struct shmcache_entry));
-  shm_size = sizeof(struct shmcache_data) +
-    (shm_sess_max * sizeof(struct shmcache_entry));
-
-  rem = shm_size % SHMLBA;
-  if (rem != 0) {
-    shm_size = (shm_size - rem + SHMLBA);
-    pr_trace_msg(trace_channel, 9,
-      "rounded requested size up to %lu bytes", (unsigned long) shm_size);
-  }
-
-  key = ftok(fh->fh_path, TLS_SHMCACHE_PROJ_ID);
+  key = ftok(fh->fh_path, project_id);
   if (key == (key_t) -1) {
     xerrno = errno;
 
@@ -328,6 +393,14 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
 
     errno = xerrno;
     return NULL;
+  }
+
+  /* Round the requested segment size up to the nearest SHMBLA boundary. */
+  rem = *shm_size % SHMLBA;
+  if (rem != 0) {
+    *shm_size = (*shm_size - rem + SHMLBA);
+    pr_trace_msg(trace_channel, 9,
+      "rounded requested size up to %lu bytes", (unsigned long) *shm_size);
   }
 
   /* Try first using IPC_CREAT|IPC_EXCL, to check if there is an existing
@@ -340,20 +413,20 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
    */
 
   PRIVS_ROOT
-  shmid = shmget(key, shm_size, IPC_CREAT|IPC_EXCL|0600);
+  *shm_id = shmget(key, *shm_size, IPC_CREAT|IPC_EXCL|0600);
   xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (shmid < 0) {
+  if (*shm_id < 0) {
     if (xerrno == EEXIST) {
       shm_existed = TRUE;
 
       PRIVS_ROOT
-      shmid = shmget(key, 0, 0);
+      *shm_id = shmget(key, 0, 0);
       xerrno = errno;
       PRIVS_RELINQUISH
 
-      if (shmid < 0) {
+      if (*shm_id < 0) {
         pr_trace_msg(trace_channel, 1,
           "unable to get shm for existing key: %s", strerror(xerrno));
         errno = xerrno;
@@ -365,7 +438,7 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
       if (xerrno == ENOMEM) {
         pr_trace_msg(trace_channel, 1,
           "not enough memory for %lu shm bytes; try specifying a smaller size",
-          (unsigned long) shm_size);
+          (unsigned long) *shm_size);
 
       } else if (xerrno == ENOSPC) {
         pr_trace_msg(trace_channel, 1, "%s",
@@ -378,17 +451,17 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
   }
 
   /* Attach to the shm. */
-  pr_trace_msg(trace_channel, 10,
-    "attempting to attach to shm ID %d", shmid);
+  pr_trace_msg(trace_channel, 10, "attempting to attach to shm ID %d",
+    *shm_id);
 
   PRIVS_ROOT
-  data = (struct shmcache_data *) shmat(shmid, NULL, 0);
+  data = shmat(*shm_id, NULL, 0);
   xerrno = errno;
   PRIVS_RELINQUISH
 
   if (data == NULL) {
     pr_trace_msg(trace_channel, 1,
-      "unable to attach to shm ID %d: %s", shmid, strerror(xerrno));
+      "unable to attach to shm ID %d: %s", *shm_id, strerror(xerrno));
     errno = xerrno;
     return NULL;
   }
@@ -403,7 +476,7 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
      */
 
     PRIVS_ROOT
-    res = shmctl(shmid, IPC_STAT, &ds);
+    res = shmctl(*shm_id, IPC_STAT, &ds);
     xerrno = errno;
     PRIVS_RELINQUISH
 
@@ -411,81 +484,137 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
       pr_trace_msg(trace_channel, 10,
         "existing shm size: %u bytes", (unsigned int) ds.shm_segsz);
 
-      if (ds.shm_segsz != shm_size) {
-        if (ds.shm_segsz > shm_size) {
+      if ((unsigned long) ds.shm_segsz != (unsigned long) *shm_size) {
+        if ((unsigned long) ds.shm_segsz > (unsigned long) *shm_size) {
           pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
             ": requested shm size (%lu bytes) is smaller than existing shm "
             "size, migrating to smaller shm (may result in loss of cache data)",
-            (unsigned long) shm_size);
+            (unsigned long) *shm_size);
 
-        } else if (ds.shm_segsz < shm_size) {
+        } else if ((unsigned long) ds.shm_segsz < (unsigned long) *shm_size) {
           pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
             ": requested shm size (%lu bytes) is larger than existing shm "
-            "size, migrating to larger shm", (unsigned long) shm_size);
+            "size, migrating to larger shm", (unsigned long) *shm_size);
         }
-
-        /* XXX In future versions, we could probably handle the migration
-         * of the existing cache data to a different size shm segment.
-         *
-         * If the shm size was increased:
-         *   Simply iterate through existing valid cached sessions and
-         *   load them into the new shm segment; the hash index will change
-         *   because of the change in shm size, hence the reloading.
-         *
-         * If the shm size was decreased:
-         *   Need to first sort existing valid cached sessions by expiration
-         *   timestamp, in _decreasing_ order; this sorted order is the order
-         *   in which they will be loaded into the new shm.  This guarantees
-         *   that the sessions _most_ likely to expire will be added later,
-         *   when the possibility of a cache fill in the smaller shm is higher.
-         *   Those older sessions, once the cache is full, would be lost.
-         *
-         * For now, though, we complain about this, and tell the admin to
-         * manually remove shm.
-         */
 
         pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
           ": remove existing shmcache using 'ftpdctl tls sesscache remove' "
-          "before using new size");
+          "or 'ftpdctl tls ocspcache remove' before using new size");
 
-        shmcache_close(NULL);
-
-        errno = EINVAL;
+        errno = EEXIST;
         return NULL;
       }
 
     } else {
       pr_trace_msg(trace_channel, 1,
-        "unable to stat shm ID %d: %s", shmid, strerror(xerrno));
+        "unable to stat shm ID %d: %s", *shm_id, strerror(xerrno));
       errno = xerrno;
     }
 
   } else {
     /* Make sure the memory is initialized. */
-    if (shmcache_lock_shm(F_WRLCK) < 0) {
-      pr_trace_msg(trace_channel, 1,
-        "error write-locking shmcache: %s", strerror(errno));
+    if (shmcache_lock_shm(fh, F_WRLCK) < 0) {
+      pr_trace_msg(trace_channel, 1, "error write-locking shm: %s",
+        strerror(errno));
     }
 
-    memset(data, 0, shm_size);
+    memset(data, 0, *shm_size);
 
-    if (shmcache_lock_shm(F_UNLCK) < 0) {
-      pr_trace_msg(trace_channel, 1,
-        "error unlocking shmcache: %s", strerror(errno));
+    if (shmcache_lock_shm(fh, F_UNLCK) < 0) {
+      pr_trace_msg(trace_channel, 1, "error unlocking shm: %s",
+        strerror(errno));
     }
   }
 
-  shmcache_datasz = shm_size;
+  return data;
+}
 
-  shmcache_shmid = shmid;
+static struct sesscache_data *sess_cache_get_shm(pr_fh_t *fh,
+    size_t requested_size) {
+  int shmid, xerrno = 0;
+  struct sesscache_data *data = NULL;
+  size_t shm_size;
+  unsigned int shm_sess_max = 0;
+
+  /* Calculate the size to allocate.  First, calculate the maximum number
+   * of sessions we can cache, given the configured size.  Then
+   * calculate the shm segment size to allocate to hold that number of
+   * sessions.
+   */
+  shm_sess_max = (requested_size - sizeof(struct sesscache_data)) /
+    (sizeof(struct sesscache_entry));
+  shm_size = sizeof(struct sesscache_data) +
+    (shm_sess_max * sizeof(struct sesscache_entry));
+
+  data = shmcache_get_shm(fh, &shm_size, TLS_SHMCACHE_SESS_PROJECT_ID, &shmid);
+  if (data == NULL) {
+    xerrno = errno;
+
+    if (errno == EEXIST) {
+      sess_cache_close(NULL);
+    }
+
+    errno = xerrno;
+    return NULL;
+  }
+
+  sesscache_datasz = shm_size;
+  sesscache_shmid = shmid;
   pr_trace_msg(trace_channel, 9,
-    "using shm ID %d for shmcache path '%s'", shmcache_shmid, fh->fh_path);
+    "using shm ID %d for sesscache path '%s' (%u sessions)", sesscache_shmid,
+    fh->fh_path, shm_sess_max);
 
-  data->sd_entries = (struct shmcache_entry *) (data + sizeof(struct shmcache_data));
+  data->sd_entries = (struct sesscache_entry *) (data + sizeof(struct sesscache_data));
   data->sd_listsz = shm_sess_max;
 
   return data;
 }
+
+#if defined(PR_USE_OPENSSL_OCSP)
+static struct ocspcache_data *ocsp_cache_get_shm(pr_fh_t *fh,
+    size_t requested_size) {
+  int shmid, xerrno = 0;
+  struct ocspcache_data *data = NULL;
+  size_t shm_size;
+  unsigned int shm_resp_max = 0;
+
+  /* Calculate the size to allocate.  First, calculate the maximum number
+   * of responses we can cache, given the configured size.  Then
+   * calculate the shm segment size to allocate to hold that number of
+   * responses.
+   */
+  shm_resp_max = (requested_size - sizeof(struct ocspcache_data)) /
+    (sizeof(struct ocspcache_entry));
+  shm_size = sizeof(struct ocspcache_data) +
+    (shm_resp_max * sizeof(struct ocspcache_entry));
+
+  data = shmcache_get_shm(fh, &shm_size, TLS_SHMCACHE_OCSP_PROJECT_ID, &shmid);
+  if (data == NULL) {
+    xerrno = errno;
+
+    if (errno == EEXIST) {
+      ocsp_cache_close(NULL);
+    }
+
+    errno = xerrno;
+    return NULL;
+  }
+
+  ocspcache_datasz = shm_size;
+  ocspcache_shmid = shmid;
+  pr_trace_msg(trace_channel, 9,
+    "using shm ID %d for ocspcache path '%s' (%u responses)", ocspcache_shmid,
+    fh->fh_path, shm_resp_max);
+
+  data->od_entries = (struct ocspcache_entry *) (data + sizeof(struct ocspcache_data));
+  data->od_listsz = shm_resp_max;
+
+  return data;
+}
+#endif /* PR_USE_OPENSSL_OCSP */
+
+/* SSL session cache implementation callbacks.
+ */
 
 /* Scan the entire list, clearing out expired sessions.  Logs the number
  * of sessions that expired and updates the header stat.
@@ -493,7 +622,7 @@ static struct shmcache_data *shmcache_get_shm(pr_fh_t *fh,
  * NOTE: Callers are assumed to handle the locking of the shm before/after
  * calling this function!
  */
-static unsigned int shmcache_flush(void) {
+static unsigned int sess_cache_flush(void) {
   register unsigned int i;
   unsigned int flushed = 0;
   time_t now, next_expiring = 0;
@@ -501,19 +630,19 @@ static unsigned int shmcache_flush(void) {
   now = time(NULL);
 
   /* We always scan the in-memory large session entry list. */
-  if (shmcache_sess_list != NULL) {
-    struct shmcache_large_entry *entries;
+  if (sesscache_sess_list != NULL) {
+    struct sesscache_large_entry *entries;
 
-    entries = shmcache_sess_list->elts;
-    for (i = 0; i < shmcache_sess_list->nelts; i++) {
-      struct shmcache_large_entry *entry;
+    entries = sesscache_sess_list->elts;
+    for (i = 0; i < sesscache_sess_list->nelts; i++) {
+      struct sesscache_large_entry *entry;
 
       entry = &(entries[i]);
 
       if (entry->expires > now) {
         /* This entry has expired; clear its slot. */
         entry->expires = 0;
-        pr_memscrub(entry->sess_data, entry->sess_datalen);
+        pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
       }
     }
   }
@@ -521,21 +650,21 @@ static unsigned int shmcache_flush(void) {
   /* If now is earlier than the earliest expiring session in the cache,
    * then a scan will be pointless.
    */
-  if (now < shmcache_data->next_expiring) {
+  if (now < sesscache_data->next_expiring) {
     unsigned int secs;
 
-    secs = shmcache_data->next_expiring - now;
+    secs = sesscache_data->next_expiring - now;
     tls_log("shmcache: no expired sessions to flush; %u secs to next "
       "expiration", secs);
     return 0;
   }
 
-  tls_log("shmcache: flushing cache of expired sessions");
+  tls_log("shmcache: flushing session cache of expired sessions");
 
-  for (i = 0; i < shmcache_data->sd_listsz; i++) {
-    struct shmcache_entry *entry;
+  for (i = 0; i < sesscache_data->sd_listsz; i++) {
+    struct sesscache_entry *entry;
 
-    entry = &(shmcache_data->sd_entries[i]);
+    entry = &(sesscache_data->sd_entries[i]);
     if (entry->expires > 0) {
       if (entry->expires > now) {
         if (entry->expires < next_expiring) {
@@ -545,41 +674,38 @@ static unsigned int shmcache_flush(void) {
       } else {
         /* This entry has expired; clear its slot. */
         entry->expires = 0;
-        pr_memscrub(entry->sess_data, entry->sess_datalen);
+        pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
 
         /* Don't forget to update the stats. */
-        shmcache_data->nexpired++;
+        sesscache_data->nexpired++;
 
-        if (shmcache_data->sd_listlen > 0) {
-          shmcache_data->sd_listlen--;
+        if (sesscache_data->sd_listlen > 0) {
+          sesscache_data->sd_listlen--;
         }
 
         flushed++;
       }
     }
 
-    shmcache_data->next_expiring = next_expiring;
+    sesscache_data->next_expiring = next_expiring;
   }
 
-  tls_log("shmcache: flushed %u expired %s from cache", flushed,
+  tls_log("shmcache: flushed %u expired %s from session cache", flushed,
     flushed != 1 ? "sessions" : "session");
   return flushed;
 }
 
-/* Cache implementation callbacks.
- */
-
-static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
+static int sess_cache_open(tls_sess_cache_t *cache, char *info, long timeout) {
   int fd, xerrno;
   char *ptr;
   size_t requested_size;
   struct stat st;
 
-  pr_trace_msg(trace_channel, 9, "opening shmcache cache %p", cache);
+  pr_trace_msg(trace_channel, 9, "opening shmcache session cache %p", cache);
 
   /* The info string must be formatted like:
    *
-   *  /file=%s[&size=%u]
+   *  /path=%s[&size=%u]
    *
    * where the optional size is in bytes.  There is a minimum size; if the
    * configured size is less than the minimum, it's an error.  The default
@@ -615,10 +741,10 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
         size_t min_size;
 
         /* The bare minimum size MUST be able to hold at least one session. */
-        min_size = sizeof(struct shmcache_data) +
-          sizeof(struct shmcache_entry);
+        min_size = sizeof(struct sesscache_data) +
+          sizeof(struct sesscache_entry);
 
-        if (size < min_size) {
+        if ((size_t) size < min_size) {
           pr_trace_msg(trace_channel, 1,
             "requested size (%lu bytes) smaller than minimum size "
             "(%lu bytes), ignoring", (unsigned long) size,
@@ -659,18 +785,18 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
     return -1;
   }
 
-  /* If shmcache_fh is not null, then we are a restarted server.  And if
+  /* If sesscache_fh is not null, then we are a restarted server.  And if
    * the 'info' path does not match that previous fh, then the admin
    * has changed the configuration.
    *
    * For now, we complain about this, and tell the admin to manually remove
    * the old file/shm.
    */
-  if (shmcache_fh != NULL &&
-      strcmp(shmcache_fh->fh_path, info) != 0) {
+  if (sesscache_fh != NULL &&
+      strcmp(sesscache_fh->fh_path, info) != 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
       ": file '%s' does not match previously configured file '%s'",
-      info, shmcache_fh->fh_path);
+      info, sesscache_fh->fh_path);
     pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
       ": remove existing shmcache using 'ftpdctl tls sesscache remove' "
       "before using new file");
@@ -680,11 +806,11 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
   }
 
   PRIVS_ROOT
-  shmcache_fh = pr_fsio_open(info, O_RDWR|O_CREAT);
+  sesscache_fh = pr_fsio_open(info, O_RDWR|O_CREAT);
   xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (shmcache_fh == NULL) {
+  if (sesscache_fh == NULL) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
       ": error: unable to open file '%s': %s", info, strerror(xerrno));
 
@@ -692,14 +818,14 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
     return -1;
   }
 
-  if (pr_fsio_fstat(shmcache_fh, &st) < 0) {
+  if (pr_fsio_fstat(sesscache_fh, &st) < 0) {
     xerrno = errno;
 
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
       ": error: unable to stat file '%s': %s", info, strerror(xerrno));
 
-    pr_fsio_close(shmcache_fh);
-    shmcache_fh = NULL;
+    pr_fsio_close(sesscache_fh);
+    sesscache_fh = NULL;
 
     errno = EINVAL;
     return -1;
@@ -711,8 +837,8 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
       ": error: unable to use file '%s': %s", info, strerror(xerrno));
 
-    pr_fsio_close(shmcache_fh);
-    shmcache_fh = NULL;
+    pr_fsio_close(sesscache_fh);
+    sesscache_fh = NULL;
     
     errno = EINVAL;
     return -1;
@@ -722,7 +848,7 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
    * descriptors (stdin/stdout/stderr), as can happen especially if the
    * server has restarted.
    */
-  fd = PR_FH_FD(shmcache_fh);
+  fd = PR_FH_FD(sesscache_fh);
   if (fd <= STDERR_FILENO) {
     int res;
 
@@ -734,96 +860,97 @@ static int shmcache_open(tls_sess_cache_t *cache, char *info, long timeout) {
  
     } else {
       close(fd);
-      PR_FH_FD(shmcache_fh) = res;
+      PR_FH_FD(sesscache_fh) = res;
     }
   }
 
   pr_trace_msg(trace_channel, 9,
-    "requested shmcache file: %s (fd %d)", shmcache_fh->fh_path,
-    PR_FH_FD(shmcache_fh));
+    "requested session cache file: %s (fd %d)", sesscache_fh->fh_path,
+    PR_FH_FD(sesscache_fh));
   pr_trace_msg(trace_channel, 9, 
-    "requested shmcache size: %lu bytes", (unsigned long) requested_size);
+    "requested session cache size: %lu bytes", (unsigned long) requested_size);
 
-  shmcache_data = shmcache_get_shm(shmcache_fh, requested_size);
-  if (shmcache_data == NULL) {
+  sesscache_data = sess_cache_get_shm(sesscache_fh, requested_size);
+  if (sesscache_data == NULL) {
     xerrno = errno;
 
     pr_trace_msg(trace_channel, 1,
-      "unable to allocate shm: %s", strerror(xerrno));
+      "unable to allocate session shm: %s", strerror(xerrno));
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
-      ": unable to allocate shm: %s", strerror(xerrno));
+      ": unable to allocate session shm: %s", strerror(xerrno));
 
-    pr_fsio_close(shmcache_fh);
-    shmcache_fh = NULL;
+    pr_fsio_close(sesscache_fh);
+    sesscache_fh = NULL;
 
     errno = EINVAL;
     return -1;
   }
 
-  cache->cache_pool = make_sub_pool(session.pool);
+  cache->cache_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(cache->cache_pool, MOD_TLS_SHMCACHE_VERSION);
 
   cache->cache_timeout = timeout;
   return 0;
 }
 
-static int shmcache_close(tls_sess_cache_t *cache) {
+static int sess_cache_close(tls_sess_cache_t *cache) {
 
   if (cache != NULL) {
-    pr_trace_msg(trace_channel, 9, "closing shmcache cache %p", cache);
+    pr_trace_msg(trace_channel, 9, "closing shmcache session cache %p", cache);
   }
 
   if (cache != NULL &&
       cache->cache_pool != NULL) {
     destroy_pool(cache->cache_pool);
 
-    if (shmcache_sess_list != NULL) {
+    if (sesscache_sess_list != NULL) {
       register unsigned int i;
-      struct shmcache_large_entry *entries;
+      struct sesscache_large_entry *entries;
 
-      entries = shmcache_sess_list->elts;
-      for (i = 0; i < shmcache_sess_list->nelts; i++) {
-        struct shmcache_large_entry *entry;
+      entries = sesscache_sess_list->elts;
+      for (i = 0; i < sesscache_sess_list->nelts; i++) {
+        struct sesscache_large_entry *entry;
 
         entry = &(entries[i]);
         if (entry->expires > 0) {
-          pr_memscrub(entry->sess_data, entry->sess_datalen);
+          pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
         }
       }
 
-      shmcache_sess_list = NULL;
+      sesscache_sess_list = NULL;
     }
   }
 
-  if (shmcache_shmid >= 0) {
+  if (sesscache_shmid >= 0) {
     int res, xerrno = 0;
 
     PRIVS_ROOT
 #if !defined(_POSIX_SOURCE)
-    res = shmdt((char *) shmcache_data);
+    res = shmdt((char *) sesscache_data);
 #else
-    res = shmdt((const char *) shmcache_data);
+    res = shmdt((const char *) sesscache_data);
 #endif
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
       pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
-        ": error detaching shm ID %d: %s", shmcache_shmid, strerror(xerrno));
+        ": error detaching session shm ID %d: %s", sesscache_shmid,
+        strerror(xerrno));
     }
 
-    shmcache_data = NULL;
+    sesscache_data = NULL;
   }
 
-  pr_fsio_close(shmcache_fh);
-  shmcache_fh = NULL;
+  pr_fsio_close(sesscache_fh);
+  sesscache_fh = NULL;
   return 0;
 }
 
-static int shmcache_add_large_sess(tls_sess_cache_t *cache,
-    unsigned char *sess_id, unsigned int sess_id_len, time_t expires,
+static int sess_cache_add_large_sess(tls_sess_cache_t *cache,
+    const unsigned char *sess_id, unsigned int sess_id_len, time_t expires,
     SSL_SESSION *sess, int sess_len) {
-  struct shmcache_large_entry *entry = NULL;
+  struct sesscache_large_entry *entry = NULL;
 
   if (sess_len > TLS_MAX_SSL_SESSION_SIZE) {
     /* We may get sessions to add to the list which do not exceed the max
@@ -831,47 +958,45 @@ static int shmcache_add_large_sess(tls_sess_cache_t *cache,
      * shmcache.  Don't track these in the 'exceeded' stats'.
      */
 
-    if (shmcache_lock_shm(F_WRLCK) == 0) {
-      shmcache_data->nexceeded++;
-      if (sess_len > shmcache_data->exceeded_maxsz) {
-        shmcache_data->exceeded_maxsz = sess_len;
+    if (shmcache_lock_shm(sesscache_fh, F_WRLCK) == 0) {
+      sesscache_data->nexceeded++;
+      if ((size_t) sess_len > sesscache_data->exceeded_maxsz) {
+        sesscache_data->exceeded_maxsz = sess_len;
       }
 
-      if (shmcache_lock_shm(F_UNLCK) < 0) {
-        tls_log("shmcache: error unlocking shmcache: %s",
-        strerror(errno));
+      if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
+        tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
       }
 
     } else {
-      tls_log("shmcache: error write-locking shmcache: %s",
-        strerror(errno));
+      tls_log("shmcache: error write-locking shmcache: %s", strerror(errno));
     }
   }
 
-  if (shmcache_sess_list != NULL) {
+  if (sesscache_sess_list != NULL) {
     register unsigned int i;
-    struct shmcache_large_entry *entries;
+    struct sesscache_large_entry *entries;
     time_t now;
 
     /* Look for any expired sessions in the list to overwrite/reuse. */
-    entries = shmcache_sess_list->elts;
+    entries = sesscache_sess_list->elts;
     now = time(NULL);
-    for (i = 0; i < shmcache_sess_list->nelts; i++) {
+    for (i = 0; i < sesscache_sess_list->nelts; i++) {
       entry = &(entries[i]);
 
       if (entry->expires > now) {
         /* This entry has expired; clear and reuse its slot. */
         entry->expires = 0;
-        pr_memscrub(entry->sess_data, entry->sess_datalen);
+        pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
 
         break;
       }
     }
 
   } else {
-    shmcache_sess_list = make_array(cache->cache_pool, 1,
-      sizeof(struct shmcache_large_entry));
-    entry = push_array(shmcache_sess_list);
+    sesscache_sess_list = make_array(cache->cache_pool, 1,
+      sizeof(struct sesscache_large_entry));
+    entry = push_array(sesscache_sess_list);
   }
 
   /* Be defensive, and catch the case where entry might still be null here. */
@@ -883,21 +1008,22 @@ static int shmcache_add_large_sess(tls_sess_cache_t *cache,
   entry->expires = expires;
   entry->sess_id_len = sess_id_len;
   entry->sess_id = palloc(cache->cache_pool, sess_id_len);
-  memcpy(entry->sess_id, sess_id, sess_id_len);
+  memcpy((char *) entry->sess_id, sess_id, sess_id_len);
   entry->sess_datalen = sess_len;
   entry->sess_data = palloc(cache->cache_pool, sess_len);
-  i2d_SSL_SESSION(sess, &(entry->sess_data));
+  i2d_SSL_SESSION(sess, (unsigned char **) &(entry->sess_data));
 
   return 0;
 }
 
-static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
+static int sess_cache_add(tls_sess_cache_t *cache, const unsigned char *sess_id,
     unsigned int sess_id_len, time_t expires, SSL_SESSION *sess) {
   register unsigned int i;
   unsigned int h, idx, last;
   int found_slot = FALSE, need_lock = TRUE, res = 0, sess_len;
 
-  pr_trace_msg(trace_channel, 9, "adding session to shmcache cache %p", cache);
+  pr_trace_msg(trace_channel, 9, "adding session to shmcache session cache %p",
+    cache);
 
   /* First we need to find out how much space is needed for the serialized
    * session data.  There is no known maximum size for SSL session data;
@@ -918,17 +1044,17 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
      * so that we can cache these large records in the shm segment.
      */
 
-    return shmcache_add_large_sess(cache, sess_id, sess_id_len, expires,
+    return sess_cache_add_large_sess(cache, sess_id, sess_id_len, expires,
       sess, sess_len);
   }
 
-  if (shmcache_data->sd_listlen == shmcache_data->sd_listsz) {
+  if (sesscache_data->sd_listlen == sesscache_data->sd_listsz) {
     /* It appears that the cache is full.  Try flushing any expired
      * sessions.
      */
 
-    if (shmcache_lock_shm(F_WRLCK) == 0) {
-      if (shmcache_flush() > 0) {
+    if (shmcache_lock_shm(sesscache_fh, F_WRLCK) == 0) {
+      if (sess_cache_flush() > 0) {
         /* If we made room, then do NOT release the lock; we keep the lock
          * so that we can add the session.
          */
@@ -936,11 +1062,11 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
 
       } else {
         /* Release the lock, and use the "large session" list fallback. */
-        if (shmcache_lock_shm(F_UNLCK) < 0) {
+        if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
           tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
         }
 
-        return shmcache_add_large_sess(cache, sess_id, sess_id_len, expires,
+        return sess_cache_add_large_sess(cache, sess_id, sess_id_len, expires,
           sess, sess_len);
       }
 
@@ -949,22 +1075,22 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
         "shmcache: %s", strerror(errno));
 
       /* Add this session to the "large session" list instead as a fallback. */
-      return shmcache_add_large_sess(cache, sess_id, sess_id_len, expires,
+      return sess_cache_add_large_sess(cache, sess_id, sess_id_len, expires,
         sess, sess_len);
     }
   }
 
   /* Hash the key, start looking for an open slot. */
   h = shmcache_hash(sess_id, sess_id_len);
-  idx = h % shmcache_data->sd_listsz;
+  idx = h % sesscache_data->sd_listsz;
 
   if (need_lock) {
-    if (shmcache_lock_shm(F_WRLCK) < 0) {
+    if (shmcache_lock_shm(sesscache_fh, F_WRLCK) < 0) {
       tls_log("shmcache: unable to add session to shm cache: error "
         "write-locking shmcache: %s", strerror(errno));
 
       /* Add this session to the "large session" list instead as a fallback. */
-      return shmcache_add_large_sess(cache, sess_id, sess_id_len, expires,
+      return sess_cache_add_large_sess(cache, sess_id, sess_id_len, expires,
         sess, sess_len);
     }
   }
@@ -973,12 +1099,12 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
   last = idx > 0 ? (idx - 1) : 0;
 
   do {
-    struct shmcache_entry *entry;
+    struct sesscache_entry *entry;
 
     pr_signals_handle();
 
     /* Look for the first open slot (i.e. expires == 0). */
-    entry = &(shmcache_data->sd_entries[i]);
+    entry = &(sesscache_data->sd_entries[i]);
     if (entry->expires == 0) {
       unsigned char *ptr;
 
@@ -990,23 +1116,23 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
       ptr = entry->sess_data;
       i2d_SSL_SESSION(sess, &ptr);
 
-      shmcache_data->sd_listlen++;
-      shmcache_data->nstored++;
+      sesscache_data->sd_listlen++;
+      sesscache_data->nstored++;
 
-      if (shmcache_data->next_expiring > 0) {
-        if (expires < shmcache_data->next_expiring) {
-          shmcache_data->next_expiring = expires;
+      if (sesscache_data->next_expiring > 0) {
+        if (expires < sesscache_data->next_expiring) {
+          sesscache_data->next_expiring = expires;
         }
 
       } else {
-        shmcache_data->next_expiring = expires;
+        sesscache_data->next_expiring = expires;
       }
 
       found_slot = TRUE;
       break;
     }
 
-    if (i < shmcache_data->sd_listsz) {
+    if (i < sesscache_data->sd_listsz) {
       i++;
 
     } else {
@@ -1020,12 +1146,12 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
    * an open slot at this point, add it to the "large session" list.
    */
   if (!found_slot) {
-    res = shmcache_add_large_sess(cache, sess_id, sess_id_len, expires, sess,
+    res = sess_cache_add_large_sess(cache, sess_id, sess_id_len, expires, sess,
       sess_len);
   }
 
   if (need_lock) {
-    if (shmcache_lock_shm(F_UNLCK) < 0) {
+    if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
       tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
     }
   }
@@ -1033,22 +1159,22 @@ static int shmcache_add(tls_sess_cache_t *cache, unsigned char *sess_id,
   return res;
 }
 
-static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
-    unsigned char *sess_id, unsigned int sess_id_len) {
+static SSL_SESSION *sess_cache_get(tls_sess_cache_t *cache,
+    const unsigned char *sess_id, unsigned int sess_id_len) {
   unsigned int h, idx;
   SSL_SESSION *sess = NULL;
 
-  pr_trace_msg(trace_channel, 9, "getting session from shmcache cache %p",
-    cache); 
+  pr_trace_msg(trace_channel, 9,
+    "getting session from shmcache session cache %p", cache);
 
   /* Look for the requested session in the "large session" list first. */
-  if (shmcache_sess_list != NULL) {
+  if (sesscache_sess_list != NULL) {
     register unsigned int i;
-    struct shmcache_large_entry *entries;
+    struct sesscache_large_entry *entries;
 
-    entries = shmcache_sess_list->elts;
-    for (i = 0; i < shmcache_sess_list->nelts; i++) {
-      struct shmcache_large_entry *entry;
+    entries = sesscache_sess_list->elts;
+    for (i = 0; i < sesscache_sess_list->nelts; i++) {
+      struct sesscache_large_entry *entry;
 
       entry = &(entries[i]);
       if (entry->expires > 0 &&
@@ -1063,8 +1189,8 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
           ptr = entry->sess_data;
           sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen);
           if (sess == NULL) {
-            tls_log("shmcache: error retrieving session from cache: %s",
-              shmcache_get_crypto_errors());
+            tls_log("shmcache: error retrieving session from session cache: %s",
+              shmcache_get_errors());
 
           } else {
             break;
@@ -1079,9 +1205,9 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
   }
 
   h = shmcache_hash(sess_id, sess_id_len);
-  idx = h % shmcache_data->sd_listsz;
+  idx = h % sesscache_data->sd_listsz;
 
-  if (shmcache_lock_shm(F_WRLCK) == 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_WRLCK) == 0) {
     register unsigned int i;
     unsigned int last;
 
@@ -1089,11 +1215,11 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
     last = idx > 0 ? (idx -1) : 0;
 
     do {
-      struct shmcache_entry *entry;
+      struct sesscache_entry *entry;
 
       pr_signals_handle();
 
-      entry = &(shmcache_data->sd_entries[i]);
+      entry = &(sesscache_data->sd_entries[i]);
       if (entry->expires > 0 &&
           entry->sess_id_len == sess_id_len &&
           memcmp(entry->sess_id, sess_id, entry->sess_id_len) == 0) {
@@ -1108,19 +1234,19 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
           ptr = entry->sess_data;
           sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen);
           if (sess != NULL) {
-            shmcache_data->nhits++;
+            sesscache_data->nhits++;
 
           } else {
-            tls_log("shmcache: error retrieving session from cache: %s",
-              shmcache_get_crypto_errors());
-            shmcache_data->nerrors++;
+            tls_log("shmcache: error retrieving session from session cache: %s",
+              shmcache_get_errors());
+            sesscache_data->nerrors++;
           }
         }
 
         break;
       }
 
-      if (i < shmcache_data->sd_listsz) {
+      if (i < sesscache_data->sd_listsz) {
         i++;
 
       } else {
@@ -1130,16 +1256,16 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
     } while (i != last);
 
     if (sess == NULL) {
-      shmcache_data->nmisses++;
+      sesscache_data->nmisses++;
       errno = ENOENT;
     }
 
-    if (shmcache_lock_shm(F_UNLCK) < 0) {
+    if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
       tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
     }
 
   } else {
-    tls_log("shmcache: unable to retrieve session from cache: error "
+    tls_log("shmcache: unable to retrieve session from session cache: error "
       "write-locking shmcache: %s", strerror(errno));
 
     errno = EPERM;
@@ -1148,28 +1274,28 @@ static SSL_SESSION *shmcache_get(tls_sess_cache_t *cache,
   return sess;
 }
 
-static int shmcache_delete(tls_sess_cache_t *cache,
-    unsigned char *sess_id, unsigned int sess_id_len) {
+static int sess_cache_delete(tls_sess_cache_t *cache,
+    const unsigned char *sess_id, unsigned int sess_id_len) {
   unsigned int h, idx;
   int res;
 
-  pr_trace_msg(trace_channel, 9, "removing session from shmcache cache %p",
-    cache);
+  pr_trace_msg(trace_channel, 9,
+    "removing session from shmcache session cache %p", cache);
 
   /* Look for the requested session in the "large session" list first. */
-  if (shmcache_sess_list != NULL) {
+  if (sesscache_sess_list != NULL) {
     register unsigned int i;
-    struct shmcache_large_entry *entries;
+    struct sesscache_large_entry *entries;
 
-    entries = shmcache_sess_list->elts;
-    for (i = 0; i < shmcache_sess_list->nelts; i++) {
-      struct shmcache_large_entry *entry;
+    entries = sesscache_sess_list->elts;
+    for (i = 0; i < sesscache_sess_list->nelts; i++) {
+      struct sesscache_large_entry *entry;
 
       entry = &(entries[i]);
       if (entry->sess_id_len == sess_id_len &&
           memcmp(entry->sess_id, sess_id, entry->sess_id_len) == 0) {
 
-        pr_memscrub(entry->sess_data, entry->sess_datalen);
+        pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
         entry->expires = 0;
         return 0;
       }
@@ -1177,9 +1303,9 @@ static int shmcache_delete(tls_sess_cache_t *cache,
   }
 
   h = shmcache_hash(sess_id, sess_id_len);
-  idx = h % shmcache_data->sd_listsz;
+  idx = h % sesscache_data->sd_listsz;
 
-  if (shmcache_lock_shm(F_WRLCK) == 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_WRLCK) == 0) {
     register unsigned int i;
     unsigned int last;
 
@@ -1187,35 +1313,35 @@ static int shmcache_delete(tls_sess_cache_t *cache,
     last = idx > 0 ? (idx - 1) : 0;
 
     do {
-      struct shmcache_entry *entry;
+      struct sesscache_entry *entry;
 
       pr_signals_handle();
 
-      entry = &(shmcache_data->sd_entries[i]);
+      entry = &(sesscache_data->sd_entries[i]);
       if (entry->sess_id_len == sess_id_len &&
           memcmp(entry->sess_id, sess_id, entry->sess_id_len) == 0) {
         time_t now;
 
-        pr_memscrub(entry->sess_data, entry->sess_datalen);
+        pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
 
-        if (shmcache_data->sd_listlen > 0) {
-          shmcache_data->sd_listlen--;
+        if (sesscache_data->sd_listlen > 0) {
+          sesscache_data->sd_listlen--;
         }
 
         /* Don't forget to update the stats. */
         now = time(NULL);
         if (entry->expires > now) {
-          shmcache_data->ndeleted++;
+          sesscache_data->ndeleted++;
 
         } else {
-          shmcache_data->nexpired++;
+          sesscache_data->nexpired++;
         }
 
         entry->expires = 0;
         break;
       }
 
-      if (i < shmcache_data->sd_listsz) {
+      if (i < sesscache_data->sd_listsz) {
         i++;
 
       } else {
@@ -1224,14 +1350,14 @@ static int shmcache_delete(tls_sess_cache_t *cache,
 
     } while (i != last);
 
-    if (shmcache_lock_shm(F_UNLCK) < 0) {
+    if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
       tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
     }
 
     res = 0;
 
   } else {
-    tls_log("shmcache: unable to delete session from cache: error "
+    tls_log("shmcache: unable to delete session from session cache: error "
       "write-locking shmcache: %s", strerror(errno));
 
     errno = EPERM;
@@ -1241,91 +1367,93 @@ static int shmcache_delete(tls_sess_cache_t *cache,
   return res;
 }
 
-static int shmcache_clear(tls_sess_cache_t *cache) {
+static int sess_cache_clear(tls_sess_cache_t *cache) {
   register unsigned int i;
   int res;
 
-  pr_trace_msg(trace_channel, 9, "clearing shmcache cache %p", cache); 
+  pr_trace_msg(trace_channel, 9, "clearing shmcache session cache %p", cache);
 
-  if (shmcache_shmid < 0) {
+  if (sesscache_shmid < 0) {
     errno = EINVAL;
     return -1;
   }
 
-  if (shmcache_sess_list != NULL) {
-    struct shmcache_large_entry *entries;
+  if (sesscache_sess_list != NULL) {
+    struct sesscache_large_entry *entries;
     
-    entries = shmcache_sess_list->elts;
-    for (i = 0; i < shmcache_sess_list->nelts; i++) {
-      struct shmcache_large_entry *entry;
+    entries = sesscache_sess_list->elts;
+    for (i = 0; i < sesscache_sess_list->nelts; i++) {
+      struct sesscache_large_entry *entry;
 
       entry = &(entries[i]);
       entry->expires = 0;
-      pr_memscrub(entry->sess_data, entry->sess_datalen);
+      pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
     }
   }
 
-  if (shmcache_lock_shm(F_WRLCK) < 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_WRLCK) < 0) {
     tls_log("shmcache: unable to clear cache: error write-locking shmcache: %s",
       strerror(errno));
     return -1;
   }
 
-  for (i = 0; i < shmcache_data->sd_listsz; i++) {
-    struct shmcache_entry *entry;
+  for (i = 0; i < sesscache_data->sd_listsz; i++) {
+    struct sesscache_entry *entry;
 
-    entry = &(shmcache_data->sd_entries[i]);
+    entry = &(sesscache_data->sd_entries[i]);
 
     entry->expires = 0;
-    pr_memscrub(entry->sess_data, entry->sess_datalen);
+    pr_memscrub((void *) entry->sess_data, entry->sess_datalen);
   }
 
-  res = shmcache_data->sd_listlen; 
-  shmcache_data->sd_listlen = 0;
+  res = sesscache_data->sd_listlen; 
+  sesscache_data->sd_listlen = 0;
 
-  if (shmcache_lock_shm(F_UNLCK) < 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
     tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
   }
 
   return res;
 }
 
-static int shmcache_remove(tls_sess_cache_t *cache) {
+static int sess_cache_remove(tls_sess_cache_t *cache) {
   int res;
   struct shmid_ds ds;
   const char *cache_file;
 
-  if (shmcache_fh == NULL) {
+  if (sesscache_fh == NULL) {
     return 0;
   }
 
   if (cache != NULL) {
-    pr_trace_msg(trace_channel, 9, "removing shmcache cache %p", cache); 
+    pr_trace_msg(trace_channel, 9, "removing shmcache session cache %p",
+      cache);
   }
 
-  cache_file = shmcache_fh->fh_path;
-  (void) shmcache_close(cache);
+  cache_file = sesscache_fh->fh_path;
+  (void) sess_cache_close(cache);
 
-  if (shmcache_shmid < 0) {
+  if (sesscache_shmid < 0) {
     errno = EINVAL;
     return -1;
   }
 
   pr_log_debug(DEBUG9, MOD_TLS_SHMCACHE_VERSION
-    ": attempting to remove shm ID %d", shmcache_shmid);
+    ": attempting to remove session cache shm ID %d", sesscache_shmid);
 
   PRIVS_ROOT
-  res = shmctl(shmcache_shmid, IPC_RMID, &ds);
+  res = shmctl(sesscache_shmid, IPC_RMID, &ds);
   PRIVS_RELINQUISH
 
   if (res < 0) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
-      ": error removing shm ID %d: %s", shmcache_shmid, strerror(errno));
+      ": error removing session cache shm ID %d: %s", sesscache_shmid,
+      strerror(errno));
 
   } else {
     pr_log_debug(DEBUG9, MOD_TLS_SHMCACHE_VERSION
-      ": removed shm ID %d", shmcache_shmid);
-    shmcache_shmid = -1;
+      ": removed session cache shm ID %d", sesscache_shmid);
+    sesscache_shmid = -1;
   }
 
   /* Don't forget to remove the on-disk file as well. */
@@ -1334,15 +1462,15 @@ static int shmcache_remove(tls_sess_cache_t *cache) {
   return res;
 }
 
-static int shmcache_status(tls_sess_cache_t *cache,
+static int sess_cache_status(tls_sess_cache_t *cache,
     void (*statusf)(void *, const char *, ...), void *arg, int flags) {
   int res, xerrno = 0;
   struct shmid_ds ds;
   pool *tmp_pool;
 
-  pr_trace_msg(trace_channel, 9, "checking shmcache cache %p", cache); 
+  pr_trace_msg(trace_channel, 9, "checking shmcache session cache %p", cache);
 
-  if (shmcache_lock_shm(F_RDLCK) < 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_RDLCK) < 0) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
       ": error read-locking shmcache: %s", strerror(errno));
     return -1;
@@ -1353,10 +1481,10 @@ static int shmcache_status(tls_sess_cache_t *cache,
   statusf(arg, "%s", "Shared memory (shm) SSL session cache provided by "
     MOD_TLS_SHMCACHE_VERSION);
   statusf(arg, "%s", "");
-  statusf(arg, "Shared memory segment ID: %d", shmcache_shmid);
+  statusf(arg, "Shared memory segment ID: %d", sesscache_shmid);
 
   PRIVS_ROOT
-  res = shmctl(shmcache_shmid, IPC_STAT, &ds);
+  res = shmctl(sesscache_shmid, IPC_STAT, &ds);
   xerrno = errno;
   PRIVS_RELINQUISH
 
@@ -1370,27 +1498,27 @@ static int shmcache_status(tls_sess_cache_t *cache,
 
   } else {
     statusf(arg, "Unable to stat shared memory segment ID %d: %s",
-      shmcache_shmid, strerror(xerrno));
+      sesscache_shmid, strerror(xerrno));
   } 
 
   statusf(arg, "%s", "");
-  statusf(arg, "Max session cache size: %u", shmcache_data->sd_listsz);
-  statusf(arg, "Current session cache size: %u", shmcache_data->sd_listlen);
+  statusf(arg, "Max session cache size: %u", sesscache_data->sd_listsz);
+  statusf(arg, "Current session cache size: %u", sesscache_data->sd_listlen);
   statusf(arg, "%s", "");
-  statusf(arg, "Cache lifetime hits: %u", shmcache_data->nhits);
-  statusf(arg, "Cache lifetime misses: %u", shmcache_data->nmisses);
+  statusf(arg, "Cache lifetime hits: %u", sesscache_data->nhits);
+  statusf(arg, "Cache lifetime misses: %u", sesscache_data->nmisses);
   statusf(arg, "%s", "");
-  statusf(arg, "Cache lifetime sessions stored: %u", shmcache_data->nstored);
-  statusf(arg, "Cache lifetime sessions deleted: %u", shmcache_data->ndeleted);
-  statusf(arg, "Cache lifetime sessions expired: %u", shmcache_data->nexpired);
+  statusf(arg, "Cache lifetime sessions stored: %u", sesscache_data->nstored);
+  statusf(arg, "Cache lifetime sessions deleted: %u", sesscache_data->ndeleted);
+  statusf(arg, "Cache lifetime sessions expired: %u", sesscache_data->nexpired);
   statusf(arg, "%s", "");
   statusf(arg, "Cache lifetime errors handling sessions in cache: %u",
-    shmcache_data->nerrors);
+    sesscache_data->nerrors);
   statusf(arg, "Cache lifetime sessions exceeding max entry size: %u",
-    shmcache_data->nexceeded);
-  if (shmcache_data->nexceeded > 0) {
+    sesscache_data->nexceeded);
+  if (sesscache_data->nexceeded > 0) {
     statusf(arg, "  Largest session exceeding max entry size: %u",
-      shmcache_data->exceeded_maxsz);
+      sesscache_data->exceeded_maxsz);
   }
 
   if (flags & TLS_SESS_CACHE_STATUS_FL_SHOW_SESSIONS) {
@@ -1399,7 +1527,7 @@ static int shmcache_status(tls_sess_cache_t *cache,
     statusf(arg, "%s", "");
     statusf(arg, "%s", "Cached sessions:");
 
-    if (shmcache_data->sd_listlen == 0) {
+    if (sesscache_data->sd_listlen == 0) {
       statusf(arg, "%s", "  (none)");
     }
 
@@ -1413,56 +1541,60 @@ static int shmcache_status(tls_sess_cache_t *cache,
      * of rolling our own printing function.
      */
 
-    for (i = 0; i < shmcache_data->sd_listsz; i++) {
-      struct shmcache_entry *entry;
+    for (i = 0; i < sesscache_data->sd_listsz; i++) {
+      struct sesscache_entry *entry;
 
       pr_signals_handle();
 
-      entry = &(shmcache_data->sd_entries[i]);
+      entry = &(sesscache_data->sd_entries[i]);
       if (entry->expires > 0) {
         SSL_SESSION *sess;
         TLS_D2I_SSL_SESSION_CONST unsigned char *ptr;
         time_t ts;
+        int ssl_version;
 
         ptr = entry->sess_data;
         sess = d2i_SSL_SESSION(NULL, &ptr, entry->sess_datalen); 
         if (sess == NULL) {
           pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
-            ": error retrieving session from cache: %s",
-            shmcache_get_crypto_errors());
+            ": error retrieving session from session cache: %s",
+            shmcache_get_errors());
           continue;
         }
 
         statusf(arg, "%s", "  -----BEGIN SSL SESSION PARAMETERS-----");
 
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
         /* XXX Directly accessing these fields cannot be a Good Thing. */
         if (sess->session_id_length > 0) {
-          register unsigned int j;
           char *sess_id_str;
 
-          sess_id_str = pcalloc(tmp_pool, (sess->session_id_length * 2) + 1);
-
-          for (j = 0; j < sess->session_id_length; j++) {
-            sprintf((char *) &(sess_id_str[j*2]), "%02X", sess->session_id[j]);
-          }
+          sess_id_str = pr_str_bin2hex(tmp_pool, sess->session_id,
+            sess->session_id_length, PR_STR_FL_HEX_USE_UC);
 
           statusf(arg, "    Session ID: %s", sess_id_str);
         }
 
         if (sess->sid_ctx_length > 0) {
-          register unsigned int j;
           char *sid_ctx_str;
 
-          sid_ctx_str = pcalloc(tmp_pool, (sess->sid_ctx_length * 2) + 1);
-
-          for (j = 0; j < sess->sid_ctx_length; j++) {
-            sprintf((char *) &(sid_ctx_str[j*2]), "%02X", sess->sid_ctx[j]);
-          }
+          sid_ctx_str = pr_str_bin2hex(tmp_pool, sess->sid_ctx,
+            sess->sid_ctx_length, PR_STR_FL_HEX_USE_UC);
 
           statusf(arg, "    Session ID Context: %s", sid_ctx_str);
         }
 
-        switch (sess->ssl_version) {
+        ssl_version = sess->ssl_version;
+#else
+# if OPENSSL_VERSION_NUMBER >= 0x10100006L && \
+     !defined(HAVE_LIBRESSL)
+        ssl_version = SSL_SESSION_get_protocol_version(sess);
+# else
+        ssl_version = 0;
+# endif /* prior to OpenSSL-1.1.0-pre5 */
+#endif /* prior to OpenSSL-1.1.x */
+
+        switch (ssl_version) {
           case SSL3_VERSION:
             statusf(arg, "    Protocol: %s", "SSLv3");
             break;
@@ -1470,6 +1602,16 @@ static int shmcache_status(tls_sess_cache_t *cache,
           case TLS1_VERSION:
             statusf(arg, "    Protocol: %s", "TLSv1");
             break;
+
+#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+          case TLS1_1_VERSION:
+            statusf(arg, "    Protocol: %s", "TLSv1.1");
+            break;
+
+          case TLS1_2_VERSION:
+            statusf(arg, "    Protocol: %s", "TLSv1.2");
+            break;
+#endif
 
           default:
             statusf(arg, "    Protocol: %s", "unknown");
@@ -1488,7 +1630,7 @@ static int shmcache_status(tls_sess_cache_t *cache,
     }
   }
 
-  if (shmcache_lock_shm(F_UNLCK) < 0) {
+  if (shmcache_lock_shm(sesscache_fh, F_UNLCK) < 0) {
     pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
       ": error unlocking shmcache: %s", strerror(errno));
   }
@@ -1496,6 +1638,916 @@ static int shmcache_status(tls_sess_cache_t *cache,
   destroy_pool(tmp_pool);
   return 0;
 }
+
+#if defined(PR_USE_OPENSSL_OCSP)
+
+/* OCSP response cache implementation callbacks.
+ */
+
+/* Scan the entire list, and clear out the oldest response.  Logs the number
+ * of responses cleared and updates the header stat.
+ *
+ * NOTE: Callers are assumed to handle the locking of the shm before/after
+ * calling this function!
+ */
+static unsigned int ocsp_cache_flush(void) {
+  register unsigned int i;
+  unsigned int flushed = 0;
+  time_t now;
+
+  now = time(NULL);
+
+  /* We always scan the in-memory large response entry list. */
+  if (ocspcache_resp_list != NULL) {
+    struct ocspcache_large_entry *entries;
+
+    entries = ocspcache_resp_list->elts;
+    for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+      struct ocspcache_large_entry *entry;
+
+      entry = &(entries[i]);
+
+      if (entry->age > (now - 3600)) {
+        /* This entry has expired; clear its slot. */
+        pr_memscrub(entry->resp_der, entry->resp_derlen);
+        entry->resp_derlen = 0;
+        pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+        entry->fingerprint_len = 0;
+      }
+    }
+  }
+
+  tls_log("shmcache: flushing ocsp cache of oldest responses");
+
+  for (i = 0; i < ocspcache_data->od_listsz; i++) {
+    struct ocspcache_entry *entry;
+
+    entry = &(ocspcache_data->od_entries[i]);
+    if (entry->age > (now - 3600)) {
+      /* This entry has expired; clear its slot. */
+      pr_memscrub(entry->resp_der, entry->resp_derlen);
+      entry->resp_derlen = 0;
+      pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+      entry->fingerprint_len = 0;
+      entry->age = 0;
+
+      /* Don't forget to update the stats. */
+      ocspcache_data->nexpired++;
+
+      if (ocspcache_data->od_listlen > 0) {
+        ocspcache_data->od_listlen--;
+      }
+
+      flushed++;
+    }
+  }
+
+  tls_log("shmcache: flushed %u old %s from ocsp cache", flushed,
+    flushed != 1 ? "responses" : "response");
+  return flushed;
+}
+
+static int ocsp_cache_open(tls_ocsp_cache_t *cache, char *info) {
+  int fd, xerrno;
+  char *ptr;
+  size_t requested_size;
+  struct stat st;
+
+  pr_trace_msg(trace_channel, 9, "opening shmcache ocsp cache %p", cache);
+
+  /* The info string must be formatted like:
+   *
+   *  /file=%s[&size=%u]
+   *
+   * where the optional size is in bytes.  There is a minimum size; if the
+   * configured size is less than the minimum, it's an error.  The default
+   * size (when no size is explicitly configured) is, of course, larger than
+   * the minimum size.
+   */
+
+  if (strncmp(info, "/file=", 6) != 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
+      ": badly formatted info '%s', unable to open shmcache", info);
+    errno = EINVAL;
+    return -1;
+  }
+
+  info += 6;
+
+  /* Check for the optional size parameter. */
+  ptr = strchr(info, '&');
+  if (ptr != NULL) {
+    if (strncmp(ptr + 1, "size=", 5) == 0) {
+      char *tmp = NULL;
+      long size;
+
+      size = strtol(ptr + 6, &tmp, 10);
+      if (tmp && *tmp) {
+        pr_trace_msg(trace_channel, 1,
+          "badly formatted size parameter '%s', ignoring", ptr + 1);
+
+        /* Default size of 1.5M. */
+        requested_size = 1538 * 1024;
+
+      } else {
+        size_t min_size;
+
+        /* The bare minimum size MUST be able to hold at least one response. */
+        min_size = sizeof(struct ocspcache_data) +
+          sizeof(struct ocspcache_entry);
+
+        if ((size_t) size < min_size) {
+          pr_trace_msg(trace_channel, 1,
+            "requested size (%lu bytes) smaller than minimum size "
+            "(%lu bytes), ignoring", (unsigned long) size,
+            (unsigned long) min_size);
+
+          /* Default size of 1.5M.  */
+          requested_size = 1538 * 1024;
+
+        } else {
+          requested_size = size;
+        }
+      }
+
+    } else {
+      pr_trace_msg(trace_channel, 1,
+        "badly formatted size parameter '%s', ignoring", ptr + 1);
+
+      /* Default size of 1.5M.  */
+      requested_size = 1538 * 1024;
+    }
+
+    *ptr = '\0';
+
+  } else {
+    /* Default size of 1.5M.  */
+    requested_size = 1538 * 1024;
+  }
+
+  if (pr_fs_valid_path(info) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
+      ": file '%s' not an absolute path", info);
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* If ocspcache_fh is not null, then we are a restarted server.  And if
+   * the 'info' path does not match that previous fh, then the admin
+   * has changed the configuration.
+   *
+   * For now, we complain about this, and tell the admin to manually remove
+   * the old file/shm.
+   */
+
+  if (ocspcache_fh != NULL &&
+      strcmp(ocspcache_fh->fh_path, info) != 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
+      ": file '%s' does not match previously configured file '%s'",
+      info, ocspcache_fh->fh_path);
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
+      ": remove existing shmcache using 'ftpdctl tls ocspcache remove' "
+      "before using new file");
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  PRIVS_ROOT
+  ocspcache_fh = pr_fsio_open(info, O_RDWR|O_CREAT);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (ocspcache_fh == NULL) {
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error: unable to open file '%s': %s", info, strerror(xerrno));
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (pr_fsio_fstat(ocspcache_fh, &st) < 0) {
+    xerrno = errno;
+
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error: unable to stat file '%s': %s", info, strerror(xerrno));
+
+    pr_fsio_close(ocspcache_fh);
+    ocspcache_fh = NULL;
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    xerrno = EISDIR;
+
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error: unable to use file '%s': %s", info, strerror(xerrno));
+
+    pr_fsio_close(ocspcache_fh);
+    ocspcache_fh = NULL;
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Make sure that we don't inadvertently get one of the Big Three file
+   * descriptors (stdin/stdout/stderr), as can happen especially if the
+   * server has restarted.
+   */
+  fd = PR_FH_FD(ocspcache_fh);
+  if (fd <= STDERR_FILENO) {
+    int res;
+
+    res = pr_fs_get_usable_fd(fd);
+    if (res < 0) {
+      pr_log_debug(DEBUG0,
+        "warning: unable to find good fd for shmcache fd %d: %s", fd,
+        strerror(errno));
+
+    } else {
+      close(fd);
+      PR_FH_FD(ocspcache_fh) = res;
+    }
+  }
+
+  pr_trace_msg(trace_channel, 9,
+    "requested OCSP response cache file: %s (fd %d)", ocspcache_fh->fh_path,
+    PR_FH_FD(ocspcache_fh));
+  pr_trace_msg(trace_channel, 9,
+    "requested OCSP cache size: %lu bytes", (unsigned long) requested_size);
+  ocspcache_data = ocsp_cache_get_shm(ocspcache_fh, requested_size);
+  if (ocspcache_data == NULL) {
+    xerrno = errno;
+
+    pr_trace_msg(trace_channel, 1,
+      "unable to allocate OCSP response shm: %s", strerror(xerrno));
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": unable to allocate OCSP response shm: %s", strerror(xerrno));
+
+    pr_fsio_close(ocspcache_fh);
+    ocspcache_fh = NULL;
+
+    errno = EINVAL;
+    return -1;
+  }
+
+  cache->cache_pool = make_sub_pool(permanent_pool);
+  pr_pool_tag(cache->cache_pool, MOD_TLS_SHMCACHE_VERSION);
+
+  return 0;
+}
+
+static int ocsp_cache_close(tls_ocsp_cache_t *cache) {
+  if (cache != NULL) {
+    pr_trace_msg(trace_channel, 9, "closing shmcache ocsp cache %p", cache);
+  }
+
+  if (cache != NULL &&
+      cache->cache_pool != NULL) {
+    if (ocspcache_resp_list != NULL) {
+      register unsigned int i;
+      struct ocspcache_large_entry *entries;
+
+      entries = ocspcache_resp_list->elts;
+      for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+        struct ocspcache_large_entry *entry;
+
+        entry = &(entries[i]);
+        pr_memscrub(entry->resp_der, entry->resp_derlen);
+      }
+
+      ocspcache_resp_list = NULL;
+    }
+
+    destroy_pool(cache->cache_pool);
+  }
+
+  if (ocspcache_shmid >= 0) {
+    int res, xerrno = 0;
+
+    PRIVS_ROOT
+#if !defined(_POSIX_SOURCE)
+    res = shmdt((char *) ocspcache_data);
+#else
+    res = shmdt((const char *) ocspcache_data);
+#endif
+    xerrno = errno;
+    PRIVS_RELINQUISH
+
+    if (res < 0) {
+      pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+        ": error detaching ocsp shm ID %d: %s", ocspcache_shmid,
+        strerror(xerrno));
+    }
+
+    ocspcache_data = NULL;
+  }
+
+  pr_fsio_close(ocspcache_fh);
+  ocspcache_fh = NULL;
+  return 0;
+}
+
+static int ocsp_cache_add_large_resp(tls_ocsp_cache_t *cache,
+    const char *fingerprint, OCSP_RESPONSE *resp, time_t resp_age) {
+  struct ocspcache_large_entry *entry = NULL;
+  int resp_derlen = 0;
+  unsigned char *ptr;
+
+  resp_derlen = i2d_OCSP_RESPONSE(resp, NULL);
+
+  if (resp_derlen > TLS_MAX_OCSP_RESPONSE_SIZE) {
+    /* We may get responses to add to the list which do not exceed the max
+     * size, but instead are here because we couldn't get the lock on the
+     * shmcache.  Don't track these in the 'exceeded' stats'.
+     */
+
+    if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) == 0) {
+      ocspcache_data->nexceeded++;
+      if ((size_t) resp_derlen > ocspcache_data->exceeded_maxsz) {
+        ocspcache_data->exceeded_maxsz = resp_derlen;
+      }
+
+      if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+        tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+      }
+
+    } else {
+      tls_log("shmcache: error write-locking shmcache: %s", strerror(errno));
+    }
+  }
+
+  if (ocspcache_resp_list != NULL) {
+    register unsigned int i;
+    struct ocspcache_large_entry *entries;
+    time_t now;
+
+    /* Look for any expired responses in the list to overwrite/reuse. */
+    entries = ocspcache_resp_list->elts;
+    now = time(NULL);
+    for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+      entry = &(entries[i]);
+
+      if (entry->age > (now - 3600)) {
+        /* This entry has expired; clear and reuse its slot. */
+        entry->age = 0;
+        pr_memscrub(entry->resp_der, entry->resp_derlen);
+        entry->resp_derlen = 0;
+        pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+        entry->fingerprint_len = 0;
+
+        break;
+      }
+    }
+
+  } else {
+    ocspcache_resp_list = make_array(cache->cache_pool, 1,
+      sizeof(struct ocspcache_large_entry));
+    entry = push_array(ocspcache_resp_list);
+  }
+
+  /* Be defensive, and catch the case where entry might still be null here. */
+  if (entry == NULL) {
+    errno = EPERM;
+    return -1;
+  }
+
+  entry->age = resp_age;
+  entry->fingerprint_len = strlen(fingerprint);
+  entry->fingerprint = palloc(cache->cache_pool, entry->fingerprint_len);
+  memcpy(entry->fingerprint, fingerprint, entry->fingerprint_len);
+  entry->resp_derlen = resp_derlen;
+  entry->resp_der = palloc(cache->cache_pool, resp_derlen);
+
+  ptr = entry->resp_der;
+  i2d_OCSP_RESPONSE(resp, &ptr);
+
+  return 0;
+}
+
+static int ocsp_cache_add(tls_ocsp_cache_t *cache, const char *fingerprint,
+    OCSP_RESPONSE *resp, time_t resp_age) {
+  register unsigned int i;
+  unsigned int h, idx, last;
+  int found_slot = FALSE, need_lock = TRUE, res = 0, resp_derlen;
+  size_t fingerprint_len;
+
+  pr_trace_msg(trace_channel, 9, "adding response to shmcache ocsp cache %p",
+    cache);
+
+  /* First we need to find out how much space is needed for the serialized
+   * response data.  There is no known maximum size for OCSP response data;
+   * this module is currently designed to allow only up to a certain size.
+   */
+
+  resp_derlen = i2d_OCSP_RESPONSE(resp, NULL);
+  if (resp_derlen <= 0) {
+    pr_trace_msg(trace_channel, 1,
+      "error DER-encoding OCSP response: %s", shmcache_get_errors());
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (resp_derlen > TLS_MAX_OCSP_RESPONSE_SIZE) {
+    tls_log("shmcache: length of serialized OCSP response data (%d) exceeds "
+      "maximum size (%u), unable to add to shared shmcache", resp_derlen,
+      TLS_MAX_OCSP_RESPONSE_SIZE);
+
+    /* Instead of rejecting the add here, we add the response to a "large
+     * response" list.  Thus the large response would still be cached per
+     * process and will not be lost.
+     *
+     * XXX We should also track how often this happens, and possibly trigger
+     * a shmcache resize (using a larger record size, vs larger cache size)
+     * so that we can cache these large records in the shm segment.
+     */
+
+    return ocsp_cache_add_large_resp(cache, fingerprint, resp, resp_age);
+  }
+
+  if (ocspcache_data->od_listlen == ocspcache_data->od_listsz) {
+    /* It appears that the cache is full.  Flush the oldest response. */
+    if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) == 0) {
+      if (ocsp_cache_flush() > 0) {
+        /* If we made room, then do NOT release the lock; we keep the lock
+         * so that we can add the response.
+         */
+        need_lock = FALSE;
+
+      } else {
+        /* Release the lock, and use the "large response" list fallback. */
+        if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+          tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+        }
+
+        return ocsp_cache_add_large_resp(cache, fingerprint, resp, resp_age);
+      }
+
+    } else {
+      tls_log("shmcache: unable to flush ocsp shmcache: error write-locking "
+        "shmcache: %s", strerror(errno));
+
+      /* Add this response to the "large response" list instead as a
+       * fallback.
+       */
+      return ocsp_cache_add_large_resp(cache, fingerprint, resp, resp_age);
+    }
+  }
+
+  /* Hash the key, start looking for an open slot. */
+  fingerprint_len = strlen(fingerprint);
+  h = shmcache_hash((unsigned char *) fingerprint, fingerprint_len);
+  idx = h % ocspcache_data->od_listsz;
+
+  if (need_lock) {
+    if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) < 0) {
+      tls_log("shmcache: unable to add response to ocsp shmcache: error "
+        "write-locking shmcache: %s", strerror(errno));
+
+      /* Add this response to the "large response" list instead as a
+       * fallback.
+       */
+      return ocsp_cache_add_large_resp(cache, fingerprint, resp, resp_age);
+    }
+  }
+
+  i = idx;
+  last = idx > 0 ? (idx - 1) : 0;
+
+  do {
+    struct ocspcache_entry *entry;
+
+    pr_signals_handle();
+
+    /* Look for the first open slot (i.e. fingerprint_len == 0). */
+    entry = &(ocspcache_data->od_entries[i]);
+    if (entry->fingerprint_len == 0) {
+      unsigned char *ptr;
+
+      entry->age = resp_age;
+      entry->fingerprint_len = fingerprint_len;
+      memcpy(entry->fingerprint, fingerprint, fingerprint_len);
+      entry->resp_derlen = resp_derlen;
+
+      ptr = entry->resp_der;
+      i2d_OCSP_RESPONSE(resp, &ptr);
+
+      ocspcache_data->od_listlen++;
+      ocspcache_data->nstored++;
+
+      found_slot = TRUE;
+      break;
+    }
+
+    if (i < ocspcache_data->od_listsz) {
+      i++;
+
+    } else {
+      i = 0;
+    }
+  } while (i != last);
+
+  /* There is a race condition possible between the open slots check
+   * above and the scan through the slots.  So if we didn't actually find
+   * an open slot at this point, add it to the "large response" list.
+   */
+  if (!found_slot) {
+    res = ocsp_cache_add_large_resp(cache, fingerprint, resp, resp_age);
+  }
+
+  if (need_lock) {
+    if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+      tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+    }
+  }
+
+  return res;
+}
+
+static OCSP_RESPONSE *ocsp_cache_get(tls_ocsp_cache_t *cache,
+    const char *fingerprint, time_t *resp_age) {
+  unsigned int h, idx;
+  OCSP_RESPONSE *resp = NULL;
+  size_t fingerprint_len = 0;
+
+  pr_trace_msg(trace_channel, 9,
+    "getting response from shmcache ocsp cache %p", cache);
+
+  fingerprint_len = strlen(fingerprint);
+
+  /* Look for the requested response in the "large response" list first. */
+  if (ocspcache_resp_list != NULL) {
+    register unsigned int i;
+    struct ocspcache_large_entry *entries;
+
+    entries = ocspcache_resp_list->elts;
+    for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+      struct ocspcache_large_entry *entry;
+
+      entry = &(entries[i]);
+      if (entry->fingerprint_len > 0 &&
+          entry->fingerprint_len == fingerprint_len &&
+          memcmp(entry->fingerprint, fingerprint, fingerprint_len) == 0) {
+        const unsigned char *ptr;
+
+        ptr = entry->resp_der;
+        resp = d2i_OCSP_RESPONSE(NULL, &ptr, entry->resp_derlen);
+        if (resp == NULL) {
+          tls_log("shmcache: error retrieving response from ocsp cache: %s",
+            shmcache_get_errors());
+
+        } else {
+          *resp_age = entry->age;
+          break;
+        }
+      }
+    }
+  }
+
+  if (resp) {
+    return resp;
+  }
+
+  h = shmcache_hash((unsigned char *) fingerprint, fingerprint_len);
+  idx = h % ocspcache_data->od_listsz;
+
+  if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) == 0) {
+    register unsigned int i;
+    unsigned int last;
+
+    i = idx;
+    last = idx > 0 ? (idx -1) : 0;
+
+    do {
+      struct ocspcache_entry *entry;
+
+      pr_signals_handle();
+
+      entry = &(ocspcache_data->od_entries[i]);
+      if (entry->fingerprint_len > 0 &&
+          entry->fingerprint_len == fingerprint_len &&
+          memcmp(entry->fingerprint, fingerprint, fingerprint_len) == 0) {
+        const unsigned char *ptr;
+
+        /* Don't forget to update the stats. */
+
+        ptr = entry->resp_der;
+        resp = d2i_OCSP_RESPONSE(NULL, &ptr, entry->resp_derlen);
+        if (resp != NULL) {
+          *resp_age = entry->age;
+          ocspcache_data->nhits++;
+
+        } else {
+          tls_log("shmcache: error retrieving response from ocsp cache: %s",
+            shmcache_get_errors());
+          ocspcache_data->nerrors++;
+        }
+
+        break;
+      }
+
+      if (i < ocspcache_data->od_listsz) {
+        i++;
+
+      } else {
+        i = 0;
+      }
+    } while (i != last);
+
+    if (resp == NULL) {
+      ocspcache_data->nmisses++;
+      errno = ENOENT;
+    }
+
+    if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+      tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+    }
+
+  } else {
+    tls_log("shmcache: unable to retrieve response from ocsp cache: error "
+      "write-locking shmcache: %s", strerror(errno));
+
+    errno = EPERM;
+  }
+
+  return resp;
+}
+
+static int ocsp_cache_delete(tls_ocsp_cache_t *cache, const char *fingerprint) {
+  unsigned int h, idx;
+  int res;
+  size_t fingerprint_len = 0;
+
+  pr_trace_msg(trace_channel, 9,
+    "removing response from shmcache ocsp cache %p", cache);
+
+  fingerprint_len = strlen(fingerprint);
+
+  /* Look for the requested response in the "large response" list first. */
+  if (ocspcache_resp_list != NULL) {
+    register unsigned int i;
+    struct ocspcache_large_entry *entries;
+
+    entries = ocspcache_resp_list->elts;
+    for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+      struct ocspcache_large_entry *entry;
+
+      entry = &(entries[i]);
+      if (entry->fingerprint_len == fingerprint_len &&
+          memcmp(entry->fingerprint, fingerprint, fingerprint_len) == 0) {
+
+        pr_memscrub(entry->resp_der, entry->resp_derlen);
+        entry->resp_derlen = 0;
+        pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+        entry->fingerprint_len = 0;
+        entry->age = 0;
+        return 0;
+      }
+    }
+  }
+
+  h = shmcache_hash((unsigned char *) fingerprint, fingerprint_len);
+  idx = h % ocspcache_data->od_listsz;
+
+  if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) == 0) {
+    register unsigned int i;
+    unsigned int last;
+
+    i = idx;
+    last = idx > 0 ? (idx - 1) : 0;
+
+    do {
+      struct ocspcache_entry *entry;
+
+      pr_signals_handle();
+
+      entry = &(ocspcache_data->od_entries[i]);
+      if (entry->fingerprint_len == fingerprint_len &&
+          memcmp(entry->fingerprint, fingerprint, fingerprint_len) == 0) {
+        time_t now;
+
+        pr_memscrub(entry->resp_der, entry->resp_derlen);
+        entry->resp_derlen = 0;
+        pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+        entry->fingerprint_len = 0;
+
+        if (ocspcache_data->od_listlen > 0) {
+          ocspcache_data->od_listlen--;
+        }
+
+        /* Don't forget to update the stats. */
+        now = time(NULL);
+        if (entry->age > (now - 3600)) {
+          ocspcache_data->nexpired++;
+
+        } else {
+          ocspcache_data->ndeleted++;
+        }
+
+        entry->age = 0;
+        break;
+      }
+
+      if (i < ocspcache_data->od_listsz) {
+        i++;
+
+      } else {
+        i = 0;
+      }
+
+    } while (i != last);
+
+    if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+      tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+    }
+
+    res = 0;
+
+  } else {
+    tls_log("shmcache: unable to delete response from ocsp cache: error "
+      "write-locking shmcache: %s", strerror(errno));
+
+    errno = EPERM;
+    res = -1;
+  }
+
+  return res;
+}
+
+static int ocsp_cache_clear(tls_ocsp_cache_t *cache) {
+  register unsigned int i;
+  int res;
+
+  pr_trace_msg(trace_channel, 9, "clearing shmcache ocsp cache %p", cache);
+
+  if (ocspcache_shmid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (ocspcache_resp_list != NULL) {
+    struct ocspcache_large_entry *entries;
+
+    entries = ocspcache_resp_list->elts;
+    for (i = 0; i < ocspcache_resp_list->nelts; i++) {
+      struct ocspcache_large_entry *entry;
+
+      entry = &(entries[i]);
+      entry->age = 0;
+      pr_memscrub(entry->resp_der, entry->resp_derlen);
+      entry->resp_derlen = 0;
+      pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+      entry->fingerprint_len = 0;
+    }
+  }
+
+  if (shmcache_lock_shm(ocspcache_fh, F_WRLCK) < 0) {
+    tls_log("shmcache: unable to clear cache: error write-locking shmcache: %s",
+      strerror(errno));
+    return -1;
+  }
+
+  for (i = 0; i < ocspcache_data->od_listsz; i++) {
+    struct ocspcache_entry *entry;
+
+    entry = &(ocspcache_data->od_entries[i]);
+
+    entry->age = 0;
+    pr_memscrub(entry->resp_der, entry->resp_derlen);
+    entry->resp_derlen = 0;
+    pr_memscrub(entry->fingerprint, entry->fingerprint_len);
+    entry->fingerprint_len = 0;
+  }
+
+  res = ocspcache_data->od_listlen;
+  ocspcache_data->od_listlen = 0;
+
+  if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+    tls_log("shmcache: error unlocking shmcache: %s", strerror(errno));
+  }
+
+  return res;
+}
+
+static int ocsp_cache_remove(tls_ocsp_cache_t *cache) {
+  int res;
+  struct shmid_ds ds;
+  const char *cache_file;
+
+  if (ocspcache_fh == NULL) {
+    return 0;
+  }
+
+  if (cache != NULL) {
+    pr_trace_msg(trace_channel, 9, "removing shmcache ocsp cache %p", cache);
+  }
+
+  cache_file = ocspcache_fh->fh_path;
+  (void) ocsp_cache_close(cache);
+
+  if (ocspcache_shmid < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  pr_log_debug(DEBUG9, MOD_TLS_SHMCACHE_VERSION
+    ": attempting to remove OCSP response cache shm ID %d", ocspcache_shmid);
+
+  PRIVS_ROOT
+  res = shmctl(ocspcache_shmid, IPC_RMID, &ds);
+  PRIVS_RELINQUISH
+
+  if (res < 0) {
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error removing OCSP response cache shm ID %d: %s", ocspcache_shmid,
+      strerror(errno));
+
+  } else {
+    pr_log_debug(DEBUG9, MOD_TLS_SHMCACHE_VERSION
+      ": removed OCSP response cache shm ID %d", ocspcache_shmid);
+    ocspcache_shmid = -1;
+  }
+
+  /* Don't forget to remove the on-disk file as well. */
+  unlink(cache_file);
+
+  return res;
+}
+
+static int ocsp_cache_status(tls_ocsp_cache_t *cache,
+    void (*statusf)(void *, const char *, ...), void *arg, int flags) {
+  int res, xerrno = 0;
+  struct shmid_ds ds;
+  pool *tmp_pool;
+
+  pr_trace_msg(trace_channel, 9, "checking shmcache ocsp cache %p", cache);
+
+  if (shmcache_lock_shm(ocspcache_fh, F_RDLCK) < 0) {
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error read-locking shmcache: %s", strerror(errno));
+    return -1;
+  }
+
+  tmp_pool = make_sub_pool(permanent_pool);
+
+  statusf(arg, "%s", "Shared memory (shm) OCSP response cache provided by "
+    MOD_TLS_SHMCACHE_VERSION);
+  statusf(arg, "%s", "");
+  statusf(arg, "Shared memory segment ID: %d", ocspcache_shmid);
+
+  PRIVS_ROOT
+  res = shmctl(ocspcache_shmid, IPC_STAT, &ds);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (res == 0) {
+    statusf(arg, "Shared memory segment size: %u bytes",
+      (unsigned int) ds.shm_segsz);
+    statusf(arg, "Shared memory cache created on: %s",
+      pr_strtime(ds.shm_ctime));
+    statusf(arg, "Shared memory attach count: %u",
+      (unsigned int) ds.shm_nattch);
+
+  } else {
+    statusf(arg, "Unable to stat shared memory segment ID %d: %s",
+      ocspcache_shmid, strerror(xerrno));
+  }
+
+  statusf(arg, "%s", "");
+  statusf(arg, "Max response cache size: %u", ocspcache_data->od_listsz);
+  statusf(arg, "Current response cache size: %u", ocspcache_data->od_listlen);
+  statusf(arg, "%s", "");
+  statusf(arg, "Cache lifetime hits: %u", ocspcache_data->nhits);
+  statusf(arg, "Cache lifetime misses: %u", ocspcache_data->nmisses);
+  statusf(arg, "%s", "");
+  statusf(arg, "Cache lifetime responses stored: %u", ocspcache_data->nstored);
+  statusf(arg, "Cache lifetime responses deleted: %u",
+    ocspcache_data->ndeleted);
+  statusf(arg, "Cache lifetime responses expired: %u",
+    ocspcache_data->nexpired);
+  statusf(arg, "%s", "");
+  statusf(arg, "Cache lifetime errors handling responses in cache: %u",
+    ocspcache_data->nerrors);
+  statusf(arg, "Cache lifetime responses exceeding max entry size: %u",
+    ocspcache_data->nexceeded);
+  if (ocspcache_data->nexceeded > 0) {
+    statusf(arg, "  Largest response exceeding max entry size: %u",
+      ocspcache_data->exceeded_maxsz);
+  }
+
+  if (shmcache_lock_shm(ocspcache_fh, F_UNLCK) < 0) {
+    pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
+      ": error unlocking shmcache: %s", strerror(errno));
+  }
+
+  destroy_pool(tmp_pool);
+  return 0;
+}
+
+#endif /* PR_USE_OPENSSL_OCSP */
 
 /* Event Handlers
  */
@@ -1509,10 +2561,13 @@ static void shmcache_shutdown_ev(const void *event_data, void *user_data) {
 
     /* Remove external session caches on shutdown; the security policy/config
      * may have changed, e.g. becoming more strict, and allow clients to
-     * resumed cached sessions from a more relaxed security config is not a 
+     * resumed cached sessions from a more relaxed security config is not a
      * Good Thing at all.
      */
-    shmcache_remove(NULL);
+    sess_cache_remove(NULL);
+#if defined(PR_USE_OPENSSL_OCSP)
+    ocsp_cache_remove(NULL);
+#endif /* PR_USE_OPENSSL_OCSP */
   }
 }
 
@@ -1525,7 +2580,11 @@ static void shmcache_mod_unload_ev(const void *event_data, void *user_data) {
     /* This clears our cache by detaching and destroying the shared memory
      * segment.
      */
-    shmcache_remove(NULL);
+    sess_cache_remove(NULL);
+
+#if defined(PR_USE_OPENSSL_OCSP)
+    tls_ocsp_cache_unregister("shm");
+#endif /* PR_USE_OPENSSL_OCSP */
   }
 }
 #endif /* !PR_SHARED_MODULE */
@@ -1533,10 +2592,10 @@ static void shmcache_mod_unload_ev(const void *event_data, void *user_data) {
 static void shmcache_restart_ev(const void *event_data, void *user_data) {
   /* Clear external session caches on shutdown; the security policy/config
    * may have changed, e.g. becoming more strict, and allow clients to
-   * resumed cached sessions from a more relaxed security config is not a 
+   * resumed cached sessions from a more relaxed security config is not a
    * Good Thing at all.
    */
-  shmcache_clear(NULL);
+  sess_cache_clear(NULL);
 }
 
 /* Initialization functions
@@ -1552,32 +2611,53 @@ static int tls_shmcache_init(void) {
   pr_event_register(&tls_shmcache_module, "core.shutdown", shmcache_shutdown_ev,
     NULL);
 
-  /* Prepare our cache handler. */
-  memset(&shmcache, 0, sizeof(shmcache));
-  shmcache.open = shmcache_open;
-  shmcache.close = shmcache_close;
-  shmcache.add = shmcache_add;
-  shmcache.get = shmcache_get;
-  shmcache.delete = shmcache_delete;
-  shmcache.clear = shmcache_clear;
-  shmcache.remove = shmcache_remove;
-  shmcache.status = shmcache_status;
+  /* Prepare our SSL session cache handler. */
+  memset(&sess_cache, 0, sizeof(sess_cache));
+  sess_cache.open = sess_cache_open;
+  sess_cache.close = sess_cache_close;
+  sess_cache.add = sess_cache_add;
+  sess_cache.get = sess_cache_get;
+  sess_cache.delete = sess_cache_delete;
+  sess_cache.clear = sess_cache_clear;
+  sess_cache.remove = sess_cache_remove;
+  sess_cache.status = sess_cache_status;
 
 #ifdef SSL_SESS_CACHE_NO_INTERNAL_LOOKUP
   /* Take a chance, and inform OpenSSL that it does not need to use its own
    * internal session cache lookups; using the external session cache (i.e. us)
    * will be enough.
    */
-  shmcache.cache_mode = SSL_SESS_CACHE_NO_INTERNAL_LOOKUP;
+  sess_cache.cache_mode = SSL_SESS_CACHE_NO_INTERNAL_LOOKUP;
 #endif
 
   /* Register ourselves with mod_tls. */
-  if (tls_sess_cache_register("shm", &shmcache) < 0) {
+  if (tls_sess_cache_register("shm", &sess_cache) < 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
       ": notice: error registering 'shm' SSL session cache: %s",
       strerror(errno));
     return -1;
   }
+
+#if defined(PR_USE_OPENSSL_OCSP)
+  /* Prepare our OCSP response cache handler. */
+  memset(&ocsp_cache, 0, sizeof(ocsp_cache));
+  ocsp_cache.open = ocsp_cache_open;
+  ocsp_cache.close = ocsp_cache_close;
+  ocsp_cache.add = ocsp_cache_add;
+  ocsp_cache.get = ocsp_cache_get;
+  ocsp_cache.delete = ocsp_cache_delete;
+  ocsp_cache.clear = ocsp_cache_clear;
+  ocsp_cache.remove = ocsp_cache_remove;
+  ocsp_cache.status = ocsp_cache_status;
+
+  /* Register ourselves with mod_tls. */
+  if (tls_ocsp_cache_register("shm", &ocsp_cache) < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_TLS_SHMCACHE_VERSION
+      ": notice: error registering 'shm' OCSP response cache: %s",
+      strerror(errno));
+    return -1;
+  }
+#endif /* PR_USE_OPENSSL_OCSP */
 
   return 0;
 }
@@ -1585,7 +2665,7 @@ static int tls_shmcache_init(void) {
 static int tls_shmcache_sess_init(void) {
 
 #ifdef HAVE_MLOCK
-  if (shmcache_data != NULL) {
+  if (sesscache_data != NULL) {
     int res, xerrno = 0;
 
     /* Make sure the memory is pinned in RAM where possible.
@@ -1595,19 +2675,19 @@ static int tls_shmcache_sess_init(void) {
      * when the session process exits.
      */
     PRIVS_ROOT
-    res = mlock(shmcache_data, shmcache_datasz);
+    res = mlock(sesscache_data, sesscache_datasz);
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
       pr_log_debug(DEBUG1, MOD_TLS_SHMCACHE_VERSION
-        ": error locking 'shm' cache (%lu bytes) into memory: %s",
-        (unsigned long) shmcache_datasz, strerror(xerrno));
+        ": error locking 'shm' session cache (%lu bytes) into memory: %s",
+        (unsigned long) sesscache_datasz, strerror(xerrno));
 
     } else {
       pr_log_debug(DEBUG5, MOD_TLS_SHMCACHE_VERSION
-        ": 'shm' cache locked into memory (%lu bytes)",
-        (unsigned long) shmcache_datasz);
+        ": 'shm' session cache locked into memory (%lu bytes)",
+        (unsigned long) sesscache_datasz);
     }
   }
 #endif

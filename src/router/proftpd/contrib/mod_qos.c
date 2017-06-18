@@ -2,7 +2,7 @@
  * ProFTPD: mod_qos -- a module for managing QoS socket options
  *
  * Copyright (c) 2010 Philip Prindeville
- * Copyright (c) 2010-2011 The ProFTPD Project
+ * Copyright (c) 2010-2014 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
  * source distribution.
  *
  * This is mod_qos, contrib software for proftpd 1.3.x and above.
- *
- * $Id: mod_qos.c,v 1.4 2011-05-23 20:56:40 castaglia Exp $
  */
 
 #include "conf.h"
@@ -238,6 +236,9 @@ static struct qos_rec qos_vals[] = {
   { NULL,	-1 }
 };
 
+/* Prototypes. */
+static int qos_sess_init(void);
+
 static int qos_get_int(const char *str) {
   register unsigned int i;
 
@@ -393,6 +394,22 @@ static void qos_mod_unload_ev(const void *event_data, void *user_data) {
 }
 #endif /* PR_SHARED_MODULE */
 
+static void qos_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&qos_module, "core.data-connect", qos_data_connect_ev);
+  pr_event_unregister(&qos_module, "core.data-listen", qos_data_listen_ev);
+  pr_event_unregister(&qos_module, "core.session-reinit", qos_sess_reinit_ev);
+
+  res = qos_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&qos_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization routines
  */
 
@@ -424,6 +441,9 @@ static int qos_sess_init(void) {
     }
   }
 #endif
+
+  pr_event_register(&qos_module, "core.session-reinit", qos_sess_reinit_ev,
+    NULL);
 
   return 0;
 }

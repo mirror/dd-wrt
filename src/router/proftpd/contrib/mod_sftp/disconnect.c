@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp disconnect msgs
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: disconnect.c,v 1.10 2012-02-15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -74,6 +72,7 @@ const char *sftp_disconnect_get_str(uint32_t reason_code) {
 void sftp_disconnect_send(uint32_t reason, const char *explain,
     const char *file, int lineno, const char *func) {
   struct ssh2_packet *pkt;
+  const pr_netaddr_t *remote_addr;
   const char *lang = "en-US";
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
@@ -81,6 +80,8 @@ void sftp_disconnect_send(uint32_t reason, const char *explain,
 
   /* Send the client a DISCONNECT mesg. */
   pkt = sftp_ssh2_packet_create(sftp_pool);
+
+  remote_addr = pr_netaddr_get_sess_remote_addr();
 
   buflen = bufsz = 1024;
   ptr = buf = palloc(pkt->pool, bufsz);
@@ -92,11 +93,15 @@ void sftp_disconnect_send(uint32_t reason, const char *explain,
       if (explanations[i].code == reason) {
         explain = explanations[i].explain;
         lang = explanations[i].lang;
-        if (lang == NULL)
+        if (lang == NULL) {
           lang = "en-US";
-
+        }
         break;
       }
+    }
+
+    if (explain == NULL) {
+      explain = "Unknown reason";
     }
 
   } else {
@@ -120,8 +125,8 @@ void sftp_disconnect_send(uint32_t reason, const char *explain,
   pkt->payload = ptr;
   pkt->payload_len = (bufsz - buflen);
 
-  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "disconnecting (%s)",
-    explain);
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+    "disconnecting %s (%s)", pr_netaddr_get_ipstr(remote_addr), explain);
 
   /* If we are called very early in the connection lifetime, then the
    * sftp_conn variable may not have been set yet, thus the conditional here.

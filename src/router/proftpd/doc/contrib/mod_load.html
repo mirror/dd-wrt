@@ -1,6 +1,4 @@
-<!-- $Id: mod_load.html,v 1.3 2005-01-01 20:15:55 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_load.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_load</title>
@@ -42,7 +40,7 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="MaxLoad">MaxLoad</a></h2>
+<h3><a name="MaxLoad">MaxLoad</a></h3>
 <strong>Syntax:</strong> MaxLoad <em>number|&quot;none&quot; [message]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -91,28 +89,20 @@ can be used in any <code>Display</code> file <i>e.g.</i>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 To install <code>mod_load</code>, follow the usual steps for using third-party
-modules in proftpd:
+modules in ProFTPD:
 <pre>
-  ./configure --with-modules=mod_load
-  make
-  make install
+  $ ./configure --with-modules=mod_load
+  $ make
+  $ make install
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2005-01-01 20:15:55 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2000-2005 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

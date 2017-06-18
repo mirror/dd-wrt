@@ -1,6 +1,4 @@
-<!-- $Id: ftpquota.html,v 1.1 2004-11-03 19:37:44 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/ftpquota.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ftpquota: tool for ProFTPD mod_quotatab</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This program is distributed with the
 <a href="./mod_quotatab.html"><code>mod_quotatab</code></a> module for
 ProFTPD 1.2.  It is used to create and manage quota tables of type
@@ -42,18 +41,18 @@ Tables of type &quot;file&quot; have identifying magic headers such that
 <code>ftpquota</code> is needed to initially create both tables.  It is an
 error to attempt to create a table that already exists:
 <pre>
-  # ftpquota --create-table --type=limit
+  $ ftpquota --create-table --type=limit
   ftpquota: cannot create existing table
 </pre>
 
 <p>
 To create the initial limit table:
 <pre>
-  ftpquota --create-table --type=limit
+  $ ftpquota --create-table --type=limit
 </pre>
 To create the initial tally table:
 <pre>
-  ftpquota --create-table --type=tally
+  $ ftpquota --create-table --type=tally
 </pre>
 The population of a tally table file with the tally for <code>user</code>s,
 <code>group</code>s, <code>class</code>es, and <code>all</code> is done
@@ -73,7 +72,7 @@ you, as the administrator, wish to impose quotas.
 To a basic limit record for a user <code>bob</code> using the default quotas
 (which are all &quot;unlimited&quot; by default):
 <pre>
-  ftpquota --add-record --type=limit --name=bob --quota-type=user
+  $ ftpquota --add-record --type=limit --name=bob --quota-type=user
 </pre>
 Similarly for quotas of type <code>group</code> or <code>class.</code>  Note
 that for quotas of type <code>all</code>, the <code>--name</code> option
@@ -92,12 +91,12 @@ combination of name and quota type.
 An example of creating a limit record with more complex quotas for a class
 named &quot;browsers&quot;
 <pre>
-  ftpquota --add-record --type=limit --name=browsers --quota-type=class \
+  $ ftpquota --add-record --type=limit --name=browsers --quota-type=class \
     --files-upload=0  --files-download=25 --table-path=/usr/local/etc/ftplimit.tab
 </pre>
 or, another way:
 <pre>
-  ftpquota --add-record --type=limit --name=browsers --quota-type=class \
+  $ ftpquota --add-record --type=limit --name=browsers --quota-type=class \
     --bytes-upload=0 --bytes-download=2 --units=Gb --table-path=/usr/local/etc/ftplimit.tab
 </pre>
 In general, it is a good idea to use either byte quotas or file quotas, but
@@ -121,7 +120,7 @@ tally table (effectively resetting the quotas to zero for that
 <code>user/group/class/all</code>), there is the
 <code>--delete-record</code> option:
 <pre>
-  ftpquota --delete-record --type=limit --name=browsers --quota-type=class
+  $ ftpquota --delete-record --type=limit --name=browsers --quota-type=class
 </pre>
 
 <p>
@@ -129,7 +128,7 @@ In addition to adding and removing records, an administrator may want to
 simply change the quotas in a given record, either in the limit or tally
 tables.  In this case, use <code>--update-record</code>:
 <pre>
-  ftpquota --update-record --type=tally --name=bob --quota-type=user \
+  $ ftpquota --update-record --type=tally --name=bob --quota-type=user \
     --bytes-download=100 --files-download=1
 </pre>
 This example command manually sets user <code>bob</code>'s download tally to
@@ -140,7 +139,7 @@ There are some administrators who wish to impose quotas on a daily basis, that
 is, to have a per-day quota.  At present, the easiest way to do this is to
 have a cron job that, once a day, does the following:
 <pre>
-  ftpquota --update-record --type=tally --name=<i>name</i> --quota-type=<i>quotatype</i>
+  $ ftpquota --update-record --type=tally --name=<i>name</i> --quota-type=<i>quotatype</i>
 </pre>
 This command will &quot;reset&quot; the matching tally record.  By default, if
 no byte or file quotas are set, the default values are used: <b>unlimited</b>
@@ -162,12 +161,12 @@ current tally.  <code>ftpquota</code> thus supports the dumping out of
 table contents in human-legible form via the <code>--show-records</code>
 option:
 <pre>
-  ftpquota --show-records --type=limit
+  $ ftpquota --show-records --type=limit
 </pre>
 or, for a tally table not in the location where the scripts expects it to
 be:
 <pre>
-  ftpquota --show-records --type=tally --table-path=/usr/local/etc/ftpd/quota-tally.tab
+  $ ftpquota --show-records --type=tally --table-path=/usr/local/etc/ftpd/quota-tally.tab
 </pre>
 When viewing tables this way, the <code>--units</code> option can be used
 to display byte quotas in other units (<i>e.g.</i> Kb, Mb, etc).
@@ -268,20 +267,12 @@ usage: ftpquota [options]
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2004-11-03 19:37:44 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2000-2002 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

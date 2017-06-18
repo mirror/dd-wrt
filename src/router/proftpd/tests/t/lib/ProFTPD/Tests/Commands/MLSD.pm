@@ -32,9 +32,14 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  mlsd_ok_dir => {
+  mlsd_ok_cwd_dir => {
     order => ++$order,
     test_class => [qw(forking)],
+  },
+
+  mlsd_ok_other_dir_bug4198 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
   },
 
   mlsd_ok_chrooted_dir => {
@@ -97,12 +102,27 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  mlsd_symlink_showsymlinks_on_chrooted_bug4219 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  mlsd_symlink_showsymlinks_on_use_slink_chrooted_bug4219 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
   mlsd_symlinked_dir_bug3859 => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
 
   mlsd_symlinked_dir_showsymlinks_off_bug3859 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  mlsd_wide_dir => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
@@ -121,45 +141,15 @@ sub list_tests {
 sub mlsd_ok_raw_active {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -168,7 +158,7 @@ sub mlsd_ok_raw_active {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},     $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -185,9 +175,9 @@ sub mlsd_ok_raw_active {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw();
       unless ($conn) {
@@ -199,12 +189,19 @@ sub mlsd_ok_raw_active {
       $conn->read($buf, 8192, 30);
       eval { $conn->close() };
 
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
+
       # We have to be careful of the fact that readdir returns directory
       # entries in an unordered fashion.
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
+      $self->assert(scalar(@$lines) > 1,
+        test_msg("Expected several MLSD lines, got " . scalar(@$lines)));
+
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -243,7 +240,7 @@ sub mlsd_ok_raw_active {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -253,18 +250,10 @@ sub mlsd_ok_raw_active {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlsd_ok_raw_passive {
@@ -335,7 +324,6 @@ sub mlsd_ok_raw_passive {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
-
       $client->login($user, $passwd);
 
       my $conn = $client->mlsd_raw();
@@ -351,9 +339,9 @@ sub mlsd_ok_raw_passive {
       # We have to be careful of the fact that readdir returns directory
       # entries in an unordered fashion.
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -486,7 +474,6 @@ sub mlsd_fails_file {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
 
       my $conn = $client->mlsd_raw($test_file);
@@ -501,11 +488,11 @@ sub mlsd_fails_file {
 
       $expected = 550;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "'$test_file' is not a directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -540,7 +527,7 @@ sub mlsd_fails_file {
   unlink($log_file);
 }
 
-sub mlsd_ok_dir {
+sub mlsd_ok_cwd_dir {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -608,8 +595,8 @@ sub mlsd_ok_dir {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw($home_dir);
       unless ($conn) {
@@ -622,10 +609,10 @@ sub mlsd_ok_dir {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
-          $res->{$1} = 1;
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$2} = $1;
         }
       }
 
@@ -634,6 +621,162 @@ sub mlsd_ok_dir {
       unless ($count == $expected) {
         die("MLSD returned wrong number of entries (expected $expected, got $count)");
       }
+
+      # Make sure that the 'type' fact for the current directory is
+      # "cdir" (Bug#4198).
+      my $type = $res->{'.'};
+      my $expected = 'cdir';
+      $self->assert($expected eq $type,
+        test_msg("Expected type '$expected', got '$type'"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub mlsd_ok_other_dir_bug4198 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/cmds.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  my $sub_dir = File::Spec->rel2abs("$test_dir/sub.d");
+  mkpath($sub_dir);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+      $client->type('binary');
+
+      # First, change to some other directory
+      $client->cwd($sub_dir);
+
+      my $conn = $client->mlsd_raw($test_dir);
+      unless ($conn) {
+        die("MLSD failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      my $res = {};
+      my $lines = [split(/\r\n/, $buf)];
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$2} = $1;
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      my $expected = 3;
+      unless ($count == $expected) {
+        die("MLSD returned wrong number of entries (expected $expected, got $count)");
+      }
+
+      # Make sure that the 'type' fact for the current directory is
+      # "cdir" (Bug#4198).
+      my $type = $res->{'.'};
+      my $expected = 'cdir';
+      $self->assert($expected eq $type,
+        test_msg("Expected type '$expected', got '$type'"));
+
+      # Similarly, make sure that the 'type' fact for parent directory
+      # (by name) is NOT "cdir", but is just "dir" (Bug#4198).
+      my $type = $res->{'sub.d'};
+      my $expected = 'dir';
+      $self->assert($expected eq $type,
+        test_msg("Expected type '$expected', got '$type'"));
     };
 
     if ($@) {
@@ -671,45 +814,15 @@ sub mlsd_ok_dir {
 sub mlsd_ok_chrooted_dir {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  my $setup = test_setup($tmpdir, 'cmds');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     DefaultRoot => '~',
 
@@ -720,7 +833,8 @@ sub mlsd_ok_chrooted_dir {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -737,9 +851,9 @@ sub mlsd_ok_chrooted_dir {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('/');
       unless ($conn) {
@@ -751,20 +865,23 @@ sub mlsd_ok_chrooted_dir {
       $conn->read($buf, 8192, 30);
       eval { $conn->close() };
 
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
+
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
 
       my $count = scalar(keys(%$res));
-      unless ($count == 7) {
+      unless ($count == 8) {
         die("MLSD returned wrong number of entries (expected 7, got $count)");
       }
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -773,7 +890,7 @@ sub mlsd_ok_chrooted_dir {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -783,18 +900,10 @@ sub mlsd_ok_chrooted_dir {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub mlsd_ok_empty_dir {
@@ -868,8 +977,8 @@ sub mlsd_ok_empty_dir {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw($test_dir);
       unless ($conn) {
@@ -882,9 +991,9 @@ sub mlsd_ok_empty_dir {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$2} = $1;
         }
       }
@@ -900,12 +1009,12 @@ sub mlsd_ok_empty_dir {
       my $type = $res->{'.'};
       my $expected = 'cdir';
       $self->assert($expected eq $type,
-        test_msg("Expected '$expected', got '$type'"));
+        test_msg("Expected type '$expected', got '$type'"));
 
       $type = $res->{'..'};
       $expected = 'pdir';
       $self->assert($expected eq $type,
-        test_msg("Expected '$expected', got '$type'"));
+        test_msg("Expected type '$expected', got '$type'"));
     };
 
     if ($@) {
@@ -1008,8 +1117,8 @@ sub mlsd_ok_no_path {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw();
       unless ($conn) {
@@ -1022,9 +1131,9 @@ sub mlsd_ok_no_path {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -1138,8 +1247,8 @@ sub mlsd_ok_glob {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd('?foo*');
       unless ($conn) {
@@ -1154,11 +1263,11 @@ sub mlsd_ok_glob {
 
       $expected = 226;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Transfer complete";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1234,25 +1343,23 @@ sub mlsd_fails_login_required {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-      eval { ($resp_code, $resp_msg) = $client->mlsd() };
+      eval { $client->mlsd() };
       unless ($@) {
         die("MLSD succeeded unexpectedly");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Please login with USER and PASS";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1355,32 +1462,30 @@ sub mlsd_fails_enoent {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
+      $client->type('binary');
       $client->port();
 
       my $test_file = 'foo/bar/baz';
 
-      eval { ($resp_code, $resp_msg) = $client->mlsd($test_file) };
+      eval { $client->mlsd($test_file) };
       unless ($@) {
-        die("MLSD succeeded unexpectedly ($resp_code $resp_msg)");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
+        die("MLSD succeeded unexpectedly: " . $client->response_code() . " " .
+          $client->response_msg());
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 550;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "$test_file: No such file or directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1494,31 +1599,30 @@ sub mlsd_fails_eperm {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
       $client->port();
 
       chmod(0660, $sub_dir);
 
-      my ($resp_code, $resp_msg);
-      eval { ($resp_code, $resp_msg) = $client->mlsd($test_file) };
+      eval { $client->mlsd($test_file) };
       unless ($@) {
-        die("MLSD succeeded unexpectedly ($resp_code $resp_msg)");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg();
+        die("MLSD succeeded unexpectedly: " . $client->response_code() . " " .
+          $client->response_msg());
       }
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
 
       my $expected;
 
       $expected = 550;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "$test_file: Permission denied";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1635,8 +1739,8 @@ sub mlsd_ok_hidden_file {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw($home_dir);
       unless ($conn) {
@@ -1649,9 +1753,9 @@ sub mlsd_ok_hidden_file {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -1769,8 +1873,8 @@ sub mlsd_ok_path_with_spaces {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('test foo');
       unless ($conn) {
@@ -1783,9 +1887,9 @@ sub mlsd_ok_path_with_spaces {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -1899,8 +2003,8 @@ sub mlsd_nonascii_chars_bug3032 {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw("test\b");
       unless ($conn) {
@@ -1913,9 +2017,9 @@ sub mlsd_nonascii_chars_bug3032 {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$1} = 1;
         }
       }
@@ -1961,26 +2065,158 @@ sub mlsd_nonascii_chars_bug3032 {
 sub mlsd_symlink_showsymlinks_off_bug3318 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $foo_dir = File::Spec->rel2abs("$tmpdir/foo");
+  my $foo_dir = File::Spec->rel2abs("$setup->{home_dir}/foo");
   mkpath($foo_dir);
 
-  my $test_file = File::Spec->rel2abs("$tmpdir/foo/test.txt");
+  my $test_file = File::Spec->rel2abs("$foo_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Change to the 'foo' directory in order to create a relative path in the
+  # symlink we need
+
+  my $cwd = getcwd();
+  unless (chdir($foo_dir)) {
+    die("Can't chdir to $foo_dir: $!");
+  }
+
+  unless (symlink('./test.txt', './test.lnk')) {
+    die("Can't symlink 'test.lnk' to './test.txt': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $foo_dir)) {
+      die("Can't set perms on $foo_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $foo_dir)) {
+      die("Can't set owner of $foo_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'fsio:20 fs.statcache:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    ShowSymlinks => 'off',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
+
+      my $conn = $client->mlsd_raw('foo');
+      unless ($conn) {
+        die("MLSD failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
+
+      my $res = {};
+      my $lines = [split(/\r\n/, $buf)];
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$2} = $1;
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      unless ($count == 4) {
+        die("MLSD returned wrong number of entries (expected 4, got $count)");
+      }
+
+      # test.lnk is a symlink to test.txt.  According to RFC 3659, the unique
+      # fact for both of these should thus be the same, since they are the
+      # same underlying object.
+
+      my $expected = $res->{'test.txt'};
+      my $got = $res->{'test.lnk'};
+      $self->assert($expected eq $got,
+        test_msg("Expected '$expected', got '$got'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub mlsd_symlink_showsymlinks_on_bug3318 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $foo_dir = File::Spec->rel2abs("$setup->{home_dir}/foo");
+  mkpath($foo_dir);
+
+  my $test_file = File::Spec->rel2abs("$foo_dir/test.txt");
   if (open(my $fh, "> $test_file")) {
     print $fh "Hello, World!\n";
     unless (close($fh)) {
@@ -2010,27 +2246,23 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $foo_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
+    unless (chmod(0755, $foo_dir)) {
+      die("Can't set perms on $foo_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $foo_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $foo_dir)) {
+      die("Can't set owner of $foo_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
 
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
-    ShowSymlinks => 'off',
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    ShowSymlinks => 'on',
 
     IfModules => {
       'mod_delay.c' => {
@@ -2039,7 +2271,8 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2056,9 +2289,9 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('foo');
       unless ($conn) {
@@ -2068,12 +2301,17 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
 
       my $buf;
       $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=(\S+);UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
-          $res->{$2} = $1;
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$3} = { type => $1, unique => $2 };
         }
       }
 
@@ -2086,12 +2324,18 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
       # fact for both of these should thus be the same, since they are the
       # same underlying object.
 
-      my $expected = $res->{'test.txt'};
-      my $got = $res->{'test.lnk'};
+      my $expected = $res->{'test.txt'}->{unique};
+      my $got = $res->{'test.lnk'}->{unique};
       $self->assert($expected eq $got,
         test_msg("Expected '$expected', got '$got'"));
-    };
 
+      # Since ShowSymlinks is on, the type for test.lnk should indicate that
+      # it's a symlink
+      $expected = 'OS.unix=symlink';
+      $got = $res->{'test.lnk'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        test_msg("Expected '$expected', got '$got'"));
+    };
     if ($@) {
       $ex = $@;
     }
@@ -2100,7 +2344,7 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2110,43 +2354,21 @@ sub mlsd_symlink_showsymlinks_off_bug3318 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
-sub mlsd_symlink_showsymlinks_on_bug3318 {
+sub mlsd_symlink_showsymlinks_on_chrooted_bug4219 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
 
-  my $config_file = "$tmpdir/cmds.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/cmds.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/cmds.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/cmds.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/cmds.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  my $foo_dir = File::Spec->rel2abs("$tmpdir/foo");
+  my $foo_dir = File::Spec->rel2abs("$setup->{home_dir}/foo");
   mkpath($foo_dir);
 
-  my $test_file = File::Spec->rel2abs("$tmpdir/foo/test.txt");
+  my $test_file = File::Spec->rel2abs("$foo_dir/test.txt");
   if (open(my $fh, "> $test_file")) {
     print $fh "Hello, World!\n";
     unless (close($fh)) {
@@ -2176,26 +2398,26 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
   # Make sure that, if we're running as root, that the home directory has
   # permissions/privs set for the account we create
   if ($< == 0) {
-    unless (chmod(0755, $home_dir, $foo_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
+    unless (chmod(0755, $foo_dir)) {
+      die("Can't set perms on $foo_dir to 0755: $!");
     }
 
-    unless (chown($uid, $gid, $home_dir, $foo_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    unless (chown($setup->{uid}, $setup->{gid}, $foo_dir)) {
+      die("Can't set owner of $foo_dir to $setup->{uid}/$setup->{gid}: $!");
     }
   }
 
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
-
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'fsio:20',
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    DefaultRoot => '~',
     ShowSymlinks => 'on',
 
     IfModules => {
@@ -2205,7 +2427,8 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -2222,9 +2445,9 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-
-      $client->login($user, $passwd);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('foo');
       unless ($conn) {
@@ -2236,10 +2459,14 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
       $conn->read($buf, 8192, 30);
       eval { $conn->close() };
 
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
+
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$3} = { type => $1, unique => $2 };
         }
       }
@@ -2265,7 +2492,6 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected '$expected', got '$got'"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -2274,7 +2500,7 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -2284,18 +2510,167 @@ sub mlsd_symlink_showsymlinks_on_bug3318 {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    test_append_logfile($log_file);
-    unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
+}
 
-    die($ex);
+sub mlsd_symlink_showsymlinks_on_use_slink_chrooted_bug4219 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $foo_dir = File::Spec->rel2abs("$setup->{home_dir}/foo");
+  mkpath($foo_dir);
+
+  my $test_file = File::Spec->rel2abs("$foo_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
   }
 
-  unlink($log_file);
+  # Change to the 'foo' directory in order to create a relative path in the
+  # symlink we need
+
+  my $cwd = getcwd();
+  unless (chdir("$foo_dir")) {
+    die("Can't chdir to $foo_dir: $!");
+  }
+
+  unless (symlink('test.txt', 'test.lnk')) {
+    die("Can't symlink 'test.txt' to 'test.lnk': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $foo_dir)) {
+      die("Can't set perms on $foo_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $foo_dir)) {
+      die("Can't set owner of $foo_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'fsio:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    DefaultRoot => '~',
+    FactsOptions => 'UseSlink',
+    ShowSymlinks => 'on',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->type('binary');
+
+      my $conn = $client->mlsd_raw('foo');
+      unless ($conn) {
+        die("MLSD failed: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Response:\n$buf\n";
+      }
+
+      my $res = {};
+      my $lines = [split(/\r\n/, $buf)];
+      foreach my $line (@$lines) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+          $res->{$3} = { type => $1, unique => $2 };
+        }
+      }
+
+      my $count = scalar(keys(%$res));
+      unless ($count == 4) {
+        die("MLSD returned wrong number of entries (expected 4, got $count)");
+      }
+
+      # test.lnk is a symlink to test.txt.  According to RFC3659, the unique
+      # fact for both of these should thus be the same, since they are the
+      # same underlying object.
+
+      my $expected = $res->{'test.txt'}->{unique};
+      my $got = $res->{'test.lnk'}->{unique};
+      $self->assert($expected eq $got,
+        test_msg("Expected '$expected', got '$got'"));
+
+      # Since ShowSymlinks is on, the type for test.lnk should indicate that
+      # it's a symlink
+      $expected = 'OS.unix=slink:/foo/test.txt';
+      $got = $res->{'test.lnk'}->{type};
+      $self->assert(qr/$expected/i, $got,
+        test_msg("Expected '$expected', got '$got'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 # See also:
@@ -2394,6 +2769,7 @@ sub mlsd_symlinked_dir_bug3859 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('foo');
       unless ($conn) {
@@ -2406,9 +2782,9 @@ sub mlsd_symlinked_dir_bug3859 {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$3} = { type => $1, unique => $2 };
         }
       }
@@ -2429,7 +2805,7 @@ sub mlsd_symlinked_dir_bug3859 {
 
       # Since ShowSymlinks is on by default, the type for test.lnk should
       # indicate that it's a symlink
-      $expected = 'OS.unix=symlink'; 
+      $expected = 'OS.unix=symlink';
       $got = $res->{'test.lnk'}->{type};
       $self->assert(qr/$expected/i, $got,
         test_msg("Expected type fact '$expected', got '$got'"));
@@ -2561,6 +2937,7 @@ sub mlsd_symlinked_dir_showsymlinks_off_bug3859 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
+      $client->type('binary');
 
       my $conn = $client->mlsd_raw('foo');
       unless ($conn) {
@@ -2573,9 +2950,9 @@ sub mlsd_symlinked_dir_showsymlinks_off_bug3859 {
       eval { $conn->close() };
 
       my $res = {};
-      my $lines = [split(/\n/, $buf)];
+      my $lines = [split(/\r\n/, $buf)];
       foreach my $line (@$lines) {
-        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.mode=\d+;UNIX.owner=\d+; (.*?)$/) {
+        if ($line =~ /^modify=\S+;perm=\S+;type=(\S+);unique=(\S+);UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
           $res->{$3} = { type => $1, unique => $2 };
         }
       }
@@ -2632,6 +3009,145 @@ sub mlsd_symlinked_dir_showsymlinks_off_bug3859 {
   }
 
   unlink($log_file);
+}
+
+sub mlsd_wide_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'cmds');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $expected = {
+    '.' => 1,
+    '..' => 1,
+  };
+
+  my $max_nfiles = 500;
+  for (my $i = 0; $i < $max_nfiles; $i++) {
+    my $test_filename = 'SomeReallyLongAndObnoxiousTestFileNameTemplate' . $i;
+
+    # The expected hash is used later for verifying the results of the READDIR
+    $expected->{$test_filename} = 1;
+
+    my $test_path = File::Spec->rel2abs("$test_dir/$test_filename");
+
+    if (open(my $fh, "> $test_path")) {
+      close($fh);
+
+    } else {
+      die("Can't open $test_path: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'pool:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      for (my $i = 0; $i < 10; $i++) {
+        my $conn = $client->mlsd_raw($test_dir);
+        unless ($conn) {
+          die("Failed to MLSD: " . $client->response_code() . " " .
+            $client->response_msg());
+        }
+
+        my $buf;
+        my $tmp;
+        while ($conn->read($tmp, 16382, 25)) {
+          $buf .= $tmp;
+          $tmp = '';
+        }
+        eval { $conn->close() };
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "buf:\n$buf\n";
+        }
+
+        # We have to be careful of the fact that readdir returns directory
+        # entries in an unordered fashion.
+        my $res = {};
+        my $lines = [split(/\r\n/, $buf)];
+        foreach my $line (@$lines) {
+          if ($line =~ /^modify=\S+;perm=\S+;type=\S+;unique=\S+;UNIX\.group=\d+;UNIX\.groupname=\S+;UNIX\.mode=\d+;UNIX\.owner=\d+;UNIX\.ownername=\S+; (.*?)$/) {
+            $res->{$1} = 1;
+          }
+        }
+
+        my $ok = 1;
+        my $mismatch;
+        foreach my $name (keys(%$res)) {
+          unless (defined($expected->{$name})) {
+            $mismatch = $name;
+            $ok = 0;
+            last;
+          }
+        }
+
+        unless ($ok) {
+          die("Unexpected name '$mismatch' appeared in MLSD data")
+        }
+      }
+
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

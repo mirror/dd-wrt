@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp miscellaneous
- * Copyright (c) 2010-2012 TJ Saunders
+ * Copyright (c) 2010-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: misc.c,v 1.4 2012-12-26 23:18:58 castaglia Exp $
  */
 
 #include "mod_sftp.h"
 #include "misc.h"
 
-int sftp_misc_chown_file(pr_fh_t *fh) {
+int sftp_misc_chown_file(pool *p, pr_fh_t *fh) {
   struct stat st;
   int res, xerrno;
  
@@ -40,7 +38,6 @@ int sftp_misc_chown_file(pr_fh_t *fh) {
    * requested via GroupOwner.
    */
   if (session.fsuid != (uid_t) -1) {
-
     PRIVS_ROOT
     res = pr_fsio_fchown(fh, session.fsuid, session.fsgid);
     xerrno = errno;
@@ -53,17 +50,20 @@ int sftp_misc_chown_file(pr_fh_t *fh) {
     } else {
       if (session.fsgid != (gid_t) -1) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "root chown(%s) to UID %lu, GID %lu successful", fh->fh_path,
-          (unsigned long) session.fsuid, (unsigned long) session.fsgid);
+          "root chown(%s) to UID %s, GID %s successful", fh->fh_path,
+          pr_uid2str(p, session.fsuid), pr_gid2str(p, session.fsgid));
 
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "root chown(%s) to UID %lu successful", fh->fh_path,
-          (unsigned long) session.fsuid);
+          "root chown(%s) to UID %s successful", fh->fh_path,
+          pr_uid2str(NULL, session.fsuid));
       }
 
-      pr_fs_clear_cache();
-      pr_fsio_fstat(fh, &st);
+      if (pr_fsio_fstat(fh, &st) < 0) {
+        pr_log_debug(DEBUG0,
+          "'%s' fstat(2) error for root chmod: %s", fh->fh_path,
+          strerror(errno));
+      }
 
       /* The chmod happens after the chown because chown will remove the
        * S{U,G}ID bits on some files (namely, directories); the subsequent
@@ -123,12 +123,15 @@ int sftp_misc_chown_file(pr_fh_t *fh) {
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "%schown(%s) to GID %lu successful",
+        "%schown(%s) to GID %s successful",
         use_root_privs ? "root " : "", fh->fh_path,
-        (unsigned long) session.fsgid);
+        pr_gid2str(NULL, session.fsgid));
 
-      pr_fs_clear_cache();
-      pr_fsio_fstat(fh, &st);
+      if (pr_fsio_fstat(fh, &st) < 0) {
+        pr_log_debug(DEBUG0,
+          "'%s' fstat(2) error for %sfchmod: %s", fh->fh_path,
+          use_root_privs ? "root " : "", strerror(errno));
+      }
 
       if (use_root_privs) {
         PRIVS_ROOT
@@ -152,7 +155,7 @@ int sftp_misc_chown_file(pr_fh_t *fh) {
   return 0;
 }
 
-int sftp_misc_chown_path(const char *path) {
+int sftp_misc_chown_path(pool *p, const char *path) {
   struct stat st;
   int res, xerrno;
 
@@ -178,17 +181,20 @@ int sftp_misc_chown_path(const char *path) {
     } else {
       if (session.fsgid != (gid_t) -1) {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "root lchown(%s) to UID %lu, GID %lu successful", path,
-          (unsigned long) session.fsuid, (unsigned long) session.fsgid);
+          "root lchown(%s) to UID %s, GID %s successful", path,
+          pr_uid2str(p, session.fsuid), pr_gid2str(p, session.fsgid));
 
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "root lchown(%s) to UID %lu successful", path,
-          (unsigned long) session.fsuid);
+          "root lchown(%s) to UID %s successful", path,
+          pr_uid2str(NULL, session.fsuid));
       }
 
-      pr_fs_clear_cache();
-      pr_fsio_stat(path, &st);
+      pr_fs_clear_cache2(path);
+      if (pr_fsio_stat(path, &st) < 0) {
+        pr_log_debug(DEBUG0,
+          "'%s' stat(2) error for root chmod: %s", path, strerror(errno));
+      }
 
       /* The chmod happens after the chown because chown will remove the
        * S{U,G}ID bits on some files (namely, directories); the subsequent
@@ -248,12 +254,16 @@ int sftp_misc_chown_path(const char *path) {
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "%slchown(%s) to GID %lu successful",
+        "%slchown(%s) to GID %s successful",
         use_root_privs ? "root " : "", path,
-        (unsigned long) session.fsgid);
+        pr_gid2str(NULL, session.fsgid));
 
-      pr_fs_clear_cache();
-      pr_fsio_stat(path, &st);
+      pr_fs_clear_cache2(path);
+      if (pr_fsio_stat(path, &st) < 0) {
+        pr_log_debug(DEBUG0,
+          "'%s' stat(2) error for %schmod: %s", path,
+          use_root_privs ? "root " : "", strerror(errno));
+      }
 
       if (use_root_privs) {
         PRIVS_ROOT
@@ -275,4 +285,41 @@ int sftp_misc_chown_path(const char *path) {
   }
 
   return 0;
+}
+
+const char *sftp_misc_namelist_shared(pool *p, const char *c2s_names,
+    const char *s2c_names) {
+  register unsigned int i;
+  const char *name = NULL, **client_names, **server_names;
+  pool *tmp_pool;
+  array_header *client_list, *server_list;
+
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Share name pool");
+
+  client_list = pr_str_text_to_array(tmp_pool, c2s_names, ',');
+  client_names = (const char **) client_list->elts;
+
+  server_list = pr_str_text_to_array(tmp_pool, s2c_names, ',');
+  server_names = (const char **) server_list->elts;
+
+  for (i = 0; i < client_list->nelts; i++) {
+    register unsigned int j;
+
+    if (name != NULL) {
+      break;
+    }
+
+    for (j = 0; j < server_list->nelts; j++) {
+      if (strcmp(client_names[i], server_names[j]) == 0) {
+        name = client_names[i];
+        break;
+      }
+    }
+  }
+
+  name = pstrdup(p, name);
+  destroy_pool(tmp_pool);
+
+  return name;
 }

@@ -1,6 +1,4 @@
-<!-- $Id: mod_quotatab.html,v 1.20 2014-01-27 22:08:41 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_quotatab.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_quotatab</title>
@@ -83,7 +81,7 @@ for overwritten files.
 </ul>
 
 <hr>
-<h2><a name="QuotaDefault">QuotaDefault</a></h2>
+<h3><a name="QuotaDefault">QuotaDefault</a></h3>
 <strong>Syntax:</strong> QuotaDefault <em>quota-type per-session limit-type bytes-avail-in bytes-avail-out bytes-avail-xfer files-avail-in files-avail-out files-avail-xfer</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -95,7 +93,7 @@ The <code>QuotaDefault</code> directive configures a "default" quota limit,
 to be used when a limit is not found for the current user (<i>e.g.</i> a limit
 has not yet been configured for the user via one of the mod_quotatab backends).
 Since this "default" needs to provide all of the limit information required
-by <code>mod_quotatab</b>, there are quite a few required parameters:
+by <code>mod_quotatab</code>, there are quite a few required parameters:
 <ul>
   <li><em>quota-type</em>
   <li><em>per-session</em>
@@ -118,7 +116,7 @@ For example, you might use:
 
 <p>
 <hr>
-<h2><a name="QuotaDirectoryTally">QuotaDirectoryTally</a></h2>
+<h3><a name="QuotaDirectoryTally">QuotaDirectoryTally</a></h3>
 <strong>Syntax:</strong> QuotaDirectoryTally <em>on|off</em><br>
 <strong>Default:</strong> QuotaDirectoryTally off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -132,7 +130,7 @@ a directory, removing a directory) into account when tallying.
 
 <p>
 <hr>
-<h2><a name="QuotaDisplayUnits">QuotaDisplayUnits</a></h2>
+<h3><a name="QuotaDisplayUnits">QuotaDisplayUnits</a></h3>
 <strong>Syntax:</strong> QuotaDisplayUnits <em>&quot;b&quot;|&quot;Kb&quot;|&quot;Mb&quot;|&quot;Gb&quot;</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -158,7 +156,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="QuotaEngine">QuotaEngine</a></h2>
+<h3><a name="QuotaEngine">QuotaEngine</a></h3>
 <strong>Syntax:</strong> QuotaEngine <em>on|off</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -173,7 +171,7 @@ commenting out all <code>mod_quotatab</code> directives.
 
 <p>
 <hr>
-<h2><a name="QuotaExcludeFilter">QuotaExcludeFilter</a></h2>
+<h3><a name="QuotaExcludeFilter">QuotaExcludeFilter</a></h3>
 <strong>Syntax:</strong>  QuotaExcludeFilter <em>regex|"none"</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -197,7 +195,7 @@ exclude particular directories, or just certain filenames.
 
 <p>
 <hr>
-<h2><a name="QuotaLimitTable">QuotaLimitTable</a></h2>
+<h3><a name="QuotaLimitTable">QuotaLimitTable</a></h3>
 <strong>Syntax:</strong>  QuotaLimitTable <em>source-type:source-info</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -223,7 +221,7 @@ See also: <a href="#QuotaTallyTable">QuotaTallyTable</a>
 
 <p>
 <hr>
-<h2><a name="QuotaLock">QuotaLock</a></h2>
+<h3><a name="QuotaLock">QuotaLock</a></h3>
 <strong>Syntax:</strong>  QuotaLock <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -243,7 +241,7 @@ configured lock file <b>not</b> be on an NFS (or any other network) filesystem.
 
 <p>
 <hr>
-<h2><a name="QuotaLog">QuotaLog</a></h2>
+<h3><a name="QuotaLog">QuotaLog</a></h3>
 <strong>Syntax:</strong>  QuotaLog <em>file|&quot;none&quot;</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -266,7 +264,7 @@ a <code>&lt;Global&gt;</code> context.
 
 <p>
 <hr>
-<h2><a name="QuotaOptions">QuotaOptions</a></h2>
+<h3><a name="QuotaOptions">QuotaOptions</a></h3>
 <strong>Syntax:</strong> QuotaOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -305,7 +303,7 @@ The currently implemented options are:
 
 <p>
 <hr>
-<h2><a name="QuotaShowQuotas">QuotaShowQuotas</a></h2>
+<h3><a name="QuotaShowQuotas">QuotaShowQuotas</a></h3>
 <strong>Syntax:</strong>  QuotaShowQuotas <em>on|off</em><br>
 <strong>Default:</strong> on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -321,7 +319,7 @@ may consider this a definite feature.
 
 <p>
 <hr>
-<h2><a name="QuotaTallyTable">QuotaTallyTable</a></h2>
+<h3><a name="QuotaTallyTable">QuotaTallyTable</a></h3>
 <strong>Syntax:</strong> QuotaTallyTable <em>source-type:source-info</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -348,7 +346,7 @@ See also: <a href="#QuotaLimitTable">QuotaLimitTable</a>
 <hr><br>
 
 <p>
-<h2><a name="SITE_QUOTA">SITE QUOTA</a></h2>
+<h3><a name="SITE_QUOTA">SITE QUOTA</a></h3>
 <p>
 The <code>SITE QUOTA</code> command will display the quota, both the limit
 and the current tally, to the client.  This <code>SITE</code> command accepts
@@ -570,11 +568,11 @@ Note that the values for the various byte variables honor any
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-Follow the usual steps for using third-party modules in proftpd: 
+Follow the usual steps for using third-party modules in ProFTPD: 
 <pre>
-  ./configure --with-modules=<i>mod_quotatab:...</i>
-  make
-  make install
+  $ ./configure --with-modules=<i>mod_quotatab:...</i>
+  $ make
+  $ make install
 </pre>
 where the list of modules, including <code>mod_quotatab</code>, will depend on
 the types of quota tables you wish to support.
@@ -630,20 +628,12 @@ Consult the <code>mod_sql</code> documentation for installation instructions
 for that module.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2014-01-27 22:08:41 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2014 TJ Saunders<br>
+&copy; Copyright 2000-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

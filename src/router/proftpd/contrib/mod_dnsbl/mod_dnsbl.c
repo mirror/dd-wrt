@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_dnsbl -- a module for checking DNSBL (DNS Black Lists)
  *                       servers before allowing a connection
- *
- * Copyright (c) 2007-2013 TJ Saunders
+ * Copyright (c) 2007-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,8 +24,6 @@
  *
  * This is mod_dnsbl, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_dnsbl.c,v 1.2 2013-10-13 16:48:08 castaglia Exp $
  */
 
 #include "mod_dnsbl.h"
@@ -42,10 +39,15 @@
 
 #define DNSBL_REASON_MAX_LEN		256
 
+module dnsbl_module;
+
 static int dnsbl_engine = FALSE;
 static int dnsbl_logfd = -1;
 
 static const char *trace_channel = "dnsbl";
+
+/* Necessary prototypes. */
+static int dnsbl_sess_init(void);
 
 typedef enum {
   DNSBL_POLICY_ALLOW_DENY,
@@ -159,7 +161,7 @@ static void lookup_reason(pool *p, const char *name) {
 }
 
 static int lookup_addr(pool *p, const char *addr, const char *domain) {
-  pr_netaddr_t *reject_addr = NULL;
+  const pr_netaddr_t *reject_addr = NULL;
   const char *name = pstrcat(p, addr, ".", domain, NULL);
 
   (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
@@ -182,6 +184,105 @@ static int lookup_addr(pool *p, const char *addr, const char *domain) {
     "no record returned for DNS name '%s', client address is not blacklisted",
     name);
   return 0;
+}
+
+static int dnsbl_reject_conn(void) {
+  config_rec *c;
+  pool *tmp_pool = NULL;
+  const char *rev_ip_addr = NULL;
+  int reject_conn = FALSE;
+  dnsbl_policy_e policy = DNSBL_POLICY_DENY_ALLOW;
+
+  c = find_config(main_server->conf, CONF_PARAM, "DNSBLPolicy", FALSE);
+  if (c) {
+    policy = *((dnsbl_policy_e *) c->argv[0]);
+  }
+
+  switch (policy) {
+    case DNSBL_POLICY_ALLOW_DENY:
+      pr_trace_msg(trace_channel, 8,
+        "using policy of allowing connections unless listed by DNSBLDomains");
+      reject_conn = FALSE;
+      break;
+
+    case DNSBL_POLICY_DENY_ALLOW:
+      pr_trace_msg(trace_channel, 8,
+        "using policy of rejecting connections unless listed by DNSBLDomains");
+      reject_conn = TRUE;
+      break;
+  }
+
+  tmp_pool = make_sub_pool(permanent_pool);
+  rev_ip_addr = get_reversed_addr(tmp_pool);
+  if (rev_ip_addr == NULL) {
+    (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
+      "client address '%s' is an IPv6 address, skipping",
+      pr_netaddr_get_ipstr(session.c->remote_addr));
+    destroy_pool(tmp_pool);
+    return -1;
+  }
+
+  switch (policy) {
+    /* For this policy, the connection will be allowed unless the connecting
+     * client is listed by any of the DNSBLDomain sites.
+     */
+    case DNSBL_POLICY_ALLOW_DENY: {
+      c = find_config(main_server->conf, CONF_PARAM, "DNSBLDomain", FALSE);
+      while (c) {
+        const char *domain;
+    
+        pr_signals_handle();
+
+        domain = c->argv[0];
+
+        if (lookup_addr(tmp_pool, rev_ip_addr, domain) < 0) {
+          (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
+            "client address '%s' is listed by DNSBLDomain '%s', rejecting "
+            "connection", pr_netaddr_get_ipstr(session.c->remote_addr), domain);
+          reject_conn = TRUE;
+          break;
+        }
+
+        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
+      }
+
+      break;
+    }
+
+    /* For this policy, the connection will be NOT allowed unless the
+     * connecting client is listed by any of the DNSBLDomain sites.
+     */
+    case DNSBL_POLICY_DENY_ALLOW: {
+      c = find_config(main_server->conf, CONF_PARAM, "DNSBLDomain", FALSE);
+      while (c) {
+        const char *domain;
+
+        pr_signals_handle();
+
+        domain = c->argv[0];
+
+        if (lookup_addr(tmp_pool, rev_ip_addr, domain) < 0) {
+          (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
+            "client address '%s' is listed by DNSBLDomain '%s', allowing "
+            "connection", pr_netaddr_get_ipstr(session.c->remote_addr), domain);
+          reject_conn = FALSE;
+          break;
+        }
+    
+        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
+      } 
+
+      break; 
+    }
+  }
+
+  destroy_pool(tmp_pool);
+
+  if (reject_conn) {
+    return TRUE;
+  }
+
+  return FALSE;
 }
 
 /* Configuration handlers
@@ -264,15 +365,35 @@ MODRET set_dnsblpolicy(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* Event listeners
+ */
+
 /* Initialization functions
  */
 
+static void dnsbl_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&dnsbl_module, "core.session-reinit",
+    dnsbl_sess_reinit_ev);
+
+  (void) close(dnsbl_logfd);
+  dnsbl_logfd = -1;
+
+  res = dnsbl_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&dnsbl_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 static int dnsbl_sess_init(void) {
   config_rec *c;
-  pool *tmp_pool = NULL;
-  const char *rev_ip_addr = NULL;
-  int reject_conn = FALSE;
-  dnsbl_policy_e policy = DNSBL_POLICY_DENY_ALLOW;
+
+  pr_event_register(&dnsbl_module, "core.session-reinit", dnsbl_sess_reinit_ev,
+    NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "DNSBLEngine", FALSE);
   if (c &&
@@ -314,92 +435,7 @@ static int dnsbl_sess_init(void) {
     }
   }
 
-  c = find_config(main_server->conf, CONF_PARAM, "DNSBLPolicy", FALSE);
-  if (c) {
-    policy = *((dnsbl_policy_e *) c->argv[0]);
-  }
-
-  switch (policy) {
-    case DNSBL_POLICY_ALLOW_DENY:
-      pr_trace_msg(trace_channel, 8,
-        "using policy of allowing connections unless listed by DNSBLDomains");
-      reject_conn = FALSE;
-      break;
-
-    case DNSBL_POLICY_DENY_ALLOW:
-      pr_trace_msg(trace_channel, 8,
-        "using policy of rejecting connections unless listed by DNSBLDomains");
-      reject_conn = TRUE;
-      break;
-  }
-
-  tmp_pool = make_sub_pool(permanent_pool);
-  rev_ip_addr = get_reversed_addr(tmp_pool);
-  if (!rev_ip_addr) {
-    (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
-      "client address '%s' is an IPv6 address, skipping",
-      pr_netaddr_get_ipstr(session.c->remote_addr));
-    destroy_pool(tmp_pool);
-    return 0;
-  }
-
-  switch (policy) {
-    /* For this policy, the connection will be allowed unless the connecting
-     * client is listed by any of the DNSBLDomain sites.
-     */
-    case DNSBL_POLICY_ALLOW_DENY: {
-      c = find_config(main_server->conf, CONF_PARAM, "DNSBLDomain", FALSE);
-      while (c) {
-        const char *domain;
-    
-        pr_signals_handle();
-
-        domain = c->argv[0];
-
-        if (lookup_addr(tmp_pool, rev_ip_addr, domain) < 0) {
-          (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
-            "client address '%s' is listed by DNSBLDomain '%s', rejecting "
-            "connection", pr_netaddr_get_ipstr(session.c->remote_addr), domain);
-          reject_conn = TRUE;
-          break;
-        }
-
-        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
-      }
-
-      break;
-    }
-
-    /* For this policy, the connection will be NOT allowed unless the
-     * connecting client is listed by any of the DNSBLDomain sites.
-     */
-    case DNSBL_POLICY_DENY_ALLOW: {
-      c = find_config(main_server->conf, CONF_PARAM, "DNSBLDomain", FALSE);
-      while (c) {
-        const char *domain;
-
-        pr_signals_handle();
-
-        domain = c->argv[0];
-
-        if (lookup_addr(tmp_pool, rev_ip_addr, domain) < 0) {
-          (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
-            "client address '%s' is listed by DNSBLDomain '%s', allowing "
-            "connection", pr_netaddr_get_ipstr(session.c->remote_addr), domain);
-          reject_conn = FALSE;
-          break;
-        }
-    
-        c = find_config_next(c, c->next, CONF_PARAM, "DNSBLDomain", FALSE);
-      } 
-
-      break; 
-    }
-  }
-
-  destroy_pool(tmp_pool);
-
-  if (reject_conn) {
+  if (dnsbl_reject_conn() == TRUE) {
     (void) pr_log_writefile(dnsbl_logfd, MOD_DNSBL_VERSION,
       "client not allowed by DNSBLPolicy, rejecting connection");
     errno = EACCES;

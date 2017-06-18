@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
- *
- * Copyright (c) 2007-2015 The ProFTPD Project
+ * Copyright (c) 2007-2017 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,7 +25,7 @@
 #include "conf.h"
 #include "privs.h"
 
-#define MOD_FACTS_VERSION		"mod_facts/0.4"
+#define MOD_FACTS_VERSION		"mod_facts/0.6"
 
 #if PROFTPD_VERSION_NUMBER < 0x0001030101
 # error "ProFTPD 1.3.1rc1 or later required"
@@ -43,20 +42,28 @@ static unsigned long facts_opts = 0;
 #define FACTS_OPT_SHOW_UNIX_GROUP	0x00020
 #define FACTS_OPT_SHOW_UNIX_MODE	0x00040
 #define FACTS_OPT_SHOW_UNIX_OWNER	0x00080
+#define FACTS_OPT_SHOW_MEDIA_TYPE	0x00100
+#define FACTS_OPT_SHOW_UNIX_OWNER_NAME	0x00200
+#define FACTS_OPT_SHOW_UNIX_GROUP_NAME	0x00400
 
 static unsigned long facts_mlinfo_opts = 0;
 #define FACTS_MLINFO_FL_SHOW_SYMLINKS			0x00001
 #define FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK		0x00002
 #define FACTS_MLINFO_FL_NO_CDIR				0x00004
 #define FACTS_MLINFO_FL_APPEND_CRLF			0x00008
+#define FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS		0x00010
+#define FACTS_MLINFO_FL_NO_NAMES			0x00020
 
 struct mlinfo {
   pool *pool;
   struct stat st;
   struct tm *tm;
+  const char *user;
+  const char *group;
   const char *type;
   const char *perm;
   const char *path;
+  const char *real_path;
 };
 
 /* Necessary prototypes */
@@ -72,7 +79,8 @@ static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) != 0) {
     pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-      ": %s denied by PathAllowFilter on '%s'", cmd->argv[0], cmd->arg);
+      ": %s denied by PathAllowFilter on '%s'", (char *) cmd->argv[0],
+      cmd->arg);
     return -1;
   }
 
@@ -80,7 +88,7 @@ static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) == 0) {
     pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-      ": %s denied by PathDenyFilter on '%s'", cmd->argv[0], cmd->arg);
+      ": %s denied by PathDenyFilter on '%s'", (char *) cmd->argv[0], cmd->arg);
     return -1;
   }
 #endif
@@ -203,8 +211,31 @@ static time_t facts_mktime(unsigned int year, unsigned int month,
   return res;
 }
 
+static const char *facts_mime_type(struct mlinfo *info) {
+  cmdtable *cmdtab;
+  cmd_rec *cmd;
+  modret_t *res;
+
+  cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "mime_type", NULL, NULL, NULL);
+  if (cmdtab == NULL) {
+    errno = EPERM;
+    return NULL;
+  }
+
+  cmd = pr_cmd_alloc(info->pool, 1, info->real_path);
+  res = pr_module_call(cmdtab->m, cmdtab->handler, cmd);
+  if (MODRET_ISHANDLED(res) &&
+      MODRET_HASDATA(res)) {
+    return res->data;
+  }
+
+  errno = ENOENT;
+  return NULL;
+}
+
 static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
     int flags) {
+  int len;
   char *ptr;
   size_t buflen = 0;
 
@@ -213,70 +244,104 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
   ptr = buf;
 
   if (facts_opts & FACTS_OPT_SHOW_MODIFY) {
-    snprintf(ptr, bufsz, "modify=%04d%02d%02d%02d%02d%02d;",
-      info->tm->tm_year+1900, info->tm->tm_mon+1, info->tm->tm_mday,
-      info->tm->tm_hour, info->tm->tm_min, info->tm->tm_sec);
-    buflen = strlen(buf);
+    if (info->tm != NULL) {
+      len = snprintf(ptr, bufsz, "modify=%04d%02d%02d%02d%02d%02d;",
+        info->tm->tm_year+1900, info->tm->tm_mon+1, info->tm->tm_mday,
+        info->tm->tm_hour, info->tm->tm_min, info->tm->tm_sec);
+
+    } else {
+      len = 0;
+    }
+
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_PERM) {
-    snprintf(ptr, bufsz - buflen, "perm=%s;", info->perm);
-    buflen = strlen(buf);
+    len = snprintf(ptr, bufsz - buflen, "perm=%s;", info->perm);
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (!S_ISDIR(info->st.st_mode) &&
       (facts_opts & FACTS_OPT_SHOW_SIZE)) {
-    snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
+    len = snprintf(ptr, bufsz - buflen, "size=%" PR_LU ";",
       (pr_off_t) info->st.st_size);
-    buflen = strlen(buf);
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_TYPE) {
-    snprintf(ptr, bufsz - buflen, "type=%s;", info->type);
-    buflen = strlen(buf);
+    len = snprintf(ptr, bufsz - buflen, "type=%s;", info->type);
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIQUE) {
-    snprintf(ptr, bufsz - buflen, "unique=%lXU%lX;",
+    len = snprintf(ptr, bufsz - buflen, "unique=%lXU%lX;",
       (unsigned long) info->st.st_dev, (unsigned long) info->st.st_ino);
-    buflen = strlen(buf);
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP) {
-    snprintf(ptr, bufsz - buflen, "UNIX.group=%lu;",
-      (unsigned long) info->st.st_gid);
-    buflen = strlen(buf);
+    len = snprintf(ptr, bufsz - buflen, "UNIX.group=%s;",
+      pr_gid2str(NULL, info->st.st_gid));
+    buflen += len;
     ptr = buf + buflen;
   }
 
+  if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
+    if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP_NAME) {
+      len = snprintf(ptr, bufsz - buflen, "UNIX.groupname=%s;", info->group);
+      buflen += len;
+      ptr = buf + buflen;
+    }
+  }
+
   if (facts_opts & FACTS_OPT_SHOW_UNIX_MODE) {
-    snprintf(ptr, bufsz - buflen, "UNIX.mode=0%o;",
+    len = snprintf(ptr, bufsz - buflen, "UNIX.mode=0%o;",
       (unsigned int) info->st.st_mode & 07777);
-    buflen = strlen(buf);
+    buflen += len;
     ptr = buf + buflen;
   }
 
   if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER) {
-    snprintf(ptr, bufsz - buflen, "UNIX.owner=%lu;",
-      (unsigned long) info->st.st_uid);
-    buflen = strlen(buf);
+    len = snprintf(ptr, bufsz - buflen, "UNIX.owner=%s;",
+      pr_uid2str(NULL, info->st.st_uid));
+    buflen += len;
     ptr = buf + buflen;
   }
 
+  if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
+    if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER_NAME) {
+      len = snprintf(ptr, bufsz - buflen, "UNIX.ownername=%s;", info->user);
+      buflen += len;
+      ptr = buf + buflen;
+    }
+  }
+
+  if (facts_opts & FACTS_OPT_SHOW_MEDIA_TYPE) {
+    const char *mime_type;
+
+    mime_type = facts_mime_type(info);
+    if (mime_type != NULL) {
+      len = snprintf(ptr, bufsz - buflen, "media-type=%s;",
+        mime_type);
+      buflen += len;
+      ptr = buf + buflen;
+    }
+  }
+
   if (flags & FACTS_MLINFO_FL_APPEND_CRLF) {
-    snprintf(ptr, bufsz - buflen, " %s\r\n", info->path);
+    len = snprintf(ptr, bufsz - buflen, " %s\r\n", info->path);
 
   } else {
-    snprintf(ptr, bufsz - buflen, " %s", info->path);
+    len = snprintf(ptr, bufsz - buflen, " %s", info->path);
   }
 
   buf[bufsz-1] = '\0';
-  buflen = strlen(buf);
+  buflen += len;
 
   return buflen;
 }
@@ -290,6 +355,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
  * channel, wherease MLSD's output is sent via a data transfer, much like
  * LIST or NLST.
  */
+static pool *mlinfo_pool = NULL;
 static char *mlinfo_buf = NULL, *mlinfo_bufptr = NULL;
 static size_t mlinfo_bufsz = 0;
 static size_t mlinfo_buflen = 0;
@@ -297,7 +363,15 @@ static size_t mlinfo_buflen = 0;
 static void facts_mlinfobuf_init(void) {
   if (mlinfo_buf == NULL) {
     mlinfo_bufsz = pr_config_get_server_xfer_bufsz(PR_NETIO_IO_WR);
-    mlinfo_buf = palloc(session.pool, mlinfo_bufsz);
+
+    if (mlinfo_pool != NULL) {
+      destroy_pool(mlinfo_pool);
+    }
+
+    mlinfo_pool = make_sub_pool(session.pool);
+    pr_pool_tag(mlinfo_pool, "Facts MLSD Buffer Pool");
+
+    mlinfo_buf = palloc(mlinfo_pool, mlinfo_bufsz);
     pr_trace_msg("data", 8, "allocated facts buffer of %lu bytes",
       (unsigned long) mlinfo_bufsz);
   }
@@ -349,10 +423,12 @@ static void facts_mlinfobuf_flush(void) {
 }
 
 static int facts_mlinfo_get(struct mlinfo *info, const char *path,
-    const char *dent_name, int flags, uid_t uid, gid_t gid, mode_t *mode) {
+    const char *dent_name, int flags, const char *user, uid_t uid,
+    const char *group, gid_t gid, mode_t *mode) {
   char *perm = "";
   int res;
 
+  pr_fs_clear_cache2(path);
   res = pr_fsio_lstat(path, &(info->st));
   if (res < 0) {
     int xerrno = errno;
@@ -364,8 +440,22 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
     return -1;
   }
 
+  if (user != NULL) {
+    info->user = pstrdup(info->pool, user);
+
+  } else {
+    info->user = session.user;
+  }
+
   if (uid != (uid_t) -1) {
     info->st.st_uid = uid;
+  }
+
+  if (group != NULL) {
+    info->group = pstrdup(info->pool, group);
+
+  } else {
+    info->group = session.group;
   }
 
   if (gid != (gid_t) -1) {
@@ -378,19 +468,47 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
 #ifdef S_ISLNK
     if (S_ISLNK(info->st.st_mode)) {
       struct stat target_st;
+      const char *dst_path;
+      char *link_path;
+      size_t link_pathsz;
+      int len;
 
       /* Now we need to use stat(2) on the path (versus lstat(2)) to get the
        * info for the target, and copy its st_dev and st_ino values to our
        * stat in order to ensure that the unique fact values are the same.
+       *
+       * If we are chrooted, however, then the stat(2) on the symlink will
+       * almost certainly fail, especially if the destination path is an
+       * absolute path.
        */
 
-      pr_fs_clear_cache();
-      res = pr_fsio_stat(path, &target_st);
+      link_pathsz = PR_TUNABLE_PATH_MAX;
+      link_path = pcalloc(info->pool, link_pathsz);
+      len = dir_readlink(info->pool, path, link_path, link_pathsz-1,
+        PR_DIR_READLINK_FL_HANDLE_REL_PATH);
+      if (len > 0 &&
+          (size_t) len < link_pathsz) {
+        char *best_path;
+
+        best_path = dir_best_path(info->pool, link_path);
+        if (best_path != NULL) {
+          dst_path = best_path;
+
+        } else {
+          dst_path = link_path;
+        }
+
+      } else {
+        dst_path = path;
+      }
+
+      pr_fs_clear_cache2(dst_path);
+      res = pr_fsio_stat(dst_path, &target_st);
       if (res < 0) {
         int xerrno = errno;
 
         pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": error stat'ing '%s': %s",
-          path, strerror(xerrno));
+          dst_path, strerror(xerrno));
 
         errno = xerrno;
         return -1;
@@ -424,7 +542,14 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
           char target[PR_TUNABLE_PATH_MAX+1];
           int targetlen;
 
-          targetlen = pr_fsio_readlink(path, target, sizeof(target)-1);
+          if (flags & FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS) {
+            targetlen = pr_fsio_readlink(path, target, sizeof(target)-1);
+
+          } else {
+            sstrncpy(target, dst_path, sizeof(target)-1);
+            targetlen = len;
+          }
+
           if (targetlen < 0) { 
             int xerrno = errno;
 
@@ -435,7 +560,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
             return -1;
           }
 
-          if (targetlen >= sizeof(target)-1) {
+          if ((size_t) targetlen >= sizeof(target)-1) {
             targetlen = sizeof(target)-1;
           }
 
@@ -477,6 +602,9 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
        */
 
       perm = pstrcat(info->pool, perm, "adfr", NULL);
+
+    } else {
+      perm = pstrcat(info->pool, perm, "dfr", NULL);
     }
 
     if (pr_fsio_access(path, W_OK, session.uid, session.gid,
@@ -528,6 +656,7 @@ static int facts_mlinfo_get(struct mlinfo *info, const char *path,
     info->st.st_mode = *mode;
   }
 
+  info->real_path = pstrdup(info->pool, path);
   return 0;
 }
 
@@ -591,6 +720,16 @@ static void facts_mlst_feat_add(pool *p) {
     feat_str = pstrcat(p, feat_str, ";", NULL);
   }
 
+  if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
+    feat_str = pstrcat(p, feat_str, "UNIX.groupname", NULL);
+    if (facts_opts & FACTS_OPT_SHOW_UNIX_GROUP_NAME) {
+      feat_str = pstrcat(p, feat_str, "*;", NULL);
+
+    } else {
+      feat_str = pstrcat(p, feat_str, ";", NULL);
+    }
+  }
+
   feat_str = pstrcat(p, feat_str, "UNIX.mode", NULL);
   if (facts_opts & FACTS_OPT_SHOW_UNIX_MODE) {
     feat_str = pstrcat(p, feat_str, "*;", NULL);
@@ -605,6 +744,24 @@ static void facts_mlst_feat_add(pool *p) {
 
   } else {
     feat_str = pstrcat(p, feat_str, ";", NULL);
+  }
+
+  if (!(facts_mlinfo_opts & FACTS_MLINFO_FL_NO_NAMES)) {
+    feat_str = pstrcat(p, feat_str, "UNIX.ownername", NULL);
+    if (facts_opts & FACTS_OPT_SHOW_UNIX_OWNER_NAME) {
+      feat_str = pstrcat(p, feat_str, "*;", NULL);
+
+    } else {
+      feat_str = pstrcat(p, feat_str, ";", NULL);
+    }
+  }
+
+  /* Note: we only show the 'media-type' fact IFF mod_mime is present AND
+   * is enabled via MIMEEngine.
+   */
+  if (pr_module_exists("mod_mime.c") == TRUE &&
+      (facts_opts & FACTS_OPT_SHOW_MEDIA_TYPE)) {
+    feat_str = pstrcat(p, feat_str, "media-type*;", NULL);
   }
 
   feat_str = pstrcat(p, "MLST ", feat_str, NULL);
@@ -632,7 +789,7 @@ static void facts_mlst_feat_remove(void) {
 
 static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
   char c, *ptr;
-  unsigned int year, month, day, hour, min, sec;
+  int year, month, day, hour, min, sec;
   struct timeval tvs[2];
   int res;
 
@@ -722,81 +879,14 @@ static int facts_modify_mtime(pool *p, const char *path, char *timestamp) {
   tvs[0].tv_sec = tvs[1].tv_sec = facts_mktime(year, month, day, hour, min,
     sec);
 
-  res = pr_fsio_utimes(path, tvs);
+  res = pr_fsio_utimes_with_root(path, tvs);
   if (res < 0) {
     int xerrno = errno;
 
-    if (xerrno == EPERM) {
-      struct stat st;
-      int matching_gid = FALSE;
-
-      /* If the utimes(2) call failed because the process UID doesn't
-       * match the file UID, then check to see if the GIDs match (and that
-       * the file has group write permissions).
-       *
-       * This can be alleviated in two ways: a) if mod_cap is present,
-       * enable the CAP_FOWNER capability for the session, or b) use root
-       * privs.
-       */
-      pr_fs_clear_cache();
-      if (pr_fsio_stat(path, &st) < 0) {
-        errno = xerrno;
-        return -1;
-      }
-
-      /* Be sure to check the primary and all the supplemental groups to
-       * which this session belongs.
-       */
-      if (st.st_gid == session.gid) {
-        matching_gid = TRUE;
-
-      } else {
-        register unsigned int i;
-        gid_t *gids;
-
-        gids = session.gids->elts;
-        for (i = 0; i < session.gids->nelts; i++) {
-          if (st.st_gid == gids[i]) {
-            matching_gid = TRUE;
-            break;
-          }
-        }
-      }
-
-      if (matching_gid == TRUE &&
-          (st.st_mode & S_IWGRP)) {
-        int merrno = 0;
-
-        /* Try the utimes(2) call again, this time with root privs. */
-
-        pr_signals_block();
-        PRIVS_ROOT
-        res = pr_fsio_utimes(path, tvs);
-        if (res < 0) {
-          merrno = errno;
-        }
-        PRIVS_RELINQUISH
-        pr_signals_unblock();
-
-        if (res == 0)
-          return 0;
-
-        pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-          ": error modifying modify fact for '%s': %s", path,
-          strerror(merrno));
-        errno = xerrno;
-        return -1;
-      }
-
-      errno = xerrno;
-      return -1;
-
-    } else {
-      pr_log_debug(DEBUG2, MOD_FACTS_VERSION
-        ": error modifying modify fact for '%s': %s", path, strerror(xerrno));
-      errno = xerrno;
-      return -1;
-    }
+    pr_log_debug(DEBUG2, MOD_FACTS_VERSION
+      ": error modifying modify fact for '%s': %s", path, strerror(xerrno));
+    errno = xerrno;
+    return -1;
   }
 
   return 0;
@@ -857,7 +947,10 @@ MODRET facts_mff(cmd_rec *cmd) {
   char *facts, *ptr;
 
   if (cmd->argc < 3) {
-    pr_response_add_err(R_501, _("Invalid number of arguments"));
+    pr_response_add_err(R_501, _("Invalid number of parameters"));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
@@ -870,34 +963,68 @@ MODRET facts_mff(cmd_rec *cmd) {
   ptr = strchr(cmd->arg, ' ');
   if (ptr == NULL) {
     pr_response_add_err(R_501, _("Invalid command syntax"));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
   path = pstrdup(cmd->tmp_pool, ptr + 1);
 
-  decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
+  decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+    FSIO_DECODE_FL_TELL_ERRORS);
+  if (decoded_path == NULL) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+      strerror(xerrno));
+    pr_response_add_err(R_550, _("%s: Illegal character sequence in filename"),
+      path);
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
 
   canon_path = dir_canonical_path(cmd->tmp_pool, decoded_path);
   if (canon_path == NULL) {
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, canon_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
-      cmd->argv[0]);
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
   if (facts_filters_allow_path(cmd, decoded_path) < 0) {
-    pr_response_add_err(R_550, "%s: %s", path, strerror(EACCES));
+    int xerrno = EACCES;
+
+    pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   ptr = strchr(facts, ';');
   if (ptr == NULL) {
-    pr_response_add_err(R_550, "%s: %s", facts, strerror(EINVAL));
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_550, "%s: %s", facts, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
@@ -912,15 +1039,26 @@ MODRET facts_mff(cmd_rec *cmd) {
       char *timestamp, *ptr2;
 
       ptr2 = strchr(facts, '=');
-      if (!ptr2) {
-        pr_response_add_err(R_501, "%s: %s", cmd->argv[1], strerror(EINVAL));
+      if (ptr2 == NULL) {
+        int xerrno = EINVAL;
+
+        pr_response_add_err(R_501, "%s: %s", (char *) cmd->argv[1],
+          strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
       timestamp = ptr2 + 1;
 
       if (strlen(timestamp) < 14) {
-        pr_response_add_err(R_501, "%s: %s", timestamp, strerror(EINVAL));
+        int xerrno = EINVAL;
+
+        pr_response_add_err(R_501, "%s: %s", timestamp, strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
@@ -928,7 +1066,7 @@ MODRET facts_mff(cmd_rec *cmd) {
       if (ptr2) {
         pr_log_debug(DEBUG7, MOD_FACTS_VERSION
           ": %s: ignoring unsupported timestamp precision in '%s'",
-          cmd->argv[0], timestamp);
+          (char *) cmd->argv[0], timestamp);
         *ptr2 = '\0';
       }
 
@@ -938,6 +1076,7 @@ MODRET facts_mff(cmd_rec *cmd) {
         pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
           strerror(xerrno));
 
+        pr_cmd_set_errno(cmd, xerrno);
         errno = xerrno;
         return PR_ERROR(cmd);
       }
@@ -948,17 +1087,28 @@ MODRET facts_mff(cmd_rec *cmd) {
       char *group, *ptr2;
 
       ptr2 = strchr(facts, '=');
-      if (!ptr2) {
+      if (ptr2 == NULL) {
+        int xerrno = EINVAL;
+
         *ptr = ';';
-        pr_response_add_err(R_501, "%s: %s", cmd->argv[1], strerror(EINVAL));
+        pr_response_add_err(R_501, "%s: %s", (char *) cmd->argv[1],
+          strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
       group = ptr2 + 1;
 
       if (facts_modify_unix_group(cmd->tmp_pool, decoded_path, group) < 0) {
-        pr_response_add_err(errno == ENOENT ? R_550 : R_501, "%s: %s", path,
-          strerror(errno));
+        int xerrno = errno;
+
+        pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
+          strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
@@ -968,17 +1118,28 @@ MODRET facts_mff(cmd_rec *cmd) {
       char *mode_str, *ptr2;
 
       ptr2 = strchr(facts, '=');
-      if (!ptr2) {
+      if (ptr2 == NULL) {
+        int xerrno = errno;
+
         *ptr = ';';
-        pr_response_add_err(R_501, "%s: %s", cmd->argv[1], strerror(EINVAL));
+        pr_response_add_err(R_501, "%s: %s", (char *) cmd->argv[1],
+          strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
       mode_str = ptr2 + 1;
 
       if (facts_modify_unix_mode(cmd->tmp_pool, decoded_path, mode_str) < 0) {
-        pr_response_add_err(errno == ENOENT ? R_550 : R_501, "%s: %s", path,
-          strerror(errno));
+        int xerrno = errno;
+
+        pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
+          strerror(xerrno));
+
+        pr_cmd_set_errno(cmd, xerrno);
+        errno = xerrno;
         return PR_ERROR(cmd);
       }
 
@@ -988,10 +1149,13 @@ MODRET facts_mff(cmd_rec *cmd) {
        */
       pr_log_debug(DEBUG5, MOD_FACTS_VERSION
         ": %s: fact '%s' unsupported for modification, denying request",
-        cmd->argv[0], facts);
+        (char *) cmd->argv[0], facts);
       pr_response_add_err(R_504, _("Cannot modify fact '%s'"), facts);
 
       *ptr = ';';
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
@@ -1004,7 +1168,7 @@ MODRET facts_mff(cmd_rec *cmd) {
    * were successfully modified are to be included in the response, for
    * possible client parsing.  This means that the list is NOT localisable.
    */
-  pr_response_add(R_213, "%s %s", cmd->argv[1], path);
+  pr_response_add(R_213, "%s %s", (char *) cmd->argv[1], path);
   return PR_HANDLED(cmd);
 }
 
@@ -1014,7 +1178,10 @@ MODRET facts_mfmt(cmd_rec *cmd) {
   int res;
 
   if (cmd->argc < 3) {
-    pr_response_add_err(R_501, _("Invalid number of arguments"));
+    pr_response_add_err(R_501, _("Invalid number of parameters"));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
@@ -1027,41 +1194,75 @@ MODRET facts_mfmt(cmd_rec *cmd) {
   ptr = strchr(cmd->arg, ' ');
   if (ptr == NULL) {
     pr_response_add_err(R_501, _("Invalid command syntax"));
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
   path = pstrdup(cmd->tmp_pool, ptr + 1);
 
-  decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
+  decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+    FSIO_DECODE_FL_TELL_ERRORS);
+  if (decoded_path == NULL) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+      strerror(xerrno));
+    pr_response_add_err(R_550, _("%s: Illegal character sequence in filename"),
+      path);
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
+    return PR_ERROR(cmd);
+  }
 
   canon_path = dir_canonical_path(cmd->tmp_pool, decoded_path);
   if (canon_path == NULL) {
-    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(EINVAL));
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_550, "%s: %s", cmd->arg, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, canon_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
-      cmd->argv[0]);
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
   if (facts_filters_allow_path(cmd, decoded_path) < 0) {
-    pr_response_add_err(R_550, "%s: %s", path, strerror(EACCES));
+    int xerrno = EACCES;
+
+    pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (strlen(timestamp) < 14) {
-    pr_response_add_err(R_501, "%s: %s", timestamp, strerror(EINVAL));
+    int xerrno = EINVAL;
+
+    pr_response_add_err(R_501, "%s: %s", timestamp, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   ptr = strchr(timestamp, '.');
   if (ptr) {
     pr_log_debug(DEBUG7, MOD_FACTS_VERSION
-      ": %s: ignoring unsupported timestamp precision in '%s'", cmd->argv[0],
-      timestamp);
+      ": %s: ignoring unsupported timestamp precision in '%s'",
+      (char *) cmd->argv[0], timestamp);
     *ptr = '\0';
   }
 
@@ -1076,6 +1277,7 @@ MODRET facts_mfmt(cmd_rec *cmd) {
     pr_response_add_err(xerrno == ENOENT ? R_550 : R_501, "%s: %s", path,
       strerror(xerrno));
 
+    pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
   }
@@ -1098,6 +1300,7 @@ MODRET facts_mfmt(cmd_rec *cmd) {
 
 MODRET facts_mlsd(cmd_rec *cmd) {
   const char *path, *decoded_path, *best_path;
+  const char *fake_user = NULL, *fake_group = NULL;
   config_rec *c;
   uid_t fake_uid = -1;
   gid_t fake_gid = -1;
@@ -1110,7 +1313,21 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   if (cmd->argc != 1) {
     path = pstrdup(cmd->tmp_pool, cmd->arg);
-    decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
+
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+        strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), path);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
 
   } else {
     decoded_path = path = pr_fs_getcwd();
@@ -1118,8 +1335,11 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path, NULL)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
-      cmd->argv[0]);
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1137,14 +1357,20 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     int xerrno = errno;
 
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": unable to stat '%s' (%s), "
-      "denying %s", decoded_path, strerror(xerrno), cmd->argv[0]);
+      "denying %s", decoded_path, strerror(xerrno), (char *) cmd->argv[0]);
 
     pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
   if (!S_ISDIR(info.st.st_mode)) {
     pr_response_add_err(R_550, _("'%s' is not a directory"), path);
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1177,8 +1403,6 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     "DirFakeUser", FALSE);
   if (c) {
     if (c->argc > 0) {
-      const char *fake_user = NULL;
-
       fake_user = c->argv[0];
       if (fake_user != NULL &&
           strncmp(fake_user, "~", 2) != 0) {
@@ -1186,11 +1410,13 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
       } else {
         fake_uid = session.uid;
+        fake_user = session.user;
       }
 
     } else {
       /* Handle the "DirFakeUser off" case (Bug#3715). */
       fake_uid = (uid_t) -1;
+      fake_user = NULL;
     }
   }
 
@@ -1198,8 +1424,6 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     "DirFakeGroup", FALSE);
   if (c) {
     if (c->argc > 0) {
-      const char *fake_group = NULL;
-
       fake_group = c->argv[0];
       if (fake_group != NULL &&
           strncmp(fake_group, "~", 2) != 0) {
@@ -1207,11 +1431,13 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
       } else {
         fake_gid = session.gid;
+        fake_group = session.group;
       }
 
     } else {
       /* Handle the "DirFakeGroup off" case (Bug#3715). */
       fake_gid = (gid_t) -1;
+      fake_group = NULL;
     }
   }
 
@@ -1219,13 +1445,15 @@ MODRET facts_mlsd(cmd_rec *cmd) {
   if (dirh == NULL) {
     int xerrno = errno;
 
-    pr_trace_msg("fileperms", 1, "MLSD, user '%s' (UID %lu, GID %lu): "
+    pr_trace_msg("fileperms", 1, "MLSD, user '%s' (UID %s, GID %s): "
       "error opening directory '%s': %s", session.user,
-      (unsigned long) session.uid, (unsigned long) session.gid,
+      pr_uid2str(cmd->tmp_pool, session.uid),
+      pr_gid2str(cmd->tmp_pool, session.gid),
       best_path, strerror(xerrno));
 
     pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
 
+    pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
   }
@@ -1239,12 +1467,12 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[0],
       strerror(xerrno));
 
+    pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
   }
   session.sf_flags |= SF_ASCII_OVERRIDE;
 
-  pr_fs_clear_cache();
   facts_mlinfobuf_init();
 
   while ((dent = pr_fsio_readdir(dirh)) != NULL) {
@@ -1279,9 +1507,10 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     memset(&info, 0, sizeof(struct mlinfo));
 
-    info.pool = cmd->tmp_pool;
+    info.pool = make_sub_pool(cmd->tmp_pool);
+    pr_pool_tag(info.pool, "MLSD facts pool");
     if (facts_mlinfo_get(&info, rel_path, dent->d_name, flags,
-        fake_uid, fake_gid, fake_mode) < 0) {
+        fake_user, fake_uid, fake_group, fake_gid, fake_mode) < 0) {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
         ": MLSD: unable to get info for '%s': %s", abs_path, strerror(errno));
       continue;
@@ -1290,9 +1519,12 @@ MODRET facts_mlsd(cmd_rec *cmd) {
     /* As per RFC3659, the directory being listed should not appear as a
      * component in the paths of the directory contents.
      */
-    info.path = pr_fs_encode_path(cmd->tmp_pool, dent->d_name);
+    info.path = pr_fs_encode_path(info.pool, dent->d_name);
 
     facts_mlinfobuf_add(&info, FACTS_MLINFO_FL_APPEND_CRLF);
+
+    destroy_pool(info.pool);
+    info.pool = NULL;
 
     if (XFER_ABORTED) {
       pr_data_abort(0, 0);
@@ -1339,11 +1571,26 @@ MODRET facts_mlst(cmd_rec *cmd) {
   mode_t *fake_mode = NULL;
   unsigned char *ptr;
   const char *path, *decoded_path;
+  const char *fake_user = NULL, *fake_group = NULL;
   struct mlinfo info;
 
   if (cmd->argc != 1) {
     path = pstrdup(cmd->tmp_pool, cmd->arg);
-    decoded_path = pr_fs_decode_path(cmd->tmp_pool, path);
+
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, path,
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s", path,
+        strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), path);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
 
   } else {
     decoded_path = path = pr_fs_getcwd();
@@ -1352,8 +1599,11 @@ MODRET facts_mlst(cmd_rec *cmd) {
   if (!dir_check(cmd->tmp_pool, cmd, cmd->group, (char *) decoded_path,
       &hidden)) {
     pr_log_debug(DEBUG4, MOD_FACTS_VERSION ": %s command denied by <Limit>",
-      cmd->argv[0]);
+      (char *) cmd->argv[0]);
     pr_response_add_err(R_550, _("Unable to handle command"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1385,8 +1635,6 @@ MODRET facts_mlst(cmd_rec *cmd) {
     CONF_PARAM, "DirFakeUser", FALSE);
   if (c) {
     if (c->argc > 0) {
-      const char *fake_user;
-
       fake_user = c->argv[0];
       if (fake_user != NULL &&
           strncmp(fake_user, "~", 2) != 0) {
@@ -1394,11 +1642,13 @@ MODRET facts_mlst(cmd_rec *cmd) {
 
       } else {
         fake_uid = session.uid;
+        fake_user = session.user;
       }
 
     } else {
       /* Handle the "DirFakeUser off" case (Bug#3715). */
-      fake_uid = session.uid;
+      fake_uid = (uid_t) -1;
+      fake_user = NULL;
     }
   }
 
@@ -1406,8 +1656,6 @@ MODRET facts_mlst(cmd_rec *cmd) {
     CONF_PARAM, "DirFakeGroup", FALSE);
   if (c) {
     if (c->argc > 0) {
-      const char *fake_group;
-
       fake_group = c->argv[0];
       if (fake_group != NULL &&
           strncmp(fake_group, "~", 2) != 0) {
@@ -1415,11 +1663,13 @@ MODRET facts_mlst(cmd_rec *cmd) {
 
       } else {
         fake_gid = session.gid;
+        fake_group = session.group;
       }
 
     } else {
       /* Handle the "DirFakeGroup off" case (Bug#3715). */
-      fake_gid = session.gid;
+      fake_gid = (gid_t) -1;
+      fake_group = NULL;
     }
   }
 
@@ -1432,10 +1682,13 @@ MODRET facts_mlst(cmd_rec *cmd) {
    */
   flags |= FACTS_MLINFO_FL_NO_CDIR;
 
-  pr_fs_clear_cache();
-  if (facts_mlinfo_get(&info, decoded_path, decoded_path, flags, fake_uid,
-      fake_gid, fake_mode) < 0) {
+  pr_fs_clear_cache2(decoded_path);
+  if (facts_mlinfo_get(&info, decoded_path, decoded_path, flags,
+      fake_user, fake_uid, fake_group, fake_gid, fake_mode) < 0) {
     pr_response_add_err(R_550, _("'%s' cannot be listed"), path);
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -1479,12 +1732,16 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
 
   /* Convert underscores to spaces in the method name, for prettier logging. */
   for (i = 0; method[i]; i++) {
-    if (method[i] == '_')
+    if (method[i] == '_') {
       method[i] = ' ';
+    }
   }
 
   if (cmd->argc > 2) {
     pr_response_add_err(R_501, _("'%s' not understood"), method);
+
+    pr_cmd_set_errno(cmd, EINVAL);
+    errno = EINVAL;
     return PR_ERROR(cmd);
   }
 
@@ -1498,7 +1755,7 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
     /* This response is mandated by RFC3659, therefore it is not
      * localisable.
      */
-    pr_response_add(R_200, "%s", method);
+    pr_response_add(R_200, "%s", "MLST OPTS");
     return PR_HANDLED(cmd);
   }
 
@@ -1541,6 +1798,10 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
       facts_opts |= FACTS_OPT_SHOW_UNIX_GROUP;
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.group;", NULL);
 
+    } else if (strcasecmp(facts, "UNIX.groupname") == 0) {
+      facts_opts |= FACTS_OPT_SHOW_UNIX_GROUP_NAME;
+      resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.groupname;", NULL);
+
     } else if (strcasecmp(facts, "UNIX.mode") == 0) {
       facts_opts |= FACTS_OPT_SHOW_UNIX_MODE;
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.mode;", NULL);
@@ -1548,6 +1809,14 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
     } else if (strcasecmp(facts, "UNIX.owner") == 0) {
       facts_opts |= FACTS_OPT_SHOW_UNIX_OWNER;
       resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.owner;", NULL);
+
+    } else if (strcasecmp(facts, "UNIX.ownername") == 0) {
+      facts_opts |= FACTS_OPT_SHOW_UNIX_OWNER_NAME;
+      resp_str = pstrcat(cmd->tmp_pool, resp_str, "UNIX.ownername;", NULL);
+
+    } else if (strcasecmp(facts, "media-type") == 0) {
+      facts_opts |= FACTS_OPT_SHOW_MEDIA_TYPE;
+      resp_str = pstrcat(cmd->tmp_pool, resp_str, "media-type;", NULL);
 
     } else {
       pr_log_debug(DEBUG3, MOD_FACTS_VERSION
@@ -1562,29 +1831,8 @@ MODRET facts_opts_mlst(cmd_rec *cmd) {
   facts_mlst_feat_add(cmd->tmp_pool);
 
   /* This response is mandated by RFC3659, therefore it is not localisable. */
-  pr_response_add(R_200, "%s %s", method, resp_str);
+  pr_response_add(R_200, "MLST OPTS %s", resp_str);
   return PR_HANDLED(cmd);
-}
-
-MODRET facts_post_host(cmd_rec *cmd) {
-
-  /* If the HOST command changed the main_server pointer, reinitialize
-   * ourselves.
-   */
-  if (session.prev_server != NULL) {
-    int res;
-
-    facts_opts = 0;
-    facts_mlinfo_opts = 0;
-
-    res = facts_sess_init();
-    if (res < 0) {
-      pr_session_disconnect(&facts_module,
-        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
-    }
-  }
-
-  return PR_DECLINED(cmd);
 }
 
 /* Configuration handlers
@@ -1624,8 +1872,14 @@ MODRET set_factsoptions(cmd_rec *cmd) {
   c = add_config_param(cmd->argv[0], 1, NULL);
 
   for (i = 1; i < cmd->argc; i++) {
-    if (strncmp(cmd->argv[i], "UseSlink", 9) == 0) {
+    if (strcmp(cmd->argv[i], "UseSlink") == 0) {
       opts |= FACTS_MLINFO_FL_SHOW_SYMLINKS_USE_SLINK;
+
+    } else if (strcmp(cmd->argv[i], "NoAdjustedSymlinks") == 0) {
+      opts |= FACTS_MLINFO_FL_NO_ADJUSTED_SYMLINKS;
+
+    } else if (strcmp(cmd->argv[i], "NoNames") == 0) {
+      opts |= FACTS_MLINFO_FL_NO_NAMES;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown FactsOption '",
@@ -1637,6 +1891,32 @@ MODRET set_factsoptions(cmd_rec *cmd) {
   *((unsigned long *) c->argv[0]) = opts;
 
   return PR_HANDLED(cmd);
+}
+
+/* Event listeners
+ */
+
+static void facts_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&facts_module, "core.session-reinit",
+    facts_sess_reinit_ev);
+
+  facts_opts = 0;
+  facts_mlinfo_opts = 0;
+
+  pr_feat_remove("MFF modify;UNIX.group;UNIX.mode;");
+  pr_feat_remove("MFMT");
+  pr_feat_remove("TVFS");
+  facts_mlst_feat_remove();
+
+  res = facts_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&facts_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
 }
 
 /* Initialization functions
@@ -1652,6 +1932,9 @@ static int facts_init(void) {
 static int facts_sess_init(void) {
   config_rec *c;
   int advertise = TRUE;
+
+  pr_event_register(&facts_module, "core.session-reinit",
+    facts_sess_reinit_ev, NULL);
 
   c = find_config(main_server->conf, CONF_PARAM, "FactsAdvertise", FALSE);
   if (c) {
@@ -1675,12 +1958,27 @@ static int facts_sess_init(void) {
   }
 
   facts_opts = FACTS_OPT_SHOW_MODIFY|FACTS_OPT_SHOW_PERM|FACTS_OPT_SHOW_SIZE|
-    FACTS_OPT_SHOW_TYPE|FACTS_OPT_SHOW_UNIQUE|FACTS_OPT_SHOW_UNIX_GROUP|
-    FACTS_OPT_SHOW_UNIX_MODE|FACTS_OPT_SHOW_UNIX_OWNER;
+    FACTS_OPT_SHOW_TYPE|FACTS_OPT_SHOW_UNIQUE|
+    FACTS_OPT_SHOW_UNIX_GROUP|FACTS_OPT_SHOW_UNIX_GROUP_NAME|
+    FACTS_OPT_SHOW_UNIX_MODE|FACTS_OPT_SHOW_UNIX_OWNER|
+    FACTS_OPT_SHOW_UNIX_OWNER_NAME;
 
-  /* XXX The media-type fact could be supported if mod_mimetype was available
-   * and used.
-   */
+  if (pr_module_exists("mod_mime.c") == TRUE) {
+    /* Check to see if MIMEEngine is enabled.  Yes, this is slightly
+     * naughty, looking at some other module's configuration directives,
+     * but for compliance with RFC 3659, specifically for implementing the
+     * "media-type" fact for MLSx commands, we need to do this.
+     */
+    c = find_config(main_server->conf, CONF_PARAM, "MIMEEngine", FALSE);
+    if (c != NULL) {
+      int engine;
+
+      engine = *((int *) c->argv[0]);
+      if (engine == TRUE) {
+        facts_opts |= FACTS_OPT_SHOW_MEDIA_TYPE;
+      }
+    }
+  }
 
   pr_feat_add("MFF modify;UNIX.group;UNIX.mode;");
   pr_feat_add("MFMT");
@@ -1708,7 +2006,6 @@ static cmdtable facts_cmdtab[] = {
   { LOG_CMD_ERR,C_MLSD,		G_NONE,	facts_mlsd_cleanup, FALSE, FALSE },
   { CMD,	C_MLST,		G_DIRS,	facts_mlst, TRUE, FALSE, CL_DIRS },
   { CMD,	C_OPTS "_MLST", G_NONE, facts_opts_mlst, FALSE, FALSE },
-  { POST_CMD,	C_HOST,		G_NONE,	facts_post_host, FALSE, FALSE },
   { 0, NULL }
 };
 

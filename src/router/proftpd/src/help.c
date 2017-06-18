@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* HELP management code
- * $Id: help.c,v 1.7 2011-05-23 21:22:24 castaglia Exp $
- */
+/* HELP management code */
 
 #include "conf.h"
 
@@ -40,11 +38,13 @@ static array_header *help_list = NULL;
 void pr_help_add(const char *cmd, const char *syntax, int impl) {
   struct help_rec *help;
 
-  if (!cmd || !syntax)
+  if (cmd == NULL ||
+      syntax == NULL) {
     return;
+  }
 
   /* If no list has been allocated, create one. */
-  if (!help_pool) {
+  if (help_pool == NULL) {
     help_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(help_pool, "Help Pool");
     help_list = make_array(help_pool, 0, sizeof(struct help_rec));
@@ -59,7 +59,7 @@ void pr_help_add(const char *cmd, const char *syntax, int impl) {
     register unsigned int i = 0;
     struct help_rec *helps = help_list->elts;
 
-    for (i = 0; i < help_list->nelts; i++)
+    for (i = 0; i < help_list->nelts; i++) {
       if (strcmp(helps[i].cmd, cmd) == 0) {
         if (helps[i].impl == FALSE &&
             impl == TRUE) {
@@ -68,6 +68,7 @@ void pr_help_add(const char *cmd, const char *syntax, int impl) {
 
         return;
       }
+    }
   }
 
   help = push_array(help_list);
@@ -77,6 +78,11 @@ void pr_help_add(const char *cmd, const char *syntax, int impl) {
 }
 
 int pr_help_add_response(cmd_rec *cmd, const char *target) {
+  if (cmd == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   if (help_list) {
     register unsigned int i;
     struct help_rec *helps = help_list->elts;
@@ -84,7 +90,9 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
     char buf[9] = {'\0'};
     int col = 0;
 
-    if (!target) {
+    if (target == NULL) {
+      const char *server_admin = "ftp-admin";
+
       pr_response_add(R_214,
         _("The following commands are recognized (* =>'s unimplemented):"));
 
@@ -102,7 +110,7 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
 
         /* 8 rows */
         if ((i + 1) % 8 == 0 ||
-            helps[i+1].cmd == NULL) {
+            (i+1 == help_list->nelts)) {
           register unsigned int j;
 
           for (j = 0; j < 8; j++) {
@@ -116,31 +124,32 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
             }
           }
 
-          if (*outstr)
+          if (*outstr) {
             pr_response_add(R_DUP, "%s", outstr);
+          }
 
           memset(outa, '\0', sizeof(outa));
           col = 0;
         }
       }
 
-      pr_response_add(R_DUP, _("Direct comments to %s"),
-        cmd->server->ServerAdmin ? cmd->server->ServerAdmin : "ftp-admin");
-
-    } else {
-
-      /* List the syntax for the given target command. */
-      for (i = 0; i < help_list->nelts; i++) {
-        if (strcasecmp(helps[i].cmd, target) == 0) {
-          pr_response_add(R_214, "Syntax: %s %s", helps[i].cmd,
-            helps[i].syntax);
-          return 0;
-        }
+      if (cmd->server != NULL &&
+          cmd->server->ServerAdmin != NULL) {
+        server_admin = cmd->server->ServerAdmin;
       }
+
+      pr_response_add(R_DUP, _("Direct comments to %s"), server_admin);
+      return 0;
     }
 
-    errno = ENOENT;
-    return -1;
+    /* List the syntax for the given target command. */
+    for (i = 0; i < help_list->nelts; i++) {
+      if (strcasecmp(helps[i].cmd, target) == 0) {
+        pr_response_add(R_214, "Syntax: %s %s", helps[i].cmd,
+          helps[i].syntax);
+        return 0;
+      }
+    }
   }
 
   errno = ENOENT;

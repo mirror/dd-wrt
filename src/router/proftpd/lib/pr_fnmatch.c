@@ -250,7 +250,11 @@ __wcschrnul (const wchar_t *s, wint_t c)
 # endif
 # define STRLEN(S) strlen (S)
 # define STRCAT(D, S) strcat (D, S)
-# define MEMPCPY(D, S, N) __mempcpy2 (D, S, N)
+# ifdef HAVE_MEMPCPY
+#  define MEMPCPY(D, S, N) mempcpy (D, S, N)
+# else
+#  define MEMPCPY(D, S, N) __mempcpy2 (D, S, N)
+# endif
 # define MEMCHR(S, C, N) memchr (S, C, N)
 # define STRCOLL(S1, S2) strcoll (S1, S2)
 # include "pr_fnmatch_loop.c"

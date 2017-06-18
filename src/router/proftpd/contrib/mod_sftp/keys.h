@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key mgmt (keys)
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: keys.h,v 1.9 2012-03-13 18:58:48 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_KEYS_H
 #define MOD_SFTP_KEYS_H
+
+#include "mod_sftp.h"
 
 enum sftp_key_type_e {
   SFTP_KEY_UNKNOWN = 0,
@@ -48,15 +46,13 @@ enum sftp_key_type_e {
 const char *sftp_keys_get_fingerprint(pool *, unsigned char *, uint32_t, int);
 #define SFTP_KEYS_FP_DIGEST_MD5		1
 #define SFTP_KEYS_FP_DIGEST_SHA1	2
+#define SFTP_KEYS_FP_DIGEST_SHA256	3
 
 void sftp_keys_free(void);
 int sftp_keys_get_hostkey(pool *p, const char *);
 const unsigned char *sftp_keys_get_hostkey_data(pool *, enum sftp_key_type_e,
-  size_t *);
+  uint32_t *);
 void sftp_keys_get_passphrases(void);
-int sftp_keys_have_dsa_hostkey(void);
-int sftp_keys_have_ecdsa_hostkey(pool *, int **);
-int sftp_keys_have_rsa_hostkey(void);
 int sftp_keys_set_passphrase_provider(const char *);
 const unsigned char *sftp_keys_sign_data(pool *, enum sftp_key_type_e,
   const unsigned char *, size_t, size_t *);
@@ -69,4 +65,14 @@ int sftp_keys_verify_signed_data(pool *, const char *,
   unsigned char *, uint32_t, unsigned char *, uint32_t,
   unsigned char *, size_t);
 
-#endif
+/* Sets minimum key sizes. */
+int sftp_keys_set_key_limits(int rsa_min, int dsa_min, int ec_min);
+
+int sftp_keys_clear_dsa_hostkey(void);
+int sftp_keys_clear_ecdsa_hostkey(void);
+int sftp_keys_clear_rsa_hostkey(void);
+int sftp_keys_have_dsa_hostkey(void);
+int sftp_keys_have_ecdsa_hostkey(pool *, int **);
+int sftp_keys_have_rsa_hostkey(void);
+
+#endif /* MOD_SFTP_KEYS_H */

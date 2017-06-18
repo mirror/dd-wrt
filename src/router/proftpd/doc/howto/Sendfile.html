@@ -1,15 +1,13 @@
-<!-- $Id: Sendfile.html,v 1.4 2011-02-21 02:57:16 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Sendfile.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Sendfile Support</title>
+<title>ProFTPD: Sendfile Support</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Sendfile Support</b></h2></center>
+<center><h2><b>ProFTPD: Sendfile Support</b></h2></center>
 <hr>
 
 <p>
@@ -48,7 +46,7 @@ a few cases where ProFTPD will specifically avoid the use of
     by definition, are ASCII transfers)
   <li>When RFC2228 data channel protection is in effect (<i>e.g.</i>
     <a href="TLS.html">SSL/TLS</a>)
-  </i>When transfers are being throttled via the <code>TransferRate</code>
+  <li>When transfers are being throttled via the <code>TransferRate</code>
     directive
   <li>When <code>MODE Z</code> data compression is being used (via the
     <code>mod_deflate</code> module)
@@ -64,7 +62,7 @@ Sendfile support in the compiled <code>proftpd</code> daemon can also be
 disabled at compile time, by using the <code>--disable-sendfile</code>
 configure option, <i>e.g.</i>:
 <pre>
-  # ./configure --disable-sendfile ...
+  $ ./configure --disable-sendfile ...
 </pre>
 This is not recommended unless necessary.
 
@@ -167,7 +165,11 @@ the size of the file being downloaded:
 
 <p>
 <hr>
-<i>$Date: 2011-02-21 02:57:16 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

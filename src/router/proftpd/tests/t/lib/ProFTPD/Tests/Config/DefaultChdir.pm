@@ -146,21 +146,23 @@ sub defaultchdir_ok {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -267,21 +269,23 @@ sub defaultchdir_var_u {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -389,21 +393,23 @@ sub defaultchdir_with_defaultroot {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"/subdir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -511,21 +517,23 @@ sub defaultchdir_with_defaultroot2 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"/subdir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -634,21 +642,23 @@ sub defaultchdir_one_env_var_bug3502 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -758,21 +768,23 @@ sub defaultchdir_multi_env_var_bug3502 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -879,21 +891,23 @@ sub defaultchdir_empty_env_var_bug3502 {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1003,21 +1017,23 @@ sub defaultchdir_user_mux_one_level {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {
@@ -1127,21 +1143,23 @@ sub defaultchdir_user_mux_three_levels {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
-
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->pwd();
-
+      my ($resp_code, $resp_msg) = $client->pwd();
       $client->quit();
 
       my $expected;
 
       $expected = 257;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $sub_dir = '/private' . $sub_dir;
+      }
 
       $expected = "\"$sub_dir\" is the current directory";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
     };
 
     if ($@) {

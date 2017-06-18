@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013-2014 The ProFTPD Project team
+ * Copyright (c) 2013-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,26 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Resource limit module
- * $Id: mod_rlimit.c,v 1.8 2014-01-31 17:29:27 castaglia Exp $
- */
+/* Resource limit module */
 
 #include "conf.h"
 #include "privs.h"
 
 #define MOD_RLIMIT_VERSION		"mod_rlimit/1.0"
+
+/* On some platforms, including both sys/prctl.h and linux/prctl.h will cause
+ * build errors similar to this one:
+ *
+ *  https://github.com/dvarrazzo/py-setproctitle/issues/44
+ *
+ * So try to work around this behavior by including sys/prctrl.h if available,
+ * and if not, try linux/prctl.h.
+ */
+#if defined(HAVE_SYS_PRCTL_H)
+# include <sys/prctl.h>
+#elif defined(HAVE_LINUX_PRCTL_H)
+# include <linux/prctl.h>
+#endif
 
 module rlimit_module;
 
@@ -142,7 +154,8 @@ MODRET set_rlimitcpu(cmd_rec *cmd) {
     CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
   }
 
-  if (pr_rlimit_get_cpu(&current, &max) < 0) {
+  if (pr_rlimit_get_cpu(&current, &max) < 0 &&
+      errno != ENOSYS) {
     pr_log_pri(PR_LOG_NOTICE, "unable to retrieve CPU resource limits: %s",
       strerror(errno));
   }
@@ -281,7 +294,8 @@ MODRET set_rlimitmemory(cmd_rec *cmd) {
   }
 
   /* Retrieve the current values */
-  if (pr_rlimit_get_memory(&current, &max) < 0) {
+  if (pr_rlimit_get_memory(&current, &max) < 0 &&
+      errno != ENOSYS) {
     pr_log_pri(PR_LOG_NOTICE, "unable to get memory resource limits: %s",
       strerror(errno));
   }
@@ -551,6 +565,26 @@ static int rlimit_set_core(int scope) {
     pr_log_debug(DEBUG2, "set core resource limits for daemon");
   }
 
+#if !defined(PR_DEVEL_COREDUMP) && \
+    defined(HAVE_PRCTL) && \
+    defined(PR_SET_DUMPABLE)
+  if (max == 0) {
+    /* Really, no core dumps please. On Linux, there are exceptions made
+     * even when setting RLIMIT_CORE = 0; see:
+     *
+     *  https://lkml.org/lkml/2011/8/24/136
+     *
+     * so when possible, use PR_SET_DUMPABLE to ensure that no coredumps
+     * happen.
+     */
+    if (prctl(PR_SET_DUMPABLE, 0, 0, 0, 0) < 0) {
+      pr_log_pri(PR_LOG_ERR, "error setting PR_SET_DUMPABLE to false: %s",
+        strerror(errno));
+    }
+  }
+#endif /* no --enable-devel=coredump and HAVE_PRCTL and PR_SET_DUMPABLE */
+
+  errno = xerrno;
   return res;
 }
 

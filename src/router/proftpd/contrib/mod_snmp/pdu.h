@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp PDU routines
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,16 +20,14 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: pdu.h,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
+
+#ifndef MOD_SNMP_PDU_H
+#define MOD_SNMP_PDU_H
 
 #include "mod_snmp.h"
 #include "asn1.h"
 #include "smi.h"
-
-#ifndef MOD_SNMP_PDU_H
-#define MOD_SNMP_PDU_H
 
 /* RFC1905 SNMPv2 ResponsePDU error status codes */
 #define SNMP_ERR_NO_ERROR		0
@@ -119,4 +117,4 @@ int snmp_pdu_read(pool *p, unsigned char **buf, size_t *buflen,
 int snmp_pdu_write(pool *p, unsigned char **buf, size_t *buflen,
     struct snmp_pdu *pdu, long snmp_version);
 
-#endif
+#endif /* MOD_SNMP_PDU_H */

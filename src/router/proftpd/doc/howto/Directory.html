@@ -1,15 +1,13 @@
-<!-- $Id: Directory.html,v 1.12 2008-12-10 22:40:15 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Directory.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Configuring a &lt;Directory&gt;</title>
+<title>ProFTPD: Configuring a &lt;Directory&gt;</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Configuring a <code>&lt;Directory&gt;</code></b></h2></center>
+<center><h2><b>ProFTPD: Configuring a <code>&lt;Directory&gt;</code></b></h2></center>
 <hr>
 
 <p>
@@ -29,7 +27,7 @@ like:
 </pre>
 The daemon will not let one do this, in fact.  The daemon will determine
 automatically the relations of <code>&lt;Directory&gt;</code> paths, depending
-on the path given and surrounding configuration context.
+on the path given and surrounding configuration section.
 
 <p>
 Always use the normal, absolute path for a <code>&lt;Directory&gt;</code>
@@ -150,21 +148,23 @@ which will achieve the desired effect of allowing uploads only in
 subdirectories of the given directory, <code>upload/</code>.
 
 <p>
-Also, it is good to keep in mind the <a href="http://www.castaglia.org/proftpd/doc/devel-guide/internals/ftpaccess.html">similarity</a> between a
-<code>&lt;Directory&gt;</code> section and a <code>.ftpaccess</code> file.
-In some cases, using <code>.ftpaccess</code> files might be more convenient.
-The <code>AllowOverride</code> configuration directive (which first appeared
-in the 1.2.7rc1 release) will provide fine-grained control over when
-<code>.ftpaccess</code> files will be honored.
+Also, it is good to keep in mind the <a href="ftpaccess.html">similarity</a>
+between a <code>&lt;Directory&gt;</code> section and a <code>.ftpaccess</code>
+file.  In some cases, using <code>.ftpaccess</code> files might be more
+convenient.  The
+<a href="../modules/mod_core.html#AllowOverride"><code>AllowOverride</code></a>
+configuration directive (which first appeared in the 1.2.7rc1 release) provides
+fine-grained control over when <code>.ftpaccess</code> files will be honored.
 
 <p>
 The fact that <code>&lt;Directory&gt;</code> sections can be used to
 refer to specific <i>files</i>, in addition to directories, is not obvious.
 However, there are some cases where it can be useful to use this feature.
 One proftpd user used this feature in the following way: the
-<code>DirFakeMode</code> was used to make all files look read-only (mostly
-so that FTP mirroring tools would create a read-only mirror of the site).
-However, a particular file on the site needed have execute permissions,
+<a href="../modules/mod_ls.html#DirFakeMode"><code>DirFakeMode</code></a>
+directive was used to make all files look read-only (mostly so that FTP
+mirroring tools would create a read-only mirror of the site).  However, a
+particular file on the site needed have execute permissions,
 even in the FTP mirrored site.  A <code>&lt;Directorygt;</code> section
 was used just for this one file, <i>e.g.</i>:
 <pre>
@@ -195,7 +195,7 @@ For example, if you tried:
     &lt;Limit ALL&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 
   &lt;Directory /path/to/dir&gt;
     &lt;Limit ALL&gt;
@@ -205,11 +205,11 @@ For example, if you tried:
     &lt;Limit WRITE&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 </pre>
 When starting <code>proftpd</code>, you would see something like:
 <pre>
- - Fatal: <Directory>: <Directory> section already configured for '/path/to/dir' on line 39 of '/etc/ftpd/proftpd.conf'
+ - Fatal: &lt;Directory&gt;: &lt;Directory&gt; section already configured for '/path/to/dir' on line 39 of '/etc/ftpd/proftpd.conf'
 </pre>
 
 <p>
@@ -221,7 +221,7 @@ same path?  For example:
     &lt;Limit ALL&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 
   &lt;Directory /path/*/dir&gt;
     &lt;Limit ALL&gt;
@@ -231,7 +231,7 @@ same path?  For example:
     &lt;Limit WRITE&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 </pre>
 This time, the config parser would not choke; <code>proftpd</code> would start
 up normally.  When it came time to look up the <code>&lt;Directory&gt;</code>
@@ -255,18 +255,18 @@ However, if you simply reversed the order of the above
     &lt;Limit WRITE&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 
   &lt;Directory /path/to/dir&gt;
     &lt;Limit ALL&gt;
       DenyAll
     &lt;/Limit&gt;
-  &lt/Directory&gt;
+  &lt;/Directory&gt;
 </pre>
 the upload would succeed, since the non-wildcard-using
 <code>&lt;Directory&gt;</code> section appeared later in the config.
 
-<p><a name="PreventDirectoryRename">
+<p><a name="PreventDirectoryRename"></a>
 <font color=red>Question</font>: How can I prevent a specific directory from
 being renamed?  I am currently trying:
 <pre>
@@ -314,7 +314,10 @@ list, we make sure that the <code><i>RNFR</i></code> <i>does</i> match the
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2008-12-10 22:40:15 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

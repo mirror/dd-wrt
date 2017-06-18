@@ -1,6 +1,4 @@
-<!-- $Id: mod_copy.html,v 1.1 2010-03-10 19:20:43 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_copy.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_copy</title>
@@ -38,6 +36,7 @@ questions, concerns, or suggestions regarding this module.
 <h2>Directives</h2>
 <ul>
   <li><a href="#CopyEngine">CopyEngine</a>
+  <li><a href="#CopyOptions">CopyOptions</a>
 </ul>
 
 <h2><code>SITE</code> Commands</h2>
@@ -48,11 +47,11 @@ questions, concerns, or suggestions regarding this module.
 
 <p>
 <hr>
-<h2><a name="CopyEngine">CopyEngine</a></h2>
+<h3><a name="CopyEngine">CopyEngine</a></h3>
 <strong>Syntax:</strong> CopyEngine <em>on|off</em><br>
 <strong>Default:</strong> CopyEngine on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
-<strong>Module:</strong> mod_radius<br>
+<strong>Module:</strong> mod_copy<br>
 <strong>Compatibility:</strong> 1.3.6rc1 and later
 
 <p>
@@ -62,7 +61,31 @@ handling of <code>SITE COPY</code> <i>et al</i> commands.  If it is set to
 
 <p>
 <hr>
-<h2><a name="SITE_CPFR">SITE CPFR</a></h2>
+<h3><a name="CopyOptions">CopyOptions</a></h3>
+<strong>Syntax:</strong> CopyOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_copy<br>
+<strong>Compatibility:</strong> 1.3.6rc3 and later
+
+<p>
+The <code>CopyOptions</code> directive is used to configure various optional
+behavior of <code>mod_copy</code>.
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>NoDeleteOnFailure</code><br>
+    <p>
+    The <code>mod_copy</code> file, when a copying operation fails, will
+    delete the <i>destination</i> file by default.  If, however, you <b>do</b>
+    want to keep that destination file when a failure happens, use this option.
+  </li>
+</ul>
+
+<p>
+<hr>
+<h3><a name="SITE_CPFR">SITE CPFR</a></h3>
 This <code>SITE</code> command specifies the source file/directory to use
 for copying from one place to another directly on the server.
 
@@ -75,8 +98,9 @@ The syntax for <code>SITE CPFR</code> is:
 <p>
 See also: <a href="#SITE_CPTO">SITE CPTO</a>
 
+<p>
 <hr>
-<h2><a name="SITE_CPTO">SITE CPTO</a></h2>
+<h3><a name="SITE_CPTO">SITE CPTO</a></h3>
 This <code>SITE</code> command specifies the destination file/directory to use
 for copying from one place to another directly on the server.
 
@@ -93,7 +117,7 @@ handled using <code>RNFR</code> and <code>RNTO</code>.
 
 <p>
 Use of these <code>SITE</code> command can be controlled via
-<code>&lt;Limit&gt;<code> sections, <i>e.g.</i>:
+<code>&lt;Limit&gt;</code> sections, <i>e.g.</i>:
 <pre>
   &lt;Limit SITE_COPY&gt;
     AllowUser alex
@@ -104,25 +128,37 @@ Use of these <code>SITE</code> command can be controlled via
 <p>
 See also: <a href="#SITE_CPFR">SITE CPFR</a>
 
+<p>
+<b>Logging</b><br>
+The <code>mod_copy</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>copy
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace copy:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
+
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-To install <code>mod_copy</code>, copy the <code>mod_copy.c</code> file into:
-<pre>
-  <i>proftpd-dir</i>/contrib/
-</pre>
-after unpacking the latest proftpd-1.3.<i>x</i> source code.  For including
+The <code>mod_copy</code> module is distributed with ProFTPD.  Simply follow
+the normal steps for using third-party modules in ProFTPD.  For including
 <code>mod_copy</code> as a staticly linked module:
 <pre>
-  ./configure --with-modules=mod_copy
+  $ ./configure --with-modules=mod_copy
 </pre>
 To build <code>mod_copy</code> as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_copy
+  $ ./configure --enable-dso --with-shared=mod_copy
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
@@ -130,19 +166,16 @@ For those with an existing ProFTPD installation, you can use the
 <code>prxs</code> tool to add <code>mod_copy</code>, as a DSO module, to
 your existing server:
 <pre>
-  # prxs -c -i -d mod_copy.c
+  $ prxs -c -i -d mod_copy.c
 </pre>
 
 <p>
-<hr><br>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2015 TJ Saunders<br>
+&copy; Copyright 2009-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

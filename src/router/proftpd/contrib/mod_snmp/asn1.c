@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp ASN.1 support
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,11 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: asn1.c,v 1.1 2013-05-15 15:20:25 castaglia Exp $
  */
 
 #include "mod_snmp.h"
 #include "asn1.h"
 #include "mib.h"
-#include "stacktrace.h"
 
 static const char *trace_channel = "snmp.asn1";
 
@@ -148,7 +145,7 @@ static int asn1_read_byte(pool *p, unsigned char **buf, size_t *buflen,
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
       "ASN.1 format error: unable to read type (buflen = %lu)",
       (unsigned long) *buflen);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -191,7 +188,7 @@ static int asn1_read_len(pool *p, unsigned char **buf, size_t *buflen,
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
       "ASN.1 format error: unable to read length (buflen = %lu)",
       (unsigned long) *buflen);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -210,7 +207,7 @@ static int asn1_read_len(pool *p, unsigned char **buf, size_t *buflen,
     if (byte == 0) {
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
         "ASN.1 format error: invalid ASN1 length value %c", byte);
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -219,7 +216,7 @@ static int asn1_read_len(pool *p, unsigned char **buf, size_t *buflen,
       (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
         "ASN.1 format error: invalid ASN1 length value %c (> %lu)", byte,
         (unsigned long) sizeof(unsigned int));
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -252,7 +249,7 @@ int snmp_asn1_read_header(pool *p, unsigned char **buf, size_t *buflen,
     pr_trace_msg(trace_channel, 3,
       "failed reading object header: extension length bit set (%c)", (*buf)[0]);
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EPERM;
     return -1;
   }
@@ -274,7 +271,7 @@ int snmp_asn1_read_header(pool *p, unsigned char **buf, size_t *buflen,
     pr_trace_msg(trace_channel, 3,
       "failed reading object header: object length (%u bytes) is greater "
       "than max object length (%u bytes)", objlen, SNMP_ASN1_MAX_OBJECT_LEN);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -284,7 +281,7 @@ int snmp_asn1_read_header(pool *p, unsigned char **buf, size_t *buflen,
       "failed reading object header: object length (%u bytes) is greater "
       "than remaining data (%lu bytes)", objlen, (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -327,7 +324,7 @@ int snmp_asn1_read_int(pool *p, unsigned char **buf, size_t *buflen,
       "failed reading object header: object length (%u bytes) is greater "
       "than remaining data (%lu bytes)", objlen, (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -418,7 +415,7 @@ int snmp_asn1_read_null(pool *p, unsigned char **buf, size_t *buflen,
       "failed reading NULL object: object length (%u bytes) is not zero, "
       "as expected", objlen);
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -469,7 +466,7 @@ int snmp_asn1_read_oid(pool *p, unsigned char **buf, size_t *buflen,
       "failed reading OID object: object length (%u bytes) is greater "
       "than remaining data (%lu bytes)", objlen, (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -510,7 +507,7 @@ int snmp_asn1_read_oid(pool *p, unsigned char **buf, size_t *buflen,
         "failed reading OID object: sub-identifer (%u is greater "
         "than maximum allowed OID value (%u)", sub_id, SNMP_ASN1_OID_MAX_ID);
 
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -576,7 +573,7 @@ int snmp_asn1_read_string(pool *p, unsigned char **buf, size_t *buflen,
       "failed reading OCTET_STRING object: object length (%u bytes) is greater "
       "than remaining data (%lu bytes)", objlen, (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -596,7 +593,7 @@ static int asn1_write_byte(unsigned char **buf, size_t *buflen,
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
       "ASN.1 format error: unable to write byte %c (buflen = %lu)", byte,
       (unsigned long) *buflen);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -644,7 +641,7 @@ static int asn1_write_len(unsigned char **buf, size_t *buflen,
           "ASN.1 format error: unable to write length %u (buflen = %lu)",
           asn1_len, (unsigned long) *buflen);
 
-        snmp_stacktrace_log();
+        pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
         errno = EINVAL;
         return -1;
       }
@@ -663,7 +660,7 @@ static int asn1_write_len(unsigned char **buf, size_t *buflen,
           "ASN.1 format error: unable to write length %u (buflen = %lu)",
           asn1_len, (unsigned long) *buflen);
 
-        snmp_stacktrace_log();
+        pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
         errno = EINVAL;
         return -1;
       }
@@ -692,7 +689,7 @@ static int asn1_write_len(unsigned char **buf, size_t *buflen,
           "ASN.1 format error: unable to write length %u (buflen = %lu)",
           asn1_len, (unsigned long) *buflen);
 
-        snmp_stacktrace_log();
+        pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
         errno = EINVAL;
         return -1;
       }
@@ -726,7 +723,7 @@ static int asn1_write_len(unsigned char **buf, size_t *buflen,
         "ASN.1 format error: unable to write length %u (buflen = %lu)",
         asn1_len, (unsigned long) *buflen);
 
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -817,7 +814,7 @@ int snmp_asn1_write_int(pool *p, unsigned char **buf, size_t *buflen,
       "than remaining buffer (%lu bytes)", asn1_intsz,
       (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -894,7 +891,7 @@ int snmp_asn1_write_uint(pool *p, unsigned char **buf, size_t *buflen,
       "than remaining buffer (%lu bytes)", asn1_uintsz,
       (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -986,7 +983,7 @@ int snmp_asn1_write_oid(pool *p, unsigned char **buf, size_t *buflen,
      */
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
       "invalid first sub-identifier (%lu) in OID", (unsigned long) asn1_oid[0]);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
 
@@ -995,7 +992,7 @@ int snmp_asn1_write_oid(pool *p, unsigned char **buf, size_t *buflen,
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
       "OID sub-identifier count (%u) exceeds max supported (%u)", asn1_oidlen,
       SNMP_MIB_MAX_OIDLEN);
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
 
@@ -1060,7 +1057,7 @@ int snmp_asn1_write_oid(pool *p, unsigned char **buf, size_t *buflen,
       "failed writing OID object: object length (%u bytes) is greater "
       "than remaining buffer (%lu bytes)", asn1_len, (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -1219,7 +1216,7 @@ int snmp_asn1_write_string(pool *p, unsigned char **buf, size_t *buflen,
       "than remaining buffer (%lu bytes)", (unsigned long) asn1_strlen,
       (unsigned long) (*buflen));
 
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }

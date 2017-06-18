@@ -1,6 +1,4 @@
-<!-- $Id: mod_rlimit.html,v 1.4 2014-01-31 17:08:10 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_rlimit.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_rlimit</title>
@@ -48,10 +46,10 @@ ProFTPD source distribution:
 
 <p>
 <hr>
-<h2><a name="RLimitChroot">RLimitChroot</a></h2>
+<h3><a name="RLimitChroot">RLimitChroot</a></h3>
 <strong>Syntax:</strong> RLimitChroot <em>on|off</em><br>
-<strong>Default:</strong> <em>on</em><br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Default:</strong> RLimitChroot on<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_rlimit<br>
 <strong>Compatibility:</strong> 1.3.5rc5
 
@@ -88,11 +86,19 @@ be logged (at debug level 2):
 </pre>
 
 <p>
+The <code>RLimitChroot</code> directive is <b>not</b> intended to <b>prevent</b>
+"Roaring Beast" style attacks entirely; the guarded <code>/etc</code> and
+<code>/lib</code> directories might be created via other means, outside of
+ProFTPD, which would also allow for the attack.  The <code>RLimitChroot</code>
+directive is meant to <em>mitigate</em> (not <em>prevent</em>) the attacks by
+making sure it cannot be done using <i>just</i> ProFTPD.
+
+<p>
 <hr>
-<h2><a name="RLimitCPU">RLimitCPU</a></h2>
+<h3><a name="RLimitCPU">RLimitCPU</a></h3>
 <strong>Syntax:</strong> RLimitCPU <em>[scope] soft-limit|"max" [hard-limit|"max"]</em><br>
-<strong>Default:</strong> System defaults<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Default:</strong> <em>System defaults</em><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_rlimit<br>
 <strong>Compatibility:</strong> 1.3.5rc2
 
@@ -128,10 +134,10 @@ Example:
 
 <p>
 <hr>
-<h2><a name="RLimitMemory">RLimitMemory</a></h2>
+<h3><a name="RLimitMemory">RLimitMemory</a></h3>
 <strong>Syntax:</strong> RLimitMemory <em>[scope] soft-limit|"max" [hard-limit|"max"]</em><br>
-<strong>Default:</strong> System defaults<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Default:</strong> <em>System defaults</em><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_rlimit<br>
 <strong>Compatibility:</strong> 1.3.5rc2
 
@@ -165,11 +171,33 @@ Example:
 </pre>
 
 <p>
+<b>Note</b>: If you use <code>RLimitMemory</code>, <i>e.g.</i>:
+<pre>
+  &lt;IfModule mod_rlimit.c&gt;
+    RLimitMemory session 64M
+  &lt;/IfModule&gt;
+</pre>
+<b>and</b> you use <a href="../contrib/mod_tls.html"><code>mod_tls</code></a>
+for FTPS transfers:
+<pre>
+  &lt;IfModule mod_tls.c&gt;
+    ...
+  &lt;/IfModule&gt;
+</pre>
+then your transfers are likely to fail.  Why?  Because OpenSSL will need to
+allocate memory for the TLS support, in addition to the memory that ProFTPD
+already allocates for data transfers.  Depending on the specific ciphersuites
+negotiated, and the specific memory limit configured, you are very likely to
+hit the <code>RLimitMemory</code> limit.  In short, your
+<code>RLimitMemory</code> might be too low, and not allowing ProFTPD and
+OpenSSL enough memory for the transfer.
+
+<p>
 <hr>
-<h2><a name="RLimitOpenFiles">RLimitOpenFiles</a></h2>
+<h3><a name="RLimitOpenFiles">RLimitOpenFiles</a></h3>
 <strong>Syntax:</strong> RLimitOpenFiles <em>[scope] soft-limit|"max" [hard-limit|"max"]</em><br>
-<strong>Default:</strong> System defaults<br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Default:</strong> <em>System defaults</em><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_rlimit<br>
 <strong>Compatibility:</strong> 1.3.5rc2
 
@@ -199,7 +227,7 @@ used.
 Example:
 <pre>
   # Limit a given session to 12 open file descriptors
-  RLimitMemory session 12
+  RLimitOpenFiles session 12
 </pre>
 
 <p>
@@ -208,21 +236,31 @@ Example:
 The <code>mod_rlimit</code> module is compiled into <code>proftpd</code> by
 default.
 
+<p><a name="FAQ">FAQ</a>
+<b>Frequently Asked Questions</b><br>
+
 <p>
-<hr><br>
+<font color=red>Question</font>: Why can't I create directories named "lib"
+or "etc" in the root directory?  For example, my FTP client fails like so:
+<code>
+  <font color=blue>Command:	MKD lib</font>
+  <font color=green>Response:	550 lib: Permission denied</font>
+  <font color=blue>Command:	MKD /lib</font>
+  <font color=green>Response:	550 /lib: Permission denied</font>
+</code>
+Although I don't have anything in my <code>proftpd.conf</code> that would block
+these commands, and the filesystem permissions are OK.  Why does this
+happen?<br>
+<font color=blue>Answer</font>: For the answer to this, see the description for
+the <a href="#RLimitChroot"><code>RLimitChroot</code></a> directive.
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2014-01-31 17:08:10 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2013-2014 TJ Saunders<br>
+&copy; Copyright 2013-2017 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

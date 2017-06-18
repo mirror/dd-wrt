@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2011 The ProFTPD Project team
+ * Copyright (c) 2009-2014 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * copyright holders give permission to link this program with OpenSSL, and
  * distribute the resulting executable, without including the source code for
  * OpenSSL in the source distribution.
- *
- * $Id: filter.h,v 1.3 2011-05-23 20:35:35 castaglia Exp $
  */
 
 #ifndef PR_FILTER_H
@@ -38,8 +36,8 @@
  * match a configured PathDenyFilter.
  */
 int pr_filter_allow_path(xaset_t *set, const char *path);
-#define PR_FILTER_ERR_FAILS_ALLOW_FILTER	-1
-#define PR_FILTER_ERR_FAILS_DENY_FILTER		-2
+#define PR_FILTER_ERR_FAILS_ALLOW_FILTER	-2
+#define PR_FILTER_ERR_FAILS_DENY_FILTER		-3
 
 /* Parse the optional flags parameter for PathAllowFilter, PathDenyFilter
  * directive configurations.

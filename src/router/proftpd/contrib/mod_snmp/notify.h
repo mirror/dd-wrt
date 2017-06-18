@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp notification types
- * Copyright (c) 2012 TJ Saunders
+ * Copyright (c) 2012-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,11 +22,11 @@
  * source distribution.
  */
 
-#include "mod_snmp.h"
-#include "asn1.h"
-
 #ifndef MOD_SNMP_NOTIFY_H
 #define MOD_SNMP_NOTIFY_H
+
+#include "mod_snmp.h"
+#include "asn1.h"
 
 /* ftp.notifications */
 #define SNMP_NOTIFY_DAEMON_MAX_INSTANCES	100
@@ -34,8 +34,9 @@
 #define SNMP_NOTIFY_FTP_BAD_USER		1001
 
 int snmp_notify_generate(pool *p, int sockfd, const char *community,
-  pr_netaddr_t *src_addr, pr_netaddr_t *dst_addr, unsigned int notify_id);
+  const pr_netaddr_t *src_addr, const pr_netaddr_t *dst_addr,
+  unsigned int notify_id);
 long snmp_notify_get_request_id(void);
 void snmp_notify_poll_cond(void);
 
-#endif
+#endif /* MOD_SNMP_NOTIFY */

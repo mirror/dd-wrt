@@ -36,6 +36,11 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
+  include_limit => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
 };
 
 sub new {
@@ -833,6 +838,117 @@ EOC
   }
 
   unlink($log_file);
+}
+
+sub include_limit {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $include_config = File::Spec->rel2abs("$tmpdir/include.conf");
+  if (open(my $fh, "> $include_config")) {
+    print $fh "Allow from 127.0.0.1\n";
+    unless (close($fh)) {
+      die("Can't write $include_config: $!");
+    }
+
+  } else {
+    die("Can't open $include_config: $!");
+  }
+
+  my $ftpaccess_file = File::Spec->rel2abs("$setup->{home_dir}/.ftpaccess");
+  if (open(my $fh, "> $ftpaccess_file")) {
+    print $fh <<EOC;
+<Limit LOGIN>
+  Include $include_config
+  DenyAll
+</Limit>
+EOC
+    unless (close($fh)) {
+      die("Can't write $ftpaccess_file: $!");
+    }
+
+  } else {
+    die("Can't open $ftpaccess_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AllowOverride => 'on',
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Limit LOGIN>
+  Include $include_config
+  DenyAll
+</Limit>
+EOC
+
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

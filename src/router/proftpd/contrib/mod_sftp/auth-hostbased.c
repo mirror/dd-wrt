@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp 'hostbased' user authentication
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: auth-hostbased.c,v 1.10 2012-03-13 18:58:48 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -43,17 +41,22 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     unsigned char **buf, uint32_t *buflen, int *send_userauth_fail) {
   struct passwd *pw;
   char *hostkey_algo, *host_fqdn, *host_user, *host_user_utf8;
-  const char *fp = NULL;
+  const char *fp = NULL, *fp_algo = NULL;
   unsigned char *hostkey_data, *signature_data;
   unsigned char *buf2, *ptr2;
   const unsigned char *id;
   uint32_t buflen2, bufsz2, hostkey_datalen, id_len, signature_len;
   enum sftp_key_type_e pubkey_type;
+  int fp_algo_id;
 
   if (pr_cmd_dispatch_phase(pass_cmd, PRE_CMD, 0) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "authentication request for user '%s' blocked by '%s' handler",
-      orig_user, pass_cmd->argv[0]);
+      orig_user, (char *) pass_cmd->argv[0]);
+
+    pr_log_auth(PR_LOG_NOTICE,
+      "USER %s (Login failed): blocked by '%s' handler", orig_user,
+      (char *) pass_cmd->argv[0]);
 
     pr_cmd_dispatch_phase(pass_cmd, POST_CMD_ERR, 0);
     pr_cmd_dispatch_phase(pass_cmd, LOG_CMD_ERR, 0);
@@ -64,6 +67,14 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   }
 
   hostkey_algo = sftp_msg_read_string(pkt->pool, buf, buflen);
+  if (hostkey_algo == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "missing required host key algorithm, rejecting request");
+
+    *send_userauth_fail = TRUE;
+    errno = EINVAL;
+    return 0;
+  }
 
   hostkey_datalen = sftp_msg_read_int(pkt->pool, buf, buflen);
   hostkey_data = sftp_msg_read_data(pkt->pool, buf, buflen, hostkey_datalen);
@@ -104,6 +115,10 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
       "unsupported host key algorithm '%s' requested, rejecting request",
       hostkey_algo);
 
+    pr_log_auth(PR_LOG_NOTICE,
+      "USER %s (Login failed): unsupported host key algorithm '%s' requested",
+      user, hostkey_algo);
+
     *send_userauth_fail = TRUE;
     errno = EINVAL;
     return 0;
@@ -122,28 +137,46 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
 #ifdef OPENSSL_FIPS
   if (FIPS_mode()) {
+# if defined(HAVE_SHA256_OPENSSL)
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA256;
+    fp_algo = "SHA256";
+# else
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA1;
+    fp_algo = "SHA1";
+# endif /* HAVE_SHA256_OPENSSL */
+
     fp = sftp_keys_get_fingerprint(pkt->pool, hostkey_data, hostkey_datalen,
-      SFTP_KEYS_FP_DIGEST_SHA1);
+      fp_algo_id);
     if (fp != NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "public key SHA1 fingerprint: %s", fp);
+        "public key %s fingerprint: %s", fp_algo, fp);
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error obtaining public key SHA1 fingerprint: %s", strerror(errno));
+        "error obtaining public key %s fingerprint: %s", fp_algo,
+        strerror(errno));
     }
 
   } else {
 #endif /* OPENSSL_FIPS */
+#if defined(HAVE_SHA256_OPENSSL)
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_SHA256;
+    fp_algo = "SHA256";
+#else
+    fp_algo_id = SFTP_KEYS_FP_DIGEST_MD5;
+    fp_algo = "MD5";
+#endif /* HAVE_SHA256_OPENSSL */
+
     fp = sftp_keys_get_fingerprint(pkt->pool, hostkey_data, hostkey_datalen,
-      SFTP_KEYS_FP_DIGEST_MD5);
+      fp_algo_id);
     if (fp != NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "public key MD5 fingerprint: %s", fp);
+        "public key %s fingerprint: %s", fp_algo, fp);
 
     } else {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error obtaining public key MD5 fingerprint: %s", strerror(errno));
+        "error obtaining public key %s fingerprint: %s", fp_algo,
+        strerror(errno));
     }
 #ifdef OPENSSL_FIPS
   }
@@ -170,6 +203,9 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
    */
 
   if (sftp_blacklist_reject_key(pkt->pool, hostkey_data, hostkey_datalen)) {
+    pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): requested host "
+      "key is blacklisted", user);
+
     *send_userauth_fail = TRUE;
     errno = EACCES;
     return 0;
@@ -182,6 +218,9 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
 
   if (sftp_keystore_verify_host_key(pkt->pool, user, host_fqdn, host_user,
       hostkey_data, hostkey_datalen) < 0) {
+    pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): authentication "
+      "via '%s' host key failed", user, hostkey_algo);
+
     *send_userauth_fail = TRUE;
     errno = EACCES;
     return 0;
@@ -218,7 +257,12 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "failed to verify '%s' signature on hostbased auth request for "
       "user '%s', host %s", hostkey_algo, orig_user, host_fqdn);
+
+    pr_log_auth(PR_LOG_NOTICE, "USER %s (Login failed): signature "
+      "verification of '%s' host key failed", user, hostkey_algo);
+
     *send_userauth_fail = TRUE;
+    errno = EACCES;
     return 0;
   }
 
@@ -238,4 +282,8 @@ int sftp_auth_hostbased(struct ssh2_packet *pkt, cmd_rec *pass_cmd,
   }
 
   return 1;
+}
+
+int sftp_auth_hostbased_init(pool *p) {
+  return 0;
 }

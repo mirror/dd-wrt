@@ -40,6 +40,11 @@ my $TESTS = {
     test_class => [qw(bug forking mod_wrap2_file sftp ssh2)],
   },
 
+  sftp_wrap2_deny_msg_var_u => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_wrap2_file sftp ssh2)],
+  },
+
 };
 
 sub new {
@@ -737,6 +742,174 @@ sub sftp_wrap2_deny_msg_on_auth_bug3670 {
   my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
 
   my $deny_msg = '"SFTP denied by access rules"';
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $log_file",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+
+      'mod_wrap2.c' => {
+        WrapEngine => 'on',
+        WrapLog => $log_file,
+        WrapTables => "file:$allow_file file:$deny_file",
+        WrapDenyMsg => $deny_msg,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str (see unit test notes)");
+      }
+
+      if ($ssh2->auth_password($user, $passwd)) {
+        die("Password authentication succeeded unexpectedly");
+      }
+
+      my ($err_code, $err_name, $err_str) = $ssh2->error();
+
+      $ssh2->disconnect();
+
+      # Unfortunately, the Net::SSH2::SFTP API doesn't provide the error
+      # text as sent by the SFTP server.
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_append_logfile($log_file, $ex);
+    unlink($log_file);
+
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub sftp_wrap2_deny_msg_var_u {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/sftp.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/sftp.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/sftp.scoreboard");
+
+  my $log_file = test_get_logfile();
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/sftp.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/sftp.group");
+
+  my $fh;
+  my $allow_file = File::Spec->rel2abs("$tmpdir/sftp.allow");
+  if (open($fh, "> $allow_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $allow_file: $!");
+  }
+
+  my $deny_file = File::Spec->rel2abs("$tmpdir/sftp.deny");
+  if (open($fh, "> $deny_file")) {
+    print $fh "ALL: ALL\n";
+
+    unless (close($fh)) {
+      die("Can't write $deny_file: $!");
+    }
+
+  } else {
+    die("Can't open $deny_file: $!");
+  }
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $rsa_priv_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key');
+  my $rsa_pub_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/test_rsa_key.pub');
+
+  my $deny_msg = '"User %u denied by access rules"';
 
   my $config = {
     PidFile => $pid_file,

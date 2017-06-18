@@ -561,6 +561,11 @@ EOS
   $self->assert($expected eq $xfer_status,
     test_msg("Expected transfer status '$expected', got '$xfer_status'"));
 
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $test_file = '/private' . $test_file;
+  }
+
   $expected = $test_file;
   $self->assert($expected eq $xfer_path,
     test_msg("Expected file path '$expected', got '$xfer_path'"));
@@ -786,6 +791,11 @@ EOS
   $expected = 'success';
   $self->assert($expected eq $xfer_status,
     test_msg("Expected transfer status '$expected', got '$xfer_status'"));
+
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $test_file = '/private' . $test_file;
+  }
 
   $expected = $test_file;
   $self->assert($expected eq $xfer_path,
@@ -1022,6 +1032,11 @@ EOS
   $expected = 'failed';
   $self->assert($expected eq $xfer_status,
     test_msg("Expected transfer status '$expected', got '$xfer_status'"));
+
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $test_file = '/private' . $test_file;
+  }
 
   $expected = $test_file;
   $self->assert($expected eq $xfer_path,
@@ -1267,6 +1282,11 @@ EOS
   $expected = 'failed';
   $self->assert($expected eq $xfer_status,
     test_msg("Expected transfer status '$expected', got '$xfer_status'"));
+
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $test_file = '/private' . $test_file;
+  }
 
   $expected = $test_file;
   $self->assert($expected eq $xfer_path,
@@ -1531,6 +1551,11 @@ EOS
   $expected = '-';
   $self->assert($expected eq $xfer_failure,
     test_msg("Expected transfer failure '$expected', got '$xfer_failure'"));
+
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $test_file = '/private' . $test_file;
+  }
 
   $expected = $test_file;
   $self->assert($expected eq $xfer_path,

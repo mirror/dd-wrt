@@ -1,15 +1,13 @@
-<!-- $Id: DSO.html,v 1.10 2012-10-12 02:21:19 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/DSO.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Dynamic Shared Objects</title>
+<title>ProFTPD: Dynamic Shared Objects (DSOs)</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Dynamic Shared Objects</b></h2></center>
+<center><h2><b>ProFTPD: Dynamic Shared Objects (DSOs)</b></h2></center>
 <hr>
 
 <p>
@@ -29,7 +27,7 @@ ProFTPD gained the ability to use DSOs starting with the 1.3.0rc1 release.
 To make sure the compiled <code>proftpd</code> binary can load DSO modules,
 use the <code>--enable-dso</code> configure option:
 <pre>
-  ./configure --enable-dso ...
+  $ ./configure --enable-dso ...
 </pre>
 This causes the build system to build the <code>libltdl</code> supporting
 library, which is used to handle OS-specific ways of loading and unloading
@@ -47,7 +45,7 @@ easily be built as DSO modules, rather than statically linked into the
 <code>--with-modules</code> configure option, you use the
 <code>--with-shared</code> option:
 <pre>
-  ./configure --enable-dso --with-shared=mod_sql:mod_sql_mysql --with-includes=... --with-libraries=...
+  $ ./configure --enable-dso --with-shared=mod_sql:mod_sql_mysql --with-includes=... --with-libraries=...
 </pre>
 These DSO modules will be installed under the <code>libexec/</code> directory
 of your ProFTPD install location.  To control the location of this
@@ -55,7 +53,7 @@ of your ProFTPD install location.  To control the location of this
 will load modules, you can use the <code>--libexecdir</code> configure
 option, <i>e.g.</i>:
 <pre>
-  ./configure --libexecdir=/path/to/custom/libexec --enable-dso ...
+  $ ./configure --libexecdir=/path/to/custom/libexec --enable-dso ...
 </pre>
 
 <p>
@@ -213,8 +211,8 @@ a library <code>libcustom.so</code>, you might have the following:
 Place the <code>Makefile</code> in a directory with your
 <code>mod_custom.c</code> source file, then do:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 The <code>make install</code> step will install the DSO module into the
 <code>libexec/</code> directory of your ProFTPD install location.
@@ -261,7 +259,7 @@ At least one of the above actions must be specified when using
 <p>
 To use <code>prxs</code> all in one step, you could do:
 <pre>
-  # prxs -c -i -d mod_custom.c
+  $ prxs -c -i -d mod_custom.c
 </pre>
 which will do the compile, install, and clean actions in order.  Once
 installed, update your <code>proftpd.conf</code> to make sure your module is
@@ -276,7 +274,7 @@ For example, you might use <code>prxs</code> to compile the
 <code>mod_sql_sqlite</code> module like so, from the top level of the
 ProFTPD source directory:
 <pre>
-  # prxs -c -i -d contrib/mod_sql_sqlite.c
+  $ prxs -c -i -d contrib/mod_sql_sqlite.c
 </pre>
 
 <p>
@@ -304,8 +302,8 @@ The following options are also supported:
 Using <code>prxs</code>, the above <code>mod_custom</code> example would
 become:
 <pre>
-  # cd /path/to/mod_custom/dir
-  # prxs -c -i -D USE_CUSTOM -I /path/to/custom/include -L /path/to/custom/lib -l custom mod_custom.c
+  $ cd /path/to/mod_custom/dir
+  $ prxs -c -i -D USE_CUSTOM -I /path/to/custom/include -L /path/to/custom/lib -l custom mod_custom.c
 </pre>
 That's it!  No need for a special Makefile, and no need to edit/replace any
 variables.
@@ -318,7 +316,7 @@ installed <code>libtool</code>), you can use the <code>LIBTOOL</code>
 environment variable to point <code>prxs</code> to the <code>libtool</code>
 to use.  For example:
 <pre>
-  # LIBTOOL=/path/to/custom/libtool prxs -c -i -d mod_custom.c
+  $ LIBTOOL=/path/to/custom/libtool prxs -c -i -d mod_custom.c
 </pre>
 
 <p>
@@ -344,7 +342,7 @@ whatever other module you want to add to your proftpd).  Assume, then, that
 you have found the <code>mod_sql_passwd.c</code> source file.  The next
 step is to use <code>prxs</code> to build that module as a DSO module:
 <pre>
-  # /usr/local/bin/prxs -c -i -d mod_sql_passwd.c
+  $ /usr/local/bin/prxs -c -i -d mod_sql_passwd.c
 </pre>
 If the above fails with this error message:
 <pre>
@@ -376,7 +374,11 @@ needing to recompile/reinstall proftpd itself.
 
 <p>
 <hr>
-<i>$Date: 2012-10-12 02:21:19 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

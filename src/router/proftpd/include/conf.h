@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Generic configuration and standard header file includes.
- * $Id: conf.h,v 1.92 2013-09-19 05:54:32 castaglia Exp $
- */
+/* Generic configuration and standard header file includes. */
 
 #ifndef PR_CONF_H
 #define PR_CONF_H
@@ -273,14 +271,6 @@ char *strchr(),*strrchr();
 
 #include "options.h"
 
-/* Solaris 2.5 seems to already have a typedef for 'timer_t', so
- * #define timer_t to something else as a workaround.  However, on AIX,
- * we do NOT want to do this.
- */
-#if defined(HAVE_TIMER_T) && !defined(AIX7)
-# define timer_t p_timer_t
-#endif
-
 /* AIX, when compiled using -D_NO_PROTO, lacks some prototypes without
  * which ProFTPD may do some funny (and not good) things.  Provide the
  * prototypes as necessary here.
@@ -422,10 +412,12 @@ typedef struct {
 #include "str.h"
 #include "ascii.h"
 #include "table.h"
+#include "signals.h"
 #include "proftpd.h"
 #include "support.h"
 #include "str.h"
 #include "sets.h"
+#include "configdb.h"
 #include "dirtree.h"
 #include "expr.h"
 #include "rlimit.h"
@@ -468,7 +460,9 @@ typedef struct {
 #include "pidfile.h"
 #include "env.h"
 #include "pr-syslog.h"
+#include "json.h"
 #include "memcache.h"
+#include "redis.h"
 
 # ifdef HAVE_SETPASSENT
 #  define setpwent()	setpassent(1)

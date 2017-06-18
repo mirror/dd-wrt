@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp packet routines
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,13 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: packet.h,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
-
-#include "mod_snmp.h"
-#include "pdu.h"
 
 #ifndef MOD_SNMP_PACKET_H
 #define MOD_SNMP_PACKET_H
+
+#include "mod_snmp.h"
+#include "pdu.h"
 
 /* SNMP packets shouldn't be larger than 4K, right? */
 #define SNMP_PACKET_MAX_LEN		4096
@@ -36,8 +34,8 @@
 struct snmp_packet {
   pool *pool;
 
-  pr_netaddr_t *remote_addr;
-  pr_class_t *remote_class;
+  const pr_netaddr_t *remote_addr;
+  const pr_class_t *remote_class;
 
   /* Request packet data */
   unsigned char *req_data;
@@ -62,4 +60,4 @@ struct snmp_packet {
 struct snmp_packet *snmp_packet_create(pool *p);
 int snmp_packet_write(pool *p, int sockfd, struct snmp_packet *pkt);
 
-#endif
+#endif /* MOD_SNMP_PACKET_H */

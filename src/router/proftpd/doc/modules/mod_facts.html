@@ -1,6 +1,4 @@
-<!-- $Id: mod_facts.html,v 1.13 2013-07-29 16:54:45 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_facts.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_facts</title>
@@ -29,7 +27,8 @@ the <code>mod_facts</code> module implements the <code>MFF</code> and
 
 <p>
 This module is contained in the <code>mod_facts.c</code> file for
-ProFTPD 1.3.<i>x</i>, and is compiled by default.
+ProFTPD 1.3.<i>x</i>, and is compiled by default.  Other installation
+instructions are discussed <a href="#Installation">here</a>.
 
 <p>
 The most current version of <code>mod_facts</code> can be found in the
@@ -45,7 +44,7 @@ ProFTPD source distribution:
 </ul>
 
 <hr>
-<h2><a name="FactsAdvertise">FactsAdvertise</a></h2>
+<h3><a name="FactsAdvertise">FactsAdvertise</a></h3>
 <strong>Syntax:</strong> FactsAdvertise <em>on|off</em><br>
 <strong>Default:</strong> FactsAdvertise on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -76,7 +75,7 @@ you can disable the advertising of support for those commands using
 </pre>
 
 <hr>
-<h2><a name="FactsOptions">FactsOptions</a></h2>
+<h3><a name="FactsOptions">FactsOptions</a></h3>
 <strong>Syntax:</strong> FactsOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -105,6 +104,32 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.4b</code>.
+  </li>
+
+  <p>
+  <li><code>NoAdjustedSymlinks</code><br>
+    <p>
+    By default, <code>mod_facts</code> tries to automatically adjust any
+    symlink destination paths when the FTP session is chrooted, so that
+    the adjusted symlinks work properly <i>e.g.</i> for FTP clients.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.6rc2</code>.
+  </li>
+
+  <p>
+  <li><code>NoNames</code><br>
+    <p>
+    By default, <code>mod_facts</code> will automatically use the newer
+    <code>UNIX.ownername</code> and <code>UNIX.groupname</code> facts in its
+    <code>MLSD</code>/<code>MLST</code> responses.  But some FTP clients may
+    not react well to the presence of these facts.  Use this option to disable
+    to use of these facts.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.6rc3</code>.
   </li>
 </ul>
 
@@ -223,19 +248,49 @@ Alternatively, you can use the <code>HideFiles</code> and
 This latter configuration will apply to <code>LIST</code>, <code>NLST</code>,
 and <code>MLSD</code> equally.
 
+<p><a name="FactsRemove">
+<font color=red>Question</font>: How can I disable the <code>mod_facts</code>
+module entirely?  Some clients (<i>e.g.</i> ncftp) do not appear to implement
+<code>MLSD</code> properly, and do not honor the <code>FEAT</code> response from
+<code>proftpd</code> when <code>FactsAdvertise</code> is configured
+<em>off</em>.<br>
+<font color=blue>Answer</font>: There is no easy way of disabling the
+<code>mod_facts</code> module at present; the
+<a href="#FactsAdvertise"><code>FactsAdvertise</code></a> directive is intended
+to do this in a way compliant with the RFCs.
+
 <p>
-<hr><br>
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-07-29 16:54:45 $</i><br>
+That said, you <i>can</i> compile <code>proftpd</code> such that
+<code>mod_facts</code> is built as a DSO/shared module:
+<pre>
+  $ ./configure --enable-dso --with-shared=mod_facts ...
+</pre>
+and then, in your <code>proftpd.conf</code>, you simply omit any
+"LoadModule mod_facts.c" directive, so that that module is never dynamically
+loaded.
 
-<br><hr>
+<p>
+<hr>
+<h2><a name="Installation">Installation</a></h2>
+The <code>mod_facts</code> module is distributed with ProFTPD, and is
+normally compiled as a static module by default.  However, if you wish to
+have <code>mod_facts</code> be built as a shared module, you would use:
+<pre>
+  $ ./configure --enable-dso --with-shared=mod_facts ...
+</pre>
+Then follow the usual steps:
+<pre>
+  $ make
+  $ make install
+</pre>
 
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2007-2013 TJ Saunders<br>
+&copy; Copyright 2007-2016 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
+<hr>
 
-<hr><br>
 </body>
 </html>
-

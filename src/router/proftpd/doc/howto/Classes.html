@@ -1,15 +1,13 @@
-<!-- $Id: Classes.html,v 1.4 2008-06-10 16:29:07 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Classes.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Classes</title>
+<title>ProFTPD: Classes</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Classes</b></h2></center>
+<center><h2><b>ProFTPD: Classes</b></h2></center>
 <hr>
 
 <p>
@@ -110,7 +108,7 @@ To illustrate, the following class definition will never match:
     From 127.0.0.1
     From !127.0.0.1
     Satisfy all
-  &lt/Class&gt;
+  &lt;/Class&gt;
 </pre>
 It is impossible to both an address and <b>not</b> match that same address,
 but that is what is demanded by the "Satisfy all" setting in the above
@@ -124,7 +122,7 @@ rule with exceptions:
     From .domain.com
     From !host1.domain.com !host2.domain.com
     Satisfy all
-  &lt/Class&gt;
+  &lt;/Class&gt;
 </pre>
 Specifically, the use of "Satisfy all" is necessary when you have multiple
 <i>not</i> matches (<i>i.e.</i> using the <code>!</code> prefix), <i>all</i>
@@ -152,11 +150,12 @@ main directives to use, for example in <code>&lt;Limit&gt;</code> sections:
 </pre>
 
 <p>
-The <a href="http://www.castaglia.org/proftpd/modules/mod_ifsession.html"><code>mod_ifsession</code></a> module also makes use of classes with its
-<code>&lt;IfClass&gt;</code> configuration section.  Using classes and
-<code>mod_ifsession</code>, you can write a <code>proftpd.conf</code> that
-has specific configurations for specific classes of clients.  Here's an
-example snippet demonstrating use of <code>&lt;IfClass&gt;</code>:
+The <a href="../contrib/mod_ifsession.html"><code>mod_ifsession</code></a>
+module also makes use of classes with its <code>&lt;IfClass&gt;</code>
+configuration section.  Using classes and <code>mod_ifsession</code>, you can
+write a <code>proftpd.conf</code> that has specific configurations for specific
+classes of clients.  Here's an example snippet demonstrating use of
+<code>&lt;IfClass&gt;</code>:
 <pre>
   &lt;IfClass internal&gt;
     MaxClients 100
@@ -172,7 +171,10 @@ This allows clients from class &quot;internal&quot; to see an effective
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2008-06-10 16:29:07 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>
