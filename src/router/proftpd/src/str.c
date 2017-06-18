@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2013 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,18 +22,17 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* String manipulation functions
- * $Id: str.c,v 1.21 2013-11-24 00:45:30 castaglia Exp $
- */
+/* String manipulation functions. */
 
 #include "conf.h"
 
 /* Maximum number of matches that we will do in a given string. */
 #define PR_STR_MAX_MATCHES			128
 
-static char *str_vreplace(pool *p, unsigned int max_replaces, char *s,
-    va_list args) {
-  char *m, *r, *src, *cp;
+static const char *str_vreplace(pool *p, unsigned int max_replaces,
+    const char *s, va_list args) {
+  const char *src;
+  char *m, *r, *cp;
   char *matches[PR_STR_MAX_MATCHES+1], *replaces[PR_STR_MAX_MATCHES+1];
   char buf[PR_TUNABLE_PATH_MAX] = {'\0'}, *pbuf = NULL;
   size_t nmatches = 0, rlen = 0;
@@ -51,7 +50,7 @@ static char *str_vreplace(pool *p, unsigned int max_replaces, char *s,
   while ((m = va_arg(args, char *)) != NULL &&
          nmatches < PR_STR_MAX_MATCHES) {
     char *tmp = NULL;
-    int count = 0;
+    unsigned int count = 0;
 
     r = va_arg(args, char *);
     if (r == NULL) {
@@ -169,9 +168,24 @@ static char *str_vreplace(pool *p, unsigned int max_replaces, char *s,
   return pbuf;
 }
 
-char *pr_str_replace(pool *p, unsigned int max_replaces, char *s, ...) {
+const char *pr_str_quote(pool *p, const char *str) {
+  if (p == NULL ||
+      str == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  return sreplace(p, str, "\"", "\"\"", NULL);
+}
+
+const char *quote_dir(pool *p, char *path) {
+  return pr_str_quote(p, path);
+}
+
+const char *pr_str_replace(pool *p, unsigned int max_replaces,
+    const char *s, ...) {
   va_list args;
-  char *res = NULL;
+  const char *res = NULL;
 
   if (p == NULL ||
       s == NULL ||
@@ -187,9 +201,9 @@ char *pr_str_replace(pool *p, unsigned int max_replaces, char *s, ...) {
   return res;
 }
 
-char *sreplace(pool *p, char *s, ...) {
+const char *sreplace(pool *p, const char *s, ...) {
   va_list args;
-  char *res = NULL;
+  const char *res = NULL;
 
   if (p == NULL ||
       s == NULL) {
@@ -251,7 +265,8 @@ char *pstrdup(pool *p, const char *str) {
   char *res;
   size_t len;
 
-  if (!p || !str) {
+  if (p == NULL ||
+      str == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -259,7 +274,10 @@ char *pstrdup(pool *p, const char *str) {
   len = strlen(str) + 1;
 
   res = palloc(p, len);
-  sstrncpy(res, str, len);
+  if (res != NULL) {
+    sstrncpy(res, str, len);
+  }
+
   return res;
 }
 
@@ -424,10 +442,12 @@ int pr_strnrstr(const char *s, size_t slen, const char *suffix,
   return res;
 }
 
-char *pr_str_strip(pool *p, char *str) {
-  char c, *dupstr, *start, *finish;
+const char *pr_str_strip(pool *p, const char *str) {
+  const char *dup_str, *start, *finish;
+  size_t len = 0;
  
-  if (!p || !str) {
+  if (p == NULL ||
+      str == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -438,22 +458,16 @@ char *pr_str_strip(pool *p, char *str) {
   /* Now, find the non-whitespace end of the given string */
   for (finish = &str[strlen(str)-1]; PR_ISSPACE(*finish); finish--);
 
-  /* finish is now pointing to a non-whitespace character.  So advance one
-   * character forward, and set that to NUL.
-   */
-  c = *++finish;
-  *finish = '\0';
+  /* Include for the last byte, of course. */
+  len = finish - start + 1;
 
   /* The space-stripped string is, then, everything from start to finish. */
-  dupstr = pstrdup(p, start);
+  dup_str = pstrndup(p, start, len);
 
-  /* Restore the given string buffer contents. */
-  *finish = c;
-
-  return dupstr;
+  return dup_str;
 }
 
-char *pr_str_strip_end(char *s, char *ch) {
+char *pr_str_strip_end(char *s, const char *ch) {
   size_t len;
 
   if (s == NULL ||
@@ -474,9 +488,519 @@ char *pr_str_strip_end(char *s, char *ch) {
   return s;
 }
 
+#if defined(HAVE_STRTOULL) && \
+  (SIZEOF_UID_T == SIZEOF_LONG_LONG && SIZEOF_GID_T == SIZEOF_LONG_LONG)
+static int parse_ull(const char *val, unsigned long long *num) {
+  char *endp = NULL;
+  unsigned long long res;
+
+  res = strtoull(val, &endp, 10);
+  if (endp && *endp) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  *num = res;
+  return 0;
+}
+#endif /* HAVE_STRTOULL */
+
+static int parse_ul(const char *val, unsigned long *num) {
+  char *endp = NULL;
+  unsigned long res;
+
+  res = strtoul(val, &endp, 10);
+  if (endp && *endp) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  *num = res;
+  return 0;
+}
+
+char *pr_str_bin2hex(pool *p, const unsigned char *buf, size_t len, int flags) {
+  static const char *hex_lc = "0123456789abcdef", *hex_uc = "0123456789ABCDEF";
+  register unsigned int i;
+  const char *hex_vals;
+  char *hex, *ptr;
+  size_t hex_len;
+
+  if (p == NULL ||
+      buf == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (len == 0) {
+    return pstrdup(p, "");
+  }
+
+  /* By default, we use lowercase hex values. */
+  hex_vals = hex_lc;
+  if (flags & PR_STR_FL_HEX_USE_UC) {
+    hex_vals = hex_uc;
+  }
+
+  hex_len = (len * 2) + 1;
+  hex = palloc(p, hex_len);
+
+  ptr = hex;
+  for (i = 0; i < len; i++) {
+    *ptr++ = hex_vals[buf[i] >> 4];
+    *ptr++ = hex_vals[buf[i] % 16];
+  }
+  *ptr = '\0';
+
+  return hex;
+}
+
+static int c2h(char c, unsigned char *h) {
+  if (c >= '0' &&
+      c <= '9') {
+    *h = c - '0';
+    return TRUE;
+  }
+
+  if (c >= 'a' &&
+      c <= 'f') {
+    *h = c - 'a' + 10;
+    return TRUE;
+  }
+
+  if (c >= 'A' &&
+      c <= 'F') {
+    *h = c - 'A' + 10;
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+unsigned char *pr_str_hex2bin(pool *p, const unsigned char *hex, size_t hex_len,
+    size_t *len) {
+  register unsigned int i, j;
+  unsigned char *data;
+  size_t data_len;
+
+  if (p == NULL ||
+      hex == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (hex_len == 0) {
+    hex_len = strlen((char *) hex);
+  }
+
+  if (hex_len == 0) {
+    data = (unsigned char *) pstrdup(p, "");
+    return data;
+  }
+
+  data_len = hex_len / 2;
+  data = palloc(p, data_len);
+
+  for (i = 0, j = 0; i < hex_len; i += 2) {
+    unsigned char v1, v2;
+
+    if (c2h(hex[i], &v1) == FALSE) {
+      errno = ERANGE;
+      return NULL;
+    }
+
+    if (c2h(hex[i+1], &v2) == FALSE) {
+      errno = ERANGE;
+      return NULL;
+    }
+
+    data[j++] = ((v1 << 4) | v2);
+  }
+
+  if (len != NULL) {
+    *len = data_len;
+  }
+
+  return data;
+}
+
+/* Calculate the Damerau-Levenshtein distance between strings `a' and `b'.
+ * This implementation borrows from the git implementation; see
+ * git/src/levenshtein.c.
+ */
+int pr_str_levenshtein(pool *p, const char *a, const char *b, int swap_cost,
+    int subst_cost, int insert_cost, int del_cost, int flags) {
+  size_t alen, blen;
+  unsigned int i, j;
+  int *row0, *row1, *row2, res;
+  pool *tmp_pool;
+
+  if (p == NULL ||
+      a == NULL ||
+      b == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  alen = strlen(a);
+  blen = strlen(b);
+
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Levenshtein Distance pool");
+
+  if (flags & PR_STR_FL_IGNORE_CASE) {
+    char *a2, *b2;
+
+    a2 = pstrdup(tmp_pool, a);
+    for (i = 0; i < alen; i++) {
+      a2[i] = tolower((int) a[i]);
+    }
+
+    b2 = pstrdup(tmp_pool, b);
+    for (i = 0; i < blen; i++) {
+      b2[i] = tolower((int) b[i]);
+    }
+
+    a = a2;
+    b = b2;
+  }
+
+  row0 = pcalloc(tmp_pool, sizeof(int) * (blen + 1));
+  row1 = pcalloc(tmp_pool, sizeof(int) * (blen + 1));
+  row2 = pcalloc(tmp_pool, sizeof(int) * (blen + 1));
+
+  for (j = 0; j <= blen; j++) {
+    row1[j] = j * insert_cost;
+  }
+
+  for (i = 0; i < alen; i++) {
+    int *ptr;
+
+    row2[0] = (i + 1) * del_cost;
+    for (j = 0; j < blen; j++) {
+      /* Substitution */
+      row2[j + 1] = row1[j] + (subst_cost * (a[i] != b[j]));
+
+      /* Swap */
+      if (i > 0 &&
+          j > 0 &&
+          a[i-1] == b[j] &&
+          a[i] == b[j-1] &&
+          row2[j+1] > (row0[j-1] + swap_cost)) {
+        row2[j+1] = row0[j-1] + swap_cost;
+      }
+
+      /* Deletion */
+      if (row2[j+1] > (row1[j+1] + del_cost)) {
+        row2[j+1] = row1[j+1] + del_cost;
+      }
+
+      /* Insertion */
+      if (row2[j+1] > (row2[j] + insert_cost)) {
+        row2[j+1] = row2[j] + insert_cost;
+      }
+    }
+
+    ptr = row0;
+    row0 = row1;
+    row1 = row2;
+    row2 = ptr;
+  }
+
+  res = row2[blen];
+
+  destroy_pool(tmp_pool);
+  return res;
+}
+
+/* For tracking the Levenshtein distance for a string. */
+struct candidate {
+  const char *s;
+  int distance;
+  int flags;
+};
+
+static int distance_cmp(const void *a, const void *b) {
+  const struct candidate *cand1, *cand2;
+  const char *s1, *s2;
+  int distance1, distance2;
+
+  cand1 = a;
+  s1 = cand1->s;
+  distance1 = cand1->distance;
+
+  cand2 = b;
+  s2 = cand2->s;
+  distance2 = cand2->distance;
+
+  if (distance1 != distance2) {
+    return distance1 - distance2;
+  }
+
+  if (cand1->flags & PR_STR_FL_IGNORE_CASE) {
+    return strcasecmp(s1, s2);
+  }
+
+  return strcmp(s1, s2);
+}
+
+array_header *pr_str_get_similars(pool *p, const char *s,
+    array_header *candidates, int max_distance, int flags) {
+  register unsigned int i;
+  size_t len;
+  array_header *similars;
+  struct candidate **distances;
+  pool *tmp_pool;
+
+  if (p == NULL ||
+      s == NULL ||
+      candidates == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (candidates->nelts == 0) {
+    errno = ENOENT;
+    return NULL;
+  }
+
+  if (max_distance <= 0) {
+    max_distance = PR_STR_DEFAULT_MAX_EDIT_DISTANCE;
+  }
+
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Similar Strings pool");
+
+  /* In order to use qsort(3), we need a contiguous block of memory, not
+   * one of our array_headers.
+   */
+
+  distances = pcalloc(tmp_pool, candidates->nelts * sizeof(struct candidate *));
+
+  len = strlen(s);
+  for (i = 0; i < candidates->nelts; i++) {
+    const char *c;
+    struct candidate *cand;
+    int prefix_match = FALSE;
+
+    c = ((const char **) candidates->elts)[i];
+    cand = pcalloc(tmp_pool, sizeof(struct candidate));
+    cand->s = c;
+    cand->flags = flags;
+
+    /* Give prefix matches a higher score */
+    if (flags & PR_STR_FL_IGNORE_CASE) {
+      if (strncasecmp(c, s, len) == 0) {
+        prefix_match = TRUE;
+      }
+
+    } else {
+      if (strncmp(c, s, len) == 0) {
+        prefix_match = TRUE;
+      }
+    }
+
+    if (prefix_match == TRUE) {
+      cand->distance = 0;
+
+    } else {
+      /* Note: We arbitrarily add one to the edit distance, in order to
+       * distinguish a distance of zero from our prefix match "distances" of
+       * zero above.
+       */
+      cand->distance = pr_str_levenshtein(tmp_pool, s, c, 0, 2, 1, 3,
+        flags) + 1;
+    }
+
+    distances[i] = cand;
+  }
+
+  qsort(distances, candidates->nelts, sizeof(struct candidate *), distance_cmp);
+
+  similars = make_array(p, candidates->nelts, sizeof(const char *));
+  for (i = 0; i < candidates->nelts; i++) {
+    struct candidate *cand;
+
+    cand = distances[i];
+    if (cand->distance <= max_distance) {
+      *((const char **) push_array(similars)) = cand->s;
+    }
+  }
+
+  destroy_pool(tmp_pool);
+  return similars;
+}
+
+array_header *pr_str_text_to_array(pool *p, const char *text, char delimiter) {
+  char *ptr;
+  array_header *items;
+  size_t text_len;
+
+  if (p == NULL ||
+      text == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  text_len = strlen(text);
+  items = make_array(p, 1, sizeof(char *));
+
+  if (text_len == 0) {
+    return items;
+  }
+
+  ptr = memchr(text, delimiter, text_len);
+  while (ptr != NULL) {
+    size_t item_len;
+
+    pr_signals_handle();
+
+    item_len = ptr - text;
+    if (item_len > 0) {
+      char *item;
+
+      item = palloc(p, item_len + 1);
+      memcpy(item, text, item_len);
+      item[item_len] = '\0';
+      *((char **) push_array(items)) = item;
+    }
+
+    text = ++ptr;
+
+    /* Include one byte for the delimiter character being skipped over. */
+    text_len = text_len - item_len - 1;
+
+    if (text_len == 0) {
+      break;
+    }
+
+    ptr = memchr(text, delimiter, text_len);
+  }
+
+  if (text_len > 0) {
+    *((char **) push_array(items)) = pstrdup(p, text);
+  }
+
+  return items;
+}
+
+int pr_str2uid(const char *val, uid_t *uid) {
+#ifdef HAVE_STRTOULL
+  unsigned long long ull = 0ULL;
+#endif /* HAVE_STRTOULL */
+  unsigned long ul = 0UL;
+
+  if (val == NULL ||
+      uid == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+#if SIZEOF_UID_T == SIZEOF_LONG_LONG
+# ifdef HAVE_STRTOULL
+  if (parse_ull(val, &ull) < 0) {
+    return -1;
+  }
+  *uid = ull; 
+
+# else
+  if (parse_ul(val, &ul) < 0) {
+    return -1;
+  }
+  *uid = ul;
+# endif /* HAVE_STRTOULL */
+#else
+  (void) ull;
+  if (parse_ul(val, &ul) < 0) {
+    return -1;
+  }
+  *uid = ul;
+#endif /* sizeof(uid_t) != sizeof(long long) */
+
+  return 0;
+}
+
+int pr_str2gid(const char *val, gid_t *gid) {
+#ifdef HAVE_STRTOULL
+  unsigned long long ull = 0ULL;
+#endif /* HAVE_STRTOULL */
+  unsigned long ul = 0UL;
+
+  if (val == NULL ||
+      gid == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+#if SIZEOF_GID_T == SIZEOF_LONG_LONG
+# ifdef HAVE_STRTOULL
+  if (parse_ull(val, &ull) < 0) {
+    return -1;
+  }
+  *gid = ull; 
+
+# else
+  if (parse_ul(val, &ul) < 0) {
+    return -1;
+  }
+  *gid = ul;
+# endif /* HAVE_STRTOULL */
+#else
+  (void) ull;
+  if (parse_ul(val, &ul) < 0) {
+    return -1;
+  }
+  *gid = ul;
+#endif /* sizeof(gid_t) != sizeof(long long) */
+
+  return 0;
+}
+
+const char *pr_uid2str(pool *p, uid_t uid) {
+  static char buf[64];
+
+  memset(&buf, 0, sizeof(buf));
+  if (uid != (uid_t) -1) {
+#if SIZEOF_UID_T == SIZEOF_LONG_LONG
+    snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) uid);
+#else
+    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) uid);
+#endif /* sizeof(uid_t) != sizeof(long long) */
+  } else {
+    snprintf(buf, sizeof(buf)-1, "%d", -1);
+  }
+
+  if (p != NULL) {
+    return pstrdup(p, buf);
+  }
+
+  return buf;
+}
+
+const char *pr_gid2str(pool *p, gid_t gid) {
+  static char buf[64];
+
+  memset(&buf, 0, sizeof(buf));
+  if (gid != (gid_t) -1) {
+#if SIZEOF_GID_T == SIZEOF_LONG_LONG
+    snprintf(buf, sizeof(buf)-1, "%llu", (unsigned long long) gid);
+#else
+    snprintf(buf, sizeof(buf)-1, "%lu", (unsigned long) gid);
+#endif /* sizeof(gid_t) != sizeof(long long) */
+  } else {
+    snprintf(buf, sizeof(buf)-1, "%d", -1);
+  }
+
+  if (p != NULL) {
+    return pstrdup(p, buf);
+  }
+
+  return buf;
+}
+
 /* NOTE: Update mod_ban's ban_parse_timestr() to use this function. */
 int pr_str_get_duration(const char *str, int *duration) {
-  unsigned int hours, mins, secs;
+  int hours, mins, secs;
   int flags = PR_STR_FL_IGNORE_CASE, has_suffix = FALSE;
   size_t len;
   char *ptr = NULL;
@@ -486,10 +1010,10 @@ int pr_str_get_duration(const char *str, int *duration) {
     return -1;
   }
 
-  if (sscanf(str, "%2u:%2u:%2u", &hours, &mins, &secs) == 3) {
-    if (hours > INT_MAX ||
-        mins > INT_MAX ||
-        secs > INT_MAX) {
+  if (sscanf(str, "%2d:%2d:%2d", &hours, &mins, &secs) == 3) {
+    if (hours < 0 ||
+        mins < 0 ||
+        secs < 0) {
       errno = ERANGE;
       return -1;
     }
@@ -523,8 +1047,8 @@ int pr_str_get_duration(const char *str, int *duration) {
   if (has_suffix == TRUE) {
     /* Parse seconds */
 
-    if (sscanf(str, "%u", &secs) == 1) {
-      if (secs > INT_MAX) {
+    if (sscanf(str, "%d", &secs) == 1) {
+      if (secs < 0) {
         errno = ERANGE;
         return -1;
       }
@@ -547,8 +1071,8 @@ int pr_str_get_duration(const char *str, int *duration) {
   if (has_suffix == TRUE) {
     /* Parse minutes */
 
-    if (sscanf(str, "%u", &mins) == 1) {
-      if (mins > INT_MAX) {
+    if (sscanf(str, "%d", &mins) == 1) {
+      if (mins < 0) {
         errno = ERANGE;
         return -1;
       }
@@ -571,8 +1095,8 @@ int pr_str_get_duration(const char *str, int *duration) {
   if (has_suffix == TRUE) {
     /* Parse hours */
 
-    if (sscanf(str, "%u", &hours) == 1) {
-      if (hours > INT_MAX) {
+    if (sscanf(str, "%d", &hours) == 1) {
+      if (hours < 0) {
         errno = ERANGE;
         return -1;
       }
@@ -596,8 +1120,7 @@ int pr_str_get_duration(const char *str, int *duration) {
     return -1;
   }
 
-  if (secs < 0 ||
-      secs > INT_MAX) {
+  if (secs < 0) {
     errno = ERANGE;
     return -1;
   }
@@ -697,19 +1220,22 @@ char *pr_str_get_word(char **cp, int flags) {
 
   if (!(flags & PR_STR_FL_PRESERVE_WHITESPACE)) {
     while (**cp && PR_ISSPACE(**cp)) {
+      pr_signals_handle();
       (*cp)++;
     }
   }
 
-  if (!**cp)
+  if (!**cp) {
     return NULL;
+  }
 
   res = dst = *cp;
 
   if (!(flags & PR_STR_FL_PRESERVE_COMMENTS)) {
     /* Stop processing at start of an inline comment. */
-    if (**cp == '#')
+    if (**cp == '#') {
       return NULL;
+    }
   }
 
   if (**cp == '\"') {
@@ -718,21 +1244,25 @@ char *pr_str_get_word(char **cp, int flags) {
   }
 
   while (**cp && (quote_mode ? (**cp != '\"') : !PR_ISSPACE(**cp))) {
+    pr_signals_handle();
+
     if (**cp == '\\' && quote_mode) {
 
       /* Escaped char */
-      if (*((*cp)+1))
+      if (*((*cp)+1)) {
         *dst = *(++(*cp));
+      }
     }
 
     *dst++ = **cp;
     ++(*cp);
   }
 
-  if (**cp)
+  if (**cp) {
     (*cp)++;
-  *dst = '\0';
+  }
 
+  *dst = '\0';
   return res;
 }
 
@@ -825,6 +1355,10 @@ int pr_str_is_boolean(const char *str) {
 int pr_str_is_fnmatch(const char *str) {
   int have_bracket = 0;
 
+  if (str == NULL) {
+    return FALSE;
+  }
+
   while (*str) {
     switch (*str) {
       case '?':
@@ -833,8 +1367,9 @@ int pr_str_is_fnmatch(const char *str) {
 
       case '\\':
         /* If the next character is NUL, we've reached the end of the string. */
-        if (*(str+1) == '\0')
+        if (*(str+1) == '\0') {
           return FALSE;
+        }
 
         /* Skip past the escaped character, i.e. the next character. */
         str++;

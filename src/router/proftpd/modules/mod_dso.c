@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
- *
- * Copyright (c) 2004-2013 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2016 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,8 +23,6 @@
  *
  * This is mod_dso, contrib software for proftpd 1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_dso.c,v 1.33 2013-10-13 23:46:43 castaglia Exp $
  */
 
 #include "conf.h"
@@ -203,10 +200,9 @@ static int dso_load_module(char *name) {
 
     *ptr = '.';
     pr_log_debug(DEBUG1, MOD_DSO_VERSION
-      ": unable to find module symbol '%s' in '%s'", symbol_name,
-        mh ? name : "self");
-    pr_trace_msg(trace_channel, 1, "unable to find module symbol '%s' in '%s'",
-      symbol_name, mh ? name : "self");
+      ": unable to find module symbol '%s' in 'self'", symbol_name);
+    pr_trace_msg(trace_channel, 1,
+      "unable to find module symbol '%s' in 'self'", symbol_name);
 
     lt_dlclose(mh);
     mh = NULL;
@@ -338,7 +334,7 @@ static int dso_unload_module_by_name(const char *name) {
 
 static int dso_handle_insmod(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i;
+  register int i;
 
   /* Check the ACL. */
   if (!pr_ctrls_check_acl(ctrl, dso_acttab, "insmod")) {
@@ -416,7 +412,7 @@ static int dso_handle_lsmod(pr_ctrls_t *ctrl, int reqargc,
 
 static int dso_handle_rmmod(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i;
+  register int i;
 
   /* Check the ACL. */
   if (!pr_ctrls_check_acl(ctrl, dso_acttab, "rmmod")) {
@@ -576,7 +572,7 @@ MODRET set_moduleorder(cmd_rec *cmd) {
     }
   }
 
-  pr_log_debug(DEBUG4, "%s: reordering modules", cmd->argv[0]);
+  pr_log_debug(DEBUG4, "%s: reordering modules", (char *) cmd->argv[0]);
   for (i = 1; i < cmd->argc; i++) {
     m = pr_module_get(cmd->argv[i]);
 
@@ -598,7 +594,7 @@ MODRET set_moduleorder(cmd_rec *cmd) {
 
     if (pr_module_unload(m) < 0) {
       pr_log_debug(DEBUG0, "%s: error unloading module 'mod_%s.c': %s",
-        cmd->argv[0], m->name, strerror(errno));
+        (char *) cmd->argv[0], m->name, strerror(errno));
     }
 
     m = mn;
@@ -607,12 +603,12 @@ MODRET set_moduleorder(cmd_rec *cmd) {
   for (m = module_list; m; m = m->next) {
     if (pr_module_load(m) < 0) {
       pr_log_debug(DEBUG0, "%s: error loading module 'mod_%s.c': %s",
-        cmd->argv[0], m->name, strerror(errno));
+        (char *) cmd->argv[0], m->name, strerror(errno));
       exit(1);
     }
   }
 
-  pr_log_pri(PR_LOG_NOTICE, "%s: module order is now:", cmd->argv[0]);
+  pr_log_pri(PR_LOG_NOTICE, "%s: module order is now:", (char *) cmd->argv[0]);
   for (m = loaded_modules; m; m = m->next) {
     pr_log_pri(PR_LOG_NOTICE, " mod_%s.c", m->name);
   }
@@ -677,6 +673,7 @@ static void dso_restart_ev(const void *event_data, void *user_data) {
   /* Re-register the control handlers */
   for (i = 0; dso_acttab[i].act_action; i++) {
     pool *sub_pool = make_sub_pool(dso_pool);
+    pr_pool_tag(sub_pool, "DSO control action pool");
 
     /* Allocate and initialize the ACL for this control. */
     dso_acttab[i].act_acl = pcalloc(sub_pool, sizeof(ctrls_acl_t));
@@ -756,6 +753,7 @@ static int dso_init(void) {
   /* Register ctrls handlers. */
   for (i = 0; dso_acttab[i].act_action; i++) {
     pool *sub_pool = make_sub_pool(dso_pool);
+    pr_pool_tag(sub_pool, "DSO control action pool");
 
     /* Allocate and initialize the ACL for this control. */
     dso_acttab[i].act_acl = pcalloc(sub_pool, sizeof(ctrls_acl_t));

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2013 The ProFTPD Project team
+ * Copyright (c) 2008-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Timers API tests
- * $Id: timers.c,v 1.7 2013-09-24 01:21:16 castaglia Exp $
- */
+/* Timers API tests */
 
 #include "tests.h"
 
@@ -37,15 +35,26 @@ static unsigned int timer_triggered_count = 0;
 
 static void set_up(void) {
   if (p == NULL) {
-    p = make_sub_pool(NULL);
+    p = permanent_pool = make_sub_pool(NULL);
   }
-  permanent_pool = p;
 
   repeat_cb = FALSE;
   timer_triggered_count = 0;
+
+  timers_init();
+
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_use_stderr(TRUE);
+    pr_trace_set_levels("timers", 1, 20);
+  }
 }
 
 static void tear_down(void) {
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_use_stderr(FALSE);
+    pr_trace_set_levels("timers", 0, 0);
+  }
+
   if (p) {
     destroy_pool(p);
     p = permanent_pool = NULL;
@@ -270,7 +279,6 @@ Suite *tests_get_timers_suite(void) {
   TCase *testcase;
 
   suite = suite_create("timers");
-
   testcase = tcase_create("base");
 
   tcase_add_checked_fixture(testcase, set_up, tear_down);
@@ -288,6 +296,5 @@ Suite *tests_get_timers_suite(void) {
   tcase_set_timeout(testcase, 5);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

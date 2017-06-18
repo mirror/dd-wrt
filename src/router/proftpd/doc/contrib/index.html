@@ -1,6 +1,4 @@
-<!-- $Id: index.html,v 1.15 2013-09-18 21:51:36 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/index.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD Contrib Module Documentation</title>
@@ -35,6 +33,12 @@ distribution.
   </dd>
 
   <p>
+  <dt>The <a href="mod_auth_otp.html"><code>mod_ban</code></a> module
+  <dd>For supporting HOTP/TOTP One-Time Passwords (OTP) for multi-factor
+      authentication, <i>e.g.</i> using Google Authenticator
+  </dd>
+
+  <p>
   <dt>The <a href="mod_ban.html"><code>mod_ban</code></a> module
   <dd>For supporting automatic bans based on configurable thresholds
   </dd>
@@ -49,6 +53,11 @@ distribution.
   <p>
   <dt>The <a href="mod_deflate.html"><code>mod_deflate</code></a> module
   <dd>For suppporting <code>MODE Z</code> compression of data transfers
+  </dd>
+
+  <p>
+  <dt>The <a href="mod_digest.html"><code>mod_digest</code></a> module
+  <dd>For suppporting FTP <code>HASH</code> commands for files
   </dd>
 
   <p>
@@ -187,6 +196,12 @@ distribution.
   </dd>
 
   <p>
+  <dt>The <a href="mod_statcache.html"><code>mod_statcache</code></a> module
+  <dd>Supports caching <code>stat(2)</code>/<code>lstat(2)</code> data in a
+      shared location, for reuse across sessions/processes.
+  </dd>
+
+  <p>
   <dt>The <a href="mod_tls.html"><code>mod_tls</code></a> module
   <dd>Adds the ability to encrypt the control and data connections using
       SSL/TLS
@@ -232,6 +247,13 @@ distribution.
   </dd>
 
   <p>
+  <dt>The <a href="mod_wrap2_redis.html"><code>mod_wrap2_redis</code></a>
+      module
+  <dd>This is one of the supporting modules for <code>mod_wrap2</code>
+      which handles access rules that are stored in Redis lists/sets
+  </dd>
+
+  <p>
   <dt>The <a href="mod_wrap2_sql.html"><code>mod_wrap2_sql</code></a>
       module
   <dd>This is one of the supporting modules for <code>mod_wrap2</code>
@@ -255,7 +277,10 @@ all of the directives to see everything that ProFTPD is capable of supporting.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2013-09-18 21:51:36 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

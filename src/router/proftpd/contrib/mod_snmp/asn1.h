@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp ASN.1 support
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: asn1.h,v 1.1 2013-05-15 15:20:26 castaglia Exp $
  */
-
-#include "mod_snmp.h"
 
 #ifndef MOD_SNMP_ASN1_H
 #define MOD_SNMP_ASN1_H
+
+#include "mod_snmp.h"
 
 typedef uint32_t oid_t;
 
@@ -120,4 +118,4 @@ int snmp_asn1_write_exception(pool *p, unsigned char **buf, size_t *buflen,
 
 /* XXX Need an snmp_asn1_write_sequence() function? */
 
-#endif
+#endif /* MOD_SNMP_ASN1_H */

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Array API tests
- * $Id: array.c,v 1.2 2011-05-23 20:50:29 castaglia Exp $
- */
+/* Array API tests */
 
 #include "tests.h"
 
@@ -156,6 +154,62 @@ START_TEST (array_cat_test) {
   push_array(src);
   push_array(src);
   array_cat(dst, src);
+
+  fail_unless(dst->nalloc == 8, "Wrong dst alloc count (expected %u, got %d)",
+    8, dst->nalloc);
+  fail_unless(dst->nelts == 5, "Wrong dst item count (expected %u, got %d)",
+    5, dst->nelts);
+}
+END_TEST
+
+START_TEST (array_cat2_test) {
+  array_header *src, *dst;
+  int res;
+
+  mark_point();
+
+  res = array_cat2(NULL, NULL);
+  fail_unless(res < 0, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Expected errno EINVAL, got '%s' (%d)",
+    strerror(errno), errno);
+
+  dst = make_array(p, 0, 1);
+  mark_point();
+  res = array_cat2(dst, NULL);
+  fail_unless(res < 0, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Expected errno EINVAL, got '%s' (%d)",
+    strerror(errno), errno);
+
+  src = make_array(p, 0, 1);
+  mark_point();
+  res = array_cat2(NULL, src);
+  fail_unless(res < 0, "Failed to handle null arguments");
+  fail_unless(errno == EINVAL, "Expected errno EINVAL, got '%s' (%d)",
+    strerror(errno), errno);
+
+  mark_point();
+  res = array_cat2(dst, src);
+  fail_unless(res == 0, "Failed to concatenate arrays: %s", strerror(errno));
+
+  fail_unless(dst->nalloc == 1, "Wrong dst alloc count (expected %u, got %d)",
+    1, dst->nalloc);
+  fail_unless(dst->nelts == 0, "Wrong dst item count (expected %u, got %d)",
+    0, dst->nelts);
+
+  push_array(src);
+  res = array_cat2(dst, src);
+  fail_unless(res == 0, "Failed to concatenate arrays: %s", strerror(errno));
+
+  fail_unless(dst->nalloc == 1, "Wrong dst alloc count (expected %u, got %d)",
+    1, dst->nalloc);
+  fail_unless(dst->nelts == 1, "Wrong dst item count (expected %u, got %d)",
+    1, dst->nelts);
+
+  push_array(src);
+  push_array(src);
+  push_array(src);
+  res = array_cat2(dst, src);
+  fail_unless(res == 0, "Failed to concatenate arrays: %s", strerror(errno));
 
   fail_unless(dst->nalloc == 8, "Wrong dst alloc count (expected %u, got %d)",
     8, dst->nalloc);
@@ -398,6 +452,7 @@ Suite *tests_get_array_suite(void) {
   tcase_add_test(testcase, make_array_test);
   tcase_add_test(testcase, push_array_test);
   tcase_add_test(testcase, array_cat_test);
+  tcase_add_test(testcase, array_cat2_test);
   tcase_add_test(testcase, clear_array_test);
   tcase_add_test(testcase, copy_array_test);
   tcase_add_test(testcase, copy_array_str_test);

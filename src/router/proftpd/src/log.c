@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,24 +24,28 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* ProFTPD logging support.
- * $Id: log.c,v 1.121 2013-10-13 23:46:43 castaglia Exp $
- */
+/* ProFTPD logging support. */
 
 #include "conf.h"
 
-/* Max path length plus 64 bytes for additional info. */
-#define LOGBUFFER_SIZE		(PR_TUNABLE_PATH_MAX + 64)
+#ifdef HAVE_EXECINFO_H
+# include <execinfo.h>
+#endif
+
+#define LOGBUFFER_SIZE		(PR_TUNABLE_PATH_MAX * 4)
 
 static int syslog_open = FALSE;
 static int syslog_discard = FALSE;
 static int logstderr = TRUE;
-static int debug_level = DEBUG0;	/* Default is no debug logging */
+static int debug_level = DEBUG0;
+static int default_level = PR_LOG_NOTICE;
 static int facility = LOG_DAEMON;
 static int set_facility = -1;
 static char systemlog_fn[PR_TUNABLE_PATH_MAX] = {'\0'};
 static char systemlog_host[256] = {'\0'};
 static int systemlog_fd = -1;
+
+static const char *trace_channel = "log";
 
 int syslog_sockfd = -1;
 
@@ -59,12 +63,13 @@ static int fd_set_block(int fd) {
 int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   int res;
   pool *tmp_pool = NULL;
-  char *tmp = NULL, *lf;
+  char *ptr = NULL, *lf;
   unsigned char have_stat = FALSE, *allow_log_symlinks = NULL;
   struct stat st;
 
   /* Sanity check */
-  if (!log_file || !log_fd) {
+  if (log_file == NULL ||
+      log_fd == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -74,8 +79,8 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   pr_pool_tag(tmp_pool, "log_openfile() tmp pool");
   lf = pstrdup(tmp_pool, log_file);
 
-  tmp = strrchr(lf, '/');
-  if (tmp == NULL) {
+  ptr = strrchr(lf, '/');
+  if (ptr == NULL) {
     pr_log_debug(DEBUG0, "inappropriate log file: %s", lf);
     destroy_pool(tmp_pool);
 
@@ -86,7 +91,9 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   /* Set the path separator to zero, in order to obtain the directory
    * name, so that checks of the directory may be made.
    */
-  *tmp = '\0';
+  if (ptr != lf) {
+    *ptr = '\0';
+  }
 
   if (stat(lf, &st) < 0) {
     int xerrno = errno;
@@ -108,16 +115,18 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
   }
 
   /* Do not log to world-writable directories */
-//  if (st.st_mode & S_IWOTH) {
-//    pr_log_pri(PR_LOG_NOTICE, "error: %s is a world-writable directory", lf);
-//    destroy_pool(tmp_pool);
-//    return PR_LOG_WRITABLE_DIR;
-//  }
+/*  if (st.st_mode & S_IWOTH) {
+    pr_log_pri(PR_LOG_NOTICE, "error: %s is a world-writable directory", lf);
+    destroy_pool(tmp_pool);
+    return PR_LOG_WRITABLE_DIR;
+  }*/
 
   /* Restore the path separator so that checks on the file itself may be
    * done.
    */
-  *tmp = '/';
+  if (ptr != lf) {
+    *ptr = '/';
+  }
 
   allow_log_symlinks = get_param_ptr(main_server->conf, "AllowLogSymlinks",
     FALSE);
@@ -214,8 +223,9 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
 
     /* Stat the file using the descriptor, not the path */
     if (!have_stat &&
-        fstat(*log_fd, &st) != -1)
+        fstat(*log_fd, &st) != -1) {
       have_stat = TRUE;
+    }
 
     if (!have_stat ||
         S_ISLNK(st.st_mode)) {
@@ -241,9 +251,42 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
 
     *log_fd = open(lf, flags, log_mode);
     if (*log_fd < 0) {
+      int xerrno = errno;
+
       destroy_pool(tmp_pool);
+      errno = xerrno;
       return -1;
     }
+  }
+
+  /* Make sure we're dealing with an expected file type (i.e. NOT a
+   * directory).
+   */
+  if (fstat(*log_fd, &st) < 0) {
+    int xerrno = errno;
+
+    pr_log_debug(DEBUG0, "error: unable to stat %s (fd %d): %s", lf, *log_fd,
+      strerror(xerrno));
+
+    close(*log_fd);
+    *log_fd = -1;
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  if (S_ISDIR(st.st_mode)) {
+    int xerrno = EISDIR;
+
+    pr_log_debug(DEBUG0, "error: unable to use %s: %s", lf, strerror(xerrno));
+
+    close(*log_fd);
+    *log_fd = -1;
+    destroy_pool(tmp_pool);
+
+    errno = xerrno;
+    return -1;
   }
 
   /* Find a usable fd for the just-opened log fd. */
@@ -264,9 +307,14 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
       *log_fd, strerror(errno));
   }
 
+  /* Advise the platform that we will be treating this log file as
+   * write-only data.
+   */
+  pr_fs_fadvise(*log_fd, 0, 0, PR_FS_FADVISE_DONTNEED);
+
 #ifdef PR_USE_NONBLOCKING_LOG_OPEN
   /* Return the fd to blocking mode. */
-  fd_set_block(*log_fd);
+  (void) fd_set_block(*log_fd);
 #endif /* PR_USE_NONBLOCKING_LOG_OPEN */
 
   destroy_pool(tmp_pool);
@@ -275,7 +323,7 @@ int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
 
 int pr_log_vwritefile(int logfd, const char *ident, const char *fmt,
     va_list msg) {
-  char buf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
+  char buf[LOGBUFFER_SIZE] = {'\0'};
   struct timeval now;
   struct tm *tm = NULL;
   size_t buflen, len;
@@ -318,8 +366,11 @@ int pr_log_vwritefile(int logfd, const char *ident, const char *fmt,
     buf[buflen++] = '\n';
 
   } else {
+    buf[sizeof(buf)-5] = '.';
+    buf[sizeof(buf)-4] = '.';
+    buf[sizeof(buf)-3] = '.';
     buf[sizeof(buf)-2] = '\n';
-    buflen++;
+    buflen = sizeof(buf)-1;
   }
 
   pr_log_event_generate(PR_LOG_TYPE_UNSPEC, logfd, -1, buf, buflen);
@@ -369,8 +420,14 @@ int log_opensyslog(const char *fn) {
     pr_closelog(syslog_sockfd);
 
     syslog_sockfd = pr_openlog("proftpd", LOG_NDELAY|LOG_PID, facility);
-    if (syslog_sockfd < 0)
+    if (syslog_sockfd < 0) {
+      int xerrno = errno;
+
+      (void) pr_trace_msg(trace_channel, 1,
+        "error opening syslog fd: %s", strerror(xerrno));
+      errno = xerrno;
       return -1;
+    }
 
     /* Find a usable fd for the just-opened socket fd. */
     if (syslog_sockfd <= STDERR_FILENO) {
@@ -381,7 +438,7 @@ int log_opensyslog(const char *fn) {
       }
     }
 
-    fcntl(syslog_sockfd, F_SETFD, FD_CLOEXEC);
+    (void) fcntl(syslog_sockfd, F_SETFD, FD_CLOEXEC);
     systemlog_fd = -1;
 
   } else if ((res = pr_log_openfile(systemlog_fn, &systemlog_fd,
@@ -417,20 +474,24 @@ void log_discard(void) {
 }
 
 static void log_write(int priority, int f, char *s, int discard) {
-  unsigned int *max_priority = NULL;
+  int max_priority = 0, *ptr = NULL;
   char serverinfo[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
 
   memset(serverinfo, '\0', sizeof(serverinfo));
 
   if (main_server &&
       main_server->ServerFQDN) {
-    pr_netaddr_t *remote_addr = pr_netaddr_get_sess_remote_addr();
-    const char *remote_name = pr_netaddr_get_sess_remote_name();
+    const pr_netaddr_t *remote_addr;
+    const char *remote_name;
+
+    remote_addr = pr_netaddr_get_sess_remote_addr();
+    remote_name = pr_netaddr_get_sess_remote_name();
 
     snprintf(serverinfo, sizeof(serverinfo)-1, "%s", main_server->ServerFQDN);
     serverinfo[sizeof(serverinfo)-1] = '\0';
 
-    if (remote_addr && remote_name) {
+    if (remote_addr != NULL &&
+        remote_name != NULL) {
       size_t serverinfo_len;
 
       serverinfo_len = strlen(serverinfo);
@@ -486,6 +547,7 @@ static void log_write(int priority, int f, char *s, int discard) {
       buf, buflen);
 
     fprintf(stderr, "%s", buf);
+    fflush(stderr);
     return;
   }
 
@@ -497,10 +559,26 @@ static void log_write(int priority, int f, char *s, int discard) {
     }
   }
 
-  max_priority = get_param_ptr(main_server->conf, "SyslogLevel", FALSE);
-  if (max_priority != NULL &&
-      priority > *max_priority) {
+  if (main_server != NULL) {
+    ptr = get_param_ptr(main_server->conf, "SyslogLevel", FALSE);
+  }
 
+  if (ptr != NULL) {
+    max_priority = *ptr;
+
+  } else {
+    /* Default SyslogLevel is NOTICE.  Note, however, that for backward
+     * compatibility of debugging, if the DebugLevel is set higher
+     * than DEBUG0, we will automatically ASSUME that the admin wants
+     * the syslog level to be e.g. DEBUG.
+     */
+    max_priority = default_level;
+    if (debug_level != DEBUG0) {
+      max_priority = PR_LOG_DEBUG;
+    }
+  }
+
+  if (priority > max_priority) {
     /* Only return now if we don't have any log listeners. */
     if (pr_log_event_listening(PR_LOG_TYPE_SYSLOG) <= 0 &&
         pr_log_event_listening(PR_LOG_TYPE_SYSTEMLOG) <= 0) {
@@ -560,8 +638,7 @@ static void log_write(int priority, int f, char *s, int discard) {
       return;
     }
 
-    if (max_priority != NULL &&
-        priority > *max_priority) {
+    if (priority > max_priority) {
       return;
     }
 
@@ -571,7 +648,7 @@ static void log_write(int priority, int f, char *s, int discard) {
         continue;
       }
 
-      return;
+      break;
     }
 
     return;
@@ -580,11 +657,18 @@ static void log_write(int priority, int f, char *s, int discard) {
   pr_log_event_generate(PR_LOG_TYPE_SYSLOG, syslog_sockfd, priority, s,
     strlen(s));
 
-  if (set_facility != -1)
+  if (set_facility != -1) {
     f = set_facility;
+  }
 
   if (!syslog_open) {
     syslog_sockfd = pr_openlog("proftpd", LOG_NDELAY|LOG_PID, f);
+    if (syslog_sockfd < 0) {
+      (void) pr_trace_msg(trace_channel, 1,
+        "error opening syslog fd: %s", strerror(errno));
+      return;
+    }
+
     syslog_open = TRUE;
 
   } else if (f != facility) {
@@ -605,6 +689,7 @@ static void log_write(int priority, int f, char *s, int discard) {
 }
 
 #ifdef NEED_PRINTF
+
 void pr_log_pri(int priority, const char *fmt, ...) {
   char buf[LOGBUFFER_SIZE] = {'\0'};
   va_list msg;
@@ -644,13 +729,20 @@ void log_stderr(int bool) {
   logstderr = bool;
 }
 
-/* Set the debug logging level, see log.h for constants.  Higher
+/* Set the debug logging level; see log.h for constants.  Higher
  * numbers mean print more, DEBUG0 (0) == print no debugging log
  * (default)
  */
 int pr_log_setdebuglevel(int level) {
   int old_level = debug_level;
   debug_level = level;
+  return old_level;
+}
+
+/* Set the default logging level; see log.h for constants. */
+int pr_log_setdefaultlevel(int level) {
+  int old_level = default_level;
+  default_level = level;
   return old_level;
 }
 
@@ -687,7 +779,9 @@ int pr_log_str2sysloglevel(const char *name) {
   errno = ENOENT;
   return -1;
 }
+
 #ifdef NEED_PRINTF
+
 void pr_log_debug(int level, const char *fmt, ...) {
   char buf[LOGBUFFER_SIZE] = {'\0'};
   va_list msg;
@@ -797,13 +891,84 @@ int pr_log_event_listening(unsigned int log_type) {
 
   return TRUE;
 }
+#ifdef NEED_PRINTF
+void pr_log_stacktrace(int log_fd, const char *name) {
+#if defined(HAVE_EXECINFO_H) && \
+    defined(HAVE_BACKTRACE) && \
+    defined(HAVE_BACKTRACE_SYMBOLS)
+  void *trace[PR_TUNABLE_CALLER_DEPTH];
+  int tracesz, use_fd = TRUE;
 
+  if (log_fd < 0 ||
+      name == NULL) {
+    use_fd = FALSE;
+  }
+
+  if (use_fd) {
+    (void) pr_log_writefile(log_fd, name, "%s", "-----BEGIN STACK TRACE-----");
+
+  } else {
+    (void) pr_log_pri(PR_LOG_WARNING, "-----BEGIN STACK TRACE-----");
+  }
+
+  tracesz = backtrace(trace, PR_TUNABLE_CALLER_DEPTH);
+  if (tracesz < 0) {
+    if (use_fd) {
+      (void) pr_log_writefile(log_fd, name, "backtrace(3) error: %s",
+        strerror(errno));
+
+    } else {
+      (void) pr_log_pri(PR_LOG_WARNING, "backtrace(3) error: %s",
+        strerror(errno));
+    }
+
+  } else {
+    char **strings;
+
+    strings = backtrace_symbols(trace, tracesz);
+    if (strings != NULL) {
+      register int i;
+
+      for (i = 1; i < tracesz; i++) {
+        if (use_fd) {
+          (void) pr_log_writefile(log_fd, name, "[%d] %s", i-1, strings[i]);
+
+        } else {
+          (void) pr_log_pri(PR_LOG_WARNING, "[%d] %s", i-1, strings[i]);
+        }
+      }
+
+      /* Prevent memory leaks. */
+      free(strings);
+
+    } else {
+      if (use_fd) {
+        (void) pr_log_writefile(log_fd, name,
+          "error obtaining backtrace symbols: %s", strerror(errno));
+
+      } else {
+        (void) pr_log_pri(PR_LOG_WARNING,
+          "error obtaining backtrace symbols: %s", strerror(errno));
+      }
+    }
+  }
+
+  if (use_fd) {
+    (void) pr_log_writefile(log_fd, name, "%s", "-----END STACK TRACE-----");
+
+  } else {
+    (void) pr_log_pri(PR_LOG_WARNING, "%s", "-----END STACK TRACE-----");
+  }
+#endif
+}
+#endif
 void init_log(void) {
   char buf[256];
 
   memset(buf, '\0', sizeof(buf));
-  if (gethostname(buf, sizeof(buf)) == -1)
+  if (gethostname(buf, sizeof(buf)) < 0) {
     sstrncpy(buf, "localhost", sizeof(buf));
+  }
 
   sstrncpy(systemlog_host, (char *) pr_netaddr_validate_dns_str(buf),
     sizeof(systemlog_host));

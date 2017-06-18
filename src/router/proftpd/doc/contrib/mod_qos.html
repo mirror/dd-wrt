@@ -1,6 +1,4 @@
-<!-- $Id: mod_qos.html,v 1.2 2013-08-14 21:40:17 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_qos.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_qos</title>
@@ -27,7 +25,7 @@ instructions are discussed <a href="#Installation">here</a>.
 
 <p>
 The most current version of <code>mod_qos</code> is distributed with
-the <code>proftpd<code> source code.
+the ProFTPD source code.
 
 <h2>Directives</h2>
 <ul>
@@ -35,10 +33,10 @@ the <code>proftpd<code> source code.
 </ul>
 
 <hr>
-<h2><a name="QoSOptions">QoSOptions</a></h2>
+<h3><a name="QoSOptions">QoSOptions</a></h3>
 <strong>Syntax:</strong> QoSOptions <em>&quot;ctrlqos&quot; value|&quot;dataqos&quot; value</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code><br>
 <strong>Module:</strong> mod_qos<br>
 <strong>Compatibility:</strong> 1.3.4rc1 and later
 
@@ -87,43 +85,36 @@ deprecated, and can have adverse effects on TCP congestion control:
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-For including <code>mod_qos</code> as a staticly linked module in your <code>proftpd</code>, use:
+For including <code>mod_qos</code> as a staticly linked module in your
+<code>proftpd</code>, use:
 <pre>
-  ./configure --with-modules=mod_qos
+  $ ./configure --with-modules=mod_qos
 </pre>
 Alternatively, <code>mod_qos</code> could be built as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_qos
+  $ ./configure --enable-dso --with-shared=mod_qos
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
-Alternatively, if your proftpd was compiled with DSO support, you can
-use the <code>prxs</code> tool to build <code>mod_qos</code> as a shared
+Alternatively, if your <code>proftpd</code> was compiled with DSO support, you
+can use the <code>prxs</code> tool to build <code>mod_qos</code> as a shared
 module:
 <pre>
-  prxs -c -i -d mod_qos.c
+  $ prxs -c -i -d mod_qos.c
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-08-14 21:40:17 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
 &copy; Copyright 2010-2013 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

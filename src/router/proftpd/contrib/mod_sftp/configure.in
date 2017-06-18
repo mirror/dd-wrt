@@ -1,3 +1,22 @@
+dnl ProFTPD - mod_sftp
+dnl Copyright (c) 2012-2016 TJ Saunders <tj@castaglia.org>
+dnl
+dnl This program is free software; you can redistribute it and/or modify
+dnl it under the terms of the GNU General Public License as published by
+dnl the Free Software Foundation; either version 2 of the License, or
+dnl (at your option) any later version.
+dnl
+dnl This program is distributed in the hope that it will be useful,
+dnl but WITHOUT ANY WARRANTY; without even the implied warranty of
+dnl MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+dnl GNU General Public License for more details.
+dnl
+dnl You should have received a copy of the GNU General Public License
+dnl along with this program; if not, write to the Free Software
+dnl Foundation, Inc., 51 Franklin Street, Suite 500, Boston, MA 02110-1335, USA.
+dnl
+dnl Process this file with autoconf to produce a configure script.
+
 AC_INIT(./mod_sftp.c)
 
 AC_CANONICAL_SYSTEM
@@ -9,9 +28,6 @@ AC_PROG_CPP
 AC_AIX
 AC_ISC_POSIX
 AC_MINIX
-
-AC_HEADER_STDC
-AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
 
 dnl Need to support/handle the --with-includes and --with-libraries options
 AC_ARG_WITH(includes,
@@ -46,6 +62,12 @@ AC_ARG_WITH(libraries,
     LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
   ])
 
+AC_HEADER_STDC
+AC_CHECK_HEADERS(stdlib.h unistd.h limits.h fcntl.h)
+AC_CHECK_HEADER(zlib.h,
+  [AC_DEFINE(HAVE_ZLIB_H, 1, [Define if zlib.h is present.])
+   MODULE_LIBS="$MODULE_LIBS -lz"
+  ])
 
 dnl Check for a crippled OpenSSL library (e.g. Solaris 10).  More details
 dnl can be found in:
@@ -58,15 +80,13 @@ dnl So for those users stuck using the Solaris 10 whose OpenSSL does
 dnl not provide support for AES ciphers longer than 128 bits, we need to
 dnl check and disable those symbols.  Otherwise mod_sftp fails to build due
 dnl to linker errors.
-saved_libs="$LIBS"
-LIBS="$LIBS -lcrypto"
 
 AC_MSG_CHECKING([whether linking with OpenSSL functions requires -ldl])
 saved_libs="$LIBS"
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="$LIBS -lcrypto -ldl"
+LIBS="-lcrypto -ldl $LIBS"
 
 AC_TRY_LINK(
   [
@@ -87,7 +107,7 @@ saved_libs="$LIBS"
 
 dnl Splice out -lsupp, since that library hasn't been built yet
 LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
-LIBS="$LIBS -lcrypto -lz"
+LIBS="-lcrypto -lz $LIBS"
 
 AC_TRY_LINK(
   [
@@ -190,6 +210,7 @@ LIBDIRS="$ac_build_addl_libdirs"
 AC_SUBST(INCLUDES)
 AC_SUBST(LDFLAGS)
 AC_SUBST(LIBDIRS)
+AC_SUBST(MODULE_LIBS)
 
 AC_CONFIG_HEADER(mod_sftp.h)
 AC_OUTPUT(Makefile)

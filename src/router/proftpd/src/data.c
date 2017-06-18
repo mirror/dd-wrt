@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Data connection management functions
- * $Id: data.c,v 1.152 2013-11-09 23:20:23 castaglia Exp $
- */
+/* Data connection management functions */
 
 #include "conf.h"
 
@@ -39,6 +37,13 @@
 #endif /* HAVE_SYS_UIO_H */
 
 static const char *trace_channel = "data";
+static const char *timing_channel = "timing";
+
+#define PR_DATA_OPT_IGNORE_ASCII	0x0001
+static unsigned long data_opts = 0UL;
+static uint64_t data_start_ms = 0L;
+static int data_first_byte_read = FALSE;
+static int data_first_byte_written = FALSE;
 
 /* local macro */
 
@@ -65,8 +70,7 @@ static int stalled_timeout_cb(CALLBACK_FRAME) {
   pr_session_disconnect(NULL, PR_SESS_DISCONNECT_TIMEOUT,
     "TimeoutStalled during data transfer");
 
-  /* Prevent compiler warning.
-   */
+  /* Prevent compiler warning. */
   return 0;
 }
 
@@ -87,162 +91,30 @@ static RETSIGTYPE data_urgent(int signo) {
   signal(SIGURG, data_urgent);
 }
 
-static int xfrm_ascii_read(char *buf, int *bufsize, int *adjlen) {
-  char *dest = buf,*src = buf;
-  int thislen = *bufsize;
-
-  *adjlen = 0;
-  while (thislen--) {
-    if (*src != '\r')
-      *dest++ = *src++;
-    else {
-      if (thislen == 0) {
-	/* copy, but save it for later */
-	*dest++ = *src++;
-	(*adjlen)++;
-	(*bufsize)--;
-      } else {
-	if (*(src+1) == '\n') { /* skip */
-	  (*bufsize)--;
-	  src++;
-	} else
-	  *dest++ = *src++;
-      }
-    }
-  }
-
-  return *bufsize;
-}
-
-/* this function rewrites the contents of the given buffer, making sure that
- * each LF has a preceding CR, as required by RFC959:
- *
- *  buf = pointer to a buffer
- *  buflen = length of data in buffer
- *  bufsize = total size of buffer
- *  expand = will contain the number of expansion bytes (CRs) added,
- *           and should be the difference between buflen's original
- *           value and its value when this function returns
- */
-
-static int have_dangling_cr = FALSE;
-static unsigned int xfrm_ascii_write(char **buf, unsigned int *buflen,
-    unsigned int bufsize) {
-  char *tmpbuf = *buf;
-  unsigned int tmplen = *buflen;
-  unsigned int lfcount = 0;
-  unsigned int added = 0;
-
-  int res = 0;
-  register unsigned int i = 0;
-
-  /* First, determine how many bare LFs are present. */
-  if (!have_dangling_cr && tmpbuf[0] == '\n')
-    lfcount++;
-
-  for (i = 1; i < tmplen; i++)
-    if (tmpbuf[i] == '\n' && tmpbuf[i-1] != '\r')
-      lfcount++;
-
-  /* If the last character in the buffer is CR, then we have a dangling CR.
-   * The first character in the next buffer could be an LF, and without
-   * this flag, that LF would be treated as a bare LF, thus resulting in
-   * an added extraneous CR in the stream.
-   */
-  have_dangling_cr = (tmpbuf[tmplen-1] == '\r') ? TRUE : FALSE;
-
-  if (lfcount == 0)
-    /* No translation needed. */
-    return 0;
-
-  /* Assume that for each LF (including a leading LF), space for another
-   * char (a '\r') is needed.  Determine whether there is enough space in
-   * the buffer for the adjusted data.  If not, allocate a new buffer that is
-   * large enough.  The new buffer is allocated from session.xfer.p, which is
-   * fine; this pool has a lifetime only for this current data transfer, and
-   * will be cleared after the transfer is done, either having succeeded or
-   * failed.
-   *
-   * Note: the res variable is needed in order to force signedness of the
-   * resulting difference.  Without it, this condition would never evaluate
-   * to true, as C's promotion rules would ensure that the resulting value
-   * would be of the same type as the operands: an unsigned int (which will
-   * never be less than zero).
-   */
-  if ((res = (bufsize - tmplen - lfcount)) <= 0) {
-    char *copybuf = malloc(tmplen);
-    if (copybuf == NULL) {
-      pr_log_pri(PR_LOG_ALERT, "Out of memory!");
-      exit(1);
-    }
-
-    memcpy(copybuf, tmpbuf, tmplen);
-
-    /* Allocate a new session.xfer.buf of the needed size. */
-    session.xfer.bufsize = tmplen + lfcount + 1;
-    session.xfer.buf = pcalloc(session.xfer.p, session.xfer.bufsize);
-
-    memcpy(session.xfer.buf, copybuf, tmplen);
-
-    free(copybuf);
-    copybuf = NULL;
-
-    tmpbuf = session.xfer.buf;
-    bufsize = session.xfer.bufsize;
-  }
-
-  if (tmpbuf[0] == '\n') {
-
-    /* Shift everything in the buffer to the right one character, making
-     * space for a '\r'
-     */
-    memmove(&(tmpbuf[1]), &(tmpbuf[0]), tmplen);
-    tmpbuf[0] = '\r';
-
-    /* Increment the number of added characters, and decrement the number
-     * of bare LFs.
-     */
-    added++;
-    lfcount--;
-  }
-
-  for (i = 1; i < bufsize && (lfcount > 0); i++) {
-    if (tmpbuf[i] == '\n' && tmpbuf[i-1] != '\r') {
-      memmove(&(tmpbuf[i+1]), &(tmpbuf[i]), bufsize - i - 1);
-      tmpbuf[i] = '\r';
-      added++;
-      lfcount--;
-    }
-  }
-
-  *buf = tmpbuf;
-  *buflen = tmplen + added;
-
-  return added;
-}
-
 static void data_new_xfer(char *filename, int direction) {
   pr_data_clear_xfer_pool();
 
   session.xfer.p = make_sub_pool(session.pool);
-  pr_pool_tag(session.xfer.p, "data transfer pool");
+  pr_pool_tag(session.xfer.p, "Data Transfer pool");
 
   session.xfer.filename = pstrdup(session.xfer.p, filename);
   session.xfer.direction = direction;
   session.xfer.bufsize = pr_config_get_server_xfer_bufsz(direction);
   session.xfer.buf = pcalloc(session.xfer.p, session.xfer.bufsize + 1);
-  pr_trace_msg("data", 8, "allocated data transfer buffer of %lu bytes",
+  pr_trace_msg(trace_channel, 8, "allocated data transfer buffer of %lu bytes",
     (unsigned long) session.xfer.bufsize);
   session.xfer.buf++;	/* leave room for ascii translation */
   session.xfer.buflen = 0;
 }
 
-static int data_pasv_open(char *reason, off_t size) {
+static int data_passive_open(const char *reason, off_t size) {
   conn_t *c;
-  int rev;
+  int rev, xerrno = 0;
 
-  if (!reason && session.xfer.filename)
+  if (reason == NULL &&
+      session.xfer.filename) {
     reason = session.xfer.filename;
+  }
 
   /* Set the "stalled" timer, if any, to prevent the connection
    * open from taking too long
@@ -276,7 +148,7 @@ static int data_pasv_open(char *reason, off_t size) {
 
   if (c && c->mode != CM_ERROR) {
     pr_inet_close(session.pool, session.d);
-    pr_inet_set_nonblock(session.pool, c);
+    (void) pr_inet_set_nonblock(session.pool, c);
     session.d = c;
 
     pr_log_debug(DEBUG4, "passive data connection opened - local  : %s:%d",
@@ -322,26 +194,38 @@ static int data_pasv_open(char *reason, off_t size) {
   }
 
   /* Check for error conditions. */
-  if (c && c->mode == CM_ERROR) {
+  if (c != NULL &&
+      c->mode == CM_ERROR) {
     pr_log_pri(PR_LOG_ERR, "error: unable to accept an incoming data "
       "connection: %s", strerror(c->xerrno));
   }
 
+  xerrno = session.d->xerrno;
   pr_response_add_err(R_425, _("Unable to build data connection: %s"),
-    strerror(session.d->xerrno));
+    strerror(xerrno));
   destroy_pool(session.d->pool);
   session.d = NULL;
+
+  errno = xerrno;
   return -1;
 }
 
-static int data_active_open(char *reason, off_t size) {
+static int data_active_open(const char *reason, off_t size) {
   conn_t *c;
   int bind_port, rev;
-  pr_netaddr_t *bind_addr;
+  const pr_netaddr_t *bind_addr = NULL;
   unsigned char *root_revoke = NULL;
 
-  if (!reason && session.xfer.filename)
+  if (session.c->remote_addr == NULL) {
+    /* An opened but unconnected connection? */
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (reason == NULL &&
+      session.xfer.filename) {
     reason = session.xfer.filename;
+  }
 
   if (pr_netaddr_get_family(session.c->local_addr) == pr_netaddr_get_family(session.c->remote_addr)) {
     bind_addr = session.c->local_addr;
@@ -441,17 +325,20 @@ static int data_active_open(char *reason, off_t size) {
     session.d->local_addr, session.d->listen_fd);
 
   if (pr_inet_connect(session.d->pool, session.d, &session.data_addr,
-      session.data_port) == -1) {
+      session.data_port) < 0) {
+    int xerrno = session.d->xerrno;
+
     pr_log_debug(DEBUG6,
       "Error connecting to %s#%u for active data transfer: %s",
       pr_netaddr_get_ipstr(&session.data_addr), session.data_port,
-      strerror(session.d->xerrno));
+      strerror(xerrno));
     pr_response_add_err(R_425, _("Unable to build data connection: %s"),
-      strerror(session.d->xerrno));
-    errno = session.d->xerrno;
+      strerror(xerrno));
 
     destroy_pool(session.d->pool);
     session.d = NULL;
+
+    errno = xerrno;
     return -1;
   }
 
@@ -501,7 +388,7 @@ static int data_active_open(char *reason, off_t size) {
     }
 
     pr_inet_close(session.pool, session.d);
-    pr_inet_set_nonblock(session.pool, session.d);
+    (void) pr_inet_set_nonblock(session.pool, session.d);
     session.d = c;
     return 0;
   }
@@ -574,10 +461,37 @@ void pr_data_reset(void) {
   }
 
   /* Clear any leftover state from previous transfers. */
-  have_dangling_cr = FALSE;
+  pr_ascii_ftp_reset();
 
   session.d = NULL;
   session.sf_flags &= (SF_ALL^(SF_ABORT|SF_POST_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE|SF_EPSV_ALL));
+}
+
+int pr_data_ignore_ascii(int ignore_ascii) {
+  int res;
+
+  if (ignore_ascii != TRUE && 
+      ignore_ascii != FALSE) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (data_opts & PR_DATA_OPT_IGNORE_ASCII) {
+    if (!ignore_ascii) {
+      data_opts &= ~PR_DATA_OPT_IGNORE_ASCII;
+    }
+
+    res = TRUE;
+
+  } else {
+    if (ignore_ascii) {
+      data_opts |= PR_DATA_OPT_IGNORE_ASCII;
+    }
+
+    res = FALSE;
+  }
+
+  return res;
 }
 
 void pr_data_init(char *filename, int direction) {
@@ -586,19 +500,44 @@ void pr_data_init(char *filename, int direction) {
 
   } else {
     if (!(session.sf_flags & SF_PASSIVE)) {
-      pr_log_debug(DEBUG0, "data_init oddity: session.xfer exists in "
-        "non-PASV mode.");
+      pr_log_debug(DEBUG5,
+        "data_init oddity: session.xfer exists in non-PASV mode");
     }
 
     session.xfer.direction = direction;
   }
 
   /* Clear any leftover state from previous transfers. */
-  have_dangling_cr = FALSE;
+  pr_ascii_ftp_reset();
 }
 
 int pr_data_open(char *filename, char *reason, int direction, off_t size) {
   int res = 0;
+
+  if (session.c == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if ((session.sf_flags & SF_PASSIVE) ||
+      (session.sf_flags & SF_EPSV_ALL)) {
+    /* For passive transfers, we expect there to already be an existing
+     * data connection...
+     */
+    if (session.d == NULL) {
+      errno = EINVAL;
+      return -1;
+    }
+
+  } else {
+    /* ...but for active transfers, we expect there to NOT be an existing
+     * data connection.
+     */
+    if (session.d != NULL) {
+      errno = session.d->xerrno = EINVAL;
+      return -1;
+    }
+  }
 
   /* Make sure that any abort flags have been cleared. */
   session.sf_flags &= ~(SF_ABORT|SF_POST_ABORT);
@@ -610,28 +549,17 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     session.xfer.direction = direction;
   }
 
-  if (!reason)
+  if (!reason) {
     reason = filename;
+  }
 
   /* Passive data transfers... */
-  if (session.sf_flags & SF_PASSIVE ||
-      session.sf_flags & SF_EPSV_ALL) {
-    if (session.d == NULL) {
-      pr_log_pri(PR_LOG_ERR, "Internal error: PASV mode set, but no data "
-        "connection listening");
-      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
-    }
-
-    res = data_pasv_open(reason, size);
+  if ((session.sf_flags & SF_PASSIVE) ||
+      (session.sf_flags & SF_EPSV_ALL)) {
+    res = data_passive_open(reason, size);
 
   /* Active data transfers... */
   } else {
-    if (session.d != NULL) {
-      pr_log_pri(PR_LOG_ERR, "Internal error: non-PASV mode, yet data "
-        "connection already exists?!?");
-      pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
-    }
-
     res = data_active_open(reason, size);
   }
 
@@ -659,16 +587,18 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     memset(&session.xfer.start_time, '\0', sizeof(session.xfer.start_time));
     gettimeofday(&session.xfer.start_time, NULL);
 
-    if (session.xfer.direction == PR_NETIO_IO_RD)
+    if (session.xfer.direction == PR_NETIO_IO_RD) {
       nstrm = session.d->instrm;
 
-    else
+    } else {
       nstrm = session.d->outstrm;
+    }
 
     session.sf_flags |= SF_XFER;
 
-    if (timeout_noxfer)
+    if (timeout_noxfer) {
       pr_timer_reset(PR_TIMER_NOXFER, ANY_MODULE);
+    }
 
     /* Allow aborts -- set the current NetIO stream to allow interrupted
      * syscalls, so our SIGURG handler can interrupt it
@@ -689,19 +619,26 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     act.sa_flags |= SA_INTERRUPT;
 #endif
 
-    if (sigaction(SIGURG, &act, NULL) < 0)
+    if (sigaction(SIGURG, &act, NULL) < 0) {
       pr_log_pri(PR_LOG_WARNING,
         "warning: unable to set SIGURG signal handler: %s", strerror(errno));
+    }
 
 #ifdef HAVE_SIGINTERRUPT
     /* This is the BSD way of ensuring interruption.
      * Linux uses it too (??)
      */
-    if (siginterrupt(SIGURG, 1) < 0)
+    if (siginterrupt(SIGURG, 1) < 0) {
       pr_log_pri(PR_LOG_WARNING,
         "warning: unable to make SIGURG interrupt system calls: %s",
         strerror(errno));
+    }
 #endif
+
+    /* Reset all of the timing-related variables for data transfers. */
+    pr_gettimeofday_millis(&data_start_ms);
+    data_first_byte_read = FALSE;
+    data_first_byte_written = FALSE;
   }
 
   return res;
@@ -741,7 +678,7 @@ void pr_data_close(int quiet) {
  * send the OOB byte (which results in a broken pipe on our
  * end).  Thus, it's a race between the OOB data and the tcp close
  * finishing.  Either way, it's ok (client will see either "Broken pipe"
- * error or "Aborted").  cmd_abor in mod_xfer cleans up the session
+ * error or "Aborted").  xfer_abor() in mod_xfer cleans up the session
  * flags in any case.  session flags will end up have SF_POST_ABORT
  * set if the OOB byte won the race.
  */
@@ -768,6 +705,11 @@ void pr_data_cleanup(void) {
 void pr_data_abort(int err, int quiet) {
   int true_abort = XFER_ABORTED;
   nstrm = NULL;
+
+  pr_trace_msg(trace_channel, 9,
+    "aborting data transfer (errno = %s (%d), quiet = %s, true abort = %s)",
+    strerror(err), err, quiet ? "true" : "false",
+    true_abort ? "true" : "false");
 
   if (session.d) {
     if (true_abort == FALSE) {
@@ -943,7 +885,7 @@ void pr_data_abort(int err, int quiet) {
     }
 
     pr_log_pri(PR_LOG_NOTICE, "notice: user %s: aborting transfer: %s",
-      session.user, msg);
+      session.user ? session.user : "(unknown)", msg);
 
     /* If we are aborting, then a 426 response has already been sent,
      * and we don't want to add another to the error queue.
@@ -961,21 +903,13 @@ void pr_data_abort(int err, int quiet) {
 /* From response.c.  XXX Need to provide these symbols another way. */
 extern pr_response_t *resp_list, *resp_err_list;
 
-/* pr_data_xfer() actually transfers the data on the data connection.  ASCII
- * translation is performed if necessary.  `direction' is set when the data
- * connection was opened.
- *
- * We determine if the client buffer is read from or written to.  Returns 0 if
- * reading and data connection closes, or -1 if error (with errno set).
- */
-int pr_data_xfer(char *cl_buf, size_t cl_size) {
-  int len = 0;
-  int total = 0;
-  int res = 0;
+static void poll_ctrl(void) {
+  int res;
 
-  /* Poll the control channel for any commands we should handle, like
-   * QUIT or ABOR.
-   */
+  if (session.c == NULL) {
+    return;
+  }
+
   pr_trace_msg(trace_channel, 4, "polling for commands on control channel");
   pr_netio_set_poll_interval(session.c->instrm, 0);
   res = pr_netio_poll(session.c->instrm);
@@ -1008,14 +942,15 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
       /* Otherwise, EOF */
       pr_session_disconnect(NULL, PR_SESS_DISCONNECT_CLIENT_EOF, NULL);
 #else
-      return -1;
+      return;
 #endif /* PR_DEVEL_NO_DAEMON */
 
     } else if (cmd != NULL) {
       char *ch;
 
-      for (ch = cmd->argv[0]; *ch; ch++)
+      for (ch = cmd->argv[0]; *ch; ch++) {
         *ch = toupper(*ch);
+      }
 
       cmd->cmd_id = pr_cmd_get_id(cmd->argv[0]);
 
@@ -1046,7 +981,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
 
         pr_trace_msg(trace_channel, 5,
           "client sent '%s' command during data transfer, denying",
-          cmd->argv[0]);
+          (char *) cmd->argv[0]);
 
         resp_list = resp_err_list = NULL;
         resp_pool = pr_response_get_pool();
@@ -1054,7 +989,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         pr_response_set_pool(cmd->pool);
 
         pr_response_add_err(R_450, _("%s: data transfer in progress"),
-          cmd->argv[0]);
+          (char *) cmd->argv[0]);
 
         pr_response_flush(&resp_err_list);
 
@@ -1072,7 +1007,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
 
         pr_trace_msg(trace_channel, 5,
           "client sent '%s' command during data transfer, ignoring",
-          cmd->argv[0]);
+          (char *) cmd->argv[0]);
 
         resp_list = resp_err_list = NULL;
         resp_pool = pr_response_get_pool();
@@ -1080,7 +1015,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         pr_response_set_pool(cmd->pool);
 
         pr_response_add(R_200, _("%s: data transfer in progress"),
-          cmd->argv[0]);
+          (char *) cmd->argv[0]);
 
         pr_response_flush(&resp_list);
 
@@ -1094,7 +1029,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
 
         pr_trace_msg(trace_channel, 5,
           "client sent '%s' command during data transfer, dispatching",
-          cmd->argv[0]);
+          (char *) cmd->argv[0]);
 
         title_len = pr_proctitle_get(NULL, 0);
         if (title_len > 0) {
@@ -1125,9 +1060,34 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
       pr_response_send(R_500, _("Invalid command: try being more creative"));
     }
   }
+}
+
+/* pr_data_xfer() actually transfers the data on the data connection.  ASCII
+ * translation is performed if necessary.  `direction' is set when the data
+ * connection was opened.
+ *
+ * We determine if the client buffer is read from or written to.  Returns 0 if
+ * reading and data connection closes, or -1 if error (with errno set).
+ */
+int pr_data_xfer(char *cl_buf, size_t cl_size) {
+  int len = 0;
+  int total = 0;
+  int res = 0;
+  pool *tmp_pool = NULL;
+
+  if (cl_buf == NULL ||
+      cl_size == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Poll the control channel for any commands we should handle, like
+   * QUIT or ABOR.
+   */
+  poll_ctrl();
 
   /* If we don't have a data connection here (e.g. might have been closed
-   * by an ABOR, then return zero (no data transferred).
+   * by an ABOR), then return zero (no data transferred).
    */
   if (session.d == NULL) {
     int xerrno;
@@ -1152,10 +1112,16 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
   }
 
   if (session.xfer.direction == PR_NETIO_IO_RD) {
-    char *buf = session.xfer.buf;
-    pr_buffer_t *pbuf;
+    char *buf;
 
-    if (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) {
+    buf = session.xfer.buf;
+
+    /* We use ASCII translation if:
+     *
+     * - SF_ASCII session flag is set, AND IGNORE_ASCII data opt NOT set
+     */
+    if (((session.sf_flags & SF_ASCII) &&
+        !(data_opts & PR_DATA_OPT_IGNORE_ASCII))) {
       int adjlen, buflen;
 
       do {
@@ -1182,24 +1148,26 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
             continue;
           }
 
+          destroy_pool(tmp_pool);
+          errno = xerrno;
           return -1;
         }
 
-        /* Before we process the data read from the client, generate an event
-         * for any listeners which may want to examine this data.
-         */
+        if (len > 0 &&
+            data_first_byte_read == FALSE) {
+          if (pr_trace_get_level(timing_channel)) {
+            unsigned long elapsed_ms;
+            uint64_t read_ms;
 
-        pbuf = pcalloc(session.xfer.p, sizeof(pr_buffer_t));
-        pbuf->buf = buf;
-        pbuf->buflen = len;
-        pbuf->current = pbuf->buf;
-        pbuf->remaining = 0;
+            pr_gettimeofday_millis(&read_ms);
+            elapsed_ms = (unsigned long) (read_ms - data_start_ms);
 
-        pr_event_generate("core.data-read", pbuf);
+            pr_trace_msg(timing_channel, 7,
+              "Time for first data byte read: %lu ms", elapsed_ms);
+          }
 
-        /* The event listeners may have changed the data to write out. */
-        buf = pbuf->buf;
-        len = pbuf->buflen - pbuf->remaining;
+          data_first_byte_read = TRUE;
+        }
 
         if (len > 0) {
           buflen += len;
@@ -1213,25 +1181,42 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
         if (len >= 0 &&
             buflen > 0) {
 
-          /* Perform translation:
+          /* Perform ASCII translation:
            *
-           * buflen is returned as the modified buffer length after
-           *        translation
-           * adjlen is returned as the number of characters unprocessed in
-           *        the buffer (to be dealt with later)
+           * buflen: is returned as the modified buffer length after
+           *         translation
+           * res:    is returned as the number of characters unprocessed in
+           *         the buffer (to be dealt with later)
            *
-           * We skip the call to xfrm_ascii_read() in one case:
+           * We skip the call to pr_ascii_ftp_from_crlf() in one case:
            * when we have one character in the buffer and have reached
-           * end of data, this is so that xfrm_ascii_read() won't sit
+           * end of data, this is so that pr_ascii_ftp_from_crlf() won't sit
            * forever waiting for the next character after a final '\r'.
            */
           if (len > 0 ||
               buflen > 1) {
-            xfrm_ascii_read(buf, &buflen, &adjlen);
+            size_t outlen = 0;
+
+            /* Use a temporary pool for the CRLF conversion, lest the
+             * session.xfer.p pool grow quite large while downloading a large
+             * file for ASCII conversion (Bug#4277).
+             */
+            tmp_pool = make_sub_pool(session.xfer.p);
+            pr_pool_tag(tmp_pool, "ASCII download");
+
+            res = pr_ascii_ftp_from_crlf(tmp_pool, buf, buflen, &buf, &outlen);
+            if (res < 0) {
+              pr_trace_msg(trace_channel, 3, "error reading ASCII data: %s",
+                strerror(errno));
+
+            } else {
+              adjlen += res;
+              buflen = (int) outlen;
+            }
           }
 
           /* Now copy everything we can into cl_buf */
-          if (buflen > cl_size) {
+          if ((size_t) buflen > cl_size) {
             /* Because we have to cut our buffer short, make sure this
              * is made up for later by increasing adjlen.
              */
@@ -1259,8 +1244,8 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
 	
         /* Restart if data was returned by pr_netio_read() (len > 0) but no
          * data was copied to the client buffer (buflen = 0).  This indicates
-         * that xfrm_ascii_read() needs more data in order to translate, so we
-         * need to call pr_netio_read() again.
+         * that pr_ascii_ftp_from_crlf() needs more data in order to
+         * translate, so we need to call pr_netio_read() again.
          */
       } while (len > 0 && buflen == 0);
 
@@ -1288,21 +1273,20 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
       }
 
       if (len > 0) {
-        /* Before we process the data read from the client, generate an event
-         * for any listeners which may want to examine this data.
-         */
+        if (data_first_byte_read == FALSE) {
+          if (pr_trace_get_level(timing_channel)) {
+            unsigned long elapsed_ms;
+            uint64_t read_ms;
 
-        pbuf = pcalloc(session.xfer.p, sizeof(pr_buffer_t));
-        pbuf->buf = buf;
-        pbuf->buflen = len;
-        pbuf->current = pbuf->buf;
-        pbuf->remaining = 0;
+            pr_gettimeofday_millis(&read_ms);
+            elapsed_ms = (unsigned long) (read_ms - data_start_ms);
 
-        pr_event_generate("core.data-read", pbuf);
+            pr_trace_msg(timing_channel, 7,
+              "Time for first data byte read: %lu ms", elapsed_ms);
+          }
 
-        /* The event listeners may have changed the data to write out. */
-        buf = pbuf->buf;
-        len = pbuf->buflen - pbuf->remaining;
+          data_first_byte_read = TRUE;
+        }
 
         /* Non-ASCII mode doesn't need to use session.xfer.buf */
         if (timeout_stalled) {
@@ -1331,13 +1315,39 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
       /* Fill up our internal buffer. */
       memcpy(session.xfer.buf, cl_buf, buflen);
 
-      if (session.sf_flags & (SF_ASCII|SF_ASCII_OVERRIDE)) {
+      /* We use ASCII translation if:
+       *
+       * - SF_ASCII_OVERRIDE session flag is set (e.g. for LIST/NLST)
+       * - SF_ASCII session flag is set, AND IGNORE_ASCII data opt NOT set
+       */
+      if ((session.sf_flags & SF_ASCII_OVERRIDE) ||
+          ((session.sf_flags & SF_ASCII) &&
+           !(data_opts & PR_DATA_OPT_IGNORE_ASCII))) {
+        char *out = NULL;
+        size_t outlen = 0;
+
+        /* Use a temporary pool for the CRLF conversion, lest the
+         * session.xfer.p pool grow quite large while downloading a large
+         * file for ASCII conversion (Bug#4277).
+         */
+        tmp_pool = make_sub_pool(session.xfer.p);
+        pr_pool_tag(tmp_pool, "ASCII upload");
+
         /* Scan the internal buffer, looking for LFs with no preceding CRs.
          * Add CRs (and expand the internal buffer) as necessary. xferbuflen
          * will be adjusted so that it contains the length of data in
          * the internal buffer, including any added CRs.
          */
-        xfrm_ascii_write(&session.xfer.buf, &xferbuflen, session.xfer.bufsize);
+        res = pr_ascii_ftp_to_crlf(tmp_pool, session.xfer.buf, xferbuflen,
+          &out, &outlen);
+        if (res < 0) {
+          pr_trace_msg(trace_channel, 1, "error writing ASCII data: %s",
+            strerror(errno));
+
+        } else {
+          session.xfer.buf = out;
+          session.xfer.buflen = xferbuflen = outlen;
+        }
       }
 
       bwrote = pr_netio_write(session.d->outstrm, session.xfer.buf, xferbuflen);
@@ -1357,10 +1367,27 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
           continue;
         }
 
+        destroy_pool(tmp_pool);
+        errno = xerrno;
         return -1;
       }
 
       if (bwrote > 0) {
+        if (data_first_byte_written == FALSE) {
+          if (pr_trace_get_level(timing_channel)) {
+            unsigned long elapsed_ms;
+            uint64_t write_ms;
+
+            pr_gettimeofday_millis(&write_ms);
+            elapsed_ms = (unsigned long) (write_ms - data_start_ms);
+
+            pr_trace_msg(timing_channel, 7,
+              "Time for first data byte written: %lu ms", elapsed_ms);
+          }
+
+          data_first_byte_written = TRUE;
+        }
+
         if (timeout_stalled) {
           pr_timer_reset(PR_TIMER_STALLED, ANY_MODULE);
         }
@@ -1375,8 +1402,9 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
   }
 
   if (total &&
-      timeout_idle)
+      timeout_idle) {
     pr_timer_reset(PR_TIMER_IDLE, ANY_MODULE);
+  }
 
   session.xfer.total_bytes += total;
   session.total_bytes += total;
@@ -1387,6 +1415,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
     session.total_bytes_out += total;
   }
 
+  destroy_pool(tmp_pool);
   return (len < 0 ? -1 : len);
 }
 
@@ -1403,17 +1432,32 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
   int rc;
 #endif /* HAVE_AIX_SENDFILE */
 
-  if (session.xfer.direction == PR_NETIO_IO_RD)
+  if (offset == NULL ||
+      count == 0) {
+    errno = EINVAL;
     return -1;
+  }
+
+  if (session.xfer.direction == PR_NETIO_IO_RD) {
+    errno = EPERM;
+    return -1;
+  }
+
+  if (session.d == NULL) {
+    errno = EPERM;
+    return -1;
+  }
 
   flags = fcntl(PR_NETIO_FD(session.d->outstrm), F_GETFL);
-  if (flags == -1)
+  if (flags < 0) {
     return -1;
+  }
 
   /* Set fd to blocking-mode for sendfile() */
   if (flags & O_NONBLOCK) {
-    if (fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags^O_NONBLOCK) == -1)
+    if (fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags^O_NONBLOCK) < 0) {
       return -1;
+    }
   }
 
   for (;;) {
@@ -1436,24 +1480,26 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
      */
 
 #if defined(HAVE_LINUX_SENDFILE)
-    if (count > INT_MAX)
+    if (count > INT_MAX) {
       count = INT_MAX;
-
+    }
 #elif defined(HAVE_SOLARIS_SENDFILE)
 # if SIZEOF_SIZE_T == SIZEOF_INT
-    if (count > INT_MAX)
+    if (count > INT_MAX) {
       count = INT_MAX;
+    }
 # elif SIZEOF_SIZE_T == SIZEOF_LONG
-    if (count > LONG_MAX)
+    if (count > LONG_MAX) {
       count = LONG_MAX;
+    }
 # elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
-    if (count > LLONG_MAX)
+    if (count > LLONG_MAX) {
       count = LLONG_MAX;
+    }
 # endif
 #endif /* !HAVE_SOLARIS_SENDFILE */
 
     len = sendfile(PR_NETIO_FD(session.d->outstrm), retr_fd, offset, count);
-
     if (len != -1 &&
         len < count) {
       /* Under Linux semantics, this occurs when a signal has interrupted
@@ -1517,14 +1563,17 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
      */
 
 #if SIZEOF_SIZE_T == SIZEOF_INT
-    if (count > UINT_MAX)
+    if (count > UINT_MAX) {
       count = UINT_MAX;
+    }
 #elif SIZEOF_SIZE_T == SIZEOF_LONG
-    if (count > ULONG_MAX)
+    if (count > ULONG_MAX) {
       count = ULONG_MAX;
+    }
 #elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
-    if (count > ULLONG_MAX)
+    if (count > ULLONG_MAX) {
       count = ULLONG_MAX;
+    }
 #endif
 
     if (sendfile(retr_fd, PR_NETIO_FD(session.d->outstrm), *offset, count,
@@ -1540,10 +1589,10 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
      */
 
     res = sendfile(retr_fd, PR_NETIO_FD(session.d->outstrm), *offset, &orig_len,
-        NULL, 0);
+      NULL, 0);
     len = orig_len;
 
-    if (res == -1) {
+    if (res < 0) {
 #elif defined(HAVE_AIX_SENDFILE)
 
     memset(&parms, 0, sizeof(parms));
@@ -1552,10 +1601,10 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
     parms.file_offset = (uint64_t) *offset;
     parms.file_bytes = (int64_t) count;
 
-    rc  = send_file(&(PR_NETIO_FD(session.d->outstrm)), &(parms), (uint_t)0);
+    rc = send_file(&(PR_NETIO_FD(session.d->outstrm)), &(parms), (uint_t)0);
     len = (int) parms.bytes_sent;
 
-    if (rc == -1 || rc == 1) {
+    if (rc < -1 || rc == 1) {
 
 #endif /* HAVE_AIX_SENDFILE */
 
@@ -1614,7 +1663,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
       }
 
       error = errno;
-      fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags);
+      (void) fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags);
       errno = error;
 
       return -1;
@@ -1623,8 +1672,9 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
     break;
   }
 
-  if (flags & O_NONBLOCK)
-    fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags);
+  if (flags & O_NONBLOCK) {
+    (void) fcntl(PR_NETIO_FD(session.d->outstrm), F_SETFL, flags);
+  }
 
   if (timeout_stalled) {
     pr_timer_reset(PR_TIMER_STALLED, ANY_MODULE);
@@ -1641,5 +1691,10 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
   total += len;
 
   return total;
+}
+#else
+pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
+  errno = ENOSYS;
+  return -1;
 }
 #endif /* HAVE_SENDFILE */

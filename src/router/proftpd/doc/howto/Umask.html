@@ -1,9 +1,7 @@
-<!-- $Id: Umask.html,v 1.5 2012-03-24 18:41:57 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Umask.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Umask</title>
+<title>ProFTPD: Umask</title>
 </head>
 
 <body bgcolor=white>
@@ -25,7 +23,7 @@ works something like this:
 <pre>
   new file mode = <i>base-mode</i> - <i>umask</i>
 </pre>
-(Technically, the operation is <code><i>base-mode & ~umask</i></code>).
+(Technically, the operation is <code><i>base-mode &amp; ~umask</i></code>).
 Thus, with a <i>base-mode</i> of <code>0666</code>, and a <i>umask</i> of
 <code>0022</code>, the permissions on the newly created file will be
 <code>0644</code> (<i>e.g.</i> <code>rw-r--r--</code>).
@@ -50,7 +48,7 @@ example is <code>0</code> (no permissions, <i>e.g.</i> <code>---</code>).
 <p>
 Here are some concrete examples to help illustrate things:
 <p>
-<table border=1>
+<table border=1 summary="Umask Examples">
   <tr>
     <td><b>Mode</b></td>
     <td><b>Label</b></td>
@@ -231,7 +229,10 @@ rename files of other users in that directory.  Because of this property,
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2012-03-24 18:41:57 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

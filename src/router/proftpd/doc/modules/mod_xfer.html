@@ -1,6 +1,4 @@
-<!-- $Id: mod_xfer.html,v 1.10 2013-03-13 18:08:28 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_xfer.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_xfer</title>
@@ -23,6 +21,7 @@ file transfers.
   <li><a href="#AllowOverwrite">AllowOverwrite</a>
   <li><a href="#AllowRetrieveRestart">AllowRetrieveRestart</a>
   <li><a href="#AllowStoreRestart">AllowStoreRestart</a>
+  <li><a href="#DefaultTransferMode">DefaultTransferMode</a>
   <li><a href="#DeleteAbortedStores">DeleteAbortedStores</a>
   <li><a href="#DisplayFileTransfer">DisplayFileTransfer</a>
   <li><a href="#HiddenStores">HiddenStores</a>
@@ -33,6 +32,7 @@ file transfers.
   <li><a href="#StoreUniquePrefix">StoreUniquePrefix</a>
   <li><a href="#TimeoutNoTransfer">TimeoutNoTransfer</a>
   <li><a href="#TimeoutStalled">TimeoutStalled</a>
+  <li><a href="#TransferOptions">TransferOptions</a>
   <li><a href="#TransferPriority">TransferPriority</a>
   <li><a href="#TransferRate">TransferRate</a>
   <li><a href="#UseSendfile">UseSendfile</a>
@@ -40,7 +40,7 @@ file transfers.
 
 <p>
 <hr>
-<h2><a name="AllowOverwrite">AllowOverwrite</a></h2>
+<h3><a name="AllowOverwrite">AllowOverwrite</a></h3>
 <strong>Syntax:</strong> AllowOverwrite <em>on|off</em><br>
 <strong>Default:</strong> <code>AllowOverwrite off</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -54,7 +54,7 @@ existing files.
 
 <p>
 <hr>
-<h2><a name="AllowRetrieveRestart">AllowRetrieveRestart</a></h2>
+<h3><a name="AllowRetrieveRestart">AllowRetrieveRestart</a></h3>
 <strong>Syntax:</strong> AllowRetrieveRestart <em>on|off</em><br>
 <strong>Default:</strong> <code>AllowRetrieveRestart on</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -73,7 +73,7 @@ See also: <a href="#AllowStoreRestart"><code>AllowStoreRestart</code></a>
 
 <p>
 <hr>
-<h2><a name="AllowStoreRestart">AllowStoreRestart</a></h2>
+<h3><a name="AllowStoreRestart">AllowStoreRestart</a></h3>
 <strong>Syntax:</strong> AllowStoreRestart <em>on|off</em><br>
 <strong>Default:</strong> <code>AllowStoreRestart on</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -100,7 +100,24 @@ See also: <a href="#AllowRetrieveRestart"><code>AllowRetrieveRestart</code></a>,
 
 <p>
 <hr>
-<h2><a name="DeleteAbortedStores">DeleteAbortedStores</a></h2>
+<h3><a name="DefaultTransferMode">DefaultTransferMode</a></h3>
+<strong>Syntax:</strong> DefaultTransferMode <em>ascii|binary</em><br>
+<strong>Default:</strong> <code>DefaultTransferMode ascii</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.2.0pre9 and later
+
+<p>
+The <code>DefaultTransferMode</code> directive sets the <em>default</em>
+transfer mode used for data transfers.  Per RFC 959 requirements, the default
+transfer mode is "ascii", which means that carriage return (<code>CR</code>)
+and line feed (<code>LF</code>) translation will be performed: <code>CRLF</code>
+sequences in <em>uploaded</em> data will be translated to <code>LF</code>,
+and <code>LF</code> translated to <code>CRLF</code> in <em>downloaded</em> data.
+
+<p>
+<hr>
+<h3><a name="DeleteAbortedStores">DeleteAbortedStores</a></h3>
 <strong>Syntax:</strong> DeleteAbortedStores <em>on|off</em><br>
 <strong>Default:</strong> <code>DeleteAbortedStores off</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -111,16 +128,18 @@ See also: <a href="#AllowRetrieveRestart"><code>AllowRetrieveRestart</code></a>,
 The <code>DeleteAbortedStores</code> directive controls whether ProFTPD
 deletes partially uploaded files if the transfer is stopped via the
 FTP <code>ABOR</code> command (as opposed to a connection failure).
-By default, <code>DeleteAbortedStores</code> is <em>off</em>; however when
-<code>HiddenStores</code> is enabled, then <code>DeleteAbortedStores</code>
-is automatically enabled as well.
+By default, <code>DeleteAbortedStores</code> is <em>off</em>.
+
+<p>
+<b>However</b>, when <code>HiddenStores</code> is enabled, then
+<code>DeleteAbortedStores</code> is automatically enabled as well.
 
 <p>
 See also: <a href="#HiddenStores"><code>HiddenStores</code></a>
 
 <p>
 <hr>
-<h2><a name="HiddenStores">HiddenStores</a></h2>
+<h3><a name="HiddenStores">HiddenStores</a></h3>
 <strong>Syntax:</strong> HiddenStores <em>on|off|prefix [suffix]</em><br>
 <strong>Default:</strong> <code>HiddenStores off</code><br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code><br>
@@ -169,6 +188,17 @@ a suffix:
 prefix as well.
 
 <p>
+In <code>proftpd-1.3.6rc1</code> and later, the <em>prefix</em> and
+<em>suffix</em> values can use the <code>%P</code> variable, which will
+be substituted with the session PID.  This can help to reduce issues
+encountered when an FTP upload fails in such a way that proftpd cannot properly
+clean up the <code>HiddenStores</code> temporary file.  For example:
+<pre>
+  # Use the session PID as part of the name
+  HiddenStores .in. .%P
+</pre>
+
+<p>
 <b><i>Discussion</i></b><br>
 When would you want or need to specify different prefix and suffix values
 for <code>HiddenStores</code>?  You might need this when, for example, your
@@ -188,7 +218,7 @@ See also: <a href="#AllowStoreRestart"><code>AllowStoreRestart</code></a>,
 
 <p>
 <hr>
-<h2><a name="MaxRetrieveFileSize">MaxRetrieveFileSize</a></h2>
+<h3><a name="MaxRetrieveFileSize">MaxRetrieveFileSize</a></h3>
 <strong>Syntax:</strong> MaxRetrieveFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -236,7 +266,7 @@ See also: <a href="#MaxStoreFileSize"><code>MaxStoreFileSize</code></a>
 
 <p>
 <hr>
-<h2><a name="MaxStoreFileSize">MaxStoreFileSize</a></h2>
+<h3><a name="MaxStoreFileSize">MaxStoreFileSize</a></h3>
 <strong>Syntax:</strong> MaxStoreFileSize <em>[number|"*" units ["user"|"group"|"class" expression]]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
@@ -292,7 +322,101 @@ See also: <a href="#MaxRetrieveFileSize"><code>MaxRetrieveFileSize</code></a>
 
 <p>
 <hr>
-<h2><a name="TimeoutNoTransfer">TimeoutNoTransfer</a></h2>
+<h3><a name="MaxTransfersPerHost">MaxTransfersPerHost</a></h3>
+<strong>Syntax:</strong> MaxTransfersPerHost <em>cmd-list count [message]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.3.2rc1 and later
+
+<p>
+The <code>MaxTransfersPerHost</code> directive limits the number of data
+transfers happening at the same time <i>from the same host</i>.  The
+<em>cmd-list</em> parameter is a comma-separated list of the data transfer FTP
+commands (APPE, RETR, STOR, and/or STOU) to which the limit applies.  The
+optional <em>message</em> parameter may be used, which will be displayed to a
+client attempting to exceed the maximum value.  If <em>message</em> is
+<i>not</i> supplied, the following message is used by default:
+<pre>
+  "Sorry, the maximum number of data transfers (%m) from your host are currently being used."
+</pre>
+
+<p>
+For example:
+<pre>
+  MaxTransfersPerHost RETR 2
+</pre>
+will result in the following FTP response to a client exceeding the download
+limit:
+<pre>
+  "451 Sorry, the maximum number of data transfers (2) from your host are currently being used."
+</pre>
+And for uploads, you might using something like:
+<pre>
+  MaxTransferPerHost APPE,STOR,STOU 1
+</pre>
+
+<p>
+See also: <a href="#MaxTransfersPerUser"><code>MaxTransfersPerUser</code></a>
+
+<p>
+<hr>
+<h3><a name="MaxTransfersPerUser">MaxTransfersPerUser</a></h3>
+<strong>Syntax:</strong> MaxTransfersPerUser <em>cmd-list count [message]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.3.2rc1 and later
+
+<p>
+The <code>MaxTransfersPerUser</code> directive limits the number of data
+transfers happening at the same time <i>for the same user name</i>.  The
+<em>cmd-list</em> parameter is a comma-separated list of the data transfer FTP
+commands (APPE, RETR, STOR, and/or STOU) to which the limit applies.  The
+optional <em>message</em> parameter may be used, which will be displayed to a
+client attempting to exceed the maximum value.  If <em>message</em> is
+<i>not</i> supplied, the following message is used by default:
+<pre>
+  "Sorry, the maximum number of data transfers (%m) from this user are currently being used."
+</pre>
+
+<p>
+For example:
+<pre>
+  MaxTransfersPerUser RETR 2
+</pre>
+will result in the following FTP response to a client exceeding the download
+limit:
+<pre>
+  "451 Sorry, the maximum number of data transfers (2) from this user are currently being used."
+</pre>
+And for uploads, you might using something like:
+<pre>
+  MaxTransferPerUser APPE,STOR,STOU 1
+</pre>
+
+<p>
+See also: <a href="#MaxTransfersPerHost"><code>MaxTransfersPerHost</code></a>
+
+<p>
+<hr>
+<h3><a name="StoreUniquePrefix">StoreUniquePrefix</a></h3>
+<strong>Syntax:</strong> StoreUniquePrefix <em>prefix</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, <code>.ftpaccess</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.2.6rc1 and later
+
+<p>
+The <code>StoreUniquePrefix</code> directive is used to configure a
+<em>prefix</em> for the generated unique random filenames used for the STOU
+FTP command.  The last six characters of the filename will be random.
+<b>Note</b>: Slash (/) characters are <b>not</b> allowed in the <em>prefix</em>
+value.
+
+<p>
+<hr>
+<h3><a name="TimeoutNoTransfer">TimeoutNoTransfer</a></h3>
 <strong>Syntax:</strong> TimeoutNoTransfer <em>seconds</em><br>
 <strong>Default:</strong> 300 seconds<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -313,7 +437,7 @@ See also: <a href="mod_core.html#TimeoutIdle"><code>TimeoutIdle</code></a>,
 
 <p>
 <hr>
-<h2><a name="TimeoutStalled">TimeoutStalled</a></h2>
+<h3><a name="TimeoutStalled">TimeoutStalled</a></h3>
 <strong>Syntax:</strong> TimeoutStalled <em>seconds</em><br>
 <strong>Default:</strong> 3600 seconds<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -330,7 +454,37 @@ The maximum allowed <em>seconds</em> value is 65535 (108 minutes).
 
 <p>
 <hr>
-<h2><a name="TransferPriority">TransferPriority</a></h2>
+<h3><a name="TransferOptions">TransferOptions</a></h3>
+<strong>Syntax:</strong> TransferOptions <em>opt1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_xfer<br>
+<strong>Compatibility:</strong> 1.3.6rc1 and later
+
+<p>
+The <code>TransferOptions</code> directive to configure various optional data
+transfer behaviors.
+
+<p>
+The currently implemented options are:
+<ul>
+  <li><code>IgnoreASCII</code><br>
+    <p>
+    This option causes proftpd to silently ignore any client requests to
+    perform ASCII translations via the <code>TYPE</code> command.  That is,
+    FTP clients can request ASCII translations, and proftpd will respond
+    as the client expects, but will <b>not</b> actually perform the translation
+    for either uploads <i>or</i> downloads.  This behavior can be useful in
+    circumstances involving older/mainframe clients and EBCDIC files.
+
+    <p>
+    <b>Note</b> that this option first appeared in 
+    <code>proftpd-1.3.6rc1</code>.
+</ul>
+
+<p>
+<hr>
+<h3><a name="TransferPriority">TransferPriority</a></h3>
 <strong>Syntax:</strong> TransferPriority <em>cmd-list "low"|"medium"|"high"|number</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code><br>
@@ -364,7 +518,7 @@ fine:
 
 <p>
 <hr>
-<h2><a name="TransferRate">TransferRate</a></h2>
+<h3><a name="TransferRate">TransferRate</a></h3>
 <strong>Syntax:</strong> TransferRate <em>cmd-list kbytes-per-sec[:free-bytes]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
@@ -412,7 +566,7 @@ Here are some examples:
 
 <p>
 <hr>
-<h2><a name="UseSendfile">UseSendfile</a></h2>
+<h3><a name="UseSendfile">UseSendfile</a></h3>
 <strong>Syntax:</strong> UseSendfile <em>on|off|len units|percentage</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>, <code>&lt;Anonymous&gt;</code>, <code>&lt;Directory&gt;</code>, .ftpaccess<br>
@@ -432,19 +586,27 @@ operations, and buffer allocations.  Read this
 The <code>mod_xfer</code>module is <b>always</b> installed.
 
 <p>
-<hr><br>
+<b>Logging</b><br>
+The <code>mod_xfer</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>xfer
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace xfer:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-03-13 18:08:28 $</i><br>
-
-<br><hr>
-
+<p>
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2013 The ProFTPD Project<br>
+&copy; Copyright 2000-2016 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
+<hr>
 
-<hr><br>
 </body>
 </html>
-

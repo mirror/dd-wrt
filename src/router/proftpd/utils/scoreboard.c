@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2011 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* ProFTPD scoreboard support (modified for use by external utilities).
- * $Id: scoreboard.c,v 1.17 2011-05-23 20:46:20 castaglia Exp $
- */
+/* ProFTPD scoreboard support (modified for use by external utilities). */
 
 #include "utils.h"
 
@@ -123,10 +121,11 @@ int util_close_scoreboard(void) {
   if (util_scoreboard_fd == -1)
     return 0;
 
-  if (util_scoreboard_read_locked)
+  if (util_scoreboard_read_locked) {
     unlock_scoreboard();
+  }
 
-  close(util_scoreboard_fd);
+  (void) close(util_scoreboard_fd);
   util_scoreboard_fd = -1;
 
   return 0;
@@ -264,7 +263,7 @@ pr_scoreboard_entry_t *util_scoreboard_entry_read(void) {
 }
 
 int util_scoreboard_scrub(int verbose) {
-  int fd = -1;
+  int fd = -1, res = 0;
   off_t curr_offset = 0;
   struct flock lock;
   pr_scoreboard_entry_t sce;
@@ -278,6 +277,10 @@ int util_scoreboard_scrub(int verbose) {
    */
   fd = open(util_get_scoreboard(), O_RDWR);
   if (fd < 0) {
+    if (verbose) {
+      fprintf(stdout, "error opening scoreboard: %s", strerror(errno));
+    }
+
     return -1;
   }
 
@@ -290,15 +293,40 @@ int util_scoreboard_scrub(int verbose) {
 
   /* We can afford to block/wait until we obtain our lock on the file. */
   while (fcntl(fd, F_SETLKW, &lock) < 0) {
-    if (errno == EINTR) {
+    int xerrno = errno;
+
+    if (xerrno == EINTR) {
       continue;
     }
 
+    (void) close(fd);
+    errno = xerrno;
     return -1;
   }
 
   /* Skip past the scoreboard header. */
   curr_offset = lseek(fd, (off_t) sizeof(pr_scoreboard_header_t), SEEK_SET);
+  if (curr_offset < 0) {
+    int xerrno = errno;
+
+    /* Release the scoreboard. */
+    lock.l_type = F_UNLCK;
+    lock.l_whence = SEEK_SET;
+    lock.l_start = 0;
+    lock.l_len = 0;
+
+    while (fcntl(fd, F_SETLKW, &lock) < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+    }
+
+    /* Don't need the descriptor anymore. */
+    (void) close(fd);
+
+    errno = xerrno;
+    return -1;
+  }
 
   memset(&sce, 0, sizeof(sce));
 
@@ -340,6 +368,10 @@ int util_scoreboard_scrub(int verbose) {
 
     /* Mark the current offset. */
     curr_offset = lseek(fd, (off_t) 0, SEEK_CUR);
+    if (curr_offset < 0) {
+      res = -1;
+      break;
+    }
   }
 
   /* Release the scoreboard. */
@@ -357,5 +389,5 @@ int util_scoreboard_scrub(int verbose) {
   /* Don't need the descriptor anymore. */
   (void) close(fd);
 
-  return 0;
+  return res;
 }

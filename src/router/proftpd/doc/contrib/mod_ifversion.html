@@ -1,6 +1,4 @@
-<!-- $Id: mod_ifversion.html,v 1.1 2010-06-29 14:52:30 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_ifversion.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_ifversion</title>
@@ -43,7 +41,7 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="IfVersion">&lt;IfVersion&gt;</a></h2>
+<h3><a name="IfVersion">&lt;IfVersion&gt;</a></h3>
 <strong>Syntax:</strong> &lt;IfVersion <em>[[!]operator] version</em>&gt;<br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> <em>All</em><br>
@@ -66,7 +64,7 @@ candidate (RC) or maintenance release.
 <p>
 The following numerical comparison operators are supported:
 <p>
-<table border=1>
+<table border=1 summary="Numeric Comparators">
   <tr>
     <td><em>operator</em></td>
     <td>Description</td>
@@ -99,10 +97,10 @@ The following numerical comparison operators are supported:
 </table>
 
 <p>
-It is also possible to use regular expressions to match the proftpd version.
+It is also possible to use regular expressions to match the ProFTPD version.
 To use a regular expression, the <em>operators</em> are:
 <p>
-<table border=1>
+<table border=1 summary="Regex Operators">
   <tr>
     <td><em>operator</em></td>
     <td>Description</td>
@@ -133,24 +131,19 @@ If <em>operator</em> is omitted, it is assumed to be <code>=</code>.
 
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-To install <code>mod_ifversion</code>, copy the <code>mod_ifversion.c</code>
-file into:
+The <code>mod_ifversion</code> module is distributed with ProFTPD.  For
+including <code>mod_ifversion</code> as a staticly linked module:
 <pre>
-  <i>proftpd-dir</i>/contrib/
-</pre>
-after unpacking the latest proftpd-1.3.<i>x</i> source code.  For including
-<code>mod_ifversion</code> as a staticly linked module:
-<pre>
-  ./configure --with-modules=mod_ifversion
+  $ ./configure --with-modules=mod_ifversion
 </pre>
 To build <code>mod_ifversion</code> as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_ifversion
+  $ ./configure --enable-dso --with-shared=mod_ifversion
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
@@ -158,7 +151,7 @@ For those with an existing ProFTPD installation, you can use the
 <code>prxs</code> tool to add <code>mod_ifversion</code>, as a DSO module, to
 your existing server:
 <pre>
-  # prxs -c -i -d mod_ifversion.c
+  $ prxs -c -i -d mod_ifversion.c
 </pre>
 
 <hr>
@@ -194,20 +187,12 @@ Using a reversed regular expression (<i>i.e.</i> in this case, meaning
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2010-06-29 14:52:30 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2009-2010 TJ Saunders<br>
+&copy; Copyright 2009-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

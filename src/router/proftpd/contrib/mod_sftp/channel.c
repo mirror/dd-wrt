@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp channels
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: channel.c,v 1.47 2012-02-18 22:12:20 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -404,9 +402,10 @@ static int read_channel_open(struct ssh2_packet *pkt, uint32_t *channel_id) {
     "packet size = %lu bytes", channel_type, (unsigned long) *channel_id,
     (unsigned long) initial_windowsz, (unsigned long) max_packetsz);
 
-  cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_OPEN"));
+  cmd = pr_cmd_alloc(pkt->pool, 2, pstrdup(pkt->pool, "CHANNEL_OPEN"),
+    pstrdup(pkt->pool, channel_type));
   cmd->arg = channel_type;
-  cmd->cmd_class = CL_MISC;
+  cmd->cmd_class = CL_MISC|CL_SSH;
 
   if (strncmp(channel_type, "session", 8) != 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -444,7 +443,7 @@ static int handle_channel_close(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_CLOSE"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
-  cmd->cmd_class = CL_MISC;
+  cmd->cmd_class = CL_MISC|CL_SSH;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -680,7 +679,7 @@ static int handle_channel_eof(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_EOF"));
   cmd->arg = pstrdup(pkt->pool, chan_str);
-  cmd->cmd_class = CL_MISC;
+  cmd->cmd_class = CL_MISC|CL_SSH;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -990,9 +989,10 @@ static int handle_channel_req(struct ssh2_packet *pkt) {
     channel_request, (unsigned long) channel_id,
     want_reply ? "true" : "false");
 
-  cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_REQUEST"));
+  cmd = pr_cmd_alloc(pkt->pool, 2, pstrdup(pkt->pool, "CHANNEL_REQUEST"),
+    pstrdup(pkt->pool, channel_request));
   cmd->arg = channel_request;
-  cmd->cmd_class = CL_MISC;
+  cmd->cmd_class = CL_MISC|CL_SSH;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -1147,7 +1147,7 @@ static int handle_channel_window_adjust(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "CHANNEL_WINDOW_ADJUST"));
   cmd->arg = pstrdup(pkt->pool, adjust_str);
-  cmd->cmd_class = CL_MISC;
+  cmd->cmd_class = CL_MISC|CL_SSH;
 
   chan = get_channel(channel_id);
   if (chan == NULL) {
@@ -1641,14 +1641,21 @@ static int channel_write_data(pool *p, uint32_t channel_id,
 
   if (buflen > 0) {
     struct ssh2_channel_databuf *db;
+    const char *reason;
 
     db = get_databuf(channel_id, buflen);
 
     db->buflen = buflen;
     memcpy(db->buf, buf, buflen);
 
+    /* Why are we buffering these bytes? */
+    reason = "remote window size too small";
+    if (sftp_sess_state & SFTP_SESS_STATE_REKEYING) {
+      reason = "rekeying";
+    }
+
     pr_trace_msg(trace_channel, 8, "buffering %lu remaining bytes of "
-      "outgoing data", (unsigned long) buflen);
+      "outgoing data (%s)", (unsigned long) buflen, reason);
   }
 
   return 0;

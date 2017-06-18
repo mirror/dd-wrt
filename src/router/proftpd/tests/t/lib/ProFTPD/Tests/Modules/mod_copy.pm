@@ -21,7 +21,7 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  copy_file_no_login => {
+  copy_file_no_login_bug4169 => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
@@ -91,7 +91,7 @@ my $TESTS = {
     test_class => [qw(forking)],
   },
 
-  copy_cpfr_cpto_no_login => {
+  copy_cpfr_cpto_no_login_bug4169 => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
@@ -109,6 +109,16 @@ my $TESTS = {
   copy_config_limit_bug3399 => {
     order => ++$order,
     test_class => [qw(forking rootprivs)],
+  },
+
+  copy_cpto_quotatab_file_dst_enopc_bug4262 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_quotatab_sql mod_sql_sqlite)],
+  },
+
+  copy_cpto_timeout_bug4263 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
   },
 
 };
@@ -273,7 +283,7 @@ sub copy_file {
   unlink($log_file);
 }
 
-sub copy_file_no_login {
+sub copy_file_no_login_bug4169 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -2747,7 +2757,7 @@ sub copy_cpfr_cpto {
   unlink($log_file);
 }
 
-sub copy_cpfr_cpto_no_login {
+sub copy_cpfr_cpto_no_login_bug4169 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
 
@@ -3324,6 +3334,322 @@ EOC
   }
 
   unlink($log_file);
+}
+
+sub copy_cpto_quotatab_file_dst_enopc_bug4262 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'copy');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE users (
+  userid TEXT,
+  passwd TEXT,
+  uid INTEGER,
+  gid INTEGER,
+  homedir TEXT,
+  shell TEXT,
+  lastdir TEXT
+);
+INSERT INTO users (userid, passwd, uid, gid, homedir, shell) VALUES ('$setup->{user}', '$setup->{passwd}', $setup->{uid}, $setup->{gid}, '$setup->{home_dir}', '/bin/bash');
+
+CREATE TABLE groups (
+  groupname TEXT,
+  gid INTEGER,
+  members TEXT
+);
+INSERT INTO groups (groupname, gid, members) VALUES ('ftpd', $setup->{gid}, '$setup->{user}');
+
+CREATE TABLE quotalimits (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  per_session TEXT NOT NULL,
+  limit_type TEXT NOT NULL,
+  bytes_in_avail REAL NOT NULL,
+  bytes_out_avail REAL NOT NULL,
+  bytes_xfer_avail REAL NOT NULL,
+  files_in_avail INTEGER NOT NULL,
+  files_out_avail INTEGER NOT NULL,
+  files_xfer_avail INTEGER NOT NULL
+);
+INSERT INTO quotalimits (name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail) VALUES ('$setup->{user}', 'user', 'false', 'hard', 32, 0, 0, 2, 0, 0);
+
+CREATE TABLE quotatallies (
+  name TEXT NOT NULL,
+  quota_type TEXT NOT NULL,
+  bytes_in_used REAL NOT NULL,
+  bytes_out_used REAL NOT NULL,
+  bytes_xfer_used REAL NOT NULL,
+  files_in_used INTEGER NOT NULL,
+  files_out_used INTEGER NOT NULL,
+  files_xfer_used INTEGER NOT NULL
+);
+EOS
+
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  my $src_file = File::Spec->rel2abs("$setup->{home_dir}/foo.txt");
+  if (open(my $fh, "> $src_file")) {
+    # Make sure this file is larger than the allowed number of upload bytes
+    print $fh "Hello, World!\n" x 1024;
+
+    unless (close($fh)) {
+      die("Can't write $src_file: $!");
+    }
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$setup->{home_dir}/bar.txt");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'fsio:20',
+
+    DefaultChdir => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+     'mod_quotatab_sql.c' => [
+        'SQLNamedQuery get-quota-limit SELECT "name, quota_type, per_session, limit_type, bytes_in_avail, bytes_out_avail, bytes_xfer_avail, files_in_avail, files_out_avail, files_xfer_avail FROM quotalimits WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery get-quota-tally SELECT "name, quota_type, bytes_in_used, bytes_out_used, bytes_xfer_used, files_in_used, files_out_used, files_xfer_used FROM quotatallies WHERE name = \'%{0}\' AND quota_type = \'%{1}\'"',
+        'SQLNamedQuery update-quota-tally UPDATE "bytes_in_used = bytes_in_used + %{0}, bytes_out_used = bytes_out_used + %{1}, bytes_xfer_used = bytes_xfer_used + %{2}, files_in_used = files_in_used + %{3}, files_out_used = files_out_used + %{4}, files_xfer_used = files_xfer_used + %{5} WHERE name = \'%{6}\' AND quota_type = \'%{7}\'" quotatallies',
+        'SQLNamedQuery insert-quota-tally INSERT "%{0}, %{1}, %{2}, %{3}, %{4}, %{5}, %{6}, %{7}" quotatallies',
+
+        'QuotaEngine on',
+        "QuotaLog $setup->{log_file}",
+        'QuotaLimitTable sql:/get-quota-limit',
+        'QuotaTallyTable sql:/get-quota-tally/update-quota-tally/insert-quota-tally',
+      ],
+
+      'mod_sql.c' => {
+        AuthOrder => 'mod_sql.c',
+        SQLAuthTypes => 'plaintext',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => $db_file,
+        SQLLogFile => $setup->{log_file},
+        SQLMinID => '0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.txt');
+
+      my $expected = 350;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "File or directory exists, ready for destination name";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      eval { $client->site('CPTO', 'bar.txt') };
+      unless ($@) {
+        die("SITE CPTO succeeded unexpectedly");
+      }
+
+      $resp_code = $client->response_code();
+
+      $expected = 552;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $client->quit();
+
+      $self->assert(!-f $dst_file,
+        test_msg("File $dst_file exists unexpectedly"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub copy_cpto_timeout_bug4263 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'copy');
+
+  my $src_file = File::Spec->rel2abs("$tmpdir/foo.dat");
+  if (open(my $fh, "> $src_file")) {
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "# Writing source file\n";
+    }
+
+    my $count = 20000;
+    for (my $i = 0; $i < $count; $i++) {
+      print $fh "AbCdEfGh" x 32768;
+    }
+
+    unless (close($fh)) {
+      die("Can't write $src_file: $!");
+    }
+
+  } else {
+    die("Can't open $src_file: $!");
+  }
+
+  my $dst_file = File::Spec->rel2abs("$tmpdir/bar.dat");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'copy:20 timer:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    TimeoutIdle => 3,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my ($resp_code, $resp_msg) = $client->site('CPFR', 'foo.dat');
+
+      my $expected = 350;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "File or directory exists, ready for destination name";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      ($resp_code, $resp_msg) = $client->site('CPTO', 'bar.dat');
+
+      $expected = 250;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "Copy successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      unless (-f $dst_file) {
+        die("File $dst_file does not exist as expected");
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

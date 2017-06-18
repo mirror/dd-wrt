@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013 The ProFTPD Project team
+ * Copyright (c) 2013-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Resource limits implementation
- * $Id: rlimit.c,v 1.4 2013-06-06 20:26:11 castaglia Exp $
- */
+/* Resource limits implementation */
 
 #include "conf.h"
 
@@ -40,6 +38,11 @@ static int get_rlimit(int resource, rlim_t *current, rlim_t *max) {
 
   res = getrlimit(resource, &rlim);
   if (res < 0) {
+    /* Some libcs use EPERM instead of ENOSYS; weird. */
+    if (errno == EPERM) {
+      errno = ENOSYS;
+    }
+
     return res;
   }
 

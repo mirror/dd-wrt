@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_dynmasq -- a module for dynamically updating MasqueradeAddress
  *                         configurations, as when DynDNS names are used
- *
- * Copyright (c) 2004-2013 TJ Saunders
+ * Copyright (c) 2004-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,10 +22,8 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * This is mod_dynmasq, contrib software for proftpd 1.2.x and above.
+ * This is mod_dynmasq, contrib software for proftpd 1.3.x and above.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_dynmasq.c,v 1.11 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #include "conf.h"
@@ -35,11 +32,11 @@
 # include "mod_ctrls.h"
 #endif
 
-#define MOD_DYNMASQ_VERSION		"mod_dynmasq/0.4"
+#define MOD_DYNMASQ_VERSION		"mod_dynmasq/0.5"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030201
-# error "ProFTPD 1.3.2rc1 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 extern xaset_t *server_list;
@@ -55,51 +52,49 @@ static ctrls_acttab_t dynmasq_acttab[];
 static void dynmasq_refresh(void) {
   server_rec *s;
 
-  /* Clear the netaddr cache.  Sadly, this is required in order for any
-   * updates to be discovered this way.
-   */
-  pr_netaddr_clear_cache();
-
   pr_log_debug(DEBUG2, MOD_DYNMASQ_VERSION
     ": resolving all MasqueradeAddress directives (could take a little while)");
 
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
-    config_rec *c = find_config(s->conf, CONF_PARAM, "MasqueradeAddress",
-      FALSE);
+    config_rec *c;
 
-    if (c) {
-      pr_netaddr_t *na = pr_netaddr_get_addr(s->pool, c->argv[1], NULL);
+    c = find_config(s->conf, CONF_PARAM, "MasqueradeAddress", FALSE);
+    if (c != NULL) {
+      const char *masq_addr;
+      const pr_netaddr_t *na;
 
-      if (na) {
+      masq_addr = c->argv[1];
+
+      pr_netaddr_clear_ipcache(masq_addr);
+      na = pr_netaddr_get_addr(s->pool, masq_addr, NULL);
+      if (na != NULL) {
         /* Compare the obtained netaddr with the one already present.
          * Only update the "live" netaddr if they differ.
          */
         pr_log_debug(DEBUG2, MOD_DYNMASQ_VERSION
-          ": resolved MasqueradeAddress '%s' to IP address %s",
-          (const char *) c->argv[1], pr_netaddr_get_ipstr(na));
+          ": resolved MasqueradeAddress '%s' to IP address %s", masq_addr,
+          pr_netaddr_get_ipstr(na));
 
         if (pr_netaddr_cmp(c->argv[0], na) != 0) {
           pr_log_pri(PR_LOG_DEBUG, MOD_DYNMASQ_VERSION
             ": MasqueradeAddress '%s' updated for new address %s (was %s)",
-            (const char *) c->argv[1], pr_netaddr_get_ipstr(na),
+            masq_addr, pr_netaddr_get_ipstr(na),
             pr_netaddr_get_ipstr(c->argv[0]));
 
           /* Overwrite the old netaddr pointer.  Note that this constitutes
            * a minor memory leak, as there currently isn't a way to free
            * the memory used by a netaddr object.  Hrm.
            */
-          c->argv[0] = na;
+          c->argv[0] = (void *) na;
 
         } else {
           pr_log_debug(DEBUG2, MOD_DYNMASQ_VERSION
-            ": MasqueradeAddress '%s' has not changed addresses",
-            (const char *) c->argv[1]);
+            ": MasqueradeAddress '%s' has not changed addresses", masq_addr);
         }
  
       } else {
-        pr_log_pri(PR_LOG_NOTICE, MOD_DYNMASQ_VERSION
-          ": unable to resolve '%s', keeping previous address",
-          (const char *) c->argv[1]);
+        pr_log_pri(PR_LOG_INFO, MOD_DYNMASQ_VERSION
+          ": unable to resolve '%s', keeping previous address", masq_addr);
       }
     }
   }

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2011 The ProFTPD Project team
+ * Copyright (c) 2008-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* NetACL API tests
- * $Id: netacl.c,v 1.4 2011-05-23 20:50:31 castaglia Exp $
- */
+/* NetACL API tests */
 
 #include "tests.h"
 
@@ -38,13 +36,22 @@ static void set_up(void) {
   }
 
   init_netaddr();
+
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_set_levels("dns", 1, 20);
+    pr_trace_set_levels("netacl", 1, 20);
+  }
 }
 
 static void tear_down(void) {
+  if (getenv("TEST_VERBOSE") != NULL) {
+    pr_trace_set_levels("dns", 0, 0);
+    pr_trace_set_levels("netacl", 0, 0);
+  }
+
   if (p) {
     destroy_pool(p);
-    p = NULL;
-    permanent_pool = NULL;
+    p = permanent_pool = NULL;
   } 
 }
 
@@ -105,6 +112,11 @@ START_TEST (netacl_create_test) {
   acl_str = pstrdup(p, "127.0.0.1/36");
   res = pr_netacl_create(p, acl_str);
   fail_unless(res == NULL, "Failed to handle bad ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_str = pstrdup(p, "0.0.0.0/0");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));
 
 #ifdef PR_USE_IPV6
@@ -224,6 +236,33 @@ START_TEST (netacl_create_test) {
   acl_type = pr_netacl_get_type(res);
   fail_unless(acl_type == PR_NETACL_TYPE_DNSMATCH,
     "Failed to have DNSMATCH type for ACL string '%s'", acl_str);
+
+  acl_str = pstrdup(p, "foobar");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_type = pr_netacl_get_type(res);
+  fail_unless(acl_type == PR_NETACL_TYPE_DNSMATCH,
+    "Failed to have DNSMATCH type for ACL string '%s'", acl_str);
+
+  acl_str = pstrdup(p, "!foobar");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_type = pr_netacl_get_type(res);
+  fail_unless(acl_type == PR_NETACL_TYPE_DNSMATCH,
+    "Failed to have DNSMATCH type for ACL string '%s'", acl_str);
+
+  acl_str = pstrdup(p, "!fo?bar");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_type = pr_netacl_get_type(res);
+  fail_unless(acl_type == PR_NETACL_TYPE_DNSGLOB,
+    "Failed to have DNSGLOB type for ACL string '%s'", acl_str);
 }
 END_TEST
 
@@ -333,6 +372,15 @@ START_TEST (netacl_get_str_test) {
   fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
   fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
 
+  acl_str = pstrdup(p, "0.0.0.0/0");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "0.0.0.0/0 <IP address mask, 0-bit mask>";
+  res = pr_netacl_get_str(p, acl);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
   acl_str = pstrdup(p, "!127.0.0.1/24");
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
@@ -373,6 +421,162 @@ START_TEST (netacl_get_str_test) {
 }
 END_TEST
 
+START_TEST (netacl_get_str2_test) {
+  pr_netacl_t *acl;
+  char *acl_str, *ok;
+  const char *res;
+  int flags = PR_NETACL_FL_STR_NO_DESC;
+
+  res = pr_netacl_get_str2(NULL, NULL, 0);
+  fail_unless(res == NULL, "Failed to handle NULL arguments");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  res = pr_netacl_get_str2(p, NULL, 0);
+  fail_unless(res == NULL, "Failed to handle NULL ACL");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  acl_str = "all";
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  res = pr_netacl_get_str2(NULL, acl, flags);
+  fail_unless(res == NULL, "Failed to handle NULL pool");
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL");
+
+  ok = "all";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = "AlL";
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = "None";
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "none";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "127.0.0.1");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "127.0.0.1";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "!127.0.0.1");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "!127.0.0.1";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "127.0.0.");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "127.0.0.*";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "localhost");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "localhost";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, ".castaglia.org");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "*.castaglia.org";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "127.0.0.1/24");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "127.0.0.1/24";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "127.0.0.1/0");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "127.0.0.1/0";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "0.0.0.0/0");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "0.0.0.0/0";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "!127.0.0.1/24");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "!127.0.0.1/24";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+#ifdef PR_USE_IPV6
+  acl_str = pstrdup(p, "::1/24");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "::1/24";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "::1/127");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "::1/127";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+
+  acl_str = pstrdup(p, "::ffff:127.0.0.1/127");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to create ACL: %s", strerror(errno));
+
+  ok = "::ffff:127.0.0.1/127";
+  res = pr_netacl_get_str2(p, acl, flags);
+  fail_unless(res != NULL, "Failed to get ACL string: %s", strerror(errno));
+  fail_unless(strcmp(res, ok) == 0, "Expected '%s', got '%s'", ok, res);
+#endif
+}
+END_TEST
+
 START_TEST (netacl_dup_test) {
   pr_netacl_t *acl, *res;
 
@@ -401,9 +605,9 @@ END_TEST
 
 START_TEST (netacl_match_test) {
   pr_netacl_t *acl;
-  pr_netaddr_t *addr;
+  const pr_netaddr_t *addr;
   char *acl_str;
-  int have_localdomain = FALSE, res;
+  int have_localdomain = FALSE, res, reverse_dns;
 
   res = pr_netacl_match(NULL, NULL);
   fail_unless(res == -2, "Failed to handle NULL arguments");
@@ -422,12 +626,14 @@ START_TEST (netacl_match_test) {
   fail_unless(addr != NULL, "Failed to get addr for '%s': %s", "localhost",
     strerror(errno));
 
-  /* It's possible that the DNS name for 'localhost' that is used will
-   * actually be 'localhost.localdomain', depending on the contents of
-   * the host's /etc/hosts file.
-   */
-  if (strcmp(pr_netaddr_get_dnsstr(addr), "localhost.localdomain") == 0) {
-    have_localdomain = TRUE;
+  if (getenv("TRAVIS") == NULL) {
+    /* It's possible that the DNS name for 'localhost' that is used will
+     * actually be 'localhost.localdomain', depending on the contents of
+     * the host's /etc/hosts file.
+     */
+    if (strcmp(pr_netaddr_get_dnsstr(addr), "localhost.localdomain") == 0) {
+      have_localdomain = TRUE;
+    }
   }
 
   res = pr_netacl_match(NULL, addr);
@@ -500,6 +706,15 @@ START_TEST (netacl_match_test) {
   fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
     strerror(errno));
 
+  acl_str = pstrdup(p, "!1.2.3.4/24");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  res = pr_netacl_match(acl, addr);
+  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
+    strerror(errno));
+
   acl_str = pstrdup(p, "127.0.0.");
   acl = pr_netacl_create(p, acl_str);
   fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
@@ -518,6 +733,15 @@ START_TEST (netacl_match_test) {
   fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
     strerror(errno));
 
+  acl_str = pstrdup(p, "!1.2.3.");
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  res = pr_netacl_match(acl, addr);
+  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
+    strerror(errno));
+
   if (!have_localdomain) {
     acl_str = pstrdup(p, "localhost");
 
@@ -530,8 +754,10 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
-    strerror(errno));
+  if (getenv("TRAVIS") == NULL) {
+    fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
+      strerror(errno));
+  }
 
   if (!have_localdomain) {
     acl_str = pstrdup(p, "!localhost");
@@ -545,7 +771,18 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
+  if (getenv("TRAVIS") == NULL) {
+    fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
+      strerror(errno));
+  }
+
+  acl_str = "!www.google.com";
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  res = pr_netacl_match(acl, addr);
+  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
     strerror(errno));
 
   if (!have_localdomain) {
@@ -560,8 +797,10 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
-    strerror(errno));
+  if (getenv("TRAVIS") == NULL) {
+    fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
+      strerror(errno));
+  }
 
   if (!have_localdomain) {
     acl_str = pstrdup(p, "!loc*st");
@@ -575,8 +814,27 @@ START_TEST (netacl_match_test) {
     strerror(errno));
 
   res = pr_netacl_match(acl, addr);
-  fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
+  if (getenv("TRAVIS") == NULL) {
+    fail_unless(res == -1, "Failed to negatively match ACL to addr: %s",
+      strerror(errno));
+  }
+
+  acl_str = "!www.g*g.com";
+  acl = pr_netacl_create(p, acl_str);
+  fail_unless(acl != NULL, "Failed to handle ACL string '%s': %s", acl_str,
     strerror(errno));
+
+  res = pr_netacl_match(acl, addr);
+  fail_unless(res == 1, "Failed to positively match ACL to addr: %s",
+    strerror(errno));
+
+  reverse_dns = ServerUseReverseDNS;
+  ServerUseReverseDNS = FALSE;
+
+  res = pr_netacl_match(acl, addr);
+  fail_unless(res == 0, "Matched DNS glob ACL to addr unexpectedly");
+
+  ServerUseReverseDNS = reverse_dns;
 }
 END_TEST
 
@@ -609,16 +867,15 @@ Suite *tests_get_netacl_suite(void) {
   suite = suite_create("netacl");
 
   testcase = tcase_create("base");
-
   tcase_add_checked_fixture(testcase, set_up, tear_down);
 
   tcase_add_test(testcase, netacl_create_test);
   tcase_add_test(testcase, netacl_get_str_test);
+  tcase_add_test(testcase, netacl_get_str2_test);
   tcase_add_test(testcase, netacl_dup_test);
   tcase_add_test(testcase, netacl_match_test);
   tcase_add_test(testcase, netacl_get_negated_test);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

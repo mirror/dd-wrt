@@ -2072,6 +2072,7 @@ lt_dlpath_insertdir (char **ppath, char *before, const char *dir)
   char  *canonical	= 0;
   char  *argz		= 0;
   size_t argz_len	= 0;
+  char  *pdir           = 0;
 
   assert (ppath);
   assert (dir && *dir);
@@ -2090,7 +2091,7 @@ lt_dlpath_insertdir (char **ppath, char *before, const char *dir)
       assert (!before);		/* BEFORE cannot be set without PPATH.  */
       assert (dir);		/* Without DIR, don't call this function!  */
 
-      *ppath = lt__strdup (dir);
+      *ppath = pdir = lt__strdup (dir);
       if (*ppath == 0)
 	++errors;
 
@@ -2130,6 +2131,7 @@ lt_dlpath_insertdir (char **ppath, char *before, const char *dir)
  cleanup:
   FREE (argz);
   FREE (canonical);
+  FREE (pdir);
 
   return errors;
 }

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,8 +26,6 @@
 
 /* Logging, either to syslog or stderr, as well as debug logging
  * and debug levels.
- *
- * $Id: log.h,v 1.38 2013-10-07 01:29:05 castaglia Exp $
  */
 
 #ifndef PR_LOG_H
@@ -63,7 +61,6 @@
 
 /* Log file modes */
 #define PR_LOG_SYSTEM_MODE	0640
-#define PR_LOG_XFER_MODE	0644
 
 #ifdef PR_USE_LASTLOG
 
@@ -102,8 +99,9 @@
 # endif
 #endif
 
+
 int log_lastlog(uid_t uid, const char *user_name, const char *tty,
-  pr_netaddr_t *remote_addr);
+  const pr_netaddr_t *remote_addr);
 #endif /* PR_USE_LASTLOG */
 
 /* Note: Like lastlog.h, it would be tempting to split out the declaration of
@@ -111,7 +109,7 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
  * wtmp.h file.  But that would collide with the system wtmp.h file on
  * some systems.
  */
-int log_wtmp(const char *, const char *, const char *, pr_netaddr_t *);
+int log_wtmp(const char *, const char *, const char *, const pr_netaddr_t *);
 
 /* file-based logging functions */
 int pr_log_openfile(const char *, int *, mode_t);
@@ -169,7 +167,9 @@ void pr_log_debug(int, const char *, ...)
 #else
 #define pr_log_debug(a,b,...) do { } while(0)
 #endif
-int  pr_log_setdebuglevel(int);
+
+int pr_log_setdebuglevel(int);
+int pr_log_setdefaultlevel(int);
 
 void log_stderr(int);
 void log_discard(void);
@@ -227,5 +227,16 @@ int pr_log_event_generate(unsigned int log_type, int log_fd, int log_level,
  * otherwise.
  */
 int pr_log_event_listening(unsigned int log_type);
+
+/* Log a stacktrace, starting at the location of the calling function.
+ * Note that if fd is less than zero, OR if the given name is null, then the
+ * stacktrace will be logged using pr_log_pri(), otherwise the stacktrace will
+ * be written to the provided file descriptor.
+ */
+#ifdef NEED_PRINTF
+void pr_log_stacktrace(int fd, const char *name);
+#else
+#define pr_log_stacktrace(a,b) do { } while(0)
+#endif
 
 #endif /* PR_LOG_H */

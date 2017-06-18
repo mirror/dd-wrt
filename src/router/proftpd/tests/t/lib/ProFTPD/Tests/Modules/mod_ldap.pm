@@ -32,70 +32,87 @@ my $TESTS = {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_users_authdenied => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_genhomedir_with_username => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_genhomedir_without_username => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_genhomedir_forcegenhdir => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_groups_authdenied => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_groups_authallowed => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_quota_on_user => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_quota_default => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_default_uid => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_default_gid => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_default_force_uid => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_default_force_gid => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_alias_dereference_off => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_alias_dereference_on => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_scope_base => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_scope_sub => {
     order => ++$order,
     test_class => [qw(forking)],
   },
+
   ldap_default_auth_scheme => {
     order => ++$order,
     test_class => [qw(forking)],

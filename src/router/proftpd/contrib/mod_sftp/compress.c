@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp compression
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,18 +20,17 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: compress.c,v 1.8 2012-12-13 23:05:15 castaglia Exp $
  */
 
 #include "mod_sftp.h"
-
-#include <zlib.h>
 
 #include "msg.h"
 #include "packet.h"
 #include "crypto.h"
 #include "compress.h"
+
+#ifdef HAVE_ZLIB_H
+#include <zlib.h>
 
 static const char *trace_channel = "ssh2";
 
@@ -63,15 +62,17 @@ static unsigned int read_comp_idx = 0;
 static unsigned int write_comp_idx = 0;
 
 static unsigned int get_next_read_index(void) {
-  if (read_comp_idx == 1)
+  if (read_comp_idx == 1) {
     return 0;
+  }
 
   return 1;
 }
 
 static unsigned int get_next_write_index(void) {
-  if (write_comp_idx == 1)
+  if (write_comp_idx == 1) {
     return 0;
+  }
 
   return 1;
 }
@@ -168,7 +169,7 @@ int sftp_compress_set_read_algo(const char *algo) {
     idx = get_next_read_index();
   }
 
-  if (strncmp(algo, "zlib@openssh.com", 9) == 0) {
+  if (strncmp(algo, "zlib@openssh.com", 17) == 0) {
     read_compresses[idx].use_zlib = SFTP_COMPRESS_FL_AUTHENTICATED;
     return 0;
   }
@@ -361,7 +362,7 @@ int sftp_compress_set_write_algo(const char *algo) {
     idx = get_next_write_index();
   }
 
-  if (strncmp(algo, "zlib@openssh.com", 9) == 0) {
+  if (strncmp(algo, "zlib@openssh.com", 17) == 0) {
     write_compresses[idx].use_zlib = SFTP_COMPRESS_FL_AUTHENTICATED;
     return 0;
   }
@@ -522,3 +523,48 @@ int sftp_compress_write_data(struct ssh2_packet *pkt) {
   return 0;
 }
 
+#else
+
+int sftp_compress_init_read(int flags) {
+  return 0;
+}
+
+const char *sftp_compress_get_read_algo(void) {
+  return "none";
+}
+
+int sftp_compress_set_read_algo(const char *algo) {
+  if (strncmp(algo, "none", 5) == 0) {
+    return 0;
+  }
+
+  errno = EINVAL;
+  return -1;
+}
+
+int sftp_compress_read_data(struct ssh2_packet *pkt) {
+  return 0;
+}
+
+int sftp_compress_init_write(int flags) {
+  return 0;
+}
+
+const char *sftp_compress_get_write_algo(void) {
+  return "none";
+}
+
+int sftp_compress_set_write_algo(const char *algo) {
+  if (strncmp(algo, "none", 5) == 0) {
+    return 0;
+  }
+
+  errno = EINVAL;
+  return -1;
+}
+
+int sftp_compress_write_data(struct ssh2_packet *pkt) {
+  return 0;
+}
+
+#endif /* !HAVE_ZLIB_H */

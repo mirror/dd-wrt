@@ -27,9 +27,6 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: pr-syslog.c,v 1.26 2012-01-25 07:03:24 castaglia Exp $
- */
-
 #include "conf.h"
 
 #if defined(SOLARIS2) || defined(IRIX6) || defined(SYSV5UNIXWARE7)
@@ -109,7 +106,7 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
   time_t now;
   static char logbuf[PR_TUNABLE_BUFFER_SIZE] = {'\0'};
   size_t buflen = 0;
-  int saved_errno = errno;
+  int len = 0, saved_errno = errno;
 
 #ifdef HAVE_DEV_LOG_STREAMS
   struct strbuf ctl, dat;
@@ -126,21 +123,24 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
   memset(logbuf, '\0', sizeof(logbuf));
 
   /* Check for invalid bits. */
-  if (pri & ~(LOG_PRIMASK|LOG_FACMASK))
+  if (pri & ~(LOG_PRIMASK|LOG_FACMASK)) {
     pri &= LOG_PRIMASK|LOG_FACMASK;
+  }
 
   /* Check priority against setlogmask values. */
-  if ((LOG_MASK(pri & LOG_PRIMASK) & log_mask) == 0)
+  if ((LOG_MASK(pri & LOG_PRIMASK) & log_mask) == 0) {
     return;
+  }
 
   /* Set default facility if none specified. */
-  if ((pri & LOG_FACMASK) == 0)
+  if ((pri & LOG_FACMASK) == 0) {
     pri |= log_facility;
+  }
 
 #ifndef HAVE_DEV_LOG_STREAMS
-  snprintf(logbuf, sizeof(logbuf), "<%d>", pri);
+  len = snprintf(logbuf, sizeof(logbuf), "<%d>", pri);
   logbuf[sizeof(logbuf)-1] = '\0';
-  buflen = strlen(logbuf);
+  buflen += len;
 
 # ifdef HAVE_TZNAME
   /* Preserve the old tzname setting. */
@@ -164,37 +164,41 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
   /* Skip past the leading "day of week" prefix. */
   timestr += 4;
 
-  snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "%.15s ", timestr);
+  len = snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "%.15s ", timestr);
   logbuf[sizeof(logbuf)-1] = '\0';
-  buflen = strlen(logbuf);
+  buflen += len;
 #endif
 
   time(&now);
 
-  if (log_ident == NULL)
+  if (log_ident == NULL) {
 #ifdef HAVE___PROGNAME
     log_ident = __progname;
 #else
     log_ident = "proftpd";
 #endif /* HAVE___PROGNAME */
-
-  if (buflen < sizeof(logbuf) && log_ident != NULL) {
-    snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "%s", log_ident);
-    logbuf[sizeof(logbuf)-1] = '\0';
-    buflen = strlen(logbuf);
   }
 
-  if (buflen < sizeof(logbuf)-1 && (log_opts & LOG_PID)) {
-    snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen,
-             "[%d]", (int)getpid());
+  if (buflen < sizeof(logbuf) &&
+      log_ident != NULL) {
+    len = snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "%s", log_ident);
     logbuf[sizeof(logbuf)-1] = '\0';
-    buflen = strlen(logbuf);
+    buflen += len;
   }
 
-  if (buflen < sizeof(logbuf)-1 && log_ident != NULL) {
-    snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, ": ");
+  if (buflen < sizeof(logbuf)-1 &&
+      (log_opts & LOG_PID)) {
+    len = snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "[%d]",
+      (int) getpid());
     logbuf[sizeof(logbuf)-1] = '\0';
-    buflen = strlen(logbuf);
+    buflen += len;
+  }
+
+  if (buflen < sizeof(logbuf)-1 &&
+      log_ident != NULL) {
+    len = snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, ": ");
+    logbuf[sizeof(logbuf)-1] = '\0';
+    buflen += len;
   }
 
 #if defined(SOLARIS2_9) || defined(SOLARIS2_10)
@@ -234,10 +238,10 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
       }
     }
 
-    snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, "[ID %lu %s.%s] ",
-      (unsigned long) msgid, facility_name, level_name);
+    len = snprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen,
+      "[ID %lu %s.%s] ", (unsigned long) msgid, facility_name, level_name);
     logbuf[sizeof(logbuf)-1] = '\0';
-    buflen = strlen(logbuf);
+    buflen += len;
   }
 #endif /* Solaris 9 or 10 */
 
@@ -246,9 +250,9 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
 
   /* We have the header.  Print the user's format into the buffer.  */
   if (buflen < sizeof(logbuf)) {
-    vsnprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, fmt, ap);
+    len = vsnprintf(&(logbuf[buflen]), sizeof(logbuf) - buflen, fmt, ap);
     logbuf[sizeof(logbuf)-1] = '\0';
-    buflen = strlen(logbuf);
+    buflen += len;
   }
 
   /* Always make sure the buffer is NUL-terminated
@@ -258,15 +262,25 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
   /* If we have a SOCK_STREAM connection, also send ASCII NUL as a record
    * terminator.
    */
-  if (sock_type == SOCK_STREAM)
+  if (sock_type == SOCK_STREAM) {
     ++buflen;
+  }
+
+  /* If we have exceeded the capacity of the buffer, we're done here. */
+  if (buflen >= sizeof(logbuf)) {
+    return;
+  }
 
 #ifndef HAVE_DEV_LOG_STREAMS
-  send(sockfd, logbuf, buflen, 0);
+  if (sockfd >= 0 &&
+      send(sockfd, logbuf, buflen, 0) < 0) {
+    fprintf(stderr, "error sending log message '%s' to socket fd %d: %s\n",
+      logbuf, sockfd, strerror(errno));
+  }
 #else
 
-  /* Prepare the structs for use by putmsg(). As /dev/log is a STREAMS
-   * device on Solaris (and possibly other platforms?), putmsg() is
+  /* Prepare the structs for use by putmsg(). As /dev/log (or /dev/conslog)
+   * is a STREAMS device on Solaris (and possibly other platforms?), putmsg() is
    * used so that syslog facility and level are properly honored; write()
    * does not seem to work as desired.
    */
@@ -323,7 +337,7 @@ int pr_openlog(const char *ident, int opts, int facility) {
           return -1;
         }
 
-        fcntl(sockfd, F_SETFD, 1);
+        (void) fcntl(sockfd, F_SETFD, 1);
       }
     }
 
@@ -348,21 +362,9 @@ int pr_openlog(const char *ident, int opts, int facility) {
 #else
   sockfd = open(PR_PATH_LOG, O_WRONLY);
 
-# ifdef SOLARIS2
-  /* Workaround for a /dev/log bug (SunSolve bug #4817079) on Solaris. */
-  if (sockfd >= 0) {
-    struct strioctl ic;
-
-    ic.ic_cmd = I_ERRLOG;
-    ic.ic_timout = 0;
-    ic.ic_len = 0;
-    ic.ic_dp = NULL;
-
-    if (ioctl(sockfd, I_STR, &ic) < 0)
-      fprintf(stderr, "error setting I_ERRLOG on " PR_PATH_LOG ": %s\n",
-        strerror(errno));
+  if (sockfd < 0) {
+    fprintf(stderr, "error opening '%s': %s\n", PR_PATH_LOG, strerror(errno));
   }
-# endif /* SOLARIS2 */
 #endif
 
   return sockfd;

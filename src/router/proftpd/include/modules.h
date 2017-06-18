@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2012 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* ProFTPD module definitions.
- * $Id: modules.h,v 1.59 2012-04-15 18:04:14 castaglia Exp $
- */
+/* ProFTPD module definitions. */
 
 #ifndef PR_MODULES_H
 #define PR_MODULES_H
@@ -36,10 +34,10 @@ typedef struct modret_struc	modret_t;
 
 struct modret_struc {
   module *mr_handler_module;		/* which module handled this? */
-  int    mr_error;			/* !0 if error */
-  char   *mr_numeric;			/* numeric error code */
-  char   *mr_message;			/* text message */
-  void	 *data;				/* add'l data -- undefined */
+  int mr_error;				/* !0 if error */
+  const char *mr_numeric;		/* numeric error code */
+  const char *mr_message;		/* text message */
+  void *data;				/* add'l data -- undefined */
 };
 
 /* The following macros are for creating basic modret_t, and can
@@ -68,7 +66,7 @@ struct modret_struc {
 
 typedef struct conftab_rec {
   char *directive;
-  modret_t *(*handler)(cmd_rec*);
+  modret_t *(*handler)(cmd_rec *);
 
   module *m;				/* Reference to owning module
 					 * set when module is initialized
@@ -87,12 +85,14 @@ typedef struct conftab_rec {
 #define CL_MISC				(1 << 5) /* Miscellaneous (RNFR/RNTO, SITE, etc) */
 #define CL_SEC				(1 << 6) /* RFC2228 Security commands */
 #define CL_EXIT				(1 << 7) /* Session exit */
+#define CL_SSH				(1 << 8) /* SSH requests */
+#define CL_SFTP				(1 << 9) /* SFTP requests */
 
 /* Note that CL_ALL explicitly does NOT include CL_EXIT; this is to preserve
  * backward compatible behavior.
  */
 #define CL_ALL				(CL_AUTH|CL_INFO|CL_DIRS|CL_READ| \
-					CL_WRITE|CL_MISC|CL_SEC)
+					CL_WRITE|CL_MISC|CL_SEC|CL_SSH|CL_SFTP)
 
 /* Command handler types for command table */
 #define PRE_CMD				1
@@ -107,11 +107,11 @@ typedef struct cmdtab_rec {
 
   /* See above for cmd types. */
   unsigned char cmd_type;
-  char *command;
+  const char *command;
 
   /* Command group. */
-  char *group;
-  modret_t *(*handler)(cmd_rec*);
+  const char *group;
+  modret_t *(*handler)(cmd_rec *);
 
   /* Does this command require authentication? */
   unsigned char requires_auth;
@@ -126,8 +126,8 @@ typedef struct cmdtab_rec {
 
 typedef struct authtab_rec {
   int auth_flags;			/* future use */
-  char *name;
-  modret_t *(*handler)(cmd_rec*);
+  const char *name;
+  modret_t *(*handler)(cmd_rec *);
 
   module *m;
 } authtable;
@@ -135,10 +135,10 @@ typedef struct authtab_rec {
 #define PR_AUTH_FL_REQUIRED		0x00001
 
 struct module_struc {
-  module *next,*prev;
+  module *next, *prev;
 
   int api_version;			/* API version _not_ module version */
-  char *name;				/* Module name */
+  const char *name;			/* Module name */
 
   struct conftab_rec *conftable;	/* Configuration directive table */
   struct cmdtab_rec *cmdtable;		/* Command table */
@@ -147,7 +147,7 @@ struct module_struc {
   int (*init)(void); 			/* Module initialization */
   int (*sess_init)(void);		/* Session initialization */
 
-  char *module_version;			/* Module version */
+  const char *module_version;		/* Module version */
   void *handle;				/* Module handle */
 
   /* Internal use; high number == higher priority. */
@@ -158,9 +158,10 @@ struct module_struc {
 
 /* Prototypes */
 
-unsigned char command_exists(char *);
+unsigned char command_exists(const char *);
 int modules_init(void);
-void modules_list(int);
+void modules_list(int flags);
+void modules_list2(int (*listf)(const char *, ...), int flags);
 #define PR_MODULES_LIST_FL_SHOW_VERSION		0x00001
 #define PR_MODULES_LIST_FL_SHOW_STATIC		0x00002
 
@@ -185,12 +186,12 @@ void set_auth_check(int (*ck)(cmd_rec *));
 extern int (*cmd_auth_chk)(cmd_rec *);
 
 /* For use from inside module handler functions */
-modret_t *mod_create_ret(cmd_rec *, unsigned char, char *, char *);
+modret_t *mod_create_ret(cmd_rec *, unsigned char, const char *, const char *);
 modret_t *mod_create_error(cmd_rec *, int);
 modret_t *mod_create_data(cmd_rec *, void *);
 
 /* Implemented in mod_core.c */
-int core_chgrp(cmd_rec *, char *, uid_t, gid_t);
-int core_chmod(cmd_rec *, char *, mode_t);
+int core_chgrp(cmd_rec *, const char *, uid_t, gid_t);
+int core_chmod(cmd_rec *, const char *, mode_t);
 
 #endif /* PR_MODULES_H */

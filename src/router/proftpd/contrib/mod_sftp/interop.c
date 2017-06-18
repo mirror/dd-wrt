@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: interop.c,v 1.16 2013-03-14 21:49:19 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -36,7 +34,7 @@ extern module sftp_module;
 /* By default, each client is assumed to support all of the features in
  * which we are interested.
  */
-static unsigned int interop_flags =
+static unsigned int default_flags =
   SFTP_SSH2_FEAT_IGNORE_MSG |
   SFTP_SSH2_FEAT_MAC_LEN |
   SFTP_SSH2_FEAT_CIPHER_USE_K |
@@ -45,11 +43,12 @@ static unsigned int interop_flags =
   SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO |
   SFTP_SSH2_FEAT_SERVICE_IN_HOST_SIG |
   SFTP_SSH2_FEAT_SERVICE_IN_PUBKEY_SIG |
-  SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG;
+  SFTP_SSH2_FEAT_HAVE_PUBKEY_ALGO_IN_DSA_SIG |
+  SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING;
 
 struct sftp_version_pattern {
   const char *pattern;
-  int interop_flags;
+  int disabled_flags;
   pr_regex_t *pre;
 };
 
@@ -71,6 +70,8 @@ static struct sftp_version_pattern known_versions[] = {
     "^OpenSSH_2\\.5\\.3.*",	SFTP_SSH2_FEAT_REKEYING,		NULL },
 
   { "^OpenSSH.*",		0,					NULL },
+
+  { ".*J2SSH_Maverick.*",	SFTP_SSH2_FEAT_REKEYING,		NULL },
 
   { ".*MindTerm.*",		0,					NULL },
 
@@ -116,6 +117,10 @@ static struct sftp_version_pattern known_versions[] = {
     "^1\\.3\\.2.*|"		
     "^3\\.2\\.9.*",		SFTP_SSH2_FEAT_IGNORE_MSG,		NULL },
 
+  { ".*PuTTY.*|"
+    ".*PUTTY.*|"
+    ".*WinSCP.*",		SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING,	NULL },
+
   { ".*SSH_Version_Mapper.*",	SFTP_SSH2_FEAT_SCANNER,			NULL },
 
   { "^Probe-.*", 		SFTP_SSH2_FEAT_PROBE,			NULL },
@@ -125,10 +130,11 @@ static struct sftp_version_pattern known_versions[] = {
 
 static const char *trace_channel = "ssh2";
 
-int sftp_interop_handle_version(const char *client_version) {
+int sftp_interop_handle_version(pool *p, const char *client_version) {
   register unsigned int i;
   size_t version_len;
   const char *version = NULL;
+  char *ptr = NULL;
   int is_probe = FALSE, is_scan = FALSE;
   config_rec *c;
 
@@ -165,10 +171,28 @@ int sftp_interop_handle_version(const char *client_version) {
    * client info.
    */
   if (strncmp(client_version, "SSH-2.0-", 8) == 0) {
-    version = client_version + 8;
+    version = pstrdup(p, client_version + 8);
 
   } else if (strncmp(client_version, "SSH-1.99-", 9) == 0) {
-    version = client_version + 9;
+    version = pstrdup(p, client_version + 9);
+
+  } else {
+    /* An illegally formatted client version.  How did it get here? */
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "client-sent version (%s) is illegally formmated, disconnecting client",
+      client_version);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_VERSION_NOT_SUPPORTED,
+      NULL);
+  }
+
+  /* Look for the optional comments field in the received client version; if
+   * present, trim it out, so that we do not try to match on it.
+   */
+  ptr = strchr(version, ' ');
+  if (ptr != NULL) {
+    pr_trace_msg(trace_channel, 11, "read client version with comments: '%s'",
+      version);
+    *ptr = '\0';
   }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -193,13 +217,13 @@ int sftp_interop_handle_version(const char *client_version) {
         known_versions[i].pattern);
 
       /* We have a match. */
-      interop_flags &= ~(known_versions[i].interop_flags);
+      default_flags &= ~(known_versions[i].disabled_flags);
 
-      if (known_versions[i].interop_flags == SFTP_SSH2_FEAT_PROBE) {
+      if (known_versions[i].disabled_flags == SFTP_SSH2_FEAT_PROBE) {
         is_probe = TRUE;
       }
 
-      if (known_versions[i].interop_flags == SFTP_SSH2_FEAT_SCANNER) {
+      if (known_versions[i].disabled_flags == SFTP_SSH2_FEAT_SCANNER) {
         is_scan = TRUE;
       }
 
@@ -255,7 +279,7 @@ int sftp_interop_handle_version(const char *client_version) {
     res = pr_regexp_exec(pre, version, 0, NULL, 0, 0, 0);
     if (res == 0) {
       pr_table_t *tab;
-      void *v, *v2;
+      const void *v, *v2;
 
       /* We have a match. */
 
@@ -272,7 +296,7 @@ int sftp_interop_handle_version(const char *client_version) {
        */
 
       v = pr_table_get(tab, "channelWindowSize", NULL);
-      if (v) {
+      if (v != NULL) {
         uint32_t window_size;
 
         window_size = *((uint32_t *) v);
@@ -285,7 +309,7 @@ int sftp_interop_handle_version(const char *client_version) {
       }
       
       v = pr_table_get(tab, "channelPacketSize", NULL);
-      if (v) {
+      if (v != NULL) {
         uint32_t packet_size;
 
         packet_size = *((uint32_t *) v);
@@ -298,7 +322,7 @@ int sftp_interop_handle_version(const char *client_version) {
       }
 
       v = pr_table_get(tab, "pessimisticNewkeys", NULL);
-      if (v) {
+      if (v != NULL) {
         int pessimistic_newkeys;
 
         pessimistic_newkeys = *((int *) v);
@@ -308,13 +332,14 @@ int sftp_interop_handle_version(const char *client_version) {
           pessimistic_newkeys ? "true" : "false");
 
         if (pessimistic_newkeys) {
-          interop_flags |= SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS;
+          default_flags |= SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS;
         } 
       }
 
       v = pr_table_get(tab, "sftpMinProtocolVersion", NULL);
       v2 = pr_table_get(tab, "sftpMaxProtocolVersion", NULL);
-      if (v && v2) {
+      if (v != NULL &&
+          v2 != NULL) {
         unsigned int min_version, max_version;
 
         min_version = *((unsigned int *) v);
@@ -335,7 +360,7 @@ int sftp_interop_handle_version(const char *client_version) {
 
 #ifdef PR_USE_NLS
       v = pr_table_get(tab, "sftpUTF8ProtocolVersion", NULL);
-      if (v) {
+      if (v != NULL) {
         unsigned int protocol_version;
 
         protocol_version = *((unsigned int *) v);
@@ -371,8 +396,9 @@ int sftp_interop_supports_feature(int feat_flag) {
       return FALSE;
 
     default:
-      if (!(interop_flags & feat_flag))
+      if (!(default_flags & feat_flag)) {
         return FALSE;
+      }
   }
 
   return TRUE;

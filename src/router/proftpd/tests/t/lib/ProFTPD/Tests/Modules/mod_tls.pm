@@ -4,10 +4,12 @@ use lib qw(t/lib);
 use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
+use Carp;
 use File::Copy;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
+use Socket;
 
 use ProFTPD::TestSuite::FTP;
 use ProFTPD::TestSuite::Utils qw(:auth :config :running :test :testsuite);
@@ -179,6 +181,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  tls_ccc_before_login => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   tls_opts_commonname_required_bug3512 => {
     order => ++$order,
     test_class => [qw(bug forking)],
@@ -328,6 +335,26 @@ my $TESTS = {
   },
 
   tls_config_limit_sscn_bug3955 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_config_missing_certs => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_stapling_on_bug4175 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_session_tickets_on_bug4176 => {
+    order => ++$order,
+    test_class => [qw(bug forking inprogress)],
+  },
+
+  tls_restart_protected_certs_bug4260 => {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
@@ -985,6 +1012,7 @@ sub tls_dh_ciphersuite {
       my $ssl_opts = {
         # Results in set_tmp_dh_callback() keylength of 1024 BITS
         SSL_cipher_list => 'DHE-RSA-AES256-SHA',
+        SSL_ca_file => $ca_file,
       };
 
       my $client = Net::FTPSSL->new('127.0.0.1',
@@ -1136,6 +1164,7 @@ sub tls_crl_file_ok {
           SSL_use_cert => 1,
           SSL_cert_file => $client_cert,
           SSL_key_file => $client_cert,
+          SSL_ca_file => $ca_cert,
         };
 
         $client = Net::FTPSSL->new('127.0.0.1',
@@ -1575,6 +1604,7 @@ sub tls_list_fails_tls_required_by_dir_bug2178 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       $client = Net::FTPSSL->new('127.0.0.1',
@@ -1735,6 +1765,7 @@ sub tls_list_ok_tls_required_by_dir_bug2178 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       $client = Net::FTPSSL->new('127.0.0.1',
@@ -1905,6 +1936,7 @@ sub tls_list_fails_tls_required_by_ftpaccess_bug2178 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       $client = Net::FTPSSL->new('127.0.0.1',
@@ -2075,6 +2107,7 @@ sub tls_list_ok_tls_required_by_ftpaccess_bug2178 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       $client = Net::FTPSSL->new('127.0.0.1',
@@ -2770,6 +2803,7 @@ sub tls_opts_std_env_vars_client_vars {
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
         TLSOptions => 'StdEnvVars',
+        TLSVerifyClient => 'optional',
       },
     },
   };
@@ -2801,6 +2835,7 @@ sub tls_opts_std_env_vars_client_vars {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client = Net::FTPSSL->new('127.0.0.1',
@@ -2977,6 +3012,7 @@ sub tls_opts_ipaddr_required_ipv4 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client;
@@ -3133,6 +3169,7 @@ sub tls_opts_ipaddr_required_ipv6 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client;
@@ -5327,6 +5364,180 @@ sub tls_ccc_list_bug3465 {
   unlink($log_file);
 }
 
+sub tls_ccc_before_login {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'DEFAULT:10 tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSProtocol => 'TLSv1',
+        TLSRequired => 'off',
+        TLSOptions => 'NoSessionReuseRequired',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client_opts = {
+        PeerHost => '127.0.0.1',
+        PeerPort => $port,
+        Proto => 'tcp',
+        Type => SOCK_STREAM,
+        Timeout => 10
+      };
+
+      my $ssl_opts = {
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE(),
+      };
+
+      my $client = IO::Socket::INET->new(%$client_opts);
+      unless ($client) {
+        die("Can't connect to 127.0.0.1:$port: $!");
+      }
+
+      # Read the banner
+      my $banner = <$client>;
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Received banner: $banner";
+      }
+
+      # Send the AUTH command
+      my $cmd = "AUTH TLS\r\n";
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Sending command: $cmd";
+      }
+      $client->print($cmd);
+      $client->flush();
+
+      # Read the AUTH response
+      my $resp = <$client>;
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Received response: $resp";
+      }
+
+      my $expected = "234 AUTH TLS successful\r\n";
+      unless ($expected eq $resp) {
+        die("Expected response '$expected', got '$resp'");
+      }
+
+      if ($ENV{TEST_VERBOSE}) {
+        $IO::Socket::SSL::DEBUG = 3;
+      }
+
+      my $res = IO::Socket::SSL->start_SSL($client, $ssl_opts);
+      unless ($res) {
+        croak("Failed SSL handshake: " . IO::Socket::SSL::errstr());
+      }
+
+      $cmd = "CCC\r\n";
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Sending command: $cmd";
+      }
+      $client->print($cmd);
+      $client->flush();
+
+      $resp = <$client>;
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Received response: $resp";
+      }
+
+      $expected = "530 Please login with USER and PASS\r\n";
+      unless ($expected eq $resp) {
+        die("Expected response '$expected', got '$resp'");
+      }
+
+      $res = $client->stop_SSL();
+      unless ($res) {
+        croak("Failed SSL shutdown: " . IO::Socket::SSL::errstr());
+      }
+
+      $cmd = "QUIT\r\n";
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Sending command: $cmd";
+      }
+      $client->print($cmd);
+      $client->flush();
+
+      $resp = <$client>;
+      if ($ENV{TEST_VERBOSE}) {
+        print STDOUT "# Received response: $resp";
+      }
+
+      if ($resp) {
+        die("Received response unexpectedly");
+      }
+
+      $client->close();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
 sub tls_opts_commonname_required_bug3512 {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -5423,6 +5634,7 @@ sub tls_opts_commonname_required_bug3512 {
         SSL_use_cert => 1,
         SSL_cert_file => $bad_client_cert,
         SSL_key_file => $bad_client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client;
@@ -5589,6 +5801,7 @@ sub tls_opts_dns_name_required {
         SSL_use_cert => 1,
         SSL_cert_file => $bad_client_cert,
         SSL_key_file => $bad_client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client;
@@ -5755,6 +5968,7 @@ sub tls_opts_ip_addr_dns_name_cn_required {
         SSL_use_cert => 1,
         SSL_cert_file => $bad_client_cert,
         SSL_key_file => $bad_client_cert,
+        SSL_ca_file => $ca_file,
       };
 
       my $client;
@@ -7223,6 +7437,7 @@ sub tls_verify_order_crl_bug3658 {
           SSL_use_cert => 1,
           SSL_cert_file => $client_cert,
           SSL_key_file => $client_cert,
+          SSL_ca_file => $ca_cert,
         };
 
         $client = Net::FTPSSL->new('127.0.0.1',
@@ -7390,6 +7605,7 @@ sub tls_verify_order_ocsp {
           SSL_use_cert => 1,
           SSL_cert_file => $client_cert,
           SSL_key_file => $client_cert,
+          SSL_ca_file => $ca_cert,
         };
 
         $client = Net::FTPSSL->new('127.0.0.1',
@@ -7560,6 +7776,7 @@ sub tls_verify_order_ocsp_https {
           SSL_use_cert => 1,
           SSL_cert_file => $client_cert,
           SSL_key_file => $client_cert,
+          SSL_ca_file => $ca_cert,
         };
 
         $client = Net::FTPSSL->new('127.0.0.1',
@@ -7718,6 +7935,7 @@ sub tls_client_cert_verify_failed_selfsigned_cert_only_bug3742 {
           SSL_use_cert => 1,
           SSL_cert_file => $client_cert,
           SSL_key_file => $client_key,
+          SSL_ca_file => $ca_cert,
         };
 
         eval {
@@ -8233,7 +8451,7 @@ sub tls_opts_allow_dot_login {
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
-
+        TLSVerifyClient => 'optional',
         TLSOptions => 'AllowDotLogin',
       },
     },
@@ -8266,6 +8484,7 @@ sub tls_opts_allow_dot_login {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       my $client = Net::FTPSSL->new('127.0.0.1',
@@ -8284,6 +8503,15 @@ sub tls_opts_allow_dot_login {
       }
 
       my $expected = "232 User $user logged in";
+      my $resp = $client->last_message();
+      $self->assert($expected eq $resp,
+        test_msg("Expected response '$expected', got '$resp'"));
+
+      if ($client->_passwd()) {
+        die("PASS succeeded unexpectedly");
+      }
+
+      my $expected = "503 You are already logged in";
       my $resp = $client->last_message();
       $self->assert($expected eq $resp,
         test_msg("Expected response '$expected', got '$resp'"));
@@ -8703,6 +8931,7 @@ sub tls_config_tlsdhparamfile_bug3868 {
       my $ssl_opts = {
         # Results in set_tmp_dh_callback() keylength of 1024 BITS
         SSL_cipher_list => 'DHE-RSA-AES256-SHA',
+        SSL_ca_file => $ca_file,
       };
 
       my $client = Net::FTPSSL->new('127.0.0.1',
@@ -9014,6 +9243,7 @@ EOC
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       my $debug = 0;
@@ -9048,7 +9278,7 @@ EOC
         die("PROT failed unexpectedly: " . $client->last_message());
       }
 
-      my $res = $client->list();
+      $res = $client->list();
       unless ($res) {
         die("LIST failed unexpectedly: " . $client->last_message());
       }
@@ -9155,6 +9385,7 @@ sub tls_config_tlsusername_bug3899 {
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
+        TLSVerifyClient => 'optional',
 
         TLSUserName => 'CommonName',
       },
@@ -9188,6 +9419,7 @@ sub tls_config_tlsusername_bug3899 {
         SSL_use_cert => 1,
         SSL_cert_file => $client_cert,
         SSL_key_file => $client_cert,
+        SSL_ca_file => $ca_cert,
       };
 
       my $client = Net::FTPSSL->new('127.0.0.1',
@@ -10035,6 +10267,424 @@ sub tls_config_limit_sscn_bug3955 {
   }
 
   unlink($log_file);
+}
+
+sub tls_config_missing_certs {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSProtocol => 'SSLv3 TLSv1',
+        TLSRequired => 'on',
+        TLSOptions => 'EnableDiags',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+      );
+
+      if ($client) {
+        die("Connected via AUTH TLS unexpectedly");
+      }
+
+      my $errstr = IO::Socket::SSL::errstr();
+      unless ($errstr) {
+        $errstr = $Net::FTPSSL::ERRSTR;
+      }
+
+      $self->assert(qr/^431/, $errstr, "Expected 431, got '$errstr'");
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub starttls_ftp {
+  my $port = shift;
+  my $ssl_opts = shift;
+
+  my $client = IO::Socket::INET->new(
+    PeerHost => '127.0.0.1',
+    PeerPort => $port,
+    Proto => 'tcp',
+    Type => SOCK_STREAM,
+    Timeout => 10
+  );
+  unless ($client) {
+    croak("Can't connect to 127.0.0.1:$port: $!");
+  }
+
+  # Read the banner
+  my $banner = <$client>;
+
+  # Send the AUTH command
+  my $cmd = "AUTH TLS\r\n";
+  if ($ENV{TEST_VERBOSE}) {
+    print STDOUT "# Sending command: $cmd";
+  }
+  $client->print($cmd);
+  $client->flush();
+
+  # Read the AUTH response
+  my $resp = <$client>;
+  if ($ENV{TEST_VERBOSE}) {
+    print STDOUT "# Received response: $resp";
+  }
+
+  my $expected = "234 AUTH TLS successful\r\n";
+  unless ($expected eq $resp) {
+    croak(test_msg("Expected response '$expected', got '$resp'"));
+  }
+
+  # Now perform the SSL handshake
+  if ($ENV{TEST_VERBOSE}) {
+    $IO::Socket::SSL::DEBUG = 3;
+  }
+
+  my $res = IO::Socket::SSL->start_SSL($client, $ssl_opts);
+  unless ($res) {
+    croak("Failed SSL handshake: " . IO::Socket::SSL::errstr());
+  }
+
+  $cmd = "QUIT\r\n";
+  if ($ENV{TEST_VERBOSE}) {
+    print STDOUT "# Sending command: $cmd";
+  }
+
+  $client->print($cmd);
+  $client->flush();
+
+  $resp = <$client>;
+  if ($ENV{TEST_VERBOSE}) {
+    print STDOUT "# Received response: $resp";
+  }
+
+  $client->close();
+}
+
+sub tls_stapling_on_bug4175 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSProtocol => 'SSLv3 TLSv1',
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => 'EnableDiags',
+        TLSStapling => 'on',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require IO::Socket::INET;
+  require IO::Socket::SSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      # Manually simulate the STARTTLS protocol
+
+      my $ssl_opts = {
+        SSL_ocsp_mode => IO::Socket::SSL::SSL_OCSP_TRY_STAPLE(),
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE(),
+      };
+
+      starttls_ftp($port, $ssl_opts);
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_session_tickets_on_bug4176 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => 'EnableDiags',
+        TLSSessionTickets => 'on',
+        TLSSessionTicketKeys => 'age 3sec count 2',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require IO::Socket::INET;
+  require IO::Socket::SSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_NONE(),
+      };
+
+      # Manually simulate the STARTTLS protocol
+
+      starttls_ftp($port, $ssl_opts);
+
+      my $delay = 7;
+      if ($delay > 0) {
+        if ($ENV{TEST_VERBOSE}) {
+          print STDOUT "# Delaying for $delay secs\n";
+        }
+
+        sleep($delay);
+      }
+
+      starttls_ftp($port, $ssl_opts);
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh, 30) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_restart_protected_certs_bug4260 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert-passwd.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+  my $passphrase_provider = File::Spec->rel2abs('t/etc/modules/mod_tls/tls-get-passphrase-once.pl');
+
+  # Note: This lock file path MUST be kept in sync with the path used by
+  # the TLSPassPhraseProvider script used in this test.
+  my $lock_file = "/tmp/tls-passphrase.lock";
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+
+        TLSPassPhraseProvider => $passphrase_provider,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $ex;
+
+  # Start the server
+  server_start($setup->{config_file});
+  sleep(4);
+
+  # Restart the server
+  server_restart($setup->{pid_file});
+  sleep(4);
+
+  # Stop server
+  unless (server_stop($setup->{pid_file})) {
+    $ex = "Error stopping server";
+  }
+
+  unlink($lock_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

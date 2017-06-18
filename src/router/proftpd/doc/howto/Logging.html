@@ -1,15 +1,13 @@
-<!-- $Id: Logging.html,v 1.13 2013-10-09 16:46:37 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Logging.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD Logging</title>
+<title>ProFTPD: Logging</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>ProFTPD Logging</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Logging</i></b></h2></center>
 <hr>
 
 <p>
@@ -72,12 +70,143 @@ generate: <code>TransferLog</code>, <code>SystemLog</code>, and
 <code>ExtendedLog</code>.
 
 <p><a name="TransferLog"></a>
+<b><i><code>TransferLog</code></i></b><br>
 A <a href="../modules/mod_core.html#TransferLog"><code>TransferLog</code></a>
-is the most common log kept, recording file transfers.  Its format is described
-in the <code>xferlog(5)</code> man page,
-also available <a href="http://www.castaglia.org/proftpd/doc/xferlog.html">here</a>.
+is the most common log kept, recording file transfers.  It is written in the
+<code>xferlog(5)</code> format, described here, <b>and</b> in the
+<code>xferlog(5)</code> man page.
+
+<p>
+Each entry in the <code>TransferLog</code> is a single line of space-delimited
+fields:
+<table border=1 summary="TransferLog Fields">
+  <tr>
+    <td>&nbsp;<b>Field</b></td>
+    <td>&nbsp;<b>Values</b></td>
+    <td>&nbsp;<b>Description</b></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>current-time</em></td>
+    <td>&nbsp;DDD MMM dd hh:mm:ss YYYY</td>
+    <td>&nbsp;Current <b>local</b> time at the time of transfer</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>transfer-time</em></td>
+    <td>&nbsp;Seconds</td>
+    <td>&nbsp;Total time in <b>seconds</b> for the transfer</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>remote-host</em></td>
+    <td>&nbsp;String</td>
+    <td>&nbsp;Remote client DNS name (or IP address)</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>file-size</em></td>
+    <td>&nbsp;Bytes</td>
+    <td>&nbsp;Number of bytes transferred</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>filename</em></td>
+    <td>&nbsp;String</td>
+    <td>&nbsp;Name of the transferred file</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>transfer-type</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Indicates whether the transfer was an ASCII (<code>"a"</code>) or
+        binary (<code>"b"</code>) transfer</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>special-action-flag</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;One or more single character indicating any special action taken: "C" (compressed), "U" (uncompressed), "T" (tarred), "_" (no action)</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>direction</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Direction of the transfer: "o" (outgoing, <i>i.e.</i> download), "i" (incoming, <i>i.e.</i> upload), "d" (deleted)</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>access-mode</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Method by which the user is logged in: "a" (anonymous), "g" (guest), "r" (real user)</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>username</em></td>
+    <td>&nbsp;String</td>
+    <td>&nbsp;Authenticated username</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>service-name</em></td>
+    <td>&nbsp;String</td>
+    <td>&nbsp;Name of the service used: "ftp", "sftp", "scp", <i>etc</i></td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>authentication-method</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Method of authentication used: "0" (none), "1" (<a href="https://www.ietf.org/rfc/rfc1413.txt">RFC 1413</a>)</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>authenticated-user-id</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Name of user provided by RFC 1413 lookup, otherwise "*"</td>
+  </tr>
+
+  <tr>
+    <td>&nbsp;<em>completion-status</em></td>
+    <td>&nbsp;Flags</td>
+    <td>&nbsp;Single character indicating the status of the transfer: "c" (complete), "i" (incomplete)</td>
+  </tr>
+</table>
+
+<p>
+<b>History of the <code>xferlog(5)</code> Format</b><br>
+This xferlog(5) format seems a bit odd, right?  To understand this, it helps
+to keep in mind the history of this format.  The xferlog(5) format
+<b>predates</b> ProFTPD.  The ProFTPD Project copied this format from
+<a href="http://wu-ftpd.therockgarden.ca/man/xferlog.html">wu-ftpd</a>, which
+was <em>the</em> popular FTP server at that time.  There were already existing
+tools/scripts which knew how to parse that format, so ProFTPD used it.  Since
+then, <code>wu-ftpd</code> has waned in maintenance and popularity; other
+FTP servers (<i>e.g.</i> <code>pure-ftpd</code>, <code>vsftpd</code>, but
+<b>not</b> the built-in <code>ftpd</code> on FreeBSD) have since then picked
+up the <code>xferlog(5)</code> format from ProFTPD.  Thus this log format has
+a 20+ year history, and keeps going.
+
+<p>
+This history helps explain certain fields in the <code>xferlog(5)</code>
+format, such as the <em>authentication-method</em> and
+<em>authenticated-user-id</em> fields.  These fields were more relevant in
+the past, when the RFC 1413 Identd protocol was more widespread in use.  Now,
+<b>very</b> few sites run <code>identd</code> servers; these fields in the
+log format are thus archaic.  Thus in almost all ProFTPD-generated
+<code>TransferLog</code> entries, <em>authentication-method</em> will be "0",
+and <em>authenticated-user-id</em> will be "*".
+
+<p>
+Likewise, the <em>special-action-flags</em> field mentions "compressed" and
+"uncompressed" files; these flags specifically refer to the
+<a href="https://en.wikipedia.org/wiki/Compress"><code>compress</code></a>
+Unix program, which used the ".Z" file extension.  This compression utility
+has been superceded with <i>e.g.</i> <code>gzip</code>, <code>bzip2</code>,
+and others these days.  Thus the <em>special-action-flags</em> field in
+ProFTPD-generated <code>TransferLog</code> entries is almost always "_".
 
 <p><a name="SystemLog"></a>
+<b><i><code>SystemLog</code></i></b><br>
 If the site administrator wants to have <code>proftpd</code> log its messages
 to a file rather than going through <code>syslogd</code>, the
 <a href="../modules/mod_log.html#SystemLog"><code>SystemLog</code></a>
@@ -90,6 +219,7 @@ directive only applies to <code>SystemLog</code> files; it does not materially
 affect the syslog-based logging messages.
 
 <p><a name="ExtendedLog"></a>
+<b><i><code>ExtendedLog</code></i></b><br>
 The <a href="../modules/mod_log.html#ExtendedLog"><code>ExtendedLog</code></a>
 directive is used to create log files of a very flexible and configurable
 format, and to have granular control over what is logged, and when.  The format
@@ -101,7 +231,7 @@ Multiple <code>ExtendedLogs</code> can be configured, each with a different
 <!-- Add note/chunk about FTP response codes, from RFC959, for ExtendedLog? -->
 
 <p><a name="SyslogVSFileLog"></a>
-<b>Use of syslog versus file logging</b><br>
+<b>Use of <code>syslog</code> versus file logging</b><br>
 Most sites will choose to have <code>proftpd</code> log via syslog (which is
 the default) or to a file (via the <code>SystemLog</code> directive).  In
 either case, there is the question of logging <i>verbosity</i>, <i>i.e.</i>
@@ -251,10 +381,10 @@ logging".  This form of logging is covered in greater detail
 <b>Pid File</b><br>
 On startup, <code>proftpd</code> saves the process ID of the parent daemon
 process to the file <code>var/proftpd/proftpd.pid</code>. This filename can be
-changed with the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_PidFile.html">PidFile</a> directive. The process ID (<i>aka</i> PID) is for
-use by the administrator in restarting and terminating the daemon by sending
-signals to the parent process.  For more information see the
-<a href="Stopping.html">stopping and starting</a> page.
+changed with the <a href="../modules/mod_core.html#PidFile"><code>PidFile</code></a> directive. The process ID (<i>aka</i> PID) is for use by the administrator
+in restarting and terminating the daemon by sending signals to the parent
+process.  For more information see the <a href="Stopping.html">stopping and
+starting</a> page.
 
 <p>
 <b>Scoreboard File</b><br>
@@ -263,7 +393,7 @@ scoreboard is binary-formatted file the server uses to store information
 about each session; it is this file that is read by <code>ftptop</code>,
 <code>ftpwho</code> and <code>ftpcount</code>.  The location for the
 scoreboard file is determined by the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_ScoreboardFile.html"><code>ScoreboardFile</code></a> directive.
+<a href="../modules/mod_core.html#ScoreboardFile"><code>ScoreboardFile</code></a> directive.
 
 <p><a name="FAQ"></a>
 <b>Frequently Asked Questions</b><br>
@@ -381,7 +511,9 @@ please find their related man pages.
 
 <p>
 Now to make the "No such file or directory" log message go away, simply tell
-<code>proftpd</code> to stop trying to use <code>wtmp</code> logging by using:
+<code>proftpd</code> to stop trying to use <code>wtmp</code> logging by using
+the <a href="../modules/mod_auth.html#WtmpLog"><code>WtmpLog</code></a>
+directive:
 <pre>
   WtmpLog off
 </pre>
@@ -389,9 +521,11 @@ in your <code>proftpd.conf</code>.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2013-10-09 16:46:37 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>
 </html>
-

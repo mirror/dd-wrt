@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* User configurable defaults and tunable parameters.
- * $Id: options.h,v 1.36 2014-01-25 16:34:09 castaglia Exp $
- */
+/* User configurable defaults and tunable parameters. */
 
 #ifndef PR_OPTIONS_H
 #define PR_OPTIONS_H
@@ -50,8 +48,9 @@
  * burst before the kernel rejects.  This can be configured by the
  * "tcpBackLog" configuration directive, this value is just the default.
  */
-
-#define PR_TUNABLE_DEFAULT_BACKLOG	32
+#ifndef PR_TUNABLE_DEFAULT_BACKLOG
+# define PR_TUNABLE_DEFAULT_BACKLOG	128
+#endif /* PR_TUNABLE_DEFAULT_BACKLOG */
 
 /* The default TCP send/receive buffer sizes, should explicit sizes not
  * be defined at compile time, or should the runtime determination process
@@ -77,7 +76,17 @@
  * miscellaneous tasks.
  */
 #ifndef PR_TUNABLE_BUFFER_SIZE
-# define PR_TUNABLE_BUFFER_SIZE	1024
+# define PR_TUNABLE_BUFFER_SIZE		1024
+#endif
+
+/* There is also a definable buffer size used specifically for parsing
+ * lines of text from the config file: PR_TUNABLE_PARSER_BUFFER_SIZE.
+ *
+ * You should manually set the PR_TUNABLE_PARSER_BUFFER_SIZE only if you
+ * have exceptionally long configuration lines.
+ */
+#ifndef PR_TUNABLE_PARSER_BUFFER_SIZE
+# define PR_TUNABLE_PARSER_BUFFER_SIZE	4096
 #endif
 
 /* There is also a definable buffer size used specifically for data
@@ -133,7 +142,7 @@
  * default linger timeout under 60 seconds.
  */
 #ifndef PR_TUNABLE_TIMEOUTLINGER
-# define PR_TUNABLE_TIMEOUTLINGER	30
+# define PR_TUNABLE_TIMEOUTLINGER	10
 #endif
 
 #ifndef PR_TUNABLE_TIMEOUTLOGIN
@@ -218,6 +227,11 @@
 # define PR_TUNABLE_LOGIN_MAX		256
 #endif
 
+#ifndef PR_TUNABLE_PASSWORD_MAX
+/* Maximum length of a password. */
+# define PR_TUNABLE_PASSWORD_MAX	1024
+#endif
+
 #ifndef PR_TUNABLE_EINTR_RETRY_INTERVAL
 /* Define the time to delay, in seconds, after a system call has been
  * interrupted (errno is EINTR) before retrying that call.
@@ -225,6 +239,19 @@
  * The default behavior is delay 0.2 secs between retries.
  */
 # define PR_TUNABLE_EINTR_RETRY_INTERVAL	0.2
+#endif
+
+#ifndef PR_TUNABLE_XFER_LOG_MODE
+# define PR_TUNABLE_XFER_LOG_MODE		0644
+#endif
+
+/* FS Statcache tuning. */
+#ifndef PR_TUNABLE_FS_STATCACHE_SIZE
+# define PR_TUNABLE_FS_STATCACHE_SIZE		32
+#endif
+
+#ifndef PR_TUNABLE_FS_STATCACHE_MAX_AGE
+# define PR_TUNABLE_FS_STATCACHE_MAX_AGE	30
 #endif
 
 #endif /* PR_OPTIONS_H */

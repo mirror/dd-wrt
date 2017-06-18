@@ -50,9 +50,6 @@
     extern "C" {
 #endif
 
-size_t umac_ctx_size(void);
-/* Returns size of umac_ctx struct. */
-
 struct umac_ctx *umac_alloc(void);
 /* Dynamically allocate a umac_ctx struct. */
 
@@ -78,47 +75,17 @@ int umac_final(struct umac_ctx *ctx, unsigned char tag[], unsigned char nonce[8]
 int umac_delete(struct umac_ctx *ctx);
 /* Deallocate the context structure */
 
-#if 0
-int umac(struct umac_ctx *ctx, unsigned char *input, 
-         long len, unsigned char tag[],
-         unsigned char nonce[8]);
-/* All-in-one implementation of the functions Reset, Update and Final */
-#endif
-
-/* uhash.h */
-
-
-#if 0
-typedef struct uhash_ctx *uhash_ctx_t;
-  /* The uhash_ctx structure is defined by the implementation of the    */
-  /* UHASH functions.                                                   */
- 
-uhash_ctx_t uhash_alloc(unsigned char key[16]);
-  /* Dynamically allocate a uhash_ctx struct and generate subkeys using */
-  /* the kdf and kdf_key passed in. If kdf_key_len is 0 then RC6 is     */
-  /* used to generate key with a fixed key. If kdf_key_len > 0 but kdf  */
-  /* is NULL then the first 16 bytes pointed at by kdf_key is used as a */
-  /* key for an RC6 based KDF.                                          */
-  
-int uhash_free(uhash_ctx_t ctx);
-
-int uhash_set_params(uhash_ctx_t ctx,
-                   void       *params);
-
-int uhash_reset(uhash_ctx_t ctx);
-
-int uhash_update(uhash_ctx_t ctx,
-               unsigned char       *input,
-               long        len);
-
-int uhash_final(uhash_ctx_t ctx,
-              unsigned char        ouput[]);
-
-int uhash(uhash_ctx_t ctx,
-        unsigned char       *input,
-        long        len,
-        unsigned char        output[]);
-#endif
+/* ProFTPD Note: We reuse umac_ctx for the umac-128 implementation, as the
+ * structure is opaque.  We simply recompile the umac.c file with different
+ * preprocessor macros to get the umac-128 implementation.
+ */
+struct umac_ctx *umac128_alloc(void);
+struct umac_ctx *umac128_new(unsigned char key[]);
+void umac128_init(struct umac_ctx *ctx, unsigned char key[]);
+int umac128_reset(struct umac_ctx *ctx);
+int umac128_update(struct umac_ctx *ctx, unsigned char *input, long len);
+int umac128_final(struct umac_ctx *ctx, unsigned char tag[], unsigned char nonce[8]);
+int umac128_delete(struct umac_ctx *ctx);
 
 #ifdef __cplusplus
     }

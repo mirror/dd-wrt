@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp SMI routines
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: smi.c,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
 
 #include "mod_snmp.h"
@@ -29,7 +27,6 @@
 #include "smi.h"
 #include "mib.h"
 #include "msg.h"
-#include "stacktrace.h"
 
 static const char *trace_channel = "snmp.smi";
 
@@ -292,7 +289,7 @@ struct snmp_var *snmp_smi_dup_var(pool *p, struct snmp_var *src_var) {
 
           /* XXX Destroy the entire chain? */
           destroy_pool(var->pool);
-          snmp_stacktrace_log();
+          pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
           errno = EINVAL;
           return NULL;
       }
@@ -336,7 +333,7 @@ int snmp_smi_read_vars(pool *p, unsigned char **buf, size_t *buflen,
     pr_trace_msg(trace_channel, 1,
       "unable to parse tag (%s) as list of variables",
       snmp_asn1_get_tagstr(p, asn1_type));
-    snmp_stacktrace_log();
+    pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
     errno = EINVAL;
     return -1;
   }
@@ -361,7 +358,7 @@ int snmp_smi_read_vars(pool *p, unsigned char **buf, size_t *buflen,
       pr_trace_msg(trace_channel, 1,
         "unable to parse tag (%s) as variable binding",
         snmp_asn1_get_tagstr(p, asn1_type));
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -383,7 +380,7 @@ int snmp_smi_read_vars(pool *p, unsigned char **buf, size_t *buflen,
         snmp_asn1_get_tagstr(p, asn1_type));
 
       destroy_pool(var->pool);
-      snmp_stacktrace_log();
+      pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
       errno = EINVAL;
       return -1;
     }
@@ -498,7 +495,7 @@ int snmp_smi_read_vars(pool *p, unsigned char **buf, size_t *buflen,
         pr_trace_msg(trace_channel, 1,
           "unable to read variable type %x", var->smi_type);
         destroy_pool(var->pool);
-        snmp_stacktrace_log(); 
+        pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
         errno = EINVAL;
         return -1;
     }
@@ -639,7 +636,7 @@ int snmp_smi_write_vars(pool *p, unsigned char **buf, size_t *buflen,
         /* Unsupported type */
         pr_trace_msg(trace_channel, 1, "%s",
           "unable to encode unsupported SMI variable type");
-        snmp_stacktrace_log();
+        pr_log_stacktrace(snmp_logfd, MOD_SNMP_VERSION);
         errno = ENOSYS;
         return -1;
     }

@@ -1011,6 +1011,11 @@ sub sftp_rewrite_realpath {
       my $expected;
 
       $expected = $test_file;
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $expected = '/private' . $expected;
+      }
+
       $self->assert($expected eq $resolved,
         test_msg("Expected '$expected', got '$resolved'"));
 
@@ -1182,6 +1187,11 @@ sub sftp_rewrite_realpath_backslashes_bug4017 {
       my $expected;
 
       $expected = $test_file;
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $expected = '/private' . $expected;
+      }
+
       $self->assert($expected eq $resolved,
         test_msg("Expected '$expected', got '$resolved'"));
 
@@ -3252,6 +3262,10 @@ sub sftp_rewrite_homedir {
       $ssh2->disconnect();
 
       my $expected = $home_dir;
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $expected = '/private' . $expected;
+      }
 
       $self->assert($expected eq $cwd,
         test_msg("Expected '$home_dir', got '$cwd'"));

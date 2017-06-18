@@ -1,9 +1,7 @@
-<!-- $Id: CreateHome.html,v 1.7 2012-09-05 17:30:05 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/CreateHome.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - CreateHome</title>
+<title>ProFTPD: CreateHome</title>
 </head>
 
 <body bgcolor=white>
@@ -34,7 +32,8 @@ other authentication modules, such as <code>mod_radius</code>, do not support
 it at all.  It was decided then, rather than having authentication modules
 have largely duplicated code for this feature, to have home-on-demand
 creation in the core <code>daemon</code> itself.  And so it is.
-As of 1.2.8rc2, <code>proftpd</code> has the <code>CreateHome</code>
+As of 1.2.8rc2, <code>proftpd</code> has the
+<a href="../modules/mod_auth.html#CreateHome"><code>CreateHome</code></a>
 configuration directive.
 
 <p>
@@ -161,7 +160,7 @@ desired from the FTP daemon.
 <font color=red>Question</font>: Is it possible to have different permissions
 for the <code>CreateHome</code> <em>mode</em> and <em>dirmode</em> based on the
 group of the connecting user?<br>
-<font color=blue>Answer</font>: Yes, if you use the <a href="http://www.proftpd.org/docs/contrib/mod_ifsession.html"><code>mod_ifsession</code></a> module.
+<font color=blue>Answer</font>: Yes, if you use the <a href="../contrib/mod_ifsession.html"><code>mod_ifsession</code></a> module.
 For example:
 <pre>
   &lt;IfGroup special&gt;
@@ -175,7 +174,11 @@ For example:
 
 <p>
 <hr>
-<i>$Date: 2012-09-05 17:30:05 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Network ACL routines
- * $Id: netacl.c,v 1.27 2013-02-15 22:39:00 castaglia Exp $
- */
+/* Network ACL routines */
 
 #include "conf.h"
 
@@ -36,21 +34,22 @@ struct pr_netacl_t {
 
   char *pattern;
   int negated;
-  pr_netaddr_t *addr;
+  const pr_netaddr_t *addr;
   unsigned int masklen;
 };
 
 static const char *trace_channel = "netacl";
 
-pr_netacl_type_t pr_netacl_get_type(pr_netacl_t *acl) {
+pr_netacl_type_t pr_netacl_get_type(const pr_netacl_t *acl) {
   return acl->type;
 }
 
 /* Returns 1 if there was a positive match, -1 if there was a negative
  * match, -2 if there was an error, and zero if there was no match at all.
  */
-int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
+int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
   pool *tmp_pool;
+  int res = 0;
 
   if (acl == NULL ||
       addr == NULL) {
@@ -64,14 +63,14 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
     case PR_NETACL_TYPE_ALL:
       pr_trace_msg(trace_channel, 10, "addr '%s' matched rule 'ALL' ('%s')",
         pr_netaddr_get_ipstr(addr), pr_netacl_get_str(tmp_pool, acl));
-      destroy_pool(tmp_pool);
-      return 1;
+      res = 1;
+      break;
 
     case PR_NETACL_TYPE_NONE:
       pr_trace_msg(trace_channel, 10, "addr '%s' matched rule 'NONE'",
         pr_netaddr_get_ipstr(addr));
-      destroy_pool(tmp_pool);
-      return -1;
+      res = -1;
+      break;
 
     case PR_NETACL_TYPE_IPMASK:
       pr_trace_msg(trace_channel, 10,
@@ -81,17 +80,17 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
       if (pr_netaddr_ncmp(addr, acl->addr, acl->masklen) == 0) {
         pr_trace_msg(trace_channel, 10, "addr '%s' matched IP mask rule '%s'",
           pr_netaddr_get_ipstr(addr), acl->aclstr);
-        destroy_pool(tmp_pool);
 
-        if (acl->negated)
-          return -1;
+        if (acl->negated) {
+          res = -1;
 
-        return 1;
+        } else {
+          res = 1;
+        }
 
       } else {
         if (acl->negated) {
-          destroy_pool(tmp_pool);
-          return 1;
+          res = 1;
         }
       }
       break;
@@ -105,17 +104,17 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
         pr_trace_msg(trace_channel, 10,
           "addr '%s' matched IP address rule '%s'",
           pr_netaddr_get_ipstr(addr), acl->aclstr);
-        destroy_pool(tmp_pool);
 
-        if (acl->negated)
-          return -1;
+        if (acl->negated) {
+          res = -1;
 
-        return 1;
+        } else {
+          res = 1;
+        }
 
       } else {
         if (acl->negated) {
-          destroy_pool(tmp_pool);
-          return 1;
+          res = 1;
         }
       }
       break;
@@ -130,17 +129,17 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
           "addr '%s' (%s) matched DNS name rule '%s'",
           pr_netaddr_get_ipstr(addr), pr_netaddr_get_dnsstr(addr),
           acl->aclstr);
-        destroy_pool(tmp_pool);
 
-        if (acl->negated)
-          return -1;
+        if (acl->negated) {
+          res = -1;
 
-        return 1;
+        } else {
+          res = 1;
+        }
 
       } else {
         if (acl->negated) {
-          destroy_pool(tmp_pool);
-          return 1;
+          res = 1;
         }
       }
       break;
@@ -155,17 +154,17 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
         pr_trace_msg(trace_channel, 10,
           "addr '%s' matched IP glob rule '%s'",
           pr_netaddr_get_ipstr(addr), acl->aclstr);
-        destroy_pool(tmp_pool);
 
-        if (acl->negated)
-          return -1;
+        if (acl->negated) {
+          res = -1;
 
-        return 1;
+        } else {
+          res = 1;
+        }
 
       } else {
         if (acl->negated) {
-          destroy_pool(tmp_pool);
-          return 1;
+          res = 1;
         }
       }
       break;
@@ -182,17 +181,17 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
             "addr '%s' (%s) matched DNS glob rule '%s'",
             pr_netaddr_get_ipstr(addr), pr_netaddr_get_dnsstr(addr),
             acl->aclstr);
-          destroy_pool(tmp_pool);
 
-          if (acl->negated)
-            return -1;
+          if (acl->negated) {
+            res = -1;
 
-          return 1;
+          } else {
+            res = 1;
+          }
 
         } else {
           if (acl->negated) {
-            destroy_pool(tmp_pool);
-            return 1;
+            res = 1;
           }
         }
 
@@ -206,7 +205,7 @@ int pr_netacl_match(pr_netacl_t *acl, pr_netaddr_t *addr) {
   }
 
   destroy_pool(tmp_pool);
-  return 0;
+  return res;
 }
 
 pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
@@ -259,8 +258,9 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
     }
 
     acl->addr = pr_netaddr_get_addr(p, aclstr, NULL);
-    if (!acl->addr)
+    if (acl->addr == NULL) {
       return NULL;
+    }
 
     /* Determine what the given bitmask is. */
     acl->masklen = strtol(cp + 1, &tmp, 10);
@@ -392,10 +392,6 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
       acl->type = PR_NETACL_TYPE_DNSGLOB;
       acl->pattern = pstrdup(p, aclstr);
 
-    } else if (*aclstr == '.') {
-      acl->type = PR_NETACL_TYPE_DNSGLOB;
-      acl->pattern = pstrcat(p, "*", aclstr, NULL);
-
     } else {
       acl->type = PR_NETACL_TYPE_DNSMATCH;
       acl->pattern = pstrdup(p, aclstr);
@@ -487,10 +483,11 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
   return acl;
 }
 
-pr_netacl_t *pr_netacl_dup(pool *p, pr_netacl_t *acl) {
+pr_netacl_t *pr_netacl_dup(pool *p, const pr_netacl_t *acl) {
   pr_netacl_t *acl2;
 
-  if (!p || !acl) {
+  if (p == NULL ||
+      acl == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -500,28 +497,33 @@ pr_netacl_t *pr_netacl_dup(pool *p, pr_netacl_t *acl) {
   /* A simple memcpy(3) won't suffice; we need a deep copy. */
   acl2->type = acl->type;
 
-  if (acl->pattern)
+  if (acl->pattern != NULL) {
     acl2->pattern = pstrdup(p, acl->pattern);
+  }
 
   acl2->negated = acl->negated;
 
-  if (acl->addr) {
-    acl2->addr = pr_netaddr_alloc(p);
+  if (acl->addr != NULL) {
+    pr_netaddr_t *addr;
 
-    pr_netaddr_set_family(acl2->addr, pr_netaddr_get_family(acl->addr));
-    pr_netaddr_set_sockaddr(acl2->addr, pr_netaddr_get_sockaddr(acl->addr));
+    addr = pr_netaddr_alloc(p);
+    pr_netaddr_set_family(addr, pr_netaddr_get_family(acl->addr));
+    pr_netaddr_set_sockaddr(addr, pr_netaddr_get_sockaddr(acl->addr));
+
+    acl2->addr = addr;
   }
 
   acl2->masklen = acl->masklen;
 
-  if (acl->aclstr)
+  if (acl->aclstr != NULL) {
     acl2->aclstr = pstrdup(p, acl->aclstr);
+  }
 
   return acl2;
 }
 
-int pr_netacl_get_negated(pr_netacl_t *acl) {
-  if (!acl) {
+int pr_netacl_get_negated(const pr_netacl_t *acl) {
+  if (acl == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -529,10 +531,11 @@ int pr_netacl_get_negated(pr_netacl_t *acl) {
   return acl->negated;
 }
 
-const char *pr_netacl_get_str(pool *p, pr_netacl_t *acl) {
+const char *pr_netacl_get_str2(pool *p, const pr_netacl_t *acl, int flags) {
   char *res = "";
 
-  if (!p || !acl) {
+  if (p == NULL ||
+      acl == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -541,51 +544,73 @@ const char *pr_netacl_get_str(pool *p, pr_netacl_t *acl) {
   switch (acl->type) {
     case PR_NETACL_TYPE_ALL:
       res = pstrcat(p, res, acl->aclstr, NULL);
-      res = pstrcat(p, res, " <all>", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <all>", NULL);
+      }
       return res;
 
     case PR_NETACL_TYPE_NONE:
       res = pstrcat(p, res, acl->aclstr, NULL);
-      res = pstrcat(p, res, " <none>", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <none>", NULL);
+      }
       return res;
 
     case PR_NETACL_TYPE_IPMASK: {
-      char masklenstr[64];
-
       res = pstrcat(p, res, acl->aclstr, NULL);
-      memset(masklenstr, '\0', sizeof(masklenstr));
-      snprintf(masklenstr, sizeof(masklenstr)-1, "%u", acl->masklen);
-      res = pstrcat(p, res, " <IP address mask, ", masklenstr, "-bit mask",
-        NULL);
+
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        char masklenstr[64];
+
+        memset(masklenstr, '\0', sizeof(masklenstr));
+        snprintf(masklenstr, sizeof(masklenstr)-1, "%u", acl->masklen);
+        res = pstrcat(p, res, " <IP address mask, ", masklenstr, "-bit mask",
+          NULL);
+      }
       break;
     }
 
     case PR_NETACL_TYPE_IPMATCH:
       res = pstrcat(p, res, acl->aclstr, NULL);
-      res = pstrcat(p, res, " <IP address match", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <IP address match", NULL);
+      }
       break;
 
     case PR_NETACL_TYPE_DNSMATCH:
       res = pstrcat(p, res, acl->aclstr, NULL);
-      res = pstrcat(p, res, " <DNS hostname match", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <DNS hostname match", NULL);
+      }
       break;
 
     case PR_NETACL_TYPE_IPGLOB:
       res = pstrcat(p, res, acl->pattern, NULL);
-      res = pstrcat(p, res, " <IP address glob", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <IP address glob", NULL);
+      }
       break;
 
     case PR_NETACL_TYPE_DNSGLOB:
       res = pstrcat(p, res, acl->pattern, NULL);
-      res = pstrcat(p, res, " <DNS hostname glob", NULL);
+      if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+        res = pstrcat(p, res, " <DNS hostname glob", NULL);
+      }
       break;
   }
 
-  if (!acl->negated)
-    res = pstrcat(p, res, ">", NULL);
-  else
-    res = pstrcat(p, res, ", inverted>", NULL);
+  if (!(flags & PR_NETACL_FL_STR_NO_DESC)) {
+    if (!acl->negated) {
+      res = pstrcat(p, res, ">", NULL);
+
+    } else {
+      res = pstrcat(p, res, ", inverted>", NULL);
+    }
+  }
 
   return res;
 }
 
+const char *pr_netacl_get_str(pool *p, const pr_netacl_t *acl) {
+  return pr_netacl_get_str2(p, acl, 0);
+}

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
  * source distribution.
  *
  * -----DO NOT EDIT BELOW THIS LINE-----
- * $Archive: mod_sftp.a $
- * $Libraries: -lcrypto -lz $
+ * $Archive: mod_sftp.a$
+ * $Libraries: -lcrypto$
  */
 
 #include "mod_sftp.h"
@@ -31,6 +31,7 @@
 #include "packet.h"
 #include "interop.h"
 #include "crypto.h"
+#include "cipher.h"
 #include "mac.h"
 #include "keys.h"
 #include "keystore.h"
@@ -44,6 +45,12 @@
 #include "kbdint.h"
 #include "fxp.h"
 #include "utf8.h"
+
+#if defined(HAVE_SODIUM_H)
+# include <sodium.h>
+#endif /* HAVE_SODIUM_H */
+
+extern xaset_t *server_list;
 
 module sftp_module;
 
@@ -59,6 +66,13 @@ static int sftp_engine = 0;
 static const char *sftp_client_version = NULL;
 static const char *sftp_server_version = SFTP_ID_DEFAULT_STRING;
 
+/* Flags for changing how hostkeys are handled. */
+#define SFTP_HOSTKEY_FL_CLEAR_RSA_KEY		0x001
+#define SFTP_HOSTKEY_FL_CLEAR_DSA_KEY		0x002
+#define SFTP_HOSTKEY_FL_CLEAR_ECDSA_KEY		0x004
+
+static const char *trace_channel = "ssh2";
+
 static int sftp_have_authenticated(cmd_rec *cmd) {
   return (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH);
 }
@@ -67,7 +81,8 @@ static int sftp_get_client_version(conn_t *conn) {
   int res;
 
   /* 255 is the RFC-defined maximum banner/ID string size */
-  char buf[256];
+  char buf[256], *banner = NULL;
+  size_t buflen = 0;
 
   /* Read client version.  This looks ugly, reading one byte at a time.
    * It is necessary, though.  The banner sent by the client is not of any
@@ -88,7 +103,9 @@ static int sftp_get_client_version(conn_t *conn) {
     for (i = 0; i < sizeof(buf) - 1; i++) {
       res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1, 0);
       while (res <= 0) {
-        if (errno == EINTR) {
+        int xerrno = errno;
+
+        if (xerrno == EINTR) {
           pr_signals_handle();
 
           res = sftp_ssh2_packet_sock_read(conn->rfd, &buf[i], 1, 0);
@@ -97,9 +114,11 @@ static int sftp_get_client_version(conn_t *conn) {
 
         if (res < 0) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-            "error reading from client rfd %d: %s", conn->rfd, strerror(errno));
+            "error reading from client rfd %d: %s", conn->rfd,
+            strerror(xerrno));
         }
 
+        errno = xerrno;
         return res;
       }
 
@@ -117,7 +136,13 @@ static int sftp_get_client_version(conn_t *conn) {
       }
     }
 
-    buf[sizeof(buf)-1] = '\0';
+    if (i == sizeof(buf)-1) {
+      bad_proto = TRUE;
+
+    } else {
+      buf[sizeof(buf)-1] = '\0';
+      buflen = strlen(buf);
+    }
 
     /* If the line does not begin with "SSH-2.0-", skip it.  RFC4253, Section
      * 4.2 does not specify what should happen if the client sends data
@@ -130,14 +155,45 @@ static int sftp_get_client_version(conn_t *conn) {
      * if the client's version string does not begin with "SSH-2.0-"
      * (or "SSH-1.99-").  Works for me.
      */
-    if (strncmp(buf, "SSH-2.0-", 8) != 0) {
-      bad_proto = TRUE;
+    if (bad_proto == FALSE) {
+      if (strncmp(buf, "SSH-2.0-", 8) != 0) {
+        bad_proto = TRUE;
 
-      if (sftp_opts & SFTP_OPT_OLD_PROTO_COMPAT) {
-        if (strncmp(buf, "SSH-1.99-", 9) == 0) {
-          bad_proto = FALSE;
+        if (sftp_opts & SFTP_OPT_OLD_PROTO_COMPAT) {
+          if (strncmp(buf, "SSH-1.99-", 9) == 0) {
+            if (buflen == 9) {
+              /* The client sent ONLY "SSH-1.99-".  OpenSSH handles this as a
+               * "Protocol mismatch", so shall we.
+               */
+              bad_proto = TRUE;
+
+            } else {
+              banner = buf + 9;
+              bad_proto = FALSE;
+            }
+          }
         }
-      } 
+
+      } else {
+        if (buflen == 8) {
+          /* The client sent ONLY "SSH-2.0-".  OpenSSH handles this as a
+           * "Protocol mismatch", so shall we.
+           */
+          bad_proto = TRUE;
+
+        } else {
+          banner = buf + 8;
+        }
+      }
+    }
+
+    if (banner != NULL) {
+      char *k, *v;
+
+      k = pstrdup(session.pool, "SFTP_CLIENT_BANNER");
+      v = pstrdup(session.pool, banner);
+      pr_env_unset(session.pool, k);
+      pr_env_set(session.pool, k, v);
     }
 
     if (bad_proto) {
@@ -164,7 +220,7 @@ static int sftp_get_client_version(conn_t *conn) {
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
     "received client version '%s'", sftp_client_version);
 
-  if (sftp_interop_handle_version(sftp_client_version) < 0) {
+  if (sftp_interop_handle_version(sftp_pool, sftp_client_version) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error checking client version '%s' for interoperability: %s",
       sftp_client_version, strerror(errno));
@@ -278,55 +334,72 @@ MODRET set_sftpacceptenv(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: SFTPAuthMethods meth1 ... methN */
+/* usage: SFTPAuthMethods method-list1 ... method-listN */
 MODRET set_sftpauthmeths(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
-  char *meths = "";
-  unsigned int enabled = 0;
+  array_header *auth_chains;
 
-  if (cmd->argc < 2 ||
-      cmd->argc > 5) {
+  if (cmd->argc < 2) {
     CONF_ERROR(cmd, "Wrong number of parameters");
   }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
+  c = add_config_param(cmd->argv[0], 1, NULL);
+  auth_chains = make_array(c->pool, 0, sizeof(struct sftp_auth_chain *));
+
   for (i = 1; i < cmd->argc; i++) {
-    if (strncasecmp(cmd->argv[i], "publickey", 10) == 0) {
-      enabled |= SFTP_AUTH_FL_METH_PUBLICKEY;
+    array_header *method_names;
+    register unsigned int j;
+    struct sftp_auth_chain *auth_chain;
 
-    } else if (strncasecmp(cmd->argv[i], "hostbased", 10) == 0) {
-      enabled |= SFTP_AUTH_FL_METH_HOSTBASED;
+    method_names = sftp_auth_chain_parse_method_chain(cmd->tmp_pool,
+      cmd->argv[i]);
+    if (method_names == NULL) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "invalid authentication parameter: ", (char *) cmd->argv[i], NULL));
+    }
 
-    } else if (strncasecmp(cmd->argv[i], "password", 9) == 0) {
-      enabled |= SFTP_AUTH_FL_METH_PASSWORD;
+    auth_chain = sftp_auth_chain_alloc(c->pool);
+    for (j = 0; j < method_names->nelts; j++) {
+      int res;
+      char *name;
+      unsigned int method_id = 0;
+      const char *method_name = NULL, *submethod_name = NULL;
 
-    } else if (strncasecmp(cmd->argv[i], "keyboard-interactive", 21) == 0) {
-      if (sftp_kbdint_have_drivers() == 0) {
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-          "unable to support '", cmd->argv[i],
-            "' authentication: No drivers loaded", NULL));
+      name = ((char **) method_names->elts)[j];
+
+      res = sftp_auth_chain_parse_method(c->pool, name, &method_id,
+        &method_name, &submethod_name);
+      if (res < 0) {
+        /* Make for a slightly better/more informative error message. */
+        if (method_id == SFTP_AUTH_FL_METH_KBDINT) {
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+            "unsupported authentication method '", name,
+            "': No drivers loaded", NULL));
+
+        } else {
+          CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+            "unsupported authentication method '", name, "': ",
+            strerror(errno), NULL));
+        }
       }
 
-      enabled |= SFTP_AUTH_FL_METH_KBDINT;
-
-    } else {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        "unsupported authentication method: ", cmd->argv[i], NULL));
+      sftp_auth_chain_add_method(auth_chain, method_id, method_name,
+        submethod_name);
     }
+
+    if (sftp_auth_chain_isvalid(auth_chain) < 0) {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
+        "unsupportable chain of authentication methods '",
+        (char *) cmd->argv[i], "': ", strerror(errno), NULL));
+    }
+
+    *((struct sftp_auth_chain **) push_array(auth_chains)) = auth_chain;
   }
 
-  c = add_config_param(cmd->argv[0], 2, NULL, NULL);
-
-  for (i = 1; i < cmd->argc; i++) {
-    meths = pstrcat(c->pool, meths, *meths ? "," : "", cmd->argv[i], NULL);
-  }
-  c->argv[0] = meths;
-
-  c->argv[1] = pcalloc(c->pool, sizeof(unsigned int));
-  *((unsigned int *) c->argv[1]) = enabled;
-
+  c->argv[0] = auth_chains;
   return PR_HANDLED(cmd);
 }
 
@@ -356,7 +429,7 @@ MODRET set_sftpauthorizedkeys(cmd_rec *cmd) {
     ptr = strchr(cmd->argv[i], ':');
     if (ptr == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly formatted parameter: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
     *ptr = '\0';
 
@@ -365,7 +438,7 @@ MODRET set_sftpauthorizedkeys(cmd_rec *cmd) {
      */
     if (sftp_keystore_supports_store(cmd->argv[i], requested_key_type) < 0) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported key store: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
 
     *ptr = ':';
@@ -395,7 +468,7 @@ MODRET set_sftpciphers(cmd_rec *cmd) {
   for (i = 1; i < cmd->argc; i++) {
     if (sftp_crypto_get_cipher(cmd->argv[i], NULL, NULL) == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
-        "unsupported cipher algorithm: ", cmd->argv[i], NULL));
+        "unsupported cipher algorithm: ", (char *) cmd->argv[i], NULL));
     }
   }
 
@@ -417,13 +490,13 @@ MODRET set_sftpclientalive(cmd_rec *cmd) {
 
   count = atoi(cmd->argv[1]);
   if (count < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "max count '", cmd->argv[1],
-      "' must be equal to or greater than zero", NULL));
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "max count '",
+      (char *) cmd->argv[1], "' must be equal to or greater than zero", NULL));
   }
 
   interval = atoi(cmd->argv[2]);
   if (interval < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "interval '", cmd->argv[2],
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "interval '", (char *) cmd->argv[2],
       "' must be equal to or greater than zero", NULL));
   }
 
@@ -471,8 +544,8 @@ MODRET set_sftpclientmatch(cmd_rec *cmd) {
     pr_regexp_error(res, pre, errstr, sizeof(errstr));
     pr_regexp_free(NULL, pre);
 
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", cmd->argv[1], "' failed regex "
-      "compilation: ", errstr, NULL));
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "'", (char *) cmd->argv[1],
+      "' failed regex compilation: ", errstr, NULL));
   }
 
   c = add_config_param(cmd->argv[0], 3, NULL, NULL, NULL);
@@ -812,6 +885,7 @@ MODRET set_sftpcompression(cmd_rec *cmd) {
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
+#ifdef HAVE_ZLIB_H
   bool = get_boolean(cmd, 1);
   if (bool == -1) {
     if (strncasecmp(cmd->argv[1], "delayed", 8) != 0) {
@@ -821,6 +895,10 @@ MODRET set_sftpcompression(cmd_rec *cmd) {
 
     bool = 2;
   }
+#else
+  pr_log_debug(DEBUG0, MOD_SFTP_VERSION ": platform lacks zlib support, ignoring SFTPCompression");
+  bool = 0;
+#endif /* !HAVE_ZLIB_H */
 
   c = add_config_param(cmd->argv[0], 1, NULL);
   c->argv[0] = pcalloc(c->pool, sizeof(int));
@@ -1036,6 +1114,34 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
         "on this system; requires statvfs(3) support", cmd->argv[0]);
 #endif /* !HAVE_SYS_STATVFS_H */
 
+    } else if (strncasecmp(ext, "hardlink", 9) == 0) {
+      switch (action) {
+        case '-':
+          ext_flags &= ~SFTP_FXP_EXT_HARDLINK;
+          break;
+
+        case '+':
+          ext_flags |= SFTP_FXP_EXT_HARDLINK;
+          break;
+      }
+
+    } else if (strncasecmp(ext, "xattr", 8) == 0) {
+#ifdef HAVE_SYS_XATTR_H
+      switch (action) {
+        case '-':
+          ext_flags &= ~SFTP_FXP_EXT_XATTR;
+          break;
+
+        case '+':
+          ext_flags |= SFTP_FXP_EXT_XATTR;
+          break;
+      }
+#else
+      pr_log_debug(DEBUG0, "%s: xattr@proftpd.org extension not supported "
+        "on this system; requires extended attribute support",
+        (char *) cmd->argv[0]);
+#endif /* HAVE_SYS_XATTR_H */
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown extension: '",
         ext, "'", NULL)); 
@@ -1049,38 +1155,79 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: SFTPHostKey path|"agent:/..." */
+/* usage: SFTPHostKey path|"agent:/..."|"NoRSA"|"NoDSA"|"NoECDSA"" */
 MODRET set_sftphostkey(cmd_rec *cmd) {
   struct stat st;
+  int flags = 0;
+  config_rec *c;
+  const char *path = NULL;
 
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-  if (strncmp(cmd->argv[1], "agent:", 6) != 0) {
+  if (strncasecmp(cmd->argv[1], "NoRSA", 6) == 0) {
+    flags |= SFTP_HOSTKEY_FL_CLEAR_RSA_KEY;
+
+  } else if (strncasecmp(cmd->argv[1], "NoDSA", 6) == 0) {
+    flags |= SFTP_HOSTKEY_FL_CLEAR_DSA_KEY;
+
+  } else if (strncasecmp(cmd->argv[1], "NoECDSA", 8) == 0) {
+    flags |= SFTP_HOSTKEY_FL_CLEAR_ECDSA_KEY;
+  }
+
+  if (strncmp(cmd->argv[1], "agent:", 6) != 0 &&
+      flags == 0) {
     int res, xerrno;
 
-    if (*cmd->argv[1] != '/') {
-      CONF_ERROR(cmd, "must be an absolute path");
+    path = cmd->argv[1];
+    if (*path != '/') {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "must be an absolute path: ",
+        path, NULL));
     }
 
     PRIVS_ROOT
-    res = stat(cmd->argv[1], &st);
+    res = stat(path, &st);
     xerrno = errno;
     PRIVS_RELINQUISH
 
     if (res < 0) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to check '", cmd->argv[1],
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to check '", path,
         "': ", strerror(xerrno), NULL));
     }
 
     if ((st.st_mode & S_IRWXG) ||
         (st.st_mode & S_IRWXO)) {
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", cmd->argv[1],
-        "' as host key, as it is group- or world-accessible", NULL));
+      int insecure_hostkey_perms = FALSE;
+
+      /* Check for the InsecureHostKeyPerms SFTPOption. */
+      c = find_config(cmd->server->conf, CONF_PARAM, "SFTPOptions", FALSE);
+      while (c != NULL) {
+        unsigned long opts;
+
+        pr_signals_handle();
+
+        opts = *((unsigned long *) c->argv[0]);
+        if (opts & SFTP_OPT_INSECURE_HOSTKEY_PERMS) {
+          insecure_hostkey_perms = TRUE;
+          break;
+        }
+      }
+
+      if (insecure_hostkey_perms) {
+        pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION ": unable to use '%s' "
+          "as host key, as it is group- or world-accessible", path);
+
+      } else {
+        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path,
+          "' as host key, as it is group- or world-accessible", NULL));
+      }
     }
   }
 
-  (void) add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+  c = add_config_param_str(cmd->argv[0], 2, NULL, NULL);
+  c->argv[0] = pstrdup(c->pool, path);
+  c->argv[1] = palloc(c->pool, sizeof(int));
+  *((int *) c->argv[1]) = flags;
   return PR_HANDLED(cmd);
 }
 
@@ -1095,7 +1242,7 @@ MODRET set_sftpkeyblacklist(cmd_rec *cmd) {
         "' not an absolute path", NULL));
     }
 
-    if (!exists(cmd->argv[1])) {
+    if (!exists2(cmd->tmp_pool, cmd->argv[1])) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "path '", cmd->argv[1],
         "' not found", NULL));
     }
@@ -1122,6 +1269,9 @@ MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
         strncmp(cmd->argv[i], "diffie-hellman-group14-sha1", 28) != 0 &&
 #if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
     (OPENSSL_VERSION_NUMBER > 0x000908000L)
+        strncmp(cmd->argv[i], "diffie-hellman-group14-sha256", 30) != 0 &&
+        strncmp(cmd->argv[i], "diffie-hellman-group16-sha512", 30) != 0 &&
+        strncmp(cmd->argv[i], "diffie-hellman-group18-sha512", 30) != 0 &&
         strncmp(cmd->argv[i], "diffie-hellman-group-exchange-sha256", 37) != 0 &&
 #endif
         strncmp(cmd->argv[i], "diffie-hellman-group-exchange-sha1", 35) != 0 &&
@@ -1130,6 +1280,9 @@ MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
         strncmp(cmd->argv[i], "ecdh-sha2-nistp384", 19) != 0 &&
         strncmp(cmd->argv[i], "ecdh-sha2-nistp521", 19) != 0 &&
 #endif /* PR_USE_OPENSSL_ECC */
+#if defined(HAVE_SODIUM_H) && defined(HAVE_SHA256_OPENSSL)
+        strncmp(cmd->argv[i], "curve25519-sha256@libssh.org", 22) != 0 &&
+#endif /* HAVE_SODIUM_H and HAVE_SHA256_OPENSSL */
         strncmp(cmd->argv[i], "rsa1024-sha1", 13) != 0) {
 
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool,
@@ -1144,6 +1297,62 @@ MODRET set_sftpkeyexchanges(cmd_rec *cmd) {
       NULL);
   }
   c->argv[0] = exchanges;
+
+  return PR_HANDLED(cmd);
+}
+
+/* usage: SFTPKeyLimits limit1 ... limitN */
+MODRET set_sftpkeylimits(cmd_rec *cmd) {
+  register unsigned int i;
+  config_rec *c;
+
+  if (cmd->argc < 3 ||
+      ((cmd->argc-1) % 2 != 0)) {
+    CONF_ERROR(cmd, "wrong number of parameters");
+  }
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  c = add_config_param(cmd->argv[0], 3, NULL, NULL, NULL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    if (strcasecmp(cmd->argv[i], "MinimumRSASize") == 0) {
+      int nbits;
+
+      nbits = atoi(cmd->argv[++i]);
+      if (nbits < 0) {
+        CONF_ERROR(cmd, "minimum key size must be zero or greater");
+      }
+
+      c->argv[0] = palloc(c->pool, sizeof(int));
+      *((int *) c->argv[0]) = nbits;
+
+    } else if (strcasecmp(cmd->argv[i], "MinimumDSASize") == 0) {
+      int nbits;
+
+      nbits = atoi(cmd->argv[++i]);
+      if (nbits < 0) {
+        CONF_ERROR(cmd, "minimum key size must be zero or greater");
+      }
+
+      c->argv[1] = palloc(c->pool, sizeof(int));
+      *((int *) c->argv[1]) = nbits;
+
+    } else if (strcasecmp(cmd->argv[i], "MinimumECSize") == 0) {
+      int nbits;
+
+      nbits = atoi(cmd->argv[++i]);
+      if (nbits < 0) {
+        CONF_ERROR(cmd, "minimum key size must be zero or greater");
+      }
+
+      c->argv[2] = palloc(c->pool, sizeof(int));
+      *((int *) c->argv[2]) = nbits;
+
+    } else {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPKeyLimit '",
+        cmd->argv[i], "'", NULL));
+    }
+  }
 
   return PR_HANDLED(cmd);
 }
@@ -1231,8 +1440,24 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
     } else if (strncmp(cmd->argv[i], "MatchKeySubject", 16) == 0) {
       opts |= SFTP_OPT_MATCH_KEY_SUBJECT;
 
-    } else if (strcmp(cmd->argv[1], "AllowInsecureLogin") == 0) {
+    } else if (strcmp(cmd->argv[i], "AllowInsecureLogin") == 0) {
       opts |= SFTP_OPT_ALLOW_INSECURE_LOGIN;
+
+    } else if (strcmp(cmd->argv[i], "InsecureHostKeyPerms") == 0) {
+      opts |= SFTP_OPT_INSECURE_HOSTKEY_PERMS;
+
+    } else if (strcmp(cmd->argv[i], "AllowWeakDH") == 0) {
+      opts |= SFTP_OPT_ALLOW_WEAK_DH;
+
+    } else if (strcmp(cmd->argv[i], "IgnoreFIFOs") == 0) {
+      opts |= SFTP_OPT_IGNORE_FIFOS;
+
+    } else if (strcmp(cmd->argv[i],
+               "IgnoreSFTPUploadExtendedAttributes") == 0) {
+      opts |= SFTP_OPT_IGNORE_SFTP_UPLOAD_XATTRS;
+
+    } else if (strcmp(cmd->argv[i], "IgnoreSFTPSetExtendedAttributes") == 0) {
+      opts |= SFTP_OPT_IGNORE_SFTP_SET_XATTRS;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPOption '",
@@ -1249,26 +1474,29 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
 /* usage: SFTPPassPhraseProvider path */
 MODRET set_sftppassphraseprovider(cmd_rec *cmd) {
   struct stat st;
+  char *path;
  
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
+
+  path = cmd->argv[1];
  
-  if (*cmd->argv[1] != '/') {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "must be a full path: '",
-      cmd->argv[1], "'", NULL));
+  if (*path != '/') {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "must be a full path: '", path, "'",
+      NULL));
   }
  
-  if (stat(cmd->argv[1], &st) < 0) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error checking '", 
-      cmd->argv[1], "': ", strerror(errno), NULL));
+  if (stat(path, &st) < 0) {
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error checking '", path, "': ",
+      strerror(errno), NULL));
   }
 
   if (!S_ISREG(st.st_mode)) {
-    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '",
-      cmd->argv[1], ": Not a regular file", NULL));
+    CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unable to use '", path,
+      ": Not a regular file", NULL));
   }
 
-  add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
+  add_config_param_str(cmd->argv[0], 1, path);
   return PR_HANDLED(cmd);
 }
 
@@ -1413,7 +1641,14 @@ static void sftp_ban_host_ev(const void *event_data, void *user_data) {
 
   /* Only send an SSH2 DISCONNECT if we're dealing with an SSH2 client. */
   if (strncmp(proto, "SSH2", 5) == 0) {
-    sftp_disconnect_send(SFTP_SSH2_DISCONNECT_BY_APPLICATION, "Banned",
+    char *ban_msg = "Banned", *name;
+
+    name = user_data;
+    if (name != NULL) {
+      ban_msg = pstrcat(sftp_pool, "Host ", name, " has been banned", NULL);
+    }
+
+    sftp_disconnect_send(SFTP_SSH2_DISCONNECT_BY_APPLICATION, ban_msg,
       __FILE__, __LINE__, "");
   }
 }
@@ -1425,7 +1660,14 @@ static void sftp_ban_user_ev(const void *event_data, void *user_data) {
 
   /* Only send an SSH2 DISCONNECT if we're dealing with an SSH2 client. */
   if (strncmp(proto, "SSH2", 5) == 0) {
-    sftp_disconnect_send(SFTP_SSH2_DISCONNECT_BY_APPLICATION, "Banned",
+    char *ban_msg = "Banned", *name;
+
+    name = user_data;
+    if (name != NULL) {
+      ban_msg = pstrcat(sftp_pool, "User ", name, " has been banned", NULL);
+    }
+
+    sftp_disconnect_send(SFTP_SSH2_DISCONNECT_BY_APPLICATION, ban_msg,
       __FILE__, __LINE__, "");
   }
 }
@@ -1451,6 +1693,7 @@ static void sftp_mod_unload_ev(const void *event_data, void *user_data) {
     sftp_interop_free();
     sftp_keystore_free();
     sftp_keys_free();
+    sftp_cipher_free();
     sftp_mac_free();
     pr_response_block(FALSE);
     sftp_utf8_free();
@@ -1469,8 +1712,12 @@ static void sftp_mod_unload_ev(const void *event_data, void *user_data) {
 
 static void sftp_postparse_ev(const void *event_data, void *user_data) {
   config_rec *c;
+  server_rec *s;
 
   /* Initialize OpenSSL. */
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  OPENSSL_config(NULL);
+#endif /* prior to OpenSSL-1.1.x */
   ERR_load_crypto_strings();
   OpenSSL_add_all_algorithms();
 
@@ -1489,6 +1736,68 @@ static void sftp_postparse_ev(const void *event_data, void *user_data) {
     pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
       ": error preparing interoperability checks: %s", strerror(errno));
   }
+
+  /* Check for incompatible SFTPAuthMethods configurations.  For example,
+   * configuring:
+   *
+   *  SFTPAuthMethods hostbased+password
+   *
+   * without also configuring SFTPAuthorizedHostKeys means that authentication
+   * will never succeed.
+   */
+  for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
+    int supports_hostbased = FALSE, supports_publickey = FALSE;
+
+    c = find_config(s->conf, CONF_PARAM, "SFTPAuthorizedHostKeys", FALSE);
+    if (c != NULL) {
+      supports_hostbased = TRUE;
+    }
+
+    c = find_config(s->conf, CONF_PARAM, "SFTPAuthorizedUserKeys", FALSE);
+    if (c != NULL) {
+      supports_publickey = TRUE;
+    }
+
+    c = find_config(s->conf, CONF_PARAM, "SFTPAuthMethods", FALSE);
+    if (c != NULL) {
+      register unsigned int i;
+      array_header *auth_chains;
+
+      auth_chains = c->argv[0];
+
+      for (i = 0; i < auth_chains->nelts; i++) {
+        register unsigned int j;
+        struct sftp_auth_chain *auth_chain;
+
+        auth_chain = ((struct sftp_auth_chain **) auth_chains->elts)[i];
+        for (j = 0; j < auth_chain->methods->nelts; j++) {
+          struct sftp_auth_method *meth;
+
+          meth = ((struct sftp_auth_method **) auth_chain->methods->elts)[j];
+
+          if (meth->method_id == SFTP_AUTH_FL_METH_HOSTBASED &&
+              supports_hostbased == FALSE) {
+            pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+              ": Server %s: cannot support authentication method '%s' "
+              "without SFTPAuthorizedHostKeys configuraion", s->ServerName,
+              meth->method_name);
+            pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+              NULL);
+          }
+
+          if (meth->method_id == SFTP_AUTH_FL_METH_PUBLICKEY &&
+              supports_publickey == FALSE) {
+            pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+              ": Server %s: cannot support authentication method '%s' "
+              "without SFTPAuthorizedUserKeys configuraion", s->ServerName,
+              meth->method_name);
+            pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BAD_CONFIG,
+              NULL);
+          }
+        }
+      }
+    }
+  }
 }
 
 static void sftp_restart_ev(const void *event_data, void *user_data) {
@@ -1504,6 +1813,7 @@ static void sftp_shutdown_ev(const void *event_data, void *user_data) {
   sftp_interop_free();
   sftp_keystore_free();
   sftp_keys_free();
+  sftp_cipher_free();
   sftp_mac_free();
   sftp_utf8_free();
 
@@ -1519,6 +1829,42 @@ static void sftp_shutdown_ev(const void *event_data, void *user_data) {
   }
 }
 
+static void sftp_timeoutlogin_ev(const void *event_data, void *user_data) {
+  if (sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) {
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_BY_APPLICATION, NULL);
+  }
+}
+
+#ifdef PR_USE_DEVEL
+static void pool_printf(const char *fmt, ...) {
+  char buf[PR_TUNABLE_BUFFER_SIZE];
+  va_list msg;
+
+  memset(buf, '\0', sizeof(buf));
+
+  va_start(msg, fmt);
+  vsnprintf(buf, sizeof(buf), fmt, msg);
+  va_end(msg);
+
+  buf[sizeof(buf)-1] = '\0';
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "%s", buf);
+}
+
+static void sftp_sigusr2_ev(const void *event_data, void *user_data) {
+  /* Note: the mod_shaper module deliberately uses the SIGUSR2 signal
+   * for handling shaping.  Thus we only want to dump out the pools
+   * IFF mod_shaper is NOT present.
+   */
+  if (pr_module_exists("mod_shaper.c") == FALSE) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "%s",
+      "-----BEGIN POOL DUMP-----");
+    pr_pool_debug_memory(pool_printf);
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "%s",
+      "-----END POOL DUMP-----");
+  }
+}
+#endif /* PR_USE_DEVEL */
+
 static void sftp_wrap_conn_denied_ev(const void *event_data, void *user_data) {
   const char *proto;
 
@@ -1526,16 +1872,21 @@ static void sftp_wrap_conn_denied_ev(const void *event_data, void *user_data) {
 
   /* Only send an SSH2 DISCONNECT if we're dealing with an SSH2 client. */
   if (strncmp(proto, "SSH2", 5) == 0) {
-    char *msg;
+    const char *msg;
 
     msg = get_param_ptr(main_server->conf, "WrapDenyMsg", FALSE);
     if (msg != NULL) {
+      const char *user;
+
+      user = session.user;
+      if (user == NULL) {
+        user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
+      }
+
       /* If the client has authenticated, we can interpolate any '%u'
        * variable in the configured deny message.
        */
-      if (sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH) {
-        msg = sreplace(sftp_pool, msg, "%u", session.user, NULL);
-      }
+      msg = sreplace(sftp_pool, msg, "%u", user, NULL);
 
     } else {
       /* XXX This needs to be properly localized.  However, trying to use
@@ -1609,7 +1960,22 @@ static int sftp_init(void) {
 
   pr_log_debug(DEBUG2, MOD_SFTP_VERSION ": using " OPENSSL_VERSION_TEXT);
 
+#if defined(HAVE_SODIUM_H)
+  if (sodium_init() < 0) {
+    pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
+      ": error initializing libsodium");
+
+  } else {
+    const char *sodium_version;
+
+    sodium_version = sodium_version_string();
+    pr_log_debug(DEBUG2, MOD_SFTP_VERSION ": using libsodium-%s",
+      sodium_version);
+  }
+#endif /* HAVE_SODIUM_H */
+
   sftp_keystore_init();
+  sftp_cipher_init();
   sftp_mac_init();
 
   pr_event_register(&sftp_module, "mod_ban.ban-class", sftp_ban_class_ev, NULL);
@@ -1630,6 +1996,8 @@ static int sftp_init(void) {
   pr_event_register(&sftp_module, "core.postparse", sftp_postparse_ev, NULL);
   pr_event_register(&sftp_module, "core.restart", sftp_restart_ev, NULL);
   pr_event_register(&sftp_module, "core.shutdown", sftp_shutdown_ev, NULL);
+  pr_event_register(&sftp_module, "core.timeout-login", sftp_timeoutlogin_ev,
+    NULL);
 
   return 0;
 }
@@ -1647,6 +2015,9 @@ static int sftp_sess_init(void) {
     return 0;
 
   pr_event_register(&sftp_module, "core.exit", sftp_exit_ev, NULL);
+#ifdef PR_USE_DEVEL
+  pr_event_register(&sftp_module, "core.signal.USR2", sftp_sigusr2_ev, NULL);
+#endif /* PR_USE_DEVEL */
   pr_event_register(&sftp_module, "mod_auth.max-clients",
     sftp_max_conns_ev, NULL);
   pr_event_register(&sftp_module, "mod_auth.max-clients-per-class",
@@ -1743,24 +2114,84 @@ static int sftp_sess_init(void) {
   sftp_pool = make_sub_pool(session.pool);
   pr_pool_tag(sftp_pool, MOD_SFTP_VERSION);
 
+  c = find_config(main_server->conf, CONF_PARAM, "SFTPOptions", FALSE);
+  while (c != NULL) {
+    unsigned long opts;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    sftp_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "SFTPOptions", FALSE);
+  }
+
+  /* We do two passes through the configured hostkeys.  On the first pass,
+   * we focus on loading all of the configured keys.  On the second pass,
+   * we focus on handling any of the hostkey flags that would e.g. clear the
+   * previously loaded keys.
+   */
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPHostKey", FALSE);
   while (c) {
     const char *path = c->argv[0];
+    int flags = *((int *) c->argv[1]);
 
-    /* This pool needs to have the lifetime of the session, since the hostkey
-     * data is needed for rekeying, and rekeying can happen at any time
-     * during the session.
-     */
-    if (sftp_keys_get_hostkey(sftp_pool, path) < 0) {
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error loading hostkey '%s', skipping key", path);
+    if (path != NULL &&
+        flags == 0) {
+      /* This pool needs to have the lifetime of the session, since the hostkey
+       * data is needed for rekeying, and rekeying can happen at any time
+       * during the session.
+       */
+      if (sftp_keys_get_hostkey(sftp_pool, path) < 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "error loading hostkey '%s', skipping key", path);
+      }
     }
 
     c = find_config_next(c, c->next, CONF_PARAM, "SFTPHostKey", FALSE);
   }
 
-  /* Support having either an RSA hostkey, a DSA hostkey, or both.  But
-   * we have to have at least one hostkey.
+  c = find_config(main_server->conf, CONF_PARAM, "SFTPHostKey", FALSE);
+  while (c) {
+    int flags = *((int *) c->argv[1]);
+
+    if (flags != 0) {
+      /* Handle any flags, such as for clearing previous host keys. */
+      if (flags & SFTP_HOSTKEY_FL_CLEAR_RSA_KEY) {
+        if (sftp_keys_clear_rsa_hostkey() < 0) {
+          pr_trace_msg(trace_channel, 13,
+            "error clearing RSA hostkey: %s", strerror(errno));
+
+        } else {
+          pr_trace_msg(trace_channel, 9, "cleared RSA hostkey");
+        }
+
+      } else if (flags & SFTP_HOSTKEY_FL_CLEAR_DSA_KEY) {
+        if (sftp_keys_clear_dsa_hostkey() < 0) {
+          pr_trace_msg(trace_channel, 13,
+            "error clearing DSA hostkey: %s", strerror(errno));
+
+        } else {
+          pr_trace_msg(trace_channel, 9, "cleared DSA hostkey");
+        }
+
+      } else if (flags & SFTP_HOSTKEY_FL_CLEAR_ECDSA_KEY) {
+        if (sftp_keys_clear_ecdsa_hostkey() < 0) {
+          pr_trace_msg(trace_channel, 13,
+            "error clearing ECDSA hostkey(s): %s", strerror(errno));
+
+        } else {
+          pr_trace_msg(trace_channel, 9, "cleared ECDSA hostkey(s)");
+        }
+      }
+    }
+
+    c = find_config_next(c, c->next, CONF_PARAM, "SFTPHostKey", FALSE);
+  }
+
+  /* Support having either an RSA hostkey, a DSA hostkey, an ECDSA hostkey,
+   * or any combination thereof.  But we have to have at least one hostkey.
    */
   if (sftp_keys_have_dsa_hostkey() < 0 &&
       sftp_keys_have_rsa_hostkey() < 0 &&
@@ -1771,8 +2202,34 @@ static int sftp_sess_init(void) {
     return -1;
   }
 
+  c = find_config(main_server->conf, CONF_PARAM, "SFTPKeyLimits", FALSE);
+  if (c != NULL) {
+    int rsa_min = -1, dsa_min = -1, ec_min = -1;
+
+    if (c->argv[0] != NULL) {
+      rsa_min = *((int *) c->argv[0]);
+    }
+
+    if (c->argv[1] != NULL) {
+      dsa_min = *((int *) c->argv[1]);
+    }
+
+    if (c->argv[2] != NULL) {
+      ec_min = *((int *) c->argv[2]);
+    }
+
+    if (rsa_min > -1 ||
+        dsa_min > -1 ||
+        ec_min > -1) {
+      if (sftp_keys_set_key_limits(rsa_min, dsa_min, ec_min) < 0) {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "error setting SFTPKeyLimits: %s", strerror(errno));
+      }
+    }
+  }
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPKeyBlacklist", FALSE);
-  if (c) {
+  if (c != NULL) {
     if (strncasecmp((char *) c->argv[0], "none", 5) != 0) {
       sftp_blacklist_set_file(c->argv[0]);
 
@@ -1785,18 +2242,6 @@ static int sftp_sess_init(void) {
   c = find_config(main_server->conf, CONF_PARAM, "SFTPMaxChannels", FALSE);
   if (c) {
     sftp_channel_set_max_count(*((unsigned int *) c->argv[0]));
-  }
-
-  c = find_config(main_server->conf, CONF_PARAM, "SFTPOptions", FALSE);
-  while (c != NULL) {
-    unsigned long opts;
-
-    pr_signals_handle();
-
-    opts = *((unsigned long *) c->argv[0]);
-    sftp_opts |= opts;
-
-    c = find_config_next(c, c->next, CONF_PARAM, "SFTPOptions", FALSE);
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "DisplayLogin", FALSE);
@@ -1990,6 +2435,7 @@ static conftable sftp_conftab[] = {
   { "SFTPHostKey",		set_sftphostkey,		NULL },
   { "SFTPKeyBlacklist",		set_sftpkeyblacklist,		NULL },
   { "SFTPKeyExchanges",		set_sftpkeyexchanges,		NULL },
+  { "SFTPKeyLimits",		set_sftpkeylimits,		NULL },
   { "SFTPLog",			set_sftplog,			NULL },
   { "SFTPMaxChannels",		set_sftpmaxchannels,		NULL },
   { "SFTPOptions",		set_sftpoptions,		NULL },

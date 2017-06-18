@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2014 The ProFTPD Project
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,9 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Network IO stream layer
- * $Id: netio.h,v 1.18 2014-01-06 06:57:16 castaglia Exp $
- */
+/* Network IO stream layer */
 
 #ifndef PR_NETIO_H
 #define PR_NETIO_H
@@ -186,7 +184,7 @@ int pr_netio_printf_async(pr_netio_stream_t *, char *,...);
 int pr_netio_poll(pr_netio_stream_t *);
 
 /* Read, from the given stream, into the buffer the requested size_t number
- * of bytes.  The int is the minimum number of bytes to read before
+ * of bytes.  The last argument is the minimum number of bytes to read before
  * returning 1 (or greater).
  */
 int pr_netio_read(pr_netio_stream_t *, char *, size_t, int);
@@ -200,6 +198,12 @@ int pr_netio_shutdown(pr_netio_stream_t *, int);
  * command, and odd clients
  */
 char *pr_netio_telnet_gets(char *, size_t, pr_netio_stream_t *,
+  pr_netio_stream_t *);
+
+/* Similar to pr_netio_telnet_gets(), except that it returns the number of
+ * bytes stored in the given buffer, or -1 if there was an error.
+ */
+int pr_netio_telnet_gets2(char *, size_t, pr_netio_stream_t *,
   pr_netio_stream_t *);
 
 int pr_netio_write(pr_netio_stream_t *, char *, size_t);
@@ -219,7 +223,7 @@ void pr_netio_set_poll_interval(pr_netio_stream_t *, unsigned int);
  * default handlers.
  */
 pr_netio_t *pr_alloc_netio(pool *);
-pr_netio_t *pr_alloc_netio2(pool *, module *);
+pr_netio_t *pr_alloc_netio2(pool *, module *, const char *);
 
 /* Register the given NetIO object and all its callbacks for the network
  * I/O layer's use.  If given a NULL argument, it will automatically
@@ -227,15 +231,13 @@ pr_netio_t *pr_alloc_netio2(pool *, module *);
  */
 int pr_register_netio(pr_netio_t *, int);
 
-/* Unregister the NetIO objects indicated by strm_types.
- */
+/* Unregister the NetIO objects indicated by strm_types. */
 int pr_unregister_netio(int);
 
 /* Peek at the NetIO registered for the given stream type. */
 pr_netio_t *pr_get_netio(int);
 
-/* Initialize the network I/O layer.
- */
+/* Initialize the network I/O layer. */
 void init_netio(void);
 
 #endif /* PR_NETIO_H */

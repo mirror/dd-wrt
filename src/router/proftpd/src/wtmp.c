@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2013 The ProFTPD Project team
+ * Copyright (c) 2009-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * holders give permission to link this program with OpenSSL, and distribute
  * the resulting executable, without including the source code for OpenSSL in
  * the source distribution.
- *
- * $Id: wtmp.c,v 1.10 2013-12-09 19:16:15 castaglia Exp $
  */
 
 #include "conf.h"
@@ -32,7 +30,7 @@
  */
 
 int log_wtmp(const char *line, const char *name, const char *host,
-    pr_netaddr_t *ip) {
+    const pr_netaddr_t *ip) {
   struct stat buf;
   int res = 0;
 

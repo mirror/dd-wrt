@@ -127,6 +127,11 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  hidefiles_multi_dirs => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -3535,7 +3540,7 @@ sub hidefiles_stat {
 
       my $expected;
 
-      $expected = 211;
+      $expected = 213;
       $self->assert($expected == $resp_code,
         test_msg("Expected response code $expected, got $resp_code"));
 
@@ -4053,6 +4058,181 @@ sub hidefiles_mlsd_symlink_bug3924 {
   }
 
   unlink($log_file);
+}
+
+# See:
+#   https://forums.proftpd.org/smf/index.php/topic,12152.0.html
+sub hidefiles_multi_dirs {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'config');
+
+  my $a_dir = File::Spec->rel2abs("$tmpdir/a");
+  mkpath($a_dir);
+
+  my $b_dir = File::Spec->rel2abs("$tmpdir/a/b");
+  mkpath($b_dir);
+
+  my $test_file = File::Spec->rel2abs("$b_dir/b.sh");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $c_dir = File::Spec->rel2abs("$tmpdir/a/b/c");
+  mkpath($c_dir);
+
+  $test_file = File::Spec->rel2abs("$c_dir/c.sh");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $a_dir, $b_dir)) {
+      die("Can't set perms on $a_dir, $b_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $a_dir, $b_dir)) {
+      die("Can't set owner of $a_dir, $b_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'directory:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    if ($^O eq 'darwin') {
+      # Mac OSX hack
+      $b_dir = '/private' . $b_dir;
+    }
+
+    print $fh <<EOC;
+<Directory $b_dir>
+  HideFiles \(.sh\)\$
+</Directory>
+
+<Directory $b_dir/\*>
+  HideFiles none
+</Directory>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->mlsd_raw($b_dir);
+      unless ($conn) {
+        die("Failed to MLSD $b_dir: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      my $tmp;
+      while ($conn->read($tmp, 8192, 30)) {
+        $buf .= $tmp;
+      }
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Output:\n$buf\n";
+      }
+
+      $self->assert($buf !~ /b\.sh/, "Expected no .sh, saw 'b.sh'");
+
+      $conn = $client->mlsd_raw($c_dir);
+      unless ($conn) {
+        die("Failed to MLSD $c_dir: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      $buf = '';
+      $tmp = '';
+      while ($conn->read($tmp, 8192, 30)) {
+        $buf .= $tmp;
+      }
+      eval { $conn->close() };
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# Output:\n$buf\n";
+      }
+
+      $self->assert($buf =~ /c\.sh/, "Expected c.sh, saw none");
+      $client->quit();
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

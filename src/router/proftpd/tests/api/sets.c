@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Sets API tests
- * $Id: sets.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
- */
+/* Sets API tests */
 
 #include "tests.h"
 
@@ -449,7 +447,6 @@ Suite *tests_get_sets_suite(void) {
   TCase *testcase;
 
   suite = suite_create("sets");
-
   testcase = tcase_create("base");
 
   tcase_add_checked_fixture(testcase, set_up, tear_down);
@@ -462,6 +459,5 @@ Suite *tests_get_sets_suite(void) {
   tcase_add_test(testcase, set_copy_test);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

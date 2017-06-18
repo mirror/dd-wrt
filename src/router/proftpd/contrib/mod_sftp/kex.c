@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +36,19 @@
 #include "disconnect.h"
 #include "interop.h"
 #include "tap.h"
+#include "misc.h"
 
+#ifdef PR_USE_SODIUM
+# include <sodium.h>
+# define CURVE25519_SIZE	32
+#endif /* PR_USE_SODIUM */
+
+/* Define the minimum DH group length we allow (unless the AllowWeakDH
+ * SFTPOption is used).
+ */
+#define SFTP_DH_MIN_LEN			2048
+
+extern pr_response_t *resp_list, *resp_err_list;
 extern module sftp_module;
 
 /* For managing the kexinit process */
@@ -61,6 +73,8 @@ struct sftp_kex_names {
 };
 
 struct sftp_kex {
+  pool *pool;
+
   /* Versions */
   const char *client_version;
   const char *server_version;
@@ -100,6 +114,9 @@ struct sftp_kex {
   /* Using ECDH? */
   int use_ecdh;
 
+  /* Using Curve25519? */
+  int use_curve25519;
+
   /* For generating the session ID */
   DH *dh;
   BIGNUM *e;
@@ -117,6 +134,9 @@ struct sftp_kex {
   EC_KEY *ec;
   EC_POINT *client_point;
 #endif /* PR_USE_OPENSSL_ECC */
+#if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+  unsigned char *client_curve25519;
+#endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
 };
 
 static struct sftp_kex *kex_first_kex = NULL;
@@ -141,6 +161,76 @@ static const char *dh_group14_str =
   "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9DE2BCBF695581718"
   "3995497CEA956AE515D2261898FA051015728E5A8AACAA68FFFFFFFFFFFFFFFF";
 
+static const char *dh_group16_str =
+  "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
+  "29024E088A67CC74020BBEA63B139B22514A08798E3404DD"
+  "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
+  "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED"
+  "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D"
+  "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F"
+  "83655D23DCA3AD961C62F356208552BB9ED529077096966D"
+  "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B"
+  "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9"
+  "DE2BCBF6955817183995497CEA956AE515D2261898FA0510"
+  "15728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64"
+  "ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7"
+  "ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6B"
+  "F12FFA06D98A0864D87602733EC86A64521F2B18177B200C"
+  "BBE117577A615D6C770988C0BAD946E208E24FA074E5AB31"
+  "43DB5BFCE0FD108E4B82D120A92108011A723C12A787E6D7"
+  "88719A10BDBA5B2699C327186AF4E23C1A946834B6150BDA"
+  "2583E9CA2AD44CE8DBBBC2DB04DE8EF92E8EFC141FBECAA6"
+  "287C59474E6BC05D99B2964FA090C3A2233BA186515BE7ED"
+  "1F612970CEE2D7AFB81BDD762170481CD0069127D5B05AA9"
+  "93B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934063199"
+  "FFFFFFFFFFFFFFFF";
+
+static const char *dh_group18_str =
+  "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1"
+  "29024E088A67CC74020BBEA63B139B22514A08798E3404DD"
+  "EF9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245"
+  "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED"
+  "EE386BFB5A899FA5AE9F24117C4B1FE649286651ECE45B3D"
+  "C2007CB8A163BF0598DA48361C55D39A69163FA8FD24CF5F"
+  "83655D23DCA3AD961C62F356208552BB9ED529077096966D"
+  "670C354E4ABC9804F1746C08CA18217C32905E462E36CE3B"
+  "E39E772C180E86039B2783A2EC07A28FB5C55DF06F4C52C9"
+  "DE2BCBF6955817183995497CEA956AE515D2261898FA0510"
+  "15728E5A8AAAC42DAD33170D04507A33A85521ABDF1CBA64"
+  "ECFB850458DBEF0A8AEA71575D060C7DB3970F85A6E1E4C7"
+  "ABF5AE8CDB0933D71E8C94E04A25619DCEE3D2261AD2EE6B"
+  "F12FFA06D98A0864D87602733EC86A64521F2B18177B200C"
+  "BBE117577A615D6C770988C0BAD946E208E24FA074E5AB31"
+  "43DB5BFCE0FD108E4B82D120A92108011A723C12A787E6D7"
+  "88719A10BDBA5B2699C327186AF4E23C1A946834B6150BDA"
+  "2583E9CA2AD44CE8DBBBC2DB04DE8EF92E8EFC141FBECAA6"
+  "287C59474E6BC05D99B2964FA090C3A2233BA186515BE7ED"
+  "1F612970CEE2D7AFB81BDD762170481CD0069127D5B05AA9"
+  "93B4EA988D8FDDC186FFB7DC90A6C08F4DF435C934028492"
+  "36C3FAB4D27C7026C1D4DCB2602646DEC9751E763DBA37BD"
+  "F8FF9406AD9E530EE5DB382F413001AEB06A53ED9027D831"
+  "179727B0865A8918DA3EDBEBCF9B14ED44CE6CBACED4BB1B"
+  "DB7F1447E6CC254B332051512BD7AF426FB8F401378CD2BF"
+  "5983CA01C64B92ECF032EA15D1721D03F482D7CE6E74FEF6"
+  "D55E702F46980C82B5A84031900B1C9E59E7C97FBEC7E8F3"
+  "23A97A7E36CC88BE0F1D45B7FF585AC54BD407B22B4154AA"
+  "CC8F6D7EBF48E1D814CC5ED20F8037E0A79715EEF29BE328"
+  "06A1D58BB7C5DA76F550AA3D8A1FBFF0EB19CCB1A313D55C"
+  "DA56C9EC2EF29632387FE8D76E3C0468043E8F663F4860EE"
+  "12BF2D5B0B7474D6E694F91E6DBE115974A3926F12FEE5E4"
+  "38777CB6A932DF8CD8BEC4D073B931BA3BC832B68D9DD300"
+  "741FA7BF8AFC47ED2576F6936BA424663AAB639C5AE4F568"
+  "3423B4742BF1C978238F16CBE39D652DE3FDB8BEFC848AD9"
+  "22222E04A4037C0713EB57A81A23F0C73473FC646CEA306B"
+  "4BCBC8862F8385DDFA9D4B7FA2C087E879683303ED5BDD3A"
+  "062B3CF5B3A278A66D2A13F83F44F82DDF310EE074AB6A36"
+  "4597E899A0255DC164F31CC50846851DF9AB48195DED7EA1"
+  "B1D510BD7EE74D73FAF36BC31ECFA268359046F4EB879F92"
+  "4009438B481C6CD7889A002ED5EE382BC9190DA6FC026E47"
+  "9558E4475677E9AA9E3050E2765694DFC81F56E880B96E71"
+  "60C980DD98EDD3DFFFFFFFFFFFFFFFFF";
+
+
 #define SFTP_DH_GROUP1_SHA1		1
 #define SFTP_DH_GROUP14_SHA1		2
 #define SFTP_DH_GEX_SHA1		3
@@ -150,6 +240,9 @@ static const char *dh_group14_str =
 #define SFTP_ECDH_SHA256		7
 #define SFTP_ECDH_SHA384		8
 #define SFTP_ECDH_SHA512		9
+#define SFTP_DH_GROUP14_SHA256		10
+#define SFTP_DH_GROUP16_SHA512		11
+#define SFTP_DH_GROUP18_SHA512		12
 
 #define SFTP_KEXRSA_SHA1_SIZE		2048
 #define SFTP_KEXRSA_SHA256_SIZE		3072
@@ -171,25 +264,36 @@ static const char *trace_channel = "ssh2";
 
 static int kex_rekey_timeout_cb(CALLBACK_FRAME) {
   pr_trace_msg(trace_channel, 5,
-    "Failed to rekey before timeout, disconnecting client");
+    "Failed to rekey before %d %s timeout, disconnecting client",
+    kex_rekey_timeout, kex_rekey_timeout != 1 ? "seconds" : "second");
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+    "Failed to rekey before %d %s timeout, disconnecting client",
+    kex_rekey_timeout, kex_rekey_timeout != 1 ? "seconds" : "second");
   SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_KEY_EXCHANGE_FAILED, NULL);
   return 0;
 }
 
 static int kex_rekey_timer_cb(CALLBACK_FRAME) {
-  pr_trace_msg(trace_channel, 17, "SFTPRekey timer expired, requesting rekey");
+  pr_trace_msg(trace_channel, 17,
+    "SFTPRekey timer (%d %s) expired, requesting rekey", kex_rekey_interval,
+    kex_rekey_interval != 1 ? "secs" : "sec");
   sftp_kex_rekey();
   return 0;
 }
 
 static const unsigned char *calculate_h(struct sftp_kex *kex,
-    const unsigned char *hostkey_data, size_t hostkey_datalen, const BIGNUM *k,
-    uint32_t *hlen) {
+    const unsigned char *hostkey_data, uint32_t hostkey_datalen,
+    const BIGNUM *k, uint32_t *hlen) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
+  const BIGNUM *dh_pub_key = NULL;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
-  bufsz = buflen = 4096;
+  bufsz = buflen = 8192;
 
   /* XXX Is this buffer large enough? Too large? */
   ptr = buf = sftp_msg_getbuf(kex_pool, bufsz);
@@ -219,10 +323,23 @@ static const unsigned char *calculate_h(struct sftp_kex *kex,
   sftp_msg_write_mpint(&buf, &buflen, kex->e);
 
   /* Server's key */
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->pub_key);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_key(kex->dh, &dh_pub_key, NULL);
+#else
+  dh_pub_key = kex->dh->pub_key;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_pub_key);
 
   /* Shared secret */
   sftp_msg_write_mpint(&buf, &buflen, k);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  pctx = EVP_MD_CTX_new();
+#else
+  pctx = &ctx;
+#endif /* OpenSSL-1.1.0 and later */
 
   /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
    * int.  Without these ugly OpenSSL version preprocessor checks, the
@@ -230,43 +347,60 @@ static const unsigned char *calculate_h(struct sftp_kex *kex,
    */
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestInit(&ctx, kex->hash) != 1) {
+  if (EVP_DigestInit(pctx, kex->hash) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestInit(&ctx, kex->hash);
+  EVP_DigestInit(pctx, kex->hash);
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen)) != 1) {
+  if (EVP_DigestUpdate(pctx, ptr, (bufsz - buflen)) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen));
+  EVP_DigestUpdate(pctx, ptr, (bufsz - buflen));
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestFinal(&ctx, kex_digest_buf, hlen) != 1) {
+  if (EVP_DigestFinal(pctx, kex_digest_buf, hlen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestFinal(&ctx, kex_digest_buf, hlen);
+  EVP_DigestFinal(pctx, kex_digest_buf, hlen);
 #endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_free(pctx);
+#endif /* OpenSSL-1.1.0 and later */
 
   BN_clear_free(kex->e);
   kex->e = NULL;
@@ -276,9 +410,15 @@ static const unsigned char *calculate_h(struct sftp_kex *kex,
 }
 
 static const unsigned char *calculate_gex_h(struct sftp_kex *kex,
-    const unsigned char *hostkey_data, size_t hostkey_datalen, const BIGNUM *k,
-    uint32_t min, uint32_t pref, uint32_t max, uint32_t *hlen) {
+    const unsigned char *hostkey_data, uint32_t hostkey_datalen,
+    const BIGNUM *k, uint32_t min, uint32_t pref, uint32_t max,
+    uint32_t *hlen) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
+  const BIGNUM *dh_p = NULL, *dh_g = NULL, *dh_pub_key = NULL;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
@@ -320,17 +460,37 @@ static const unsigned char *calculate_gex_h(struct sftp_kex *kex,
     sftp_msg_write_int(&buf, &buflen, max);
   }
 
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->p);
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->g);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
+#else
+  dh_p = kex->dh->p;
+  dh_g = kex->dh->g;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_p);
+  sftp_msg_write_mpint(&buf, &buflen, dh_g);
 
   /* Client's key */
   sftp_msg_write_mpint(&buf, &buflen, kex->e);
 
   /* Server's key */
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->pub_key);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_key(kex->dh, &dh_pub_key, NULL);
+#else
+  dh_pub_key = kex->dh->pub_key;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_pub_key);
 
   /* Shared secret */
   sftp_msg_write_mpint(&buf, &buflen, k);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  pctx = EVP_MD_CTX_new();
+#else
+  pctx = &ctx;
+#endif /* OpenSSL-1.1.0 and later */
 
   /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
    * int.  Without these ugly OpenSSL version preprocessor checks, the
@@ -338,44 +498,60 @@ static const unsigned char *calculate_gex_h(struct sftp_kex *kex,
    */
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestInit(&ctx, kex->hash) != 1) {
+  if (EVP_DigestInit(pctx, kex->hash) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestInit(&ctx, kex->hash);
+  EVP_DigestInit(pctx, kex->hash);
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen)) != 1) {
+  if (EVP_DigestUpdate(pctx, ptr, (bufsz - buflen)) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen));
+  EVP_DigestUpdate(pctx, ptr, (bufsz - buflen));
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestFinal(&ctx, kex_digest_buf, hlen) != 1) {
+  if (EVP_DigestFinal(pctx, kex_digest_buf, hlen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestFinal(&ctx, kex_digest_buf, hlen);
+  EVP_DigestFinal(pctx, kex_digest_buf, hlen);
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_free(pctx);
+#endif /* OpenSSL-1.1.0 and later */
   BN_clear_free(kex->e);
   kex->e = NULL;
   pr_memscrub(ptr, bufsz);
@@ -384,9 +560,14 @@ static const unsigned char *calculate_gex_h(struct sftp_kex *kex,
 }
 
 static const unsigned char *calculate_kexrsa_h(struct sftp_kex *kex,
-    const unsigned char *hostkey_data, size_t hostkey_datalen, const BIGNUM *k,
-    unsigned char *rsa_key, uint32_t rsa_keylen, uint32_t *hlen) {
+    const unsigned char *hostkey_data, uint32_t hostkey_datalen,
+    const BIGNUM *k, unsigned char *rsa_key, uint32_t rsa_keylen,
+    uint32_t *hlen) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
@@ -426,53 +607,81 @@ static const unsigned char *calculate_kexrsa_h(struct sftp_kex *kex,
   /* Shared secret. */
   sftp_msg_write_mpint(&buf, &buflen, k);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  pctx = EVP_MD_CTX_new();
+#else
+  pctx = &ctx;
+#endif /* OpenSSL-1.1.0 and later */
+
   /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
    * int.  Without these ugly OpenSSL version preprocessor checks, the
    * compiler will error out with "void value not ignored as it ought to be".
    */
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestInit(&ctx, kex->hash) != 1) {
+  if (EVP_DigestInit(pctx, kex->hash) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestInit(&ctx, kex->hash);
+  EVP_DigestInit(pctx, kex->hash);
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen)) != 1) {
+  if (EVP_DigestUpdate(pctx, ptr, (bufsz - buflen)) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest: %s", sftp_crypto_get_errors());
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen));
+  EVP_DigestUpdate(pctx, ptr, (bufsz - buflen));
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestFinal(&ctx, kex_digest_buf, hlen) != 1) {
+  if (EVP_DigestFinal(pctx, kex_digest_buf, hlen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestFinal(&ctx, kex_digest_buf, hlen);
+  EVP_DigestFinal(pctx, kex_digest_buf, hlen);
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_free(pctx);
+#endif /* OpenSSL-1.1.0 and later */
   pr_memscrub(ptr, bufsz);
+
   return kex_digest_buf;
 }
 
 #ifdef PR_USE_OPENSSL_ECC
 static const unsigned char *calculate_ecdh_h(struct sftp_kex *kex,
-    const unsigned char *hostkey_data, size_t hostkey_datalen, const BIGNUM *k,
-    uint32_t *hlen) {
+    const unsigned char *hostkey_data, uint32_t hostkey_datalen,
+    const BIGNUM *k, uint32_t *hlen) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || \
+    defined(HAVE_LIBRESSL)
   EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
@@ -515,50 +724,73 @@ static const unsigned char *calculate_ecdh_h(struct sftp_kex *kex,
   /* Shared secret */
   sftp_msg_write_mpint(&buf, &buflen, k);
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  pctx = EVP_MD_CTX_new();
+#else
+  pctx = &ctx;
+#endif /* OpenSSL-1.1.0 and later */
+
   /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
    * int.  Without these ugly OpenSSL version preprocessor checks, the
    * compiler will error out with "void value not ignored as it ought to be".
    */
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestInit(&ctx, kex->hash) != 1) {
+  if (EVP_DigestInit(pctx, kex->hash) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error initializing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestInit(&ctx, kex->hash);
+  EVP_DigestInit(pctx, kex->hash);
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen)) != 1) {
+  if (EVP_DigestUpdate(pctx, ptr, (bufsz - buflen)) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error updating message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestUpdate(&ctx, ptr, (bufsz - buflen));
+  EVP_DigestUpdate(pctx, ptr, (bufsz - buflen));
 #endif
 
 #if OPENSSL_VERSION_NUMBER >= 0x000907000L
-  if (EVP_DigestFinal(&ctx, kex_digest_buf, hlen) != 1) {
+  if (EVP_DigestFinal(pctx, kex_digest_buf, hlen) != 1) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finalizing message digest: %s", sftp_crypto_get_errors());
     BN_clear_free(kex->e);
     kex->e = NULL;
     pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+     !defined(HAVE_LIBRESSL)
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
     return NULL;
   }
 #else
-  EVP_DigestFinal(&ctx, kex_digest_buf, hlen);
+  EVP_DigestFinal(pctx, kex_digest_buf, hlen);
 #endif
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL && \
+    !defined(HAVE_LIBRESSL)
+  EVP_MD_CTX_free(pctx);
+#endif /* OpenSSL-1.1.0 and later */
   BN_clear_free(kex->e);
   kex->e = NULL;
   pr_memscrub(ptr, bufsz);
@@ -569,16 +801,19 @@ static const unsigned char *calculate_ecdh_h(struct sftp_kex *kex,
 
 /* Make sure that the DH key we're generating is good enough. */
 static int have_good_dh(DH *dh, BIGNUM *pub_key) {
-  register unsigned int i;
+  register int i;
   unsigned int nbits = 0;
+  const BIGNUM *dh_p = NULL;
   BIGNUM *tmp;
 
-  if (pub_key->neg) {
+#if OPENSSL_VERSION_NUMBER >= 0x0090801fL
+  if (BN_is_negative(pub_key)) {
     pr_trace_msg(trace_channel, 10,
       "DH public keys cannot have negative numbers");
     errno = EINVAL;
     return -1;
   }
+#endif /* OpenSSL-0.9.8a or later */
 
   if (BN_cmp(pub_key, BN_value_one()) != 1) {
     pr_trace_msg(trace_channel, 10, "bad DH public key exponent (<= 1)");
@@ -586,8 +821,15 @@ static int have_good_dh(DH *dh, BIGNUM *pub_key) {
     return -1;
   }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_pqg(dh, &dh_p, NULL, NULL);
+#else
+  dh_p = dh->p;
+#endif /* prior to OpenSSL-1.1.0 */
+
   tmp = BN_new();
-  if (!BN_sub(tmp, dh->p, BN_value_one()) ||
+  if (!BN_sub(tmp, dh_p, BN_value_one()) ||
       BN_cmp(pub_key, tmp) != -1) {
     BN_clear_free(tmp);
     pr_trace_msg(trace_channel, 10, "bad DH public key (>= p-1)");
@@ -708,12 +950,16 @@ static int create_dh(struct sftp_kex *kex, int type) {
   DH *dh;
 
   if (type != SFTP_DH_GROUP1_SHA1 &&
-      type != SFTP_DH_GROUP14_SHA1) {
+      type != SFTP_DH_GROUP14_SHA1 &&
+      type != SFTP_DH_GROUP14_SHA256 &&
+      type != SFTP_DH_GROUP16_SHA512 &&
+      type != SFTP_DH_GROUP18_SHA512) {
     errno = EINVAL;
     return -1;
   }
 
   if (kex->dh) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     if (kex->dh->p) {
       BN_clear_free(kex->dh->p);
       kex->dh->p = NULL;
@@ -733,6 +979,7 @@ static int create_dh(struct sftp_kex *kex, int type) {
       BN_clear_free(kex->dh->pub_key);
       kex->dh->pub_key = NULL;
     }
+#endif /* prior to OpenSSL-1.1.0 */
 
     DH_free(kex->dh);
     kex->dh = NULL;
@@ -742,6 +989,8 @@ static int create_dh(struct sftp_kex *kex, int type) {
 
   /* We have 10 attempts to make a DH key which passes muster. */
   while (attempts <= 10) {
+    BIGNUM *dh_p, *dh_g, *dh_pub_key = NULL, *dh_priv_key = NULL;
+
     pr_signals_handle();
 
     attempts++;
@@ -755,42 +1004,90 @@ static int create_dh(struct sftp_kex *kex, int type) {
       return -1;
     }
 
-    dh->p = BN_new();
-    dh->g = BN_new();
-    dh->priv_key = BN_new();
-  
-    if (type == SFTP_DH_GROUP1_SHA1) {
-      if (BN_hex2bn(&dh->p, dh_group1_str) == 0) {
-        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "error setting DH (group1) P: %s", sftp_crypto_get_errors());
-        DH_free(dh);
-        return -1;
-      }
+    dh_p = BN_new();
 
-    } else if (type == SFTP_DH_GROUP14_SHA1) {
-      if (BN_hex2bn(&dh->p, dh_group14_str) == 0) {
-        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-          "error setting DH (group14) P: %s", sftp_crypto_get_errors());
-        DH_free(dh);
-        return -1;
-      }
+    switch (type) {
+      case SFTP_DH_GROUP18_SHA512:
+        if (BN_hex2bn(&dh_p, dh_group18_str) == 0) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error setting DH (group18) P: %s", sftp_crypto_get_errors());
+          BN_clear_free(dh_p);
+          DH_free(dh);
+          return -1;
+        }
+        break;
+
+      case SFTP_DH_GROUP16_SHA512:
+        if (BN_hex2bn(&dh_p, dh_group16_str) == 0) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error setting DH (group16) P: %s", sftp_crypto_get_errors());
+          BN_clear_free(dh_p);
+          DH_free(dh);
+          return -1;
+        }
+        break;
+
+      case SFTP_DH_GROUP14_SHA1:
+      case SFTP_DH_GROUP14_SHA256:
+        if (BN_hex2bn(&dh_p, dh_group14_str) == 0) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error setting DH (group14) P: %s", sftp_crypto_get_errors());
+          BN_clear_free(dh_p);
+          DH_free(dh);
+          return -1;
+        }
+        break;
+
+      default:
+        if (BN_hex2bn(&dh_p, dh_group1_str) == 0) {
+          (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+            "error setting DH (group1) P: %s", sftp_crypto_get_errors());
+          BN_clear_free(dh_p);
+          DH_free(dh);
+          return -1;
+        }
+        break;
     }
 
-    if (BN_hex2bn(&dh->g, "2") == 0) {
+    dh_g = BN_new();
+
+    if (BN_hex2bn(&dh_g, "2") == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting DH G: %s", sftp_crypto_get_errors());
+      BN_clear_free(dh_p);
+      BN_clear_free(dh_g);
       DH_free(dh);
       return -1;
     }
 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+    DH_set0_pqg(dh, dh_p, NULL, dh_g);
+#else
+    dh->p = dh_p;
+    dh->g = dh_g;
+#endif /* prior to OpenSSL-1.1.0 */
+
+    dh_priv_key = BN_new();
+
     /* Generate a random private exponent of the desired size, in bits. */
-    if (!BN_rand(dh->priv_key, dh_nbits, 0, 0)) {
+    if (!BN_rand(dh_priv_key, dh_nbits, 0, 0)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error generating DH random key (%d bits): %s", dh_nbits,
         sftp_crypto_get_errors());
+      BN_clear_free(dh_priv_key);
       DH_free(dh);
       return -1;
     }
+
+    dh_pub_key = BN_new();
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+    DH_set0_key(dh, dh_pub_key, dh_priv_key);
+#else
+    dh->pub_key = dh_pub_key;
+    dh->priv_key = dh_priv_key;
+#endif /* prior to OpenSSL-1.1.0 */
 
     pr_trace_msg(trace_channel, 12, "generating DH key");
     if (DH_generate_key(dh) != 1) {
@@ -800,13 +1097,38 @@ static int create_dh(struct sftp_kex *kex, int type) {
       return -1;
     }
 
-    if (have_good_dh(dh, dh->pub_key) < 0) {
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+    DH_get0_key(dh, &dh_pub_key, NULL);
+#else
+    dh_pub_key = dh->pub_key;
+#endif /* prior to OpenSSL-1.1.0 */
+
+    if (have_good_dh(dh, dh_pub_key) < 0) {
       DH_free(dh);
       continue;
     }
 
     kex->dh = dh;
-    kex->hash = EVP_sha1();
+
+    switch (type) {
+#ifdef HAVE_SHA512_OPENSSL
+      case SFTP_DH_GROUP16_SHA512:
+      case SFTP_DH_GROUP18_SHA512:
+        kex->hash = EVP_sha512();
+        break;
+#endif /* HAVE_SHA512_OPENSSL */
+
+#ifdef HAVE_SHA256_OPENSSL
+      case SFTP_DH_GROUP14_SHA256:
+        kex->hash = EVP_sha256();
+        break;
+#endif /* HAVE_SHA256_OPENSSL */
+
+      default:
+        kex->hash = EVP_sha1();
+    }
+
     return 0;
   }
 
@@ -824,6 +1146,7 @@ static int prepare_dh(struct sftp_kex *kex, int type) {
   }
 
   if (kex->dh) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
     if (kex->dh->p) {
       BN_clear_free(kex->dh->p);
       kex->dh->p = NULL;
@@ -843,6 +1166,7 @@ static int prepare_dh(struct sftp_kex *kex, int type) {
       BN_clear_free(kex->dh->pub_key);
       kex->dh->pub_key = NULL;
     }
+#endif /* prior to OpenSSL-1.1.0 */
 
     DH_free(kex->dh);
     kex->dh = NULL;
@@ -860,8 +1184,9 @@ static int prepare_dh(struct sftp_kex *kex, int type) {
   if (type == SFTP_DH_GEX_SHA1) {
     kex->hash = EVP_sha1();
 
-#if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
-    (OPENSSL_VERSION_NUMBER > 0x000908000L)
+#if ((OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
+     (OPENSSL_VERSION_NUMBER > 0x000908000L)) && \
+     defined(HAVE_SHA256_OPENSSL)
   } else if (type == SFTP_DH_GEX_SHA256) {
     kex->hash = EVP_sha256();
 #endif
@@ -873,6 +1198,7 @@ static int prepare_dh(struct sftp_kex *kex, int type) {
 static int finish_dh(struct sftp_kex *kex) {
   unsigned int attempts = 0;
   int dh_nbits;
+  BIGNUM *dh_pub_key, *dh_priv_key;
 
   dh_nbits = get_dh_nbits(kex);
 
@@ -884,15 +1210,26 @@ static int finish_dh(struct sftp_kex *kex) {
     pr_trace_msg(trace_channel, 9, "attempt #%u to create a good DH key",
       attempts);
 
-    kex->dh->priv_key = BN_new();
- 
-    /* Generate a random private exponent of the desired size, in bits. */ 
-    if (!BN_rand(kex->dh->priv_key, dh_nbits, 0, 0)) {
+    dh_priv_key = BN_new();
+  
+    /* Generate a random private exponent of the desired size, in bits. */
+    if (!BN_rand(dh_priv_key, dh_nbits, 0, 0)) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error generating DH random key (%d bits): %s", dh_nbits,
         sftp_crypto_get_errors());
+      BN_clear_free(dh_priv_key);
       return -1;
     }
+
+    dh_pub_key = BN_new();
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+    DH_set0_key(kex->dh, dh_pub_key, dh_priv_key);
+#else
+    kex->dh->pub_key = dh_pub_key;
+    kex->dh->priv_key = dh_priv_key;
+#endif /* prior to OpenSSL-1.1.0 */
 
     pr_trace_msg(trace_channel, 12, "generating DH key");
     if (DH_generate_key(kex->dh) != 1) {
@@ -902,15 +1239,33 @@ static int finish_dh(struct sftp_kex *kex) {
     }
 
     if (have_good_dh(kex->dh, kex->e) < 0) {
-      if (kex->dh->priv_key) {
-        BN_clear_free(kex->dh->priv_key);
-        kex->dh->priv_key = NULL;
-      } 
+      dh_pub_key = NULL;
+      dh_priv_key = NULL;
 
-      if (kex->dh->pub_key) {
-        BN_clear_free(kex->dh->pub_key);
-        kex->dh->pub_key = NULL;
-      } 
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+      DH_get0_key(kex->dh, &dh_pub_key, &dh_priv_key);
+#else
+      dh_pub_key = kex->dh->pub_key;
+      dh_priv_key = kex->dh->priv_key;
+#endif /* prior to OpenSSL-1.1.0 */
+
+      if (dh_priv_key != NULL) {
+        BN_clear_free(dh_priv_key);
+      }
+
+      if (dh_pub_key != NULL) {
+        BN_clear_free(dh_pub_key);
+      }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+      /* Per the docs, this is a no-no -- but its the only way to actually
+       * set the public DH key to null.
+       */
+      dh_pub_key = dh_priv_key = NULL;
+#else
+      kex->dh->pub_key = kex->dh->priv_key = NULL;
+#endif /* prior to OpenSSL-1.1.0 */
 
       continue;
     }
@@ -978,12 +1333,13 @@ static int create_kexrsa(struct sftp_kex *kex, int type) {
 
     kex->hash = EVP_sha1();
 
-#if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
-    (OPENSSL_VERSION_NUMBER > 0x000908000L)
+#if ((OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
+     (OPENSSL_VERSION_NUMBER > 0x000908000L)) && \
+     defined(HAVE_SHA256_OPENSSL)
   } else if (type == SFTP_KEXRSA_SHA256) {
     BIGNUM *e = NULL;
 
-#if OPENSSL_VERSION_NUMBER > 0x000908000L
+# if OPENSSL_VERSION_NUMBER > 0x000908000L
     e = BN_new();
     if (e == NULL) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -999,10 +1355,10 @@ static int create_kexrsa(struct sftp_kex *kex, int type) {
     }
 
     if (RSA_generate_key_ex(rsa, SFTP_KEXRSA_SHA256_SIZE, e, NULL) != 1) {
-#else
+# else
     rsa = RSA_generate_key(SFTP_KEXRSA_SHA256_SIZE, 65537, NULL, NULL);
     if (rsa == NULL) {
-#endif /* OpenSSL version 0.9.8 and later */
+# endif /* OpenSSL version 0.9.8 and later */
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error generating %u-bit RSA key: %s", SFTP_KEXRSA_SHA256_SIZE,
         sftp_crypto_get_errors());
@@ -1051,6 +1407,7 @@ static int create_ecdh(struct sftp_kex *kex, int type) {
   }
 
   switch (type) {
+# if defined(HAVE_SHA256_OPENSSL)
     case SFTP_ECDH_SHA256:
       curve_nid = NID_X9_62_prime256v1;
       curve_name = "NID_X9_62_prime256v1";
@@ -1062,12 +1419,15 @@ static int create_ecdh(struct sftp_kex *kex, int type) {
       curve_name = "NID_secp384r1";
       kex->hash = EVP_sha384();
       break;
+# endif /* HAVE_SHA256_OPENSSL */
 
+# if defined(HAVE_SHA512_OPENSSL)
     case SFTP_ECDH_SHA512:
       curve_nid = NID_secp521r1;
       curve_name = "NID_secp521r1";
       kex->hash = EVP_sha512();
       break;
+# endif /* HAVE_SHA512_OPENSSL */
   }
 
   ec = EC_KEY_new_by_curve_name(curve_nid);
@@ -1102,46 +1462,7 @@ static int finish_ecdh(struct sftp_kex *kex) {
 
   return 0;
 }
-
 #endif /* PR_USE_OPENSSL_ECC */
-
-static array_header *parse_namelist(pool *p, const char *names) {
-  char *ptr;
-  array_header *list;
-  size_t names_len;
-
-  list = make_array(p, 0, sizeof(const char *));
-
-  names_len = strlen(names);
-  if (names_len == 0) {
-    return list;
-  }
-
-  ptr = memchr(names, ',', names_len);
-  while (ptr != NULL) {
-    char *elt;
-    size_t elt_len;
-
-    pr_signals_handle();
-
-    elt_len = ptr - names;
-
-    elt = palloc(p, elt_len + 1);
-    memcpy(elt, names, elt_len);
-    elt[elt_len] = '\0';
-
-    *((const char **) push_array(list)) = elt;
-    names = ++ptr;
-
-    /* Add one for the ',' character we skipped over. */
-    names_len -= (elt_len + 1);
-
-    ptr = memchr(names, ',', names_len);
-  }
-  *((const char **) push_array(list)) = pstrdup(p, names);
-
-  return list;
-}
 
 /* Given a name-list, return the first (i.e. preferred) name in the list. */
 static const char *get_preferred_name(pool *p, const char *names) {
@@ -1162,63 +1483,42 @@ static const char *get_preferred_name(pool *p, const char *names) {
 
   /* This should never happen. */
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-    "unable to find preferred name in '%s'", names ? names : "(null)");
+    "unable to find preferred name in '%s'", names);
   return NULL;
 }
 
-/* Given name-lists from the client and server, find the first name from the
- * client list which appears on the server list.
+/* Note that in this default list of key exchange algorithms, one of the
+ * REQUIRED algorithms is conspicuously absent:
+ *
+ *   diffie-hellman-group1-sha1
+ *
+ * This exchange has a weak hardcoded DH group, and will thus only be used
+ * if explicitly requested via SFTPKeyExchanges, or if the AllowWeakDH
+ * SFTPOption is used.
  */
-static const char *get_shared_name(pool *p, const char *c2s_names,
-    const char *s2c_names) {
-  register unsigned int i;
-  const char *name = NULL, **client_names, **server_names;
-  pool *tmp_pool;
-  array_header *client_list, *server_list;
-
-  tmp_pool = make_sub_pool(p);
-  pr_pool_tag(tmp_pool, "SSH2 session shared name pool");
-
-  client_list = parse_namelist(tmp_pool, c2s_names);
-  client_names = (const char **) client_list->elts;
-
-  server_list = parse_namelist(tmp_pool, s2c_names);
-  server_names = (const char **) server_list->elts;
-
-  for (i = 0; i < client_list->nelts; i++) {
-    register unsigned int j;
-
-    if (name)
-      break;
-
-    for (j = 0; j < server_list->nelts; j++) {
-      if (strcmp(client_names[i], server_names[j]) == 0) {
-        name = client_names[i];
-        break;
-      }
-    }
-  }
-
-  name = pstrdup(p, name);
-  destroy_pool(tmp_pool);
-
-  return name;
-}
-
 static const char *kex_exchanges[] = {
+#if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+  "curve25519-sha256@libssh.org",
+#endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
 #ifdef PR_USE_OPENSSL_ECC
-  "ecdh-sha2-nistp256",
-  "ecdh-sha2-nistp384",
   "ecdh-sha2-nistp521",
+  "ecdh-sha2-nistp384",
+  "ecdh-sha2-nistp256",
 #endif /* PR_USE_OPENSSL_ECC */
 
 #if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
     (OPENSSL_VERSION_NUMBER > 0x000908000L)
+# if defined(HAVE_SHA512_OPENSSL)
+  "diffie-hellman-group18-sha512",
+  "diffie-hellman-group16-sha512",
+# endif /* HAVE_SHA512_OPENSSL */
+# if defined(HAVE_SHA256_OPENSSL)
+  "diffie-hellman-group14-sha256",
   "diffie-hellman-group-exchange-sha256",
+# endif /* HAVE_SHA256_OPENSSL */
 #endif
   "diffie-hellman-group-exchange-sha1",
   "diffie-hellman-group14-sha1",
-  "diffie-hellman-group1-sha1",
 
 #if 0
 /* We cannot currently support rsa2048-sha256, since it requires support
@@ -1226,8 +1526,9 @@ static const char *kex_exchanges[] = {
  * at present, which only allows EME-OAEP using SHA1.  v2.1 allows for
  * using other message digests, e.g. SHA256, for EME-OAEP.
  */
-#if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
-    (OPENSSL_VERSION_NUMBER > 0x000908000L)
+#if ((OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
+     (OPENSSL_VERSION_NUMBER > 0x000908000L)) && \
+     defined(HAVE_SHA256_OPENSSL)
   "rsa2048-sha256",
 #endif
 #endif
@@ -1241,7 +1542,7 @@ static const char *get_kexinit_exchange_list(pool *p) {
   config_rec *c;
 
   c = find_config(main_server->conf, CONF_PARAM, "SFTPKeyExchanges", FALSE);
-  if (c) {
+  if (c != NULL) {
     res = pstrdup(p, c->argv[0]);
 
   } else {
@@ -1249,6 +1550,16 @@ static const char *get_kexinit_exchange_list(pool *p) {
 
     for (i = 0; kex_exchanges[i]; i++) {
       res = pstrcat(p, res, *res ? "," : "", pstrdup(p, kex_exchanges[i]),
+        NULL);
+    }
+
+    if (sftp_opts & SFTP_OPT_ALLOW_WEAK_DH) {
+      /* The hardcoded group for this exchange is rather weak in the face of
+       * the "Logjam" vulnerability (see https://weakdh.org).  Thus it is
+       * only appended to the end of the default exchanges if the AllowWeakDH
+       * SFTPOption is in effect.
+       */
+      res = pstrcat(p, res, ",", pstrdup(p, "diffie-hellman-group1-sha1"),
         NULL);
     }
   }
@@ -1272,7 +1583,7 @@ static const char *get_kexinit_hostkey_algo_list(pool *p) {
 #ifdef PR_USE_OPENSSL_ECC
   res = sftp_keys_have_ecdsa_hostkey(p, &nids);
   if (res > 0) {
-    register unsigned int i;
+    register int i;
 
     for (i = 0; i < res; i++) {
       char *algo_name = NULL;
@@ -1318,13 +1629,18 @@ static struct sftp_kex *create_kex(pool *p) {
   struct sftp_kex *kex;
   const char *list;
   config_rec *c;
+  pool *tmp_pool;
 
-  kex = pcalloc(p, sizeof(struct sftp_kex));
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Kex KEXINIT Pool");
+
+  kex = pcalloc(tmp_pool, sizeof(struct sftp_kex));
+  kex->pool = tmp_pool;
   kex->client_version = kex_client_version;
   kex->server_version = kex_server_version;
-  kex->client_names = pcalloc(p, sizeof(struct sftp_kex_names));
-  kex->server_names = pcalloc(p, sizeof(struct sftp_kex_names));
-  kex->session_names = pcalloc(p, sizeof(struct sftp_kex_names));
+  kex->client_names = pcalloc(kex->pool, sizeof(struct sftp_kex_names));
+  kex->server_names = pcalloc(kex->pool, sizeof(struct sftp_kex_names));
+  kex->session_names = pcalloc(kex->pool, sizeof(struct sftp_kex_names));
   kex->use_hostkey_type = SFTP_KEY_UNKNOWN;
   kex->dh = NULL;
   kex->e = NULL;
@@ -1336,17 +1652,17 @@ static struct sftp_kex *create_kex(pool *p) {
   kex->rsa_encrypted = NULL;
   kex->rsa_encrypted_len = 0;
 
-  list = get_kexinit_exchange_list(kex_pool);
+  list = get_kexinit_exchange_list(kex->pool);
   kex->server_names->kex_algo = list;
 
-  list = get_kexinit_hostkey_algo_list(kex_pool);
+  list = get_kexinit_hostkey_algo_list(kex->pool);
   kex->server_names->server_hostkey_algo = list;
 
-  list = sftp_crypto_get_kexinit_cipher_list(kex_pool);
+  list = sftp_crypto_get_kexinit_cipher_list(kex->pool);
   kex->server_names->c2s_encrypt_algo = list;
   kex->server_names->s2c_encrypt_algo = list;
 
-  list = sftp_crypto_get_kexinit_digest_list(kex_pool);
+  list = sftp_crypto_get_kexinit_digest_list(kex->pool);
   kex->server_names->c2s_mac_algo = list;
   kex->server_names->s2c_mac_algo = list;
 
@@ -1399,6 +1715,7 @@ static struct sftp_kex *create_kex(pool *p) {
 static void destroy_kex(struct sftp_kex *kex) {
   if (kex) {
     if (kex->dh) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
       if (kex->dh->p) {
         BN_clear_free(kex->dh->p);
         kex->dh->p = NULL;
@@ -1408,6 +1725,7 @@ static void destroy_kex(struct sftp_kex *kex) {
         BN_clear_free(kex->dh->g);
         kex->dh->g = NULL;
       }
+#endif /* prior to OpenSSL-1.1.0 */
 
       DH_free(kex->dh);
       kex->dh = NULL;
@@ -1438,6 +1756,11 @@ static void destroy_kex(struct sftp_kex *kex) {
       pr_memscrub((char *) kex->h, kex->hlen);
       kex->hlen = 0;
     }
+
+    if (kex->pool) {
+      destroy_pool(kex->pool);
+      kex->pool = NULL;
+    }
   }
 
   kex_first_kex = kex_rekey_kex = NULL;
@@ -1458,6 +1781,39 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
   } else if (strncmp(algo, "diffie-hellman-group14-sha1", 28) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP14_SHA1) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error using '%s' as the key exchange algorithm: %s", algo,
+        strerror(errno));
+      return -1;
+    }
+
+    kex->session_names->kex_algo = algo;
+    return 0;
+
+  } else if (strncmp(algo, "diffie-hellman-group14-sha256", 30) == 0) {
+    if (create_dh(kex, SFTP_DH_GROUP14_SHA256) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error using '%s' as the key exchange algorithm: %s", algo,
+        strerror(errno));
+      return -1;
+    }
+
+    kex->session_names->kex_algo = algo;
+    return 0;
+
+  } else if (strncmp(algo, "diffie-hellman-group16-sha512", 30) == 0) {
+    if (create_dh(kex, SFTP_DH_GROUP16_SHA512) < 0) {
+      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+        "error using '%s' as the key exchange algorithm: %s", algo,
+        strerror(errno));
+      return -1;
+    }
+
+    kex->session_names->kex_algo = algo;
+    return 0;
+
+  } else if (strncmp(algo, "diffie-hellman-group18-sha512", 30) == 0) {
+    if (create_dh(kex, SFTP_DH_GROUP18_SHA512) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
         strerror(errno));
@@ -1491,8 +1847,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->use_kexrsa = TRUE;
     return 0;
 
-#if (OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
-    (OPENSSL_VERSION_NUMBER > 0x000908000L)
+#if ((OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
+     (OPENSSL_VERSION_NUMBER > 0x000908000L)) && \
+     defined(HAVE_SHA256_OPENSSL)
   } else if (strncmp(algo, "diffie-hellman-group-exchange-sha256", 37) == 0) {
     if (prepare_dh(kex, SFTP_DH_GEX_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1554,8 +1911,15 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_ecdh = TRUE;
     return 0;
-
 #endif /* PR_USE_OPENSSL_ECC */
+
+#if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+  } else if (strncmp(algo, "curve25519-sha256@libssh.org", 22) == 0) {
+    kex->hash = EVP_sha256();
+    kex->session_names->kex_algo = algo;
+    kex->use_curve25519 = TRUE;
+    return 0;
+#endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
   }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1657,11 +2021,13 @@ static int setup_s2c_comp_algo(struct sftp_kex *kex, const char *algo) {
 }
 
 static int setup_c2s_lang(struct sftp_kex *kex, const char *lang) {
+  /* XXX Need to implement the functionality here. */
   kex->session_names->c2s_lang = lang;
   return 0;
 }
 
 static int setup_s2c_lang(struct sftp_kex *kex, const char *lang) {
+  /* XXX Need to implement the functionality here. */
   kex->session_names->s2c_lang = lang;
   return 0;
 }
@@ -1671,7 +2037,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   const char *client_pref, *server_pref;
   pool *tmp_pool;
 
-  tmp_pool = make_sub_pool(kex_pool);
+  tmp_pool = make_sub_pool(kex->pool);
   pr_pool_tag(tmp_pool, "SSH2 session shared name pool");
 
   client_list = kex->client_names->kex_algo;
@@ -1707,7 +2073,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
     }
   }
 
-  kex_algo = get_shared_name(kex_pool, client_list, server_list);
+  kex_algo = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (kex_algo != NULL) {
     /* Unlike the following algorithms, we wait to setup the chosen kex algo
      * until the end.  Why?  The kex algo setup may require knowledge of the
@@ -1734,7 +2100,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8,
     "server-sent host key algorithms: %s", server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_hostkey_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1762,7 +2128,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8, "server-sent client encryption algorithms: %s",
     server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_c2s_encrypt_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1790,7 +2156,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8, "server-sent server encryption algorithms: %s",
     server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_s2c_encrypt_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1818,7 +2184,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8, "server-sent client MAC algorithms: %s",
     server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_c2s_mac_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1846,7 +2212,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8, "server-sent server MAC algorithms: %s",
     server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_s2c_mac_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1874,7 +2240,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8,
     "server-sent client compression algorithms: %s", server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_c2s_comp_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1902,7 +2268,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8,
     "server-sent server compression algorithms: %s", server_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_s2c_comp_algo(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1930,7 +2296,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8,
     "server-sent client languages: %s", client_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_c2s_lang(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -1961,7 +2327,7 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
   pr_trace_msg(trace_channel, 8,
     "server-sent server languages: %s", client_list);
 
-  shared = get_shared_name(kex_pool, client_list, server_list);
+  shared = sftp_misc_namelist_shared(kex->pool, client_list, server_list);
   if (shared) {
     if (setup_s2c_lang(kex, shared) < 0) {
       destroy_pool(tmp_pool);
@@ -2005,43 +2371,43 @@ static int read_kexinit(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   buflen = pkt->payload_len;
 
   /* Make a copy of the payload for later. */
-  kex->client_kexinit_payload = palloc(kex_pool, pkt->payload_len);
+  kex->client_kexinit_payload = palloc(kex->pool, pkt->payload_len);
   kex->client_kexinit_payload_len = pkt->payload_len;
   memcpy(kex->client_kexinit_payload, pkt->payload, pkt->payload_len);
 
   /* Read the cookie, which is a mandated length of 16 bytes. */
   (void) sftp_msg_read_data(pkt->pool, &buf, &buflen, 16);
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->kex_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->server_hostkey_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->c2s_encrypt_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->s2c_encrypt_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->c2s_mac_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->s2c_mac_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->c2s_comp_algo = list;
 
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->s2c_comp_algo = list;
 
   /* Client-to-server languages */
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->c2s_lang = list;
 
   /* Server-to-client languages */
-  list = sftp_msg_read_string(kex_pool, &buf, &buflen);
+  list = sftp_msg_read_string(kex->pool, &buf, &buflen);
   kex->client_names->s2c_lang = list;
 
   /* Read the "first kex packet follows" byte */
@@ -2089,9 +2455,13 @@ static int write_kexinit(struct ssh2_packet *pkt, struct sftp_kex *kex) {
    * pseudo-cryptographically secure bytes.
    */
   memset(cookie, 0, sizeof(cookie));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  RAND_bytes(cookie, sizeof(cookie));
+#else
   if (RAND_bytes(cookie, sizeof(cookie)) != 1) {
     RAND_pseudo_bytes(cookie, sizeof(cookie));
   }
+#endif /* prior to OpenSSL-1.1.0 */
 
   sftp_msg_write_data(&buf, &buflen, cookie, sizeof(cookie), FALSE);
 
@@ -2136,7 +2506,7 @@ static int write_kexinit(struct ssh2_packet *pkt, struct sftp_kex *kex) {
    * is the KEXINIT identifier.
    */
   kex->server_kexinit_payload_len = pkt->payload_len - 1;
-  kex->server_kexinit_payload = palloc(kex_pool, pkt->payload_len - 1);
+  kex->server_kexinit_payload = palloc(kex->pool, pkt->payload_len - 1);
   memcpy(kex->server_kexinit_payload, pkt->payload + 1, pkt->payload_len - 1);
 
   return 0;
@@ -2160,65 +2530,93 @@ static int read_dh_init(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   return 0;
 }
 
+/* Only set the given environment variable/value IFF it is not already
+ * present.
+ */
+static void set_env_var(pool *p, const char *k, const char *v) {
+  const char *val;
+  int have_val = FALSE;
+
+  val = pr_env_get(p, k);
+  if (val != NULL) {
+    if (strcmp(val, v) == 0) {
+      have_val = TRUE;
+    }
+  }
+
+  if (have_val == FALSE) {
+    k = pstrdup(p, k);
+    v = pstrdup(p, v);
+    pr_env_unset(p, k);
+    pr_env_set(p, k, v);
+  }
+}
+
 static int set_session_keys(struct sftp_kex *kex) {
-  const char *k, *v;
+  const char *k;
+  int comp_read_flags, comp_write_flags;
 
   if (sftp_cipher_set_read_key(kex_pool, kex->hash, kex->k, kex->h,
-      kex->hlen) < 0)
+      kex->hlen, SFTP_ROLE_SERVER) < 0) {
     return -1;
+  }
 
   if (sftp_cipher_set_write_key(kex_pool, kex->hash, kex->k, kex->h,
-      kex->hlen) < 0)
+      kex->hlen, SFTP_ROLE_SERVER) < 0) {
     return -1;
+  }
 
   if (sftp_mac_set_read_key(kex_pool, kex->hash, kex->k, kex->h,
-      kex->hlen) < 0)
+      kex->hlen, SFTP_ROLE_SERVER) < 0) {
     return -1;
+  }
 
   if (sftp_mac_set_write_key(kex_pool, kex->hash, kex->k, kex->h,
-      kex->hlen) < 0)
+      kex->hlen, SFTP_ROLE_SERVER) < 0) {
     return -1;
+  }
 
-  if (sftp_compress_init_read(SFTP_COMPRESS_FL_NEW_KEY) < 0)
+  comp_read_flags = comp_write_flags = SFTP_COMPRESS_FL_NEW_KEY;
+
+  /* If we are rekeying, AND the existing compression is "delayed", then
+   * we need to use slightly different compression flags.
+   */
+  if (kex_rekey_kex) {
+    const char *algo;
+
+    algo = sftp_compress_get_read_algo();
+    if (strncmp(algo, "zlib@openssh.com", 17) == 0) {
+      comp_read_flags = SFTP_COMPRESS_FL_AUTHENTICATED;
+    }
+
+    algo = sftp_compress_get_write_algo();
+    if (strncmp(algo, "zlib@openssh.com", 17) == 0) {
+      comp_write_flags = SFTP_COMPRESS_FL_AUTHENTICATED;
+    }
+  }
+
+  if (sftp_compress_init_read(comp_read_flags) < 0) {
     return -1;
+  }
 
-  if (sftp_compress_init_write(SFTP_COMPRESS_FL_NEW_KEY) < 0)
+  if (sftp_compress_init_write(comp_write_flags) < 0) {
     return -1;
+  }
 
-  k = pstrdup(session.pool, "SFTP_CLIENT_CIPHER_ALGO");
-  v = pstrdup(session.pool, sftp_cipher_get_read_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_SERVER_CIPHER_ALGO");
-  v = pstrdup(session.pool, sftp_cipher_get_write_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_CLIENT_MAC_ALGO");
-  v = pstrdup(session.pool, sftp_mac_get_read_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_SERVER_MAC_ALGO");
-  v = pstrdup(session.pool, sftp_mac_get_write_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_CLIENT_COMPRESSION_ALGO");
-  v = pstrdup(session.pool, sftp_compress_get_read_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_SERVER_COMPRESSION_ALGO");
-  v = pstrdup(session.pool, sftp_compress_get_write_algo());
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
-
-  k = pstrdup(session.pool, "SFTP_KEX_ALGO");
-  v = pstrdup(session.pool, kex->session_names->kex_algo);
-  pr_env_unset(session.pool, k);
-  pr_env_set(session.pool, k, v);
+  set_env_var(session.pool, "SFTP_CLIENT_CIPHER_ALGO",
+    sftp_cipher_get_read_algo());
+  set_env_var(session.pool, "SFTP_SERVER_CIPHER_ALGO",
+    sftp_cipher_get_write_algo());
+  set_env_var(session.pool, "SFTP_CLIENT_MAC_ALGO",
+    sftp_mac_get_read_algo());
+  set_env_var(session.pool, "SFTP_SERVER_MAC_ALGO",
+    sftp_mac_get_write_algo());
+  set_env_var(session.pool, "SFTP_CLIENT_COMPRESSION_ALGO",
+    sftp_compress_get_read_algo());
+  set_env_var(session.pool, "SFTP_SERVER_COMPRESSION_ALGO",
+    sftp_compress_get_write_algo());
+  set_env_var(session.pool, "SFTP_KEX_ALGO",
+    kex->session_names->kex_algo);
 
   if (kex_rekey_interval > 0 &&
       kex_rekey_timerno == -1) {
@@ -2263,14 +2661,14 @@ static int write_dh_reply(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   const unsigned char *h;
   const unsigned char *hostkey_data, *hsig;
   unsigned char *buf, *ptr;
-  uint32_t bufsz, buflen, hlen = 0;
-  size_t dhlen, hostkey_datalen, hsiglen;
-  BIGNUM *k = NULL;
+  uint32_t bufsz, buflen, hlen = 0, hostkey_datalen = 0;
+  size_t dhlen, hsiglen;
+  BIGNUM *k = NULL, *dh_pub_key = NULL;
   int res;
 
   /* Compute the shared secret */
   dhlen = DH_size(kex->dh);
-  buf = palloc(kex_pool, dhlen);
+  buf = palloc(pkt->pool, dhlen);
 
   pr_trace_msg(trace_channel, 12, "computing DH key");
   res = DH_compute_key((unsigned char *) buf, kex->e, kex->dh);
@@ -2339,7 +2737,15 @@ static int write_dh_reply(struct ssh2_packet *pkt, struct sftp_kex *kex) {
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEX_DH_REPLY);
   sftp_msg_write_data(&buf, &buflen, hostkey_data, hostkey_datalen, TRUE);
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->pub_key);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_key(kex->dh, &dh_pub_key, NULL);
+#else
+  dh_pub_key = kex->dh->pub_key;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_pub_key);
+
   sftp_msg_write_data(&buf, &buflen, hsig, hsiglen, TRUE);
 
   /* Scrub any sensitive data when done */
@@ -2374,7 +2780,7 @@ static int handle_kex_dh(struct ssh2_packet *pkt, struct sftp_kex *kex) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "DH_INIT"));
   cmd->arg = "(data)";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_trace_msg(trace_channel, 9, "reading DH_INIT message from client");
 
@@ -2462,8 +2868,22 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
 
   dhparam_path = PR_CONFIG_DIR "/dhparams.pem";
   c = find_config(main_server->conf, CONF_PARAM, "SFTPDHParamFile", FALSE);
-  if (c) {
+  if (c != NULL) {
     dhparam_path = c->argv[0];
+  }
+
+  /* If the preferred DH is less than SFTP_DH_MIN_LEN, AND the AllowWeakDH
+   * SFTPOption is not used, then use a pref of SFTP_DH_MIN_LEN (Bug#4184).
+   */
+  if (pref < SFTP_DH_MIN_LEN) {
+    if (!(sftp_opts & SFTP_OPT_ALLOW_WEAK_DH)) {
+      pref = SFTP_DH_MIN_LEN;
+
+    } else {
+      pr_trace_msg(trace_channel, 14,
+       "client prefers relatively weak DH group size (%lu) but AllowWeakDH "
+       "SFTPOption in effect", (unsigned long) pref);
+    }
   }
 
   if (dhparam_path) {
@@ -2479,14 +2899,14 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
       register unsigned int i;
       pool *tmp_pool;
       array_header *smaller_dhs, *pref_dhs, *larger_dhs;
-      DH *dh, **dhs;
-      int smaller_dh_nbits = 0, larger_dh_nbits = 0;
+      DH *chosen_dh, **dhs;
+      uint32_t smaller_dh_nbits = 0, larger_dh_nbits = 0;
 
       pr_trace_msg(trace_channel, 15,
         "using DH parameters from SFTPDHParamFile '%s' for group exchange",
         dhparam_path);
 
-      tmp_pool = make_sub_pool(kex_pool);
+      tmp_pool = make_sub_pool(kex->pool);
       pr_pool_tag(tmp_pool, "Kex DHparams selection pool");
 
       smaller_dhs = make_array(tmp_pool, 1, sizeof(DH *)); 
@@ -2513,12 +2933,12 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
        */
 
       while (TRUE) {
-        int nbits;
+        uint32_t nbits;
 
         pr_signals_handle();
 
-        dh = PEM_read_DHparams(kex_dhparams_fp, NULL, NULL, NULL);
-        if (dh == NULL) {
+        chosen_dh = PEM_read_DHparams(kex_dhparams_fp, NULL, NULL, NULL);
+        if (chosen_dh == NULL) {
           if (!feof(kex_dhparams_fp)) {
             pr_trace_msg(trace_channel, 5, "error reading DH params from "
               "SFTPDHParamFile '%s': %s", dhparam_path,
@@ -2528,16 +2948,20 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
           break;
         }
 
-        nbits = DH_size(dh) * 8;
+        nbits = DH_size(chosen_dh) * 8;
 
         if (nbits < min ||
             nbits > max) {
-          DH_free(dh);
+          pr_trace_msg(trace_channel, 17,
+            "skipping %lu-bit DH from %s (exceeds min %lu, max %lu bits)",
+            (unsigned long) nbits, dhparam_path, (unsigned long) min,
+            (unsigned long) max);
+          DH_free(chosen_dh);
           continue;
         }
 
         if (nbits == pref) {
-          *((DH **) push_array(pref_dhs)) = dh;
+          *((DH **) push_array(pref_dhs)) = chosen_dh;
 
         } else if (nbits < pref) {
           if (nbits > smaller_dh_nbits) {
@@ -2551,10 +2975,13 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
             }
 
             smaller_dh_nbits = nbits;
-            *((DH **) push_array(smaller_dhs)) = dh;
+            *((DH **) push_array(smaller_dhs)) = chosen_dh;
 
           } else if (nbits == smaller_dh_nbits) {
-            *((DH **) push_array(smaller_dhs)) = dh;
+            *((DH **) push_array(smaller_dhs)) = chosen_dh;
+
+          } else {
+            DH_free(chosen_dh);
           }
 
         } else {
@@ -2571,39 +2998,54 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
             }
 
             larger_dh_nbits = nbits;
-            *((DH **) push_array(larger_dhs)) = dh;
+            *((DH **) push_array(larger_dhs)) = chosen_dh;
 
           } else if (nbits == larger_dh_nbits) {
-            *((DH **) push_array(larger_dhs)) = dh;
+            *((DH **) push_array(larger_dhs)) = chosen_dh;
+
+          } else {
+            DH_free(chosen_dh);
           }
         }
       }
 
-      dh = NULL;
+      chosen_dh = NULL;
 
       /* The use of rand(3) below is NOT intended to be perfect, or even
        * uniformly distributed.  It simply needs to be good enough to pick
        * a single item from a small list, where all items are equally
        * usable and valid.
+       *
+       * Ideally we want to find a preferred DH first.  Failing that, a larger
+       * DH is better; if none found there, then we settle for a smaller DH.
        */
 
       if (pref_dhs->nelts > 0) {
         int r = (int) (rand() / (RAND_MAX / pref_dhs->nelts + 1));
 
+        pr_trace_msg(trace_channel, 17,
+          "%s DH selection: preferred DHs (count %u, idx %d)", dhparam_path,
+          pref_dhs->nelts, r);
         dhs = pref_dhs->elts;
-        dh = dhs[r];
+        chosen_dh = dhs[r];
 
       } else if (larger_dhs->nelts > 0) {
         int r = (int) (rand() / (RAND_MAX / larger_dhs->nelts + 1));
 
+        pr_trace_msg(trace_channel, 17,
+          "%s DH selection: larger DHs (count %u, idx %d)", dhparam_path,
+          larger_dhs->nelts, r);
         dhs = larger_dhs->elts;
-        dh = dhs[r];
+        chosen_dh = dhs[r];
 
       } else if (smaller_dhs->nelts > 0) {
         int r = (int) (rand() / (RAND_MAX / smaller_dhs->nelts + 1));
 
+        pr_trace_msg(trace_channel, 17,
+          "%s DH selection: smaller DHs (count %u, idx %d)", dhparam_path,
+          smaller_dhs->nelts, r);
         dhs = smaller_dhs->elts;
-        dh = dhs[r];
+        chosen_dh = dhs[r];
 
       } else {
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -2614,14 +3056,28 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
         use_fixed_modulus = TRUE;
       }
 
-      if (dh) {
+      if (chosen_dh != NULL) {
+        BIGNUM *dh_p = NULL, *dh_g = NULL, *dup_p, *dup_g;
+
         pr_trace_msg(trace_channel, 20, "client requested min %lu, pref %lu, "
           "max %lu sizes for DH group exchange, selected DH of %lu bits",
           (unsigned long) min, (unsigned long) pref, (unsigned long) max,
-          (unsigned long) DH_size(dh) * 8);
+          (unsigned long) DH_size(chosen_dh) * 8);
 
-        kex->dh->p = BN_dup(dh->p);
-        if (kex->dh->p == NULL) {
+        /* Get the P, G parameters of the chosen DH group, and make copies
+         * of them for our KEX DH.
+         */
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+        DH_get0_pqg(chosen_dh, &dh_p, NULL, &dh_g);
+#else
+        dh_p = chosen_dh->p;
+        dh_g = chosen_dh->g;
+#endif /* prior to OpenSSL-1.1.0 */
+
+        dup_p = BN_dup(dh_p);
+        if (dup_p == NULL) {
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
             "error copying selected DH P: %s", sftp_crypto_get_errors());
           (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -2629,16 +3085,24 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
           use_fixed_modulus = TRUE;
 
         } else {
-          kex->dh->g = BN_dup(dh->g);
-          if (kex->dh->g == NULL) {
+          dup_g = BN_dup(dh_g);
+          if (dup_g == NULL) {
             (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
               "error copying selected DH G: %s", sftp_crypto_get_errors());
             (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
               "WARNING: using fixed modulus for DH group exchange");
-
-            BN_clear_free(kex->dh->p);
-            kex->dh->p = NULL;
+            BN_clear_free(dup_p);
             use_fixed_modulus = TRUE;
+
+          } else {
+            /* Now set those P, G copies into our KEX DH. */
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+            DH_set0_pqg(kex->dh, dup_p, NULL, dup_g);
+#else
+            kex->dh->p = dup_p;
+            kex->dh->g = dup_g;
+#endif /* prior to OpenSSL-1.1.0 */
           }
         }
       }
@@ -2675,28 +3139,36 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
   }
 
   if (use_fixed_modulus) {
-    kex->dh->p = BN_new();
-    kex->dh->g = BN_new();
+    BIGNUM *dh_p, *dh_g;
 
-    if (BN_hex2bn(&kex->dh->p, dh_group14_str) == 0) {
+    dh_p = BN_new();
+
+    /* Note: Consider using a stronger fixed DH group here! */
+    if (BN_hex2bn(&dh_p, dh_group14_str) == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting DH P: %s", sftp_crypto_get_errors());
-      BN_clear_free(kex->dh->p);
-      kex->dh->p = NULL;
-
+      BN_clear_free(dh_p);
       errno = EACCES;
       return -1;
     }
 
-    if (BN_hex2bn(&kex->dh->g, "2") == 0) {
+    dh_g = BN_new();
+    if (BN_hex2bn(&dh_g, "2") == 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error setting DH G: %s", sftp_crypto_get_errors());
-      BN_clear_free(kex->dh->g);
-      kex->dh->g = NULL;
-
+      BN_clear_free(dh_p);
+      BN_clear_free(dh_g);
       errno = EACCES;
       return -1;
     }
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+    DH_set0_pqg(kex->dh, dh_p, NULL, dh_g);
+#else
+    kex->dh->p = dh_p;
+    kex->dh->g = dh_g;
+#endif /* prior to OpenSSL-1.1.0 */
   }
 
   return 0;
@@ -2704,6 +3176,7 @@ static int get_dh_gex_group(struct sftp_kex *kex, uint32_t min,
 
 static int write_dh_gex_group(struct ssh2_packet *pkt, struct sftp_kex *kex,
     uint32_t min, uint32_t pref, uint32_t max) {
+  BIGNUM *dh_p = NULL, *dh_g = NULL;
   unsigned char *buf, *ptr;
   uint32_t buflen, bufsz;
 
@@ -2716,8 +3189,16 @@ static int write_dh_gex_group(struct ssh2_packet *pkt, struct sftp_kex *kex,
   ptr = buf = palloc(pkt->pool, bufsz);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEX_DH_GEX_GROUP);
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->p);
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->g);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_pqg(kex->dh, &dh_p, NULL, &dh_g);
+#else
+  dh_p = kex->dh->p;
+  dh_g = kex->dh->g;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_p);
+  sftp_msg_write_mpint(&buf, &buflen, dh_g);
 
   pkt->payload = ptr;
   pkt->payload_len = (bufsz - buflen);
@@ -2747,9 +3228,9 @@ static int write_dh_gex_reply(struct ssh2_packet *pkt, struct sftp_kex *kex,
     uint32_t min, uint32_t pref, uint32_t max, int old_request) {
   const unsigned char *h, *hostkey_data, *hsig;
   unsigned char *buf, *ptr;
-  uint32_t bufsz, buflen, hlen = 0;
-  size_t dhlen, hostkey_datalen, hsiglen;
-  BIGNUM *k = NULL;
+  uint32_t bufsz, buflen, hlen = 0, hostkey_datalen = 0;
+  size_t dhlen, hsiglen = 0;
+  BIGNUM *k = NULL, *dh_pub_key = NULL;
   int res;
 
   /* Compute the shared secret. */
@@ -2757,7 +3238,7 @@ static int write_dh_gex_reply(struct ssh2_packet *pkt, struct sftp_kex *kex,
   buf = palloc(kex_pool, dhlen);
 
   pr_trace_msg(trace_channel, 12, "computing DH key");
-  res = DH_compute_key((unsigned char *) buf, kex->e, kex->dh);
+  res = DH_compute_key(buf, kex->e, kex->dh);
   if (res < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error computing DH shared secret: %s", sftp_crypto_get_errors());
@@ -2765,11 +3246,12 @@ static int write_dh_gex_reply(struct ssh2_packet *pkt, struct sftp_kex *kex,
   }
 
   k = BN_new();
-  if (BN_bin2bn((unsigned char *) buf, res, k) == NULL) {
+  if (BN_bin2bn(buf, res, k) == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error converting DH shared secret to BN: %s", sftp_crypto_get_errors());
 
     pr_memscrub(buf, res);
+    BN_clear_free(k);
     return -1;
   }
 
@@ -2828,7 +3310,15 @@ static int write_dh_gex_reply(struct ssh2_packet *pkt, struct sftp_kex *kex,
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEX_DH_GEX_REPLY);
   sftp_msg_write_data(&buf, &buflen, hostkey_data, hostkey_datalen, TRUE);
-  sftp_msg_write_mpint(&buf, &buflen, kex->dh->pub_key);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  DH_get0_key(kex->dh, &dh_pub_key, NULL);
+#else
+  dh_pub_key = kex->dh->pub_key;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, dh_pub_key);
+
   sftp_msg_write_data(&buf, &buflen, hsig, hsiglen, TRUE);
 
   /* Scrub any sensitive data when done */
@@ -2853,7 +3343,7 @@ static int handle_kex_dh_gex(struct ssh2_packet *pkt, struct sftp_kex *kex,
 
     cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "DH_GEX_REQUEST"));
     cmd->arg = "(data)";
-    cmd->cmd_class = CL_AUTH;
+    cmd->cmd_class = CL_AUTH|CL_SSH;
 
   } else {
     pr_trace_msg(trace_channel, 9,
@@ -2861,7 +3351,7 @@ static int handle_kex_dh_gex(struct ssh2_packet *pkt, struct sftp_kex *kex,
 
     cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "DH_GEX_REQUEST_OLD"));
     cmd->arg = "(data)";
-    cmd->cmd_class = CL_AUTH;
+    cmd->cmd_class = CL_AUTH|CL_SSH;
   }
 
   res = read_dh_gex(pkt, &min, &pref, &max, old_request);
@@ -2897,7 +3387,7 @@ static int handle_kex_dh_gex(struct ssh2_packet *pkt, struct sftp_kex *kex,
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "DH_GEX_INIT"));
   cmd->arg = "(data)";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_trace_msg(trace_channel, 9, "reading DH_GEX_INIT message from client");
 
@@ -2991,12 +3481,13 @@ static int read_kexrsa_secret(struct ssh2_packet *pkt, struct sftp_kex *kex) {
 }
 
 static int write_kexrsa_pubkey(struct ssh2_packet *pkt, struct sftp_kex *kex) {
+  BIGNUM *rsa_n = NULL, *rsa_e = NULL;
   unsigned char *buf, *ptr, *buf2, *ptr2;
   const unsigned char *hostkey_data;
   uint32_t buflen, bufsz, buflen2, bufsz2, hostkey_datalen;
 
   hostkey_data = sftp_keys_get_hostkey_data(pkt->pool, kex->use_hostkey_type,
-    (size_t *) &hostkey_datalen);
+    &hostkey_datalen);
   if (hostkey_data == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error obtaining hostkey for KEXRSA key exchange: %s", strerror(errno));
@@ -3013,8 +3504,16 @@ static int write_kexrsa_pubkey(struct ssh2_packet *pkt, struct sftp_kex *kex) {
    * written in its entirety as an SSH2 string.
    */
   sftp_msg_write_string(&buf, &buflen, "ssh-rsa");
-  sftp_msg_write_mpint(&buf, &buflen, kex->rsa->e);
-  sftp_msg_write_mpint(&buf, &buflen, kex->rsa->n);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  RSA_get0_key(kex->rsa, &rsa_n, &rsa_e, NULL);
+#else
+  rsa_e = kex->rsa->e;
+  rsa_n = kex->rsa->n;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf, &buflen, rsa_e);
+  sftp_msg_write_mpint(&buf, &buflen, rsa_n);
 
   /* XXX Is this buffer large enough?  Too large? */
   bufsz2 = buflen2 = 4096;
@@ -3033,10 +3532,11 @@ static int write_kexrsa_pubkey(struct ssh2_packet *pkt, struct sftp_kex *kex) {
 }
 
 static int write_kexrsa_done(struct ssh2_packet *pkt, struct sftp_kex *kex) {
+  BIGNUM *rsa_e = NULL, *rsa_n = NULL;
   unsigned char *buf, *ptr, *buf2, *ptr2;
   const unsigned char *h, *hostkey_data, *hsig;
-  uint32_t buflen, bufsz, buflen2, bufsz2, hlen;
-  size_t hostkey_datalen, hsiglen;
+  uint32_t buflen, bufsz, buflen2, bufsz2, hlen, hostkey_datalen = 0;
+  size_t hsiglen;
 
   hostkey_data = sftp_keys_get_hostkey_data(pkt->pool, kex->use_hostkey_type,
     &hostkey_datalen);
@@ -3063,8 +3563,16 @@ static int write_kexrsa_done(struct ssh2_packet *pkt, struct sftp_kex *kex) {
    * written in its entirety as an SSH2 string.
    */
   sftp_msg_write_string(&buf2, &buflen2, "ssh-rsa");
-  sftp_msg_write_mpint(&buf2, &buflen2, kex->rsa->e);
-  sftp_msg_write_mpint(&buf2, &buflen2, kex->rsa->n);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && \
+    !defined(HAVE_LIBRESSL)
+  RSA_get0_key(kex->rsa, &rsa_n, &rsa_e, NULL);
+#else
+  rsa_e = kex->rsa->e;
+  rsa_n = kex->rsa->n;
+#endif /* prior to OpenSSL-1.1.0 */
+  sftp_msg_write_mpint(&buf2, &buflen2, rsa_e);
+  sftp_msg_write_mpint(&buf2, &buflen2, rsa_n);
 
   /* Calculate H */
   h = calculate_kexrsa_h(kex, hostkey_data, hostkey_datalen, kex->k,
@@ -3155,7 +3663,7 @@ static int handle_kex_rsa(struct sftp_kex *kex) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "KEXRSA_SECRET"));
   cmd->arg = "(data)";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_trace_msg(trace_channel, 9, "reading KEXRSA_SECRET message from client");
 
@@ -3188,6 +3696,353 @@ static int handle_kex_rsa(struct sftp_kex *kex) {
   destroy_pool(pkt->pool);
   return 0;
 }
+
+#if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+static int generate_curve25519_keys(unsigned char *priv_key,
+    unsigned char *pub_key) {
+  static const unsigned char basepoint[CURVE25519_SIZE] = {9};
+  unsigned char zero_curve25519[CURVE25519_SIZE];
+  int res;
+
+  randombytes_buf(priv_key, CURVE25519_SIZE);
+  res = crypto_scalarmult_curve25519(pub_key, priv_key, basepoint);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error performing Curve25519 scalar multiplication");
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Check for all-zero public keys. */
+  sodium_memzero(zero_curve25519, CURVE25519_SIZE);
+  if (sodium_memcmp(pub_key, zero_curve25519, CURVE25519_SIZE) == 0) {
+    pr_trace_msg(trace_channel, 12,
+      "generated all-zero Curve25519 public key, trying again");
+    return generate_curve25519_keys(priv_key, pub_key);
+  }
+
+  return 0;
+}
+
+static int read_curve25519_init(struct ssh2_packet *pkt, struct sftp_kex *kex) {
+  unsigned char zero_curve25519[CURVE25519_SIZE];
+  unsigned char *client_curve25519;
+  unsigned char *buf;
+  uint32_t buflen, data_len;
+  char *data;
+
+  buf = pkt->payload;
+  buflen = pkt->payload_len;
+
+  data = sftp_msg_read_string(pkt->pool, &buf, &buflen);
+  data_len = strlen(data);
+  if (data_len != CURVE25519_SIZE) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "rejecting invalid length (%lu bytes) client Curve25519 key",
+      (unsigned long) data_len);
+    errno = EINVAL;
+    return -1;
+  }
+
+  client_curve25519 = (unsigned char *) data;
+
+  /* Watch for all-zero public keys, and reject them. */
+  sodium_memzero(zero_curve25519, CURVE25519_SIZE);
+  if (sodium_memcmp(client_curve25519, zero_curve25519, CURVE25519_SIZE) == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "rejecting invalid (all-zero) client Curve25519 key");
+    errno = EINVAL;
+    return -1;
+  }
+
+  kex->client_curve25519 = client_curve25519;
+  return 0;
+}
+
+static int get_curve25519_shared_key(unsigned char *shared_key,
+    unsigned char *client_curve25519, unsigned char *server_key) {
+  int res;
+
+  res = crypto_scalarmult_curve25519(shared_key, server_key, client_curve25519);
+  if (res < 0) {
+    pr_trace_msg(trace_channel, 3,
+      "error performing Curve25519 scalar multiplication");
+    errno = EINVAL;
+    return -1;
+  }
+
+  return CURVE25519_SIZE;
+}
+
+static const unsigned char *calculate_curve25519_h(struct sftp_kex *kex,
+    const unsigned char *hostkey_data, uint32_t hostkey_datalen,
+    const BIGNUM *k, unsigned char *client_curve25519,
+    unsigned char *server_curve25519, uint32_t *hlen) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+  EVP_MD_CTX ctx;
+#endif /* prior to OpenSSL-1.1.0 */
+  EVP_MD_CTX *pctx;
+  unsigned char *buf, *ptr;
+  uint32_t buflen, bufsz;
+
+  bufsz = buflen = 4096;
+
+  /* XXX Is this buffer large enough? Too large? */
+  ptr = buf = sftp_msg_getbuf(kex_pool, bufsz);
+
+  /* Write all of the data into the buffer in the SSH2 format, and hash it.
+   * The ordering of these fields is described in RFC5656.
+   */
+
+  /* First, the version strings */
+  sftp_msg_write_string(&buf, &buflen, kex->client_version);
+  sftp_msg_write_string(&buf, &buflen, kex->server_version);
+
+  /* Client's KEXINIT */
+  sftp_msg_write_int(&buf, &buflen, kex->client_kexinit_payload_len + 1);
+  sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEXINIT);
+  sftp_msg_write_data(&buf, &buflen, kex->client_kexinit_payload,
+    kex->client_kexinit_payload_len, FALSE);
+
+  /* Server's KEXINIT */
+  sftp_msg_write_int(&buf, &buflen, kex->server_kexinit_payload_len + 1);
+  sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEXINIT);
+  sftp_msg_write_data(&buf, &buflen, kex->server_kexinit_payload,
+    kex->server_kexinit_payload_len, FALSE);
+
+  /* Hostkey data */
+  sftp_msg_write_data(&buf, &buflen, hostkey_data, hostkey_datalen, TRUE);
+
+  /* Client's key */
+  sftp_msg_write_data(&buf, &buflen, client_curve25519, CURVE25519_SIZE, TRUE);
+
+  /* Server's key */
+  sftp_msg_write_data(&buf, &buflen, server_curve25519, CURVE25519_SIZE, TRUE);
+
+  /* Shared secret */
+  sftp_msg_write_mpint(&buf, &buflen, k);
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL
+    pctx = EVP_MD_CTX_new();
+#else
+    pctx = &ctx;
+#endif /* OpenSSL-1.1.0 and later */
+
+  /* In OpenSSL 0.9.6, many of the EVP_Digest* functions returned void, not
+   * int.  Without these ugly OpenSSL version preprocessor checks, the
+   * compiler will error out with "void value not ignored as it ought to be".
+   */
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestInit(pctx, kex->hash) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error initializing message digest: %s", sftp_crypto_get_errors());
+    BN_clear_free(kex->e);
+    kex->e = NULL;
+    pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
+    return NULL;
+  }
+#else
+  EVP_DigestInit(pctx, kex->hash);
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestUpdate(pctx, ptr, (bufsz - buflen)) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error updating message digest: %s", sftp_crypto_get_errors());
+    BN_clear_free(kex->e);
+    kex->e = NULL;
+    pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
+    return NULL;
+  }
+#else
+  EVP_DigestUpdate(pctx, ptr, (bufsz - buflen));
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x000907000L
+  if (EVP_DigestFinal(pctx, kex_digest_buf, hlen) != 1) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error finalizing message digest: %s", sftp_crypto_get_errors());
+    BN_clear_free(kex->e);
+    kex->e = NULL;
+    pr_memscrub(ptr, bufsz);
+# if OPENSSL_VERSION_NUMBER >= 0x10100000LL
+    EVP_MD_CTX_free(pctx);
+# endif /* OpenSSL-1.1.0 and later */
+    return NULL;
+  }
+#else
+  EVP_DigestFinal(pctx, kex_digest_buf, hlen);
+#endif
+
+#if OPENSSL_VERSION_NUMBER >= 0x10100000LL
+  EVP_MD_CTX_free(pctx);
+#endif /* OpenSSL-1.1.0 and later */
+  BN_clear_free(kex->e);
+  kex->e = NULL;
+  pr_memscrub(ptr, bufsz);
+
+  return kex_digest_buf;
+}
+
+static int write_curve25519_reply(struct ssh2_packet *pkt,
+    struct sftp_kex *kex) {
+  const unsigned char *h, *hostkey_data, *hsig;
+  unsigned char *buf, *ptr;
+  unsigned char server_curve25519[CURVE25519_SIZE];
+  unsigned char server_key[CURVE25519_SIZE];
+  uint32_t bufsz, buflen, hlen = 0, hostkey_datalen = 0;
+  size_t hsiglen;
+  BIGNUM *k = NULL;
+  int res;
+
+  if (generate_curve25519_keys(server_key, server_curve25519) < 0) {
+    return -1;
+  }
+
+  /* Compute the shared secret. */
+  buf = palloc(kex_pool, CURVE25519_SIZE);
+
+  pr_trace_msg(trace_channel, 12, "computing Curve25519 key");
+  res = get_curve25519_shared_key((unsigned char *) buf, kex->client_curve25519,
+    server_key);
+  if (res < 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error computing Curve25519 shared secret: %s", strerror(errno));
+    return -1;
+  }
+
+  k = BN_new();
+  if (k == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error allocating new BIGNUM: %s", sftp_crypto_get_errors());
+    pr_memscrub(buf, res);
+    return -1;
+  }
+
+  if (BN_bin2bn((unsigned char *) buf, res, k) == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error converting Curve25519 shared secret to BN: %s",
+      sftp_crypto_get_errors());
+    pr_memscrub(buf, res);
+    return -1;
+  }
+
+  pr_memscrub(buf, res);
+  kex->k = k;
+
+  /* Get the hostkey data; it will be part of the data we hash in order
+   * to create the session key.
+   */
+  hostkey_data = sftp_keys_get_hostkey_data(pkt->pool, kex->use_hostkey_type,
+    &hostkey_datalen);
+  if (hostkey_data == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "error converting hostkey for signing: %s", strerror(errno));
+
+    BN_clear_free(kex->k);
+    kex->k = NULL;
+    return -1;
+  }
+
+  /* Calculate H */
+  h = calculate_curve25519_h(kex, hostkey_data, hostkey_datalen, k,
+    kex->client_curve25519, server_curve25519, &hlen);
+  if (h == NULL) {
+    pr_memscrub((char *) hostkey_data, hostkey_datalen);
+    BN_clear_free(kex->k);
+    kex->k = NULL;
+    return -1;
+  }
+
+  kex->h = palloc(pkt->pool, hlen);
+  kex->hlen = hlen;
+  memcpy((char *) kex->h, h, kex->hlen);
+
+  /* Save H as the session ID */
+  sftp_session_set_id(h, hlen);
+
+  /* Sign H with our hostkey */
+  hsig = sftp_keys_sign_data(pkt->pool, kex->use_hostkey_type, h, hlen,
+    &hsiglen);
+  if (hsig == NULL) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION, "error signing H");
+    pr_memscrub((char *) hostkey_data, hostkey_datalen);
+    BN_clear_free(kex->k);
+    kex->k = NULL;
+    return -1;
+  }
+
+  /* XXX Is this large enough?  Too large? */
+  buflen = bufsz = 4096;
+  ptr = buf = palloc(pkt->pool, bufsz);
+
+  sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_KEX_ECDH_REPLY);
+  sftp_msg_write_data(&buf, &buflen, hostkey_data, hostkey_datalen, TRUE);
+  sftp_msg_write_data(&buf, &buflen, server_curve25519, CURVE25519_SIZE, TRUE);
+  sftp_msg_write_data(&buf, &buflen, hsig, hsiglen, TRUE);
+
+  /* Scrub any sensitive data when done */
+  pr_memscrub((char *) server_key, CURVE25519_SIZE);
+  pr_memscrub((char *) hostkey_data, hostkey_datalen);
+  pr_memscrub((char *) hsig, hsiglen);
+
+  pkt->payload = ptr;
+  pkt->payload_len = (bufsz - buflen);
+
+  return 0;
+}
+
+static int handle_kex_curve25519(struct ssh2_packet *pkt,
+    struct sftp_kex *kex) {
+  int res;
+  cmd_rec *cmd;
+  const char *req;
+
+  req = "ECDH_INIT";
+  cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, req));
+  cmd->arg = "(data)";
+  cmd->cmd_class = CL_AUTH|CL_SSH;
+
+  pr_trace_msg(trace_channel, 9, "reading %s message from client", req);
+
+  res = read_curve25519_init(pkt, kex);
+  if (res < 0) {
+    pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
+
+    destroy_pool(pkt->pool);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_KEY_EXCHANGE_FAILED, NULL);
+  }
+
+  pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+  destroy_pool(pkt->pool);
+
+  /* Send our key exchange reply. */
+  pkt = sftp_ssh2_packet_create(kex_pool);
+  res = write_curve25519_reply(pkt, kex);
+  if (res < 0) {
+    destroy_pool(pkt->pool);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_KEY_EXCHANGE_FAILED, NULL);
+  }
+
+  pr_trace_msg(trace_channel, 9, "writing %s message to client", req);
+
+  res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
+  if (res < 0) {
+    destroy_pool(pkt->pool);
+    SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_KEY_EXCHANGE_FAILED, NULL);
+  }
+
+  destroy_pool(pkt->pool);
+  return 0;
+}
+#endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
 
 #ifdef PR_USE_OPENSSL_ECC
 static int read_ecdh_init(struct ssh2_packet *pkt, struct sftp_kex *kex) {
@@ -3234,8 +4089,8 @@ static int write_ecdh_reply(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   const unsigned char *h;
   const unsigned char *hostkey_data, *hsig;
   unsigned char *buf, *ptr;
-  uint32_t bufsz, buflen, hlen = 0;
-  size_t ecdhlen, hostkey_datalen, hsiglen;
+  uint32_t bufsz, buflen, hlen = 0, hostkey_datalen = 0;
+  size_t ecdhlen, hsiglen;
   BIGNUM *k = NULL;
   int res;
 
@@ -3252,7 +4107,7 @@ static int write_ecdh_reply(struct ssh2_packet *pkt, struct sftp_kex *kex) {
     return -1;
   }
 
-  if (res != ecdhlen) {
+  if ((size_t) res != ecdhlen) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "computed ECDH shared secret length (%d) does not match needed length "
       "(%lu), rejecting", res, (unsigned long) ecdhlen);
@@ -3348,7 +4203,7 @@ static int handle_kex_ecdh(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   req = "ECDH_INIT";
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, req));
   cmd->arg = "(data)";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_trace_msg(trace_channel, 9, "reading %s message from client", req);
 
@@ -3377,6 +4232,7 @@ static int handle_kex_ecdh(struct ssh2_packet *pkt, struct sftp_kex *kex) {
   if (finish_ecdh(kex) < 0) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "error finishing ECDH key: %s", strerror(errno));
+    destroy_pool(pkt->pool);
     return -1;
   }
 
@@ -3435,6 +4291,10 @@ static struct ssh2_packet *read_kex_packet(pool *p, struct sftp_kex *kex,
       return NULL;
     }
 
+    pr_response_clear(&resp_list);
+    pr_response_clear(&resp_err_list);
+    pr_response_set_pool(pkt->pool);
+
     /* Per RFC 4253, Section 11, DEBUG, DISCONNECT, IGNORE, and UNIMPLEMENTED
      * messages can occur at any time, even during KEX.  We have to be prepared
      * for this, and Do The Right Thing(tm).
@@ -3468,21 +4328,25 @@ static struct ssh2_packet *read_kex_packet(pool *p, struct sftp_kex *kex,
     switch (mesg_type) {
       case SFTP_SSH2_MSG_DEBUG:
         sftp_ssh2_packet_handle_debug(pkt);
+        pr_response_set_pool(NULL);
         pkt = NULL;
         break;
 
       case SFTP_SSH2_MSG_DISCONNECT:
         sftp_ssh2_packet_handle_disconnect(pkt);
+        pr_response_set_pool(NULL);
         pkt = NULL;
         break;
 
       case SFTP_SSH2_MSG_IGNORE:
         sftp_ssh2_packet_handle_ignore(pkt);
+        pr_response_set_pool(NULL);
         pkt = NULL;
         break;
 
       case SFTP_SSH2_MSG_UNIMPLEMENTED:
-        sftp_ssh2_packet_handle_ignore(pkt);
+        sftp_ssh2_packet_handle_unimplemented(pkt);
+        pr_response_set_pool(NULL);
         pkt = NULL;
         break;
 
@@ -3491,6 +4355,7 @@ static struct ssh2_packet *read_kex_packet(pool *p, struct sftp_kex *kex,
         (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
           "received %s (%d) unexpectedly, disconnecting",
           sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+        pr_response_set_pool(NULL);
         destroy_kex(kex);
         destroy_pool(pkt->pool);
         SFTP_DISCONNECT_CONN(disconn_code, NULL);
@@ -3530,7 +4395,7 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "KEXINIT"));
   cmd->arg = "(data)";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_trace_msg(trace_channel, 9, "reading KEXINIT message from client");
 
@@ -3545,6 +4410,7 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 
   pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
   destroy_pool(pkt->pool);
+  cmd = NULL;
 
   pr_trace_msg(trace_channel, 9,
     "determining shared algorithms for SSH session");
@@ -3671,6 +4537,12 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
         /* This handles the case of SFTP_SSH2_MSG_KEX_DH_GEX_REQUEST_OLD as
          * well; that ID has the same value as the KEX_DH_INIT ID.
          */
+#if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+        if (kex->use_curve25519) {
+          res = handle_kex_curve25519(pkt, kex);
+
+        } else
+#endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
 #ifdef PR_USE_OPENSSL_ECC
         if (kex->use_ecdh) {
           res = handle_kex_ecdh(pkt, kex);
@@ -3715,6 +4587,10 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
         SFTP_DISCONNECT_CONN(SFTP_SSH2_DISCONNECT_PROTOCOL_ERROR, NULL);
     }
 
+    /* Note: All of the above handle_kex_*() functions are REQUIRED to have
+     * destroyed the pkt->pool themselves, thus we do NOT need to do it here.
+     */
+
   } else {
     res = handle_kex_rsa(kex);
     if (res < 0) {
@@ -3751,25 +4627,27 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 
   /* If we didn't send our NEWKEYS message earlier, do it now. */
   if (!sent_newkeys) {
+    struct ssh2_packet *pkt2;
+
     pr_trace_msg(trace_channel, 9, "sending NEWKEYS message to client");
 
     /* Send our NEWKEYS reply. */
-    pkt = sftp_ssh2_packet_create(kex_pool);
-    res = write_newkeys_reply(pkt);
+    pkt2 = sftp_ssh2_packet_create(kex_pool);
+    res = write_newkeys_reply(pkt2);
     if (res < 0) {
       destroy_kex(kex);
-      destroy_pool(pkt->pool);
+      destroy_pool(pkt2->pool);
       return -1;
     }
 
-    res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt);
+    res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt2);
     if (res < 0) {
       destroy_kex(kex);
-      destroy_pool(pkt->pool);
+      destroy_pool(pkt2->pool);
       return -1;
     }
 
-    destroy_pool(pkt->pool);
+    destroy_pool(pkt2->pool);
   }
 
   /* Last but certainly not least, set up the keys for encryption and
@@ -3785,10 +4663,11 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 
   cmd = pr_cmd_alloc(pkt->pool, 1, pstrdup(pkt->pool, "NEWKEYS"));
   cmd->arg = "";
-  cmd->cmd_class = CL_AUTH;
+  cmd->cmd_class = CL_AUTH|CL_SSH;
 
   pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
   destroy_pool(pkt->pool);
+  cmd = NULL;
 
   /* Reset this flag for the next time through. */
   kex_sent_kexinit = FALSE;
@@ -3798,9 +4677,25 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
 }
 
 int sftp_kex_free(void) {
+  struct sftp_kex *first_kex, *rekey_kex;
+
   if (kex_dhparams_fp != NULL) {
     (void) fclose(kex_dhparams_fp);
     kex_dhparams_fp = NULL;
+  }
+
+  /* destroy_kex() will set the kex_first_kex AND kex_rekey_kex pointers to
+   * null, so we need to keep our own copies of those pointers here.
+   */
+  first_kex = kex_first_kex;
+  rekey_kex = kex_rekey_kex;
+
+  if (first_kex != NULL) {
+    destroy_kex(first_kex);
+  }
+
+  if (rekey_kex != NULL) {
+    destroy_kex(rekey_kex);
   }
 
   if (kex_pool) {
@@ -3883,6 +4778,21 @@ int sftp_kex_rekey(void) {
     return 0;
   }
 
+  /* If the client has NOT authenticated by this point in time, try again
+   * later.  Some clients do not deal well with having their authentication
+   * processes interrupted by a rekey (Bug#4254).
+   */
+  if (!(sftp_sess_state & SFTP_SESS_STATE_HAVE_AUTH)) {
+    pr_trace_msg(trace_channel, 17,
+      "authentication not completed, delaying rekey request");
+
+    /* If the rekey interval is so short as to interfere the client before
+     * it has authenticated, assume the rekey interval is short enough to
+     * fire again soon, such that we do not need to change its schedule.
+     */
+    return 1;
+  }
+
   /* Make sure that any rekey timer will try not to interfere while the
    * rekeying is happening.
    */
@@ -3893,7 +4803,15 @@ int sftp_kex_rekey(void) {
 
   pr_trace_msg(trace_channel, 17, "sending rekey KEXINIT");
 
-  sftp_sess_state |= SFTP_SESS_STATE_REKEYING;
+  /* Some SSH2 clients are very particular about rekeying, and do NOT want
+   * other data while they are rekeying.  Other clients are more forgiving.
+   * For the strict clients, we set the REKEYING flag here, such that the
+   * Channel API will buffer up its responses until the rekeying completes.
+   */
+  if (sftp_interop_supports_feature(SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING)) {
+    sftp_sess_state |= SFTP_SESS_STATE_REKEYING;
+  }
+
   sftp_kex_init(NULL, NULL);
 
   kex_rekey_kex = create_kex(kex_pool);

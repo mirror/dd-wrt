@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_copy -- a module supporting copying of files on the server
  *                      without transferring the data to the client and back
- *
- * Copyright (c) 2009-2015 TJ Saunders
+ * Copyright (c) 2009-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,7 +28,7 @@
 
 #include "conf.h"
 
-#define MOD_COPY_VERSION	"mod_copy/0.5"
+#define MOD_COPY_VERSION	"mod_copy/0.6"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030401
@@ -38,9 +37,14 @@
 
 extern pr_response_t *resp_list, *resp_err_list;
 
+module copy_module;
 static int copy_engine = TRUE;
+static unsigned long copy_opts = 0UL;
+#define COPY_OPT_NO_DELETE_ON_FAILURE	0x0001
 
 static const char *trace_channel = "copy";
+
+static int copy_sess_init(void);
 
 /* These are copied largely from src/mkhome.c */
 
@@ -48,7 +52,7 @@ static int create_dir(const char *dir) {
   struct stat st;
   int res = -1;
 
-  pr_fs_clear_cache();
+  pr_fs_clear_cache2(dir);
   res = pr_fsio_stat(dir, &st);
 
   if (res < 0 &&
@@ -86,10 +90,10 @@ static int create_path(pool *p, const char *path) {
   struct stat st;
   char *curr_path, *dup_path; 
  
-  pr_fs_clear_cache();
- 
-  if (pr_fsio_stat(path, &st) == 0)
+  pr_fs_clear_cache2(path);
+  if (pr_fsio_stat(path, &st) == 0) {
     return 0;
+  }
  
   dup_path = pstrdup(p, path);
 
@@ -153,7 +157,8 @@ static int create_path(pool *p, const char *path) {
   return 0;
 }
 
-static int copy_symlink(pool *p, const char *src_path, const char *dst_path) {
+static int copy_symlink(pool *p, const char *src_path, const char *dst_path,
+    int flags) {
   char *link_path = pcalloc(p, PR_TUNABLE_BUFFER_SIZE);
   int len;
 
@@ -183,7 +188,8 @@ static int copy_symlink(pool *p, const char *src_path, const char *dst_path) {
   return 0;
 }
 
-static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
+static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
+    int flags) {
   DIR *dh = NULL;
   struct dirent *dent = NULL;
   int res = 0;
@@ -229,7 +235,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
         break;
       }
 
-      if (copy_dir(iter_pool, src_path, dst_path) < 0) {
+      if (copy_dir(iter_pool, src_path, dst_path, flags) < 0) {
         res = -1;
         break;
       }
@@ -265,11 +271,18 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
         break;
 
       } else {
-        if (pr_fs_copy_file(src_path, dst_path) < 0) {
+        if (pr_fs_copy_file2(src_path, dst_path, flags, NULL) < 0) {
+          int xerrno = errno;
+
+          pr_log_debug(DEBUG7, MOD_COPY_VERSION
+            ": error copying file '%s' to '%s': %s", src_path, dst_path,
+            strerror(xerrno));
+
           pr_cmd_dispatch_phase(cmd, POST_CMD_ERR, 0);
           pr_cmd_dispatch_phase(cmd, LOG_CMD_ERR, 0);
           pr_response_clear(&resp_err_list);
 
+          errno = xerrno;
           res = -1;
           break;
 
@@ -282,7 +295,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
 
           /* Write a TransferLog entry as well. */
 
-          pr_fs_clear_cache();
+          pr_fs_clear_cache2(dst_path);
           pr_fsio_stat(dst_path, &st);
 
           abs_path = dir_abs_path(p, dst_path, TRUE);
@@ -304,7 +317,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
 
     /* Is this path a symlink? */
     } else if (S_ISLNK(st.st_mode)) {
-      if (copy_symlink(iter_pool, src_path, dst_path) < 0) {
+      if (copy_symlink(iter_pool, src_path, dst_path, flags) < 0) {
         res = -1;
         break;
       }
@@ -328,7 +341,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir) {
 
 static int copy_paths(pool *p, const char *from, const char *to) {
   struct stat st;
-  int res;
+  int res, flags = 0;
   xaset_t *set;
 
   set = get_dir_ctxt(p, (char *) to);
@@ -363,11 +376,15 @@ static int copy_paths(pool *p, const char *from, const char *to) {
     errno = xerrno;
     return -1;
   }
-   
+
+  if (copy_opts & COPY_OPT_NO_DELETE_ON_FAILURE) {
+    flags |= PR_FSIO_COPY_FILE_FL_NO_DELETE_ON_FAILURE;
+  }
+
   if (S_ISREG(st.st_mode)) { 
     char *abs_path;
 
-    pr_fs_clear_cache();
+    pr_fs_clear_cache2(to);
     res = pr_fsio_stat(to, &st);
     if (res == 0) {
       unsigned char *allow_overwrite;
@@ -382,7 +399,7 @@ static int copy_paths(pool *p, const char *from, const char *to) {
       }
     }
 
-    res = pr_fs_copy_file(from, to);
+    res = pr_fs_copy_file2(from, to, flags, NULL);
     if (res < 0) {
       int xerrno = errno;
 
@@ -393,8 +410,11 @@ static int copy_paths(pool *p, const char *from, const char *to) {
       return -1;
     }
 
-    pr_fs_clear_cache();
-    pr_fsio_stat(to, &st);
+    pr_fs_clear_cache2(to);
+    if (pr_fsio_stat(to, &st) < 0) {
+      pr_trace_msg(trace_channel, 3,
+        "error stat'ing '%s': %s", to, strerror(errno));
+    }
 
     /* Write a TransferLog entry as well. */
     abs_path = dir_abs_path(p, to, TRUE);
@@ -422,7 +442,7 @@ static int copy_paths(pool *p, const char *from, const char *to) {
       return -1;
     }
 
-    res = copy_dir(p, from, to);
+    res = copy_dir(p, from, to, flags);
     if (res < 0) {
       int xerrno = errno;
 
@@ -435,7 +455,7 @@ static int copy_paths(pool *p, const char *from, const char *to) {
     }
 
   } else if (S_ISLNK(st.st_mode)) {
-    pr_fs_clear_cache();
+    pr_fs_clear_cache2(to);
     res = pr_fsio_stat(to, &st);
     if (res == 0) {
       unsigned char *allow_overwrite;
@@ -445,12 +465,13 @@ static int copy_paths(pool *p, const char *from, const char *to) {
           *allow_overwrite == FALSE) {
         pr_log_debug(DEBUG6, MOD_COPY_VERSION
           ": AllowOverwrite permission denied for '%s'", to);
+
         errno = EACCES;
         return -1;
       }
     }
 
-    res = copy_symlink(p, from, to);
+    res = copy_symlink(p, from, to, flags);
     if (res < 0) {
       int xerrno = errno;
 
@@ -464,6 +485,7 @@ static int copy_paths(pool *p, const char *from, const char *to) {
   } else {
     pr_log_debug(DEBUG7, MOD_COPY_VERSION
       ": unsupported file type for '%s'", from);
+
     errno = EINVAL;
     return -1;
   }
@@ -494,6 +516,36 @@ MODRET set_copyengine(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
+/* usage: CopyOptions opt1 ... */
+MODRET set_copyoptions(cmd_rec *cmd) {
+  config_rec *c = NULL;
+  register unsigned int i = 0;
+  unsigned long opts = 0UL;
+
+  if (cmd->argc-1 == 0) {
+    CONF_ERROR(cmd, "wrong number of parameters");
+  }
+
+  CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
+
+  c = add_config_param(cmd->argv[0], 1, NULL);
+
+  for (i = 1; i < cmd->argc; i++) {
+    if (strcmp(cmd->argv[i], "NoDeleteOnFailure") == 0) {
+      opts |= COPY_OPT_NO_DELETE_ON_FAILURE;
+
+    } else {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown CopyOption '",
+        cmd->argv[i], "'", NULL));
+    }
+  }
+
+  c->argv[0] = pcalloc(c->pool, sizeof(unsigned long));
+  *((unsigned long *) c->argv[0]) = opts;
+
+  return PR_HANDLED(cmd);
+}
+
 /* Command handlers
  */
 
@@ -507,7 +559,7 @@ MODRET copy_copy(cmd_rec *cmd) {
   }
 
   if (strncasecmp(cmd->argv[1], "COPY", 5) == 0) {
-    char *cmd_name, *from, *to;
+    char *cmd_name, *decoded_path, *from, *to;
     unsigned char *authenticated;
 
     if (cmd->argc != 4) {
@@ -518,15 +570,47 @@ MODRET copy_copy(cmd_rec *cmd) {
     if (authenticated == NULL ||
         *authenticated == FALSE) {
       pr_response_add_err(R_530, _("Please login with USER and PASS"));
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
     }
 
     /* XXX What about paths which contain spaces? */
-    from = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[2]);
-    from = dir_canonical_vpath(cmd->tmp_pool, from);
 
-    to = pr_fs_decode_path(cmd->tmp_pool, cmd->argv[3]);
-    to = dir_canonical_vpath(cmd->tmp_pool, to);
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[2],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[2], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), (char *) cmd->argv[2]);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    from = dir_canonical_vpath(cmd->tmp_pool, decoded_path);
+
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[3],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[3], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), (char *) cmd->argv[3]);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    to = dir_canonical_vpath(cmd->tmp_pool, decoded_path);
 
     cmd_name = cmd->argv[0];
     pr_cmd_set_name(cmd, "SITE_COPY");
@@ -534,8 +618,10 @@ MODRET copy_copy(cmd_rec *cmd) {
       int xerrno = EPERM;
 
       pr_cmd_set_name(cmd, cmd_name);
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[3], strerror(xerrno));
+      pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[3],
+        strerror(xerrno));
 
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
@@ -544,13 +630,19 @@ MODRET copy_copy(cmd_rec *cmd) {
     if (copy_paths(cmd->tmp_pool, from, to) < 0) {
       int xerrno = errno;
 
-      pr_response_add_err(R_550, "%s: %s", cmd->argv[1], strerror(xerrno));
+      pr_log_debug(DEBUG7, MOD_COPY_VERSION
+        ": error copying '%s' to '%s': %s", from, to, strerror(xerrno));
 
+      pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[1],
+        strerror(xerrno));
+
+      pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
       return PR_ERROR(cmd);
     }
 
-    pr_response_add(R_200, _("SITE %s command successful"), cmd->argv[1]);
+    pr_response_add(R_200, _("SITE %s command successful"),
+      (char *) cmd->argv[1]);
     return PR_HANDLED(cmd);
   }
 
@@ -582,6 +674,7 @@ MODRET copy_cpfr(cmd_rec *cmd) {
       *authenticated == FALSE) {
     pr_response_add_err(R_530, _("Please login with USER and PASS"));
   
+    pr_cmd_set_errno(cmd, EPERM);
     errno = EPERM;
     return PR_ERROR(cmd);
   }
@@ -592,8 +685,24 @@ MODRET copy_cpfr(cmd_rec *cmd) {
    * the "SITE CPFR", separating them with spaces.
    */
   for (i = 2; i <= cmd->argc-1; i++) {
-    path = pstrcat(cmd->tmp_pool, path, *path ? " " : "",
-      pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
+    char *decoded_path;
+
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[i],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[i], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), cmd->arg);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    path = pstrcat(cmd->tmp_pool, path, *path ? " " : "", decoded_path, NULL);
   }
 
   res = pr_filter_allow_path(CURRENT_CONF, path);
@@ -605,12 +714,18 @@ MODRET copy_cpfr(cmd_rec *cmd) {
       pr_log_debug(DEBUG2, MOD_COPY_VERSION
         ": 'CPFR %s' denied by PathAllowFilter", path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), path);
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
 
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
       pr_log_debug(DEBUG2, MOD_COPY_VERSION
         ": 'CPFR %s' denied by PathDenyFilter", path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), path);
+
+      pr_cmd_set_errno(cmd, EPERM);
+      errno = EPERM;
       return PR_ERROR(cmd);
   }
 
@@ -619,22 +734,30 @@ MODRET copy_cpfr(cmd_rec *cmd) {
 
   if (!path ||
       !dir_check_canon(cmd->tmp_pool, cmd, cmd->group, path, NULL) ||
-      !exists(path)) {
-    pr_response_add_err(R_550, "%s: %s", path, strerror(errno));
+      !exists2(cmd->tmp_pool, path)) {
+    int xerrno = errno;
+
+    pr_response_add_err(R_550, "%s: %s", path, strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
+    errno = xerrno;
     return PR_ERROR(cmd);
   }
 
-  pr_table_add(session.notes, "mod_copy.cpfr-path",
-    pstrdup(session.pool, path), 0);
+  if (pr_table_add(session.notes, "mod_copy.cpfr-path",
+      pstrdup(session.pool, path), 0) < 0) {
+    pr_trace_msg(trace_channel, 4,
+      "error adding 'mod_copy.cpfr-path' note: %s", strerror(errno));
+  }
 
-  pr_response_add(R_350, _("File or directory exists, ready for destination "
-    "name"));
+  pr_response_add(R_350,
+    _("File or directory exists, ready for destination name"));
   return PR_HANDLED(cmd);
 }
 
 MODRET copy_cpto(cmd_rec *cmd) {
   register unsigned int i;
-  char *from, *to = "";
+  const char *from, *to = "";
   unsigned char *authenticated = NULL;
 
   if (copy_engine == FALSE) {
@@ -651,6 +774,7 @@ MODRET copy_cpto(cmd_rec *cmd) {
       *authenticated == FALSE) {
     pr_response_add_err(R_530, _("Please login with USER and PASS"));
 
+    pr_cmd_set_errno(cmd, EPERM);
     errno = EPERM;
     return PR_ERROR(cmd);
   }
@@ -660,6 +784,9 @@ MODRET copy_cpto(cmd_rec *cmd) {
   from = pr_table_get(session.notes, "mod_copy.cpfr-path", NULL);
   if (from == NULL) {
     pr_response_add_err(R_503, _("Bad sequence of commands"));
+
+    pr_cmd_set_errno(cmd, EPERM);
+    errno = EPERM;
     return PR_ERROR(cmd);
   }
 
@@ -667,17 +794,62 @@ MODRET copy_cpto(cmd_rec *cmd) {
    * the "SITE CPTO", separating them with spaces.
    */
   for (i = 2; i <= cmd->argc-1; i++) {
-    to = pstrcat(cmd->tmp_pool, to, *to ? " " : "",
-      pr_fs_decode_path(cmd->tmp_pool, cmd->argv[i]), NULL);
+    char *decoded_path;
+
+    decoded_path = pr_fs_decode_path2(cmd->tmp_pool, cmd->argv[i],
+      FSIO_DECODE_FL_TELL_ERRORS);
+    if (decoded_path == NULL) {
+      int xerrno = errno;
+
+      pr_log_debug(DEBUG8, "'%s' failed to decode properly: %s",
+        (char *) cmd->argv[i], strerror(xerrno));
+      pr_response_add_err(R_550,
+        _("%s: Illegal character sequence in filename"), cmd->arg);
+
+      pr_cmd_set_errno(cmd, xerrno);
+      errno = xerrno;
+      return PR_ERROR(cmd);
+    }
+
+    to = pstrcat(cmd->tmp_pool, to, *to ? " " : "", decoded_path, NULL);
   }
 
   to = dir_canonical_vpath(cmd->tmp_pool, to);
 
   if (copy_paths(cmd->tmp_pool, from, to) < 0) {
     int xerrno = errno;
+    const char *err_code = R_550;
 
-    pr_response_add_err(R_550, "%s: %s", cmd->argv[1], strerror(xerrno));
+    pr_log_debug(DEBUG7, MOD_COPY_VERSION
+      ": error copying '%s' to '%s': %s", from, to, strerror(xerrno));
 
+    /* Check errno for EDQOUT (or the most appropriate alternative).
+     * (I hate the fact that FTP has a special response code just for
+     * this, and that clients actually expect it.  Special cases are
+     * stupid.)
+     */
+    switch (xerrno) {
+#if defined(EDQUOT)
+      case EDQUOT:
+#endif /* EDQUOT */
+#if defined(EFBIG)
+      case EFBIG:
+#endif /* EFBIG */
+#if defined(ENOSPC)
+      case ENOSPC:
+#endif /* ENOSPC */
+        err_code = R_552;
+        break;
+
+      default:
+        err_code = R_550;
+        break;
+    }
+
+    pr_response_add_err(err_code, "%s: %s", (char *) cmd->argv[1],
+      strerror(xerrno));
+
+    pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
   }
@@ -717,6 +889,22 @@ MODRET copy_post_pass(cmd_rec *cmd) {
     copy_engine = *((int *) c->argv[0]);
   }
 
+  if (copy_engine == FALSE) {
+    return PR_DECLINED(cmd);
+  }
+
+  c = find_config(main_server->conf, CONF_PARAM, "CopyOptions", FALSE);
+  while (c != NULL) {
+    unsigned long opts = 0;
+
+    pr_signals_handle();
+
+    opts = *((unsigned long *) c->argv[0]);
+    copy_opts |= opts;
+
+    c = find_config_next(c, c->next, CONF_PARAM, "CopyOptions", FALSE);
+  }
+
   return PR_DECLINED(cmd);
 }
 
@@ -745,6 +933,7 @@ static int copy_sess_init(void) {
 
 static conftable copy_conftab[] = {
   { "CopyEngine",	set_copyengine,		NULL },
+  { "CopyOptions",	set_copyoptions,	NULL },
 
   { NULL }
 };

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp message routines
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,15 +20,13 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: msg.h,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
-
-#include "mod_snmp.h"
-#include "pdu.h"
 
 #ifndef MOD_SNMP_MSG_H
 #define MOD_SNMP_MSG_H
+
+#include "mod_snmp.h"
+#include "pdu.h"
 
 const char *snmp_msg_get_versionstr(long snmp_version);
 
@@ -39,4 +37,4 @@ int snmp_msg_write(pool *p, unsigned char **buf, size_t *buflen,
   char *community, unsigned int community_len, long snmp_version,
   struct snmp_pdu *pdu);
 
-#endif
+#endif /* MOD_SNMP_MSG_H */

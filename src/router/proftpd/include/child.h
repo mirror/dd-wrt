@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Management of child objects
- * $Id: child.h,v 1.3 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Management of child objects */
 
 #ifndef PR_CHILD_H
 #define PR_CHILD_H

@@ -78,9 +78,6 @@ than the default configuration file.  The default configuration file is
 .BI \-N,\--nocollision
 Disables address/port collision checking.
 .TP
-.BI \-V,\--settings
-Displays various compile-time settings and exits.
-.TP
 .BI \-S,\--serveraddr
 Specifies an IP address for the host machine, avoiding an DNS lookup of the hostname
 .TP
@@ -95,6 +92,12 @@ the \fBPersistentPasswd\fP directive.
 .TP
 .BI \-l,\--list
 Lists all modules compiled into proftpd.
+.TP
+.BI \-V,\--settings
+Displays various compile-time settings and exits.
+.TP
+.BI \-X,\--nofork
+Debug mode (do not fork a session process); exits after one session.
 .TP
 .BI \-4,\--ipv4
 Support IPv4 functionality \fBonly\fP, regardless of whether the

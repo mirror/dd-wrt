@@ -1,6 +1,4 @@
 /*
- * $Id: cap_proc.c,v 1.2 2008-08-06 17:00:41 castaglia Exp $
- *
  * Copyright (c) 1997-8 Andrew G Morgan <morgan@linux.kernel.org>
  *
  * See end of file for Log.

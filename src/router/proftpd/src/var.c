@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2013 The ProFTPD Project team
+ * Copyright (c) 2004-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Variables API implementation
- * $Id: var.c,v 1.8 2013-10-06 05:30:31 castaglia Exp $
- */
+/* Variables API implementation */
 
 #include "conf.h"
 
@@ -75,7 +73,7 @@ int pr_var_exists(const char *name) {
 }
 
 const char *pr_var_get(const char *name) {
-  struct var *v = NULL;
+  const struct var *v = NULL;
 
   if (var_tab == NULL) {
     errno = EPERM;
@@ -113,7 +111,7 @@ const char *pr_var_get(const char *name) {
 
 const char *pr_var_next(const char **desc) {
   const char *name;
-  struct var *v;
+  const struct var *v;
 
   if (var_tab == NULL) {
     errno = EPERM;
@@ -126,7 +124,8 @@ const char *pr_var_next(const char **desc) {
   }
 
   v = pr_table_get(var_tab, name, NULL);
-  if (v && desc) {
+  if (v != NULL &&
+      desc != NULL) {
     *desc = v->v_desc;
   }
 

@@ -1,8 +1,7 @@
 /*
  * ProFTPD: mod_wrap -- use Wietse Venema's TCP wrappers library for
  *                      access control
- *
- * Copyright (c) 2000-2013 TJ Saunders
+ * Copyright (c) 2000-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +23,6 @@
  *
  * -- DO NOT MODIFY THE TWO LINES BELOW --
  * $Libraries: -lwrap -lnsl$
- * $Id: mod_wrap.c,v 1.28 2013-10-13 22:51:36 castaglia Exp $
  */
 
 #define MOD_WRAP_VERSION "mod_wrap/1.2.4"
@@ -39,13 +37,16 @@
 int allow_severity = PR_LOG_INFO;
 int deny_severity = PR_LOG_WARNING;
 
-/* function prototypes */
+module wrap_module;
+
+/* Necessary prototypes */
 static int wrap_eval_expression(char **, array_header *);
-static char *wrap_get_user_table(cmd_rec *, char *, char *);
-static int wrap_is_usable_file(char *);
+static const char *wrap_get_user_table(cmd_rec *, const char *, char *);
+static int wrap_is_usable_file(const char *);
 static void wrap_log_request_allowed(int, struct request_info *);
 static void wrap_log_request_denied(int, struct request_info *);
-static config_rec *wrap_resolve_user(pool *, char **);
+static config_rec *wrap_resolve_user(pool *, const char **);
+static int wrap_sess_init(void);
 
 static char *wrap_service_name = "proftpd";
 
@@ -58,7 +59,7 @@ static int wrap_eval_expression(char **config_expr,
     array_header *session_expr) {
 
   unsigned char found = FALSE;
-  int i = 0;
+  unsigned int i = 0;
   char *elem = NULL, **list = NULL;
 
   /* sanity check */
@@ -96,12 +97,9 @@ static int wrap_eval_expression(char **config_expr,
   return FALSE;
 }
 
-/* Determine logging-in user's access table locations.  This function was
- * "borrowed" (ie plagiarized/copied/whatever) liberally from modules/
- * mod_auth.c -- the _true_ author is MacGuyver <macguyver@tos.net>.
- */
-static char *wrap_get_user_table(cmd_rec *cmd, char *user,
+static const char *wrap_get_user_table(cmd_rec *cmd, const char *user,
     char *path) {
+  int xerrno = 0;
 
   char *real_path = NULL;
   struct passwd *pw = NULL;
@@ -121,21 +119,25 @@ static char *wrap_get_user_table(cmd_rec *cmd, char *user,
 
   PRIVS_USER
   real_path = dir_realpath(cmd->pool, path);
+  xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (real_path)
+  if (real_path) {
     path = real_path;
+  }
 
+  errno = xerrno;
   return path;
 }
 
-static int wrap_is_usable_file(char *filename) {
+static int wrap_is_usable_file(const char *filename) {
   struct stat st;
   pr_fh_t *fh = NULL;
 
   /* check the easy case first */
-  if (filename == NULL)
+  if (filename == NULL) {
     return FALSE;
+  }
 
   /* Make sure that the current process can _read_ the file. */
   fh = pr_fsio_open(filename, O_RDONLY);
@@ -203,12 +205,7 @@ static void wrap_log_request_denied(int severity,
   return;
 }
 
-/* yet more plagiarizing...this one raided from mod_auth's _auth_resolve_user()
- * function [in case you haven't noticed yet, I'm quite the hack, in the
- * _true_ sense of the world]. =) hmmm...I wonder if it'd be feasible
- * to make some of mod_auth's functions visible from src/auth.c?
- */
-static config_rec *wrap_resolve_user(pool *p, char **user) {
+static config_rec *wrap_resolve_user(pool *p, const char **user) {
   config_rec *conf = NULL, *top_conf;
   char *ourname = NULL, *anonname = NULL;
   unsigned char is_alias = FALSE, force_anon = FALSE;
@@ -249,26 +246,30 @@ static config_rec *wrap_resolve_user(pool *p, char **user) {
       is_alias = TRUE;
   }
 
-  if (conf) {
+  if (conf != NULL) {
     *user = conf->argv[1];
 
     /* If the alias is applied inside an <Anonymous> context, we have found
      * our anon block
      */
-    if (conf->parent && conf->parent->config_type == CONF_ANON)
+    if (conf->parent &&
+        conf->parent->config_type == CONF_ANON) {
       conf = conf->parent;
-    else
+
+    } else {
       conf = NULL;
+    }
   }
 
   /* Next, search for an anonymous entry */
-  if (!conf)
+  if (conf == NULL) {
     conf = find_config(main_server->conf, CONF_ANON, NULL, FALSE);
 
-  else
+  } else {
     find_config_set_top(conf);
+  }
 
-  if (conf) do {
+  if (conf != NULL) do {
     anonname = (char*) get_param_ptr(conf->subset, "UserName", FALSE);
 
     if (!anonname)
@@ -287,15 +288,18 @@ static config_rec *wrap_resolve_user(pool *p, char **user) {
     if (find_config((conf ? conf->subset :
         main_server->conf), CONF_PARAM, "AuthAliasOnly", FALSE)) {
 
-      if (conf && conf->config_type == CONF_ANON)
+      if (conf != NULL &&
+          conf->config_type == CONF_ANON) {
         conf = NULL;
 
-      else
+      } else {
         *user = NULL;
+      }
 
-      if (*user && find_config(main_server->conf, CONF_PARAM, "AuthAliasOnly",
-          FALSE))
+      if (*user != NULL &&
+          find_config(main_server->conf, CONF_PARAM, "AuthAliasOnly", FALSE)) {
         *user = NULL;
+      }
     }
   }
 
@@ -399,8 +403,8 @@ MODRET set_tcpaccessfiles(cmd_rec *cmd) {
 }
 
 MODRET set_tcpgroupaccessfiles(cmd_rec *cmd) {
-  int group_argc = 1;
-  char **group_argv = NULL;
+  unsigned int group_argc = 1;
+  char *expr, **group_argv = NULL;
   array_header *group_acl = NULL;
   config_rec *c = NULL;
 
@@ -487,7 +491,8 @@ MODRET set_tcpgroupaccessfiles(cmd_rec *cmd) {
 
   c = add_config_param(cmd->argv[0], 0);
 
-  group_acl = pr_expr_create(cmd->tmp_pool, &group_argc, &cmd->argv[0]);
+  expr = (char *) cmd->argv[0];
+  group_acl = pr_expr_create(cmd->tmp_pool, &group_argc, &expr);
 
   /* build the desired config_rec manually */
   c->argc = group_argc + 2;
@@ -515,8 +520,8 @@ MODRET set_tcpgroupaccessfiles(cmd_rec *cmd) {
 }
 
 MODRET set_tcpuseraccessfiles(cmd_rec *cmd) {
-  int user_argc = 1;
-  char **user_argv = NULL;
+  unsigned int user_argc = 1;
+  char *expr, **user_argv = NULL;
   array_header *user_acl = NULL;
   config_rec *c = NULL;
 
@@ -603,7 +608,8 @@ MODRET set_tcpuseraccessfiles(cmd_rec *cmd) {
 
   c = add_config_param_str(cmd->argv[0], 0);
 
-  user_acl = pr_expr_create(cmd->tmp_pool, &user_argc, &cmd->argv[0]);
+  expr = (char *) cmd->argv[0];
+  user_acl = pr_expr_create(cmd->tmp_pool, &user_argc, &expr);
 
   /* build the desired config_rec manually */
   c->argc = user_argc + 2;
@@ -728,7 +734,7 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
    */
   struct request_info request;
 
-  char *user = NULL;
+  const char *user = NULL;
   config_rec *conf = NULL, *access_conf = NULL, *syslog_conf = NULL;
   hosts_allow_table = NULL;
   hosts_deny_table = NULL;
@@ -745,8 +751,9 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
    * handler, so it won't be protected from this case; we'll need to do
    * it manually.
    */
-  if (!user)
+  if (user == NULL) {
     return PR_DECLINED(cmd);
+  }
 
   /* Use mod_auth's _auth_resolve_user() [imported for use here] to get the
    * right configuration set, since the user may be logging in anonymously,
@@ -844,7 +851,7 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
    */
   if (hosts_allow_table != NULL && hosts_allow_table[0] == '~' &&
       hosts_allow_table[1] == '/') {
-    char *allow_real_table = NULL;
+    const char *allow_real_table = NULL;
 
     allow_real_table = wrap_get_user_table(cmd, user, hosts_allow_table);
 
@@ -854,7 +861,7 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
       hosts_allow_table = NULL;
 
     } else
-      hosts_allow_table = allow_real_table;
+      hosts_allow_table = (char *) allow_real_table;
   }
 
   if (hosts_deny_table != NULL && hosts_deny_table[0] == '~' &&
@@ -953,14 +960,16 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
     pr_event_generate("mod_wrap.connection-denied", NULL);
 
     /* check for AccessDenyMsg */
-    if ((denymsg = (char *) get_param_ptr(TOPLEVEL_CONF, "AccessDenyMsg",
-        FALSE)) != NULL)
-      denymsg = sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
+    denymsg = (char *) get_param_ptr(TOPLEVEL_CONF, "AccessDenyMsg", FALSE);
+    if (denymsg != NULL) {
+      denymsg = (char *) sreplace(cmd->tmp_pool, denymsg, "%u", user, NULL);
+    }
 
-    if (denymsg)
+    if (denymsg != NULL) {
       return PR_ERROR_MSG(cmd, R_530, denymsg);
-    else
-      return PR_ERROR_MSG(cmd, R_530, _("Access denied"));
+    }
+
+    return PR_ERROR_MSG(cmd, R_530, _("Access denied"));
   }
 
   /* If request is allowable, return DECLINED (for engine to act as if this
@@ -972,15 +981,38 @@ MODRET wrap_handle_request(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Event listeners
+ */
+
+static void wrap_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer; reinitialize ourselves. */
+
+  pr_event_unregister(&wrap_module, "core.session-reinit", wrap_sess_reinit_ev);
+
+  /* Reset defaults */
+  wrap_service_name = "proftpd";
+
+  res = wrap_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&wrap_module, PR_SESS_DISCONNECT_SESSION_INIT_FAILED,
+      NULL);
+  }
+}
+
 /* Initialization routines
  */
 
 static int wrap_sess_init(void) {
+  pr_event_register(&wrap_module, "core.session-reinit", wrap_sess_reinit_ev,
+    NULL);
 
   /* look up any configured TCPServiceName */
-  if ((wrap_service_name = get_param_ptr(main_server->conf,
-      "TCPServiceName", FALSE)) == NULL)
+  wrap_service_name = get_param_ptr(main_server->conf, "TCPServiceName", FALSE);
+  if (wrap_service_name == NULL) {
     wrap_service_name = "proftpd";
+  }
 
   return 0;
 }

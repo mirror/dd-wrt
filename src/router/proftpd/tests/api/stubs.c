@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server API testsuite
- * Copyright (c) 2008-2014 The ProFTPD Project team
+ * Copyright (c) 2008-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,19 +34,62 @@ server_rec *main_server = NULL;
 pid_t mpid = 1;
 module *static_modules[] = { NULL };
 module *loaded_modules = NULL;
+xaset_t *server_list = NULL;
 
-char *dir_realpath(pool *p, const char *path) {
-  return NULL;
+static cmd_rec *next_cmd = NULL;
+
+int tests_stubs_set_next_cmd(cmd_rec *cmd) {
+  next_cmd = cmd;
+  return 0;
 }
 
-void *get_param_ptr(xaset_t *set, const char *name, int recurse) {
-  errno = ENOENT;
-  return NULL;
+int tests_stubs_set_main_server(server_rec *s) {
+  main_server = s;
+  return 0;
 }
 
-struct passwd *pr_auth_getpwnam(pool *p, const char *name) {
-  errno = ENOENT;
-  return NULL;
+void init_dirtree(void) {
+  pool *main_pool;
+  xaset_t *servers;
+
+  main_pool = make_sub_pool(permanent_pool);
+  pr_pool_tag(main_pool, "testsuite#main_server pool");
+
+  servers = xaset_create(main_pool, NULL);
+
+  main_server = (server_rec *) pcalloc(main_pool, sizeof(server_rec));
+  xaset_insert(servers, (xasetmember_t *) main_server);
+
+  main_server->pool = main_pool;
+  main_server->set = servers;
+  main_server->sid = 1;
+  main_server->notes = pr_table_nalloc(main_pool, 0, 8);
+
+  /* TCP KeepAlive is enabled by default, with the system defaults. */
+  main_server->tcp_keepalive = palloc(main_server->pool,
+    sizeof(struct tcp_keepalive));
+  main_server->tcp_keepalive->keepalive_enabled = TRUE;
+  main_server->tcp_keepalive->keepalive_idle = -1;
+  main_server->tcp_keepalive->keepalive_count = -1;
+  main_server->tcp_keepalive->keepalive_intvl = -1;
+
+  main_server->ServerPort = 21;
+}
+
+int pr_cmd_dispatch(cmd_rec *cmd) {
+  return 0;
+}
+
+int pr_cmd_read(cmd_rec **cmd) {
+  if (next_cmd != NULL) {
+    *cmd = next_cmd;
+    next_cmd = NULL;
+
+  } else {
+    *cmd = NULL;
+  }
+
+  return 0;
 }
 
 int pr_config_get_server_xfer_bufsz(int direction) {
@@ -73,6 +116,20 @@ int pr_ctrls_unregister(module *m, const char *action) {
   return 0;
 }
 
+void pr_log_auth(int level, const char *fmt, ...) {
+  if (getenv("TEST_VERBOSE") != NULL) {
+    va_list msg;
+
+    fprintf(stderr, "AUTH%d: ", level);
+
+    va_start(msg, fmt);
+    vfprintf(stderr, fmt, msg);
+    va_end(msg);
+
+    fprintf(stderr, "\n");
+  }
+}
+
 void pr_log_debug(int level, const char *fmt, ...) {
   if (getenv("TEST_VERBOSE") != NULL) {
     va_list msg;
@@ -85,6 +142,16 @@ void pr_log_debug(int level, const char *fmt, ...) {
 
     fprintf(stderr, "\n");
   }
+}
+
+int pr_log_event_generate(unsigned int log_type, int log_fd, int log_level,
+    const char *log_msg, size_t log_msglen) {
+  errno = ENOSYS;
+  return -1;
+}
+
+int pr_log_event_listening(unsigned int log_type) {
+  return FALSE;
 }
 
 void pr_log_pri(int prio, const char *fmt, ...) {
@@ -101,35 +168,53 @@ void pr_log_pri(int prio, const char *fmt, ...) {
   }
 }
 
-void pr_signals_handle(void) {
-}
+int pr_log_openfile(const char *log_file, int *log_fd, mode_t log_mode) {
+  int res;
+  struct stat st;
 
-void pr_signals_block(void) {
-}
-
-void pr_signals_unblock(void) {
-}
-
-int pr_trace_get_level(const char *channel) {
-  return 0;
-}
-
-int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
-
-  if (getenv("TEST_VERBOSE") != NULL) {
-    va_list msg;
-
-    fprintf(stderr, "TRACE: <%s:%d>: ", channel, level);
-
-    va_start(msg, fmt);
-    vfprintf(stderr, fmt, msg);
-    va_end(msg);
-
-    fprintf(stderr, "\n");
+  if (log_file == NULL ||
+      log_fd == NULL) {
+    errno = EINVAL;
+    return -1;
   }
 
+  res = stat(log_file, &st);
+  if (res < 0) {
+    if (errno != ENOENT) {
+      return -1;
+    }
+
+  } else {
+    if (S_ISDIR(st.st_mode)) {
+      errno = EISDIR;
+      return -1;
+    }
+  }
+
+  *log_fd = STDERR_FILENO;
   return 0;
 }
 
-void run_schedule(void) {
+void pr_log_stacktrace(int fd, const char *name) {
+}
+
+int pr_proctitle_get(char *buf, size_t buflen) {
+  errno = ENOSYS;
+  return -1;
+}
+
+void pr_proctitle_set(const char *fmt, ...) {
+}
+
+void pr_proctitle_set_str(const char *str) {
+}
+
+void pr_session_disconnect(module *m, int reason_code, const char *details) {
+}
+
+int pr_session_set_idle(void) {
+  return 0;
+}
+
+void pr_signals_handle(void) {
 }

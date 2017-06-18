@@ -1,6 +1,4 @@
-<!-- $Id: mod_dnsbl.html,v 1.1 2013-09-18 21:18:51 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_dnsbl.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_dnsbl</title>
@@ -31,8 +29,7 @@ FTP client's address should be allowed or rejected by an FTP server.  Thus
 the <code>mod_dnsbl</code> module was written for ProFTPD, for such a purpose.
 
 <p>
-This module is contained in the <code>mod_dnsbl.c</code> file for
-ProFTPD 1.3.<i>x</i>, and is not compiled by default.  Installation
+The <code>mod_dnsbl</code> module is not compiled by default; build/installation
 instructions are discussed <a href="#Installation">here</a>.
 
 <p>
@@ -53,7 +50,7 @@ questions, concerns, or suggestions regarding this module.
 </ul>
 
 <hr>
-<h2><a name="DNSBLDomain">DNSBLDomain</a></h2>
+<h3><a name="DNSBLDomain">DNSBLDomain</a></h3>
 <strong>Syntax:</strong> DNSBLDomain <em>domain</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -78,7 +75,7 @@ Example:
 
 <p>
 <hr>
-<h2><a name="DNSBLEngine">DNSBLEngine</a></h2>
+<h3><a name="DNSBLEngine">DNSBLEngine</a></h3>
 <strong>Syntax:</strong> DNSBLEngine <em>on|off</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -95,7 +92,7 @@ virtual hosts.
 
 <p>
 <hr>
-<h2><a name="DNSBLLog">DNSBLLog</a></h2>
+<h3><a name="DNSBLLog">DNSBLLog</a></h3>
 <strong>Syntax:</strong> DNSBLLog <em>file</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -114,7 +111,7 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 <hr>
-<h2><a name="DNSBLPolicy">DNSBLPolicy</a></h2>
+<h3><a name="DNSBLPolicy">DNSBLPolicy</a></h3>
 <strong>Syntax:</strong> DNSBLPolicy <em>"allow,deny"|"deny,allow"</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -141,48 +138,48 @@ the <code>mod_dnsbl</code> module will <b>not</b> allow the connection,
 <p>
 <hr><br>
 <h2><a name="Installation">Installation</a></h2>
-After unpacking the <code>mod_dnsbl</code> tarball, move the directory into
-the ProFTPD source directory:
+The <code>mod_dnsbl</code> module is distributed with ProFTPD.  Simply follow
+the normal steps for using third-party modules in ProFTPD:
 <pre>
-  mv mod_dnsbl/ /path/to/proftpd/contrib/
+  $ ./configure --with-modules=mod_dnsbl
+  $ make
+  $ make install
 </pre>
-<b>Note</b> that it is necessary to move the entire <code>mod_dnsbl</code>
-directory, not just the <code>mod_dnsbl.c</code> source file, into the
-<code>contrib/</code> directory in the ProFTPD source directory.  Failure to
-do so will result in a failed build.
-
-<p>
-Next:
+Alternatively, <code>mod_dnsbl</code> can be built as a DSO module:
 <pre>
-  cd /path/to/proftpd/contrib/mod_dnsbl/
-  ./configure
+  $ ./configure --enable-dso --with-shared=mod_dnbsl ...
 </pre>
-This step is also necessary.  If not done, then the proftpd build system
-will not pick up the correct linker flags for the resolver library.
-
-<p>
-Then follow the normal steps for using third-party modules in proftpd:
+Then follow the usual steps:
 <pre>
-  ./configure --with-modules=mod_dnsbl
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
-<hr><br>
+<b>Logging</b><br>
+The <code>mod_dnbsl</code> module supports different forms of logging.  The
+main module logging is done via the <code>DNSBLLog</code> directive.
+For debugging purposes, the module also uses <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>dnsbl
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace dnsbl:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-09-18 21:18:51 $</i><br>
-
-<br><hr>
+<p>
+<hr>
 
 <font size=2><b><i>
-&copy; Copyright 2007-2013 TJ Saunders<br>
+&copy; Copyright 2007-2014 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 
-<hr><br>
-
+<hr>
 </body>
 </html>
-

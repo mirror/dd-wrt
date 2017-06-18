@@ -1,9 +1,7 @@
-<!-- $Id: Chroot.html,v 1.9 2014-03-13 18:06:26 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Chroot.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Symlinks and chroot()</title>
+<title>ProFTPD: Symlinks and chroot()</title>
 </head>
 
 <body bgcolor=white>
@@ -20,7 +18,7 @@ way, &quot;How can I put my users in a chroot jail?&quot;  As a common
 question, it definitely has a place in the
 <a href="http://www.proftpd.org/docs/faq/linked/faq-ch5.html#AEN524">FAQ</a>.
 Many users, I fear, do not read the FAQ carefully, and so miss that section.
-The answer is ProFTPD's <a href="http://www.proftpd.org/docs/directives/linked/config_ref_DefaultRoot.html"><code>DefaultRoot</code></a> configuration
+The answer is ProFTPD's <a href="../modules/mod_auth.html#DefaultRoot"><code>DefaultRoot</code></a> configuration
 directive, which accomplishes this functionality by using the
 <code>chroot(2)</code> function.
 
@@ -291,14 +289,27 @@ used for the chroot.  It's always a good idea of have a "applies to everyone"
 <code>DefaultRoot</code> directive in your proftpd.conf, at the
 <i>end of the list</i> of <code>DefaultRoot</code>s, as a catch-all.
 
-<p><a name="Symlinks">
+<p><a name="SymlinksFAQ">
 <font color=red>Question</font>: Does <code>DefaultRoot</code> work properly if
 the path/home directory is a symlink?<br>
 <font color=blue>Answer</font>: Yes.
 
+<p>
+Note that some sites consider this a security risk; if that home directory
+can be deleted by remote users, and replaced with a symlink of their own
+creation (<i>e.g.</i> via SSH or some other webapp), this can be a problem.
+To help mitigate situations like this, you can use the <a href="../modules/mod_auth.html#AllowChrootSymlinks"><code>AllowChrootSymlinks</code></a> directive:
+<pre>
+  # Do not follow symlinks when chrooting
+  AllowChrootSymlinks off
+</pre>
+As stated in the documentation, using <code>AllowChrootSymlinks</code> does
+<b>not</b> prevent this problem entirely; it simply means that
+<i><code>proftpd</code></i> cannot be used to get around the restrictions.
+
 <p><a name="ChrootNotWorking">
 <font color=red>Question</font>: I have configured <code>DefaultRoot</code> in my proftpd.conf, but my clients still see the root directory.  Is it a bug?<br>
-<cont color=blue>Answer</font>.  Usually not.
+<font color=blue>Answer</font>.  Usually not.
 
 <p>
 First, make sure that you have restarted <code>proftpd</code>, so that the
@@ -325,7 +336,10 @@ edited, or maybe the <code>DefaultRoot</code> directive is not in a
 
 <p>
 <hr>
-Last Updated: $Date: 2014-03-13 18:06:26 $<br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

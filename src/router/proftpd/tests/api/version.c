@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Version API tests
- * $Id: version.c,v 1.2 2011-05-23 20:50:31 castaglia Exp $
- */
+/* Version API tests */
 
 #include "tests.h"
 
@@ -63,7 +61,6 @@ Suite *tests_get_version_suite(void) {
   TCase *testcase;
 
   suite = suite_create("version");
-
   testcase = tcase_create("base");
 
   tcase_add_test(testcase, version_get_module_api_number_test);
@@ -71,6 +68,5 @@ Suite *tests_get_version_suite(void) {
   tcase_add_test(testcase, version_get_str_test);
 
   suite_add_tcase(suite, testcase);
-
   return suite;
 }

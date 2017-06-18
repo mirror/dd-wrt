@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_ban -- a module implementing ban lists using the Controls API
- *
- * Copyright (c) 2004-2014 TJ Saunders
+ * Copyright (c) 2004-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,24 +21,24 @@
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
  *
- * This is mod_ban, contrib software for proftpd 1.2.x/1.3.x.
+ * This is mod_ban, contrib software for proftpd 1.3.x.
  * For more information contact TJ Saunders <tj@castaglia.org>.
- *
- * $Id: mod_ban.c,v 1.75 2014-04-30 17:33:33 castaglia Exp $
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_ctrls.h"
+#include "hanson-tpl.h"
+#include "json.h"
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
 
-#define MOD_BAN_VERSION			"mod_ban/0.6.2"
+#define MOD_BAN_VERSION			"mod_ban/0.7"
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030402
-# error "ProFTPD 1.3.4rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030602
+# error "ProFTPD 1.3.6rc2 or later required"
 #endif
 
 #ifndef PR_USE_CTRLS
@@ -136,6 +135,8 @@ struct ban_event_entry {
 #define BAN_EV_TYPE_TLS_HANDSHAKE		15
 #define BAN_EV_TYPE_ROOT_LOGIN			16
 #define BAN_EV_TYPE_USER_DEFINED		17
+#define BAN_EV_TYPE_BAD_PROTOCOL		18
+#define BAN_EV_TYPE_EMPTY_PASSWORD		19
 
 struct ban_event_list {
   struct ban_event_entry bel_entries[BAN_EVENT_LIST_MAXSZ + BAN_LIST_HEADROOMSZ];
@@ -147,6 +148,12 @@ struct ban_data {
   struct ban_list bans;
   struct ban_event_list events;
 };
+
+/* Tracks whether we have already seen the client connect, so that we only
+ * generate the 'client-connect-rate' event once, even in the face of multiple
+ * HOST commands.
+ */
+static int ban_client_connected = FALSE;
 
 static struct ban_data *ban_lists = NULL;
 static int ban_engine = -1;
@@ -164,6 +171,8 @@ static char *ban_table = NULL;
 static pr_fh_t *ban_tabfh = NULL;
 static int ban_timerno = -1;
 
+static const char *trace_channel = "ban";
+
 /* Needed for implementing LoginRate rules; command handlers don't get an
  * arbitrary data pointer like event listeners do.
  */
@@ -172,7 +181,10 @@ static struct ban_event_entry *login_rate_tmpl = NULL;
 /* For communicating with memcached servers for shared/cached ban data. */
 static pr_memcache_t *mcache = NULL;
 
-struct ban_mcache_entry {
+/* For communicating with Redis servers for shared/cached ban data. */
+static pr_redis_t *redis = NULL;
+
+struct ban_cache_entry {
   int version;
 
   /* Timestamp indicating when this entry last changed.  Ideally it will
@@ -180,9 +192,9 @@ struct ban_mcache_entry {
    */
   uint32_t update_ts;
 
-  /* IP address/port of origin of this cache entry. */
+  /* IP address/port of origin/source server/vhost of this cache entry. */
   char *ip_addr;
-  int port;
+  unsigned int port;
 
   /* We could use a struct ban_entry here, except that it uses fixed-size
    * buffers for the strings, and for cache storage, dynamically allocated
@@ -199,20 +211,40 @@ struct ban_mcache_entry {
   int be_sid;
 };
 
-/* These are tpl format strings */
-#define BAN_MCACHE_KEY_FMT		"vs"
-#define BAN_MCACHE_VALUE_FMT		"S(ivsiisssvi)"
+#define BAN_CACHE_VALUE_VERSION	2
 
-#define BAN_MCACHE_VALUE_VERSION	1
+/* These are tpl format strings */
+#define BAN_CACHE_TPL_KEY_FMT		"vs"
+#define BAN_CACHE_TPL_VALUE_FMT		"S(iusiisssui)"
+
+/* These are the JSON format field names */
+#define BAN_CACHE_JSON_KEY_VERSION	"version"
+#define BAN_CACHE_JSON_KEY_UPDATE_TS	"update_ts"
+#define BAN_CACHE_JSON_KEY_IP_ADDR	"ip_addr"
+#define BAN_CACHE_JSON_KEY_PORT		"port"
+#define BAN_CACHE_JSON_KEY_TYPE		"ban_type"
+#define BAN_CACHE_JSON_KEY_NAME		"ban_name"
+#define BAN_CACHE_JSON_KEY_REASON	"ban_reason"
+#define BAN_CACHE_JSON_KEY_MESSAGE	"ban_message"
+#define BAN_CACHE_JSON_KEY_EXPIRES_TS	"expires_ts"
+#define BAN_CACHE_JSON_KEY_SERVER_ID	"server_id"
+
+#define BAN_CACHE_JSON_TYPE_USER_TEXT	"user ban"
+#define BAN_CACHE_JSON_TYPE_HOST_TEXT	"host ban"
+#define BAN_CACHE_JSON_TYPE_CLASS_TEXT	"class ban"
 
 /* BanCacheOptions flags */
 static unsigned long ban_cache_opts = 0UL;
 #define BAN_CACHE_OPT_MATCH_SERVER	0x001
+#define BAN_CACHE_OPT_USE_JSON		0x002
 
 static int ban_lock_shm(int);
+static int ban_sess_init(void);
 
 static void ban_anonrejectpasswords_ev(const void *, void *);
+static void ban_badprotocol_ev(const void *, void *);
 static void ban_clientconnectrate_ev(const void *, void *);
+static void ban_emptypassword_ev(const void *, void *);
 static void ban_maxclientsperclass_ev(const void *, void *);
 static void ban_maxclientsperhost_ev(const void *, void *);
 static void ban_maxclientsperuser_ev(const void *, void *);
@@ -231,21 +263,17 @@ static void ban_userdefined_ev(const void *, void *);
 static void ban_handle_event(unsigned int, int, const char *,
   struct ban_event_entry *);
 
-/* Functions for marshalling key/value data to/from shared cache,
- * e.g. memcached.
+/* Functions for marshalling key/value data to/from Redis/Memchache shared
+ * cache.
  */
-
-static int ban_mcache_key_get(pool *p, unsigned int type, const char *name,
+static int ban_cache_get_tpl_key(pool *p, unsigned int type, const char *name,
     void **key, size_t *keysz) {
+  int res;
   void *data = NULL;
   size_t datasz = 0;
-  int res;
 
-  res = tpl_jot(TPL_MEM, &data, &datasz, BAN_MCACHE_KEY_FMT, &type, &name);
+  res = tpl_jot(TPL_MEM, &data, &datasz, BAN_CACHE_TPL_KEY_FMT, &type, &name);
   if (res < 0) {
-    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "error constructing cache lookup key for type %u, name %s", type,
-      name);
     return -1;
   }
 
@@ -257,48 +285,95 @@ static int ban_mcache_key_get(pool *p, unsigned int type, const char *name,
   return 0;
 }
 
-static int ban_mcache_entry_get(pool *p, unsigned int type, const char *name,
-    struct ban_mcache_entry *bme) {
-  tpl_node *tn;
+static int ban_cache_get_json_key(pool *p, unsigned int type, const char *name,
+    void **key, size_t *keysz) {
+  pr_json_object_t *json;
+  char *json_text;
+
+  json = pr_json_object_alloc(p);
+  (void) pr_json_object_set_number(p, json, "ban_type_id", (double) type);
+  (void) pr_json_object_set_string(p, json, "ban_name", name);
+
+  json_text = pr_json_object_to_text(p, json, "");
+
+  /* Include the terminating NUL in the key. */
+  *keysz = strlen(json_text) + 1;
+  *key = pstrndup(p, json_text, *keysz - 1);
+  (void) pr_json_object_free(json);
+
+  return 0;
+}
+
+static int ban_cache_get_key(pool *p, unsigned int type, const char *name,
+    void **key, size_t *keysz) {
   int res;
-  void *key = NULL, *value = NULL;
-  char *ptr = NULL;
-  size_t keysz = 0, valuesz = 0;
-  uint32_t flags = 0;
+  const char *key_type = "unknown";
 
-  res = ban_mcache_key_get(p, type, name, &key, &keysz);
-  if (res < 0)
-    return -1;
+  if (ban_cache_opts & BAN_CACHE_OPT_USE_JSON) {
+    key_type = "JSON";
+    res = ban_cache_get_json_key(p, type, name, key, keysz);
 
-  value = pr_memcache_kget(mcache, &ban_module, (const char *) key, keysz,
-    &valuesz, &flags);
-  if (value == NULL) {
+  } else {
+    key_type = "TPL";
+    res = ban_cache_get_tpl_key(p, type, name, key, keysz);
+  }
+
+  if (res < 0) {
     (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "no matching memcache entry found for name %s, type %u", name, type);
+      "error constructing cache %s lookup key for type %u, name %s", key_type,
+      type, name);
     return -1;
   }
 
-  /* Unmarshal the ban entry. */
+  return 0;
+}
 
-  tn = tpl_map(BAN_MCACHE_VALUE_FMT, bme);
+static int ban_cache_entry_delete(pool *p, unsigned int type,
+    const char *name) {
+  int res;
+  void *key = NULL;
+  size_t keysz = 0;
+
+  res = ban_cache_get_key(p, type, name, &key, &keysz);
+  if (res < 0) {
+    return -1;
+  }
+
+  if (redis != NULL) {
+    res = pr_redis_kremove(redis, &ban_module, key, keysz);
+
+  } else {
+    res = pr_memcache_kremove(mcache, &ban_module, key, keysz, 0);
+  }
+
+  return res;
+}
+
+static int ban_cache_entry_decode_tpl(pool *p, void *value, size_t valuesz,
+    struct ban_cache_entry *bce) {
+  int res;
+  tpl_node *tn;
+  char *ptr = NULL;
+
+  tn = tpl_map(BAN_CACHE_TPL_VALUE_FMT, bce);
   if (tn == NULL) {
     (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "error allocating tpl_map for format '%s'", BAN_MCACHE_VALUE_FMT);
+      "error allocating tpl_map for format '%s'", BAN_CACHE_TPL_VALUE_FMT);
     return -1;
   }
 
   res = tpl_load(tn, TPL_MEM, value, valuesz);
   if (res < 0) {
-    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "%s", "error loading marshalled ban memcache data");
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION, "%s",
+      "error loading TPL ban cache data");
     tpl_free(tn);
     return -1;
   }
 
   res = tpl_unpack(tn, 0);
   if (res < 0) {
-    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "%s", "error unpacking marshalled ban memcache data");
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION, "%s",
+      "error unpacking TPL ban cache data");
     tpl_free(tn);
     return -1;
   }
@@ -306,86 +381,407 @@ static int ban_mcache_entry_get(pool *p, unsigned int type, const char *name,
   tpl_free(tn);
 
   /* Now that we've called tpl_free(), we need to free up the memory
-   * associated with the strings in the struct ban_mcache_entry, so we
+   * associated with the strings in the struct ban_cache_entry, so we
    * allocate them out of the given pool.
    */
 
-  ptr = bme->ip_addr;
+  ptr = bce->ip_addr;
   if (ptr != NULL) {
-    bme->ip_addr = pstrdup(p, ptr);
+    bce->ip_addr = pstrdup(p, ptr);
     free(ptr);
   }
 
-  ptr = bme->be_name;
+  ptr = bce->be_name;
   if (ptr != NULL) {
-    bme->be_name = pstrdup(p, ptr);
+    bce->be_name = pstrdup(p, ptr);
     free(ptr);
   }
 
-  ptr = bme->be_reason;
+  ptr = bce->be_reason;
   if (ptr != NULL) {
-    bme->be_reason = pstrdup(p, ptr);
+    bce->be_reason = pstrdup(p, ptr);
     free(ptr);
   }
 
-  ptr = bme->be_mesg;
+  ptr = bce->be_mesg;
   if (ptr != NULL) {
-    bme->be_mesg = pstrdup(p, ptr);
+    bce->be_mesg = pstrdup(p, ptr);
     free(ptr);
   }
 
   return 0;
 }
 
-static int ban_mcache_entry_set(pool *p, struct ban_mcache_entry *bme) {
-  tpl_node *tn;
+static int entry_get_json_number(pool *p, pr_json_object_t *json,
+    const char *key, double *val, const char *text) {
+  if (pr_json_object_get_number(p, json, key, val) < 0) {
+    if (errno == EEXIST) {
+      pr_trace_msg(trace_channel, 3,
+       "ignoring non-number '%s' JSON field in '%s'", key, text);
+
+    } else {
+      (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+        "missing required '%s' JSON field in '%s'", key, text);
+    }
+
+    (void) pr_json_object_free(json);
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
+}
+
+static int entry_get_json_string(pool *p, pr_json_object_t *json,
+    const char *key, char **val, const char *text) {
+  if (pr_json_object_get_string(p, json, key, val) < 0) {
+    if (errno == EEXIST) {
+      pr_trace_msg(trace_channel, 3,
+       "ignoring non-string '%s' JSON field in '%s'", key, text);
+
+    } else {
+      (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+        "missing required '%s' JSON field in '%s'", key, text);
+    }
+
+    (void) pr_json_object_free(json);
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
+}
+
+static int ban_cache_entry_decode_json(pool *p, void *value, size_t valuesz,
+    struct ban_cache_entry *bce) {
+  int res;
+  pr_json_object_t *json;
+  const char *key;
+  char *entry, *text;
+  double number;
+
+  entry = value;
+  if (pr_json_text_validate(p, entry) == FALSE) {
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+      "unable to decode invalid JSON cache entry: '%s'", entry);
+    errno = EINVAL;
+    return -1;
+  }
+
+  json = pr_json_object_from_text(p, entry);
+
+  key = BAN_CACHE_JSON_KEY_VERSION;
+  res = entry_get_json_number(p, json, key, &number, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->version = (int) number;
+
+  if (bce->version != BAN_CACHE_VALUE_VERSION) {
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+      "unsupported/unknown version value '%d' in cached JSON value, rejecting",
+      bce->version);
+    (void) pr_json_object_free(json);
+    errno = EINVAL;
+    return -1;
+  }
+
+  key = BAN_CACHE_JSON_KEY_UPDATE_TS;
+  res = entry_get_json_number(p, json, key, &number, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->update_ts = (uint32_t) number;
+
+  key = BAN_CACHE_JSON_KEY_IP_ADDR;
+  res = entry_get_json_string(p, json, key, &text, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->ip_addr = text;
+
+  key = BAN_CACHE_JSON_KEY_PORT;
+  res = entry_get_json_number(p, json, key, &number, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->port = (unsigned int) number;
+
+  if (bce->port == 0 ||
+      bce->port > 65535) {
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+      "invalid port number %u in cached JSON value, rejecting", bce->port);
+    (void) pr_json_object_free(json);
+    errno = EINVAL;
+    return -1;
+  }
+
+  key = BAN_CACHE_JSON_KEY_TYPE;
+  res = entry_get_json_string(p, json, key, &text, entry);
+  if (res < 0) {
+    return -1;
+  }
+
+  if (strcmp(text, BAN_CACHE_JSON_TYPE_USER_TEXT) == 0) {
+    bce->be_type = BAN_TYPE_USER;
+
+  } else if (strcmp(text, BAN_CACHE_JSON_TYPE_HOST_TEXT) == 0) {
+    bce->be_type = BAN_TYPE_HOST;
+
+  } else if (strcmp(text, BAN_CACHE_JSON_TYPE_CLASS_TEXT) == 0) {
+    bce->be_type = BAN_TYPE_CLASS;
+
+  } else {
+    pr_trace_msg(trace_channel, 3,
+      "ignoring unknown/unsupported '%s' JSON field value: %s", key, text);
+    (void) pr_json_object_free(json);
+    errno = EINVAL;
+    return -1;
+  }
+
+  key = BAN_CACHE_JSON_KEY_NAME;
+  res = entry_get_json_string(p, json, key, &text, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->be_name = text;
+
+  key = BAN_CACHE_JSON_KEY_REASON;
+  res = entry_get_json_string(p, json, key, &text, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->be_reason = text;
+
+  key = BAN_CACHE_JSON_KEY_MESSAGE;
+  res = entry_get_json_string(p, json, key, &text, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->be_mesg = text;
+
+  key = BAN_CACHE_JSON_KEY_EXPIRES_TS;
+  res = entry_get_json_number(p, json, key, &number, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->be_expires = (uint32_t) number;
+
+  key = BAN_CACHE_JSON_KEY_SERVER_ID;
+  res = entry_get_json_number(p, json, key, &number, entry);
+  if (res < 0) {
+    return -1;
+  }
+  bce->be_sid = (int) number;
+
+  (void) pr_json_object_free(json);
+
+  if (bce->be_sid <= 0) {
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+      "invalid server ID %d in cached JSON value, rejecting", bce->be_sid);
+    errno = EINVAL;
+    return -1;
+  }
+
+  return 0;
+}
+
+static int ban_cache_entry_get(pool *p, unsigned int type, const char *name,
+    struct ban_cache_entry *bce) {
   int res;
   void *key = NULL, *value = NULL;
   size_t keysz = 0, valuesz = 0;
-  uint32_t flags = 0;
+  const char *driver = NULL;
 
-  /* Marshal the ban entry. */
+  res = ban_cache_get_key(p, type, name, &key, &keysz);
+  if (res < 0) {
+    return -1;
+  }
 
-  tn = tpl_map(BAN_MCACHE_VALUE_FMT, bme);
+  if (redis != NULL) {
+    driver = "Redis";
+
+    value = pr_redis_kget(p, redis, &ban_module, (const char *) key, keysz,
+      &valuesz);
+
+  } else {
+    uint32_t flags = 0;
+
+    driver = "memcache";
+    value = pr_memcache_kget(mcache, &ban_module, (const char *) key, keysz,
+      &valuesz, &flags);
+  }
+
+  if (value == NULL) {
+    int xerrno = errno;
+
+    pr_trace_msg(trace_channel, 8,
+      "no matching %s entry found for name %s, type %u", driver, name, type);
+
+    errno = xerrno;
+    return -1;
+  }
+
+  /* Decode the cached ban entry. */
+  if (ban_cache_opts & BAN_CACHE_OPT_USE_JSON) {
+    res = ban_cache_entry_decode_json(p, value, valuesz, bce);
+
+  } else {
+    res = ban_cache_entry_decode_tpl(p, value, valuesz, bce);
+  }
+
+  if (res == 0) {
+    pr_trace_msg(trace_channel, 9, "retrieved ban entry in cache using %s",
+      ban_cache_opts & BAN_CACHE_OPT_USE_JSON ? "JSON" : "TPL");
+  }
+
+  return res;
+}
+
+static int ban_cache_entry_encode_tpl(pool *p, void **value, size_t *valuesz,
+    struct ban_cache_entry *bce) {
+  int res;
+  tpl_node *tn;
+  void *ptr = NULL;
+
+  tn = tpl_map(BAN_CACHE_TPL_VALUE_FMT, bce);
   if (tn == NULL) {
     (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "error allocating tpl_map for format '%s'", BAN_MCACHE_VALUE_FMT);
+      "error allocating tpl_map for format '%s'", BAN_CACHE_TPL_VALUE_FMT);
     return -1;
   }
 
   res = tpl_pack(tn, 0);
   if (res < 0) {
-    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "%s", "error marshalling ban memcache data");
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION, "%s",
+      "error encoding TPL ban cache data");
     return -1;
   }
 
-  res = tpl_dump(tn, TPL_MEM, &value, &valuesz);
+  res = tpl_dump(tn, TPL_MEM, &ptr, valuesz);
   if (res < 0) {
-    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "%s", "error dumping marshalled ban memcache data");
+    (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION, "%s",
+      "error dumping TPL ban cache data");
     return -1;
   }
+
+  /* Duplicate the value using the given pool, so that we can free up the
+   * memory allocated by tpl_dump().
+   */
+  *value = palloc(p, *valuesz);
+  memcpy(*value, ptr, *valuesz);
 
   tpl_free(tn);
+  free(ptr);
 
-  res = ban_mcache_key_get(p, bme->be_type, bme->be_name, &key, &keysz);
+  return 0;
+}
+
+static int ban_cache_entry_encode_json(pool *p, void **value, size_t *valuesz,
+    struct ban_cache_entry *bce) {
+  pr_json_object_t *json;
+  const char *ban_type = "unknown";
+  char *json_text;
+
+  json = pr_json_object_alloc(p);
+
+  (void) pr_json_object_set_number(p, json, BAN_CACHE_JSON_KEY_VERSION,
+    (double) bce->version);
+  (void) pr_json_object_set_number(p, json, BAN_CACHE_JSON_KEY_UPDATE_TS,
+    (double) bce->update_ts);
+  (void) pr_json_object_set_string(p, json, BAN_CACHE_JSON_KEY_IP_ADDR,
+    bce->ip_addr);
+  (void) pr_json_object_set_number(p, json, BAN_CACHE_JSON_KEY_PORT,
+    (double) bce->port);
+
+  /* Textify the ban type, for better inoperability. */
+  switch (bce->be_type) {
+    case BAN_TYPE_USER:
+      ban_type = BAN_CACHE_JSON_TYPE_USER_TEXT;
+      break;
+
+    case BAN_TYPE_HOST:
+      ban_type = BAN_CACHE_JSON_TYPE_HOST_TEXT;
+      break;
+
+    case BAN_TYPE_CLASS:
+      ban_type = BAN_CACHE_JSON_TYPE_CLASS_TEXT;
+      break;
+  }
+
+  (void) pr_json_object_set_string(p, json, BAN_CACHE_JSON_KEY_TYPE,
+    ban_type);
+  (void) pr_json_object_set_string(p, json, BAN_CACHE_JSON_KEY_NAME,
+    bce->be_name);
+  (void) pr_json_object_set_string(p, json, BAN_CACHE_JSON_KEY_REASON,
+    bce->be_reason);
+  (void) pr_json_object_set_string(p, json, BAN_CACHE_JSON_KEY_MESSAGE,
+    bce->be_mesg);
+  (void) pr_json_object_set_number(p, json, BAN_CACHE_JSON_KEY_EXPIRES_TS,
+    (double) bce->be_expires);
+  (void) pr_json_object_set_number(p, json, BAN_CACHE_JSON_KEY_SERVER_ID,
+    (double) bce->be_sid);
+
+  json_text = pr_json_object_to_text(p, json, "");
+
+  /* Include the terminating NUL in the value. */
+  *valuesz = strlen(json_text) + 1;
+  *value = pstrndup(p, json_text, *valuesz - 1);
+
+  (void) pr_json_object_free(json);
+  return 0;
+}
+
+static int ban_cache_entry_set(pool *p, struct ban_cache_entry *bce) {
+  int res;
+  void *key = NULL, *value = NULL;
+  size_t keysz = 0, valuesz = 0;
+  const char *driver = NULL;
+
+  /* Encode the ban entry. */
+  if (ban_cache_opts & BAN_CACHE_OPT_USE_JSON) {
+    res = ban_cache_entry_encode_json(p, &value, &valuesz, bce);
+
+  } else {
+    res = ban_cache_entry_encode_tpl(p, &value, &valuesz, bce);
+  }
+
   if (res < 0) {
-    free(value);
     return -1;
   }
 
-  res = pr_memcache_kset(mcache, &ban_module, (const char *) key, keysz,
-    value, valuesz, bme->be_expires, flags);
-  free(value);
+  res = ban_cache_get_key(p, bce->be_type, bce->be_name, &key, &keysz);
+  if (res < 0) {
+    return -1;
+  }
+
+  if (redis != NULL) {
+    driver = "Redis";
+
+    res = pr_redis_kset(redis, &ban_module, (const char *) key, keysz,
+      value, valuesz, bce->be_expires);
+
+  } else {
+    uint32_t flags = 0;
+
+    driver = "memcache";
+    res = pr_memcache_kset(mcache, &ban_module, (const char *) key, keysz,
+      value, valuesz, bce->be_expires, flags);
+  }
 
   if (res < 0) {
+    int xerrno = errno;
+
     (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-      "unable to add memcache entry for name %s, type %u: %s", bme->be_name,
-      bme->be_type, strerror(errno));
+      "unable to add %s entry for name %s, type %u: %s", driver, bce->be_name,
+      bce->be_type, strerror(xerrno));
+
+    errno = xerrno;
     return -1;
   }
 
+  pr_trace_msg(trace_channel, 9, "stored ban entry in cache using %s",
+    ban_cache_opts & BAN_CACHE_OPT_USE_JSON ? "JSON" : "TPL");
   return 0;
 }
 
@@ -758,7 +1154,7 @@ static time_t ban_parse_timestr(const char *str) {
  * or, if there isn't a rule-specific message, the BanMessage to the client.
  */
 static void ban_send_mesg(pool *p, const char *user, const char *rule_mesg) {
-  char *mesg = NULL;
+  const char *mesg = NULL;
 
   if (rule_mesg) {
     mesg = pstrdup(p, rule_mesg);
@@ -767,7 +1163,7 @@ static void ban_send_mesg(pool *p, const char *user, const char *rule_mesg) {
     mesg = pstrdup(p, ban_mesg);
   }
 
-  if (mesg) {
+  if (mesg != NULL) {
     mesg = pstrdup(p, mesg);
 
     if (strstr(mesg, "%c")) {
@@ -784,8 +1180,9 @@ static void ban_send_mesg(pool *p, const char *user, const char *rule_mesg) {
       mesg = sreplace(p, mesg, "%a", remote_ip, NULL);
     }
 
-    if (strstr(mesg, "%u"))
+    if (strstr(mesg, "%u")) {
       mesg = sreplace(p, mesg, "%u", user, NULL);
+    }
 
     pr_response_send_async(R_530, "%s", mesg);
   }
@@ -879,33 +1276,33 @@ static int ban_list_add(pool *p, unsigned int type, unsigned int sid,
     }
   }
 
-  /* Add the entry to memcached, if configured AND if the caller provided a pool
+  /* Add the entry to cache, if configured AND if the caller provided a pool
    * for such uses.
    */
-  if (mcache != NULL &&
+  if ((mcache != NULL || redis != NULL) &&
       p != NULL) {
-    struct ban_mcache_entry bme;
-    pr_netaddr_t *na;
+    struct ban_cache_entry bce;
+    const pr_netaddr_t *na;
 
-    memset(&bme, 0, sizeof(bme));
+    memset(&bce, 0, sizeof(bce));
 
-    bme.version = BAN_MCACHE_VALUE_VERSION;
-    bme.update_ts = (uint32_t) time(NULL);
+    bce.version = BAN_CACHE_VALUE_VERSION;
+    bce.update_ts = (uint32_t) time(NULL);
 
     na = pr_netaddr_get_sess_local_addr();
-    bme.ip_addr = (char *) pr_netaddr_get_ipstr(na);
-    bme.port = pr_netaddr_get_port(na);
+    bce.ip_addr = (char *) pr_netaddr_get_ipstr(na);
+    bce.port = pr_netaddr_get_port(na);
 
-    bme.be_type = type;
-    bme.be_name = (char *) name;
-    bme.be_reason = (char *) reason;
-    bme.be_mesg = (char *) (rule_mesg ? rule_mesg : "");
-    bme.be_expires = (uint32_t) (lasts ? time(NULL) + lasts : 0);
-    bme.be_sid = main_server->sid;
+    bce.be_type = type;
+    bce.be_name = (char *) name;
+    bce.be_reason = (char *) reason;
+    bce.be_mesg = (char *) (rule_mesg ? rule_mesg : "");
+    bce.be_expires = (uint32_t) (lasts ? time(NULL) + lasts : 0);
+    bce.be_sid = main_server->sid;
 
-    if (ban_mcache_entry_set(p, &bme) == 0) {
+    if (ban_cache_entry_set(p, &bce) == 0) {
       (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-        "memcache entry added for name %s, type %u", name, type);
+        "cache entry added for name %s, type %u", name, type);
     }
   }
 
@@ -947,72 +1344,85 @@ static int ban_list_exists(pool *p, unsigned int type, unsigned int sid,
     }
   }
 
-  /* Check with memcached, if configured AND if the caller provided a pool
-   * for such uses.
+  /* Check with cache, if configured AND if the caller provided a pool for
+   * such uses.
    */
-  if (mcache != NULL &&
+  if ((mcache != NULL || redis != NULL) &&
       p != NULL) {
     int res;
-    struct ban_mcache_entry bme;
+    struct ban_cache_entry bce;
 
-    memset(&bme, 0, sizeof(bme));
+    memset(&bce, 0, sizeof(bce));
 
-    res = ban_mcache_entry_get(p, type, name, &bme);
+    res = ban_cache_entry_get(p, type, name, &bce);
     if (res == 0) {
       int use_entry = TRUE;
+      time_t now;
 
-      /* XXX Check the expiration timestamp; if too old, delete it from the
+      /* Check the expiration timestamp; if too old, delete it from the
        * cache.
        */
+      time(&now);
+      if (bce.be_expires != 0 &&
+          bce.be_expires <= (uint32_t) now) {
+        pr_trace_msg(trace_channel, 3,
+          "purging expired entry from cache: %lu <= now %lu",
+          (unsigned long) bce.be_expires, (unsigned long) now);
+
+        (void) ban_cache_entry_delete(p, type, name);
+        errno = ENOENT;
+        return -1;
+      }
 
       /* XXX Check the entry version; if it doesn't match ours, then we
        * need to Do Something Intelligent(tm).
        */
 
       (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-        "found memcache entry for name %s, type %u: version %u, update_ts %s, "
+        "found cache entry for name %s, type %u: version %u, update_ts %s, "
         "ip_addr %s, port %u, be_type %u, be_name %s, be_reason %s, "
-        "be_mesg %s, be_expires %s, be_sid %u", name, type, bme.version,
-        pr_strtime(bme.update_ts), bme.ip_addr, bme.port, bme.be_type,
-        bme.be_name, bme.be_reason, bme.be_mesg ? bme.be_mesg : "<nil>",
-        pr_strtime(bme.be_expires), bme.be_sid);
+        "be_mesg %s, be_expires %s, be_sid %u", name, type, bce.version,
+        pr_strtime(bce.update_ts), bce.ip_addr, bce.port, bce.be_type,
+        bce.be_name, bce.be_reason, bce.be_mesg ? bce.be_mesg : "<nil>",
+        pr_strtime(bce.be_expires), bce.be_sid);
 
       /* Use BanCacheOptions to check the various struct fields for usability.
        */
 
       if (ban_cache_opts & BAN_CACHE_OPT_MATCH_SERVER) {
-        pr_netaddr_t *na;
+        const pr_netaddr_t *na;
 
-        /* Make sure that the IP address/port in the mcache entry matches
+        /* Make sure that the IP address/port in the cache entry matches
          * our address/port.
          */
-
         na = pr_netaddr_get_sess_local_addr();
         if (use_entry == TRUE &&
-            strcmp(bme.ip_addr, pr_netaddr_get_ipstr(na)) != 0) {
+            bce.ip_addr != NULL &&
+            strcmp(bce.ip_addr, pr_netaddr_get_ipstr(na)) != 0) {
           use_entry = FALSE;
 
           (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-            "BanCacheOption MatchServer: memcache entry IP address '%s' "
+            "BanCacheOption MatchServer: cache entry IP address '%s' "
             "does not match vhost IP address '%s', ignoring entry",
-            bme.ip_addr, pr_netaddr_get_ipstr(na));
+            bce.ip_addr, pr_netaddr_get_ipstr(na));
         }
 
         if (use_entry == TRUE &&
-            bme.port != pr_netaddr_get_port(na)) {
+            bce.port != pr_netaddr_get_port(na)) {
           use_entry = FALSE;
 
           (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
-            "BanCacheOption MatchServer: memcache entry port %u "
+            "BanCacheOption MatchServer: cache entry port %u "
             "does not match vhost port %d, ignoring entry",
-            bme.port, pr_netaddr_get_port(na));
+            bce.port, pr_netaddr_get_port(na));
         }
       }
 
       if (use_entry == TRUE) {
         if (mesg != NULL &&
-            strlen(bme.be_mesg) > 0) {
-          *mesg = bme.be_mesg;
+            bce.be_mesg != NULL &&
+            strlen(bce.be_mesg) > 0) {
+          *mesg = bce.be_mesg;
         }
 
         return 0;
@@ -1134,6 +1544,12 @@ static const char *ban_event_entry_typestr(unsigned int type) {
   switch (type) {
     case BAN_EV_TYPE_ANON_REJECT_PASSWORDS:
       return "AnonRejectPasswords";
+
+    case BAN_EV_TYPE_EMPTY_PASSWORD:
+      return "EmptyPassword";
+
+    case BAN_EV_TYPE_BAD_PROTOCOL:
+      return "BadProtocol";
 
     case BAN_EV_TYPE_MAX_CLIENTS_PER_CLASS:
       return "MaxClientsPerClass";
@@ -1343,7 +1759,7 @@ static void ban_event_list_expire(void) {
 /* Controls handlers
  */
 
-static server_rec *ban_get_server_by_id(int sid) {
+static server_rec *ban_get_server_by_id(unsigned int sid) {
   server_rec *s = NULL;
 
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
@@ -1359,11 +1775,13 @@ static server_rec *ban_get_server_by_id(int sid) {
   return s;
 }
 
-static int ban_get_sid_by_addr(pr_netaddr_t *server_addr,
+static int ban_get_sid_by_addr(const pr_netaddr_t *server_addr,
     unsigned int server_port) {
   server_rec *s = NULL;
 
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
+    pr_signals_handle();
+
     if (s->ServerPort == 0) {
       continue;
     }
@@ -1552,6 +1970,8 @@ static int ban_handle_info(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
 
         switch (type) {
           case BAN_EV_TYPE_ANON_REJECT_PASSWORDS:
+          case BAN_EV_TYPE_EMPTY_PASSWORD:
+          case BAN_EV_TYPE_BAD_PROTOCOL:
           case BAN_EV_TYPE_MAX_CLIENTS_PER_CLASS:
           case BAN_EV_TYPE_MAX_CLIENTS_PER_HOST:
           case BAN_EV_TYPE_MAX_CLIENTS_PER_USER:
@@ -1607,7 +2027,7 @@ static int ban_handle_info(pr_ctrls_t *ctrl, int reqargc, char **reqargv) {
 
 static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i = 0;
+  register int i = 0;
   unsigned int sid = 0;
 
   /* Check the ban ACL */
@@ -1619,8 +2039,8 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
   }
 
   /* Sanity check */
-  if (!reqargv) {
-    pr_ctrls_add_response(ctrl, "missing arguments");
+  if (reqargv == NULL) {
+    pr_ctrls_add_response(ctrl, "missing parameters");
     return -1;
   }
 
@@ -1658,7 +2078,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
 
     if (server_str != NULL) {
       char *ptr;
-      pr_netaddr_t *server_addr = NULL;
+      const pr_netaddr_t *server_addr = NULL;
       unsigned int server_port = 21;
       int res;
 
@@ -1694,7 +2114,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
   if (strcmp(reqargv[0], "user") == 0) {
 
     if (reqargc < 2) {
-      pr_ctrls_add_response(ctrl, "missing arguments");
+      pr_ctrls_add_response(ctrl, "missing parameters");
       return -1;
     }
 
@@ -1735,7 +2155,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
   } else if (strcmp(reqargv[0], "host") == 0) {
 
     if (reqargc < 2) {
-      pr_ctrls_add_response(ctrl, "missing arguments");
+      pr_ctrls_add_response(ctrl, "missing parameters");
       return -1;
     }
 
@@ -1746,12 +2166,11 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
 
     /* Add each site to the list */
     for (i = optind; i < reqargc; i++) {
+      const pr_netaddr_t *site;
 
       /* XXX handle multiple addresses */
-      pr_netaddr_t *site = pr_netaddr_get_addr(ctrl->ctrls_tmp_pool,
-        reqargv[i], NULL);
-
-      if (!site) {
+      site = pr_netaddr_get_addr(ctrl->ctrls_tmp_pool, reqargv[i], NULL);
+      if (site == NULL) {
         pr_ctrls_add_response(ctrl, "ban: unknown host '%s'", reqargv[i]);
         continue;
       }
@@ -1785,7 +2204,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
   } else if (strcmp(reqargv[0], "class") == 0) {
 
     if (reqargc < 2) {
-      pr_ctrls_add_response(ctrl, "missing arguments");
+      pr_ctrls_add_response(ctrl, "missing parameters");
       return -1;
     }
 
@@ -1836,7 +2255,7 @@ static int ban_handle_ban(pr_ctrls_t *ctrl, int reqargc,
 
 static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
     char **reqargv) {
-  register unsigned int i = 0;
+  register int i = 0;
   int optc;
   unsigned int sid = 0;
   const char *reqopts = "s:";
@@ -1851,8 +2270,9 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
   }
 
   /* Sanity check */
-  if (reqargc < 2 || reqargv == NULL) {
-    pr_ctrls_add_response(ctrl, "missing arguments");
+  if (reqargc < 2 ||
+      reqargv == NULL) {
+    pr_ctrls_add_response(ctrl, "missing parameters");
     return -1;
   }
 
@@ -1883,7 +2303,7 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
 
   if (server_str != NULL) {
     char *ptr;
-    pr_netaddr_t *server_addr = NULL;
+    const pr_netaddr_t *server_addr = NULL;
     unsigned int server_port = 21;
     int res;
 
@@ -1989,12 +2409,11 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
       }
 
       for (i = optind; i < reqargc; i++) {
+        const pr_netaddr_t *site;
 
         /* XXX handle multiple addresses */
-        pr_netaddr_t *site = pr_netaddr_get_addr(ctrl->ctrls_tmp_pool,
-          reqargv[i], NULL);
-
-        if (site) {
+        site = pr_netaddr_get_addr(ctrl->ctrls_tmp_pool, reqargv[i], NULL);
+        if (site != NULL) {
           if (ban_list_remove(BAN_TYPE_HOST, sid,
                 pr_netaddr_get_ipstr(site)) == 0) {
             (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
@@ -2081,15 +2500,17 @@ static int ban_handle_permit(pr_ctrls_t *ctrl, int reqargc,
  */
 
 MODRET ban_pre_pass(cmd_rec *cmd) {
-  char *user, *rule_mesg = NULL;
+  const char *user;
+  char *rule_mesg = NULL;
 
-  if (ban_engine != TRUE)
+  if (ban_engine != TRUE) {
     return PR_DECLINED(cmd);
+  }
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-
-  if (!user)
+  if (user == NULL) {
     return PR_DECLINED(cmd);
+  }
 
   /* Make sure the list is up-to-date. */
   ban_list_expire();
@@ -2133,7 +2554,7 @@ MODRET set_bancache(cmd_rec *cmd) {
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
-#ifdef PR_USE_MEMCACHE
+#if defined(PR_USE_MEMCACHE)
   if (strcmp(cmd->argv[1], "memcache") == 0) {
     config_rec *c;
 
@@ -2142,13 +2563,24 @@ MODRET set_bancache(cmd_rec *cmd) {
 
     return PR_HANDLED(cmd);
   }
-#endif /* !PR_USE_MEMCACHE */
+#endif /* PR_USE_MEMCACHE */
+
+#if defined(PR_USE_REDIS)
+  if (strcmp(cmd->argv[1], "redis") == 0) {
+    config_rec *c;
+
+    c = add_config_param(cmd->argv[0], 1, NULL);
+    c->argv[0] = pstrdup(c->pool, cmd->argv[1]);
+
+    return PR_HANDLED(cmd);
+  }
+#endif /* PR_USE_REDIS */
 
   CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported BanCache driver '",
     cmd->argv[1], "'", NULL));
 }
 
-/* usage: BanCacheOptions MatchServer */
+/* usage: BanCacheOptions opt1 ... optN */
 MODRET set_bancacheoptions(cmd_rec *cmd) {
   register unsigned int i;
   config_rec *c;
@@ -2163,6 +2595,9 @@ MODRET set_bancacheoptions(cmd_rec *cmd) {
   for (i = 1; i < cmd->argc; i++) {
     if (strcmp(cmd->argv[i], "MatchServer") == 0) {
       opts |= BAN_CACHE_OPT_MATCH_SERVER;
+
+    } else if (strcmp(cmd->argv[i], "UseJSON") == 0) {
+      opts |= BAN_CACHE_OPT_USE_JSON;
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown BanCacheOption '",
@@ -2340,10 +2775,20 @@ MODRET set_banonevent(cmd_rec *cmd) {
     pr_event_register(&ban_module, "mod_auth.anon-reject-passwords",
       ban_anonrejectpasswords_ev, bee);
 
+  } else if (strcasecmp(cmd->argv[1], "BadProtocol") == 0) {
+    bee->bee_type = BAN_EV_TYPE_BAD_PROTOCOL;
+    pr_event_register(&ban_module, "core.bad-protocol", ban_badprotocol_ev,
+      bee);
+
   } else if (strcasecmp(cmd->argv[1], "ClientConnectRate") == 0) {
     bee->bee_type = BAN_EV_TYPE_CLIENT_CONNECT_RATE;
     pr_event_register(&ban_module, "mod_ban.client-connect-rate",
       ban_clientconnectrate_ev, bee);
+
+  } else if (strcasecmp(cmd->argv[1], "EmptyPassword") == 0) {
+    bee->bee_type = BAN_EV_TYPE_EMPTY_PASSWORD;
+    pr_event_register(&ban_module, "mod_auth.empty-password",
+      ban_emptypassword_ev, bee);
 
   } else if (strcasecmp(cmd->argv[1], "LoginRate") == 0) {
     /* We don't register an event listener here.  Instead we rely on
@@ -2635,6 +3080,22 @@ static void ban_anonrejectpasswords_ev(const void *event_data,
     ipstr, tmpl);
 }
 
+static void ban_badprotocol_ev(const void *event_data, void *user_data) {
+
+  /* For this event, event_data is the client. */
+  conn_t *c = (conn_t *) event_data;
+  const char *ipstr;
+
+  /* user_data is a template of the ban event entry. */
+  struct ban_event_entry *tmpl = user_data;
+
+  if (ban_engine != TRUE)
+    return;
+
+  ipstr = pr_netaddr_get_ipstr(c->remote_addr);
+  ban_handle_event(BAN_EV_TYPE_BAD_PROTOCOL, BAN_TYPE_HOST, ipstr, tmpl);
+}
+
 static void ban_clientconnectrate_ev(const void *event_data, void *user_data) {
 
   /* For this event, event_data is the client. */
@@ -2649,6 +3110,19 @@ static void ban_clientconnectrate_ev(const void *event_data, void *user_data) {
 
   ipstr = pr_netaddr_get_ipstr(c->remote_addr);
   ban_handle_event(BAN_EV_TYPE_CLIENT_CONNECT_RATE, BAN_TYPE_HOST, ipstr, tmpl);
+}
+
+static void ban_emptypassword_ev(const void *event_data, void *user_data) {
+  const char *ipstr;
+
+  /* user_data is a template of the ban event entry. */
+  struct ban_event_entry *tmpl = user_data;
+
+  if (ban_engine != TRUE)
+    return;
+
+  ipstr = pr_netaddr_get_ipstr(session.c->remote_addr);
+  ban_handle_event(BAN_EV_TYPE_EMPTY_PASSWORD, BAN_TYPE_HOST, ipstr, tmpl);
 }
 
 static void ban_maxclientsperclass_ev(const void *event_data, void *user_data) {
@@ -2932,6 +3406,7 @@ static void ban_restart_ev(const void *event_data, void *user_data) {
   pr_event_unregister(&ban_module, "core.timeout-login", NULL);
   pr_event_unregister(&ban_module, "core.timeout-no-transfer", NULL);
   pr_event_unregister(&ban_module, "mod_auth.anon-reject-passwords", NULL);
+  pr_event_unregister(&ban_module, "mod_auth.empty-password", NULL);
   pr_event_unregister(&ban_module, "mod_auth.max-clients-per-class", NULL);
   pr_event_unregister(&ban_module, "mod_auth.max-clients-per-host", NULL);
   pr_event_unregister(&ban_module, "mod_auth.max-clients-per-user", NULL);
@@ -2963,6 +3438,36 @@ static void ban_restart_ev(const void *event_data, void *user_data) {
   }
 
   return;
+}
+
+static void ban_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  ban_cache_opts = 0UL;
+
+#if defined(PR_USE_MEMCACHE)
+  if (mcache != NULL) {
+    (void) pr_memcache_conn_set_namespace(mcache, &ban_module, NULL);
+    mcache = NULL;
+  }
+#endif /* PR_USE_MEMCACHE */
+
+#if defined(PR_USE_REDIS)
+  if (redis != NULL) {
+    (void) pr_redis_conn_set_namespace(redis, &ban_module, NULL, 0);
+    redis = NULL;
+  }
+#endif /* PR_USE_REDIS */
+
+  pr_event_unregister(&ban_module, "core.session-reinit", ban_sess_reinit_ev);
+
+  res = ban_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&ban_module, PR_SESS_DISCONNECT_SESSION_INIT_FAILED,
+      NULL);
+  }
 }
 
 static void ban_rootlogin_ev(const void *event_data, void *user_data) {
@@ -3094,26 +3599,34 @@ static int ban_sess_init(void) {
   const char *remote_ip;
   char *rule_mesg = NULL;
 
-  if (ban_engine != TRUE)
+  pr_event_register(&ban_module, "core.session-reinit", ban_sess_reinit_ev,
+    NULL);
+
+  if (ban_engine != TRUE) {
     return 0;
+  }
 
   /* Check to see if the BanEngine directive is set to 'off'. */
   c = find_config(main_server->conf, CONF_PARAM, "BanEngine", FALSE);
   if (c) {
-    int use_bans = *((int *) c->argv[0]);
+    int use_bans;
 
-    if (!use_bans) {
+    use_bans = *((int *) c->argv[0]);
+    if (use_bans == FALSE) {
       ban_engine = FALSE;
       return 0;
     }
   }
 
   c = find_config(main_server->conf, CONF_PARAM, "BanCache", FALSE);
-  if (c) {
+  if (c != NULL) {
+    int supported_driver = FALSE;
     char *driver;
 
     driver = c->argv[0];
-    if (strcmp(driver, "memcache") == 0) {
+
+#if defined(PR_USE_MEMCACHE)
+    if (strcasecmp(driver, "memcache") == 0) {
       mcache = pr_memcache_conn_get();
       if (mcache == NULL) {
         (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
@@ -3124,17 +3637,54 @@ static int ban_sess_init(void) {
        * driver is acceptable.
        */
       c = find_config(main_server->conf, CONF_PARAM, "BanCacheOptions", FALSE);
-      if (c) {
+      if (c != NULL) {
         ban_cache_opts = *((unsigned long *) c->argv[0]);
       }
 
       /* Configure a namespace prefix for our memcached keys. */
-      if (pr_memcache_conn_set_namespace(mcache, &ban_module, "mod_ban") < 0) {
+      if (pr_memcache_conn_set_namespace(mcache, &ban_module, "mod_ban.") < 0) {
         (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
           "error setting memcache namespace prefix: %s", strerror(errno));
       }
 
-    } else {
+      supported_driver = TRUE;
+    }
+#endif /* PR_USE_MEMCACHE */
+
+#if defined(PR_USE_REDIS)
+    if (strcasecmp(driver, "redis") == 0) {
+      redis = pr_redis_conn_get(session.pool);
+      if (redis == NULL) {
+        (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+          "error connecting to Redis: %s", strerror(errno));
+      }
+
+      /* We really only need to look up BanCacheOptions if the BanCache
+       * driver is acceptable.
+       */
+      c = find_config(main_server->conf, CONF_PARAM, "BanCacheOptions", FALSE);
+      if (c != NULL) {
+        ban_cache_opts = *((unsigned long *) c->argv[0]);
+      }
+
+      /* When using Redis, always use JSON. */
+      if (!(ban_cache_opts & BAN_CACHE_OPT_USE_JSON)) {
+        (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION, "%s",
+          "using JSON for Redis caching");
+        ban_cache_opts |= BAN_CACHE_OPT_USE_JSON;
+      }
+
+      /* Configure a namespace prefix for our Redis keys. */
+      if (pr_redis_conn_set_namespace(redis, &ban_module, "mod_ban.", 8) < 0) {
+        (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
+          "error setting Redis namespace prefix: %s", strerror(errno));
+      }
+
+      supported_driver = TRUE;
+    }
+#endif /* PR_USE_MEMCACHE */
+
+    if (supported_driver == FALSE) {
       (void) pr_log_writefile(ban_logfd, MOD_BAN_VERSION,
         "unsupported BanCache driver '%s' configured, ignoring", driver);
     }
@@ -3179,7 +3729,10 @@ static int ban_sess_init(void) {
     }
   }
 
-  pr_event_generate("mod_ban.client-connect-rate", session.c);
+  if (!ban_client_connected) {
+    pr_event_generate("mod_ban.client-connect-rate", session.c);
+    ban_client_connected = TRUE;
+  }
 
   pr_event_unregister(&ban_module, "core.restart", ban_restart_ev);
 

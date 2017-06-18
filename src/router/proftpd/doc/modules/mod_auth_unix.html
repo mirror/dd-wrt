@@ -1,6 +1,4 @@
-<!-- $Id: mod_auth_unix.html,v 1.7 2013-09-29 23:28:02 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_auth_unix.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_auth_unix</title>
@@ -14,6 +12,7 @@
 </center>
 <hr><br>
 
+<p>
 This module is contained in the <code>mod_auth_unix.c</code> file for
 ProFTPD 1.3.<i>x</i>, and is compiled by default.
 
@@ -24,7 +23,7 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
 </ul>
 
 <hr>
-<h2><a name="AuthUnixOptions">AuthUnixOptions</a></h2>
+<h3><a name="AuthUnixOptions">AuthUnixOptions</a></h3>
 <strong>Syntax:</strong> AuthUnixOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -36,7 +35,7 @@ The <code>AuthUnixOptions</code> directive is used to tweak various
 Unix-specific authentication behaviors in <code>mod_auth_unix</code>.  The
 currently implemented options are:
 <ul>
-  <li><code>aixNoRLogin</code><br>
+  <li><code>AIXNoRLogin</code><br>
     <p>
     In <a href="http://bugs.proftpd.org/show_bug.cgi?id=1896">Bug#1896</a>,
     support for checking some AIX-specific functions for whether a login
@@ -47,7 +46,7 @@ currently implemented options are:
     to allow FTP logins.  To enable this specific behavior, a new
     <code>AuthUnixOptions</code> setting (only honored on AIX) was added:
 <pre>
-        AuthUnixOptions aixNoRLogin
+        AuthUnixOptions AIXNoRLogin
 </pre>
     If this setting is used on any other server, it is silently ignored.
     <a href="http://bugs.proftpd.org/show_bug.cgi?id=3300">Bug#3300</a> has
@@ -55,7 +54,7 @@ currently implemented options are:
   </li>
 
   <p>
-  <li><code>magicTokenChroot</code><br>
+  <li><code>MagicTokenChroot</code><br>
     <p>
     This option causes <code>mod_auth_unix</code> to examine the home
     directory retrieved for a user for the magic "/./" token.  If found,
@@ -73,7 +72,7 @@ currently implemented options are:
   </li>
 
   <p>
-  <li><code>noGetgrouplist</code><br>
+  <li><code>NoGetgrouplist</code><br>
     <p>
     On systems which support it, the <code>getgrouplist(3)</code> function
     can be used to get the group membership list of a user in a <i>much</i>
@@ -83,15 +82,33 @@ currently implemented options are:
     Use this option to disable use of the <code>getgrouplist(3)</code>
     function, <i>e.g.</i>:
 <pre>
-        AuthUnixOptions noGetgrouplist
+        AuthUnixOptions NoGetgrouplist
 </pre>
     This setting has no effect on systems which do not support the
     <code>getgrouplist(3)</code> function.
+  </li>
+
+  <p>
+  <li><code>NoInitgroups</code><br>
+    <p>
+    On systems which support it, the <code>initgroups(3)</code> function
+    can be used to get the group membership list of a user in a <i>much</i>
+    faster way.  However, there are limits to the number of groups to which
+    a user can belong, use of this function means that groups which exceed
+    that limit <b>will be silently ignored</b>.  Thus for sites which need
+    users to belong to a <i>large</i> number of groups, use this option to
+    disable the use of the <code>initgroups(3)</code> function, <i>e.g.</i>:
+<pre>
+        AuthUnixOptions NoInitgroups
+</pre>
+    This setting has no effect on systems which do not support the
+    <code>initgroups(3)</code> function.
+  </li>
 </ul>
 
 <p>
 <hr>
-<h2><a name="PersistentPasswd">PersistentPasswd</a></h2>
+<h3><a name="PersistentPasswd">PersistentPasswd</a></h3>
 <strong>Syntax:</strong> PersistentPasswd <em>on|off</em><br>
 <strong>Default:</strong> off<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -124,6 +141,21 @@ from <code>NIS</code> maps or <code>NSS</code> lookups, and local users.
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_auth_unix</code> module is compiled by default.
+
+<p>
+<b>Logging</b><br>
+The <code>mod_auth_unix</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>auth.unix
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace auth.unix:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
 
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
@@ -194,20 +226,52 @@ But <code>proftpd</code> still has a descriptor to the <i>old</i> file, and
 does not see/know that the file has changed.  That is why it can look like
 <code>proftpd</code> is "caching" your system users.
 
+<p><a name="DeleteViaPasswd">
+<font color=red>Question</font>: I recently deleted a user's password using:
+<pre>
+  $ passwd -d <em>user</em>
+</pre>
+This successfully prevented the user from logging in via <code>ssh</code>,
+but they <i>were</i> able to successfully login using <code>proftpd</code>.
+This is a bug, right?<br>
+<font color=blue>Answer</font>: No, not really.  It's more of a nasty gotcha.
+
+<p>
+Per the <code>passwd(1)</code> man page, the <code>-d</code> option does not
+do what you might assume/think it does:
+<pre>
+  -d
+  This is a quick way to delete a password for an account. It will set
+  the named account passwordless. Available to root only.
+</pre>
+Thus the <code>-d</code> option only <i>deletes the password</i>; it does
+<b>not</b> lock the account by setting a password of "*", and it does <b>not</b>
+delete the account/entry.  Rather than using <code>passwd -d</code>, I would
+strongly recommend using <code>passwd -l</code> (to <em>lock</em> the account),
+or <code>userdel(8)</code> or equivalent (to <em>remove</em> the account
+entirely).
+
+<p>
+The issue then is that <code>proftpd</code> does not <b>require</b> that
+clients provide non-empty passwords by default.  Thus a client providing
+an empty string as the password for a so-called "deleted" account would be
+able to successfully log in.  To address this, there is the
+<a href="./mod_auth.html#AllowEmptyPasswords"><code>AllowEmptyPasswords</code></a> directive.  For example, setting this in your <code>proftpd.conf</code>
+should make using <code>passwd -d</code> work as you'd expect:
+<pre>
+  &lt;Global&gt;
+    AllowEmptyPassword off
+  &lt;/Global&gt;
+</pre>
+
 <p>
 <hr><br>
 
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-09-29 23:28:02 $</i><br>
-
-<br><hr>
-
 <font size=2><b><i>
-&copy; Copyright 2010-2013<br>
+&copy; Copyright 2010-2015 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2013 The ProFTPD Project team
+ * Copyright (c) 2001-2017 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,15 +24,15 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* Regex management code
- * $Id: regexp.c,v 1.20 2013-03-14 21:49:19 castaglia Exp $
- */
+/* Regex management code. */
 
 #include "conf.h"
 
 #ifdef PR_USE_REGEX
 
 #ifdef PR_USE_PCRE
+#include <pcre.h>
+
 struct regexp_rec {
   pool *regex_pool;
 
@@ -45,7 +45,7 @@ struct regexp_rec {
   /* For callers wishing to use POSIX REs */
   regex_t *re;
 
-  /* For calles wishing to use PCRE REs */
+  /* For callers wishing to use PCRE REs */
   pcre *pcre;
   pcre_extra *pcre_extra;
 
@@ -76,6 +76,28 @@ static array_header *regexp_list = NULL;
 
 static const char *trace_channel = "regexp";
 
+static void regexp_free(pr_regex_t *pre) {
+#ifdef PR_USE_PCRE
+  if (pre->pcre != NULL) {
+# if defined(HAVE_PCRE_PCRE_FREE_STUDY)
+    pcre_free_study(pre->pcre_extra);
+# endif /* HAVE_PCRE_PCRE_FREE_STUDY */
+    pre->pcre_extra = NULL;
+    pcre_free(pre->pcre);
+    pre->pcre = NULL;
+  }
+#endif /* PR_USE_PCRE */
+
+  if (pre->re != NULL) {
+    /* This frees memory associated with this pointer by regcomp(3). */
+    regfree(pre->re);
+    pre->re = NULL;
+  }
+
+  pre->pattern = NULL;
+  destroy_pool(pre->regex_pool);
+}
+
 static void regexp_cleanup(void) {
   /* Only perform this cleanup if necessary */
   if (regexp_pool) {
@@ -84,23 +106,8 @@ static void regexp_cleanup(void) {
 
     for (i = 0; i < regexp_list->nelts; i++) {
       if (pres[i] != NULL) {
-
-#ifdef PR_USE_PCRE
-        if (pres[i]->pcre != NULL) {
-          /* This frees memory associated with this pointer by regcomp(3). */
-          pcre_free(pres[i]->pcre);
-          pres[i]->pcre = NULL;
-        }
-#endif /* PR_USE_PCRE */
-
-        if (pres[i]->re != NULL) {
-          /* This frees memory associated with this pointer by regcomp(3). */
-          regfree(pres[i]->re);
-          pres[i]->re = NULL;
-        }
-
-        /* This frees the memory allocated for the object itself. */
-        destroy_pool(pres[i]->regex_pool);
+        regexp_free(pres[i]);
+        pres[i] = NULL;
       }
     }
 
@@ -163,25 +170,7 @@ void pr_regexp_free(module *m, pr_regex_t *pre) {
 
     if ((pre != NULL && pres[i] == pre) ||
         (m != NULL && pres[i]->m == m)) {
-
-#ifdef PR_USE_PCRE
-      if (pres[i]->pcre != NULL) {
-        /* This frees memory associated with this pointer by regcomp(3). */
-        pcre_free(pres[i]->pcre);
-        pres[i]->pcre = NULL;
-      }
-#endif /* PR_USE_PCRE */
-
-      if (pres[i]->re != NULL) {
-        /* This frees memory associated with this pointer by regcomp(3). */
-        regfree(pres[i]->re);
-        pres[i]->re = NULL;
-      }
-
-      pres[i]->pattern = NULL;
-
-      /* This frees the memory allocated for the object itself. */
-      destroy_pool(pres[i]->regex_pool);
+      regexp_free(pres[i]);
       pres[i] = NULL;
     }
   }
@@ -190,7 +179,7 @@ void pr_regexp_free(module *m, pr_regex_t *pre) {
 #ifdef PR_USE_PCRE
 static int regexp_compile_pcre(pr_regex_t *pre, const char *pattern,
     int flags) {
-  int err_offset;
+  int err_offset, study_flags = 0;
 
   if (pre == NULL ||
       pattern == NULL) {
@@ -204,7 +193,6 @@ static int regexp_compile_pcre(pr_regex_t *pre, const char *pattern,
 
   pre->pcre = pcre_compile(pattern, flags, &(pre->pcre_errstr), &err_offset,
     NULL);
-
   if (pre->pcre == NULL) {
     pr_trace_msg(trace_channel, 4,
       "error compiling pattern '%s' into PCRE regex: %s", pattern,
@@ -213,9 +201,20 @@ static int regexp_compile_pcre(pr_regex_t *pre, const char *pattern,
   }
 
   /* Study the pattern as well, just in case. */
+#ifdef PCRE_STUDY_JIT_COMPILE
+  study_flags = PCRE_STUDY_JIT_COMPILE;
+#endif /* PCRE_STUDY_JIT_COMPILE */
   pr_trace_msg(trace_channel, 9, "studying pattern '%s' for PCRE extra data",
     pattern);
-  pre->pcre_extra = pcre_study(pre->pcre, 0, &(pre->pcre_errstr));
+  pre->pcre_extra = pcre_study(pre->pcre, study_flags, &(pre->pcre_errstr));
+  if (pre->pcre_extra == NULL) {
+    if (pre->pcre_errstr != NULL) {
+      pr_trace_msg(trace_channel, 4,
+        "error studying pattern '%s' for PCRE regex: %s", pattern,
+        pre->pcre_errstr);
+    }
+  }
+
   return 0;
 }
 #endif /* PR_USE_PCRE */
@@ -263,7 +262,8 @@ int pr_regexp_compile(pr_regex_t *pre, const char *pattern, int flags) {
 }
 
 size_t pr_regexp_error(int errcode, const pr_regex_t *pre, char *buf,
-  size_t bufsz) {
+    size_t bufsz) {
+  size_t res = 0;
 
   if (pre == NULL ||
       buf == NULL ||
@@ -281,10 +281,10 @@ size_t pr_regexp_error(int errcode, const pr_regex_t *pre, char *buf,
   if (pre->re != NULL) {
     /* Make sure the given buffer is always zeroed out first. */
     memset(buf, '\0', bufsz);
-    return regerror(errcode, pre->re, buf, bufsz-1);
+    res = regerror(errcode, pre->re, buf, bufsz-1);
   }
 
-  return 0;
+  return res;
 }
 
 const char *pr_regexp_get_pattern(const pr_regex_t *pre) {
@@ -305,11 +305,6 @@ const char *pr_regexp_get_pattern(const pr_regex_t *pre) {
 static int regexp_exec_pcre(pr_regex_t *pre, const char *str,
     size_t nmatches, regmatch_t *matches, int flags, unsigned long match_limit,
     unsigned long match_limit_recursion) {
-  if (pre == NULL ||
-      str == NULL) {
-    errno = EINVAL;
-    return -1;
-  }
 
   if (pre->pcre != NULL) {
     int res;
@@ -448,6 +443,14 @@ int pr_regexp_exec(pr_regex_t *pre, const char *str, size_t nmatches,
 #endif /* PR_USE_PCRE */
 
   res = regexp_exec_posix(pre, str, nmatches, matches, flags);
+
+  /* Make sure that we return a negative value to indicate a failed match;
+   * PCRE already does this.
+   */
+  if (res == REG_NOMATCH) {
+    res = -1;
+  }
+
   return res;
 }
 

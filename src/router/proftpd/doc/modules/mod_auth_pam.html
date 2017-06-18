@@ -1,6 +1,4 @@
-<!-- $Id: mod_auth_pam.html,v 1.3 2011-03-10 07:28:33 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/modules/mod_auth_pam.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_auth_pam</title>
@@ -18,7 +16,7 @@
 PAM stands for <b>P</b>luggable <b>A</b>uthentication <b>M</b>odules,
 and is used to configure ways for authenticating users.  Now
 &quot;authenticating&quot; a user usually means comparing a password they
-give with some other information, and returning a &quotyes/no&quot;-style
+give with some other information, and returning a &quot;yes/no&quot;-style
 answer.  PAM does <b>not</b> provide all of the other information for a user,
 such as UID, GID, home, and shell.  This means that <code>mod_auth_pam</code>
 cannot be used, by itself, as an auth module for <code>proftpd</code>;
@@ -41,7 +39,7 @@ ProFTPD source distribution.
 </ul>
 
 <hr>
-<h2><a name="AuthPAM">AuthPAM</a></h2>
+<h3><a name="AuthPAM">AuthPAM</a></h3>
 <strong>Syntax:</strong> AuthPAM <em>on|off</em><br>
 <strong>Default:</strong> AuthPAM on<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -55,7 +53,7 @@ when authenticating a user.
 
 <p>
 <hr>
-<h2><a name="AuthPAMConfig">AuthPAMConfig</a></h2>
+<h3><a name="AuthPAMConfig">AuthPAMConfig</a></h3>
 <strong>Syntax:</strong> AuthPAMConfig <em>service</em><br>
 <strong>Default:</strong> AuthPAMConfig ftp<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -80,7 +78,7 @@ Here's an example of changing the <em>service</em> used:
 
 <p>
 <hr>
-<h2><a name="AuthPAMOptions">AuthPAMOptions</a></h2>
+<h3><a name="AuthPAMOptions">AuthPAMOptions</a></h3>
 <strong>Syntax:</strong> AuthPAMOptions <em>opt1 opt2 ... optN</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
@@ -126,6 +124,21 @@ The <code>mod_auth_pam</code> module is automatically included when
 this automatic inclusion, use the <code>--disable-auth-pam</code> configure
 option.
 
+<p>
+<b>Logging</b><br>
+The <code>mod_auth_pam</code> module supports <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>auth.pam
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
+<pre>
+  TraceLog /path/to/ftpd/trace.log
+  Trace auth.pam:20
+</pre>
+This trace logging can generate large files; it is intended for debugging use
+only, and should be removed from any production configuration.
+
 <p><a name="FAQ">
 <b>Frequently Asked Questions</b><br>
 
@@ -149,10 +162,13 @@ The asterisk ("*") after a module name in the <code>AuthOrder</code> directive
 is what tells <code>proftpd</code> to treat that module's results as
 authoritative.
 
+<p>
 <hr>
-Last Updated: <i>$Date: 2011-03-10 07:28:33 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>
 </html>
-

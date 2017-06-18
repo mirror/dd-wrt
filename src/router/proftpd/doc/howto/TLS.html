@@ -1,9 +1,7 @@
-<!-- $Id: TLS.html,v 1.39 2014-03-26 18:22:32 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/TLS.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - FTP and SSL/TLS</title>
+<title>ProFTPD: FTP and SSL/TLS</title>
 </head>
 
 <body bgcolor=white>
@@ -464,6 +462,26 @@ All that said, in ProFTPD 1.3.3rc2, the <code>mod_tls</code> module was
 enhanced to support implicit FTPS via the <code>UseImplicitSSL</code>
 <a href="../contrib/mod_tls.html#TLSOption"><code>TLSOption</code></a>.
 
+<p><a name="TLSv1.2">
+<font color=red>Question</font>: How can I require that <b>only</b> TLSv1.2
+be allowed/used?<br>
+<font color=blue>Answer</font>: Assuming your OpenSSL library is new enough,
+you should only need to use the following in your <code>mod_tls</code>
+configuration section:
+<pre>
+  TLSProtocol TLSv1.2
+</pre>
+Note that if you have multiple <code>&lt;VirtualHost&gt;</code> sections in
+your <code>proftpd.conf</code> and you want this to apply to <em>all</em> of
+those vhosts, then you should place the <code>TLSProtocol</code> directive
+in a <code>&lt;Global&gt;</code> section, <i>e.g.</i>:
+<pre>
+  &lt;Global&gt;
+    # Only allow TLSv1.2 for any of our FTPS vhosts
+    TLSProtocol TLSv1.2
+  &lt;/Global&gt;
+</pre>
+
 <p><a name="TLSPerUser">
 <font color=red>Question</font>: Can I require TLS on a per-user basis?<br>
 <font color=blue>Answer</font>: Prior to ProFTPD 1.2.10rc2, no.  The IETF
@@ -569,7 +587,7 @@ unencrypted.
 (FXP) transfers are supported via the <code>SSCN</code> FTP command.  The
 <a href="../contrib/mod_tls.html#TLSVerifyServer"><code>TLSVerifyServer</code></a> directive is also needed for secure FXP transfers.
 
-<p><a name="TLSv2">
+<p><a name="SSLv2">
 <font color=red>Question</font>: How come <code>mod_tls</code> does not support
 SSLv2?<br>
 <font color=blue>Answer</font>: Various defects have been found in the SSLv2
@@ -627,18 +645,6 @@ the <code>CCC</code> command by clients, the following must appear in your
   TLSRequired auth+data
 </pre>
 See the <a href="../contrib/mod_tls.html#TLSRequired"><code>TLSRequired</code></a> description for more details.
-
-<!-- Note: I am not sure the following advice is relevant or even good anymore
-<p><a name="TLSSlow">
-<font color=red>Question</font>: Sometimes my encrypted transfers are slow.
-Is there a way to speed them up?<br>
-<font color=blue>Answer</font>:  There have been reports that increasing the
-tunable buffer size (using the <code>--enable-buffer-size</code> option
-of the <code>configure</code> script) to 8192 increases transfer speeds, most
-notably on very high speed networks.  Increasing the buffer size does not
-appear to affect normal FTP transfers (in fact, it may benefit them as well,
-depending on the client).
--->
 
 <p><a name="TLSDataProtection">
 <font color=red>Question</font>: I can login using FTPS, but I cannot see
@@ -770,6 +776,32 @@ SSL session ID properly for data transfers, when a data transfer is requested,
 the SSL session ID presented by the client should always be fresh and in the
 session cache.
 
+<p><a name="TLSUnknownProtocol">
+<font color=red>Question</font>: My FTPS client is failing to connect to
+<code>proftpd</code> with <code>mod_tls</code>.  The <code>TLSLog</code> shows
+the following log messages, each time the FTPS client tries to connect:
+<pre>
+  2016-01-15 07:32:37,275 mod_tls/2.7[5072]: TLS/TLS-C requested, starting TLS handshake
+  2016-01-15 07:32:37,303 mod_tls/2.7[5072]: unable to accept TLS connection: protocol error:
+    <b>(1) error:140760FC:SSL routines:SSL23_GET_CLIENT_HELLO:unknown protocol</b>
+  2016-01-15 07:32:37,303 mod_tls/2.7[5072]: TLS/TLS-C negotiation failed on control channel
+</pre>
+Why does this happen?<br>
+<font color=blue>Answer</font>: This can happen when <code>mod_tls</code> is
+configured (<i>e.g.</i> using <code>TLSProtocol</code>) to support specific
+TLS versions, and the FTPS client is trying to use one of the unsupported
+protocol versions.  For example, if you use:
+<pre>
+  # Only support TLSv1.1 and TLSv1.2
+  TLSProtocol TLSv1.1 TLSv1.2
+</pre>
+And then connect with an FTPS client using TLSv1, like so:
+<pre>
+  $ openssl s_client -connect <i>address</i>:<i>port</i> -starttls ftp -tls1
+</pre>
+Then you would see the above error.  Note that this same protocol mismatch
+issue can also manifest as the error message "wrong version number".
+
 <p><a name="TLSBuildErrors">
 <font color=red>Question</font>: Why would I see the following errors while attempting to build <code>proftpd</code> with <code>mod_tls</code>?
 <pre>
@@ -837,6 +869,26 @@ section in your <code>proftpd.conf</code>, so that they apply to all
 vhosts configured.  The virtual hosting <a href="Vhost.html">howto</a>
 describes this in more detail.
 
+<p><a name="TLSClientCertChainTooLong">
+<font color=red>Question</font>: When my FTPS client connects to my
+<code>mod_tls</code>-enabled server, the TLS handshake fails.  I see these
+messages in my <code>TLSLog</code>:
+<pre>
+  mod_tls/2.4.3[28786]: error: unable to verify certificate at depth 1
+  mod_tls/2.4.3[28786]: client certificate failed verification: certificate chain too long
+</pre>
+What causes this?<br>
+<font color=blue>Answer</font>: This can happen if you have your
+<code>mod_tls</code> configured with a very small <a href="../contrib/mod_tls.html#TLSVerifyDepth"><code>TLSVerifyDepth</code></a> value, <i>e.g.</i>:
+<pre>
+  TLSVerifyDepth 0
+</pre>
+Using small values, especially a value of 0, is a <b>bad idea</b>; most client
+certificate chains have a "depth" (or <em>length</em>) of 2-3, or perhaps
+longer.  The default <code>TLSVerifyDepth</code> value of 10 is sufficient for
+most cases; it allows for long certificate chains, but still guards against
+chains which might be absurdly long.
+
 <p><a name="TLSRenegotiations">
 <font color=red>Question</font>: My FTPS client sometimes times out after uploading/downloading more than 1 GB of data.  When I turn off SSL/TLS, the upload/download works. Why?<br>
 <font color=blue>Answer</font>:
@@ -865,12 +917,12 @@ them:
   TLSRenegotiate required off
 </pre>
 
-<p><a name="TLSNoCertRequest">
+<p><a name="TLSEOF">
 <font color=red>Question</font>: My FTPS client has trouble connecting to <code>proftpd</code> using SSL/TLS, with the following error appearing in the <code>TLSLog</code>:
 <pre>
-  Sep 17 11:03:46 mod_tls/2.1.2[9628]: TLS/TLS-C requested, starting TLS handshake
-  Sep 17 11:03:46 mod_tls/2.1.2[9628]: unable to accept TLS connection: received EOF that violates protocol
-  Sep 17 11:03:46 mod_tls/2.1.2[9628]: TLS/TLS-C negotiation failed on control channel
+  mod_tls/2.1.2[9628]: TLS/TLS-C requested, starting TLS handshake
+  mod_tls/2.1.2[9628]: unable to accept TLS connection: received EOF that violates protocol
+  mod_tls/2.1.2[9628]: TLS/TLS-C negotiation failed on control channel
 </pre>
 Is this a bug in <code>mod_tls</code>, in the client, or something else?<br><br>
 <font color=blue>Answer</font>: There might be several different causes for
@@ -878,33 +930,13 @@ this error.  It could be a bug in the OpenSSL library, in <code>mod_tls</code>,
 in the FTPS client, or it could be a transient network issue.
 
 <p>
-Now, one possible thing to try is to use the following in your <code>proftpd.conf</code> file:
-<pre>
-  TLSOptions NoCertRequest
-</pre>
-This option tells the OpenSSL library to <b>not</b> include a message requesting
-the client's certificate in the SSL/TLS handshake messages.  Some older
-SSL implementations seem to have trouble with this certificate request message,
-and react badly.  This includes some Windows FTP clients, as well as some
-FTP clients for the Mac.
-
-<p>
-One user tried using both the <a href="http://www.panic.com/transmit/">Transmit</a> and the <a href="http://www.fetchsoftworks.com/">Fetch</a> applications for
-the Mac; both state that they can handle FTP over SSL/TLS.  Using both of
-these applications, the user saw the above error.  The user, when using
-Transmit, saw the following error message appear from the client:
-<pre>
-  Server said:
-  AUTH TLS successful
-  error:00000000:lib(0):func(0):reason(0)
-</pre>
-And when using Fetch, the error message displayed by that client was:
-<pre> 
-  SSL Error -9844
-  Server responded: "AUTH TLS successful"
-</pre>
-In <b>both</b> causes, using "TLSOptions NoCertRequest" appeared to make
-those clients happy.
+The <i>usual</i> culprit for the above error is an <em>FTP-aware</em> network
+device such as a NAT, router, or firewall between the client and the server.
+Such network devices "peek" into the FTP control connection in order to
+dynamically open the necessary ports for data transfers.  However, this
+"peeking" fails once an SSL/TLS handshake starts on that same control
+connection, and when that happens, these network devices usually terminate
+the control connection, resulting in the EOF ("end of file") error reported.
 
 <p><a name="TLSNoPassphrasePrompt">
 <font color=red>Question</font>: When <code>proftpd</code> starts up, I am
@@ -1133,8 +1165,9 @@ To do this, you would use a combination of
 <p>
 <font color=red>Question</font>: I have configured my <code>proftpd</code>
 server for FTPS.  When I use FileZilla to try to connect to it, though, I
-see this error in the FileZilla logs:
+see one of these errors in the FileZilla logs:
 <pre>
+  GnuTLS error -8: A record packet with illegal version was received
   GnuTLS error -9: A TLS packet with unexpected length was received
 </pre>
 Is there a ProFTPD directive to fix this error?<br>
@@ -1143,6 +1176,48 @@ an <i>error unrelated to SSL/TLS</i> on your server.  Check the proftpd
 <a href="Debugging.html">debug</a> logging, the
 <a href="../contrib/mod_sql.html#SQLLogFile"><code>SQLLogFile</code></a> if
 you are using the <code>mod_sql</code> module, <i>etc</i>.
+
+<p><a name="TLSFileZilla">
+<font color=red>Question</font>: When I use FileZilla to connect to my
+<code>proftpd</code> server, it fails, and I see this error:
+<pre>
+  gnutls_handshake: An unexpected TLS packet was received.
+</pre>
+How to can I connect to my FTPS server using FileZilla?<br>
+<font color=blue>Answer</font>: The most common cause of this is using
+a URL such as "ftps://..." in your FileZilla client; for FileZilla, you
+<b>must</b> use <b>"ftpes://..."</b> (note the <b><i>e</i></b> there) when
+connecting to <code>proftpd</code>.  Why?  Using "ftpes://..." tells FileZilla
+to use <b>explicit</b> TLS, which is what <code>proftpd</code> implements,
+as that is the RFC-mandated behavior.  See:
+<pre>
+  <a href="https://wiki.filezilla-project.org/SSL/TLS#Explicit_vs_Implicit_FTPS">https://wiki.filezilla-project.org/SSL/TLS#Explicit_vs_Implicit_FTPS</a>
+</pre>
+
+<p><a name="TLSLFTP">
+<font color=red>Question</font>: I'm trying to use <code>lftp</code> as my
+FTPS client for talking to <code>proftpd</code>, configured to use
+<code>mod_tls</code>, but it fails to connect.  I am using:
+<pre>
+  $ lftp ftps://pc -u myuser
+</pre>
+What is going wrong?<br>
+<font color=blue>Answer</font>: You may need to tell <code>lftp</code> that
+using SSL/TLS is <i>allowed</i> when talking to an FTP server:
+<pre>
+  $ lftp pc
+  lftp&gt; set ftp:ssl-allow yes
+  lftp&gt; user <i>user</i>
+  ...
+</pre>
+<b>or</b> put the above setting in your <code>~/.lftprc</code> file.
+
+<p>
+Note that if you <i>always</i> want <code>lftp</code> to use SSL/TLS for FTP
+sessions, then you would use this setting:
+<pre>
+  set ftp:ssl-force yes
+</pre>
 
 <p><a name="TLSShmcacheVsMemcache">
 <font color=red>Question</font>: What is the difference between the
@@ -1177,7 +1252,7 @@ following errors in the TLSLog:
 </pre>
 What does this mean?<br>
 <font color=blue>Answer</font>: This error means that, somehow, you have
-configured a key for a certificate, but don't have the matching certificate
+configured a key for a certificate, but do not have the matching certificate
 configured.  For example, if you configured <code>mod_tls</code> like so:
 <pre>
   #TLSRSACertificateFile /usr/local/etc/proftpd/ssl/server.cert.pem
@@ -1191,7 +1266,10 @@ configured files were not properly matched up.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2014-03-26 18:22:32 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

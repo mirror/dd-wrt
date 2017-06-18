@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2008 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Class routines
- * $Id: class.c,v 1.10 2011-05-23 21:22:24 castaglia Exp $
- */
+/* Class routines */
 
 #include "conf.h"
 
@@ -36,18 +34,23 @@ static const char *trace_channel = "class";
 static pr_class_t *class_list = NULL;
 static pr_class_t *curr_cls = NULL;
 
-pr_class_t *pr_class_get(pr_class_t *prev) {
-  if (prev)
+const pr_class_t *pr_class_get(const pr_class_t *prev) {
+  if (prev != NULL) {
     return prev->cls_next;
+  }
+
+  if (class_list == NULL) {
+    errno = ENOENT;
+  }
 
   return class_list;
 }
 
-pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
+const pr_class_t *pr_class_match_addr(const pr_netaddr_t *addr) {
   pr_class_t *cls;
   pool *tmp_pool;
 
-  if (!addr) {
+  if (addr == NULL) {
     errno = EINVAL;
     return NULL;
   }
@@ -55,10 +58,13 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
   tmp_pool = make_sub_pool(permanent_pool);
 
   for (cls = class_list; cls; cls = cls->cls_next) {
-    array_header *acl_list = cls->cls_acls;
-    pr_netacl_t **acls = acl_list->elts;
-    register int i;
+    array_header *acl_list;
+    const pr_netacl_t **acls;
+    register unsigned int i;
     int next_class = FALSE;
+
+    acl_list = cls->cls_acls;
+    acls = acl_list->elts;
 
     /* For each ACL rule in this class, compare the rule against the given
      * address.  The address matches the given class depending on the
@@ -68,11 +74,15 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
     for (i = 0; i < acl_list->nelts; i++) {
       int res;
 
-      if (next_class)
-        break;
+      pr_signals_handle();
 
-      if (acls[i] == NULL)
+      if (next_class) {
+        break;
+      }
+
+      if (acls[i] == NULL) {
         continue;
+      }
 
       switch (cls->cls_satisfy) {
         case PR_CLASS_SATISFY_ANY:
@@ -97,9 +107,9 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
             pr_netacl_get_str(tmp_pool, acls[i]));
 
           res = pr_netacl_match(acls[i], addr);
-
-          if (res <= 0)
+          if (res <= 0) {
             next_class = TRUE;
+          }
           break;
       }
     }
@@ -121,38 +131,42 @@ pr_class_t *pr_class_match_addr(pr_netaddr_t *addr) {
   return NULL;
 }
 
-pr_class_t *pr_class_find(const char *name) {
+const pr_class_t *pr_class_find(const char *name) {
   pr_class_t *cls;
 
-  if (!name) {
+  if (name == NULL) {
     errno = EINVAL;
     return NULL;
   }
 
-  for (cls = class_list; cls; cls = cls->cls_next)
-    if (strcmp(cls->cls_name, name) == 0)
+  for (cls = class_list; cls; cls = cls->cls_next) {
+    pr_signals_handle();
+    if (strcmp(cls->cls_name, name) == 0) {
       return cls;
+    }
+  }
 
   errno = ENOENT;
   return NULL;
 }
 
-int pr_class_add_acl(pr_netacl_t *acl) {
+int pr_class_add_acl(const pr_netacl_t *acl) {
 
-  if (!acl) {
+  if (acl == NULL) {
     errno = EINVAL;
     return -1;
   }
 
-  if (!curr_cls) {
+  if (curr_cls == NULL) {
     errno = EPERM;
     return -1;
   }
 
   /* Add this ACL rule to the current Class. */
-  if (!curr_cls->cls_acls)
+  if (curr_cls->cls_acls == NULL) {
     curr_cls->cls_acls = make_array(curr_cls->cls_pool, 1,
       sizeof(pr_netacl_t *));
+  }
 
   *((pr_netacl_t **) push_array(curr_cls->cls_acls)) =
     pr_netacl_dup(curr_cls->cls_pool, acl);
@@ -161,8 +175,7 @@ int pr_class_add_acl(pr_netacl_t *acl) {
 }
 
 int pr_class_set_satisfy(int satisfy) {
-
-  if (!curr_cls) {
+  if (curr_cls == NULL) {
     errno = EPERM;
     return -1;
   }
@@ -179,11 +192,29 @@ int pr_class_set_satisfy(int satisfy) {
   return 0;
 }
 
+int pr_class_add_note(const char *key, void *value, size_t valuesz) {
+  int res;
+
+  if (key == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  if (curr_cls == NULL) {
+    errno = EPERM;
+    return -1;
+  }
+
+  res = pr_table_add(curr_cls->cls_notes, key, value, valuesz);
+  return res;
+}
+
 int pr_class_open(pool *p, const char *name) {
   pr_class_t *cls;
   pool *cls_pool;
 
-  if (!p || !name) {
+  if (p == NULL ||
+      name == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -198,6 +229,7 @@ int pr_class_open(pool *p, const char *name) {
   cls->cls_pool = cls_pool;
   cls->cls_name = pstrdup(cls->cls_pool, name);
   cls->cls_satisfy = PR_CLASS_SATISFY_ANY;
+  cls->cls_notes = pr_table_nalloc(cls_pool, 0, 1);
  
   /* Change the configuration context type. */
   main_server->config_type = CONF_CLASS;
@@ -209,13 +241,14 @@ int pr_class_open(pool *p, const char *name) {
 int pr_class_close(void) {
 
   /* If there is no current Class, there is nothing to do. */
-  if (!curr_cls)
+  if (curr_cls == NULL) {
     return 0;
+  }
 
   /* If there are no client rules in this class, simply remove it.  No need
    * to waste space.
    */
-  if (!curr_cls->cls_acls) {
+  if (curr_cls->cls_acls == NULL) {
     destroy_pool(curr_cls->cls_pool);
     curr_cls = NULL;
 
@@ -231,14 +264,19 @@ int pr_class_close(void) {
 
   /* Now add the current Class to the end of the list. */
   if (class_list) {
-    pr_class_t *ci = class_list;
-    while (ci && ci->cls_next)
+    pr_class_t *ci;
+
+    ci = class_list;
+    while (ci != NULL &&
+           ci->cls_next != NULL) {
       ci = ci->cls_next;
+    }
 
     ci->cls_next = curr_cls;
 
-  } else
+  } else {
     class_list = curr_cls;
+  }
 
   curr_cls = NULL;
 
@@ -250,5 +288,4 @@ int pr_class_close(void) {
 
 void init_class(void) {
   class_list = NULL;
-  return;
 }

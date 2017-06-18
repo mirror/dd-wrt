@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Home-on-demand support
- * $Id: mkhome.c,v 1.23 2013-10-09 05:21:06 castaglia Exp $
- */
+/* Home-on-demand support */
 
 #include "conf.h"
 #include "privs.h"
@@ -37,7 +35,7 @@ static int create_dir(const char *dir, uid_t uid, gid_t gid,
   struct stat st;
   int res = -1;
 
-  pr_fs_clear_cache();
+  pr_fs_clear_cache2(dir);
   res = pr_fsio_stat(dir, &st);
 
   if (res == -1 &&
@@ -98,7 +96,7 @@ static int create_path(pool *p, const char *path, const char *user,
   char *currpath = NULL, *tmppath = NULL;
   struct stat st;
 
-  pr_fs_clear_cache();
+  pr_fs_clear_cache2(path);
   if (pr_fsio_stat(path, &st) == 0) {
     /* Path already exists, nothing to be done. */
     errno = EEXIST;
@@ -183,8 +181,8 @@ static int copy_symlink(pool *p, const char *src_dir, const char *src_path,
 
   /* Make sure the new symlink has the proper ownership. */
   if (pr_fsio_chown(dst_path, uid, gid) < 0) {
-    pr_log_pri(PR_LOG_WARNING, "CreateHome: error chown'ing '%s' to %u/%u: %s",
-      dst_path, (unsigned int) uid, (unsigned int) gid, strerror(errno));
+    pr_log_pri(PR_LOG_WARNING, "CreateHome: error chown'ing '%s' to %s/%s: %s",
+      dst_path, pr_uid2str(p, uid), pr_gid2str(p, gid), strerror(errno));
   }
 
   return 0; 
@@ -256,7 +254,7 @@ static int copy_dir(pool *p, const char *src_dir, const char *dst_dir,
       /* Make sure the destination file has the proper ownership and mode. */
       if (pr_fsio_chown(dst_path, uid, gid) < 0) {
         pr_log_pri(PR_LOG_WARNING, "CreateHome: error chown'ing '%s' "
-          "to %u/%u: %s", dst_path, (unsigned int) uid, (unsigned int) gid,
+          "to %s/%s: %s", dst_path, pr_uid2str(p, uid), pr_gid2str(p, gid),
           strerror(errno));
       }
 
@@ -310,7 +308,7 @@ int create_home(pool *p, const char *home, const char *user, uid_t uid,
   flags = *((unsigned long *) c->argv[7]);
 
   dst_uid = uid;
-  dst_gid = (home_gid == -1) ? gid : home_gid;
+  dst_gid = (home_gid == (gid_t) -1) ? gid : home_gid;
 
   dst_mode = *((mode_t *) c->argv[1]);
 

@@ -232,12 +232,11 @@ extern void bcopy ();
 #if !defined HAVE_STRCOLL && !defined _LIBC
 # define strcoll	strcmp
 #endif
-
 #if 0
 #if !defined HAVE_MEMPCPY && defined __GLIBC__ && __GLIBC__ - 0 == 2 && __GLIBC_MINOR__ >= 1
 # define HAVE_MEMPCPY	1
 # undef  mempcpy
-# define mempcpy(Dest, Src, Len) __mempcpy2 (Dest, Src, Len)
+# define mempcpy(Dest, Src, Len) __mempcpy (Dest, Src, Len)
 #endif
 #endif
 
@@ -1369,10 +1368,10 @@ glob_in_dir (const char *pattern, const char *directory, int flags,
 	     "*a/".  */
 	  names = (struct globlink *) __alloca (sizeof (struct globlink));
 	  names->name = (char *) malloc (1);
+	  names->next = NULL;
 	  if (names->name == NULL)
 	    goto memory_error;
 	  names->name[0] = '\0';
-	  names->next = NULL;
 	  nfound = 1;
 	  meta = 0;
 	}

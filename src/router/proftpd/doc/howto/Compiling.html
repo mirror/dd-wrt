@@ -1,9 +1,7 @@
-<!-- $Id: Compiling.html,v 1.10 2013-10-06 16:02:23 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Compiling.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Compiling ProFTPD</title>
+<title>ProFTPD: Compiling ProFTPD</title>
 </head>
 
 <body bgcolor=white>
@@ -113,7 +111,7 @@ You can also change only portions of the layout, for just the binaries
 or the configuration file or other parts:
 
 <p>
-<table>
+<table summary="Configure Options">
   <tr>
     <td><code>--bindir</code></td>
     <td>Change <code><i>prefix-dir</i>/bin/</code></td>
@@ -266,7 +264,7 @@ about the more common of these feature options:
   </li>
 
   <p>
-  <li>--with-lastlog</code><em>=/path/to/lastlog</em><br>
+  <li><code>--with-lastlog</code><em>=/path/to/lastlog</em><br>
     Enables support for lastlog logging; see the <code>lastlog(8)</code>
     man page.  The optional <em>/path/to/lastlog</em> argument is only
     needed if your lastlog file location is not a standard location.
@@ -333,7 +331,7 @@ list of the module names you wish to add, as staticly linked modules.  Thus if
 you wanted to add LDAP and SSL/TLS support to your <code>proftpd</code>, you
 would list the appropriate modules in the <code>--with-modules</code> list:
 <pre>
-  # ./configure --with-modules=mod_ldap:mod_tls ...
+  $ ./configure --with-modules=mod_ldap:mod_tls ...
 </pre>
 Do <b>not</b> include the names of any modules under the <code>modules/</code>
 directory; the modules there are either mandatory or conditional.  Attempting
@@ -348,7 +346,7 @@ of modules to be compiled as shared modules.  Note that using the
 <code>--enable-dso</code>.  Thus to add LDAP and SSL/TLS support as
 shared modules, you would use:
 <pre>
-  # ./configure --enable-dso --with-shared=mod_ldap:mod_tls ...
+  $ ./configure --enable-dso --with-shared=mod_ldap:mod_tls ...
 </pre>
 Failure to include the <code>--enable-dso</code> option when using
 <code>--with-shared</code> results in a configure error:
@@ -370,7 +368,7 @@ modules, but not all of them.  The following automatically included modules
 If your <code>--with-shared</code> list includes one of the above modules,
 it will result in a configure error:
 <pre>
-  # ./configure --enable-dso --with-shared=mod_auth_unix ...
+  $ ./configure --enable-dso --with-shared=mod_auth_unix ...
   configure: error: cannot build mod_auth_unix as a shared module
 </pre>
 Why can't these be shared modules?  These modules <b>must</b> appear in the
@@ -398,14 +396,14 @@ For example, on Solaris, you have to explicitly tell the compiler and linker
 to use the <code>/usr/local/include</code> and <code>/usr/local/lib</code>
 directories:
 <pre>
-  # ./configure --with-includes=/usr/local/include --with-libraries=/usr/local/lib ...
+  $ ./configure --with-includes=/usr/local/include --with-libraries=/usr/local/lib ...
 </pre>
 
 <p>
 Or you may have the MySQL or OpenSSL packages installed in custom locations,
 and you need to tell <code>configure</code> about those locations:
 <pre>
-  # ./configure --with-modules=mod_sql:mod_sql_mysql:mod_tls \
+  $ ./configure --with-modules=mod_sql:mod_sql_mysql:mod_tls \
     --with-includes=/usr/local/mysql/include/mysql:/usr/local/openssl/include \
     --with-libraries=/usr/local/mysql/lib/mysql:/usr/local/openssl/lib
 </pre>
@@ -442,7 +440,7 @@ does not include IDENT support, is installed under <code>/opt/proftpd/</code>
 as user and group 'ftpd', has staticly linked SSL/TLS support and dynamically
 loaded SQL backend modules:
 <pre>
-  # install_user=ftpd install_group=ftpd ./configure \
+  $ install_user=ftpd install_group=ftpd ./configure \
     --prefix=/opt/proftpd \
     --disable-ident \
     --enable-dso \
@@ -468,8 +466,8 @@ Now you are ready to actually compile the source code into working executables,
 using all of your selected options and features and capabilities.  To do
 this, imply run 'make' from the top-level source directory:
 <pre>
-  # cd proftpd-<i>version</i>/
-  # make
+  $ cd proftpd-<i>version</i>/
+  $ make
 </pre>
 On some systems (<i>e.g.</i> BSDI), you may need to use GNU <code>make</code>
 (often called <code>gmake</code> or <code>gnumake</code>) instead of the
@@ -485,8 +483,8 @@ the ProFTPD source code.
 <p>
 To install the compiled executables, use:
 <pre>
-  # cd proftpd-<i>version</i>/
-  # make install
+  $ cd proftpd-<i>version</i>/
+  $ make install
 </pre>
 You are now prepared to start up and use your compiled <code>proftpd</code>.
 
@@ -498,7 +496,7 @@ development purposes; it is <b>not recommended for use in production
 builds or packages</b>.  If you are using a <code>proftpd</code> installed
 from a package, try this command:
 <pre>
-  # /usr/local/sbin/proftpd -V
+  $ /usr/local/sbin/proftpd -V
 </pre>
 if you see "+ Developer support" in the output, it means that your
 package provider used the <code>--enable-devel</code> option when they
@@ -512,12 +510,12 @@ option, like many of ProFTPD's configure options, takes a colon-delimited
 list of option names.  The full list of supported developer options is
 shown here:
 <pre>
-  # ./configure --enable-devel=coredump:nodaemon:nofork:profile:stacktrace ...
+  $ ./configure --enable-devel=coredump:nodaemon:nofork:profile:stacktrace ...
 </pre>
 You can also use just <code>--enable-devel</code> by itself, without any
 specific option names:
 <pre>
-  # ./configure --enable-devel ...
+  $ ./configure --enable-devel ...
 </pre>
 When <code>--enable-devel</code> is used, the executables that are installed
 by the ProFTPD build system will not be stripped of their debugging symbols,
@@ -575,7 +573,7 @@ developers.
 <p>
 Let's say you configured the build for stacktrace support:
 <pre>
-  # ./configure --enable-devel=stacktrace ...
+  $ ./configure --enable-devel=stacktrace ...
 </pre>
 If/when a SIGSEGV occurs, the logs should show something like this:
 <pre>
@@ -605,11 +603,11 @@ frame; in this case, "[0] ./proftpd [0x809b1e1]" and the memory address
 install separately on your system) and that memory address, you can determine
 the location of the segfault source:
 <pre>
-  # addr2line -e /usr/local/sbin/proftpd 0x809b1e1
+  $ addr2line -e /usr/local/sbin/proftpd 0x809b1e1
 </pre>
 In this particular case, I saw:
 <pre>
-  # addr2line -e /usr/local/sbin/proftpd 0x809b1e1
+  $ addr2line -e /usr/local/sbin/proftpd 0x809b1e1
   /home/tj/proftpd/cvs/proftpd/modules/mod_auth.c:1723
 </pre>
 which is the location of test code I added to deliberately trigger a segfault.
@@ -663,7 +661,7 @@ Note that older releases of ProFTPD did not check for these types of
 <code>proftpd</code> and you see the same module appear multiple times in
 the output from running:
 <pre>
-  # /usr/local/sbin/proftpd -l
+  $ /usr/local/sbin/proftpd -l
 </pre>
 Then you should re-configure and re-compile your <code>proftpd</code>, making
 sure that no automatically included modules appear in your
@@ -679,13 +677,42 @@ there is "d_auth_pam.c", rather than "mod_auth_pam.c"?  If you see a mangled
 module name like this, it probably means that your <code>--with-modules</code>
 or <code>--with-shared</code> module lists contain a double colon, <i>e.g.</i>:
 <pre>
-  # ./configure --with-modules=mod_sql<b>::</b>mod_sql_mysql:...
+  $ ./configure --with-modules=mod_sql<b>::</b>mod_sql_mysql:...
 </pre>
 or:
 <pre>
-  # ./configure --with-shared=mod_sql<b>::</b>mod_sql_mysql:...
+  $ ./configure --with-shared=mod_sql<b>::</b>mod_sql_mysql:...
 </pre>
 <i>Use only a single colon between module names</i>; this should fix this error.
+
+<p>
+<font color=red>Question</font>: I installed ProFTPD, and encountered this
+error when trying to use <code>ftptop</code>:
+<pre>
+  $ ftptop
+  ftptop: no curses or ncurses library on this system
+</pre>
+So I installed the <code>ncurses</code> library on my system, and compiled
+ProFTPD again.  But the error still occurs!  Why?<br>
+<font color=blue>Answer</font>: The ProFTPD build system discovers the
+libraries it needs, like <code>curses</code> or <code>ncurses</code>, as part
+of the running of the <code>configure</code> command; the results of those
+discoveries are recorded in the generated <code>config.h</code> (and other)
+files.
+
+<p>
+This means that if you install a needed library <i>after</i> building ProFTPD,
+you need to <i>re-run <code>configure</code>, <code>make</code>, etc</i> in
+order for ProFTPD to discover that new library and use it:
+<pre>
+  $ cd /path/to/proftpd/
+  $ make clean
+  $ ./configure ...
+  $ make
+  $ make install
+</pre>
+The "make clean" step is necessary, to clean up any leftover state from the
+previous build.
 
 <p>
 <font color=red>Question</font>: I can't seem to compile <code>mod_tls</code>
@@ -693,7 +720,7 @@ or:
 shows up in the <code>`proftpd -l`</code> list), but not both.  I'm using the
 following configure command:
 <pre>
-  # ./configure --with-modules=mod_tls --with-modules=mod_sql:mod_sql_mysql ...
+  $ ./configure --with-modules=mod_tls --with-modules=mod_sql:mod_sql_mysql ...
 </pre>
 <font color=blue>Answer</font>: The problem is that the
 <code>--with-modules</code> option cannot appear multiple times in the
@@ -701,8 +728,8 @@ configure command.  If it does, only the last one seen on the command line
 wins.  In this case, the user would need to put all of the desired modules
 into <b>one</b> colon-delimited list, <i>e.g.</i>:
 <pre>
-  # make clean
-  # ./configure --with-modules=mod_tls:mod_sql:mod_sql_mysql ...
+  $ make clean
+  $ ./configure --with-modules=mod_tls:mod_sql:mod_sql_mysql ...
 </pre>
 And keep in mind that the same restriction holds true for the
 <code>--with-includes</code> and <code>--with-libraries</code> options.
@@ -724,7 +751,7 @@ particular about the order in which they appear in the
 the modules are loaded when <code>proftpd</code> starts up.  The above
 error, for example, happens when <code>--with-modules</code> looks like:
 <pre>
-  # ./configure --with-modules=mod_sql_mysql:<b>mod_sql</b> (<i><font color=red>wrong</font></i>)
+  $ ./configure --with-modules=mod_sql_mysql:<b>mod_sql</b> (<i><font color=red>wrong</font></i>)
 </pre>
 but the <code>mod_sql</code> module needs to be loaded first, so that later,
 when <code>mod_sql_mysql</code> loads, the expected <code>mod_sql</code>
@@ -732,7 +759,7 @@ code is present.  Thus the proper ordering is to make sure that
 <code>mod_sql</code> appears <i>before</i> any of the database-specific
 backend modules:
 <pre>
-  # ./configure --with-modules=<b>mod_sql</b>:mod_sql_mysql (<i><font color=green>correct</font></i>)
+  $ ./configure --with-modules=<b>mod_sql</b>:mod_sql_mysql (<i><font color=green>correct</font></i>)
 </pre>
 
 <p>
@@ -758,16 +785,16 @@ your configure command when compiling <code>proftpd</code>.
 <code>proftpd</code> binary?<br>
 <font color=blue>Answer</font>: To do this, using the following:
 <pre>
-  # make clean
-  # ./configure LDFLAGS="-Wl,-static" ...
+  $ make clean
+  $ ./configure LDFLAGS="-Wl,-static" ...
 </pre>
 Do <b>not</b> try to use the "-static" value for the CFLAGS or LDFLAGS
 environment variables, or try to edit the Make.rules file to tweak the
 options.  ProFTPD's build system uses libtool, and thus the above method
 is the way to get a statically linked <code>proftpd</code> executable:
 <pre>
-  # make
-  # ldd ./proftpd
+  $ make
+  $ ldd ./proftpd
     not a dynamic executable
 </pre>
 
@@ -798,7 +825,7 @@ a single parameter which exceeds the 1024 byte buffer limit, and which
 <code>proftpd</code> with a larger buffer size.  To do this, use the
 <code>--enable-buffer-size</code> configure option, <i>e.g.</i>:
 <pre>
-  # ./configure --enable-buffer-size=2048 ...
+  $ ./configure --enable-buffer-size=2048 ...
 </pre>
 
 <p>
@@ -820,7 +847,11 @@ and <code>--enable-autoshadow</code>.
 
 <p>
 <hr>
-<i>$Date: 2013-10-06 16:02:23 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

@@ -1,9 +1,7 @@
-<!-- $Id: ListOptions.html,v 1.6 2012-02-02 00:40:13 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/ListOptions.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Directory Lists and ListOptions</title>
+<title>ProFTPD: Directory Lists and ListOptions</title>
 </head>
 
 <body bgcolor=white>
@@ -13,9 +11,10 @@
 <hr>
 
 <p>
-The <code><a href="http://www.proftpd.org/docs/directives/linked/config_ref_ListOptions.html">ListOptions</a></code> directive of ProFTPD can be used
-to control how directory listings are generated.  Directory listings are
-sent in response to the <code>LIST</code> and <code>NLST</code> FTP commands.
+The <code><a href="../modules/mod_ls.html#ListOptions">ListOptions</a></code>
+directive of ProFTPD can be used to control how directory listings are
+generated.  Directory listings are sent in response to the <code>LIST</code>
+and <code>NLST</code> FTP commands.
 
 <p>
 The <code>ListOptions</code> directive supports the following options:
@@ -52,6 +51,8 @@ The <code>ListOptions</code> directive supports the following options:
       <dd>Sort by file size</dd>
   <li><dt>-t</dt>
       <dd>Sort by file modification time</dd>
+  <li><dt>-U<dt>
+      <dd>Do not sort; list entries in directory order</dd>
   <li><dt>-u<dt>
       <dd>Sort by file access time when <code>-t</code> is also used</dd>
 </ul>
@@ -122,6 +123,8 @@ The following keywords are supported, in addition to &quot;strict&quot;:
       <dd>Applies the <code>ListOptions</code> only to <code>NLST</code> commands (and not <code>LIST</code> or <code>STAT</code> commands)
   <li><dt>NoErrorIfAbsent</dt>
       <dd>Causes a 226 response code to be returned for <code>LIST/NLST</code> commands for files which do not exist, rather than 450
+  <li><dt>SortedNLST</dt>
+      <dd>Causes the <code>NLST</code> results to be sorted by name
 </ul>
 These keywords were added for finer-grained control over directory listings.
 They make it possible to allow recursive listings and yet still apply limits,
@@ -148,7 +151,11 @@ used to block the <code>LIST</code> and <code>NLST</code> commands altogether.
 
 <p>
 <hr>
-<i>$Date: 2012-02-02 00:40:13 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

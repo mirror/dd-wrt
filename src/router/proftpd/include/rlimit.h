@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2013 The ProFTPD Project team
+ * Copyright (c) 2013-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Resource limits
- * $Id: rlimit.h,v 1.3 2013-02-06 07:34:54 castaglia Exp $
- */
+/* Resource limits */
 
 #ifndef PR_RLIMIT_H
 #define PR_RLIMIT_H

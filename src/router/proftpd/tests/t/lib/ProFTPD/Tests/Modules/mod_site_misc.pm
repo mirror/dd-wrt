@@ -4,6 +4,7 @@ use lib qw(t/lib);
 use base qw(ProFTPD::TestSuite::Child);
 use strict;
 
+use Cwd;
 use File::Path qw(mkpath);
 use File::Spec;
 use IO::Handle;
@@ -39,6 +40,26 @@ my $TESTS = {
   site_misc_utime_with_sec_ok => {
     order => ++$order,
     test_class => [qw(forking)],
+  },
+
+  site_misc_utime_abs_symlink => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  site_misc_utime_abs_symlink_chrooted_bug4219 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
+  },
+
+  site_misc_utime_rel_symlink => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  site_misc_utime_rel_symlink_chrooted_bug4219 => {
+    order => ++$order,
+    test_class => [qw(bug forking rootprivs)],
   },
 
   site_feat_ok => {
@@ -110,6 +131,26 @@ my $TESTS = {
   },
 
   site_misc_utime_failed_limit => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  site_misc_utime_atime_mtime_ctime_bug4130 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  site_misc_utime_atime_mtime_ctime_with_spaces_bug4130 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  site_misc_extlog_rmdir_resp_code_empty_dir => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  site_misc_extlog_rmdir_resp_code_nonempty_dir => {
     order => ++$order,
     test_class => [qw(forking)],
   },
@@ -514,45 +555,15 @@ sub site_misc_symlink_ok {
 sub site_misc_utime_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/site.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/site.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/site.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/site.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/site.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', $gid, $user);
+  my $setup = test_setup($tmpdir, 'site');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -561,7 +572,8 @@ sub site_misc_utime_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -578,32 +590,31 @@ sub site_misc_utime_ok {
   defined(my $pid = fork()) or die("Can't fork: $!");
   if ($pid) {
     eval {
-      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      sleep(1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
 
-      my ($resp_code, $resp_msg);
-      ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
-        'site.conf');
+      my $path = 'site.conf';
+      my ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
+        $path);
+      $client->quit();
 
-      my $expected;
-
-      $expected = 200;
+      my $expected = 200;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "SITE UTIME command successful";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
-      my ($atime, $mtime) = (stat($config_file))[8,9];
+      my ($atime, $mtime) = (stat($setup->{config_file}))[8,9];
 
       $expected = 951380760;
       $self->assert($expected == $atime,
-        test_msg("Expected $expected, got $atime"));
+        test_msg("Expected file atime $expected, got $atime"));
       $self->assert($expected == $mtime,
-        test_msg("Expected $expected, got $mtime"));
+        test_msg("Expected file mtime $expected, got $mtime"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -612,7 +623,7 @@ sub site_misc_utime_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -622,15 +633,10 @@ sub site_misc_utime_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub site_misc_utime_with_sec_ok {
@@ -753,6 +759,510 @@ sub site_misc_utime_with_sec_ok {
   }
 
   unlink($log_file);
+}
+
+sub site_misc_utime_abs_symlink {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'site');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $test_file = File::Spec->rel2abs("$test_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_symlink = File::Spec->rel2abs("$test_dir/test.lnk");
+
+  my $dst_path = $test_file;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $dst_path = '/private' . $dst_path;
+  }
+
+  unless (symlink($dst_path, $test_symlink)) {
+    die("Can't symlink $test_symlink to $dst_path: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $test_dir)) {
+      die("Can't set perms on $test_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $test_dir, $test_file)) {
+      die("Can't set owner of $test_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $path = 'test.d/test.lnk';
+      my ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
+        $path);
+      $client->quit();
+
+      my $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($test_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected file atime $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected file mtime $expected, got $mtime"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub site_misc_utime_abs_symlink_chrooted_bug4219 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'site');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $test_file = File::Spec->rel2abs("$test_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $test_symlink = File::Spec->rel2abs("$test_dir/test.lnk");
+
+  my $dst_path = $test_file;
+  if ($^O eq 'darwin') {
+    # MacOSX-specific hack
+    $dst_path = '/private' . $dst_path;
+  }
+
+  unless (symlink($dst_path, $test_symlink)) {
+    die("Can't symlink $test_symlink to $dst_path: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $test_dir)) {
+      die("Can't set perms on $test_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $test_dir, $test_file)) {
+      die("Can't set owner of $test_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $path = 'test.d/test.lnk';
+      my ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
+        $path);
+      $client->quit();
+
+      my $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($test_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected file atime $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected file mtime $expected, got $mtime"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub site_misc_utime_rel_symlink {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'site');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $test_file = File::Spec->rel2abs("$test_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Change to the test directory in order to create a relative path in the
+  # symlink we need
+
+  my $cwd = getcwd();
+  unless (chdir($test_dir)) {
+    die("Can't chdir to $test_dir: $!");
+  }
+
+  unless (symlink('./test.txt', './test.lnk')) {
+    die("Can't symlink 'test.lnk' to './test.txt': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $test_dir)) {
+      die("Can't set perms on $test_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $test_dir, $test_file)) {
+      die("Can't set owner of $test_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $path = 'test.d/test.lnk';
+      my ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
+        $path);
+      $client->quit();
+
+      my $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($test_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected file atime $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected file mtime $expected, got $mtime"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub site_misc_utime_rel_symlink_chrooted_bug4219 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'site');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $test_file = File::Spec->rel2abs("$test_dir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Hello, World!\n";
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Change to the test directory in order to create a relative path in the
+  # symlink we need
+
+  my $cwd = getcwd();
+  unless (chdir($test_dir)) {
+    die("Can't chdir to $test_dir: $!");
+  }
+
+  unless (symlink('./test.txt', './test.lnk')) {
+    die("Can't symlink 'test.lnk' to './test.txt': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  if ($< == 0) {
+    unless (chmod(0755, $test_dir)) {
+      die("Can't set perms on $test_dir to 0755: $!");
+    }
+
+    unless (chown($setup->{uid}, $setup->{gid}, $test_dir, $test_file)) {
+      die("Can't set owner of $test_dir to $setup->{uid}/$setup->{gid}: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      sleep(1);
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 0, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $path = 'test.d/test.lnk';
+      my ($resp_code, $resp_msg) = $client->site('UTIME', '200002240826',
+        $path);
+      $client->quit();
+
+      my $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($test_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected file atime $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected file mtime $expected, got $mtime"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub site_feat_ok {
@@ -1630,8 +2140,13 @@ sub site_misc_mkdir_failed_bug3519 {
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
   if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = "$tmpdir/foo";
+    if ($^O eq 'darwin') {
+      $limit_dir = '/private' . $limit_dir;
+    }
+
     print $fh <<EOT;
-<Directory $tmpdir/foo>
+<Directory $limit_dir>
   <Limit WRITE>
     DenyAll
   </Limit>
@@ -1678,11 +2193,11 @@ EOT
 
       $expected = 550;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "MKDIR $path: Operation not permitted";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       $client->quit();
 
@@ -1798,8 +2313,13 @@ sub site_misc_rmdir_failed_bug3519 {
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
   if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = "$tmpdir/foo";
+    if ($^O eq 'darwin') {
+      $limit_dir = '/private' . $limit_dir;
+    }
+
     print $fh <<EOT;
-<Directory $tmpdir/foo>
+<Directory $limit_dir>
   <Limit WRITE>
     DenyAll
   </Limit>
@@ -1953,8 +2473,13 @@ sub site_misc_symlink_failed_bug3519 {
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
   if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = "$tmpdir/foo";
+    if ($^O eq 'darwin') {
+      $limit_dir = '/private' . $limit_dir;
+    }
+
     print $fh <<EOT;
-<Directory $tmpdir/foo>
+<Directory $limit_dir>
   <Limit WRITE>
     DenyAll
   </Limit>
@@ -2112,8 +2637,13 @@ sub site_misc_utime_failed_bug3519 {
   my ($port, $config_user, $config_group) = config_write($config_file, $config);
 
   if (open(my $fh, ">> $config_file")) {
+    my $limit_dir = "$tmpdir/foo";
+    if ($^O eq 'darwin') {
+      $limit_dir = '/private' . $limit_dir;
+    }
+
     print $fh <<EOT;
-<Directory $tmpdir/foo>
+<Directory $limit_dir>
   <Limit WRITE>
     DenyAll
   </Limit>
@@ -2742,6 +3272,629 @@ sub site_misc_utime_failed_limit {
   server_stop($pid_file);
 
   $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub site_misc_utime_atime_mtime_ctime_bug4130 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/site.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/site.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/site.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/site.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/site.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my ($resp_code, $resp_msg) = $client->site('UTIME', 'site.conf',
+        '200002240826', '200002240826', '200002240826', 'UTC');
+
+      my $expected;
+
+      $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($config_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected $expected, got $mtime"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub site_misc_utime_atime_mtime_ctime_with_spaces_bug4130 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/site.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/site.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/site.scoreboard");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/site.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/site.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test file");
+  if (open(my $fh, "> $test_file")) {
+    close($fh);
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my ($resp_code, $resp_msg) = $client->site('UTIME', 'test', 'file',
+        '200002240826', '200002240826', '200002240826', 'UTC');
+
+      my $expected;
+
+      $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE UTIME command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      my ($atime, $mtime) = (stat($test_file))[8,9];
+
+      $expected = 951380760;
+      $self->assert($expected == $atime,
+        test_msg("Expected $expected, got $atime"));
+      $self->assert($expected == $mtime,
+        test_msg("Expected $expected, got $mtime"));
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub site_misc_extlog_rmdir_resp_code_empty_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/site.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/site.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/site.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/site.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/site.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $sub_dir = File::Spec->rel2abs("$tmpdir/foo/bar/baz");
+  mkpath($sub_dir);
+
+  my $test_dirs = [
+    File::Spec->rel2abs("$tmpdir/foo"),
+    File::Spec->rel2abs("$tmpdir/foo/bar"),
+    $sub_dir,
+  ];
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/foo/bar/quxx.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Quzz\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'custom "%r: %s"',
+    ExtendedLog => "$extlog_file MISC custom",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my ($resp_code, $resp_msg) = $client->site('RMDIR', 'foo');
+
+      my $expected;
+
+      $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE RMDIR command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      # Make sure that the test file is gone, along with all of the
+      # test dirs.
+      if (-f $test_file) {
+        die("File $test_file exists, should be deleted");
+      }
+
+      foreach my $test_dir (@$test_dirs) {
+        if (-d $test_dir) {
+          die("Directory $test_dir exists, should be deleted");
+        }
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $extlog_file")) {
+      my $ok = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# line: $line\n"
+        }
+
+        if ($line =~ /SITE RMDIR (\S+): 200/) {
+          $ok = 1;
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($ok, "ExtendedLog did not contain expected log line");
+    } else {
+      die("Can't read $extlog_file: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  if ($ex) {
+    die($ex);
+  }
+
+  unlink($log_file);
+}
+
+sub site_misc_extlog_rmdir_resp_code_nonempty_dir {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+
+  my $config_file = "$tmpdir/site.conf";
+  my $pid_file = File::Spec->rel2abs("$tmpdir/site.pid");
+  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/site.scoreboard");
+  my $extlog_file = File::Spec->rel2abs("$tmpdir/ext.log");
+
+  my $log_file = File::Spec->rel2abs('tests.log');
+
+  my $auth_user_file = File::Spec->rel2abs("$tmpdir/site.passwd");
+  my $auth_group_file = File::Spec->rel2abs("$tmpdir/site.group");
+
+  my $user = 'proftpd';
+  my $passwd = 'test';
+  my $group = 'ftpd';
+  my $home_dir = File::Spec->rel2abs($tmpdir);
+  my $uid = 500;
+  my $gid = 500;
+
+  my $sub_dir = File::Spec->rel2abs("$tmpdir/foo/bar/baz");
+  mkpath($sub_dir);
+
+  my $test_dirs = [
+    File::Spec->rel2abs("$tmpdir/foo"),
+    File::Spec->rel2abs("$tmpdir/foo/bar"),
+    $sub_dir,
+  ];
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/foo/bar/quxx.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "Quzz\n";
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  # Make sure that, if we're running as root, that the home directory has
+  # permissions/privs set for the account we create
+  if ($< == 0) {
+    unless (chmod(0755, $home_dir)) {
+      die("Can't set perms on $home_dir to 0755: $!");
+    }
+
+    unless (chown($uid, $gid, $home_dir)) {
+      die("Can't set owner of $home_dir to $uid/$gid: $!");
+    }
+  }
+
+  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
+    '/bin/bash');
+  auth_group_write($auth_group_file, $group, $gid, $user);
+
+  my $config = {
+    PidFile => $pid_file,
+    ScoreboardFile => $scoreboard_file,
+    SystemLog => $log_file,
+
+    AuthUserFile => $auth_user_file,
+    AuthGroupFile => $auth_group_file,
+
+    LogFormat => 'custom "%r: %s"',
+    ExtendedLog => "$extlog_file ALL custom",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($user, $passwd);
+
+      my ($resp_code, $resp_msg) = $client->site('RMDIR', 'foo');
+
+      my $expected;
+
+      $expected = 200;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+
+      $expected = "SITE RMDIR command successful";
+      $self->assert($expected eq $resp_msg,
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
+
+      # Make sure that the test file is gone, along with all of the
+      # test dirs.
+      if (-f $test_file) {
+        die("File $test_file exists, should be deleted");
+      }
+
+      foreach my $test_dir (@$test_dirs) {
+        if (-d $test_dir) {
+          die("Directory $test_dir exists, should be deleted");
+        }
+      }
+    };
+
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($config_file, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($pid_file);
+
+  $self->assert_child_ok($pid);
+
+  eval {
+    if (open(my $fh, "< $extlog_file")) {
+      my $dele_ok = 0;
+      my $rmd_ok = 0;
+      my $site_ok = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# line: $line\n"
+        }
+
+        if ($line =~ /DELE .*?250$/) {
+          $dele_ok = 1;
+          next;
+        }
+
+        if ($line =~ /RMD .*?257$/) {
+          $rmd_ok = 1;
+          next;
+        }
+
+        if ($line =~ /SITE RMDIR (\S+): 200$/) {
+          $site_ok = 1;
+          last;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($dele_ok, "ExtendedLog did not contain expected log line for DELE");
+      $self->assert($rmd_ok, "ExtendedLog did not contain expected log line for RMD");
+      $self->assert($site_ok, "ExtendedLog did not contain expected log line for SITE RMDIR");
+
+    } else {
+      die("Can't read $extlog_file: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
 
   if ($ex) {
     die($ex);

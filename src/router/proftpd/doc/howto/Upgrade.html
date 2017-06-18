@@ -1,15 +1,13 @@
-<!-- $Id: Upgrade.html,v 1.2 2010-01-21 17:37:16 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Upgrade.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Upgrading ProFTPD</title>
+<title>ProFTPD: Upgrading</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>Upgrading ProFTPD</b></h2></center>
+<center><h2><b>ProFTPD: Upgrading</b></h2></center>
 <hr>
 
 <p>
@@ -31,39 +29,43 @@ One safe way to test the upgrade is to compile the new <code>proftpd</code>,
 and test it out on your existing configuration file before actually installing
 the new version into the &quot;live&quot; location:
 <pre>
-  tar zxvf proftpd-<i>version</i>.tar.gz
-  cd proftpd-<i>version</i>/
-  ./configure ..
-  make
-  ./proftpd -t -d10 -c /path/to/proftpd.conf
+  $ tar zxvf proftpd-<i>version</i>.tar.gz
+  $ cd proftpd-<i>version</i>/
+  $ ./configure ..
+  $ make
+  $ ./proftpd -t -d10 -c /path/to/proftpd.conf
 </pre>
 The &quot;<code>./proftpd</code>&quot; means to use the new
 <code>proftpd</code> binary compiled by <code>make</code>, but not yet
 installed.  If the new binary reports errors, make a copy of your existing
 <code>proftpd.conf</code> file, keeping the old one as a backup:
 <pre>
-  cp /path/to/proftpd.conf /path/to/proftpd.conf.new
+  $ cp /path/to/proftpd.conf /path/to/proftpd.conf.new
 </pre>
 Make any needed changes to the <code>proftpd.conf.new</code> file, until
 the new <code>proftpd</code> binary reports a successful syntax check:
 <pre>
-  ./proftpd -t -d10 -c /path/to/proftpd.conf.new
+  $ ./proftpd -t -d10 -c /path/to/proftpd.conf.new
 </pre>
 
 <p>
 Once everything is configured the way you like, install the new binary and
 configuration file:
 <pre>
-  make install
-  cp /path/to/proftpd.conf /path/to/proftpd.conf.old
-  mv /path/to/proftpd.conf.new /path/to/proftpd.conf
+  $ make install
+  $ cp /path/to/proftpd.conf /path/to/proftpd.conf.old
+  $ mv /path/to/proftpd.conf.new /path/to/proftpd.conf
 </pre>
 Now do a stop/start on <code>proftpd</code>, and the new version of ProFTPD
 will be running.
 
 <p>
 <hr>
-<i>$Date: 2010-01-21 17:37:16 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
 
 </body>
 </html>

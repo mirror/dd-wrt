@@ -2,7 +2,7 @@
  * ProFTPD: mod_quotatab_radius -- a mod_quotatab sub-module for obtaining
  *                                 quota information from RADIUS servers.
  *
- * Copyright (c) 2005-2011 TJ Saunders
+ * Copyright (c) 2005-2014 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,8 +55,8 @@ static unsigned char radiustab_lookup(quota_table_t *radiustab, void *ptr,
   }
 
   /* Find the cmdtable for the radius_quota_lookup command. */
-  cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "radius_quota_lookup", NULL,
-    NULL);
+  cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "radius_quota_lookup", NULL,
+    NULL, NULL);
   if (cmdtab == NULL) {
     quotatab_log("error: unable to find RADIUS hook symbol "
       "'radius_quota_lookup'");

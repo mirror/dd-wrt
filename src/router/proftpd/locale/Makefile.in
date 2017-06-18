@@ -18,7 +18,7 @@ PACKAGE=proftpd
 #
 #   `find ../ -name "*.[ch]" -print | grep -v tests\/ | egrep "contrib|include|modules|src" | sort > files.txt'
 #
-# and is then checked into CVS.
+# and is then checked into git.
 FILES=files.txt
 
 LANGS=bg_BG en_US es_ES fr_FR it_IT ja_JP ko_KR ru_RU zh_CN zh_TW $(EXTRA_LANGS)

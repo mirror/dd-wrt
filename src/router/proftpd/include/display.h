@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2011 The ProFTPD Project team
+ * Copyright (c) 2004-2015 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Display of files
- * $Id: display.h,v 1.7 2011-05-23 20:35:35 castaglia Exp $
- */
+/* Display of files */
 
 #ifndef PR_DISPLAY_H
 #define PR_DISPLAY_H
@@ -46,18 +44,18 @@ struct fh_rec;
 
 /* Used to read the file handle given by fh, located on the filesystem fs, and
  * return the results, with variables expanded, to the client, using the
- * response code given by code.  Returns 0 if the file handle's contents
+ * response code given by resp_code.  Returns 0 if the file handle's contents
  * are displayed without issue, -1 otherwise (with errno set appropriately).
  */
-int pr_display_fh(struct fh_rec *fh, const char *fs, const char *code,
+int pr_display_fh(struct fh_rec *fh, const char *fs, const char *resp_code,
   int flags);
 
 /* Used to read the file given by path, located on the filesystem fs, and
  * return the results, with variables expanded, to the client, using the
- * response code given by code.  Returns 0 if the file is displayed without
+ * response code given by resp_code.  Returns 0 if the file is displayed without
  * issue, -1 otherwise (with errno set appropriately).
  */
-int pr_display_file(const char *path, const char *fs, const char *code,
+int pr_display_file(const char *path, const char *fs, const char *resp_code,
   int flags);
 
 #endif /* PR_DISPLAY_H */

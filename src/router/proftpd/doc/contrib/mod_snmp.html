@@ -1,6 +1,4 @@
-<!-- $Id: mod_snmp.html,v 1.1 2013-05-15 15:21:44 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_snmp.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_snmp</title>
@@ -33,10 +31,8 @@ default.  Installation instructions are discussed
 <a href="#Installation">here</a>.
 
 <p>
-The most current version of <code>mod_snmp</code> can be found at:
-<pre>
-  <a href="https://github.com/Castaglia/proftpd-mod_snmp">https://github.com/Castaglia/proftpd-mod_snmp</a>
-</pre>
+The most current version of <code>mod_sftp</code> is distributed with the
+ProFTPD source code.
 
 <h2>Author</h2>
 <p>
@@ -63,10 +59,10 @@ functionality, and providing OpenNMS support/examples.
 
 <p>
 <hr>
-<h2><a name="SNMPAgent">SNMPAgent</a></h2>
-<strong>Syntax:</strong> SNMPAgent master|agentx <em>address[:port]</em><br>
+<h3><a name="SNMPAgent">SNMPAgent</a></h3>
+<strong>Syntax:</strong> SNMPAgent master|agentx <em>address[:port] ...</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -83,16 +79,28 @@ for UDP SNMP packets.  By default, a port of 161 is assumed, use
 <pre>
   SNMPAgent master localhost:1161
 </pre>
+Note that IPv6 addresses should be enclosed in square brackets, as they can
+contain colons as well, <i>e.g.</i>:
+<pre>
+  SNMPAgent master [::1]:1161
+</pre>
+
+<p>
+Multiple addresses can be supplied, allowing <code>mod_snmp</code> to listen
+on multiple addresses/ports simultaneously:
+<pre>
+  SNMPAgent master 1.2.3.4:1161 [a::f]:2262
+</pre>
 
 <p>
 Note that the <code>SNMPAgent</code> directive is <b>required</b>.
 
 <p>
 <hr>
-<h2><a name="SNMPCommunity">SNMPCommunity</a></h2>
+<h3><a name="SNMPCommunity">SNMPCommunity</a></h3>
 <strong>Syntax:</strong> SNMPCommunity <em>community</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -106,10 +114,10 @@ Note that the <code>SNMPCommunity</code> directive is <b>required</b>.
 
 <p>
 <hr>
-<h2><a name="SNMPEngine">SNMPEngine</a></h2>
+<h3><a name="SNMPEngine">SNMPEngine</a></h3>
 <strong>Syntax:</strong> SNMPEngine <em>on|off</em><br>
 <strong>Default:</strong> <em>off</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -119,10 +127,10 @@ will run as an SNMP agent, and handle SNMP messages.
 
 <p>
 <hr>
-<h2><a name="SNMPLog">SNMPLog</a></h2>
+<h3><a name="SNMPLog">SNMPLog</a></h3>
 <strong>Syntax:</strong> SNMPLog <em>file|"none"</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -138,10 +146,10 @@ unless <code>AllowLogSymlinks</code> is explicitly set to <em>on</em>
 
 <p>
 <hr>
-<h2><a name="SNMPNotify">SNMPNotify</a></h2>
+<h3><a name="SNMPNotify">SNMPNotify</a></h3>
 <strong>Syntax:</strong> SNMPNotify <em>address[:port]</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -164,10 +172,10 @@ Multiple <code>SNMPNotify</code> directives can be configured;
 
 <p>
 <hr>
-<h2><a name="SNMPOptions">SNMPOptions</a></h2>
+<h3><a name="SNMPOptions">SNMPOptions</a></h3>
 <strong>Syntax:</strong> SNMPOptions <em>opt1 ...</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -193,10 +201,10 @@ The currently implemented options are:
 
 <p>
 <hr>
-<h2><a name="SNMPTables">SNMPTables</a></h2>
+<h3><a name="SNMPTables">SNMPTables</a></h3>
 <strong>Syntax:</strong> SNMPTables <em>path</em><br>
 <strong>Default:</strong> <em>None</em><br>
-<strong>Context:</strong> &quot;server config&quot;<br>
+<strong>Context:</strong> server config<br>
 <strong>Module:</strong> mod_snmp<br>
 <strong>Compatibility:</strong> 1.3.4rc3 and later
 
@@ -208,31 +216,24 @@ are used for tracking the various statistics reported via SNMP.
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
-To install <code>mod_snmp</code>, go to the third-party module area in
-the proftpd source code and unpack the <code>mod_snmp</code> source tarball:
+The <code>mod_snmp</code> module is distributed with ProFTPD.  For including
+<code>mod_snmp</code> as a staticly linked module, use:
 <pre>
-  cd <i>proftpd-dir</i>/contrib/
-  tar zxvf /path/to/mod_snmp-<i>version</i>.tar.gz
-</pre>
-after unpacking the latest proftpd-1.3.4 (or later) source code.  For including
-<code>mod_snmp</code> as a staticly linked module:
-<pre>
-  ./configure --with-modules=mod_snmp ...
+  $ ./configure --with-modules=mod_snmp ...
 </pre>
 Alternatively, <code>mod_snmp</code> can be built as a DSO module:
 <pre>
-  ./configure --enable-dso --with-shared=mod_snmp ...
+  $ ./configure --enable-dso --with-shared=mod_snmp ...
 </pre>
 Then follow the usual steps:
 <pre>
-  make
-  make install
+  $ make
+  $ make install
 </pre>
 
 <p>
 <hr>
 <h2><a name="Usage">Usage</a></h2>
-<p>
 
 <p>
 <b>Important Security Considerations</b><br>
@@ -307,9 +308,19 @@ can reach the <code>mod_snmp</code> address/port.
 <b>Logging</b><br>
 The <code>mod_snmp</code> module supports different forms of logging.  The
 main module logging is done via the <code>SNMPLog</code> directive.  For
-debugging purposes, the module also uses <a href="http://www.proftpd.org/docs/howto/Tracing.html">trace logging</a>, via the module-specific "snmp" and
-"snmp.db" log channels.  Thus for trace logging, to aid in debugging, you
-would use the following in your <code>proftpd.conf</code>:
+debugging purposes, the module also uses <a href="../howto/Tracing.html">trace logging</a>, via the module-specific log channels:
+<ul>
+  <li>snmp
+  <li>snmp.asn1
+  <li>snmp.db
+  <li>snmp.mib
+  <li>snmp.msg
+  <li>snmp.notify
+  <li>snmp.pdu
+  <li>snmp.smi
+</ul>
+Thus for trace logging, to aid in debugging, you would use the following in
+your <code>proftpd.conf</code>:
 <pre>
   TraceLog /path/to/snmp-trace.log
   Trace snmp:20
@@ -324,13 +335,13 @@ use only, and should be removed from any production configuration.
 contains the ProFTPD versions where the OID is present.
 
 <p>
-<table border=1>
+<table border=1 summary="ProFTPD SNMP OIDs">
   <tr>
-    <td>&nbsp;<b>OID<b>&nbsp;</td>
-    <td>&nbsp;<b>Name<b>&nbsp;</td>
-    <td>&nbsp;<b>Type<b>&nbsp;</td>
-    <td>&nbsp;<b><code>ProFTPD</code><b>&nbsp;</td>
-    <td>&nbsp;<b>Description<b>&nbsp;</td>
+    <td>&nbsp;<b>OID</b>&nbsp;</td>
+    <td>&nbsp;<b>Name</b>&nbsp;</td>
+    <td>&nbsp;<b>Type</b>&nbsp;</td>
+    <td>&nbsp;<b><code>ProFTPD</code></b>&nbsp;</td>
+    <td>&nbsp;<b>Description</b>&nbsp;</td>
   </tr>
 
   <!-- daemon arc -->
@@ -1264,7 +1275,7 @@ according to need, demand, inclination, and time:
   <li>Controls support (<i>e.g.</i> for "ftpdctl snmp" action)
 </ul>
 
-<p><a name="Notifications">
+<p><a name="Notifications"></a>
 <b>Notifications</b><br>
 The <code>mod_snmp</code> module supports sending notifications (via SNMP
 <i>traps</i>) whenever certain events occur or conditions are met.  Note
@@ -1290,10 +1301,10 @@ that should be notified via the
 Agent process?<br>
 <font color=blue>Answer</font>: You can test if your <code>proftpd</code>
 supports SNMP with the <code>snmpwalk</code> program (<code>snmpwalk</code> is
-a part of the <a href="http://net-snmp.sourceforge.net">Net-SNMP</code></a>
-project). Note that you have to specify the SNMP port, which in
-<code>mod_snmp</code> is configured via the
-<a href="#SNMPAgent"><code>SNMPAgent</code></a> directive.
+a part of the
+<a href="http://net-snmp.sourceforge.net"><code>Net-SNMP</code></a> project).
+Note that you have to specify the SNMP port, which in <code>mod_snmp</code> is
+configured via the <a href="#SNMPAgent"><code>SNMPAgent</code></a> directive.
 
 <p>
 For example, you might try:
@@ -1331,20 +1342,12 @@ counters/gauges, such as the <code>ftp.dataTransfers</code> and
 to get <i>just</i> a directory listing; the protocol only transfers files.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2013-05-15 15:21:44 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2011-2013 TJ Saunders<br>
+&copy; Copyright 2011-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keystores
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: keystore.c,v 1.7 2012-02-15 23:50:51 castaglia Exp $
  */
 
 #include "mod_sftp.h"
@@ -163,6 +161,14 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
   int res = -1;
   config_rec *c;
 
+  if (host_fqdn == NULL ||
+      host_user == NULL ||
+      key_data == NULL ||
+      key_len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPAuthorizedHostKeys",
     FALSE);
   if (c == NULL) {
@@ -205,6 +211,12 @@ int sftp_keystore_verify_host_key(pool *p, const char *user,
       "user '%s', host %s", store_type, user, host_fqdn);
 
     ptr = strchr(store_type, ':');
+    if (ptr == NULL) {
+      pr_trace_msg(trace_channel, 2,
+        "skipping badly formatted SFTPAuthorizedHostKeys '%s'", store_type);
+      continue;
+    }
+
     *ptr = '\0';
 
     sks = keystore_get_store(store_type, SFTP_SSH2_HOST_KEY_STORE);
@@ -264,6 +276,12 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
   int res = -1;
   config_rec *c;
 
+  if (key_data == NULL ||
+      key_len == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPAuthorizedUserKeys",
     FALSE);
   if (c == NULL) {
@@ -275,7 +293,8 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
 
   for (i = 0; i < c->argc; i++) {
     struct sftp_keystore_store *sks;
-    char *store_type, *path, *ptr, *session_user;
+    const char *path, *sess_user;
+    char *store_type, *ptr;
 
     pr_signals_handle();
 
@@ -283,8 +302,13 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
     store_type = c->argv[i];
 
     ptr = strchr(store_type, ':');
-    *ptr = '\0';
+    if (ptr == NULL) {
+      pr_trace_msg(trace_channel, 2,
+        "skipping badly formatted SFTPAuthorizedUserKeys '%s'", store_type);
+      continue;
+    }
 
+    *ptr = '\0';
     path = ptr + 1;
 
     /* Check for any variables in the configured path.
@@ -292,14 +316,14 @@ int sftp_keystore_verify_user_key(pool *p, const char *user,
      * Note that path_subst_uservar() relies on the session.user variable
      * being set, hence why we cache/restore its value.
      */
-    session_user = session.user;
-    session.user = (char *) user;
+    sess_user = session.user;
+    session.user = user;
     path = path_subst_uservar(p, &path);
-    session.user = session_user;
+    session.user = sess_user;
 
     pr_trace_msg(trace_channel, 2,
-      "using SFTPAuthorizedUserKeys '%s' for public key authentication for "
-      "user '%s'", path, user);
+      "using SFTPAuthorizedUserKeys '%s:%s' for public key authentication for "
+      "user '%s'", store_type, path, user);
 
     sks = keystore_get_store(store_type, SFTP_SSH2_USER_KEY_STORE);
     if (sks) {

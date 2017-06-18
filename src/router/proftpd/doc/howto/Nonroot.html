@@ -1,15 +1,13 @@
-<!-- $Id: Nonroot.html,v 1.1 2009-10-26 15:39:34 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/Nonroot.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Running by nonroot user</title>
+<title>ProFTPD: Running by Nonroot User</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Running ProFTPD as a Nonroot User</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Running as a Nonroot User</i></b></h2></center>
 <hr>
 
 <p>
@@ -43,8 +41,8 @@ to run the server without root privileges:<br>
   <code>/etc/shadow</code> for the password.  Comparing stored passwords
   requires root privileges, which this nonroot-running daemon will not have.
   You can get around this requirement by supplying your own passwd (and
-  possibly group) files via the <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AuthUserFile.html"><code>AuthUserFile</code></a> and
-  <a href="http://www.proftpd.org/docs/directives/linked/config_ref_AuthGroupFile.html"><code>AuthGroupFile</code></a> directives.  Make sure the permissions on your
+  possibly group) files via the <a href="../modules/mod_auth_file.html#AuthUserFile"><code>AuthUserFile</code></a> and
+  <a href="../modules/mod_auth_file.html#AuthGroupFile"><code>AuthGroupFile</code></a> directives.  Make sure the permissions on your
   custom files allow for the daemon to read them (but hopefully not other
   users).
 
@@ -108,8 +106,8 @@ to run the server without root privileges:<br>
 
   <li><b><code>User, Group</code></b><br>
   The ability to switch the identity of the server process to those configured
-  by the <a href="http://www.proftpd.org/docs/linked/config_ref_User.html"><code>User</code></a> and
-  <a href="http://www.proftpd.org/docs/linked/config_ref_Group.html"><code>Group</code></a> directives requires, of course, root privileges.  It is best to
+  by the <a href="../modules/mod_core.html#Userl"><code>User</code></a> and
+  <a href="../modules/mod_core.html#Group"><code>Group</code></a> directives requires, of course, root privileges.  It is best to
   configure <code>User</code> to be your username, and <code>Group</code> to
   be the name of your primary group (which is usually the first group listed
   by the <code>groups</code> command).
@@ -139,6 +137,13 @@ The daemon should now start successfully.  Complaints about not being able
 to switch UIDs and such will be logged, but the daemon should still function
 properly.
 
+<p>
 <hr>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
+<hr>
+
 </body>
 </html>

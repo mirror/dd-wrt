@@ -1,15 +1,13 @@
-<!-- $Id: VirtualUsers.html,v 1.1 2005-07-05 16:11:15 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/VirtualUsers.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - ProFTPD Virtual Users</title>
+<title>ProFTPD: Virtual Users</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b>ProFTPD Virtual Users</b></h2></center>
+<center><h2><b>ProFTPD: Virtual Users</b></h2></center>
 <hr>
 
 <p>
@@ -65,7 +63,7 @@ of virtual user names.  When working with files created by virtual users, use
 those files.  You will then need to manually make sure those IDs are the
 correct ones for the file.
 
-<p><a name="IDs"</a>
+<p><a name="IDs"></a>
 <font color=red>Question</font>: Which IDs should I use for my virtual users?<br>
 <font color=blue>Answer</font>: It does not matter.  The only UID and GID
 which are special are UID 0 (zero) and GID 0 (zero).  These IDs are used
@@ -124,10 +122,7 @@ to your <code>proftpd.conf</code>:
 </pre>
 The <code>ftpasswd</code> tool is a Perl script, distributed with the
 ProFTPD source code, under the <code>contrib/</code> directory.  A copy
-can also be found online:
-<pre>
-  <a href="http://www.castaglia.org/proftpd/contrib/ftpasswd">http://www.castaglia.org/proftpd/contrib/ftpasswd</a>
-</pre>
+can also be found <a href="https://github.com/proftpd/proftpd/blob/master/contrib/ftpasswd">on GitHub</a>.
 
 <p>
 Another very popular authentication mechanism used for virtual users is a SQL
@@ -180,7 +175,10 @@ flexible, and more in line with ProFTPD's design philosophy.
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2005-07-05 16:11:15 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

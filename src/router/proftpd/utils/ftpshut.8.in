@@ -49,12 +49,12 @@ is used, this will be the only operation performed by
 .TP
 .B -l min
 Specifies the number of minutes before shutdown that new ftp access will
-be disabled.  If the -l option is not specified, a default of 10 minutes
+be disabled.  If the \-l option is not specified, a default of 10 minutes
 (or immediately, if less than 10 minutes remains until shutdown) is used.
 .TP
 .B -d min
 Specifies the number of minutes before shutdown that existing ftp
-connections will be disconnected.  If the -d option is not specified,
+connections will be disconnected.  If the \-d option is not specified,
 a default of 5 minutes (or immediately, if less than 5 minutes remains
 until shutdown) is used.
 .TP

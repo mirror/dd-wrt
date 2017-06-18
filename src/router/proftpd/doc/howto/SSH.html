@@ -1,15 +1,13 @@
-<!-- $Id: SSH.html,v 1.1 2004-04-10 02:01:38 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/howto/SSH.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
-<title>ProFTPD mini-HOWTO - Configuring ProFTPD for FTP over SSH</title>
+<title>ProFTPD: Configuring FTP over SSH</title>
 </head>
 
 <body bgcolor=white>
 
 <hr>
-<center><h2><b><i>Configuring ProFTPD for FTP over SSH</i></b></h2></center>
+<center><h2><b><i>ProFTPD: Configuring FTP over SSH</i></b></h2></center>
 <hr>
 <i><b>IMPORTANT NOTICE</b>: the original instructions listed on this page,
 based on <a href="http://www.proftpd.org/proftpd-l-archive/98-11/msg00066.html">http://www.proftpd.org/proftpd-l-archive/98-11/msg00066.html</a> were
@@ -47,7 +45,7 @@ request was sent to localhost, rather than to the remote server, which
 effectively set up the encrypted channel between localhost and itself).
 Here's how to set up a local port forward:
 <pre>
-  ssh -L<i>local-port</i>:<i>remote-addr</i>:<i>remote-port</i> <i>user</i>@<i>host</i>
+  $ ssh -L<i>local-port</i>:<i>remote-addr</i>:<i>remote-port</i> <i>user</i>@<i>host</i>
 </pre>
 This says to listen on port <i>local-port</i> on localhost, and to send that
 encrypted traffic to <i>host</i>'s <i>remote-addr</i> at port
@@ -55,7 +53,7 @@ encrypted traffic to <i>host</i>'s <i>remote-addr</i> at port
 specific, the control channel, through which passwords are transmitted, will
 be encrypted; the data channel will not), it would look like:
 <pre>
-  ssh -f -L3000:ftpserver:21 ftpserver 'exec sleep 10' && ftp localhost 3000
+  $ ssh -f -L3000:ftpserver:21 ftpserver 'exec sleep 10' &amp;&amp; ftp localhost 3000
 </pre>
 Note that the choice of <i>local-port</i> is arbitrary.  Using port
 <code>3000</code> is not a requirement.  This trick also requires that
@@ -84,10 +82,10 @@ of quasi-shell (although, strictly speaking, there are better, more restrictive
 shells than this example, as it could be escaped from), one can ssh over any
 command:
 <pre>
-  ssh -l test -f -L3000:ftpserver:21 ftpserver true && ftp localhost 3000
+  $ ssh -l test -f -L3000:ftpserver:21 ftpserver true &amp;&amp; ftp localhost 3000
 </pre>
 You'll also need to use the
-<a href="http://www.proftpd.org/docs/directives/linked/config_ref_AllowForeignAddress.html"><code>AllowForeignAddress</code></a> configuration directive in your
+<a href="../modules/mod_core.html#AllowForeignAddress"><code>AllowForeignAddress</code></a> configuration directive in your
 configuration file:
 <pre>
    AllowForeignAddress on
@@ -112,7 +110,10 @@ email.<br>
 
 <p>
 <hr>
-Last Updated: <i>$Date: 2004-04-10 02:01:38 $</i><br>
+<font size=2><b><i>
+&copy; Copyright 2017 The ProFTPD Project<br>
+ All Rights Reserved<br>
+</i></b></font>
 <hr>
 
 </body>

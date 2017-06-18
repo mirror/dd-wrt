@@ -1,6 +1,4 @@
-<!-- $Id: mod_sql_odbc.html,v 1.4 2011-04-19 22:23:12 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/contrib/mod_sql_odbc.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ProFTPD module mod_sql_odbc</title>
@@ -46,6 +44,33 @@ ProFTPD.
 Please contact TJ Saunders &lt;tj <i>at</i> castaglia.org&gt; with any
 questions, concerns, or suggestions regarding this module.
 
+<h2>Directives</h2>
+<ul>
+  <li><a href="#SQLODBCVersion">SQLODBCVersion</a>
+</ul>
+
+<hr>
+<h3><a name="SQLODBCVersion">SQLODBCVersion</a></h3>
+<strong>Syntax:</strong> SQLODBCVersion <em>version</em><br>
+<strong>Default:</strong> SQLODBCVersion ODBCv3<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sql_odbc<br>
+<strong>Compatibility:</strong> 1.3.6rc2 and later
+
+<p>
+The <code>SQLODBCVersion</code> directive configures the ODBC API
+<em>version</em> that the ODBC driver should use/expect.  The default is
+"ODBCv3", <i>i.e.</i> ODBC version 3.  Some drivers may have issues with the
+default version; this can manifest as errors similar to the following in your
+<code>SQLLogFile</code>:
+<pre>
+  message: '[unixODBC][Driver Manager]Driver does not support the requested version'
+</pre>
+When this happens, you might try using an older version of ODBC, via:
+<pre>
+  SQLODBCVersion ODBCv2
+</pre>
+
 <p>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
@@ -59,7 +84,7 @@ One of these ODBC libraries must be installed prior to using
 <code>mod_sql_odbc</code>.
 
 <p>
-Follow the usual steps for using contrib modules in proftpd, making sure to
+Follow the usual steps for using contrib modules in ProFTPD, making sure to
 list <code>mod_sql</code>.  Note that you will need to use the
 <code>LIBS</code> environment variable for indicating which ODBC library
 to link against.
@@ -67,23 +92,23 @@ to link against.
 <p>
 For example, if you wish to use the unixODBC library, you would use:
 <pre>
-  ./configure LIBS=-lodbc --with-modules=mod_sql:mod_sql_odbc ...
-  make
-  make install
+  $ ./configure LIBS=-lodbc --with-modules=mod_sql:mod_sql_odbc ...
+  $ make
+  $ make install
 </pre>
 On the other hand, for using the iODBC library, the invocation is slightly
 different, specifying a different library name:
 <pre>
-  ./configure LIBS=-liodbc --with-modules=mod_sql:mod_sql_odbc ...
-  make
-  make install
+  $ ./configure LIBS=-liodbc --with-modules=mod_sql:mod_sql_odbc ...
+  $ make
+  $ make install
 </pre>
 
 <p>
 You may need to specify the location of the ODBC header and library files in
 your <code>configure</code> command, <i>e.g.</i>:
 <pre>
-  ./configure \
+  $ ./configure \
     LD_LIBRARY_PATH=/usr/local/odbc/lib \
     LDFLAGS=-L/usr/local/odbc/lib \
     LIBS=-lodbc \
@@ -140,7 +165,7 @@ MySQL and Postgres databases:
 
   <p>
   <dt>Postgres ODBC Driver (psqlODBC)</dt>
-  <dd><a href="http://gborg.postgresql.org/project/psqlodbc/">http://gborg.postgresql.org/project/psqlodbc/</a></dd>
+  <dd><a href="https://odbc.postgresql.org/">https://odbc.postgresql.org/</a></dd>
 </dl>
 
 <p>
@@ -246,31 +271,23 @@ configuration directives to set the environment variables directly in
 the <code>proftpd.conf</code> file, which makes configuration more
 centralized.
 
+<p>
 Example configuration using <code>SetEnv</code>:
 <pre>
   &lt;IfModule mod_sql_odbc.c&gt;
     SetEnv LD_LIBRARY_PATH <i>/path/to/odbc/lib</i>
-    SetEnv ODBCINI <i>/path/to/</i><code>odbc.ini</i>
+    SetEnv ODBCINI <i>/path/to/</i><code>odbc.ini</code>
   &lt;/IfModule&gt;
 </pre>
-
 Please contact the author directly with any questions or comments.
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011-04-19 22:23:12 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2003-2011 TJ Saunders<br>
+&copy; Copyright 2003-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

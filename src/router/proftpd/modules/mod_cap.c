@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2003-2013 The ProFTPD Project team
+ * Copyright (c) 2003-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,9 @@
  * recommended for security-consious admins. See README.capabilities for more
  * information.
  *
- * -- DO NOT MODIFY THE TWO LINES BELOW --
+ * ----- DO NOT MODIFY THE TWO LINES BELOW -----
  * $Libraries: -L$(top_srcdir)/lib/libcap -lcap$
  * $Directories: $(top_srcdir)/lib/libcap$
- * $Id: mod_cap.c,v 1.35 2013-10-13 17:34:01 castaglia Exp $
  */
 
 #include <stdio.h>
@@ -109,7 +108,7 @@ static void lp_debug(void) {
   }
 
   pr_log_debug(DEBUG1, MOD_CAP_VERSION ": capabilities '%s'", res);
-  cap_free(res);
+  (void) cap_free(res);
 
   if (cap_free(caps) < 0) {
     pr_log_pri(PR_LOG_NOTICE, MOD_CAP_VERSION
@@ -191,8 +190,9 @@ MODRET set_caps(cmd_rec *cmd) {
   config_rec *c = NULL;
   register unsigned int i = 0;
 
-  if (cmd->argc - 1 < 1)
+  if (cmd->argc - 1 < 1) {
     CONF_ERROR(cmd, "need at least one parameter");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -200,40 +200,50 @@ MODRET set_caps(cmd_rec *cmd) {
   flags |= (CAP_USE_CHOWN|CAP_USE_SETUID);
 
   for (i = 1; i < cmd->argc; i++) {
-    char *cp = cmd->argv[i];
-    cp++;
+    char *cap, *ptr;
 
-    if (*cmd->argv[i] != '+' && *cmd->argv[i] != '-')
-      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": bad option: '",
-        cmd->argv[i], "'", NULL));
+    cap = ptr = cmd->argv[i];
+    ptr++;
 
-    if (strcasecmp(cp, "CAP_CHOWN") == 0) {
-      if (*cmd->argv[i] == '-')
+    if (*cap != '+' &&
+        *cap != '-') {
+      CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": bad option: '", cap, "'",
+        NULL));
+    }
+
+    if (strcasecmp(ptr, "CAP_CHOWN") == 0) {
+      if (*cap == '-') {
         flags &= ~CAP_USE_CHOWN;
+      }
 
-    } else if (strcasecmp(cp, "CAP_DAC_OVERRIDE") == 0) {
-      if (*cmd->argv[i] == '+')
+    } else if (strcasecmp(ptr, "CAP_DAC_OVERRIDE") == 0) {
+      if (*cap == '+') {
         flags |= CAP_USE_DAC_OVERRIDE;
+      }
 
-    } else if (strcasecmp(cp, "CAP_DAC_READ_SEARCH") == 0) {
-      if (*cmd->argv[i] == '+')
+    } else if (strcasecmp(ptr, "CAP_DAC_READ_SEARCH") == 0) {
+      if (*cap == '+') {
         flags |= CAP_USE_DAC_READ_SEARCH;
+      }
 
-    } else if (strcasecmp(cp, "CAP_FOWNER") == 0) {
-      if (*cmd->argv[i] == '+')
+    } else if (strcasecmp(ptr, "CAP_FOWNER") == 0) {
+      if (*cap == '+') {
         flags |= CAP_USE_FOWNER;
+      }
 
-    } else if (strcasecmp(cp, "CAP_FSETID") == 0) {
-      if (*cmd->argv[i] == '+')
+    } else if (strcasecmp(ptr, "CAP_FSETID") == 0) {
+      if (*cap == '+') {
         flags |= CAP_USE_FSETID;
+      }
 
-    } else if (strcasecmp(cp, "CAP_SETUID") == 0) {
-      if (*cmd->argv[i] == '-')
+    } else if (strcasecmp(ptr, "CAP_SETUID") == 0) {
+      if (*cap == '-') {
         flags &= ~CAP_USE_SETUID;
+      }
 
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unknown capability: '",
-        cp, "'", NULL));
+        ptr, "'", NULL));
     }
   }
 
@@ -270,28 +280,6 @@ MODRET set_capengine(cmd_rec *cmd) {
 /* Command handlers
  */
 
-MODRET cap_post_host(cmd_rec *cmd) {
-
-  /* If the HOST command changed the main_server pointer, reinitialize
-   * ourselves.
-   */
-  if (session.prev_server != NULL) {
-    int res;
-
-    have_capabilities = FALSE;
-    use_capabilities = TRUE;
-    cap_flags = 0;
-
-    res = cap_sess_init();
-    if (res < 0) {
-      pr_session_disconnect(&cap_module,
-        PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
-    }
-  }
-
-  return PR_DECLINED(cmd);
-}
-
 /* The POST_CMD handler for "PASS" is only called after PASS has
  * successfully completed, which means authentication is successful,
  * so we can "tweak" our root access down to almost nothing.
@@ -299,10 +287,20 @@ MODRET cap_post_host(cmd_rec *cmd) {
 MODRET cap_post_pass(cmd_rec *cmd) {
   int cap_root_revoke = TRUE, res;
   config_rec *c;
+  unsigned char *cap_engine = NULL;
   uid_t dst_uid = PR_ROOT_UID;
 
   if (!use_capabilities)
     return PR_DECLINED(cmd);
+
+  /* Check to see if we have been disabled via e.g. mod_ifsession. */
+  cap_engine = get_param_ptr(main_server->conf, "CapabilitiesEngine", FALSE);
+  if (cap_engine != NULL) {
+    use_capabilities = *cap_engine;
+    if (use_capabilities == FALSE) {
+      return PR_DECLINED(cmd);
+    }
+  }
 
   /* Check for which specific capabilities to include/exclude. */
   c = find_config(main_server->conf, CONF_PARAM, "CapabilitiesSet", FALSE);
@@ -360,8 +358,9 @@ MODRET cap_post_pass(cmd_rec *cmd) {
      */
     if (strncmp(proto, "ssh2", 5) != 0 ||
         xerrno != EPERM) {
-      pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid(%lu, %lu) failed: %s",
-        (unsigned long) session.uid, (unsigned long) PR_ROOT_UID,
+      pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid(%s, %s) failed: %s",
+        pr_uid2str(cmd->tmp_pool, session.uid),
+        pr_uid2str(cmd->tmp_pool, PR_ROOT_UID),
         strerror(xerrno));
     }
 
@@ -376,8 +375,9 @@ MODRET cap_post_pass(cmd_rec *cmd) {
    */
 
   res = lp_init_cap();
-  if (res != -1)
+  if (res != -1) {
     res = lp_add_cap(CAP_NET_BIND_SERVICE, CAP_PERMITTED);
+  }
 
   /* Add the CAP_CHOWN capability, unless explicitly configured not to. */
   if (res != -1 &&
@@ -451,8 +451,10 @@ MODRET cap_post_pass(cmd_rec *cmd) {
   }
 
   if (setreuid(dst_uid, session.uid) == -1) {
-    pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid(%lu, %lu) failed: %s",
-      (unsigned long) dst_uid, (unsigned long) session.uid, strerror(errno));
+    pr_log_pri(PR_LOG_ERR, MOD_CAP_VERSION ": setreuid(%s, %s) failed: %s",
+      pr_uid2str(cmd->tmp_pool, dst_uid),
+      pr_uid2str(cmd->tmp_pool, session.uid),
+      strerror(errno));
     lp_free_cap();
     pr_signals_unblock();
     pr_session_disconnect(&cap_module, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
@@ -460,17 +462,20 @@ MODRET cap_post_pass(cmd_rec *cmd) {
   pr_signals_unblock();
 
   pr_log_debug(DEBUG9, MOD_CAP_VERSION
-    ": uid = %lu, euid = %lu, gid = %lu, egid = %lu",
-    (unsigned long) getuid(), (unsigned long) geteuid(),
-    (unsigned long) getgid(), (unsigned long) getegid());
+    ": uid = %s, euid = %s, gid = %s, egid = %s",
+    pr_uid2str(cmd->tmp_pool, getuid()),
+    pr_uid2str(cmd->tmp_pool, geteuid()),
+    pr_gid2str(cmd->tmp_pool, getgid()),
+    pr_gid2str(cmd->tmp_pool, getegid()));
 
   /* Now our only capabilities consist of CAP_NET_BIND_SERVICE (and other
    * configured caps), however in order to actually be able to bind to
    * low-numbered ports, we need the capability to be in the effective set.
    */
 
-  if (res != -1)
+  if (res != -1) {
     res = lp_add_cap(CAP_NET_BIND_SERVICE, CAP_EFFECTIVE);
+  }
 
   /* Add the CAP_CHOWN capability, unless explicitly configured not to. */
   if (res != -1 &&
@@ -533,10 +538,34 @@ MODRET cap_post_pass(cmd_rec *cmd) {
   return PR_DECLINED(cmd);
 }
 
+/* Event listeners
+ */
+
+static void cap_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer, reinitialize ourselves. */
+
+  pr_event_unregister(&cap_module, "core.session-reinit", cap_sess_reinit_ev);
+
+  have_capabilities = FALSE;
+  use_capabilities = TRUE;
+  cap_flags = 0;
+
+  res = cap_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&cap_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization routines
  */
 
 static int cap_sess_init(void) {
+  pr_event_register(&cap_module, "core.session-reinit", cap_sess_reinit_ev,
+    NULL);
+
   /* Check to see if the lowering of capabilities has been disabled in the
    * configuration file.
    */
@@ -646,7 +675,6 @@ static conftable cap_conftab[] = {
 };
 
 static cmdtable cap_cmdtab[] = {
-  { POST_CMD,	C_HOST,	G_NONE,	cap_post_host,	FALSE, FALSE },
   { POST_CMD,	C_PASS,	G_NONE,	cap_post_pass,	FALSE, FALSE },
   { 0, NULL }
 };

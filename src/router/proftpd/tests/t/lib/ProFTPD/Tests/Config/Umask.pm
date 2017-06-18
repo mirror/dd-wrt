@@ -38,7 +38,10 @@ sub new {
 }
 
 sub list_tests {
-  return testsuite_get_runnable_tests($TESTS);
+#  return testsuite_get_runnable_tests($TESTS);
+  return qw(
+    umask_new_dir_mode_subdir
+  );
 }
 
 sub umask_new_dir_mode {
@@ -126,6 +129,11 @@ sub umask_new_dir_mode {
       $self->assert($resp_code == $expected,
         test_msg("Expected response code $expected, got $resp_code"));
 
+      if ($^O eq 'darwin') {
+        # Mac OSX hack
+        $test_dir = '/private' . $test_dir;
+      }
+
       $expected = "\"$test_dir\" - Directory successfully created";
       $self->assert($resp_msg eq $expected,
         test_msg("Expected response message '$expected', got '$resp_msg'"));
@@ -206,6 +214,11 @@ sub umask_new_dir_mode_subdir {
 
   my $sub_dir = File::Spec->rel2abs("$tmpdir/sub.d");
   mkpath($sub_dir);
+
+  if ($^O eq 'darwin') {
+    # Mac OSX hack
+    $sub_dir = '/private' . $sub_dir;
+  }
 
   my $test_dir = File::Spec->rel2abs("$sub_dir/test.d");
 

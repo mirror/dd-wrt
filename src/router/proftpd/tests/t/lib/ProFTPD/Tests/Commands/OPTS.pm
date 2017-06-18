@@ -70,6 +70,8 @@ sub opts_bug3870 {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'DEFAULT:10',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -101,7 +103,7 @@ sub opts_bug3870 {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
       $client->login($user, $passwd);
 
-      my $opts_args = ('a ' x 2000);
+      my $opts_args = ('a ' x 100);
 
       eval { $client->opts($opts_args) };
       unless ($@) {

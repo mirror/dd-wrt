@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2008 The ProFTPD Project team
+ * Copyright (c) 2001-2016 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,9 +22,7 @@
  * OpenSSL in the source distribution.
  */
 
-/* Feature management code
- * $Id: feat.c,v 1.9 2011-05-23 21:22:24 castaglia Exp $
- */
+/* Feature management code */
 
 #include "conf.h"
 
@@ -32,13 +30,13 @@ static pool *feat_pool = NULL;
 static pr_table_t *feat_tab = NULL;
 
 int pr_feat_add(const char *feat) {
-  if (!feat) {
+  if (feat == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   /* If no feature-tracking list has been allocated, create one. */
-  if (!feat_pool) {
+  if (feat_pool == NULL) {
     feat_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(feat_pool, "Feat API");
     feat_tab = pr_table_alloc(feat_pool, 0);
@@ -54,29 +52,29 @@ int pr_feat_add(const char *feat) {
 }
 
 int pr_feat_remove(const char *feat) {
-  void *res;
+  const void *res;
 
-  if (!feat_tab) {
+  if (feat_tab == NULL) {
     errno = EPERM;
     return -1;
   }
 
-  if (!feat) {
+  if (feat == NULL) {
     errno = EINVAL;
     return -1;
   }
 
   res = pr_table_remove(feat_tab, feat, NULL);
-
-  if (res)
+  if (res != NULL) {
     return 0;
+  }
 
   errno = ENOENT;
   return -1;
 }
 
 const char *pr_feat_get(void) {
-  if (!feat_tab) {
+  if (feat_tab == NULL) {
     errno = EPERM;
     return NULL;
   }
@@ -86,7 +84,7 @@ const char *pr_feat_get(void) {
 }
 
 const char *pr_feat_get_next(void) {
-  if (!feat_tab) {
+  if (feat_tab == NULL) {
     errno = EPERM;
     return NULL;
   }

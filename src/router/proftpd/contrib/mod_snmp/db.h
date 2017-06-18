@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp database tables
- * Copyright (c) 2008-2013 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,10 @@
  * source distribution.
  */
 
-#include "mod_snmp.h"
-
 #ifndef MOD_SNMP_DB_H
 #define MOD_SNMP_DB_H
+
+#include "mod_snmp.h"
 
 /* Database IDs */
 #define SNMP_DB_ID_UNKNOWN		0
@@ -242,4 +242,4 @@ int snmp_db_reset_value(pool *p, unsigned int field);
  */
 int snmp_db_set_root(const char *path);
 
-#endif
+#endif /* MOD_SNMP_DB_H */

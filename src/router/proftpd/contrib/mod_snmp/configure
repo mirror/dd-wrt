@@ -3199,7 +3199,7 @@ else
   { echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6; }
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 
 { echo "$as_me:$LINENO: checking for library containing strerror" >&5
@@ -3353,7 +3353,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3374,7 +3374,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3679,6 +3679,38 @@ _ACEOF
 fi
 
 
+
+# Check whether --with-includes was given.
+if test "${with_includes+set}" = set; then
+  withval=$with_includes;  ac_addl_includes=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for ainclude in $ac_addl_includes; do
+      if test x"$ac_build_addl_includes" = x ; then
+        ac_build_addl_includes="-I$ainclude"
+      else
+        ac_build_addl_includes="-I$ainclude $ac_build_addl_includes"
+      fi
+    done
+    CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
+
+fi
+
+
+
+# Check whether --with-libraries was given.
+if test "${with_libraries+set}" = set; then
+  withval=$with_libraries;  ac_addl_libdirs=`echo "$withval" | sed -e 's/:/ /g'` ;
+    for alibdir in $ac_addl_libdirs; do
+      if test x"$ac_build_addl_libdirs" = x ; then
+        ac_build_addl_libdirs="-L$alibdir"
+      else
+        ac_build_addl_libdirs="-L$alibdir $ac_build_addl_libdirs"
+      fi
+    done
+    LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
+
+fi
+
+
 { echo "$as_me:$LINENO: checking for ANSI C header files" >&5
 echo $ECHO_N "checking for ANSI C header files... $ECHO_C" >&6; }
 if test "${ac_cv_header_stdc+set}" = set; then
@@ -3747,7 +3779,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -3768,7 +3800,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f -r conftest*
+rm -f conftest*
 
 fi
 
@@ -4093,38 +4125,6 @@ _ACEOF
 
 fi
 done
-
-
-
-# Check whether --with-includes was given.
-if test "${with_includes+set}" = set; then
-  withval=$with_includes;  ac_addl_includes=`echo "$withval" | sed -e 's/:/ /g'` ;
-    for ainclude in $ac_addl_includes; do
-      if test x"$ac_build_addl_includes" = x ; then
-        ac_build_addl_includes="-I$ainclude"
-      else
-        ac_build_addl_includes="-I$ainclude $ac_build_addl_includes"
-      fi
-    done
-    CPPFLAGS="$CPPFLAGS $ac_build_addl_includes"
-
-fi
-
-
-
-# Check whether --with-libraries was given.
-if test "${with_libraries+set}" = set; then
-  withval=$with_libraries;  ac_addl_libdirs=`echo "$withval" | sed -e 's/:/ /g'` ;
-    for alibdir in $ac_addl_libdirs; do
-      if test x"$ac_build_addl_libdirs" = x ; then
-        ac_build_addl_libdirs="-L$alibdir"
-      else
-        ac_build_addl_libdirs="-L$alibdir $ac_build_addl_libdirs"
-      fi
-    done
-    LDFLAGS="$LDFLAGS $ac_build_addl_libdirs"
-
-fi
 
 
 INCLUDES="$ac_build_addl_includes"
@@ -5171,7 +5171,7 @@ do
     cat >>$CONFIG_STATUS <<_ACEOF
     # First, check the format of the line:
     cat >"\$tmp/defines.sed" <<\\CEOF
-/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*/b def
+/^[	 ]*#[	 ]*undef[	 ][	 ]*$ac_word_re[	 ]*\$/b def
 /^[	 ]*#[	 ]*define[	 ][	 ]*$ac_word_re[(	 ]/b def
 b
 :def

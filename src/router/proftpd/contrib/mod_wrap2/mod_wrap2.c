@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- *
- * Copyright (c) 2000-2014 TJ Saunders
+ * Copyright (c) 2000-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,7 +35,7 @@ typedef struct regtab_obj {
   const char *regtab_name;
 
   /* Initialization function for this type of table source */
-  wrap2_table_t *(*regtab_open)(pool *, char *);
+  wrap2_table_t *(*regtab_open)(pool *, const char *);
 
 } wrap2_regtab_t;
 
@@ -55,11 +54,11 @@ static wrap2_regtab_t *wrap2_regtab_list = NULL;
 
 /* Logging data */
 static int wrap2_logfd = -1;
-static char *wrap2_logname = NULL;
+static const char *wrap2_logname = NULL;
 
 static int wrap2_engine = FALSE;
-static char *wrap2_service_name = WRAP2_DEFAULT_SERVICE_NAME;
-static char *wrap2_client_name = NULL;
+static const char *wrap2_service_name = WRAP2_DEFAULT_SERVICE_NAME;
+static const char *wrap2_client_name = NULL;
 static config_rec *wrap2_ctxt = NULL;
 
 /* Access check variables */
@@ -107,6 +106,9 @@ typedef struct conn_info {
 #ifndef INADDR_NONE
 #define INADDR_NONE 0xffffffff
 #endif
+
+/* Necessary prototypes. */
+static int wrap2_sess_init(void);
 
 /* Logging routines */
 
@@ -172,6 +174,11 @@ static wrap2_table_t *wrap2_open_table(char *name) {
   wrap2_table_t *tab = NULL;
 
   info = ptr = strchr(name, ':');
+  if (info == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
   *info++ = '\0';
 
   /* Look up the table source open routine by name, and invoke it */
@@ -287,7 +294,7 @@ static wrap2_conn_t *wrap2_conn_set(wrap2_conn_t *conn, ...) {
 static char *wrap2_get_user(wrap2_conn_t *conn) {
 
   if (*conn->user == '\0') {
-    char *rfc1413_ident;
+    const char *rfc1413_ident;
 
     /* RFC1413 lookups may have already been done by the mod_ident module.
      * If so, use the ident name stashed; otherwise, use the user name issued
@@ -296,14 +303,14 @@ static char *wrap2_get_user(wrap2_conn_t *conn) {
 
     rfc1413_ident = pr_table_get(session.notes, "mod_ident.rfc1413-ident",
       NULL);
-    if (rfc1413_ident) {
+    if (rfc1413_ident != NULL) {
       sstrncpy(conn->user, rfc1413_ident, sizeof(conn->user));
 
     } else {
-      char *user;
+      const char *user;
 
       user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-      if (user) {
+      if (user != NULL) {
         sstrncpy(conn->user, user, sizeof(conn->user));
       }
     }
@@ -329,12 +336,16 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
 
     reverse_dns = pr_netaddr_set_reverse_dns(TRUE);
     if (reverse_dns) {
+      pr_netaddr_t *remote_addr;
+
       /* If UseReverseDNS is on, then clear any caches, so that we really do
        * use the DNS name here if possible.
        */
       pr_netaddr_clear_cache();
 
-      session.c->remote_addr->na_have_dnsstr = FALSE;
+      remote_addr = (pr_netaddr_t *) session.c->remote_addr;
+      remote_addr->na_have_dnsstr = FALSE;
+
       sstrncpy(host->name, pr_netaddr_get_dnsstr(session.c->remote_addr),
         sizeof(host->name));
 
@@ -346,7 +357,7 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
       }
 
       pr_netaddr_set_reverse_dns(reverse_dns);
-      session.c->remote_addr->na_have_dnsstr = TRUE;
+      remote_addr->na_have_dnsstr = TRUE;
 
     } else {
       wrap2_log("'UseReverseDNS off' in effect, NOT resolving %s to DNS name "
@@ -600,7 +611,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
   } else if (pr_netaddr_use_ipv6() &&
              *tok == '[') {
     char *cp;
-    pr_netaddr_t *acl_addr;
+    const pr_netaddr_t *acl_addr;
 
     /* IPv6 address */
 
@@ -656,7 +667,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     return (wrap2_match_netmask(tok, mask, wrap2_get_hostaddr(host)));
 
   } else {
-    pr_netaddr_t *acl_addr;
+    const pr_netaddr_t *acl_addr;
 
     /* Anything else.
      *
@@ -1208,7 +1219,7 @@ static unsigned char wrap2_eval_or_expression(char **acl, array_header *creds) {
   list = (char **) creds->elts;
 
   for (; *acl; acl++) {
-    register int i = 0;
+    register unsigned int i = 0;
     elem = *acl;
     found = FALSE;
 
@@ -1244,7 +1255,7 @@ static unsigned char wrap2_eval_and_expression(char **acl, array_header *creds) 
   list = (char **) creds->elts;
 
   for (; *acl; acl++) {
-    register int i = 0;
+    register unsigned int i = 0;
     elem = *acl;
     found = FALSE;
 
@@ -1268,7 +1279,7 @@ static unsigned char wrap2_eval_and_expression(char **acl, array_header *creds) 
 }
 
 int wrap2_register(const char *srcname,
-    wrap2_table_t *(*srcopen)(pool *, char *)) {
+    wrap2_table_t *(*srcopen)(pool *, const char *)) {
 
   /* Note: I know that use of permanent_pool is discouraged as much as
    * possible, but in this particular instance, I need a pool that
@@ -1290,7 +1301,6 @@ int wrap2_register(const char *srcname,
   }
 
   wrap2_regtab_list = regtab;
-
   return 0;
 }
 
@@ -1356,7 +1366,7 @@ static array_header *builtin_fetch_options_cb(wrap2_table_t *tab,
   return NULL;
 }
 
-static wrap2_table_t *builtin_open_cb(pool *parent_pool, char *srcinfo) {
+static wrap2_table_t *builtin_open_cb(pool *parent_pool, const char *srcinfo) {
   wrap2_table_t *tab = NULL;
   pool *tab_pool = make_sub_pool(parent_pool);
 
@@ -1423,9 +1433,8 @@ MODRET set_wrapgrouptables(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned char have_registration = FALSE;
   config_rec *c = NULL;
-
-  int argc = 1;
-  char **argv = NULL;
+  unsigned int argc = 1;
+  void **argv = NULL;
   array_header *acl = NULL;
 
   CHECK_ARGS(cmd, 3);
@@ -1438,7 +1447,7 @@ MODRET set_wrapgrouptables(cmd_rec *cmd) {
     tmp = strchr(cmd->argv[i], ':');
     if (tmp == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly table parameter: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
 
     *tmp = '\0';
@@ -1452,20 +1461,19 @@ MODRET set_wrapgrouptables(cmd_rec *cmd) {
 
     if (!have_registration) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
-        cmd->argv[1], "'", NULL));
+        (char *) cmd->argv[1], "'", NULL));
     }
 
     *tmp = ':';
   }
 
   c = add_config_param(cmd->argv[0], 0);
-
-  acl = pr_expr_create(cmd->tmp_pool, &argc, &cmd->argv[0]);
+  acl = pr_expr_create(cmd->tmp_pool, &argc, (char **) &cmd->argv[0]);
 
   /* Build the desired config_rec manually. */
   c->argc = argc + 2;
-  c->argv = pcalloc(c->pool, (argc + 3) * sizeof(char *));
-  argv = (char **) c->argv;
+  c->argv = pcalloc(c->pool, (argc + 3) * sizeof(void *));
+  argv = c->argv;
 
   /* The tables are the first two parameters */
   *argv++ = pstrdup(c->pool, cmd->argv[2]);
@@ -1492,7 +1500,6 @@ MODRET set_wraplog(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
   add_config_param_str(cmd->argv[0], 1, cmd->argv[1]);
-
   return PR_HANDLED(cmd);
 }
 
@@ -1502,8 +1509,9 @@ MODRET set_wrapoptions(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned long opts = 0UL;
 
-  if (cmd->argc-1 == 0)
+  if (cmd->argc-1 == 0) {
     CONF_ERROR(cmd, "wrong number of parameters");
+  }
 
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL);
 
@@ -1586,9 +1594,8 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
   register unsigned int i = 0;
   unsigned char have_registration = FALSE;
   config_rec *c = NULL;
-
-  int argc = 1;
-  char **argv = NULL;
+  unsigned int argc = 1;
+  void **argv = NULL;
   array_header *acl = NULL;
 
   CHECK_ARGS(cmd, 3);
@@ -1601,7 +1608,7 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
     tmp = strchr(cmd->argv[i], ':');
     if (tmp == NULL) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "badly table parameter: '",
-        cmd->argv[i], "'", NULL));
+        (char *) cmd->argv[i], "'", NULL));
     }
 
     *tmp = '\0';
@@ -1615,37 +1622,36 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
 
     if (!have_registration) {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "unsupported table source type: '",
-        cmd->argv[1], "'", NULL));
+        (char *) cmd->argv[1], "'", NULL));
     }
 
     *tmp = ':';
   }
 
   c = add_config_param(cmd->argv[0], 0);
-
-  acl = pr_expr_create(cmd->tmp_pool, &argc, &cmd->argv[0]);
+  acl = pr_expr_create(cmd->tmp_pool, &argc, (char **) &cmd->argv[0]);
 
   /* Build the desired config_rec manually. */
   c->argc = argc + 2;
-  c->argv = pcalloc(c->pool, (argc + 3) * sizeof(char *));
-  argv = (char **) c->argv;
+  c->argv = pcalloc(c->pool, (argc + 3) * sizeof(void *));
+  argv = c->argv;
 
   /* The tables are the first two parameters */
   *argv++ = pstrdup(c->pool, cmd->argv[2]);
   *argv++ = pstrdup(c->pool, cmd->argv[3]); 
 
   /* Now populate the user-expression names */
-  if (argc && acl)
+  if (argc && acl) {
     while (argc--) {
       *argv++ = pstrdup(c->pool, *((char **) acl->elts));
       acl->elts = ((char **) acl->elts) + 1;
     }
+  }
 
   /* Do not forget the terminating NULL */
   *argv = NULL;
 
   c->flags |= CF_MERGEDOWN;
-
   return PR_HANDLED(cmd);
 }
 
@@ -1655,23 +1661,26 @@ MODRET set_wrapusertables(cmd_rec *cmd) {
 MODRET wrap2_pre_pass(cmd_rec *cmd) {
   wrap2_conn_t conn;
   unsigned char have_tables = FALSE;
-  char *user = NULL;
+  const char *user = NULL;
   config_rec *c = NULL;
 
-  if (!wrap2_engine)
+  if (wrap2_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   /* Hide passwords */
   session.hide_password = TRUE;
 
   user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
-  if (!user)
+  if (user == NULL) {
     return PR_DECLINED(cmd);
+  }
 
   wrap2_ctxt = pr_auth_get_anon_config(cmd->pool, &user, NULL, NULL);
 
-  if (!user)
+  if (user == NULL) {
     return PR_DECLINED(cmd);
+  }
 
   {
     /* Cheat a little here, and pre-populate some of session's members.  Do
@@ -1818,7 +1827,7 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
   wrap2_log("%s", "checking access rules for connection");
 
   if (wrap2_allow_access(&conn) == FALSE) {
-    char *msg = NULL;
+    const char *msg = NULL;
 
     /* Log the denied connection */
     wrap2_log("refused connection from %s", wrap2_get_client(&conn));
@@ -1846,10 +1855,11 @@ MODRET wrap2_pre_pass(cmd_rec *cmd) {
 }
 
 MODRET wrap2_post_pass(cmd_rec *cmd) {
-  char *msg = NULL;
+  const char *msg = NULL;
 
-  if (!wrap2_engine)
+  if (wrap2_engine == FALSE) {
     return PR_DECLINED(cmd);
+  }
 
   /* Check for a configured WrapAllowMsg.  If the connection were denied,
    * it would have been terminated before reaching this command handler.
@@ -1857,7 +1867,7 @@ MODRET wrap2_post_pass(cmd_rec *cmd) {
   msg = get_param_ptr(wrap2_ctxt ? wrap2_ctxt->subset : main_server->conf,
     "WrapAllowMsg", FALSE);
   if (msg != NULL) {
-    char *user;
+    const char *user;
 
     user = pr_table_get(session.notes, "mod_auth.orig-user", NULL);
     msg = sreplace(cmd->tmp_pool, msg, "%u", user, NULL);
@@ -1925,6 +1935,33 @@ static void wrap2_restart_ev(const void *event_data, void *user_data) {
   pr_pool_tag(wrap2_pool, MOD_WRAP2_VERSION);
 }
 
+static void wrap2_sess_reinit_ev(const void *event_data, void *user_data) {
+  int res;
+
+  /* A HOST command changed the main_server pointer; reinitialize ourselves. */
+
+  pr_event_unregister(&wrap2_module, "core.exit", wrap2_exit_ev);
+  pr_event_unregister(&wrap2_module, "core.session-reinit",
+    wrap2_sess_reinit_ev);
+
+  /* Reset defaults. */
+  wrap2_engine = FALSE;
+  (void) close(wrap2_logfd);
+  wrap2_logfd = -1;
+  wrap2_logname = NULL;
+  wrap2_service_name = WRAP2_DEFAULT_SERVICE_NAME;
+  wrap2_opts = 0UL;
+  wrap2_allow_table = NULL;
+  wrap2_deny_table = NULL;
+  wrap2_client_name = NULL;
+
+  res = wrap2_sess_init();
+  if (res < 0) {
+    pr_session_disconnect(&wrap2_module,
+      PR_SESS_DISCONNECT_SESSION_INIT_FAILED, NULL);
+  }
+}
+
 /* Initialization routines
  */
 
@@ -1951,12 +1988,15 @@ static int wrap2_init(void) {
 static int wrap2_sess_init(void) {
   config_rec *c;
 
+  pr_event_register(&wrap2_module, "core.session-reinit", wrap2_sess_reinit_ev,
+    NULL);
+
   c = find_config(main_server->conf, CONF_PARAM, "WrapEngine", FALSE);
-  if (c) {
+  if (c != NULL) {
     wrap2_engine = *((int *) c->argv[0]);
   }
 
-  if (!wrap2_engine) {
+  if (wrap2_engine == FALSE) {
     return 0;
   }
 
@@ -2003,7 +2043,7 @@ static int wrap2_sess_init(void) {
       wrap2_log("%s", "checking access rules for connection");
 
       if (wrap2_allow_access(&conn) == FALSE) {
-        char *msg = NULL;
+        const char *msg = NULL;
 
         /* Log the denied connection */
         wrap2_log("refused connection from %s", wrap2_get_client(&conn));

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2014 TJ Saunders
+ * Copyright (c) 2008-2017 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: mod_sftp.h.in,v 1.30 2014-03-02 22:05:43 castaglia Exp $
  */
 
 #ifndef MOD_SFTP_H
@@ -45,6 +43,9 @@
 # define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #endif
 
+/* Define if you have the <zlib.h> header.  */
+#undef HAVE_ZLIB_H
+
 /* Define if you have OpenSSL with crippled AES support. */
 #undef HAVE_AES_CRIPPLED_OPENSSL
 
@@ -54,7 +55,7 @@
 /* Define if you have OpenSSL with SHA512 support. */
 #undef HAVE_SHA512_OPENSSL
 
-#define MOD_SFTP_VERSION	"mod_sftp/0.9.9"
+#define MOD_SFTP_VERSION	"mod_sftp/1.0.0"
 
 /* Make sure the version of proftpd is as necessary. */
 #if PROFTPD_VERSION_NUMBER < 0x0001030402
@@ -62,16 +63,23 @@
 #endif
 
 #include <openssl/bio.h>
-#include <openssl/blowfish.h>
+#if !defined(OPENSSL_NO_BF)
+# include <openssl/blowfish.h>
+#endif /* !OPENSSL_NO_BF */
 #include <openssl/bn.h>
-#include <openssl/des.h>
+#include <openssl/conf.h>
+#if !defined(OPENSSL_NO_DES)
+# include <openssl/des.h>
+#endif /* !OPENSSL_NO_DES */
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
 #include <openssl/x509v3.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/pem.h>
-#include <openssl/dsa.h>
+#if !defined(OPENSSL_NO_DSA)
+# include <openssl/dsa.h>
+#endif /* !OPENSSL_NO_DSA */
 #include <openssl/rsa.h>
 #if OPENSSL_VERSION_NUMBER > 0x000907000L
 # include <openssl/aes.h>
@@ -83,10 +91,17 @@
 # include <openssl/ecdh.h>
 #endif /* PR_USE_OPENSSL_ECC */
 
-#include <zlib.h>
+/* Define if you have the LibreSSL library.  */
+#if defined(LIBRESSL_VERSION_NUMBER)
+# define HAVE_LIBRESSL	1
+#endif
 
 #define SFTP_ID_PREFIX		"SSH-2.0-"
-#define SFTP_ID_DEFAULT_STRING	SFTP_ID_PREFIX MOD_SFTP_VERSION
+
+/* Omit the version information in the default banner.  Sites wishing to use
+ * or see that version information can configure it explicitly via ServerIdent.
+ */
+#define SFTP_ID_DEFAULT_STRING	SFTP_ID_PREFIX "mod_sftp"
 
 /* mod_sftp session state flags */
 #define SFTP_SESS_STATE_HAVE_KEX	0x00001
@@ -105,6 +120,11 @@
 #define SFTP_OPT_IGNORE_SFTP_SET_OWNERS		0x0080
 #define SFTP_OPT_IGNORE_SCP_UPLOAD_TIMES	0x0100
 #define SFTP_OPT_ALLOW_INSECURE_LOGIN		0x0200
+#define SFTP_OPT_INSECURE_HOSTKEY_PERMS		0x0400
+#define SFTP_OPT_ALLOW_WEAK_DH			0x0800
+#define SFTP_OPT_IGNORE_FIFOS			0x1000
+#define SFTP_OPT_IGNORE_SFTP_UPLOAD_XATTRS	0x2000
+#define SFTP_OPT_IGNORE_SFTP_SET_XATTRS		0x2000
 
 /* mod_sftp service flags */
 #define SFTP_SERVICE_FL_SFTP		0x0001
@@ -113,6 +133,10 @@
 
 #define SFTP_SERVICE_DEFAULT \
 	(SFTP_SERVICE_FL_SFTP|SFTP_SERVICE_FL_SCP)
+
+/* mod_sftp roles */
+#define SFTP_ROLE_SERVER		1
+#define SFTP_ROLE_CLIENT		2
 
 /* Miscellaneous */
 extern int sftp_logfd;

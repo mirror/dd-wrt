@@ -32,6 +32,7 @@ our @FEATURES = qw(
 
 our @RUNNING = qw(
   server_restart
+  server_signal
   server_start
   server_stop
   server_wait
@@ -333,6 +334,28 @@ sub config_write_subsection {
 
       print $fh "$indent</Limit>\n";
     }
+
+  } elsif ($type eq 'Class') {
+    my $sections = $config;
+
+    foreach my $class (keys(%$sections)) {
+      print $fh "<Class $class>\n";
+
+      my $section = $sections->{$class};
+
+      if (ref($section) eq 'HASH') {
+        while (my ($class_k, $class_v) = each(%$section)) {
+          print $fh "  $class_k $class_v\n";
+        }
+
+      } elsif (ref($section) eq 'ARRAY') {
+        foreach my $line (@$section) {
+          print $fh "  $line\n";
+        }
+      }
+
+      print $fh "</Class>\n";
+    }
   }
 }
 
@@ -359,7 +382,9 @@ sub config_write {
     $port = $config->{Port};
 
     unless (defined($config->{User})) {
-      $config->{User} = $user_name;
+      # Handle User names that may contain embedded backslashes and spaces
+      $user_name =~ s/\\/\\\\/g;
+      $config->{User} = "\"$user_name\"";
 
       if ($< == 0) {
         $config->{User} = 'root';
@@ -367,7 +392,9 @@ sub config_write {
     }
 
     unless (defined($config->{Group})) {
-      $config->{Group} = $group_name;
+      # Handle Group names that may contain embedded backslashes and spaces
+      $group_name =~ s/\\/\\\\/g;
+      $config->{Group} = "\"$group_name\"";
     }
 
     unless ($opts->{NoAllowOverride}) {
@@ -519,7 +546,14 @@ sub config_write {
 
             if (ref($section) eq 'HASH') {
               while (my ($mod_k, $mod_v) = each(%$section)) {
-                print $fh "  $mod_k $mod_v\n";
+
+                if (ref($mod_v) eq 'HASH' ||
+                    ref($mod_v) eq 'ARRAY') {
+                  config_write_subsection($fh, $mod_k, $mod_v, "  ");
+
+                } else {
+                  print $fh "  $mod_k $mod_v\n";
+                }
               }
 
             } elsif (ref($section) eq 'ARRAY') {
@@ -832,11 +866,13 @@ sub feature_have_module_loaded {
       my $alt_module = $module;
       $alt_module =~ s/\.c$/\//g;
 
+      my $res = 0;
       if (grep { /^($module$|$alt_module)/ } @$mod_list) {
-        return 1;
+        $res = 1;
       }
 
-      return 0;
+      close($cmdh);
+      return $res;
     }
 
     close($cmdh);
@@ -846,9 +882,11 @@ sub feature_have_module_loaded {
   }
 }
 
-sub server_restart {
+sub server_signal {
   my $pid_file = shift;
   croak("Missing PID file argument") unless $pid_file;
+  my $signal_name = shift;
+  $signal_name = 'HUP' unless $signal_name;
 
   my $pid;
   if (open(my $fh, "< $pid_file")) {
@@ -857,16 +895,33 @@ sub server_restart {
     close($fh);
 
   } else {
-    die("Can't read $pid_file: $!");
+    croak("Can't read $pid_file: $!");
   }
 
-  my $cmd = "kill -HUP $pid";
+  my $cmd = "kill -$signal_name $pid";
 
   if ($ENV{TEST_VERBOSE}) {
-    print STDERR "Restarting server: $cmd\n";
+    my $label = 'Signalling';
+    if ($signal_name eq 'HUP') {
+      $label = 'Restarting';
+    }
+
+    print STDERR "$label server: $cmd\n";
   }
 
   my @output = `$cmd`;
+  if ($? != 0) {
+    return undef;
+  }
+
+  return 1;
+}
+
+sub server_restart {
+  my $pid_file = shift;
+  croak("Missing PID file argument") unless $pid_file;
+
+  return server_signal($pid_file, 'HUP');
 }
 
 sub server_start {
@@ -892,7 +947,12 @@ sub server_start {
     }
   }
 
-  $cmd .= "$proftpd_bin -q -c $abs_config_file";
+  my $quiet = '-q';
+  if ($ENV{TEST_VERBOSE}) {
+    $quiet = '';
+  }
+
+  $cmd .= "$proftpd_bin $quiet -c $abs_config_file";
 
   if (defined($server_opts->{define})) {
     my $defines = $server_opts->{define};
@@ -973,6 +1033,9 @@ sub server_stop {
   }
 
   my @output = `$cmd`;
+  unless ($? == 0) {
+    return undef;
+  }
 
   unless ($nowait) {
     # Wait until the PidFile has been deleted by the shutting-down server.
@@ -986,6 +1049,8 @@ sub server_stop {
       select(undef, undef, undef, 0.5);
     }
   }
+
+  return 1;
 }
 
 my $server_wait_timeout = 0;
@@ -1047,11 +1112,7 @@ sub test_append_logfile {
   my $out_file = File::Spec->rel2abs('tests.log');
 
   unless (open($outfh, ">> $out_file")) {
-    die("Can't append to $out_file: $!");
-  }
-
-  unless (open($infh, "< $log_file")) {
-    die("Can't read $log_file: $!");
+    croak("Can't append to $out_file: $!");
   }
 
   my ($pkg, $filename, $lineno, $func) = (caller(1))[0, 1, 2, 3];
@@ -1061,8 +1122,12 @@ sub test_append_logfile {
 
   print $outfh "-----BEGIN $func-----\n";
 
-  while (my $line = <$infh>) {
-    print $outfh $line;
+  if (open($infh, "+< $log_file")) {
+    while (my $line = <$infh>) {
+      print $outfh $line;
+    }
+
+    close($infh);
   }
 
   # If an exception was provided, write that out to the log file, too.
@@ -1072,10 +1137,8 @@ sub test_append_logfile {
 
   print $outfh "-----END $func-----\n";
 
-  close($infh);
-
   unless (close($outfh)) {
-    die("Can't write $out_file: $!");
+    croak("Can't write $out_file: $!");
   }
 }
 
@@ -1135,6 +1198,7 @@ sub test_setup {
   $uid = 500 unless defined($uid);
   my $gid = shift;
   $gid = 500 unless defined($gid);
+  my $home_dir = shift;
 
   my $config_file = "$tmpdir/$name.conf";
   my $pid_file = File::Spec->rel2abs("$tmpdir/$name.pid");
@@ -1143,17 +1207,21 @@ sub test_setup {
   my $auth_user_file = File::Spec->rel2abs("$tmpdir/$name.passwd");
   my $auth_group_file = File::Spec->rel2abs("$tmpdir/$name.group");
 
-  my $home_dir = File::Spec->rel2abs($tmpdir);
+  # If the caller provides the home directory, it is ASSUMED that they will
+  # have created it.
+  unless (defined($home_dir)) {
+    $home_dir = File::Spec->rel2abs($tmpdir);
 
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      croak("Can't set perms on $home_dir to 0755: $!");
-    }
+    # Make sure that, if we're running as root, that the home directory has
+    # permissions/privs set for the account we create
+    if ($< == 0) {
+      unless (chmod(0755, $home_dir)) {
+        croak("Can't set perms on $home_dir to 0755: $!");
+      }
 
-    unless (chown($uid, $gid, $home_dir)) {
-      croak("Can't set owner of $home_dir to $uid/$gid: $!");
+      unless (chown($uid, $gid, $home_dir)) {
+        croak("Can't set owner of $home_dir to $uid/$gid: $!");
+      }
     }
   }
 

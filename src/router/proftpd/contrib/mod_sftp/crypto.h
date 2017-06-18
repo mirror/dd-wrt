@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp misc crypto routines
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: crypto.h,v 1.4 2011-05-23 20:40:13 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_CRYPTO_H
 #define MOD_SFTP_CRYPTO_H
+
+#include "mod_sftp.h"
 
 void sftp_crypto_free(int);
 const EVP_CIPHER *sftp_crypto_get_cipher(const char *, size_t *, size_t *);
@@ -38,4 +36,4 @@ const char *sftp_crypto_get_kexinit_digest_list(pool *);
 
 size_t sftp_crypto_get_size(size_t, size_t);
 
-#endif
+#endif /* MOD_SFTP_CRYPTO_H */

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp packet routines
- * Copyright (c) 2008-2012 TJ Saunders
+ * Copyright (c) 2008-2015 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,8 +20,6 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: packet.c,v 1.1 2013-05-15 15:20:27 castaglia Exp $
  */
 
 #include "mod_snmp.h"
@@ -118,15 +116,9 @@ int snmp_packet_write(pool *p, int sockfd, struct snmp_packet *pkt) {
     }
 
   } else {
-    if (res == 0) {
-      (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
-        "dropping response after waiting %u secs for available socket space",
-        (unsigned int) tv.tv_sec);
-
-    } else {
-      (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
-        "dropping response due to select(2) failure: %s", strerror(errno));
-    }
+    (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
+      "dropping response after waiting %u secs for available socket space",
+      (unsigned int) tv.tv_sec);
 
     res = snmp_db_incr_value(pkt->pool, SNMP_DB_SNMP_F_PKTS_DROPPED_TOTAL, 1);
     if (res < 0) {

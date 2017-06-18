@@ -1,7 +1,6 @@
 /*
  * ProFTPD: mod_sftp_sql -- SQL backend module for retrieving authorized keys
- *
- * Copyright (c) 2008-2015 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,7 +34,7 @@
 
 module sftp_sql_module;
 
-#define SFTP_SQL_BUFSZ		1024
+#define SFTP_SQL_BUFSZ			1024
 
 struct sqlstore_key {
   const char *subject;
@@ -51,10 +50,10 @@ struct sqlstore_data {
 
 static const char *trace_channel = "ssh2";
 
-static cmd_rec *sqlstore_cmd_create(pool *parent_pool, int argc, ...) {
+static cmd_rec *sqlstore_cmd_create(pool *parent_pool, unsigned int argc, ...) {
+  register unsigned int i = 0;
   pool *cmd_pool = NULL;
   cmd_rec *cmd = NULL;
-  register unsigned int i = 0;
   va_list argp;
 
   cmd_pool = make_sub_pool(parent_pool);
@@ -62,14 +61,15 @@ static cmd_rec *sqlstore_cmd_create(pool *parent_pool, int argc, ...) {
   cmd->pool = cmd_pool;
 
   cmd->argc = argc;
-  cmd->argv = (char **) pcalloc(cmd->pool, argc * sizeof(char *));
+  cmd->argv = pcalloc(cmd->pool, argc * sizeof(void *));
 
   /* Hmmm... */
   cmd->tmp_pool = cmd->pool;
 
   va_start(argp, argc);
-  for (i = 0; i < argc; i++)
+  for (i = 0; i < argc; i++) {
     cmd->argv[i] = va_arg(argp, char *);
+  }
   va_end(argp);
 
   return cmd;
@@ -87,8 +87,6 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
 
   if (data == NULL ||
       datalen == 0) {
-    pr_trace_msg(trace_channel, 10,
-      "reached end of data, no matching key found");
     errno = EOF;
     return NULL;
   }
@@ -155,7 +153,8 @@ static char *sqlstore_getline(pool *p, char **blob, size_t *bloblen) {
     datalen -= (linelen + delimlen);
 
     /* Check for continued lines. */
-    if (linebuf[linelen-2] == '\\') {
+    if (linelen >= 2 &&
+        linebuf[linelen-2] == '\\') {
       linebuf[linelen-2] = '\0';
       have_line_continuation = TRUE;
     }
@@ -417,7 +416,7 @@ static char *sqlstore_get_str(pool *p, char *str) {
     return str;
 
   /* Find the cmdtable for the sql_escapestr command. */
-  cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_escapestr", NULL, NULL);
+  cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_escapestr", NULL, NULL, NULL);
   if (cmdtab == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
       "unable to find SQL hook symbol 'sql_escapestr'");
@@ -523,7 +522,8 @@ static int sqlstore_verify_host_key(sftp_keystore_t *store, pool *p,
   store_data = store->keystore_data;
 
   /* Find the cmdtable for the sql_lookup command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_lookup", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
       "unable to find SQL hook symbol 'sql_lookup'");
@@ -615,7 +615,8 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
   store_data = store->keystore_data;
 
   /* Find the cmdtable for the sql_lookup command. */
-  sql_cmdtab = pr_stash_get_symbol(PR_SYM_HOOK, "sql_lookup", NULL, NULL);
+  sql_cmdtab = pr_stash_get_symbol2(PR_SYM_HOOK, "sql_lookup", NULL, NULL,
+    NULL);
   if (sql_cmdtab == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
       "unable to find SQL hook symbol 'sql_lookup'");

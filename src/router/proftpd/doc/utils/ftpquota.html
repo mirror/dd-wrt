@@ -1,6 +1,4 @@
-<!-- $Id: ftpquota.html,v 1.2 2011-03-03 22:17:29 castaglia Exp $ -->
-<!-- $Source: /home/proftpd-core/backup/proftp-cvsroot/proftpd/doc/utils/ftpquota.html,v $ -->
-
+<!DOCTYPE html>
 <html>
 <head>
 <title>ftpquota: tool for ProFTPD mod_quotatab</title>
@@ -209,25 +207,35 @@ usage: ftpquota [options]
  The following options are used to specify specific quota limits:
 
   --Bu                 Specifies the limit of the number of bytes that may be
-  --bytes-upload       uploaded.  Defaults to -1 (unlimited).
+  --bytes-upload       uploaded.  Defaults to -1 (unlimited).  Note that any
+                       value less than or equal to zero will be treated as
+                       "unlimited".
 
   --Bd                 Specifies the limit of the number of bytes that may be
-  --bytes-download     downloaded.  Defaults to -1 (unlimited).
+  --bytes-download     downloaded.  Defaults to -1 (unlimited).  Note that any
+                       value less than or equal to zero will be treated as
+                       "unlimited".
 
   --Bx                 Specifies the limit of the number of bytes that may be
   --bytes-xfer         transferred.  Note that this total includes uploads,
                        downloads, AND directory listings.  Defaults to
-                       -1 (unlimited).
+                       -1 (unlimited).  Note that any value less than or equal
+                       to zero will be treated as "unlimited".
 
   --Fu                 Specifies the limit of the number of files that may be
-  --files-upload       uploaded.  Defaults to -1 (unlimited).
+  --files-upload       uploaded.  Defaults to -1 (unlimited).  Note that any
+                       value less than or equal to zero will be treated as
+                       "unlimited".
 
   --Fd                 Specifies the limit of the number of files that may be
-  --files-download     downloaded.  Defaults to -1 (unlimited).
+  --files-download     downloaded.  Defaults to -1 (unlimited).  Note that any
+                       value less than or equal to zero will be treated as
+                       "unlimited".
 
   --Fx                 Specifies the limit of the number of files that may be
   --files-xfer         transferred, including uploads and downloads.  Defaults
-                       to -1 (unlimited).
+                       to -1 (unlimited).  Note that any value less than or
+                       equal to zero will be treated as "unlimited".
 
   -L                   Specifies the type of limit, "hard" or "soft", of
   --limit-type         the bytes limits.  If "hard", any uploaded files that
@@ -267,20 +275,12 @@ usage: ftpquota [options]
 </pre>
 
 <p>
-<hr><br>
-
-Author: <i>$Author: castaglia $</i><br>
-Last Updated: <i>$Date: 2011-03-03 22:17:29 $</i><br>
-
-<br><hr>
-
+<hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2011 TJ Saunders<br>
+&copy; Copyright 2000-2017 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
-
-<hr><br>
+<hr>
 
 </body>
 </html>
-

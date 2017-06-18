@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp interoperability
- * Copyright (c) 2008-2011 TJ Saunders
+ * Copyright (c) 2008-2016 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,14 +20,12 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in the
  * source distribution.
- *
- * $Id: interop.h,v 1.6 2011-05-23 20:40:13 castaglia Exp $
  */
-
-#include "mod_sftp.h"
 
 #ifndef MOD_SFTP_INTEROP_H
 #define MOD_SFTP_INTEROP_H
+
+#include "mod_sftp.h"
 
 /* For clients which do not support IGNORE packets */
 #define SFTP_SSH2_FEAT_IGNORE_MSG			0x0001
@@ -76,6 +74,11 @@
  */
 #define SFTP_SSH2_FEAT_PESSIMISTIC_NEWKEYS		0x0200
 
+/* For clients which cannot/do not tolerate non-kex related packets after a
+ * server has requested rekeying.
+ */
+#define SFTP_SSH2_FEAT_NO_DATA_WHILE_REKEYING		0x0400
+
 /* For scanners. */
 #define SFTP_SSH2_FEAT_SCANNER				0xfffe
 
@@ -85,7 +88,7 @@
 /* Compares the given client version string against a table of known client
  * client versions and their interoperability/compatibility issues.
  */
-int sftp_interop_handle_version(const char *);
+int sftp_interop_handle_version(pool *, const char *);
 
 /* Returns TRUE if the client supports the requested feature, FALSE
  * otherwise.
@@ -95,4 +98,4 @@ int sftp_interop_supports_feature(int);
 int sftp_interop_init(void);
 int sftp_interop_free(void);
 
-#endif
+#endif /* MOD_SFTP_INTEROP_H */
