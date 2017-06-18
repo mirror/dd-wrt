@@ -189,6 +189,7 @@ module *pr_module_get(const char *name) {
 }
 
 void modules_list2(int (*listf)(const char *, ...), int flags) {
+#ifdef NEED_PRINTF
   if (listf == NULL) {
     listf = printf;
   }
@@ -238,6 +239,7 @@ void modules_list2(int (*listf)(const char *, ...), int flags) {
       }
     }
   }
+#endif
 }
 
 void modules_list(int flags) {
