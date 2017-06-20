@@ -1264,7 +1264,7 @@ int net_open_eth(net_interface *netif) {
     coe(netif->fd);
 
     option = 1;
-    if (net_setsockopt(netif->fd, SOL_SOCKET, TCP_NODELAY,
+    if (net_setsockopt(netif->fd, IPPROTO_TCP, TCP_NODELAY,
 		       &option, sizeof(option)) < 0)
       return -1;
 
