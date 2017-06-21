@@ -190,6 +190,12 @@
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #undef HAVE_DMALLOC_H
 
+/* Define to 1 if you have the `DSA_bits' function. */
+#undef HAVE_DSA_BITS
+
+/* Define to 1 if you have the `DSA_get0_pqg' function. */
+#undef HAVE_DSA_GET0_PQG
+
 /* Define to 1 if you have the `dup' function. */
 #undef HAVE_DUP
 
@@ -217,8 +223,32 @@
 /* Define to 1 if you have the `EVP_aes_256_gcm' function. */
 #undef HAVE_EVP_AES_256_GCM
 
+/* Define to 1 if you have the `EVP_CIPHER_CTX_free' function. */
+#undef HAVE_EVP_CIPHER_CTX_FREE
+
+/* Define to 1 if you have the `EVP_CIPHER_CTX_new' function. */
+#undef HAVE_EVP_CIPHER_CTX_NEW
+
 /* Define to 1 if you have the `EVP_CIPHER_CTX_set_key_length' function. */
 #undef HAVE_EVP_CIPHER_CTX_SET_KEY_LENGTH
+
+/* Define to 1 if you have the `EVP_MD_CTX_free' function. */
+#undef HAVE_EVP_MD_CTX_FREE
+
+/* Define to 1 if you have the `EVP_MD_CTX_new' function. */
+#undef HAVE_EVP_MD_CTX_NEW
+
+/* Define to 1 if you have the `EVP_MD_CTX_reset' function. */
+#undef HAVE_EVP_MD_CTX_RESET
+
+/* Define to 1 if you have the `EVP_PKEY_get0_DSA' function. */
+#undef HAVE_EVP_PKEY_GET0_DSA
+
+/* Define to 1 if you have the `EVP_PKEY_get0_RSA' function. */
+#undef HAVE_EVP_PKEY_GET0_RSA
+
+/* Define to 1 if you have the `EVP_PKEY_id' function. */
+#undef HAVE_EVP_PKEY_ID
 
 /* Define to 1 if you have the `execve' function. */
 #undef HAVE_EXECVE
@@ -267,6 +297,18 @@
 
 /* Define to 1 if you have the <grp.h> header file. */
 #undef HAVE_GRP_H
+
+/* Define to 1 if you have the `HMAC_CTX_free' function. */
+#undef HAVE_HMAC_CTX_FREE
+
+/* Define to 1 if you have the `HMAC_CTX_init' function. */
+#undef HAVE_HMAC_CTX_INIT
+
+/* Define to 1 if you have the `HMAC_CTX_new' function. */
+#undef HAVE_HMAC_CTX_NEW
+
+/* Define to 1 if you have the `HMAC_CTX_reset' function. */
+#undef HAVE_HMAC_CTX_RESET
 
 /* Define to 1 if you have the `inet_ntoa' function. */
 #undef HAVE_INET_NTOA
@@ -412,6 +454,12 @@
 /* Define to 1 if you have the <resolv.h> header file. */
 #undef HAVE_RESOLV_H
 
+/* Define to 1 if you have the `RSA_bits' function. */
+#undef HAVE_RSA_BITS
+
+/* Define to 1 if you have the `RSA_get0_key' function. */
+#undef HAVE_RSA_GET0_KEY
+
 /* Define to 1 if you have the `RSA_meth_free' function. */
 #undef HAVE_RSA_METH_FREE
 
@@ -438,6 +486,12 @@
 
 /* Define to 1 if you have the `RSA_meth_set_pub_enc' function. */
 #undef HAVE_RSA_METH_SET_PUB_ENC
+
+/* Define to 1 if you have the `RSA_set0_key' function. */
+#undef HAVE_RSA_SET0_KEY
+
+/* Define to 1 if you have the `RSA_set_flags' function. */
+#undef HAVE_RSA_SET_FLAGS
 
 /* sa_family_t, needed to hold AF_* info */
 #undef HAVE_SA_FAMILY_T
@@ -629,6 +683,9 @@
 /* Define to 1 if you have the <ws2tcpip.h> header file. */
 #undef HAVE_WS2TCPIP_H
 
+/* Define to 1 if you have the `X509_get0_pubkey' function. */
+#undef HAVE_X509_GET0_PUBKEY
+
 /* Define to 1 if you have the `X509_OBJECT_free' function. */
 #undef HAVE_X509_OBJECT_FREE
 
@@ -644,8 +701,7 @@
 /* Path to iproute tool */
 #undef IPROUTE_PATH
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* use copy of LZ4 source in compat/ */

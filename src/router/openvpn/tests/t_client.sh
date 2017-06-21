@@ -133,12 +133,12 @@ fail()
 get_ifconfig_route()
 {
     # linux / iproute2? (-> if configure got a path)
-    if [ -n "/usr/sbin/ip" ]
+    if [ -n "" ]
     then
 	echo "-- linux iproute2 --"
-	/usr/sbin/ip addr show     | grep -v valid_lft
-	/usr/sbin/ip route show
-	/usr/sbin/ip -o -6 route show | grep -v ' cache' | sed -E -e 's/ expires [0-9]*sec//' -e 's/ (mtu|hoplimit|cwnd|ssthresh) [0-9]+//g' -e 's/ (rtt|rttvar) [0-9]+ms//g'
+	 addr show     | grep -v valid_lft
+	 route show
+	 -o -6 route show | grep -v ' cache' | sed -E -e 's/ expires [0-9]*sec//' -e 's/ (mtu|hoplimit|cwnd|ssthresh) [0-9]+//g' -e 's/ (rtt|rttvar) [0-9]+ms//g'
 	return
     fi
 
@@ -146,32 +146,32 @@ get_ifconfig_route()
     case `uname -s` in
 	Linux)
 	   echo "-- linux / ifconfig --"
-	   LANG=C /usr/sbin/ifconfig -a |egrep  "( addr:|encap:)"
+	   LANG=C /sbin/ifconfig -a |egrep  "( addr:|encap:)"
 	   LANG=C netstat -rn -4 -6
 	   return
 	   ;;
 	FreeBSD|NetBSD|Darwin)
 	   echo "-- FreeBSD/NetBSD/Darwin [MacOS X] --"
-	   /usr/sbin/ifconfig -a | egrep "(flags=|inet)"
+	   /sbin/ifconfig -a | egrep "(flags=|inet)"
 	   netstat -rn | awk '$3 !~ /^UHL/ { print $1,$2,$3,$NF }'
 	   return
 	   ;;
 	OpenBSD)
 	   echo "-- OpenBSD --"
-	   /usr/sbin/ifconfig -a | egrep "(flags=|inet)" | \
+	   /sbin/ifconfig -a | egrep "(flags=|inet)" | \
 		sed -e 's/pltime [0-9]*//' -e 's/vltime [0-9]*//'
 	   netstat -rn | awk '$3 !~ /^UHL/ { print $1,$2,$3,$NF }'
 	   return
 	   ;;
 	SunOS)
 	   echo "-- Solaris --"
-	   /usr/sbin/ifconfig -a | egrep "(flags=|inet)"
+	   /sbin/ifconfig -a | egrep "(flags=|inet)"
 	   netstat -rn | awk '$3 !~ /^UHL/ { print $1,$2,$3,$6 }'
 	   return
 	   ;;
 	AIX)
 	   echo "-- AIX --"
-	   /usr/sbin/ifconfig -a | egrep "(flags=|inet)"
+	   /sbin/ifconfig -a | egrep "(flags=|inet)"
 	   netstat -rn | awk '$3 !~ /^UHL/ { print $1,$2,$3,$6 }'
 	   return
 	   ;;
