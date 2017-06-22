@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3460 | brainslayer | 2017-06-22 07:49:41 +0200 (Thu, 22 Jun 2017) | 1 line
+
+fix local var
+------------------------------------------------------------------------
 r3459 | brainslayer | 2017-06-22 07:45:12 +0200 (Thu, 22 Jun 2017) | 1 line
 
 the precalibration patch applies only to 10.4 firmwares, so disable it for older chipsets. they will hang otherwise
