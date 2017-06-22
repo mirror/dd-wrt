@@ -35,16 +35,6 @@
 
 extern struct unl unl;
 extern bool bunl;
-#ifndef HAVE_MICRO
-extern pthread_mutex_t mutex_unl;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
-#define lock() pthread_mutex_lock(&mutex_unl)
-#define unlock() pthread_mutex_unlock(&mutex_unl)
-#else
-#define mutex_init()
-#define lock()
-#define unlock()
-#endif
 
 #if 0
 static void __attribute__((constructor)) mac80211_init(void)
@@ -292,7 +282,6 @@ static void scan(struct unl *unl, int wdev)
 
 out:
 	unl_genl_unsubscribe(unl, "scan");
-	unlock();
 	return;
 
 nla_put_failure:
@@ -432,7 +421,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		country = "DE";
 
 	wifi_channels = mac80211_get_channels(interface, country, bw, 0xff);
-	lock();
 	if (scans == 0)
 		scans = 2;
 	/* get maximum eirp possible in channel list */
@@ -454,7 +442,6 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 		scan(&unl, wdev);
 		survey(&unl, wdev, freq_add_stats);
 	}
-	unlock();
 	bzero(&sdata, sizeof(sdata));
 	list_for_each_entry(f, &frequencies, list) {
 		if (f->clear_count) {
