@@ -53,26 +53,26 @@ static char *nvram_buf = NULL;
 
 #ifndef HAVE_MICRO
 #include <pthread.h>
-pthread_mutex_t mutex_unl;
+static pthread_mutex_t nv_mutex;
 //char *lastlock;
 //char *lastunlock;
-#define mutex_init() pthread_mutex_init(&mutex_unl,NULL);
+#define mutex_init() pthread_mutex_init(&nv_mutex,NULL);
 /*#define lock() { \
 		    int m_result; \
 		    int m_cnt=0; \
-		while ((m_result=pthread_mutex_trylock(&mutex_unl)) ==EBUSY) { \
+		while ((m_result=pthread_mutex_trylock(&nv_mutex)) ==EBUSY) { \
 			m_cnt++; \
 			usleep(100 * 1000); \
 			if (m_cnt==10) { \
-			    dd_syslog(LOG_INFO, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
+			    fprintf(stderr, "lock failed at %s, lastlock = %s lastunlock = %s\n",__func__,lastlock?lastlock:"none", lastunlock?lastunlock:"none"); \
 			    break; \
 			} \
 		} \
 		lastlock = __func__; \
-}
-*/
-#define lock() pthread_mutex_lock(&mutex_unl);
-#define unlock() pthread_mutex_unlock(&mutex_unl);
+}*/
+
+#define lock() pthread_mutex_lock(&nv_mutex);
+#define unlock() pthread_mutex_unlock(&nv_mutex);
 #else
 #define mutex_init()
 static void lock(void)
@@ -139,13 +139,11 @@ char *nvram_get(const char *name)
 #if defined(HAVE_X86) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		FILE *in = fopen("/usr/local/nvram/nvram.bin", "rb");
 		if (in == NULL) {
-			unlock();
 			return NULL;
 		}
 		fclose(in);
 #endif
 		if (nvram_init(NULL)) {
-			unlock();
 			return NULL;
 		}
 	}
@@ -189,12 +187,10 @@ int nvram_getall(char *buf, int count)
 		fclose(in);
 #endif
 		if ((ret = nvram_init(NULL))) {
-			//unlock();
 			return ret;
 		}
 	}
 	if (count == 0) {
-		//unlock();
 		return 0;
 	}
 	/* Get all variables */
@@ -203,7 +199,6 @@ int nvram_getall(char *buf, int count)
 
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
-	//unlock();
 	return (ret == count) ? 0 : ret;
 }
 
@@ -223,7 +218,6 @@ static int _nvram_set(const char *name, const char *value)
 
 	if (nvram_fd < 0)
 		if ((ret = nvram_init(NULL))) {
-			unlock();
 			return ret;
 		}
 	lock();
@@ -318,7 +312,6 @@ int nvram_commit(void)
 	if (nvram_fd < 0) {
 		if ((ret = nvram_init(NULL))) {
 			fprintf(stderr, "nvram_commit(): failed\n");
-			unlock();
 			return ret;
 		}
 	}
