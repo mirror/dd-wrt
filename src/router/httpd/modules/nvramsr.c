@@ -30,13 +30,12 @@
  * (0) 
  */
 
-static int restore_ret;
 
 void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 {
 
 	char buf[1024];
-	restore_ret = EINVAL;
+	wp->restore_ret = EINVAL;
 #ifdef HAVE_REGISTER
 	if (!isregistered_real()) {
 		return;
@@ -79,16 +78,16 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	fclose(fp);
 	int ret = nvram_restore("/tmp/restore.bin");
 	if (ret < 0)
-		restore_ret = 99;
+		wp->restore_ret = 99;
 	else
-		restore_ret = 0;
+		wp->restore_ret = 0;
 	unlink("/tmp/restore.bin");
 	chdir("/www");
 }
 
 void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query)
 {
-	if (restore_ret != 0)
+	if (wp->restore_ret != 0)
 		do_ej(METHOD_GET, handler, "Fail.asp", wp, NULL);
 	else
 		do_ej(METHOD_GET, handler, "Success_rest.asp", wp, NULL);
@@ -98,7 +97,7 @@ void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *pat
 	/*
 	 * Reboot if successful 
 	 */
-	if (restore_ret == 0) {
+	if (wp->restore_ret == 0) {
 		nvram_commit();
 		sleep(5);
 		sys_reboot();

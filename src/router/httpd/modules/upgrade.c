@@ -44,14 +44,13 @@
 #define MIN_BUF_SIZE    4096
 #endif
 #define CODE_PATTERN_ERROR 9999
-static int upgrade_ret;
 static char upload_fifo[] = "/tmp/uploadXXXXXX";
-void set_upgrade_ret(int result)
+void set_upgrade_ret(webs_t stream, int result)
 {
 	if (result != 0) {
-		upgrade_ret = result;
+		stream->upgrade_ret = result;
 	} else {
-		upgrade_ret = NULL;
+		stream->upgrade_ret = NULL;
 	}
 }
 
@@ -62,8 +61,8 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 {
 #ifndef ANTI_FLASH
 
-	fprintf(stderr, "[UPGRADE] ret: %d\n", upgrade_ret);
-	if (upgrade_ret) {
+	fprintf(stderr, "[UPGRADE] ret: %d\n", stream->upgrade_ret);
+	if (stream->upgrade_ret) {
 		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream, NULL);
 		killall("ledtool", SIGTERM);
 		led_control(LED_DIAG, LED_OFF);
@@ -75,7 +74,7 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 	/*
 	 * Reboot if successful 
 	 */
-	if (upgrade_ret == 0) {
+	if (stream->upgrade_ret == 0) {
 		// sleep (10);
 		sys_reboot();
 	}
@@ -666,7 +665,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 #ifndef ANTI_FLASH
 	int type = 0;
 	char *buf = malloc(1024);
-	upgrade_ret = EINVAL;
+	stream->upgrade_ret = EINVAL;
 
 	/*
 	 * Look for our part 
@@ -717,8 +716,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
-
-	upgrade_ret = sys_upgrade(NULL, stream, &len, type);
+	stream->upgrade_ret = sys_upgrade(NULL, stream, &len, type);
 
 	/*
 	 * Restore factory original settings if told to. This will also cause a

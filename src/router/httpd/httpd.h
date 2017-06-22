@@ -74,6 +74,8 @@ typedef struct {
 	int auth_fail;
 	char label[64];
 	char my_next_page[30];
+	int upgrade_ret;
+	int restore_ret;
 
 /* CGI hash table */
 	struct hsearch_data htab;
