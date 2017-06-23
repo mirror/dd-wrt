@@ -50,7 +50,6 @@
 static int nvram_fd = -1;
 static char *nvram_buf = NULL;
 
-
 #ifndef HAVE_MICRO
 #include <pthread.h>
 static pthread_mutex_t nv_mutex;
@@ -126,13 +125,10 @@ err:
 	return errno;
 }
 
-
-
-
 char *nvram_get(const char *name)
 {
 	size_t count = strlen(name) + 1;
-	char *value;
+	char *value = NULL;
 	unsigned long *off;
 
 	if (nvram_fd < 0) {
@@ -150,8 +146,7 @@ char *nvram_get(const char *name)
 	lock();
 
 	if (!(off = malloc(count))) {
-		unlock();
-		return NULL;
+		goto out;
 	}
 
 	/* Get offset into mmap() space */
@@ -170,13 +165,13 @@ char *nvram_get(const char *name)
 		perror(PATH_DEV_NVRAM);
 
 	free(off);
+      out:;
 	unlock();
 	return value;
 }
 
 int nvram_getall(char *buf, int count)
 {
-//lock();
 	int ret;
 
 	if (nvram_fd < 0) {
@@ -193,10 +188,11 @@ int nvram_getall(char *buf, int count)
 	if (count == 0) {
 		return 0;
 	}
+	lock();
 	/* Get all variables */
 	*buf = '\0';
 	ret = read(nvram_fd, buf, count);
-
+	unlock();
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 	return (ret == count) ? 0 : ret;
@@ -220,11 +216,9 @@ static int _nvram_set(const char *name, const char *value)
 		if ((ret = nvram_init(NULL))) {
 			return ret;
 		}
-	lock();
 
 	/* Wolf add - keep nvram varname to sane len - may prevent corruption */
 	if (strlen(name) > 64) {
-		unlock();
 		return -ENOMEM;
 	}
 
@@ -233,7 +227,6 @@ static int _nvram_set(const char *name, const char *value)
 		count += strlen(value) + 2;
 
 	if (!(buf = malloc(count))) {
-		unlock();
 		return -ENOMEM;
 	}
 
@@ -243,13 +236,13 @@ static int _nvram_set(const char *name, const char *value)
 		strcpy(buf, name);
 
 	count = strlen(buf) + 1;
+	lock();
 	ret = write(nvram_fd, buf, count);
-
+	unlock();
 	if (ret < 0)
 		perror(PATH_DEV_NVRAM);
 
 	free(buf);
-	unlock();
 	return (ret == count) ? 0 : ret;
 }
 
@@ -285,9 +278,7 @@ int nvram_immed_set(const char *name, const char *value)
 
 int nvram_unset(const char *name)
 {
-//lock();
 	int v = _nvram_set(name, NULL);
-//unlock();
 	return v;
 }
 
@@ -397,7 +388,7 @@ int nvram_used(int *space)
 	char *name, *buf;
 
 	*space = NVRAMSPACE;
-	
+
 	buf = malloc(NVRAMSPACE);
 	nvram_getall(buf, NVRAMSPACE);
 

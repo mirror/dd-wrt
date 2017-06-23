@@ -112,7 +112,6 @@ int nvram_invmatch(char *name, char *invmatch)
 	return (value && strcmp(value, invmatch));
 }
 
-
 int nvram_invmatchi(char *name, int invmatch)
 {
 	char tmp[100];
@@ -209,9 +208,9 @@ int nvram_default_match(char *var, char *match, char *def)
 	char *v = nvram_get(var);
 	if (v == NULL || strlen(v) == 0) {
 		nvram_set(var, def);
-		return !strcmp(match, def);
+		v = def;
 	}
-	return nvram_match(var, match);
+	return !strcmp(v, match);
 }
 
 char *nvram_default_get(char *var, char *def)
@@ -221,7 +220,7 @@ char *nvram_default_get(char *var, char *def)
 		nvram_set(var, def);
 		return def;
 	}
-	return nvram_safe_get(var);
+	return v;
 }
 
 int nvram_default_geti(char *var, int def)
@@ -233,7 +232,7 @@ int nvram_default_geti(char *var, int def)
 		nvram_set(var, tmp);
 		return def;
 	}
-	return atoi(nvram_safe_get(var));
+	return atoi(v);
 }
 
 void fwritenvram(char *var, FILE * fp)

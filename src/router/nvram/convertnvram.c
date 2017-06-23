@@ -74,8 +74,7 @@ void sort(void)
 	for (i = 0; i < values.nov; i++)
 		for (a = i; a < values.nov; a++) {
 			if (values.values[a].name && values.values[i].name) {
-				if (values.values[a].name[0] <
-				    values.values[i].name[0]) {
+				if (values.values[a].name[0] < values.values[i].name[0]) {
 					struct nvrams b = values.values[a];
 					values.values[a] = values.values[i];
 					values.values[i] = b;
@@ -124,10 +123,8 @@ void writedb(void)
 		if (values.values[i].name) {
 			//take a look in our offset table
 			int a;
-			if (values.offsets[values.values[i].name[0] - 'A'] ==
-			    -1)
-				values.offsets[values.values[i].name[0] - 'A'] =
-				    ftell(in);
+			if (values.offsets[values.values[i].name[0] - 'A'] == -1)
+				values.offsets[values.values[i].name[0] - 'A'] = ftell(in);
 			int len = strlen(values.values[i].name);
 			int fulllen = len + strlen(values.values[i].value) + 3;
 			putc(fulllen >> 8, in);
@@ -156,8 +153,7 @@ void readdb(void)
 	}
 	values.nov = getc(in) << 8;
 	values.nov += getc(in);
-	values.values =
-	    (struct nvrams *)malloc(values.nov * sizeof(struct nvrams));
+	values.values = (struct nvrams *)malloc(values.nov * sizeof(struct nvrams));
 	int i;
 	for (i = 0; i < values.nov; i++) {
 		getc(in);
