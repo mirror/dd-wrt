@@ -21,8 +21,7 @@
 
 static void usage(void)
 {
-	fprintf(stderr,
-		"usage: nvram [get name] [set name=value] [unset name] [show]\n");
+	fprintf(stderr, "usage: nvram [get name] [set name=value] [unset name] [show]\n");
 	exit(0);
 }
 
@@ -76,10 +75,8 @@ int main(int argc, char **argv)
 			nvram_getall(buf, sizeof(buf));
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
-			size =
-			    sizeof(struct nvram_header) + (int)name - (int)buf;
-			fprintf(stderr, "size: %d bytes (%d left) %d\n", size,
-				NVRAMSPACE - size, NVRAMSPACE);
+			size = sizeof(struct nvram_header) + (int)name - (int)buf;
+			fprintf(stderr, "size: %d bytes (%d left) %d\n", size, NVRAMSPACE - size, NVRAMSPACE);
 		}
 		if (!*argv)
 			break;
