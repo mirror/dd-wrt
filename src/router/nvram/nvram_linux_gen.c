@@ -79,8 +79,7 @@ void sort(void)
 	for (i = 0; i < values.nov; i++)
 		for (a = i; a < values.nov; a++) {
 			if (values.values[a].name && values.values[i].name) {
-				if (values.values[a].name[0] <
-				    values.values[i].name[0]) {
+				if (values.values[a].name[0] < values.values[i].name[0]) {
 					struct nvrams b = values.values[a];
 					values.values[a] = values.values[i];
 					values.values[i] = b;
@@ -133,10 +132,8 @@ void writedb(void)
 		if (values.values[i].name) {
 			//take a look in our offset table
 			int a;
-			if (values.offsets[values.values[i].name[0] - 'A'] ==
-			    -1)
-				values.offsets[values.values[i].name[0] - 'A'] =
-				    ftell(in);
+			if (values.offsets[values.values[i].name[0] - 'A'] == -1)
+				values.offsets[values.values[i].name[0] - 'A'] = ftell(in);
 			int len = strlen(values.values[i].name);
 			int fulllen = len + strlen(values.values[i].value) + 3;
 			putc(fulllen >> 8, in);
@@ -165,8 +162,7 @@ void readdb(void)
 	}
 	values.nov = getc(in) << 8;
 	values.nov += getc(in);
-	values.values =
-	    (struct nvrams *)malloc(values.nov * sizeof(struct nvrams));
+	values.values = (struct nvrams *)malloc(values.nov * sizeof(struct nvrams));
 	int i;
 	for (i = 0; i < values.nov; i++) {
 		getc(in);
@@ -322,16 +318,13 @@ int nvram_immed_set(const char *name, const char *value)
 	cprintf("nvram_set %s %s\n", name, value);
 
 	if (name[0] < 'A' || name[0] > 'z') {
-		fprintf(stderr,
-			"nvram parameter %s starts with a illegal character\n",
-			name);
+		fprintf(stderr, "nvram parameter %s starts with a illegal character\n", name);
 		return NULL;
 	}
 
 	int i;
 	for (i = 0; i < values.nov; i++) {
-		if (values.values[i].name != NULL
-		    && !strcmp(values.values[i].name, name)) {
+		if (values.values[i].name != NULL && !strcmp(values.values[i].name, name)) {
 			if (value == NULL) {
 				free(values.values[i].name);
 				free(values.values[i].value);
@@ -345,10 +338,7 @@ int nvram_immed_set(const char *name, const char *value)
 		}
 	}
 	if (value) {
-		values.values =
-		    (struct nvrams *)realloc(values.values,
-					     (values.nov +
-					      1) * sizeof(struct nvrams));
+		values.values = (struct nvrams *)realloc(values.values, (values.nov + 1) * sizeof(struct nvrams));
 		values.values[values.nov].name = strdup(name);
 		values.values[values.nov].value = strdup(value);
 		values.nov++;
@@ -408,24 +398,19 @@ int nvram_commit(void)
 {
 	lock();
 #ifdef HAVE_MAGICBOX
-	system
-	    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+	system("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
 	system("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #elif HAVE_GATEWORX
-	system
-	    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+	system("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
 	system("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #elif HAVE_FONERA
-	system
-	    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+	system("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
 	system("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #elif HAVE_WHRAG108
-	system
-	    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+	system("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
 	system("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #elif HAVE_TW6600
-	system
-	    ("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
+	system("tar -czf /tmp/nvram/nvram.tar.gz /tmp/nvram/nvram.db /tmp/nvram/offsets.db");
 	system("mtd -f write /tmp/nvram/nvram.tar.gz nvram");
 #else
 	system("mount /usr/local -o remount,rw");
