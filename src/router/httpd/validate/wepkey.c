@@ -9,7 +9,6 @@
 #include <httpd.h>
 #include "md5.h"
 
-
 // void nwepgen(char *genstr, int weptype)
 int wep128_passphase(char *buffer, unsigned char *keybyte)
 {

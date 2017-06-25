@@ -590,6 +590,7 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 
 	return "";
 }
+
 /*
 void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 {

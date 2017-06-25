@@ -801,7 +801,7 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 #endif
 		strcpy(http, "http");
 
-	if (wp->browser_method==USE_LAN) {	// Use LAN to browser
+	if (wp->browser_method == USE_LAN) {	// Use LAN to browser
 		if (nvram_matchi("restore_defaults", 1)
 		    || nvram_matchi("sv_restore_defaults", 1)) {
 
