@@ -4324,7 +4324,7 @@ void ej_gen_init_timer(webs_t wp, int argc, char_t ** argv)
 		char radio[32];
 		sprintf(radio, "radio%d_on_time", i);
 		websWrite(wp, "setRadioTable(%d);\n", i);
-		websWrite(wp, "initWlTimer('%s',%d);\n", nvram_default_get(radio, "111111111111111111111111"),i);
+		websWrite(wp, "initWlTimer('%s',%d);\n", nvram_default_get(radio, "111111111111111111111111"), i);
 		websWrite(wp, "show_layer_ext(document.wireless.radio%d_timer_enable, 'radio%d', %d);", i, i, nvram_nmatch("1", "radio%d_timer_enable", i) ? 1 : 0);
 	}
 #endif
@@ -4975,7 +4975,7 @@ void show_wep(webs_t wp, char *prefix)
 	char p_temp[128];
 	char temp[256];
 
-	sprintf(p_temp, "%s", get_wep_value(temp, "passphrase", bit, prefix));
+	sprintf(p_temp, "%s", get_wep_value(wp, temp, "passphrase", bit, prefix));
 	nvram_set("passphrase_temp", p_temp);
 	if (strcmp(p_temp, nvram_safe_get("passphrase_temp"))) {
 		fprintf(stderr, "[NVRAM WRITE ERROR] no match: \"%s\" -> \"%s\"\n", p_temp, nvram_safe_get("passphrase_temp"));
@@ -5564,14 +5564,14 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 void ej_getnumfilters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	sprintf(filter, "numfilterservice%d", wp->filter_id);
 	websWrite(wp, "%s", nvram_default_get(filter, "4"));
 }
 
 void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	sprintf(filter, "numfilterservice%d", wp->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {
@@ -5593,7 +5593,7 @@ void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	sprintf(filter, "numfilterservice%d", wp->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {

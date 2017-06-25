@@ -90,7 +90,7 @@ void execute(webs_t wp);
 #endif
 void clone_mac(webs_t wp)
 {
-	nvram_seti("clone_wan_mac", 1);
+	wp->clone_wan_mac = 1;
 }
 
 /*
@@ -271,8 +271,8 @@ void validate_filter_tod(webs_t wp)
 	}
 
 	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour, _end_min, time);
-	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%s", nvram_safe_get("filter_id"));
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%s", nvram_safe_get("filter_id"));
+	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", wp->filter_id);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", wp->filter_id);
 
 	nvram_set(filter_tod, buf);
 	nvram_set(filter_tod_buf, tod_buf);
@@ -328,7 +328,7 @@ void save_policy(webs_t wp)
 
 	validate_filter_tod(wp);
 
-	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%s", nvram_safe_get("filter_id"));
+	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
@@ -346,9 +346,9 @@ void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 	char *f_id = websGetVar(wp, "f_id", NULL);
 
 	if (f_id)
-		nvram_set("filter_id", f_id);
+		wp->filter_id = f_id;
 	else
-		nvram_seti("filter_id", 1);
+		wp->filter_id = 1;
 
 	save_policy(wp);
 }
@@ -462,10 +462,8 @@ void delete_policy(webs_t wp, int which)
 
 void single_delete_policy(webs_t wp)
 {
-	char *id = nvram_safe_get("filter_id");
-
 	D("single delete policy");
-	delete_policy(wp, atoi(id));
+	delete_policy(wp, wp->filter_id);
 	D("okay");
 	return;
 }
@@ -574,7 +572,7 @@ extern void gen_key(char *genstr, int weptype);
 extern unsigned char key128[4][13];
 extern unsigned char key64[4][5];
 
-void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx)
+void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)
 {
 
 	int i;
@@ -586,7 +584,7 @@ void generate_wep_key_single(char *prefix, char *passphrase, char *bit, char *tx
 
 	gen_key(passphrase, atoi(bit));
 
-	nvram_seti("generate_key", 1);
+	wp->generate_key = 1;
 
 	if (atoi(bit) == 64) {
 		char key1[27] = "";
@@ -677,7 +675,7 @@ void generate_wep_key(webs_t wp)
 	tx = websGetVar(wp, var, NULL);
 	cprintf("gen wep key: bits = %s\n", bit);
 
-	generate_wep_key_single(prefix, passphrase, bit, tx);
+	generate_wep_key_single(wp, prefix, passphrase, bit, tx);
 }
 
 char *copytonv(webs_t wp, const char *fmt, ...)
@@ -1839,7 +1837,7 @@ void forward_add(webs_t wp)
 void filter_remove(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	sprintf(filter, "numfilterservice%d", wp->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	if (numfilters > 0)
 		numfilters--;
@@ -1851,7 +1849,7 @@ void filter_remove(webs_t wp)
 void filter_add(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%s", nvram_safe_get("filter_id"));
+	sprintf(filter, "numfilterservice%d", wp->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	numfilters++;
 	char num[32];

@@ -154,9 +154,8 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 					}
 					cprintf("entry dumpleases:%d\n", __LINE__);
 					websWrite(wp,
-						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac,
-						  ((expires == 0) ? live_translate("share.sttic")
-						   : dhcp_reltime(buf, expires)), p + 1);
+						  "%c'%s','%s','%s','%s','%s'", (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic")
+																					   : dhcp_reltime(buf, expires)), p + 1);
 					cprintf("entry dumpleases:%d\n", __LINE__);
 					++count;
 				}
@@ -193,8 +192,7 @@ void ej_dumpleases(webs_t wp, int argc, char_t ** argv)
 				}
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				websWrite(wp, "%c'%s','%s','%s','%s','%s'",
-					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic") : dhcp_reltime(buf, expires)),
-					  p + 1);
+					  (count ? ',' : ' '), (hostname[0] ? hostname : live_translate("share.unknown")), ip, mac, ((expires == 0) ? live_translate("share.sttic") : dhcp_reltime(buf, expires)), p + 1);
 				cprintf("entry dumpleases:%d\n", __LINE__);
 				++count;
 			}

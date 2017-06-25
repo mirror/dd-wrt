@@ -98,7 +98,7 @@ char *websGetVar(webs_t wp, char *var, char *d)
 
 char *GOZILA_GET(webs_t wp, char *name)
 {
-	return nvram_matchi("gozila_action", 1) ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
+	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
 }
 
 static void *load_visual_service(char *name)
