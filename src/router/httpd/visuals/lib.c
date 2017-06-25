@@ -67,7 +67,7 @@ void ej_get_firmware_version(webs_t wp, int argc, char_t ** argv)
 #else
 
 #ifdef HAVE_REGISTER
-	if (isregistered() && !isregistered_real()) {
+	if (wp->isregistered && !wp->isregistered_real) {
 		websWrite(wp, " Click here to ACTIVATE %d Hour Trial", getTrialCount());
 	} else
 #endif

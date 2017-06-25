@@ -36,7 +36,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 #ifdef HAVE_REGISTER
-	if (!isregistered_real()) {
+	if (wp->isregistered_real) {
 		return;
 	}
 #endif
@@ -107,7 +107,7 @@ void nv_file_out(unsigned char method, struct mime_handler *handler, char *path,
 {
 
 #ifdef HAVE_REGISTER
-	if (!isregistered_real()) {
+	if (!wp->isregistered_real) {
 		return;
 	}
 #endif

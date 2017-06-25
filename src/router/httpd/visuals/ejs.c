@@ -801,7 +801,7 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 #endif
 		strcpy(http, "http");
 
-	if (nvram_match("browser_method", "USE_LAN")) {	// Use LAN to browser
+	if (wp->browser_method==USE_LAN) {	// Use LAN to browser
 		if (nvram_matchi("restore_defaults", 1)
 		    || nvram_matchi("sv_restore_defaults", 1)) {
 
@@ -1441,7 +1441,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	int auth = nvram_matchi("status_auth", 1);
 	int registered = 1;
 #ifdef HAVE_REGISTER
-	if (!isregistered_real())
+	if (!wp->isregistered_real)
 		registered = 0;
 	int cpeonly = iscpe();
 #else
