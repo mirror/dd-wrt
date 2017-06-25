@@ -569,7 +569,6 @@ void delete_static_route(webs_t wp)
 
 extern void gen_key(webs_t wp, char *genstr, int weptype);
 
-
 void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)
 {
 

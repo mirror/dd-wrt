@@ -1407,9 +1407,9 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 		goto footer;
 	}
 	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", wp->http_client_ip) == TRUE)
-		wp->browser_method=USE_LAN;
+		wp->browser_method = USE_LAN;
 	else
-		wp->browser_method=USE_WAN;
+		wp->browser_method = USE_WAN;
 
   /**********   get all webs var **********/
 
