@@ -208,7 +208,7 @@ void ej_nvram_selget(webs_t wp, int argc, char_t ** argv)
 	char *name;
 
 	name = argv[0];
-	if (nvram_matchi("gozila_action", 1)) {
+	if (wp->gozila_action) {
 		char *buf = websGetVar(wp, name, NULL);
 
 		if (buf) {

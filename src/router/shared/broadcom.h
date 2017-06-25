@@ -79,10 +79,7 @@ extern void do_vsp_info_page(unsigned char method, struct mime_handler *handler,
 #define USE_LAN 1
 #define USE_WAN 2
 
-extern int gozila_action;
-extern int error_value;
 extern int debug_value;
-extern int filter_id;
 
 extern char http_client_ip[20];
 extern int lan_ip_changed;
@@ -553,17 +550,8 @@ char *tran_string(char *buf, char *str);
  */
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
-extern int generate_key;
-extern int clone_wan_mac;
 extern int httpd_filter_name(char *old_name, char *new_name, size_t size, int type);
-#else
-extern int *generate_key;
-extern int *clone_wan_mac;
 #endif
-
-#else
-extern int *generate_key;
-extern int *clone_wan_mac;
 #endif
 
 /*
@@ -637,7 +625,7 @@ extern void show_preshared(webs_t wp, char *prefix);
 extern void show_radius(webs_t wp, char *prefix, int showmac, int backup);
 extern void show_wparadius(webs_t wp, char *prefix);
 extern void show_wep(webs_t wp, char *prefix);
-extern char *get_wep_value(char *buf, char *type, char *_bit, char *prefix);
+extern char *get_wep_value(webs_t wp, char *buf, char *type, char *_bit, char *prefix);
 
 #ifdef HAVE_MILKFISH
 extern void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv);
@@ -743,10 +731,4 @@ extern void (*Uvalidate_cgi) (webs_t wp);
 
 #define validate_cgi Uvalidate_cgi
 
-extern int *Uclone_wan_mac;
-
-#define clone_wan_mac Uclone_wan_mac
-extern int *Ugenerate_key;
-
-#define generate_key Ugenerate_key
 #endif
