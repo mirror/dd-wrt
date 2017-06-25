@@ -71,7 +71,7 @@ void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 	ejArgs(argc, argv, "%d", &which);
 
 	if (wp->clone_wan_mac)
-		c = nvram_safe_get("http_client_mac");
+		c = wp->http_client_mac;
 	else {
 		if (nvram_match("def_hwaddr", "00:00:00:00:00:00")) {
 			if (nvram_matchi("port_swap", 1))

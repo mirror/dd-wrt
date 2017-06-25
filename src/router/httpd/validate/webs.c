@@ -567,10 +567,8 @@ void delete_static_route(webs_t wp)
 	return;
 }
 
-extern void gen_key(char *genstr, int weptype);
+extern void gen_key(webs_t wp, char *genstr, int weptype);
 
-extern unsigned char key128[4][13];
-extern unsigned char key64[4][5];
 
 void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)
 {
@@ -582,7 +580,7 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 	if (!prefix || !bit || !passphrase || !tx)
 		return;
 
-	gen_key(passphrase, atoi(bit));
+	gen_key(wp, passphrase, atoi(bit));
 
 	wp->generate_key = 1;
 
@@ -593,13 +591,13 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 5; i++)
-			sprintf(key1 + (i << 1), "%02X", key64[0][i]);
+			sprintf(key1 + (i << 1), "%02X", wp->key64[0][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key2 + (i << 1), "%02X", key64[1][i]);
+			sprintf(key2 + (i << 1), "%02X", wp->key64[1][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key3 + (i << 1), "%02X", key64[2][i]);
+			sprintf(key3 + (i << 1), "%02X", wp->key64[2][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key4 + (i << 1), "%02X", key64[3][i]);
+			sprintf(key4 + (i << 1), "%02X", wp->key64[3][i]);
 
 		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
@@ -618,19 +616,19 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 13; i++)
-			sprintf(key1 + (i << 1), "%02X", key128[0][i]);
+			sprintf(key1 + (i << 1), "%02X", wp->key128[0][i]);
 		key1[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key2 + (i << 1), "%02X", key128[1][i]);
+			sprintf(key2 + (i << 1), "%02X", wp->key128[1][i]);
 		key2[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key3 + (i << 1), "%02X", key128[2][i]);
+			sprintf(key3 + (i << 1), "%02X", wp->key128[2][i]);
 		key3[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key4 + (i << 1), "%02X", key128[3][i]);
+			sprintf(key4 + (i << 1), "%02X", wp->key128[3][i]);
 		key4[26] = 0;
 		// cprintf("passphrase[%s]\n", passphrase);
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
@@ -1096,7 +1094,7 @@ void ping_wol(webs_t wp)
 
 	// use Wol.asp as a debugging console
 #ifdef HAVE_REGISTER
-	if (!isregistered_real())
+	if (wp->isregistered_real)
 		return;
 #endif
 	FILE *fp = popen(wol_cmd, "rb");
@@ -1119,7 +1117,7 @@ void diag_ping_start(webs_t wp)
 
 	setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 #ifdef HAVE_REGISTER
-	if (!isregistered_real())
+	if (wp->isregistered_real)
 		return;
 #endif
 	char cmd[128];
