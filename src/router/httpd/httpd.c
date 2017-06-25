@@ -942,7 +942,7 @@ static void *handle_request(void *arg)
 #endif
 
 #ifdef HAVE_REGISTER
-			if (registered)
+			if (wp->registered)
 #endif
 			{
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {

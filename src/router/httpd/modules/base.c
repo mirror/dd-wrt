@@ -1663,7 +1663,7 @@ static int do_cauth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
-	if (!isregistered())
+	if (wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
