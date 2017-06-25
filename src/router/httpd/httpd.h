@@ -40,6 +40,9 @@ extern BIO *bio_err;
 
 #define AUTH_MAX 64
 
+#define USE_LAN 0
+#define USE_WAN 1
+
 typedef struct {
 	FILE *fp;
 	int threadid;
@@ -76,8 +79,17 @@ typedef struct {
 	char my_next_page[30];
 	int upgrade_ret;
 	int restore_ret;
-
 	int gozila_action;
+	char http_client_ip[sizeof("000.000.000.000\0")];
+	char http_client_mac[sizeof("00:00:00:00:00:00\0")];
+	int browser_method;
+#ifdef HAVE_REGISTER
+	int isregistered;
+	int isregistered_real;
+#endif
+	unsigned char key128[4][14];
+	unsigned char key64[4][5];
+
 
 //persistent
 	int generate_key;

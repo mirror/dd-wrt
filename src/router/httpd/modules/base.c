@@ -1406,10 +1406,10 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	if (!query) {
 		goto footer;
 	}
-	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", nvram_safe_get("http_client_ip")) == TRUE)
-		nvram_set("browser_method", "USE_LAN");
+	if (legal_ip_netmask("lan_ipaddr", "lan_netmask", wp->http_client_ip) == TRUE)
+		wp->browser_method=USE_LAN;
 	else
-		nvram_set("browser_method", "USE_WAN");
+		wp->browser_method=USE_WAN;
 
   /**********   get all webs var **********/
 
@@ -1886,7 +1886,7 @@ static void do_trial_logo(unsigned char method, struct mime_handler *handler, ch
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	do_file(method, handler, url, stream, query);
 #else
-	if (!isregistered_real()) {
+	if (wp->isregistered_real) {
 		do_file(method, handler, "style/logo-trial.png", stream, query);
 	} else {
 		if (iscpe()) {

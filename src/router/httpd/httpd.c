@@ -144,8 +144,7 @@ char *server_dir = NULL;
 
 int httpd_level;
 
-char http_client_ip[20];
-extern char *get_mac_from_ip(char *ip);
+extern char *get_mac_from_ip(char *mac, char *ip);
 
 /* Forwards. */
 static int initialize_listen_socket(usockaddr * usaP);
@@ -481,7 +480,7 @@ void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, cha
 	do_file_2(handler, path, stream, query, attachment);
 }
 
-static int check_connect_type(void)
+static int check_connect_type(webs_t wp)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count_wl = 0;
@@ -497,7 +496,7 @@ static int check_connect_type(void)
 		wlmac = get_wl_assoc_mac(j, &count_wl);
 
 		for (i = 0; i < count_wl; i++) {
-			if (!strcmp(wlmac[i].mac, nvram_safe_get("http_client_mac"))) {
+			if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
 				cprintf("Can't accept wireless access\n");
 				ret = -1;
 			}
@@ -508,15 +507,11 @@ static int check_connect_type(void)
 	return ret;
 }
 
-static char *last_log_ip = NULL;
-static int registered = -1;
-static int registered_real = -1;
 #ifdef HAVE_IAS
 char ias_sid[20];
-char ias_http_client_mac[20];
 int ias_sid_timeout;
-void ias_sid_set();
-int ias_sid_valid();
+void ias_sid_set(webs_t wp);
+int ias_sid_valid(webs_t wp);
 #endif
 
 #define LINE_LEN 10000
@@ -779,13 +774,13 @@ static void *handle_request(void *arg)
 	}
 	// seg change for status site
 #ifdef HAVE_REGISTER
-	if (registered_real == -1) {
-		registered_real = isregistered_real();
+	if (wp->registered_real == -1) {
+		wp->registered_real = isregistered_real();
 	}
-	if (!registered_real)
-		registered = isregistered();
+	if (!wp->registered_real)
+		wp->registered = isregistered();
 	else
-		registered = registered_real;
+		wp->registered = wp->registered_real;
 #endif
 
 	// save the originally requested url
@@ -823,10 +818,10 @@ static void *handle_request(void *arg)
 		}
 	}
 
-	if (!ias_sid_valid()
+	if (!ias_sid_valid(conn_fp)
 	    && (endswith(file, "InternetAtStart.asp") || endswith(file, "detect.asp") || endswith(file, "?ias_detect"))
 	    && strstr(useragent, "Android"))
-		ias_sid_set();
+		ias_sid_set(conn_fp);
 
 	char hostname[32];
 	if (strlen(host) < 32 && ias_detected == 1 && (nvram_matchi("ias_dnsresp", 1))) {
@@ -898,11 +893,11 @@ static void *handle_request(void *arg)
 	}
 	int changepassword = 0;
 #ifdef HAVE_REGISTER
-	if (!registered_real) {
+	if (!wp->registered_real) {
 		if (endswith(file, "About.htm"))
 			file = "register.asp";
 	}
-	if (!registered) {
+	if (!wp->registered) {
 		if (endswith(file, ".asp"))
 			file = "register.asp";
 		else if (endswith(file, ".htm"))
@@ -995,7 +990,7 @@ static void *handle_request(void *arg)
 			}
 #endif
 #endif
-			if (check_connect_type() < 0) {
+			if (check_connect_type(conn_fp) < 0) {
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
 				goto out;
 			}
@@ -1068,22 +1063,13 @@ static void *handle_request(void *arg)
 }
 
 void				// add by honor 2003-04-16
-get_client_ip_mac(int conn_fp)
+get_client_ip_mac(webs_t conn_fp)
 {
 	struct sockaddr_in sa;
 	unsigned int len = sizeof(struct sockaddr_in);
-	char *m;
-
-	getpeername(conn_fp, (struct sockaddr *)&sa, &len);
-	char client[32];
-	char *peer = (char *)inet_ntop(AF_INET, &sa.sin_addr, client, 16);
-
-	nvram_set("http_client_ip", peer);
-	m = get_mac_from_ip(peer);
-	nvram_set("http_client_mac", m);
-#ifdef HAVE_IAS
-	sprintf(ias_http_client_mac, "%s\0", m);
-#endif
+	getpeername(conn_fp->conn_fd, (struct sockaddr *)&sa, &len);
+	inet_ntop(AF_INET, &sa.sin_addr, conn_fp->http_client_ip, sizeof(conn_fp->http_client_ip));
+	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
 }
 
 static void handle_server_sig_int(int sig)
@@ -1489,7 +1475,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		get_client_ip_mac(conn_fp->conn_fd);
+		get_client_ip_mac(conn_fp);
 
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
@@ -1794,21 +1780,21 @@ int wfclose(webs_t wp)
 }
 
 #ifdef HAVE_IAS
-void ias_sid_set()
+void ias_sid_set(webs_t wp)
 {
 
 	struct sysinfo sinfo;
 
 	sysinfo(&sinfo);
-	if (strlen(ias_http_client_mac)) {
+	if (strlen(wp->http_client_mac)) {
 		ias_sid_timeout = sinfo.uptime + 300;
-		sprintf(ias_sid, "%s", ias_http_client_mac);
+		sprintf(ias_sid, "%s", wp->http_client_mac);
 		fprintf(stderr, "[IAS SID SET] %d %s\n", ias_sid_timeout, ias_sid);
 	}
 	return;
 }
 
-int ias_sid_valid()
+int ias_sid_valid(webs_t wp)
 {
 
 	struct sysinfo sinfo;
@@ -1818,7 +1804,7 @@ int ias_sid_valid()
 		return 0;
 
 	sysinfo(&sinfo);
-	mac = ias_http_client_mac;
+	mac = wp->http_client_mac;
 	if (sinfo.uptime > ias_sid_timeout || (strcmp(mac, ias_sid) && strlen(mac))) {
 		fprintf(stderr, "[IAS SID RESET] %d<>%d %s<>%s\n", sinfo.uptime, ias_sid_timeout, mac, ias_sid);
 		ias_sid_timeout = 0;

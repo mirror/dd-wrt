@@ -787,7 +787,6 @@ void validate_portsetup(webs_t wp, char *value, struct variable *v)
 	}
 }
 #endif
-int lan_ip_changed;
 
 void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
@@ -812,10 +811,10 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 		unlink("/jffs/dnsmasq.leases");
 	}
 
-	if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) || strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
+/*	if (strcmp(lan_ipaddr, nvram_safe_get("lan_ipaddr")) || strcmp(lan_netmask, nvram_safe_get("lan_netmask")))
 		lan_ip_changed = 1;
 	else
-		lan_ip_changed = 0;
+		lan_ip_changed = 0;*/
 
 	nvram_set(v->name, lan_ipaddr);
 	nvram_set("lan_netmask", lan_netmask);
