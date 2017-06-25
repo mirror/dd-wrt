@@ -799,7 +799,7 @@ extern char *getRouter(void);
 extern int diag_led(int type, int act);
 extern int C_led(int i);
 extern int get_single_ip(char *ipaddr, int which);
-extern char *get_mac_from_ip(char *ip);
+extern char *get_mac_from_ip(char *mac, char *ip);
 extern struct dns_lists *get_dns_list(void);
 extern int dns_to_resolv(void);
 extern char *get_wan_face(void);
