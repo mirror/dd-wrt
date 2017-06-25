@@ -590,7 +590,7 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 
 	return "";
 }
-
+/*
 void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 {
 	char *type, *bit;
@@ -617,7 +617,7 @@ void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 
 	websWrite(wp, "%s", new_value);
 }
-
+*/
 void ej_show_wl_wep_setting(webs_t wp, int argc, char_t ** argv)
 {
 
