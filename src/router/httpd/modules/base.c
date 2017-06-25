@@ -2026,6 +2026,7 @@ static char *scanfile(char *buf, const char *tran)
 				if (val == EOF) {
 					free(temp);
 					free(temp1);
+					fclose(fp);
 					return NULL;
 				}
 				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
