@@ -546,14 +546,14 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
  * 
  * return ""; } 
  */
-char *get_wep_value(char *temp, char *type, char *_bit, char *prefix)
+char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 {
 
 	int cnt;
 	char *wordlist;
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
-	if (nvram_matchi("generate_key", 1)) {
+	if (wp->generate_key) {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);
@@ -603,13 +603,13 @@ void ej_get_wep_value(webs_t wp, int argc, char_t ** argv)
 	if (bit == NULL)
 		bit = nvram_safe_get("ath0_wep_bit");
 
-	value = get_wep_value(temp, type, bit, "ath0");
+	value = get_wep_value(wp, temp, type, bit, "ath0");
 #else
 	bit = GOZILA_GET(wp, "wl_wep_bit");
 	if (bit == NULL)
 		bit = nvram_safe_get("ath0_wep_bit");
 	cprintf("bit = %s\n", bit);
-	value = get_wep_value(temp, type, bit, "wl");
+	value = get_wep_value(wp, temp, type, bit, "wl");
 #endif
 	cprintf("value = %s\n", value);
 	httpd_filter_name(value, new_value, sizeof(new_value), GET);

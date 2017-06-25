@@ -58,8 +58,6 @@
 #include <utils.h>
 #include <dlfcn.h>
 
-int debug_value = 0;
-
 #include <fcntl.h>
 #include <signal.h>
 #include <time.h>
@@ -1184,7 +1182,7 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 	int sleep_time;
 	struct gozila_action *act;
 
-	nvram_seti("gozila_action", 1);
+	wp->gozila_action = 1;
 	wp->my_next_page[0] = '\0';
 	submit_button = websGetVar(wp, "submit_button", NULL);	/* every html 
 								 * must have
@@ -1255,9 +1253,9 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_ej(METHOD_GET, NULL, path, wp, NULL);	// refresh
 	websDone(wp, 200);
 
-	nvram_seti("gozila_action", 0);
-	nvram_seti("generate_key", 0);
-	nvram_seti("clone_wan_mac", 0);
+	wp->generate_key = 0;
+	wp->gozila_action = 0;
+	wp->clone_wan_mac = 0;
 
 	return 1;
 }

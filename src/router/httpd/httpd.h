@@ -77,6 +77,13 @@ typedef struct {
 	int upgrade_ret;
 	int restore_ret;
 
+	int gozila_action;
+
+//persistent
+	int generate_key;
+	int clone_wan_mac;
+	int filter_id;
+
 /* CGI hash table */
 	struct hsearch_data htab;
 } webs;

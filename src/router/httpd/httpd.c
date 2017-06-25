@@ -133,6 +133,10 @@ char *dhm_G = "4";
 //unsigned char session_table[SSL_SESSION_TBL_LEN];
 #endif
 
+static int generate_key;
+static int clone_wan_mac;
+static int filter_id;
+
 #define DEFAULT_HTTP_PORT 80
 int server_port;
 char pid_file[80];
@@ -156,6 +160,7 @@ static int numthreads = 0;
 
 #ifndef HAVE_MICRO
 pthread_mutex_t httpd_mutex;
+pthread_mutex_t input_mutex;
 #endif
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -529,6 +534,20 @@ static void *handle_request(void *arg)
 	int cl = 0, count, flags;
 	char *line;
 	long method_type;
+
+#ifndef HAVE_MICRO
+	pthread_mutex_lock(&httpd_mutex);
+	conn_fp->generate_key = generate_key;
+	conn_fp->clone_wan_mac = clone_wan_mac;
+	conn_fp->filter_id = filter_id;
+	pthread_mutex_unlock(&httpd_mutex);
+#else
+	conn_fp->generate_key = generate_key;
+	conn_fp->clone_wan_mac = clone_wan_mac;
+	conn_fp->filter_id = filter_id;
+
+#endif
+
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
@@ -921,6 +940,12 @@ static void *handle_request(void *arg)
 
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
+
+#ifndef HAVE_MICRO
+			if (handler->input)
+				pthread_mutex_lock(&input_mutex);
+#endif
+
 #ifdef HAVE_REGISTER
 			if (registered)
 #endif
@@ -950,6 +975,7 @@ static void *handle_request(void *arg)
 			if (method_type == METHOD_POST) {
 				conn_fp->post = 1;
 			}
+
 			if (handler->input)
 				handler->input(file, conn_fp, cl, boundary);
 #if defined(linux)
@@ -998,6 +1024,12 @@ static void *handle_request(void *arg)
 			} else {
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
+
+#ifndef HAVE_MICRO
+			if (handler->input)
+				pthread_mutex_unlock(&input_mutex);
+#endif
+
 			break;
 
 		}
@@ -1023,7 +1055,14 @@ static void *handle_request(void *arg)
 #ifndef HAVE_MICRO
 	pthread_mutex_lock(&httpd_mutex);
 	numthreads--;
+	generate_key = conn_fp->generate_key;
+	clone_wan_mac = conn_fp->clone_wan_mac;
+	filter_id = conn_fp->filter_id;
 	pthread_mutex_unlock(&httpd_mutex);
+#else
+	generate_key = conn_fp->generate_key;
+	clone_wan_mac = conn_fp->clone_wan_mac;
+	filter_id = conn_fp->filter_id;
 #endif
 	return NULL;
 }
@@ -1159,7 +1198,6 @@ int main(int argc, char **argv)
 	struct stat stat_dir;
 
 	set_sigchld_handler();
-	nvram_seti("gozila_action", 0);
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
 #endif
@@ -1179,6 +1217,7 @@ int main(int argc, char **argv)
 #endif
 #ifndef HAVE_MICRO
 	pthread_mutex_init(&httpd_mutex, NULL);
+	pthread_mutex_init(&input_mutex, NULL);
 #endif
 	strcpy(pid_file, "/var/run/httpd.pid");
 	server_port = DEFAULT_HTTP_PORT;
