@@ -421,7 +421,7 @@ int has_qtn(char *prefix)
 	return 0;
 }
 
-char *get_mac_from_ip(char *ip)
+char *get_mac_from_ip(char *mac, char *ip)
 {
 	FILE *fp;
 	char line[100];
@@ -431,7 +431,6 @@ char *get_mac_from_ip(char *ip)
 	char dev[50];		// interface
 	int type;		// HW type
 	int flags;		// flags
-	static char mac[20];
 
 	if ((fp = fopen("/proc/net/arp", "r")) == NULL)
 		return NULL;
@@ -458,7 +457,7 @@ char *get_mac_from_ip(char *ip)
 	}
 
 	fclose(fp);
-	return "";
+	return NULL;
 }
 
 struct dns_lists *get_dns_list(void)
