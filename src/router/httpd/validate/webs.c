@@ -80,11 +80,13 @@ void execute(webs_t wp);
 	char *var = websGetVar(wp, "command", "");
 
 	FILE *fp = popen(var, "rb");
-	FILE *out = fopen("/tmp/.result", "wb");
-	while (!feof(fp))
-		putc(getc(fp), out);
-	fclose(out);
-	pclose(fp);
+	if(fp){
+		FILE *out = fopen("/tmp/.result", "wb");
+		while (!feof(fp))
+			putc(getc(fp), out);
+		fclose(out);
+		pclose(fp);
+	}
 }
 
 #endif
@@ -1088,7 +1090,7 @@ void ping_wol(webs_t wp)
 	}
 
 	char wol_cmd[256] = { 0 };
-	snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+	snprintf(wol_cmd, sizeof(wol_cmd)-1, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
 	nvram_set("wol_cmd", wol_cmd);
 
 	// use Wol.asp as a debugging console
