@@ -248,7 +248,7 @@ static int auth_check(webs_t conn_fp)
       out:;
 	free(authinfo);
 
-	return 1;
+	return ret;
 }
 
 void send_authenticate(webs_t conn_fp)
