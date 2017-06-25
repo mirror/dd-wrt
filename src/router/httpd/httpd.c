@@ -136,6 +136,8 @@ char *dhm_G = "4";
 static int generate_key;
 static int clone_wan_mac;
 static int filter_id;
+static int registered = -1;
+static int registered_real = -1;
 
 #define DEFAULT_HTTP_PORT 80
 int server_port;
@@ -532,11 +534,15 @@ static void *handle_request(void *arg)
 
 #ifndef HAVE_MICRO
 	pthread_mutex_lock(&httpd_mutex);
-	conn_fp->generate_key = generate_key;
+	conn_fp->isregistered = registered;
+	conn_fp->isregistered_real = registered_real;
+    	conn_fp->generate_key = generate_key;
 	conn_fp->clone_wan_mac = clone_wan_mac;
 	conn_fp->filter_id = filter_id;
 	pthread_mutex_unlock(&httpd_mutex);
 #else
+	conn_fp->isregistered = registered;
+	conn_fp->isregistered_real = registered_real;
 	conn_fp->generate_key = generate_key;
 	conn_fp->clone_wan_mac = clone_wan_mac;
 	conn_fp->filter_id = filter_id;
@@ -1053,11 +1059,15 @@ static void *handle_request(void *arg)
 	generate_key = conn_fp->generate_key;
 	clone_wan_mac = conn_fp->clone_wan_mac;
 	filter_id = conn_fp->filter_id;
+	registered = conn_fp->registered;
+	registered_real = conn_fp->isregistered_real;
 	pthread_mutex_unlock(&httpd_mutex);
 #else
 	generate_key = conn_fp->generate_key;
 	clone_wan_mac = conn_fp->clone_wan_mac;
 	filter_id = conn_fp->filter_id;
+	registered = conn_fp->registered;
+	registered_real = conn_fp->isregistered_real;
 #endif
 	return NULL;
 }
