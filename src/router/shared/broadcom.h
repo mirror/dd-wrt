@@ -76,13 +76,6 @@ extern void do_vsp_info_page(unsigned char method, struct mime_handler *handler,
 #define MAC_LEN 17
 #define TMP_PASSWD "d6nw5v1x2pc7st9m"
 
-#define USE_LAN 1
-#define USE_WAN 2
-
-extern int debug_value;
-
-extern char http_client_ip[20];
-extern int lan_ip_changed;
 
 /*
  * struct variable { char *name; char *longname; void (*validate)(webs_t wp,
