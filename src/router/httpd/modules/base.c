@@ -1886,7 +1886,7 @@ static void do_trial_logo(unsigned char method, struct mime_handler *handler, ch
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	do_file(method, handler, url, stream, query);
 #else
-	if (wp->isregistered_real) {
+	if (stream->isregistered_real) {
 		do_file(method, handler, "style/logo-trial.png", stream, query);
 	} else {
 		if (iscpe()) {

@@ -1,4 +1,4 @@
-/* milli_httpd - pretty small HTTP server
+/* milli_httpd - pretty smal7l HTTP server
 ** A combination of
 ** micro_httpd - really small HTTP server
 ** and
@@ -774,13 +774,13 @@ static void *handle_request(void *arg)
 	}
 	// seg change for status site
 #ifdef HAVE_REGISTER
-	if (conn_fp->registered_real == -1) {
-		conn_fp->registered_real = isregistered_real();
+	if (conn_fp->isregistered_real == -1) {
+		conn_fp->isregistered_real = isregistered_real();
 	}
-	if (!conn_fp->registered_real)
-		conn_fp->registered = isregistered();
+	if (!conn_fp->isregistered_real)
+		conn_fp->isregistered = isregistered();
 	else
-		conn_fp->registered = wp->registered_real;
+		conn_fp->isregistered = conn_fp->isregistered_real;
 #endif
 
 	// save the originally requested url
@@ -893,11 +893,11 @@ static void *handle_request(void *arg)
 	}
 	int changepassword = 0;
 #ifdef HAVE_REGISTER
-	if (!conn_fp->registered_real) {
+	if (!conn_fp->isregistered_real) {
 		if (endswith(file, "About.htm"))
 			file = "register.asp";
 	}
-	if (!conn_fp->registered) {
+	if (!conn_fp->isregistered) {
 		if (endswith(file, ".asp"))
 			file = "register.asp";
 		else if (endswith(file, ".htm"))
@@ -942,7 +942,7 @@ static void *handle_request(void *arg)
 #endif
 
 #ifdef HAVE_REGISTER
-			if (conn_fp->registered)
+			if (conn_fp->isregistered)
 #endif
 			{
 				if (!changepassword && handler->auth && (!handler->handle_options || method_type != METHOD_OPTIONS)) {
