@@ -87,10 +87,6 @@ typedef struct {
 	int isregistered;
 	int isregistered_real;
 #endif
-	unsigned char key128[4][14];
-	unsigned char key64[4][5];
-
-
 //persistent
 	int generate_key;
 	int clone_wan_mac;
