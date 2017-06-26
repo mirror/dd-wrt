@@ -134,7 +134,7 @@ static int phy_lookup_by_number(int idx)
 	char buf[200];
 	int fd, pos;
 
-	snprintf(buf, sizeof(buf), "/sys/class/ieee80211/phy%d/index", idx);
+	snprintf(buf, sizeof(buf)-1, "/sys/class/ieee80211/phy%d/index", idx);
 
 	fd = open(buf, O_RDONLY);
 	if (fd < 0)
@@ -901,6 +901,7 @@ int has_greenfield(char *interface)
 		return 1;
 	}
 	free(htcaps);
+	return 0;
 
 }
 
