@@ -111,7 +111,7 @@ static void flog(const char *fmt, ...)
 		va_list args;
 
 		va_start(args, (char *)fmt);
-		vsnprintf(varbuf, sizeof(varbuf)-1, fmt, args);
+		vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 		va_end(args);
 		FILE *fp = fopen("/tmp/syslog.log", "ab");
 		fprintf(fp, varbuf);
@@ -603,7 +603,7 @@ int nvifname_to_osifname(const char *nvifname, char *osifname_buf, int osifname_
 		return 0;
 	}
 
-	snprintf(varname, sizeof(varname)-1, "%s_ifname", nvifname);
+	snprintf(varname, sizeof(varname), "%s_ifname", nvifname);
 	ptr = nvram_get(varname);
 	if (ptr) {
 		/*
@@ -655,7 +655,7 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 	 * look for interface name on the primary interfaces first 
 	 */
 	for (pri = 0; pri < MAX_NVPARSE; pri++) {
-		snprintf(varname, sizeof(varname)-1, "wl%d_ifname", pri);
+		snprintf(varname, sizeof(varname), "wl%d_ifname", pri);
 		if (nvram_match(varname, (char *)osifname)) {
 			snprintf(nvifname_buf, nvifname_buf_len, "wl%d", pri);
 			return 0;
@@ -667,7 +667,7 @@ int osifname_to_nvifname(const char *osifname, char *nvifname_buf, int nvifname_
 	 */
 	for (pri = 0; pri < MAX_NVPARSE; pri++)
 		for (sec = 0; sec < MAX_NVPARSE; sec++) {
-			snprintf(varname, sizeof(varname)-1, "wl%d.%d_ifname", pri, sec);
+			snprintf(varname, sizeof(varname), "wl%d.%d_ifname", pri, sec);
 			if (nvram_match(varname, (char *)osifname)) {
 				snprintf(nvifname_buf, nvifname_buf_len, "wl%d.%d", pri, sec);
 				return 0;
@@ -827,14 +827,14 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	va_list ap;
 	int n;
 	char *dest;
-
+	if (len < 1)
+	    return 0;
 	va_start(ap, fmt);
 	n = vasprintf(&dest, fmt, ap);
 	va_end(ap);
-	strncpy(str, dest, len);
-	str[len] = '\0';
+	strncpy(str, dest, len - 1);
+	str[len - 1] = '\0';
 	free(dest);
-
 	return n;
 }
 

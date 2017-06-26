@@ -257,7 +257,7 @@ int dhcp_lease_table_init(void)
 		// Parse leases file 
 		if ((fp = fopen("/tmp/udhcpd.leases", "r"))) {
 			while (fread(&lease, sizeof(lease), 1, fp)) {
-				snprintf(mac, sizeof(mac)-1, "%02X:%02X:%02X:%02X:%02X:%02X", lease.chaddr[0], lease.chaddr[1], lease.chaddr[2], lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
+				snprintf(mac, sizeof(mac), "%02X:%02X:%02X:%02X:%02X:%02X", lease.chaddr[0], lease.chaddr[1], lease.chaddr[2], lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
 				if (!strcmp("00:00:00:00:00:00", mac))
 					continue;
 				addr.s_addr = lease.yiaddr;
@@ -294,8 +294,8 @@ void get_hostname_ip(char *type, char *filename)
 				continue;
 			for (i = 0; i < MAX_LEASES; i++) {
 				if (!strcmp(leases[0], wl_client_macs[i].hwaddr)) {
-					snprintf(wl_client_macs[i].ipaddr, sizeof(wl_client_macs[i].ipaddr)-1, "%s", leases[1]);
-					snprintf(wl_client_macs[i].hostname, sizeof(wl_client_macs[i].hostname)-1, "%s", leases[2]);
+					snprintf(wl_client_macs[i].ipaddr, sizeof(wl_client_macs[i].ipaddr), "%s", leases[1]);
+					snprintf(wl_client_macs[i].hostname, sizeof(wl_client_macs[i].hostname), "%s", leases[2]);
 					break;
 				}
 			}
@@ -332,9 +332,9 @@ void save_hostname_ip(void)
 			strcpy(leases[2], "");
 			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
-			snprintf(wl_clients[i].hwaddr, sizeof(wl_clients[i].hwaddr)-1, "%s", leases[0]);
-			snprintf(wl_clients[i].ipaddr, sizeof(wl_clients[i].ipaddr)-1, "%s", leases[1]);
-			snprintf(wl_clients[i].hostname, sizeof(wl_clients[i].hostname)-1, "%s", leases[2]);
+			snprintf(wl_clients[i].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
+			snprintf(wl_clients[i].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", leases[1]);
+			snprintf(wl_clients[i].hostname, sizeof(wl_clients[i].hostname), "%s", leases[2]);
 			i++;
 		}
 		fclose(fp);
@@ -346,17 +346,17 @@ void save_hostname_ip(void)
 			for (j = 0; j < MAX_LEASES; j++) {
 				match = 0;
 				if (!strcmp(wl_clients[j].hwaddr, wl_client_macs[i].hwaddr)) {
-					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr)-1, "%s", wl_client_macs[i].ipaddr);
-					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname)-1, "%s", wl_client_macs[i].hostname);
+					snprintf(wl_clients[j].ipaddr, sizeof(wl_clients[j].ipaddr), "%s", wl_client_macs[i].ipaddr);
+					snprintf(wl_clients[j].hostname, sizeof(wl_clients[j].hostname), "%s", wl_client_macs[i].hostname);
 					match = 1;
 					break;
 				}
 
 			}
 			if (match == 0) {
-				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr)-1, "%s", wl_client_macs[i].hwaddr);
-				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr)-1, "%s", wl_client_macs[i].ipaddr);
-				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname)-1, "%s", wl_client_macs[i].hostname);
+				snprintf(wl_clients[count].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", wl_client_macs[i].hwaddr);
+				snprintf(wl_clients[count].ipaddr, sizeof(wl_clients[i].ipaddr), "%s", wl_client_macs[i].ipaddr);
+				snprintf(wl_clients[count].hostname, sizeof(wl_clients[i].hostname), "%s", wl_client_macs[i].hostname);
 				count++;
 			}
 		}
@@ -405,7 +405,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 		char *maclist = nvram_safe_get(var);
 
 		foreach(word, maclist, next) {
-			snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr)-1, "%s", word);
+			snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", word);
 			wl_client_macs[nv_count].status = 0;	// offline (default)
 			wl_client_macs[nv_count].check = 1;	// checked
 			nv_count++;
@@ -452,7 +452,7 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 					}
 				}
 				if (match == 0) {
-					snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr)-1, "%s", list[1]);
+					snprintf(wl_client_macs[nv_count].hwaddr, sizeof(wl_client_macs[nv_count].hwaddr), "%s", list[1]);
 					wl_client_macs[nv_count].status = 1;	// online
 					wl_client_macs[nv_count].check = 0;	// no checked
 					nv_count++;
@@ -554,9 +554,9 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
 	if (wp->generate_key) {
-		snprintf(wl_wep, sizeof(wl_wep)-1, "%s_wep_gen", prefix);
+		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
-		snprintf(wl_wep, sizeof(wl_wep)-1, "%s_wep_buf", prefix);
+		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);
 	}
 
 	wordlist = nvram_safe_get(wl_wep);
@@ -771,7 +771,7 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 	if ((unit = nvram_geti("wl_unit")) < 0)
 		return;
 
-	snprintf(prefix, sizeof(prefix)-1, "wl%d_", unit);
+	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	name = nvram_safe_get(strcat_r(prefix, "ifname", tmp));
 
 	if (strcmp(op, "get") == 0) {

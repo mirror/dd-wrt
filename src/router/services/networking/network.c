@@ -442,7 +442,7 @@ static int enable_dhcprelay(char *ifname)
 			 * get the instance number of the wl i/f 
 			 */
 			wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
-			snprintf(mode, sizeof(mode)-1, "wl%d_mode", unit);
+			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
 
 			/*
 			 * enable DHCP relay, there should be only one WET i/f 
@@ -2379,7 +2379,7 @@ void start_lan(void)
 #else
 				wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 #endif
-				snprintf(wl_name, sizeof(wl_name)-1, "wl%d_mode", unit);
+				snprintf(wl_name, sizeof(wl_name), "wl%d_mode", unit);
 				/*
 				 * Do not attach the main wl i/f if in wds or client/adhoc 
 				 */
@@ -2531,7 +2531,7 @@ void start_lan(void)
 			 * get the instance number of the wl i/f 
 			 */
 			wl_ioctl(lan_ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
-			snprintf(prefix, sizeof(prefix)-1, "wl%d_", unit);
+			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 			/*
 			 * Receive all multicast frames in WET mode 
 			 */
@@ -2726,7 +2726,7 @@ void start_lan(void)
 				wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
 #endif
 
-				snprintf(wdsbc, sizeof(wdsbc)-1, "%s", wdsip);
+				snprintf(wdsbc, sizeof(wdsbc), "%s", wdsip);
 				get_broadcast(wdsbc, wdsnm);
 				eval("ifconfig", dev, wdsip, "broadcast", wdsbc, "netmask", wdsnm, "up");
 			} else if (nvram_matchi(wdsvarname, 2)
@@ -3876,11 +3876,11 @@ void start_wan(int status)
 		char username[80], passwd[80];
 		char idletime[20], retry_num[20];
 
-		snprintf(idletime, sizeof(idletime)-1, "%d", nvram_geti("ppp_idletime") * 60);
-		snprintf(retry_num, sizeof(retry_num)-1, "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-		snprintf(username, sizeof(username)-1, "%s", nvram_safe_get("ppp_username"));
-		snprintf(passwd, sizeof(passwd)-1, "%s", nvram_safe_get("ppp_passwd"));
+		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 		mkdir("/tmp/ppp", 0777);
 		int timeout = 5;
@@ -4207,11 +4207,11 @@ void start_wan(int status)
 		stop_atm();
 		start_atm();
 
-		snprintf(idletime, sizeof(idletime)-1, "%d", nvram_geti("ppp_idletime") * 60);
-		snprintf(retry_num, sizeof(retry_num)-1, "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
+		snprintf(idletime, sizeof(idletime), "%d", nvram_geti("ppp_idletime") * 60);
+		snprintf(retry_num, sizeof(retry_num), "%d", (nvram_geti("ppp_redialperiod") / 5) - 1);
 
-		snprintf(username, sizeof(username)-1, "%s", nvram_safe_get("ppp_username"));
-		snprintf(passwd, sizeof(passwd)-1, "%s", nvram_safe_get("ppp_passwd"));
+		snprintf(username, sizeof(username), "%s", nvram_safe_get("ppp_username"));
+		snprintf(passwd, sizeof(passwd), "%s", nvram_safe_get("ppp_passwd"));
 
 		mkdir("/tmp/ppp", 0777);
 		int timeout = 5;
@@ -4599,7 +4599,7 @@ static void start_wan6_done(char *wan_ifname)
 		if (nvram_match("wan_proto", "disabled")) {
 			sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
 		} else {
-			sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
+			sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		}
 
 		char ip[INET6_ADDRSTRLEN + 4];
@@ -4608,7 +4608,7 @@ static void start_wan6_done(char *wan_ifname)
 
 		p = ipv6_router_address(NULL, addr6);
 		if (*p) {
-			snprintf(ip, sizeof(ip)-1, "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
+			snprintf(ip, sizeof(ip), "%s/%d", p, nvram_geti("ipv6_pf_len") ? : 64);
 			eval("ip", "-6", "addr", "add", ip, "dev", nvram_safe_get("lan_ifname"));
 		}
 		if (nvram_match("wan_proto", "disabled")) {
@@ -5119,7 +5119,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	 * the wireless interface must be configured to run NAS 
 	 */
 	wl_ioctl(ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
-	snprintf(prefix, sizeof(prefix)-1, "wl%d_", unit);
+	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	if (nvram_match(strcat_r(prefix, "akm", tmp), "") && nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
 		return 0;
 
@@ -5188,7 +5188,7 @@ void stop_hotplug_net(void)
 static void writenet(char *path, int cpumask, char *ifname)
 {
 	char dev[64];
-	snprintf(dev, sizeof(dev)-1, "/sys/class/net/%s/%s", ifname, path);
+	snprintf(dev, sizeof(dev), "/sys/class/net/%s/%s", ifname, path);
 
 	int fd = open(dev, O_WRONLY);
 	if (fd < 0)

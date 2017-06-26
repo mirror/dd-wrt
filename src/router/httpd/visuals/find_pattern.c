@@ -30,9 +30,9 @@
 
 /*
  * Example data = $NAME:111$STAT:222 find_pattern(data, strlen(data),
- * "$NAME:", sizeof("$NAME:")-1, '$', &offset, &len); produces : ret = 1,
+ * "$NAME:", sizeof("$NAME:"), '$', &offset, &len); produces : ret = 1,
  * offset=6, len=3, buf = 111 find_pattern(data, strlen(data), "$IP:",
- * sizeof("$IP:")-1, '$', &offset, &len); produces : ret = 0 
+ * sizeof("$IP:"), '$', &offset, &len); produces : ret = 0 
  */
 /*
  * Return 1 for match, 0 for accept, -1 for partial. 
