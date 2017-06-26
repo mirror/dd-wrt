@@ -176,7 +176,7 @@ static int file_get(webs_t wp)
 static void *global_handle = NULL;
 static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/2003
 {
-	int c, ret;
+	int c = 0, ret = 0;
 	char *pattern, *asp = NULL, *func = NULL, *end = NULL;
 	int len = 0;
 	memdebug_enter();
