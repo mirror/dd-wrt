@@ -1059,7 +1059,7 @@ static void *handle_request(void *arg)
 	generate_key = conn_fp->generate_key;
 	clone_wan_mac = conn_fp->clone_wan_mac;
 	filter_id = conn_fp->filter_id;
-	registered = conn_fp->registered;
+	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
 	pthread_mutex_unlock(&httpd_mutex);
 #else
