@@ -74,96 +74,96 @@ int init_ddns(void)
 		else
 			strcpy(service, "dyndns@dyndns.org");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname");
-		snprintf(_dyndnstype, sizeof(_dyndnstype)-1, "%s", "ddns_dyndnstype");
-		snprintf(_wildcard, sizeof(_wildcard)-1, "%s", "ddns_wildcard");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype");
+		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard");
 		break;
 
 	case 2:
 		strcpy(service, "default@freedns.afraid.org");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_2");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_2");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_2");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_2");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_2");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_2");
 		break;
 
 	case 3:
 		strcpy(service, "default@zoneedit.com");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_3");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_3");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_3");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_3");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_3");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_3");
 		break;
 
 	case 4:
 		strcpy(service, "default@no-ip.com");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_4");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_4");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_4");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_4");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_4");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_4");
 		break;
 
 	case 5:
 		strcpy(service, "custom@http_svr_basic_auth");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_5");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_5");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_5");
-		snprintf(_url, sizeof(_url)-1, "%s", "ddns_url");
-		snprintf(_conf, sizeof(_conf)-1, "%s", "ddns_conf");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_5");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_5");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_5");
+		snprintf(_url, sizeof(_url), "%s", "ddns_url");
+		snprintf(_conf, sizeof(_conf), "%s", "ddns_conf");
 		break;
 
 	case 6:
 		strcpy(service, "dyndns@3322.org");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_6");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_6");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_6");
-		snprintf(_dyndnstype, sizeof(_dyndnstype)-1, "%s", "ddns_dyndnstype_6");
-		snprintf(_wildcard, sizeof(_wildcard)-1, "%s", "ddns_wildcard_6");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_6");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_6");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_6");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "%s", "ddns_dyndnstype_6");
+		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_6");
 		break;
 
 	case 7:
 		strcpy(service, "default@easydns.com");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_7");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_7");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_7");
-		snprintf(_wildcard, sizeof(_wildcard)-1, "%s", "ddns_wildcard_7");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_7");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_7");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_7");
+		snprintf(_wildcard, sizeof(_wildcard), "%s", "ddns_wildcard_7");
 		break;
 
 	case 8:
 		strcpy(service, "default@tzo.com");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_8");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_8");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_8");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_8");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_8");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_8");
 		break;
 
 	case 9:
 		strcpy(service, "default@dynsip.org");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_9");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_9");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_9");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_9");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_9");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_9");
 		break;
 
 	case 10:
 		strcpy(service, "default@dtdns.com");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_10");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_10");
-		snprintf(_hostname, sizeof(_username)-1, "%s", "ddns_username_10");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_10");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_10");
+		snprintf(_hostname, sizeof(_username), "%s", "ddns_username_10");
 		break;
 
 	case 11:
 		strcpy(service, "default@duiadns.net");
 
-		snprintf(_username, sizeof(_username)-1, "%s", "ddns_username_11");
-		snprintf(_passwd, sizeof(_passwd)-1, "%s", "ddns_passwd_11");
-		snprintf(_hostname, sizeof(_hostname)-1, "%s", "ddns_hostname_11");
+		snprintf(_username, sizeof(_username), "%s", "ddns_username_11");
+		snprintf(_passwd, sizeof(_passwd), "%s", "ddns_passwd_11");
+		snprintf(_hostname, sizeof(_hostname), "%s", "ddns_hostname_11");
 		break;
 
 	default:

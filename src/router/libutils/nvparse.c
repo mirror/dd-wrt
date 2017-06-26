@@ -370,7 +370,7 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 	 * Parse
 	 * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1[:,]proto[:,]enable[:,]desc 
 	 */
-	snprintf(name, sizeof(name)-1, "forward_port%d", which);
+	snprintf(name, sizeof(name), "forward_port%d", which);
 	if (!nvram_invmatch(name, ""))
 		return FALSE;
 	strncpy(value, nvram_get(name), sizeof(value));
@@ -451,10 +451,10 @@ bool get_forward_port(int which, netconf_nat_t * nat)
 		char *ip;
 		char buf[254];
 
-		snprintf(ip3, sizeof(ip3)-1, "%d", get_single_ip(lan_ipaddr, 3));
+		snprintf(ip3, sizeof(ip3), "%d", get_single_ip(lan_ipaddr, 3));
 		ip = get_complete_lan_ip(ip3);
 		(void)inet_aton(ip, &nat->ipaddr);
-		snprintf(buf, sizeof(buf)-1, "%s-%s>%s:%s-%s,%s,%s,%s", wan_port0, wan_port1, ip, lan_port0, lan_port1, proto, enable, desc);
+		snprintf(buf, sizeof(buf), "%s-%s>%s:%s-%s,%s,%s,%s", wan_port0, wan_port1, ip, lan_port0, lan_port1, proto, enable, desc);
 		nvram_set(name, buf);
 	} else
 		(void)inet_aton(lan_ipaddr, &nat->ipaddr);
@@ -513,7 +513,7 @@ bool set_forward_port(const netconf_nat_t * nat)
 	 * Set
 	 * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc 
 	 */
-	snprintf(name, sizeof(name)-1, "forward_port%d", which);
+	snprintf(name, sizeof(name), "forward_port%d", which);
 	len = sizeof(value);
 
 	/*
@@ -593,7 +593,7 @@ bool del_forward_port(const netconf_nat_t * nat)
 	 * Set
 	 * wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc 
 	 */
-	snprintf(name, sizeof(name)-1, "forward_port%d", which);
+	snprintf(name, sizeof(name), "forward_port%d", which);
 	len = sizeof(value);
 
 	/*
@@ -679,7 +679,7 @@ bool get_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char
 {
 	char name[] = "wlXXXXXXX_wdsXXXXXXX", value[1000], *next;
 
-	snprintf(name, sizeof(name)-1, "wl%d_wds%d", unit, which);
+	snprintf(name, sizeof(name), "wl%d_wds%d", unit, which);
 	strncpy(value, nvram_safe_get(name), sizeof(value));
 	next = value;
 
@@ -743,8 +743,8 @@ bool set_wds_wsec(int unit, int which, char *mac, char *role, char *crypto, char
 {
 	char name[] = "wlXXXXXXX_wdsXXXXXXX", value[10000];
 
-	snprintf(name, sizeof(name)-1, "wl%d_wds%d", unit, which);
-	snprintf(value, sizeof(value)-1, "%s,%s,%s,%s", mac, role, crypto, auth);
+	snprintf(name, sizeof(name), "wl%d_wds%d", unit, which);
+	snprintf(value, sizeof(value), "%s,%s,%s,%s", mac, role, crypto, auth);
 
 	if (!strcmp(auth, "psk")) {
 		int offset;
@@ -768,7 +768,7 @@ bool del_wds_wsec(int unit, int which)
 {
 	char name[] = "wlXXXXXXX_wdsXXXXXXX";
 
-	snprintf(name, sizeof(name)-1, "wl%d_wds%d", unit, which);
+	snprintf(name, sizeof(name), "wl%d_wds%d", unit, which);
 
 	nvram_unset(name);
 

@@ -550,7 +550,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			// have code pattern
 			char ver[40];
 			long ver1, ver2, ver3;
-			snprintf(ver, sizeof(ver)-1, "v%d.%d.%d", buf[11], buf[12], buf[13]);
+			snprintf(ver, sizeof(ver), "v%d.%d.%d", buf[11], buf[12], buf[13]);
 			ver1 = convert_ver(ver);
 			ver2 = convert_ver(INTEL_FLASH_SUPPORT_VERSION_FROM);
 			ver3 = convert_ver(BCM4712_CHIP_SUPPORT_VERSION_FROM);

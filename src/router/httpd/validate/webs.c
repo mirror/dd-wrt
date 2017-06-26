@@ -258,7 +258,7 @@ void validate_filter_tod(webs_t wp)
 		if (time[strlen(time) - 1] == ',')
 			time[strlen(time) - 1] = '\0';
 
-		snprintf(tod_buf, sizeof(tod_buf)-1, "%s %s %s %s %s %s %s", week0, week1, week2, week3, week4, week5, week6);
+		snprintf(tod_buf, sizeof(tod_buf), "%s %s %s %s %s %s %s", week0, week1, week2, week3, week4, week5, week6);
 	}
 	if (atoi(time_all) == 1) {
 		_start_hour = 0;
@@ -273,8 +273,8 @@ void validate_filter_tod(webs_t wp)
 	}
 
 	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour, _end_min, time);
-	snprintf(filter_tod, sizeof(filter_tod)-1, "filter_tod%d", wp->filter_id);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf)-1, "filter_tod_buf%d", wp->filter_id);
+	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", wp->filter_id);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", wp->filter_id);
 
 	nvram_set(filter_tod, buf);
 	nvram_set(filter_tod_buf, tod_buf);
@@ -330,11 +330,11 @@ void save_policy(webs_t wp)
 
 	validate_filter_tod(wp);
 
-	snprintf(filter_buf, sizeof(filter_buf)-1, "filter_rule%d", wp->filter_id);
+	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
-	snprintf(buf, sizeof(buf)-1, "$STAT:%s$NAME:%s$DENY:%d$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0);
+	snprintf(buf, sizeof(buf), "$STAT:%s$NAME:%s$DENY:%d$$", f_status, f_name, !strcmp(f_status2, "deny") ? 1 : 0);
 
 	nvram_set(filter_buf, buf);
 	addAction("filters");
@@ -397,7 +397,7 @@ void validate_services_port(webs_t wp)
 	char var[32] = "";
 	int index = 0;
 	do {
-		snprintf(var, sizeof(var)-1, "services_array%d", index++);
+		snprintf(var, sizeof(var), "services_array%d", index++);
 		svcs = websGetVar(wp, var, NULL);
 		if (svcs)
 			strcat(services, svcs);
@@ -479,7 +479,7 @@ void summary_delete_policy(webs_t wp)
 		char filter_sum[] = "sumXXX";
 		char *sum;
 
-		snprintf(filter_sum, sizeof(filter_sum)-1, "sum%d", i);
+		snprintf(filter_sum, sizeof(filter_sum), "sum%d", i);
 		sum = websGetVar(wp, filter_sum, NULL);
 		if (sum)
 			delete_policy(wp, i);
@@ -600,7 +600,7 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		for (i = 0; i < 5; i++)
 			sprintf(key4 + (i << 1), "%02X", wp->key64[3][i]);
 
-		snprintf(buf, sizeof(buf)-1, "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
+		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
 		cprintf("buf = %s\n", buf);
 		sprintf(var, "%s_wep_gen", prefix);
@@ -640,7 +640,7 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		cprintf("key3 = %s\n", key3);
 		cprintf("key4 = %s\n", key4);
 
-		snprintf(buf, sizeof(buf)-1, "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
+		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		cprintf("buf = %s\n", buf);
 		// nvram_set("wl_wep_gen_128",buf);
 		sprintf(var, "%s_wep_gen", prefix);
@@ -1090,7 +1090,7 @@ void ping_wol(webs_t wp)
 	}
 
 	char wol_cmd[256] = { 0 };
-	snprintf(wol_cmd, sizeof(wol_cmd)-1, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+	snprintf(wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
 	nvram_set("wol_cmd", wol_cmd);
 
 	// use Wol.asp as a debugging console
@@ -1320,9 +1320,9 @@ void qos_add_svc(webs_t wp)
 		return;
 
 	if (strlen(svqos_svcs) > 0)
-		snprintf(new_svcs, sizeof(new_svcs)-1, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
+		snprintf(new_svcs, sizeof(new_svcs), "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
 	else
-		snprintf(new_svcs, sizeof(new_svcs)-1, "%s %s %s 30 |", add_svc, protocol, ports);
+		snprintf(new_svcs, sizeof(new_svcs), "%s %s %s 30 |", add_svc, protocol, ports);
 
 	if (strlen(new_svcs) >= sizeof(new_svcs))
 		return;
@@ -1347,9 +1347,9 @@ void qos_add_dev(webs_t wp)
 	 * if this ip exists, return an error 
 	 */
 #ifdef HAVE_AQOS
-	snprintf(new_ip, sizeof(new_ip)-1, "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
+	snprintf(new_ip, sizeof(new_ip), "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
 #else
-	snprintf(new_ip, sizeof(new_ip)-1, "%s %s 30 |", svqos_ips, add_dev);
+	snprintf(new_ip, sizeof(new_ip), "%s %s 30 |", svqos_ips, add_dev);
 #endif
 	if (strlen(new_ip) >= sizeof(new_ip))
 		return;
@@ -1378,7 +1378,7 @@ void qos_add_ip(webs_t wp)
 
 	bzero(new_ip, sizeof(new_ip));
 
-	snprintf(add_ip, sizeof(add_ip)-1, "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3, add_nm);
+	snprintf(add_ip, sizeof(add_ip), "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3, add_nm);
 
 	/*
 	 * if this ip exists, return an error 
@@ -1386,9 +1386,9 @@ void qos_add_ip(webs_t wp)
 	if (strstr(svqos_ips, add_ip))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_ip, sizeof(new_ip)-1, "%s %s 100 100 0 0 |", svqos_ips, add_ip);
+	snprintf(new_ip, sizeof(new_ip), "%s %s 100 100 0 0 |", svqos_ips, add_ip);
 #else
-	snprintf(new_ip, sizeof(new_ip)-1, "%s %s 30 |", svqos_ips, add_ip);
+	snprintf(new_ip, sizeof(new_ip), "%s %s 30 |", svqos_ips, add_ip);
 #endif
 
 	nvram_set("svqos_ips", new_ip);
@@ -1424,9 +1424,9 @@ void qos_add_mac(webs_t wp)
 	if (strstr(svqos_macs, add_mac))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_mac, sizeof(new_mac)-1, "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
+	snprintf(new_mac, sizeof(new_mac), "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
 #else
-	snprintf(new_mac, sizeof(new_mac)-1, "%s %s 30 |", svqos_macs, add_mac);
+	snprintf(new_mac, sizeof(new_mac), "%s %s 30 |", svqos_macs, add_mac);
 #endif
 
 	nvram_set("svqos_macs", new_mac);
@@ -1506,18 +1506,18 @@ void qos_save(webs_t wp)
 		bzero(protocol, 100);
 		bzero(ports, 10);
 
-		snprintf(field, sizeof(field)-1, "svqos_svcdel%d", i);
+		snprintf(field, sizeof(field), "svqos_svcdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
 		if (delete && strlen(delete) > 0)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_svcname%d", i);
+		snprintf(field, sizeof(field), "svqos_svcname%d", i);
 		name = websGetVar(wp, field, NULL);
 		if (!name)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_svcprio%d", i);
+		snprintf(field, sizeof(field), "svqos_svcprio%d", i);
 		level = websGetVar(wp, field, NULL);
 
 		if (!level)
@@ -1559,26 +1559,26 @@ void qos_save(webs_t wp)
 	 */
 	for (i = 0; i < no_devs; i++) {
 
-		snprintf(field, sizeof(field)-1, "svqos_devdel%d", i);
+		snprintf(field, sizeof(field), "svqos_devdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
 		if (delete && strlen(delete) > 0)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_dev%d", i);
+		snprintf(field, sizeof(field), "svqos_dev%d", i);
 		data = websGetVar(wp, field, NULL);
 
 		if (!data)
 			continue;
 
 #ifndef HAVE_AQOS
-		snprintf(field, sizeof(field)-1, "svqos_devprio%d", i);
+		snprintf(field, sizeof(field), "svqos_devprio%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
 		if (strlen(svqos_var) > 0) {
 			char *copy = malloc(4096);
-			snprintf(copy, sizeof(copy)-1, "%s %s %s |", svqos_var, data, level);
+			snprintf(copy, sizeof(copy), "%s %s %s |", svqos_var, data, level);
 			strcpy(svqos_var, copy);
 			free(copy);
 		} else {
@@ -1588,24 +1588,24 @@ void qos_save(webs_t wp)
 			free(copy);
 		}
 #else
-		snprintf(field, sizeof(field)-1, "svqos_devprio%d", i);
+		snprintf(field, sizeof(field), "svqos_devprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 
-		snprintf(field, sizeof(field)-1, "svqos_devup%d", i);
+		snprintf(field, sizeof(field), "svqos_devup%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		snprintf(field, sizeof(field)-1, "svqos_devdown%d", i);
+		snprintf(field, sizeof(field), "svqos_devdown%d", i);
 		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_devservice%d", i);
+		snprintf(field, sizeof(field), "svqos_devservice%d", i);
 		proto = websGetVar(wp, field, NULL);
 		if (!proto)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_devlanlvl%d", i);
+		snprintf(field, sizeof(field), "svqos_devlanlvl%d", i);
 		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
@@ -1630,19 +1630,19 @@ void qos_save(webs_t wp)
 	 */
 	for (i = 0; i < no_ips; i++) {
 
-		snprintf(field, sizeof(field)-1, "svqos_ipdel%d", i);
+		snprintf(field, sizeof(field), "svqos_ipdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
 		if (delete && strlen(delete) > 0)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_ip%d", i);
+		snprintf(field, sizeof(field), "svqos_ip%d", i);
 		data = websGetVar(wp, field, NULL);
 		if (!data)
 			continue;
 
 #ifndef HAVE_AQOS
-		snprintf(field, sizeof(field)-1, "svqos_ipprio%d", i);
+		snprintf(field, sizeof(field), "svqos_ipprio%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
@@ -1651,20 +1651,20 @@ void qos_save(webs_t wp)
 		else
 			sprintf(svqos_var, "%s %s |", data, level);
 #else
-		snprintf(field, sizeof(field)-1, "svqos_ipprio%d", i);
+		snprintf(field, sizeof(field), "svqos_ipprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 		if (!prio)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_ipup%d", i);
+		snprintf(field, sizeof(field), "svqos_ipup%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		snprintf(field, sizeof(field)-1, "svqos_ipdown%d", i);
+		snprintf(field, sizeof(field), "svqos_ipdown%d", i);
 		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
-		snprintf(field, sizeof(field)-1, "svqos_iplanlvl%d", i);
+		snprintf(field, sizeof(field), "svqos_iplanlvl%d", i);
 		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
@@ -1689,19 +1689,19 @@ void qos_save(webs_t wp)
 	 * MAC priorities 
 	 */
 	for (i = 0; i < no_macs; i++) {
-		snprintf(field, sizeof(field)-1, "svqos_macdel%d", i);
+		snprintf(field, sizeof(field), "svqos_macdel%d", i);
 		delete = websGetVar(wp, field, NULL);
 
 		if (delete && strlen(delete) > 0)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_mac%d", i);
+		snprintf(field, sizeof(field), "svqos_mac%d", i);
 		data = websGetVar(wp, field, NULL);
 		if (!data)
 			continue;
 
 #ifndef HAVE_AQOS
-		snprintf(field, sizeof(field)-1, "svqos_macprio%d", i);
+		snprintf(field, sizeof(field), "svqos_macprio%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
@@ -1711,20 +1711,20 @@ void qos_save(webs_t wp)
 		else
 			sprintf(svqos_var, "%s %s |", data, level);
 #else
-		snprintf(field, sizeof(field)-1, "svqos_macprio%d", i);
+		snprintf(field, sizeof(field), "svqos_macprio%d", i);
 		prio = websGetVar(wp, field, NULL);
 		if (!prio)
 			continue;
 
-		snprintf(field, sizeof(field)-1, "svqos_macup%d", i);
+		snprintf(field, sizeof(field), "svqos_macup%d", i);
 		level = websGetVar(wp, field, NULL);
 		if (!level)
 			continue;
-		snprintf(field, sizeof(field)-1, "svqos_macdown%d", i);
+		snprintf(field, sizeof(field), "svqos_macdown%d", i);
 		level2 = websGetVar(wp, field, NULL);
 		if (!level2)
 			continue;
-		snprintf(field, sizeof(field)-1, "svqos_maclanlvl%d", i);
+		snprintf(field, sizeof(field), "svqos_maclanlvl%d", i);
 		lanlevel = websGetVar(wp, field, NULL);
 		if (!lanlevel)
 			continue;
@@ -3941,7 +3941,7 @@ char *request_freedns(char *user, char *password)
 		sprintf(request, "%s%02x", request, final[i]);
 	unlink("/tmp/.hash");
 	char url[128];
-	snprintf(url, sizeof(url)-1, "http://freedns.afraid.org/api/?action=getdyndns&sha=%s", request);
+	snprintf(url, sizeof(url), "http://freedns.afraid.org/api/?action=getdyndns&sha=%s", request);
 	eval("wget", url, "-O", "/tmp/.hash");
 	FILE *in = fopen("/tmp/.hash", "rb");
 
@@ -4040,8 +4040,8 @@ void ddns_save_value(webs_t wp)
 	case 1:
 		// dyndns
 
-		snprintf(_dyndnstype, sizeof(_dyndnstype)-1, "ddns_dyndnstype");
-		snprintf(_wildcard, sizeof(_wildcard)-1, "ddns_wildcard");
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype");
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard");
 		break;
 	case 2:
 		// afraid
@@ -4049,18 +4049,18 @@ void ddns_save_value(webs_t wp)
 		break;
 	case 5:
 		// custom
-		snprintf(_custom, sizeof(_custom)-1, "ddns_custom_%d", enable);
-		snprintf(_conf, sizeof(_conf)-1, "ddns_conf");
-		snprintf(_url, sizeof(_url)-1, "ddns_url");
+		snprintf(_custom, sizeof(_custom), "ddns_custom_%d", enable);
+		snprintf(_conf, sizeof(_conf), "ddns_conf");
+		snprintf(_url, sizeof(_url), "ddns_url");
 		break;
 	case 6:
 		// 3322 dynamic : added botho 30/07/06
-		snprintf(_dyndnstype, sizeof(_dyndnstype)-1, "ddns_dyndnstype_%d", enable);
-		snprintf(_wildcard, sizeof(_wildcard)-1, "ddns_wildcard_%d", enable);
+		snprintf(_dyndnstype, sizeof(_dyndnstype), "ddns_dyndnstype_%d", enable);
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	case 7:
 		// easydns
-		snprintf(_wildcard, sizeof(_wildcard)-1, "ddns_wildcard_%d", enable);
+		snprintf(_wildcard, sizeof(_wildcard), "ddns_wildcard_%d", enable);
 		break;
 	}
 
@@ -4131,7 +4131,7 @@ void port_vlan_table_save(webs_t wp)
 
 	for (port = 0; port < 5; port++) {
 		for (vlan = 0; vlan < 22; vlan++) {
-			snprintf(portid, sizeof(portid)-1, "port%dvlan%d", port, vlan);
+			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
 			portval = websGetVar(wp, portid, "");
 
 			if (vlan < 17 || vlan > 21)
@@ -4149,7 +4149,7 @@ void port_vlan_table_save(webs_t wp)
 			}
 		}
 
-		snprintf(portid, sizeof(portid)-1, "port%dvlans", port);
+		snprintf(portid, sizeof(portid), "port%dvlans", port);
 		nvram_set(portid, portvlan);
 		strcpy(portvlan, "");
 	}
@@ -4212,7 +4212,7 @@ void port_vlan_table_save(webs_t wp)
 	}
 
 	for (i = 0; i < 16; i++) {
-		snprintf(buff, sizeof(buff)-1, "vlan%d", i);
+		snprintf(buff, sizeof(buff), "vlan%d", i);
 		portval = websGetVar(wp, buff, "");
 
 		switch (atoi(portval)) {

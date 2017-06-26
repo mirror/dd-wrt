@@ -475,13 +475,13 @@ struct dns_lists *get_dns_list(void)
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
 	if (strlen(sv_localdns))
-		snprintf(list, 255, "%s", sv_localdns);
+		snprintf(list, 256, "%s", sv_localdns);
 	if (strlen(wan_dns)) {
 		if (strlen(list)) {
 			strcat(list, " ");
 			strcat(list, wan_dns);
 		} else
-			snprintf(list, 255, "%s", wan_dns);
+			snprintf(list, 256, "%s", wan_dns);
 	}
 
 	if (strlen(wan_get_dns)) {
@@ -489,7 +489,7 @@ struct dns_lists *get_dns_list(void)
 			strcat(list, " ");
 			strcat(list, wan_get_dns);
 		} else
-			snprintf(list, 255, "%s", wan_get_dns);
+			snprintf(list, 256, "%s", wan_get_dns);
 	}
 
 	word = malloc(32);
@@ -501,7 +501,7 @@ struct dns_lists *get_dns_list(void)
 					match = 1;
 			}
 			if (!match) {
-				snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers])-1, "%s", word);
+				snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", word);
 				dns_list->num_servers++;
 			}
 		}
@@ -521,7 +521,7 @@ struct dns_lists *get_dns_list(void)
 		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
 		if (strlen(nvram_safe_get(altdnsvar)) > 0) {
-			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers])-1, "%s", nvram_safe_get(altdnsvar));
+			snprintf(dns_list->dns_server[dns_list->num_servers], sizeof(dns_list->dns_server[dns_list->num_servers]), "%s", nvram_safe_get(altdnsvar));
 			dns_list->num_servers++;
 		}
 		altdns_index++;
@@ -620,7 +620,7 @@ char *get_complete_ip(char *from, char *to)
 	if (sscanf(from, "%d.%d.%d.%d", &i[0], &i[1], &i[2], &i[3]) != 4)
 		return "0.0.0.0";
 
-	snprintf(ipaddr, sizeof(ipaddr)-1, "%d.%d.%d.%s", i[0], i[1], i[2], to);
+	snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%s", i[0], i[1], i[2], to);
 
 	return ipaddr;
 }
@@ -634,7 +634,7 @@ char *get_complete_lan_ip(char *ip)
 	if (sscanf(nvram_safe_get("lan_ipaddr"), "%d.%d.%d.%d", &i[0], &i[1], &i[2], &i[3]) != 4)
 		return "0.0.0.0";
 
-	snprintf(ipaddr, sizeof(ipaddr)-1, "%d.%d.%d.%s", i[0], i[1], i[2], ip);
+	snprintf(ipaddr, sizeof(ipaddr), "%d.%d.%d.%s", i[0], i[1], i[2], ip);
 
 	return ipaddr;
 }
@@ -649,7 +649,7 @@ int get_int_len(int num)
 {
 	char buf[80];
 
-	snprintf(buf, sizeof(buf)-1, "%d", num);
+	snprintf(buf, sizeof(buf), "%d", num);
 
 	return strlen(buf);
 }
@@ -811,10 +811,10 @@ int convert_ver(char *ver)
 	ret = sscanf(ver, "v%d.%d.%d", &v[0], &v[1], &v[2]);
 
 	if (ret == 2) {
-		snprintf(buf, sizeof(buf)-1, "%02d%02d", v[0], v[1]);
+		snprintf(buf, sizeof(buf), "%02d%02d", v[0], v[1]);
 		return atoi(buf);
 	} else if (ret == 3) {
-		snprintf(buf, sizeof(buf)-1, "%02d%02d%02d", v[0], v[1], v[2]);
+		snprintf(buf, sizeof(buf), "%02d%02d%02d", v[0], v[1], v[2]);
 		return atoi(buf);
 	} else
 		return -1;
@@ -944,7 +944,7 @@ void ct_syslog(int level, int enable, const char *fmt, ...)
 	va_list args;
 
 	va_start(args, fmt);
-	vsnprintf(buf, sizeof(buf)-1, fmt, args);
+	vsnprintf(buf, sizeof(buf), fmt, args);
 	va_end(args);
 
 	switch (enable) {

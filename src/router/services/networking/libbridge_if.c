@@ -87,7 +87,7 @@ static int br_foreach_port(const char *brname, int (*iterator) (const char *br, 
 	if (!br_class_net || !(dev = sysfs_get_class_device(br_class_net, (char *)brname)))
 		goto old;
 
-	snprintf(path, sizeof(path)-1, "%s/%s", dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
+	snprintf(path, sizeof(path), "%s/%s", dev->path, SYSFS_BRIDGE_PORT_SUBDIR);
 
 	dir = opendir(path);
 	if (!dir) {
@@ -263,7 +263,7 @@ static int br_set(const char *bridge, const char *name, unsigned long value, uns
 		char buf[32];
 		char path[SYSFS_PATH_MAX];
 
-		snprintf(buf, sizeof(buf)-1, "%ld\n", value);
+		snprintf(buf, sizeof(buf), "%ld\n", value);
 		snprintf(path, SYSFS_PATH_MAX-1, "%s/bridge/%s", dev->path, name);
 
 		attr = sysfs_open_attribute(path);
@@ -550,7 +550,7 @@ static int isbridge(const struct sysfs_class_device *dev)
 {
 	char path[SYSFS_PATH_MAX];
 
-	snprintf(path, sizeof(path)-1, "%s/bridge", dev->path);
+	snprintf(path, sizeof(path), "%s/bridge", dev->path);
 	return !sysfs_path_is_dir(path);
 }
 
