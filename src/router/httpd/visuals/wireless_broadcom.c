@@ -564,10 +564,10 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 		rssi = 0;
 		bzero(desc, 30);
 		for (i = 1; i <= 10; i++) {
-			snprintf(wdsvar, 30, "wl%d_wds%d_hwaddr", instance, i);
+			snprintf(wdsvar, sizeof(wdsvar)-1, "wl%d_wds%d_hwaddr", instance, i);
 			if (nvram_match(wdsvar, mac)) {
-				snprintf(wdsvar, 30, "wl%d_wds%d_desc", instance, i);
-				snprintf(desc, sizeof(desc), "%s", nvram_safe_get(wdsvar));
+				snprintf(wdsvar, sizeof(wdsvar)-1, "wl%d_wds%d_desc", instance, i);
+				snprintf(desc, sizeof(desc)-1, "%s", nvram_safe_get(wdsvar));
 				if (!strcmp(nvram_get(wdsvar), ""))
 					strcpy(desc, "&nbsp;");
 			}
