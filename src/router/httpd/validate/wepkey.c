@@ -35,7 +35,7 @@ int wep128_passphase(char *buffer, unsigned char *keybyte)
 	return 1;
 }
 
-void gen_key(webs_t wp, char *genstr, int weptype)
+void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], unsigned char key128[4][14])
 {
 	unsigned int i, j;
 	unsigned char pseed[4] = { 0, 0, 0, 0 };
@@ -56,20 +56,20 @@ void gen_key(webs_t wp, char *genstr, int weptype)
 	if (weptype == 128) {
 		strcpy(str, genstr);
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&wp->key128[0], (unsigned char *)&key[0], 13);
-		wp->key128[0][13] = 0;
+		memcpy((unsigned char *)&key128[0], (unsigned char *)&key[0], 13);
+		key128[0][13] = 0;
 		strcat(str, "#$%");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&wp->key128[1], (unsigned char *)&key[1], 13);
-		wp->key128[1][13] = 0;
+		memcpy((unsigned char *)&key128[1], (unsigned char *)&key[1], 13);
+		key128[1][13] = 0;
 		strcat(str, "!@#");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&wp->key128[2], (unsigned char *)&key[2], 13);
-		wp->key128[2][13] = 0;
+		memcpy((unsigned char *)&key128[2], (unsigned char *)&key[2], 13);
+		key128[2][13] = 0;
 		strcat(str, "%&^");
 		wep128_passphase(str, key);
-		memcpy((unsigned char *)&wp->key128[3], (unsigned char *)&key[3], 13);
-		wp->key128[3][13] = 0;
+		memcpy((unsigned char *)&key128[3], (unsigned char *)&key[3], 13);
+		key128[3][13] = 0;
 		// for(i = 0;i<13;i++)
 		// printf("[%x]\n",key128[i]);
 		return;
@@ -98,7 +98,7 @@ void gen_key(webs_t wp, char *genstr, int weptype)
 				 */
 				randNumber *= 0x343fd;
 				randNumber += 0x269ec3;
-				wp->key64[i][j] = (unsigned char)((randNumber >> 16) & 0x7fff);
+				key64[i][j] = (unsigned char)((randNumber >> 16) & 0x7fff);
 			}
 			// for (j=0; j<5; j++)
 			// printf("%x",key64[i][j]);
