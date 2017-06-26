@@ -265,14 +265,14 @@ int ipdown_main(int argc, char **argv)
 
 		in += old_in;
 		out += old_out;
-		snprintf(buffer, sizeof(buffer)-1, "%lld", in);
+		snprintf(buffer, sizeof(buffer), "%lld", in);
 		nvram_set("ppp_byte_in", buffer);
-		snprintf(buffer, sizeof(buffer)-1, "%lld", out);
+		snprintf(buffer, sizeof(buffer), "%lld", out);
 		nvram_set("ppp_byte_out", buffer);
 		if ((stamp = time(NULL)) < 1087818160)	// clock is not set
 			// properly
 			stamp = 0;
-		snprintf(buffer, sizeof(buffer)-1, "%ld", stamp);
+		snprintf(buffer, sizeof(buffer), "%ld", stamp);
 		nvram_set("ppp_byte_stamp", buffer);
 		nvram_commit();
 	}
