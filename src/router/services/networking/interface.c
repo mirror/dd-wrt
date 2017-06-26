@@ -211,7 +211,7 @@ void start_config_vlan(void)
 			continue;
 		if (!(ifr.ifr_flags & IFF_UP))
 			eval("ifconfig", ifr.ifr_name, "0.0.0.0", "up");
-		snprintf(vlan_id, sizeof(vlan_id), "%d", i);
+		snprintf(vlan_id, sizeof(vlan_id)-1, "%d", i);
 		eval("vconfig", "add", ifr.ifr_name, vlan_id);
 	}
 
@@ -586,7 +586,7 @@ int flush_interfaces(void)
 		foreach(buff, c, next) {
 			if (atoi(buff) > 15)
 				continue;
-			snprintf(buff2, sizeof(buff2), " vlan%s", buff);
+			snprintf(buff2, sizeof(buff2)-1, " vlan%s", buff);
 			strcat(all_ifnames, buff2);
 		}
 	}

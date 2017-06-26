@@ -66,24 +66,24 @@ static void start_heartbeat(int status)
 	 */
 	if (nvram_invmatch("hb_server_ip", "")
 	    && nvram_invmatch("hb_server_ip", "0.0.0.0")) {
-		snprintf(authserver, sizeof(authserver), "%s", nvram_safe_get("hb_server_ip"));
-		snprintf(authdomain, sizeof(authdomain), "%s", "");
+		snprintf(authserver, sizeof(authserver)-1, "%s", nvram_safe_get("hb_server_ip"));
+		snprintf(authdomain, sizeof(authdomain)-1, "%s", "");
 	} else if ((nvram_match("wan_get_domain", "nsw.bigpond.net.au")) ||	// NSW
 		   (nvram_match("wan_get_domain", "vic.bigpond.net.au")) ||	// Victoria
 		   (nvram_match("wan_get_domain", "qld.bigpond.net.au")) ||	// Queensland
 		   (nvram_match("wan_get_domain", "sa.bigpond.net.au")) ||	// South 
 		   // Australia
 		   (nvram_match("wan_get_domain", "wa.bigpond.net.au"))) {	// Western Australia
-		snprintf(authserver, sizeof(authserver), "%s", "sm-server");
-		snprintf(authdomain, sizeof(authdomain), "%s", nvram_safe_get("wan_get_domain"));
+		snprintf(authserver, sizeof(authserver)-1, "%s", "sm-server");
+		snprintf(authdomain, sizeof(authdomain)-1, "%s", nvram_safe_get("wan_get_domain"));
 	} else {
 		MY_LOG(LOG_ERR, "Can't find HB server from domain! Use gateway.\n");
-		snprintf(authserver, sizeof(authserver), "%s", nvram_safe_get("wan_gateway"));
-		snprintf(authdomain, sizeof(authdomain), "%s", "");
+		snprintf(authserver, sizeof(authserver)-1, "%s", nvram_safe_get("wan_gateway"));
+		snprintf(authdomain, sizeof(authdomain)-1, "%s", "");
 		// return 1;
 	}
 
-	snprintf(buf, sizeof(buf), "%s%s%s", authserver, !strcmp(authdomain, "") ? "" : ".", authdomain);
+	snprintf(buf, sizeof(buf)-1, "%s%s%s", authserver, !strcmp(authdomain, "") ? "" : ".", authdomain);
 
 	nvram_set("hb_server_name", buf);
 
