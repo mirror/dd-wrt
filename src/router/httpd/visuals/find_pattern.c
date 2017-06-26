@@ -92,7 +92,7 @@ int find_match_pattern(char *name, size_t mlen, const char *data, const char *pa
 		strncpy(name, data + offset, length);
 		name[length] = '\0';
 	} else
-		snprintf(name, mlen + 1, "%s", def);	// not found and set to
+		snprintf(name, mlen-1, "%s", def);	// not found and set to
 	// default value
 
 	return ret;
