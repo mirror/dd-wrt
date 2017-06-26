@@ -106,9 +106,9 @@ static int open_site_survey(void)
 static char *dtim_period(int dtim, char *mem)
 {
 	if (dtim)
-		snprintf(mem, 32, "%d", dtim);
+		snprintf(mem, 31, "%d", dtim);
 	else
-		snprintf(mem, 32, "%s", "None");
+		snprintf(mem, 31, "%s", "None");
 	return mem;
 }
 
