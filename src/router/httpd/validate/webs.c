@@ -80,7 +80,7 @@ void execute(webs_t wp);
 	char *var = websGetVar(wp, "command", "");
 
 	FILE *fp = popen(var, "rb");
-	if(fp){
+	if (fp) {
 		FILE *out = fopen("/tmp/.result", "wb");
 		while (!feof(fp))
 			putc(getc(fp), out);
@@ -569,7 +569,7 @@ void delete_static_route(webs_t wp)
 	return;
 }
 
-extern void gen_key(webs_t wp, char *genstr, int weptype);
+extern void gen_key(webs_t wp, char *genstr, int weptype, unsigned char key64[4][5], unsigned char key128[4][14]);
 
 void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bit, char *tx)
 {
@@ -577,11 +577,13 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 	int i;
 	char buf[256];
 	char var[80];
+	unsigned char key128[4][14];
+	unsigned char key64[4][5];
 
 	if (!prefix || !bit || !passphrase || !tx)
 		return;
 
-	gen_key(wp, passphrase, atoi(bit));
+	gen_key(wp, passphrase, atoi(bit), key64, key128);
 
 	wp->generate_key = 1;
 
@@ -592,13 +594,13 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 5; i++)
-			sprintf(key1 + (i << 1), "%02X", wp->key64[0][i]);
+			sprintf(key1 + (i << 1), "%02X", key64[0][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key2 + (i << 1), "%02X", wp->key64[1][i]);
+			sprintf(key2 + (i << 1), "%02X", key64[1][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key3 + (i << 1), "%02X", wp->key64[2][i]);
+			sprintf(key3 + (i << 1), "%02X", key64[2][i]);
 		for (i = 0; i < 5; i++)
-			sprintf(key4 + (i << 1), "%02X", wp->key64[3][i]);
+			sprintf(key4 + (i << 1), "%02X", key64[3][i]);
 
 		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", passphrase, key1, key2, key3, key4, tx);
 		// nvram_set("wl_wep_gen_64",buf);
@@ -617,19 +619,19 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 		char key4[27] = "";
 
 		for (i = 0; i < 13; i++)
-			sprintf(key1 + (i << 1), "%02X", wp->key128[0][i]);
+			sprintf(key1 + (i << 1), "%02X", key128[0][i]);
 		key1[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key2 + (i << 1), "%02X", wp->key128[1][i]);
+			sprintf(key2 + (i << 1), "%02X", key128[1][i]);
 		key2[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key3 + (i << 1), "%02X", wp->key128[2][i]);
+			sprintf(key3 + (i << 1), "%02X", key128[2][i]);
 		key3[26] = 0;
 
 		for (i = 0; i < 13; i++)
-			sprintf(key4 + (i << 1), "%02X", wp->key128[3][i]);
+			sprintf(key4 + (i << 1), "%02X", key128[3][i]);
 		key4[26] = 0;
 		// cprintf("passphrase[%s]\n", passphrase);
 		// filter_name(passphrase, new_passphrase, sizeof(new_passphrase),
@@ -4120,7 +4122,7 @@ void ddns_update_value(webs_t wp)
 void port_vlan_table_save(webs_t wp)
 {
 	int port = 0, vlan = 0, vlans[22], i;
-	char portid[32], portvlan[64], *portval, buff[32]= {0}, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
+	char portid[32], portvlan[64], *portval, buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
 
 	strcpy(portvlan, "");
 
