@@ -274,7 +274,7 @@ void validate_merge_netmask(webs_t wp, char *value, struct variable *v)
 
 	strcpy(netmask, "");
 	for (i = 0; i < 4; i++) {
-		snprintf(maskname, sizeof(maskname), "%s_%d", v->name, i);
+		snprintf(maskname, sizeof(maskname)-1, "%s_%d", v->name, i);
 		mask = websGetVar(wp, maskname, NULL);
 		if (mask) {
 			strcat(netmask, mask);
@@ -302,7 +302,7 @@ void validate_list(webs_t wp, char *value, struct variable *v, int (*valid) (web
 	n = atoi(value);
 
 	for (i = 0; i < n; i++) {
-		snprintf(name, sizeof(name), "%s%d", v->name, i);
+		snprintf(name, sizeof(name)-1, "%s%d", v->name, i);
 		if (!(value = websGetVar(wp, name, NULL)))
 			return;
 		if (!*value && v->nullok)
@@ -411,7 +411,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr)
 
 	for (i = 0; i < 4; i++) {
 		// cprintf("merge %s_%d\n",name,i);
-		snprintf(ipname, sizeof(ipname), "%s_%d", name, i);
+		snprintf(ipname, sizeof(ipname)-1, "%s_%d", name, i);
 		tmp = websGetVar(wp, ipname, ip[i]);
 		if (tmp == NULL)
 			return 0;
@@ -448,7 +448,7 @@ int get_merge_mac(webs_t wp, char *name, char *macaddr)
 	strcpy(macaddr, "");
 
 	for (i = 0; i < 6; i++) {
-		snprintf(macname, sizeof(macname), "%s_%d", name, i);
+		snprintf(macname, sizeof(macname)-1, "%s_%d", name, i);
 		mac = websGetVar(wp, macname, "00");
 		if (strlen(mac) == 1)
 			strcat(macaddr, "0");
@@ -482,7 +482,7 @@ void validate_dns(webs_t wp, char *value, struct variable *v)
 	for (j = 0; j < 3; j++) {
 		strcpy(ipaddr, "");
 		for (i = 0; i < 4; i++) {
-			snprintf(ipname, sizeof(ipname), "%s%d_%d", v->name, j, i);
+			snprintf(ipname, sizeof(ipname)-1, "%s%d_%d", v->name, j, i);
 			ip = websGetVar(wp, ipname, NULL);
 			if (ip) {
 				strcat(ipaddr, ip);
@@ -563,7 +563,7 @@ void validate_range(webs_t wp, char *value, struct variable *v)
 
 	if (valid_range(wp, value, v)) {
 		range = atoi(value);
-		snprintf(buf, sizeof(buf), "%d", range);
+		snprintf(buf, sizeof(buf)-1, "%d", range);
 		nvram_set(v->name, buf);
 	}
 }
@@ -829,13 +829,13 @@ void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 
 	get_merge_ipaddr(wp, v->name, from);
 
-	snprintf(name, sizeof(name), "%s_4", v->name);
+	snprintf(name, sizeof(name)-1, "%s_4", v->name);
 	to = websGetVar(wp, name, NULL);
 
 	if (!valid_ipaddr(wp, from, v))
 		return;
 
-	snprintf(remote_ip, sizeof(remote_ip), "%s %s", from, to);
+	snprintf(remote_ip, sizeof(remote_ip)-1, "%s %s", from, to);
 
 	nvram_set(v->name, remote_ip);
 }
@@ -960,7 +960,7 @@ void validate_wl_wme_params(webs_t wp, char *value, struct variable *v)
 	n = atoi(value) + 1;
 
 	for (i = 0; i < n; i++) {
-		snprintf(name, sizeof(name), "%s%d", v->name, i);
+		snprintf(name, sizeof(name)-1, "%s%d", v->name, i);
 		if (!(value = websGetVar(wp, name, NULL)))
 			return;
 		if (!*value && v->nullok)
@@ -1145,7 +1145,7 @@ void validate_wl_wep_key(webs_t wp, char *value, struct variable *v)
 	}
 
 	if (!error_value) {
-		snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:%s", new_wep_passphrase, new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4, wep_tx);
+		snprintf(buf, sizeof(buf)-1, "%s:%s:%s:%s:%s:%s", new_wep_passphrase, new_wep_key1, new_wep_key2, new_wep_key3, new_wep_key4, wep_tx);
 		nvram_set("wl_wep_bit", wep_bit);
 		nvram_set("wl_wep_buf", buf);
 
@@ -1212,7 +1212,7 @@ void validate_wl_hwaddrs(webs_t wp, char *value, struct variable *v)
 		char *mac = NULL;
 		char mac1[21];
 
-		snprintf(filter_mac, sizeof(filter_mac), "%s%s%d", ifname2, "_mac", i);
+		snprintf(filter_mac, sizeof(filter_mac)-1, "%s%s%d", ifname2, "_mac", i);
 
 		mac = websGetVar(wp, filter_mac, NULL);
 
@@ -1319,14 +1319,14 @@ void validate_forward_proto(webs_t wp, char *value, struct variable *v)
 		char forward_enable[] = "enableXXX";
 		char *name = "", new_name[200] = "", *from = "", *to = "", *ip = "", *tcp = "", *udp = "", *enable = "", proto[10], *pro = "";
 
-		snprintf(forward_name, sizeof(forward_name), "name%d", i);
-		snprintf(forward_from, sizeof(forward_from), "from%d", i);
-		snprintf(forward_to, sizeof(forward_to), "to%d", i);
-		snprintf(forward_ip, sizeof(forward_ip), "ip%d", i);
-		snprintf(forward_tcp, sizeof(forward_tcp), "tcp%d", i);
-		snprintf(forward_udp, sizeof(forward_udp), "udp%d", i);
-		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
-		snprintf(forward_pro, sizeof(forward_pro), "pro%d", i);
+		snprintf(forward_name, sizeof(forward_name)-1, "name%d", i);
+		snprintf(forward_from, sizeof(forward_from)-1, "from%d", i);
+		snprintf(forward_to, sizeof(forward_to)-1, "to%d", i);
+		snprintf(forward_ip, sizeof(forward_ip)-1, "ip%d", i);
+		snprintf(forward_tcp, sizeof(forward_tcp)-1, "tcp%d", i);
+		snprintf(forward_udp, sizeof(forward_udp)-1, "udp%d", i);
+		snprintf(forward_enable, sizeof(forward_enable)-1, "enable%d", i);
+		snprintf(forward_pro, sizeof(forward_pro)-1, "pro%d", i);
 
 		name = websGetVar(wp, forward_name, "");
 		from = websGetVar(wp, forward_from, "0");
@@ -1458,15 +1458,15 @@ void validate_forward_spec(webs_t wp, char *value, struct variable *v)
 		char forward_enable[] = "enableXXX";
 		char *name = "", new_name[200] = "", *from = "", *to = "", *ip = "", *tcp = "", *udp = "", *enable = "", proto[10], *pro = "", *src = "";
 
-		snprintf(forward_name, sizeof(forward_name), "name%d", i);
-		snprintf(forward_from, sizeof(forward_from), "from%d", i);
-		snprintf(forward_to, sizeof(forward_to), "to%d", i);
-		snprintf(forward_ip, sizeof(forward_ip), "ip%d", i);
-		snprintf(forward_src, sizeof(forward_src), "src%d", i);
-		snprintf(forward_tcp, sizeof(forward_tcp), "tcp%d", i);
-		snprintf(forward_udp, sizeof(forward_udp), "udp%d", i);
-		snprintf(forward_enable, sizeof(forward_enable), "enable%d", i);
-		snprintf(forward_pro, sizeof(forward_pro), "pro%d", i);
+		snprintf(forward_name, sizeof(forward_name)-1, "name%d", i);
+		snprintf(forward_from, sizeof(forward_from)-1, "from%d", i);
+		snprintf(forward_to, sizeof(forward_to)-1, "to%d", i);
+		snprintf(forward_ip, sizeof(forward_ip)-1, "ip%d", i);
+		snprintf(forward_src, sizeof(forward_src)-1, "src%d", i);
+		snprintf(forward_tcp, sizeof(forward_tcp)-1, "tcp%d", i);
+		snprintf(forward_udp, sizeof(forward_udp)-1, "udp%d", i);
+		snprintf(forward_enable, sizeof(forward_enable)-1, "enable%d", i);
+		snprintf(forward_pro, sizeof(forward_pro)-1, "pro%d", i);
 
 		name = websGetVar(wp, forward_name, "");
 		from = websGetVar(wp, forward_from, "0");
@@ -1857,10 +1857,10 @@ void validate_chaps(webs_t wp, char *value, struct variable *v)
 		char chap_enable[] = "enableXXX";
 		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "", *ip = "", *enable = "";
 
-		snprintf(chap_user, sizeof(chap_user), "user%d", i);
-		snprintf(chap_pass, sizeof(chap_pass), "pass%d", i);
-		snprintf(chap_ip, sizeof(chap_ip), "ip%d", i);
-		snprintf(chap_enable, sizeof(chap_enable), "enable%d", i);
+		snprintf(chap_user, sizeof(chap_user)-1, "user%d", i);
+		snprintf(chap_pass, sizeof(chap_pass)-1, "pass%d", i);
+		snprintf(chap_ip, sizeof(chap_ip)-1, "ip%d", i);
+		snprintf(chap_enable, sizeof(chap_enable)-1, "enable%d", i);
 
 		user = websGetVar(wp, chap_user, "");
 		pass = websGetVar(wp, chap_pass, "");
@@ -1944,8 +1944,8 @@ void validate_aliases(webs_t wp, char *value, struct variable *v)
 		char alias_pass[] = "passXXX";
 		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
-		snprintf(alias_user, sizeof(alias_user), "user%d", i);
-		snprintf(alias_pass, sizeof(alias_pass), "pass%d", i);
+		snprintf(alias_user, sizeof(alias_user)-1, "user%d", i);
+		snprintf(alias_pass, sizeof(alias_pass)-1, "pass%d", i);
 
 		user = websGetVar(wp, alias_user, "");
 		pass = websGetVar(wp, alias_pass, "");
@@ -2001,8 +2001,8 @@ void validate_subscribers(webs_t wp, char *value, struct variable *v)
 		char subscriber_pass[] = "passXXX";
 		char *user = "", new_user[200] = "", *pass = "", new_pass[200] = "";
 
-		snprintf(subscriber_user, sizeof(subscriber_user), "user%d", i);
-		snprintf(subscriber_pass, sizeof(subscriber_pass), "pass%d", i);
+		snprintf(subscriber_user, sizeof(subscriber_user)-1, "user%d", i);
+		snprintf(subscriber_pass, sizeof(subscriber_pass)-1, "pass%d", i);
 
 		user = websGetVar(wp, subscriber_user, "");
 		pass = websGetVar(wp, subscriber_pass, "");
@@ -2061,22 +2061,22 @@ void validate_iradius(webs_t wp, char *value, struct variable *v)
 	gettimeofday(&now, NULL);
 
 	for (i = 0; i < leasenum; i++) {
-		snprintf(del, 31, "iradius%d_delete", i);
+		snprintf(del, sizeof(del)-1, "iradius%d_delete", i);
 		char *d = websGetVar(wp, del, "");
 
 		cprintf("radius delete = %s\n", d);
 		if (strcmp(d, "1") == 0)
 			continue;
 
-		snprintf(username, 31, "iradius%d_name", i);
+		snprintf(username, sizeof(username)-1, "iradius%d_name", i);
 		strcat(leases, websGetVar(wp, username, "00:00:00:00:00:00"));
 		strcat(leases, " ");
 
-		snprintf(active, 31, "iradius%d_active", i);
+		snprintf(active, sizeof(active)-1, "iradius%d_active", i);
 		strcat(leases, websGetVar(wp, active, "0"));
 		strcat(leases, " ");
 
-		snprintf(active, 31, "iradius%d_lease", i);
+		snprintf(active, sizeof(active)-1, "iradius%d_lease", i);
 		char *time = websGetVar(wp, active, "-1");
 		int t = -1;
 
@@ -2126,10 +2126,10 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	leases = (char *)calloc((128 * leasenum) + 1, 1);
 
 	for (i = 0; i < leasenum; i++) {
-		snprintf(username, 31, "fon_user%d_name", i);
+		snprintf(username, sizeof(username)-1, "fon_user%d_name", i);
 		strcat(leases, websGetVar(wp, username, ""));
 		strcat(leases, "=");
-		snprintf(password, 31, "fon_user%d_password", i);
+		snprintf(password, sizeof(password)-1, "fon_user%d_password", i);
 		strcat(leases, websGetVar(wp, password, ""));
 		strcat(leases, " ");
 	}
@@ -2204,7 +2204,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	leases = (char *)calloc((54 * leasenum) + 1, 1);
 
 	for (i = 0; i < leasenum; i++) {
-		snprintf(lease_hwaddr, 31, "lease%d_hwaddr", i);
+		snprintf(lease_hwaddr, sizeof(lease_hwaddr)-1, "lease%d_hwaddr", i);
 		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
 		if (hwaddr == NULL)
 			break;
@@ -2217,13 +2217,13 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		}
 		strcat(leases, mac);
 		free(mac);
-		snprintf(lease_hostname, 31, "lease%d_hostname", i);
+		snprintf(lease_hostname, sizeof(lease_hostname)-1, "lease%d_hostname", i);
 		char *hostname = websGetVar(wp, lease_hostname, NULL);
 
-		snprintf(lease_ip, 31, "lease%d_ip", i);
+		snprintf(lease_ip, sizeof(lease_ip)-1, "lease%d_ip", i);
 		char *ip = websGetVar(wp, lease_ip, "");
 
-		snprintf(lease_time, 31, "lease%d_time", i);
+		snprintf(lease_time, sizeof(lease_time)-1, "lease%d_time", i);
 		char *time = websGetVar(wp, lease_time, "");
 
 		if (hostname == NULL || strlen(hostname) == 0 || ip == NULL || strlen(ip) == 0)
@@ -2285,8 +2285,8 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 
 	sprintf(wl0wds, "%s_wds", interface);
 	nvram_set(wl0wds, "");
-	snprintf(wds, 31, "%s_br1", interface);
-	snprintf(enabled_var, 31, "%s_enable", wds);
+	snprintf(wds, sizeof(wds)-1, "%s_br1", interface);
+	snprintf(enabled_var, sizeof(enabled_var)-1, "%s_enable", wds);
 	cprintf("wds_validate\n");
 	/*
 	 * validate separate br1 bridge params 
@@ -2302,7 +2302,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		// subnet params validation
 		for (i = 0; i < 4; i++) {
 
-			snprintf(ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
+			snprintf(ipaddr_var, sizeof(ipaddr_var)-1, "%s_%s%d", wds, "ipaddr", i);
 			val = websGetVar(wp, ipaddr_var, NULL);
 			if (val) {
 				strcat(ipaddr, val);
@@ -2311,7 +2311,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			} else
 				break;
 
-			snprintf(netmask_var, 31, "%s_%s%d", wds, "netmask", i);
+			snprintf(netmask_var, sizeof(netmask_var)-1, "%s_%s%d", wds, "netmask", i);
 			val = websGetVar(wp, netmask_var, NULL);
 			if (val) {
 				strcat(netmask, val);
@@ -2325,13 +2325,13 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		if (!valid_ipaddr(wp, ipaddr, &wds_variables[1]) || !valid_netmask(wp, netmask, &wds_variables[2]))
 			return;
 
-		snprintf(ipaddr_var, 31, "%s_%s", wds, "ipaddr");
-		snprintf(netmask_var, 31, "%s_%s", wds, "netmask");
+		snprintf(ipaddr_var, sizeof(ipaddr_var)-1, "%s_%s", wds, "ipaddr");
+		snprintf(netmask_var, sizeof(netmask_var)-1, "%s_%s", wds, "netmask");
 
 		nvram_seti(enabled_var, 1);
-		snprintf(ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
+		snprintf(ipaddr_var, sizeof(ipaddr_var)-1, "%s_%s%d", wds, "ipaddr", i);
 		nvram_set(ipaddr_var, ipaddr);
-		snprintf(netmask_var, 31, "%s_%s%d", wds, "netmask", i);
+		snprintf(netmask_var, sizeof(netmask_var)-1, "%s_%s%d", wds, "netmask", i);
 		nvram_set(netmask_var, netmask);
 	} else
 		nvram_seti(enabled_var, 0);
@@ -2339,12 +2339,12 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 	for (h = 1; h <= MAX_WDS_DEVS; h++) {
 		bzero(hwaddr, sizeof(hwaddr));
 		bzero(desc, sizeof(desc));
-		snprintf(wds, 31, "%s_wds%d", interface, h);
-		snprintf(enabled_var, 31, "%s_enable", wds);
+		snprintf(wds, sizeof(wds)-1, "%s_wds%d", interface, h);
+		snprintf(enabled_var, sizeof(enabled_var)-1, "%s_enable", wds);
 
 		for (i = 0; i < 6; i++) {
 
-			snprintf(hwaddr_var, 31, "%s_%s%d", wds, "hwaddr", i);
+			snprintf(hwaddr_var, sizeof(hwaddr_var)-1, "%s_%s%d", wds, "hwaddr", i);
 			val = websGetVar(wp, hwaddr_var, NULL);
 
 			if (val) {
@@ -2358,24 +2358,24 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			return;
 		}
 
-		snprintf(hwaddr_var, 31, "%s_%s", wds, "hwaddr");
+		snprintf(hwaddr_var, sizeof(hwaddr_var)-1, "%s_%s", wds, "hwaddr");
 		nvram_set(hwaddr_var, hwaddr);
 
-		snprintf(desc_var, 31, "%s_%s", wds, "desc");
+		snprintf(desc_var, sizeof(desc_var)-1, "%s_%s", wds, "desc");
 		val = websGetVar(wp, desc_var, NULL);
 		if (val) {
 			strcat(desc, val);
-			snprintf(desc_var, 31, "%s_%s", wds, "desc");
+			snprintf(desc_var, sizeof(desc_var)-1, "%s_%s", wds, "desc");
 			nvram_set(desc_var, desc);
 		}
 
 		/*
 		 * <lonewolf> 
 		 */
-		snprintf(desc_var, 31, "%s_%s", wds, "ospf");
+		snprintf(desc_var, sizeof(desc_var)-1, "%s_%s", wds, "ospf");
 		val = websGetVar(wp, desc_var, "");
 		if (val) {
-			snprintf(desc_var, 31, "%s_%s", wds, "ospf");
+			snprintf(desc_var, sizeof(desc_var)-1, "%s_%s", wds, "ospf");
 			nvram_set(desc_var, val);
 		}
 		/*
@@ -2384,7 +2384,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 
 		if (strcmp(hwaddr, "00:00:00:00:00:00")
 		    && nvram_invmatchi(enabled_var, 0)) {
-			snprintf(wds_list, 199, "%s %s", wds_list, hwaddr);
+			snprintf(wds_list, sizeof(wds_list)-1, "%s %s", wds_list, hwaddr);
 		}
 
 		if (nvram_matchi(enabled_var, 1)) {
@@ -2398,7 +2398,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 			// subnet params validation
 			for (i = 0; i < 4; i++) {
 
-				snprintf(ipaddr_var, 31, "%s_%s%d", wds, "ipaddr", i);
+				snprintf(ipaddr_var, sizeof(ipaddr_var)-1, "%s_%s%d", wds, "ipaddr", i);
 				val = websGetVar(wp, ipaddr_var, NULL);
 				if (val) {
 					strcat(ipaddr, val);
@@ -2407,7 +2407,7 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 				} else
 					break;
 
-				snprintf(netmask_var, 31, "%s_%s%d", wds, "netmask", i);
+				snprintf(netmask_var, sizeof(netmask_var)-1, "%s_%s%d", wds, "netmask", i);
 				val = websGetVar(wp, netmask_var, NULL);
 				if (val) {
 					strcat(netmask, val);
@@ -2422,8 +2422,8 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 				continue;
 			}
 
-			snprintf(ipaddr_var, 31, "%s_%s", wds, "ipaddr");
-			snprintf(netmask_var, 31, "%s_%s", wds, "netmask");
+			snprintf(ipaddr_var, sizeof(ipaddr_var)-1, "%s_%s", wds, "ipaddr");
+			snprintf(netmask_var, sizeof(netmask_var)-1, "%s_%s", wds, "netmask");
 
 			nvram_seti(enabled_var, 1);
 			nvram_set(ipaddr_var, ipaddr);
@@ -2433,25 +2433,25 @@ void validate_wds(webs_t wp, char *value, struct variable *v)
 		/*
 		 * keep the wds devices in sync w enabled entries 
 		 */
-		snprintf(wdsif_var, 31, "%s_if", wds);
+		snprintf(wdsif_var, sizeof(wdsif_var)-1, "%s_if", wds);
 		if (!nvram_matchi(enabled_var, 0)) {
 #ifdef HAVE_MADWIFI
-			snprintf(wds_if, 31, "%s.wds%d", interface, (devcount++));
+			snprintf(wds_if, sizeof(wds_if)-1, "%s.wds%d", interface, (devcount++));
 #else
 			// quick and dirty
 #ifdef HAVE_RT2880
 			if (!strcmp(interface, "wl0"))
-				snprintf(wds_if, 31, "wds%d", (devcount++) - 1);
+				snprintf(wds_if, sizeof(wds_if)-1, "wds%d", (devcount++) - 1);
 			else if (!strcmp(interface, "wl1"))
-				snprintf(wds_if, 31, "wds%d", (devcount++) + 10 - 1);
+				snprintf(wds_if, sizeof(wds_if)-1, "wds%d", (devcount++) + 10 - 1);
 #else
 			if (!strcmp(interface, "wl0"))
-				snprintf(wds_if, 31, "wds0.%d", (devcount++));
+				snprintf(wds_if, sizeof(wds_if)-1, "wds0.%d", (devcount++));
 			else if (!strcmp(interface, "wl1"))
-				snprintf(wds_if, 31, "wds1.%d", (devcount++));
+				snprintf(wds_if, sizeof(wds_if)-1, "wds1.%d", (devcount++));
 #endif
 			else
-				snprintf(wds_if, 31, "wds%d.%d", get_wl_instance(interface), (devcount++));
+				snprintf(wds_if, sizeof(wds_if)-1, "wds%d.%d", get_wl_instance(interface), (devcount++));
 #endif
 			nvram_set(wdsif_var, wds_if);
 		} else
@@ -2553,7 +2553,7 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 		ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip_range0_0,
 		ip_range0_1, ip_range0_2, ip_range0_3, ip_range0_4, ip_range0_5, ip_range0_6, ip_range0_7, ip_range1_0, ip_range1_1, ip_range1_2, ip_range1_3, ip_range1_4, ip_range1_5, ip_range1_6, ip_range1_7);
 
-	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%d", wp->filter_id);
+	snprintf(_filter_ip, sizeof(_filter_ip)-1, "filter_ip_grp%d", wp->filter_id);
 	nvram_set(_filter_ip, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2592,9 +2592,9 @@ void validate_filter_port(webs_t wp, char *value, struct variable *v)
 		char *port, *start, *end;
 		char *temp;
 
-		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
-		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
-		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
+		snprintf(filter_port, sizeof(filter_port)-1, "proto%d", i);
+		snprintf(filter_port_start, sizeof(filter_port_start)-1, "start%d", i);
+		snprintf(filter_port_end, sizeof(filter_port_end)-1, "end%d", i);
 		port = websGetVar(wp, filter_port, NULL);
 		start = websGetVar(wp, filter_port_start, NULL);
 		end = websGetVar(wp, filter_port_end, NULL);
@@ -2653,9 +2653,9 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 		char *port, *start, *end;
 		char *temp;
 
-		snprintf(filter_port, sizeof(filter_port), "proto%d", i);
-		snprintf(filter_port_start, sizeof(filter_port_start), "start%d", i);
-		snprintf(filter_port_end, sizeof(filter_port_end), "end%d", i);
+		snprintf(filter_port, sizeof(filter_port)-1, "proto%d", i);
+		snprintf(filter_port_start, sizeof(filter_port_start)-1, "start%d", i);
+		snprintf(filter_port_end, sizeof(filter_port_end)-1, "end%d", i);
 		port = websGetVar(wp, filter_port, NULL);
 		start = websGetVar(wp, filter_port_start, NULL);
 		end = websGetVar(wp, filter_port_end, NULL);
@@ -2686,7 +2686,7 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d", cur == buf ? "" : " ", port, atoi(start), atoi(end));
 	}
 
-	snprintf(_filter_port, sizeof(_filter_port), "filter_dport_grp%d", wp->filter_id);
+	snprintf(_filter_port, sizeof(_filter_port)-1, "filter_dport_grp%d", wp->filter_id);
 	nvram_set(_filter_port, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2719,7 +2719,7 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 		char filter_mac[] = "macXXX";
 		char *mac, mac1[20] = "";
 
-		snprintf(filter_mac, sizeof(filter_mac), "mac%d", i);
+		snprintf(filter_mac, sizeof(filter_mac)-1, "mac%d", i);
 
 		mac = websGetVar(wp, filter_mac, NULL);
 		if (!mac)
@@ -2752,7 +2752,7 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", mac1);
 	}
 
-	snprintf(_filter_mac, sizeof(_filter_mac), "filter_mac_grp%d", wp->filter_id);
+	snprintf(_filter_mac, sizeof(_filter_mac)-1, "filter_mac_grp%d", wp->filter_id);
 	nvram_set(_filter_mac, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
@@ -2785,7 +2785,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 		char filter_host[] = "hostXXX";
 		char *host;
 
-		snprintf(filter_host, sizeof(filter_host), "host%d", i);
+		snprintf(filter_host, sizeof(filter_host)-1, "host%d", i);
 		host = websGetVar(wp, filter_host, "");
 
 		if (!strcmp(host, ""))
@@ -2800,7 +2800,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	if (strcmp(buf, ""))
 		strcat(buf, "<&nbsp;>");
 
-	snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->filter_id);
+	snprintf(filter_host, sizeof(filter_host)-1, "filter_web_host%d", wp->filter_id);
 	nvram_set(filter_host, buf);
 
 	/*
@@ -2810,7 +2810,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 		char filter_url[] = "urlXXX";
 		char *url;
 
-		snprintf(filter_url, sizeof(filter_url), "url%d", i);
+		snprintf(filter_url, sizeof(filter_url)-1, "url%d", i);
 		url = websGetVar(wp, filter_url, "");
 
 		if (!strcmp(url, ""))
@@ -2821,7 +2821,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	if (strcmp(buf1, ""))
 		strcat(buf1, "<&nbsp;>");
 
-	snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->filter_id);
+	snprintf(filter_url, sizeof(filter_url)-1, "filter_web_url%d", wp->filter_id);
 	nvram_set(filter_url, buf1);
 	D("everything okay");
 }
@@ -2863,13 +2863,13 @@ void validate_port_trigger(webs_t wp, char *value, struct variable *v)
 		char trigger_proto[] = "proXXX";
 		char *name = "", *enable, new_name[200] = "", *i_from = "", *i_to = "", *o_from = "", *o_to = "", *proto = "both";
 
-		snprintf(trigger_name, sizeof(trigger_name), "name%d", i);
-		snprintf(trigger_enable, sizeof(trigger_enable), "enable%d", i);
-		snprintf(trigger_i_from, sizeof(trigger_i_from), "i_from%d", i);
-		snprintf(trigger_i_to, sizeof(trigger_i_to), "i_to%d", i);
-		snprintf(trigger_o_from, sizeof(trigger_o_from), "o_from%d", i);
-		snprintf(trigger_o_to, sizeof(trigger_o_to), "o_to%d", i);
-		snprintf(trigger_proto, sizeof(trigger_proto), "pro%d", i);
+		snprintf(trigger_name, sizeof(trigger_name)-1, "name%d", i);
+		snprintf(trigger_enable, sizeof(trigger_enable)-1, "enable%d", i);
+		snprintf(trigger_i_from, sizeof(trigger_i_from)-1, "i_from%d", i);
+		snprintf(trigger_i_to, sizeof(trigger_i_to)-1, "i_to%d", i);
+		snprintf(trigger_o_from, sizeof(trigger_o_from)-1, "o_from%d", i);
+		snprintf(trigger_o_to, sizeof(trigger_o_to)-1, "o_to%d", i);
+		snprintf(trigger_proto, sizeof(trigger_proto)-1, "pro%d", i);
 
 		name = websGetVar(wp, trigger_name, "");
 		enable = websGetVar(wp, trigger_enable, "off");
@@ -2964,7 +2964,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 		char blocked_service[] = "blocked_serviceXXX";
 		char *service;
 
-		snprintf(blocked_service, sizeof(blocked_service), "blocked_service%d", i);
+		snprintf(blocked_service, sizeof(blocked_service)-1, "blocked_service%d", i);
 		service = websGetVar(wp, blocked_service, NULL);
 		if (!service || !strcmp(service, "None"))
 			continue;
@@ -2973,7 +2973,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 		// cur == buf ? "" : "<&nbsp;>", service);
 	}
 
-	snprintf(port_grp, sizeof(port_grp), "filter_port_grp%d", wp->filter_id);
+	snprintf(port_grp, sizeof(port_grp)-1, "filter_port_grp%d", wp->filter_id);
 	nvram_set(port_grp, buf);
 	D("right");
 }
@@ -3044,7 +3044,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	 */
 	strcpy(ipaddr, "");
 	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_ipaddr", i);
+		snprintf(temp, sizeof(temp)-1, "%s_%d", "route_ipaddr", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(ipaddr, val);
@@ -3065,7 +3065,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	 */
 	strcpy(netmask, "");
 	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_netmask", i);
+		snprintf(temp, sizeof(temp)-1, "%s_%d", "route_netmask", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(netmask, val);
@@ -3087,7 +3087,7 @@ void validate_static_route(webs_t wp, char *value, struct variable *v)
 	 */
 	strcpy(gateway, "");
 	for (i = 0; i < 4; i++) {
-		snprintf(temp, sizeof(temp), "%s_%d", "route_gateway", i);
+		snprintf(temp, sizeof(temp)-1, "%s_%d", "route_gateway", i);
 		val = websGetVar(wp, temp, NULL);
 		if (val) {
 			strcat(gateway, val);
