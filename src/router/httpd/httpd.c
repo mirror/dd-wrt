@@ -1074,7 +1074,7 @@ static void *handle_request(void *arg)
 	clone_wan_mac = conn_fp->clone_wan_mac;
 	filter_id = conn_fp->filter_id;
 #ifdef HAVE_REGISTER
-	registered = conn_fp->registered;
+	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
 #endif
 #endif
