@@ -69,4 +69,5 @@ obj-$(CONFIG_MT7610_AP)      += rt7610/
 endif
 ifeq ($(CONFIG_SOC_MT7621_OPENWRT),y)
 obj-$(CONFIG_RLT_AP_SUPPORT)      += rt7612/rlt_wifi_ap/
+obj-$(CONFIG_MT_AP_SUPPORT)      += rt7615/mt_wifi_ap/
 endif
