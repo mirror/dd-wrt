@@ -477,6 +477,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		eval("ifconfig", "apcli1", "down");
 		rmmod("MT7610_ap");
 		rmmod("RTPCI_ap");
+		rmmod("mt_wifi");
 		rmmod("rlt_wifi");
 		rmmod("rt2860v2_ap");
 		rmmod("rt2860v2_sta");
@@ -1215,6 +1216,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		} else {
 			insmod("RTPCI_ap");
 			insmod("rlt_wifi");
+			insmod("mt_wifi");
 #ifdef HAVE_DIR810L
 			sysprintf("insmod MT7610_ap mac=%s\n", mac5);
 #else
