@@ -270,6 +270,12 @@ config GPIO_MENZ127
 	help
 	 Say yes here to support the MEN 16Z127 GPIO Controller
 
+config GPIO_MT7621
+	bool "Mediatek GPIO Support"
+	depends on SOC_MT7620 || SOC_MT7621
+	help
+	  Say yes here to support the Mediatek SoC GPIO device
+
 config GPIO_MM_LANTIQ
 	bool "Lantiq Memory mapped GPIOs"
 	depends on LANTIQ && SOC_XWAY
@@ -373,6 +379,12 @@ config GPIO_RCAR
 	select GPIOLIB_IRQCHIP
 	help
 	  Say yes here to support GPIO on Renesas R-Car SoCs.
+
+config GPIO_RALINK
+	bool "Ralink GPIO Support"
+	depends on RALINK
+	help
+	  Say yes here to support the Ralink SoC GPIO device
 
 config GPIO_SPEAR_SPICS
 	bool "ST SPEAr13xx SPI Chip Select as GPIO support"
@@ -632,12 +644,6 @@ config GPIO_SCH
 
 	  The Intel Quark X1000 SoC has 2 GPIOs powered by the core
 	  power well and 6 from the suspend power well.
-
-config GPIO_RALINK
-	bool "Ralink GPIO Support"
-	depends on RALINK_OPENWRT
-	help
-	  Say yes here to support the Ralink SoC GPIO device
 
 config GPIO_SCH311X
 	tristate "SMSC SCH311x SuperI/O GPIO"

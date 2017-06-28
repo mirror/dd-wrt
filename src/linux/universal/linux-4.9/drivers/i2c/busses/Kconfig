@@ -845,6 +845,16 @@ config I2C_RK3X
 	  This driver can also be built as a module. If so, the module will
 	  be called i2c-rk3x.
 
+config I2C_RALINK
+	tristate "Ralink I2C Controller"
+	depends on RALINK && !SOC_MT7621
+	select OF_I2C
+
+config I2C_MT7621
+	tristate "MT7621/MT7628 I2C Controller"
+	depends on RALINK && (SOC_MT7620 || SOC_MT7621)
+	select OF_I2C
+
 config HAVE_S3C2410_I2C
 	bool
 	help

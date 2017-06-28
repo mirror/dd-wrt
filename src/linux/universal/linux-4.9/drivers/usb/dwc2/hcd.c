@@ -47,6 +47,7 @@
 #include <linux/io.h>
 #include <linux/slab.h>
 #include <linux/usb.h>
+#include <linux/reset.h>
 
 #include <linux/usb/hcd.h>
 #include <linux/usb/ch11.h>
@@ -4981,6 +4982,8 @@ int dwc2_hcd_init(struct dwc2_hsotg *hsotg, int irq)
 	dev_dbg(hsotg->dev, "DWC OTG HCD INIT\n");
 
 	retval = -ENOMEM;
+
+	device_reset(hsotg->dev);
 
 	hcfg = dwc2_readl(hsotg->regs + HCFG);
 	dev_dbg(hsotg->dev, "hcfg=%08x\n", hcfg);

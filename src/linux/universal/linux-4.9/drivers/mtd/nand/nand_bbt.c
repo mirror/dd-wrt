@@ -1219,6 +1219,25 @@ err:
 	return res;
 }
 
+void nand_bbt_set(struct mtd_info *mtd, int page, int flag)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift - 1));
+	this->bbt[block >> 3] &= ~(0x03 << (block & 0x6));
+	this->bbt[block >> 3] |= (flag & 0x3) << (block & 0x6);
+}
+
+int nand_bbt_get(struct mtd_info *mtd, int page)
+{
+	struct nand_chip *this = mtd->priv;
+	int block;
+
+	block = (int)(page >> (this->bbt_erase_shift - this->page_shift - 1));
+	return (this->bbt[block >> 3] >> (block & 0x06)) & 0x03;
+}
+
 /**
  * nand_update_bbt - update bad block table(s)
  * @mtd: MTD device structure

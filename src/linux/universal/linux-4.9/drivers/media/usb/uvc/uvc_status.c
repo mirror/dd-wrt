@@ -139,6 +139,7 @@ static void uvc_status_complete(struct urb *urb)
 		switch (dev->status[0] & 0x0f) {
 		case UVC_STATUS_TYPE_CONTROL:
 			uvc_event_control(dev, dev->status, len);
+			dev->motion = 1;
 			break;
 
 		case UVC_STATUS_TYPE_STREAMING:
@@ -182,6 +183,7 @@ int uvc_status_init(struct uvc_device *dev)
 	}
 
 	pipe = usb_rcvintpipe(dev->udev, ep->desc.bEndpointAddress);
+	dev->motion = 0;
 
 	/* For high-speed interrupt endpoints, the bInterval value is used as
 	 * an exponent of two. Some developers forgot about it.

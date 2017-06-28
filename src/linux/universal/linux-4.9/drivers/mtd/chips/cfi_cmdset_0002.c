@@ -41,7 +41,7 @@
 
 #define AMD_BOOTLOC_BUG
 
-#if defined(CONFIG_MIPS_RALINK) || defined(CONFIG_RALINK_OPENWRT)
+#if defined(CONFIG_RALINK)
 #define FORCE_WORD_WRITE 1
 #else
 #define FORCE_WORD_WRITE 0

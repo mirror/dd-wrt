@@ -47,7 +47,7 @@
 #include <linux/mtd/partitions.h>
 #include <linux/of.h>
 
-static int nand_get_device(struct mtd_info *mtd, int new_state);
+int nand_get_device(struct mtd_info *mtd, int new_state);
 
 static int nand_do_write_oob(struct mtd_info *mtd, loff_t to,
 			     struct mtd_oob_ops *ops);
@@ -233,7 +233,7 @@ static int check_offs_len(struct mtd_info *mtd,
  *
  * Release chip lock and wake up anyone waiting on the device.
  */
-static void nand_release_device(struct mtd_info *mtd)
+void nand_release_device(struct mtd_info *mtd)
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
 
@@ -919,7 +919,7 @@ static void panic_nand_get_device(struct nand_chip *chip,
  *
  * Get the device and lock it for exclusive access
  */
-static int
+int
 nand_get_device(struct mtd_info *mtd, int new_state)
 {
 	struct nand_chip *chip = mtd_to_nand(mtd);
@@ -2018,6 +2018,9 @@ static int nand_do_read_ops(struct mtd_info *mtd, loff_t from,
 						 __func__, buf);
 
 read_retry:
+#ifdef CONFIG_MTK_MTD_NAND
+			ret = chip->read_page(mtd, chip, bufpoi, page);
+#else
 			chip->cmdfunc(mtd, NAND_CMD_READ0, 0x00, page);
 
 			/*
@@ -2036,6 +2039,7 @@ read_retry:
 			else
 				ret = chip->ecc.read_page(mtd, chip, bufpoi,
 							  oob_required, page);
+#endif
 			if (ret < 0) {
 				if (use_bufpoi)
 					/* Invalidate page cache */
@@ -3199,8 +3203,11 @@ int nand_erase_nand(struct mtd_info *mtd, struct erase_info *instr,
 		    (page + pages_per_block))
 			chip->pagebuf = -1;
 
+#ifdef CONFIG_MTK_MTD_NAND
+		status = chip->erase_mtk(mtd, page & chip->pagemask);
+#else
 		status = chip->erase(mtd, page & chip->pagemask);
-
+#endif
 		/*
 		 * See if operation failed and additional status checks are
 		 * available
@@ -4425,6 +4432,7 @@ int nand_scan_ident(struct mtd_info *mtd, int maxchips,
 		 * cmdfunc() both expect cmd_ctrl() to be populated,
 		 * so we need to check that that's the case
 		 */
+		printk("%s:%s[%d]%p %p %p\n", __FILE__, __func__, __LINE__, chip->cmdfunc, chip->select_chip, chip->cmd_ctrl);
 		pr_err("chip.cmd_ctrl() callback is not provided");
 		return -EINVAL;
 	}

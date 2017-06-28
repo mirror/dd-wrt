@@ -398,6 +398,9 @@ uart_get_baud_rate(struct uart_port *port, struct ktermios *termios,
 		break;
 	}
 
+	if (tty_termios_baud_rate(termios) == 2500000)
+		return 250000;
+
 	for (try = 0; try < 2; try++) {
 		baud = tty_termios_baud_rate(termios);
 

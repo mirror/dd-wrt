@@ -70,7 +70,8 @@ obj-$(CONFIG_ZX_DMA) += zx296702_dma.o
 obj-$(CONFIG_QCOM_BAM_DMA) += qcom_bam_dma.o
 obj-$(CONFIG_QCOM_ADM) += qcom_adm.o
 obj-$(CONFIG_AL_DMA) += al/
-#obj-$(CONFIG_QCOM_ADM_DMA) += qcom_adm_dma.o
+obj-$(CONFIG_DMA_RALINK) += ralink-gdma.o
+obj-$(CONFIG_MTK_HSDMA) += mtk-hsdma.o
 
 obj-y += qcom/
 obj-y += xilinx/

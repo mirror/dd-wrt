@@ -164,7 +164,9 @@
 #define UVC_QUIRK_RESTRICT_FRAME_RATE	0x00000200
 #define UVC_QUIRK_RESTORE_CTRLS_ON_INIT	0x00000400
 #define UVC_QUIRK_FORCE_Y8		0x00000800
-
+#define UVC_QUIRK_MOTION		0x00001000
+#define UVC_QUIRK_SINGLE_ISO		0x00002000
+ 
 /* Format flags */
 #define UVC_FMT_FLAG_COMPRESSED		0x00000001
 #define UVC_FMT_FLAG_STREAM		0x00000002
@@ -562,6 +564,7 @@ struct uvc_device {
 	__u8 *status;
 	struct input_dev *input;
 	char input_phys[64];
+	int motion;
 };
 
 enum uvc_handle_state {

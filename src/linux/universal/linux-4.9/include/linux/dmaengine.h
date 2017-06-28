@@ -514,6 +514,7 @@ static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
 struct dmaengine_unmap_data *
 dmaengine_get_unmap_data(struct device *dev, int nr, gfp_t flags);
 void dmaengine_unmap_put(struct dmaengine_unmap_data *unmap);
+struct dma_chan *dma_get_slave_channel(struct dma_chan *chan);
 #else
 static inline void dma_set_unmap(struct dma_async_tx_descriptor *tx,
 				 struct dmaengine_unmap_data *unmap)
