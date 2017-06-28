@@ -1350,7 +1350,7 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_TPLINK_ARCHERC3150:
 		sesgpio = 0x103;
 		break;
-	case ROUTER_DIR882::
+	case ROUTER_DIR882:
 		sesgpio = 0x107;
 		break;
 	case ROUTER_DIR860LB1:
