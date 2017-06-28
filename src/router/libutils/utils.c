@@ -7414,6 +7414,8 @@ static struct wifidevices wdevices[] = {
 	{"88W8897 802.11ac", 0x11ab, 0x2b38},
 	{"WIL6210 802.11ad", 0x1ae9, 0x0310},
 	{"SD8887 802.11ac", 0x02df, 0x9135},
+	{"MT7615 802.11ac", 0x14c3, 0x7615},
+	{"MT7662E 802.11ac", 0x14c3, 0x7662},
 
 };
 
@@ -7458,6 +7460,36 @@ char *getWifiDeviceName(char *prefix)
 			fclose(fp);
 		}
 		free(globstring);
+	}
+#endif
+#ifdef HAVE_RT2880
+	if (!vendor || !device) {
+
+		if (!strncmp(prefix, "ra", 2) || !strncmp(prefix, "wl0", 3)) {
+			FILE *fp = fopen("/sys/bus/pci/devices/0000:01:00.0/device", "rb");
+			if (fp) {
+				fscanf(fp, "0x%x", &device);
+				fclose(fp);
+			}
+			fp = fopen("/sys/bus/pci/devices/0000:01:00.0/vendor", "rb");
+			if (fp) {
+				fscanf(fp, "0x%x", &vendor);
+				fclose(fp);
+			}
+		}
+
+		if (!strncmp(prefix, "ba", 2) || !strncmp(prefix, "wl1", 3)) {
+			FILE *fp = fopen("/sys/bus/pci/devices/0000:02:00.0/device", "rb");
+			if (fp) {
+				fscanf(fp, "0x%x", &device);
+				fclose(fp);
+			}
+			fp = fopen("/sys/bus/pci/devices/0000:02:00.0/vendor", "rb");
+			if (fp) {
+				fscanf(fp, "0x%x", &vendor);
+				fclose(fp);
+			}
+		}
 	}
 #endif
 	if (!vendor || !device) {
@@ -8150,7 +8182,6 @@ void getPortMapping(int *vlanmap)
 	}
 
 }
-
 
 u_int64_t freediskSpace(char *path)
 {
