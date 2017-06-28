@@ -657,7 +657,7 @@ static struct mtd_part *allocate_partition(struct mtd_info *parent,
 	if ((slave->mtd.flags & MTD_WRITEABLE) && remainder) {
 		/* Doesn't start on a boundary of major erase size */
 		slave->mtd.flags |= MTD_ERASE_PARTIAL;
-		if (((u32) slave->mtd.size) > master->erasesize)
+		if (((u32) slave->mtd.size) > parent->erasesize)
 			slave->mtd.flags &= ~MTD_WRITEABLE;
 		else
 			slave->mtd.erasesize = slave->mtd.size;
