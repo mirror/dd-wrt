@@ -1861,7 +1861,7 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_DIR860
-	FILE *fp = fopen("/dev/mtdlock3","rb");
+	FILE *fp = fopen("/dev/mtdblock3","rb");
 	if (fp) {
 		fseek(fp,64,SEEK_SET);
 		char sign[32];
