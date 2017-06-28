@@ -132,6 +132,11 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "4 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
+//		set_smp_affinity(11, 2); // ethh
+		set_smp_affinity(12, 4);  //wifi1
+		set_smp_affinity(32, 8);  // wifi2
+		set_smp_affinity(30, 8);   // usb;
+
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 
 	} else {
