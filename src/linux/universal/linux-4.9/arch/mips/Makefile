@@ -215,28 +215,6 @@ cflags-$(CONFIG_CAVIUM_CN63XXP1) += -Wa,-mfix-cn63xxp1
 cflags-$(CONFIG_CPU_BMIPS)	+= -march=mips32 -Wa,-mips32 -Wa,--trap
 
 
-
-#
-# Ralink SoC common stuff
-#
-core-$(CONFIG_MIPS_RALINK)	+= arch/mips/ralink/common/
-cflags-$(CONFIG_MIPS_RALINK)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink
-
-#
-# Ralink RT288x
-#
-core-$(CONFIG_RALINK_RT288X)	+= arch/mips/ralink/rt288x/
-cflags-$(CONFIG_RALINK_RT288X)	+= -I$(srctree)//arch/mips/include/asm/mach-ralink/rt288x  -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT288X)	+= 0xffffffff88000000
-
-#
-# Ralink RT305x
-#
-core-$(CONFIG_RALINK_RT305X)	+= arch/mips/ralink/rt305x/
-cflags-$(CONFIG_RALINK_RT305X)	+= -I$(srctree)/arch/mips/include/asm/mach-ralink/rt305x -I$(srctree)/arch/mips/include/asm/rt2880
-load-$(CONFIG_RALINK_RT305X)	+= 0xffffffff80000000
-
-
 # Atheros AR5312/AR2312 WiSoC
 #
 core-$(CONFIG_ATHEROS)		+= arch/mips/atheros/
