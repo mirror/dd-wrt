@@ -2215,6 +2215,10 @@ static void rpc_pipe_bind_step_two_trigger(struct tevent_req *req)
 				      struct schannel_state);
 	struct tevent_req *subreq;
 
+#ifndef NETLOGON_SUPPORT
+	tevent_req_nterror(req, NT_STATUS_UNSUCCESSFUL);
+	return;
+#endif
 	if (schannel_auth == NULL ||
 	    !ndr_syntax_id_equal(&state->cli->abstract_syntax,
 				 &ndr_table_netlogon.syntax_id)) {
