@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.32 Kernel Configuration
+# Linux/arm 4.9.34 Kernel Configuration
 #
 CONFIG_ARM=y
 CONFIG_ARM_HAS_SG_CHAIN=y
@@ -1189,6 +1189,10 @@ CONFIG_MTD_CMDLINE_PARTS=y
 CONFIG_MTD_QCOM_SMEM_PARTS=y
 
 #
+# Partition parsers
+#
+
+#
 # User Modules And Translation Layers
 #
 CONFIG_MTD_BLKDEVS=y
@@ -1733,6 +1737,7 @@ CONFIG_NET_VENDOR_MARVELL=y
 # CONFIG_MVNETA_BM is not set
 # CONFIG_SKGE is not set
 # CONFIG_SKY2 is not set
+# CONFIG_NET_MEDIATEK_SOC is not set
 CONFIG_NET_VENDOR_MELLANOX=y
 # CONFIG_MLX4_EN is not set
 # CONFIG_MLX4_CORE is not set

@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/powerpc 4.9.32 Kernel Configuration
+# Linux/powerpc 4.9.34 Kernel Configuration
 #
 # CONFIG_PPC64 is not set
 
@@ -1014,6 +1014,10 @@ CONFIG_MTD=y
 # CONFIG_MTD_AR7_PARTS is not set
 
 #
+# Partition parsers
+#
+
+#
 # User Modules And Translation Layers
 #
 CONFIG_MTD_BLKDEVS=y
@@ -1440,6 +1444,7 @@ CONFIG_GIANFAR=m
 # CONFIG_NET_VENDOR_INTEL is not set
 # CONFIG_JME is not set
 # CONFIG_NET_VENDOR_MARVELL is not set
+# CONFIG_NET_MEDIATEK_SOC is not set
 # CONFIG_NET_VENDOR_MELLANOX is not set
 # CONFIG_NET_VENDOR_MICREL is not set
 # CONFIG_NET_VENDOR_MYRI is not set

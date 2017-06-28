@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.32 Kernel Configuration
+# Linux/mips 4.9.34 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -16,7 +16,6 @@ CONFIG_MIPS=y
 # CONFIG_ATHEROS is not set
 # CONFIG_ATH79 is not set
 # CONFIG_BMIPS_GENERIC is not set
-# CONFIG_MIPS_RALINK is not set
 # CONFIG_BCM63XX is not set
 # CONFIG_MIPS_COBALT is not set
 # CONFIG_MACH_DECSTATION is not set
@@ -35,7 +34,7 @@ CONFIG_MIPS=y
 # CONFIG_NXP_STB220 is not set
 # CONFIG_NXP_STB225 is not set
 # CONFIG_PMC_MSP is not set
-# CONFIG_RALINK_OPENWRT is not set
+# CONFIG_RALINK is not set
 # CONFIG_SGI_IP22 is not set
 # CONFIG_SGI_IP27 is not set
 # CONFIG_SGI_IP28 is not set
@@ -889,6 +888,10 @@ CONFIG_MTD_ROOTFS_ROOT_DEV=y
 # CONFIG_MTD_AR7_PARTS is not set
 
 #
+# Partition parsers
+#
+
+#
 # User Modules And Translation Layers
 #
 CONFIG_MTD_BLKDEVS=y
@@ -1126,6 +1129,7 @@ CONFIG_AG71XX=m
 # CONFIG_AG71XX_DEBUG_FS is not set
 CONFIG_AG71XX_AR8216_SUPPORT=y
 # CONFIG_NET_VENDOR_MARVELL is not set
+# CONFIG_NET_MEDIATEK_SOC is not set
 # CONFIG_NET_VENDOR_MELLANOX is not set
 # CONFIG_NET_VENDOR_MICREL is not set
 # CONFIG_NET_VENDOR_MYRI is not set
