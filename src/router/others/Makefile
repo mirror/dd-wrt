@@ -62,6 +62,10 @@ ifdef CONFIG_MT7612
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/SingleSKU.dat $(INSTALLDIR)/etc/wlan
 endif
+ifdef CONFIG_MT7615
+	install -d $(INSTALLDIR)/etc/wlan/
+	cp rt2880/mt7615/*.dat $(INSTALLDIR)/etc/wlan
+endif
 ifdef CONFIG_RT3052
 	install -d $(INSTALLDIR)/etc/wlan
 	install rt2880/RT30*.bin $(INSTALLDIR)/etc/wlan

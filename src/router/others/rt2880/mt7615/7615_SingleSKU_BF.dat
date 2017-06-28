@@ -1,0 +1,71 @@
+# Single SKU Max Power Table (unit is 0.5dBm)                                                   
+# 2.4G Channel                                                   
+Band: 2.4G MaxPower_4T MaxPower_3T MaxPower_2T                                                
+Ch1 5 5 5                                                
+Ch2 5 5 5                                                
+Ch3 5 5 5                                                
+Ch4 5 5 5                                                
+Ch5 5 5 5                                                
+Ch6 5 5 5                                                
+Ch7 5 5 5                                                
+Ch8 5 5 5                                                
+Ch9 5 5 5                                                
+Ch10 4 4 4                                                
+Ch11 5 5 5                                                
+Ch12 5 5 5                                                
+Ch13 5 5 5                                                
+Ch14 5 5 5                                                
+                                                   
+# 5G Channel                                                   
+Band: 5G MaxPower_4T MaxPower_3T MaxPower_2T                                                
+Ch184 4 4 4                                                
+Ch188 4 4 4                                                
+Ch192 4 4 4                                                
+Ch196 4 4 4                                                
+Ch8 4 4 4                                                
+Ch12 4 4 4                                                
+Ch16 4 4 4                                                
+Ch36 4 4 4                                                
+Ch40 4 4 4                                                
+Ch44 4 4 4                                                
+Ch48 4 4 4                                                
+Ch52 4 4 4                                                
+Ch56 4 4 4                                                
+Ch60 4 4 4                                                
+Ch64 4 4 4                                                
+Ch68 4 4 4                                                
+Ch72 4 4 4                                                
+Ch76 4 4 4                                                
+Ch80 3 3 3                                                
+Ch84 4 4 4                                                
+Ch88 4 4 4                                                
+Ch92 4 4 4                                                
+Ch96 4 4 4                                                
+Ch100 6 6 6                                                
+Ch104 6 6 6                                                
+Ch108 6 6 6                                                
+Ch112 6 6 6                                                
+Ch116 6 6 6                                                
+Ch120 6 6 6                                                
+Ch124 6 6 6                                                
+Ch128 6 6 6                                                
+Ch132 6 6 6                                                
+Ch136 6 6 6                                                
+Ch140 6 6 6                                                
+Ch144 6 6 6                                                
+Ch149 6 6 6                                                
+Ch153 6 6 6                                                
+Ch157 5 5 5                                                
+Ch161 6 6 6                                                
+Ch165 6 6 6                                                
+Ch169 6 6 6                                                
+Ch173 6 6 6                                                
+Ch177 6 6 6                                                
+Ch181 6 6 6                                                
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   
+                                                   
