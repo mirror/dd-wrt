@@ -445,7 +445,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 
@@ -466,7 +465,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 
@@ -486,7 +484,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 
@@ -508,7 +505,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 
@@ -526,7 +522,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 
@@ -570,7 +565,6 @@ static NTSTATUS cli_pipe_validate_current_pdu(TALLOC_CTX *mem_ctx,
 				  rpccli_pipe_txt(talloc_tos(), cli),
 				  pkt->ptype, expected_pkt_type,
 				  nt_errstr(ret)));
-			NDR_PRINT_DEBUG(ncacn_packet, pkt);
 			return ret;
 		}
 

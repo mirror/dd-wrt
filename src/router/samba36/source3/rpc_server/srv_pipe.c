@@ -988,7 +988,6 @@ static bool api_pipe_bind_req(struct pipes_struct *p,
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1, ("api_pipe_bind_req: invalid pdu: %s\n",
 			  nt_errstr(status)));
-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
 		goto err_exit;
 	}
 
@@ -1322,7 +1321,6 @@ bool api_pipe_bind_auth3(struct pipes_struct *p, struct ncacn_packet *pkt)
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1, ("api_pipe_bind_auth3: invalid pdu: %s\n",
 			  nt_errstr(status)));
-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
 		goto err;
 	}
 
@@ -1480,7 +1478,6 @@ static bool api_pipe_alter_context(struct pipes_struct *p,
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1, ("api_pipe_alter_context: invalid pdu: %s\n",
 			  nt_errstr(status)));
-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
 		goto err_exit;
 	}
 
@@ -2054,7 +2051,6 @@ static bool process_request_pdu(struct pipes_struct *p, struct ncacn_packet *pkt
 	if (!NT_STATUS_IS_OK(status)) {
 		DEBUG(1, ("process_request_pdu: invalid pdu: %s\n",
 			  nt_errstr(status)));
-		NDR_PRINT_DEBUG(ncacn_packet, pkt);
 		set_incoming_fault(p);
 		return false;
 	}
