@@ -42,7 +42,8 @@
 #define ML_MAGIC2			0x26594131
 #define TRX_MAGIC			0x30524448
 #define SHSQ_MAGIC			0x71736873	/* shsq (weird ZTE H218N endianness) */
-#define UBI_EC_MAGIC			0x23494255	/* UBI# */
+
+static const char * const trx_types[] = { "trx", NULL };
 
 struct trx_header {
 	uint32_t magic;

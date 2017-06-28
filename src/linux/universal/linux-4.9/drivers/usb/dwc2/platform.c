@@ -616,6 +616,12 @@ static int dwc2_driver_probe(struct platform_device *dev)
 	if (retval)
 		return retval;
 
+	/* Enable USB port before any regs access */
+	if (dwc2_readl(hsotg->regs + PCGCTL) & 0x0f) {
+		dwc2_writel(0x00, hsotg->regs + PCGCTL);
+		/* TODO: mdelay(25) here? vendor driver don't use it */
+	}
+
 	retval = dwc2_get_dr_mode(hsotg);
 	if (retval)
 		goto error;

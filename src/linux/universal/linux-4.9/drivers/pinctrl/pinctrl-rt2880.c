@@ -20,13 +20,14 @@
 #include <linux/pinctrl/consumer.h>
 #include <linux/pinctrl/machine.h>
 
-#include <asm/mach-ralink-openwrt/ralink_regs.h>
-#include <asm/mach-ralink-openwrt/pinmux.h>
-#include <asm/mach-ralink-openwrt/mt7620.h>
+#include <asm/mach-ralink/ralink_regs.h>
+#include <asm/mach-ralink/pinmux.h>
+#include <asm/mach-ralink/mt7620.h>
 
 #include "core.h"
 
 #define SYSC_REG_GPIO_MODE	0x60
+#define SYSC_REG_GPIO_MODE2	0x64
 
 struct rt2880_priv {
 	struct device *dev;
@@ -44,8 +45,6 @@ struct rt2880_priv {
 	uint8_t *gpio;
 	int max_pins;
 };
-
-struct rt2880_pmx_group *rt2880_pinmux_data = NULL;
 
 static int rt2880_get_group_count(struct pinctrl_dev *pctrldev)
 {
@@ -204,7 +203,9 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 {
 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
         u32 mode = 0;
+	u32 reg = SYSC_REG_GPIO_MODE;
 	int i;
+	int shift;
 
 	/* dont allow double use */
 	if (p->groups[group].enabled) {
@@ -215,8 +216,13 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 	p->groups[group].enabled = 1;
 	p->func[func]->enabled = 1;
 
-	mode = rt_sysc_r32(SYSC_REG_GPIO_MODE);
-	mode &= ~(p->groups[group].mask << p->groups[group].shift);
+	shift = p->groups[group].shift;
+	if (shift >= 32) {
+		shift -= 32;
+		reg = SYSC_REG_GPIO_MODE2;
+	}
+	mode = rt_sysc_r32(reg);
+	mode &= ~(p->groups[group].mask << shift);
 
 	/* mark the pins as gpio */
 	for (i = 0; i < p->groups[group].func[0].pin_count; i++)
@@ -224,14 +230,13 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 
 	/* function 0 is gpio and needs special handling */
 	if (func == 0) {
-		mode |= p->groups[group].gpio << p->groups[group].shift;
+		mode |= p->groups[group].gpio << shift;
 	} else {
 		for (i = 0; i < p->func[func]->pin_count; i++)
 			p->gpio[p->func[func]->pins[i]] = 0;
-		mode |= p->func[func]->value << p->groups[group].shift;
+		mode |= p->func[func]->value << shift;
 	}
-	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
-
+	rt_sysc_w32(mode, reg);
 
 	return 0;
 }
@@ -254,7 +259,7 @@ static const struct pinmux_ops rt2880_pmx_group_ops = {
 	.get_functions_count	= rt2880_pmx_func_count,
 	.get_function_name	= rt2880_pmx_func_name,
 	.get_function_groups	= rt2880_pmx_group_get_groups,
-	.enable			= rt2880_pmx_group_enable,
+	.set_mux		= rt2880_pmx_group_enable,
 	.gpio_request_enable	= rt2880_pmx_group_gpio_request_enable,
 };
 

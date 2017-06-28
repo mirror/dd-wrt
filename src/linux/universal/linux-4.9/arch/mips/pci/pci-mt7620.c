@@ -33,7 +33,6 @@
 #define RALINK_GPIOMODE			0x60
 
 #define PPLL_CFG1			0x9c
-#define PDRV_SW_SET			BIT(23)
 
 #define PPLL_DRV			0xa0
 #define PDRV_SW_SET			(1<<31)
@@ -121,7 +120,7 @@ static int wait_pciephy_busy(void)
 		else
 			break;
 		if (retry++ > WAITRETRY_MAX) {
-			printk(KERN_WARN "PCIE-PHY retry failed.\n");
+			pr_warn("PCIE-PHY retry failed.\n");
 			return -1;
 		}
 	}
@@ -316,6 +315,7 @@ static int mt7620_pci_probe(struct platform_device *pdev)
 		break;
 
 	case MT762X_SOC_MT7628AN:
+	case MT762X_SOC_MT7688:
 		if (mt7628_pci_hw_init(pdev))
 			return -1;
 		break;
