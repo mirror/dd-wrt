@@ -1041,6 +1041,9 @@ static void resetbtn_period_check(int sig)
 	case ROUTER_DIR860LB1:
 		val = (get_gpio(7) << 7) | (get_gpio(18) << 18);
 		break;
+	case ROUTER_DIR882:
+		val = (get_gpio(7) << 7) | (get_gpio(15) << 15);
+		break;
 	case ROUTER_BOARD_GW2380:
 	case ROUTER_BOARD_GW2388:
 		val = get_gpio(240);
@@ -1346,6 +1349,9 @@ static void resetbtn_period_check(int sig)
 		break;
 	case ROUTER_TPLINK_ARCHERC3150:
 		sesgpio = 0x103;
+		break;
+	case ROUTER_DIR882::
+		sesgpio = 0x107;
 		break;
 	case ROUTER_DIR860LB1:
 		sesgpio = 0x112;
