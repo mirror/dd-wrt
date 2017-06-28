@@ -1555,7 +1555,7 @@ static int get_max_mcs_index(const __u8 *mcs)
 		unsigned int mcs_octet = mcs_bit / 8;
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
-		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
 		if (!mcs_rate_idx_set)
 			continue;
 		if (prev_bit != mcs_bit - 1) {
@@ -1578,10 +1578,10 @@ static int get_ht_mcs(const __u8 *mcs)
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
 	max_rx_supp_data_rate = ((mcs[10] >> 8) & ((mcs[11] & 0x3) << 8));
-	tx_mcs_set_defined = ! !(mcs[12] & (1 << 0));
+	tx_mcs_set_defined = !!(mcs[12] & (1 << 0));
 	tx_mcs_set_equal = !(mcs[12] & (1 << 1));
 	tx_max_num_spatial_streams = ((mcs[12] >> 2) & 3) + 1;
-	tx_unequal_modulation = ! !(mcs[12] & (1 << 4));
+	tx_unequal_modulation = !!(mcs[12] & (1 << 4));
 	/* XXX: else see 9.6.0e.5.3 how to get this I think */
 	if (tx_mcs_set_defined) {
 		if (tx_mcs_set_equal) {

@@ -828,7 +828,7 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	int n;
 	char *dest;
 	if (len < 1)
-	    return 0;
+		return 0;
 	va_start(ap, fmt);
 	n = vasprintf(&dest, fmt, ap);
 	va_end(ap);
