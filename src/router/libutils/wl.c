@@ -126,12 +126,16 @@ int has_5ghz(char *prefix)
 {
 	if (!strcmp(prefix, "wl0"))
 		return 0;
+	if (!strcmp(prefix, "ra0"))
+		return 0;
 	return 1;
 }
 
 int has_2ghz(char *prefix)
 {
 	if (!strcmp(prefix, "wl0"))
+		return 1;
+	if (!strcmp(prefix, "ra0"))
 		return 1;
 	return 0;
 }
