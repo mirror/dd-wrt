@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.32 Kernel Configuration
+# Linux/i386 4.9.34 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -1678,6 +1678,7 @@ CONFIG_SKGE=m
 CONFIG_SKGE_GENESIS=y
 CONFIG_SKY2=m
 # CONFIG_SKY2_DEBUG is not set
+# CONFIG_NET_MEDIATEK_SOC is not set
 CONFIG_NET_VENDOR_MELLANOX=y
 CONFIG_MLX4_EN=m
 CONFIG_MLX4_CORE=m
@@ -3229,6 +3230,7 @@ CONFIG_MMC_USHC=y
 # CONFIG_MMC_USDHI6ROL0 is not set
 # CONFIG_MMC_TOSHIBA_PCI is not set
 # CONFIG_MMC_MTK is not set
+# CONFIG_MTK_MMC is not set
 # CONFIG_MEMSTICK is not set
 CONFIG_NEW_LEDS=y
 CONFIG_LEDS_CLASS=y
