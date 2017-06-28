@@ -495,9 +495,15 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	FILE *fp = fopen(cname, "wb");	// config file for driver (don't ask me, its really the worst config thing i have seen)
 
 	fprintf(fp, "Default\n");
+	char wl[32];
+	sprintf(wl, "wl%d", idx);
+	char *dev = getWifiDeviceName(wl);
+	if (dev && !strcmp(dev, "MT7615 802.11ac"))
+		fprintf(fp, "E2pAccessMode=2\n");
+	else
 	if (idx == 1)
 		fprintf(fp, "E2pAccessMode=2\n");
-
+	
 #ifdef BUFFALO_JP
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
@@ -589,9 +595,6 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
 #elif HAVE_RT3052
-		char wl[32];
-		sprintf(wl, "wl%d", idx);
-		char *dev = getWifiDeviceName(wl);
 		if (idx && dev && !strcmp(dev, "MT7615 802.11ac")) {
 			fprintf(fp, "HT_TxStream=4\n");
 			fprintf(fp, "HT_RxStream=4\n");
@@ -634,7 +637,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		if (has_5ghz(refif) && has_ac(refif))
 			fprintf(fp, "WirelessMode=14\n");
 		else
-			fprintf(fp, "WirelessMode=5\n");
+			fprintf(fp, "WirelessMode=9\n");
 	}
 	if (nvram_nmatch("ac-only", "wl%d_net_mode", idx)) {
 		fprintf(fp, "WirelessMode=15\n");
@@ -1155,14 +1158,18 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_GI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
 	fprintf(fp, "HT_STBC=1\n");
 	if (has_ac(refif)) {
+		if (has_ac(refif) && has_5ghz(refif)) {
 		fprintf(fp, "HT_LDPC=1\n");
 		fprintf(fp, "VHT_STBC=1\n");
 		fprintf(fp, "VHT_LDPC=1\n");
 		fprintf(fp, "VHT_SGI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
+		}
 		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
+		if (has_ac(refif) && has_5ghz(refif)) {
 		fprintf(fp, "ITxBfEn=%d\n", 1 /*? nvram_nmatch("1", "wl%d_itxbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "ETxBfEnCond=%d\n", 1 /*? nvram_nmatch("1", "wl%d_txbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "MUTxRxEnable=%d\n", 1 /* ? nvram_nmatch("1", "wl%d_mubf", idx) ? 1 : 0 */ );
+		}
 	}
 	fclose(fp);
 
