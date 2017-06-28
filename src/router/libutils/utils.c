@@ -1861,6 +1861,21 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_DIR860
+	FILE *fp = fopen("/dev/mtdlock3","rb");
+	if (fp) {
+		fseek(fp,64,SEEK_SET);
+		char sign[32];
+		fread(&sign,32,1,fp);
+		fclose(fp);
+		if (!memcmp(sign, "DIR-882",7)) {
+			setRouter("Dlink DIR-882 A1");
+			return ROUTER_DIR882;
+		}	
+		if (!memcmp(sign, "DIR-878",7)) {
+			setRouter("Dlink DIR-878 A1");
+			return ROUTER_DIR882;
+		}	
+	}
 	setRouter("Dlink DIR-860L B1");
 	return ROUTER_DIR860LB1;
 #elif HAVE_DIR810L
@@ -5875,6 +5890,10 @@ int led_control(int type, int act)
 		diag_gpio = 0x107;
 		connected_gpio = 0x10b;
 //              ses_gpio = 0x10e;
+		break;
+	case ROUTER_DIR882:
+		diag_gpio = 0x108;
+		power_gpio = 0x110;
 		break;
 	case ROUTER_DIR860LB1:
 		power_gpio = 0x10f;
