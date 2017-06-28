@@ -123,7 +123,7 @@ static int ralink_gpio_to_irq(struct gpio_chip *chip, unsigned pin)
 	return irq_create_mapping(rg->domain, pin);
 }
 
-static void ralink_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
+static void ralink_gpio_irq_handler(struct irq_desc *desc)
 {
 	int i;
 
@@ -148,14 +148,15 @@ static void ralink_gpio_irq_unmask(struct irq_data *d)
 {
 	struct ralink_gpio_chip *rg;
 	unsigned long flags;
-	u32 val;
+	u32 rise, fall;
 
 	rg = (struct ralink_gpio_chip *) d->domain->host_data;
-	val = rt_gpio_r32(rg, GPIO_REG_RENA);
+	rise = rt_gpio_r32(rg, GPIO_REG_RENA);
+	fall = rt_gpio_r32(rg, GPIO_REG_FENA);
 
 	spin_lock_irqsave(&rg->lock, flags);
-	rt_gpio_w32(rg, GPIO_REG_RENA, val | (BIT(d->hwirq) & rg->rising));
-	rt_gpio_w32(rg, GPIO_REG_FENA, val | (BIT(d->hwirq) & rg->falling));
+	rt_gpio_w32(rg, GPIO_REG_RENA, rise | (BIT(d->hwirq) & rg->rising));
+	rt_gpio_w32(rg, GPIO_REG_FENA, fall | (BIT(d->hwirq) & rg->falling));
 	spin_unlock_irqrestore(&rg->lock, flags);
 }
 
@@ -163,14 +164,15 @@ static void ralink_gpio_irq_mask(struct irq_data *d)
 {
 	struct ralink_gpio_chip *rg;
 	unsigned long flags;
-	u32 val;
+	u32 rise, fall;
 
 	rg = (struct ralink_gpio_chip *) d->domain->host_data;
-	val = rt_gpio_r32(rg, GPIO_REG_RENA);
+	rise = rt_gpio_r32(rg, GPIO_REG_RENA);
+	fall = rt_gpio_r32(rg, GPIO_REG_FENA);
 
 	spin_lock_irqsave(&rg->lock, flags);
-	rt_gpio_w32(rg, GPIO_REG_FENA, val & ~BIT(d->hwirq));
-	rt_gpio_w32(rg, GPIO_REG_RENA, val & ~BIT(d->hwirq));
+	rt_gpio_w32(rg, GPIO_REG_FENA, fall & ~BIT(d->hwirq));
+	rt_gpio_w32(rg, GPIO_REG_RENA, rise & ~BIT(d->hwirq));
 	spin_unlock_irqrestore(&rg->lock, flags);
 }
 
@@ -185,18 +187,18 @@ static int ralink_gpio_irq_type(struct irq_data *d, unsigned int type)
 		if ((rg->rising | rg->falling) & mask)
 			return 0;
 
-		type = IRQ_TYPE_EDGE_RISING | IRQ_TYPE_EDGE_RISING;
+		type = IRQ_TYPE_EDGE_RISING | IRQ_TYPE_EDGE_FALLING;
 	}
 
 	if (type & IRQ_TYPE_EDGE_RISING)
 		rg->rising |= mask;
 	else
-		rg->rising &= mask;
+		rg->rising &= ~mask;
 
-	if (type & IRQ_TYPE_EDGE_RISING)
+	if (type & IRQ_TYPE_EDGE_FALLING)
 		rg->falling |= mask;
 	else
-		rg->falling &= mask;
+		rg->falling &= ~mask;
 
 	return 0;
 }
@@ -235,7 +237,7 @@ static void ralink_gpio_irq_init(struct device_node *np,
 	rg->domain = irq_domain_add_linear(np, rg->chip.ngpio,
 					   &irq_domain_ops, rg);
 	if (!rg->domain) {
-		dev_err(rg->chip.dev, "irq_domain_add_linear failed\n");
+		dev_err(rg->chip.parent, "irq_domain_add_linear failed\n");
 		return;
 	}
 
@@ -248,7 +250,7 @@ static void ralink_gpio_irq_init(struct device_node *np,
 		irq_set_chained_handler(rg->irq, ralink_gpio_irq_handler);
 	atomic_inc(&irq_refcount);
 
-	dev_info(rg->chip.dev, "registering %d irq handlers\n", rg->chip.ngpio);
+	dev_info(rg->chip.parent, "registering %d irq handlers\n", rg->chip.ngpio);
 }
 
 static int ralink_gpio_request(struct gpio_chip *chip, unsigned offset)
@@ -256,6 +258,13 @@ static int ralink_gpio_request(struct gpio_chip *chip, unsigned offset)
 	int gpio = chip->base + offset;
 
 	return pinctrl_request_gpio(gpio);
+}
+
+static void ralink_gpio_free(struct gpio_chip *chip, unsigned offset)
+{
+	int gpio = chip->base + offset;
+
+	pinctrl_free_gpio(gpio);
 }
 
 static int ralink_gpio_probe(struct platform_device *pdev)
@@ -275,7 +284,7 @@ static int ralink_gpio_probe(struct platform_device *pdev)
 	if (!rg)
 		return -ENOMEM;
 
-	rg->membase = devm_request_and_ioremap(&pdev->dev, res);
+	rg->membase = devm_ioremap_resource(&pdev->dev, res);
 	if (!rg->membase) {
 		dev_err(&pdev->dev, "cannot remap I/O memory region\n");
 		return -ENOMEM;
@@ -301,7 +310,7 @@ static int ralink_gpio_probe(struct platform_device *pdev)
 
 	spin_lock_init(&rg->lock);
 
-	rg->chip.dev = &pdev->dev;
+	rg->chip.parent = &pdev->dev;
 	rg->chip.label = dev_name(&pdev->dev);
 	rg->chip.of_node = np;
 	rg->chip.ngpio = be32_to_cpu(*ngpio);
@@ -311,6 +320,7 @@ static int ralink_gpio_probe(struct platform_device *pdev)
 	rg->chip.set = ralink_gpio_set;
 	rg->chip.request = ralink_gpio_request;
 	rg->chip.to_irq = ralink_gpio_to_irq;
+	rg->chip.free = ralink_gpio_free;
 
 	/* set polarity to low for all lines */
 	rt_gpio_w32(rg, GPIO_REG_POL, 0);

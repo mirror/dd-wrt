@@ -116,7 +116,7 @@ config PINCTRL_LPC18XX
 
 config PINCTRL_RT2880
 	bool
-	depends on RALINK_OPENWRT
+	depends on RALINK
 	select PINMUX
 
 config PINCTRL_FALCON

@@ -40,6 +40,18 @@ config ASYNC_TX_ENABLE_CHANNEL_SWITCH
 config ARCH_HAS_ASYNC_TX_FIND_CHANNEL
 	bool
 
+config DMA_RALINK
+	tristate "RALINK DMA support"
+	depends on RALINK && !SOC_RT288X
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+
+config MTK_HSDMA
+	tristate "MTK HSDMA support"
+	depends on RALINK && SOC_MT7621
+	select DMA_ENGINE
+	select DMA_VIRTUAL_CHANNELS
+
 config DMA_ENGINE
 	bool
 

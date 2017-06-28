@@ -213,6 +213,10 @@ config MTD_QCOM_SMEM_PARTS
 	  This provides partitions parser for QCOM devices using SMEM
 	  such as IPQ806x.
 
+menu "Partition parsers"
+source "drivers/mtd/parsers/Kconfig"
+endmenu
+
 comment "User Modules And Translation Layers"
 
 #

@@ -429,6 +429,14 @@ config PHY_XGENE
 	help
 	  This option enables support for APM X-Gene SoC multi-purpose PHY.
 
+config PHY_RALINK_USB
+	tristate "Ralink USB PHY driver"
+	select GENERIC_PHY
+	depends on RALINK
+	help
+	  This option enables support for the Ralink USB PHY found inside
+	  RT3352 and MT7620.
+
 config PHY_STIH407_USB
 	tristate "STMicroelectronics USB2 picoPHY driver for STiH407 family"
 	depends on RESET_CONTROLLER

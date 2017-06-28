@@ -603,4 +603,10 @@ config MTD_NAND_AL
 	help
 	  Enable support for NAND Flash chips on Annapurna Labs NAND controllers.
 
+config MTK_MTD_NAND
+	tristate "Support for MTK SoC NAND controller"
+	depends on SOC_MT7621
+	select MTD_NAND_IDS
+	select MTD_NAND_ECC
+
 endif # MTD_NAND

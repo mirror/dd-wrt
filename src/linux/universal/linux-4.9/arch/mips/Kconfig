@@ -70,25 +70,6 @@ config MIPS
 
 menu "Machine selection"
 
-config RALINK_DEVICE
-	bool
-config RALINK_RT2880_MP
-	bool
-config RALINK_RT2880_SHUTTLE
-	bool
-config RALINK_RT3052_MP2
-	bool
-config RALINK_RT3352_MP
-	bool
-config RALINK_RT5350_MP
-	bool
-config RALINK_RT3883_MP
-	bool
-config RALINK_RT3052
-	bool
-config RALINK_RT2880
-	bool
-
 choice
 	prompt "System type"
 	default SGI_IP22
@@ -307,9 +288,6 @@ config BMIPS_GENERIC
 	  BCM33xx cable modem chips, BCM63xx DSL chips, and BCM7xxx set-top
 	  box chips.  Note that CONFIG_CPU_BIG_ENDIAN/CONFIG_CPU_LITTLE_ENDIAN
 	  must be set appropriately for your board.
-
-config MIPS_RALINK
-	bool "Ralink MIPS SoC based boards"
 
 config BCM63XX
 	bool "Broadcom BCM63XX based boards"
@@ -657,11 +635,10 @@ config PMC_MSP
 	  of integrated peripherals, interfaces and DSPs in addition to
 	  a variety of MIPS cores.
 
-config RALINK_OPENWRT
+config RALINK
 	bool "Ralink based machines"
 	select CEVT_R4K
 	select CSRC_R4K
-	select IRQ_MIPS_CPU
 	select BOOT_RAW
 	select DMA_NONCOHERENT
 	select IRQ_MIPS_CPU
@@ -673,9 +650,13 @@ config RALINK_OPENWRT
 	select SYS_SUPPORTS_MIPS16
 	select SYS_HAS_EARLY_PRINTK
 	select CLKDEV_LOOKUP
-	select ARCH_REQUIRE_GPIOLIB
+	select ARCH_HAS_RESET_CONTROLLER
+	select RESET_CONTROLLER
 	select PINCTRL
 	select PINCTRL_RT2880
+	select ARCH_HAS_RESET_CONTROLLER
+	select RESET_CONTROLLER
+	select ARCH_REQUIRE_GPIOLIB
 
 config SGI_IP22
 	bool "SGI IP22 (Indy/Indigo2)"
@@ -1220,9 +1201,6 @@ config MIPS_PARAVIRT
 
 endchoice
 
-if RALINK_DEVICE
-#source "arch/mips/rt2880/Kconfig"
-endif
 source "arch/mips/atheros/Kconfig"
 source "arch/mips/brcm-boards/Kconfig"
 source "arch/mips/adm5120/Kconfig"

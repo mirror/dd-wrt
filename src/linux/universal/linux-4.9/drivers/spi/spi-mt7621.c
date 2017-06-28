@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2011 Sergiy <piratfm@gmail.com>
  * Copyright (C) 2011-2013 Gabor Juhos <juhosg@openwrt.org>
- * Copyright (C) 2014-2015 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (C) 2014-2015 Felix Fietkau <nbd@nbd.name>
  *
  * Some parts are based on spi-orion.c:
  *   Author: Shadi Ammouri <shadi@marvell.com>
@@ -42,6 +42,7 @@
 
 #define MT7621_SPI_OPCODE	0x04
 #define MT7621_SPI_DATA0	0x08
+#define MT7621_SPI_DATA4	0x18
 #define SPI_CTL_TX_RX_CNT_MASK	0xff
 #define SPI_CTL_START		BIT(8)
 
@@ -49,6 +50,10 @@
 #define MT7621_SPI_MASTER	0x28
 #define MT7621_SPI_MOREBUF	0x2c
 #define MT7621_SPI_SPACE	0x3c
+
+#define MT7621_CPHA		BIT(5)
+#define MT7621_CPOL		BIT(4)
+#define MT7621_LSB_FIRST	BIT(3)
 
 #define RT2880_SPI_MODE_BITS	(SPI_CPOL | SPI_CPHA | SPI_LSB_FIRST | SPI_CS_HIGH)
 
@@ -80,16 +85,75 @@ static inline void mt7621_spi_write(struct mt7621_spi *rs, u32 reg, u32 val)
 	iowrite32(val, rs->base + reg);
 }
 
+static void mt7621_spi_reset(struct mt7621_spi *rs, int duplex)
+{
+	u32 master = mt7621_spi_read(rs, MT7621_SPI_MASTER);
+
+	master |= 7 << 29;
+	master |= 1 << 2;
+	if (duplex)
+		master |= 1 << 10;
+	else
+		master &= ~(1 << 10);
+
+	mt7621_spi_write(rs, MT7621_SPI_MASTER, master);
+}
+
 static void mt7621_spi_set_cs(struct spi_device *spi, int enable)
 {
 	struct mt7621_spi *rs = spidev_to_mt7621_spi(spi);
-	u32 polar = mt7621_spi_read(rs, MT7621_SPI_POLAR);
+	int cs = spi->chip_select;
+	u32 polar = 0;
 
+        mt7621_spi_reset(rs, cs);
 	if (enable)
-		polar |= 1;
-	else
-		polar &= ~1;
+		polar = BIT(cs);
 	mt7621_spi_write(rs, MT7621_SPI_POLAR, polar);
+}
+
+static int mt7621_spi_prepare(struct spi_device *spi, unsigned int speed)
+{
+	struct mt7621_spi *rs = spidev_to_mt7621_spi(spi);
+	u32 rate;
+	u32 reg;
+
+	dev_dbg(&spi->dev, "speed:%u\n", speed);
+
+	rate = DIV_ROUND_UP(rs->sys_freq, speed);
+	dev_dbg(&spi->dev, "rate-1:%u\n", rate);
+
+	if (rate > 4097)
+		return -EINVAL;
+
+	if (rate < 2)
+		rate = 2;
+
+	reg = mt7621_spi_read(rs, MT7621_SPI_MASTER);
+	reg &= ~(0xfff << 16);
+	reg |= (rate - 2) << 16;
+	rs->speed = speed;
+
+	reg &= ~MT7621_LSB_FIRST;
+	if (spi->mode & SPI_LSB_FIRST)
+		reg |= MT7621_LSB_FIRST;
+
+	reg &= ~(MT7621_CPHA | MT7621_CPOL);
+	switch(spi->mode & (SPI_CPOL | SPI_CPHA)) {
+		case SPI_MODE_0:
+			break;
+		case SPI_MODE_1:
+			reg |= MT7621_CPHA;
+			break;
+		case SPI_MODE_2:
+			reg |= MT7621_CPOL;
+			break;
+		case SPI_MODE_3:
+			reg |= MT7621_CPOL | MT7621_CPHA;
+			break;
+	}
+	mt7621_spi_write(rs, MT7621_SPI_MASTER, reg);
+
+	return 0;
 }
 
 static inline int mt7621_spi_wait_till_ready(struct spi_device *spi)
@@ -111,11 +175,12 @@ static inline int mt7621_spi_wait_till_ready(struct spi_device *spi)
 	return -ETIMEDOUT;
 }
 
-static int mt7621_spi_transfer_one_message(struct spi_master *master,
+static int mt7621_spi_transfer_half_duplex(struct spi_master *master,
 					   struct spi_message *m)
 {
 	struct mt7621_spi *rs = spi_master_get_devdata(master);
 	struct spi_device *spi = m->spi;
+	unsigned int speed = spi->max_speed_hz;
 	struct spi_transfer *t = NULL;
 	int status = 0;
 	int i, len = 0;
@@ -134,6 +199,9 @@ static int mt7621_spi_transfer_one_message(struct spi_master *master,
 		if (!buf)
 			continue;
 
+		if (t->speed_hz < speed)
+			speed = t->speed_hz;
+
 		if (WARN_ON(len + t->len > 36)) {
 			status = -EIO;
 			goto msg_done;
@@ -148,6 +216,10 @@ static int mt7621_spi_transfer_one_message(struct spi_master *master,
 		goto msg_done;
 	}
 
+	if (mt7621_spi_prepare(spi, speed)) {
+		status = -EIO;
+		goto msg_done;
+	}
 	data[0] = swab32(data[0]);
 	if (len < 4)
 		data[0] >>= (4 - len) * 8;
@@ -194,21 +266,117 @@ msg_done:
 	return 0;
 }
 
-static int mt7621_spi_setup(struct spi_device *spi)
+static int mt7621_spi_transfer_full_duplex(struct spi_master *master,
+					   struct spi_message *m)
 {
+	struct mt7621_spi *rs = spi_master_get_devdata(master);
+	struct spi_device *spi = m->spi;
+	unsigned int speed = spi->max_speed_hz;
+	struct spi_transfer *t = NULL;
+	int status = 0;
+	int i, len = 0;
+	int rx_len = 0;
+	u32 data[9] = { 0 };
+	u32 val = 0;
+
+	mt7621_spi_wait_till_ready(spi);
+
+	list_for_each_entry(t, &m->transfers, transfer_list) {
+		const u8 *buf = t->tx_buf;
+
+		if (t->rx_buf)
+			rx_len += t->len;
+
+		if (!buf)
+			continue;
+
+		if (WARN_ON(len + t->len > 16)) {
+			status = -EIO;
+			goto msg_done;
+		}
+
+		for (i = 0; i < t->len; i++, len++)
+			data[len / 4] |= buf[i] << (8 * (len & 3));
+		if (speed > t->speed_hz)
+			speed = t->speed_hz;
+	}
+
+	if (WARN_ON(rx_len > 16)) {
+		status = -EIO;
+		goto msg_done;
+	}
+
+	if (mt7621_spi_prepare(spi, speed)) {
+		status = -EIO;
+		goto msg_done;
+	}
+
+	for (i = 0; i < len; i += 4)
+		mt7621_spi_write(rs, MT7621_SPI_DATA0 + i, data[i / 4]);
+
+	val |= len * 8;
+	val |= (rx_len * 8) << 12;
+	mt7621_spi_write(rs, MT7621_SPI_MOREBUF, val);
+
+	mt7621_spi_set_cs(spi, 1);
+
+	val = mt7621_spi_read(rs, MT7621_SPI_TRANS);
+	val |= SPI_CTL_START;
+	mt7621_spi_write(rs, MT7621_SPI_TRANS, val);
+
+	mt7621_spi_wait_till_ready(spi);
+
+	mt7621_spi_set_cs(spi, 0);
+
+	for (i = 0; i < rx_len; i += 4)
+		data[i / 4] = mt7621_spi_read(rs, MT7621_SPI_DATA4 + i);
+
+	m->actual_length = rx_len;
+
+	len = 0;
+	list_for_each_entry(t, &m->transfers, transfer_list) {
+		u8 *buf = t->rx_buf;
+
+		if (!buf)
+			continue;
+
+		for (i = 0; i < t->len; i++, len++)
+			buf[i] = data[len / 4] >> (8 * (len & 3));
+	}
+
+msg_done:
+	m->status = status;
+	spi_finalize_current_message(master);
+
 	return 0;
 }
 
-static void mt7621_spi_reset(struct mt7621_spi *rs)
+static int mt7621_spi_transfer_one_message(struct spi_master *master,
+					   struct spi_message *m)
 {
-	u32 master = mt7621_spi_read(rs, MT7621_SPI_MASTER);
+	struct spi_device *spi = m->spi;
+	int cs = spi->chip_select;
 
-	master &= ~(0xfff << 16);
-	master |= 13 << 16;
-	master |= 7 << 29;
-	master |= 1 << 2;
+	if (cs)
+		return mt7621_spi_transfer_full_duplex(master, m);
+	return mt7621_spi_transfer_half_duplex(master, m);
+}
 
-	mt7621_spi_write(rs, MT7621_SPI_MASTER, master);
+static int mt7621_spi_setup(struct spi_device *spi)
+{
+	struct mt7621_spi *rs = spidev_to_mt7621_spi(spi);
+
+	if ((spi->max_speed_hz == 0) ||
+		(spi->max_speed_hz > (rs->sys_freq / 2)))
+		spi->max_speed_hz = (rs->sys_freq / 2);
+
+	if (spi->max_speed_hz < (rs->sys_freq / 4097)) {
+		dev_err(&spi->dev, "setup: requested speed is too low %d Hz\n",
+			spi->max_speed_hz);
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 static const struct of_device_id mt7621_spi_match[] = {
@@ -252,7 +420,7 @@ static int mt7621_spi_probe(struct platform_device *pdev)
 
 	master = spi_alloc_master(&pdev->dev, sizeof(*rs));
 	if (master == NULL) {
-		dev_dbg(&pdev->dev, "master allocation failed\n");
+		dev_info(&pdev->dev, "master allocation failed\n");
 		return -ENOMEM;
 	}
 
@@ -262,7 +430,7 @@ static int mt7621_spi_probe(struct platform_device *pdev)
 	master->transfer_one_message = mt7621_spi_transfer_one_message;
 	master->bits_per_word_mask = SPI_BPW_MASK(8);
 	master->dev.of_node = pdev->dev.of_node;
-	master->num_chipselect = 1;
+	master->num_chipselect = 2;
 
 	dev_set_drvdata(&pdev->dev, master);
 
@@ -272,12 +440,12 @@ static int mt7621_spi_probe(struct platform_device *pdev)
 	rs->master = master;
 	rs->sys_freq = clk_get_rate(rs->clk);
 	rs->ops = ops;
-	dev_dbg(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
+	dev_info(&pdev->dev, "sys_freq: %u\n", rs->sys_freq);
 	spin_lock_irqsave(&rs->lock, flags);
 
 	device_reset(&pdev->dev);
 
-	mt7621_spi_reset(rs);
+	mt7621_spi_reset(rs, 0);
 
 	return spi_register_master(master);
 }
@@ -311,5 +479,5 @@ static struct platform_driver mt7621_spi_driver = {
 module_platform_driver(mt7621_spi_driver);
 
 MODULE_DESCRIPTION("MT7621 SPI driver");
-MODULE_AUTHOR("Felix Fietkau <nbd@openwrt.org>");
+MODULE_AUTHOR("Felix Fietkau <nbd@nbd.name>");
 MODULE_LICENSE("GPL");

@@ -563,12 +563,6 @@ config SPI_RSPI
 	help
 	  SPI driver for Renesas RSPI and QSPI blocks.
 
-config SPI_RT2880
-	tristate "Ralink RT288x SPI Controller"
-	depends on RALINK_OPENWRT
-	help
-	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
-
 config SPI_QUP
 	tristate "Qualcomm SPI controller with QUP interface"
 	depends on ARCH_QCOM || (ARM && COMPILE_TEST)
@@ -581,6 +575,12 @@ config SPI_QUP
 
 	  This driver can also be built as a module.  If so, the module
 	  will be called spi_qup.
+
+config SPI_RT2880
+	tristate "Ralink RT288x SPI Controller"
+	depends on RALINK
+	help
+	  This selects a driver for the Ralink RT288x/RT305x SPI Controller.
 
 config SPI_MT7621
 	tristate "MediaTek MT7621 SPI Controller"

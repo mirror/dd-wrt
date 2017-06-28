@@ -494,7 +494,7 @@ config  AG7100_USE_TRC
 source "drivers/net/ethernet/ag71xx/Kconfig"
 
 source "drivers/net/ethernet/marvell/Kconfig"
-source "drivers/net/ethernet/mediatek/Kconfig"
+source "drivers/net/ethernet/mtk/Kconfig"
 source "drivers/net/ethernet/mellanox/Kconfig"
 source "drivers/net/ethernet/micrel/Kconfig"
 source "drivers/net/ethernet/microchip/Kconfig"

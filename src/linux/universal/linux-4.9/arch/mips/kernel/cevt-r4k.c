@@ -15,6 +15,26 @@
 #include <asm/time.h>
 #include <asm/cevt-r4k.h>
 
+static int mips_state_oneshot(struct clock_event_device *evt)
+{
+	if (!cp0_timer_irq_installed) {
+		cp0_timer_irq_installed = 1;
+		setup_irq(evt->irq, &c0_compare_irqaction);
+	}
+
+	return 0;
+}
+
+static int mips_state_shutdown(struct clock_event_device *evt)
+{
+	if (cp0_timer_irq_installed) {
+		cp0_timer_irq_installed = 0;
+		remove_irq(evt->irq, &c0_compare_irqaction);
+	}
+
+	return 0;
+}
+
 static int mips_next_event(unsigned long delta,
 			   struct clock_event_device *evt)
 {
@@ -294,17 +314,21 @@ int r4k_clockevent_init(void)
 	cd->rating		= 300;
 	cd->irq			= irq;
 	cd->cpumask		= cpumask_of(cpu);
+	cd->set_state_shutdown	= mips_state_shutdown;
+	cd->set_state_oneshot	= mips_state_oneshot;
 	cd->set_next_event	= mips_next_event;
 	cd->event_handler	= mips_event_handler;
 
 	clockevents_config_and_register(cd, mips_hpt_frequency, min_delta, 0x7fffffff);
 
+#ifndef CONFIG_CEVT_SYSTICK_QUIRK
 	if (cp0_timer_irq_installed)
 		return 0;
 
 	cp0_timer_irq_installed = 1;
 
 	setup_irq(irq, &c0_compare_irqaction);
+#endif
 
 	return 0;
 }

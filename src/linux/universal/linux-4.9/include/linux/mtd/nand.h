@@ -826,6 +826,10 @@ struct nand_chip {
 				    const struct nand_data_interface *conf,
 				    bool check_only);
 
+#ifdef CONFIG_MTK_MTD_NAND
+	int (*read_page)(struct mtd_info *mtd, struct nand_chip *chip, u8 *buf, int page);
+	int (*erase_mtk)(struct mtd_info *mtd, int page);
+#endif /* CONFIG_MTK_MTD_NAND */
 
 	int chip_delay;
 	unsigned int options;

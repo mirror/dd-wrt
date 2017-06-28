@@ -46,13 +46,16 @@
 #include <linux/version.h>
 #include <asm/pci.h>
 #include <asm/io.h>
-//#include <asm/mach-ralink/eureka_ep430.h>
+#include <asm/mips-cm.h>
 #include <linux/init.h>
-#include <linux/mod_devicetable.h>
+#include <linux/module.h>
 #include <linux/delay.h>
-//#include <asm/rt2880/surfboardint.h>
+#include <linux/of.h>
+#include <linux/of_pci.h>
+#include <linux/of_irq.h>
+#include <linux/platform_device.h>
 
-#include <asm/mach-ralink-openwrt/ralink_regs.h>
+#include <ralink_regs.h>
 
 extern void pcie_phy_init(void);
 extern void chk_phy_pll(void);
@@ -71,12 +74,9 @@ extern void chk_phy_pll(void);
 
 #define RALINK_PCI_CONFIG_ADDR                         0x20
 #define RALINK_PCI_CONFIG_DATA_VIRTUAL_REG     0x24
-#define SURFBOARDINT_PCIE0       12      /* PCIE0 */
-#define RALINK_INT_PCIE0         SURFBOARDINT_PCIE0
-#define RALINK_INT_PCIE1         SURFBOARDINT_PCIE1
-#define RALINK_INT_PCIE2         SURFBOARDINT_PCIE2
-#define SURFBOARDINT_PCIE1       32     /* PCIE1 */
-#define SURFBOARDINT_PCIE2       33     /* PCIE2 */
+#define RALINK_INT_PCIE0         pcie_irq[0]
+#define RALINK_INT_PCIE1         pcie_irq[1]
+#define RALINK_INT_PCIE2         pcie_irq[2]
 #define RALINK_PCI_MEMBASE              *(volatile u32 *)(RALINK_PCI_BASE + 0x0028)
 #define RALINK_PCI_IOBASE               *(volatile u32 *)(RALINK_PCI_BASE + 0x002C)
 #define RALINK_PCIE0_RST                (1<<24)
@@ -185,10 +185,7 @@ extern void chk_phy_pll(void);
 #define LC_CKDRVPD_			(1<<19)
 
 #define MEMORY_BASE 0x0
-int pcie_link_status = 0;
-
-void __inline__ read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val);
-void __inline__ write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long val);
+static int pcie_link_status = 0;
 
 #define PCI_ACCESS_READ_1  0
 #define PCI_ACCESS_READ_2  1
@@ -196,6 +193,8 @@ void __inline__ write_config(unsigned long bus, unsigned long dev, unsigned long
 #define PCI_ACCESS_WRITE_1 3
 #define PCI_ACCESS_WRITE_2 4
 #define PCI_ACCESS_WRITE_4 5
+
+static int pcie_irq[3];
 
 static int config_access(unsigned char access_type, struct pci_bus *bus,
 			unsigned int devfn, unsigned int where, u32 * data)
@@ -309,34 +308,34 @@ pci_config_write(struct pci_bus *bus, unsigned int devfn, int where, int size, u
 	}
 }
 
-struct pci_ops rt2880_pci_ops= {
+struct pci_ops mt7621_pci_ops= {
 	.read		=  pci_config_read,
 	.write		= pci_config_write,
 };
 
-static struct resource rt2880_res_pci_mem1 = {
+static struct resource mt7621_res_pci_mem1 = {
 	.name		= "PCI MEM1",
 	.start		= RALINK_PCI_MM_MAP_BASE,
 	.end		= (u32)((RALINK_PCI_MM_MAP_BASE + (unsigned char *)0x0fffffff)),
 	.flags		= IORESOURCE_MEM,
 };
-static struct resource rt2880_res_pci_io1 = {
+static struct resource mt7621_res_pci_io1 = {
 	.name		= "PCI I/O1",
 	.start		= RALINK_PCI_IO_MAP_BASE,
 	.end		= (u32)((RALINK_PCI_IO_MAP_BASE + (unsigned char *)0x0ffff)),
 	.flags		= IORESOURCE_IO,
 };
 
-struct pci_controller rt2880_controller = {
-	.pci_ops	= &rt2880_pci_ops,
-	.mem_resource	= &rt2880_res_pci_mem1,
-	.io_resource	= &rt2880_res_pci_io1,
+static struct pci_controller mt7621_controller = {
+	.pci_ops	= &mt7621_pci_ops,
+	.mem_resource	= &mt7621_res_pci_mem1,
+	.io_resource	= &mt7621_res_pci_io1,
 	.mem_offset	= 0x00000000UL,
 	.io_offset	= 0x00000000UL,
 	.io_map_base	= 0xa0000000,
 };
 
-void __inline__
+static void
 read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long *val)
 {
 	unsigned int address_reg, data_reg, address;
@@ -349,7 +348,7 @@ read_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned l
 	return;
 }
 
-void __inline__
+static void
 write_config(unsigned long bus, unsigned long dev, unsigned long func, unsigned long reg, unsigned long val)
 {
 	unsigned int address_reg, data_reg, address;
@@ -555,13 +554,35 @@ set_phy_for_ssc(void)
 #endif
 }
 
-int init_rt2880pci(void)
+void setup_cm_memory_region(struct resource *mem_resource)
+{
+	resource_size_t mask;
+	if (mips_cm_numiocu()) {
+		/* FIXME: hardware doesn't accept mask values with 1s after
+		   0s (e.g. 0xffef), so it would be great to warn if that's
+		   about to happen */
+		mask = ~(mem_resource->end - mem_resource->start);
+
+		write_gcr_reg1_base(mem_resource->start);
+		write_gcr_reg1_mask(mask | CM_GCR_REGn_MASK_CMTGT_IOCU0);
+		printk("PCI coherence region base: 0x%08lx, mask/settings: 0x%08lx\n",
+		       read_gcr_reg1_base(),
+		       read_gcr_reg1_mask());
+	}
+}
+
+static int mt7621_pci_probe(struct platform_device *pdev)
 {
 	unsigned long val = 0;
-       iomem_resource.start = 0;
-       iomem_resource.end= ~0;
-       ioport_resource.start= 0;
-       ioport_resource.end = ~0;
+	int i;
+
+	for (i = 0; i < 3; i++)
+		pcie_irq[i] = irq_of_parse_and_map(pdev->dev.of_node, i);
+
+	iomem_resource.start = 0;
+	iomem_resource.end= ~0;
+	ioport_resource.start= 0;
+	ioport_resource.end = ~0;
 
 #if defined (CONFIG_PCIE_PORT0)
 	val = RALINK_PCIE0_RST;
@@ -572,11 +593,6 @@ int init_rt2880pci(void)
 #if defined (CONFIG_PCIE_PORT2)
 	val |= RALINK_PCIE2_RST;
 #endif
-	DEASSERT_SYSRST_PCIE(val);
-	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
-
-	bypass_pipe_rst();
-	set_phy_for_ssc();
 	ASSERT_SYSRST_PCIE(RALINK_PCIE0_RST | RALINK_PCIE1_RST | RALINK_PCIE2_RST);
 	printk("pull PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
 #if defined GPIO_PERST /* add GPIO control instead of PERST_N */ /*chhung*/
@@ -602,24 +618,11 @@ int init_rt2880pci(void)
 #endif
 	DEASSERT_SYSRST_PCIE(val);
 	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
-#if defined (CONFIG_PCIE_PORT0)
-	read_config(0, 0, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 0, 0, 0x70c, val);
-#endif
-#if defined (CONFIG_PCIE_PORT1)
-	read_config(0, 1, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 1, 0, 0x70c, val);
-#endif
-#if defined (CONFIG_PCIE_PORT2)
-	read_config(0, 2, 0, 0x70c, &val);
-	val &= ~(0xff)<<8;
-	val |= 0x50<<8;
-	write_config(0, 2, 0, 0x70c, val);
-#endif
+
+	if ((*(unsigned int *)(0xbe00000c)&0xFFFF) == 0x0101) // MT7621 E2
+		bypass_pipe_rst();
+	set_phy_for_ssc();
+	printk("release PCIe RST: RALINK_RSTCTRL = %x\n", RALINK_RSTCTRL);
 
 #if defined (CONFIG_PCIE_PORT0)
 	read_config(0, 0, 0, 0x70c, &val);
@@ -733,8 +736,8 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 	//printk(" RALINK_PCI_ARBCTL = %x\n", RALINK_PCI_ARBCTL);
 
 /*
-	ioport_resource.start = rt2880_res_pci_io1.start;
-  	ioport_resource.end = rt2880_res_pci_io1.end;
+	ioport_resource.start = mt7621_res_pci_io1.start;
+  	ioport_resource.end = mt7621_res_pci_io1.end;
 */
 
 	RALINK_PCI_MEMBASE = 0xffffffff; //RALINK_PCI_MM_MAP_BASE;
@@ -774,24 +777,60 @@ pcie(2/1/0) link status	pcie2_num	pcie1_num	pcie0_num
 		read_config(0, 2, 0, 0x4, &val);
 		write_config(0, 2, 0, 0x4, val|0x4);
 		// write_config(0, 1, 0, 0x4, val|0x7);
+		read_config(0, 2, 0, 0x70c, &val);
+		val &= ~(0xff)<<8;
+		val |= 0x50<<8;
+		write_config(0, 2, 0, 0x70c, val);
 	case 3:
 	case 5:
 	case 6:
 		read_config(0, 1, 0, 0x4, &val);
 		write_config(0, 1, 0, 0x4, val|0x4);
 		// write_config(0, 1, 0, 0x4, val|0x7);
+		read_config(0, 1, 0, 0x70c, &val);
+		val &= ~(0xff)<<8;
+		val |= 0x50<<8;
+		write_config(0, 1, 0, 0x70c, val);
 	default:
 		read_config(0, 0, 0, 0x4, &val);
 		write_config(0, 0, 0, 0x4, val|0x4); //bus master enable
 		// write_config(0, 0, 0, 0x4, val|0x7); //bus master enable
+		read_config(0, 0, 0, 0x70c, &val);
+		val &= ~(0xff)<<8;
+		val |= 0x50<<8;
+		write_config(0, 0, 0, 0x70c, val);
 	}
-	register_pci_controller(&rt2880_controller);
+
+	pci_load_of_ranges(&mt7621_controller, pdev->dev.of_node);
+	setup_cm_memory_region(mt7621_controller.mem_resource);
+	register_pci_controller(&mt7621_controller);
 	return 0;
 
 }
-arch_initcall(init_rt2880pci);
 
 int pcibios_plat_dev_init(struct pci_dev *dev)
 {
 	return 0;
 }
+
+static const struct of_device_id mt7621_pci_ids[] = {
+	{ .compatible = "mediatek,mt7621-pci" },
+	{},
+};
+MODULE_DEVICE_TABLE(of, mt7621_pci_ids);
+
+static struct platform_driver mt7621_pci_driver = {
+	.probe = mt7621_pci_probe,
+	.driver = {
+		.name = "mt7621-pci",
+		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(mt7621_pci_ids),
+	},
+};
+
+static int __init mt7621_pci_init(void)
+{
+	return platform_driver_register(&mt7621_pci_driver);
+}
+
+arch_initcall(mt7621_pci_init);
