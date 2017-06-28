@@ -5796,6 +5796,13 @@ int led_control(int type, int act)
 		power_gpio = 0x109;
 #endif
 		break;
+		/*
+		DIR 882 
+		power LED red diag = 8 inv, green 16 inv
+		
+			
+		
+		*/
 	case ROUTER_BOARD_W502U:
 		connected_gpio = 0x10d;
 		break;
