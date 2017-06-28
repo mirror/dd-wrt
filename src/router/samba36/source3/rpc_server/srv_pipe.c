@@ -409,6 +409,7 @@ static bool check_bind_req(struct pipes_struct *p,
 	context_fns->syntax = *abstract;
 
 	context_fns->allow_connect = lp_allow_dcerpc_auth_level_connect();
+#ifdef SAMR_SUPPORT
 	/*
 	 * for the samr and the lsarpc interfaces we don't allow "connect"
 	 * auth_level by default.
@@ -417,14 +418,19 @@ static bool check_bind_req(struct pipes_struct *p,
 	if (ok) {
 		context_fns->allow_connect = false;
 	}
+#endif
+#ifdef LSA_SUPPORT
 	ok = ndr_syntax_id_equal(abstract, &ndr_table_lsarpc.syntax_id);
 	if (ok) {
 		context_fns->allow_connect = false;
 	}
+#endif
+#ifdef NETLOGON_SUPPORT
 	ok = ndr_syntax_id_equal(abstract, &ndr_table_netlogon.syntax_id);
 	if (ok) {
 		context_fns->allow_connect = false;
 	}
+#endif
 	/*
 	 * for the epmapper and echo interfaces we allow "connect"
 	 * auth_level by default.
@@ -433,10 +439,12 @@ static bool check_bind_req(struct pipes_struct *p,
 	if (ok) {
 		context_fns->allow_connect = true;
 	}
+#ifdef DEVELOPER
 	ok = ndr_syntax_id_equal(abstract, &ndr_table_rpcecho.syntax_id);
 	if (ok) {
 		context_fns->allow_connect = true;
 	}
+#endif
 	/*
 	 * every interface can be modified to allow "connect" auth_level by
 	 * using a parametric option like:
@@ -465,17 +473,17 @@ bool is_known_pipename(const char *cli_filename, struct ndr_syntax_id *syntax)
 	const char *pipename = cli_filename;
 	NTSTATUS status;
 
-	if (strchr(pipename, '/')) {
-		DEBUG(1, ("Refusing open on pipe %s\n", pipename));
-		return false;
-	}
-
 	if (strnequal(pipename, "\\PIPE\\", 6)) {
 		pipename += 5;
 	}
 
 	if (*pipename == '\\') {
 		pipename += 1;
+	}
+
+	if (strchr(pipename, '/')) {
+		DEBUG(1, ("Refusing open on pipe %s\n", pipename));
+		return false;
 	}
 
 	if (lp_disable_spoolss() && strequal(pipename, "spoolss")) {
