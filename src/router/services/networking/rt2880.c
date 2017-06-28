@@ -1151,7 +1151,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "VHT_STBC=1\n");
 		fprintf(fp, "VHT_LDPC=1\n");
 		fprintf(fp, "VHT_SGI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
-		fprintf(fp, "G_BAND_256QAM=%d\n", ? nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
+		fprintf(fp, "G_BAND_256QAM=%d\n",  nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
 		fprintf(fp, "ITxBfEn=%d\n", 1 /*? nvram_nmatch("1", "wl%d_itxbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "ETxBfEnCond=%d\n", 1 /*? nvram_nmatch("1", "wl%d_txbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "MUTxRxEnable=%d\n", 1 /* ? nvram_nmatch("1", "wl%d_mubf", idx) ? 1 : 0 */ );
