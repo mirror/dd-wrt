@@ -90,22 +90,15 @@ static const char *ieee80211_ntoa(const uint8_t mac[6])
 	return (i < 17 ? NULL : a);
 }
 
-/*
-		USHORT MCS:7;
-		USHORT BW:2;
-		USHORT ShortGI:1;
-		USHORT STBC:1;
-		USHORT eTxBF:1;
-		USHORT iTxBF:1;
-		USHORT MODE:3;
-*/
 typedef union _MACHTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
 		unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
 		unsigned short ShortGI:1;
 		unsigned short STBC:2;	//SPACE
-		unsigned short rsv:3;
+		unsigned short eTxBF:1;
+		unsigned short rsv:1;
+		unsigned short iTxBF:1;
 		unsigned short MODE:2;	// Use definition MODE_xxx.
 	} field;
 	unsigned short word;
@@ -125,32 +118,21 @@ typedef struct _RT_802_11_MAC_ENTRY {
 	unsigned int LastRxRate;
 	short StreamSnr[3];
 	short SoundingRespSnr[3];
+#if 0
+	short TxPER;
+	short reserved;
+#endif
 } RT_802_11_MAC_ENTRY;
 
-		// Last RX Rate
-//              unsigned int mcs = pe->LastRxRate & 0x7F;
-//              websWrite(wp, T("<td>MCS %d<br>%2dM, %cGI<br>%s%s</td>"),
-//                              mcs,  ((lastRxRate>>7) & 0x1)? 40: 20,
-//                              ((lastRxRate>>8) & 0x1)? 'S': 'L',
-//                              phyMode[(lastRxRate>>14) & 0x3],
-//                              ((lastRxRate>>9) & 0x3)? ", STBC": " ");
-/*
-// need chipset detection. AC chipsets using the following structure
-		USHORT MCS:7;
-		USHORT BW:2;
-		USHORT ShortGI:1;
-		USHORT STBC:1;
-		USHORT eTxBF:1;
-		USHORT iTxBF:1;
-		USHORT MODE:3;
-*/
 typedef union _HTTRANSMIT_SETTING {
 	struct {
 		unsigned short MCS:7;	// MCS
 		unsigned short BW:1;	//channel bandwidth 20MHz or 40 MHz
 		unsigned short ShortGI:1;
 		unsigned short STBC:2;	//SPACE
-		unsigned short rsv:3;
+		unsigned short eTxBF:1;
+		unsigned short rsv:1;
+		unsigned short iTxBF:1;
 		unsigned short MODE:2;	// 0: CCK, 1:OFDM, 2:Mixedmode, 3:GreenField
 	} field;
 	unsigned short word;
