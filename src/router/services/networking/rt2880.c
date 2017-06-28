@@ -589,8 +589,16 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "HT_TxStream=1\n");
 		fprintf(fp, "HT_RxStream=1\n");
 #elif HAVE_RT3052
-		fprintf(fp, "HT_TxStream=2\n");
-		fprintf(fp, "HT_RxStream=2\n");
+		char wl[32];
+		sprintf(wl, "wl%d", idx);
+		char *dev = getWifiDeviceName(wl);
+		if (idx && dev && !strcmp(dev, "MT7615 802.11ac")) {
+			fprintf(fp, "HT_TxStream=4\n");
+			fprintf(fp, "HT_RxStream=4\n");
+		} else {
+			fprintf(fp, "HT_TxStream=2\n");
+			fprintf(fp, "HT_RxStream=2\n");
+		}
 #else
 		fprintf(fp, "HT_TxStream=2\n");
 		fprintf(fp, "HT_RxStream=3\n");
@@ -623,7 +631,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "WirelessMode=8\n");
 
 	if (nvram_nmatch("mixed", "wl%d_net_mode", idx)) {
-		if (has_ac(refif))
+		if (has_5ghz(refif) && has_ac(refif))
 			fprintf(fp, "WirelessMode=14\n");
 		else
 			fprintf(fp, "WirelessMode=5\n");
@@ -1151,7 +1159,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "VHT_STBC=1\n");
 		fprintf(fp, "VHT_LDPC=1\n");
 		fprintf(fp, "VHT_SGI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
-		fprintf(fp, "G_BAND_256QAM=%d\n",  nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
+		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
 		fprintf(fp, "ITxBfEn=%d\n", 1 /*? nvram_nmatch("1", "wl%d_itxbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "ETxBfEnCond=%d\n", 1 /*? nvram_nmatch("1", "wl%d_txbf", idx) ? 1 : 0 */ );
 		fprintf(fp, "MUTxRxEnable=%d\n", 1 /* ? nvram_nmatch("1", "wl%d_mubf", idx) ? 1 : 0 */ );
