@@ -1144,7 +1144,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_AutoBA=1\n");
 	fprintf(fp, "HT_AMSDU=0\n");
 	fprintf(fp, "HT_BAWinSize=64\n");
-	fprintf(fp, "HT_GI=1\n");
+	fprintf(fp, "HT_GI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
 	fprintf(fp, "HT_STBC=1\n");
 	if (has_ac(refif)) {
 		fprintf(fp, "HT_LDPC=1\n");
