@@ -59,6 +59,8 @@ int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type)
 char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
+
+
 void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query) = NULL;	// jimmy, 
 									// https, 
 									// 8/4/2003
@@ -1520,6 +1522,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", ""},	//
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
+	fprintf("%d\n",__LINE__);
 	char menu[8][13][32];
 	char menuname[8][14][32];
 	int x, y;
@@ -1545,6 +1548,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #endif
+	fprintf("%d\n",__LINE__);
 #ifdef HAVE_IPR
 	if (!wp->userid) {
 		sprintf(&menu[0][2][0], "");	// setup - mac cloning
@@ -1557,6 +1561,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 	sprintf(&menu[2][9][0], "");	// services - anchorfree
 #endif
+	fprintf("%d\n",__LINE__);
 #ifdef HAVE_CORENET
 	sprintf(&menuname[0][0][0], "setupnetw");
 	sprintf(&menuname[6][0][0], "adminman");
@@ -1567,6 +1572,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	sprintf(&menu[1][8][0], "");
 	sprintf(&menuname[1][9][0], "");
 #else
+	fprintf("%d\n",__LINE__);
 	// fill up WDS
 	int ifcount = getdevicecount();
 	if (ifcount > 4)
@@ -1587,6 +1593,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #else
+	fprintf("%d\n",__LINE__);
 #ifdef HAVE_ERC
 	if (wp->userid) {
 #endif
@@ -1609,6 +1616,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #endif
+	fprintf("%d\n",__LINE__);
 //fprintf(stderr,"generate menu header content\n");
 
 	int i, j;
