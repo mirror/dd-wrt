@@ -3086,6 +3086,9 @@ void start_drivers(void)
 	set_smp_affinity(111, 2);
 	set_smp_affinity(112, 2);
 #endif
+#ifdef HAVE_MT7621
+	set_smp_affinity(30, 8);   // usb;
+#endif
 
 #ifdef HAVE_MVEBU
 	int brand = getRouterBrand();
