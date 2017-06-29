@@ -59,3 +59,7 @@ config BRIDGE_VLAN_FILTERING
 	  Say N to exclude this support and reduce the binary size.
 
 	  If unsure, say Y.
+
+config KERNEL_ARP_SPOOFING_PROTECT
+	bool "kernel arp spoofing protect"
+        default n

@@ -21,6 +21,9 @@
 #include <linux/netfilter_bridge.h>
 #include <linux/export.h>
 #include "br_private.h"
+#include <linux/inetdevice.h>
+#include <linux/if_arp.h>
+#include <net/arp.h>
 
 static int deliver_clone(const struct net_bridge_port *prev,
 			 struct sk_buff *skb,
@@ -57,7 +60,35 @@ EXPORT_SYMBOL(br_dev_queue_push_xmit);
 
 int br_forward_finish(struct sk_buff *skb)
 {
-	return BR_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING, skb, NULL, skb->dev,
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+extern int g_arp_spoofing_enable;
+	struct net_device *dev;
+	struct in_device *in_dev;
+	struct arphdr *arp;
+
+	if(g_arp_spoofing_enable)
+	{
+		dev = skb->dev;
+		in_dev = __in_dev_get_rcu(dev);
+
+		if(NULL != in_dev)
+		{
+			if(htons(ETH_P_ARP) == skb->protocol && PACKET_OTHERHOST == skb->pkt_type)
+			{
+				arp = arp_hdr(skb);
+				if(arp->ar_op == htons(ARPOP_REPLY))
+				{
+					if(arp_spoofing_protect(skb))
+					{
+						kfree_skb(skb);
+						return NF_DROP;
+					}
+				}
+			}
+		}
+	}
+#endif
+	return NF_HOOK(NFPROTO_BRIDGE, NF_BR_POST_ROUTING, skb, NULL, skb->dev,
 		       br_dev_queue_push_xmit);
 
 }

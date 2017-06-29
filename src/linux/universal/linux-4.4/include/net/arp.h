@@ -6,7 +6,14 @@
 #include <linux/hash.h>
 #include <net/neighbour.h>
 
-
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+#define MAX_ARP_SPOOFING_TABLE 256
+struct st_ip_mac_table
+{
+	__be32 szIPaddr;
+	unsigned char szMac[ETH_ALEN];
+};
+#endif
 extern struct neigh_table arp_tbl;
 
 static inline u32 arp_hashfn(const void *pkey, const struct net_device *dev, u32 *hash_rnd)
@@ -50,5 +57,9 @@ struct sk_buff *arp_create(int type, int ptype, __be32 dest_ip,
 			   const unsigned char *src_hw,
 			   const unsigned char *target_hw);
 void arp_xmit(struct sk_buff *skb);
+
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int arp_spoofing_protect(struct sk_buff *skb);
+#endif
 
 #endif	/* _ARP_H */
