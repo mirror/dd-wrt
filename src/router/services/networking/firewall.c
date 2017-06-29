@@ -2105,6 +2105,11 @@ static void filter_input(void)
 	if (nvram_matchi("block_ident", 0) || nvram_match("filter", "off"))
 		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, log_accept);
 
+
+	if (nvram_matchi("arp_spoofing", 1))
+		sysprintf("echo 1 > /proc/net/arp_spoofing_enable");
+	else
+		sysprintf("echo 0 > /proc/net/arp_spoofing_enable");
 	/*
 	 * Filter known SPI state 
 	 */
