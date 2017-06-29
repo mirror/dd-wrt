@@ -2588,7 +2588,7 @@ struct mime_handler mime_handlers[] = {
 	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth, 1, 0,0},
 #endif
-	{"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0,0},
+	{"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0,1},
 #ifdef HAVE_DDLAN
 	{"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
 	 1, 0,0},
