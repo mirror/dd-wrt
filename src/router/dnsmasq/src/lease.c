@@ -248,6 +248,8 @@ void lease_update_file(time_t now)
 
   if (file_dirty != 0 && daemon->lease_stream)
     {
+	sprintf(syscall("echo flush > /proc/net/arp_spoofing_table");
+
       errno = 0;
       rewind(daemon->lease_stream);
       if (errno != 0 || ftruncate(fileno(daemon->lease_stream), 0) != 0)
