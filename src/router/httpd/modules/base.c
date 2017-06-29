@@ -1679,7 +1679,7 @@ static int do_cauth(webs_t wp, int (*auth_check) (webs_t conn_fp))
 #ifdef HAVE_REGISTER
 static int do_auth_reg(webs_t wp, int (*auth_check) (webs_t conn_fp))
 {
-	if (wp->isregistered)
+	if (!wp->isregistered)
 		return 1;
 	return do_auth(wp, auth_check);
 }
@@ -1902,7 +1902,7 @@ static void do_trial_logo(unsigned char method, struct mime_handler *handler, ch
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
 	do_file(method, handler, url, stream, query);
 #else
-	if (stream->isregistered_real) {
+	if (!stream->isregistered_real) {
 		do_file(method, handler, "style/logo-trial.png", stream, query);
 	} else {
 		if (iscpe()) {
