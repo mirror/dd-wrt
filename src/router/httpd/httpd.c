@@ -539,7 +539,7 @@ static void *handle_request(void *arg)
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
 #endif
-    	conn_fp->generate_key = generate_key;
+	conn_fp->generate_key = generate_key;
 	conn_fp->clone_wan_mac = clone_wan_mac;
 	conn_fp->filter_id = filter_id;
 	pthread_mutex_unlock(&httpd_mutex);
@@ -943,13 +943,13 @@ static void *handle_request(void *arg)
 	}
 	FILE *fp;
 	int file_found = 1;
-
 	for (handler = &mime_handlers[0]; handler->pattern; handler++) {
 		if (match(handler->pattern, file)) {
 
 #ifndef HAVE_MICRO
-			if (handler->input || handler->singlethread)
+			if (handler->input || handler->singlethread) {
 				pthread_mutex_lock(&input_mutex);
+			}
 #endif
 
 #ifdef HAVE_REGISTER
@@ -1031,11 +1031,6 @@ static void *handle_request(void *arg)
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}
 
-#ifndef HAVE_MICRO
-			if (handler->input || handler->singlethread)
-				pthread_mutex_unlock(&input_mutex);
-#endif
-
 			break;
 
 		}
@@ -1045,6 +1040,12 @@ static void *handle_request(void *arg)
 	}
 
       out:;
+
+#ifndef HAVE_MICRO
+	if (handler->input || handler->singlethread)
+		pthread_mutex_unlock(&input_mutex);
+#endif
+
 	free(line);
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
