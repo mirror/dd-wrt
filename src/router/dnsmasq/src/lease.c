@@ -245,10 +245,12 @@ void lease_update_file(time_t now)
   struct dhcp_lease *lease;
   time_t next_event;
   int i, err = 0;
+  char syscall[128];
 
   if (file_dirty != 0 && daemon->lease_stream)
     {
-	sprintf(syscall("echo flush > /proc/net/arp_spoofing_table");
+	sprintf(syscall,"echo flush > /proc/net/arp_spoofing_table");
+	system(syscall);
 
       errno = 0;
       rewind(daemon->lease_stream);
@@ -281,8 +283,8 @@ void lease_update_file(time_t now)
 	  inet_ntop(AF_INET, &lease->addr, daemon->addrbuff, ADDRSTRLEN); 
 
 	  ourprintf(&err, " %s ", daemon->addrbuff);
-	  char syscall[128];
-	sprintf(syscall("echo ADD %s %.2x:%.2x:%.2x:%.2x:%.2x:%.2x > /proc/net/arp_spoofing_table",daemon->addrbuff, lease->hwaddr[0],lease->hwaddr[1],lease->hwaddr[2],lease->hwaddr[3],lease->hwaddr[4],lease->hwaddr[5]);
+	sprintf(syscall,"echo ADD %s %.2x:%.2x:%.2x:%.2x:%.2x:%.2x > /proc/net/arp_spoofing_table",daemon->addrbuff, lease->hwaddr[0],lease->hwaddr[1],lease->hwaddr[2],lease->hwaddr[3],lease->hwaddr[4],lease->hwaddr[5]);
+	system(syscall);
 	  ourprintf(&err, "%s ", lease->hostname ? lease->hostname : "*");
     	  	  
 	  if (lease->clid && lease->clid_len != 0)
