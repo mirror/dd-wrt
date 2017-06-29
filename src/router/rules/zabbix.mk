@@ -30,7 +30,6 @@ zabbix-configure:
 	cd zabbix && rm -rf config.{cache,status} \
 	&& autoheader && autoconf \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \
-	--disable-server --disable-proxy --disable-java --enable-agent \
-	-with-iconv-include=$(TOP)/glib20/libiconv/include --with-iconv-lib=$(TOP)/glib20/libiconv/lib/.libs \
+	--disable-server --disable-proxy --disable-java --enable-agent --without-iconv \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -ffunction-sections -fdata-sections -Wl,--gc-section"
 	cd zabbix && touch *
