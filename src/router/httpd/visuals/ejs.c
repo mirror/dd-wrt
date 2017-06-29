@@ -1522,16 +1522,13 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", ""},	//
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
-	fprintf("%d\n",__LINE__);
 	char menu[8][13][32];
 	char menuname[8][14][32];
 	int x, y;
 	for (x = 0; x < 8; x++) {
 		for (y = 0; y < 14; y++) {
-//                      fprintf(stderr,"copy %s %d %d\n",menuname_t[x][y],x,y);
 			strcpy(&menuname[x][y][0], menuname_t[x][y]);
 			if (y < 13) {
-//                      fprintf(stderr,"copy menu %s\n",menu_t[x][y]);
 				strcpy(&menu[x][y][0], menu_t[x][y]);
 			}
 		}
@@ -1548,7 +1545,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 #endif
-	fprintf("%d\n",__LINE__);
 #ifdef HAVE_IPR
 	if (!wp->userid) {
 		sprintf(&menu[0][2][0], "");	// setup - mac cloning
@@ -1561,18 +1557,15 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 	sprintf(&menu[2][9][0], "");	// services - anchorfree
 #endif
-	fprintf("%d\n",__LINE__);
 #ifdef HAVE_CORENET
 	sprintf(&menuname[0][0][0], "setupnetw");
 	sprintf(&menuname[6][0][0], "adminman");
 #endif
-//fprintf(stderr,"generate menu content\n");
 #ifdef HAVE_MADWIFI
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
 	sprintf(&menu[1][8][0], "");
 	sprintf(&menuname[1][9][0], "");
 #else
-	fprintf("%d\n",__LINE__);
 	// fill up WDS
 	int ifcount = getdevicecount();
 	if (ifcount > 4)
@@ -1593,7 +1586,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #else
-	fprintf("%d\n",__LINE__);
 #ifdef HAVE_ERC
 	if (wp->userid) {
 #endif
@@ -1616,8 +1608,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	}
 #endif
 #endif
-	fprintf("%d\n",__LINE__);
-//fprintf(stderr,"generate menu header content\n");
 
 	int i, j;
 
@@ -1645,7 +1635,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 		if (i >= MAXMENU)
 			break;
-//fprintf(stderr,"generate menu %s\n",menu[i][0]);
 		if (!strcmp(menu[i][0], mainmenu)) {
 #ifdef HAVE_MADWIFI
 			if (!wifi && wimaxwifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
@@ -1868,7 +1857,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						  menuname[i][j + 1]);
 					websWrite(wp, "      \n//]]>\n</script>\n");
 				}
-#endif
+#endif<
 #endif
 #ifdef HAVE_MADWIFI
 				else if (strlen(menu[i][j])
