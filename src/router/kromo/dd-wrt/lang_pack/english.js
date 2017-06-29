@@ -711,6 +711,7 @@ firewall.ssh="Limit SSH Access";
 firewall.telnet="Limit Telnet Access";
 firewall.pptp="Limit PPTP Server Access";
 firewall.ftp="Limit FTP Server Access";
+firewall.arp_spoofing="ARP Spoofing Protection";
 
 //help container
 var hfirewall=new Object();

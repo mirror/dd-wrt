@@ -661,10 +661,13 @@ firewall.legend3="WAN-Zugriffe blockieren";
 firewall.legend4="Verhindere WAN DoS/Bruteforce Attacken";
 firewall.ping="Anonyme WAN-Zugriffsversuche blockieren";
 firewall.muticast="Multicast filtern";
-firewall.ssh="Limit SSH Access";
-firewall.telnet="Limit Telnet Access";
-firewall.pptp="Limit PPTP Server Access";
-firewall.ftp="Limit FTP Server Access";
+firewall.ssh="SSH Access Zugriff Limitieren";
+firewall.telnet=" Telnet Zugriff Limitieren";
+firewall.pptp="PPTP Server Zugriff Limitieren";
+firewall.ftp="FTP Server Zugriff Limitieren";
+firewall.arp_spoofing="ARP Spoofing Schutz";
+
+
 filter.nat="WAN-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filtern";
 filter.snmp="Block WAN SNMP access";
