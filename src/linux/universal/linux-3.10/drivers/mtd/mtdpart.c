@@ -1156,7 +1156,7 @@ int ra_mtd_read(int num,int from, int len, u_char *buf)
 	int ret;
 	size_t rdlen;
 	struct mtd_info *mtd;
-	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
+//	printk(KERN_INFO "read ralink eeprom from %X with len %X to %p (device %d)\n",from,len,buf,num);
 	mtd = get_mtd_device(NULL, num);
 
 	ret = mtd_read(mtd, from, len, &rdlen, buf);
