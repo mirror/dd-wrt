@@ -30,6 +30,9 @@ function submitcheck(F) {
 	if(F._block_snmp){
 		F.block_snmp.value = F._block_snmp.checked ? 1 : 0;
 	}
+	if(F._arp_spoofing){
+		F.arp_spoofing.value = F._arp_spoofing.checked ? 1 : 0;
+	}
 	if(F._limit_ssh){
 		F.limit_ssh.value = F._limit_ssh.checked ? 1 : 0;
 	}
@@ -89,6 +92,9 @@ function setFirewall(F, val) {
 	}
 	if(F._block_snmp){
 		F._block_snmp.checked = false;
+	}
+	if(F._arp_spoofing){
+		F._arp_spoofing.checked = false;
 	}
 	if(F._limit_ssh){
 		F._limit_ssh.checked = false;
@@ -156,6 +162,7 @@ addEvent(window, "unload", function() {
 						<input type="hidden" name="block_proxy" />
 						<input type="hidden" name="block_activex" />
 						<input type="hidden" name="block_snmp" />
+						<input type="hidden" name="arp_spoofing" />
 						<input type="hidden" name="limit_ssh" />
 						<input type="hidden" name="limit_telnet" />
 						<input type="hidden" name="limit_pptp" />
@@ -185,6 +192,9 @@ addEvent(window, "unload", function() {
 									</div>
 									<div class="setting">
 										<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvc("block_activex", "1"); %> /><% tran("firewall.activex"); %>
+									</div>
+									<div class="setting">
+										<input class="spaceradio" type="checkbox" value="1" name="_arp_spoofing" <% nvc("arp_spoofing", "1"); %> /><% tran("firewall.arp_spoofing"); %>
 									</div>
 								</fieldset><br />
 								
