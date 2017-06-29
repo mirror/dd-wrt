@@ -16,7 +16,12 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
+	speedchecker_toggle_desc(document.setup.speedchecker_enable);
+	speedchecker_enable_onClick(document.setup.speedchecker_enable);
 	show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', <% nvem("speedchecker_enable", "1", "1", "0"); %> == 1);
+
+	document.getElementById("main").style.float="none";
+	document.getElementById("contents").style.width="97%";
 
 	update = new StatusbarUpdate();
 	update.start();
@@ -27,7 +32,35 @@ addEvent(window, "unload", function() {
 	update.stop();
 
 });
-		
+
+function speedchecker_enable_onClick(source) {
+            var scope = document.getElementById('speedcheckerconfig');
+            var RID = '<% nvg("speedchecker_uuid"); %>';
+            var secret = '<% nvg("speedchecker_uuid2"); %>';
+	    speedchecker_toggle_desc(source);
+
+            if (parseInt(source['value'])) {
+                scope.innerHTML = ''.concat(
+                    '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="',
+                    'https://speedchecker.dd-wrt.com/registration.html?RID=', RID, '&secret=', secret, '"></iframe>');
+		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', true);
+            } else {
+                scope.innerHTML = '';
+		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', false);
+            };
+        }
+
+function speedchecker_toggle_desc() {
+            var val = <% nvg("speedchecker_enable"); %>;
+            var scope = document.getElementById('scdesc');
+
+            if (val==1) {
+                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/speed-checker.html"></iframe>';
+	    } else {
+                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/opt-in-description.html"></iframe>';
+		}
+	}
+	
 		//]]>
 		</script>
 	</head>
@@ -49,25 +82,14 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="commit" value="1"/>
 							
-<h2><% tran("speedchecker.legend"); %></h2>
 <fieldset>
-<legend><% tran("speedchecker.server"); %></legend>
+<div id="scdesc" size="100%"></div>
 <div class="setting">
            <div class="label"><% tran("speedchecker.server"); %></div>
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="show_layer_ext(this, 'speedcheckerconfig', true)" /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="show_layer_ext(this, 'speedcheckerconfig', false)"/><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="speedchecker_enable_onClick(this)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="speedchecker_enable_onClick(this)"/><% tran("share.disable"); %>
 </div>
 <div id="speedcheckerconfig">
-  <div class="setting">
-           <div class="label"><% tran("speedchecker.regtitle"); %></div>
-<% nvm("speedchecker_uuid", "", "<!--"); %>
-<a href="https://speedchecker.dd-wrt.com/registration.html?RID=<% nvram_get("speedchecker_uuid"); %>&redirect_back=<% nvram_get("lan_ipaddr") %>/Speedchecker.asp">Registration Link</a>
-<% nvm("speedchecker_uuid", "", "-->"); %>
-<% nvram_invmatch("speedchecker_uuid", "", "<!--"); %>
-<% tran("speedchecker.savemessage"); %>
-<% nvram_invmatch("speedchecker_uuid", "", "-->"); %>
-
-  </div>
 </div>
 </fieldset><br />
 
@@ -79,17 +101,6 @@ addEvent(window, "unload", function() {
 								</script>
 							</div>
 						</form>
-					</div>
-				</div>
-				<div id="helpContainer">
-					<div id="help">
-						<div><h2><% tran("share.help"); %></h2></div>
-						<dl>
-							<dt class="term"><% tran("speedchecker.server"); %></dt>
-    							<dd class="definition"><% tran("hSpeedchecker.right2"); %></dd>
-						</dl>
-						<br />
-						<a href="javascript:openHelpWindow<% ifdef("EXTHELP","Ext"); %>('HSpeedchecker.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
