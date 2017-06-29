@@ -2106,10 +2106,6 @@ static void filter_input(void)
 		save2file("-A INPUT -p tcp --dport %d -j %s\n", IDENT_PORT, log_accept);
 
 
-	if (nvram_matchi("arp_spoofing", 1))
-		sysprintf("echo 1 > /proc/net/arp_spoofing_enable");
-	else
-		sysprintf("echo 0 > /proc/net/arp_spoofing_enable");
 	/*
 	 * Filter known SPI state 
 	 */
@@ -2762,6 +2758,10 @@ void start_firewall(void)
 	start_loadfwmodules();
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
 	system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
+	if (nvram_matchi("arp_spoofing", 1))
+		sysprintf("echo 1 > /proc/net/arp_spoofing_enable");
+	else
+		sysprintf("echo 0 > /proc/net/arp_spoofing_enable");
 
 #ifndef	HAVE_80211AC
 	/*
