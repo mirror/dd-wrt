@@ -539,6 +539,7 @@ static void *handle_request(void *arg)
 	conn_fp->isregistered = registered;
 	conn_fp->isregistered_real = registered_real;
 #endif
+fprintf(stderr,"recover registered %d %d\n",conn_fp->isregistered,conn_fp->isregistered_real);
 	conn_fp->generate_key = generate_key;
 	conn_fp->clone_wan_mac = clone_wan_mac;
 	conn_fp->filter_id = filter_id;
@@ -787,12 +788,15 @@ static void *handle_request(void *arg)
 #ifdef HAVE_REGISTER
 	if (conn_fp->isregistered_real == -1) {
 		conn_fp->isregistered_real = isregistered_real();
+		fprintf(stderr,"registered %d\n",conn_fp->isregistered_real);
 	}
 	if (!conn_fp->isregistered_real)
 		conn_fp->isregistered = isregistered();
 	else
 		conn_fp->isregistered = conn_fp->isregistered_real;
 #endif
+		fprintf(stderr,"after registered_real %d\n",conn_fp->isregistered_real);
+		fprintf(stderr,"after registered %d\n",conn_fp->isregistered);
 
 	// save the originally requested url
 	conn_fp->request_url = strdup(file);
@@ -1056,9 +1060,6 @@ static void *handle_request(void *arg)
 	if (conn_fp->post_buf)
 		free(conn_fp->post_buf);
 //      fprintf(stderr, "destroy thread %d\n", conn_fp->threadid);
-	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
-
-	free(conn_fp);
 #ifndef HAVE_MICRO
 	pthread_mutex_lock(&httpd_mutex);
 	numthreads--;
@@ -1066,6 +1067,7 @@ static void *handle_request(void *arg)
 	clone_wan_mac = conn_fp->clone_wan_mac;
 	filter_id = conn_fp->filter_id;
 #ifdef HAVE_REGISTER
+fprintf(stderr,"store registered %d %d\n",conn_fp->isregistered,conn_fp->isregistered_real);
 	registered = conn_fp->isregistered;
 	registered_real = conn_fp->isregistered_real;
 #endif
@@ -1079,6 +1081,9 @@ static void *handle_request(void *arg)
 	registered_real = conn_fp->isregistered_real;
 #endif
 #endif
+	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
+
+	free(conn_fp);
 	return NULL;
 }
 
