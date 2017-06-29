@@ -118,6 +118,10 @@
 
 #include <linux/netfilter_arp.h>
 
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int g_arp_spoofing_enable = 0;
+struct st_ip_mac_table szIPMac[MAX_ARP_SPOOFING_TABLE];
+#endif
 /*
  *	Interface to generic neighbour cache.
  */
@@ -1368,7 +1372,56 @@ static void arp_format_pneigh_entry(struct seq_file *seq,
 		   tbuf, hatype, ATF_PUBL | ATF_PERM, "00:00:00:00:00:00",
 		   dev ? dev->name : "*");
 }
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+int arp_spoofing_protect(struct sk_buff *skb)
+{
+	struct arphdr *arp;
+	unsigned char *arp_ptr;
+	unsigned char *sha;
+	__be32 sip;
+	struct net_device *dev = skb->dev;
+	int i = 0;
 
+	arp = arp_hdr(skb);
+
+	/*
+ *	Extract fields
+ */
+	arp_ptr = (unsigned char *)(arp + 1);
+	sha	= arp_ptr;
+	arp_ptr += dev->addr_len;
+	memcpy(&sip, arp_ptr, 4);
+
+	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
+	{
+		if(szIPMac[i].szIPaddr == 0)
+		{
+			break;
+		}
+				
+		if(sip == szIPMac[i].szIPaddr)
+		{
+			printk("ip=%x match mac %02x:%02x:%02x:%02x:%02x:%02x= %02x:%02x:%02x:%02x:%02x:%02x\n", sip,
+				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5],
+				*sha, *(sha+1), *(sha+2), *(sha+3), *(sha+4), *(sha+5));
+			if(szIPMac[i].szMac[0]== *sha && szIPMac[i].szMac[1]== *(sha+1) &&
+				szIPMac[i].szMac[2]== *(sha+2) && szIPMac[i].szMac[3]== *(sha+3) &&
+				szIPMac[i].szMac[4]== *(sha+4) && szIPMac[i].szMac[5]== *(sha+5) )
+			{
+				return 0;
+			}
+			else
+			{
+				return 1;
+			}
+		}
+		
+	}
+	return 0;
+}
+
+EXPORT_SYMBOL(arp_spoofing_protect);
+#endif
 static int arp_seq_show(struct seq_file *seq, void *v)
 {
 	if (v == SEQ_START_TOKEN) {
@@ -1417,11 +1470,233 @@ static const struct file_operations arp_seq_fops = {
 	.release	= seq_release_net,
 };
 
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+ssize_t arp_spoofing_enable_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+{
+	int iLen = 0;
 
+	sprintf(buffer, "%d\n",  g_arp_spoofing_enable);
+	iLen = strlen(buffer);
+
+	if (iLen <= *ppos)
+	{
+		return 0;
+	}
+	iLen -= *ppos;
+
+	*ppos += iLen;
+	
+	return iLen;
+
+}
+
+ssize_t arp_spoofing_enable_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char *buf = kmalloc(count, GFP_KERNEL);
+	unsigned long val;
+
+	if (buf) 
+	{
+		if (copy_from_user(buf, buffer, count))
+		{
+			kfree(buf);
+			return -EFAULT;
+		}
+
+		val = simple_strtoul(buf, NULL, 10);
+
+		g_arp_spoofing_enable = val;
+	}
+
+	if(NULL != buf)
+		kfree(buf);
+
+	return count;
+}
+
+ssize_t arp_spoofing_table_read(struct file *file,  char __user *buffer, size_t count,  loff_t *ppos)
+{
+	int iLen = 0;
+	int i = 0;
+	
+	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
+	{
+		if(szIPMac[i].szIPaddr != 0 )
+		{
+			iLen += sprintf(buffer+iLen, "szIPMAC[%d] %x %02x:%02x:%02x:%02x:%02x:%02x\n",  i,  szIPMac[i].szIPaddr, 
+				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5]);
+		}
+		else
+		{
+			break;
+		}
+	}
+	
+	//iLen = strlen(buffer);
+
+	if (iLen <= *ppos)
+	{
+		return 0;
+	}
+	iLen -= *ppos;
+
+	*ppos += iLen;
+	
+	return iLen;
+
+}
+
+ssize_t arp_spoofing_table_write(struct file *file, const char __user *buffer, size_t count, loff_t *ppos)
+{
+	char *buf = kmalloc(count, GFP_KERNEL);
+	int i = 0;
+	char szAction[16] = { 0 };
+	char szIPaddr[16] = { 0 };
+	char szMac[18] = { 0 };
+	unsigned char szUCMac[ETH_ALEN] = { 0 };
+	__be32 ui_ip;
+	int iFlag = 0;
+		
+	if (buf) 
+	{
+		if (copy_from_user(buf, buffer, count))
+		{
+			kfree(buf);
+			return -EFAULT;
+		}
+		memset(szIPaddr, 0, sizeof(szIPaddr));
+		memset(szMac, 0, sizeof(szMac));
+		
+		i = sscanf(buf, "%s %s %s",  szAction, szIPaddr, szMac);
+
+		if(!strcmp(szAction, "ADD"))
+                {
+			if(3 != i)
+			{
+				goto exit;
+			}
+			ui_ip = in_aton(szIPaddr);
+		
+			if(0 == mac_pton(szMac, szUCMac))
+			{
+				goto exit;
+			}
+			
+			for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
+			{
+				if(szIPMac[i].szIPaddr !=0 )
+				{
+					if(szIPMac[i].szIPaddr == ui_ip)
+					{
+						szIPMac[i].szMac[0] = szUCMac[0];
+						szIPMac[i].szMac[1] = szUCMac[1];
+						szIPMac[i].szMac[2] = szUCMac[2];
+						szIPMac[i].szMac[3] = szUCMac[3];
+						szIPMac[i].szMac[4] = szUCMac[4];
+						szIPMac[i].szMac[5] = szUCMac[5];
+						break;
+					}
+				}
+				else
+				{
+					szIPMac[i].szIPaddr = ui_ip;
+					szIPMac[i].szMac[0] = szUCMac[0];
+					szIPMac[i].szMac[1] = szUCMac[1];
+					szIPMac[i].szMac[2] = szUCMac[2];
+					szIPMac[i].szMac[3] = szUCMac[3];
+					szIPMac[i].szMac[4] = szUCMac[4];
+					szIPMac[i].szMac[5] = szUCMac[5];
+					break;
+				}
+			}
+		}
+		else if(!strcmp(szAction, "DEL"))
+		{
+			ui_ip = in_aton(szIPaddr);
+			
+			for(i = 0;  i < MAX_ARP_SPOOFING_TABLE-1; i++)
+			{
+				if(iFlag)
+				{
+					if(szIPMac[i+1].szIPaddr != 0)
+					{
+						szIPMac[i].szIPaddr = szIPMac[i+1].szIPaddr;
+						szIPMac[i].szMac[0] = szIPMac[i+1].szMac[0];
+						szIPMac[i].szMac[1] = szIPMac[i+1].szMac[1];
+						szIPMac[i].szMac[2] = szIPMac[i+1].szMac[2];
+						szIPMac[i].szMac[3] = szIPMac[i+1].szMac[3];
+						szIPMac[i].szMac[4] = szIPMac[i+1].szMac[4];
+						szIPMac[i].szMac[5] = szIPMac[i+1].szMac[5];
+					}
+					else
+					{
+						szIPMac[i].szIPaddr = 0;
+						szIPMac[i].szMac[0] = 0;
+						szIPMac[i].szMac[1] = 0;
+						szIPMac[i].szMac[2] = 0;
+						szIPMac[i].szMac[3] = 0;
+						szIPMac[i].szMac[4] = 0;
+						szIPMac[i].szMac[5] = 0;
+						break;
+					}
+				}
+				
+				
+				if(szIPMac[i].szIPaddr == ui_ip)
+				{
+					szIPMac[i].szIPaddr = szIPMac[i+1].szIPaddr;
+					szIPMac[i].szMac[0] = szIPMac[i+1].szMac[0];
+					szIPMac[i].szMac[1] = szIPMac[i+1].szMac[1];
+					szIPMac[i].szMac[2] = szIPMac[i+1].szMac[2];
+					szIPMac[i].szMac[3] = szIPMac[i+1].szMac[3];
+					szIPMac[i].szMac[4] = szIPMac[i+1].szMac[4];
+					szIPMac[i].szMac[5] = szIPMac[i+1].szMac[5];
+					iFlag = 1;
+				}
+			}
+		}
+		else if(!strcmp(szAction, "flush"))
+		{
+			for(i = 0;	i < MAX_ARP_SPOOFING_TABLE; i++)
+			{
+				szIPMac[i].szIPaddr = 0;
+				szIPMac[i].szMac[0] = 0;
+				szIPMac[i].szMac[1] = 0;
+				szIPMac[i].szMac[2] = 0;
+				szIPMac[i].szMac[3] = 0;
+				szIPMac[i].szMac[4] = 0;
+				szIPMac[i].szMac[5] = 0;
+			}
+		}
+						
+	}
+exit:
+	if(NULL != buf)
+		kfree(buf);
+
+	return count;
+}
+
+static const struct file_operations arp_spoofing_enable_fops = {
+        .read = arp_spoofing_enable_read,
+        .write = arp_spoofing_enable_write,
+};
+
+static const struct file_operations arp_spoofing_table_fops = {
+        .read = arp_spoofing_table_read,
+        .write = arp_spoofing_table_write,
+};
+#endif
 static int __net_init arp_net_init(struct net *net)
 {
 	if (!proc_create("arp", S_IRUGO, net->proc_net, &arp_seq_fops))
 		return -ENOMEM;
+#ifdef CONFIG_KERNEL_ARP_SPOOFING_PROTECT
+	if (!proc_create("arp_spoofing_enable", S_IRUGO, net->proc_net, &arp_spoofing_enable_fops))
+		return -ENOMEM;
+	if (!proc_create("arp_spoofing_table", S_IRUGO, net->proc_net, &arp_spoofing_table_fops))
+		return -ENOMEM;
+#endif
 	return 0;
 }
 
