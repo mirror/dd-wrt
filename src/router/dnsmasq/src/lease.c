@@ -279,8 +279,10 @@ void lease_update_file(time_t now)
 	  inet_ntop(AF_INET, &lease->addr, daemon->addrbuff, ADDRSTRLEN); 
 
 	  ourprintf(&err, " %s ", daemon->addrbuff);
+	  char syscall[128];
+	sprintf(syscall("echo ADD %s %.2x:%.2x:%.2x:%.2x:%.2x:%.2x > /proc/net/arp_spoofing_table",daemon->addrbuff, lease->hwaddr[0],lease->hwaddr[1],lease->hwaddr[2],lease->hwaddr[3],lease->hwaddr[4],lease->hwaddr[5]);
 	  ourprintf(&err, "%s ", lease->hostname ? lease->hostname : "*");
-	  	  
+    	  	  
 	  if (lease->clid && lease->clid_len != 0)
 	    {
 	      for (i = 0; i < lease->clid_len - 1; i++)
