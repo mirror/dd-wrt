@@ -1872,6 +1872,7 @@ struct nvram_param srouter_defaults[] = {
 	{"limit_telnet", "0"},	/* Impede DDoS/Brutforce [1|0] */
 	{"limit_pptp", "0"},	/* Impede DDoS/Brutforce [1|0] */
 #endif
+	{"arp_spoofing", "0"},
 #ifdef HAVE_DDLAN
 	{"remote_management", "1"},	/* Remote Management [1|0] */
 #elif HAVE_GGEW
