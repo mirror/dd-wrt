@@ -19,6 +19,8 @@
 #include <asm/smp-ops.h>
 #include <asm/mach-ralink-openwrt/ralink_regs.h>
 #include <asm/mach-ralink-openwrt/mt7621.h>
+#include <asm/mips-boards/launch.h>
+#include <asm/delay.h>
 
 #include <pinmux.h>
 
@@ -146,6 +148,21 @@ void __init ralink_of_remap(void)
 		panic("Failed to remap core resources");
 }
 
+bool plat_cpu_core_present(int core)
+{
+	struct cpulaunch *launch = (struct cpulaunch *)CKSEG0ADDR(CPULAUNCH);
+
+	if (!core)
+		return true;
+	launch += core * 2; /* 2 VPEs per core */
+	if (!(launch->flags & LAUNCH_FREADY))
+		return false;
+	if (launch->flags & (LAUNCH_FGO | LAUNCH_FGONE))
+		return false;
+	return true;
+}
+
+
 void prom_soc_init(struct ralink_soc_info *soc_info)
 {
 	void __iomem *sysc = (void __iomem *) KSEG1ADDR(MT7621_SYSC_BASE);
@@ -182,3 +199,65 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 	if (register_cmp_smp_ops())
 		panic("failed to register_vsmp_smp_ops()");
 }
+
+
+#define LPS_PREC 8
+/*
+ *  Re-calibration lpj(loop-per-jiffy).
+ *  (derived from kernel/calibrate.c)
+ */
+static int udelay_recal(void)
+{
+	unsigned int i, lpj = 0;
+	unsigned long ticks, loopbit;
+	int lps_precision = LPS_PREC;
+
+	lpj = (1<<12);
+
+	while ((lpj <<= 1) != 0) {
+		/* wait for "start of" clock tick */
+		ticks = jiffies;
+		while (ticks == jiffies)
+			/* nothing */;
+
+			/* Go .. */
+		ticks = jiffies;
+		__delay(lpj);
+		ticks = jiffies - ticks;
+		if (ticks)
+			break;
+	}
+
+	/*
+	 * Do a binary approximation to get lpj set to
+	 * equal one clock (up to lps_precision bits)
+	 */
+	lpj >>= 1;
+	loopbit = lpj;
+	while (lps_precision-- && (loopbit >>= 1)) {
+		lpj |= loopbit;
+		ticks = jiffies;
+		while (ticks == jiffies)
+				/* nothing */;
+		ticks = jiffies;
+		__delay(lpj);
+		if (jiffies != ticks)   /* longer than 1 tick */
+			lpj &= ~loopbit;
+	}
+	printk(KERN_INFO "%d CPUs re-calibrate udelay(lpj = %d)\n", NR_CPUS, lpj);
+
+	for(i=0; i< NR_CPUS; i++)
+		cpu_data[i].udelay_val = lpj;
+
+#if defined (CONFIG_RALINK_CPUSLEEP) && defined (CONFIG_RALINK_MT7621)
+	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
+        lpj &= ~(0xF << 8);
+        lpj |= (0xA << 8);
+        lpj &= ~(0xF);
+        lpj |= (0xA);
+        (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = lpj;
+#endif
+
+	return 0;
+}
+device_initcall(udelay_recal);
