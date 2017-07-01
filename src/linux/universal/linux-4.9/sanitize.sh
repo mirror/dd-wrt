@@ -9,6 +9,14 @@ do
     sed -i 's/\CONFIG_IP_VS=m/# CONFIG_IP_VS is not set/g' .config	    
     sed -i 's/\CONFIG_USBIP_CORE=m/# CONFIG_USBIP_CORE is not set/g' .config	    
 
+    cp drivers/net/wireless/Kconfig.mt7621 drivers/net/wireless/Kconfig
+
+    grep "CONFIG_DIR882=y" $i
+    if [ $? -eq 0 ] 
+	then 
+	    cp drivers/net/wireless/Kconfig.dir882 drivers/net/wireless/Kconfig
+    fi
+
     grep "CONFIG_X86=y" $i
     if [ $? -eq 0 ] 
 	then 
@@ -34,6 +42,7 @@ do
 	    sed -i 's/\# CONFIG_CPU_BIG_ENDIAN is not set/CONFIG_CPU_BIG_ENDIAN=y/g' .config	    
 	    make oldconfig ARCH=arm
     fi
+
 
     grep "CONFIG_ARCH_ALPINE=y" $i
     if [ $? -eq 0 ] 
