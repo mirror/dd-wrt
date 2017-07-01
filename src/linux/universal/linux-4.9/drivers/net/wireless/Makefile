@@ -17,14 +17,14 @@ ifeq ($(CONFIG_RALINK_DEVICE),y)
 obj-$(CONFIG_RT2860V2_AP)       += rt3352/rt2860v2_ap/
 obj-$(CONFIG_RT2860V2_STA)      += rt3352/rt2860v2_sta/
 endif
-ifeq ($(CONFIG_MT7620_OPENWRT),y)
+ifeq ($(CONFIG_SOC_MT7620),y)
 obj-$(CONFIG_RT2860V2_AP)       += rt7620/rt2860v2_ap/
 obj-$(CONFIG_RT2860V2_STA)      += rt7620/rt2860v2_sta/
 obj-$(CONFIG_RTPCI_AP)      += rt5592/
 obj-$(CONFIG_RLT_AP_SUPPORT)      += rt7612/rlt_wifi_ap/
 obj-$(CONFIG_MT7610_AP)      += rt7610/
 endif
-ifeq ($(CONFIG_MT7621_OPENWRT),y)
+ifeq ($(CONFIG_SOC_MT7621),y)
 obj-$(CONFIG_RLT_AP_SUPPORT)      += rt7612/rlt_wifi_ap/
 obj-$(CONFIG_MT_AP_SUPPORT)      += rt7615/mt_wifi_ap/
 endif
