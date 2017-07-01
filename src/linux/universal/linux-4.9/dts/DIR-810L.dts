@@ -7,6 +7,7 @@
 	model = "D-Link DIR-810L";
 
 	palmbus@10000000 {
+
 		spi@b00 {
 			status = "okay";
 
@@ -32,13 +33,6 @@
 					label = "factory";
 					reg = <0x40000 0x20000>;
 				};
-
-/*
-				factory5g: partition@50000 {
-					label = "factory5g";
-					reg = <0x50000 0x10000>;
-				};
-*/
 
 				partition@170000 {
 					label = "linux";
