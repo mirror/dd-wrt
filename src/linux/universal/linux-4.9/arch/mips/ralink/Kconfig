@@ -58,6 +58,11 @@ choice
 		select HW_HAS_PCI
 endchoice
 
+config DIR882
+	bool "MT7620/8"
+	depends on SOC_MT7621
+
+
 choice
 	prompt "Devicetree selection"
 	default DTB_RT_NONE

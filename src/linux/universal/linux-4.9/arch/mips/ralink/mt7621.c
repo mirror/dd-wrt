@@ -17,6 +17,7 @@
 #include <asm/mips-cpc.h>
 #include <asm/mach-ralink/ralink_regs.h>
 #include <asm/mach-ralink/mt7621.h>
+#include <asm/delay.h>
 
 #include <pinmux.h>
 
@@ -224,3 +225,64 @@ void prom_soc_init(struct ralink_soc_info *soc_info)
 	if (!register_vsmp_smp_ops())
 		return;
 }
+
+#define LPS_PREC 8
+/*
+ *  Re-calibration lpj(loop-per-jiffy).
+ *  (derived from kernel/calibrate.c)
+ */
+static int udelay_recal(void)
+{
+	unsigned int i, lpj = 0;
+	unsigned long ticks, loopbit;
+	int lps_precision = LPS_PREC;
+
+	lpj = (1<<12);
+
+	while ((lpj <<= 1) != 0) {
+		/* wait for "start of" clock tick */
+		ticks = jiffies;
+		while (ticks == jiffies)
+			/* nothing */;
+
+			/* Go .. */
+		ticks = jiffies;
+		__delay(lpj);
+		ticks = jiffies - ticks;
+		if (ticks)
+			break;
+	}
+
+	/*
+	 * Do a binary approximation to get lpj set to
+	 * equal one clock (up to lps_precision bits)
+	 */
+	lpj >>= 1;
+	loopbit = lpj;
+	while (lps_precision-- && (loopbit >>= 1)) {
+		lpj |= loopbit;
+		ticks = jiffies;
+		while (ticks == jiffies)
+				/* nothing */;
+		ticks = jiffies;
+		__delay(lpj);
+		if (jiffies != ticks)   /* longer than 1 tick */
+			lpj &= ~loopbit;
+	}
+	printk(KERN_INFO "%d CPUs re-calibrate udelay(lpj = %d)\n", NR_CPUS, lpj);
+
+	for(i=0; i< NR_CPUS; i++)
+		cpu_data[i].udelay_val = lpj;
+
+#if defined (CONFIG_RALINK_CPUSLEEP) && defined (CONFIG_RALINK_MT7621)
+	lpj = (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10)));
+        lpj &= ~(0xF << 8);
+        lpj |= (0xA << 8);
+        lpj &= ~(0xF);
+        lpj |= (0xA);
+        (*((volatile u32 *)(RALINK_RBUS_MATRIXCTL_BASE + 0x10))) = lpj;
+#endif
+
+	return 0;
+}
+device_initcall(udelay_recal);
