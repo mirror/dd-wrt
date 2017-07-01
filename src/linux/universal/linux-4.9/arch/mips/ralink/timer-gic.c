@@ -12,6 +12,7 @@
 #include <linux/of.h>
 #include <linux/clk-provider.h>
 #include <linux/clocksource.h>
+#include <linux/clk.h>
 
 #include "common.h"
 
@@ -22,3 +23,19 @@ void __init plat_time_init(void)
 	of_clk_init(NULL);
 	clocksource_probe();
 }
+
+int getCPUClock(void)
+{
+    struct clk *clk;
+    clk = clk_get_sys("cpu", NULL);
+    return clk_get_rate(clk) / 1000000;
+}
+
+u32 get_surfboard_sysclk(void) 
+{
+    struct clk *clk;
+    clk = clk_get_sys("sys", NULL);
+    return clk_get_rate(clk);
+}
+EXPORT_SYMBOL(get_surfboard_sysclk);
+

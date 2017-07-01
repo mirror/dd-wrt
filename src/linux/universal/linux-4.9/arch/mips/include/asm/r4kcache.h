@@ -683,9 +683,8 @@ static inline void extra##blast_##pfx##cache##lsize##_page_indexed(unsigned long
 			       current_cpu_data.desc.waybit;		\
 	unsigned long ws, addr;						\
 									\
-	war								\
-									\
 	__##pfx##flush_prologue						\
+	war								\
 									\
 	for (ws = 0; ws < ws_end; ws += ws_inc)				\
 		for (addr = start; addr < end; addr += lsize * 32)	\
@@ -749,9 +748,9 @@ static inline void prot##extra##blast_##pfx##cache##_range(unsigned long start, 
 	unsigned long lsize = cpu_##desc##_line_size();			\
 	unsigned long addr = start & ~(lsize - 1);			\
 	unsigned long aend = (end - 1) & ~(lsize - 1);			\
-	war								\
 									\
 	__##pfx##flush_prologue						\
+	war								\
 									\
 	while (1) {							\
 		war2						\
