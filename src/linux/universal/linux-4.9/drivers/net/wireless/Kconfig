@@ -32,11 +32,12 @@ if RALINK_DEVICE
 source "drivers/net/wireless/rt3352/rt2860v2_ap/Kconfig"
 source "drivers/net/wireless/rt3352/rt2860v2_sta/Kconfig"
 endif
-if SOC_MT7620_OPENWRT
+if SOC_MT7620 || SOC_MT7621
 source "drivers/net/wireless/rt7620/rt2860v2_ap/Kconfig"
 source "drivers/net/wireless/rt7620/rt2860v2_sta/Kconfig"
 source "drivers/net/wireless/rt5592/Kconfig"
 source "drivers/net/wireless/rt7612/rlt_wifi/Kconfig"
+source "drivers/net/wireless/rt7610/Kconfig"
 endif
 source "drivers/net/wireless/rsi/Kconfig"
 source "drivers/net/wireless/st/Kconfig"
