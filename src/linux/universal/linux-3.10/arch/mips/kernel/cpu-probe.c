@@ -174,6 +174,9 @@ static inline unsigned int decode_config0(struct cpuinfo_mips *c)
 
 	if (((config0 & MIPS_CONF_MT) >> 7) == 1)
 		c->options |= MIPS_CPU_TLB;
+	if (((config0 & MIPS_CONF_MT) >> 7) == 4)
+		c->options |= MIPS_CPU_TLB;
+
 	isa = (config0 & MIPS_CONF_AT) >> 13;
 	switch (isa) {
 	case 0:
@@ -1059,8 +1062,8 @@ __cpuinit void cpu_report(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
 
-	printk(KERN_INFO "CPU revision is: %08x (%s)\n",
-	       c->processor_id, cpu_name_string());
+	printk(KERN_INFO "CPU%d revision is: %08x (%s)\n",
+	       smp_processor_id(), c->processor_id, cpu_name_string());
 	if (c->options & MIPS_CPU_FPU)
 		printk(KERN_INFO "FPU revision is: %08x\n", c->fpu_id);
 }
