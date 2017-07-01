@@ -1287,7 +1287,7 @@ EXPORT_SYMBOL_GPL(mtd_get_device_size);
 
 
 
-#ifdef CONFIG_RALINK_OPENWRT
+#ifdef CONFIG_RALINK
 /*
  * Flash API: ra_mtd_read, ra_mtd_write
  * Arguments:
