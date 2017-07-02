@@ -56,6 +56,11 @@ static unsigned core_vpe_count(unsigned core)
 	return (cfg >> CM_GCR_Cx_CONFIG_PVPE_SHF) + 1;
 }
 
+bool __weak plat_cpu_core_present(int core)
+{
+	return true;
+}
+
 static void __init cps_smp_setup(void)
 {
 	unsigned int ncores, nvpes, core_vpes;
@@ -66,6 +71,8 @@ static void __init cps_smp_setup(void)
 	ncores = mips_cm_numcores();
 	pr_info("%s topology ", cpu_has_mips_r6 ? "VP" : "VPE");
 	for (c = nvpes = 0; c < ncores; c++) {
+		if (!plat_cpu_core_present(c))
+			continue;
 		core_vpes = core_vpe_count(c);
 		pr_cont("%c%u", c ? ',' : '{', core_vpes);
 
