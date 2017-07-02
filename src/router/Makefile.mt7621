@@ -89,11 +89,7 @@ export BASEOPT:=-Os
 #export ARCH:= mipsel
 
 ifeq ($(ARCH),mipsel)
-ifeq ($(CONFIG_MT7621),y)
-export COPTS:=$(BASEOPT) -pipe -mmt -mips32r2 -mtune=1004kc -fno-caller-saves -mno-branch-likely -fno-plt
-else
 export COPTS:=$(BASEOPT) -pipe -mips32r2 -mtune=24kec -fno-caller-saves -mno-branch-likely -fno-plt
-endif
 endif
 ifeq ($(ARCH),arm)
 export COPTS:=$(BASEOPT) -march=armv4 -pipe -funit-at-a-time -msoft-float
@@ -234,6 +230,11 @@ ifeq ($(CONFIG_DIR810L),y)
 endif
 ifeq ($(CONFIG_DIR860),y)
 	cp $(LINUXDIR)/.config_mt7621 $(LINUXDIR)/.config
+	cp $(LINUXDIR)/drivers/net/wireless/Kconfig.mt7621 $(LINUXDIR)/drivers/net/wireless/Kconfig
+endif
+ifeq ($(CONFIG_DIR882),y)
+	cp $(LINUXDIR)/.config_mt7621_dir882 $(LINUXDIR)/.config
+	cp $(LINUXDIR)/drivers/net/wireless/Kconfig.dir882 $(LINUXDIR)/drivers/net/wireless/Kconfig
 endif
 	$(kernelfeatures)
 	$(MAKE) -C $(LINUXDIR) oldconfig	
@@ -358,18 +359,24 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	cp $(LINUXDIR)/vmlinux $(LINUXDIR)/vmlinux-mt7620
 ifeq ($(CONFIG_DIR860),y)
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dts
+ifeq ($(CONFIG_DIR882),y)
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-882.dtb.tmp $(LINUXDIR)/dts/DIR-882.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-882.dtb.tmp
+else
+	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-860.dtb.tmp $(LINUXDIR)/dts/DIR-860.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dts.tmp
+endif
 else
 ifeq ($(CONFIG_DIR810L),y)
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-810L.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-810L.dts
 else
 ifeq ($(CONFIG_E1700),y)
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_MT7530.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_MT7530.dts
 else
 ifeq ($(CONFIG_WHR1166D),y)
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_1166.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_1166.dts
 else
-	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
 endif
 endif
 endif
@@ -625,6 +632,18 @@ endif
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -nopad  -root-owned -noappend
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le -nopad
+
+	dd if=mipsel-uclibc/root-mt7621_dir882.uimage of=mipsel-uclibc/aligned-mt7621_dir882.uimage bs=4096 conv=sync
+	dd if=mipsel-uclibc/root-mt7621_dir878.uimage of=mipsel-uclibc/aligned-mt7621_dir878.uimage bs=4096 conv=sync
+
+
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir878.uimage
+	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir878-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir878.uimage
+
+	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7621_dir882.uimage
+	./tools/trx_n -m 30000000 -o mipsel-uclibc/dir882-a1-webflash.bin mipsel-uclibc/aligned-mt7621_dir882.uimage
+
+
 ifeq ($(CONFIG_MT7620),y)
 	dd if=mipsel-uclibc/root-mt7620.uimage of=mipsel-uclibc/aligned-mt7620.uimage bs=4096 conv=sync
 	cat mipsel-uclibc/root.fs  >> mipsel-uclibc/aligned-mt7620.uimage
