@@ -17,6 +17,7 @@
 #include <asm/mips-cpc.h>
 #include <asm/mach-ralink/ralink_regs.h>
 #include <asm/mach-ralink/mt7621.h>
+#include <asm/mips-boards/launch.h>
 #include <asm/delay.h>
 
 #include <pinmux.h>
