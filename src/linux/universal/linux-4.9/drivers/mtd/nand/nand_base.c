@@ -3846,6 +3846,7 @@ static void nand_decode_ext_id(struct mtd_info *mtd, struct nand_chip *chip,
 	/*
 	 * Field definitions are in the following datasheets:
 	 * Old style (4,5 byte ID): Samsung K9GAG08U0M (p.32)
+	 *                          Spansion S34ML02G2 (p.33)
 	 * New Samsung (6 byte ID): Samsung K9GAG08U0F (p.44)
 	 * Hynix MLC   (6 byte ID): Hynix H27UBG8T2B (p.22)
 	 *
@@ -3941,6 +3942,19 @@ static void nand_decode_ext_id(struct mtd_info *mtd, struct nand_chip *chip,
 		extid >>= 2;
 		/* Get buswidth information */
 		*busw = (extid & 0x01) ? NAND_BUSWIDTH_16 : 0;
+
+		/*
+		 * Spansion S34ML0[24]G2 have oobsize twice as large
+		 * as S34ML01G2 encoded in the same bit. We
+		 * differinciate them by their ID length
+		 */
+		if (id_data[0] == NAND_MFR_AMD
+		    		&& (id_data[1] == 0xda
+				 || id_data[1] == 0xdc
+				 || id_data[1] == 0xca
+				 || id_data[1] == 0xcc)) {
+			mtd->oobsize *= 2;
+		}
 
 		/*
 		 * Toshiba 24nm raw SLC (i.e., not BENAND) have 32B OOB per
