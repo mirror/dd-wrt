@@ -174,7 +174,7 @@ extern int cifs_read_from_socket(struct TCP_Server_Info *server, char *buf,
 extern int cifs_readv_from_socket(struct TCP_Server_Info *server,
 		struct kvec *iov_orig, unsigned int nr_segs,
 		unsigned int to_read);
-extern void cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
+extern int cifs_setup_cifs_sb(struct smb_vol *pvolume_info,
 			       struct cifs_sb_info *cifs_sb);
 extern int cifs_match_super(struct super_block *, void *);
 extern void cifs_cleanup_volume_info(struct smb_vol *pvolume_info);
@@ -194,6 +194,9 @@ extern void cifs_add_pending_open_locked(struct cifs_fid *fid,
 					 struct tcon_link *tlink,
 					 struct cifs_pending_open *open);
 extern void cifs_del_pending_open(struct cifs_pending_open *open);
+extern void cifs_put_tcp_session(struct TCP_Server_Info *server,
+				 int from_reconnect);
+extern void cifs_put_tcon(struct cifs_tcon *tcon);
 
 #if IS_ENABLED(CONFIG_CIFS_DFS_UPCALL)
 extern void cifs_dfs_release_automount_timer(void);
