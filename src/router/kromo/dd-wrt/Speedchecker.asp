@@ -47,17 +47,26 @@ function speedchecker_enable_onClick(source) {
             } else {
                 scope.innerHTML = '';
 		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', false);
+  		scope = document.getElementById('scdesc');
+                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
             };
         }
 
 function speedchecker_toggle_desc() {
-            var val = <% nvg("speedchecker_enable"); %>;
-            var scope = document.getElementById('scdesc');
-
-            if (val==1) {
-                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/speed-checker.html"></iframe>';
+  var val = <% nvg("speedchecker_enable"); %>;
+  var scope = document.getElementById('scdesc');
+  var RID = '<% nvg("speedchecker_uuid"); %>';
+  var secret = '<% nvg("speedchecker_uuid2"); %>';
+  var server = '<% nvg("lan_ipaddr"); %>';
+  var port = '<% nvg("http_lanport"); %>';
+	
+ if (val==1) {
+       	scope.innerHTML = ''.concat(
+			'<iframe width="99%" height="250" frameborder="0" scrolling="no" src="',
+			'https://speedchecker.dd-wrt.com/speedtest.html?RID=', RID, '&secret=', secret,
+			'&server=', server ,'&port=', port ,'"></iframe>');
 	    } else {
-                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/opt-in-description.html"></iframe>';
+                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
 		}
 	}
 	
