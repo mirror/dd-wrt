@@ -57,6 +57,7 @@ samba3-preconfigure:
 	if ! test -e "samba36/source3/Makefile"; then	cd samba36/source3 && ./configure $(CONFIGURE_VARS) $(CONFIGURE_ARGS_SMB) CFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)" LDFLAGS="$(COPTS) -DMAX_DEBUG_LEVEL=-1  -ffunction-sections -fdata-sections -Wl,--gc-sections $(LTO) $(SAMBA3_EXTRA)"; fi
 
 samba3-configure: samba3-delete samba3-preconfigure
+	touch samba36/librpc/idl/*
 	
 
 samba3-delete:
