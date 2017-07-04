@@ -1435,7 +1435,6 @@ static struct menucontext *init_menu(webs_t wp)
 
 	if (!m)
 		m = malloc(sizeof(struct menucontext));
-
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
 		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1582,7 +1581,7 @@ static struct menucontext *init_menu(webs_t wp)
 	}
 #endif
 #endif
-
+	return m;
 }
 
 void ej_do_menu(webs_t wp, int argc, char_t ** argv)
@@ -1873,7 +1872,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 						  m->menuname[i][j + 1]);
 					websWrite(wp, "      \n//]]>\n</script>\n");
 				}
-#endif	/* < */
+#endif				/* < */
 #endif
 #ifdef HAVE_MADWIFI
 				else if (strlen(m->menu[i][j])
