@@ -1290,12 +1290,10 @@ void qos_add_svc(webs_t wp)
 	0};
 	char *add_svc = websGetVar(wp, "add_svc", NULL);
 	char *svqos_svcs = nvram_safe_get("svqos_svcs");
-	char new_svcs[4096] = { 0 };
+	char *new_svcs;
 	int i = 0;
 	if (!add_svc)
 		return;
-
-	bzero(new_svcs, sizeof(new_svcs));
 
 	if (get_svc(add_svc, protocol, ports))
 		return;
@@ -1322,15 +1320,16 @@ void qos_add_svc(webs_t wp)
 		return;
 
 	if (strlen(svqos_svcs) > 0)
-		snprintf(new_svcs, sizeof(new_svcs), "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
+		asprintf(new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
 	else
-		snprintf(new_svcs, sizeof(new_svcs), "%s %s %s 30 |", add_svc, protocol, ports);
+		asprintf(new_svcs, "%s %s %s 30 |", add_svc, protocol, ports);
 
-	if (strlen(new_svcs) >= sizeof(new_svcs))
-		return;
+//      if (strlen(new_svcs) >= sizeof(new_svcs)) //this check is just stupid. it means overflow
+//              return;
 
 	nvram_set("svqos_svcs", new_svcs);
 	nvram_commit();
+	free(new_svcs);
 }
 
 void qos_add_dev(webs_t wp)
@@ -1342,22 +1341,20 @@ void qos_add_dev(webs_t wp)
 
 	char *add_dev = websGetVar(wp, "svqos_dev", NULL);
 	char *svqos_ips = nvram_safe_get("svqos_devs");
-	char new_ip[4096] = { 0 };
+	char *new_ip;
 	if (!add_dev)
 		return;
 	/*
 	 * if this ip exists, return an error 
 	 */
 #ifdef HAVE_AQOS
-	snprintf(new_ip, sizeof(new_ip), "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
+	asprintf(&new_ip, "%s %s 100 100 0 0 none |", svqos_ips, add_dev);
 #else
-	snprintf(new_ip, sizeof(new_ip), "%s %s 30 |", svqos_ips, add_dev);
+	asprintf(&new_ip, "%s %s 30 |", svqos_ips, add_dev);
 #endif
-	if (strlen(new_ip) >= sizeof(new_ip))
-		return;
 
 	nvram_set("svqos_devs", new_ip);
-
+	free(new_ip);
 }
 
 void qos_add_ip(webs_t wp)
@@ -1374,11 +1371,9 @@ void qos_add_ip(webs_t wp)
 	char *add_nm = websGetVar(wp, "svqos_netmask", NULL);
 	char add_ip[19] = { 0 };
 	char *svqos_ips = nvram_safe_get("svqos_ips");
-	char new_ip[4096] = { 0 };
+	char *new_ip;
 	if (!svqos_ips || !add_ip0 || !add_ip1 || !add_ip2 || !add_ip3 || !add_nm)
 		return;
-
-	bzero(new_ip, sizeof(new_ip));
 
 	snprintf(add_ip, sizeof(add_ip), "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3, add_nm);
 
@@ -1388,12 +1383,13 @@ void qos_add_ip(webs_t wp)
 	if (strstr(svqos_ips, add_ip))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_ip, sizeof(new_ip), "%s %s 100 100 0 0 |", svqos_ips, add_ip);
+	asprintf(&new_ip, "%s %s 100 100 0 0 |", svqos_ips, add_ip);
 #else
-	snprintf(new_ip, sizeof(new_ip), "%s %s 30 |", svqos_ips, add_ip);
+	asprintf(&new_ip, "%s %s 30 |", svqos_ips, add_ip);
 #endif
 
 	nvram_set("svqos_ips", new_ip);
+	free(new_ip);
 
 }
 
@@ -1410,35 +1406,33 @@ void qos_add_mac(webs_t wp)
 	char *add_mac3 = websGetVar(wp, "svqos_hwaddr3", NULL);
 	char *add_mac4 = websGetVar(wp, "svqos_hwaddr4", NULL);
 	char *add_mac5 = websGetVar(wp, "svqos_hwaddr5", NULL);
-	char add_mac[19] = { 0 };
 	char *svqos_macs = nvram_safe_get("svqos_macs");
-	char new_mac[4096] = { 0 };
+	char *new_mac;
 	if (!svqos_macs || !add_mac0 || !add_mac1 || !add_mac2 || !add_mac3 || !add_mac4 || !add_mac5)
 		return;
 
-	bzero(new_mac, sizeof(new_mac));
-
-	snprintf(add_mac, 18, "%s:%s:%s:%s:%s:%s", add_mac0, add_mac1, add_mac2, add_mac3, add_mac4, add_mac5);
-
+	char add_mac[19];
+	snprintf(add_mac, sizeof(add_mac), "%s:%s:%s:%s:%s:%s", add_mac0, add_mac1, add_mac2, add_mac3, add_mac4, add_mac5);
 	/*
 	 * if this mac exists, return an error 
 	 */
 	if (strstr(svqos_macs, add_mac))
 		return;
 #ifdef HAVE_AQOS
-	snprintf(new_mac, sizeof(new_mac), "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
+	asprintf(&new_mac, "%s %s 100 100 user 0 0 |", svqos_macs, add_mac);
 #else
-	snprintf(new_mac, sizeof(new_mac), "%s %s 30 |", svqos_macs, add_mac);
+	asprintf(&new_mac, "%s %s 30 |", svqos_macs, add_mac);
 #endif
 
 	nvram_set("svqos_macs", new_mac);
+	free(new_mac);
 
 }
 
 void qos_save(webs_t wp)
 {
 	char *value = websGetVar(wp, "action", "");
-	char svqos_var[4096] = { 0 };
+	char *svqos_var;
 	char svqos_pktstr[30] = { 0 };
 	char field[32] = { 0 };
 	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
@@ -1447,7 +1441,6 @@ void qos_save(webs_t wp)
 	int no_devs = atoi(websGetVar(wp, "svqos_nodevs", "0"));
 	int no_macs = atoi(websGetVar(wp, "svqos_nomacs", "0"));
 	int i = 0, j = 0;
-
 	/*
 	 * reused wshaper fields - see src/router/rc/wshaper.c 
 	 */
@@ -1461,6 +1454,10 @@ void qos_save(webs_t wp)
 		applytake(value);
 		return;
 	}
+
+	svqos_var = malloc(4096);
+	bzero(svqos_var, 4096);
+
 //      nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
 	nvram_set("svqos_defaults", websGetVar(wp, "svqos_defaults", "0"));
 	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", "0"));
@@ -1500,7 +1497,6 @@ void qos_save(webs_t wp)
 	/*
 	 * services priorities 
 	 */
-	bzero(svqos_var, sizeof(svqos_var));
 
 	for (i = 0; i < no_svcs; i++) {
 		char protocol[100], ports[100];
@@ -1554,7 +1550,7 @@ void qos_save(webs_t wp)
 
 	nvram_set("svqos_svcs", svqos_var);
 	// nvram_commit ();
-	bzero(svqos_var, sizeof(svqos_var));
+	bzero(svqos_var, 4096);
 
 	/*
 	 * DEV priorities 
@@ -1579,13 +1575,12 @@ void qos_save(webs_t wp)
 		if (!level)
 			continue;
 		if (strlen(svqos_var) > 0) {
-			char *copy = malloc(4096);
-			snprintf(copy, sizeof(copy), "%s %s %s |", svqos_var, data, level);
+			asprintf(&copy, sizeof(copy), "%s %s %s |", svqos_var, data, level);
 			strcpy(svqos_var, copy);
 			free(copy);
 		} else {
-			char *copy = malloc(4096);
-			sprintf(copy, "%s %s |", data, level);
+			char *copy;
+			asprintf(&copy, "%s %s |", data, level);
 			strcpy(svqos_var, copy);
 			free(copy);
 		}
@@ -1625,7 +1620,7 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("svqos_devs", svqos_var);
-	bzero(svqos_var, sizeof(svqos_var));
+	bzero(svqos_var, 4096);
 
 	/*
 	 * IP priorities 
@@ -1685,7 +1680,7 @@ void qos_save(webs_t wp)
 
 	nvram_set("svqos_ips", svqos_var);
 	// nvram_commit ();
-	bzero(svqos_var, sizeof(svqos_var));
+	bzero(svqos_var, 4096);
 
 	/*
 	 * MAC priorities 
@@ -1744,6 +1739,7 @@ void qos_save(webs_t wp)
 	}
 
 	nvram_set("svqos_macs", svqos_var);
+	free(svqos_var);
 	// nvram_commit ();
 
 	/*

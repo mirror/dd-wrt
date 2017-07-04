@@ -305,7 +305,7 @@ void get_hostname_ip(char *type, char *filename)
 }
 
 int nv_count = 0;
-void save_hostname_ip(void)
+static void save_hostname_ip(void)
 {
 	FILE *fp, *fp_w;
 	char line[80];
@@ -316,20 +316,19 @@ void save_hostname_ip(void)
 		char hostname[32];
 		char ipaddr[20];
 		char hwaddr[20];
-	} wl_clients[MAX_LEASES];
+	};
 
-	for (i = 0; i < MAX_LEASES; i++) {	// init value
-		strcpy(wl_clients[i].hostname, "");
-		strcpy(wl_clients[i].ipaddr, "");
-		strcpy(wl_clients[i].hwaddr, "");
-	}
+	struct wl_client *wl_clients;
+	wl_clients = malloc(sizeof(struct wl_client) * MAX_LEASES);
+	bzero(wl_clients, sizeof(struct wl_client) * MAX_LEASES);
+
 	i = 0;
 	if ((fp = fopen(OLD_NAME_IP, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
 			// 00:11:22:33:44:55 192.168.1.100 honor
-			strcpy(leases[0], "");
-			strcpy(leases[1], "");
-			strcpy(leases[2], "");
+			leases[0][0] = 0;
+			leases[1][0] = 0;
+			leases[2][0] = 0;
 			if (sscanf(line, "%s %s %s", leases[0], leases[1], leases[2]) != 3)
 				continue;
 			snprintf(wl_clients[i].hwaddr, sizeof(wl_clients[i].hwaddr), "%s", leases[0]);
@@ -369,6 +368,7 @@ void save_hostname_ip(void)
 		}
 		fclose(fp_w);
 	}
+	free(wl_clients);
 
 }
 

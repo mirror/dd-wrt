@@ -2543,7 +2543,8 @@ void ej_showad(webs_t wp, int argc, char_t ** argv)
 #endif
 	return;
 }
-#ifdef HAVE_SHOWNF //for web change testing only
+
+#ifdef HAVE_SHOWNF		//for web change testing only
 void ej_shownf(webs_t wp, int argc, char_t ** argv)
 {
 	if (nvram_get("shownf") != NULL)
