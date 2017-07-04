@@ -23,55 +23,56 @@
 
 struct mon {
 	char *name;		// Process name
-	int count;		// Process count, 0 means don't check
 	int type;		// LAN or WAN
 	// int (*stop) (void); // stop function
 	// int (*start) (void); // start function
 	char *nvvalue;
 	char *nvmatch;
+	char *nvvalue2;
+	char *nvmatch2;
 };
 
 enum { M_LAN, M_WAN };
 
 struct mon mons[] = {
-	// {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
+	// {"tftpd",  M_LAN, stop_tftpd, start_tftpd},
 #ifdef HAVE_UPNP
-	{"upnp", 1, M_LAN, "upnp_enable", "1"},
+	{"upnp", M_LAN, "upnp_enable", "1", NULL, NULL},
 #endif
-	{"process_monitor", 1, M_LAN},
-	{"httpd", 2, M_LAN},
+	{"process_monitor", M_LAN},
+	{"httpd", M_LAN, "http_enable", "1", "https_enable", "1"},
 #ifdef HAVE_UDHCPD
-	{"udhcpd", 1, M_LAN},
+	{"udhcpd", M_LAN},
 #endif
-	{"dnsmasq", 1, M_LAN, "dnsmasq_enable", "1"},
-	{"dhcpfwd", 1, M_LAN, "dhcpfwd_enable", "1"},
+	{"dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL},
+	{"dhcpfwd", M_LAN, "dhcpfwd_enable", "1", NULL, NULL},
 #ifdef HAVE_PRIVOXY
-	{"privoxy", 1, M_LAN, "privoxy_enable", "1"},
+	{"privoxy", M_LAN, "privoxy_enable", "1", NULL, NULL},
 #endif
 #ifdef HAVE_NOCAT
-	{"splashd", 1, M_LAN, "NC_enable", "1"},
+	{"splashd", M_LAN, "NC_enable", "1", NULL, NULL},
 #endif
 #ifdef HAVE_CHILLI
-	{"chilli", 1, M_LAN, "chilli_enable", "1"},
+	{"chilli", M_LAN, "chilli_enable", "1", NULL, NULL},
 #endif
 #ifdef HAVE_WIFIDOG
-	{"wifidog", 1, M_WAN, "wd_enable", "1"},
+	{"wifidog", M_WAN, "wd_enable", "1", NULL, NULL},
 #endif
 #ifdef HAVE_OLSRD
-	{"olsrd", 1, M_LAN, "wk_mode", "olsrd"},
+	{"olsrd", M_LAN, "wk_mode", "olsrd", NULL, NULL},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-	{"sputnik", 1, M_WAN, "apd_enable", "1"},
+	{"sputnik", M_WAN, "apd_enable", "1", NULL, NULL},
 #endif
 #ifdef HAVE_MULTICAST
-	{"igmprt", 1, M_WAN, "block_multicast", "0"},
+	{"igmprt", M_WAN, "block_multicast", "0", NULL, NULL},
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN
-	{"openvpn", 1, M_LAN, "openvpncl_enable", "1"},
+	{"openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL},
 #endif
 #endif
-	{NULL, 0, 0}
+	{NULL, 0, NULL, NULL, NULL, NULL}
 };
 
 static int search_process(char *name, int count)
@@ -84,11 +85,9 @@ static int search_process(char *name, int count)
 		return 0;
 	} else {
 		printf("Find %s which count is %d\n", name, c);
-		// if(count && c != count){
-		// cprintf("%s count is not match\n", name);
-		// return 0;
-		// }
-		// else
+		if (count && c != count) {
+			return 0;
+		}
 		return 1;
 	}
 }
@@ -261,23 +260,26 @@ static int do_mon(void)
 	for (v = mons; v < &mons[sizeof(mons) / sizeof(struct mon)]; v++) {
 		if (v->name == NULL)
 			break;
-		if (v->nvvalue && v->nvmatch) {
-			if (!nvram_match(v->nvvalue, v->nvmatch))
-				continue;	// service not enabled. no need to check
-		}
-		printf("checking %s\n", v->name);
+		if ((v->nvvalue && nvram_match(v->nvvalue, v->nvmatch)) || (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))) {
+			int count = 0;
+			if (v->nvvalue && nvram_match(v->nvvalue, v->nvmatch))
+				count++;
+			if (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))
+				count++;
+			printf("checking %s\n", v->name);
 
-		if (v->type == M_WAN)
-			if (!check_wan_link(0)) {
-				printf("process is wan, but wan is not up\n");
-				continue;
+			if (v->type == M_WAN)
+				if (!check_wan_link(0)) {
+					printf("process is wan, but wan is not up\n");
+					continue;
+				}
+			if (!search_process(v->name, count)) {
+
+				printf("Maybe %s had died, we need to re-exec it\n", v->name);
+				eval("stopservice", v->name);
+				killall(v->name, SIGKILL);
+				eval("startservice_f", v->name);
 			}
-		if (!search_process(v->name, v->count)) {
-
-			printf("Maybe %s had died, we need to re-exec it\n", v->name);
-			eval("stopservice", v->name);
-			killall(v->name, SIGKILL);
-			eval("startservice_f", v->name);
 		}
 		printf("checking for %s done\n", v->name);
 	}
