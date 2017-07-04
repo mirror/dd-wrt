@@ -85,8 +85,9 @@ void main(int argc, char *argv[])
  */
 static int nvram_main(int argc, char **argv)
 {
-	char *name, *value, buf[NVRAMSPACE];
+	char *name, *value, *buf;
 	int size;
+	buf = malloc(NVRAMSPACE);
 
 	/* 
 	 * Skip program name 
@@ -110,7 +111,7 @@ static int nvram_main(int argc, char **argv)
 			}
 		} else if (!strncmp(*argv, "set", 3)) {
 			if (*++argv) {
-				strncpy(value = buf, *argv, sizeof(buf));
+				strncpy(value = buf, *argv, NVRAM_SPACE);
 				name = strsep(&value, "=");
 				nvram_set(name, value);
 			}
@@ -121,7 +122,7 @@ static int nvram_main(int argc, char **argv)
 			nvram_commit();
 		} else if (!strncmp(*argv, "show", 4)
 			   || !strncmp(*argv, "getall", 6)) {
-			nvram_getall(buf, sizeof(buf));
+			nvram_getall(buf, NVRAM_SPACE);
 			for (name = buf; *name; name += strlen(name) + 1)
 				puts(name);
 			size = sizeof(struct nvram_header) + (long)name - (long)buf;
@@ -134,6 +135,7 @@ static int nvram_main(int argc, char **argv)
 				int ret = nvram_backup(*argv);
 				if (ret < 0) {
 					fprintf(stderr, "can't write %s\n", *argv);
+					free(buf);
 					return 1;
 				}
 			}
@@ -142,10 +144,12 @@ static int nvram_main(int argc, char **argv)
 				int ret = nvram_restore(*argv);
 				if (ret == -1) {
 					fprintf(stderr, "can't write %s\n", *argv);
+					free(buf);
 					return 1;
 				}
 				if (ret == -2) {
 					fprintf(stderr, "file %s broken\n", *argv);
+					free(buf);
 					return 1;
 				}
 			}
@@ -154,5 +158,6 @@ static int nvram_main(int argc, char **argv)
 			break;
 	}
 
+	free(buf);
 	return 0;
 }
