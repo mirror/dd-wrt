@@ -38,7 +38,7 @@
  */
 void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 {
-	char buf[LOG_BUF], *line, *next, *s;
+	char *buf, *line, *next, *s;
 	int len;
 	char *type;
 
@@ -61,9 +61,12 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 		websError(wp, 400, "Insufficient args\n");
 		return;
 	}
+	buf = malloc(LOG_BUF);
+	bzero(buf, LOG_BUF);
 	// if (klogctl(3, buf, 4096) < 0) {
 	if (klogctl(3, buf, LOG_BUF) < 0) {
 		websError(wp, 400, "Insufficient memory\n");
+		free(buf);
 		return;
 	}
 	cprintf("log: %s\n", buf);
@@ -193,7 +196,7 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 		// if(s_service) free(s_service);
 		// if(d_service) free(d_service);
 	}
-
+	free(buf);
 	return;
 
 }

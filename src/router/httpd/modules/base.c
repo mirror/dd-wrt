@@ -241,7 +241,7 @@ void Initnvramtab()
 	};
 
 	variables = NULL;
-	char buf[1024];
+	char *buf;
 
 	// format = VARNAME VARDESC VARVALID VARVALIDARGS FLAGS FLAGS
 	// open config directory directory =
@@ -254,8 +254,9 @@ void Initnvramtab()
 		// list all files in this directory
 		while ((entry = readdir(directory)) != NULL) {
 			if (endswith(entry->d_name, ".nvramconfig")) {
-				sprintf(buf, "%s/%s", directories[idx], entry->d_name);
+				asprintf(&buf, "%s/%s", directories[idx], entry->d_name);
 				in = fopen(buf, "rb");
+				free(buf);
 				if (in == NULL) {
 					return;
 				}
