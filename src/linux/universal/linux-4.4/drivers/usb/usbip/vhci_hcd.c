@@ -242,7 +242,6 @@ static inline void hub_descriptor(struct usb_hub_descriptor *desc)
 	desc->wHubCharacteristics = cpu_to_le16(
 		HUB_CHAR_INDV_PORT_LPSM | HUB_CHAR_COMMON_OCPM);
 	desc->bNbrPorts = VHCI_HC_PORTS;
-	BUILD_BUG_ON(VHCI_NPORTS > USB_MAXCHILDREN);
 	width = desc->bNbrPorts / 8 + 1;
 	desc->bDescLength = USB_DT_HUB_NONVAR_SIZE + 2 * width;
 	memset(&desc->u.hs.DeviceRemovable[0], 0, width);
