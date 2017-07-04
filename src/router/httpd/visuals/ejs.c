@@ -60,7 +60,6 @@ char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
 
-
 void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query) = NULL;	// jimmy, 
 									// https, 
 									// 8/4/2003
@@ -1292,7 +1291,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 	char bufferif[512];
 #ifdef HAVE_ATH9K
 	glob_t globbuf;
-	char globstring[1024];
+	char *globstring;
 	int globresult;
 #endif
 
@@ -1393,18 +1392,21 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 		}
 #ifdef HAVE_ATH9K
 		if (is_ath9k(dev)) {
-			sprintf(globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
+			asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s.sta*", dev);
 			globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 			int awdscount;
 			for (awdscount = 0; awdscount < globbuf.gl_pathc; awdscount++) {
 				char *ifname;
 				ifname = strrchr(globbuf.gl_pathv[awdscount], '/');
-				if (!ifname)
+				if (!ifname) {
+					free(globstring);
 					continue;
+				}
 				sprintf(name, "%s (%s)", tran_string(buf, "share.wireless"), ifname + 1);
 				show_bwif(wp, ifname + 1, name);
 			}
 			globfree(&globbuf);
+			free(globstring);
 		}
 #endif
 	}
@@ -1422,44 +1424,18 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_do_menu(webs_t wp, int argc, char_t ** argv)
+struct menucontext {
+	char menu[8][13][32];
+	char menuname[8][14][32];
+};
+
+static struct menucontext *init_menu(webs_t wp)
 {
-	char *mainmenu, *submenu;
+	static struct menucontext *m = NULL;
 
-	mainmenu = argv[0];
-	submenu = argv[1];
+	if (!m)
+		m = malloc(sizeof(struct menucontext));
 
-	int vlan_supp = check_vlan_support();
-	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
-		vlan_supp = 1;
-
-#ifdef HAVE_SPUTNIK_APD
-	int sputnik = nvram_matchi("apd_enable", 1);
-#else
-	int sputnik = 0;
-#endif
-	int openvpn = nvram_match("openvpn_enable",
-				  "1") | nvram_matchi("openvpncl_enable", 1);
-	int auth = nvram_matchi("status_auth", 1);
-	int registered = 1;
-#ifdef HAVE_REGISTER
-	if (!wp->isregistered_real)
-		registered = 0;
-	int cpeonly = iscpe();
-#else
-	int cpeonly = 0;
-#endif
-
-#ifdef HAVE_MADWIFI
-#ifdef HAVE_NOWIFI
-	int wifi = 0;
-#else
-	int wifi = haswifi();
-#endif
-#endif
-#ifdef HAVE_MADWIFI
-	int wimaxwifi = 0;
-#endif
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
 		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1522,14 +1498,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		{"admin", "adminManagement", "adminAlive", "adminDiag", "adminWol", "adminFactory", "adminUpgrade", "adminBackup", "", "", "", "", "", ""},	//
 		{"statu", "statuRouter", "statuInet", "statuLAN", "statuWLAN", "statuSputnik", "statuVPN", "statuBand", "statuSyslog", "statuSysInfo", "statuActivate", "statuMyPage", "statuGpio", "statuCWMP"}	//
 	};
-	char menu[8][13][32];
-	char menuname[8][14][32];
 	int x, y;
 	for (x = 0; x < 8; x++) {
 		for (y = 0; y < 14; y++) {
-			strcpy(&menuname[x][y][0], menuname_t[x][y]);
+			strcpy(&m->menuname[x][y][0], menuname_t[x][y]);
 			if (y < 13) {
-				strcpy(&menu[x][y][0], menu_t[x][y]);
+				strcpy(&m->menu[x][y][0], menu_t[x][y]);
 			}
 		}
 	}
@@ -1537,9 +1511,9 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 	if (!wp->userid) {
 		for (x = 0; x < 8; x++) {
 			for (y = 0; y < 14; y++) {
-				strcpy(&menuname[x][y][0], menuname_s[x][y]);
+				strcpy(&m->menuname[x][y][0], menuname_s[x][y]);
 				if (y < 13) {
-					strcpy(&menu[x][y][0], menu_s[x][y]);
+					strcpy(&m->menu[x][y][0], menu_s[x][y]);
 				}
 			}
 		}
@@ -1547,24 +1521,24 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #ifdef HAVE_IPR
 	if (!wp->userid) {
-		sprintf(&menu[0][2][0], "");	// setup - mac cloning
+		sprintf(&m->menu[0][2][0], "");	// setup - mac cloning
 		//sprintf(&menu[0][4][0], "");  // setup - routing / test!
-		sprintf(&menu[2][4][0], "");	// services - USB
-		sprintf(&menu[2][5][0], "");	// services - NAS
-		sprintf(&menu[2][6][0], "");	// services - Hotspot
-		sprintf(&menu[6][2][0], "");	// administration - commands
-		sprintf(&menu[6][5][0], "");	// administration - upgrade
+		sprintf(&m->menu[2][4][0], "");	// services - USB
+		sprintf(&m->menu[2][5][0], "");	// services - NAS
+		sprintf(&m->menu[2][6][0], "");	// services - Hotspot
+		sprintf(&m->menu[6][2][0], "");	// administration - commands
+		sprintf(&m->menu[6][5][0], "");	// administration - upgrade
 	}
-	sprintf(&menu[2][9][0], "");	// services - anchorfree
+	sprintf(&m->menu[2][9][0], "");	// services - anchorfree
 #endif
 #ifdef HAVE_CORENET
-	sprintf(&menuname[0][0][0], "setupnetw");
-	sprintf(&menuname[6][0][0], "adminman");
+	sprintf(&m->menuname[0][0][0], "setupnetw");
+	sprintf(&m->menuname[6][0][0], "adminman");
 #endif
 #ifdef HAVE_MADWIFI
 #if defined(HAVE_BUFFALO) && !defined(HAVE_ATH9K)
-	sprintf(&menu[1][8][0], "");
-	sprintf(&menuname[1][9][0], "");
+	sprintf(&m->menu[1][8][0], "");
+	sprintf(&m->menuname[1][9][0], "");
 #else
 	// fill up WDS
 	int ifcount = getdevicecount();
@@ -1577,11 +1551,11 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		sprintf(check, "ath%d", a);
 		if (has_ad(check))
 			continue;
-		sprintf(&menu[1][count + 8][0], "Wireless_WDS-ath%d.asp", a);
+		sprintf(&m->menu[1][count + 8][0], "Wireless_WDS-ath%d.asp", a);
 		if (ifcount == 1)
-			sprintf(&menuname[1][count + 9][0], "wirelessWds");
+			sprintf(&m->menuname[1][count + 9][0], "wirelessWds");
 		else
-			sprintf(&menuname[1][count + 9][0], "wirelessWds%d", a);
+			sprintf(&m->menuname[1][count + 9][0], "wirelessWds%d", a);
 		count++;
 	}
 #endif
@@ -1594,14 +1568,14 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		int a;
 
 		for (a = 0; a < ifcount; a++) {
-			sprintf(&menu[1][a * 2 + 7][0], "Wireless_Advanced-wl%d.asp", a);
-			sprintf(&menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp", a);
+			sprintf(&m->menu[1][a * 2 + 7][0], "Wireless_Advanced-wl%d.asp", a);
+			sprintf(&m->menu[1][a * 2 + 8][0], "Wireless_WDS-wl%d.asp", a);
 			if (ifcount == 1) {
-				sprintf(&menuname[1][a * 2 + 8][0], "wirelessAdvanced");
-				sprintf(&menuname[1][a * 2 + 9][0], "wirelessWds");
+				sprintf(&m->menuname[1][a * 2 + 8][0], "wirelessAdvanced");
+				sprintf(&m->menuname[1][a * 2 + 9][0], "wirelessWds");
 			} else {
-				sprintf(&menuname[1][a * 2 + 8][0], "wirelessAdvancedwl%d", a);
-				sprintf(&menuname[1][a * 2 + 9][0], "wirelessWdswl%d", a);
+				sprintf(&m->menuname[1][a * 2 + 8][0], "wirelessAdvancedwl%d", a);
+				sprintf(&m->menuname[1][a * 2 + 9][0], "wirelessWdswl%d", a);
 			}
 		}
 #ifdef HAVE_ERC
@@ -1609,6 +1583,48 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #endif
 #endif
 
+}
+
+void ej_do_menu(webs_t wp, int argc, char_t ** argv)
+{
+	char *mainmenu, *submenu;
+
+	mainmenu = argv[0];
+	submenu = argv[1];
+
+	int vlan_supp = check_vlan_support();
+	if (getRouterBrand() == ROUTER_UBNT_UNIFIAC)
+		vlan_supp = 1;
+
+#ifdef HAVE_SPUTNIK_APD
+	int sputnik = nvram_matchi("apd_enable", 1);
+#else
+	int sputnik = 0;
+#endif
+	int openvpn = nvram_match("openvpn_enable",
+				  "1") | nvram_matchi("openvpncl_enable", 1);
+	int auth = nvram_matchi("status_auth", 1);
+	int registered = 1;
+#ifdef HAVE_REGISTER
+	if (!wp->isregistered_real)
+		registered = 0;
+	int cpeonly = iscpe();
+#else
+	int cpeonly = 0;
+#endif
+
+#ifdef HAVE_MADWIFI
+#ifdef HAVE_NOWIFI
+	int wifi = 0;
+#else
+	int wifi = haswifi();
+#endif
+#endif
+#ifdef HAVE_MADWIFI
+	int wimaxwifi = 0;
+#endif
+
+	struct menucontext *m = init_menu(wp);
 	int i, j;
 
 	websWrite(wp, "<div id=\"menu\">\n");
@@ -1622,41 +1638,41 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #define MAXSUBMENU 13
 
 	for (i = 0; i < MAXMENU; i++) {
-		if (strlen(menu[i][0]) == 0)
+		if (strlen(m->menu[i][0]) == 0)
 			continue;
 #ifdef HAVE_MADWIFI
-		if (!wifi && !wimaxwifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
+		if (!wifi && !wimaxwifi && !strcmp(m->menu[i][0], "Wireless_Basic.asp"))
 			i++;
 #endif
 #ifdef HAVE_CORENET
-		if (!strcmp(menu[i][0], "Firewall.asp") || !strcmp(menu[i][0], "Filters.asp") || !strcmp(menu[i][0], "ForwardSpec.asp"))	// jump over
+		if (!strcmp(m->menu[i][0], "Firewall.asp") || !strcmp(m->menu[i][0], "Filters.asp") || !strcmp(m->menu[i][0], "ForwardSpec.asp"))	// jump over
 			// Corenet
 			i++;
 #endif
 		if (i >= MAXMENU)
 			break;
-		if (!strcmp(menu[i][0], mainmenu)) {
+		if (!strcmp(m->menu[i][0], mainmenu)) {
 #ifdef HAVE_MADWIFI
-			if (!wifi && wimaxwifi && !strcmp(menu[i][0], "Wireless_Basic.asp"))
+			if (!wifi && wimaxwifi && !strcmp(m->menu[i][0], "Wireless_Basic.asp"))
 				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
-				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", menuname[i][0]);
+				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", m->menuname[i][0]);
 			websWrite(wp, "    <div id=\"menuSub\">\n");
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < MAXSUBMENU; j++) {
 #ifdef HAVE_MADWIFI
-				if (!wifi && !strncmp(menu[i][j], "Wireless_Basic.asp", 8))
+				if (!wifi && !strncmp(m->menu[i][j], "Wireless_Basic.asp", 8))
 					j++;
 #ifndef HAVE_SUPERCHANNEL
-				if (!strcmp(menu[i][j], "SuperChannel.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "SuperChannel.asp"))	// jump over
 					// PPTP in
 					// micro
 					// build
 					j++;
 #else
-				if (!strcmp(menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	// jump 
+				if (!strcmp(m->menu[i][j], "SuperChannel.asp") && (issuperchannel() || !wifi))	// jump 
 					// over 
 					// PPTP 
 					// in 
@@ -1665,54 +1681,54 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					j++;
 #endif
 #else
-				if (!strcmp(menu[i][j], "SuperChannel.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "SuperChannel.asp"))	// jump over
 					// PPTP in
 					// micro
 					// build
 					j++;
 #endif
 #ifndef HAVE_WAVESAT
-				if (!strcmp(menu[i][j], "WiMAX.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "WiMAX.asp"))	// jump over
 					// WiMAX
 					j++;
 #else
-				if (!wimaxwifi && !strcmp(menu[i][j], "WiMAX.asp"))	// jump 
+				if (!wimaxwifi && !strcmp(m->menu[i][j], "WiMAX.asp"))	// jump 
 					// over 
 					// WiMAX
 					j++;
 #endif
 #if !defined(HAVE_AOSS) && !defined(HAVE_WPS)
-				if (!strcmp(menu[i][j], "AOSS.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "AOSS.asp"))	// jump over
 					// AOSS
 					j++;
 #endif
 #if defined(HAVE_WPS) && !defined(HAVE_IDEXX)
-				if (!strcmp(menu[i][j], "AOSS.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "AOSS.asp"))	// jump over
 					// AOSS
 					j++;
 #endif
 #ifdef HAVE_MADWIFI
-				if (!wifi && !strcmp(menu[i][j], "WL_WPATable.asp"))	// jump 
+				if (!wifi && !strcmp(m->menu[i][j], "WL_WPATable.asp"))	// jump 
 					// over 
 					// PPTP 
 					// in 
 					// micro 
 					// build
 					j++;
-				if (!strcmp(menu[i][j], "Wireless_radauth.asp"))
+				if (!strcmp(m->menu[i][j], "Wireless_radauth.asp"))
 					j++;
-				if (!wifi && !strncmp(menu[i][j], "Wireless_MAC.asp", 8))
+				if (!wifi && !strncmp(m->menu[i][j], "Wireless_MAC.asp", 8))
 					j++;
-				if (!strncmp(menu[i][j], "Wireless_Advanced", 17))
+				if (!strncmp(m->menu[i][j], "Wireless_Advanced", 17))
 					j++;
 				if ((!wifi || cpeonly)
-				    && !strncmp(menu[i][j], "Wireless_WDS", 12))
+				    && !strncmp(m->menu[i][j], "Wireless_WDS", 12))
 					j++;
-				if (!wifi && !strcmp(menu[i][j], "Status_Wireless.asp"))
+				if (!wifi && !strcmp(m->menu[i][j], "Status_Wireless.asp"))
 					j++;
 
 #endif
-				if ((!vlan_supp) && !strcmp(menu[i][j], "Vlan.asp"))	// jump 
+				if ((!vlan_supp) && !strcmp(m->menu[i][j], "Vlan.asp"))	// jump 
 					// over 
 					// VLANs 
 					// if 
@@ -1721,153 +1737,153 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					// supported
 					j++;
 #ifndef HAVE_FREERADIUS
-				if (!strcmp(menu[i][j], "FreeRadius.asp"))
+				if (!strcmp(m->menu[i][j], "FreeRadius.asp"))
 					j++;
 #endif
 #ifndef HAVE_PPPOESERVER
-				if (!strcmp(menu[i][j], "PPPoE_Server.asp"))
+				if (!strcmp(m->menu[i][j], "PPPoE_Server.asp"))
 					j++;
 #endif
 #ifdef HAVE_MICRO
-				if (!strcmp(menu[i][j], "PPTP.asp"))	// jump over PPTP in
+				if (!strcmp(m->menu[i][j], "PPTP.asp"))	// jump over PPTP in
 					// micro build
 					j++;
 #endif
 #ifndef HAVE_USB
-				if (!strcmp(menu[i][j], "USB.asp"))	// jump over USB
+				if (!strcmp(m->menu[i][j], "USB.asp"))	// jump over USB
 					j++;
 #endif
 #ifndef HAVE_NAS_SERVER
-				if (!strcmp(menu[i][j], "NAS.asp"))	// jump over NAS
+				if (!strcmp(m->menu[i][j], "NAS.asp"))	// jump over NAS
 					j++;
 #endif
 #ifdef HAVE_GLAUCO
-				if (!strcmp(menu[i][j], "Factory_Defaults.asp"))
+				if (!strcmp(m->menu[i][j], "Factory_Defaults.asp"))
 					j++;
-				if (!strcmp(menu[i][j], "Upgrade.asp"))
+				if (!strcmp(m->menu[i][j], "Upgrade.asp"))
 					j++;
 #endif
 #ifdef HAVE_SANSFIL
-				if (!strcmp(menu[i][j], "Hotspot.asp"))
+				if (!strcmp(m->menu[i][j], "Hotspot.asp"))
 					j++;
 #endif
 #ifndef HAVE_SPOTPASS
-				if (!strcmp(menu[i][j], "Nintendo.asp"))	// jump over
+				if (!strcmp(m->menu[i][j], "Nintendo.asp"))	// jump over
 					// Nintendo
 					j++;
 #endif
 #ifndef HAVE_MILKFISH
-				if (!strcmp(menu[i][j], "Milkfish.asp"))
+				if (!strcmp(m->menu[i][j], "Milkfish.asp"))
 					j++;
 #endif
 #ifndef HAVE_IPV6
-				if (!strcmp(menu[i][j], "IPV6.asp"))
+				if (!strcmp(m->menu[i][j], "IPV6.asp"))
 					j++;
 #endif
 //#ifdef HAVE_WIKINGS
-//                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//                              if (!strcmp(m->menu[i][j], "AnchorFree.asp"))
 //                                      j++;
 //#endif
 #ifndef HAVE_PRIVOXY
-				if (!strcmp(menu[i][j], "Privoxy.asp"))
+				if (!strcmp(m->menu[i][j], "Privoxy.asp"))
 					j++;
 #endif
 #ifndef HAVE_SPEEDCHECKER
-				if (!strcmp(menu[i][j], "Speedchecker.asp"))
+				if (!strcmp(m->menu[i][j], "Speedchecker.asp"))
 					j++;
 #endif
 //#ifdef HAVE_ESPOD
-//                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//                              if (!strcmp(m->menu[i][j], "AnchorFree.asp"))
 //                                      j++;
 //#endif
 //#ifdef HAVE_CARLSONWIRELESS
-//                              if (!strcmp(menu[i][j], "AnchorFree.asp"))
+//                              if (!strcmp(m->menu[i][j], "AnchorFree.asp"))
 //                                      j++;
 //#endif
 #ifndef HAVE_WOL
-				if (!strcmp(menu[i][j], "Wol.asp"))
+				if (!strcmp(m->menu[i][j], "Wol.asp"))
 					j++;
 #endif
 #ifndef HAVE_EOP_TUNNEL
-				if (!strcmp(menu[i][j], "eop-tunnel.asp"))
+				if (!strcmp(m->menu[i][j], "eop-tunnel.asp"))
 					j++;
 #endif
 #ifndef HAVE_VLANTAGGING
-				if (!strcmp(menu[i][j], "Networking.asp"))
+				if (!strcmp(m->menu[i][j], "Networking.asp"))
 					j++;
 #endif
 #ifndef HAVE_CTORRENT
-				if (!strcmp(menu[i][j], "P2P.asp"))
+				if (!strcmp(m->menu[i][j], "P2P.asp"))
 					j++;
 #endif
-				if ((!sputnik) && !strcmp(menu[i][j], "Status_SputnikAPD.asp"))	// jump 
+				if ((!sputnik) && !strcmp(m->menu[i][j], "Status_SputnikAPD.asp"))	// jump 
 					// over 
 					// Sputnik
 					j++;
-				if ((!openvpn) && !strcmp(menu[i][j], "Status_OpenVPN.asp"))	// jump 
+				if ((!openvpn) && !strcmp(m->menu[i][j], "Status_OpenVPN.asp"))	// jump 
 					// over 
 					// OpenVPN
 					j++;
-				if ((!auth) && !strcmp(menu[i][j], "Info.htm"))	// jump 
+				if ((!auth) && !strcmp(m->menu[i][j], "Info.htm"))	// jump 
 					// over 
 					// Sys-Info
 					j++;
-				if ((registered) && !cpeonly && !strcmp(menu[i][j], "register.asp"))	// jump 
+				if ((registered) && !cpeonly && !strcmp(m->menu[i][j], "register.asp"))	// jump 
 					// over 
 					// register.asp
 					j++;
-				if ((!strlen(nvram_safe_get("mypage_scripts"))) && !strcmp(menu[i][j], "MyPage.asp"))	// jump 
+				if ((!strlen(nvram_safe_get("mypage_scripts"))) && !strcmp(m->menu[i][j], "MyPage.asp"))	// jump 
 					// over 
 					// MyPage.asp
 					j++;
 #ifndef HAVE_STATUS_GPIO
-				if (!strcmp(menu[i][j], "Gpio.asp"))
+				if (!strcmp(m->menu[i][j], "Gpio.asp"))
 					j++;
 #endif
 #ifndef HAVE_FREECWMP
-				if (!strcmp(menu[i][j], "Status_CWMP.asp"))
+				if (!strcmp(m->menu[i][j], "Status_CWMP.asp"))
 					j++;
 #endif
 #ifndef HAVE_STATUS_SYSLOG
-				if (!strcmp(menu[i][j], "Syslog.asp"))
+				if (!strcmp(m->menu[i][j], "Syslog.asp"))
 					j++;
 #endif
 				if (j >= MAXSUBMENU)
 					break;
 #ifdef HAVE_MADWIFI
-				if (!strcmp(menu[i][j], submenu)
-				    && (strlen(menu[i][j])
-					&& !strcmp(menu[i][j], "Wireless_Basic.asp")
+				if (!strcmp(m->menu[i][j], submenu)
+				    && (strlen(m->menu[i][j])
+					&& !strcmp(m->menu[i][j], "Wireless_Basic.asp")
 					&& !wifi && wimaxwifi)) {
 					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span></li>\n");
 				}
 #endif
-				else if (!strcmp(menu[i][j], submenu)
-					 && (strlen(menu[i][j]))) {
-					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", menuname[i][j + 1]);
+				else if (!strcmp(m->menu[i][j], submenu)
+					 && (strlen(m->menu[i][j]))) {
+					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", m->menuname[i][j + 1]);
 				}
 #ifdef HAVE_HTTPS		// until https will allow upgrade and backup
 #ifdef HAVE_MATRIXSSL
-				else if ((strlen(menu[i][j]) != 0) && (wp->do_ssl)
-					 && ((!strcmp(menu[i][j], "Upgrade.asp")
-					      || (!strcmp(menu[i][j], "config.asp"))))) {
+				else if ((strlen(m->menu[i][j]) != 0) && (wp->do_ssl)
+					 && ((!strcmp(m->menu[i][j], "Upgrade.asp")
+					      || (!strcmp(m->menu[i][j], "config.asp"))))) {
 					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp,
 						  "      document.write(\"<li><a style=\\\"cursor:pointer\\\" title=\\\"\" + errmsg.err46 + \"\\\" onclick=\\\"alert(errmsg.err45)\\\" ><em>\" + bmenu.%s + \"</em></a></li>\");\n",
-						  menuname[i][j + 1]);
+						  m->menuname[i][j + 1]);
 					websWrite(wp, "      \n//]]>\n</script>\n");
 				}
-#endif<
+#endif	/* < */
 #endif
 #ifdef HAVE_MADWIFI
-				else if (strlen(menu[i][j])
-					 && !strcmp(menu[i][j], "Wireless_Basic.asp")
+				else if (strlen(m->menu[i][j])
+					 && !strcmp(m->menu[i][j], "Wireless_Basic.asp")
 					 && !wifi && wimaxwifi) {
 					websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 				}
 #endif
-				else if (strlen(menu[i][j])) {
-					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", menu[i][j], menuname[i][j + 1]);
+				else if (strlen(m->menu[i][j])) {
+					websWrite(wp, "      <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][j], m->menuname[i][j + 1]);
 				}
 			}
 			websWrite(wp, "     </ul>\n");
@@ -1875,12 +1891,12 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 			websWrite(wp, "    </li>\n");
 		}
 #ifdef HAVE_MADWIFI
-		else if (!strcmp(menu[i][0], "Wireless_Basic.asp") && !wifi && wimaxwifi) {
+		else if (!strcmp(m->menu[i][0], "Wireless_Basic.asp") && !wifi && wimaxwifi) {
 			websWrite(wp, "      <li><a href=\"WiMAX.asp\"><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></a></li>\n");
 		}
 #endif
 		else {
-			websWrite(wp, "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", menu[i][0], menuname[i][0]);
+			websWrite(wp, "   <li><a href=\"%s\"><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></a></li>\n", m->menu[i][0], m->menuname[i][0]);
 		}
 	}
 	websWrite(wp, "  </ul>\n");
