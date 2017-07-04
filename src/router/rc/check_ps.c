@@ -39,10 +39,10 @@ struct mon mons[] = {
 #ifdef HAVE_UPNP
 	{"upnp", M_LAN, "upnp_enable", "1", NULL, NULL},
 #endif
-	{"process_monitor", M_LAN},
+	{"process_monitor", M_LAN, NULL, NULL, NULL, NULL},
 	{"httpd", M_LAN, "http_enable", "1", "https_enable", "1"},
 #ifdef HAVE_UDHCPD
-	{"udhcpd", M_LAN},
+	{"udhcpd", M_LAN, NULL, NULL, NULL, NULL},
 #endif
 	{"dnsmasq", M_LAN, "dnsmasq_enable", "1", NULL, NULL},
 	{"dhcpfwd", M_LAN, "dhcpfwd_enable", "1", NULL, NULL},
@@ -85,7 +85,7 @@ static int search_process(char *name, int count)
 		return 0;
 	} else {
 		printf("Find %s which count is %d\n", name, c);
-		if (count && c != count) {
+		if (c < count) {
 			return 0;
 		}
 		return 1;
@@ -260,12 +260,12 @@ static int do_mon(void)
 	for (v = mons; v < &mons[sizeof(mons) / sizeof(struct mon)]; v++) {
 		if (v->name == NULL)
 			break;
-		if ((v->nvvalue && nvram_match(v->nvvalue, v->nvmatch)) || (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))) {
-			int count = 0;
-			if (v->nvvalue && nvram_match(v->nvvalue, v->nvmatch))
-				count++;
-			if (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))
-				count++;
+		int count = 0;
+		if (v->nvvalue && nvram_match(v->nvvalue, v->nvmatch))
+			count++;
+		if (v->nvvalue2 && nvram_match(v->nvvalue2, v->nvmatch2))
+			count++;
+		if (count) {
 			printf("checking %s\n", v->name);
 
 			if (v->type == M_WAN)
@@ -275,7 +275,7 @@ static int do_mon(void)
 				}
 			if (!search_process(v->name, count)) {
 
-				printf("Maybe %s had died, we need to re-exec it\n", v->name);
+				dd_syslog(LOG_INFO, "Maybe %s had died, we need to re-exec it\n", v->name);
 				eval("stopservice", v->name);
 				killall(v->name, SIGKILL);
 				eval("startservice_f", v->name);
