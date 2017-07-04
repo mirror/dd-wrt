@@ -487,7 +487,7 @@ static int check_connect_type(webs_t wp)
 {
 	struct wl_assoc_mac *wlmac = NULL;
 	int count_wl = 0;
-	int i, j, ret = 0;
+	int i, j;
 	char temp[32];
 	int c = get_wl_instances();
 
@@ -501,13 +501,14 @@ static int check_connect_type(webs_t wp)
 		for (i = 0; i < count_wl; i++) {
 			if (!strcmp(wlmac[i].mac, wp->http_client_mac)) {
 				cprintf("Can't accept wireless access\n");
-				ret = -1;
+				free(wlmac);
+				return -1;
 			}
 		}
 		free(wlmac);
 	}
 
-	return ret;
+	return 0;
 }
 
 #ifdef HAVE_IAS
@@ -553,7 +554,6 @@ static void *handle_request(void *arg)
 	conn_fp->filter_id = filter_id;
 
 #endif
-
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
