@@ -1320,9 +1320,9 @@ void qos_add_svc(webs_t wp)
 		return;
 
 	if (strlen(svqos_svcs) > 0)
-		asprintf(new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
+		asprintf(&new_svcs, "%s %s %s %s 30 |", svqos_svcs, add_svc, protocol, ports);
 	else
-		asprintf(new_svcs, "%s %s %s 30 |", add_svc, protocol, ports);
+		asprintf(&new_svcs, "%s %s %s 30 |", add_svc, protocol, ports);
 
 //      if (strlen(new_svcs) >= sizeof(new_svcs)) //this check is just stupid. it means overflow
 //              return;
