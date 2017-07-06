@@ -2424,7 +2424,7 @@ static void ttraff_backup(unsigned char method, struct mime_handler *handler, ch
 	FILE *out = fopen("/tmp/traffdata.bak", "wb");
 	fprintf(out, "TRAFF-DATA\n");
 	FILE *fp = popen("nvram show | grep traff-", "rb");
-	while (!feof(fp))
+ 	while (!feof(fp))
 		putc(getc(fp), out);
 	pclose(fp);
 	fclose(out);
@@ -2570,8 +2570,8 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_REGISTER
 	{"style/logo.png", "image/png", NULL, NULL, do_trial_logo, NULL, 0, 0, 0},
 #endif
-	{"graph_if.svg*", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
-	{"graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
+//	{"graph_if.svg*", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
+//	{"graph_if.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 1},
 	{"**.css", "text/css", NULL, NULL, do_file, NULL, 0, 0, 0},
 	{"**.svg", "image/svg+xml", NULL, NULL, do_file, do_auth, 0, 0, 0},
 	{"**.gif", "image/gif", NULL, NULL, do_file, NULL, 0, 0, 0},
@@ -2605,7 +2605,7 @@ struct mime_handler mime_handlers[] = {
 	{"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
 	 do_auth, 1, 0, 0},
 #endif
-	{"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0, 1},
+	{"fetchif.cgi*", "text/html", no_cache, NULL, do_fetchif, do_auth, 1, 0, 0},
 #ifdef HAVE_DDLAN
 	{"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL,
 	 1, 0, 0},
