@@ -1285,6 +1285,9 @@ int phy_ethtool_set_eee(struct phy_device *phydev, struct ethtool_eee *data)
 
 	adv = ethtool_adv_to_mmd_eee_adv_t(data->advertised) & cap;
 
+	/* Mask prohibited EEE modes */
+	adv &= ~phydev->eee_broken_modes;
+
 	if (old_adv != adv) {
 		ret = phy_write_mmd(phydev, MDIO_MMD_AN, MDIO_AN_EEE_ADV, adv);
 		if (ret < 0)
