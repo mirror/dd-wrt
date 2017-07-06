@@ -85,6 +85,8 @@
 #include <pthread.h>
 #endif
 
+#include <crypt.h>
+
 #define SERVER_NAME "httpd"
 #define PROTOCOL "HTTP/1.0"
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
@@ -162,7 +164,9 @@ static int numthreads = 0;
 
 #ifndef HAVE_MICRO
 
+#ifdef __UCLIBC__
 pthread_mutex_t crypt_mutex;
+#endif
 pthread_mutex_t httpd_mutex;
 pthread_mutex_t input_mutex;
 #endif
@@ -202,7 +206,9 @@ static int initialize_listen_socket(usockaddr * usaP)
 static int auth_check(webs_t conn_fp)
 {
 #ifndef HAVE_MICRO
+#ifdef __UCLIBC__
 	pthread_mutex_lock(&crypt_mutex);
+#endif
 #endif
 	char *authinfo;
 	unsigned char *authpass;
@@ -236,12 +242,22 @@ static int auth_check(webs_t conn_fp)
 
 	char *enc1;
 	char *enc2;
+#ifdef __UCLIBC__
 	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
+#else
+	struct crypt_data data;
+	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, &data);
+#endif
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		goto out;
 	}
 	char dummy[128];
+#ifdef __UCLIBC__
 	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
+#else
+	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, &data);
+#endif
+
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		while (wfgets(dummy, 64, conn_fp) > 0) {
@@ -253,7 +269,9 @@ static int auth_check(webs_t conn_fp)
       out:;
 	free(authinfo);
 #ifndef HAVE_MICRO
+#ifdef __UCLIBC__
 	pthread_mutex_unlock(&crypt_mutex);
+#endif
 #endif
 
 	return ret;
@@ -1215,7 +1233,9 @@ int main(int argc, char **argv)
 	const char *pers = "ssl_server";
 #endif
 #ifndef HAVE_MICRO
+#ifdef __UCLIBC__
 	pthread_mutex_init(&crypt_mutex, NULL);
+#endif
 	pthread_mutex_init(&httpd_mutex, NULL);
 	pthread_mutex_init(&input_mutex, NULL);
 #endif
