@@ -84,12 +84,12 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	chdir("/www");
 }
 
-void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query)
+void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 	if (wp->restore_ret != 0)
-		do_ej(METHOD_GET, handler, "Fail.asp", wp, NULL);
+		do_ej(METHOD_GET, handler, "Fail.asp", wp);
 	else
-		do_ej(METHOD_GET, handler, "Success_rest.asp", wp, NULL);
+		do_ej(METHOD_GET, handler, "Success_rest.asp", wp);
 
 	websDone(wp, 200);
 
@@ -103,7 +103,7 @@ void sr_config_cgi(unsigned char method, struct mime_handler *handler, char *pat
 	}
 }
 
-void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query)
+void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 
 #ifdef HAVE_REGISTER
@@ -112,7 +112,7 @@ void nv_file_out(unsigned char method, struct mime_handler *handler, char *path,
 	}
 #endif
 	nvram_backup("/tmp/nvrambak.bin");
-	do_file_attach(handler, "/tmp/nvrambak.bin", wp, query, "nvrambak.bin");
+	do_file_attach(handler, "/tmp/nvrambak.bin", wp, "nvrambak.bin");
 	unlink("/tmp/nvrambak.bin");
 	return;
 }
@@ -180,8 +180,8 @@ void td_file_in(char *url, webs_t wp, int len, char *boundary)	//load and set tr
 	nvram_commit();
 }
 
-void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp, char *query)
+void td_config_cgi(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
-	do_ej(METHOD_GET, handler, "Traff_admin.asp", wp, NULL);
+	do_ej(METHOD_GET, handler, "Traff_admin.asp", wp);
 	websDone(wp, 200);
 }

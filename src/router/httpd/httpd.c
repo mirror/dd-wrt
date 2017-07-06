@@ -230,8 +230,6 @@ static int auth_check(webs_t conn_fp)
 
 	char *crypt(const char *, const char *);
 
-	char buf1[36];
-	char buf2[36];
 	char *enc1;
 	char *enc2;
 	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
@@ -437,7 +435,7 @@ static int match_one(const char *pattern, int patternlen, const char *string)
 	return 0;
 }
 
-static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attach)	//jimmy, https, 8/4/2003
+static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, char *attach)	//jimmy, https, 8/4/2003
 {
 
 	size_t len;
@@ -471,16 +469,16 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 
 void
 //do_file(char *path, FILE *stream)
-do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)	//jimmy, https, 8/4/2003
+do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, query, NULL);
+	do_file_2(handler, path, stream, NULL);
 }
 
-void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment)	//jimmy, https, 8/4/2003
+void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment)	//jimmy, https, 8/4/2003
 {
 
-	do_file_2(handler, path, stream, query, attachment);
+	do_file_2(handler, path, stream, attachment);
 }
 
 static int check_connect_type(webs_t wp)
@@ -522,7 +520,6 @@ int ias_sid_valid(webs_t wp);
 static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
-	char *query;
 	char *cur;
 	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent, *language;
 	char *cp;
@@ -889,19 +886,6 @@ static void *handle_request(void *arg)
 				file = "index.asp";
 	}
 #endif
-	if (strncmp(file, "bigfile.bin", 11)) {
-		/* extract url args if present */
-		query = strchr(file, '?');
-		if (query) {
-			//see token length in createpageToken
-			char token[16] = "0";
-			strncpy(token, &query[1], sizeof(token));
-			nvram_set("token", token);
-			*query++ = 0;
-		} else {
-			nvram_seti("token", 0);
-		}
-	}
 	int changepassword = 0;
 #ifdef HAVE_REGISTER
 	if (!conn_fp->isregistered_real) {
@@ -1026,7 +1010,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (handler->output && file_found) {
-				handler->output(method_type, handler, file, conn_fp, query);
+				handler->output(method_type, handler, file, conn_fp);
 			} else {
 				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 			}

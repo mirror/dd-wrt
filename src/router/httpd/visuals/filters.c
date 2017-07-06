@@ -833,7 +833,7 @@ void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 
 	D("ej_filter-init");
 	if (f_id)		// for first time enter this page and don't press apply.
-		wp->filter_id = f_id;
+		wp->filter_id = atoi(f_id);
 	else
 		wp->filter_id = 1;
 

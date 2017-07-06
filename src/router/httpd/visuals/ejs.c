@@ -60,7 +60,7 @@ char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
 
-void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query) = NULL;	// jimmy, 
+void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream) = NULL;	// jimmy, 
 									// https, 
 									// 8/4/2003
 int (*ejArgs) (int argc, char_t ** argv, char_t * fmt, ...) = NULL;
@@ -847,8 +847,6 @@ void ej_get_mtu(webs_t wp, int argc, char_t ** argv)
 }
 
 void ej_show_forward(webs_t wp, int argc, char_t ** argv)
-// ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
-// char_t *url, char_t *path, char_t *query)
 {
 	int i;
 	char *count;
@@ -882,8 +880,6 @@ void ej_show_forward(webs_t wp, int argc, char_t ** argv)
 }
 
 void ej_show_forward_spec(webs_t wp, int argc, char_t ** argv)
-// ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
-// char_t *url, char_t *path, char_t *query)
 {
 	int i;
 	char *count;
@@ -1116,7 +1112,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 		}
 		for (i = 0; i < resultcount; i++) {
 			sprintf(buf, "%s/%s", directories[idx], result[i]);
-			do_ej(METHOD_GET, NULL, buf, wp, NULL);
+			do_ej(METHOD_GET, NULL, buf, wp);
 		}
 		for (i = 0; i < resultcount; i++) {
 			free(result[i]);
