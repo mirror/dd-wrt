@@ -284,9 +284,15 @@ void do_ej_file(FILE * fp, int len, webs_t stream)
 #include "webs.h"
 #include "html.c"
 
-FILE *getWebsFile(char *path)
+FILE *getWebsFile(char *path2)
 {
 	FILE *web;
+
+	char *path = strdup(path2);
+	char *query = strchr(path, '?');
+	if (query)
+		*query++ = 0;
+
 	cprintf("opening %s\n", path);
 	int i = 0;
 	unsigned int curoffset = 0;
@@ -296,9 +302,10 @@ FILE *getWebsFile(char *path)
 			/* to prevent stack overwrite problems */
 			web = fopen("/etc/www", "rb");
 			if (web == NULL)
-				return NULL;
+				goto err;
 			fseek(web, curoffset, SEEK_SET);
 			cprintf("found %s\n", path);
+			free(path);
 			return web;
 		}
 		curoffset += (websRomPageIndex[i].size - WEBSOFFSET);
@@ -306,13 +313,20 @@ FILE *getWebsFile(char *path)
 	}
 	cprintf("not found %s\n", path);
 
+err:
+	free(path);
 	return NULL;
 }
 
-int getWebsFileLen(char *path)
+int getWebsFileLen(char *path2)
 {
 	unsigned int len = 0;
 	int i = 0;
+	char *path = strdup(path2);
+	char *query = strchr(path, '?');
+	if (query)
+		*query++ = 0;
+
 	while (websRomPageIndex[i].path != NULL) {
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			len = websRomPageIndex[i].size - WEBSOFFSET;

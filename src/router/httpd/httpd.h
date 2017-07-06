@@ -148,7 +148,7 @@ extern void set_cgi(webs_t wp, char *name, char *value);
 
 /* Regular file handler */
 extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
-extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream,char *attachment);
+extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 extern void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 
 /* GoAhead 2.1 compatibility */

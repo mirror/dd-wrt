@@ -1926,14 +1926,14 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 	char sname[128];
 	int qnum;
 	int i = 1;
-	char *query = strchr(url,'?');
+	char *query = strchr(url, '?');
 	if (query == NULL || strlen(query) == 0)
 		qnum = 1;
 	else
 		qnum = atoi(query);
 
 	if (qnum < 0)
-	    qnum = 1;
+		qnum = 1;
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
 			FILE *fp = popen(sname, "rb");
@@ -1959,7 +1959,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	char buffer[256];
 	char querybuffer[32];
 
-	char *query = strchr(url,'?');
+	char *query = strchr(url, '?');
 
 	if (query == NULL || strlen(query) == 0)
 		return;
@@ -2528,7 +2528,7 @@ struct mime_handler mime_handlers[] = {
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0,0},
 	{"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0, 0},
 #ifdef HAVE_LANGUAGE
-	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,NULL, 0, 0, 0},
+	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0, 0},
 #endif
 #ifdef HAVE_BUFFALO
 	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0, 0},
