@@ -200,6 +200,7 @@ static int initialize_listen_socket(usockaddr * usaP)
 static int auth_check(webs_t conn_fp)
 {
 	char *authinfo;
+	char cryptbuf[128];
 	unsigned char *authpass;
 	int l;
 	int ret = 0;
@@ -232,13 +233,13 @@ static int auth_check(webs_t conn_fp)
 
 	char *enc1;
 	char *enc2;
-	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
-	if (strcmp(enc1, conn_fp->auth_userid)) {
+	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, (struct crypt_data *)cryptbuf);
+	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		goto out;
 	}
 	char dummy[128];
-	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
-	if (strcmp(enc2, conn_fp->auth_passwd)) {
+	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, (struct crypt_data *)cryptbuf);
+	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		while (wfgets(dummy, 64, conn_fp) > 0) {
 			//fprintf(stderr, "flushing %s\n", dummy);
