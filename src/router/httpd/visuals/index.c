@@ -37,11 +37,11 @@ void ej_show_index_setting(webs_t wp, int argc, char_t ** argv)
 	if (type == NULL)
 		type = nvram_safe_get("wan_proto");
 #ifdef HAVE_DSL_CPE_CONTROL
-	do_ej(METHOD_GET, NULL, "index_atm.asp", wp, NULL);
+	do_ej(METHOD_GET, NULL, "index_atm.asp", wp);
 #endif
 	char ejname[32];
 	snprintf(ejname, 31, "index_%s.asp", type);
-	do_ej(METHOD_GET, NULL, ejname, wp, NULL);
+	do_ej(METHOD_GET, NULL, ejname, wp);
 }
 
 void ej_get_wl_max_channel(webs_t wp, int argc, char_t ** argv)
@@ -108,6 +108,6 @@ void ej_atmsettings(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_DSL_CPE_CONTROL
 	char ejname[32];
 	snprintf(ejname, 31, "index_%s_atm.asp", argv[0]);
-	do_ej(METHOD_GET, NULL, ejname, wp, NULL);
+	do_ej(METHOD_GET, NULL, ejname, wp);
 #endif
 }

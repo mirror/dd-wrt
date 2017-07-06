@@ -4,9 +4,9 @@
 struct radiususer {
 	unsigned int fieldlen;
 	unsigned int usersize;
-	unsigned char *user;
+	char *user;
 	unsigned int passwordsize;
-	unsigned char *passwd;
+	char *passwd;
 	unsigned int downstream;
 	unsigned int upstream;
 	unsigned int expiration;
@@ -22,9 +22,9 @@ struct radiusdb {
 struct radiusclient {
 	unsigned int fieldlen;
 	unsigned int clientsize;
-	unsigned char *client;
+	char *client;
 	unsigned int passwordsize;
-	unsigned char *passwd;
+	char *passwd;
 //more fields can be added in future
 } __attribute__((packed));
 

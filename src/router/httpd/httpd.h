@@ -120,7 +120,7 @@ struct mime_handler {
 	char *mime_type;
 	char *extra_header;
 	void (*input) (char *path, webs_t stream, int len, char *boundary);
-	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);
+	void (*output) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);
 	int (*auth) (webs_t wp, int (*auth_check) (webs_t conn_fp));
 	unsigned char send_headers;
 	unsigned char handle_options;
@@ -147,8 +147,8 @@ extern char *get_cgi(webs_t wp, char *name);
 extern void set_cgi(webs_t wp, char *name, char *value);
 
 /* Regular file handler */
-extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query);
-extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *query, char *attachment);
+extern void do_file(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
+extern void do_file_attach(struct mime_handler *handler, char *path, webs_t stream,char *attachment);
 extern void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
 
 /* GoAhead 2.1 compatibility */
@@ -178,7 +178,7 @@ struct Webenvironment {
 	char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
 	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
 	struct wl_client_mac *Pwl_client_macs;
-	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream, char *query);	// jimmy, https, 8/4/2003
+	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
 	int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
 	FILE *(*PgetWebsFile) (char *path);
 	int (*Pwfputs) (char *buf, webs_t fp);
@@ -189,7 +189,7 @@ struct Webenvironment {
 };
 
 #define websSetVar(wp, var, value) set_cgi(wp, var, value)
-#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(METHOD_GET, path, wp,""); fflush(wp); 1; })
+#define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path) ({ do_ej(METHOD_GET, path, wp,""); fflush(wp); 1; })
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = wfwrite(buf, 1, nChars, wp); wfflush(wp); TMPVAR; })
 #define websWriteDataNonBlock websWriteData
 #define a_assert(a)
@@ -201,7 +201,7 @@ extern int getWebsFileLen(char *path);
 #ifndef VALIDSOURCE
 extern FILE *getWebsFile(char *path);
 extern int ejArgs(int argc, char_t ** argv, char_t * fmt, ...);
-extern void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query);
+extern void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_t stream);
 extern void do_ej_buffer(char *buffer, webs_t stream);
 extern int websWrite(webs_t wp, char *fmt, ...);
 #endif
