@@ -1930,7 +1930,7 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 	if (query == NULL || strlen(query) == 0)
 		qnum = 1;
 	else
-		qnum = atoi(query);
+		qnum = atoi(query + 1);
 
 	if (qnum < 0)
 		qnum = 1;
@@ -1963,6 +1963,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 
 	if (query == NULL || strlen(query) == 0)
 		return;
+	query++;
 
 	strncpy(querybuffer, query, 30);
 	strcat(querybuffer, ":");
@@ -2236,7 +2237,7 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 	int offset = 0;
 	int count = 0;
 	char *query = strchr(url, '?');
-	if (!query || sscanf(query, "%d", &offset) != 1)
+	if (!query || sscanf(query + 1, "%d", &offset) != 1)
 		return;
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
@@ -2321,7 +2322,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	unsigned long totin = 0;
 	unsigned long totout = 0;
 	char *query = strchr(url, '?');
-	if (!query || sscanf(query, "%u-%u", &month, &year) != 2)
+	if (!query || sscanf(query + 1, "%u-%u", &month, &year) != 2)
 		return;
 	if (month < 1 || month > 12)
 		return;
