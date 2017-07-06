@@ -69,7 +69,7 @@
 
 char *live_translate(const char *tran);
 #ifdef HAVE_BUFFALO
-void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query);
+void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream);
 #endif
 /*
  * Deal with side effects before committing 
@@ -435,7 +435,7 @@ static char *insert(char *ifname, char *index, char *filename)
 }
 
 /* bigfile.bin download method used for benchmarking. use http://x.x.x.x/bigfile.bin?size=FILESIZE to request any filesize you want */
-static void do_bigfile(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_bigfile(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char fs[128];
 	char *temp2;
@@ -525,7 +525,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 
 }
 
-static void do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_filtertable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char ifname[32];
 	char *temp2;
@@ -558,7 +558,7 @@ static void do_filtertable(unsigned char method, struct mime_handler *handler, c
 #ifdef HAVE_FREERADIUS
 #include <radiusdb.h>
 
-static void cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void cert_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	int idx = indexof(path, '/');
 	if (idx < 0)
@@ -566,7 +566,7 @@ static void cert_file_out(unsigned char method, struct mime_handler *handler, ch
 	char *temp2 = &path[idx + 1];
 	char link[128];
 	sprintf(link, "/jffs/etc/freeradius/certs/clients/%s", temp2);
-	do_file_attach(handler, link, stream, NULL, temp2);
+	do_file_attach(handler, link, stream, temp2);
 }
 
 static void show_certfield(webs_t wp, char *title, char *file)
@@ -578,7 +578,7 @@ static void show_certfield(webs_t wp, char *title, char *file)
 		  "value=\\\"\" + sbutton.download + \"\\\" onclick=\\\"window.location.href='/freeradius-certs/%s';\\\" />\");\n//]]>\n</script>\n</div>\n", title, file);
 }
 
-static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_radiuscert(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char buf[128];
 	int idx = indexof(path, '-');
@@ -729,7 +729,7 @@ static void do_radiuscert(unsigned char method, struct mime_handler *handler, ch
 #endif
 
 #ifdef HAVE_ATH9K
-static void do_spectral_scan(unsigned char method, struct mime_handler *handler, char *p, webs_t stream, char *query)
+static void do_spectral_scan(unsigned char method, struct mime_handler *handler, char *p, webs_t stream)
 {
 #define json_cache "/tmp/spectral_scan.json"
 #define json_cache_timeout 2
@@ -796,7 +796,7 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 }
 #endif
 
-static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char *temp2 = NULL;
 	char ifname[32];
@@ -824,7 +824,7 @@ static void do_activetable(unsigned char method, struct mime_handler *handler, c
 	free(temp);
 }
 
-static void do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wds(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -838,7 +838,7 @@ static void do_wds(unsigned char method, struct mime_handler *handler, char *pat
 	free(temp);
 }
 
-static void do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)
+static void do_wireless_adv(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	int idx = indexof(path, '-');
 	if (idx < 0)
@@ -1192,7 +1192,7 @@ static struct gozila_action *handle_gozila_action(char *name, char *type)
 	return NULL;
 }
 
-static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
+static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path)
 {
 	char *submit_button, *submit_type, *next_page;
 	int action = REFRESH;
@@ -1253,21 +1253,21 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 			sprintf(path, "%s.asp", submit_button);
 	}
 	if (!strncmp(path, "WL_FilterTable", 14))
-		do_filtertable(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
 #ifdef HAVE_FREERADIUS
 	else if (!strncmp(path, "FreeRadiusCert", 14))
-		do_radiuscert(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh
 #endif
 	// #ifdef HAVE_MADWIFI
 	else if (!strncmp(path, "WL_ActiveTable", 14))
-		do_activetable(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_activetable(METHOD_GET, NULL, path, wp);	// refresh
 	else if (!strncmp(path, "Wireless_WDS", 12))
-		do_wds(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_wds(METHOD_GET, NULL, path, wp);	// refresh
 	// #endif
 	else if (!strncmp(path, "Wireless_Advanced", 17))
-		do_wireless_adv(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
 	else
-		do_ej(METHOD_GET, NULL, path, wp, NULL);	// refresh
+		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 	websDone(wp, 200);
 
 	wp->generate_key = 0;
@@ -1395,7 +1395,7 @@ static void do_logout(webs_t conn_fp)	// static functions are not exportable,
 	send_authenticate(conn_fp);
 }
 
-static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char_t * query)
+static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, char_t * url, char_t * path, char *query)
 {
 	int action = NOTHING;
 	char *value;
@@ -1415,7 +1415,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	if (value && !strcmp(value, "gozila_cgi")) {
 		fprintf(stderr, "[APPLY] %s %s %s\n", websGetVar(wp, "submit_button", NULL), websGetVar(wp, "submit_type", NULL), websGetVar(wp, "call", NULL));
-		gozila_cgi(wp, urlPrefix, webDir, arg, url, path, query);
+		gozila_cgi(wp, urlPrefix, webDir, arg, url, path);
 		return 1;
 	}
 
@@ -1569,7 +1569,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	/** GUI Logout **/// Experimental, not work yet ... 
 	else if (!strncmp(value, "Logout", 6)) {
-		do_ej(METHOD_GET, NULL, "Logout.asp", wp, NULL);
+		do_ej(METHOD_GET, NULL, "Logout.asp", wp);
 		websDone(wp, 200);
 		do_logout(wp);
 		return 1;
@@ -1608,23 +1608,23 @@ footer:
 		}
 
 		if (!strncmp(path, "WL_FilterTable", 14))
-			do_filtertable(METHOD_GET, NULL, path, wp, NULL);	// refresh
+			do_filtertable(METHOD_GET, NULL, path, wp);	// refresh
 #ifdef HAVE_FREERADIUS
 		else if (!strncmp(path, "FreeRadiusCert", 14))
-			do_radiuscert(METHOD_GET, NULL, path, wp, NULL);	// refresh      
+			do_radiuscert(METHOD_GET, NULL, path, wp);	// refresh      
 #endif
 		else if (!strncmp(path, "WL_ActiveTable", 14))
-			do_activetable(METHOD_GET, NULL, path, wp, NULL);	// refresh      
+			do_activetable(METHOD_GET, NULL, path, wp);	// refresh      
 		else if (!strncmp(path, "Wireless_WDS", 12))
-			do_wds(METHOD_GET, NULL, path, wp, NULL);	// refresh
+			do_wds(METHOD_GET, NULL, path, wp);	// refresh
 		else if (!strncmp(path, "Wireless_Advanced", 17))
-			do_wireless_adv(METHOD_GET, NULL, path, wp, NULL);	// refresh
+			do_wireless_adv(METHOD_GET, NULL, path, wp);	// refresh
 		else
-			do_ej(METHOD_GET, NULL, path, wp, NULL);	// refresh
+			do_ej(METHOD_GET, NULL, path, wp);	// refresh
 		websDone(wp, 200);
 	} else {
 #ifndef HAVE_WRK54G
-		do_ej(METHOD_GET, NULL, "Reboot.asp", wp, NULL);
+		do_ej(METHOD_GET, NULL, "Reboot.asp", wp);
 		websDone(wp, 200);
 #endif
 		// sleep (5);
@@ -1735,7 +1735,7 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 }
 
 #if !defined(HAVE_X86) && !defined(HAVE_MAGICBOX)
-static void do_cfebackup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_cfebackup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	FILE *fp = fopen("/dev/mtd/0", "rb");
 	if (fp) {
@@ -1747,14 +1747,14 @@ static void do_cfebackup(unsigned char method, struct mime_handler *handler, cha
 			putc(getc(fp), out);
 		fclose(out);
 		fclose(fp);
-		do_file_attach(handler, "/tmp/cfe.bin", stream, NULL, "cfe.bin");
+		do_file_attach(handler, "/tmp/cfe.bin", stream, "cfe.bin");
 		unlink("/tmp/cfe.bin");
 	}
 }
 #endif
 
 #ifdef HAVE_PRIVOXY
-static void do_wpad(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_wpad(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	FILE *fp;
 
@@ -1771,17 +1771,14 @@ static void do_wpad(unsigned char method, struct mime_handler *handler, char *ur
 		fclose(fp);
 	}
 
-	do_file_attach(handler, "/tmp/wpad.dat", stream, NULL, "wpad.dat");
+	do_file_attach(handler, "/tmp/wpad.dat", stream, "wpad.dat");
 }
 #endif
 
 #ifdef HAVE_ROUTERSTYLE
-static void do_stylecss(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_stylecss(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *style = nvram_get("router_style");
-
-	if (query != NULL)
-		style = query;
 
 	unsigned int sdata[33];
 	bzero(sdata, sizeof(sdata));
@@ -1890,7 +1887,7 @@ static void do_stylecss(unsigned char method, struct mime_handler *handler, char
 		  sdata[29], sdata[30], sdata[31], sdata[32]);
 }
 
-static void do_stylecss_ie(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_stylecss_ie(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	websWrite(stream, ".submitFooter input {\npadding:.362em .453em;\n}\n"	//
 		  "fieldset {\npadding-top:0;\n}\nfieldset legend {\n"	//
@@ -1898,18 +1895,18 @@ static void do_stylecss_ie(unsigned char method, struct mime_handler *handler, c
 }
 #endif
 #ifdef HAVE_REGISTER
-static void do_trial_logo(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_trial_logo(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 #if defined(HAVE_TRIMAX) || defined(HAVE_MAKSAT) || defined(HAVE_VILIM) || defined(HAVE_TELCOM) || defined(HAVE_WIKINGS) || defined(HAVE_NEXTMEDIA)
-	do_file(method, handler, url, stream, query);
+	do_file(method, handler, url, stream);
 #else
 	if (!stream->isregistered_real) {
-		do_file(method, handler, "style/logo-trial.png", stream, query);
+		do_file(method, handler, "style/logo-trial.png", stream);
 	} else {
 		if (iscpe()) {
-			do_file(method, handler, "style/logo-cpe.png", stream, query);
+			do_file(method, handler, "style/logo-cpe.png", stream);
 		} else {
-			do_file(method, handler, url, stream, query);
+			do_file(method, handler, url, stream);
 		}
 	}
 #endif
@@ -1922,19 +1919,21 @@ static void do_trial_logo(unsigned char method, struct mime_handler *handler, ch
  * do_file ("kromo.css", stream, NULL); else do_file (style, stream, NULL); } 
  */
 
-static void do_mypage(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_mypage(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *snamelist = nvram_safe_get("mypage_scripts");
 	char *next;
 	char sname[128];
 	int qnum;
 	int i = 1;
-
+	char *query = strchr(url,'?');
 	if (query == NULL || strlen(query) == 0)
 		qnum = 1;
 	else
 		qnum = atoi(query);
 
+	if (qnum < 0)
+	    qnum = 1;
 	foreach(sname, snamelist, next) {
 		if (qnum == i) {
 			FILE *fp = popen(sname, "rb");
@@ -1943,7 +1942,7 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 				putc(getc(fp), out);
 			fclose(out);
 			pclose(fp);
-			do_file_attach(handler, "/tmp/mypage.tmp", stream, NULL, "MyPage.asp");
+			do_file_attach(handler, "/tmp/mypage.tmp", stream, "MyPage.asp");
 			unlink("/tmp/mypage.tmp");
 		}
 		i++;
@@ -1953,12 +1952,14 @@ static void do_mypage(unsigned char method, struct mime_handler *handler, char *
 
 }
 
-static void do_fetchif(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_fetchif(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char line[256];
 	int i, llen;
 	char buffer[256];
 	char querybuffer[32];
+
+	char *query = strchr(url,'?');
 
 	if (query == NULL || strlen(query) == 0)
 		return;
@@ -2225,7 +2226,7 @@ char *live_translate(const char *tran)	// todo: add locking to be thread safe
 }
 
 #ifdef HAVE_STATUS_SYSLOG
-static void do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_syslog(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 
 	static const char filename[] = "/var/log/messages";
@@ -2234,7 +2235,8 @@ static void do_syslog(unsigned char method, struct mime_handler *handler, char *
 		charset = strdup(live_translate("lang_charset.set"));
 	int offset = 0;
 	int count = 0;
-	if (sscanf(query, "%d", &offset) != 1)
+	char *query = strchr(url, '?');
+	if (!query || sscanf(query, "%d", &offset) != 1)
 		return;
 
 	websWrite(stream, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n"	//
@@ -2284,7 +2286,7 @@ char *tran_string(char *buf, char *str)
 	return buf;
 }
 
-static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char buf[128];
 	static char *charset = NULL;
@@ -2318,8 +2320,8 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 	unsigned long max = 5, smax = 5, f = 1;
 	unsigned long totin = 0;
 	unsigned long totout = 0;
-
-	if (sscanf(query, "%u-%u", &month, &year) != 2)
+	char *query = strchr(url, '?');
+	if (!query || sscanf(query, "%u-%u", &month, &year) != 2)
 		return;
 	if (month < 1 || month > 12)
 		return;
@@ -2417,7 +2419,7 @@ static void do_ttgraph(unsigned char method, struct mime_handler *handler, char 
 
 }
 
-static void ttraff_backup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+static void ttraff_backup(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	FILE *out = fopen("/tmp/traffdata.bak", "wb");
 	fprintf(out, "TRAFF-DATA\n");
@@ -2426,14 +2428,13 @@ static void ttraff_backup(unsigned char method, struct mime_handler *handler, ch
 		putc(getc(fp), out);
 	pclose(fp);
 	fclose(out);
-	do_file_attach(handler, "/tmp/traffdata.bak", stream, NULL, "traffdata.bak");
+	do_file_attach(handler, "/tmp/traffdata.bak", stream, "traffdata.bak");
 	unlink("/tmp/traffdata.bak");
 }
 
-static void do_apply_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *q)
+static void do_apply_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 	char *path, *query;
-
 	if (stream->post == 1) {
 		query = stream->post_buf;
 		path = url;
@@ -2455,7 +2456,7 @@ extern int getdevicecount(void);
 #endif
 
 #ifdef HAVE_LANGUAGE
-static void do_language(unsigned char method, struct mime_handler *handler, char *path, webs_t stream, char *query)	// jimmy, 
+static void do_language(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)	// jimmy, 
 	    // https, 
 	    // 8/4/2003
 {
@@ -2466,7 +2467,7 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 	strncpy(prefix, path, strlen(path) - strlen("lang_pack/language.js"));
 
 	asprintf(&lang, "%s%s", prefix, langname);
-	do_file(method, handler, lang, stream, NULL);
+	do_file(method, handler, lang, stream);
 
 	free(lang);
 	free(prefix);
@@ -2527,8 +2528,7 @@ struct mime_handler mime_handlers[] = {
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0,0},
 	{"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0, 0},
 #ifdef HAVE_LANGUAGE
-	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,
-	 NULL, 0, 0, 0, 0},
+	{"lang_pack/language.js", "text/javascript", NULL, NULL, do_language,NULL, 0, 0, 0},
 #endif
 #ifdef HAVE_BUFFALO
 	{"intatstart/lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL, 0, 0, 0},
@@ -2765,7 +2765,7 @@ int httpd_filter_name(char *old_name, char *new_name, size_t size, int type)
 }
 
 #ifdef HAVE_BUFFALO
-void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)
+void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
 /*
 #ifdef HAVE_MADWIFI

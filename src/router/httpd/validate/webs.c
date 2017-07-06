@@ -131,7 +131,7 @@ void delete_pptp(webs_t wp)
 	char *iface;
 	iface = websGetVar(wp, "if_del", NULL);
 	if (iface)
-		kill(iface, SIGTERM);
+		kill(atoi(iface), SIGTERM);
 }
 #endif
 void save_wifi(webs_t wp)
@@ -348,7 +348,7 @@ void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 	char *f_id = websGetVar(wp, "f_id", NULL);
 
 	if (f_id)
-		wp->filter_id = f_id;
+		wp->filter_id = atoi(f_id);
 	else
 		wp->filter_id = 1;
 

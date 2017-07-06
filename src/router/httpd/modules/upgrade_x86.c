@@ -32,19 +32,18 @@
 
 #define MIN_BUF_SIZE    4096
 #define CODE_PATTERN_ERROR 9999
-static int upgrade_ret;
 
 void
 // do_upgrade_cgi(char *url, FILE *stream)
-do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream, char *query)	// jimmy, https,
+do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)	// jimmy, https,
 							// 8/6/2003
 {
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
-	if (upgrade_ret)
-		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream, NULL);
+	if (handler->upgrade_ret)
+		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
-		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream, NULL);
+		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
 	fprintf(stderr, "websdone\n");
 
 	websDone(stream, 200);
@@ -53,13 +52,13 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 	/*
 	 * Reboot if successful 
 	 */
-	if (upgrade_ret == 0) {
+	if (handler->upgrade_ret == 0) {
 		sleep(4);
 		eval("umount", "/usr/local");
 		sys_reboot();
 	}
 #else
-	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream, NULL);
+	do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	websDone(stream, 200);
 #endif
 }
@@ -280,7 +279,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	char buf[1024];
 	int type = 0;
 
-	upgrade_ret = EINVAL;
+	handler->upgrade_ret = EINVAL;
 
 	// Let below files loaded to memory
 	// To avoid the successful screen is blank after web upgrade.
@@ -324,7 +323,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
-	upgrade_ret = sys_upgrade(NULL, stream, &len, type);
+	handler->upgrade_ret = sys_upgrade(NULL, stream, &len, type);
 	fprintf(stderr, "core upgrade done() %d\n", len);
 	/*
 	 * Restore factory original settings if told to. This will also cause a
