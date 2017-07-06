@@ -161,6 +161,8 @@ static void *handle_request(void *conn_fp);
 static int numthreads = 0;
 
 #ifndef HAVE_MICRO
+
+pthread_mutex_t crypt_mutex;
 pthread_mutex_t httpd_mutex;
 pthread_mutex_t input_mutex;
 #endif
@@ -199,24 +201,27 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 static int auth_check(webs_t conn_fp)
 {
+#ifndef HAVE_MICRO
+	pthread_mutex_lock(&crypt_mutex);
+#endif
 	char *authinfo;
-	char cryptbuf[128];
 	unsigned char *authpass;
 	int l;
 	int ret = 0;
+	authinfo = malloc(500);
 	/* Is this directory unprotected? */
 	if (!strlen(conn_fp->auth_passwd)) {
 		/* Yes, let the request go through. */
-		return 1;
+		ret = 1;
+		goto out;
 	}
 
 	/* Basic authorization info? */
 	if (!conn_fp->authorization || strncmp(conn_fp->authorization, "Basic ", 6) != 0) {
 		ct_syslog(LOG_INFO, httpd_level, "Authentication fail");
 
-		return 0;
+		goto out;
 	}
-	authinfo = malloc(500);
 	bzero(authinfo, 500);
 	/* Decode it. */
 	l = b64_decode(&(conn_fp->authorization[6]), (unsigned char *)authinfo, 499);
@@ -229,16 +234,14 @@ static int auth_check(webs_t conn_fp)
 	}
 	*authpass++ = '\0';
 
-	char *crypt_r(const char *, const char *, struct crypt_data *data);
-
 	char *enc1;
 	char *enc2;
-	enc1 = crypt_r(authinfo, (const char *)conn_fp->auth_userid, (struct crypt_data *)cryptbuf);
+	enc1 = crypt(authinfo, (const char *)conn_fp->auth_userid);
 	if (!enc1 || strcmp(enc1, conn_fp->auth_userid)) {
 		goto out;
 	}
 	char dummy[128];
-	enc2 = crypt_r(authpass, (const char *)conn_fp->auth_passwd, (struct crypt_data *)cryptbuf);
+	enc2 = crypt(authpass, (const char *)conn_fp->auth_passwd);
 	if (!enc2 || strcmp(enc2, conn_fp->auth_passwd)) {
 		syslog(LOG_INFO, "httpd login failure - bad passwd !\n");
 		while (wfgets(dummy, 64, conn_fp) > 0) {
@@ -249,6 +252,9 @@ static int auth_check(webs_t conn_fp)
 	ret = 1;
       out:;
 	free(authinfo);
+#ifndef HAVE_MICRO
+	pthread_mutex_unlock(&crypt_mutex);
+#endif
 
 	return ret;
 }
@@ -1209,6 +1215,7 @@ int main(int argc, char **argv)
 	const char *pers = "ssl_server";
 #endif
 #ifndef HAVE_MICRO
+	pthread_mutex_init(&crypt_mutex, NULL);
 	pthread_mutex_init(&httpd_mutex, NULL);
 	pthread_mutex_init(&input_mutex, NULL);
 #endif
