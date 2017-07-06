@@ -229,7 +229,7 @@ static int auth_check(webs_t conn_fp)
 	}
 	*authpass++ = '\0';
 
-	char *crypt(const char *, const char *);
+	char *crypt_r(const char *, const char *, struct crypt_data *data);
 
 	char *enc1;
 	char *enc2;
