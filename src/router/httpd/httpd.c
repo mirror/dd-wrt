@@ -393,12 +393,22 @@ static int match(const char *pattern, const char *string)
 {
 	const char *or;
 
+	char *path = strdup(string);
+	char *query = strchr(path, '?');
+	if (query)
+		*query++ = 0;
+
 	for (;;) {
 		or = strchr(pattern, '|');
-		if (or == (char *)0)
-			return match_one(pattern, strlen(pattern), string);
-		if (match_one(pattern, or - pattern, string))
+		if (or == (char *)0) {
+			int ret = match_one(pattern, strlen(pattern), path);
+			free(path);
+			return ret;
+		}
+		if (match_one(pattern, or - pattern, path)) {
+			free(path);
 			return 1;
+		}
 		pattern = or + 1;
 	}
 }
