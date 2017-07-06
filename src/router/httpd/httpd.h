@@ -74,7 +74,6 @@ typedef struct {
 	unsigned char *s_filebuffer;
 	int s_filecount;
 	int s_filelen;
-	int auth_fail;
 	char label[64];
 	char my_next_page[30];
 	int upgrade_ret;
