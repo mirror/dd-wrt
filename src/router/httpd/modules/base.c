@@ -1965,8 +1965,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 		return;
 	query++;
 
-	strncpy(querybuffer, query, 30);
-	strcat(querybuffer, ":");
+	snprintf(querybuffer,sizeof(querybuffer),"%s:",query);
 
 	int strbuffer = 0;
 	time_t tm;

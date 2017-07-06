@@ -965,7 +965,6 @@ static void *handle_request(void *arg)
 #else
 					if (!result) {
 #endif
-						conn_fp->auth_fail = 0;
 						send_authenticate(conn_fp);
 						goto out;
 					}
@@ -999,15 +998,9 @@ static void *handle_request(void *arg)
 				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
 				goto out;
 			}
-			if (conn_fp->auth_fail == 1) {
-				send_authenticate(conn_fp);
-				conn_fp->auth_fail = 0;
-				goto out;
-			} else {
-				if (handler->output != do_file)
-					if (handler->send_headers)
-						send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
-			}
+			if (handler->output != do_file)
+				if (handler->send_headers)
+					send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
 			// check for do_file handler and check if file exists
 			file_found = 1;
 			if (handler->output == do_file) {
