@@ -334,6 +334,7 @@ int getWebsFileLen(char *path2)
 		}
 		i++;
 	}
+	free(path);
 	return len;
 }
 
