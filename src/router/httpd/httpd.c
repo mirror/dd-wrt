@@ -966,7 +966,7 @@ static void *handle_request(void *arg)
 		if (match(handler->pattern, file)) {
 
 #ifndef HAVE_MICRO
-			if (handler->input || handler->singlethread) {
+			if (handler->input) {
 				pthread_mutex_lock(&input_mutex);
 			}
 #endif
@@ -1054,7 +1054,7 @@ static void *handle_request(void *arg)
       out:;
 
 #ifndef HAVE_MICRO
-	if (handler->input || handler->singlethread)
+	if (handler->input)
 		pthread_mutex_unlock(&input_mutex);
 #endif
 
