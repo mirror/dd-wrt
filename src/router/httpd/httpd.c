@@ -555,13 +555,13 @@ int ias_sid_valid(webs_t wp);
 static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
-	char *cur;
+	char *cur = NULL;
 	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent, *language;
-	char *cp;
+	char *cp = NULL;
 	char *file = NULL;
 	FILE *exec;
 	int len;
-	struct mime_handler *handler;
+	struct mime_handler *handler = NULL;;
 	int cl = 0, count, flags;
 	char *line;
 	long method_type;
@@ -1087,8 +1087,9 @@ static void *handle_request(void *arg)
 #endif
 
 #ifndef HAVE_MICRO
-	if (handler->input)
-		pthread_mutex_unlock(&input_mutex);	//releases barrier
+	if(handler)
+		if (handler->input)
+			pthread_mutex_unlock(&input_mutex);	//releases barrier
 #endif
 
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
@@ -1536,6 +1537,7 @@ int main(int argc, char **argv)
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 		pthread_attr_destroy(&attr);
+		free(thread);
 
 //              conn_fp->do_ssl = do_ssl;
 //              FORK(handle_request(conn_fp));
@@ -1792,7 +1794,7 @@ int wfflush(webs_t wp)
 
 int wfclose(webs_t wp)
 {
-	int ret;
+	int ret = 0;
 	FILE *fp = wp->fp;
 
 #ifdef HAVE_HTTPS
