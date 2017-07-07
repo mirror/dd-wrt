@@ -225,12 +225,12 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 						break;
 					*end++ = '\0';
 					/* Call function */
-					webs_t clone = (webs_t)malloc(sizeof(webs));
+					webs clone;
 					memcpy(clone, stream, sizeof(webs));
-					global_handle = call(global_handle, func, clone);
-	    				stream->generate_key = clone->generate_key;
-					stream->clone_wan_mac = clone->clone_wan_mac;
-					stream->filter_id = clone->filter_id;
+					global_handle = call(global_handle, func, &clone);
+	    				stream->generate_key = clone.generate_key;
+					stream->clone_wan_mac = clone.clone_wan_mac;
+					stream->filter_id = clone.filter_id;
 					free(clone);
 					// restore pointers
 				}
