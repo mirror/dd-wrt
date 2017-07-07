@@ -500,10 +500,9 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	char *dev = getWifiDeviceName(wl);
 	if (dev && !strcmp(dev, "MT7615 802.11ac"))
 		fprintf(fp, "E2pAccessMode=2\n");
-	else
-	if (idx == 1)
+	else if (idx == 1)
 		fprintf(fp, "E2pAccessMode=2\n");
-	
+
 #ifdef BUFFALO_JP
 	fprintf(fp, "CountryRegion=5\n");
 	fprintf(fp, "CountryRegionABand=7\n");
@@ -1159,16 +1158,16 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	fprintf(fp, "HT_STBC=1\n");
 	if (has_ac(refif)) {
 		if (has_ac(refif) && has_5ghz(refif)) {
-		fprintf(fp, "HT_LDPC=1\n");
-		fprintf(fp, "VHT_STBC=1\n");
-		fprintf(fp, "VHT_LDPC=1\n");
-		fprintf(fp, "VHT_SGI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
+			fprintf(fp, "HT_LDPC=1\n");
+			fprintf(fp, "VHT_STBC=1\n");
+			fprintf(fp, "VHT_LDPC=1\n");
+			fprintf(fp, "VHT_SGI=%d\n", nvram_nmatch("1", "wl%d_shortgi", idx) ? 1 : 0);
 		}
 		fprintf(fp, "G_BAND_256QAM=%d\n", nvram_nmatch("1", "wl%d_turbo_qam", idx) ? 1 : 0);
 		if (has_ac(refif) && has_5ghz(refif)) {
-		fprintf(fp, "ITxBfEn=%d\n", 1 /*? nvram_nmatch("1", "wl%d_itxbf", idx) ? 1 : 0 */ );
-		fprintf(fp, "ETxBfEnCond=%d\n", 1 /*? nvram_nmatch("1", "wl%d_txbf", idx) ? 1 : 0 */ );
-		fprintf(fp, "MUTxRxEnable=%d\n", 1 /* ? nvram_nmatch("1", "wl%d_mubf", idx) ? 1 : 0 */ );
+			fprintf(fp, "ITxBfEn=%d\n", 1 /*? nvram_nmatch("1", "wl%d_itxbf", idx) ? 1 : 0 */ );
+			fprintf(fp, "ETxBfEnCond=%d\n", 1 /*? nvram_nmatch("1", "wl%d_txbf", idx) ? 1 : 0 */ );
+			fprintf(fp, "MUTxRxEnable=%d\n", 1 /* ? nvram_nmatch("1", "wl%d_mubf", idx) ? 1 : 0 */ );
 		}
 	}
 	fclose(fp);
