@@ -1861,20 +1861,20 @@ int internal_getRouterBrand()
 	setRouter("Linksys E1700 / N300");
 	return ROUTER_BOARD_E1700;
 #elif HAVE_DIR860
-	FILE *fp = fopen("/dev/mtdblock3","rb");
+	FILE *fp = fopen("/dev/mtdblock3", "rb");
 	if (fp) {
-		fseek(fp,64,SEEK_SET);
+		fseek(fp, 64, SEEK_SET);
 		char sign[32];
-		fread(&sign,32,1,fp);
+		fread(&sign, 32, 1, fp);
 		fclose(fp);
-		if (!memcmp(sign, "DIR-882",7)) {
+		if (!memcmp(sign, "DIR-882", 7)) {
 			setRouter("Dlink DIR-882 A1");
 			return ROUTER_DIR882;
-		}	
-		if (!memcmp(sign, "DIR-878",7)) {
+		}
+		if (!memcmp(sign, "DIR-878", 7)) {
 			setRouter("Dlink DIR-878 A1");
 			return ROUTER_DIR882;
-		}	
+		}
 	}
 	setRouter("Dlink DIR-860L B1");
 	return ROUTER_DIR860LB1;
@@ -5814,12 +5814,10 @@ int led_control(int type, int act)
 #endif
 		break;
 		/*
-		DIR 882 
-		power LED red diag = 8 inv, green 16 inv
-		
-			
-		
-		*/
+		   DIR 882 
+		   power LED red diag = 8 inv, green 16 inv
+
+		 */
 	case ROUTER_BOARD_W502U:
 		connected_gpio = 0x10d;
 		break;
