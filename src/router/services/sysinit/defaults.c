@@ -3630,7 +3630,9 @@ struct nvram_param srouter_defaults[] = {
 	{"radius_common", "none"},
 	{"radius_passphrase", "none"},
 #endif
-	{"ptoken", "0"},
+#ifdef HAVE_SPEEDCHECKER
+	{"shownf", "1"},
+#endif
 	{0, 0}
 };
 #else
