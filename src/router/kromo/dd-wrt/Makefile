@@ -822,6 +822,15 @@ endif
 ifneq ($(CONFIG_SPEEDCHECKER),y)
 	rm -f $(INSTALLDIR)/www/Speedchecker.asp
 endif
+
+ifeq ($(CONFIG_SPEEDCHECKER),y)
+	-install $(TOP)/private/shownf/icons/shownf-sc.png $(INSTALLDIR)/www/images/shownf-sc.png
+endif
+
+ifeq ($(CONFIG_DNSCRYPT),y)
+	-install $(TOP)/private/shownf/icons/shownf-dnscrypt.png $(INSTALLDIR)/www/images/sc_icon_32x32.png
+endif
+
 ifneq ($(CONFIG_WEBSERVER),y)
 	-rm -f $(INSTALLDIR)/www/Lighttpd.asp
 	rm -f $(INSTALLDIR)/www/help/HLighttpd.asp
