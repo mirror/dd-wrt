@@ -50,7 +50,7 @@ void start_jffs2(void)
 #if defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
-#elif defined(HAVE_MVEBU) || defined(HAVE_R9000) 
+#elif defined(HAVE_MVEBU) || defined(HAVE_R9000)
 			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);

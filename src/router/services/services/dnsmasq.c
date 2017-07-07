@@ -224,7 +224,7 @@ void start_dnsmasq(void)
 
 #ifdef HAVE_DNSCRYPT
 	if (nvram_matchi("dns_crypt", 1)) {
-		nvram_seti("recursive_dns", 0); // disable unbound
+		nvram_seti("recursive_dns", 0);	// disable unbound
 		fprintf(fp, "server=127.0.0.1#30\n");
 		fprintf(fp, "no-resolv\n");
 	}

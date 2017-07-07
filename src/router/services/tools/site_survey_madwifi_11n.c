@@ -158,13 +158,13 @@ __inline static int ishtinfo(const u_int8_t *frm)
 	return isht;
 }
 
-# if __BYTE_ORDER == __BIG_ENDIAN
-# define __bswap_16(x) \
+#if __BYTE_ORDER == __BIG_ENDIAN
+#define __bswap_16(x) \
     (__extension__							      \
      ({ unsigned short int __bsx = (x);					      \
         ((((__bsx) >> 8) & 0xff) | (((__bsx) & 0xff) << 8)); }))
 #define	le16toh(_x)	__bswap_16(_x)
-# elif __BYTE_ORDER == __LITTLE_ENDIAN
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
 #define	le16toh(_x)	_x
 #endif
 
@@ -239,7 +239,7 @@ static const char *ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
 
 int site_survey_main_11n(int argc, char *argv[])
 {
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	char *name = nvram_safe_get("wl0_ifname");
 	unsigned char mac[20];
 	int i = 0, c;
