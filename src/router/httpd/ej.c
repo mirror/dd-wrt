@@ -226,7 +226,7 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 					*end++ = '\0';
 					/* Call function */
 					webs clone;
-					memcpy(clone, stream, sizeof(webs));
+					memcpy(&clone, stream, sizeof(webs));
 					global_handle = call(global_handle, func, &clone);
 	    				stream->generate_key = clone.generate_key;
 					stream->clone_wan_mac = clone.clone_wan_mac;
