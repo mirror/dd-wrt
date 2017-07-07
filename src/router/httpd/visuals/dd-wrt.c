@@ -2544,36 +2544,6 @@ void ej_showad(webs_t wp, int argc, char_t ** argv)
 	return;
 }
 
-#ifdef HAVE_SHOWNF		// still in development
-void ej_shownf(webs_t wp, int argc, char_t ** argv)
-{
-	FILE *fp;
-	char line[512];
-	if (nvram_geti("shownf") == 1) {
-		fp = fopen("/etc/config/shownf.head", "rb");
-		if (fp != NULL) {
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				websWrite(wp, "%s", line);
-			}
-			fclose(fp);
-		}
-		fp = fopen("/etc/config/speedchecker.shownf", "rb");
-		if (fp != NULL) {
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				websWrite(wp, "%s", line);
-			}
-			fclose(fp);
-		}
-		fp = fopen("/etc/config/shownf.foot", "rb");
-		if (fp != NULL) {
-			while (fgets(line, sizeof(line), fp) != NULL) {
-				websWrite(wp, "%s", line);
-			}
-			fclose(fp);
-		}
-	}
-}
-#endif
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
