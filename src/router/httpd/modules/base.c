@@ -2192,6 +2192,7 @@ char *live_translate(const char *tran)	// todo: add locking to be thread safe
 			if (translationcache[i].request != NULL && cur > translationcache[i].time + 120) {	// free translation if not used for 2 minutes
 				free(translationcache[i].translation);
 				free(translationcache[i].request);
+				translation = NULL;
 				translationcache[i].request = NULL;
 				translationcache[i].translation = NULL;
 			}
