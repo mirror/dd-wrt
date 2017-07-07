@@ -231,7 +231,6 @@ static void do_ej_s(int (*get) (webs_t wp), webs_t stream)	// jimmy, https, 8/4/
 	    				stream->generate_key = clone.generate_key;
 					stream->clone_wan_mac = clone.clone_wan_mac;
 					stream->filter_id = clone.filter_id;
-					free(clone);
 					// restore pointers
 				}
 				asp = NULL;
