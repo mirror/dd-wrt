@@ -48,7 +48,7 @@ function speedchecker_enable_onClick(source) {
                 scope.innerHTML = '';
 		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', false);
   		scope = document.getElementById('scdesc');
-                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
+                scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
             };
         }
 
@@ -62,11 +62,11 @@ function speedchecker_toggle_desc() {
 	
  if (val==1) {
        	scope.innerHTML = ''.concat(
-			'<iframe width="99%" height="250" frameborder="0" scrolling="no" src="',
+			'<iframe width="99%" height="200" frameborder="0" scrolling="no" src="',
 			'https://speedchecker.dd-wrt.com/speedtest.html?RID=', RID, '&secret=', secret,
-			'&server=', server ,'&port=', port ,'"></iframe>');
+			'&server=', server ,':', port ,'"></iframe>');
 	    } else {
-                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
+                scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
 		}
 	}
 	
