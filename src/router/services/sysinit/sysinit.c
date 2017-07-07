@@ -3087,7 +3087,7 @@ void start_drivers(void)
 	set_smp_affinity(112, 2);
 #endif
 #ifdef HAVE_MT7621
-	set_smp_affinity(30, 8);   // usb;
+	set_smp_affinity(30, 8);	// usb;
 #endif
 
 #ifdef HAVE_MVEBU
@@ -3103,7 +3103,7 @@ void start_drivers(void)
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_2", "usb2-port2");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb3_1", "usb2-port2 usb1-port1");
 		set_led_usbport("pca963x\\:caiman\\:white\\:usb2", "usb3-port1");
-	} 
+	}
 
 	if (brand == ROUTER_WRT_1900ACV2) {
 

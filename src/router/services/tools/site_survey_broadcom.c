@@ -334,7 +334,7 @@ static int get_mcs_max(const unsigned char *mcs)
 		unsigned int MCS_RATE_BIT = 1 << mcs_bit % 8;
 		bool mcs_rate_idx_set;
 
-		mcs_rate_idx_set = !!(mcs[mcs_octet] & MCS_RATE_BIT);
+		mcs_rate_idx_set = ! !(mcs[mcs_octet] & MCS_RATE_BIT);
 
 		if (!mcs_rate_idx_set)
 			break;
@@ -377,8 +377,7 @@ int get_legacy(unsigned char *rates, int count)
 
 int site_survey_main(int argc, char *argv[])
 {
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
-
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 
 	char tmp[32];
 	sprintf(tmp, "%s_ifname", nvram_safe_get("wifi_display"));

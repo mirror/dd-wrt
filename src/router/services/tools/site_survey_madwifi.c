@@ -215,7 +215,7 @@ int site_survey_main(int argc, char *argv[])
 	unsigned char *buf = malloc(24 * 1024);
 	if (!buf)
 		return -1;
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	bzero(buf, 24 * 1024);
 	eval("iwlist", sta, "scan");
 	len = do80211priv(sta, IEEE80211_IOCTL_SCAN_RESULTS, buf, 24 * 1024);

@@ -9,11 +9,11 @@
  *
  * Feature : Function prototype definition
  *
- */
-
+ */  
+    
 #ifndef __RTK_SWITCH_H__
 #define __RTK_SWITCH_H__
-
+    
 #include "rtk_types.h"
 #ifdef _CFE_
 #include "lib_types.h"
@@ -24,190 +24,140 @@
 #include "cfe_iocb.h"
 #include "cfe_device.h"
 #include "cfe_timer.h"
-#endif
-
+#endif	/*  */
+    
 #define UNDEFINE_PHY_PORT   (0xFF)
 #define RTK_SWITCH_PORT_NUM (32)
-
+    
 #define MAXPKTLEN_CFG_ID_MAX (1)
-
+    
 #define RTK_SWITCH_MAX_PKTLEN (0x3FFF)
-
-typedef enum init_state_e
-{
-    INIT_NOT_COMPLETED = 0,
-    INIT_COMPLETED,
-    INIT_STATE_END
+typedef enum init_state_e  { INIT_NOT_COMPLETED = 0, INIT_COMPLETED, INIT_STATE_END 
 } init_state_t;
-
-typedef enum switch_chip_e
-{
-    CHIP_RTL8367C = 0,
-    CHIP_RTL8370B,
-    CHIP_END
-}switch_chip_t;
-
-typedef enum port_type_e
-{
-    UTP_PORT = 0,
-    EXT_PORT,
-    UNKNOWN_PORT = 0xFF,
-    PORT_TYPE_END
-}port_type_t;
-
-typedef struct rtk_switch_halCtrl_s
-{
-    switch_chip_t   switch_type;
-    rtk_uint32      l2p_port[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      p2l_port[RTK_SWITCH_PORT_NUM];
-    port_type_t     log_port_type[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      ptp_port[RTK_SWITCH_PORT_NUM];
-    rtk_uint32      valid_portmask;
-    rtk_uint32      valid_utp_portmask;
-    rtk_uint32      valid_ext_portmask;
-    rtk_uint32      min_phy_port;
-    rtk_uint32      max_phy_port;
-    rtk_uint32      phy_portmask;
-    rtk_uint32      combo_logical_port;
-    rtk_uint32      hsg_logical_port;
-    rtk_uint32      max_meter_id;
-    rtk_uint32      max_lut_addr_num;
-    rtk_uint32      max_trunk_id;
-
-}rtk_switch_halCtrl_t;
-
-typedef enum rtk_switch_maxPktLen_linkSpeed_e {
-     MAXPKTLEN_LINK_SPEED_FE = 0,
-     MAXPKTLEN_LINK_SPEED_GE,
-     MAXPKTLEN_LINK_SPEED_END,
+ typedef enum switch_chip_e  { CHIP_RTL8367C = 0, CHIP_RTL8370B, CHIP_END 
+} switch_chip_t;
+ typedef enum port_type_e  { UTP_PORT = 0, EXT_PORT, UNKNOWN_PORT = 0xFF, PORT_TYPE_END 
+} port_type_t;
+ typedef struct rtk_switch_halCtrl_s  {
+	switch_chip_t switch_type;
+	rtk_uint32 l2p_port[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 p2l_port[RTK_SWITCH_PORT_NUM];
+	port_type_t log_port_type[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 ptp_port[RTK_SWITCH_PORT_NUM];
+	rtk_uint32 valid_portmask;
+	rtk_uint32 valid_utp_portmask;
+	rtk_uint32 valid_ext_portmask;
+	rtk_uint32 min_phy_port;
+	rtk_uint32 max_phy_port;
+	rtk_uint32 phy_portmask;
+	rtk_uint32 combo_logical_port;
+	rtk_uint32 hsg_logical_port;
+	rtk_uint32 max_meter_id;
+	rtk_uint32 max_lut_addr_num;
+	rtk_uint32 max_trunk_id;
+} rtk_switch_halCtrl_t;
+ typedef enum rtk_switch_maxPktLen_linkSpeed_e { MAXPKTLEN_LINK_SPEED_FE = 0, MAXPKTLEN_LINK_SPEED_GE, MAXPKTLEN_LINK_SPEED_END, 
 } rtk_switch_maxPktLen_linkSpeed_t;
-
+ 
 #define RTK_SWITCH_CMDS {			\
-     CASEID(INIT_SWITCH),			\
-     CASEID(INIT_SWITCH_UP),			\
-     CASEID(BAD_ADDR_X),			\
-     CASEID(POWERUP_LANPORTS),			\
-     CASEID(POWERDOWN_LANPORTS),		\
-     CASEID(SOFT_RESET),			\
-     CASEID(GET_REG),				\
-     CASEID(SET_REG),				\
-     CASEID(TEST_REG),				\
-     CASEID(RESET_PORT),			\
-     CASEID(GET_LANPORTS_LINK_STATUS),		\
-     CASEID(GET_PORT_STAT),			\
-     CASEID(GET_PORT_SPEED),			\
-     CASEID(GET_EXT_TXRXDELAY),			\
-     CASEID(SET_EXT_TXDELAY),			\
-     CASEID(SET_EXT_RXDELAY),			\
-     CASEID(SET_EXT_MODE),			\
-     CASEID(GET_CPU),				\
-     CASEID(SET_CPU),				\
-     CASEID(GET_RTK_PHYSTATES),			\
-     CASEID(MAX_REQ),				\
-}
-
+CASEID(INIT_SWITCH), \CASEID(INIT_SWITCH_UP), \CASEID(BAD_ADDR_X), \CASEID(POWERUP_LANPORTS), \CASEID(POWERDOWN_LANPORTS), \CASEID(SOFT_RESET), \CASEID(GET_REG), \CASEID(SET_REG), \CASEID(TEST_REG),
+    \CASEID(RESET_PORT), \CASEID(GET_LANPORTS_LINK_STATUS), \CASEID(GET_PORT_STAT), \CASEID(GET_PORT_SPEED), \CASEID(GET_EXT_TXRXDELAY), \CASEID(SET_EXT_TXDELAY), \CASEID(SET_EXT_RXDELAY),
+    \CASEID(SET_EXT_MODE), \CASEID(GET_CPU), \CASEID(SET_CPU), \CASEID(GET_RTK_PHYSTATES), \CASEID(MAX_REQ), \}  
 #define CASEID(a)	a
 typedef enum RTK_SWITCH_CMDS rtk_switch_cmds_e;
+
 #undef CASEID
-
-typedef struct rtk_asic_s {
-    rtk_uint32      rtk_reg;
-    rtk_uint32      rtk_val;
-} rtk_asic_t;
-
-typedef enum stb_LANWAN_config_e {
-     LLLLW,	/* default mode (if rtk_switch is the main switch)*/
-     LLLWW,
-     LLWLW,
-     LWLLW,
-     WLLLW,
-     LLWWW,
-     ALL_LAN = 100,	/* wan port is as lan port */
-     NO_WAN_PORT = 101
+    typedef struct rtk_asic_s {
+	rtk_uint32 rtk_reg;
+	rtk_uint32 rtk_val;
+} rtk_asic_t;
+ typedef enum stb_LANWAN_config_e { LLLLW, /* default mode (if rtk_switch is the main switch) */ 
+	    LLLWW, LLWLW, LWLLW, WLLLW, LLWWW, ALL_LAN = 100, /* wan port is as lan port */ 
+	NO_WAN_PORT = 101 
 } stb_config_t;
-
-/* UTIL MACRO */
+ 
+/* UTIL MACRO */ 
 #define RTK_CHK_INIT_STATE()                                \
-    do                                                      \
-    {                                                       \
-        if(rtk_switch_initialState_get() != INIT_COMPLETED) \
-        {                                                   \
-            return RT_ERR_NOT_INIT;                         \
-        }                                                   \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_initialState_get() != INIT_COMPLETED)
+		\ {
+		\return RT_ERR_NOT_INIT;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORT_VALID(__port__)                            \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_logicalPortCheck(__port__) != RT_ERR_OK)  \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_logicalPortCheck(__port__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_ID;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORT_IS_UTP(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isUtpPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isUtpPort(__port__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_ID;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORT_IS_EXT(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isExtPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isExtPort(__port__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_ID;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORT_IS_COMBO(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isComboPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isComboPort(__port__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_ID;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORT_IS_PTP(__port__)                           \
-    do                                                          \
-    {                                                           \
-        if(rtk_switch_isPtpPort(__port__) != RT_ERR_OK)         \
-        {                                                       \
-            return RT_ERR_PORT_ID;                              \
-        }                                                       \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isPtpPort(__port__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_ID;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORTMASK_VALID(__portmask__)                        \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskValid(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isPortMaskValid(__portmask__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_MASK;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORTMASK_VALID_ONLY_UTP(__portmask__)               \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskUtp(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isPortMaskUtp(__portmask__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_MASK;
+		\}
+\} while (0)
+ 
 #define RTK_CHK_PORTMASK_VALID_ONLY_EXT(__portmask__)               \
-    do                                                              \
-    {                                                               \
-        if(rtk_switch_isPortMaskExt(__portmask__) != RT_ERR_OK)   \
-        {                                                           \
-            return RT_ERR_PORT_MASK;                                  \
-        }                                                           \
-    }while(0)
-
+    do
+	\ {
+	\if (rtk_switch_isPortMaskExt(__portmask__) != RT_ERR_OK)
+		\ {
+		\return RT_ERR_PORT_MASK;
+		\}
+\} while (0)
+ 
 #define RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__)    (((__portmask__).bits[0] & (0x00000001 << __port__)) ? 1 : 0)
 #define RTK_PORTMASK_IS_EMPTY(__portmask__)                 (((__portmask__).bits[0] == 0) ? 1 : 0)
 #define RTK_PORTMASK_CLEAR(__portmask__)                    ((__portmask__).bits[0] = 0)
@@ -216,20 +166,20 @@ typedef enum stb_LANWAN_config_e {
 #define RTK_PORTMASK_ALLPORT_SET(__portmask__)              (rtk_switch_logPortMask_get(&__portmask__))
 #define RTK_PORTMASK_SCAN(__portmask__, __port__)           for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if(RTK_PORTMASK_IS_PORT_SET(__portmask__, __port__))
 #define RTK_PORTMASK_COMPARE(__portmask_A__, __portmask_B__)    ((__portmask_A__).bits[0] - (__portmask_B__).bits[0])
-
+    
 #define RTK_SCAN_ALL_PHY_PORTMASK(__port__)                 for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if( (rtk_switch_phyPortMask_get() & (0x00000001 << __port__)))
 #define RTK_SCAN_ALL_LOG_PORT(__port__)                     for(__port__ = 0; __port__ < RTK_SWITCH_PORT_NUM; __port__++)  if( rtk_switch_logicalPortCheck(__port__) == RT_ERR_OK)
 #define RTK_SCAN_ALL_LOG_PORTMASK(__portmask__)             for((__portmask__).bits[0] = 0; (__portmask__).bits[0] < 0x7FFFF; (__portmask__).bits[0]++)  if( rtk_switch_isPortMaskValid(&__portmask__) == RT_ERR_OK)
-
-/* Port mask defination */
+    
+/* Port mask defination */ 
 #define RTK_PHY_PORTMASK_ALL                                (rtk_switch_phyPortMask_get())
-
-/* Port defination*/
+    
+/* Port defination*/ 
 #define RTK_MAX_LOGICAL_PORT_ID                             (rtk_switch_maxLogicalPort_get())
-
-/* Trunk ID defination*/
+    
+/* Trunk ID defination*/ 
 #define RTK_MAX_TRUNK_GROUP_ID                              (rtk_switch_maxTrunkId_get())
-
+    
 /* Function Name:
  *      rtk_switch_probe
  * Description:
@@ -243,9 +193,9 @@ typedef enum stb_LANWAN_config_e {
  *      RT_ERR_FAILED   - Switch Unprobed.
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_probe(switch_chip_t *pSwitchChip);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_probe(switch_chip_t * pSwitchChip);
+ 
 /* Function Name:
  *      rtk_switch_initialState_set
  * Description:
@@ -259,9 +209,9 @@ extern rtk_api_ret_t rtk_switch_probe(switch_chip_t *pSwitchChip);
  *      RT_ERR_FAILED   - Uninitialized
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_initialState_set(init_state_t state);
-
+ 
 /* Function Name:
  *      rtk_switch_initialState_get
  * Description:
@@ -275,9 +225,9 @@ extern rtk_api_ret_t rtk_switch_initialState_set(init_state_t state);
  *      INIT_NOT_COMPLETED - Uninitialized
  * Note:
  *
- */
+ */ 
 extern init_state_t rtk_switch_initialState_get(void);
-
+ 
 /* Function Name:
  *      rtk_switch_logicalPortCheck
  * Description:
@@ -292,9 +242,9 @@ extern init_state_t rtk_switch_initialState_get(void);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_logicalPortCheck(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_isUtpPort
  * Description:
@@ -309,9 +259,9 @@ extern rtk_api_ret_t rtk_switch_logicalPortCheck(rtk_port_t logicalPort);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_isUtpPort(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_isExtPort
  * Description:
@@ -326,9 +276,9 @@ extern rtk_api_ret_t rtk_switch_isUtpPort(rtk_port_t logicalPort);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_isExtPort(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_isHsgPort
  * Description:
@@ -343,9 +293,9 @@ extern rtk_api_ret_t rtk_switch_isExtPort(rtk_port_t logicalPort);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_isHsgPort(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_isComboPort
  * Description:
@@ -360,9 +310,9 @@ extern rtk_api_ret_t rtk_switch_isHsgPort(rtk_port_t logicalPort);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_isComboPort(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_ComboPort_get
  * Description:
@@ -375,9 +325,9 @@ extern rtk_api_ret_t rtk_switch_isComboPort(rtk_port_t logicalPort);
  *      Port ID of combo port
  * Note:
  *
- */
+ */ 
 extern rtk_uint32 rtk_switch_ComboPort_get(void);
-
+ 
 /* Function Name:
  *      rtk_switch_isPtpPort
  * Description:
@@ -392,9 +342,9 @@ extern rtk_uint32 rtk_switch_ComboPort_get(void);
  *      RT_ERR_NOT_INIT - Not Initialize
  * Note:
  *
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_isPtpPort(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_port_L2P_get
  * Description:
@@ -407,9 +357,9 @@ extern rtk_api_ret_t rtk_switch_isPtpPort(rtk_port_t logicalPort);
  *      Physical port ID
  * Note:
  *
- */
+ */ 
 extern rtk_uint32 rtk_switch_port_L2P_get(rtk_port_t logicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_port_P2L_get
  * Description:
@@ -422,9 +372,9 @@ extern rtk_uint32 rtk_switch_port_L2P_get(rtk_port_t logicalPort);
  *      logical port ID
  * Note:
  *
- */
+ */ 
 extern rtk_port_t rtk_switch_port_P2L_get(rtk_uint32 physicalPort);
-
+ 
 /* Function Name:
  *      rtk_switch_isPortMaskValid
  * Description:
@@ -440,9 +390,9 @@ extern rtk_port_t rtk_switch_port_P2L_get(rtk_uint32 physicalPort);
  *      RT_ERR_NULL_POINTER - Null pointer
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_isPortMaskValid(rtk_portmask_t *pPmask);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_isPortMaskValid(rtk_portmask_t * pPmask);
+ 
 /* Function Name:
  *      rtk_switch_isPortMaskUtp
  * Description:
@@ -458,9 +408,9 @@ extern rtk_api_ret_t rtk_switch_isPortMaskValid(rtk_portmask_t *pPmask);
  *      RT_ERR_NULL_POINTER - Null pointer
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_isPortMaskUtp(rtk_portmask_t *pPmask);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_isPortMaskUtp(rtk_portmask_t * pPmask);
+ 
 /* Function Name:
  *      rtk_switch_isPortMaskExt
  * Description:
@@ -476,9 +426,9 @@ extern rtk_api_ret_t rtk_switch_isPortMaskUtp(rtk_portmask_t *pPmask);
  *      RT_ERR_NULL_POINTER - Null pointer
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t *pPmask);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t * pPmask);
+ 
 /* Function Name:
  *      rtk_switch_portmask_L2P_get
  * Description:
@@ -494,9 +444,9 @@ extern rtk_api_ret_t rtk_switch_isPortMaskExt(rtk_portmask_t *pPmask);
  *      RT_ERR_PORT_MASK    - Error port mask
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, rtk_uint32 *pPhysicalPortmask);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t * pLogicalPmask, rtk_uint32 * pPhysicalPortmask);
+ 
 /* Function Name:
  *      rtk_switch_portmask_P2L_get
  * Description:
@@ -512,9 +462,9 @@ extern rtk_api_ret_t rtk_switch_portmask_L2P_get(rtk_portmask_t *pLogicalPmask, 
  *      RT_ERR_PORT_MASK    - Error port mask
  * Note:
  *
- */
-extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rtk_portmask_t *pLogicalPmask);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rtk_portmask_t * pLogicalPmask);
+ 
 /* Function Name:
  *      rtk_switch_phyPortMask_get
  * Description:
@@ -528,9 +478,9 @@ extern rtk_api_ret_t rtk_switch_portmask_P2L_get(rtk_uint32 physicalPortmask, rt
  *      Other value         - Physical port mask
  * Note:
  *
- */
-rtk_uint32 rtk_switch_phyPortMask_get(void);
-
+ */ 
+    rtk_uint32 rtk_switch_phyPortMask_get(void);
+ 
 /* Function Name:
  *      rtk_switch_logPortMask_get
  * Description:
@@ -545,9 +495,9 @@ rtk_uint32 rtk_switch_phyPortMask_get(void);
  *      RT_ERR_NULL_POINTER - Null pointer
  * Note:
  *
- */
-rtk_api_ret_t rtk_switch_logPortMask_get(rtk_portmask_t *pPortmask);
-
+ */ 
+    rtk_api_ret_t rtk_switch_logPortMask_get(rtk_portmask_t * pPortmask);
+ 
 /* Function Name:
  *      rtk_switch_init
  * Description:
@@ -562,9 +512,9 @@ rtk_api_ret_t rtk_switch_logPortMask_get(rtk_portmask_t *pPortmask);
  *      RT_ERR_SMI          - SMI access error
  * Note:
  *      The API can set chip registers to default configuration for different release chip model.
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_init(void);
-
+ 
 /* Function Name:
  *      rtk_switch_portMaxPktLen_set
  * Description:
@@ -581,9 +531,9 @@ extern rtk_api_ret_t rtk_switch_init(void);
  *      RT_ERR_SMI          - SMI access error
  *      RT_ERR_INPUT        - Error Input
  * Note:
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_portMaxPktLen_set(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 cfgId);
-
+ 
 /* Function Name:
  *      rtk_switch_portMaxPktLen_get
  * Description:
@@ -599,9 +549,9 @@ extern rtk_api_ret_t rtk_switch_portMaxPktLen_set(rtk_port_t port, rtk_switch_ma
  *      RT_ERR_SMI          - SMI access error
  *      RT_ERR_INPUT        - Error Input
  * Note:
- */
-extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 *pCfgId);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_maxPktLen_linkSpeed_t speed, rtk_uint32 * pCfgId);
+ 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_set
  * Description:
@@ -617,9 +567,9 @@ extern rtk_api_ret_t rtk_switch_portMaxPktLen_get(rtk_port_t port, rtk_switch_ma
  *      RT_ERR_SMI          - SMI access error
  *      RT_ERR_INPUT        - Error Input
  * Note:
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId, rtk_uint32 pktLen);
-
+ 
 /* Function Name:
  *      rtk_switch_maxPktLenCfg_get
  * Description:
@@ -635,9 +585,9 @@ extern rtk_api_ret_t rtk_switch_maxPktLenCfg_set(rtk_uint32 cfgId, rtk_uint32 pk
  *      RT_ERR_SMI          - SMI access error
  *      RT_ERR_INPUT        - Error Input
  * Note:
- */
-extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 *pPktLen);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 * pPktLen);
+ 
 /* Function Name:
  *      rtk_switch_greenEthernet_set
  * Description:
@@ -656,9 +606,9 @@ extern rtk_api_ret_t rtk_switch_maxPktLenCfg_get(rtk_uint32 cfgId, rtk_uint32 *p
  *      The configuration is as following:
  *      - DISABLE
  *      - ENABLE
- */
+ */ 
 extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable);
-
+ 
 /* Function Name:
  *      rtk_switch_greenEthernet_get
  * Description:
@@ -673,9 +623,9 @@ extern rtk_api_ret_t rtk_switch_greenEthernet_set(rtk_enable_t enable);
  *      RT_ERR_SMI             - SMI access error
  * Note:
  *      This API can get Green Ethernet state.
- */
-extern rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_enable_t *pEnable);
-
+ */ 
+extern rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_enable_t * pEnable);
+ 
 /* Function Name:
  *      rtk_switch_maxLogicalPort_get
  * Description:
@@ -688,9 +638,9 @@ extern rtk_api_ret_t rtk_switch_greenEthernet_get(rtk_enable_t *pEnable);
  *      Max logical port
  * Note:
  *      This API can get max logical port
- */
+ */ 
 extern rtk_port_t rtk_switch_maxLogicalPort_get(void);
-
+ 
 /* Function Name:
  *      rtk_switch_maxMeterId_get
  * Description:
@@ -704,9 +654,9 @@ extern rtk_port_t rtk_switch_maxLogicalPort_get(void);
  *      Other value         - Max Meter ID
  * Note:
  *
- */
+ */ 
 extern rtk_uint32 rtk_switch_maxMeterId_get(void);
-
+ 
 /* Function Name:
  *      rtk_switch_maxLutAddrNumber_get
  * Description:
@@ -720,9 +670,9 @@ extern rtk_uint32 rtk_switch_maxMeterId_get(void);
  *      Other value         - Max LUT Address number
  * Note:
  *
- */
+ */ 
 extern rtk_uint32 rtk_switch_maxLutAddrNumber_get(void);
-
+ 
 /* Function Name:
  *      rtk_switch_maxTrunkId_get
  * Description:
@@ -736,7 +686,7 @@ extern rtk_uint32 rtk_switch_maxLutAddrNumber_get(void);
  *      Other value         - Max Trunk ID
  * Note:
  *
- */
+ */ 
 extern rtk_uint32 rtk_switch_maxTrunkId_get(void);
-
-#endif
+ 
+#endif	/*  */

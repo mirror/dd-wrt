@@ -108,7 +108,7 @@ int site_survey_main(int argc, char *argv[])
 #define DOT11_CAP_IBSS				0x0002
 #define DOT11_CAP_PRIVACY			0x0010	/* d11 cap. privacy */
 
-	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM,1);
+	site_survey_lists = calloc(sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1);
 	unsigned char b1[32], b2[64], b3[32], b4[32], b5[32], b6[32], b7[32], ext[32];
 	int i = 0;
 
