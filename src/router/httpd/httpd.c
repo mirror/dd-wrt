@@ -567,7 +567,7 @@ static void *handle_request(void *arg)
 	long method_type;
 
 #ifndef HAVE_MICRO
-	pthread_mutex_lock(&input_mutex);  // barrier. block until input is done. otherwise global members get async
+	pthread_mutex_lock(&input_mutex);	// barrier. block until input is done. otherwise global members get async
 	pthread_mutex_unlock(&input_mutex);
 
 	pthread_mutex_lock(&httpd_mutex);
@@ -1056,7 +1056,6 @@ static void *handle_request(void *arg)
 
       out:;
 
-
 	free(line);
 	wfclose(conn_fp);
 	close(conn_fp->conn_fd);
@@ -1089,7 +1088,7 @@ static void *handle_request(void *arg)
 
 #ifndef HAVE_MICRO
 	if (handler->input)
-		pthread_mutex_unlock(&input_mutex);  //releases barrier
+		pthread_mutex_unlock(&input_mutex);	//releases barrier
 #endif
 
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
