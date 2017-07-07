@@ -567,6 +567,9 @@ static void *handle_request(void *arg)
 	long method_type;
 
 #ifndef HAVE_MICRO
+	pthread_mutex_lock(&input_mutex);  // barrier. block until input is done. otherwise global members get async
+	pthread_mutex_unlock(&input_mutex);
+
 	pthread_mutex_lock(&httpd_mutex);
 #ifdef HAVE_REGISTER
 	conn_fp->isregistered = registered;
@@ -1053,10 +1056,6 @@ static void *handle_request(void *arg)
 
       out:;
 
-#ifndef HAVE_MICRO
-	if (handler->input)
-		pthread_mutex_unlock(&input_mutex);
-#endif
 
 	free(line);
 	wfclose(conn_fp);
@@ -1087,6 +1086,12 @@ static void *handle_request(void *arg)
 	registered_real = conn_fp->isregistered_real;
 #endif
 #endif
+
+#ifndef HAVE_MICRO
+	if (handler->input)
+		pthread_mutex_unlock(&input_mutex);  //releases barrier
+#endif
+
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
 
 	free(conn_fp);

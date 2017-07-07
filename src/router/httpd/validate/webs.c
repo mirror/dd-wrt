@@ -329,7 +329,7 @@ void save_policy(webs_t wp)
 	}
 
 	validate_filter_tod(wp);
-
+	wp->filter_id = atoi(f_id);
 	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
