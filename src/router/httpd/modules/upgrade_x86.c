@@ -279,7 +279,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 	char buf[1024];
 	int type = 0;
 
-	handler->upgrade_ret = EINVAL;
+	stream->upgrade_ret = EINVAL;
 
 	// Let below files loaded to memory
 	// To avoid the successful screen is blank after web upgrade.
@@ -323,7 +323,7 @@ do_upgrade_post(char *url, webs_t stream, int len, char *boundary)	// jimmy,
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
-	handler->upgrade_ret = sys_upgrade(NULL, stream, &len, type);
+	stream->upgrade_ret = sys_upgrade(NULL, stream, &len, type);
 	fprintf(stderr, "core upgrade done() %d\n", len);
 	/*
 	 * Restore factory original settings if told to. This will also cause a
