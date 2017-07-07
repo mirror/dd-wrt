@@ -40,7 +40,7 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 {
 #ifndef ANTI_FLASH
 	fprintf(stderr, "do post\n");
-	if (handler->upgrade_ret)
+	if (stream->upgrade_ret)
 		do_ej(METHOD_GET, handler, "Fail_u_s.asp", stream);
 	else
 		do_ej(METHOD_GET, handler, "Success_u_s.asp", stream);
@@ -52,7 +52,7 @@ do_upgrade_cgi(unsigned char method, struct mime_handler *handler, char *url, we
 	/*
 	 * Reboot if successful 
 	 */
-	if (handler->upgrade_ret == 0) {
+	if (stream->upgrade_ret == 0) {
 		sleep(4);
 		eval("umount", "/usr/local");
 		sys_reboot();
