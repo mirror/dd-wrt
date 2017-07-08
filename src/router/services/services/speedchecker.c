@@ -36,14 +36,13 @@ void start_speedchecker(void)
 		nvram_commit();
 
 	if (nvram_matchi("speedchecker_enable", 1)) {
-		sysprintf("SCC_JID=%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s| SCC_SRV=xmpp.speedcheckerapi.com SCC_STATS_IF=%s SCC_RNAME=%s SCC_LOG=%s scc&\n",	//
+		sysprintf("SCC_JID=\"%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s|\" SCC_SRV=\"xmpp.speedcheckerapi.com\" SCC_STATS_IF=%s SCC_RNAME=\"%s\" scc &\n",	//
 			  nvram_safe_get("speedchecker_uuid"),	//
 			  SCVERSION,	//
 			  PSVN_REVISION,	//
 			  nvram_safe_get("os_version"),	//
 			  get_wan_face(),	//
-			  nvram_safe_get("DD_BOARD"),	//
-			  nvram_safe_get("speedchecker_debug"));
+			  nvram_safe_get("DD_BOARD"));
 		syslog(LOG_INFO, "speedchecker : client started\n");
 	}
 
