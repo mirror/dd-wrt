@@ -1050,7 +1050,7 @@ static void *handle_request(void *arg)
 
 		}
 
-		if (!handler->pattern)
+		if (!handler || !handler->pattern)
 			send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
 	}
 
@@ -1087,9 +1087,8 @@ static void *handle_request(void *arg)
 #endif
 
 #ifndef HAVE_MICRO
-	if(handler)
-		if (handler->input)
-			pthread_mutex_unlock(&input_mutex);	//releases barrier
+	if (handler && handler->input)
+		pthread_mutex_unlock(&input_mutex);	//releases barrier
 #endif
 
 	bzero(conn_fp, sizeof(webs));	// erase to delete any traces of stored passwords or usernames
