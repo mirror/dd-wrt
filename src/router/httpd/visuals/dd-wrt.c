@@ -5564,14 +5564,14 @@ void ej_statfs(webs_t wp, int argc, char_t ** argv)
 void ej_getnumfilters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	websWrite(wp, "%s", nvram_default_get(filter, "4"));
 }
 
 void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {
@@ -5593,7 +5593,7 @@ void ej_show_filters(webs_t wp, int argc, char_t ** argv)
 void ej_gen_filters(webs_t wp, int argc, char_t ** argv)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	int i;
 	for (i = 0; i < numfilters; i++) {

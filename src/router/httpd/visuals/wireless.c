@@ -553,7 +553,7 @@ char *get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *prefix)
 	char *wordlist;
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
-	if (wp->generate_key) {
+	if (wp->p->generate_key) {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);
