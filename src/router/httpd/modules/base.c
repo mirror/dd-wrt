@@ -124,8 +124,10 @@ static char *getFileString(FILE * in)
 	StringStart(in);
 	for (i = 0; i < 1024; i++) {
 		b = getc(in);
-		if (b == EOF)
+		if (b == EOF){
+			free(buf);
 			return NULL;
+		}
 		if (b == '"') {
 			buf[i] = 0;
 			buf = realloc(buf, strlen(buf) + 1);
@@ -2050,7 +2052,7 @@ static char *scanfile(char *buf, const char *tran)
 				if (!count && (val == ' ' || val == '\r' || val == '\t' || val == '\n'))
 					continue;
 			} else {
-				int a, v;
+				int a, v = 0;
 				for (a = 0; a < filelen - i; a++) {
 					prev = v;
 					v = getc(fp);
