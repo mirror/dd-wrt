@@ -17,24 +17,32 @@
 #include <prevision.h>
 
 #define SCVERSION "1.1"
-void start_speedchecker(void)
+
+void start_speedchecker_init(void)
 {
 	char uuid[37];
 	char change = 0;
 	if (!nvram_get("speedchecker_uuid")) {
-		getUUID(uuid);
-		nvram_set("speedchecker_uuid", uuid);
-		change = 1;
+		if (getUUID(uuid)) {
+			nvram_set("speedchecker_uuid", uuid);
+			change = 1;
+		}
 	}
 
 	if (!nvram_get("speedchecker_uuid2")) {
-		getUUID(uuid);
-		nvram_set("speedchecker_uuid2", uuid);
-		change = 1;
+		if (getUUID(uuid)) {
+			nvram_set("speedchecker_uuid2", uuid);
+			change = 1;
+		}
 	}
 	if (change)
 		nvram_commit();
 
+}
+
+void start_speedchecker(void)
+{
+	start_speedchecker_init();
 	if (nvram_matchi("speedchecker_enable", 1)) {
 		sysprintf("SCC_JID=\"%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s|\" SCC_SRV=\"xmpp.speedcheckerapi.com\" SCC_STATS_IF=%s SCC_RNAME=\"%s\" scc &\n",	//
 			  nvram_safe_get("speedchecker_uuid"),	//
