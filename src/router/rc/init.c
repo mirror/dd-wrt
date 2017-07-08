@@ -476,6 +476,9 @@ int main(int argc, char **argv)
 	start_service("devinit");	//init /dev /proc etc.
 	start_service("sysinit");
 	start_service("post_sysinit");
+#ifdef HAVE_SPEEDCHECKER
+	start_service("speedchecker_init");
+#endif
 	int brand = getRouterBrand();
 #ifndef HAVE_MICRO
 	if (console_init())
