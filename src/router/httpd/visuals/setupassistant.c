@@ -1633,13 +1633,13 @@ char *sas_get_wep_value(webs_t wp, char *temp, char *type, char *_bit, char *pre
 	char wl_wep[] = "wlX.XX_wep_XXXXXX";
 
 	// check for httpd post values
-	if (wp->gozila_action && !wp->generate_key) {
+	if (wp->gozila_action && !wp->p->generate_key) {
 		char label[32];
 		sprintf(label, "%s_%s", prefix, type);
 		return nvram_selget(wp, label);
 	}
 
-	if (wp->generate_key) {
+	if (wp->p->generate_key) {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_gen", prefix);
 	} else {
 		snprintf(wl_wep, sizeof(wl_wep), "%s_wep_buf", prefix);

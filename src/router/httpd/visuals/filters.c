@@ -80,7 +80,7 @@ static char *filter_ip_get(webs_t wp, char *type, int which, char *word)
 	char filter_ip[] = "filter_ip_grpXXX";
 
 	D("filter_ip_get");
-	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->filter_id);
+	snprintf(filter_ip, sizeof(filter_ip), "filter_ip_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_ip);
 	if (!wordlist)
@@ -217,7 +217,7 @@ static char *filter_dport_get(webs_t wp, char *type, int which, char *word)
 	int temp;
 	char name[] = "filter_dport_grpXXX";
 
-	sprintf(name, "filter_dport_grp%d", wp->filter_id);
+	sprintf(name, "filter_dport_grp%d", wp->p->filter_id);
 	wordlist = nvram_safe_get(name);
 	temp = which;
 	D("filter dport get");
@@ -368,7 +368,7 @@ static char *filter_mac_get(webs_t wp, int which, char *word)
 	char filter_mac[] = "filter_mac_grpXXX";
 
 	D("filter mac get");
-	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%d", wp->filter_id);
+	snprintf(filter_mac, sizeof(filter_mac), "filter_mac_grp%d", wp->p->filter_id);
 
 	wordlist = nvram_safe_get(filter_mac);
 	if (!wordlist)
@@ -441,7 +441,7 @@ void ej_filter_policy_select(webs_t wp, int argc, char_t ** argv)
 			// name 
 			// value
 		}
-		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (wp->filter_id == i ? "selected=\"selected\" " : ""), i, name);
+		websWrite(wp, "<option value=%d %s>%d ( %s ) </option>\n", i, (wp->p->filter_id == i ? "selected=\"selected\" " : ""), i, name);
 	}
 	D("okay");
 	return;
@@ -459,13 +459,13 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (!strcmp(type, "f_id")) {
-		websWrite(wp, "%d", wp->filter_id);
+		websWrite(wp, "%d", wp->p->filter_id);
 	} else if (!strcmp(type, "f_name")) {
 		char name[50] = "";
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%d", wp->filter_id);
+		snprintf(filter, sizeof(filter), "filter_rule%d", wp->p->filter_id);
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) {
 			find_match_pattern(name, sizeof(name), data, "$NAME:", "");	// get 
@@ -478,7 +478,7 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 		char filter[] = "filter_ruleXXX";
 		char *data = "";
 
-		snprintf(filter, sizeof(filter), "filter_rule%d", wp->filter_id);
+		snprintf(filter, sizeof(filter), "filter_rule%d", wp->p->filter_id);
 		data = nvram_safe_get(filter);
 		if (strcmp(data, "")) {	// have data
 			find_match_pattern(status, sizeof(status), data, "$STAT:", "1");	// get 
@@ -619,7 +619,7 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 		return;
 	}
 
-	filter_tod_init(wp->filter_id);
+	filter_tod_init(wp->p->filter_id);
 
 	if (!strcmp(type, "day_all_init")) {
 		if (day_all == 0)
@@ -732,7 +732,7 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 		char *host_data, filter_host[] = "filter_web_hostXXX";;
 		char host[80];
 
-		snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->filter_id);
+		snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->p->filter_id);
 		host_data = nvram_safe_get(filter_host);
 		if (!strcmp(host_data, ""))
 			return;	// no data
@@ -742,7 +742,7 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 		char *url_data, filter_url[] = "filter_web_urlXXX";
 		char url[80];
 
-		snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->filter_id);
+		snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->p->filter_id);
 		url_data = nvram_safe_get(filter_url);
 		if (!strcmp(url_data, ""))
 			return;	// no data
@@ -833,9 +833,9 @@ void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 
 	D("ej_filter-init");
 	if (f_id)		// for first time enter this page and don't press apply.
-		wp->filter_id = atoi(f_id);
+		wp->p->filter_id = atoi(f_id);
 	else
-		wp->filter_id = 1;
+		wp->p->filter_id = 1;
 
 	return;
 }
@@ -932,7 +932,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 		char *port_data, filter_port[] = "filter_port_grpXXX";
 		char name[80];
 
-		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%d", wp->filter_id);
+		snprintf(filter_port, sizeof(filter_port), "filter_port_grp%d", wp->p->filter_id);
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return;	// no data
@@ -942,7 +942,7 @@ void filter_port_services_get(webs_t wp, char *type, int which)
 	} else if (!strcmp(type, "p2p")) {
 		char *port_data, filter_port[] = "filter_p2p_grpXXX";
 
-		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%d", wp->filter_id);
+		snprintf(filter_port, sizeof(filter_port), "filter_p2p_grp%d", wp->p->filter_id);
 		port_data = nvram_safe_get(filter_port);
 		if (!strcmp(port_data, ""))
 			return;	// no data

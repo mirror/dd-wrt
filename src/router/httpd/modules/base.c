@@ -1270,9 +1270,9 @@ static int gozila_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, c
 		do_ej(METHOD_GET, NULL, path, wp);	// refresh
 	websDone(wp, 200);
 
-	wp->generate_key = 0;
 	wp->gozila_action = 0;
-	wp->clone_wan_mac = 0;
+	wp->p->generate_key = 0;
+	wp->p->clone_wan_mac = 0;
 
 	return 1;
 }

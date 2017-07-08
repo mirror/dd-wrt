@@ -2553,13 +2553,13 @@ void validate_filter_ip_grp(webs_t wp, char *value, struct variable *v)
 		ip[0], ip[1], ip[2], ip[3], ip[4], ip[5], ip_range0_0,
 		ip_range0_1, ip_range0_2, ip_range0_3, ip_range0_4, ip_range0_5, ip_range0_6, ip_range0_7, ip_range1_0, ip_range1_1, ip_range1_2, ip_range1_3, ip_range1_4, ip_range1_5, ip_range1_6, ip_range1_7);
 
-	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%d", wp->filter_id);
+	snprintf(_filter_ip, sizeof(_filter_ip), "filter_ip_grp%d", wp->p->filter_id);
 	nvram_set(_filter_ip, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// snprintf(_filter_tod, sizeof(_filter_tod), "filter_tod%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// if(nvram_match(_filter_rule, "")){
 	// nvram_set(_filter_rule, "$STAT:1$NAME:$$");
 	// nvram_set(_filter_tod, "0:0 23:59 0-6");
@@ -2686,13 +2686,13 @@ void validate_filter_dport_grp(webs_t wp, char *value, struct variable *v)
 		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s:%d-%d", cur == buf ? "" : " ", port, atoi(start), atoi(end));
 	}
 
-	snprintf(_filter_port, sizeof(_filter_port), "filter_dport_grp%d", wp->filter_id);
+	snprintf(_filter_port, sizeof(_filter_port), "filter_dport_grp%d", wp->p->filter_id);
 	nvram_set(_filter_port, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// snprintf(_filter_tod, sizeof(_filter_tod), "filter_tod%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// if(nvram_match(_filter_rule, "")){
 	// nvram_set(_filter_rule, "$STAT:1$NAME:$$");
 	// nvram_set(_filter_tod, "0:0 23:59 0-6");
@@ -2752,13 +2752,13 @@ void validate_filter_mac_grp(webs_t wp, char *value, struct variable *v)
 		cur += snprintf(cur, buf + sizeof(buf) - cur, "%s%s", cur == buf ? "" : " ", mac1);
 	}
 
-	snprintf(_filter_mac, sizeof(_filter_mac), "filter_mac_grp%d", wp->filter_id);
+	snprintf(_filter_mac, sizeof(_filter_mac), "filter_mac_grp%d", wp->p->filter_id);
 	nvram_set(_filter_mac, buf);
 
 	// snprintf(_filter_rule, sizeof(_filter_rule), "filter_rule%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// snprintf(_filter_tod, sizeof(_filter_tod), "filter_tod%s",
-	// wp->filter_id);
+	// wp->p->filter_id);
 	// if(nvram_match(_filter_rule, "")){
 	// nvram_set(_filter_rule, "$STAT:1$NAME:$$");
 	// nvram_set(_filter_tod, "0:0 23:59 0-6");
@@ -2800,7 +2800,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	if (strcmp(buf, ""))
 		strcat(buf, "<&nbsp;>");
 
-	snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->filter_id);
+	snprintf(filter_host, sizeof(filter_host), "filter_web_host%d", wp->p->filter_id);
 	nvram_set(filter_host, buf);
 
 	/*
@@ -2821,7 +2821,7 @@ void validate_filter_web(webs_t wp, char *value, struct variable *v)
 	if (strcmp(buf1, ""))
 		strcat(buf1, "<&nbsp;>");
 
-	snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->filter_id);
+	snprintf(filter_url, sizeof(filter_url), "filter_web_url%d", wp->p->filter_id);
 	nvram_set(filter_url, buf1);
 	D("everything okay");
 }
@@ -2958,7 +2958,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 
 	D("validate_blocked_service");
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	for (i = 0; i < numfilters; i++) {
 		char blocked_service[] = "blocked_serviceXXX";
@@ -2973,7 +2973,7 @@ void validate_blocked_service(webs_t wp, char *value, struct variable *v)
 		// cur == buf ? "" : "<&nbsp;>", service);
 	}
 
-	snprintf(port_grp, sizeof(port_grp), "filter_port_grp%d", wp->filter_id);
+	snprintf(port_grp, sizeof(port_grp), "filter_port_grp%d", wp->p->filter_id);
 	nvram_set(port_grp, buf);
 	D("right");
 }
@@ -2988,7 +2988,7 @@ void validate_catchall(webs_t wp, char *value, struct variable *v)
 
 	p2p = websGetVar(wp, "filter_p2p", NULL);
 	if (p2p) {
-		snprintf(port_grp, sizeof(port_grp), "filter_p2p_grp%d", wp->filter_id);
+		snprintf(port_grp, sizeof(port_grp), "filter_p2p_grp%d", wp->p->filter_id);
 		nvram_set(port_grp, p2p);
 	}
 

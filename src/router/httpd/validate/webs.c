@@ -92,7 +92,7 @@ void execute(webs_t wp);
 #endif
 void clone_mac(webs_t wp)
 {
-	wp->clone_wan_mac = 1;
+	wp->p->clone_wan_mac = 1;
 }
 
 /*
@@ -273,8 +273,8 @@ void validate_filter_tod(webs_t wp)
 	}
 
 	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour, _end_min, time);
-	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", wp->filter_id);
-	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", wp->filter_id);
+	snprintf(filter_tod, sizeof(filter_tod), "filter_tod%d", wp->p->filter_id);
+	snprintf(filter_tod_buf, sizeof(filter_tod_buf), "filter_tod_buf%d", wp->p->filter_id);
 
 	nvram_set(filter_tod, buf);
 	nvram_set(filter_tod_buf, tod_buf);
@@ -329,8 +329,8 @@ void save_policy(webs_t wp)
 	}
 
 	validate_filter_tod(wp);
-	wp->filter_id = atoi(f_id);
-	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->filter_id);
+	wp->p->filter_id = atoi(f_id);
+	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->p->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
 	// Disable // 2003/10/21
@@ -348,9 +348,9 @@ void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 	char *f_id = websGetVar(wp, "f_id", NULL);
 
 	if (f_id)
-		wp->filter_id = atoi(f_id);
+		wp->p->filter_id = atoi(f_id);
 	else
-		wp->filter_id = 1;
+		wp->p->filter_id = 1;
 
 	save_policy(wp);
 }
@@ -465,7 +465,7 @@ void delete_policy(webs_t wp, int which)
 void single_delete_policy(webs_t wp)
 {
 	D("single delete policy");
-	delete_policy(wp, wp->filter_id);
+	delete_policy(wp, wp->p->filter_id);
 	D("okay");
 	return;
 }
@@ -585,7 +585,7 @@ void generate_wep_key_single(webs_t wp, char *prefix, char *passphrase, char *bi
 
 	gen_key(wp, passphrase, atoi(bit), key64, key128);
 
-	wp->generate_key = 1;
+	wp->p->generate_key = 1;
 
 	if (atoi(bit) == 64) {
 		char key1[27] = "";
@@ -1834,7 +1834,7 @@ void forward_add(webs_t wp)
 void filter_remove(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	if (numfilters > 0)
 		numfilters--;
@@ -1846,7 +1846,7 @@ void filter_remove(webs_t wp)
 void filter_add(webs_t wp)
 {
 	char filter[32];
-	sprintf(filter, "numfilterservice%d", wp->filter_id);
+	sprintf(filter, "numfilterservice%d", wp->p->filter_id);
 	int numfilters = nvram_default_geti(filter, 4);
 	numfilters++;
 	char num[32];
