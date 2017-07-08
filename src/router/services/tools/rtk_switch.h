@@ -3,7 +3,7 @@
  * All rights reserved.
  *
  * $Revision: 49203 $
- * $Date: 2014-07-15 11:28:36 +0800 (é€±äºŒ, 15 ä¸ƒæœˆ 2014) $
+ * $Date: 2014-07-15 11:28:36 +0800 (.Ç...î, 15 ..âµ£ê 2014) $
  *
  * Purpose : Definition function prototype of RTK switch API.
  *
