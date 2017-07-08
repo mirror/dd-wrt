@@ -292,6 +292,7 @@ include rules/softether.mk
 include rules/f2fs-tools.mk
 -include rules/anchorfree.mk
 include rules/speedchecker.mk
+include rules/shownf.mk
 
 #
 # Generic rules
