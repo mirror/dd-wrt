@@ -1016,9 +1016,9 @@ static char *directories[] = {
 	"/etc/config",
 };
 
-static int checkandadd(char *name)
+static int checkandadd(char *name, char **lst)
 {
-	static char *list = NULL;
+	char *list = *lst;
 	if (!name) {
 		if (list)
 			free(list);
@@ -1051,6 +1051,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	int resultcount = 0;
 	char *result[256];
 	result[0] = NULL;
+	char *list;
 
 	// display modules
 	int idx;
@@ -1061,9 +1062,16 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 			continue;
 		// list all files in this directory
 		while ((entry = readdir(directory)) != NULL) {
-			if (checkandadd(entry->d_name))
+			if (checkandadd(entry->d_name, &list))
 				continue;
 			if (argc > 0) {
+				if (argc == 3) {
+					if (!nvram_match(argv[1], argv[2])) {
+						closedir(directory);
+						return;
+					}
+				}
+
 				if (endswith(entry->d_name, argv[0])) {
 #if defined(HAVE_ERC)
 					if (strcmp(entry->d_name, "base.webconfig") && !wp->userid)	//show only base.webconfig for this user and nothing else
@@ -1121,7 +1129,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 		result[0] = NULL;
 		closedir(directory);
 	}
-	checkandadd(NULL);
+	checkandadd(NULL, &list);
 	return;
 }
 
