@@ -3632,6 +3632,7 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_SPEEDCHECKER
 	{"shownf", "1"},
+	{"speedchecker_enable", "0"},
 #endif
 	{0, 0}
 };
