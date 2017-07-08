@@ -16,9 +16,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	speedchecker_toggle_desc(document.setup.speedchecker_enable);
 	speedchecker_enable_onClick(document.setup.speedchecker_enable);
-	show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', <% nvem("speedchecker_enable", "1", "1", "0"); %> == 1);
 
 	document.getElementById("main").style.float="none";
 	document.getElementById("contents").style.width="97%";
@@ -39,10 +37,8 @@ function speedchecker_enable_onClick(source) {
             var secret = '<% nvg("speedchecker_uuid2"); %>';
 	    speedchecker_toggle_desc(source);
 
-            if (parseInt(source['value'])) {
-                scope.innerHTML = ''.concat(
-                    '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="',
-                    'https://speedchecker.dd-wrt.com/registration.html?RID=', RID, '&secret=', secret, '"></iframe>');
+            if (source.value == 1) {
+                scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/registration.html?RID=' + RID + '&secret=' + secret + '"></iframe>';
 		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', true);
             } else {
                 scope.innerHTML = '';
@@ -61,10 +57,7 @@ function speedchecker_toggle_desc() {
   var port = '<% nvg("http_lanport"); %>';
 	
  if (val==1) {
-       	scope.innerHTML = ''.concat(
-			'<iframe width="99%" height="200" frameborder="0" scrolling="no" src="',
-			'https://speedchecker.dd-wrt.com/speedtest.html?RID=', RID, '&secret=', secret,
-			'&server=', server ,':', port ,'"></iframe>');
+       	scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/speedtest.html?RID=' + RID +  '&secret=' + secret + '&server=' + server  + ':' + port + '"></iframe>';
 	    } else {
                 scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
 		}
