@@ -14,13 +14,36 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <services.h>
+#include <prevision.h>
 
+#define SCVERSION "1.1"
 void start_speedchecker(void)
 {
-	if (!nvram_matchi("speedchecker_enable", 1)) {
-		return;
-	} else {
-		eval("sh", "/etc/config/speedchecker.startup");
+	char uuid[37];
+	char change = 0;
+	if (!nvram_get("speedchecker_uuid")) {
+		getUUID(uuid);
+		nvram_set("speedchecker_uuid", uuid);
+		change = 1;
+	}
+
+	if (!nvram_get("speedchecker_uuid2")) {
+		getUUID(uuid);
+		nvram_set("speedchecker_uuid2", uuid);
+		change = 1;
+	}
+	if (change)
+		nvram_commit();
+
+	if (nvram_matchi("speedchecker_enable", 1)) {
+		sysprintf("SCC_JID=%s@xmpp.speedcheckerapi.com/%s|%s|ddwrt|%s| SCC_SRV=xmpp.speedcheckerapi.com SCC_STATS_IF=%s SCC_RNAME=%s SCC_LOG=%s scc&\n",	//
+			  nvram_safe_get("speedchecker_uuid"),	//
+			  SCVERSION,	//
+			  PSVN_REVISION,	//
+			  nvram_safe_get("os_version"),	//
+			  get_wan_face(),	//
+			  nvram_safe_get("DD_BOARD"),	//
+			  nvram_safe_get("speedchecker_debug"));
 		syslog(LOG_INFO, "speedchecker : client started\n");
 	}
 
@@ -29,11 +52,7 @@ void start_speedchecker(void)
 
 void stop_speedchecker(void)
 {
-
-	if (pidof("scc") > 0) {
-		eval("kill", "-9", pidof("scc"));
-	}
-
+	stop_process("scc", "speedchecker");
 	return;
 }
 #endif
