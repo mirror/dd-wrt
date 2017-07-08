@@ -88,8 +88,8 @@ function speedchecker_toggle_desc(value) {
 <div id="scdesc" size="100%"></div>
 <div class="setting">
            <div class="label"><% tran("speedchecker.server"); %></div>
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="speedchecker_enable_onClick(this.speedchecker_enable.value)" /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="speedchecker_enable_onClick(this.speedchecker_enable.value)"/><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="speedchecker_enable_onClick(1)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="speedchecker_enable_onClick(0)"/><% tran("share.disable"); %>
 </div>
 <div id="speedcheckerconfig">
 </div>
