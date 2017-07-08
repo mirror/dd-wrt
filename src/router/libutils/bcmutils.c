@@ -477,7 +477,7 @@ char *get_mac_from_ip(char *mac, char *ip)
 				continue;
 			// if (!(flags & ATF_COM)) { //ATF_COM = 0x02 completed entry (ha 
 			// valid)
-			strcpy(mac, hwa);
+			strncpy(mac, hwa, 17);
 			fclose(fp);
 			return mac;
 			// }
