@@ -7373,8 +7373,12 @@ int crypt_make_salt(char *p, int cnt, int x)
 char *getUUID(char *buf)
 {
 	FILE *fp = fopen("/proc/sys/kernel/random/uuid", "rb");
-	fscanf(fp, "%s", buf);
-	fclose(fp);
+	if (fp) {
+		fscanf(fp, "%s", buf);
+		fclose(fp);
+		return buf;
+	}
+	return NULL;
 }
 
 char *zencrypt(char *passwd, char *passout)
