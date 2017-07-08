@@ -16,7 +16,7 @@ function to_apply(F) {
 var update;
 
 addEvent(window, "load", function() {
-	speedchecker_enable_onClick(document.setup.speedchecker_enable);
+	speedchecker_enable_onClick(<% nvg("speedchecker_enable"); %>);
 
 	document.getElementById("main").style.float="none";
 	document.getElementById("contents").style.width="97%";
@@ -31,13 +31,13 @@ addEvent(window, "unload", function() {
 
 });
 
-function speedchecker_enable_onClick(source) {
+function speedchecker_enable_onClick(value) {
             var scope = document.getElementById('speedcheckerconfig');
             var RID = '<% nvg("speedchecker_uuid"); %>';
             var secret = '<% nvg("speedchecker_uuid2"); %>';
-	    speedchecker_toggle_desc(source);
+	    speedchecker_toggle_desc(value);
 
-            if (source.value == 1) {
+            if (value == 1) {
                 scope.innerHTML = '<iframe width="99%" height="250" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/registration.html?RID=' + RID + '&secret=' + secret + '"></iframe>';
 		show_layer_ext(document.setup.speedchecker_enable, 'speedcheckerconfig', true);
             } else {
@@ -48,7 +48,7 @@ function speedchecker_enable_onClick(source) {
             };
         }
 
-function speedchecker_toggle_desc() {
+function speedchecker_toggle_desc(value) {
   var val = <% nvg("speedchecker_enable"); %>;
   var scope = document.getElementById('scdesc');
   var RID = '<% nvg("speedchecker_uuid"); %>';
@@ -88,8 +88,8 @@ function speedchecker_toggle_desc() {
 <div id="scdesc" size="100%"></div>
 <div class="setting">
            <div class="label"><% tran("speedchecker.server"); %></div>
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="speedchecker_enable_onClick(this)" /><% tran("share.enable"); %>&nbsp;
-           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="speedchecker_enable_onClick(this)"/><% tran("share.disable"); %>
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="1" <% nvram_checked("speedchecker_enable", "1"); %> onclick="speedchecker_enable_onClick(this.speedchecker_enable.value)" /><% tran("share.enable"); %>&nbsp;
+           <input class="spaceradio" type="radio" name="speedchecker_enable" value="0" <% nvram_checked("speedchecker_enable", "0"); %> onclick="speedchecker_enable_onClick(this.speedchecker_enable.value)"/><% tran("share.disable"); %>
 </div>
 <div id="speedcheckerconfig">
 </div>
