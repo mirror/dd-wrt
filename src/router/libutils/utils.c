@@ -7370,6 +7370,13 @@ int crypt_make_salt(char *p, int cnt, int x)
 
 #include <crypt.h>
 
+char *getUUID(char *buf)
+{
+	FILE *fp = fopen("/proc/sys/kernel/random/uuid", "rb");
+	fscanf(fp, "%s", buf);
+	fclose(fp);
+}
+
 char *zencrypt(char *passwd, char *passout)
 {
 	char salt[sizeof("$N$XXXXXXXX")];	/* "$N$XXXXXXXX" or "XX" */
