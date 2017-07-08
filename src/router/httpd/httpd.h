@@ -44,6 +44,14 @@ extern BIO *bio_err;
 #define USE_WAN 1
 
 typedef struct {
+//persistent
+	int generate_key;
+	int clone_wan_mac;
+	int filter_id;
+} persistent_vars;
+
+
+typedef struct {
 	FILE *fp;
 	int threadid;
 	int userid;
@@ -86,14 +94,11 @@ typedef struct {
 	int isregistered;
 	int isregistered_real;
 #endif
-//persistent
-	int generate_key;
-	int clone_wan_mac;
-	int filter_id;
-
+	persistent_vars *p;
 /* CGI hash table */
 	struct hsearch_data htab;
 } webs;
+
 
 typedef webs *webs_t;
 
