@@ -13,3 +13,4 @@ speedchecker-install:
 	install -D speedchecker/scripts/traceroute $(INSTALLDIR)/speedchecker/usr/bin/speedchecker/traceroute
 	svn log $(TOP)/private/speedchecker/scc.c | head -n2 | tail -n1 | cut -d \| -f 1 |cut -c2- | awk '{print "PSVNVERSION="$$1}' >$(INSTALLDIR)/speedchecker/usr/bin/speedchecker/sccversion
 	cat $(TOP)/private/speedchecker/speedchecker/VERSION >>$(INSTALLDIR)/speedchecker/usr/bin/speedchecker/sccversion
+	install -D speedchecker/configs/01-sc.shownf $(INSTALLDIR)/speedchecker/etc/config/01-sc.shownf
