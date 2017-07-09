@@ -753,11 +753,11 @@ struct sk_buff {
 #ifdef CONFIG_NET_SWITCHDEV
 	__u8			offload_fwd_mark:1;
 #endif
-	/* 2, 4 or 5 bit hole */
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 	__u8			imq_flags:IMQ_F_BITS;
 #endif
-
+	__u8			gro_skip:1;
+	/* 1, 3 or 4 bit hole */
 #ifdef CONFIG_NET_SCHED
 	__u16			tc_index;	/* traffic control index */
 #ifdef CONFIG_NET_CLS_ACT
