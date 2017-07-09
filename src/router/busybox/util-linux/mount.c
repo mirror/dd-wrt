@@ -90,7 +90,7 @@
 //config:
 //config:config FEATURE_MOUNT_FLAGS
 //config:	depends on MOUNT
-//config:	bool "Support lots of -o flags in mount"
+//config:	bool "Support lots of -o flags"
 //config:	default y
 //config:	help
 //config:	  Without this, mount only supports ro/rw/remount. With this, it
@@ -1884,6 +1884,7 @@ static int nfsmount(struct mntent *mp, unsigned long vfsflags, char *filteropts)
 // NB: mp->xxx fields may be trashed on exit
 static int singlemount(struct mntent *mp, int ignore_busy)
 {
+	int loopfd = -1;
 	int rc = -1;
 	unsigned long vfsflags;
 	char *loopFile = NULL, *filteropts = NULL;
@@ -2023,7 +2024,20 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 		if (ENABLE_FEATURE_MOUNT_LOOP && S_ISREG(st.st_mode)) {
 			loopFile = bb_simplify_path(mp->mnt_fsname);
 			mp->mnt_fsname = NULL; // will receive malloced loop dev name
-			if (set_loop(&mp->mnt_fsname, loopFile, 0, /*ro:*/ (vfsflags & MS_RDONLY)) < 0) {
+
+			// mount always creates AUTOCLEARed loopdevs, so that umounting
+			// drops them without any code in the userspace.
+			// This happens since circa linux-2.6.25:
+			// commit 96c5865559cee0f9cbc5173f3c949f6ce3525581
+			// Date:    Wed Feb 6 01:36:27 2008 -0800
+			// Subject: Allow auto-destruction of loop devices
+			loopfd = set_loop(&mp->mnt_fsname,
+					loopFile,
+					0,
+					((vfsflags & MS_RDONLY) ? BB_LO_FLAGS_READ_ONLY : 0)
+						| BB_LO_FLAGS_AUTOCLEAR
+			);
+			if (loopfd < 0) {
 				if (errno == EPERM || errno == EACCES)
 					bb_error_msg(bb_msg_perm_denied_are_you_root);
 				else
@@ -2071,6 +2085,8 @@ static int singlemount(struct mntent *mp, int ignore_busy)
 	}
 
 	// If mount failed, clean up loop file (if any).
+	// (Newer kernels which support LO_FLAGS_AUTOCLEAR should not need this,
+	// merely "close(loopfd)" should do it?)
 	if (ENABLE_FEATURE_MOUNT_LOOP && rc && loopFile) {
 		del_loop(mp->mnt_fsname);
 		if (ENABLE_FEATURE_CLEAN_UP) {
@@ -2082,6 +2098,9 @@ static int singlemount(struct mntent *mp, int ignore_busy)
  report_error:
 	if (ENABLE_FEATURE_CLEAN_UP)
 		free(filteropts);
+
+	if (loopfd >= 0)
+		close(loopfd);
 
 	if (errno == EBUSY && ignore_busy)
 		return 0;
@@ -2309,7 +2328,7 @@ int mount_main(int argc UNUSED_PARAM, char **argv)
 				bb_error_msg_and_die(bb_msg_you_must_be_root);
 
 			// Does type match? (NULL matches always)
-			if (!match_fstype(mtcur, fstype))
+			if (!fstype_matches(mtcur->mnt_type, fstype))
 				continue;
 
 			// Skip noauto and swap anyway

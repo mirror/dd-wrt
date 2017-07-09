@@ -48,11 +48,9 @@ aa:      85.1% -- replaced with aa.gz
 //config:	bool "Enable long options"
 //config:	default y
 //config:	depends on GZIP && LONG_OPTS
-//config:	help
-//config:	  Enable use of long options, increases size by about 106 Bytes
 //config:
 //config:config GZIP_FAST
-//config:	int "Trade memory for gzip speed (0:small,slow - 2:fast,big)"
+//config:	int "Trade memory for speed (0:small,slow - 2:fast,big)"
 //config:	default 0
 //config:	range 0 2
 //config:	depends on GZIP
@@ -72,22 +70,33 @@ aa:      85.1% -- replaced with aa.gz
 //config:	  is 6. If levels 1-3 are specified, 4 is used.
 //config:	  If this option is not selected, -N options are ignored and -9
 //config:	  is used.
+//config:
+//config:config FEATURE_GZIP_DECOMPRESS
+//config:	bool "Enable decompression"
+//config:	default y
+//config:	depends on GZIP || GUNZIP || ZCAT
+//config:	help
+//config:	  Enable -d (--decompress) and -t (--test) options for gzip.
+//config:	  This will be automatically selected if gunzip or zcat is
+//config:	  enabled.
 
 //applet:IF_GZIP(APPLET(gzip, BB_DIR_BIN, BB_SUID_DROP))
 //kbuild:lib-$(CONFIG_GZIP) += gzip.o
 
 //usage:#define gzip_trivial_usage
-//usage:       "[-cf" IF_GUNZIP("d") IF_FEATURE_GZIP_LEVELS("123456789") "] [FILE]..."
+//usage:       "[-cfk" IF_FEATURE_GZIP_DECOMPRESS("dt") IF_FEATURE_GZIP_LEVELS("123456789") "] [FILE]..."
 //usage:#define gzip_full_usage "\n\n"
 //usage:       "Compress FILEs (or stdin)\n"
 //usage:	IF_FEATURE_GZIP_LEVELS(
 //usage:     "\n	-1..9	Compression level"
 //usage:	)
-//usage:	IF_GUNZIP(
+//usage:	IF_FEATURE_GZIP_DECOMPRESS(
 //usage:     "\n	-d	Decompress"
+//usage:     "\n	-t	Test file integrity"
 //usage:	)
 //usage:     "\n	-c	Write to stdout"
 //usage:     "\n	-f	Force"
+//usage:     "\n	-k	Keep input files"
 //usage:
 //usage:#define gzip_example_usage
 //usage:       "$ ls -la /tmp/busybox*\n"
@@ -267,7 +276,7 @@ enum {
  * input file length plus MIN_LOOKAHEAD.
  */
 
-#ifndef ENABLE_FEATURE_GZIP_LEVELS
+#if !ENABLE_FEATURE_GZIP_LEVELS
 
 	max_chain_length = 4096,
 /* To speed up deflation, hash chains are never searched beyond this length.
@@ -306,7 +315,7 @@ enum {
 
 struct globals {
 
-#ifdef ENABLE_FEATURE_GZIP_LEVELS
+#if ENABLE_FEATURE_GZIP_LEVELS
 	unsigned max_chain_length;
 	unsigned max_lazy_match;
 	unsigned good_match;
@@ -2154,7 +2163,7 @@ static const char gzip_longopts[] ALIGN1 =
 	"to-stdout\0"           No_argument       "c"
 	"force\0"               No_argument       "f"
 	"verbose\0"             No_argument       "v"
-#if ENABLE_GUNZIP
+#if ENABLE_FEATURE_GZIP_DECOMPRESS
 	"decompress\0"          No_argument       "d"
 	"uncompress\0"          No_argument       "d"
 	"test\0"                No_argument       "t"
@@ -2181,14 +2190,14 @@ static const char gzip_longopts[] ALIGN1 =
  */
 
 int gzip_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
-#if ENABLE_GUNZIP
+#if ENABLE_FEATURE_GZIP_DECOMPRESS
 int gzip_main(int argc, char **argv)
 #else
 int gzip_main(int argc UNUSED_PARAM, char **argv)
 #endif
 {
 	unsigned opt;
-#ifdef ENABLE_FEATURE_GZIP_LEVELS
+#if ENABLE_FEATURE_GZIP_LEVELS
 	static const struct {
 		uint8_t good;
 		uint8_t chain_shift;
@@ -2211,13 +2220,13 @@ int gzip_main(int argc UNUSED_PARAM, char **argv)
 	applet_long_options = gzip_longopts;
 #endif
 	/* Must match bbunzip's constants OPT_STDOUT, OPT_FORCE! */
-	opt = getopt32(argv, "cfv" IF_GUNZIP("dt") "qn123456789");
-#if ENABLE_GUNZIP /* gunzip_main may not be visible... */
-	if (opt & 0x18) // -d and/or -t
+	opt = getopt32(argv, "cfkv" IF_FEATURE_GZIP_DECOMPRESS("dt") "qn123456789");
+#if ENABLE_FEATURE_GZIP_DECOMPRESS /* gunzip_main may not be visible... */
+	if (opt & 0x30) // -d and/or -t
 		return gunzip_main(argc, argv);
 #endif
-#ifdef ENABLE_FEATURE_GZIP_LEVELS
-	opt >>= ENABLE_GUNZIP ? 7 : 5; /* drop cfv[dt]qn bits */
+#if ENABLE_FEATURE_GZIP_LEVELS
+	opt >>= ENABLE_FEATURE_GZIP_DECOMPRESS ? 8 : 6; /* drop cfkv[dt]qn bits */
 	if (opt == 0)
 		opt = 1 << 6; /* default: 6 */
 	opt = ffs(opt >> 4); /* Maps -1..-4 to [0], -5 to [1] ... -9 to [5] */
@@ -2226,7 +2235,7 @@ int gzip_main(int argc UNUSED_PARAM, char **argv)
 	max_lazy_match	 = gzip_level_config[opt].lazy2 * 2;
 	nice_match	 = gzip_level_config[opt].nice2 * 2;
 #endif
-	option_mask32 &= 0x7; /* retain only -cfv */
+	option_mask32 &= 0xf; /* retain only -cfkv */
 
 	/* Allocate all global buffers (for DYN_ALLOC option) */
 	ALLOC(uch, G1.l_buf, INBUFSIZ);

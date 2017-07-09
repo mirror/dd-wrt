@@ -155,6 +155,7 @@
 #define RETRY_INTERVAL    32    /* on send/recv error, retry in N secs (need to be power of 2) */
 #define NOREPLY_INTERVAL 512    /* sent, but got no reply: cap next query by this many seconds */
 #define RESPONSE_INTERVAL 16    /* wait for reply up to N secs */
+#define HOSTNAME_INTERVAL  5    /* hostname lookup failed. Wait N secs for next try */
 
 /* Step threshold (sec). std ntpd uses 0.128.
  */
@@ -392,7 +393,7 @@ struct globals {
 	 * too big and we will step. I observed it with -6.
 	 *
 	 * OTOH, setting precision_sec far too small would result in futile
-	 * attempts to syncronize to an unachievable precision.
+	 * attempts to synchronize to an unachievable precision.
 	 *
 	 * -6 is 1/64 sec, -7 is 1/128 sec and so on.
 	 * -8 is 1/256 ~= 0.003906 (worked well for me --vda)
@@ -753,10 +754,10 @@ reset_peer_stats(peer_t *p, double offset)
 	bool small_ofs = fabs(offset) < STEP_THRESHOLD;
 
 	/* Used to set p->filter_datapoint[i].d_dispersion = MAXDISP
-	 * and clear reachable bits, but this proved to be too agressive:
+	 * and clear reachable bits, but this proved to be too aggressive:
 	 * after step (tested with suspending laptop for ~30 secs),
 	 * this caused all previous data to be considered invalid,
-	 * making us needing to collect full ~8 datapoins per peer
+	 * making us needing to collect full ~8 datapoints per peer
 	 * after step in order to start trusting them.
 	 * In turn, this was making poll interval decrease even after
 	 * step was done. (Poll interval decreases already before step
@@ -790,28 +791,22 @@ reset_peer_stats(peer_t *p, double offset)
 	VERB6 bb_error_msg("%s->lastpkt_recv_time=%f", p->p_dotted, p->lastpkt_recv_time);
 }
 
-static void
-resolve_peer_hostname(peer_t *p, int loop_on_fail)
+static len_and_sockaddr*
+resolve_peer_hostname(peer_t *p)
 {
-	len_and_sockaddr *lsa;
-
- again:
-	lsa = host2sockaddr(p->p_hostname, 123);
-	if (!lsa) {
-		/* error message already emitted by host2sockaddr() */
-		if (!loop_on_fail)
-			return;
-//FIXME: do this to avoid infinite looping on typo in a hostname?
-//well... in which case, what is a good value for loop_on_fail?
-		//if (--loop_on_fail == 0)
-		//	xfunc_die();
-		sleep(5);
-		goto again;
+	len_and_sockaddr *lsa = host2sockaddr(p->p_hostname, 123);
+	if (lsa) {
+		free(p->p_lsa);
+		free(p->p_dotted);
+		p->p_lsa = lsa;
+		p->p_dotted = xmalloc_sockaddr2dotted_noport(&lsa->u.sa);
+		VERB1 if (strcmp(p->p_hostname, p->p_dotted) != 0)
+			bb_error_msg("'%s' is %s", p->p_hostname, p->p_dotted);
+	} else {
+		/* error message is emitted by host2sockaddr() */
+		set_next(p, HOSTNAME_INTERVAL);
 	}
-	free(p->p_lsa);
-	free(p->p_dotted);
-	p->p_lsa = lsa;
-	p->p_dotted = xmalloc_sockaddr2dotted_noport(&lsa->u.sa);
+	return lsa;
 }
 
 static void
@@ -822,27 +817,27 @@ add_peers(const char *s)
 
 	p = xzalloc(sizeof(*p) + strlen(s));
 	strcpy(p->p_hostname, s);
-	resolve_peer_hostname(p, /*loop_on_fail=*/ 1);
+	p->p_fd = -1;
+	p->p_xmt_msg.m_status = MODE_CLIENT | (NTP_VERSION << 3);
+	p->next_action_time = G.cur_time; /* = set_next(p, 0); */
+	reset_peer_stats(p, STEP_THRESHOLD);
 
 	/* Names like N.<country2chars>.pool.ntp.org are randomly resolved
 	 * to a pool of machines. Sometimes different N's resolve to the same IP.
 	 * It is not useful to have two peers with same IP. We skip duplicates.
 	 */
-	for (item = G.ntp_peers; item != NULL; item = item->link) {
-		peer_t *pp = (peer_t *) item->data;
-		if (strcmp(p->p_dotted, pp->p_dotted) == 0) {
-			bb_error_msg("duplicate peer %s (%s)", s, p->p_dotted);
-			free(p->p_lsa);
-			free(p->p_dotted);
-			free(p);
-			return;
+	if (resolve_peer_hostname(p)) {
+		for (item = G.ntp_peers; item != NULL; item = item->link) {
+			peer_t *pp = (peer_t *) item->data;
+			if (pp->p_dotted && strcmp(p->p_dotted, pp->p_dotted) == 0) {
+				bb_error_msg("duplicate peer %s (%s)", s, p->p_dotted);
+				free(p->p_lsa);
+				free(p->p_dotted);
+				free(p);
+				return;
+			}
 		}
 	}
-
-	p->p_fd = -1;
-	p->p_xmt_msg.m_status = MODE_CLIENT | (NTP_VERSION << 3);
-	p->next_action_time = G.cur_time; /* = set_next(p, 0); */
-	reset_peer_stats(p, STEP_THRESHOLD);
 
 	llist_add_to(&G.ntp_peers, p);
 	G.peer_cnt++;
@@ -871,6 +866,11 @@ do_sendto(int fd,
 static void
 send_query_to_peer(peer_t *p)
 {
+	if (!p->p_lsa) {
+		if (!resolve_peer_hostname(p))
+			return;
+	}
+
 	/* Why do we need to bind()?
 	 * See what happens when we don't bind:
 	 *
@@ -1715,7 +1715,7 @@ update_local_clock(peer_t *p)
 	 * It looks like Linux kernel's PLL is far too gentle in changing
 	 * tmx.freq in response to clock offset. Offset keeps growing
 	 * and eventually we fall back to smaller poll intervals.
-	 * We can make correction more agressive (about x2) by supplying
+	 * We can make correction more aggressive (about x2) by supplying
 	 * PLL time constant which is one less than the real one.
 	 * To be on a safe side, let's do it only if offset is significantly
 	 * larger than jitter.
@@ -2238,7 +2238,7 @@ static NOINLINE void ntp_init(char **argv)
 			IF_FEATURE_NTPD_SERVER("I:") /* compat */
 			"d" /* compat */
 			"46aAbgL", /* compat, ignored */
-			&peers,&G.script_name,
+			&peers, &G.script_name,
 #if ENABLE_FEATURE_NTPD_SERVER
 			&G.if_name,
 #endif
@@ -2263,9 +2263,6 @@ static NOINLINE void ntp_init(char **argv)
 	if (opts & OPT_N)
 		setpriority(PRIO_PROCESS, 0, -15);
 
-	/* add_peers() calls can retry DNS resolution (possibly forever).
-	 * Daemonize before them, or else boot can stall forever.
-	 */
 	if (!(opts & OPT_n)) {
 		bb_daemonize_or_rexec(DAEMON_DEVNULL_STDIO, argv);
 		logmode = LOGMODE_NONE;
@@ -2400,7 +2397,7 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 
 					/* What if don't see it because it changed its IP? */
 					if (p->reachable_bits == 0)
-						resolve_peer_hostname(p, /*loop_on_fail=*/ 0);
+						resolve_peer_hostname(p);
 
 					set_next(p, timeout);
 				}

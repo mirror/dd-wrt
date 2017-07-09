@@ -57,13 +57,13 @@
 //usage:	IF_LONG_OPTS(
 //usage:	IF_FEATURE_GETOPT_LONG(
 //usage:       "	-a,--alternative		Allow long options starting with single -\n"
-//usage:       "	-l,--longoptions=LOPT[,...]	Long options to recognize\n"
+//usage:       "	-l,--longoptions LOPT[,...]	Long options to recognize\n"
 //usage:	)
-//usage:       "	-n,--name=PROGNAME		The name under which errors are reported"
-//usage:     "\n	-o,--options=OPTSTRING		Short options to recognize"
+//usage:       "	-n,--name PROGNAME		The name under which errors are reported"
+//usage:     "\n	-o,--options OPTSTRING		Short options to recognize"
 //usage:     "\n	-q,--quiet			No error messages on unrecognized options"
 //usage:     "\n	-Q,--quiet-output		No normal output"
-//usage:     "\n	-s,--shell=SHELL		Set shell quoting conventions"
+//usage:     "\n	-s,--shell SHELL		Set shell quoting conventions"
 //usage:     "\n	-T,--test			Version test (exits with 4)"
 //usage:     "\n	-u,--unquoted			Don't quote output"
 //usage:	)
@@ -246,12 +246,7 @@ static int generate_output(char **argv, int argc, const char *optstr, const stru
 
 	/* We used it already in main() in getopt32(),
 	 * we *must* reset getopt(3): */
-#ifdef __GLIBC__
-	optind = 0;
-#else /* BSD style */
-	optind = 1;
-	/* optreset = 1; */
-#endif
+	GETOPT_RESET();
 
 	while (1) {
 #if ENABLE_FEATURE_GETOPT_LONG
