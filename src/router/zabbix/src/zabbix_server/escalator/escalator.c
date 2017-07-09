@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -76,10 +76,8 @@ DB_ACTION;
 extern unsigned char	process_type, program_type;
 extern int		server_num, process_num;
 
-static void	add_message_alert(DB_ESCALATION *escalation, const DB_EVENT *event, const DB_EVENT *r_event,
-		const DB_ACTION *action, zbx_uint64_t userid, zbx_uint64_t mediatypeid, const char *subject,
-		const char *message)
-;
+static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zbx_uint64_t actionid, int esc_step,
+		zbx_uint64_t userid, zbx_uint64_t mediatypeid, const char *subject, const char *message);
 
 /******************************************************************************
  *                                                                            *
@@ -460,8 +458,8 @@ static void	add_sentusers_msg(ZBX_USER_MSG **user_msg, zbx_uint64_t actionid, co
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
 }
 
-static void	flush_user_msg(ZBX_USER_MSG **user_msg, DB_ESCALATION *escalation, const DB_EVENT *event,
-		const DB_EVENT *r_event, const DB_ACTION *action)
+static void	flush_user_msg(ZBX_USER_MSG **user_msg, int esc_step, const DB_EVENT *event, const DB_EVENT *r_event,
+		zbx_uint64_t actionid)
 {
 	ZBX_USER_MSG	*p;
 
@@ -470,7 +468,7 @@ static void	flush_user_msg(ZBX_USER_MSG **user_msg, DB_ESCALATION *escalation, c
 		p = *user_msg;
 		*user_msg = (*user_msg)->next;
 
-		add_message_alert(escalation, event, r_event, action, p->userid, p->mediatypeid, p->subject,
+		add_message_alert(event, r_event, actionid, esc_step, p->userid, p->mediatypeid, p->subject,
 				p->message);
 
 		zbx_free(p->subject);
@@ -637,6 +635,35 @@ static int	get_dynamic_hostid(const DB_EVENT *event, DC_HOST *host, char *error,
 	return ret;
 }
 
+/******************************************************************************
+ *                                                                            *
+ * Function: get_operation_groupids                                           *
+ *                                                                            *
+ * Purpose: get groups (including nested groups) used by an operation         *
+ *                                                                            *
+ * Parameters: operationid - [IN] the operation id                            *
+ *             groupids    - [OUT] the group ids                              *
+ *                                                                            *
+ ******************************************************************************/
+static void	get_operation_groupids(zbx_uint64_t operationid, zbx_vector_uint64_t *groupids)
+{
+	char			*sql = NULL;
+	size_t			sql_alloc = 0, sql_offset = 0;
+	zbx_vector_uint64_t	parent_groupids;
+
+	zbx_vector_uint64_create(&parent_groupids);
+
+	zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset,
+			"select groupid from opcommand_grp where operationid=" ZBX_FS_UI64, operationid);
+
+	DBselect_uint64(sql, &parent_groupids);
+
+	zbx_dc_get_nested_hostgroupids(parent_groupids.values, parent_groupids.values_num, groupids);
+
+	zbx_free(sql);
+	zbx_vector_uint64_destroy(&parent_groupids);
+}
+
 static void	execute_commands(const DB_EVENT *event, zbx_uint64_t actionid, zbx_uint64_t operationid, int esc_step)
 {
 	const char		*__function_name = "execute_commands";
@@ -646,33 +673,48 @@ static void	execute_commands(const DB_EVENT *event, zbx_uint64_t actionid, zbx_u
 	int			alerts_num = 0;
 	char			*buffer = NULL;
 	size_t			buffer_alloc = 2 * ZBX_KIBIBYTE, buffer_offset = 0;
-	zbx_vector_uint64_t	executed_on_hosts;
+	zbx_vector_uint64_t	executed_on_hosts, groupids;
 
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s()", __function_name);
 
 	buffer = zbx_malloc(buffer, buffer_alloc);
 
-	zbx_strcpy_alloc(&buffer, &buffer_alloc, &buffer_offset,
-			/* the 1st 'select' works if remote command target is "Host group" */
-			"select distinct h.hostid,h.host,o.type,o.scriptid,o.execute_on,o.port"
-				",o.authtype,o.username,o.password,o.publickey,o.privatekey,o.command,h.tls_connect"
+	/* get hosts operation's hosts */
+
+	zbx_vector_uint64_create(&groupids);
+	get_operation_groupids(operationid, &groupids);
+
+	if (0 != groupids.values_num)
+	{
+		zbx_strcpy_alloc(&buffer, &buffer_alloc, &buffer_offset,
+				/* the 1st 'select' works if remote command target is "Host group" */
+				"select distinct h.hostid,h.host,o.type,o.scriptid,o.execute_on,o.port"
+					",o.authtype,o.username,o.password,o.publickey,o.privatekey,o.command,h.tls_connect"
 #ifdef HAVE_OPENIPMI
-			/* do not forget to update ZBX_IPMI_FIELDS_NUM if number of selected IPMI fields changes */
-			",h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password"
+				/* do not forget to update ZBX_IPMI_FIELDS_NUM if number of selected IPMI fields changes */
+				",h.ipmi_authtype,h.ipmi_privilege,h.ipmi_username,h.ipmi_password"
 #endif
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
-			",h.tls_issuer,h.tls_subject,h.tls_psk_identity,h.tls_psk"
+				",h.tls_issuer,h.tls_subject,h.tls_psk_identity,h.tls_psk"
 #endif
-			);
-	zbx_snprintf_alloc(&buffer, &buffer_alloc, &buffer_offset,
-			" from opcommand o,opcommand_grp og,hosts_groups hg,hosts h"
-			" where o.operationid=og.operationid"
-				" and og.groupid=hg.groupid"
-				" and hg.hostid=h.hostid"
-				" and o.operationid=" ZBX_FS_UI64
-				" and h.status=%d"
-			" union ",
-			operationid, HOST_STATUS_MONITORED);
+				);
+
+		zbx_snprintf_alloc(&buffer, &buffer_alloc, &buffer_offset,
+				" from opcommand o,hosts_groups hg,hosts h"
+				" where o.operationid=" ZBX_FS_UI64
+					" and hg.hostid=h.hostid"
+					" and h.status=%d"
+					" and",
+				operationid, HOST_STATUS_MONITORED);
+
+		DBadd_condition_alloc(&buffer, &buffer_alloc, &buffer_offset, "hg.groupid", groupids.values,
+				groupids.values_num);
+
+		zbx_snprintf_alloc(&buffer, &buffer_alloc, &buffer_offset, " union ");
+	}
+
+	zbx_vector_uint64_destroy(&groupids);
+
 	zbx_strcpy_alloc(&buffer, &buffer_alloc, &buffer_offset,
 			/* the 2nd 'select' works if remote command target is "Host" */
 			"select distinct h.hostid,h.host,o.type,o.scriptid,o.execute_on,o.port"
@@ -823,9 +865,8 @@ skip:
 
 #undef ZBX_IPMI_FIELDS_NUM
 
-static void	add_message_alert(DB_ESCALATION *escalation, const DB_EVENT *event, const DB_EVENT *r_event,
-		const DB_ACTION *action, zbx_uint64_t userid, zbx_uint64_t mediatypeid, const char *subject,
-		const char *message)
+static void	add_message_alert(const DB_EVENT *event, const DB_EVENT *r_event, zbx_uint64_t actionid, int esc_step,
+		zbx_uint64_t userid, zbx_uint64_t mediatypeid, const char *subject, const char *message)
 {
 	const char	*__function_name = "add_message_alert";
 
@@ -903,8 +944,8 @@ static void	add_message_alert(DB_ESCALATION *escalation, const DB_EVENT *event, 
 					"alerttype", NULL);
 		}
 
-		zbx_db_insert_add_values(&db_insert, __UINT64_C(0), action->actionid, c_event->eventid, userid, now,
-				mediatypeid, row[1], subject, message, status, perror, escalation->esc_step,
+		zbx_db_insert_add_values(&db_insert, __UINT64_C(0), actionid, c_event->eventid, userid, now,
+				mediatypeid, row[1], subject, message, status, perror, esc_step,
 				(int)ALERT_TYPE_MESSAGE);
 	}
 
@@ -919,9 +960,9 @@ static void	add_message_alert(DB_ESCALATION *escalation, const DB_EVENT *event, 
 		zbx_db_insert_prepare(&db_insert, "alerts", "alertid", "actionid", "eventid", "userid", "clock",
 				"subject", "message", "status", "retries", "error", "esc_step", "alerttype", NULL);
 
-		zbx_db_insert_add_values(&db_insert, __UINT64_C(0), action->actionid, c_event->eventid, userid, now,
-				subject, message, (int)ALERT_STATUS_FAILED, (int)ALERT_MAX_RETRIES, error,
-				escalation->esc_step, (int)ALERT_TYPE_MESSAGE);
+		zbx_db_insert_add_values(&db_insert, __UINT64_C(0), actionid, c_event->eventid, userid, now,
+				subject, message, (int)ALERT_STATUS_FAILED, (int)ALERT_MAX_RETRIES, error, esc_step,
+				(int)ALERT_TYPE_MESSAGE);
 	}
 
 	if (0 != medias_num)
@@ -1085,6 +1126,12 @@ static void	escalation_execute_operations(DB_ESCALATION *escalation, const DB_EV
 		esc_period = atoi(row[2]);
 		evaltype = (unsigned char)atoi(row[3]);
 
+		if (0 == esc_period)
+			esc_period = action->esc_period;
+
+		if (0 == next_esc_period || next_esc_period > esc_period)
+			next_esc_period = esc_period;
+
 		if (SUCCEED == check_operation_conditions(event, operationid, evaltype))
 		{
 			unsigned char	default_msg;
@@ -1092,9 +1139,6 @@ static void	escalation_execute_operations(DB_ESCALATION *escalation, const DB_EV
 			zbx_uint64_t	mediatypeid;
 
 			zabbix_log(LOG_LEVEL_DEBUG, "Conditions match our event. Execute operation.");
-
-			if (0 == next_esc_period || next_esc_period > esc_period)
-				next_esc_period = esc_period;
 
 			switch (operationtype)
 			{
@@ -1131,7 +1175,7 @@ static void	escalation_execute_operations(DB_ESCALATION *escalation, const DB_EV
 	}
 	DBfree_result(result);
 
-	flush_user_msg(&user_msg, escalation, event, NULL, action);
+	flush_user_msg(&user_msg, escalation->esc_step, event, NULL, action->actionid);
 
 	if (0 == action->esc_period)
 	{
@@ -1180,14 +1224,17 @@ static void	escalation_execute_operations(DB_ESCALATION *escalation, const DB_EV
  *                                                                            *
  * Purpose: execute escalation recovery operations                            *
  *                                                                            *
- * Parameters: escalation - [IN] the escalation                               *
- *             event      - [IN] the event                                    *
+ * Parameters: event      - [IN] the event                                    *
  *             r_event    - [IN] the recovery event                           *
  *             action     - [IN] the action                                   *
  *                                                                            *
+ * Comments: Action recovery operations have a single escalation step, so     *
+ *           alerts created by escalation recovery operations must have       *
+ *           esc_step field set to 1.                                         *
+ *                                                                            *
  ******************************************************************************/
-static void	escalation_execute_recovery_operations(DB_ESCALATION *escalation, const DB_EVENT *event,
-		const DB_EVENT *r_event, const DB_ACTION *action)
+static void	escalation_execute_recovery_operations(const DB_EVENT *event, const DB_EVENT *r_event,
+		const DB_ACTION *action)
 {
 	const char	*__function_name = "escalation_execute_recovery_operations";
 	DB_RESULT	result;
@@ -1269,7 +1316,7 @@ static void	escalation_execute_recovery_operations(DB_ESCALATION *escalation, co
 							message);
 					break;
 				case OPERATION_TYPE_COMMAND:
-					execute_commands(r_event, action->actionid, operationid, escalation->esc_step);
+					execute_commands(r_event, action->actionid, operationid, 1);
 					break;
 			}
 		}
@@ -1278,7 +1325,7 @@ static void	escalation_execute_recovery_operations(DB_ESCALATION *escalation, co
 	}
 	DBfree_result(result);
 
-	flush_user_msg(&user_msg, escalation, event, r_event, action);
+	flush_user_msg(&user_msg, 1, event, r_event, action->actionid);
 
 	zabbix_log(LOG_LEVEL_DEBUG, "End of %s()", __function_name);
 }
@@ -1698,7 +1745,7 @@ static void	escalation_cancel(DB_ESCALATION *escalation, const DB_ACTION *action
 
 		message = zbx_dsprintf(NULL, "NOTE: Escalation cancelled: %s\n%s", error, action->longdata);
 		add_sentusers_msg(&user_msg, action->actionid, event, NULL, action->shortdata, message);
-		flush_user_msg(&user_msg, escalation, event, NULL, action);
+		flush_user_msg(&user_msg, escalation->esc_step, event, NULL, action->actionid);
 
 		zbx_free(message);
 	}
@@ -1752,11 +1799,7 @@ static void	escalation_recover(DB_ESCALATION *escalation, const DB_ACTION *actio
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() escalationid:" ZBX_FS_UI64 " status:%s",
 			__function_name, escalation->escalationid, zbx_escalation_status_string(escalation->status));
 
-	/* Action recovery operations have a single escalation step, so alerts */
-	/* created by escalation operations must have esc_step field set to 1. */
-	escalation->esc_step = 1;
-
-	escalation_execute_recovery_operations(escalation, event, r_event, action);
+	escalation_execute_recovery_operations(event, r_event, action);
 
 	escalation->status = ESCALATION_STATUS_COMPLETED;
 
@@ -2001,7 +2044,7 @@ static int	process_escalations(int now, int *nextcheck, unsigned int escalation_
 		ZBX_DBROW2UINT64(escalation.r_eventid, row[4]);
 
 		/* Skip escalations that must be checked later and that are not recovered */
-		/* (corresponding OK event hasn't occured yet, see process_actions()).    */
+		/* (corresponding OK event hasn't occurred yet, see process_actions()).   */
 		if (escalation.nextcheck > now && 0 == escalation.r_eventid)
 		{
 			if (escalation.nextcheck < *nextcheck)
@@ -2079,6 +2122,9 @@ static int	process_escalations(int now, int *nextcheck, unsigned int escalation_
 
 		if (0 != escalation.r_eventid)
 		{
+			if (0 == escalation.esc_step)
+				escalation_execute(&escalation, &action, &event);
+
 			escalation_recover(&escalation, &action, &event, &r_event);
 		}
 		else if (escalation.nextcheck <= now)

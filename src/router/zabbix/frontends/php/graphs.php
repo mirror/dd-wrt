@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -399,7 +399,7 @@ $pageFilter = new CPageFilter([
 
 if (empty($_REQUEST['parent_discoveryid'])) {
 	if ($pageFilter->groupid > 0) {
-		$groupId = $pageFilter->groupid;
+		$groupId = $pageFilter->groupids;
 	}
 	if ($pageFilter->hostid > 0) {
 		$hostId = $pageFilter->hostid;
@@ -645,7 +645,7 @@ else {
 	// get graphs
 	$options = [
 		'hostids' => ($data['hostid'] == 0) ? null : $data['hostid'],
-		'groupids' => ($data['hostid'] == 0 && $pageFilter->groupid > 0) ? $pageFilter->groupid : null,
+		'groupids' => ($data['hostid'] == 0 && $pageFilter->groupid > 0) ? $pageFilter->groupids : null,
 		'discoveryids' => isset($discoveryRule) ? $discoveryRule['itemid'] : null,
 		'editable' => true,
 		'output' => ['graphid', 'name', 'graphtype'],

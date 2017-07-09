@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -367,6 +367,34 @@ class CItemKey extends CParser {
 		}
 
 		return substr($unquoted, 0, -1);
+	}
+
+	/*
+	 * Quotes special symbols in item key parameter.
+	 *
+	 * @param string $param   Item key parameter.
+	 * @param bool   $forced  true - enclose parameter in " even if it does not contain any special characters.
+	 *                        false - do nothing if the paramter does not contain any special characters.
+	 *
+	 * @return string|bool  false - if parameter ends with backslash (cannot be quoted), string - otherwice.
+	 */
+	public static function quoteParam($param, $forced = false) {
+		if (!$forced)
+		{
+			if ($param === '') {
+				return $param;
+			}
+
+			if (strpos('" ', $param[0]) === false && strpos($param, ',') === false && strpos($param, ']') === false) {
+				return $param;
+			}
+		}
+
+		if ('\\' == substr($param, -1)) {
+			return false;
+		}
+
+		return '"'.str_replace ('"', '\\"', $param).'"';
 	}
 
 	/**

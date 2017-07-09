@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@
 include('include/views/js/administration.users.edit.js.php');
 
 if ($this->data['is_profile']) {
-	$userWidget = (new CWidget())->setTitle(_('User profile').NAME_DELIMITER.$this->data['name'].' '.$this->data['surname']);
+	$userWidget = ($this->data['name'] !== '' || $this->data['surname'] !== '')
+		? (new CWidget())->setTitle(_('User profile').NAME_DELIMITER.$this->data['name'].' '.$this->data['surname'])
+		: (new CWidget())->setTitle(_('User profile').NAME_DELIMITER.$this->data['alias']);
 }
 else {
 	$userWidget = (new CWidget())->setTitle(_('Users'));
@@ -74,7 +76,9 @@ if (!$this->data['is_profile']) {
 				->onClick('return PopUp("popup_usrgrp.php?dstfrm='.$userForm->getName().'&list_name=user_groups_to_del[]&var_name=user_groups");'),
 			BR(),
 			(count($this->data['user_groups']) > 0)
-				? (new CSubmit('del_user_group', _('Delete selected')))->addClass(ZBX_STYLE_BTN_GREY)
+				? (new CSimpleButton(_('Delete selected')))
+					->onClick('javascript: submitFormWithParam("'.$userForm->getName().'", "del_user_group", "1");')
+					->addClass(ZBX_STYLE_BTN_GREY)
 				: null
 		]
 	);
@@ -97,7 +101,9 @@ if ($data['auth_type'] == ZBX_AUTH_INTERNAL) {
 		}
 	}
 	else {
-		$passwdButton = (new CSubmit('change_password', _('Change password')))->addClass(ZBX_STYLE_BTN_GREY);
+		$passwdButton = (new CSimpleButton(_('Change password')))
+			->onClick('javascript: submitFormWithParam("'.$userForm->getName().'", "change_password", "1");')
+			->addClass(ZBX_STYLE_BTN_GREY);
 		if ($this->data['alias'] == ZBX_GUEST_USER) {
 			$passwdButton->setAttribute('disabled', 'disabled');
 		}
@@ -395,13 +401,17 @@ if (!$data['is_profile']) {
 		->setHeader([_('Host group'), _('Permissions')]);
 
 	if ($data['user_type'] == USER_TYPE_SUPER_ADMIN) {
-		$permissions_table->addRow(['*', permissionText(PERM_READ_WRITE)]);
+		$permissions_table->addRow([italic(_('All groups')), permissionText(PERM_READ_WRITE)]);
 	}
 	else {
 		foreach ($data['groups_rights'] as $groupid => $group_rights) {
-			$group_name = $group_rights['name'];
 			if (array_key_exists('grouped', $group_rights) && $group_rights['grouped']) {
-				$group_name .= ($groupid == 0) ? '*' : '/*';
+				$group_name = ($groupid == 0)
+					? italic(_('All groups'))
+					: [$group_rights['name'], SPACE, italic('('._('including subgroups').')')];
+			}
+			else {
+				$group_name = $group_rights['name'];
 			}
 			$permissions_table->addRow([$group_name, permissionText($group_rights['permission'])]);
 		}

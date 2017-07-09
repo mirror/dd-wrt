@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -29,8 +29,16 @@ function getIdFromNodeId(id) {
 	return null;
 }
 
-function check_target(e) {
-	var targets = document.getElementsByName('expr_target_single');
+function check_target(e, type) {
+	// If type is expression.
+	if (type == 0) {
+		var targets = document.getElementsByName('expr_target_single');
+	}
+	// Type is recovery expression.
+	else {
+		var targets = document.getElementsByName('recovery_expr_target_single');
+	}
+
 	for (var i = 0; i < targets.length; ++i) {
 		targets[i].checked = targets[i] == e;
 	}

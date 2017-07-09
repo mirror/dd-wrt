@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -190,6 +190,9 @@ $config = select_config();
 
 $data = getUserFormData(CWebUser::$data['userid'], $config, true);
 $data['userid'] = CWebUser::$data['userid'];
+$data['name'] = CWebUser::$data['name'];
+$data['surname'] = CWebUser::$data['surname'];
+$data['alias'] = CWebUser::$data['alias'];
 $data['form'] = getRequest('form');
 $data['form_refresh'] = getRequest('form_refresh', 0);
 $data['autologout'] = getRequest('autologout');

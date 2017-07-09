@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -738,10 +738,14 @@ function getItemDataOverviewCells($tableRow, $ithosts, $hostName) {
 			// Display event acknowledgement.
 			$config = select_config();
 			if ($config['event_ack_enable']) {
-				$ack = get_last_event_by_triggerid($item['triggerid']);
-				$ack = ($ack['acknowledged'] == 1)
-					? [SPACE, (new CSpan())->addClass(ZBX_STYLE_ICON_ACKN)]
-					: null;
+				$ack = getTriggerLastProblems([$item['triggerid']], ['acknowledged']);
+
+				if ($ack) {
+					$ack = reset($ack);
+					$ack = ($ack['acknowledged'] == 1)
+						? [SPACE, (new CSpan())->addClass(ZBX_STYLE_ICON_ACKN)]
+						: null;
+				}
 			}
 		}
 

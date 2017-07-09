@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -274,6 +274,13 @@ class C20ImportConverter extends CConverter {
 		foreach ($discovery_rules as &$discovery_rule) {
 			if ($discovery_rule['status'] == ITEM_STATUS_NOTSUPPORTED) {
 				$discovery_rule['status'] = ITEM_STATUS_ACTIVE;
+			}
+
+			if (in_array($discovery_rule['type'], [ITEM_TYPE_SNMPV1, ITEM_TYPE_SNMPV2C, ITEM_TYPE_SNMPV3])) {
+				$param = CItemKey::quoteParam($discovery_rule['snmp_oid']);
+				if ($param !== false) {
+					$discovery_rule['snmp_oid'] = 'discovery[{#SNMPVALUE},'.$param.']';
+				}
 			}
 
 			if (!array_key_exists('host_prototypes', $discovery_rule)) {

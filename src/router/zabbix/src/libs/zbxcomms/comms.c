@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -41,8 +41,6 @@ extern ZBX_THREAD_LOCAL char	info_buf[256];
 #endif
 
 extern int	CONFIG_TIMEOUT;
-
-extern ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;
 
 /******************************************************************************
  *                                                                            *
@@ -671,7 +669,7 @@ static ssize_t	zbx_tcp_write(zbx_socket_t *s, const char *buf, size_t len)
 	}
 #endif
 #if defined(_WINDOWS)
-	zbx_timed_out = 0;
+	zbx_alarm_flag_clear();
 	sec = zbx_time();
 #endif
 	do
@@ -679,16 +677,15 @@ static ssize_t	zbx_tcp_write(zbx_socket_t *s, const char *buf, size_t len)
 		res = ZBX_TCP_WRITE(s->socket, buf, len);
 #if defined(_WINDOWS)
 		if (s->timeout < zbx_time() - sec)
-			zbx_timed_out = 1;
+			zbx_alarm_flag_set();
 #endif
+		if (SUCCEED == zbx_alarm_timed_out())
+		{
+			zbx_set_socket_strerror("ZBX_TCP_WRITE() timed out");
+			return ZBX_PROTO_ERROR;
+		}
 	}
-	while (0 == zbx_timed_out && ZBX_PROTO_ERROR == res && ZBX_PROTO_AGAIN == (err = zbx_socket_last_error()));
-
-	if (1 == zbx_timed_out)
-	{
-		zbx_set_socket_strerror("ZBX_TCP_WRITE() timed out");
-		return ZBX_PROTO_ERROR;
-	}
+	while (ZBX_PROTO_ERROR == res && ZBX_PROTO_AGAIN == (err = zbx_socket_last_error()));
 
 	if (ZBX_PROTO_ERROR == res)
 		zbx_set_socket_strerror("ZBX_TCP_WRITE() failed: %s", strerror_from_system(err));
@@ -1460,15 +1457,14 @@ static ssize_t	zbx_tcp_read(zbx_socket_t *s, char *buf, size_t len)
 {
 	ssize_t	res;
 	int	err;
-#if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
-	char	*error = NULL;
-#endif
 #if defined(_WINDOWS)
 	double	sec;
 #endif
 #if defined(HAVE_POLARSSL) || defined(HAVE_GNUTLS) || defined(HAVE_OPENSSL)
 	if (NULL != s->tls_ctx)	/* TLS connection */
 	{
+		char	*error = NULL;
+
 		if (ZBX_PROTO_ERROR == (res = zbx_tls_read(s, buf, len, &error)))
 		{
 			zbx_set_socket_strerror("%s", error);
@@ -1479,7 +1475,7 @@ static ssize_t	zbx_tcp_read(zbx_socket_t *s, char *buf, size_t len)
 	}
 #endif
 #if defined(_WINDOWS)
-	zbx_timed_out = 0;
+	zbx_alarm_flag_clear();
 	sec = zbx_time();
 #endif
 	do
@@ -1487,16 +1483,15 @@ static ssize_t	zbx_tcp_read(zbx_socket_t *s, char *buf, size_t len)
 		res = ZBX_TCP_READ(s->socket, buf, len);
 #if defined(_WINDOWS)
 		if (s->timeout < zbx_time() - sec)
-			zbx_timed_out = 1;
+			zbx_alarm_flag_set();
 #endif
+		if (SUCCEED == zbx_alarm_timed_out())
+		{
+			zbx_set_socket_strerror("ZBX_TCP_READ() timed out");
+			return ZBX_PROTO_ERROR;
+		}
 	}
-	while (0 == zbx_timed_out && ZBX_PROTO_ERROR == res && ZBX_PROTO_AGAIN == (err = zbx_socket_last_error()));
-
-	if (1 == zbx_timed_out)
-	{
-		zbx_set_socket_strerror("ZBX_TCP_READ() timed out");
-		return ZBX_PROTO_ERROR;
-	}
+	while (ZBX_PROTO_ERROR == res && ZBX_PROTO_AGAIN == (err = zbx_socket_last_error()));
 
 	if (ZBX_PROTO_ERROR == res)
 		zbx_set_socket_strerror("ZBX_TCP_READ() failed: %s", strerror_from_system(err));
@@ -1875,6 +1870,28 @@ int	zbx_tcp_check_security(zbx_socket_t *s, const char *ip_list, int allow_if_em
 			inet_ntoa(name.sin_addr), ip_list);
 #endif
 	return FAIL;
+}
+
+/******************************************************************************
+ *                                                                            *
+ * Function: zbx_tcp_connection_type_name                                     *
+ *                                                                            *
+ * Purpose: translate connection type code to name                            *
+ *                                                                            *
+ ******************************************************************************/
+const char	*zbx_tcp_connection_type_name(unsigned int type)
+{
+	switch (type)
+	{
+		case ZBX_TCP_SEC_UNENCRYPTED:
+			return "unencrypted";
+		case ZBX_TCP_SEC_TLS_CERT:
+			return "TLS with certificate";
+		case ZBX_TCP_SEC_TLS_PSK:
+			return "TLS with PSK";
+		default:
+			return "unknown";
+	}
 }
 
 int	zbx_udp_connect(zbx_socket_t *s, const char *source_ip, const char *ip, unsigned short port, int timeout)

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -332,7 +332,8 @@ class CValueMap extends CApiService {
 			}
 
 			// Check required parameters.
-			$missing_keys = checkRequiredKeys($valuemap, $required_fields);
+			$missing_keys = array_diff($required_fields, array_keys($valuemap));
+
 			if ($missing_keys) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Value map is missing parameters: %1$s', implode(', ', $missing_keys))
@@ -494,7 +495,7 @@ class CValueMap extends CApiService {
 					self::exception(ZBX_API_ERROR_PARAMETERS, _('Incorrect arguments passed to function.'));
 				}
 
-				$missing_keys = checkRequiredKeys($mapping, $required_fields);
+				$missing_keys = array_diff($required_fields, array_keys($mapping));
 
 				if ($missing_keys) {
 					self::exception(ZBX_API_ERROR_PARAMETERS, _s(

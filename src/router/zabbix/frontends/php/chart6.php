@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ if (!check_fields($fields)) {
  */
 $dbGraph = API::Graph()->get([
 	'output' => API_OUTPUT_EXTEND,
-	'selectGraphItems' => ['itemid', 'calc_fnc', 'color', 'type'],
+	'selectGraphItems' => ['itemid', 'sortorder', 'color', 'calc_fnc', 'type'],
 	'selectHosts' => ['name'],
 	'graphids' => $_REQUEST['graphid']
 ]);
@@ -91,8 +91,7 @@ $graph->setHeight($height);
 
 // array sorting
 CArrayHelper::sort($dbGraph['gitems'], [
-	['field' => 'sortorder', 'order' => ZBX_SORT_UP],
-	['field' => 'itemid', 'order' => ZBX_SORT_DOWN]
+	['field' => 'sortorder', 'order' => ZBX_SORT_UP]
 ]);
 
 // get graph items

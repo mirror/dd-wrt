@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -2195,19 +2195,6 @@ function hasErrorMesssages() {
 	}
 
 	return false;
-}
-
-/**
- * Check if all keys from $keys exist in $array.
- * If some keys are missing return array of missing keys, true otherwise.
- *
- * @param array $array
- * @param array $keys
- *
- * @return array|bool
- */
-function checkRequiredKeys(array $array, array $keys) {
-	return array_diff($keys, array_keys($array));
 }
 
 /**

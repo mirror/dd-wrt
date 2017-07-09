@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -190,6 +190,10 @@ typedef struct
 }
 zbx_tag_t;
 
+#define ZBX_DC_TRIGGER_PROBLEM_EXPRESSION	0x1	/* this flag shows that trigger value recalculation is  */
+							/* initiated by a time-based function or a new value of */
+							/* an item in problem expression */
+
 typedef struct _DC_TRIGGER
 {
 	zbx_uint64_t		triggerid;
@@ -214,6 +218,8 @@ typedef struct _DC_TRIGGER
 	unsigned char		status;
 	unsigned char		recovery_mode;
 	unsigned char		correlation_mode;
+
+	unsigned char		flags;
 
 	zbx_vector_ptr_t	tags;
 }
@@ -379,6 +385,9 @@ typedef struct
 	zbx_vector_ptr_t	correlations;
 	zbx_hashset_t		conditions;
 
+	/* Configuration synchonization timestamp of the rules. */
+	/* Update the cache if this timesamp is less than the   */
+	/* current configuration synchonization timestamp.      */
 	int			sync_ts;
 }
 zbx_correlation_rules_t;
@@ -463,6 +472,7 @@ void	DCfree_triggers(zbx_vector_ptr_t *triggers);
 void	DCconfig_update_interface_snmp_stats(zbx_uint64_t interfaceid, int max_snmp_succeed, int min_snmp_fail);
 int	DCconfig_get_suggested_snmp_vars(zbx_uint64_t interfaceid, int *bulk);
 int	DCconfig_get_interface_by_type(DC_INTERFACE *interface, zbx_uint64_t hostid, unsigned char type);
+int	DCconfig_get_interface(DC_INTERFACE *interface, zbx_uint64_t hostid, zbx_uint64_t itemid);
 int	DCconfig_get_poller_nextcheck(unsigned char poller_type);
 int	DCconfig_get_poller_items(unsigned char poller_type, DC_ITEM *items);
 int	DCconfig_get_snmp_interfaceids_by_addr(const char *addr, zbx_uint64_t **interfaceids);
@@ -515,6 +525,8 @@ int	DChost_deactivate(zbx_uint64_t hostid, unsigned char agent, const zbx_timesp
 void	DCget_delta_items(zbx_hashset_t *items, const zbx_vector_uint64_t *ids);
 void	DCset_delta_items(zbx_hashset_t *items);
 
+#define ZBX_QUEUE_FROM_DEFAULT	6	/* default lower limit for delay (in seconds) */
+#define ZBX_QUEUE_TO_INFINITY	-1	/* no upper limit for delay */
 void	DCfree_item_queue(zbx_vector_ptr_t *queue);
 int	DCget_item_queue(zbx_vector_ptr_t *queue, int from, int to);
 
@@ -564,6 +576,10 @@ void	zbx_dc_correlation_rules_init(zbx_correlation_rules_t *rules);
 void	zbx_dc_correlation_rules_clean(zbx_correlation_rules_t *rules);
 void	zbx_dc_correlation_rules_free(zbx_correlation_rules_t *rules);
 void	zbx_dc_correlation_rules_get(zbx_correlation_rules_t *rules);
+
+void	zbx_dc_get_nested_hostgroupids(zbx_uint64_t *groupids, int groupids_num, zbx_vector_uint64_t *nested_groupids);
+void	zbx_dc_get_nested_hostgroupids_by_names(char **names, int names_num,
+		zbx_vector_uint64_t *nested_groupids);
 
 #define ZBX_HC_ITEM_STATUS_NORMAL	0
 #define ZBX_HC_ITEM_STATUS_BUSY		1

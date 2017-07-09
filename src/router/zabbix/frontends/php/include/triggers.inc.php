@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -797,7 +797,11 @@ function getTriggerOverviewCells($trigger, $pageFile, $screenid = null) {
 			$ack = null;
 
 			if ($config['event_ack_enable']) {
-				if ($event = get_last_event_by_triggerid($trigger['triggerid'])) {
+				$event = getTriggerLastProblems([$trigger['triggerid']], ['eventid', 'acknowledged']);
+
+				if ($event) {
+					$event = reset($event);
+
 					if ($screenid !== null) {
 						$acknowledge = [
 							'eventid' => $event['eventid'],
@@ -1070,9 +1074,9 @@ function make_trigger_details($trigger) {
 	$scripts = API::Script()->getScriptsByHosts($hostIds);
 
 	foreach ($hosts as $host) {
-		$hostName = new CSpan($host['name'], ZBX_STYLE_LINK_ACTION);
-		$hostName->setMenuPopup(CMenuPopupHelper::getHost($host, $scripts[$host['hostid']]));
-		$hostNames[] = $hostName;
+		$hostNames[] = (new CSpan($host['name']))
+			->setMenuPopup(CMenuPopupHelper::getHost($host, $scripts[$host['hostid']]))
+			->addClass(ZBX_STYLE_LINK_ACTION);
 		$hostNames[] = ', ';
 	}
 	array_pop($hostNames);
@@ -1777,7 +1781,7 @@ function get_item_function_info($expr) {
 			$result = [
 				'value_type' => $value_type[ITEM_VALUE_TYPE_FLOAT],
 				'type' => T_ZBX_STR,
-				'validation' => 'preg_match("/^'.ZBX_PREG_NUMBER.'$/u", {})'
+				'validation' => 'preg_match("/^'.ZBX_PREG_NUMBER.'$/", {})'
 			];
 		}
 		elseif ($parseResult->hasTokenOfType(CTriggerExpressionParserResult::TOKEN_TYPE_FUNCTION_MACRO)) {
@@ -1829,7 +1833,7 @@ function get_item_function_info($expr) {
 
 				if ($result['type'] == T_ZBX_INT) {
 					$result['type'] = T_ZBX_STR;
-					$result['validation'] = 'preg_match("/^'.ZBX_PREG_NUMBER.'$/u",{})';
+					$result['validation'] = 'preg_match("/^'.ZBX_PREG_NUMBER.'$/", {})';
 				}
 			}
 		}
@@ -2107,7 +2111,7 @@ function makeTriggersHostsList(array $triggers_hosts) {
 			]);
 		}
 
-		$scripts_by_hosts = API::Script()->getScriptsByHosts($hostids);
+		$scripts_by_hosts = API::Script()->getScriptsByHosts(array_keys($hostids));
 	}
 
 	foreach ($triggers_hosts as &$hosts) {
@@ -2156,4 +2160,33 @@ function makeTriggersHostsList(array $triggers_hosts) {
 	unset($hosts);
 
 	return $triggers_hosts;
+}
+
+/**
+ * Get last problems by given trigger IDs.
+ *
+ * @param array $triggerids
+ * @param array $output         List of output fields.
+ *
+ * @return array
+ */
+function getTriggerLastProblems(array $triggerids, array $output) {
+	$problems = DBfetchArray(DBselect(
+		'SELECT '.implode(',e.', $output).
+		' FROM events e'.
+		' JOIN ('.
+			'SELECT e2.source,e2.object,e2.objectid,MAX(clock) AS clock'.
+			' FROM events e2'.
+			' WHERE e2.source='.EVENT_SOURCE_TRIGGERS.
+				' AND e2.object='.EVENT_OBJECT_TRIGGER.
+				' AND e2.value='.TRIGGER_VALUE_TRUE.
+				' AND '.dbConditionInt('e2.objectid', $triggerids).
+			' GROUP BY e2.source,e2.object,e2.objectid'.
+		') e3 ON e3.source=e.source'.
+			' AND e3.object=e.object'.
+			' AND e3.objectid=e.objectid'.
+			' AND e3.clock=e.clock'
+	));
+
+	return $problems;
 }

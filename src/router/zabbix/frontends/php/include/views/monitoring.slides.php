@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -70,8 +70,16 @@ if ($this->data['screen']) {
 $header->addVar('fullscreen', $this->data['fullscreen']);
 
 if (isset($this->data['isDynamicItems'])) {
-	$controls->addItem([SPACE, _('Group'), SPACE, $this->data['pageFilter']->getGroupsCB()]);
-	$controls->addItem([SPACE, _('Host'), SPACE, $this->data['pageFilter']->getHostsCB()]);
+	$controls->addItem([
+		new CLabel(_('Group'), 'groupid'),
+		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+		$this->data['pageFilter']->getGroupsCB()
+	]);
+	$controls->addItem([
+		new CLabel(_('Host'), 'hostid'),
+		(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+		$this->data['pageFilter']->getHostsCB()
+	]);
 }
 $controls
 	->addItem($data['screen']['editable']

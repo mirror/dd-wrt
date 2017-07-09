@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -45,6 +45,8 @@ int	check_vcenter_hv_datastore_discovery(AGENT_REQUEST *request, const char *use
 		AGENT_RESULT *result);
 int	check_vcenter_hv_datastore_read(AGENT_REQUEST *request, const char *username, const char *password,
 		AGENT_RESULT *result);
+int	check_vcenter_hv_datastore_size(AGENT_REQUEST *request, const char *username, const char *password,
+		AGENT_RESULT *result);
 int	check_vcenter_hv_datastore_write(AGENT_REQUEST *request, const char *username, const char *password,
 		AGENT_RESULT *result);
 int	check_vcenter_hv_discovery(AGENT_REQUEST *request, const char *username, const char *password,
@@ -76,6 +78,8 @@ int	check_vcenter_hv_network_in(AGENT_REQUEST *request, const char *username, co
 int	check_vcenter_hv_network_out(AGENT_REQUEST *request, const char *username, const char *password,
 		AGENT_RESULT *result);
 int	check_vcenter_hv_perfcounter(AGENT_REQUEST *request, const char *username, const char *password,
+		AGENT_RESULT *result);
+int	check_vcenter_hv_sensor_health_state(AGENT_REQUEST *request, const char *username, const char *password,
 		AGENT_RESULT *result);
 int	check_vcenter_hv_status(AGENT_REQUEST *request, const char *username, const char *password,
 		AGENT_RESULT *result);

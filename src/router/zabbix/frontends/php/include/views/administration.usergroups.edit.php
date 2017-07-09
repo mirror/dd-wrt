@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -96,16 +96,17 @@ foreach ($data['groups_rights'] as $groupid => $group_rights) {
 	$userGroupForm->addVar('groups_rights['.$groupid.'][name]', $group_rights['name']);
 
 	if ($groupid == 0) {
-		$permissions_table->addRow(['*', permissionText($group_rights['permission'])]);
+		$permissions_table->addRow([italic(_('All groups')), permissionText($group_rights['permission'])]);
 		$userGroupForm->addVar('groups_rights['.$groupid.'][grouped]', $group_rights['grouped']);
 		$userGroupForm->addVar('groups_rights['.$groupid.'][permission]', $group_rights['permission']);
 	}
 	else {
-		$group_name = $group_rights['name'];
 		if (array_key_exists('grouped', $group_rights) && $group_rights['grouped']) {
 			$userGroupForm->addVar('groups_rights['.$groupid.'][grouped]', $group_rights['grouped']);
-
-			$group_name .= '/*';
+			$group_name = [$group_rights['name'], SPACE, italic('('._('including subgroups').')')];
+		}
+		else {
+			$group_name = $group_rights['name'];
 		}
 
 		$permissions_table->addRow([$group_name,
@@ -130,7 +131,6 @@ $new_permissions_table = (new CTable())
 		(new CMultiSelect([
 			'name' => 'groupids[]',
 			'objectName' => 'hostGroup',
-			'nested' => true,
 			'styles' => ['margin-top' => '-.3em'],
 			'popup' => [
 				'parameters' => 'srctbl=host_groups&dstfrm='.$userGroupForm->getName().
@@ -146,7 +146,16 @@ $new_permissions_table = (new CTable())
 				->setModern(true)
 		))->setAttribute('style', 'vertical-align: top')
 	])
-	->addRow([(new CSubmit('add_permission', _('Add')))->addClass(ZBX_STYLE_BTN_LINK)]);
+	->addRow([[
+		(new CCheckBox('subgroups')),
+		SPACE,
+		_('Include subgroups')
+	]])
+	->addRow([
+		(new CSimpleButton(_('Add')))
+			->onClick('javascript: submitFormWithParam("'.$userGroupForm->getName().'", "add_permission", "1");')
+			->addClass(ZBX_STYLE_BTN_LINK)
+	]);
 
 $permissionsFormList->addRow(null,
 	(new CDiv($new_permissions_table))

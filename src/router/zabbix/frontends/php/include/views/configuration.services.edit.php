@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -314,7 +314,9 @@ else {
 $servicesTimeFormList->addRow(_('New service time'),
 	(new CDiv([
 		$serviceTimeTable,
-		(new CButton('add_service_time', _('Add')))->addClass(ZBX_STYLE_BTN_LINK)
+		(new CSimpleButton(_('Add')))
+			->onClick('javascript: submitFormWithParam("'.$servicesForm->getName().'", "add_service_time", "1");')
+			->addClass(ZBX_STYLE_BTN_LINK)
 	]))
 		->addClass(ZBX_STYLE_TABLE_FORMS_SEPARATOR)
 		->setAttribute('style', 'min-width: '.ZBX_TEXTAREA_BIG_WIDTH.'px;')

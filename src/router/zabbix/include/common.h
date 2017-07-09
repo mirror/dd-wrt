@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -855,9 +855,11 @@ ZBX_TASK_EX;
 
 char	*string_replace(const char *str, const char *sub_str1, const char *sub_str2);
 
-int	is_double_suffix(const char *str);
+#define ZBX_FLAG_DOUBLE_PLAIN	0x00
+#define ZBX_FLAG_DOUBLE_SUFFIX	0x01
+int	is_double_suffix(const char *str, unsigned char flags);
 int	is_double(const char *c);
-int	is_uint_suffix(const char *c, unsigned int *value);
+int	is_time_suffix(const char *c, int *value);
 int	is_int_prefix(const char *c);
 int	is_uint_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint64_t min, zbx_uint64_t max);
 int	is_hex_n_range(const char *str, size_t n, void *value, size_t size, zbx_uint64_t min, zbx_uint64_t max);
@@ -1025,6 +1027,7 @@ char	*__zbx_zbx_strdcatf(char *dest, const char *f, ...);
 
 int	xml_get_data_dyn(const char *xml, const char *tag, char **data);
 void	xml_free_data_dyn(char **data);
+char	*xml_escape_dyn(const char *data);
 
 int	comms_parse_response(char *xml, char *host, size_t host_len, char *key, size_t key_len,
 		char *data, size_t data_len, char *lastlogsize, size_t lastlogsize_len,
@@ -1032,10 +1035,9 @@ int	comms_parse_response(char *xml, char *host, size_t host_len, char *key, size
 		char *severity, size_t severity_len);
 
 /* misc functions */
-#ifdef HAVE_IPV6
 int	is_ip6(const char *ip);
-#endif
 int	is_ip4(const char *ip);
+int	is_supported_ip(const char *ip);
 int	is_ip(const char *ip);
 
 void	zbx_on_exit(void); /* calls exit() at the end! */
@@ -1164,7 +1166,6 @@ int	get_item_key(char **exp, char **key);
 
 int	parse_host(char **exp, char **host);
 int	parse_key(char **exp);
-int	parse_function(char **exp, char **func, char **params);
 
 int	parse_host_key(char *exp, char **host, char **key);
 
@@ -1206,22 +1207,21 @@ char	*zbx_dyn_escape_shell_single_quote(const char *text);
 #define HOST_TLS_PSK_LEN_MAX		(HOST_TLS_PSK_LEN + 1)
 #define HOST_TLS_PSK_LEN_MIN		32				/* for 16 hex-encoded bytes (128-bit PSK) */
 
-typedef struct
-{
-	char	*name;
-	char	**params;
-	int	nparam;
-}
-zbx_function_t;
+void	zbx_function_param_parse(const char *expr, size_t *param_pos, size_t *length, size_t *sep_pos);
+char	*zbx_function_param_unquote_dyn(const char *param, size_t len, int *quoted);
+int	zbx_function_param_quote(char **param, int forced);
+int	zbx_function_validate(const char *expr, size_t *par_l, size_t *par_r);
+int	zbx_function_find(const char *expr, size_t *func_pos, size_t *par_l, size_t *par_r);
 
-void	zbx_function_clean(zbx_function_t *func);
-int	zbx_function_parse(zbx_function_t *func, const char *expr, size_t *length);
-int	zbx_function_tostr(const zbx_function_t *func, const char *expr, size_t expr_len, char **out);
+void	zbx_alarm_flag_set(void);
+void	zbx_alarm_flag_clear(void);
 
 #ifndef _WINDOWS
 unsigned int	zbx_alarm_on(unsigned int seconds);
 unsigned int	zbx_alarm_off(void);
 #endif
+
+int	zbx_alarm_timed_out(void);
 
 #define zbx_bsearch(key, base, nmemb, size, compar)	(0 == (nmemb) ? NULL : bsearch(key, base, nmemb, size, compar))
 

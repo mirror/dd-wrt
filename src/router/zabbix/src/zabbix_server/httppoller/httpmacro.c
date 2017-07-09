@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -89,15 +89,6 @@ static int	httpmacro_append_pair(zbx_httptest_t *httptest, const char *pkey, siz
 	zabbix_log(LOG_LEVEL_DEBUG, "In %s() pkey:'%.*s' pvalue:'%.*s'",
 			__function_name, (int)nkey, pkey, (int)nvalue, pvalue);
 
-	if (NULL == data)
-	{
-		/* Ignore regex variables when no input data is specified. For example,   */
-		/* scenario level regex variables don't have input data before the first  */
-		/* web scenario step is processed.                                        */
-		ret = SUCCEED;
-		goto out;
-	}
-
 	if (0 == nkey || 0 == nvalue)
 	{
 		if (0 == nkey && 0 != nvalue)
@@ -180,10 +171,11 @@ static int	httpmacro_append_pair(zbx_httptest_t *httptest, const char *pkey, siz
 	}
 	zbx_vector_ptr_pair_append(&httptest->macros, pair);
 
+	zabbix_log(LOG_LEVEL_DEBUG, "append macro '%s'='%s' in cache", pair.first, pair.second);
+
 	ret = SUCCEED;
 out:
-	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s macro:'%s'='%s'",
-			__function_name, zbx_result_string(ret), (char*)pair.first, (char*)pair.second);
+	zabbix_log(LOG_LEVEL_DEBUG, "End of %s():%s", __function_name, zbx_result_string(ret));
 
 	return ret;
 }

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -188,7 +188,7 @@ class CHostPrototype extends CHostBase {
 				]),
 				'groupLinks' => new CCollectionValidator([
 					'uniqueField' => 'groupid',
-					'messageEmpty' => _('Host prototype "%1$s" must have at least one host group.'),
+					'messageEmpty' => _('Host prototype "%1$s" cannot be without host group.'),
 					'messageInvalid' => _('Incorrect host groups for host prototype "%1$s".'),
 					'messageDuplicate' => _('Duplicate host group ID "%2$s" for host prototype "%1$s".')
 				]),

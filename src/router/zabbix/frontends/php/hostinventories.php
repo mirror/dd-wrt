@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -196,11 +196,9 @@ else {
 				'output' => ['hostid', 'name', 'status'],
 				'selectInventory' => $requiredInventoryFields,
 				'withInventory' => true,
-				'selectGroups' => API_OUTPUT_EXTEND
+				'selectGroups' => API_OUTPUT_EXTEND,
+				'groupids' => $data['pageFilter']->groupids
 			];
-			if ($data['pageFilter']->groupid > 0) {
-				$options['groupids'] = $data['pageFilter']->groupid;
-			}
 
 			if ($data['filterField'] !== '' && $data['filterFieldValue'] !== '') {
 				$options['searchInventory'] = [

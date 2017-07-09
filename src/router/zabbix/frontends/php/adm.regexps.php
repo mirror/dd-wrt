@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -125,7 +125,7 @@ if (hasRequest('add') || hasRequest('update')) {
 	];
 	$expressions = getRequest('expressions', []);
 
-	foreach ($expressions as $i => &$expression) {
+	foreach ($expressions as &$expression) {
 		if (!array_key_exists('case_sensitive', $expression)) {
 			$expression['case_sensitive'] = 0;
 		}
@@ -235,6 +235,13 @@ if (isset($_REQUEST['form'])) {
 				'case_sensitive' => 0
 			]
 		]);
+
+		foreach ($data['expressions'] as &$expression) {
+			if (!array_key_exists('case_sensitive', $expression)) {
+				$expression['case_sensitive'] = 0;
+			}
+		}
+		unset($expression);
 	}
 
 	$view = new CView('administration.general.regularexpressions.edit', $data);

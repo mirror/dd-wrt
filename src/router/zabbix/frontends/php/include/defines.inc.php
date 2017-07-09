@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,13 +19,13 @@
 **/
 
 
-define('ZABBIX_VERSION',		'3.2.0');
-define('ZABBIX_API_VERSION',	'3.2.0');
+define('ZABBIX_VERSION',		'3.2.6');
+define('ZABBIX_API_VERSION',	'3.2.6');
 define('ZABBIX_EXPORT_VERSION',	'3.2');
 define('ZABBIX_DB_VERSION',		3020000);
 
 define('ZABBIX_COPYRIGHT_FROM',	'2001');
-define('ZABBIX_COPYRIGHT_TO',	'2016');
+define('ZABBIX_COPYRIGHT_TO',	'2017');
 
 define('ZBX_LOGIN_ATTEMPTS',	5);
 define('ZBX_LOGIN_BLOCK',		30); // sec
@@ -1017,18 +1017,18 @@ define('ZBX_TEXTAREA_MACRO_VALUE_WIDTH',		250);
 define('ZBX_TEXTAREA_COLOR_WIDTH',				96);
 define('ZBX_TEXTAREA_FILTER_SMALL_WIDTH',		150);
 define('ZBX_TEXTAREA_FILTER_STANDARD_WIDTH',	300);
-define('ZBX_TEXTAREA_FILTER_BIG_WIDTH',			524);
 define('ZBX_TEXTAREA_TINY_WIDTH',				75);
 define('ZBX_TEXTAREA_SMALL_WIDTH',				150);
-define('ZBX_TEXTAREA_STANDARD_WIDTH',			300);
-define('ZBX_TEXTAREA_BIG_WIDTH',				524);
+define('ZBX_TEXTAREA_TAG_WIDTH',				218);
+define('ZBX_TEXTAREA_MEDIUM_WIDTH',				270);
+define('ZBX_TEXTAREA_STANDARD_WIDTH',			453);
+define('ZBX_TEXTAREA_BIG_WIDTH',				540);
 define('ZBX_TEXTAREA_NUMERIC_STANDARD_WIDTH',	75);
 define('ZBX_TEXTAREA_NUMERIC_BIG_WIDTH',		150);
 define('ZBX_TEXTAREA_2DIGITS_WIDTH',			35);	// please use for date selector only
 define('ZBX_TEXTAREA_4DIGITS_WIDTH',			50);	// please use for date selector only
 define('ZBX_TEXTAREA_INTERFACE_IP_WIDTH',		225);
 define('ZBX_TEXTAREA_INTERFACE_DNS_WIDTH',		175);
-define('ZBX_TEXTAREA_INTERFACE_USEIP_WIDTH',	100);
 define('ZBX_TEXTAREA_INTERFACE_PORT_WIDTH',		100);
 define('ZBX_TEXTAREA_STANDARD_ROWS',			7);
 

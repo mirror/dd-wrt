@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -63,23 +63,21 @@ if ($this->data['grpswitch']) {
 		'objectName' => 'hostGroup',
 		'data' => $this->data['groups'],
 		'disabled' => !$this->data['isFilterEnable'],
-		'nested' => true,
 		'popup' => [
 			'parameters' => 'srctbl=host_groups&dstfrm='.$form->getName().'&dstfld1=groupids_'.
 				'&srcfld1=groupid&multiselect=1'
 		]
-	]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH));
+	]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH));
 	$form_list->addRow(_('Hide selected groups'), (new CMultiSelect([
 		'name' => 'hidegroupids[]',
 		'objectName' => 'hostGroup',
 		'data' => $this->data['hideGroups'],
 		'disabled' => !$this->data['isFilterEnable'],
-		'nested' => true,
 		'popup' => [
 			'parameters' => 'srctbl=host_groups&dstfrm='.$form->getName().'&dstfld1=hidegroupids_'.
 				'&srcfld1=groupid&multiselect=1'
 		]
-	]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH));
+	]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH));
 }
 
 // append host in maintenance checkbox to form list
