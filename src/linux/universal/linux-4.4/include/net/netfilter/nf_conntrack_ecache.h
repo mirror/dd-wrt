@@ -63,25 +63,15 @@ struct nf_ct_event {
 	int report;
 };
 
-struct nf_ct_event_notifier {
-	int (*fcn)(unsigned int events, struct nf_ct_event *item);
-};
-
-int nf_conntrack_register_notifier(struct net *net,
-				   struct nf_ct_event_notifier *nb);
-void nf_conntrack_unregister_notifier(struct net *net,
-				      struct nf_ct_event_notifier *nb);
+extern int nf_conntrack_register_notifier(struct net *net, struct notifier_block *nb);
+extern int nf_conntrack_unregister_notifier(struct net *net, struct notifier_block *nb);
 
 void nf_ct_deliver_cached_events(struct nf_conn *ct);
 
 static inline void
 nf_conntrack_event_cache(enum ip_conntrack_events event, struct nf_conn *ct)
 {
-	struct net *net = nf_ct_net(ct);
 	struct nf_conntrack_ecache *e;
-
-	if (!rcu_access_pointer(net->ct.nf_conntrack_event_cb) && !rcu_access_pointer(net->ct.nf_conntrack_event_cb_2)) 
-		return;
 
 	e = nf_ct_ecache_find(ct);
 	if (e == NULL)
@@ -96,22 +86,13 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 			      u32 portid,
 			      int report)
 {
-	int ret = 0;
-	struct net *net = nf_ct_net(ct);
-	struct nf_ct_event_notifier *notify;
-	struct nf_ct_event_notifier *notify_2;
 	struct nf_conntrack_ecache *e;
 
-	rcu_read_lock();
-        /* Incredibly nasty duplication in order to hack second event */
-	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
-	notify_2 = rcu_dereference(net->ct.nf_conntrack_event_cb_2);
-	if ((notify == NULL) && (notify_2 == NULL))
-		goto out_unlock;
+	struct net *net = nf_ct_net(ct);
 
 	e = nf_ct_ecache_find(ct);
 	if (e == NULL)
-		goto out_unlock;
+		return 0;
 
 	if (nf_ct_is_confirmed(ct) && !nf_ct_is_dying(ct)) {
 		struct nf_ct_event item = {
@@ -123,29 +104,12 @@ nf_conntrack_eventmask_report(unsigned int eventmask,
 		unsigned long missed = e->portid ? 0 : e->missed;
 
 		if (!((eventmask | missed) & e->ctmask))
-			goto out_unlock;
+			return 0;
 
-		ret = min( notify ? notify->fcn(eventmask | missed, &item) : 0,
-                           notify_2 ? notify_2->fcn(eventmask | missed, &item) : 0 );
-		if (unlikely(ret < 0 || missed)) {
-			spin_lock_bh(&ct->lock);
-			if (ret < 0) {
-				/* This is a destroy event that has been
-				 * triggered by a process, we store the PORTID
-				 * to include it in the retransmission. */
-				if (eventmask & (1 << IPCT_DESTROY) &&
-				    e->portid == 0 && portid != 0)
-					e->portid = portid;
-				else
-					e->missed |= eventmask;
-			} else
-				e->missed &= ~missed;
-			spin_unlock_bh(&ct->lock);
-		}
+		atomic_notifier_call_chain(&net->ct.nf_conntrack_chain, eventmask | missed, &item);
 	}
-out_unlock:
-	rcu_read_unlock();
-	return ret;
+
+	return 0;
 }
 
 static inline int
