@@ -401,13 +401,15 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #elif defined(HAVE_MVEBU)
 			unsigned int *uboot_magic = (unsigned int *)buf;
 			if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
-				char *write_argv_buf[6];
+				char *write_argv_buf[8];
 				write_argv_buf[0] = "mtd";
-				write_argv_buf[1] = "-f";
-				write_argv_buf[2] = "write";
-				write_argv_buf[3] = upload_fifo;
-				write_argv_buf[4] = "linux";
-				write_argv_buf[5] = NULL;
+				write_argv_buf[1] = "-e";
+				write_argv_buf[2] = "linux";
+				write_argv_buf[3] = "-f";
+				write_argv_buf[4] = "write";
+				write_argv_buf[5] = upload_fifo;
+				write_argv_buf[6] = "linux";
+				write_argv_buf[7] = NULL;
 				char *bootpart_argv_buf[5];
 				bootpart_argv_buf[0] = "ubootenv";
 				bootpart_argv_buf[1] = "set";
@@ -420,7 +422,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 					fprintf(stderr, "boot partiton is %s\n", part);
 					if (!strcmp(part, "2")) {
 					} else {
-						write_argv_buf[4] = "linux2";
+						write_argv_buf[2] = "linux2";
+						write_argv_buf[6] = "linux2";
 						bootpart_argv_buf[3] = "2";
 					}
 					fprintf(stderr, "flash to partition %s\n", write_argv_buf[4]);
