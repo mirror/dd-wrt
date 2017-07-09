@@ -809,7 +809,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 	 */
 	if (!test_bit(IPS_FIXED_TIMEOUT_BIT, &ct->status)) {
 		spin_lock_bh(&ct->lock);
-		ct->timeout.expires += sis->delta_jiffies;
+		ct->timeout += sis->delta_jiffies;
 		spin_unlock_bh(&ct->lock);
 	}
 
