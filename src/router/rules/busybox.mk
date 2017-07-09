@@ -498,6 +498,7 @@ endif
 	echo "CONFIG_ASH_TEST=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_TOP_INTERACTIVE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_POWERTOP_INTERACTIVE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_UNZIP_CDF is not set" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
