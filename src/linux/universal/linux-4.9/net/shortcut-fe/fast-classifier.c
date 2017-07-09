@@ -35,9 +35,9 @@
 #include <linux/if_bridge.h>
 #include <linux/hashtable.h>
 
-#include <sfe_backport.h>
-#include <sfe.h>
-#include <sfe_cm.h>
+#include "sfe_backport.h"
+#include "sfe.h"
+#include "sfe_cm.h"
 #include "fast-classifier.h"
 
 typedef enum fast_classifier_exception {
@@ -109,7 +109,7 @@ struct fast_classifier {
 	u32 exceptions[FAST_CL_EXCEPTION_MAX];
 };
 
-static struct fast_classifier __sc;
+static struct fast_classifier __fsc;
 
 static struct nla_policy fast_classifier_genl_policy[FAST_CLASSIFIER_A_MAX + 1] = {
 	[FAST_CLASSIFIER_A_TUPLE] = {
@@ -187,7 +187,7 @@ static bool skip_to_bridge_ingress;
  */
 static inline void fast_classifier_incr_exceptions(fast_classifier_exception_t except)
 {
-	struct fast_classifier *sc = &__sc;
+	struct fast_classifier *sc = &__fsc;
 
 	spin_lock_bh(&sc->lock);
 	sc->exceptions[except]++;
@@ -1509,7 +1509,7 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 				     char *buf)
 {
 	int idx, len;
-	struct fast_classifier *sc = &__sc;
+	struct fast_classifier *sc = &__fsc;
 
 	spin_lock_bh(&sc->lock);
 	for (len = 0, idx = 0; idx < FAST_CL_EXCEPTION_MAX; idx++) {
@@ -1535,9 +1535,9 @@ static const struct device_attribute fast_classifier_attrs[] = {
 /*
  * fast_classifier_init()
  */
-static int __init fast_classifier_init(void)
+static int fast_classifier_init(void)
 {
-	struct fast_classifier *sc = &__sc;
+	struct fast_classifier *sc = &__fsc;
 	int result = -1;
 	size_t i, j;
 
@@ -1673,9 +1673,9 @@ exit1:
 /*
  * fast_classifier_exit()
  */
-static void __exit fast_classifier_exit(void)
+static void fast_classifier_exit(void)
 {
-	struct fast_classifier *sc = &__sc;
+	struct fast_classifier *sc = &__fsc;
 	int result = -1;
 
 	DEBUG_INFO("SFE CM exit\n");
@@ -1727,10 +1727,4 @@ static void __exit fast_classifier_exit(void)
 
 	kobject_put(sc->sys_fast_classifier);
 }
-
-module_init(fast_classifier_init)
-module_exit(fast_classifier_exit)
-
-MODULE_DESCRIPTION("Shortcut Forwarding Engine - Connection Manager");
-MODULE_LICENSE("Dual BSD/GPL");
 

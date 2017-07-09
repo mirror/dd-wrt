@@ -926,7 +926,7 @@ static inline struct sfe_ipv6_connection *sfe_ipv6_find_connection(struct sfe_ip
  *
  * Will take hash lock upon entry
  */
-void sfe_ipv6_mark_rule(struct sfe_connection_mark *mark)
+static void sfe_ipv6_mark_rule(struct sfe_connection_mark *mark)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2132,7 +2132,7 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
  *
  * Returns 1 if the packet is forwarded or 0 if it isn't.
  */
-int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
+static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 {
 	struct sfe_ipv6 *si = &__si6;
 	unsigned int len;
@@ -2312,7 +2312,7 @@ sfe_ipv6_update_protocol_state(struct sfe_ipv6_connection *c,
  * sfe_ipv6_update_rule()
  *	update forwarding rule after rule is created.
  */
-void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
+static void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
 {
 	struct sfe_ipv6_connection *c;
 	struct sfe_ipv6 *si = &__si6;
@@ -2336,7 +2336,7 @@ void sfe_ipv6_update_rule(struct sfe_connection_create *sic)
  * sfe_ipv6_create_rule()
  *	Create a forwarding rule.
  */
-int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
+static int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2603,7 +2603,7 @@ int sfe_ipv6_create_rule(struct sfe_connection_create *sic)
  * sfe_ipv6_destroy_rule()
  *	Destroy a forwarding rule.
  */
-void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
+static void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -2644,7 +2644,7 @@ void sfe_ipv6_destroy_rule(struct sfe_connection_destroy *sid)
  * sfe_ipv6_register_sync_rule_callback()
  *	Register a callback for rule synchronization.
  */
-void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_callback)
+static void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_callback)
 {
 	struct sfe_ipv6 *si = &__si6;
 
@@ -2678,7 +2678,7 @@ static ssize_t sfe_ipv6_get_debug_dev(struct device *dev,
  *
  * If we pass dev as NULL then this destroys all connections.
  */
-void sfe_ipv6_destroy_all_rules_for_dev(struct net_device *dev)
+static void sfe_ipv6_destroy_all_rules_for_dev(struct net_device *dev)
 {
 	struct sfe_ipv6 *si = &__si6;
 	struct sfe_ipv6_connection *c;
@@ -3266,7 +3266,7 @@ static struct file_operations sfe_ipv6_debug_dev_fops = {
 /*
  * sfe_ipv6_init()
  */
-static int __init sfe_ipv6_init(void)
+static int sfe_ipv6_init(void)
 {
 	struct sfe_ipv6 *si = &__si6;
 	int result = -1;
@@ -3325,7 +3325,7 @@ exit1:
 /*
  * sfe_ipv6_exit()
  */
-static void __exit sfe_ipv6_exit(void)
+static void sfe_ipv6_exit(void)
 {
 	struct sfe_ipv6 *si = &__si6;
 
@@ -3344,18 +3344,3 @@ static void __exit sfe_ipv6_exit(void)
 
 	kobject_put(si->sys_sfe_ipv6);
 }
-
-module_init(sfe_ipv6_init)
-module_exit(sfe_ipv6_exit)
-
-EXPORT_SYMBOL(sfe_ipv6_recv);
-EXPORT_SYMBOL(sfe_ipv6_create_rule);
-EXPORT_SYMBOL(sfe_ipv6_destroy_rule);
-EXPORT_SYMBOL(sfe_ipv6_destroy_all_rules_for_dev);
-EXPORT_SYMBOL(sfe_ipv6_register_sync_rule_callback);
-EXPORT_SYMBOL(sfe_ipv6_mark_rule);
-EXPORT_SYMBOL(sfe_ipv6_update_rule);
-
-MODULE_DESCRIPTION("Shortcut Forwarding Engine - IPv6 support");
-MODULE_LICENSE("Dual BSD/GPL");
-
