@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -572,7 +572,7 @@ function show_color_picker(id) {
 	color_picker.y = pos.top;
 	color_picker.style.left = (color_picker.x + 20) + 'px';
 	color_picker.style.top = color_picker.y + 'px';
-	color_picker.style.display = null;
+	color_picker.style.display = 'block';
 }
 
 function create_color_picker() {

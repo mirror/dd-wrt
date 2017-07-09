@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -516,6 +516,8 @@ class CCorrelation extends CApiService {
 			self::exception(ZBX_API_ERROR_PARAMETERS, _('Empty input parameter.'));
 		}
 
+		$required_fields = ['name', 'filter', 'operations'];
+
 		// Validate required fields and check if "name" is not empty.
 		foreach ($correlations as $correlation) {
 			if (!is_array($correlation)) {
@@ -523,7 +525,8 @@ class CCorrelation extends CApiService {
 			}
 
 			// Check required parameters.
-			$missing_keys = checkRequiredKeys($correlation, ['name', 'filter', 'operations']);
+			$missing_keys = array_diff($required_fields, array_keys($correlation));
+
 			if ($missing_keys) {
 				self::exception(ZBX_API_ERROR_PARAMETERS,
 					_s('Correlation is missing parameters: %1$s', implode(', ', $missing_keys))

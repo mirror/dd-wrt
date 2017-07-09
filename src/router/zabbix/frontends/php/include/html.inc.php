@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -594,10 +594,14 @@ function getHostAvailabilityTable($host) {
 				$ai = (new CSpan($type))->addClass(ZBX_STYLE_STATUS_GREEN);
 				break;
 			case HOST_AVAILABLE_FALSE:
-				$ai = (new CSpan($type))
-					->addClass(ZBX_STYLE_STATUS_RED)
-					->addClass(ZBX_STYLE_CURSOR_POINTER)
-					->setHint($host[$prefix.'error'], ZBX_STYLE_RED);
+				$ai = (new CSpan($type))->addClass(ZBX_STYLE_STATUS_RED);
+
+				if ($host[$prefix.'error'] !== '') {
+					$ai
+						->addClass(ZBX_STYLE_CURSOR_POINTER)
+						->setHint($host[$prefix.'error'], ZBX_STYLE_RED);
+				}
+
 				break;
 			case HOST_AVAILABLE_UNKNOWN:
 				$ai = (new CSpan($type))->addClass(ZBX_STYLE_STATUS_GREY);

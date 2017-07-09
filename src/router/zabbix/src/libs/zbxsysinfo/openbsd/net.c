@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,8 +24,13 @@
 
 #include <sys/sockio.h>
 
-#if OpenBSD >= 201405
-#	include <net/if_var.h>	/* structs ifnet and ifnet_head are defined in this header since OpenBSD 5.5 */
+#if OpenBSD >= 201405			/* if OpenBSD 5.5 or newer */
+#	if OpenBSD >= 201510		/* if Openbsd 5.8 or newer */
+#		include <sys/malloc.h>	/* Workaround: include malloc.h here without _KERNEL to prevent its */
+					/* inclusion later from if_var.h to avoid malloc() and free() redefinition. */
+#		define _KERNEL	/* define _KERNEL to enable 'ifnet' and 'ifnet_head' definitions in if_var.h */
+#	endif
+#	include <net/if_var.h>  /* structs ifnet and ifnet_head are defined in this header since OpenBSD 5.5 */
 #endif
 
 static struct nlist kernel_symbols[] =
@@ -362,6 +367,8 @@ int	NET_IF_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result)
 	SET_STR_RESULT(result, strdup(j.buffer));
 
 	zbx_json_free(&j);
+
+	if_freenameindex(interfaces);
 
 	return SYSINFO_RET_OK;
 }

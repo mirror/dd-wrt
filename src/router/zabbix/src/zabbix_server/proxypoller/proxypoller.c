@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -110,14 +110,16 @@ static void	disconnect_proxy(zbx_socket_t *sock)
  *                                                                            *
  * Purpose: get historical data from proxy                                    *
  *                                                                            *
- * Parameters:                                                                *
+ * Parameters: proxy   - [IN] proxy data                                      *
+ *             request - [IN] requested data type                             *
+ *             data    - [OUT] data received from proxy                       *
+ *             ts      - [OUT] timestamp when the proxy connection was        *
+ *                             established                                    *
  *                                                                            *
  * Return value: SUCCESS - processed successfully                             *
  *               FAIL - an error occurred                                     *
  *                                                                            *
  * Author: Alexander Vladishev                                                *
- *                                                                            *
- * Comments:                                                                  *
  *                                                                            *
  ******************************************************************************/
 static int	get_data_from_proxy(DC_PROXY *proxy, const char *request, char **data, zbx_timespec_t *ts)
@@ -140,9 +142,13 @@ static int	get_data_from_proxy(DC_PROXY *proxy, const char *request, char **data
 			zbx_timespec(ts);
 
 		if (SUCCEED == (ret = send_data_to_proxy(proxy, &s, j.buffer)))
+		{
 			if (SUCCEED == (ret = recv_data_from_proxy(proxy, &s)))
+			{
 				if (SUCCEED == (ret = zbx_send_response(&s, SUCCEED, NULL, 0)))
 					*data = zbx_strdup(*data, s.buffer);
+			}
+		}
 
 		disconnect_proxy(&s);
 	}
@@ -178,7 +184,7 @@ static int	process_proxy(void)
 	struct zbx_json_parse	jp, jp_data;
 	zbx_socket_t		s;
 	char			*answer = NULL, *port = NULL, *error = NULL;
-	time_t			now;
+	time_t			now, last_access;
 	unsigned char		update_nextcheck;
 	zbx_timespec_t		ts;
 
@@ -194,6 +200,7 @@ static int	process_proxy(void)
 	for (i = 0; i < num; i++)
 	{
 		update_nextcheck = 0;
+		last_access = 0;
 
 		if (proxy.proxy_config_nextcheck <= now)
 			update_nextcheck |= ZBX_PROXY_CONFIG_NEXTCHECK;
@@ -247,6 +254,8 @@ static int	process_proxy(void)
 
 			if (SUCCEED != ret)
 				goto network_error;
+
+			last_access = time(NULL);
 		}
 
 		if (proxy.proxy_data_nextcheck <= now)
@@ -269,6 +278,8 @@ static int	process_proxy(void)
 							zbx_json_strerror());
 					goto network_error;
 				}
+
+				last_access = time(NULL);
 
 				if (SUCCEED != process_host_availability(&jp, &error))
 				{
@@ -297,6 +308,8 @@ retry_history:
 							" history data: %s", proxy.host, proxy.addr, zbx_json_strerror());
 					goto network_error;
 				}
+
+				last_access = time(NULL);
 
 				if (SUCCEED != process_hist_data(NULL, &jp, proxy.hostid, &ts, &error))
 				{
@@ -333,6 +346,8 @@ retry_dhistory:
 					goto network_error;
 				}
 
+				last_access = time(NULL);
+
 				if (SUCCEED != process_dhis_data(&jp, &error))
 				{
 					zabbix_log(LOG_LEVEL_WARNING, "proxy \"%s\" at \"%s\" returned invalid"
@@ -368,6 +383,8 @@ retry_autoreg_host:
 					goto network_error;
 				}
 
+				last_access = time(NULL);
+
 				if (SUCCEED != process_areg_data(&jp, proxy.hostid, &error))
 				{
 					zabbix_log(LOG_LEVEL_WARNING, "proxy \"%s\" at \"%s\" returned invalid"
@@ -384,11 +401,14 @@ retry_autoreg_host:
 			else
 				goto network_error;
 		}
-
-		DBbegin();
-		update_proxy_lastaccess(proxy.hostid);
-		DBcommit();
 network_error:
+		if (0 != last_access)
+		{
+			DBbegin();
+			update_proxy_lastaccess(proxy.hostid, last_access);
+			DBcommit();
+		}
+
 		DCrequeue_proxy(proxy.hostid, update_nextcheck);
 	}
 

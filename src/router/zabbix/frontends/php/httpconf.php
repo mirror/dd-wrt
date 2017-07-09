@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -300,7 +300,7 @@ elseif (hasRequest('add') || hasRequest('update')) {
 
 			$httpTest = CArrayHelper::unsetEqualValues($httpTest, $dbHttpTest, ['applicationid']);
 			foreach ($httpTest['steps'] as $snum => $step) {
-				if (isset($step['httpstepid']) && isset($dbHttpSteps[$step['httpstepid']])) {
+				if (array_key_exists('httpstepid', $step) && array_key_exists($step['httpstepid'], $dbHttpSteps)) {
 					$newStep = CArrayHelper::unsetEqualValues($step, $dbHttpSteps[$step['httpstepid']], ['httpstepid']);
 					$httpTest['steps'][$snum] = $newStep;
 				}
@@ -670,7 +670,7 @@ else {
 			$options['hostids'] = $data['pageFilter']->hostid;
 		}
 		elseif ($data['pageFilter']->groupid > 0) {
-			$options['groupids'] = $data['pageFilter']->groupid;
+			$options['groupids'] = $data['pageFilter']->groupids;
 		}
 		$httpTests = API::HttpTest()->get($options);
 

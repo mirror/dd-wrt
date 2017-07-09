@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -256,7 +256,11 @@ else {
 		$linkedTemplateTable->addRow([
 			$templateLink,
 			(new CCol(
-				(new CSubmit('unlink['.$template['templateid'].']', _('Unlink')))->addClass(ZBX_STYLE_BTN_LINK)
+				(new CSimpleButton(_('Unlink')))
+					->onClick('javascript: submitFormWithParam('.
+						'"'.$frmHost->getName().'", "unlink['.$template['templateid'].']", "1"'.
+					');')
+					->addClass(ZBX_STYLE_BTN_LINK)
 			))->addClass(ZBX_STYLE_NOWRAP)
 		]);
 
@@ -282,7 +286,11 @@ else {
 				]
 			]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
 		])
-		->addRow([(new CSubmit('add_template', _('Add')))->addClass(ZBX_STYLE_BTN_LINK)]);
+		->addRow([
+			(new CSimpleButton(_('Add')))
+				->onClick('javascript: submitFormWithParam("'.$frmHost->getName().'", "add_template", "1");')
+				->addClass(ZBX_STYLE_BTN_LINK)
+		]);
 
 	$tmplList->addRow(_('Link new templates'),
 		(new CDiv($newTemplateTable))

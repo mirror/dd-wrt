@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -49,7 +49,10 @@ class CScreenMap extends CScreenBase {
 
 			$image->setSrc($image->getAttribute('src').'&severity_min='.$sysmap['severity_min']);
 
-			$action_map = getActionMapBySysmap($sysmap, ['severity_min' => $sysmap['severity_min']]);
+			$action_map = getActionMapBySysmap($sysmap, [
+				'severity_min' => $sysmap['severity_min'],
+				'fullscreen' => array_key_exists('fullscreen', $this->screenitem) ? $this->screenitem['fullscreen'] : 0
+			]);
 			$image->setMap($action_map->getName());
 
 			$output = [$action_map, $image];

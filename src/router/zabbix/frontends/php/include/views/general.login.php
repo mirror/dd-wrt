@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -22,7 +22,6 @@
 define('ZBX_PAGE_NO_HEADER', 1);
 define('ZBX_PAGE_NO_FOOTER', 1);
 
-$request = CHtml::encode(getRequest('request', ''));
 $message = CHtml::encode(getRequest('message', '')) ;
 // remove debug code for login form message, trimming not in regex to relay only on [ ] in debug message.
 $message = trim(preg_replace('/\[.*\]/', '', $message));
@@ -44,6 +43,8 @@ global $ZBX_SERVER_NAME;
 	(new CDiv([
 		(new CDiv())->addClass(ZBX_STYLE_SIGNIN_LOGO),
 		(new CForm())
+			->cleanItems()
+			->addItem(hasRequest('request') ? new CVar('request', getRequest('request')) : null)
 			->addItem(
 				(new CList())
 					->addItem([
@@ -63,7 +64,7 @@ global $ZBX_SERVER_NAME;
 			)
 	]))->addClass(ZBX_STYLE_SIGNIN_CONTAINER),
 	(new CDiv([
-		(new CLink(_('Help'), 'http://www.zabbix.com/documentation/3.0/'))
+		(new CLink(_('Help'), 'http://www.zabbix.com/documentation/3.2/'))
 			->setTarget('_blank')
 			->addClass(ZBX_STYLE_GREY)
 			->addClass(ZBX_STYLE_LINK_ALT),

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -33,7 +33,6 @@ $paramsFieldName = getParamFieldNameByType(getRequest('type', 0));
 
 // VAR	TYPE	OPTIONAL	FLAGS	VALIDATION	EXCEPTION
 $fields = [
-	'groupid' =>				[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null],
 	'hostid' =>					[T_ZBX_INT, O_OPT, P_SYS,	DB_ID.NOT_ZERO, 'isset({form}) && !isset({itemid})'],
 	'interfaceid' =>			[T_ZBX_INT, O_OPT, P_SYS,	DB_ID,		null, _('Interface')],
 	'copy_type' =>				[T_ZBX_INT, O_OPT, P_SYS,	IN('0,1,2'), 'isset({copy})'],
@@ -1157,7 +1156,6 @@ elseif (((hasRequest('action') && getRequest('action') === 'item.massupdateform'
 	$data['hosts'] = API::Host()->get([
 		'output' => ['hostid'],
 		'itemids' => $data['itemids'],
-		'selectItems' => ['itemid'],
 		'selectInterfaces' => API_OUTPUT_EXTEND
 	]);
 	$hostCount = count($data['hosts']);
@@ -1200,7 +1198,7 @@ elseif (((hasRequest('action') && getRequest('action') === 'item.massupdateform'
 
 			// set the initial chosen interface to one of the interfaces the items use
 			$items = API::Item()->get([
-				'itemids' => zbx_objectValues($data['hosts']['items'], 'itemid'),
+				'itemids' => $data['itemids'],
 				'output' => ['itemid', 'type']
 			]);
 			$usedInterfacesTypes = [];

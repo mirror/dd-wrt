@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -283,7 +283,9 @@ class CUser extends CApiService {
 
 			if (isset($user['usrgrps'])) {
 				if (empty($user['usrgrps'])) {
-					self::exception(ZBX_API_ERROR_PARAMETERS, _s('User "%s" cannot be without user group.', $dbUser['alias']));
+					self::exception(ZBX_API_ERROR_PARAMETERS,
+						_s('User "%1$s" cannot be without user group.', $dbUser['alias'])
+					);
 				}
 
 				// checking if user tries to disable himself (not allowed). No need to check this on creating a user.
@@ -1149,7 +1151,7 @@ class CUser extends CApiService {
 		}
 
 		// start session
-		$sessionid = md5(time().$password.$name.rand(0, 10000000));
+		$sessionid = md5(microtime().$password.$name.mt_rand());
 		DBexecute('INSERT INTO sessions (sessionid,userid,lastaccess,status)'.
 			' VALUES ('.zbx_dbstr($sessionid).','.zbx_dbstr($userInfo['userid']).','.time().','.ZBX_SESSION_ACTIVE.')'
 		);

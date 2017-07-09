@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -167,12 +167,16 @@ if ($triggerData) {
 		->show();
 }
 elseif (isset($_REQUEST['filter_hostid'])) {
-	$controls = new CList();
-	$controls->addItem([_('Mode').SPACE, new CComboBox('mode', $availabilityReportMode, 'submit()', [
-		AVAILABILITY_REPORT_BY_HOST => _('By host'),
-		AVAILABILITY_REPORT_BY_TEMPLATE => _('By trigger template')
-	])]);
-	$headerForm = (new CForm('get'))->addItem($controls);
+	$headerForm = (new CForm('get'))->addItem((new CList())
+		->addItem([
+			new CLabel(_('Mode'), 'mode'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			new CComboBox('mode', $availabilityReportMode, 'submit()', [
+				AVAILABILITY_REPORT_BY_HOST => _('By host'),
+				AVAILABILITY_REPORT_BY_TEMPLATE => _('By trigger template')
+			])
+		])
+	);
 	$reportWidget->setControls($headerForm);
 
 	$triggerOptions = [
@@ -210,9 +214,6 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		if (isset($_REQUEST['tpl_triggerid']) && !empty($_REQUEST['tpl_triggerid'])) {
 			$triggerOptions['filter']['templateid'] = $_REQUEST['tpl_triggerid'];
 		}
-		if (isset($_REQUEST['hostgroupid']) && !empty($_REQUEST['hostgroupid'])) {
-			$triggerOptions['groupids'] = $_REQUEST['hostgroupid'];
-		}
 
 		// filter template group
 		$groupsComboBox = (new CComboBox('filter_groupid', $_REQUEST['filter_groupid'], 'javascript: submit();'))
@@ -222,8 +223,38 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		$groups = API::HostGroup()->get([
 			'output' => ['groupid', 'name'],
 			'templated_hosts' => true,
-			'with_triggers' => true
+			'with_triggers' => true,
+			'preservekeys' => true
 		]);
+
+		$parents = [];
+		$parent_name = '';
+		foreach ($groups as $group) {
+			$parent = explode('/', $group['name']);
+			if (count($parent) > 1) {
+				array_pop($parent);
+				foreach ($parent as $sub_parent) {
+					if ($parent_name === '') {
+						$parent_name = $sub_parent;
+					}
+					else {
+						$parent_name .= '/'.$sub_parent;
+					}
+					$parents[] = $parent_name;
+				}
+			}
+		}
+
+		if ($parents) {
+			$parent_groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'filter' => ['name' => $parents],
+				'preservekeys' => true
+			]);
+
+			$groups = array_replace($groups, $parent_groups);
+		}
+
 		order_result($groups, 'name');
 
 		foreach ($groups as $group) {
@@ -235,9 +266,22 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		$templateComboBox = new CComboBox('filter_hostid', $_REQUEST['filter_hostid'], 'javascript: submit();');
 		$templateComboBox->addItem(0, _('all'));
 
+		if (getRequest('filter_groupid')) {
+			$filter_groupids = [getRequest('filter_groupid')];
+			$parent = $groups[getRequest('filter_groupid')]['name'].'/';
+			foreach ($groups as $group) {
+				if (strpos($group['name'], $parent) === 0) {
+					$filter_groupids[] = $group['groupid'];
+				}
+			}
+		}
+		else {
+			$filter_groupids = null;
+		}
+
 		$templates = API::Template()->get([
 			'output' => ['templateid', 'name'],
-			'groupids' => empty($_REQUEST['filter_groupid']) ? null : $_REQUEST['filter_groupid'],
+			'groupids' => $filter_groupids,
 			'with_triggers' => true
 		]);
 		order_result($templates, 'name');
@@ -287,19 +331,63 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		$hostGroupsComboBox = new CComboBox('hostgroupid', getRequest('hostgroupid', 0), 'javascript: submit()');
 		$hostGroupsComboBox->addItem(0, _('all'));
 
-		$hostGroups = API::HostGroup()->get([
+		$groups = API::HostGroup()->get([
 			'output' => ['groupid', 'name'],
 			'hostids' => $triggerOptions['hostids'],
 			'monitored_hosts' => true,
 			'preservekeys' => true
 		]);
-		order_result($hostGroups, 'name');
 
-		foreach ($hostGroups as $hostGroup) {
-			$hostGroupsComboBox->addItem($hostGroup['groupid'], $hostGroup['name']);
+		$parents = [];
+		$parent_name = '';
+		foreach ($groups as $group) {
+			$parent = explode('/', $group['name']);
+			if (count($parent) > 1) {
+				array_pop($parent);
+				foreach ($parent as $sub_parent) {
+					if ($parent_name === '') {
+						$parent_name = $sub_parent;
+					}
+					else {
+						$parent_name .= '/'.$sub_parent;
+					}
+					$parents[] = $parent_name;
+				}
+			}
 		}
 
-		if (isset($_REQUEST['hostgroupid']) && !isset($hostGroups[$_REQUEST['hostgroupid']])) {
+		if ($parents) {
+			$parent_groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'filter' => ['name' => $parents],
+				'preservekeys' => true
+			]);
+
+			$groups = array_replace($groups, $parent_groups);
+		}
+
+		order_result($groups, 'name');
+
+		if (hasRequest('hostgroupid') && getRequest('hostgroupid')) {
+			$triggerOptions['groupids'] = [getRequest('hostgroupid')];
+			if (array_key_exists(getRequest('hostgroupid'), $groups)) {
+				$parent = $groups[getRequest('hostgroupid')]['name'].'/';
+				foreach ($groups as $group) {
+					if (strpos($group['name'], $parent) === 0) {
+						$triggerOptions['groupids'][] = $group['groupid'];
+					}
+				}
+			}
+		}
+		else {
+			$triggerOptions['groupids'] = null;
+		}
+
+		foreach ($groups as $group) {
+			$hostGroupsComboBox->addItem($group['groupid'], $group['name']);
+		}
+
+		if (isset($_REQUEST['hostgroupid']) && !isset($groups[$_REQUEST['hostgroupid']])) {
 			unset($triggerOptions['groupids']);
 		}
 
@@ -316,8 +404,38 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		$groups = API::HostGroup()->get([
 			'output' => ['groupid', 'name'],
 			'monitored_hosts' => true,
-			'with_triggers' => true
+			'with_triggers' => true,
+			'preservekeys' => true
 		]);
+
+		$parents = [];
+		$parent_name = '';
+		foreach ($groups as $group) {
+			$parent = explode('/', $group['name']);
+			if (count($parent) > 1) {
+				array_pop($parent);
+				foreach ($parent as $sub_parent) {
+					if ($parent_name === '') {
+						$parent_name = $sub_parent;
+					}
+					else {
+						$parent_name .= '/'.$sub_parent;
+					}
+					$parents[] = $parent_name;
+				}
+			}
+		}
+
+		if ($parents) {
+			$parent_groups = API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'filter' => ['name' => $parents],
+				'preservekeys' => true
+			]);
+
+			$groups = array_replace($groups, $parent_groups);
+		}
+
 		order_result($groups, 'name');
 
 		foreach ($groups as $group) {
@@ -328,9 +446,21 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		// filter host
 		$hostsComboBox = new CComboBox('filter_hostid', $_REQUEST['filter_hostid'], 'javascript: submit();');
 		$hostsComboBox->addItem(0, _('all'));
+		if (getRequest('filter_groupid')) {
+			$filter_groupids = [getRequest('filter_groupid')];
+			$parent = $groups[getRequest('filter_groupid')]['name'].'/';
+			foreach ($groups as $group) {
+				if (strpos($group['name'], $parent) === 0) {
+					$filter_groupids[] = $group['groupid'];
+				}
+			}
+		}
+		else {
+			$filter_groupids = null;
+		}
 
 		$hosts = API::Host()->get([
-			'groupids' => empty($_REQUEST['filter_groupid']) ? null : $_REQUEST['filter_groupid'],
+			'groupids' => $filter_groupids,
 			'output' => ['hostid', 'name'],
 			'monitored_hosts' => true,
 			'with_triggers' => true
@@ -344,9 +474,7 @@ elseif (isset($_REQUEST['filter_hostid'])) {
 		$filterColumn1->addRow(_('Host'), $hostsComboBox);
 
 		// trigger options
-		if (!empty($_REQUEST['filter_groupid'])) {
-			$triggerOptions['groupids'] = $_REQUEST['filter_groupid'];
-		}
+		$triggerOptions['groupids'] = $filter_groupids;
 		if (!empty($_REQUEST['filter_hostid']) && isset($hosts[$_REQUEST['filter_hostid']])) {
 			$triggerOptions['hostids'] = $_REQUEST['filter_hostid'];
 		}

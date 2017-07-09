@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -18,20 +18,20 @@
 ** Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 **/
 
-$widget = (new CWidget())->setTitle(_('Slide shows'));
-
-$controls = (new CList())->addItem(
-	new CComboBox('config', 'slides.php', 'redirect(this.options[this.selectedIndex].value);', [
-		'screens.php' => _('Screens'),
-		'slides.php' => _('Slide shows')
-	])
-)
-	->addItem(new CSubmit('form', _('Create slide show')));
-
-$createForm = (new CForm('get'))->cleanItems()
-	->addItem($controls);
-
-$widget->setControls($createForm);
+$widget = (new CWidget())
+	->setTitle(_('Slide shows'))
+	->setControls((new CForm('get'))
+		->cleanItems()
+		->addItem((new CList())
+			->addItem(
+				new CComboBox('config', 'slides.php', 'redirect(this.options[this.selectedIndex].value);', [
+					'screens.php' => _('Screens'),
+					'slides.php' => _('Slide shows')
+				])
+			)
+			->addItem(new CSubmit('form', _('Create slide show')))
+		)
+	);
 
 // filter
 $widget->addItem(

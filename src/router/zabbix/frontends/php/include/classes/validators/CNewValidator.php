@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -301,6 +301,15 @@ class CNewValidator {
 
 		// between INT_MIN and INT_MAX
 		return (bccomp($value, '-2147483648') >= 0 && bccomp($value, '2147483647') <= 0);
+	}
+
+	public static function is_uint64($value) {
+		if (1 != preg_match('/^[0-9]+$/', $value)) {
+			return false;
+		}
+
+		// between 0 and _UI64_MAX
+		return (bccomp($value, '0') >= 0 && bccomp($value, '18446744073709551615') <= 0);
 	}
 
 	private function check_db_value($field_schema, $value) {

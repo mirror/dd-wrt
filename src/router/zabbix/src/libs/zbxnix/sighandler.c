@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -24,8 +24,6 @@
 #include "fatal.h"
 #include "sigcommon.h"
 #include "../../libs/zbxcrypto/tls.h"
-
-extern volatile sig_atomic_t	zbx_timed_out;
 
 int	sig_parent_pid = -1;
 int	sig_exiting = 0;
@@ -64,7 +62,7 @@ static void	alarm_signal_handler(int sig, siginfo_t *siginfo, void *context)
 {
 	SIG_CHECK_PARAMS(sig, siginfo, context);
 
-	zbx_timed_out = 1;	/* set a global flag */
+	zbx_alarm_flag_set();	/* set alarm flag */
 }
 
 /******************************************************************************

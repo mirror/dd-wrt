@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -76,15 +76,27 @@ $widget = (new CWidget())
 	->setControls((new CForm('get'))
 		->cleanItems()
 		->addItem((new CList())
-			->addItem([_('Group'), SPACE, $this->data['pageFilter']->getGroupsCB()])
-			->addItem([_('Type'), SPACE, new CComboBox('type', $this->data['type'], 'submit()', [
-				SHOW_TRIGGERS => _('Triggers'),
-				SHOW_DATA => _('Data')
-			])])
-			->addItem([_('Hosts location'), SPACE, new CComboBox('view_style', $this->data['view_style'], 'submit()', [
-				STYLE_TOP => _('Top'),
-				STYLE_LEFT => _('Left')
-			])])
+			->addItem([
+				new CLabel(_('Group'), 'groupid'),
+				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+				$this->data['pageFilter']->getGroupsCB()
+			])
+			->addItem([
+				new CLabel(_('Type'), 'type'),
+				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+				new CComboBox('type', $this->data['type'], 'submit()', [
+					SHOW_TRIGGERS => _('Triggers'),
+					SHOW_DATA => _('Data')
+				])
+			])
+			->addItem([
+				new CLabel(_('Hosts location'), 'view_style'),
+				(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+				new CComboBox('view_style', $this->data['view_style'], 'submit()', [
+					STYLE_TOP => _('Top'),
+					STYLE_LEFT => _('Left')
+				])
+			])
 			->addItem(get_icon('fullscreen', ['fullscreen' => $this->data['fullscreen']]))
 			->addItem($help)
 		)

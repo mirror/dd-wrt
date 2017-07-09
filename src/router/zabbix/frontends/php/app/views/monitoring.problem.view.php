@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -88,7 +88,6 @@ if ($data['action'] == 'problem.view') {
 				'name' => 'filter_groupids[]',
 				'objectName' => 'hostGroup',
 				'data' => $data['filter']['groups'],
-				'nested' => true,
 				'popup' => [
 					'parameters' => 'srctbl=host_groups&dstfrm=zbx_filter&dstfld1=filter_groupids_'.
 						'&srcfld1=groupid&multiselect=1'
@@ -136,7 +135,7 @@ if ($data['action'] == 'problem.view') {
 					'parameters' => 'srctbl=triggers&srcfld1=triggerid&dstfrm=zbx_filter&dstfld1=filter_triggerids_'.
 						'&monitored_hosts=1&with_monitored_triggers=1&multiselect=1&noempty=1'
 				]
-			]))->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
+			]))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)
 		)
 		->addRow(_('Problem'),
 			(new CTextBox('filter_problem', $data['filter']['problem']))->setWidth(ZBX_TEXTAREA_FILTER_STANDARD_WIDTH)

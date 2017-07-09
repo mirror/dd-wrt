@@ -11,8 +11,8 @@
 		<input type="hidden" id="interface_type_#{iface.interfaceid}" name="interfaces[#{iface.interfaceid}][type]" value="#{iface.type}">
 		<input name="interfaces[#{iface.interfaceid}][ip]" type="text" style="width: <?= ZBX_TEXTAREA_INTERFACE_IP_WIDTH ?>px" maxlength="64" value="#{iface.ip}">
 		<div class="interface-bulk">
-			<input type="checkbox" id="interfaces[#{iface.interfaceid}][bulk]" name="interfaces[#{iface.interfaceid}][bulk]" value="1" #{attrs.checked_bulk}>
-			<label for="interfaces[#{iface.interfaceid}][bulk]"><?= _('Use bulk requests') ?></label>
+			<input type="checkbox" id="interfaces_#{iface.interfaceid}_bulk" name="interfaces[#{iface.interfaceid}][bulk]" value="1" #{attrs.checked_bulk}>
+			<label for="interfaces_#{iface.interfaceid}_bulk"><?= _('Use bulk requests') ?></label>
 		</div>
 	</td>
 	<td class="interface-dns">
@@ -77,8 +77,7 @@
 		}
 
 		function resetMainInterfaces() {
-			var hostInterface,
-				typeInterfaces,
+			var typeInterfaces,
 				hostInterfaces = getMainInterfacesByType();
 
 			for (var hostInterfaceType in hostInterfaces) {
@@ -132,15 +131,30 @@
 			domElement.draggable({
 				handle: 'div.<?= ZBX_STYLE_DRAG_ICON ?>',
 				revert: 'invalid',
+				helper: function(event) {
+					var hostInterfaceId = jQuery(this).data('interfaceid');
+					var clone = jQuery(this).clone();
+					// Make sure to update names for all radio and checkboxes for them not to affect selection of
+					// originals.
+					// If original is addressed by any means (ex. by ID), make sure, to update these means in clone,
+					// for clone not to be addressed in place of original.
+					clone.find("[name$='[useip]']").each(function(){
+						jQuery(this).attr('name','interfaces[' + hostInterfaceId + '][useip_handle]');
+					});
+					clone.find("#interface_main_" + hostInterfaceId)
+						.attr('name','mainInterfaces[handle]')
+						.attr('id','interface_main_' + hostInterfaceId + '_handle');
+					return clone;
+				},
 				start: function(event, ui) {
-					jQuery(this).css({'z-index': '1000'})
+					jQuery(ui.helper).css({'z-index': '1000'});
+					// Visibility is added to original element to hide it, while helper is beeing moved, but to keep
+					// it's place visually.
+					jQuery(this).css({'visibility': 'hidden'});
 				},
 				stop: function(event, ui) {
-					var hostInterfaceId = jQuery(this).data('interfaceid');
 					resetMainInterfaces();
-					resetUseipInterface(hostInterfaceId)
-
-					jQuery(this).css({'z-index': ''})
+					jQuery(this).css({'visibility': ''});
 				}
 			});
 		}
@@ -171,7 +185,7 @@
 
 			if (hostInterface.type == <?= INTERFACE_TYPE_SNMP ?>) {
 				if (hostInterface.bulk == 1) {
-					attrs.checked_bulk = 'checked="checked"';
+					attrs.checked_bulk = 'checked=checked';
 				}
 				else {
 					attrs.checked_bulk = '';
@@ -237,16 +251,6 @@
 			jQuery('#interface_main_' + hostInterfaceId).prop('checked', false);
 			jQuery('#interface_type_' + hostInterfaceId).val(newHostInterfaceType);
 			jQuery('#hostInterfaceRow_' + hostInterfaceId).insertBefore(newDomId);
-		}
-
-		function resetUseipInterface(hostInterfaceId) {
-			var useip = allHostInterfaces[hostInterfaceId].useip;
-			if (useip == 0) {
-				jQuery('#radio_dns_' + hostInterfaceId).prop('checked', true);
-			}
-			else {
-				jQuery('#radio_ip_' + hostInterfaceId).prop('checked', true);
-			}
 		}
 
 		return {
@@ -325,9 +329,7 @@
 			hostInterfacesManager.setMainInterface(interfaceId);
 		});
 
-		// when we start dragging row, all radio buttons are unchecked for some reason, we store radio buttons values
-		// to restore them when drag is ended
-		jQuery('#hostlist').on('click', 'input[type=radio].interface-useip', function() {
+		jQuery('#hostlist').on('click', 'input[type=radio][id*="_useip_"]', function() {
 			var interfaceId = jQuery(this).attr('id').match(/\d+/);
 			hostInterfacesManager.setUseipForInterface(interfaceId[0], jQuery(this).val());
 		});
@@ -358,8 +360,6 @@
 				var hostInterfaceTypeName = jQuery(this).data('type'),
 					hostInterfaceId = ui.draggable.data('interfaceid');
 
-				ui.helper.css({'left': '', 'top': ''});
-
 				if (getHostInterfaceNumericType(hostInterfaceTypeName) == <?= INTERFACE_TYPE_SNMP ?>) {
 					if (jQuery('.interface-bulk', jQuery('#hostInterfaceRow_' + hostInterfaceId)).length == 0) {
 						var bulkDiv = jQuery('<div>', {
@@ -368,8 +368,7 @@
 
 						// append checkbox
 						bulkDiv.append(jQuery('<input>', {
-							id: 'interfaces[' + hostInterfaceId + '][bulk]',
-							'class': 'input checkbox pointer',
+							id: 'interfaces_' + hostInterfaceId + '_bulk',
 							type: 'checkbox',
 							name: 'interfaces[' + hostInterfaceId + '][bulk]',
 							value: 1,
@@ -378,7 +377,7 @@
 
 						// append label
 						bulkDiv.append(jQuery('<label>', {
-							'for': 'interfaces[' + hostInterfaceId + '][bulk]',
+							'for': 'interfaces_' + hostInterfaceId + '_bulk',
 							text: '<?= _('Use bulk requests') ?>'
 						}));
 
@@ -390,7 +389,6 @@
 				}
 
 				hostInterfacesManager.setType(hostInterfaceId, hostInterfaceTypeName);
-				hostInterfacesManager.resetMainInterfaces();
 			},
 			activate: function(event, ui) {
 				if (!jQuery(this).find(ui.draggable).length) {

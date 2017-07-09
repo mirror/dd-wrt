@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -121,8 +121,6 @@ static int	zbx_process_trigger(struct _DC_TRIGGER *trigger, zbx_vector_ptr_t *di
 
 	if (0 != (event_flags & ZBX_FLAGS_TRIGGER_CREATE_TRIGGER_EVENT))
 	{
-		flags |= ZBX_FLAGS_TRIGGER_DIFF_UPDATE_LASTCHANGE;
-
 		add_event(EVENT_SOURCE_TRIGGERS, EVENT_OBJECT_TRIGGER, trigger->triggerid,
 				&trigger->timespec, new_value, trigger->description,
 				trigger->expression_orig, trigger->recovery_expression_orig,
@@ -136,11 +134,8 @@ static int	zbx_process_trigger(struct _DC_TRIGGER *trigger, zbx_vector_ptr_t *di
 				&trigger->timespec, new_state, NULL, NULL, NULL, 0, 0, NULL, 0, NULL);
 	}
 
-	if (0 != (flags & ZBX_FLAGS_TRIGGER_DIFF_UPDATE))
-	{
-		zbx_append_trigger_diff(diffs, trigger->triggerid, trigger->priority, flags, trigger->value,
-				new_state, trigger->timespec.sec, new_error);
-	}
+	zbx_append_trigger_diff(diffs, trigger->triggerid, trigger->priority, flags, trigger->value, new_state,
+			trigger->timespec.sec, new_error);
 
 	ret = SUCCEED;
 out:
@@ -204,7 +199,7 @@ void	zbx_save_trigger_changes(const zbx_vector_ptr_t *trigger_diff)
 		{
 			char	*error_esc;
 
-			error_esc = DBdyn_escape_string_len(diff->error, TRIGGER_ERROR_LEN);
+			error_esc = DBdyn_escape_field("triggers", "error", diff->error);
 			zbx_snprintf_alloc(&sql, &sql_alloc, &sql_offset, "%cerror='%s'", delim, error_esc);
 			zbx_free(error_esc);
 		}

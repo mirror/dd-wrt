@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -100,7 +100,7 @@ $scriptsForm->addItem([
 	$data['paging'],
 	new CActionButtonList('action', 'scriptids', [
 		'script.delete' => ['name' => _('Delete'), 'confirm' => _('Delete selected scripts?')]
-	])
+	], 'script')
 ]);
 
 // append form to widget

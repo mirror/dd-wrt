@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -66,8 +66,16 @@ if (check_dynamic_items($data['screen']['screenid'], 0)) {
 	$_REQUEST['hostid'] = $pageFilter->hostid;
 
 	$controls
-		->addItem([ _('Group').SPACE, $pageFilter->getGroupsCB()])
-		->addItem([ _('Host').SPACE, $pageFilter->getHostsCB()]);
+		->addItem([
+			new CLabel(_('Group'), 'groupid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$pageFilter->getGroupsCB()
+		])
+		->addItem([
+			new CLabel(_('Host'), 'hostid'),
+			(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+			$pageFilter->getHostsCB()
+		]);
 }
 
 // page header

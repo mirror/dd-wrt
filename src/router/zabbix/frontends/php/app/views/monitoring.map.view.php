@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -32,7 +32,11 @@ $this->addJsFile('flickerfreescreen.js');
 			->addVar('fullscreen', $data['fullscreen'])
 			->addItem(
 				(new CList())
-					->addItem([_('Minimum severity'), SPACE, $data['pageFilter']->getSeveritiesMinCB()])
+					->addItem([
+						new CLabel(_('Minimum severity'), 'severity_min'),
+						(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+						$data['pageFilter']->getSeveritiesMinCB()
+					])
 					->addItem($data['map']['editable']
 						? (new CButton('edit', _('Edit map')))
 							->onClick('redirect("sysmap.php?sysmapid='.$data['map']['sysmapid'].'")')
@@ -65,7 +69,8 @@ $this->addJsFile('flickerfreescreen.js');
 						'resourceid' => $data['map']['sysmapid'],
 						'width' => null,
 						'height' => null,
-						'severity_min' => $data['severity_min']
+						'severity_min' => $data['severity_min'],
+						'fullscreen' => $data['fullscreen']
 					]
 				])->get()
 			)

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -171,8 +171,6 @@ typedef struct
 	int			history_num;
 	int			trends_num;
 	int			trends_last_cleanup_hour;
-
-	zbx_timespec_t		last_ts;
 }
 ZBX_DC_CACHE;
 
@@ -892,6 +890,8 @@ static void	DCmass_update_triggers(ZBX_DC_HISTORY *history, int history_num, zbx
 	DCconfig_get_triggers_by_itemids(&trigger_info, &trigger_order, itemids, timespecs, NULL, item_num,
 			ZBX_EXPAND_MACROS);
 
+	zbx_determine_items_in_expressions(&trigger_order, itemids, item_num);
+
 	if (0 == trigger_order.values_num)
 		goto clean_triggers;
 
@@ -1186,7 +1186,7 @@ notsupported:
 
 		if (0 != strcmp(item->db_error, h->value_orig.err))
 		{
-			value_esc = DBdyn_escape_string_len(h->value_orig.err, ITEM_ERROR_LEN);
+			value_esc = DBdyn_escape_field("items", "error", h->value_orig.err);
 			zbx_snprintf_alloc(&sql, &sql_alloc, sql_offset, "%serror='%s'", sql_start, value_esc);
 			sql_start = sql_continue;
 
@@ -1231,7 +1231,6 @@ static void	DCinventory_value_add(zbx_vector_ptr_t *inventory_values, DC_ITEM *i
 {
 	char			value[MAX_BUFFER_LEN];
 	const char		*inventory_field;
-	unsigned short		inventory_field_len;
 	zbx_inventory_value_t	*inventory_value;
 
 	if (ITEM_STATE_NOTSUPPORTED == h->state)
@@ -1264,13 +1263,11 @@ static void	DCinventory_value_add(zbx_vector_ptr_t *inventory_values, DC_ITEM *i
 
 	zbx_format_value(value, sizeof(value), item->valuemapid, item->units, h->value_type);
 
-	inventory_field_len = DBget_inventory_field_len(item->inventory_link);
-
 	inventory_value = zbx_malloc(NULL, sizeof(zbx_inventory_value_t));
 
 	inventory_value->hostid = item->host.hostid;
 	inventory_value->field_name = inventory_field;
-	inventory_value->value_esc = DBdyn_escape_string_len(value, inventory_field_len);
+	inventory_value->value_esc = DBdyn_escape_field("host_inventory", inventory_field, value);
 
 	zbx_vector_ptr_append(inventory_values, inventory_value);
 }
@@ -2210,7 +2207,11 @@ int	DCsync_history(int sync_type, int *total_num)
 	}
 
 	if (0 == cache->history_num)
+	{
+		/* even with no history there might be events queued to be closed, flush them */
+		flush_correlated_events();
 		goto finish;
+	}
 
 	sync_start = time(NULL);
 
@@ -2441,17 +2442,6 @@ finish:
 	}
 
 	return next_sync;
-}
-
-static void	DCcheck_ns(zbx_timespec_t *ts)
-{
-	if (ts->ns >= 0)
-		return;
-
-	ts->ns = cache->last_ts.ns++;
-	if ((cache->last_ts.ns > 999900000 && cache->last_ts.sec != ts->sec) || cache->last_ts.ns == 1000000000)
-		cache->last_ts.ns = 0;
-	cache->last_ts.sec = ts->sec;
 }
 
 /******************************************************************************
@@ -3063,7 +3053,6 @@ static int	hc_clone_history_data(zbx_hc_data_t **data, const dc_item_value_t *it
 		(*data)->state = item_value->state;
 		(*data)->ts = item_value->ts;
 		(*data)->flags = item_value->flags;
-		DCcheck_ns(&(*data)->ts);
 	}
 
 	if (ITEM_STATE_NOTSUPPORTED == item_value->state)

@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -310,6 +310,8 @@ int	NET_IF_DISCOVERY(AGENT_REQUEST *request, AGENT_RESULT *result)
 	SET_STR_RESULT(result, strdup(j.buffer));
 
 	zbx_json_free(&j);
+
+	if_freenameindex(interfaces);
 
 	return SYSINFO_RET_OK;
 }

@@ -669,9 +669,25 @@ UPDATE graph_theme SET theme = 'darkblue' WHERE theme = 'css_bb.css'
 UPDATE graph_theme SET theme = 'originalblue' WHERE theme = 'css_ob.css'
 /
 -- Insert new graph theme
-INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor, maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor, nonworktimecolor, gridview, legendview) VALUES ((SELECT MAX(graphthemeid) + 1 FROM graph_theme), 'Dark orange', 'darkorange', '333333', '0A0A0A', '888888', '222222', '4F4F4F', 'EFEFEF', 'DFDFDF', 'FF5500', 'FF5500', 'FF1111', '1F1F1F', 1, 1)
+INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor,
+	maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor,
+	nonworktimecolor, gridview, legendview)
+SELECT (SELECT MAX(graphthemeid) FROM graph_theme) + 1 AS graphthemeid, 'Dark orange' AS description, 'darkorange' AS theme,
+	'333333' AS backgroundcolor, '0A0A0A' AS graphcolor, '888888' AS graphbordercolor, '222222' AS gridcolor,
+	'4F4F4F' AS maingridcolor, 'EFEFEF' AS gridbordercolor, 'DFDFDF' AS textcolor, 'FF5500' AS highlightcolor,
+	'FF5500' AS leftpercentilecolor, 'FF1111' AS rightpercentilecolor, '1F1F1F' AS nonworktimecolor, 1 AS gridview,
+	1 AS legendview
+FROM dual WHERE EXISTS (SELECT NULL FROM graph_theme)
 /
-INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor, maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor, nonworktimecolor, gridview, legendview) VALUES ((SELECT MAX(graphthemeid) + 1 FROM graph_theme), 'Classic', 'classic', 'F0F0F0', 'FFFFFF', '333333', 'CCCCCC', 'AAAAAA', '000000', '222222', 'AA4444', '11CC11', 'CC1111', 'E0E0E0', 1, 1)
+INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor,
+	maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor,
+	nonworktimecolor, gridview, legendview)
+SELECT (SELECT MAX(graphthemeid) FROM graph_theme) + 1 AS graphthemeid, 'Classic' AS description, 'classic' AS theme,
+	'F0F0F0' AS backgroundcolor, 'FFFFFF' AS graphcolor, '333333' AS graphbordercolor, 'CCCCCC' AS gridcolor,
+	'AAAAAA' AS maingridcolor, '000000' AS gridbordercolor, '222222' AS textcolor, 'AA4444' AS highlightcolor,
+	'11CC11' AS leftpercentilecolor, 'CC1111' AS rightpercentilecolor, 'E0E0E0' AS nonworktimecolor, 1 AS gridview,
+	1 AS legendview
+FROM dual WHERE EXISTS (SELECT NULL FROM graph_theme)
 /
 DELETE FROM ids WHERE table_name = 'graph_theme'
 /
@@ -698,9 +714,9 @@ INSERT INTO help_items (itemtype,key_,description) values ('0','kernel.maxfiles'
 /
 INSERT INTO help_items (itemtype,key_,description) values ('0','kernel.maxproc','Maximum number of processes supported by OS.')
 /
-INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns.record[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.')
+INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns.record[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.')
 /
-INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.')
+INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.')
 /
 INSERT INTO help_items (itemtype,key_,description) values ('0','net.if.collisions[if]','Out-of-window collision. Collisions count.')
 /
@@ -872,9 +888,9 @@ INSERT INTO help_items (itemtype,key_,description) values ('7','logrt[file_forma
 /
 INSERT INTO help_items (itemtype,key_,description) values ('7','log[file,&lt;pattern&gt;,&lt;encoding&gt;,&lt;maxlines&gt;,&lt;mode&gt;]','Monitoring of log file. pattern - regular expression')
 /
-INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns.record[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.')
+INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns.record[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.')
 /
-INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.')
+INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.')
 /
 INSERT INTO help_items (itemtype,key_,description) values ('7','net.if.collisions[if]','Out-of-window collision. Collisions count.')
 /

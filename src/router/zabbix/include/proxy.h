@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -49,7 +49,7 @@ int	get_active_proxy_id(struct zbx_json_parse *jp, zbx_uint64_t *hostid, char *h
 		char **error);
 int	check_access_passive_proxy(zbx_socket_t *sock, int send_response, const char *req);
 
-void	update_proxy_lastaccess(const zbx_uint64_t hostid);
+void	update_proxy_lastaccess(const zbx_uint64_t hostid, time_t last_access);
 
 int	get_proxyconfig_data(zbx_uint64_t proxy_hostid, struct zbx_json *j, char **error);
 void	process_proxyconfig(struct zbx_json_parse *jp_data);

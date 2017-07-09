@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -185,8 +185,8 @@ $itemFormList->addRow(
 	[
 		_('Privacy passphrase'),
 		SPACE,
-		(new CVisibilityBox('visible[privpassphras]', 'snmpv3_privpassphrase', _('Original')))
-			->setChecked(isset($this->data['visible']['privpassphras']))
+		(new CVisibilityBox('visible[privpassphrase]', 'snmpv3_privpassphrase', _('Original')))
+			->setChecked(isset($this->data['visible']['privpassphrase']))
 	],
 	(new CTextBox('snmpv3_privpassphrase', $this->data['snmpv3_privpassphrase']))
 		->setWidth(ZBX_TEXTAREA_STANDARD_WIDTH)
@@ -577,7 +577,7 @@ $itemTab->addTab('itemTab', _('Mass update'), $itemFormList);
 // append buttons to form
 $itemTab->setFooter(makeFormFooter(
 	new CSubmit('massupdate', _('Update')),
-	[new CButtonCancel(url_param('groupid').url_param('hostid'))]
+	[new CButtonCancel(url_param('hostid'))]
 ));
 
 $itemForm->addItem($itemTab);

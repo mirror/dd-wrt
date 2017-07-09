@@ -219,11 +219,26 @@ UPDATE graph_theme SET theme = 'darkblue' WHERE theme = 'css_bb.css';
 UPDATE graph_theme SET theme = 'originalblue' WHERE theme = 'css_ob.css';
 
 -- Insert new graph theme
-SET @graphthemeid = (SELECT MAX(graphthemeid) FROM graph_theme);
-INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor, maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor, nonworktimecolor, gridview, legendview)
-VALUES
-(@graphthemeid + 1, 'Dark orange', 'darkorange', '333333', '0A0A0A', '888888', '222222', '4F4F4F', 'EFEFEF', 'DFDFDF', 'FF5500', 'FF5500', 'FF1111', '1F1F1F', 1, 1),
-(@graphthemeid + 2, 'Classic', 'classic', 'F0F0F0', 'FFFFFF', '333333', 'CCCCCC', 'AAAAAA', '000000', '222222', 'AA4444', '11CC11', 'CC1111', 'E0E0E0', 1, 1);
+INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor,
+	maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor,
+	nonworktimecolor, gridview, legendview)
+SELECT (SELECT MAX(graphthemeid) FROM graph_theme) + 1 AS graphthemeid, 'Dark orange' AS description, 'darkorange' AS theme,
+	'333333' AS backgroundcolor, '0A0A0A' AS graphcolor, '888888' AS graphbordercolor, '222222' AS gridcolor,
+	'4F4F4F' AS maingridcolor, 'EFEFEF' AS gridbordercolor, 'DFDFDF' AS textcolor, 'FF5500' AS highlightcolor,
+	'FF5500' AS leftpercentilecolor, 'FF1111' AS rightpercentilecolor, '1F1F1F' AS nonworktimecolor, 1 AS gridview,
+	1 AS legendview
+FROM dual WHERE EXISTS (SELECT NULL FROM graph_theme);
+
+INSERT INTO graph_theme (graphthemeid, description, theme, backgroundcolor, graphcolor, graphbordercolor, gridcolor,
+	maingridcolor, gridbordercolor, textcolor, highlightcolor, leftpercentilecolor, rightpercentilecolor,
+	nonworktimecolor, gridview, legendview)
+SELECT (SELECT MAX(graphthemeid) FROM graph_theme) + 1 AS graphthemeid, 'Classic' AS description, 'classic' AS theme,
+	'F0F0F0' AS backgroundcolor, 'FFFFFF' AS graphcolor, '333333' AS graphbordercolor, 'CCCCCC' AS gridcolor,
+	'AAAAAA' AS maingridcolor, '000000' AS gridbordercolor, '222222' AS textcolor, 'AA4444' AS highlightcolor,
+	'11CC11' AS leftpercentilecolor, 'CC1111' AS rightpercentilecolor, 'E0E0E0' AS nonworktimecolor, 1 AS gridview,
+	1 AS legendview
+FROM dual WHERE EXISTS (SELECT NULL FROM graph_theme);
+
 DELETE FROM ids WHERE table_name = 'graph_theme';
 ALTER TABLE groups MODIFY groupid bigint unsigned NOT NULL;
 DROP TABLE help_items;
@@ -239,8 +254,8 @@ INSERT INTO help_items (itemtype,key_,description) values ('0','agent.ping','Che
 INSERT INTO help_items (itemtype,key_,description) values ('0','agent.version','Version of zabbix_agent(d) running on monitored host. String value. Example of returned value: 1.1');
 INSERT INTO help_items (itemtype,key_,description) values ('0','kernel.maxfiles','Maximum number of opened files supported by OS.');
 INSERT INTO help_items (itemtype,key_,description) values ('0','kernel.maxproc','Maximum number of processes supported by OS.');
-INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns.record[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.');
-INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.');
+INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns.record[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.');
+INSERT INTO help_items (itemtype,key_,description) values ('0','net.dns[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.');
 INSERT INTO help_items (itemtype,key_,description) values ('0','net.if.collisions[if]','Out-of-window collision. Collisions count.');
 INSERT INTO help_items (itemtype,key_,description) values ('0','net.if.in[if,&lt;mode&gt;]','Network interface input statistic. Integer value. If mode is missing bytes is used.');
 INSERT INTO help_items (itemtype,key_,description) values ('0','net.if.list','List of network interfaces. Text value.');
@@ -326,8 +341,8 @@ INSERT INTO help_items (itemtype,key_,description) values ('7','kernel.maxfiles'
 INSERT INTO help_items (itemtype,key_,description) values ('7','kernel.maxproc','Maximum number of processes supported by OS.');
 INSERT INTO help_items (itemtype,key_,description) values ('7','logrt[file_format,&lt;pattern&gt;,&lt;encoding&gt;,&lt;maxlines&gt;,&lt;mode&gt;]','Monitoring of log file with rotation. fileformat - [path][regexp], pattern - regular expression');
 INSERT INTO help_items (itemtype,key_,description) values ('7','log[file,&lt;pattern&gt;,&lt;encoding&gt;,&lt;maxlines&gt;,&lt;mode&gt;]','Monitoring of log file. pattern - regular expression');
-INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns.record[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.');
-INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns[&lt;ip&gt;,zone,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.');
+INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns.record[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Performs a DNS query. On success returns a character string with the required type of information.');
+INSERT INTO help_items (itemtype,key_,description) values ('7','net.dns[&lt;ip&gt;,name,&lt;type&gt;,&lt;timeout&gt;,&lt;count&gt;]','Checks if DNS service is up. 0 - DNS is down (server did not respond or DNS resolution failed), 1 - DNS is up.');
 INSERT INTO help_items (itemtype,key_,description) values ('7','net.if.collisions[if]','Out-of-window collision. Collisions count.');
 INSERT INTO help_items (itemtype,key_,description) values ('7','net.if.in[if,&lt;mode&gt;]','Network interface input statistic. Integer value. If mode is missing bytes is used.');
 INSERT INTO help_items (itemtype,key_,description) values ('7','net.if.list','List of network interfaces. Text value.');
