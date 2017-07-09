@@ -753,7 +753,6 @@ static void nat_prerouting(void)
 	count = 1;
 
 	if (has_gateway()) {
-		insmod("shortcut-fe"); // since shortcut also gains performance for bridging, it should maybe loaded always
 		writeprocsysnet("netfilter/nf_conntrack_helper", "1");	// kerne 4.7 uses 0 as new default which disables several nat helpers
 
 		/*
@@ -771,8 +770,6 @@ static void nat_prerouting(void)
 		/*
 		 * DD-WRT addition end 
 		 */
-	} else {
-		rmmod("shortcut-fe");
 	}
 
 	/*
@@ -2764,7 +2761,8 @@ void start_firewall(void)
 		sysprintf("echo 1 > /proc/net/arp_spoofing_enable");
 	else
 		sysprintf("echo 0 > /proc/net/arp_spoofing_enable");
-
+	insmod("shortcut-fe");
+	writeint("/sys/fast_classifier/skip_to_bridge_ingres", 1);
 #ifndef	HAVE_80211AC
 	/*
 	 * Improve WAN<->LAN Performance on K26
