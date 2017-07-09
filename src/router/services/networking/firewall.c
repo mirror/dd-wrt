@@ -771,6 +771,8 @@ static void nat_prerouting(void)
 		/*
 		 * DD-WRT addition end 
 		 */
+	} else {
+		rmmod("shortcut-fe");
 	}
 
 	/*
