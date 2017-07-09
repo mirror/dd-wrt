@@ -30,7 +30,7 @@
 //config:	  you may wish to use something else.
 //config:
 //config:config FEATURE_VI_MAX_LEN
-//config:	int "Maximum screen width in vi"
+//config:	int "Maximum screen width"
 //config:	range 256 16384
 //config:	default 4096
 //config:	depends on VI
@@ -39,7 +39,7 @@
 //config:	  Make it smaller than 4k only if you are very limited on memory.
 //config:
 //config:config FEATURE_VI_8BIT
-//config:	bool "Allow vi to display 8-bit chars (otherwise shows dots)"
+//config:	bool "Allow to display 8-bit chars (otherwise shows dots)"
 //config:	default n
 //config:	depends on VI
 //config:	help
@@ -53,7 +53,7 @@
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  Enable a limited set of colon commands for vi. This does not
+//config:	  Enable a limited set of colon commands. This does not
 //config:	  provide an "ex" mode.
 //config:
 //config:config FEATURE_VI_YANKMARK
@@ -61,16 +61,14 @@
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  This will enable you to use yank and put, as well as mark in
-//config:	  busybox vi.
+//config:	  This will enable you to use yank and put, as well as mark.
 //config:
 //config:config FEATURE_VI_SEARCH
 //config:	bool "Enable search and replace cmds"
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  Select this if you wish to be able to do search and replace in
-//config:	  busybox vi.
+//config:	  Select this if you wish to be able to do search and replace.
 //config:
 //config:config FEATURE_VI_REGEX_SEARCH
 //config:	bool "Enable regex in search and replace"
@@ -84,16 +82,15 @@
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  Selecting this option will make busybox vi signal aware. This will
-//config:	  make busybox vi support SIGWINCH to deal with Window Changes, catch
-//config:	  Ctrl-Z and Ctrl-C and alarms.
+//config:	  Selecting this option will make vi signal aware. This will support
+//config:	  SIGWINCH to deal with Window Changes, catch ^Z and ^C and alarms.
 //config:
 //config:config FEATURE_VI_DOT_CMD
 //config:	bool "Remember previous cmd and \".\" cmd"
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  Make busybox vi remember the last command and be able to repeat it.
+//config:	  Make vi remember the last command and be able to repeat it.
 //config:
 //config:config FEATURE_VI_READONLY
 //config:	bool "Enable -R option and \"view\" mode"
@@ -104,25 +101,23 @@
 //config:	  open a file in read-only mode.
 //config:
 //config:config FEATURE_VI_SETOPTS
-//config:	bool "Enable set-able options, ai ic showmatch"
+//config:	bool "Enable settable options, ai ic showmatch"
 //config:	default y
 //config:	depends on VI
 //config:	help
 //config:	  Enable the editor to set some (ai, ic, showmatch) options.
 //config:
 //config:config FEATURE_VI_SET
-//config:	bool "Support for :set"
+//config:	bool "Support :set"
 //config:	default y
 //config:	depends on VI
-//config:	help
-//config:	  Support for ":set".
 //config:
 //config:config FEATURE_VI_WIN_RESIZE
 //config:	bool "Handle window resize"
 //config:	default y
 //config:	depends on VI
 //config:	help
-//config:	  Make busybox vi behave nicely with terminals that get resized.
+//config:	  Behave nicely with terminals that get resized.
 //config:
 //config:config FEATURE_VI_ASK_TERMINAL
 //config:	bool "Use 'tell me cursor position' ESC sequence to measure window"
@@ -133,15 +128,16 @@
 //config:	  this option makes vi perform a last-ditch effort to find it:
 //config:	  position cursor to 999,999 and ask terminal to report real
 //config:	  cursor position using "ESC [ 6 n" escape sequence, then read stdin.
-//config:
 //config:	  This is not clean but helps a lot on serial lines and such.
+//config:
 //config:config FEATURE_VI_UNDO
-//config:	bool "Support undo command 'u'"
+//config:	bool "Support undo command \"u\""
 //config:	default y
 //config:	depends on VI
 //config:	help
 //config:	  Support the 'u' command to undo insertion, deletion, and replacement
 //config:	  of text.
+//config:
 //config:config FEATURE_VI_UNDO_QUEUE
 //config:	bool "Enable undo operation queuing"
 //config:	default y
@@ -152,6 +148,7 @@
 //config:	  reached, the contents of the queue are committed to the undo stack.
 //config:	  This increases the size of the undo code and allows some undo
 //config:	  operations (especially un-typing/backspacing) to be far more useful.
+//config:
 //config:config FEATURE_VI_UNDO_QUEUE_MAX
 //config:	int "Maximum undo character queue size"
 //config:	default 256
@@ -357,7 +354,7 @@ struct globals {
 #if ENABLE_FEATURE_VI_USE_SIGNALS
 	sigjmp_buf restart;     // catch_sig()
 #endif
-	struct termios term_orig, term_vi; // remember what the cooked mode was
+	struct termios term_orig; // remember what the cooked mode was
 #if ENABLE_FEATURE_VI_COLON
 	char *initial_cmds[3];  // currently 2 entries, NULL terminated
 #endif
@@ -465,7 +462,6 @@ struct globals {
 #define context_end    (G.context_end   )
 #define restart        (G.restart       )
 #define term_orig      (G.term_orig     )
-#define term_vi        (G.term_vi       )
 #define initial_cmds   (G.initial_cmds  )
 #define readbuffer     (G.readbuffer    )
 #define scr_out_buf    (G.scr_out_buf   )
@@ -719,14 +715,6 @@ static int init_text_buffer(char *fn)
 {
 	int rc;
 
-	flush_undo_data();
-	modified_count = 0;
-	last_modified_count = -1;
-#if ENABLE_FEATURE_VI_YANKMARK
-	/* init the marks */
-	memset(mark, 0, sizeof(mark));
-#endif
-
 	/* allocate/reallocate text buffer */
 	free(text);
 	text_size = 10240;
@@ -741,6 +729,14 @@ static int init_text_buffer(char *fn)
 		// file doesnt exist. Start empty buf with dummy line
 		char_insert(text, '\n', NO_UNDO);
 	}
+
+	flush_undo_data();
+	modified_count = 0;
+	last_modified_count = -1;
+#if ENABLE_FEATURE_VI_YANKMARK
+	/* init the marks */
+	memset(mark, 0, sizeof(mark));
+#endif
 	return rc;
 }
 
@@ -1038,7 +1034,9 @@ static void colon(char *buf)
 	 || strncmp(p, "wn", cnt) == 0
 	 || (p[0] == 'x' && !p[1])
 	) {
-		cnt = file_write(current_filename, text, end - 1);
+		if (modified_count != 0 || p[0] != 'x') {
+			cnt = file_write(current_filename, text, end - 1);
+		}
 		if (cnt < 0) {
 			if (cnt == -1)
 				status_line_bold("Write error: %s", strerror(errno));
@@ -1049,8 +1047,9 @@ static void colon(char *buf)
 				current_filename,
 				count_lines(text, end - 1), cnt
 			);
-			if (p[0] == 'x' || p[1] == 'q' || p[1] == 'n'
-			 || p[0] == 'X' || p[1] == 'Q' || p[1] == 'N'
+			if (p[0] == 'x'
+			 || p[1] == 'q' || p[1] == 'n'
+			 || p[1] == 'Q' || p[1] == 'N'
 			) {
 				editing = 0;
 			}
@@ -1461,7 +1460,7 @@ static void colon(char *buf)
 		}
 #endif /* FEATURE_VI_SEARCH */
 	} else if (strncmp(cmd, "version", i) == 0) {  // show software version
-		status_line(BB_VER " " BB_BT);
+		status_line(BB_VER);
 	} else if (strncmp(cmd, "write", i) == 0  // write text to file
 	        || strncmp(cmd, "wq", i) == 0
 	        || strncmp(cmd, "wn", i) == 0
@@ -1480,16 +1479,19 @@ static void colon(char *buf)
 			goto ret;
 		}
 #endif
-		// how many lines in text[]?
-		li = count_lines(q, r);
-		size = r - q + 1;
 		//if (useforce) {
 			// if "fn" is not write-able, chmod u+w
 			// sprintf(syscmd, "chmod u+w %s", fn);
 			// system(syscmd);
 			// forced = TRUE;
 		//}
-		l = file_write(fn, q, r);
+		if (modified_count != 0 || cmd[0] != 'x') {
+			size = r - q + 1;
+			l = file_write(fn, q, r);
+		} else {
+			size = 0;
+			l = 0;
+		}
 		//if (useforce && forced) {
 			// chmod u-w
 			// sprintf(syscmd, "chmod u-w %s", fn);
@@ -1500,17 +1502,20 @@ static void colon(char *buf)
 			if (l == -1)
 				status_line_bold_errno(fn);
 		} else {
+			// how many lines written
+			li = count_lines(q, q + l - 1);
 			status_line("'%s' %dL, %dC", fn, li, l);
-			if (q == text && r == end - 1 && l == size) {
-				modified_count = 0;
-				last_modified_count = -1;
-			}
-			if ((cmd[0] == 'x' || cmd[1] == 'q' || cmd[1] == 'n'
-			    || cmd[0] == 'X' || cmd[1] == 'Q' || cmd[1] == 'N'
-			    )
-			 && l == size
-			) {
-				editing = 0;
+			if (l == size) {
+				if (q == text && q + l == end) {
+					modified_count = 0;
+					last_modified_count = -1;
+				}
+				if (cmd[0] == 'x'
+				 || cmd[1] == 'q' || cmd[1] == 'n'
+				 || cmd[1] == 'Q' || cmd[1] == 'N'
+				) {
+					editing = 0;
+				}
 			}
 		}
 #if ENABLE_FEATURE_VI_YANKMARK
@@ -2734,15 +2739,9 @@ static char *swap_context(char *p) // goto new context for '' command make this 
 //----- Set terminal attributes --------------------------------
 static void rawmode(void)
 {
-	tcgetattr(0, &term_orig);
-	term_vi = term_orig;
-	term_vi.c_lflag &= (~ICANON & ~ECHO);	// leave ISIG on - allow intr's
-	term_vi.c_iflag &= (~IXON & ~ICRNL);
-	term_vi.c_oflag &= (~ONLCR);
-	term_vi.c_cc[VMIN] = 1;
-	term_vi.c_cc[VTIME] = 0;
-	erase_char = term_vi.c_cc[VERASE];
-	tcsetattr_stdin_TCSANOW(&term_vi);
+	// no TERMIOS_CLEAR_ISIG: leave ISIG on - allow signals
+	set_termios_to_raw(STDIN_FILENO, &term_orig, TERMIOS_RAW_CRNL);
+	erase_char = term_orig.c_cc[VERASE];
 }
 
 static void cookmode(void)
@@ -2817,8 +2816,15 @@ static int readit(void) // read (maybe cursor) key from stdin
 	int c;
 
 	fflush_all();
-	c = read_key(STDIN_FILENO, readbuffer, /*timeout off:*/ -2);
+
+	// Wait for input. TIMEOUT = -1 makes read_key wait even
+	// on nonblocking stdin.
+	// Note: read_key sets errno to 0 on success.
+ again:
+	c = read_key(STDIN_FILENO, readbuffer, /*timeout:*/ -1);
 	if (c == -1) { // EOF/error
+		if (errno == EAGAIN) // paranoia
+			goto again;
 		go_bottom_and_clear_to_eol();
 		cookmode(); // terminal to "cooked"
 		bb_error_msg_and_die("can't read user input");

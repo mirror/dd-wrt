@@ -121,28 +121,8 @@ int FAST_FUNC run_nofork_applet(int applet_no, char **argv)
 
 	/* In case getopt() or getopt32() was already called:
 	 * reset the libc getopt() function, which keeps internal state.
-	 *
-	 * BSD-derived getopt() functions require that optind be set to 1 in
-	 * order to reset getopt() state.  This used to be generally accepted
-	 * way of resetting getopt().  However, glibc's getopt()
-	 * has additional getopt() state beyond optind, and requires that
-	 * optind be set to zero to reset its state.  So the unfortunate state of
-	 * affairs is that BSD-derived versions of getopt() misbehave if
-	 * optind is set to 0 in order to reset getopt(), and glibc's getopt()
-	 * will core dump if optind is set 1 in order to reset getopt().
-	 *
-	 * More modern versions of BSD require that optreset be set to 1 in
-	 * order to reset getopt().  Sigh.  Standards, anyone?
 	 */
-#ifdef __GLIBC__
-	optind = 0;
-#else /* BSD style */
-	optind = 1;
-	/* optreset = 1; */
-#endif
-	/* optarg = NULL; opterr = 1; optopt = 63; - do we need this too? */
-	/* (values above are what they initialized to in glibc and uclibc) */
-	/* option_mask32 = 0; - not needed, no applet depends on it being 0 */
+	GETOPT_RESET();
 
 	argc = 1;
 	while (argv[argc])
@@ -167,11 +147,7 @@ int FAST_FUNC run_nofork_applet(int applet_no, char **argv)
 	restore_nofork_data(&old);
 
 	/* Other globals can be simply reset to defaults */
-#ifdef __GLIBC__
-	optind = 0;
-#else /* BSD style */
-	optind = 1;
-#endif
+	GETOPT_RESET();
 
 	return rc & 0xff; /* don't confuse people with "exitcodes" >255 */
 }
@@ -183,26 +159,28 @@ int FAST_FUNC spawn_and_wait(char **argv)
 #if ENABLE_FEATURE_PREFER_APPLETS
 	int a = find_applet_by_name(argv[0]);
 
-	if (a >= 0 && (APPLET_IS_NOFORK(a)
-# if BB_MMU
-			|| APPLET_IS_NOEXEC(a) /* NOEXEC trick needs fork() */
-# endif
-	)) {
-# if BB_MMU
+	if (a >= 0) {
 		if (APPLET_IS_NOFORK(a))
-# endif
-		{
 			return run_nofork_applet(a, argv);
+# if BB_MMU /* NOEXEC needs fork(), thus this is done only on MMU machines: */
+		if (APPLET_IS_NOEXEC(a)) {
+			fflush_all();
+			rc = fork();
+			if (rc) /* parent or error */
+				return wait4pid(rc);
+
+			/* child */
+			/* reset some state and run without execing */
+
+			/* msg_eol = "\n"; - no caller needs this reinited yet */
+			logmode = LOGMODE_STDIO;
+			/* die_func = NULL; - needed if the caller is a shell,
+			 * init, or a NOFORK applet. But none of those call us
+			 * as of yet (and that should probably always stay true).
+			 */
+			/* xfunc_error_retval and applet_name are init by: */
+			run_applet_no_and_exit(a, argv);
 		}
-# if BB_MMU
-		/* MMU only */
-		/* a->noexec is true */
-		rc = fork();
-		if (rc) /* parent or error */
-			return wait4pid(rc);
-		/* child */
-		xfunc_error_retval = EXIT_FAILURE;
-		run_applet_no_and_exit(a, argv);
 # endif
 	}
 #endif /* FEATURE_PREFER_APPLETS */

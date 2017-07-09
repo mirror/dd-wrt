@@ -39,13 +39,14 @@
 //config:config FEATURE_GREP_CONTEXT
 //config:	bool "Enable before and after context flags (-A, -B and -C)"
 //config:	default y
-//config:	depends on GREP || EGREP
+//config:	depends on GREP || EGREP || FGREP
 //config:	help
 //config:	  Print the specified number of leading (-B) and/or trailing (-A)
 //config:	  context surrounding our matching lines.
 //config:	  Print the specified number of context lines (-C).
 
 //applet:IF_GREP(APPLET(grep, BB_DIR_BIN, BB_SUID_DROP))
+//                APPLET_ODDNAME:name   main  location    suid_type     help
 //applet:IF_EGREP(APPLET_ODDNAME(egrep, grep, BB_DIR_BIN, BB_SUID_DROP, egrep))
 //applet:IF_FGREP(APPLET_ODDNAME(fgrep, grep, BB_DIR_BIN, BB_SUID_DROP, fgrep))
 
@@ -514,7 +515,7 @@ static int grep_file(FILE *file)
 				if (option_mask32 & OPT_o) {
 					if (FGREP_FLAG) {
 						/* -Fo just prints the pattern
-						 * (unless -v: -Fov doesnt print anything at all) */
+						 * (unless -v: -Fov doesn't print anything at all) */
 						if (found)
 							print_line(gl->pattern, strlen(gl->pattern), linenum, ':');
 					} else while (1) {
@@ -822,7 +823,7 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
  grep_done: ;
 	} while (*argv && *++argv);
 
-	/* destroy all the elments in the pattern list */
+	/* destroy all the elements in the pattern list */
 	if (ENABLE_FEATURE_CLEAN_UP) {
 		while (pattern_head) {
 			llist_t *pattern_head_ptr = pattern_head;
