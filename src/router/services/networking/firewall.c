@@ -753,7 +753,7 @@ static void nat_prerouting(void)
 	count = 1;
 
 	if (has_gateway()) {
-		insmod("shortcut-fe");
+		insmod("shortcut-fe"); // since shortcut also gains performance for bridging, it should maybe loaded always
 		writeprocsysnet("netfilter/nf_conntrack_helper", "1");	// kerne 4.7 uses 0 as new default which disables several nat helpers
 
 		/*
