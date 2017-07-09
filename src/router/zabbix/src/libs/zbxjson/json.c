@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -653,7 +653,7 @@ static const char	*zbx_json_copy_string(const char *p, char *out, size_t size)
 				*out++ = *p++;
 		}
 
-		if (out - start == size)
+		if ((size_t)(out - start) == size)
 			break;
 	}
 

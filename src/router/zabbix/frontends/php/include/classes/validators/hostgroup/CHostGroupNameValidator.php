@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -43,8 +43,7 @@ class CHostGroupNameValidator extends CValidator {
 			return false;
 		}
 
-		if ($name[0] === '/' || substr($name, -1) === '/' || strpos($name, '//') !== false
-				|| strpos($name, '*') !== false) {
+		if ($name[0] === '/' || substr($name, -1) === '/' || strpos($name, '//') !== false) {
 			$this->setError(_s('invalid group name "%1$s"', $name));
 
 			return false;

@@ -1,6 +1,6 @@
 dnl
 dnl Zabbix
-dnl Copyright (C) 2001-2016 Zabbix SIA
+dnl Copyright (C) 2001-2017 Zabbix SIA
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -19,7 +19,7 @@ dnl
 
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([Zabbix],[3.2.0])
+AC_INIT([Zabbix],[3.2.6])
 AC_CONFIG_SRCDIR(src/zabbix_server/server.c)
 AM_INIT_AUTOMAKE
 

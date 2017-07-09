@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1183,8 +1183,8 @@ static zbx_sysinfo_proc_t	*proc_create(int pid, unsigned int flags)
 
 	if (NULL != cmdline)
 	{
-		char	*ptr;
-		int	i;
+		char		*ptr;
+		unsigned int	i;
 
 		if (0 != (flags & ZBX_SYSINFO_PROC_NAME))
 		{

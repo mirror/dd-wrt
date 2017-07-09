@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -1068,8 +1068,7 @@ class CImportReferencer {
 			$dbProxy = API::Proxy()->get([
 				'filter' => ['host' => $this->proxies],
 				'output' => ['hostid', 'host'],
-				'preservekeys' => true,
-				'editable' => true
+				'preservekeys' => true
 			]);
 			foreach ($dbProxy as $proxy) {
 				$this->proxiesRefs[$proxy['host']] = $proxy['proxyid'];

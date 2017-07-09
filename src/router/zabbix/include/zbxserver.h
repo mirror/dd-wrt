@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@
 #define MACRO_TYPE_ITEM_KEY		0x00000040
 #define MACRO_TYPE_ITEM_EXPRESSION	0x00000080
 #define MACRO_TYPE_INTERFACE_ADDR	0x00000100
-#define MACRO_TYPE_INTERFACE_ADDR_DB	0x00000200
 #define MACRO_TYPE_COMMON		0x00000400
 #define MACRO_TYPE_PARAMS_FIELD		0x00000800
 #define MACRO_TYPE_SCRIPT		0x00001000
@@ -61,15 +60,17 @@ void	evaluate_expressions(zbx_vector_ptr_t *triggers);
 void	zbx_format_value(char *value, size_t max_len, zbx_uint64_t valuemapid,
 		const char *units, unsigned char value_type);
 
+void	zbx_determine_items_in_expressions(zbx_vector_ptr_t *trigger_order, const zbx_uint64_t *itemids, int item_num);
+
 /* lld macro context */
 #define ZBX_MACRO_ANY		(ZBX_TOKEN_LLD_MACRO | ZBX_TOKEN_USER_MACRO)
 #define ZBX_MACRO_NUMERIC	(ZBX_MACRO_ANY | ZBX_TOKEN_NUMERIC)
 #define ZBX_MACRO_SIMPLE	(ZBX_MACRO_ANY | ZBX_TOKEN_SIMPLE_MACRO)
 #define ZBX_MACRO_FUNC		(ZBX_MACRO_ANY | ZBX_TOKEN_FUNC_MACRO)
 
-int	substitute_lld_macros(char **data, struct zbx_json_parse *jp_row, int flags, const char **func_macros,
+int	substitute_lld_macros(char **data, const struct zbx_json_parse *jp_row, int flags, const char **func_macros,
 		char *error, size_t max_error_len);
-int	substitute_key_macros(char **data, zbx_uint64_t *hostid, DC_ITEM *dc_item, struct zbx_json_parse *jp_row,
+int	substitute_key_macros(char **data, zbx_uint64_t *hostid, DC_ITEM *dc_item, const struct zbx_json_parse *jp_row,
 		int macro_type, char *error, size_t mexerrlen);
 
 #endif

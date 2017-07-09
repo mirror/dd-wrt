@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -238,11 +238,9 @@ class CScreenHistory extends CScreenBase {
 										->addClass(ZBX_STYLE_NOWRAP)
 										->addClass(get_item_logtype_style($data['severity']))
 									: '';
-								$row[] = ($data['logeventid'] != 0)
-									? (new CCol($data['logeventid']))
-										->addClass(ZBX_STYLE_NOWRAP)
-										->addClass($color)
-									: '';
+								$row[] = (new CCol($data['logeventid']))
+									->addClass(ZBX_STYLE_NOWRAP)
+									->addClass($color);
 							}
 						}
 

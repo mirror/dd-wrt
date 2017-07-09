@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -240,7 +240,7 @@ static int	get_value(const char *source_ip, const char *host, unsigned short por
 	{
 		request = zbx_dsprintf(NULL, "%s\n", key);
 
-		if (SUCCEED == (ret = zbx_tcp_send(&s, request)))
+		if (SUCCEED == (ret = zbx_tcp_send_raw(&s, request)))
 		{
 			if (0 < (bytes_received = zbx_tcp_recv_ext(&s, ZBX_TCP_READ_UNTIL_CLOSE, 0)))
 			{

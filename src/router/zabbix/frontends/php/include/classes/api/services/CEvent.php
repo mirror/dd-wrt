@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -543,15 +543,18 @@ class CEvent extends CApiService {
 		$sqlParts = parent::applyQueryOutputOptions($tableName, $tableAlias, $options, $sqlParts);
 
 		if ($options['countOutput'] === null) {
-			if ($this->outputIsRequested('r_eventid', $options['output'])
-					|| $this->outputIsRequested('c_eventid', $options['output'])
+			if ($this->outputIsRequested('r_eventid', $options['output'])) {
+				// Select fields from event_recovery table using LEFT JOIN.
+
+				$sqlParts['select']['r_eventid'] = 'er1.r_eventid';
+				$sqlParts['left_join'][] = ['from' => 'event_recovery er1', 'on' => 'er1.eventid=e.eventid'];
+			}
+
+			if ($this->outputIsRequested('c_eventid', $options['output'])
 					|| $this->outputIsRequested('correlationid', $options['output'])
 					|| $this->outputIsRequested('userid', $options['output'])) {
 				// Select fields from event_recovery table using LEFT JOIN.
 
-				if ($this->outputIsRequested('r_eventid', $options['output'])) {
-					$sqlParts['select']['r_eventid'] = 'er1.r_eventid';
-				}
 				if ($this->outputIsRequested('c_eventid', $options['output'])) {
 					$sqlParts['select']['c_eventid'] = 'er2.c_eventid';
 				}
@@ -562,7 +565,6 @@ class CEvent extends CApiService {
 					$sqlParts['select']['userid'] = 'er2.userid';
 				}
 
-				$sqlParts['left_join'][] = ['from' => 'event_recovery er1', 'on' => 'er1.eventid=e.eventid'];
 				$sqlParts['left_join'][] = ['from' => 'event_recovery er2', 'on' => 'er2.r_eventid=e.eventid'];
 			}
 
@@ -677,11 +679,13 @@ class CEvent extends CApiService {
 				// create the base query
 				$sqlParts = API::getApiService()->createSelectQueryParts('acknowledges', 'a', [
 					'output' => $this->outputExtend($options['select_acknowledges'],
-						['acknowledgeid', 'eventid', 'clock']
+						['acknowledgeid', 'eventid', 'clock', 'userid']
 					),
 					'filter' => ['eventid' => $eventIds]
 				]);
 				$sqlParts['order'][] = 'a.clock DESC';
+
+				$acknowledges = DBFetchArrayAssoc(DBselect($this->createSelectQueryFromParts($sqlParts)), 'acknowledgeid');
 
 				// if the user data is requested via extended output or specified fields, join the users table
 				$userFields = ['alias', 'name', 'surname'];
@@ -691,17 +695,24 @@ class CEvent extends CApiService {
 						$requestUserData[] = $userField;
 					}
 				}
+
 				if ($requestUserData) {
-					foreach ($requestUserData as $userField) {
-						$sqlParts = $this->addQuerySelect('u.'.$userField, $sqlParts);
+					$users = API::User()->get([
+						'output' => $requestUserData,
+						'userids' => zbx_objectValues($acknowledges, 'userid'),
+						'preservekeys' => true
+					]);
+
+					foreach ($acknowledges as &$acknowledge) {
+						if (array_key_exists($acknowledge['userid'], $users)) {
+							$acknowledge = array_merge($acknowledge, $users[$acknowledge['userid']]);
+						}
 					}
-					$sqlParts['from'][] = 'users u';
-					$sqlParts['where'][] = 'a.userid=u.userid';
+					unset($acknowledge);
 				}
 
-				$acknowledges = DBFetchArrayAssoc(DBselect($this->createSelectQueryFromParts($sqlParts)), 'acknowledgeid');
 				$relationMap = $this->createRelationMap($acknowledges, 'eventid', 'acknowledgeid');
-				$acknowledges = $this->unsetExtraFields($acknowledges, ['eventid', 'acknowledgeid', 'clock'],
+				$acknowledges = $this->unsetExtraFields($acknowledges, ['eventid', 'acknowledgeid', 'clock', 'userid'],
 					$options['select_acknowledges']
 				);
 				$result = $relationMap->mapMany($result, $acknowledges, 'acknowledges');

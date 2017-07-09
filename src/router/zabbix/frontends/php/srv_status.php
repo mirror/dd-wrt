@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -150,23 +150,25 @@ else {
 
 	if ($tree) {
 		// creates form for choosing a preset interval
-		$r_form = (new CForm('get'))
-			->setAttribute('name', 'period_choice')
-			->addVar('fullscreen', $_REQUEST['fullscreen']);
-
 		$period_combo = new CComboBox('period', $period, 'javascript: submit();');
 		foreach ($periods as $key => $val) {
 			$period_combo->addItem($key, $val);
 		}
-		// controls
-		$r_form->addItem((new CList())
-			->addItem([_('Period'), SPACE, $period_combo])
-			->addItem(get_icon('fullscreen', ['fullscreen' => $_REQUEST['fullscreen']]))
-		);
 
 		$srv_wdgt = (new CWidget())
 			->setTitle(_('IT services'))
-			->setControls($r_form)
+			->setControls((new CForm('get'))
+				->cleanItems()
+				->addVar('fullscreen', $_REQUEST['fullscreen'])
+				->addItem((new CList())
+					->addItem([
+						new CLabel(_('Period'), 'period'),
+						(new CDiv())->addClass(ZBX_STYLE_FORM_INPUT_MARGIN),
+						$period_combo
+					])
+					->addItem(get_icon('fullscreen', ['fullscreen' => $_REQUEST['fullscreen']]))
+				)
+			)
 			->addItem(BR())
 			->addItem($tree->getHTML())
 			->show();

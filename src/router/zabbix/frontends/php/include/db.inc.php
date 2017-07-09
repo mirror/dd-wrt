@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -53,6 +53,10 @@ function DBconnect(&$error) {
 				$DB['DB'] = @mysqli_connect($DB['SERVER'], $DB['USER'], $DB['PASSWORD'], $DB['DATABASE'], $DB['PORT']);
 				if (!$DB['DB']) {
 					$error = 'Error connecting to database: '.trim(mysqli_connect_error());
+					$result = false;
+				}
+				elseif (mysqli_autocommit($DB['DB'], true) === false) {
+					$error = 'Error setting auto commit.';
 					$result = false;
 				}
 				else {
@@ -743,12 +747,12 @@ function get_dbid($table, $field) {
 }
 
 function zbx_db_distinct($sql_parts) {
-	if (count($sql_parts['from']) > 1) {
-		return ' DISTINCT ';
+	$count = count($sql_parts['from']);
+	if (array_key_exists('left_join', $sql_parts)) {
+		$count += count($sql_parts['left_join']);
 	}
-	else {
-		return ' ';
-	}
+
+	return ($count > 1 ? ' DISTINCT' : '');
 }
 
 function zbx_db_search($table, $options, &$sql_parts) {

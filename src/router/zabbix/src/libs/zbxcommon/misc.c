@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ typedef struct zbx_scheduler_interval
 }
 zbx_scheduler_interval_t;
 
-ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;	/* 0 - no timeout occurred, 1 - SIGALRM took place */
+static ZBX_THREAD_LOCAL volatile sig_atomic_t	zbx_timed_out;	/* 0 - no timeout occurred, 1 - SIGALRM took place */
 
 #ifdef _WINDOWS
 
@@ -1798,7 +1798,6 @@ int	is_ip4(const char *ip)
 	return res;
 }
 
-#if defined(HAVE_IPV6)
 /******************************************************************************
  *                                                                            *
  * Function: is_ip6                                                           *
@@ -1855,7 +1854,31 @@ int	is_ip6(const char *ip)
 
 	return res;
 }
-#endif	/*HAVE_IPV6*/
+
+/******************************************************************************
+ *                                                                            *
+ * Function: is_supported_ip                                                  *
+ *                                                                            *
+ * Purpose: is string IP address of supported version                         *
+ *                                                                            *
+ * Parameters: ip - string                                                    *
+ *                                                                            *
+ * Return value: SUCCEED - is IP address                                      *
+ *               FAIL - otherwise                                             *
+ *                                                                            *
+ * Author: Alexander Vladishev                                                *
+ *                                                                            *
+ ******************************************************************************/
+int	is_supported_ip(const char *ip)
+{
+	if (SUCCEED == is_ip4(ip))
+		return SUCCEED;
+#ifdef HAVE_IPV6
+	if (SUCCEED == is_ip6(ip))
+		return SUCCEED;
+#endif
+	return FAIL;
+}
 
 /******************************************************************************
  *                                                                            *
@@ -1873,15 +1896,7 @@ int	is_ip6(const char *ip)
  ******************************************************************************/
 int	is_ip(const char *ip)
 {
-	zabbix_log(LOG_LEVEL_DEBUG, "In is_ip() ip:'%s'", ip);
-
-	if (SUCCEED == is_ip4(ip))
-		return SUCCEED;
-#if defined(HAVE_IPV6)
-	if (SUCCEED == is_ip6(ip))
-		return SUCCEED;
-#endif
-	return FAIL;
+	return SUCCEED == is_ip4(ip) ? SUCCEED : is_ip6(ip);
 }
 
 /******************************************************************************
@@ -2021,7 +2036,9 @@ int	zbx_double_compare(double a, double b)
  *                                                                            *
  * Purpose: check if the string is double                                     *
  *                                                                            *
- * Parameters: str - string to check                                          *
+ * Parameters: str   - string to check                                        *
+ *             flags - extra options including:                               *
+ *                       ZBX_FLAG_DOUBLE_SUFFIX - allow suffixes              *
  *                                                                            *
  * Return value:  SUCCEED - the string is double                              *
  *                FAIL - otherwise                                            *
@@ -2032,7 +2049,7 @@ int	zbx_double_compare(double a, double b)
  *           s, m, h, d, w                                                    *
  *                                                                            *
  ******************************************************************************/
-int	is_double_suffix(const char *str)
+int	is_double_suffix(const char *str, unsigned char flags)
 {
 	size_t	i;
 	char	dot = 0;
@@ -2053,7 +2070,7 @@ int	is_double_suffix(const char *str)
 		}
 
 		/* last character is suffix */
-		if (NULL != strchr("KMGTsmhdw", str[i]) && '\0' == str[i + 1])
+		if (0 != (flags & ZBX_FLAG_DOUBLE_SUFFIX) && NULL != strchr("KMGTsmhdw", str[i]) && '\0' == str[i + 1])
 			continue;
 
 		return FAIL;
@@ -2126,14 +2143,15 @@ int	is_double(const char *str)
 
 /******************************************************************************
  *                                                                            *
- * Function: is_uint_suffix                                                   *
+ * Function: is_time_suffix                                                   *
  *                                                                            *
- * Purpose: check if the string is unsigned integer                           *
+ * Purpose: check if the string is a non-negative integer with or without     *
+ *          supported time suffix                                             *
  *                                                                            *
- * Parameters: str   - string to check                                        *
- *             value - a pointer to converted value (optional)                *
+ * Parameters: str   - [IN] string to check                                   *
+ *             value - [OUT] a pointer to converted value (optional)          *
  *                                                                            *
- * Return value: SUCCEED - the string is unsigned integer                     *
+ * Return value: SUCCEED - the string is valid and within reasonable limits   *
  *               FAIL    - otherwise                                          *
  *                                                                            *
  * Author: Aleksandrs Saveljevs, Vladimir Levijev                             *
@@ -2141,22 +2159,22 @@ int	is_double(const char *str)
  * Comments: the function automatically processes suffixes s, m, h, d, w      *
  *                                                                            *
  ******************************************************************************/
-int	is_uint_suffix(const char *str, unsigned int *value)
+int	is_time_suffix(const char *str, int *value)
 {
-	const unsigned int	max_uint = ~0U;
-	unsigned int		value_uint = 0, c, factor = 1;
+	const int	max = 0x7fffffff;	/* minimum acceptable value for INT_MAX is 2 147 483 647 */
+	int		value_tmp = 0, c, factor = 1;
 
-	if ('\0' == *str || '0' > *str || *str > '9')
+	if ('\0' == *str || 0 == isdigit(*str))
 		return FAIL;
 
 	while ('\0' != *str && 0 != isdigit(*str))
 	{
-		c = (unsigned int)(unsigned char)(*str - '0');
+		c = (int)(unsigned char)(*str - '0');
 
-		if ((max_uint - c) / 10 < value_uint)
+		if ((max - c) / 10 < value_tmp)
 			return FAIL;	/* overflow */
 
-		value_uint = value_uint * 10 + c;
+		value_tmp = value_tmp * 10 + c;
 
 		str++;
 	}
@@ -2189,11 +2207,11 @@ int	is_uint_suffix(const char *str, unsigned int *value)
 	if ('\0' != *str)
 		return FAIL;
 
-	if (max_uint / factor < value_uint)
+	if (max / factor < value_tmp)
 		return FAIL;	/* overflow */
 
 	if (NULL != value)
-		*value = value_uint * factor;
+		*value = value_tmp * factor;
 
 	return SUCCEED;
 }
@@ -3070,10 +3088,20 @@ fail:
 	return res;
 }
 
+void	zbx_alarm_flag_set(void)
+{
+	zbx_timed_out = 1;
+}
+
+void	zbx_alarm_flag_clear(void)
+{
+	zbx_timed_out = 0;
+}
+
 #if !defined(_WINDOWS)
 unsigned int	zbx_alarm_on(unsigned int seconds)
 {
-	zbx_timed_out = 0;
+	zbx_alarm_flag_clear();
 
 	return alarm(seconds);
 }
@@ -3083,7 +3111,12 @@ unsigned int	zbx_alarm_off(void)
 	unsigned int	ret;
 
 	ret = alarm(0);
-	zbx_timed_out = 0;
+	zbx_alarm_flag_clear();
 	return ret;
 }
 #endif
+
+int	zbx_alarm_timed_out(void)
+{
+	return (0 == zbx_timed_out ? FAIL : SUCCEED);
+}

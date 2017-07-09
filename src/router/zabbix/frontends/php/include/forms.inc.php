@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -833,7 +833,7 @@ function getItemFormData(array $item = [], array $options = []) {
 		'form' => getRequest('form'),
 		'form_refresh' => getRequest('form_refresh'),
 		'is_discovery_rule' => !empty($options['is_discovery_rule']),
-		'parent_discoveryid' => getRequest('parent_discoveryid', !empty($options['is_discovery_rule']) ? getRequest('itemid') : null),
+		'parent_discoveryid' => getRequest('parent_discoveryid'),
 		'itemid' => getRequest('itemid'),
 		'limited' => false,
 		'interfaceid' => getRequest('interfaceid', 0),
@@ -875,7 +875,6 @@ function getItemFormData(array $item = [], array $options = []) {
 		'privatekey' => getRequest('privatekey', ''),
 		'formula' => getRequest('formula', 1),
 		'logtimefmt' => getRequest('logtimefmt', ''),
-		'add_groupid' => getRequest('add_groupid', getRequest('groupid', 0)),
 		'valuemaps' => null,
 		'possibleHostInventories' => null,
 		'alreadyPopulated' => null,
@@ -886,15 +885,15 @@ function getItemFormData(array $item = [], array $options = []) {
 	// hostid
 	if (!empty($data['parent_discoveryid'])) {
 		$discoveryRule = API::DiscoveryRule()->get([
+			'output' => ['hostid'],
 			'itemids' => $data['parent_discoveryid'],
-			'output' => API_OUTPUT_EXTEND,
 			'editable' => true
 		]);
 		$discoveryRule = reset($discoveryRule);
 		$data['hostid'] = $discoveryRule['hostid'];
 
 		$data['new_application_prototype'] = getRequest('new_application_prototype', '');
-		$data['application_prototypes'] = getRequest('application_prototypes', array());
+		$data['application_prototypes'] = getRequest('application_prototypes', []);
 	}
 	else {
 		$data['hostid'] = getRequest('hostid', 0);
@@ -1482,6 +1481,9 @@ function getTriggerFormData(array $data) {
 		}
 		else {
 			show_messages(false, '', _('Expression syntax error.'));
+			$data['expression_field_name'] = 'expression';
+			$data['expression_field_value'] = $data['expression'];
+			$data['expression_field_readonly'] = $readonly;
 			$data['expression_constructor'] = IM_ESTABLISHED;
 		}
 	}
@@ -1522,6 +1524,9 @@ function getTriggerFormData(array $data) {
 		}
 		else {
 			show_messages(false, '', _('Recovery expression syntax error.'));
+			$data['recovery_expression_field_name'] = 'recovery_expression';
+			$data['recovery_expression_field_value'] = $data['recovery_expression'];
+			$data['recovery_expression_field_readonly'] = $readonly;
 			$data['recovery_expression_constructor'] = IM_ESTABLISHED;
 		}
 	}

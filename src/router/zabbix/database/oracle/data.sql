@@ -1871,6 +1871,9 @@ INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,hi
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23148','0','','','10081','Total swap space','system.swap.size[,total]','3600','7','365','0','3','','B','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0',NULL,'','','0','30','0','0','','0')
 /
 
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23668','0','','','10081','Free virtual memory, in %','vm.vmemory.size[pavailable]','60','7','365','0','0','','%','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0',NULL,'','','0','30','0','0','','0')
+/
+
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23149','0','','','10081','System information','system.uname','3600','7','0','0','1','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0',NULL,'','','5','30','0','0','','0')
 /
 
@@ -2399,6 +2402,15 @@ INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,hi
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23633','3','','','10091','Average write latency of the datastore $3','vmware.hv.datastore.write[{$URL},{HOST.HOST},{#DATASTORE},latency]','60','90','365','0','3','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','2',NULL,'','','0','30','0','0','','0')
 /
 
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23667','3','','','10091','Health state rollup','vmware.hv.sensor.health.state[{$URL},{HOST.HOST}]','60','90','365','0','3','','','0','0','','0','','','1','',NULL,'13','','','','0','0','{$USERNAME}','{$PASSWORD}','','','0',NULL,'','The host health state rollup sensor value: gray - unknown, ok, red - it has a problem, yellow - it might have a problem.','0','30','0','0','','0')
+/
+
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23669','3','','','10091','Total size of datastore $3','vmware.hv.datastore.size[{$URL},{HOST.HOST},{#DATASTORE}]','60','90','365','0','3','','B','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','2',NULL,'','','0','30','0','0','','0')
+/
+
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23670','3','','','10091','Free space on datastore $3 (percentage)','vmware.hv.datastore.size[{$URL},{HOST.HOST},{#DATASTORE},pfree]','60','90','365','0','0','','%','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','2',NULL,'','','0','30','0','0','','0')
+/
+
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23634','5','','','10047','Zabbix vmware cache, % free','zabbix[vmware,buffer,pfree]','60','7','365','0','0','','%','0','0','','0','','','1','',NULL,NULL,'','','','0','0','','','','','0',NULL,'','','0','30','0','0','','0')
 /
 
@@ -2474,7 +2486,7 @@ INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,hi
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23659','3','','','10088','Version','vmware.version[{$URL}]','3600','90','0','0','1','','','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','0',NULL,'','','0','30','0','0','','0')
 /
 
-INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23660','3','','','10089','CPU ready','vmware.vm.cpu.ready[{$URL},{HOST.HOST}]','60','90','365','0','3','','%','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','0',NULL,'','Percentage of time that the virtual machine was ready, but could not get scheduled to run on the physical CPU. CPU ready time is dependent on the number of virtual machines on the host and their CPU loads.','0','30','0','0','','0')
+INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23660','3','','','10089','CPU ready','vmware.vm.cpu.ready[{$URL},{HOST.HOST}]','60','90','365','0','3','','ms','0','0','','0','','','1','',NULL,NULL,'','','','0','0','{$USERNAME}','{$PASSWORD}','','','0',NULL,'','Time that the virtual machine was ready, but could not get scheduled to run on the physical CPU during last measurement interval (VMware vCenter/ESXi Server performance counter sampling interval - 20 seconds)','0','30','0','0','','0')
 /
 
 INSERT INTO items (itemid,type,snmp_community,snmp_oid,hostid,name,key_,delay,history,trends,status,value_type,trapper_hosts,units,multiplier,delta,snmpv3_securityname,snmpv3_securitylevel,snmpv3_authpassphrase,snmpv3_privpassphrase,formula,logtimefmt,templateid,valuemapid,delay_flex,params,ipmi_sensor,data_type,authtype,username,password,publickey,privatekey,flags,interfaceid,port,description,inventory_link,lifetime,snmpv3_authprotocol,snmpv3_privprotocol,snmpv3_contextname,evaltype) values ('23661','5','','','10047','Zabbix value cache operating mode','zabbix[vcache,cache,mode]','60','7','365','0','3','','','0','0','','0','','','1','',NULL,'15','','','','0','0','','','','','0',NULL,'','','0','30','0','0','','0')
@@ -3560,7 +3572,7 @@ INSERT INTO triggers (triggerid,expression,description,url,status,priority,comme
 INSERT INTO triggers (triggerid,expression,description,url,status,priority,comments,templateid,type,flags,recovery_mode,recovery_expression,correlation_mode,correlation_tag,manual_close) values ('13430','{13095}>300','Too many processes on {HOST.NAME}','','0','3','',NULL,'0','0','0','','0','','0')
 /
 
-INSERT INTO triggers (triggerid,expression,description,url,status,priority,comments,templateid,type,flags,recovery_mode,recovery_expression,correlation_mode,correlation_tag,manual_close) values ('13431','{12818}<100000','Lack of free swap space on {HOST.NAME}','','0','3','',NULL,'0','0','0','','0','','0')
+INSERT INTO triggers (triggerid,expression,description,url,status,priority,comments,templateid,type,flags,recovery_mode,recovery_expression,correlation_mode,correlation_tag,manual_close) values ('13431','{12818}<10','Lack of available virtual memory on server {HOST.NAME}','','0','3','',NULL,'0','0','1','{12818}>20','0','','0')
 /
 
 INSERT INTO triggers (triggerid,expression,description,url,status,priority,comments,templateid,type,flags,recovery_mode,recovery_expression,correlation_mode,correlation_tag,manual_close) values ('13433','{12820}<10000','Lack of free memory on server {HOST.NAME}','','0','3','',NULL,'0','0','0','','0','','0')
@@ -4484,7 +4496,7 @@ INSERT INTO functions (functionid,itemid,triggerid,function,parameter) values ('
 INSERT INTO functions (functionid,itemid,triggerid,function,parameter) values ('12815','23150','13428','change','0')
 /
 
-INSERT INTO functions (functionid,itemid,triggerid,function,parameter) values ('12818','23147','13431','last','0')
+INSERT INTO functions (functionid,itemid,triggerid,function,parameter) values ('12818','23668','13431','min','10m')
 /
 
 INSERT INTO functions (functionid,itemid,triggerid,function,parameter) values ('12820','23158','13433','last','0')
@@ -8900,6 +8912,18 @@ INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5887','
 INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5888','418','25365')
 /
 
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5889','418','23667')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5890','328','23668')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5891','445','23669')
+/
+
+INSERT INTO items_applications (itemappid,applicationid,itemid) values ('5892','445','23670')
+/
+
 INSERT INTO mappings (mappingid,valuemapid,value,newvalue) values ('1','1','0','Down')
 /
 
@@ -9753,6 +9777,12 @@ INSERT INTO item_discovery (itemdiscoveryid,itemid,parent_itemid) values ('219',
 /
 
 INSERT INTO item_discovery (itemdiscoveryid,itemid,parent_itemid) values ('220','23666','23665')
+/
+
+INSERT INTO item_discovery (itemdiscoveryid,itemid,parent_itemid) values ('221','23669','23631')
+/
+
+INSERT INTO item_discovery (itemdiscoveryid,itemid,parent_itemid) values ('222','23670','23631')
 /
 
 INSERT INTO host_discovery (hostid,parent_hostid,parent_itemid) values ('10090',NULL,'23542')

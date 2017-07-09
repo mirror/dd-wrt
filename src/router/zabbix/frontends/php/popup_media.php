@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -66,12 +66,12 @@ if (isset($_REQUEST['add'])) {
 		}
 
 		echo '<script type="text/javascript">
-				add_media("'.$_REQUEST['dstfrm'].'",'.
-				$_REQUEST['media'].','.
-				zbx_jsvalue($_REQUEST['mediatypeid']).','.
-				CJs::encodeJson($_REQUEST['sendto']).',"'.
-				$_REQUEST['period'].'",'.
-				getRequest('active', MEDIA_STATUS_DISABLED).','.
+				add_media('.CJs::encodeJson($_REQUEST['dstfrm']).','.
+				CJs::encodeJson($_REQUEST['media']).','.
+				CJs::encodeJson($_REQUEST['mediatypeid']).','.
+				CJs::encodeJson($_REQUEST['sendto']).','.
+				CJs::encodeJson($_REQUEST['period']).','.
+				CJs::encodeJson(getRequest('active', MEDIA_STATUS_DISABLED)).','.
 				$severity.');'.
 				'</script>';
 	}

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -284,10 +284,17 @@ elseif (hasRequest('action') && getRequest('action') == 'host.massupdate' && has
 		if (array_key_exists('encryption', $visible)) {
 			$newValues['tls_connect'] = getRequest('tls_connect', HOST_ENCRYPTION_NONE);
 			$newValues['tls_accept'] = getRequest('tls_accept', HOST_ENCRYPTION_NONE);
-			$newValues['tls_issuer'] = getRequest('tls_issuer', '');
-			$newValues['tls_subject'] = getRequest('tls_subject', '');
-			$newValues['tls_psk_identity'] = getRequest('tls_psk_identity', '');
-			$newValues['tls_psk'] = getRequest('tls_psk', '');
+
+			if ($newValues['tls_connect'] == HOST_ENCRYPTION_PSK || ($newValues['tls_accept'] & HOST_ENCRYPTION_PSK)) {
+				$newValues['tls_psk_identity'] = getRequest('tls_psk_identity', '');
+				$newValues['tls_psk'] = getRequest('tls_psk', '');
+			}
+
+			if ($newValues['tls_connect'] == HOST_ENCRYPTION_CERTIFICATE
+					|| ($newValues['tls_accept'] & HOST_ENCRYPTION_CERTIFICATE)) {
+				$newValues['tls_issuer'] = getRequest('tls_issuer', '');
+				$newValues['tls_subject'] = getRequest('tls_subject', '');
+			}
 		}
 
 		$templateIds = [];
@@ -398,7 +405,7 @@ elseif (hasRequest('action') && getRequest('action') == 'host.massupdate' && has
 		uncheckTableRows();
 		show_message(_('Hosts updated'));
 
-		unset($_REQUEST['massupdate'], $_REQUEST['form'], $_REQUEST['hosts']);
+		unset($_REQUEST['masssave'], $_REQUEST['form'], $_REQUEST['hosts']);
 	}
 	catch (Exception $e) {
 		DBend(false);
@@ -510,10 +517,6 @@ elseif (hasRequest('add') || hasRequest('update')) {
 				'ipmi_password' => getRequest('ipmi_password'),
 				'tls_connect' => getRequest('tls_connect', HOST_ENCRYPTION_NONE),
 				'tls_accept' => getRequest('tls_accept', HOST_ENCRYPTION_NONE),
-				'tls_issuer' => getRequest('tls_issuer'),
-				'tls_subject' => getRequest('tls_subject'),
-				'tls_psk_identity' => getRequest('tls_psk_identity'),
-				'tls_psk' => getRequest('tls_psk'),
 				'groups' => $groups,
 				'templates' => $templates,
 				'interfaces' => $interfaces,
@@ -523,6 +526,17 @@ elseif (hasRequest('add') || hasRequest('update')) {
 					? []
 					: getRequest('host_inventory', [])
 			];
+
+			if ($host['tls_connect'] == HOST_ENCRYPTION_PSK || ($host['tls_accept'] & HOST_ENCRYPTION_PSK)) {
+				$host['tls_psk_identity'] = getRequest('tls_psk_identity', '');
+				$host['tls_psk'] = getRequest('tls_psk', '');
+			}
+
+			if ($host['tls_connect'] == HOST_ENCRYPTION_CERTIFICATE
+					|| ($host['tls_accept'] & HOST_ENCRYPTION_CERTIFICATE)) {
+				$host['tls_issuer'] = getRequest('tls_issuer', '');
+				$host['tls_subject'] = getRequest('tls_subject', '');
+			}
 
 			if (!$create) {
 				$host['templates_clear'] = zbx_toObject(getRequest('clear_templates', []), 'templateid');
@@ -725,7 +739,7 @@ $_REQUEST['hostid'] = getRequest('hostid', 0);
 
 $config = select_config();
 
-if (hasRequest('action') && getRequest('action') === 'host.massupdateform' && hasRequest('hosts')) {
+if ((getRequest('action') === 'host.massupdateform' || hasRequest('masssave')) && hasRequest('hosts')) {
 	$data = [
 		'hosts' => getRequest('hosts'),
 		'visible' => getRequest('visible', []),
@@ -1045,7 +1059,7 @@ else {
 	if ($pageFilter->groupsSelected) {
 		$hosts = API::Host()->get([
 			'output' => ['hostid', $sortField],
-			'groupids' => ($pageFilter->groupid > 0) ? $pageFilter->groupid : null,
+			'groupids' => $pageFilter->groupids,
 			'editable' => true,
 			'sortfield' => $sortField,
 			'limit' => $config['search_limit'] + 1,

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -155,7 +155,7 @@ $proxyForm->addItem([
 			'confirm' => _('Disable hosts monitored by selected proxies?')
 		],
 		'proxy.delete' => ['name' => _('Delete'), 'confirm' => _('Delete selected proxies?')]
-	])
+	], 'proxy')
 ]);
 
 // append form to widget

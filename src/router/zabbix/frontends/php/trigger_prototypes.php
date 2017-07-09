@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -47,9 +47,9 @@ $fields = [
 	'expression_constructor' =>					[T_ZBX_INT, O_OPT, null,	NOT_EMPTY,	'isset({toggle_expression_constructor})'],
 	'recovery_expression_constructor' =>		[T_ZBX_INT, O_OPT, null,	NOT_EMPTY,		'isset({toggle_recovery_expression_constructor})'],
 	'expr_temp' =>								[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'(isset({add_expression}) || isset({and_expression}) || isset({or_expression}) || isset({replace_expression}))', _('Expression')],
-	'expr_target_single' =>						[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'(isset({and_expression}) || isset({or_expression}) || isset({replace_expression}))'],
+	'expr_target_single' =>						[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,	'(isset({and_expression}) || isset({or_expression}) || isset({replace_expression}))', _('Target')],
 	'recovery_expr_temp' =>						[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'(isset({add_recovery_expression}) || isset({and_recovery_expression}) || isset({or_recovery_expression}) || isset({replace_recovery_expression}))', _('Recovery expression')],
-	'recovery_expr_target_single' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'(isset({and_recovery_expression}) || isset({or_recovery_expression}) || isset({replace_recovery_expression}))'],
+	'recovery_expr_target_single' =>			[T_ZBX_STR, O_OPT, null,	NOT_EMPTY,		'(isset({and_recovery_expression}) || isset({or_recovery_expression}) || isset({replace_recovery_expression}))', _('Target')],
 	'dependencies' =>							[T_ZBX_INT, O_OPT, null,	DB_ID,		null],
 	'new_dependency' =>							[T_ZBX_INT, O_OPT, null,	DB_ID.NOT_ZERO, 'isset({add_dependency})'],
 	'g_triggerid' =>							[T_ZBX_INT, O_OPT, null,	DB_ID,		null],
@@ -413,7 +413,7 @@ elseif (hasRequest('action') && getRequest('action') === 'triggerprototype.massu
 	}
 
 	if ($result) {
-		unset($_REQUEST['form'], $_REQUEST['g_triggerid']);
+		unset($_REQUEST['massupdate'], $_REQUEST['form'], $_REQUEST['g_triggerid']);
 		uncheckTableRows(getRequest('parent_discoveryid'));
 	}
 	show_messages($result, _('Trigger prototypes updated'), _('Cannot update trigger prototypes'));
@@ -470,7 +470,8 @@ $config = select_config();
 /*
  * Display
  */
-if (hasRequest('action') && getRequest('action') === 'triggerprototype.massupdateform' && hasRequest('g_triggerid')) {
+if ((getRequest('action') === 'triggerprototype.massupdateform' || hasRequest('massupdate'))
+		&& hasRequest('g_triggerid')) {
 	$data = getTriggerMassupdateFormData();
 	$data['action'] = 'triggerprototype.massupdate';
 	$data['hostid'] = $discoveryRule['hostid'];

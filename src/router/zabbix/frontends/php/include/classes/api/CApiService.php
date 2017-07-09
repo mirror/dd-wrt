@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -433,7 +433,7 @@ class CApiService {
 		$sqlGroup = empty($sqlParts['group']) ? '' : ' GROUP BY '.implode(',', array_unique($sqlParts['group']));
 		$sqlOrder = empty($sqlParts['order']) ? '' : ' ORDER BY '.implode(',', array_unique($sqlParts['order']));
 
-		return 'SELECT '.zbx_db_distinct($sqlParts).' '.$sqlSelect.
+		return 'SELECT'.zbx_db_distinct($sqlParts).' '.$sqlSelect.
 				' FROM '.$sqlFrom.
 				$sql_left_join.
 				$sqlWhere.
@@ -726,6 +726,30 @@ class CApiService {
 		foreach ($objects as $key => &$object) {
 			if (isset($sourceObjects[$key])) {
 				$object += array_intersect_key($sourceObjects[$key], $fields);
+			}
+		}
+		unset($object);
+
+		return $objects;
+	}
+
+	/**
+	 * For each object in $objects the method copies fields listed in $fields that are not present in the target
+	 * object from the source object.
+	 *
+	 * @param array  $objects
+	 * @param array  $source
+	 * @param string $field_name
+	 * @param array  $fields
+	 *
+	 * @return array
+	 */
+	protected function extendObjectsByKey(array $objects, array $source, $field_name, array $fields) {
+		$fields = array_flip($fields);
+
+		foreach ($objects as &$object) {
+			if (array_key_exists($object[$field_name], $source)) {
+				$object += array_intersect_key($source[$object[$field_name]], $fields);
 			}
 		}
 		unset($object);

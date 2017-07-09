@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -86,7 +86,6 @@ class ZBase {
 		require_once $this->getRootDir().'/include/perm.inc.php';
 		require_once $this->getRootDir().'/include/audit.inc.php';
 		require_once $this->getRootDir().'/include/js.inc.php';
-		require_once $this->getRootDir().'/include/groups.inc.php';
 		require_once $this->getRootDir().'/include/users.inc.php';
 		require_once $this->getRootDir().'/include/validate.inc.php';
 		require_once $this->getRootDir().'/include/profiles.inc.php';

@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ class CPageFilter {
 	 */
 	protected $ids = [
 		'groupid' => null,
+		'groupids' => null,
 		'hostid' => null,
 		'graphid' => null,
 		'druleid' => null,
@@ -175,13 +176,13 @@ class CPageFilter {
 	 * @return mixed
 	 */
 	public function __get($name) {
-		if (isset($this->data[$name])) {
+		if (array_key_exists($name, $this->data)) {
 			return $this->data[$name];
 		}
-		elseif (isset($this->ids[$name])) {
+		elseif (array_key_exists($name, $this->ids)) {
 			return $this->ids[$name];
 		}
-		elseif (isset($this->isSelected[$name])) {
+		elseif (array_key_exists($name, $this->isSelected)) {
 			return $this->isSelected[$name];
 		}
 		else {
@@ -383,11 +384,43 @@ class CPageFilter {
 	private function _initGroups($groupId, array $options, $hostId) {
 		$defaultOptions = [
 			'output' => ['groupid', 'name'],
-			'preservekeys' => true,
-			'sortfield' => ['name']
+			'preservekeys' => true
 		];
 		$options = zbx_array_merge($defaultOptions, $options);
 		$this->data['groups'] = API::HostGroup()->get($options);
+
+		$parents = [];
+		foreach ($this->data['groups'] as $group) {
+			$parent = explode('/', $group['name']);
+			$count = count($parent) - 1;
+
+			if ($count !== 0) {
+				$parent_name = '';
+
+				for ($i = 0; $i < $count; $i++) {
+					$parent_name .= ($parent_name === '') ? '' : '/';
+					$parent_name .= $parent[$i];
+					$parents[$parent_name] = true;
+				}
+			}
+		}
+
+		// removing already selected parent groups
+		foreach ($this->data['groups'] as $group) {
+			if (array_key_exists($group['name'], $parents)) {
+				unset($parents[$group['name']]);
+			}
+		}
+
+		if ($parents) {
+			$this->data['groups'] += API::HostGroup()->get([
+				'output' => ['groupid', 'name'],
+				'filter' => ['name' => array_keys($parents)],
+				'preservekeys' => true
+			]);
+		}
+
+		CArrayHelper::sort($this->data['groups'], ['name']);
 
 		// select remembered selection
 		if ($groupId === null && $this->_profileIds['groupid'] > 0) {
@@ -396,18 +429,27 @@ class CPageFilter {
 			$template = null;
 
 			if ($hostId) {
+				// Get child groups for "profileIds['groupid']".
+				$profileids = [$this->_profileIds['groupid']];
+				$parent = $this->data['groups'][$this->_profileIds['groupid']]['name'].'/';
+				foreach ($this->data['groups'] as $group) {
+					if (strpos($group['name'], $parent) === 0) {
+						$profileids[] = $group['groupid'];
+					}
+				}
+
 				// Profile ID can contain zero, hence no host will be selected.
 				$host = API::Host()->get([
 					'output' => ['hostid'],
 					'hostids' => $hostId,
-					'groupids' => $this->_profileIds['groupid']
+					'groupids' => $profileids
 				]);
 
 				if (!$host) {
 					$template = API::Template()->get([
 						'output' => ['hostid'],
 						'templateids' => $hostId,
-						'groupids' => $this->_profileIds['groupid']
+						'groupids' => $profileids
 					]);
 				}
 			}
@@ -474,6 +516,19 @@ class CPageFilter {
 		$this->isSelected['groupsAll'] = ($firstIsAllAndHaveGroups && $groupId == 0);
 
 		$this->ids['groupid'] = $groupId;
+
+		if ($groupId != 0) {
+			$this->ids['groupids'] = [$groupId];
+			$parent = $this->data['groups'][$groupId]['name'].'/';
+			foreach ($this->data['groups'] as $group) {
+				if (strpos($group['name'], $parent) === 0) {
+					$this->ids['groupids'][] = $group['groupid'];
+				}
+			}
+		}
+		else {
+			$this->ids['groupids'] = null;
+		}
 	}
 
 	/**
@@ -499,7 +554,7 @@ class CPageFilter {
 		else {
 			$defaultOptions = [
 				'output' => ['hostid', 'name', 'status'],
-				'groupids' => ($this->groupid > 0) ? $this->groupid : null
+				'groupids' => $this->groupids
 			];
 			$hosts = API::Host()->get(zbx_array_merge($defaultOptions, $options));
 
@@ -556,7 +611,7 @@ class CPageFilter {
 		else {
 			$def_ptions = [
 				'output' => ['graphid', 'name'],
-				'groupids' => ($this->groupid > 0 && $this->hostid == 0) ? $this->groupid : null,
+				'groupids' => ($this->groupid > 0 && $this->hostid == 0) ? $this->groupids : null,
 				'hostids' => ($this->hostid > 0) ? $this->hostid : null,
 				'expandName' => true
 			];

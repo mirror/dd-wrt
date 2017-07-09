@@ -1,7 +1,7 @@
 <?php
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -31,7 +31,6 @@ $widget = (new CWidget())
 // create form
 $itemForm = (new CForm())
 	->setName('items')
-	->addVar('hostid', $this->data['hostid'])
 	->addVar('parent_discoveryid', $this->data['parent_discoveryid']);
 
 // create table

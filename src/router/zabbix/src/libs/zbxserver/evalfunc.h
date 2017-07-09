@@ -1,6 +1,6 @@
 /*
 ** Zabbix
-** Copyright (C) 2001-2016 Zabbix SIA
+** Copyright (C) 2001-2017 Zabbix SIA
 **
 ** This program is free software; you can redistribute it and/or modify
 ** it under the terms of the GNU General Public License as published by
@@ -19,12 +19,6 @@
 
 #ifndef ZABBIX_EVALFUNC_H
 #define ZABBIX_EVALFUNC_H
-
-#include "common.h"
-#include "db.h"
-
-#define ZBX_FLAG_SEC	0
-#define ZBX_FLAG_VALUES	1
 
 int	evaluate_macro_function(char *value, const char *host, const char *key,
 		const char *function, const char *parameter);
