@@ -33,6 +33,7 @@ struct br_ip_list {
 };
 
 extern void brioctl_set(int (*ioctl_hook)(struct net *, unsigned int, void __user *));
+extern void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlstats);
 
 typedef int br_should_route_hook_t(struct sk_buff *skb);
 extern br_should_route_hook_t __rcu *br_should_route_hook;

@@ -1832,6 +1832,7 @@ int nf_conntrack_init_net(struct net *net)
 	ret = nf_conntrack_proto_pernet_init(net);
 	if (ret < 0)
 		goto err_proto;
+	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
 	return 0;
 
 err_proto:

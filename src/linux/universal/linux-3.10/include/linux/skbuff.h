@@ -497,6 +497,7 @@ struct sk_buff {
 	__u8			wifi_acked:1;
 	__u8			no_fcs:1;
 	__u8			head_frag:1;
+	__u8			fast_forwarded:1;
 	/* Encapsulation protocol and NIC drivers should use
 	 * this flag to indicate to each other if the skb contains
 	 * encapsulated packet or not and maybe use the inner packet
