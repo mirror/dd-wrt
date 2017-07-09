@@ -472,7 +472,7 @@ void __net_exit br_net_exit(struct net *net)
 void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlstats)
 {
 	struct net_bridge *br;
-	struct pcpu_sw_netstats *stats;
+	struct br_cpu_netstats *stats;
 
 	/*
 	 * Is this a bridge?
