@@ -199,11 +199,11 @@ static int sfe_cm_recv(struct sk_buff *skb)
  * structure, obtain the hardware address.  This means this function also
  * works if the neighbours are routers too.
  */
-static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device **dev, u8 *mac_addr, int is_v4)
+bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device **dev, u8 *mac_addr, int is_v4)
 {
 	struct neighbour *neigh;
 	struct rtable *rt;
-	struct rt6_info *rt6;
+	struct rt6_info *rt6 = NULL;
 	struct dst_entry *dst;
 	struct net_device *mac_dev;
 
@@ -220,7 +220,8 @@ static bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device 
 
 		dst = (struct dst_entry *)rt;
 	} else {
-		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
+		if (rt6_lookup)
+		    rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
 		if (!rt6) {
 			goto ret_fail;
 		}
@@ -272,6 +273,7 @@ ret_fail:
 	return false;
 }
 
+EXPORT_SYMBOL(sfe_cm_find_dev_and_mac_addr);
 /*
  * sfe_cm_post_routing()
  *	Called for packets about to leave the box - either locally generated or forwarded from another interface
