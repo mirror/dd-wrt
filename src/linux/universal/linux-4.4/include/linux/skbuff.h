@@ -651,9 +651,10 @@ struct sk_buff {
 #endif
 	__u8			ipvs_property:1;
 	__u8			inner_protocol_type:1;
+	__u8			fast_forwarded:1;
 	__u8			remcsum_offload:1;
 	__u8			gro_skip:1;
-	/* 2 or 4 bit hole */
+	/* 1 or 2 bit hole */
 
 #ifdef CONFIG_NET_SCHED
 	__u16			tc_index;	/* traffic control index */
