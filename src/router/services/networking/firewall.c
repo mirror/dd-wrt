@@ -753,7 +753,7 @@ static void nat_prerouting(void)
 	count = 1;
 
 	if (has_gateway()) {
-		insmod("shortcut-fe shortcut-fe-ipv6 shortcut-fe-cm fast-classifier");
+		insmod("shortcut-fe");
 		writeprocsysnet("netfilter/nf_conntrack_helper", "1");	// kerne 4.7 uses 0 as new default which disables several nat helpers
 
 		/*
