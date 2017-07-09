@@ -36,6 +36,12 @@
 #include "sfe_cm.h"
 #include "sfe_backport.h"
 
+#include "sfe_ipv4.c"
+#ifdef SFE_SUPPORT_IPV6
+#include "sfe_ipv6.c"
+#endif
+#include "fast-classifier.c"
+
 typedef enum sfe_cm_exception {
 	SFE_CM_EXCEPTION_PACKET_BROADCAST,
 	SFE_CM_EXCEPTION_PACKET_MULTICAST,
@@ -999,6 +1005,11 @@ static int __init sfe_cm_init(void)
 	int result = -1;
 	size_t i, j;
 
+#ifdef SFE_SUPPORT_IPV6
+	sfe_ipv6_init();
+#endif
+	sfe_ipv4_init();
+
 	DEBUG_INFO("SFE CM init\n");
 
 	/*
@@ -1057,6 +1068,8 @@ static int __init sfe_cm_init(void)
 	 */
 	sfe_ipv4_register_sync_rule_callback(sfe_cm_sync_rule);
 	sfe_ipv6_register_sync_rule_callback(sfe_cm_sync_rule);
+	fast_classifier_init();
+
 	return 0;
 
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
@@ -1074,6 +1087,11 @@ exit2:
 	kobject_put(sc->sys_sfe_cm);
 
 exit1:
+	sfe_ipv4_exit();
+#ifdef SFE_SUPPORT_IPV6
+	sfe_ipv6_exit();
+#endif
+
 	return result;
 }
 
@@ -1085,6 +1103,7 @@ static void __exit sfe_cm_exit(void)
 	struct sfe_cm *sc = &__sc;
 
 	DEBUG_INFO("SFE CM exit\n");
+	fast_classifier_exit();
 
 	/*
 	 * Unregister our sync callback.
@@ -1119,6 +1138,10 @@ static void __exit sfe_cm_exit(void)
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
 	kobject_put(sc->sys_sfe_cm);
+	sfe_ipv4_exit();
+#ifdef SFE_SUPPORT_IPV6
+	sfe_ipv6_exit();
+#endif
 }
 
 module_init(sfe_cm_init)

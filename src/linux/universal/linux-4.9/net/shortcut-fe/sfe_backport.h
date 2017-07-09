@@ -15,6 +15,8 @@
  * OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef SFE_BACKPORT_H
+#define SFE_BACKPORT_H
 #include <linux/version.h>
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0))
@@ -157,3 +159,5 @@ static inline int sfe_propagate_dev_event(sfe_dev_event_cb_t fn, struct notifier
 
 #define sfe_hash_for_each(name, bkt, obj, member) \
 	hash_for_each(name, bkt, obj, member)
+
+#endif
