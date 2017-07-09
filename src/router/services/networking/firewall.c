@@ -2762,7 +2762,7 @@ void start_firewall(void)
 	else
 		writeproc("/proc/net/arp_spoofing_enable", "0");
 	insmod("shortcut-fe");
-	writeint("/sys/fast_classifier/skip_to_bridge_ingres", 1);
+	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 #ifndef	HAVE_80211AC
 	/*
 	 * Improve WAN<->LAN Performance on K26
