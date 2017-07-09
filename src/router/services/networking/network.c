@@ -4517,6 +4517,10 @@ void start_wan_service(void)
 	start_process_monitor();
 	cprintf("start ddns\n");
 	start_ddns();
+#ifdef HAVE_SPEEDCHECKER
+	stop_speedchecker();
+	start_speedchecker();
+#endif
 }
 
 #ifdef HAVE_IPV6
