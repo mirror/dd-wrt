@@ -3273,7 +3273,7 @@ static struct file_operations sfe_ipv4_debug_dev_fops = {
 /*
  * sfe_ipv4_init()
  */
-static int __init sfe_ipv4_init(void)
+static int sfe_ipv4_init(void)
 {
 	struct sfe_ipv4 *si = &__si;
 	int result = -1;
@@ -3332,7 +3332,7 @@ exit1:
 /*
  * sfe_ipv4_exit()
  */
-static void __exit sfe_ipv4_exit(void)
+static void sfe_ipv4_exit(void)
 {
 	struct sfe_ipv4 *si = &__si;
 
@@ -3352,18 +3352,3 @@ static void __exit sfe_ipv4_exit(void)
 	kobject_put(si->sys_sfe_ipv4);
 
 }
-
-module_init(sfe_ipv4_init)
-module_exit(sfe_ipv4_exit)
-
-EXPORT_SYMBOL(sfe_ipv4_recv);
-EXPORT_SYMBOL(sfe_ipv4_create_rule);
-EXPORT_SYMBOL(sfe_ipv4_destroy_rule);
-EXPORT_SYMBOL(sfe_ipv4_destroy_all_rules_for_dev);
-EXPORT_SYMBOL(sfe_ipv4_register_sync_rule_callback);
-EXPORT_SYMBOL(sfe_ipv4_mark_rule);
-EXPORT_SYMBOL(sfe_ipv4_update_rule);
-
-MODULE_DESCRIPTION("Shortcut Forwarding Engine - IPv4 edition");
-MODULE_LICENSE("Dual BSD/GPL");
-
