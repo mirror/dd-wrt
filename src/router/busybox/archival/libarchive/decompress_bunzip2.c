@@ -134,7 +134,7 @@ static unsigned get_bits(bunzip_data *bd, int bits_wanted)
 
 		/* Avoid 32-bit overflow (dump bit buffer to top of output) */
 		if (bit_count >= 24) {
-			bits = bd->inbufBits & ((1 << bit_count) - 1);
+			bits = bd->inbufBits & ((1U << bit_count) - 1);
 			bits_wanted -= bit_count;
 			bits <<= bits_wanted;
 			bit_count = 0;
@@ -158,11 +158,11 @@ static int get_next_block(bunzip_data *bd)
 {
 	struct group_data *hufGroup;
 	int dbufCount, dbufSize, groupCount, *base, *limit, selector,
-		i, j, t, runPos, symCount, symTotal, nSelectors, byteCount[256];
+		i, j, runPos, symCount, symTotal, nSelectors, byteCount[256];
 	int runCnt = runCnt; /* for compiler */
 	uint8_t uc, symToByte[256], mtfSymbol[256], *selectors;
 	uint32_t *dbuf;
-	unsigned origPtr;
+	unsigned origPtr, t;
 
 	dbuf = bd->dbuf;
 	dbufSize = bd->dbufSize;
@@ -308,7 +308,7 @@ static int get_next_block(bunzip_data *bd)
 		base = hufGroup->base - 1;
 		limit = hufGroup->limit - 1;
 
-		/* Calculate permute[].  Concurently, initialize temp[] and limit[]. */
+		/* Calculate permute[].  Concurrently, initialize temp[] and limit[]. */
 		pp = 0;
 		for (i = minLen; i <= maxLen; i++) {
 			int k;

@@ -87,7 +87,6 @@
 //config:	  this option makes less perform a last-ditch effort to find it:
 //config:	  position cursor to 999,999 and ask terminal to report real
 //config:	  cursor position using "ESC [ 6 n" escape sequence, then read stdin.
-//config:
 //config:	  This is not clean but helps a lot on serial lines and such.
 //config:
 //config:config FEATURE_LESS_DASHCMD
@@ -99,11 +98,9 @@
 //config:	  less itself ('-' keyboard command).
 //config:
 //config:config FEATURE_LESS_LINENUMS
-//config:	bool "Enable dynamic switching of line numbers"
+//config:	bool "Enable -N (dynamic switching of line numbers)"
 //config:	default y
 //config:	depends on FEATURE_LESS_DASHCMD
-//config:	help
-//config:	  Enables "-N" command.
 
 //applet:IF_LESS(APPLET(less, BB_DIR_USR_BIN, BB_SUID_DROP))
 
@@ -270,7 +267,7 @@ struct globals {
 /* flines[] are lines read from stdin, each in malloc'ed buffer.
  * Line numbers are stored as uint32_t prepended to each line.
  * Pointer is adjusted so that flines[i] points directly past
- * line number. Accesor: */
+ * line number. Accessor: */
 #define MEMPTR(p) ((char*)(p) - 4)
 #define LINENO(p) (*(uint32_t*)((p) - 4))
 

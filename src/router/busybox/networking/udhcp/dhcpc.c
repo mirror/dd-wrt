@@ -84,7 +84,9 @@ static const char udhcpc_longopts[] ALIGN1 =
 	"request-option\0" Required_argument "O"
 	"no-default-options\0" No_argument   "o"
 	"foreground\0"     No_argument       "f"
+	USE_FOR_MMU(
 	"background\0"     No_argument       "b"
+	)
 	"broadcast\0"      No_argument       "B"
 	IF_FEATURE_UDHCPC_ARPING("arping\0"	Optional_argument "a")
 	IF_FEATURE_UDHCP_PORT("client-port\0"	Required_argument "P")
@@ -1293,9 +1295,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	unsigned already_waited_sec;
 	unsigned opt;
 	IF_FEATURE_UDHCPC_ARPING(unsigned arpping_ms;)
-	int max_fd;
 	int retval;
-	fd_set rfds;
 
 	setup_common_bufsiz();
 
@@ -1358,7 +1358,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		char *optstr = llist_pop(&list_O);
 		unsigned n = bb_strtou(optstr, NULL, 0);
 		if (errno || n > 254) {
-			n = udhcp_option_idx(optstr);
+			n = udhcp_option_idx(optstr, dhcp_option_strings);
 			n = dhcp_optflags[n].code;
 		}
 		client_config.opt_mask[n >> 3] |= 1 << (n & 7);
@@ -1378,7 +1378,9 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 			*colon = ' ';
 		/* now it looks similar to udhcpd's config file line:
 		 * "optname optval", using the common routine: */
-		udhcp_str2optset(optstr, &client_config.options);
+		udhcp_str2optset(optstr, &client_config.options, dhcp_optflags, dhcp_option_strings);
+		if (colon)
+			*colon = ':'; /* restore it for NOMMU reexec */
 	}
 
 	if (udhcp_read_interface(client_config.interface,
@@ -1444,7 +1446,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	 * "continue" statements in code below jump to the top of the loop.
 	 */
 	for (;;) {
-		struct timeval tv;
+		int tv;
+		struct pollfd pfds[2];
 		struct dhcp_packet packet;
 		/* silence "uninitialized!" warning */
 		unsigned timestamp_before_wait = timestamp_before_wait;
@@ -1464,23 +1467,22 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		 * to change_listen_mode(). Thus we open listen socket
 		 * BEFORE we send renew request (see "case BOUND:"). */
 
-		max_fd = udhcp_sp_fd_set(&rfds, sockfd);
+		udhcp_sp_fd_set(pfds, sockfd);
 
-		tv.tv_sec = timeout - already_waited_sec;
-		tv.tv_usec = 0;
+		tv = timeout - already_waited_sec;
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
-		if ((int)tv.tv_sec > 0) {
-			log1("waiting on select %u seconds", (int)tv.tv_sec);
+		if (tv > 0) {
+			log1("waiting on select %u seconds", tv);
 			timestamp_before_wait = (unsigned)monotonic_sec();
-			retval = select(max_fd + 1, &rfds, NULL, NULL, &tv);
+			retval = poll(pfds, 2, tv < INT_MAX/1000 ? tv * 1000 : INT_MAX);
 			if (retval < 0) {
 				/* EINTR? A signal was caught, don't panic */
 				if (errno == EINTR) {
 					already_waited_sec += (unsigned)monotonic_sec() - timestamp_before_wait;
 					continue;
 				}
-				/* Else: an error occured, panic! */
+				/* Else: an error occurred, panic! */
 				bb_perror_msg_and_die("select");
 			}
 		}
@@ -1609,8 +1611,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		/* select() didn't timeout, something happened */
 
 		/* Is it a signal? */
-		/* note: udhcp_sp_read checks FD_ISSET before reading */
-		switch (udhcp_sp_read(&rfds)) {
+		/* note: udhcp_sp_read checks poll result before reading */
+		switch (udhcp_sp_read(pfds)) {
 		case SIGUSR1:
 			client_config.first_secs = 0; /* make secs field count from 0 */
 			already_waited_sec = 0;
@@ -1645,7 +1647,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		}
 
 		/* Is it a packet? */
-		if (listen_mode == LISTEN_NONE || !FD_ISSET(sockfd, &rfds))
+		if (listen_mode == LISTEN_NONE || !pfds[1].revents)
 			continue; /* no */
 
 		{
@@ -1760,8 +1762,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					/* paranoia: must not be too small and not prone to overflows */
 					if (lease_seconds < 0x10)
 						lease_seconds = 0x10;
-					if (lease_seconds >= 0x10000000)
-						lease_seconds = 0x0fffffff;
+					if (lease_seconds > 0x7fffffff / 1000)
+						lease_seconds = 0x7fffffff / 1000;
 				}
 #if ENABLE_FEATURE_UDHCPC_ARPING
 				if (opt & OPT_a) {

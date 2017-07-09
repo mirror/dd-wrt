@@ -49,13 +49,15 @@
 //config:	  create compressed archives. It's probably the most widely used
 //config:	  UNIX archive program.
 //config:
+//config:config FEATURE_TAR_LONG_OPTIONS
+//config:	bool "Enable long options"
+//config:	default y
+//config:	depends on TAR && LONG_OPTS
+//config:
 //config:config FEATURE_TAR_CREATE
-//config:	bool "Enable archive creation"
+//config:	bool "Enable -c (archive creation)"
 //config:	default y
 //config:	depends on TAR
-//config:	help
-//config:	  If you enable this option you'll be able to create
-//config:	  tar archives using the `-c' option.
 //config:
 //config:config FEATURE_TAR_AUTODETECT
 //config:	bool "Autodetect compressed tarballs"
@@ -74,7 +76,7 @@
 //config:	  a list of files to include or exclude from an archive.
 //config:
 //config:config FEATURE_TAR_OLDGNU_COMPATIBILITY
-//config:	bool "Support for old tar header format"
+//config:	bool "Support old tar header format"
 //config:	default y
 //config:	depends on TAR || DPKG
 //config:	help
@@ -93,22 +95,12 @@
 //config:	  tarballs still exist.
 //config:
 //config:config FEATURE_TAR_GNU_EXTENSIONS
-//config:	bool "Support for GNU tar extensions (long filenames)"
+//config:	bool "Support GNU tar extensions (long filenames)"
 //config:	default y
 //config:	depends on TAR || DPKG
-//config:	help
-//config:	  With this option busybox supports GNU long filenames and
-//config:	  linknames.
-//config:
-//config:config FEATURE_TAR_LONG_OPTIONS
-//config:	bool "Enable long options"
-//config:	default y
-//config:	depends on TAR && LONG_OPTS
-//config:	help
-//config:	  Enable use of long options, increases size by about 400 Bytes
 //config:
 //config:config FEATURE_TAR_TO_COMMAND
-//config:	bool "Support for writing to an external program"
+//config:	bool "Support writing to an external program (--to-command)"
 //config:	default y
 //config:	depends on TAR && FEATURE_TAR_LONG_OPTIONS
 //config:	help
@@ -121,20 +113,17 @@
 //config:	default y
 //config:	depends on TAR
 //config:	help
-//config:	  Enables use of user and group names in tar. This affects contents
+//config:	  Enable use of user and group names in tar. This affects contents
 //config:	  listings (-t) and preserving permissions when unpacking (-p).
 //config:	  +200 bytes.
 //config:
 //config:config FEATURE_TAR_NOPRESERVE_TIME
-//config:	bool "Enable -m (do not preserve time) option"
+//config:	bool "Enable -m (do not preserve time) GNU option"
 //config:	default y
 //config:	depends on TAR
-//config:	help
-//config:	  With this option busybox supports GNU tar -m
-//config:	  (do not preserve time) option.
 //config:
 //config:config FEATURE_TAR_SELINUX
-//config:	bool "Support for extracting SELinux labels"
+//config:	bool "Support extracting SELinux labels"
 //config:	default n
 //config:	depends on TAR && SELINUX
 //config:	help
@@ -540,8 +529,8 @@ static int FAST_FUNC writeFileToTarball(const char *fileName, struct stat *statb
 	/*
 	 * Check to see if we are dealing with a hard link.
 	 * If so -
-	 * Treat the first occurance of a given dev/inode as a file while
-	 * treating any additional occurances as hard links.  This is done
+	 * Treat the first occurrence of a given dev/inode as a file while
+	 * treating any additional occurrences as hard links.  This is done
 	 * by adding the file information to the HardLinkInfo linked list.
 	 */
 	tbInfo->hlInfo = NULL;
@@ -1227,21 +1216,26 @@ int tar_main(int argc UNUSED_PARAM, char **argv)
 		USE_FOR_MMU(IF_DESKTOP(long long) int FAST_FUNC (*xformer)(transformer_state_t *xstate);)
 		USE_FOR_NOMMU(const char *xformer_prog;)
 
-		if (opt & OPT_COMPRESS)
-			USE_FOR_MMU(xformer = unpack_Z_stream;)
+		if (opt & OPT_COMPRESS) {
+			USE_FOR_MMU(IF_FEATURE_SEAMLESS_Z(xformer = unpack_Z_stream;))
 			USE_FOR_NOMMU(xformer_prog = "uncompress";)
-		if (opt & OPT_GZIP)
-			USE_FOR_MMU(xformer = unpack_gz_stream;)
+		}
+		if (opt & OPT_GZIP) {
+			USE_FOR_MMU(IF_FEATURE_SEAMLESS_GZ(xformer = unpack_gz_stream;))
 			USE_FOR_NOMMU(xformer_prog = "gunzip";)
-		if (opt & OPT_BZIP2)
-			USE_FOR_MMU(xformer = unpack_bz2_stream;)
+		}
+		if (opt & OPT_BZIP2) {
+			USE_FOR_MMU(IF_FEATURE_SEAMLESS_BZ2(xformer = unpack_bz2_stream;))
 			USE_FOR_NOMMU(xformer_prog = "bunzip2";)
-		if (opt & OPT_LZMA)
-			USE_FOR_MMU(xformer = unpack_lzma_stream;)
+		}
+		if (opt & OPT_LZMA) {
+			USE_FOR_MMU(IF_FEATURE_SEAMLESS_LZMA(xformer = unpack_lzma_stream;))
 			USE_FOR_NOMMU(xformer_prog = "unlzma";)
-		if (opt & OPT_XZ)
-			USE_FOR_MMU(xformer = unpack_xz_stream;)
+		}
+		if (opt & OPT_XZ) {
+			USE_FOR_MMU(IF_FEATURE_SEAMLESS_XZ(xformer = unpack_xz_stream;))
 			USE_FOR_NOMMU(xformer_prog = "unxz";)
+		}
 
 		fork_transformer_with_sig(tar_handle->src_fd, xformer, xformer_prog);
 		/* Can't lseek over pipes */

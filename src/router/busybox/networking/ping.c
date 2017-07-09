@@ -94,10 +94,10 @@
 //usage:     "\n	-4,-6		Force IP or IPv6 name resolution"
 //usage:	)
 //usage:     "\n	-c CNT		Send only CNT pings"
-//usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default:56)"
+//usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default 56)"
 //usage:     "\n	-t TTL		Set TTL"
-//usage:     "\n	-I IFACE/IP	Use interface or IP address as source"
-//usage:     "\n	-W SEC		Seconds to wait for the first response (default:10)"
+//usage:     "\n	-I IFACE/IP	Source interface or IP address"
+//usage:     "\n	-W SEC		Seconds to wait for the first response (default 10)"
 //usage:     "\n			(after all -c CNT packets are sent)"
 //usage:     "\n	-w SEC		Seconds until ping exits (default:infinite)"
 //usage:     "\n			(can exit earlier with -c CNT)"
@@ -110,8 +110,8 @@
 //usage:# define ping6_full_usage "\n\n"
 //usage:       "Send ICMP ECHO_REQUEST packets to network hosts\n"
 //usage:     "\n	-c CNT		Send only CNT pings"
-//usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default:56)"
-//usage:     "\n	-I IFACE/IP	Use interface or IP address as source"
+//usage:     "\n	-s SIZE		Send SIZE data bytes in packets (default 56)"
+//usage:     "\n	-I IFACE/IP	Source interface or IP address"
 //usage:     "\n	-q		Quiet, only display output at start"
 //usage:     "\n			and when finished"
 //usage:     "\n	-p		Pattern to use for payload"
@@ -478,7 +478,7 @@ static void sendping_tail(void (*sp)(int), int size_pkt)
 	} else { /* -c NN, and all NN are sent (and no deadline) */
 		/* Wait for the last ping to come back.
 		 * -W timeout: wait for a response in seconds.
-		 * Affects only timeout in absense of any responses,
+		 * Affects only timeout in absence of any responses,
 		 * otherwise ping waits for two RTTs. */
 		unsigned expire = timeout;
 
@@ -712,7 +712,7 @@ static void ping4(len_and_sockaddr *lsa)
 
 	if (opt_ttl != 0) {
 		setsockopt_int(pingsock, IPPROTO_IP, IP_TTL, opt_ttl);
-		/* above doesnt affect packets sent to bcast IP, so... */
+		/* above doesn't affect packets sent to bcast IP, so... */
 		setsockopt_int(pingsock, IPPROTO_IP, IP_MULTICAST_TTL, opt_ttl);
 	}
 

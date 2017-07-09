@@ -88,8 +88,6 @@
 //config:	bool "Enable long options"
 //config:	default y
 //config:	depends on DIFF && LONG_OPTS
-//config:	help
-//config:	  Enable use of long options.
 //config:
 //config:config FEATURE_DIFF_DIR
 //config:	bool "Enable directory support"
@@ -294,17 +292,6 @@ static int search(const int *c, int k, int y, const struct cand *list)
 				return l;
 		} else
 			return l + 1;
-	}
-}
-
-static unsigned isqrt(unsigned n)
-{
-	unsigned x = 1;
-	while (1) {
-		const unsigned y = x;
-		x = ((n / x) + x) >> 1;
-		if (x <= (y + 1) && x >= (y - 1))
-			return x;
 	}
 }
 
@@ -728,9 +715,19 @@ static int diffreg(char *file[2])
 	fp[0] = stdin;
 	fp[1] = stdin;
 	for (i = 0; i < 2; i++) {
-		int fd = open_or_warn_stdin(file[i]);
-		if (fd == -1)
-			goto out;
+		int fd = STDIN_FILENO;
+		if (!LONE_DASH(file[i])) {
+			if (!(option_mask32 & FLAG(N))) {
+				fd = open_or_warn(file[i], O_RDONLY);
+				if (fd == -1)
+					goto out;
+			} else {
+				/* -N: if some file does not exist compare it like empty */
+				fd = open(file[i], O_RDONLY);
+				if (fd == -1)
+					fd = xopen("/dev/null", O_RDONLY);
+			}
+		}
 		/* Our diff implementation is using seek.
 		 * When we meet non-seekable file, we must make a temp copy.
 		 */
@@ -991,17 +988,23 @@ int diff_main(int argc UNUSED_PARAM, char **argv)
 	argv += optind;
 	while (L_arg)
 		label[!!label[0]] = llist_pop(&L_arg);
+
+	/* Compat: "diff file name_which_doesnt_exist" exits with 2 */
 	xfunc_error_retval = 2;
 	for (i = 0; i < 2; i++) {
 		file[i] = argv[i];
-		/* Compat: "diff file name_which_doesnt_exist" exits with 2 */
 		if (LONE_DASH(file[i])) {
 			fstat(STDIN_FILENO, &stb[i]);
 			gotstdin++;
-		} else
+		} else if (option_mask32 & FLAG(N)) {
+			if (stat(file[i], &stb[i]))
+				xstat("/dev/null", &stb[i]);
+		} else {
 			xstat(file[i], &stb[i]);
+		}
 	}
 	xfunc_error_retval = 1;
+
 	if (gotstdin && (S_ISDIR(stb[0].st_mode) || S_ISDIR(stb[1].st_mode)))
 		bb_error_msg_and_die("can't compare stdin to a directory");
 
