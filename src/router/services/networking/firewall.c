@@ -2758,9 +2758,9 @@ void start_firewall(void)
 	system("cat /proc/net/ip_conntrack_flush 2>&1");
 	system("cat /proc/sys/net/netfilter/nf_conntrack_flush 2>&1");
 	if (nvram_matchi("arp_spoofing", 1))
-		sysprintf("echo 1 > /proc/net/arp_spoofing_enable");
+		writeproc("/proc/net/arp_spoofing_enable", "1");
 	else
-		sysprintf("echo 0 > /proc/net/arp_spoofing_enable");
+		writeproc("/proc/net/arp_spoofing_enable", "0");
 	insmod("shortcut-fe");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingres", 1);
 #ifndef	HAVE_80211AC
