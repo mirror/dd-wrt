@@ -261,6 +261,8 @@ ifeq ($(ARCHITECTURE),mvebu)
 	cp busybox/.config_bcmmodern_std busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_CPU is not set/CONFIG_FEATURE_TOP_SMP_CPU=y/g' busybox/.config
 	sed -i 's/\# CONFIG_FEATURE_TOP_SMP_PROCESS is not set/CONFIG_FEATURE_TOP_SMP_PROCESS=y/g' busybox/.config
+	echo "CONFIG_FEATURE_TOP_INTERACTIVE=y" >> busybox/.config
+	echo "CONFIG_FEATURE_POWERTOP_INTERACTIVE=y" >> busybox/.config
 endif
 ifeq ($(ARCHITECTURE),laguna)
 	cp busybox/.config_laguna busybox/.config
@@ -474,6 +476,29 @@ endif
 	echo "CONFIG_ASH_INTERNAL_GLOB=y" >> busybox/.config
 	echo "CONFIG_FEATURE_SH_MATH=y" >> busybox/.config
 	echo "# CONFIG_FEATURE_SH_MATH_64 is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_CATV is not set" >> busybox/.config
+	echo "# CONFIG_FACTOR is not set" >> busybox/.config
+	echo "# CONFIG_LINK is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_LS_WIDTH=y" >> busybox/.config
+	echo "# CONFIG_NL is not set" >> busybox/.config
+	echo "# CONFIG_NPROC is not set" >> busybox/.config
+	echo "# CONFIG_PASTE is not set" >> busybox/.config
+	echo "# CONFIG_SHRED is not set" >> busybox/.config
+	echo "# CONFIG_FALLOCATE is not set" >> busybox/.config
+	echo "# CONFIG_FSFREEZE is not set" >> busybox/.config
+	echo "# CONFIG_XXD is not set" >> busybox/.config
+	echo "# CONFIG_SETPRIV is not set" >> busybox/.config
+	echo "# CONFIG_LSSCSI is not set" >> busybox/.config
+	echo "# CONFIG_PARTPROBE is not set" >> busybox/.config
+	echo "# CONFIG_SSL_CLIENT is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_TELNET_WIDTH=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_WGET_HTTPS is not set" >> busybox/.config
+	echo "CONFIG_ASH_ECHO=y" >> busybox/.config
+	echo "CONFIG_ASH_PRINTF=y" >> busybox/.config
+	echo "CONFIG_ASH_TEST=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_TOP_INTERACTIVE is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_POWERTOP_INTERACTIVE is not set" >> busybox/.config
+
 	cd busybox && make oldconfig
 	
 	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
