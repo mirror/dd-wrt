@@ -552,7 +552,7 @@ function setChannelProperties(channels) {
 
 		// auto channel
 		if( channels[index].value == '0' ) {
-			nctrlsb.options[nctrlsb.length] = new Option( 'auto', wl_basic.ch_pos_auto );
+			nctrlsb.options[nctrlsb.length] = new Option( 'Auto', wl_basic.ch_pos_auto );
 		} else {
 			if (F.value == 40) {
 			// HT40 minus
