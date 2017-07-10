@@ -485,7 +485,7 @@ static void aqos_tables(void)
 						strcpy(proto2, protos[s_filters[count].proto - 1]);
 						strcpy(proto1, s_filters[count].name);
 						sprintf(proto3, "%d:%d", s_filters[count].portfrom, s_filters[count].portto);
-						strcpy(proto4, prio);
+						sprintf(proto4, "%d", prio);
 						break;
 					}
 					count++;
