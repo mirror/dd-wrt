@@ -417,6 +417,7 @@ struct sk_buff {
 				ipvs_property:1,
 				peeked:1,
 				nf_trace:1;
+	__u8			fast_forwarded:1;
 	kmemcheck_bitfield_end(flags1);
 	__be16			protocol;
 
