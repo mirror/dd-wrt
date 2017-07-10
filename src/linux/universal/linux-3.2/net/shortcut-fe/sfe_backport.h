@@ -154,10 +154,10 @@ static inline int sfe_propagate_dev_event(sfe_dev_event_cb_t fn, struct notifier
 #define SFE_ACCT_COUNTER(NM) (NM)
 #endif
 
-#define sfe_hash_for_each_possible(name, obj, member, key) \
-	hash_for_each_possible(name, obj, member, key)
+#define sfe_hash_for_each_possible(h, name, obj, member, key) \
+	hash_for_each_possible(h, name, obj, member, key)
 
-#define sfe_hash_for_each(name, bkt, obj, member) \
-	hash_for_each(name, bkt, obj, member)
+#define sfe_hash_for_each(h, name, bkt, obj, member) \
+	hash_for_each(h, name, bkt, obj, member)
 
 #endif

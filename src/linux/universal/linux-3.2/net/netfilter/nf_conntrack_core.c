@@ -1495,7 +1495,6 @@ static int nf_conntrack_init_init_net(void)
 	}
 	/*  - and look it like as a confirmed connection */
 	nf_ct_untracked_status_or(IPS_CONFIRMED | IPS_UNTRACKED);
-	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
 
 	return 0;
 
@@ -1564,7 +1563,7 @@ static int nf_conntrack_init_net(struct net *net)
 	ret = nf_conntrack_ecache_init(net);
 	if (ret < 0)
 		goto err_ecache;
-
+	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
 	return 0;
 
 err_ecache:
