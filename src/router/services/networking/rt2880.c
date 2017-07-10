@@ -1243,6 +1243,10 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 #endif
 		}
 	}
+	if (getRouterBrand() == ROUTER_DIR882) {
+		eval("iwpriv", "ra0", "set", "led_setting=00-00-00-00-02-00-00-02");
+		eval("iwpriv", "ba0", "set", "led_setting=00-00-00-00-02-00-00-02");
+	}
 
 }
 
