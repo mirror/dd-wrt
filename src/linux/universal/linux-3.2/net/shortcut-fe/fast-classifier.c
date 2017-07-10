@@ -464,11 +464,12 @@ fast_classifier_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 {
 	struct sfe_connection_create *p_sic;
 	struct sfe_connection *conn;
+	struct hlist_node *h;
 	u32 key;
 
 	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(h, fc_conn_ht, conn, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -501,11 +502,13 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 {
 	struct sfe_connection_create *p_sic;
 	struct sfe_connection *conn;
+	struct hlist_node *h;
+	struct hlist_node *h2;
 	u32 key;
 
 	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(h, fc_conn_ht, conn, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -526,7 +529,7 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	 */
 	key = fc_conn_hash(daddr, saddr, dport, sport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(h2, fc_conn_ht, conn, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -1327,10 +1330,10 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	acct = nf_conn_acct_find(ct);
 	if (acct) {
 		spin_lock_bh(&ct->lock);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets, sis->src_packet_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes, sis->src_byte_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets, sis->dest_packet_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes, sis->dest_byte_count);
+		atomic64_set((atomic64_t *)&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets, sis->src_packet_count);
+		atomic64_set((atomic64_t *)&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes, sis->src_byte_count);
+		atomic64_set((atomic64_t *)&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets, sis->dest_packet_count);
+		atomic64_set((atomic64_t *)&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes, sis->dest_byte_count);
 		spin_unlock_bh(&ct->lock);
 	}
 
@@ -1441,6 +1444,7 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 	size_t len = 0;
 	struct sfe_connection *conn;
 	u32 i;
+	struct hlist_node *h;
 
 	spin_lock_bh(&sfe_connections_lock);
 	len += scnprintf(buf, PAGE_SIZE - len, "size=%d offload=%d offload_no_match=%d"
@@ -1452,7 +1456,7 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 			atomic_read(&done_msgs),
 			atomic_read(&offloaded_fail_msgs),
 			atomic_read(&done_fail_msgs));
-	sfe_hash_for_each(fc_conn_ht, i, conn, hl) {
+	sfe_hash_for_each(h, fc_conn_ht, i, conn, hl) {
 		len += scnprintf(buf + len, PAGE_SIZE - len,
 				(conn->is_v4 ? "o=%d, p=%d [%pM]:%pI4:%u %pI4:%u:[%pM] m=%08x h=%d\n" : "o=%d, p=%d [%pM]:%pI6:%u %pI6:%u:[%pM] m=%08x h=%d\n"),
 				conn->offloaded,

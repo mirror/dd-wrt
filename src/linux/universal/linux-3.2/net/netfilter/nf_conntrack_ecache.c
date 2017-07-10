@@ -68,7 +68,7 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 		spin_lock_bh(&ct->lock);
 		e->missed &= ~missed;
 		spin_unlock_bh(&ct->lock);
-		} 
+		 
 	}
 	return;
 }
