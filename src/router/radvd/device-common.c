@@ -13,10 +13,10 @@
  */
 
 #include "config.h"
-#include "includes.h"
-#include "radvd.h"
 #include "defaults.h"
+#include "includes.h"
 #include "pathnames.h"
+#include "radvd.h"
 
 int check_device(int sock, struct Interface *iface)
 {
@@ -87,11 +87,7 @@ int get_v4addr(const char *ifn, unsigned int *dst)
 	return 0;
 }
 
-
-static int cmp_iface_addrs(void const *a, void const *b)
-{
-	return memcmp(a, b, sizeof(struct in6_addr));
-}
+static int cmp_iface_addrs(void const *a, void const *b) { return memcmp(a, b, sizeof(struct in6_addr)); }
 
 /*
  * Return first IPv6 link local addr in if_addr.
@@ -111,7 +107,7 @@ int get_iface_addrs(char const *name, struct in6_addr *if_addr, struct in6_addr 
 	if (getifaddrs(&addresses) != 0) {
 		flog(LOG_ERR, "getifaddrs failed on %s: %s", name, strerror(errno));
 	} else {
-		for (struct ifaddrs * ifa = addresses; ifa != NULL; ifa = ifa->ifa_next) {
+		for (struct ifaddrs *ifa = addresses; ifa != NULL; ifa = ifa->ifa_next) {
 
 			if (!ifa->ifa_addr)
 				continue;
@@ -125,11 +121,11 @@ int get_iface_addrs(char const *name, struct in6_addr *if_addr, struct in6_addr 
 			if (strcmp(ifa->ifa_name, name) != 0)
 				continue;
 
-			*if_addrs = realloc(*if_addrs, (i+1) * sizeof(struct in6_addr));
+			*if_addrs = realloc(*if_addrs, (i + 1) * sizeof(struct in6_addr));
 			(*if_addrs)[i++] = a6->sin6_addr;
 
 			/* Skip if it is not a linklocal address or link locak address already found*/
-			uint8_t const ll_prefix[] = { 0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0 };
+			uint8_t const ll_prefix[] = {0xfe, 0x80, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 			if (link_local_set || 0 != memcmp(&(a6->sin6_addr), ll_prefix, sizeof(ll_prefix)))
 				continue;
 
@@ -144,7 +140,7 @@ int get_iface_addrs(char const *name, struct in6_addr *if_addr, struct in6_addr 
 		freeifaddrs(addresses);
 
 	/* last item in the list is all zero (unspecified) address */
-	*if_addrs = realloc(*if_addrs, (i+1) * sizeof(struct in6_addr));
+	*if_addrs = realloc(*if_addrs, (i + 1) * sizeof(struct in6_addr));
 	memset(&(*if_addrs)[i], 0, sizeof(struct in6_addr));
 
 	/* Sort the addresses so the output is predictable. */
@@ -155,7 +151,6 @@ int get_iface_addrs(char const *name, struct in6_addr *if_addr, struct in6_addr 
 
 	return i;
 }
-
 
 /*
  * Saves the first link local address seen on the specified interface to iface->if_addr
@@ -175,9 +170,9 @@ int setup_iface_addrs(struct Interface *iface)
 			dlog(LOG_DEBUG, 4, "%s address: %s", iface->props.name, addr_str);
 		}
 		/* AdvRASrcAddress: allow operator selection of RA source address */
-		if(iface->AdvRASrcAddressList != NULL) {
+		if (iface->AdvRASrcAddressList != NULL) {
 			iface->props.if_addr_rasrc = NULL;
-			for (struct AdvRASrcAddress * current = iface->AdvRASrcAddressList; current; current = current->next) {
+			for (struct AdvRASrcAddress *current = iface->AdvRASrcAddressList; current; current = current->next) {
 				for (int i = 0; i < iface->props.addrs_count; i++) {
 					struct in6_addr cmp_addr = iface->props.if_addrs[i];
 					if (0 == memcmp(&cmp_addr, &current->address, sizeof(struct in6_addr))) {
@@ -187,7 +182,7 @@ int setup_iface_addrs(struct Interface *iface)
 						break;
 					}
 				}
-				if(NULL != iface->props.if_addr_rasrc)
+				if (NULL != iface->props.if_addr_rasrc)
 					break;
 			}
 		} else {
@@ -221,4 +216,3 @@ int update_device_index(struct Interface *iface)
 
 	return 0;
 }
-

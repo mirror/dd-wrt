@@ -1,10 +1,10 @@
 /*
  *
  *   Authors:
- *    Lars Fenneberg		<lf@elemental.net>	 
+ *    Lars Fenneberg		<lf@elemental.net>
  *    Reuben Hawkins		<reubenhwk@gmail.com>
  *
- *   This software is Copyright 1996,1997 by the above mentioned author(s), 
+ *   This software is Copyright 1996,1997 by the above mentioned author(s),
  *   All Rights Reserved.
  *
  *   The license which is distributed with this software in the file COPYRIGHT
@@ -18,5 +18,5 @@
 #include "radvd.h"
 
 int netlink_get_device_addr_len(struct Interface *iface);
-void process_netlink_msg(int sock, struct Interface * ifaces);
+void process_netlink_msg(int sock, struct Interface *ifaces);
 int netlink_socket(void);

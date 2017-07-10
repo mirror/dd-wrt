@@ -17,15 +17,16 @@
 #include "includes.h"
 #include "radvd.h"
 
-int recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr, struct in6_pktinfo **pkt_info, int *hoplimit, unsigned char * chdr)
+int recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr, struct in6_pktinfo **pkt_info, int *hoplimit,
+	       unsigned char *chdr)
 {
 	struct iovec iov;
 	iov.iov_len = MSG_SIZE_RECV;
-	iov.iov_base = (caddr_t) msg;
+	iov.iov_base = (caddr_t)msg;
 
 	struct msghdr mhdr;
 	memset(&mhdr, 0, sizeof(mhdr));
-	mhdr.msg_name = (caddr_t) addr;
+	mhdr.msg_name = (caddr_t)addr;
 	mhdr.msg_namelen = sizeof(*addr);
 	mhdr.msg_iov = &iov;
 	mhdr.msg_iovlen = 1;
@@ -50,8 +51,8 @@ int recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr, struct i
 		switch (cmsg->cmsg_type) {
 #ifdef IPV6_HOPLIMIT
 		case IPV6_HOPLIMIT:
-			if ((cmsg->cmsg_len == CMSG_LEN(sizeof(int))) && (*(int *)CMSG_DATA(cmsg) >= 0)
-			    && (*(int *)CMSG_DATA(cmsg) < 256)) {
+			if ((cmsg->cmsg_len == CMSG_LEN(sizeof(int))) && (*(int *)CMSG_DATA(cmsg) >= 0) &&
+			    (*(int *)CMSG_DATA(cmsg) < 256)) {
 				*hoplimit = *(int *)CMSG_DATA(cmsg);
 			} else {
 				flog(LOG_ERR, "received a bogus IPV6_HOPLIMIT from the kernel! len=%d, data=%d",
@@ -59,10 +60,10 @@ int recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr, struct i
 				return -1;
 			}
 			break;
-#endif				/* IPV6_HOPLIMIT */
+#endif /* IPV6_HOPLIMIT */
 		case IPV6_PKTINFO:
-			if ((cmsg->cmsg_len == CMSG_LEN(sizeof(struct in6_pktinfo)))
-			    && ((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_ifindex) {
+			if ((cmsg->cmsg_len == CMSG_LEN(sizeof(struct in6_pktinfo))) &&
+			    ((struct in6_pktinfo *)CMSG_DATA(cmsg))->ipi6_ifindex) {
 				*pkt_info = (struct in6_pktinfo *)CMSG_DATA(cmsg);
 			} else {
 				flog(LOG_ERR, "received a bogus IPV6_PKTINFO from the kernel! len=%d, index=%d",
@@ -73,7 +74,7 @@ int recv_rs_ra(int sock, unsigned char *msg, struct sockaddr_in6 *addr, struct i
 		}
 	}
 
-	char if_namebuf[IF_NAMESIZE] = { "" };
+	char if_namebuf[IF_NAMESIZE] = {""};
 	char *if_name = 0;
 	if (pkt_info && *pkt_info) {
 		if_name = if_indextoname((*pkt_info)->ipi6_ifindex, if_namebuf);

@@ -93,7 +93,7 @@ DNSSL (DNS Search List) definitions are of the form:
 .B };
 .fi
 
-By default radvd will send route advertisements so that every node on the link can use them.
+By default radvd will send multicast route advertisements so that every node on the link can use them.
 The list of clients (IPv6 address) to advertise to, and accept route solicitations from can be configured.
 If done, radvd does not send send messages to the multicast addresses but
 to the configured unicast addresses only.  Solicitations from other addresses are refused.
@@ -171,6 +171,19 @@ soliciting node.  This option is necessary for non-broadcast,
 multiple-access links, such as ISATAP.
 
 Default: off
+
+.TP
+.BR AdvRASolicitedUnicast " " on | off
+
+Indicates that router solicitations will be responded to with unicast
+router advertisements, as recommended by RFC7772. Large networks with a
+high concentration of mobile devices might experience like battery
+depletion, when solicited Router Advertisement messages are multicast.
+
+This corresponds to the Cisco IOS option
+.B ipv6 nd ra solicited unicast
+
+Default: on
 
 .TP
 .BR "MaxRtrAdvInterval " seconds
