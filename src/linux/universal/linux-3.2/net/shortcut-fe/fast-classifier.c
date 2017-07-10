@@ -105,7 +105,9 @@ struct fast_classifier {
 	 */
 	struct notifier_block dev_notifier;	/* Device notifier */
 	struct notifier_block inet_notifier;	/* IPv4 notifier */
+#ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
+#endif
 	u32 exceptions[FAST_CL_EXCEPTION_MAX];
 };
 
@@ -254,7 +256,10 @@ static int fast_classifier_recv(struct sk_buff *skb)
 
 		ret = sfe_ipv4_recv(dev, skb);
 
-	} else if (likely(htons(ETH_P_IPV6) == skb->protocol)) {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+
+	else if (likely(htons(ETH_P_IPV6) == skb->protocol)) {
 		struct inet6_dev *in_dev;
 
 		/*
@@ -277,7 +282,9 @@ static int fast_classifier_recv(struct sk_buff *skb)
 
 		ret = sfe_ipv6_recv(dev, skb);
 
-	} else {
+	} 
+#endif
+	else {
 		DEBUG_TRACE("not IP packet\n");
 	}
 
@@ -788,7 +795,9 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
 		}
-	} else {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else {
 		u32 dscp;
 
 		sic.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
@@ -815,7 +824,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
 		}
 	}
-
+#endif
 	switch (sic.protocol) {
 	case IPPROTO_TCP:
 		sic.src_port = orig_tuple.src.u.tcp.port;
@@ -1050,6 +1059,7 @@ fast_classifier_ipv4_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
 	return fast_classifier_post_routing(skb, true);
 }
 
+#ifdef SFE_SUPPORT_IPV6
 /*
  * fast_classifier_ipv6_post_routing_hook()
  *	Called for packets about to leave the box - either locally generated or forwarded from another interface
@@ -1058,7 +1068,7 @@ fast_classifier_ipv6_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
 {
 	return fast_classifier_post_routing(skb, false);
 }
-
+#endif
 /*
  * fast_classifier_update_mark()
  *	updates the mark for a fast-classifier connection
@@ -1123,11 +1133,15 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 		sid.src_ip.ip = (__be32)orig_tuple.src.u3.ip;
 		sid.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 		is_v4 = true;
-	} else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
 		sid.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
 		sid.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 		is_v4 = false;
-	} else {
+	} 
+#endif
+	else {
 		DEBUG_TRACE("ignoring non-IPv4 and non-IPv6 connection\n");
 		return NOTIFY_DONE;
 	}
@@ -1237,7 +1251,9 @@ static struct notifier_block fast_classifier_conntrack_notifier = {
  */
 static struct nf_hook_ops fast_classifier_ops_post_routing[] __read_mostly = {
 	SFE_IPV4_NF_POST_ROUTING_HOOK(__fast_classifier_ipv4_post_routing_hook),
+#ifdef SFE_SUPPORT_IPV6
 	SFE_IPV6_NF_POST_ROUTING_HOOK(__fast_classifier_ipv6_post_routing_hook),
+#endif
 };
 
 /*
@@ -1379,7 +1395,9 @@ static int fast_classifier_device_event(struct notifier_block *this, unsigned lo
 	case NETDEV_DOWN:
 		if (dev) {
 			sfe_ipv4_destroy_all_rules_for_dev(dev);
+#ifdef SFE_SUPPORT_IPV6
 			sfe_ipv6_destroy_all_rules_for_dev(dev);
+#endif
 		}
 		break;
 	}
@@ -1576,10 +1594,12 @@ static int fast_classifier_init(void)
 	sc->inet_notifier.priority = 1;
 	register_inetaddr_notifier(&sc->inet_notifier);
 
+#ifdef SFE_SUPPORT_IPV6
 	sc->inet6_notifier.notifier_call = fast_classifier_inet6_event;
 	sc->inet6_notifier.priority = 1;
-	register_inet6addr_notifier(&sc->inet6_notifier);
-
+	if (register_inet6addr_notifier)
+		register_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 	/*
 	 * Register our netfilter hooks.
 	 */
@@ -1643,7 +1663,9 @@ static int fast_classifier_init(void)
 	 * Hook the shortcut sync callback.
 	 */
 	sfe_ipv4_register_sync_rule_callback(fast_classifier_sync_rule);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_register_sync_rule_callback(fast_classifier_sync_rule);
+#endif
 	return 0;
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
@@ -1661,7 +1683,10 @@ exit4:
 
 exit3:
 	unregister_inetaddr_notifier(&sc->inet_notifier);
-	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#ifdef SFE_SUPPORT_IPV6
+	if (unregister_inet6addr_notifier)
+		unregister_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
 exit2:
@@ -1689,7 +1714,9 @@ static void fast_classifier_exit(void)
 	 * Unregister our sync callback.
 	 */
 	sfe_ipv4_register_sync_rule_callback(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_register_sync_rule_callback(NULL);
+#endif
 
 	/*
 	 * Unregister our receive callback.
@@ -1705,7 +1732,10 @@ static void fast_classifier_exit(void)
 	 * Destroy all connections.
 	 */
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
+#endif
+
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
 	result = genl_unregister_ops(&fast_classifier_gnl_family, fast_classifier_gnl_ops);
@@ -1725,7 +1755,10 @@ static void fast_classifier_exit(void)
 #endif
 	nf_unregister_hooks(fast_classifier_ops_post_routing, ARRAY_SIZE(fast_classifier_ops_post_routing));
 
-	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#ifdef SFE_SUPPORT_IPV6
+	if (unregister_inet6addr_notifier)
+		unregister_inet6addr_notifier(&sc->inet6_notifier);
+#endif
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 	unregister_netdevice_notifier(&sc->dev_notifier);
 

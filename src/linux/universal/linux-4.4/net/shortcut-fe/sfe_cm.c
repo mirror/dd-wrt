@@ -101,7 +101,9 @@ struct sfe_cm {
 	 */
 	struct notifier_block dev_notifier;	/* Device notifier */
 	struct notifier_block inet_notifier;	/* IPv4 notifier */
+#ifdef SFE_SUPPORT_IPV6
 	struct notifier_block inet6_notifier;	/* IPv6 notifier */
+#endif
 	u32 exceptions[SFE_CM_EXCEPTION_MAX];
 };
 
@@ -167,6 +169,7 @@ static int sfe_cm_recv(struct sk_buff *skb)
 		return sfe_ipv4_recv(dev, skb);
 	}
 
+#ifdef SFE_SUPPORT_IPV6
 	if (likely(htons(ETH_P_IPV6) == skb->protocol)) {
 		struct inet6_dev *in_dev;
 
@@ -190,7 +193,7 @@ static int sfe_cm_recv(struct sk_buff *skb)
 
 		return sfe_ipv6_recv(dev, skb);
 	}
-
+#endif
 	DEBUG_TRACE("not IP packet\n");
 	return 0;
 }
@@ -437,7 +440,9 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 			sic.src_dscp = sic.dest_dscp;
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
 		}
-	} else {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else {
 		u32 dscp;
 
 		sic.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
@@ -464,7 +469,7 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 			sic.flags |= SFE_CREATE_FLAG_REMARK_DSCP;
 		}
 	}
-
+#endif
 	switch (sic.protocol) {
 	case IPPROTO_TCP:
 		sic.src_port = orig_tuple.src.u.tcp.port;
@@ -618,10 +623,12 @@ static unsigned int sfe_cm_post_routing(struct sk_buff *skb, int is_v4)
 	sic.mark = skb->mark;
 	if (likely(is_v4)) {
 		sfe_ipv4_create_rule(&sic);
-	} else {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else {
 		sfe_ipv6_create_rule(&sic);
 	}
-
+#endif
 	/*
 	 * If we had bridge ports then release them too.
 	 */
@@ -656,11 +663,12 @@ sfe_cm_ipv4_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
  * sfe_cm_ipv6_post_routing_hook()
  *	Called for packets about to leave the box - either locally generated or forwarded from another interface
  */
+#ifdef SFE_SUPPORT_IPV6
 sfe_cm_ipv6_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
 {
 	return sfe_cm_post_routing(skb, false);
 }
-
+#endif
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 /*
  * sfe_cm_conntrack_event()
@@ -726,12 +734,16 @@ static int sfe_cm_conntrack_event(struct notifier_block *this,
 		sid.dest_ip.ip = (__be32)orig_tuple.dst.u3.ip;
 
 		sfe_ipv4_destroy_rule(&sid);
-	} else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
+	} 
+#ifdef SFE_SUPPORT_IPV6
+	else if (likely(nf_ct_l3num(ct) == AF_INET6)) {
 		sid.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
 		sid.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 
 		sfe_ipv6_destroy_rule(&sid);
-	} else {
+	}
+#endif 
+	else {
 		DEBUG_TRACE("ignoring non-IPv4 and non-IPv6 connection\n");
 	}
 
@@ -873,7 +885,9 @@ static int sfe_cm_device_event(struct notifier_block *this, unsigned long event,
 	case NETDEV_DOWN:
 		if (dev) {
 			sfe_ipv4_destroy_all_rules_for_dev(dev);
+#ifdef SFE_SUPPORT_IPV6
 			sfe_ipv6_destroy_all_rules_for_dev(dev);
+#endif
 		}
 		break;
 	}
@@ -983,7 +997,9 @@ static ssize_t sfe_cm_set_defunct_all(struct device *dev,
                                       const char *buf, size_t count)
 {
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
+#endif
 	return count;
 }
 
@@ -1037,10 +1053,13 @@ static int __init sfe_cm_init(void)
 	sc->inet_notifier.notifier_call = sfe_cm_inet_event;
 	sc->inet_notifier.priority = 1;
 	register_inetaddr_notifier(&sc->inet_notifier);
-
-	sc->inet6_notifier.notifier_call = sfe_cm_inet6_event;
-	sc->inet6_notifier.priority = 1;
-	register_inet6addr_notifier(&sc->inet6_notifier);
+#ifdef SFE_SUPPORT_IPV6
+	if (register_inet6addr_notifier) {
+		sc->inet6_notifier.notifier_call = sfe_cm_inet6_event;
+		sc->inet6_notifier.priority = 1;
+		register_inet6addr_notifier(&sc->inet6_notifier);
+	}
+#endif
 	/*
 	 * Register our netfilter hooks.
 	 */
@@ -1067,7 +1086,9 @@ static int __init sfe_cm_init(void)
 	 * Hook the shortcut sync callback.
 	 */
 	sfe_ipv4_register_sync_rule_callback(sfe_cm_sync_rule);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_register_sync_rule_callback(sfe_cm_sync_rule);
+#endif
 	fast_classifier_init();
 
 	return 0;
@@ -1077,7 +1098,11 @@ exit4:
 	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
 #endif
 exit3:
-	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#ifdef SFE_SUPPORT_IPV6
+	if (unregister_inet6addr_notifier) {
+		unregister_inet6addr_notifier(&sc->inet6_notifier);
+	}
+#endif
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 	unregister_netdevice_notifier(&sc->dev_notifier);
 exit2:
@@ -1109,8 +1134,9 @@ static void __exit sfe_cm_exit(void)
 	 * Unregister our sync callback.
 	 */
 	sfe_ipv4_register_sync_rule_callback(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_register_sync_rule_callback(NULL);
-
+#endif
 	/*
 	 * Unregister our receive callback.
 	 */
@@ -1125,15 +1151,20 @@ static void __exit sfe_cm_exit(void)
 	 * Destroy all connections.
 	 */
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
+#ifdef SFE_SUPPORT_IPV6
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
-
+#endif
 #ifdef CONFIG_NF_CONNTRACK_EVENTS
 	nf_conntrack_unregister_notifier(&init_net, &sfe_cm_conntrack_notifier);
 
 #endif
 	nf_unregister_hooks(sfe_cm_ops_post_routing, ARRAY_SIZE(sfe_cm_ops_post_routing));
 
-	unregister_inet6addr_notifier(&sc->inet6_notifier);
+#ifdef SFE_SUPPORT_IPV6
+	if (unregister_inet6addr_notifier) {
+		unregister_inet6addr_notifier(&sc->inet6_notifier);
+	}
+#endif
 	unregister_inetaddr_notifier(&sc->inet_notifier);
 	unregister_netdevice_notifier(&sc->dev_notifier);
 
