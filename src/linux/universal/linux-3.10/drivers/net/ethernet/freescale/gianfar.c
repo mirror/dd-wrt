@@ -101,7 +101,7 @@
 #include <linux/of_net.h>
 
 #include "gianfar.h"
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 #include <sysdev/fsl_soc.h>
 static int is_mpc83xx(void) {
 	unsigned version = mfspr(SPRN_PVR);
@@ -379,7 +379,7 @@ static void gfar_init_mac(struct net_device *ndev)
 		gfar_write(&regs->rir0, DEFAULT_RIR0);
 	}
 
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 	rctrl |= RCTRL_PROM;
 #endif
 	/* Restore PROMISC mode */
@@ -1034,12 +1034,14 @@ static int gfar_probe(struct platform_device *ofdev)
 	u32 rstat = 0, tstat = 0, rqueue = 0, tqueue = 0;
 	u32 isrg = 0;
 	u32 __iomem *baddr;
+#ifdef CONFIG_RB_IOMAP
 	if (is_mpc83xx()) {
 		volatile unsigned *xxx = ioremap(0xe0000000, 0x1000);
 		gfar_write(xxx + 0x110, (gfar_read(xxx + 0x110) & 0xFFFF0000) | 0x0707);
 		gfar_write(xxx + 0xa08, (gfar_read(xxx + 0xa08) & 0x0FFFFFFF) | 0x50000000);
 		gfar_write(xxx + 0x800, gfar_read(xxx + 0x800) | 0x30000);
 	}
+#endif
 
 	err = gfar_of_init(ofdev, &dev);
 
@@ -1071,7 +1073,7 @@ static int gfar_probe(struct platform_device *ofdev)
 	/* We need to delay at least 3 TX clocks */
 	udelay(2);
 
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 	if (is_mpc83xx()) {
 		gfar_write(&regs->maccfg1,
 			   MACCFG1_RX_FLOW | MACCFG1_TX_FLOW);
@@ -1118,7 +1120,7 @@ static int gfar_probe(struct platform_device *ofdev)
 			netif_napi_add(dev, &priv->gfargrp[i].napi, gfar_poll,
 				       GFAR_DEV_WEIGHT);
 
-#ifndef CONFIG_RB_PCI
+#ifndef CONFIG_RB_IOMAP
 
 	if (priv->device_flags & FSL_GIANFAR_DEV_HAS_CSUM) {
 		dev->hw_features = NETIF_F_IP_CSUM | NETIF_F_SG |
@@ -1236,7 +1238,7 @@ static int gfar_probe(struct platform_device *ofdev)
 	for (i = 0; i < priv->num_tx_queues; i++) {
 		priv->tx_queue[i]->tx_ring_size = DEFAULT_TX_RING_SIZE;
 		priv->tx_queue[i]->num_txbdfree = DEFAULT_TX_RING_SIZE;
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 		priv->tx_queue[i]->txcoalescing = is_mpc83xx() ? DEFAULT_TX_COALESCE : 0;
 #else
 		priv->tx_queue[i]->txcoalescing = DEFAULT_TX_COALESCE;
@@ -1246,7 +1248,7 @@ static int gfar_probe(struct platform_device *ofdev)
 
 	for (i = 0; i < priv->num_rx_queues; i++) {
 		priv->rx_queue[i]->rx_ring_size = DEFAULT_RX_RING_SIZE;
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 		priv->rx_queue[i]->rxcoalescing = is_mpc83xx() ? DEFAULT_RX_COALESCE : 0;
 #else
 		priv->rx_queue[i]->rxcoalescing = DEFAULT_RX_COALESCE;
@@ -1563,7 +1565,7 @@ static int init_phy(struct net_device *dev)
 
 	if (interface == PHY_INTERFACE_MODE_SGMII)
 		gfar_configure_serdes(dev);
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 	priv->phydev->drv->flags |= PHY_HAS_MAGICANEG;
 #endif
 	/* Remove any features not supported by the controller */
@@ -1877,7 +1879,7 @@ void gfar_start(struct net_device *dev)
 	u32 tempval;
 	int i = 0;
 
-#ifndef CONFIG_RB_PCI
+#ifndef CONFIG_RB_IOMAP
 	/* Enable Rx and Tx in MACCFG1 */
 	tempval = gfar_read(&regs->maccfg1);
 	tempval |= (MACCFG1_RX_EN | MACCFG1_TX_EN);
@@ -1902,7 +1904,7 @@ void gfar_start(struct net_device *dev)
 		gfar_write(&regs->imask, IMASK_DEFAULT);
 	}
 
-#ifdef CONFIG_RB_PCI
+#ifdef CONFIG_RB_IOMAP
 	if (is_mpc83xx()) {
 		// magic to prevent rx hang
 
