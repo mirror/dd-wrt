@@ -2186,7 +2186,7 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 		 */
 		if (dev->priv_flags & IFF_XMIT_DST_RELEASE)
 			skb_dst_drop(skb);
-
+	if (!skb->fast_forwarded) {
 #if defined(CONFIG_IMQ) || defined(CONFIG_IMQ_MODULE)
 		if (!list_empty(&ptype_all) &&
 					!(skb->imq_flags & IMQ_F_ENQUEUE))
@@ -2194,7 +2194,7 @@ int dev_hard_start_xmit(struct sk_buff *skb, struct net_device *dev,
 		if (!list_empty(&ptype_all))
 #endif
 			dev_queue_xmit_nit(skb, dev);
-
+	}
 		features = netif_skb_features(skb);
 
 		if (vlan_tx_tag_present(skb) &&
@@ -3249,6 +3249,8 @@ static int __netif_receive_skb(struct sk_buff *skb)
 	bool deliver_exact = false;
 	int ret = NET_RX_DROP;
 	__be16 type;
+	int (*fast_recv)(struct sk_buff *skb);
+
 
 	if (!netdev_tstamp_prequeue)
 		net_timestamp_check(skb);
@@ -3277,6 +3279,12 @@ another_round:
 		skb = vlan_untag(skb);
 		if (unlikely(!skb))
 			goto out;
+	}
+
+	fast_recv = rcu_dereference(fast_nat_recv);
+	if (fast_recv && fast_recv(skb)) {
+		ret = NET_RX_SUCCESS;
+		goto out;
 	}
 
 #ifdef CONFIG_NET_CLS_ACT
@@ -3750,6 +3758,9 @@ gro_result_t napi_gro_frags(struct napi_struct *napi)
 	return napi_frags_finish(napi, skb, __napi_gro_receive(napi, skb));
 }
 EXPORT_SYMBOL(napi_gro_frags);
+
+int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(fast_nat_recv);
 
 /*
  * net_rps_action sends any pending IPI's for rps.

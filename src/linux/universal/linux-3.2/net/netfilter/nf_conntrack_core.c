@@ -1495,6 +1495,8 @@ static int nf_conntrack_init_init_net(void)
 	}
 	/*  - and look it like as a confirmed connection */
 	nf_ct_untracked_status_or(IPS_CONFIRMED | IPS_UNTRACKED);
+	ATOMIC_INIT_NOTIFIER_HEAD(&net->ct.nf_conntrack_chain);
+
 	return 0;
 
 #ifdef CONFIG_NF_CONNTRACK_ZONES
