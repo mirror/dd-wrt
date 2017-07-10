@@ -2475,7 +2475,9 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		}
 	}
 	websWrite(wp, "<div class=\"center\">\n");
-#ifdef HAVE_MADWIFI
+#ifdef HAVE_ATH9K
+	if (count < 16 && gpfound == 0)
+#elif HAVE_MADWIFI
 	if (count < 8 && gpfound == 0 && !has_ad(prefix))
 #elif HAVE_RT2880
 	if (count < 7 && gpfound == 0)
