@@ -333,22 +333,43 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			}
 #endif
 #if defined(HAVE_DIR860) || defined(HAVE_DIR859)
+			if (brand == ROUTER_DIR882) {
+				unsigned int *uboot_magic = (unsigned int *)buf;
+				if (*uboot_magic == HOST_TO_BE32(0x27051956)) {
+					char *write_argv_buf[8];
+					write_argv_buf[0] = "mtd";
+					write_argv_buf[1] = "-f";
+					write_argv_buf[2] = "write";
+					write_argv_buf[3] = upload_fifo;
+					write_argv_buf[4] = "linux";
+					write_argv_buf[5] = NULL;
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+					    || !(fifo = fopen(upload_fifo, "w"))) {
+						if (!ret)
+							ret = errno;
+						goto err;
+					}
+					goto write_data;
+				}
+
+			} else {
+
 #define SEAMA_MAGIC		0x5EA3A417
 
-			typedef struct seama_hdr seamahdr_t;
-			struct seama_hdr {
-				unsigned int magic;	/* should always be SEAMA_MAGIC. */
-				unsigned short reserved;	/* reserved for  */
-				unsigned short metasize;	/* size of the META data */
-				unsigned int size;	/* size of the image */
-			} __attribute__((packed));
-			seamahdr_t *seama = (seamahdr_t *) buf;
+				typedef struct seama_hdr seamahdr_t;
+				struct seama_hdr {
+					unsigned int magic;	/* should always be SEAMA_MAGIC. */
+					unsigned short reserved;	/* reserved for  */
+					unsigned short metasize;	/* size of the META data */
+					unsigned int size;	/* size of the image */
+				} __attribute__((packed));
+				seamahdr_t *seama = (seamahdr_t *) buf;
 
-			if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
-				unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
-				fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
-				if (skip > count)
-					goto err;
+				if (seama->magic == HOST_TO_BE32(SEAMA_MAGIC)) {
+					unsigned int skip = HOST_TO_BE16(seama->metasize) + sizeof(seamahdr_t);
+					fprintf(stderr, "found seama header, skip seal header of %d bytes\n", skip);
+					if (skip > count)
+						goto err;
 #ifdef HAVE_DIR869
 #define signature "signature=wrgac54_dlink.2015_dir869"
 #elif HAVE_DIR859
@@ -356,28 +377,29 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 #else
 #define signature "signature=wrgac13_dlink.2013gui_dir860lb"
 #endif
-				if (memcmp(buf + sizeof(seamahdr_t), signature, sizeof(signature))) {
-					fprintf(stderr, "firmware signature must be %s\n", signature);
-					goto err;
-				}
+					if (memcmp(buf + sizeof(seamahdr_t), signature, sizeof(signature))) {
+						fprintf(stderr, "firmware signature must be %s\n", signature);
+						goto err;
+					}
 
-				count -= skip;
-				memcpy(buf, buf + skip, count);
-				char *write_argv_buf[8];
-				write_argv_buf[0] = "mtd";
-				write_argv_buf[1] = "-f";
-				write_argv_buf[2] = "write";
-				write_argv_buf[3] = upload_fifo;
-				write_argv_buf[4] = "linux";
-				write_argv_buf[5] = NULL;
-				if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
-				    || !(fifo = fopen(upload_fifo, "w"))) {
-					if (!ret)
-						ret = errno;
-					goto err;
-				}
-				goto write_data;
+					count -= skip;
+					memcpy(buf, buf + skip, count);
+					char *write_argv_buf[8];
+					write_argv_buf[0] = "mtd";
+					write_argv_buf[1] = "-f";
+					write_argv_buf[2] = "write";
+					write_argv_buf[3] = upload_fifo;
+					write_argv_buf[4] = "linux";
+					write_argv_buf[5] = NULL;
+					if (!mktemp(upload_fifo) || mkfifo(upload_fifo, S_IRWXU) < 0 || (ret = _evalpid(write_argv_buf, NULL, 0, &pid))
+					    || !(fifo = fopen(upload_fifo, "w"))) {
+						if (!ret)
+							ret = errno;
+						goto err;
+					}
+					goto write_data;
 
+				}
 			}
 #endif
 #if defined(HAVE_DIR862)
