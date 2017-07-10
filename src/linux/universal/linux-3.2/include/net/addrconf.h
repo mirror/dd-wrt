@@ -171,8 +171,8 @@ extern int ipv6_chk_acast_addr(struct net *net, struct net_device *dev,
 
 
 /* Device notifier */
-extern int register_inet6addr_notifier(struct notifier_block *nb);
-extern int unregister_inet6addr_notifier(struct notifier_block *nb);
+extern int __weak register_inet6addr_notifier(struct notifier_block *nb);
+extern int __weak unregister_inet6addr_notifier(struct notifier_block *nb);
 
 /**
  * __in6_dev_get - get inet6_dev pointer from netdevice
