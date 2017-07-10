@@ -16,6 +16,7 @@
 #include <linux/stddef.h>
 #include <linux/err.h>
 #include <linux/percpu.h>
+#include <linux/notifier.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
 #include <linux/slab.h>
@@ -31,22 +32,15 @@ static DEFINE_MUTEX(nf_ct_ecache_mutex);
  * disabled softirqs */
 void nf_ct_deliver_cached_events(struct nf_conn *ct)
 {
-	struct net *net = nf_ct_net(ct);
 	unsigned long events;
         /* Incredibly nasty duplication in order to hack second event */
-	struct nf_ct_event_notifier *notify;
-	struct nf_ct_event_notifier *notify_2;
 	struct nf_conntrack_ecache *e;
 
-	rcu_read_lock();
-	notify = rcu_dereference(net->ct.nf_conntrack_event_cb);
-	notify_2 = rcu_dereference(net->ct.nf_conntrack_event_cb_2);
-	if ( (notify == NULL) && (notify_2 == NULL) )
-		goto out_unlock;
+	struct net *net = nf_ct_net(ct);
 
 	e = nf_ct_ecache_find(ct);
 	if (e == NULL)
-		goto out_unlock;
+		return;
 
 	events = xchg(&e->cache, 0);
 
@@ -63,71 +57,32 @@ void nf_ct_deliver_cached_events(struct nf_conn *ct)
 		unsigned long missed = e->missed;
 
 		if (!((events | missed) & e->ctmask))
-			goto out_unlock;
+			return;
 
-		ret = min( notify ? notify->fcn(events | missed, &item) : 0,
-                           notify_2 ? notify_2->fcn(events | missed, &item) : 0);
-		if (unlikely(ret < 0 || missed)) {
-			spin_lock_bh(&ct->lock);
-			if (ret < 0)
-				e->missed |= events;
-			else
-				e->missed &= ~missed;
-			spin_unlock_bh(&ct->lock);
+		atomic_notifier_call_chain(&net->ct.nf_conntrack_chain,
+			events | missed,
+			&item);
+		if (likely(!missed))
+			return;
+
+		spin_lock_bh(&ct->lock);
+		e->missed &= ~missed;
+		spin_unlock_bh(&ct->lock);
 		} 
 	}
-
-out_unlock:
-	rcu_read_unlock();
+	return;
 }
 EXPORT_SYMBOL_GPL(nf_ct_deliver_cached_events);
 
-int nf_conntrack_register_notifier(struct net *net,
-				   struct nf_ct_event_notifier *new)
+int nf_conntrack_register_notifier(struct net *net, struct notifier_block *nb)
 {
-	int ret = 0;
-	struct nf_ct_event_notifier *notify;
-	struct nf_ct_event_notifier *notify_2;
-
-	mutex_lock(&nf_ct_ecache_mutex);
-	notify = rcu_dereference_protected(net->ct.nf_conntrack_event_cb,
-					   lockdep_is_held(&nf_ct_ecache_mutex));
-	notify_2 = rcu_dereference_protected(net->ct.nf_conntrack_event_cb_2,
-					   lockdep_is_held(&nf_ct_ecache_mutex));
-	if ( (notify != NULL) && (notify_2 != NULL) ) {
-		ret = -EBUSY;
-		goto out_unlock;
-	}
-        if (notify == NULL)
-	    rcu_assign_pointer(net->ct.nf_conntrack_event_cb, new);
-        else
-	    rcu_assign_pointer(net->ct.nf_conntrack_event_cb_2, new);
-	mutex_unlock(&nf_ct_ecache_mutex);
-	return ret;
-
-out_unlock:
-	mutex_unlock(&nf_ct_ecache_mutex);
-	return ret;
+	return atomic_notifier_chain_register(&net->ct.nf_conntrack_chain, nb);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_register_notifier);
 
-void nf_conntrack_unregister_notifier(struct net *net,
-				      struct nf_ct_event_notifier *new)
+int nf_conntrack_unregister_notifier(struct net *net, struct notifier_block *nb)
 {
-	struct nf_ct_event_notifier *notify;
-	struct nf_ct_event_notifier *notify_2;
-
-	mutex_lock(&nf_ct_ecache_mutex);
-	notify = rcu_dereference_protected(net->ct.nf_conntrack_event_cb,
-					   lockdep_is_held(&nf_ct_ecache_mutex));
-	notify_2 = rcu_dereference_protected(net->ct.nf_conntrack_event_cb_2,
-					   lockdep_is_held(&nf_ct_ecache_mutex));
-	BUG_ON((notify != new) || (notify_2 != new));
-        if (notify == new)
-	    RCU_INIT_POINTER(net->ct.nf_conntrack_event_cb, NULL);
-        else
-	    RCU_INIT_POINTER(net->ct.nf_conntrack_event_cb_2, NULL);
-	mutex_unlock(&nf_ct_ecache_mutex);
+	return atomic_notifier_chain_unregister(&net->ct.nf_conntrack_chain, nb);
 }
 EXPORT_SYMBOL_GPL(nf_conntrack_unregister_notifier);
 
