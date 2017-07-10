@@ -3240,6 +3240,10 @@ void netdev_rx_handler_unregister(struct net_device *dev)
 }
 EXPORT_SYMBOL_GPL(netdev_rx_handler_unregister);
 
+int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
+EXPORT_SYMBOL_GPL(fast_nat_recv);
+
+
 static int __netif_receive_skb(struct sk_buff *skb)
 {
 	struct packet_type *ptype, *pt_prev;
@@ -3759,8 +3763,6 @@ gro_result_t napi_gro_frags(struct napi_struct *napi)
 }
 EXPORT_SYMBOL(napi_gro_frags);
 
-int (*fast_nat_recv)(struct sk_buff *skb) __rcu __read_mostly;
-EXPORT_SYMBOL_GPL(fast_nat_recv);
 
 /*
  * net_rps_action sends any pending IPI's for rps.
