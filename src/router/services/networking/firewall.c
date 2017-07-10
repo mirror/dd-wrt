@@ -2761,7 +2761,11 @@ void start_firewall(void)
 		writeproc("/proc/net/arp_spoofing_enable", "1");
 	else
 		writeproc("/proc/net/arp_spoofing_enable", "0");
-	insmod("shortcut-fe");
+
+	if (!nvram_invmatchi("wshaper_enable", 0))
+		insmod("shortcut-fe");
+	else
+		rmmod("shortcut-fe");
 	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 #ifndef	HAVE_80211AC
 	/*
