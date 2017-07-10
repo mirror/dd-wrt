@@ -8,7 +8,7 @@
 # NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE 
 #
 
-interface eth0
+interface lo
 {
 	AdvSendAdvert on;
 

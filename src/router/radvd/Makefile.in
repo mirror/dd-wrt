@@ -585,6 +585,7 @@ pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
+runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -1804,7 +1805,7 @@ cov: check
 ### build support ###
 
 indent:
-	indent -linux -l125 *.c *.h
+	clang-format -i *.c *.h test/*.c test/*.h
 
 sign:
 	$(AM_V_GEN)for e in $(EXTENSIONS); do \

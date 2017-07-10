@@ -138,7 +138,7 @@ man_MANS = \
 ### build support ###
 
 indent:
-	indent -linux -l125 *.c *.h
+	clang-format -i *.c *.h test/*.c test/*.h
 
 EXTRA_DIST = \
 	CHANGES \

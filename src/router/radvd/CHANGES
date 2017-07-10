@@ -1,3 +1,12 @@
+2017/07/03	Release v2.17
+
+2017/07/01	Fix STDERR_SYSLOG log level bug.
+		Always close stdout and stderr when daemonizing.
+
+2017/03/15	Implement RFC 7772 Section 5.1.1, 5.1.2, defaulted to on. <Robin H. Johnson>
+
+2017/02/04	clang-format the code
+
 2017/02/01	Release v2.16
 
 2017/01/10	Fixed ExecReload in systemd service file <Harald Albrecht>

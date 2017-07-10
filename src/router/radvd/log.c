@@ -16,8 +16,7 @@
 #include "includes.h"
 #include "radvd.h"
 
-__attribute__ ((format(printf, 2, 0)))
-static int vlog(int prio, char const *format, va_list ap);
+__attribute__((format(printf, 2, 0))) static int vlog(int prio, char const *format, va_list ap);
 
 static int log_method = L_NONE;
 static char const *log_ident;
@@ -36,9 +35,9 @@ int log_open(int method, char const *ident, char const *log, int facility)
 	case L_STDERR:
 		break;
 	case L_STDERR_CLEAN:
-		/* fallthrough */
+	/* fallthrough */
 	case L_STDERR_SYSLOG:
-		/* fallthrough */
+	/* fallthrough */
 	case L_SYSLOG:
 		if (facility == -1)
 			log_facility = LOG_DAEMON;
@@ -67,8 +66,7 @@ int log_open(int method, char const *ident, char const *log, int facility)
 }
 
 /* note: [dfv]log() is also called from root context */
-__attribute__ ((format(printf, 2, 0)))
-static int vlog(int prio, char const *format, va_list ap)
+__attribute__((format(printf, 2, 0))) static int vlog(int prio, char const *format, va_list ap)
 {
 	char tstamp[64], buff[1024];
 	struct tm *tm;
@@ -84,7 +82,7 @@ static int vlog(int prio, char const *format, va_list ap)
 		break;
 	case L_STDERR_SYSLOG:
 		syslog(prio, "%s", buff);
-		if (prio > LOG_ERR)	/* fall through for messages with high priority */
+		if (debug_level < prio) /* fall through for messages with high priority */
 			break;
 	case L_STDERR:
 		current = time(NULL);
@@ -155,12 +153,6 @@ int log_close(void)
 	return 0;
 }
 
-void set_debuglevel(int level)
-{
-	debug_level = level;
-}
+void set_debuglevel(int level) { debug_level = level; }
 
-int get_debuglevel(void)
-{
-	return debug_level;
-}
+int get_debuglevel(void) { return debug_level; }
