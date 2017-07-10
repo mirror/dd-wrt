@@ -16,19 +16,19 @@
 
 #include "config.h"
 
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <time.h>
-#include <syslog.h>
-#include <unistd.h>
 #include <errno.h>
-#include <signal.h>
+#include <grp.h>
 #include <netdb.h>
 #include <pwd.h>
-#include <grp.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <syslog.h>
+#include <time.h>
+#include <unistd.h>
 
 #include <sys/types.h>
 #ifdef HAVE_INTTYPES_H
@@ -62,13 +62,13 @@
 #include <sys/time.h>
 #include <sys/uio.h>
 
-#include <sys/stat.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 
 #include <netinet/in.h>
 
-#include <netinet/ip6.h>
 #include <netinet/icmp6.h>
+#include <netinet/ip6.h>
 
 #include <arpa/inet.h>
 
@@ -86,9 +86,9 @@
 #include <net/if_types.h>
 #endif
 
-#if defined(HAVE_NET_IF_ARP_H) && !defined(ARPHRD_ETHER)
+#if defined(HAVE_NET_IF_ARP_H) && !defined(ARPHRD_ETHER) && !defined(HAVE_LINUX_IF_ARP_H)
 #include <net/if_arp.h>
-#endif				/* defined(HAVE_NET_IF_ARP_H) && !defined(ARPHRD_ETHER) */
+#endif /* defined(HAVE_NET_IF_ARP_H) && !defined(ARPHRD_ETHER) */
 
 #ifdef HAVE_SYS_SOCKIO_H
 #include <sys/sockio.h>
@@ -107,4 +107,3 @@
 #ifdef HAVE_LINUX_IF_ARP_H
 #include <linux/if_arp.h>
 #endif
-

@@ -20,15 +20,15 @@
 #include "test/util.c"
 #endif
 
-struct safe_buffer * new_safe_buffer(void)
+struct safe_buffer *new_safe_buffer(void)
 {
-	struct safe_buffer * sb = malloc(sizeof(struct safe_buffer));
+	struct safe_buffer *sb = malloc(sizeof(struct safe_buffer));
 	*sb = SAFE_BUFFER_INIT;
 	sb->should_free = 1;
 	return sb;
 }
 
-void safe_buffer_free(struct safe_buffer * sb)
+void safe_buffer_free(struct safe_buffer *sb)
 {
 	if (sb->buffer) {
 		free(sb->buffer);
@@ -51,15 +51,15 @@ void safe_buffer_free(struct safe_buffer * sb)
  * @param sb safe_buffer to enlarge
  * @param b Minimum capacity for the safe_buffer.
  */
-void safe_buffer_resize(struct safe_buffer * sb, size_t n)
+void safe_buffer_resize(struct safe_buffer *sb, size_t n)
 {
 	const int blocksize = 1 << 6; // MUST BE POWER OF 2.
 	if (sb->allocated < n) {
-		if(n % blocksize > 0) {
-			n |= (blocksize-1); // Set all the low bits
+		if (n % blocksize > 0) {
+			n |= (blocksize - 1); // Set all the low bits
 			n++;
 		}
-		if (n > 64*1024) {
+		if (n > 64 * 1024) {
 			flog(LOG_ERR, "Requested buffer too large for any possible IPv6 ND, even with jumbogram.  Exiting.");
 			exit(1);
 		}
@@ -68,7 +68,7 @@ void safe_buffer_resize(struct safe_buffer * sb, size_t n)
 	}
 }
 
-size_t safe_buffer_pad(struct safe_buffer * sb, size_t count)
+size_t safe_buffer_pad(struct safe_buffer *sb, size_t count)
 {
 	safe_buffer_resize(sb, sb->used + count);
 	memset(&sb->buffer[sb->used], (uint8_t)0, count);
@@ -76,10 +76,10 @@ size_t safe_buffer_pad(struct safe_buffer * sb, size_t count)
 	return count;
 }
 
-size_t safe_buffer_append(struct safe_buffer * sb, void const * v, size_t count)
+size_t safe_buffer_append(struct safe_buffer *sb, void const *v, size_t count)
 {
 	if (sb) {
-		unsigned const char * m = (unsigned const char *)v;
+		unsigned const char *m = (unsigned const char *)v;
 		safe_buffer_resize(sb, sb->used + count);
 		memcpy(&sb->buffer[sb->used], m, count);
 		sb->used += count;
@@ -93,9 +93,9 @@ size_t safe_buffer_append(struct safe_buffer * sb, void const * v, size_t count)
  *
  * @return new safe_buffer_list, with a safe_buffer on the heap.
  */
-struct safe_buffer_list * new_safe_buffer_list(void)
+struct safe_buffer_list *new_safe_buffer_list(void)
 {
-	struct safe_buffer_list * sbl = malloc(sizeof(struct safe_buffer_list));
+	struct safe_buffer_list *sbl = malloc(sizeof(struct safe_buffer_list));
 	sbl->sb = new_safe_buffer();
 	sbl->next = NULL;
 	return sbl;
@@ -110,11 +110,11 @@ struct safe_buffer_list * new_safe_buffer_list(void)
  * @param sbl safe_buffer_list.
  * @return new tail of list.
  */
-struct safe_buffer_list * safe_buffer_list_append(struct safe_buffer_list * sbl)
+struct safe_buffer_list *safe_buffer_list_append(struct safe_buffer_list *sbl)
 {
 	// Only allocate a new entry if this one has bytes in it.
-	if(sbl->sb && sbl->sb->used > 0) {
-		struct safe_buffer_list * next = new_safe_buffer_list();
+	if (sbl->sb && sbl->sb->used > 0) {
+		struct safe_buffer_list *next = new_safe_buffer_list();
 		sbl->next = next;
 		sbl = next;
 	}
@@ -127,11 +127,11 @@ struct safe_buffer_list * safe_buffer_list_append(struct safe_buffer_list * sbl)
  * @param sbl safe_buffer_list source.
  * @param sb  safe_buffer destination.
  */
-void safe_buffer_list_to_safe_buffer(struct safe_buffer_list * sbl, struct safe_buffer *sb)
+void safe_buffer_list_to_safe_buffer(struct safe_buffer_list *sbl, struct safe_buffer *sb)
 {
 	struct safe_buffer_list *cur;
-	for(cur = sbl; cur; cur = cur->next) {
-		if(cur->sb)
+	for (cur = sbl; cur; cur = cur->next) {
+		if (cur->sb)
 			safe_buffer_append(sb, cur->sb->buffer, cur->sb->used);
 	}
 }
@@ -141,23 +141,22 @@ void safe_buffer_list_to_safe_buffer(struct safe_buffer_list * sbl, struct safe_
  *
  * @param sbl safe_buffer_list to free.
  */
-void safe_buffer_list_free(struct safe_buffer_list * sbl)
+void safe_buffer_list_free(struct safe_buffer_list *sbl)
 {
-	struct safe_buffer_list * next;
+	struct safe_buffer_list *next;
 	for (struct safe_buffer_list *current = sbl; current; current = next) {
-		if(current->sb)
+		if (current->sb)
 			safe_buffer_free(current->sb);
 		next = current->next;
 		free(current);
 	}
 }
 
-__attribute__ ((format(printf, 1, 2)))
-char * strdupf(char const * format, ...)
+__attribute__((format(printf, 1, 2))) char *strdupf(char const *format, ...)
 {
 	va_list va;
 	va_start(va, format);
-	char * strp = 0;
+	char *strp = 0;
 	int rc = vasprintf(&strp, format, va);
 	if (rc == -1 || !strp) {
 		flog(LOG_ERR, "vasprintf failed: %s", strerror(errno));
@@ -168,17 +167,14 @@ char * strdupf(char const * format, ...)
 	return strp;
 }
 
-double rand_between(double lower, double upper)
-{
-	return ((upper - lower) / (RAND_MAX + 1.0) * rand() + lower);
-}
+double rand_between(double lower, double upper) { return ((upper - lower) / (RAND_MAX + 1.0) * rand() + lower); }
 
 /* This assumes that str is not null and str_size > 0 */
 void addrtostr(struct in6_addr const *addr, char *str, size_t str_size)
 {
 	const char *res;
 
-	res = inet_ntop(AF_INET6, (void const*)addr, str, str_size);
+	res = inet_ntop(AF_INET6, (void const *)addr, str, str_size);
 
 	if (res == NULL) {
 		flog(LOG_ERR, "addrtostr: inet_ntop: %s", strerror(errno));
@@ -191,10 +187,10 @@ void addrtostr(struct in6_addr const *addr, char *str, size_t str_size)
 int check_rdnss_presence(struct AdvRDNSS *rdnss, struct in6_addr *addr)
 {
 	while (rdnss) {
-		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr))
-		    || !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr))
-		    || !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
-			return 1;	/* rdnss address found in the list */
+		if (!memcmp(&rdnss->AdvRDNSSAddr1, addr, sizeof(struct in6_addr)) ||
+		    !memcmp(&rdnss->AdvRDNSSAddr2, addr, sizeof(struct in6_addr)) ||
+		    !memcmp(&rdnss->AdvRDNSSAddr3, addr, sizeof(struct in6_addr)))
+			return 1; /* rdnss address found in the list */
 		rdnss = rdnss->next;
 	}
 	return 0;
@@ -206,7 +202,7 @@ int check_dnssl_presence(struct AdvDNSSL *dnssl, const char *suffix)
 	while (dnssl) {
 		for (int i = 0; i < dnssl->AdvDNSSLNumber; ++i) {
 			if (0 == strcmp(dnssl->AdvDNSSLSuffixes[i], suffix))
-				return 1;	/* suffix found in the list */
+				return 1; /* suffix found in the list */
 		}
 		dnssl = dnssl->next;
 	}
@@ -287,5 +283,3 @@ struct in6_addr get_prefix6(struct in6_addr const *addr, struct in6_addr const *
 
 	return prefix;
 }
-
-

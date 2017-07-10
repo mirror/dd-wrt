@@ -13,9 +13,9 @@
  */
 
 #include "config.h"
+#include "defaults.h"
 #include "includes.h"
 #include "radvd.h"
-#include "defaults.h"
 
 /*
  * this function gets the hardware type and address of an interface,
@@ -49,7 +49,7 @@ int update_device_info(int sock, struct Interface *iface)
 		goto ret;
 	}
 
-	for (struct ifaddrs * ifa = addresses; ifa != NULL; ifa = ifa->ifa_next) {
+	for (struct ifaddrs *ifa = addresses; ifa != NULL; ifa = ifa->ifa_next) {
 		if (strcmp(ifa->ifa_name, iface->props.name) != 0)
 			continue;
 
@@ -101,7 +101,8 @@ int update_device_info(int sock, struct Interface *iface)
 		struct AdvPrefix *prefix = iface->AdvPrefixList;
 		while (prefix) {
 			if ((iface->sllao.if_prefix_len != -1) && (iface->sllao.if_prefix_len != prefix->PrefixLen)) {
-				flog(LOG_WARNING, "prefix length should be %d for %s", iface->sllao.if_prefix_len, iface->props.name);
+				flog(LOG_WARNING, "prefix length should be %d for %s", iface->sllao.if_prefix_len,
+				     iface->props.name);
 			}
 
 			prefix = prefix->next;
@@ -114,7 +115,7 @@ int update_device_info(int sock, struct Interface *iface)
 		return 0;
 	}
 
- ret:
+ret:
 	iface->sllao.if_maxmtu = -1;
 	iface->sllao.if_hwaddr_len = -1;
 	iface->sllao.if_prefix_len = -1;
@@ -125,10 +126,7 @@ int update_device_info(int sock, struct Interface *iface)
 	return -1;
 }
 
-int setup_allrouters_membership(int sock, struct Interface *iface)
-{
-	return 0;
-}
+int setup_allrouters_membership(int sock, struct Interface *iface) { return 0; }
 
 int set_interface_linkmtu(const char *iface, uint32_t mtu)
 {

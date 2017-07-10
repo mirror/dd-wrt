@@ -2,24 +2,23 @@
 #include "config.h"
 
 #include <check.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
 #endif
 
-
 static void usage(char const *pname);
 static void version(void);
-Suite * util_suite();
-Suite * send_suite();
+Suite *util_suite();
+Suite *send_suite();
 
 #ifdef HAVE_GETOPT_LONG
 
-/* *INDENT-OFF* */
+/* clang-format off */
 static char usage_str[] = {
 "\n"
 "  -h, --help                Print the help and quit.\n"
@@ -43,25 +42,25 @@ static struct option prog_opt[] = {
 static char usage_str[] = {
 "[-hv] [-m mode] [-s suite] [-t test]"
 };
-/* *INDENT-ON* */
+/* clang-format on */
 
 #endif
 
 struct options {
-	char * suite;
-	char * test;
+	char *suite;
+	char *test;
 	int mode;
 };
 
-static void process_command_line_args(int argc, char * argv[], struct options * options)
+static void process_command_line_args(int argc, char *argv[], struct options *options)
 {
 	char const *pname = ((pname = strrchr(argv[0], '/')) != NULL) ? pname + 1 : argv[0];
 	int c;
-	char * suite = 0;
-	char * test = 0;
+	char *suite = 0;
+	char *test = 0;
 	int mode = CK_VERBOSE;
-	
-	/* parse args */
+
+/* parse args */
 #define OPTIONS_STR "s:t:m:vh"
 #ifdef HAVE_GETOPT_LONG
 	int opt_idx;
@@ -72,22 +71,17 @@ static void process_command_line_args(int argc, char * argv[], struct options * 
 	{
 		switch (c) {
 		case 'm':
-			if (0 == strcmp(optarg, "SILENT")){
+			if (0 == strcmp(optarg, "SILENT")) {
 				mode = CK_SILENT;
-			}
-			else if (0 == strcmp(optarg, "MINIMAL")){
+			} else if (0 == strcmp(optarg, "MINIMAL")) {
 				mode = CK_MINIMAL;
-			}
-			else if (0 == strcmp(optarg, "NORMAL")){
+			} else if (0 == strcmp(optarg, "NORMAL")) {
 				mode = CK_NORMAL;
-			}
-			else if (0 == strcmp(optarg, "VERBOSE")){
+			} else if (0 == strcmp(optarg, "VERBOSE")) {
 				mode = CK_VERBOSE;
-			}
-			else if (0 == strcmp(optarg, "ENV")){
+			} else if (0 == strcmp(optarg, "ENV")) {
 				mode = CK_ENV;
-			}
-			else {
+			} else {
 				fprintf(stderr, "%s: mode, \"%s\", unknown.\n", pname, optarg);
 				exit(1);
 			}
@@ -124,15 +118,14 @@ static void process_command_line_args(int argc, char * argv[], struct options * 
 	}
 }
 
-
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
 	srand((unsigned int)time(NULL));
 
 	struct options options = {0, 0, 0};
 	process_command_line_args(argc, argv, &options);
 
-	SRunner * sr = srunner_create(util_suite());
+	SRunner *sr = srunner_create(util_suite());
 	srunner_add_suite(sr, send_suite());
 	srunner_run(sr, options.suite, options.test, options.mode);
 	int number_failed = srunner_ntests_failed(sr);
@@ -152,4 +145,3 @@ static void version(void)
 	fprintf(stderr, "Version: %s\n\n", VERSION);
 	exit(0);
 }
-

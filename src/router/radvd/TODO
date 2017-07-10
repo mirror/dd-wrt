@@ -58,3 +58,20 @@ Known problems (probably can't do anything about these):
    Ethernet frames with the old MAC until interface is flapped.
    More: http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=508466
 
+AdvRASolicitedUnicast: Further improvement is possible.
+- If we get a RS and are about to send a multicast RA, then we can further save
+  battery on the client device by NOT sending a unicast response, and just
+  letting the client wait for the multicast response. This should be
+  implemented as a new time value, specifying the maximum amount of time
+  remaining to as a deciding factor between send-solicited-RA-now vs
+  wait-for-next-multicast.
+- The above can also form part of rate-limiting of unicast RA responses when
+  network topology has recently changed.
+
+The following parts of RFC7222 are not yet implemented:
+- Section 5.1.3: Networks that serve battery-powered devices SHOULD NOT send
+  multicast RAs too frequently (see Section 4) unless the information in the RA
+  packet has substantially changed.  If there is a desire to ensure that hosts
+  pick up configuration changes quickly, those networks MAY send frequent
+  Router Advertisements for a limited period of time (e.g., not more than one
+  minute) immediately after a configuration change.
