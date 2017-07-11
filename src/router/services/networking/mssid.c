@@ -35,6 +35,7 @@
 #include <linux/sockios.h>
 #include <wlutils.h>
 #include <services.h>
+#include <utils.h>
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
