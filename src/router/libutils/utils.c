@@ -5893,7 +5893,7 @@ int led_control(int type, int act)
 		break;
 	case ROUTER_DIR882:
 		connected_gpio = 0x103;
-		disconnected_gpio = 0x102;
+		disconnected_gpio = 0x104;
 		diag_gpio = 0x108;
 		power_gpio = 0x110;
 		usb_gpio = 0x10c;
