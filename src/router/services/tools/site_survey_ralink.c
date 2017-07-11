@@ -225,7 +225,7 @@ static int open_site_survey(void)
 {
 	FILE *fp;
 
-	bzero(site_survey_lists, sizeof(site_survey_lists));
+	bzero(site_survey_lists, sizeof(site_survey_lists) * SITE_SURVEY_NUM);
 
 	if ((fp = fopen(SITE_SURVEY_DB, "r"))) {
 		fread(&site_survey_lists[0], sizeof(struct site_survey_list) * SITE_SURVEY_NUM, 1, fp);
