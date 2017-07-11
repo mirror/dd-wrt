@@ -44,8 +44,8 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("share.vdslbng"); %></div>
-			<input class="spaceradio" type="radio" name="dtag_vlan8" value="1" <% nvc("dtag_bng","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="dtag_vlan8" value="0" <% nvc("dtag_bng","0"); %> /><% tran("share.disable"); %> 
+			<input class="spaceradio" type="radio" name="dtag_bng" value="1" <% nvc("dtag_bng","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="dtag_bng" value="0" <% nvc("dtag_bng","0"); %> /><% tran("share.disable"); %> 
 		</div>
 	</div>
 	<div class="setting">
