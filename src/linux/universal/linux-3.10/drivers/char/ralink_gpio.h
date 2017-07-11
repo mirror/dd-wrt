@@ -494,7 +494,7 @@
 // if you would like to enable GPIO mode for other pins, please modify this value
 // !! Warning: changing this value may make other features(MDIO, PCI, etc) lose efficacy
 #if defined (CONFIG_RALINK_MT7621) || defined (CONFIG_SOC_MT7621_OPENWRT)
-#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UART2 | RALINK_GPIOMODE_UART3 | RALINK_GPIOMODE_WDT) 
+#define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_UART2 | RALINK_GPIOMODE_UART3 | RALINK_GPIOMODE_WDT | RALINK_GPIOMODE_I2C | RALINK_GPIOMODE_JTAG) 
 #elif defined (CONFIG_RALINK_MT7620) || defined (CONFIG_SOC_MT7620_OPENWRT)
 #define RALINK_GPIOMODE_DFT		(RALINK_GPIOMODE_I2C) | (RALINK_GPIOMODE_UARTF)
 #elif defined (CONFIG_RALINK_MT7628)
