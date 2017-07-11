@@ -1031,6 +1031,7 @@ void start_wshaper(void)
 		return 0;
 	} else
 		rmmod("shortcut-fe");
+	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 
 	if (!strcmp(wshaper_dev, "WAN")
 	    && (nvram_match("wan_proto", "disabled")
