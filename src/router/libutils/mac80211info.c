@@ -756,20 +756,6 @@ nla_put_failure:
 	return capstring;
 }
 
-int has_5ghz(char *prefix)
-{
-	int devnum;
-	sscanf(prefix, "ath%d", &devnum);
-	if (has_ad(prefix))
-		return 0;
-#ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 5);
-#endif
-
-	return has_athmask(devnum, 0x1);
-}
-
 #ifdef HAVE_MVEBU
 static int is_wrt3200()
 {
@@ -786,23 +772,6 @@ static int is_wrt3200()
 	return 0;
 }
 #endif
-
-int has_2ghz(char *prefix)
-{
-	int devnum;
-	sscanf(prefix, "ath%d", &devnum);
-#ifdef HAVE_MVEBU
-//      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
-	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
-		return 0;
-#endif
-#ifdef HAVE_ATH9K
-	if (is_ath9k(prefix))
-		return mac80211_check_band(prefix, 2);
-#endif
-
-	return has_athmask(devnum, 0x8);
-}
 
 #ifdef HAVE_ATH10K
 
