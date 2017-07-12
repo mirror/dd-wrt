@@ -63,6 +63,42 @@ int ieee80211_mhz2ieee(int freq)
 	return (freq - 5000) / 5;
 }
 
+#ifdef HAVE_MADWIFI
+int has_2ghz(char *prefix)
+{
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum);
+#ifdef HAVE_MVEBU
+//      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
+	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
+		return 0;
+#endif
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return mac80211_check_band(prefix, 2);
+#endif
+
+	return has_athmask(devnum, 0x8);
+}
+
+
+int has_5ghz(char *prefix)
+{
+	int devnum;
+	sscanf(prefix, "ath%d", &devnum);
+	if (has_ad(prefix))
+		return 0;
+#ifdef HAVE_ATH9K
+	if (is_ath9k(prefix))
+		return mac80211_check_band(prefix, 5);
+#endif
+
+	return has_athmask(devnum, 0x1);
+}
+
+#endif
+
+
 #ifndef HAVE_MADWIFI
 
 unsigned int ieee80211_ieee2mhz(unsigned int chan)
