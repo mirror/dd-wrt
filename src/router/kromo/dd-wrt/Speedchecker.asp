@@ -51,13 +51,9 @@ function speedchecker_enable_onClick(value) {
 function speedchecker_toggle_desc(value) {
   var val = <% nvg("speedchecker_enable"); %>;
   var scope = document.getElementById('scdesc');
-  var RID = '<% nvg("speedchecker_uuid"); %>';
-  var secret = '<% nvg("speedchecker_uuid2"); %>';
-  var server = '<% nvg("lan_ipaddr"); %>';
-  var port = '<% nvg("http_lanport"); %>';
 	
  if (val==1) {
-       	scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/speedtest.html?RID=' + RID +  '&secret=' + secret + '&server=' + server  + ':' + port + '"></iframe>';
+       	scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="/speedtest.asp"></iframe>';
 	    } else {
                 scope.innerHTML = '<iframe width="99%" height="200" frameborder="0" scrolling="no" src="https://speedchecker.dd-wrt.com/header.html"></iframe>';
 		}
