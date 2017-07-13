@@ -62,6 +62,22 @@ int ieee80211_mhz2ieee(int freq)
 
 	return (freq - 5000) / 5;
 }
+#ifdef HAVE_MVEBU
+int is_wrt3200()
+{
+	FILE *fp = fopen("/proc/device-tree/model", "r");
+	if (fp) {
+		char modelstr[32];
+		fread(modelstr, 1, 31, fp);
+		if (strstr(modelstr, "WRT3200ACM")) {
+			fclose(fp);
+			return 1;
+		}
+		fclose(fp);
+	}
+	return 0;
+}
+#endif
 
 #ifdef HAVE_MADWIFI
 int has_2ghz(char *prefix)
@@ -69,7 +85,6 @@ int has_2ghz(char *prefix)
 	int devnum;
 	sscanf(prefix, "ath%d", &devnum);
 #ifdef HAVE_MVEBU
-//      fprintf(stderr, "is mvebu %d\n",is_mvebu(prefix));
 	if (is_wrt3200() && is_mvebu(prefix) && !strncmp(prefix, "ath0", 4))
 		return 0;
 #endif

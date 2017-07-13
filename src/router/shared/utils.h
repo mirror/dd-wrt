@@ -1162,7 +1162,7 @@ void getPortMapping(int *vlanmap);
 
 u_int64_t freediskSpace(char *path);
 
-char *getIsoName(const char *country);
+const char *getIsoName(const char *country);
 int has_gateway(void);		// return 1 if nat/gateway mode is enabled for wan
 #if defined(HAVE_RT2880) || defined(HAVE_RT61)
 char *getRADev(char *prefix);

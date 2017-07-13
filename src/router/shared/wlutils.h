@@ -112,6 +112,7 @@ extern int has_qtn(char *prefix);
 
 extern int has_athmask(int devnum, int mask);
 extern int has_2ghz(char *prefix);
+extern int is_wrt3200(void);
 extern int has_5ghz(char *prefix);
 extern int has_ht40(char *prefix);
 #ifdef HAVE_80211AC
@@ -171,7 +172,7 @@ extern unsigned int get_ath10kack(char *ifname);
 extern unsigned int get_ath10kdistance(char *ifname);
 #endif
 extern int mac80211_check_band(char *interface, int checkband);
-struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband);
+struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband);
 #define AUTO_FORCEHT40 1
 #define AUTO_FORCEVHT80 2
 #define AUTO_FORCEVHT160 4
@@ -270,7 +271,7 @@ int isAssociated(char *ifname);
 
 unsigned int getRegDomain(const char *country);
 unsigned int getCountry(const char *country);
-char *getCountryByIso(const char *iso);
+const char *getCountryByIso(const char *iso);
 char *getCountryList(void);
 
 #endif

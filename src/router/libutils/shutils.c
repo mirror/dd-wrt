@@ -151,7 +151,7 @@ int sysprintf(const char *fmt, ...)
 
 int eval_va(const char *cmd, ...)
 {
-	char *s_args[128];
+	const char *s_args[128];
 	va_list args;
 	va_start(args, (char *)cmd);
 	char *next;
@@ -169,7 +169,7 @@ int eval_va(const char *cmd, ...)
 
 int eval_va_silence(const char *cmd, ...)
 {
-	char *s_args[128];
+	const char *s_args[128];
 	va_list args;
 	va_start(args, (char *)cmd);
 	char *next;
@@ -186,7 +186,7 @@ int eval_va_silence(const char *cmd, ...)
 }
 
 // FILE *debugfp=NULL;
-int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
+int _evalpid(char * const argv[], char *path, int timeout, int *ppid)
 {
 	pid_t pid;
 	int status;
