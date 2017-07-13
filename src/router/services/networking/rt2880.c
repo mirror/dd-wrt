@@ -971,7 +971,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	} else if (nvram_nmatch("160", "wl%d_nbw", idx)) {
 		fprintf(fp, "HT_BW=1\n");
 		fprintf(fp, "VHT_BW=2\n");
-	} else if (nvram_nmatch("8080", "wl%d_nbw", idx)) {
+	} else if (nvram_nmatch("80+80", "wl%d_nbw", idx)) {
 		fprintf(fp, "HT_BW=1\n");
 		fprintf(fp, "VHT_BW=3\n");
 	}
