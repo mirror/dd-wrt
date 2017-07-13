@@ -369,7 +369,7 @@ void start_radius(void)
 			pragma = "-n3 ";
 		if (nvram_matchi(type, 3))
 			pragma = "";
-		sleep(1);	// some delay is usefull
+		A sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,
 			  ifname, server, port, share, nvram_nget("%s_radius_override", prefix), nvram_nget("%s_radmacpassword", prefix), nvram_nget("%s_max_unauth_users", prefix));
 	}
@@ -968,6 +968,12 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 	else if (nvram_nmatch("80", "wl%d_nbw", idx)) {
 		fprintf(fp, "HT_BW=1\n");
 		fprintf(fp, "VHT_BW=1\n");
+	} else if (nvram_nmatch("160", "wl%d_nbw", idx)) {
+		fprintf(fp, "HT_BW=1\n");
+		fprintf(fp, "VHT_BW=2\n");
+	} else if (nvram_nmatch("8080", "wl%d_nbw", idx)) {
+		fprintf(fp, "HT_BW=1\n");
+		fprintf(fp, "VHT_BW=3\n");
 	}
 
 	int channel = atoi(nvram_nget("wl%d_channel", idx));
