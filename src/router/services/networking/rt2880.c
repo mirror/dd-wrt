@@ -976,6 +976,8 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		fprintf(fp, "VHT_BW=3\n");
 	}
 
+//VHT_Sec80_Channel for 80+80
+
 	int channel = atoi(nvram_nget("wl%d_channel", idx));
 
 	int ext_chan = 0;
