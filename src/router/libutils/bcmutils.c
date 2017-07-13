@@ -1,4 +1,5 @@
 // #define CDEBUG 
+#include <sys/sysinfo.h>
 
 #include <stdio.h>
 #include <stdlib.h>

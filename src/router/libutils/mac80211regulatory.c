@@ -38,6 +38,7 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include "mac80211regulatory.h"
 
@@ -106,7 +107,7 @@ struct ieee80211_regdomain *country2rd(__u8 *db, int dblen, struct regdb_file_re
 	return rd;
 }
 
-struct ieee80211_regdomain *mac80211_get_regdomain(char *varcountry)
+struct ieee80211_regdomain *mac80211_get_regdomain(const char *varcountry)
 {
 	int fd = -1;
 	struct stat stat;

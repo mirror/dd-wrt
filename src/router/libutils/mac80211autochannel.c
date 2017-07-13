@@ -416,7 +416,7 @@ struct mac80211_ac *mac80211autochannel(char *interface, char *freq_range, int s
 	else if (htflags & AUTO_FORCEHT40)
 		bw = 40;
 
-	char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
+	const char *country = getIsoName(nvram_default_get("ath0_regdomain", "UNITED_STATES"));
 	if (!country)
 		country = "DE";
 

@@ -911,7 +911,7 @@ unsigned int getCountry(const char *country)
 	return 0;
 }
 
-char *getIsoName(const char *country)
+const char *getIsoName(const char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
@@ -921,7 +921,7 @@ char *getIsoName(const char *country)
 	return 0;
 }
 
-char *getCountryByIso(const char *country)
+const char *getCountryByIso(const char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
