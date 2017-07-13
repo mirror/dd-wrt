@@ -891,7 +891,7 @@ static char regionCountryCodes[10][31][3] = {
 	{"_D", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", "", ""}
 };
 #endif
-unsigned int getRegDomain(const char *country)
+unsigned int getRegDomain(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
@@ -901,7 +901,7 @@ unsigned int getRegDomain(const char *country)
 	return 0;
 }
 
-unsigned int getCountry(const char *country)
+unsigned int getCountry(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
@@ -911,7 +911,7 @@ unsigned int getCountry(const char *country)
 	return 0;
 }
 
-const char *getIsoName(const char *country)
+const char *getIsoName(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
@@ -921,7 +921,7 @@ const char *getIsoName(const char *country)
 	return 0;
 }
 
-const char *getCountryByIso(const char *country)
+const char *getCountryByIso(char *country)
 {
 	int i;
 	for (i = 0; i < N(allCountries); i++) {
@@ -968,7 +968,7 @@ char *getCountryList(void)
 	int i;
 #ifdef HAVE_BUFFALO
 	char country[80];
-	char *region = getUEnv("region");
+	char *region = getUEnv("region");	
 	if (!region) {
 		region = "_D";
 	}

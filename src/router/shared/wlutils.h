@@ -269,9 +269,9 @@ int get_radiostate(char *ifname);
 
 int isAssociated(char *ifname);
 
-unsigned int getRegDomain(const char *country);
-unsigned int getCountry(const char *country);
-const char *getCountryByIso(const char *iso);
+unsigned int getRegDomain(char *country);
+unsigned int getCountry(char *country);
+const char *getCountryByIso(char *iso);
 char *getCountryList(void);
 
 #endif
