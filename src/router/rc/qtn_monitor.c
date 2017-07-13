@@ -66,7 +66,7 @@ void rpc_parse_nvram_from_httpd(void)
 	else
 		rpc_qcsapi_set_vht("0");
 
-	char *country = getIsoName(nvram_safe_get("wl_regdomain"));
+	const char *country = getIsoName(nvram_safe_get("wl_regdomain"));
 	char lower[32];
 	int i;
 	for (i = 0; i < strlen(country); i++)

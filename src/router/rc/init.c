@@ -20,10 +20,12 @@
 
 #include <shutils.h>
 #include <utils.h>
-#include <bcmnvram.h>
+#include <wlutils.h>
 #include "rc.h"
 #include <cyutils.h>
 #include <revision.h>
+#include <bcmnvram.h>
+
 
 #define loop_forever() do { sleep(1); } while (1)
 #define SHELL "/bin/login"
@@ -450,6 +452,8 @@ static void set_tcp_params(void)
 	}
 
 }
+
+
 
 /* 
  * Main loop 
