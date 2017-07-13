@@ -3251,9 +3251,19 @@ if (nvram_match(wl_mode, "ap") || nvram_match(wl_mode, "wdsap")
 //                        nvram_nmatch("0", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "<option value=\"40\" %s><script type=\"text/javascript\">Capture(share.ht40);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
-		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))
+		if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
 			websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n", nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
+			if (has_vht160(prefix)) {
+				websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
+					  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+
+			}
+			if (has_vht80plus80(prefix)) {
+				websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+					  nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
+			}
+		}
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
 		if (nvram_nmatch("40", "%s_nbw", prefix)) {
@@ -3696,18 +3706,17 @@ if (!strcmp(prefix, "wl2"))
 			websWrite(wp, "<option value=\"20\" %s>20 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("20", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "<option value=\"40\" %s>40 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n", nvram_nmatch("40", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 			if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
-				websWrite(wp, "<option value=\"80\" %s>80 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+				websWrite(wp, "<option value=\"80\" %s><script type=\"text/javascript\">Capture(share.vht80);</script></option>\n",
 					  nvram_nmatch("80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
-			}
-			char *dev = getWifiDeviceName(wl);
-			if (dev && !strcmp(dev, "MT7615 802.11ac")) {
-
-				if (has_ac(prefix) && has_5ghz(prefix) && nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-				    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)) {
-					websWrite(wp, "<option value=\"160\" %s>160 <script type=\"text/javascript\">Capture(wl_basic.mhz);</script></option>\n",
+				if (has_vht160(prefix)) {
+					websWrite(wp, "<option value=\"160\" %s><script type=\"text/javascript\">Capture(share.vht160);</script></option>\n",
 						  nvram_nmatch("160", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 
+				}
+				if (has_vht80plus80(prefix)) {
+					websWrite(wp, "<option value=\"80+80\" %s><script type=\"text/javascript\">Capture(share.vht80plus80);</script></option>\n",
+						  nvram_nmatch("80+80", "%s_nbw", prefix) ? "selected=\\\"selected\\\"" : "");
 				}
 			}
 			websWrite(wp, "</select>\n");

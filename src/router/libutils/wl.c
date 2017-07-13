@@ -62,6 +62,7 @@ int ieee80211_mhz2ieee(int freq)
 
 	return (freq - 5000) / 5;
 }
+
 #ifdef HAVE_MVEBU
 int is_wrt3200()
 {
@@ -96,7 +97,6 @@ int has_2ghz(char *prefix)
 	return has_athmask(devnum, 0x8);
 }
 
-
 int has_5ghz(char *prefix)
 {
 	int devnum;
@@ -113,6 +113,25 @@ int has_5ghz(char *prefix)
 
 #endif
 
+#ifndef HAVE_ATH9K
+int has_vht160(char *prefix)
+{
+	char *dev = getWifiDeviceName(prefix);
+	if (dev && !strcmp(dev, "MT7615 802.11ac"))
+		return 1;
+
+	return 0;
+}
+
+int has_vht80plus80(char *prefix)
+{
+//                      char *dev = getWifiDeviceName(prefix);
+//                      if (dev && !strcmp(dev, "MT7615 802.11ac"))
+//                          return 1;
+
+	return 0;
+}
+#endif
 
 #ifndef HAVE_MADWIFI
 
