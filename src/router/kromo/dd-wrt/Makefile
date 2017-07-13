@@ -821,6 +821,8 @@ endif
 
 ifneq ($(CONFIG_SPEEDCHECKER),y)
 	rm -f $(INSTALLDIR)/www/Speedchecker.asp
+	rm -f $(INSTALLDIR)/www/speedtest.asp
+	rm -f $(INSTALLDIR)/www/wifiSpeedchecker.asp
 endif
 
 ifeq ($(CONFIG_SPEEDCHECKER),y)
