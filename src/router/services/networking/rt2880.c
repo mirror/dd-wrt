@@ -369,7 +369,7 @@ void start_radius(void)
 			pragma = "-n3 ";
 		if (nvram_matchi(type, 3))
 			pragma = "";
-		A sleep(1);	// some delay is usefull
+		sleep(1);	// some delay is usefull
 		sysprintf("wrt-radauth %s %s %s %s %s %s %s %s &", pragma,
 			  ifname, server, port, share, nvram_nget("%s_radius_override", prefix), nvram_nget("%s_radmacpassword", prefix), nvram_nget("%s_max_unauth_users", prefix));
 	}
