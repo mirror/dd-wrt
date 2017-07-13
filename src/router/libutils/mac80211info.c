@@ -756,23 +756,6 @@ nla_put_failure:
 	return capstring;
 }
 
-#ifdef HAVE_MVEBU
-static int is_wrt3200()
-{
-	FILE *fp = fopen("/proc/device-tree/model", "r");
-	if (fp) {
-		char modelstr[32];
-		fread(modelstr, 1, 31, fp);
-		if (strstr(modelstr, "WRT3200ACM")) {
-			fclose(fp);
-			return 1;
-		}
-		fclose(fp);
-	}
-	return 0;
-}
-#endif
-
 #ifdef HAVE_ATH10K
 
 char *mac80211_get_vhtcaps(char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
@@ -1158,7 +1141,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1},
 };
 
-struct wifi_channels *mac80211_get_channels(char *interface, char *country, int max_bandwidth_khz, unsigned char checkband)
+struct wifi_channels *mac80211_get_channels(char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];

@@ -7116,7 +7116,7 @@ int insmod(char *module)
 	int ret = 0;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-		ret |= _evalpid((char *[]) {
+		ret |= _evalpid((char * const[]) {
 				"insmod", word, NULL}, ">/dev/null", 0, NULL);
 	}
 	return ret;
@@ -7128,7 +7128,7 @@ void rmmod(char *module)
 	char *next, *wordlist;
 	wordlist = module;
 	foreach(word, wordlist, next) {
-		_evalpid((char *[]) {
+		_evalpid((char *const[]) {
 			 "rmmod", word, NULL}, ">/dev/null", 0, NULL);
 	}
 }
