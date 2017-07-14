@@ -1,4 +1,4 @@
-A/* Connection state tracking for netfilter.  This is separated from,
+/* Connection state tracking for netfilter.  This is separated from,
    but required by, the NAT layer; it can also be used by an iptables
    extension. */
 
