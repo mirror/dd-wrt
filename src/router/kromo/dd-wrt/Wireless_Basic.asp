@@ -288,6 +288,12 @@ function submitcheck(F) {
 	else if(F.wl0_nbw.value == 80) { // 80MHz
 		F.wl0_nbw.value = 80;
 	}
+	else if(F.wl0_nbw.value == 160) { // 160MHz
+		F.wl0_nbw.value = 160;
+	}
+	else if(F.wl0_nbw.value == "80+80") { // 80+80 MHz
+		F.wl0_nbw.value = "80+80";
+	}
 	else { // 40MHz
 		F.wl0_nbw.value = 40;
 	}
@@ -312,6 +318,12 @@ function submitcheck(F) {
 	else if(F.wl1_nbw.value == 80) { // 80MHz
 		F.wl1_nbw.value = 80;
 	}
+	else if(F.wl1_nbw.value == 160) { // 160MHz
+		F.wl1_nbw.value = 160;
+	}
+	else if(F.wl1_nbw.value == "80+80") { // 80+80 MHz
+		F.wl1_nbw.value = "80+80";
+	}
 	else { // 40MHz
 		F.wl1_nbw.value = 40;
 	}
@@ -335,6 +347,12 @@ function submitcheck(F) {
 	}
 	else if(F.wl2_nbw.value == 80) { // 80MHz
 		F.wl2_nbw.value = 80;
+	}
+	else if(F.wl2_nbw.value == 160) { // 160MHz
+		F.wl2_nbw.value = 160;
+	}
+	else if(F.wl2_nbw.value == "80+80") { // 80+80 MHz
+		F.wl2_nbw.value = "80+80";
 	}
 	else { // 40MHz
 		F.wl2_nbw.value = 40;
