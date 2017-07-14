@@ -49,6 +49,7 @@
 #include <net/netfilter/nf_conntrack_zones.h>
 #include <net/netfilter/nf_conntrack_timestamp.h>
 #include <net/netfilter/nf_conntrack_timeout.h>
+#include <net/netfilter/nf_conntrack_dscpremark_ext.h>
 #include <net/netfilter/nf_conntrack_labels.h>
 #include <net/netfilter/nf_conntrack_synproxy.h>
 #include <net/netfilter/nf_nat.h>
@@ -1174,6 +1175,7 @@ init_conntrack(struct net *net, struct nf_conn *tmpl,
 	nf_ct_acct_ext_add(ct, GFP_ATOMIC);
 	nf_ct_tstamp_ext_add(ct, GFP_ATOMIC);
 	nf_ct_labels_ext_add(ct);
+	nf_ct_dscpremark_ext_add(ct, GFP_ATOMIC);
 
 	ecache = tmpl ? nf_ct_ecache_find(tmpl) : NULL;
 	nf_ct_ecache_ext_add(ct, ecache ? ecache->ctmask : 0,
@@ -1660,6 +1662,7 @@ void nf_conntrack_cleanup_end(void)
 	nf_conntrack_proto_fini();
 	nf_conntrack_seqadj_fini();
 	nf_conntrack_labels_fini();
+	nf_conntrack_dscpremark_ext_fini();
 	nf_conntrack_helper_fini();
 	nf_conntrack_timeout_fini();
 	nf_conntrack_ecache_fini();
@@ -1885,6 +1888,10 @@ int nf_conntrack_init_start(void)
 	       NF_CONNTRACK_VERSION, nf_conntrack_htable_size,
 	       nf_conntrack_max);
 
+	ret = nf_conntrack_dscpremark_ext_init();
+	if (ret < 0)
+		goto err_dscpremark_ext;
+
 	ret = nf_conntrack_expect_init();
 	if (ret < 0)
 		goto err_expect;
@@ -1952,6 +1959,8 @@ err_tstamp:
 err_acct:
 	nf_conntrack_expect_fini();
 err_expect:
+	nf_conntrack_dscpremark_ext_fini();
+err_dscpremark_ext:
 	kmem_cache_destroy(nf_conntrack_cachep);
 err_cachep:
 	nf_ct_free_hashtable(nf_conntrack_hash, nf_conntrack_htable_size);
