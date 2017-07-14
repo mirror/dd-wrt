@@ -1,4 +1,4 @@
-/* Connection state tracking for netfilter.  This is separated from,
+A/* Connection state tracking for netfilter.  This is separated from,
    but required by, the NAT layer; it can also be used by an iptables
    extension. */
 
@@ -44,6 +44,7 @@
 #include <net/netfilter/nf_conntrack_ecache.h>
 #include <net/netfilter/nf_conntrack_zones.h>
 #include <net/netfilter/nf_conntrack_timestamp.h>
+#include <net/netfilter/nf_conntrack_dscpremark_ext.h>
 #include <net/netfilter/nf_nat.h>
 #include <net/netfilter/nf_nat_core.h>
 
@@ -780,6 +781,7 @@ init_conntrack(struct net *net, struct nf_conn *tmpl,
 
 	nf_ct_acct_ext_add(ct, GFP_ATOMIC);
 	nf_ct_tstamp_ext_add(ct, GFP_ATOMIC);
+	nf_ct_dscpremark_ext_add(ct, GFP_ATOMIC);
 
 	ecache = tmpl ? nf_ct_ecache_find(tmpl) : NULL;
 	nf_ct_ecache_ext_add(ct, ecache ? ecache->ctmask : 0,
@@ -1312,6 +1314,7 @@ static void nf_conntrack_cleanup_init_net(void)
 
 	nf_conntrack_helper_fini();
 	nf_conntrack_proto_fini();
+	nf_conntrack_dscpremark_ext_fini();
 #ifdef CONFIG_NF_CONNTRACK_ZONES
 	nf_ct_extend_unregister(&nf_ct_zone_extend);
 #endif
@@ -1551,6 +1554,9 @@ static int nf_conntrack_init_net(struct net *net)
 		printk(KERN_ERR "Unable to create nf_conntrack_hash\n");
 		goto err_hash;
 	}
+	ret = nf_conntrack_dscpremark_ext_init();
+	if (ret < 0)
+		goto err_dscpremark_ext;
 	ret = nf_conntrack_expect_init(net);
 	if (ret < 0)
 		goto err_expect;
@@ -1581,6 +1587,8 @@ err_cache:
 err_slabname:
 	free_percpu(net->ct.stat);
 err_stat:
+	nf_conntrack_dscpremark_ext_fini();
+err_dscpremark_ext:
 	return ret;
 }
 

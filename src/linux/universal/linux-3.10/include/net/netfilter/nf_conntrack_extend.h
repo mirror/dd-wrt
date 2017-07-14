@@ -29,6 +29,9 @@ enum nf_ct_ext_id {
 #if IS_ENABLED(CONFIG_NF_CONNTRACK_RTCACHE)
 	NF_CT_EXT_RTCACHE,
 #endif
+#ifdef CONFIG_NF_CONNTRACK_DSCPREMARK_EXT
+	NF_CT_EXT_DSCPREMARK,
+#endif
 	NF_CT_EXT_CUSTOM,
 	NF_CT_EXT_NUM=NF_CT_EXT_CUSTOM+CONFIG_NF_CONNTRACK_CUSTOM,
 };
@@ -42,6 +45,7 @@ enum nf_ct_ext_id {
 #define NF_CT_EXT_TIMEOUT_TYPE struct nf_conn_timeout
 #define NF_CT_EXT_LABELS_TYPE struct nf_conn_labels
 #define NF_CT_EXT_RTCACHE_TYPE struct nf_conn_rtcache
+#define NF_CT_EXT_DSCPREMARK_TYPE struct nf_ct_dscpremark_ext
 
 /* Extensions: optional stuff which isn't permanently in struct. */
 struct nf_ct_ext {
