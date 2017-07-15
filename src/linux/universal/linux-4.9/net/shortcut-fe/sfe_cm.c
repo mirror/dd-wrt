@@ -877,7 +877,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		 *
 		 * Linux will update timer of UDP flow to stream timeout once it seen packets
 		 * in reply direction. But if flow is accelerated by NSS or SFE, Linux won't
-		 * see any packets. So we have to do the same thing in our stats sync message.
+		 * see any packets. So we hAave to do the same thing in our stats sync message.
 		 */
 		if (!test_bit(IPS_ASSURED_BIT, &ct->status) && acct) {
 			u_int64_t reply_pkts = atomic64_read(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
@@ -893,7 +893,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
 
 				spin_lock_bh(&ct->lock);
-				ct->timeout.expires = jiffies + timeouts[UDP_CT_REPLIED];
+				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
 				spin_unlock_bh(&ct->lock);
 			}
 		}
