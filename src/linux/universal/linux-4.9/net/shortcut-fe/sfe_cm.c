@@ -893,7 +893,7 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 				timeouts = nf_ct_timeout_lookup(&init_net, ct, l4proto);
 
 				spin_lock_bh(&ct->lock);
-				ct->timeout = jiffies + timeouts[UDP_CT_REPLIED];
+				ct->timeout = nfct_time_stamp + timeouts[UDP_CT_REPLIED];
 				spin_unlock_bh(&ct->lock);
 			}
 		}
