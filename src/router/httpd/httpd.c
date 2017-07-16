@@ -312,7 +312,7 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 	char timebuf[100];
 
 	wfprintf(conn_fp, "%s %d %s\r\n", PROTOCOL, status, title);
-	if (mime_type != (char *)0)
+	if (mime_type != NULL)
 		wfprintf(conn_fp, "Content-Type: %s\r\n", mime_type);
 
 	wfprintf(conn_fp, "Server: %s\r\n", SERVER_NAME);
@@ -325,7 +325,7 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 	wfprintf(conn_fp, "Pragma: no-cache\r\n");
 	if (attach_file)
 		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
-	if (extra_header != (char *)0 && *extra_header)
+	if (extra_header != NULL && *extra_header)
 		wfprintf(conn_fp, "%s\r\n", extra_header);
 	if (length != -1)
 		wfprintf(conn_fp, "Content-Length: %ld\r\n", length);
@@ -422,7 +422,7 @@ static int match(const char *pattern, const char *string)
 
 	for (;;) {
 		or = strchr(pattern, '|');
-		if (or == (char *)0) {
+		if (or == NULL) {
 			int ret = match_one(pattern, strlen(pattern), path);
 			free(path);
 			return ret;
@@ -602,7 +602,7 @@ static void *handle_request(void *arg)
 			break;
 		buf += r;
 		lastread += r;
-		if (strstr(line, "\015\012\015\012") != (char *)0 || strstr(line, "\012\012") != (char *)0) {
+		if (strstr(line, "\015\012\015\012") != NULL || strstr(line, "\012\012") != NULL) {
 			finished = 1;
 			break;
 		}
@@ -621,7 +621,7 @@ static void *handle_request(void *arg)
 	method = path = line;
 	strsep(&path, " ");
 	if (!path) {		// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request.");
 		goto out;
 	}
 	while (*path == ' ')
@@ -629,7 +629,7 @@ static void *handle_request(void *arg)
 	protocol = path;
 	strsep(&protocol, " ");
 	if (!protocol) {	// Avoid http server crash, added by honor 2003-12-08
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "Can't parse request.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Can't parse request.");
 		goto out;
 	}
 	while (*protocol == ' ')
@@ -714,18 +714,18 @@ static void *handle_request(void *arg)
 		method_type = METHOD_OPTIONS;
 
 	if (method_type == METHOD_INVALID) {
-		send_error(conn_fp, 501, "Not Implemented", (char *)0, "That method is not implemented.");
+		send_error(conn_fp, 501, "Not Implemented", NULL, "That method is not implemented.");
 		goto out;
 	}
 
 	if (path[0] != '/') {
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "Bad filename.");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Bad filename.");
 		goto out;
 	}
 	file = &(path[1]);
 	len = strlen(file);
-	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != (char *)0 || strcmp(&(file[len - 3]), "/..") == 0) {
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "Illegal filename.");
+	if (file[0] == '/' || strcmp(file, "..") == 0 || strncmp(file, "../", 3) == 0 || strstr(file, "/../") != NULL || strcmp(&(file[len - 3]), "/..") == 0) {
+		send_error(conn_fp, 400, "Bad Request", NULL, "Illegal filename.");
 		goto out;
 	}
 
@@ -799,7 +799,7 @@ static void *handle_request(void *arg)
 #endif
 
 	if (!referer && method_type == METHOD_POST && nodetect == 0) {
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
+		send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
 		goto out;
 	}
 
@@ -827,11 +827,11 @@ static void *handle_request(void *arg)
 			hlen = strlen(host);
 			for (a = i; a < rlen; a++) {
 				if (referer[a] == '/') {
-					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
 					goto out;
 				}
 				if (host[c++] != referer[a]) {
-					send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
+					send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
 					goto out;
 				}
 				if (c == hlen) {
@@ -840,7 +840,7 @@ static void *handle_request(void *arg)
 				}
 			}
 			if (c != hlen || referer[a] != '/') {
-				send_error(conn_fp, 400, "Bad Request", (char *)0, "Cross Site Action detected!");
+				send_error(conn_fp, 400, "Bad Request", NULL, "Cross Site Action detected!");
 				goto out;
 			}
 		}
@@ -1051,7 +1051,7 @@ static void *handle_request(void *arg)
 #endif
 #endif
 			if (check_connect_type(conn_fp) < 0) {
-				send_error(conn_fp, 401, "Bad Request", (char *)0, "Can't use wireless interface to access GUI.");
+				send_error(conn_fp, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
 				goto out;
 			}
 			if (handler->output != do_file)
@@ -1071,7 +1071,7 @@ static void *handle_request(void *arg)
 			if (handler->output && file_found) {
 				handler->output(method_type, handler, file, conn_fp);
 			} else {
-				send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
+				send_error(conn_fp, 404, "Not Found", NULL, "File not found.");
 			}
 
 			break;
@@ -1079,7 +1079,7 @@ static void *handle_request(void *arg)
 		}
 
 		if (!handler || !handler->pattern)
-			send_error(conn_fp, 404, "Not Found", (char *)0, "File not found.");
+			send_error(conn_fp, 404, "Not Found", NULL, "File not found.");
 	}
 
       out:;
