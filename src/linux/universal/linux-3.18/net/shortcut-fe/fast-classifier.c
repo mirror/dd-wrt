@@ -3,7 +3,7 @@
  *	Shortcut forwarding engine connection manager.
  *	fast-classifier
  *
- * Copyright (c) 2013-2016 The Linux Foundation. All rights reserved.
+ * Copyright (c) 2013-2017 The Linux Foundation. All rights reserved.
  * Permission to use, copy, modify, and/or distribute this software for
  * any purpose with or without fee is hereby granted, provided that the
  * above copyright notice and this permission notice appear in all copies.
@@ -256,9 +256,8 @@ static int fast_classifier_recv(struct sk_buff *skb)
 
 		ret = sfe_ipv4_recv(dev, skb);
 
-	} 
+	}
 #ifdef SFE_SUPPORT_IPV6
-
 	else if (likely(htons(ETH_P_IPV6) == skb->protocol)) {
 		struct inet6_dev *in_dev;
 
@@ -282,7 +281,7 @@ static int fast_classifier_recv(struct sk_buff *skb)
 
 		ret = sfe_ipv6_recv(dev, skb);
 
-	} 
+	}
 #endif
 	else {
 		DEBUG_TRACE("not IP packet\n");
@@ -379,7 +378,6 @@ ret_fail:
 	return false;
 }
 
-
 static DEFINE_SPINLOCK(sfe_connections_lock);
 
 struct sfe_connection {
@@ -387,6 +385,7 @@ struct sfe_connection {
 	struct sfe_connection_create *sic;
 	struct nf_conn *ct;
 	int hits;
+	int offload_permit;
 	int offloaded;
 	bool is_v4;
 	unsigned char smac[ETH_ALEN];
@@ -470,10 +469,31 @@ static void fast_classifier_send_genl_msg(int msg, struct fast_classifier_tuple 
 {
 	struct sk_buff *skb;
 	int rc;
+	int buf_len;
+	int total_len;
 	void *msg_head;
 
-	skb = genlmsg_new(sizeof(*fc_msg) + fast_classifier_gnl_family.hdrsize,
-			  GFP_ATOMIC);
+	/*
+	 * Calculate our packet payload size.
+	 * Start with our family header.
+	 */
+	buf_len = fast_classifier_gnl_family.hdrsize;
+
+	/*
+	 * Add the nla_total_size of each attribute we're going to nla_put().
+	 */
+	buf_len += nla_total_size(sizeof(*fc_msg));
+
+	/*
+	 * Lastly we need to add space for the NL message header since
+	 * genlmsg_new only accounts for the GENL header and not the
+	 * outer NL header. To do this, we use a NL helper function which
+	 * calculates the total size of a netlink message given a payload size.
+	 * Note this value does not include the GENL header, but that's
+	 * added automatically by genlmsg_new.
+	 */
+	total_len = nlmsg_total_size(buf_len);
+	skb = genlmsg_new(total_len, GFP_ATOMIC);
 	if (!skb)
 		return;
 
@@ -490,12 +510,17 @@ static void fast_classifier_send_genl_msg(int msg, struct fast_classifier_tuple 
 		return;
 	}
 
-	genlmsg_end(skb, msg_head);
+#if (LINUX_VERSION_CODE <= KERNEL_VERSION(3, 19 , 0))
+	rc = genlmsg_end(skb, msg_head);
 	if (rc < 0) {
 		genlmsg_cancel(skb, msg_head);
 		nlmsg_free(skb);
 		return;
 	}
+#else
+	genlmsg_end(skb, msg_head);
+
+#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
 	rc = genlmsg_multicast(&fast_classifier_gnl_family, skb, 0, 0, GFP_ATOMIC);
@@ -523,7 +548,11 @@ static void fast_classifier_send_genl_msg(int msg, struct fast_classifier_tuple 
 	}
 
 	DEBUG_TRACE("Notify NL message %d ", msg);
-	DEBUG_TRACE("sip=%pIS dip=%pIS ", &fc_msg->src_saddr, &fc_msg->dst_saddr);
+	if (fc_msg->ethertype == AF_INET) {
+		DEBUG_TRACE("sip=%pI4 dip=%pI4 ", &fc_msg->src_saddr, &fc_msg->dst_saddr);
+	} else {
+		DEBUG_TRACE("sip=%pI6 dip=%pI6 ", &fc_msg->src_saddr, &fc_msg->dst_saddr);
+	}
 	DEBUG_TRACE("protocol=%d sport=%d dport=%d smac=%pM dmac=%pM\n",
 		    fc_msg->proto, fc_msg->sport, fc_msg->dport, fc_msg->smac, fc_msg->dmac);
 }
@@ -541,10 +570,13 @@ fast_classifier_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	struct sfe_connection_create *p_sic;
 	struct sfe_connection *conn;
 	u32 key;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+	struct hlist_node *node;
+#endif
 
 	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -578,10 +610,13 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	struct sfe_connection_create *p_sic;
 	struct sfe_connection *conn;
 	u32 key;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+	struct hlist_node *node;
+#endif
 
 	key = fc_conn_hash(saddr, daddr, sport, dport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -602,7 +637,7 @@ fast_classifier_sb_find_conn(sfe_ip_addr_t *saddr, sfe_ip_addr_t *daddr,
 	 */
 	key = fc_conn_hash(daddr, saddr, dport, sport, is_v4);
 
-	sfe_hash_for_each_possible(fc_conn_ht, conn, hl, key) {
+	sfe_hash_for_each_possible(fc_conn_ht, conn, node, hl, key) {
 		if (conn->is_v4 != is_v4) {
 			continue;
 		}
@@ -650,8 +685,13 @@ fast_classifier_add_conn(struct sfe_connection *conn)
 
 	DEBUG_TRACE(" -> adding item to sfe_connections, new size: %d\n", sfe_connections_size);
 
-	DEBUG_TRACE("new offloadable: key: %u proto: %d src_ip: %pIS dst_ip: %pIS, src_port: %d, dst_port: %d\n",
-		key, sic->protocol, &(sic->src_ip), &(sic->dest_ip), sic->src_port, sic->dest_port);
+	if (conn->is_v4) {
+		DEBUG_TRACE("new offloadable: key: %u proto: %d src_ip: %pI4 dst_ip: %pI4, src_port: %d, dst_port: %d\n",
+				key, sic->protocol, &(sic->src_ip), &(sic->dest_ip), sic->src_port, sic->dest_port);
+	} else {
+		DEBUG_TRACE("new offloadable: key: %u proto: %d src_ip: %pI6 dst_ip: %pI6, src_port: %d, dst_port: %d\n",
+				key, sic->protocol, &(sic->src_ip), &(sic->dest_ip), sic->src_port, sic->dest_port);
+	}
 
 	return conn;
 }
@@ -663,7 +703,6 @@ fast_classifier_add_conn(struct sfe_connection *conn)
 static int
 fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info)
 {
-	int ret;
 	struct nlattr *na;
 	struct fast_classifier_tuple *fc_msg;
 	struct sfe_connection *conn;
@@ -671,15 +710,17 @@ fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info)
 	na = info->attrs[FAST_CLASSIFIER_A_TUPLE];
 	fc_msg = nla_data(na);
 
-	DEBUG_TRACE("want to offload: %d-%d, %pIS, %pIS, %d, %d SMAC=%pM DMAC=%pM\n" :
-		fc_msg->ethertype,
-		fc_msg->proto,
-		&fc_msg->src_saddr,
-		&fc_msg->dst_saddr,
-		fc_msg->sport,
-		fc_msg->dport,
-		fc_msg->smac,
-		fc_msg->dmac);
+	DEBUG_TRACE((fc_msg->ethertype == AF_INET ?
+		"want to offload: %d-%d, %pI4, %pI4, %d, %d SMAC=%pM DMAC=%pM\n" :
+		"want to offload: %d-%d, %pI6, %pI6, %d, %d SMAC=%pM DMAC=%pM\n"),
+		    fc_msg->ethertype,
+		    fc_msg->proto,
+		    &fc_msg->src_saddr,
+		    &fc_msg->dst_saddr,
+		    fc_msg->sport,
+		    fc_msg->dport,
+		    fc_msg->smac,
+		    fc_msg->dmac);
 
 	spin_lock_bh(&sfe_connections_lock);
 	conn = fast_classifier_sb_find_conn((sfe_ip_addr_t *)&fc_msg->src_saddr,
@@ -695,29 +736,11 @@ fast_classifier_offload_genl_msg(struct sk_buff *skb, struct genl_info *info)
 		return 0;
 	}
 
-	if (conn->offloaded != 0) {
-		spin_unlock_bh(&sfe_connections_lock);
-		DEBUG_TRACE("GOT REQUEST TO OFFLOAD ALREADY OFFLOADED CONN FROM USERSPACE\n");
-		return 0;
-	}
-
-	DEBUG_TRACE("USERSPACE OFFLOAD REQUEST, MATCH FOUND, WILL OFFLOAD\n");
-	if (fast_classifier_update_protocol(conn->sic, conn->ct) == 0) {
-		spin_unlock_bh(&sfe_connections_lock);
-		DEBUG_TRACE("UNKNOWN PROTOCOL OR CONNECTION CLOSING, SKIPPING\n");
-		return 0;
-	}
+	conn->offload_permit = 1;
+	spin_unlock_bh(&sfe_connections_lock);
+	atomic_inc(&offload_msgs);
 
 	DEBUG_TRACE("INFO: calling sfe rule creation!\n");
-	spin_unlock_bh(&sfe_connections_lock);
-	ret = conn->is_v4 ? sfe_ipv4_create_rule(conn->sic) : sfe_ipv6_create_rule(conn->sic);
-	if ((ret == 0) || (ret == -EADDRINUSE)) {
-		conn->offloaded = 1;
-		fast_classifier_send_genl_msg(FAST_CLASSIFIER_C_OFFLOADED,
-					      fc_msg);
-	}
-
-	atomic_inc(&offload_msgs);
 	return 0;
 }
 
@@ -836,7 +859,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	/*
 	 * Get addressing information, non-NAT first
 	 */
-	if (is_v4) {
+	if (likely(is_v4)) {
 		u32 dscp;
 
 		sic.src_ip.ip = (__be32)orig_tuple.src.u3.ip;
@@ -891,6 +914,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		}
 	}
 #endif
+
 	switch (sic.protocol) {
 	case IPPROTO_TCP:
 		sic.src_port = orig_tuple.src.u.tcp.port;
@@ -936,8 +960,13 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		sic.flags |= SFE_CREATE_FLAG_REMARK_PRIORITY;
 	}
 
-	DEBUG_TRACE("POST_ROUTE: checking new connection: %d src_ip: %pIS dst_ip: %pIS, src_port: %d, dst_port: %d\n",
-		sic.protocol, &sic.src_ip, &sic.dest_ip, sic.src_port, sic.dest_port);
+	if (is_v4) {
+		DEBUG_TRACE("POST_ROUTE: checking new connection: %d src_ip: %pI4 dst_ip: %pI4, src_port: %d, dst_port: %d\n",
+			    sic.protocol, &sic.src_ip, &sic.dest_ip, sic.src_port, sic.dest_port);
+	} else {
+		DEBUG_TRACE("POST_ROUTE: checking new connection: %d src_ip: %pI6 dst_ip: %pI6, src_port: %d, dst_port: %d\n",
+			    sic.protocol, &sic.src_ip, &sic.dest_ip, sic.src_port, sic.dest_port);
+	}
 
 	/*
 	 * If we already have this connection in our list, skip it
@@ -950,7 +979,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		conn->hits++;
 
 		if (!conn->offloaded) {
-			if (conn->hits >= offload_at_pkts) {
+			if (conn->offload_permit || conn->hits >= offload_at_pkts) {
 				DEBUG_TRACE("OFFLOADING CONNECTION, TOO MANY HITS\n");
 
 				if (fast_classifier_update_protocol(conn->sic, conn->ct) == 0) {
@@ -971,12 +1000,14 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 						fc_msg.ethertype = AF_INET;
 						fc_msg.src_saddr.in = *((struct in_addr *)&sic.src_ip);
 						fc_msg.dst_saddr.in = *((struct in_addr *)&sic.dest_ip_xlate);
-					} else {
+					} 
+#ifdef SFE_SUPPORT_IPV6
+					else {
 						fc_msg.ethertype = AF_INET6;
 						fc_msg.src_saddr.in6 = *((struct in6_addr *)&sic.src_ip);
 						fc_msg.dst_saddr.in6 = *((struct in6_addr *)&sic.dest_ip_xlate);
 					}
-
+#endif
 					fc_msg.proto = sic.protocol;
 					fc_msg.sport = sic.src_port;
 					fc_msg.dport = sic.dest_port_xlate;
@@ -1073,6 +1104,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		goto done3;
 	}
 	conn->hits = 0;
+	conn->offload_permit = 0;
 	conn->offloaded = 0;
 	conn->is_v4 = is_v4;
 	DEBUG_TRACE("Source MAC=%pM\n", sic.src_mac);
@@ -1126,6 +1158,7 @@ fast_classifier_ipv4_post_routing_hook(hooknum, ops, skb, in_unused, out, okfn)
 }
 
 #ifdef SFE_SUPPORT_IPV6
+
 /*
  * fast_classifier_ipv6_post_routing_hook()
  *	Called for packets about to leave the box - either locally generated or forwarded from another interface
@@ -1205,7 +1238,7 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 		sid.src_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.src.u3.in6);
 		sid.dest_ip.ip6[0] = *((struct sfe_ipv6_addr *)&orig_tuple.dst.u3.in6);
 		is_v4 = false;
-	} 
+	}
 #endif
 	else {
 		DEBUG_TRACE("ignoring non-IPv4 and non-IPv6 connection\n");
@@ -1253,8 +1286,13 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 		return NOTIFY_DONE;
 	}
 
-	DEBUG_TRACE("Try to clean up: proto: %d src_ip: %pIS dst_ip: %pIS, src_port: %d, dst_port: %d\n",
-		sid.protocol, &sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port);
+	if (is_v4) {
+		DEBUG_TRACE("Try to clean up: proto: %d src_ip: %pI4 dst_ip: %pI4, src_port: %d, dst_port: %d\n",
+			    sid.protocol, &sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port);
+	} else {
+		DEBUG_TRACE("Try to clean up: proto: %d src_ip: %pI6 dst_ip: %pI6, src_port: %d, dst_port: %d\n",
+			    sid.protocol, &sid.src_ip, &sid.dest_ip, sid.src_port, sid.dest_port);
+	}
 
 	spin_lock_bh(&sfe_connections_lock);
 
@@ -1264,12 +1302,14 @@ static int fast_classifier_conntrack_event(struct notifier_block *this,
 			fc_msg.ethertype = AF_INET;
 			fc_msg.src_saddr.in = *((struct in_addr *)&conn->sic->src_ip);
 			fc_msg.dst_saddr.in = *((struct in_addr *)&conn->sic->dest_ip_xlate);
-		} else {
+		} else 
+#ifdef SFE_SUPPORT_IPV6
+		{
 			fc_msg.ethertype = AF_INET6;
 			fc_msg.src_saddr.in6 = *((struct in6_addr *)&conn->sic->src_ip);
 			fc_msg.dst_saddr.in6 = *((struct in6_addr *)&conn->sic->dest_ip_xlate);
 		}
-
+#endif
 		fc_msg.proto = conn->sic->protocol;
 		fc_msg.sport = conn->sic->src_port;
 		fc_msg.dport = conn->sic->dest_port_xlate;
@@ -1342,6 +1382,7 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	tuple.dst.protonum = (u8)sis->protocol;
 	tuple.dst.u.all = (__be16)sis->dest_port;
 
+#ifdef SFE_SUPPORT_IPV6
 	if (sis->is_v6) {
 		tuple.src.u3.in6 = *((struct in6_addr *)sis->src_ip.ip6);
 		tuple.dst.u3.in6 = *((struct in6_addr *)sis->dest_ip.ip6);
@@ -1351,7 +1392,9 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 			    (int)tuple.dst.protonum,
 			    &tuple.src.u3.in6, (unsigned int)ntohs(tuple.src.u.all),
 			    &tuple.dst.u3.in6, (unsigned int)ntohs(tuple.dst.u.all));
-	} else {
+	} else 
+#endif
+	{
 		tuple.src.u3.ip = sis->src_ip.ip;
 		tuple.dst.u3.ip = sis->dest_ip.ip;
 		tuple.src.l3num = AF_INET;
@@ -1412,10 +1455,10 @@ static void fast_classifier_sync_rule(struct sfe_connection_sync *sis)
 	acct = nf_conn_acct_find(ct);
 	if (acct) {
 		spin_lock_bh(&ct->lock);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets, sis->src_packet_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes, sis->src_byte_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets, sis->dest_packet_count);
-		atomic64_set(&SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes, sis->dest_byte_count);
+		atomic64_add(sis->src_new_packet_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].packets);
+		atomic64_add(sis->src_new_byte_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_ORIGINAL].bytes);
+		atomic64_add(sis->dest_new_packet_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].packets);
+		atomic64_add(sis->dest_new_byte_count, &SFE_ACCT_COUNTER(acct)[IP_CT_DIR_REPLY].bytes);
 		spin_unlock_bh(&ct->lock);
 	}
 
@@ -1463,6 +1506,7 @@ static int fast_classifier_device_event(struct notifier_block *this, unsigned lo
 		sfe_ipv6_destroy_all_rules_for_dev(dev);
 #endif
 	}
+
 	return NOTIFY_DONE;
 }
 
@@ -1476,9 +1520,11 @@ static int fast_classifier_inet_event(struct notifier_block *this, unsigned long
 	if (dev && (event == NETDEV_DOWN)) {
 		sfe_ipv4_destroy_all_rules_for_dev(dev);
 	}
+
 	return NOTIFY_DONE;
 }
 
+#ifdef SFE_SUPPORT_IPV6
 /*
  * fast_classifier_inet6_event()
  */
@@ -1489,10 +1535,10 @@ static int fast_classifier_inet6_event(struct notifier_block *this, unsigned lon
 	if (dev && (event == NETDEV_DOWN)) {
 		sfe_ipv6_destroy_all_rules_for_dev(dev);
 	}
+
 	return NOTIFY_DONE;
 }
-
-
+#endif
 /*
  * fast_classifier_get_offload_at_pkts()
  */
@@ -1532,6 +1578,9 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 	size_t len = 0;
 	struct sfe_connection *conn;
 	u32 i;
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 9, 0))
+	struct hlist_node *node;
+#endif
 
 	spin_lock_bh(&sfe_connections_lock);
 	len += scnprintf(buf, PAGE_SIZE - len, "size=%d offload=%d offload_no_match=%d"
@@ -1543,7 +1592,7 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 			atomic_read(&done_msgs),
 			atomic_read(&offloaded_fail_msgs),
 			atomic_read(&done_fail_msgs));
-	sfe_hash_for_each(fc_conn_ht, i, conn, hl) {
+	sfe_hash_for_each(fc_conn_ht, i, node, conn, hl) {
 		len += scnprintf(buf + len, PAGE_SIZE - len,
 				(conn->is_v4 ? "o=%d, p=%d [%pM]:%pI4:%u %pI4:%u:[%pM] m=%08x h=%d\n" : "o=%d, p=%d [%pM]:%pI6:%u %pI6:%u:[%pM] m=%08x h=%d\n"),
 				conn->offloaded,
@@ -1616,12 +1665,14 @@ static ssize_t fast_classifier_get_exceptions(struct device *dev,
 /*
  * sysfs attributes.
  */
-static const struct device_attribute fast_classifier_attrs[] = {
-	__ATTR(offload_at_pkts, S_IWUSR | S_IRUGO, fast_classifier_get_offload_at_pkts, fast_classifier_set_offload_at_pkts),
-	__ATTR(debug_info, S_IRUGO, fast_classifier_get_debug_info, NULL),
-	__ATTR(skip_to_bridge_ingress, S_IWUSR | S_IRUGO, fast_classifier_get_skip_bridge_ingress, fast_classifier_set_skip_bridge_ingress),
-	__ATTR(exceptions, S_IRUGO, fast_classifier_get_exceptions, NULL),
-};
+static const struct device_attribute fast_classifier_offload_at_pkts_attr =
+	__ATTR(offload_at_pkts, S_IWUSR | S_IRUGO, fast_classifier_get_offload_at_pkts, fast_classifier_set_offload_at_pkts);
+static const struct device_attribute fast_classifier_debug_info_attr =
+	__ATTR(debug_info, S_IRUGO, fast_classifier_get_debug_info, NULL);
+static const struct device_attribute fast_classifier_skip_bridge_ingress =
+	__ATTR(skip_to_bridge_ingress, S_IWUSR | S_IRUGO, fast_classifier_get_skip_bridge_ingress, fast_classifier_set_skip_bridge_ingress);
+static const struct device_attribute fast_classifier_exceptions_attr =
+	__ATTR(exceptions, S_IRUGO, fast_classifier_get_exceptions, NULL);
 
 /*
  * fast_classifier_init()
@@ -1630,7 +1681,6 @@ static int fast_classifier_init(void)
 {
 	struct fast_classifier *sc = &__fsc;
 	int result = -1;
-	size_t i, j;
 
 	printk(KERN_ALERT "fast-classifier: starting up\n");
 	DEBUG_INFO("SFE CM init\n");
@@ -1646,13 +1696,34 @@ static int fast_classifier_init(void)
 		goto exit1;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(fast_classifier_attrs); i++) {
-		result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_attrs[i].attr);
-		if (result) {
-			DEBUG_ERROR("failed to register %s : %d\n",
-				    fast_classifier_attrs[i].attr.name, result);
-			goto exit2;
-		}
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register offload at pkgs: %d\n", result);
+		goto exit2;
+	}
+
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register debug dev: %d\n", result);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+		goto exit2;
+	}
+
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register skip bridge on ingress: %d\n", result);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+		goto exit2;
+	}
+
+	result = sysfs_create_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
+	if (result) {
+		DEBUG_ERROR("failed to register exceptions file: %d\n", result);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+		goto exit2;
 	}
 
 	sc->dev_notifier.notifier_call = fast_classifier_device_event;
@@ -1757,11 +1828,12 @@ exit3:
 		unregister_inet6addr_notifier(&sc->inet6_notifier);
 #endif
 	unregister_netdevice_notifier(&sc->dev_notifier);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_offload_at_pkts_attr.attr);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_debug_info_attr.attr);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_skip_bridge_ingress.attr);
+	sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_exceptions_attr.attr);
 
 exit2:
-	for (j = 0; j < i; j++) {
-		sysfs_remove_file(sc->sys_fast_classifier, &fast_classifier_attrs[j].attr);
-	}
 	kobject_put(sc->sys_fast_classifier);
 
 exit1:
@@ -1805,7 +1877,6 @@ static void fast_classifier_exit(void)
 	sfe_ipv6_destroy_all_rules_for_dev(NULL);
 #endif
 
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 13, 0))
 	result = genl_unregister_ops(&fast_classifier_gnl_family, fast_classifier_gnl_ops);
 	if (result != 0) {
@@ -1833,4 +1904,3 @@ static void fast_classifier_exit(void)
 
 	kobject_put(sc->sys_fast_classifier);
 }
-
