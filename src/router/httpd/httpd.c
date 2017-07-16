@@ -590,14 +590,23 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	char *str;
 
-	for (cnt = 0; cnt < 10; cnt++) {
-		str = wfgets(line, LINE_LEN, conn_fp);
-		if (strlen(line) > 0)
+	char *buf = line;
+	int lastread = 0;
+	for (;;) {
+
+		int r = wfread(buf, LINE_LEN - lastread, 1, conn_fp);
+		if (r < 0 && (errno == EINTR || errno == EAGAIN))
+			continue;
+		if (r <= 0)
+			break;
+		buf += r;
+		lastread += r;
+		if (strstr(line, "\015\012\015\012") != (char *)0 || strstr(line, "\012\012") != (char *)0)
 			break;
 	}
 
 	if (!strlen(line)) {
-		send_error(conn_fp, 400, "Bad Request", (char *)0, "No request found.");
+		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 		goto out;
 	}
 
@@ -627,7 +636,7 @@ static void *handle_request(void *arg)
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
 
-	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
+	while (cur < (line + LINE_LEN))	//jimmy,https,8/4/2003
 	{
 
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
@@ -1500,6 +1509,16 @@ int main(int argc, char **argv)
 		}
 
 		get_client_ip_mac(conn_fp);
+
+#ifdef TCP_NOPUSH
+		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+		 ** delay between sending the headers and sending the data.  A better
+		 ** solution is writev() (as used in thttpd), or send the headers with
+		 ** send(MSG_MORE) (only available in Linux so far).
+		 */
+		r = 1;
+		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
 
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
