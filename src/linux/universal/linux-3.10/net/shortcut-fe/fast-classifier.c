@@ -1407,6 +1407,7 @@ static int fast_classifier_inet_event(struct notifier_block *this, unsigned long
 	if (dev && (event == NETDEV_DOWN)) {
 		sfe_ipv4_destroy_all_rules_for_dev(dev);
 	}
+	return NOTIFY_DONE;
 }
 
 /*
@@ -1419,7 +1420,9 @@ static int fast_classifier_inet6_event(struct notifier_block *this, unsigned lon
 	if (dev && (event == NETDEV_DOWN)) {
 		sfe_ipv6_destroy_all_rules_for_dev(dev);
 	}
+	return NOTIFY_DONE;
 }
+
 
 /*
  * fast_classifier_get_offload_at_pkts()
