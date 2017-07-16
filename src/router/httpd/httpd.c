@@ -595,7 +595,7 @@ static void *handle_request(void *arg)
 	int finished = 0;
 	for (;;) {
 
-		int r = wfread(buf, LINE_LEN - lastread, 1, conn_fp);
+		int r = wfread(buf, 1, LINE_LEN - lastread, conn_fp);
 		if (r < 0 && (errno == EINTR || errno == EAGAIN))
 			continue;
 		if (r <= 0)
@@ -610,6 +610,7 @@ static void *handle_request(void *arg)
 
 	if (!strlen(line) || !finished) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
+
 		goto out;
 	}
 
@@ -647,21 +648,33 @@ static void *handle_request(void *arg)
 			cp = &cur[14];
 			cp += strspn(cp, " \t");
 			authorization = cp;
-			cur = cp + strlen(cp) + 1;
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
+
 		} else if (strncasecmp(cur, "Referer:", 8) == 0) {
 			cp = &cur[8];
 			cp += strspn(cp, " \t");
 			referer = cp;
-			cur = cp + strlen(cp) + 1;
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
+
 		} else if (strncasecmp(cur, "Host:", 5) == 0) {
 			cp = &cur[5];
 			cp += strspn(cp, " \t");
 			host = cp;
-			cur = cp + strlen(cp) + 1;
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
+
 		} else if (strncasecmp(cur, "Content-Length:", 15) == 0) {
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
 			cl = strtoul(cp, NULL, 0);
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
 
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
@@ -672,12 +685,18 @@ static void *handle_request(void *arg)
 			cp = &cur[11];
 			cp += strspn(cp, " \t");
 			useragent = cp;
-			cur = cp + strlen(cp) + 1;
+
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
+
 		} else if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
 			cp = &cur[17];
 			cp += strspn(cp, " \t");
 			language = cp;
-			cur = cp + strlen(cp) + 1;
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
 		} else {
 			// skip line                    
 			for (cp = cur; *cp && *cp != '\n'; cp++) ;
@@ -1525,7 +1544,7 @@ int main(int argc, char **argv)
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = 1;
-		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+//              (void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
 #endif				/* TCP_NOPUSH */
 
 #ifndef HAVE_MICRO
@@ -1771,12 +1790,12 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 		ret = len;
 #elif defined(HAVE_POLARSSL)
 		int len = n * size;
-		fprintf(stderr, "read ssl %d\n", len);
+		A fprintf(stderr, "read ssl %d\n", len);
 		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
 	} else
 #endif
-		ret = fread(buf, size, n, fp);
+		ret = read(wp->conn_fd, buf, size * n);
 	return ret;
 }
 
