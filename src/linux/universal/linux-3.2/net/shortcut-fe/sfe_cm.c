@@ -866,7 +866,6 @@ static void sfe_cm_sync_rule(struct sfe_connection_sync *sis)
 		}
 		spin_unlock_bh(&ct->lock);
 		break;
-
 	}
 
 	/*
@@ -905,6 +904,7 @@ static int sfe_cm_inet_event(struct notifier_block *this, unsigned long event, v
 	return NOTIFY_DONE;
 }
 
+#ifdef SFE_SUPPORT_IPV6
 /*
  * sfe_cm_inet6_event()
  */
@@ -918,7 +918,7 @@ static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event, 
 
 	return NOTIFY_DONE;
 }
-
+#endif
 /*
  * sfe_cm_get_exceptions
  * 	dump exception counters
