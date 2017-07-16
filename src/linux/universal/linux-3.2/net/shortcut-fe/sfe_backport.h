@@ -133,10 +133,36 @@ static inline struct net_device *sfe_dev_get_master(struct net_device *dev)
 #define SFE_ACCT_COUNTER(NM) (NM)
 #endif
 
-#define sfe_hash_for_each_possible(h, name, obj, member, key) \
-	hash_for_each_possible(h, name, obj, member, key)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0))
+#define sfe_hash_for_each_possible(name, obj, node, member, key) \
+	hash_for_each_possible(name, obj, member, key)
+#else
+#define sfe_hash_for_each_possible(name, obj, node, member, key) \
+	hash_for_each_possible(name, obj, node, member, key)
+#endif
 
-#define sfe_hash_for_each(h, name, bkt, obj, member) \
-	hash_for_each(h, name, bkt, obj, member)
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 9, 0))
+#define sfe_hash_for_each(name, bkt, node, obj, member) \
+	hash_for_each(name, bkt, obj, member)
+#else
+#define sfe_hash_for_each(name, bkt, node, obj, member) \
+	hash_for_each(name, bkt, node, obj, member)
+#endif
+
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 4, 0))
+#define sfe_dst_get_neighbour(dst, daddr) dst_neigh_lookup(dst, addr)
+#else
+static inline struct neighbour *
+sfe_dst_get_neighbour(struct dst_entry *dst, void *daddr)
+{
+	struct neighbour *neigh = dst_get_neighbour_noref(dst);
+
+	if (neigh)
+		neigh_hold(neigh);
+
+	return neigh;
+}
+#endif
+
 
 #endif
