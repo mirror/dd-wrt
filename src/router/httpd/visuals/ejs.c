@@ -1354,7 +1354,7 @@ void ej_show_bandwidth(webs_t wp, int argc, char_t ** argv)
 
 		show_bwif(wp, get_wan_face(), name);
 
-		if (nvram_matchi("dtag_vlan8", 1) || nvram_matchi("dtag_bng", 0)) {
+		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("dtag_bng", 0)) {
 			if (getRouterBrand() == ROUTER_WRT600N || getRouterBrand() == ROUTER_WRT610N)
 				show_bwif(wp, "eth2.0008", "IPTV");
 			else
