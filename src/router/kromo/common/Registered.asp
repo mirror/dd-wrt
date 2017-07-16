@@ -12,7 +12,6 @@ document.title = "<% nvg("router_name"); %> - Activation";
 	</head>
 
 	<body class="gui">
-		<% showad(); %>
 		<div id="wrapper">
 			<div id="content" class="infopage">
 				<div id="header">

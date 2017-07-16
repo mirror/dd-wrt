@@ -41,7 +41,7 @@ if (valid_password(F))
 	</head>
 
 	<body class="gui">
-		<% showad(); %>
+		
 		<div id="wrapper">
 			<div id="content" class="infopage">
 				<div id="header">
