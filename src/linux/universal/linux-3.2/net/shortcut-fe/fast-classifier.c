@@ -1391,17 +1391,12 @@ static int fast_classifier_device_event(struct notifier_block *this, unsigned lo
 {
 	struct net_device *dev = SFE_DEV_EVENT_PTR(ptr);
 
-	switch (event) {
-	case NETDEV_DOWN:
-		if (dev) {
-			sfe_ipv4_destroy_all_rules_for_dev(dev);
+	if (dev && (event == NETDEV_DOWN)) {
+		sfe_ipv4_destroy_all_rules_for_dev(dev);
 #ifdef SFE_SUPPORT_IPV6
-			sfe_ipv6_destroy_all_rules_for_dev(dev);
+		sfe_ipv6_destroy_all_rules_for_dev(dev);
 #endif
-		}
-		break;
 	}
-
 	return NOTIFY_DONE;
 }
 
@@ -1411,7 +1406,10 @@ static int fast_classifier_device_event(struct notifier_block *this, unsigned lo
 static int fast_classifier_inet_event(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct net_device *dev = ((struct in_ifaddr *)ptr)->ifa_dev->dev;
-	return sfe_propagate_dev_event(fast_classifier_device_event, this, event, dev);
+
+	if (dev && (event == NETDEV_DOWN)) {
+		sfe_ipv4_destroy_all_rules_for_dev(dev);
+	}
 }
 
 /*
@@ -1420,7 +1418,10 @@ static int fast_classifier_inet_event(struct notifier_block *this, unsigned long
 static int fast_classifier_inet6_event(struct notifier_block *this, unsigned long event, void *ptr)
 {
 	struct net_device *dev = ((struct inet6_ifaddr *)ptr)->idev->dev;
-	return sfe_propagate_dev_event(fast_classifier_device_event, this, event, dev);
+
+	if (dev && (event == NETDEV_DOWN)) {
+		sfe_ipv6_destroy_all_rules_for_dev(dev);
+	}
 }
 
 /*
