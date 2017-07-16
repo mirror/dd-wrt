@@ -297,8 +297,7 @@ rx_exit:
 }
 
 /*
- * fast_classifier_
- find_dev_and_mac_addr()
+ * fast_classifier_find_dev_and_mac_addr()
  *	Find the device and MAC address for a given IPv4 address.
  *
  * Returns true if we find the device and MAC address, otherwise false.
@@ -307,8 +306,78 @@ rx_exit:
  * structure, obtain the hardware address.  This means this function also
  * works if the neighbours are routers too.
  */
+static bool fast_classifier_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device **dev, u8 *mac_addr, bool is_v4)
+{
+	struct neighbour *neigh;
+	struct rtable *rt;
+	struct rt6_info *rt6;
+	struct dst_entry *dst;
+	struct net_device *mac_dev;
 
-extern bool sfe_cm_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct net_device **dev, u8 *mac_addr, int is_v4);
+	/*
+	 * Look up the rtable entry for the IP address then get the hardware
+	 * address from its neighbour structure.  This means this works when the
+	 * neighbours are routers too.
+	 */
+	if (likely(is_v4)) {
+		rt = ip_route_output(&init_net, addr->ip, 0, 0, 0);
+		if (unlikely(IS_ERR(rt))) {
+			goto ret_fail;
+		}
+
+		dst = (struct dst_entry *)rt;
+	} else {
+		rt6 = rt6_lookup(&init_net, (struct in6_addr *)addr->ip6, 0, 0, 0);
+		if (!rt6) {
+			goto ret_fail;
+		}
+
+		dst = (struct dst_entry *)rt6;
+	}
+
+	rcu_read_lock();
+	neigh = sfe_dst_get_neighbour(dst, addr);
+	if (unlikely(!neigh)) {
+		rcu_read_unlock();
+		dst_release(dst);
+		goto ret_fail;
+	}
+
+	if (unlikely(!(neigh->nud_state & NUD_VALID))) {
+		rcu_read_unlock();
+		neigh_release(neigh);
+		dst_release(dst);
+		goto ret_fail;
+	}
+
+	mac_dev = neigh->dev;
+	if (!mac_dev) {
+		rcu_read_unlock();
+		neigh_release(neigh);
+		dst_release(dst);
+		goto ret_fail;
+	}
+
+	memcpy(mac_addr, neigh->ha, (size_t)mac_dev->addr_len);
+
+	dev_hold(mac_dev);
+	*dev = mac_dev;
+	rcu_read_unlock();
+	neigh_release(neigh);
+	dst_release(dst);
+
+	return true;
+
+ret_fail:
+	if (is_v4) {
+		DEBUG_TRACE("failed to find MAC address for IP: %pI4\n", addr);
+
+	} else {
+		DEBUG_TRACE("failed to find MAC address for IP: %pI6\n", addr);
+	}
+
+	return false;
+}
 
 
 static DEFINE_SPINLOCK(sfe_connections_lock);
@@ -937,26 +1006,26 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	 * Get the net device and MAC addresses that correspond to the various source and
 	 * destination host addresses.
 	 */
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
+	if (!fast_classifier_find_dev_and_mac_addr(&sic.src_ip, &src_dev, sic.src_mac, is_v4)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_DEV);
 		return NF_ACCEPT;
 	}
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
+	if (!fast_classifier_find_dev_and_mac_addr(&sic.src_ip_xlate, &dev, sic.src_mac_xlate, is_v4)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_SRC_XLATE_DEV);
 		goto done1;
 	}
 
 	dev_put(dev);
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
+	if (!fast_classifier_find_dev_and_mac_addr(&sic.dest_ip, &dev, sic.dest_mac, is_v4)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_DEV);
 		goto done1;
 	}
 
 	dev_put(dev);
 
-	if (!sfe_cm_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
+	if (!fast_classifier_find_dev_and_mac_addr(&sic.dest_ip_xlate, &dest_dev, sic.dest_mac_xlate, is_v4)) {
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_NO_DEST_XLATE_DEV);
 		goto done1;
 	}
