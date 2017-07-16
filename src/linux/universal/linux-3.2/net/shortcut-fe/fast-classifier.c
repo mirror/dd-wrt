@@ -309,7 +309,7 @@ static bool fast_classifier_find_dev_and_mac_addr(sfe_ip_addr_t *addr, struct ne
 {
 	struct neighbour *neigh;
 	struct rtable *rt;
-	struct rt6_info *rt6;
+	struct rt6_info *rt6 = NULL;
 	struct dst_entry *dst;
 	struct net_device *mac_dev;
 
