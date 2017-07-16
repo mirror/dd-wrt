@@ -47,7 +47,7 @@ addEvent(window, "unload", function() {
    </head>
 
 	<body class="gui">
-		<% showad(); %>
+		
 			<div id="wrapper">
 			<div id="content">
 				<div id="header">

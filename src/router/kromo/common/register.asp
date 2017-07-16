@@ -20,7 +20,6 @@ function to_submit(F) {
 	</head>
 
 	<body class="gui">
-		<% showad(); %>
 		<div id="wrapper">
 			<div id="content" class="infopage">
 				<div id="header">

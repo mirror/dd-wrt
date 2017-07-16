@@ -101,7 +101,7 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui" onload="init()">
-		<% showad(); %>
+		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">

@@ -89,7 +89,7 @@ addEvent(window, "unload", function() {
 	</head>
 
 	<body class="gui" onload="reloadIt()">
-		<% showad(); %>
+		
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
