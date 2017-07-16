@@ -592,6 +592,7 @@ static void *handle_request(void *arg)
 
 	char *buf = line;
 	int lastread = 0;
+	int finished = 0;
 	for (;;) {
 
 		int r = wfread(buf, LINE_LEN - lastread, 1, conn_fp);
@@ -601,11 +602,13 @@ static void *handle_request(void *arg)
 			break;
 		buf += r;
 		lastread += r;
-		if (strstr(line, "\015\012\015\012") != (char *)0 || strstr(line, "\012\012") != (char *)0)
+		if (strstr(line, "\015\012\015\012") != (char *)0 || strstr(line, "\012\012") != (char *)0) {
+			finished = 1;
 			break;
+		}
 	}
 
-	if (!strlen(line)) {
+	if (!strlen(line) || !finished) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 		goto out;
 	}
@@ -638,7 +641,6 @@ static void *handle_request(void *arg)
 
 	while (cur < (line + LINE_LEN))	//jimmy,https,8/4/2003
 	{
-
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
@@ -676,6 +678,12 @@ static void *handle_request(void *arg)
 			cp += strspn(cp, " \t");
 			language = cp;
 			cur = cp + strlen(cp) + 1;
+		} else {
+			// skip line                    
+			for (cp = cur; *cp && *cp != '\n'; cp++) ;
+			*cp = '\0';
+			cur = ++cp;
+
 		}
 	}
 	method_type = METHOD_INVALID;
