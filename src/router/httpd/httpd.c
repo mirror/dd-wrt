@@ -1790,7 +1790,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 		ret = len;
 #elif defined(HAVE_POLARSSL)
 		int len = n * size;
-		A fprintf(stderr, "read ssl %d\n", len);
+		fprintf(stderr, "read ssl %d\n", len);
 		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
 	} else
