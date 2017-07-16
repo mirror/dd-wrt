@@ -121,27 +121,6 @@ static inline struct net_device *sfe_dev_get_master(struct net_device *dev)
 #define SFE_DEV_EVENT_PTR(PTR) (struct net_device *)(PTR)
 #endif
 
-/*
- * declare function sfe_dev_event_cb_t
- */
-typedef int (*sfe_dev_event_cb_t)(struct notifier_block *this, unsigned long event, void *ptr);
-
-/*
- * sfe_propagate_dev_event
- *     propagate ip address event as network device event
- */
-static inline int sfe_propagate_dev_event(sfe_dev_event_cb_t fn, struct notifier_block *this, unsigned long event, struct net_device *dev)
-{
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0))
-       struct netdev_notifier_info info;
-
-       netdev_notifier_info_init(&info, dev);
-       return fn(this, event, &info);
-#else
-       return fn(this, event, dev);
-#endif
-}
-
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
 #define SFE_NF_CONN_ACCT(NM) struct nf_conn_acct *NM
 #else
