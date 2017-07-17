@@ -100,6 +100,7 @@ typedef struct {
 
 typedef webs *webs_t;
 
+extern int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
 extern char *wfgets(char *buf, int len, webs_t fp);
 extern int wfprintf(webs_t fp, char *fmt, ...);
 extern size_t wfwrite(char *buf, int size, int n, webs_t fp);
