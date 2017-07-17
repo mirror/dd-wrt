@@ -600,25 +600,13 @@ static void *handle_request(void *arg)
 	int cnt = 0;
 	char *str;
 
-	char *buf = line;
-	int lastread = 0;
-	int finished = 0;
-	for (;;) {
-
-		int r = wfread(buf, 1, LINE_LEN - lastread, conn_fp);
-		if (r < 0 && (errno == EINTR || errno == EAGAIN))
-			continue;
-		if (r <= 0)
+	for (cnt = 0; cnt < 10; cnt++) {
+		str = wfgets(line, LINE_LEN, conn_fp);
+		if (strlen(line) > 0)
 			break;
-		buf += r;
-		lastread += r;
-		if (strstr(line, "\015\012\015\012") != NULL || strstr(line, "\012\012") != NULL) {
-			finished = 1;
-			break;
-		}
 	}
 
-	if (!strlen(line) || !finished) {
+	if (!strlen(line)) {
 		send_error(conn_fp, 408, "Request Timeout", NULL, "No request appeared within a reasonable time period.");
 
 		goto out;
@@ -650,41 +638,30 @@ static void *handle_request(void *arg)
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
 
-	while (cur < (line + LINE_LEN))	//jimmy,https,8/4/2003
+	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
 	{
+
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
 			cp = &cur[14];
 			cp += strspn(cp, " \t");
 			authorization = cp;
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Referer:", 8) == 0) {
 			cp = &cur[8];
 			cp += strspn(cp, " \t");
 			referer = cp;
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Host:", 5) == 0) {
 			cp = &cur[5];
 			cp += strspn(cp, " \t");
 			host = cp;
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Content-Length:", 15) == 0) {
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
 			cl = strtoul(cp, NULL, 0);
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
 
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
@@ -695,24 +672,12 @@ static void *handle_request(void *arg)
 			cp = &cur[11];
 			cp += strspn(cp, " \t");
 			useragent = cp;
-
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-
+			cur = cp + strlen(cp) + 1;
 		} else if (strncasecmp(cur, "Accept-Language:", 16) == 0) {
 			cp = &cur[17];
 			cp += strspn(cp, " \t");
 			language = cp;
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-		} else {
-			// skip line                    
-			for (cp = cur; *cp && *cp != '\n'; cp++) ;
-			*cp = '\0';
-			cur = ++cp;
-
+			cur = cp + strlen(cp) + 1;
 		}
 	}
 	method_type = METHOD_INVALID;
