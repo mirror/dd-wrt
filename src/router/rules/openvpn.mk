@@ -44,7 +44,10 @@ CONFIGURE_ARGS_OVPN += \
 	$(SSL_ADDOPT) \
 	CFLAGS="$(COPTS) -I$(SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl" \
-	ac_cv_func_epoll_create=yes
+	ac_cv_func_epoll_create=yes \
+	ac_cv_path_IFCONFIG=/sbin/ifconfig \
+	ac_cv_path_ROUTE=/sbin/route \
+	ac_cv_path_IPROUTE=/usr/sbin/ip
 
 openvpn-conf-prep:
 	-rm -f openvpn/Makefile
