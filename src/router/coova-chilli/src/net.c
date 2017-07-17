@@ -1263,11 +1263,6 @@ int net_open_eth(net_interface *netif) {
     ndelay_on(netif->fd);
     coe(netif->fd);
 
-    option = 1;
-    if (net_setsockopt(netif->fd, SOL_SOCKET, TCP_NODELAY,
-		       &option, sizeof(option)) < 0)
-      return -1;
-
     /* Enable reception and transmission of broadcast frames */
     option = 1;
     if (net_setsockopt(netif->fd, SOL_SOCKET, SO_BROADCAST,
