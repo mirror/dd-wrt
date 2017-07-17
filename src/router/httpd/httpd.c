@@ -54,6 +54,7 @@
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/sendfile.h>
+#include <wlutils.h>
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
@@ -150,7 +151,6 @@ int httpd_level;
 extern char *get_mac_from_ip(char *mac, char *ip);
 
 /* Forwards. */
-static int wfsendfile(int fd, size_t nbytes, webs_t wp);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(webs_t conn_fp);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
@@ -210,7 +210,7 @@ static int auth_check(webs_t conn_fp)
 #endif
 #endif
 	char *authinfo;
-	unsigned char *authpass;
+	char *authpass;
 	int l;
 	int ret = 0;
 	authinfo = malloc(500);
@@ -233,7 +233,7 @@ static int auth_check(webs_t conn_fp)
 	authinfo[l] = '\0';
 	/* Split into user and password. */
 	authpass = strchr((char *)authinfo, ':');
-	if (authpass == (unsigned char *)0) {
+	if (authpass == NULL) {
 		/* No colon?  Bogus auth info. */
 		goto out;
 	}
@@ -278,13 +278,7 @@ static int auth_check(webs_t conn_fp)
 
 void send_authenticate(webs_t conn_fp)
 {
-	u_int64_t auth_time = (u_int64_t)(atoll(nvram_safe_get("auth_time")));
-	u_int64_t curr_time = (u_int64_t)time(NULL);
-	char s_curr_time[24];
-	sprintf(s_curr_time, "%llu", curr_time);
-
 	char *header;
-
 	(void)asprintf(&header, "WWW-Authenticate: Basic realm=\"%s\"", conn_fp->auth_realm);
 	send_error(conn_fp, 401, "Unauthorized", header,
 #if defined(HAVE_BUFFALO) && defined(HAVE_IAS)
@@ -293,8 +287,6 @@ void send_authenticate(webs_t conn_fp)
 		   "Authorization required. please note that the default username is \"root\" in all newer releases");
 #endif
 	free(header);
-	/* init these after a successful auth */
-	nvram_set("auth_time", s_curr_time);
 }
 
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text)
@@ -504,7 +496,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 #endif
 	{
 		wfflush(stream);
-		wfsendfile(fileno(web), len, stream);
+		wfsendfile(fileno(web), 0, len, stream);
 	}
 	fclose(web);
 }
@@ -563,13 +555,15 @@ static void *handle_request(void *arg)
 {
 	webs_t conn_fp = (webs_t)arg;
 	char *cur = NULL;
-	char *method, *path, *protocol, *authorization, *boundary, *referer, *host, *useragent, *language;
+	char *method, *path, *protocol, *authorization, *boundary, *referer, *host;
+#ifdef HAVE_IAS
+	char *language, *useragent;
+#endif
 	char *cp = NULL;
 	char *file = NULL;
-	FILE *exec;
 	int len;
 	struct mime_handler *handler = NULL;;
-	int cl = 0, count, flags;
+	int cl = 0, flags;
 	char *line;
 	long method_type;
 	conn_fp->p = &global_vars;
@@ -598,10 +592,9 @@ static void *handle_request(void *arg)
 
 	/* Parse the first line of the request. */
 	int cnt = 0;
-	char *str;
 
 	for (cnt = 0; cnt < 10; cnt++) {
-		str = wfgets(line, LINE_LEN, conn_fp);
+		wfgets(line, LINE_LEN, conn_fp);
 		if (strlen(line) > 0)
 			break;
 	}
@@ -667,7 +660,9 @@ static void *handle_request(void *arg)
 			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++) ;
 			*cp = '\0';
 			cur = ++cp;
-		} else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
+		}
+#ifdef HAVE_IAS
+		else if (strncasecmp(cur, "User-Agent:", 11) == 0) {
 			cp = &cur[11];
 			cp += strspn(cp, " \t");
 			useragent = cp;
@@ -678,6 +673,7 @@ static void *handle_request(void *arg)
 			language = cp;
 			cur = cp + strlen(cp) + 1;
 		}
+#endif
 	}
 	method_type = METHOD_INVALID;
 	if (!strcasecmp(method, "get"))
@@ -1435,7 +1431,7 @@ int main(int argc, char **argv)
 
 #ifdef NID_X9_62_prime256v1
 			EC_KEY *ecdh = NULL;
-			if (ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1)) {
+			if ((ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1))) {
 				SSL_CTX_set_tmp_ecdh(ctx, ecdh);
 				EC_KEY_free(ecdh);
 			}
@@ -1755,9 +1751,11 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 	return ret;
 }
 
-static int wfsendfile(int fd, size_t nbytes, webs_t wp)
+int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
 {
-	return sendfile(wp->conn_fd, fd, NULL, nbytes);
+	off_t lo = offset;
+
+	return sendfile(wp->conn_fd, fd, &lo, nbytes);
 
 }
 

@@ -124,7 +124,7 @@ static char *getFileString(FILE * in)
 	StringStart(in);
 	for (i = 0; i < 1024; i++) {
 		b = getc(in);
-		if (b == EOF){
+		if (b == EOF) {
 			free(buf);
 			return NULL;
 		}
@@ -515,10 +515,12 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 		test[i] = rand() % 255;
 	long long i64;
 	long long sz = filesize / 65536;
+	FILE *fp = fmemopen(test, 65536, "rb");
 	for (i64 = 0; i64 < sz; i64++) {
-		wfwrite(test, 65536, 1, stream);
+		wfsendfile(fileno(fp), 0, 65536, stream);
 	}
-	wfwrite(test, filesize % 65536, 1, stream);
+	wfsendfile(fileno(fp), 0, filesize % 65536, stream);
+	fclose(fp);
 	free(test);
 
       ret:;
