@@ -2510,42 +2510,6 @@ void ej_getdefaultindex(webs_t wp, int argc, char_t ** argv)
 #endif
 }
 
-void ej_showad(webs_t wp, int argc, char_t ** argv)
-{
-#ifndef HAVE_FON
-#ifndef HAVE_BRANDING
-#ifdef HAVE_CHILLI
-	// if (nvram_invmatch ("fon_enable", "1"))
-	// websWrite (wp,
-	// "<a href=\"fon.cgi\"><img src=\"images/turn.gif\" border=0 /></a>");
-#endif
-#endif
-#endif
-
-#ifndef HAVE_NOAD
-	/*
-	 * if (nvram_match("wanup","1")) { websWrite(wp,"<script
-	 * type=\"text/javascript\"><!--\n//<![CDATA[\n ");
-	 * websWrite(wp,"google_ad_client = \"pub-8308593183433068\";\n");
-	 * websWrite(wp,"google_ad_width = 728;\n");
-	 * websWrite(wp,"google_ad_height = 90;\n");
-	 * websWrite(wp,"google_ad_format = \"728x90_as\";\n");
-	 * websWrite(wp,"google_ad_type = \"text_image\";\n");
-	 * websWrite(wp,"google_ad_channel =\"8866414571\";\n");
-	 * websWrite(wp,"google_color_border = \"333333\";\n");
-	 * websWrite(wp,"google_color_bg = \"000000\";\n");
-	 * websWrite(wp,"google_color_link = \"FFFFFF\";\n");
-	 * websWrite(wp,"google_color_url = \"999999\";\n");
-	 * websWrite(wp,"google_color_text = \"CCCCCC\";\n");
-	 * websWrite(wp,"//-->//]]>\n</script>\n"); websWrite(wp,"<script
-	 * type=\"text/javascript\"\n"); websWrite(wp,"
-	 * src=\"http://pagead2.googlesyndication.com/pagead/show_ads.js\">\n");
-	 * websWrite(wp,"</script>\n"); }
-	 */
-#endif
-	return;
-}
-
 #ifndef HAVE_SUPERCHANNEL
 int inline issuperchannel(void)
 {
