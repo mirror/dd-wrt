@@ -8051,7 +8051,7 @@ static struct NF_MASKS service_masks[] = {
 
 char *get_NFServiceMark(char *service, uint32 mark)
 {
-	static char buffer[24];
+	static char buffer[32];
 	bzero(&buffer, sizeof(buffer));
 
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
