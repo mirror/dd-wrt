@@ -5268,9 +5268,9 @@ char *cpustring(void)
 	static char buf[256];
 #ifdef HAVE_MVEBU
 	if (getRouterBrand() == ROUTER_WRT_1900AC) {
-		strcpy(buf, "Marvel Armada 370/XP");
+		strcpy(buf, "Marvell Armada 370/XP");
 	} else {
-		strcpy(buf, "Marvel Armada 385");
+		strcpy(buf, "Marvell Armada 385");
 	}
 	return buf;
 #elif HAVE_ALPINE
