@@ -50,7 +50,6 @@ typedef struct {
 	int filter_id;
 } persistent_vars;
 
-
 typedef struct {
 	FILE *fp;
 	int threadid;
@@ -98,7 +97,6 @@ typedef struct {
 /* CGI hash table */
 	struct hsearch_data htab;
 } webs;
-
 
 typedef webs *webs_t;
 
