@@ -1566,6 +1566,11 @@ int main(int argc, char **argv)
 		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
 #endif				/* TCP_NOPUSH */
 
+#ifdef TCP_NODELAY
+		r = 1;
+		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
+
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
 		numthreads++;
