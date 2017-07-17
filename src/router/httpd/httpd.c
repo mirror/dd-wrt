@@ -640,7 +640,6 @@ static void *handle_request(void *arg)
 
 	while (wfgets(cur, line + LINE_LEN - cur, conn_fp) != 0)	//jimmy,https,8/4/2003
 	{
-
 		if (strcmp(cur, "\n") == 0 || strcmp(cur, "\r\n") == 0) {
 			break;
 		} else if (strncasecmp(cur, "Authorization:", 14) == 0) {
@@ -1006,8 +1005,9 @@ static void *handle_request(void *arg)
 				conn_fp->post = 1;
 			}
 
-			if (handler->input)
+			if (handler->input) {
 				handler->input(file, conn_fp, cl, boundary);
+			}
 #if defined(linux)
 #ifdef HAVE_HTTPS
 			if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
@@ -1790,7 +1790,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 #endif
 	} else
 #endif
-		ret = read(wp->conn_fd, buf, size * n);
+		ret = fread(buf, size, n, fp);
 	return ret;
 }
 

@@ -1725,7 +1725,6 @@ do_apply_post(char *url, webs_t stream, int len, char *boundary)
 			return;
 		stream->post_buf[count] = '\0';;
 		len -= strlen(stream->post_buf);
-
 		/*
 		 * Slurp anything remaining in the request 
 		 */
