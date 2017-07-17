@@ -53,6 +53,7 @@
 #include <sys/time.h>
 #include <signal.h>
 #include <sys/wait.h>
+#include <sys/sendfile.h>
 
 #ifdef HAVE_OPENSSL
 #include <openssl/ssl.h>
@@ -149,6 +150,7 @@ int httpd_level;
 extern char *get_mac_from_ip(char *mac, char *ip);
 
 /* Forwards. */
+static int wfsendfile(int fd, size_t nbytes, webs_t wp);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(webs_t conn_fp);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
@@ -485,17 +487,25 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	}
 	if (!handler->send_headers)
 		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach);
-	char *buffer = malloc(4096);
-	while (len) {
-		size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
-		if (!ret) {
-			dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
-			break;	// deadlock prevention
+#ifdef HAVE_HTTPS
+	if (stream->do_ssl) {
+		char *buffer = malloc(4096);
+		while (len) {
+			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
+			if (!ret) {
+				dd_syslog(LOG_INFO, "%s: cannot ret from stream (%s)\n", __func__, strerror(errno));
+				break;	// deadlock prevention
+			}
+			len -= ret;
+			wfwrite(buffer, ret, 1, stream);
 		}
-		len -= ret;
-		wfwrite(buffer, ret, 1, stream);
+		free(buffer);
+	} else
+#endif
+	{
+		wfflush(stream);
+		wfsendfile(fileno(web), len, stream);
 	}
-	free(buffer);
 	fclose(web);
 }
 
@@ -1544,7 +1554,16 @@ int main(int argc, char **argv)
 		 ** send(MSG_MORE) (only available in Linux so far).
 		 */
 		r = 1;
-//              (void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
+#ifdef TCP_CORK
+		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+		 ** delay between sending the headers and sending the data.  A better
+		 ** solution is writev() (as used in thttpd), or send the headers with
+		 ** send(MSG_MORE) (only available in Linux so far).
+		 */
+		r = 1;
+		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
 #endif				/* TCP_NOPUSH */
 
 #ifndef HAVE_MICRO
@@ -1764,6 +1783,12 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 		ret = fwrite(buf, size, n, fp);
 
 	return ret;
+}
+
+static int wfsendfile(int fd, size_t nbytes, webs_t wp)
+{
+	return sendfile(wp->conn_fd, fd, NULL, nbytes);
+
 }
 
 size_t wfread(char *buf, int size, int n, webs_t wp)
