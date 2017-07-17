@@ -440,7 +440,6 @@ static char *insert(char *ifname, char *index, char *filename)
 static void do_bigfile(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
 	char fs[128];
-	char *temp2;
 	char *parameter = "s=";
 	char *parameter2 = "u=";
 	if (!nvram_matchi("speedchecker_enable", 1))
@@ -779,8 +778,6 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 	if (!fp)
 		return;
 	char *buffer = malloc(65536 + 1);
-
-	int i;
 	websWrite(stream, "{ \"epoch\": %d, \"samples\":\n", time(NULL));
 	int result = 0;
 	while (!feof(fp)) {
@@ -802,7 +799,6 @@ static void do_spectral_scan(unsigned char method, struct mime_handler *handler,
 
 static void do_activetable(unsigned char method, struct mime_handler *handler, char *path, webs_t stream)
 {
-	char *temp2 = NULL;
 	char ifname[32];
 	bzero(ifname, sizeof(ifname));
 	int idx = indexof(path, '-');
@@ -1383,16 +1379,6 @@ static struct apply_action *handle_apply_action(char *name)
 	return NULL;
 }
 
-static int getFileLen(FILE * in)
-{
-	int len;
-
-	fseek(in, 0, SEEK_END);
-	len = ftell(in);
-	rewind(in);
-	return len;
-}
-
 static void do_logout(webs_t conn_fp)	// static functions are not exportable,
 				// additionally this is no ej function
 {
@@ -1405,7 +1391,6 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	char *value;
 	char *submit_button, *next_page;
 	int sleep_time = 0;
-	int need_commit = 1;
 
 	cprintf("need reboot\n");
 	int need_reboot = atoi(websGetVar(wp, "need_reboot", "0"));
@@ -1437,8 +1422,8 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	submit_button = websGetVar(wp, "submit_button", "");
 	cprintf("get submit_button = %s\n", submit_button);
 
-	need_commit = atoi(websGetVar(wp, "commit", "1"));
-	cprintf("get need_commit = %d\n", need_commit);
+//	int need_commit = atoi(websGetVar(wp, "commit", "1"));
+//	cprintf("get need_commit = %d\n", need_commit);
 
 	value = websGetVar(wp, "action", "");
 	cprintf("get action = %s\n", value);
@@ -2292,7 +2277,6 @@ char *tran_string(char *buf, char *str)
 
 static void do_ttgraph(unsigned char method, struct mime_handler *handler, char *url, webs_t stream)
 {
-	char buf[128];
 	static char *charset = NULL;
 	if (!charset)
 		charset = strdup(live_translate("lang_charset.set"));
