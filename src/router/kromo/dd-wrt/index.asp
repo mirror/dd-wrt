@@ -431,6 +431,11 @@ addEvent(window, "unload", function() {
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvg("wan_mtu"); %>" />
 								</div>
 								<div class="setting">
+									<div class="label"><% tran("idx.sfe"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="sfe" <% nvc("sfe", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="sfe" <% nvc("sfe", "0"); %> /><% tran("share.disable"); %>
+								</div>
+								<div class="setting">
 									<div class="label"><% tran("idx.stp"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvc("lan_stp", "1"); %> /><% tran("share.enable"); %>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvc("lan_stp", "0"); %> /><% tran("share.disable"); %>
