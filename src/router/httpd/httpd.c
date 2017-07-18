@@ -496,7 +496,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 #endif
 	{
 		wfflush(stream);
-		wfsendfile(fileno(web), ftell(web), len, stream);
+		wfsendfile(fileno(web),  ftell(web), len, stream);
 	}
 	fclose(web);
 }
