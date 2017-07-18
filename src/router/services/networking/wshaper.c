@@ -1026,12 +1026,6 @@ void start_wshaper(void)
 		script_name = "svqos2";
 
 	stop_wshaper();
-	if (!nvram_invmatchi("wshaper_enable", 0)) {
-		insmod("shortcut-fe");
-		return 0;
-	} else
-		rmmod("shortcut-fe");
-	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 
 	if (!strcmp(wshaper_dev, "WAN")
 	    && (nvram_match("wan_proto", "disabled")
