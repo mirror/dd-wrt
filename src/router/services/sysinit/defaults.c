@@ -298,6 +298,8 @@ struct nvram_param srouter_defaults[] = {
 #endif
 	{"lan_lease", "86400"},	/* LAN lease time in seconds */
 	// {"lan_lease", "1440"}, /* LAN lease time in seconds */
+	
+	{"sfe", "0"},
 
 	/*
 	 * WAN H/W parameters 
