@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3495 | brainslayer | 2017-07-18 10:55:00 +0200 (Tue, 18 Jul 2017) | 1 line
+
+mwlwifi: Make sure EAPOL packet gets high priority.
+------------------------------------------------------------------------
 r3494 | brainslayer | 2017-07-13 22:36:28 +0200 (Thu, 13 Jul 2017) | 1 line
 
 speedchecker changes
