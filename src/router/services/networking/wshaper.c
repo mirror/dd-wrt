@@ -1032,6 +1032,13 @@ void start_wshaper(void)
 		|| client_bridged_enabled()))
 		return;
 
+	if (!nvram_invmatchi("wshaper_enable", 0)) {
+		if (nvram_matchi("sfe","1"))	
+			insmod("shortcut-fe");
+		return 0;
+	} else
+		rmmod("shortcut-fe");
+	writeint("/sys/fast_classifier/skip_to_bridge_ingress", 1);
 	if ((dl_val = nvram_safe_get("wshaper_downlink")) == NULL && atoi(dl_val) > 0)
 		return;
 	if ((ul_val = nvram_safe_get("wshaper_uplink")) == NULL && atoi(ul_val) > 0)
