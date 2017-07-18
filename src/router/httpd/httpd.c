@@ -1,4 +1,4 @@
- /* milli_httpd - pretty smal7l HTTP server
+/* milli_httpd - pretty smal7l HTTP server
 ** A combination of
 ** micro_httpd - really small HTTP server
 ** and
