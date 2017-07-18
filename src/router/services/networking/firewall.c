@@ -2762,7 +2762,7 @@ void start_firewall(void)
 	else
 		writeproc("/proc/net/arp_spoofing_enable", "0");
 
-	if (!nvram_invmatchi("wshaper_enable", 0))
+	if (nvram_matchi("sfe", 1))
 		insmod("shortcut-fe");
 	else
 		rmmod("shortcut-fe");
