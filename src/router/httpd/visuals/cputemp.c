@@ -73,6 +73,38 @@ static void show_temp(webs_t wp, char *fmt)
 }
 #endif
 
+#ifdef HAVE_X86
+
+int getCoreTemp(char *p, int *ridx)
+{
+	int idx = 0;
+	char path[64];
+	while (1) {
+		int tidx;
+		for (tidx = 0; tidx < 32; tidx++) {
+			sprintf(path, "/sys/class/hwmon/hwmon%d/temp%d_label", idx, tidx);
+			FILE *fp = fopen(path, "rb");
+			if (!fp)
+				continue;
+			char name[64];
+			fscanf(fp, "%s", name);
+			if (!strncmp(name, "Core", 4)) {
+				fclose(fp);
+				sprintf(p, "/sys/class/hwmon/hwmon%d", idx);
+				*ridx = tidx;
+				return 1;
+			}
+		}
+		if (tidx == 32) {
+			*ridx = -1;
+			return 0;
+		}
+	}
+
+}
+
+#endif
+
 void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 {
 	int i, cpufound = 0;
@@ -193,10 +225,27 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 #else
 	int TEMP_MUL = 1000;
 #ifdef HAVE_X86
+
 	FILE *fp = fopen("/sys/devices/platform/i2c-1/1-0048/temp1_input", "rb");
 	if (!fp) {
 		TEMP_MUL = 100;
-		fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
+
+		char path[64];
+		int idx = 0;
+		int hascore = 0;
+		if (getCoreTemp(path, &idx)) {
+			char tempp[64];
+			char maxp[64];
+			sprintf(tempp, "%s/temp%d_input", path, idx);
+			sprintf(maxp, "%s/temp%d_max", path, idx);
+			hascore = 1;
+			fp = fopen(maxp, "rb");
+		}
+
+		if (!fp)
+			fp = fopen("/sys/class/hwmon/hwmon0/temp1_max", "rb");
+		if (!fp)
+			fp = fopen("/sys/class/hwmon/hwmon0/temp2_max", "rb");
 		if (!fp)
 			fp = fopen("/sys/class/hwmon/hwmon1/temp1_max", "rb");
 		if (fp) {	// some heuristic to detect unit 
@@ -211,7 +260,13 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 			} else
 				TEMP_MUL = 1;
 		}
-		fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+		fp = NULL;
+		if (hascore)
+			fp = fopen(tempp, "rb");
+		if (!fp)
+			fp = fopen("/sys/class/hwmon/hwmon0/temp1_input", "rb");
+		if (!fp)
+			fp = fopen("/sys/class/hwmon/hwmon0/temp2_input", "rb");
 		if (!fp)
 			fp = fopen("/sys/class/hwmon/hwmon1/temp1_input", "rb");
 	}
