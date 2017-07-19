@@ -161,7 +161,7 @@ typedef struct {
 int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char *visible, int cnt)
 {
 	int rssi = 0, noise = 0;
-	FILE *fp2;
+	FILE *fp2 = NULL;
 	char *mode;
 	char mac[30];
 	char line[80];
@@ -230,18 +230,18 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			// system2 (cmd); // get RSSI value for mac
 
 			fp2 = popen(cmd, "r");
-			if (fgets(line, sizeof(line), fp2) != NULL) {
-
-				// get rssi
-				if (sscanf(line, "%d", &rssi) != 1)
-					continue;
-				noise = getNoise(iface, NULL);
-				/*
-				 * if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
-				 * NULL && sscanf (line, "%d", &noise) != 1) continue;
-				 */
-				// get noise for client/wet mode
-
+			if(fp2){
+				if (fgets(line, sizeof(line), fp2) != NULL) {
+					// get rssi
+					if (sscanf(line, "%d", &rssi) != 1)
+						continue;
+					noise = getNoise(iface, NULL);
+					/*
+					* if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
+					* NULL && sscanf (line, "%d", &noise) != 1) continue;
+					*/
+					// get noise for client/wet mode
+				}
 				pclose(fp2);
 			}
 #ifdef HAVE_QTN
@@ -528,7 +528,7 @@ void ej_active_wds(webs_t wp, int argc, char_t ** argv)
 int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, int cnt)
 {
 	int rssi = 0, i;
-	FILE *fp2;
+	FILE *fp2 = NULL;
 	char *mode;
 	char mac[30];
 	char line[80];
@@ -583,8 +583,8 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 				// get rssi
 				if (sscanf(line, "%d", &rssi) != 1)
 					continue;
-				pclose(fp2);
 			}
+			pclose(fp2);
 		}
 		if (nvram_matchi("maskmac", 1) && macmask) {
 			mac[0] = 'x';
