@@ -1,6 +1,81 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-7 Jun 2017, PHP 7.1.6
+06 Jul 2017, PHP 7.1.7
+
+- Core:
+  . Fixed bug #74738 (Multiple [PATH=] and [HOST=] sections not properly
+    parsed). (Manuel Mausz)
+  . Fixed bug #74658 (Undefined constants in array properties result in broken
+    properties). (Laruence)
+  . Fixed misparsing of abstract unix domain socket names. (Sara)
+  . Fixed bug #74603 (PHP INI Parsing Stack Buffer Overflow Vulnerability).
+    (Stas)
+  . Fixed bug #74101, bug #74614 (Unserialize Heap Use-After-Free (READ: 1) in
+    zval_get_type). (Nikita)
+  . Fixed bug #74111 (Heap buffer overread (READ: 1) finish_nested_data from
+    unserialize). (Nikita)
+  . Fixed bug #74819 (wddx_deserialize() heap out-of-bound read via
+    php_parse_date()). (Derick)
+
+- Date:
+  . Fixed bug #74639 (implement clone for DatePeriod and DateInterval).
+    (andrewnester)
+
+- DOM:
+  . Fixed bug #69373 (References to deleted XPath query results). (ttoohey)
+
+- GD:
+  . Fixed bug #74435 (Buffer over-read into uninitialized memory). (cmb)
+
+- Intl:
+  . Fixed bug #73473 (Stack Buffer Overflow in msgfmt_parse_message). (libnex)
+  . Fixed bug #74705 (Wrong reflection on Collator::getSortKey and
+    collator_get_sort_key). (Tyson Andre, Remi)
+
+- Mbstring:
+  . Add oniguruma upstream fix (CVE-2017-9224, CVE-2017-9226, CVE-2017-9227,
+    CVE-2017-9228, CVE-2017-9229) (Remi, Mamoru TASAKA)
+
+- OCI8:
+ . Add TAF callback (PR #2459). (KoenigsKind)
+
+- Opcache:
+  . Fixed bug #74663 (Segfault with opcache.memory_protect and
+    validate_timestamp). (Laruence)
+  . Revert opcache.enable_cli to default disabled. (Nikita)
+
+- OpenSSL:
+  . Fixed bug #74720 (pkcs7_en/decrypt does not work if \x1a is used in
+    content). (Anatol)
+  . Fixed bug #74651 (negative-size-param (-1) in memcpy in zif_openssl_seal()).
+    (Stas)
+
+- PDO_OCI:
+  . Support Instant Client 12.2 in --with-pdo-oci configure option.
+    (Tianfang Yang)
+
+- Reflection:
+  . Fixed bug #74673 (Segfault when cast Reflection object to string with
+    undefined constant). (Laruence)
+
+- SPL:
+  . Fixed bug #74478 (null coalescing operator failing with SplFixedArray).
+    (jhdxr)
+
+- FTP:
+  . Fixed bug #74598 (ftp:// wrapper ignores context arg). (Sara)
+
+- PHAR:
+  . Fixed bug #74386 (Phar::__construct reflection incorrect). (villfa)
+
+- SOAP
+  . Fixed bug #74679 (Incorrect conversion array with WSDL_CACHE_MEMORY).
+    (Dmitry)
+
+- Streams:
+  . Fixed bug #74556 (stream_socket_get_name() returns '\0'). (Sara)
+
+8 Jun 2017, PHP 7.1.6
 
 - Core:
   . Fixed bug #74600 (crash (SIGSEGV) in _zend_hash_add_or_update_i).
@@ -239,6 +314,8 @@ PHP                                                                        NEWS
     anonymous classes). (Adam Saponara)
   . Fixed bug #74105 (PHP on Linux should use /dev/urandom when getrandom is
     not available). (Benjamin Robin)
+  . Fixed bug #74708 (Invalid Reflection signatures for random_bytes and
+    random_int). (Tyson Andre, Remi)
 
 - Streams:
   . Fixed bug #73496 (Invalid memory access in zend_inline_hash_func).

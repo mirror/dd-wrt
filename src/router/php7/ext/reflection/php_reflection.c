@@ -20,7 +20,7 @@
    +----------------------------------------------------------------------+
 */
 
-/* $Id: a06522d025b0af3e6ba10a0f6964086b7e6f5458 $ */
+/* $Id: db7056e03b7071d15858224c1c6c472ec58ef401 $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -468,6 +468,9 @@ static void _class_string(string *str, zend_class_entry *ce, zval *obj, char *in
 
 		ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->constants_table, key, c) {
 			_class_const_string(str, ZSTR_VAL(key), c, ZSTR_VAL(sub_indent.buf));
+			if (UNEXPECTED(EG(exception))) {
+				return;
+			}
 		} ZEND_HASH_FOREACH_END();
 	}
 	string_printf(str, "%s  }\n", indent);
@@ -732,7 +735,10 @@ static void _parameter_string(string *str, zend_function *fptr, struct _zend_arg
 
 			string_write(str, " = ", sizeof(" = ")-1);
 			ZVAL_DUP(&zv, RT_CONSTANT(&fptr->op_array, precv->op2));
-			zval_update_constant_ex(&zv, fptr->common.scope);
+			if (UNEXPECTED(zval_update_constant_ex(&zv, fptr->common.scope) == FAILURE)) {
+				zval_ptr_dtor(&zv);
+				return;
+			}
 			if (Z_TYPE(zv) == IS_TRUE) {
 				string_write(str, "true", sizeof("true")-1);
 			} else if (Z_TYPE(zv) == IS_FALSE) {
@@ -6919,7 +6925,7 @@ PHP_MINFO_FUNCTION(reflection) /* {{{ */
 	php_info_print_table_start();
 	php_info_print_table_header(2, "Reflection", "enabled");
 
-	php_info_print_table_row(2, "Version", "$Id: a06522d025b0af3e6ba10a0f6964086b7e6f5458 $");
+	php_info_print_table_row(2, "Version", "$Id: db7056e03b7071d15858224c1c6c472ec58ef401 $");
 
 	php_info_print_table_end();
 } /* }}} */
