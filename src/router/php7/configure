@@ -3662,7 +3662,7 @@ ac_config_headers="$ac_config_headers main/php_config.h"
 
 PHP_MAJOR_VERSION=7
 PHP_MINOR_VERSION=1
-PHP_RELEASE_VERSION=6
+PHP_RELEASE_VERSION=7
 PHP_EXTRA_VERSION=""
 PHP_VERSION="$PHP_MAJOR_VERSION.$PHP_MINOR_VERSION.$PHP_RELEASE_VERSION$PHP_EXTRA_VERSION"
 PHP_VERSION_ID=`expr $PHP_MAJOR_VERSION \* 10000 + $PHP_MINOR_VERSION \* 100 + $PHP_RELEASE_VERSION`
@@ -54459,7 +54459,7 @@ $as_echo "$OCI8_ORACLE_VERSION" >&6; }
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -54508,7 +54508,7 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -54638,7 +54638,7 @@ _ACEOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -54684,7 +54684,7 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -55097,7 +55097,7 @@ $as_echo "#define HAVE_OCI_INSTANT_CLIENT 1" >>confdefs.h
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -55146,7 +55146,7 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -55276,7 +55276,7 @@ _ACEOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -55322,7 +55322,7 @@ EOF
 
 
   old_IFS=$IFS
-  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c; do
+  for ac_src in oci8.c oci8_lob.c oci8_statement.c oci8_collection.c oci8_interface.c oci8_failover.c; do
 
       IFS=.
       set $ac_src
@@ -62869,7 +62869,19 @@ fi
 
 
 
-SUPPORTED_LIB_VERS="9.0 10.1 11.1 12.1"  # The lib vers are not bumped when the DB version is bumped
+if test -z "$SED"; then
+  PHP_PDO_OCI_SED="sed";
+else
+  PHP_PDO_OCI_SED="$SED";
+fi
+
+PHP_PDO_OCI_TAIL1=`echo a | tail -n1 2>/dev/null`
+if test "$PHP_PDO_OCI_TAIL1" = "a"; then
+    PHP_PDO_OCI_TAIL1="tail -n1"
+else
+    PHP_PDO_OCI_TAIL1="tail -1"
+fi
+
 
 
 
@@ -63562,13 +63574,14 @@ $as_echo "$PDO_OCI_LIB_DIR" >&6; }
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking Oracle version" >&5
 $as_echo_n "checking Oracle version... " >&6; }
-  for OCI_VER in $SUPPORTED_LIB_VERS; do
-    if test -f $PDO_OCI_DIR/lib/libclntsh.$SHLIB_SUFFIX_NAME.$OCI_VER; then
-      PDO_OCI_VERSION="$OCI_VER"
-    fi
-  done
-  if test -z "$PDO_OCI_VERSION"; then
-    as_fn_error $? "Oracle required OCI8 libraries not found under $PDO_OCI_DIR" "$LINENO" 5
+  PDO_OCI_LCS_BASE=$PDO_OCI_LIB_DIR/libclntsh.$SHLIB_SUFFIX_NAME
+  PDO_OCI_LCS=`ls $PDO_OCI_LCS_BASE.*.1 2> /dev/null | $PHP_PDO_OCI_TAIL1`  # Oracle 10g, 11g, 12c etc
+  if test -f "$PDO_OCI_LCS"; then
+        PDO_OCI_VERSION=`echo $PDO_OCI_LCS | $PHP_PDO_OCI_SED -e 's/.*\.\(.*\)\.1$/\1.1/'`
+  elif test -f $PDO_OCI_LCS_BASE.9.0; then
+        PDO_OCI_VERSION=9.0
+  else
+    as_fn_error $? "Oracle libclntsh.$SHLIB_SUFFIX_NAME client library not found or its version is lower than 9" "$LINENO" 5
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PDO_OCI_VERSION" >&5
 $as_echo "$PDO_OCI_VERSION" >&6; }
@@ -63576,7 +63589,10 @@ $as_echo "$PDO_OCI_VERSION" >&6; }
   fi
 
   case $PDO_OCI_VERSION in
-    9.0|10.1|10.2|11.1|11.2|12.1)
+    7.3|8.0|8.1)
+      as_fn_error $? "Unsupported Oracle version $PDO_OCI_VERSION" "$LINENO" 5
+      ;;
+    *)
 
 
   case clntsh in
@@ -63600,10 +63616,6 @@ $as_echo "$PDO_OCI_VERSION" >&6; }
   esac
 
 
-      ;;
-
-    *)
-      as_fn_error $? "Unsupported Oracle version $PDO_OCI_VERSION" "$LINENO" 5
       ;;
   esac
 
@@ -95876,7 +95888,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 95879 "configure"
+#line 95891 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -97929,7 +97941,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 97932 "configure"' > conftest.$ac_ext
+  echo '#line 97944 "configure"' > conftest.$ac_ext
   if { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_compile\""; } >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -99327,7 +99339,7 @@ else
       LDFLAGS="$LDFLAGS -Wl,-exported_symbols_list,conftest.sym"
 
 cat > conftest.$ac_ext <<EOF
-#line 99330 "configure"
+#line 99342 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -99485,11 +99497,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99488: $lt_compile\"" >&5)
+   (eval echo "\"configure:99500: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99492: \$? = $ac_status" >&5
+   echo "configure:99504: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99783,11 +99795,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99786: $lt_compile\"" >&5)
+   (eval echo "\"configure:99798: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:99790: \$? = $ac_status" >&5
+   echo "configure:99802: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -99887,11 +99899,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:99890: $lt_compile\"" >&5)
+   (eval echo "\"configure:99902: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:99894: \$? = $ac_status" >&5
+   echo "configure:99906: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -100351,7 +100363,7 @@ _LT_EOF
        # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 100354 "configure"
+#line 100366 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -100393,7 +100405,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	 # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 100396 "configure"
+#line 100408 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -101910,7 +101922,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 101913 "configure"
+#line 101925 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -102010,7 +102022,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 102013 "configure"
+#line 102025 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -103075,7 +103087,7 @@ case $host_os in
       # Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 103078 "configure"
+#line 103090 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -103118,7 +103130,7 @@ if test -z "$aix_libpath"; then aix_libpath="/usr/lib:/lib"; fi
 	# Determine the default libpath from the value encoded in an empty executable.
 
 cat > conftest.$ac_ext <<EOF
-#line 103121 "configure"
+#line 103133 "configure"
 #include "confdefs.h"
 int main() {
 ; return 0; }
@@ -104370,11 +104382,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:104373: $lt_compile\"" >&5)
+   (eval echo "\"configure:104385: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "configure:104377: \$? = $ac_status" >&5
+   echo "configure:104389: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -104474,11 +104486,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"configure:104477: $lt_compile\"" >&5)
+   (eval echo "\"configure:104489: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "configure:104481: \$? = $ac_status" >&5
+   echo "configure:104493: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
