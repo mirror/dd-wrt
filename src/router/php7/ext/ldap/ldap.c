@@ -23,7 +23,7 @@
    +----------------------------------------------------------------------+
  */
 
-/* $Id: 1a2168f979730c42ec291285f5183076688f4509 $ */
+/* $Id: 0779387e5f88edc656159d12b9302a053e82cc79 $ */
 #define IS_EXT_MODULE
 
 #ifdef HAVE_CONFIG_H
@@ -320,7 +320,7 @@ PHP_MINFO_FUNCTION(ldap)
 
 	php_info_print_table_start();
 	php_info_print_table_row(2, "LDAP Support", "enabled");
-	php_info_print_table_row(2, "RCS Version", "$Id: 1a2168f979730c42ec291285f5183076688f4509 $");
+	php_info_print_table_row(2, "RCS Version", "$Id: 0779387e5f88edc656159d12b9302a053e82cc79 $");
 
 	if (LDAPG(max_links) == -1) {
 		snprintf(tmp, 31, ZEND_LONG_FMT "/unlimited", LDAPG(num_links));
@@ -415,7 +415,7 @@ PHP_FUNCTION(ldap_connect)
 	{
 		int rc = LDAP_SUCCESS;
 		char	*url = host;
-		if (!ldap_is_ldap_url(url)) {
+		if (url && !ldap_is_ldap_url(url)) {
 			int	urllen = hostlen + sizeof( "ldap://:65535" );
 
 			if (port <= 0 || port > 65535) {
@@ -425,7 +425,7 @@ PHP_FUNCTION(ldap_connect)
 			}
 
 			url = emalloc(urllen);
-			snprintf( url, urllen, "ldap://%s:" ZEND_LONG_FMT, host ? host : "", port );
+			snprintf( url, urllen, "ldap://%s:" ZEND_LONG_FMT, host, port );
 		}
 
 #ifdef LDAP_API_FEATURE_X_OPENLDAP

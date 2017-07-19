@@ -477,13 +477,12 @@ string_key:
 
 static inline int finish_nested_data(UNSERIALIZE_PARAMETER)
 {
-	if (*((*p)++) == '}')
-		return 1;
+	if (*p >= max || **p != '}') {
+		return 0;
+	}
 
-#if SOMETHING_NEW_MIGHT_LEAD_TO_CRASH_ENABLE_IF_YOU_ARE_BRAVE
-	zval_ptr_dtor(rval);
-#endif
-	return 0;
+	(*p)++;
+	return 1;
 }
 
 static inline int object_custom(UNSERIALIZE_PARAMETER, zend_class_entry *ce)
@@ -552,6 +551,10 @@ static inline int object_common2(UNSERIALIZE_PARAMETER, zend_long elements)
 		&& zend_hash_str_exists(&Z_OBJCE_P(rval)->function_table, "__wakeup", sizeof("__wakeup")-1);
 
 	ht = Z_OBJPROP_P(rval);
+	if (elements >= HT_MAX_SIZE - zend_hash_num_elements(ht)) {
+		return 0;
+	}
+
 	zend_hash_extend(ht, zend_hash_num_elements(ht) + elements, (ht->u.flags & HASH_FLAG_PACKED));
 	if (!process_nested_data(UNSERIALIZE_PASSTHRU, ht, elements, 1)) {
 		if (has_wakeup) {
@@ -808,7 +811,7 @@ use_double:
 	*p = YYCURSOR;
     if (!var_hash) return 0;
 
-	if (elements < 0) {
+	if (elements < 0 || elements >= HT_MAX_SIZE) {
 		return 0;
 	}
 
@@ -827,11 +830,11 @@ use_double:
 }
 
 "o:" iv ":" ["] {
-	long elements;
+	zend_long elements;
     if (!var_hash) return 0;
 
 	elements = object_common1(UNSERIALIZE_PASSTHRU, ZEND_STANDARD_CLASS_DEF_PTR);
-	if (elements < 0) {
+	if (elements < 0 || elements >= HT_MAX_SIZE) {
 		return 0;
 	}
 	return object_common2(UNSERIALIZE_PASSTHRU, elements);
