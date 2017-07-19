@@ -4022,15 +4022,19 @@ sprint_status48(char *s, int status, int sigonly)
 
 	col = 0;
 	if (!WIFEXITED(status)) {
-		if (JOBS && WIFSTOPPED(status))
+#if JOBS
+		if (WIFSTOPPED(status))
 			st = WSTOPSIG(status);
 		else
+#endif
 			st = WTERMSIG(status);
 		if (sigonly) {
 			if (st == SIGINT || st == SIGPIPE)
 				goto out;
-			if (JOBS && WIFSTOPPED(status))
+#if JOBS
+			if (WIFSTOPPED(status))
 				goto out;
+#endif
 		}
 		st &= 0x7f;
 //TODO: use bbox's get_signame? strsignal adds ~600 bytes to text+rodata
@@ -4182,8 +4186,10 @@ dowait(int block, struct job *job)
 		goto out;
 	}
 	/* The process wasn't found in job list */
-	if (JOBS && !WIFSTOPPED(status))
+#if JOBS
+	if (!WIFSTOPPED(status))
 		jobless--;
+#endif
  out:
 	INT_ON;
 
@@ -7688,7 +7694,7 @@ tryexec(IF_FEATURE_SH_STANDALONE(int applet_no,) char *cmd, char **argv, char **
 			clearenv();
 			while (*envp)
 				putenv(*envp++);
-			run_applet_no_and_exit(applet_no, argv);
+			run_applet_no_and_exit(applet_no, cmd, argv);
 		}
 		/* re-exec ourselves with the new arguments */
 		execve(bb_busybox_exec_path, argv, envp);
