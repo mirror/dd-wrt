@@ -81,6 +81,14 @@ int getCoreTemp(char *p, int *ridx)
 	char path[64];
 	while (1) {
 		int tidx;
+		sprintf(path, "/sys/class/hwmon/hwmon%d/name", idx);
+		FILE *fp = fopen(path, "rb");
+		if (!fp) {
+			*ridx = -1;
+			return 0;
+		}
+		fclose(fp);
+
 		for (tidx = 0; tidx < 32; tidx++) {
 			sprintf(path, "/sys/class/hwmon/hwmon%d/temp%d_label", idx, tidx);
 			FILE *fp = fopen(path, "rb");
@@ -94,11 +102,9 @@ int getCoreTemp(char *p, int *ridx)
 				*ridx = tidx;
 				return 1;
 			}
+			fclose(fp);
 		}
-		if (tidx == 32) {
-			*ridx = -1;
-			return 0;
-		}
+		idx++;
 	}
 
 }
