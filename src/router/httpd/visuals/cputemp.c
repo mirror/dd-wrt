@@ -239,8 +239,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 		char path[64];
 		int idx = 0;
 		int hascore = 0;
+		char tempp[64];
 		if (getCoreTemp(path, &idx)) {
-			char tempp[64];
 			char maxp[64];
 			sprintf(tempp, "%s/temp%d_input", path, idx);
 			sprintf(maxp, "%s/temp%d_max", path, idx);
