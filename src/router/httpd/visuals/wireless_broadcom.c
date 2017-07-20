@@ -233,8 +233,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			if(fp2){
 				if (fgets(line, sizeof(line), fp2) != NULL) {
 					// get rssi
-					if (sscanf(line, "%d", &rssi) != 1)
+					if (sscanf(line, "%d", &rssi) != 1) {
+						pclose(fp2);
 						continue;
+					}
 					noise = getNoise(iface, NULL);
 					/*
 					* if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
@@ -581,8 +583,10 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 			if (fgets(line, sizeof(line), fp2) != NULL) {
 
 				// get rssi
-				if (sscanf(line, "%d", &rssi) != 1)
+				if (sscanf(line, "%d", &rssi) != 1) {
+					pclose(fp2);
 					continue;
+				}
 			}
 			pclose(fp2);
 		}
