@@ -308,7 +308,6 @@ static int initialize_listen_socket(usockaddr * usaP)
 	}
 
 	if (bind(listen_fd, &usaP->sa, sockaddr_len(usaP)) < 0) {
-		perror("bind");
 		return -1;
 	}
 
@@ -1509,14 +1508,15 @@ int main(int argc, char **argv)
 	 ** v4, but in Linux if you bind a v4 socket first then the v6 bind fails.
 	 */
 #ifdef USE_IPV6
-	if (gotv6)
+	if (gotv6) {
 		listen6_fd = initialize_listen_socket(&host_addr6);
-	else
+	} else
 		listen6_fd = -1;
+	
 #endif
-	if (gotv4)
+	if (gotv4) {
 		listen4_fd = initialize_listen_socket(&host_addr4);
-	else
+	} else
 		listen4_fd = -1;
 	/* If we didn't get any valid sockets, fail. */
 	if (listen4_fd == -1 && listen6_fd == -1) {
