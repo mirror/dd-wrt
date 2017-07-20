@@ -1,4 +1,4 @@
-/* milli_httpd - pretty smal7l HTTP server
+/* milli_httpd - pretty small HTTP server
 ** A combination of
 ** micro_httpd - really small HTTP server
 ** and
@@ -200,22 +200,22 @@ static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usoc
 	}
 
 	/* Find the first IPv6 and IPv4 entries. */
-	aiv6 = (struct addrinfo *)0;
-	aiv4 = (struct addrinfo *)0;
-	for (ai2 = ai; ai2 != (struct addrinfo *)0; ai2 = ai2->ai_next) {
+	aiv6 = NULL;
+	aiv4 = NULL;
+	for (ai2 = ai; ai2 != NULL; ai2 = ai2->ai_next) {
 		switch (ai2->ai_family) {
 		case AF_INET6:
-			if (aiv6 == (struct addrinfo *)0)
+			if (!aiv6)
 				aiv6 = ai2;
 			break;
 		case AF_INET:
-			if (aiv4 == (struct addrinfo *)0)
+			if (!aiv4)
 				aiv4 = ai2;
 			break;
 		}
 	}
 
-	if (aiv6 == (struct addrinfo *)0)
+	if (!aiv6)
 		*gotv6P = 0;
 	else {
 		if (sa6_len < aiv6->ai_addrlen) {
@@ -226,7 +226,7 @@ static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usoc
 		*gotv6P = 1;
 	}
 
-	if (aiv4 == (struct addrinfo *)0)
+	if (!aiv4)
 		*gotv4P = 0;
 	else {
 		if (sa4_len < aiv4->ai_addrlen) {
@@ -428,7 +428,7 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 		wfprintf(conn_fp, "Content-Type: %s\r\n", mime_type);
 
 	wfprintf(conn_fp, "Server: %s\r\n", SERVER_NAME);
-	now = time((time_t *) 0);
+	now = time(NULL);
 	strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
 	wfprintf(conn_fp, "Date: %s\r\n", timebuf);
 	wfprintf(conn_fp, "Connection: close\r\n");
@@ -1541,8 +1541,7 @@ int main(int argc, char **argv)
 
 	/* Loop forever handling requests */
 	for (;;) {
-		webs_t conn_fp;
-		conn_fp = safe_malloc(sizeof(webs));
+		webs_t conn_fp = safe_malloc(sizeof(webs));
 		if (!conn_fp) {
 			ct_syslog(LOG_ERR, httpd_level, "Out of memory while creating new connection");
 			continue;
@@ -1562,7 +1561,7 @@ int main(int argc, char **argv)
 			if (listen6_fd > maxfd)
 				maxfd = listen6_fd;
 		}
-		if (select(maxfd + 1, &lfdset, (fd_set *) 0, (fd_set *) 0, (struct timeval *)0) < 0) {
+		if (select(maxfd + 1, &lfdset, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;	/* try again */
 			perror("select");
