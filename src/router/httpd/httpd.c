@@ -37,6 +37,7 @@
 #include <time.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <netdb.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -94,10 +95,15 @@
 #define RFC1123FMT "%a, %d %b %Y %H:%M:%S GMT"
 #define TIMEOUT	5
 
+//#define USE_IPV6 1
 /* A multi-family sockaddr. */
 typedef union {
 	struct sockaddr sa;
 	struct sockaddr_in sa_in;
+#ifdef USE_IPV6
+	struct sockaddr_in6 sa_in6;
+	struct sockaddr_storage sa_stor;
+#endif				/* USE_IPV6 */
 } usockaddr;
 
 /* Globals. */
@@ -170,35 +176,146 @@ pthread_mutex_t httpd_mutex;
 pthread_mutex_t input_mutex;
 #endif
 
+static void lookup_hostname(usockaddr * usa4P, size_t sa4_len, int *gotv4P, usockaddr * usa6P, size_t sa6_len, int *gotv6P)
+{
+#ifdef USE_IPV6
+
+	struct addrinfo hints;
+	char portstr[10];
+	int gaierr;
+	struct addrinfo *ai;
+	struct addrinfo *ai2;
+	struct addrinfo *aiv6;
+	struct addrinfo *aiv4;
+
+	(void)memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_flags = AI_PASSIVE;
+	hints.ai_socktype = SOCK_STREAM;
+	(void)snprintf(portstr, sizeof(portstr), "%d", (int)server_port);
+	if ((gaierr = getaddrinfo(NULL, portstr, &hints, &ai)) != 0) {
+		exit(1);
+	}
+
+	/* Find the first IPv6 and IPv4 entries. */
+	aiv6 = (struct addrinfo *)0;
+	aiv4 = (struct addrinfo *)0;
+	for (ai2 = ai; ai2 != (struct addrinfo *)0; ai2 = ai2->ai_next) {
+		switch (ai2->ai_family) {
+		case AF_INET6:
+			if (aiv6 == (struct addrinfo *)0)
+				aiv6 = ai2;
+			break;
+		case AF_INET:
+			if (aiv4 == (struct addrinfo *)0)
+				aiv4 = ai2;
+			break;
+		}
+	}
+
+	if (aiv6 == (struct addrinfo *)0)
+		*gotv6P = 0;
+	else {
+		if (sa6_len < aiv6->ai_addrlen) {
+			exit(1);
+		}
+		(void)memset(usa6P, 0, sa6_len);
+		(void)memmove(usa6P, aiv6->ai_addr, aiv6->ai_addrlen);
+		*gotv6P = 1;
+	}
+
+	if (aiv4 == (struct addrinfo *)0)
+		*gotv4P = 0;
+	else {
+		if (sa4_len < aiv4->ai_addrlen) {
+			exit(1);
+		}
+		(void)memset(usa4P, 0, sa4_len);
+		(void)memmove(usa4P, aiv4->ai_addr, aiv4->ai_addrlen);
+		*gotv4P = 1;
+	}
+
+	freeaddrinfo(ai);
+
+#else				/* USE_IPV6 */
+
+	struct hostent *he;
+
+	*gotv6P = 0;
+
+	(void)memset(usa4P, 0, sa4_len);
+	usa4P->sa.sa_family = AF_INET;
+	usa4P->sa_in.sin_addr.s_addr = htonl(INADDR_ANY);
+	usa4P->sa_in.sin_port = htons(server_port);
+	*gotv4P = 1;
+
+#endif				/* USE_IPV6 */
+}
+
+static int sockaddr_check(usockaddr * usaP)
+{
+	switch (usaP->sa.sa_family) {
+	case AF_INET:
+		return 1;
+#ifdef USE_IPV6
+	case AF_INET6:
+		return 1;
+#endif				/* USE_IPV6 */
+	default:
+		return 0;
+	}
+}
+
+static size_t sockaddr_len(usockaddr * usaP)
+{
+	switch (usaP->sa.sa_family) {
+	case AF_INET:
+		return sizeof(struct sockaddr_in);
+#ifdef USE_IPV6
+	case AF_INET6:
+		return sizeof(struct sockaddr_in6);
+#endif				/* USE_IPV6 */
+	default:
+		return 0;	/* shouldn't happen */
+	}
+}
+
 static int initialize_listen_socket(usockaddr * usaP)
 {
 	int listen_fd;
 	int i;
 
-	bzero(usaP, sizeof(usockaddr));
-	usaP->sa.sa_family = AF_INET;
-	usaP->sa_in.sin_addr.s_addr = htonl(INADDR_ANY);
-	usaP->sa_in.sin_port = htons(server_port);
+	/* Check sockaddr. */
+	if (!sockaddr_check(usaP)) {
+		return -1;
+	}
 
 	listen_fd = socket(usaP->sa.sa_family, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
 		perror("socket");
 		return -1;
 	}
+
 	(void)fcntl(listen_fd, F_SETFD, 1);
+
 	i = 1;
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (char *)&i, sizeof(i)) < 0) {
-		perror("setsockopt");
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&i, sizeof(i)) < 0) {
+		syslog(LOG_CRIT, "setsockopt SO_REUSEADDR - %m");
+		perror("setsockopt SO_REUSEADDR");
 		return -1;
 	}
-	if (bind(listen_fd, &usaP->sa, sizeof(struct sockaddr_in)) < 0) {
+
+	if (bind(listen_fd, &usaP->sa, sockaddr_len(usaP)) < 0) {
 		perror("bind");
 		return -1;
 	}
+
 	if (listen(listen_fd, 1024) < 0) {
+		syslog(LOG_CRIT, "listen - %m");
 		perror("listen");
 		return -1;
 	}
+
 	return listen_fd;
 }
 
@@ -1203,14 +1320,19 @@ sslKeys_t *keys;
 
 int main(int argc, char **argv)
 {
+	usockaddr host_addr4;
+	usockaddr host_addr6;
 	usockaddr usa;
-	int listen_fd;
+	int gotv4, gotv6;
+	int listen4_fd = -1;
+	int listen6_fd = -1;
 	int conn_fd;
 	socklen_t sz = sizeof(usa);
 	int c;
 	int timeout = TIMEOUT;
 	struct stat stat_dir;
-
+	fd_set lfdset;
+	int maxfd;
 	set_sigchld_handler();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
@@ -1373,10 +1495,31 @@ int main(int argc, char **argv)
 	}
 #endif
 
-	/* Initialize listen socket */
-	if ((listen_fd = initialize_listen_socket(&usa)) < 0) {
-		ct_syslog(LOG_ERR, httpd_level, "Can't bind to any address");
-		exit(errno);
+	/* Look up hostname. */
+	lookup_hostname(&host_addr4, sizeof(host_addr4), &gotv4, &host_addr6, sizeof(host_addr6), &gotv6);
+
+	if (!(gotv4 || gotv6)) {
+		exit(1);
+	}
+
+	/* Initialize listen sockets.  Try v6 first because of a Linux peculiarity;
+	 ** like some other systems, it has magical v6 sockets that also listen for
+	 ** v4, but in Linux if you bind a v4 socket first then the v6 bind fails.
+	 */
+#ifdef USE_IPV6
+	if (gotv6)
+		listen6_fd = initialize_listen_socket(&host_addr6);
+	else
+		listen6_fd = -1;
+#endif
+	if (gotv4)
+		listen4_fd = initialize_listen_socket(&host_addr4);
+	else
+		listen4_fd = -1;
+	/* If we didn't get any valid sockets, fail. */
+	if (listen4_fd == -1 && listen6_fd == -1) {
+		syslog(LOG_CRIT, "can't bind to any address");
+		exit(1);
 	}
 #if !defined(DEBUG)
 	FILE *pid_fp;
@@ -1404,7 +1547,37 @@ int main(int argc, char **argv)
 		}
 		bzero(conn_fp, sizeof(webs));
 
-		if ((conn_fp->conn_fd = accept(listen_fd, &usa.sa, &sz)) < 0) {
+#ifdef USE_IPV6
+		FD_ZERO(&lfdset);
+		maxfd = -1;
+		if (listen4_fd != -1) {
+			FD_SET(listen4_fd, &lfdset);
+			if (listen4_fd > maxfd)
+				maxfd = listen4_fd;
+		}
+		if (listen6_fd != -1) {
+			FD_SET(listen6_fd, &lfdset);
+			if (listen6_fd > maxfd)
+				maxfd = listen6_fd;
+		}
+		if (select(maxfd + 1, &lfdset, (fd_set *) 0, (fd_set *) 0, (struct timeval *)0) < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;	/* try again */
+			perror("select");
+			return errno;
+		}
+#endif
+
+		sz = sizeof(usa);
+#ifdef USE_IPV6
+		if (listen4_fd != -1 && FD_ISSET(listen4_fd, &lfdset))
+			conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
+		else if (listen6_fd != -1 && FD_ISSET(listen6_fd, &lfdset))
+			conn_fp->conn_fd = accept(listen6_fd, &usa.sa, &sz);
+#else
+		conn_fp->conn_fd = accept(listen4_fd, &usa.sa, &sz);
+#endif
+		if (conn_fp->conn_fd < 0) {
 			perror("accept");
 			return errno;
 		}
@@ -1451,6 +1624,7 @@ int main(int argc, char **argv)
 //                              fprintf(stderr,"ssl accept return %d, ssl error %d %d\n",r,SSL_get_error(ssl,r),RAND_status());
 				ct_syslog(LOG_ERR, httpd_level, "SSL accept error");
 				close(conn_fp->conn_fd);
+
 				SSL_free(conn_fp->ssl);
 				continue;
 			}
@@ -1563,9 +1737,16 @@ int main(int argc, char **argv)
 
 	}
 
-	shutdown(listen_fd, 2);
-	close(listen_fd);
-
+	if (listen4_fd != -1) {
+		shutdown(listen4_fd, 2);
+		close(listen4_fd);
+	}
+#ifdef USE_IPV6
+	if (listen6_fd != -1) {
+		shutdown(listen6_fd, 2);
+		close(listen6_fd);
+	}
+#endif
 	return 0;
 }
 
