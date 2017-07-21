@@ -53,7 +53,6 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 			}
 		}
 	}
-fprintf(stderr,"%d\n",__LINE__);
 	/*
 	 * Skip boundary and headers 
 	 */
@@ -64,13 +63,11 @@ fprintf(stderr,"%d\n",__LINE__);
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
-fprintf(stderr,"%d\n",__LINE__);
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
 	eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 	unlink("/tmp/nvram/.lock");	// delete nvram database
 #endif
-fprintf(stderr,"%d\n",__LINE__);
-	// fprintf (stderr, "file write");
+
 	unsigned short count;
 	FILE *fp = fopen("/tmp/restore.bin", "wb");
 	char *mem = malloc(len);
@@ -82,7 +79,6 @@ fprintf(stderr,"%d\n",__LINE__);
 		wp->restore_ret = 99;
 	else
 		wp->restore_ret = 0;
-fprintf(stderr,"%d ret %d\n",__LINE__,ret);
 	unlink("/tmp/restore.bin");
 	chdir("/www");
 }
