@@ -1097,7 +1097,7 @@ void ping_wol(webs_t wp)
 
 	// use Wol.asp as a debugging console
 #ifdef HAVE_REGISTER
-	if (wp->isregistered_real)
+	if (!wp->isregistered_real)
 		return;
 #endif
 	FILE *fp = popen(wol_cmd, "rb");
@@ -1120,7 +1120,7 @@ void diag_ping_start(webs_t wp)
 
 	setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 #ifdef HAVE_REGISTER
-	if (wp->isregistered_real)
+	if (!wp->isregistered_real)
 		return;
 #endif
 	char cmd[128];

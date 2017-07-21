@@ -36,11 +36,10 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 	char buf[1024];
 	wp->restore_ret = EINVAL;
 #ifdef HAVE_REGISTER
-	if (wp->isregistered_real) {
+	if (!wp->isregistered_real) {
 		return;
 	}
 #endif
-
 	/*
 	 * Look for our part 
 	 */
@@ -54,6 +53,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 			}
 		}
 	}
+fprintf(stderr,"%d\n",__LINE__);
 	/*
 	 * Skip boundary and headers 
 	 */
@@ -64,10 +64,12 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 		if (!strcmp(buf, "\n") || !strcmp(buf, "\r\n"))
 			break;
 	}
+fprintf(stderr,"%d\n",__LINE__);
 #if defined(HAVE_FONERA) || defined(HAVE_WHRAG108) || defined(HAVE_GATEWORX) || defined(HAVE_MAGICBOX) || defined(HAVE_X86) || defined(HAVE_LS2) || defined(HAVE_MERAKI) || defined(HAVE_CA8) || defined(HAVE_TW6600)  || defined(HAVE_LS5)
 	eval("rm", "-f", "/tmp/nvram/*");	// delete nvram database
 	unlink("/tmp/nvram/.lock");	// delete nvram database
 #endif
+fprintf(stderr,"%d\n",__LINE__);
 	// fprintf (stderr, "file write");
 	unsigned short count;
 	FILE *fp = fopen("/tmp/restore.bin", "wb");
@@ -80,6 +82,7 @@ void nv_file_in(char *url, webs_t wp, int len, char *boundary)
 		wp->restore_ret = 99;
 	else
 		wp->restore_ret = 0;
+fprintf(stderr,"%d ret %d\n",__LINE__,ret);
 	unlink("/tmp/restore.bin");
 	chdir("/www");
 }
