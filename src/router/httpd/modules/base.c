@@ -2512,7 +2512,7 @@ struct mime_handler mime_handlers[] = {
 	// #endif
 	{"MyPage.asp*", "text/html", no_cache, NULL, do_mypage, do_auth, 1, 0},
 	{"**.asp", "text/html", no_cache, NULL, do_ej, do_auth, 1, 0},
-	{"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL, 0, 0},
+	{"**.JPG", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0},
 	// {"style.css", "text/css", NULL, NULL, do_style, NULL,0, 0,0},
 	{"common.js", "text/javascript", NULL, NULL, do_file, NULL, 0, 0},
 #ifdef HAVE_LANGUAGE
@@ -2566,7 +2566,7 @@ struct mime_handler mime_handlers[] = {
 	{"**.png", "image/png", NULL, NULL, do_file, NULL, 0, 0},
 	{"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL, 0, 0},
 	{"**.ico", "image/x-icon", NULL, NULL, do_file, NULL, 0, 0},
-	{"**.js", "text/javascript", NULL, NULL, do_ej, NULL, 1, 0},
+	{"**.js", "text/javascript", NULL, NULL, do_file, NULL, 1, 0},
 	{"**.swf", "application/x-shockwave-flash", NULL, NULL, do_file, NULL, 0, 0},
 	{"**.pdf", "application/pdf", NULL, NULL, do_file, NULL, 0, 0},
 	{"**.mp4", "video/mp4", NULL, NULL, do_file, NULL, 0, 0},
