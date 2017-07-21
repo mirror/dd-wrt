@@ -501,10 +501,10 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 		else
 			asprintf(&extra, "%s", options);
 		if (method == METHOD_OPTIONS) {
-			send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+			send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
 			goto ret;
 		} else {
-			send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin");
+			send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
 		}
 	}
 	// send body in 64kb chunks based on random values

@@ -162,7 +162,7 @@ extern char *get_mac_from_ip(char *mac, char *ip);
 static int initialize_listen_socket(usockaddr * usaP);
 static int auth_check(webs_t conn_fp);
 static void send_error(webs_t conn_fp, int status, char *title, char *extra_header, char *text);
-void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file);
+void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache);
 static int b64_decode(const char *str, unsigned char *space, int size);
 static int match(const char *pattern, const char *string);
 static int match_one(const char *pattern, int patternlen, const char *string);
@@ -411,14 +411,14 @@ static void send_error(webs_t conn_fp, int status, char *title, char *extra_head
 {
 
 	// jimmy, https, 8/4/2003, fprintf -> wfprintf, fflush -> wfflush
-	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL);
+	send_headers(conn_fp, status, title, extra_header, "text/html", -1, NULL, 1);
 	(void)wfprintf(conn_fp, "<HTML><HEAD><TITLE>%d %s</TITLE></HEAD>\n<BODY BGCOLOR=\"#cc9999\"><H4>%d %s</H4>\n", status, title, status, title);
 	(void)wfprintf(conn_fp, "%s\n", text);
 	(void)wfprintf(conn_fp, "</BODY></HTML>\n");
 	(void)wfflush(conn_fp);
 }
 
-void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file)
+void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, char *mime_type, int length, char *attach_file, int nocache)
 {
 	time_t now;
 	char timebuf[100];
@@ -432,9 +432,11 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 	strftime(timebuf, sizeof(timebuf), RFC1123FMT, gmtime(&now));
 	wfprintf(conn_fp, "Date: %s\r\n", timebuf);
 	wfprintf(conn_fp, "Connection: close\r\n");
-	wfprintf(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
-	wfprintf(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
-	wfprintf(conn_fp, "Pragma: no-cache\r\n");
+	if (nocache) {
+		wfprintf(conn_fp, "Cache-Control: no-store, no-cache, must-revalidate\r\n");
+		wfprintf(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
+		wfprintf(conn_fp, "Pragma: no-cache\r\n");
+	}
 	if (attach_file)
 		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
 	if (extra_header != NULL && *extra_header)
@@ -596,7 +598,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 		len = getWebsFileLen(path);
 	}
 	if (!handler->send_headers)
-		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach);
+		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach, 0);
 #ifdef HAVE_HTTPS
 	if (stream->do_ssl) {
 		char *buffer = malloc(4096);
@@ -971,7 +973,7 @@ static void *handle_request(void *arg)
 
 			fprintf(stderr, "[HTTP PATH] %s redirect\n", file);
 			sprintf(redirect_path, "Location: http://%s/detect.asp", nvram_get("lan_ipaddr"));
-			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL);
+			send_headers(conn_fp, 302, "Found", redirect_path, "", -1, NULL, 1);
 			goto out;
 
 		} else if (ias_detected == 1) {
@@ -1145,7 +1147,7 @@ static void *handle_request(void *arg)
 			}
 			if (handler->output != do_file)
 				if (handler->send_headers)
-					send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL);
+					send_headers(conn_fp, 200, "Ok", handler->extra_header, handler->mime_type, -1, NULL, 1);
 			// check for do_file handler and check if file exists
 			file_found = 1;
 			if (handler->output == do_file) {
@@ -1512,7 +1514,7 @@ int main(int argc, char **argv)
 		listen6_fd = initialize_listen_socket(&host_addr6);
 	} else
 		listen6_fd = -1;
-	
+
 #endif
 	if (gotv4) {
 		listen4_fd = initialize_listen_socket(&host_addr4);
