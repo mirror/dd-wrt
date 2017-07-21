@@ -1436,9 +1436,11 @@ struct menucontext {
 static struct menucontext *init_menu(webs_t wp)
 {
 	static struct menucontext *m = NULL;
-
-	if (!m)
+	if (!m) {
 		m = malloc(sizeof(struct menucontext));
+		bzero(&m->menu[0],8*13*32);
+		bzero(&m->menuname[0],8*14*32);
+	}
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
 		{"index.asp", "DDNS.asp", "", "", "", "", "", "", "", "", "", "", ""},	//
@@ -1655,16 +1657,19 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 		if (i >= MAXMENU)
 			break;
 		if (!strcmp(m->menu[i][0], mainmenu)) {
+//fprintf(stderr,"%s->%d\n",__func__,__LINE__);
 #ifdef HAVE_MADWIFI
 			if (!wifi && wimaxwifi && !strcmp(m->menu[i][0], "Wireless_Basic.asp"))
 				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.wimax)</script></strong></span>\n");
 			else
 #endif
 				websWrite(wp, "   <li class=\"current\"><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span>\n", m->menuname[i][0]);
+//fprintf(stderr,"%s->%d\n",__func__,__LINE__);
 			websWrite(wp, "    <div id=\"menuSub\">\n");
 			websWrite(wp, "     <ul id=\"menuSubList\">\n");
 
 			for (j = 0; j < MAXSUBMENU; j++) {
+//fprintf(stderr,"%s->%d %d %d\n",__func__,__LINE__,i, j);
 #ifdef HAVE_MADWIFI
 				if (!wifi && !strncmp(m->menu[i][j], "Wireless_Basic.asp", 8))
 					j++;
