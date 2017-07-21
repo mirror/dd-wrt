@@ -441,7 +441,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 		 */
 		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
-			spin_unlock(&ct->lock);
+			spin_unlock_bh(&ct->lock);
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
 			DEBUG_TRACE("connection in termination state: %#x, s: %pI4:%u, d: %pI4:%u\n",
 				    ct->proto.tcp.state, &p_sic->src_ip, ntohs(p_sic->src_port),
