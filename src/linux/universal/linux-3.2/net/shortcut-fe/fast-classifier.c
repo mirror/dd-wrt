@@ -439,7 +439,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 		 * state can not be SYN_SENT, SYN_RECV because connection is assured
 		 * Not managed states: FIN_WAIT, CLOSE_WAIT, LAST_ACK, TIME_WAIT, CLOSE.
 		 */
-		spin_lock(&ct->lock);
+		spin_lock_bh(&ct->lock);
 		if (ct->proto.tcp.state != TCP_CONNTRACK_ESTABLISHED) {
 			spin_unlock(&ct->lock);
 			fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_TCP_NOT_ESTABLISHED);
@@ -448,7 +448,7 @@ static int fast_classifier_update_protocol(struct sfe_connection_create *p_sic, 
 				    &p_sic->dest_ip, ntohs(p_sic->dest_port));
 			return 0;
 		}
-		spin_unlock(&ct->lock);
+		spin_unlock_bh(&ct->lock);
 		break;
 
 	case IPPROTO_UDP:
