@@ -1438,8 +1438,7 @@ static struct menucontext *init_menu(webs_t wp)
 	static struct menucontext *m = NULL;
 	if (!m) {
 		m = malloc(sizeof(struct menucontext));
-		bzero(&m->menu[0],8*13*32);
-		bzero(&m->menuname[0],8*14*32);
+		bzero(m, sizeof(struct menucontext));
 	}
 #ifdef HAVE_ERC
 	static char *menu_s[8][13] = {
