@@ -604,11 +604,11 @@ void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlsta
 	br = netdev_priv(dev);
 	stats = per_cpu_ptr(br->stats, 0);
 
-	u64_stats_update_begin_irq(&stats->syncp);
+	u64_stats_update_begin_bh(&stats->syncp);
 	stats->rx_packets += nlstats->rx_packets;
 	stats->rx_bytes += nlstats->rx_bytes;
 	stats->tx_packets += nlstats->tx_packets;
 	stats->tx_bytes += nlstats->tx_bytes;
-	u64_stats_update_end_irq(&stats->syncp);
+	u64_stats_update_end_bh(&stats->syncp);
 }
 EXPORT_SYMBOL_GPL(br_dev_update_stats);
