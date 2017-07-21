@@ -591,7 +591,7 @@ void br_dev_update_stats(struct net_device *dev, struct rtnl_link_stats64 *nlsta
 		return;
 
 	br = netdev_priv(dev);
-	stats = per_cpu_ptr(br->stats, 0);
+	stats = this_cpu_ptr(br->stats);
 
 	u64_stats_update_begin_bh(&stats->syncp);
 	stats->rx_packets += nlstats->rx_packets;
