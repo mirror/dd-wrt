@@ -230,7 +230,7 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 			// system2 (cmd); // get RSSI value for mac
 
 			fp2 = popen(cmd, "r");
-			if(fp2){
+			if (fp2) {
 				if (fgets(line, sizeof(line), fp2) != NULL) {
 					// get rssi
 					if (sscanf(line, "%d", &rssi) != 1) {
@@ -239,9 +239,9 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 					}
 					noise = getNoise(iface, NULL);
 					/*
-					* if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
-					* NULL && sscanf (line, "%d", &noise) != 1) continue;
-					*/
+					 * if (strcmp (mode, "ap") && fgets (line, sizeof (line), fp2) != 
+					 * NULL && sscanf (line, "%d", &noise) != 1) continue;
+					 */
 					// get noise for client/wet mode
 				}
 				pclose(fp2);

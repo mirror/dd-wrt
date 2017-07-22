@@ -76,7 +76,7 @@ struct fsentry *getfsentries(void)
 
 	char line[512];
 	FILE *fp;
-	struct fsentry *list, *tmplist, *current;
+	struct fsentry *list = NULL, *tmplist, *current = NULL;
 	int count = 0;
 
 	if ((fp = popen("mount", "r"))) {
@@ -87,8 +87,7 @@ struct fsentry *getfsentries(void)
 			if (!tmplist)
 				continue;
 			if (count == 0) {
-				list = tmplist;
-				current = list;
+				list = current = tmplist;
 			} else {
 				current->next = tmplist;
 				current = current->next;
@@ -97,13 +96,14 @@ struct fsentry *getfsentries(void)
 		}
 		pclose(fp);
 	}
+	if (!list)
+		return NULL;
 	struct fsentry *entry = calloc(1, sizeof(struct fsentry));
 	strcpy(entry->fs, "/mnt");
 	strcpy(entry->fstype, "dummy");
 	strcpy(entry->perms, "rw");
 	strcpy(entry->mp, "/mnt");
 	current->next = entry;
-	current = current->next;
 	return list;
 }
 #endif

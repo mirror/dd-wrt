@@ -1605,8 +1605,7 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 #else
 	int sputnik = 0;
 #endif
-	int openvpn = nvram_match("openvpn_enable",
-				  "1") | nvram_matchi("openvpncl_enable", 1);
+	int openvpn = nvram_matchi("openvpn_enable", 1) | nvram_matchi("openvpncl_enable", 1);
 	int auth = nvram_matchi("status_auth", 1);
 	int registered = 1;
 #ifdef HAVE_REGISTER
