@@ -408,7 +408,7 @@ static char *insert(char *ifname, char *index, char *filename)
 	int i;
 	int ai = 0;
 	int length = calclength(webfile, ifname);
-	char *temp = calloc(length, 1);
+	char *temp = calloc(length+1, 1);
 
 	for (i = 0; i < weblen; i++) {
 		if (webfile[i] == '%') {
