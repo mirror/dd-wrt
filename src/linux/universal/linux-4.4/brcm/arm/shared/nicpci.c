@@ -1534,6 +1534,7 @@ BCMATTACHFN(pcicore_attach)(void *pch, char *pvars, int state)
 		    BCM4350_CHIP(sih->chip) ||
 		    (BCM4352_CHIP_ID == CHIPID(sih->chip)) ||
 		    (BCM43602_CHIP_ID == CHIPID(sih->chip)) ||
+		    (BCM43462_CHIP_ID == CHIPID(sih->chip)) ||
 		    (BCM4335_CHIP_ID == CHIPID(sih->chip)) ||
 			0)
 			pi->pcie_reqsize = PCIE_CAP_DEVCTRL_MRRS_1024B;
