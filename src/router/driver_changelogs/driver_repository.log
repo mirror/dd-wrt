@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3496 | brainslayer | 2017-07-24 16:19:23 +0200 (Mon, 24 Jul 2017) | 1 line
+
+style changes sc/shownf
+------------------------------------------------------------------------
 r3495 | brainslayer | 2017-07-18 10:55:00 +0200 (Tue, 18 Jul 2017) | 1 line
 
 mwlwifi: Make sure EAPOL packet gets high priority.
