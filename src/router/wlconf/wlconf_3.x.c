@@ -1033,6 +1033,7 @@ wlconf_set_ampdu_retry_limit(char *name, char *prefix)
 	return;
 }
 
+
 /* Function to set the Short and the Long retry limits
  */
 static void
@@ -1611,9 +1612,10 @@ wlconf(char *name)
 	int max_assoc = -1;
 	bool ure_enab = FALSE;
 	bool radar_enab = FALSE;
-	chanspec_t chanspec = 0;
+	chanspec_t chanspec = 0, prev_chspec = 0;
 	bool obss_coex = FALSE;
 	int wet_tunnel_cap = 0, wet_tunnel_enable = 0;
+	bool cap_160 = FALSE, cap_dyn160 = FALSE;
 	brcm_prop_ie_t brcm_syscap_ie;
 	int is_dhd = 0;
 	int cfg_max_assoc = -1;
@@ -1700,6 +1702,11 @@ cprintf("get caps\n");
 			radio_pwrsave = 1;
 		else if (!strcmp(cap, "wet_tunnel"))
 			wet_tunnel_cap = 1;
+		else if (!strcmp(cap, "160"))
+			cap_160 = TRUE;
+		else if (!strcmp(cap, "dyn160"))
+			cap_dyn160 = TRUE;
+
 	}
 cprintf("get wl addr\n");
 	/* Get MAC address */
@@ -1884,6 +1891,8 @@ cprintf("set wet flag %s\n",name);
 	} else
 #endif
 	WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
+	WL_IOVAR_SETINT(name, "wet_enab", wet);
+
 
 cprintf("set spoof flag %s\n",name);
 //fprintf(stderr, "set spoof flag %s\n",name);
@@ -2376,6 +2385,7 @@ cprintf("get core rev %s\n",name);
 			int bandtype;
 			uint8 bw_cap;
 		} param;
+
 		/* Get the user nmode setting now */
 		nmode = AUTO;	/* enable by default for NPHY */
 		/* Set n mode */
@@ -2383,19 +2393,28 @@ cprintf("get core rev %s\n",name);
 		if (nvram_match(tmp, "0"))
 			nmode = OFF;
 
-
 		WL_IOVAR_SETINT(name, "nmode", (uint32)nmode);
+
 		if (nmode == OFF)
 			val = WLC_BW_CAP_20MHZ;
- 		else
+		else
 			val = wlconf_bw_cap(prefix, bandtype);
 
+		val &= WLC_BW_CAP_UNRESTRICTED;
+
 		/* record the bw here */
-		if (val == WLC_BW_CAP_80MHZ)
+		if (val == WLC_BW_CAP_UNRESTRICTED) {
+			if (phytype == PHY_TYPE_AC) {
+				nbw = cap_160 ? WL_CHANSPEC_BW_160 : WL_CHANSPEC_BW_80;
+			} else {
+				nbw = WL_CHANSPEC_BW_40;
+			}
+		} else if (val == WLC_BW_CAP_160MHZ)
+			nbw = WL_CHANSPEC_BW_160;
+		else if (val == WLC_BW_CAP_80MHZ)
 			nbw = WL_CHANSPEC_BW_80;
 		else if (val == WLC_BW_CAP_40MHZ)
 			nbw = WL_CHANSPEC_BW_40;
-
 
 		param.bandtype = bandtype;
 		param.bw_cap = (uint8) val;
@@ -2405,6 +2424,15 @@ cprintf("get core rev %s\n",name);
 		/* Save n mode to OFF */
 		nvram_set(strcat_r(prefix, "nmode", tmp), "0");
 	}
+
+	str = nvram_safe_get(strcat_r(prefix, "dyn160", tmp));
+	/* validate before setting */
+	if (cap_dyn160 && str != NULL && str[0] != '\0' && str[0] >= '0' && str[0] <= '1') {
+		val = atoi(str);
+		WL_IOVAR_SETINT(name, "dyn160", (uint32)val);
+	}
+
+	WL_IOVAR_GETINT(name, "chanspec", &prev_chspec);
 
 	/* Set channel before setting gmode or rateset */
 	/* Manual Channel Selection - when channel # is not 0 */
@@ -2437,6 +2465,9 @@ cprintf("set channel %s\n",name);
 		
 		fprintf(stderr,"channel %d, val %d\n",channel,val);
 		switch (val) {
+		case 160:
+			val = WL_CHANSPEC_BW_160;
+			break;
 		case 80:
 			val = WL_CHANSPEC_BW_80;
 			break;
@@ -2457,7 +2488,39 @@ cprintf("set channel %s\n",name);
 
 		//fprintf(stderr,"nbw:%X, nctrlsb:%X, channel:%X\n",nbw,nctrlsb,channel);
 		/* Get Ctrl SB for 40MHz channel */
-		if (nbw == WL_CHANSPEC_BW_80) {
+		if (nbw == WL_CHANSPEC_BW_160) {
+			/* Get Ctrl SB for 160MHz channel */
+			str = nvram_safe_get(strcat_r(prefix, "nctrlsb", tmp));
+
+			/* Adjust the channel to be center channel */
+			channel = channel + CH_80MHZ_APART - CH_10MHZ_APART;
+
+			if (!strcmp(str, "lll")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_LLL;
+			} else if (!strcmp(str, "llu")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_LLU;
+				channel -= CH_20MHZ_APART;
+			} else if (!strcmp(str, "lul")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_LUL;
+				channel -= 2 * CH_20MHZ_APART;
+			} else if (!strcmp(str, "luu")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_LUU;
+				channel -= 3 * CH_20MHZ_APART;
+			} else if (!strcmp(str, "ull")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_ULL;
+				channel -= 4 * CH_20MHZ_APART;
+			} else if (!strcmp(str, "ulu")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_ULU;
+				channel -= 5 * CH_20MHZ_APART;
+			} else if (!strcmp(str, "uul")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_UUL;
+				channel -= 6 * CH_20MHZ_APART;
+			} else if (!strcmp(str, "uuu")) {
+				nctrlsb = WL_CHANSPEC_CTL_SB_UUU;
+				channel -= 7 * CH_20MHZ_APART;
+			}
+
+		} else if (nbw == WL_CHANSPEC_BW_80) {
 			/* Get Ctrl SB for 80MHz channel */
 			str = nvram_safe_get(strcat_r(prefix, "nctrlsb", tmp));
 
@@ -2500,6 +2563,7 @@ cprintf("set channel %s\n",name);
 
 		WL_IOVAR_SETINT(name, "chanspec", (uint32)chanspec);
 	}
+
 
 	/* Set up number of Tx and Rx streams */
 	if (WLCONF_PHYTYPE_11N(phytype)) {
@@ -2788,7 +2852,10 @@ cprintf("set btc mode %s\n",name);
 	}
 cprintf("set rate set %s\n",name);
 	/* Set rateset */
-	WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof(wl_rateset_t));
+	if (!CHSPEC_IS160(prev_chspec) || bandtype == WLC_BAND_2G || phytype != PHY_TYPE_AC) {
+		WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof(wl_rateset_t));
+	}
+
 
 cprintf("set plcphdr %s\n",name);
 	/* Allow short preamble override for b cards */
@@ -3021,6 +3088,26 @@ cprintf("%d\n",__LINE__);
 		wlconf_set_txbf(name, prefix);
 	}
 
+	/* 4365b1: Set ctdma completion busy dma war */
+	if (rev.corerev == 64) {
+		val = 0;
+		str = nvram_get(strcat_r(prefix, "cpbusy_war", tmp));
+		if (str) {
+			val = atoi(str);
+			WL_IOVAR_SETINT(name, "cpbusy_war", val);
+		}
+	}
+
+	/* Set maximum MU clients number if needed. */
+	if (rev.corerev >= 64) {
+		val = 0;
+		str = nvram_get(strcat_r(prefix, "max_muclients", tmp));
+		if (str) {
+			val = atoi(str);
+			WL_IOVAR_SETINT(name, "max_muclients", val);
+		}
+	}
+
 cprintf("%d\n",__LINE__);
 
 	/* set airtime fairness */
@@ -3085,9 +3172,22 @@ cprintf("set up %s\n",name);
 	/* Set phy periodic cal if nvram present. Otherwise, use driver defaults. */
 	str = nvram_get(strcat_r(prefix, "cal_period", tmp));
 	if (str) {
-		/* user specified phy cal period. */
+		/*
+		 *  If cal_period is "-1 / Auto"
+		 *     - For corerev >= 40, set cal_period to 0
+		 *     - For corerev < 40, use driver defaults.
+		 *  Else
+		 *     - Use the value specified in the nvram.
+		 */
 		val = atoi(str);
-		WL_IOVAR_SET(name, "cal_period", &val, sizeof(val));
+		if (val == -1) {
+			if (rev.corerev >= 40) {
+				val = 0;
+				WL_IOVAR_SET(name, "cal_period", &val, sizeof(val));
+			}
+		} else {
+			WL_IOVAR_SET(name, "cal_period", &val, sizeof(val));
+		}
 	}
 
 cprintf("set antdiv mode %s\n",name);
