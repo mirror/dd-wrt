@@ -148,15 +148,15 @@ void start_radvd(void)
 			" {\n"
 			"  AdvOnLink on;\n"
 			"  AdvAutonomous %s;\n"
-			"%s"
+			"  AdvValidLifetime 30;\n"
+			"  AdvPreferredLifetime 20;\n"
 			"%s%s%s"
 			" };\n",
 			nvram_safe_get("lan_ifname"),
 			manual ? "on" : "off",
 			mtu,
 			prefix,
-			manual ? "off" : "on",
-			do_6to4 | do_6rd ? "  AdvValidLifetime 300;\n  AdvPreferredLifetime 120;\n" : "", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? get_wan_face() : "", do_6to4 ? ";\n" : "");
+			manual ? "off" : "on", do_6to4 ? "  Base6to4Interface " : "", do_6to4 ? get_wan_face() : "", do_6to4 ? ";\n" : "");
 
 		char ipv6_dns_str[1024] = "";
 		char nvname[sizeof("ipv6_dnsXXX")];
