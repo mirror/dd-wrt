@@ -342,6 +342,7 @@ static rsc_per_chip_t* si_pmu_get_rsc_positions(si_t *sih)
 		rsc = &rsc_43239;
 		break;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		rsc = &rsc_43602;
 		break;
 	case BCM43430_CHIP_ID:
@@ -935,6 +936,7 @@ BCMINITFN(si_pmu_fast_pwrup_delay)(si_t *sih, osl_t *osh)
 			pmudelay = pmudelay + 200;
 			break;
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 			rsc = si_pmu_get_rsc_positions(sih);
 			/* Retrieve time by reading it out of the hardware */
 			ilp = si_ilp_clock(sih);
@@ -2936,6 +2938,7 @@ si_pmu_res_masks(si_t *sih, uint32 *pmin, uint32 *pmax)
 		break;
 
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		/* as a bare minimum, have ALP clock running */
 		min_mask = PMURES_BIT(RES43602_LPLDO_PU)  | PMURES_BIT(RES43602_REGULATOR)      |
 			PMURES_BIT(RES43602_PMU_SLEEP)    | PMURES_BIT(RES43602_XTALLDO_PU)     |
@@ -3564,6 +3567,7 @@ BCMATTACHFN(si_pmu_res_init)(si_t *sih, osl_t *osh)
 		}
 		break;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		pmu_res_updown_table = bcm43602_res_updown;
 		pmu_res_updown_table_sz = ARRAYSIZE(bcm43602_res_updown);
 		pmu_res_depend_table = bcm43602_res_depend;
@@ -3657,7 +3661,7 @@ BCMATTACHFN(si_pmu_res_init)(si_t *sih, osl_t *osh)
 			is_pciedev = TRUE;
 		else if (BCM4350_CHIP(sih->chip) && CST4350_CHIPMODE_PCIE(sih->chipst))
 			is_pciedev = TRUE;
-		else if (CHIPID(sih->chip) == BCM43602_CHIP_ID)
+		else if (CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID)
 			is_pciedev = TRUE;
 
 		if (is_pciedev) {
@@ -4831,6 +4835,7 @@ BCMINITFN(si_pmu1_xtaldef0)(si_t *sih)
 		/* Default to 37400Khz */
 		return &pmu1_xtaltab0_960[PMU1_XTALTAB0_960_37400K];
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		return &pmu1_xtaltab0_960[PMU1_XTALTAB0_960_40000K];
 
 	case BCM4349_CHIP_GRPID:
@@ -4939,6 +4944,7 @@ BCMINITFN(si_pmu1_pllfvco0)(si_t *sih)
 		return FVCO_960;
 
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		return FVCO_960;
 
 
@@ -5034,6 +5040,7 @@ si_pmu_htclk_mask(si_t *sih)
 		case BCM4335_CHIP_ID:   /* Same HT_ vals as 4350 */
 		case BCM4345_CHIP_ID:	/* Same HT_ vals as 4350 */
 		case BCM43602_CHIP_ID:  /* Same HT_ vals as 4350 */
+		case BCM43462_CHIP_ID:  /* Same HT_ vals as 4350 */
 		case BCM4349_CHIP_GRPID:
 		case BCM43430_CHIP_ID:
 		case BCM53573_CHIP_GRPID: /* ht start is not defined for 53573 */
@@ -5135,6 +5142,7 @@ BCMATTACHFN(si_pmu_def_alp_clock)(si_t *sih, osl_t *osh)
 		clock = 40000*1000;
 		break;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		clock = 40000 * 1000;
 		break;
 	}
@@ -5540,6 +5548,7 @@ BCMATTACHFN(si_pmu_update_pllcontrol)(si_t *sih, osl_t *osh, uint32 xtal, bool u
 		 */
 		 break;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		/*
 		 * XXX43602 has only 1 x-tal value, possibly insert case when an other BBPLL
 		 * frequency than 960Mhz is required (e.g., for spur avoidance)
@@ -5858,6 +5867,7 @@ si_pmu_pll_off(si_t *sih, osl_t *osh, chipcregs_t *cc, uint32 *min_mask,
 		(CHIPID(sih->chip) == BCM43430_CHIP_ID) ||
 		(BCM53573_CHIP(sih->chip)) ||
 		(CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+		(CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 		BCM4350_CHIP(sih->chip) ||
 		(BCM4349_CHIP(sih->chip)) ||
 	0) {
@@ -5910,6 +5920,7 @@ uint32 *max_mask, uint32 *clk_ctl_st)
 		(CHIPID(sih->chip) == BCM43430_CHIP_ID) ||
 		(BCM53573_CHIP(sih->chip)) ||
 		(CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+		(CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 		BCM4350_CHIP(sih->chip) ||
 		BCM4349_CHIP(sih->chip) ||
 	0) {
@@ -6588,7 +6599,8 @@ BCMINITFN(si_pmu1_cpuclk0)(si_t *sih, osl_t *osh, chipcregs_t *cc)
 #endif
 	uint32 FVCO = si_pmu1_pllfvco0(sih);	/* in [khz] units */
 
-	if ((CHIPID(sih->chip) == BCM43602_CHIP_ID) &&
+	if ((CHIPID(sih->chip) == BCM43602_CHIP_ID ||
+	    CHIPID(sih->chip) == BCM43462_CHIP_ID) &&
 #ifdef DONGLEBUILD
 #ifdef __arm__
 	    (si_arm_clockratio(sih, 0) == 1) &&
@@ -6666,6 +6678,7 @@ BCMINITFN(si_pmu1_cpuclk0)(si_t *sih, osl_t *osh, chipcregs_t *cc)
 		break;
 #ifdef DONGLEBUILD
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 #ifdef __arm__
 		ASSERT(si_arm_clockratio(sih, 0) == 2);
 #endif
@@ -6942,6 +6955,7 @@ BCMATTACHFN(si_set_bb_vcofreq_frac)(si_t *sih, osl_t *osh, int vcofreq, int frac
 	if ((CHIPID(sih->chip) == BCM4360_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM43460_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+	    (CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM43526_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM4352_CHIP_ID)) {
 		chipcregs_t *cc;
@@ -7015,6 +7029,7 @@ si_pmu_get_bb_vcofreq(si_t *sih, osl_t *osh, int xtalfreq)
 	    (CHIPID(sih->chip) == BCM43460_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM43526_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+	    (CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 	    (CHIPID(sih->chip) == BCM4352_CHIP_ID)) {
 		reg = si_pmu_pllcontrol(sih, 2, 0, 0);
 		ndiv_int = reg >> 7;
@@ -7171,6 +7186,7 @@ BCMATTACHFN(si_pmu_pll_init)(si_t *sih, osl_t *osh, uint xtalfreq)
 		break;
 	}
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		si_set_bb_vcofreq_frac(sih, osh, 960, 98, 40);
 		break;
 	case BCM4313_CHIP_ID:
@@ -7288,6 +7304,7 @@ BCMINITFN(si_pmu_alp_clock)(si_t *sih, osl_t *osh)
 		break;
 
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 	case BCM53573_CHIP_GRPID:
 		/* always 40Mhz */
 		clock = 40000 * 1000;
@@ -7557,7 +7574,9 @@ BCMINITFN(si_pmu_si_clock)(si_t *sih, osl_t *osh)
 			clock = clock/mdiv * 1000;
 			break;
 		}
-	case BCM43602_CHIP_ID: {
+	case BCM43602_CHIP_ID: 
+	case BCM43462_CHIP_ID: 
+		{
 			uint32 mdiv;
 			/* Ch3 is connected to backplane_clk. Read 'bbpll_i_m3div' from pllctl[4] */
 			W_REG(osh, PMUREG(sih, pllcontrol_addr), PMU1_PLL0_PLLCTL4);
@@ -7704,7 +7723,7 @@ BCMINITFN(si_pmu_cpu_clock)(si_t *sih, osl_t *osh)
 		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
 			clock = si_4706_pmu_clock(sih, osh, cc,
 				PMU4706_MAINPLL_PLL0, PMU5_MAINPLL_CPU);
-		else if (CHIPID(sih->chip) == BCM43602_CHIP_ID)
+		else if (CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID)
 			clock = si_pmu1_cpuclk0(sih, osh, cc);
 		else
 			clock = si_pmu5_clock(sih, osh, cc, pll, PMU5_MAINPLL_CPU);
@@ -7766,6 +7785,7 @@ BCMINITFN(si_pmu_mem_clock)(si_t *sih, osl_t *osh)
 		(CHIPID(sih->chip) == BCM4335_CHIP_ID) ||
 		(CHIPID(sih->chip) == BCM4345_CHIP_ID) ||
 		(CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+		(CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 		BCM4350_CHIP(sih->chip) ||
 		BCM4349_CHIP(sih->chip) ||
 		0)) {
@@ -9352,6 +9372,7 @@ si_pmu_is_otp_powered(si_t *sih, osl_t *osh)
 	case BCM43234_CHIP_ID:
 	case BCM4331_CHIP_ID:   case BCM43431_CHIP_ID:
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		st = TRUE;
 		break;
 	default:
@@ -9439,6 +9460,7 @@ BCMATTACHFN(si_pmu_set_lpoclk)(si_t *sih, osl_t *osh)
 	if (ext_lpo_sel != 0) {
 		switch (CHIPID(sih->chip)) {
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 			/* External LPO is POR default enabled */
 			si_pmu_chipcontrol(sih, CHIPCTRLREG2, PMU43602_CC2_XTAL32_SEL,
 				ext_lpo_isclock ? 0 : PMU43602_CC2_XTAL32_SEL);
@@ -9466,6 +9488,7 @@ BCMATTACHFN(si_pmu_set_lpoclk)(si_t *sih, osl_t *osh)
 
 			switch (CHIPID(sih->chip)) {
 			case BCM43602_CHIP_ID:
+			case BCM43462_CHIP_ID:
 				si_pmu_chipcontrol(sih, CHIPCTRLREG2, PMU43602_CC2_FORCE_EXT_LPO,
 					PMU43602_CC2_FORCE_EXT_LPO); /* switches to external LPO */
 				break;
@@ -9489,6 +9512,7 @@ BCMATTACHFN(si_pmu_set_lpoclk)(si_t *sih, osl_t *osh)
 				/* Clear Force External LPO Sel */
 				switch (CHIPID(sih->chip)) {
 				case BCM43602_CHIP_ID:
+				case BCM43462_CHIP_ID:
 					si_pmu_chipcontrol(sih, CHIPCTRLREG2,
 						PMU43602_CC2_FORCE_EXT_LPO, 0);
 					break;
@@ -9500,6 +9524,7 @@ BCMATTACHFN(si_pmu_set_lpoclk)(si_t *sih, osl_t *osh)
 				/* Clear Force Internal LPO Power Up */
 				switch (CHIPID(sih->chip)) {
 				case BCM43602_CHIP_ID:
+				case BCM43462_CHIP_ID:
 					break;
 				default:
 					si_pmu_chipcontrol(sih, CHIPCTRLREG0, CC_INT_LPO_PU, 0x0);
@@ -9511,6 +9536,7 @@ BCMATTACHFN(si_pmu_set_lpoclk)(si_t *sih, osl_t *osh)
 	} else if (int_lpo_sel != 0) {
 		switch (CHIPID(sih->chip)) {
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 			break; /* do nothing, internal LPO is POR default powered and selected */
 		default:
 			/* Force Internal LPO Power Up */
@@ -9762,6 +9788,7 @@ BCMATTACHFN(si_pmu_chip_init)(si_t *sih, osl_t *osh)
 	}
 	case BCM4335_CHIP_ID:
 	case BCM43602_CHIP_ID: /* fall through */
+	case BCM43462_CHIP_ID: /* fall through */
 	case BCM43430_CHIP_ID: /* fall through */
 		/* Set internal/external LPO */
 		si_pmu_set_lpoclk(sih, osh);
@@ -10234,6 +10261,7 @@ BCMATTACHFN(si_pmu_measure_alpclk)(si_t *sih, osl_t *osh)
 		BCM4349_CHIP(sih->chip) ||
 		(CHIPID(sih->chip) == BCM43430_CHIP_ID) ||
 		(CHIPID(sih->chip) == BCM43602_CHIP_ID) ||
+		(CHIPID(sih->chip) == BCM43462_CHIP_ID) ||
 		BCM4350_CHIP(sih->chip) ||
 		0)
 		pmustat_lpo = !(R_REG(osh, PMUREG(sih, pmucontrol)) & PCTL_LPO_SEL);
@@ -10335,6 +10363,7 @@ si_pmu_res_minmax_update(si_t *sih, osl_t *osh)
 	case BCM4345_CHIP_ID:
 	case BCM43430_CHIP_ID:
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 	case BCM4350_CHIP_ID:
 	case BCM4354_CHIP_ID:
 	case BCM4356_CHIP_ID:
