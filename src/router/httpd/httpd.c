@@ -1248,21 +1248,18 @@ void settimeouts(int sock, int secs)
 		 */
 		r = 1;
 		(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
+#endif	
 #ifdef TCP_CORK
-		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
-		 ** delay between sending the headers and sending the data.  A better
-		 ** solution is writev() (as used in thttpd), or send the headers with
-		 ** send(MSG_MORE) (only available in Linux so far).
+		/* TCP_PUSH is BSD only. TCP_CORK is the linux variant
 		 */
 		r = 1;
 		(void)setsockopt(sock, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
+#endif			
 
 #ifdef TCP_NODELAY
 		r = 1;
 		(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
+#endif				
 
 }
 
