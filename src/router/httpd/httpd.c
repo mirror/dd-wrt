@@ -113,6 +113,11 @@ typedef union {
 FILE *debout;
 #endif
 
+#if defined(TCP_CORK) && !defined(TCP_NOPUSH)
+#define TCP_NOPUSH TCP_CORK
+/* (Linux's TCP_CORK is basically the same as BSD's TCP_NOPUSH.) */
+#endif
+
 #if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 
 #define DEFAULT_HTTPS_PORT 443
@@ -280,6 +285,28 @@ static size_t sockaddr_len(usockaddr * usaP)
 	default:
 		return 0;	/* shouldn't happen */
 	}
+}
+
+void setnaggle(webs_t wp, int on)
+{
+	int r;
+
+	if (!wp->do_ssl) {
+#if defined(TCP_NOPUSH)
+		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+		 ** delay between sending the headers and sending the data.  A better
+		 ** solution is writev() (as used in thttpd), or send the headers with
+		 ** send(MSG_MORE) (only available in Linux so far).
+		 */
+		r = on;
+		(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+		if (on) {
+			r = 1;
+			(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+		}
+#endif
+	}
+
 }
 
 static int initialize_listen_socket(usockaddr * usaP)
@@ -707,6 +734,8 @@ static void *handle_request(void *arg)
 #endif
 
 #endif
+	setnaggle(conn_fp, 1);
+
 	line = malloc(LINE_LEN);
 	/* Initialize the request variables. */
 	authorization = referer = boundary = host = NULL;
@@ -1176,6 +1205,7 @@ static void *handle_request(void *arg)
 	}
 
       out:;
+	setnaggle(conn_fp, 0);
 
 	free(line);
 	wfclose(conn_fp);
@@ -1228,38 +1258,16 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-void settimeouts(int sock, int secs)
+void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
-	int r;
 
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
-	if (setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_SNDTIMEO)");
-	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
+	if (setsockopt(wp->conn_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
-
-#ifdef TCP_NOPUSH
-		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
-		 ** delay between sending the headers and sending the data.  A better
-		 ** solution is writev() (as used in thttpd), or send the headers with
-		 ** send(MSG_MORE) (only available in Linux so far).
-		 */
-		r = 1;
-		(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
-#endif	
-#ifdef TCP_CORK
-		/* TCP_PUSH is BSD only. TCP_CORK is the linux variant
-		 */
-		r = 1;
-		(void)setsockopt(sock, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
-#endif			
-
-#ifdef TCP_NODELAY
-		r = 1;
-		(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-#endif				
 
 }
 
@@ -1574,6 +1582,9 @@ int main(int argc, char **argv)
 			continue;
 		}
 		bzero(conn_fp, sizeof(webs));
+#ifdef HAVE_HTTPS
+		conn_fp->do_ssl = do_ssl;
+#endif
 
 #ifdef USE_IPV6
 		FD_ZERO(&lfdset);
@@ -1611,7 +1622,7 @@ int main(int argc, char **argv)
 		}
 
 		/* Make sure we don't linger a long time if the other end disappears */
-		settimeouts(conn_fp->conn_fd, timeout);
+		settimeouts(conn_fp, timeout);
 		fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
 
 		if (check_action() == ACT_TFTP_UPGRADE ||	// We don't want user to use web during tftp upgrade.
@@ -1725,9 +1736,6 @@ int main(int argc, char **argv)
 		pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 //              pthread_attr_setstacksize(&attr, 4096);
 		pthread_t thread;
-#ifdef HAVE_HTTPS
-		conn_fp->do_ssl = do_ssl;
-#endif
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 		pthread_attr_destroy(&attr);
