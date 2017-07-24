@@ -80,10 +80,14 @@ static int radio_timer_main(int argc, char **argv)
 							//on first time call the radio is already on, no need to reinit it a second time
 							syslog(LOG_DEBUG, "Turning radio %d on\n", i);
 							char on[32];
+							sprintf(on, "radio_on_%d", i);
 							start_service_force(on);
 							char dev[32];
 							sprintf(dev, "ath%d", i);
 							eval("ifconfig", dev, "up");
+#ifdef HAVE_MADWIFI
+							start_service_force("restarthostapd");
+#endif
 						}
 						break;
 					case 2:	// 10 - turn radio off
