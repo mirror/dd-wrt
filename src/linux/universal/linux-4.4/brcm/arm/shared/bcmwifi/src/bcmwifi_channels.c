@@ -272,7 +272,20 @@ wf_chspec_ntoa(chanspec_t chspec, char *buf)
 			sb = CHSPEC_SB_UPPER(chspec) ? "u" : "l";
 			snprintf(buf, CHANSPEC_STR_LEN, "%s%d%s", band, ctl_chan, sb);
 		} else {
-			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s", band, ctl_chan, bw);
+			char ll[8]={0};
+			char lu[8]={0};
+			char ul[8]={0};
+			char uu[8]={0};
+			if ((chspec & WL_CHANSPEC_CTL_SB_LL) == WL_CHANSPEC_CTL_SB_LL)
+				sprintf(ll,"[ll]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_LU) == WL_CHANSPEC_CTL_SB_LU)
+				sprintf(lu,"[lu]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_UL) == WL_CHANSPEC_CTL_SB_UL)
+				sprintf(ul,"[ul]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_UU) == WL_CHANSPEC_CTL_SB_UU)
+				sprintf(uu,"[uu]");
+			
+			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s %s%s%s%s", band, ctl_chan, bw, ll,lu,ul,uu);
 		}
 #endif /* CHANSPEC_NEW_40MHZ_FORMAT */
 
