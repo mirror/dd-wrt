@@ -1739,7 +1739,6 @@ int main(int argc, char **argv)
 		if (pthread_create(&thread, &attr, handle_request, conn_fp) != 0)
 			fprintf(stderr, "Failed to create thread\n");
 		pthread_attr_destroy(&attr);
-		free(thread);
 
 //              conn_fp->do_ssl = do_ssl;
 //              FORK(handle_request(conn_fp));
