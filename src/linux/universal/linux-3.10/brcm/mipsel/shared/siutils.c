@@ -832,6 +832,7 @@ BCMATTACHFN(si_muxenab)(si_t *sih, uint32 w)
 	case BCM4360_CHIP_ID:
 	case BCM43460_CHIP_ID:
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 	case BCM4352_CHIP_ID:
 	case BCM43526_CHIP_ID:
 		if (w & MUXENAB_UART)
@@ -2680,6 +2681,7 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 					xtalfreq = 20000;
 					break;
 				case BCM43602_CHIP_ID:
+				case BCM43462_CHIP_ID:
 					xtalfreq = 40000;
 					break;
 				case BCM4350_CHIP_ID:
@@ -3677,6 +3679,7 @@ si_chip_hostif(si_t *sih)
 		break;
 
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		hosti = CHIP_HOSTIF_PCIEMODE;
 		break;
 
@@ -3993,7 +3996,7 @@ BCMATTACHFN(si_d11_devid)(si_t *sih)
 		device = BCM4360_D11AC_ID;
 	} else if (BCM4350_CHIP(sih->chip)) {
 		device = BCM4350_D11AC_ID;
-	} else if ((CHIPID(sih->chip) == BCM43602_CHIP_ID)) {
+	} else if ((CHIPID(sih->chip) == BCM43602_CHIP_ID) || (CHIPID(sih->chip) == BCM43462_CHIP_ID)) {
 		device = BCM43602_D11AC_ID;
 	}
 #endif /* BCM_OL_DEV */
@@ -5281,7 +5284,7 @@ BCMINITFN(si_pci_up)(si_t *sih)
 	/* In the down path, the FEM control has been overrided.
 	 * Restore FEM control back to its default.
 	 */
-	if (CHIPID(sih->chip) == BCM43602_CHIP_ID)
+	if (CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID)
 		si_pmu_chipcontrol(sih, CHIPCTRLREG1, PMU43602_CC1_GPIO12_OVRD, 0);
 
 	if (PCIE(sii)) {
@@ -5315,7 +5318,7 @@ BCMINITFN(si_pci_down)(si_t *sih)
 	/* Override the FEM control to GPIO (High-Z) so that in down state the pin
 	 * is not driven low which causes excess current draw.
 	 */
-	if (CHIPID(sih->chip) == BCM43602_CHIP_ID)
+	if (CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID)
 		si_pmu_chipcontrol(sih, CHIPCTRLREG1,
 			PMU43602_CC1_GPIO12_OVRD, PMU43602_CC1_GPIO12_OVRD);
 
@@ -7651,6 +7654,7 @@ si_is_sprom_available(si_t *sih)
 	case BCM4358_CHIP_ID:
 		return (sih->chipst & CST4350_SPROM_PRESENT) != 0;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		return (sih->chipst & CST43602_SPROM_PRESENT) != 0;
 	case BCM43131_CHIP_ID:
 	case BCM43217_CHIP_ID:
@@ -7694,6 +7698,7 @@ si_is_otp_disabled(si_t *sih)
 	case BCM4331_CHIP_ID:
 		return (sih->chipst & CST4331_OTP_PRESENT) != CST4331_OTP_PRESENT;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		return (sih->chipst & CST43602_SPROM_PRESENT) != 0;
 	case BCM4349_CHIP_GRPID:
 	case BCM53573_CHIP_GRPID:
@@ -7900,6 +7905,7 @@ si_cis_source(si_t *sih)
 		return CIS_DEFAULT;
 	}
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		if (sih->chipst & CST43602_SPROM_PRESENT) {
 			/* Don't support CIS formatted SROM, use 'real' SROM format instead */
 			return BCME_NOTFOUND;
@@ -7997,6 +8003,7 @@ uint16 BCMATTACHFN(si_fabid)(si_t *sih)
 		case BCM4335_CHIP_ID:
 		case BCM4345_CHIP_ID:
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 		case BCM4349_CHIP_GRPID:
 		case BCM53573_CHIP_GRPID:
 		case BCM43430_CHIP_ID:
@@ -8099,6 +8106,7 @@ si_update_masks(si_t *sih)
 
 	case BCM43430_CHIP_ID:
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 	case BCM4350_CHIP_ID:
 	case BCM4354_CHIP_ID:
 	case BCM4356_CHIP_ID:
@@ -8214,6 +8222,7 @@ si_pmu_rfldo(si_t *sih, bool on)
 	switch (CHIPID(sih->chip)) {
 	case BCM4360_CHIP_ID:
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 	case BCM4352_CHIP_ID:
 	case BCM43526_CHIP_ID: {
 		si_pmu_regcontrol(sih, 0, RCTRL4360_RFLDO_PWR_DOWN,
@@ -8423,7 +8432,7 @@ si_lowpwr_opt(si_t *sih)
 #endif
 	/* 4335, 4345 & 4350 chip (all revision) related changes */
 	if (CHIPID(sih->chip) == BCM4335_CHIP_ID || CHIPID(sih->chip) == BCM4345_CHIP_ID ||
-		BCM4350_CHIP(sih->chip) || CHIPID(sih->chip) == BCM43602_CHIP_ID ||
+		BCM4350_CHIP(sih->chip) || CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID ||
 		BCM4349_CHIP(sih->chip)) {
 		uint hosti = si_chip_hostif(sih);
 		uint origidx = si_coreidx(sih);
@@ -8436,7 +8445,7 @@ si_lowpwr_opt(si_t *sih)
 		/* disable usb app clk */
 		/* Can be done any time. If it is not USB, then do it. In case */
 		/* of USB, do not write it */
-		if (hosti != CHIP_HOSTIF_USBMODE && CHIPID(sih->chip) != BCM43602_CHIP_ID &&
+		if (hosti != CHIP_HOSTIF_USBMODE && CHIPID(sih->chip) != BCM43602_CHIP_ID && CHIPID(sih->chip) != BCM43462_CHIP_ID &&
 			!(BCM4349_CHIP(sih->chip) ||
 			0)) {
 			si_pmu_chipcontrol(sih, PMU_CHIPCTL5, (1 << USBAPP_CLK_BIT), 0);
@@ -8451,6 +8460,7 @@ si_lowpwr_opt(si_t *sih)
 		/* In TCL, dhalt commands needs to change to undo this */
 		switch (CHIPID(sih->chip)) {
 			case BCM43602_CHIP_ID:
+			case BCM43462_CHIP_ID:
 				si_pmu_chipcontrol(sih, PMU_CHIPCTL3, PMU43602_CC3_ARMCR4_DBG_CLK,
 				                   0);
 				break;
@@ -8493,7 +8503,7 @@ si_lowpwr_opt(si_t *sih)
 			val = (0x1 << PCIE_TL_CLK_BIT);
 			si_pmu_pllcontrol(sih, PMU1_PLL0_PLLCTL0, mask, val);
 			si_pmu_pllupd(sih);
-		} else if (CHIPID(sih->chip) == BCM43602_CHIP_ID) {
+		} else if (CHIPID(sih->chip) == BCM43602_CHIP_ID || CHIPID(sih->chip) == BCM43462_CHIP_ID) {
 			/* configure open loop PLL parameters, open loop is used during S/R */
 			val = (3 << PMU1_PLL0_PC1_M1DIV_SHIFT) | (6 << PMU1_PLL0_PC1_M2DIV_SHIFT) |
 			      (6 << PMU1_PLL0_PC1_M3DIV_SHIFT) | (8 << PMU1_PLL0_PC1_M4DIV_SHIFT);
@@ -8700,6 +8710,7 @@ si_pll_sr_reinit(si_t *sih)
 	/* disable PLL open loop operation */
 	switch (CHIPID(sih->chip)) {
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 			/* read back the pll openloop state */
 			data = si_pmu_pllcontrol(sih, PMU1_PLL0_PLLCTL8, 0, 0);
 			/* check current pll mode */
@@ -8804,6 +8815,7 @@ si_pll_closeloop(si_t *sih)
 	switch (CHIPID(sih->chip)) {
 #if !defined(DONGLEBUILD)
 		case BCM43602_CHIP_ID:
+		case BCM43462_CHIP_ID:
 			/* read back the pll openloop state */
 			data = si_pmu_pllcontrol(sih, PMU1_PLL0_PLLCTL8, 0, 0);
 			/* current mode is openloop (possible POR) */

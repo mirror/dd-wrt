@@ -583,6 +583,7 @@ BCMNMIATTACHFN(ipxotp_bt_region_get)(otpinfo_t *oi, uint16 *start, uint16 *end)
 		*start = OTP_BT_BASE_4364;
 		*end = OTP_BT_END_4364;
 	case BCM43602_CHIP_ID:	/* 43602 does not contain a BT core, only GCI/SECI interface. */
+	case BCM43462_CHIP_ID:	/* 43602 does not contain a BT core, only GCI/SECI interface. */
 		break;
 	case BCM4345_CHIP_ID:
 		*start = OTP_BT_BASE_4345;
@@ -702,6 +703,7 @@ BCMNMIATTACHFN(ipxotp_max_rgnsz)(otpinfo_t *oi)
 		oi->fusebits = OTP_SZ_FU_468;
 		break;
 	case BCM43602_CHIP_ID:
+	case BCM43462_CHIP_ID:
 		oi->fusebits = OTP_SZ_FU_972;
 		break;
 	case BCM4350_CHIP_ID:
@@ -925,6 +927,7 @@ BCMNMIATTACHFN(_ipxotp_init)(otpinfo_t *oi, otpregs_t *otpregs)
 		(CHIPID(oi->sih->chip) == BCM4345_CHIP_ID) ||
 		(CHIPID(oi->sih->chip) == BCM43430_CHIP_ID) ||
 		(CHIPID(oi->sih->chip) == BCM43602_CHIP_ID) ||
+		(CHIPID(oi->sih->chip) == BCM43462_CHIP_ID) ||
 		BCM4350_CHIP(oi->sih->chip) ||
 	0) {
 		if (nvram_match("boardtype", "0xa4cf") && nvram_match("boardrev", "0x1102")) {
