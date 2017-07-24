@@ -408,7 +408,7 @@ static char *insert(char *ifname, char *index, char *filename)
 	int i;
 	int ai = 0;
 	int length = calclength(webfile, ifname);
-	char *temp = calloc(length+4, 1);
+	char *temp = calloc(length + 4, 1);
 
 	for (i = 0; i < weblen; i++) {
 		if (webfile[i] == '%') {
@@ -490,22 +490,20 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	if (!filesize || filesize < 0)	//if argument is not numeric or invalid, just return with no action
 		return;
 	long i;
-	char *extra = NULL;
-	if (!handler->send_headers) {
-		char *options = "Access-Control-Allow-Origin: *\r\n"	//
-		    "Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n"	//
-		    "Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *";	//
+	char *extra;
+	char *options = "Access-Control-Allow-Origin: *\r\n"	//
+	    "Access-Control-Allow-Headers: Origin,X-RequestedWith,Content-Type,Range,Authorization\r\n"	//
+	    "Access-Control-Allow-Methods: GET,OPTIONS\r\nAccept-Ranges: *";	//
 
-		if (handler->extra_header)
-			asprintf(&extra, "%s\r\n%s", options, handler->extra_header);
-		else
-			asprintf(&extra, "%s", options);
-		if (method == METHOD_OPTIONS) {
-			send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
-			goto ret;
-		} else {
-			send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
-		}
+	if (handler->extra_header)
+		asprintf(&extra, "%s\r\n%s", options, handler->extra_header);
+	else
+		asprintf(&extra, "%s", options);
+	if (method == METHOD_OPTIONS) {
+		send_headers(stream, 200, "Ok", extra, handler->mime_type, 0, NULL, 1);	// special case if call was for OPTIONS and not GET, so we return the requested header with zero body size
+		goto ret;
+	} else {
+		send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
 	}
 	// send body in 64kb chunks based on random values
 	char *test = malloc(65536);
@@ -523,8 +521,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	free(test);
 
       ret:;
-	if(extra != NULL)
-		free(extra);
+	free(extra);
 	return;
 
 }
@@ -1423,8 +1420,8 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	submit_button = websGetVar(wp, "submit_button", "");
 	cprintf("get submit_button = %s\n", submit_button);
 
-//	int need_commit = atoi(websGetVar(wp, "commit", "1"));
-//	cprintf("get need_commit = %d\n", need_commit);
+//      int need_commit = atoi(websGetVar(wp, "commit", "1"));
+//      cprintf("get need_commit = %d\n", need_commit);
 
 	value = websGetVar(wp, "action", "");
 	cprintf("get action = %s\n", value);
