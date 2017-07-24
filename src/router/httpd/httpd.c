@@ -1213,11 +1213,11 @@ static void *handle_request(void *arg)
 }
 
 void				// add by honor 2003-04-16
-get_client_ip_mac(webs_t conn_fp)
+get_client_ip_mac(int conn_fd, webs_t conn_fp)
 {
 	struct sockaddr_in sa;
 	socklen_t len = sizeof(struct sockaddr_in);
-	getpeername(conn_fp->conn_fd, (struct sockaddr *)&sa, &len);
+	getpeername(conn_fd, (struct sockaddr *)&sa, &len);
 	inet_ntop(AF_INET, &sa.sin_addr, conn_fp->http_client_ip, sizeof(conn_fp->http_client_ip));
 	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
 }
@@ -1619,6 +1619,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
+		get_client_ip_mac(conn_fd, conn_fp);
 #ifdef HAVE_HTTPS
 		if (do_ssl) {
 			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
@@ -1691,6 +1692,7 @@ int main(int argc, char **argv)
 			}
 
 			conn_fp->fp = (webs_t)(&ssl);
+
 #endif
 		} else
 #endif
@@ -1707,8 +1709,6 @@ int main(int argc, char **argv)
 				return errno;
 			}
 		}
-
-		get_client_ip_mac(conn_fp);
 
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
