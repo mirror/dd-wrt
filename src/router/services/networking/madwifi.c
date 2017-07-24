@@ -616,6 +616,7 @@ static void checkhostapd(char *ifname, int force)
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
 			if (pid > 0) {
+				int needrestart=0;
 				if (force) {
 					needrestart = 1;
 					kill(pid, SIGKILL);
@@ -638,10 +639,11 @@ static void checkhostapd(char *ifname, int force)
 				if (needrestart) {
 					char fstr[32];
 					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
-					if (force)
+					if (force) {
 						dd_syslog(LOG_INFO, "HOSTAPD on %s with pid %d is forced to be restarted....\n", ifname, pid);
-					else
+					} else {
 						dd_syslog(LOG_INFO, "HOSTAPD on %s with pid %d died, restarting....\n", ifname, pid);
+					}
 					do_hostapd(fstr, ifname);
 				}
 			}
