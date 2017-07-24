@@ -1960,7 +1960,7 @@ static void do_fetchif(unsigned char method, struct mime_handler *handler, char 
 	struct tm tm_time;
 
 	time(&tm);
-	memcpy(&tm_time, localtime(&tm), sizeof(tm_time));
+	localtime_r(&tm, &tm_time);
 	char *date_fmt = "%a %b %e %H:%M:%S %Z %Y";
 
 	strftime(buffer, 200, date_fmt, &tm_time);

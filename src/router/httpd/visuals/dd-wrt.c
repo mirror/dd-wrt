@@ -5232,15 +5232,15 @@ void ej_get_uptime(webs_t wp, int argc, char_t ** argv)
 {
 	unsigned updays, uphours, upminutes;
 	struct sysinfo info;
-	struct tm *current_time;
+	struct tm current_time;
 	time_t current_secs;
 
 	time(&current_secs);
-	current_time = localtime(&current_secs);
+	localtime_r(&current_secs, &current_time);
 
 	sysinfo(&info);
 
-	websWrite(wp, " %02u:%02u:%02u up ", current_time->tm_hour, current_time->tm_min, current_time->tm_sec);
+	websWrite(wp, " %02u:%02u:%02u up ", current_time.tm_hour, current_time.tm_min, current_time.tm_sec);
 	updays = (unsigned)info.uptime / (unsigned)(60 * 60 * 24);
 	if (updays)
 		websWrite(wp, "%u day%s, ", updays, (updays != 1) ? "s" : "");

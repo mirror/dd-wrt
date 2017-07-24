@@ -56,9 +56,8 @@ void ej_show_status_setting(webs_t wp, int argc, char_t ** argv)
 
 char *rfctime(const time_t * timep, char *s)
 {
-	struct tm tm;
-
-	memcpy(&tm, localtime(timep), sizeof(struct tm));
+	struct tm tm;	
+	localtime_r(timep, &tm);
 	strftime(s, 200, "%a, %d %b %Y %H:%M:%S", &tm);	// spec for linksys
 	return s;
 }
