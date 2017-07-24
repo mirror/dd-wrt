@@ -1216,7 +1216,7 @@ void				// add by honor 2003-04-16
 get_client_ip_mac(webs_t conn_fp)
 {
 	struct sockaddr_in sa;
-	unsigned int len = sizeof(struct sockaddr_in);
+	socklen_t len = sizeof(struct sockaddr_in);
 	getpeername(conn_fp->conn_fd, (struct sockaddr *)&sa, &len);
 	inet_ntop(AF_INET, &sa.sin_addr, conn_fp->http_client_ip, sizeof(conn_fp->http_client_ip));
 	get_mac_from_ip(conn_fp->http_client_mac, conn_fp->http_client_ip);
@@ -1231,6 +1231,7 @@ static void handle_server_sig_int(int sig)
 void settimeouts(int sock, int secs)
 {
 	struct timeval tv;
+	int r;
 
 	tv.tv_sec = secs;
 	tv.tv_usec = 0;
@@ -1238,6 +1239,31 @@ void settimeouts(int sock, int secs)
 		perror("setsockopt(SO_SNDTIMEO)");
 	if (setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0)
 		perror("setsockopt(SO_RCVTIMEO)");
+
+#ifdef TCP_NOPUSH
+		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+		 ** delay between sending the headers and sending the data.  A better
+		 ** solution is writev() (as used in thttpd), or send the headers with
+		 ** send(MSG_MORE) (only available in Linux so far).
+		 */
+		r = 1;
+		(void)setsockopt(sock, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
+#ifdef TCP_CORK
+		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
+		 ** delay between sending the headers and sending the data.  A better
+		 ** solution is writev() (as used in thttpd), or send the headers with
+		 ** send(MSG_MORE) (only available in Linux so far).
+		 */
+		r = 1;
+		(void)setsockopt(sock, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
+
+#ifdef TCP_NODELAY
+		r = 1;
+		(void)setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
+#endif				/* TCP_NOPUSH */
+
 }
 
 static void sigchld(int sig)
@@ -1686,30 +1712,6 @@ int main(int argc, char **argv)
 		}
 
 		get_client_ip_mac(conn_fp);
-
-#ifdef TCP_NOPUSH
-		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
-		 ** delay between sending the headers and sending the data.  A better
-		 ** solution is writev() (as used in thttpd), or send the headers with
-		 ** send(MSG_MORE) (only available in Linux so far).
-		 */
-		r = 1;
-		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NOPUSH, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
-#ifdef TCP_CORK
-		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
-		 ** delay between sending the headers and sending the data.  A better
-		 ** solution is writev() (as used in thttpd), or send the headers with
-		 ** send(MSG_MORE) (only available in Linux so far).
-		 */
-		r = 1;
-		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_CORK, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
-
-#ifdef TCP_NODELAY
-		r = 1;
-		(void)setsockopt(conn_fp->conn_fd, IPPROTO_TCP, TCP_NODELAY, (void *)&r, sizeof(r));
-#endif				/* TCP_NOPUSH */
 
 #ifndef HAVE_MICRO
 		pthread_mutex_lock(&httpd_mutex);
