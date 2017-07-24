@@ -604,7 +604,7 @@ void do_hostapd(char *fstr, char *prefix)
 	_evalpid(argv, NULL, 0, NULL);
 }
 
-static void checkhostapd(char *ifname)
+static void checkhostapd(char *ifname, int force)
 {
 	int pid;
 	char fname[32];
@@ -616,10 +616,16 @@ static void checkhostapd(char *ifname)
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
 			if (pid > 0) {
-				char checkname[32];
-				sprintf(checkname, "/proc/%d/cmdline", pid);
-				fp = fopen(checkname, "rb");
-				int needrestart = 0;
+				if (force) {
+					needrestart = 1;
+					kill(pid, SIGKILL);
+					fp = NULL;
+				} else {
+					char checkname[32];
+					sprintf(checkname, "/proc/%d/cmdline", pid);
+					fp = fopen(checkname, "rb");
+					needrestart = 0;
+				}
 				if (!fp) {
 					needrestart = 1;
 				} else {
@@ -632,7 +638,10 @@ static void checkhostapd(char *ifname)
 				if (needrestart) {
 					char fstr[32];
 					sprintf(fstr, "/tmp/%s_hostap.conf", ifname);
-					dd_syslog(LOG_INFO, "HOSTAPD on %s with pid %d died, restarting....\n", ifname, pid);
+					if (force)
+						dd_syslog(LOG_INFO, "HOSTAPD on %s with pid %d is forced to be restarted....\n", ifname, pid);
+					else
+						dd_syslog(LOG_INFO, "HOSTAPD on %s with pid %d died, restarting....\n", ifname, pid);
 					do_hostapd(fstr, ifname);
 				}
 			}
@@ -640,7 +649,7 @@ static void checkhostapd(char *ifname)
 	}
 }
 
-void start_checkhostapd(void)
+static void s_checkhostapd(int force)
 {
 	char *next, *vifs;
 	char wifivifs[32];
@@ -654,18 +663,30 @@ void start_checkhostapd(void)
 		    && (nvram_nmatch("ap", "%s_mode", athname)
 			|| nvram_nmatch("wdsap", "%s_mode", athname))) {
 			//okay, these modes might run hostapd and may cause troubles if the radius gets unavailable
-			checkhostapd(athname);
+			checkhostapd(athname, force);
 			sprintf(wifivifs, "%s_vifs", athname);
 			vifs = nvram_safe_get(wifivifs);
 			if (vifs != NULL && strlen(vifs) > 0) {
 				foreach(var, vifs, next) {
-					checkhostapd(var);
+					checkhostapd(var, force);
 				}
 
 			}
 
 		}
 	}
+}
+
+void start_checkhostapd(void)
+{
+	s_checkhostapd(0);
+}
+
+void start_restarthostapd(void)
+{
+
+	s_checkhostapd(1);
+
 }
 
 #ifdef HAVE_WPS
