@@ -272,20 +272,43 @@ wf_chspec_ntoa(chanspec_t chspec, char *buf)
 			sb = CHSPEC_SB_UPPER(chspec) ? "u" : "l";
 			snprintf(buf, CHANSPEC_STR_LEN, "%s%d%s", band, ctl_chan, sb);
 		} else {
-			char ll[8]={0};
-			char lu[8]={0};
-			char ul[8]={0};
-			char uu[8]={0};
+			char lll[8]={0};
+			char llu[8]={0};
+			char lul[8]={0};
+			char luu[8]={0};
+			char ull[8]={0};
+			char ulu[8]={0};
+			char uul[8]={0};
+			char uuu[8]={0};
+			if (chspec & WL_CHANSPEC_BW_160) {
+			if ((chspec & WL_CHANSPEC_CTL_SB_LLL) == WL_CHANSPEC_CTL_SB_LLL)
+				sprintf(lll,"[lll]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_LLU) == WL_CHANSPEC_CTL_SB_LLU)
+				sprintf(llu,"[llu]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_LUL) == WL_CHANSPEC_CTL_SB_LUL)
+				sprintf(lul,"[lul]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_LUU) == WL_CHANSPEC_CTL_SB_LUU)
+				sprintf(luu,"[luu]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_ULL) == WL_CHANSPEC_CTL_SB_ULL)
+				sprintf(ull,"[ull]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_ULU) == WL_CHANSPEC_CTL_SB_ULU)
+				sprintf(ulu,"[ulu]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_UUL) == WL_CHANSPEC_CTL_SB_UUL)
+				sprintf(uul,"[uul]");
+			if ((chspec & WL_CHANSPEC_CTL_SB_UUU) == WL_CHANSPEC_CTL_SB_UUU)
+				sprintf(uuu,"[uuu]");			
+			}
+			if (chspec & WL_CHANSPEC_BW_80) {
 			if ((chspec & WL_CHANSPEC_CTL_SB_LL) == WL_CHANSPEC_CTL_SB_LL)
-				sprintf(ll,"[ll]");
+				sprintf(lll,"[ll]");
 			if ((chspec & WL_CHANSPEC_CTL_SB_LU) == WL_CHANSPEC_CTL_SB_LU)
-				sprintf(lu,"[lu]");
+				sprintf(llu,"[lu]");
 			if ((chspec & WL_CHANSPEC_CTL_SB_UL) == WL_CHANSPEC_CTL_SB_UL)
-				sprintf(ul,"[ul]");
+				sprintf(lul,"[ul]");
 			if ((chspec & WL_CHANSPEC_CTL_SB_UU) == WL_CHANSPEC_CTL_SB_UU)
-				sprintf(uu,"[uu]");
-			
-			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s %s%s%s%s", band, ctl_chan, bw, ll,lu,ul,uu);
+				sprintf(luu,"[uu]");
+			}
+			snprintf(buf, CHANSPEC_STR_LEN, "%s%d/%s %s%s%s%s%s%s%s%s", band, ctl_chan, bw, lll,llu,lul,luu , ull,ulu,uul,uuu);
 		}
 #endif /* CHANSPEC_NEW_40MHZ_FORMAT */
 
