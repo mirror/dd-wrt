@@ -1716,7 +1716,7 @@ cprintf("get wl addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 	/* Get instance */
 cprintf("get instance\n");
 	int offset = 0;
-	if (!strcmp(name, "eth2") && !dhd_probe("eth1"))
+	if (!strcmp(name, "eth2") && !dhd_probe("eth1") && dhd_probe("eth2"))
 	    offset = 1;
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	
