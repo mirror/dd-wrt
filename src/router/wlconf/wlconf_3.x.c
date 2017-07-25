@@ -1715,7 +1715,13 @@ cprintf("get wl addr\n");
 cprintf("get wl addr %s\n",ether_etoa((uchar *)vif_addr, eaddr));
 	/* Get instance */
 cprintf("get instance\n");
+	int offset = 0;
+	if (!strcmp(name, "eth2") && !dhd_probe("eth1"))
+	    offset = 1;
 	WL_IOCTL(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
+	
+	unit+=offset;
+	
     	sprintf(tmp, "wl%d_mbss", unit);
 	if (mbsscap)
 	    {
@@ -1891,7 +1897,6 @@ cprintf("set wet flag %s\n",name);
 	} else
 #endif
 	WL_IOCTL(name, WLC_SET_WET, &wet, sizeof(wet));
-	WL_IOVAR_SETINT(name, "wet_enab", wet);
 
 
 cprintf("set spoof flag %s\n",name);
@@ -1901,6 +1906,9 @@ cprintf("set spoof flag %s\n",name);
 		WL_IOVAR_SETINT(name, "mac_spoof", 1);
 	}else
 		WL_IOVAR_SETINT(name, "mac_spoof", 0);
+
+
+	WL_IOVAR_SETINT(name, "wet_enab", wet);
 
 	/* For STA configurations, configure association retry time.
 	 * Use specified time (capped), or mode-specific defaults.
