@@ -44,5 +44,9 @@ dnsmasq-install:
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
 #endif
 	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
+	install -D dnsmasq/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
+ifeq ($(CONFIG_DNSSEC),y)
+	install -D dnsmasq/trust-anchors.conf $(INSTALLDIR)/dnsmasq/etc/trust-anchors.conf
+endif
 
 
