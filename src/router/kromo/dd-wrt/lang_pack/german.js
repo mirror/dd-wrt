@@ -1378,6 +1378,12 @@ service.dhcp_nvramlease="Nutze NVRAM f&uuml;r Clientzuweisungs-DB";
 service.dhcp_domain="Genutzte Domain";
 service.dhcp_landomain="LAN-Domain";
 service.dhcp_option="Zus&auml;tzliche DHCPD-Optionen";
+service.dns_crypt="Verschlüssele DNS (DNSCrypt)";
+service.dns_crypt_resolv="DNS Crypt Server";
+service.dnsmasq_dnssec="Prüfe DNS Antworten (DNSSEC)";
+service.dnsmasq_dnssec_proxy="DNSSEC Daten and Clients weiterleiten";
+service.dnsmasq_dnssec_cu="Prüfe unsignierte DNS Antworten";
+
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="Lokaler DNS";
