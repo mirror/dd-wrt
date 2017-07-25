@@ -490,6 +490,9 @@ endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
+ifeq ($(CONFIG_DNSSEC),y)
+CFLAGS += -DHAVE_DNSSEC
+endif
 ifeq ($(CONFIG_ESPOD),y)
 CFLAGS += -DHAVE_ESPOD
 endif
