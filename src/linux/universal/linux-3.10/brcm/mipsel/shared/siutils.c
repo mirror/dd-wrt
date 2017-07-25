@@ -2474,6 +2474,14 @@ BCMATTACHFN(si_doattach)(si_info_t *sii, uint devid, osl_t *osh, void *regs,
 		goto exit;
 	}
 
+	//add by lawrence depend on Broadcom advice for R7500
+	/* To bypass 4365 CHIP ID since driver doesn't support */
+	if (BCM4365_CHIP(CHIPID(sih->chip))) {
+		SI_ERROR(("si_doattach: 4366 chip, return NULL !!\n"));
+		goto exit;
+	}
+
+
 #if (!defined(_CFE_) && !defined(_CFEZ_)) || defined(CFG_WL)
 	if (CHIPID(sih->chip) == BCM4322_CHIP_ID && (((sih->chipst & CST4322_SPROM_OTP_SEL_MASK)
 		>> CST4322_SPROM_OTP_SEL_SHIFT) == (CST4322_OTP_PRESENT |
