@@ -106,10 +106,14 @@ int get_wl_instance(char *name)
 		return -1;
 
 	int offset = 0;
-	if (!strcmp(name, "eth2") && !dhd_probe("eth1") && dhd_probe("eth2"))
-	    offset = 1;
+	if (!strcmp(name, "eth2")) {
+		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
+			offset = 1;
+		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
+			offset = 1;
+	}
 	ret = wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
-	unit+=offset;
+	unit += offset;
 //      fprintf(stderr,"wl_instance = %d\n",unit);
 	if (ret == 0)
 		return unit;
