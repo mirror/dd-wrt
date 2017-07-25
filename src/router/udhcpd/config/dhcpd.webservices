@@ -101,6 +101,23 @@
 				<input class="spaceradio" type="radio" name="dnsmasq_add_mac" value="0" <% nvram_checked("dnsmasq_add_mac", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_dnssec_proxy"); %></div>
+				<input class="spaceradio" type="radio" name="dnssec_proxy" value="1" <% nvram_checked("dnssec_proxy", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec_proxy" value="0" <% nvram_checked("dnssec_proxy", "0"); %> /><% tran("share.disable"); %>
+			</div>
+<% ifndef("DNSSEC", "<!--"); %>
+			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_dnssec"); %></div>
+				<input class="spaceradio" type="radio" name="dnssec" value="1" <% nvram_checked("dnssec", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec" value="0" <% nvram_checked("dnssec", "0"); %> /><% tran("share.disable"); %>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.dnsmasq_dnssec_cu"); %></div>
+				<input class="spaceradio" type="radio" name="dnssec_cu" value="1" <% nvram_checked("dnssec_cu", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="dnssec_cu" value="0" <% nvram_checked("dnssec_cu", "0"); %> /><% tran("share.disable"); %>
+			</div>
+<% ifndef("DNSSEC", "<!--"); %>
+			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_opt"); %></div>
 					<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
 					<script type="text/javascript">
