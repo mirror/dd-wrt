@@ -106,12 +106,14 @@ int get_wl_instance(char *name)
 		return -1;
 
 	int offset = 0;
+#ifdef HAVE_DHDAP
 	if (!strcmp(name, "eth2")) {
 		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
 			offset = 1;
 		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
 			offset = 1;
 	}
+#endif
 	ret = wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 	unit += offset;
 //      fprintf(stderr,"wl_instance = %d\n",unit);
