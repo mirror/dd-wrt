@@ -401,7 +401,7 @@ void start_dnsmasq(void)
 		}
 	}
 #endif
-	if (nvram_matchi("proxy_dnssec", 1)) {
+	if (nvram_matchi("dnssec_proxy", 1)) {
 		fprintf(fp, "proxy-dnssec\n");
 	}
 	/* stop dns rebinding for private addresses */
