@@ -556,6 +556,9 @@ static char *s_conditions[] = {
 #ifdef HAVE_80211AC
 	"80211AC",
 #endif
+#ifdef HAVE_DNSSEC
+	"DNSSEC",
+#endif
 	NULL
 };
 
