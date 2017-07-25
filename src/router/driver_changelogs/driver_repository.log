@@ -1,12 +1,4 @@
 ------------------------------------------------------------------------
-r3511 | brainslayer | 2017-07-25 18:04:41 +0200 (Tue, 25 Jul 2017) | 1 line
-
-fix typo
-------------------------------------------------------------------------
-r3510 | brainslayer | 2017-07-25 18:02:18 +0200 (Tue, 25 Jul 2017) | 1 line
-
-display side channel information for broadcom 160 mhz devices
-------------------------------------------------------------------------
 r3509 | brainslayer | 2017-07-25 14:40:13 +0200 (Tue, 25 Jul 2017) | 1 line
 
  ath9k: fix more-data flag for buffered multicast packets
