@@ -299,13 +299,13 @@ void save_policy(webs_t wp)
 
 	D("save policy");
 	which = &filter_variables[0];
-	int f_id = websGetVari(wp, "f_id", 1);
+	char *f_id = websGetVar(wp, "f_id", NULL);
 	f_name = websGetVar(wp, "f_name", NULL);
 	f_status = websGetVar(wp, "f_status", NULL);	// 0=>Disable /
 	// 1,2=>Enable
 	f_status2 = websGetVar(wp, "f_status2", NULL);	// deny=>Deny /
 	// allow=>Allow
-	if (!f_name || !f_status || !f_status2) {
+	if (!f_id || !f_name || !f_status || !f_status2) {
 		D("invalid");
 		return;
 	}
@@ -323,7 +323,7 @@ void save_policy(webs_t wp)
 	}
 
 	validate_filter_tod(wp);
-	wp->p->filter_id = f_id;
+	wp->p->filter_id = atoi(f_id);
 	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->p->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
