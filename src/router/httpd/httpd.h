@@ -98,6 +98,12 @@ typedef struct {
 	struct hsearch_data htab;
 } webs;
 
+#ifdef HAVE_HTTPS
+#define DO_SSL(wp) wp->do_ssl
+#else
+#define DO_SSL(wp) 0
+#endif
+
 typedef webs *webs_t;
 
 extern int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp);
