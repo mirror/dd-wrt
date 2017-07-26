@@ -129,10 +129,9 @@ void delete_leases(webs_t wp)
 #if defined(HAVE_PPTPD) || defined(HAVE_PPPOESERVER)
 void delete_pptp(webs_t wp)
 {
-	char *iface;
-	iface = websGetVar(wp, "if_del", NULL);
+	int iface = websGetVari(wp, "if_del", 0);
 	if (iface)
-		kill(atoi(iface), SIGTERM);
+		kill(iface, SIGTERM);
 }
 #endif
 void save_wifi(webs_t wp)
@@ -186,8 +185,8 @@ void validate_filter_tod(webs_t wp)
 
 	}, *which;
 
-	char *day_all, *week0, *week1, *week2, *week3, *week4, *week5, *week6;
-	char *time_all, *start_hour, *start_min, *end_hour, *end_min;
+	int day_all, week0, week1, week2, week3, week4, week5, week6;
+	int time_all, start_hour, start_min, end_hour, end_min;
 	int _start_hour, _start_min, _end_hour, _end_min;
 	char time[20];
 	int week[7];
@@ -197,38 +196,32 @@ void validate_filter_tod(webs_t wp)
 
 	which = &filter_tod_variables[0];
 
-	day_all = websGetVar(wp, "day_all", "0");
-	week0 = websGetVar(wp, "week0", "0");
-	week1 = websGetVar(wp, "week1", "0");
-	week2 = websGetVar(wp, "week2", "0");
-	week3 = websGetVar(wp, "week3", "0");
-	week4 = websGetVar(wp, "week4", "0");
-	week5 = websGetVar(wp, "week5", "0");
-	week6 = websGetVar(wp, "week6", "0");
-	time_all = websGetVar(wp, "time_all", "0");
-	start_hour = websGetVar(wp, "start_hour", "0");
-	start_min = websGetVar(wp, "start_min", "0");
-	// start_time = websGetVar (wp, "start_time", "0");
-	end_hour = websGetVar(wp, "end_hour", "0");
-	end_min = websGetVar(wp, "end_min", "0");
-	// end_time = websGetVar (wp, "end_time", "0");
+	day_all = websGetVari(wp, "day_all", 0);
+	week0 = websGetVari(wp, "week0", 0);
+	week1 = websGetVari(wp, "week1", 0);
+	week2 = websGetVari(wp, "week2", 0);
+	week3 = websGetVari(wp, "week3", 0);
+	week4 = websGetVari(wp, "week4", 0);
+	week5 = websGetVari(wp, "week5", 0);
+	week6 = websGetVari(wp, "week6", 0);
+	time_all = websGetVari(wp, "time_all", 0);
+	start_hour = websGetVari(wp, "start_hour", 0);
+	start_min = websGetVari(wp, "start_min", 0);
+	// start_time = websGetVari (wp, "start_time", 0);
+	end_hour = websGetVari(wp, "end_hour", 0);
+	end_min = websGetVari(wp, "end_min", 0);
 
-	// if(atoi(time_all) == 0)
-	// if(!start_hour || !start_min || !start_time || !end_hour || !end_min
-	// || !end_time)
-	// return 1;
-
-	if (atoi(day_all) == 1) {
+	if (day_all == 1) {
 		strcpy(time, "0-6");
 		strcpy(tod_buf, "7");
 	} else {
-		week[0] = atoi(week0);
-		week[1] = atoi(week1);
-		week[2] = atoi(week2);
-		week[3] = atoi(week3);
-		week[4] = atoi(week4);
-		week[5] = atoi(week5);
-		week[6] = atoi(week6);
+		week[0] = week0;
+		week[1] = week1;
+		week[2] = week2;
+		week[3] = week3;
+		week[4] = week4;
+		week[5] = week5;
+		week[6] = week6;
 		strcpy(time, "");
 
 		for (i = 0; i < 7; i++) {
@@ -261,16 +254,16 @@ void validate_filter_tod(webs_t wp)
 
 		snprintf(tod_buf, sizeof(tod_buf), "%s %s %s %s %s %s %s", week0, week1, week2, week3, week4, week5, week6);
 	}
-	if (atoi(time_all) == 1) {
+	if (time_all == 1) {
 		_start_hour = 0;
 		_start_min = 0;
 		_end_hour = 23;
 		_end_min = 59;
 	} else {
-		_start_hour = atoi(start_hour);
-		_start_min = atoi(start_min);
-		_end_hour = atoi(end_hour);
-		_end_min = atoi(end_min);
+		_start_hour = start_hour;
+		_start_min = start_min;
+		_end_hour = end_hour;
+		_end_min = end_min;
 	}
 
 	sprintf(buf, "%d:%d %d:%d %s", _start_hour, _start_min, _end_hour, _end_min, time);
@@ -346,13 +339,7 @@ void save_policy(webs_t wp)
 
 void validate_filter_policy(webs_t wp, char *value, struct variable *v)
 {
-	char *f_id = websGetVar(wp, "f_id", NULL);
-
-	if (f_id)
-		wp->p->filter_id = atoi(f_id);
-	else
-		wp->p->filter_id = 1;
-
+	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 	save_policy(wp);
 }
 
@@ -533,14 +520,14 @@ void delete_static_route(webs_t wp)
 	char *cur_name = buf_name;
 	char word[256], *next;
 	char word_name[256], *next_name;
-	char *page = websGetVar(wp, "route_page", NULL);
+	int page = websGetVari(wp, "route_page", 0);
 	char *value = websGetVar(wp, "action", "");
 	int i = 0;
 	char *performance = nvram_safe_get("static_route");
 	char *performance2 = nvram_safe_get("static_route_name");
 
 	foreach(word, performance, next) {
-		if (i == atoi(page)) {
+		if (i == page) {
 			addDeletion(word);
 			i++;
 			continue;
@@ -553,7 +540,7 @@ void delete_static_route(webs_t wp)
 
 	i = 0;
 	foreach(word_name, performance2, next_name) {
-		if (i == atoi(page)) {
+		if (i == page) {
 			i++;
 			continue;
 		}
@@ -1437,10 +1424,10 @@ void qos_save(webs_t wp)
 	char svqos_pktstr[30] = { 0 };
 	char field[32] = { 0 };
 	char *name, *data, *level, *level2, *lanlevel, *prio, *delete, *pktopt, *proto;
-	int no_svcs = atoi(websGetVar(wp, "svqos_nosvcs", "0"));
-	int no_ips = atoi(websGetVar(wp, "svqos_noips", "0"));
-	int no_devs = atoi(websGetVar(wp, "svqos_nodevs", "0"));
-	int no_macs = atoi(websGetVar(wp, "svqos_nomacs", "0"));
+	int no_svcs = websGetVari(wp, "svqos_nosvcs", 0);
+	int no_ips = websGetVari(wp, "svqos_noips", 0);
+	int no_devs = websGetVari(wp, "svqos_nodevs", 0);
+	int no_macs = websGetVari(wp, "svqos_nomacs", 0);
 	int i = 0, j = 0;
 	/*
 	 * reused wshaper fields - see src/router/rc/wshaper.c 
@@ -4071,7 +4058,7 @@ void ddns_save_value(webs_t wp)
 	custom = websGetVar(wp, _custom, NULL);
 	conf = websGetVar(wp, _conf, NULL);
 	url = websGetVar(wp, _url, NULL);
-	force = atoi(websGetVar(wp, _force, "0"));
+	force = websGetVari(wp, _force, 0);
 	wan_ip = websGetVar(wp, _wan_ip, NULL);
 
 	if (!username || !passwd || !hostname || !force || !wan_ip) {
@@ -4119,8 +4106,8 @@ void ddns_update_value(webs_t wp)
 void port_vlan_table_save(webs_t wp)
 {
 	int port = 0, vlan = 0, vlans[22], i;
-	char portid[32], portvlan[64], *portval, buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
-
+	char portid[32], portvlan[64], buff[32] = { 0 }, *c, *next, br0vlans[64], br1vlans[64], br2vlans[64];
+	int portval;
 	strcpy(portvlan, "");
 
 	for (vlan = 0; vlan < 22; vlan++)
@@ -4131,12 +4118,12 @@ void port_vlan_table_save(webs_t wp)
 	for (port = 0; port < 5; port++) {
 		for (vlan = 0; vlan < 22; vlan++) {
 			snprintf(portid, sizeof(portid), "port%dvlan%d", port, vlan);
-			portval = websGetVar(wp, portid, "");
+			char *s_portval = websGetVar(wp, portid, "");
 
 			if (vlan < 17 || vlan > 21)
-				i = (strcmp(portval, "on") == 0);
+				i = (strcmp(s_portval, "on") == 0);
 			else
-				i = (strcmp(portval, "on") != 0);
+				i = (strcmp(s_portval, "on") != 0);
 
 			if (i) {
 				if (strlen(portvlan) > 0)
@@ -4212,9 +4199,9 @@ void port_vlan_table_save(webs_t wp)
 
 	for (i = 0; i < 16; i++) {
 		snprintf(buff, sizeof(buff), "vlan%d", i);
-		portval = websGetVar(wp, buff, "");
+		portval = websGetVari(wp, buff, -1);
 
-		switch (atoi(portval)) {
+		switch (portval) {
 		case 0:
 			if (strlen(br0vlans) > 0)
 				strcat(br0vlans, " ");
@@ -4235,7 +4222,7 @@ void port_vlan_table_save(webs_t wp)
 
 	strcpy(buff, "");
 
-	switch (atoi(websGetVar(wp, "wireless", ""))) {
+	switch (websGetVari(wp, "wireless", -1)) {
 	case 0:
 		if (strlen(br0vlans) > 0)
 			strcat(br0vlans, " ");
@@ -4375,7 +4362,7 @@ static void dlna_save(webs_t wp)
 
 	// dlna shares
 	json_t *entries = json_array();
-	int share_number = atoi(websGetVar(wp, "dlna_shares_count", "0"));
+	int share_number = websGetVari(wp, "dlna_shares_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "dlnashare_mp_%d", c);
@@ -4384,13 +4371,13 @@ static void dlna_save(webs_t wp)
 		json_object_set_new(entry, "sd", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "dlnashare_audio_%d", c);
-		if (atoi(websGetVar(wp, var, "0")))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_AUDIO;
 		sprintf(var, "dlnashare_video_%d", c);
-		if (atoi(websGetVar(wp, var, "0")))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_VIDEO;
 		sprintf(var, "dlnashare_images_%d", c);
-		if (atoi(websGetVar(wp, var, "0")))
+		if (websGetVari(wp, var, 0))
 			type |= TYPE_IMAGES;
 		json_object_set_new(entry, "types", json_integer(type));
 		json_array_append(entries, entry);
@@ -4411,8 +4398,8 @@ void nassrv_save(webs_t wp)
 
 	// samba shares
 	json_t *entries = json_array();
-	int share_number = atoi(websGetVar(wp, "samba_shares_count", "0"));
-	int user_number = atoi(websGetVar(wp, "samba_users_count", "0"));
+	int share_number = websGetVari(wp, "samba_shares_count", 0);
+	int user_number = websGetVari(wp, "samba_users_count", 0);
 	for (c = 1; c <= share_number; c++) {
 		entry = json_object();
 		sprintf(var, "smbshare_mp_%d", c);
@@ -4422,7 +4409,7 @@ void nassrv_save(webs_t wp)
 		sprintf(var, "smbshare_label_%d", c);
 		json_object_set_new(entry, "label", json_string(websGetVar(wp, var, "")));
 		sprintf(var, "smbshare_public_%d", c);
-		json_object_set_new(entry, "public", json_integer(atoi(websGetVar(wp, var, "0"))));
+		json_object_set_new(entry, "public", json_integer(websGetVari(wp, var, 0)));
 		sprintf(var, "smbshare_access_perms_%d", c);
 		sprintf(val, "%s", websGetVar(wp, var, "-"));
 		if (!strcmp(val, "-")) {
@@ -4454,10 +4441,10 @@ void nassrv_save(webs_t wp)
 		json_object_set_new(entry, "pass", json_string(websGetVar(wp, var, "")));
 		int type = 0;
 		sprintf(var, "smbuser_samba_%d", c);
-		if (atoi(websGetVar(wp, var, "0")))
+		if (websGetVari(wp, var, 0))
 			type |= SHARETYPE_SAMBA;
 		sprintf(var, "smbuser_ftp_%d", c);
-		if (atoi(websGetVar(wp, var, "0")))
+		if (websGetVari(wp, var, 0))
 			type |= SHARETYPE_FTP;
 		json_object_set_new(entry, "type", json_integer(type));
 		json_array_append(entries, entry);
@@ -4586,7 +4573,7 @@ void nintendo_save(webs_t wp)
 		}
 	}
 
-	if (atoi(websGetVar(wp, "spotpass", "")) != enabled) {
+	if (websGetVari(wp, "spotpass", 0) != enabled) {
 		addAction("wireless");
 		nvram_seti("nowebaction", 1);
 	}
