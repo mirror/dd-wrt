@@ -116,11 +116,25 @@ int has_5ghz(char *prefix)
 #ifndef HAVE_ATH9K
 int has_vht160(char *prefix)
 {
+#ifdef HAVE_RT2880
 	char *dev = getWifiDeviceName(prefix);
 	if (dev && !strcmp(dev, "MT7615 802.11ac"))
 		return 1;
-
+#endif
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+	char cap[WLC_IOCTL_SMLEN];
+	char caps[WLC_IOCTL_MEDLEN];
+	char *next;
+	if (wl_iovar_get(prefix, "cap", (void *)caps, sizeof(caps)))
+		return 4;	//minimum is default
+	foreach(cap, caps, next) {
+		if (!strcmp(cap, "160")) {
+			return 1;
+		}
+	}
+#endif
 	return 0;
+
 }
 
 int has_vht80plus80(char *prefix)
