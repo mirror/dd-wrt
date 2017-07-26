@@ -291,7 +291,10 @@ void setnaggle(webs_t wp, int on)
 {
 	int r;
 
-	if (!wp->do_ssl) {
+#ifdef HAVE_HTTPS
+	if (!wp->do_ssl) 
+#endif
+	{
 #if defined(TCP_NOPUSH)
 		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
 		 ** delay between sending the headers and sending the data.  A better
