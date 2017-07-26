@@ -291,10 +291,7 @@ void setnaggle(webs_t wp, int on)
 {
 	int r;
 
-#ifdef HAVE_HTTPS
-	if (!wp->do_ssl) 
-#endif
-	{
+	if (DO_SSL(wp)) {
 #if defined(TCP_NOPUSH)
 		/* Set the TCP_NOPUSH socket option, to try and avoid the 0.2 second
 		 ** delay between sending the headers and sending the data.  A better
@@ -631,8 +628,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 	}
 	if (!handler->send_headers)
 		send_headers(stream, 200, "Ok", handler->extra_header, handler->mime_type, len, attach, 0);
-#ifdef HAVE_HTTPS
-	if (stream->do_ssl) {
+	if (DO_SSL(stream)) {
 		char *buffer = malloc(4096);
 		while (len) {
 			size_t ret = fread(buffer, 1, len > 4096 ? 4096 : len, web);
@@ -644,9 +640,7 @@ static void do_file_2(struct mime_handler *handler, char *path, webs_t stream, c
 			wfwrite(buffer, ret, 1, stream);
 		}
 		free(buffer);
-	} else
-#endif
-	{
+	} else {
 		wfflush(stream);
 		wfsendfile(fileno(web), ftell(web), len, stream);
 	}
@@ -1159,21 +1153,12 @@ static void *handle_request(void *arg)
 				handler->input(file, conn_fp, cl, boundary);
 			}
 #if defined(linux)
-#ifdef HAVE_HTTPS
-			if (!conn_fp->do_ssl && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
+			if (!DO_SSL(conn_fp) && (flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
 				/* Read up to two more characters */
 				if (fgetc(conn_fp->fp) != EOF)
 					(void)fgetc(conn_fp->fp);
 				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
 			}
-#else
-			if ((flags = fcntl(fileno(conn_fp->fp), F_GETFL)) != -1 && fcntl(fileno(conn_fp->fp), F_SETFL, flags | O_NONBLOCK) != -1) {
-				/* Read up to two more characters */
-				if (fgetc(conn_fp->fp) != EOF)
-					(void)fgetc(conn_fp->fp);
-				fcntl(fileno(conn_fp->fp), F_SETFL, flags);
-			}
-#endif
 #endif
 			if (check_connect_type(conn_fp) < 0) {
 				send_error(conn_fp, 401, "Bad Request", NULL, "Can't use wireless interface to access GUI.");
@@ -1635,7 +1620,7 @@ int main(int argc, char **argv)
 		}
 		get_client_ip_mac(conn_fd, conn_fp);
 #ifdef HAVE_HTTPS
-		if (do_ssl) {
+		if (DO_SSL(conn_fp)) {
 			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "httpsd: nothing to do...\n");
 				return -1;
@@ -1768,9 +1753,8 @@ char *wfgets(char *buf, int len, webs_t wp)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
-#ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 		int eof = 1;
 		int i;
 		char c;
@@ -1798,18 +1782,17 @@ char *wfgets(char *buf, int len, webs_t wp)
 
 	} else
 #elif defined(HAVE_MATRIXSSL)
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 		ret = (char *)matrixssl_gets(fp, buf, len);
 	} else
 #elif defined(HAVE_POLARSSL)
 
 	fprintf(stderr, "ssl read %d\n", len);
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 		int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
 		fprintf(stderr, "returns %d\n", r);
 		ret = buf;
 	} else
-#endif
 #endif
 	{
 		ret = fgets(buf, len, fp);
@@ -1823,28 +1806,19 @@ int wfputs(char *buf, webs_t wp)
 
 	FILE *fp = wp->fp;
 	int ret;
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl)
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-	{
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
 
-	}
 #elif defined(HAVE_MATRIXSSL)
-	{
 		ret = matrixssl_puts(fp, buf);
 
-	}
 #elif defined(HAVE_POLARSSL)
-	{
 		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, strlen(buf));
 		fprintf(stderr, "ssl write str %d\n", strlen(buf));
 
-	}
 #endif
-	else
-#endif
-	{
+	} else {
 		ret = fputs(buf, fp);
 	}
 	return ret;
@@ -1860,23 +1834,17 @@ int wfprintf(webs_t wp, char *fmt, ...)
 
 	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl)
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-	{
 
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
-	}
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_printf(fp, "%s", buf);
 #elif defined(HAVE_POLARSSL)
-	{
 		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
 		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
-	}
 #endif
-	else
-#endif
+	} else
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
@@ -1897,22 +1865,16 @@ int websWrite(webs_t wp, char *fmt, ...)
 
 	va_start(args, fmt);
 	vasprintf(&buf, fmt, args);
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl)
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-	{
 		ret = sslbufferwrite((struct sslbuffer *)fp, buf, strlen(buf));
-	}
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_printf(fp, "%s", buf);
 #elif defined(HAVE_POLARSSL)
-	{
 		fprintf(stderr, "ssl write buf %d\n", strlen(buf));
 		ret = ssl_write((ssl_context *) fp, buf, strlen(buf));
-	}
 #endif
-	else
-#endif
+	} else
 		ret = fprintf(fp, "%s", buf);
 	free(buf);
 	va_end(args);
@@ -1925,25 +1887,22 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 
 	FILE *fp = wp->fp;
 	size_t ret;
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl)
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
-	{
-		ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
-	}
+		{
+			ret = sslbufferwrite((struct sslbuffer *)fp, buf, n * size);
+		}
 #elif defined(HAVE_MATRIXSSL)
 		ret = matrixssl_write(fp, (unsigned char *)buf, n * size);
 #elif defined(HAVE_POLARSSL)
-	{
-		fprintf(stderr, "ssl write buf %d\n", n * size);
-		ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
-	}
+		{
+			fprintf(stderr, "ssl write buf %d\n", n * size);
+			ret = ssl_write((ssl_context *) fp, (unsigned char *)buf, n * size);
+		}
 #endif
-	else
-#endif
-		ret = fwrite(buf, size, n, fp);
+	} else
 
-	return ret;
+		return ret;
 }
 
 int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
@@ -1959,8 +1918,7 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 	size_t ret;
 	FILE *fp = wp->fp;
 
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		ret = sslbufferread((struct sslbuffer *)fp, buf, n * size);
 #elif defined(HAVE_MATRIXSSL)
@@ -1982,7 +1940,6 @@ size_t wfread(char *buf, int size, int n, webs_t wp)
 		ret = ssl_read((ssl_context *) fp, (unsigned char *)buf, &len);
 #endif
 	} else
-#endif
 		ret = fread(buf, size, n, fp);
 	return ret;
 }
@@ -1992,8 +1949,7 @@ int wfflush(webs_t wp)
 	int ret;
 	FILE *fp = wp->fp;
 
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		/* ssl_write doesn't buffer */
 		sslbufferflush((struct sslbuffer *)fp);
@@ -2005,7 +1961,6 @@ int wfflush(webs_t wp)
 		ret = 1;
 #endif
 	} else
-#endif
 		ret = fflush(fp);
 
 	return ret;
@@ -2016,8 +1971,7 @@ int wfclose(webs_t wp)
 	int ret = 0;
 	FILE *fp = wp->fp;
 
-#ifdef HAVE_HTTPS
-	if (wp->do_ssl) {
+	if (DO_SSL(wp)) {
 #ifdef HAVE_OPENSSL
 		sslbufferflush((struct sslbuffer *)fp);
 		sslbufferfree((struct sslbuffer *)fp);
@@ -2029,9 +1983,7 @@ int wfclose(webs_t wp)
 		ssl_free((ssl_context *) fp);
 		ret = 1;
 #endif
-	} else
-#endif
-	{
+	} else {
 		int ret = fclose(fp);
 		wp->fp = NULL;
 	}

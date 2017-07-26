@@ -100,11 +100,9 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 
 	// diag_led(DIAG, START_LED); // blink the diag led
 	C_led(1);
-#ifdef HAVE_HTTPS
-	if (stream->do_ssl)
+	if (DO_SSL(stream))
 		ACTION("ACT_WEBS_UPGRADE");
 	else
-#endif
 		ACTION("ACT_WEB_UPGRADE");
 
 	/*

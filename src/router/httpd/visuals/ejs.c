@@ -789,14 +789,14 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_HTTPS
 	char *https_enable = websGetVar(wp, "https_enable", NULL);
 
-	if (wp->do_ssl && http_enable == NULL && https_enable == NULL) {
+	if (DO_SSL(wp) && http_enable == NULL && https_enable == NULL) {
 		strcpy(http, "https");
-	} else if (wp->do_ssl && http_enable && https_enable) {
+	} else if (DO_SSL(wp) && http_enable && https_enable) {
 		if (atoi(https_enable))
 			strcpy(http, "https");
 		else
 			strcpy(http, "http");
-	} else if (!wp->do_ssl && http_enable && https_enable) {
+	} else if (!DO_SSL(wp) && http_enable && https_enable) {
 		if (atoi(https_enable) && !atoi(http_enable))
 			strcpy(http, "https");
 		else
@@ -1871,9 +1871,8 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					 && (strlen(m->menu[i][j]))) {
 					websWrite(wp, "      <li><span><strong><script type=\"text/javascript\">Capture(bmenu.%s)</script></strong></span></li>\n", m->menuname[i][j + 1]);
 				}
-#ifdef HAVE_HTTPS		// until https will allow upgrade and backup
 #ifdef HAVE_MATRIXSSL
-				else if ((strlen(m->menu[i][j]) != 0) && (wp->do_ssl)
+				else if (DO_SSL(wp) && (strlen(m->menu[i][j]) != 0)
 					 && ((!strcmp(m->menu[i][j], "Upgrade.asp")
 					      || (!strcmp(m->menu[i][j], "config.asp"))))) {
 					websWrite(wp, "      <script type=\"text/javascript\">\n//<![CDATA[\n");
@@ -1883,7 +1882,6 @@ void ej_do_menu(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "      \n//]]>\n</script>\n");
 				}
 #endif				/* < */
-#endif
 #ifdef HAVE_MADWIFI
 				else if (strlen(m->menu[i][j])
 					 && !strcmp(m->menu[i][j], "Wireless_Basic.asp")
