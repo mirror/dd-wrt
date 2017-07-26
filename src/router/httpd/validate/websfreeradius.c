@@ -41,6 +41,7 @@
 #include <sha1.h>
 
 extern char *(*websGetVar) (webs_t wp, char *var, char *d);
+extern int (*websGetVari) (webs_t wp, char *var, int d);
 
 void radius_generate_certificate(webs_t wp)
 {

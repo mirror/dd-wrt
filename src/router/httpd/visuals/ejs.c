@@ -57,6 +57,7 @@
 void (*do_ej_buffer) (char *buffer, webs_t stream) = NULL;
 int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type) = NULL;
 char *(*websGetVar) (webs_t wp, char *var, char *d) = NULL;
+int (*websGetVari) (webs_t wp, char *var, int d) = NULL;
 int (*websWrite) (webs_t wp, char *fmt, ...) = NULL;
 struct wl_client_mac *wl_client_macs = NULL;
 
@@ -75,6 +76,7 @@ void initWeb(struct Webenvironment *env)
 {
 
 	websGetVar = env->PwebsGetVar;
+	websGetVari = env->PwebsGetVari;
 	httpd_filter_name = env->Phttpd_filter_name;
 	wl_client_macs = env->Pwl_client_macs;
 	websWrite = env->PwebsWrite;
@@ -784,23 +786,17 @@ void ej_get_http_prefix(webs_t wp, int argc, char_t ** argv)
 	char ipaddr[20];
 	char port[10];
 
-	char *http_enable = websGetVar(wp, "http_enable", NULL);
+	int http_enable = websGetVari(wp, "http_enable", 0);
 
 #ifdef HAVE_HTTPS
-	char *https_enable = websGetVar(wp, "https_enable", NULL);
+	int https_enable = websGetVari(wp, "https_enable", 0);
 
-	if (DO_SSL(wp) && http_enable == NULL && https_enable == NULL) {
+	if (DO_SSL(wp) && !http_enable && !https_enable) {
 		strcpy(http, "https");
-	} else if (DO_SSL(wp) && http_enable && https_enable) {
-		if (atoi(https_enable))
-			strcpy(http, "https");
-		else
-			strcpy(http, "http");
-	} else if (!DO_SSL(wp) && http_enable && https_enable) {
-		if (atoi(https_enable) && !atoi(http_enable))
-			strcpy(http, "https");
-		else
-			strcpy(http, "http");
+	} else if (DO_SSL(wp) && https_enable) {
+		strcpy(http, "https");
+	} else if (!DO_SSL(wp) && !http_enable && https_enable) {
+		strcpy(http, "https");
 	} else
 #endif
 		strcpy(http, "http");
