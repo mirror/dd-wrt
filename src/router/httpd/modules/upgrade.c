@@ -200,27 +200,21 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 		return eval("write", url, WRITEPART);
 	// diag_led(DIAG, START_LED); // blink the diag led
 	C_led(1);
-#ifdef HAVE_HTTPS
-	if (stream->do_ssl)
+	if (DO_SSL(stream))
 		ACTION("ACT_WEBS_UPGRADE");
 	else
-#endif
 		ACTION("ACT_WEB_UPGRADE");
 	int uploadcount = 0;
 
 	/*
 	 * Set nonblock on the socket so we can timeout 
 	 */
-#ifdef HAVE_HTTPS
-	if (!stream->do_ssl) {
-#endif
+	if (!DO_SSL(stream)) {
 		if ((flags = fcntl(fileno(stream->fp), F_GETFL)) < 0 || fcntl(fileno(stream->fp), F_SETFL, flags | O_NONBLOCK) < 0) {
 			ret = errno;
 			goto err;
 		}
-#ifdef HAVE_HTTPS
 	}
-#endif
 
 	/*
 	 ** The buffer must be at least as big as what the stream file is
@@ -247,14 +241,11 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	cprintf("Upgrading\n");
 	int lastblock = 0;
 	while (total && *total) {
-#ifdef HAVE_HTTPS
-		if (stream->do_ssl) {
+		if (DO_SSL(stream)) {
 			if (size > *total)
 				size = *total;
 			count = wfread(buf, 1, size, stream);
-		} else
-#endif
-		{
+		} else {
 			if (waitfor(fileno(stream->fp), 5) <= 0) {
 				lastblock = 1;
 			}
@@ -686,9 +677,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	 */
 	waitpid(pid, &ret, 0);
 	cprintf("done\n");
-#ifdef HAVE_HTTPS
-	if (!stream->do_ssl) {
-#endif
+	if (!DO_SSL(stream)) {
 		/*
 		 * Reset nonblock on the socket 
 		 */
@@ -696,9 +685,7 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 			ret = errno;
 			goto err;
 		}
-#ifdef HAVE_HTTPS
 	}
-#endif
 
 err:
 	if (buf)
