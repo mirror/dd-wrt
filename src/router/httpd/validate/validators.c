@@ -48,6 +48,7 @@ extern FILE *debout;
 
 int (*httpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 char *(*websGetVar) (webs_t wp, char *var, char *d);
+int (*websGetVari) (webs_t wp, char *var, int d);
 struct wl_client_mac *wl_client_macs;
 void (*validate_cgi) (webs_t fp) = NULL;
 char *copytonv(webs_t wp, const char *fmt, ...);
@@ -57,6 +58,7 @@ void initWeb(struct Webenvironment *env)
 {
 	cprintf("set websgetwar\n");
 	websGetVar = env->PwebsGetVar;
+	websGetVari = env->PwebsGetVari;
 	httpd_filter_name = env->Phttpd_filter_name;
 	wl_client_macs = env->Pwl_client_macs;
 	validate_cgi = env->Pvalidate_cgi;

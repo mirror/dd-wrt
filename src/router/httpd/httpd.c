@@ -1753,8 +1753,8 @@ char *wfgets(char *buf, int len, webs_t wp)
 {
 	FILE *fp = wp->fp;
 	char *ret = NULL;
-#ifdef HAVE_OPENSSL
 	if (DO_SSL(wp)) {
+#ifdef HAVE_OPENSSL
 		int eof = 1;
 		int i;
 		char c;
@@ -1780,21 +1780,14 @@ char *wfgets(char *buf, int len, webs_t wp)
 			goto out;
 		}
 
-	} else
 #elif defined(HAVE_MATRIXSSL)
-	if (DO_SSL(wp)) {
 		ret = (char *)matrixssl_gets(fp, buf, len);
-	} else
 #elif defined(HAVE_POLARSSL)
 
-	fprintf(stderr, "ssl read %d\n", len);
-	if (DO_SSL(wp)) {
 		int r = ssl_read((ssl_context *) fp, (unsigned char *)buf, len);
-		fprintf(stderr, "returns %d\n", r);
 		ret = buf;
-	} else
 #endif
-	{
+	} else {
 		ret = fgets(buf, len, fp);
 	}
       out:;

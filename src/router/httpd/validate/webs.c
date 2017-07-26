@@ -43,6 +43,7 @@
 #endif
 
 extern char *(*websGetVar) (webs_t wp, char *var, char *d);
+extern int (*websGetVari) (webs_t wp, char *var, int d);
 extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
 
 void wan_proto(webs_t wp)
