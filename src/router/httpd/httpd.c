@@ -464,7 +464,7 @@ void send_headers(webs_t conn_fp, int status, char *title, char *extra_header, c
 		wfprintf(conn_fp, "Cache-Control: post-check=0, pre-check=0\r\n");
 		wfprintf(conn_fp, "Pragma: no-cache\r\n");
 	} else {
-		wfprintf(conn_fp, "Cache-Control: private, max-age=31536000\r\n");
+		wfprintf(conn_fp, "Cache-Control: private, max-age=600\r\n");
 	}
 	if (attach_file)
 		wfprintf(conn_fp, "Content-Disposition: attachment; filename=%s\r\n", attach_file);
