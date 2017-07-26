@@ -64,12 +64,12 @@ extern FILE *debout;
 
 void dhcpfwd(webs_t wp)
 {
-	char *enable;
+	int enable;
 
-	enable = websGetVar(wp, "dhcpfwd_enable", NULL);
-	if (enable && !strcmp(enable, "1"))
+	enable = websGetVari(wp, "dhcpfwd_enable", 0);
+	if (enable)
 		nvram_set("lan_proto", "static");
-	nvram_set("dhcpfwd_enable", enable);
+	nvram_seti("dhcpfwd_enable", enable);
 
 }
 
@@ -286,7 +286,7 @@ void applytake(char *value)
 
 void save_policy(webs_t wp)
 {
-	char *f_id, *f_name, *f_status, *f_status2;
+	char *f_name, *f_status, *f_status2;
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
@@ -299,13 +299,13 @@ void save_policy(webs_t wp)
 
 	D("save policy");
 	which = &filter_variables[0];
-	f_id = websGetVar(wp, "f_id", NULL);
+	int f_id = websGetVari(wp, "f_id", 1);
 	f_name = websGetVar(wp, "f_name", NULL);
 	f_status = websGetVar(wp, "f_status", NULL);	// 0=>Disable /
 	// 1,2=>Enable
 	f_status2 = websGetVar(wp, "f_status2", NULL);	// deny=>Deny /
 	// allow=>Allow
-	if (!f_id || !f_name || !f_status || !f_status2) {
+	if (!f_name || !f_status || !f_status2) {
 		D("invalid");
 		return;
 	}
@@ -323,7 +323,7 @@ void save_policy(webs_t wp)
 	}
 
 	validate_filter_tod(wp);
-	wp->p->filter_id = atoi(f_id);
+	wp->p->filter_id = f_id;
 	snprintf(filter_buf, sizeof(filter_buf), "filter_rule%d", wp->p->filter_id);
 
 	// Add $DENY to decide that users select Allow or Deny, if status is
@@ -1447,17 +1447,17 @@ void qos_save(webs_t wp)
 	bzero(svqos_var, 4096);
 
 //      nvram_set("enable_game", websGetVar(wp, "enable_game", NULL));
-	nvram_set("svqos_defaults", websGetVar(wp, "svqos_defaults", "0"));
-	nvram_set("default_uplevel", websGetVar(wp, "default_uplevel", "0"));
-	nvram_set("default_downlevel", websGetVar(wp, "default_downlevel", "0"));
-	nvram_set("default_lanlevel", websGetVar(wp, "default_lanlevel", "0"));
-	nvram_set("wshaper_downlink", websGetVar(wp, "wshaper_downlink", "0"));
-	nvram_set("wshaper_uplink", websGetVar(wp, "wshaper_uplink", "0"));
-	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", "0"));
-	nvram_set("qos_type", websGetVar(wp, "qos_type", "0"));
+	nvram_seti("svqos_defaults", websGetVari(wp, "svqos_defaults", 0));
+	nvram_seti("default_uplevel", websGetVari(wp, "default_uplevel", 0));
+	nvram_seti("default_downlevel", websGetVari(wp, "default_downlevel", 0));
+	nvram_seti("default_lanlevel", websGetVari(wp, "default_lanlevel", 0));
+	nvram_seti("wshaper_downlink", websGetVari(wp, "wshaper_downlink", 0));
+	nvram_seti("wshaper_uplink", websGetVari(wp, "wshaper_uplink", 0));
+	nvram_seti("wshaper_dev", websGetVari(wp, "wshaper_dev", 0));
+	nvram_seti("qos_type", websGetVari(wp, "qos_type", 0));
 
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE)
-	nvram_set("svqos_aqd", websGetVar(wp, "qos_aqd", "0"));
+	nvram_seti("svqos_aqd", websGetVari(wp, "qos_aqd", 0));
 #endif
 
 	// nvram_commit ();
@@ -1733,15 +1733,15 @@ void qos_save(webs_t wp)
 	/*
 	 * adm6996 LAN port priorities 
 	 */
-	nvram_set("svqos_port1prio", websGetVar(wp, "svqos_port1prio", "0"));
-	nvram_set("svqos_port2prio", websGetVar(wp, "svqos_port2prio", "0"));
-	nvram_set("svqos_port3prio", websGetVar(wp, "svqos_port3prio", "0"));
-	nvram_set("svqos_port4prio", websGetVar(wp, "svqos_port4prio", "0"));
+	nvram_seti("svqos_port1prio", websGetVari(wp, "svqos_port1prio", 0));
+	nvram_seti("svqos_port2prio", websGetVari(wp, "svqos_port2prio", 0));
+	nvram_seti("svqos_port3prio", websGetVari(wp, "svqos_port3prio", 0));
+	nvram_seti("svqos_port4prio", websGetVari(wp, "svqos_port4prio", 0));
 
-	nvram_set("svqos_port1bw", websGetVar(wp, "svqos_port1bw", "0"));
-	nvram_set("svqos_port2bw", websGetVar(wp, "svqos_port2bw", "0"));
-	nvram_set("svqos_port3bw", websGetVar(wp, "svqos_port3bw", "0"));
-	nvram_set("svqos_port4bw", websGetVar(wp, "svqos_port4bw", "0"));
+	nvram_seti("svqos_port1bw", websGetVari(wp, "svqos_port1bw", 0));
+	nvram_seti("svqos_port2bw", websGetVari(wp, "svqos_port2bw", 0));
+	nvram_seti("svqos_port3bw", websGetVari(wp, "svqos_port3bw", 0));
+	nvram_seti("svqos_port4bw", websGetVari(wp, "svqos_port4bw", 0));
 
 	addAction("qos");
 	nvram_seti("nowebaction", 1);
@@ -1855,19 +1855,17 @@ void lease_add(webs_t wp)
 #ifdef HAVE_PPPOESERVER
 void chap_user_add(webs_t wp)
 {
-	char *var = websGetVar(wp, "pppoeserver_enabled", NULL);
+	int var = websGetVari(wp, "pppoeserver_enabled", 0);
 
-	if (var != NULL)
-		nvram_set("pppoeserver_enabled", var);
+	nvram_seti("pppoeserver_enabled", var);
 	macro_add("pppoeserver_chapsnum");
 }
 
 void chap_user_remove(webs_t wp)
 {
-	char *var = websGetVar(wp, "pppoeserver_enabled", NULL);
+	int var = websGetVari(wp, "pppoeserver_enabled", 0);
 
-	if (var != NULL)
-		nvram_set("pppoeserver_enabled", var);
+	nvram_seti("pppoeserver_enabled", var);
 	macro_rem("pppoeserver_chapsnum", "pppoeserver_chaps");
 }
 #endif
@@ -2413,11 +2411,7 @@ void del_bond(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bondings");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -2470,11 +2464,8 @@ void add_olsrd(webs_t wp)
 
 void del_olsrd(webs_t wp)
 {
-	char *del = websGetVar(wp, "olsrd_delcount", NULL);
+	int d = websGetVari(wp, "olsrd_delcount", -1);
 
-	if (del == NULL)
-		return;
-	int d = atoi(del);
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *newlist = (char *)calloc(strlen(wordlist) + 2, 1);
 
@@ -2938,11 +2929,7 @@ void del_vlan(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("vlan_tags");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3007,11 +2994,7 @@ void del_mdhcp(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("mdhcpd");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3042,11 +3025,7 @@ void del_bridge(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bridges");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3110,11 +3089,7 @@ void del_bridgeif(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("bridgesif");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
@@ -3194,11 +3169,7 @@ void del_ipvs(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvs");
 	newwordlist = (char *)calloc(strlen(wordlist), 1);
@@ -3251,11 +3222,7 @@ void del_ipvstarget(webs_t wp)
 	char word[256];
 	int realcount = 0;
 	char *next, *wordlist, *newwordlist;
-	char *val = websGetVar(wp, "del_value", NULL);
-
-	if (val == NULL)
-		return;
-	int todel = atoi(val);
+	int todel = websGetVari(wp, "del_value", -1);
 
 	wordlist = nvram_safe_get("ipvstarget");
 	newwordlist = (char *)calloc(strlen(wordlist), 1);
@@ -3986,7 +3953,7 @@ static void getddns_userdata(int enable, char *_username, char *_passwd, char *_
 void ddns_save_value(webs_t wp)
 {
 	char *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf, *url, *wan_ip;
-	int enable, force;
+	int force;
 	char _username[] = "ddns_username_XX";
 	char _passwd[] = "ddns_passwd_XX";
 	char _hostname[] = "ddns_hostname_XX";
@@ -3998,10 +3965,8 @@ void ddns_save_value(webs_t wp)
 	char _force[] = "ddns_force";
 	char _wan_ip[] = "ddns_wan_ip";
 
-	char *s_enable = websGetVar(wp, "ddns_enable", NULL);
-	if (s_enable)
-		enable = atoi(s_enable);
-	if (!s_enable || enable > 11 || enable < 0) {
+	int enable = websGetVari(wp, "ddns_enable", -1);
+	if (enable > 11 || enable < 0) {
 		return;
 	}
 	int gethash = 0;
