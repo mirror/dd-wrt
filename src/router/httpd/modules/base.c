@@ -1391,7 +1391,7 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 	int sleep_time = 0;
 
 	cprintf("need reboot\n");
-	int need_reboot = atoi(websGetVar(wp, "need_reboot", "0"));
+	int need_reboot = websGetVari(wp, "need_reboot", 0);
 
 	cprintf("apply");
 
@@ -1419,9 +1419,6 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 
 	submit_button = websGetVar(wp, "submit_button", "");
 	cprintf("get submit_button = %s\n", submit_button);
-
-//      int need_commit = atoi(websGetVar(wp, "commit", "1"));
-//      cprintf("get need_commit = %d\n", need_commit);
 
 	value = websGetVar(wp, "action", "");
 	cprintf("get action = %s\n", value);

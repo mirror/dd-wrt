@@ -829,13 +829,7 @@ void ej_filter_summary_show(webs_t wp, int argc, char_t ** argv)
 
 void ej_filter_init(webs_t wp, int argc, char_t ** argv)
 {
-	char *f_id = websGetVar(wp, "f_id", NULL);
-
-	D("ej_filter-init");
-	if (f_id)		// for first time enter this page and don't press apply.
-		wp->p->filter_id = atoi(f_id);
-	else
-		wp->p->filter_id = 1;
+	wp->p->filter_id = websGetVari(wp, "f_id", 1);
 
 	return;
 }

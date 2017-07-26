@@ -1607,7 +1607,7 @@ void validate_dynamic_route(webs_t wp, char *value, struct variable *v)
 	/*
 	 * <lonewolf> 
 	 */
-	if (atoi(websGetVar(wp, "dyn_default", "0")) == 1)
+	if (websGetVari(wp, "dyn_default", 0) == 1)
 		nvram_seti("dyn_default", 1);
 	else
 		nvram_seti("dyn_default", 0);
