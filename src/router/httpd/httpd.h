@@ -177,6 +177,7 @@ typedef char char_t;
 #ifndef VALIDSOURCE
 #ifndef VISUALSOURCE
 char *websGetVar(webs_t wp, char *var, char *d);
+int websGetVari(webs_t wp, char *var, int d);
 #endif
 #endif
 
@@ -184,6 +185,7 @@ struct Webenvironment {
 	void (*Pdo_ej_buffer) (char *buffer, webs_t stream);
 	int (*Phttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 	char *(*PwebsGetVar) (webs_t wp, char *var, char *d);
+	int (*PwebsGetVari) (webs_t wp, char *var, int d);
 	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
 	struct wl_client_mac *Pwl_client_macs;
 	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003

@@ -96,6 +96,12 @@ char *websGetVar(webs_t wp, char *var, char *d)
 	return get_cgi(wp, var) ? : d;
 }
 
+int websGetVari(webs_t wp, char *var, int d)
+{
+	char *res = get_cgi(wp, var);
+	return res ? atoi(res) : d;
+}
+
 char *GOZILA_GET(webs_t wp, char *name)
 {
 	return wp->gozila_action ? websGetVar(wp, name, NULL) : nvram_safe_get(name);
@@ -169,6 +175,7 @@ static int initWeb(void *handle)
 		return -1;
 	}
 	env.PwebsGetVar = websGetVar;
+	env.PwebsGetVari = websGetVari;
 	env.PwebsWrite = websWrite;
 	env.Phttpd_filter_name = httpd_filter_name;
 	env.Pwl_client_macs = wl_client_macs;

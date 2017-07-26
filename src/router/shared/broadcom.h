@@ -669,6 +669,11 @@ extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, i
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
 
 #define websGetVar UwebsGetVar
+
+extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
+
+#define websGetVari UwebsGetVari
+
 extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 
 #define websWrite UwebsWrite
@@ -709,8 +714,12 @@ extern void (*Udo_ej_buffer) (char *buffer, webs_t stream);
 extern int (*Uhttpd_filter_name) (char *old_name, char *new_name, size_t size, int type);
 #define httpd_filter_name Uhttpd_filter_name
 extern char *(*UwebsGetVar) (webs_t wp, char *var, char *d);
-
 #define websGetVar UwebsGetVar
+
+extern int (*UwebsGetVari) (webs_t wp, char *var, int d);
+#define websGetVari UwebsGetVari
+
+
 extern int (*UwebsWrite) (webs_t wp, char *fmt, ...);
 
 #define websWrite UwebsWrite
