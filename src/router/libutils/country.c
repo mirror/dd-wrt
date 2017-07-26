@@ -968,7 +968,7 @@ char *getCountryList(void)
 	int i;
 #ifdef HAVE_BUFFALO
 	char country[80];
-	char *region = getUEnv("region");	
+	char *region = getUEnv("region");
 	if (!region) {
 		region = "_D";
 	}

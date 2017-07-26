@@ -186,7 +186,7 @@ int eval_va_silence(const char *cmd, ...)
 }
 
 // FILE *debugfp=NULL;
-int _evalpid(char * const argv[], char *path, int timeout, int *ppid)
+int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 {
 	pid_t pid;
 	int status;
