@@ -388,10 +388,10 @@ void start_dnsmasq(void)
 		}
 	}
 	fprintf(fp, "bogus-priv\n");
-	fprintf(fp, "conf-file /etc/rfc6761.conf\n");
+	fprintf(fp, "conf-file=/etc/rfc6761.conf\n");
 #ifdef HAVE_DNSSEC
 	if (nvram_matchi("dnssec", 1)) {
-		fprintf(fp, "conf-file /etc/trust-anchors.conf\n");
+		fprintf(fp, "conf-file=/etc/trust-anchors.conf\n");
 		fprintf(fp, "dnssec\n");
 		if (!nvram_matchi("ntp_enable", 1)) {
 			fprintf(fp, "dnssec-no-timecheck\n");
