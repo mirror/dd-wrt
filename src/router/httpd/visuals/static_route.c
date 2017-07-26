@@ -36,15 +36,12 @@ void ej_show_routeif(webs_t wp, int argc, char_t ** argv)
 {
 	int which;
 	char word[256];
-	char *next = NULL, *page = NULL;
+	char *next = NULL;
 	char *ipaddr = NULL, *netmask = NULL, *gateway = NULL, *metric = NULL, *ifname = NULL;
 	char ifnamecopy[32];
 	char bufferif[512];
 
-	page = websGetVar(wp, "route_page", NULL);
-	if (!page)
-		page = "0";
-	which = atoi(page);
+	which = websGetVari(wp, "route_page", 0);
 	char *sroute = nvram_safe_get("static_route");
 
 	foreach(word, sroute, next) {
@@ -105,11 +102,7 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 
 	ejArgs(argc, argv, "%s %d", &arg, &count);
 
-	page = websGetVar(wp, "route_page", NULL);
-	if (!page)
-		page = "0";
-
-	which = atoi(page);
+	which = websGetVari(wp, "route_page", 0);
 
 	temp = which;
 
@@ -189,7 +182,7 @@ void ej_static_route_table(webs_t wp, int argc, char_t ** argv)
 		return;
 	type = argv[0];
 
-	page = atoi(websGetVar(wp, "route_page", "0"));	// default to 0
+	page = websGetVari(wp, "route_page", 0);	// default to 0
 
 	if (!strcmp(type, "select")) {
 		char *sroutename = nvram_safe_get("static_route_name");
