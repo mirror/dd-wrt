@@ -3,12 +3,10 @@
 		//<![CDATA[
 
 function to_submit(F) {
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "speedchecker";
 	apply(F);
 }
 function to_apply(F) {
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "speedchecker";
 	apply(F);
 }
