@@ -19,5 +19,5 @@ lsof-clean:
 	@true
 
 lsof-install:
-	install -D lsof/lsof $(INSTALLDIR)/usr/sbin/lsof
+	install -D lsof/lsof $(INSTALLDIR)/lsof/usr/sbin/lsof
 #
