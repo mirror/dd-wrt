@@ -1,0 +1,239 @@
+	Solaris Kernel Address Filtering in lsof 4.50 and Above
+
+Current Filter
+==============
+
+Lsof revisions 4.49 and below, have exactly one filter:  the kernel
+virtual address is checked against the kernel's virtual address
+base -- e.g., what's found in the kernel variable kernelbase.  For
+sun4m that's 0xf0000000, for sun4u, 0x10000000.
+
+This filter keeps lsof from handing some bad addresses to the
+kernel, but not all bad addresses.  For example, the virtual address
+0x657a682e passes this test on a sun4u machine, but on at least
+one sun4u that virtual address translates to the physical address
+0x1cf08c30000, which is the address of a register of a qfe interface
+on the machine.  There is some evidence that a kvm_kread() call for
+the 0x657a682e address may crash that sun4u.
+
+Lsof 4.71 and above use no filter if they detect that /dev/allkmem
+exists.  That is done because, when /dev/allkmem exists, /dev/kmem has
+address filtering in its device driver.
+
+
+======================
+!!!IMPORTANT UPDATE!!!
+======================
+
+In late May 2002 I learned that Sun had reports of other kernel
+crashes, caused by adb, lsof, and mdb, related to incorrect addresses
+being supplied to /dev/kmem.  (This report was written originally
+on July 18, 2000.)
+
+The problem is described in and fixed or patched:
+
+    Solaris 7: SPARC kernel patch 106541-20
+	       Intel kernel patch 106542-20
+
+    Solaris 8: SPARC kernel patch 108528-14
+	       Intel kernel patch 108529-14
+
+    Solaris 9: bug 4344513
+
+So, if you want to be comfortable using lsof (or adb or mdb) with
+Solaris, install the appropriate Solaris 7 or 8 patches, or upgrade
+to Solaris 9.
+
+Note that these patches provide the /dev/allkmem device, whose presence
+causes lsof to rely on the address filtering of the /dev/kmem device.
+
+
+New Filters
+===========
+
+Lsof 4.50 adds additional filters to the kernelbase check.  The
+filters differ, based on the Solaris version:
+
+	Solaris
+	Version		New Filters
+	=======		===========
+
+	2.5 and below	none
+	2.5.1           kvm_physaddr() (-lkvm), caching, llseek(),
+			    and /dev/mem
+	2.6             kvm_physaddr() (-lkvm), caching, llseek(),
+			    and /dev/mem
+	7, 8, and 9     kvm_physaddr() (ioctl()), caching, and
+			    kvm_pread()
+
+			See !!!IMPORTANT NOTICE!! above for
+			information on a Solaris 9 bug report about,
+			or Solaris 7 and 8 kernel patches to the
+			kernel /dev/kmem driver.  Those fixes
+			obviate the need for the kernel address
+			filtering described in this report.
+
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			!!! I STRONGLY RECOMMEND YOU INSTALL  !!!
+			!!! THE PATCHES OR UPGRADE TO SOLARIS !!!
+			!!! 9.                                !!!
+			!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+kvm_physaddr() (-lkvm)
+======================
+
+Solaris has an undocumented function called kvm_physaddr() that
+will convert a kernel virtual address to a kernel physical address.
+(Until Solaris 7 this function doesn't even have a prototype
+definition in <kvm.h>.)
+
+I have been assured repeatedly by Casper Dik of Sun that this
+function, when given a kernel virtual address, will produce addresses
+of physical memory only; it will not produce physical addresses of
+interface registers, such as the one for the qfe interface.
+
+In Solaris 2.5.1 this function runs in application space from within
+the KVM library.  Since it needs to know the components of the
+kernel's address space map, it must read those from kernel memory
+each time it is called.  That can be time consuming.
+
+I'm not sure about kvm_physaddr() for Solaris 2.6.  It may still
+run in application space from within the KVM library, but if so,
+it is much faster than its 2.5.1 ancestor.
+
+kvm_physaddr() (ioctl())
+========================
+
+I'm sure that at Solaris 7 and above kvm_physaddr() has moved inside
+the kernel and is called with an ioctl().  That makes it much faster
+than its ancestors.
+
+kvm_physaddr() Use
+==================
+
+Lsof 4.50 for Solaris will use one or the other version of
+kvm_physaddr() for Solaris 2.5.1, 2.6, 7, and 8.
+
+Using it for Solaris 2.5.1 causes lsof to take four times as much
+real time as it formerly did with only the kernelbase filtering.
+
+Caching
+=======
+
+To recover the performance lost by kvm_physaddr() on Solaris 2.5.1,
+I added virtual-to-physical address caching to lsof's kernel read
+function, kread().  This improves Solaris 2.6, 7, and 8 performance,
+too, but by a smaller amount.
+
+It turns out that a typical lsof run may require reading from 16,000
+or more different kernel virtual addresses.  However, it also turns
+out that those addresses are contained within about 600 distinct
+kernel memory pages.
+
+To exploit this condition lsof caches each virtual page address
+that has a corresponding legitimate physical page address for use
+in checking later addresses.  This caching regains all but a bit
+of the performance loss on Solaris 2.5.1.
+
+Caching can provide some performance gain on Solaris 2.6, 7, and
+8, but it's not nearly as large as the gain for 2.5.1, and may
+depend on the machine architecture type.
+
+/dev/mem
+========
+
+Once lsof has kernel physical addresses, on Solaris 2.5.1 and 2.6
+it seeks to those addresses with llseek() and reads from them via
+the /dev/mem device.  This contrasts with lsof's pre-4.50 behavior
+where it fed kernel virtual addresses to kvm_kread(), letting it
+and the kernel do the virtual to physical translations -- and
+letting that combined process crash that one unlucky sun4u via its
+qfe interface.
+
+Using /dev/mem requires no more permission for lsof, but it does
+require an additional open file descriptor and use of the 64 bit
+llseek() function.
+
+The additional file descriptor is an unfortunate consequence of
+the KVM library's opacity.  The library usually has /dev/kmem open
+to a file descriptor, but lsof can't easily get at that descriptor,
+so it opens one of its own.
+
+On Solaris 2.6 for one test system, a 4 CPU E4000 sun4u, doing
+physical kernel address reads from /dev/mem turned out to be faster
+than using kvm_kread().  It was marginally faster on a sun4d, and
+marginally slower on two sun4m's.
+
+kvm_pread()
+===========
+
+Even though it is still undocumented, the kvm_physaddr() function
+is represented by a prototype in the Solaris 7 and 8 <kvm.h>.
+Additionally useful is another undocumented function, kvm_pread()
+(for physical read), that also is represented by a <kvm.h> prototype
+in Solaris 7 and 8.
+
+Lsof 4.50 for Solaris 7 and 8 uses kvm_pread() instead of opening
+a descriptor to /dev/mem, llseek()-ing to physical addresses in
+it, and using read(2) to obtain physical address contents.  The
+bonus of kvm_pread() is two-fold: 1) it does positioning as well
+as reading, so there's one less function call; and 2) its combined
+operation appears to be faster than llseek() plus read() -- or even
+kvm_kread().
+
+Combined with the virtual-to-physical address caching, the performance
+boost of kvm_pread() makes lsof faster on Solaris 7 and 8 than
+previous revisions, using only kernelbase filtering and kvm_kread().
+
+Remaining Risks
+===============
+
+There may remain some extremely small likelihood that lsof will
+transmit a bad physical address to the kernel.  Here are some
+possible failure scenarios:
+
+	*  The physical address filters haven't been tested on
+	   the machine whose qfe interface was affected.  That's
+	   because the machine's memory configuration was changed
+	   before the test could be run.
+
+	*  The kvm_physaddr() function, especially in Solaris
+	   2.5.1, might fail to map an address correctly.  Only
+	   Sun can correct this problem.
+
+	*  Because lsof must read the kernel address map from
+	   kernel virtual memory to pass it to the Solaris 2.5.1
+	   and 2.6 kvm_physaddr() functions, lsof must use kvm_kread()
+	   to read the map.
+
+	   There's also the chance that lsof could pass a stale
+	   kernel address map to kvm_physaddr(), because re-reading
+	   it for each call to kvm_physaddr() would lead to
+	   unacceptable performance.  When in repeat mode lsof
+	   re-reads the map between each cycle.
+
+	   On Solaris 7 and 8, since kvm_physaddr() is inside the
+	   kernel, there's no chance of its having a stale address
+	   map.
+
+	*  There's an extremely small chance that a cached
+	   virtual+physical page address could become invalid.
+	   This is so small I think it can be ignored, since the
+	   kernel memory map rarely changes.
+
+	   When in repeat mode, lsof clears its virtual+physical
+	   address map between cycles.
+
+	*  Lsof still uses Sun's kvm_getproc() (from -lkvm), and
+	   I have no idea what kernel address filtering it does,
+	   if any.
+
+I wish to acknowledge: Casper Dik of Sun, who provided information
+about kvm_physaddr() and helped test the lsof changes; Jim Mewes
+of Phone.com, who reported the initial problem and helped test the
+lsof changes; and several readers of the lsof-l listserv, who
+volunteered to run test programs.
+
+
+Vic Abell
+March 16, 2004

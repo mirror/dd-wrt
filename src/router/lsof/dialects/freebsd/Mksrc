@@ -1,0 +1,29 @@
+#!/bin/sh
+#
+# Mksrc - make FreeBSD source files
+#
+# WARNING: This script assumes it is running from the main directory
+#	   of the lsof, version 4 distribution.
+#
+# One environment variable applies:
+#
+# LSOF_MKC	is the method for creating the source files.
+#		It defaults to "ln -s".  A common alternative is "cp".
+#
+# $Id: Mksrc,v 1.5 2008/04/15 13:31:47 abe Exp $
+
+
+D=dialects/freebsd
+L="dlsof.h dmnt.c dnode.c dnode1.c dnode2.c dproc.c dproto.h dsock.c dstore.c dzfs.h machine.h"
+
+for i in $L
+do
+  rm -f $i
+  $LSOF_MKC $D/$i $i
+  echo "$LSOF_MKC $D/$i $i"
+done
+
+# For ZFS
+
+rm -f vnode_if.h
+touch vnode_if.h

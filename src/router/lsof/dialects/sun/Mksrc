@@ -1,0 +1,57 @@
+#!/bin/sh
+#
+# Mksrc - make Solaris source files
+#
+# WARNING: This script assumes it is running from the main directory
+#	   of the lsof, version 4 distribution.
+#
+# One environment variable applies:
+#
+# LSOF_MKC	is the method for creating the source files.
+#		It defaults to "ln -s".  A common alternative is "cp".
+#
+# $Id: Mksrc,v 1.4 2000/12/04 14:35:13 abe Exp $
+
+
+D=dialects/sun
+L="ddev.c dfile.c dlsof.h dmnt.c dnode.c dnode1.c dnode2.c dproc.c dproto.h dsock.c dstore.c machine.h"
+
+for i in $L
+do
+  rm -f $i
+  $LSOF_MKC $D/$i $i
+  echo "$LSOF_MKC $D/$i $i"
+done
+
+# Assemble kernelbase.h for SunOS and Solaris < 2.5 (5.5)
+
+NM=kernelbase.h
+rm -f $NM
+if test "X$1" != "Xsolaris" -o $2 -lt 20500
+then
+  if test "X$1" = "Xsolaris"
+  then
+    A=`uname -m`
+    if test "$A" = "i86pc"
+    then
+      H=/usr/include/sys/machparam.h
+    else
+      H=/usr/src/uts/$A/sys/machparam.h
+    fi
+  else
+    H=/usr/include/machine/param.h
+  fi
+  echo "#if	!defined(KERNELSIZE)" > $NM
+  grep "^#define[ 	]*KERNELSIZE" $H >> $NM
+  echo "#endif" >> $NM
+  echo "#if	!defined(KERNELBASE)" >> $NM
+  grep "^#define[ 	]*KERNELBASE" $H >> $NM
+  echo "#endif" >> $NM
+else
+
+# To keep the dependency list for dproc.o simple in the Makefile,
+# create an empty kernelbase.h for Solaris 2.5 (5.5) and above.
+
+  touch $NM
+fi
+echo "$NM assembled."

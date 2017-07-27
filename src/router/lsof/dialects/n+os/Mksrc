@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Mksrc - make NEXTSTEP and OPENSTEP source files
+#
+# WARNING: This script assumes it is running from the main directory
+#	   of the lsof, version 4 distribution.
+#
+# One environment variable is supplied:
+#
+# LSOF_MKC	is the method for creating the source files.
+#		It defaults to "ln -s".  A common alternative is "cp".
+#
+# $Id: Mksrc,v 1.6 2001/08/09 11:44:07 abe Exp $
+
+
+D=dialects/n+os
+L="dlsof.h dnode.c dnode1.c dproc.c dproto.h dsock.c dstore.c machine.h"
+
+for i in $L
+do
+  rm -f $i
+  $LSOF_MKC $D/$i $i
+  echo "$LSOF_MKC $D/$i $i"
+done

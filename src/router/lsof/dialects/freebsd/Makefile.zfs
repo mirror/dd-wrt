@@ -1,0 +1,17 @@
+
+# Makefile.zfs -- FreeBSD Makefile remainder for ZFS modules
+#
+# $Id: Makefile.zfs,v 1.3 2011/08/07 22:51:28 abe Exp $
+
+CFLAGS+=-D_SOLARIS_C_SOURCE
+CFLAGS+=${DEBUG}
+CFLAGS+=-I${OPENSOLARIS}/compat/opensolaris
+CFLAGS+=-I${OPENSOLARIS}/contrib/opensolaris/uts/common/fs/zfs
+CFLAGS+=-I${OPENSOLARIS}/contrib/opensolaris/uts/common/zmod
+CFLAGS+=-I${OPENSOLARIS}/contrib/opensolaris/uts/common
+CFLAGS+=-I${OPENSOLARIS}/contrib/opensolaris/common/zfs
+CFLAGS+=-I${OPENSOLARIS}/contrib/opensolaris/common
+CFLAGS+=-I${.CURDIR}/usr/src/include
+CFLAGS+=-I`pwd`
+
+dnode2.o:	dzfs.h dnode2.c
