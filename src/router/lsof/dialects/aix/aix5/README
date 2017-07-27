@@ -1,0 +1,7 @@
+This directory exists to supply missing /usr/include/j2 header
+files for AIX 5 and above, or to supply alternatives that can be
+#include'd when distributed AIX 5 and above header files can't be
+used -- e.g., they #include missing header files.
+
+Vic Abell
+March 2, 2003

@@ -1,0 +1,24 @@
+#!/bin/sh
+#
+# Mksrc -- make Darwin libproc-based lsof source files
+#
+# WARNING: This script assumes it is running from the main directory
+#	   of the lsof, version 4 distribution.
+#
+# One environment variable applies:
+#
+# LSOF_MKC	is the method for creating the source files.
+#		It defaults to "ln -s".  A common alternative is "cp".
+#
+# $Id: Mksrc,v 1.5 2005/11/06 12:50:09 abe Exp $
+
+
+D=dialects/darwin/libproc
+L="dlsof.h ddev.c dfile.c dmnt.c dproc.c dproto.h dsock.c dstore.c machine.h"
+
+for i in $L
+do
+  rm -f $i
+  $LSOF_MKC $D/$i $i
+  echo "$LSOF_MKC $D/$i $i"
+done
