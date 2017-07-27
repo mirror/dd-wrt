@@ -45,10 +45,10 @@ static char *rcsid = "$Id: dsock.c,v 1.41 2015/07/07 19:46:33 abe Exp $";
  * UNIX endpoint definitions
  */
 
-#include <sys/socket.h>			/* for AF_NETLINK */
-#include <linux/rtnetlink.h>		/* for NETLINK_INET_DIAG */
-#include <linux/sock_diag.h>		/* for SOCK_DIAG_BY_FAMILY */
-#include <linux/unix_diag.h>		/* for unix_diag_req */
+#include "socket.h"			/* for AF_NETLINK */
+#include "rtnetlink.h"		/* for NETLINK_INET_DIAG */
+#include "sock_diag.h"		/* for SOCK_DIAG_BY_FAMILY */
+#include "unix_diag.h"		/* for unix_diag_req */
 #include <string.h>			/* memset */
 #include <stdint.h>			/* for unt8_t */
 #include <unistd.h>			/* for getpagesize */
