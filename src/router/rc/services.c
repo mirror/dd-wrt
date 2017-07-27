@@ -742,6 +742,23 @@ static void handle_nassrv(void)
 
 }
 
+#ifdef HAVE_IPV6
+static void handle_ipv6(void)
+{
+	stop_service_f("radvd");
+	stop_service_f("httpd");
+	stop_service_f("dhcp6c");
+	stop_service_f("dhcp6s");
+	stop_service_f("ipv6");
+	stop_running_main(0, NULL);
+	start_service("ipv6");
+	start_service_f("radvd");
+	start_service_f("httpd");
+	start_service_f("dhcp6c");
+	start_service_f("dhcp6s");
+}
+#endif
+
 static void handle_management(void)
 {
 
@@ -1370,6 +1387,9 @@ static struct SERVICES services_def[] = {
 #endif
 #ifdef HAVE_SPOTPASS
 	{"spotpass", handle_spotpass},
+#endif
+#ifdef HAVE_IPV6
+	{"ipv6", handle_ipv6},
 #endif
 	{NULL, NULL}
 };
