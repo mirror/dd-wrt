@@ -1170,9 +1170,7 @@ static struct gozila_action gozila_actions[] = {
 	{"AOSS", "wps_configure", "aoss", 1, REFRESH, "wps_configure"},
 #endif
 #endif
-#ifdef HAVE_SPEEDCHECKER
-	{"Speedchecker", "speedchecker", "", 0, REFRESH, "speedchecker_save"},
-#endif
+
 };
 
 static struct gozila_action *handle_gozila_action(char *name, char *type)
@@ -1319,7 +1317,7 @@ static struct apply_action apply_actions[] = {
 	 * SERVICES 
 	 */
 	{"PPPoE_Server", "services", 0, SERVICE_RESTART, NULL},
-	{"PPTP", "services", 0, SERVICE_RESTART, NULL},
+	{"PPTP", "pptp", 0, SERVICE_RESTART, NULL},
 	{"USB", "usbdrivers", 0, SERVICE_RESTART, NULL},
 	{"NAS", "nassrv", 0, SERVICE_RESTART, NULL},
 	{"Hotspot", "hotspot", 0, SERVICE_RESTART, "hotspot_save"},
@@ -1361,6 +1359,9 @@ static struct apply_action apply_actions[] = {
 	 * SERVICE_RESTART, NULL}, //gozilla does the save 
 	 */
 	{"InternetAtStart", "finish", 0, SYS_RESTART, NULL},
+#ifdef HAVE_SPEEDCHECKER
+	{"Speedchecker", "speedchecker", "", 0, SERVICE_RESTART, NULL},
+#endif
 
 };
 
