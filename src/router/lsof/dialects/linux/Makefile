@@ -40,7 +40,15 @@ SHELL=	/bin/sh
 
 SOURCE=	Makefile ${OTHER} ${MAN} ${HDR} ${SRC}
 
-all: ${PROG}
+include _cmake.mk
+
+lib_rpc:
+	$(call CMakeClean,librpc)
+	$(call CMakeConfigure,librpc) 
+	make -C librpc
+
+all: lib_rpc ${PROG}
+
 
 ${PROG}: ${P} ${LIB} ${OBJ}
 	${CC} -o $@ ${OBJ} ${CFGL}
