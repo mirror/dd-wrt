@@ -46,6 +46,8 @@ void start_dhcp6c(void)
 	} __attribute__((__packed__)) duid;
 	uint16 duid_len = 0;
 
+	if (!nvram_matchi("ipv6_enable", 1))
+		return;
 	if (!nvram_match("ipv6_typ", "ipv6pd"))
 		return;
 	nvram_unset("ipv6_prefix");
