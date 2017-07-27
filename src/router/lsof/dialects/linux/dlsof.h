@@ -34,6 +34,7 @@
  * $Id: dlsof.h,v 1.23 2015/07/07 19:46:33 abe Exp $
  */
 
+#include <features.h>
 
 #if	!defined(LINUX_LSOF_H)
 #define	LINUX_LSOF_H	1
@@ -66,10 +67,10 @@
 #endif	/* defined(HASSELINUX) */
 
 #include <sys/sysmacros.h>
-#include <sys/socket.h>
+#include "socket.h"
 #include <arpa/inet.h>
 #include <linux/if_ether.h>
-#include <linux/netlink.h>
+#include "netlink.h"
 
 
 /*

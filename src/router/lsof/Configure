@@ -2933,7 +2933,7 @@ return(0); }
 
     if test -r ${LSOF_INCLUDE}/linux/sock_diag.h -a -r ${LSOF_INCLUDE}/linux/unix_diag.h  # {
     then
-      LSOF_CFGF="$LSOF_CFGF"
+      LSOF_CFGF="$LSOF_CFGF -DHASUXSOCKEPT"
     fi	# }
     LSOF_DIALECT_DIR="linux"
     LSOF_CFGF="$LSOF_CFGF -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE"
