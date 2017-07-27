@@ -174,6 +174,10 @@ void stop_iptqueue(void)
 #ifdef HAVE_IPV6
 void stop_ipv6(void)
 {
+	insmod("ipcomp6 xfrm6_tunnel xfrm6_mode_tunnel xfrm6_mode_transport xfrm6_mode xfrm6_mode_beet ip6_tunnel tunnel6 mip6 ah6 esp6 ipv6");
+
+	dd_syslog(LOG_INFO, "ipv6 successfully stopped\n");
+
 }
 
 void start_ipv6(void)
