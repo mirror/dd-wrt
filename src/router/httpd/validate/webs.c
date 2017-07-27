@@ -4551,14 +4551,4 @@ void nintendo_save(webs_t wp)
 	applytake(value);
 }
 #endif
-#ifdef HAVE_SPEEDCHECKER
-void speedchecker_save(webs_t wp)
-{
-	nvram_set("speedchecker_enable", websGetVar(wp, "speedchecker_enable", "0"));
-	nvram_commit();
-	if (nvram_match("speedchecker_enable", "1")) {
-		eval("startstop", "speedchecker");
 
-	}
-}
-#endif
