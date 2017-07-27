@@ -26,7 +26,6 @@
 #include <revision.h>
 #include <bcmnvram.h>
 
-
 #define loop_forever() do { sleep(1); } while (1)
 #define SHELL "/bin/login"
 #define	_PATH_CONSOLE	"/dev/console"
@@ -452,8 +451,6 @@ static void set_tcp_params(void)
 	}
 
 }
-
-
 
 /* 
  * Main loop 

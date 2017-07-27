@@ -605,6 +605,31 @@ static void handle_hotspot(void)
 #endif
 }
 
+static void handle_pptp(void)
+{
+#ifdef HAVE_PPTPD
+	stop_service_f("pptpd");
+#endif
+#ifdef HAVE_OPENVPN
+	stop_service_f("openvpnserver");
+	stop_service_f("openvpn");
+#endif
+	stop_running_main(0, NULL);
+#ifdef HAVE_PPTPD
+	start_service_f("pptpd");
+#endif
+#ifdef HAVE_OPENVPN
+	start_service_f("openvpnserver");
+	start_service_f("openvpn");
+#endif
+}
+
+#ifdef HAVE_SPEEDCHECKER
+static void handle_speedchecker(void)
+{
+	startstop_f("speedchecker");
+}
+#endif
 static void handle_services(void)
 {
 #ifdef HAVE_GPSI
@@ -1390,6 +1415,10 @@ static struct SERVICES services_def[] = {
 #endif
 #ifdef HAVE_IPV6
 	{"ipv6", handle_ipv6},
+#endif
+	{"pptp", handle_pptp},
+#ifdef HAVE_SPEEDCHECKER
+	{"speedchecker", handle_speedchecker},
 #endif
 	{NULL, NULL}
 };
