@@ -293,6 +293,7 @@ include rules/f2fs-tools.mk
 -include rules/anchorfree.mk
 include rules/speedchecker.mk
 include rules/shownf.mk
+include rules/lsof.mk
 
 #
 # Generic rules
