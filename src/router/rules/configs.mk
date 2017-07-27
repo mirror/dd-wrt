@@ -270,6 +270,7 @@ obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_ANCHORFREE) += zlib jansson libevent-af hydra
 obj-$(CONFIG_F2FS) += f2fs-tools
 obj-$(CONFIG_MTDUTILS) += mtd-utils
+obj-$(CONFIG_LSOF) += lsof
 #obj-$(CONFIG_OPROFILE) += oprofile
 ifeq ($(CONFIG_BCMMODERN),y)
 obj-$(CONFIG_WPS) += brcmwps
