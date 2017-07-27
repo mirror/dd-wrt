@@ -1,0 +1,23 @@
+#!/bin/sh
+#
+# Mksrc - make SCO UnixWare source files
+#
+# WARNING: This script assumes it is running from the main directory
+#	   of the lsof, version 4 distribution.
+#
+# One environment variable applies:
+#
+# LSOF_MKC	is the method for creating the source files.
+#		It defaults to "ln -s".  A common alternative is "cp".
+#
+# $Id: Mksrc,v 1.5 99/06/22 09:52:02 abe Exp $
+
+D=dialects/uw
+L="dfile.c dlsof.h dmnt.c dnode.c dnode1.c dnode2.c dnode3.c dproc.c dproto.h dsock.c dstore.c machine.h"
+
+for i in $L
+do
+  rm -f $i
+  $LSOF_MKC $D/$i $i
+  echo "$LSOF_MKC $D/$i $i"
+done
