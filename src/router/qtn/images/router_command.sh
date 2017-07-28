@@ -56,6 +56,14 @@ if [ "$1" == "80211h_off" ] ; then
 	iwpriv wifi0 pc_override 0 &
 fi
 
+if [ "$1" == "ipv6_on" ] ; then
+	echo "0" > /proc/sys/net/ipv6/conf/$2/disable_ipv6
+fi
+
+if [ "$1" == "ipv6_off" ] ; then
+	echo "1" > /proc/sys/net/ipv6/conf/$2/disable_ipv6
+fi
+
 eth1_1_speed=`cat /sys/class/net/eth1_1/speed`
 if [ "$1" == "get_eth_1000m" ] ; then
         if [ "$eth1_1_speed" == "1000" ] ; then
@@ -124,6 +132,15 @@ if [ "$1" == "lan4_led_ctrl" ]; then
 	echo 'w 0x1f 0x0' > /proc/phy_reg0
 	fi
 	exit 0
+fi
+
+if [ "$1" == "diagnostics" ]; then
+	sed -i "s/QTN_RPC_CLIENT/${2}/g" /scripts/gather_info
+	gather_info &
+fi
+
+if [ "$1" == "sync_time" ]; then
+	date -s ${2}
 fi
 
 exit 0
