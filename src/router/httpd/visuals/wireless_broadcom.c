@@ -539,8 +539,7 @@ int ej_active_wds_instance(webs_t wp, int argc, char_t ** argv, int instance, in
 	char wdsvar[30];
 	char desc[30];
 	int macmask;
-
-	ejArgs(argc, argv, "%d", &macmask);
+	macmask = atoi(argv[0]);
 
 	mode = nvram_nget("wl%d_mode", instance);
 
@@ -631,9 +630,7 @@ int ej_wl_txbf_capable(webs_t wp, int argc, char_t ** argv)
 	char tmp[NVRAM_BUFSIZE], prefix[] = "wlXXXXXXXXXX_";
 	int txbf_capable = 0;
 	wlc_rev_info_t revinfo;
-	char *ifname;
-
-	ejArgs(argc, argv, "%s", &ifname);
+	char *ifname = argv[0];
 
 	name = nvram_nget("%s_ifname", ifname);
 

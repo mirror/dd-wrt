@@ -64,7 +64,6 @@ struct wl_client_mac *wl_client_macs = NULL;
 void (*do_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream) = NULL;	// jimmy, 
 									// https, 
 									// 8/4/2003
-int (*ejArgs) (int argc, char_t ** argv, char_t * fmt, ...) = NULL;
 FILE *(*getWebsFile) (char *path) = NULL;
 int (*wfputs) (char *buf, webs_t fp) = NULL;
 char *(*live_translate) (const char *tran) = NULL;
@@ -82,7 +81,6 @@ void initWeb(struct Webenvironment *env)
 	websWrite = env->PwebsWrite;
 	do_ej_buffer = env->Pdo_ej_buffer;
 	do_ej = env->Pdo_ej;
-	ejArgs = env->PejArgs;
 	getWebsFile = env->PgetWebsFile;
 	wfputs = env->Pwfputs;
 	PwebsRomPageIndex = env->PwebsRomPageIndex;
@@ -700,13 +698,8 @@ void ej_nvm(webs_t wp, int argc, char_t ** argv)
  */
 void ej_nvram_invmatch(webs_t wp, int argc, char_t ** argv)
 {
-	char *name, *invmatch, *output;
-
-	ejArgs(argc, argv, "%s %s %s", &name, &invmatch, &output);
-
-	if (!nvram_match(name, invmatch))
-		websWrite(wp, output);
-
+	if (!nvram_match(argv[0], argv[1]))
+		websWrite(wp, argv[2]);
 	return;
 }
 
@@ -1963,8 +1956,7 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 
 void ej_do_hpagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 {
-	char *htitle;
-	ejArgs(argc, argv, "%s", &htitle);
+	char *htitle = argv[0];
 	websWrite(wp, "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
 	if (!strcmp(htitle, "doctype_only"))
 		return;		// stop here, for About.htm

@@ -189,7 +189,6 @@ struct Webenvironment {
 	int (*PwebsWrite) (webs_t wp, char *fmt, ...);
 	struct wl_client_mac *Pwl_client_macs;
 	void (*Pdo_ej) (unsigned char method, struct mime_handler * handler, char *path, webs_t stream);	// jimmy, https, 8/4/2003
-	int (*PejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
 	FILE *(*PgetWebsFile) (char *path);
 	int (*Pwfputs) (char *buf, webs_t fp);
 	char *(*PGOZILA_GET) (webs_t wp, char *name);

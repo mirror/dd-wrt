@@ -57,10 +57,8 @@ void ej_dumplog(webs_t wp, int argc, char_t ** argv)
 
 	int count = 0;
 
-	if (ejArgs(argc, argv, "%s", &type) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
+	type = argv[0];
+
 	buf = malloc(LOG_BUF);
 	bzero(buf, LOG_BUF);
 	// if (klogctl(3, buf, 4096) < 0) {

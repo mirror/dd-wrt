@@ -99,8 +99,8 @@ void ej_static_route_setting(webs_t wp, int argc, char_t ** argv)
 	char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
 	int temp;
 	char new_name[200];
-
-	ejArgs(argc, argv, "%s %d", &arg, &count);
+	arg = argv[0];
+	count = atoi(argv[1]);
 
 	which = websGetVari(wp, "route_page", 0);
 

@@ -39,10 +39,8 @@
 
 void ej_sputnik_apd_status(webs_t wp, int argc, char_t ** argv)
 {
-	char *key;
+	char *key = argv[0];
 	FILE *fh;
-
-	ejArgs(argc, argv, "%s", &key);
 
 	if ((fh = fopen("/var/run/apd.status", "r"))) {
 		char s[128];
