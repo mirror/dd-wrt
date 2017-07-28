@@ -299,7 +299,7 @@ static int listen_interface(char *interface)
 			 */
 			check = ntohs(packet.check);
 			packet.check = 0;
-			
+
 			if (check != checksum(&(packet.version), sizeof(struct iphdr))) {
 				DEBUG("bad IP header checksum, ignoring\n");
 				DEBUG("check received = %X, should be %X", check, checksum(&(packet.version), sizeof(struct iphdr)));
