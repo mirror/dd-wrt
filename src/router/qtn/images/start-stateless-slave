@@ -88,6 +88,7 @@ rm -rf /mnt/jffs2/bootcfg
 rm -f /tmp/bootcfg.tgz
 
 echo_with_logging "=== Running start-prod"
+${INVOKE_QCSAPI} wps_upnp_enable wifi0 0
 ${INVOKE_QCSAPI} startprod
 
 # On non PCIe boards we may lose ability to use QCSAPI RPC if we don't know slave IP address
@@ -102,6 +103,8 @@ fi
 # Waiting for start-prod to finish
 echo_with_logging "=== waiting start-prod"
 sleep 10
+
+${INVOKE_QCSAPI} wps_upnp_enable wifi0 0
 
 echo_with_logging "=== Setting security parameters"
 
@@ -166,10 +169,9 @@ elif [ "${wifi0_mode}" = "sta" ]; then
 			${INVOKE_QCSAPI} SSID_set_passphrase wifi0 "${wifi0_SSID}" 0 "${wifi0_passphrase}"
 		fi
 	fi
+	echo_with_logging "=== Applying security configuration"
+	${INVOKE_QCSAPI} apply_security_config wifi0
 fi
-
-echo_with_logging "=== Applying security configuration"
-${INVOKE_QCSAPI} apply_security_config wifi0
 
 echo_with_logging "=== Apply some hardware wireless setting"
 # ifconfig br0 169.254.39.2 netmask 255.255.255.0
@@ -197,5 +199,9 @@ echo_with_logging "=== Enable telnet for ATE"
 # telnet_ate
 
 brctl stp br0 off
+brctl ssdp_flood br0 off
 qdrvcmd set br_isolate 0
-
+if [ "${wifi0_mode}" = "ap" ]; then
+	iwpriv wifi0 inact 90
+	iwpriv wifi0 rx_agg_to 200
+fi
