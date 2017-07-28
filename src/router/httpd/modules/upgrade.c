@@ -44,7 +44,6 @@
 #define MIN_BUF_SIZE    4096
 #endif
 #define CODE_PATTERN_ERROR 9999
-static char upload_fifo[] = "/tmp/uploadXXXXXX";
 void set_upgrade_ret(webs_t stream, int result)
 {
 	if (result != 0) {
