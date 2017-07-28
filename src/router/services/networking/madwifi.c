@@ -616,7 +616,7 @@ static void checkhostapd(char *ifname, int force)
 			fscanf(fp, "%d", &pid);
 			fclose(fp);
 			if (pid > 0) {
-				int needrestart=0;
+				int needrestart = 0;
 				if (force) {
 					needrestart = 1;
 					kill(pid, SIGKILL);
