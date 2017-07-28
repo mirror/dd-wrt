@@ -157,7 +157,7 @@ static u_int16_t checksum(void *addr, int count)
 		/* 
 		 * This is the inner loop 
 		 */
-		sum += *source++;
+		sum += ntohs(*source++);
 		count -= 2;
 	}
 
@@ -283,7 +283,7 @@ static int listen_interface(char *interface)
 			DEBUG1("ip.saddr=%08x", *(u_int32_t *)&(packet.saddr));
 			DEBUG1("ip.daddr=%08x", *(u_int32_t *)&(packet.daddr));
 
-			if (*(u_int16_t *)packet.type == 0x0800) {
+			if (ntohl(*(u_int16_t *)packet.type) == 0x0800) {
 				DEBUG("not ip protocol");
 				ret = L_FAIL;
 				goto Exit;
@@ -297,9 +297,9 @@ static int listen_interface(char *interface)
 			/* 
 			 * check IP checksum 
 			 */
-			check = packet.check;
+			check = ntohs(packet.check);
 			packet.check = 0;
-
+			
 			if (check != checksum(&(packet.version), sizeof(struct iphdr))) {
 				DEBUG("bad IP header checksum, ignoring\n");
 				DEBUG("check received = %X, should be %X", check, checksum(&(packet.version), sizeof(struct iphdr)));
