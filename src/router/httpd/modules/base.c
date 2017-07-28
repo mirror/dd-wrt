@@ -1360,7 +1360,7 @@ static struct apply_action apply_actions[] = {
 	 */
 	{"InternetAtStart", "finish", 0, SYS_RESTART, NULL},
 #ifdef HAVE_SPEEDCHECKER
-	{"Speedchecker", "speedchecker", "", 0, SERVICE_RESTART, NULL},
+	{"Speedchecker", "speedchecker", 0, SERVICE_RESTART, NULL},
 #endif
 
 };
