@@ -684,9 +684,7 @@ extern void (*Udo_ej) (unsigned char method, struct mime_handler * handler, char
 									// https, 
 									// 8/4/2003
 #define do_ej Udo_ej
-extern int (*UejArgs) (int argc, char_t ** argv, char_t * fmt, ...);
 
-#define ejArgs UejArgs
 extern FILE *(*UgetWebsFile) (char *path);
 
 #define getWebsFile UgetWebsFile

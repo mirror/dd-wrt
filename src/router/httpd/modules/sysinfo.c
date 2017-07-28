@@ -131,7 +131,7 @@ void ej_show_sysinfo(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 
-	ejArgs(argc, argv, "%s", &type);
+	type = argv[0];
 
 	if (type && !strcmp(type, "other"))
 		show_other_info(wp);

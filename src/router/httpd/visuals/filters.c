@@ -272,11 +272,8 @@ void ej_filter_dport_get(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 
 	D("ej filter dport get");
-	if (ejArgs(argc, argv, "%s %d", &type, &which) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		D("bad value");
-		return;
-	}
+	type = argv[0];
+	which = atoi(argv[1]);
 	websWrite(wp, "%s", filter_dport_get(wp, type, which, word));
 	D("good value");
 
@@ -344,11 +341,8 @@ void ej_filter_port_get(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 
 	D("ej filter port get");
-	if (ejArgs(argc, argv, "%s %d", &type, &which) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		D("bad value");
-		return;
-	}
+	type = argv[0];
+	which = atoi(argv[1]);
 	websWrite(wp, "%s", filter_port_get(type, which, word));
 
 	D("good value");
@@ -394,12 +388,8 @@ void ej_filter_ip_get(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 
 	D("ej-filter ip get");
-	if (ejArgs(argc, argv, "%s %d", &type, &which) < 2) {
-
-		websError(wp, 400, "Insufficient args\n");
-		D("BAD VALUE");
-		return;
-	}
+	type = argv[0];
+	which = atoi(argv[1]);
 	websWrite(wp, "%s", filter_ip_get(wp, type, which, word));
 
 	D("good value");
@@ -412,12 +402,7 @@ void ej_filter_mac_get(webs_t wp, int argc, char_t ** argv)
 	char word[256];
 
 	D("ej filter mac get");
-	if (ejArgs(argc, argv, "%d", &which) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		D("bad value");
-		return;
-	}
-
+	which = atoi(argv[0]);
 	websWrite(wp, "%s", filter_mac_get(wp, which, word));
 	D("good value");
 	return;
@@ -453,10 +438,8 @@ void ej_filter_policy_get(webs_t wp, int argc, char_t ** argv)
 	char *type, *part;
 
 	D("ej filter policy get");
-	if (ejArgs(argc, argv, "%s %s", &type, &part) < 2) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
+	type = argv[0];
+	part = argv[1];
 
 	if (!strcmp(type, "f_id")) {
 		websWrite(wp, "%d", wp->p->filter_id);
@@ -612,12 +595,7 @@ void ej_filter_tod_get(webs_t wp, int argc, char_t ** argv)
 {
 	char *type;
 	int i;
-
-	D("ej-filter-tod_get");
-	if (ejArgs(argc, argv, "%s", &type) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
+	type = argv[0];
 
 	filter_tod_init(wp->p->filter_id);
 
@@ -723,10 +701,8 @@ void ej_filter_web_get(webs_t wp, int argc, char_t ** argv)
 	char *token = "<&nbsp;>";
 
 	D("filter-web-get");
-	if (ejArgs(argc, argv, "%s %d", &type, &which) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
+	type = argv[0];
+	which = atoi(argv[1]);
 
 	if (!strcmp(type, "host")) {
 		char *host_data, filter_host[] = "filter_web_hostXXX";;

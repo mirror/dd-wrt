@@ -65,10 +65,8 @@ void ej_get_wl_domain(webs_t wp, int argc, char_t ** argv)
 void ej_get_clone_mac(webs_t wp, int argc, char_t ** argv)
 {
 	char *c;
-	int mac, which;
+	int mac, which = atoi(argv[0]);
 	char buf[32];
-
-	ejArgs(argc, argv, "%d", &which);
 
 	if (wp->p->clone_wan_mac)
 		c = wp->http_client_mac;

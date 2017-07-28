@@ -1346,7 +1346,7 @@ static struct apply_action apply_actions[] = {
 	{"Milkfish", "milkfish", 0, SERVICE_RESTART, NULL},
 #endif
 #ifdef HAVE_IPV6
-	{"IPV6", "ipv6", 0 , SERVICE_RESTART, NULL},
+	{"IPV6", "ipv6", 0, SERVICE_RESTART, NULL},
 #endif
 	/*
 	 * Obsolete {"WL_WEPTable", "", 0, SERVICE_RESTART, NULL}, {"Security",

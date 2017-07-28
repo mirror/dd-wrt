@@ -196,18 +196,6 @@ void ej_get_model_name(webs_t wp, int argc, char_t ** argv)
 	websWrite(wp, "%s", nvram_safe_get("router_name"));
 }
 
-void ej_get_url(webs_t wp, int argc, char_t ** argv)
-{
-	char *type;
-
-	if (ejArgs(argc, argv, "%s", &type) < 1) {
-		websError(wp, 400, "Insufficient args\n");
-		return;
-	}
-
-	websWrite(wp, "%s", "Invalid argument\n");
-}
-
 void ej_show_logo(webs_t wp, int argc, char_t ** argv)
 {
 	return;
