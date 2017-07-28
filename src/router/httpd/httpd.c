@@ -1350,7 +1350,6 @@ int main(int argc, char **argv)
 	int gotv4, gotv6;
 	int listen4_fd = -1;
 	int listen6_fd = -1;
-	int conn_fd;
 	socklen_t sz = sizeof(usa);
 	int c;
 	int timeout = TIMEOUT;
@@ -1618,7 +1617,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
-		get_client_ip_mac(conn_fd, conn_fp);
+		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
 #ifdef HAVE_HTTPS
 		if (DO_SSL(conn_fp)) {
 			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
@@ -1894,8 +1893,8 @@ size_t wfwrite(char *buf, int size, int n, webs_t wp)
 		}
 #endif
 	} else
-
-		return ret;
+		ret = fwrite(buf, size, n, fp);
+	return ret;
 }
 
 int wfsendfile(int fd, off_t offset, size_t nbytes, webs_t wp)
