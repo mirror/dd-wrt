@@ -36,9 +36,7 @@ void ej_exec_milkfish_service(webs_t wp, int argc, char_t ** argv)
 
 	FILE *fp;
 	char line[254];
-	char *request;
-
-	ejArgs(argc, argv, "%s", &request);
+	char *request = argv[0];
 
 	if ((fp = popen(request, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {
@@ -56,8 +54,7 @@ void ej_exec_milkfish_phonebook(webs_t wp, int argc, char_t ** argv)
 
 	FILE *fp;
 	char line[254];
-	char *request;
-	ejArgs(argc, argv, "%s", &request);
+	char *request = argv[0];
 
 	if ((fp = popen(request, "r"))) {
 		while (fgets(line, sizeof(line), fp) != NULL) {

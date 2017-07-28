@@ -146,8 +146,8 @@ void ej_wireless_filter_table(webs_t wp, int argc, char_t ** argv)
 #endif
 
 	char *mac_mess = "MAC";
-
-	ejArgs(argc, argv, "%s %s", &type, &ifname);
+	type = argv[0];
+	ifname = argv[1];
 
 	char var[32];
 	char *wordlist;
@@ -382,7 +382,8 @@ void ej_wireless_active_table(webs_t wp, int argc, char_t ** argv)
 	int dhcp_table_count;
 	char *type, *ifname2;
 	char ifname[32];
-	ejArgs(argc, argv, "%s %s", &type, &ifname2);
+	type = argv[0];
+	ifname2 = argv[1];
 	strcpy(ifname, ifname2);
 	rep(ifname, 'X', '.');
 	if (!strcmp(type, "online")) {
@@ -700,9 +701,8 @@ void ej_get_wl_active_mac(webs_t wp, int argc, char_t ** argv)
 
 void ej_get_wl_value(webs_t wp, int argc, char_t ** argv)
 {
-	char *type;
+	char *type = argv[0];
 
-	ejArgs(argc, argv, "%s", &type);
 	if (!strcmp(type, "default_dtim")) {
 		websWrite(wp, "1");	// This is a best value for 11b test
 	} else if (!strcmp(type, "wl_afterburner_override")) {
@@ -726,7 +726,7 @@ void ej_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix)
 
 	sprintf(var, "%s_security_mode", prefix);
 	cprintf("show wpa setting\n");
-	ejArgs(argc, argv, "%s", &type);
+	type = argv[0];
 	rep(var, '.', 'X');
 	security_mode = GOZILA_GET(wp, var);
 	if (security_mode == NULL)
@@ -766,7 +766,9 @@ void ej_wl_ioctl(webs_t wp, int argc, char_t ** argv)
 	char *op, *type, *var;
 	char *name;
 
-	ejArgs(argc, argv, "%s %s %s", &op, &type, &var);
+	op = argv[0];
+	type = argv[1];
+	var = argv[2];
 
 	if ((unit = nvram_geti("wl_unit")) < 0)
 		return;

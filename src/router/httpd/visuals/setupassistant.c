@@ -1589,7 +1589,7 @@ void sas_show_wpa_setting(webs_t wp, int argc, char_t ** argv, char *prefix, cha
 	fprintf(stderr, "[security prefix] %s\n", security_prefix);
 	sprintf(var, "%s_security_mode", prefix);
 	cprintf("show wpa setting\n");
-	ejArgs(argc, argv, "%s", &type);
+	type = argv[0];
 	rep(var, '.', 'X');
 	security_mode = GOZILA_GET(wp, var);
 	if (security_mode == NULL)

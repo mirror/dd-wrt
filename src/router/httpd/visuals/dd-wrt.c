@@ -313,10 +313,9 @@ void ej_dumpmeminfo(webs_t wp, int argc, char_t ** argv)
 
 void ej_show_wds_subnet(webs_t wp, int argc, char_t ** argv)
 {
-	int index = -1;
-	char *interface;
+	int index = atoi(argv[0]);
+	char *interface = argv[1];
 
-	ejArgs(argc, argv, "%d %s", &index, &interface);
 	char br1[32];
 
 	sprintf(br1, "%s_br1_enable", interface);
@@ -5055,13 +5054,12 @@ void ej_get_wds_mac(webs_t wp, int argc, char_t ** argv)
 	char *c, wds_var[32] = "";
 
 	char *interface;
-
-	if (ejArgs(argc, argv, "%d %d %s", &wds_idx, &mac_idx, &interface) < 3) {
-		websError(wp, 400, "Insufficient args\n");
+	wds_idx = atoi(argv[0]);
+	mac_idx = atoi(argv[1]);
+	interface = argv[2];
+	if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
 		return;
-	} else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
-		return;
-	else if (mac_idx < 0 || mac_idx > 5)
+	if (mac_idx < 0 || mac_idx > 5)
 		return;
 
 	snprintf(wds_var, 31, "%s_wds%d_hwaddr", interface, wds_idx);
@@ -5082,8 +5080,8 @@ void ej_showbridgesettings(webs_t wp, int argc, char_t ** argv)
 {
 	char *interface;
 	int mcast;
-
-	ejArgs(argc, argv, "%s %d", &interface, &mcast);
+	interface = argv[0];
+	mcast = atoi(argv[1]);
 	showbridgesettings(wp, interface, mcast, 0);
 }
 
@@ -5093,11 +5091,12 @@ void ej_get_wds_ip(webs_t wp, int argc, char_t ** argv)
 	char *c, wds_var[32] = "";
 
 	char *interface;
-
-	ejArgs(argc, argv, "%d %d %s", &wds_idx, &ip_idx, &interface);
+	wds_idx = atoi(argv[0]);
+	ip_idx = atoi(argv[1]);
+	interface = atoi(argv[2]);
 	if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
 		return;
-	else if (ip_idx < 0 || ip_idx > 3)
+	if (ip_idx < 0 || ip_idx > 3)
 		return;
 
 	snprintf(wds_var, 31, "%s_wds%d_ipaddr", interface, wds_idx);
@@ -5121,11 +5120,13 @@ void ej_get_wds_netmask(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-	ejArgs(argc, argv, "%d %d %s", &wds_idx, &nm_idx, &interface);
+	wds_idx = atoi(argv[0]);
+	nm_idx = atoi(argv[1]);
+	interface = atoi(argv[2]);
 
 	if (wds_idx < 1 || wds_idx > 6)
 		return;
-	else if (nm_idx < 0 || nm_idx > 3)
+	if (nm_idx < 0 || nm_idx > 3)
 		return;
 
 	snprintf(wds_var, 31, "%s_wds%d_netmask", interface, wds_idx);
@@ -5149,11 +5150,13 @@ void ej_get_wds_gw(webs_t wp, int argc, char_t ** argv)
 
 	char *interface;
 
-	ejArgs(argc, argv, "%d %d %s", &wds_idx, &gw_idx, &interface);
+	wds_idx = atoi(argv[0]);
+	gw_idx = atoi(argv[1]);
+	interface = atoi(argv[2]);
 
 	if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
 		return;
-	else if (gw_idx < 0 || gw_idx > 3)
+	if (gw_idx < 0 || gw_idx > 3)
 		return;
 
 	snprintf(wds_var, 31, "%s_wds%d_gw", interface, wds_idx);
@@ -5176,8 +5179,8 @@ void ej_get_br1_ip(webs_t wp, int argc, char_t ** argv)
 	char *c;
 
 	char *interface;
-
-	ejArgs(argc, argv, "%d %s", &ip_idx, &interface);
+	ip_idx = atoi(argv[0]);
+	interface = argv[1];
 	if (ip_idx < 0 || ip_idx > 3)
 		return;
 	char br1[32];
@@ -5201,8 +5204,9 @@ void ej_get_br1_netmask(webs_t wp, int argc, char_t ** argv)
 	char *c;
 
 	char *interface;
+	nm_idx = atoi(argv[0]);
+	interface = argv[1];
 
-	ejArgs(argc, argv, "%d %s", &nm_idx, &interface);
 	if (nm_idx < 0 || nm_idx > 3)
 		return;
 	char nms[32];
@@ -5305,7 +5309,9 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 	char nvramvar[32] = { 0 };
 	char *interface;
 
-	ejArgs(argc, argv, "%d %s", &index, &interface);
+	index = atoi(argv[0]);
+	interface = argv[1];
+
 	char wlwds[32];
 
 	sprintf(wlwds, "%s_wds1_enable", interface);
@@ -5359,7 +5365,7 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 	int mac, which;
 	char buf[32];
 
-	ejArgs(argc, argv, "%d", &which);
+	which = atoi(argv[0]);
 
 	if (nvram_match("def_whwaddr", "00:00:00:00:00:00")) {
 
@@ -5404,9 +5410,7 @@ void ej_get_clone_wmac(webs_t wp, int argc, char_t ** argv)
 void ej_gethostnamebyip(webs_t wp, int argc, char_t ** argv)
 {
 	char buf[200];
-	char *argument;
-
-	ejArgs(argc, argv, "%s", &argument);
+	char *argument = argv[0];
 
 	if (argc == 1) {
 		getHostName(buf, argument);
@@ -5610,9 +5614,7 @@ void ej_bandwidth(webs_t wp, int argc, char_t ** argv)
 {
 	char *name;
 	int sig;
-	char *argument;
-
-	ejArgs(argc, argv, "%s", &argument);
+	char *argument = argv[0];
 
 	if (argc == 1) {
 		if (strcmp(argument, "speed") == 0) {

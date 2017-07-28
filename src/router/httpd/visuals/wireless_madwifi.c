@@ -212,7 +212,7 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int t;
 	int macmask;
 	int gotassocs = 0;
-	ejArgs(argc, argv, "%d", &macmask);
+	macmask = atoi(argv[0]);
 	for (i = 0; i < c; i++) {
 		sprintf(devs, "ath%d", i);
 		sprintf(turbo, "%s_channelbw", devs);

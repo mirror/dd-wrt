@@ -374,31 +374,3 @@ void do_ej(unsigned char method, struct mime_handler *handler, char *path, webs_
 	memdebug_leave_info(path);
 
 }
-
-int ejArgs(int argc, char **argv, char *fmt, ...)
-{
-	va_list ap;
-	int arg;
-	char *c;
-
-	if (!argv)
-		return 0;
-
-	va_start(ap, fmt);
-	for (arg = 0, c = fmt; c && *c && arg < argc;) {
-		if (*c++ != '%')
-			continue;
-		switch (*c) {
-		case 'd':
-			*(va_arg(ap, int *)) = atoi(argv[arg]);
-			break;
-		case 's':
-			*(va_arg(ap, char **)) = argv[arg];
-			break;
-		}
-		arg++;
-	}
-	va_end(ap);
-
-	return arg;
-}

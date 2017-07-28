@@ -382,9 +382,8 @@ void ej_active_wireless(webs_t wp, int argc, char_t ** argv)
 	int cnt = 0;
 	char turbo[32];
 	int t;
-	int macmask;
+	int macmask = atoi(argv[0]);
 
-	ejArgs(argc, argv, "%d", &macmask);
 	t = 1;
 	cnt = ej_active_wireless_if(wp, argc, argv, "wl0", cnt, t, macmask);
 	cnt = ej_active_wireless_if(wp, argc, argv, "wl1", cnt, t, macmask);
