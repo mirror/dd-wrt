@@ -183,6 +183,12 @@ int gen_stateless_conf(void)
 	} else {
 		fprintf(fp, "wifi0_bf=0\n");
 	}
+	if (nvram_matchi("wl1_txbf", 1)) {
+		fprintf(fp, "wifi0_mu=1\n");
+	} else {
+		fprintf(fp, "wifi0_mu=0\n");
+	}
+
 	fprintf(fp, "wifi0_staticip=1\n");
 	fprintf(fp, "slave_ipaddr=\"192.168.1.111/16\"\n");
 	fprintf(fp, "server_ipaddr=\"%s\"\n", nvram_safe_get("QTN_RPC_SERVER"));
