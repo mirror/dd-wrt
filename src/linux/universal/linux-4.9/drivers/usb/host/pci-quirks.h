@@ -19,6 +19,7 @@ bool usb_amd_prefetch_quirk(void);
 void usb_amd_dev_put(void);
 void usb_amd_quirk_pll_disable(void);
 void usb_amd_quirk_pll_enable(void);
+void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev);
 #else
 static inline int usb_amd_find_chipset_info(void)
 {
@@ -27,6 +28,9 @@ static inline int usb_amd_find_chipset_info(void)
 struct pci_dev;
 static inline void usb_amd_quirk_pll_disable(void) {}
 static inline void usb_amd_quirk_pll_enable(void) {}
+static inline void  usb_asmedia_modifyflowcontrol(struct pci_dev *pdev) {};
+
+static inline void usb_asmedia_modifyflowcontrol(struct pci_dev *pdev) {}
 static inline void usb_amd_dev_put(void) {}
 static inline bool usb_amd_hang_symptom_quirk(void)
 {
