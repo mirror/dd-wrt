@@ -199,7 +199,7 @@ typedef uint16 chanspec_t;
 /**
  * Number of chars needed for wf_chspec_ntoa() destination character buffer.
  */
-#define CHANSPEC_STR_LEN    20
+#define CHANSPEC_STR_LEN    64
 
 
 #define CHSPEC_IS_BW_160_WIDE(chspec) (CHSPEC_BW(chspec) == WL_CHANSPEC_BW_160 ||\
