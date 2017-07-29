@@ -2379,6 +2379,14 @@ void start_lan(void)
 #else
 				wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
 #endif
+#ifdef HAVE_DHDAP
+	if (!strcmp(name, "eth2")) {
+		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
+			unit = 1;
+		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
+			unit = 1;
+	}
+#endif
 				snprintf(wl_name, sizeof(wl_name), "wl%d_mode", unit);
 				/*
 				 * Do not attach the main wl i/f if in wds or client/adhoc 
