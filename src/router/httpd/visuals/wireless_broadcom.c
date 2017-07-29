@@ -52,7 +52,7 @@ typedef struct wl_rateset3 {
 	uint8 rates[16];	/* rates in 500kbps units w/hi bit set if basic */
 } wl_rateset3_t;
 
-typedef struct wl_rateset_args {
+typedef struct wl_rateset5_args {
 	uint32	count;			/**< # rates in this set */
 	uint8	rates[16];	/**< rates in 500kbps units w/hi bit set if basic */
 	uint8   mcs[16];        /* supported mcs index bit map */
