@@ -244,6 +244,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	sprintf(wlmode, "%s_mode", visible);
 	mode = nvram_safe_get(wlmode);
 	unsigned char buf[WLC_IOCTL_MAXLEN];
+					int ht = 0;
+					int sgi = 0;
+					int vht = 0;
+					int i40 = 0;
 
 	bzero(buf, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
@@ -401,10 +405,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcpy(time, UPTIME(sta4->in));
 					}
 					info[0] = 0;
-					int ht = 0;
-					int sgi = 0;
-					int vht = 0;
-					int i40 = 0;
+					ht = 0;
+					sgi = 0;
+					vht = 0;
+					i40 = 0;
 					if (sta4->flags & WL_STA_N_CAP) {
 						ht = 1;
 						if (sta4->ht_capabilities) {
@@ -477,10 +481,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcpy(time, UPTIME(sta5->in));
 					}
 					info[0] = 0;
-					int ht = 0;
-					int sgi = 0;
-					int vht = 0;
-					int i40 = 0;
+					ht = 0;
+					sgi = 0;
+					vht = 0;
+					i40 = 0;
 					if (sta5->flags & WL_STA_N_CAP) {
 						ht = 1;
 						if (sta5->ht_capabilities) {
