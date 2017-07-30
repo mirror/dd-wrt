@@ -85,7 +85,7 @@ endif
 CFLAGS += $(MIPS16_OPT)
 
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64  -Werror=maybe-uninitialized -Werror=int-conversion
+CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
 LDFLAGS += -L.
 OBJS := utils.o 
