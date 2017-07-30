@@ -263,6 +263,8 @@ extern void free_wifi_clients(struct wifi_client_info *wci);
 extern void free_mac80211_ac(struct mac80211_ac *ac);
 #endif
 
+char *getCountryList(void);
+
 #ifdef HAVE_MADWIFI
 extern struct wifi_channels *list_channels(char *devnr);
 int get_radiostate(char *ifname);
@@ -272,7 +274,6 @@ int isAssociated(char *ifname);
 unsigned int getRegDomain(char *country);
 unsigned int getCountry(char *country);
 const char *getCountryByIso(char *iso);
-char *getCountryList(void);
 
 #endif
 int ieee80211_mhz2ieee(int freq);

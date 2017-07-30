@@ -436,7 +436,7 @@ static int enable_dhcprelay(char *ifname)
 			 */
 			unit = wl_get_instance(name);
 			if (unit == -1)
-			    continue;
+				continue;
 			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
 
 			/*
@@ -828,7 +828,7 @@ void start_lan(void)
 	char wan_ifname[64];	//= strdup(nvram_safe_get("wan_ifname"));
 	char lan_ifnames[128];	//= strdup(nvram_safe_get("lan_ifnames"));
 	char name[80];
-	char *next, *svbuf;
+	char *next;
 	char realname[80];
 	char wl_face[10];
 
@@ -2422,13 +2422,33 @@ void start_lan(void)
 					// ("brctl", "addif", lan_ifname, name);
 					do_mssid(name);
 				}
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
+				wl_scan_params_t params;
+
+				bzero(&params, sizeof(params));
+
+				/*
+				 * use defaults (same parameters as wl scan) 
+				 */
+
+				memset(&params.bssid, 0xff, sizeof(params.bssid));
+
+				params.bss_type = DOT11_BSSTYPE_ANY;
+				params.scan_type = 0;
+				params.nprobes = -1;
+				params.active_time = -1;
+				params.passive_time = -1;
+				params.home_time = -1;
+				params.channel_num = 0;
+#endif
+
 				if (nvram_match(wl_name, "apsta")) {
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT61)
 					// eval ("wl", "ap", "0");
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "1");
 					eval("wl", "-i", name, "infra", "1");
-					wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
+					wl_ioctl(wl_name, WLC_SCAN, &params, 64);
 					wlconf_up(name);
 #endif
 					// eval("wlconf", name, "up");
@@ -2455,7 +2475,7 @@ void start_lan(void)
 					eval("wl", "-i", name, "ap", "0");
 					// eval ("wl", "infra", "0");
 					eval("wl", "-i", name, "infra", "0");
-					wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
+					wl_ioctl(wl_name, WLC_SCAN, &params, 64);
 					wlconf_up(name);
 #endif
 					// eval ("wl", "infra", "0");
@@ -2473,7 +2493,7 @@ void start_lan(void)
 					// eval ("wl", "infra", "1");
 					eval("wl", "-i", name, "infra", "1");
 					wlconf_up(name);
-					wl_ioctl(name, WLC_SCAN, svbuf, sizeof(svbuf));
+					wl_ioctl(name, WLC_SCAN, &params, 64);
 #endif
 					// eval("wlconf", name, "up");
 					ifconfig(name, IFUP | IFF_ALLMULTI, NULL, NULL);
@@ -5119,7 +5139,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	 */
 	unit = wl_get_instance(ifname);
 	if (unit == -1)
-	    return;
+		return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	if (nvram_match(strcat_r(prefix, "akm", tmp), "") && nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
 		return 0;
