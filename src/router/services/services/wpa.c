@@ -59,7 +59,9 @@ void start_nas_notify(char *ifname)
 	/*
 	 * the wireless interface must be configured to run NAS 
 	 */
-	wl_ioctl(ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
+	unit = wl_get_instance(ifname);
+	if (unit == -1)
+	    return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	snprintf(pidfile, sizeof(pidfile), "/tmp/nas.wl%dlan.pid", unit);
 
