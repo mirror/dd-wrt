@@ -433,13 +433,6 @@ typedef struct _RT_802_11_MAC_TABLE {
 	RT_802_11_MAC_ENTRY Entry[128];	//MAX_LEN_OF_MAC_TABLE = 32
 } RT_802_11_MAC_TABLE;
 
-typedef struct STAINFO {
-	char mac[6];
-	char rssi;
-	char noise;
-	char ifname[32];
-} STAINFO;
-
 int OidQueryInformation(unsigned long OidQueryCode, int socket_id, char *DeviceName, void *ptr, unsigned long PtrLength)
 {
 	struct iwreq wrq;
