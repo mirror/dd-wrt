@@ -3468,6 +3468,21 @@ if (nvram_match(strcat_r(bsscfg->prefix, "wmf_bss_enable", tmp), "1")) {
 #endif
     }
 
+#ifdef __CONFIG_DHDAP__
+	if (is_dhd) {
+		val = nvram_geti(strcat_r(prefix, "lbr_aggr_en_mask", tmp));
+		(void)dhd_iovar_setint(name, "lbr_aggr_en_mask", val);
+		val = nvram_geti(strcat_r(prefix, "lbr_aggr_release_timeout", tmp));
+		if (val) {
+			(void)dhd_iovar_setint(name, "lbr_aggr_release_timeout", val);
+		}
+		val = atoi(nvram_safe_get(strcat_r(prefix, "lbr_aggr_len", tmp)));
+		if (val) {
+			(void)dhd_iovar_setint(name, "lbr_aggr_len", val);
+		}
+	}
+#endif /* __CONFIG_DHDAP__ */
+
 	ret = 0;
 exit:
 	if (bclist != NULL)
