@@ -154,13 +154,6 @@ typedef struct _RT_802_11_MAC_TABLE {
 #define RTPRIV_IOCTL_GET_MAC_TABLE		(SIOCIWFIRSTPRIV + 0x0F)
 #define RTPRIV_IOCTL_GET_MAC_TABLE_STRUCT					(SIOCIWFIRSTPRIV + 0x1F)	// modified by Red@Ralink, 2009/09/30
 
-typedef struct STAINFO {
-	char mac[6];
-	char rssi;
-	char noise;
-	char ifname[32];
-} STAINFO;
-
 static char bGetHTTxRateByBW_GI_MCS(int nBW, int nGI, int nMCS, int *dRate)
 {
 	//fprintf(stderr, "bGetHTTxRateByBW_GI_MCS()\n");

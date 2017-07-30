@@ -146,6 +146,17 @@ struct wifi_interface {
 	int center2;
 };
 
+
+typedef struct STAINFO {
+	char mac[6];
+	char rssi;
+	char noise;
+	char ifname[32];
+} STAINFO;
+
+extern STAINFO *getRaStaInfo(char *ifname);
+
+
 #if defined(HAVE_MADWIFI) || defined(HAVE_MADWIFI_MIMO) || defined(HAVE_ATH9K)
 #include <stdint.h>
 
@@ -158,6 +169,9 @@ extern struct mac80211_info *mac80211_assoclist(char *interface);
 extern char *mac80211_get_caps(char *interface, int shortgi, int greenfield);
 extern int has_shortgi(char *interface);
 extern int has_greenfield(char *interface);
+
+
+
 #ifdef HAVE_ATH10K
 extern int has_vht160(char *interface);
 extern int has_vht80(char *interface);
