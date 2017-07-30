@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3525 | brainslayer | 2017-07-30 18:09:41 +0200 (Sun, 30 Jul 2017) | 1 line
+
+update dhd driver
+------------------------------------------------------------------------
 r3524 | brainslayer | 2017-07-30 13:02:23 +0200 (Sun, 30 Jul 2017) | 1 line
 
 openwrt's latest update to ath9k seem to introduce a critical new issue, to apply a update for the update :-)
