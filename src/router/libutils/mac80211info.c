@@ -237,18 +237,15 @@ out:
 
 static void getNoise_mac80211_internal(char *interface, struct mac80211_info *mac80211_info)
 {
-	lock();
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
 	unl_genl_request(&unl, msg, mac80211_cb_survey, mac80211_info);
-	unlock();
 	return;
 nla_put_failure:
 	nlmsg_free(msg);
-	unlock();
 	return;
 }
 
@@ -670,7 +667,8 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
-	struct statdata data;
+	struct statdata data
+	lock();	
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
 	if (interface)
 		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
@@ -698,9 +696,11 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	// print_wifi_clients(mac80211_info->wci);
 	// free_wifi_clients(mac80211_info->wci);
 	globfree(&globbuf);
+	unlock();
 	return (data.mac80211_info);
 nla_put_failure:
 	nlmsg_free(msg);
+	unlock();
 	return (data.mac80211_info);
 }
 
