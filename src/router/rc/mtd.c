@@ -258,7 +258,7 @@ int mtd_write(const char *path, const char *mtd)
 	int count, len, off;
 	int sum = 0;		// for debug
 	int ret = -1;
-	int i;
+	int i = 0;
 	int badblocks = 0;
 	unsigned char lzmaloader[4096];
 	int brand = getRouterBrand();

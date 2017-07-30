@@ -61,7 +61,7 @@ void start_nas_notify(char *ifname)
 	 */
 	unit = wl_get_instance(ifname);
 	if (unit == -1)
-	    return;
+		return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	snprintf(pidfile, sizeof(pidfile), "/tmp/nas.wl%dlan.pid", unit);
 

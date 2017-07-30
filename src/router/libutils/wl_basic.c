@@ -130,7 +130,7 @@ int bcm_gettxpower(char *wlname)
 	char cmd[32];
 	char wl[16];
 	sprintf(wl, "%s_txpwr", wlname);
-	pwr = nvram_safe_get(wl);
+	pwr = nvram_geti(wl);
 	if (!strcmp(wlname, "wl0"))
 		c = 0;
 	else if (!strcmp(wlname, "wl1"))

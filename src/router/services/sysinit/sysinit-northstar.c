@@ -87,7 +87,7 @@ static struct regiondef regions[] = {
 	{"MY", "MY", 0, NULL},
 	{"IN", "AU", 0, "IN", 0},
 	{"EG", "EG", 0, "EG", 0},
-	{NULL, NULL, NULL}
+	{NULL, NULL, 0, NULL, 0}
 };
 
 static void setcaldata()
@@ -143,6 +143,7 @@ static void setdlinkcountry(int count, int offset24)
 	if (set) {
 		if (!nvram_get("nocountrysel"))
 			nvram_seti("nocountrysel", 1);
+
 		set_regulation(offset24, set, rev);
 		if (!set5) {
 			set5 = set;
@@ -3572,30 +3573,30 @@ void start_sysinit(void)
 
 		// regulatory setup
 		if (nvram_match("regulation_domain", "US"))
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 		else if (nvram_match("regulation_domain", "Q2"))
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "EU", "66");
+			set_regulation(0, "EU", 66);
 		else if (nvram_match("regulation_domain", "TW"))
-			set_regulation(0, "TW", "13");
+			set_regulation(0, "TW", 13);
 		else if (nvram_match("regulation_domain", "CN"))
-			set_regulation(0, "CN", "1");
+			set_regulation(0, "CN", 1);
 		else
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 
 		if (nvram_match("regulation_domain_5G", "US"))
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 		else if (nvram_match("regulation_domain_5G", "Q2"))
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "EU", "38");
+			set_regulation(1, "EU", 18);
 		else if (nvram_match("regulation_domain_5G", "TW"))
-			set_regulation(1, "TW", "13");
+			set_regulation(1, "TW", 13);
 		else if (nvram_match("regulation_domain_5G", "CN"))
-			set_regulation(1, "CN", "1");
+			set_regulation(1, "CN", 1);
 		else
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 		break;
 	case ROUTER_ASUS_RTN18U:
 		set_gpio(7, 1);	// fixup reset button
@@ -3661,30 +3662,30 @@ void start_sysinit(void)
 		nvram_set("1:mcsbw805ghpo", "0xAA864433");
 
 		if (nvram_match("regulation_domain", "US"))
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 		else if (nvram_match("regulation_domain", "Q2"))
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 		else if (nvram_match("regulation_domain", "EU"))
-			set_regulation(0, "EU", "66");
+			set_regulation(0, "EU", 66);
 		else if (nvram_match("regulation_domain", "TW"))
-			set_regulation(0, "TW", "13");
+			set_regulation(0, "TW", 13);
 		else if (nvram_match("regulation_domain", "CN"))
-			set_regulation(0, "CN", "1");
+			set_regulation(0, "CN", 1);
 		else
-			set_regulation(0, "US", "0");
+			set_regulation(0, "US", 0);
 
 		if (nvram_match("regulation_domain_5G", "US"))
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 		else if (nvram_match("regulation_domain_5G", "Q2"))
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 		else if (nvram_match("regulation_domain_5G", "EU"))
-			set_regulation(1, "EU", "38");
+			set_regulation(1, "EU", 38);
 		else if (nvram_match("regulation_domain_5G", "TW"))
-			set_regulation(1, "TW", "13");
+			set_regulation(1, "TW", 13);
 		else if (nvram_match("regulation_domain_5G", "CN"))
-			set_regulation(1, "CN", "1");
+			set_regulation(1, "CN", 1);
 		else
-			set_regulation(1, "US", "0");
+			set_regulation(1, "US", 0);
 
 		break;
 	case ROUTER_DLINK_DIR890:

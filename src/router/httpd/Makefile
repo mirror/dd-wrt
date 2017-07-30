@@ -63,9 +63,11 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-COPTS += $(MIPS16_OPT) -D_GNU_SOURCE
+COPTS += $(MIPS16_OPT) -D_GNU_SOURCE -Werror=maybe-uninitialized -Werror=int-conversion
 
 BCFLAGS	= $(COPTS)  -fPIC -DMEMLEAK_OVERRIDE
+
+
 
 ifeq ($(CONFIG_80211AC),y)
 BCFLAGS	+= -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall
