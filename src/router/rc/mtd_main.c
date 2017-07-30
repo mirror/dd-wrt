@@ -186,7 +186,7 @@ static int mtd_check(char *mtd)
 static int s_mtd_write(int imagefd, const char *mtd, int quiet)
 {
 	int fd, i, result;
-	size_t r, w, e, skip_bad_blocks;
+	size_t r, w, e, skip_bad_blocks = 0;
 	struct mtd_info_user mtdInfo;
 	struct erase_info_user mtdEraseInfo;
 	int ret = 0;
@@ -382,8 +382,8 @@ static void usage(void)
 
 int mtd_main(int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd, force, quiet, unlocked;
-	char *erase[MAX_ARGS], *device, *imagefile;
+	int ch, i, boot, unlock, imagefd=0, force, quiet, unlocked;
+	char *erase[MAX_ARGS], *device, *imagefile = NULL;
 	enum {
 		CMD_ERASE,
 		CMD_WRITE,

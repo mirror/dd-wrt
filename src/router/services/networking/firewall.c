@@ -1593,7 +1593,7 @@ static void lan2wan_chains(void)
 	int seq;
 	char buf[] = "filter_rulexxx";
 	char *data;
-	int offset, len;
+	int offset = 0, len = 0;
 	unsigned int mark = 0;
 	int up = 0;
 	int urlfilter = 1;
