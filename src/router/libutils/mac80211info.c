@@ -667,7 +667,7 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	glob_t globbuf;
 	char *globstring;
 	int globresult;
-	struct statdata data
+	struct statdata data;
 	lock();	
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
 	if (interface)
