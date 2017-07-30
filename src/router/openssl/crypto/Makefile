@@ -73,6 +73,7 @@ x86_64cpuid.s: x86_64cpuid.pl;	$(PERL) x86_64cpuid.pl $(PERLASM_SCHEME) > $@
 ia64cpuid.s: ia64cpuid.S;	$(CC) $(CFLAGS) -E ia64cpuid.S > $@
 ppccpuid.s:	ppccpuid.pl;	$(PERL) ppccpuid.pl $(PERLASM_SCHEME) $@
 pariscid.s:	pariscid.pl;	$(PERL) pariscid.pl $(PERLASM_SCHEME) $@
+armv4cpuid.s:	armv4cpuid.pl;	$(PERL) armv4cpuid.pl $(PERLASM_SCHEME) $@
 alphacpuid.s:	alphacpuid.pl
 	(preproc=$$$$.$@.S; trap "rm $$preproc" INT; \
 	$(PERL) alphacpuid.pl > $$preproc && \
