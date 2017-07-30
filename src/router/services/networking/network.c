@@ -431,17 +431,12 @@ static int enable_dhcprelay(char *ifname)
 
 			char mode[] = "wlXXXXXXXXXX_mode";
 			int unit;
-
-			/*
-			 * make sure the interface is indeed of wl 
-			 */
-			if (wl_probe(name))
-				continue;
-
 			/*
 			 * get the instance number of the wl i/f 
 			 */
-			wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
+			unit = wl_get_instance(name);
+			if (unit == -1)
+			    continue;
 			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
 
 			/*
@@ -2377,15 +2372,7 @@ void start_lan(void)
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 				unit = 0;
 #else
-				wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
-#endif
-#ifdef HAVE_DHDAP
-	if (!strcmp(name, "eth2")) {
-		if (!dhd_probe("eth1") && dhd_probe("eth2") && !wl_probe("eth2"))
-			unit = 1;
-		else if (!dhd_probe("eth2") && dhd_probe("eth1") && !wl_probe("eth1"))
-			unit = 1;
-	}
+				unit = wl_get_instance(name);
 #endif
 				snprintf(wl_name, sizeof(wl_name), "wl%d_mode", unit);
 				/*
@@ -2538,7 +2525,7 @@ void start_lan(void)
 			/*
 			 * get the instance number of the wl i/f 
 			 */
-			wl_ioctl(lan_ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
+			unit = wl_get_instance(lan_ifname);
 			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 			/*
 			 * Receive all multicast frames in WET mode 
@@ -5130,7 +5117,9 @@ static int notify_nas(char *type, char *ifname, char *action)
 	/*
 	 * the wireless interface must be configured to run NAS 
 	 */
-	wl_ioctl(ifname, WLC_GET_INSTANCE, &unit, sizeof(unit));
+	unit = wl_get_instance(ifname);
+	if (unit == -1)
+	    return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 	if (nvram_match(strcat_r(prefix, "akm", tmp), "") && nvram_match(strcat_r(prefix, "auth_mode", tmp), "none"))
 		return 0;
