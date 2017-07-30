@@ -882,15 +882,15 @@ struct nvram_param srouter_defaults[] = {
 	{"wl0_txchain_pwrsave_enable", "0"},
 	{"wl1_txchain_pwrsave_enable", "0"},
 	{"wl2_txchain_pwrsave_enable", "0"},
-	{ "wl0_lbr_aggr_en_mask", "0"},	        /* per tid/ac mask disable by default */
-	{ "wl0_lbr_aggr_len", "16"},	                /* default aggregate len */
-	{ "wl0_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
-	{ "wl1_lbr_aggr_en_mask", "0"},	        /* per tid/ac mask disable by default */
-	{ "wl1_lbr_aggr_len", "16"},	                /* default aggregate len */
-	{ "wl1_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
-	{ "wl2_lbr_aggr_en_mask", "0"},	        /* per tid/ac mask disable by default */
-	{ "wl2_lbr_aggr_len", "16"},	                /* default aggregate len */
-	{ "wl2_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
+	{"wl0_lbr_aggr_en_mask", "0"},	/* per tid/ac mask disable by default */
+	{"wl0_lbr_aggr_len", "16"},	/* default aggregate len */
+	{"wl0_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
+	{"wl1_lbr_aggr_en_mask", "0"},	/* per tid/ac mask disable by default */
+	{"wl1_lbr_aggr_len", "16"},	/* default aggregate len */
+	{"wl1_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
+	{"wl2_lbr_aggr_en_mask", "0"},	/* per tid/ac mask disable by default */
+	{"wl2_lbr_aggr_len", "16"},	/* default aggregate len */
+	{"wl2_lbr_aggr_release_timeout", "10"},	/* default release timeout in msec */
 
 #endif
 #ifdef HAVE_BCMMODERN
