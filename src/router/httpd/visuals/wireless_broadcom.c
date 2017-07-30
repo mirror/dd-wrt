@@ -278,7 +278,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 #endif
 #ifdef WL_STA_ANT_MAX
 			sta_info_compat4_t *sta4;
-			sta_info_compat5_t *sta5;
 #endif
 			sta_info_compat3_t *sta3;
 			sta_info_compat2_t *sta2;
