@@ -61,6 +61,9 @@ DHDFLAGS        += -DDHD_MCAST_REGEN
 #M2M host memory allocation
 DHDFLAGS		+= -DBCM_HOST_MEM_SCB -DDMA_HOST_BUFFER_LEN=0x80000
 
+#ifneq ($(CONFIG_LBR_AGGR),)
+DHDFLAGS        += -DDHD_LBR_AGGR_BCM_ROUTER
+#endif
 ifeq ($(BCM_BUZZZ),1)
 DHDFLAGS        += -DBCM_BUZZZ
 endif
@@ -110,6 +113,10 @@ DHDFILES_SRC    += src/dhd/sys/dhd_linux.c
 DHDFILES_SRC    += src/dhd/sys/dhd_linux_platdev.c
 DHDFILES_SRC    += src/dhd/sys/dhd_linux_sched.c
 DHDFILES_SRC    += src/dhd/sys/dhd_linux_wq.c
+#ifneq ($(CONFIG_LBR_AGGR),)
+DHDFILES_SRC    += src/dhd/sys/dhd_aggr.c
+DHDFILES_SRC    += src/dhd/sys/dhd_lbr_aggr_linux.c
+#endif
 DHDFILES_SRC    += src/dhd/sys/dhd_msgbuf.c
 DHDFILES_SRC    += src/dhd/sys/dhd_flowring.c
 DHDFILES_SRC    += src/dhd/sys/dhd_pcie.c
