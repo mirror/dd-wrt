@@ -1247,26 +1247,23 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
-static void handle_server_sigsegv(int sig,siginfo_t *si,void *unused)
+static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 {
-	ucontext_t *u = (ucontext_t *)unused;
-#ifdef __arm__
-	unsigned char *pc = (unsigned char*)u->uc_mcontext.fault_address;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
+	ucontext_t *u = (ucontext_t *) unused;
+#if defined(__arm__)
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX fault_address 0x%08lX PC 0x%08lX", (long)si->si_addr, u->uc_mcontext.fault_address, u->uc_mcontext.arm_pc);
+#elif defined(__i386__)
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.eip;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+#elif defined(__x86_64__)
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.rip;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+#elif defined(__mips__)
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.sc_pc;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+#else
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX", (long)si->si_addr);
 #endif
-#ifdef __i386__
-	unsigned char *pc = (unsigned char*)u->uc_mcontext.eip;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
-#endif
-#ifdef __x86_64__
-	unsigned char *pc = (unsigned char*)u->uc_mcontext.rip;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
-#endif
-#ifdef __mips__
-	unsigned char *pc = (unsigned char*)u->uc_mcontext.sc_pc;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
-#endif
-
 
 	exit(0);
 }
@@ -1467,7 +1464,7 @@ int main(int argc, char **argv)
 	signal(SIGTERM, handle_server_sig_int);	// kill
 	struct sigaction sa;
 	sa.sa_flags = SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);		
+	sigemptyset(&sa.sa_mask);
 	sa.sa_sigaction = handle_server_sigsegv;
 	sigaction(SIGSEGV, &sa, NULL);
 
