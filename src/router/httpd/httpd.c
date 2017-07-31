@@ -1255,7 +1255,7 @@ static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_EIP];
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
 #elif defined(__powerpc__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.uc_regs->gregs[PT_NIP];
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[32];
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
 #elif defined(__x86_64__)
 	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_RIP];
