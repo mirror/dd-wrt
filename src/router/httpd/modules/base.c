@@ -2465,7 +2465,7 @@ static void do_language(unsigned char method, struct mime_handler *handler, char
 extern int issuperchannel(void);
 
 static char no_cache[] = "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
-static char do_cache[] = "Cache-Control: private, max-age=31536000\r\n";
+static char do_cache[] = "Cache-Control: private, max-age=600\r\n";
 
 struct mime_handler mime_handlers[] = {
 	// { "ezconfig.asp", "text/html", ezc_version, do_apply_ezconfig_post,
