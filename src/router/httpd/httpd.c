@@ -1253,14 +1253,20 @@ static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 #if defined(__arm__)
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX fault_address 0x%08lX PC 0x%08lX", (long)si->si_addr, u->uc_mcontext.fault_address, u->uc_mcontext.arm_pc);
 #elif defined(__i386__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.eip;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_EIP];
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
+#elif defined(__powerpc__)
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.uc_regs->gregs[PT_NIP];
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
 #elif defined(__x86_64__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.rip;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_RIP];
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX RIP = 0x%08lX", (long)si->si_addr, (long)pc);
+#elif defined(__mips64__)
+	unsigned char *pc = (unsigned char *)u->uc_mcontext.sc_pc;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%016lX PC = 0x%016lX", (long)si->si_addr, (long)pc);
 #elif defined(__mips__)
 	unsigned char *pc = (unsigned char *)u->uc_mcontext.pc;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/", (long)si->si_addr, (long)pc);
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX PC = 0x%08lX", (long)si->si_addr, (long)pc);
 #else
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX", (long)si->si_addr);
 #endif
