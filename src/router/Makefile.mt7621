@@ -364,7 +364,7 @@ ifeq ($(CONFIG_DIR882),y)
 	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-882.dtb.tmp
 else
 	$(ARCH)-linux-uclibc-cpp -nostdinc -x assembler-with-cpp -I$(LINUXDIR)/arch/mips/boot/dts -I$(LINUXDIR)/arch/mips/boot/dts/include -undef -D__DTS__ -o $(LINUXDIR)/dts/DIR-860.dtb.tmp $(LINUXDIR)/dts/DIR-860.dts
-	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/include -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dts.tmp
+	$(LINUXDIR)/scripts/dtc/dtc -i $(LINUXDIR)/dts/ -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/DIR-860.dtb.tmp
 endif
 else
 ifeq ($(CONFIG_DIR810L),y)
