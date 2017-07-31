@@ -59,7 +59,7 @@ void start_nas_notify(char *ifname)
 	/*
 	 * the wireless interface must be configured to run NAS 
 	 */
-	unit = wl_get_instance(ifname);
+	unit = get_wl_instance(ifname);
 	if (unit == -1)
 		return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
