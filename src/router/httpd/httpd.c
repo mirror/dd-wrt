@@ -80,6 +80,7 @@
 #include <error.h>
 #endif
 #include <sys/signal.h>
+#include <ucontext.h>
 
 #ifdef HAVE_IAS
 #include <sys/sysinfo.h>
@@ -1246,6 +1247,30 @@ static void handle_server_sig_int(int sig)
 	exit(0);
 }
 
+static void handle_server_sigsegv(int sig,siginfo_t *si,void *unused)
+{
+	ucontext_t *u = (ucontext_t *)unused;
+#ifdef __arm__
+	unsigned char *pc = (unsigned char*)u->uc_mcontext.fault_address;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
+#endif
+#ifdef __i386__
+	unsigned char *pc = (unsigned char*)u->uc_mcontext.eip;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
+#endif
+#ifdef __x86_64__
+	unsigned char *pc = (unsigned char*)u->uc_mcontext.rip;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
+#endif
+#ifdef __mips__
+	unsigned char *pc = (unsigned char*)u->uc_mcontext.sc_pc;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX/0x%08lX/",(long)si->si_addr, (long)pc);
+#endif
+
+
+	exit(0);
+}
+
 void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
@@ -1440,6 +1465,11 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
+	struct sigaction sa;
+	sa.sa_flags = SA_SIGINFO;
+	sigemptyset(&sa.sa_mask);		
+	sa.sa_sigaction = handle_server_sigsegv;
+	sigaction(SIGSEGV, &sa, NULL);
 
 	if (server_dir && stat(server_dir, &stat_dir) == 0)
 		chdir(server_dir);
