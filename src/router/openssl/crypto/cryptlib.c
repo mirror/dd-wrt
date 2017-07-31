@@ -1026,7 +1026,7 @@ void *OPENSSL_stderr(void)
  * There are also assembler versions of this function.
  */
 # undef CRYPTO_memcmp
-int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
+int CRYPTO_memcmp(const volatile void *in_a, const volatile void *in_b, size_t len)
 {
     size_t i;
     const volatile unsigned char *a = in_a;
@@ -1038,4 +1038,5 @@ int CRYPTO_memcmp(const void * in_a, const void * in_b, size_t len)
 
     return x;
 }
+
 #endif
