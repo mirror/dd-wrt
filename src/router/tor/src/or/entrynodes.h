@@ -276,16 +276,17 @@ struct entry_guard_handle_t;
  * A restriction to remember which entry guards are off-limits for a given
  * circuit.
  *
- * Right now, we only use restrictions to block a single guard from being
- * selected; this mechanism is designed to be more extensible in the future,
- * however.
+ * Right now, we only use restrictions to block a single guard and its family
+ * from being selected; this mechanism is designed to be more extensible in
+ * the future, however.
  *
  * Note: This mechanism is NOT for recording which guards are never to be
  * used: only which guards cannot be used on <em>one particular circuit</em>.
  */
 struct entry_guard_restriction_t {
   /**
-   * The guard's RSA identity digest must not equal this.
+   * The guard's RSA identity digest must not equal this; and it must not
+   * be in the same family as any node with this digest.
    */
   uint8_t exclude_id[DIGEST_LEN];
 };
@@ -323,6 +324,10 @@ const node_t *guards_choose_dirguard(circuit_guard_state_t **guard_state_out);
 entry_guard_t *entry_guard_get_by_id_digest_for_guard_selection(
     guard_selection_t *gs, const char *digest);
 entry_guard_t *entry_guard_get_by_id_digest(const char *digest);
+
+circuit_guard_state_t *
+get_guard_state_for_bridge_desc_fetch(const char *digest);
+
 void entry_guards_changed_for_guard_selection(guard_selection_t *gs);
 void entry_guards_changed(void);
 guard_selection_t * get_guard_selection_info(void);

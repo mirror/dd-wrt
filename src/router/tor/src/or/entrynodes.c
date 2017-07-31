@@ -1093,6 +1093,18 @@ select_and_add_guard_item_for_sample(guard_selection_t *gs,
   return added_guard;
 }
 
+/** Return true iff we need a consensus to maintain our  */
+static int
+live_consensus_is_missing(const guard_selection_t *gs)
+{
+  tor_assert(gs);
+  if (gs->type == GS_TYPE_BRIDGE) {
+    /* We don't update bridges from the consensus; they aren't there. */
+    return 0;
+  }
+  return networkstatus_get_live_consensus(approx_time()) == NULL;
+}
+
 /**
  * Add new guards to the sampled guards in <b>gs</b> until there are
  * enough usable filtered guards, but never grow the sample beyond its
@@ -1104,6 +1116,13 @@ entry_guards_expand_sample(guard_selection_t *gs)
 {
   tor_assert(gs);
   const or_options_t *options = get_options();
+
+  if (live_consensus_is_missing(gs)) {
+    log_info(LD_GUARD, "Not expanding the sample guard set; we have "
+             "no live consensus.");
+    return NULL;
+  }
+
   int n_sampled = smartlist_len(gs->sampled_entry_guards);
   entry_guard_t *added_guard = NULL;
   int n_usable_filtered_guards = num_reachable_filtered_guards(gs, NULL);
@@ -1212,18 +1231,13 @@ sampled_guards_update_from_consensus(guard_selection_t *gs)
 
   // It's important to use only a live consensus here; we don't want to
   // make changes based on anything expired or old.
-  if (gs->type != GS_TYPE_BRIDGE) {
-    networkstatus_t *ns = networkstatus_get_live_consensus(approx_time());
-
-    if (! ns) {
-      log_info(LD_GUARD, "No live consensus; can't update "
-               "sampled entry guards.");
-      return;
-    } else {
-      log_info(LD_GUARD, "Updating sampled guard status based on received "
-               "consensus.");
-    }
+  if (live_consensus_is_missing(gs)) {
+    log_info(LD_GUARD, "Not updating the sample guard set; we have "
+             "no live consensus.");
+    return;
   }
+  log_info(LD_GUARD, "Updating sampled guard status based on received "
+           "consensus.");
 
   int n_changes = 0;
 
@@ -1414,6 +1428,38 @@ entry_guard_passes_filter(const or_options_t *options, guard_selection_t *gs,
   }
 }
 
+/** Return true iff <b>guard</b> is in the same family as <b>node</b>.
+ */
+static int
+guard_in_node_family(const entry_guard_t *guard, const node_t *node)
+{
+  const node_t *guard_node = node_get_by_id(guard->identity);
+  if (guard_node) {
+    return nodes_in_same_family(guard_node, node);
+  } else {
+    /* If we don't have a node_t for the guard node, we might have
+     * a bridge_info_t for it. So let's check to see whether the bridge
+     * address matches has any family issues.
+     *
+     * (Strictly speaking, I believe this check is unnecessary, since we only
+     * use it to avoid the exit's family when building circuits, and we don't
+     * build multihop circuits until we have a routerinfo_t for the
+     * bridge... at which point, we'll also have a node_t for the
+     * bridge. Nonetheless, it seems wise to include it, in case our
+     * assumptions change down the road.  -nickm.)
+     */
+    if (get_options()->EnforceDistinctSubnets && guard->bridge_addr) {
+      tor_addr_t node_addr;
+      node_get_addr(node, &node_addr);
+      if (addrs_in_same_network_family(&node_addr,
+                                       &guard->bridge_addr->addr)) {
+        return 1;
+      }
+    }
+    return 0;
+  }
+}
+
 /**
  * Return true iff <b>guard</b> obeys the restrictions defined in <b>rst</b>.
  * (If <b>rst</b> is NULL, there are no restrictions.)
@@ -1426,7 +1472,12 @@ entry_guard_obeys_restriction(const entry_guard_t *guard,
   if (! rst)
     return 1; // No restriction?  No problem.
 
-  // Only one kind of restriction exists right now
+  // Only one kind of restriction exists right now: excluding an exit
+  // ID and all of its family.
+  const node_t *node = node_get_by_id((const char*)rst->exclude_id);
+  if (node && guard_in_node_family(guard, node))
+    return 0;
+
   return tor_memneq(guard->identity, rst->exclude_id, DIGEST_LEN);
 }
 
@@ -2924,6 +2975,34 @@ entry_guard_get_by_id_digest(const char *digest)
 {
   return entry_guard_get_by_id_digest_for_guard_selection(
       get_guard_selection_info(), digest);
+}
+
+/** We are about to connect to bridge with identity <b>digest</b> to fetch its
+ *  descriptor. Create a new guard state for this connection and return it. */
+circuit_guard_state_t *
+get_guard_state_for_bridge_desc_fetch(const char *digest)
+{
+  circuit_guard_state_t *guard_state = NULL;
+  entry_guard_t *guard = NULL;
+
+  guard = entry_guard_get_by_id_digest_for_guard_selection(
+                                    get_guard_selection_info(), digest);
+  if (!guard) {
+    return NULL;
+  }
+
+  /* Update the guard last_tried_to_connect time since it's checked by the
+   * guard susbsystem. */
+  guard->last_tried_to_connect = approx_time();
+
+  /* Create the guard state */
+  guard_state = tor_malloc_zero(sizeof(circuit_guard_state_t));
+  guard_state->guard = entry_guard_handle_new(guard);
+  guard_state->state = GUARD_CIRC_STATE_USABLE_ON_COMPLETION;
+  guard_state->state_set_at = approx_time();
+  guard_state->restrictions = NULL;
+
+  return guard_state;
 }
 
 /** Release all storage held by <b>e</b>. */
