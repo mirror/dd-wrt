@@ -1,3 +1,136 @@
+Changes in version 0.3.0.9 - 2017-06-29
+  Tor 0.3.0.9 fixes a path selection bug that would allow a client
+  to use a guard that was in the same network family as a chosen exit
+  relay. This is a security regression; all clients running earlier
+  versions of 0.3.0.x or 0.3.1.x should upgrade to 0.3.0.9 or
+  0.3.1.4-alpha.
+
+  This release also backports several other bugfixes from the 0.3.1.x
+  series.
+
+  o Major bugfixes (path selection, security, backport from 0.3.1.4-alpha):
+    - When choosing which guard to use for a circuit, avoid the exit's
+      family along with the exit itself. Previously, the new guard
+      selection logic avoided the exit, but did not consider its family.
+      Fixes bug 22753; bugfix on 0.3.0.1-alpha. Tracked as TROVE-2016-
+      006 and CVE-2017-0377.
+
+  o Major bugfixes (entry guards, backport from 0.3.1.1-alpha):
+    - Don't block bootstrapping when a primary bridge is offline and we
+      can't get its descriptor. Fixes bug 22325; fixes one case of bug
+      21969; bugfix on 0.3.0.3-alpha.
+
+  o Major bugfixes (entry guards, backport from 0.3.1.4-alpha):
+    - When starting with an old consensus, do not add new entry guards
+      unless the consensus is "reasonably live" (under 1 day old). Fixes
+      one root cause of bug 22400; bugfix on 0.3.0.1-alpha.
+
+  o Minor features (geoip):
+    - Update geoip and geoip6 to the June 8 2017 Maxmind GeoLite2
+      Country database.
+
+  o Minor bugfixes (voting consistency, backport from 0.3.1.1-alpha):
+    - Reject version numbers with non-numeric prefixes (such as +, -, or
+      whitespace). Disallowing whitespace prevents differential version
+      parsing between POSIX-based and Windows platforms. Fixes bug 21507
+      and part of 21508; bugfix on 0.0.8pre1.
+
+  o Minor bugfixes (linux seccomp2 sandbox, backport from 0.3.1.4-alpha):
+    - Permit the fchmod system call, to avoid crashing on startup when
+      starting with the seccomp2 sandbox and an unexpected set of
+      permissions on the data directory or its contents. Fixes bug
+      22516; bugfix on 0.2.5.4-alpha.
+
+  o Minor bugfixes (defensive programming, backport from 0.3.1.4-alpha):
+    - Fix a memset() off the end of an array when packing cells. This
+      bug should be harmless in practice, since the corrupted bytes are
+      still in the same structure, and are always padding bytes,
+      ignored, or immediately overwritten, depending on compiler
+      behavior. Nevertheless, because the memset()'s purpose is to make
+      sure that any other cell-handling bugs can't expose bytes to the
+      network, we need to fix it. Fixes bug 22737; bugfix on
+      0.2.4.11-alpha. Fixes CID 1401591.
+
+
+Changes in version 0.3.0.8 - 2017-06-08
+  Tor 0.3.0.8 fixes a pair of bugs that would allow an attacker to
+  remotely crash a hidden service with an assertion failure. Anyone
+  running a hidden service should upgrade to this version, or to some
+  other version with fixes for TROVE-2017-004 and TROVE-2017-005.
+
+  Tor 0.3.0.8 also includes fixes for several key management bugs
+  that sometimes made relays unreliable, as well as several other
+  bugfixes described below.
+
+  o Major bugfixes (hidden service, relay, security, backport
+    from 0.3.1.3-alpha):
+    - Fix a remotely triggerable assertion failure when a hidden service
+      handles a malformed BEGIN cell. Fixes bug 22493, tracked as
+      TROVE-2017-004 and as CVE-2017-0375; bugfix on 0.3.0.1-alpha.
+    - Fix a remotely triggerable assertion failure caused by receiving a
+      BEGIN_DIR cell on a hidden service rendezvous circuit. Fixes bug
+      22494, tracked as TROVE-2017-005 and CVE-2017-0376; bugfix
+      on 0.2.2.1-alpha.
+
+  o Major bugfixes (relay, link handshake, backport from 0.3.1.3-alpha):
+    - When performing the v3 link handshake on a TLS connection, report
+      that we have the x509 certificate that we actually used on that
+      connection, even if we have changed certificates since that
+      connection was first opened. Previously, we would claim to have
+      used our most recent x509 link certificate, which would sometimes
+      make the link handshake fail. Fixes one case of bug 22460; bugfix
+      on 0.2.3.6-alpha.
+
+  o Major bugfixes (relays, key management, backport from 0.3.1.3-alpha):
+    - Regenerate link and authentication certificates whenever the key
+      that signs them changes; also, regenerate link certificates
+      whenever the signed key changes. Previously, these processes were
+      only weakly coupled, and we relays could (for minutes to hours)
+      wind up with an inconsistent set of keys and certificates, which
+      other relays would not accept. Fixes two cases of bug 22460;
+      bugfix on 0.3.0.1-alpha.
+    - When sending an Ed25519 signing->link certificate in a CERTS cell,
+      send the certificate that matches the x509 certificate that we
+      used on the TLS connection. Previously, there was a race condition
+      if the TLS context rotated after we began the TLS handshake but
+      before we sent the CERTS cell. Fixes a case of bug 22460; bugfix
+      on 0.3.0.1-alpha.
+
+  o Major bugfixes (hidden service v3, backport from 0.3.1.1-alpha):
+    - Stop rejecting v3 hidden service descriptors because their size
+      did not match an old padding rule. Fixes bug 22447; bugfix on
+      tor-0.3.0.1-alpha.
+
+  o Minor features (fallback directory list, backport from 0.3.1.3-alpha):
+    - Replace the 177 fallbacks originally introduced in Tor 0.2.9.8 in
+      December 2016 (of which ~126 were still functional) with a list of
+      151 fallbacks (32 new, 119 unchanged, 58 removed) generated in May
+      2017. Resolves ticket 21564.
+
+  o Minor bugfixes (configuration, backport from 0.3.1.1-alpha):
+    - Do not crash when starting with LearnCircuitBuildTimeout 0. Fixes
+      bug 22252; bugfix on 0.2.9.3-alpha.
+
+  o Minor bugfixes (correctness, backport from 0.3.1.3-alpha):
+    - Avoid undefined behavior when parsing IPv6 entries from the geoip6
+      file. Fixes bug 22490; bugfix on 0.2.4.6-alpha.
+
+  o Minor bugfixes (link handshake, backport from 0.3.1.3-alpha):
+    - Lower the lifetime of the RSA->Ed25519 cross-certificate to six
+      months, and regenerate it when it is within one month of expiring.
+      Previously, we had generated this certificate at startup with a
+      ten-year lifetime, but that could lead to weird behavior when Tor
+      was started with a grossly inaccurate clock. Mitigates bug 22466;
+      mitigation on 0.3.0.1-alpha.
+
+  o Minor bugfixes (memory leak, directory authority, backport from
+    0.3.1.2-alpha):
+    - When directory authorities reject a router descriptor due to
+      keypinning, free the router descriptor rather than leaking the
+      memory. Fixes bug 22370; bugfix on 0.2.7.2-alpha.
+
+
+
 Changes in version 0.3.0.7 - 2017-05-15
   Tor 0.3.0.7 fixes a medium-severity security bug in earlier versions
   of Tor 0.3.0.x, where an attacker could cause a Tor relay process to

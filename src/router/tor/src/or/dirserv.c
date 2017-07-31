@@ -383,6 +383,17 @@ dirserv_get_status_impl(const char *id_digest, const char *nickname,
     return FP_REJECT;
   }
 
+  /* Tor 0.2.9.x where x<5 suffers from bug #20499, where relays don't
+   * keep their consensus up to date so they make bad guards.
+   * The simple fix is to just drop them from the network. */
+  if (platform &&
+      tor_version_as_new_as(platform,"0.2.9.0-alpha") &&
+      !tor_version_as_new_as(platform,"0.2.9.5-alpha")) {
+    if (msg)
+      *msg = "Tor version contains bug 20499. Please upgrade!";
+    return FP_REJECT;
+  }
+
   status_by_digest = digestmap_get(fingerprint_list->status_by_digest,
                                    id_digest);
   if (status_by_digest)
@@ -615,7 +626,11 @@ dirserv_add_multiple_descriptors(const char *desc, uint8_t purpose,
  * passed back to the origin of this descriptor, or NULL if there is no such
  * message. Use <b>source</b> to produce better log messages.
  *
- * Return the status of the operation
+ * If <b>ri</b> is not added to the list of server descriptors, free it.
+ * That means the caller must not access <b>ri</b> after this function
+ * returns, since it might have been freed.
+ *
+ * Return the status of the operation.
  *
  * This function is only called when fresh descriptors are posted, not when
  * we re-load the cache.
@@ -688,6 +703,7 @@ dirserv_add_descriptor(routerinfo_t *ri, const char **msg, const char *source)
              "its key did not match an older RSA/Ed25519 keypair",
              router_describe(ri), source);
     *msg = "Looks like your keypair does not match its older value.";
+    routerinfo_free(ri);
     return ROUTER_AUTHDIR_REJECTS;
   }
 
