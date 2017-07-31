@@ -1259,13 +1259,13 @@ static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX EIP = 0x%08lX", (long)si->si_addr, (long)pc);
 #elif defined(__x86_64__)
 	unsigned char *pc = (unsigned char *)u->uc_mcontext.gregs[REG_RIP];
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX RIP = 0x%08lX", (long)si->si_addr, (long)pc);
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%016lX RIP = 0x%016lX", (long)si->si_addr, (long)pc);
 #elif defined(__mips64__)
 	unsigned char *pc = (unsigned char *)u->uc_mcontext.sc_pc;
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%016lX PC = 0x%016lX", (long)si->si_addr, (long)pc);
 #elif defined(__mips__)
-	unsigned char *pc = (unsigned char *)u->uc_mcontext.pc;
-	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX PC = 0x%08lX", (long)si->si_addr, (long)pc);
+	struct sigcontext *ctx = (struct sigcontext *)&u->uc_mcontext;
+	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX PC = 0x%08lX", (long)si->si_addr, (long)ctx->sc_pc);
 #else
 	dd_syslog(LOG_ERR, "httpd server crash at 0x%08lX", (long)si->si_addr);
 #endif
