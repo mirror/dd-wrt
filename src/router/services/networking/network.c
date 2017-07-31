@@ -434,7 +434,7 @@ static int enable_dhcprelay(char *ifname)
 			/*
 			 * get the instance number of the wl i/f 
 			 */
-			unit = wl_get_instance(name);
+			unit = get_wl_instance(name);
 			if (unit == -1)
 				continue;
 			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
@@ -2372,7 +2372,7 @@ void start_lan(void)
 #if defined(HAVE_MADWIFI) || defined(HAVE_RT2880) || defined(HAVE_RT61)
 				unit = 0;
 #else
-				unit = wl_get_instance(name);
+				unit = get_wl_instance(name);
 #endif
 				snprintf(wl_name, sizeof(wl_name), "wl%d_mode", unit);
 				/*
@@ -2545,7 +2545,7 @@ void start_lan(void)
 			/*
 			 * get the instance number of the wl i/f 
 			 */
-			unit = wl_get_instance(lan_ifname);
+			unit = get_wl_instance(lan_ifname);
 			snprintf(prefix, sizeof(prefix), "wl%d_", unit);
 			/*
 			 * Receive all multicast frames in WET mode 
@@ -5137,7 +5137,7 @@ static int notify_nas(char *type, char *ifname, char *action)
 	/*
 	 * the wireless interface must be configured to run NAS 
 	 */
-	unit = wl_get_instance(ifname);
+	unit = get_wl_instance(ifname);
 	if (unit == -1)
 		return;
 	snprintf(prefix, sizeof(prefix), "wl%d_", unit);
