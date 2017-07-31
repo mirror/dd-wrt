@@ -118,7 +118,8 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	int wan_link = check_wan_link(0);
 	int trans = 0;
 	type = argv[0];
-	trans = atoi(argv[1]);
+	if (argc > 1)
+	    trans = atoi(argv[1]);
 	if (!strcmp(wan_proto, "pptp")) {
 		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
