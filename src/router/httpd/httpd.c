@@ -322,7 +322,6 @@ static int initialize_listen_socket(usockaddr * usaP)
 
 	listen_fd = socket(usaP->sa.sa_family, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
-		perror("socket");
 		return -1;
 	}
 
@@ -1468,11 +1467,25 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
-	struct sigaction sa;
-	sa.sa_flags = SA_SIGINFO;
-	sigemptyset(&sa.sa_mask);
-	sa.sa_sigaction = handle_server_sigsegv;
-	sigaction(SIGSEGV, &sa, NULL);
+	struct sigaction sa1;
+#ifdef SA_SIGINFO
+	sa1.sa_flags = SA_SIGINFO;
+#else
+	sa1.sa_flags = 0;
+#endif
+	sigemptyset(&sa1.sa_mask);
+	sa1.sa_sigaction = handle_server_sigsegv;
+	sigaction(SIGSEGV, &sa1, NULL);
+
+	struct sigaction sa2;
+#ifdef SA_SIGINFO
+	sa2.sa_flags = SA_SIGINFO;
+#else
+	sa2.sa_flags = 0;
+#endif
+	sigemptyset(&sa2.sa_mask);
+	sa2.sa_sigaction = handle_server_sigsegv;
+	sigaction(SIGBUS, &sa2, NULL);
 
 	if (server_dir && stat(server_dir, &stat_dir) == 0)
 		chdir(server_dir);
