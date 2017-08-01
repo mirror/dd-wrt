@@ -45,6 +45,11 @@
 #include <string.h>
 
 #include <syslog.h>
+#ifdef TEST
+#define dd_syslog(a, args...) do { } while(0)
+#else
+#include <utils.h>
+#endif
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -346,7 +351,7 @@ static int airbag_printf(char *fmt, ...)
 	}
 	free(temp);
 	if (strchr(buffer, '\n')) {
-		syslog(LOG_ERR, "%s", buffer);
+		dd_syslog(LOG_ERR, "%s", buffer);
 		fprintf(stderr, "%s", buffer);
 		free(buffer);
 		buffer = NULL;
