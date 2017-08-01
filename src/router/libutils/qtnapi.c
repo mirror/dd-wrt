@@ -100,7 +100,7 @@ int file_lock(char *tag)
 	return lockfd;
 lock_error:
 	// No proper error processing
-	dd_syslog("Error %d locking %s, proceeding anyway", errno, fn);
+	dd_syslog(LOG_INFO, "Error %d locking %s, proceeding anyway", errno, fn);
 	return -1;
 }
 
