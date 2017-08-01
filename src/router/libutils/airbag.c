@@ -394,7 +394,7 @@ AIRBAG_EXPORT void airbag_symbol(void *pc)
 	_airbag_symbol(pc, 0, 0);
 }
 
-#ifdef USE_GCC_UNWIND
+#if defined(USE_GCC_UNWIND) && !defined(__mips__) && !defined(__arm__)
 struct trace_arg {
 	void **array;
 	int cnt;
@@ -465,7 +465,6 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 	 */
 	unsigned long *addr, *pc, *ra, *sp;
 	unsigned long raOffset, stackSize;
-	uint32_t invalid;
 
 	pc = (unsigned long *)uc->uc_mcontext.pc;
 	ra = (unsigned long *)uc->uc_mcontext.gregs[31];
