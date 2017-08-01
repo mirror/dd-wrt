@@ -96,7 +96,7 @@
 				<input class="spaceradio" type="radio" name="dnssec_cu" value="1" <% nvram_checked("dnssec_cu", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="dnssec_cu" value="0" <% nvram_checked("dnssec_cu", "0"); %> /><% tran("share.disable"); %>
 			</div>
-<% ifndef("DNSSEC", "<!--"); %>
+<% ifndef("DNSSEC", "-->"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_loc"); %></div>
 				<input class="spaceradio" type="radio" name="local_dns" value="1" <% nvram_checked("local_dns", "1"); %> /><% tran("share.enable"); %>&nbsp;
