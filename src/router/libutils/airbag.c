@@ -662,8 +662,16 @@ backward:
 					MCTX_PC(uc) = eip;
 				}
 #elif defined(__x86_64__)
-				/* TODO x84_64 abi encourages not saving fp */
-				size = 0;
+				/* TODO heuristic for -fomit-frame-pointer? */
+				uint8_t *fp = (uint8_t *) MCTXREG(uc, 5) + 4;
+				uint32_t eip;
+				if (load32((void *)fp, &eip)) {
+					airbag_printf("%sText at %x is not mapped; cannot get backtrace.\n", comment, fp);
+					size = 0;
+				} else {
+					MCTX_PC(uc) = eip;
+				}
+
 #else
 				size = 0;
 #endif
