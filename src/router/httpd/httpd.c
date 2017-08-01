@@ -53,6 +53,7 @@
 #include <shutils.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <airbag.h>
 #include <sys/wait.h>
 #include <sys/sendfile.h>
 #include <wlutils.h>
@@ -1245,7 +1246,7 @@ static void handle_server_sig_int(int sig)
 	ct_syslog(LOG_INFO, httpd_level, "httpd server shutdown");
 	exit(0);
 }
-
+#if 0
 static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 {
 	ucontext_t *u = (ucontext_t *) unused;
@@ -1276,7 +1277,7 @@ static void handle_server_sigsegv(int sig, siginfo_t * si, void *unused)
 
 	exit(0);
 }
-
+#endif
 void settimeouts(webs_t wp, int secs)
 {
 	struct timeval tv;
@@ -1387,6 +1388,7 @@ int main(int argc, char **argv)
 	struct stat stat_dir;
 	fd_set lfdset;
 	int maxfd;
+	airbag_init();
 	set_sigchld_handler();
 #ifdef HAVE_HTTPS
 	int do_ssl = 0;
@@ -1471,6 +1473,7 @@ int main(int argc, char **argv)
 	/* Ignore broken pipes */
 	signal(SIGPIPE, SIG_IGN);
 	signal(SIGTERM, handle_server_sig_int);	// kill
+#if 0
 	struct sigaction sa1;
 #ifdef SA_SIGINFO
 	sa1.sa_flags = SA_SIGINFO;
@@ -1490,7 +1493,7 @@ int main(int argc, char **argv)
 	sigemptyset(&sa2.sa_mask);
 	sa2.sa_sigaction = handle_server_sigsegv;
 	sigaction(SIGBUS, &sa2, NULL);
-
+#endif
 	if (server_dir && stat(server_dir, &stat_dir) == 0)
 		chdir(server_dir);
 

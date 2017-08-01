@@ -41,6 +41,7 @@
 #include <arpa/inet.h>
 
 #include <revision.h>
+#include <airbag.h>
 #include "servicemanager.c"
 #include "services.c"
 #include "mtd.c"
@@ -451,9 +452,11 @@ static struct MAIN maincalls[] = {
 
 int main(int argc, char **argv)
 {
+	airbag_init();
 	char *base = strrchr(argv[0], '/');
 	base = base ? base + 1 : argv[0];
 	int i;
+	int ret =0;
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
@@ -466,48 +469,48 @@ int main(int argc, char **argv)
 	if (strstr(base, "startservice_f")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
-			return 0;
+			goto out;
 		}
 		if (argc == 3 && !strcmp(argv[2], "-f"))
 			start_service_force_f(argv[1]);
 		else
 			start_service_f(argv[1]);
-		return 0;
+		goto out;
 	}
 	if (strstr(base, "startservice")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
-			return 0;
+			goto out;
 		}
 		if (argc == 3 && !strcmp(argv[2], "-f"))
 			start_service_force(argv[1]);
 		else
 			start_service(argv[1]);
-		return 0;
+		goto out;
 	}
 
 	if (strstr(base, "stopservice_f")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
-			return 0;
+			goto out;
 		}
 		if (argc == 3 && !strcmp(argv[2], "-f"))
 			stop_service_force_f(argv[1]);
 		else
 			stop_service_f(argv[1]);
-		return 0;
+		goto out;
 	}
 
 	if (strstr(base, "stopservice")) {
 		if (argc < 2) {
 			puts("try to be professional\n");
-			return 0;
+			goto out;
 		}
 		if (argc == 3 && !strcmp(argv[2], "-f"))
 			stop_service_force(argv[1]);
 		else
 			stop_service(argv[1]);
-		return 0;
+		goto out;
 	}
 #ifndef HAVE_RB500
 #if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
@@ -538,28 +541,33 @@ int main(int argc, char **argv)
 		{
 			if (argv[1] && strcmp(argv[1], "nvram")) {
 				fprintf(stderr, "Sorry, erasing nvram will get this router unuseable\n");
-				return 0;
+				goto out;
 			}
 		} else {
-			if (argv[1])
-				return mtd_erase(argv[1]);
+			if (argv[1]) {
+				ret = mtd_erase(argv[1]);
+				goto out;
+			}
 			else {
 				fprintf(stderr, "usage: erase [device]\n");
-				return EINVAL;
+				ret = EINVAL;
+				goto out;
 			}
 		}
-		return 0;
+		goto out;
 	}
 
 	/* 
 	 * write [path] [device] 
 	 */
 	if (strstr(base, "write")) {
-		if (argc >= 3)
-			return mtd_write(argv[1], argv[2]);
-		else {
+		if (argc >= 3) {
+			ret = mtd_write(argv[1], argv[2]);
+			goto out;
+		}else {
 			fprintf(stderr, "usage: write [path] [device]\n");
-			return EINVAL;
+				ret = EINVAL;
+				goto out;
 		}
 	}
 #else
@@ -573,7 +581,7 @@ int main(int argc, char **argv)
 			eval("rm", "-f", "/etc/nvram/*");	// delete nvram database
 			eval("mount", "/usr/local", "-o", "remount,ro");
 		}
-		return 0;
+		goto out;
 	}
 #endif
 #endif
@@ -582,7 +590,7 @@ int main(int argc, char **argv)
 	// 
 	if (strstr(base, "filtersync")) {
 		startstop("filtersync");
-		return 0;
+		goto out;
 	}
 	/* 
 	 * filter [add|del] number 
@@ -594,17 +602,17 @@ int main(int argc, char **argv)
 			if ((num = atoi(argv[2])) > 0) {
 				if (strcmp(argv[1], "add") == 0) {
 					start_servicei("filter_add", num);
-					return 0;
+					goto out;
 				} else if (strcmp(argv[1], "del") == 0) {
 					start_servicei("filter_del", num);
-					return 0;
+					goto out;
 				}
 			}
 		} else {
 			fprintf(stderr, "usage: filter [add|del] number\n");
-			return EINVAL;
+			ret = EINVAL;
 		}
-		return 0;
+		goto out;
 	}
 
 	if (strstr(base, "restart_dns")) {
@@ -614,27 +622,33 @@ int main(int argc, char **argv)
 		start_service("udhcpd");
 #endif
 		start_service("dnsmasq");
-		return 0;
+		goto out;
 	}
 	if (strstr(base, "setpasswd")) {
 		startstop("mkfiles");
-		return 0;
+		goto out;
 	}
 	/* 
 	 * rc [stop|start|restart ] 
 	 */
 	else if (strstr(base, "rc")) {
 		if (argv[1]) {
-			if (strncmp(argv[1], "start", 5) == 0)
-				return kill(1, SIGUSR2);
-			else if (strncmp(argv[1], "stop", 4) == 0)
-				return kill(1, SIGINT);
-			else if (strncmp(argv[1], "restart", 7) == 0)
-				return kill(1, SIGHUP);
+			if (strncmp(argv[1], "start", 5) == 0) {
+				ret = kill(1, SIGUSR2);
+			} else if (strncmp(argv[1], "stop", 4) == 0){ 
+				ret = kill(1, SIGINT);
+			} else if (strncmp(argv[1], "restart", 7) == 0) {
+				ret = kill(1, SIGHUP);
+			}
+			goto out;
 		} else {
 			fprintf(stderr, "usage: rc [start|stop|restart]\n");
-			return EINVAL;
+			ret = EINVAL;
+			goto out;
 		}
 	}
-	return 1;
+	ret = 1;
+	out:;
+	airbag_deinit();
+	return ret;
 }
