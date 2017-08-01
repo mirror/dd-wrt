@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2011-2014 Chuck Coffing <clc@alum.mit.edu>
+ * Copyright (C) 2017 Sebastian Gottschall <gottschall@dd-wrt.com> (mips64, powerpc, x86_64 changes, specific code for dd-wrt)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
