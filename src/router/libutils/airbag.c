@@ -649,6 +649,8 @@ backward:
 				MCTX_PC(uc) = MCTXREG(uc, 31);	/* RA */
 #elif defined(__arm__)
 				MCTX_PC(uc) = MCTXREG(uc, 17);	/* LR */
+#elif defined(__powerpc__)
+				MCTX_PC(uc) = MCTXREG(uc, 37);	/* LINK */
 #elif defined(__i386__)
 				/* TODO heuristic for -fomit-frame-pointer? */
 				uint8_t *fp = (uint8_t *) MCTXREG(uc, 6) + 4;
