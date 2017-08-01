@@ -31,6 +31,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <asm/byteorder.h>
 #include <arpa/inet.h>		/* for htonl */
 #include <dlfcn.h>
 #include <errno.h>
@@ -304,8 +305,8 @@ static uint8_t load8(const void *_p, uint8_t * v)
 static uint32_t load32(const void *_p, unsigned long *_v)
 {
 	int i;
-	uint32_t r = 0;
-	uint32_t v = 0;
+	unsigned long r = 0;
+	unsigned long v = 0;
 	const uint8_t *p = (const uint8_t *)_p;
 
 	for (i = 0; i < sizeof(long *); ++i) {
@@ -315,8 +316,13 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 		r |= load8(p + i, &b);
 		v |= b;
 	}
+    if (sizeof(long *) == 8) {
+	v = __cpu_to_be64(v);
+	r = __cpu_to_be64(r);
+    }else{
 	v = htonl(v);
 	r = htonl(r);
+    }
 	if (_v)
 		*_v = v;
 	return r;
@@ -489,7 +495,15 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 			stackSize = abs((short)(v & 0xffff));
 			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
 			break;
+		case 0x67bd0000:	/* daddiu   sp,sp,??? */
+			stackSize = abs((short)(v & 0xffff));
+			airbag_printf("%s[0x%" FMTBIT "lx]: stack size %lu\n", comment, addr, stackSize);
+			break;
 		case 0xafbf0000:	/* sw      ra,???(sp) */
+			raOffset = (v & 0xffff);
+			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
+			break;
+		case 0xffbf0000:	/* ld     ra,???(sp) */
 			raOffset = (v & 0xffff);
 			airbag_printf("%s[0x%" FMTBIT "lx]: ra offset %lu\n", comment, addr, raOffset);
 			break;
@@ -958,7 +972,7 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 			width = 0;
 		}
 		if (width == 0) {
-			airbag_printf("%02x: ", addr);
+			airbag_printf("%" FMTBIT "lx: ", addr);
 		}
 		width += airbag_printf((const uint8_t *)addr == pc ? ">" : " ");
 #if defined(__x86_64__) || defined(__i386__)
@@ -972,8 +986,9 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 #else
 		unsigned long w;
 		unsigned long invalid = load32(addr, &w);
-		for (i = 3; i >= 0; --i) {
-			int shift = i * 8;
+		int bitlen = sizeof(char *) - 1;
+		for (i = bitlen; i >= 0; --i) {
+			unsigned long shift = i * 8;
 			if ((invalid >> shift) & 0xff) {
 				airbag_printf("??");
 			} else {
