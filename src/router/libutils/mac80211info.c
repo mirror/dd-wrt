@@ -108,7 +108,7 @@ static char *lastunlock;
 #define unlock() { \
 	pthread_mutex_unlock(&mutex_unl); \
 	lastunlock = __func__; \
-}  
+}
 #else
 #define mutex_init()
 #define lock()
@@ -671,7 +671,7 @@ struct mac80211_info *mac80211_assoclist(char *interface)
 	char *globstring;
 	int globresult;
 	struct statdata data;
-	lock();	
+	lock();
 	data.mac80211_info = calloc(1, sizeof(struct mac80211_info));
 	if (interface)
 		asprintf(&globstring, "/sys/class/ieee80211/phy*/device/net/%s*", interface);
