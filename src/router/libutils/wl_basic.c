@@ -176,7 +176,7 @@ char *get_wdev(void)
 
 int wl_probe(char *name)
 {
-	int ret, val;
+	int ret, val = 0;
 	char buf[DEV_TYPE_LEN];
 	if (isListed("probe_blacklist", name))
 		return -1;
