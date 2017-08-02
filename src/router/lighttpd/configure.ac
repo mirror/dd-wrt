@@ -414,26 +414,29 @@ AC_ARG_WITH(pcre, AC_HELP_STRING([--with-pcre],[Enable pcre support (default yes
     [WITH_PCRE=$withval],[WITH_PCRE=yes])
 AC_MSG_RESULT([$WITH_PCRE])
 
-if test "$WITH_PCRE" != "no"; then
-		if test "$WITH_PCRE" != "yes"; then
-			PCRE_LIB="-L$WITH_PCRE/lib -lpcre"
-			CPPFLAGS="$CPPFLAGS -I$WITH_PCRE/include"
-		else
-			AC_PATH_PROG(PCRECONFIG, pcre-config)
-			if test x"$PCRECONFIG" != x; then
-				PCRE_LIB=`$PCRECONFIG --libs`
-				CPPFLAGS="$CPPFLAGS `$PCRECONFIG --cflags`"
-			fi
-		fi
-
-  if test x"$PCRE_LIB" != x; then
-    AC_DEFINE([HAVE_LIBPCRE], [1], [libpcre])
-    AC_DEFINE([HAVE_PCRE_H], [1], [pcre.h])
-    AC_SUBST(PCRE_LIB)
-  else
-    AC_MSG_ERROR([pcre-config not found, install the pcre-devel package or build with --without-pcre])
-  fi
-fi
+#if test "$WITH_PCRE" != "no"; then
+#		if test "$WITH_PCRE" != "yes"; then
+#			PCRE_LIB="-L$WITH_PCRE/lib -lpcre"
+#			CPPFLAGS="$CPPFLAGS -I$WITH_PCRE/include"
+#		else
+			#AC_PATH_PROG(PCRECONFIG, pcre-config)
+			#if test x"$PCRECONFIG" != x; then
+			#	PCRE_LIB=`$PCRECONFIG --libs`
+			#	CPPFLAGS="$CPPFLAGS `$PCRECONFIG --cflags`"
+			#fi
+#		fi
+#
+# if test x"$PCRE_LIB" != x; then
+#    AC_DEFINE([HAVE_LIBPCRE], [1], [libpcre])
+#    AC_DEFINE([HAVE_PCRE_H], [1], [pcre.h])
+#    AC_SUBST(PCRE_LIB)
+#  else
+#    AC_MSG_ERROR([pcre-config not found, install the pcre-devel package or build with --without-pcre])
+#  fi
+#fi
+AC_DEFINE([HAVE_LIBPCRE], [1], [libpcre])
+AC_DEFINE([HAVE_PCRE_H], [1], [pcre.h])
+AC_SUBST(PCRE_LIB)
 
 AC_MSG_CHECKING(for zlib support)
 AC_ARG_WITH(zlib, AC_HELP_STRING([--with-zlib],[Enable zlib support for mod_compress]),
