@@ -88,7 +88,7 @@ CFLAGS += $(MIPS16_OPT)
 CFLAGS	+= -D_GNU_SOURCE -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64
 #  -Werror=maybe-uninitialized -Werror=int-conversion -Werror=array-bounds
 CFLAGS	+= -fPIC
-LDFLAGS += -L.
+LDFLAGS += -L. -ldl
 OBJS := utils.o 
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
