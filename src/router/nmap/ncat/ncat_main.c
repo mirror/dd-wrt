@@ -3,7 +3,7 @@
  * to mode-specific functions.                                             *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -61,7 +61,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -126,7 +126,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_main.c 36651 2017-03-16 21:54:26Z dmiller $ */
+/* $Id: ncat_main.c 36887 2017-07-29 05:55:30Z dmiller $ */
 
 #include "nsock.h"
 #include "ncat.h"
@@ -320,12 +320,14 @@ int main(int argc, char *argv[])
         {"ssl-verify",      no_argument,        NULL,         0},
         {"ssl-trustfile",   required_argument,  NULL,         0},
         {"ssl-ciphers",     required_argument,  NULL,         0},
+        {"ssl-alpn",        required_argument,  NULL,         0},
 #else
         {"ssl-cert",        optional_argument,  NULL,         0},
         {"ssl-key",         optional_argument,  NULL,         0},
         {"ssl-verify",      no_argument,        NULL,         0},
         {"ssl-trustfile",   optional_argument,  NULL,         0},
         {"ssl-ciphers",     optional_argument,  NULL,         0},
+        {"ssl-alpn",        optional_argument,  NULL,         0},
 #endif
         {0, 0, 0, 0}
     };
@@ -536,7 +538,16 @@ int main(int argc, char *argv[])
             } else if (strcmp(long_options[option_index].name, "ssl-ciphers") == 0) {
                 o.ssl = 1;
                 o.sslciphers = Strdup(optarg);
+#ifdef HAVE_ALPN_SUPPORT
+            } else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
+                o.ssl = 1;
+                o.sslalpn = Strdup(optarg);
             }
+#else
+            } else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
+                bye("OpenSSL does not have ALPN support compiled in. The --ssl-alpn option cannot be chosen.");
+            }
+#endif
 #else
             else if (strcmp(long_options[option_index].name, "ssl-cert") == 0) {
                 bye("OpenSSL isn't compiled in. The --ssl-cert option cannot be chosen.");
@@ -548,6 +559,8 @@ int main(int argc, char *argv[])
                 bye("OpenSSL isn't compiled in. The --ssl-trustfile option cannot be chosen.");
             } else if (strcmp(long_options[option_index].name, "ssl-ciphers") == 0) {
                 bye("OpenSSL isn't compiled in. The --ssl-ciphers option cannot be chosen.");
+            } else if (strcmp(long_options[option_index].name, "ssl-alpn") == 0) {
+                bye("OpenSSL isn't compiled in. The --ssl-alpn option cannot be chosen.");
             }
 #endif
 #ifdef HAVE_LUA
@@ -637,6 +650,7 @@ int main(int argc, char *argv[])
 "      --ssl-verify           Verify trust and domain name of certificates\n"
 "      --ssl-trustfile        PEM file containing trusted SSL certificates\n"
 "      --ssl-ciphers          Cipherlist containing SSL ciphers to use\n"
+"      --ssl-alpn             ALPN protocol list to use.\n"
 #endif
 "      --version              Display Ncat's version information and exit\n"
 "\n"
@@ -903,9 +917,11 @@ int main(int argc, char *argv[])
     }
 
     if (o.proto == IPPROTO_UDP) {
-        /* Don't allow a false sense of security if someone tries SSL over UDP. */
+
+#ifndef HAVE_DTLS_CLIENT_METHOD
         if (o.ssl)
-            bye("UDP mode does not support SSL.");
+            bye("OpenSSL does not have DTLS support compiled in.");
+#endif
         if (o.keepopen && o.cmdexec == NULL)
             bye("UDP mode does not support the -k or --keep-open options, except with --exec or --sh-exec.");
         if (o.broker)

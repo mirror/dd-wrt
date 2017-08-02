@@ -2,7 +2,7 @@
  * util.c -- Various utility functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -60,7 +60,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: util.c 36651 2017-03-16 21:54:26Z dmiller $ */
+/* $Id: util.c 36893 2017-07-30 04:09:48Z dmiller $ */
 
 #include "sys_wrap.h"
 #include "util.h"
@@ -749,4 +749,40 @@ int fix_line_endings(char *src, int *len, char **dst, int *state)
     *len += fix_count;
 
     return 1;
+}
+
+/*-
+ * next_protos_parse parses a comma separated list of strings into a string
+ * in a format suitable for passing to SSL_CTX_set_next_protos_advertised.
+ *   outlen: (output) set to the length of the resulting buffer on success.
+ *   err: NULL on failure
+ *   in: a NULL terminated string like "abc,def,ghi"
+ *
+ *   returns: a malloc'd buffer or NULL on failure.
+ */
+unsigned char *next_protos_parse(size_t *outlen, const char *in)
+{
+    size_t len;
+    unsigned char *out;
+    size_t i, start = 0;
+
+    len = strlen(in);
+    if (len >= 65535)
+        return NULL;
+
+    out = (unsigned char *)safe_malloc(strlen(in) + 1);
+    for (i = 0; i <= len; ++i) {
+        if (i == len || in[i] == ',') {
+            if (i - start > 255) {
+                free(out);
+                return NULL;
+            }
+            out[start] = i - start;
+            start = i + 1;
+        } else
+            out[i + 1] = in[i];
+    }
+
+    *outlen = len + 1;
+    return out;
 }

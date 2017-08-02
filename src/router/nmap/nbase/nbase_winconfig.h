@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -64,7 +64,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_winconfig.h 36586 2017-02-25 00:47:30Z nnposter $ */
+/* $Id: nbase_winconfig.h 36896 2017-07-31 16:56:48Z dmiller $ */
 
 #ifndef NBASE_WINCONFIG_H
 #define NBASE_WINCONFIG_H

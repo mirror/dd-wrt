@@ -4,7 +4,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2016 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2017 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_write.c 35831 2016-06-01 16:51:50Z dmiller $ */
+/* $Id: nsock_write.c 36788 2017-06-07 12:32:38Z dmiller $ */
 
 #include "nsock.h"
 #include "nsock_internal.h"

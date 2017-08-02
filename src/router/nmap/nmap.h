@@ -6,7 +6,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -64,7 +64,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.h 36785 2017-06-07 02:33:14Z dmiller $ */
+/* $Id: nmap.h 36906 2017-07-31 22:29:24Z dmiller $ */
 
 #ifndef NMAP_H
 #define NMAP_H
@@ -190,13 +190,13 @@
 #ifndef NMAP_VERSION
 /* Edit this definition only within the quotes, because it is read from this
    file by the makefiles. */
-#define NMAP_VERSION "7.50"
-#define NMAP_NUM_VERSION "7.0.50.0"
+#define NMAP_VERSION "7.60"
+#define NMAP_NUM_VERSION "7.0.60.0"
 #endif
 /* The version number of updates retrieved by the nmap-update
    program. It can be different (but should always be the same or
    earlier) than NMAP_VERSION. */
-#define NMAP_UPDATE_CHANNEL "7.40"
+#define NMAP_UPDATE_CHANNEL "7.60"
 
 #define NMAP_XMLOUTPUTVERSION "1.04"
 

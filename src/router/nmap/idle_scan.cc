@@ -9,7 +9,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -67,7 +67,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -132,7 +132,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: idle_scan.cc 36715 2017-04-19 13:53:57Z dmiller $ */
+/* $Id: idle_scan.cc 36788 2017-06-07 12:32:38Z dmiller $ */
 
 /* IPv6 fragment ID sequence algorithms. http://seclists.org/nmap-dev/2013/q3/369.
         Android 4.1 (Linux 3.0.15) | Per host, incremental (1)

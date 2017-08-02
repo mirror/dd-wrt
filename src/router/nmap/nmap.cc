@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -63,7 +63,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 36742 2017-04-26 18:55:16Z dmiller $ */
+/* $Id: nmap.cc 36896 2017-07-31 16:56:48Z dmiller $ */
 
 #include "nmap.h"
 #include "osscan.h"
@@ -179,6 +179,14 @@
 
 #if HAVE_OPENSSL
 #include <openssl/opensslv.h>
+#endif
+
+#if HAVE_LIBSSH2
+#include "libssh2/libssh2v.h"
+#endif
+
+#if HAVE_LIBZ
+#include "libz/libzv.h"
 #endif
 
 /* To get the version number only. */
@@ -2834,6 +2842,26 @@ static void display_nmap_version() {
   without.push_back("openssl");
 #endif
 
+#if HAVE_LIBSSH2
+#ifdef LIBSSH2_INCLUDED
+  with.push_back(std::string("nmap-libssh2-") + get_word_or_quote(LIBSSH2_VERSION_TEXT, 1));
+#else
+  with.push_back(std::string("libssh2-") + get_word_or_quote(LIBSSH2_VERSION_TEXT, 1));
+#endif
+#else
+  without.push_back("libssh2");
+#endif
+
+#if HAVE_LIBZ
+#ifdef ZLIB_INCLUDED
+  with.push_back(std::string("nmap-libz-") + get_word_or_quote(LIBZ_VERSION_TEXT, 1));
+#else
+  with.push_back(std::string("libz-") + get_word_or_quote(LIBZ_VERSION_TEXT, 1));
+#endif
+#else
+  without.push_back("libz");
+#endif
+  
 #ifdef PCRE_INCLUDED
   with.push_back(std::string("nmap-libpcre-") + get_word_or_quote(pcre_version(), 0));
 #else
