@@ -386,7 +386,7 @@ input.four_column {
 input.four_column_last {
   margin-right: 0px;
 }
-/* for DIV popup Style */
+ 
 div.bulle {
 	width:auto;
 	background-color:#FFFFE1;
@@ -408,7 +408,7 @@ td.bulle {
 	padding:0.09em;
 	border:0em;
 }
-/* Status colors */
+ 
 .status_red {
 	background: #f00;
 }
@@ -418,7 +418,7 @@ td.bulle {
 .status_yellow {
 	background: #ff0;
 }
-/* Moved from inline HTML */
+ 
 .off {
 	background: #e0e0e0;
 }

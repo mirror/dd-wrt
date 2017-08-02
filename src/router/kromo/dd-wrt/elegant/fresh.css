@@ -4,8 +4,8 @@ h3,
 padding: 4px 12px;
 font-size: 12px;
 line-height: 1.42857;
-color: #fff; /* [re]defined in color styles, comment to use color headers */
-background-color: #777674; /* [re]defined in color styles, comment to use color headers */
+color: #fff;  
+background-color: #777674;  
 background-image: none;
 border-radius: 4px;
 border-color: none;
@@ -18,18 +18,18 @@ border-radius: 3px;
 background-image: none;
 }
 table tr:hover {
-background-color: #f1f1f1; /* lighter tr hoover */
+background-color: #f1f1f1;  
 }
 .submitFooter {
 background-color: #CCC;
 }
 .submitFooter .button {
-margin:.362em .362em; /* some vertical margins in case of 2 lines */
+margin:.362em .362em;  
 }
 #menuSub {
 border-radius: 4px 4px 0px 0px;
-border-width: 0; /* fix UI (this removes submenu line separator) in FF */
-border-style: none; /* fix UI (this removes submenu line separator) */
+border-width: 0;  
+border-style: none;  
 }
 li.current {
 margin-top:2px;
@@ -41,7 +41,7 @@ margin-top:2px;
 border-radius: 4px 4px 0px 0px;
 border-style: solid solid none;
 border-width: 0.09em;
-border-width: 1px; /* fix UI (no borders) in Safari */
+border-width: 1px;  
 display: block;
 margin-left: 0.362em;
 text-decoration: none;
@@ -49,7 +49,7 @@ text-decoration: none;
 
 fieldset {
 border-radius: 4px;
-border-width: 1px; /* fix UI (no borders) in Safari */
+border-width: 1px;  
 }
 fieldset legend {
 left: 0px;
@@ -162,7 +162,7 @@ border-radius: 4px;
 #content.infopage #main{
 	background-color: #FFF;
 	border-radius: 5px;
-	border: 1px solid #111111; /* fix UI (content padding) in Safari */
+	border: 1px solid #111111;  
 }
 input.button {
 	box-shadow: 2px 2px 2px gray;
@@ -173,9 +173,9 @@ input.button[disabled] {
 #content {
 	border-radius: 0 0 5px 5px;
 	margin-bottom: 1em;
-	border: 1px solid #111111; /* fix UI (content padding) in Safari */
+	border: 1px solid #111111;  
 }
-/* I can't change the size attributes therefore this will have to do - fix in firefox*/
+ 
 table[summary="ports forwardig table"] .num[size="15"]{ 
 	max-width: 100px;
 }
@@ -185,8 +185,8 @@ table[summary="ports forwardig table"] .num[size="5"]{
 table[summary="ports forwardig table"] input[size="10"]{
 	max-width: 79px;
 }
-/* Fresh Add-Ons */
-#header {  /* looks like after removing submenu border it must be little smaller - no dark bottom line in firefox etc */
+ 
+#header {   
 	height:9.240em;
 }
 .message {
@@ -203,10 +203,10 @@ table[summary="ports forwardig table"] input[size="10"]{
 	border-radius: 6px;
 	border-width: 2px;
 }
-.off {  /* disabled ui elements */
+.off {   
 	background-color: #e0e0e0;
 }
-.odd {  /* odd / even table rows */
+.odd {   
 	background-color: #f1f1f1;
 	border-radius: 2px;
 }

@@ -139,7 +139,7 @@
 	background:#BFDBFF;
 }
 
-/* For alert/confirm dialog */
+ 
 .bluelighting_window {
 	border:1px solid #F00;	
 	background:#FFF;
@@ -185,7 +185,7 @@
 	background:transparent url('lighting/spinner.gif') no-repeat center center
 }
 
-/* FOR IE */
+ 
 * html .bluelighting_nw {
 	background-color: transparent;
 	background-image: none;
@@ -373,7 +373,7 @@
 	background:#CDCDCD;
 }
 
-/* For alert/confirm dialog */
+ 
 .greylighting_window {
 	border:1px solid #F00;	
 	background:#FFF;
@@ -419,7 +419,7 @@
 	background:transparent url('lighting/spinner.gif') no-repeat center center
 }
 
-/* FOR IE */
+ 
 * html .greylighting_nw {
 	background-color: transparent;
 	background-image: none;
@@ -607,7 +607,7 @@
 	background:#ACFCAF;
 }
 
-/* For alert/confirm dialog */
+ 
 .greenlighting_window {
 	border:1px solid #F00;	
 	background:#FFF;
@@ -653,7 +653,7 @@
 	background:transparent url('lighting/spinner.gif') no-repeat center center
 }
 
-/* FOR IE */
+ 
 * html .greenlighting_nw {
 	background-color: transparent;
 	background-image: none;
@@ -841,7 +841,7 @@
 	background:#0413C0;
 }
 
-/* For alert/confirm dialog */
+ 
 .darkbluelighting_window {
 	border:1px solid #F00;	
 	background:#FFF;
@@ -887,7 +887,7 @@
 	background:transparent url('lighting/spinner.gif') no-repeat center center
 }
 
-/* FOR IE */
+ 
 * html .darkbluelighting_nw {
 	background-color: transparent;
 	background-image: none;

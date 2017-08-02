@@ -1,4 +1,4 @@
-/* Colors */
+ 
 body {
 	background-color:		#CCC;
 }
@@ -16,24 +16,24 @@ table.table th {
 	background-color:		#888888;
 }
 
-/* hintergrund */
+ 
 body.gui {
 	background-color:		#888888;
 }
 
-/* help hintergrund */
+ 
 #help {
 	background-color:		#FFFEC1;
 	border-color:			#111;
 }
 
-/* status info */
+ 
 #statusInfo  {
 	background:				#CCCCDD URL(../../images/dd-wrt.png) bottom right no-repeat;
 	border-color:			#000;
 }
 
-/* input elemente */
+ 
 input[type!="radio"] {
 	background-color:		#EEEEF3;
 	border-color:			#003399;
@@ -63,7 +63,7 @@ div.message div {
 }
 
 	
-/* Text */
+ 
 body {
 	color:					#115B80;
 }
@@ -76,7 +76,7 @@ input,select {
 	color:					#115B80;
 }
 
-/* More link im Hilfe fenster*/
+ 
 a:link {
 	color:					#167DAF;
 }
@@ -104,14 +104,14 @@ div.warning {
 	color:					#EE3333;
 }
 
-/* Tabs */
+ 
 
 #main {
 	border-color:			#666;
 	background:				#FFF3B3;
 }
 
-/* tabellen hintergrund */
+ 
 #contents {
 	background:				#DDD;
 }
