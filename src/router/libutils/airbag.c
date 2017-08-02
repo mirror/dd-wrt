@@ -351,6 +351,12 @@ static int is_lost_conn(int e)
 	return e == ECONNREFUSED || e == ECONNRESET || e == ENOTCONN || e == EPIPE;
 }
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC   02000000
+#define SOCK_NONBLOCK  04000
+#endif
+
+
 static void slog(int priority, const char *message)
 {
 	char *buf;
