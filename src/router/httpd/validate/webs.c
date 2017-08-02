@@ -1453,7 +1453,7 @@ void qos_save(webs_t wp)
 	nvram_seti("default_lanlevel", websGetVari(wp, "default_lanlevel", 0));
 	nvram_seti("wshaper_downlink", websGetVari(wp, "wshaper_downlink", 0));
 	nvram_seti("wshaper_uplink", websGetVari(wp, "wshaper_uplink", 0));
-	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev", 0);
+	nvram_set("wshaper_dev", websGetVar(wp, "wshaper_dev"));
 	nvram_seti("qos_type", websGetVari(wp, "qos_type", 0));
 
 #if defined(HAVE_CODEL) || defined(HAVE_FQ_CODEL) || defined(HAVE_PIE)
