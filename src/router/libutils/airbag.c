@@ -93,6 +93,10 @@
 #define O_CLOEXEC 0		/* Supported starting in Linux 2.6.23 */
 #endif
 
+#ifndef PR_SET_NAME
+#define PR_SET_NAME    15		/* Set process name */
+#define PR_GET_NAME    16		/* Get process name */
+#endif
 
 #ifndef SI_TKILL 
 #define SI_TKILL (-6)
