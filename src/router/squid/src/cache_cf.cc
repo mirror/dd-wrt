@@ -567,8 +567,9 @@ parseOneConfigFile(const char *file_name, unsigned int depth)
     return err_count;
 }
 
+static
 int
-parseConfigFile(const char *file_name)
+parseConfigFileOrThrow(const char *file_name)
 {
     int err_count = 0;
 
@@ -607,6 +608,20 @@ parseConfigFile(const char *file_name)
     }
 
     return err_count;
+}
+
+// TODO: Refactor main.cc to centrally handle (and report) all exceptions.
+int
+parseConfigFile(const char *file_name)
+{
+    try {
+        return parseConfigFileOrThrow(file_name);
+    }
+    catch (const std::exception &ex) {
+        debugs(3, DBG_CRITICAL, "FATAL: bad configuration: " << ex.what());
+        self_destruct();
+        return 1; // not reached
+    }
 }
 
 static void
@@ -1308,12 +1323,14 @@ dump_acl(StoreEntry * entry, const char *name, ACL * ae)
 {
     while (ae != NULL) {
         debugs(3, 3, "dump_acl: " << name << " " << ae->name);
-        storeAppendPrintf(entry, "%s %s %s %s ",
+        storeAppendPrintf(entry, "%s %s %s ",
                           name,
                           ae->name,
-                          ae->typeString(),
-                          ae->flags.flagsStr());
-        dump_SBufList(entry, ae->dump());
+                          ae->typeString());
+        SBufList tail;
+        tail.splice(tail.end(), ae->dumpOptions());
+        tail.splice(tail.end(), ae->dump()); // ACL parameters
+        dump_SBufList(entry, tail);
         ae = ae->next;
     }
 }
@@ -2205,7 +2222,7 @@ parse_peer(CachePeer ** head)
         } else if (!strcmp(token, "auth-no-keytab")) {
             p->options.auth_no_keytab = 1;
         } else if (!strncmp(token, "connect-timeout=", 16)) {
-            p->connect_timeout = xatoi(token + 16);
+            p->connect_timeout_raw = xatoi(token + 16);
         } else if (!strncmp(token, "connect-fail-limit=", 19)) {
             p->connect_fail_limit = xatoi(token + 19);
 #if USE_CACHE_DIGESTS
@@ -2403,7 +2420,7 @@ parse_peer_access(void)
 
     CachePeer *p = peerFindByName(host);
     if (!p) {
-        debugs(15, DBG_CRITICAL, "" << cfg_filename << ", line " << config_lineno << ": No cache_peer '" << host << "'");
+        debugs(15, DBG_CRITICAL, "ERROR: " << cfg_filename << ", line " << config_lineno << ": No cache_peer '" << host << "'");
         return;
     }
 
@@ -4038,7 +4055,7 @@ setLogformat(CustomLog *cl, const char *logdef_name, const bool dieWhenMissing)
     debugs(3, 9, "possible " << cl->filename << " logformat: " << logdef_name);
 
     if (cl->type != Log::Format::CLF_UNKNOWN) {
-        debugs(3, DBG_CRITICAL, "Second logformat name in one access_log: " <<
+        debugs(3, DBG_CRITICAL, "FATAL: Second logformat name in one access_log: " <<
                logdef_name << " " << cl->type << " ? " << Log::Format::CLF_NONE);
         self_destruct();
         return false;
@@ -4077,7 +4094,7 @@ setLogformat(CustomLog *cl, const char *logdef_name, const bool dieWhenMissing)
     } else if (strcmp(logdef_name, "referrer") == 0) {
         cl->type = Log::Format::CLF_REFERER;
     } else if (dieWhenMissing) {
-        debugs(3, DBG_CRITICAL, "Log format '" << logdef_name << "' is not defined");
+        debugs(3, DBG_CRITICAL, "FATAL: Log format '" << logdef_name << "' is not defined");
         self_destruct();
         return false;
     } else {
@@ -4112,7 +4129,8 @@ dump_access_log(StoreEntry * entry, const char *name, CustomLog * logs)
             break;
 
         case Log::Format::CLF_SQUID:
-            storeAppendPrintf(entry, "%s logformat=squid", log->filename);
+            // this is the default, no need to add to the dump
+            //storeAppendPrintf(entry, "%s logformat=squid", log->filename);
             break;
 
         case Log::Format::CLF_COMBINED:

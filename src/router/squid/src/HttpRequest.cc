@@ -13,6 +13,7 @@
 #include "acl/AclSizeLimit.h"
 #include "acl/FilledChecklist.h"
 #include "client_side.h"
+#include "client_side_request.h"
 #include "dns/LookupDetails.h"
 #include "Downloader.h"
 #include "err_detail_type.h"
@@ -38,15 +39,19 @@
 #include "adaptation/icap/icap_log.h"
 #endif
 
-HttpRequest::HttpRequest() :
-    HttpMsg(hoRequest)
+HttpRequest::HttpRequest(const MasterXaction::Pointer &mx) :
+    HttpMsg(hoRequest),
+    masterXaction(mx)
 {
+    assert(mx);
     init();
 }
 
-HttpRequest::HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aSchemeImg, const char *aUrlpath) :
-    HttpMsg(hoRequest)
+HttpRequest::HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aSchemeImg, const char *aUrlpath, const MasterXaction::Pointer &mx) :
+    HttpMsg(hoRequest),
+    masterXaction(mx)
 {
+    assert(mx);
     static unsigned int id = 1;
     debugs(93,7, HERE << "constructed, this=" << this << " id=" << ++id);
     init();
@@ -170,7 +175,7 @@ HttpRequest::reset()
 HttpRequest *
 HttpRequest::clone() const
 {
-    HttpRequest *copy = new HttpRequest();
+    HttpRequest *copy = new HttpRequest(masterXaction);
     copy->method = method;
     // TODO: move common cloning clone to Msg::copyTo() or copy ctor
     copy->header.append(&header);
@@ -327,14 +332,11 @@ HttpRequest::parseFirstLine(const char *start, const char *end)
 
     * (char *) end = '\0';     // temp terminate URI, XXX dangerous?
 
-    HttpRequest *tmp = urlParse(method, (char *) start, this);
+    const bool ret = url.parse(method, (char *) start);
 
     * (char *) end = save;
 
-    if (NULL == tmp)
-        return false;
-
-    return true;
+    return ret;
 }
 
 /* swaps out request using httpRequestPack */
@@ -518,9 +520,14 @@ HttpRequest::expectingBody(const HttpRequestMethod &, int64_t &theSize) const
  * If the request cannot be created cleanly, NULL is returned
  */
 HttpRequest *
-HttpRequest::CreateFromUrl(char * url, const HttpRequestMethod& method)
+HttpRequest::FromUrl(char * url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
 {
-    return urlParse(method, url, NULL);
+    std::unique_ptr<HttpRequest> req(new HttpRequest(mx));
+    if (req->url.parse(method, url)) {
+        req->method = method;
+        return req.release();
+    }
+    return nullptr;
 }
 
 /**
@@ -548,7 +555,7 @@ HttpRequest::maybeCacheable()
         //
         // NP: refresh_pattern ignore-no-store only applies to response messages
         //     this test is handling request message CC header.
-        if (!flags.ignoreCc && cache_control && cache_control->noStore())
+        if (!flags.ignoreCc && cache_control && cache_control->hasNoStore())
             return false;
         break;
 
@@ -604,7 +611,7 @@ HttpRequest::getRangeOffsetLimit()
 
     for (AclSizeLimit *l = Config.rangeOffsetLimit; l; l = l -> next) {
         /* if there is no ACL list or if the ACLs listed match use this limit value */
-        if (!l->aclList || ch.fastCheck(l->aclList) == ACCESS_ALLOWED) {
+        if (!l->aclList || ch.fastCheck(l->aclList).allowed()) {
             debugs(58, 4, HERE << "rangeOffsetLimit=" << rangeOffsetLimit);
             rangeOffsetLimit = l->size; // may be -1
             break;
@@ -665,5 +672,44 @@ HttpRequest::effectiveRequestUri() const
     if (method.id() == Http::METHOD_CONNECT || url.getScheme() == AnyP::PROTO_AUTHORITY_FORM)
         return url.authority(true); // host:port
     return url.absolute();
+}
+
+void
+HttpRequest::manager(const CbcPointer<ConnStateData> &aMgr, const AccessLogEntryPointer &al)
+{
+    clientConnectionManager = aMgr;
+
+    if (!clientConnectionManager.valid())
+        return;
+
+    AnyP::PortCfgPointer port = clientConnectionManager->port;
+    if (port) {
+        myportname = port->name;
+        flags.ignoreCc = port->ignore_cc;
+    }
+
+    if (auto clientConnection = clientConnectionManager->clientConnection) {
+        client_addr = clientConnection->remote; // XXX: remove request->client_addr member.
+#if FOLLOW_X_FORWARDED_FOR
+        // indirect client gets stored here because it is an HTTP header result (from X-Forwarded-For:)
+        // not details about the TCP connection itself
+        indirect_client_addr = clientConnection->remote;
+#endif /* FOLLOW_X_FORWARDED_FOR */
+        my_addr = clientConnection->local;
+
+        flags.intercepted = ((clientConnection->flags & COMM_INTERCEPTION) != 0);
+        flags.interceptTproxy = ((clientConnection->flags & COMM_TRANSPARENT) != 0 ) ;
+        const bool proxyProtocolPort = port ? port->flags.proxySurrogate : false;
+        if (flags.interceptTproxy && !proxyProtocolPort) {
+            if (Config.accessList.spoof_client_ip) {
+                ACLFilledChecklist *checklist = new ACLFilledChecklist(Config.accessList.spoof_client_ip, this, clientConnection->rfc931);
+                checklist->al = al;
+                flags.spoofClientIp = checklist->fastCheck().allowed();
+                delete checklist;
+            } else
+                flags.spoofClientIp = true;
+        } else
+            flags.spoofClientIp = false;
+    }
 }
 

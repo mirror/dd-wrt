@@ -417,7 +417,7 @@ icpAccessAllowed(Ip::Address &from, HttpRequest * icp_request)
     ACLFilledChecklist checklist(Config.accessList.icp, icp_request, NULL);
     checklist.src_addr = from;
     checklist.my_addr.setNoAddr();
-    return (checklist.fastCheck() == ACCESS_ALLOWED);
+    return checklist.fastCheck().allowed();
 }
 
 char const *
@@ -439,8 +439,8 @@ icpGetRequest(char *url, int reqnum, int fd, Ip::Address &from)
     }
 
     HttpRequest *result;
-
-    if ((result = HttpRequest::CreateFromUrl(url)) == NULL)
+    const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initIcp);
+    if ((result = HttpRequest::FromUrl(url, mx)) == NULL)
         icpCreateAndSend(ICP_ERR, 0, url, reqnum, 0, fd, from);
 
     return result;

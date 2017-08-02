@@ -10,8 +10,9 @@
 
 #include "squid.h"
 #include "AccessLogEntry.h"
-#include "acl/Acl.h"
+//#include "acl/Acl.h"
 #include "acl/Asn.h"
+#include "acl/forward.h"
 #include "anyp/UriScheme.h"
 #include "AuthReg.h"
 #include "base/RunnersRegistry.h"
@@ -46,6 +47,7 @@
 #include "icmp/net_db.h"
 #include "ICP.h"
 #include "ident/Ident.h"
+#include "Instance.h"
 #include "ip/tools.h"
 #include "ipc/Coordinator.h"
 #include "ipc/Kids.h"
@@ -61,6 +63,7 @@
 #include "profiler/Profiler.h"
 #include "redirect.h"
 #include "refresh.h"
+#include "sbuf/Stream.h"
 #include "SBufStatsAction.h"
 #include "send-announce.h"
 #include "SquidConfig.h"
@@ -171,7 +174,6 @@ static void watch_child(char **);
 static void setEffectiveUser(void);
 static void SquidShutdown(void);
 static void mainSetCwd(void);
-static int checkRunningPid(void);
 
 #if !_SQUID_WINDOWS_
 static const char *squid_start_script = "squid_start";
@@ -386,9 +388,9 @@ usage(void)
             "       -C        Do not catch fatal signals.\n"
             "       -D        OBSOLETE. Scheduled for removal.\n"
             "       -F        Don't serve any requests until store is rebuilt.\n"
-            "       -N        No daemon mode.\n"
+            "       -N        Master process runs in foreground and is a worker. No kids.\n"
             "       --foreground\n"
-            "                 Parent process does not exit until its children have finished.\n"
+            "                 Master process runs in foreground and creates worker kids.\n"
 #if USE_WIN32_SERVICE
             "       -O options\n"
             "                 Set Windows Service Command line options in Registry.\n"
@@ -662,6 +664,10 @@ mainParseOptions(int argc, char *argv[])
             printf("Service Name: " SQUIDSBUFPH "\n", SQUIDSBUFPRINT(service_name));
             if (strlen(SQUID_BUILD_INFO))
                 printf("%s\n",SQUID_BUILD_INFO);
+#if USE_OPENSSL
+            printf("\nThis binary uses %s. ", SSLeay_version(SSLEAY_VERSION));
+            printf("For legal restrictions on distribution see https://www.openssl.org/source/license.html\n\n");
+#endif
             printf( "configure options: %s\n", SQUID_CONFIGURE_OPTIONS);
 
 #if USE_WIN32_SERVICE
@@ -1003,9 +1009,6 @@ mainReconfigureFinish(void *)
             eventDelete(start_announce, NULL);
     }
 
-    if (!InDaemonMode())
-        writePidFile(); /* write PID file */
-
     reconfiguring = 0;
 }
 
@@ -1069,13 +1072,16 @@ mainChangeDir(const char *dir)
     return false;
 }
 
+/// Hack: Have we called chroot()? This exposure is needed because some code has
+/// to open the same files before and after chroot()
+bool Chrooted = false;
+
 /// set the working directory.
 static void
 mainSetCwd(void)
 {
-    static bool chrooted = false;
-    if (Config.chroot_dir && !chrooted) {
-        chrooted = true;
+    if (Config.chroot_dir && !Chrooted) {
+        Chrooted = true;
 
         if (chroot(Config.chroot_dir) != 0) {
             int xerrno = errno;
@@ -1257,9 +1263,6 @@ mainInitialize(void)
     if (Config.chroot_dir)
         no_suid();
 
-    if (!configured_once && !InDaemonMode())
-        writePidFile();     /* write PID file */
-
 #if defined(_SQUID_LINUX_THREADS_)
 
     squid_signal(SIGQUIT, rotate_logs, SA_RESTART);
@@ -1337,6 +1340,39 @@ mainInitialize(void)
     configured_once = 1;
 }
 
+/// describes active (i.e., thrown but not yet handled) exception
+static std::ostream &
+CurrentException(std::ostream &os)
+{
+    if (std::current_exception()) {
+        try {
+            throw; // re-throw to recognize the exception type
+        }
+        catch (const std::exception &ex) {
+            os << ex.what();
+        }
+        catch (...) {
+            os << "[unknown exception type]";
+        }
+    } else {
+        os << "[no active exception]";
+    }
+    return os;
+}
+
+static void
+OnTerminate()
+{
+    // ignore recursive calls to avoid termination loops
+    static bool terminating = false;
+    if (terminating)
+        return;
+    terminating = true;
+
+    debugs(1, DBG_CRITICAL, "FATAL: Dying from an exception handling failure; exception: " << CurrentException);
+    abort();
+}
+
 /// unsafe main routine -- may throw
 int SquidMain(int argc, char **argv);
 /// unsafe main routine wrapper to catch exceptions
@@ -1370,17 +1406,17 @@ main(int argc, char **argv)
 static int
 SquidMainSafe(int argc, char **argv)
 {
+    (void)std::set_terminate(&OnTerminate);
+    // XXX: This top-level catch works great for startup, but, during runtime,
+    // it erases valuable stack info. TODO: Let stack-preserving OnTerminate()
+    // handle FATAL runtime errors by splitting main code into protected
+    // startup, unprotected runtime, and protected termination sections!
     try {
         return SquidMain(argc, argv);
-    } catch (const std::exception &e) {
-        debugs(1, DBG_CRITICAL, "FATAL: dying from an unhandled exception: " <<
-               e.what());
-        throw;
     } catch (...) {
-        debugs(1, DBG_CRITICAL, "FATAL: dying from an unhandled exception.");
-        throw;
+        debugs(1, DBG_CRITICAL, "FATAL: " << CurrentException);
     }
-    return -1; // not reached
+    return -1; // TODO: return EXIT_FAILURE instead
 }
 
 /// computes name and ID for the current kid process
@@ -1407,6 +1443,12 @@ ConfigureCurrentKid(const char *processName)
         xstrncpy(TheKidName, APP_SHORTNAME, sizeof(TheKidName));
         KidIdentifier = 0;
     }
+}
+
+static void StartUsingConfig()
+{
+    RunRegisteredHere(RegisteredRunner::claimMemoryNeeds);
+    RunRegisteredHere(RegisteredRunner::useConfig);
 }
 
 int
@@ -1516,6 +1558,7 @@ SquidMain(int argc, char **argv)
 
         /* we may want the parsing process to set this up in the future */
         Store::Init();
+        Acl::Init();
         Auth::Init();      /* required for config parsing. NOP if !USE_AUTH */
         Ip::ProbeTransport(); // determine IPv4 or IPv6 capabilities before parsing.
 
@@ -1536,9 +1579,12 @@ SquidMain(int argc, char **argv)
             return parse_err;
     }
     setUmask(Config.umask);
-    if (-1 == opt_send_signal)
-        if (checkRunningPid())
-            exit(0);
+
+    // Master optimization: Where possible, avoid pointless daemon fork() and/or
+    // pointless wait for the exclusive PID file lock. This optional/weak check
+    // is not applicable to kids because they always co-exist with their master.
+    if (opt_send_signal == -1 && IamMasterProcess())
+        Instance::ThrowIfAlreadyRunning();
 
 #if TEST_ACCESS
 
@@ -1563,20 +1609,24 @@ SquidMain(int argc, char **argv)
         }
 
         sendSignal();
-        /* NOTREACHED */
+        return 0;
     }
 
     debugs(1,2, HERE << "Doing post-config initialization\n");
     leave_suid();
     RunRegisteredHere(RegisteredRunner::finalizeConfig);
-    RunRegisteredHere(RegisteredRunner::claimMemoryNeeds);
-    RunRegisteredHere(RegisteredRunner::useConfig);
-    enter_suid();
 
-    if (InDaemonMode() && IamMasterProcess()) {
-        watch_child(argv);
-        // NOTREACHED
+    if (IamMasterProcess()) {
+        if (InDaemonMode()) {
+            watch_child(argv);
+            // NOTREACHED
+        } else {
+            Instance::WriteOurPid();
+        }
     }
+
+    StartUsingConfig();
+    enter_suid();
 
     if (opt_create_swap_dirs) {
         /* chroot if configured to run inside chroot */
@@ -1667,50 +1717,26 @@ SquidMain(int argc, char **argv)
 static void
 sendSignal(void)
 {
-    pid_t pid;
     debug_log = stderr;
 
-    if (strcmp(Config.pidFilename, "none") == 0) {
-        debugs(0, DBG_IMPORTANT, "No pid_filename specified. Trusting you know what you are doing.");
-    }
-
-    pid = readPidFile();
-
-    if (pid > 1) {
 #if USE_WIN32_SERVICE
-        if (opt_signal_service) {
-            WIN32_sendSignal(opt_send_signal);
-            exit(0);
-        } else {
-            fprintf(stderr, "%s: ERROR: Could not send ", APP_SHORTNAME);
-            fprintf(stderr, "signal to Squid Service:\n");
-            fprintf(stderr, "missing -n command line switch.\n");
-            exit(1);
-        }
-        /* NOTREACHED */
-#endif
-
-        if (kill(pid, opt_send_signal) &&
-                /* ignore permissions if just running check */
-                !(opt_send_signal == 0 && errno == EPERM)) {
-            int xerrno = errno;
-            fprintf(stderr, "%s: ERROR: Could not send ", APP_SHORTNAME);
-            fprintf(stderr, "signal %d to process %d: %s\n",
-                    opt_send_signal, (int) pid, xstrerr(xerrno));
-            exit(1);
-        }
-    } else {
-        if (opt_send_signal != SIGTERM) {
-            fprintf(stderr, "%s: ERROR: No running copy\n", APP_SHORTNAME);
-            exit(1);
-        } else {
-            fprintf(stderr, "%s: No running copy\n", APP_SHORTNAME);
-            exit(0);
-        }
+    // WIN32_sendSignal() does not need the PID value to signal,
+    // but we must exit if there is no valid PID (TODO: Why?).
+    (void)Instance::Other();
+    if (!opt_signal_service)
+        throw TexcHere("missing -n command line switch");
+    WIN32_sendSignal(opt_send_signal);
+#else
+    const auto pid = Instance::Other();
+    if (kill(pid, opt_send_signal) &&
+            /* ignore permissions if just running check */
+            !(opt_send_signal == 0 && errno == EPERM)) {
+        const auto savedErrno = errno;
+        throw TexcHere(ToSBuf("failed to send signal ", opt_send_signal,
+                              " to Squid instance with PID ", pid, ": ", xstrerr(savedErrno)));
     }
-
+#endif
     /* signal successfully sent */
-    exit(0);
 }
 
 #if !_SQUID_WINDOWS_
@@ -1751,31 +1777,6 @@ mainStartScript(const char *prog)
 
 #endif /* _SQUID_WINDOWS_ */
 
-static int
-checkRunningPid(void)
-{
-    // master process must start alone, but its kids processes may co-exist
-    if (!IamMasterProcess())
-        return 0;
-
-    pid_t pid;
-
-    if (!debug_log)
-        debug_log = stderr;
-
-    pid = readPidFile();
-
-    if (pid < 2)
-        return 0;
-
-    if (kill(pid, 0) < 0)
-        return 0;
-
-    debugs(0, DBG_CRITICAL, "Squid is already running!  Process ID " <<  pid);
-
-    return 1;
-}
-
 #if !_SQUID_WINDOWS_
 static void
 masterCheckAndBroadcastSignals()
@@ -1799,12 +1800,29 @@ masterSignaled()
     return (DebugSignal > 0 || RotateSignal > 0 || ReconfigureSignal > 0 || ShutdownSignal > 0);
 }
 
+#if !_SQUID_WINDOWS_
+/// makes the caller a daemon process running in the background
+static void
+GoIntoBackground()
+{
+    pid_t pid;
+    if ((pid = fork()) < 0) {
+        int xerrno = errno;
+        syslog(LOG_ALERT, "fork failed: %s", xstrerr(xerrno));
+        // continue anyway, mimicking --foreground mode (XXX?)
+    } else if (pid > 0) {
+        // parent
+        exit(EXIT_SUCCESS);
+    }
+    // child, running as a background daemon (or a failed-to-fork parent)
+}
+#endif /* !_SQUID_WINDOWS_ */
+
 static void
 watch_child(char *argv[])
 {
 #if !_SQUID_WINDOWS_
     char *prog;
-    PidStatus status_f, status;
     pid_t pid;
 #ifdef TIOCNOTTY
 
@@ -1813,23 +1831,16 @@ watch_child(char *argv[])
 
     int nullfd;
 
+    enter_suid();
+
     openlog(APP_SHORTNAME, LOG_PID | LOG_NDELAY | LOG_CONS, LOG_LOCAL4);
 
-    if ((pid = fork()) < 0) {
-        int xerrno = errno;
-        syslog(LOG_ALERT, "fork failed: %s", xstrerr(xerrno));
-    } else if (pid > 0) {
-        // parent
-        if (opt_foreground) {
-            if (WaitForAnyPid(status_f, 0) < 0) {
-                int xerrno = errno;
-                syslog(LOG_ALERT, "WaitForAnyPid failed: %s", xstrerr(xerrno));
-            }
-        }
+    if (!opt_foreground)
+        GoIntoBackground();
 
-        exit(0);
-    }
-
+    // TODO: Fails with --foreground if the calling process is process group
+    //       leader, which is always (?) the case. Should probably moved to
+    //       GoIntoBackground and executed only after successfully forking
     if (setsid() < 0) {
         int xerrno = errno;
         syslog(LOG_ALERT, "setsid failed: %s", xstrerr(xerrno));
@@ -1866,8 +1877,10 @@ watch_child(char *argv[])
         dup2(nullfd, 2);
     }
 
-    writePidFile();
-    enter_suid(); // writePidFile() uses leave_suid()
+    leave_suid();
+    Instance::WriteOurPid();
+    StartUsingConfig();
+    enter_suid();
 
 #if defined(_SQUID_LINUX_THREADS_)
     squid_signal(SIGQUIT, rotate_logs, 0);
@@ -1937,6 +1950,7 @@ watch_child(char *argv[])
         int waitFlag = 0;
         if (masterSignaled())
             waitFlag = WNOHANG;
+        PidStatus status;
         pid = WaitForAnyPid(status, waitFlag);
 
         // check for a stopped kid
@@ -1973,8 +1987,6 @@ watch_child(char *argv[])
             RunRegisteredHere(RegisteredRunner::finishShutdown);
             enter_suid();
 
-            removePidFile();
-            enter_suid(); // removePidFile() uses leave_suid()
             if (TheKids.someSignaled(SIGINT) || TheKids.someSignaled(SIGTERM)) {
                 syslog(LOG_ALERT, "Exiting due to unexpected forced shutdown");
                 exit(1);
@@ -2093,10 +2105,6 @@ SquidShutdown()
     RunRegisteredHere(RegisteredRunner::finishShutdown);
 
     memClean();
-
-    if (!InDaemonMode()) {
-        removePidFile();
-    }
 
     debugs(1, DBG_IMPORTANT, "Squid Cache (Version " << version_string << "): Exiting normally.");
 

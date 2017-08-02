@@ -36,7 +36,7 @@ Ssl::PeekingPeerConnector::cbCheckForPeekAndSpliceDone(allow_t answer, void *dat
 void
 Ssl::PeekingPeerConnector::checkForPeekAndSpliceDone(allow_t answer)
 {
-    const Ssl::BumpMode finalAction = (answer.code == ACCESS_ALLOWED) ?
+    const Ssl::BumpMode finalAction = answer.allowed() ?
                                       static_cast<Ssl::BumpMode>(answer.kind):
                                       checkForPeekAndSpliceGuess();
     checkForPeekAndSpliceMatched(finalAction);
@@ -88,6 +88,7 @@ Ssl::PeekingPeerConnector::checkForPeekAndSpliceMatched(const Ssl::BumpMode acti
         request->clientConnectionManager->sslBumpMode = finalAction;
         request->clientConnectionManager->serverBump()->act.step3 = finalAction;
     }
+    al->ssl.bumpMode = finalAction;
 
     if (finalAction == Ssl::bumpTerminate) {
         serverConn->close();

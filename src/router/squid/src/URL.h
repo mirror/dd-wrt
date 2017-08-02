@@ -53,6 +53,8 @@ public:
     }
     void touch(); ///< clear the cached URI display forms
 
+    bool parse(const HttpRequestMethod &, char *url);
+
     AnyP::UriScheme const & getScheme() const {return scheme_;}
 
     /// convert the URL scheme to that given
@@ -104,6 +106,8 @@ public:
     SBuf &absolute() const;
 
 private:
+    void parseFinish(const AnyP::ProtocolType, const char *const, const char *const, const char *const, const SBuf &, const int);
+
     /**
      \par
      * The scheme of this URL. This has the 'type code' smell about it.
@@ -166,7 +170,7 @@ class HttpRequest;
 class HttpRequestMethod;
 
 void urlInitialize(void);
-HttpRequest *urlParse(const HttpRequestMethod&, char *, HttpRequest *request = NULL);
+bool urlParse(const HttpRequestMethod&, char *, HttpRequest &request);
 char *urlCanonicalClean(const HttpRequest *);
 const char *urlCanonicalFakeHttps(const HttpRequest * request);
 bool urlIsRelative(const char *);

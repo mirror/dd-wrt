@@ -338,7 +338,7 @@ Security::PeerConnector::sslCrtvdCheckForErrors(Ssl::CertValidationResponse cons
             bool allowed = false;
             if (check) {
                 check->sslErrors = new Security::CertErrors(Security::CertError(i->error_no, i->cert, i->error_depth));
-                if (check->fastCheck() == ACCESS_ALLOWED)
+                if (check->fastCheck().allowed())
                     allowed = true;
             }
             // else the Config.ssl_client.cert_error access list is not defined
@@ -633,7 +633,7 @@ Security::PeerConnector::startCertDownloading(SBuf &url)
                                       PeerConnectorCertDownloaderDialer(&Security::PeerConnector::certDownloadingDone, this));
 
     const Downloader *csd = (request ? dynamic_cast<const Downloader*>(request->downloader.valid()) : nullptr);
-    Downloader *dl = new Downloader(url, certCallback, csd ? csd->nestedLevel() + 1 : 1);
+    Downloader *dl = new Downloader(url, certCallback, XactionInitiator::initCertFetcher, csd ? csd->nestedLevel() + 1 : 1);
     AsyncJob::Start(dl);
 }
 

@@ -383,7 +383,6 @@ snmpDecodePacket(SnmpRequest * rq)
     u_char *Community;
     u_char *buf = rq->buf;
     int len = rq->len;
-    allow_t allow = ACCESS_DENIED;
 
     if (!Config.accessList.snmp) {
         debugs(49, DBG_IMPORTANT, "WARNING: snmp_access not configured. agent query DENIED from : " << rq->from);
@@ -402,9 +401,8 @@ snmpDecodePacket(SnmpRequest * rq)
         ACLFilledChecklist checklist(Config.accessList.snmp, NULL, NULL);
         checklist.src_addr = rq->from;
         checklist.snmp_community = (char *) Community;
-        allow = checklist.fastCheck();
 
-        if (allow == ACCESS_ALLOWED && (snmp_coexist_V2toV1(PDU))) {
+        if (checklist.fastCheck().allowed() && (snmp_coexist_V2toV1(PDU))) {
             rq->community = Community;
             rq->PDU = PDU;
             debugs(49, 5, "snmpAgentParse: reqid=[" << PDU->reqid << "]");
@@ -1130,51 +1128,9 @@ oid2addr(oid * id, Ip::Address &addr, u_int size)
         addr = i6addr;
 }
 
-/* SNMP checklists */
-#include "acl/Strategised.h"
-#include "acl/Strategy.h"
-#include "acl/StringData.h"
-
-class ACLSNMPCommunityStrategy : public ACLStrategy<char const *>
-{
-
-public:
-    virtual int match (ACLData<MatchType> * &, ACLFilledChecklist *, ACLFlags &);
-    static ACLSNMPCommunityStrategy *Instance();
-    /* Not implemented to prevent copies of the instance. */
-    /* Not private to prevent brain dead g++ warnings about
-     * private constructors with no friends */
-    ACLSNMPCommunityStrategy(ACLSNMPCommunityStrategy const &);
-
-private:
-    static ACLSNMPCommunityStrategy Instance_;
-    ACLSNMPCommunityStrategy() {}
-
-    ACLSNMPCommunityStrategy&operator=(ACLSNMPCommunityStrategy const &);
-};
-
-class ACLSNMPCommunity
-{
-
-private:
-    static ACL::Prototype RegistryProtoype;
-    static ACLStrategised<char const *> RegistryEntry_;
-};
-
-ACL::Prototype ACLSNMPCommunity::RegistryProtoype(&ACLSNMPCommunity::RegistryEntry_, "snmp_community");
-ACLStrategised<char const *> ACLSNMPCommunity::RegistryEntry_(new ACLStringData, ACLSNMPCommunityStrategy::Instance(), "snmp_community");
-
 int
-ACLSNMPCommunityStrategy::match (ACLData<MatchType> * &data, ACLFilledChecklist *checklist, ACLFlags &)
+ACLSNMPCommunityStrategy::match (ACLData<MatchType> * &data, ACLFilledChecklist *checklist)
 {
     return data->match (checklist->snmp_community);
 }
-
-ACLSNMPCommunityStrategy *
-ACLSNMPCommunityStrategy::Instance()
-{
-    return &Instance_;
-}
-
-ACLSNMPCommunityStrategy ACLSNMPCommunityStrategy::Instance_;
 
