@@ -1,7 +1,4 @@
-/* DARK MOD:
-This CSS is addition / overrides to elegant/fresh.css
-Colors also defined in theme style.css
-*/
+ 
 body a {
 	color: #fff;
 }
@@ -15,8 +12,8 @@ body a:hover {
 	color: #fff;
 }
 body, body.gui, .popup {
-	color: #999; /* default text color */
-	background: #111111; /* same as header */
+	color: #999;  
+	background: #111111;  
 }
 body div.message {
 	background-color: #1a1a1a;
@@ -29,33 +26,33 @@ body div.progressbar {
 	border: 1px solid #333;
 }
 body input.button {
-	border: 2px solid #444; /* wide buttons borders */
-	/* color: #fff; text on all buttons, defined by color styles */
-	box-shadow: none; /* no shadows on black */
+	border: 2px solid #444;  
+	 
+	box-shadow: none;  
 }
 body input.button[disabled] {
 	cursor: default;
-	color: #999; /* as main text color */
-	background-color: #1a1a1a; /* as background */
-	border-color: #111111; /* as foreground */
+	color: #999;  
+	background-color: #1a1a1a;  
+	border-color: #111111;  
 }
 body #content {
-	color: #999; /* main text color: help etc */
-	background: #1a1a1a; /* content bg color */
-	border: 1px solid #111111; /* safari need this */
+	color: #999;  
+	background: #1a1a1a;  
+	border: 1px solid #111111;  
 }
 body #content.infopage #main {
-	background-color: #1a1a1a; /* background for info site */
-	border: 1px solid #333; /* border around contents */
+	background-color: #1a1a1a;  
+	border: 1px solid #333;  
 }
 body fieldset {
-	background-color: #222222; /* more gradients */
-	background-color: #1a1a1a; /* more flat look */
-	border: 1px solid #333; /* safari need this */
+	background-color: #222222;  
+	background-color: #1a1a1a;  
+	border: 1px solid #333;  
 }
 body fieldset legend {
 	background-color: #1a1a1a;
-	background-color: transparent; /* clear bg for labels */
+	background-color: transparent;  
 }
 body #help dd.definition {
 	border-bottom: dotted .09em #333;
@@ -74,9 +71,9 @@ body input[disabled], body select[disabled] {
 	background-color: #1a1a1a;
 	border-color: #111111;
 }
-/* 4 main buttons styles */
+ 
 body input[name="save_button"]:hover{
-	color: #eee; /* good for yellow style */
+	color: #eee;  
 }
 body input[name="apply_button"]:hover {
 	background: none repeat scroll 0 0 #78D98D;
@@ -95,7 +92,7 @@ body input[name="reboot_button"]:hover{
 	background: none repeat scroll 0 0 #FF7C7C;
 	color:#eee;
 }
-/* end main buttons styles */
+ 
 textarea {
 	color: #e0e0e0;
 	background-color: #333;
@@ -132,10 +129,9 @@ table tr:hover {
 	border-color: #999;
 }
 .off {
-	color: #666; /* Safari is evil */
+	color: #666;  
 	background-color: #1a1a1a;
-	border-color: #111111; /* this applied to fieldsets borders also
-	so need fix */
+	border-color: #111111;  
 }
 fieldset.off {
 	border-color: #333;
@@ -143,4 +139,4 @@ fieldset.off {
 .odd {
 	background-color: #222;
 }
-/* END DARK MOD */
+ 

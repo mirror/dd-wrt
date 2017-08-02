@@ -356,7 +356,7 @@ input.spaceradio {
 margin-right:.4em;
 }
 
-/* For Opera browsers only */
+ 
 @media all and (min-width: 0px){
 fieldset {
 padding-top:0;

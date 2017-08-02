@@ -1,4 +1,4 @@
-/* Focused windows */
+ 
 .overlay_mac_os_x {
 	background-color: #85BBEF;
 	filter:alpha(opacity=60);
@@ -109,7 +109,7 @@
   padding-bottom:24px;
 }
 
-/* FOR IE */
+ 
 * html .mac_os_x_nw {
 	background-color: transparent;
 	background-image: none;
@@ -165,7 +165,7 @@
 }
 
 
-/* Focused windows */
+ 
 .overlay_blur_os_x {
 	background-color: #85BBEF;
 	filter:alpha(opacity=60);
@@ -276,7 +276,7 @@
   padding-bottom:24px;
 }
 
-/* FOR IE */
+ 
 * html .blur_os_x_nw {
 	background-color: transparent;
 	background-image: none;

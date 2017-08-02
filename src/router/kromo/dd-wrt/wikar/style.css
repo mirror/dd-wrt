@@ -1,5 +1,4 @@
-/* defaults
------------------------------------ */
+ 
 
 * {
 	padding: 0;
@@ -47,15 +46,13 @@ select, option {
 	min-width: 30px;
 }
 
-/* gui
------------------------------------ */
+ 
 
 .gui {
 	background-color: #fff;
 }
 
-/* content
------------------------------------ */
+ 
 
 #content {
 	background-color: #000;
@@ -66,16 +63,14 @@ position:relative;
 z-index:0;
 padding:.906em;
 }
-/* header
------------------------------------ */
+ 
 
 #header {
 	height: 65px;	
 	background-color: #000;
 }
 
-/* logo
------------------------------------ */
+ 
 
 #header #logo {
 	background-color: #2b226f;
@@ -83,8 +78,7 @@ padding:.906em;
 	padding: 0px 5px 0px 5px;
 }
 
-/* menu
------------------------------------ */
+ 
 
 #header #menu {
 	background-color: #2b226f;
@@ -111,8 +105,7 @@ padding:.906em;
 	text-decoration: underline;
 }
 
-/* menu -> main
------------------------------------ */
+ 
 
 #header #menu #menuMain {
 	width: 100%;
@@ -127,8 +120,7 @@ padding:.906em;
 	border-bottom: none;
 }
 
-/* menu -> sub
------------------------------------ */
+ 
 
 #header #menu #menuSub {
 	width: 100%;
@@ -142,8 +134,7 @@ padding:.906em;
 	border-bottom: solid 1px #0f0;
 }
 
-/* main
------------------------------------ */
+ 
 
 #main {
 	background-color: #fff;
@@ -185,16 +176,14 @@ padding:.906em;
 	margin: 0px 2px 0px 0px;
 }
 
-/* submit footer
------------------------------------ */
+ 
 
 .submitFooter,
 .submitFooterCmd {
 	padding: 5px 5px 5px 5px;
 }
 
-/* status info
------------------------------------ */
+ 
 
 #statusInfo {
 	position: absolute;
@@ -204,8 +193,7 @@ padding:.906em;
 	padding: 5px 5px 5px 5px;
 }
 
-/* help
------------------------------------ */
+ 
 
 #helpContainer {
 	position: absolute;
@@ -215,8 +203,7 @@ padding:.906em;
 	padding: 5px 5px 5px 5px;
 }
 
-/* warning & process
------------------------------------ */
+ 
 
 .warning {
 	font-weight: bold;
