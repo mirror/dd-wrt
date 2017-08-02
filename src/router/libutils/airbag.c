@@ -1189,11 +1189,11 @@ AIRBAG_EXPORT void airbag_deinit()
 	deinitCrashHandlers();
 }
 #else
-AIRBAG_EXPORT int airbag_init(void)
+int airbag_init(void)
 {
 }
 
-AIRBAG_EXPORT void airbag_deinit()
+void airbag_deinit()
 {
 }
 
