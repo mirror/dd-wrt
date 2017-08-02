@@ -28,6 +28,7 @@ stage-nmap: build-nmap LICENSE
 # "cp" means that the copied DLLs don't have the same ACL and cause an
 # error on startup: 0xc0000022.
 	cmd /c copy $(subst /,\\,$(NMAP_MSWIN32_AUX))\\OpenSSL\\bin\\*.dll nmap-$(NMAP_VERSION)
+	cmd /c copy Release\\libssh2.dll nmap-$(NMAP_VERSION)
 	mkdir nmap-$(NMAP_VERSION)/scripts
 	cd Release && cp -f $(NSE_FILES) ../nmap-$(NMAP_VERSION)/scripts/
 	cd Release && for f in `find nselib -name .svn -prune -o -type d -print`; do \

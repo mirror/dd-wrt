@@ -2,7 +2,7 @@
  * ncat_ssl.c -- SSL support functions.                                    *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -60,7 +60,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_ssl.c 36570 2017-02-07 20:10:02Z dmiller $ */
+/* $Id: ncat_ssl.c 36885 2017-07-29 05:55:27Z dmiller $ */
 
 #include "nbase.h"
 #include "ncat_config.h"
@@ -197,7 +197,7 @@ SSL_CTX *setup_ssl_listen(void)
 
     /* Secure ciphers list taken from Nsock. */
     if (o.sslciphers == NULL) {
-      if (!SSL_CTX_set_cipher_list(sslctx, "ALL:!ADH:!LOW:!EXP:!MD5:@STRENGTH"))
+      if (!SSL_CTX_set_cipher_list(sslctx, "ALL:!aNULL:!eNULL:!LOW:!EXP:!MD5:@STRENGTH"))
         bye("Unable to set OpenSSL cipher list: %s", ERR_error_string(ERR_get_error(), NULL));
     }
     else {

@@ -2,7 +2,7 @@
  * ncat_listen.c -- --listen mode.                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -60,7 +60,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_listen.c 36699 2017-04-04 16:27:59Z dmiller $ */
+/* $Id: ncat_listen.c 36887 2017-07-29 05:55:30Z dmiller $ */
 
 #include "ncat.h"
 
@@ -264,6 +264,8 @@ static int ncat_listen_stream(int proto)
 
 #ifdef HAVE_OPENSSL
     if (o.ssl)
+        if (o.sslalpn)
+            bye("ALPN is not supported in listen mode\n");
         setup_ssl_listen();
 #endif
 
@@ -711,6 +713,11 @@ static int ncat_listen_dgram(int proto)
     struct timeval tv;
     struct timeval *tvp = NULL;
     unsigned int num_sockets;
+
+#ifdef HAVE_OPENSSL
+    if(o.ssl)
+        bye("DTLS is not supported in listen mode\n");
+#endif
 
     for (i = 0; i < NUM_LISTEN_ADDRS; i++) {
         sockfd[i].fd = -1;
