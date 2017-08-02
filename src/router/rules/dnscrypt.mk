@@ -47,6 +47,7 @@ dnscrypt-install:
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/etc
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/include
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/lib
+	rm -rf $(INSTALLDIR)/dnscrypt/usr/lib64
 	rm -rf $(INSTALLDIR)/dnscrypt/usr/share
 
 
