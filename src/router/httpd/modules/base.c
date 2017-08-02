@@ -1693,7 +1693,7 @@ char ezc_version[128];
 
 // #endif
 
-static void			// support GET and POST 2003-08-22
+void			// support GET and POST 2003-08-22
 do_apply_post(char *url, webs_t stream, int len, char *boundary)
 {
 	int count;
