@@ -321,13 +321,13 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 		r |= load8(p + i, &b);
 		v |= b;
 	}
-    if (sizeof(long *) == 8) {
-	v = __cpu_to_be64(v);
-	r = __cpu_to_be64(r);
-    }else{
-	v = htonl(v);
-	r = htonl(r);
-    }
+	if (sizeof(long *) == 8) {
+		v = __cpu_to_be64(v);
+		r = __cpu_to_be64(r);
+	} else {
+		v = htonl(v);
+		r = htonl(r);
+	}
 	if (_v)
 		*_v = v;
 	return r;
@@ -351,7 +351,9 @@ static int airbag_printf(char *fmt, ...)
 	}
 	free(temp);
 	if (strchr(buffer, '\n')) {
+#ifndef HAVE_X86
 		dd_syslog(LOG_ERR, "%s", buffer);
+#endif
 		fprintf(stderr, "%s", buffer);
 		free(buffer);
 		buffer = NULL;
