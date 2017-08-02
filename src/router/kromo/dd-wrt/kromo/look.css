@@ -1,4 +1,4 @@
-/* Styling */
+ 
 table.center {
 	margin-left:			auto;
 	margin-right:			auto;
@@ -29,7 +29,7 @@ dd {
 }
 
 input {
-	/*border:					1px solid;*/
+	 
 }
 
 select {
@@ -55,7 +55,7 @@ div.message div {
 	border-style:			solid;
 }
 
-/* Text */
+ 
 body,td,th,input,select {
 	font-family:			AvantGarde, Verdana, Arial, Helvetica, sans-serif;
 	font-size:				.9em;
@@ -95,7 +95,7 @@ div.warning {
 	font-weight: bolder;
 }
 
-/* Tabs */
+ 
 
 #main {
 	border:				1px solid;
@@ -129,5 +129,5 @@ div.warning {
 
 #menuMain ul#menuSubList li:last-child * {
 	border:				none; 
-	/*border-right:		0px dotted;*/
+	 
 }

@@ -1,4 +1,4 @@
-/* Properties */
+ 
 html,body,#wrapper {
 	height:					100%;
 	margin:					0px;
@@ -74,19 +74,7 @@ div.setting {
 	clear:					both;
 }
 
-/*
-#header div#logo:before {
-	position: absolute; top: 35px;
-	font-size: 32px;
-	font-weight: bolder;
-	content: "DD-WRT Content Panel";
-}
-
-#header div#logo h1
-{
-	visibility: hidden;
-}
-*/
+ 
 
 fieldset {
 	padding-left:			10px;
@@ -147,7 +135,7 @@ fieldset {
 	text-align:				center;
 }
 
-/* Tabs */
+ 
 
 #main {
 	clear:				both;

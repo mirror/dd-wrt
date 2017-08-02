@@ -95,7 +95,7 @@
 .top_draggable, .bottom_draggable {
   cursor:move
 }
-/* FOR IE */
+ 
 * html .nuncio_nw {
 	background-color: transparent;
 	background-image: none;
