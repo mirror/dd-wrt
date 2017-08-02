@@ -54,6 +54,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <ucontext.h>
 #include <unistd.h>
 #ifdef __linux__
@@ -90,6 +91,11 @@
 
 #ifndef O_CLOEXEC
 #define O_CLOEXEC 0		/* Supported starting in Linux 2.6.23 */
+#endif
+
+
+#ifndef SI_TKILL 
+#define SI_TKILL (-6)
 #endif
 
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
@@ -189,8 +195,13 @@ static const char *mctxRegNames[NMCTXREGS] = {
 static const int gregOffset = 3;
 #elif defined(__mips__)
 #define NMCTXREGS NGREG
+#ifdef HAVE_ADM5120
+#define MCTXREG(uc, i) (uc->uc_mcontext.gpregs[i])
+#define MCTX_PC(uc) (uc->uc_mcontext.gpregs[35])
+#else
 #define MCTXREG(uc, i) (uc->uc_mcontext.gregs[i])
 #define MCTX_PC(uc) (uc->uc_mcontext.pc)
+#endif
 static const char *mctxRegNames[NMCTXREGS] = {
 	"ZERO", "AT", "V0", "V1", "A0", "A1", "A2", "A3",
 #if _MIPS_SIM == _ABIO32
@@ -539,10 +550,15 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 	unsigned long *addr, *pc, *ra, *sp;
 	unsigned long raOffset, stackSize;
 
+#ifdef HAVE_ADM5120
+	pc = (unsigned long *)uc->uc_mcontext.gpregs[35];
+	ra = (unsigned long *)uc->uc_mcontext.gpregs[31];
+	sp = (unsigned long *)uc->uc_mcontext.gpregs[29];
+#else
 	pc = (unsigned long *)uc->uc_mcontext.pc;
 	ra = (unsigned long *)uc->uc_mcontext.gregs[31];
 	sp = (unsigned long *)uc->uc_mcontext.gregs[29];
-
+#endif
 	int depth = 0;
 	buffer[depth++] = pc;
 	if (size == 1)
@@ -554,7 +570,11 @@ static int airbag_walkstack(void **buffer, int *repeat, int size, ucontext_t * u
 		unsigned long v;
 		if (load32(addr, &v)) {
 			airbag_printf("%sText at 0x%" FMTBIT "lx is not mapped; trying prior frame pointer.\n", comment, addr);
+#ifdef HAVE_ADM5120
+			uc->uc_mcontext.gpregs[35] = (unsigned long)ra;
+#else
 			uc->uc_mcontext.pc = (unsigned long)ra;
+#endif
 			goto backward;
 		}
 		switch (v & 0xffff0000) {
