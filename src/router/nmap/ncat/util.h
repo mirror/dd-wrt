@@ -2,7 +2,7 @@
  * util.h                                                                  *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -60,7 +60,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: util.h 36488 2016-12-14 00:12:23Z fyodor $ */
+/* $Id: util.h 36887 2017-07-29 05:55:30Z dmiller $ */
 
 #ifndef UTIL_H_
 #define UTIL_H_
@@ -229,5 +229,7 @@ int get_maxfd(fd_list_t *);
 struct fdinfo *get_fdinfo(const fd_list_t *, int);
 
 int fix_line_endings(char *src, int *len, char **dst, int *state);
+
+unsigned char *next_protos_parse(size_t *outlen, const char *in);
 
 #endif

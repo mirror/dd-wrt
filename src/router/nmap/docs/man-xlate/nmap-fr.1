@@ -1,13 +1,13 @@
 '\" t
 .\"     Title: nmap
 .\"    Author: [see the "Auteur" section]
-.\" Generator: DocBook XSL Stylesheets v1.78.1 <http://docbook.sf.net/>
-.\"      Date: 18/01/2017
+.\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
+.\"      Date: 31/07/2017
 .\"    Manual: [FIXME: manual]
 .\"    Source: [FIXME: source]
 .\"  Language: French
 .\"
-.TH "NMAP" "1" "18/01/2017" "[FIXME: source]" "[FIXME: manual]"
+.TH "NMAP" "1" "31/07/2017" "[FIXME: source]" "[FIXME: manual]"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -814,7 +814,8 @@ Exclude\&.
 \fB\-\-version\-intensity <intensity>\fR(Sélectionne l\*(Aqintensité du scan de version)
 .RS 4
 Lors d\*(Aqun scan de version (\fB\-sV\fR), Nmap envoie une série de paquets de tests, à chacun duquel est associé une valeur de rareté allant de 1 à 9\&. Les tests aux basses valeurs sont efficaces pour une grande variété de services courants, tandis que les hautes valeurs indiquent ceux qui ne sont que rarement utiles\&. Le niveau d\*(Aqintensité spécifie quels tests doivent être effectués\&. Plus la valeur est haute, plus le service a de chances d\*(Aqêtre correctement identifié\&. Cependant, ces scans\-ci sont plus longs\&. La valeur d\*(Aqintensité doit être comprise entre 0 et 9, la valeur par défaut étant le 7\&. Quand un test est inscrit sur le port cible par le biais de la directive
-nmap\-service\-probesports, ce test est tenté quelque soit le niveau d\*(Aqintensité\&. Cela permet de s\*(Aqassurer que les tests DNS seront toujours tentés sur chaque port 53 ouvert, les tests SSL sur chaque 443, etc\&.
+nmap\-service\-probes
+ports, ce test est tenté quelque soit le niveau d\*(Aqintensité\&. Cela permet de s\*(Aqassurer que les tests DNS seront toujours tentés sur chaque port 53 ouvert, les tests SSL sur chaque 443, etc\&.
 .RE
 .PP
 \fB\-\-version\-light\fR(Active le mode léger)
@@ -1248,7 +1249,7 @@ fait la même chose que
 \fB\-\-max\-rtt\-timeout 300 \-\-min_rtt_timeout 50 \-\-initial\-rtt\-timeout 250 \-\-max\-retries 2 \-\-host\-timeout 900000\fR
 tout en mettant le délai maximum de scan TCP à 5 millisecondes\&.
 .RE
-.SH "ÉVITEMENT DE PARE-FEUX/IDS ET MYSTIFICATION"
+.SH "ÉVITEMENT DE PARE\-FEUX/IDS ET MYSTIFICATION"
 .PP
 Beaucoup de pionniers d\*(AqInternet envisageaient un réseau global ouvert avec un espace d\*(Aqadressage IP universel permettant des connexions virtuelles entre n\*(Aqimporte quel noeuds\&. Ceci permet aux hôtes d\*(Aqagir en véritables relais, recevant et renvoyant l\*(Aqinformation les uns aux autres\&. Les gens pourraient accéder à l\*(Aqensemble de leur système domestique du bureau, en changeant les réglages de climatisation ou en déverrouillant leur porte pour les premiers invités\&. Cette vision d\*(Aqune connectivité universelle a été étouffée par la réduction de l\*(Aqespace d\*(Aqadressage et les considérations de sécurité\&. Au début des années 90, les organisations commencèrent à déployer des pare\-feux dans le but explicite de réduire la connectivité\&. De gigantesques réseaux furent cernés et coupés (NdT : le texte original dit
 « barrés par un cordon de police ») d\*(AqInternet non filtré par des proxies applicatifs, la conversion des adresses réseau (network address translation) et les filtrages de paquets\&. Le flux d\*(Aqinformation libre céda la place à une régulation stricte de canaux de communication approuvés et du contenu qui y transitait\&.

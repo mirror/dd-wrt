@@ -5,7 +5,7 @@
  *                                                                         *
  ***********************IMPORTANT NMAP LICENSE TERMS************************
  *                                                                         *
- * The Nmap Security Scanner is (C) 1996-2016 Insecure.Com LLC ("The Nmap  *
+ * The Nmap Security Scanner is (C) 1996-2017 Insecure.Com LLC ("The Nmap  *
  * Project"). Nmap is also a registered trademark of the Nmap Project.     *
  * This program is free software; you may redistribute and/or modify it    *
  * under the terms of the GNU General Public License as published by the   *
@@ -63,7 +63,7 @@
  * OpenSSL library which is distributed under a license identical to that  *
  * listed in the included docs/licenses/OpenSSL.txt file, and distribute   *
  * linked combinations including the two.                                  *
- *                                                                         * 
+ *                                                                         *
  * The Nmap Project has permission to redistribute Npcap, a packet         *
  * capturing driver and library for the Microsoft Windows platform.        *
  * Npcap is a separate work with it's own license rather than this Nmap    *
@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 36727 2017-04-19 19:06:47Z dmiller $ */
+/* $Id: NmapOps.cc 36819 2017-06-23 04:44:21Z dmiller $ */
 #include "nmap.h"
 #include "nbase.h"
 #include "NmapOps.h"
@@ -429,15 +429,11 @@ void NmapOps::ValidateOptions() {
         const char *privreq = "root privileges.";
 #ifdef WIN32
         if (!have_pcap)
-                privreq = "WinPcap version 3.1 or higher and\n\
-iphlpapi.dll.  You seem to be missing one or both of these.  Winpcap is\n\
-available from http://www.winpcap.org.  iphlpapi.dll comes with Win98 and\n\
-later operating systems and NT 4.0 with SP4 or greater.  For previous Windows\n\
-versions, you may be able to take iphlpapi.dll from another system and place\n\
-it in your system32 dir (e.g. c:\\windows\\system32).\n\
-On Windows Vista and Windows 7, The WinPcap NPF service must be started by an\n\
-administrator before WinPcap can be used.  Running nmap.exe will open a UAC\n\
-dialog where you can start NPF if you have administrator privileges.";
+          privreq = "Npcap, but it seems to be missing.\n\
+Npcap is available from http://www.npcap.org. The Npcap driver service must\n\
+be started by an administrator before Npcap can be used. Running nmap.exe\n\
+will open a UAC dialog where you can start the service if you have\n\
+administrator privileges.";
 #endif
 
 
