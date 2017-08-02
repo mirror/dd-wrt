@@ -59,7 +59,7 @@ static void neighborAliveHtcp(CachePeer *, const MemObject *, const HtcpReplyDat
 static void neighborCountIgnored(CachePeer *);
 static void peerRefreshDNS(void *);
 static IPH peerDNSConfigure;
-static bool peerProbeConnect(CachePeer *);
+static void peerProbeConnect(CachePeer *, const bool reprobeIfBusy = false);
 static CNCB peerProbeConnectDone;
 static void peerCountMcastPeersDone(void *data);
 static void peerCountMcastPeersStart(void *data);
@@ -168,7 +168,7 @@ peerAllowedToUse(const CachePeer * p, HttpRequest * request)
 
     ACLFilledChecklist checklist(p->access, request, NULL);
 
-    return (checklist.fastCheck() == ACCESS_ALLOWED);
+    return checklist.fastCheck().allowed();
 }
 
 /* Return TRUE if it is okay to send an ICP request to this CachePeer.   */
@@ -1123,10 +1123,8 @@ int
 neighborUp(const CachePeer * p)
 {
     if (!p->tcp_up) {
-        if (!peerProbeConnect((CachePeer *) p)) {
-            debugs(15, 8, "neighborUp: DOWN (probed): " << p->host << " (" << p->in_addr << ")");
-            return 0;
-        }
+        peerProbeConnect(const_cast<CachePeer*>(p));
+        return 0;
     }
 
     /*
@@ -1161,6 +1159,20 @@ peerNoteDigestGone(CachePeer * p)
 #endif
 }
 
+/// \returns the effective connect timeout for this peer
+time_t
+peerConnectTimeout(const CachePeer *peer)
+{
+    return peer->connect_timeout_raw > 0 ?
+           peer->connect_timeout_raw : Config.Timeout.peer_connect;
+}
+
+time_t
+positiveTimeout(const time_t timeout)
+{
+    return max(static_cast<time_t>(1), timeout);
+}
+
 static void
 peerDNSConfigure(const ipcache_addrs *ia, const Dns::LookupDetails &, void *data)
 {
@@ -1190,8 +1202,6 @@ peerDNSConfigure(const ipcache_addrs *ia, const Dns::LookupDetails &, void *data
         return;
     }
 
-    p->tcp_up = p->connect_fail_limit;
-
     for (j = 0; j < (int) ia->count && j < PEER_MAX_ADDRESSES; ++j) {
         p->addresses[j] = ia->in_addrs[j];
         debugs(15, 2, "--> IP address #" << j << ": " << p->addresses[j]);
@@ -1201,6 +1211,8 @@ peerDNSConfigure(const ipcache_addrs *ia, const Dns::LookupDetails &, void *data
     p->in_addr.setEmpty();
     p->in_addr = p->addresses[0];
     p->in_addr.port(p->icp.port);
+
+    peerProbeConnect(p, true); // detect any died or revived peers ASAP
 
     if (p->type == PEER_MULTICAST)
         peerCountMcastPeersSchedule(p, 10);
@@ -1275,21 +1287,33 @@ peerConnectSucceded(CachePeer * p)
         p->tcp_up = p->connect_fail_limit;
 }
 
+/// whether new TCP probes are currently banned
+static bool
+peerProbeIsBusy(const CachePeer *p)
+{
+    if (p->testing_now > 0) {
+        debugs(15, 8, "yes, probing " << p);
+        return true;
+    }
+    if (squid_curtime - p->stats.last_connect_probe == 0) {
+        debugs(15, 8, "yes, just probed " << p);
+        return true;
+    }
+    return false;
+}
 /*
 * peerProbeConnect will be called on dead peers by neighborUp
 */
-static bool
-peerProbeConnect(CachePeer * p)
+static void
+peerProbeConnect(CachePeer *p, const bool reprobeIfBusy)
 {
-    time_t ctimeout = p->connect_timeout > 0 ? p->connect_timeout : Config.Timeout.peer_connect;
-    bool ret = (squid_curtime - p->stats.last_connect_failure) > (ctimeout * 10);
+    if (peerProbeIsBusy(p)) {
+        p->reprobe = reprobeIfBusy;
+        return;
+    }
+    p->reprobe = false;
 
-    if (p->testing_now > 0)
-        return ret;/* probe already running */
-
-    if (squid_curtime - p->stats.last_connect_probe == 0)
-        return ret;/* don't probe to often */
-
+    const time_t ctimeout = peerConnectTimeout(p);
     /* for each IP address of this CachePeer. find one that we can connect to and probe it. */
     for (int i = 0; i < p->n_addresses; ++i) {
         Comm::ConnectionPointer conn = new Comm::Connection;
@@ -1307,8 +1331,6 @@ peerProbeConnect(CachePeer * p)
     }
 
     p->stats.last_connect_probe = squid_curtime;
-
-    return ret;
 }
 
 static void
@@ -1325,6 +1347,9 @@ peerProbeConnectDone(const Comm::ConnectionPointer &conn, Comm::Flag status, int
     -- p->testing_now;
     conn->close();
     // TODO: log this traffic.
+
+    if (p->reprobe)
+        peerProbeConnect(p);
 }
 
 static void
@@ -1357,7 +1382,8 @@ peerCountMcastPeersStart(void *data)
     p->in_addr.toUrl(url+7, MAX_URL -8 );
     strcat(url, "/");
     fake = storeCreateEntry(url, url, RequestFlags(), Http::METHOD_GET);
-    HttpRequest *req = HttpRequest::CreateFromUrl(url);
+    const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initPeerMcast);
+    HttpRequest *req = HttpRequest::FromUrl(url, mx);
     psstate = new ps_state;
     psstate->request = req;
     HTTPMSGLOCK(psstate->request);
@@ -1528,8 +1554,8 @@ dump_peer_options(StoreEntry * sentry, CachePeer * p)
     if (p->mcast.ttl > 0)
         storeAppendPrintf(sentry, " ttl=%d", p->mcast.ttl);
 
-    if (p->connect_timeout > 0)
-        storeAppendPrintf(sentry, " connect-timeout=%d", (int) p->connect_timeout);
+    if (p->connect_timeout_raw > 0)
+        storeAppendPrintf(sentry, " connect-timeout=%d", (int)p->connect_timeout_raw);
 
     if (p->connect_fail_limit != PEER_TCP_MAGIC_COUNT)
         storeAppendPrintf(sentry, " connect-fail-limit=%d", p->connect_fail_limit);

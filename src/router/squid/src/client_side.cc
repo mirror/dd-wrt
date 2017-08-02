@@ -461,7 +461,7 @@ ClientHttpRequest::logRequest()
             statsCheck.reply = al->reply;
             HTTPMSGLOCK(statsCheck.reply);
         }
-        updatePerformanceCounters = (statsCheck.fastCheck() == ACCESS_ALLOWED);
+        updatePerformanceCounters = statsCheck.fastCheck().allowed();
     }
 
     if (updatePerformanceCounters) {
@@ -592,6 +592,7 @@ ConnStateData::swanSong()
     clientdbEstablished(clientConnection->remote, -1);  /* decrement */
     pipeline.terminateAll(0);
 
+    // XXX: Closing pinned conn is too harsh: The Client may want to continue!
     unpinConnection(true);
 
     Server::swanSong(); // closes the client connection
@@ -1526,7 +1527,7 @@ bool ConnStateData::serveDelayedError(Http::Stream *context)
             if (Config.ssl_client.cert_error) {
                 ACLFilledChecklist check(Config.ssl_client.cert_error, request, dash_str);
                 check.sslErrors = new Security::CertErrors(Security::CertError(SQUID_X509_V_ERR_DOMAIN_MISMATCH, srvCert));
-                allowDomainMismatch = (check.fastCheck() == ACCESS_ALLOWED);
+                allowDomainMismatch = check.fastCheck().allowed();
                 delete check.sslErrors;
                 check.sslErrors = NULL;
             }
@@ -1580,7 +1581,7 @@ clientTunnelOnError(ConnStateData *conn, Http::StreamPointer &context, HttpReque
         checklist.my_addr = conn->clientConnection->local;
         checklist.conn(conn);
         allow_t answer = checklist.fastCheck();
-        if (answer == ACCESS_ALLOWED && answer.kind == 1) {
+        if (answer.allowed() && answer.kind == 1) {
             debugs(33, 3, "Request will be tunneled to server");
             if (context) {
                 assert(conn->pipeline.front() == context); // XXX: still assumes HTTP/1 semantics
@@ -1633,11 +1634,10 @@ clientProcessRequest(ConnStateData *conn, const Http1::RequestParserPointer &hp,
     // this entire function to remove them from the FTP code path. Connection
     // setup and body_pipe preparation blobs are needed for FTP.
 
-    request->clientConnectionManager = conn;
+    request->manager(conn, http->al);
 
     request->flags.accelerated = http->flags.accel;
     request->flags.sslBumped=conn->switchedToHttps();
-    request->flags.ignoreCc = conn->port->ignore_cc;
     // TODO: decouple http->flags.accel from request->flags.sslBumped
     request->flags.noDirect = (request->flags.accelerated && !request->flags.sslBumped) ?
                               !conn->port->allow_direct : 0;
@@ -1649,25 +1649,6 @@ clientProcessRequest(ConnStateData *conn, const Http1::RequestParserPointer &hp,
             request->auth_user_request = conn->getAuth();
     }
 #endif
-
-    /** \par
-     * If transparent or interception mode is working clone the transparent and interception flags
-     * from the port settings to the request.
-     */
-    if (http->clientConnection != NULL) {
-        request->flags.intercepted = ((http->clientConnection->flags & COMM_INTERCEPTION) != 0);
-        request->flags.interceptTproxy = ((http->clientConnection->flags & COMM_TRANSPARENT) != 0 ) ;
-        static const bool proxyProtocolPort = (conn->port != NULL) ? conn->port->flags.proxySurrogate : false;
-        if (request->flags.interceptTproxy && !proxyProtocolPort) {
-            if (Config.accessList.spoof_client_ip) {
-                ACLFilledChecklist *checklist = clientAclChecklistCreate(Config.accessList.spoof_client_ip, http);
-                request->flags.spoofClientIp = (checklist->fastCheck() == ACCESS_ALLOWED);
-                delete checklist;
-            } else
-                request->flags.spoofClientIp = true;
-        } else
-            request->flags.spoofClientIp = false;
-    }
 
     if (internalCheck(request->url.path())) {
         if (internalHostnameIs(request->url.host()) && request->url.port() == getMyPort()) {
@@ -1685,14 +1666,6 @@ clientProcessRequest(ConnStateData *conn, const Http1::RequestParserPointer &hp,
 
     request->flags.internal = http->flags.internal;
     setLogUri (http, urlCanonicalClean(request.getRaw()));
-    request->client_addr = conn->clientConnection->remote; // XXX: remove request->client_addr member.
-#if FOLLOW_X_FORWARDED_FOR
-    // indirect client gets stored here because it is an HTTP header result (from X-Forwarded-For:)
-    // not details about the TCP connection itself
-    request->indirect_client_addr = conn->clientConnection->remote;
-#endif /* FOLLOW_X_FORWARDED_FOR */
-    request->my_addr = conn->clientConnection->local;
-    request->myportname = conn->port->name;
 
     if (!isFtp) {
         // XXX: for non-HTTP messages instantiate a different HttpMsg child type
@@ -1702,10 +1675,6 @@ clientProcessRequest(ConnStateData *conn, const Http1::RequestParserPointer &hp,
         request->http_ver.major = http_ver.major;
         request->http_ver.minor = http_ver.minor;
     }
-
-    // Link this HttpRequest to ConnStateData relatively early so the following complex handling can use it
-    // TODO: this effectively obsoletes a lot of conn->FOO copying. That needs cleaning up later.
-    request->clientConnectionManager = conn;
 
     if (request->header.chunked()) {
         chunked = true;
@@ -1857,7 +1826,7 @@ ConnStateData::proxyProtocolValidateClient()
     ch.my_addr = clientConnection->local;
     ch.conn(this);
 
-    if (ch.fastCheck() != ACCESS_ALLOWED)
+    if (!ch.fastCheck().allowed())
         return proxyProtocolError("PROXY client not permitted by ACLs");
 
     return true;
@@ -2128,6 +2097,13 @@ ConnStateData::clientParseRequests()
     // Loop while we have read bytes that are not needed for producing the body
     // On errors, bodyPipe may become nil, but readMore will be cleared
     while (!inBuf.isEmpty() && !bodyPipe && flags.readMore) {
+
+        // Prohibit concurrent requests when using a pinned to-server connection
+        // because our Client classes do not support request pipelining.
+        if (pinning.pinned && !pinning.readHandler) {
+            debugs(33, 3, clientConnection << " waits for busy " << pinning.serverConnection);
+            break;
+        }
 
         /* Limit the number of concurrent requests */
         if (concurrentRequestQueueFilled())
@@ -2477,7 +2453,7 @@ ConnStateData::whenClientIpKnown()
         ACLFilledChecklist identChecklist(Ident::TheConfig.identLookup, NULL, NULL);
         identChecklist.src_addr = clientConnection->remote;
         identChecklist.my_addr = clientConnection->local;
-        if (identChecklist.fastCheck() == ACCESS_ALLOWED)
+        if (identChecklist.fastCheck().allowed())
             Ident::Start(clientConnection, clientIdentDone, this);
     }
 #endif
@@ -2505,7 +2481,7 @@ ConnStateData::whenClientIpKnown()
             if (pools[pool].access) {
                 ch.changeAcl(pools[pool].access);
                 allow_t answer = ch.fastCheck();
-                if (answer == ACCESS_ALLOWED) {
+                if (answer.allowed()) {
 
                     /*  request client information from db after we did all checks
                         this will save hash lookup if client failed checks */
@@ -2727,8 +2703,6 @@ httpsEstablish(ConnStateData *connState, const Security::ContextPointer &ctx)
 
 /**
  * A callback function to use with the ACLFilledChecklist callback.
- * In the case of ACCESS_ALLOWED answer initializes a bumped SSL connection,
- * else reverts the connection to tunnel mode.
  */
 static void
 httpsSslBumpAccessCheckDone(allow_t answer, void *data)
@@ -2739,15 +2713,19 @@ httpsSslBumpAccessCheckDone(allow_t answer, void *data)
     if (!connState->isOpen())
         return;
 
-    // Require both a match and a positive bump mode to work around exceptional
-    // cases where ACL code may return ACCESS_ALLOWED with zero answer.kind.
-    if (answer == ACCESS_ALLOWED && answer.kind != Ssl::bumpNone) {
-        debugs(33, 2, "sslBump needed for " << connState->clientConnection << " method " << answer.kind);
+    if (answer.allowed()) {
+        debugs(33, 2, "sslBump action " << Ssl::bumpMode(answer.kind) << "needed for " << connState->clientConnection);
         connState->sslBumpMode = static_cast<Ssl::BumpMode>(answer.kind);
     } else {
-        debugs(33, 2, HERE << "sslBump not needed for " << connState->clientConnection);
-        connState->sslBumpMode = Ssl::bumpNone;
+        debugs(33, 3, "sslBump not needed for " << connState->clientConnection);
+        connState->sslBumpMode = Ssl::bumpSplice;
     }
+
+    if (connState->sslBumpMode == Ssl::bumpTerminate) {
+        connState->clientConnection->close();
+        return;
+    }
+
     if (!connState->fakeAConnectRequest("ssl-bump", connState->inBuf))
         connState->clientConnection->close();
 }
@@ -2791,9 +2769,11 @@ ConnStateData::postHttpsAccept()
             return;
         }
 
+        MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
+        mx->tcpClient = clientConnection;
         // Create a fake HTTP request for ssl_bump ACL check,
         // using tproxy/intercept provided destination IP and port.
-        HttpRequest *request = new HttpRequest();
+        HttpRequest *request = new HttpRequest(mx);
         static char ip[MAX_IPSTRLEN];
         assert(clientConnection->flags & (COMM_TRANSPARENT | COMM_INTERCEPTION));
         request->url.host(clientConnection->local.toStr(ip, sizeof(ip)));
@@ -2889,7 +2869,7 @@ void ConnStateData::buildSslCertGenerationParams(Ssl::CertificateProperties &cer
                     (ca->alg == Ssl::algSetValidBefore && certProperties.setValidBefore) )
                 continue;
 
-            if (ca->aclList && checklist.fastCheck(ca->aclList) == ACCESS_ALLOWED) {
+            if (ca->aclList && checklist.fastCheck(ca->aclList).allowed()) {
                 const char *alg = Ssl::CertAdaptAlgorithmStr[ca->alg];
                 const char *param = ca->param;
 
@@ -2912,7 +2892,7 @@ void ConnStateData::buildSslCertGenerationParams(Ssl::CertificateProperties &cer
 
         certProperties.signAlgorithm = Ssl::algSignEnd;
         for (sslproxy_cert_sign *sg = Config.ssl_client.cert_sign; sg != NULL; sg = sg->next) {
-            if (sg->aclList && checklist.fastCheck(sg->aclList) == ACCESS_ALLOWED) {
+            if (sg->aclList && checklist.fastCheck(sg->aclList).allowed()) {
                 certProperties.signAlgorithm = (Ssl::CertSignAlgorithm)sg->alg;
                 break;
             }
@@ -3145,8 +3125,9 @@ ConnStateData::parseTlsHandshake()
 
     parsingTlsHandshake = false;
 
-    if (mayTunnelUnsupportedProto())
-        preservedClientData = inBuf;
+    // client data may be needed for splicing and for
+    // tunneling unsupportedProtocol after an error
+    preservedClientData = inBuf;
 
     // Even if the parser failed, each TLS detail should either be set
     // correctly or still be "unknown"; copying unknown detail is a no-op.
@@ -3154,8 +3135,7 @@ ConnStateData::parseTlsHandshake()
     clientConnection->tlsNegotiations()->retrieveParsedInfo(details);
     if (details && !details->serverName.isEmpty()) {
         resetSslCommonName(details->serverName.c_str());
-        if (sslServerBump)
-            sslServerBump->clientSni = details->serverName;
+        tlsClientSni_ = details->serverName;
     }
 
     // We should disable read/write handlers
@@ -3167,7 +3147,8 @@ ConnStateData::parseTlsHandshake()
         Must(context && context->http);
         HttpRequest::Pointer request = context->http->request;
         debugs(83, 5, "Got something other than TLS Client Hello. Cannot SslBump.");
-        sslBumpMode = Ssl::bumpNone;
+        sslBumpMode = Ssl::bumpSplice;
+        context->http->al->ssl.bumpMode = Ssl::bumpSplice;
         if (!clientTunnelOnError(this, context, request, HttpRequestMethod(), ERR_PROTOCOL_UNKNOWN))
             clientConnection->close();
         return;
@@ -3196,13 +3177,16 @@ void httpsSslBumpStep2AccessCheckDone(allow_t answer, void *data)
     debugs(33, 5, "Answer: " << answer << " kind:" << answer.kind);
     assert(connState->serverBump());
     Ssl::BumpMode bumpAction;
-    if (answer == ACCESS_ALLOWED) {
+    if (answer.allowed()) {
         bumpAction = (Ssl::BumpMode)answer.kind;
     } else
         bumpAction = Ssl::bumpSplice;
 
     connState->serverBump()->act.step2 = bumpAction;
     connState->sslBumpMode = bumpAction;
+    Http::StreamPointer context = connState->pipeline.front();
+    if (ClientHttpRequest *http = (context ? context->http : nullptr))
+        http->al->ssl.bumpMode = bumpAction;
 
     if (bumpAction == Ssl::bumpTerminate) {
         connState->clientConnection->close();
@@ -3228,9 +3212,23 @@ ConnStateData::splice()
     transferProtocol = Http::ProtocolVersion();
     assert(!pipeline.empty());
     Http::StreamPointer context = pipeline.front();
+    Must(context);
+    Must(context->http);
     ClientHttpRequest *http = context->http;
-    tunnelStart(http);
-    return true;
+    HttpRequest::Pointer request = http->request;
+    context->finished();
+    if (transparent()) {
+        // For transparent connections, make a new fake CONNECT request, now
+        // with SNI as target. doCallout() checks, adaptations may need that.
+        return fakeAConnectRequest("splice", preservedClientData);
+    } else {
+        // For non transparent connections  make a new tunneled CONNECT, which
+        // also sets the HttpRequest::flags::forceTunnel flag to avoid
+        // respond with "Connection Established" to the client.
+        // This fake CONNECT request required to allow use of SNI in
+        // doCallout() checks and adaptations.
+        return initiateTunneledRequest(request, Http::METHOD_CONNECT, "splice", preservedClientData);
+    }
 }
 
 void
@@ -3308,21 +3306,17 @@ ConnStateData::doPeekAndSpliceStep()
 }
 
 void
-ConnStateData::httpsPeeked(Comm::ConnectionPointer serverConnection)
+ConnStateData::httpsPeeked(PinnedIdleContext pic)
 {
     Must(sslServerBump != NULL);
+    Must(sslServerBump->request == pic.request);
+    Must(pipeline.empty() || pipeline.front()->http == nullptr || pipeline.front()->http->request == pic.request.getRaw());
 
-    if (Comm::IsConnOpen(serverConnection)) {
-        pinConnection(serverConnection, NULL, NULL, false);
-
+    if (Comm::IsConnOpen(pic.connection)) {
+        notePinnedConnectionBecameIdle(pic);
         debugs(33, 5, HERE << "bumped HTTPS server: " << sslConnectHostOrIp);
-    } else {
+    } else
         debugs(33, 5, HERE << "Error while bumping: " << sslConnectHostOrIp);
-
-        //  copy error detail from bump-server-first request to CONNECT request
-        if (!pipeline.empty() && pipeline.front()->http != nullptr && pipeline.front()->http->request)
-            pipeline.front()->http->request->detailError(sslServerBump->request->errType, sslServerBump->request->errDetail);
-    }
 
     getSslContextStart();
 }
@@ -3338,7 +3332,8 @@ ConnStateData::initiateTunneledRequest(HttpRequest::Pointer const &cause, Http::
 
     if (pinning.serverConnection != nullptr) {
         static char ip[MAX_IPSTRLEN];
-        connectHost.assign(pinning.serverConnection->remote.toStr(ip, sizeof(ip)));
+        pinning.serverConnection->remote.toHostStr(ip, sizeof(ip));
+        connectHost.assign(ip);
         connectPort = pinning.serverConnection->remote.port();
     } else if (cause && cause->method == Http::METHOD_CONNECT) {
         // We are inside a (not fully established) CONNECT request
@@ -3369,13 +3364,14 @@ ConnStateData::fakeAConnectRequest(const char *reason, const SBuf &payload)
     const unsigned short connectPort = clientConnection->local.port();
 
 #if USE_OPENSSL
-    if (serverBump() && !serverBump()->clientSni.isEmpty())
-        connectHost.assign(serverBump()->clientSni);
+    if (!tlsClientSni_.isEmpty())
+        connectHost.assign(tlsClientSni_);
     else
 #endif
     {
         static char ip[MAX_IPSTRLEN];
-        connectHost.assign(clientConnection->local.toStr(ip, sizeof(ip)));
+        clientConnection->local.toHostStr(ip, sizeof(ip));
+        connectHost.assign(ip);
     }
 
     ClientHttpRequest *http = buildFakeRequest(Http::METHOD_CONNECT, connectHost, connectPort, payload);
@@ -3413,9 +3409,11 @@ ConnStateData::buildFakeRequest(Http::MethodType const method, SBuf &useHost, un
 
     stream->registerWithConn();
 
+    MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
+    mx->tcpClient = clientConnection;
     // Setup Http::Request object. Maybe should be replaced by a call to (modified)
     // clientProcessRequest
-    HttpRequest::Pointer request = new HttpRequest();
+    HttpRequest::Pointer request = new HttpRequest(mx);
     AnyP::ProtocolType proto = (method == Http::METHOD_NONE) ? AnyP::PROTO_AUTHORITY_FORM : AnyP::PROTO_HTTP;
     request->url.setScheme(proto, nullptr);
     request->method = method;
@@ -3424,23 +3422,16 @@ ConnStateData::buildFakeRequest(Http::MethodType const method, SBuf &useHost, un
     http->request = request.getRaw();
     HTTPMSGLOCK(http->request);
 
-    request->clientConnectionManager = this;
+    request->manager(this, http->al);
 
     if (proto == AnyP::PROTO_HTTP)
         request->header.putStr(Http::HOST, useHost.c_str());
-    request->flags.intercepted = ((clientConnection->flags & COMM_INTERCEPTION) != 0);
-    request->flags.interceptTproxy = ((clientConnection->flags & COMM_TRANSPARENT) != 0 );
+
     request->sources |= ((switchedToHttps() || port->transport.protocol == AnyP::PROTO_HTTPS) ? HttpMsg::srcHttps : HttpMsg::srcHttp);
 #if USE_AUTH
     if (getAuth())
         request->auth_user_request = getAuth();
 #endif
-    request->client_addr = clientConnection->remote;
-#if FOLLOW_X_FORWARDED_FOR
-    request->indirect_client_addr = clientConnection->remote;
-#endif /* FOLLOW_X_FORWARDED_FOR */
-    request->my_addr = clientConnection->local;
-    request->myportname = port->name;
 
     inBuf = payload;
     flags.readMore = false;
@@ -3868,19 +3859,35 @@ ConnStateData::clientPinnedConnectionClosed(const CommCloseCbParams &io)
 }
 
 void
-ConnStateData::pinConnection(const Comm::ConnectionPointer &pinServer, HttpRequest *request, CachePeer *aPeer, bool auth, bool monitor)
+ConnStateData::pinBusyConnection(const Comm::ConnectionPointer &pinServer, const HttpRequest::Pointer &request)
 {
-    if (!Comm::IsConnOpen(pinning.serverConnection) ||
-            pinning.serverConnection->fd != pinServer->fd)
-        pinNewConnection(pinServer, request, aPeer, auth);
-
-    if (monitor)
-        startPinnedConnectionMonitoring();
+    pinConnection(pinServer, *request);
 }
 
 void
-ConnStateData::pinNewConnection(const Comm::ConnectionPointer &pinServer, HttpRequest *request, CachePeer *aPeer, bool auth)
+ConnStateData::notePinnedConnectionBecameIdle(PinnedIdleContext pic)
 {
+    Must(pic.connection);
+    Must(pic.request);
+    pinConnection(pic.connection, *pic.request);
+
+    // monitor pinned server connection for remote-end closures.
+    startPinnedConnectionMonitoring();
+
+    if (pipeline.empty())
+        kick(); // in case clientParseRequests() was blocked by a busy pic.connection
+}
+
+/// Forward future client requests using the given server connection.
+void
+ConnStateData::pinConnection(const Comm::ConnectionPointer &pinServer, const HttpRequest &request)
+{
+    if (Comm::IsConnOpen(pinning.serverConnection) &&
+            pinning.serverConnection->fd == pinServer->fd) {
+        debugs(33, 3, "already pinned" << pinServer);
+        return;
+    }
+
     unpinConnection(true); // closes pinned connection, if any, and resets fields
 
     pinning.serverConnection = pinServer;
@@ -3889,23 +3896,18 @@ ConnStateData::pinNewConnection(const Comm::ConnectionPointer &pinServer, HttpRe
 
     Must(pinning.serverConnection != NULL);
 
-    // when pinning an SSL bumped connection, the request may be NULL
     const char *pinnedHost = "[unknown]";
-    if (request) {
-        pinning.host = xstrdup(request->url.host());
-        pinning.port = request->url.port();
-        pinnedHost = pinning.host;
-    } else {
-        pinning.port = pinServer->remote.port();
-    }
+    pinning.host = xstrdup(request.url.host());
+    pinning.port = request.url.port();
+    pinnedHost = pinning.host;
     pinning.pinned = true;
-    if (aPeer)
+    if (CachePeer *aPeer = pinServer->getPeer())
         pinning.peer = cbdataReference(aPeer);
-    pinning.auth = auth;
+    pinning.auth = request.flags.connectionAuth;
     char stmp[MAX_IPSTRLEN];
     char desc[FD_DESC_SZ];
     snprintf(desc, FD_DESC_SZ, "%s pinned connection for %s (%d)",
-             (auth || !aPeer) ? pinnedHost : aPeer->name,
+             (pinning.auth || !pinning.peer) ? pinnedHost : pinning.peer->name,
              clientConnection->remote.toUrl(stmp,MAX_IPSTRLEN),
              clientConnection->fd);
     fd_note(pinning.serverConnection->fd, desc);
@@ -4104,6 +4106,7 @@ ConnStateData::checkLogging()
     /* Create a temporary ClientHttpRequest object. Its destructor will log. */
     ClientHttpRequest http(this);
     http.req_sz = inBuf.length();
+    // XXX: Or we died while waiting for the pinned connection to become idle.
     char const *uri = "error:transaction-end-before-headers";
     http.uri = xstrdup(uri);
     setLogUri(&http, uri);
@@ -4119,5 +4122,11 @@ ConnStateData::mayTunnelUnsupportedProto()
             || (serverBump() && pinning.serverConnection))
 #endif
            ;
+}
+
+std::ostream &
+operator <<(std::ostream &os, const ConnStateData::PinnedIdleContext &pic)
+{
+    return os << pic.connection << ", request=" << pic.request;
 }
 

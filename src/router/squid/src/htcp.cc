@@ -678,7 +678,8 @@ htcpUnpackSpecifier(char *buf, int sz)
     // Parse the request
     method.HttpRequestMethodXXX(s->method);
 
-    s->request = HttpRequest::CreateFromUrl(s->uri, method == Http::METHOD_NONE ? HttpRequestMethod(Http::METHOD_GET) : method);
+    const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initHtcp);
+    s->request = HttpRequest::FromUrl(s->uri, mx, method == Http::METHOD_NONE ? HttpRequestMethod(Http::METHOD_GET) : method);
     return s;
 }
 
@@ -774,7 +775,7 @@ htcpAccessAllowed(acl_access * acl, const htcpSpecifier::Pointer &s, Ip::Address
     ACLFilledChecklist checklist(acl, s->request.getRaw(), nullptr);
     checklist.src_addr = from;
     checklist.my_addr.setNoAddr();
-    return (checklist.fastCheck() == ACCESS_ALLOWED);
+    return checklist.fastCheck().allowed();
 }
 
 static void
