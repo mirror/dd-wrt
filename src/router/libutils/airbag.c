@@ -94,11 +94,11 @@
 #endif
 
 #ifndef PR_SET_NAME
-#define PR_SET_NAME    15		/* Set process name */
-#define PR_GET_NAME    16		/* Get process name */
+#define PR_SET_NAME    15	/* Set process name */
+#define PR_GET_NAME    16	/* Get process name */
 #endif
 
-#ifndef SI_TKILL 
+#ifndef SI_TKILL
 #define SI_TKILL (-6)
 #endif
 
@@ -370,7 +370,6 @@ static int is_lost_conn(int e)
 #define SOCK_CLOEXEC   02000000
 #define SOCK_NONBLOCK  04000
 #endif
-
 
 static void slog(int priority, const char *message)
 {
@@ -883,6 +882,16 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 				case BUS_OBJERR:
 					faultReason = "object-specific hardware error";
 					break;
+#ifdef  BUS_MCEERR_AR
+				case BUS_MCEERR_AR:
+					faultReason = "hardware memory error consumed on a machine check: action required";
+					break;
+#endif
+#ifdef  BUS_MCEERR_AO
+				case BUS_MCEERR_AO:
+					faultReason = "hardware memory error detected in process but not consumed: action optional";
+					break;
+#endif
 				default:
 					faultReason = "unknown";
 					break;
@@ -967,6 +976,16 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 				case SEGV_ACCERR:
 					faultReason = "invalid permissions for mapped object";
 					break;
+#ifdef SEGV_BNDERR
+				case SEGV_BNDERR:
+					faultReason = "failed address bound checks";
+					break;
+#endif
+#ifdef SEGV_PKUERR
+				case SEGV_PKUERR:
+					faultReason = "failed protection key checks";
+					break;
+#endif
 				default:
 					faultReason = "unknown";
 					break;
