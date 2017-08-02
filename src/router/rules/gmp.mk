@@ -13,5 +13,10 @@ gmp-install:
 	$(MAKE) -C gmp install DESTDIR=$(INSTALLDIR)/gmp
 	rm -rf $(INSTALLDIR)/gmp/usr/share
 	rm -rf $(INSTALLDIR)/gmp/usr/include
+	-cp $(INSTALLDIR)/gmp/usr/lib64/* $(INSTALLDIR)/gmp/usr/lib 
 	rm -f $(INSTALLDIR)/gmp/usr/lib/libgmp.a
 	rm -f $(INSTALLDIR)/gmp/usr/lib/libgmp.la
+	rm -rf $(INSTALLDIR)/gmp/usr/lib64
+
+
+
