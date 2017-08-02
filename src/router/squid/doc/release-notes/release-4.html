@@ -2,10 +2,10 @@
 <HTML>
 <HEAD>
  <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 0.9.72">
- <TITLE>Squid 4.0.19 release notes</TITLE>
+ <TITLE>Squid 4.0.21 release notes</TITLE>
 </HEAD>
 <BODY>
-<H1>Squid 4.0.19 release notes</H1>
+<H1>Squid 4.0.21 release notes</H1>
 
 <H2>Squid Developers</H2>
 <HR>
@@ -62,7 +62,7 @@ for Applied Network Research and members of the Web Caching community.</EM>
 <HR>
 <H2><A NAME="s1">1.</A> <A HREF="#toc1">Notice</A></H2>
 
-<P>The Squid Team are pleased to announce the release of Squid-4.0.19 for testing.</P>
+<P>The Squid Team are pleased to announce the release of Squid-4.0.21 for testing.</P>
 <P>This new release is available for download from 
 <A HREF="http://www.squid-cache.org/Versions/v4/">http://www.squid-cache.org/Versions/v4/</A> or the
 <A HREF="http://www.squid-cache.org/Download/http-mirrors.html">mirrors</A>.</P>
@@ -237,10 +237,9 @@ now taking on signal handling instead of the main daemon process. Enabling
 integration with daemon managers such as Upstart or systemd which assume the
 process they initiated is the daemon with a PID to control.</P>
 
-<P>The squid binary now has a new <EM>--foreground</EM> command line option
-which prevents the process from exiting early while background workers
-continue their processing. When run with this option Squid will now wait
-for the worker(s) to finish before exiting. Unlike the old <EM>-N</EM> option
+<P>The squid binary now has a new <EM>--foreground</EM> command line option,
+which (only) prevents daemonizing the master process.
+Unlike the old <EM>-N</EM> option,
 <EM>--foreground</EM> supports SMP workers and multi-process features.
 <EM>--foreground</EM> is particularly useful for use with <EM>-z</EM> (disk
 cache structures creation), as it allows the caller to wait until Squid has
@@ -340,6 +339,13 @@ logged with URI <EM>error:transaction-end-before-headers</EM>.</P>
 <P>New <EM>connections_encrypted</EM> type for matching transactions
 where all HTTP messages were received over TLS transport connections,
 including messages received from ICAP servers.</P>
+<P>New <EM>has</EM> type for matching whether or not Squid is able to provide
+certain sets of transaction state. For example HTTP reply headers.</P>
+<P>New <EM>transaction_initiator</EM> type for detecting various
+unusual transactions.</P>
+<P>New <EM>--consensus</EM>, <EM>--client-requested</EM> and
+<EM>--server-provided</EM> flags for the <EM>ssl::server_name</EM>
+type to control which server name to match against.</P>
 
 <DT><B>auth_param</B><DD>
 <P>New parameter <EM>queue-size=</EM> to set the maximum number

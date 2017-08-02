@@ -303,12 +303,8 @@ Ftp::Server::notePeerConnection(Comm::ConnectionPointer conn)
     Must(http != NULL);
     HttpRequest *const request = http->request;
     Must(request != NULL);
-
-    // this is not an idle connection, so we do not want I/O monitoring
-    const bool monitor = false;
-
     // make FTP peer connection exclusive to our request
-    pinConnection(conn, request, conn->getPeer(), false, monitor);
+    pinBusyConnection(conn, request);
 }
 
 void
@@ -728,7 +724,9 @@ Ftp::Server::parseOneRequest()
                        &params : NULL;
     calcUri(path);
     char *newUri = xstrdup(uri.c_str());
-    HttpRequest *const request = HttpRequest::CreateFromUrl(newUri, method);
+    MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
+    mx->tcpClient = clientConnection;
+    HttpRequest *const request = HttpRequest::FromUrl(newUri, mx, method);
     if (!request) {
         debugs(33, 5, "Invalid FTP URL: " << uri);
         uri.clear();
@@ -1545,7 +1543,7 @@ Ftp::Server::handleUploadRequest(String &, String &)
         ClientHttpRequest *http = pipeline.front()->http;
         HttpRequest *request = http->request;
         ACLFilledChecklist bodyContinuationCheck(Config.accessList.forceRequestBodyContinuation, request, NULL);
-        if (bodyContinuationCheck.fastCheck() == ACCESS_ALLOWED) {
+        if (bodyContinuationCheck.fastCheck().allowed()) {
             request->forcedBodyContinuation = true;
             if (checkDataConnPost()) {
                 // Write control Msg

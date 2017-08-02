@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[4.0.19],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[4.0.21],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -1347,9 +1347,26 @@ if test "x$with_openssl" = "xyes"; then
     SSLLIB="$LIBOPENSSL_PATH $LIBOPENSSL_LIBS $SSLLIB"
     AC_DEFINE(USE_OPENSSL,1,[OpenSSL support is available])
 
+    # check for API functions
+    SQUID_CHECK_LIBCRYPTO_API
+    SQUID_CHECK_LIBSSL_API
+    SQUID_CHECK_OPENSSL_TLS_METHODS
+    SQUID_STATE_SAVE(check_SSL_CTX_get0_certificate)
+    LIBS="$LIBS $SSLLIB"
+    AC_CHECK_LIB(ssl, SSL_CTX_get0_certificate, [
+      AC_DEFINE(HAVE_SSL_CTX_GET0_CERTIFICATE, 1, [SSL_CTX_get0_certificate is available])
+      ], [
+          missing_SSL_CTX_get0_certificate=yes
+      ])
+    SQUID_STATE_ROLLBACK(check_SSL_CTX_get0_certificate)
+
     # check for other specific broken implementations
-    SQUID_CHECK_OPENSSL_GETCERTIFICATE_WORKS
+    if test "x$missing_SSL_CTX_get0_certificate" = "xyes"; then
+      SQUID_CHECK_OPENSSL_GETCERTIFICATE_WORKS
+    fi
     SQUID_CHECK_OPENSSL_CONST_SSL_METHOD
+    SQUID_CHECK_OPENSSL_CONST_CRYPTO_EX_DATA
+    SQUID_CHECK_OPENSSL_CONST_SSL_SESSION_CB_ARG
     SQUID_CHECK_OPENSSL_TXTDB
     SQUID_CHECK_OPENSSL_HELLO_OVERWRITE_HACK
   fi
@@ -3859,6 +3876,7 @@ AC_CONFIG_FILES([
 	src/store/id_rewriters/file/Makefile
 	test-suite/Makefile
 	tools/Makefile
+	tools/apparmor/Makefile
 	tools/helper-mux/Makefile
 	tools/purge/Makefile
 	tools/squidclient/Makefile

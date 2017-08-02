@@ -144,6 +144,8 @@ public:
 #endif
 
     int tcp_up;         /* 0 if a connect() fails */
+    /// whether to do another TCP probe after current TCP probes
+    bool reprobe;
 
     Ip::Address addresses[10];
     int n_addresses;
@@ -170,7 +172,7 @@ public:
     } sourcehash;
 
     char *login;        /* Proxy authorization */
-    time_t connect_timeout;
+    time_t connect_timeout_raw; ///< connect_timeout; use peerConnectTimeout() instead!
     int connect_fail_limit;
     int max_conn;
     struct {

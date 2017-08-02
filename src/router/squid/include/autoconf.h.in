@@ -492,6 +492,43 @@
 /* Define to 1 if you have the `cap' library (-lcap). */
 #undef HAVE_LIBCAP
 
+/* "Define to 1 if the ASN1_STRING_get0_data() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_ASN1_STRING_GET0_DATA
+
+/* "Define to 1 if the BIO_get_init() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_BIO_GET_INIT
+
+/* "Define to 1 if the BIO_meth_new() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_BIO_METH_NEW
+
+/* "Define to 1 if the DH_up_ref() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_DH_UP_REF
+
+/* "Define to 1 if the EVP_PKEY_get0_RSA() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_EVP_PKEY_GET0_RSA
+
+/* "Define to 1 if the X509_CRL_up_ref() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_X509_CRL_UP_REF
+
+/* "Define to 1 if the X509_STORE_CTX_get0_cert() OpenSSL API function exists"
+   */
+#undef HAVE_LIBCRYPTO_X509_STORE_CTX_GET0_CERT
+
+/* "Define to 1 if the X509_STORE_CTX_get0_untrusted() OpenSSL API function
+   exists" */
+#undef HAVE_LIBCRYPTO_X509_STORE_CTX_GET0_UNTRUSTED
+
+/* "Define to 1 if the X509_STORE_CTX_set0_untrusted() OpenSSL API function
+   exists" */
+#undef HAVE_LIBCRYPTO_X509_STORE_CTX_SET0_UNTRUSTED
+
+/* "Define to 1 if the X509_up_ref() OpenSSL API function exists" */
+#undef HAVE_LIBCRYPTO_X509_UP_REF
+
+/* "Define to 1 if the X509_VERIFY_PARAM_get_depth() OpenSSL API function
+   exists" */
+#undef HAVE_LIBCRYPTO_X509_VERIFY_PARAM_GET_DEPTH
+
 /* Define to 1 if you have the <libc.h> header file. */
 #undef HAVE_LIBC_H
 
@@ -520,6 +557,16 @@
 /* Define to 1 if you have the
    <libnetfilter_conntrack/libnetfilter_conntrack_tcp.h> header file. */
 #undef HAVE_LIBNETFILTER_CONNTRACK_LIBNETFILTER_CONNTRACK_TCP_H
+
+/* "Define to 1 if the SSL_CIPHER_find() OpenSSL API function exists" */
+#undef HAVE_LIBSSL_SSL_CIPHER_FIND
+
+/* "Define to 1 if the SSL_CTX_set_tmp_rsa_callback() OpenSSL API function
+   exists" */
+#undef HAVE_LIBSSL_SSL_CTX_SET_TMP_RSA_CALLBACK
+
+/* "Define to 1 if the SSL_SESSION_get_id() OpenSSL API function exists" */
+#undef HAVE_LIBSSL_SSL_SESSION_GET_ID
 
 /* Define to 1 if you have the libxml2 library */
 #undef HAVE_LIBXML2
@@ -717,6 +764,15 @@
 /* Define to 1 if you have the <openssl/ssl.h> header file. */
 #undef HAVE_OPENSSL_SSL_H
 
+/* "Define to 1 if the TLS_client_method() OpenSSL API function exists" */
+#undef HAVE_OPENSSL_TLS_CLIENT_METHOD
+
+/* "Define to 1 if the TLS_method() OpenSSL API function exists" */
+#undef HAVE_OPENSSL_TLS_METHOD
+
+/* "Define to 1 if the TLS_server_method() OpenSSL API function exists" */
+#undef HAVE_OPENSSL_TLS_SERVER_METHOD
+
 /* Define to 1 if you have the <openssl/txt_db.h> header file. */
 #undef HAVE_OPENSSL_TXT_DB_H
 
@@ -886,6 +942,9 @@
 
 /* SPNEGO support */
 #undef HAVE_SPNEGO
+
+/* SSL_CTX_get0_certificate is available */
+#undef HAVE_SSL_CTX_GET0_CERTIFICATE
 
 /* Define if sockaddr_storage has field ss_len */
 #undef HAVE_SS_LEN_IN_SS
@@ -1312,9 +1371,17 @@
 /* TCP send buffer size */
 #undef SQUID_TCP_SO_SNDBUF
 
+/* "Define to 1 if the SSL_get_new_ex_index() dup callback accepts 'const
+   CRYPTO_EX_DATA *'" */
+#undef SQUID_USE_CONST_CRYPTO_EX_DATA_DUP
+
 /* "Define to 1 if the SSL_CTX_new and similar openSSL API functions require
    'const SSL_METHOD *'" */
 #undef SQUID_USE_CONST_SSL_METHOD
+
+/* "Define to 1 if the SSL_CTX_sess_set_get_cb() callback accepts a const ID
+   argument" */
+#undef SQUID_USE_CONST_SSL_SESSION_CBID
 
 /* "Define to 1 if hello message can be overwritten in SSL struct" */
 #undef SQUID_USE_OPENSSL_HELLO_OVERWRITE_HACK

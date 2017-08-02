@@ -38,9 +38,6 @@
 // TODO: Move ssl_ex_index_* global variables from global.cc here.
 int ssl_ex_index_ssl_untrusted_chain = -1;
 
-Ipc::MemMap *Ssl::SessionCache = NULL;
-const char *Ssl::SessionCacheName = "ssl_session_cache";
-
 static Ssl::CertsIndexedList SquidUntrustedCerts;
 
 const EVP_MD *Ssl::DefaultSignHash = NULL;
@@ -97,7 +94,7 @@ ssl_ask_password(SSL_CTX * context, const char * prompt)
     }
 }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if HAVE_LIBSSL_SSL_CTX_SET_TMP_RSA_CALLBACK
 static RSA *
 ssl_temp_rsa_cb(SSL * ssl, int anInt, int keylen)
 {
@@ -152,7 +149,7 @@ ssl_temp_rsa_cb(SSL * ssl, int anInt, int keylen)
 static void
 maybeSetupRsaCallback(Security::ContextPointer &ctx)
 {
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if HAVE_LIBSSL_SSL_CTX_SET_TMP_RSA_CALLBACK
     debugs(83, 9, "Setting RSA key generation callback.");
     SSL_CTX_set_tmp_rsa_callback(ctx.get(), ssl_temp_rsa_cb);
 #endif
@@ -236,7 +233,7 @@ bool Ssl::checkX509ServerValidity(X509 *cert, const char *server)
     return matchX509CommonNames(cert, (void *)server, check_domain);
 }
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
+#if !HAVE_LIBCRYPTO_X509_STORE_CTX_GET0_CERT
 static inline X509 *X509_STORE_CTX_get0_cert(X509_STORE_CTX *ctx)
 {
     return ctx->cert;
@@ -332,7 +329,7 @@ ssl_verify_cb(int ok, X509_STORE_CTX * ctx)
                 assert(!filledCheck->sslErrors);
                 filledCheck->sslErrors = new Security::CertErrors(Security::CertError(error_no, broken_cert));
                 filledCheck->serverCert = peer_cert;
-                if (check->fastCheck() == ACCESS_ALLOWED) {
+                if (check->fastCheck().allowed()) {
                     debugs(83, 3, "bypassing SSL error " << error_no << " in " << buffer);
                     ok = 1;
                 } else {
@@ -380,7 +377,7 @@ ssl_verify_cb(int ok, X509_STORE_CTX * ctx)
 }
 
 // "dup" function for SSL_get_ex_new_index("cert_err_check")
-#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+#if SQUID_USE_CONST_CRYPTO_EX_DATA_DUP
 static int
 ssl_dupAclChecklist(CRYPTO_EX_DATA *, const CRYPTO_EX_DATA *, void *,
                     int, long, void *)
@@ -472,6 +469,7 @@ Ssl::Initialize(void)
 
 #if HAVE_OPENSSL_ENGINE_H
     if (::Config.SSL.ssl_engine) {
+        ENGINE_load_builtin_engines();
         ENGINE *e;
         if (!(e = ENGINE_by_id(::Config.SSL.ssl_engine)))
             fatalf("Unable to find SSL engine '%s'\n", ::Config.SSL.ssl_engine);
@@ -564,7 +562,7 @@ configureSslContext(Security::ContextPointer &ctx, AnyP::PortCfg &port)
     if (port.secure.parsedFlags & SSL_FLAG_DONT_VERIFY_DOMAIN)
         SSL_CTX_set_ex_data(ctx.get(), ssl_ctx_ex_index_dont_verify_domain, (void *) -1);
 
-    Ssl::SetSessionCallbacks(ctx);
+    Security::SetSessionCacheCallbacks(ctx);
 
     return true;
 }
@@ -986,9 +984,11 @@ Ssl::configureSSLUsingPkeyAndCertFromMemory(SSL *ssl, const char *data, AnyP::Po
 bool
 Ssl::verifySslCertificate(Security::ContextPointer &ctx, CertificateProperties const &properties)
 {
+#if HAVE_SSL_CTX_GET0_CERTIFICATE
+    X509 * cert = SSL_CTX_get0_certificate(ctx.get());
+#elif SQUID_USE_SSLGETCERTIFICATE_HACK
     // SSL_get_certificate is buggy in openssl versions 1.0.1d and 1.0.1e
     // Try to retrieve certificate directly from Security::ContextPointer object
-#if SQUID_USE_SSLGETCERTIFICATE_HACK
     X509 ***pCert = (X509 ***)ctx->cert;
     X509 * cert = pCert && *pCert ? **pCert : NULL;
 #elif SQUID_SSLGETCERTIFICATE_BUGGY
@@ -1066,10 +1066,10 @@ hasAuthorityInfoAccessCaIssuers(X509 *cert)
             if (ad->location->type == GEN_URI) {
                 xstrncpy(uri,
                          reinterpret_cast<const char *>(
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-                             ASN1_STRING_data(ad->location->d.uniformResourceIdentifier)
-#else
+#if HAVE_LIBCRYPTO_ASN1_STRING_GET0_DATA
                              ASN1_STRING_get0_data(ad->location->d.uniformResourceIdentifier)
+#else
+                             ASN1_STRING_data(ad->location->d.uniformResourceIdentifier)
 #endif
                          ),
                          sizeof(uri));
@@ -1116,7 +1116,7 @@ findCertIssuerFast(Ssl::CertsIndexedList &list, X509 *cert)
     const auto ret = list.equal_range(SBuf(buffer));
     for (Ssl::CertsIndexedList::iterator it = ret.first; it != ret.second; ++it) {
         X509 *issuer = it->second;
-        if (X509_check_issued(cert, issuer)) {
+        if (X509_check_issued(issuer, cert) == X509_V_OK) {
             return issuer;
         }
     }
@@ -1201,16 +1201,16 @@ completeIssuers(X509_STORE_CTX *ctx, STACK_OF(X509) *untrustedCerts)
 {
     debugs(83, 2,  "completing " << sk_X509_num(untrustedCerts) << " OpenSSL untrusted certs using " << SquidUntrustedCerts.size() << " configured untrusted certificates");
 
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    int depth = ctx->param->depth;
-#else
+#if HAVE_LIBCRYPTO_X509_VERIFY_PARAM_GET_DEPTH
     const X509_VERIFY_PARAM *param = X509_STORE_CTX_get0_param(ctx);
     int depth = X509_VERIFY_PARAM_get_depth(param);
+#else
+    int depth = ctx->param->depth;
 #endif
     X509 *current = X509_STORE_CTX_get0_cert(ctx);
     int i = 0;
     for (i = 0; current && (i < depth); ++i) {
-        if (X509_check_issued(current, current)) {
+        if (X509_check_issued(current, current) == X509_V_OK) {
             // either ctx->cert is itself self-signed or untrustedCerts
             // aready contain the self-signed current certificate
             break;
@@ -1241,10 +1241,10 @@ untrustedToStoreCtx_cb(X509_STORE_CTX *ctx,void *data)
     // OpenSSL already maintains ctx->untrusted but we cannot modify
     // internal OpenSSL list directly. We have to give OpenSSL our own
     // list, but it must include certificates on the OpenSSL ctx->untrusted
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    STACK_OF(X509) *oldUntrusted = ctx->untrusted;
-#else
+#if HAVE_LIBCRYPTO_X509_STORE_CTX_GET0_UNTRUSTED
     STACK_OF(X509) *oldUntrusted = X509_STORE_CTX_get0_untrusted(ctx);
+#else
+    STACK_OF(X509) *oldUntrusted = ctx->untrusted;
 #endif
     STACK_OF(X509) *sk = sk_X509_dup(oldUntrusted); // oldUntrusted is always not NULL
 
@@ -1260,10 +1260,10 @@ untrustedToStoreCtx_cb(X509_STORE_CTX *ctx,void *data)
 
     X509_STORE_CTX_set_chain(ctx, sk); // No locking/unlocking, just sets ctx->untrusted
     int ret = X509_verify_cert(ctx);
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    X509_STORE_CTX_set_chain(ctx, oldUntrusted); // Set back the old untrusted list
-#else
+#if HAVE_LIBCRYPTO_X509_STORE_CTX_SET0_UNTRUSTED
     X509_STORE_CTX_set0_untrusted(ctx, oldUntrusted);
+#else
+    X509_STORE_CTX_set_chain(ctx, oldUntrusted); // Set back the old untrusted list
 #endif
     sk_X509_free(sk); // Release sk list
     return ret;
@@ -1377,114 +1377,6 @@ bool Ssl::generateUntrustedCert(Security::CertPointer &untrustedCert, EVP_PKEY_P
     certProperties.signWithPkey.resetAndLock(pkey.get());
     certProperties.mimicCert.resetAndLock(cert.get());
     return Ssl::generateSslCertificate(untrustedCert, untrustedPkey, certProperties);
-}
-
-static int
-store_session_cb(SSL *ssl, SSL_SESSION *session)
-{
-    if (!Ssl::SessionCache)
-        return 0;
-
-    debugs(83, 5, "Request to store SSL Session ");
-
-    SSL_SESSION_set_timeout(session, Config.SSL.session_ttl);
-
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-    unsigned char *id = session->session_id;
-    unsigned int idlen = session->session_id_length;
-#else
-    unsigned int idlen;
-    const unsigned char *id = SSL_SESSION_get_id(session, &idlen);
-#endif
-    unsigned char key[MEMMAP_SLOT_KEY_SIZE];
-    // Session ids are of size 32bytes. They should always fit to a
-    // MemMap::Slot::key
-    assert(idlen <= MEMMAP_SLOT_KEY_SIZE);
-    memset(key, 0, sizeof(key));
-    memcpy(key, id, idlen);
-    int pos;
-    Ipc::MemMap::Slot *slotW = Ssl::SessionCache->openForWriting((const cache_key*)key, pos);
-    if (slotW) {
-        int lenRequired =  i2d_SSL_SESSION(session, NULL);
-        if (lenRequired <  MEMMAP_SLOT_DATA_SIZE) {
-            unsigned char *p = (unsigned char *)slotW->p;
-            lenRequired = i2d_SSL_SESSION(session, &p);
-            slotW->set(key, NULL, lenRequired, squid_curtime + Config.SSL.session_ttl);
-        }
-        Ssl::SessionCache->closeForWriting(pos);
-        debugs(83, 5, "wrote an ssl session entry of size " << lenRequired << " at pos " << pos);
-    }
-    return 0;
-}
-
-static void
-remove_session_cb(SSL_CTX *, SSL_SESSION *sessionID)
-{
-    if (!Ssl::SessionCache)
-        return ;
-
-    debugs(83, 5, "Request to remove corrupted or not valid SSL Session ");
-    int pos;
-    Ipc::MemMap::Slot const *slot = Ssl::SessionCache->openForReading((const cache_key*)sessionID, pos);
-    if (slot == NULL)
-        return;
-    Ssl::SessionCache->closeForReading(pos);
-    // TODO:
-    // What if we are not able to remove the session?
-    // Maybe schedule a job to remove it later?
-    // For now we just have an invalid entry in cache until will be expired
-    // The openSSL will reject it when we try to use it
-    Ssl::SessionCache->free(pos);
-}
-
-static SSL_SESSION *
-#if (OPENSSL_VERSION_NUMBER < 0x10100000L)
-get_session_cb(SSL *, unsigned char *sessionID, int len, int *copy)
-#else
-get_session_cb(SSL *, const unsigned char *sessionID, int len, int *copy)
-#endif
-{
-    if (!Ssl::SessionCache)
-        return NULL;
-
-    SSL_SESSION *session = NULL;
-    const unsigned int *p;
-    p = (unsigned int *)sessionID;
-    debugs(83, 5, "Request to search for SSL Session of len:" <<
-           len << p[0] << ":" << p[1]);
-
-    int pos;
-    Ipc::MemMap::Slot const *slot = Ssl::SessionCache->openForReading((const cache_key*)sessionID, pos);
-    if (slot != NULL) {
-        if (slot->expire > squid_curtime) {
-            const unsigned char *ptr = slot->p;
-            session = d2i_SSL_SESSION(NULL, &ptr, slot->pSize);
-            debugs(83, 5, "Session retrieved from cache at pos " << pos);
-        } else
-            debugs(83, 5, "Session in cache expired");
-        Ssl::SessionCache->closeForReading(pos);
-    }
-
-    if (!session)
-        debugs(83, 5, "Failed to retrieved from cache\n");
-
-    // With the parameter copy the callback can require the SSL engine
-    // to increment the reference count of the SSL_SESSION object, Normally
-    // the reference count is not incremented and therefore the session must
-    // not be explicitly freed with SSL_SESSION_free(3).
-    *copy = 0;
-    return session;
-}
-
-void
-Ssl::SetSessionCallbacks(Security::ContextPointer &ctx)
-{
-    if (Ssl::SessionCache) {
-        SSL_CTX_set_session_cache_mode(ctx.get(), SSL_SESS_CACHE_SERVER|SSL_SESS_CACHE_NO_INTERNAL);
-        SSL_CTX_sess_set_new_cb(ctx.get(), store_session_cb);
-        SSL_CTX_sess_set_remove_cb(ctx.get(), remove_session_cb);
-        SSL_CTX_sess_set_get_cb(ctx.get(), get_session_cb);
-    }
 }
 
 #endif /* USE_OPENSSL */
