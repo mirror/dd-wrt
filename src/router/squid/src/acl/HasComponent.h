@@ -6,20 +6,18 @@
  * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-#ifndef SQUID_ACLREFERER_H
-#define SQUID_ACLREFERER_H
-#include "acl/Acl.h"
-#include "acl/Data.h"
-#include "acl/RequestHeaderStrategy.h"
+#ifndef SQUID_ACLHASCOMPONENT_H
+#define SQUID_ACLHASCOMPONENT_H
+
 #include "acl/Strategised.h"
+#include "acl/Strategy.h"
 
-class ACLReferer
+/// \ingroup ACLAPI
+class ACLHasComponentStrategy : public ACLStrategy<ACLChecklist *>
 {
-
-private:
-    static ACL::Prototype RegistryProtoype;
-    static ACLStrategised<char const *> RegistryEntry_;
+public:
+    virtual int match(ACLData<MatchType> * &, ACLFilledChecklist *);
 };
 
-#endif /* SQUID_ACLREFERER_H */
+#endif
 
