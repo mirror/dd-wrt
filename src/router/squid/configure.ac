@@ -464,11 +464,11 @@ fi
 
 ## check for atomics library before anything that might need it
 # AC_SEARCH_LIBS pollutes LIBS
-SQUID_STATE_SAVE(LIBATOMIC)
-AC_SEARCH_LIBS([__atomic_load_8],[atomic],[
-  test "$ac_res" = "none required" || ATOMICLIB=$ac_res],[])
-SQUID_STATE_ROLLBACK(LIBATOMIC)
-AC_SUBST(ATOMICLIB)
+#SQUID_STATE_SAVE(LIBATOMIC)
+#AC_SEARCH_LIBS([__atomic_load_8],[atomic],[
+#  test "$ac_res" = "none required" || ATOMICLIB=$ac_res],[])
+#SQUID_STATE_ROLLBACK(LIBATOMIC)
+#AC_SUBST(ATOMICLIB)
 
 AC_SEARCH_LIBS([shm_open], [rt])
 if test "x$ac_cv_search_shm_open" != "xno" ; then
