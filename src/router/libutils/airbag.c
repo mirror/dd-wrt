@@ -334,6 +334,7 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 	return r;
 }
 
+/* some loaned from musl libc, modified to fix crash problem in signal context */
 static const struct {
 	short sun_family;
 	char sun_path[9];
