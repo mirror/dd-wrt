@@ -18,7 +18,7 @@ ifneq ($(wildcard ../cy_conf.mak),)
 endif
 
 CONFIG_WPE72_SIZE?=0x3d0000
-#CONFIG_MUSL=y
+CONFIG_MUSL=y
 
 #
 # Paths
@@ -157,7 +157,7 @@ all: kernel install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
-#	echo "CONFIG_MUSL=y" >> .config 
+	echo "CONFIG_MUSL=y" >> .config 
 
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
@@ -361,7 +361,7 @@ ifneq ($(CONFIG_MUSL),y)
 	cp ${shell $(ARCH)-linux-gcc -print-file-name=ld64-uClibc.so.0} $(ARCH)-uclibc/target/lib/ld64-uClibc.so.0 
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=ld.so.1} $(ARCH)-uclibc/target/lib/ld.so.1 
 else
-	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-mips.so.1
+	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-mips64-sf.so.1
 endif
 
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libnss_dns.so.2} $(ARCH)-uclibc/target/lib/libnss_dns.so.2 
@@ -426,7 +426,7 @@ else
 		--sysroot $(TARGETDIR) \
 		-L /lib \
 		-L /usr/lib \
-		--ldlib /lib/ld64-musl-mips.so.1 \
+		--ldlib /lib/ld-musl-mips64-sf.so.1 \
 		--target $(ARCH)-linux-uclibc \
 		`cat /tmp/$(ARCHITECTURE)/mklibs-progs` 2>&1
 
@@ -656,7 +656,7 @@ endif
 	rm -f $(ARCH)-uclibc/vfat/*
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vfat/vmlinux.64
 	md5sum $(ARCH)-uclibc/vfat/vmlinux.64 > $(ARCH)-uclibc/vfat/vmlinux.64.md5
-	./gen_image.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 64 $(ARCH)-uclibc/root.fs
+	./gen_image.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
 	./tools/wrap $(ARCH)-uclibc/erouter.image $(ARCH)-uclibc/erouter.bin
 
 	mkdir -p $(ARCH)-uclibc/sysupgrade-erlite/

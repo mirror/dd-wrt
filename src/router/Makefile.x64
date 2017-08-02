@@ -273,7 +273,7 @@ ifneq ($(CONFIG_MUSL),y)
 else
 	cd $(ARCH)-uclibc/target/lib && ln -sf libc.so ld-musl-x86_64.so.1
 endif
-	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
+#	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libatomic.so.1} $(ARCH)-uclibc/target/lib/libatomic.so.1 
 ifeq ($(CONFIG_LIBDL),y)
 	-cp ${shell $(ARCH)-linux-gcc -print-file-name=libdl.so.0} $(ARCH)-uclibc/target/lib/libdl.so.0 
 endif
