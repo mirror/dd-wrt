@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <syslog.h>
 #ifdef TEST
@@ -333,6 +334,59 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 	return r;
 }
 
+static const struct {
+	short sun_family;
+	char sun_path[9];
+} log_addr = {
+AF_UNIX, "/dev/log"};
+
+static int log_fd = -1;
+static int log_facility = LOG_USER;
+static int log_opt;
+static char log_ident[32];
+
+static int is_lost_conn(int e)
+{
+	return e == ECONNREFUSED || e == ECONNRESET || e == ENOTCONN || e == EPIPE;
+}
+
+static void slog(int priority, const char *message)
+{
+	char *buf;
+	int errno_save = errno;
+	int pid;
+	int l;
+	int hlen;
+	int fd;
+	if (log_fd < 0) {
+		log_fd = socket(AF_UNIX, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+		if (log_fd >= 0)
+			connect(log_fd, (void *)&log_addr, sizeof log_addr);
+
+	}
+	if (!(priority & LOG_FACMASK))
+		priority |= log_facility;
+	pid = (log_opt & LOG_PID) ? getpid() : 0;
+	l = 0;
+	l = asprintf(&buf, "<%d>%n%s%s%.0d%s: %s", priority, &hlen, log_ident, "[" + !pid, pid, "]" + !pid, message);
+	errno = errno_save;
+	if (l >= 0) {
+		if (send(log_fd, buf, l, 0) < 0 && (!is_lost_conn(errno)
+						    || connect(log_fd, (void *)&log_addr, sizeof log_addr) < 0 || send(log_fd, buf, l, 0) < 0)
+		    && (log_opt & LOG_CONS)) {
+			fd = open("/dev/console", O_WRONLY | O_NOCTTY | O_CLOEXEC);
+			if (fd >= 0) {
+				dprintf(fd, "%.*s", l - hlen, buf + hlen);
+				close(fd);
+			}
+		}
+		if (log_opt & LOG_PERROR)
+			dprintf(2, "%.*s", l - hlen, buf + hlen);
+	}
+	if (buf)
+		free(buf);
+}
+
 static int airbag_printf(char *fmt, ...)
 {
 	static char *buffer = NULL;
@@ -341,6 +395,7 @@ static int airbag_printf(char *fmt, ...)
 	va_start(args, fmt);
 	int size = vasprintf(&temp, fmt, args);
 	va_end(args);
+
 	if (!size || size < 0)
 		return 0;
 	if (!buffer)
@@ -351,9 +406,7 @@ static int airbag_printf(char *fmt, ...)
 	}
 	free(temp);
 	if (strchr(buffer, '\n')) {
-#ifndef HAVE_X86
-		dd_syslog(LOG_ERR, "%s", buffer);
-#endif
+		slog(LOG_ERR, buffer);
 		fprintf(stderr, "%s", buffer);
 		free(buffer);
 		buffer = NULL;
