@@ -1135,7 +1135,7 @@ static void *handle_request(void *arg)
 #ifdef HAVE_IAS
 					if (!result && !((!strcmp(file, "apply.cgi") || !strcmp(file, "InternetAtStart.ajax.asp"))
 							 && strstr(useragent, "Android")
-							 && ias_sid_valid())) {
+							 && ias_sid_valid(conn_fp))) {
 						fprintf(stderr, "[AUTH FAIL]: %s", useragent);
 #else
 					if (!result) {
@@ -2057,7 +2057,7 @@ int ias_sid_valid(webs_t wp)
 	struct sysinfo sinfo;
 	char *mac;
 
-	if (!ias_sid_timeout && (!ias_sid || !strcmp(ias_sid, "")))
+	if (!ias_sid_timeout && !strlen(ias_sid))
 		return 0;
 
 	sysinfo(&sinfo);
