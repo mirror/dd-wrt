@@ -57,7 +57,7 @@ java:
 java-clean:
 	make -C $(TOP)/java/classpath clean
 #	make -C $(TOP)/java/jamvm clean
-	make -C $(TOP)/java/cacao clean
+	-make -C $(TOP)/java/cacao clean
 	
 	
 java-install:
