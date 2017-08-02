@@ -6,14 +6,15 @@
  * Please see the COPYING and CONTRIBUTORS files for details.
  */
 
-/* DEBUG: section 28    Access Control */
-
 #include "squid.h"
-#include "acl/Checklist.h"
-#include "acl/RegexData.h"
-#include "acl/RequestMimeType.h"
+#include "acl/HasComponent.h"
+#include "acl/HasComponentData.h"
 
-/* explicit template instantiation required for some systems */
-
-template class ACLRequestHeaderStrategy<Http::HdrType::CONTENT_TYPE>;
+int
+ACLHasComponentStrategy::match(ACLData<MatchType> * &data, ACLFilledChecklist *checklist)
+{
+    ACLHasComponentData *cdata = dynamic_cast<ACLHasComponentData*>(data);
+    assert(cdata);
+    return cdata->match(checklist);
+}
 
