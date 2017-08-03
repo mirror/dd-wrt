@@ -1344,6 +1344,7 @@ mainInitialize(void)
 static std::ostream &
 CurrentException(std::ostream &os)
 {
+#if 0
     if (std::current_exception()) {
         try {
             throw; // re-throw to recognize the exception type
@@ -1357,6 +1358,10 @@ CurrentException(std::ostream &os)
     } else {
         os << "[no active exception]";
     }
+#else
+        os << "[no active exception]";
+
+#endif
     return os;
 }
 
