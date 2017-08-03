@@ -474,7 +474,7 @@ static void _airbag_symbol(void *pc, const char *sname, void *saddr)
 	}
 }
 
-AIRBAG_EXPORT void airbag_symbol(void *pc)
+static void airbag_symbol(void *pc)
 {
 	_airbag_symbol(pc, 0, 0);
 }
