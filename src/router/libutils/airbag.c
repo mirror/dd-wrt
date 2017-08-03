@@ -329,7 +329,6 @@ static uint32_t load32(const void *_p, unsigned long *_v)
 	unsigned long r = 0;
 	unsigned long v = 0;
 	const uint8_t *p = (const uint8_t *)_p;
-
 	for (i = 0; i < sizeof(long *); ++i) {
 		uint8_t b;
 		r <<= 8;
@@ -410,7 +409,8 @@ static void slog(int priority, const char *message)
 
 static int airbag_printf(char *fmt, ...)
 {
-	static char *buffer = NULL;
+	static char *ss_buffer = NULL;
+	static int clear=0;
 	char *temp;
 	va_list args;
 	va_start(args, fmt);
@@ -419,18 +419,19 @@ static int airbag_printf(char *fmt, ...)
 
 	if (!size || size < 0)
 		return 0;
-	if (!buffer)
-		buffer = strdup(temp);
-	else {
-		buffer = realloc(buffer, strlen(buffer) + strlen(temp) + 1);
-		strcat(buffer, temp);
+	if (!clear) {
+		ss_buffer = strdup(temp);
+		clear = 1;
+	} else {
+		ss_buffer = realloc(ss_buffer, strlen(ss_buffer) + strlen(temp) + 1);
+		strcat(ss_buffer, temp);
 	}
 	free(temp);
-	if (strchr(buffer, '\n')) {
-		slog(LOG_ERR, buffer);
-		fprintf(stderr, "%s", buffer);
-		free(buffer);
-		buffer = NULL;
+	if (strchr(ss_buffer, '\n')) {
+		slog(LOG_ERR, ss_buffer);
+		fprintf(stderr, "%s", ss_buffer);
+		free(ss_buffer);
+		clear=0;
 	}
 	return size;
 }
@@ -519,7 +520,7 @@ static void *getPokedFnName(uint32_t addr, char *fname)
 	addr &= ~3;
 	/* GCC man page suggests len is at "pc - 12", but prologue can vary, so scan back */
 	for (i = 0; i < 16; ++i) {
-		uint32_t len;
+		unsigned long len;
 		addr -= 4;
 		if (load32((void *)addr, &len) == 0 && (len & 0xffffff00) == 0xff000000) {
 			uint32_t offset;
@@ -686,7 +687,7 @@ backward:
 		airbag_printf("%sSearching frame %u (FP=0x%" FMTBIT "lx, PC=0x%" FMTBIT "lx)\n", comment, depth - 1, fp, pc);
 
 		for (i = 0; i < 8192 && !found; ++i) {
-			uint32_t instr, instr2;
+			unsigned long instr, instr2;
 			if (load32((void *)(pc - i * 4), &instr2)) {
 				airbag_printf("%sInstruction at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, pc - i * 4, termBt);
 				return depth;
@@ -706,13 +707,12 @@ backward:
 					airbag_printf("%sPC-%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx stm%s%s sp!\n", comment, i * 4, pc - i * 4, instr, pre == 1 ? "f" : "e", dir == 1 ? "a" : "d");
 					for (regNum = 15; regNum >= 0; --regNum) {
 						if (instr & (1 << regNum)) {
-							uint32_t reg;
+							unsigned long reg;
 							if (load32((void *)(fp + pushes * 4 * dir), &reg)) {
 								airbag_printf("%sStack at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, fp + pushes * 4 * dir, termBt);
 								return depth;
 							}
-							airbag_printf("%sFP%s%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx {%" FMTLEN "s}\n", comment, dir == 1 ? "+" : "-", pushes * 4, fp + pushes * 4 * dir, reg,
-								      mctxRegNames[gregOffset + regNum]);
+							airbag_printf("%sFP%s%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx {%s}\n", comment, dir == 1 ? "+" : "-", pushes * 4, fp + pushes * 4 * dir, reg, mctxRegNames[gregOffset + regNum]);
 							pushes++;
 							if (regNum == 11)
 								priorFp = reg;
@@ -833,10 +833,74 @@ static uint64_t getNow()
 }
 #endif
 
+struct fault {
+	int fault;
+	char *message;
+};
+
+struct faults {
+	int code;
+	int errorsize;
+	struct fault *errors;
+
+};
+static struct fault sigbus_fault[] = {
+	{BUS_ADRALN, "invalid address alignment"},
+	{BUS_ADRERR, "nonexistent physical address"},
+	{BUS_OBJERR, "object-specific hardware error"},
+#ifdef  BUS_MCEERR_AR
+	{BUS_MCEERR_AR, "hardware memory error consumed on a machine check: action required"},
+#endif
+#ifdef  BUS_MCEERR_AO
+	{BUS_MCEERR_AO, "hardware memory error detected in process but not consumed: action optional"},
+#endif
+};
+
+static struct fault sigfpe_fault[] = {
+	{FPE_INTDIV, "integer divide by zero"},
+	{FPE_INTOVF, "integer overflow"},
+	{FPE_FLTDIV, "floating-point divide by zero"},
+	{FPE_FLTOVF, "floating-point overflow"},
+	{FPE_FLTUND, "floating-point underflow"},
+	{FPE_FLTRES, "floating-point inexact result"},
+	{FPE_FLTINV, "floating-point invalid operation"},
+	{FPE_FLTSUB, "subscript out of range"}
+};
+
+static struct fault sigill_fault[] = {
+	{ILL_ILLOPC, "illegal opcode"},
+	{ILL_ILLOPN, "illegal operand"},
+	{ILL_ILLADR, "illegal addressing mode"},
+	{ILL_ILLTRP, "illegal trap"},
+	{ILL_PRVOPC, "privileged opcode"},
+	{ILL_PRVREG, "privileged register"},
+	{ILL_COPROC, "coprocessor error"},
+	{ILL_BADSTK, "stack error"},
+};
+
+static struct fault sigsegv_fault[] = {
+	{SEGV_MAPERR, "address not mapped to object"},
+	{SEGV_ACCERR, "invalid permissions for mapped object"},
+#ifdef SEGV_BNDERR
+	{SEGV_BNDERR, "failed address bound checks"},
+#endif
+#ifdef SEGV_PKUERR
+	{SEGV_PKUERR, "failed protection key checks"},
+#endif
+};
+
+static struct faults signals[] = {
+	{SIGBUS, sizeof(sigbus_fault) / sizeof(struct fault), sigbus_fault},
+	{SIGFPE, sizeof(sigfpe_fault) / sizeof(struct fault), sigfpe_fault},
+	{SIGILL, sizeof(sigill_fault) / sizeof(struct fault), sigill_fault},
+	{SIGSEGV, sizeof(sigsegv_fault) / sizeof(struct fault), sigsegv_fault},
+};
+
 static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 {
 	ucontext_t *uc = (ucontext_t *) ucontext;
 	const uint8_t *pc = (uint8_t *) MCTX_PC(uc);
+	int i, a;
 
 #if defined(__GCC_HAVE_SYNC_COMPARE_AND_SWAP_4)
 	__sync_fetch_and_add(&pending, 1);
@@ -871,127 +935,24 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 		switch (sigNum) {
 		case SIGABRT:
 			break;
-		case SIGBUS:{
-				switch (si->si_code) {
-				case BUS_ADRALN:
-					faultReason = "invalid address alignment";
-					break;
-				case BUS_ADRERR:
-					faultReason = "nonexistent physical address";
-					break;
-				case BUS_OBJERR:
-					faultReason = "object-specific hardware error";
-					break;
-#ifdef  BUS_MCEERR_AR
-				case BUS_MCEERR_AR:
-					faultReason = "hardware memory error consumed on a machine check: action required";
-					break;
-#endif
-#ifdef  BUS_MCEERR_AO
-				case BUS_MCEERR_AO:
-					faultReason = "hardware memory error detected in process but not consumed: action optional";
-					break;
-#endif
-				default:
-					faultReason = "unknown";
-					break;
-				}
-				break;
-			}
-		case SIGFPE:{
-				switch (si->si_code) {
-				case FPE_INTDIV:
-					faultReason = "integer divide by zero";
-					break;
-				case FPE_INTOVF:
-					faultReason = "integer overflow";
-					break;
-				case FPE_FLTDIV:
-					faultReason = "floating-point divide by zero";
-					break;
-				case FPE_FLTOVF:
-					faultReason = "floating-point overflow";
-					break;
-				case FPE_FLTUND:
-					faultReason = "floating-point underflow";
-					break;
-				case FPE_FLTRES:
-					faultReason = "floating-point inexact result";
-					break;
-				case FPE_FLTINV:
-					faultReason = "floating-point invalid operation";
-					break;
-				case FPE_FLTSUB:
-					faultReason = "subscript out of range";
-					break;
-				default:
-					faultReason = "unknown";
-					break;
-				}
-				break;
-			}
-		case SIGILL:{
-				switch (si->si_code) {
-				case ILL_ILLOPC:
-					faultReason = "illegal opcode";
-					break;
-				case ILL_ILLOPN:
-					faultReason = "illegal operand";
-					break;
-				case ILL_ILLADR:
-					faultReason = "illegal addressing mode";
-					break;
-				case ILL_ILLTRP:
-					faultReason = "illegal trap";
-					break;
-				case ILL_PRVOPC:
-					faultReason = "privileged opcode";
-					break;
-				case ILL_PRVREG:
-					faultReason = "privileged register";
-					break;
-				case ILL_COPROC:
-					faultReason = "coprocessor error";
-					break;
-				case ILL_BADSTK:
-					faultReason = "stack error";
-					break;
-				default:
-					faultReason = "unknown";
-					break;
-				}
-				break;
-			}
 		case SIGINT:
 			break;
 		case SIGQUIT:
 			break;
 		case SIGTERM:
 			break;
-		case SIGSEGV:{
-				switch (si->si_code) {
-				case SEGV_MAPERR:
-					faultReason = "address not mapped to object";
-					break;
-				case SEGV_ACCERR:
-					faultReason = "invalid permissions for mapped object";
-					break;
-#ifdef SEGV_BNDERR
-				case SEGV_BNDERR:
-					faultReason = "failed address bound checks";
-					break;
-#endif
-#ifdef SEGV_PKUERR
-				case SEGV_PKUERR:
-					faultReason = "failed protection key checks";
-					break;
-#endif
-				default:
-					faultReason = "unknown";
-					break;
+		default:
+			for (i = 0; i < sizeof(signals) / sizeof(struct faults); i++) {
+				struct faults s = signals[i];
+				if (s.code == sigNum) {
+					struct fault *f = s.errors;
+					for (a = 0; a < s.errorsize; a++) {
+						if (f[a].fault == si->si_code)
+							faultReason = f[a].message;
+					}
 				}
-				break;
 			}
+			break;
 		}
 
 		if (faultReason) {
@@ -1024,7 +985,6 @@ static void sigHandler(int sigNum, siginfo_t * si, void *ucontext)
 
 	airbag_printf("%sContext:\n", section);
 	int width = 0;
-	int i;
 	for (i = 0; i < NMCTXREGS; ++i) {
 		if (!mctxRegNames[i])	/* Can trim junk per-arch by NULL-ing name. */
 			continue;
@@ -1252,8 +1212,8 @@ void airbag_deinit()
 int main(int argc, char *argv[])
 {
 	airbag_init();
-	unsigned char *p = 0;
-	p[0] = 0;
+	unsigned *p = 666;
+	p[0]=1;
 }
 
 #endif
