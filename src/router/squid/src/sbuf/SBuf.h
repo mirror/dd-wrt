@@ -26,6 +26,9 @@
 #if HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
 
 /* SBuf placeholder for printf */
 #ifndef SQUIDSBUFPH
