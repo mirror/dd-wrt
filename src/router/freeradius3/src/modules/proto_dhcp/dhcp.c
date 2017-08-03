@@ -2,7 +2,7 @@
 /*
  * dhcp.c	Functions to send/receive dhcp packets.
  *
- * Version:	$Id: 98d87509d65034728523aa3105044159a1a88305 $
+ * Version:	$Id: 5fd922d037c1186fd1e6a001ef21ac38a5113f28 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,7 @@
  * Copyright 2008 Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 98d87509d65034728523aa3105044159a1a88305 $")
+RCSID("$Id: 5fd922d037c1186fd1e6a001ef21ac38a5113f28 $")
 
 #include <freeradius-devel/libradius.h>
 #include <freeradius-devel/udpfromto.h>
@@ -629,6 +629,24 @@ static int fr_dhcp_decode_suboption(TALLOC_CTX *ctx, VALUE_PAIR **tlv, uint8_t c
 		uint32_t	attr;
 
 		/*
+		 *	Not enough room for the option header, it's a
+		 *	bad packet.
+		 */
+		if ((p + 2) > (data + len)) {
+			fr_pair_list_free(&head);
+			return -1;
+		}
+
+		/*
+		 *	Not enough room for the option header + data,
+		 *	it's a bad packet.
+		 */
+		if ((p + 2 + p[1]) > (data + len)) {
+			fr_pair_list_free(&head);
+			return -1;
+		}
+
+		/*
 		 *	The initial OID string looks like:
 		 *	<iana>.0
 		 *
@@ -774,25 +792,23 @@ static int fr_dhcp_attr2vp(TALLOC_CTX *ctx, VALUE_PAIR **vp_p, uint8_t const *da
 		 *	multiple additional VPs
 		 */
 		fr_cursor_init(&cursor, vp_p);
-		for (;;) {
-			q = memchr(p, '\0', q - p);
+		while (p < end) {
+			q = memchr(p, '\0', end - p);
 			/* Malformed but recoverable */
 			if (!q) q = end;
 
 			fr_pair_value_bstrncpy(vp, (char const *)p, q - p);
 			p = q + 1;
 
+			if (p >= end) break;
+
 			/* Need another VP for the next round */
-			if (p < end) {
-				vp = fr_pair_afrom_da(ctx, vp->da);
-				if (!vp) {
-					fr_pair_list_free(vp_p);
-					return -1;
-				}
-				fr_cursor_insert(&cursor, vp);
-				continue;
+			vp = fr_pair_afrom_da(ctx, vp->da);
+			if (!vp) {
+				fr_pair_list_free(vp_p);
+				return -1;
 			}
-			break;
+			fr_cursor_insert(&cursor, vp);
 		}
 	}
 		break;
@@ -1097,8 +1113,8 @@ int fr_dhcp_decode(RADIUS_PACKET *packet)
 			/*
 			 *	Vendor is "MSFT 98"
 			 */
-			vp = fr_pair_find_by_num(head, 63, DHCP_MAGIC_VENDOR, TAG_ANY);
-			if (vp && (strcmp(vp->vp_strvalue, "MSFT 98") == 0)) {
+			vp = fr_pair_find_by_num(head, 60, DHCP_MAGIC_VENDOR, TAG_ANY);
+			if (vp && (vp->vp_length >= 7) && (memcmp(vp->vp_octets, "MSFT 98", 7) == 0)) {
 				vp = fr_pair_find_by_num(head, 262, DHCP_MAGIC_VENDOR, TAG_ANY);
 
 				/*

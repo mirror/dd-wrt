@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 5f4c7226984d1ecfeff294ccbedde4de47d55db4 $
+ * Version:	$Id: fb2c48bad43883a436e662090e1c39c7cc47aef0 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 5f4c7226984d1ecfeff294ccbedde4de47d55db4 $")
+RCSID("$Id: fb2c48bad43883a436e662090e1c39c7cc47aef0 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -1199,7 +1199,7 @@ static char const *cf_expand_variables(char const *cf, int *lineno,
 				ERROR("%s[%d]: Reference \"%s\" type is invalid", cf, *lineno, input);
 				return NULL;
 			}
-		} else if (memcmp(ptr, "$ENV{", 5) == 0) {
+		} else if (strncmp(ptr, "$ENV{", 5) == 0) {
 			char *env;
 
 			ptr += 5;
@@ -1928,6 +1928,8 @@ int cf_section_parse(CONF_SECTION *cs, void *base, CONF_PARSER const *variables)
 			    (variables[i + 1].data == variables[i].data)) {
 				cf_log_err(&(cs->item), "Replace \"%s\" with \"%s\"", variables[i].name,
 					   variables[i + 1].name);
+			} else {
+				cf_log_err(&(cs->item), "Cannot use deprecated configuration item \"%s\"", variables[i].name);
 			}
 			goto finish;
 		}
