@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: e3e32f424b00f12f82e2d3b140f254e336a49514 $
+ * $Id: 016f8baf98842b066b50a8415844711089c1e03d $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: e3e32f424b00f12f82e2d3b140f254e336a49514 $")
+RCSID("$Id: 016f8baf98842b066b50a8415844711089c1e03d $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -5321,7 +5321,9 @@ static void check_proxy(rad_listen_t *head)
 	if (check_config) return;
 	if (!main_config.proxy_requests) return;
 	if (!head) return;
+#ifdef WITH_TCP
 	if (!home_servers_udp) return;
+#endif
 
 	/*
 	 *	We passed "-i" on the command line.  Use that address

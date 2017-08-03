@@ -1,7 +1,7 @@
 /*
  * eap_chbind.c
  *
- * Version:     $Id: a8ecb51de96f513fb9d0db9034efed1fd4939967 $
+ * Version:     $Id: e4d7ed81c2a3763f8b63a1d871213ef7013e74d3 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  */
 
 
-RCSID("$Id: a8ecb51de96f513fb9d0db9034efed1fd4939967 $")
+RCSID("$Id: e4d7ed81c2a3763f8b63a1d871213ef7013e74d3 $")
 
 #include "eap_chbind.h"
 
@@ -119,7 +119,7 @@ static size_t chbind_get_data(chbind_packet_t const *packet,
 	}
 
 	ptr = (uint8_t const *) packet;
-	end = ptr + talloc_array_length(packet);
+	end = ptr + talloc_array_length((uint8_t const *) packet);
 
 	ptr++;			/* skip the code at the start of the packet */
 	while (ptr < end) {
@@ -182,7 +182,7 @@ PW_CODE chbind_process(REQUEST *request, CHBIND_REQ *chbind)
 	/* Add the channel binding attributes to the fake packet */
 	data_len = chbind_get_data(chbind->request, CHBIND_NSID_RADIUS, &attr_data);
 	if (data_len) {
-		rad_assert(data_len <= talloc_array_length(chbind->request));
+		rad_assert(data_len <= talloc_array_length((uint8_t const *) chbind->request));
 
 		while (data_len > 0) {
 			int attr_len = rad_attr2vp(fake->packet, NULL, NULL, NULL, attr_data, data_len, &vp);

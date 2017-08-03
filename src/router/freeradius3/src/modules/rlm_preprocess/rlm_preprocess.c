@@ -15,14 +15,14 @@
  */
 
 /**
- * $Id: ce75ac849434a3e38f506cb4eedebe7ef53dae69 $
+ * $Id: b6d3a5dc19b713108a1a9ce6a6ccc7c75cb5b66f $
  * @file rlm_preprocess.c
  * @brief Fixes up requests, and processes huntgroups/hints files.
  *
  * @copyright 2000,2006  The FreeRADIUS server project
  * @copyright 2000  Alan DeKok <aland@ox.org>
  */
-RCSID("$Id: ce75ac849434a3e38f506cb4eedebe7ef53dae69 $")
+RCSID("$Id: b6d3a5dc19b713108a1a9ce6a6ccc7c75cb5b66f $")
 
 #include	<freeradius-devel/radiusd.h>
 #include	<freeradius-devel/modules.h>
@@ -357,7 +357,7 @@ static int hunt_paircmp(REQUEST *req, VALUE_PAIR *request, VALUE_PAIR *check)
 		/* FIXME: fr_pair_list_copy should be removed once VALUE_PAIRs are no longer in linked lists */
 		tmp = fr_pair_copy(request, check_item);
 		tmp->op = check_item->op;
-		result = paircompare(req, request, check_item, NULL);
+		result = paircompare(req, request, tmp, NULL);
 		fr_pair_list_free(&tmp);
 	}
 

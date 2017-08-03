@@ -1,7 +1,7 @@
 /*
  * realms.c	Realm handling code
  *
- * Version:     $Id: d1fafcf43f262e4930b588a3f0b625dc81a6667c $
+ * Version:     $Id: 4f3c6b80e27d2690405e66619194b8543d681a83 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: d1fafcf43f262e4930b588a3f0b625dc81a6667c $")
+RCSID("$Id: 4f3c6b80e27d2690405e66619194b8543d681a83 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/realms.h>
@@ -433,9 +433,9 @@ void realm_home_server_sanitize(home_server_t *home, CONF_SECTION *cs)
 	FR_INTEGER_BOUND_CHECK("ping_interval", home->ping_interval, <=, 120);
 
 	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, >=, 0, 1000);
-	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, <=, 60, 0);
 	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, <=,
 			       main_config.max_request_time, 0);
+	FR_TIMEVAL_BOUND_CHECK("response_window", &home->response_window, <=, 60, 0);
 
 	FR_INTEGER_BOUND_CHECK("response_timeouts", home->max_response_timeouts, >=, 1);
 	FR_INTEGER_BOUND_CHECK("response_timeouts", home->max_response_timeouts, <=, 1000);
@@ -767,7 +767,9 @@ home_server_t *home_server_afrom_cs(TALLOC_CTX *ctx, realm_config_t *rc, CONF_SE
 
 		switch (proto) {
 		case IPPROTO_UDP:
+#ifdef WITH_TCP
 			home_servers_udp = true;
+#endif
 			break;
 
 		case IPPROTO_TCP:

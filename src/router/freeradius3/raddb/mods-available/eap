@@ -2,7 +2,7 @@
 ##
 ##  eap.conf -- Configuration for EAP types (PEAP, TTLS, etc.)
 ##
-##	$Id: 04698ceb7e28d026fc1d1780350b5d1721d37fe0 $
+##	$Id: 2621e183c3d9eafacb03bbea57a4a1fb71bf0383 $
 
 #######################################################################
 #
@@ -420,6 +420,11 @@ eap {
 			#  Two files per session will be written, the SSL
 			#  state and the cached VPs. This will persist session
 			#  across server restarts.
+			#
+			#  The default directory is ${logdir}, for historical
+			#  reasons.  You should ${db_dir} instead.  And check
+			#  the value of db_dir in the main radiusd.conf file.
+			#  It should not point to ${raddb}
 			#
 			#  The server will need write perms, and the directory
 			#  should be secured from anyone else. You might want
