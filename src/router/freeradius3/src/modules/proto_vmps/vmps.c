@@ -1,7 +1,7 @@
 /*
  * vmps.c	Handle VMPS traffic.
  *
- * Version:	$Id: f1df12885f0e45928afeccccfc5ee222832228b5 $
+ * Version:	$Id: 1fc0a1970b1461276c024adbeafec2adad41abe1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  * Copyright 2007  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: f1df12885f0e45928afeccccfc5ee222832228b5 $")
+RCSID("$Id: 1fc0a1970b1461276c024adbeafec2adad41abe1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/protocol.h>
@@ -37,6 +37,7 @@ static int vmps_process(REQUEST *request)
 	process_post_auth(0, request);
 	DEBUG2("Done VMPS");
 
+	request->packet->code = 0; /* hack for VMPS */
 	request->reply->code = PW_CODE_ACCESS_ACCEPT;
 
 	return 0;
