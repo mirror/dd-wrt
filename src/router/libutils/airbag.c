@@ -410,28 +410,25 @@ static void slog(int priority, const char *message)
 static int airbag_printf(char *fmt, ...)
 {
 	static char *ss_buffer = NULL;
-	static int clear=0;
-	char *temp;
+	static char temp[128];;
 	va_list args;
 	va_start(args, fmt);
-	int size = vasprintf(&temp, fmt, args);
+	int size = vsnprintf(temp, 128, fmt, args);
 	va_end(args);
 
 	if (!size || size < 0)
 		return 0;
-	if (!clear) {
+	if (!ss_buffer) {
 		ss_buffer = strdup(temp);
-		clear = 1;
 	} else {
 		ss_buffer = realloc(ss_buffer, strlen(ss_buffer) + strlen(temp) + 1);
 		strcat(ss_buffer, temp);
 	}
-	free(temp);
 	if (strchr(ss_buffer, '\n')) {
 		slog(LOG_ERR, ss_buffer);
 		fprintf(stderr, "%s", ss_buffer);
 		free(ss_buffer);
-		clear=0;
+		ss_buffer = NULL;
 	}
 	return size;
 }
