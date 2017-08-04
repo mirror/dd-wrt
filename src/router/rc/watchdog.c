@@ -202,9 +202,8 @@ static void watchdog(void)
 			target = 10000;
 		target *= 4000;
 		target /= 10000;
-		if (target)
-			fprintf(stderr, "set fan to %d\n", target);
 		if (target != lasttarget) {
+			fprintf(stderr, "set fan to %d\n", target);
 			sysprintf("/bin/echo %d > /sys/class/hwmon/hwmon0/device/fan1_target", target);
 			lasttarget = target;
 		}
