@@ -109,15 +109,6 @@ int app_is_finished(struct stasis_app *app);
 void app_update(struct stasis_app *app, stasis_app_cb handler, void *data);
 
 /*!
- * \brief Return an application's name.
- *
- * \param app Application.
- * \return Name of the application.
- * \return \c NULL is \a app is \c NULL.
- */
-const char *app_name(const struct stasis_app *app);
-
-/*!
  * \brief Send a message to an application.
  *
  * \param app Application.
@@ -127,6 +118,14 @@ void app_send(struct stasis_app *app, struct ast_json *message);
 
 struct app_forwards;
 
+/*!
+ * \brief Create a JSON representation of a \c stasis_app
+ *
+ * \param app The application
+ *
+ * \return \c JSON blob on success
+ * \return \c NULL on error
+ */
 struct ast_json *app_to_json(const struct stasis_app *app);
 
 /*!

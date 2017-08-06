@@ -213,6 +213,25 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Gets or sets a variable that is sent to a remote IAX2 peer during call setup.</para>
 		</description>
 	</function>
+	<info name="CHANNEL" language="en_US" tech="IAX">
+		<enumlist>
+			<enum name="osptoken">
+				<para>R/O Get the peer's osptoken.</para>
+			</enum>
+			<enum name="peerip">
+				<para>R/O Get the peer's ip address.</para>
+			</enum>
+			<enum name="peername">
+				<para>R/O Get the peer's username.</para>
+			</enum>
+			<enum name="secure_signaling">
+				<para>R/O Get the if the IAX channel is secured.</para>
+			</enum>
+			<enum name="secure_media">
+				<para>R/O Get the if the IAX channel is secured.</para>
+			</enum>
+		</enumlist>
+	</info>
 	<manager name="IAXpeers" language="en_US">
 		<synopsis>
 			List IAX peers.
@@ -12909,7 +12928,13 @@ static struct iax2_peer *build_peer(const char *name, struct ast_variable *v, st
 					/* Non-dynamic.  Make sure we become that way if we're not */
 					AST_SCHED_DEL(sched, peer->expire);
 					ast_clear_flag64(peer, IAX_DYNAMIC);
-					peer->addr.ss.ss_family = AST_AF_UNSPEC;
+					if (peer->dnsmgr) {
+						// Make sure we refresh dnsmgr if we're using it
+						ast_dnsmgr_refresh(peer->dnsmgr);
+					} else {
+						// Or just invalidate the address
+						peer->addr.ss.ss_family = AST_AF_UNSPEC;
+					}
 					if (ast_dnsmgr_lookup(v->value, &peer->addr, &peer->dnsmgr, srvlookup ? "_iax._udp" : NULL)) {
 						return peer_unref(peer);
 					}
@@ -14864,7 +14889,7 @@ container_fail:
 	if (calltoken_ignores) {
 		ao2_ref(calltoken_ignores, -1);
 	}
-	return AST_MODULE_LOAD_FAILURE;
+	return -1;
 }
 
 
@@ -15069,12 +15094,14 @@ static int load_module(void)
 	struct iax2_registry *reg = NULL;
 
 	if (!(iax2_tech.capabilities = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 	ast_format_cap_append_by_type(iax2_tech.capabilities, AST_MEDIA_TYPE_UNKNOWN);
 
 	if (load_objects()) {
-		return AST_MODULE_LOAD_FAILURE;
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	memset(iaxs, 0, sizeof(iaxs));
@@ -15085,28 +15112,36 @@ static int load_module(void)
 
 	if (!(sched = ast_sched_context_create())) {
 		ast_log(LOG_ERROR, "Failed to create scheduler thread\n");
-		return AST_MODULE_LOAD_FAILURE;
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (ast_sched_start_thread(sched)) {
 		ast_sched_context_destroy(sched);
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
 		sched = NULL;
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (!(io = io_context_create())) {
 		ast_log(LOG_ERROR, "Failed to create I/O context\n");
 		ast_sched_context_destroy(sched);
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
 		sched = NULL;
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (!(netsock = ast_netsock_list_alloc())) {
 		ast_log(LOG_ERROR, "Failed to create netsock list\n");
 		io_context_destroy(io);
 		ast_sched_context_destroy(sched);
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
 		sched = NULL;
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 	ast_netsock_init(netsock);
 
@@ -15115,8 +15150,10 @@ static int load_module(void)
 		ast_log(LOG_ERROR, "Could not allocate outsock list.\n");
 		io_context_destroy(io);
 		ast_sched_context_destroy(sched);
+		ao2_ref(iax2_tech.capabilities, -1);
+		iax2_tech.capabilities = NULL;
 		sched = NULL;
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 	ast_netsock_init(outsock);
 
@@ -15135,6 +15172,7 @@ static int load_module(void)
 			ast_timer_close(timer);
 			timer = NULL;
 		}
+		__unload_module();
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -15160,7 +15198,7 @@ static int load_module(void)
  	if (ast_channel_register(&iax2_tech)) {
 		ast_log(LOG_ERROR, "Unable to register channel class %s\n", "IAX2");
 		__unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (ast_register_switch(&iax2_switch)) {
@@ -15170,7 +15208,7 @@ static int load_module(void)
 	if (start_network_thread()) {
 		ast_log(LOG_ERROR, "Unable to start network thread\n");
 		__unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	} else {
 		ast_verb(2, "IAX Ready and Listening\n");
 	}

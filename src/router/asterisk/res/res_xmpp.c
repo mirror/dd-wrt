@@ -278,11 +278,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Sends a message to a Jabber Client.</para>
 		</description>
 	</manager>
-	<info name="XMPPMessageToInfo" language="en_US" tech="XMPP">
+	<info name="MessageToInfo" language="en_US" tech="XMPP">
 		<para>Specifying a prefix of <literal>xmpp:</literal> will send the
 		message as an XMPP chat message.</para>
 	</info>
-	<info name="XMPPMessageFromInfo" language="en_US" tech="XMPP">
+	<info name="MessageFromInfo" language="en_US" tech="XMPP">
 		<para>Specifying a prefix of <literal>xmpp:</literal> will specify the
 		account defined in <literal>xmpp.conf</literal> to send the message from.
 		Note that this field is required for XMPP messages.</para>
@@ -561,7 +561,6 @@ static void xmpp_client_destructor(void *obj)
 	ast_xmpp_client_disconnect(client);
 
 	ast_endpoint_shutdown(client->endpoint);
-	ao2_cleanup(client->endpoint);
 	client->endpoint = NULL;
 
 	if (client->filter) {
@@ -1632,6 +1631,35 @@ static int xmpp_resource_immediate(void *obj, void *arg, int flags)
 	return CMP_MATCH | CMP_STOP;
 }
 
+#define BUDDY_OFFLINE 6
+#define BUDDY_NOT_IN_ROSTER 7
+
+static int get_buddy_status(struct ast_xmpp_client_config *clientcfg, char *screenname, char *resource)
+{
+	int status = BUDDY_OFFLINE;
+	struct ast_xmpp_resource *res;
+	struct ast_xmpp_buddy *buddy = ao2_find(clientcfg->client->buddies, screenname, OBJ_KEY);
+
+	if (!buddy) {
+		return BUDDY_NOT_IN_ROSTER;
+	}
+
+	res = ao2_callback(
+		buddy->resources,
+		0,
+		ast_strlen_zero(resource) ? xmpp_resource_immediate : xmpp_resource_cmp,
+		resource);
+
+	if (res) {
+		status = res->status;
+	}
+
+	ao2_cleanup(res);
+	ao2_cleanup(buddy);
+
+	return status;
+}
+
 /*
  * \internal
  * \brief Dial plan function status(). puts the status of watched user
@@ -1645,10 +1673,7 @@ static int xmpp_status_exec(struct ast_channel *chan, const char *data)
 {
 	RAII_VAR(struct xmpp_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 	RAII_VAR(struct ast_xmpp_client_config *, clientcfg, NULL, ao2_cleanup);
-	struct ast_xmpp_buddy *buddy;
-	struct ast_xmpp_resource *resource;
 	char *s = NULL, status[2];
-	int stat = 7;
 	static int deprecation_warning = 0;
 	AST_DECLARE_APP_ARGS(args,
 			     AST_APP_ARG(sender);
@@ -1687,25 +1712,7 @@ static int xmpp_status_exec(struct ast_channel *chan, const char *data)
 		return -1;
 	}
 
-	if (!(buddy = ao2_find(clientcfg->client->buddies, jid.screenname, OBJ_KEY))) {
-		ast_log(LOG_WARNING, "Could not find buddy in list: '%s'\n", jid.screenname);
-		return -1;
-	}
-
-	if (ast_strlen_zero(jid.resource) || !(resource = ao2_callback(buddy->resources, 0, xmpp_resource_cmp, jid.resource))) {
-		resource = ao2_callback(buddy->resources, OBJ_NODATA, xmpp_resource_immediate, NULL);
-	}
-
-	ao2_ref(buddy, -1);
-
-	if (resource) {
-		stat = resource->status;
-		ao2_ref(resource, -1);
-	} else {
-		ast_log(LOG_NOTICE, "Resource '%s' of buddy '%s' was not found\n", jid.resource, jid.screenname);
-	}
-
-	snprintf(status, sizeof(status), "%d", stat);
+	snprintf(status, sizeof(status), "%d", get_buddy_status(clientcfg, jid.screenname, jid.resource));
 	pbx_builtin_setvar_helper(chan, args.variable, status);
 
 	return 0;
@@ -1724,9 +1731,6 @@ static int acf_jabberstatus_read(struct ast_channel *chan, const char *name, cha
 {
 	RAII_VAR(struct xmpp_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 	RAII_VAR(struct ast_xmpp_client_config *, clientcfg, NULL, ao2_cleanup);
-	struct ast_xmpp_buddy *buddy;
-	struct ast_xmpp_resource *resource;
-	int stat = 7;
 	AST_DECLARE_APP_ARGS(args,
 			     AST_APP_ARG(sender);
 			     AST_APP_ARG(jid);
@@ -1758,25 +1762,7 @@ static int acf_jabberstatus_read(struct ast_channel *chan, const char *name, cha
 		return -1;
 	}
 
-	if (!(buddy = ao2_find(clientcfg->client->buddies, jid.screenname, OBJ_KEY))) {
-		ast_log(LOG_WARNING, "Could not find buddy in list: '%s'\n", jid.screenname);
-		return -1;
-	}
-
-	if (ast_strlen_zero(jid.resource) || !(resource = ao2_callback(buddy->resources, 0, xmpp_resource_cmp, jid.resource))) {
-		resource = ao2_callback(buddy->resources, OBJ_NODATA, xmpp_resource_immediate, NULL);
-	}
-
-	ao2_ref(buddy, -1);
-
-	if (resource) {
-		stat = resource->status;
-		ao2_ref(resource, -1);
-	} else {
-		ast_log(LOG_NOTICE, "Resource %s of buddy %s was not found.\n", jid.resource, jid.screenname);
-	}
-
-	snprintf(buf, buflen, "%d", stat);
+	snprintf(buf, buflen, "%d", get_buddy_status(clientcfg, jid.screenname, jid.resource));
 
 	return 0;
 }
@@ -2564,10 +2550,16 @@ static void xmpp_log_hook(void *data, const char *xmpp, size_t size, int incomin
 static int xmpp_client_send_raw_message(struct ast_xmpp_client *client, const char *message)
 {
 	int ret;
-#ifdef HAVE_OPENSSL
-	int len = strlen(message);
 
+	if (client->state == XMPP_STATE_DISCONNECTED) {
+		/* iks_send_raw will crash without a connection */
+		return IKS_NET_NOCONN;
+	}
+
+#ifdef HAVE_OPENSSL
 	if (xmpp_is_secure(client)) {
+		int len = strlen(message);
+
 		ret = SSL_write(client->ssl_session, message, len);
 		if (ret) {
 			/* Log the message here, because iksemel's logHook is
@@ -2631,12 +2623,31 @@ static int xmpp_client_request_tls(struct ast_xmpp_client *client, struct ast_xm
 #endif
 }
 
+#ifdef HAVE_OPENSSL
+static char *openssl_error_string(void)
+{
+	char *buf = NULL, *ret;
+	size_t len;
+	BIO *bio = BIO_new(BIO_s_mem());
+
+	ERR_print_errors(bio);
+	len = BIO_get_mem_data(bio, &buf);
+	ret = ast_calloc(1, len + 1);
+	if (ret) {
+		memcpy(ret, buf, len);
+	}
+	BIO_free(bio);
+	return ret;
+}
+#endif
+
 /*! \brief Internal function called when we receive a response to our TLS initiation request */
 static int xmpp_client_requested_tls(struct ast_xmpp_client *client, struct ast_xmpp_client_config *cfg, int type, iks *node)
 {
 #ifdef HAVE_OPENSSL
 	int sock;
 	long ssl_opts;
+	char *err;
 #endif
 
 	if (!strcmp(iks_name(node), "success")) {
@@ -2672,7 +2683,7 @@ static int xmpp_client_requested_tls(struct ast_xmpp_client *client, struct ast_
 		goto failure;
 	}
 
-	if (!SSL_connect(client->ssl_session)) {
+	if (SSL_connect(client->ssl_session) <= 0) {
 		goto failure;
 	}
 
@@ -2692,7 +2703,10 @@ static int xmpp_client_requested_tls(struct ast_xmpp_client *client, struct ast_
 	return 0;
 
 failure:
-	ast_log(LOG_ERROR, "TLS connection for client '%s' cannot be established. OpenSSL initialization failed.\n", client->name);
+	err = openssl_error_string();
+	ast_log(LOG_ERROR, "TLS connection for client '%s' cannot be established. "
+		"OpenSSL initialization failed: %s\n", client->name, err);
+	ast_free(err);
 	return -1;
 #endif
 }
@@ -3567,6 +3581,7 @@ int ast_xmpp_client_disconnect(struct ast_xmpp_client *client)
 {
 	if ((client->thread != AST_PTHREADT_NULL) && !pthread_equal(pthread_self(), client->thread)) {
 		xmpp_client_change_state(client, XMPP_STATE_DISCONNECTING);
+		pthread_cancel(client->thread);
 		pthread_join(client->thread, NULL);
 		client->thread = AST_PTHREADT_NULL;
 	}
@@ -3746,22 +3761,37 @@ static int xmpp_client_receive(struct ast_xmpp_client *client, unsigned int time
 	return IKS_OK;
 }
 
+static void sleep_with_backoff(unsigned int *sleep_time)
+{
+	/* We're OK with our thread dying here */
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
+	sleep(*sleep_time);
+	*sleep_time = MIN(60, *sleep_time * 2);
+
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+}
+
 /*! \brief XMPP client connection thread */
 static void *xmpp_client_thread(void *data)
 {
 	struct ast_xmpp_client *client = data;
 	int res = IKS_NET_RWERR;
+	unsigned int sleep_time = 1;
+
+	/* We only allow cancellation while sleeping */
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 
 	do {
 		if (client->state == XMPP_STATE_DISCONNECTING) {
-			ast_debug(1, "JABBER: Disconnecting client '%s'\n", client->name);
+			ast_debug(1, "[%s] Disconnecting\n", client->name);
 			break;
 		}
 
 		if (res == IKS_NET_RWERR || client->timeout == 0) {
-			ast_debug(3, "Connecting client '%s'\n", client->name);
+			ast_debug(3, "[%s] Connecting\n", client->name);
 			if ((res = xmpp_client_reconnect(client)) != IKS_OK) {
-				sleep(4);
+				sleep_with_backoff(&sleep_time);
 				res = IKS_NET_RWERR;
 			}
 			continue;
@@ -3776,9 +3806,9 @@ static void *xmpp_client_thread(void *data)
 		}
 
 		if (res == IKS_HOOK) {
-			ast_debug(2, "JABBER: Got hook event.\n");
+			ast_debug(2, "[%s] Got hook event\n", client->name);
 		} else if (res == IKS_NET_TLSFAIL) {
-			ast_log(LOG_ERROR, "JABBER:  Failure in TLS.\n");
+			ast_log(LOG_ERROR, "[%s] TLS failure\n", client->name);
 		} else if (!client->timeout && client->state == XMPP_STATE_CONNECTED) {
 			RAII_VAR(struct xmpp_config *, cfg, ao2_global_obj_ref(globals), ao2_cleanup);
 			RAII_VAR(struct ast_xmpp_client_config *, clientcfg, NULL, ao2_cleanup);
@@ -3796,22 +3826,26 @@ static void *xmpp_client_thread(void *data)
 			if (res == IKS_OK) {
 				client->timeout = 50;
 			} else {
-				ast_log(LOG_WARNING, "JABBER: Network Timeout\n");
+				ast_log(LOG_WARNING, "[%s] Network timeout\n", client->name);
 			}
 		} else if (res == IKS_NET_RWERR) {
-			ast_log(LOG_WARNING, "JABBER: socket read error\n");
+			ast_log(LOG_WARNING, "[%s] Socket read error\n", client->name);
+			ast_xmpp_client_disconnect(client);
+			sleep_with_backoff(&sleep_time);
 		} else if (res == IKS_NET_NOSOCK) {
-			ast_log(LOG_WARNING, "JABBER: No Socket\n");
+			ast_log(LOG_WARNING, "[%s] No socket\n", client->name);
 		} else if (res == IKS_NET_NOCONN) {
-			ast_log(LOG_WARNING, "JABBER: No Connection\n");
+			ast_log(LOG_WARNING, "[%s] No connection\n", client->name);
 		} else if (res == IKS_NET_NODNS) {
-			ast_log(LOG_WARNING, "JABBER: No DNS\n");
+			ast_log(LOG_WARNING, "[%s] No DNS\n", client->name);
 		} else if (res == IKS_NET_NOTSUPP) {
-			ast_log(LOG_WARNING, "JABBER: Not Supported\n");
+			ast_log(LOG_WARNING, "[%s] Not supported\n", client->name);
 		} else if (res == IKS_NET_DROPPED) {
-			ast_log(LOG_WARNING, "JABBER: Dropped?\n");
+			ast_log(LOG_WARNING, "[%s] Dropped?\n", client->name);
 		} else if (res == IKS_NET_UNKNOWN) {
-			ast_debug(5, "JABBER: Unknown\n");
+			ast_debug(5, "[%s] Unknown\n", client->name);
+		} else if (res == IKS_OK) {
+			sleep_time = 1;
 		}
 
 	} while (1);
@@ -4651,6 +4685,10 @@ static int load_module(void)
 
 	ast_mutex_init(&messagelock);
 	ast_cond_init(&message_received_condition, NULL);
+
+	if (ast_eid_is_empty(&ast_eid_default)) {
+		ast_log(LOG_WARNING, "Entity ID is not set. The distributing device state or MWI will not work.\n");
+	}
 
 	return AST_MODULE_LOAD_SUCCESS;
 }

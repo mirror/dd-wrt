@@ -70,6 +70,8 @@ struct member {
 	const char *touch_on_change;
 	const char *support_level;
 	const char *replacement;
+	/*! member_data is just an opaque, member-specific string */
+	const char *member_data;
 	/*! This module is currently selected */
 	unsigned int enabled:1;
 	/*! This module was enabled when the config was loaded */
@@ -105,7 +107,9 @@ enum support_level_values {
 	SUPPORT_EXTENDED = 1,
 	SUPPORT_DEPRECATED = 2,
 	SUPPORT_UNSPECIFIED = 3,
-	SUPPORT_COUNT = 4, /* Keep this item at the end of the list. Tracks total number of support levels. */
+	SUPPORT_EXTERNAL = 4,
+	SUPPORT_OPTION = 5,
+	SUPPORT_COUNT = 6, /* Keep this item at the end of the list. Tracks total number of support levels. */
 };
 
 AST_LIST_HEAD_NOLOCK(support_level_bucket, member);
@@ -160,5 +164,17 @@ static inline int strlen_zero(const char *s)
 {
 	return (!s || (*s == '\0'));
 }
+
+#if !defined(ast_strdupa) && defined(__GNUC__)
+#define ast_strdupa(s)                                                    \
+	(__extension__                                                    \
+	({                                                                \
+		const char *__old = (s);                                  \
+		size_t __len = strlen(__old) + 1;                         \
+		char *__new = __builtin_alloca(__len);                    \
+		memcpy (__new, __old, __len);                             \
+		__new;                                                    \
+	}))
+#endif
 
 #endif /* MENUSELECT_H */

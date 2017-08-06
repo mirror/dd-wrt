@@ -64,7 +64,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/cli.h"
 #include "asterisk/manager.h"
 #include "asterisk/utils.h"
-#include "asterisk/adsi.h"
 #include "asterisk/devicestate.h"
 #include "asterisk/audiohook.h"
 #include "asterisk/global_datastores.h"
@@ -203,6 +202,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				</variable>
 			</variablelist>
 		</description>
+		<see-also>
+			<ref type="manager">Bridge</ref>
+			<ref type="managerEvent">BridgeCreate</ref>
+			<ref type="managerEvent">BridgeEnter</ref>
+		</see-also>
 	</application>
 	<manager name="Bridge" language="en_US">
 		<synopsis>
@@ -229,6 +233,15 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Bridge together two channels already in the PBX.</para>
 		</description>
+		<see-also>
+			<ref type="application">Bridge</ref>
+			<ref type="managerEvent">BridgeCreate</ref>
+			<ref type="managerEvent">BridgeEnter</ref>
+			<ref type="manager">BridgeDestroy</ref>
+			<ref type="manager">BridgeInfo</ref>
+			<ref type="manager">BridgeKick</ref>
+			<ref type="manager">BridgeList</ref>
+		</see-also>
 	</manager>
  ***/
 
@@ -767,12 +780,12 @@ static int action_bridge(struct mansession *s, const struct message *m)
 		astman_send_error(s, m, buf);
 		return 0;
 	}
-	xfer_cfg_a = ast_get_chan_features_xfer_config(chana);
 	ast_channel_lock(chana);
+	xfer_cfg_a = ast_get_chan_features_xfer_config(chana);
 	chana_exten = ast_strdupa(ast_channel_exten(chana));
 	chana_context = ast_strdupa(ast_channel_context(chana));
 	chana_priority = ast_channel_priority(chana);
-	if (!ast_test_flag(ast_channel_flags(chana), AST_FLAG_IN_AUTOLOOP)) {
+	if (ast_test_flag(ast_channel_flags(chana), AST_FLAG_IN_AUTOLOOP)) {
 		chana_priority++;
 	}
 	ast_channel_unlock(chana);
@@ -783,12 +796,12 @@ static int action_bridge(struct mansession *s, const struct message *m)
 		astman_send_error(s, m, buf);
 		return 0;
 	}
-	xfer_cfg_b = ast_get_chan_features_xfer_config(chanb);
 	ast_channel_lock(chanb);
+	xfer_cfg_b = ast_get_chan_features_xfer_config(chanb);
 	chanb_exten = ast_strdupa(ast_channel_exten(chanb));
 	chanb_context = ast_strdupa(ast_channel_context(chanb));
 	chanb_priority = ast_channel_priority(chanb);
-	if (!ast_test_flag(ast_channel_flags(chanb), AST_FLAG_IN_AUTOLOOP)) {
+	if (ast_test_flag(ast_channel_flags(chanb), AST_FLAG_IN_AUTOLOOP)) {
 		chanb_priority++;
 	}
 	ast_channel_unlock(chanb);
@@ -799,7 +812,7 @@ static int action_bridge(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
-	ast_bridge_set_after_go_on(chana, chana_context, chana_exten, chana_priority, NULL);
+	ast_bridge_set_after_goto(chana, chana_context, chana_exten, chana_priority);
 	if (ast_bridge_add_channel(bridge, chana, NULL, playtone & PLAYTONE_CHANNEL1, xfer_cfg_a ? xfer_cfg_a->xfersound : NULL)) {
 		snprintf(buf, sizeof(buf), "Unable to add Channel1 to bridge: %s", ast_channel_name(chana));
 		astman_send_error(s, m, buf);
@@ -807,7 +820,7 @@ static int action_bridge(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
-	ast_bridge_set_after_go_on(chanb, chanb_context, chanb_exten, chanb_priority, NULL);
+	ast_bridge_set_after_goto(chanb, chanb_context, chanb_exten, chanb_priority);
 	if (ast_bridge_add_channel(bridge, chanb, NULL, playtone & PLAYTONE_CHANNEL2, xfer_cfg_b ? xfer_cfg_b->xfersound : NULL)) {
 		snprintf(buf, sizeof(buf), "Unable to add Channel2 to bridge: %s", ast_channel_name(chanb));
 		astman_send_error(s, m, buf);
@@ -1098,13 +1111,14 @@ static int bridge_exec(struct ast_channel *chan, const char *data)
 		goto done;
 	}
 
+	ast_channel_lock(current_dest_chan);
 	xfer_cfg = ast_get_chan_features_xfer_config(current_dest_chan);
+	ast_channel_unlock(current_dest_chan);
 	bridge_add_failed = ast_bridge_add_channel(bridge, current_dest_chan, peer_features,
 		ast_test_flag(&opts, BRIDGE_OPT_PLAYTONE),
 		xfer_cfg ? xfer_cfg->xfersound : NULL);
 	ao2_cleanup(xfer_cfg);
 	if (bridge_add_failed) {
-		ast_bridge_features_destroy(peer_features);
 		ast_bridge_features_cleanup(&chan_features);
 		ast_bridge_destroy(bridge, 0);
 		goto done;

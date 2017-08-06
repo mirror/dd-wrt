@@ -306,7 +306,8 @@ static void softmix_process_write_audio(struct softmix_translate_helper *trans_h
 		if (entry->trans_pvt && !entry->out_frame) {
 			entry->out_frame = ast_translate(entry->trans_pvt, &sc->write_frame, 0);
 		}
-		if (entry->out_frame && (entry->out_frame->datalen < MAX_DATALEN)) {
+		if (entry->out_frame && entry->out_frame->frametype == AST_FRAME_VOICE
+				&& entry->out_frame->datalen < MAX_DATALEN) {
 			ao2_replace(sc->write_frame.subclass.format, entry->out_frame->subclass.format);
 			memcpy(sc->final_buf, entry->out_frame->data.ptr, entry->out_frame->datalen);
 			sc->write_frame.datalen = entry->out_frame->datalen;
@@ -358,6 +359,9 @@ static void set_softmix_bridge_data(int rate, int interval, struct ast_bridge_ch
 	struct softmix_channel *sc = bridge_channel->tech_pvt;
 	struct ast_format *slin_format;
 	int setup_fail;
+
+	/* The callers have already ensured that sc is never NULL. */
+	ast_assert(sc != NULL);
 
 	slin_format = ast_format_cache_get_slin_by_rate(rate);
 
@@ -439,21 +443,6 @@ static void softmix_bridge_unsuspend(struct ast_bridge *bridge, struct ast_bridg
 	}
 }
 
-/*!
- * \internal
- * \brief Indicate a source change to the channel.
- * \since 12.0.0
- *
- * \param bridge_channel Which channel source is changing.
- *
- * \retval 0 on success.
- * \retval -1 on error.
- */
-static int softmix_src_change(struct ast_bridge_channel *bridge_channel)
-{
-	return ast_bridge_channel_queue_control_data(bridge_channel, AST_CONTROL_SRCCHANGE, NULL, 0);
-}
-
 /*! \brief Function called when a channel is joined into the bridge */
 static int softmix_bridge_join(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
 {
@@ -469,8 +458,6 @@ static int softmix_bridge_join(struct ast_bridge *bridge, struct ast_bridge_chan
 	if (!(sc = ast_calloc(1, sizeof(*sc)))) {
 		return -1;
 	}
-
-	softmix_src_change(bridge_channel);
 
 	/* Can't forget the lock */
 	ast_mutex_init(&sc->lock);
@@ -497,8 +484,6 @@ static void softmix_bridge_leave(struct ast_bridge *bridge, struct ast_bridge_ch
 		return;
 	}
 	bridge_channel->tech_pvt = NULL;
-
-	softmix_src_change(bridge_channel);
 
 	/* Drop mutex lock */
 	ast_mutex_destroy(&sc->lock);
@@ -693,6 +678,15 @@ static int softmix_bridge_write_control(struct ast_bridge *bridge, struct ast_br
 	 * XXX Softmix needs to use channel roles to determine what to
 	 * do with control frames.
 	 */
+
+	switch (frame->subclass.integer) {
+	case AST_CONTROL_VIDUPDATE:
+		ast_bridge_queue_everyone_else(bridge, NULL, frame);
+		break;
+	default:
+		break;
+	}
+
 	return 0;
 }
 
@@ -714,7 +708,7 @@ static int softmix_bridge_write(struct ast_bridge *bridge, struct ast_bridge_cha
 {
 	int res = 0;
 
-	if (!bridge->tech_pvt || (bridge_channel && !bridge_channel->tech_pvt)) {
+	if (!bridge->tech_pvt || !bridge_channel || !bridge_channel->tech_pvt) {
 		/* "Accept" the frame and discard it. */
 		return 0;
 	}
@@ -984,6 +978,11 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 		AST_LIST_TRAVERSE(&bridge->channels, bridge_channel, entry) {
 			struct softmix_channel *sc = bridge_channel->tech_pvt;
 
+			if (!sc) {
+				/* This channel failed to join successfully. */
+				continue;
+			}
+
 			/* Update the sample rate to match the bridge's native sample rate if necessary. */
 			if (update_all_rates) {
 				set_softmix_bridge_data(softmix_data->internal_rate, softmix_data->internal_mixing_interval, bridge_channel, 1);
@@ -1019,7 +1018,8 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 		AST_LIST_TRAVERSE(&bridge->channels, bridge_channel, entry) {
 			struct softmix_channel *sc = bridge_channel->tech_pvt;
 
-			if (bridge_channel->suspended) {
+			if (!sc || bridge_channel->suspended) {
+				/* This channel failed to join successfully or is suspended. */
 				continue;
 			}
 

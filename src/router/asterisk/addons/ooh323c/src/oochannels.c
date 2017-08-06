@@ -679,9 +679,9 @@ int ooProcessCallFDSETsAndTimers
     if (0 != call->pH245Channel && 0 != call->pH245Channel->sock)
     {
      if(ooPDWrite(pfds, nfds, call->pH245Channel->sock)) {
-      while (call->pH245Channel->outQueue.count>0) {
+      if (call->pH245Channel->outQueue.count>0) {
        if (ooSendMsg(call, OOH245MSG) != OO_OK)
-	break;
+	OOTRACEERR1("Error in sending h245 message\n");
       }
      }
     }
@@ -699,26 +699,24 @@ int ooProcessCallFDSETsAndTimers
     {
      if(ooPDWrite(pfds, nfds, call->pH225Channel->sock))
      {
-      while (call->pH225Channel->outQueue.count>0)
+      if (call->pH225Channel->outQueue.count>0)
       {
        OOTRACEDBGC3("Sending H225 message (%s, %s)\n", 
                         call->callType, call->callToken);
        if (ooSendMsg(call, OOQ931MSG) != OO_OK)
-	break;
+	OOTRACEERR1("Error in sending h225 message\n");
       }
       if(call->pH245Channel && 
          call->pH245Channel->outQueue.count>0 && 
         OO_TESTFLAG (call->flags, OO_M_TUNNELING)) {
-       while (call->pH245Channel->outQueue.count>0) {
         OOTRACEDBGC3("H245 message needs to be tunneled. "
                           "(%s, %s)\n", call->callType, 
                                call->callToken);
         if (ooSendMsg(call, OOH245MSG) != OO_OK)
-	 break;
+	  OOTRACEERR1("Error in sending h245 message\n");
        }
-      }
-     }                                
-    }
+      }                                
+     }
 
      if(ooTimerNextTimeout(&call->timerList, &toNext))
      {
@@ -1061,11 +1059,6 @@ int ooH2250Receive(OOH323CallData *call)
    while(total < len)
    {
       struct pollfd pfds;
-      recvLen = ooSocketRecv (call->pH225Channel->sock, message1, len-total);
-      memcpy(message+total, message1, recvLen);
-      total = total + recvLen;
-
-      if(total == len) break; /* Complete message is received */
       
       pfds.fd = call->pH225Channel->sock;
       pfds.events = POLLIN;
@@ -1085,8 +1078,9 @@ int ooH2250Receive(OOH323CallData *call)
          }
          return OO_FAILED;
       }
-      /* If remaining part of the message is not received in 3 seconds 
-         exit */
+
+      /* exit If remaining part of the message is not received in 3 seconds */
+
       if(!ooPDRead(&pfds, 1, call->pH225Channel->sock))
       {
          OOTRACEERR3("Error: Incomplete H.2250 message received - clearing "
@@ -1099,6 +1093,23 @@ int ooH2250Receive(OOH323CallData *call)
          }
          return OO_FAILED;
       }
+
+      recvLen = ooSocketRecv (call->pH225Channel->sock, message1, len-total);
+      if (recvLen == 0) {
+         OOTRACEERR3("Error in read while receiving H.2250 message - "
+                     "clearing call (%s, %s)\n", call->callType, 
+                     call->callToken);
+         ooFreeQ931Message(pctxt, pmsg);
+         if(call->callState < OO_CALL_CLEAR)
+         {
+            call->callEndReason = OO_REASON_TRANSPORTFAILURE;
+            call->callState = OO_CALL_CLEAR;
+         }
+         return OO_FAILED;
+      }
+      memcpy(message+total, message1, recvLen);
+      total = total + recvLen;
+
    }
 
    OOTRACEDBGC3("Received Q.931 message: (%s, %s)\n", 

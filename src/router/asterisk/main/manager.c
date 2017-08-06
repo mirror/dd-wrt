@@ -100,6 +100,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/rtp_engine.h"
 #include "asterisk/format_cache.h"
 #include "asterisk/translate.h"
+#include "asterisk/taskprocessor.h"
 
 /*** DOCUMENTATION
 	<manager name="Ping" language="en_US">
@@ -148,6 +149,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Logoff the current manager session.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Login</ref>
+		</see-also>
 	</manager>
 	<manager name="Login" language="en_US">
 		<synopsis>
@@ -167,6 +171,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Login Manager.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Logoff</ref>
+		</see-also>
 	</manager>
 	<manager name="Challenge" language="en_US">
 		<synopsis>
@@ -320,6 +327,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<para>If a channel name is not provided then the variable is considered global.</para>
 			</note>
 		</description>
+		<see-also>
+			<ref type="manager">Getvar</ref>
+		</see-also>
 	</manager>
 	<manager name="Getvar" language="en_US">
 		<synopsis>
@@ -340,6 +350,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<para>If a channel name is not provided then the variable is considered global.</para>
 			</note>
 		</description>
+		<see-also>
+			<ref type="manager">Setvar</ref>
+		</see-also>
 	</manager>
 	<manager name="GetConfig" language="en_US">
 		<synopsis>
@@ -372,6 +385,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			In the case where a category name is non-unique, a filter may be specified
 			to match only categories with matching variable values.</para>
 		</description>
+		<see-also>
+			<ref type="manager">GetConfigJSON</ref>
+			<ref type="manager">UpdateConfig</ref>
+			<ref type="manager">CreateConfig</ref>
+			<ref type="manager">ListCategories</ref>
+		</see-also>
 	</manager>
 	<manager name="GetConfigJSON" language="en_US">
 		<synopsis>
@@ -396,6 +415,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			In the case where a category name is non-unique, a filter may be specified
 			to match only categories with matching variable values.</para>
 		</description>
+		<see-also>
+			<ref type="manager">GetConfig</ref>
+			<ref type="manager">UpdateConfig</ref>
+			<ref type="manager">CreateConfig</ref>
+			<ref type="manager">ListCategories</ref>
+		</see-also>
 	</manager>
 	<manager name="UpdateConfig" language="en_US">
 		<synopsis>
@@ -487,6 +512,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>This action will modify, create, or delete configuration elements
 			in Asterisk configuration files.</para>
 		</description>
+		<see-also>
+			<ref type="manager">GetConfig</ref>
+			<ref type="manager">GetConfigJSON</ref>
+			<ref type="manager">CreateConfig</ref>
+			<ref type="manager">ListCategories</ref>
+		</see-also>
 	</manager>
 	<manager name="CreateConfig" language="en_US">
 		<synopsis>
@@ -503,6 +534,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			directory. This action is intended to be used before an UpdateConfig
 			action.</para>
 		</description>
+		<see-also>
+			<ref type="manager">GetConfig</ref>
+			<ref type="manager">GetConfigJSON</ref>
+			<ref type="manager">UpdateConfig</ref>
+			<ref type="manager">ListCategories</ref>
+		</see-also>
 	</manager>
 	<manager name="ListCategories" language="en_US">
 		<synopsis>
@@ -517,6 +554,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>This action will dump the categories in a given file.</para>
 		</description>
+		<see-also>
+			<ref type="manager">GetConfig</ref>
+			<ref type="manager">GetConfigJSON</ref>
+			<ref type="manager">UpdateConfig</ref>
+			<ref type="manager">CreateConfig</ref>
+		</see-also>
 	</manager>
 	<manager name="Redirect" language="en_US">
 		<synopsis>
@@ -552,6 +595,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Redirect (transfer) a call.</para>
 		</description>
+		<see-also>
+			<ref type="manager">BlindTransfer</ref>
+		</see-also>
 	</manager>
 	<manager name="Atxfer" language="en_US">
 		<synopsis>
@@ -572,6 +618,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Attended transfer.</para>
 		</description>
+		<see-also>
+			<ref type="managerEvent">AttendedTransfer</ref>
+		</see-also>
 	</manager>
 	<manager name="Originate" language="en_US">
 		<synopsis>
@@ -696,6 +745,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Will return an <literal>Extension Status</literal> message. The response will include
 			the hint for the extension and the status.</para>
 		</description>
+		<see-also>
+			<ref type="managerEvent">ExtensionStatus</ref>
+		</see-also>
 	</manager>
 	<manager name="PresenceState" language="en_US">
 		<synopsis>
@@ -712,6 +764,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Will return a <literal>Presence State</literal> message. The response will include the
 			presence state and, if set, a presence subtype and custom message.</para>
 		</description>
+		<see-also>
+			<ref type="managerEvent">PresenceStatus</ref>
+		</see-also>
 	</manager>
 	<manager name="AbsoluteTimeout" language="en_US">
 		<synopsis>
@@ -749,6 +804,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Waiting: <literal>0</literal> if messages waiting, <literal>1</literal>
 			if no messages waiting.</para>
 		</description>
+		<see-also>
+			<ref type="manager">MailboxCount</ref>
+		</see-also>
 	</manager>
 	<manager name="MailboxCount" language="en_US">
 		<synopsis>
@@ -769,6 +827,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>NewMessages: <replaceable>count</replaceable></para>
 			<para>OldMessages: <replaceable>count</replaceable></para>
 		</description>
+		<see-also>
+			<ref type="manager">MailboxStatus</ref>
+		</see-also>
 	</manager>
 	<manager name="ListCommands" language="en_US">
 		<synopsis>
@@ -818,6 +879,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Send an event to manager sessions.</para>
 		</description>
+		<see-also>
+			<ref type="managerEvent">UserEvent</ref>
+			<ref type="application">UserEvent</ref>
+		</see-also>
 	</manager>
 	<manager name="WaitEvent" language="en_US">
 		<synopsis>
@@ -870,6 +935,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Send a reload event.</para>
 		</description>
+		<see-also>
+			<ref type="manager">ModuleLoad</ref>
+		</see-also>
 	</manager>
 	<managerEvent language="en_US" name="CoreShowChannel">
 		<managerEventInstance class="EVENT_FLAG_CALL">
@@ -982,6 +1050,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Loads, unloads or reloads an Asterisk module in a running system.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Reload</ref>
+			<ref type="manager">ModuleCheck</ref>
+		</see-also>
 	</manager>
 	<manager name="ModuleCheck" language="en_US">
 		<synopsis>
@@ -997,6 +1069,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>Checks if Asterisk module is loaded. Will return Success/Failure.
 			For success returns, the module revision number is included.</para>
 		</description>
+		<see-also>
+			<ref type="manager">ModuleLoad</ref>
+		</see-also>
 	</manager>
 	<manager name="AOCMessage" language="en_US">
 		<synopsis>
@@ -1103,6 +1178,10 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<description>
 			<para>Generates an AOC-D or AOC-E message on a channel.</para>
 		</description>
+		<see-also>
+			<ref type="managerEvent">AOC-D</ref>
+			<ref type="managerEvent">AOC-E</ref>
+		</see-also>
 	</manager>
 	<function name="AMI_CLIENT" language="en_US">
 		<synopsis>
@@ -1162,6 +1241,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			this command can be used to create filters that may bypass
 			filters defined in manager.conf</para>
 		</description>
+		<see-also>
+			<ref type="manager">FilterList</ref>
+		</see-also>
 	</manager>
 	<manager name="FilterList" language="en_US">
 		<synopsis>
@@ -1171,6 +1253,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>The filters displayed are for the current session.  Only those filters defined in
                         manager.conf will be present upon starting a new session.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Filter</ref>
+		</see-also>
 	</manager>
 	<manager name="BlindTransfer" language="en_US">
 		<synopsis>
@@ -1189,6 +1274,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</description>
 		<see-also>
 			<ref type="manager">Redirect</ref>
+			<ref type="managerEvent">BlindTransfer</ref>
 		</see-also>
 	</manager>
 	<managerEvent name="ExtensionStatus" language="en_US">
@@ -1266,6 +1352,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 					</enumlist>
 				</parameter>
 			</syntax>
+			<see-also>
+				<ref type="manager">ExtensionState</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
 	<managerEvent name="PresenceStatus" language="en_US">
@@ -1279,6 +1368,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<parameter name="Subtype" />
 				<parameter name="Message" />
 			</syntax>
+			<see-also>
+				<ref type="manager">PresenceState</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
  ***/
@@ -1541,6 +1633,17 @@ static AST_RWLIST_HEAD_STATIC(manager_hooks, manager_custom_hook);
 /*! \brief A container of event documentation nodes */
 static AO2_GLOBAL_OBJ_STATIC(event_docs);
 
+static int __attribute__((format(printf, 9, 0))) __manager_event_sessions(
+	struct ao2_container *sessions,
+	int category,
+	const char *event,
+	int chancount,
+	struct ast_channel **chans,
+	const char *file,
+	int line,
+	const char *func,
+	const char *fmt,
+	...);
 static enum add_filter_result manager_add_filter(const char *filter_pattern, struct ao2_container *whitefilters, struct ao2_container *blackfilters);
 
 static int match_filter(struct mansession *s, char *eventdata);
@@ -1679,37 +1782,75 @@ struct ast_str *ast_manager_str_from_json_object(struct ast_json *blob, key_excl
 	return res;
 }
 
+#define manager_event_sessions(sessions, category, event, contents , ...)	\
+	__manager_event_sessions(sessions, category, event, 0, NULL, __FILE__, __LINE__, __PRETTY_FUNCTION__, contents , ## __VA_ARGS__)
+
+#define any_manager_listeners(sessions)	\
+	((sessions && ao2_container_count(sessions)) || !AST_RWLIST_EMPTY(&manager_hooks))
+
 static void manager_default_msg_cb(void *data, struct stasis_subscription *sub,
 				    struct stasis_message *message)
 {
-	RAII_VAR(struct ast_manager_event_blob *, ev, NULL, ao2_cleanup);
+	struct ao2_container *sessions;
+	struct ast_manager_event_blob *ev;
 
-	ev = stasis_message_to_ami(message);
-
-	if (ev == NULL) {
-		/* Not and AMI message; disregard */
+	if (!stasis_message_can_be_ami(message)) {
+		/* Not an AMI message; disregard */
 		return;
 	}
 
-	manager_event(ev->event_flags, ev->manager_event, "%s",
-		ev->extra_fields);
+	sessions = ao2_global_obj_ref(mgr_sessions);
+	if (!any_manager_listeners(sessions)) {
+		/* Nobody is listening */
+		ao2_cleanup(sessions);
+		return;
+	}
+
+	ev = stasis_message_to_ami(message);
+	if (!ev) {
+		/* Conversion failure */
+		ao2_cleanup(sessions);
+		return;
+	}
+
+	manager_event_sessions(sessions, ev->event_flags, ev->manager_event,
+		"%s", ev->extra_fields);
+	ao2_ref(ev, -1);
+	ao2_cleanup(sessions);
 }
 
 static void manager_generic_msg_cb(void *data, struct stasis_subscription *sub,
 				    struct stasis_message *message)
 {
-	struct ast_json_payload *payload = stasis_message_data(message);
-	int class_type = ast_json_integer_get(ast_json_object_get(payload->json, "class_type"));
-	const char *type = ast_json_string_get(ast_json_object_get(payload->json, "type"));
-	struct ast_json *event = ast_json_object_get(payload->json, "event");
-	RAII_VAR(struct ast_str *, event_buffer, NULL, ast_free);
+	struct ast_json_payload *payload;
+	int class_type;
+	const char *type;
+	struct ast_json *event;
+	struct ast_str *event_buffer;
+	struct ao2_container *sessions;
+
+	sessions = ao2_global_obj_ref(mgr_sessions);
+	if (!any_manager_listeners(sessions)) {
+		/* Nobody is listening */
+		ao2_cleanup(sessions);
+		return;
+	}
+
+	payload = stasis_message_data(message);
+	class_type = ast_json_integer_get(ast_json_object_get(payload->json, "class_type"));
+	type = ast_json_string_get(ast_json_object_get(payload->json, "type"));
+	event = ast_json_object_get(payload->json, "event");
 
 	event_buffer = ast_manager_str_from_json_object(event, NULL);
 	if (!event_buffer) {
 		ast_log(AST_LOG_WARNING, "Error while creating payload for event %s\n", type);
+		ao2_cleanup(sessions);
 		return;
 	}
-	manager_event(class_type, type, "%s", ast_str_buffer(event_buffer));
+	manager_event_sessions(sessions, class_type, type,
+		"%s", ast_str_buffer(event_buffer));
+	ast_free(event_buffer);
+	ao2_cleanup(sessions);
 }
 
 void ast_manager_publish_event(const char *type, int class_type, struct ast_json *obj)
@@ -4678,14 +4819,10 @@ static int action_redirect(struct mansession *s, const struct message *m)
 
 	/* Release the bridge wait. */
 	if (chan1_wait) {
-		ast_channel_lock(chan);
-		ast_clear_flag(ast_channel_flags(chan), AST_FLAG_BRIDGE_DUAL_REDIRECT_WAIT);
-		ast_channel_unlock(chan);
+		ast_channel_clear_flag(chan, AST_FLAG_BRIDGE_DUAL_REDIRECT_WAIT);
 	}
 	if (chan2_wait) {
-		ast_channel_lock(chan2);
-		ast_clear_flag(ast_channel_flags(chan2), AST_FLAG_BRIDGE_DUAL_REDIRECT_WAIT);
-		ast_channel_unlock(chan2);
+		ast_channel_clear_flag(chan2, AST_FLAG_BRIDGE_DUAL_REDIRECT_WAIT);
 	}
 
 	chan2 = ast_channel_unref(chan2);
@@ -4698,7 +4835,7 @@ static int action_blind_transfer(struct mansession *s, const struct message *m)
 	const char *name = astman_get_header(m, "Channel");
 	const char *exten = astman_get_header(m, "Exten");
 	const char *context = astman_get_header(m, "Context");
-	RAII_VAR(struct ast_channel *, chan, NULL, ao2_cleanup);
+	struct ast_channel *chan;
 
 	if (ast_strlen_zero(name)) {
 		astman_send_error(s, m, "No channel specified");
@@ -4735,6 +4872,7 @@ static int action_blind_transfer(struct mansession *s, const struct message *m)
 		break;
 	}
 
+	ast_channel_unref(chan);
 	return 0;
 }
 
@@ -4954,13 +5092,15 @@ static void *fast_originate(void *data)
 
 	if (!ast_strlen_zero(in->app)) {
 		res = ast_pbx_outgoing_app(in->tech, in->cap, in->data,
-			in->timeout, in->app, in->appdata, &reason, 1,
+			in->timeout, in->app, in->appdata, &reason,
+			AST_OUTGOING_WAIT,
 			S_OR(in->cid_num, NULL),
 			S_OR(in->cid_name, NULL),
 			in->vars, in->account, &chan, &assignedids);
 	} else {
 		res = ast_pbx_outgoing_exten(in->tech, in->cap, in->data,
-			in->timeout, in->context, in->exten, in->priority, &reason, 1,
+			in->timeout, in->context, in->exten, in->priority, &reason,
+			AST_OUTGOING_WAIT,
 			S_OR(in->cid_num, NULL),
 			S_OR(in->cid_name, NULL),
 			in->vars, in->account, &chan, in->early_media, &assignedids);
@@ -5431,11 +5571,16 @@ static int action_originate(struct mansession *s, const struct message *m)
 			}
 		}
 	} else if (!ast_strlen_zero(app)) {
-		res = ast_pbx_outgoing_app(tech, cap, data, to, app, appdata, &reason, 1, l, n, vars, account, NULL, assignedids.uniqueid ? &assignedids : NULL);
+		res = ast_pbx_outgoing_app(tech, cap, data, to, app, appdata, &reason,
+				AST_OUTGOING_WAIT, l, n, vars, account, NULL,
+				assignedids.uniqueid ? &assignedids : NULL);
 		ast_variables_destroy(vars);
 	} else {
 		if (exten && context && pi) {
-			res = ast_pbx_outgoing_exten(tech, cap, data, to, context, exten, pi, &reason, 1, l, n, vars, account, NULL, bridge_early, assignedids.uniqueid ? &assignedids : NULL);
+			res = ast_pbx_outgoing_exten(tech, cap, data, to,
+					context, exten, pi, &reason, AST_OUTGOING_WAIT,
+					l, n, vars, account, NULL, bridge_early,
+					assignedids.uniqueid ? &assignedids : NULL);
 			ast_variables_destroy(vars);
 		} else {
 			astman_send_error(s, m, "Originate with 'Exten' requires 'Context' and 'Priority'");
@@ -5497,8 +5642,9 @@ static int action_extensionstate(struct mansession *s, const struct message *m)
 {
 	const char *exten = astman_get_header(m, "Exten");
 	const char *context = astman_get_header(m, "Context");
-	char hint[256] = "";
+	char hint[256];
 	int status;
+
 	if (ast_strlen_zero(exten)) {
 		astman_send_error(s, m, "Extension not specified");
 		return 0;
@@ -5507,16 +5653,18 @@ static int action_extensionstate(struct mansession *s, const struct message *m)
 		context = "default";
 	}
 	status = ast_extension_state(NULL, context, exten);
-	ast_get_hint(hint, sizeof(hint) - 1, NULL, 0, NULL, context, exten);
+	hint[0] = '\0';
+	ast_get_hint(hint, sizeof(hint), NULL, 0, NULL, context, exten);
 	astman_start_ack(s, m);
-	astman_append(s,   "Message: Extension Status\r\n"
-			   "Exten: %s\r\n"
-			   "Context: %s\r\n"
-			   "Hint: %s\r\n"
-			   "Status: %d\r\n"
-		           "StatusText: %s\r\n\r\n",
-		      exten, context, hint, status,
-		      ast_extension_state2str(status));
+	astman_append(s, "Message: Extension Status\r\n"
+		"Exten: %s\r\n"
+		"Context: %s\r\n"
+		"Hint: %s\r\n"
+		"Status: %d\r\n"
+		"StatusText: %s\r\n"
+		"\r\n",
+		exten, context, hint, status,
+		ast_extension_state2str(status));
 	return 0;
 }
 
@@ -5713,7 +5861,11 @@ static int match_filter(struct mansession *s, char *eventdata)
 {
 	int result = 0;
 
-	ast_debug(3, "Examining AMI event:\n%s\n", eventdata);
+	if (manager_debug) {
+		ast_verbose("<-- Examining AMI event: -->\n%s\n", eventdata);
+	} else {
+		ast_debug(3, "Examining AMI event:\n%s\n", eventdata);
+	}
 	if (!ao2_container_count(s->session->whitefilters) && !ao2_container_count(s->session->blackfilters)) {
 		return 1; /* no filtering means match all */
 	} else if (ao2_container_count(s->session->whitefilters) && !ao2_container_count(s->session->blackfilters)) {
@@ -5907,7 +6059,7 @@ static int action_coreshowchannels(struct mansession *s, const struct message *m
 	const char *actionid = astman_get_header(m, "ActionID");
 	char idText[256];
 	int numchans = 0;
-	RAII_VAR(struct ao2_container *, channels, NULL, ao2_cleanup);
+	struct ao2_container *channels;
 	struct ao2_iterator it_chans;
 	struct stasis_message *msg;
 
@@ -5917,7 +6069,8 @@ static int action_coreshowchannels(struct mansession *s, const struct message *m
 		idText[0] = '\0';
 	}
 
-	if (!(channels = stasis_cache_dump(ast_channel_cache_by_name(), ast_channel_snapshot_type()))) {
+	channels = stasis_cache_dump(ast_channel_cache_by_name(), ast_channel_snapshot_type());
+	if (!channels) {
 		astman_send_error(s, m, "Could not get cached channels");
 		return 0;
 	}
@@ -5969,6 +6122,7 @@ static int action_coreshowchannels(struct mansession *s, const struct message *m
 	astman_send_list_complete_start(s, m, "CoreShowChannelsComplete", numchans);
 	astman_send_list_complete_end(s);
 
+	ao2_ref(channels, -1);
 	return 0;
 }
 
@@ -6300,6 +6454,12 @@ static int get_input(struct mansession *s, char *output)
 	}
 
 	ao2_lock(s->session);
+	/*
+	 * It is worth noting here that you can all but ignore fread()'s documentation
+	 * for the purposes of this call. The FILE * we are working with here was created
+	 * as a result of a call to fopencookie() (or equivalent) in tcptls.c, and as such
+	 * the behavior of fread() is not as documented. Frankly, I think this is gross.
+	 */
 	res = fread(src + s->session->inlen, 1, maxlen - s->session->inlen, s->session->f);
 	if (res < 1) {
 		res = -1;	/* error return */
@@ -6433,10 +6593,9 @@ static void *session_do(void *data)
 	struct mansession s = {
 		.tcptls_session = data,
 	};
-	int flags;
+	int flags = 1;
 	int res;
 	struct ast_sockaddr ser_remote_address_tmp;
-	struct protoent *p;
 
 	if (ast_atomic_fetchadd_int(&unauth_sessions, +1) >= authlimit) {
 		fclose(ser->f);
@@ -6456,14 +6615,8 @@ static void *session_do(void *data)
 	/* here we set TCP_NODELAY on the socket to disable Nagle's algorithm.
 	 * This is necessary to prevent delays (caused by buffering) as we
 	 * write to the socket in bits and pieces. */
-	p = getprotobyname("tcp");
-	if (p) {
-		int arg = 1;
-		if( setsockopt(ser->fd, p->p_proto, TCP_NODELAY, (char *)&arg, sizeof(arg) ) < 0 ) {
-			ast_log(LOG_WARNING, "Failed to set manager tcp connection to TCP_NODELAY mode: %s\nSome manager actions may be slow to respond.\n", strerror(errno));
-		}
-	} else {
-		ast_log(LOG_WARNING, "Failed to set manager tcp connection to TCP_NODELAY, getprotobyname(\"tcp\") failed\nSome manager actions may be slow to respond.\n");
+	if (setsockopt(ser->fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flags, sizeof(flags)) < 0) {
+		ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on manager connection: %s\n", strerror(errno));
 	}
 
 	/* make sure socket is non-blocking */
@@ -6597,11 +6750,10 @@ static int append_event(const char *str, int category)
 
 static void append_channel_vars(struct ast_str **pbuf, struct ast_channel *chan)
 {
-	RAII_VAR(struct varshead *, vars, NULL, ao2_cleanup);
+	struct varshead *vars;
 	struct ast_var_t *var;
 
 	vars = ast_channel_get_manager_vars(chan);
-
 	if (!vars) {
 		return;
 	}
@@ -6609,62 +6761,67 @@ static void append_channel_vars(struct ast_str **pbuf, struct ast_channel *chan)
 	AST_LIST_TRAVERSE(vars, var, entries) {
 		ast_str_append(pbuf, 0, "ChanVariable(%s): %s=%s\r\n", ast_channel_name(chan), var->name, var->value);
 	}
+	ao2_ref(vars, -1);
 }
 
 /* XXX see if can be moved inside the function */
 AST_THREADSTORAGE(manager_event_buf);
 #define MANAGER_EVENT_BUF_INITSIZE   256
 
-int __ast_manager_event_multichan(int category, const char *event, int chancount,
-	struct ast_channel **chans, const char *file, int line, const char *func,
-	const char *fmt, ...)
+static int __attribute__((format(printf, 9, 0))) __manager_event_sessions_va(
+	struct ao2_container *sessions,
+	int category,
+	const char *event,
+	int chancount,
+	struct ast_channel **chans,
+	const char *file,
+	int line,
+	const char *func,
+	const char *fmt,
+	va_list ap)
 {
-	RAII_VAR(struct ao2_container *, sessions, ao2_global_obj_ref(mgr_sessions), ao2_cleanup);
-	struct mansession_session *session;
-	struct manager_custom_hook *hook;
 	struct ast_str *auth = ast_str_alloca(MAX_AUTH_PERM_STRING);
 	const char *cat_str;
-	va_list ap;
 	struct timeval now;
 	struct ast_str *buf;
 	int i;
 
-	if (!(sessions && ao2_container_count(sessions)) && AST_RWLIST_EMPTY(&manager_hooks)) {
-		return 0;
-	}
-
-	if (!(buf = ast_str_thread_get(&manager_event_buf, MANAGER_EVENT_BUF_INITSIZE))) {
+	buf = ast_str_thread_get(&manager_event_buf, MANAGER_EVENT_BUF_INITSIZE);
+	if (!buf) {
 		return -1;
 	}
 
 	cat_str = authority_to_str(category, &auth);
 	ast_str_set(&buf, 0,
-			"Event: %s\r\nPrivilege: %s\r\n",
-			 event, cat_str);
+		"Event: %s\r\n"
+		"Privilege: %s\r\n",
+		event, cat_str);
 
 	if (timestampevents) {
 		now = ast_tvnow();
 		ast_str_append(&buf, 0,
-				"Timestamp: %ld.%06lu\r\n",
-				 (long)now.tv_sec, (unsigned long) now.tv_usec);
+			"Timestamp: %ld.%06lu\r\n",
+			(long)now.tv_sec, (unsigned long) now.tv_usec);
 	}
 	if (manager_debug) {
 		static int seq;
+
 		ast_str_append(&buf, 0,
-				"SequenceNumber: %d\r\n",
-				 ast_atomic_fetchadd_int(&seq, 1));
+			"SequenceNumber: %d\r\n",
+			ast_atomic_fetchadd_int(&seq, 1));
 		ast_str_append(&buf, 0,
-				"File: %s\r\nLine: %d\r\nFunc: %s\r\n", file, line, func);
+			"File: %s\r\n"
+			"Line: %d\r\n"
+			"Func: %s\r\n",
+			file, line, func);
 	}
 	if (!ast_strlen_zero(ast_config_AST_SYSTEM_NAME)) {
 		ast_str_append(&buf, 0,
-				"SystemName: %s\r\n",
-				 ast_config_AST_SYSTEM_NAME);
+			"SystemName: %s\r\n",
+			ast_config_AST_SYSTEM_NAME);
 	}
 
-	va_start(ap, fmt);
 	ast_str_append_va(&buf, 0, fmt, ap);
-	va_end(ap);
 	for (i = 0; i < chancount; i++) {
 		append_channel_vars(&buf, chans[i]);
 	}
@@ -6675,9 +6832,11 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 
 	/* Wake up any sleeping sessions */
 	if (sessions) {
-		struct ao2_iterator i;
-		i = ao2_iterator_init(sessions, 0);
-		while ((session = ao2_iterator_next(&i))) {
+		struct ao2_iterator iter;
+		struct mansession_session *session;
+
+		iter = ao2_iterator_init(sessions, 0);
+		while ((session = ao2_iterator_next(&iter))) {
 			ao2_lock(session);
 			if (session->waiting_thread != AST_PTHREADT_NULL) {
 				pthread_kill(session->waiting_thread, SIGURG);
@@ -6692,10 +6851,12 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 			ao2_unlock(session);
 			unref_mansession(session);
 		}
-		ao2_iterator_destroy(&i);
+		ao2_iterator_destroy(&iter);
 	}
 
 	if (category != EVENT_FLAG_SHUTDOWN && !AST_RWLIST_EMPTY(&manager_hooks)) {
+		struct manager_custom_hook *hook;
+
 		AST_RWLIST_RDLOCK(&manager_hooks);
 		AST_RWLIST_TRAVERSE(&manager_hooks, hook, list) {
 			hook->helper(category, event, ast_str_buffer(buf));
@@ -6704,6 +6865,50 @@ int __ast_manager_event_multichan(int category, const char *event, int chancount
 	}
 
 	return 0;
+}
+
+static int __attribute__((format(printf, 9, 0))) __manager_event_sessions(
+	struct ao2_container *sessions,
+	int category,
+	const char *event,
+	int chancount,
+	struct ast_channel **chans,
+	const char *file,
+	int line,
+	const char *func,
+	const char *fmt,
+	...)
+{
+	va_list ap;
+	int res;
+
+	va_start(ap, fmt);
+	res = __manager_event_sessions_va(sessions, category, event, chancount, chans,
+		file, line, func, fmt, ap);
+	va_end(ap);
+	return res;
+}
+
+int __ast_manager_event_multichan(int category, const char *event, int chancount,
+	struct ast_channel **chans, const char *file, int line, const char *func,
+	const char *fmt, ...)
+{
+	struct ao2_container *sessions = ao2_global_obj_ref(mgr_sessions);
+	va_list ap;
+	int res;
+
+	if (!any_manager_listeners(sessions)) {
+		/* Nobody is listening */
+		ao2_cleanup(sessions);
+		return 0;
+	}
+
+	va_start(ap, fmt);
+	res = __manager_event_sessions_va(sessions, category, event, chancount, chans,
+		file, line, func, fmt, ap);
+	va_end(ap);
+	ao2_cleanup(sessions);
+	return res;
 }
 
 /*! \brief
@@ -6744,6 +6949,7 @@ static int manager_state_cb(char *context, char *exten, struct ast_state_cb_info
 	/* Notify managers of change */
 	char hint[512];
 
+	hint[0] = '\0';
 	ast_get_hint(hint, sizeof(hint), NULL, 0, NULL, context, exten);
 
 	switch(info->reason) {
@@ -8513,6 +8719,10 @@ static void manager_shutdown(void)
 	ami_tls_cfg.pvtfile = NULL;
 	ast_free(ami_tls_cfg.cipher);
 	ami_tls_cfg.cipher = NULL;
+	ast_free(ami_tls_cfg.cafile);
+	ami_tls_cfg.cafile = NULL;
+	ast_free(ami_tls_cfg.capath);
+	ami_tls_cfg.capath = NULL;
 
 	ao2_global_obj_release(mgr_sessions);
 
@@ -8546,6 +8756,8 @@ static int manager_subscriptions_init(void)
 	if (!stasis_router) {
 		return -1;
 	}
+	stasis_message_router_set_congestion_limits(stasis_router, -1,
+		6 * AST_TASKPROCESSOR_HIGH_WATER_LEVEL);
 
 	res |= stasis_message_router_set_default(stasis_router,
 		manager_default_msg_cb, NULL);
@@ -8611,6 +8823,10 @@ static void manager_set_defaults(void)
 	ami_tls_cfg.pvtfile = ast_strdup("");
 	ast_free(ami_tls_cfg.cipher);
 	ami_tls_cfg.cipher = ast_strdup("");
+	ast_free(ami_tls_cfg.cafile);
+	ami_tls_cfg.cafile = ast_strdup("");
+	ast_free(ami_tls_cfg.capath);
+	ami_tls_cfg.capath = ast_strdup("");
 }
 
 static int __init_manager(int reload, int by_external_config)
@@ -9184,6 +9400,7 @@ int ast_str_append_event_header(struct ast_str **fields_string,
 static void manager_event_blob_dtor(void *obj)
 {
 	struct ast_manager_event_blob *ev = obj;
+
 	ast_string_field_free_memory(ev);
 }
 
@@ -9195,18 +9412,19 @@ ast_manager_event_blob_create(
 	const char *extra_fields_fmt,
 	...)
 {
-	RAII_VAR(struct ast_manager_event_blob *, ev, NULL, ao2_cleanup);
+	struct ast_manager_event_blob *ev;
 	va_list argp;
 
 	ast_assert(extra_fields_fmt != NULL);
 	ast_assert(manager_event != NULL);
 
-	ev = ao2_alloc(sizeof(*ev), manager_event_blob_dtor);
+	ev = ao2_alloc_options(sizeof(*ev), manager_event_blob_dtor, AO2_ALLOC_OPT_LOCK_NOLOCK);
 	if (!ev) {
 		return NULL;
 	}
 
 	if (ast_string_field_init(ev, 20)) {
+		ao2_ref(ev, -1);
 		return NULL;
 	}
 
@@ -9214,10 +9432,8 @@ ast_manager_event_blob_create(
 	ev->event_flags = event_flags;
 
 	va_start(argp, extra_fields_fmt);
-	ast_string_field_ptr_build_va(ev, &ev->extra_fields, extra_fields_fmt,
-				      argp);
+	ast_string_field_ptr_build_va(ev, &ev->extra_fields, extra_fields_fmt, argp);
 	va_end(argp);
 
-	ao2_ref(ev, +1);
 	return ev;
 }

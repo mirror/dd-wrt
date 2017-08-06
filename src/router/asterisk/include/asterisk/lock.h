@@ -119,7 +119,7 @@ struct ast_lock_track {
 	int lineno[AST_MAX_REENTRANCY];
 	int reentrancy;
 	const char *func[AST_MAX_REENTRANCY];
-	pthread_t thread[AST_MAX_REENTRANCY];
+	pthread_t thread_id[AST_MAX_REENTRANCY];
 #if 0 //ndef __UCLIBC__
 #ifdef HAVE_BKTR
 	struct ast_bt backtrace[AST_MAX_REENTRANCY];

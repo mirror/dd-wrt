@@ -148,11 +148,32 @@ static void set_redirecting_id(pjsip_name_addr *name_addr, struct ast_party_id *
 			       struct ast_set_party_id *update)
 {
 	pjsip_sip_uri *uri = pjsip_uri_get_uri(name_addr->uri);
+	char *semi;
+	pj_str_t uri_user;
 
-	if (pj_strlen(&uri->user)) {
+	uri_user = uri->user;
+
+	/* Always truncate redirecting number at a semicolon. */
+	semi = pj_strchr(&uri_user, ';');
+	if (semi) {
+		/*
+		 * We need to be able to handle URI's looking like
+		 * "sip:1235557890;phone-context=national@x.x.x.x;user=phone"
+		 *
+		 * Where the uri->user field will result in:
+		 * "1235557890;phone-context=national"
+		 *
+		 * People don't care about anything after the semicolon
+		 * showing up on their displays even though the RFC
+		 * allows the semicolon.
+		 */
+		pj_strset(&uri_user, (char *) pj_strbuf(&uri_user), semi - pj_strbuf(&uri_user));
+	}
+
+	if (pj_strlen(&uri_user)) {
 		update->number = 1;
 		data->number.valid = 1;
-		set_redirecting_value(&data->number.str, &uri->user);
+		set_redirecting_value(&data->number.str, &uri_user);
 	}
 
 	if (pj_strlen(&name_addr->display)) {
@@ -256,6 +277,7 @@ static int diversion_incoming_request(struct ast_sip_session *session, pjsip_rx_
 static void diversion_incoming_response(struct ast_sip_session *session, pjsip_rx_data *rdata)
 {
 	static const pj_str_t contact_name = { "Contact", 7 };
+	static const pj_str_t contact_name_s = { "m", 1 };
 
 	pjsip_status_line status = rdata->msg_info.msg->line.status;
 	pjsip_fromto_hdr *div_hdr;
@@ -271,7 +293,7 @@ static void diversion_incoming_response(struct ast_sip_session *session, pjsip_r
 		div_hdr = PJSIP_MSG_TO_HDR(rdata->msg_info.msg);
 	}
 
-	contact_hdr = pjsip_msg_find_hdr_by_name(rdata->msg_info.msg, &contact_name, NULL);
+	contact_hdr = pjsip_msg_find_hdr_by_names(rdata->msg_info.msg, &contact_name, &contact_name_s, NULL);
 
 	set_redirecting(session, div_hdr, contact_hdr ?	(pjsip_name_addr*)contact_hdr->uri :
 			(pjsip_name_addr*)PJSIP_MSG_FROM_HDR(rdata->msg_info.msg)->uri);
@@ -305,7 +327,7 @@ static void add_diversion_header(pjsip_tx_data *tdata, struct ast_party_redirect
 	hdr = pjsip_from_hdr_create(tdata->pool);
 	hdr->type = PJSIP_H_OTHER;
 	pj_strdup(tdata->pool, &hdr->name, &diversion_name);
-	hdr->sname.slen = 0;
+	hdr->sname = hdr->name;
 
 	name_addr = pjsip_uri_clone(tdata->pool, base);
 	uri = pjsip_uri_get_uri(name_addr->uri);

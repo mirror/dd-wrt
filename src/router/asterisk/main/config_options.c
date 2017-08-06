@@ -97,6 +97,7 @@ static char *aco_option_type_string[] = {
 	"IP Address",		/* OPT_SOCKADDR_T, */
 	"String",			/* OPT_STRINGFIELD_T, */
 	"Unsigned Integer",	/* OPT_UINT_T, */
+	"Boolean",			/* OPT_YESNO_T, */
 };
 
 void *aco_pending_config(struct aco_info *info)
@@ -139,6 +140,10 @@ static aco_option_handler ast_config_option_default_handler(enum aco_option_type
 	switch(type) {
 	case OPT_ACL_T: return acl_handler_fn;
 	case OPT_BOOL_T: return bool_handler_fn;
+	/* Reading from config files, BOOL and YESNO are handled exactly the
+	 * same. Their difference is in how they are rendered to users
+	 */
+	case OPT_YESNO_T: return bool_handler_fn;
 	case OPT_BOOLFLAG_T: return boolflag_handler_fn;
 	case OPT_CHAR_ARRAY_T: return chararray_handler_fn;
 	case OPT_CODEC_T: return codec_handler_fn;
@@ -582,10 +587,13 @@ enum aco_process_status aco_process_ast_config(struct aco_info *info, struct aco
 	};
 
 	ao2_cleanup(info->internal->pending);
+	info->internal->pending = NULL;
 	return ACO_PROCESS_OK;
 
 error:
 	ao2_cleanup(info->internal->pending);
+	info->internal->pending = NULL;
+
 	return ACO_PROCESS_ERROR;
 }
 
@@ -698,6 +706,8 @@ try_alias:
 
 end:
 	ao2_cleanup(info->internal->pending);
+	info->internal->pending = NULL;
+
 	return res;
 }
 int aco_process_var(struct aco_type *type, const char *cat, struct ast_variable *var, void *obj)

@@ -361,7 +361,7 @@ int ast_format_cap_update_by_allow_disallow(struct ast_format_cap *cap, const ch
 	parse = ast_strdupa(list);
 
 	/* If the list is being fed to us as a result of ast_format_cap_get_names,
-	 * strip off the paranthesis and immediately apply the inverse of the
+	 * strip off the parenthesis and immediately apply the inverse of the
 	 * allowing option
 	 */
 	if (parse[0] == '(' && parse[strlen(parse) - 1] == ')') {
@@ -737,7 +737,7 @@ const char *ast_format_cap_get_names(struct ast_format_cap *cap, struct ast_str 
 
 	ast_str_set(buf, 0, "(");
 
-	if (!AST_VECTOR_SIZE(&cap->preference_order)) {
+	if (!cap || !AST_VECTOR_SIZE(&cap->preference_order)) {
 		ast_str_append(buf, 0, "nothing)");
 		return ast_str_buffer(*buf);
 	}

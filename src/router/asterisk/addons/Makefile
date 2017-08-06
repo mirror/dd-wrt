@@ -41,10 +41,10 @@ ifeq ($(filter format_mp3,$(MENUSELECT_ADDONS)),)
 		echo ; \
 		echo "**************************************************************" ; \
 		echo "***                                                        ***" ; \
-		echo "***   --->  READ THIS OR YOUR BUILD WILL FAIL  <---        ***" ; \
+		echo "***    ---> IMPORTANT INFORMATION ABOUT format_mp3 <---    ***" ; \
 		echo "***                                                        ***" ; \
 		echo "*** format_mp3 has been selected to be installed, but the  ***" ; \
-		echo "*** mp3 decoder library has not yet been downloaded into   ***" ; \
+		echo "*** MP3 decoder library has not yet been downloaded into   ***" ; \
 		echo "*** the source tree.  To do so, please run the following   ***" ; \
 		echo "*** command:                                               ***" ; \
 		echo "***                                                        ***" ; \
@@ -61,12 +61,17 @@ clean::
 	if [ -f mp3/Makefile ] ; then $(MAKE) -C mp3 clean ; fi
 	rm -f $(addprefix ooh323c/src/,$(H323OBJS))
 
-$(if $(filter format_mp3,$(EMBEDDED_MODS)),modules.link,format_mp3.so): mp3/common.o mp3/dct64_i386.o mp3/decode_ntom.o mp3/layer3.o mp3/tabinit.o mp3/interface.o
+ifneq ($(wildcard mp3/Makefile),)
+format_mp3.so: mp3/common.o mp3/dct64_i386.o mp3/decode_ntom.o mp3/layer3.o mp3/tabinit.o mp3/interface.o
+endif
 
 chan_ooh323.o: _ASTCFLAGS+=$(H323CFLAGS)
-
-$(if $(filter chan_ooh323,$(EMBEDDED_MODS)),modules.link,chan_ooh323.so): _ASTCFLAGS+=$(H323CFLAGS)
-$(if $(filter chan_ooh323,$(EMBEDDED_MODS)),modules.link,chan_ooh323.so): $(addprefix ooh323c/src/,$(H323OBJS)) chan_ooh323.o ooh323cDriver.o
+chan_ooh323.so: _ASTCFLAGS+=$(H323CFLAGS)
+chan_ooh323.so: $(addprefix ooh323c/src/,$(H323OBJS)) chan_ooh323.o ooh323cDriver.o
 $(addprefix ooh323c/src/,$(H323OBJS)) chan_ooh323.o ooh323cDriver.o: _ASTCFLAGS+=$(call MOD_ASTCFLAGS,chan_ooh323)
 
 .PHONY: check_mp3
+
+ifeq ($(wildcard mp3/Makefile),)
+.PHONY: format_mp3.o format_mp3.so
+endif

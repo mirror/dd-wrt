@@ -288,11 +288,10 @@ int ast_ari_events_user_event_parse_body(
 static void ast_ari_events_user_event_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_events_user_event_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -353,21 +352,6 @@ static void ast_ari_events_user_event_cb(
 		} else
 		{}
 	}
-	/* Look for a JSON request entity */
-	body = ast_http_get_json(ser, headers);
-	if (!body) {
-		switch (errno) {
-		case EFBIG:
-			ast_ari_response_error(response, 413, "Request Entity Too Large", "Request body too large");
-			goto fin;
-		case ENOMEM:
-			ast_ari_response_error(response, 500, "Internal Server Error", "Error processing request");
-			goto fin;
-		case EIO:
-			ast_ari_response_error(response, 400, "Bad Request", "Error parsing request body");
-			goto fin;
-		}
-	}
 	args.variables = body;
 	ast_ari_events_user_event(headers, &args, response);
 #if defined(AST_DEVMODE)
@@ -407,7 +391,7 @@ fin: __attribute__((unused))
 	return;
 }
 
-/*! \brief REST handler for /api-docs/events.{format} */
+/*! \brief REST handler for /api-docs/events.json */
 static struct stasis_rest_handlers events_user_eventName = {
 	.path_segment = "eventName",
 	.is_wildcard = 1,
@@ -417,7 +401,7 @@ static struct stasis_rest_handlers events_user_eventName = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/events.{format} */
+/*! \brief REST handler for /api-docs/events.json */
 static struct stasis_rest_handlers events_user = {
 	.path_segment = "user",
 	.callbacks = {
@@ -425,7 +409,7 @@ static struct stasis_rest_handlers events_user = {
 	.num_children = 1,
 	.children = { &events_user_eventName, }
 };
-/*! \brief REST handler for /api-docs/events.{format} */
+/*! \brief REST handler for /api-docs/events.json */
 static struct stasis_rest_handlers events = {
 	.path_segment = "events",
 	.callbacks = {
@@ -434,30 +418,6 @@ static struct stasis_rest_handlers events = {
 	.children = { &events_user, }
 };
 
-static int load_module(void)
-{
-	int res = 0;
-	struct ast_websocket_protocol *protocol;
-
-	events.ws_server = ast_websocket_server_create();
-	if (!events.ws_server) {
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
-	protocol = ast_websocket_sub_protocol_alloc("ari");
-	if (!protocol) {
-		ao2_ref(events.ws_server, -1);
-		events.ws_server = NULL;
-		return AST_MODULE_LOAD_FAILURE;
-	}
-	protocol->session_attempted = ast_ari_events_event_websocket_ws_attempted_cb;
-	protocol->session_established = ast_ari_events_event_websocket_ws_established_cb;
-	res |= ast_websocket_server_add_protocol2(events.ws_server, protocol);
-	stasis_app_ref();
-	res |= ast_ari_add_handler(&events);
-	return res;
-}
-
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&events);
@@ -465,6 +425,42 @@ static int unload_module(void)
 	events.ws_server = NULL;
 	stasis_app_unref();
 	return 0;
+}
+
+static int load_module(void)
+{
+	int res = 0;
+
+	CHECK_ARI_MODULE_LOADED();
+
+	/* This is scoped to not conflict with CHECK_ARI_MODULE_LOADED */
+	{
+		struct ast_websocket_protocol *protocol;
+
+		events.ws_server = ast_websocket_server_create();
+		if (!events.ws_server) {
+			return AST_MODULE_LOAD_DECLINE;
+		}
+
+		protocol = ast_websocket_sub_protocol_alloc("ari");
+		if (!protocol) {
+			ao2_ref(events.ws_server, -1);
+			events.ws_server = NULL;
+			return AST_MODULE_LOAD_DECLINE;
+		}
+		protocol->session_attempted = ast_ari_events_event_websocket_ws_attempted_cb;
+		protocol->session_established = ast_ari_events_event_websocket_ws_established_cb;
+		res |= ast_websocket_server_add_protocol2(events.ws_server, protocol);
+	}
+
+	stasis_app_ref();
+	res |= ast_ari_add_handler(&events);
+	if (res) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - WebSocket resource",

@@ -450,19 +450,11 @@ static char *handle_debug(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 	case CLI_INIT:
 		e->command = "core set debug";
 		e->usage =
-#if !defined(LOW_MEMORY)
 			"Usage: core set debug [atleast] <level> [module]\n"
-#else
-			"Usage: core set debug [atleast] <level>\n"
-#endif
 			"       core set debug off\n"
 			"\n"
-#if !defined(LOW_MEMORY)
 			"       Sets level of debug messages to be displayed or\n"
 			"       sets a module name to display debug messages from.\n"
-#else
-			"       Sets level of debug messages to be displayed.\n"
-#endif
 			"       0 or off means no messages should be displayed.\n"
 			"       Equivalent to -d[d[...]] on startup\n";
 		return NULL;
@@ -490,13 +482,9 @@ static char *handle_debug(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 			} else if (a->n == (22 - numbermatch) && a->pos == 3 && ast_strlen_zero(argv3)) {
 				return ast_strdup("atleast");
 			}
-#if !defined(LOW_MEMORY)
 		} else if ((a->pos == 4 && !atleast && strcasecmp(argv3, "off") && strcasecmp(argv3, "channel"))
 			|| (a->pos == 5 && atleast)) {
-			const char *pos = S_OR(a->argv[a->pos], "");
-
-			return ast_complete_source_filename(pos, a->n);
-#endif
+			return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, 0);
 		}
 		return NULL;
 	}
@@ -929,6 +917,7 @@ static char *handle_modlist(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 
 static char *handle_showcalls(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
+	static const char * const completions[] = { "seconds", NULL };
 	struct timeval curtime = ast_tvnow();
 	int showuptime, printsec;
 
@@ -936,7 +925,7 @@ static char *handle_showcalls(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	case CLI_INIT:
 		e->command = "core show calls [uptime]";
 		e->usage =
-			"Usage: core show calls [uptime] [seconds]\n"
+			"Usage: core show calls [uptime [seconds]]\n"
 			"       Lists number of currently active calls and total number of calls\n"
 			"       processed through PBX since last restart. If 'uptime' is specified\n"
 			"       the system uptime is also displayed. If 'seconds' is specified in\n"
@@ -946,7 +935,7 @@ static char *handle_showcalls(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	case CLI_GENERATE:
 		if (a->pos != e->args)
 			return NULL;
-		return a->n == 0  ? ast_strdup("seconds") : NULL;
+		return ast_cli_complete(a->word, completions, a->n);
 	}
 
 	/* regular handler */
@@ -1116,7 +1105,9 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 
 static char *handle_softhangup(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
-	struct ast_channel *c=NULL;
+	struct ast_channel *c = NULL;
+	static const char * const completions[] = { "all", NULL };
+	char *complete;
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -1129,7 +1120,14 @@ static char *handle_softhangup(struct ast_cli_entry *e, int cmd, struct ast_cli_
 			"       will see the hangup request.\n";
 		return NULL;
 	case CLI_GENERATE:
-		return ast_complete_channels(a->line, a->word, a->pos, a->n, e->args);
+		if (a->pos != e->args) {
+			return NULL;
+		}
+		complete = ast_cli_complete(a->word, completions, a->n);
+		if (!complete) {
+			complete = ast_complete_channels(a->line, a->word, a->pos, a->n - 1, e->args);
+		}
+		return complete;
 	}
 
 	if (a->argc != 4) {
@@ -1441,6 +1439,8 @@ static int channel_set_debug(void *obj, void *arg, void *data, int flags)
 static char *handle_core_set_debug_channel(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct ast_channel *c = NULL;
+	static const char * const completions_all[] = { "all", NULL };
+	static const char * const completions_off[] = { "off", NULL };
 	struct channel_set_debug_args args = {
 		.fd = a->fd,
 	};
@@ -1453,10 +1453,15 @@ static char *handle_core_set_debug_channel(struct ast_cli_entry *e, int cmd, str
 			"       Enables/disables debugging on all or on a specific channel.\n";
 		return NULL;
 	case CLI_GENERATE:
-		/* XXX remember to handle the optional "off" */
-		if (a->pos != e->args)
-			return NULL;
-		return a->n == 0 ? ast_strdup("all") : ast_complete_channels(a->line, a->word, a->pos, a->n - 1, e->args);
+		if (a->pos == 4) {
+			char *complete = ast_cli_complete(a->word, completions_all, a->n);
+			if (!complete) {
+				complete = ast_complete_channels(a->line, a->word, a->pos, a->n - 1, e->args);
+			}
+			return complete;
+		} else if (a->pos == 5) {
+			return ast_cli_complete(a->word, completions_off, a->n);
+		}
 	}
 
 	if (cmd == (CLI_HANDLER + 1000)) {

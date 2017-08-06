@@ -12,6 +12,12 @@
 ; If you want to see more detail please check the documentation sources
 ; mentioned at the top of this file.
 
+; ============================================================================
+; NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE NOTICE
+;
+; This file does not maintain the complete option documentation.
+; ============================================================================
+
 ; Documentation
 ;
 ; The official documentation is at http://wiki.asterisk.org
@@ -71,6 +77,8 @@
 ;   * Defines a permission list or references one stored in acl.conf
 ; * Registration "registration"
 ;   * Contains information about an outbound SIP registration
+; * Resource Lists
+;   * Contains information for configuring resource lists.
 ; * Phone Provisioning "phoneprov"
 ;   * Contains information needed by res_phoneprov for autoprovisioning
 
@@ -111,9 +119,6 @@
 ; For the NAT transport example, be aware that the options starting with
 ; the prefix "external_" will only apply to communication with addresses
 ; outside the range set with "local_net=".
-;
-; IPv6: For endpoints using IPv6, remember to set "rtp_ipv6=yes" so that the RTP
-; engine will also be able to bind to an IPv6 address.
 ;
 ; You can have more than one of any type of transport, as long as it doesn't
 ; use the same resources (bind address, port, etc) as the others.
@@ -294,8 +299,6 @@
 ; If using the TLS enabled transport, you may want the "media_encryption=sdes"
 ; option to additionally enable SRTP, though they are not mutually inclusive.
 ;
-; Use the "rtp_ipv6=yes" option if you want to utilize RTP over an ipv6 transport.
-;
 ; If this endpoint were remote, and it was using a transport configured for NAT
 ; then you likely want to use "direct_media=no" to prevent audio issues.
 
@@ -315,7 +318,6 @@
 ;transport=transport-tls
 ;media_encryption=sdes
 ;transport=transport-udp-ipv6
-;rtp_ipv6=yes
 ;transport=transport-udp-nat
 ;direct_media=no
 ;
@@ -595,6 +597,7 @@
                 ; "yes")
 ;aggregate_mwi=yes      ;  (default: "yes")
 ;allow= ; Media Codec s to allow (default: "")
+;allow_overlap=yes ; Enable RFC3578 overlap dialing support. (default: "yes")
 ;aors=  ; AoR s to be used with the endpoint (default: "")
 ;auth=  ; Authentication Object s associated with the endpoint (default: "")
 ;callerid=      ; CallerID information for the endpoint (default: "")
@@ -605,8 +608,15 @@
 ;direct_media_glare_mitigation=none     ; Mitigation of direct media re INVITE
                                         ; glare (default: "none")
 ;direct_media_method=invite     ; Direct Media method type (default: "invite")
-;connected_line_method=invite   ; Connected line method type (default:
-                                ; "invite")
+;connected_line_method=invite   ; Connected line method type.
+                                ; When set to "invite", check the remote's
+                                ; Allow header and if UPDATE is allowed, send
+                                ; UPDATE instead of INVITE to avoid SDP
+                                ; renegotiation.  If UPDATE is not Allowed,
+                                ; send INVITE.
+                                ; If set to "update", send UPDATE regardless
+                                ; of what the remote Allows.
+                                ; (default: "invite")
 ;direct_media=yes       ; Determines whether media may flow directly between
                         ; endpoints (default: "yes")
 ;disable_direct_media_on_nat=no ; Disable direct media session refreshes when
@@ -620,8 +630,13 @@
                                 ; the specified address. (default: "no")
 ;force_rport=yes        ; Force use of return port (default: "yes")
 ;ice_support=no ; Enable the ICE mechanism to help traverse NAT (default: "no")
-;identify_by=username   ; Way s for Endpoint to be identified (default:
-                        ; "username")
+;identify_by=username   ; A comma-separated list of ways the Endpoint or AoR can be
+                        ; identified.
+                        ; "username": Identify by the From or To username and domain
+                        ; "auth_username": Identify by the Authorization username and realm
+                        ; In all cases, if an exact match on username and domain/realm fails,
+                        ; the match will be retried with just the username.
+                        ; (default: "username")
 ;redirect_method=user   ; How redirects received from an endpoint are handled
                         ; (default: "user")
 ;mailboxes=     ; NOTIFY the endpoint when state changes for any of the specified mailboxes.
@@ -635,11 +650,10 @@
 ;moh_suggest=default    ; Default Music On Hold class (default: "default")
 ;outbound_auth= ; Authentication object used for outbound requests (default:
                 ; "")
-;outbound_proxy=        ; Proxy through which to send requests a full SIP URI
+;outbound_proxy=        ; Proxy through which to send requests, a full SIP URI
                         ; must be provided (default: "")
 ;rewrite_contact=no     ; Allow Contact header to be rewritten with the source
                         ; IP address port (default: "no")
-;rtp_ipv6=no    ; Allow use of IPv6 for RTP traffic (default: "no")
 ;rtp_symmetric=no       ; Enforce that RTP must be symmetric (default: "no")
 ;send_diversion=yes     ; Send the Diversion header conveying the diversion
                         ; information to the called user agent (default: "yes")
@@ -665,7 +679,7 @@
                         ; usage of media encryption for this endpoint (default:
                         ; "no")
 ;media_encryption_optimistic=no ; Use encryption if possible but don't fail the call
-								; if not possible.
+                                ; if not possible.
 ;g726_non_standard=no   ; When set to "yes" and an endpoint negotiates g.726
                         ; audio then g.726 for AAL2 packing order is used contrary
                         ; to what is recommended in RFC3551. Note, 'g726aal2' also
@@ -686,10 +700,12 @@
 ;t38_udptl_maxdatagram=0        ; T 38 UDPTL maximum datagram size (default:
                                 ; "0")
 ;fax_detect=no  ; Whether CNG tone detection is enabled (default: "no")
+;fax_detect_timeout=30  ; How many seconds into a call before fax_detect is
+                        ; disabled for the call.
+                        ; Zero disables the timeout.
+                        ; (default: "0")
 ;t38_udptl_nat=no       ; Whether NAT support is enabled on UDPTL sessions
                         ; (default: "no")
-;t38_udptl_ipv6=no      ; Whether IPv6 is used for UDPTL Sessions (default:
-                        ; "no")
 ;tone_zone=     ; Set which country s indications to use for channels created
                 ; for this endpoint (default: "")
 ;language=      ; Set the default language to use for channels created for this
@@ -741,7 +757,7 @@
 ;srtp_tag_32=no ; Determines whether 32 byte tags should be used instead of 80
                 ; byte tags (default: "no")
 ;set_var=       ; Variable set on a channel involving the endpoint. For multiple
-		; channel variables specify multiple 'set_var'(s)
+                ; channel variables specify multiple 'set_var'(s)
 ;rtp_keepalive= ; Interval, in seconds, between comfort noise RTP packets if
                 ; RTP is not flowing. This setting is useful for ensuring that
                 ; holes in NATs and firewalls are kept open throughout a call.
@@ -751,10 +767,31 @@
 ;rtp_timeout_hold= ; Hang up channel if RTP is not received for the specified
                    ; number of seconds when the channel is on hold (default:
                    ; "0" or not enabled)
+;contact_user= ; On outgoing requests, force the user portion of the Contact
+               ; header to this value (default: "")
+;asymmetric_rtp_codec= ; Allow the sending and receiving codec to differ and
+                       ; not be automatically matched (default: "no")
+;refer_blind_progress= ; Whether to notifies all the progress details on blind
+                       ; transfer (default: "yes"). The value "no" is useful
+                       ; for some SIP phones (Mitel/Aastra, Snom) which expect
+                       ; a sip/frag "200 OK" after REFER has been accepted.
+;notify_early_inuse_ringing = ; Whether to notifies dialog-info 'early'
+                              ; on INUSE && RINGING state (default: "no").
+                              ; The value "yes" is useful for some SIP phones
+                              ; (Cisco SPA) to be able to indicate and pick up
+                              ; ringing devices.
 
 ;==========================AUTH SECTION OPTIONS=========================
 ;[auth]
 ;  SYNOPSIS: Authentication type
+;
+;  Note: Using the same auth section for inbound and outbound
+;  authentication is not recommended.  There is a difference in
+;  meaning for an empty realm setting between inbound and outbound
+;  authentication uses.  Look to the CLI config help
+;  "config show help res_pjsip auth realm" or on the wiki for the
+;  difference.
+;
 ;auth_type=userpass     ; Authentication type (default: "userpass")
 ;nonce_lifetime=32      ; Lifetime of a nonce associated with this
                         ; authentication config (default: "32")
@@ -783,7 +820,7 @@
                 ; (default: "")
 ;ca_list_path=  ; Path to directory containing certificates to read TLS ONLY.
                 ; PJProject version 2.4 or higher is required for this option to
-				; be used.
+                ; be used.
                 ; (default: "")
 ;cert_file=     ; Certificate file for endpoint TLS ONLY
                 ; Will read .crt or .pem file but only uses cert,
@@ -823,6 +860,17 @@
                     ; this option is set to 'no' (the default) changes to the
                     ; particular transport will be ignored. If set to 'yes',
                     ; changes (if any) will be applied.
+;symmetric_transport=no ; When a request from a dynamic contact comes in on a
+                        ; transport with this option set to 'yes', the transport
+                        ; name will be saved and used for subsequent outgoing
+                        ; requests like OPTIONS, NOTIFY and INVITE.  It's saved
+                        ; as a contact uri parameter named 'x-ast-txp' and will
+                        ; display with the contact uri in CLI, AMI, and ARI
+                        ; output.  On the outgoing request, if a transport
+                        ; wasn't explicitly set on the endpoint AND the request
+                        ; URI is not a hostname, the saved transport will be
+                        ; used and the 'x-ast-txp' parameter stripped from the
+                        ; outgoing packet.
 
 ;==========================AOR SECTION OPTIONS=========================
 ;[aor]
@@ -847,8 +895,8 @@
 ;qualify_timeout=3.0      ; Qualify timeout in fractional seconds (default: "3.0")
 ;authenticate_qualify=no        ; Authenticates a qualify request if needed
                                 ; (default: "no")
-;outbound_proxy=        ; Outbound proxy used when sending OPTIONS request
-                        ; (default: "")
+;outbound_proxy=        ; Proxy through which to send OPTIONS requests, a full SIP URI
+                        ; must be provided (default: "")
 
 
 ;==========================SYSTEM SECTION OPTIONS=========================
@@ -869,8 +917,8 @@
 ;disable_tcp_switch=yes ; Disable automatic switching from UDP to TCP transports
                         ; if outgoing request is too large.
                         ; See RFC 3261 section 18.1.1.
-						; Disabling this option has been known to cause interoperability
-						; issues, so disable at your own risk.
+                        ; Disabling this option has been known to cause interoperability
+                        ; issues, so disable at your own risk.
                         ; (default: "yes")
 ;type=  ; Must be of type system (default: "")
 
@@ -880,11 +928,10 @@
 ;max_forwards=70        ; Value used in Max Forwards header for SIP requests
                         ; (default: "70")
 ;type=  ; Must be of type global (default: "")
-;user_agent=Asterisk PBX SVN-branch-12-r404375  ; Value used in User Agent
-                                                ; header for SIP requests and
-                                                ; Server header for SIP
-                                                ; responses (default: "Asterisk
-                                                ; PBX SVN-branch-12-r404375")
+;user_agent=Asterisk PBX        ; Allows you to change the user agent string
+                                ; The default user agent string also contains
+                                ; the Asterisk version. If you don't want to
+                                ; expose this, change the user_agent string.
 ;default_outbound_endpoint=default_outbound_endpoint    ; Endpoint to use when
                                                         ; sending an outbound
                                                         ; request to a URI
@@ -899,10 +946,19 @@
                         ; (default: "0")
 ;contact_expiration_check_interval=30
                         ; The interval (in seconds) to check for expired contacts.
+;disable_multi_domain=no
+            ; Disable Multi Domain support.
+            ; If disabled it can improve realtime performace by reducing
+            ; number of database requsts
+            ; (default: "no")
 ;endpoint_identifier_order=ip,username,anonymous
             ; The order by which endpoint identifiers are given priority.
-            ; Identifier names are derived from res_pjsip_endpoint_identifier_*
-            ; modules. (default: ip,username,anonymous)
+            ; Currently, "ip", "username", "auth_username" and "anonymous" are valid
+            ; identifiers as registered by the res_pjsip_endpoint_identifier_* modules.
+            ; Some modules like res_pjsip_endpoint_identifier_user register more than
+            ; one identifier. Use the CLI command "pjsip show identifiers" to see the
+            ; identifiers currently available.
+            ; (default: ip,username,anonymous)
 ;max_initial_qualify_time=4 ; The maximum amount of time (in seconds) from
                             ; startup that qualifies should be attempted on all
                             ; contacts.  If greater than the qualify_frequency
@@ -915,7 +971,65 @@
                    ; The voicemail extension to send in the NOTIFY Message-Account header
                    ; if not set on endpoint or aor.
                    ; (default: "")
+;
+; The following unidentified_request options are only used when "auth_username"
+; matching is enabled in "endpoint_identifier_order".
+;
+;unidentified_request_count=5   ; The number of unidentified requests that can be
+                                ; received from a single IP address in
+                                ; unidentified_request_period seconds before a security
+                                ; event is generated. (default: 5)
+;unidentified_request_period=5  ; See above.  (default: 5 seconds)
+;unidentified_request_prune_interval=30
+                                ; The interval at which unidentified requests
+                                ; are check to see if they can be pruned.  If they're
+                                ; older than twice the unidentified_request_period,
+                                ; they're pruned.
+;
+;default_from_user=asterisk     ; When Asterisk generates an outgoing SIP request, the
+                                ; From header username will be set to this value if
+                                ; there is no better option (such as CallerID or
+                                ; endpoint/from_user) to be used
+;default_realm=asterisk         ; When Asterisk generates a challenge, the digest realm
+                                ; will be set to this value if there is no better option
+                                ; (such as auth/realm) to be used.
 
+                    ; Asterisk Task Processor Queue Size
+                    ; On heavy loaded system with DB storage you may need to increase
+                    ; taskprocessor queue.
+                    ; If the taskprocessor queue size reached high water level,
+                    ; the alert is triggered.
+                    ; If the alert is set the pjsip distibutor stops processing incoming
+                    ; requests until the alert is cleared.
+                    ; The alert is cleared when taskprocessor queue size drops to the
+                    ; low water clear level.
+                    ; The next options set taskprocessor queue levels for MWI.
+;mwi_tps_queue_high=500 ; Taskprocessor high water alert trigger level.
+;mwi_tps_queue_low=450  ; Taskprocessor low water clear alert level.
+                    ; The default is -1 for 90% of high water level.
+
+                    ; Unsolicited MWI
+                    ; If there are endpoints configured with unsolicited MWI
+                    ; then res_pjsip_mwi module tries to send MWI to all endpoints on startup.
+;mwi_disable_initial_unsolicited=no ; Disable sending unsolicited mwi to all endpoints on startup.
+                    ; If disabled then unsolicited mwi will start processing
+                    ; on the endpoint's next contact update.
+
+;ignore_uri_user_options=no ; Enable/Disable ignoring SIP URI user field options.
+                    ; If you have this option enabled and there are semicolons
+                    ; in the user field of a SIP URI then the field is truncated
+                    ; at the first semicolon.  This effectively makes the semicolon
+                    ; a non-usable character for PJSIP endpoint names, extensions,
+                    ; and AORs.  This can be useful for improving compatability with
+                    ; an ITSP that likes to use user options for whatever reason.
+                    ; Example:
+                    ; URI: "sip:1235557890;phone-context=national@x.x.x.x;user=phone"
+                    ; The user field is "1235557890;phone-context=national"
+                    ; Which becomes this: "1235557890"
+                    ;
+                    ; Note: The caller-id and redirecting number strings obtained
+                    ; from incoming SIP URI user fields are always truncated at the
+                    ; first semicolon.
 
 ; MODULE PROVIDING BELOW SECTION(S): res_pjsip_acl
 ;==========================ACL SECTION OPTIONS=========================
@@ -948,8 +1062,8 @@
 ;max_retries=10 ; Maximum number of registration attempts (default: "10")
 ;outbound_auth= ; Authentication object to be used for outbound registrations
                 ; (default: "")
-;outbound_proxy=        ; Outbound Proxy used to send registrations (default:
-                        ; "")
+;outbound_proxy=        ; Proxy through which to send registrations, a full SIP URI
+                        ; must be provided (default: "")
 ;retry_interval=60      ; Interval in seconds between retries if outbound
                         ; registration is unsuccessful (default: "60")
 ;forbidden_retry_interval=0     ; Interval used when receiving a 403 Forbidden
@@ -999,3 +1113,142 @@
                 ; Common variables include LINE, LINEKEYS, etc.
                 ; See phoneprov.conf.sample for others.
 ;type=          ; Must be of type phoneprov (default: "")
+
+
+
+; MODULE PROVIDING BELOW SECTION(S): res_pjsip_outbound_publish
+;======================OUTBOUND_PUBLISHEN SECTION OPTIONS=====================
+; See https://wiki.asterisk.org/wiki/display/AST/Publishing+Extension+State
+; for more information.
+;[outbound-publish]
+;type=outbound-publish     ; Must be of type 'outbound-publish'.
+
+;expiration=3600           ; Expiration time for publications in seconds
+
+;outbound_auth=            ; Authentication object(s) to be used for outbound
+                           ; publishes.
+                           ; This is a comma-delimited list of auth	sections
+                           ; defined in pjsip.conf used to respond to outbound
+                           ; authentication challenges.
+                           ; Using the same auth section for inbound and
+                           ; outbound authentication is not recommended.  There
+                           ; is a difference in meaning for an empty realm
+                           ; setting between inbound and outbound authentication
+                           ; uses. See the auth realm description for details.
+
+;outbound_proxy=           ; SIP URI of the outbound proxy used to send
+                           ; publishes
+
+;server_uri=               ; SIP URI of the server and entity to publish to.
+                           ; This is the URI at which to find the entity and
+                           ; server to send the outbound PUBLISH to.
+                           ; This URI is used as the request URI of the outbound
+                           ; PUBLISH request from Asterisk.
+
+;from_uri=                 ; SIP URI to use in the From header.
+                           ; This is the URI that will be placed into the From
+                           ; header of outgoing PUBLISH messages. If no URI is
+                           ; specified then the URI provided in server_uri will
+                           ; be used.
+
+;to_uri=                   ; SIP URI to use in the To header.
+                           ; This is the URI that will be placed into the To
+                           ; header of outgoing PUBLISH messages. If no URI is
+                           ; specified then the URI provided in server_uri will
+                           ; be used.
+
+;event=                    ; Event type of the PUBLISH.
+
+;max_auth_attempts=        ; Maximum number of authentication attempts before
+                           ; stopping the pub.
+
+;transport=                ; Transport used for outbound publish.
+                           ; A transport configured in pjsip.conf. As with other
+                           ; res_pjsip modules, this will use the first
+                           ; available transport of the appropriate type if
+                           ; unconfigured.
+
+;multi_user=no             ; Enable multi-user support (Asterisk 14+ only)
+
+
+
+; MODULE PROVIDING BELOW SECTION(S): res_pjsip_pubsub
+;=============================RESOURCE-LIST===================================
+; See https://wiki.asterisk.org/wiki/pages/viewpage.action?pageId=30278158
+; for more information.
+;[resource_list]
+;type=resource_list        ; Must be of type 'resource_list'.
+
+;event=                    ; The SIP event package that the list resource.
+                           ; belongs to.  The SIP event package describes the
+                           ; types of resources that Asterisk reports the state
+                           ; of.
+
+;list_item=                ; The name of a resource to report state on.
+                           ; In general Asterisk looks up list items in the
+                           ; following way:
+                           ;  1. Check if the list item refers to another
+                           ;     configured resource list.
+                           ;  2. Pass the name of the resource off to
+                           ;     event-package-specific handlers to find the
+                           ;     specified resource.
+                           ; The second part means that the way the list item
+                           ; is specified depends on what type of list this is.
+                           ; For instance, if you have the event set to
+                           ; presence, then list items should be in the form of
+                           ; dialplan_extension@dialplan_context. For
+                           ; message-summary, mailbox names should be listed.
+
+;full_state=no             ; Indicates if the entire list's state should be
+                           ; sent out.
+                           ; If this option is enabled, and a resource changes
+                           ; state, then Asterisk will construct a notification
+                           ; that contains the state of all resources in the
+                           ; list. If the option is disabled, Asterisk will
+                           ; construct a notification that only contains the
+                           ; states of resources that have changed.
+                           ; NOTE: Even with this option disabled, there are
+                           ; certain situations where Asterisk is forced to send
+                           ; a notification with the states of all resources in
+                           ; the list. When a subscriber renews or terminates
+                           ; its subscription to the list, Asterisk MUST send
+                           ; a full state notification.
+
+;notification_batch_interval=0
+                           ; Time Asterisk should wait, in milliseconds,
+                           ; before sending notifications.
+
+;==========================INBOUND_PUBLICATION================================
+; See https://wiki.asterisk.org/wiki/display/AST/Exchanging+Device+and+Mailbox+State+Using+PJSIP
+; for more information.
+;[inbound-publication]
+;type=                     ; Must be of type 'inbound-publication'.
+
+;endpoint=                 ; Optional name of an endpoint that is only allowed
+                           ; to publish to this resource.
+
+
+; MODULE PROVIDING BELOW SECTION(S): res_pjsip_publish_asterisk
+;==========================ASTERISK_PUBLICATION===============================
+; See https://wiki.asterisk.org/wiki/display/AST/Exchanging+Device+and+Mailbox+State+Using+PJSIP
+; for more information.
+;[asterisk-publication]
+;type=asterisk-publication ; Must be of type 'asterisk-publication'.
+
+;devicestate_publish=      ; Optional name of a publish item that can be used
+                           ; to publish a req.
+
+;mailboxstate_publish=     ; Optional name of a publish item that can be used
+                           ; to publish a req.
+
+;device_state=no           ; Whether we should permit incoming device state
+                           ; events.
+
+;device_state_filter=      ; Optional regular expression used to filter what
+                           ; devices we accept events for.
+
+;mailbox_state=no          ; Whether we should permit incoming mailbox state
+                           ; events.
+
+;mailbox_state_filter=     ; Optional regular expression used to filter what
+                           ; mailboxes we accept events for.

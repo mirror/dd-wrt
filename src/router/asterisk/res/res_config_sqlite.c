@@ -875,10 +875,8 @@ static int add_cfg_entry(void *arg, int argc, char **argv, char **columnNames)
 	}
 
 	if (!args->cat_name || strcmp(args->cat_name, argv[RES_CONFIG_SQLITE_CONFIG_CATEGORY])) {
-		args->cat = ast_category_new(argv[RES_CONFIG_SQLITE_CONFIG_CATEGORY], "", 99999);
-
+		args->cat = ast_category_new_dynamic(argv[RES_CONFIG_SQLITE_CONFIG_CATEGORY]);
 		if (!args->cat) {
-			ast_log(LOG_WARNING, "Unable to allocate category\n");
 			return 1;
 		}
 
@@ -1087,8 +1085,8 @@ static int add_rt_multi_cfg_entry(void *arg, int argc, char **argv, char **colum
 		return 1;
 	}
 
-	if (!(cat = ast_category_new(cat_name, "", 99999))) {
-		ast_log(LOG_WARNING, "Unable to allocate category\n");
+	cat = ast_category_new_dynamic(cat_name);
+	if (!cat) {
 		return 1;
 	}
 
@@ -1683,7 +1681,7 @@ static int load_module(void)
 		ast_log(LOG_ERROR, "%s\n", S_OR(errormsg, sqlite_error_string(error)));
 		sqlite_freemem(errormsg);
 		unload_module();
-		return 1;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	sqlite_freemem(errormsg);
@@ -1703,7 +1701,7 @@ static int load_module(void)
 		if (!query) {
 			ast_log(LOG_ERROR, "Unable to allocate SQL query\n");
 			unload_module();
-			return 1;
+			return AST_MODULE_LOAD_DECLINE;
 		}
 
 		ast_debug(1, "SQL query: %s\n", query);
@@ -1722,7 +1720,7 @@ static int load_module(void)
 				ast_log(LOG_ERROR, "%s\n", S_OR(errormsg, sqlite_error_string(error)));
 				sqlite_freemem(errormsg);
 				unload_module();
-				return 1;
+				return AST_MODULE_LOAD_DECLINE;
 			}
 
 			sqlite_freemem(errormsg);
@@ -1732,7 +1730,7 @@ static int load_module(void)
 			if (!query) {
 				ast_log(LOG_ERROR, "Unable to allocate SQL query\n");
 				unload_module();
-				return 1;
+				return AST_MODULE_LOAD_DECLINE;
 			}
 
 			ast_debug(1, "SQL query: %s\n", query);
@@ -1747,7 +1745,7 @@ static int load_module(void)
 				ast_log(LOG_ERROR, "%s\n", S_OR(errormsg, sqlite_error_string(error)));
 				sqlite_freemem(errormsg);
 				unload_module();
-				return 1;
+				return AST_MODULE_LOAD_DECLINE;
 			}
 		}
 		sqlite_freemem(errormsg);
@@ -1757,7 +1755,7 @@ static int load_module(void)
 
 		if (error) {
 			unload_module();
-			return 1;
+			return AST_MODULE_LOAD_DECLINE;
 		}
 
 		cdr_registered = 1;
@@ -1767,12 +1765,12 @@ static int load_module(void)
 
 	if (error) {
 		unload_module();
-		return 1;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	cli_status_registered = 1;
 
-	return 0;
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Realtime SQLite configuration",

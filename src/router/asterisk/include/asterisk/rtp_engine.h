@@ -84,6 +84,9 @@ extern "C" {
 /*! First dynamic RTP payload type */
 #define AST_RTP_PT_FIRST_DYNAMIC 96
 
+/*! Last reassignable RTP payload type */
+#define AST_RTP_PT_LAST_REASSIGN 63
+
 /*! Maximum number of generations */
 #define AST_RED_MAX_GENERATION 5
 
@@ -234,6 +237,15 @@ enum ast_rtp_instance_stat {
 	AST_RTP_INSTANCE_STAT_RXOCTETCOUNT,
 };
 
+enum ast_rtp_instance_rtcp {
+	/*! RTCP should not be sent/received */
+	AST_RTP_INSTANCE_RTCP_DISABLED = 0,
+	/*! RTCP should be sent/received based on standard port rules */
+	AST_RTP_INSTANCE_RTCP_STANDARD,
+	/*! RTCP should be sent/received on the same port as RTP */
+	AST_RTP_INSTANCE_RTCP_MUX,
+};
+
 /* Codes for RTP-specific data - not defined by our AST_FORMAT codes */
 /*! DTMF (RFC2833) */
 #define AST_RTP_DTMF                    (1 << 0)
@@ -366,7 +378,7 @@ struct ast_rtp_instance_stats {
 };
 
 #define AST_RTP_STAT_SET(current_stat, combined, placement, value) \
-if (stat == current_stat || stat == AST_RTP_INSTANCE_STAT_ALL || (combined >= 0 && combined == current_stat)) { \
+if (stat == current_stat || stat == AST_RTP_INSTANCE_STAT_ALL || (combined >= 0 && combined == stat)) { \
 placement = value; \
 if (stat == current_stat) { \
 return 0; \
@@ -374,7 +386,7 @@ return 0; \
 }
 
 #define AST_RTP_STAT_STRCPY(current_stat, combined, placement, value) \
-if (stat == current_stat || stat == AST_RTP_INSTANCE_STAT_ALL || (combined >= 0 && combined == current_stat)) { \
+if (stat == current_stat || stat == AST_RTP_INSTANCE_STAT_ALL || (combined >= 0 && combined == stat)) { \
 	ast_copy_string(placement, value, sizeof(placement)); \
 	if (stat == current_stat) { \
 		return 0; \
@@ -440,6 +452,8 @@ struct ast_rtp_engine_ice {
 	void (*turn_request)(struct ast_rtp_instance *instance, enum ast_rtp_ice_component_type component,
 		enum ast_transport transport, const char *server, unsigned int port,
 		const char *username, const char *password);
+	/*! Callback to alter the number of ICE components on a session */
+	void (*change_components)(struct ast_rtp_instance *instance, int num_components);
 };
 
 /*! \brief DTLS setup types */
@@ -610,12 +624,13 @@ struct ast_rtp_glue {
 	/*!
 	 * \brief Used to prevent two channels from remotely bridging audio rtp if the channel tech has a
 	 *        reason for prohibiting it based on qualities that need to be compared from both channels.
-	 * \note This function may be NULL for a given channel driver. This should be accounted for and if that is the case, function this is not used.
+	 * \note This function may be NULL for a given channel driver. This should be accounted for and if that is the case, this function is not used.
 	 */
 	int (*allow_rtp_remote)(struct ast_channel *chan1, struct ast_rtp_instance *instance);
 	/*!
 	 * \brief Callback for retrieving the RTP instance carrying video
 	 * \note This function increases the reference count on the returned RTP instance.
+	 * \note This function may be NULL for a given channel driver. This should be accounted for and if that is the case, this function is not used.
 	 */
 	enum ast_rtp_glue_result (*get_vrtp_info)(struct ast_channel *chan, struct ast_rtp_instance **instance);
 	/*!
@@ -628,11 +643,15 @@ struct ast_rtp_glue {
 	/*!
 	 * \brief Callback for retrieving the RTP instance carrying text
 	 * \note This function increases the reference count on the returned RTP instance.
+	 * \note This function may be NULL for a given channel driver. This should be accounted for and if that is the case, this function is not used.
 	 */
 	enum ast_rtp_glue_result (*get_trtp_info)(struct ast_channel *chan, struct ast_rtp_instance **instance);
 	/*! Callback for updating the destination that the remote side should send RTP to */
 	int (*update_peer)(struct ast_channel *chan, struct ast_rtp_instance *instance, struct ast_rtp_instance *vinstance, struct ast_rtp_instance *tinstance, const struct ast_format_cap *cap, int nat_active);
-	/*! Callback for retrieving codecs that the channel can do.  Result returned in result_cap. */
+	/*!
+	 * \brief Callback for retrieving codecs that the channel can do.  Result returned in result_cap.
+	 * \note This function may be NULL for a given channel driver. This should be accounted for and if that is the case, this function is not used.
+	 */
 	void (*get_codec)(struct ast_channel *chan, struct ast_format_cap *result_cap);
 	/*! Linked list information */
 	AST_RWLIST_ENTRY(ast_rtp_glue) entry;

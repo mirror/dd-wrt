@@ -36,12 +36,53 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/res_hep.h"
 #include "asterisk/module.h"
 #include "asterisk/netsock2.h"
+#include "asterisk/channel.h"
+#include "asterisk/pbx.h"
 #include "asterisk/stasis.h"
 #include "asterisk/rtp_engine.h"
 #include "asterisk/json.h"
 #include "asterisk/config.h"
 
 static struct stasis_subscription *stasis_rtp_subscription;
+
+static char *assign_uuid(struct ast_json *json_channel)
+{
+	const char *channel_name = ast_json_string_get(ast_json_object_get(json_channel, "name"));
+	enum hep_uuid_type uuid_type = hepv3_get_uuid_type();
+	char *uuid = NULL;
+
+	if (!channel_name) {
+		return NULL;
+	}
+
+	if (uuid_type == HEP_UUID_TYPE_CALL_ID) {
+		struct ast_channel *chan = NULL;
+		char buf[128];
+
+		if (ast_begins_with(channel_name, "PJSIP")) {
+			chan = ast_channel_get_by_name(channel_name);
+
+			if (chan && !ast_func_read(chan, "CHANNEL(pjsip,call-id)", buf, sizeof(buf))) {
+				uuid = ast_strdup(buf);
+			}
+		} else if (ast_begins_with(channel_name, "SIP")) {
+			chan = ast_channel_get_by_name(channel_name);
+
+			if (chan && !ast_func_read(chan, "SIP_HEADER(call-id)", buf, sizeof(buf))) {
+				uuid = ast_strdup(buf);
+			}
+		}
+
+		ast_channel_cleanup(chan);
+	}
+
+	/* If we couldn't get the call-id or didn't want it, just use the channel name */
+	if (!uuid) {
+		uuid = ast_strdup(channel_name);
+	}
+
+	return uuid;
+}
 
 static void rtcp_message_handler(struct stasis_message *message)
 {
@@ -94,7 +135,7 @@ static void rtcp_message_handler(struct stasis_message *message)
 	ast_sockaddr_parse(&capture_info->src_addr, ast_json_string_get(from), PARSE_PORT_REQUIRE);
 	ast_sockaddr_parse(&capture_info->dst_addr, ast_json_string_get(to), PARSE_PORT_REQUIRE);
 
-	capture_info->uuid = ast_strdup(ast_json_string_get(ast_json_object_get(json_channel, "name")));
+	capture_info->uuid = assign_uuid(json_channel);
 	if (!capture_info->uuid) {
 		ao2_ref(capture_info, -1);
 		return;
@@ -118,11 +159,15 @@ static void rtp_topic_handler(void *data, struct stasis_subscription *sub, struc
 
 static int load_module(void)
 {
+	if (!ast_module_check("res_hep.so") || !hepv3_is_loaded()) {
+		ast_log(AST_LOG_WARNING, "res_hep is not loaded or running; declining module load\n");
+		return AST_MODULE_LOAD_DECLINE;
+	}
 
 	stasis_rtp_subscription = stasis_subscribe(ast_rtp_topic(),
 		rtp_topic_handler, NULL);
 	if (!stasis_rtp_subscription) {
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	return AST_MODULE_LOAD_SUCCESS;
@@ -138,6 +183,7 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "RTCP HEPv3 Logger",
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_DEFAULT,

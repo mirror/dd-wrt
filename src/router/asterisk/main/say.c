@@ -993,7 +993,7 @@ static int ast_say_number_full_de(struct ast_channel *chan, int num, const char 
 
 /*! \brief  ast_say_number_full_en_GB: British syntax
  New files:
-  - In addition to American English, the following sounds are required:  "and"
+  - In addition to American English, the following sounds are required:  "vm-and"
  */
 static int ast_say_number_full_en_GB(struct ast_channel *chan, int num, const char *ints, const char *language, int audiofd, int ctrlfd)
 {
@@ -1016,7 +1016,7 @@ static int ast_say_number_full_en_GB(struct ast_channel *chan, int num, const ch
 			ast_copy_string(fn, "digits/hundred", sizeof(fn));
 			playh = 0;
 		} else if (playa) {
-			ast_copy_string(fn, "digits/and", sizeof(fn));
+			ast_copy_string(fn, "vm-and", sizeof(fn));
 			playa = 0;
 		} else if (num < 20) {
 			snprintf(fn, sizeof(fn), "digits/%d", num);
@@ -5201,13 +5201,14 @@ int ast_say_date_with_format_it(struct ast_channel *chan, time_t t, const char *
 			case 'I':
 			case 'l':
 				/* 12-Hour */
-				if (tm.tm_hour == 0)
+				if (tm.tm_hour == 0) {
 					ast_copy_string(nextmsg, "digits/12", sizeof(nextmsg));
-				else if (tm.tm_hour > 12)
+				} else if (tm.tm_hour > 12) {
 					snprintf(nextmsg, sizeof(nextmsg), "digits/%d", tm.tm_hour - 12);
-				else
+				} else {
 					snprintf(nextmsg, sizeof(nextmsg), "digits/%d", tm.tm_hour);
-					res = wait_file(chan, ints, nextmsg, lang);
+				}
+				res = wait_file(chan, ints, nextmsg, lang);
 				break;
 			case 'H':
 			case 'k':
@@ -5227,11 +5228,12 @@ int ast_say_date_with_format_it(struct ast_channel *chan, time_t t, const char *
 			case 'P':
 			case 'p':
 				/* AM/PM */
-				if (tm.tm_hour > 11)
+				if (tm.tm_hour > 11) {
 					ast_copy_string(nextmsg, "digits/p-m", sizeof(nextmsg));
-				else
+				} else {
 					ast_copy_string(nextmsg, "digits/a-m", sizeof(nextmsg));
-					res = wait_file(chan, ints, nextmsg, lang);
+				}
+				res = wait_file(chan, ints, nextmsg, lang);
 				break;
 			case 'Q':
 				/* Shorthand for "Today", "Yesterday", or ABdY */
@@ -7948,9 +7950,9 @@ int ast_say_date_with_format_ja(struct ast_channel *chan, time_t time, const cha
                      /* NOTE:  if you add more options here, please try to be consistent with strftime(3) */
                      case '\'':
                              /* Literal name of a sound file */
-                             sndoffset=0;
-                             for (sndoffset=0 ; (format[++offset] != '\'') && (sndoffset < 256) ; sndoffset++)
+                             for (sndoffset = 0 ; (format[++offset] != '\'') && (sndoffset < sizeof(sndfile) - 1) ; sndoffset++) {
                                      sndfile[sndoffset] = format[offset];
+                             }
                              sndfile[sndoffset] = '\0';
                              res = wait_file(chan,ints,sndfile,lang);
                              break;

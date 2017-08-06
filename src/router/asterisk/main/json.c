@@ -269,6 +269,127 @@ const char *ast_json_typename(enum ast_json_type type)
 	return "?";
 }
 
+/* Ported from libjansson utf.c:utf8_check_first() */
+static size_t json_utf8_check_first(char byte)
+{
+	unsigned char ch = (unsigned char) byte;
+
+	if (ch < 0x80) {
+		return 1;
+	}
+
+	if (0x80 <= ch && ch <= 0xBF) {
+		/* second, third or fourth byte of a multi-byte
+		   sequence, i.e. a "continuation byte" */
+		return 0;
+	} else if (ch == 0xC0 || ch == 0xC1) {
+		/* overlong encoding of an ASCII byte */
+		return 0;
+	} else if (0xC2 <= ch && ch <= 0xDF) {
+		/* 2-byte sequence */
+		return 2;
+	} else if (0xE0 <= ch && ch <= 0xEF) {
+		/* 3-byte sequence */
+		return 3;
+	} else if (0xF0 <= ch && ch <= 0xF4) {
+		/* 4-byte sequence */
+		return 4;
+	} else { /* ch >= 0xF5 */
+		/* Restricted (start of 4-, 5- or 6-byte sequence) or invalid
+		   UTF-8 */
+		return 0;
+	}
+}
+
+/* Ported from libjansson utf.c:utf8_check_full() */
+static size_t json_utf8_check_full(const char *str, size_t len)
+{
+	size_t pos;
+	int32_t value;
+	unsigned char ch = (unsigned char) str[0];
+
+	if (len == 2) {
+		value = ch & 0x1F;
+	} else if (len == 3) {
+		value = ch & 0xF;
+	} else if (len == 4) {
+		value = ch & 0x7;
+	} else {
+		return 0;
+	}
+
+	for (pos = 1; pos < len; ++pos) {
+		ch = (unsigned char) str[pos];
+		if (ch < 0x80 || ch > 0xBF) {
+			/* not a continuation byte */
+			return 0;
+		}
+
+		value = (value << 6) + (ch & 0x3F);
+	}
+
+	if (value > 0x10FFFF) {
+		/* not in Unicode range */
+		return 0;
+	} else if (0xD800 <= value && value <= 0xDFFF) {
+		/* invalid code point (UTF-16 surrogate halves) */
+		return 0;
+	} else if ((len == 2 && value < 0x80)
+		|| (len == 3 && value < 0x800)
+		|| (len == 4 && value < 0x10000)) {
+		/* overlong encoding */
+		return 0;
+	}
+
+	return 1;
+}
+
+int ast_json_utf8_check_len(const char *str, size_t len)
+{
+	size_t pos;
+	size_t count;
+	int res = 1;
+
+	if (!str) {
+		return 0;
+	}
+
+	/*
+	 * Since the json library does not make the check function
+	 * public we recreate/copy the function in our interface
+	 * module.
+	 *
+	 * Loop ported from libjansson utf.c:utf8_check_string()
+	 */
+	for (pos = 0; pos < len; pos += count) {
+		count = json_utf8_check_first(str[pos]);
+		if (count == 0) {
+			res = 0;
+			break;
+		} else if (count > 1) {
+			if (count > len - pos) {
+				/* UTF-8 needs more than we have left in the string. */
+				res = 0;
+				break;
+			}
+
+			if (!json_utf8_check_full(&str[pos], count)) {
+				res = 0;
+				break;
+			}
+		}
+	}
+
+	if (!res) {
+		ast_debug(1, "String '%.*s' is not UTF-8 for json conversion\n", (int) len, str);
+	}
+	return res;
+}
+
+int ast_json_utf8_check(const char *str)
+{
+	return str ? ast_json_utf8_check_len(str, strlen(str)) : 0;
+}
 
 struct ast_json *ast_json_true(void)
 {
@@ -721,16 +842,16 @@ struct ast_json *ast_json_deep_copy(const struct ast_json *value)
 struct ast_json *ast_json_name_number(const char *name, const char *number)
 {
 	return ast_json_pack("{s: s, s: s}",
-			     "name", name,
-			     "number", number);
+		"name", AST_JSON_UTF8_VALIDATE(name),
+		"number", AST_JSON_UTF8_VALIDATE(number));
 }
 
 struct ast_json *ast_json_dialplan_cep(const char *context, const char *exten, int priority)
 {
 	return ast_json_pack("{s: o, s: o, s: o}",
-			     "context", context ? ast_json_string_create(context) : ast_json_null(),
-			     "exten", exten ? ast_json_string_create(exten) : ast_json_null(),
-			     "priority", priority != -1 ? ast_json_integer_create(priority) : ast_json_null());
+		"context", context ? ast_json_string_create(context) : ast_json_null(),
+		"exten", exten ? ast_json_string_create(exten) : ast_json_null(),
+		"priority", priority != -1 ? ast_json_integer_create(priority) : ast_json_null());
 }
 
 struct ast_json *ast_json_timeval(const struct timeval tv, const char *zone)
@@ -821,7 +942,7 @@ static struct ast_json *json_party_number(struct ast_party_number *number)
 		return NULL;
 	}
 	return ast_json_pack("{s: s, s: i, s: i, s: s}",
-		"number", number->str,
+		"number", AST_JSON_UTF8_VALIDATE(number->str),
 		"plan", number->plan,
 		"presentation", number->presentation,
 		"presentation_txt", ast_describe_caller_presentation(number->presentation));
@@ -833,7 +954,7 @@ static struct ast_json *json_party_name(struct ast_party_name *name)
 		return NULL;
 	}
 	return ast_json_pack("{s: s, s: s, s: i, s: s}",
-		"name", name->str,
+		"name", AST_JSON_UTF8_VALIDATE(name->str),
 		"character_set", ast_party_name_charset_describe(name->char_set),
 		"presentation", name->presentation,
 		"presentation_txt", ast_describe_caller_presentation(name->presentation));
@@ -845,7 +966,7 @@ static struct ast_json *json_party_subaddress(struct ast_party_subaddress *subad
 		return NULL;
 	}
 	return ast_json_pack("{s: s, s: i, s: b}",
-		"subaddress", subaddress->str,
+		"subaddress", AST_JSON_UTF8_VALIDATE(subaddress->str),
 		"type", subaddress->type,
 		"odd", subaddress->odd_even_indicator);
 }
@@ -865,17 +986,20 @@ struct ast_json *ast_json_party_id(struct ast_party_id *party)
 	}
 
 	/* Party number */
-	if (party->number.valid && ast_json_object_set(json_party_id, "number", json_party_number(&party->number))) {
+	if (party->number.valid
+		&& ast_json_object_set(json_party_id, "number", json_party_number(&party->number))) {
 		return NULL;
 	}
 
 	/* Party name */
-	if (party->name.valid && ast_json_object_set(json_party_id, "name", json_party_name(&party->name))) {
+	if (party->name.valid
+		&& ast_json_object_set(json_party_id, "name", json_party_name(&party->name))) {
 		return NULL;
 	}
 
 	/* Party subaddress */
-	if (party->subaddress.valid && ast_json_object_set(json_party_id, "subaddress", json_party_subaddress(&party->subaddress))) {
+	if (party->subaddress.valid
+		&& ast_json_object_set(json_party_id, "subaddress", json_party_subaddress(&party->subaddress))) {
 		return NULL;
 	}
 

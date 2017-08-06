@@ -19,7 +19,6 @@
 #ifndef _ASTERISK_STASIS_SYSTEM_H
 #define _ASTERISK_STASIS_SYSTEM_H
 
-#include "asterisk/json.h"
 #include "asterisk/stasis.h"
 
 /*!
@@ -120,6 +119,12 @@ struct stasis_message_type *ast_cc_failure_type(void);
  * \since 12
  */
 struct stasis_message_type *ast_cc_monitorfailed_type(void);
+
+/*!
+ * \brief A \ref stasis_message_type for Cluster discovery
+ * \since 13.11.0
+ */
+struct stasis_message_type *ast_cluster_discovery_type(void);
 
 /*!
  * \brief Initialize the stasis system topic and message types
