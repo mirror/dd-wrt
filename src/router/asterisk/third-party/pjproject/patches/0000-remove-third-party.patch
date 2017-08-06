@@ -1,0 +1,131 @@
+diff --git a/build.mak.in b/build.mak.in
+index eb28663..83024ef 100644
+--- a/build.mak.in
++++ b/build.mak.in
+@@ -1,6 +1,5 @@
+-export PJDIR := @ac_pjdir@
+ include $(PJDIR)/version.mak
+ export PJ_DIR := $(PJDIR)
+ 
+ # @configure_input@
+ export MACHINE_NAME := auto
+@@ -28,19 +27,6 @@ export APP_THIRD_PARTY_EXT :=
+ export APP_THIRD_PARTY_LIBS :=
+ export APP_THIRD_PARTY_LIB_FILES :=
+ 
+-ifeq (@ac_external_srtp@,1)
+-# External SRTP library
+-APP_THIRD_PARTY_EXT += -lsrtp
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libsrtp-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lsrtp-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lsrtp
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libsrtp.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libsrtp.$(SHLIB_SUFFIX)
+-endif
+-endif
+-
+ ifeq (@ac_pjmedia_resample@,libresample)
+ APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libresample-$(LIB_SUFFIX)
+ ifeq ($(PJ_SHARED_LIBRARIES),)
+@@ -57,99 +43,6 @@ APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libresample.$(SHLIB_SUFFI
+ endif
+ endif
+ 
+-ifneq (@ac_no_gsm_codec@,1)
+-ifeq (@ac_external_gsm@,1)
+-# External GSM library
+-APP_THIRD_PARTY_EXT += -lgsm
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libgsmcodec-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lgsmcodec-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lgsmcodec
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libgsmcodec.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libgsmcodec.$(SHLIB_SUFFIX)
+-endif
+-endif
+-endif
+-
+-ifneq (@ac_no_speex_codec@,1)
+-ifeq (@ac_external_speex@,1)
+-APP_THIRD_PARTY_EXT += -lspeex -lspeexdsp
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libspeex-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lspeex-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lspeex
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libspeex.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libspeex.$(SHLIB_SUFFIX)
+-endif
+-endif
+-endif
+-
+-ifneq (@ac_no_ilbc_codec@,1)
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libilbccodec-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lilbccodec-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lilbccodec
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libilbccodec.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libilbccodec.$(SHLIB_SUFFIX)
+-endif
+-endif
+-
+-ifneq (@ac_no_g7221_codec@,1)
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libg7221codec-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lg7221codec-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lg7221codec
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libg7221codec.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libg7221codec.$(SHLIB_SUFFIX)
+-endif
+-endif
+-
+-ifneq ($(findstring pa,@ac_pjmedia_snd@),)
+-ifeq (@ac_external_pa@,1)
+-# External PA
+-APP_THIRD_PARTY_EXT += -lportaudio
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libportaudio-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lportaudio-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lportaudio
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libportaudio.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libportaudio.$(SHLIB_SUFFIX)
+-endif
+-endif
+-endif
+-
+-ifneq (@ac_no_yuv@,1)
+-ifeq (@ac_external_yuv@,1)
+-APP_THIRD_PARTY_EXT += -lyuv
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libyuv-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lyuv-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lyuv
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libyuv.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libyuv.$(SHLIB_SUFFIX)
+-endif
+-endif
+-endif
+-
+-ifneq (@ac_no_webrtc@,1)
+-ifeq (@ac_external_webrtc@,1)
+-APP_THIRD_PARTY_EXT += -lwebrtc
+-else
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libwebrtc-$(LIB_SUFFIX)
+-ifeq ($(PJ_SHARED_LIBRARIES),)
+-APP_THIRD_PARTY_LIBS += -lwebrtc-$(TARGET_NAME)
+-else
+-APP_THIRD_PARTY_LIBS += -lwebrtc
+-APP_THIRD_PARTY_LIB_FILES += $(PJ_DIR)/third_party/lib/libwebrtc.$(SHLIB_SUFFIX).$(PJ_VERSION_MAJOR) $(PJ_DIR)/third_party/lib/libwebrtc.$(SHLIB_SUFFIX)
+-endif
+-endif
+-endif
+-
+-
+ # Additional flags
+ @ac_build_mak_vars@
+ 
