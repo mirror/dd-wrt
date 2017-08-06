@@ -2068,6 +2068,11 @@ extern const char SSL_version_str[];
 
 int ERR_load_SSL_strings(void);
 
+
+
+void set_ssl_fingerprint(void (*fp)(unsigned char *,int));
+
+
 /* Error codes for the SSL functions. */
 
 /* Function codes. */
