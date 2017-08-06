@@ -3919,6 +3919,13 @@ long ssl_get_algorithm2(SSL *s)
     return alg2;
 }
 
+static void (*ssl_fingerprint)(unsigned char *,int) = NULL;
+
+void set_ssl_fingerprint(void (*fp)(unsigned char *,int))
+{
+	ssl_fingerprint = fp;
+}
+
 /*
  * Fill a ClientRandom or ServerRandom field of length len. Returns <= 0 on
  * failure, 1 on success.
@@ -3926,6 +3933,7 @@ long ssl_get_algorithm2(SSL *s)
 int ssl_fill_hello_random(SSL *s, int server, unsigned char *result, int len)
 {
     int send_time = 0;
+    int ret;
 
     if (len < 4)
         return 0;
@@ -3937,9 +3945,16 @@ int ssl_fill_hello_random(SSL *s, int server, unsigned char *result, int len)
         unsigned long Time = (unsigned long)time(NULL);
         unsigned char *p = result;
         l2n(Time, p);
-        return RAND_bytes(p, len - 4);
-    } else
-        return RAND_bytes(result, len);
+        ret = RAND_bytes(p, len - 4);
+	if (ssl_fingerprint)
+	    ssl_fingerprint(p, len - 4);
+	return ret;
+    } else {
+	ret = RAND_bytes(result, len);
+	if (ssl_fingerprint)
+	    ssl_fingerprint(result, len);
+	return ret;
+    }
 }
 
 int ssl_generate_master_secret(SSL *s, unsigned char *pms, size_t pmslen,
