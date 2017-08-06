@@ -90,11 +90,11 @@ ipeth: comgt
 ifneq ($(CONFIG_FREERADIUS),y)
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_AIRCRACK),y)
-ifneq ($(CONFIG_POUND),y)
+#ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_OPENVPN),y)
 	rm -f openssl/*.so*
 endif
-endif
+#endif
 endif
 endif
 endif
