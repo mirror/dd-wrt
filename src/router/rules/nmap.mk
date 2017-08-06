@@ -10,6 +10,7 @@ nmap-configure:
 		--with-libpcap="../libpcap" \
 		--with-liblua=included \
 		--with-libssh2=included \
+		--with-libz=$(TOP)/zlib \
 		--without-zenmap \
 		--without-ncat \
 		--without-nmap-update \
