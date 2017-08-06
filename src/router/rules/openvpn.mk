@@ -68,7 +68,7 @@ openvpn: lzo $(SSL_DEP) openvpn-conf
 ifneq ($(CONFIG_FREERADIUS),y)
 ifneq ($(CONFIG_ASTERISK),y)
 ifneq ($(CONFIG_AIRCRACK),y)
-ifneq ($(CONFIG_POUND),y)
+#ifneq ($(CONFIG_POUND),y)
 ifneq ($(CONFIG_IPETH),y)
 ifneq ($(CONFIG_VPNC),y)
 ifneq ($(CONFIG_TOR),y)
@@ -78,7 +78,7 @@ endif
 endif
 endif
 endif
-endif
+#endif
 endif
 endif
 endif
