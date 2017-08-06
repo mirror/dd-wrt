@@ -4,25 +4,13 @@ SUBMAKE?=$(MAKE) --quiet --no-print-directory
 ECHO_PREFIX?=@
 CMD_PREFIX?=@
 QUIET_CONFIGURE=-q
-REALLY_QUIET=&>/dev/null
+REALLY_QUIET=>/dev/null 2>&1
 else
 SUBMAKE?=$(MAKE)
 ECHO_PREFIX?=@\#
 CMD_PREFIX?=
 QUIET_CONFIGURE=
 REALLY_QUIET=
-endif
-
-DOWNLOAD := $(shell which wget 2>/dev/null)
-DOWNLOAD := $(if $(DOWNLOAD),$(DOWNLOAD) -O- ,)
-
-ifeq ($(DOWNLOAD),)
-DOWNLOAD := $(shell which curl 2>/dev/null)
-DOWNLOAD := $(if $(DOWNLOAD), $(DOWNLOAD) -L ,)
-endif
-
-ifeq ($(DOWNLOAD),)
-DOWNLOAD := echo "No download program available" ; exit 1;
 endif
 
 export SUBMAKE
@@ -34,3 +22,12 @@ export ASTTOPDIR
 export ASTSBINDIR
 export DESTDIR
 export ASTDATADIR
+export TAR
+export PATCH
+export SED
+export NM
+export MD5
+export CAT
+export DOWNLOAD
+export DOWNLOAD_TO_STDOUT
+export DOWNLOAD_TIMEOUT

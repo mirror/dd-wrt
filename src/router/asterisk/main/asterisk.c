@@ -248,6 +248,8 @@ int daemon(int, int);  /* defined in libresolv of all places */
 #include "asterisk/endpoints.h"
 #include "asterisk/codec.h"
 #include "asterisk/format_cache.h"
+#include "asterisk/astdb.h"
+#include "asterisk/options.h"
 
 #include "../defaults.h"
 
@@ -323,6 +325,8 @@ int ast_verb_sys_level;
 
 int option_verbose;				/*!< Verbosity level */
 int option_debug;				/*!< Debug level */
+int ast_pjproject_max_log_level = -1;/* Default to -1 to know if we have read the level from pjproject yet. */
+int ast_option_pjproject_log_level;
 double ast_option_maxload;			/*!< Max load avg on system */
 int ast_option_maxcalls;			/*!< Max number of active calls */
 int ast_option_maxfiles;			/*!< Max number of open file handles (files, sockets) */
@@ -330,6 +334,7 @@ unsigned int option_dtmfminduration;		/*!< Minimum duration of DTMF. */
 #if defined(HAVE_SYSINFO)
 long option_minmemfree;				/*!< Minimum amount of free system memory - stop accepting calls if free memory falls below this watermark */
 #endif
+unsigned int ast_option_rtpptdynamic;
 
 /*! @} */
 
@@ -606,6 +611,8 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	char buf[BUFSIZ];
 	struct ast_tm tm;
 	char eid_str[128];
+	struct rlimit limits;
+	char pbx_uuid[AST_UUID_STR_LEN];
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -618,6 +625,7 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	}
 
 	ast_eid_to_str(eid_str, sizeof(eid_str), &ast_eid_default);
+	ast_pbx_uuid_get(pbx_uuid, sizeof(pbx_uuid));
 
 	ast_cli(a->fd, "\nPBX Core settings\n");
 	ast_cli(a->fd, "-----------------\n");
@@ -627,10 +635,17 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 		ast_cli(a->fd, "  Maximum calls:               %d (Current %d)\n", ast_option_maxcalls, ast_active_channels());
 	else
 		ast_cli(a->fd, "  Maximum calls:               Not set\n");
-	if (ast_option_maxfiles)
-		ast_cli(a->fd, "  Maximum open file handles:   %d\n", ast_option_maxfiles);
-	else
-		ast_cli(a->fd, "  Maximum open file handles:   Not set\n");
+
+	if (getrlimit(RLIMIT_NOFILE, &limits)) {
+		ast_cli(a->fd, "  Maximum open file handles:   Error because of %s\n", strerror(errno));
+	} else if (limits.rlim_cur == RLIM_INFINITY) {
+		ast_cli(a->fd, "  Maximum open file handles:   Unlimited\n");
+	} else if (limits.rlim_cur < ast_option_maxfiles) {
+		ast_cli(a->fd, "  Maximum open file handles:   %d (is) %d (requested)\n", (int) limits.rlim_cur, ast_option_maxfiles);
+	} else {
+		ast_cli(a->fd, "  Maximum open file handles:   %d\n", (int) limits.rlim_cur);
+	}
+
 	ast_cli(a->fd, "  Root console verbosity:      %d\n", option_verbose);
 	ast_cli(a->fd, "  Current console verbosity:   %d\n", ast_verb_console_get());
 	ast_cli(a->fd, "  Debug level:                 %d\n", option_debug);
@@ -649,6 +664,7 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	ast_cli(a->fd, "  System:                      %s/%s built by %s on %s %s\n", ast_build_os, ast_build_kernel, ast_build_user, ast_build_machine, ast_build_date);
 	ast_cli(a->fd, "  System name:                 %s\n", ast_config_AST_SYSTEM_NAME);
 	ast_cli(a->fd, "  Entity ID:                   %s\n", eid_str);
+	ast_cli(a->fd, "  PBX UUID:                    %s\n", pbx_uuid);
 	ast_cli(a->fd, "  Default language:            %s\n", ast_defaultlanguage);
 	ast_cli(a->fd, "  Language prefix:             %s\n", ast_language_is_prefix ? "Enabled" : "Disabled");
 	ast_cli(a->fd, "  User name and group:         %s/%s\n", ast_config_AST_RUN_USER, ast_config_AST_RUN_GROUP);
@@ -657,6 +673,19 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	ast_cli(a->fd, "  Transmit silence during rec: %s\n", ast_test_flag(&ast_options, AST_OPT_FLAG_TRANSMIT_SILENCE) ? "Enabled" : "Disabled");
 	ast_cli(a->fd, "  Generic PLC:                 %s\n", ast_test_flag(&ast_options, AST_OPT_FLAG_GENERIC_PLC) ? "Enabled" : "Disabled");
 	ast_cli(a->fd, "  Min DTMF duration::          %u\n", option_dtmfminduration);
+
+	if (ast_option_rtpptdynamic == AST_RTP_PT_LAST_REASSIGN) {
+		ast_cli(a->fd, "  RTP dynamic payload types:   %u,%u-%u\n",
+		        ast_option_rtpptdynamic,
+		        AST_RTP_PT_FIRST_DYNAMIC, AST_RTP_MAX_PT - 1);
+	} else if (ast_option_rtpptdynamic < AST_RTP_PT_LAST_REASSIGN) {
+		ast_cli(a->fd, "  RTP dynamic payload types:   %u-%u,%u-%u\n",
+		        ast_option_rtpptdynamic, AST_RTP_PT_LAST_REASSIGN,
+		        AST_RTP_PT_FIRST_DYNAMIC, AST_RTP_MAX_PT - 1);
+	} else {
+		ast_cli(a->fd, "  RTP dynamic payload types:   %u-%u\n",
+		        AST_RTP_PT_FIRST_DYNAMIC, AST_RTP_MAX_PT - 1);
+	}
 
 	ast_cli(a->fd, "\n* Subsystems\n");
 	ast_cli(a->fd, "  -------------\n");
@@ -846,7 +875,7 @@ static char *handle_show_sysinfo(struct ast_cli_entry *e, int cmd, struct ast_cl
 #if defined(HAVE_SYSINFO)
 	ast_cli(a->fd, "  Buffer RAM:                %" PRIu64 " KiB\n", ((uint64_t) sys_info.bufferram * sys_info.mem_unit) / 1024);
 #endif
-#if defined (HAVE_SYSCTL) || defined(HAVE_SWAPCTL)
+#if defined(HAVE_SWAPCTL) || defined(HAVE_SYSINFO)
 	ast_cli(a->fd, "  Total Swap Space:          %d KiB\n", totalswap);
 	ast_cli(a->fd, "  Free Swap Space:           %" PRIu64 " KiB\n\n", freeswap);
 #endif
@@ -1035,35 +1064,30 @@ static char *handle_clear_profile(struct ast_cli_entry *e, int cmd, struct ast_c
 static char *handle_show_version_files(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 #define FORMAT "%-25.25s %-40.40s\n"
+	static const char * const completions[] = { "like", NULL };
 	struct registered_file *iterator;
 	regex_t regexbuf;
 	int havepattern = 0;
 	int havename = 0;
 	int count_files = 0;
 	char *ret = NULL;
-	int matchlen, which = 0;
-	struct registered_file *find;
 
 	switch (cmd) {
 	case CLI_INIT:
-		e->command = "core show file version [like]";
+		e->command = "core show file version";
 		e->usage =
-			"Usage: core show file version [like <pattern>]\n"
+			"Usage: core show file version [<filename>|like <pattern>]\n"
 			"       Lists the files along with the Asterisk version.\n"
 			"       Optional regular expression pattern is used to filter the file list.\n";
 		return NULL;
 	case CLI_GENERATE:
-		matchlen = strlen(a->word);
-		if (a->pos != 3)
+		if (a->pos != 4) {
 			return NULL;
-		AST_RWLIST_RDLOCK(&registered_files);
-		AST_RWLIST_TRAVERSE(&registered_files, find, list) {
-			if (!strncasecmp(a->word, find->file, matchlen) && ++which > a->n) {
-				ret = ast_strdup(find->file);
-				break;
-			}
 		}
-		AST_RWLIST_UNLOCK(&registered_files);
+		ret = ast_cli_complete(a->word, completions, a->n);
+		if (!ret) {
+			ret = ast_complete_source_filename(a->word, a->n - 1);
+		}
 		return ret;
 	}
 
@@ -1078,6 +1102,9 @@ static char *handle_show_version_files(struct ast_cli_entry *e, int cmd, struct 
 			return CLI_SHOWUSAGE;
 		break;
 	case 5:
+		if (!strcasecmp(a->argv[4], "like")) {
+			return CLI_SHOWUSAGE;
+		}
 		havename = 1;
 		break;
 	case 4:
@@ -1114,6 +1141,11 @@ static char *handle_show_version_files(struct ast_cli_entry *e, int cmd, struct 
 }
 
 #endif /* ! LOW_MEMORY */
+
+int ast_pbx_uuid_get(char *pbx_uuid, int length)
+{
+	return ast_db_get("pbx", "UUID", pbx_uuid, length);
+}
 
 static void publish_fully_booted(void)
 {
@@ -1767,7 +1799,6 @@ static void _urg_handler(int num)
 
 static struct sigaction urg_handler = {
 	.sa_handler = _urg_handler,
-	.sa_flags = SA_RESTART,
 };
 
 static void _hup_handler(int num)
@@ -1844,6 +1875,66 @@ static void set_icon(char *text)
 {
 	if (getenv("TERM") && strstr(getenv("TERM"), "xterm"))
 		fprintf(stdout, "\033]1;%s\007", text);
+}
+
+/*! \brief Check whether we were set to high(er) priority. */
+static int has_priority(void)
+{
+	/* Neither of these calls should fail with these arguments. */
+#ifdef __linux__
+	/* For SCHED_OTHER, SCHED_BATCH and SCHED_IDLE, this will return
+	 * 0. For the realtime priorities SCHED_RR and SCHED_FIFO, it
+	 * will return something >= 1. */
+	return sched_getscheduler(0);
+#else
+	/* getpriority() can return a value in -20..19 (or even -INF..20)
+	 * where negative numbers are high priority. We don't bother
+	 * checking errno. If the query fails and it returns -1, we'll
+	 * assume that we're running at high prio; a safe assumption
+	 * that will enable the resource starvation monitor (canary)
+	 * just in case. */
+	return (getpriority(PRIO_PROCESS, 0) < 0);
+#endif
+}
+
+/*! \brief Set priority on all known threads. */
+static int set_priority_all(int pri)
+{
+#if !defined(__linux__)
+	/* The non-linux version updates the entire process prio. */
+	return ast_set_priority(pri);
+#elif defined(LOW_MEMORY)
+	ast_log(LOG_WARNING, "Unable to enumerate all threads to update priority\n");
+	return ast_set_priority(pri);
+#else
+	struct thread_list_t *cur;
+	struct sched_param sched;
+	char const *policy_str;
+	int policy;
+
+	memset(&sched, 0, sizeof(sched));
+	if (pri) {
+		policy = SCHED_RR;
+		policy_str = "realtime";
+		sched.sched_priority = 10;
+	} else {
+		policy = SCHED_OTHER;
+		policy_str = "regular";
+		sched.sched_priority = 0;
+	}
+	if (sched_setscheduler(getpid(), policy, &sched)) {
+		ast_log(LOG_WARNING, "Unable to set %s thread priority on main thread\n", policy_str);
+		return -1;
+	}
+	ast_verb(1, "Setting %s thread priority on all threads\n", policy_str);
+	AST_RWLIST_RDLOCK(&thread_list);
+	AST_RWLIST_TRAVERSE(&thread_list, cur, list) {
+		/* Don't care about the return value. It should work. */
+		sched_setscheduler(cur->lwp, policy, &sched);
+	}
+	AST_RWLIST_UNLOCK(&thread_list);
+	return 0;
+#endif
 }
 
 /*! \brief We set ourselves to a high priority, that we might pre-empt
@@ -2063,10 +2154,14 @@ static void really_quit(int num, shutdown_nice_t niceness, int restart)
 	struct ast_json *json_object = NULL;
 	int run_cleanups = niceness >= SHUTDOWN_NICE;
 
-	if (run_cleanups) {
-		ast_module_shutdown();
+	if (run_cleanups && modules_shutdown()) {
+		ast_verb(0, "Some modules could not be unloaded, switching to fast shutdown\n");
+		run_cleanups = 0;
 	}
 
+	if (!restart) {
+		ast_sd_notify("STOPPING=1");
+	}
 	if (ast_opt_console || (ast_opt_remote && !ast_opt_exec)) {
 		ast_el_write_default_histfile();
 		if (consolethread == AST_PTHREADT_NULL || consolethread == pthread_self()) {
@@ -2738,7 +2833,11 @@ static void send_rasterisk_connect_commands(void)
 	}
 }
 
+#ifdef HAVE_LIBEDIT_IS_UNICODE
+static int ast_el_read_char(EditLine *editline, wchar_t *cp)
+#else
 static int ast_el_read_char(EditLine *editline, char *cp)
+#endif
 {
 	int num_read = 0;
 	int lastpos = 0;
@@ -2768,10 +2867,16 @@ static int ast_el_read_char(EditLine *editline, char *cp)
 		}
 
 		if (!ast_opt_exec && fds[1].revents) {
-			num_read = read(STDIN_FILENO, cp, 1);
+			char c = '\0';
+			num_read = read(STDIN_FILENO, &c, 1);
 			if (num_read < 1) {
 				break;
 			} else {
+#ifdef 	HAVE_LIBEDIT_IS_UNICODE
+				*cp = btowc(c);
+#else
+				*cp = c;
+#endif
 				return (num_read);
 			}
 		}
@@ -2815,7 +2920,11 @@ static int ast_el_read_char(EditLine *editline, char *cp)
 			console_print(buf, 0);
 
 			if ((res < EL_BUF_SIZE - 1) && ((buf[res-1] == '\n') || (res >= 2 && buf[res-2] == '\n'))) {
+#ifdef 	HAVE_LIBEDIT_IS_UNICODE
+				*cp = btowc(CC_REFRESH);
+#else
 				*cp = CC_REFRESH;
+#endif
 				return(1);
 			} else {
 				lastpos = 1;
@@ -2823,7 +2932,12 @@ static int ast_el_read_char(EditLine *editline, char *cp)
 		}
 	}
 
+#ifdef 	HAVE_LIBEDIT_IS_UNICODE
+	*cp = btowc('\0');
+#else
 	*cp = '\0';
+#endif
+
 	return (0);
 }
 
@@ -3525,6 +3639,7 @@ static void ast_readconfig(void)
 
 	/* Set default value */
 	option_dtmfminduration = AST_MIN_DTMF_DURATION;
+	ast_option_rtpptdynamic = AST_RTP_PT_FIRST_DYNAMIC;
 
 	if (ast_opt_override_config) {
 		cfg = ast_config_load2(ast_config_AST_CONFIG_FILE, "" /* core, can't reload */, config_flags);
@@ -3674,6 +3789,12 @@ static void ast_readconfig(void)
 			if (sscanf(v->value, "%30u", &option_dtmfminduration) != 1) {
 				option_dtmfminduration = AST_MIN_DTMF_DURATION;
 			}
+		/* http://www.iana.org/assignments/rtp-parameters
+		 * RTP dynamic payload types start at 96 normally; extend down to 0 */
+		} else if (!strcasecmp(v->name, "rtp_pt_dynamic")) {
+			ast_parse_arg(v->value, PARSE_UINT32|PARSE_IN_RANGE|PARSE_DEFAULT,
+			              &ast_option_rtpptdynamic, AST_RTP_PT_FIRST_DYNAMIC,
+			              0, AST_RTP_PT_LAST_REASSIGN);
 		} else if (!strcasecmp(v->name, "maxcalls")) {
 			if ((sscanf(v->value, "%30d", &ast_option_maxcalls) != 1) || (ast_option_maxcalls < 0)) {
 				ast_option_maxcalls = 0;
@@ -3735,10 +3856,10 @@ static void ast_readconfig(void)
 		} else if (!strcasecmp(v->name, "entityid")) {
 			struct ast_eid tmp_eid;
 			if (!ast_str_to_eid(&tmp_eid, v->value)) {
-				ast_verbose("Successfully set global EID to '%s'\n", v->value);
 				ast_eid_default = tmp_eid;
-			} else
-				ast_verbose("Invalid Entity ID '%s' provided\n", v->value);
+			} else {
+				ast_log(LOG_WARNING, "Invalid Entity ID '%s' provided\n", v->value);
+			}
 		} else if (!strcasecmp(v->name, "lightbackground")) {
 			ast_set2_flag(&ast_options, ast_true(v->value), AST_OPT_FLAG_LIGHT_BACKGROUND);
 		} else if (!strcasecmp(v->name, "forceblackbackground")) {
@@ -3765,6 +3886,37 @@ static void ast_readconfig(void)
 	}
 	if (!ast_opt_remote) {
 		pbx_live_dangerously(live_dangerously);
+	}
+
+	ast_config_destroy(cfg);
+}
+
+static void read_pjproject_startup_options(void)
+{
+	struct ast_config *cfg;
+	struct ast_variable *v;
+	struct ast_flags config_flags = { CONFIG_FLAG_NOCACHE | CONFIG_FLAG_NOREALTIME };
+
+	ast_option_pjproject_log_level = DEFAULT_PJ_LOG_MAX_LEVEL;
+
+	cfg = ast_config_load2("pjproject.conf", "" /* core, can't reload */, config_flags);
+	if (!cfg
+		|| cfg == CONFIG_STATUS_FILEUNCHANGED
+		|| cfg == CONFIG_STATUS_FILEINVALID) {
+		/* We'll have to use defaults */
+		return;
+	}
+
+	for (v = ast_variable_browse(cfg, "startup"); v; v = v->next) {
+		if (!strcasecmp(v->name, "log_level")) {
+			if (sscanf(v->value, "%30d", &ast_option_pjproject_log_level) != 1) {
+				ast_option_pjproject_log_level = DEFAULT_PJ_LOG_MAX_LEVEL;
+			} else if (ast_option_pjproject_log_level < 0) {
+				ast_option_pjproject_log_level = 0;
+			} else if (MAX_PJ_LOG_MAX_LEVEL < ast_option_pjproject_log_level) {
+				ast_option_pjproject_log_level = MAX_PJ_LOG_MAX_LEVEL;
+			}
+		}
 	}
 
 	ast_config_destroy(cfg);
@@ -3815,7 +3967,7 @@ static void *canary_thread(void *unused)
 				"He's kicked the bucket.  He's shuffled off his mortal coil, "
 				"run down the curtain, and joined the bleeding choir invisible!!  "
 				"THIS is an EX-CANARY.  (Reducing priority)\n");
-			ast_set_priority(0);
+			set_priority_all(0);
 			pthread_exit(NULL);
 		}
 
@@ -3827,8 +3979,11 @@ static void *canary_thread(void *unused)
 /* Used by libc's atexit(3) function */
 static void canary_exit(void)
 {
-	if (canary_pid > 0)
+	if (canary_pid > 0) {
+		int status;
 		kill(canary_pid, SIGKILL);
+		waitpid(canary_pid, &status, 0);
+	}
 }
 
 /* Execute CLI commands on startup.  Run by main() thread. */
@@ -4290,13 +4445,26 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+static inline void check_init(int init_result, const char *name)
+{
+	if (init_result) {
+		if (ast_is_logger_initialized()) {
+			ast_log(LOG_ERROR, "%s initialization failed.  ASTERISK EXITING!\n%s", name, term_quit());
+		} else {
+			fprintf(stderr, "%s initialization failed.  ASTERISK EXITING!\n%s", name, term_quit());
+		}
+		ast_run_atexits(0);
+		exit(init_result == -2 ? 2 : 1);
+	}
+}
+
 static void asterisk_daemon(int isroot, const char *runuser, const char *rungroup)
 {
 	FILE *f;
 	sigset_t sigs;
 	int num;
 	char *buf;
-	int moduleresult;         /*!< Result from the module load subsystem */
+	char pbx_uuid[AST_UUID_STR_LEN];
 
 	/* This needs to remain as high up in the initial start up as possible.
 	 * daemon causes a fork to occur, which has all sorts of unintended
@@ -4326,8 +4494,16 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	__ast_mm_init_phase_1();
 #endif	/* defined(__AST_DEBUG_MALLOC) */
 
+	/* Check whether high prio was succesfully set by us or some
+	 * other incantation. */
+	if (has_priority()) {
+		ast_set_flag(&ast_options, AST_OPT_FLAG_HIGH_PRIORITY);
+	} else {
+		ast_clear_flag(&ast_options, AST_OPT_FLAG_HIGH_PRIORITY);
+	}
+
 	/* Spawning of astcanary must happen AFTER the call to daemon(3) */
-	if (isroot && ast_opt_high_priority) {
+	if (ast_opt_high_priority) {
 		snprintf(canary_filename, sizeof(canary_filename), "%s/alt.asterisk.canary.tweet.tweet.tweet", ast_config_AST_RUN_DIR);
 
 		/* Don't let the canary child kill Asterisk, if it dies immediately */
@@ -4386,21 +4562,29 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	register_config_cli();
 	read_config_maps();
 
-	if (astobj2_init()) {
-		printf("Failed: astobj2_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_named_locks_init()) {
-		printf("Failed: ast_named_locks_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(astobj2_init(), "AO2");
+	check_init(ast_named_locks_init(), "Named Locks");
 
 	if (ast_opt_console) {
 		if (el_hist == NULL || el == NULL)
 			ast_el_initialize();
 		ast_el_read_default_histfile();
 	}
+
+#ifdef AST_XML_DOCS
+	/* Load XML documentation. */
+	ast_xmldoc_load_documentation();
+#endif
+
+	check_init(astdb_init(), "ASTdb");
+
+	ast_uuid_init();
+
+	if (ast_pbx_uuid_get(pbx_uuid, sizeof(pbx_uuid))) {
+		ast_uuid_generate_str(pbx_uuid, sizeof(pbx_uuid));
+		ast_db_put("pbx", "UUID", pbx_uuid);
+	}
+	ast_verb(0, "PBX UUID: %s\n", pbx_uuid);
 
 	ast_json_init();
 	ast_ulaw_init();
@@ -4409,92 +4593,27 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	callerid_init();
 	ast_builtins_init();
 
-	if (ast_utils_init()) {
-		printf("Failed: ast_utils_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_tps_init()) {
-		printf("Failed: ast_tps_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_fd_init()) {
-		printf("Failed: ast_fd_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_pbx_init()) {
-		printf("Failed: ast_pbx_init\n%s", term_quit());
-		exit(1);
-	}
-
+	check_init(ast_utils_init(), "Utilities");
+	check_init(ast_tps_init(), "Task Processor Core");
+	check_init(ast_fd_init(), "File Descriptor Debugging");
+	check_init(ast_pbx_init(), "ast_pbx_init");
 #ifdef TEST_FRAMEWORK
-	if (ast_test_init()) {
-		printf("Failed: ast_test_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_test_init(), "Test Framework");
 #endif
-
-	if (ast_translate_init()) {
-		printf("Failed: ast_translate_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_translate_init(), "Translator Core");
 
 	ast_aoc_cli_init();
-	ast_uuid_init();
 
-	if (ast_sorcery_init()) {
-		printf("Failed: ast_sorcery_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_codec_init()) {
-		printf("Failed: ast_codec_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_format_init()) {
-		printf("Failed: ast_format_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_format_cache_init()) {
-		printf("Failed: ast_format_cache_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_codec_builtin_init()) {
-		printf("Failed: ast_codec_builtin_init\n%s", term_quit());
-		exit(1);
-	}
-
-#ifdef AST_XML_DOCS
-	/* Load XML documentation. */
-	ast_xmldoc_load_documentation();
-#endif
-
-	aco_init();
-
-	if (ast_bucket_init()) {
-		printf("Failed: ast_bucket_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (stasis_init()) {
-		printf("Stasis initialization failed.\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_stasis_system_init()) {
-		printf("Stasis system-level information initialization failed.\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_endpoint_stasis_init()) {
-		printf("Endpoint initialization failed.\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_sorcery_init(), "Sorcery");
+	check_init(ast_codec_init(), "Codecs");
+	check_init(ast_format_init(), "Formats");
+	check_init(ast_format_cache_init(), "Format Cache");
+	check_init(ast_codec_builtin_init(), "Built-in Codecs");
+	check_init(aco_init(), "Configuration Option Framework");
+	check_init(ast_bucket_init(), "Bucket API");
+	check_init(stasis_init(), "Stasis");
+	check_init(ast_stasis_system_init(), "Stasis system-level information");
+	check_init(ast_endpoint_stasis_init(), "Stasis Endpoint");
 
 	ast_makesocket();
 	/* GCC 4.9 gives a bogus "right-hand operand of comma expression has
@@ -4518,212 +4637,59 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	srand((unsigned int) getpid() + (unsigned int) time(NULL));
 	initstate((unsigned int) getpid() * 65536 + (unsigned int) time(NULL), randompool, sizeof(randompool));
 
-	if (init_logger()) {		/* Start logging subsystem */
-		printf("Failed: init_logger\n%s", term_quit());
-		exit(1);
-	}
+	check_init(init_logger(), "Logger");
 
 	threadstorage_init();
 
-	if (ast_rtp_engine_init()) {
-		printf("Failed: ast_rtp_engine_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_rtp_engine_init(), "RTP Engine");
 
 	ast_autoservice_init();
 
-	if (ast_timing_init()) {
-		printf("Failed: ast_timing_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_ssl_init()) {
-		printf("Failed: ast_ssl_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_pj_init()) {
-		printf("Failed: ast_pj_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (app_init()) {
-		printf("App core initialization failed.\n%s", term_quit());
-		exit(1);
-	}
-
-	if (devstate_init()) {
-		printf("Device state core initialization failed.\n%s", term_quit());
-		exit(1);
-	}
-
-	if (astdb_init()) {
-		printf("Failed: astdb_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_msg_init()) {
-		printf("Failed: ast_msg_init\n%s", term_quit());
-		exit(1);
-	}
-
-	/* initialize the data retrieval API */
-	if (ast_data_init()) {
-		printf("Failed: ast_data_init\n%s", term_quit());
-		exit(1);
-	}
-
-	ast_channels_init();
-
-	if (ast_endpoint_init()) {
-		printf ("Failed: ast_endpoint_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_pickup_init()) {
-		printf("Failed: ast_pickup_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_bridging_init()) {
-		printf("Failed: ast_bridging_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_parking_stasis_init()) {
-		printf("Failed: ast_parking_stasis_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_device_state_engine_init()) {
-		printf("Failed: ast_device_state_engine_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_presence_state_engine_init()) {
-		printf("Failed: ast_presence_state_engine_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if ((moduleresult = load_modules(1))) {		/* Load modules, pre-load only */
-		printf("Failed: load_modules\n%s", term_quit());
-		exit(moduleresult == -2 ? 2 : 1);
-	}
-
-	if (ast_features_init()) {
-		printf("Failed: ast_features_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (dnsmgr_init()) {		/* Initialize the DNS manager */
-		printf("Failed: dnsmgr_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_security_stasis_init()) {		/* Initialize Security Stasis Topic and Events */
-		printf("Failed: ast_security_stasis_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_named_acl_init()) { /* Initialize the Named ACL system */
-		printf("Failed: ast_named_acl_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_timing_init(), "Timing");
+	check_init(ast_ssl_init(), "SSL");
+	read_pjproject_startup_options();
+	check_init(ast_pj_init(), "Embedded PJProject");
+	check_init(app_init(), "App Core");
+	check_init(devstate_init(), "Device State Core");
+	check_init(ast_msg_init(), "Messaging API");
+	check_init(ast_data_init(), "Data Retrieval API");
+	check_init(ast_channels_init(), "Channel");
+	check_init(ast_endpoint_init(), "Endpoints");
+	check_init(ast_pickup_init(), "Call Pickup");
+	check_init(ast_bridging_init(), "Bridging");
+	check_init(ast_parking_stasis_init(), "Parking Core");
+	check_init(ast_device_state_engine_init(), "Device State Engine");
+	check_init(ast_presence_state_engine_init(), "Presence State Engine");
+	check_init(load_modules(1), "Module Preload");
+	check_init(ast_features_init(), "Call Features");
+	check_init(dnsmgr_init(), "DNS manager");
+	check_init(ast_security_stasis_init(), "Security Stasis Topic and Events");
+	check_init(ast_named_acl_init(), "Named ACL system");
 
 	ast_http_init();		/* Start the HTTP server, if needed */
 
-	if (ast_indications_init()) {
-		printf("Failed: ast_indications_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_cdr_engine_init()) {
-		printf("Failed: ast_cdr_engine_init\n%s", term_quit());
-		exit(1);
-	}
+	check_init(ast_indications_init(), "Indication Tone Handling");
+	check_init(ast_cdr_engine_init(), "CDR Engine");
 
 	ast_dsp_init();
 	ast_udptl_init();
 
-	if (ast_image_init()) {
-		printf("Failed: ast_image_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_file_init()) {
-		printf("Failed: ast_file_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx()) {
-		printf("Failed: load_pbx\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_builtins()) {
-		printf("Failed: load_pbx_builtins\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_functions_cli()) {
-		printf("Failed: load_pbx_functions_cli\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_variables()) {
-		printf("Failed: load_pbx_variables\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_switch()) {
-		printf("Failed: load_pbx_switch\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_app()) {
-		printf("Failed: load_pbx_app\n%s", term_quit());
-		exit(1);
-	}
-
-	if (load_pbx_hangup_handler()) {
-		printf("Failed: load_pbx_hangup_handler\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_local_init()) {
-		printf("Failed: ast_local_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_cel_engine_init()) {
-		printf("Failed: ast_cel_engine_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (init_manager()) {
-		printf("Failed: init_manager\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_enum_init()) {
-		printf("Failed: ast_enum_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_cc_init()) {
-		printf("Failed: ast_cc_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if (ast_sounds_index_init()) {
-		printf("Failed: ast_sounds_index_init\n%s", term_quit());
-		exit(1);
-	}
-
-	if ((moduleresult = load_modules(0))) {		/* Load modules */
-		printf("%s", term_quit());
-		exit(moduleresult == -2 ? 2 : 1);
-	}
+	check_init(ast_image_init(), "Image");
+	check_init(ast_file_init(), "Generic File Format Support");
+	check_init(load_pbx(), "load_pbx");
+	check_init(load_pbx_builtins(), "Builtin PBX Applications");
+	check_init(load_pbx_functions_cli(), "PBX Functions Support");
+	check_init(load_pbx_variables(), "PBX Variables Support");
+	check_init(load_pbx_switch(), "PBX Switch Support");
+	check_init(load_pbx_app(), "PBX Application Support");
+	check_init(load_pbx_hangup_handler(), "PBX Hangup Handler Support");
+	check_init(ast_local_init(), "Local Proxy Channel Driver");
+	check_init(ast_cel_engine_init(), "CEL Engine");
+	check_init(init_manager(), "Asterisk Manager Interface");
+	check_init(ast_enum_init(), "ENUM Support");
+	check_init(ast_cc_init(), "Call Completion Supplementary Services");
+	check_init(ast_sounds_index_init(), "Sounds Indexer");
+	check_init(load_modules(0), "Module");
 
 	/* loads the cli_permissoins.conf file needed to implement cli restrictions. */
 	ast_cli_perms_init(0);
@@ -4757,6 +4723,7 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	ast_register_cleanup(main_atexit);
 
 	run_startup_commands();
+	ast_sd_notify("READY=1");
 
 	ast_verb(0, COLORIZE_FMT "\n", COLORIZE(COLOR_BRGREEN, 0, "Asterisk Ready."));
 

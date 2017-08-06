@@ -2,9 +2,18 @@
 ; res_hep Module configuration for Asterisk
 ;
 
+;
+; Note that this configuration file is consumed by res_hep, which is responsible
+; for the HEPv3 protocol manipulation and managing the connection to the Homer
+; capture server. Additional modules provide specific messages to be sent to
+; the Homer server:
+;  - res_hep_pjsip: Send SIP messages transmitted/received by the PJSIP stack
+;  - res_hep_rtcp: Send RTCP information (all channels)
+;
+
 ; All settings are currently set in the general section.
 [general]
-enabled = yes                      ; Enable/disable forwarding of packets to a
+enabled = no                       ; Enable/disable forwarding of packets to a
                                    ; HEP server. Default is "yes".
 capture_address = 192.168.1.1:9061 ; The address of the HEP capture server.
 capture_password = foo             ; If specified, the authorization passsword
@@ -13,4 +22,11 @@ capture_password = foo             ; If specified, the authorization passsword
 capture_id = 1234                  ; A unique integer identifier for this
                                    ; server. This ID will be embedded sent
                                    ; with each packet from this server.
-
+uuid_type = call-id                ; Specify the preferred source for the Homer
+                                   ; correlation UUID. Valid options are:
+                                   ; - 'call-id' for the PJSIP or chan_sip SIP
+                                   ;             Call-ID
+                                   ; - 'channel' for the Asterisk channel name
+                                   ; Note: If 'call-id' is specified but the
+                                   ; channel is not PJSIP or chan_sip then the
+                                   ; Asterisk channel name will be used instead.

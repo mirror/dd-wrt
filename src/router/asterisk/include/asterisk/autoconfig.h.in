@@ -100,6 +100,9 @@
 /* Define to 1 if your GCC C compiler supports the 'may_alias' attribute. */
 #undef HAVE_ATTRIBUTE_may_alias
 
+/* Define to 1 if your GCC C compiler supports the 'noreturn' attribute. */
+#undef HAVE_ATTRIBUTE_noreturn
+
 /* Define to 1 if your GCC C compiler supports the 'pure' attribute. */
 #undef HAVE_ATTRIBUTE_pure
 
@@ -203,6 +206,10 @@
 
 /* Define to 1 if you have the `euidaccess' function. */
 #undef HAVE_EUIDACCESS
+
+/* Define to 1 if your system supports eventfd and the EFD_NONBLOCK and
+   EFD_SEMAPHORE flags. */
+#undef HAVE_EVENTFD
 
 /* Define to 1 if you have the `exp' function. */
 #undef HAVE_EXP
@@ -388,6 +395,9 @@
 /* Define if your system has the LIBEDIT libraries. */
 #undef HAVE_LIBEDIT
 
+/* Define if your system has the LIBEDIT_IS_UNICODE headers. */
+#undef HAVE_LIBEDIT_IS_UNICODE
+
 /* Define to 1 if you have the <libintl.h> header file. */
 #undef HAVE_LIBINTL_H
 
@@ -545,9 +555,6 @@
 /* Define to 1 if CRYPTO has the OpenSSL Elliptic Curve Support feature. */
 #undef HAVE_OPENSSL_EC
 
-/* Define if your system has SSL_CTX_set_ecdh_auto declared. */
-#undef HAVE_OPENSSL_ECDH_AUTO
-
 /* Define to 1 if CRYPTO has the OpenSSL SRTP Extension Support feature. */
 #undef HAVE_OPENSSL_SRTP
 
@@ -581,14 +588,30 @@
 /* Define if your system has PJPROJECT_BUNDLED */
 #undef HAVE_PJPROJECT_BUNDLED
 
-/* Define if your system has pjsip_dlg_create_uas_and_inc_lock declared. */
+/* Define to 1 if PJPROJECT has the pjsip_auth_clt_deinit support feature. */
+#undef HAVE_PJSIP_AUTH_CLT_DEINIT
+
+/* Define to 1 if PJPROJECT has the PJSIP Dialog Create UAS with Incremented
+   Lock feature. */
 #undef HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
 
-/* Define if your system has pjsip_endpt_set_ext_resolver declared. */
+/* Define to 1 if PJPROJECT has the PJSIP EVSUB Group Lock support feature. */
+#undef HAVE_PJSIP_EVSUB_GRP_LOCK
+
+/* Define to 1 if PJPROJECT has the PJSIP EVSUB Set UAS Timeout support
+   feature. */
+#undef HAVE_PJSIP_EVSUB_SET_UAS_TIMEOUT
+
+/* Define to 1 if PJPROJECT has the PJSIP External Resolver Support feature.
+   */
 #undef HAVE_PJSIP_EXTERNAL_RESOLVER
 
-/* Define if your system has pjsip_get_dest_info declared. */
+/* Define to 1 if PJPROJECT has the pjsip_get_dest_info support feature. */
 #undef HAVE_PJSIP_GET_DEST_INFO
+
+/* Define to 1 if PJPROJECT has the PJSIP INVITE Session Reference Count
+   support feature. */
+#undef HAVE_PJSIP_INV_SESSION_REF
 
 /* Define if your system has the PJSIP_REPLACE_MEDIA_STREAM headers. */
 #undef HAVE_PJSIP_REPLACE_MEDIA_STREAM
@@ -596,10 +619,16 @@
 /* Define if your system has the PJSIP_TLS_TRANSPORT_PROTO headers. */
 #undef HAVE_PJSIP_TLS_TRANSPORT_PROTO
 
-/* Define if your system has pj_ssl_cert_load_from_files2 declared. */
+/* Define to 1 if PJPROJECT has the pjsip_tsx_layer_find_tsx2 support feature.
+   */
+#undef HAVE_PJSIP_TSX_LAYER_FIND_TSX2
+
+/* Define to 1 if PJPROJECT has the pj_ssl_cert_load_from_files2 support
+   feature. */
 #undef HAVE_PJ_SSL_CERT_LOAD_FROM_FILES2
 
-/* Define if your system has pjsip_tsx_create_uac2 declared. */
+/* Define to 1 if PJPROJECT has the PJSIP Transaction Group Lock Support
+   feature. */
 #undef HAVE_PJ_TRANSACTION_GRP_LOCK
 
 /* Define to 1 if your system defines IP_PKTINFO. */
@@ -702,6 +731,9 @@
    */
 #undef HAVE_PTHREAD_MUTEX_RECURSIVE_NP
 
+/* Have PTHREAD_PRIO_INHERIT. */
+#undef HAVE_PTHREAD_PRIO_INHERIT
+
 /* Define if your system has the PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
    headers. */
 #undef HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
@@ -727,6 +759,9 @@
 
 /* Define if your system has the PWLib libraries. */
 #undef HAVE_PWLIB
+
+/* Define if your system has the PYTHONDEV libraries. */
+#undef HAVE_PYTHONDEV
 
 /* Define to 1 if you have the Radius Client library. */
 #undef HAVE_RADIUS
@@ -766,6 +801,9 @@
 
 /* Define to 1 if you have the `roundl' function. */
 #undef HAVE_ROUNDL
+
+/* Define to 1 if rt has the Realtime functions feature. */
+#undef HAVE_RT
 
 /* Define if your system has the RTLD_NOLOAD headers. */
 #undef HAVE_RTLD_NOLOAD
@@ -826,6 +864,9 @@
 
 /* Define to 1 if SRTP has the SRTP Library Shutdown Function feature. */
 #undef HAVE_SRTP_SHUTDOWN
+
+/* Define to the version of the srtp library. */
+#undef HAVE_SRTP_VERSION
 
 /* Define to 1 if you have the ISDN SS7 library. */
 #undef HAVE_SS7
@@ -993,6 +1034,9 @@
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
+
+/* Define if your system has the SYSTEMD libraries. */
+#undef HAVE_SYSTEMD
 
 /* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
    */
@@ -1199,8 +1243,20 @@
 /* Defined if libcurl supports HTTPS */
 #undef LIBCURL_PROTOCOL_HTTPS
 
+/* Defined if libcurl supports IMAP */
+#undef LIBCURL_PROTOCOL_IMAP
+
 /* Defined if libcurl supports LDAP */
 #undef LIBCURL_PROTOCOL_LDAP
+
+/* Defined if libcurl supports POP3 */
+#undef LIBCURL_PROTOCOL_POP3
+
+/* Defined if libcurl supports RTSP */
+#undef LIBCURL_PROTOCOL_RTSP
+
+/* Defined if libcurl supports SMTP */
+#undef LIBCURL_PROTOCOL_SMTP
 
 /* Defined if libcurl supports TELNET */
 #undef LIBCURL_PROTOCOL_TELNET
@@ -1239,9 +1295,6 @@
 
 /* Define if your system needs braces around PTHREAD_ONCE_INIT */
 #undef PTHREAD_ONCE_INIT_NEEDS_BRACES
-
-/* Define as the return type of signal handlers (`int' or `void'). */
-#undef RETSIGTYPE
 
 /* Define to the type of arg 1 for `select'. */
 #undef SELECT_TYPE_ARG1

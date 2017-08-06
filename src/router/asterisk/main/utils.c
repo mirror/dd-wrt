@@ -69,6 +69,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #define AST_API_MODULE
 #include "asterisk/config.h"
 
+#define AST_API_MODULE
+#include "asterisk/alertpipe.h"
+
 static char base64[64];
 static char b2a[256];
 
@@ -1453,7 +1456,9 @@ int ast_careful_fwrite(FILE *f, int fd, const char *src, size_t len, int timeout
 
 		if (ferror(f) && errno != EINTR && errno != EAGAIN) {
 			/* fatal error from fwrite() */
-			if (!feof(f)) {
+			if (errno == EPIPE) {
+				ast_debug(1, "fwrite() failed due to reading end being closed: EPIPE\n");
+			} else if (!feof(f)) {
 				/* Don't spam the logs if it was just that the connection is closed. */
 				ast_log(LOG_ERROR, "fwrite() returned error: %s\n", strerror(errno));
 			}
@@ -1486,8 +1491,12 @@ int ast_careful_fwrite(FILE *f, int fd, const char *src, size_t len, int timeout
 			continue;
 		}
 		if (errno && !feof(f)) {
-			/* Don't spam the logs if it was just that the connection is closed. */
-			ast_log(LOG_ERROR, "fflush() returned error: %s\n", strerror(errno));
+			if (errno == EPIPE) {
+				ast_debug(1, "fflush() failed due to reading end being closed: EPIPE\n");
+			} else {
+				/* Don't spam the logs if it was just that the connection is closed. */
+				ast_log(LOG_ERROR, "fflush() returned error: %s\n", strerror(errno));
+			}
 		}
 		n = -1;
 		break;
@@ -2425,7 +2434,19 @@ char *ast_utils_which(const char *binary, char *fullpath, size_t fullpath_size)
 	return NULL;
 }
 
-void ast_do_crash(void)
+int ast_check_ipv6(void)
+{
+	int udp6_socket = socket(AF_INET6, SOCK_DGRAM, 0);
+
+	if (udp6_socket < 0) {
+		return 0;
+	}
+
+	close(udp6_socket);
+	return 1;
+}
+
+void DO_CRASH_NORETURN ast_do_crash(void)
 {
 #if defined(DO_CRASH)
 	abort();
@@ -2437,17 +2458,16 @@ void ast_do_crash(void)
 #endif	/* defined(DO_CRASH) */
 }
 
-#if defined(AST_DEVMODE)
-void __ast_assert_failed(int condition, const char *condition_str, const char *file, int line, const char *function)
+void DO_CRASH_NORETURN __ast_assert_failed(int condition, const char *condition_str, const char *file, int line, const char *function)
 {
 	/*
 	 * Attempt to put it into the logger, but hope that at least
 	 * someone saw the message on stderr ...
 	 */
-	ast_log(__LOG_ERROR, file, line, function, "FRACK!, Failed assertion %s (%d)\n",
-		condition_str, condition);
 	fprintf(stderr, "FRACK!, Failed assertion %s (%d) at line %d in %s of %s\n",
 		condition_str, condition, line, function, file);
+	ast_log(__LOG_ERROR, file, line, function, "FRACK!, Failed assertion %s (%d)\n",
+		condition_str, condition);
 
 	/* Generate a backtrace for the assert */
 	ast_log_backtrace();
@@ -2460,7 +2480,6 @@ void __ast_assert_failed(int condition, const char *condition_str, const char *f
 	usleep(1);
 	ast_do_crash();
 }
-#endif	/* defined(AST_DEVMODE) */
 
 char *ast_eid_to_str(char *s, int maxlen, struct ast_eid *eid)
 {
@@ -2480,72 +2499,226 @@ char *ast_eid_to_str(char *s, int maxlen, struct ast_eid *eid)
 	return os;
 }
 
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__Darwin__)
+#include <ifaddrs.h>
+#include <net/if_dl.h>
+
 void ast_set_default_eid(struct ast_eid *eid)
 {
-#if defined(SIOCGIFHWADDR) && defined(HAVE_STRUCT_IFREQ_IFR_IFRU_IFRU_HWADDR)
-	int s, x = 0;
+	struct ifaddrs *ifap, *ifaphead;
+	int rtnerr;
+	const struct sockaddr_dl *sdl;
+	int alen;
+	caddr_t ap;
 	char eid_str[20];
-	struct ifreq ifr;
-	static const unsigned int MAXIF = 10;
+	unsigned char empty_mac[6] = {0, 0, 0, 0, 0, 0};
+	unsigned char full_mac[6]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-	s = socket(AF_INET, SOCK_STREAM, 0);
-	if (s < 0) {
+	rtnerr = getifaddrs(&ifaphead);
+	if (rtnerr) {
+		ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+			"You will have to set it manually.\n");
 		return;
 	}
-	for (x = 0; x < MAXIF; x++) {
-		static const char *prefixes[] = { "eth", "em" };
-		unsigned int i;
 
-		for (i = 0; i < ARRAY_LEN(prefixes); i++) {
-			memset(&ifr, 0, sizeof(ifr));
-			snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "%s%d", prefixes[i], x);
-			if (!ioctl(s, SIOCGIFHWADDR, &ifr)) {
-				break;
-			}
+	if (!ifaphead) {
+		ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+			"You will have to set it manually.\n");
+		return;
+	}
+
+	for (ifap = ifaphead; ifap; ifap = ifap->ifa_next) {
+		if (ifap->ifa_addr->sa_family != AF_LINK) {
+			continue;
 		}
 
-		if (i == ARRAY_LEN(prefixes)) {
-			/* Try pciX#[1..N] */
-			for (i = 0; i < MAXIF; i++) {
-				memset(&ifr, 0, sizeof(ifr));
-				snprintf(ifr.ifr_name, sizeof(ifr.ifr_name), "pci%d#%u", x, i);
-				if (!ioctl(s, SIOCGIFHWADDR, &ifr)) {
-					break;
-				}
-			}
-			if (i == MAXIF) {
-				continue;
-			}
+		sdl = (const struct sockaddr_dl *) ifap->ifa_addr;
+		ap = ((caddr_t) ((sdl)->sdl_data + (sdl)->sdl_nlen));
+		alen = sdl->sdl_alen;
+		if (alen != 6 || !(memcmp(ap, &empty_mac, 6) && memcmp(ap, &full_mac, 6))) {
+			continue;
 		}
 
-		memcpy(eid, ((unsigned char *)&ifr.ifr_hwaddr) + 2, sizeof(*eid));
-		ast_debug(1, "Seeding global EID '%s' from '%s' using 'siocgifhwaddr'\n", ast_eid_to_str(eid_str, sizeof(eid_str), eid), ifr.ifr_name);
+		memcpy(eid, ap, sizeof(*eid));
+		ast_debug(1, "Seeding global EID '%s'\n",
+				ast_eid_to_str(eid_str, sizeof(eid_str), eid));
+		freeifaddrs(ifaphead);
+		return;
+	}
+
+	ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+		"You will have to set it manually.\n");
+	freeifaddrs(ifaphead);
+
+	return;
+}
+
+#elif defined(SOLARIS)
+#include <sys/sockio.h>
+#include <net/if_arp.h>
+
+void ast_set_default_eid(struct ast_eid *eid)
+{
+	int s;
+	int x;
+	int res = 0;
+	struct lifreq *ifr = NULL;
+	struct lifnum ifn;
+	struct lifconf ifc;
+	struct arpreq ar;
+	struct sockaddr_in *sa, *sa2;
+	char *buf = NULL;
+	char eid_str[20];
+	int bufsz;
+	unsigned char empty_mac[6] = {0, 0, 0, 0, 0, 0};
+	unsigned char full_mac[6]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+	s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s <= 0) {
+		ast_log(LOG_WARNING, "Unable to open a socket for seeding global EID. "
+			" You will have to set it manually.\n");
+		return;
+	}
+
+	/* Get a count of interfaces on the machine */
+	ifn.lifn_family = AF_UNSPEC;
+	ifn.lifn_flags = 0;
+	ifn.lifn_count = 0;
+	if (ioctl(s, SIOCGLIFNUM, &ifn) < 0) {
+		ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+			" You will have to set it manually.\n");
 		close(s);
 		return;
 	}
-	close(s);
-#else
-#if defined(ifa_broadaddr) && !defined(SOLARIS)
-	char eid_str[20];
-	struct ifaddrs *ifap;
 
-	if (getifaddrs(&ifap) == 0) {
-		struct ifaddrs *p;
-		for (p = ifap; p; p = p->ifa_next) {
-			if ((p->ifa_addr->sa_family == AF_LINK) && !(p->ifa_flags & IFF_LOOPBACK) && (p->ifa_flags & IFF_RUNNING)) {
-				struct sockaddr_dl* sdp = (struct sockaddr_dl*) p->ifa_addr;
-				memcpy(&(eid->eid), sdp->sdl_data + sdp->sdl_nlen, 6);
-				ast_debug(1, "Seeding global EID '%s' from '%s' using 'getifaddrs'\n", ast_eid_to_str(eid_str, sizeof(eid_str), eid), p->ifa_name);
-				freeifaddrs(ifap);
-				return;
-			}
-		}
-		freeifaddrs(ifap);
+	bufsz = ifn.lifn_count * sizeof(struct lifreq);
+	if (!(buf = ast_malloc(bufsz))) {
+		ast_log(LOG_WARNING, "Unable to allocate memory for seeding global EID. "
+			"You will have to set it manually.\n");
+		close(s);
+		return;
 	}
-#endif
-#endif
-	ast_debug(1, "No ethernet interface found for seeding global EID. You will have to set it manually.\n");
+	memset(buf, 0, bufsz);
+
+	/* Get a list of interfaces on the machine */
+	ifc.lifc_len = bufsz;
+	ifc.lifc_buf = buf;
+	ifc.lifc_family = AF_UNSPEC;
+	ifc.lifc_flags = 0;
+	if (ioctl(s, SIOCGLIFCONF, &ifc) < 0) {
+		ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+			"You will have to set it manually.\n");
+		ast_free(buf);
+		close(s);
+		return;
+	}
+
+	for (ifr = (struct lifreq *)buf, x = 0; x < ifn.lifn_count; ifr++, x++) {
+		unsigned char *p;
+
+		sa = (struct sockaddr_in *)&(ifr->lifr_addr);
+		sa2 = (struct sockaddr_in *)&(ar.arp_pa);
+		*sa2 = *sa;
+
+		if(ioctl(s, SIOCGARP, &ar) >= 0) {
+			p = (unsigned char *)&(ar.arp_ha.sa_data);
+			if (!(memcmp(p, &empty_mac, 6) && memcmp(p, &full_mac, 6))) {
+				continue;
+			}
+
+			memcpy(eid, p, sizeof(*eid));
+			ast_debug(1, "Seeding global EID '%s'\n",
+				ast_eid_to_str(eid_str, sizeof(eid_str), eid));
+			ast_free(buf);
+			close(s);
+			return;
+		}
+	}
+
+	ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+		"You will have to set it manually.\n");
+	ast_free(buf);
+	close(s);
+
+	return;
 }
+
+#else
+void ast_set_default_eid(struct ast_eid *eid)
+{
+	int s;
+	int i;
+	struct ifreq *ifr;
+	struct ifreq *ifrp;
+	struct ifconf ifc;
+	char *buf = NULL;
+	char eid_str[20];
+	int bufsz, num_interfaces;
+	unsigned char empty_mac[6] = {0, 0, 0, 0, 0, 0};
+	unsigned char full_mac[6]  = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+
+	s = socket(AF_INET, SOCK_STREAM, 0);
+	if (s <= 0) {
+		ast_log(LOG_WARNING, "Unable to open socket for seeding global EID. "
+			"You will have to set it manually.\n");
+		return;
+	}
+
+	ifc.ifc_len = 0;
+	ifc.ifc_buf = NULL;
+	if (ioctl(s, SIOCGIFCONF, &ifc) || ifc.ifc_len <= 0) {
+		ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+			"You will have to set it manually.\n");
+		close(s);
+		return;
+	}
+	bufsz = ifc.ifc_len;
+
+	if (!(buf = ast_malloc(bufsz))) {
+		ast_log(LOG_WARNING, "Unable to allocate memory for seeding global EID. "
+			"You will have to set it manually.\n");
+		close(s);
+		return;
+	}
+
+	ifc.ifc_buf = buf;
+	if (ioctl(s, SIOCGIFCONF, &ifc) < 0) {
+		ast_log(LOG_WARNING, "Unable to retrieve ethernet interfaces for seeding global EID. "
+			"You will have to set it manually.\n");
+		ast_free(buf);
+		close(s);
+		return;
+	}
+
+	ifrp = ifc.ifc_req;
+	num_interfaces = ifc.ifc_len / sizeof(*ifr);
+
+	for (i = 0; i < num_interfaces; i++) {
+		ifr = &ifrp[i];
+		if (!ioctl(s, SIOCGIFHWADDR, ifr)) {
+			unsigned char *hwaddr = (unsigned char *) ifr->ifr_hwaddr.sa_data;
+
+			if (!(memcmp(hwaddr, &empty_mac, 6) && memcmp(hwaddr, &full_mac, 6))) {
+				continue;
+			}
+
+			memcpy(eid, hwaddr, sizeof(*eid));
+			ast_debug(1, "Seeding global EID '%s' from '%s' using 'siocgifhwaddr'\n",
+				ast_eid_to_str(eid_str, sizeof(eid_str), eid), ifr->ifr_name);
+			ast_free(buf);
+			close(s);
+			return;
+		}
+	}
+
+	ast_log(LOG_WARNING, "No ethernet interface found for seeding global EID. "
+		"You will have to set it manually.\n");
+	ast_free(buf);
+	close(s);
+
+	return;
+}
+#endif /* LINUX */
 
 int ast_str_to_eid(struct ast_eid *eid, const char *s)
 {
@@ -2567,6 +2740,14 @@ int ast_str_to_eid(struct ast_eid *eid, const char *s)
 int ast_eid_cmp(const struct ast_eid *eid1, const struct ast_eid *eid2)
 {
 	return memcmp(eid1, eid2, sizeof(*eid1));
+}
+
+int ast_eid_is_empty(const struct ast_eid *eid)
+{
+	struct ast_eid empty_eid;
+
+	memset(&empty_eid, 0, sizeof(empty_eid));
+	return memcmp(eid, &empty_eid, sizeof(empty_eid)) ? 0 : 1;
 }
 
 int ast_file_is_readable(const char *filename)

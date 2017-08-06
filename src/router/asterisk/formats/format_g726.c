@@ -126,8 +126,16 @@ static struct ast_frame *g726_read(struct ast_filestream *s, int *whennext)
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, frame_size[fs->rate]);
 	s->fr.samples = 8 * FRAME_TIME;
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
-		if (res)
-			ast_log(LOG_WARNING, "Short read (%d) (%s)!\n", res, strerror(errno));
+		if (feof(s->f)) {
+			if (res) {
+				ast_debug(3, "Incomplete frame data at end of %s file "
+						  "(expected %d bytes, read %d)\n",
+						  ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res);
+			}
+		} else {
+			ast_log(LOG_ERROR, "Error while reading %s file: %s\n",
+					ast_format_get_name(s->fr.subclass.format), strerror(errno));
+		}
 		return NULL;
 	}
 	*whennext = s->fr.samples;
@@ -223,20 +231,6 @@ static struct ast_format_def f[] = {
 	{	.desc_size = 0 }	/* terminator */
 };
 
-static int load_module(void)
-{
-	int i;
-
-	for (i = 0; f[i].desc_size ; i++) {
-		f[i].format = ast_format_g726;
-		if (ast_format_def_register(&f[i])) {	/* errors are fatal */
-			ast_log(LOG_WARNING, "Failed to register format %s.\n", f[i].name);
-			return AST_MODULE_LOAD_FAILURE;
-		}
-	}
-	return AST_MODULE_LOAD_SUCCESS;
-}
-
 static int unload_module(void)
 {
 	int i;
@@ -246,6 +240,21 @@ static int unload_module(void)
 			ast_log(LOG_WARNING, "Failed to unregister format %s.\n", f[i].name);
 	}
 	return(0);
+}
+
+static int load_module(void)
+{
+	int i;
+
+	for (i = 0; f[i].desc_size ; i++) {
+		f[i].format = ast_format_g726;
+		if (ast_format_def_register(&f[i])) {	/* errors are fatal */
+			ast_log(LOG_WARNING, "Failed to register format %s.\n", f[i].name);
+			unload_module();
+			return AST_MODULE_LOAD_DECLINE;
+		}
+	}
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Raw G.726 (16/24/32/40kbps) data",

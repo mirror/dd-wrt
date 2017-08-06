@@ -1,10 +1,11 @@
 #!/usr/bin/python
 
 import optparse
+import socket
+import urlparse  # Python 2.7 required for Literal IPv6 Addresses
+
 import astdicts
 import astconfigparser
-import socket
-import re
 
 PREFIX = 'pjsip_'
 
@@ -16,7 +17,7 @@ PREFIX = 'pjsip_'
 def section_by_type(section, pjsip, type):
     """Finds a section based upon the given type, adding it if not found."""
     def __find_dict(mdicts, key, val):
-        """Given a list of mult-dicts, return the multi-dict that contains
+        """Given a list of multi-dicts, return the multi-dict that contains
            the given key/value pair."""
 
         def found(d):
@@ -54,10 +55,11 @@ def set_value(key=None, val=None, section=None, pjsip=None,
 
 
 def merge_value(key=None, val=None, section=None, pjsip=None,
-                nmapped=None, type='endpoint', section_to=None):
+                nmapped=None, type='endpoint', section_to=None,
+                key_to=None):
     """Merge values from the given section with those from the default."""
     def _merge_value(k, v, s, r, n):
-        merge_value(key if key else k, v, s, r, n, type, section_to)
+        merge_value(key if key else k, v, s, r, n, type, section_to, key_to)
 
     # if no value or section return the merge_value
     # function with the enclosed key and type
@@ -71,7 +73,8 @@ def merge_value(key=None, val=None, section=None, pjsip=None,
         sect = sip.default(section)[0]
     # for each merged value add it to pjsip.conf
     for i in sect.get_merged(key):
-        set_value(key, i, section_to if section_to else section,
+        set_value(key_to if key_to else key, i,
+                  section_to if section_to else section,
                   pjsip, nmapped, type)
 
 
@@ -133,11 +136,14 @@ def set_timers(key, val, section, pjsip, nmapped):
     found in sip.conf.
     """
     # pjsip.conf values can be yes/no, required, always
+    # 'required' is a new feature of chan_pjsip, which rejects
+    #            all SIP clients not supporting Session Timers
+    # 'Accept' is the default value of chan_sip and maps to 'yes'
+    # chan_sip ignores the case, for example 'session-timers=Refuse'
+    val = val.lower()
     if val == 'originate':
         set_value('timers', 'always', section, pjsip, nmapped)
-    elif val == 'accept':
-        set_value('timers', 'required', section, pjsip, nmapped)
-    elif val == 'never':
+    elif val == 'refuse':
         set_value('timers', 'no', section, pjsip, nmapped)
     else:
         set_value('timers', 'yes', section, pjsip, nmapped)
@@ -208,37 +214,42 @@ def from_progressinband(key, val, section, pjsip, nmapped):
     set_value('inband_progress', val, section, pjsip, nmapped)
 
 
-def build_host(config, host, section, port_key):
+def build_host(config, host, section='general', port_key=None):
     """
     Returns a string composed of a host:port. This assumes that the host
-    may have a port as part of the initial value. The port_key is only used
-    if the host does not already have a port set on it.
-    Throws a LookupError if the key does not exist
+    may have a port as part of the initial value. The port_key overrides
+    a port in host, see parameter 'bindport' in chan_sip.
     """
-    port = None
-
     try:
         socket.inet_pton(socket.AF_INET6, host)
         if not host.startswith('['):
             # SIP URI will need brackets.
             host = '[' + host + ']'
-        else:
-            # If brackets are present, there may be a port as well
-            port = re.match('\[.*\]:(\d+)', host)
     except socket.error:
-        # No biggie. It's just not an IPv6 address
-        port = re.match('.*:(\d+)', host)
+        pass
 
-    result = host
+    # Literal IPv6 (like [::]), IPv4, or hostname
+    # does not work for IPv6 without brackets; case catched above
+    url = urlparse.urlparse('sip://' + host)
 
-    if not port:
+    if port_key:
         try:
             port = config.get(section, port_key)[0]
-            result += ':' + port
+            host = url.hostname # no port, but perhaps no brackets
+            try:
+                socket.inet_pton(socket.AF_INET6, host)
+                if not host.startswith('['):
+                    # SIP URI will need brackets.
+                    host = '[' + host + ']'
+            except socket.error:
+                pass
+            return host + ':' + port
         except LookupError:
             pass
 
-    return result
+    # Returns host:port, in brackets if required
+    # TODO Does not compress IPv6, for example 0:0:0:0:0:0:0:0 should get [::]
+    return url.netloc
 
 
 def from_host(key, val, section, pjsip, nmapped):
@@ -363,7 +374,7 @@ def from_dtlsenable(key, val, section, pjsip, nmapped):
 ###############################################################################
 
 # options in pjsip.conf on an endpoint that have no sip.conf equivalent:
-# type, rtp_ipv6, 100rel, trust_id_outbound, aggregate_mwi,
+# type, 100rel, trust_id_outbound, aggregate_mwi,
 # connected_line_method
 
 # known sip.conf peer keys that can be mapped to a pjsip.conf section/key
@@ -383,9 +394,8 @@ peer_map = [
     ['session-timers',     set_timers],          # timers
     ['session-minse',      set_value('timers_min_se')],
     ['session-expires',    set_value('timers_sess_expires')],
-    ['externip',           set_value('external_media_address')],
-    ['externhost',         set_value('external_media_address')],
     # identify_by ?
+    ['canreinvite',        set_direct_media],    # direct_media alias
     ['directmedia',        set_direct_media],    # direct_media
                                                  # direct_media_method
                                                  # directed_media_glare_mitigation
@@ -396,7 +406,7 @@ peer_map = [
     ['trustpid',           set_value('trust_id_inbound')],
     ['sendrpid',           from_sendrpid],       # send_pai, send_rpid
     ['send_diversion',     set_value],
-    ['encrpytion',         set_media_encryption],
+    ['encryption',         set_media_encryption],
     ['avpf',               set_value('use_avpf')],
     ['recordonfeature',    set_record_on_feature],  # automixon
     ['recordofffeature',   set_record_off_feature],  # automixon
@@ -440,6 +450,9 @@ peer_map = [
 
     ['host',               from_host],           # contact, max_contacts
     ['qualifyfreq',        set_value('qualify_frequency', type='aor')],
+    ['maxexpiry',          set_value('maximum_expiration', type='aor')],
+    ['minexpiry',          set_value('minimum_expiration', type='aor')],
+    ['defaultexpiry',      set_value('default_expiration', type='aor')],
 
 ############################# maps to auth#####################################
 #        type = auth
@@ -454,9 +467,9 @@ peer_map = [
     ['permit',             merge_value(type='acl', section_to='acl')],
     ['deny',               merge_value(type='acl', section_to='acl')],
     ['acl',                merge_value(type='acl', section_to='acl')],
-    ['contactpermit',      merge_value('contact_permit', type='acl', section_to='acl')],
-    ['contactdeny',        merge_value('contact_deny', type='acl', section_to='acl')],
-    ['contactacl',         merge_value('contact_acl', type='acl', section_to='acl')],
+    ['contactpermit',      merge_value(type='acl', section_to='acl', key_to='contact_permit')],
+    ['contactdeny',        merge_value(type='acl', section_to='acl', key_to='contact_deny')],
+    ['contactacl',         merge_value(type='acl', section_to='acl', key_to='contact_acl')],
 
 ########################### maps to transport #################################
 #        type = transport
@@ -464,6 +477,7 @@ peer_map = [
 #        bind
 #        async_operations
 #        ca_list_file
+#        ca_list_path
 #        cert_file
 #        privkey_file
 #        password
@@ -499,81 +513,143 @@ peer_map = [
 ]
 
 
-def add_localnet(section, pjsip, nmapped):
-    """
-    Adds localnet values from sip.conf's general section to a transport in
-    pjsip.conf. Ideally, we would have just created a template with the
-    localnet sections, but because this is a script, it's not hard to add
-    the same thing on to every transport.
-    """
-    try:
-        merge_value('local_net', sip.get('general', 'localnet')[0], 'general',
-                    pjsip, nmapped, 'transport', section)
-    except LookupError:
-        # No localnet options configured. No biggie!
-        pass
-
-
-def set_transport_common(section, pjsip, nmapped):
-    """
-    sip.conf has several global settings that in pjsip.conf apply to individual
-    transports. This function adds these global settings to each individual
-    transport.
-
-    The settings included are:
-    localnet
-    tos_sip
-    cos_sip
-    """
-
-    try:
-        merge_value('local_net', sip.get('general', 'localnet')[0], 'general',
-                    pjsip, nmapped, 'transport', section)
-    except LookupError:
-        # No localnet options configured. Move on.
-        pass
-
-    try:
-        set_value('tos', sip.get('general', 'sip_tos')[0], 'general', pjsip,
-                  nmapped, 'transport', section)
-    except LookupError:
-        pass
-
-    try:
-        set_value('cos', sip.get('general', 'sip_cos')[0], 'general', pjsip,
-                  nmapped, 'transport', section)
-    except LookupError:
-        pass
-
-
 def split_hostport(addr):
     """
-    Given an address in the form 'addr:port' separate the addr and port
+    Given an address in the form 'host:port' separate the host and port
     components.
-    Returns a two-tuple of strings, (addr, port). If no port is present in the
+    Returns a two-tuple of strings, (host, port). If no port is present in the
     string, then the port section of the tuple is None.
     """
     try:
         socket.inet_pton(socket.AF_INET6, addr)
         if not addr.startswith('['):
             return (addr, None)
-        else:
-            # If brackets are present, there may be a port as well
-            match = re.match('\[(.*\)]:(\d+)', addr)
-            if match:
-                return (match.group(1), match.group(2))
-            else:
-                return (addr, None)
     except socket.error:
         pass
 
-    # IPv4 address or hostname
-    host, sep, port = addr.rpartition(':')
+    # Literal IPv6 (like [::]), IPv4, or hostname
+    # does not work for IPv6 without brackets; case catched above
+    url = urlparse.urlparse('sip://' + addr)
+    # TODO Does not compress IPv6, for example 0:0:0:0:0:0:0:0 should get [::]
+    return (url.hostname, url.port)
 
-    if not sep and not port:
-        return (host, None)
+
+def set_transport_common(section, sip, pjsip, protocol, nmapped):
+    """
+    sip.conf has several global settings that in pjsip.conf apply to individual
+    transports. This function adds these global settings to each individual
+    transport.
+
+    The settings included are:
+    externaddr (or externip)
+    externhost
+    externtcpport for TCP
+    externtlsport for TLS
+    localnet
+    tos_sip
+    cos_sip
+    """
+    try:
+        extern_addr = sip.multi_get('general', ['externaddr', 'externip',
+                                                'externhost'])[0]
+        host, port = split_hostport(extern_addr)
+        try:
+            port = sip.get('general', 'extern' + protocol + 'port')[0]
+        except LookupError:
+            pass
+        set_value('external_media_address', host, section, pjsip,
+                  nmapped, 'transport')
+        set_value('external_signaling_address', host, section, pjsip,
+                  nmapped, 'transport')
+        if port:
+            set_value('external_signaling_port', port, section, pjsip,
+                      nmapped, 'transport')
+    except LookupError:
+        pass
+
+    try:
+        merge_value('localnet', sip.get('general', 'localnet')[0], 'general',
+                    pjsip, nmapped, 'transport', section, "local_net")
+    except LookupError:
+        # No localnet options configured. Move on.
+        pass
+
+    try:
+        set_value('tos', sip.get('general', 'tos_sip')[0], section, pjsip,
+                  nmapped, 'transport')
+    except LookupError:
+        pass
+
+    try:
+        set_value('cos', sip.get('general', 'cos_sip')[0], section, pjsip,
+                  nmapped, 'transport')
+    except LookupError:
+        pass
+
+
+def get_bind(sip, pjsip, protocol):
+    """
+    Given the protocol (udp, tcp, or tls), return
+    - the bind address, like [::] or 0.0.0.0
+    - name of the section to be created
+    """
+    section = 'transport-' + protocol
+
+    # UDP cannot be disabled in chan_sip
+    if protocol != 'udp':
+        try:
+            enabled = sip.get('general', protocol + 'enable')[0]
+        except LookupError:
+            # No value means disabled by default. Don't create this transport
+            return (None, section)
+        if enabled != 'yes':
+            return (None, section)
+
+    try:
+        bind = pjsip.get(section, 'bind')[0]
+        # The first run created an transport already but this
+        # server was not configured for IPv4/IPv6 Dual Stack
+        return (None, section)
+    except LookupError:
+        pass
+
+    try:
+        bind = pjsip.get(section + '6', 'bind')[0]
+        # The first run created an IPv6 transport, because
+        # the server was configured with :: as bindaddr.
+        # Now, re-use its port and create the IPv4 transport
+        host, port = split_hostport(bind)
+        bind = '0.0.0.0'
+        if port:
+            bind += ':' + str(port)
+    except LookupError:
+        # This is the first run, no transport in pjsip exists.
+        try:
+            bind = sip.get('general', protocol + 'bindaddr')[0]
+        except LookupError:
+            if protocol == 'udp':
+                try:
+                    bind = sip.get('general', 'bindaddr')[0]
+                except LookupError:
+                    bind = '0.0.0.0'
+            else:
+                try:
+                    bind = pjsip.get('transport-udp6', 'bind')[0]
+                except LookupError:
+                    bind = pjsip.get('transport-udp', 'bind')[0]
+                # Only TCP reuses host:port of UDP, others reuse just host
+                if protocol == 'tls':
+                    bind, port = split_hostport(bind)
+        host, port = split_hostport(bind)
+        if host == '::':
+            section += '6'
+
+    if protocol == 'udp':
+        host = build_host(sip, bind, 'general', 'bindport')
     else:
-        return (host, port)
+        host = build_host(sip, bind)
+
+    return (host, section)
 
 
 def create_udp(sip, pjsip, nmapped):
@@ -583,32 +659,13 @@ def create_udp(sip, pjsip, nmapped):
 
     bindaddr (or udpbindaddr)
     bindport
-    externaddr (or externip)
-    externhost
     """
+    protocol = 'udp'
+    bind, section = get_bind(sip, pjsip, protocol)
 
-    try:
-        bind = sip.multi_get('general', ['udpbindaddr', 'bindaddr'])[0]
-    except LookupError:
-        bind = ''
-
-    bind = build_host(sip, bind, 'general', 'bindport')
-
-    try:
-        extern_addr = sip.multi_get('general', ['externaddr', 'externip',
-                                    'externhost'])[0]
-        host, port = split_hostport(extern_addr)
-        set_value('external_signaling_address', host, 'transport-udp', pjsip,
-                  nmapped, 'transport')
-        if port:
-            set_value('external_signaling_port', port, 'transport-udp', pjsip,
-                      nmapped, 'transport')
-    except LookupError:
-        pass
-
-    set_value('protocol', 'udp', 'transport-udp', pjsip, nmapped, 'transport')
-    set_value('bind', bind, 'transport-udp', pjsip, nmapped, 'transport')
-    set_transport_common('transport-udp', pjsip, nmapped)
+    set_value('protocol', protocol, section, pjsip, nmapped, 'transport')
+    set_value('bind', bind, section, pjsip, nmapped, 'transport')
+    set_transport_common(section, sip, pjsip, protocol, nmapped)
 
 
 def create_tcp(sip, pjsip, nmapped):
@@ -617,123 +674,62 @@ def create_tcp(sip, pjsip, nmapped):
     on the following settings from sip.conf:
 
     tcpenable
-    tcpbindaddr
-    externtcpport
+    tcpbindaddr (or bindaddr)
     """
-
-    try:
-        enabled = sip.get('general', 'tcpenable')[0]
-    except:
-        # No value means disabled by default. No need for a tranport
+    protocol = 'tcp'
+    bind, section = get_bind(sip, pjsip, protocol)
+    if not bind:
         return
 
-    if enabled == 'no':
-        return
-
-    try:
-        bind = sip.get('general', 'tcpbindaddr')[0]
-        bind = build_host(sip, bind, 'general', 'bindport')
-    except LookupError:
-        # No tcpbindaddr means to default to the udpbindaddr
-        bind = pjsip.get('transport-udp', 'bind')[0]
-
-    try:
-        extern_addr = sip.multi_get('general', ['externaddr', 'externip',
-                                    'externhost'])[0]
-        host, port = split_hostport(extern_addr)
-        try:
-            tcpport = sip.get('general', 'externtcpport')[0]
-        except:
-            tcpport = port
-        set_value('external_signaling_address', host, 'transport-tcp', pjsip,
-                  nmapped, 'transport')
-        if tcpport:
-            set_value('external_signaling_port', tcpport, 'transport-tcp',
-                      pjsip, nmapped, 'transport')
-    except LookupError:
-        pass
-
-    set_value('protocol', 'tcp', 'transport-tcp', pjsip, nmapped, 'transport')
-    set_value('bind', bind, 'transport-tcp', pjsip, nmapped, 'transport')
-    set_transport_common('transport-tcp', pjsip, nmapped)
+    set_value('protocol', protocol, section, pjsip, nmapped, 'transport')
+    set_value('bind', bind, section, pjsip, nmapped, 'transport')
+    set_transport_common(section, sip, pjsip, protocol, nmapped)
 
 
-def set_tls_bindaddr(val, pjsip, nmapped):
-    """
-    Creates the TCP bind address. This has two possible methods of
-    working:
-    Use the 'tlsbindaddr' option from sip.conf directly if it has both
-    an address and port. If no port is present, use 5061
-    If there is no 'tlsbindaddr' option present in sip.conf, use the
-    previously-established UDP bind address and port 5061
-    """
-    try:
-        bind = sip.get('general', 'tlsbindaddr')[0]
-        explicit = True
-    except LookupError:
-        # No tlsbindaddr means to default to the bindaddr but with standard TLS
-        # port
-        bind = pjsip.get('transport-udp', 'bind')[0]
-        explicit = False
-
-    matchv4 = re.match('\d+\.\d+\.\d+\.\d+:\d+', bind)
-    matchv6 = re.match('\[.*\]:d+', bind)
-    if matchv4 or matchv6:
-        if explicit:
-            # They provided a port. We'll just use it.
-            set_value('bind', bind, 'transport-tls', pjsip, nmapped,
-                      'transport')
-            return
-        else:
-            # Need to strip the port from the UDP address
-            index = bind.rfind(':')
-            bind = bind[:index]
-
-    # Reaching this point means either there was no port provided or we
-    # stripped the port off. We need to add on the default 5061 port
-
-    bind += ':5061'
-
-    set_value('bind', bind, 'transport-tls', pjsip, nmapped, 'transport')
+def set_tls_cert_file(val, pjsip, section, nmapped):
+    """Sets cert_file based on sip.conf tlscertfile"""
+    set_value('cert_file', val, section, pjsip, nmapped,
+              'transport')
 
 
-def set_tls_private_key(val, pjsip, nmapped):
+def set_tls_private_key(val, pjsip, section, nmapped):
     """Sets privkey_file based on sip.conf tlsprivatekey or sslprivatekey"""
-    set_value('priv_key_file', val, 'transport-tls', pjsip, nmapped,
+    set_value('priv_key_file', val, section, pjsip, nmapped,
               'transport')
 
 
-def set_tls_cipher(val, pjsip, nmapped):
+def set_tls_cipher(val, pjsip, section, nmapped):
     """Sets cipher based on sip.conf tlscipher or sslcipher"""
-    set_value('cipher', val, 'transport-tls', pjsip, nmapped, 'transport')
+    set_value('cipher', val, section, pjsip, nmapped, 'transport')
 
 
-def set_tls_cafile(val, pjsip, nmapped):
+def set_tls_cafile(val, pjsip, section, nmapped):
     """Sets ca_list_file based on sip.conf tlscafile"""
-    set_value('ca_list_file', val, 'transport-tls', pjsip, nmapped,
+    set_value('ca_list_file', val, section, pjsip, nmapped,
               'transport')
 
 
-def set_tls_verifyclient(val, pjsip, nmapped):
+def set_tls_capath(val, pjsip, section, nmapped):
+    """Sets ca_list_path based on sip.conf tlscapath"""
+    set_value('ca_list_path', val, section, pjsip, nmapped,
+              'transport')
+
+
+def set_tls_verifyclient(val, pjsip, section, nmapped):
     """Sets verify_client based on sip.conf tlsverifyclient"""
-    set_value('verify_client', val, 'transport-tls', pjsip, nmapped,
+    set_value('verify_client', val, section, pjsip, nmapped,
               'transport')
 
 
-def set_tls_verifyserver(val, pjsip, nmapped):
+def set_tls_verifyserver(val, pjsip, section, nmapped):
     """Sets verify_server based on sip.conf tlsdontverifyserver"""
 
     if val == 'no':
-        set_value('verify_server', 'yes', 'transport-tls', pjsip, nmapped,
+        set_value('verify_server', 'yes', section, pjsip, nmapped,
                   'transport')
     else:
-        set_value('verify_server', 'no', 'transport-tls', pjsip, nmapped,
+        set_value('verify_server', 'no', section, pjsip, nmapped,
                   'transport')
-
-
-def set_tls_method(val, pjsip, nmapped):
-    """Sets method based on sip.conf tlsclientmethod or sslclientmethod"""
-    set_value('method', val, 'transport-tls', pjsip, nmapped, 'transport')
 
 
 def create_tls(sip, pjsip, nmapped):
@@ -742,7 +738,7 @@ def create_tls(sip, pjsip, nmapped):
     settings from sip.conf:
 
     tlsenable (or sslenable)
-    tlsbindaddr (or sslbindaddr)
+    tlsbindaddr (or sslbindaddr or bindaddr)
     tlsprivatekey (or sslprivatekey)
     tlscipher (or sslcipher)
     tlscafile
@@ -752,50 +748,53 @@ def create_tls(sip, pjsip, nmapped):
     tlsdontverifyserver
     tlsclientmethod (or sslclientmethod)
     """
+    protocol = 'tls'
+    bind, section = get_bind(sip, pjsip, protocol)
+    if not bind:
+        return
+
+    set_value('protocol', protocol, section, pjsip, nmapped, 'transport')
+    set_value('bind', bind, section, pjsip, nmapped, 'transport')
+    set_transport_common(section, sip, pjsip, protocol, nmapped)
 
     tls_map = [
-        (['tlsbindaddr', 'sslbindaddr'], set_tls_bindaddr),
+        (['tlscertfile', 'sslcert', 'tlscert'], set_tls_cert_file),
         (['tlsprivatekey', 'sslprivatekey'], set_tls_private_key),
         (['tlscipher', 'sslcipher'], set_tls_cipher),
         (['tlscafile'], set_tls_cafile),
+        (['tlscapath', 'tlscadir'], set_tls_capath),
         (['tlsverifyclient'], set_tls_verifyclient),
-        (['tlsdontverifyserver'], set_tls_verifyserver),
-        (['tlsclientmethod', 'sslclientmethod'], set_tls_method)
+        (['tlsdontverifyserver'], set_tls_verifyserver)
     ]
-
-    try:
-        enabled = sip.multi_get('general', ['tlsenable', 'sslenable'])[0]
-    except LookupError:
-        # Not enabled. Don't create a transport
-        return
-
-    if enabled == 'no':
-        return
-
-    set_value('protocol', 'tls', 'transport-tls', pjsip, nmapped, 'transport')
 
     for i in tls_map:
         try:
-            i[1](sip.multi_get('general', i[0])[0], pjsip, nmapped)
+            i[1](sip.multi_get('general', i[0])[0], pjsip, section, nmapped)
         except LookupError:
             pass
 
-    set_transport_common('transport-tls', pjsip, nmapped)
     try:
-        extern_addr = sip.multi_get('general', ['externaddr', 'externip',
-                                    'externhost'])[0]
-        host, port = split_hostport(extern_addr)
-        try:
-            tlsport = sip.get('general', 'externtlsport')[0]
-        except:
-            tlsport = port
-        set_value('external_signaling_address', host, 'transport-tls', pjsip,
-                  nmapped, 'transport')
-        if tlsport:
-            set_value('external_signaling_port', tlsport, 'transport-tls',
-                      pjsip, nmapped, 'transport')
+        method = sip.multi_get('general', ['tlsclientmethod',
+                                           'sslclientmethod'])[0]
+        if section != 'transport-' + protocol + '6':  # print only once
+            print 'In chan_sip, you specified the TLS version. With chan_sip,' \
+                  ' this was just for outbound client connections. In' \
+                  ' chan_pjsip, this value is for client and server. Instead,' \
+                  ' consider not to specify \'tlsclientmethod\' for chan_sip' \
+                  ' and \'method = sslv23\' for chan_pjsip.'
     except LookupError:
-        pass
+        """
+        OpenSSL emerged during the 90s. SSLv2 and SSLv3 were the only
+        existing methods at that time. The OpenSSL project continued. And as
+        of today (OpenSSL 1.0.2) this does not start SSLv2 and SSLv3 anymore
+        but TLSv1.0 and v1.2. Or stated differently: This method should
+        have been called 'method = secure' or 'method = automatic' back in
+        the 90s. The PJProject did not realize this and uses 'tlsv1' as
+        default when unspecified, which disables TLSv1.2. chan_sip used
+        'sslv23' as default when unspecified, which gives TLSv1.0 and v1.2.
+        """
+        method = 'sslv23'
+    set_value('method', method, section, pjsip, nmapped, 'transport')
 
 
 def map_transports(sip, pjsip, nmapped):
@@ -805,23 +804,29 @@ def map_transports(sip, pjsip, nmapped):
     configuration sections in pjsip.conf.
 
     sip.conf only allows a single UDP transport, TCP transport,
-    and TLS transport. As such, the mapping into PJSIP can be made
-    consistent by defining three sections:
+    and TLS transport for each IP version. As such, the mapping
+    into PJSIP can be made consistent by defining six sections:
 
+    transport-udp6
     transport-udp
+    transport-tcp6
     transport-tcp
+    transport-tls6
     transport-tls
 
     To accommodate the default behaviors in sip.conf, we'll need to
-    create the UDP transport first, followed by the TCP and TLS transports.
+    create the UDP transports first, followed by the TCP and TLS transports.
     """
 
     # First create a UDP transport. Even if no bind parameters were provided
     # in sip.conf, chan_sip would always bind to UDP 0.0.0.0:5060
     create_udp(sip, pjsip, nmapped)
+    create_udp(sip, pjsip, nmapped)
 
     # TCP settings may be dependent on UDP settings, so do it second.
     create_tcp(sip, pjsip, nmapped)
+    create_tcp(sip, pjsip, nmapped)
+    create_tls(sip, pjsip, nmapped)
     create_tls(sip, pjsip, nmapped)
 
 
@@ -907,6 +912,17 @@ class Registration:
         the right of the user, then finish by using rpartition calls to remove
         everything to the left of the user.
         """
+        self.peer = ''
+        self.protocol = 'udp'
+        protocols = ['udp', 'tcp', 'tls']
+        for protocol in protocols:
+            position = user_part.find(protocol + '://')
+            if -1 < position:
+                post_transport = user_part[position + 6:]
+                self.peer, sep, self.protocol = user_part[:position + 3].rpartition('?')
+                user_part = post_transport
+                break
+
         colons = user_part.count(':')
         if (colons == 3):
             # :domainport:secret:authuser
@@ -927,11 +943,7 @@ class Registration:
             # Invalid setting
             raise
 
-        pre_domain, sep, self.domain = pre_auth.partition('@')
-        self.peer, sep, post_peer = pre_domain.rpartition('?')
-        transport, sep, self.user = post_peer.rpartition('://')
-
-        self.protocol = transport if transport else 'udp'
+        self.user, sep, self.domain = pre_auth.partition('@')
 
     def write(self, pjsip, nmapped):
         """
@@ -981,9 +993,8 @@ class Registration:
         if hasattr(self, 'secret') and self.secret:
             set_value('password', self.secret, auth_section, pjsip, nmapped,
                       'auth')
-            if hasattr(self, 'authuser'):
-                set_value('username', self.authuser or self.user, auth_section,
-                          pjsip, nmapped, 'auth')
+            set_value('username', self.authuser if hasattr(self, 'authuser')
+                      else self.user, auth_section, pjsip, nmapped, 'auth')
             set_value('outbound_auth', auth_section, section, pjsip, nmapped,
                       'registration')
 
@@ -1010,7 +1021,7 @@ class Registration:
 
         if self.outbound_proxy:
             set_value('outboundproxy', self.outbound_proxy, section, pjsip,
-                      nmapped, 'registartion')
+                      nmapped, 'registration')
 
 
 def map_registrations(sip, pjsip, nmapped):
@@ -1080,6 +1091,41 @@ def find_non_mapped(sections, nmapped):
             pass
 
 
+def map_system(sip, pjsip, nmapped):
+    section = 'system' # Just a label; you as user can change that
+    type = 'system' # Not a label, therefore not the same as section
+
+    try:
+        user_agent = sip.get('general', 'useragent')[0]
+        set_value('user_agent', user_agent, 'global', pjsip, nmapped, 'global')
+    except LookupError:
+        pass
+
+    try:
+        useroption_parsing = sip.get('general', 'legacy_useroption_parsing')[0]
+        set_value('ignore_uri_user_options', useroption_parsing, 'global', pjsip, nmapped, 'global')
+    except LookupError:
+        pass
+
+    try:
+        timer_t1 = sip.get('general', 'timert1')[0]
+        set_value('timer_t1', timer_t1, section, pjsip, nmapped, type)
+    except LookupError:
+        pass
+
+    try:
+        timer_b = sip.get('general', 'timerb')[0]
+        set_value('timer_b', timer_b, section, pjsip, nmapped, type)
+    except LookupError:
+        pass
+
+    try:
+        compact_headers = sip.get('general', 'compactheaders')[0]
+        set_value('compact_headers', compact_headers, section, pjsip, nmapped, type)
+    except LookupError:
+        pass
+
+
 def convert(sip, filename, non_mappings, include):
     """
     Entry point for configuration file conversion. This
@@ -1092,6 +1138,7 @@ def convert(sip, filename, non_mappings, include):
     nmapped = non_mapped(non_mappings[filename])
     if not include:
         # Don't duplicate transport and registration configs
+        map_system(sip, pjsip, nmapped)
         map_transports(sip, pjsip, nmapped)
         map_registrations(sip, pjsip, nmapped)
     map_auth(sip, pjsip, nmapped)
@@ -1141,7 +1188,7 @@ def cli_options():
     """
     global PREFIX
     usage = "usage: %prog [options] [input-file [output-file]]\n\n" \
-		"Converts the chan_sip configuration input-file to the chan_pjsip output-file.\n"\
+        "Converts the chan_sip configuration input-file to the chan_pjsip output-file.\n" \
         "The input-file defaults to 'sip.conf'.\n" \
         "The output-file defaults to 'pjsip.conf'."
     parser = optparse.OptionParser(usage=usage)
@@ -1160,6 +1207,8 @@ if __name__ == "__main__":
     sip_filename, pjsip_filename = cli_options()
     # configuration parser for sip.conf
     sip = astconfigparser.MultiOrderedConfigParser()
+    print 'Please, report any issue at:'
+    print '    https://issues.asterisk.org/'
     print 'Reading', sip_filename
     sip.read(sip_filename)
     print 'Converting to PJSIP...'

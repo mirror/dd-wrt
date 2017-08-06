@@ -51,7 +51,6 @@
  */
 
 #include "asterisk/channel.h"
-#include "asterisk/json.h"
 
 /*! @{ */
 
@@ -75,6 +74,16 @@ typedef void (*stasis_app_cb)(void *data, const char *app_name,
  * \return \c NULL on error.
  */
 struct ao2_container *stasis_app_get_all(void);
+
+/*!
+ * \brief Retrieve a handle to a Stasis application by its name
+ *
+ * \param name The name of the registered Stasis application
+ *
+ * \return \c stasis_app on success.
+ * \return \c NULL on error.
+ */
+struct stasis_app *stasis_app_get_by_name(const char *name);
 
 /*!
  * \brief Register a new Stasis application.
@@ -746,6 +755,15 @@ int stasis_app_bridge_playback_channel_add(struct ast_bridge *bridge,
 	struct stasis_app_control *control);
 
 /*!
+ * \brief remove channel from list of ARI playback channels for bridges.
+ *
+ * \param bridge_id The unique ID of the bridge the playback channel is in.
+ * \param control The app control structure for the playback channel
+ */
+void stasis_app_bridge_playback_channel_remove(char *bridge_id,
+	struct stasis_app_control *control);
+
+/*!
  * \brief Result codes used when adding/removing channels to/from bridges.
  */
 enum stasis_app_control_channel_result {
@@ -871,6 +889,55 @@ int stasis_app_channel_unreal_set_internal(struct ast_channel *chan);
  * \retval non-zero Failure
  */
 int stasis_app_channel_set_internal(struct ast_channel *chan);
+
+/*!
+ * \brief Enable/disable request/response and event logging on an application
+ *
+ * \param app The app to debug
+ * \param debug If non-zero, enable debugging. If zero, disable.
+ */
+void stasis_app_set_debug(struct stasis_app *app, int debug);
+
+/*!
+ * \brief Enable/disable request/response and event logging on an application
+ *
+ * \param app_name The app name to debug
+ * \param debug If non-zero, enable debugging. If zero, disable.
+ */
+void stasis_app_set_debug_by_name(const char *app_name, int debug);
+
+/*!
+ * \brief Get debug status of an application
+ *
+ * \param app The app to check
+ * \return The debug flag for the app || the global debug flag
+ */
+int stasis_app_get_debug(struct stasis_app *app);
+
+/*!
+ * \brief Get debug status of an application
+ *
+ * \param app_name The app_name to check
+ * \return The debug flag for the app || the global debug flag
+ */
+int stasis_app_get_debug_by_name(const char *app_name);
+
+/*!
+ * \brief Enable/disable request/response and event logging on all applications
+ *
+ * \param debug If non-zero, enable debugging. If zero, disable.
+ */
+void stasis_app_set_global_debug(int debug);
+
+struct ast_cli_args;
+
+/*!
+ * \brief Dump properties of a \c stasis_app to the CLI
+ *
+ * \param app The application
+ * \param a The CLI arguments
+ */
+void stasis_app_to_cli(const struct stasis_app *app, struct ast_cli_args *a);
 
 /*! @} */
 

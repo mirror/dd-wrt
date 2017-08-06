@@ -444,8 +444,14 @@ struct ast_frame *ast_trans_frameout(struct ast_trans_pvt *pvt,
 	}
 	if (datalen) {
 		f->datalen = datalen;
+		f->data.ptr = pvt->outbuf.c;
 	} else {
 		f->datalen = pvt->datalen;
+		if (!f->datalen) {
+			f->data.ptr = NULL;
+		} else {
+			f->data.ptr = pvt->outbuf.c;
+		}
 		pvt->datalen = 0;
 	}
 
@@ -494,7 +500,7 @@ struct ast_trans_pvt *ast_translator_build_path(struct ast_format *dst, struct a
 			AST_RWLIST_UNLOCK(&translators);
 			return NULL;
 		}
-		if ((t->dst_codec.sample_rate == ast_format_get_sample_rate(dst)) && (t->dst_codec.type == ast_format_get_type(dst)) && (!strcmp(t->dst_codec.name, ast_format_get_name(dst)))) {
+		if ((t->dst_codec.sample_rate == ast_format_get_sample_rate(dst)) && (t->dst_codec.type == ast_format_get_type(dst))) {
 			explicit_dst = dst;
 		}
 		if (!(cur = newpvt(t, explicit_dst))) {

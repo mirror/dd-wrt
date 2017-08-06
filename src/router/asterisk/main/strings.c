@@ -53,7 +53,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
  *	ast_str_append_va(...)
  */
 
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+#ifdef __AST_DEBUG_MALLOC
 int __ast_debug_str_helper(struct ast_str **buf, ssize_t max_len,
 	int append, const char *fmt, va_list ap, const char *file, int lineno, const char *function)
 #else
@@ -112,7 +112,7 @@ int __ast_str_helper(struct ast_str **buf, ssize_t max_len,
 		}
 
 		if (
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+#ifdef __AST_DEBUG_MALLOC
 			_ast_str_make_space(buf, need, file, lineno, function)
 #else
 			ast_str_make_space(buf, need)
@@ -186,15 +186,32 @@ static int str_hash(const void *obj, const int flags)
 	return ast_str_hash(obj);
 }
 
+static int str_sort(const void *lhs, const void *rhs, int flags)
+{
+	if ((flags & OBJ_SEARCH_MASK) == OBJ_SEARCH_PARTIAL_KEY) {
+		return strncmp(lhs, rhs, strlen(rhs));
+	} else {
+		return strcmp(lhs, rhs);
+	}
+}
+
 static int str_cmp(void *lhs, void *rhs, int flags)
 {
-	return strcmp(lhs, rhs) ? 0 : CMP_MATCH;
+	int cmp = 0;
+
+	if ((flags & OBJ_SEARCH_MASK) == OBJ_SEARCH_PARTIAL_KEY) {
+		cmp = strncmp(lhs, rhs, strlen(rhs));
+	} else {
+		cmp = strcmp(lhs, rhs);
+	}
+
+	return cmp ? 0 : CMP_MATCH;
 }
 
 //struct ao2_container *ast_str_container_alloc_options(enum ao2_container_opts opts, int buckets)
 struct ao2_container *ast_str_container_alloc_options(enum ao2_alloc_opts opts, int buckets)
 {
-	return ao2_container_alloc_options(opts, buckets, str_hash, str_cmp);
+	return ao2_container_alloc_hash(opts, 0, buckets, str_hash, str_sort, str_cmp);
 }
 
 int ast_str_container_add(struct ao2_container *str_container, const char *add)

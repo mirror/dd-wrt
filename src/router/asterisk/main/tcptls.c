@@ -39,6 +39,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <signal.h>
 #include <sys/signal.h>
+#include <sys/stat.h>
 
 #include "asterisk/compat.h"
 #include "asterisk/tcptls.h"
@@ -49,6 +50,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/manager.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/pbx.h"
+#include "asterisk/app.h"
 
 /*! ao2 object used for the FILE stream fopencookie()/funopen() cookie. */
 struct ast_tcptls_stream {
@@ -80,6 +82,39 @@ struct ast_tcptls_stream {
 	/*! TRUE if stream can exclusively wait for fd input. */
 	int exclusive_input;
 };
+
+#if defined(DO_SSL)
+AST_THREADSTORAGE(err2str_threadbuf);
+#define ERR2STR_BUFSIZE   128
+
+static const char *ssl_error_to_string(int sslerr, int ret)
+{
+	switch (sslerr) {
+	case SSL_ERROR_SSL:
+		return "Internal SSL error";
+	case SSL_ERROR_SYSCALL:
+		if (!ret) {
+			return "System call EOF";
+		} else if (ret == -1) {
+			char *buf;
+
+			buf = ast_threadstorage_get(&err2str_threadbuf, ERR2STR_BUFSIZE);
+			if (!buf) {
+				return "Unknown";
+			}
+
+			snprintf(buf, ERR2STR_BUFSIZE, "Underlying BIO error: %s", strerror(errno));
+			return buf;
+		} else {
+			return "System call other";
+		}
+	default:
+		break;
+	}
+
+	return "Unknown";
+}
+#endif
 
 void ast_tcptls_stream_set_timeout_disable(struct ast_tcptls_stream *stream)
 {
@@ -149,12 +184,17 @@ static HOOK_T tcptls_stream_read(void *cookie, char *buf, LEN_T size)
 #if defined(DO_SSL)
 	if (stream->ssl) {
 		for (;;) {
+			int sslerr;
+			char err[256];
+
 			res = SSL_read(stream->ssl, buf, size);
 			if (0 < res) {
 				/* We read some payload data. */
 				return res;
 			}
-			switch (SSL_get_error(stream->ssl, res)) {
+
+			sslerr = SSL_get_error(stream->ssl, res);
+			switch (sslerr) {
 			case SSL_ERROR_ZERO_RETURN:
 				/* Report EOF for a shutdown */
 				ast_debug(1, "TLS clean shutdown alert reading data\n");
@@ -202,7 +242,8 @@ static HOOK_T tcptls_stream_read(void *cookie, char *buf, LEN_T size)
 				break;
 			default:
 				/* Report EOF for an undecoded SSL or transport error. */
-				ast_debug(1, "TLS transport or SSL error reading data\n");
+				ast_debug(1, "TLS transport or SSL error reading data: %s, %s\n", ERR_error_string(sslerr, err),
+					ssl_error_to_string(sslerr, res));
 				return 0;
 			}
 			if (!ms) {
@@ -277,6 +318,9 @@ static HOOK_T tcptls_stream_write(void *cookie, const char *buf, LEN_T size)
 		written = 0;
 		remaining = size;
 		for (;;) {
+			int sslerr;
+			char err[256];
+
 			res = SSL_write(stream->ssl, buf + written, remaining);
 			if (res == remaining) {
 				/* Everything was written. */
@@ -288,7 +332,8 @@ static HOOK_T tcptls_stream_write(void *cookie, const char *buf, LEN_T size)
 				remaining -= res;
 				continue;
 			}
-			switch (SSL_get_error(stream->ssl, res)) {
+			sslerr = SSL_get_error(stream->ssl, res);
+			switch (sslerr) {
 			case SSL_ERROR_ZERO_RETURN:
 				ast_debug(1, "TLS clean shutdown alert writing data\n");
 				if (written) {
@@ -317,7 +362,8 @@ static HOOK_T tcptls_stream_write(void *cookie, const char *buf, LEN_T size)
 				break;
 			default:
 				/* Undecoded SSL or transport error. */
-				ast_debug(1, "TLS transport or SSL error writing data\n");
+				ast_debug(1, "TLS transport or SSL error writing data: %s, %s\n", ERR_error_string(sslerr, err),
+					ssl_error_to_string(sslerr, res));
 				if (written) {
 					/* Report partial write. */
 					return written;
@@ -394,17 +440,26 @@ static int tcptls_stream_close(void *cookie)
 			 */
 			res = SSL_shutdown(stream->ssl);
 			if (res < 0) {
-				ast_log(LOG_ERROR, "SSL_shutdown() failed: %d\n",
-					SSL_get_error(stream->ssl, res));
+				int sslerr = SSL_get_error(stream->ssl, res);
+				char err[256];
+
+				ast_log(LOG_ERROR, "SSL_shutdown() failed: %s, %s\n",
+					ERR_error_string(sslerr, err), ssl_error_to_string(sslerr, res));
 			}
 
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+			if (!SSL_is_server(stream->ssl)) {
+#else
 			if (!stream->ssl->server) {
+#endif
 				/* For client threads, ensure that the error stack is cleared */
-#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+#if !defined(OPENSSL_VERSION_NUMBER) || OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER >= 0x10000000L
 				ERR_remove_thread_state(NULL);
 #else
 				ERR_remove_state(0);
-#endif	/* OPENSSL_VERSION_NUMBER >= 0x10000000L */
+#endif	/* openssl == 1.0 */
+#endif  /* openssl < 1.1 */
 			}
 
 			SSL_free(stream->ssl);
@@ -555,6 +610,35 @@ static void session_instance_destructor(void *obj)
 	ao2_cleanup(i->private_data);
 }
 
+#ifdef DO_SSL
+static int check_tcptls_cert_name(ASN1_STRING *cert_str, const char *hostname, const char *desc)
+{
+	unsigned char *str;
+	int ret;
+
+	ret = ASN1_STRING_to_UTF8(&str, cert_str);
+	if (ret < 0 || !str) {
+		return -1;
+	}
+
+	if (strlen((char *) str) != ret) {
+		ast_log(LOG_WARNING, "Invalid certificate %s length (contains NULL bytes?)\n", desc);
+
+		ret = -1;
+	} else if (!strcasecmp(hostname, (char *) str)) {
+		ret = 0;
+	} else {
+		ret = -1;
+	}
+
+	ast_debug(3, "SSL %s compare s1='%s' s2='%s'\n", desc, hostname, str);
+	OPENSSL_free(str);
+
+	return ret;
+}
+
+#endif
+
 /*! \brief
 * creates a FILE * from the fd passed by the accept thread.
 * This operation is potentially expensive (certificate verification),
@@ -568,7 +652,6 @@ static void *handle_tcptls_connection(void *data)
 #ifdef DO_SSL
 	int (*ssl_setup)(SSL *) = (tcptls_session->client) ? SSL_connect : SSL_accept;
 	int ret;
-	char err[256];
 #endif
 
 	/* TCP/TLS connections are associated with external protocols, and
@@ -606,7 +689,11 @@ static void *handle_tcptls_connection(void *data)
 	else if ( (tcptls_session->ssl = SSL_new(tcptls_session->parent->tls_cfg->ssl_ctx)) ) {
 		SSL_set_fd(tcptls_session->ssl, tcptls_session->fd);
 		if ((ret = ssl_setup(tcptls_session->ssl)) <= 0) {
-			ast_log(LOG_ERROR, "Problem setting up ssl connection: %s\n", ERR_error_string(ERR_get_error(), err));
+			char err[256];
+			int sslerr = SSL_get_error(tcptls_session->ssl, ret);
+
+			ast_log(LOG_ERROR, "Problem setting up ssl connection: %s, %s\n", ERR_error_string(sslerr, err),
+				ssl_error_to_string(sslerr, ret));
 		} else if ((tcptls_session->f = tcptls_stream_fopen(tcptls_session->stream_cookie,
 			tcptls_session->ssl, tcptls_session->fd, -1))) {
 			if ((tcptls_session->client && !ast_test_flag(&tcptls_session->parent->tls_cfg->flags, AST_SSL_DONT_VERIFY_SERVER))
@@ -631,8 +718,8 @@ static void *handle_tcptls_connection(void *data)
 				}
 				if (!ast_test_flag(&tcptls_session->parent->tls_cfg->flags, AST_SSL_IGNORE_COMMON_NAME)) {
 					ASN1_STRING *str;
-					unsigned char *str2;
 					X509_NAME *name = X509_get_subject_name(peer);
+					STACK_OF(GENERAL_NAME) *alt_names;
 					int pos = -1;
 					int found = 0;
 
@@ -643,25 +730,36 @@ static void *handle_tcptls_connection(void *data)
 						if (pos < 0) {
 							break;
 						}
-						str = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(name, pos));
-						ret = ASN1_STRING_to_UTF8(&str2, str);
-						if (ret < 0) {
-							continue;
-						}
 
-						if (str2) {
-							if (strlen((char *) str2) != ret) {
-								ast_log(LOG_WARNING, "Invalid certificate common name length (contains NULL bytes?)\n");
-							} else if (!strcasecmp(tcptls_session->parent->hostname, (char *) str2)) {
-								found = 1;
-							}
-							ast_debug(3, "SSL Common Name compare s1='%s' s2='%s'\n", tcptls_session->parent->hostname, str2);
-							OPENSSL_free(str2);
-						}
-						if (found) {
+						str = X509_NAME_ENTRY_get_data(X509_NAME_get_entry(name, pos));
+						if (!check_tcptls_cert_name(str, tcptls_session->parent->hostname, "common name")) {
+							found = 1;
 							break;
 						}
 					}
+
+					if (!found) {
+						alt_names = X509_get_ext_d2i(peer, NID_subject_alt_name, NULL, NULL);
+						if (alt_names != NULL) {
+							int alt_names_count = sk_GENERAL_NAME_num(alt_names);
+
+							for (pos = 0; pos < alt_names_count; pos++) {
+								const GENERAL_NAME *alt_name = sk_GENERAL_NAME_value(alt_names, pos);
+
+								if (alt_name->type != GEN_DNS) {
+									continue;
+								}
+
+								if (!check_tcptls_cert_name(alt_name->d.dNSName, tcptls_session->parent->hostname, "alt name")) {
+									found = 1;
+									break;
+								}
+							}
+
+							sk_GENERAL_NAME_pop_free(alt_names, GENERAL_NAME_free);
+						}
+					}
+
 					if (!found) {
 						ast_log(LOG_ERROR, "Certificate common name did not match (%s)\n", tcptls_session->parent->hostname);
 						X509_free(peer);
@@ -714,26 +812,37 @@ void *ast_tcptls_server_root(void *data)
 		}
 		i = ast_wait_for_input(desc->accept_fd, desc->poll_timeout);
 		if (i <= 0) {
+			/* Prevent tight loop from hogging CPU */
+			usleep(1);
 			continue;
 		}
 		fd = ast_accept(desc->accept_fd, &addr);
 		if (fd < 0) {
-			if ((errno != EAGAIN) && (errno != EWOULDBLOCK) && (errno != EINTR) && (errno != ECONNABORTED)) {
-				ast_log(LOG_ERROR, "Accept failed: %s\n", strerror(errno));
-				break;
+			if (errno != EAGAIN
+				&& errno != EWOULDBLOCK
+				&& errno != EINTR
+				&& errno != ECONNABORTED) {
+				ast_log(LOG_ERROR, "TCP/TLS accept failed: %s\n", strerror(errno));
+				if (errno != EMFILE) {
+					break;
+				}
 			}
+			/* Prevent tight loop from hogging CPU */
+			usleep(1);
 			continue;
 		}
 		tcptls_session = ao2_alloc(sizeof(*tcptls_session), session_instance_destructor);
 		if (!tcptls_session) {
-			ast_log(LOG_WARNING, "No memory for new session: %s\n", strerror(errno));
-			if (close(fd)) {
-				ast_log(LOG_ERROR, "close() failed: %s\n", strerror(errno));
-			}
+			close(fd);
 			continue;
 		}
 
 		tcptls_session->overflow_buf = ast_str_create(128);
+		if (!tcptls_session->overflow_buf) {
+			ao2_ref(tcptls_session, -1);
+			close(fd);
+			continue;
+		}
 		flags = fcntl(fd, F_GETFL);
 		fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
 		tcptls_session->fd = fd;
@@ -744,10 +853,20 @@ void *ast_tcptls_server_root(void *data)
 
 		/* This thread is now the only place that controls the single ref to tcptls_session */
 		if (ast_pthread_create_detached_background(&launched, NULL, handle_tcptls_connection, tcptls_session)) {
-			ast_log(LOG_ERROR, "Unable to launch helper thread: %s\n", strerror(errno));
+			ast_log(LOG_ERROR, "TCP/TLS unable to launch helper thread: %s\n",
+				strerror(errno));
 			ast_tcptls_close_session_file(tcptls_session);
 			ao2_ref(tcptls_session, -1);
 		}
+	}
+
+	ast_log(LOG_ERROR, "TCP/TLS listener thread ended abnormally\n");
+
+	/* Close the listener socket so Asterisk doesn't appear dead. */
+	fd = desc->accept_fd;
+	desc->accept_fd = -1;
+	if (0 <= fd) {
+		close(fd);
 	}
 	return NULL;
 }
@@ -774,7 +893,7 @@ static int __ssl_setup(struct ast_tls_config *cfg, int client)
 	}
 
 	if (client) {
-#ifndef OPENSSL_NO_SSL2
+#if !defined(OPENSSL_NO_SSL2) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 		if (ast_test_flag(&cfg->flags, AST_SSL_SSLV2_CLIENT)) {
 			ast_log(LOG_WARNING, "Usage of SSLv2 is discouraged due to known vulnerabilities. Please use 'tlsv1' or leave the TLS method unspecified!\n");
 			cfg->ssl_ctx = SSL_CTX_new(SSLv2_client_method());
@@ -786,12 +905,16 @@ static int __ssl_setup(struct ast_tls_config *cfg, int client)
 			cfg->ssl_ctx = SSL_CTX_new(SSLv3_client_method());
 		} else
 #endif
+#if defined(OPENSSL_VERSION_NUMBER) && (OPENSSL_VERSION_NUMBER  >= 0x10100000L)
+		cfg->ssl_ctx = SSL_CTX_new(TLS_client_method());
+#else
 		if (ast_test_flag(&cfg->flags, AST_SSL_TLSV1_CLIENT)) {
 			cfg->ssl_ctx = SSL_CTX_new(TLSv1_client_method());
 		} else {
 			disable_ssl = 1;
 			cfg->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
 		}
+#endif
 	} else {
 		disable_ssl = 1;
 		cfg->ssl_ctx = SSL_CTX_new(SSLv23_server_method());
@@ -1008,11 +1131,15 @@ struct ast_tcptls_session_instance *ast_tcptls_client_create(struct ast_tcptls_s
 		}
 	}
 
-	if (!(tcptls_session = ao2_alloc(sizeof(*tcptls_session), session_instance_destructor))) {
+	tcptls_session = ao2_alloc(sizeof(*tcptls_session), session_instance_destructor);
+	if (!tcptls_session) {
 		goto error;
 	}
 
 	tcptls_session->overflow_buf = ast_str_create(128);
+	if (!tcptls_session->overflow_buf) {
+		goto error;
+	}
 	tcptls_session->client = 1;
 	tcptls_session->fd = desc->accept_fd;
 	tcptls_session->parent = desc;
@@ -1027,9 +1154,7 @@ struct ast_tcptls_session_instance *ast_tcptls_client_create(struct ast_tcptls_s
 error:
 	close(desc->accept_fd);
 	desc->accept_fd = -1;
-	if (tcptls_session) {
-		ao2_ref(tcptls_session, -1);
-	}
+	ao2_cleanup(tcptls_session);
 	return NULL;
 }
 
@@ -1037,9 +1162,64 @@ void ast_tcptls_server_start(struct ast_tcptls_session_args *desc)
 {
 	int flags;
 	int x = 1;
+	int tls_changed = 0;
+
+	if (desc->tls_cfg) {
+		char hash[41];
+		char *str = NULL;
+		struct stat st;
+
+		/* Store the hashes of the TLS certificate etc. */
+		if (stat(desc->tls_cfg->certfile, &st) || NULL == (str = ast_read_textfile(desc->tls_cfg->certfile))) {
+			memset(hash, 0, 41);
+		} else {
+			ast_sha1_hash(hash, str);
+		}
+		ast_free(str);
+		str = NULL;
+		memcpy(desc->tls_cfg->certhash, hash, 41);
+		if (stat(desc->tls_cfg->pvtfile, &st) || NULL == (str = ast_read_textfile(desc->tls_cfg->pvtfile))) {
+			memset(hash, 0, 41);
+		} else {
+			ast_sha1_hash(hash, str);
+		}
+		ast_free(str);
+		str = NULL;
+		memcpy(desc->tls_cfg->pvthash, hash, 41);
+		if (stat(desc->tls_cfg->cafile, &st) || NULL == (str = ast_read_textfile(desc->tls_cfg->cafile))) {
+			memset(hash, 0, 41);
+		} else {
+			ast_sha1_hash(hash, str);
+		}
+		ast_free(str);
+		str = NULL;
+		memcpy(desc->tls_cfg->cahash, hash, 41);
+
+		/* Check whether TLS configuration has changed */
+		if (!desc->old_tls_cfg) { /* No previous configuration */
+			tls_changed = 1;
+			desc->old_tls_cfg = ast_calloc(1, sizeof(*desc->old_tls_cfg));
+		} else if (memcmp(desc->tls_cfg->certhash, desc->old_tls_cfg->certhash, 41)) {
+			tls_changed = 1;
+		} else if (memcmp(desc->tls_cfg->pvthash, desc->old_tls_cfg->pvthash, 41)) {
+			tls_changed = 1;
+		} else if (strcmp(desc->tls_cfg->cipher, desc->old_tls_cfg->cipher)) {
+			tls_changed = 1;
+		} else if (memcmp(desc->tls_cfg->cahash, desc->old_tls_cfg->cahash, 41)) {
+			tls_changed = 1;
+		} else if (strcmp(desc->tls_cfg->capath, desc->old_tls_cfg->capath)) {
+			tls_changed = 1;
+		} else if (memcmp(&desc->tls_cfg->flags, &desc->old_tls_cfg->flags, sizeof(desc->tls_cfg->flags))) {
+			tls_changed = 1;
+		}
+
+		if (tls_changed) {
+			ast_debug(1, "Changed parameters for %s found\n", desc->name);
+		}
+	}
 
 	/* Do nothing if nothing has changed */
-	if (!ast_sockaddr_cmp(&desc->old_address, &desc->local_address)) {
+	if (!tls_changed && !ast_sockaddr_cmp(&desc->old_address, &desc->local_address)) {
 		ast_debug(1, "Nothing changed in %s\n", desc->name);
 		return;
 	}
@@ -1095,6 +1275,22 @@ void ast_tcptls_server_start(struct ast_tcptls_session_args *desc)
 
 	/* Set current info */
 	ast_sockaddr_copy(&desc->old_address, &desc->local_address);
+	if (desc->old_tls_cfg) {
+		ast_free(desc->old_tls_cfg->certfile);
+		ast_free(desc->old_tls_cfg->pvtfile);
+		ast_free(desc->old_tls_cfg->cipher);
+		ast_free(desc->old_tls_cfg->cafile);
+		ast_free(desc->old_tls_cfg->capath);
+		desc->old_tls_cfg->certfile = ast_strdup(desc->tls_cfg->certfile);
+		desc->old_tls_cfg->pvtfile = ast_strdup(desc->tls_cfg->pvtfile);
+		desc->old_tls_cfg->cipher = ast_strdup(desc->tls_cfg->cipher);
+		desc->old_tls_cfg->cafile = ast_strdup(desc->tls_cfg->cafile);
+		desc->old_tls_cfg->capath = ast_strdup(desc->tls_cfg->capath);
+		memcpy(desc->old_tls_cfg->certhash, desc->tls_cfg->certhash, 41);
+		memcpy(desc->old_tls_cfg->pvthash, desc->tls_cfg->pvthash, 41);
+		memcpy(desc->old_tls_cfg->cahash, desc->tls_cfg->cahash, 41);
+		memcpy(&desc->old_tls_cfg->flags, &desc->tls_cfg->flags, sizeof(desc->old_tls_cfg->flags));
+	}
 
 	return;
 
@@ -1140,6 +1336,17 @@ void ast_tcptls_server_stop(struct ast_tcptls_session_args *desc)
 		close(desc->accept_fd);
 	}
 	desc->accept_fd = -1;
+
+	if (desc->old_tls_cfg) {
+		ast_free(desc->old_tls_cfg->certfile);
+		ast_free(desc->old_tls_cfg->pvtfile);
+		ast_free(desc->old_tls_cfg->cipher);
+		ast_free(desc->old_tls_cfg->cafile);
+		ast_free(desc->old_tls_cfg->capath);
+		ast_free(desc->old_tls_cfg);
+		desc->old_tls_cfg = NULL;
+	}
+
 	ast_debug(2, "Stopped server :: %s\n", desc->name);
 }
 

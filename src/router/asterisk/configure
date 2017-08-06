@@ -639,6 +639,11 @@ PBX_SYSLOG_FACILITY_LOG_DAEMON
 PBX_SYSLOG_FACILITY_LOG_CRON
 PBX_SYSLOG_FACILITY_LOG_AUTHPRIV
 PBX_SYSLOG_FACILITY_LOG_AUTH
+SYSTEMD_LIBS
+SYSTEMD_CFLAGS
+SYSTEMD_INCLUDE
+SYSTEMD_LIB
+PBX_SYSTEMD
 PBX_GENERIC_ODBC
 GENERIC_ODBC_INCLUDE
 GENERIC_ODBC_LIB
@@ -663,6 +668,10 @@ PWLIB_LIBDIR
 PWLIB_INCDIR
 PWLIBDIR
 PTLIB_CONFIG
+PYTHONDEV_LIBS
+PYTHONDEV_CFLAGS
+PYTHONDEV_INCLUDE
+PYTHONDEV_LIB
 PJPROJECT_LIBS
 PJPROJECT_CFLAGS
 PG_CONFIG
@@ -688,6 +697,7 @@ PBX_IP_MTU_DISCOVER
 PBX_RTLD_NOLOAD
 PBX_GLOB_BRACE
 PBX_GLOB_NOMAGIC
+BIND8_CFLAGS
 AST_RPATH
 AST_NATIVE_ARCH
 AST_SHADOW_WARNINGS
@@ -695,8 +705,6 @@ AST_NO_STRICT_OVERFLOW
 AST_FORTIFY_SOURCE
 AST_TRAMPOLINES
 AST_DECLARATION_AFTER_STATEMENT
-GC_LDFLAGS
-GC_CFLAGS
 AST_UNDEFINED_SANITIZER
 AST_LEAK_SANITIZER
 AST_THREAD_SANITIZER
@@ -757,6 +765,10 @@ PBX_SUPPSERV
 SUPPSERV_DIR
 SUPPSERV_INCLUDE
 SUPPSERV_LIB
+PBX_RT
+RT_DIR
+RT_INCLUDE
+RT_LIB
 PBX_OPENSSL
 OPENSSL_DIR
 OPENSSL_INCLUDE
@@ -797,7 +809,6 @@ PBX_SPANDSP
 SPANDSP_DIR
 SPANDSP_INCLUDE
 SPANDSP_LIB
-SOUNDS_CACHE_DIR
 PBX_SDL_IMAGE
 SDL_IMAGE_DIR
 SDL_IMAGE_INCLUDE
@@ -910,6 +921,26 @@ PBX_POPT
 POPT_DIR
 POPT_INCLUDE
 POPT_LIB
+PBX_PJSIP_TSX_LAYER_FIND_TSX2
+PJSIP_TSX_LAYER_FIND_TSX2_DIR
+PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE
+PJSIP_TSX_LAYER_FIND_TSX2_LIB
+PBX_PJSIP_EVSUB_SET_UAS_TIMEOUT
+PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR
+PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE
+PJSIP_EVSUB_SET_UAS_TIMEOUT_LIB
+PBX_PJSIP_AUTH_CLT_DEINIT
+PJSIP_AUTH_CLT_DEINIT_DIR
+PJSIP_AUTH_CLT_DEINIT_INCLUDE
+PJSIP_AUTH_CLT_DEINIT_LIB
+PBX_PJSIP_INV_SESSION_REF
+PJSIP_INV_SESSION_REF_DIR
+PJSIP_INV_SESSION_REF_INCLUDE
+PJSIP_INV_SESSION_REF_LIB
+PBX_PJSIP_EVSUB_GRP_LOCK
+PJSIP_EVSUB_GRP_LOCK_DIR
+PJSIP_EVSUB_GRP_LOCK_INCLUDE
+PJSIP_EVSUB_GRP_LOCK_LIB
 PBX_PJSIP_TLS_TRANSPORT_PROTO
 PJSIP_TLS_TRANSPORT_PROTO_DIR
 PJSIP_TLS_TRANSPORT_PROTO_INCLUDE
@@ -938,11 +969,6 @@ PBX_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK
 PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_DIR
 PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_INCLUDE
 PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_LIB
-PJPROJECT_BUNDLED
-PBX_PJPROJECT
-PJPROJECT_DIR
-PJPROJECT_INCLUDE
-PJPROJECT_LIB
 PBX_PGSQL
 PGSQL_DIR
 PGSQL_INCLUDE
@@ -1019,6 +1045,10 @@ PBX_LIBXML2
 LIBXML2_DIR
 LIBXML2_INCLUDE
 LIBXML2_LIB
+PBX_LIBEDIT_IS_UNICODE
+LIBEDIT_IS_UNICODE_DIR
+LIBEDIT_IS_UNICODE_INCLUDE
+LIBEDIT_IS_UNICODE_LIB
 PBX_LIBEDIT
 LIBEDIT_DIR
 LIBEDIT_INCLUDE
@@ -1107,10 +1137,6 @@ PBX_DAHDI
 DAHDI_DIR
 DAHDI_INCLUDE
 DAHDI_LIB
-PBX_OPENSSL_ECDH_AUTO
-OPENSSL_ECDH_AUTO_DIR
-OPENSSL_ECDH_AUTO_INCLUDE
-OPENSSL_ECDH_AUTO_LIB
 PBX_OPENSSL_EC
 OPENSSL_EC_DIR
 OPENSSL_EC_INCLUDE
@@ -1159,29 +1185,46 @@ PBX_ALSA
 ALSA_DIR
 ALSA_INCLUDE
 ALSA_LIB
+PJPROJECT_INCLUDE
+PJPROJECT_LIB
+PBX_PJPROJECT
+PJPROJECT_DIR
+PJPROJECT_BUNDLED
+PJPROJECT_CONFIGURE_OPTS
 AST_C_COMPILER_FAMILY
 AST_CLANG_BLOCKS
 AST_CLANG_BLOCKS_LIBS
 AST_NESTED_FUNCTIONS
 AST_CODE_COVERAGE
+EXTERNALS_CACHE_DIR
+SOUNDS_CACHE_DIR
 AST_DEVMODE_STRICT
 AST_DEVMODE
 NOISY_BUILD
 PTHREAD_CFLAGS
 PTHREAD_LIBS
 PTHREAD_CC
-acx_pthread_config
+ax_pthread_config
 MD5
 SOXMIX
+PBX_BASH
+PBX_XMLSTARLET
 PBX_FLEX
 PBX_BISON
 OPENSSL
 SHA1SUM
 LDCONFIG
+DOWNLOAD_TIMEOUT
+DOWNLOAD_TO_STDOUT
 DOWNLOAD
 FETCH
+NM
+PATCH
+TAR
+BZIP2
 ALEMBIC
 GIT
+BASH
 XMLSTARLET
 XMLLINT
 KPATHSEA
@@ -1198,6 +1241,7 @@ COMPRESS
 FIND
 PYTHON
 FLEX
+CAT
 CMP
 BISON
 GNU_LD
@@ -1307,7 +1351,10 @@ ac_user_opts='
 enable_option_checking
 with_gnu_ld
 enable_dev_mode
+with_sounds_cache
+with_externals_cache
 enable_coverage
+with_pjproject_bundled
 with_asound
 with_bfd
 with_execinfo
@@ -1358,7 +1405,6 @@ with_osptk
 with_oss
 with_postgres
 with_pjproject
-with_pjproject_bundled
 with_popt
 with_portaudio
 with_pri
@@ -1367,7 +1413,6 @@ with_radius
 with_resample
 with_sdl
 with_SDL_image
-with_sounds_cache
 with_spandsp
 with_ss7
 with_speex
@@ -1406,6 +1451,7 @@ CXX
 CXXFLAGS
 CCC
 CXXCPP
+PJPROJECT_CONFIGURE_OPTS
 PKG_CONFIG
 PKG_CONFIG_PATH
 PKG_CONFIG_LIBDIR
@@ -1415,10 +1461,14 @@ LIBEDIT_CFLAGS
 LIBEDIT_LIBS
 PJPROJECT_CFLAGS
 PJPROJECT_LIBS
+PYTHONDEV_CFLAGS
+PYTHONDEV_LIBS
 GMIME_CFLAGS
 GMIME_LIBS
 GTK2_CFLAGS
-GTK2_LIBS'
+GTK2_LIBS
+SYSTEMD_CFLAGS
+SYSTEMD_LIBS'
 
 
 # Initialize some variables set by options.
@@ -2044,6 +2094,12 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
+  --with-sounds-cache=PATH
+                          use cached sound tarfiles in PATH
+  --with-externals-cache=PATH
+                          use cached external module tarfiles in PATH
+  --with-pjproject-bundled
+                          Use bundled pjproject libraries
   --with-asound=PATH      use Advanced Linux Sound Architecture files in PATH
   --with-bfd=PATH         use Debug symbol decoding files in PATH
   --with-execinfo=PATH    use Stack Backtrace files in PATH
@@ -2075,7 +2131,8 @@ Optional Packages:
   --with-uriparser=PATH   use uriparser library files in PATH
   --with-kqueue=PATH      use kqueue support files in PATH
   --with-ldap=PATH        use OpenLDAP files in PATH
-  --with-libcurl=DIR      look for the curl library in DIR
+  --with-libcurl=PREFIX   look for the curl library in PREFIX/lib and headers
+                          in PREFIX/include
   --with-libedit=PATH     use NetBSD Editline library files in PATH, use
                           'internal' Editline otherwise
   --with-libxml2=PATH     use LibXML2 files in PATH
@@ -2097,8 +2154,6 @@ Optional Packages:
   --with-oss=PATH         use Open Sound System files in PATH
   --with-postgres=PATH    use PostgreSQL files in PATH
   --with-pjproject=PATH   use PJPROJECT files in PATH
-  --with-pjproject-bundled
-                          Use bundled pjproject libraries
   --with-popt=PATH        use popt files in PATH
   --with-portaudio=PATH   use PortAudio files in PATH
   --with-pri=PATH         use ISDN PRI files in PATH
@@ -2107,8 +2162,6 @@ Optional Packages:
   --with-resample=PATH    use LIBRESAMPLE files in PATH
   --with-sdl=PATH         use Sdl files in PATH
   --with-SDL_image=PATH   use Sdl Image files in PATH
-  --with-sounds-cache=PATH
-                          use cached sound tarfiles in PATH
   --with-spandsp=PATH     use SPANDSP files in PATH
   --with-ss7=PATH         use ISDN SS7 files in PATH
   --with-speex=PATH       use Speex files in PATH
@@ -2142,6 +2195,8 @@ Some influential environment variables:
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   CXXCPP      C++ preprocessor
+  PJPROJECT_CONFIGURE_OPTS
+              Additional configure options to pass to bundled pjproject
   PKG_CONFIG  path to pkg-config utility
   PKG_CONFIG_PATH
               directories to add to pkg-config's search path
@@ -2157,11 +2212,19 @@ Some influential environment variables:
               C compiler flags for PJPROJECT, overriding pkg-config
   PJPROJECT_LIBS
               linker flags for PJPROJECT, overriding pkg-config
+  PYTHONDEV_CFLAGS
+              C compiler flags for PYTHONDEV, overriding pkg-config
+  PYTHONDEV_LIBS
+              linker flags for PYTHONDEV, overriding pkg-config
   GMIME_CFLAGS
               C compiler flags for GMIME, overriding pkg-config
   GMIME_LIBS  linker flags for GMIME, overriding pkg-config
   GTK2_CFLAGS C compiler flags for GTK2, overriding pkg-config
   GTK2_LIBS   linker flags for GTK2, overriding pkg-config
+  SYSTEMD_CFLAGS
+              C compiler flags for SYSTEMD, overriding pkg-config
+  SYSTEMD_LIBS
+              linker flags for SYSTEMD, overriding pkg-config
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -4842,7 +4905,7 @@ case "${host_os}" in
      OSARCH=cygwin
      PBX_WINARCH=1
      ;;
-     linux-gnueabi* |  linux-gnuspe)
+     linux-gnu*)
      OSARCH=linux-gnu
      ;;
      kfreebsd*-gnu)
@@ -6708,6 +6771,47 @@ $as_echo "no" >&6; }
 fi
 
 
+# Extract the first word of "cat", so it can be a program name with args.
+set dummy cat; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CAT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CAT in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CAT="$CAT" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CAT="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_CAT" && ac_cv_path_CAT=":"
+  ;;
+esac
+fi
+CAT=$ac_cv_path_CAT
+if test -n "$CAT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CAT" >&5
+$as_echo "$CAT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 # Extract the first word of "flex", so it can be a program name with args.
 set dummy flex; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7446,6 +7550,47 @@ $as_echo "no" >&6; }
 fi
 
 
+# Extract the first word of "bash", so it can be a program name with args.
+set dummy bash; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BASH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BASH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BASH="$BASH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BASH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_BASH" && ac_cv_path_BASH=":"
+  ;;
+esac
+fi
+BASH=$ac_cv_path_BASH
+if test -n "$BASH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BASH" >&5
+$as_echo "$BASH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
 # Extract the first word of "git", so it can be a program name with args.
 set dummy git; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -7528,10 +7673,220 @@ $as_echo "no" >&6; }
 fi
 
 
+# Extract the first word of "bzip2", so it can be a program name with args.
+set dummy bzip2; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_BZIP2+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $BZIP2 in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_BZIP2="$BZIP2" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_BZIP2="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_BZIP2" && ac_cv_path_BZIP2=":"
+  ;;
+esac
+fi
+BZIP2=$ac_cv_path_BZIP2
+if test -n "$BZIP2"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BZIP2" >&5
+$as_echo "$BZIP2" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "tar", so it can be a program name with args.
+set dummy tar; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_TAR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $TAR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_TAR="$TAR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_TAR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_TAR" && ac_cv_path_TAR=":"
+  ;;
+esac
+fi
+TAR=$ac_cv_path_TAR
+if test -n "$TAR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $TAR" >&5
+$as_echo "$TAR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "patch", so it can be a program name with args.
+set dummy patch; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_PATCH+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $PATCH in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PATCH="$PATCH" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PATCH="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_PATCH" && ac_cv_path_PATCH=":"
+  ;;
+esac
+fi
+PATCH=$ac_cv_path_PATCH
+if test -n "$PATCH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $PATCH" >&5
+$as_echo "$PATCH" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "sed", so it can be a program name with args.
+set dummy sed; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $SED in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_SED="$SED" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_SED="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_SED" && ac_cv_path_SED=":"
+  ;;
+esac
+fi
+SED=$ac_cv_path_SED
+if test -n "$SED"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SED" >&5
+$as_echo "$SED" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+# Extract the first word of "nm", so it can be a program name with args.
+set dummy nm; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NM+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NM in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NM="$NM" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NM="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_NM" && ac_cv_path_NM=":"
+  ;;
+esac
+fi
+NM=$ac_cv_path_NM
+if test -n "$NM"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NM" >&5
+$as_echo "$NM" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
 if test "${WGET}" != ":" ; then
   DOWNLOAD=${WGET}
+  DOWNLOAD_TO_STDOUT="${WGET} -q -O-"
+  DOWNLOAD_TIMEOUT='--timeout=$1'
 else if test "${CURL}" != ":" ; then
   DOWNLOAD="${CURL} -O --progress-bar -w \"%{url_effective}\n\""
+  DOWNLOAD_TO_STDOUT="${CURL} -Ls"
+  DOWNLOAD_TIMEOUT='--max-time $(or $2,$1)'
 else
   # Extract the first word of "fetch", so it can be a program name with args.
 set dummy fetch; ac_word=$2
@@ -7575,8 +7930,14 @@ fi
 
 
   DOWNLOAD=${FETCH}
+  DOWNLOAD_TO_STDOUT="${FETCH} -o-"
+  DOWNLOAD_TIMEOUT='--timeout=$(or $2,$1)'
 fi
 fi
+
+
+
+
 
 # Extract the first word of "ldconfig", so it can be a program name with args.
 set dummy ldconfig; ac_word=$2
@@ -7753,6 +8114,20 @@ else
 fi
 
 
+if test "x${XMLSTARLET}" = "x:" ; then
+	PBX_XMLSTARLET=0
+else
+	PBX_XMLSTARLET=1
+fi
+
+
+if test "x${BASH}" = "x:" ; then
+	PBX_BASH=0
+else
+	PBX_BASH=1
+fi
+
+
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}soxmix", so it can be a program name with args.
 set dummy ${ac_tool_prefix}soxmix; ac_word=$2
@@ -7898,6 +8273,76 @@ if test "${MD5}" = "digest" ; then
    MD5="${MD5} -a md5"
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
+$as_echo_n "checking for a sed that does not truncate output... " >&6; }
+if ${ac_cv_path_SED+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+            ac_script=s/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb/
+     for ac_i in 1 2 3 4 5 6 7; do
+       ac_script="$ac_script$as_nl$ac_script"
+     done
+     echo "$ac_script" 2>/dev/null | sed 99q >conftest.sed
+     { ac_script=; unset ac_script;}
+     if test -z "$SED"; then
+  ac_path_SED_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_prog in sed gsed; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_SED="$as_dir/$ac_prog$ac_exec_ext"
+      as_fn_executable_p "$ac_path_SED" || continue
+# Check for GNU ac_path_SED and select it if it is found.
+  # Check for GNU $ac_path_SED
+case `"$ac_path_SED" --version 2>&1` in
+*GNU*)
+  ac_cv_path_SED="$ac_path_SED" ac_path_SED_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo '' >> "conftest.nl"
+    "$ac_path_SED" -f conftest.sed < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    as_fn_arith $ac_count + 1 && ac_count=$as_val
+    if test $ac_count -gt ${ac_path_SED_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_SED="$ac_path_SED"
+      ac_path_SED_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_SED_found && break 3
+    done
+  done
+  done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_SED"; then
+    as_fn_error $? "no acceptable sed could be found in \$PATH" "$LINENO" 5
+  fi
+else
+  ac_cv_path_SED=$SED
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_path_SED" >&5
+$as_echo "$ac_cv_path_SED" >&6; }
+ SED="$ac_cv_path_SED"
+  rm -f conftest.sed
+
+
 
 
 
@@ -7907,22 +8352,26 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-acx_pthread_ok=no
+ax_pthread_ok=no
 
 # We used to check for pthread.h first, but this fails if pthread.h
-# requires special compiler flags (e.g. on True64 or Sequent).
+# requires special compiler flags (e.g. on Tru64 or Sequent).
 # It gets checked for in the link test anyway.
 
 # First of all, check if the user has set any of the PTHREAD_LIBS,
 # etcetera environment variables, and if threads linking works using
 # them:
-if test x"$PTHREAD_LIBS$PTHREAD_CFLAGS" != x; then
-        save_CFLAGS="$CFLAGS"
+if test "x$PTHREAD_CFLAGS$PTHREAD_LIBS" != "x"; then
+        ax_pthread_save_CC="$CC"
+        ax_pthread_save_CFLAGS="$CFLAGS"
+        ax_pthread_save_LIBS="$LIBS"
+        if test "x$PTHREAD_CC" != "x"; then :
+  CC="$PTHREAD_CC"
+fi
         CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-        save_LIBS="$LIBS"
         LIBS="$PTHREAD_LIBS $LIBS"
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS" >&5
-$as_echo_n "checking for pthread_join in LIBS=$PTHREAD_LIBS with CFLAGS=$PTHREAD_CFLAGS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_join using $CC $PTHREAD_CFLAGS $PTHREAD_LIBS" >&5
+$as_echo_n "checking for pthread_join using $CC $PTHREAD_CFLAGS $PTHREAD_LIBS... " >&6; }
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -7942,18 +8391,19 @@ return pthread_join ();
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  acx_pthread_ok=yes
+  ax_pthread_ok=yes
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_pthread_ok" >&5
-$as_echo "$acx_pthread_ok" >&6; }
-        if test x"$acx_pthread_ok" = xno; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_ok" >&5
+$as_echo "$ax_pthread_ok" >&6; }
+        if test "x$ax_pthread_ok" = "xno"; then
                 PTHREAD_LIBS=""
                 PTHREAD_CFLAGS=""
         fi
-        LIBS="$save_LIBS"
-        CFLAGS="$save_CFLAGS"
+        CC="$ax_pthread_save_CC"
+        CFLAGS="$ax_pthread_save_CFLAGS"
+        LIBS="$ax_pthread_save_LIBS"
 fi
 
 # We must check for the threads library under a number of different
@@ -7966,7 +8416,7 @@ fi
 # which indicates that we try without any flags at all, and "pthread-config"
 # which is a program returning the flags for the Pth emulation library.
 
-acx_pthread_flags="pthreads none -Kthread -kthread lthread -pthread -pthreads -mthreads pthread --thread-safe -mt pthread-config"
+ax_pthread_flags="pthreads none -Kthread -pthread -pthreads -mthreads pthread --thread-safe -mt pthread-config"
 
 # The ordering *is* (sometimes) important.  Some notes on the
 # individual items follow:
@@ -7975,59 +8425,269 @@ acx_pthread_flags="pthreads none -Kthread -kthread lthread -pthread -pthreads -m
 # none: in case threads are in libc; should be tried before -Kthread and
 #       other compiler flags to prevent continual compiler warnings
 # -Kthread: Sequent (threads in libc, but -Kthread needed for pthread.h)
-# -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
-# lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
-# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads)
-# -pthreads: Solaris/gcc
-# -mthreads: Mingw32/gcc, Lynx/gcc
+# -pthread: Linux/gcc (kernel threads), BSD/gcc (userland threads), Tru64
+#           (Note: HP C rejects this with "bad form for `-t' option")
+# -pthreads: Solaris/gcc (Note: HP C also rejects)
 # -mt: Sun Workshop C (may only link SunOS threads [-lthread], but it
-#      doesn't hurt to check since this sometimes defines pthreads too;
-#      also defines -D_REENTRANT)
-#      ... -mt is also the pthreads flag for HP/aCC
+#      doesn't hurt to check since this sometimes defines pthreads and
+#      -D_REENTRANT too), HP C (must be checked before -lpthread, which
+#      is present but should not be used directly; and before -mthreads,
+#      because the compiler interprets this as "-mt" + "-hreads")
+# -mthreads: Mingw32/gcc, Lynx/gcc
 # pthread: Linux, etcetera
 # --thread-safe: KAI C++
 # pthread-config: use pthread-config program (for GNU Pth library)
 
-case "${host_cpu}-${host_os}" in
-        *solaris*)
+case $host_os in
+
+        freebsd*)
+
+        # -kthread: FreeBSD kernel threads (preferred to -pthread since SMP-able)
+        # lthread: LinuxThreads port on FreeBSD (also preferred to -pthread)
+
+        ax_pthread_flags="-kthread lthread $ax_pthread_flags"
+        ;;
+
+        hpux*)
+
+        # From the cc(1) man page: "[-mt] Sets various -D flags to enable
+        # multi-threading and also sets -lpthread."
+
+        ax_pthread_flags="-mt -pthread pthread $ax_pthread_flags"
+        ;;
+
+        openedition*)
+
+        # IBM z/OS requires a feature-test macro to be defined in order to
+        # enable POSIX threads at all, so give the user a hint if this is
+        # not set. (We don't define these ourselves, as they can affect
+        # other portions of the system API in unpredictable ways.)
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#            if !defined(_OPEN_THREADS) && !defined(_UNIX03_THREADS)
+             AX_PTHREAD_ZOS_MISSING
+#            endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "AX_PTHREAD_ZOS_MISSING" >/dev/null 2>&1; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: IBM z/OS requires -D_OPEN_THREADS or -D_UNIX03_THREADS to enable pthreads support." >&5
+$as_echo "$as_me: WARNING: IBM z/OS requires -D_OPEN_THREADS or -D_UNIX03_THREADS to enable pthreads support." >&2;}
+fi
+rm -f conftest*
+
+        ;;
+
+        solaris*)
 
         # On Solaris (at least, for some versions), libc contains stubbed
         # (non-functional) versions of the pthreads routines, so link-based
-        # tests will erroneously succeed.  (We need to link with -pthreads/-mt/
-        # -lpthread.)  (The stubs are missing pthread_cleanup_push, or rather
-        # a function called by this macro, so we could check for that, but
-        # who knows whether they'll stub that too in a future libc.)  So,
-        # we'll just look for -pthreads and -lpthread first:
+        # tests will erroneously succeed. (N.B.: The stubs are missing
+        # pthread_cleanup_push, or rather a function called by this macro,
+        # so we could check for that, but who knows whether they'll stub
+        # that too in a future libc.)  So we'll check first for the
+        # standard Solaris way of linking pthreads (-mt -lpthread).
 
-        acx_pthread_flags="-pthreads pthread -mt -pthread $acx_pthread_flags"
+        ax_pthread_flags="-mt,pthread pthread $ax_pthread_flags"
         ;;
 esac
 
-if test x"$acx_pthread_ok" = xno; then
-for flag in $acx_pthread_flags; do
+# GCC generally uses -pthread, or -pthreads on some platforms (e.g. SPARC)
 
-        case $flag in
+if test "x$GCC" = "xyes"; then :
+  ax_pthread_flags="-pthread -pthreads $ax_pthread_flags"
+fi
+
+# The presence of a feature test macro requesting re-entrant function
+# definitions is, on some systems, a strong hint that pthreads support is
+# correctly enabled
+
+case $host_os in
+        darwin* | hpux* | linux* | osf* | solaris*)
+        ax_pthread_check_macro="_REENTRANT"
+        ;;
+
+        aix*)
+        ax_pthread_check_macro="_THREAD_SAFE"
+        ;;
+
+        *)
+        ax_pthread_check_macro="--"
+        ;;
+esac
+if test "x$ax_pthread_check_macro" = "x--"; then :
+  ax_pthread_check_cond=0
+else
+  ax_pthread_check_cond="!defined($ax_pthread_check_macro)"
+fi
+
+# Are we compiling with Clang?
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether $CC is Clang" >&5
+$as_echo_n "checking whether $CC is Clang... " >&6; }
+if ${ax_cv_PTHREAD_CLANG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ax_cv_PTHREAD_CLANG=no
+     # Note that Autoconf sets GCC=yes for Clang as well as GCC
+     if test "x$GCC" = "xyes"; then
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+/* Note: Clang 2.7 lacks __clang_[a-z]+__ */
+#            if defined(__clang__) && defined(__llvm__)
+             AX_PTHREAD_CC_IS_CLANG
+#            endif
+
+_ACEOF
+if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
+  $EGREP "AX_PTHREAD_CC_IS_CLANG" >/dev/null 2>&1; then :
+  ax_cv_PTHREAD_CLANG=yes
+fi
+rm -f conftest*
+
+     fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_CLANG" >&5
+$as_echo "$ax_cv_PTHREAD_CLANG" >&6; }
+ax_pthread_clang="$ax_cv_PTHREAD_CLANG"
+
+ax_pthread_clang_warning=no
+
+# Clang needs special handling, because older versions handle the -pthread
+# option in a rather... idiosyncratic way
+
+if test "x$ax_pthread_clang" = "xyes"; then
+
+        # Clang takes -pthread; it has never supported any other flag
+
+        # (Note 1: This will need to be revisited if a system that Clang
+        # supports has POSIX threads in a separate library.  This tends not
+        # to be the way of modern systems, but it's conceivable.)
+
+        # (Note 2: On some systems, notably Darwin, -pthread is not needed
+        # to get POSIX threads support; the API is always present and
+        # active.  We could reasonably leave PTHREAD_CFLAGS empty.  But
+        # -pthread does define _REENTRANT, and while the Darwin headers
+        # ignore this macro, third-party headers might not.)
+
+        PTHREAD_CFLAGS="-pthread"
+        PTHREAD_LIBS=
+
+        ax_pthread_ok=yes
+
+        # However, older versions of Clang make a point of warning the user
+        # that, in an invocation where only linking and no compilation is
+        # taking place, the -pthread option has no effect ("argument unused
+        # during compilation").  They expect -pthread to be passed in only
+        # when source code is being compiled.
+        #
+        # Problem is, this is at odds with the way Automake and most other
+        # C build frameworks function, which is that the same flags used in
+        # compilation (CFLAGS) are also used in linking.  Many systems
+        # supported by AX_PTHREAD require exactly this for POSIX threads
+        # support, and in fact it is often not straightforward to specify a
+        # flag that is used only in the compilation phase and not in
+        # linking.  Such a scenario is extremely rare in practice.
+        #
+        # Even though use of the -pthread flag in linking would only print
+        # a warning, this can be a nuisance for well-run software projects
+        # that build with -Werror.  So if the active version of Clang has
+        # this misfeature, we search for an option to squash it.
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Clang needs flag to prevent \"argument unused\" warning when linking with -pthread" >&5
+$as_echo_n "checking whether Clang needs flag to prevent \"argument unused\" warning when linking with -pthread... " >&6; }
+if ${ax_cv_PTHREAD_CLANG_NO_WARN_FLAG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ax_cv_PTHREAD_CLANG_NO_WARN_FLAG=unknown
+             # Create an alternate version of $ac_link that compiles and
+             # links in two steps (.c -> .o, .o -> exe) instead of one
+             # (.c -> exe), because the warning occurs only in the second
+             # step
+             ax_pthread_save_ac_link="$ac_link"
+             ax_pthread_sed='s/conftest\.\$ac_ext/conftest.$ac_objext/g'
+             ax_pthread_link_step=`$as_echo "$ac_link" | sed "$ax_pthread_sed"`
+             ax_pthread_2step_ac_link="($ac_compile) && (echo ==== >&5) && ($ax_pthread_link_step)"
+             ax_pthread_save_CFLAGS="$CFLAGS"
+             for ax_pthread_try in '' -Qunused-arguments -Wno-unused-command-line-argument unknown; do
+                if test "x$ax_pthread_try" = "xunknown"; then :
+  break
+fi
+                CFLAGS="-Werror -Wunknown-warning-option $ax_pthread_try -pthread $ax_pthread_save_CFLAGS"
+                ac_link="$ax_pthread_save_ac_link"
+                cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int main(void){return 0;}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_link="$ax_pthread_2step_ac_link"
+                     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+int main(void){return 0;}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  break
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+             done
+             ac_link="$ax_pthread_save_ac_link"
+             CFLAGS="$ax_pthread_save_CFLAGS"
+             if test "x$ax_pthread_try" = "x"; then :
+  ax_pthread_try=no
+fi
+             ax_cv_PTHREAD_CLANG_NO_WARN_FLAG="$ax_pthread_try"
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_CLANG_NO_WARN_FLAG" >&5
+$as_echo "$ax_cv_PTHREAD_CLANG_NO_WARN_FLAG" >&6; }
+
+        case "$ax_cv_PTHREAD_CLANG_NO_WARN_FLAG" in
+                no | unknown) ;;
+                *) PTHREAD_CFLAGS="$ax_cv_PTHREAD_CLANG_NO_WARN_FLAG $PTHREAD_CFLAGS" ;;
+        esac
+
+fi # $ax_pthread_clang = yes
+
+if test "x$ax_pthread_ok" = "xno"; then
+for ax_pthread_try_flag in $ax_pthread_flags; do
+
+        case $ax_pthread_try_flag in
                 none)
                 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work without any flags" >&5
 $as_echo_n "checking whether pthreads work without any flags... " >&6; }
                 ;;
 
-                -*)
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work with $flag" >&5
-$as_echo_n "checking whether pthreads work with $flag... " >&6; }
-                PTHREAD_CFLAGS="$flag"
+                -mt,pthread)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work with -mt -lpthread" >&5
+$as_echo_n "checking whether pthreads work with -mt -lpthread... " >&6; }
+                PTHREAD_CFLAGS="-mt"
+                PTHREAD_LIBS="-lpthread"
                 ;;
 
-		pthread-config)
-		# Extract the first word of "pthread-config", so it can be a program name with args.
+                -*)
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether pthreads work with $ax_pthread_try_flag" >&5
+$as_echo_n "checking whether pthreads work with $ax_pthread_try_flag... " >&6; }
+                PTHREAD_CFLAGS="$ax_pthread_try_flag"
+                ;;
+
+                pthread-config)
+                # Extract the first word of "pthread-config", so it can be a program name with args.
 set dummy pthread-config; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_acx_pthread_config+:} false; then :
+if ${ac_cv_prog_ax_pthread_config+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$acx_pthread_config"; then
-  ac_cv_prog_acx_pthread_config="$acx_pthread_config" # Let the user override the test.
+  if test -n "$ax_pthread_config"; then
+  ac_cv_prog_ax_pthread_config="$ax_pthread_config" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -8036,7 +8696,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_acx_pthread_config="yes"
+    ac_cv_prog_ax_pthread_config="yes"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -8044,35 +8704,37 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_acx_pthread_config" && ac_cv_prog_acx_pthread_config="no"
+  test -z "$ac_cv_prog_ax_pthread_config" && ac_cv_prog_ax_pthread_config="no"
 fi
 fi
-acx_pthread_config=$ac_cv_prog_acx_pthread_config
-if test -n "$acx_pthread_config"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_pthread_config" >&5
-$as_echo "$acx_pthread_config" >&6; }
+ax_pthread_config=$ac_cv_prog_ax_pthread_config
+if test -n "$ax_pthread_config"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_config" >&5
+$as_echo "$ax_pthread_config" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
-		if test x"$acx_pthread_config" = xno; then continue; fi
-		PTHREAD_CFLAGS="`pthread-config --cflags`"
-		PTHREAD_LIBS="`pthread-config --ldflags` `pthread-config --libs`"
-		;;
+                if test "x$ax_pthread_config" = "xno"; then :
+  continue
+fi
+                PTHREAD_CFLAGS="`pthread-config --cflags`"
+                PTHREAD_LIBS="`pthread-config --ldflags` `pthread-config --libs`"
+                ;;
 
                 *)
-                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the pthreads library -l$flag" >&5
-$as_echo_n "checking for the pthreads library -l$flag... " >&6; }
-                PTHREAD_LIBS="-l$flag"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the pthreads library -l$ax_pthread_try_flag" >&5
+$as_echo_n "checking for the pthreads library -l$ax_pthread_try_flag... " >&6; }
+                PTHREAD_LIBS="-l$ax_pthread_try_flag"
                 ;;
         esac
 
-        save_LIBS="$LIBS"
-        save_CFLAGS="$CFLAGS"
-        LIBS="$PTHREAD_LIBS $LIBS"
+        ax_pthread_save_CFLAGS="$CFLAGS"
+        ax_pthread_save_LIBS="$LIBS"
         CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
 
         # Check for various functions.  We must include pthread.h,
         # since some functions may be macros.  (On the Sequent, we
@@ -8083,33 +8745,42 @@ $as_echo_n "checking for the pthreads library -l$flag... " >&6; }
         # pthread_cleanup_push because it is one of the few pthread
         # functions on Solaris that doesn't have a non-functional libc stub.
         # We try pthread_create on general principles.
+
         cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pthread.h>
+#                       if $ax_pthread_check_cond
+#                        error "$ax_pthread_check_macro must be defined"
+#                       endif
+                        static void routine(void *a) { a = 0; }
+                        static void *start_routine(void *a) { return a; }
 int
 main ()
 {
-pthread_t th; pthread_join(th, 0);
-                     pthread_attr_init(0); pthread_cleanup_push(0, 0);
-                     pthread_create(0,0,0,0); pthread_cleanup_pop(0);
+pthread_t th; pthread_attr_t attr;
+                        pthread_create(&th, 0, start_routine, 0);
+                        pthread_join(th, 0);
+                        pthread_attr_init(&attr);
+                        pthread_cleanup_push(routine, 0);
+                        pthread_cleanup_pop(0) /* ; */
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  acx_pthread_ok=yes
+  ax_pthread_ok=yes
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-        LIBS="$save_LIBS"
-        CFLAGS="$save_CFLAGS"
+        CFLAGS="$ax_pthread_save_CFLAGS"
+        LIBS="$ax_pthread_save_LIBS"
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $acx_pthread_ok" >&5
-$as_echo "$acx_pthread_ok" >&6; }
-        if test "x$acx_pthread_ok" = xyes; then
-                break;
-        fi
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_pthread_ok" >&5
+$as_echo "$ax_pthread_ok" >&6; }
+        if test "x$ax_pthread_ok" = "xyes"; then :
+  break
+fi
 
         PTHREAD_LIBS=""
         PTHREAD_CFLAGS=""
@@ -8117,63 +8788,127 @@ done
 fi
 
 # Various other checks:
-if test "x$acx_pthread_ok" = xyes; then
-        save_LIBS="$LIBS"
-        LIBS="$PTHREAD_LIBS $LIBS"
-        save_CFLAGS="$CFLAGS"
+if test "x$ax_pthread_ok" = "xyes"; then
+        ax_pthread_save_CFLAGS="$CFLAGS"
+        ax_pthread_save_LIBS="$LIBS"
         CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
+        LIBS="$PTHREAD_LIBS $LIBS"
 
         # Detect AIX lossage: JOINABLE attribute is called UNDETACHED.
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for joinable pthread attribute" >&5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for joinable pthread attribute" >&5
 $as_echo_n "checking for joinable pthread attribute... " >&6; }
-	attr_name=unknown
-	for attr in PTHREAD_CREATE_JOINABLE PTHREAD_CREATE_UNDETACHED; do
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+if ${ax_cv_PTHREAD_JOINABLE_ATTR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ax_cv_PTHREAD_JOINABLE_ATTR=unknown
+             for ax_pthread_attr in PTHREAD_CREATE_JOINABLE PTHREAD_CREATE_UNDETACHED; do
+                 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pthread.h>
 int
 main ()
 {
-int attr=$attr; return attr;
+int attr = $ax_pthread_attr; return attr /* ; */
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-  attr_name=$attr; break
+  ax_cv_PTHREAD_JOINABLE_ATTR=$ax_pthread_attr; break
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-	done
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $attr_name" >&5
-$as_echo "$attr_name" >&6; }
-        if test "$attr_name" != PTHREAD_CREATE_JOINABLE; then
+             done
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_JOINABLE_ATTR" >&5
+$as_echo "$ax_cv_PTHREAD_JOINABLE_ATTR" >&6; }
+        if test "x$ax_cv_PTHREAD_JOINABLE_ATTR" != "xunknown" && \
+               test "x$ax_cv_PTHREAD_JOINABLE_ATTR" != "xPTHREAD_CREATE_JOINABLE" && \
+               test "x$ax_pthread_joinable_attr_defined" != "xyes"; then :
 
 cat >>confdefs.h <<_ACEOF
-#define PTHREAD_CREATE_JOINABLE $attr_name
+#define PTHREAD_CREATE_JOINABLE $ax_cv_PTHREAD_JOINABLE_ATTR
 _ACEOF
 
-        fi
+               ax_pthread_joinable_attr_defined=yes
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking if more special flags are required for pthreads" >&5
-$as_echo_n "checking if more special flags are required for pthreads... " >&6; }
-        flag=no
-        case "${host_cpu}-${host_os}" in
-            *-aix* | *-freebsd* | *-darwin*) flag="-D_THREAD_SAFE";;
-            *solaris* | *-osf* | *-hpux*) flag="-D_REENTRANT";;
-        esac
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${flag}" >&5
-$as_echo "${flag}" >&6; }
-        if test "x$flag" != xno; then
-            PTHREAD_CFLAGS="$flag $PTHREAD_CFLAGS"
-        fi
+fi
 
-        LIBS="$save_LIBS"
-        CFLAGS="$save_CFLAGS"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether more special flags are required for pthreads" >&5
+$as_echo_n "checking whether more special flags are required for pthreads... " >&6; }
+if ${ax_cv_PTHREAD_SPECIAL_FLAGS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ax_cv_PTHREAD_SPECIAL_FLAGS=no
+             case $host_os in
+             solaris*)
+             ax_cv_PTHREAD_SPECIAL_FLAGS="-D_POSIX_PTHREAD_SEMANTICS"
+             ;;
+             esac
 
-        # More AIX lossage: must compile with xlc_r or cc_r
-	if test x"$GCC" != xyes; then
-          for ac_prog in xlc_r cc_r
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_SPECIAL_FLAGS" >&5
+$as_echo "$ax_cv_PTHREAD_SPECIAL_FLAGS" >&6; }
+        if test "x$ax_cv_PTHREAD_SPECIAL_FLAGS" != "xno" && \
+               test "x$ax_pthread_special_flags_added" != "xyes"; then :
+  PTHREAD_CFLAGS="$ax_cv_PTHREAD_SPECIAL_FLAGS $PTHREAD_CFLAGS"
+               ax_pthread_special_flags_added=yes
+fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PTHREAD_PRIO_INHERIT" >&5
+$as_echo_n "checking for PTHREAD_PRIO_INHERIT... " >&6; }
+if ${ax_cv_PTHREAD_PRIO_INHERIT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <pthread.h>
+int
+main ()
+{
+int i = PTHREAD_PRIO_INHERIT;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ax_cv_PTHREAD_PRIO_INHERIT=yes
+else
+  ax_cv_PTHREAD_PRIO_INHERIT=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ax_cv_PTHREAD_PRIO_INHERIT" >&5
+$as_echo "$ax_cv_PTHREAD_PRIO_INHERIT" >&6; }
+        if test "x$ax_cv_PTHREAD_PRIO_INHERIT" = "xyes" && \
+               test "x$ax_pthread_prio_inherit_defined" != "xyes"; then :
+
+$as_echo "#define HAVE_PTHREAD_PRIO_INHERIT 1" >>confdefs.h
+
+               ax_pthread_prio_inherit_defined=yes
+
+fi
+
+        CFLAGS="$ax_pthread_save_CFLAGS"
+        LIBS="$ax_pthread_save_LIBS"
+
+        # More AIX lossage: compile with *_r variant
+        if test "x$GCC" != "xyes"; then
+            case $host_os in
+                aix*)
+                case "x/$CC" in #(
+  x*/c89|x*/c89_128|x*/c99|x*/c99_128|x*/cc|x*/cc128|x*/xlc|x*/xlc_v6|x*/xlc128|x*/xlc128_v6) :
+    #handle absolute path differently from PATH based program lookup
+                     case "x$CC" in #(
+  x/*) :
+    if as_fn_executable_p ${CC}_r; then :
+  PTHREAD_CC="${CC}_r"
+fi ;; #(
+  *) :
+    for ac_prog in ${CC}_r
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -8214,27 +8949,31 @@ fi
 
   test -n "$PTHREAD_CC" && break
 done
-test -n "$PTHREAD_CC" || PTHREAD_CC="${CC}"
-
-        else
-          PTHREAD_CC=$CC
-	fi
-else
-        PTHREAD_CC="$CC"
+test -n "$PTHREAD_CC" || PTHREAD_CC="$CC"
+ ;;
+esac ;; #(
+  *) :
+     ;;
+esac
+                ;;
+            esac
+        fi
 fi
+
+test -n "$PTHREAD_CC" || PTHREAD_CC="$CC"
 
 
 
 
 
 # Finally, execute ACTION-IF-FOUND/ACTION-IF-NOT-FOUND:
-if test x"$acx_pthread_ok" = xyes; then
+if test "x$ax_pthread_ok" = "xyes"; then
 
 $as_echo "#define HAVE_PTHREAD 1" >>confdefs.h
 
         :
 else
-        acx_pthread_ok=no
+        ax_pthread_ok=no
 
 fi
 ac_ext=c
@@ -8269,6 +9008,55 @@ if test "${enable_dev_mode+set}" = set; then :
 	esac
 fi
 
+
+
+
+
+
+
+# Check whether --with-sounds-cache was given.
+if test "${with_sounds_cache+set}" = set; then :
+  withval=$with_sounds_cache;
+	case ${withval} in
+	n|no)
+		unset SOUNDS_CACHE_DIR
+		;;
+	*)
+		if test "x${withval}" = "x"; then
+			:
+		else
+			SOUNDS_CACHE_DIR="${withval}"
+		fi
+		;;
+	esac
+
+else
+  :
+fi
+
+
+
+
+
+# Check whether --with-externals-cache was given.
+if test "${with_externals_cache+set}" = set; then :
+  withval=$with_externals_cache;
+	case ${withval} in
+	n|no)
+		unset EXTERNALS_CACHE_DIR
+		;;
+	*)
+		if test "x${withval}" = "x"; then
+			:
+		else
+			EXTERNALS_CACHE_DIR="${withval}"
+		fi
+		;;
+	esac
+
+else
+  :
+fi
 
 
 
@@ -8423,6 +9211,146 @@ $as_echo "prevent use of __string2_1bptr_p / strsep / strcmp from bits/string2.h
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 	CFLAGS="$save_CFLAGS"
+
+
+PJPROJECT_BUNDLED=no
+
+
+
+# Check whether --with-pjproject-bundled was given.
+if test "${with_pjproject_bundled+set}" = set; then :
+  withval=$with_pjproject_bundled; case "${withval}" in
+	      n|no) PJPROJECT_BUNDLED=no ;;
+	      *) PJPROJECT_BUNDLED=yes ;;
+	esac
+fi
+
+
+
+
+	if test "$PJPROJECT_BUNDLED" = "yes" ; then
+
+	if test "${ac_mandatory_list#*PJPROJECT*}" != "$ac_mandatory_list" ; then
+		as_fn_error $? "--with-pjproject and --with-pjproject-bundled can't both be specified" "$LINENO" 5
+	fi
+
+	ac_mandatory_list="$ac_mandatory_list PJPROJECT"
+	PJPROJECT_DIR="${ac_top_build_prefix}third-party/pjproject"
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for embedded pjproject (may have to download)" >&5
+$as_echo_n "checking for embedded pjproject (may have to download)... " >&6; }
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: configuring" >&5
+$as_echo "configuring" >&6; }
+
+	if test "x${DOWNLOAD_TO_STDOUT}" = "x" ; then
+		as_fn_error $? "A download utility (wget, curl or fetch) is required to download bundled pjproject" "$LINENO" 5
+	fi
+	if test "${BZIP2}" = ":" ; then
+		as_fn_error $? "bzip2 is required to extract the pjproject tar file" "$LINENO" 5
+	fi
+	if test "${TAR}" = ":" ; then
+		as_fn_error $? "tar is required to extract the pjproject tar file" "$LINENO" 5
+	fi
+	if test "${PATCH}" = ":" ; then
+		as_fn_error $? "patch is required to configure bundled pjproject" "$LINENO" 5
+	fi
+	if test "${SED}" = ":" ; then
+		as_fn_error $? "sed is required to configure bundled pjproject" "$LINENO" 5
+	fi
+	if test "${NM}" = ":" ; then
+		as_fn_error $? "nm is required to build bundled pjproject" "$LINENO" 5
+	fi
+	if test "${MD5}" = ":" ; then
+		as_fn_error $? "md5sum is required to build bundled pjproject" "$LINENO" 5
+	fi
+	if test "${CAT}" = ":" ; then
+		as_fn_error $? "cat is required to build bundled pjproject" "$LINENO" 5
+	fi
+
+
+	this_host=$(./config.sub $(./config.guess))
+	if test "$build" != "$this_host" ; then
+		PJPROJECT_CONFIGURE_OPTS+=" --build=$build"
+	fi
+	if test "$host" != "$this_host" ; then
+		PJPROJECT_CONFIGURE_OPTS+=" --host=$host"
+	fi
+
+	export TAR PATCH SED NM EXTERNALS_CACHE_DIR DOWNLOAD_TO_STDOUT DOWNLOAD_TIMEOUT DOWNLOAD MD5 CAT
+	export NOISY_BUILD
+	${GNU_MAKE} --quiet --no-print-directory -C ${PJPROJECT_DIR} \
+		PJPROJECT_CONFIGURE_OPTS="$PJPROJECT_CONFIGURE_OPTS" \
+		EXTERNALS_CACHE_DIR="${EXTERNALS_CACHE_DIR}" \
+		configure
+	if test $? -ne 0 ; then
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
+$as_echo "failed" >&6; }
+		{ $as_echo "$as_me:${as_lineno-$LINENO}: Unable to configure ${PJPROJECT_DIR}" >&5
+$as_echo "$as_me: Unable to configure ${PJPROJECT_DIR}" >&6;}
+		as_fn_error $? "Re-run the ./configure command with 'NOISY_BUILD=yes' appended to see error details." "$LINENO" 5
+	fi
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for bundled pjproject" >&5
+$as_echo_n "checking for bundled pjproject... " >&6; }
+
+	PJPROJECT_INCLUDE=$(${GNU_MAKE} --quiet --no-print-directory -C ${PJPROJECT_DIR} PJPROJECT_CONFIGURE_OPTS="$PJPROJECT_CONFIGURE_OPTS" EXTERNALS_CACHE_DIR="${EXTERNALS_CACHE_DIR}" echo_cflags)
+	PJPROJECT_CFLAGS="$PJPROJECT_INCLUDE"
+	PBX_PJPROJECT=1
+
+
+$as_echo "#define HAVE_PJPROJECT 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJPROJECT_BUNDLED 1" >>confdefs.h
+
+
+
+$as_echo "#define HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJ_TRANSACTION_GRP_LOCK 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_REPLACE_MEDIA_STREAM 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_GET_DEST_INFO 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJ_SSL_CERT_LOAD_FROM_FILES2 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_EXTERNAL_RESOLVER 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_TLS_TRANSPORT_PROTO 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_EVSUB_GRP_LOCK 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_INV_SESSION_REF 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_AUTH_CLT_DEINIT 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_EVSUB_SET_UAS_TIMEOUT 1" >>confdefs.h
+
+
+$as_echo "#define HAVE_PJSIP_TSX_LAYER_FIND_TSX2 1" >>confdefs.h
+
+
+
+
+
+
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+	fi
+
 
 
 # AST_EXT_LIB_SETUP is used to tell configure to handle variables for
@@ -8756,18 +9684,6 @@ OPENSSL_EC_OPTION=crypto
 OPENSSL_EC_DIR=${CRYPTO_DIR}
 
 PBX_OPENSSL_EC=0
-
-
-
-
-
-
-
-OPENSSL_ECDH_AUTO_DESCRIP="OpenSSL Auto ECDH Support"
-OPENSSL_ECDH_AUTO_OPTION=crypto
-OPENSSL_ECDH_AUTO_DIR=${CRYPTO_DIR}
-
-PBX_OPENSSL_ECDH_AUTO=0
 
 
 
@@ -9436,6 +10352,10 @@ fi
 
 
 
+
+
+
+
 # Check whether --with-libcurl was given.
 if test "${with_libcurl+set}" = set; then :
   withval=$with_libcurl; _libcurl_with=$withval
@@ -9523,7 +10443,6 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_path__libcurl_config" && ac_cv_path__libcurl_config=""$withval/bin""
   ;;
 esac
 fi
@@ -9673,10 +10592,11 @@ int x;
 curl_easy_setopt(NULL,CURLOPT_URL,NULL);
 x=CURL_ERROR_SIZE;
 x=CURLOPT_WRITEFUNCTION;
-x=CURLOPT_FILE;
+x=CURLOPT_WRITEDATA;
 x=CURLOPT_ERRORBUFFER;
 x=CURLOPT_STDERR;
 x=CURLOPT_VERBOSE;
+if (x) {;}
 
   ;
   return 0;
@@ -9743,16 +10663,22 @@ _ACEOF
 
               # We don't have --protocols, so just assume that all
               # protocols are available
-              _libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT"
+              _libcurl_protocols="HTTP FTP FILE TELNET LDAP DICT TFTP"
 
               if test x$libcurl_feature_SSL = xyes ; then
                  _libcurl_protocols="$_libcurl_protocols HTTPS"
 
                  # FTPS wasn't standards-compliant until version
-                 # 7.11.0
+                 # 7.11.0 (0x070b00 == 461568)
                  if test $_libcurl_version -ge 461568; then
                     _libcurl_protocols="$_libcurl_protocols FTPS"
                  fi
+              fi
+
+              # RTSP, IMAP, POP3 and SMTP were added in
+              # 7.20.0 (0x071400 == 463872)
+              if test $_libcurl_version -ge 463872; then
+                 _libcurl_protocols="$_libcurl_protocols RTSP IMAP POP3 SMTP"
               fi
            fi
 
@@ -9817,6 +10743,18 @@ if test "${with_libedit+set}" = set; then :
 
 fi
 
+
+
+
+
+
+
+
+LIBEDIT_IS_UNICODE_DESCRIP="Libedit compiled for unicode"
+LIBEDIT_IS_UNICODE_OPTION=libedit
+LIBEDIT_IS_UNICODE_DIR=${LIBEDIT_DIR}
+
+PBX_LIBEDIT_IS_UNICODE=0
 
 
 
@@ -10412,6 +11350,7 @@ fi
 
 
 
+if test "x${PBX_PJPROJECT}" != "x1" ; then
 
     PJPROJECT_DESCRIP="PJPROJECT"
     PJPROJECT_OPTION="pjproject"
@@ -10443,29 +11382,6 @@ fi
 
 
 
-
-PJPROJECT_BUNDLED=no
-
-
-
-# Check whether --with-pjproject-bundled was given.
-if test "${with_pjproject_bundled+set}" = set; then :
-  withval=$with_pjproject_bundled; case "${enableval}" in
-	      n|no) PJPROJECT_BUNDLED=no ;;
-	      *) PJPROJECT_BUNDLED=yes ;;
-	esac
-fi
-
-
-
-if test "$PJPROJECT_BUNDLED" = "yes" -a "${ac_mandatory_list#*PJPROJECT*}" != "$ac_mandatory_list" ; then
-   as_fn_error $? "--with-pjproject and --with-pjproject-bundled can't both be specified" "$LINENO" 5
-fi
-
-if test "$PJPROJECT_BUNDLED" = "yes" ; then
-   ac_mandatory_list="$ac_mandatory_list PJPROJECT"
-   PJPROJECT_DIR="${ac_top_build_prefix}third-party/pjproject"
-fi
 
 
 PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_DESCRIP="PJSIP Dialog Create UAS with Incremented Lock"
@@ -10551,6 +11467,67 @@ PBX_PJSIP_TLS_TRANSPORT_PROTO=0
 
 
 
+
+PJSIP_EVSUB_GRP_LOCK_DESCRIP="PJSIP EVSUB Group Lock support"
+PJSIP_EVSUB_GRP_LOCK_OPTION=pjsip
+PJSIP_EVSUB_GRP_LOCK_DIR=${PJPROJECT_DIR}
+
+PBX_PJSIP_EVSUB_GRP_LOCK=0
+
+
+
+
+
+
+
+PJSIP_INV_SESSION_REF_DESCRIP="PJSIP INVITE Session Reference Count support"
+PJSIP_INV_SESSION_REF_OPTION=pjsip
+PJSIP_INV_SESSION_REF_DIR=${PJPROJECT_DIR}
+
+PBX_PJSIP_INV_SESSION_REF=0
+
+
+
+
+
+
+
+PJSIP_AUTH_CLT_DEINIT_DESCRIP="pjsip_auth_clt_deinit support"
+PJSIP_AUTH_CLT_DEINIT_OPTION=pjsip
+PJSIP_AUTH_CLT_DEINIT_DIR=${PJPROJECT_DIR}
+
+PBX_PJSIP_AUTH_CLT_DEINIT=0
+
+
+
+
+
+
+
+PJSIP_EVSUB_SET_UAS_TIMEOUT_DESCRIP="PJSIP EVSUB Set UAS Timeout support"
+PJSIP_EVSUB_SET_UAS_TIMEOUT_OPTION=pjsip
+PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR=${PJPROJECT_DIR}
+
+PBX_PJSIP_EVSUB_SET_UAS_TIMEOUT=0
+
+
+
+
+
+
+
+PJSIP_TSX_LAYER_FIND_TSX2_DESCRIP="pjsip_tsx_layer_find_tsx2 support"
+PJSIP_TSX_LAYER_FIND_TSX2_OPTION=pjsip
+PJSIP_TSX_LAYER_FIND_TSX2_DIR=${PJPROJECT_DIR}
+
+PBX_PJSIP_TSX_LAYER_FIND_TSX2=0
+
+
+
+
+
+
+fi
 
 
     POPT_DESCRIP="popt"
@@ -11053,30 +12030,6 @@ fi
 
 
 
-
-# Check whether --with-sounds-cache was given.
-if test "${with_sounds_cache+set}" = set; then :
-  withval=$with_sounds_cache;
-	case ${withval} in
-	n|no)
-		unset SOUNDS_CACHE_DIR
-		;;
-	*)
-		if test "x${withval}" = "x"; then
-			:
-		else
-			SOUNDS_CACHE_DIR="${withval}"
-		fi
-		;;
-	esac
-
-else
-  :
-fi
-
-
-
-
     SPANDSP_DESCRIP="SPANDSP"
     SPANDSP_OPTION="spandsp"
     PBX_SPANDSP=0
@@ -11381,6 +12334,18 @@ if test "${with_ssl+set}" = set; then :
 
 fi
 
+
+
+
+
+
+
+
+RT_DESCRIP="Realtime functions"
+
+RT_DIR=${rt_DIR}
+
+PBX_RT=0
 
 
 
@@ -13041,6 +14006,112 @@ _ACEOF
       fi
    fi
 fi
+
+
+# See if clock_gettime is in librt
+
+if test "x${PBX_RT}" != "x1" -a "${USE_RT}" != "no"; then
+   pbxlibdir=""
+   # if --with-RT=DIR has been specified, use it.
+   if test "x${RT_DIR}" != "x"; then
+      if test -d ${RT_DIR}/lib; then
+         pbxlibdir="-L${RT_DIR}/lib"
+      else
+         pbxlibdir="-L${RT_DIR}"
+      fi
+   fi
+   pbxfuncname="clock_gettime"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_RT_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} "
+      as_ac_Lib=`$as_echo "ac_cv_lib_rt_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lrt" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lrt... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lrt ${pbxlibdir}  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_RT_FOUND=yes
+else
+  AST_RT_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_RT_FOUND}" = "yes"; then
+      RT_LIB="${pbxlibdir} -lrt "
+      # if --with-RT=DIR has been specified, use it.
+      if test "x${RT_DIR}" != "x"; then
+         RT_INCLUDE="-I${RT_DIR}/include"
+      fi
+      RT_INCLUDE="${RT_INCLUDE} "
+      if test "x" = "x" ; then	# no header, assume found
+         RT_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${RT_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "" "ac_cv_header_" "$ac_includes_default"
+if test "x$ac_cv_header_" = xyes; then :
+  RT_HEADER_FOUND=1
+else
+  RT_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${RT_HEADER_FOUND}" = "x0" ; then
+         RT_LIB=""
+         RT_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            RT_LIB=""
+         fi
+         PBX_RT=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_RT 1
+_ACEOF
+
+      fi
+   fi
+fi
+
 
 
 
@@ -14989,46 +16060,6 @@ _ACEOF
 
 rm -f conftest*
 
-if ${ac_cv_func_setvbuf_reversed+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_cv_func_setvbuf_reversed=no
-fi
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking return type of signal handlers" >&5
-$as_echo_n "checking return type of signal handlers... " >&6; }
-if ${ac_cv_type_signal+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <sys/types.h>
-#include <signal.h>
-
-int
-main ()
-{
-return *(signal (0, 0)) (0) == 1;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  ac_cv_type_signal=int
-else
-  ac_cv_type_signal=void
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_type_signal" >&5
-$as_echo "$ac_cv_type_signal" >&6; }
-
-cat >>confdefs.h <<_ACEOF
-#define RETSIGTYPE $ac_cv_type_signal
-_ACEOF
-
-
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether lstat correctly handles trailing slash" >&5
 $as_echo_n "checking whether lstat correctly handles trailing slash... " >&6; }
 if ${ac_cv_func_lstat_dereferences_slashed_symlink+:} false; then :
@@ -16581,6 +17612,39 @@ fi
 
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if we have usable eventfd support" >&5
+$as_echo_n "checking if we have usable eventfd support... " >&6; }
+if test "$cross_compiling" = yes; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: cross-compile" >&5
+$as_echo "cross-compile" >&6; }
+
+else
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <sys/eventfd.h>
+int
+main ()
+{
+return eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE) == -1;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+$as_echo "#define HAVE_EVENTFD 1" >>confdefs.h
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext
+fi
+
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for compiler 'attribute pure' support" >&5
 $as_echo_n "checking for compiler 'attribute pure' support... " >&6; }
@@ -17330,6 +18394,74 @@ CFLAGS="$saved_CFLAGS"
 
 
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for compiler 'attribute noreturn' support" >&5
+$as_echo_n "checking for compiler 'attribute noreturn' support... " >&6; }
+saved_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -Wall -Wno-unused -Werror"
+
+
+if test "xnoreturn" = "x"
+then
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ void __attribute__((noreturn)) *test(void *muffin, ...) {return (void *) 0;}
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_ATTRIBUTE_noreturn 1
+_ACEOF
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+else
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ void __attribute__((noreturn)) *test(void *muffin, ...) ;
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_ATTRIBUTE_noreturn 1
+_ACEOF
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+CFLAGS="$saved_CFLAGS"
+
+
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -fsanitize=address support" >&5
 $as_echo_n "checking for -fsanitize=address support... " >&6; }
 saved_sanitize_CFLAGS="${CFLAGS}"
@@ -17352,7 +18484,7 @@ if ac_fn_c_try_compile "$LINENO"; then :
 $as_echo "yes" >&6; }
 	AST_ADDRESS_SANITIZER=1
 else
-  AST_ADDRESS_SANITIZER=
+  AST_ADDRESS_SANITIZER=0
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
@@ -17384,7 +18516,7 @@ if ac_fn_c_try_compile "$LINENO"; then :
 $as_echo "yes" >&6; }
 	AST_THREAD_SANITIZER=1
 else
-  AST_THREAD_SANITIZER=
+  AST_THREAD_SANITIZER=0
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
@@ -17416,7 +18548,7 @@ if ac_fn_c_try_compile "$LINENO"; then :
 $as_echo "yes" >&6; }
 	AST_LEAK_SANITIZER=1
 else
-  AST_LEAK_SANITIZER=
+  AST_LEAK_SANITIZER=0
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
@@ -17448,7 +18580,7 @@ if ac_fn_c_try_compile "$LINENO"; then :
 $as_echo "yes" >&6; }
 	AST_UNDEFINED_SANITIZER=1
 else
-  AST_UNDEFINED_SANITIZER=
+  AST_UNDEFINED_SANITIZER=0
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 
@@ -17456,62 +18588,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 CFLAGS="${saved_sanitize_CFLAGS}"
 LDFLAGS="${saved_sanitize_LDFLAGS}"
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -ffunction-sections support" >&5
-$as_echo_n "checking for -ffunction-sections support... " >&6; }
-saved_CFLAGS="${CFLAGS}"
-CFLAGS="${CFLAGS} -ffunction-sections"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int x = 1;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	saved_LDFLAGS="${LDFLAGS}"
-	LDFLAGS="${LDFLAGS} -Wl,--gc-sections"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --gc-sections support" >&5
-$as_echo_n "checking for --gc-sections support... " >&6; }
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int x = 1;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		GC_CFLAGS="-ffunction-sections"
-		GC_LDFLAGS="-Wl,--gc-sections"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-	LDFLAGS="${saved_LDFLAGS}"
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-CFLAGS="${saved_CFLAGS}"
-
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -Wdeclaration-after-statement support" >&5
@@ -17582,19 +18658,13 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for -march=native support" >&5
 $as_echo_n "checking for -march=native support... " >&6; }
 if $(${CC} -march=native -S -o /dev/null -xc /dev/null > /dev/null 2>&1); then
-	if test "${CONFIG_CFLAGS}" = ""; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-		AST_NATIVE_ARCH=1
-	else
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: user CFLAGS present" >&5
-$as_echo "user CFLAGS present" >&6; }
-		AST_NATIVE_ARCH=
-	fi
+	AST_NATIVE_ARCH=1
 else
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
-	AST_NATIVE_ARCH=
+	AST_NATIVE_ARCH=0
 fi
 
 
@@ -17925,6 +18995,33 @@ $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for BIND_8_COMPAT required" >&5
+$as_echo_n "checking for BIND_8_COMPAT required... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#undef BIND_8_COMPAT
+#include <arpa/nameser.h>
+
+int
+main ()
+{
+int x = NXDOMAIN
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+BIND8_CFLAGS=-DBIND_8_COMPAT
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 
 
     if test "x${PBX_GLOB_NOMAGIC}" != "x1"; then
@@ -19809,11 +20906,58 @@ fi
    fi
 
       if test "$PBX_LIBEDIT" = "1"; then
-	 LIBEDIT_INTERNAL="no"
+      LIBEDIT_INTERNAL="no"
       fi
    fi
    if test "${LIBEDIT_INTERNAL}" = "yes"; then
       PBX_LIBEDIT=1
+      LIBEDIT_IS_UNICODE=no
+   else
+
+    if test "x${PBX_LIBEDIT_IS_UNICODE}" != "x1" -a "${USE_LIBEDIT_IS_UNICODE}" != "no"; then
+        if test "xTesting for libedit unicode support" != "x"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Testing for libedit unicode support" >&5
+$as_echo_n "checking for Testing for libedit unicode support... " >&6; }
+	else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: checking if \"el_rfunc_t *callback;\" compiles using histedit.h" >&5
+$as_echo_n "checking if \"el_rfunc_t *callback;\" compiles using histedit.h... " >&6; }
+	fi
+	saved_cppflags="${CPPFLAGS}"
+	if test "x${LIBEDIT_IS_UNICODE_DIR}" != "x"; then
+	    LIBEDIT_IS_UNICODE_INCLUDE="-I${LIBEDIT_IS_UNICODE_DIR}/include"
+	fi
+	CPPFLAGS="${CPPFLAGS} ${LIBEDIT_IS_UNICODE_INCLUDE}"
+
+	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ #include <histedit.h>
+int
+main ()
+{
+ el_rfunc_t *callback;;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+		PBX_LIBEDIT_IS_UNICODE=1
+
+$as_echo "#define HAVE_LIBEDIT_IS_UNICODE 1" >>confdefs.h
+
+
+
+else
+         { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	CPPFLAGS="${saved_cppflags}"
+    fi
+
    fi
 fi
 
@@ -24024,245 +25168,7 @@ $as_echo "$as_me: *** including --without-postgres" >&6;}
 fi
 
 if test "$USE_PJPROJECT" != "no" ; then
-   if test "$PJPROJECT_BUNDLED" = "yes" ; then
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for embedded pjproject (may have to download)" >&5
-$as_echo_n "checking for embedded pjproject (may have to download)... " >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: configuring" >&5
-$as_echo "configuring" >&6; }
-	make --quiet --no-print-directory -C $PJPROJECT_DIR configure
-	if test $? -ne 0 ; then
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: failed" >&5
-$as_echo "failed" >&6; }
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: Unable to configure $PJPROJECT_DIR" >&5
-$as_echo "$as_me: Unable to configure $PJPROJECT_DIR" >&6;}
-		as_fn_error $? "Run \"make -C $PJPROJECT_DIR NOISY_BUILD=yes configure\" to see error details." "$LINENO" 5
-	fi
-
-	PJPROJECT_INCLUDE=$(make --quiet --no-print-directory -C $PJPROJECT_DIR echo_cflags)
-	PJPROJECT_CFLAGS="$PJPROJECT_INCLUDE"
-	PBX_PJPROJECT=1
-	PJPROJECT_BUNDLED=yes
-
-$as_echo "#define HAVE_PJPROJECT 1" >>confdefs.h
-
-
-$as_echo "#define HAVE_PJPROJECT_BUNDLED 1" >>confdefs.h
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for embedded pjproject" >&5
-$as_echo_n "checking for embedded pjproject... " >&6; }
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-
-
-	PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pjsip_dlg_create_uas_and_inc_lock declared in pjsip.h" >&5
-$as_echo_n "checking for pjsip_dlg_create_uas_and_inc_lock declared in pjsip.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjsip.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "pjsip_dlg_create_uas_and_inc_lock" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK=1
-
-$as_echo "#define HAVE_PJSIP_DLG_CREATE_UAS_AND_INC_LOCK 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJSIP_DLG_CREATE_UAS_AND_INC_LOCK_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-	PJ_TRANSACTION_GRP_LOCK_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pjsip_tsx_create_uac2 declared in pjsip.h" >&5
-$as_echo_n "checking for pjsip_tsx_create_uac2 declared in pjsip.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjsip.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "pjsip_tsx_create_uac2" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJ_TRANSACTION_GRP_LOCK=1
-
-$as_echo "#define HAVE_PJ_TRANSACTION_GRP_LOCK 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJ_TRANSACTION_GRP_LOCK_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-	PJSIP_REPLACE_MEDIA_STREAM_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PJMEDIA_SDP_NEG_ALLOW_MEDIA_CHANGE declared in pjmedia.h" >&5
-$as_echo_n "checking for PJMEDIA_SDP_NEG_ALLOW_MEDIA_CHANGE declared in pjmedia.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjmedia.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "PJMEDIA_SDP_NEG_ALLOW_MEDIA_CHANGE" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJSIP_REPLACE_MEDIA_STREAM=1
-
-$as_echo "#define HAVE_PJSIP_REPLACE_MEDIA_STREAM 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJSIP_REPLACE_MEDIA_STREAM_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-	PJSIP_GET_DEST_INFO_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pjsip_get_dest_info declared in pjsip.h" >&5
-$as_echo_n "checking for pjsip_get_dest_info declared in pjsip.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjsip.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "pjsip_get_dest_info" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJSIP_GET_DEST_INFO=1
-
-$as_echo "#define HAVE_PJSIP_GET_DEST_INFO 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJSIP_GET_DEST_INFO_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-	PJ_SSL_CERT_LOAD_FROM_FILES2_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pj_ssl_cert_load_from_files2 declared in pjlib.h" >&5
-$as_echo_n "checking for pj_ssl_cert_load_from_files2 declared in pjlib.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjlib.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "pj_ssl_cert_load_from_files2" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJ_SSL_CERT_LOAD_FROM_FILES2=1
-
-$as_echo "#define HAVE_PJ_SSL_CERT_LOAD_FROM_FILES2 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJ_SSL_CERT_LOAD_FROM_FILES2_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-	PJSIP_EXTERNAL_RESOLVER_INCLUDE="$PJPROJECT_INCLUDE"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pjsip_endpt_set_ext_resolver declared in pjsip.h" >&5
-$as_echo_n "checking for pjsip_endpt_set_ext_resolver declared in pjsip.h... " >&6; }
-
-	saved_cpp="$CPPFLAGS"
-	CPPFLAGS="$PJPROJECT_INCLUDE"
-	cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <pjsip.h>
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "pjsip_endpt_set_ext_resolver" >/dev/null 2>&1; then :
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-		PBX_PJSIP_EXTERNAL_RESOLVER=1
-
-$as_echo "#define HAVE_PJSIP_EXTERNAL_RESOLVER 1" >>confdefs.h
-
-
-else
-
-		{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f conftest*
-
-
-	CPPGLAGS="$saved_cpp"
-	PJSIP_EXTERNAL_RESOLVER_INCLUDE="$PJPROJECT_INCLUDE"
-
-
-$as_echo "#define HAVE_PJSIP_TLS_TRANSPORT_PROTO 1" >>confdefs.h
-
-
-   else
+   if test "$PJPROJECT_BUNDLED" = "no" ; then
 
    if test "x${PBX_PJPROJECT}" != "x1" -a "${USE_PJPROJECT}" != "no"; then
 
@@ -24728,7 +25634,7 @@ if test "x${PBX_PJ_SSL_CERT_LOAD_FROM_FILES2}" != "x1" -a "${USE_PJ_SSL_CERT_LOA
          pbxlibdir="-L${PJ_SSL_CERT_LOAD_FROM_FILES2_DIR}"
       fi
    fi
-   pbxfuncname="pjsip/include/pjsip/sip_util.h"
+   pbxfuncname="pj_ssl_cert_load_from_files2"
    if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
       AST_PJ_SSL_CERT_LOAD_FROM_FILES2_FOUND=yes
    else
@@ -24977,8 +25883,620 @@ rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 
       LIBS="${saved_libs}"
       CPPFLAGS="${saved_cppflags}"
+
+
+if test "x${PBX_PJSIP_EVSUB_GRP_LOCK}" != "x1" -a "${USE_PJSIP_EVSUB_GRP_LOCK}" != "no"; then
+   pbxlibdir=""
+   # if --with-PJSIP_EVSUB_GRP_LOCK=DIR has been specified, use it.
+   if test "x${PJSIP_EVSUB_GRP_LOCK_DIR}" != "x"; then
+      if test -d ${PJSIP_EVSUB_GRP_LOCK_DIR}/lib; then
+         pbxlibdir="-L${PJSIP_EVSUB_GRP_LOCK_DIR}/lib"
+      else
+         pbxlibdir="-L${PJSIP_EVSUB_GRP_LOCK_DIR}"
+      fi
+   fi
+   pbxfuncname="pjsip_evsub_add_ref"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_PJSIP_EVSUB_GRP_LOCK_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} $PJPROJECT_CFLAGS"
+      as_ac_Lib=`$as_echo "ac_cv_lib_pjsip_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lpjsip" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lpjsip... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpjsip ${pbxlibdir} $PJPROJECT_LIB $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_PJSIP_EVSUB_GRP_LOCK_FOUND=yes
+else
+  AST_PJSIP_EVSUB_GRP_LOCK_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_PJSIP_EVSUB_GRP_LOCK_FOUND}" = "yes"; then
+      PJSIP_EVSUB_GRP_LOCK_LIB="${pbxlibdir} -lpjsip $PJPROJECT_LIB"
+      # if --with-PJSIP_EVSUB_GRP_LOCK=DIR has been specified, use it.
+      if test "x${PJSIP_EVSUB_GRP_LOCK_DIR}" != "x"; then
+         PJSIP_EVSUB_GRP_LOCK_INCLUDE="-I${PJSIP_EVSUB_GRP_LOCK_DIR}/include"
+      fi
+      PJSIP_EVSUB_GRP_LOCK_INCLUDE="${PJSIP_EVSUB_GRP_LOCK_INCLUDE} $PJPROJECT_CFLAGS"
+      if test "xpjsip.h" = "x" ; then	# no header, assume found
+         PJSIP_EVSUB_GRP_LOCK_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${PJSIP_EVSUB_GRP_LOCK_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "pjsip.h" "ac_cv_header_pjsip_h" "$ac_includes_default"
+if test "x$ac_cv_header_pjsip_h" = xyes; then :
+  PJSIP_EVSUB_GRP_LOCK_HEADER_FOUND=1
+else
+  PJSIP_EVSUB_GRP_LOCK_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${PJSIP_EVSUB_GRP_LOCK_HEADER_FOUND}" = "x0" ; then
+         PJSIP_EVSUB_GRP_LOCK_LIB=""
+         PJSIP_EVSUB_GRP_LOCK_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            PJSIP_EVSUB_GRP_LOCK_LIB=""
+         fi
+         PBX_PJSIP_EVSUB_GRP_LOCK=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_PJSIP_EVSUB_GRP_LOCK 1
+_ACEOF
+
+      fi
    fi
 fi
+
+
+
+if test "x${PBX_PJSIP_INV_SESSION_REF}" != "x1" -a "${USE_PJSIP_INV_SESSION_REF}" != "no"; then
+   pbxlibdir=""
+   # if --with-PJSIP_INV_SESSION_REF=DIR has been specified, use it.
+   if test "x${PJSIP_INV_SESSION_REF_DIR}" != "x"; then
+      if test -d ${PJSIP_INV_SESSION_REF_DIR}/lib; then
+         pbxlibdir="-L${PJSIP_INV_SESSION_REF_DIR}/lib"
+      else
+         pbxlibdir="-L${PJSIP_INV_SESSION_REF_DIR}"
+      fi
+   fi
+   pbxfuncname="pjsip_inv_add_ref"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_PJSIP_INV_SESSION_REF_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} $PJPROJECT_CFLAGS"
+      as_ac_Lib=`$as_echo "ac_cv_lib_pjsip_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lpjsip" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lpjsip... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpjsip ${pbxlibdir} $PJPROJECT_LIB $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_PJSIP_INV_SESSION_REF_FOUND=yes
+else
+  AST_PJSIP_INV_SESSION_REF_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_PJSIP_INV_SESSION_REF_FOUND}" = "yes"; then
+      PJSIP_INV_SESSION_REF_LIB="${pbxlibdir} -lpjsip $PJPROJECT_LIB"
+      # if --with-PJSIP_INV_SESSION_REF=DIR has been specified, use it.
+      if test "x${PJSIP_INV_SESSION_REF_DIR}" != "x"; then
+         PJSIP_INV_SESSION_REF_INCLUDE="-I${PJSIP_INV_SESSION_REF_DIR}/include"
+      fi
+      PJSIP_INV_SESSION_REF_INCLUDE="${PJSIP_INV_SESSION_REF_INCLUDE} $PJPROJECT_CFLAGS"
+      if test "xpjsip.h" = "x" ; then	# no header, assume found
+         PJSIP_INV_SESSION_REF_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${PJSIP_INV_SESSION_REF_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "pjsip.h" "ac_cv_header_pjsip_h" "$ac_includes_default"
+if test "x$ac_cv_header_pjsip_h" = xyes; then :
+  PJSIP_INV_SESSION_REF_HEADER_FOUND=1
+else
+  PJSIP_INV_SESSION_REF_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${PJSIP_INV_SESSION_REF_HEADER_FOUND}" = "x0" ; then
+         PJSIP_INV_SESSION_REF_LIB=""
+         PJSIP_INV_SESSION_REF_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            PJSIP_INV_SESSION_REF_LIB=""
+         fi
+         PBX_PJSIP_INV_SESSION_REF=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_PJSIP_INV_SESSION_REF 1
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+
+if test "x${PBX_PJSIP_AUTH_CLT_DEINIT}" != "x1" -a "${USE_PJSIP_AUTH_CLT_DEINIT}" != "no"; then
+   pbxlibdir=""
+   # if --with-PJSIP_AUTH_CLT_DEINIT=DIR has been specified, use it.
+   if test "x${PJSIP_AUTH_CLT_DEINIT_DIR}" != "x"; then
+      if test -d ${PJSIP_AUTH_CLT_DEINIT_DIR}/lib; then
+         pbxlibdir="-L${PJSIP_AUTH_CLT_DEINIT_DIR}/lib"
+      else
+         pbxlibdir="-L${PJSIP_AUTH_CLT_DEINIT_DIR}"
+      fi
+   fi
+   pbxfuncname="pjsip_auth_clt_deinit"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_PJSIP_AUTH_CLT_DEINIT_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} $PJPROJECT_CFLAGS"
+      as_ac_Lib=`$as_echo "ac_cv_lib_pjsip_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lpjsip" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lpjsip... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpjsip ${pbxlibdir} $PJPROJECT_LIB $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_PJSIP_AUTH_CLT_DEINIT_FOUND=yes
+else
+  AST_PJSIP_AUTH_CLT_DEINIT_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_PJSIP_AUTH_CLT_DEINIT_FOUND}" = "yes"; then
+      PJSIP_AUTH_CLT_DEINIT_LIB="${pbxlibdir} -lpjsip $PJPROJECT_LIB"
+      # if --with-PJSIP_AUTH_CLT_DEINIT=DIR has been specified, use it.
+      if test "x${PJSIP_AUTH_CLT_DEINIT_DIR}" != "x"; then
+         PJSIP_AUTH_CLT_DEINIT_INCLUDE="-I${PJSIP_AUTH_CLT_DEINIT_DIR}/include"
+      fi
+      PJSIP_AUTH_CLT_DEINIT_INCLUDE="${PJSIP_AUTH_CLT_DEINIT_INCLUDE} $PJPROJECT_CFLAGS"
+      if test "xpjsip.h" = "x" ; then	# no header, assume found
+         PJSIP_AUTH_CLT_DEINIT_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${PJSIP_AUTH_CLT_DEINIT_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "pjsip.h" "ac_cv_header_pjsip_h" "$ac_includes_default"
+if test "x$ac_cv_header_pjsip_h" = xyes; then :
+  PJSIP_AUTH_CLT_DEINIT_HEADER_FOUND=1
+else
+  PJSIP_AUTH_CLT_DEINIT_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${PJSIP_AUTH_CLT_DEINIT_HEADER_FOUND}" = "x0" ; then
+         PJSIP_AUTH_CLT_DEINIT_LIB=""
+         PJSIP_AUTH_CLT_DEINIT_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            PJSIP_AUTH_CLT_DEINIT_LIB=""
+         fi
+         PBX_PJSIP_AUTH_CLT_DEINIT=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_PJSIP_AUTH_CLT_DEINIT 1
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+
+if test "x${PBX_PJSIP_EVSUB_SET_UAS_TIMEOUT}" != "x1" -a "${USE_PJSIP_EVSUB_SET_UAS_TIMEOUT}" != "no"; then
+   pbxlibdir=""
+   # if --with-PJSIP_EVSUB_SET_UAS_TIMEOUT=DIR has been specified, use it.
+   if test "x${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}" != "x"; then
+      if test -d ${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}/lib; then
+         pbxlibdir="-L${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}/lib"
+      else
+         pbxlibdir="-L${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}"
+      fi
+   fi
+   pbxfuncname="pjsip_evsub_set_uas_timeout"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_PJSIP_EVSUB_SET_UAS_TIMEOUT_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} $PJPROJECT_CFLAGS"
+      as_ac_Lib=`$as_echo "ac_cv_lib_pjsip_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lpjsip" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lpjsip... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpjsip ${pbxlibdir} $PJPROJECT_LIB $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_PJSIP_EVSUB_SET_UAS_TIMEOUT_FOUND=yes
+else
+  AST_PJSIP_EVSUB_SET_UAS_TIMEOUT_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_PJSIP_EVSUB_SET_UAS_TIMEOUT_FOUND}" = "yes"; then
+      PJSIP_EVSUB_SET_UAS_TIMEOUT_LIB="${pbxlibdir} -lpjsip $PJPROJECT_LIB"
+      # if --with-PJSIP_EVSUB_SET_UAS_TIMEOUT=DIR has been specified, use it.
+      if test "x${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}" != "x"; then
+         PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE="-I${PJSIP_EVSUB_SET_UAS_TIMEOUT_DIR}/include"
+      fi
+      PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE="${PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE} $PJPROJECT_CFLAGS"
+      if test "xpjsip.h" = "x" ; then	# no header, assume found
+         PJSIP_EVSUB_SET_UAS_TIMEOUT_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "pjsip.h" "ac_cv_header_pjsip_h" "$ac_includes_default"
+if test "x$ac_cv_header_pjsip_h" = xyes; then :
+  PJSIP_EVSUB_SET_UAS_TIMEOUT_HEADER_FOUND=1
+else
+  PJSIP_EVSUB_SET_UAS_TIMEOUT_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${PJSIP_EVSUB_SET_UAS_TIMEOUT_HEADER_FOUND}" = "x0" ; then
+         PJSIP_EVSUB_SET_UAS_TIMEOUT_LIB=""
+         PJSIP_EVSUB_SET_UAS_TIMEOUT_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            PJSIP_EVSUB_SET_UAS_TIMEOUT_LIB=""
+         fi
+         PBX_PJSIP_EVSUB_SET_UAS_TIMEOUT=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_PJSIP_EVSUB_SET_UAS_TIMEOUT 1
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+
+if test "x${PBX_PJSIP_TSX_LAYER_FIND_TSX2}" != "x1" -a "${USE_PJSIP_TSX_LAYER_FIND_TSX2}" != "no"; then
+   pbxlibdir=""
+   # if --with-PJSIP_TSX_LAYER_FIND_TSX2=DIR has been specified, use it.
+   if test "x${PJSIP_TSX_LAYER_FIND_TSX2_DIR}" != "x"; then
+      if test -d ${PJSIP_TSX_LAYER_FIND_TSX2_DIR}/lib; then
+         pbxlibdir="-L${PJSIP_TSX_LAYER_FIND_TSX2_DIR}/lib"
+      else
+         pbxlibdir="-L${PJSIP_TSX_LAYER_FIND_TSX2_DIR}"
+      fi
+   fi
+   pbxfuncname="pjsip_tsx_layer_find_tsx2"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_PJSIP_TSX_LAYER_FIND_TSX2_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} $PJPROJECT_CFLAGS"
+      as_ac_Lib=`$as_echo "ac_cv_lib_pjsip_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lpjsip" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lpjsip... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lpjsip ${pbxlibdir} $PJPROJECT_LIB $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_PJSIP_TSX_LAYER_FIND_TSX2_FOUND=yes
+else
+  AST_PJSIP_TSX_LAYER_FIND_TSX2_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_PJSIP_TSX_LAYER_FIND_TSX2_FOUND}" = "yes"; then
+      PJSIP_TSX_LAYER_FIND_TSX2_LIB="${pbxlibdir} -lpjsip $PJPROJECT_LIB"
+      # if --with-PJSIP_TSX_LAYER_FIND_TSX2=DIR has been specified, use it.
+      if test "x${PJSIP_TSX_LAYER_FIND_TSX2_DIR}" != "x"; then
+         PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE="-I${PJSIP_TSX_LAYER_FIND_TSX2_DIR}/include"
+      fi
+      PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE="${PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE} $PJPROJECT_CFLAGS"
+      if test "xpjsip.h" = "x" ; then	# no header, assume found
+         PJSIP_TSX_LAYER_FIND_TSX2_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "pjsip.h" "ac_cv_header_pjsip_h" "$ac_includes_default"
+if test "x$ac_cv_header_pjsip_h" = xyes; then :
+  PJSIP_TSX_LAYER_FIND_TSX2_HEADER_FOUND=1
+else
+  PJSIP_TSX_LAYER_FIND_TSX2_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${PJSIP_TSX_LAYER_FIND_TSX2_HEADER_FOUND}" = "x0" ; then
+         PJSIP_TSX_LAYER_FIND_TSX2_LIB=""
+         PJSIP_TSX_LAYER_FIND_TSX2_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            PJSIP_TSX_LAYER_FIND_TSX2_LIB=""
+         fi
+         PBX_PJSIP_TSX_LAYER_FIND_TSX2=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_PJSIP_TSX_LAYER_FIND_TSX2 1
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+   fi
+fi
+
+
+
+
+   if test "x${PBX_PYTHONDEV}" != "x1" -a "${USE_PYTHONDEV}" != "no"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for PYTHONDEV" >&5
+$as_echo_n "checking for PYTHONDEV... " >&6; }
+
+if test -n "$PYTHONDEV_CFLAGS"; then
+    pkg_cv_PYTHONDEV_CFLAGS="$PYTHONDEV_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"python\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "python") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PYTHONDEV_CFLAGS=`$PKG_CONFIG --cflags "python" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$PYTHONDEV_LIBS"; then
+    pkg_cv_PYTHONDEV_LIBS="$PYTHONDEV_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"python\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "python") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_PYTHONDEV_LIBS=`$PKG_CONFIG --libs "python" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        PYTHONDEV_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "python" 2>&1`
+        else
+	        PYTHONDEV_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "python" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$PYTHONDEV_PKG_ERRORS" >&5
+
+
+            PBX_PYTHONDEV=0
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+            PBX_PYTHONDEV=0
+
+
+else
+	PYTHONDEV_CFLAGS=$pkg_cv_PYTHONDEV_CFLAGS
+	PYTHONDEV_LIBS=$pkg_cv_PYTHONDEV_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+            PBX_PYTHONDEV=1
+            PYTHONDEV_INCLUDE="$PYTHONDEV_CFLAGS"
+            PYTHONDEV_LIB="$PYTHONDEV_LIBS"
+
+$as_echo "#define HAVE_PYTHONDEV 1" >>confdefs.h
+
+
+fi
+   fi
+
 
 
 if test "x${PBX_POPT}" != "x1" -a "${USE_POPT}" != "no"; then
@@ -30849,53 +32367,6 @@ fi
 if test "$PBX_OPENSSL" = "1";
 then
 
-    if test "x${PBX_OPENSSL_ECDH_AUTO}" != "x1" -a "${USE_OPENSSL_ECDH_AUTO}" != "no"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_CTX_set_ecdh_auto declared in openssl/ssl.h" >&5
-$as_echo_n "checking for SSL_CTX_set_ecdh_auto declared in openssl/ssl.h... " >&6; }
-        saved_cppflags="${CPPFLAGS}"
-        if test "x${OPENSSL_ECDH_AUTO_DIR}" != "x"; then
-            OPENSSL_ECDH_AUTO_INCLUDE="-I${OPENSSL_ECDH_AUTO_DIR}/include"
-        fi
-        CPPFLAGS="${CPPFLAGS} ${OPENSSL_ECDH_AUTO_INCLUDE}"
-
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
- #include <openssl/ssl.h>
-int
-main ()
-{
-#if !defined(SSL_CTX_set_ecdh_auto)
-                                    (void) SSL_CTX_set_ecdh_auto;
-                                #endif
-
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-                PBX_OPENSSL_ECDH_AUTO=1
-
-$as_echo "#define HAVE_OPENSSL_ECDH_AUTO 1" >>confdefs.h
-
-
-
-else
-     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-
-        CPPFLAGS="${saved_cppflags}"
-    fi
-
-fi
-
-if test "$PBX_OPENSSL" = "1";
-then
-
     if test "x${PBX_SSL_OP_NO_TLSV1_1}" != "x1"; then
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SSL_OP_NO_TLSv1_1 in openssl/ssl.h" >&5
 $as_echo_n "checking for SSL_OP_NO_TLSv1_1 in openssl/ssl.h... " >&6; }
@@ -31006,6 +32477,308 @@ if test "x${PBX_SRTP}" != "x1" -a "${USE_SRTP}" != "no"; then
    else
       ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
       CFLAGS="${CFLAGS} "
+      as_ac_Lib=`$as_echo "ac_cv_lib_srtp2_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lsrtp2" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lsrtp2... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsrtp2 ${pbxlibdir}  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_SRTP_FOUND=yes
+else
+  AST_SRTP_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_SRTP_FOUND}" = "yes"; then
+      SRTP_LIB="${pbxlibdir} -lsrtp2 "
+      # if --with-SRTP=DIR has been specified, use it.
+      if test "x${SRTP_DIR}" != "x"; then
+         SRTP_INCLUDE="-I${SRTP_DIR}/include"
+      fi
+      SRTP_INCLUDE="${SRTP_INCLUDE} "
+      if test "xsrtp2/srtp.h" = "x" ; then	# no header, assume found
+         SRTP_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${SRTP_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "srtp2/srtp.h" "ac_cv_header_srtp2_srtp_h" "$ac_includes_default"
+if test "x$ac_cv_header_srtp2_srtp_h" = xyes; then :
+  SRTP_HEADER_FOUND=1
+else
+  SRTP_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${SRTP_HEADER_FOUND}" = "x0" ; then
+         SRTP_LIB=""
+         SRTP_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            SRTP_LIB=""
+         fi
+         PBX_SRTP=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_SRTP 1
+_ACEOF
+
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_SRTP_VERSION 2
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+
+if test "x${PBX_SRTP}" = "x1"; then
+   ast_ext_lib_check_shared_saved_libs="${LIBS}"
+   ast_ext_lib_check_shared_saved_ldflags="${LDFLAGS}"
+   ast_ext_lib_check_shared_saved_cflags="${CFLAGS}"
+   LIBS="${LIBS} ${SRTP_LIB} "
+   LDFLAGS="${LDFLAGS} -shared -fPIC"
+   CFLAGS="${CFLAGS} ${SRTP_INCLUDE} "
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the ability of -lsrtp2 to be linked in a shared object" >&5
+$as_echo_n "checking for the ability of -lsrtp2 to be linked in a shared object... " >&6; }
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+       #include <srtp2/srtp.h>
+int
+main ()
+{
+srtp_init();
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+
+else
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
+$as_echo "$as_me: WARNING: ***" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** libsrtp2 could not be linked as a shared object." >&5
+$as_echo "$as_me: WARNING: *** libsrtp2 could not be linked as a shared object." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** Try compiling libsrtp2 manually. Configure libsrtp2" >&5
+$as_echo "$as_me: WARNING: *** Try compiling libsrtp2 manually. Configure libsrtp2" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** with ./configure --prefix=/usr replacing /usr with" >&5
+$as_echo "$as_me: WARNING: *** with ./configure --prefix=/usr replacing /usr with" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** the prefix of your choice, and then make with" >&5
+$as_echo "$as_me: WARNING: *** the prefix of your choice, and then make with" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** 'make libsrtp2.so'" >&5
+$as_echo "$as_me: WARNING: *** 'make libsrtp2.so'" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
+$as_echo "$as_me: WARNING: ***" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** After re-installing libsrtp2, re-run the Asterisk" >&5
+$as_echo "$as_me: WARNING: *** After re-installing libsrtp2, re-run the Asterisk" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** configure script." >&5
+$as_echo "$as_me: WARNING: *** configure script." >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
+$as_echo "$as_me: WARNING: ***" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** If you do not need SRTP support re-run configure" >&5
+$as_echo "$as_me: WARNING: *** If you do not need SRTP support re-run configure" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** with the --without-srtp option." >&5
+$as_echo "$as_me: WARNING: *** with the --without-srtp option." >&2;}
+    exit 1
+
+
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+   CFLAGS="${ast_ext_lib_check_shared_saved_cflags}"
+   LDFLAGS="${ast_ext_lib_check_shared_saved_ldflags}"
+   LIBS="${ast_ext_lib_check_shared_saved_libs}"
+fi
+
+
+if test "x$PBX_SRTP" = x1;
+then
+
+if test "x${PBX_SRTP_SHUTDOWN}" != "x1" -a "${USE_SRTP_SHUTDOWN}" != "no"; then
+   pbxlibdir=""
+   # if --with-SRTP_SHUTDOWN=DIR has been specified, use it.
+   if test "x${SRTP_SHUTDOWN_DIR}" != "x"; then
+      if test -d ${SRTP_SHUTDOWN_DIR}/lib; then
+         pbxlibdir="-L${SRTP_SHUTDOWN_DIR}/lib"
+      else
+         pbxlibdir="-L${SRTP_SHUTDOWN_DIR}"
+      fi
+   fi
+   pbxfuncname="srtp_shutdown"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_SRTP_SHUTDOWN_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} "
+      as_ac_Lib=`$as_echo "ac_cv_lib_srtp2_${pbxfuncname}" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lsrtp2" >&5
+$as_echo_n "checking for ${pbxfuncname} in -lsrtp2... " >&6; }
+if eval \${$as_ac_Lib+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsrtp2 ${pbxlibdir}  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char ${pbxfuncname} ();
+int
+main ()
+{
+return ${pbxfuncname} ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  eval "$as_ac_Lib=yes"
+else
+  eval "$as_ac_Lib=no"
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+eval ac_res=\$$as_ac_Lib
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if eval test \"x\$"$as_ac_Lib"\" = x"yes"; then :
+  AST_SRTP_SHUTDOWN_FOUND=yes
+else
+  AST_SRTP_SHUTDOWN_FOUND=no
+fi
+
+      CFLAGS="${ast_ext_lib_check_save_CFLAGS}"
+   fi
+
+   # now check for the header.
+   if test "${AST_SRTP_SHUTDOWN_FOUND}" = "yes"; then
+      SRTP_SHUTDOWN_LIB="${pbxlibdir} -lsrtp2 "
+      # if --with-SRTP_SHUTDOWN=DIR has been specified, use it.
+      if test "x${SRTP_SHUTDOWN_DIR}" != "x"; then
+         SRTP_SHUTDOWN_INCLUDE="-I${SRTP_SHUTDOWN_DIR}/include"
+      fi
+      SRTP_SHUTDOWN_INCLUDE="${SRTP_SHUTDOWN_INCLUDE} "
+      if test "xsrtp2/srtp.h" = "x" ; then	# no header, assume found
+         SRTP_SHUTDOWN_HEADER_FOUND="1"
+      else				# check for the header
+         ast_ext_lib_check_saved_CPPFLAGS="${CPPFLAGS}"
+         CPPFLAGS="${CPPFLAGS} ${SRTP_SHUTDOWN_INCLUDE}"
+         ac_fn_c_check_header_mongrel "$LINENO" "srtp2/srtp.h" "ac_cv_header_srtp2_srtp_h" "$ac_includes_default"
+if test "x$ac_cv_header_srtp2_srtp_h" = xyes; then :
+  SRTP_SHUTDOWN_HEADER_FOUND=1
+else
+  SRTP_SHUTDOWN_HEADER_FOUND=0
+fi
+
+
+         CPPFLAGS="${ast_ext_lib_check_saved_CPPFLAGS}"
+      fi
+      if test "x${SRTP_SHUTDOWN_HEADER_FOUND}" = "x0" ; then
+         SRTP_SHUTDOWN_LIB=""
+         SRTP_SHUTDOWN_INCLUDE=""
+      else
+         if test "x${pbxfuncname}" = "x" ; then		# only checking headers -> no library
+            SRTP_SHUTDOWN_LIB=""
+         fi
+         PBX_SRTP_SHUTDOWN=1
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_SRTP_SHUTDOWN 1
+_ACEOF
+
+      fi
+   fi
+fi
+
+
+
+    # libsrtp2 removed support for PRNG, so we require OpenSSL
+    if test "x$PBX_OPENSSL" != x1;
+    then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
+$as_echo "$as_me: WARNING: ***" >&2;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** OpenSSL required when using libsrtp2, checking for libsrtp instead." >&5
+$as_echo "$as_me: WARNING: *** OpenSSL required when using libsrtp2, checking for libsrtp instead." >&2;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
+$as_echo "$as_me: WARNING: ***" >&2;}
+        PBX_SRTP=0
+    fi
+fi
+
+if test "x$PBX_SRTP" != x1;
+then
+
+if test "x${PBX_SRTP}" != "x1" -a "${USE_SRTP}" != "no"; then
+   pbxlibdir=""
+   # if --with-SRTP=DIR has been specified, use it.
+   if test "x${SRTP_DIR}" != "x"; then
+      if test -d ${SRTP_DIR}/lib; then
+         pbxlibdir="-L${SRTP_DIR}/lib"
+      else
+         pbxlibdir="-L${SRTP_DIR}"
+      fi
+   fi
+   pbxfuncname="srtp_init"
+   if test "x${pbxfuncname}" = "x" ; then   # empty lib, assume only headers
+      AST_SRTP_FOUND=yes
+   else
+      ast_ext_lib_check_save_CFLAGS="${CFLAGS}"
+      CFLAGS="${CFLAGS} "
       as_ac_Lib=`$as_echo "ac_cv_lib_srtp_${pbxfuncname}" | $as_tr_sh`
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ${pbxfuncname} in -lsrtp" >&5
 $as_echo_n "checking for ${pbxfuncname} in -lsrtp... " >&6; }
@@ -31088,26 +32861,29 @@ fi
 #define HAVE_SRTP 1
 _ACEOF
 
+         cat >>confdefs.h <<_ACEOF
+#define HAVE_SRTP_VERSION 1
+_ACEOF
+
       fi
    fi
 fi
 
 
 
-if test "$PBX_SRTP" = "1";
-then
-    saved_libs="${LIBS}"
-    saved_ldflags="${LDFLAGS}"
-    saved_cflags="${CFLAGS}"
-    LIBS="${LIBS} ${SRTP_LIB}"
-    LDFLAGS="${LDFLAGS} -shared -fPIC"
-    CFLAGS="${CFLAGS} ${SRTP_INCLUDE}"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the ability of -lsrtp to be linked in a shared object" >&5
+if test "x${PBX_SRTP}" = "x1"; then
+   ast_ext_lib_check_shared_saved_libs="${LIBS}"
+   ast_ext_lib_check_shared_saved_ldflags="${LDFLAGS}"
+   ast_ext_lib_check_shared_saved_cflags="${CFLAGS}"
+   LIBS="${LIBS} ${SRTP_LIB} "
+   LDFLAGS="${LDFLAGS} -shared -fPIC"
+   CFLAGS="${CFLAGS} ${SRTP_INCLUDE} "
+   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the ability of -lsrtp to be linked in a shared object" >&5
 $as_echo_n "checking for the ability of -lsrtp to be linked in a shared object... " >&6; }
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        #include <srtp/srtp.h>
+       #include <srtp/srtp.h>
 int
 main ()
 {
@@ -31119,12 +32895,16 @@ srtp_init();
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
-   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+
+
 else
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
+
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
 $as_echo "$as_me: WARNING: ***" >&2;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** libsrtp could not be linked as a shared object." >&5
@@ -31135,8 +32915,8 @@ $as_echo "$as_me: WARNING: *** Try compiling libsrtp manually. Configure libsrtp
 $as_echo "$as_me: WARNING: *** with ./configure CFLAGS=-fPIC --prefix=/usr" >&2;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** replacing /usr with the prefix of your choice." >&5
 $as_echo "$as_me: WARNING: *** replacing /usr with the prefix of your choice." >&2;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** After re-installing libsrtp" >&5
-$as_echo "$as_me: WARNING: *** After re-installing libsrtp" >&2;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** After re-installing libsrtp, re-run the Asterisk" >&5
+$as_echo "$as_me: WARNING: *** After re-installing libsrtp, re-run the Asterisk" >&2;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: *** configure script." >&5
 $as_echo "$as_me: WARNING: *** configure script." >&2;}
         { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ***" >&5
@@ -31148,14 +32928,18 @@ $as_echo "$as_me: WARNING: *** with the --without-srtp option." >&2;}
         exit 1
 
 
+
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    LIBS="${saved_libs}"
-    LDFLAGS="${saved_ldflags}"
-    CFLAGS="${saved_cflags}"
+   CFLAGS="${ast_ext_lib_check_shared_saved_cflags}"
+   LDFLAGS="${ast_ext_lib_check_shared_saved_ldflags}"
+   LIBS="${ast_ext_lib_check_shared_saved_libs}"
 fi
 
+
+    if test "x$PBX_SRTP" = x1;
+    then
 
 if test "x${PBX_SRTP_SHUTDOWN}" != "x1" -a "${USE_SRTP_SHUTDOWN}" != "no"; then
    pbxlibdir=""
@@ -31260,6 +33044,8 @@ _ACEOF
 fi
 
 
+    fi
+fi
 
 for ver in 2.0 2.2 2.4 2.6; do
 
@@ -33023,6 +34809,98 @@ fi
 
 
 
+
+
+
+
+
+
+   if test "x${PBX_SYSTEMD}" != "x1" -a "${USE_SYSTEMD}" != "no"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for SYSTEMD" >&5
+$as_echo_n "checking for SYSTEMD... " >&6; }
+
+if test -n "$SYSTEMD_CFLAGS"; then
+    pkg_cv_SYSTEMD_CFLAGS="$SYSTEMD_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsystemd\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsystemd") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SYSTEMD_CFLAGS=`$PKG_CONFIG --cflags "libsystemd" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$SYSTEMD_LIBS"; then
+    pkg_cv_SYSTEMD_LIBS="$SYSTEMD_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libsystemd\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libsystemd") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_SYSTEMD_LIBS=`$PKG_CONFIG --libs "libsystemd" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        SYSTEMD_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "libsystemd" 2>&1`
+        else
+	        SYSTEMD_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "libsystemd" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$SYSTEMD_PKG_ERRORS" >&5
+
+
+            PBX_SYSTEMD=0
+
+
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+            PBX_SYSTEMD=0
+
+
+else
+	SYSTEMD_CFLAGS=$pkg_cv_SYSTEMD_CFLAGS
+	SYSTEMD_LIBS=$pkg_cv_SYSTEMD_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+            PBX_SYSTEMD=1
+            SYSTEMD_INCLUDE="$SYSTEMD_CFLAGS"
+            SYSTEMD_LIB="$SYSTEMD_LIBS"
+
+$as_echo "#define HAVE_SYSTEMD 1" >>confdefs.h
+
+
+fi
+   fi
 
 
 PBX_SYSLOG=0

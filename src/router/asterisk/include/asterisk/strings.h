@@ -26,6 +26,7 @@
 /* #define DEBUG_OPAQUE */
 
 #include <ctype.h>
+#include <limits.h>
 
 #include "asterisk/utils.h"
 #include "asterisk/threadstorage.h"
@@ -616,7 +617,7 @@ int ast_regex_string_to_regex_pattern(const char *regex_string, struct ast_str *
  * \note The result of this function is dynamically allocated memory, and must
  *       be free()'d after it is no longer needed.
  */
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+#ifdef __AST_DEBUG_MALLOC
 #define	ast_str_create(a)	_ast_str_create(a,__FILE__,__LINE__,__PRETTY_FUNCTION__)
 AST_INLINE_API(
 struct ast_str * attribute_malloc _ast_str_create(size_t init_len,
@@ -688,7 +689,7 @@ void ast_str_trim_blanks(struct ast_str *buf),
 	if (!buf) {
 		return;
 	}
-	while (buf->__AST_STR_USED && buf->__AST_STR_STR[buf->__AST_STR_USED - 1] < 33) {
+	while (buf->__AST_STR_USED && ((unsigned char) buf->__AST_STR_STR[buf->__AST_STR_USED - 1]) < 33) {
 		buf->__AST_STR_STR[--(buf->__AST_STR_USED)] = '\0';
 	}
 }
@@ -771,7 +772,7 @@ char *ast_str_truncate(struct ast_str *buf, ssize_t len),
 /*!
  * Make space in a new string (e.g. to read in data from a file)
  */
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+#ifdef __AST_DEBUG_MALLOC
 AST_INLINE_API(
 int _ast_str_make_space(struct ast_str **buf, size_t new_len, const char *file, int lineno, const char *function),
 {
@@ -964,7 +965,7 @@ enum {
  *       through calling one of the other functions or macros defined in this
  *       file.
  */
-#if (defined(MALLOC_DEBUG) && !defined(STANDALONE))
+#ifdef __AST_DEBUG_MALLOC
 int __attribute__((format(printf, 4, 0))) __ast_debug_str_helper(struct ast_str **buf, ssize_t max_len,
 							   int append, const char *fmt, va_list ap, const char *file, int lineno, const char *func);
 #define __ast_str_helper(a,b,c,d,e)	__ast_debug_str_helper(a,b,c,d,e,__FILE__,__LINE__,__PRETTY_FUNCTION__)
@@ -1174,6 +1175,19 @@ char *ast_tech_to_upper(char *dev_str),
 )
 
 /*!
+ * \brief Restrict hash value range
+ *
+ * \details
+ * Hash values used all over asterisk are expected to be non-negative
+ * (signed) int values.  This function restricts an unsigned int hash
+ * value to the positive half of the (signed) int values.
+ */
+static force_inline int attribute_pure ast_str_hash_restrict(unsigned int hash)
+{
+	return (int) (hash & (unsigned int) INT_MAX);
+}
+
+/*!
  * \brief Compute a hash value on a string
  *
  * This famous hash algorithm was written by Dan Bernstein and is
@@ -1183,20 +1197,21 @@ char *ast_tech_to_upper(char *dev_str),
  */
 static force_inline int attribute_pure ast_str_hash(const char *str)
 {
-	int hash = 5381;
+	unsigned int hash = 5381;
 
-	while (*str)
-		hash = hash * 33 ^ *str++;
+	while (*str) {
+		hash = hash * 33 ^ (unsigned char) *str++;
+	}
 
-	return abs(hash);
+	return ast_str_hash_restrict(hash);
 }
 
 /*!
  * \brief Compute a hash value on a string
  *
  * \param[in] str The string to add to the hash
- * \param[in] hash The hash value to add to
- * 
+ * \param[in] seed The hash value to start with
+ *
  * \details
  * This version of the function is for when you need to compute a
  * string hash of more than one string.
@@ -1206,12 +1221,15 @@ static force_inline int attribute_pure ast_str_hash(const char *str)
  *
  * \sa http://www.cse.yorku.ca/~oz/hash.html
  */
-static force_inline int ast_str_hash_add(const char *str, int hash)
+static force_inline int ast_str_hash_add(const char *str, int seed)
 {
-	while (*str)
-		hash = hash * 33 ^ *str++;
+	unsigned int hash = (unsigned int) seed;
 
-	return abs(hash);
+	while (*str) {
+		hash = hash * 33 ^ (unsigned char) *str++;
+	}
+
+	return ast_str_hash_restrict(hash);
 }
 
 /*!
@@ -1223,13 +1241,13 @@ static force_inline int ast_str_hash_add(const char *str, int hash)
  */
 static force_inline int attribute_pure ast_str_case_hash(const char *str)
 {
-	int hash = 5381;
+	unsigned int hash = 5381;
 
 	while (*str) {
-		hash = hash * 33 ^ tolower(*str++);
+		hash = hash * 33 ^ (unsigned char) tolower(*str++);
 	}
 
-	return abs(hash);
+	return ast_str_hash_restrict(hash);
 }
 
 /*!

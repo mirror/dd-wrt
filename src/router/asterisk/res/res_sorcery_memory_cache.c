@@ -83,6 +83,9 @@
 			<parameter name="Object" required="true">
 				<para>The name of the object to mark as stale.</para>
 			</parameter>
+			<parameter name="Reload" required="false">
+				<para>If true, then immediately reload the object from the backend cache instead of waiting for the next retrieval</para>
+			</parameter>
 		</syntax>
 		<description>
 			<para>Marks an object as stale within a sorcery memory cache.</para>
@@ -1394,10 +1397,8 @@ static void sorcery_memory_cache_load(void *data, const struct ast_sorcery *sorc
 	ast_debug(1, "Memory cache '%s' associated with sorcery instance '%p' of module '%s' with object type '%s'\n",
 		cache->name, sorcery, ast_sorcery_get_module(sorcery), type);
 
-	if (cache->full_backend_cache) {
-		cache->sorcery = sorcery;
-		cache->object_type = ast_strdup(type);
-	}
+	cache->sorcery = sorcery;
+	cache->object_type = ast_strdup(type);
 }
 
 /*!
@@ -1555,7 +1556,7 @@ static int sorcery_memory_cache_delete(const struct ast_sorcery *sorcery, void *
 	ao2_unlock(cache->objects);
 
 	if (res) {
-		ast_log(LOG_ERROR, "Unable to delete object '%s' from sorcery cache\n", ast_sorcery_object_get_id(object));
+		ast_debug(1, "Unable to delete object '%s' from sorcery cache\n", ast_sorcery_object_get_id(object));
 	}
 
 	return res;
@@ -1865,26 +1866,40 @@ static char *sorcery_memory_cache_expire(struct ast_cli_entry *e, int cmd, struc
 static char *sorcery_memory_cache_stale(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct sorcery_memory_cache *cache;
+	int reload = 0;
 
 	switch (cmd) {
 	case CLI_INIT:
 		e->command = "sorcery memory cache stale";
 		e->usage =
-		    "Usage: sorcery memory cache stale <cache name> [object name]\n"
-		    "       Mark a specific object or ALL objects as stale in a sorcery memory cache.\n";
+		    "Usage: sorcery memory cache stale <cache name> [object name [reload]]\n"
+		    "       Mark a specific object or ALL objects as stale in a sorcery memory cache.\n"
+		    "       If \"reload\" is specified, then the object is marked stale and immediately\n"
+		    "       retrieved from backend storage to repopulate the cache\n";
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 4) {
 			return sorcery_memory_cache_complete_name(a->word, a->n);
 		} else if (a->pos == 5) {
 			return sorcery_memory_cache_complete_object_name(a->argv[4], a->word, a->n);
+		} else if (a->pos == 6) {
+			static const char * const completions[] = { "reload", NULL };
+			return ast_cli_complete(a->word, completions, a->n);
 		} else {
 			return NULL;
 		}
 	}
 
-	if (a->argc < 5 || a->argc > 6) {
+	if (a->argc < 5 || a->argc > 7) {
 		return CLI_SHOWUSAGE;
+	}
+
+	if (a->argc == 7) {
+		if (!strcasecmp(a->argv[6], "reload")) {
+			reload = 1;
+		} else {
+			return CLI_SHOWUSAGE;
+		}
 	}
 
 	cache = ao2_find(caches, a->argv[4], OBJ_SEARCH_KEY);
@@ -1907,6 +1922,15 @@ static char *sorcery_memory_cache_stale(struct ast_cli_entry *e, int cmd, struct
 		if (!mark_object_as_stale_in_cache(cache, a->argv[5])) {
 			ast_cli(a->fd, "Successfully marked object '%s' in memory cache '%s' as stale\n",
 				a->argv[5], a->argv[4]);
+			if (reload) {
+				struct sorcery_memory_cached_object *cached;
+
+				cached = ao2_find(cache->objects, a->argv[5], OBJ_SEARCH_KEY | OBJ_NOLOCK);
+				if (cached) {
+					memory_cache_stale_update_object(cache->sorcery, cache, cached);
+					ao2_ref(cached, -1);
+				}
+			}
 		} else {
 			ast_cli(a->fd, "Object '%s' in sorcery memory cache '%s' could not be marked as stale as it was not found\n",
 				a->argv[5], a->argv[4]);
@@ -2066,6 +2090,7 @@ static int sorcery_memory_cache_ami_stale_object(struct mansession *s, const str
 {
 	const char *cache_name = astman_get_header(m, "Cache");
 	const char *object_name = astman_get_header(m, "Object");
+	const char *reload = astman_get_header(m, "Reload");
 	struct sorcery_memory_cache *cache;
 	int res;
 
@@ -2084,7 +2109,19 @@ static int sorcery_memory_cache_ami_stale_object(struct mansession *s, const str
 	}
 
 	ao2_rdlock(cache->objects);
+
 	res = mark_object_as_stale_in_cache(cache, object_name);
+
+	if (ast_true(reload)) {
+		struct sorcery_memory_cached_object *cached;
+
+		cached = ao2_find(cache->objects, object_name, OBJ_SEARCH_KEY | OBJ_NOLOCK);
+		if (cached) {
+			memory_cache_stale_update_object(cache->sorcery, cache, cached);
+			ao2_ref(cached, -1);
+		}
+	}
+
 	ao2_unlock(cache->objects);
 
 	ao2_ref(cache, -1);

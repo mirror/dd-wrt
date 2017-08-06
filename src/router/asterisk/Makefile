@@ -99,6 +99,10 @@ export WGET_EXTRA_ARGS
 export LDCONFIG
 export LDCONFIG_FLAGS
 export PYTHON
+export TAR
+export PATCH
+export SED
+export NM
 
 # makeopts is required unless the goal is clean or distclean
 ifeq ($(findstring clean,$(MAKECMDGOALS)),)
@@ -119,6 +123,9 @@ _ASTLDFLAGS+=$(LDOPTS)
 
 # libxml2 cflags
 _ASTCFLAGS+=$(LIBXML2_INCLUDE)
+
+# BIND_8_COMPAT
+_ASTCFLAGS+=$(BIND8_CFLAGS)
 
 #Uncomment this to see all build commands instead of 'quiet' output
 #NOISY_BUILD=yes
@@ -179,11 +186,6 @@ OTHER_SUBDIR_CFLAGS="-I$(ASTTOPDIR)/include"
 # Create OPTIONS variable, but probably we can assign directly to ASTCFLAGS
 OPTIONS=
 
-ifeq ($(OSARCH),linux-gnu)
-  # flag to tell 'ldconfig' to only process specified directories
-  LDCONFIG_FLAGS=-n
-endif
-
 ifeq ($(findstring -save-temps,$(_ASTCFLAGS) $(ASTCFLAGS)),)
   ifeq ($(findstring -pipe,$(_ASTCFLAGS) $(ASTCFLAGS)),)
     _ASTCFLAGS+=-pipe
@@ -219,8 +221,6 @@ ifeq ($(OSARCH),FreeBSD)
   # -V is understood by BSD Make, not by GNU make.
   BSDVERSION=$(shell make -V OSVERSION -f /usr/share/mk/bsd.port.subdir.mk)
   _ASTCFLAGS+=$(shell if test $(BSDVERSION) -lt 500016 ; then echo "-D_THREAD_SAFE"; fi)
-  # flag to tell 'ldconfig' to only process specified directories
-  LDCONFIG_FLAGS=-m
 endif
 
 ifeq ($(OSARCH),NetBSD)
@@ -257,9 +257,6 @@ SUBDIRS_INSTALL:=$(SUBDIRS:%=%-install)
 SUBDIRS_CLEAN:=$(SUBDIRS:%=%-clean)
 SUBDIRS_DIST_CLEAN:=$(SUBDIRS:%=%-dist-clean)
 SUBDIRS_UNINSTALL:=$(SUBDIRS:%=%-uninstall)
-MOD_SUBDIRS_EMBED_LDSCRIPT:=$(MOD_SUBDIRS:%=%-embed-ldscript)
-MOD_SUBDIRS_EMBED_LDFLAGS:=$(MOD_SUBDIRS:%=%-embed-ldflags)
-MOD_SUBDIRS_EMBED_LIBS:=$(MOD_SUBDIRS:%=%-embed-libs)
 MOD_SUBDIRS_MENUSELECT_TREE:=$(MOD_SUBDIRS:%=%-menuselect-tree)
 
 ifneq ($(findstring darwin,$(OSARCH)),)
@@ -348,41 +345,14 @@ ifeq ($(filter %menuselect,$(MAKECMDGOALS)),)
 	menuselect/menuselect --check-deps $@
 endif
 
-$(MOD_SUBDIRS_EMBED_LDSCRIPT):
-	+@echo "EMBED_LDSCRIPTS+="`$(SILENTMAKE) -C $(@:-embed-ldscript=) SUBDIR=$(@:-embed-ldscript=) __embed_ldscript` >> makeopts.embed_rules
-
-$(MOD_SUBDIRS_EMBED_LDFLAGS):
-	+@echo "EMBED_LDFLAGS+="`$(SILENTMAKE) -C $(@:-embed-ldflags=) SUBDIR=$(@:-embed-ldflags=) __embed_ldflags` >> makeopts.embed_rules
-
-$(MOD_SUBDIRS_EMBED_LIBS):
-	+@echo "EMBED_LIBS+="`$(SILENTMAKE) -C $(@:-embed-libs=) SUBDIR=$(@:-embed-libs=) __embed_libs` >> makeopts.embed_rules
-
 $(MOD_SUBDIRS_MENUSELECT_TREE):
 	+@$(SUBMAKE) -C $(@:-menuselect-tree=) SUBDIR=$(@:-menuselect-tree=) moduleinfo
 	+@$(SUBMAKE) -C $(@:-menuselect-tree=) SUBDIR=$(@:-menuselect-tree=) makeopts
 
-makeopts.embed_rules: menuselect.makeopts
-	@echo "Generating embedded module rules ..."
-	@rm -f $@
-	+@$(SUBMAKE) $(MOD_SUBDIRS_EMBED_LDSCRIPT)
-	+@$(SUBMAKE) $(MOD_SUBDIRS_EMBED_LDFLAGS)
-	+@$(SUBMAKE) $(MOD_SUBDIRS_EMBED_LIBS)
-
-$(SUBDIRS): makeopts .lastclean main/version.c include/asterisk/build.h include/asterisk/buildopts.h defaults.h makeopts.embed_rules
+$(SUBDIRS): makeopts .lastclean main/version.c include/asterisk/build.h include/asterisk/buildopts.h defaults.h
 
 ifeq ($(findstring $(OSARCH), mingw32 cygwin ),)
-  ifeq ($(shell grep ^MENUSELECT_EMBED=$$ menuselect.makeopts 2>/dev/null),)
-    # Non-windows:
-    # ensure that all module subdirectories are processed before 'main' during
-    # a parallel build, since if there are modules selected to be embedded the
-    # directories containing them must be completed before the main Asterisk
-    # binary can be built.
-    # If MENUSELECT_EMBED is empty, we don't need this and allow 'main' to be
-    # be built with only third_party first.
-main: $(filter-out main,$(MOD_SUBDIRS))
-  else
 main: third-party
-  endif
 else
     # Windows: we need to build main (i.e. the asterisk dll) first,
     # followed by res, followed by the other directories, because
@@ -447,7 +417,6 @@ distclean: $(SUBDIRS_DIST_CLEAN) _clean
 	@$(MAKE) -C menuselect dist-clean
 	@$(MAKE) -C sounds dist-clean
 	rm -f menuselect.makeopts makeopts menuselect-tree menuselect.makedeps
-	rm -f makeopts.embed_rules
 	rm -f config.log config.status config.cache
 	rm -rf autom4te.cache
 	rm -f include/asterisk/autoconfig.h
@@ -492,7 +461,7 @@ doc/core-en_US.xml: makeopts .lastclean $(XML_core_en_US)
 	@printf "Building Documentation For: "
 	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
 	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
-	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" > $@
+	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" >> $@
 	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
 	@for x in $(MOD_SUBDIRS); do \
 		printf "$$x " ; \
@@ -516,7 +485,7 @@ else
 	@printf "Building Documentation For: "
 	@echo "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" > $@
 	@echo "<!DOCTYPE docs SYSTEM \"appdocsxml.dtd\">" >> $@
-	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" > $@
+	@echo "<?xml-stylesheet type=\"text/xsl\" href=\"appdocsxml.xslt\"?>" >> $@
 	@echo "<docs xmlns:xi=\"http://www.w3.org/2001/XInclude\">" >> $@
 	@for x in $(MOD_SUBDIRS); do \
 		printf "$$x " ; \
@@ -619,9 +588,10 @@ $(SUBDIRS_INSTALL):
 
 NEWMODS:=$(foreach d,$(MOD_SUBDIRS),$(notdir $(wildcard $(d)/*.so)))
 OLDMODS=$(filter-out $(NEWMODS) $(notdir $(DESTDIR)$(ASTMODDIR)),$(notdir $(wildcard $(DESTDIR)$(ASTMODDIR)/*.so)))
+BADMODS=$(strip $(filter-out $(shell ./build_tools/list_valid_installed_externals),$(OLDMODS)))
 
 oldmodcheck:
-	@if [ -n "$(OLDMODS)" ]; then \
+	@if [ -n "$(BADMODS)" ]; then \
 		echo " WARNING WARNING WARNING" ;\
 		echo "" ;\
 		echo " Your Asterisk modules directory, located at" ;\
@@ -631,9 +601,83 @@ oldmodcheck:
 		echo " modules are compatible with this version before" ;\
 		echo " attempting to run Asterisk." ;\
 		echo "" ;\
-		for f in $(OLDMODS); do \
+		for f in $(BADMODS); do \
 			echo "    $$f" ;\
 		done ;\
+		echo "" ;\
+		echo " WARNING WARNING WARNING" ;\
+	fi
+
+ld-cache-update:
+ifneq ($(LDCONFIG),)
+ifeq ($(DESTDIR),)  # DESTDIR means binary archive creation; ldconfig should be run on postinst
+	@if [ $${EUID} -eq 0 ] ; then \
+		$(LDCONFIG) "$(ASTLIBDIR)/" ; \
+	else \
+		echo " WARNING WARNING WARNING" ;\
+		echo "" ;\
+		echo " You cannot rebuild the system linker cache unless you are root. " ;\
+		echo " You MUST do one of the following..." ;\
+		echo "  * Re-run 'make install' as root. " ;\
+		echo "  * Run 'ldconfig $(ASTLIBDIR)' as root. " ;\
+		echo "  * Run asterisk with 'LD_LIBRARY_PATH=$(ASTLIBDIR) asterisk' " ;\
+		echo "" ;\
+		echo " WARNING WARNING WARNING" ;\
+	fi
+endif
+endif
+
+export _oldlibdir =
+export _oldmoddir =
+ifeq ($(findstring 64,$(HOST_CPU)),64)
+    # Strip any trailing '/' so the dir and notdir functions work correctly
+    _current_libdir = $(patsubst %/,%,$(DESTDIR)$(ASTLIBDIR))
+
+    # Only process if the paths end in lib64 or lib.
+    # If we're installing to lib64, check lib for orphans.
+    # If we're installing to lib, check lib64 for orphans.
+    # Otherwise, leave _oldlibdir empty.
+    ifeq ($(notdir $(_current_libdir)),lib64)
+        _oldlibdir = $(dir $(_current_libdir))lib
+    else ifeq ($(notdir $(_current_libdir)),lib)
+        _oldlibdir = $(dir $(_current_libdir))lib64
+    endif
+
+    # Strip any trailing '/' so the dir and notdir functions work correctly
+    _current_moddir = $(patsubst %/,%,$(DESTDIR)$(ASTMODDIR))
+
+    # Only process if the paths contain /lib64/ or /lib/.
+    # If we're installing to lib64, check lib for orphans.
+    # If we're installing to lib, check lib64 for orphans.
+    # Otherwise, leave _oldmoddir empty.
+    ifeq ($(findstring /lib64/,$(_current_moddir)),/lib64/)
+        _oldmoddir = $(subst /lib64/,/lib/,$(_current_moddir))
+    else ifeq ($(findstring /lib/,$(_current_moddir)),/lib/)
+        _oldmoddir = $(subst /lib/,/lib64/,$(_current_moddir))
+    endif
+endif
+
+check-old-libdir:
+	@test -n "$(_oldlibdir)" -a -d "$(_oldlibdir)" || exit 0 ;\
+	oldfiles=`find "$(_oldlibdir)" -name libasterisk* -print -quit -o \( -path *asterisk/modules/* -a -name *.so \) -print -quit 2>/dev/null` ;\
+	if [ "x$$oldfiles" != "x" ] ; then \
+		echo " WARNING WARNING WARNING" ;\
+		echo "" ;\
+		echo " Installation is to: " ;\
+		echo "   $(DESTDIR)$(ASTLIBDIR)" ;\
+		echo " but there are asterisk shared libraries in: " ;\
+		echo "   $(_oldlibdir)" ;\
+		echo " or" ;\
+		echo "   $(_oldlibdir)/asterisk/modules" ;\
+		echo "" ;\
+		echo " It is unlikely that asterisk will start." ;\
+		echo "" ;\
+		echo " You should do one of the following..." ;\
+		echo "  * Run 'make uninstall' to remove the incorrect libraries" ;\
+		echo "    then run 'make install' again." ;\
+		echo "  * Manually remove the libraries from" ;\
+		echo "   $(_oldlibdir)" ;\
+		echo "   and run 'ldconfig' to rebuild the linker cache." ;\
 		echo "" ;\
 		echo " WARNING WARNING WARNING" ;\
 	fi
@@ -676,6 +720,8 @@ install: badshell bininstall datafiles
 	@echo " + doxygen installed on your local system    +"
 	@echo " +-------------------------------------------+"
 	@$(MAKE) -s oldmodcheck
+	@$(MAKE) -s ld-cache-update
+	@$(MAKE) -s check-old-libdir
 
 isntall: install
 
@@ -825,60 +871,56 @@ install-logrotate:
 	rm -f contrib/scripts/asterisk.logrotate.tmp
 
 config:
-	@if [ "${OSARCH}" = "linux-gnu" -o "${OSARCH}" = "kfreebsd-gnu" ]; then \
-		if [ -f /etc/redhat-release -o -f /etc/fedora-release ]; then \
-			./build_tools/install_subst contrib/init.d/rc.redhat.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
-			if [ ! -f "$(DESTDIR)/etc/sysconfig/asterisk" ] ; then \
-				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
-			fi ; \
-			if [ -z "$(DESTDIR)" ] ; then \
-				/sbin/chkconfig --add asterisk ; \
-			fi ; \
-		elif [ -f /etc/debian_version ] ; then \
-			./build_tools/install_subst contrib/init.d/rc.debian.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
-			if [ ! -f "$(DESTDIR)/etc/default/asterisk" ] ; then \
-				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/default/asterisk" ; \
-			fi ; \
-			if [ -z "$(DESTDIR)" ] ; then \
-				/usr/sbin/update-rc.d asterisk defaults 50 91 ; \
-			fi ; \
-		elif [ -f /etc/gentoo-release ] ; then \
-			./build_tools/install_subst contrib/init.d/rc.gentoo.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
-			if [ -z "$(DESTDIR)" ] ; then \
-				/sbin/rc-update add asterisk default ; \
-			fi ; \
-		elif [ -f /etc/mandrake-release -o -f /etc/mandriva-release ] ; then \
-			./build_tools/install_subst contrib/init.d/rc.mandriva.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
-			if [ ! -f /etc/sysconfig/asterisk ] ; then \
-				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
-			fi ; \
-			if [ -z "$(DESTDIR)" ] ; then \
-				/sbin/chkconfig --add asterisk ; \
-			fi ; \
-		elif [ -f /etc/SuSE-release -o -f /etc/novell-release ] ; then \
-			./build_tools/install_subst contrib/init.d/rc.suse.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
-			if [ ! -f /etc/sysconfig/asterisk ] ; then \
-				$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
-			fi ; \
-			if [ -z "$(DESTDIR)" ] ; then \
-				/sbin/chkconfig --add asterisk ; \
-			fi ; \
-		elif [ -f /etc/arch-release -o -f /etc/arch-release ] ; then \
-			./build_tools/install_subst contrib/init.d/rc.archlinux.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
-		elif [ -d "$(DESTDIR)/Library/LaunchDaemons" ]; then \
-			if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist" ]; then \
-				./build_tools/install_subst contrib/init.d/org.asterisk.asterisk.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist"; \
-			fi; \
-			if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist" ]; then \
-				./build_tools/install_subst contrib/init.d/org.asterisk.muted.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist"; \
-			fi; \
-		elif [ -f /etc/slackware-version ]; then \
-			echo "Slackware is not currently supported, although an init script does exist for it."; \
-		else \
-			echo "We could not install init scripts for your distribution." ; \
-		fi \
+	@if [ -f /etc/redhat-release -o -f /etc/fedora-release ]; then \
+		./build_tools/install_subst contrib/init.d/rc.redhat.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
+		if [ ! -f "$(DESTDIR)/etc/sysconfig/asterisk" ] ; then \
+			$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
+		fi ; \
+		if [ -z "$(DESTDIR)" ] ; then \
+			/sbin/chkconfig --add asterisk ; \
+		fi ; \
+	elif [ -f /etc/debian_version ] ; then \
+		./build_tools/install_subst contrib/init.d/rc.debian.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
+		if [ ! -f "$(DESTDIR)/etc/default/asterisk" ] ; then \
+			$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/default/asterisk" ; \
+		fi ; \
+		if [ -z "$(DESTDIR)" ] ; then \
+			/usr/sbin/update-rc.d asterisk defaults 50 91 ; \
+		fi ; \
+	elif [ -f /etc/gentoo-release ] ; then \
+		./build_tools/install_subst contrib/init.d/rc.gentoo.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
+		if [ -z "$(DESTDIR)" ] ; then \
+			/sbin/rc-update add asterisk default ; \
+		fi ; \
+	elif [ -f /etc/mandrake-release -o -f /etc/mandriva-release ] ; then \
+		./build_tools/install_subst contrib/init.d/rc.mandriva.asterisk  "$(DESTDIR)/etc/rc.d/init.d/asterisk"; \
+		if [ ! -f /etc/sysconfig/asterisk ] ; then \
+			$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
+		fi ; \
+		if [ -z "$(DESTDIR)" ] ; then \
+			/sbin/chkconfig --add asterisk ; \
+		fi ; \
+	elif [ -f /etc/SuSE-release -o -f /etc/novell-release ] ; then \
+		./build_tools/install_subst contrib/init.d/rc.suse.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
+		if [ ! -f /etc/sysconfig/asterisk ] ; then \
+			$(INSTALL) -m 644 contrib/init.d/etc_default_asterisk "$(DESTDIR)/etc/sysconfig/asterisk" ; \
+		fi ; \
+		if [ -z "$(DESTDIR)" ] ; then \
+			/sbin/chkconfig --add asterisk ; \
+		fi ; \
+	elif [ -f /etc/arch-release -o -f /etc/arch-release ] ; then \
+		./build_tools/install_subst contrib/init.d/rc.archlinux.asterisk  "$(DESTDIR)/etc/init.d/asterisk"; \
+	elif [ -d "$(DESTDIR)/Library/LaunchDaemons" ]; then \
+		if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist" ]; then \
+			./build_tools/install_subst contrib/init.d/org.asterisk.asterisk.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.asterisk.plist"; \
+		fi; \
+		if [ ! -f "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist" ]; then \
+			./build_tools/install_subst contrib/init.d/org.asterisk.muted.plist "$(DESTDIR)/Library/LaunchDaemons/org.asterisk.muted.plist"; \
+		fi; \
+	elif [ -f /etc/slackware-version ]; then \
+		echo "Slackware is not currently supported, although an init script does exist for it."; \
 	else \
-		echo "We could not install init scripts for your operating system." ; \
+		echo "We could not install init scripts for your distribution." ; \
 	fi
 
 sounds:
@@ -900,6 +942,7 @@ main-binuninstall:
 
 _uninstall: $(SUBDIRS_UNINSTALL) main-binuninstall
 	rm -f "$(DESTDIR)$(ASTMODDIR)/"*
+	test -n "$(_oldmoddir)" -a -d "$(_oldmoddir)" && rm -f "$(_oldmoddir)/"* || :
 	rm -f "$(DESTDIR)$(ASTSBINDIR)/astgenkey"
 	rm -f "$(DESTDIR)$(ASTSBINDIR)/autosupport"
 	rm -rf "$(DESTDIR)$(ASTHEADERDIR)"
@@ -912,6 +955,9 @@ ifeq ($(HAVE_DAHDI),1)
 	rm -f $(DESTDIR)$(DAHDI_UDEV_HOOK_DIR)/40-asterisk
 endif
 	$(MAKE) -C sounds uninstall
+ifneq ($(LDCONFIG),)
+	$(LDCONFIG) || :
+endif
 
 uninstall: _uninstall
 	@echo " +--------- Asterisk Uninstall Complete -----+"
@@ -929,6 +975,7 @@ uninstall: _uninstall
 
 uninstall-all: _uninstall
 	rm -rf "$(DESTDIR)$(ASTMODDIR)"
+	test -n "$(_oldmoddir)" -a -d "$(_oldmoddir)" && rm -rf "$(_oldmoddir)" || :
 	rm -rf "$(DESTDIR)$(ASTVARLIBDIR)"
 	rm -rf "$(DESTDIR)$(ASTDATADIR)"
 	rm -rf "$(DESTDIR)$(ASTSPOOLDIR)"
@@ -985,7 +1032,7 @@ menuselect/nmenuselect: menuselect/makeopts .lastclean
 menuselect/makeopts: makeopts .lastclean
 	+$(MAKE_MENUSELECT) makeopts
 
-menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(dir)/*.c) $(wildcard $(dir)/*.cc)) build_tools/cflags.xml build_tools/cflags-devmode.xml sounds/sounds.xml build_tools/embed_modules.xml utils/utils.xml agi/agi.xml configure makeopts
+menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(dir)/*.c) $(wildcard $(dir)/*.cc) $(wildcard $(dir)/*.xml)) build_tools/cflags.xml build_tools/cflags-devmode.xml sounds/sounds.xml utils/utils.xml agi/agi.xml configure makeopts
 	@echo "Generating input for menuselect ..."
 	@echo "<?xml version=\"1.0\"?>" > $@
 	@echo >> $@
@@ -998,7 +1045,6 @@ menuselect-tree: $(foreach dir,$(filter-out main,$(MOD_SUBDIRS)),$(wildcard $(di
 	fi
 	@cat utils/utils.xml >> $@
 	@cat agi/agi.xml >> $@
-	@cat build_tools/embed_modules.xml >> $@
 	@cat sounds/sounds.xml >> $@
 	@echo "</menu>" >> $@
 
@@ -1042,14 +1088,13 @@ check-alembic: makeopts
 .PHONY: ari-stubs
 .PHONY: basic-pbx
 .PHONY: check-alembic
+.PHONY: ld-cache-update
+.PHONY: check-old-libdir
 .PHONY: $(SUBDIRS_INSTALL)
 .PHONY: $(SUBDIRS_DIST_CLEAN)
 .PHONY: $(SUBDIRS_CLEAN)
 .PHONY: $(SUBDIRS_UNINSTALL)
 .PHONY: $(SUBDIRS)
-.PHONY: $(MOD_SUBDIRS_EMBED_LDSCRIPT)
-.PHONY: $(MOD_SUBDIRS_EMBED_LDFLAGS)
-.PHONY: $(MOD_SUBDIRS_EMBED_LIBS)
 
 FORCE:
 

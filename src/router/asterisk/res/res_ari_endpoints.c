@@ -62,10 +62,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 static void ast_ari_endpoints_list_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_endpoints_list_args args = {};
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -134,11 +133,10 @@ int ast_ari_endpoints_send_message_parse_body(
 static void ast_ari_endpoints_send_message_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_endpoints_send_message_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -155,21 +153,6 @@ static void ast_ari_endpoints_send_message_cb(
 			args.body = (i->value);
 		} else
 		{}
-	}
-	/* Look for a JSON request entity */
-	body = ast_http_get_json(ser, headers);
-	if (!body) {
-		switch (errno) {
-		case EFBIG:
-			ast_ari_response_error(response, 413, "Request Entity Too Large", "Request body too large");
-			goto fin;
-		case ENOMEM:
-			ast_ari_response_error(response, 500, "Internal Server Error", "Error processing request");
-			goto fin;
-		case EIO:
-			ast_ari_response_error(response, 400, "Bad Request", "Error parsing request body");
-			goto fin;
-		}
 	}
 	args.variables = body;
 	ast_ari_endpoints_send_message(headers, &args, response);
@@ -216,11 +199,10 @@ fin: __attribute__((unused))
 static void ast_ari_endpoints_list_by_tech_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_endpoints_list_by_tech_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -275,11 +257,10 @@ fin: __attribute__((unused))
 static void ast_ari_endpoints_get_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_endpoints_get_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -355,11 +336,10 @@ int ast_ari_endpoints_send_message_to_endpoint_parse_body(
 static void ast_ari_endpoints_send_message_to_endpoint_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_endpoints_send_message_to_endpoint_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -382,21 +362,6 @@ static void ast_ari_endpoints_send_message_to_endpoint_cb(
 			args.resource = (i->value);
 		} else
 		{}
-	}
-	/* Look for a JSON request entity */
-	body = ast_http_get_json(ser, headers);
-	if (!body) {
-		switch (errno) {
-		case EFBIG:
-			ast_ari_response_error(response, 413, "Request Entity Too Large", "Request body too large");
-			goto fin;
-		case ENOMEM:
-			ast_ari_response_error(response, 500, "Internal Server Error", "Error processing request");
-			goto fin;
-		case EIO:
-			ast_ari_response_error(response, 400, "Bad Request", "Error parsing request body");
-			goto fin;
-		}
 	}
 	args.variables = body;
 	ast_ari_endpoints_send_message_to_endpoint(headers, &args, response);
@@ -434,7 +399,7 @@ fin: __attribute__((unused))
 	return;
 }
 
-/*! \brief REST handler for /api-docs/endpoints.{format} */
+/*! \brief REST handler for /api-docs/endpoints.json */
 static struct stasis_rest_handlers endpoints_sendMessage = {
 	.path_segment = "sendMessage",
 	.callbacks = {
@@ -443,7 +408,7 @@ static struct stasis_rest_handlers endpoints_sendMessage = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/endpoints.{format} */
+/*! \brief REST handler for /api-docs/endpoints.json */
 static struct stasis_rest_handlers endpoints_tech_resource_sendMessage = {
 	.path_segment = "sendMessage",
 	.callbacks = {
@@ -452,7 +417,7 @@ static struct stasis_rest_handlers endpoints_tech_resource_sendMessage = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/endpoints.{format} */
+/*! \brief REST handler for /api-docs/endpoints.json */
 static struct stasis_rest_handlers endpoints_tech_resource = {
 	.path_segment = "resource",
 	.is_wildcard = 1,
@@ -462,7 +427,7 @@ static struct stasis_rest_handlers endpoints_tech_resource = {
 	.num_children = 1,
 	.children = { &endpoints_tech_resource_sendMessage, }
 };
-/*! \brief REST handler for /api-docs/endpoints.{format} */
+/*! \brief REST handler for /api-docs/endpoints.json */
 static struct stasis_rest_handlers endpoints_tech = {
 	.path_segment = "tech",
 	.is_wildcard = 1,
@@ -472,7 +437,7 @@ static struct stasis_rest_handlers endpoints_tech = {
 	.num_children = 1,
 	.children = { &endpoints_tech_resource, }
 };
-/*! \brief REST handler for /api-docs/endpoints.{format} */
+/*! \brief REST handler for /api-docs/endpoints.json */
 static struct stasis_rest_handlers endpoints = {
 	.path_segment = "endpoints",
 	.callbacks = {
@@ -482,19 +447,28 @@ static struct stasis_rest_handlers endpoints = {
 	.children = { &endpoints_sendMessage,&endpoints_tech, }
 };
 
-static int load_module(void)
-{
-	int res = 0;
-	stasis_app_ref();
-	res |= ast_ari_add_handler(&endpoints);
-	return res;
-}
-
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&endpoints);
 	stasis_app_unref();
 	return 0;
+}
+
+static int load_module(void)
+{
+	int res = 0;
+
+	CHECK_ARI_MODULE_LOADED();
+
+
+	stasis_app_ref();
+	res |= ast_ari_add_handler(&endpoints);
+	if (res) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Endpoint resources",

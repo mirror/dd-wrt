@@ -177,11 +177,6 @@ static struct ast_json *stasis_start_to_json(struct stasis_message *message,
 STASIS_MESSAGE_TYPE_DEFN_LOCAL(start_message_type,
 	.to_json = stasis_start_to_json);
 
-const char *stasis_app_name(const struct stasis_app *app)
-{
-	return app_name(app);
-}
-
 /*! AO2 hash function for \ref app */
 static int app_hash(const void *obj, const int flags)
 {
@@ -713,6 +708,22 @@ int stasis_app_bridge_playback_channel_add(struct ast_bridge *bridge,
 	return 0;
 }
 
+void stasis_app_bridge_playback_channel_remove(char *bridge_id,
+	struct stasis_app_control *control)
+{
+	struct stasis_app_bridge_channel_wrapper *wrapper;
+
+	wrapper = ao2_find(app_bridges_playback, bridge_id, OBJ_SEARCH_KEY | OBJ_UNLINK);
+	if (wrapper) {
+		/* If wrapper is not found, then that means the after bridge callback has been
+		 * called or is in progress. No need to unlink the control here since that has
+		 * been done or is about to be done in the after bridge callback
+		 */
+		ao2_unlink(app_controls, control);
+		ao2_ref(wrapper, -1);
+	}
+}
+
 struct ast_channel *stasis_app_bridge_playback_channel_find(struct ast_bridge *bridge)
 {
 	struct stasis_app_bridge_channel_wrapper *playback_wrapper;
@@ -781,6 +792,7 @@ struct ast_bridge *stasis_app_bridge_create(const char *type, const char *name, 
 
 	bridge = bridge_stasis_new(capabilities, flags, name, id);
 	if (bridge) {
+		ast_bridge_set_talker_src_video_mode(bridge);
 		if (!ao2_link(app_bridges, bridge)) {
 			ast_bridge_destroy(bridge, 0);
 			bridge = NULL;
@@ -926,7 +938,7 @@ static int send_start_msg_snapshots(struct ast_channel *chan, struct stasis_app 
 
 	if (app_subscribe_channel(app, chan)) {
 		ast_log(LOG_ERROR, "Error subscribing app '%s' to channel '%s'\n",
-			app_name(app), ast_channel_name(chan));
+			stasis_app_name(app), ast_channel_name(chan));
 		return -1;
 	}
 
@@ -940,7 +952,7 @@ static int send_start_msg_snapshots(struct ast_channel *chan, struct stasis_app 
 	payload->replace_channel = ao2_bump(replace_channel_snapshot);
 
 	json_blob = ast_json_pack("{s: s, s: o, s: []}",
-		"app", app_name(app),
+		"app", stasis_app_name(app),
 		"timestamp", ast_json_timeval(ast_tvnow(), NULL),
 		"args");
 	if (!json_blob) {
@@ -1010,7 +1022,7 @@ int app_send_end_msg(struct stasis_app *app, struct ast_channel *chan)
 		return 0;
 	}
 
-	blob = ast_json_pack("{s: s}", "app", app_name(app));
+	blob = ast_json_pack("{s: s}", "app", stasis_app_name(app));
 	if (!blob) {
 		ast_log(LOG_ERROR, "Error packing JSON for StasisEnd message\n");
 		return -1;
@@ -1045,8 +1057,18 @@ static void channel_stolen_cb(void *data, struct ast_channel *old_chan, struct a
 {
 	struct stasis_app_control *control;
 
-	/* find control */
-	control = ao2_callback(app_controls, 0, masq_match_cb, old_chan);
+	/*
+	 * At this point, old_chan is the channel pointer that is in Stasis() and
+	 * has the unknown channel's name in it while new_chan is the channel pointer
+	 * that is not in Stasis(), but has the guts of the channel that Stasis() knows
+	 * about.
+	 *
+	 * Find and unlink control since the channel has a new name/uniqueid
+	 * and its hash has changed.  Since the channel is leaving stasis don't
+	 * bother putting it back into the container.  Nobody is going to
+	 * remove it from the container later.
+	 */
+	control = ao2_callback(app_controls, OBJ_UNLINK, masq_match_cb, old_chan);
 	if (!control) {
 		ast_log(LOG_ERROR, "Could not find control for masqueraded channel\n");
 		return;
@@ -1087,8 +1109,10 @@ static void channel_replaced_cb(void *data, struct ast_channel *old_chan, struct
 		return;
 	}
 
-	/* find, unlink, and relink control since the channel has a new name and
-	 * its hash has likely changed */
+	/*
+	 * Find, unlink, and relink control since the channel has a new
+	 * name/uniqueid and its hash has changed.
+	 */
 	control = ao2_callback(app_controls, OBJ_UNLINK, masq_match_cb, new_chan);
 	if (!control) {
 		ast_log(LOG_ERROR, "Could not find control for masquerading channel\n");
@@ -1298,7 +1322,9 @@ int stasis_app_exec(struct ast_channel *chan, const char *app_name, int argc,
 		bridge = ao2_bump(stasis_app_get_bridge(control));
 
 		if (bridge != last_bridge) {
-			app_unsubscribe_bridge(app, last_bridge);
+			if (last_bridge) {
+				app_unsubscribe_bridge(app, last_bridge);
+			}
 			if (bridge) {
 				app_subscribe_bridge(app, bridge);
 			}
@@ -1359,7 +1385,9 @@ int stasis_app_exec(struct ast_channel *chan, const char *app_name, int argc,
 		ast_bridge_depart(chan);
 	}
 
-	app_unsubscribe_bridge(app, stasis_app_get_bridge(control));
+	if (stasis_app_get_bridge(control)) {
+		app_unsubscribe_bridge(app, stasis_app_get_bridge(control));
+	}
 	ao2_cleanup(bridge);
 
 	/* Only publish a stasis_end event if it hasn't already been published */
@@ -1452,11 +1480,12 @@ static struct stasis_app *find_app_by_name(const char *app_name)
 		res = ao2_find(apps_registry, app_name, OBJ_SEARCH_KEY);
 	}
 
-	if (!res) {
-		ast_log(LOG_WARNING, "Could not find app '%s'\n",
-			app_name ? : "(null)");
-	}
 	return res;
+}
+
+struct stasis_app *stasis_app_get_by_name(const char *name)
+{
+	return find_app_by_name(name);
 }
 
 static int append_name(void *obj, void *arg, int flags)
@@ -2080,12 +2109,12 @@ static int load_module(void)
 		37, bridges_channel_hash_fn, bridges_channel_sort_fn, NULL);
 	if (!apps_registry || !app_controls || !app_bridges || !app_bridges_moh || !app_bridges_playback) {
 		unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (messaging_init()) {
 		unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	bridge_stasis_init();

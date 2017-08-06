@@ -42,6 +42,11 @@ static struct stasis_message_router *bridge_state_router;
 			<syntax>
 				<bridge_snapshot/>
 			</syntax>
+			<see-also>
+				<ref type="managerEvent">BridgeDestroy</ref>
+				<ref type="managerEvent">BridgeEnter</ref>
+				<ref type="managerEvent">BridgeLeave</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
 	<managerEvent language="en_US" name="BridgeDestroy">
@@ -50,6 +55,11 @@ static struct stasis_message_router *bridge_state_router;
 			<syntax>
 				<bridge_snapshot/>
 			</syntax>
+			<see-also>
+				<ref type="managerEvent">BridgeCreate</ref>
+				<ref type="managerEvent">BridgeEnter</ref>
+				<ref type="managerEvent">BridgeLeave</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
 	<managerEvent language="en_US" name="BridgeEnter">
@@ -62,6 +72,11 @@ static struct stasis_message_router *bridge_state_router;
 					<para>The uniqueid of the channel being swapped out of the bridge</para>
 				</parameter>
 			</syntax>
+			<see-also>
+				<ref type="managerEvent">BridgeCreate</ref>
+				<ref type="managerEvent">BridgeDestroy</ref>
+				<ref type="managerEvent">BridgeLeave</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
 	<managerEvent language="en_US" name="BridgeLeave">
@@ -71,6 +86,26 @@ static struct stasis_message_router *bridge_state_router;
 				<bridge_snapshot/>
 				<channel_snapshot/>
 			</syntax>
+			<see-also>
+				<ref type="managerEvent">BridgeCreate</ref>
+				<ref type="managerEvent">BridgeDestroy</ref>
+				<ref type="managerEvent">BridgeEnter</ref>
+			</see-also>
+		</managerEventInstance>
+	</managerEvent>
+	<managerEvent language="en_US" name="BridgeVideoSourceUpdate">
+		<managerEventInstance class="EVENT_FLAG_CALL">
+			<synopsis>Raised when the channel that is the source of video in a bridge changes.</synopsis>
+			<syntax>
+				<bridge_snapshot/>
+				<parameter name="BridgePreviousVideoSource">
+					<para>The unique ID of the channel that was the video source.</para>
+				</parameter>
+			</syntax>
+			<see-also>
+				<ref type="managerEvent">BridgeCreate</ref>
+				<ref type="managerEvent">BridgeDestroy</ref>
+			</see-also>
 		</managerEventInstance>
 	</managerEvent>
 	<manager name="BridgeList" language="en_US">
@@ -86,6 +121,12 @@ static struct stasis_message_router *bridge_state_router;
 		<description>
 			<para>Returns a list of bridges, optionally filtering on a bridge type.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Bridge</ref>
+			<ref type="manager">BridgeDestroy</ref>
+			<ref type="manager">BridgeInfo</ref>
+			<ref type="manager">BridgeKick</ref>
+		</see-also>
 	</manager>
 	<manager name="BridgeInfo" language="en_US">
 		<synopsis>
@@ -100,6 +141,12 @@ static struct stasis_message_router *bridge_state_router;
 		<description>
 			<para>Returns detailed information about a bridge and the channels in it.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Bridge</ref>
+			<ref type="manager">BridgeDestroy</ref>
+			<ref type="manager">BridgeKick</ref>
+			<ref type="manager">BridgeList</ref>
+		</see-also>
 		<responses>
 			<list-elements>
 				<managerEvent language="en_US" name="BridgeInfoChannel">
@@ -134,6 +181,13 @@ static struct stasis_message_router *bridge_state_router;
 		<description>
 			<para>Deletes the bridge, causing channels to continue or hang up.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Bridge</ref>
+			<ref type="manager">BridgeInfo</ref>
+			<ref type="manager">BridgeKick</ref>
+			<ref type="manager">BridgeList</ref>
+			<ref type="managerEvent">BridgeDestroy</ref>
+		</see-also>
 	</manager>
 	<manager name="BridgeKick" language="en_US">
 		<synopsis>
@@ -153,6 +207,13 @@ static struct stasis_message_router *bridge_state_router;
 		<description>
 			<para>The channel is removed from the bridge.</para>
 		</description>
+		<see-also>
+			<ref type="manager">Bridge</ref>
+			<ref type="manager">BridgeDestroy</ref>
+			<ref type="manager">BridgeInfo</ref>
+			<ref type="manager">BridgeList</ref>
+			<ref type="managerEvent">BridgeLeave</ref>
+		</see-also>
 	</manager>
  ***/
 
@@ -178,16 +239,28 @@ struct ast_str *ast_manager_build_bridge_state_string_prefix(
 		"%sBridgeTechnology: %s\r\n"
 		"%sBridgeCreator: %s\r\n"
 		"%sBridgeName: %s\r\n"
-		"%sBridgeNumChannels: %u\r\n",
+		"%sBridgeNumChannels: %u\r\n"
+		"%sBridgeVideoSourceMode: %s\r\n",
 		prefix, snapshot->uniqueid,
 		prefix, snapshot->subclass,
 		prefix, snapshot->technology,
 		prefix, ast_strlen_zero(snapshot->creator) ? "<unknown>": snapshot->creator,
 		prefix, ast_strlen_zero(snapshot->name) ? "<unknown>": snapshot->name,
-		prefix, snapshot->num_channels);
+		prefix, snapshot->num_channels,
+		prefix, ast_bridge_video_mode_to_string(snapshot->video_mode));
 	if (!res) {
 		ast_free(out);
 		return NULL;
+	}
+
+	if (snapshot->video_mode != AST_BRIDGE_VIDEO_MODE_NONE
+		&& !ast_strlen_zero(snapshot->video_source_id)) {
+		res = ast_str_append(&out, 0, "%sBridgeVideoSource: %s\r\n",
+			prefix, snapshot->video_source_id);
+		if (!res) {
+			ast_free(out);
+			return NULL;
+		}
 	}
 
 	return out;
@@ -217,6 +290,25 @@ static struct ast_manager_event_blob *bridge_create(
 		EVENT_FLAG_CALL, "BridgeCreate", NO_EXTRA_FIELDS);
 }
 
+/* \brief Handle video source updates */
+static struct ast_manager_event_blob *bridge_video_update(
+	struct ast_bridge_snapshot *old_snapshot,
+	struct ast_bridge_snapshot *new_snapshot)
+{
+	if (!new_snapshot || !old_snapshot) {
+		return NULL;
+	}
+
+	if (!strcmp(old_snapshot->video_source_id, new_snapshot->video_source_id)) {
+		return NULL;
+	}
+
+	return ast_manager_event_blob_create(
+		EVENT_FLAG_CALL, "BridgeVideoSourceUpdate",
+		"BridgePreviousVideoSource: %s\r\n",
+		old_snapshot->video_source_id);
+}
+
 /*! \brief Handle bridge destruction */
 static struct ast_manager_event_blob *bridge_destroy(
 	struct ast_bridge_snapshot *old_snapshot,
@@ -230,9 +322,9 @@ static struct ast_manager_event_blob *bridge_destroy(
 		EVENT_FLAG_CALL, "BridgeDestroy", NO_EXTRA_FIELDS);
 }
 
-
 bridge_snapshot_monitor bridge_monitors[] = {
 	bridge_create,
+	bridge_video_update,
 	bridge_destroy,
 };
 

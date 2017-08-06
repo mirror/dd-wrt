@@ -103,18 +103,6 @@ struct dep_file {
 };
 AST_LIST_HEAD_NOLOCK_STATIC(deps_file, dep_file);
 
-#if !defined(ast_strdupa) && defined(__GNUC__)
-#define ast_strdupa(s)                                                    \
-	(__extension__                                                    \
-	({                                                                \
-		const char *__old = (s);                                  \
-		size_t __len = strlen(__old) + 1;                         \
-		char *__new = __builtin_alloca(__len);                    \
-		memcpy (__new, __old, __len);                             \
-		__new;                                                    \
-	}))
-#endif
-
 /*! \brief return a pointer to the first non-whitespace character */
 static inline char *skip_blanks(char *str)
 {
@@ -246,6 +234,14 @@ static enum support_level_values string_to_support_level(const char *support_lev
 		return SUPPORT_DEPRECATED;
 	}
 
+	if (!strcasecmp(support_level, "external")) {
+		return SUPPORT_EXTERNAL;
+	}
+
+	if (!strcasecmp(support_level, "option")) {
+		return SUPPORT_OPTION;
+	}
+
 	return SUPPORT_UNSPECIFIED;
 }
 
@@ -259,6 +255,10 @@ static const char *support_level_to_string(enum support_level_values support_lev
 		return "Extended";
 	case SUPPORT_DEPRECATED:
 		return "Deprecated";
+	case SUPPORT_EXTERNAL:
+		return "External";
+	case SUPPORT_OPTION:
+		return "Module Options";
 	default:
 		return "Unspecified";
 	}
@@ -392,6 +392,11 @@ static int process_xml_use_node(xmlNode *node, struct member *mem)
 	return process_xml_ref_node(node, mem, &mem->uses);
 }
 
+static int process_xml_member_data_node(xmlNode *node, struct member *mem)
+{
+	return 0;
+}
+
 static int process_xml_unknown_node(xmlNode *node, struct member *mem)
 {
 	fprintf(stderr, "Encountered unknown node: %s\n", node->name);
@@ -410,6 +415,7 @@ static const struct {
 	{ "depend",         process_xml_depend_node         },
 	{ "conflict",       process_xml_conflict_node       },
 	{ "use",            process_xml_use_node            },
+	{ "member_data",    process_xml_member_data_node    },
 };
 
 static node_handler lookup_node_handler(xmlNode *node)
@@ -461,7 +467,7 @@ static int process_xml_member_node(xmlNode *node, struct category *cat)
 		process_process_xml_category_child_node(cur, mem);
 	}
 
-	if (!cat->positive_output) {
+	if (!cat->positive_output && strcasecmp(mem->support_level, "option")) {
 		mem->enabled = 1;
 		if (!mem->defaultenabled || strcasecmp(mem->defaultenabled, "no")) {
 			mem->was_enabled = 1;

@@ -799,7 +799,7 @@ struct ast_filestream *ast_openvstream(struct ast_channel *chan, const char *fil
 	/* As above, but for video. But here we don't have translators
 	 * so we must enforce a format.
 	 */
-	struct ast_format_cap *tmp_cap;
+	struct ast_format_cap *nativeformats, *tmp_cap;
 	char *buf;
 	int buflen;
 	int i, fd;
@@ -810,16 +810,23 @@ struct ast_filestream *ast_openvstream(struct ast_channel *chan, const char *fil
 	buflen = strlen(preflang) + strlen(filename) + 4;
 	buf = ast_alloca(buflen);
 
+	ast_channel_lock(chan);
+	nativeformats = ao2_bump(ast_channel_nativeformats(chan));
+	ast_channel_unlock(chan);
+
 	/* is the channel capable of video without translation ?*/
-	if (!ast_format_cap_has_type(ast_channel_nativeformats(chan), AST_MEDIA_TYPE_VIDEO)) {
+	if (!ast_format_cap_has_type(nativeformats, AST_MEDIA_TYPE_VIDEO)) {
+		ao2_cleanup(nativeformats);
 		return NULL;
 	}
 	if (!(tmp_cap = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
+		ao2_cleanup(nativeformats);
 		return NULL;
 	}
 	/* Video is supported, so see what video formats exist for this file */
 	if (!fileexists_core(filename, NULL, preflang, buf, buflen, tmp_cap)) {
 		ao2_ref(tmp_cap, -1);
+		ao2_cleanup(nativeformats);
 		return NULL;
 	}
 
@@ -828,7 +835,7 @@ struct ast_filestream *ast_openvstream(struct ast_channel *chan, const char *fil
 		struct ast_format *format = ast_format_cap_get_format(tmp_cap, i);
 
 		if ((ast_format_get_type(format) != AST_MEDIA_TYPE_VIDEO) ||
-			!ast_format_cap_iscompatible(ast_channel_nativeformats(chan), tmp_cap)) {
+			!ast_format_cap_iscompatible(nativeformats, tmp_cap)) {
 			ao2_ref(format, -1);
 			continue;
 		}
@@ -837,12 +844,14 @@ struct ast_filestream *ast_openvstream(struct ast_channel *chan, const char *fil
 		if (fd >= 0) {
 			ao2_ref(format, -1);
 			ao2_ref(tmp_cap, -1);
+			ao2_cleanup(nativeformats);
 			return ast_channel_vstream(chan);
 		}
 		ast_log(LOG_WARNING, "File %s has video but couldn't be opened\n", filename);
 		ao2_ref(format, -1);
 	}
 	ao2_ref(tmp_cap, -1);
+	ao2_cleanup(nativeformats);
 
 	return NULL;
 }
@@ -1086,6 +1095,143 @@ int ast_filecopy(const char *filename, const char *filename2, const char *fmt)
 	return filehelper(filename, filename2, fmt, ACTION_COPY);
 }
 
+static int __ast_file_read_dirs(const char *path, ast_file_on_file on_file,
+				void *obj, int max_depth)
+{
+	DIR *dir;
+	struct dirent *entry;
+	int res;
+
+	if (!(dir = opendir(path))) {
+		ast_log(LOG_ERROR, "Error opening directory - %s: %s\n",
+			path, strerror(errno));
+		return -1;
+	}
+
+	--max_depth;
+
+	res = 0;
+
+	while ((entry = readdir(dir)) != NULL && !errno) {
+		int is_file = 0;
+		int is_dir = 0;
+		RAII_VAR(char *, full_path, NULL, ast_free);
+
+		if (!strcmp(entry->d_name, ".") || !strcmp(entry->d_name, "..")) {
+			continue;
+		}
+
+/*
+ * If the dirent structure has a d_type use it to determine if we are dealing with
+ * a file or directory. Unfortunately if it doesn't have it, or if the type is
+ * unknown, or a link then we'll need to use the stat function instead.
+ */
+#ifdef _DIRENT_HAVE_D_TYPE
+		if (entry->d_type != DT_UNKNOWN && entry->d_type != DT_LNK) {
+			is_file = entry->d_type == DT_REG;
+			is_dir = entry->d_type == DT_DIR;
+		} else
+#endif
+		{
+			struct stat statbuf;
+
+			/*
+			 * Don't use alloca or we risk blowing out the stack if recursing
+			 * into subdirectories.
+			 */
+			full_path = ast_malloc(strlen(path) + strlen(entry->d_name) + 2);
+			if (!full_path) {
+				return -1;
+			}
+			sprintf(full_path, "%s/%s", path, entry->d_name);
+
+			if (stat(full_path, &statbuf)) {
+				ast_log(LOG_ERROR, "Error reading path stats - %s: %s\n",
+					full_path, strerror(errno));
+				/*
+				 * Output an error, but keep going. It could just be
+				 * a broken link and other files could be fine.
+				 */
+				continue;
+			}
+
+			is_file = S_ISREG(statbuf.st_mode);
+			is_dir = S_ISDIR(statbuf.st_mode);
+		}
+
+		if (is_file) {
+			/* If the handler returns non-zero then stop */
+			if ((res = on_file(path, entry->d_name, obj))) {
+				break;
+			}
+			/* Otherwise move on to next item in directory */
+			continue;
+		}
+
+		if (!is_dir) {
+			ast_debug(5, "Skipping %s: not a regular file or directory\n", full_path);
+			continue;
+		}
+
+		/* Only re-curse into sub-directories if not at the max depth */
+		if (max_depth != 0) {
+			if (!full_path) {
+				/* Don't use alloca.  See note above. */
+				full_path = ast_malloc(strlen(path) + strlen(entry->d_name) + 2);
+				if (!full_path) {
+					return -1;
+				}
+				sprintf(full_path, "%s/%s", path, entry->d_name);
+			}
+
+			if ((res = __ast_file_read_dirs(full_path, on_file, obj, max_depth))) {
+				break;
+			}
+		}
+	}
+
+	closedir(dir);
+
+	if (!res && errno) {
+		ast_log(LOG_ERROR, "Error while reading directories - %s: %s\n",
+			path, strerror(errno));
+		res = -1;
+	}
+
+	return res;
+}
+
+#if !defined(__GLIBC__)
+/*!
+ * \brief Lock to hold when iterating over directories.
+ *
+ * Currently, 'readdir' is not required to be thread-safe. In most modern implementations
+ * it should be safe to make concurrent calls into 'readdir' that specify different directory
+ * streams (glibc would be one of these). However, since it is potentially unsafe for some
+ * implementations we'll use our own locking in order to achieve synchronization for those.
+ */
+AST_MUTEX_DEFINE_STATIC(read_dirs_lock);
+#endif
+
+int ast_file_read_dirs(const char *dir_name, ast_file_on_file on_file, void *obj, int max_depth)
+{
+	int res;
+
+	errno = 0;
+
+#if !defined(__GLIBC__)
+	ast_mutex_lock(&read_dirs_lock);
+#endif
+
+	res = __ast_file_read_dirs(dir_name, on_file, obj, max_depth);
+
+#if !defined(__GLIBC__)
+	ast_mutex_unlock(&read_dirs_lock);
+#endif
+
+	return res;
+}
+
 int ast_streamfile(struct ast_channel *chan, const char *filename, const char *preflang)
 {
 	struct ast_filestream *fs;
@@ -1097,8 +1243,10 @@ int ast_streamfile(struct ast_channel *chan, const char *filename, const char *p
 	fs = ast_openstream(chan, filename, preflang);
 	if (!fs) {
 		struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
+		ast_channel_lock(chan);
 		ast_log(LOG_WARNING, "Unable to open %s (format %s): %s\n",
 			filename, ast_format_cap_get_names(ast_channel_nativeformats(chan), &codec_buf), strerror(errno));
+		ast_channel_unlock(chan);
 		return -1;
 	}
 
@@ -1133,7 +1281,12 @@ int ast_streamfile(struct ast_channel *chan, const char *filename, const char *p
 	res = ast_playstream(fs);
 	if (!res && vfs)
 		res = ast_playstream(vfs);
-	ast_verb(3, "<%s> Playing '%s.%s' (language '%s')\n", ast_channel_name(chan), filename, ast_format_get_name(ast_channel_writeformat(chan)), preflang ? preflang : "default");
+
+	if (VERBOSITY_ATLEAST(3)) {
+		ast_channel_lock(chan);
+		ast_verb(3, "<%s> Playing '%s.%s' (language '%s')\n", ast_channel_name(chan), filename, ast_format_get_name(ast_channel_writeformat(chan)), preflang ? preflang : "default");
+		ast_channel_unlock(chan);
+	}
 
 	return res;
 }
@@ -1392,7 +1545,7 @@ static int waitstream_core(struct ast_channel *c,
 		reverse = "";
 
 	/* Switch the channel to end DTMF frame only. waitstream_core doesn't care about the start of DTMF. */
-	ast_set_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+	ast_channel_set_flag(c, AST_FLAG_END_DTMF_ONLY);
 
 	if (ast_test_flag(ast_channel_flags(c), AST_FLAG_MASQ_NOSTREAM))
 		orig_chan_name = ast_strdupa(ast_channel_name(c));
@@ -1424,7 +1577,7 @@ static int waitstream_core(struct ast_channel *c,
 			res = ast_waitfor(c, ms);
 			if (res < 0) {
 				ast_log(LOG_WARNING, "Select failed (%s)\n", strerror(errno));
-				ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+				ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 				return res;
 			}
 		} else {
@@ -1435,11 +1588,11 @@ static int waitstream_core(struct ast_channel *c,
 				if (errno == EINTR)
 					continue;
 				ast_log(LOG_WARNING, "Wait failed (%s)\n", strerror(errno));
-				ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+				ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 				return -1;
 			} else if (outfd > -1) { /* this requires cmdfd set */
 				/* The FD we were watching has something waiting */
-				ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+				ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 				return 1;
 			}
 			/* if rchan is set, it is 'c' */
@@ -1448,7 +1601,7 @@ static int waitstream_core(struct ast_channel *c,
 		if (res > 0) {
 			struct ast_frame *fr = ast_read(c);
 			if (!fr) {
-				ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+				ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 				return -1;
 			}
 			switch (fr->frametype) {
@@ -1459,7 +1612,7 @@ static int waitstream_core(struct ast_channel *c,
 						S_COR(ast_channel_caller(c)->id.number.valid, ast_channel_caller(c)->id.number.str, NULL))) {
 						res = fr->subclass.integer;
 						ast_frfree(fr);
-						ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+						ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 						return res;
 					}
 				} else {
@@ -1475,7 +1628,7 @@ static int waitstream_core(struct ast_channel *c,
 							"Break");
 
 						ast_frfree(fr);
-						ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+						ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 						return res;
 					}
 				}
@@ -1492,7 +1645,7 @@ static int waitstream_core(struct ast_channel *c,
 						"Break");
 					res = fr->subclass.integer;
 					ast_frfree(fr);
-					ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+					ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 					return res;
 				case AST_CONTROL_STREAM_REVERSE:
 					if (!skip_ms) {
@@ -1510,7 +1663,7 @@ static int waitstream_core(struct ast_channel *c,
 				case AST_CONTROL_BUSY:
 				case AST_CONTROL_CONGESTION:
 					ast_frfree(fr);
-					ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+					ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 					return -1;
 				case AST_CONTROL_RINGING:
 				case AST_CONTROL_ANSWER:
@@ -1547,7 +1700,7 @@ static int waitstream_core(struct ast_channel *c,
 		ast_sched_runq(ast_channel_sched(c));
 	}
 
-	ast_clear_flag(ast_channel_flags(c), AST_FLAG_END_DTMF_ONLY);
+	ast_channel_clear_flag(c, AST_FLAG_END_DTMF_ONLY);
 
 	return (err || ast_channel_softhangup_internal_flag(c)) ? -1 : 0;
 }

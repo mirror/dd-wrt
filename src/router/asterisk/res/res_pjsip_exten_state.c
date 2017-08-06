@@ -352,9 +352,12 @@ static void subscription_shutdown(struct ast_sip_subscription *sub)
 static int new_subscribe(struct ast_sip_endpoint *endpoint,
 		const char *resource)
 {
-	if (!ast_exists_extension(NULL, endpoint->context, resource, PRIORITY_HINT, NULL)) {
-		ast_log(LOG_NOTICE, "Extension state subscription failed: Extension %s does not exist in context '%s' or has no associated hint\n",
-			resource, endpoint->context);
+	const char *context = S_OR(endpoint->subscription.context, endpoint->context);
+
+	if (!ast_exists_extension(NULL, context, resource, PRIORITY_HINT, NULL)) {
+		ast_log(LOG_NOTICE, "Endpoint '%s' state subscription failed: "
+			"Extension '%s' does not exist in context '%s' or has no associated hint\n",
+			ast_sorcery_object_get_id(endpoint), resource, context);
 		return 404;
 	}
 
@@ -372,7 +375,9 @@ static int subscription_established(struct ast_sip_subscription *sip_sub)
 		return -1;
 	}
 
-	ast_copy_string(exten_state_sub->context, endpoint->context, sizeof(exten_state_sub->context));
+	ast_copy_string(exten_state_sub->context,
+		S_OR(endpoint->subscription.context, endpoint->context),
+		sizeof(exten_state_sub->context));
 	ast_copy_string(exten_state_sub->exten, resource, sizeof(exten_state_sub->exten));
 
 	if ((exten_state_sub->id = ast_extension_state_add_destroy_extended(
@@ -517,8 +522,8 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Extension State Notifications",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND + 5,
 );

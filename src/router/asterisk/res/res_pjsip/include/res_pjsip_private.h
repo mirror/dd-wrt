@@ -184,6 +184,14 @@ void ast_sip_destroy_global_headers(void);
 int ast_res_pjsip_init_options_handling(int reload);
 
 /*!
+ * \internal Initialize message IP updating handling.
+ *
+ * \retval 0 on success
+ * \retval other on failure
+ */
+int ast_res_pjsip_init_message_ip_updater(void);
+
+/*!
  * \internal
  * \brief Initialize transport storage for contacts.
  *
@@ -245,6 +253,12 @@ int ast_sip_initialize_global(void);
  * \brief Clean up res_pjsip options handling
  */
 void ast_res_pjsip_cleanup_options_handling(void);
+
+/*!
+ * \internal
+ * \brief Clean up res_pjsip message ip updating handling
+ */
+void ast_res_pjsip_cleanup_message_ip_updater(void);
 
 /*!
  * \internal
@@ -324,5 +338,24 @@ struct ast_sip_contact_status *ast_res_pjsip_find_or_create_contact_status(const
  * \brief Validate that the uri meets pjproject length restrictions
  */
 int ast_sip_validate_uri_length(const char *uri);
+
+/*!
+ * \brief Initialize scheduler
+ * \since 13.9.0
+ *
+ * \retval -1 failure
+ * \retval 0 success
+ */
+int ast_sip_initialize_scheduler(void);
+
+/*!
+ * \internal
+ * \brief Destroy scheduler
+ * \since 13.9.0
+ *
+ * \retval -1 failure
+ * \retval 0 success
+ */
+int ast_sip_destroy_scheduler(void);
 
 #endif /* RES_PJSIP_PRIVATE_H_ */

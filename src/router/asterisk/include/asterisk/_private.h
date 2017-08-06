@@ -16,6 +16,7 @@
 #define _ASTERISK__PRIVATE_H
 
 int load_modules(unsigned int);		/*!< Provided by loader.c */
+int modules_shutdown(void);		/*!< Provided by loader.c */
 int load_pbx(void);			/*!< Provided by pbx.c */
 int load_pbx_builtins(void);	/*!< Provided by pbx_builtins.c */
 int load_pbx_functions_cli(void);	/*!< Provided by pbx_functions.c */
@@ -29,7 +30,7 @@ void logger_queue_start(void);		/*!< Provided by logger.c */
 void clean_time_zones(void);			/*!< Provided by localtime.c */
 int ast_term_init(void);		/*!< Provided by term.c */
 int astdb_init(void);			/*!< Provided by db.c */
-void ast_channels_init(void);		/*!< Provided by channel.c */
+int ast_channels_init(void);		/*!< Provided by channel.c */
 void ast_builtins_init(void);		/*!< Provided by cli.c */
 int ast_cli_perms_init(int reload);	/*!< Provided by cli.c */
 int dnsmgr_init(void);			/*!< Provided by dnsmgr.c */

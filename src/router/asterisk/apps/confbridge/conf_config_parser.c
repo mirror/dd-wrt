@@ -317,6 +317,22 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						on a conference.
 					</para></description>
 				</configOption>
+				<configOption name="regcontext">
+					<synopsis>The name of the context into which to register the name of the conference bridge as NoOP() at priority 1</synopsis>
+					<description><para>
+						When set this will cause the name of the created conference to be registered
+						into the named context at priority 1 with an operation of NoOP().  This can
+						then be used in other parts of the dialplan to test for the existence of a
+						specific conference bridge.
+						You should be aware that there are potential races between testing for the
+						existence of a bridge, and taking action upon that information, consider
+						for example two callers executing the check simultaniously, and then taking
+						special action as "first caller" into the bridge.  The same for exiting,
+						directly after the check the bridge can be destroyed before the new caller
+						enters (creating a new bridge), for example, and the "first member" actions
+						could thus be missed.
+					</para></description>
+				</configOption>
 				<configOption name="video_mode">
 					<synopsis>Sets how confbridge handles video distribution to the conference participants</synopsis>
 					<description><para>
@@ -1327,7 +1343,7 @@ static char *handle_cli_confbridge_show_user_profiles(struct ast_cli_entry *e, i
 	case CLI_INIT:
 		e->command = "confbridge show profile users";
 		e->usage =
-			"Usage confbridge show profile users\n";
+			"Usage: confbridge show profile users\n";
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -1357,7 +1373,7 @@ static char *handle_cli_confbridge_show_user_profile(struct ast_cli_entry *e, in
 	case CLI_INIT:
 		e->command = "confbridge show profile user";
 		e->usage =
-			"Usage confbridge show profile user [<profile name>]\n";
+			"Usage: confbridge show profile user [<profile name>]\n";
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 4) {
@@ -1478,7 +1494,7 @@ static char *handle_cli_confbridge_show_bridge_profiles(struct ast_cli_entry *e,
 	case CLI_INIT:
 		e->command = "confbridge show profile bridges";
 		e->usage =
-			"Usage confbridge show profile bridges\n";
+			"Usage: confbridge show profile bridges\n";
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -1510,7 +1526,7 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 	case CLI_INIT:
 		e->command = "confbridge show profile bridge";
 		e->usage =
-			"Usage confbridge show profile bridge <profile name>\n";
+			"Usage: confbridge show profile bridge <profile name>\n";
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 4) {
@@ -1562,6 +1578,8 @@ static char *handle_cli_confbridge_show_bridge_profile(struct ast_cli_entry *e, 
 	} else {
 		ast_cli(a->fd,"Max Members:          No Limit\n");
 	}
+
+	ast_cli(a->fd,"Registration context: %s\n", b_profile.regcontext);
 
 	switch (b_profile.flags
 		& (BRIDGE_OPT_VIDEO_SRC_LAST_MARKED | BRIDGE_OPT_VIDEO_SRC_FIRST_MARKED
@@ -1650,7 +1668,7 @@ static char *handle_cli_confbridge_show_menus(struct ast_cli_entry *e, int cmd, 
 	case CLI_INIT:
 		e->command = "confbridge show menus";
 		e->usage =
-			"Usage confbridge show profile menus\n";
+			"Usage: confbridge show profile menus\n";
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
@@ -1684,7 +1702,7 @@ static char *handle_cli_confbridge_show_menu(struct ast_cli_entry *e, int cmd, s
 	case CLI_INIT:
 		e->command = "confbridge show menu";
 		e->usage =
-			"Usage confbridge show menu [<menu name>]\n";
+			"Usage: confbridge show menu [<menu name>]\n";
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 3) {
@@ -2004,7 +2022,7 @@ static int conf_menu_profile_copy(struct conf_menu *dst, struct conf_menu *src)
 static int menu_template_handler(const struct aco_option *opt, struct ast_variable *var, void *obj)
 {
 	struct conf_menu *dst_menu = obj;
-	struct confbridge_cfg *cfg = aco_pending_config(&cfg_info);
+	RAII_VAR(struct confbridge_cfg *, cfg, ao2_global_obj_ref(cfg_handle), ao2_cleanup);
 	RAII_VAR(struct conf_menu *, src_menu, NULL, ao2_cleanup);
 
 	if (!cfg) {
@@ -2039,6 +2057,7 @@ static int verify_default_profiles(void)
 	RAII_VAR(struct user_profile *, user_profile, NULL, ao2_cleanup);
 	RAII_VAR(struct bridge_profile *, bridge_profile, NULL, ao2_cleanup);
 	RAII_VAR(struct conf_menu *, menu_profile, NULL, ao2_cleanup);
+	/* We can only be called as a result of an aco_process_config so this is safe */
 	struct confbridge_cfg *cfg = aco_pending_config(&cfg_info);
 
 	if (!cfg) {
@@ -2128,6 +2147,7 @@ int conf_load_config(void)
 	aco_option_register(&cfg_info, "record_file_append", ACO_EXACT, bridge_types, "yes", OPT_BOOLFLAG_T, 1, FLDSET(struct bridge_profile, flags), BRIDGE_OPT_RECORD_FILE_APPEND);
 	aco_option_register(&cfg_info, "max_members", ACO_EXACT, bridge_types, "0", OPT_UINT_T, 0, FLDSET(struct bridge_profile, max_members));
 	aco_option_register(&cfg_info, "record_file", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, rec_file));
+	aco_option_register(&cfg_info, "regcontext", ACO_EXACT, bridge_types, NULL, OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, regcontext));
 	aco_option_register(&cfg_info, "language", ACO_EXACT, bridge_types, "en", OPT_CHAR_ARRAY_T, 0, CHARFLDSET(struct bridge_profile, language));
 	aco_option_register_custom(&cfg_info, "^sound_", ACO_REGEX, bridge_types, NULL, sound_option_handler, 0);
 	/* This option should only be used with the CONFBRIDGE dialplan function */
@@ -2135,6 +2155,7 @@ int conf_load_config(void)
 
 	/* Menu options */
 	aco_option_register(&cfg_info, "type", ACO_EXACT, menu_types, NULL, OPT_NOOP_T, 0, 0);
+	/* This option should only be used with the CONFBRIDGE dialplan function */
 	aco_option_register_custom(&cfg_info, "template", ACO_EXACT, menu_types, NULL, menu_template_handler, 0);
 	aco_option_register_custom(&cfg_info, "^[0-9A-D*#]+$", ACO_REGEX, menu_types, NULL, menu_option_handler, 0);
 

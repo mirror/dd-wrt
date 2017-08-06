@@ -526,6 +526,10 @@ void ast_http_send(struct ast_tcptls_session_instance *ser,
 	/* send content */
 	if (method != AST_HTTP_HEAD || status_code >= 400) {
 		if (out && ast_str_strlen(out)) {
+			/*
+			 * NOTE: Because ser->f is a non-standard FILE *, fwrite() will probably not
+			 * behave exactly as documented.
+			 */
 			if (fwrite(ast_str_buffer(out), ast_str_strlen(out), 1, ser->f) != 1) {
 				ast_log(LOG_ERROR, "fwrite() failed: %s\n", strerror(errno));
 				close_connection = 1;
@@ -537,6 +541,10 @@ void ast_http_send(struct ast_tcptls_session_instance *ser,
 			int len;
 
 			while ((len = read(fd, buf, sizeof(buf))) > 0) {
+				/*
+				 * NOTE: Because ser->f is a non-standard FILE *, fwrite() will probably not
+				 * behave exactly as documented.
+				 */
 				if (fwrite(buf, len, 1, ser->f) != 1) {
 					ast_log(LOG_WARNING, "fwrite() failed: %s\n", strerror(errno));
 					close_connection = 1;
@@ -670,6 +678,8 @@ int ast_http_uri_link(struct ast_http_uri *urih)
 	int len = strlen(urih->uri);
 
 	AST_RWLIST_WRLOCK(&uris);
+
+	urih->prefix = prefix;
 
 	if ( AST_RWLIST_EMPTY(&uris) || strlen(AST_RWLIST_FIRST(&uris)->uri) <= len ) {
 		AST_RWLIST_INSERT_HEAD(&uris, urih, entry);
@@ -921,6 +931,11 @@ static int http_body_read_contents(struct ast_tcptls_session_instance *ser, char
 {
 	int res;
 
+	/*
+	 * NOTE: Because ser->f is a non-standard FILE *, fread() does not behave as
+	 * documented.
+	 */
+
 	/* Stay in fread until get all the expected data or timeout. */
 	res = fread(buf, length, 1, ser->f);
 	if (res < 1) {
@@ -947,6 +962,11 @@ static int http_body_discard_contents(struct ast_tcptls_session_instance *ser, i
 {
 	int res;
 	char buf[MAX_HTTP_LINE_LENGTH];/* Discard buffer */
+
+	/*
+	 * NOTE: Because ser->f is a non-standard FILE *, fread() does not behave as
+	 * documented.
+	 */
 
 	/* Stay in fread until get all the expected data or timeout. */
 	while (sizeof(buf) < length) {
@@ -1063,6 +1083,11 @@ static int http_body_check_chunk_sync(struct ast_tcptls_session_instance *ser)
 {
 	int res;
 	char chunk_sync[2];
+
+	/*
+	 * NOTE: Because ser->f is a non-standard FILE *, fread() does not behave as
+	 * documented.
+	 */
 
 	/* Stay in fread until get the expected CRLF or timeout. */
 	res = fread(chunk_sync, sizeof(chunk_sync), 1, ser->f);
@@ -1913,8 +1938,7 @@ static int httpd_process_request(struct ast_tcptls_session_instance *ser)
 static void *httpd_helper_thread(void *data)
 {
 	struct ast_tcptls_session_instance *ser = data;
-	struct protoent *p;
-	int flags;
+	int flags = 1;
 	int timeout;
 
 	if (!ser || !ser->f) {
@@ -1934,17 +1958,8 @@ static void *httpd_helper_thread(void *data)
 	 * This is necessary to prevent delays (caused by buffering) as we
 	 * write to the socket in bits and pieces.
 	 */
-	p = getprotobyname("tcp");
-	if (p) {
-		int arg = 1;
-
-		if (setsockopt(ser->fd, p->p_proto, TCP_NODELAY, (char *) &arg, sizeof(arg) ) < 0) {
-			ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on HTTP connection: %s\n", strerror(errno));
-			ast_log(LOG_WARNING, "Some HTTP requests may be slow to respond.\n");
-		}
-	} else {
-		ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on HTTP connection, getprotobyname(\"tcp\") failed\n");
-		ast_log(LOG_WARNING, "Some HTTP requests may be slow to respond.\n");
+	if (setsockopt(ser->fd, IPPROTO_TCP, TCP_NODELAY, (char *) &flags, sizeof(flags)) < 0) {
+		ast_log(LOG_WARNING, "Failed to set TCP_NODELAY on HTTP connection: %s\n", strerror(errno));
 	}
 
 	/* make sure socket is non-blocking */
@@ -2092,22 +2107,20 @@ static int __ast_http_load(int reload)
 	http_tls_was_enabled = (reload && http_tls_cfg.enabled);
 
 	http_tls_cfg.enabled = 0;
-	if (http_tls_cfg.certfile) {
-		ast_free(http_tls_cfg.certfile);
-	}
+
+	ast_free(http_tls_cfg.certfile);
 	http_tls_cfg.certfile = ast_strdup(AST_CERTFILE);
 
-	if (http_tls_cfg.pvtfile) {
-		ast_free(http_tls_cfg.pvtfile);
-	}
+	ast_free(http_tls_cfg.capath);
+	http_tls_cfg.capath = ast_strdup("");
+
+	ast_free(http_tls_cfg.pvtfile);
 	http_tls_cfg.pvtfile = ast_strdup("");
 
 	/* Apply modern intermediate settings according to the Mozilla OpSec team as of July 30th, 2015 but disable TLSv1 */
 	ast_set_flag(&http_tls_cfg.flags, AST_SSL_DISABLE_TLSV1 | AST_SSL_SERVER_CIPHER_ORDER);
 
-	if (http_tls_cfg.cipher) {
-		ast_free(http_tls_cfg.cipher);
-	}
+	ast_free(http_tls_cfg.cipher);
 	http_tls_cfg.cipher = ast_strdup("ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA");
 
 	AST_RWLIST_WRLOCK(&uri_redirects);
@@ -2220,7 +2233,7 @@ static int __ast_http_load(int reload)
 		 * the non-TLS bindaddress here.
 		 */
 		if (ast_sockaddr_isnull(&https_desc.local_address) && http_desc.accept_fd != -1) {
-			ast_sockaddr_copy(&https_desc.local_address, &https_desc.local_address);
+			ast_sockaddr_copy(&https_desc.local_address, &http_desc.local_address);
 			/* Of course, we can't use the same port though.
 			 * Since no bind address was specified, we just use the
 			 * default TLS port
@@ -2321,6 +2334,7 @@ static void http_shutdown(void)
 		ast_tcptls_server_stop(&https_desc);
 	}
 	ast_free(http_tls_cfg.certfile);
+	ast_free(http_tls_cfg.capath);
 	ast_free(http_tls_cfg.pvtfile);
 	ast_free(http_tls_cfg.cipher);
 

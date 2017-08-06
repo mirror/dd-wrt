@@ -68,6 +68,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/utils.h"
 #include "asterisk/options.h"
 #include "asterisk/config.h"
+#include "asterisk/test.h"
 
 /*! Number of goertzels for progress detect */
 enum gsamp_size {
@@ -171,8 +172,7 @@ enum gsamp_thresh {
  */
 
 #define DTMF_THRESHOLD		8.0e7
-#define FAX_THRESHOLD		8.0e7
-#define FAX_2ND_HARMONIC	2.0     /* 4dB */
+#define TONE_THRESHOLD		7.8e7
 
 #define DEF_DTMF_NORMAL_TWIST		6.31	 /* 8.0dB */
 #define DEF_RELAX_DTMF_NORMAL_TWIST	6.31	 /* 8.0dB */
@@ -187,8 +187,6 @@ enum gsamp_thresh {
 
 #define DTMF_RELATIVE_PEAK_ROW	6.3     /* 8dB */
 #define DTMF_RELATIVE_PEAK_COL	6.3     /* 8dB */
-#define DTMF_2ND_HARMONIC_ROW       (relax ? 1.7 : 2.5)     /* 4dB normal */
-#define DTMF_2ND_HARMONIC_COL	63.1    /* 18dB */
 #define DTMF_TO_TOTAL_ENERGY	42.0
 
 #define BELL_MF_THRESHOLD	1.6e9
@@ -203,7 +201,7 @@ enum gsamp_thresh {
  * followed by a 3 second silent (2100 Hz OFF) period.
  */
 #define FAX_TONE_CNG_FREQ	1100
-#define FAX_TONE_CNG_DURATION	500
+#define FAX_TONE_CNG_DURATION	500	/* ms */
 #define FAX_TONE_CNG_DB		16
 
 /* This signal may be sent by the Terminating FAX machine anywhere between
@@ -211,7 +209,7 @@ enum gsamp_thresh {
  * of a 2100 Hz tone that is from 2.6 to 4 seconds in duration.
 */
 #define FAX_TONE_CED_FREQ	2100
-#define FAX_TONE_CED_DURATION	2600
+#define FAX_TONE_CED_DURATION	2600	/* ms */
 #define FAX_TONE_CED_DB		16
 
 #define DEFAULT_SAMPLE_RATE		8000
@@ -241,9 +239,13 @@ static const int DEFAULT_SILENCE_THRESHOLD = 256;
 #define CONFIG_FILE_NAME "dsp.conf"
 
 typedef struct {
+	/*! The previous previous sample calculation (No binary point just plain int) */
 	int v2;
+	/*! The previous sample calculation (No binary point just plain int) */
 	int v3;
+	/*! v2 and v3 power of two exponent to keep value in int range */
 	int chunky;
+	/*! 15 bit fixed point goertzel coefficient = 2 * cos(2 * pi * freq / sample_rate) */
 	int fac;
 } goertzel_state_t;
 
@@ -329,12 +331,22 @@ static inline void goertzel_sample(goertzel_state_t *s, short sample)
 {
 	int v1;
 
+	/*
+	 * Shift previous values so
+	 * v1 is previous previous value
+	 * v2 is previous value
+	 * until the new v3 is calculated.
+	 */
 	v1 = s->v2;
 	s->v2 = s->v3;
 
+	/* Discard the binary fraction introduced by s->fac */
 	s->v3 = (s->fac * s->v2) >> 15;
+	/* Scale sample to match previous values */
 	s->v3 = s->v3 - v1 + (sample >> s->chunky);
-	if (abs(s->v3) > 32768) {
+
+	if (abs(s->v3) > (1 << 15)) {
+		/* The result is now too large so increase the chunky power. */
 		s->chunky++;
 		s->v3 = s->v3 >> 1;
 		s->v2 = s->v2 >> 1;
@@ -344,21 +356,26 @@ static inline void goertzel_sample(goertzel_state_t *s, short sample)
 static inline float goertzel_result(goertzel_state_t *s)
 {
 	goertzel_result_t r;
+
 	r.value = (s->v3 * s->v3) + (s->v2 * s->v2);
 	r.value -= ((s->v2 * s->v3) >> 15) * s->fac;
+	/*
+	 * We have to double the exponent because we multiplied the
+	 * previous sample calculation values together.
+	 */
 	r.power = s->chunky * 2;
 	return (float)r.value * (float)(1 << r.power);
 }
 
 static inline void goertzel_init(goertzel_state_t *s, float freq, unsigned int sample_rate)
 {
-	s->v2 = s->v3 = s->chunky = 0.0;
+	s->v2 = s->v3 = s->chunky = 0;
 	s->fac = (int)(32768.0 * 2.0 * cos(2.0 * M_PI * freq / sample_rate));
 }
 
 static inline void goertzel_reset(goertzel_state_t *s)
 {
-	s->v2 = s->v3 = s->chunky = 0.0;
+	s->v2 = s->v3 = s->chunky = 0;
 }
 
 typedef struct {
@@ -581,10 +598,11 @@ static int tone_detect(struct ast_dsp *dsp, tone_detect_state_t *s, int16_t *amp
 		tone_energy *= 2.0;
 		s->energy *= s->block_size;
 
-		ast_debug(10, "tone %d, Ew=%.2E, Et=%.2E, s/n=%10.2f\n", s->freq, tone_energy, s->energy, tone_energy / (s->energy - tone_energy));
+		ast_debug(10, "%d Hz tone %2d Ew=%.4E, Et=%.4E, s/n=%10.2f\n", s->freq, s->hit_count, tone_energy, s->energy, tone_energy / (s->energy - tone_energy));
 		hit = 0;
-		if (tone_energy > s->energy * s->threshold) {
-			ast_debug(10, "Hit! count=%d\n", s->hit_count);
+		if (TONE_THRESHOLD <= tone_energy
+			&& tone_energy > s->energy * s->threshold) {
+			ast_debug(10, "%d Hz tone Hit! %2d Ew=%.4E, Et=%.4E, s/n=%10.2f\n", s->freq, s->hit_count, tone_energy, s->energy, tone_energy / (s->energy - tone_energy));
 			hit = 1;
 		}
 
@@ -603,7 +621,7 @@ static int tone_detect(struct ast_dsp *dsp, tone_detect_state_t *s, int16_t *amp
 		}
 
 		if (s->hit_count == s->hits_required) {
-			ast_debug(1, "%d Hz done detected\n", s->freq);
+			ast_debug(1, "%d Hz tone detected\n", s->freq);
 			res = 1;
 		}
 
@@ -716,6 +734,10 @@ static int dtmf_detect(struct ast_dsp *dsp, digit_detect_state_t *s, int16_t amp
 				best_col = i;
 			}
 		}
+		ast_debug(10, "DTMF best '%c' Erow=%.4E Ecol=%.4E Erc=%.4E Et=%.4E\n",
+			dtmf_positions[(best_row << 2) + best_col],
+			row_energy[best_row], col_energy[best_col],
+			row_energy[best_row] + col_energy[best_col], s->td.dtmf.energy);
 		hit = 0;
 		/* Basic signal level test and the twist test */
 		if (row_energy[best_row] >= DTMF_THRESHOLD &&
@@ -736,6 +758,7 @@ static int dtmf_detect(struct ast_dsp *dsp, digit_detect_state_t *s, int16_t amp
 			    (row_energy[best_row] + col_energy[best_col]) > DTMF_TO_TOTAL_ENERGY * s->td.dtmf.energy) {
 				/* Got a hit */
 				hit = dtmf_positions[(best_row << 2) + best_col];
+				ast_debug(10, "DTMF hit '%c'\n", hit);
 			}
 		}
 
@@ -1622,7 +1645,7 @@ done:
 		for (x = 0; x < len; x++) {
 			odata[x] = AST_LIN2MU((unsigned short) shortdata[x]);
 		}
-	} else if (ast_format_cmp(af->subclass.format, ast_format_ulaw) == AST_FORMAT_CMP_EQUAL) {
+	} else if (ast_format_cmp(af->subclass.format, ast_format_alaw) == AST_FORMAT_CMP_EQUAL) {
 		for (x = 0; x < len; x++) {
 			odata[x] = AST_LIN2A((unsigned short) shortdata[x]);
 		}
@@ -1929,9 +1952,460 @@ int ast_dsp_get_threshold_from_settings(enum threshold which)
 	return thresholds[which];
 }
 
+#ifdef TEST_FRAMEWORK
+static void test_tone_sample_gen(short *slin_buf, int samples, int rate, int freq, short amplitude)
+{
+	int idx;
+	double sample_step = 2.0 * M_PI * freq / rate;/* radians per step */
+
+	for (idx = 0; idx < samples; ++idx) {
+		slin_buf[idx] = amplitude * sin(sample_step * idx);
+	}
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static void test_tone_sample_gen_add(short *slin_buf, int samples, int rate, int freq, short amplitude)
+{
+	int idx;
+	double sample_step = 2.0 * M_PI * freq / rate;/* radians per step */
+
+	for (idx = 0; idx < samples; ++idx) {
+		slin_buf[idx] += amplitude * sin(sample_step * idx);
+	}
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static void test_dual_sample_gen(short *slin_buf, int samples, int rate, int f1, short a1, int f2, short a2)
+{
+	test_tone_sample_gen(slin_buf, samples, rate, f1, a1);
+	test_tone_sample_gen_add(slin_buf, samples, rate, f2, a2);
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+#define TONE_AMPLITUDE_MAX	0x7fff	/* Max signed linear amplitude */
+#define TONE_AMPLITUDE_MIN	80		/* Min signed linear amplitude detectable */
+
+static int test_tone_amplitude_sweep(struct ast_test *test, struct ast_dsp *dsp, tone_detect_state_t *tone_state)
+{
+	short slin_buf[tone_state->block_size];
+	int result;
+	int idx;
+	struct {
+		short amp_val;
+		int detect;
+	} amp_tests[] = {
+		{ .amp_val = TONE_AMPLITUDE_MAX,	.detect = 1, },
+		{ .amp_val = 10000,					.detect = 1, },
+		{ .amp_val = 1000,					.detect = 1, },
+		{ .amp_val = 100,					.detect = 1, },
+		{ .amp_val = TONE_AMPLITUDE_MIN,	.detect = 1, },
+		{ .amp_val = 75,					.detect = 0, },
+		{ .amp_val = 10,					.detect = 0, },
+		{ .amp_val = 1,						.detect = 0, },
+	};
+
+	result = 0;
+
+	for (idx = 0; idx < ARRAY_LEN(amp_tests); ++idx) {
+		int detected;
+		int duration;
+
+		ast_debug(1, "Test %d Hz at amplitude %d\n",
+			tone_state->freq, amp_tests[idx].amp_val);
+		test_tone_sample_gen(slin_buf, tone_state->block_size, DEFAULT_SAMPLE_RATE,
+			tone_state->freq, amp_tests[idx].amp_val);
+
+		detected = 0;
+		for (duration = 0; !detected && duration < tone_state->hits_required + 3; ++duration) {
+			detected = tone_detect(dsp, tone_state, slin_buf, tone_state->block_size) ? 1 : 0;
+		}
+		if (amp_tests[idx].detect != detected) {
+			/*
+			 * Both messages are needed.  ast_debug for when figuring out
+			 * what went wrong and the test update for normal output before
+			 * you start debugging.  The different logging methods are not
+			 * synchronized.
+			 */
+			ast_debug(1,
+				"Test %d Hz at amplitude %d failed.  Detected: %s\n",
+				tone_state->freq, amp_tests[idx].amp_val,
+				detected ? "yes" : "no");
+			ast_test_status_update(test,
+				"Test %d Hz at amplitude %d failed.  Detected: %s\n",
+				tone_state->freq, amp_tests[idx].amp_val,
+				detected ? "yes" : "no");
+			result = -1;
+		}
+		tone_state->hit_count = 0;
+	}
+
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static int test_dtmf_amplitude_sweep(struct ast_test *test, struct ast_dsp *dsp, int digit_index)
+{
+	short slin_buf[DTMF_GSIZE];
+	int result;
+	int row;
+	int column;
+	int idx;
+	struct {
+		short amp_val;
+		int digit;
+	} amp_tests[] = {
+		/*
+		 * XXX Since there is no current DTMF level detection issue.  This test
+		 * just checks the current detection levels.
+		 */
+		{ .amp_val = TONE_AMPLITUDE_MAX/2,	.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 10000,					.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 1000,					.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 500,					.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 250,					.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 200,					.digit = dtmf_positions[digit_index], },
+		{ .amp_val = 180,					.digit = dtmf_positions[digit_index], },
+		/* Various digits detect and not detect in this range */
+		{ .amp_val = 170,					.digit = 0, },
+		{ .amp_val = 100,					.digit = 0, },
+		/*
+		 * Amplitudes below TONE_AMPLITUDE_MIN start having questionable detection
+		 * over quantization and background noise.
+		 */
+		{ .amp_val = TONE_AMPLITUDE_MIN,	.digit = 0, },
+		{ .amp_val = 75,					.digit = 0, },
+		{ .amp_val = 10,					.digit = 0, },
+		{ .amp_val = 1,						.digit = 0, },
+	};
+
+	row = (digit_index >> 2) & 0x03;
+	column = digit_index & 0x03;
+
+	result = 0;
+
+	for (idx = 0; idx < ARRAY_LEN(amp_tests); ++idx) {
+		int digit;
+		int duration;
+
+		ast_debug(1, "Test '%c' at amplitude %d\n",
+			dtmf_positions[digit_index], amp_tests[idx].amp_val);
+		test_dual_sample_gen(slin_buf, ARRAY_LEN(slin_buf), DEFAULT_SAMPLE_RATE,
+			(int) dtmf_row[row], amp_tests[idx].amp_val,
+			(int) dtmf_col[column], amp_tests[idx].amp_val);
+
+		digit = 0;
+		for (duration = 0; !digit && duration < 3; ++duration) {
+			digit = dtmf_detect(dsp, &dsp->digit_state, slin_buf, ARRAY_LEN(slin_buf),
+				0, 0);
+		}
+		if (amp_tests[idx].digit != digit) {
+			/*
+			 * Both messages are needed.  ast_debug for when figuring out
+			 * what went wrong and the test update for normal output before
+			 * you start debugging.  The different logging methods are not
+			 * synchronized.
+			 */
+			ast_debug(1,
+				"Test '%c' at amplitude %d failed.  Detected Digit: '%c'\n",
+				dtmf_positions[digit_index], amp_tests[idx].amp_val,
+				digit ?: ' ');
+			ast_test_status_update(test,
+				"Test '%c' at amplitude %d failed.  Detected Digit: '%c'\n",
+				dtmf_positions[digit_index], amp_tests[idx].amp_val,
+				digit ?: ' ');
+			result = -1;
+		}
+		ast_dsp_digitreset(dsp);
+	}
+
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static int test_dtmf_twist_sweep(struct ast_test *test, struct ast_dsp *dsp, int digit_index)
+{
+	short slin_buf[DTMF_GSIZE];
+	int result;
+	int row;
+	int column;
+	int idx;
+	struct {
+		short amp_row;
+		short amp_col;
+		int digit;
+	} twist_tests[] = {
+		/*
+		 * XXX Since there is no current DTMF twist detection issue.  This test
+		 * just checks the current detection levels.
+		 *
+		 * Normal twist has the column higher than the row amplitude.
+		 * Reverse twist is the other way.
+		 */
+		{ .amp_row = 1000 + 1800, .amp_col = 1000 +    0, .digit = 0, },
+		{ .amp_row = 1000 + 1700, .amp_col = 1000 +    0, .digit = 0, },
+		/* Various digits detect and not detect in this range */
+		{ .amp_row = 1000 + 1400, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 + 1300, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 + 1200, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 + 1100, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 + 1000, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +  100, .amp_col = 1000 +    0, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  100, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  200, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  300, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  400, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  500, .digit = dtmf_positions[digit_index], },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  550, .digit = dtmf_positions[digit_index], },
+		/* Various digits detect and not detect in this range */
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  650, .digit = 0, },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  700, .digit = 0, },
+		{ .amp_row = 1000 +    0, .amp_col = 1000 +  800, .digit = 0, },
+	};
+	float save_normal_twist;
+	float save_reverse_twist;
+
+	save_normal_twist = dtmf_normal_twist;
+	save_reverse_twist = dtmf_reverse_twist;
+	dtmf_normal_twist = DEF_DTMF_NORMAL_TWIST;
+	dtmf_reverse_twist = DEF_DTMF_REVERSE_TWIST;
+
+	row = (digit_index >> 2) & 0x03;
+	column = digit_index & 0x03;
+
+	result = 0;
+
+	for (idx = 0; idx < ARRAY_LEN(twist_tests); ++idx) {
+		int digit;
+		int duration;
+
+		ast_debug(1, "Test '%c' twist row %d col %d amplitudes\n",
+			dtmf_positions[digit_index],
+			twist_tests[idx].amp_row, twist_tests[idx].amp_col);
+		test_dual_sample_gen(slin_buf, ARRAY_LEN(slin_buf), DEFAULT_SAMPLE_RATE,
+			(int) dtmf_row[row], twist_tests[idx].amp_row,
+			(int) dtmf_col[column], twist_tests[idx].amp_col);
+
+		digit = 0;
+		for (duration = 0; !digit && duration < 3; ++duration) {
+			digit = dtmf_detect(dsp, &dsp->digit_state, slin_buf, ARRAY_LEN(slin_buf),
+				0, 0);
+		}
+		if (twist_tests[idx].digit != digit) {
+			/*
+			 * Both messages are needed.  ast_debug for when figuring out
+			 * what went wrong and the test update for normal output before
+			 * you start debugging.  The different logging methods are not
+			 * synchronized.
+			 */
+			ast_debug(1,
+				"Test '%c' twist row %d col %d amplitudes failed.  Detected Digit: '%c'\n",
+				dtmf_positions[digit_index],
+				twist_tests[idx].amp_row, twist_tests[idx].amp_col,
+				digit ?: ' ');
+			ast_test_status_update(test,
+				"Test '%c' twist row %d col %d amplitudes failed.  Detected Digit: '%c'\n",
+				dtmf_positions[digit_index],
+				twist_tests[idx].amp_row, twist_tests[idx].amp_col,
+				digit ?: ' ');
+			result = -1;
+		}
+		ast_dsp_digitreset(dsp);
+	}
+
+	dtmf_normal_twist = save_normal_twist;
+	dtmf_reverse_twist = save_reverse_twist;
+
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static int test_tone_freq_sweep(struct ast_test *test, struct ast_dsp *dsp, tone_detect_state_t *tone_state, short amplitude)
+{
+	short slin_buf[tone_state->block_size];
+	int result;
+	int freq;
+	int lower_freq;
+	int upper_freq;
+
+	/* Calculate detection frequency range */
+	lower_freq = tone_state->freq - 4;
+	upper_freq = tone_state->freq + 4;
+
+	result = 0;
+
+	/* Sweep frequencies loop. */
+	for (freq = 100; freq <= 3500; freq += 1) {
+		int detected;
+		int duration;
+		int expect_detection;
+
+		if (freq == tone_state->freq) {
+			/* This case is done by the amplitude sweep. */
+			continue;
+		}
+
+		expect_detection = (lower_freq <= freq && freq <= upper_freq) ? 1 : 0;
+
+		ast_debug(1, "Test %d Hz detection given %d Hz tone at amplitude %d.  Range:%d-%d Expect detect: %s\n",
+			tone_state->freq, freq, amplitude, lower_freq, upper_freq,
+			expect_detection ? "yes" : "no");
+		test_tone_sample_gen(slin_buf, tone_state->block_size, DEFAULT_SAMPLE_RATE, freq,
+			amplitude);
+
+		detected = 0;
+		for (duration = 0; !detected && duration < tone_state->hits_required + 3; ++duration) {
+			detected = tone_detect(dsp, tone_state, slin_buf, tone_state->block_size) ? 1 : 0;
+		}
+		if (expect_detection != detected) {
+			/*
+			 * Both messages are needed.  ast_debug for when figuring out
+			 * what went wrong and the test update for normal output before
+			 * you start debugging.  The different logging methods are not
+			 * synchronized.
+			 */
+			ast_debug(1,
+				"Test %d Hz detection given %d Hz tone at amplitude %d failed.  Range:%d-%d Detected: %s\n",
+				tone_state->freq, freq, amplitude, lower_freq, upper_freq,
+				detected ? "yes" : "no");
+			ast_test_status_update(test,
+				"Test %d Hz detection given %d Hz tone at amplitude %d failed.  Range:%d-%d Detected: %s\n",
+				tone_state->freq, freq, amplitude, lower_freq, upper_freq,
+				detected ? "yes" : "no");
+			result = -1;
+		}
+		tone_state->hit_count = 0;
+	}
+
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+AST_TEST_DEFINE(test_dsp_fax_detect)
+{
+	struct ast_dsp *dsp;
+	enum ast_test_result_state result;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "fax";
+		info->category = "/main/dsp/";
+		info->summary = "DSP fax tone detect unit test";
+		info->description =
+			"Tests fax tone detection code.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	dsp = ast_dsp_new();
+	if (!dsp) {
+		return AST_TEST_FAIL;
+	}
+
+	result = AST_TEST_PASS;
+
+	/* Test CNG tone amplitude detection */
+	if (test_tone_amplitude_sweep(test, dsp, &dsp->cng_tone_state)) {
+		result = AST_TEST_FAIL;
+	}
+
+	/* Test CED tone amplitude detection */
+	if (test_tone_amplitude_sweep(test, dsp, &dsp->ced_tone_state)) {
+		result = AST_TEST_FAIL;
+	}
+
+	/* Test CNG tone frequency detection */
+	if (test_tone_freq_sweep(test, dsp, &dsp->cng_tone_state, TONE_AMPLITUDE_MAX)) {
+		result = AST_TEST_FAIL;
+	}
+	if (test_tone_freq_sweep(test, dsp, &dsp->cng_tone_state, TONE_AMPLITUDE_MIN)) {
+		result = AST_TEST_FAIL;
+	}
+
+	/* Test CED tone frequency detection */
+	if (test_tone_freq_sweep(test, dsp, &dsp->ced_tone_state, TONE_AMPLITUDE_MAX)) {
+		result = AST_TEST_FAIL;
+	}
+	if (test_tone_freq_sweep(test, dsp, &dsp->ced_tone_state, TONE_AMPLITUDE_MIN)) {
+		result = AST_TEST_FAIL;
+	}
+
+	ast_dsp_free(dsp);
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+AST_TEST_DEFINE(test_dsp_dtmf_detect)
+{
+	int idx;
+	struct ast_dsp *dsp;
+	enum ast_test_result_state result;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "dtmf";
+		info->category = "/main/dsp/";
+		info->summary = "DSP DTMF detect unit test";
+		info->description =
+			"Tests DTMF detection code.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	dsp = ast_dsp_new();
+	if (!dsp) {
+		return AST_TEST_FAIL;
+	}
+
+	result = AST_TEST_PASS;
+
+	for (idx = 0; dtmf_positions[idx]; ++idx) {
+		if (test_dtmf_amplitude_sweep(test, dsp, idx)) {
+			result = AST_TEST_FAIL;
+		}
+	}
+
+	for (idx = 0; dtmf_positions[idx]; ++idx) {
+		if (test_dtmf_twist_sweep(test, dsp, idx)) {
+			result = AST_TEST_FAIL;
+		}
+	}
+
+	ast_dsp_free(dsp);
+	return result;
+}
+#endif
+
+#ifdef TEST_FRAMEWORK
+static void test_dsp_shutdown(void)
+{
+	AST_TEST_UNREGISTER(test_dsp_fax_detect);
+	AST_TEST_UNREGISTER(test_dsp_dtmf_detect);
+}
+#endif
+
 int ast_dsp_init(void)
 {
-	return _dsp_init(0);
+	int res = _dsp_init(0);
+
+#ifdef TEST_FRAMEWORK
+	if (!res) {
+		AST_TEST_REGISTER(test_dsp_fax_detect);
+		AST_TEST_REGISTER(test_dsp_dtmf_detect);
+
+		ast_register_cleanup(test_dsp_shutdown);
+	}
+#endif
+	return res;
 }
 
 int ast_dsp_reload(void)

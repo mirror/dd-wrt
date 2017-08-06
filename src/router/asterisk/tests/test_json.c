@@ -99,7 +99,7 @@ AST_TEST_DEFINE(json_test_false)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "false";
+		info->name = "type_false";
 		info->category = CATEGORY;
 		info->summary = "Testing fundamental JSON false value.";
 		info->description = "Test JSON abstraction library.";
@@ -124,7 +124,7 @@ AST_TEST_DEFINE(json_test_true)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "true";
+		info->name = "type_true";
 		info->category = CATEGORY;
 		info->summary = "Testing JSON true value.";
 		info->description = "Test JSON abstraction library.";
@@ -149,7 +149,7 @@ AST_TEST_DEFINE(json_test_bool0)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "bool0";
+		info->name = "type_bool0";
 		info->category = CATEGORY;
 		info->summary = "Testing JSON boolean function (false).";
 		info->description = "Test JSON abstraction library.";
@@ -176,7 +176,7 @@ AST_TEST_DEFINE(json_test_bool1)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "bool1";
+		info->name = "type_bool1";
 		info->category = CATEGORY;
 		info->summary = "Testing JSON boolean function (true).";
 		info->description = "Test JSON abstraction library.";
@@ -203,7 +203,7 @@ AST_TEST_DEFINE(json_test_null)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "null";
+		info->name = "type_null";
 		info->category = CATEGORY;
 		info->summary = "Testing JSON null value.";
 		info->description = "Test JSON abstraction library.";
@@ -255,7 +255,7 @@ AST_TEST_DEFINE(json_test_string)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "string";
+		info->name = "type_string";
 		info->category = CATEGORY;
 		info->summary = "Basic string tests.";
 		info->description = "Test JSON abstraction library.";
@@ -360,7 +360,7 @@ AST_TEST_DEFINE(json_test_int)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "int";
+		info->name = "type_int";
 		info->category = CATEGORY;
 		info->summary = "Basic JSON integer tests.";
 		info->description = "Test JSON abstraction library.";
@@ -1597,11 +1597,26 @@ AST_TEST_DEFINE(json_test_clever_circle)
 	return AST_TEST_PASS;
 }
 
+static int test_name_number(const char *name, const char *number)
+{
+	int res;
+	struct ast_json *uut;
+	struct ast_json *expected;
+
+	expected = ast_json_pack("{s: s, s: s}",
+		"name", name ?: "",
+		"number", number ?: "");
+	uut = ast_json_name_number(name, number);
+
+	res = ast_json_equal(expected, uut);
+
+	ast_json_unref(expected);
+	ast_json_unref(uut);
+	return res;
+}
+
 AST_TEST_DEFINE(json_test_name_number)
 {
-	RAII_VAR(struct ast_json *, uut, NULL, ast_json_unref);
-	RAII_VAR(struct ast_json *, expected, NULL, ast_json_unref);
-
 	switch (cmd) {
 	case TEST_INIT:
 		info->name = "name_number";
@@ -1613,15 +1628,10 @@ AST_TEST_DEFINE(json_test_name_number)
 		break;
 	}
 
-	ast_test_validate(test, NULL == ast_json_name_number("name", NULL));
-	ast_test_validate(test, NULL == ast_json_name_number(NULL, "1234"));
-	ast_test_validate(test, NULL == ast_json_name_number(NULL, NULL));
-
-	expected = ast_json_pack("{s: s, s: s}",
-				 "name", "Jenny",
-				 "number", "867-5309");
-	uut = ast_json_name_number("Jenny", "867-5309");
-	ast_test_validate(test, ast_json_equal(expected, uut));
+	ast_test_validate(test, test_name_number("name", NULL));
+	ast_test_validate(test, test_name_number(NULL, "1234"));
+	ast_test_validate(test, test_name_number(NULL, NULL));
+	ast_test_validate(test, test_name_number("Jenny", "867-5309"));
 
 	return AST_TEST_PASS;
 }
@@ -1634,7 +1644,7 @@ AST_TEST_DEFINE(json_test_timeval)
 
 	switch (cmd) {
 	case TEST_INIT:
-		info->name = "timeval";
+		info->name = "type_timeval";
 		info->category = CATEGORY;
 		info->summary = "JSON encoding of timevals.";
 		info->description = "Test JSON abstraction library.";
