@@ -66,6 +66,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stasis_channels.h"
 #include "asterisk/max_forwards.h"
 
+#define REC_FORMAT "sln"
+
 /*** DOCUMENTATION
 	<application name="FollowMe" language="en_US">
 		<synopsis>
@@ -309,8 +311,16 @@ static struct call_followme *alloc_profile(const char *fmname)
 
 	ast_mutex_init(&f->lock);
 	ast_copy_string(f->name, fmname, sizeof(f->name));
-	f->moh[0] = '\0';
+	AST_LIST_HEAD_INIT_NOLOCK(&f->numbers);
+	AST_LIST_HEAD_INIT_NOLOCK(&f->blnumbers);
+	AST_LIST_HEAD_INIT_NOLOCK(&f->wlnumbers);
+	return f;
+}
+
+static void init_profile(struct call_followme *f, int activate)
+{
 	f->context[0] = '\0';
+	ast_copy_string(f->moh, defaultmoh, sizeof(f->moh));
 	ast_copy_string(f->takecall, takecall, sizeof(f->takecall));
 	ast_copy_string(f->nextindp, nextindp, sizeof(f->nextindp));
 	ast_copy_string(f->callfromprompt, callfromprompt, sizeof(f->callfromprompt));
@@ -319,16 +329,9 @@ static struct call_followme *alloc_profile(const char *fmname)
 	ast_copy_string(f->plsholdprompt, plsholdprompt, sizeof(f->plsholdprompt));
 	ast_copy_string(f->statusprompt, statusprompt, sizeof(f->statusprompt));
 	ast_copy_string(f->sorryprompt, sorryprompt, sizeof(f->sorryprompt));
-	AST_LIST_HEAD_INIT_NOLOCK(&f->numbers);
-	AST_LIST_HEAD_INIT_NOLOCK(&f->blnumbers);
-	AST_LIST_HEAD_INIT_NOLOCK(&f->wlnumbers);
-	return f;
-}
-
-static void init_profile(struct call_followme *f)
-{
-	f->active = 1;
-	ast_copy_string(f->moh, defaultmoh, sizeof(f->moh));
+	if (activate) {
+		f->active = 1;
+	}
 }
 
    
@@ -501,7 +504,7 @@ static int reload_followme(int reload)
 		if (!new)
 			ast_mutex_lock(&f->lock);
 		/* Re-initialize the profile */
-		init_profile(f);
+		init_profile(f, 1);
 		free_numbers(f);
 		var = ast_variable_browse(cfg, cat);
 		while (var) {
@@ -1214,6 +1217,7 @@ static struct call_followme *find_realtime(const char *name)
 		ast_free(str);
 		return NULL;
 	}
+	init_profile(new_follower, 0);
 
 	for (v = var; v; v = v->next) {
 		if (!strcasecmp(v->name, "active")) {
@@ -1421,7 +1425,7 @@ static int app_exec(struct ast_channel *chan, const char *data)
 
 			snprintf(targs->namerecloc, sizeof(targs->namerecloc), "%s/followme.%s",
 				ast_config_AST_SPOOL_DIR, ast_channel_uniqueid(chan));
-			if (ast_play_and_record(chan, "vm-rec-name", targs->namerecloc, 5, "sln", &duration,
+			if (ast_play_and_record(chan, "vm-rec-name", targs->namerecloc, 5, REC_FORMAT, &duration,
 				NULL, ast_dsp_get_threshold_from_settings(THRESHOLD_SILENCE), 0, NULL) < 0) {
 				goto outrun;
 			}
@@ -1522,7 +1526,18 @@ outrun:
 		ast_free(nm);
 	}
 	if (!ast_strlen_zero(targs->namerecloc)) {
-		unlink(targs->namerecloc);
+		int ret;
+		char fn[PATH_MAX];
+
+		snprintf(fn, sizeof(fn), "%s.%s", targs->namerecloc,
+			     REC_FORMAT);
+		ret = unlink(fn);
+		if (ret != 0) {
+			ast_log(LOG_NOTICE, "Failed to delete recorded name file %s: %d (%s)\n",
+					fn, errno, strerror(errno));
+		} else {
+			ast_debug(2, "deleted recorded prompt %s.\n", fn);
+		}
 	}
 	ast_free((char *) targs->predial_callee);
 	ast_party_connected_line_free(&targs->connected_in);

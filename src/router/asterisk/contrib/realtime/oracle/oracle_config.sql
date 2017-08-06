@@ -555,7 +555,8 @@ CREATE TABLE extensions (
     priority INTEGER NOT NULL, 
     app VARCHAR2(40 CHAR) NOT NULL, 
     appdata VARCHAR2(256 CHAR) NOT NULL, 
-    PRIMARY KEY (id, context, exten, priority), 
+    PRIMARY KEY (id), 
+    UNIQUE (context, exten, priority), 
     UNIQUE (id)
 )
 
@@ -1317,6 +1318,436 @@ ALTER TABLE ps_endpoints ADD mwi_subscribe_replaces_unsolicited INTEGER
 /
 
 UPDATE alembic_version SET version_num='1c688d9a003c' WHERE alembic_version.version_num = '5813202e92be'
+
+/
+
+-- Running upgrade 1c688d9a003c -> 8d478ab86e29
+
+ALTER TABLE ps_globals ADD disable_multi_domain VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_globals ADD CONSTRAINT yesno_values CHECK (disable_multi_domain IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='8d478ab86e29' WHERE alembic_version.version_num = '1c688d9a003c'
+
+/
+
+-- Running upgrade 8d478ab86e29 -> 65eb22eb195
+
+ALTER TABLE ps_globals ADD unidentified_request_count INTEGER
+
+/
+
+ALTER TABLE ps_globals ADD unidentified_request_period INTEGER
+
+/
+
+ALTER TABLE ps_globals ADD unidentified_request_prune_interval INTEGER
+
+/
+
+ALTER TABLE ps_globals ADD default_realm VARCHAR2(40 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='65eb22eb195' WHERE alembic_version.version_num = '8d478ab86e29'
+
+/
+
+-- Running upgrade 65eb22eb195 -> 81b01a191a46
+
+ALTER TABLE ps_contacts ADD reg_server VARCHAR2(20 CHAR)
+
+/
+
+ALTER TABLE ps_contacts ADD CONSTRAINT ps_contacts_uq UNIQUE (id, reg_server)
+
+/
+
+UPDATE alembic_version SET version_num='81b01a191a46' WHERE alembic_version.version_num = '65eb22eb195'
+
+/
+
+-- Running upgrade 81b01a191a46 -> 6be31516058d
+
+ALTER TABLE ps_contacts ADD authenticate_qualify VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_contacts ADD CONSTRAINT yesno_values CHECK (authenticate_qualify IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='6be31516058d' WHERE alembic_version.version_num = '81b01a191a46'
+
+/
+
+-- Running upgrade 6be31516058d -> bca7113d796f
+
+ALTER TABLE ps_endpoints ADD deny VARCHAR2(95 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD permit VARCHAR2(95 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD acl VARCHAR2(40 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD contact_deny VARCHAR2(95 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD contact_permit VARCHAR2(95 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD contact_acl VARCHAR2(40 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='bca7113d796f' WHERE alembic_version.version_num = '6be31516058d'
+
+/
+
+-- Running upgrade bca7113d796f -> a845e4d8ade8
+
+ALTER TABLE ps_contacts ADD via_addr VARCHAR2(40 CHAR)
+
+/
+
+ALTER TABLE ps_contacts ADD via_port INTEGER
+
+/
+
+ALTER TABLE ps_contacts ADD call_id VARCHAR2(255 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='a845e4d8ade8' WHERE alembic_version.version_num = 'bca7113d796f'
+
+/
+
+-- Running upgrade a845e4d8ade8 -> ef7efc2d3964
+
+ALTER TABLE ps_contacts ADD endpoint VARCHAR2(40 CHAR)
+
+/
+
+ALTER TABLE ps_contacts MODIFY expiration_time NUMBER(19)
+
+/
+
+CREATE INDEX ps_contacts_qualifyfreq_exp ON ps_contacts (qualify_frequency, expiration_time)
+
+/
+
+CREATE INDEX ps_aors_qualifyfreq_contact ON ps_aors (qualify_frequency, contact)
+
+/
+
+UPDATE alembic_version SET version_num='ef7efc2d3964' WHERE alembic_version.version_num = 'a845e4d8ade8'
+
+/
+
+-- Running upgrade ef7efc2d3964 -> 9deac0ae4717
+
+ALTER TABLE ps_endpoints ADD subscribe_context VARCHAR2(40 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='9deac0ae4717' WHERE alembic_version.version_num = 'ef7efc2d3964'
+
+/
+
+-- Running upgrade 9deac0ae4717 -> 4a6c67fa9b7a
+
+ALTER TABLE ps_endpoints ADD fax_detect_timeout INTEGER
+
+/
+
+UPDATE alembic_version SET version_num='4a6c67fa9b7a' WHERE alembic_version.version_num = '9deac0ae4717'
+
+/
+
+-- Running upgrade 4a6c67fa9b7a -> c7a44a5a0851
+
+ALTER TABLE ps_globals ADD mwi_tps_queue_high INTEGER
+
+/
+
+ALTER TABLE ps_globals ADD mwi_tps_queue_low INTEGER
+
+/
+
+ALTER TABLE ps_globals ADD mwi_disable_initial_unsolicited VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_globals ADD CONSTRAINT yesno_values CHECK (mwi_disable_initial_unsolicited IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='c7a44a5a0851' WHERE alembic_version.version_num = '4a6c67fa9b7a'
+
+/
+
+-- Running upgrade c7a44a5a0851 -> 3772f8f828da
+
+ALTER TABLE ps_endpoints MODIFY identify_by VARCHAR(13 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT pjsip_identify_by_values CHECK (identify_by IN ('username', 'auth_username'))
+
+/
+
+UPDATE alembic_version SET version_num='3772f8f828da' WHERE alembic_version.version_num = 'c7a44a5a0851'
+
+/
+
+-- Running upgrade 3772f8f828da -> 4e2493ef32e6
+
+ALTER TABLE ps_endpoints ADD contact_user VARCHAR2(80 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='4e2493ef32e6' WHERE alembic_version.version_num = '3772f8f828da'
+
+/
+
+-- Running upgrade 4e2493ef32e6 -> a6ef36f1309
+
+ALTER TABLE ps_globals ADD ignore_uri_user_options VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_globals ADD CONSTRAINT yesno_values CHECK (ignore_uri_user_options IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='a6ef36f1309' WHERE alembic_version.version_num = '4e2493ef32e6'
+
+/
+
+-- Running upgrade a6ef36f1309 -> 4468b4a91372
+
+ALTER TABLE ps_endpoints ADD asymmetric_rtp_codec VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT yesno_values CHECK (asymmetric_rtp_codec IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='4468b4a91372' WHERE alembic_version.version_num = 'a6ef36f1309'
+
+/
+
+-- Running upgrade 4468b4a91372 -> 28ab27a7826d
+
+ALTER TABLE ps_endpoint_id_ips ADD srv_lookups VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoint_id_ips ADD CONSTRAINT yesno_values CHECK (srv_lookups IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='28ab27a7826d' WHERE alembic_version.version_num = '4468b4a91372'
+
+/
+
+-- Running upgrade 28ab27a7826d -> 465e70e8c337
+
+ALTER TABLE ps_endpoint_id_ips ADD match_header VARCHAR2(255 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='465e70e8c337' WHERE alembic_version.version_num = '28ab27a7826d'
+
+/
+
+-- Running upgrade 465e70e8c337 -> 15db7b91a97a
+
+ALTER TABLE ps_endpoints ADD rtcp_mux VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT yesno_values CHECK (rtcp_mux IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='15db7b91a97a' WHERE alembic_version.version_num = '465e70e8c337'
+
+/
+
+-- Running upgrade 15db7b91a97a -> f638dbe2eb23
+
+ALTER TABLE ps_transports ADD symmetric_transport VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_transports ADD CONSTRAINT yesno_values CHECK (symmetric_transport IN ('yes', 'no'))
+
+/
+
+ALTER TABLE ps_subscription_persistence ADD contact_uri VARCHAR2(256 CHAR)
+
+/
+
+UPDATE alembic_version SET version_num='f638dbe2eb23' WHERE alembic_version.version_num = '15db7b91a97a'
+
+/
+
+-- Running upgrade f638dbe2eb23 -> 8fce4c573e15
+
+ALTER TABLE ps_endpoints ADD allow_overlap VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT yesno_values CHECK (allow_overlap IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='8fce4c573e15' WHERE alembic_version.version_num = 'f638dbe2eb23'
+
+/
+
+-- Running upgrade 8fce4c573e15 -> 2da192dbbc65
+
+CREATE TABLE ps_outbound_publishes (
+    id VARCHAR2(40 CHAR) NOT NULL, 
+    expiration INTEGER, 
+    outbound_auth VARCHAR2(40 CHAR), 
+    outbound_proxy VARCHAR2(256 CHAR), 
+    server_uri VARCHAR2(256 CHAR), 
+    from_uri VARCHAR2(256 CHAR), 
+    to_uri VARCHAR2(256 CHAR), 
+    event VARCHAR2(40 CHAR), 
+    max_auth_attempts INTEGER, 
+    transport VARCHAR2(40 CHAR), 
+    multi_user VARCHAR(3 CHAR), 
+    "@body" VARCHAR2(40 CHAR), 
+    "@context" VARCHAR2(256 CHAR), 
+    "@exten" VARCHAR2(256 CHAR), 
+    UNIQUE (id), 
+    CONSTRAINT yesno_values CHECK (multi_user IN ('yes', 'no'))
+)
+
+/
+
+CREATE INDEX ps_outbound_publishes_id ON ps_outbound_publishes (id)
+
+/
+
+CREATE TABLE ps_inbound_publications (
+    id VARCHAR2(40 CHAR) NOT NULL, 
+    endpoint VARCHAR2(40 CHAR), 
+    "event_asterisk-devicestate" VARCHAR2(40 CHAR), 
+    "event_asterisk-mwi" VARCHAR2(40 CHAR), 
+    UNIQUE (id)
+)
+
+/
+
+CREATE INDEX ps_inbound_publications_id ON ps_inbound_publications (id)
+
+/
+
+CREATE TABLE ps_asterisk_publications (
+    id VARCHAR2(40 CHAR) NOT NULL, 
+    devicestate_publish VARCHAR2(40 CHAR), 
+    mailboxstate_publish VARCHAR2(40 CHAR), 
+    device_state VARCHAR(3 CHAR), 
+    device_state_filter VARCHAR2(256 CHAR), 
+    mailbox_state VARCHAR(3 CHAR), 
+    mailbox_state_filter VARCHAR2(256 CHAR), 
+    UNIQUE (id), 
+    CONSTRAINT yesno_values CHECK (device_state IN ('yes', 'no')), 
+    CONSTRAINT yesno_values CHECK (mailbox_state IN ('yes', 'no'))
+)
+
+/
+
+CREATE INDEX ps_asterisk_publications_id ON ps_asterisk_publications (id)
+
+/
+
+UPDATE alembic_version SET version_num='2da192dbbc65' WHERE alembic_version.version_num = '8fce4c573e15'
+
+/
+
+-- Running upgrade 2da192dbbc65 -> 1d0e332c32af
+
+CREATE TABLE ps_resource_list (
+    id VARCHAR2(40 CHAR) NOT NULL, 
+    list_item VARCHAR2(2048 CHAR), 
+    event VARCHAR2(40 CHAR), 
+    full_state VARCHAR(3 CHAR), 
+    notification_batch_interval INTEGER, 
+    UNIQUE (id), 
+    CONSTRAINT yesno_values CHECK (full_state IN ('yes', 'no'))
+)
+
+/
+
+CREATE INDEX ps_resource_list_id ON ps_resource_list (id)
+
+/
+
+UPDATE alembic_version SET version_num='1d0e332c32af' WHERE alembic_version.version_num = '2da192dbbc65'
+
+/
+
+-- Running upgrade 1d0e332c32af -> 86bb1efa278d
+
+ALTER TABLE ps_endpoints ADD refer_blind_progress VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT yesno_values CHECK (refer_blind_progress IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='86bb1efa278d' WHERE alembic_version.version_num = '1d0e332c32af'
+
+/
+
+-- Running upgrade 86bb1efa278d -> d7983954dd96
+
+ALTER TABLE ps_endpoints ADD notify_early_inuse_ringing VARCHAR(3 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT yesno_values CHECK (notify_early_inuse_ringing IN ('yes', 'no'))
+
+/
+
+UPDATE alembic_version SET version_num='d7983954dd96' WHERE alembic_version.version_num = '86bb1efa278d'
+
+/
+
+-- Running upgrade d7983954dd96 -> 164abbd708c
+
+ALTER TABLE ps_endpoints DROP CONSTRAINT pjsip_dtmf_mode_values_v2
+
+/
+
+ALTER TABLE ps_endpoints MODIFY dtmf_mode VARCHAR(9 CHAR)
+
+/
+
+ALTER TABLE ps_endpoints ADD CONSTRAINT pjsip_dtmf_mode_values_v3 CHECK (dtmf_mode IN ('rfc4733', 'inband', 'info', 'auto', 'auto_info'))
+
+/
+
+UPDATE alembic_version SET version_num='164abbd708c' WHERE alembic_version.version_num = 'd7983954dd96'
 
 /
 

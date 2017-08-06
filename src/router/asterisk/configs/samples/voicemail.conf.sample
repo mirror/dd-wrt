@@ -227,6 +227,9 @@ pagerdateformat=%A, %B %d, %Y at %r
 ;imapclosetimeout=60     ; The TCP close timeout (in seconds)
 ;imapreadtimeout=60      ; The TCP read timeout (in seconds)
 ;imapwritetimeout=60     ; The TCP write timeout (in seconds)
+;imap_poll_logout=no     ; If pollmailboxes=yes, then specify whether need to
+                         ; disconnect from the IMAP server after polling.
+                         ; Default: no
 
 ; -----------------------------------------------------------------------------
 ;
@@ -333,6 +336,13 @@ sendvoicemail=yes ; Allow the user to compose and send a voicemail while inside
                     ; The default is "no".
 ; minpassword=0 ; Enforce minimum password length
 
+; vm-login=custom_sound
+			;     Customize which sound file is used instead of the default
+			;     prompt that says: "Comedian Mail. Mailbox?"
+; vm-newuser=custom_sound
+			;     Customize which sound file is used instead of the default
+			;     prompt that says: "Welcome to Comedian Mail. First, I will
+			;     guide you through a short setup process."
 ; vm-password=custom_sound
 			;     Customize which sound file is used instead of the default
 			;     prompt that says: "password"
@@ -376,6 +386,16 @@ sendvoicemail=yes ; Allow the user to compose and send a voicemail while inside
 ; defaults to being off
 ; backupdeleted=100
 
+; Asterisk Task Processor Queue Size
+; On heavy loaded system you may need to increase 'app_voicemail' taskprocessor queue.
+; If the taskprocessor queue size reached high water level, the alert is triggered.
+; If the alert is set then some modules (for example pjsip) slow down its production
+; until the alert is cleared.
+; The alert is cleared when taskprocessor queue size drops to the low water clear level.
+; The next options set taskprocessor queue levels for this module.
+; tps_queue_high=500	; Taskprocessor high water alert trigger level.
+; tps_queue_low=450	; Taskprocessor low water clear alert level.
+			; The default is -1 for 90% of high water level.
 
 [zonemessages]
 ; Users may be located in different timezones, or may have different
@@ -422,7 +442,7 @@ european=Europe/Copenhagen|'vm-received' a d b 'digits/at' HM
 ; Note: The rest of the system must reference mailboxes defined here as mailbox@default.
 
 1234 => 4242,Example Mailbox,root@localhost
-;4200 => 9855,Mark Spencer,markster@linux-support.net,mypager@digium.com,attach=no|serveremail=myaddy@digium.com|tz=central|maxmsg=10
+;4200 => 9855,Mark Spencer,markster@linux-support.net,mypager@digium.com,attach=no|serveremail=myaddy@digium.com|fromstring=MySystem|tz=central|maxmsg=10
 ;4300 => 3456,Ben Rigas,ben@american-computer.net
 ;4310 => -5432,Sales,sales@marko.net
 ;4069 => 6522,Matt Brooks,matt@marko.net,,|tz=central|attach=yes|saycid=yes|dialout=fromvm|callback=fromvm|review=yes|operator=yes|envelope=yes|moveheard=yes|sayduration=yes|saydurationm=1

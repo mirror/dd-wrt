@@ -11,7 +11,7 @@ AC_DEFUN([AST_EXT_LIB_SETUP],
     $1_DESCRIP="$2"
     $1_OPTION="$3"
     PBX_$1=0
-    AC_ARG_WITH([$3], AC_HELP_STRING([--with-$3=PATH],[use $2 files in PATH$4]),
+    AC_ARG_WITH([$3], AS_HELP_STRING([--with-$3=PATH],[use $2 files in PATH$4]),
     [
 	case ${withval} in
 	n|no)
@@ -163,4 +163,40 @@ _ACEOF
    fi
 fi
 m4_ifval([$7], [AH_TEMPLATE(m4_bpatsubst([[HAVE_$1_VERSION]], [(.*)]), [Define to the version of the $2 library.])])
+])
+
+# Check if the previously discovered library can be dynamically linked.
+#
+# AST_EXT_LIB_CHECK_SHARED([package], [library], [function], [header],
+#	 [extra libs], [extra cflags], [action-if-true], [action-if-false])
+AC_DEFUN([AST_EXT_LIB_CHECK_SHARED],
+[
+if test "x${PBX_$1}" = "x1"; then
+   ast_ext_lib_check_shared_saved_libs="${LIBS}"
+   ast_ext_lib_check_shared_saved_ldflags="${LDFLAGS}"
+   ast_ext_lib_check_shared_saved_cflags="${CFLAGS}"
+   LIBS="${LIBS} ${$1_LIB} $5"
+   LDFLAGS="${LDFLAGS} -shared -fPIC"
+   CFLAGS="${CFLAGS} ${$1_INCLUDE} $6"
+   AC_MSG_CHECKING(for the ability of -l$2 to be linked in a shared object)
+   AC_LINK_IFELSE(
+   [
+       AC_LANG_PROGRAM(
+           [#include <$4>],
+           [$3();]
+       )
+   ],
+   [
+      AC_MSG_RESULT(yes)
+      $7
+   ],
+   [
+      AC_MSG_RESULT(no)
+      $8
+   ]
+   )
+   CFLAGS="${ast_ext_lib_check_shared_saved_cflags}"
+   LDFLAGS="${ast_ext_lib_check_shared_saved_ldflags}"
+   LIBS="${ast_ext_lib_check_shared_saved_libs}"
+fi
 ])

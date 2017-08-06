@@ -123,16 +123,14 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<syntax>
 			<parameter name="to" required="true">
 				<para>A To URI for the message.</para>
-				<xi:include xpointer="xpointer(/docs/info[@name='PJSIPMessageToInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='SIPMessageToInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='XMPPMessageToInfo'])" />
+				<xi:include xpointer="xpointer(/docs/info[@name='MessageToInfo'])" />
 			</parameter>
 			<parameter name="from" required="false">
 				<para>A From URI for the message if needed for the
-				message technology being used to send this message.</para>
-				<xi:include xpointer="xpointer(/docs/info[@name='PJSIPMessageFromInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='SIPMessageFromInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='XMPPMessageFromInfo'])" />
+				message technology being used to send this message. This can be a
+				SIP(S) URI, such as <literal>Alice &lt;sip:alice@atlanta.com&gt;</literal>,
+				a string in the format <literal>alice@atlanta.com</literal>, or simply
+				a username such as <literal>alice</literal>.</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -168,16 +166,12 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 			<parameter name="To" required="true">
 				<para>The URI the message is to be sent to.</para>
-				<xi:include xpointer="xpointer(/docs/info[@name='PJSIPMessageToInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='SIPMessageToInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='XMPPMessageToInfo'])" />
+				<xi:include xpointer="xpointer(/docs/info[@name='MessageToInfo'])" />
 			</parameter>
 			<parameter name="From">
 				<para>A From URI for the message if needed for the
 				message technology being used to send this message.</para>
-				<xi:include xpointer="xpointer(/docs/info[@name='PJSIPMessageFromInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='SIPMessageFromInfo'])" />
-				<xi:include xpointer="xpointer(/docs/info[@name='XMPPMessageFromInfo'])" />
+				<xi:include xpointer="xpointer(/docs/info[@name='MessageFromInfo'])" />
 			</parameter>
 			<parameter name="Body">
 				<para>The message body text.  This must not contain any newlines as that
@@ -785,10 +779,19 @@ static void chan_cleanup(struct ast_channel *chan)
 	if (msg_ds) {
 		ast_channel_datastore_add(chan, msg_ds);
 	}
+
 	/*
 	 * Clear softhangup flags.
 	 */
 	ast_channel_clear_softhangup(chan, AST_SOFTHANGUP_ALL);
+
+	/*
+	 * Flush the alert pipe in case we miscounted somewhere when
+	 * messing with frames on the read queue, we had to flush the
+	 * read queue above, or we had an "Exceptionally long queue
+	 * length" event.
+	 */
+	ast_channel_internal_alert_flush(chan);
 
 	ast_channel_unlock(chan);
 }

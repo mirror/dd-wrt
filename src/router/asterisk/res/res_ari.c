@@ -147,6 +147,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/astobj2.h"
 #include "asterisk/module.h"
 #include "asterisk/paths.h"
+#include "asterisk/stasis_app.h"
 
 #include <string.h>
 #include <sys/stat.h>
@@ -304,10 +305,11 @@ void ast_ari_response_alloc_failed(struct ast_ari_response *response)
 void ast_ari_response_created(struct ast_ari_response *response,
 	const char *url, struct ast_json *message)
 {
+	RAII_VAR(struct stasis_rest_handlers *, root, get_root_handler(), ao2_cleanup);
 	response->message = message;
 	response->response_code = 201;
 	response->response_text = "Created";
-	ast_str_append(&response->headers, 0, "Location: %s\r\n", url);
+	ast_str_append(&response->headers, 0, "Location: /%s%s\r\n", root->path_segment, url);
 }
 
 static void add_allow_header(struct stasis_rest_handlers *handler,
@@ -489,7 +491,7 @@ static void handle_options(struct stasis_rest_handlers *handler,
 void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 	const char *uri, enum ast_http_method method,
 	struct ast_variable *get_params, struct ast_variable *headers,
-	struct ast_ari_response *response)
+	struct ast_json *body, struct ast_ari_response *response)
 {
 	RAII_VAR(struct stasis_rest_handlers *, root, NULL, ao2_cleanup);
 	struct stasis_rest_handlers *handler;
@@ -504,8 +506,10 @@ void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 	while ((path_segment = strsep(&path, "/")) && (strlen(path_segment) > 0)) {
 		struct stasis_rest_handlers *found_handler = NULL;
 		int i;
+
 		ast_uri_decode(path_segment, ast_uri_http_legacy);
 		ast_debug(3, "Finding handler for %s\n", path_segment);
+
 		for (i = 0; found_handler == NULL && i < handler->num_children; ++i) {
 			struct stasis_rest_handlers *child = handler->children[i];
 
@@ -567,7 +571,7 @@ void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 		return;
 	}
 
-	callback(ser, get_params, path_vars, headers, response);
+	callback(ser, get_params, path_vars, headers, body, response);
 	if (response->message == NULL && response->response_code == 0) {
 		/* Really should not happen */
 		ast_log(LOG_ERROR, "ARI %s %s not implemented\n",
@@ -578,7 +582,7 @@ void ast_ari_invoke(struct ast_tcptls_session_instance *ser,
 	}
 }
 
-void ast_ari_get_docs(const char *uri, struct ast_variable *headers,
+void ast_ari_get_docs(const char *uri, const char *prefix, struct ast_variable *headers,
 			  struct ast_ari_response *response)
 {
 	RAII_VAR(struct ast_str *, absolute_path_builder, NULL, ast_free);
@@ -684,9 +688,15 @@ void ast_ari_get_docs(const char *uri, struct ast_variable *headers,
 			}
 		}
 		if (host != NULL) {
-			ast_json_object_set(
-				obj, "basePath",
-				ast_json_stringf("http://%s/ari", host->value));
+			if (prefix != NULL && strlen(prefix) > 0) {
+				ast_json_object_set(
+					obj, "basePath",
+					ast_json_stringf("http://%s%s/ari", host->value,prefix));
+			} else {
+				ast_json_object_set(
+					obj, "basePath",
+					ast_json_stringf("http://%s/ari", host->value));
+			}
 		} else {
 			/* Without the host, we don't have the basePath */
 			ast_json_object_del(obj, "basePath");
@@ -871,6 +881,10 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 	RAII_VAR(struct ast_ari_conf_user *, user, NULL, ao2_cleanup);
 	struct ast_ari_response response = {};
 	RAII_VAR(struct ast_variable *, post_vars, NULL, ast_variables_destroy);
+	struct ast_variable *var;
+	const char *app_name = NULL;
+	RAII_VAR(struct ast_json *, body, ast_json_null(), ast_json_free);
+	int debug_app = 0;
 
 	if (!response_body) {
 		ast_http_request_close_on_completion(ser);
@@ -918,6 +932,25 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 				"Bad Request", "Error parsing request body");
 			goto request_failed;
 		}
+
+		/* Look for a JSON request entity only if there were no post_vars.
+		 * If there were post_vars, then the request body would already have
+		 * been consumed and can not be read again.
+		 */
+		body = ast_http_get_json(ser, headers);
+		if (!body) {
+			switch (errno) {
+			case EFBIG:
+				ast_ari_response_error(&response, 413, "Request Entity Too Large", "Request body too large");
+				goto request_failed;
+			case ENOMEM:
+				ast_ari_response_error(&response, 500, "Internal Server Error", "Error processing request");
+				goto request_failed;
+			case EIO:
+				ast_ari_response_error(&response, 400, "Bad Request", "Error parsing request body");
+				goto request_failed;
+			}
+		}
 	}
 	if (get_params == NULL) {
 		get_params = post_vars;
@@ -932,6 +965,41 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 		 */
 		last_var->next = ast_variables_dup(get_params);
 		get_params = post_vars;
+	}
+
+	/* At this point, get_params will contain post_vars (if any) */
+	app_name = ast_variable_find_in_list(get_params, "app");
+	if (!app_name) {
+		struct ast_json *app = ast_json_object_get(body, "app");
+
+		app_name = (app ? ast_json_string_get(app) : NULL);
+	}
+
+	/* stasis_app_get_debug_by_name returns an "||" of the app's debug flag
+	 * and the global debug flag.
+	 */
+	debug_app = stasis_app_get_debug_by_name(app_name);
+	if (debug_app) {
+		struct ast_str *buf = ast_str_create(512);
+		char *str = ast_json_dump_string_format(body, ast_ari_json_format());
+
+		if (!buf) {
+			ast_http_request_close_on_completion(ser);
+			ast_http_error(ser, 500, "Server Error", "Out of memory");
+			goto request_failed;
+		}
+
+		ast_str_append(&buf, 0, "<--- ARI request received from: %s --->\n",
+			ast_sockaddr_stringify(&ser->remote_address));
+		for (var = headers; var; var = var->next) {
+			ast_str_append(&buf, 0, "%s: %s\n", var->name, var->value);
+		}
+		for (var = get_params; var; var = var->next) {
+			ast_str_append(&buf, 0, "%s: %s\n", var->name, var->value);
+		}
+		ast_verbose("%sbody:\n%s\n\n", ast_str_buffer(buf), str);
+		ast_json_free(str);
+		ast_free(buf);
 	}
 
 	user = authenticate_user(get_params, headers);
@@ -968,11 +1036,11 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 			ast_ari_response_error(&response, 405, "Method Not Allowed", "Unsupported method");
 		} else {
 			/* Skip the api-docs prefix */
-			ast_ari_get_docs(strchr(uri, '/') + 1, headers, &response);
+			ast_ari_get_docs(strchr(uri, '/') + 1, urih->prefix, headers, &response);
 		}
 	} else {
 		/* Other RESTful resources */
-		ast_ari_invoke(ser, uri, method, get_params, headers,
+		ast_ari_invoke(ser, uri, method, get_params, headers, body,
 			&response);
 	}
 
@@ -984,6 +1052,7 @@ static int ast_ari_callback(struct ast_tcptls_session_instance *ser,
 	}
 
 request_failed:
+
 	/* If you explicitly want to have no content, set message to
 	 * ast_json_null().
 	 */
@@ -1006,8 +1075,13 @@ request_failed:
 		}
 	}
 
-	ast_debug(3, "Examining ARI response:\n%d %s\n%s\n%s\n", response.response_code,
-		response.response_text, ast_str_buffer(response.headers), ast_str_buffer(response_body));
+	if (debug_app) {
+		ast_verbose("<--- Sending ARI response to %s --->\n%d %s\n%s%s\n\n",
+			ast_sockaddr_stringify(&ser->remote_address), response.response_code,
+			response.response_text, ast_str_buffer(response.headers),
+			ast_str_buffer(response_body));
+	}
+
 	ast_http_send(ser, method, response.response_code,
 		      response.response_text, response.headers, response_body,
 		      0, 0);
@@ -1029,46 +1103,6 @@ static struct ast_http_uri http_uri = {
 	.no_decode_uri = 1,
 };
 
-static int load_module(void)
-{
-	ast_mutex_init(&root_handler_lock);
-
-	/* root_handler may have been built during a declined load */
-	if (!root_handler) {
-		root_handler = root_handler_create();
-	}
-	if (!root_handler) {
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
-	/* oom_json may have been built during a declined load */
-	if (!oom_json) {
-		oom_json = ast_json_pack(
-			"{s: s}", "error", "Allocation failed");
-	}
-	if (!oom_json) {
-		/* Ironic */
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
-	if (ast_ari_config_init() != 0) {
-		return AST_MODULE_LOAD_DECLINE;
-	}
-
-	if (is_enabled()) {
-		ast_debug(3, "ARI enabled\n");
-		ast_http_uri_link(&http_uri);
-	} else {
-		ast_debug(3, "ARI disabled\n");
-	}
-
-	if (ast_ari_cli_register() != 0) {
-		return AST_MODULE_LOAD_FAILURE;
-	}
-
-	return AST_MODULE_LOAD_SUCCESS;
-}
-
 static int unload_module(void)
 {
 	ast_ari_cli_unregister();
@@ -1088,6 +1122,49 @@ static int unload_module(void)
 	oom_json = NULL;
 
 	return 0;
+}
+
+static int load_module(void)
+{
+	ast_mutex_init(&root_handler_lock);
+
+	/* root_handler may have been built during a declined load */
+	if (!root_handler) {
+		root_handler = root_handler_create();
+	}
+	if (!root_handler) {
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	/* oom_json may have been built during a declined load */
+	if (!oom_json) {
+		oom_json = ast_json_pack(
+			"{s: s}", "error", "Allocation failed");
+	}
+	if (!oom_json) {
+		/* Ironic */
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	if (ast_ari_config_init() != 0) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	if (is_enabled()) {
+		ast_debug(3, "ARI enabled\n");
+		ast_http_uri_link(&http_uri);
+	} else {
+		ast_debug(3, "ARI disabled\n");
+	}
+
+	if (ast_ari_cli_register() != 0) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int reload_module(void)

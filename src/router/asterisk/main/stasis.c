@@ -59,6 +59,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$");
 			</description>
 			<see-also>
 				<ref type="application">UserEvent</ref>
+				<ref type="managerEvent">UserEvent</ref>
 			</see-also>
 		</managerEventInstance>
 	</managerEvent>
@@ -562,6 +563,18 @@ struct stasis_subscription *stasis_unsubscribe(struct stasis_subscription *sub)
 	/* Unsubscribing unrefs the subscription */
 	ao2_cleanup(sub);
 	return NULL;
+}
+
+int stasis_subscription_set_congestion_limits(struct stasis_subscription *subscription,
+	long low_water, long high_water)
+{
+	int res = -1;
+
+	if (subscription) {
+		res = ast_taskprocessor_alert_set_levels(subscription->mailbox,
+			low_water, high_water);
+	}
+	return res;
 }
 
 void stasis_subscription_join(struct stasis_subscription *subscription)

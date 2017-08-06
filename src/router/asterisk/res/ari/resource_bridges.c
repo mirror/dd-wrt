@@ -37,6 +37,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stasis.h"
 #include "asterisk/stasis_bridges.h"
 #include "asterisk/stasis_app.h"
+#include "asterisk/stasis_app_impl.h"
 #include "asterisk/stasis_app_playback.h"
 #include "asterisk/stasis_app_recording.h"
 #include "asterisk/stasis_channels.h"
@@ -278,6 +279,7 @@ struct bridge_channel_control_thread_data {
 	struct ast_channel *bridge_channel;
 	struct stasis_app_control *control;
 	struct stasis_forward *forward;
+	char bridge_id[0];
 };
 
 static void *bridge_channel_control_thread(void *data)
@@ -286,6 +288,7 @@ static void *bridge_channel_control_thread(void *data)
 	struct ast_channel *bridge_channel = thread_data->bridge_channel;
 	struct stasis_app_control *control = thread_data->control;
 	struct stasis_forward *forward = thread_data->forward;
+	char *bridge_id = ast_strdupa(thread_data->bridge_id);
 
 	RAII_VAR(struct ast_callid *, callid, ast_channel_callid(bridge_channel), ast_callid_cleanup);
 
@@ -299,6 +302,7 @@ static void *bridge_channel_control_thread(void *data)
 	stasis_app_control_execute_until_exhausted(bridge_channel, control);
 	stasis_app_control_flush_queue(control);
 
+	stasis_app_bridge_playback_channel_remove(bridge_id, control);
 	stasis_forward_cancel(forward);
 	ao2_cleanup(control);
 	ast_hangup(bridge_channel);
@@ -381,7 +385,7 @@ static int ari_bridges_play_helper(const char *args_media,
 		return -1;
 	}
 
-	if (ast_asprintf(playback_url, "/playback/%s",
+	if (ast_asprintf(playback_url, "/playbacks/%s",
 			stasis_app_playback_get_id(playback)) == -1) {
 		playback_url = NULL;
 		ast_ari_response_alloc_failed(response);
@@ -464,8 +468,9 @@ static void ari_bridges_play_new(const char *args_media,
 	}
 
 	/* Give play_channel and control reference to the thread data */
-	thread_data = ast_calloc(1, sizeof(*thread_data));
+	thread_data = ast_malloc(sizeof(*thread_data) + strlen(bridge->uniqueid) + 1);
 	if (!thread_data) {
+		stasis_app_bridge_playback_channel_remove((char *)bridge->uniqueid, control);
 		ast_ari_response_alloc_failed(response);
 		return;
 	}
@@ -473,8 +478,11 @@ static void ari_bridges_play_new(const char *args_media,
 	thread_data->bridge_channel = play_channel;
 	thread_data->control = control;
 	thread_data->forward = channel_forward;
+	/* Safe */
+	strcpy(thread_data->bridge_id, bridge->uniqueid);
 
 	if (ast_pthread_create_detached(&threadid, NULL, bridge_channel_control_thread, thread_data)) {
+		stasis_app_bridge_playback_channel_remove((char *)bridge->uniqueid, control);
 		ast_ari_response_alloc_failed(response);
 		ast_free(thread_data);
 		return;
@@ -990,4 +998,69 @@ void ast_ari_bridges_create_with_id(struct ast_variable *headers,
 
 	ast_ari_response_ok(response,
 		ast_bridge_snapshot_to_json(snapshot, stasis_app_get_sanitizer()));
+}
+
+static int bridge_set_video_source_cb(struct stasis_app_control *control,
+	struct ast_channel *chan, void *data)
+{
+	struct ast_bridge *bridge = data;
+
+	ast_bridge_lock(bridge);
+	ast_bridge_set_single_src_video_mode(bridge, chan);
+	ast_bridge_unlock(bridge);
+
+	return 0;
+}
+
+void ast_ari_bridges_set_video_source(struct ast_variable *headers,
+	struct ast_ari_bridges_set_video_source_args *args, struct ast_ari_response *response)
+{
+	struct ast_bridge *bridge;
+	struct stasis_app_control *control;
+
+	bridge = find_bridge(response, args->bridge_id);
+	if (!bridge) {
+		return;
+	}
+
+	control = find_channel_control(response, args->channel_id);
+	if (!control) {
+		ao2_ref(bridge, -1);
+		return;
+	}
+
+	if (stasis_app_get_bridge(control) != bridge) {
+		ast_ari_response_error(response, 422,
+			"Unprocessable Entity",
+			"Channel not in this bridge");
+		ao2_ref(bridge, -1);
+		ao2_ref(control, -1);
+		return;
+	}
+
+	stasis_app_send_command(control, bridge_set_video_source_cb,
+		ao2_bump(bridge), __ao2_cleanup);
+
+	ao2_ref(bridge, -1);
+	ao2_ref(control, -1);
+
+	ast_ari_response_no_content(response);
+}
+
+void ast_ari_bridges_clear_video_source(struct ast_variable *headers,
+	struct ast_ari_bridges_clear_video_source_args *args, struct ast_ari_response *response)
+{
+	struct ast_bridge *bridge;
+
+	bridge = find_bridge(response, args->bridge_id);
+	if (!bridge) {
+		return;
+	}
+
+	ast_bridge_lock(bridge);
+	ast_bridge_set_talker_src_video_mode(bridge);
+	ast_bridge_unlock(bridge);
+
+	ao2_ref(bridge, -1);
+	ast_ari_response_no_content(response);
 }

@@ -250,7 +250,7 @@ db_reconnect:
 					struct ast_tm tm;
 					char timestr[128];
 					ast_localtime(&tv, &tm, ast_str_strlen(cdrzone) ? ast_str_buffer(cdrzone) : NULL);
-					ast_strftime(timestr, sizeof(timestr), "%Y-%m-%d %T", &tm);
+					ast_strftime(timestr, sizeof(timestr), DATE_FORMAT, &tm);
 					value = ast_strdupa(timestr);
 					cdrname = "calldate";
 				} else {
@@ -265,8 +265,7 @@ db_reconnect:
 			/* Need the type and value to determine if we want the raw value or not */
 			if (entry->staticvalue) {
 				value = ast_strdupa(entry->staticvalue);
-			} else if ((!strcmp(cdrname, "start") ||
-				 !strcmp(cdrname, "answer") ||
+			} else if ((!strcmp(cdrname, "answer") ||
 				 !strcmp(cdrname, "end") ||
 				 !strcmp(cdrname, "disposition") ||
 				 !strcmp(cdrname, "amaflags")) &&
@@ -278,6 +277,12 @@ db_reconnect:
 				 strstr(entry->type, "numeric") ||
 				 strstr(entry->type, "fixed"))) {
 				ast_cdr_format_var(cdr, cdrname, &value, workspace, sizeof(workspace), 1);
+			} else if (!strcmp(cdrname, "start")) {
+				struct ast_tm tm;
+				char timestr[128];
+				ast_localtime(&cdr->start, &tm, ast_str_strlen(cdrzone) ? ast_str_buffer(cdrzone) : NULL);
+				ast_strftime(timestr, sizeof(timestr), DATE_FORMAT, &tm);
+				value = ast_strdupa(timestr);
 			} else if (!strcmp(cdrname, "calldate")) {
 				/* Skip calldate - the value has already been dup'd */
 			} else {
@@ -353,9 +358,20 @@ db_reconnect:
 	return 0;
 }
 
+static void free_strings(void)
+{
+	struct unload_string *us;
+
+	AST_LIST_LOCK(&unload_strings);
+	while ((us = AST_LIST_REMOVE_HEAD(&unload_strings, entry))) {
+		ast_free(us->str);
+		ast_free(us);
+	}
+	AST_LIST_UNLOCK(&unload_strings);
+}
+
 static int my_unload_module(int reload)
 { 
-	struct unload_string *us;
 	struct column *entry;
 
 	ast_cli_unregister_multiple(cdr_mysql_status_cli, sizeof(cdr_mysql_status_cli) / sizeof(struct ast_cli_entry));
@@ -366,12 +382,7 @@ static int my_unload_module(int reload)
 		records = 0;
 	}
 
-	AST_LIST_LOCK(&unload_strings);
-	while ((us = AST_LIST_REMOVE_HEAD(&unload_strings, entry))) {
-		ast_free(us->str);
-		ast_free(us);
-	}
-	AST_LIST_UNLOCK(&unload_strings);
+	free_strings();
 
 	if (!reload) {
 		AST_RWLIST_WRLOCK(&columns);
@@ -507,13 +518,16 @@ static int my_load_module(int reload)
 	} else {
 		calldate_compat = 0;
 	}
+	ast_free(compat);
 
 	if (res < 0) {
 		if (reload) {
 			AST_RWLIST_UNLOCK(&columns);
 		}
 		ast_config_destroy(cfg);
-		return AST_MODULE_LOAD_FAILURE;
+		free_strings();
+
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	/* Check for any aliases */
@@ -584,7 +598,9 @@ static int my_load_module(int reload)
 			connected = 0;
 			AST_RWLIST_UNLOCK(&columns);
 			ast_config_destroy(cfg);
-			return AST_MODULE_LOAD_FAILURE;
+			free_strings();
+
+			return AST_MODULE_LOAD_DECLINE;
 		}
 
 		if (!(result = mysql_store_result(&mysql))) {
@@ -593,7 +609,9 @@ static int my_load_module(int reload)
 			connected = 0;
 			AST_RWLIST_UNLOCK(&columns);
 			ast_config_destroy(cfg);
-			return AST_MODULE_LOAD_FAILURE;
+			free_strings();
+
+			return AST_MODULE_LOAD_DECLINE;
 		}
 
 		while ((row = mysql_fetch_row(result))) {
@@ -659,7 +677,8 @@ static int my_load_module(int reload)
 	AST_RWLIST_UNLOCK(&columns);
 	ast_config_destroy(cfg);
 	if (res < 0) {
-		return AST_MODULE_LOAD_FAILURE;
+		my_unload_module(0);
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (!reload) {
@@ -673,7 +692,12 @@ static int my_load_module(int reload)
 		res = ast_cli_register_multiple(cdr_mysql_status_cli, sizeof(cdr_mysql_status_cli) / sizeof(struct ast_cli_entry));
 	}
 
-	return res;
+	if (res) {
+		my_unload_module(0);
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int load_module(void)

@@ -286,15 +286,16 @@ static struct internal_state *find_internal_state_by_transport(const struct ast_
 static struct ast_sip_transport_state *find_state_by_transport(const struct ast_sip_transport *transport)
 {
 	struct internal_state *state;
+	struct ast_sip_transport_state *trans_state;
 
 	state = find_internal_state_by_transport(transport);
 	if (!state) {
 		return NULL;
 	}
-	ao2_bump(state->state);
-	ao2_cleanup(state);
+	trans_state = ao2_bump(state->state);
+	ao2_ref(state, -1);
 
-	return state->state;
+	return trans_state;
 }
 
 static int remove_temporary_state(void)
@@ -378,6 +379,10 @@ static struct ast_sip_transport_state *find_or_create_temporary_state(struct ast
 	new_state->type = transport->type;
 
 	pjsip_tls_setting_default(&new_state->tls);
+#ifdef HAVE_PJSIP_TLS_TRANSPORT_PROTO
+	/* proto must be forced to 0 to enable all protocols otherwise only TLS will work */
+	new_state->tls.proto = 0;
+#endif
 	new_state->tls.ciphers = new_state->ciphers;
 
 	ao2_ref(new_state, +1);
@@ -548,21 +553,35 @@ static int transport_apply(const struct ast_sorcery *sorcery, void *obj)
 			}
 		}
 
-		if (res == PJ_SUCCESS && (transport->tos || transport->cos)) {
-			pj_sock_t sock;
-			pj_qos_params qos_params;
-			sock = pjsip_udp_transport_get_socket(temp_state->state->transport);
-			pj_sock_get_qos_params(sock, &qos_params);
-			set_qos(transport, &qos_params);
-			pj_sock_set_qos_params(sock, &qos_params);
+		if (res == PJ_SUCCESS) {
+			temp_state->state->transport->info = pj_pool_alloc(temp_state->state->transport->pool,
+				(AST_SIP_X_AST_TXP_LEN + strlen(transport_id) + 2));
+
+			sprintf(temp_state->state->transport->info, "%s:%s", AST_SIP_X_AST_TXP, transport_id);
+
+			if (transport->tos || transport->cos) {
+				pj_sock_t sock;
+				pj_qos_params qos_params;
+				sock = pjsip_udp_transport_get_socket(temp_state->state->transport);
+				pj_sock_get_qos_params(sock, &qos_params);
+				set_qos(transport, &qos_params);
+				pj_sock_set_qos_params(sock, &qos_params);
+			}
 		}
 	} else if (transport->type == AST_TRANSPORT_TCP) {
 		pjsip_tcp_transport_cfg cfg;
+		static int option = 1;
 
 		pjsip_tcp_transport_cfg_default(&cfg, temp_state->state->host.addr.sa_family);
 		cfg.bind_addr = temp_state->state->host;
 		cfg.async_cnt = transport->async_operations;
 		set_qos(transport, &cfg.qos_params);
+		/* sockopt_params.options is copied to each newly connected socket */
+		cfg.sockopt_params.options[0].level = pj_SOL_TCP();
+		cfg.sockopt_params.options[0].optname = pj_TCP_NODELAY();
+		cfg.sockopt_params.options[0].optval = &option;
+		cfg.sockopt_params.options[0].optlen = sizeof(option);
+		cfg.sockopt_params.cnt = 1;
 
 		for (i = 0; i < BIND_TRIES && res != PJ_SUCCESS; i++) {
 			if (perm_state && perm_state->state && perm_state->state->factory
@@ -1279,22 +1298,22 @@ static struct ast_sip_cli_formatter_entry *cli_formatter;
 
 struct ast_sip_transport_state *ast_sip_get_transport_state(const char *transport_id)
 {
-	struct internal_state * state = NULL;
+	struct internal_state *state = NULL;
+	struct ast_sip_transport_state *trans_state;
 
 	if (!transport_states) {
 		return NULL;
 	}
 
 	state = ao2_find(transport_states, transport_id, OBJ_SEARCH_KEY);
-	if (!state || !state->state) {
-		ao2_cleanup(state);
+	if (!state) {
 		return NULL;
 	}
 
-	ao2_ref(state->state, +1);
+	trans_state = ao2_bump(state->state);
 	ao2_ref(state, -1);
 
-	return state->state;
+	return trans_state;
 }
 
 static int populate_transport_states(void *obj, void *arg, int flags)
@@ -1329,7 +1348,7 @@ int ast_sip_initialize_sorcery_transport(void)
 	transport_states = ao2_container_alloc(DEFAULT_STATE_BUCKETS, internal_state_hash, internal_state_cmp);
 	if (!transport_states) {
 		ast_log(LOG_ERROR, "Unable to allocate transport states container\n");
-		return AST_MODULE_LOAD_FAILURE;
+		return -1;
 	}
 
 	ast_sorcery_apply_default(sorcery, "transport", "config", "pjsip.conf,criteria=type=transport");
@@ -1364,6 +1383,7 @@ int ast_sip_initialize_sorcery_transport(void)
 	ast_sorcery_object_field_register(sorcery, "transport", "cos", "0", OPT_UINT_T, 0, FLDSET(struct ast_sip_transport, cos));
 	ast_sorcery_object_field_register(sorcery, "transport", "websocket_write_timeout", AST_DEFAULT_WEBSOCKET_WRITE_TIMEOUT_STR, OPT_INT_T, PARSE_IN_RANGE, FLDSET(struct ast_sip_transport, write_timeout), 1, INT_MAX);
 	ast_sorcery_object_field_register(sorcery, "transport", "allow_reload", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_transport, allow_reload));
+	ast_sorcery_object_field_register(sorcery, "transport", "symmetric_transport", "no", OPT_BOOL_T, 1, FLDSET(struct ast_sip_transport, symmetric_transport));
 
 	internal_sip_register_endpoint_formatter(&endpoint_transport_formatter);
 

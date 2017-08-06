@@ -82,10 +82,21 @@
 					<synopsis>Maximum number of registration attempts.</synopsis>
 				</configOption>
 				<configOption name="outbound_auth" default="">
-					<synopsis>Authentication object to be used for outbound registrations.</synopsis>
+					<synopsis>Authentication object(s) to be used for outbound registrations.</synopsis>
+					<description><para>
+						This is a comma-delimited list of <replaceable>auth</replaceable>
+						sections defined in <filename>pjsip.conf</filename> used to respond
+						to outbound authentication challenges.</para>
+						<note><para>
+						Using the same auth section for inbound and outbound
+						authentication is not recommended.  There is a difference in
+						meaning for an empty realm setting between inbound and outbound
+						authentication uses.  See the auth realm description for details.
+						</para></note>
+					</description>
 				</configOption>
 				<configOption name="outbound_proxy" default="">
-					<synopsis>Outbound Proxy used to send registrations</synopsis>
+					<synopsis>Full SIP URI of the outbound proxy used to send registrations</synopsis>
 				</configOption>
 				<configOption name="retry_interval" default="60">
 					<synopsis>Interval in seconds between retries if outbound registration is unsuccessful</synopsis>
@@ -169,12 +180,12 @@
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 			<parameter name="Registration" required="true">
-				<para>The outbound registration to unregister.</para>
+				<para>The outbound registration to unregister or '*all' to unregister them all.</para>
 			</parameter>
 		</syntax>
 		<description>
 			<para>
-			Unregisters the specified outbound registration and stops future registration attempts.
+			Unregisters the specified (or all) outbound registration(s) and stops future registration attempts.
 			Call PJSIPRegister to start registration and schedule re-registrations according to configuration.
             </para>
 		</description>
@@ -186,14 +197,13 @@
 		<syntax>
 			<xi:include xpointer="xpointer(/docs/manager[@name='Login']/syntax/parameter[@name='ActionID'])" />
 			<parameter name="Registration" required="true">
-				<para>The outbound registration to register.</para>
+				<para>The outbound registration to register or '*all' to register them all.</para>
 			</parameter>
 		</syntax>
 		<description>
 			<para>
-			Unregisters the specified outbound registration then starts registration and schedules re-registrations
+			Unregisters the specified (or all) outbound registration(s) then starts registration and schedules re-registrations
 			according to configuration.
-			future registrations.
             </para>
 		</description>
 	</manager>
@@ -368,6 +378,9 @@ static struct ast_serializer_shutdown_group *shutdown_group;
 #define DEFAULT_STATE_BUCKETS 53
 static AO2_GLOBAL_OBJ_STATIC(current_states);
 
+/*! subscription id for network change events */
+static struct stasis_subscription *network_change_sub;
+
 /*! \brief hashing function for state objects */
 static int registration_state_hash(const void *obj, const int flags)
 {
@@ -514,6 +527,7 @@ static pj_status_t registration_client_send(struct sip_outbound_registration_cli
 
 	callback_invoked = ast_threadstorage_get(&register_callback_invoked, sizeof(int));
 	if (!callback_invoked) {
+		pjsip_tx_data_dec_ref(tdata);
 		return PJ_ENOMEM;
 	}
 	*callback_invoked = 0;
@@ -527,6 +541,7 @@ static pj_status_t registration_client_send(struct sip_outbound_registration_cli
 	 */
 	ast_sip_set_tpselector_from_transport_name(client_state->transport_name, &selector);
 	pjsip_regc_set_transport(client_state->client, &selector);
+	ast_sip_record_request_serializer(tdata);
 	status = pjsip_regc_send(client_state->client, tdata);
 
 	/* If the attempt to send the message failed and the callback was not invoked we need to
@@ -567,6 +582,7 @@ static int handle_client_registration(void *data)
 			/* insert a new Supported header */
 			hdr = pjsip_supported_hdr_create(tdata->pool);
 			if (!hdr) {
+				pjsip_tx_data_dec_ref(tdata);
 				return -1;
 			}
 
@@ -625,15 +641,30 @@ static void schedule_registration(struct sip_outbound_registration_client_state 
 
 static void update_client_state_status(struct sip_outbound_registration_client_state *client_state, enum sip_outbound_registration_status status)
 {
+	const char *status_old;
+	const char *status_new;
+
 	if (client_state->status == status) {
+		/* Status state did not change at all. */
+		return;
+	}
+
+	status_old = sip_outbound_registration_status_str(client_state->status);
+	status_new = sip_outbound_registration_status_str(status);
+	client_state->status = status;
+
+	if (!strcmp(status_old, status_new)) {
+		/*
+		 * The internal status state may have changed but the status
+		 * state we tell the world did not change at all.
+		 */
 		return;
 	}
 
 	ast_statsd_log_string_va("PJSIP.registrations.state.%s", AST_STATSD_GAUGE, "-1", 1.0,
-		sip_outbound_registration_status_str(client_state->status));
+		status_old);
 	ast_statsd_log_string_va("PJSIP.registrations.state.%s", AST_STATSD_GAUGE, "+1", 1.0,
-		sip_outbound_registration_status_str(status));
-	client_state->status = status;
+		status_new);
 }
 
 /*! \brief Callback function for unregistering (potentially) and destroying state */
@@ -1056,7 +1087,7 @@ static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const c
 	pj_str_t tmp, local_addr;
 	pjsip_uri *uri;
 	pjsip_sip_uri *sip_uri;
-	pjsip_transport_type_e type = PJSIP_TRANSPORT_UNSPECIFIED;
+	pjsip_transport_type_e type;
 	int local_port;
 
 	pj_strdup_with_null(pool, &tmp, target);
@@ -1068,20 +1099,20 @@ static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const c
 
 	sip_uri = pjsip_uri_get_uri(uri);
 
+	type = pjsip_transport_get_type_from_name(&sip_uri->transport_param);
 	if (PJSIP_URI_SCHEME_IS_SIPS(sip_uri)) {
-		type = PJSIP_TRANSPORT_TLS;
+		if (type == PJSIP_TRANSPORT_UNSPECIFIED
+			|| !(pjsip_transport_get_flag_from_type(type) & PJSIP_TRANSPORT_SECURE)) {
+			type = PJSIP_TRANSPORT_TLS;
+		}
 	} else if (!sip_uri->transport_param.slen) {
 		type = PJSIP_TRANSPORT_UDP;
-	} else {
-		type = pjsip_transport_get_type_from_name(&sip_uri->transport_param);
-	}
-
-	if (type == PJSIP_TRANSPORT_UNSPECIFIED) {
+	} else if (type == PJSIP_TRANSPORT_UNSPECIFIED) {
 		return -1;
 	}
 
 	if (pj_strchr(&sip_uri->host, ':')) {
-		type = (pjsip_transport_type_e)(((int)type) + PJSIP_TRANSPORT_IPV6);
+		type |= PJSIP_TRANSPORT_IPV6;
 	}
 
 	if (pjsip_tpmgr_find_local_addr(pjsip_endpt_get_tpmgr(ast_sip_get_pjsip_endpoint()),
@@ -1090,13 +1121,13 @@ static int sip_dialog_create_contact(pj_pool_t *pool, pj_str_t *contact, const c
 	}
 
 	if (!pj_strchr(&sip_uri->host, ':') && pj_strchr(&local_addr, ':')) {
-		type = (pjsip_transport_type_e)(((int)type) + PJSIP_TRANSPORT_IPV6);
+		type |= PJSIP_TRANSPORT_IPV6;
 	}
 
 	contact->ptr = pj_pool_alloc(pool, PJSIP_MAX_URL_SIZE);
 	contact->slen = pj_ansi_snprintf(contact->ptr, PJSIP_MAX_URL_SIZE,
 		"<%s:%s@%s%.*s%s:%d%s%s%s%s>",
-		(pjsip_transport_get_flag_from_type(type) & PJSIP_TRANSPORT_SECURE) ? "sips" : "sip",
+		((pjsip_transport_get_flag_from_type(type) & PJSIP_TRANSPORT_SECURE) && PJSIP_URI_SCHEME_IS_SIPS(uri)) ? "sips" : "sip",
 		user,
 		(type & PJSIP_TRANSPORT_IPV6) ? "[" : "",
 		(int)local_addr.slen,
@@ -1179,6 +1210,17 @@ static int sip_outbound_registration_regc_alloc(void *data)
 			registration->client_uri, ast_sorcery_object_get_id(registration));
 		pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), pool);
 		return -1;
+	}
+
+	if (!ast_strlen_zero(registration->outbound_proxy)) {
+		pj_strdup2_with_null(pool, &tmp, registration->outbound_proxy);
+		uri = pjsip_parse_uri(pool, tmp.ptr, tmp.slen, 0);
+		if (!uri) {
+			ast_log(LOG_ERROR, "Invalid outbound proxy URI '%s' specified on outbound registration '%s'\n",
+				registration->outbound_proxy, ast_sorcery_object_get_id(registration));
+			pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), pool);
+			return -1;
+		}
 	}
 
 	pjsip_endpt_release_pool(ast_sip_get_pjsip_endpoint(), pool);
@@ -1430,6 +1472,26 @@ static int queue_register(struct sip_outbound_registration_state *state)
 	return 0;
 }
 
+static void unregister_all(void)
+{
+	struct ao2_container *states;
+
+	states = ao2_global_obj_ref(current_states);
+	if (!states) {
+		return;
+	}
+
+	/* Clean out all the states and let sorcery handle recreating the registrations */
+	ao2_callback(states, OBJ_UNLINK | OBJ_NODATA | OBJ_MULTIPLE, NULL, NULL);
+	ao2_ref(states, -1);
+}
+
+static void reregister_all(void)
+{
+	unregister_all();
+	ast_sorcery_load_object(ast_sip_get_sorcery(), "registration");
+}
+
 static char *cli_complete_registration(const char *line, const char *word,
 				       int pos, int state)
 {
@@ -1445,6 +1507,10 @@ static char *cli_complete_registration(const char *line, const char *word,
 	}
 
 	wordlen = strlen(word);
+	if (wordlen == 0 && ++which > state) {
+		return ast_strdup("*all");
+	}
+
 	registrations = ast_sorcery_retrieve_by_fields(ast_sip_get_sorcery(), "registration",
 		AST_RETRIEVE_FLAG_MULTIPLE | AST_RETRIEVE_FLAG_ALL, NULL);
 	if (!registrations) {
@@ -1479,8 +1545,9 @@ static char *cli_unregister(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 	case CLI_INIT:
 		e->command = "pjsip send unregister";
 		e->usage =
-			"Usage: pjsip send unregister <registration>\n"
-			"       Unregisters the specified outbound registration and stops future registration attempts.\n";
+			"Usage: pjsip send unregister <registration> | *all\n"
+			"       Unregisters the specified (or all) outbound registration(s) "
+			"and stops future registration attempts.\n";
 		return NULL;
 	case CLI_GENERATE:
 		return cli_complete_registration(a->line, a->word, a->pos, a->n);
@@ -1491,6 +1558,12 @@ static char *cli_unregister(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 	}
 
 	registration_name = a->argv[3];
+
+	if (strcmp(registration_name, "*all") == 0) {
+		unregister_all();
+		ast_cli(a->fd, "Unregister all queued\n");
+		return CLI_SUCCESS;
+	}
 
 	state = get_state(registration_name);
 	if (!state) {
@@ -1515,9 +1588,9 @@ static char *cli_register(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 	case CLI_INIT:
 		e->command = "pjsip send register";
 		e->usage =
-			"Usage: pjsip send register <registration>\n"
-			"       Unregisters the specified outbound "
-			"registration then re-registers and re-schedules it.\n";
+			"Usage: pjsip send register <registration> | *all \n"
+			"       Unregisters the specified (or all) outbound "
+			"registration(s) then starts registration(s) and schedules re-registrations.\n";
 		return NULL;
 	case CLI_GENERATE:
 		return cli_complete_registration(a->line, a->word, a->pos, a->n);
@@ -1528,6 +1601,12 @@ static char *cli_register(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 	}
 
 	registration_name = a->argv[3];
+
+	if (strcmp(registration_name, "*all") == 0) {
+		reregister_all();
+		ast_cli(a->fd, "Re-register all queued\n");
+		return CLI_SUCCESS;
+	}
 
 	state = get_state(registration_name);
 	if (!state) {
@@ -1558,6 +1637,12 @@ static int ami_unregister(struct mansession *s, const struct message *m)
 		return 0;
 	}
 
+	if (strcmp(registration_name, "*all") == 0) {
+		unregister_all();
+		astman_send_ack(s, m, "Unregistrations queued.");
+		return 0;
+	}
+
 	state = get_state(registration_name);
 	if (!state) {
 		astman_send_error(s, m, "Unable to retrieve registration entry\n");
@@ -1581,6 +1666,12 @@ static int ami_register(struct mansession *s, const struct message *m)
 
 	if (ast_strlen_zero(registration_name)) {
 		astman_send_error(s, m, "Registration parameter missing.");
+		return 0;
+	}
+
+	if (strcmp(registration_name, "*all") == 0) {
+		reregister_all();
+		astman_send_ack(s, m, "Reregistrations queued.");
 		return 0;
 	}
 
@@ -1759,10 +1850,6 @@ static int cli_print_body(void *obj, void *arg, int flags)
 
 	ast_assert(context->output_buffer != NULL);
 
-	if (!state) {
-		return 0;
-	}
-
 	ast_str_append(&context->output_buffer, 0, " %-s/%-*.*s  %-16s  %-16s\n",
 		id,
 		(int) (REGISTRATION_URI_FIELD_LEN - strlen(id)),
@@ -1771,8 +1858,8 @@ static int cli_print_body(void *obj, void *arg, int flags)
 		AST_VECTOR_SIZE(&registration->outbound_auths)
 			? AST_VECTOR_GET(&registration->outbound_auths, 0)
 			: "n/a",
-		sip_outbound_registration_status_str(state->client_state->status));
-	ao2_ref(state, -1);
+		(state ? sip_outbound_registration_status_str(state->client_state->status) : "Unregistered"));
+	ao2_cleanup(state);
 
 	if (context->show_details
 		|| (context->show_details_only_level_0 && context->indent_level == 0)) {
@@ -1912,9 +1999,42 @@ static const struct ast_sorcery_instance_observer observer_callbacks_registratio
 	.object_type_loaded = registration_loaded_observer,
 };
 
+static void registration_deleted_observer(const void *obj)
+{
+	const struct sip_outbound_registration *registration = obj;
+	struct ao2_container *states;
+
+	states = ao2_global_obj_ref(current_states);
+	if (!states) {
+		/* Global container has gone.  Likely shutting down. */
+		return;
+	}
+
+	ao2_find(states, ast_sorcery_object_get_id(registration), OBJ_UNLINK | OBJ_NODATA | OBJ_SEARCH_KEY);
+
+	ao2_ref(states, -1);
+}
+
+static const struct ast_sorcery_observer registration_observer = {
+	.deleted = registration_deleted_observer,
+};
+
+static void network_change_stasis_cb(void *data, struct stasis_subscription *sub, struct stasis_message *message)
+{
+	/* This callback is only concerned with network change messages from the system topic. */
+	if (stasis_message_type(message) != ast_network_change_type()) {
+		return;
+	}
+	ast_debug(3, "Received network change event\n");
+
+	reregister_all();
+}
+
 static int unload_module(void)
 {
 	int remaining;
+
+	network_change_sub = stasis_unsubscribe_and_join(network_change_sub);
 
 	ast_manager_unregister("PJSIPShowRegistrationsOutbound");
 	ast_manager_unregister("PJSIPUnregister");
@@ -1963,7 +2083,7 @@ static int load_module(void)
 
 	shutdown_group = ast_serializer_shutdown_group_alloc();
 	if (!shutdown_group) {
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	/* Create outbound registration states container. */
@@ -1972,7 +2092,7 @@ static int load_module(void)
 	if (!new_states) {
 		ast_log(LOG_ERROR, "Unable to allocate registration states container\n");
 		unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 	ao2_global_obj_replace_unref(current_states, new_states);
 	ao2_ref(new_states, -1);
@@ -2011,10 +2131,12 @@ static int load_module(void)
 	if (ast_sorcery_instance_observer_add(ast_sip_get_sorcery(),
 		&observer_callbacks_registrations)
 		|| ast_sorcery_observer_add(ast_sip_get_sorcery(), "auth",
-			&observer_callbacks_auth)) {
+			&observer_callbacks_auth)
+		|| ast_sorcery_observer_add(ast_sip_get_sorcery(), "registration",
+			&registration_observer)) {
 		ast_log(LOG_ERROR, "Unable to register observers.\n");
 		unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	/* Register how this module identifies endpoints. */
@@ -2025,7 +2147,7 @@ static int load_module(void)
 	if (!cli_formatter) {
 		ast_log(LOG_ERROR, "Unable to allocate memory for cli formatter\n");
 		unload_module();
-		return AST_MODULE_LOAD_FAILURE;
+		return AST_MODULE_LOAD_DECLINE;
 	}
 	cli_formatter->name = "registration";
 	cli_formatter->print_header = cli_print_header;
@@ -2050,6 +2172,9 @@ static int load_module(void)
 
 	/* Load configuration objects */
 	ast_sorcery_load_object(ast_sip_get_sorcery(), "registration");
+
+	network_change_sub = stasis_subscribe(ast_system_topic(),
+		network_change_stasis_cb, NULL);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }

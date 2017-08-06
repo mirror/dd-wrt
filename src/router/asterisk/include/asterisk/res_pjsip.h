@@ -19,6 +19,13 @@
 #ifndef _RES_PJSIP_H
 #define _RES_PJSIP_H
 
+#include <pjsip.h>
+/* Needed for SUBSCRIBE, NOTIFY, and PUBLISH method definitions */
+#include <pjsip_simple.h>
+#include <pjsip/sip_transaction.h>
+#include <pj/timer.h>
+#include <pjlib.h>
+
 #include "asterisk/stringfields.h"
 /* Needed for struct ast_sockaddr */
 #include "asterisk/netsock2.h"
@@ -187,6 +194,8 @@ struct ast_sip_transport {
 	int write_timeout;
 	/*! Allow reload */
 	int allow_reload;
+	/*! Automatically send requests out the same transport requests have come in on */
+	int symmetric_transport;
 };
 
 #define SIP_SORCERY_DOMAIN_ALIAS_TYPE "domain_alias"
@@ -241,6 +250,16 @@ struct ast_sip_contact {
 	struct ast_sip_endpoint *endpoint;
 	/*! The name of the aor this contact belongs to */
 	char *aor;
+	/*! Asterisk Server name */
+	AST_STRING_FIELD_EXTENDED(reg_server);
+	/*! IP-address of the Via header in REGISTER request */
+	AST_STRING_FIELD_EXTENDED(via_addr);
+	/* Port of the Via header in REGISTER request */
+	int via_port;
+	/*! Content of the Call-ID header in REGISTER request */
+	AST_STRING_FIELD_EXTENDED(call_id);
+	/*! The name of the endpoint that added the contact */
+	AST_STRING_FIELD_EXTENDED(endpoint_name);
 };
 
 #define CONTACT_STATUS "contact_status"
@@ -276,6 +295,8 @@ struct ast_sip_contact_status {
 	char *aor;
 	/*! The original contact's URI */
 	char *uri;
+	/*! TRUE if the contact was refreshed. e.g., re-registered */
+	unsigned int refresh:1;
 };
 
 /*!
@@ -342,6 +363,8 @@ enum ast_sip_dtmf_mode {
 	AST_SIP_DTMF_INFO,
 	/*! Use SIP 4733 if supported by the other side or INBAND if not */
 	AST_SIP_DTMF_AUTO,
+	/*! Use SIP 4733 if supported by the other side or INFO DTMF (blech) if not */
+	AST_SIP_DTMF_AUTO_INFO,
 };
 
 /*!
@@ -389,7 +412,10 @@ AST_VECTOR(ast_sip_auth_vector, const char *);
 enum ast_sip_endpoint_identifier_type {
 	/*! Identify based on user name in From header */
 	AST_SIP_ENDPOINT_IDENTIFY_BY_USERNAME = (1 << 0),
+	/*! Identify based on user name in Auth header first, then From header */
+	AST_SIP_ENDPOINT_IDENTIFY_BY_AUTH_USERNAME = (1 << 1),
 };
+AST_VECTOR(ast_sip_identify_by_vector, enum ast_sip_endpoint_identifier_type);
 
 enum ast_sip_session_refresh_method {
 	/*! Use reinvite to negotiate direct media */
@@ -482,6 +508,8 @@ struct ast_sip_endpoint_subscription_configuration {
 	unsigned int minexpiry;
 	/*! Message waiting configuration */
 	struct ast_sip_mwi_configuration mwi;
+	/* Context for SUBSCRIBE requests */
+	char context[AST_MAX_CONTEXT];
 };
 
 /*!
@@ -701,6 +729,8 @@ struct ast_sip_endpoint {
 	enum ast_sip_dtmf_mode dtmf;
 	/*! Method(s) by which the endpoint should be identified. */
 	enum ast_sip_endpoint_identifier_type ident_method;
+	/*! Order of the method(s) by which the endpoint should be identified. */
+	struct ast_sip_identify_by_vector ident_method_order;
 	/*! Boolean indicating if ringing should be sent as inband progress */
 	unsigned int inband_progress;
 	/*! Pointer to the persistent Asterisk endpoint */
@@ -719,7 +749,29 @@ struct ast_sip_endpoint {
 	unsigned int usereqphone;
 	/*! Do we send messages for connected line updates for unanswered incoming calls immediately to this endpoint? */
 	unsigned int rpid_immediate;
+	/*! Access control list */
+	struct ast_acl_list *acl;
+	/*! Restrict what IPs are allowed in the Contact header (for registration) */
+	struct ast_acl_list *contact_acl;
+	/*! The number of seconds into call to disable fax detection.  (0 = disabled) */
+	unsigned int faxdetect_timeout;
+	/*! Override the user on the outgoing Contact header with this value. */
+	char *contact_user;
+	/*! Do we allow an asymmetric RTP codec? */
+	unsigned int asymmetric_rtp_codec;
+	/*! Use RTCP-MUX */
+	unsigned int rtcp_mux;
+	/*! Do we allow overlap dialling? */
+	unsigned int allow_overlap;
+	/*! Whether to notifies all the progress details on blind transfer */
+	unsigned int refer_blind_progress;
+	/*! Whether to notifies dialog-info 'early' on INUSE && RINGING state */
+	unsigned int notify_early_inuse_ringing;
 };
+
+/*! URI parameter for symmetric transport */
+#define AST_SIP_X_AST_TXP "x-ast-txp"
+#define AST_SIP_X_AST_TXP_LEN 9
 
 /*!
  * \brief Initialize an auth vector with the configured values.
@@ -820,6 +872,17 @@ struct ast_sip_endpoint_identifier {
      * See ast_sip_identify_endpoint for more details
      */
     struct ast_sip_endpoint *(*identify_endpoint)(pjsip_rx_data *rdata);
+};
+
+/*!
+ * \brief Contact retrieval filtering flags
+ */
+enum ast_sip_contact_filter {
+	/*! \brief Default filter flags */
+	AST_SIP_CONTACT_FILTER_DEFAULT = 0,
+
+	/*! \brief Return only reachable or unknown contacts */
+	AST_SIP_CONTACT_FILTER_REACHABLE = (1 << 0),
 };
 
 /*!
@@ -961,6 +1024,16 @@ void ast_sip_unregister_endpoint_identifier(struct ast_sip_endpoint_identifier *
 void *ast_sip_endpoint_alloc(const char *name);
 
 /*!
+ * \brief Change state of a persistent endpoint.
+ *
+ * \param endpoint The SIP endpoint name to change state.
+ * \param state The new state
+ * \retval 0 Success
+ * \retval -1 Endpoint not found
+ */
+int ast_sip_persistent_endpoint_update_state(const char *endpoint_name, enum ast_endpoint_state state);
+
+/*!
  * \brief Get a pointer to the PJSIP endpoint.
  *
  * This is useful when modules have specific information they need
@@ -998,6 +1071,18 @@ struct ast_sip_aor *ast_sip_location_retrieve_aor(const char *aor_name);
 struct ast_sip_contact *ast_sip_location_retrieve_first_aor_contact(const struct ast_sip_aor *aor);
 
 /*!
+ * \brief Retrieve the first bound contact for an AOR and filter based on flags
+ * \since 13.16.0
+ *
+ * \param aor Pointer to the AOR
+ * \param flags Filtering flags
+ * \retval NULL if no contacts available
+ * \retval non-NULL if contacts available
+ */
+struct ast_sip_contact *ast_sip_location_retrieve_first_aor_contact_filtered(const struct ast_sip_aor *aor,
+	unsigned int flags);
+
+/*!
  * \brief Retrieve all contacts currently available for an AOR
  *
  * \param aor Pointer to the AOR
@@ -1012,6 +1097,23 @@ struct ast_sip_contact *ast_sip_location_retrieve_first_aor_contact(const struct
 struct ao2_container *ast_sip_location_retrieve_aor_contacts(const struct ast_sip_aor *aor);
 
 /*!
+ * \brief Retrieve all contacts currently available for an AOR and filter based on flags
+ * \since 13.16.0
+ *
+ * \param aor Pointer to the AOR
+ * \param flags Filtering flags
+ *
+ * \retval NULL if no contacts available
+ * \retval non-NULL if contacts available
+ *
+ * \warning
+ * Since this function prunes expired contacts before returning, it holds a named write
+ * lock on the aor.  If you already hold the lock, call ast_sip_location_retrieve_aor_contacts_nolock instead.
+ */
+struct ao2_container *ast_sip_location_retrieve_aor_contacts_filtered(const struct ast_sip_aor *aor,
+	unsigned int flags);
+
+/*!
  * \brief Retrieve all contacts currently available for an AOR without locking the AOR
  * \since 13.9.0
  *
@@ -1024,6 +1126,22 @@ struct ao2_container *ast_sip_location_retrieve_aor_contacts(const struct ast_si
  * This function should only be called if you already hold a named write lock on the aor.
  */
 struct ao2_container *ast_sip_location_retrieve_aor_contacts_nolock(const struct ast_sip_aor *aor);
+
+/*!
+ * \brief Retrieve all contacts currently available for an AOR without locking the AOR and filter based on flags
+ * \since 13.16.0
+ *
+ * \param aor Pointer to the AOR
+ * \param flags Filtering flags
+ *
+ * \retval NULL if no contacts available
+ * \retval non-NULL if contacts available
+ *
+ * \warning
+ * This function should only be called if you already hold a named write lock on the aor.
+ */
+struct ao2_container *ast_sip_location_retrieve_aor_contacts_nolock_filtered(const struct ast_sip_aor *aor,
+	unsigned int flags);
 
 /*!
  * \brief Retrieve the first bound contact from a list of AORs
@@ -1054,6 +1172,18 @@ struct ao2_container *ast_sip_location_retrieve_contacts_from_aor_list(const cha
 	struct ast_sip_contact **contact);
 
 /*!
+ * \brief Retrieve the first bound contact AND the AOR chosen from a list of AORs and filter based on flags
+ * \since 13.16.0
+ *
+ * \param aor_list A comma-separated list of AOR names
+ * \param flags Filtering flags
+ * \param aor The chosen AOR
+ * \param contact The chosen contact
+ */
+void ast_sip_location_retrieve_contact_and_aor_from_list_filtered(const char *aor_list, unsigned int flags,
+	struct ast_sip_aor **aor, struct ast_sip_contact **contact);
+
+/*!
  * \brief Retrieve a named contact
  *
  * \param contact_name Name of the contact
@@ -1082,6 +1212,7 @@ struct ast_sip_contact *ast_sip_location_retrieve_contact(const char *contact_na
  */
 int ast_sip_location_add_contact(struct ast_sip_aor *aor, const char *uri,
 	struct timeval expiration_time, const char *path_info, const char *user_agent,
+	const char *via_addr, int via_port, const char *call_id,
 	struct ast_sip_endpoint *endpoint);
 
 /*!
@@ -1103,6 +1234,7 @@ int ast_sip_location_add_contact(struct ast_sip_aor *aor, const char *uri,
  */
 int ast_sip_location_add_contact_nolock(struct ast_sip_aor *aor, const char *uri,
 	struct timeval expiration_time, const char *path_info, const char *user_agent,
+	const char *via_addr, int via_port, const char *call_id,
 	struct ast_sip_endpoint *endpoint);
 
 /*!
@@ -1174,8 +1306,9 @@ struct ast_sip_auth *ast_sip_get_artificial_auth(void);
  */
 struct ast_sip_endpoint *ast_sip_get_artificial_endpoint(void);
 
-/*!
- * \page Threading model for SIP
+/*! \defgroup pjsip_threading PJSIP Threading Model
+ * @{
+ * \page PJSIP PJSIP Threading Model
  *
  * There are three major types of threads that SIP will have to deal with:
  * \li Asterisk threads
@@ -1224,6 +1357,19 @@ struct ast_sip_endpoint *ast_sip_get_artificial_endpoint(void);
  * previous tasks pushed with the same serializer have completed. For more information
  * on serializers and the benefits they provide, see \ref ast_threadpool_serializer
  *
+ * \par Scheduler
+ *
+ * Some situations require that a task run periodically or at a future time.  Normally
+ * the ast_sched functionality would be used but ast_sched only uses 1 thread for all
+ * tasks and that thread isn't registered with PJLIB and therefore can't do any PJSIP
+ * related work.
+ *
+ * ast_sip_sched uses ast_sched only as a scheduled queue.  When a task is ready to run,
+ * it's pushed to a Serializer to be invoked asynchronously by a Servant.  This ensures
+ * that the task is executed in a PJLIB registered thread and allows the ast_sched thread
+ * to immediately continue processing the queue.  The Serializer used by ast_sip_sched
+ * is one of your choosing or a random one from the res_pjsip pool if you don't choose one.
+ *
  * \note
  *
  * Do not make assumptions about individual threads based on a corresponding serializer.
@@ -1231,6 +1377,8 @@ struct ast_sip_endpoint *ast_sip_get_artificial_endpoint(void);
  * to servants, it does not mean that the same thread is necessarily going to execute those
  * tasks, even though they are all guaranteed to be executed in sequence.
  */
+
+typedef int (*ast_sip_task)(void *user_data);
 
 /*!
  * \brief Create a new serializer for SIP tasks
@@ -1291,6 +1439,27 @@ struct ast_taskprocessor *ast_sip_create_serializer_group(struct ast_serializer_
  * \retval non-NULL Newly-created serializer
  */
 struct ast_taskprocessor *ast_sip_create_serializer_group_named(const char *name, struct ast_serializer_shutdown_group *shutdown_group);
+
+/*!
+ * \brief Determine the distributor serializer for the SIP message.
+ * \since 13.10.0
+ *
+ * \param rdata The incoming message.
+ *
+ * \retval Calculated distributor serializer on success.
+ * \retval NULL on error.
+ */
+struct ast_taskprocessor *ast_sip_get_distributor_serializer(pjsip_rx_data *rdata);
+
+/*!
+ * \brief Record the task's serializer name on the tdata structure.
+ * \since 13.15.0
+ *
+ * \param tdata The outgoing message.
+ *
+ * \retval PJ_SUCCESS.
+ */
+pj_status_t ast_sip_record_request_serializer(pjsip_tx_data *tdata);
 
 /*!
  * \brief Set a serializer on a SIP dialog so requests and responses are automatically serialized
@@ -1369,6 +1538,214 @@ int ast_sip_push_task_synchronous(struct ast_taskprocessor *serializer, int (*si
 int ast_sip_thread_is_servant(void);
 
 /*!
+ * \brief Task flags for the res_pjsip scheduler
+ *
+ * The default is AST_SIP_SCHED_TASK_FIXED
+ *                | AST_SIP_SCHED_TASK_DATA_NOT_AO2
+ *                | AST_SIP_SCHED_TASK_DATA_NO_CLEANUP
+ *                | AST_SIP_SCHED_TASK_PERIODIC
+ */
+enum ast_sip_scheduler_task_flags {
+	/*!
+	 * The defaults
+	 */
+	AST_SIP_SCHED_TASK_DEFAULTS = (0 << 0),
+
+	/*!
+	 * Run at a fixed interval.
+	 * Stop scheduling if the callback returns 0.
+	 * Any other value is ignored.
+	 */
+	AST_SIP_SCHED_TASK_FIXED = (0 << 0),
+	/*!
+	 * Run at a variable interval.
+	 * Stop scheduling if the callback returns 0.
+	 * Any other return value is used as the new interval.
+	 */
+	AST_SIP_SCHED_TASK_VARIABLE = (1 << 0),
+
+	/*!
+	 * The task data is not an AO2 object.
+	 */
+	AST_SIP_SCHED_TASK_DATA_NOT_AO2 = (0 << 1),
+	/*!
+	 * The task data is an AO2 object.
+	 * A reference count will be held by the scheduler until
+	 * after the task has run for the final time (if ever).
+	 */
+	AST_SIP_SCHED_TASK_DATA_AO2 = (1 << 1),
+
+	/*!
+	 * Don't take any cleanup action on the data
+	 */
+	AST_SIP_SCHED_TASK_DATA_NO_CLEANUP = (0 << 3),
+	/*!
+	 * If AST_SIP_SCHED_TASK_DATA_AO2 is set, decrement the reference count
+	 * otherwise call ast_free on it.
+	 */
+	AST_SIP_SCHED_TASK_DATA_FREE = ( 1 << 3 ),
+
+	/*! \brief AST_SIP_SCHED_TASK_PERIODIC
+	 * The task is scheduled at multiples of interval
+	 * \see Interval
+	 */
+	AST_SIP_SCHED_TASK_PERIODIC = (0 << 4),
+	/*! \brief AST_SIP_SCHED_TASK_DELAY
+	 * The next invocation of the task is at last finish + interval
+	 * \see Interval
+	 */
+	AST_SIP_SCHED_TASK_DELAY = (1 << 4),
+};
+
+/*!
+ * \brief Scheduler task data structure
+ */
+struct ast_sip_sched_task;
+
+/*!
+ * \brief Schedule a task to run in the res_pjsip thread pool
+ * \since 13.9.0
+ *
+ * \param serializer The serializer to use.  If NULL, don't use a serializer (see note below)
+ * \param interval The invocation interval in milliseconds (see note below)
+ * \param sip_task The task to invoke
+ * \param name An optional name to associate with the task
+ * \param task_data Optional data to pass to the task
+ * \param flags One of enum ast_sip_scheduler_task_type
+ *
+ * \returns Pointer to \ref ast_sip_sched_task ao2 object which must be dereferenced when done.
+ *
+ * \paragraph Serialization
+ *
+ * Specifying a serializer guarantees serialized execution but NOT specifying a serializer
+ * may still result in tasks being effectively serialized if the thread pool is busy.
+ * The point of the serializer BTW is not to prevent parallel executions of the SAME task.
+ * That happens automatically (see below).  It's to prevent the task from running at the same
+ * time as other work using the same serializer, whether or not it's being run by the scheduler.
+ *
+ * \paragraph Interval
+ *
+ * The interval is used to calculate the next time the task should run.  There are two models.
+ *
+ * \ref AST_SIP_SCHED_TASK_PERIODIC specifies that the invocations of the task occur at the
+ * specific interval.  That is, every \ref "interval" milliseconds, regardless of how long the task
+ * takes. If the task takes longer than \ref interval, it will be scheduled at the next available
+ * multiple of \ref interval.  For exmaple: If the task has an interval of 60 seconds and the task
+ * takes 70 seconds, the next invocation will happen at 120 seconds.
+ *
+ * \ref AST_SIP_SCHED_TASK_DELAY specifies that the next invocation of the task should start
+ * at \ref interval milliseconds after the current invocation has finished.
+ *
+ */
+struct ast_sip_sched_task *ast_sip_schedule_task(struct ast_taskprocessor *serializer,
+	int interval, ast_sip_task sip_task, char *name, void *task_data,
+	enum ast_sip_scheduler_task_flags flags);
+
+/*!
+ * \brief Cancels the next invocation of a task
+ * \since 13.9.0
+ *
+ * \param schtd The task structure pointer
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Only cancels future invocations not the currently running invocation.
+ */
+int ast_sip_sched_task_cancel(struct ast_sip_sched_task *schtd);
+
+/*!
+ * \brief Cancels the next invocation of a task by name
+ * \since 13.9.0
+ *
+ * \param name The task name
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Only cancels future invocations not the currently running invocation.
+ */
+int ast_sip_sched_task_cancel_by_name(const char *name);
+
+/*!
+ * \brief Gets the last start and end times of the task
+ * \since 13.9.0
+ *
+ * \param schtd The task structure pointer
+ * \param[out] when_queued Pointer to a timeval structure to contain the time when queued
+ * \param[out] last_start Pointer to a timeval structure to contain the time when last started
+ * \param[out] last_end Pointer to a timeval structure to contain the time when last ended
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Any of the pointers can be NULL if you don't need them.
+ */
+int ast_sip_sched_task_get_times(struct ast_sip_sched_task *schtd,
+	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end);
+
+/*!
+ * \brief Gets the last start and end times of the task by name
+ * \since 13.9.0
+ *
+ * \param name The task name
+ * \param[out] when_queued Pointer to a timeval structure to contain the time when queued
+ * \param[out] last_start Pointer to a timeval structure to contain the time when last started
+ * \param[out] last_end Pointer to a timeval structure to contain the time when last ended
+ * \retval 0 Success
+ * \retval -1 Failure
+ * \note Any of the pointers can be NULL if you don't need them.
+ */
+int ast_sip_sched_task_get_times_by_name(const char *name,
+	struct timeval *when_queued, struct timeval *last_start, struct timeval *last_end);
+
+/*!
+ * \brief Gets the number of milliseconds until the next invocation
+ * \since 13.9.0
+ *
+ * \param schtd The task structure pointer
+ * \return The number of milliseconds until the next invocation or -1 if the task isn't scheduled
+ */
+int ast_sip_sched_task_get_next_run(struct ast_sip_sched_task *schtd);
+
+/*!
+ * \brief Gets the number of milliseconds until the next invocation
+ * \since 13.9.0
+ *
+ * \param name The task name
+ * \return The number of milliseconds until the next invocation or -1 if the task isn't scheduled
+ */
+int ast_sip_sched_task_get_next_run_by_name(const char *name);
+
+/*!
+ * \brief Checks if the task is currently running
+ * \since 13.9.0
+ *
+ * \param schtd The task structure pointer
+ * \retval 0 not running
+ * \retval 1 running
+ */
+int ast_sip_sched_is_task_running(struct ast_sip_sched_task *schtd);
+
+/*!
+ * \brief Checks if the task is currently running
+ * \since 13.9.0
+ *
+ * \param name The task name
+ * \retval 0 not running or not found
+ * \retval 1 running
+ */
+int ast_sip_sched_is_task_running_by_name(const char *name);
+
+/*!
+ * \brief Gets the task name
+ * \since 13.9.0
+ *
+ * \param schtd The task structure pointer
+ * \retval 0 success
+ * \retval 1 failure
+ */
+int ast_sip_sched_task_get_name(struct ast_sip_sched_task *schtd, char *name, size_t maxlen);
+
+/*!
+ *  @}
+ */
+
+/*!
  * \brief SIP body description
  *
  * This contains a type and subtype that will be added as
@@ -1407,6 +1784,26 @@ pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint,
 
 /*!
  * \brief General purpose method for creating an rdata structure using specific information
+ * \since 13.15.0
+ *
+ * \param rdata[out] The rdata structure that will be populated
+ * \param packet A SIP message
+ * \param src_name The source IP address of the message
+ * \param src_port The source port of the message
+ * \param transport_type The type of transport the message was received on
+ * \param local_name The local IP address the message was received on
+ * \param local_port The local port the message was received on
+ * \param contact_uri The contact URI of the message
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+int ast_sip_create_rdata_with_contact(pjsip_rx_data *rdata, char *packet,
+	const char *src_name, int src_port, char *transport_type, const char *local_name,
+	int local_port, const char *contact_uri);
+
+/*!
+ * \brief General purpose method for creating an rdata structure using specific information
  *
  * \param rdata[out] The rdata structure that will be populated
  * \param packet A SIP message
@@ -1419,8 +1816,8 @@ pjsip_dialog *ast_sip_create_dialog_uas(const struct ast_sip_endpoint *endpoint,
  * \retval 0 success
  * \retval -1 failure
  */
-int ast_sip_create_rdata(pjsip_rx_data *rdata, char *packet, const char *src_name, int src_port, char *transport_type,
-	const char *local_name, int local_port);
+int ast_sip_create_rdata(pjsip_rx_data *rdata, char *packet, const char *src_name,
+	int src_port, char *transport_type, const char *local_name, int local_port);
 
 /*!
  * \brief General purpose method for creating a SIP request
@@ -2038,6 +2435,16 @@ int ast_sip_format_endpoint_ami(struct ast_sip_endpoint *endpoint,
 				struct ast_sip_ami *ami, int *count);
 
 /*!
+ * \brief Formats the contact and sends over AMI.
+ *
+ * \param obj a pointer an ast_sip_contact_wrapper structure
+ * \param arg a pointer to an ast_sip_ami structure
+ * \param flags ignored
+ * \retval 0 Success, otherwise non-zero on error
+ */
+int ast_sip_format_contact_ami(void *obj, void *arg, int flags);
+
+/*!
  * \brief Format auth details for AMI.
  *
  * \param auths an auth array
@@ -2184,6 +2591,64 @@ int ast_sip_register_supplement(struct ast_sip_supplement *supplement);
 void ast_sip_unregister_supplement(struct ast_sip_supplement *supplement);
 
 /*!
+ * \brief Retrieve the global MWI taskprocessor high water alert trigger level.
+ *
+ * \since 13.12.0
+ *
+ * \retval the system MWI taskprocessor high water alert trigger level
+ */
+unsigned int ast_sip_get_mwi_tps_queue_high(void);
+
+/*!
+ * \brief Retrieve the global MWI taskprocessor low water clear alert level.
+ *
+ * \since 13.12.0
+ *
+ * \retval the system MWI taskprocessor low water clear alert level
+ */
+int ast_sip_get_mwi_tps_queue_low(void);
+
+/*!
+ * \brief Retrieve the global setting 'disable sending unsolicited mwi on startup'.
+ * \since 13.12.0
+ *
+ * \retval non zero if disable.
+ */
+unsigned int ast_sip_get_mwi_disable_initial_unsolicited(void);
+
+/*!
+ * \brief Retrieve the global setting 'ignore_uri_user_options'.
+ * \since 13.12.0
+ *
+ * \retval non zero if ignore the user field options.
+ */
+unsigned int ast_sip_get_ignore_uri_user_options(void);
+
+/*!
+ * \brief Truncate the URI user field options string if enabled.
+ * \since 13.12.0
+ *
+ * \param str URI user field string to truncate if enabled
+ *
+ * \details
+ * We need to be able to handle URI's looking like
+ * "sip:1235557890;phone-context=national@x.x.x.x;user=phone"
+ *
+ * Where the URI user field is:
+ * "1235557890;phone-context=national"
+ *
+ * When truncated the string will become:
+ * "1235557890"
+ */
+#define AST_SIP_USER_OPTIONS_TRUNCATE_CHECK(str)				\
+	do {														\
+		char *__semi = strchr((str), ';');						\
+		if (__semi && ast_sip_get_ignore_uri_user_options()) {	\
+			*__semi = '\0';										\
+		}														\
+	} while (0)
+
+/*!
  * \brief Retrieve the system debug setting (yes|no|host).
  *
  * \note returned string needs to be de-allocated by caller.
@@ -2223,6 +2688,18 @@ char *ast_sip_get_endpoint_identifier_order(void);
 char *ast_sip_get_default_voicemail_extension(void);
 
 /*!
+ * \brief Retrieve the global default realm.
+ *
+ * This is the value placed in outbound challenges' realm if there
+ * is no better option (such as an auth-configured realm).
+ *
+ * \param[out] realm The default realm
+ * \param size The buffer size of realm
+ * \return nothing
+ */
+void ast_sip_get_default_realm(char *realm, size_t size);
+
+/*!
  * \brief Retrieve the global default from user.
  *
  * This is the value placed in outbound requests' From header if there
@@ -2258,6 +2735,13 @@ unsigned int ast_sip_get_keep_alive_interval(void);
  */
 unsigned int ast_sip_get_contact_expiration_check_interval(void);
 
+/*!
+ * \brief Retrieve the system setting 'disable multi domain'.
+ * \since 13.9.0
+ *
+ * \retval non zero if disable multi domain.
+ */
+unsigned int ast_sip_get_disable_multi_domain(void);
 
 /*!
  * \brief Retrieve the system max initial qualify time.
@@ -2361,5 +2845,65 @@ int ast_sip_set_tpselector_from_transport_name(const char *transport_name, pjsip
 void ast_sip_modify_id_header(pj_pool_t *pool, pjsip_fromto_hdr *id_hdr,
 	const struct ast_party_id *id);
 
+/*!
+ * \brief Retrieve the unidentified request security event thresholds
+ * \since 13.8.0
+ *
+ * \param count The maximum number of unidentified requests per source ip to accumulate before emitting a security event
+ * \param period The period in seconds over which to accumulate unidentified requests
+ * \param prune_interval The interval in seconds at which expired entries will be pruned
+ */
+void ast_sip_get_unidentified_request_thresholds(unsigned int *count, unsigned int *period,
+	unsigned int *prune_interval);
+
+/*!
+ * \brief Get the transport name from an endpoint or request uri
+ * \since 13.15.0
+ *
+ * \param endpoint
+ * \param sip_uri
+ * \param buf Buffer to receive transport name
+ * \param buf_len Buffer length
+ *
+ * \retval 0 Success
+ * \retval -1 Failure
+ *
+ * \note
+ * If endpoint->transport is not NULL, it is returned in buf.
+ * Otherwise if sip_uri has an 'x-ast-txp' parameter AND the sip_uri host is
+ * an ip4 or ip6 address, its value is returned,
+ */
+int ast_sip_get_transport_name(const struct ast_sip_endpoint *endpoint,
+	pjsip_sip_uri *sip_uri, char *buf, size_t buf_len);
+
+/*!
+ * \brief Sets pjsip_tpselector from an endpoint or uri
+ * \since 13.15.0
+ *
+ * \param endpoint If endpoint->transport is set, it's used
+ * \param sip_uri If sip_uri contains a x-ast-txp parameter, it's used
+ * \param selector The selector to be populated
+ *
+ * \retval 0 success
+ * \retval -1 failure
+ */
+int ast_sip_set_tpselector_from_ep_or_uri(const struct ast_sip_endpoint *endpoint,
+	pjsip_sip_uri *sip_uri, pjsip_tpselector *selector);
+
+/*!
+ * \brief Set the transport on a dialog
+ * \since 13.15.0
+ *
+ * \param endpoint
+ * \param dlg
+ * \param selector (optional)
+ *
+ * \note
+ * This API calls ast_sip_get_transport_name(endpoint, dlg->target) and if the result is
+ * non-NULL, calls pjsip_dlg_set_transport.  If 'selector' is non-NULL, it is updated with
+ * the selector used.
+ */
+int ast_sip_dlg_set_transport(const struct ast_sip_endpoint *endpoint, pjsip_dialog *dlg,
+	pjsip_tpselector *selector);
 
 #endif /* _RES_PJSIP_H */

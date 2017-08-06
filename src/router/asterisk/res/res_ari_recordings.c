@@ -62,10 +62,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 static void ast_ari_recordings_list_stored_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_list_stored_args args = {};
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -113,11 +112,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_get_stored_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_get_stored_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -172,11 +170,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_delete_stored_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_delete_stored_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -244,11 +241,10 @@ int ast_ari_recordings_copy_stored_parse_body(
 static void ast_ari_recordings_copy_stored_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_copy_stored_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -265,21 +261,6 @@ static void ast_ari_recordings_copy_stored_cb(
 			args.recording_name = (i->value);
 		} else
 		{}
-	}
-	/* Look for a JSON request entity */
-	body = ast_http_get_json(ser, headers);
-	if (!body) {
-		switch (errno) {
-		case EFBIG:
-			ast_ari_response_error(response, 413, "Request Entity Too Large", "Request body too large");
-			goto fin;
-		case ENOMEM:
-			ast_ari_response_error(response, 500, "Internal Server Error", "Error processing request");
-			goto fin;
-		case EIO:
-			ast_ari_response_error(response, 400, "Bad Request", "Error parsing request body");
-			goto fin;
-		}
 	}
 	if (ast_ari_recordings_copy_stored_parse_body(body, &args)) {
 		ast_ari_response_alloc_failed(response);
@@ -329,11 +310,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_get_live_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_get_live_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -388,11 +368,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_cancel_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_cancel_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -447,11 +426,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_stop_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_stop_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -506,11 +484,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_pause_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_pause_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -566,11 +543,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_unpause_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_unpause_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -626,11 +602,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_mute_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_mute_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -686,11 +661,10 @@ fin: __attribute__((unused))
 static void ast_ari_recordings_unmute_cb(
 	struct ast_tcptls_session_instance *ser,
 	struct ast_variable *get_params, struct ast_variable *path_vars,
-	struct ast_variable *headers, struct ast_ari_response *response)
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
 {
 	struct ast_ari_recordings_unmute_args args = {};
 	struct ast_variable *i;
-	RAII_VAR(struct ast_json *, body, NULL, ast_json_unref);
 #if defined(AST_DEVMODE)
 	int is_valid;
 	int code;
@@ -737,7 +711,7 @@ fin: __attribute__((unused))
 	return;
 }
 
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_stored_recordingName_copy = {
 	.path_segment = "copy",
 	.callbacks = {
@@ -746,7 +720,7 @@ static struct stasis_rest_handlers recordings_stored_recordingName_copy = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_stored_recordingName = {
 	.path_segment = "recordingName",
 	.is_wildcard = 1,
@@ -757,7 +731,7 @@ static struct stasis_rest_handlers recordings_stored_recordingName = {
 	.num_children = 1,
 	.children = { &recordings_stored_recordingName_copy, }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_stored = {
 	.path_segment = "stored",
 	.callbacks = {
@@ -766,7 +740,7 @@ static struct stasis_rest_handlers recordings_stored = {
 	.num_children = 1,
 	.children = { &recordings_stored_recordingName, }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_live_recordingName_stop = {
 	.path_segment = "stop",
 	.callbacks = {
@@ -775,7 +749,7 @@ static struct stasis_rest_handlers recordings_live_recordingName_stop = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_live_recordingName_pause = {
 	.path_segment = "pause",
 	.callbacks = {
@@ -785,7 +759,7 @@ static struct stasis_rest_handlers recordings_live_recordingName_pause = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_live_recordingName_mute = {
 	.path_segment = "mute",
 	.callbacks = {
@@ -795,7 +769,7 @@ static struct stasis_rest_handlers recordings_live_recordingName_mute = {
 	.num_children = 0,
 	.children = {  }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_live_recordingName = {
 	.path_segment = "recordingName",
 	.is_wildcard = 1,
@@ -806,7 +780,7 @@ static struct stasis_rest_handlers recordings_live_recordingName = {
 	.num_children = 3,
 	.children = { &recordings_live_recordingName_stop,&recordings_live_recordingName_pause,&recordings_live_recordingName_mute, }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_live = {
 	.path_segment = "live",
 	.callbacks = {
@@ -814,7 +788,7 @@ static struct stasis_rest_handlers recordings_live = {
 	.num_children = 1,
 	.children = { &recordings_live_recordingName, }
 };
-/*! \brief REST handler for /api-docs/recordings.{format} */
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings = {
 	.path_segment = "recordings",
 	.callbacks = {
@@ -823,19 +797,28 @@ static struct stasis_rest_handlers recordings = {
 	.children = { &recordings_stored,&recordings_live, }
 };
 
-static int load_module(void)
-{
-	int res = 0;
-	stasis_app_ref();
-	res |= ast_ari_add_handler(&recordings);
-	return res;
-}
-
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&recordings);
 	stasis_app_unref();
 	return 0;
+}
+
+static int load_module(void)
+{
+	int res = 0;
+
+	CHECK_ARI_MODULE_LOADED();
+
+
+	stasis_app_ref();
+	res |= ast_ari_add_handler(&recordings);
+	if (res) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Recording resources",

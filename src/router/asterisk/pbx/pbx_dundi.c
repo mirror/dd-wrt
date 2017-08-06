@@ -994,9 +994,9 @@ static int dundi_prop_precache(struct dundi_transaction *trans, struct dundi_ies
 					sizeof(trans->parent->dr[trans->parent->respcount].tech));
 				trans->parent->respcount++;
 				ast_clear_flag_nonstd(trans->parent->hmd, DUNDI_HINT_DONT_ASK);
-			} else if (trans->parent->dr[z].weight > ies->answers[x]->weight) {
+			} else if (trans->parent->dr[z].weight > ntohs(ies->answers[x]->weight)) {
 				/* Update weight if appropriate */
-				trans->parent->dr[z].weight = ies->answers[x]->weight;
+				trans->parent->dr[z].weight = ntohs(ies->answers[x]->weight);
 			}
 		} else
 			ast_log(LOG_NOTICE, "Dropping excessive answers in precache for %s@%s\n",
@@ -1764,9 +1764,9 @@ static int handle_command_response(struct dundi_transaction *trans, struct dundi
 									sizeof(trans->parent->dr[trans->parent->respcount].tech));
 								trans->parent->respcount++;
 								ast_clear_flag_nonstd(trans->parent->hmd, DUNDI_HINT_DONT_ASK);
-							} else if (trans->parent->dr[z].weight > ies.answers[x]->weight) {
+							} else if (trans->parent->dr[z].weight > ntohs(ies.answers[x]->weight)) {
 								/* Update weight if appropriate */
-								trans->parent->dr[z].weight = ies.answers[x]->weight;
+								trans->parent->dr[z].weight = ntohs(ies.answers[x]->weight);
 							}
 						} else
 							ast_log(LOG_NOTICE, "Dropping excessive answers to request for %s@%s\n",
@@ -4847,6 +4847,9 @@ static int set_config(char *config_file, struct sockaddr_in* sin, int reload)
 		ast_log(LOG_WARNING, "Unable to get host name!\n");
 	AST_LIST_LOCK(&peers);
 
+	if (ast_eid_is_empty(&ast_eid_default)) {
+		ast_log(LOG_WARNING, "Entity ID is not set.\n");
+	}
 	memcpy(&global_eid, &ast_eid_default, sizeof(global_eid));
 
 	global_storehistory = 0;

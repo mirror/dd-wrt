@@ -834,6 +834,18 @@ const char *ast_config_option(struct ast_config *cfg, const char *cat, const cha
 struct ast_category *ast_category_new(const char *name, const char *in_file, int lineno);
 
 /*!
+ * \brief Create a category that is not backed by a file
+ *
+ * \param name name of new category
+ */
+#define ast_category_new_dynamic(name) ast_category_new(name, "", -1)
+
+/*!
+ * \brief Create a nameless category that is not backed by a file
+ */
+#define ast_category_new_anonymous() ast_category_new_dynamic("")
+
+/*!
  * \brief Create a category making it a template
  *
  * \param name name of new template
@@ -907,7 +919,7 @@ void ast_category_destroy(struct ast_category *cat);
 struct ast_variable *ast_category_detach_variables(struct ast_category *cat);
 void ast_category_rename(struct ast_category *cat, const char *name);
 
-#ifdef MALLOC_DEBUG
+#ifdef __AST_DEBUG_MALLOC
 struct ast_variable *_ast_variable_new(const char *name, const char *value, const char *filename, const char *file, const char *function, int lineno);
 #define ast_variable_new(a, b, c) _ast_variable_new(a, b, c, __FILE__, __PRETTY_FUNCTION__, __LINE__)
 #else

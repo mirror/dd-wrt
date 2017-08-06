@@ -6,7 +6,10 @@
 
     <xsl:template match="node()|@*">
         <xsl:copy>
-            <xsl:apply-templates select="node()|@*"/>
+            <xsl:for-each select="node()|@*">
+                <xsl:sort select="@tech"/>
+                <xsl:apply-templates select="."/>
+            </xsl:for-each>
         </xsl:copy>
     </xsl:template>
 
@@ -141,6 +144,26 @@
                 <xsl:value-of select="concat(@prefix,'BridgeNumChannels')"/>
             </xsl:attribute>
             <para>Number of channels in the bridge</para>
+        </xsl:element>
+        <xsl:element name="parameter">
+            <xsl:attribute name="name">
+                <xsl:value-of select="concat(@prefix, 'BridgeVideoSourceMode')" />
+            </xsl:attribute>
+            <enumlist>
+                <enum name="none"/>
+                <enum name="talker"/>
+                <enum name="single"/>
+            </enumlist>
+            <para>The video source mode for the bridge.</para>
+        </xsl:element>
+        <xsl:element name="parameter">
+            <xsl:attribute name="required">
+                false
+            </xsl:attribute>
+            <xsl:attribute name="name">
+                <xsl:value-of select="concat(@prefix, 'BridgeVideoSource')" />
+            </xsl:attribute>
+            <para>If there is a video source for the bridge, the unique ID of the channel that is the video source.</para>
         </xsl:element>
     </xsl:template>
 </xsl:stylesheet>

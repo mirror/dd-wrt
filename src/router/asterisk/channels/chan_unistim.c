@@ -163,6 +163,7 @@ enum autoprov_extn {
 #define LED_HEADPHONE_ON		0x011
 #define LED_MUTE_OFF			0x018
 #define LED_MUTE_ON			0x019
+#define LED_MUTE_BLINK			0x1A
 
 #define SIZE_HEADER	     6
 #define SIZE_MAC_ADDR	   17
@@ -359,8 +360,8 @@ struct unistim_subchannel {
 	int softkey;			/*! Softkey assigned */
 	pthread_t ss_thread;		/*! unistim_ss thread handle */
 	int alreadygone;
-	char ringvolume;
-	char ringstyle;
+	signed char ringvolume;
+	signed char ringstyle;
 	int moh;					/*!< Music on hold in progress */
 	AST_LIST_ENTRY(unistim_subchannel) list;
 };
@@ -415,13 +416,13 @@ static struct unistim_device {
 	char maintext2[25];		     /*!< when the phone is idle, display this string on line 2 */
 	char titledefault[13];	  /*!< title (text before date/time) */
 	char datetimeformat;	    /*!< format used for displaying time/date */
-	char contrast;			  /*!< contrast */
+	signed char contrast;			  /*!< contrast */
 	char country[3];			/*!< country used for dial tone frequency */
 	struct ast_tone_zone *tz;	       /*!< Tone zone for res_indications (ring, busy, congestion) */
-	char ringvolume;			/*!< Ring volume */
-	char ringstyle;			 /*!< Ring melody */
-	char cwvolume;			/*!< Ring volume on call waiting */
-	char cwstyle;			 /*!< Ring melody on call waiting */
+	signed char ringvolume;			/*!< Ring volume */
+	signed char ringstyle;			 /*!< Ring melody */
+	signed char cwvolume;			/*!< Ring volume on call waiting */
+	signed char cwstyle;			 /*!< Ring melody on call waiting */
 	int interdigit_timer;		/*!< Interdigit timer for dialing number by timeout */
 	int dtmfduration;		/*!< DTMF playback duration */
 	time_t nextdial;		/*!< Timer used for dial by timeout */
@@ -445,7 +446,7 @@ static struct unistim_device {
 	int nat;					/*!< Used by the obscure ast_rtp_setnat */
 	enum autoprov_extn extension;   /*!< See ifdef EXTENSION for valid values */
 	char extension_number[11];      /*!< Extension number entered by the user */
-	char to_delete;			 /*!< Used in reload */
+	signed char to_delete;			 /*!< Used in reload */
 	struct ast_silence_generator *silence_generator;
 	AST_LIST_HEAD(,unistim_subchannel) subs; /*!< pointer to our current connection, channel... */
 	AST_LIST_HEAD(,unistim_line) lines;
@@ -567,8 +568,10 @@ static const unsigned char packet_send_stream_based_tone_off[] =
 	{ 0x16, 0x05, 0x1c, 0x00, 0x00 };
 
 static const unsigned char packet_send_mute[] = { 0x16, 0x05, 0x04, 0x00, 0x00 };
+#ifdef NOT_USED
 static const unsigned char packet_send_CloseAudioStreamRX[] = { 0x16, 0x05, 0x31, 0x00, 0xff };
 static const unsigned char packet_send_CloseAudioStreamTX[] = { 0x16, 0x05, 0x31, 0xff, 0x00 };
+#endif
 static const unsigned char packet_send_stream_based_tone_on[] =
 	{ 0x16, 0x06, 0x1b, 0x00, 0x00, 0x05 };
 static const unsigned char packet_send_stream_based_tone_single_freq[] =
@@ -1021,7 +1024,7 @@ static int get_to_address(int fd, struct sockaddr_in *toAddr)
 	memcpy(&toAddr->sin_addr, &ip_msg.address, sizeof(struct in_addr));
 	return err;
 #else
-	memcpy(&toAddr, &public_ip, sizeof(&toAddr));
+	memcpy(toAddr, &public_ip, sizeof(*toAddr));
 	return 0;
 #endif
 }
@@ -1701,7 +1704,7 @@ send_select_output(struct unistimsession *pte, unsigned char output, unsigned ch
 	}
 	pte->device->output = output;
 }
-static void send_ring(struct unistimsession *pte, char volume, char style)
+static void send_ring(struct unistimsession *pte, signed char volume, signed char style)
 {
 	BUFFSEND;
 	if (unistimdebug) {
@@ -4126,7 +4129,7 @@ static void show_main_page(struct unistimsession *pte)
 			send_date_time2(pte);
 			send_idle_clock(pte);
 			if (strlen(pte->device->maintext0)) {
-				send_text(TEXT_LINE0, TEXT_NORMAL, pte, pte->device->maintext0);
+				send_text(TEXT_LINE0, TEXT_NORMAL, pte, ustmtext(pte->device->maintext0, pte));
 			}
 		} else {
 			if (pte->device->missed_call == 1) {
@@ -4145,11 +4148,11 @@ static void show_main_page(struct unistimsession *pte)
 			strcat(tmpbuf, ast_inet_ntoa(pte->sin.sin_addr));
 			send_text(TEXT_LINE2, TEXT_NORMAL, pte, tmpbuf);
 		} else {
-			send_text(TEXT_LINE2, TEXT_NORMAL, pte, pte->device->maintext2);
+			send_text(TEXT_LINE2, TEXT_NORMAL, pte, ustmtext(pte->device->maintext2, pte));
 		}
 	}
 
-	send_texttitle(pte, pte->device->titledefault);
+	send_texttitle(pte, ustmtext(pte->device->titledefault, pte));
 	change_favorite_icon(pte, FAV_LINE_ICON);
 }
 
@@ -4404,7 +4407,7 @@ static void init_phone_step2(struct unistimsession *pte)
 			strcat(tmp, pte->macaddr);
 			send_text(TEXT_LINE2, TEXT_NORMAL, pte, tmp);
 			send_text_status(pte, "");
-			send_texttitle(pte, "UNISTIM for*");
+			send_texttitle(pte, ustmtext("UNISTIM for*", pte));
 			return;
 		}
 	}
@@ -4834,7 +4837,7 @@ static int unistim_call(struct ast_channel *ast, const char *dest, int timeout)
 	int res = 0, i;
 	struct unistim_subchannel *sub, *sub_real;
 	struct unistimsession *session;
-	char ringstyle, ringvolume;
+	signed char ringstyle, ringvolume;
 
 	session = channel_to_session(ast);
 	if (!session) {
@@ -4894,14 +4897,15 @@ static int unistim_hangup_clean(struct ast_channel *ast, struct unistim_subchann
 	ast_channel_tech_pvt_set(ast, NULL);
 	unistim_set_owner(sub, NULL);
 	sub->alreadygone = 0;
-	ast_mutex_unlock(&sub->lock);
 	if (sub->rtp) {
 		if (unistimdebug) {
 			ast_verb(0, "Destroying RTP session\n");
 		}
+		ast_rtp_instance_stop(sub->rtp);
 		ast_rtp_instance_destroy(sub->rtp);
 		sub->rtp = NULL;
 	}
+	ast_mutex_unlock(&sub->lock);
 	return 0;
 }
 
@@ -5436,8 +5440,8 @@ static struct unistim_subchannel *find_subchannel_by_name(const char *dest)
 							if ((*at < '0') || (*at > '7')) { /* ring style */
 								ast_log(LOG_WARNING, "Invalid ring selection (%s)", at);
 							} else {
-								char ring_volume = -1;
-								char ring_style = *at - '0';
+								signed char ring_volume = -1;
+								signed char ring_style = *at - '0';
 								at++;
 								if ((*at >= '0') && (*at <= '3')) {      /* ring volume */
 									ring_volume = *at - '0';
@@ -6402,7 +6406,7 @@ static struct unistim_device *build_device(const char *cat, const struct ast_var
 	int create = 1;
 	int nbsoftkey, dateformat, timeformat, callhistory, sharpdial, linecnt;
 	char linelabel[AST_MAX_EXTENSION];
-	char ringvolume, ringstyle, cwvolume, cwstyle;
+	signed char ringvolume, ringstyle, cwvolume, cwstyle;
 
 	/* First, we need to know if we already have this name in our list */
 	/* Get a lock for the device chained list */
@@ -7115,7 +7119,7 @@ buff_failed:
 	global_cap = NULL;
 	ao2_cleanup(unistim_tech.capabilities);
 	unistim_tech.capabilities = NULL;
-	return AST_MODULE_LOAD_FAILURE;
+	return AST_MODULE_LOAD_DECLINE;
 }
 
 static int unload_module(void)

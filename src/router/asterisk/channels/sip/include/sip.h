@@ -384,11 +384,12 @@
 #define SIP_PAGE3_IGNORE_PREFCAPS        (1 << 7)  /*!< DP: Ignore prefcaps when setting up an outgoing call leg */
 #define SIP_PAGE3_DISCARD_REMOTE_HOLD_RETRIEVAL  (1 << 8)  /*!< DGP: Stop telling the peer to start music on hold */
 #define SIP_PAGE3_FORCE_AVP              (1 << 9)  /*!< DGP: Force 'RTP/AVP' for all streams, even DTLS */
+#define SIP_PAGE3_RTCP_MUX               (1 << 10) /*!< DGP: Attempt to negotiate RFC 5761 RTCP multiplexing */
 
 #define SIP_PAGE3_FLAGS_TO_COPY \
 	(SIP_PAGE3_SNOM_AOC | SIP_PAGE3_SRTP_TAG_32 | SIP_PAGE3_NAT_AUTO_RPORT | SIP_PAGE3_NAT_AUTO_COMEDIA | \
 	 SIP_PAGE3_DIRECT_MEDIA_OUTGOING | SIP_PAGE3_USE_AVPF | SIP_PAGE3_ICE_SUPPORT | SIP_PAGE3_IGNORE_PREFCAPS | \
-	 SIP_PAGE3_DISCARD_REMOTE_HOLD_RETRIEVAL | SIP_PAGE3_FORCE_AVP)
+	 SIP_PAGE3_DISCARD_REMOTE_HOLD_RETRIEVAL | SIP_PAGE3_FORCE_AVP | SIP_PAGE3_RTCP_MUX)
 
 #define CHECK_AUTH_BUF_INITLEN   256
 
@@ -1230,6 +1231,12 @@ struct sip_pkt {
 	struct ast_str *data;
 };
 
+enum sip_mailbox_status {
+	SIP_MAILBOX_STATUS_UNKNOWN = 0,
+	SIP_MAILBOX_STATUS_EXISTING,
+	SIP_MAILBOX_STATUS_NEW,
+};
+
 /*!
  * \brief A peer's mailbox
  *
@@ -1240,7 +1247,8 @@ struct sip_mailbox {
 	/*! Associated MWI subscription */
 	struct stasis_subscription *event_sub;
 	AST_LIST_ENTRY(sip_mailbox) entry;
-	unsigned int delme:1;
+	struct sip_peer *peer;
+	enum sip_mailbox_status status;
 	char id[1];
 };
 

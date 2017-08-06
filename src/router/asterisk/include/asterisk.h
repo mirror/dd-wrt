@@ -36,6 +36,15 @@
 #define AST_FILE_MODE 0666
 #endif
 
+/* Make sure PATH_MAX is defined on platforms (HURD) that don't define it.
+ * Also be sure to handle the case of a path larger than PATH_MAX
+ * (err safely) in the code.
+ */
+#ifndef PATH_MAX
+#define PATH_MAX 4096
+#endif
+
+
 #define DEFAULT_LANGUAGE "en"
 
 #define DEFAULT_SAMPLE_RATE 8000
@@ -308,9 +317,17 @@ struct ast_module;
 struct ast_variable;
 struct ast_str;
 struct ast_sched_context;
+struct ast_json;
 
 /* Some handy macros for turning a preprocessor token into (effectively) a quoted string */
 #define __stringify_1(x)	#x
 #define __stringify(x)		__stringify_1(x)
+
+/*!
+ * \brief Retrieve the PBX UUID
+ * \param pbx_uuid A buffer of at least AST_UUID_STR_LEN (36 + 1) size to receive the UUID
+ * \param length The buffer length
+ */
+int ast_pbx_uuid_get(char *pbx_uuid, int length);
 
 #endif /* _ASTERISK_H */
