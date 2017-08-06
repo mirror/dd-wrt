@@ -39,12 +39,12 @@ export OPENSSL_TARGET := linux-ppc
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections  -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_TARGET := linux-generic32
+export OPENSSL_TARGET := linux-x86
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),x86_64)
-export OPENSSL_TARGET := linux-generic64
-export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_NO_ASM
+export OPENSSL_TARGET := linux-x86_64
+export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
 
