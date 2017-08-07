@@ -175,7 +175,7 @@ void stop_ppp(webs_t wp)
 	unlink("/tmp/ppp/link");
 }
 
-void validate_filter_tod(webs_t wp)
+static void validate_filter_tod(webs_t wp)
 {
 	char buf[256] = "";
 	char tod_buf[20];
@@ -252,7 +252,7 @@ void validate_filter_tod(webs_t wp)
 		if (time[strlen(time) - 1] == ',')
 			time[strlen(time) - 1] = '\0';
 
-		snprintf(tod_buf, sizeof(tod_buf), "%s %s %s %s %s %s %s", week0, week1, week2, week3, week4, week5, week6);
+		snprintf(tod_buf, sizeof(tod_buf), "%d %d %d %d %d %d %d", week0, week1, week2, week3, week4, week5, week6);
 	}
 	if (time_all == 1) {
 		_start_hour = 0;
