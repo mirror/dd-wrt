@@ -2654,56 +2654,56 @@ int speed_main(int argc, char **argv)
  show_res:
 #endif
     if (!mr) {
-        printf("%s\n", OpenSSL_version(OPENSSL_VERSION));
-        printf("%s\n", OpenSSL_version(OPENSSL_BUILT_ON));
-        printf("options:");
-        printf("%s ", BN_options());
+        fprintf(stdout,"%s\n", OpenSSL_version(OPENSSL_VERSION));
+        fprintf(stdout,"%s\n", OpenSSL_version(OPENSSL_BUILT_ON));
+        fprintf(stdout,"options:");
+        fprintf(stdout,"%s ", BN_options());
 #ifndef OPENSSL_NO_MD2
-        printf("%s ", MD2_options());
+        fprintf(stdout,"%s ", MD2_options());
 #endif
 #ifndef OPENSSL_NO_RC4
-        printf("%s ", RC4_options());
+        fprintf(stdout,"%s ", RC4_options());
 #endif
 #ifndef OPENSSL_NO_DES
-        printf("%s ", DES_options());
+        fprintf(stdout,"%s ", DES_options());
 #endif
-        printf("%s ", AES_options());
+        fprintf(stdout,"%s ", AES_options());
 #ifndef OPENSSL_NO_IDEA
-        printf("%s ", IDEA_options());
+        fprintf(stdout,"%s ", IDEA_options());
 #endif
 #ifndef OPENSSL_NO_BF
-        printf("%s ", BF_options());
+        fprintf(stdout,"%s ", BF_options());
 #endif
-        printf("\n%s\n", OpenSSL_version(OPENSSL_CFLAGS));
+        fprintf(stdout,"\n%s\n", OpenSSL_version(OPENSSL_CFLAGS));
     }
 
     if (pr_header) {
         if (mr)
-            printf("+H");
+            fprintf(stdout,"+H");
         else {
             printf
                 ("The 'numbers' are in 1000s of bytes per second processed.\n");
-            printf("type        ");
+            fprintf(stdout,"type        ");
         }
         for (testnum = 0; testnum < SIZE_NUM; testnum++)
             printf(mr ? ":%d" : "%7d bytes", lengths[testnum]);
-        printf("\n");
+        fprintf(stdout,"\n");
     }
 
     for (k = 0; k < ALGOR_NUM; k++) {
         if (!doit[k])
             continue;
         if (mr)
-            printf("+F:%d:%s", k, names[k]);
+            fprintf(stdout,"+F:%d:%s", k, names[k]);
         else
-            printf("%-13s", names[k]);
+            fprintf(stdout,"%-13s", names[k]);
         for (testnum = 0; testnum < SIZE_NUM; testnum++) {
             if (results[k][testnum] > 10000 && !mr)
-                printf(" %11.2fk", results[k][testnum] / 1e3);
+                fprintf(stdout," %11.2fk", results[k][testnum] / 1e3);
             else
                 printf(mr ? ":%.2f" : " %11.2f ", results[k][testnum]);
         }
-        printf("\n");
+        fprintf(stdout,"\n");
     }
 #ifndef OPENSSL_NO_RSA
     testnum = 1;
@@ -2711,14 +2711,14 @@ int speed_main(int argc, char **argv)
         if (!rsa_doit[k])
             continue;
         if (testnum && !mr) {
-            printf("%18ssign    verify    sign/s verify/s\n", " ");
+            fprintf(stdout,"%18ssign    verify    sign/s verify/s\n", " ");
             testnum = 0;
         }
         if (mr)
-            printf("+F2:%u:%u:%f:%f\n",
+            fprintf(stdout,"+F2:%u:%u:%f:%f\n",
                    k, rsa_bits[k], rsa_results[k][0], rsa_results[k][1]);
         else
-            printf("rsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
+            fprintf(stdout,"rsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
                    rsa_bits[k], rsa_results[k][0], rsa_results[k][1],
                    1.0 / rsa_results[k][0], 1.0 / rsa_results[k][1]);
     }
@@ -2729,14 +2729,14 @@ int speed_main(int argc, char **argv)
         if (!dsa_doit[k])
             continue;
         if (testnum && !mr) {
-            printf("%18ssign    verify    sign/s verify/s\n", " ");
+            fprintf(stdout,"%18ssign    verify    sign/s verify/s\n", " ");
             testnum = 0;
         }
         if (mr)
-            printf("+F3:%u:%u:%f:%f\n",
+            fprintf(stdout,"+F3:%u:%u:%f:%f\n",
                    k, dsa_bits[k], dsa_results[k][0], dsa_results[k][1]);
         else
-            printf("dsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
+            fprintf(stdout,"dsa %4u bits %8.6fs %8.6fs %8.1f %8.1f\n",
                    dsa_bits[k], dsa_results[k][0], dsa_results[k][1],
                    1.0 / dsa_results[k][0], 1.0 / dsa_results[k][1]);
     }
@@ -2747,16 +2747,16 @@ int speed_main(int argc, char **argv)
         if (!ecdsa_doit[k])
             continue;
         if (testnum && !mr) {
-            printf("%30ssign    verify    sign/s verify/s\n", " ");
+            fprintf(stdout,"%30ssign    verify    sign/s verify/s\n", " ");
             testnum = 0;
         }
 
         if (mr)
-            printf("+F4:%u:%u:%f:%f\n",
+            fprintf(stdout,"+F4:%u:%u:%f:%f\n",
                    k, test_curves_bits[k],
                    ecdsa_results[k][0], ecdsa_results[k][1]);
         else
-            printf("%4u bit ecdsa (%s) %8.4fs %8.4fs %8.1f %8.1f\n",
+            fprintf(stdout,"%4u bit ecdsa (%s) %8.4fs %8.4fs %8.1f %8.1f\n",
                    test_curves_bits[k],
                    test_curves_names[k],
                    ecdsa_results[k][0], ecdsa_results[k][1],
@@ -2768,16 +2768,16 @@ int speed_main(int argc, char **argv)
         if (!ecdh_doit[k])
             continue;
         if (testnum && !mr) {
-            printf("%30sop      op/s\n", " ");
+            fprintf(stdout,"%30sop      op/s\n", " ");
             testnum = 0;
         }
         if (mr)
-            printf("+F5:%u:%u:%f:%f\n",
+            fprintf(stdout,"+F5:%u:%u:%f:%f\n",
                    k, test_curves_bits[k],
                    ecdh_results[k][0], 1.0 / ecdh_results[k][0]);
 
         else
-            printf("%4u bit ecdh (%s) %8.4fs %8.1f\n",
+            fprintf(stdout,"%4u bit ecdh (%s) %8.4fs %8.1f\n",
                    test_curves_bits[k],
                    test_curves_names[k],
                    ecdh_results[k][0], 1.0 / ecdh_results[k][0]);
@@ -2929,7 +2929,7 @@ static int do_multi(int multi)
             free(fds);
             return 0;
         }
-        printf("Forked child %d\n", n);
+        fprintf(stdout,"Forked child %d\n", n);
     }
 
     /* for now, assume the pipe is long enough to take all the output */
@@ -2948,7 +2948,7 @@ static int do_multi(int multi)
                         buf, n);
                 continue;
             }
-            printf("Got: %s from %d\n", buf, n);
+            fprintf(stdout,"Got: %s from %d\n", buf, n);
             if (strncmp(buf, "+F:", 3) == 0) {
                 int alg;
                 int j;
