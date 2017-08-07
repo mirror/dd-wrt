@@ -114,6 +114,9 @@ enum EnumRd {
 	TESTEM_AP_WORLD = 0xa1,
 
 #endif
+#ifdef HAVE_TMK
+	TMK_AP_WORLD = 0xa1,
+#endif
 	IT = 0x01a2,
 
 	/*
@@ -303,6 +306,9 @@ enum CountryCode {
 #ifdef HAVE_TESTEM
 	CTRY_TESTEM_CLIENT = 381,	/* Testem */
 	CTRY_TESTEM_AP = 382,	/* Testem */
+#endif
+#ifdef HAVE_TMK
+	CTRY_EXTRATMK = 381,	/* */
 #endif
 	CTRY_JAMAICA = 388,	/* Jamaica */
 	CTRY_JAPAN = 392,	/* Japan */
@@ -555,6 +561,9 @@ static COUNTRY_CODE_TO_ENUM_RD allCountries[] = {
 #ifdef HAVE_TESTEM
 	{CTRY_TESTEM_AP, TESTEM_AP_WORLD, "IY", "TESTEM_AP"},
 	{CTRY_TESTEM_CLIENT, TESTEM_CLIENT_WORLD, "IZ", "TESTEM_CLIENT"},
+#endif
+#ifdef HAVE_TMK
+	{CTRY_EXTRATMK, TMK_AP_WORLD, "IY", "BOS"},
 #endif
 	{CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN"},
 	{CTRY_JAPAN, MKK1_MKKA, "JP", "JAPAN"},
