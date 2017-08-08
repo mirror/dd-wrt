@@ -334,17 +334,20 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 						if (strstr(result, cpufeatures[i].name))
 							continue;
 					}
-					result = realloc(result, result ? strlen(result) + strlen(word) + 2: strlen(word)+1);
-					if (strlen(result))
-						sprintf(result, "%s %s", result, word);
-					else
-						strcpy(result, word);
+					if (!strcmp(word, cpufeatures[i].field)) {
+						result = realloc(result, result ? strlen(result) + strlen(cpufeatures[i].name) + 2 : strlen(cpufeatures[i].name) + 1);
+						if (strlen(result))
+							sprintf(result, "%s %s", result, cpufeatures[i].name);
+						else
+							strcpy(result, cpufeatures[i].name);
+					}
 				}
 
 			}
 
 		}
 	}
+	fclose(fp);
 	if (result && strlen(result)) {
 		char buf[128];
 		websWrite(wp, "<div class=\"setting\">\n");
