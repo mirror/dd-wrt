@@ -177,6 +177,11 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 5");
 		eval("swconfig", "dev", "eth0", "set", "apply");
+		eval("ifconfig", "eth0", "up");
+		eval("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
+		eval("vconfig", "add", "eth0", "1");
+		eval("vconfig", "add", "eth0", "2");
+
 	}
 
 	detect_wireless_devices();
