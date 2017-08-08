@@ -2520,7 +2520,7 @@ int internal_getRouterBrand()
 
 		{"NanoBeam M2 XW", 0xe2c2, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{"NanoBeam M5 XW", 0xe3e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
-		{"NanoBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
+		{"NanoBeam M5 XW", 0xe4e5, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	// // gigabit
 		{"NanoBeam M5 XW", 0xe815, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 		{"NanoBeam M5 XW", 0xe825, 3, 3, 0, 0, ROUTER_BOARD_NS2M, 0, 10},	//
 
