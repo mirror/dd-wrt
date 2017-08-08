@@ -260,3 +260,98 @@ void ej_show_cpucores(webs_t wp, int argc, char_t ** argv)
 #endif
 	websWrite(wp, "%d", count);
 }
+
+struct CPUFEATURES {
+	char *line;
+	char *field;
+	char *name;
+};
+static struct CPUFEATURES cpufeatures[] = {
+//x86/x64
+	{"flags", "fpu", "FPU"},
+	{"flags", "mmx", "MMX"},
+	{"flags", "sse", "SSE"},
+	{"flags", "sse2", "SSE2"},
+	{"flags", "ssse3", "SSSE3"},
+	{"flags", "sse3", "SSE3"},
+	{"flags", "sse4", "SSE4"},
+	{"flags", "sse4_1", "SSE4.1"},
+	{"flags", "sse4_2", "SSE4.2"},
+	{"flags", "sse4a", "SSE4a"},
+	{"flags", "avx", "AVX"},
+	{"flags", "avx2", "AVX2"},
+	{"flags", "aes", "AES-NI"},
+	{"flags", "ht", "HYPERTHREADING"},
+	{"flags", "nx", "NX"},
+
+// ARM
+	{"Features", "vfp", "VFP"},
+	{"Features", "vfpv3", "VFPv3"},
+	{"Features", "vfpv3d16", "VFPv3d16"},
+	{"Features", "vfpv4", "VFPv4"},
+	{"Features", "neon", "NEON"},
+	{"Features", "vfpd32", "VFPD32"},
+	{"Features", "edsp", "EDSP"},
+	{"Features", "lpae", "LPAE"},
+	{"Features", "aes", "AES"},
+	{"Features", "sha1", "SHA1"},
+	{"Features", "sha2", "SHA2"},
+	{"Features", "java", "JAVA"},
+//mips
+
+	{"isa", "mips1", "MIPS1"},
+	{"isa", "mips2", "MIPS2"},
+	{"isa", "mips3", "MIPS3"},
+	{"isa", "mips4", "MIPS4"},
+	{"isa", "mips5", "MIPS5"},
+	{"isa", "mips32r1", "MIPS32r1"},
+	{"isa", "mips32r2", "MIPS32r2"},
+	{"isa", "mips32r6", "MIPS32r6"},
+	{"isa", "mips64r1", "MIPS64r1"},
+	{"isa", "mips64r2", "MIPS64r2"},
+	{"isa", "mips64r6", "MIPS64r6"},
+	{"ASEs implemented", "mips16", "MIPS16"},
+	{"ASEs implemented", "dsp", "DSP"},
+	{"ASEs implemented", "dsp2", "DSP2"},
+	{"ASEs implemented", "dsp3", "DSP3"},
+	{"ASEs implemented", "mt", "MT"},
+};
+
+void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
+{
+	char word[64];
+	char *next = NULL;
+	char *result = NULL;
+	FILE *fp = fopen("/proc/cpuinfo", "rb");
+	char *line = malloc(1024);
+	while (fgets(line, 1024, fp)) {
+		int i;
+		for (i = 0; i < sizeof(cpufeatures) / sizeof(struct CPUFEATURES); i++) {
+			if (strstr(line, cpufeatures[i].line)) {
+				char *begin = strchr(line, ':') + 1;
+				foreach(word, begin, next) {
+					if (result) {
+						if (strstr(result, cpufeatures[i].name))
+							continue;
+					}
+					result = realloc(result, result ? strlen(result) + strlen(word) + 2: strlen(word)+1);
+					if (strlen(result))
+						sprintf(result, "%s %s", result, word);
+					else
+						strcpy(result, word);
+				}
+
+			}
+
+		}
+	}
+	if (result && strlen(result)) {
+		char buf[128];
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">%s</div>\n", tran_string(buf, "status_router.features"));
+		websWrite(wp, "%s&nbsp;\n", result);
+		websWrite(wp, "</div>\n");
+	}
+	if (result)
+		free(result);
+}
