@@ -334,12 +334,20 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 						if (strstr(result, cpufeatures[i].name))
 							continue;
 					}
-					char *p = strchr(word,'\n');
+					char *p = strchr(word, '\n');
 					if (p)
-					    p[0]=0;
+						p[0] = 0;
+					int namelen = strlen(cpufeatures[i].name);
 					if (!strcmp(word, cpufeatures[i].field)) {
-						result = realloc(result, result ? strlen(result) + strlen(cpufeatures[i].name) + 2 : strlen(cpufeatures[i].name) + 1);
-						if (strlen(result))
+						int resultlen = 0;
+						if (!result) {
+							result = malloc(namelen + 1);
+							bzero(result, namelen);
+						} else {
+							resultlen = strlen(result);
+							result = realloc(result, resultlen + namelen + 2);
+						}
+						if (resultlen)
 							sprintf(result, "%s %s", result, cpufeatures[i].name);
 						else
 							strcpy(result, cpufeatures[i].name);
