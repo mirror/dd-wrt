@@ -171,6 +171,14 @@ void start_sysinit(void)
 		}
 	}
 
+	if (brand == ROUTER_BOARD_NS5XW) {
+		eval("swconfig", "dev", "eth0", "set", "reset", "1");
+		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
+		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1");
+		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "0 5");
+		eval("swconfig", "dev", "eth0", "set", "apply");
+	}
+
 	detect_wireless_devices();
 
 #ifdef HAVE_WPE72
