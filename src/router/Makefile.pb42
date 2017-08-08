@@ -361,6 +361,11 @@ ifeq ($(CONFIG_LOCOXW),y)
 else
 	echo "# CONFIG_XWLOCO is not set" >> $(LINUXDIR)/.config
 endif
+ifeq ($(CONFIG_M400XW),y)
+	echo CONFIG_XWM400=y >> $(LINUXDIR)/.config
+else
+	echo "# CONFIG_XWM400 is not set" >> $(LINUXDIR)/.config
+endif
 ifeq ($(CONFIG_UAPAC),y)
 	echo CONFIG_UAPAC=y >> $(LINUXDIR)/.config
 else
@@ -1384,11 +1389,8 @@ endif
 
 ifeq ($(CONFIG_UBNTXW),y)
 	-tools/ubnt/src/mkfwimage -v XW.ar934x.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntxw-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
-#	$(STAGING_DIR_HOST)/bin/mkfwimage2 -f 0x9f000000 \
-#		-v $(UBNT_TYPE).$(UBNT_CHIP).v6.0.0-OpenWrt-$(REVISION) \
-#		-p jffs2:0x50000:0xf60000:0:0:$@ \
-#		-o $@.new
-	-tools/ubnt/src/mkfwimage2 -f 0x9f000000 -v BZ.qca956x.v3.4.8.3291.150925.1315 -p kernel:0x60000:0xf60000:0:0:mips-uclibc/aligned.uimage -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin 
+#	-tools/ubnt/src/mkfwimage -v BZ.qca9342.v6.0.0.133900.2000 -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin -i tools/ubnt/m-dd-wrt.txt
+	-tools/ubnt/src/mkfwimage2 -f 0x9f000000 -v BZ.qca9342.v6.0.0.133900.2000 -p kernel:0x50000:0xf60000:0:0:mips-uclibc/aligned.uimage -o $(ARCH)-uclibc/ubntbz2-dd-wrt.bin 
 endif
 ifeq ($(CONFIG_DAP3410),y)
 	tools/dap3410/makedap $(ARCH)-uclibc/root.uimage $(ARCH)-uclibc/root.fs $(ARCH)-uclibc/dap3410.bin DAP3410
