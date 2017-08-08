@@ -601,6 +601,20 @@ static struct mdio_board_info at803_mdio_info[] = {
 };
 
 
+static struct at803x_platform_data ubnt_rocket_m_ti_at803_data = {
+	.disable_smarteee = 1,
+	.enable_rgmii_rx_delay = 1,
+	.enable_rgmii_tx_delay = 1,
+};
+static struct mdio_board_info ubnt_rocket_m_ti_mdio_info[] = {
+        {
+                .bus_id = "ag71xx-mdio.0",
+                .phy_addr = 4,
+                .platform_data = &ubnt_rocket_m_ti_at803_data,
+        },
+};
+
+
 
 static struct mdio_board_info db120_mdio0_info[] = {
 	{
@@ -791,6 +805,33 @@ void __init ath79_setup_ar934x_eth_cfg(u32 mask)
 
 	iounmap(base);
 }
+
+void __init ath79_setup_ar934x_eth_rx_delay(unsigned int rxd,
+					    unsigned int rxdv)
+{
+	void __iomem *base;
+	u32 t;
+
+	rxd &= AR934X_ETH_CFG_RXD_DELAY_MASK;
+	rxdv &= AR934X_ETH_CFG_RDV_DELAY_MASK;
+
+	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
+
+	t = __raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	t &= ~(AR934X_ETH_CFG_RXD_DELAY_MASK << AR934X_ETH_CFG_RXD_DELAY_SHIFT |
+	       AR934X_ETH_CFG_RDV_DELAY_MASK << AR934X_ETH_CFG_RDV_DELAY_SHIFT);
+
+	t |= (rxd << AR934X_ETH_CFG_RXD_DELAY_SHIFT |
+	      rxdv << AR934X_ETH_CFG_RDV_DELAY_SHIFT);
+
+	__raw_writel(t, base + AR934X_GMAC_REG_ETH_CFG);
+	/* flush write */
+	__raw_readl(base + AR934X_GMAC_REG_ETH_CFG);
+
+	iounmap(base);
+}
+
 
 
 #if !defined(CONFIG_MACH_HORNET) && !defined(CONFIG_WASP_SUPPORT)
@@ -1192,6 +1233,10 @@ int __init ar7240_platform_init(void)
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN);
     #elif CONFIG_UAPAC
     	ap136_gmac_setup(QCA955X_ETH_CFG_RGMII_EN | QCA955X_ETH_CFG_GE0_SGMII | (3 << QCA955X_ETH_CFG_RXD_DELAY_SHIFT) | (3 << QCA955X_ETH_CFG_RDV_DELAY_SHIFT));
+    #elif CONFIG_XWM400
+	ath79_setup_ar934x_eth_cfg(AR934X_ETH_CFG_RGMII_GMAC0);
+	ath79_setup_ar934x_eth_rx_delay(3, 3);
+
     #elif CONFIG_UBNTXW
 	//swap phy
 	base = ioremap(AR934X_GMAC_BASE, AR934X_GMAC_SIZE);
@@ -1432,15 +1477,30 @@ int __init ar7240_platform_init(void)
 				    ARRAY_SIZE(ubnt_loco_m_xw_mdio_info));
 	ar71xx_add_device_mdio(0, ~BIT(1));
 	ar71xx_eth0_data.phy_mask = BIT(1);	
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	#elif CONFIG_XWM400
+	mdiobus_register_board_info(ubnt_rocket_m_ti_mdio_info,
+			ARRAY_SIZE(ubnt_rocket_m_ti_mdio_info));
+	
+	ar71xx_add_device_mdio(0, ~BIT(4));
+
+	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_RGMII;
+	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	ar71xx_eth0_data.phy_mask = BIT(4);
+	ar71xx_eth0_pll_data.pll_1000 = 0x2000000;
+	ar71xx_eth0_pll_data.pll_10 = 0x00001313;	
+	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
 	#else
 	ar71xx_add_device_mdio(0, ~(BIT(0) | BIT(1) | BIT(5)));
 	ar71xx_eth0_data.phy_mask = (BIT(0) | BIT(1) | BIT(5));
 	ar71xx_eth0_data.speed = SPEED_100;
 	ar71xx_eth0_data.duplex = DUPLEX_FULL;
-	#endif
 	ar71xx_init_mac(ar71xx_eth0_data.mac_addr, art + DB120_MAC0_OFFSET, 0);
 	ar71xx_eth0_data.phy_if_mode = PHY_INTERFACE_MODE_MII;
 	ar71xx_eth0_data.mii_bus_dev = &ar71xx_mdio0_device.dev;
+	#endif
 	ar71xx_add_device_eth(0);
     #elif CONFIG_DAP2230
 	ar71xx_add_device_mdio(0, 0x0);

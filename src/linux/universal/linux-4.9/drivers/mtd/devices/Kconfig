@@ -322,6 +322,9 @@ config UBNTXW
 config XWLOCO
 	bool "loco phy support"
 	depends on UBNTXW
+config XWM400
+	bool "nanobridge xw M400"
+	depends on UBNTXW
 config UAPAC
 	bool "support for UBNT UAP AC"
 	depends on UBNTXW
