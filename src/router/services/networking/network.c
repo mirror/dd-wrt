@@ -1778,7 +1778,7 @@ void start_lan(void)
 		PORTSETUPWAN("");
 	} else {
 		if (vlan) {
-			PORTSETUPWAN("eth2");
+			PORTSETUPWAN("vlan2");
 		} else {
 			PORTSETUPWAN("eth0");
 		}
