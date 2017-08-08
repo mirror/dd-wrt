@@ -1043,7 +1043,7 @@ void ej_show_modules(webs_t wp, int argc, char_t ** argv)
 	int resultcount = 0;
 	char *result[256];
 	result[0] = NULL;
-	char *list=NULL;
+	char *list = NULL;
 
 	// display modules
 	int idx;

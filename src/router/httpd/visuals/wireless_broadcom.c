@@ -178,10 +178,10 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 	sprintf(wlmode, "%s_mode", visible);
 	mode = nvram_safe_get(wlmode);
 	unsigned char buf[WLC_IOCTL_MAXLEN];
-					int ht = 0;
-					int sgi = 0;
-					int vht = 0;
-					int i40 = 0;
+	int ht = 0;
+	int sgi = 0;
+	int vht = 0;
+	int i40 = 0;
 
 	bzero(buf, WLC_IOCTL_MAXLEN);	// get_wdev
 	int r;
