@@ -171,7 +171,7 @@ void start_sysinit(void)
 		}
 	}
 
-	if (brand == ROUTER_BOARD_NS5XW) {
+	if (brand == ROUTER_BOARD_NS5MXW) {
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1");
