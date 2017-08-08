@@ -36,7 +36,7 @@ export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sectio
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-ppc
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections  -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-x86
