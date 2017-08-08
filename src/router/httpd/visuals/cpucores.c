@@ -334,6 +334,9 @@ void ej_show_cpufeatures(webs_t wp, int argc, char_t ** argv)
 						if (strstr(result, cpufeatures[i].name))
 							continue;
 					}
+					char *p = strchr(word,'\n');
+					if (p)
+					    p[0]=0;
 					if (!strcmp(word, cpufeatures[i].field)) {
 						result = realloc(result, result ? strlen(result) + strlen(cpufeatures[i].name) + 2 : strlen(cpufeatures[i].name) + 1);
 						if (strlen(result))
