@@ -511,12 +511,13 @@ static int bnep_session(void *arg)
 
 static struct device *bnep_get_device(struct bnep_session *session)
 {
-	struct l2cap_conn *conn = l2cap_pi(session->sock->sk)->chan->conn;
+	struct hci_conn *conn;
 
-	if (!conn || !conn->hcon)
+	conn = l2cap_pi(session->sock->sk)->chan->conn->hcon;
+	if (!conn)
 		return NULL;
 
-	return &conn->hcon->dev;
+	return &conn->dev;
 }
 
 static struct device_type bnep_type = {
@@ -531,9 +532,6 @@ int bnep_add_connection(struct bnep_connadd_req *req, struct socket *sock)
 	int err;
 
 	BT_DBG("");
-
-	if (!l2cap_is_socket(sock))
-		return -EBADFD;
 
 	baswap((void *) dst, &l2cap_pi(sock->sk)->chan->dst);
 	baswap((void *) src, &l2cap_pi(sock->sk)->chan->src);
