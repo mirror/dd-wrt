@@ -757,6 +757,8 @@
 
 #define ROUTER_DIR882 0x10210f  // 15 reset button, 7 outer button 18. mid button
 
+#define ROUTER_BOARD_NS5MXW 0x10310c	//nanostation 5mxw
+
 #define NVROUTER "DD_BOARD"
 
 static inline int startswith(char *source, char *cmp)
