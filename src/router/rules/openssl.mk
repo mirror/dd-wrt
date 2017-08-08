@@ -1,7 +1,7 @@
 export OPENSSL_TARGET := linux-generic32
 ifeq ($(ARCH),armeb)
 export OPENSSL_TARGET := linux-armv4
-export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
+export OPENSSL_CMAKEFLAGS := -DASMAES512   -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 
 
@@ -24,7 +24,7 @@ endif
 endif
 ifeq ($(ARCH),mips)
 export OPENSSL_TARGET := linux-mips32
-export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
+export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),mips64)
 export OPENSSL_TARGET := linux-mips64
@@ -32,11 +32,11 @@ export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sectio
 endif
 ifeq ($(ARCH),mipsel)
 export OPENSSL_TARGET := linux-mips32
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),powerpc)
 export OPENSSL_TARGET := linux-generic32
-export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
+export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections
 endif
 ifeq ($(ARCH),i386)
 export OPENSSL_TARGET := linux-generic32
