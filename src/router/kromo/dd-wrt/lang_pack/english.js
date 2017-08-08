@@ -2031,6 +2031,7 @@ status_router.sys_kernel="Kernel Version";
 status_router.legend2="CPU";
 status_router.cpu="CPU Model";
 status_router.cores="CPU Cores";
+status_router.features="Features";
 status_router.clock="CPU Clock";
 status_router.legend3="Memory";
 status_router.mem_tot="Total Available";
