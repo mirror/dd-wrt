@@ -1743,7 +1743,7 @@ void start_lan(void)
 #elif HAVE_UBNTM
 	int brand = getRouterBrand();
 	int devnum = 2;
-	int vlan = 1;
+	int vlan = 0;
 	switch (brand) {
 	case ROUTER_BOARD_BS2M:
 	case ROUTER_BOARD_UNIFI:
@@ -1757,7 +1757,6 @@ void start_lan(void)
 	case ROUTER_BOARD_NS5M:
 	case ROUTER_BOARD_AIRROUTER:
 		devnum = 2;
-
 		break;
 	case ROUTER_BOARD_NS5MXW:
 		devnum = 2;
