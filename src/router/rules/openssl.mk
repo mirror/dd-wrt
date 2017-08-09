@@ -27,7 +27,7 @@ export OPENSSL_TARGET := linux-mips32
 export OPENSSL_CMAKEFLAGS := -DASMAES512 -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),mips64)
-export OPENSSL_TARGET := linux-mips64
+export OPENSSL_TARGET := linux64-mips64
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOCTEON -DHAVE_CRYPTODEV -DUSE_CRYPTODEV_DIGESTS -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),mipsel)
