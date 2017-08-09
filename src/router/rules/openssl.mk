@@ -39,11 +39,11 @@ export OPENSSL_TARGET := linux-generic32
 export OPENSSL_CMAKEFLAGS := -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),i386)
-export OPENSSL_TARGET := linux-generic32
+export OPENSSL_TARGET := linux-x86
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
 endif
 ifeq ($(ARCH),x86_64)
-export OPENSSL_TARGET := linux-generic32
+export OPENSSL_TARGET := linux-x86_64
 export OPENSSL_CMAKEFLAGS :=   -ffunction-sections -fdata-sections -Wl,--gc-sections -DOPENSSL_SMALL_FOOTPRINT
 endif
 
