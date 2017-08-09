@@ -68,6 +68,7 @@ HYDRA_OPTS:= \
 endif
 
 hydra: 
+	$(MAKE) -C hydra/sd $(HYDRA_OPTS)
 	$(MAKE) -C hydra/tranceport $(HYDRA_OPTS)
 	$(MAKE) -C hydra/viper $(HYDRA_OPTS)
 	$(MAKE) -C hydra/vpr_stats $(HYDRA_OPTS)
@@ -77,6 +78,7 @@ hydra:
 
 	
 hydra-clean:
+	$(MAKE) -C hydra/sd clean $(HYDRA_OPTS)
 	$(MAKE) -C hydra/tranceport clean $(HYDRA_OPTS)
 	$(MAKE) -C hydra/viper clean $(HYDRA_OPTS)
 	$(MAKE) -C hydra/vpr_stats clean $(HYDRA_OPTS)
