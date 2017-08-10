@@ -268,3 +268,8 @@ void start_bonding(void);
 void start_overclocking(void);
 void stop_mkfiles(void);
 void stop_ipv6(void);
+
+void start_wlconf(void);
+void stop_wlconf(void);
+void start_emf(void);
+void stop_emf(void);
