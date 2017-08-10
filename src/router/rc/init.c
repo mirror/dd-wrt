@@ -35,7 +35,6 @@
 #define start_service_f(a) eval("startservice_f",a);
 #define start_service_force_f(a) eval("startservice_f",a,"-f");
 #define start_services() eval("startservices");
-#define start_single_service() eval("start_single_service");
 #define stop_service(a) eval("stopservice",a);
 #define stop_service_force(a) eval("stopservice","-f",a);
 #define stop_running(a) eval("stop_running");
@@ -612,9 +611,7 @@ int main(int argc, char **argv)
 	fclose(fp);
 
 #ifndef HAVE_MADWIFI
-	int cnt = get_wl_instances();
 #ifdef HAVE_QTN
-	cnt = 1;
 	nvram_seti("qtn_ready", 0);
 #endif
 #endif
@@ -629,40 +626,14 @@ int main(int argc, char **argv)
 			// by honor
 			lcdmessage("RESTART SERVICES");
 			cprintf("USER1\n");
-			start_single_service();
-#ifdef HAVE_CHILLI
-			start_service_f("chilli");
-#endif
-#ifdef HAVE_WIFIDOG
-			start_service_f("wifidog");
-#endif
+			start_service_force_f("init_user");
 
 			state = IDLE;
 			break;
 
 		case RESTART:
 			lcdmessage("RESTART SYSTEM");
-#ifdef HAVE_OVERCLOCKING
-			start_service_force("overclocking");
-#endif
-			cprintf("RESET NVRAM VARS\n");
-			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
-
-			cprintf("RESTART\n");
-
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			for (c = 0; c < cnt; c++) {
-				sysprintf("wlconf %s down", get_wl_instance_name(c));
-				char *next;
-				char var[80];
-				char *vifs = nvram_nget("wl%d_vifs", c);
-
-				if (vifs != NULL)
-					foreach(var, vifs, next) {
-					sysprintf("ifconfig %s down", var);
-					}
-			}
-#endif
+			start_service_force("init_restart");
 
 			/* 
 			 * Fall through 
@@ -672,6 +643,8 @@ int main(int argc, char **argv)
 				state = IDLE;
 				break;	//force reboot on upgrade
 			}
+			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
+			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 #ifdef HAVE_REGISTER
 			if (isregistered_real())
 #endif
@@ -683,61 +656,7 @@ int main(int argc, char **argv)
 				state = IDLE;
 				break;
 			}
-
-			lcdmessage("STOPPING SERVICES");
-			cprintf("STOP\n");
-			killall("udhcpc", SIGKILL);
-			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/bin:/opt/bin:/opt/sbin:/opt/usr/bin:/opt/usr/sbin", 1);
-			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
-
-			cprintf("STOP SERVICES\n");
-
-			stop_services();
-			stop_service("radio_timer");
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			stop_service("nas");
-#endif
-			cprintf("STOP WAN\n");
-			stop_service("ttraff");
-			stop_service_force("wan");
-			stop_service("mkfiles");
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-			stop_service("wlconf");
-#endif
-			cprintf("STOP LAN\n");
-#ifdef HAVE_MADWIFI
-			stop_service("stabridge");
-#endif
-#ifdef HAVE_EMF
-			stop_service("emf");
-#endif
-#ifdef HAVE_IPVS
-			stop_service("ipvs");
-#endif
-#ifdef HAVE_VLANTAGGING
-			stop_service("bridging");
-#endif
-#ifdef HAVE_BONDING
-			stop_service("bonding");
-#endif
-
-#ifdef HAVE_VLANTAGGING
-			stop_service("bridgesif");
-			stop_service("vlantagging");
-#endif
-			stop_service("lan");
-#ifndef HAVE_RB500
-			stop_service("resetbutton");
-#endif
-#ifdef HAVE_IPV6
-			stop_service("ipv6");
-#endif
-#ifdef HAVE_REGISTER
-			if (isregistered_real())
-#endif
-			{
-				start_service("run_rc_shutdown");
-			}
+			start_service_force("init_stop");
 			/* 
 			 * Fall through 
 			 */
@@ -749,112 +668,7 @@ int main(int argc, char **argv)
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin", 1);
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
 			update_timezone();
-#ifdef HAVE_IPV6
-			start_service_f("ipv6");
-#endif
-#ifndef HAVE_RB500
-			start_service_f("resetbutton");
-#endif
-			start_service_force("setup_vlans");
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-//                      start_service("wlconf"); // doesnt make any sense. its already triggered by start lan
-#endif
-#ifdef HAVE_VLANTAGGING
-			start_service("bridging");
-#endif
-			start_service_force("lan");
-#ifdef HAVE_IPVS
-			start_service("ipvs");
-#endif
-#ifdef HAVE_BONDING
-			start_service("bonding");
-#endif
-#ifdef HAVE_REGISTER
-			start_service_force("mkfiles");
-#endif
-#ifdef HAVE_MADWIFI
-			start_service_f("stabridge");
-#endif
-
-			cprintf("start services\n");
-			start_services();
-
-			cprintf("start wan boot\n");
-#ifdef HAVE_VLANTAGGING
-			start_service("vlantagging");
-			start_service("bridgesif");
-#endif
-			start_service_force("wan_boot");
-			start_service_f("ttraff");
-
-			cprintf("diag STOP LED\n");
-			diag_led(DIAG, STOP_LED);
-			cprintf("set led release wan control\n");
-			SET_LED(RELEASE_WAN_CONTROL);
-
-#ifdef HAVE_RADIOOFF
-			if (nvram_matchi("radiooff_button", 1)
-			    && nvram_matchi("radiooff_boot_off", 1)) {
-				start_service_force("radio_off");
-				led_control(LED_SEC0, LED_OFF);
-				led_control(LED_SEC1, LED_OFF);
-			} else
-#endif
-			{
-				start_service_force("radio_off");
-				start_service_force("radio_on");
-
-			}
-			start_service_f("radio_timer");
-#ifdef HAVE_EMF
-			start_service("emf");
-#endif
-
-			cprintf("run rc file\n");
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
-			if (isregistered_real())
-#endif
-#endif
-			{
-				startstop_f("run_rc_startup");
-// start init scripts                           
-				eval("/etc/init.d/rcS");
-				eval("/opt/etc/init.d/rcS");
-				eval("/jffs/etc/init.d/rcS");
-				eval("/mmc/etc/init.d/rcS");
-				// startup script
-				// (siPath impl)
-				cprintf("start modules\n");
-				start_service_force_f("modules");
-#ifdef HAVE_MILKFISH
-				start_service_force_f("milkfish_boot");
-#endif
-				if (nvram_invmatch("rc_custom", ""))	// create
-					// custom
-					// script
-				{
-					nvram2file("rc_custom", "/tmp/custom.sh");
-					chmod("/tmp/custom.sh", 0700);
-				}
-			}
-#ifdef HAVE_CHILLI
-			start_service_f("chilli");
-#endif
-#ifdef HAVE_WIFIDOG
-			start_service_f("wifidog");
-#endif
-			cprintf("start syslog\n");
-#ifdef HAVE_SYSLOG
-			startstop_f("syslog");
-#endif
-			system("/etc/postinit&");
-			start_service_f("httpd");
-			led_control(LED_DIAG, LED_OFF);
-			lcdmessage("System Ready");
-#ifndef HAVE_RB500
-			startstop_f("resetbutton");
-#endif
+			start_service_force("init_start");
 			/* 
 			 * Fall through 
 			 */

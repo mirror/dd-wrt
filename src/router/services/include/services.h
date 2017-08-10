@@ -239,3 +239,32 @@ int wlconf_up(char *name);
 #ifdef HAVE_ClOUD4WI
 void start_cloud4wi_provisioning(void);
 #endif
+
+
+void start_modules(void);
+void start_radio_on(void);
+void start_radio_off(void);
+
+void start_radio_timer(void);
+void stop_radio_timer(void);
+void start_milkfish_boot(void);
+
+void start_bridging(void);
+void stop_bridging(void);
+void start_bridgesif(void);
+void stop_bridgesif(void);
+void start_vlantagging(void);
+void stop_vlantagging(void);
+void start_stabridge(void);
+void stop_stabridge(void);
+void start_bonding(void);
+void stop_bonding(void);
+void start_ttraff(void);
+void stop_ttraff(void);
+void start_run_rc_shutdown(void);
+void start_run_rc_startup(void);
+void stop_run_rc_startup(void);
+void start_bonding(void);
+void start_overclocking(void);
+void stop_mkfiles(void);
+void stop_ipv6(void);
