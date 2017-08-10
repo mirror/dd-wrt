@@ -652,11 +652,12 @@ int main(int argc, char **argv)
 				start_service_force("run_rc_shutdown");
 			}
 
+			start_service_force("init_stop");
+
 			if (state == STOP) {
 				state = IDLE;
 				break;
 			}
-			start_service_force("init_stop");
 			/* 
 			 * Fall through 
 			 */
