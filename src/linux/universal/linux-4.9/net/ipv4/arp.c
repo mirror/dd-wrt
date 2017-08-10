@@ -1363,26 +1363,21 @@ int arp_spoofing_protect(struct sk_buff *skb)
 	arp_ptr += dev->addr_len;
 	memcpy(&sip, arp_ptr, 4);
 
-	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++)
-	{
-		if(szIPMac[i].szIPaddr == 0)
-		{
+	for(i = 0;  i < MAX_ARP_SPOOFING_TABLE; i++) {
+		if(szIPMac[i].szIPaddr == 0) {
 			break;
 		}
 				
-		if(sip == szIPMac[i].szIPaddr)
-		{
-			printk("ip=%x match mac %02x:%02x:%02x:%02x:%02x:%02x= %02x:%02x:%02x:%02x:%02x:%02x\n", sip,
-				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5],
-				*sha, *(sha+1), *(sha+2), *(sha+3), *(sha+4), *(sha+5));
+		if(sip == szIPMac[i].szIPaddr) {
 			if(szIPMac[i].szMac[0]== *sha && szIPMac[i].szMac[1]== *(sha+1) &&
 				szIPMac[i].szMac[2]== *(sha+2) && szIPMac[i].szMac[3]== *(sha+3) &&
-				szIPMac[i].szMac[4]== *(sha+4) && szIPMac[i].szMac[5]== *(sha+5) )
-			{
+				szIPMac[i].szMac[4]== *(sha+4) && szIPMac[i].szMac[5]== *(sha+5) ) {
 				return 0;
-			}
-			else
-			{
+			} else {
+				unsigned char *ip = (unsigned char)&sip;
+				printk(KERN_ERR "arp spoofing detected ip=%d.%d.%d.%d mac is %02x:%02x:%02x:%02x:%02x:%02x but should be %02x:%02x:%02x:%02x:%02x:%02x\n", ip[0]&0xff,ip[1]&0xff,ip[2]&0xff,ip[3]&0xff,
+				szIPMac[i].szMac[0], szIPMac[i].szMac[1], szIPMac[i].szMac[2], szIPMac[i].szMac[3], szIPMac[i].szMac[4], szIPMac[i].szMac[5],
+				*sha, *(sha+1), *(sha+2), *(sha+3), *(sha+4), *(sha+5));
 				return 1;
 			}
 		}
