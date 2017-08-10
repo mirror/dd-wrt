@@ -24,8 +24,15 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <wlutils.h>
 #include <services.h>
 #include <sys/stat.h>
+
+extern int file2nvram(char *filename, char *varname);
+extern int nvram2file(char *varname, char *filename);
+
+extern void fwritenvram(char *var, FILE * fp);
+extern void writenvram(char *var, char *file);
 
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
@@ -61,6 +68,7 @@ void start_init_restart(void)
 #endif
 
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+	int c;
 	for (c = 0; c < cnt; c++) {
 		eval("wlconf", get_wl_instance_name(c), "down");
 		char *next;
@@ -88,7 +96,7 @@ void start_init_stop(void)
 	stop_services();
 	stop_radio_timer();
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
-	stop_service("nas");
+	stop_nas();
 #endif
 	cprintf("STOP WAN\n");
 	stop_ttraff();
