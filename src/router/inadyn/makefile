@@ -50,7 +50,7 @@ COMMON_OBJ=$(OUTDIR)/base64utils.o $(OUTDIR)/dyndns.o \
 OBJ=$(COMMON_OBJ) $(CFG_OBJ)
 
 COMPILE=$(CC)  -Wall  -pedantic -c  $(ARCH_SPECIFIC_CFLAGS) $(CFLAGS) -o "$(OUTDIR)/$(*F).o" $(CFG_INC) "$<"
-LINK=$(CC) $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS) -lnvram -lutils
+LINK=$(CC) $(CFLAGS) -o "$(OUTFILE)" $(OBJ) $(CFG_LIB) $(ARCH_SPECIFIC_LIBS) -lnvram -lutils -lshutils
 
 # Pattern rules
 $(OUTDIR)/%.o : $(SRCDIR)/%.c
