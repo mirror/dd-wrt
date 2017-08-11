@@ -38,6 +38,170 @@ extern void writenvram(char *var, char *file);
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
 
+
+
+
+static void set_tcp_params(void)
+{
+	eval("/etc/preinit");	// sets default values for ip_conntrack
+	start_service("conntrack");
+
+	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
+	if (fp == NULL) {
+		char *vegas = "1";
+		char *westwood = "0";
+		char *bic = "0";
+		if (nvram_match("tcp_congestion_control", "westwood")) {
+			westwood = "1";
+			vegas = "0";
+		}
+		if (nvram_match("tcp_congestion_control", "bic")) {
+			bic = "1";
+			vegas = "0";
+		}
+		writeprocsysnet("ipv4/tcp_westwood", westwood);
+		writeprocsysnet("ipv4/tcp_vegas_cong_avoid", vegas);
+		writeprocsysnet("ipv4/tcp_bic", bic);
+		writeprocsysnet("ipv4/tcp_vegas_alpha", "3");
+		writeprocsysnet("ipv4/tcp_vegas_beta", "3");
+	} else {
+		fclose(fp);
+		writeprocsysnet("ipv4/tcp_congestion_control", nvram_default_get("tcp_congestion_control", "westwood"));
+	}
+
+}
+
+
+void start_post_sysinit(void)
+{
+	int brand = getRouterBrand();
+
+	led_control(LED_POWER, LED_ON);
+	led_control(LED_SES, LED_OFF);
+	led_control(LED_SES2, LED_OFF);
+	led_control(LED_DIAG, LED_OFF);
+	led_control(LED_BRIDGE, LED_OFF);
+	led_control(LED_WLAN0, LED_OFF);
+	led_control(LED_WLAN1, LED_OFF);
+	led_control(LED_WLAN2, LED_OFF);
+	led_control(LED_CONNECTED, LED_OFF);
+	led_control(LED_USB, LED_OFF);
+	led_control(LED_USB1, LED_OFF);
+	led_control(USB_POWER, LED_OFF);
+	led_control(USB_POWER1, LED_OFF);
+	led_control(LED_DMZ, LED_OFF);
+	led_control(LED_VPN, LED_OFF);
+	led_control(LED_SEC0, LED_OFF);
+	led_control(LED_SEC1, LED_OFF);
+
+	start_nvram();
+
+	/* 
+	 * Restore defaults if necessary 
+	 */
+
+#ifdef HAVE_SKYTEL
+	nvram_set("vlan0ports", "0 1 2 3 4 5*");
+	nvram_set("vlan1ports", "");
+#else
+
+	if (brand == ROUTER_WRT600N || brand == ROUTER_WRT610N) {
+		nvram_set("vlan2hwname", "et0");
+	}
+#endif
+	start_restore_defaults();
+
+	nvram_seti("wanup", 0);
+	set_ip_forward('1');
+	set_tcp_params();
+#ifdef HAVE_JFFS2
+	start_jffs2();
+#endif
+#ifdef HAVE_MMC
+	start_mmc();
+#endif
+
+	start_mkfiles();
+	char *hostname;
+
+	/* 
+	 * set hostname to wan_hostname or router_name 
+	 */
+	if (strlen(nvram_safe_get("wan_hostname")) > 0)
+		hostname = nvram_safe_get("wan_hostname");
+	else if (strlen(nvram_safe_get("router_name")) > 0)
+		hostname = nvram_safe_get("router_name");
+	else
+		hostname = "dd-wrt";
+
+	sethostname(hostname, strlen(hostname));
+	stop_httpd();
+
+	// create loginprompt
+	FILE *fp = fopen("/tmp/loginprompt", "wb");
+
+#ifndef HAVE_MAKSAT
+#ifndef HAVE_TRIMAX
+#ifndef HAVE_WIKINGS
+#ifndef HAVE_ESPOD
+#ifndef HAVE_IPR
+#ifndef HAVE_NEXTMEDIA
+#ifndef HAVE_ERC
+#ifndef HAVE_CORENET
+#ifdef HAVE_TMK
+	fprintf(fp, "KMT-WAS %s (c) 2017 KMT GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_SANSFIL
+	fprintf(fp, "SANSFIL %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_KORENRON
+	fprintf(fp, "KORENRON %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_TESTEM
+	fprintf(fp, "TESTEM %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_HOBBIT
+	fprintf(fp, "HQ-NDS %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_ONNET
+#ifdef HAVE_ONNET_BLANK
+	fprintf(fp, "Enterprise AP %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_UNFY
+	//fprintf(fp, "UNIFY %s (c) 2013 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+	fprintf(fp, "Firmware %s (c) 2017 \nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#else
+	fprintf(fp, "OTAi %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#endif
+#elif HAVE_RAYTRONIK
+	fprintf(fp, "RAYTRONIK %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#elif HAVE_HDWIFI
+	fprintf(fp, "HDWIFI %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
+#else
+#ifdef DIST
+	if (strlen(DIST) > 0)
+		fprintf(fp, "DD-WRT v3.0-r%s %s (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION, DIST);
+	else
+		fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+#else
+	fprintf(fp, "DD-WRT v3.0-r%s custom (c) 2017 NewMedia-NET GmbH\nRelease: " BUILD_DATE "\n", SVN_REVISION);
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+#endif
+
+	fclose(fp);
+
+#ifndef HAVE_MADWIFI
+#ifdef HAVE_QTN
+	nvram_seti("qtn_ready", 0);
+#endif
+#endif
+
+
+}
+
+
 void start_init_user(void)
 {
 	start_single_service();
