@@ -122,15 +122,15 @@ endif
 ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 ATH9KCFLAGS += -DHAVE_SUPERCHANNEL
-OBJS += $(TOP)/register/register_check.o
+SHOBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 ATH9KCFLAGS += -DHAVE_REGISTER
-OBJS += $(TOP)/register/register_check.o
+SHOBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_MADWIFI),y)
-OBJS += $(TOP)/register/register_check.o
+SHOBJS += $(TOP)/register/register_check.o
 endif
 ifeq ($(CONFIG_IPV6),y)
 OBJS += getifaddrs.o
@@ -1462,7 +1462,7 @@ clean:
 libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
-libshutils.so: timezones.o shutils.o
+libshutils.so: timezones.o shutils.o $(SHOBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
