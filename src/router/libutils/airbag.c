@@ -709,7 +709,8 @@ backward:
 								airbag_printf("%sStack at 0x%" FMTBIT "lx is not mapped; %s.\n", comment, fp + pushes * 4 * dir, termBt);
 								return depth;
 							}
-							airbag_printf("%sFP%s%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx {%s}\n", comment, dir == 1 ? "+" : "-", pushes * 4, fp + pushes * 4 * dir, reg, mctxRegNames[gregOffset + regNum]);
+							airbag_printf("%sFP%s%02x[0x%" FMTBIT "lx]: 0x%" FMTBIT "lx {%s}\n", comment, dir == 1 ? "+" : "-", pushes * 4, fp + pushes * 4 * dir, reg,
+								      mctxRegNames[gregOffset + regNum]);
 							pushes++;
 							if (regNum == 11)
 								priorFp = reg;
@@ -1210,7 +1211,7 @@ int main(int argc, char *argv[])
 {
 	airbag_init();
 	unsigned *p = 666;
-	p[0]=1;
+	p[0] = 1;
 }
 
 #endif
