@@ -20,7 +20,6 @@
  * $Id:
  */
 
-
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
@@ -39,9 +38,6 @@ extern void writenvram(char *var, char *file);
 #define start_single_service() eval("start_single_service");
 #define stop_services() eval("stopservices");
 #define start_services() eval("startservices");
-
-
-
 
 static void set_tcp_params(void)
 {
@@ -72,7 +68,6 @@ static void set_tcp_params(void)
 	}
 
 }
-
 
 void start_post_sysinit(void)
 {
@@ -203,9 +198,7 @@ void start_post_sysinit(void)
 #endif
 #endif
 
-
 }
-
 
 void start_init_user(void)
 {
@@ -313,9 +306,9 @@ void start_init_stop(void)
 
 void start_init_start(void)
 {
-			set_tcp_params();
-			lcdmessage("START SERVICES");
-			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
+	set_tcp_params();
+	lcdmessage("START SERVICES");
+	nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 
 #ifdef HAVE_IPV6
 	start_ipv6();
