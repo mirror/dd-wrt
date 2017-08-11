@@ -93,7 +93,7 @@ OBJS := utils.o
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
 endif
-OBJS += wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o timezones.o airbag.o
+OBJS += wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o airbag.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
@@ -1462,7 +1462,7 @@ clean:
 libutils.so: $(OBJS)
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
 
-libshutils.so: shutils.o
+libshutils.so: timezones.o shutils.o
 	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c

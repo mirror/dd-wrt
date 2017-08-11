@@ -249,11 +249,6 @@ void shutdown_system(void)
 	for (sig = 0; sig < (_NSIG - 1); sig++)
 		signal(sig, SIG_DFL);
 
-	/* 
-	 * Blink led before reboot 
-	 */
-	diag_led(DIAG, START_LED);
-	led_control(LED_DIAG, LED_ON);
 	start_service("run_rc_shutdown");
 #ifdef HAVE_LAGUNA
 	start_service("deconfigurewifi");
