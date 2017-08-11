@@ -1196,7 +1196,7 @@ rc: $(OBJS)
 #	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
 #endif
 ifeq ($(CONFIG_QTN),y)
-	$(CC) $(CFLAGS) -o qtn_monitor qtn_monitor.c $(LDFLAGS) $(QTNFLAGS)
+	$(CC) $(CFLAGS) -o qtn_monitor qtn_monitor.c $(LDFLAGS) $(QTNFLAGS)  -lshutils
 endif
 #	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
 	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils
@@ -1204,7 +1204,7 @@ endif
 #	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
 #	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
 ifeq ($(CONFIG_NORTHSTAR),y)
-	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS)
+	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS) -lshutils
 endif
 	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
 #	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
