@@ -963,6 +963,34 @@ int dd_snprintf(char *str, int len, const char *fmt, ...)
 	return n;
 }
 
+int getMTD(char *name)
+{
+	char buf[32];
+	int device = -1;
+	char dev[32];
+	char size[32];
+	char esize[32];
+	char n[32];
+	sprintf(buf, "\"%s\"", name);
+	FILE *fp = fopen("/proc/mtd", "rb");
+	if (!fp)
+		return -1;
+	while (!feof(fp) && fscanf(fp, "%s %s %s %s", dev, size, esize, n) == 4) {
+		if (!strcmp(n, buf)) {
+			if (dev[4] == ':') {
+				device = dev[3] - '0';
+			} else {
+				device = 10 + (dev[4] - '0');
+			}
+
+			break;
+		}
+	}
+	fclose(fp);
+	return device;
+}
+
+
 int dd_sprintf(char *str, const char *fmt, ...)
 {
 	va_list ap;
