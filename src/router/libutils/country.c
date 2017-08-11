@@ -1022,4 +1022,3 @@ char *getCountryList(void)
 	}
 	return countries;
 }
-

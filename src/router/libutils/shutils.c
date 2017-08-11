@@ -990,7 +990,6 @@ int getMTD(char *name)
 	return device;
 }
 
-
 int dd_sprintf(char *str, const char *fmt, ...)
 {
 	va_list ap;
@@ -1061,9 +1060,9 @@ char *getdisc(void)		// works only for squashfs
 		char buf[4];
 
 		fread(buf, 4, 1, in);
-		if ((buf[0] == 't' && buf[1] == 'q' && buf[2] == 's' && buf[3] == 'h')
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 't')
-		    || (buf[0] == 'h' && buf[1] == 's' && buf[2] == 'q' && buf[3] == 's')) {
+		if (!memcmp(&buf[0], "tqsh", 4)
+		    || !memcmp(&buf[0], "hsqt", 4)
+		    || !memcmp(&buf[0], "hsqs", 4)) {
 			fclose(in);
 			// filesystem detected
 			bzero(ret, 8);
