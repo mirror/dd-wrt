@@ -124,14 +124,17 @@ ifeq ($(CONFIG_SUPERCHANNEL),y)
 CFLAGS += -DHAVE_SUPERCHANNEL
 ATH9KCFLAGS += -DHAVE_SUPERCHANNEL
 SHOBJS += $(TOP)/register/register_check.o
+OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_REGISTER),y)
 CFLAGS += -DHAVE_REGISTER
 ATH9KCFLAGS += -DHAVE_REGISTER
 SHOBJS += $(TOP)/register/register_check.o
+OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 SHOBJS += $(TOP)/register/register_check.o
+OBJS += $(TOP)/register/register_regulatory.o
 endif
 ifeq ($(CONFIG_IPV6),y)
 OBJS += getifaddrs.o
