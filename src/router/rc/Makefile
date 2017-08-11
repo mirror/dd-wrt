@@ -1190,7 +1190,7 @@ endif
 
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS) -lwireless -lshutils
 
 #ifeq ($(CONFIG_MADWIFI),y)
 #	$(CC) $(CFLAGS) -o roaming_daemon roaming_daemon.c $(LDFLAGS) ../wireless-tools/libiw.so 
@@ -1199,14 +1199,14 @@ ifeq ($(CONFIG_QTN),y)
 	$(CC) $(CFLAGS) -o qtn_monitor qtn_monitor.c $(LDFLAGS) $(QTNFLAGS)
 endif
 #	$(CC) $(CFLAGS) -o ttraff ttraff.c $(LDFLAGS)
-	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless
+	$(CC) $(CFLAGS) -o wland wland.c $(LDFLAGS) -lwireless -lshutils
 #	$(CC) $(CFLAGS) -o process_monitor process_monitor.c ntp.c $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o resetbutton resetbutton.c $(LDFLAGS) -lwireless
 #	$(CC) $(CFLAGS) -o gpiowatcher gpiowatcher.c $(LDFLAGS)
 ifeq ($(CONFIG_NORTHSTAR),y)
 	$(CC) $(CFLAGS) -I$(LINUXDIR)/brcm/arm/include  -o et et.c   $(LDFLAGS)
 endif
-	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lutils  $(LDFLAGS) 
+	$(CC) $(CFLAGS) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
 #	$(CC) $(CFLAGS) -o check_ps check_ps.c $(LDFLAGS)
 #	$(CC) $(CFLAGS) -o nvram nvram.c -L../nvram -lnvram  
 #	$(CC) $(CFLAGS) -o ledtool ledtool.c $(LDFLAGS)

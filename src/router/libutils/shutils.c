@@ -31,8 +31,10 @@
 #include <sys/ioctl.h>
 #include <sys/time.h>
 #include <net/ethernet.h>
+#include <dirent.h>
 #include <bcmnvram.h>
 #include <shutils.h>
+#include <utils.h>
 
 /*
  * Reads file and returns contents
@@ -817,6 +819,129 @@ int wait_file_exists(const char *name, int max, int invert)
 		sleep(1);
 	}
 	return 0;
+}
+
+int check_action(void)
+{
+	char buf[80] = "";
+
+	if (file_to_buf(ACTION_FILE, buf, sizeof(buf))) {
+		if (!strcmp(buf, "ACT_TFTP_UPGRADE")) {
+			fprintf(stderr, "Upgrading from tftp now ...\n");
+			return ACT_TFTP_UPGRADE;
+		}
+#ifdef HAVE_HTTPS
+		else if (!strcmp(buf, "ACT_WEBS_UPGRADE")) {
+			fprintf(stderr, "Upgrading from web (https) now ...\n");
+			return ACT_WEBS_UPGRADE;
+		}
+#endif
+		else if (!strcmp(buf, "ACT_WEB_UPGRADE")) {
+			fprintf(stderr, "Upgrading from web (http) now ...\n");
+			return ACT_WEB_UPGRADE;
+		} else if (!strcmp(buf, "ACT_SW_RESTORE")) {
+			fprintf(stderr, "Receiving restore command from web ...\n");
+			return ACT_SW_RESTORE;
+		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
+			fprintf(stderr, "Receiving restore command from resetbutton ...\n");
+			return ACT_HW_RESTORE;
+		} else if (!strcmp(buf, "ACT_NVRAM_COMMIT")) {
+			fprintf(stderr, "Committing nvram now ...\n");
+			return ACT_NVRAM_COMMIT;
+		} else if (!strcmp(buf, "ACT_ERASE_NVRAM")) {
+			fprintf(stderr, "Erasing nvram now ...\n");
+			return ACT_ERASE_NVRAM;
+		}
+	}
+	// fprintf(stderr, "Waiting for upgrading....\n");
+	return ACT_IDLE;
+}
+
+int file_to_buf(char *path, char *buf, int len)
+{
+	FILE *fp;
+
+	bzero(buf, len);
+
+	if ((fp = fopen(path, "r"))) {
+		fgets(buf, len, fp);
+		fclose(fp);
+		return 1;
+	}
+
+	return 0;
+}
+
+int ishexit(char c)
+{
+
+	if (strchr("01234567890abcdefABCDEF", c) != (char *)0)
+		return 1;
+
+	return 0;
+}
+
+static int _pidof(const char *name, pid_t ** pids)
+{
+	const char *p;
+	char *e;
+	DIR *dir;
+	struct dirent *de;
+	pid_t i;
+	int count;
+	char buf[256];
+
+	count = 0;
+	*pids = NULL;
+	if ((p = strchr(name, '/')) != NULL)
+		name = p + 1;
+	if ((dir = opendir("/proc")) != NULL) {
+		while ((de = readdir(dir)) != NULL) {
+			i = strtol(de->d_name, &e, 10);
+			if (*e != 0)
+				continue;
+			if (strcmp(name, psname(i, buf, sizeof(buf))) == 0) {
+				if ((*pids = realloc(*pids, sizeof(pid_t) * (count + 1))) == NULL) {
+					return -1;
+				}
+				(*pids)[count++] = i;
+			}
+		}
+	}
+	closedir(dir);
+	return count;
+}
+
+int pidof(const char *name)
+{
+	pid_t *pids;
+	pid_t p;
+	if (!name)
+		return -1;
+	if (_pidof(name, &pids) > 0) {
+		p = *pids;
+		free(pids);
+		return p;
+	}
+	return -1;
+}
+
+int killall(const char *name, int sig)
+{
+	pid_t *pids;
+	int i;
+	int r;
+
+	if ((i = _pidof(name, &pids)) > 0) {
+		r = 0;
+		do {
+			r |= kill(pids[--i], sig);
+		}
+		while (i > 0);
+		free(pids);
+		return r;
+	}
+	return -2;
 }
 
 #undef sprintf
