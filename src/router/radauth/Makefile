@@ -58,7 +58,7 @@ endif
 all: wrt-radauth radius-client macupd
 
 wrt-radauth: wrt-radauth.o md5.o radius.o
-	$(CC) $(LDFLAGS) -L../libutils -L../shared -L../nvram -lutils -lnvram -lwireless $^ -o $@
+	$(CC) $(LDFLAGS) -L../libutils -L../shared -L../nvram -lutils -lshutils -lnvram -lwireless $^ -o $@
 
 radius-client: radius-client.o md5.o radius.o
 
