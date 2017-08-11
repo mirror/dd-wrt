@@ -456,7 +456,7 @@ int main(int argc, char **argv)
 	char *base = strrchr(argv[0], '/');
 	base = base ? base + 1 : argv[0];
 	int i;
-	int ret =0;
+	int ret = 0;
 	for (i = 0; i < sizeof(maincalls) / sizeof(struct MAIN); i++) {
 		if (strstr(base, maincalls[i].callname)) {
 			if (maincalls[i].execname)
@@ -547,8 +547,7 @@ int main(int argc, char **argv)
 			if (argv[1]) {
 				ret = mtd_erase(argv[1]);
 				goto out;
-			}
-			else {
+			} else {
 				fprintf(stderr, "usage: erase [device]\n");
 				ret = EINVAL;
 				goto out;
@@ -564,10 +563,10 @@ int main(int argc, char **argv)
 		if (argc >= 3) {
 			ret = mtd_write(argv[1], argv[2]);
 			goto out;
-		}else {
+		} else {
 			fprintf(stderr, "usage: write [path] [device]\n");
-				ret = EINVAL;
-				goto out;
+			ret = EINVAL;
+			goto out;
 		}
 	}
 #else
@@ -635,7 +634,7 @@ int main(int argc, char **argv)
 		if (argv[1]) {
 			if (strncmp(argv[1], "start", 5) == 0) {
 				ret = kill(1, SIGUSR2);
-			} else if (strncmp(argv[1], "stop", 4) == 0){ 
+			} else if (strncmp(argv[1], "stop", 4) == 0) {
 				ret = kill(1, SIGINT);
 			} else if (strncmp(argv[1], "restart", 7) == 0) {
 				ret = kill(1, SIGHUP);
@@ -648,7 +647,7 @@ int main(int argc, char **argv)
 		}
 	}
 	ret = 1;
-	out:;
+      out:;
 	airbag_deinit();
 	return ret;
 }

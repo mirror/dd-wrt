@@ -382,7 +382,7 @@ static void usage(void)
 
 int mtd_main(int argc, char **argv)
 {
-	int ch, i, boot, unlock, imagefd=0, force, quiet, unlocked;
+	int ch, i, boot, unlock, imagefd = 0, force, quiet, unlocked;
 	char *erase[MAX_ARGS], *device, *imagefile = NULL;
 	enum {
 		CMD_ERASE,
