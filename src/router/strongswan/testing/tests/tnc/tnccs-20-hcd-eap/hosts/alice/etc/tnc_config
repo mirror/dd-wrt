@@ -1,3 +1,0 @@
-#IMV configuration file for strongSwan client 
-
-IMV "HCD"	/usr/local/lib/ipsec/imcvs/imv-hcd.so
