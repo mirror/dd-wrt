@@ -853,6 +853,41 @@ int dd_sprintf(char *str, const char *fmt, ...)
 	return n;
 }
 
+void strcpyto(char *dest, char *src, char c)
+{
+	int cnt = 0;
+	int len = strlen(src);
+	while (cnt < len && src[cnt] != c) {
+		dest[cnt] = src[cnt];
+		cnt++;
+	}
+	dest[cnt] = '\0';
+}
+
+char *chomp(char *s)
+{
+	char *c = (s) + strlen((s)) - 1;
+	while ((c > (s)) && (*c == '\n' || *c == '\r' || *c == ' '))
+		*c-- = '\0';
+	return s;
+}
+
+char *foreach_first(char *foreachwordlist, char *word)
+{
+	char *next = &foreachwordlist[strspn(foreachwordlist, " ")];
+	strcpyto(word, next, ' ');
+	next = strchr(next, ' ');
+	return next;
+}
+
+char *foreach_last(char *next, char *word)
+{
+	next = next ? &next[strspn(next, " ")] : "";
+	strcpyto(word, next, ' ');
+	next = strchr(next, ' ');
+	return next;
+}
+
 #ifdef MEMDEBUG
 #define MEMDEBUGSIZE 1024
 typedef struct MEMENTRY {
