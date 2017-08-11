@@ -93,7 +93,7 @@ OBJS := utils.o
 ifeq ($(CONFIG_RT2880),y)
 OBJS += utils.o crypt.save des.save md5.save
 endif
-OBJS += shutils.o wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o timezones.o airbag.o
+OBJS += wl_basic.o linux_timer.o wl_linux.o gpio.o md5c.o crc.o sha1.o nvparse.o bcmutils.o linux_osl.o timezones.o airbag.o
 WOBJS := wl.o wl_macfuncs.o
 
 #defaults.o
@@ -1434,7 +1434,7 @@ CFLAGS += -DHAVE_MATRIXSSL
 endif
 HFLAGS := $(CFLAGS)
 CFLAGS += $(COPTS)
-all: libutils.so libutils.a libwireless.so libwireless.a
+all: libshutils.so libutils.so libwireless.so
 
 install: all
 ifeq ($(CONFIG_XSCALE),y)
@@ -1458,7 +1458,10 @@ clean:
 
 
 libutils.so: $(OBJS)
-	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram $(QTNFLAGS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -lcrypt -L../nvram -lnvram -L. -lshutils $(QTNFLAGS)
+
+libshutils.so: shutils.o
+	$(CC) -shared $(CFLAGS) $(LDFLAGS) -o $@ $^  -L../nvram -lnvram
 
 mchillispot.o: $(TOP)/private/telkom/mchillispot.c
 	$(CC) -DNEED_PRINTF -I$(TOP)/jansson/src $(ATH9KCFLAGS) $(MIPS16_OPT) -c -o $@ $^
@@ -1470,7 +1473,7 @@ endif
 ifeq ($(CONFIG_ATH9K),y)
 	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) 
 endif
-	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram  $(WLDFLAGS) $(ATH9KLDFLAGS)
+	$(CC) -shared $(CFLAGS) $(LDFLAGS)  -o $@ $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -lnvram -L. -lshutils $(WLDFLAGS) $(ATH9KLDFLAGS)
 #	$(CC) -shared -c $(ATH9KCFLAGS) $(MIPS16_OPT) $(ATH9KFILES) -DTEST
 #	$(CC) -DTEST $(CFLAGS) $(LDFLAGS)  -o testlib $^ $(NOBJS) $(ATH9KOBJS) -L../nvram -L. -lnvram -lutils  $(WLDFLAGS) $(ATH9KLDFLAGS)
 
