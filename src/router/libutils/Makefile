@@ -1441,10 +1441,12 @@ ifeq ($(CONFIG_XSCALE),y)
 	install -d $(INSTALLDIR)/libutils/lib
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/lib
 	install -m 755 libwireless.so $(INSTALLDIR)/libutils/lib
+	install -m 755 libshutils.so $(INSTALLDIR)/libutils/lib
 else
 	install -d $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libutils.so $(INSTALLDIR)/libutils/usr/lib
 	install -m 755 libwireless.so $(INSTALLDIR)/libutils/usr/lib
+	install -m 755 libshutils.so $(INSTALLDIR)/libutils/usr/lib
 endif
 
 clean:
