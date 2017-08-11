@@ -273,3 +273,10 @@ void start_wlconf(void);
 void stop_wlconf(void);
 void start_emf(void);
 void stop_emf(void);
+
+void start_nvram(void);
+void start_restore_defaults(void);
+void start_conntrack(void);
+void start_jffs2(void);
+
+void start_speedchecker_init(void);

@@ -26,6 +26,8 @@
 #include <utils.h>
 #include <wlutils.h>
 #include <services.h>
+#include <cyutils.h>
+#include <revision.h>
 #include <sys/stat.h>
 
 extern int file2nvram(char *filename, char *varname);
@@ -44,7 +46,7 @@ extern void writenvram(char *var, char *file);
 static void set_tcp_params(void)
 {
 	eval("/etc/preinit");	// sets default values for ip_conntrack
-	start_service("conntrack");
+	start_conntrack();
 
 	FILE *fp = fopen("/proc/sys/net/ipv4/tcp_available_congestion_control", "rb");
 	if (fp == NULL) {
@@ -119,6 +121,9 @@ void start_post_sysinit(void)
 #endif
 #ifdef HAVE_MMC
 	start_mmc();
+#endif
+#ifdef HAVE_SPEEDCHECKER
+	start_speedchecker_init();
 #endif
 
 	start_mkfiles();
@@ -308,6 +313,10 @@ void start_init_stop(void)
 
 void start_init_start(void)
 {
+			set_tcp_params();
+			lcdmessage("START SERVICES");
+			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
+
 #ifdef HAVE_IPV6
 	start_ipv6();
 #endif

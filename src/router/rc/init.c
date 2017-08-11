@@ -463,9 +463,6 @@ int main(int argc, char **argv)
 	sigemptyset(&sigset);
 
 	start_service("post_sysinit");
-#ifdef HAVE_SPEEDCHECKER
-	start_service("speedchecker_init");
-#endif
 
 	/* 
 	 * Give user a chance to run a shell before bringing up the rest of the
@@ -521,9 +518,6 @@ int main(int argc, char **argv)
 			 * Fall through 
 			 */
 		case START:
-			set_tcp_params();
-			lcdmessage("START SERVICES");
-			nvram_set("wl0_lazy_wds", nvram_safe_get("wl_lazy_wds"));
 			cprintf("START\n");
 			setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin:/mmc/sbin:/mmc/bin:/mmc/usr/sbin:/mmc/usr/sbin:/opt/sbin:/opt/bin:/opt/usr/sbin:/opt/usr/sbin", 1);
 			setenv("LD_LIBRARY_PATH", "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:/opt/lib:/opt/usr/lib", 1);
