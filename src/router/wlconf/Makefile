@@ -18,7 +18,7 @@ include $(TOP)/.config
 #endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s -DBCMWPA2 -fpic -ffunction-sections -fdata-sections -Wl,--gc-sections
-LDFLAGS	+= -L$(TOP)/nvram -lnvram -lwireless -L$(TOP)/libutils -lutils -ffunction-sections -fdata-sections -Wl,--gc-sections
+LDFLAGS	+= -L$(TOP)/nvram -lnvram -lwireless -L$(TOP)/libutils -lutils -lshutils -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_BUFFALO),y)
 CFLAGS += -DHAVE_BUFFALO -DBUFFALO_COUNTRY="\"$(CONFIG_COUNTRY)\""
 endif
