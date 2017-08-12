@@ -42,6 +42,8 @@ freeradius3-configure: libtalloc openssl
 	--sbindir=/usr/sbin \
 	--sysconfdir=/etc \
 	--enable-shared \
+	--with-pcap-lib-dir=$(TOP)/libpcap \
+	--with-pcap-include-dir=$(TOP)/libpcap \
 	--disable-static \
 	--disable-developer \
 	--with-threads \
