@@ -1276,9 +1276,9 @@ endif
 ifeq ($(CONFIG_AIRCRACK),y)
 CONFIG_MATRIXSSL=n
 endif
-ifeq ($(CONFIG_POUND),y)
-CONFIG_MATRIXSSL=n
-endif
+#ifeq ($(CONFIG_POUND),y)
+#CONFIG_MATRIXSSL=n
+#endif
 ifeq ($(CONFIG_IPETH),y)
 CONFIG_MATRIXSSL=n
 endif
