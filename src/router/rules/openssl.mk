@@ -114,7 +114,7 @@ openssl-configure:
 	cd openssl && CROSS_COMPILE= && ./Configure $(OPENSSL_TARGET) \
 			--prefix=/usr \
 			--openssldir=/etc/ssl \
-			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG \
+			$(COPTS) $(OPENSSL_CMAKEFLAGS) -DNDEBUG -D_GNU_SOURCE \
 			$(TARGET_LDFLAGS) -ldl \
 			$(OPENSSL_NO_CIPHERS) \
 			$(OPENSSL_OPTIONS)
