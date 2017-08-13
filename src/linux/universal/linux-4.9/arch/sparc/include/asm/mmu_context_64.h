@@ -44,6 +44,8 @@ static inline void tsb_context_switch_ctx(struct mm_struct *mm,
 			     ctx);
 }
 
+#define tsb_context_switch(X) tsb_context_switch_ctx(X, 0)
+
 void tsb_grow(struct mm_struct *mm,
 	      unsigned long tsb_index,
 	      unsigned long mm_rss);
