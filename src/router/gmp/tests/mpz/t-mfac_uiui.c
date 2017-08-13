@@ -1,6 +1,6 @@
 /* Exercise mpz_mfac_uiui.
 
-Copyright 2000, 2001, 2002, 2012 Free Software Foundation, Inc.
+Copyright 2000-2002, 2012 Free Software Foundation, Inc.
 
 This file is part of the GNU MP Library test suite.
 
@@ -15,7 +15,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
 Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
-the GNU MP Library test suite.  If not, see http://www.gnu.org/licenses/.  */
+the GNU MP Library test suite.  If not, see https://www.gnu.org/licenses/.  */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -66,7 +66,7 @@ main (int argc, char *argv[])
       MPZ_CHECK_FORMAT (res);
       if (mpz_cmp (ref[m], res) != 0)
         {
-          printf ("mpz_mfac_uiui(%lu,&i) wrong\n", n, MULTIFAC_WHEEL);
+          printf ("mpz_mfac_uiui(%lu,%d) wrong\n", n, MULTIFAC_WHEEL);
           printf ("  got  "); mpz_out_str (stdout, 10, res); printf("\n");
           printf ("  want "); mpz_out_str (stdout, 10, ref[m]); printf("\n");
           abort ();
@@ -75,7 +75,7 @@ main (int argc, char *argv[])
       MPZ_CHECK_FORMAT (res);
       if (mpz_cmp (ref2[m2], res) != 0)
         {
-          printf ("mpz_mfac_uiui(%lu,&i) wrong\n", n, MULTIFAC_WHEEL2);
+          printf ("mpz_mfac_uiui(%lu,%d) wrong\n", n, MULTIFAC_WHEEL2);
           printf ("  got  "); mpz_out_str (stdout, 10, res); printf("\n");
           printf ("  want "); mpz_out_str (stdout, 10, ref2[m2]); printf("\n");
           abort ();
