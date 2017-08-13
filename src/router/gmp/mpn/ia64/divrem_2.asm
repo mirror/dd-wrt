@@ -1,23 +1,32 @@
 dnl  IA-64 mpn_divrem_2 -- Divide an mpn number by a normalized 2-limb number.
 
-dnl  Copyright 2010 Free Software Foundation, Inc.
+dnl  Copyright 2010, 2013 Free Software Foundation, Inc.
 
 dnl  This file is part of the GNU MP Library.
-
+dnl
 dnl  The GNU MP Library is free software; you can redistribute it and/or modify
-dnl  it under the terms of the GNU Lesser General Public License as published
-dnl  by the Free Software Foundation; either version 2.1 of the License, or (at
-dnl  your option) any later version.
-
+dnl  it under the terms of either:
+dnl
+dnl    * the GNU Lesser General Public License as published by the Free
+dnl      Software Foundation; either version 3 of the License, or (at your
+dnl      option) any later version.
+dnl
+dnl  or
+dnl
+dnl    * the GNU General Public License as published by the Free Software
+dnl      Foundation; either version 2 of the License, or (at your option) any
+dnl      later version.
+dnl
+dnl  or both in parallel, as here.
+dnl
 dnl  The GNU MP Library is distributed in the hope that it will be useful, but
 dnl  WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
-dnl  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-dnl  License for more details.
-
-dnl  You should have received a copy of the GNU Lesser General Public License
-dnl  along with the GNU MP Library; see the file COPYING.LIB.  If not, write
-dnl  to the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-dnl  Boston, MA 02110-1301, USA.
+dnl  or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+dnl  for more details.
+dnl
+dnl  You should have received copies of the GNU General Public License and the
+dnl  GNU Lesser General Public License along with the GNU MP Library.  If not,
+dnl  see https://www.gnu.org/licenses/.
 
 include(`../config.m4')
 
@@ -53,8 +62,9 @@ PROLOGUE(mpn_divrem_2)
 ifdef(`HAVE_ABI_32',
 `	addp4		r32 = 0, r32		C M I
 	addp4		r34 = 0, r34		C M I
-	addp4		r36 = 0, r36		C M I
 	zxt4		r35 = r35		C I
+	addp4		r36 = 0, r36		C M I
+	nop.m		0
 	zxt4		r33 = r33		C I
 	;;
 ')
@@ -98,17 +108,17 @@ ifdef(`HAVE_ABI_32',
 	br.call.sptk.many b0 = mpn_invert_limb
 	;;
 	setf.sig f11 = r8		// di (non-final)
-	setf.sig f18 = r39		// d1
-	setf.sig f17 = r36		// d0
+	setf.sig f34 = r39		// d1
+	setf.sig f33 = r36		// d0
 	mov	 r1 = r43
 	;;
 	mov	 r17 = 1
 	setf.sig f9 = r38		// n2
-	xma.l	 f6 = f11, f18, f0	// t0 = LO(di * d1)
+	xma.l	 f6 = f11, f34, f0	// t0 = LO(di * d1)
 	;;
 	setf.sig f10 = r37		// n1
 	setf.sig f15 = r17		// 1
-	xma.hu	 f8 = f11, f17, f0	// s0 = HI(di * d0)
+	xma.hu	 f8 = f11, f33, f0	// s0 = HI(di * d0)
 	;;
 	getf.sig r17 = f6
 	getf.sig r16 = f8
@@ -178,7 +188,7 @@ ifelse(1,1,`
   (p9)	br.cond.dptk .L52
 .L46:
 ')
-	setf.sig f16 = r8		// di
+	setf.sig f32 = r8		// di
 	shladd	 r32 = r35, 3, r32
 	;;
 
@@ -189,8 +199,8 @@ L(top):	nop 0
 	;;
  (p8)	mov	 r37 = r0
  (p9)	ld8	 r37 = [r34], -8
-	xma.hu	 f8 = f9, f16, f10	//				0,29
-	xma.l	 f12 = f9, f16, f10	//				0
+	xma.hu	 f8 = f9, f32, f10	//				0,29
+	xma.l	 f12 = f9, f32, f10	//				0
 	;;
 	getf.sig r20 = f12		// q0				4
 	xma.l	 f13 = f15, f8, f9	// q += n2			4
@@ -198,8 +208,8 @@ L(top):	nop 0
 	;;
 	getf.sig r18 = f13		//				8
 	xma.l	 f7 = f14, f13, f10	//				8
-	xma.l	 f6 = f17, f13, f17	// t0 = LO(d0*q+d0)		8
-	xma.hu	 f9 = f17, f13, f17	// t1 = HI(d0*q+d0)		9
+	xma.l	 f6 = f33, f13, f33	// t0 = LO(d0*q+d0)		8
+	xma.hu	 f9 = f33, f13, f33	// t1 = HI(d0*q+d0)		9
 	;;
 	getf.sig r38 = f7		// n1				12
 	getf.sig r16 = f6		//				13
