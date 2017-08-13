@@ -1,13 +1,13 @@
 pcre-configure:
-	cd pcre && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre/.libs
-	touch $(TOP)/pcre/*    
+	cd pcre && ./configure --host=$(ARCH)-linux-uclibc CFLAGS="$(COPTS)  $(MIPS16_OPT)" --prefix=/usr --disable-xmldoc --enable-utf8 --enable-unicode-properties --disable-pcretest-libreadline --libdir=$(TOP)/pcre/.libs
+	touch $(TOP)/pcre/*   
 
 
 pcre:
-	$(MAKE) -C pcre CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF"
+	$(MAKE) -C pcre CFLAGS="$(COPTS) $(MIPS16_OPT)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" CPPFLAGS="$(COPTS) $(MIPS16_OPT)"
 
 pcre-clean:
-	$(MAKE) -C pcre clean CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF"
+	$(MAKE) -C pcre clean CFLAGS="$(COPTS) $(MIPS16_OPT)"
 
 pcre-install:
 	install -D pcre/.libs/libpcre.so.1 $(INSTALLDIR)/pcre/usr/lib/libpcre.so.1
