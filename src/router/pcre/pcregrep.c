@@ -870,7 +870,7 @@ static void
 help(void)
 {
 option_item *op;
-
+#if 0
 printf("Usage: pcregrep [OPTION]... [PATTERN] [FILE1 FILE2 ...]\n");
 printf("Search for PATTERN in each FILE or standard input.\n");
 printf("PATTERN must be present if neither -e nor -f is used.\n");
@@ -929,6 +929,7 @@ printf("The maximum size of any pattern is %d bytes.\n", MAXPATLEN);
 
 printf("\nWith no FILEs, read standard input. If fewer than two FILEs given, assume -h.\n");
 printf("Exit status is 0 if any matches, 1 if no matches, and 2 if trouble.\n");
+#endif
 }
 
 
