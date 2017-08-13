@@ -51,7 +51,7 @@ RELEASE_VERSION := $(shell cat VERSION)
 
 CFLAGS += -W -Wall $(COPTS) -Wmissing-declarations -Wwrite-strings -I$(INSTALLDIR)/vpnc/usr/include -I$(TOP)/openssl/include 
 CPPFLAGS = -DVERSION=\"$(VERSION)\" $(OPENSSL_GPL_VIOLATION)
-LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib
+LDFLAGS = -L$(INSTALLDIR)/vpnc/usr/lib -pthread
 CFLAGS +=  -L$(INSTALLDIR)/vpnc/usr/lib 
 
 ifeq ($(shell uname -s), SunOS)
