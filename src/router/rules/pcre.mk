@@ -4,7 +4,7 @@ pcre-configure:
 
 
 pcre:
-	$(MAKE) -C pcre CFLAGS="$(COPTS) $(MIPS16_OPT)" CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" CPPFLAGS="$(COPTS) $(MIPS16_OPT)"
+	$(MAKE) -C pcre CFLAGS="$(COPTS) $(MIPS16_OPT)" CXXFLAGS="$(COPTS) $(MIPS16_OPT)" CPPFLAGS="$(COPTS) $(MIPS16_OPT)"
 
 pcre-clean:
 	$(MAKE) -C pcre clean CFLAGS="$(COPTS) $(MIPS16_OPT)"
