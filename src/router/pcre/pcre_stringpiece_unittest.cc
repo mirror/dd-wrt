@@ -1,3 +1,4 @@
+#define NEED_PRINTF
 // Copyright 2003 and onwards Google Inc.
 // Author: Sanjay Ghemawat
 
