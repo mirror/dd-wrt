@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if test -x $DEBUGFS_EXE; then
+FSCK_OPT=-fy
+IMAGE=$test_dir/image.gz
+
+gzip -d < $IMAGE > $TMPFILE
+#e2label $TMPFILE test_filesys
+
+# Run fsck to fix things?
+EXP=$test_dir/expect
+OUT=$test_name.log
+rm -rf $test_name.failed $test_name.ok
+
+$FSCK $FSCK_OPT -N test_filesys $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed > $OUT
+echo "Exit status is $?" >> $OUT
+
+echo "debugfs cat uninit file" >> $OUT
+echo "ex /a" > $TMPFILE.cmd
+echo "cat /a" >> $TMPFILE.cmd
+$DEBUGFS_EXE -w -f $TMPFILE.cmd $TMPFILE >> $OUT.new 2>&1
+echo >> $OUT.new
+sed -f $cmd_dir/filter.sed < $OUT.new >> $OUT
+rm -rf $OUT.new $TMPFILE $TMPFILE.cmd
+
+# Figure out what happened
+if cmp -s $EXP $OUT; then
+	echo "$test_name: $test_description: ok"
+	touch $test_name.ok
+else
+	echo "$test_name: $test_description: failed"
+	diff -u $EXP $OUT >> $test_name.failed
+fi
+unset EXP OUT FSCK_OPT IMAGE
+else #if test -a -x $DEBUGFS_EXE; then
+        echo "$test_name: $test_description: skipped"
+fi 
