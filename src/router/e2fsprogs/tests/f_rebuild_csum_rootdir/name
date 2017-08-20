@@ -1,0 +1,1 @@
+force fsck to rebuild a corrupted rootdir w/ metadata_csum
