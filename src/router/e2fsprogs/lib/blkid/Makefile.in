@@ -53,11 +53,12 @@ DEPLIBS_BLKID=	$(DEPSTATIC_LIBBLKID) $(DEPSTATIC_LIBUUID)
 
 .c.o:
 	$(E) "	CC $<"
-	$(Q) $(CC) $(ALL_CFLAGS) -c $< -o $@
+	$(Q) $(CC) $(ALL_CFLAGS_STLIB) -c $< -o $@
 	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
-@PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
-@ELF_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -fPIC -o elfshared/$*.o -c $<
-@BSDLIB_CMT@	$(Q) $(CC) $(ALL_CFLAGS) $(BSDLIB_PIC_FLAG) -o pic/$*.o -c $<
+	$(Q) $(CPPCHECK_CMD) $(CPPFLAGS) $<
+@PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS_STLIB) -g -pg -o profiled/$*.o -c $<
+@ELF_CMT@	$(Q) $(CC) $(ALL_CFLAGS_SHLIB) -fPIC -shared -o elfshared/$*.o -c $<
+@BSDLIB_CMT@	$(Q) $(CC) $(ALL_CFLAGS_SHLIB) $(BSDLIB_PIC_FLAG) -o pic/$*.o -c $<
 
 all:: $(SMANPAGES) blkid.pc
 
@@ -178,7 +179,7 @@ clean::
 		tst_tag tst_types tests/*.out tests/*.ok \
 		tests/*.img results test_probe core profiled/* \
 		blkid.h blkid_types.h ../libblkid.a ../libblkid_p.a \
-		$(SMANPAGES) blkid
+		$(SMANPAGES) blkid blkid.pc
 	@echo rmdir tests/tmp tests
 	@(rmdir tests/tmp tests 2> /dev/null ; exit 0)
 

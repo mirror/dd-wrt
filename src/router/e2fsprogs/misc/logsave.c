@@ -219,7 +219,7 @@ static int run_program(char **argv)
 			sprintf(buffer, "died with signal %d\n",
 				WTERMSIG(status));
 			send_output(buffer, 0, SEND_BOTH);
-			rc = 1;
+			return 1;
 		}
 		rc = 0;
 	}

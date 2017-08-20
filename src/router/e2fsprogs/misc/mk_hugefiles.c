@@ -4,6 +4,7 @@
 
 #define _XOPEN_SOURCE 600 /* for inclusion of PATH_MAX in Solaris */
 #define _BSD_SOURCE	  /* for makedev() and major() */
+#define _DEFAULT_SOURCE	  /* since glibc 2.20 _BSD_SOURCE is deprecated */
 
 #include "config.h"
 #include <stdio.h>
@@ -34,6 +35,9 @@ extern int optind;
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifdef HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
+#endif
 #include <libgen.h>
 #include <limits.h>
 #include <blkid/blkid.h>
@@ -45,9 +49,9 @@ extern int optind;
 #include "e2p/e2p.h"
 #include "ext2fs/ext2fs.h"
 #include "util.h"
-#include "profile.h"
-#include "prof_err.h"
-#include "nls-enable.h"
+#include "support/profile.h"
+#include "support/prof_err.h"
+#include "support/nls-enable.h"
 #include "mke2fs.h"
 
 static int uid;
@@ -287,6 +291,14 @@ static errcode_t mk_hugefile(ext2_filsys fs, blk64_t num,
 	if (retval)
 		return retval;
 
+	/*
+	 * We don't use ext2fs_fallocate() here because hugefiles are
+	 * designed to be physically contiguous (if the block group
+	 * descriptors are configured to be in a single block at the
+	 * beginning of the file system, by using the
+	 * packed_meta_blocks layout), with the extent tree blocks
+	 * allocated near the beginning of the file system.
+	 */
 	lblk = 0;
 	left = num ? num : 1;
 	while (left) {
@@ -476,6 +488,9 @@ errcode_t mk_hugefiles(ext2_filsys fs, const char *device_name)
 	if (!get_bool_from_profile(fs_types, "make_hugefiles", 0))
 		return 0;
 
+	if (!ext2fs_has_feature_extents(fs->super))
+		return EXT2_ET_EXTENT_NOT_SUPPORTED;
+
 	uid = get_int_from_profile(fs_types, "hugefiles_uid", 0);
 	gid = get_int_from_profile(fs_types, "hugefiles_gid", 0);
 	fs->umask = get_int_from_profile(fs_types, "hugefiles_umask", 077);
@@ -529,10 +544,10 @@ errcode_t mk_hugefiles(ext2_filsys fs, const char *device_name)
 
 	fs_blocks = ext2fs_free_blocks_count(fs->super);
 	if (fs_blocks < num_slack + align)
-		return ENOMEM;
+		return ENOSPC;
 	fs_blocks -= num_slack + align;
 	if (num_blocks && num_blocks > fs_blocks)
-		return ENOMEM;
+		return ENOSPC;
 	if (num_blocks == 0 && num_files == 0)
 		num_files = 1;
 
@@ -557,8 +572,7 @@ errcode_t mk_hugefiles(ext2_filsys fs, const char *device_name)
 
 	if ((num_blocks ? num_blocks : fs_blocks) >
 	    (0x80000000UL / fs->blocksize))
-		fs->super->s_feature_ro_compat |=
-			EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
+		ext2fs_set_feature_large_file(fs->super);
 
 	if (!quiet) {
 		if (zero_hugefile && verbose)

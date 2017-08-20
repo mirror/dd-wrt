@@ -8,7 +8,7 @@ debugfs \- ext2/ext3/ext4 file system debugger
 .SH SYNOPSIS
 .B debugfs
 [
-.B \-DVwci
+.B \-DVwcin
 ]
 [
 .B \-b
@@ -31,6 +31,10 @@ request
 data_source_device
 ]
 [
+.B \-z
+.I undo_file
+]
+[
 device
 ]
 .SH DESCRIPTION
@@ -38,15 +42,19 @@ The
 .B debugfs
 program is an interactive file system debugger. It can be used to
 examine and change the state of an ext2, ext3, or ext4 file system.
-.br
+.PP
 .I device
-is the special file corresponding to the device containing the
-file system (e.g /dev/hdXX).
+is a block device (e.g., /dev/sdXX) or a file containing the file system.
 .SH OPTIONS
 .TP
 .I \-w
 Specifies that the file system should be opened in read-write mode.
 Without this option, the file system is opened in read-only mode.
+.TP
+.I \-n
+Disables metadata checksum verification.  This should only be used if
+you believe the metadata to be correct despite the complaints of
+e2fsprogs.
 .TP
 .I \-c
 Specifies that the file system should be opened in catastrophic mode, in
@@ -86,8 +94,10 @@ should be used when reading blocks not found in the ext2 image file.
 This includes data, directory, and indirect blocks.
 .TP
 .I -b blocksize
-Forces the use of the given block size for the file system, rather than
-detecting the correct block size as normal.
+Forces the use of the given block size (in bytes) for the file system,
+rather than detecting the correct block size automatically.  (This
+option is rarely needed; it is used primarily when the file system is
+extremely badly damaged/corrupted.)
 .TP
 .I -s superblock
 Causes the file system superblock to be read from the given block
@@ -96,7 +106,9 @@ number, instead of using the primary superblock (located at an offset of
 .I -s
 option, you must also provide the blocksize of the filesystem via the
 .I -b
-option.
+option.   (This
+option is rarely needed; it is used primarily when the file system is
+extremely badly damaged/corrupted.)
 .TP
 .I -f cmd_file
 Causes
@@ -125,6 +137,16 @@ and then exit.
 print the version number of
 .B debugfs
 and exit.
+.TP
+.BI \-z " undo_file"
+Before overwriting a file system block, write the old contents of the block to
+an undo file.  This undo file can be used with e2undo(8) to restore the old
+contents of the file system should something go wrong.  If the empty string is
+passed as the undo_file argument, the undo file will be written to a file named
+resize2fs-\fIdevice\fR.e2undo in the directory specified via the
+\fIE2FSPROGS_UNDO_DIR\fR environment variable.
+
+WARNING: The undo file cannot be used to recover from a power or system crash.
 .SH SPECIFYING FILES
 Many
 .B debugfs
@@ -157,16 +179,19 @@ This is a list of the commands which
 .B debugfs
 supports.
 .TP
-.BI blocks " filespace"
+.BI blocks " filespec"
 Print the blocks used by the inode
 .I filespec
 to stdout.
 .TP
-.BI bmap " filespec logical_block"
-Print the physical block number corresponding to the logical block number
+.BI bmap " [ -a ] filespec logical_block [physical_block]"
+Print or set the physical block number corresponding to the logical block number
 .I logical_block
 in the inode
 .IR filespec .
+If the
+.I -a
+flag is specified, try to allocate a block if necessary.
 .TP
 .BI block_dump " [-f filespec] block_num"
 Dump the filesystem block given by
@@ -200,6 +225,12 @@ master superblock.
 Clear the contents of the inode
 .IR filespec .
 .TP
+.BI copy_inode " source_inode destination_inode"
+Copy the conents of the inode structure in
+.I source_inode
+and use it to overwrite the inode structure at
+.IR destination_inode .
+.TP
 .BI dirsearch " filespec filename"
 Search the directory
 .I filespec
@@ -221,8 +252,13 @@ option is given set the owner, group and permissions information on
 to match
 .IR filespec .
 .TP
-.B dump_mmp
-Display the multiple-mount protection (mmp) field values.
+.BI dump_mmp " [mmp_block]"
+Display the multiple-mount protection (mmp) field values.  If
+.I mmp_block
+is specified then verify and dump the MMP values from the given block
+number, otherwise use the
+.B s_mmp_block
+field in the superblock to locate and use the existing MMP block.
 .TP
 .BI dx_hash " [-h hash_alg] [-s hash_seed] filename"
 Calculate the directory hash of
@@ -254,9 +290,42 @@ not stored in filesystem data structures.   Hence, the values displayed
 may not necessarily by accurate and does not indicate a problem or
 corruption in the file system.)
 .TP
+.BI ea_get " [-f outfile] filespec attr_name"
+Retrieve the value of the extended attribute
+.I attr_name
+in the file
+.I filespec
+and write it either to stdout or to \fIoutfile\fR.
+.TP
+.BI ea_list " filespec
+List the extended attributes associated with the file
+.I filespec
+to standard output.
+.TP
+.BI ea_set " [-f infile] filespec attr_name attr_value
+Set the value of the extended attribute
+.I attr_name
+in the file
+.I filespec
+to the string value
+.I attr_value
+or read it from \fIinfile\fR.
+.TP
+.BI ea_rm " filespec attr_names...
+Remove the extended attribute
+.I attr_name
+from the file \fIfilespec\fR.
+.TP
 .BI expand_dir " filespec"
 Expand the directory
 .IR filespec .
+.TP
+.BI fallocate " filespec start_block [end_block]
+Allocate and map uninitialized blocks into \fIfilespec\fR between
+logical block \fIstart_block\fR and \fIend_block\fR, inclusive.  If
+\fIend_block\fR is not supplied, this function maps until it runs out
+of free disk blocks or the maximum file size is reached.  Existing
+mappings are left alone.
 .TP
 .BI feature " [fs_feature] [-fs_feature] ..."
 Set or clear various filesystem features in the superblock.  After setting
@@ -365,6 +434,26 @@ to do this, use the
 program.  This is just a call to the low-level library, which sets up
 the superblock and block descriptors.
 .TP
+.BI journal_close
+Close the open journal.
+.TP
+.BI journal_open " [-c] [-v ver] [-j ext_jnl]
+Opens the journal for reading and writing.  Journal checksumming can
+be enabled by supplying \fI-c\fR; checksum formats 2 and 3 can be
+selected with the \fI-v\fR option.  An external journal can be loaded
+from \fIext_jnl\fR.
+.TP
+.BI journal_run
+Replay all transactions in the open journal.
+.TP
+.BI journal_write " [-b blocks] [-r revoke] [-c] file
+Write a transaction to the open journal.  The list of blocks to write
+should be supplied as a comma-separated list in \fIblocks\fR; the
+blocks themselves should be readable from \fIfile\fR.  A list of
+blocks to revoke can be supplied as a comma-separated list in
+\fIrevoke\fR.  By default, a commit record is written at the end; the
+\fI-c\fR switch writes an uncommitted transaction.
+.TP
 .BI kill_file " filespec"
 Deallocate the inode
 .I filespec
@@ -387,7 +476,7 @@ which is a hard link to
 .IR filespec .
 Note this does not adjust the inode reference counts.
 .TP
-.BI logdump " [-acs] [-b block] [-i filespec] [-f journal_file] [output_file]"
+.BI logdump " [-acsO] [-b block] [-i filespec] [-f journal_file] [output_file]"
 Dump the contents of the ext3 journal.  By default, dump the journal inode as
 specified in the superblock.  However, this can be overridden with the
 .I \-i
@@ -418,10 +507,19 @@ the
 and
 .I \-b
 options.
+.IP
+The
+.I \-O
+option causes logdump to display old (checkpointed) journal entries.
+This can be used to try to track down journal problems even after the
+journal has been replayed.
 .TP
-.BI ls " [-d] [-l] [-p] filespec"
+.BI ls " [-l] [-c] [-d] [-p] [-r] filespec"
 Print a listing of the files in the directory
 .IR filespec .
+The
+.I \-c
+flag causes directory block checksums (if present) to be displayed.
 The
 .I \-d
 flag will list deleted entries in the directory.
@@ -433,6 +531,9 @@ The
 flag will list the files in a format which is more easily parsable by
 scripts, as well as making it more clear when there are spaces or other
 non-printing characters at the end of filenames.
+The
+.I \-r
+flag will force the printing of the filename, even if it is encrypted.
 .TP
 .BI list_deleted_inodes " [limit]"
 List deleted inodes, optionally limited to those deleted within
@@ -469,7 +570,7 @@ to those inodes.  The
 flag will enable checking the file type information in the directory
 entry to make sure it matches the inode's type.
 .TP
-.BI open " [-weficD] [-b blocksize] [-s superblock] device"
+.BI open " [-weficD] [-b blocksize] [-s superblock] [-z undo_file] device"
 Open a filesystem for editing.  The
 .I -f
 flag forces the filesystem to be opened even if there are some unknown
@@ -650,7 +751,6 @@ into a newly-created file in the filesystem named
 .IR out_file .
 .TP
 .BI zap_block " [-f filespec] [-o offset] [-l length] [-p pattern] block_num"
-.TP
 Overwrite the block specified by
 .I block_num
 with zero (NUL) bytes, or if

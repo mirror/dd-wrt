@@ -11,7 +11,7 @@ Fragment:  Address: 0    Number: 0    Size: 0
 ctime: 0x50f560e0 -- Tue Jan 15 14:00:00 2013
 atime: 0x50f560e0 -- Tue Jan 15 14:00:00 2013
 mtime: 0x50f560e0 -- Tue Jan 15 14:00:00 2013
-Fast_link_dest: bar
+Fast link dest: "bar"
 Exit status is 0
 debugfs -R ''stat foo2'' -w test.img
 Inode: 13   Type: symlink    Mode:  0777   Flags: 0x0

@@ -128,7 +128,7 @@ static errcode_t open_namei(ext2_filsys fs, ext2_ino_t root, ext2_ino_t base,
 	errcode_t retval;
 
 #ifdef NAMEI_DEBUG
-	printf("open_namei: root=%lu, dir=%lu, path=%*s, lc=%d\n",
+	printf("open_namei: root=%lu, dir=%lu, path=%.*s, lc=%d\n",
 	       root, base, pathlen, pathname, link_count);
 #endif
 	retval = dir_namei(fs, root, base, pathname, pathlen,

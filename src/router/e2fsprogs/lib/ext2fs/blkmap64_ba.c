@@ -310,12 +310,18 @@ static void ba_clear_bmap(ext2fs_generic_bitmap bitmap)
 	       (size_t) (((bitmap->real_end - bitmap->start) / 8) + 1));
 }
 
+#ifdef ENABLE_BMAP_STATS
 static void ba_print_stats(ext2fs_generic_bitmap bitmap)
 {
 	fprintf(stderr, "%16llu Bytes used by bitarray\n",
 		((bitmap->real_end - bitmap->start) >> 3) + 1 +
 		sizeof(struct ext2fs_ba_private_struct));
 }
+#else
+static void ba_print_stats(ext2fs_generic_bitmap bitmap EXT2FS_ATTR((unused)))
+{
+}
+#endif
 
 /* Find the first zero bit between start and end, inclusive. */
 static errcode_t ba_find_first_zero(ext2fs_generic_bitmap bitmap,
@@ -343,7 +349,7 @@ static errcode_t ba_find_first_zero(ext2fs_generic_bitmap bitmap,
 
 	pos = ((unsigned char *)bp->bitarray) + (bitpos >> 3);
 	/* scan bytes until 8-byte (64-bit) aligned */
-	while (count >= 8 && (((unsigned long)pos) & 0x07)) {
+	while (count >= 8 && (((uintptr_t)pos) & 0x07)) {
 		if (*pos != 0xff) {
 			byte_found = 1;
 			break;
@@ -417,7 +423,7 @@ static errcode_t ba_find_first_set(ext2fs_generic_bitmap bitmap,
 
 	pos = ((unsigned char *)bp->bitarray) + (bitpos >> 3);
 	/* scan bytes until 8-byte (64-bit) aligned */
-	while (count >= 8 && (((unsigned long)pos) & 0x07)) {
+	while (count >= 8 && (((uintptr_t)pos) & 0x07)) {
 		if (*pos != 0) {
 			byte_found = 1;
 			break;

@@ -95,8 +95,7 @@ errcode_t ext2fs_allocate_group_table(ext2_filsys fs, dgrp_t group,
 	if (!bmap)
 		bmap = fs->block_map;
 
-	if (EXT2_HAS_INCOMPAT_FEATURE(fs->super,
-				      EXT4_FEATURE_INCOMPAT_FLEX_BG) &&
+	if (ext2fs_has_feature_flex_bg(fs->super) &&
 	    fs->super->s_log_groups_per_flex) {
 		flexbg_size = 1 << fs->super->s_log_groups_per_flex;
 		last_grp = group | (flexbg_size - 1);
@@ -241,16 +240,19 @@ errcode_t ext2fs_allocate_tables(ext2_filsys fs)
 	dgrp_t		i;
 	struct ext2fs_numeric_progress_struct progress;
 
-	ext2fs_numeric_progress_init(fs, &progress, NULL,
-				     fs->group_desc_count);
+	if (fs->progress_ops && fs->progress_ops->init)
+		(fs->progress_ops->init)(fs, &progress, NULL,
+					 fs->group_desc_count);
 
 	for (i = 0; i < fs->group_desc_count; i++) {
-		ext2fs_numeric_progress_update(fs, &progress, i);
+		if (fs->progress_ops && fs->progress_ops->update)
+			(fs->progress_ops->update)(fs, &progress, i);
 		retval = ext2fs_allocate_group_table(fs, i, fs->block_map);
 		if (retval)
 			return retval;
 	}
-	ext2fs_numeric_progress_close(fs, &progress, NULL);
+	if (fs->progress_ops && fs->progress_ops->close)
+		(fs->progress_ops->close)(fs, &progress, NULL);
 	return 0;
 }
 

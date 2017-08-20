@@ -138,7 +138,7 @@ unsigned int ext2fs_bitcount(const void *addr, unsigned int nbytes)
 	const __u32 *p;
 	unsigned int res = 0;
 
-	while (((((unsigned long) cp) & 3) != 0) && (nbytes > 0)) {
+	while (((((uintptr_t) cp) & 3) != 0) && (nbytes > 0)) {
 		res += popcount8(*cp++);
 		nbytes--;
 	}

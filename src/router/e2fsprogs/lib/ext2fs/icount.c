@@ -57,8 +57,10 @@ struct ext2_icount {
 	ext2_ino_t		cursor;
 	struct ext2_icount_el	*list;
 	struct ext2_icount_el	*last_lookup;
+#ifdef CONFIG_TDB
 	char			*tdb_fn;
 	TDB_CONTEXT		*tdb;
+#endif
 };
 
 /*
@@ -82,12 +84,14 @@ void ext2fs_free_icount(ext2_icount_t icount)
 		ext2fs_free_inode_bitmap(icount->single);
 	if (icount->multiple)
 		ext2fs_free_inode_bitmap(icount->multiple);
+#ifdef CONFIG_TDB
 	if (icount->tdb)
 		tdb_close(icount->tdb);
 	if (icount->tdb_fn) {
 		unlink(icount->tdb_fn);
 		free(icount->tdb_fn);
 	}
+#endif
 
 	ext2fs_free_mem(&icount);
 }
@@ -127,6 +131,7 @@ errout:
 	return(retval);
 }
 
+#ifdef CONFIG_TDB
 struct uuid {
 	__u32	time_low;
 	__u16	time_mid;
@@ -173,10 +178,14 @@ static void uuid_unparse(void *uu, char *out)
 		uuid.node[0], uuid.node[1], uuid.node[2],
 		uuid.node[3], uuid.node[4], uuid.node[5]);
 }
+#endif
 
-errcode_t ext2fs_create_icount_tdb(ext2_filsys fs, char *tdb_dir,
-				   int flags, ext2_icount_t *ret)
+errcode_t ext2fs_create_icount_tdb(ext2_filsys fs EXT2FS_NO_TDB_UNUSED,
+				   char *tdb_dir EXT2FS_NO_TDB_UNUSED,
+				   int flags EXT2FS_NO_TDB_UNUSED,
+				   ext2_icount_t *ret EXT2FS_NO_TDB_UNUSED)
 {
+#ifdef CONFIG_TDB
 	ext2_icount_t	icount;
 	errcode_t	retval;
 	char 		*fn, uuid[40];
@@ -193,13 +202,14 @@ errcode_t ext2fs_create_icount_tdb(ext2_filsys fs, char *tdb_dir,
 		goto errout;
 	uuid_unparse(fs->super->s_uuid, uuid);
 	sprintf(fn, "%s/%s-icount-XXXXXX", tdb_dir, uuid);
-	icount->tdb_fn = fn;
 	save_umask = umask(077);
 	fd = mkstemp(fn);
 	if (fd < 0) {
 		retval = errno;
+		ext2fs_free_mem(&fn);
 		goto errout;
 	}
+	icount->tdb_fn = fn;
 	umask(save_umask);
 	/*
 	 * This is an overestimate of the size that we will need; the
@@ -223,6 +233,9 @@ errcode_t ext2fs_create_icount_tdb(ext2_filsys fs, char *tdb_dir,
 errout:
 	ext2fs_free_icount(icount);
 	return(retval);
+#else
+	return EXT2_ET_UNIMPLEMENTED;
+#endif
 }
 
 errcode_t ext2fs_create_icount2(ext2_filsys fs, int flags, unsigned int size,
@@ -400,6 +413,7 @@ static errcode_t set_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 				 __u32 count)
 {
 	struct ext2_icount_el 	*el;
+#ifdef CONFIG_TDB
 	TDB_DATA key, data;
 
 	if (icount->tdb) {
@@ -418,7 +432,7 @@ static errcode_t set_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 		}
 		return 0;
 	}
-
+#endif
 	el = get_icount_el(icount, ino, 1);
 	if (!el)
 		return EXT2_ET_NO_MEMORY;
@@ -431,6 +445,7 @@ static errcode_t get_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 				 __u32 *count)
 {
 	struct ext2_icount_el 	*el;
+#ifdef CONFIG_TDB
 	TDB_DATA key, data;
 
 	if (icount->tdb) {
@@ -447,6 +462,7 @@ static errcode_t get_inode_count(ext2_icount_t icount, ext2_ino_t ino,
 		free(data.dptr);
 		return 0;
 	}
+#endif
 	el = get_icount_el(icount, ino, 0);
 	if (!el) {
 		*count = 0;
@@ -760,6 +776,7 @@ int run_test(int flags, int size, char *dir, struct test_program *prog)
 	int		problem = 0;
 
 	if (dir) {
+#ifdef CONFIG_TDB
 		retval = ext2fs_create_icount_tdb(test_fs, dir,
 						  flags, &icount);
 		if (retval) {
@@ -767,6 +784,10 @@ int run_test(int flags, int size, char *dir, struct test_program *prog)
 				"while creating icount using tdb");
 			exit(1);
 		}
+#else
+		printf("Skipped\n");
+		return 0;
+#endif
 	} else {
 		retval = ext2fs_create_icount2(test_fs, flags, size, 0,
 					       &icount);

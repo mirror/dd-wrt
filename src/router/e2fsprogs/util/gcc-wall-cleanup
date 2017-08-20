@@ -12,6 +12,8 @@
 /ANSI C forbids long long integer constants/d
 /traditional C rejects string concatenation/d
 /integer constant is unsigned in ANSI C, signed with -traditional/d
+/ISO C forbids conversion of object pointer to function pointer type/,+2d
+/ISO C does not support ‘__FUNCTION__’ predefined identifier/d
 /At top level:/d
 /In file included from/d
 /In function `.*':/d

@@ -8,6 +8,12 @@ LOG=$test_name.log
 E2FSCK=../e2fsck/e2fsck
 RESIZE2FS_OPTS=-f
 
+if [ $(uname -s) = "FreeBSD" ]; then
+	# creates a 2TB filesystem
+	echo "$test_name: $DESCRIPTION: skipped for FreeBSD"
+	return 0
+fi
+
 . $cmd_dir/scripts/resize_test
 
 resize_test

@@ -25,7 +25,7 @@
 
 #include "ext2fs/ext2_fs.h"
 #include "../version.h"
-#include "nls-enable.h"
+#include "support/nls-enable.h"
 
 #define LPF "lost+found"
 

@@ -36,7 +36,7 @@ static errcode_t write_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	unsigned int	nbits;
 	errcode_t	retval;
 	char		*block_buf = NULL, *inode_buf = NULL;
-	int		csum_flag = 0;
+	int		csum_flag;
 	blk64_t		blk;
 	blk64_t		blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
 	ext2_ino_t	ino_itr = 1;
@@ -46,9 +46,7 @@ static errcode_t write_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	if (!(fs->flags & EXT2_FLAG_RW))
 		return EXT2_ET_RO_FILSYS;
 
-	if (EXT2_HAS_RO_COMPAT_FEATURE(fs->super,
-				       EXT4_FEATURE_RO_COMPAT_GDT_CSUM))
-		csum_flag = 1;
+	csum_flag = ext2fs_has_group_desc_csum(fs);
 
 	inode_nbytes = block_nbytes = 0;
 	if (do_block) {
@@ -90,6 +88,13 @@ static errcode_t write_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 				for (j = nbits; j < fs->blocksize * 8; j++)
 					ext2fs_set_bit(j, block_buf);
 		}
+
+		retval = ext2fs_block_bitmap_csum_set(fs, i, block_buf,
+						      block_nbytes);
+		if (retval)
+			return retval;
+		ext2fs_group_desc_csum_set(fs, i);
+
 		blk = ext2fs_block_bitmap_loc(fs, i);
 		if (blk) {
 			retval = io_channel_write_blk64(fs->io, blk, 1,
@@ -114,6 +119,12 @@ static errcode_t write_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 				ino_itr, inode_nbytes << 3, inode_buf);
 		if (retval)
 			goto errout;
+
+		retval = ext2fs_inode_bitmap_csum_set(fs, i, inode_buf,
+						      inode_nbytes);
+		if (retval)
+			goto errout;
+		ext2fs_group_desc_csum_set(fs, i);
 
 		blk = ext2fs_inode_bitmap_loc(fs, i);
 		if (blk) {
@@ -190,7 +201,7 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	errcode_t retval;
 	int block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
 	int inode_nbytes = EXT2_INODES_PER_GROUP(fs->super) / 8;
-	int csum_flag = 0;
+	int csum_flag;
 	unsigned int	cnt;
 	blk64_t	blk;
 	blk64_t	blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
@@ -206,9 +217,7 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 
 	fs->write_bitmaps = ext2fs_write_bitmaps;
 
-	if (EXT2_HAS_RO_COMPAT_FEATURE(fs->super,
-				       EXT4_FEATURE_RO_COMPAT_GDT_CSUM))
-		csum_flag = 1;
+	csum_flag = ext2fs_has_group_desc_csum(fs);
 
 	retval = ext2fs_get_mem(strlen(fs->device_name) + 80, &buf);
 	if (retval)
@@ -297,6 +306,15 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 					retval = EXT2_ET_BLOCK_BITMAP_READ;
 					goto cleanup;
 				}
+				/* verify block bitmap checksum */
+				if (!(fs->flags &
+				      EXT2_FLAG_IGNORE_CSUM_ERRORS) &&
+				    !ext2fs_block_bitmap_csum_verify(fs, i,
+						block_bitmap, block_nbytes)) {
+					retval =
+					EXT2_ET_BLOCK_BITMAP_CSUM_INVALID;
+					goto cleanup;
+				}
 			} else
 				memset(block_bitmap, 0, block_nbytes);
 			cnt = block_nbytes << 3;
@@ -317,6 +335,16 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 							       1, inode_bitmap);
 				if (retval) {
 					retval = EXT2_ET_INODE_BITMAP_READ;
+					goto cleanup;
+				}
+
+				/* verify inode bitmap checksum */
+				if (!(fs->flags &
+				      EXT2_FLAG_IGNORE_CSUM_ERRORS) &&
+				    !ext2fs_inode_bitmap_csum_verify(fs, i,
+						inode_bitmap, inode_nbytes)) {
+					retval =
+					EXT2_ET_INODE_BITMAP_CSUM_INVALID;
 					goto cleanup;
 				}
 			} else

@@ -34,7 +34,7 @@ struct fiemap {
 	struct fiemap_extent fm_extents[0]; /* array of mapped extents (out) */
 };
 
-#ifndef FS_IOC_FIEMAP
+#if defined(__linux__) && !defined(FS_IOC_FIEMAP)
 #define FS_IOC_FIEMAP	_IOWR('f', 11, struct fiemap)
 #endif
 

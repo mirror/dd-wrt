@@ -7,7 +7,6 @@
 
 #include "config.h"
 #include "e2fsck.h"
-#ifdef ENABLE_HTREE
 
 /*
  * This subroutine is called during pass1 to create a directory info
@@ -151,5 +150,3 @@ struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx, int *control)
 
 	return(ctx->dx_dir_info + (*control)++);
 }
-
-#endif /* ENABLE_HTREE */

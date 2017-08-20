@@ -8,7 +8,7 @@ if test -x $DEBUGFS_EXE; then
 	$FSCK -fy $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
 	for i in a b c d e f g; do echo "stat /$i"; done > $TMPFILE.tmp
 	echo "quit" >> $TMPFILE.tmp
-	$DEBUGFS_EXE -f $TMPFILE.tmp $TMPFILE >> $OUT
+	$DEBUGFS_EXE -f $TMPFILE.tmp $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
 	rm -f $TMPFILE.tmp
 
 	cmp -s $OUT $EXP

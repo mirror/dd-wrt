@@ -37,6 +37,7 @@
  * gcc-wall wall mode
  */
 #define _SVID_SOURCE
+#define _DEFAULT_SOURCE	  /* since glibc 2.20 _SVID_SOURCE is deprecated */
 
 #include "config.h"
 
@@ -425,6 +426,7 @@ try_again:
 	return 0;
 }
 
+#if defined(USE_UUIDD) && defined(HAVE_SYS_UN_H)
 static ssize_t read_all(int fd, char *buf, size_t count)
 {
 	ssize_t ret;
@@ -475,8 +477,12 @@ static void close_all_fds(void)
 			open("/dev/null", O_RDWR);
 	}
 }
+#endif /* defined(USE_UUIDD) && defined(HAVE_SYS_UN_H) */
 
-
+#pragma GCC diagnostic push
+#if !defined(USE_UUIDD) || !defined(HAVE_SYS_UN_H)
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#endif
 /*
  * Try using the uuidd daemon to generate the UUID
  *
@@ -559,6 +565,7 @@ fail:
 #endif
 	return -1;
 }
+#pragma GCC diagnostic pop
 
 void uuid__generate_time(uuid_t out, int *num)
 {

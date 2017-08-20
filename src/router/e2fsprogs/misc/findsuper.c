@@ -94,7 +94,7 @@
 
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
-#include "nls-enable.h"
+#include "support/nls-enable.h"
 
 #undef DEBUG
 
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 	if (print_jnl_copies)
 		printf(_("[*] probably superblock written in the ext3 "
 			 "journal superblock,\n\tso start/end/grp wrong\n"));
-	printf(_("byte_offset  byte_start     byte_end  fs_blocks blksz  grp  last_mount_time           sb_uuid label\n"));
+	printf(_("byte_offset  byte_start     byte_end  fs_blocks blksz  grp  mkfs/mount_time           sb_uuid label\n"));
 	for (; lseek64(fd, sk, SEEK_SET) != -1 &&
 	       read(fd, &ext2, 512) == 512; sk += skiprate) {
 		static unsigned char last_uuid[16] = "blah";
@@ -230,7 +230,10 @@ int main(int argc, char *argv[])
 			WHY("free_inodes_count > inodes_count (%u > %u)\n",
 			    ext2.s_free_inodes_count, ext2.s_inodes_count);
 
-		tm = ext2.s_mtime;
+		if (ext2.s_mkfs_time != 0)
+			tm = ext2.s_mkfs_time;
+		else
+			tm = ext2.s_mtime;
 		s = ctime(&tm);
 		s[24] = 0;
 		bsize = 1 << (ext2.s_log_block_size + 10);
