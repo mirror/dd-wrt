@@ -80,7 +80,7 @@ static void warn_bitmap(ext2fs_generic_bitmap bitmap,
 #endif
 }
 
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 #define INC_STAT(map, name) map->stats.name
 #else
 #define INC_STAT(map, name) ;;
@@ -124,7 +124,7 @@ errcode_t ext2fs_alloc_generic_bmap(ext2_filsys fs, errcode_t magic,
 	if (retval)
 		return retval;
 
-#ifdef BMAP_STATS
+#ifdef ENABLE_BMAP_STATS
 	if (gettimeofday(&bitmap->stats.created,
 			 (struct timezone *) NULL) == -1) {
 		perror("gettimeofday");
@@ -174,18 +174,18 @@ errcode_t ext2fs_alloc_generic_bmap(ext2_filsys fs, errcode_t magic,
 	return 0;
 }
 
-#ifdef BMAP_STATS
+#ifdef ENABLE_BMAP_STATS
 static void ext2fs_print_bmap_statistics(ext2fs_generic_bitmap bitmap)
 {
 	struct ext2_bmap_statistics *stats = &bitmap->stats;
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	float mark_seq_perc = 0.0, test_seq_perc = 0.0;
 	float mark_back_perc = 0.0, test_back_perc = 0.0;
 #endif
 	double inuse;
 	struct timeval now;
 
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	if (stats->test_count) {
 		test_seq_perc = ((float)stats->test_seq /
 				 stats->test_count) * 100;
@@ -214,7 +214,7 @@ static void ext2fs_print_bmap_statistics(ext2fs_generic_bitmap bitmap)
 	fprintf(stderr, "\n[+] %s bitmap (type %d)\n", bitmap->description,
 		stats->type);
 	fprintf(stderr, "=================================================\n");
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	fprintf(stderr, "%16llu bits long\n",
 		bitmap->real_end - bitmap->start);
 	fprintf(stderr, "%16lu copy_bmap\n%16lu resize_bmap\n",
@@ -237,7 +237,7 @@ static void ext2fs_print_bmap_statistics(ext2fs_generic_bitmap bitmap)
 	fprintf(stderr, "%16llu bits marked backwards (%.2f%%)\n"
 		"%16.2f seconds in use\n",
 		stats->mark_back, mark_back_perc, inuse);
-#endif /* BMAP_STATS_OPS */
+#endif /* ENABLE_BMAP_STATS_OPS */
 }
 #endif
 
@@ -254,7 +254,7 @@ void ext2fs_free_generic_bmap(ext2fs_generic_bitmap bmap)
 	if (!EXT2FS_IS_64_BITMAP(bmap))
 		return;
 
-#ifdef BMAP_STATS
+#ifdef ENABLE_BMAP_STATS
 	if (getenv("E2FSPROGS_BITMAP_STATS")) {
 		ext2fs_print_bmap_statistics(bmap);
 		bmap->bitmap_ops->print_stats(bmap);
@@ -294,10 +294,10 @@ errcode_t ext2fs_copy_generic_bmap(ext2fs_generic_bitmap src,
 		return retval;
 
 
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	src->stats.copy_count++;
 #endif
-#ifdef BMAP_STATS
+#ifdef ENABLE_BMAP_STATS
 	if (gettimeofday(&new_bmap->stats.created,
 			 (struct timezone *) NULL) == -1) {
 		perror("gettimeofday");
@@ -324,7 +324,8 @@ errcode_t ext2fs_copy_generic_bmap(ext2fs_generic_bitmap src,
 			ext2fs_free_mem(&new_bmap);
 			return retval;
 		}
-		sprintf(new_descr, "copy of %s", descr);
+		strcpy(new_descr, "copy of ");
+		strcat(new_descr, descr);
 		new_bmap->description = new_descr;
 	}
 
@@ -444,7 +445,7 @@ int ext2fs_mark_generic_bmap(ext2fs_generic_bitmap bitmap,
 
 	arg >>= bitmap->cluster_bits;
 
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	if (arg == bitmap->stats.last_marked + 1)
 		bitmap->stats.mark_seq++;
 	if (arg < bitmap->stats.last_marked)
@@ -511,7 +512,7 @@ int ext2fs_test_generic_bmap(ext2fs_generic_bitmap bitmap,
 
 	arg >>= bitmap->cluster_bits;
 
-#ifdef BMAP_STATS_OPS
+#ifdef ENABLE_BMAP_STATS_OPS
 	bitmap->stats.test_count++;
 	if (arg == bitmap->stats.last_tested + 1)
 		bitmap->stats.test_seq++;

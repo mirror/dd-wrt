@@ -157,7 +157,7 @@ struct dir_list {
 	char	*name;
 	struct dir_list *next;
 };
-extern void blkid__scan_dir(char *, dev_t, struct dir_list **, char **);
+extern void blkid__scan_dir(const char *, dev_t, struct dir_list **, char **);
 
 /* lseek.c */
 extern blkid_loff_t blkid_llseek(int fd, blkid_loff_t offset, int whence);

@@ -12,8 +12,12 @@
  * %End-Header%
  */
 
+#ifndef _LARGEFILE_SOURCE
 #define _LARGEFILE_SOURCE
+#endif
+#ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 
 #include "config.h"
 #include <stdio.h>
@@ -67,8 +71,8 @@
 #define HAVE_GET_FILE_SIZE_EX 1
 #endif
 
-errcode_t ext2fs_get_device_size(const char *file, int blocksize,
-				 blk_t *retblocks)
+errcode_t ext2fs_get_device_size2(const char *file, int blocksize,
+				  blk64_t *retblocks)
 {
 	HANDLE dev;
 	PARTITION_INFORMATION pi;
@@ -268,6 +272,8 @@ out:
 	return rc;
 }
 
+#endif /* WIN32 */
+
 errcode_t ext2fs_get_device_size(const char *file, int blocksize,
 				 blk_t *retblocks)
 {
@@ -282,8 +288,6 @@ errcode_t ext2fs_get_device_size(const char *file, int blocksize,
 	*retblocks = (blk_t) blocks;
 	return 0;
 }
-
-#endif /* WIN32 */
 
 #ifdef DEBUG
 int main(int argc, char **argv)

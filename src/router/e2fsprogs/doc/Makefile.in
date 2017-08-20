@@ -11,7 +11,7 @@ INSTALL = @INSTALL@
 
 @MCONFIG@
 
-DVI=texi2dvi
+DVI=texi2dvi --clean
 DVIPS=dvips -o "$@"
 INFO=@MAKEINFO@
 HTML=makeinfo --html --no-split

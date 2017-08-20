@@ -50,6 +50,9 @@ extern int optind;
 #include <setjmp.h>
 #include <time.h>
 #include <limits.h>
+#ifdef HAVE_MBSTOWCS
+#include <wchar.h>
+#endif
 
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -59,7 +62,7 @@ extern int optind;
 #include "ext2fs/ext2_io.h"
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
-#include "nls-enable.h"
+#include "support/nls-enable.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -216,6 +219,9 @@ static void print_status(void)
 {
 	struct timeval time_end;
 	char diff_buf[32], line_buf[128];
+#ifdef HAVE_MBSTOWCS
+	wchar_t wline_buf[128];
+#endif
 	int len;
 
 	gettimeofday(&time_end, 0);
@@ -229,7 +235,10 @@ static void print_status(void)
 		       num_write_errors,
 		       num_corruption_errors);
 #ifdef HAVE_MBSTOWCS
-	len = mbstowcs(NULL, line_buf, sizeof(line_buf));
+	mbstowcs(wline_buf, line_buf, sizeof(line_buf));
+	len = wcswidth(wline_buf, sizeof(line_buf));
+	if (len < 0)
+		len = strlen(line_buf); /* Should never happen... */
 #endif
 	fputs(line_buf, stderr);
 	memset(line_buf, '\b', len);

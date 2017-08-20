@@ -82,6 +82,9 @@ typedef struct ext2_sim_progress *ext2_sim_progmeter;
 #define RESIZE_PERCENT_COMPLETE		0x0100
 #define RESIZE_VERBOSE			0x0200
 
+#define RESIZE_ENABLE_64BIT		0x0400
+#define RESIZE_DISABLE_64BIT		0x0800
+
 /*
  * This structure is used for keeping track of how much resources have
  * been used for a particular resize2fs pass.

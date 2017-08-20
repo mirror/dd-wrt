@@ -101,6 +101,7 @@ void ext2fs_swap_super(struct ext2_super_block * sb)
 		sb->s_jnl_blocks[i] = ext2fs_swab32(sb->s_jnl_blocks[i]);
 	sb->s_backup_bgs[0] = ext2fs_swab32(sb->s_backup_bgs[0]);
 	sb->s_backup_bgs[1] = ext2fs_swab32(sb->s_backup_bgs[1]);
+	sb->s_checksum_seed = ext2fs_swab32(sb->s_checksum_seed);
 }
 
 void ext2fs_swap_group_desc2(ext2_filsys fs, struct ext2_group_desc *gdp)
@@ -159,7 +160,8 @@ void ext2fs_swap_ext_attr_header(struct ext2_ext_attr_header *to_header,
 	to_header->h_blocks   = ext2fs_swab32(from_header->h_blocks);
 	to_header->h_refcount = ext2fs_swab32(from_header->h_refcount);
 	to_header->h_hash     = ext2fs_swab32(from_header->h_hash);
-	for (n = 0; n < 4; n++)
+	to_header->h_checksum = ext2fs_swab32(from_header->h_checksum);
+	for (n = 0; n < 3; n++)
 		to_header->h_reserved[n] =
 			ext2fs_swab32(from_header->h_reserved[n]);
 }
@@ -195,7 +197,9 @@ void ext2fs_swap_ext_attr(char *to, char *from, int bufsize, int has_header)
 		to_entry   = (struct ext2_ext_attr_entry *)to_header;
 	}
 
-	while ((char *)from_entry < from_end && *(__u32 *)from_entry) {
+	while ((char *)from_entry < from_end &&
+	       (char *)EXT2_EXT_ATTR_NEXT(from_entry) <= from_end &&
+	       *(__u32 *)from_entry) {
 		ext2fs_swap_ext_attr_entry(to_entry, from_entry);
 		from_entry = EXT2_EXT_ATTR_NEXT(from_entry);
 		to_entry   = EXT2_EXT_ATTR_NEXT(to_entry);
@@ -208,7 +212,9 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 {
 	unsigned i, has_data_blocks, extra_isize, attr_magic;
 	int has_extents = 0;
+	int has_inline_data = 0;
 	int islnk = 0;
+	int inode_size;
 	__u32 *eaf, *eat;
 
 	if (hostorder && LINUX_S_ISLNK(f->i_mode))
@@ -234,12 +240,18 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 					   (struct ext2_inode *) t);
 	if (hostorder && (f->i_flags & EXT4_EXTENTS_FL))
 		has_extents = 1;
+	if (hostorder && (f->i_flags & EXT4_INLINE_DATA_FL))
+		has_inline_data = 1;
 	t->i_flags = ext2fs_swab32(f->i_flags);
 	if (!hostorder && (t->i_flags & EXT4_EXTENTS_FL))
 		has_extents = 1;
+	if (!hostorder && (t->i_flags & EXT4_INLINE_DATA_FL))
+		has_inline_data = 1;
 	t->i_dir_acl = ext2fs_swab32(f->i_dir_acl);
-	/* extent data are swapped on access, not here */
-	if (!has_extents && (!islnk || has_data_blocks)) {
+	/*
+	 * Extent data and inline data are swapped on access, not here
+	 */
+	if (!has_extents && !has_inline_data && (!islnk || has_data_blocks)) {
 		for (i = 0; i < EXT2_N_BLOCKS; i++)
 			t->i_block[i] = ext2fs_swab32(f->i_block[i]);
 	} else if (t != f) {
@@ -295,21 +307,26 @@ void ext2fs_swap_inode_full(ext2_filsys fs, struct ext2_inode_large *t,
 		/* this is error case: i_extra_size is too large */
 		return;
 	}
+	if (extra_isize & 3)
+		return;		/* Illegal inode extra_isize */
 
-	if (extra_isize >= 4)
+	inode_size = EXT2_GOOD_OLD_INODE_SIZE + extra_isize;
+	if (inode_includes(inode_size, i_checksum_hi))
 		t->i_checksum_hi = ext2fs_swab16(f->i_checksum_hi);
-	if (extra_isize >= 8)
+	if (inode_includes(inode_size, i_ctime_extra))
 		t->i_ctime_extra = ext2fs_swab32(f->i_ctime_extra);
-	if (extra_isize >= 12)
+	if (inode_includes(inode_size, i_mtime_extra))
 		t->i_mtime_extra = ext2fs_swab32(f->i_mtime_extra);
-	if (extra_isize >= 16)
+	if (inode_includes(inode_size, i_atime_extra))
 		t->i_atime_extra = ext2fs_swab32(f->i_atime_extra);
-	if (extra_isize >= 20)
+	if (inode_includes(inode_size, i_crtime))
 		t->i_crtime = ext2fs_swab32(f->i_crtime);
-	if (extra_isize >= 24)
+	if (inode_includes(inode_size, i_crtime_extra))
 		t->i_crtime_extra = ext2fs_swab32(f->i_crtime_extra);
-	if (extra_isize >= 28)
+	if (inode_includes(inode_size, i_version_hi))
 		t->i_version_hi = ext2fs_swab32(f->i_version_hi);
+	if (inode_includes(inode_size, i_projid))
+                t->i_projid = ext2fs_swab16(f->i_projid);
 
 	i = sizeof(struct ext2_inode) + extra_isize + sizeof(__u32);
 	if (bufsize < (int) i)
@@ -350,6 +367,81 @@ void ext2fs_swap_mmp(struct mmp_struct *mmp)
 	mmp->mmp_seq = ext2fs_swab32(mmp->mmp_seq);
 	mmp->mmp_time = ext2fs_swab64(mmp->mmp_time);
 	mmp->mmp_check_interval = ext2fs_swab16(mmp->mmp_check_interval);
+	mmp->mmp_checksum = ext2fs_swab32(mmp->mmp_checksum);
+}
+
+errcode_t ext2fs_dirent_swab_in(ext2_filsys fs, char *buf, int flags)
+{
+	return ext2fs_dirent_swab_in2(fs, buf, fs->blocksize, flags);
+}
+
+errcode_t ext2fs_dirent_swab_in2(ext2_filsys fs, char *buf,
+				 size_t size, int flags)
+{
+	errcode_t	retval;
+	char		*p, *end;
+	struct ext2_dir_entry *dirent;
+	unsigned int	name_len, rec_len;
+
+	p = (char *) buf;
+	end = (char *) buf + size;
+	while (p < end-8) {
+		dirent = (struct ext2_dir_entry *) p;
+		dirent->inode = ext2fs_swab32(dirent->inode);
+		dirent->rec_len = ext2fs_swab16(dirent->rec_len);
+		dirent->name_len = ext2fs_swab16(dirent->name_len);
+		name_len = dirent->name_len;
+		if (flags & EXT2_DIRBLOCK_V2_STRUCT)
+			dirent->name_len = ext2fs_swab16(dirent->name_len);
+		retval = ext2fs_get_rec_len(fs, dirent, &rec_len);
+		if (retval)
+			return retval;
+		if ((rec_len < 8) || (rec_len % 4)) {
+			rec_len = 8;
+			retval = EXT2_ET_DIR_CORRUPTED;
+		} else if (((name_len & 0xFF) + 8) > rec_len)
+			retval = EXT2_ET_DIR_CORRUPTED;
+		p += rec_len;
+	}
+
+	return 0;
+}
+
+errcode_t ext2fs_dirent_swab_out(ext2_filsys fs, char *buf, int flags)
+{
+	return ext2fs_dirent_swab_out2(fs, buf, fs->blocksize, flags);
+}
+
+errcode_t ext2fs_dirent_swab_out2(ext2_filsys fs, char *buf,
+				  size_t size, int flags)
+{
+	errcode_t	retval;
+	char		*p, *end;
+	unsigned int	rec_len;
+	struct ext2_dir_entry *dirent;
+
+	p = buf;
+	end = buf + size;
+	while (p < end) {
+		dirent = (struct ext2_dir_entry *) p;
+		retval = ext2fs_get_rec_len(fs, dirent, &rec_len);
+		if (retval)
+			return retval;
+		if ((rec_len < 8) ||
+		    (rec_len % 4)) {
+			ext2fs_free_mem(&buf);
+			return EXT2_ET_DIR_CORRUPTED;
+		}
+		p += rec_len;
+		dirent->inode = ext2fs_swab32(dirent->inode);
+		dirent->rec_len = ext2fs_swab16(dirent->rec_len);
+		dirent->name_len = ext2fs_swab16(dirent->name_len);
+
+		if (flags & EXT2_DIRBLOCK_V2_STRUCT)
+			dirent->name_len = ext2fs_swab16(dirent->name_len);
+	}
+
+	return 0;
 }
 
 #endif

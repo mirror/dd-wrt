@@ -33,7 +33,7 @@ $DEBUGFS -R "set_super_value mkfs_time 0" -w $TMPFILE >/dev/null 2>&1
 $TUNE2FS -c 20 -U clear $TMPFILE  >/dev/null 2>&1
 
 echo dumpe2fs test.img >> $OUT
-$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' >> $OUT
 
 echo "--------------------------------" >> $OUT
 
@@ -53,7 +53,7 @@ $DEBUGFS -R "set_super_value mkfs_time 0" -w $TMPFILE >/dev/null 2>&1
 $TUNE2FS -c 20 -U clear $TMPFILE  >/dev/null 2>&1
 
 echo dumpe2fs test.img >> $OUT
-$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' >> $OUT
 
 echo "--------------------------------" >> $OUT
 
@@ -73,7 +73,7 @@ $DEBUGFS -R "set_super_value mkfs_time 0" -w $TMPFILE >/dev/null 2>&1
 $TUNE2FS -c 20 -U clear $TMPFILE  >/dev/null 2>&1
 
 echo dumpe2fs test.img >> $OUT
-$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' >> $OUT
 
 echo "--------------------------------" >> $OUT
 
@@ -93,7 +93,7 @@ $DEBUGFS -R "set_super_value mkfs_time 0" -w $TMPFILE >/dev/null 2>&1
 $TUNE2FS -c 20 -U clear $TMPFILE  >/dev/null 2>&1
 
 echo dumpe2fs test.img >> $OUT
-$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed >> $OUT
+$DUMPE2FS $TMPFILE 2>&1 | sed -f $cmd_dir/filter.sed -e '/Block bitmap.*$/N;s/\n  Inode bitmap/, Inode bitmap/g' >> $OUT
 
 rm -f $TMPFILE
 

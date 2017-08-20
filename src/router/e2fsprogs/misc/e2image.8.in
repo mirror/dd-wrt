@@ -62,7 +62,7 @@ or
 .B \-Q
 options, the filesystem must be unmounted or be mounted read/only, in order
 for the image file to be in a consistent state.  This requirement can be
-overriden using the
+overridden using the
 .B \-f
 option, but the resulting image file is very likely not going to be useful.
 .PP

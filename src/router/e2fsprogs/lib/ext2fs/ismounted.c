@@ -9,6 +9,14 @@
  * %End-Header%
  */
 
+/* define BSD_SOURCE to make sure we get the major() macro */
+#ifndef _BSD_SOURCE
+#define _BSD_SOURCE
+#endif
+#ifndef _DEFAULT_SOURCE
+#define _DEFAULT_SOURCE	/* since glibc 2.20 _SVID_SOURCE is deprecated */
+#endif
+
 #include "config.h"
 #include <stdio.h>
 #if HAVE_UNISTD_H
@@ -38,10 +46,17 @@
 #endif /* HAVE_GETMNTINFO */
 #include <string.h>
 #include <sys/stat.h>
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_SYSMACROS_H
+#include <sys/sysmacros.h>
+#endif
 
 #include "ext2_fs.h"
 #include "ext2fs.h"
 
+#ifdef HAVE_SETMNTENT
 /*
  * Check to see if a regular file is mounted.
  * If /etc/mtab/ is a symlink of /proc/mounts, you will need the following check
@@ -72,7 +87,6 @@ static int check_loop_mounted(const char *mnt_fsname, dev_t mnt_rdev,
 	return 0;
 }
 
-#ifdef HAVE_SETMNTENT
 /*
  * Helper function which checks a file in /etc/mtab format to see if a
  * filesystem is mounted.  Returns an error if the file doesn't exist
@@ -90,6 +104,7 @@ static errcode_t check_mntent_file(const char *mtab_file, const char *file,
 	int		fd;
 
 	*mount_flags = 0;
+
 	if ((f = setmntent (mtab_file, "r")) == NULL) {
 		if (errno == ENOENT) {
 			if (getenv("EXT2FS_NO_MTAB_OK"))
@@ -351,6 +366,19 @@ errcode_t ext2fs_check_mount_point(const char *device, int *mount_flags,
 				  char *mtpt, int mtlen)
 {
 	errcode_t	retval = 0;
+
+	if (getenv("EXT2FS_PRETEND_RO_MOUNT")) {
+		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_READONLY;
+		if (getenv("EXT2FS_PRETEND_ROOTFS"))
+			*mount_flags = EXT2_MF_ISROOT;
+		return 0;
+	}
+	if (getenv("EXT2FS_PRETEND_RW_MOUNT")) {
+		*mount_flags = EXT2_MF_MOUNTED;
+		if (getenv("EXT2FS_PRETEND_ROOTFS"))
+			*mount_flags = EXT2_MF_ISROOT;
+		return 0;
+	}
 
 	if (is_swap_device(device)) {
 		*mount_flags = EXT2_MF_MOUNTED | EXT2_MF_SWAP;

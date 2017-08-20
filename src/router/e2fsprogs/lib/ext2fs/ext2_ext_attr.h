@@ -20,7 +20,9 @@ struct ext2_ext_attr_header {
 	__u32	h_refcount;	/* reference count */
 	__u32	h_blocks;	/* number of disk blocks used */
 	__u32	h_hash;		/* hash value of all attributes */
-	__u32	h_reserved[4];	/* zero right now */
+	__u32	h_checksum;	/* crc32c(uuid+id+xattrs) */
+				/* id = inum if refcount = 1, else blknum */
+	__u32	h_reserved[3];	/* zero right now */
 };
 
 struct ext2_ext_attr_entry {

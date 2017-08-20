@@ -154,6 +154,7 @@ misc/dumpe2fs
 misc/dumpe2fs.8
 misc/e2freefrag
 misc/e2freefrag.8
+misc/e2fuzz
 misc/e2image
 misc/e2image.8
 misc/e2initrd_helper

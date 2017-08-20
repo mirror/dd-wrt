@@ -31,7 +31,7 @@ static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
 	int mult = 3;
 	unsigned int ret;
 
-	if (fs->super->s_feature_compat & EXT4_FEATURE_COMPAT_SPARSE_SUPER2) {
+	if (ext2fs_has_feature_sparse_super2(fs->super)) {
 		if (*min == 1) {
 			*min += 1;
 			if (fs->super->s_backup_bgs[0])
@@ -44,8 +44,7 @@ static unsigned int list_backups(ext2_filsys fs, unsigned int *three,
 		}
 		return fs->group_desc_count;
 	}
-	if (!(fs->super->s_feature_ro_compat &
-	      EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER)) {
+	if (!ext2fs_has_feature_sparse_super(fs->super)) {
 		ret = *min;
 		*min += 1;
 		return ret;

@@ -45,7 +45,7 @@ static int ncheck_proc(struct ext2_dir_entry *dirent,
 	struct inode_walk_struct *iw = (struct inode_walk_struct *) private;
 	struct ext2_inode inode;
 	errcode_t	retval;
-	int		filetype = dirent->name_len >> 8;
+	int		filetype = ext2fs_dirent_file_type(dirent);
 	int		i;
 
 	iw->position++;
@@ -66,11 +66,13 @@ static int ncheck_proc(struct ext2_dir_entry *dirent,
 			if (iw->parent)
 				printf("%u\t%s/%.*s", iw->iarray[i],
 				       iw->parent,
-				       (dirent->name_len & 0xFF), dirent->name);
+				       ext2fs_dirent_name_len(dirent),
+				       dirent->name);
 			else
 				printf("%u\t<%u>/%.*s", iw->iarray[i],
 				       iw->dir,
-				       (dirent->name_len & 0xFF), dirent->name);
+				       ext2fs_dirent_name_len(dirent),
+				       dirent->name);
 			if (iw->check_dirent && filetype) {
 				if (!debugfs_read_inode(dirent->inode, &inode,
 							"ncheck") &&

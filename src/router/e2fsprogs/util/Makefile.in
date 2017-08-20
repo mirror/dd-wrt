@@ -17,6 +17,7 @@ SRCS = $(srcdir)/subst.c
 	$(E) "	CC $<"
 	$(Q) $(BUILD_CC) -c $(BUILD_CFLAGS) $< -o $@
 	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
+	$(Q) $(CPPCHECK_CMD) $(CPPFLAGS) $<
 
 PROGS=		subst symlinks
 
@@ -52,7 +53,7 @@ tarballs: gen-tarball
 
 clean::
 	$(RM) -f $(PROGS) \#* *.s *.o *.a *~ core *.tar.gz gen-tarball \
-		copy-sparse dirpaths.h
+		copy-sparse dirpaths.h install-symlink
 
 mostlyclean: clean
 

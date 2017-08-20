@@ -174,7 +174,6 @@ void do_block_dump(int argc, char *argv[])
 	errcode_t	errcode;
 	blk64_t		block;
 	char		*file = NULL;
-	unsigned int	i, j;
 	int		c, err;
 
 	if (check_fs_open(argv[0]))

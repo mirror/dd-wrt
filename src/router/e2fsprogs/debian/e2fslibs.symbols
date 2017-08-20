@@ -2,14 +2,17 @@ libe2p.so.2 e2fslibs #MINVER#
  e2p_edit_feature2@Base 1.40.7
  e2p_edit_feature@Base 1.37
  e2p_edit_mntopts@Base 1.37
+ e2p_encmode2string@Base 1.43
  e2p_feature2string@Base 1.37
  e2p_hash2string@Base 1.37
  e2p_is_null_uuid@Base 1.37
  e2p_jrnl_feature2string@Base 1.41.1
  e2p_jrnl_string2feature@Base 1.41.1
+ e2p_list_journal_super@Base 1.43.5
  e2p_mntopt2string@Base 1.37
  e2p_os2string@Base 1.37
  e2p_percent@Base 1.40
+ e2p_string2encmode@Base 1.43
  e2p_string2feature@Base 1.37
  e2p_string2hash@Base 1.37
  e2p_string2mntopt@Base 1.37
@@ -17,8 +20,10 @@ libe2p.so.2 e2fslibs #MINVER#
  e2p_uuid2str@Base 1.37
  e2p_uuid_to_str@Base 1.37
  fgetflags@Base 1.37
+ fgetproject@Base 1.43
  fgetversion@Base 1.37
  fsetflags@Base 1.37
+ fsetproject@Base 1.43
  fsetversion@Base 1.37
  getflags@Base 1.37
  getversion@Base 1.37
@@ -43,14 +48,17 @@ libext2fs.so.2 e2fslibs #MINVER#
  et_ext2_error_table@Base 1.37
  ext2fs_add_dir_block2@Base 1.42
  ext2fs_add_dir_block@Base 1.37
+ ext2fs_add_exit_fn@Base 1.43
  ext2fs_add_journal_device@Base 1.37
  ext2fs_add_journal_inode2@Base 1.42.9-3~
  ext2fs_add_journal_inode@Base 1.37
  ext2fs_adjust_ea_refcount2@Base 1.42
+ ext2fs_adjust_ea_refcount3@Base 1.43
  ext2fs_adjust_ea_refcount@Base 1.37
  ext2fs_alloc_block2@Base 1.42
  ext2fs_alloc_block@Base 1.37
  ext2fs_alloc_generic_bmap@Base 1.42
+ ext2fs_alloc_range@Base 1.43
  ext2fs_allocate_block_bitmap@Base 1.37
  ext2fs_allocate_generic_bitmap@Base 1.37
  ext2fs_allocate_group_table@Base 1.37
@@ -89,6 +97,9 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_block_alloc_stats2@Base 1.42
  ext2fs_block_alloc_stats@Base 1.37
  ext2fs_block_alloc_stats_range@Base 1.42.9-3~
+ ext2fs_block_bitmap_checksum@Base 1.43
+ ext2fs_block_bitmap_csum_set@Base 1.43
+ ext2fs_block_bitmap_csum_verify@Base 1.43
  ext2fs_block_bitmap_loc@Base 1.42
  ext2fs_block_bitmap_loc_set@Base 1.42
  ext2fs_block_iterate2@Base 1.37
@@ -106,6 +117,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_clear_bit64@Base 1.42
  ext2fs_clear_bit@Base 1.37
  ext2fs_clear_block_bitmap@Base 1.37
+ ext2fs_clear_block_uninit@Base 1.43
  ext2fs_clear_generic_bitmap@Base 1.41.0
  ext2fs_clear_generic_bmap@Base 1.42
  ext2fs_clear_inode_bitmap@Base 1.37
@@ -117,17 +129,19 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_compare_generic_bitmap@Base 1.41.0
  ext2fs_compare_generic_bmap@Base 1.42
  ext2fs_compare_inode_bitmap@Base 1.37
+ ext2fs_const_inode@Base 1.43
  ext2fs_convert_subcluster_bitmap@Base 1.42
  ext2fs_copy_bitmap@Base 1.37
  ext2fs_copy_dblist@Base 1.37
  ext2fs_copy_generic_bitmap@Base 1.41.0
  ext2fs_copy_generic_bmap@Base 1.42
  ext2fs_crc16@Base 1.41.1
- ext2fs_crc32c_be@Base 1.42
+ ext2fs_crc32_be@Base 1.43
  ext2fs_crc32c_le@Base 1.42
  ext2fs_create_icount2@Base 1.37
  ext2fs_create_icount@Base 1.37
  ext2fs_create_icount_tdb@Base 1.40
+ ext2fs_create_inode_cache@Base 1.43
  ext2fs_create_journal_superblock@Base 1.37
  ext2fs_create_resize_inode@Base 1.37
  ext2fs_dblist_count2@Base 1.42
@@ -137,20 +151,33 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_dblist_get_last2@Base 1.42
  ext2fs_dblist_get_last@Base 1.40.8
  ext2fs_dblist_iterate2@Base 1.42
+ ext2fs_dblist_iterate3@Base 1.43
  ext2fs_dblist_iterate@Base 1.37
  ext2fs_dblist_sort2@Base 1.42
  ext2fs_dblist_sort@Base 1.37
  ext2fs_default_journal_size@Base 1.40
  ext2fs_descriptor_block_loc2@Base 1.42
  ext2fs_descriptor_block_loc@Base 1.37
+ ext2fs_dir_block_csum_set@Base 1.43
+ ext2fs_dir_block_csum_verify@Base 1.43
  ext2fs_dir_iterate2@Base 1.37
  ext2fs_dir_iterate@Base 1.37
+ ext2fs_dirent_csum_verify@Base 1.43
+ ext2fs_dirent_file_type@Base 1.43
+ ext2fs_dirent_has_tail@Base 1.43
+ ext2fs_dirent_name_len@Base 1.43
+ ext2fs_dirent_set_file_type@Base 1.43
+ ext2fs_dirent_set_name_len@Base 1.43
  ext2fs_dirhash@Base 1.37
  ext2fs_div64_ceil@Base 1.42
  ext2fs_div_ceil@Base 1.40
  ext2fs_dup_handle@Base 1.37
  ext2fs_expand_dir@Base 1.37
+ ext2fs_ext_attr_block_csum_set@Base 1.43
+ ext2fs_ext_attr_block_csum_verify@Base 1.43
  ext2fs_ext_attr_hash_entry@Base 1.41.0
+ ext2fs_extent_block_csum_set@Base 1.43
+ ext2fs_extent_block_csum_verify@Base 1.43
  ext2fs_extent_delete@Base 1.41.0
  ext2fs_extent_fix_parents@Base 1.42.7
  ext2fs_extent_free@Base 1.41.0
@@ -165,6 +192,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_extent_open@Base 1.41.0
  ext2fs_extent_replace@Base 1.41.0
  ext2fs_extent_set_bmap@Base 1.41.0
+ ext2fs_fallocate@Base 1.43
  ext2fs_fast_clear_bit64@Base 1.42
  ext2fs_fast_clear_bit@Base 1.39
  ext2fs_fast_mark_block_bitmap2@Base 1.42
@@ -214,6 +242,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_find_first_zero_generic_bitmap@Base 1.42.3
  ext2fs_find_first_zero_generic_bmap@Base 1.42.2
  ext2fs_find_first_zero_inode_bitmap2@Base 1.42.2
+ ext2fs_find_inode_goal@Base 1.43
  ext2fs_flush2@Base 1.42
  ext2fs_flush@Base 1.37
  ext2fs_flush_icache@Base 1.37
@@ -224,10 +253,12 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_free_blocks_count_add@Base 1.42
  ext2fs_free_blocks_count_set@Base 1.42
  ext2fs_free_dblist@Base 1.37
+ ext2fs_free_ext_attr@Base 1.43
  ext2fs_free_generic_bitmap@Base 1.37
  ext2fs_free_generic_bmap@Base 1.42
  ext2fs_free_icount@Base 1.37
  ext2fs_free_inode_bitmap@Base 1.37
+ ext2fs_free_inode_cache@Base 1.43
  ext2fs_free_mem@Base 1.37
  ext2fs_fstat@Base 1.42
  ext2fs_fudge_block_bitmap_end2@Base 1.42
@@ -251,6 +282,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_get_device_size2@Base 1.41.4
  ext2fs_get_device_size@Base 1.37
  ext2fs_get_dio_alignment@Base 1.42.3
+ ext2fs_get_dx_countlimit@Base 1.43
  ext2fs_get_free_blocks2@Base 1.42
  ext2fs_get_free_blocks@Base 1.37
  ext2fs_get_generic_bitmap_end@Base 1.41.0
@@ -301,12 +333,27 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_image_inode_write@Base 1.37
  ext2fs_image_super_read@Base 1.37
  ext2fs_image_super_write@Base 1.37
+ ext2fs_init_csum_seed@Base 1.43
  ext2fs_init_dblist@Base 1.37
  ext2fs_initialize@Base 1.37
+ ext2fs_initialize_dirent_tail@Base 1.43
+ ext2fs_inline_data_dir_iterate@Base 1.43
+ ext2fs_inline_data_ea_remove@Base 1.43
+ ext2fs_inline_data_expand@Base 1.43
+ ext2fs_inline_data_get@Base 1.43
+ ext2fs_inline_data_init@Base 1.43
+ ext2fs_inline_data_set@Base 1.43
+ ext2fs_inline_data_size@Base 1.43
+ ext2fs_inode@Base 1.43
  ext2fs_inode_alloc_stats2@Base 1.37
  ext2fs_inode_alloc_stats@Base 1.37
+ ext2fs_inode_bitmap_checksum@Base 1.43
+ ext2fs_inode_bitmap_csum_set@Base 1.43
+ ext2fs_inode_bitmap_csum_verify@Base 1.43
  ext2fs_inode_bitmap_loc@Base 1.42
  ext2fs_inode_bitmap_loc_set@Base 1.42
+ ext2fs_inode_csum_set@Base 1.43
+ ext2fs_inode_csum_verify@Base 1.43
  ext2fs_inode_data_blocks2@Base 1.42
  ext2fs_inode_data_blocks@Base 1.37
  ext2fs_inode_has_valid_blocks2@Base 1.42
@@ -338,14 +385,18 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_mark_inode_bitmap@Base 1.37
  ext2fs_mark_super_dirty@Base 1.37
  ext2fs_mark_valid@Base 1.37
+ ext2fs_max_extent_depth@Base 1.43
  ext2fs_mem_is_zero@Base 1.42
  ext2fs_mkdir@Base 1.37
  ext2fs_mmp_clear@Base 1.42
+ ext2fs_mmp_csum_set@Base 1.43
+ ext2fs_mmp_csum_verify@Base 1.43
  ext2fs_mmp_init@Base 1.42
  ext2fs_mmp_new_seq@Base 1.42
  ext2fs_mmp_read@Base 1.42
  ext2fs_mmp_start@Base 1.42
  ext2fs_mmp_stop@Base 1.42
+ ext2fs_mmp_update2@Base 1.43
  ext2fs_mmp_update@Base 1.42
  ext2fs_mmp_write@Base 1.42
  ext2fs_namei@Base 1.37
@@ -354,9 +405,12 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_new_block2@Base 1.42
  ext2fs_new_block@Base 1.37
  ext2fs_new_dir_block@Base 1.37
+ ext2fs_new_dir_inline_data@Base 1.43
  ext2fs_new_inode@Base 1.37
+ ext2fs_new_range@Base 1.43
  ext2fs_numeric_progress_close@Base 1.42
  ext2fs_numeric_progress_init@Base 1.42
+ ext2fs_numeric_progress_ops@Base 1.43
  ext2fs_numeric_progress_update@Base 1.42
  ext2fs_open2@Base 1.37
  ext2fs_open@Base 1.37
@@ -385,13 +439,16 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_read_block_bitmap@Base 1.37
  ext2fs_read_dir_block2@Base 1.37
  ext2fs_read_dir_block3@Base 1.42
+ ext2fs_read_dir_block4@Base 1.43
  ext2fs_read_dir_block@Base 1.37
  ext2fs_read_ext_attr2@Base 1.42
+ ext2fs_read_ext_attr3@Base 1.43
  ext2fs_read_ext_attr@Base 1.37
  ext2fs_read_ind_block@Base 1.37
  ext2fs_read_inode@Base 1.37
  ext2fs_read_inode_bitmap@Base 1.37
  ext2fs_read_inode_full@Base 1.37
+ ext2fs_remove_exit_fn@Base 1.43
  ext2fs_reserve_super_and_bgd@Base 1.37
  ext2fs_resize_block_bitmap2@Base 1.42
  ext2fs_resize_block_bitmap@Base 1.37
@@ -406,6 +463,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_set_bit@Base 1.37
  ext2fs_set_bitmap_padding@Base 1.37
  ext2fs_set_block_alloc_stats_callback@Base 1.41.0
+ ext2fs_set_block_alloc_stats_range_callback@Base 1.43
  ext2fs_set_block_bitmap_range2@Base 1.42
  ext2fs_set_block_bitmap_range@Base 1.41.0
  ext2fs_set_data_io@Base 1.37
@@ -419,10 +477,14 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_set_inode_bitmap_range2@Base 1.42
  ext2fs_set_inode_bitmap_range@Base 1.41.0
  ext2fs_set_inode_callback@Base 1.37
+ ext2fs_set_new_range_callback@Base 1.43
  ext2fs_set_rec_len@Base 1.41.7
+ ext2fs_sha512@Base 1.43
  ext2fs_stat@Base 1.42
  ext2fs_super_and_bgd_loc2@Base 1.42
  ext2fs_super_and_bgd_loc@Base 1.37
+ ext2fs_superblock_csum_set@Base 1.43
+ ext2fs_superblock_csum_verify@Base 1.43
  ext2fs_swab16@Base 1.37
  ext2fs_swab32@Base 1.37
  ext2fs_swab64@Base 1.40
@@ -446,6 +508,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_tdb_fd@Base 1.40
  ext2fs_tdb_fetch@Base 1.40
  ext2fs_tdb_firstkey@Base 1.40
+ ext2fs_tdb_flush@Base 1.43
  ext2fs_tdb_get_flags@Base 1.40
  ext2fs_tdb_get_logging_private@Base 1.40
  ext2fs_tdb_get_seqnum@Base 1.40
@@ -519,6 +582,7 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_unmark_valid@Base 1.37
  ext2fs_update_bb_inode@Base 1.37
  ext2fs_update_dynamic_rev@Base 1.37
+ ext2fs_verify_csum_type@Base 1.43
  ext2fs_warn_bitmap2@Base 1.37
  ext2fs_warn_bitmap32@Base 1.42
  ext2fs_warn_bitmap@Base 1.37
@@ -527,25 +591,40 @@ libext2fs.so.2 e2fslibs #MINVER#
  ext2fs_write_block_bitmap@Base 1.37
  ext2fs_write_dir_block2@Base 1.37
  ext2fs_write_dir_block3@Base 1.42
+ ext2fs_write_dir_block4@Base 1.43
  ext2fs_write_dir_block@Base 1.37
  ext2fs_write_ext_attr2@Base 1.42
+ ext2fs_write_ext_attr3@Base 1.43
  ext2fs_write_ext_attr@Base 1.37
  ext2fs_write_ind_block@Base 1.37
  ext2fs_write_inode@Base 1.37
  ext2fs_write_inode_bitmap@Base 1.37
  ext2fs_write_inode_full@Base 1.37
  ext2fs_write_new_inode@Base 1.37
+ ext2fs_xattr_get@Base 1.43
+ ext2fs_xattr_inode_max_size@Base 1.43
+ ext2fs_xattr_remove@Base 1.43
+ ext2fs_xattr_set@Base 1.43
+ ext2fs_xattrs_close@Base 1.43
+ ext2fs_xattrs_count@Base 1.43
+ ext2fs_xattrs_flags@Base 1.43.4~WIP.2017.01.30
+ ext2fs_xattrs_iterate@Base 1.43
+ ext2fs_xattrs_open@Base 1.43
+ ext2fs_xattrs_read@Base 1.43
+ ext2fs_xattrs_write@Base 1.43
  ext2fs_zero_blocks2@Base 1.42
  ext2fs_zero_blocks@Base 1.41.0
  initialize_ext2_error_table@Base 1.37
  initialize_ext2_error_table_r@Base 1.37
  inode_io_manager@Base 1.37
  io_channel_alloc_buf@Base 1.42.3
+ io_channel_cache_readahead@Base 1.43
  io_channel_discard@Base 1.42
  io_channel_read_blk64@Base 1.41.1
  io_channel_set_options@Base 1.37
  io_channel_write_blk64@Base 1.41.1
  io_channel_write_byte@Base 1.37
+ io_channel_zeroout@Base 1.43
  qcow2_read_header@Base 1.42
  qcow2_write_raw_image@Base 1.42
  set_undo_io_backing_manager@Base 1.41.0
@@ -560,3 +639,4 @@ libext2fs.so.2 e2fslibs #MINVER#
  test_io_manager@Base 1.37
  undo_io_manager@Base 1.41.0
  unix_io_manager@Base 1.37
+ unixfd_io_manager@Base 1.43.2

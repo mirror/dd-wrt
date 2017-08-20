@@ -13,13 +13,13 @@ INSTALL = @INSTALL@
 @DEBUGFS_CMT@DEBUGFS_DIR= debugfs
 @UUID_CMT@UUID_LIB_SUBDIR= lib/uuid
 @BLKID_CMT@BLKID_LIB_SUBDIR= lib/blkid
-QUOTA_LIB_SUBDIR= lib/quota
+SUPPORT_LIB_SUBDIR= lib/support
 
-LIB_SUBDIRS=lib/et lib/ss lib/e2p $(UUID_LIB_SUBDIR) $(BLKID_LIB_SUBDIR) $(QUOTA_LIB_SUBDIR) lib/ext2fs intl
+LIB_SUBDIRS=lib/et lib/ss lib/e2p $(UUID_LIB_SUBDIR) $(BLKID_LIB_SUBDIR) $(SUPPORT_LIB_SUBDIR) lib/ext2fs intl
 PROG_SUBDIRS=e2fsck $(DEBUGFS_DIR) misc $(RESIZE_DIR) tests/progs po
 SUBDIRS=util $(LIB_SUBDIRS) $(PROG_SUBDIRS) tests
 
-SUBS= util/subst.conf lib/config.h lib/dirpaths.h \
+SUBS= util/subst.conf lib/config.h $(top_builddir)/lib/dirpaths.h \
 	lib/ext2fs/ext2_types.h lib/blkid/blkid_types.h lib/uuid/uuid_types.h
 
 TAR=tar
@@ -34,6 +34,7 @@ subs: $(DEP_SUBSTITUTE)
 		then $(MAKE) $$i || exit $$? ; fi ; done
 	@(if test -d lib/et ; then cd lib/et && $(MAKE) compile_et; fi)
 	@(if test -d lib/ext2fs ; then cd lib/ext2fs && $(MAKE) ext2_err.h; fi)
+	@(if test -d lib/support ; then cd lib/support && $(MAKE) prof_err.h; fi)
 
 progs: all-progs-recursive
 libs: all-libs-recursive
@@ -115,7 +116,8 @@ clean:: clean-recursive clean-local clean-doc
 	$(RM) -f $(SUBS) 
 
 distclean: distclean-doc distclean-recursive
-	$(RM) -rf autom4te.cache e2fsprogs.spec ext2ed/Makefile po/stamp-po
+	$(RM) -rf autom4te.cache e2fsprogs.spec ext2ed/Makefile po/stamp-po \
+		asm_types.h config.log public_config.h parse-types.log
 	$(MAKE) distclean-local 
 
 realclean: realclean-recursive realclean-local

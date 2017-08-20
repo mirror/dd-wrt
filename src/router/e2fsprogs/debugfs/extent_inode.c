@@ -97,6 +97,11 @@ void do_extent_open(int argc, char *argv[])
 
 	orig_prompt = ss_get_prompt(sci_idx);
 	extent_prompt = malloc(strlen(orig_prompt) + 32);
+	if (extent_prompt == NULL) {
+		com_err(argv[1], retval, "out of memory");
+		return;
+	}
+
 	strcpy(extent_prompt, orig_prompt);
 	cp = strchr(extent_prompt, ':');
 	if (cp)

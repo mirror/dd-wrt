@@ -113,8 +113,9 @@ int main(int argc, char **argv)
 	check_field(s_mmp_block, 8);
 	check_field(s_raid_stripe_width, 4);
 	check_field(s_log_groups_per_flex, 1);
-	check_field(s_reserved_char_pad, 1);
-	check_field(s_reserved_pad, 2);
+	check_field(s_checksum_type, 1);
+	check_field(s_encryption_level, 1);
+	check_field(s_reserved_pad, 1);
 	check_field(s_kbytes_written, 8);
 	check_field(s_snapshot_inum, 4);
 	check_field(s_snapshot_id, 4);
@@ -136,7 +137,12 @@ int main(int argc, char **argv)
 	check_field(s_grp_quota_inum, 4);
 	check_field(s_overhead_blocks, 4);
 	check_field(s_backup_bgs, 8);
-	check_field(s_reserved, 106 * 4);
+	check_field(s_encrypt_algos, 4);
+	check_field(s_encrypt_pw_salt, 16);
+	check_field(s_lpf_ino, 4);
+	check_field(s_prj_quota_inum, 4);
+	check_field(s_checksum_seed, 4);
+	check_field(s_reserved, 98 * 4);
 	check_field(s_checksum, 4);
 	do_field("Superblock end", 0, 0, cur_offset, 1024);
 #endif
