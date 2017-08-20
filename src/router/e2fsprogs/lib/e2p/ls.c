@@ -23,6 +23,7 @@
 #include <time.h>
 
 #include "e2p.h"
+#include "support/quotaio.h"
 
 static void print_user (unsigned short uid, FILE *f)
 {
@@ -170,21 +171,21 @@ static void print_super_flags(struct ext2_super_block * s, FILE *f)
 static __u64 e2p_blocks_count(struct ext2_super_block *super)
 {
 	return super->s_blocks_count |
-		(super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT ?
+		(ext2fs_has_feature_64bit(super) ?
 		(__u64) super->s_blocks_count_hi << 32 : 0);
 }
 
 static __u64 e2p_r_blocks_count(struct ext2_super_block *super)
 {
 	return super->s_r_blocks_count |
-		(super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT ?
+		(ext2fs_has_feature_64bit(super) ?
 		(__u64) super->s_r_blocks_count_hi << 32 : 0);
 }
 
 static __u64 e2p_free_blocks_count(struct ext2_super_block *super)
 {
 	return super->s_free_blocks_count |
-		(super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT ?
+		(ext2fs_has_feature_64bit(super) ?
 		(__u64) super->s_free_blocks_hi << 32 : 0);
 }
 
@@ -196,11 +197,36 @@ static __u64 e2p_free_blocks_count(struct ext2_super_block *super)
 #define EXT2_GOOD_OLD_REV 0
 #endif
 
+static const char *checksum_type(__u8 type)
+{
+	switch (type) {
+	case EXT2_CRC32C_CHKSUM:
+		return "crc32c";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *quota_prefix[MAXQUOTAS] = {
+	[USRQUOTA] = "User quota inode:",
+	[GRPQUOTA] = "Group quota inode:",
+	[PRJQUOTA] = "Project quota inode:",
+};
+
+/**
+ * Convert type of quota to written representation
+ */
+static const char *quota_type2prefix(enum quota_type qtype)
+{
+	return quota_prefix[qtype];
+}
+
 void list_super2(struct ext2_super_block * sb, FILE *f)
 {
 	int inode_blocks_per_group;
 	char buf[80], *str;
 	time_t	tm;
+	enum quota_type qtype;
 
 	inode_blocks_per_group = (((sb->s_inodes_per_group *
 				    EXT2_INODE_SIZE(sb)) +
@@ -253,19 +279,19 @@ void list_super2(struct ext2_super_block * sb, FILE *f)
 	fprintf(f, "Free inodes:              %u\n", sb->s_free_inodes_count);
 	fprintf(f, "First block:              %u\n", sb->s_first_data_block);
 	fprintf(f, "Block size:               %u\n", EXT2_BLOCK_SIZE(sb));
-	if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_BIGALLOC)
+	if (ext2fs_has_feature_bigalloc(sb))
 		fprintf(f, "Cluster size:             %u\n",
 			EXT2_CLUSTER_SIZE(sb));
 	else
 		fprintf(f, "Fragment size:            %u\n",
 			EXT2_CLUSTER_SIZE(sb));
-	if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT)
+	if (ext2fs_has_feature_64bit(sb))
 		fprintf(f, "Group descriptor size:    %u\n", sb->s_desc_size);
 	if (sb->s_reserved_gdt_blocks)
 		fprintf(f, "Reserved GDT blocks:      %u\n",
 			sb->s_reserved_gdt_blocks);
 	fprintf(f, "Blocks per group:         %u\n", sb->s_blocks_per_group);
-	if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_BIGALLOC)
+	if (ext2fs_has_feature_bigalloc(sb))
 		fprintf(f, "Clusters per group:       %u\n",
 			sb->s_clusters_per_group);
 	else
@@ -351,7 +377,7 @@ void list_super2(struct ext2_super_block * sb, FILE *f)
 	if (sb->s_last_orphan)
 		fprintf(f, "First orphan inode:       %u\n",
 			sb->s_last_orphan);
-	if ((sb->s_feature_compat & EXT2_FEATURE_COMPAT_DIR_INDEX) ||
+	if (ext2fs_has_feature_dir_index(sb) ||
 	    sb->s_def_hash_version)
 		fprintf(f, "Default directory hash:   %s\n",
 			e2p_hash2string(sb->s_def_hash_version));
@@ -418,22 +444,32 @@ void list_super2(struct ext2_super_block * sb, FILE *f)
 		fprintf(f, "Last error block #:       %llu\n",
 			sb->s_last_error_block);
 	}
-	if (sb->s_feature_incompat & EXT4_FEATURE_INCOMPAT_MMP) {
+	if (ext2fs_has_feature_mmp(sb)) {
 		fprintf(f, "MMP block number:         %llu\n",
 			(long long)sb->s_mmp_block);
 		fprintf(f, "MMP update interval:      %u\n",
 			sb->s_mmp_update_interval);
 	}
-	if (sb->s_usr_quota_inum)
-		fprintf(f, "User quota inode:         %u\n",
-			sb->s_usr_quota_inum);
-	if (sb->s_grp_quota_inum)
-		fprintf(f, "Group quota inode:        %u\n",
-			sb->s_grp_quota_inum);
+	for (qtype = 0; qtype < MAXQUOTAS; qtype++) {
+		if (*quota_sb_inump(sb, qtype) != 0)
+			fprintf(f, "%-26s%u\n",
+				quota_type2prefix(qtype),
+				*quota_sb_inump(sb, qtype));
+	}
 
-	if (sb->s_feature_ro_compat & EXT4_FEATURE_RO_COMPAT_METADATA_CSUM)
+	if (ext2fs_has_feature_metadata_csum(sb)) {
+		fprintf(f, "Checksum type:            %s\n",
+			checksum_type(sb->s_checksum_type));
 		fprintf(f, "Checksum:                 0x%08x\n",
 			sb->s_checksum);
+	}
+	if (!e2p_is_null_uuid(sb->s_encrypt_pw_salt))
+		fprintf(f, "Encryption PW Salt:       %s\n",
+			e2p_uuid2str(sb->s_encrypt_pw_salt));
+
+	if (ext2fs_has_feature_csum_seed(sb))
+		fprintf(f, "Checksum seed:            0x%08x\n",
+			sb->s_checksum_seed);
 }
 
 void list_super (struct ext2_super_block * s)

@@ -32,6 +32,8 @@ int fgetflags (const char * name, unsigned long * flags);
 int fgetversion (const char * name, unsigned long * version);
 int fsetflags (const char * name, unsigned long flags);
 int fsetversion (const char * name, unsigned long version);
+int fgetproject(const char *name, unsigned long *project);
+int fsetproject(const char *name, unsigned long project);
 int getflags (int fd, unsigned long * flags);
 int getversion (int fd, unsigned long * version);
 int iterate_on_dir (const char * dir_name,
@@ -44,6 +46,9 @@ void print_flags (FILE * f, unsigned long flags, unsigned options);
 void print_fs_state (FILE * f, unsigned short state);
 int setflags (int fd, unsigned long flags);
 int setversion (int fd, unsigned long version);
+
+void e2p_list_journal_super(FILE *f, char *journal_sb_buf,
+			    int exp_block_size, int flags);
 
 const char *e2p_feature2string(int compat, unsigned int mask);
 const char *e2p_jrnl_feature2string(int compat, unsigned int mask);

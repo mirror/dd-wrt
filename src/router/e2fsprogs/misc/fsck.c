@@ -59,7 +59,7 @@
 #endif
 
 #include "../version.h"
-#include "nls-enable.h"
+#include "support/nls-enable.h"
 #include "fsck.h"
 #include "blkid/blkid.h"
 
@@ -1174,8 +1174,8 @@ static void PRS(int argc, char *argv[])
 						progress_fd = 0;
 					else
 						goto next_arg;
-				} else if ((i+1) < argc &&
-					   !strncmp(argv[i+1], "-", 1) == 0) {
+				} else if (argc > i + 1 &&
+					   argv[i + 1][0] != '-') {
 					progress_fd = string_to_int(argv[i]);
 					if (progress_fd < 0)
 						progress_fd = 0;

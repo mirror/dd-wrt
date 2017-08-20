@@ -25,6 +25,7 @@ debian
 lib/e2p
 lib/evms
 lib/ext2fs
+lib/support
 ABOUT-NLS
 README
 INSTALL

@@ -42,11 +42,12 @@ BSDLIB_INSTALL_DIR = $(root_libdir)
 #
 .c.o:
 	$(E) "	CC $<"
-	$(Q) $(CC) $(ALL_CFLAGS) -c $< -o $@
+	$(Q) $(CC) $(ALL_CFLAGS_STLIB) -c $< -o $@
 	$(Q) $(CHECK_CMD) $(ALL_CFLAGS) $<
-@PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -g -pg -o profiled/$*.o -c $<
-@ELF_CMT@	$(Q) $(CC) $(ALL_CFLAGS) -fPIC -o elfshared/$*.o -c $<
-@BSDLIB_CMT@	$(Q) $(CC) $(ALL_CFLAGS) $(BSDLIB_PIC_FLAG) -o pic/$*.o -c $<
+	$(Q) $(CPPCHECK_CMD) $(CPPFLAGS) $<
+@PROFILE_CMT@	$(Q) $(CC) $(ALL_CFLAGS_STLIB) -g -pg -o profiled/$*.o -c $<
+@ELF_CMT@	$(Q) $(CC) $(ALL_CFLAGS_SHLIB) -fPIC -shared -o elfshared/$*.o -c $<
+@BSDLIB_CMT@	$(Q) $(CC) $(ALL_CFLAGS_SHLIB) $(BSDLIB_PIC_FLAG) -o pic/$*.o -c $<
 
 @MAKEFILE_LIBRARY@
 @MAKEFILE_ELF@
@@ -139,7 +140,7 @@ uninstall::
 check:: compile_et
 	for i in $(srcdir)/test_cases/*.et ; do \
 		t=`basename $$i | sed -e 's/.et//'`; \
-		./compile_et --build-tree $$i ; \
+		_ET_DIR_OVERRIDE=$(srcdir) ./compile_et $$i ; \
 		diff -c $(srcdir)/test_cases/$$t.c $$t.c > $$t.failed; \
 		if [ $$? -ne 0 ]; then echo Test case $$t failed; exit 1 ; fi ; \
 		diff -c $(srcdir)/test_cases/$$t.h $$t.h >> $$t.failed; \

@@ -48,6 +48,9 @@
  * 			the containing directory.
  * 	%r	<blkcount>		interpret blkcount as refcount
  * 	%s	<str>			miscellaneous string
+ *	%t	time (in <num>)
+ *	%T	current time
+ *	%U	quota type (in <num>)
  * 	%S	backup superblock
  * 	%X	<num> hexadecimal format
  *
@@ -92,9 +95,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <termios.h>
+#include "support/quotaio.h"
 
 #include "e2fsck.h"
-
 #include "problem.h"
 
 #ifdef __GNUC__
@@ -296,8 +299,7 @@ static _INLINE_ void expand_inode_expression(FILE *f, ext2_filsys fs, char ch,
 		fprintf(f, "%u", large_inode->i_extra_isize);
 		break;
 	case 'b':
-		if (fs->super->s_feature_ro_compat &
-		    EXT4_FEATURE_RO_COMPAT_HUGE_FILE) 
+		if (ext2fs_has_feature_huge_file(fs->super))
 			fprintf(f, "%llu", inode->i_blocks +
 				(((long long) inode->osd2.linux2.l_i_blocks_hi)
 				 << 32));
@@ -374,7 +376,7 @@ static _INLINE_ void expand_dirent_expression(FILE *f, ext2_filsys fs, char ch,
 		fprintf(f, "%u", dirent->inode);
 		break;
 	case 'n':
-		len = dirent->name_len & 0xFF;
+		len = ext2fs_dirent_name_len(dirent);
 		if ((ext2fs_get_rec_len(fs, dirent, &rec_len) == 0) &&
 		    (len > rec_len))
 			len = rec_len;
@@ -385,10 +387,10 @@ static _INLINE_ void expand_dirent_expression(FILE *f, ext2_filsys fs, char ch,
 		fprintf(f, "%u", rec_len);
 		break;
 	case 'l':
-		fprintf(f, "%u", dirent->name_len & 0xFF);
+		fprintf(f, "%u", ext2fs_dirent_name_len(dirent));
 		break;
 	case 't':
-		fprintf(f, "%u", dirent->name_len >> 8);
+		fprintf(f, "%u", ext2fs_dirent_file_type(dirent));
 		break;
 	default:
 	no_dirent:
@@ -500,6 +502,27 @@ static _INLINE_ void expand_percent_expression(FILE *f, ext2_filsys fs,
 		break;
 	case 'T':
 		print_time(f, e2fsck_ctx ? e2fsck_ctx->now : time(0));
+		break;
+	case 'U':
+		switch (ctx->num) {
+		case USRQUOTA:
+			m = _("user");
+			break;
+		case GRPQUOTA:
+			m = _("group");
+			break;
+		case PRJQUOTA:
+			m = _("group");
+			break;
+		default:
+			m = _("unknown quota type");
+			break;
+		}
+		if (*first && islower(m[0]))
+			fputc(toupper(*m++), f);
+		fputs(m, f);
+		if (ctx->num > PRJQUOTA)
+			fprintf(f, " %d", (int) ctx->num);
 		break;
 	case 'x':
 		fprintf(f, "0x%0*x", width, ctx->csum1);

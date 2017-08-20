@@ -12,6 +12,10 @@ chattr \- change file attributes on a Linux file system
 .I version
 ]
 [
+.B \-p
+.I project
+]
+[
 .I mode
 ]
 .I files...
@@ -35,6 +39,7 @@ synchronous directory updates (D),
 extent format (e),
 immutable (i),
 data journalling (j),
+project hierarchy (P),
 secure deletion (s),
 synchronous updates (S),
 no tail-merging (t),
@@ -71,6 +76,9 @@ Suppress most error messages.
 .TP
 .BI \-v " version"
 Set the file's version/generation number.
+.TP
+.BI \-p " project"
+Set the file's project number.
 .SH ATTRIBUTES
 A file with the 'a' attribute set can only be open in append mode for writing.
 Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE
@@ -93,7 +101,7 @@ set on new or empty files.  If it is set on a file which already has
 data blocks, it is undefined when the blocks assigned to the file will
 be fully stable.  If the 'C' flag is set on a directory, it will have no
 effect on the directory, but new files created in that directory will
-the No_COW attribute.)
+have the No_COW attribute set.)
 .PP
 A file with the 'd' attribute set is not candidate for backup when the
 .BR dump (8)
@@ -107,8 +115,8 @@ The 'e' attribute indicates that the file is using extents for mapping
 the blocks on disk.  It may not be removed using
 .BR chattr (1).
 .PP
-The 'E' attribute is used by the experimental compression patches to
-indicate that a compressed file has a compression error.  It may not be
+The 'E' attribute is used by the experimental encryption patches to
+indicate that the file has been encrypted.  It may not be
 set or reset using
 .BR chattr (1),
 although it can be displayed by
@@ -145,6 +153,14 @@ stored inline, within the inode itself. It may not be set or reset using
 .BR chattr (1),
 although it can be displayed by
 .BR lsattr (1).
+.PP
+A directory with the 'P' attribute set will enforce a hierarchical
+structure for project id's.  This means that files and directory created
+in the directory will inhert the project id of the directory, rename
+operations are constrained so when a file or directory is moved into
+another directory, that the project id's much match.  In addition, a
+hard link to file can only be created when the project id for the file
+and the destination directory match.
 .PP
 When a file with the 's' attribute set is deleted, its blocks are zeroed
 and written back to the disk.  Note: please make sure to read the bugs

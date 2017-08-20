@@ -10,8 +10,12 @@
  * %End-Header%
  */
 
+#ifndef _LARGEFILE_SOURCE
 #define _LARGEFILE_SOURCE
+#endif
+#ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 
 #include "config.h"
 #include <fcntl.h>
@@ -45,8 +49,9 @@ extern int optind;
 #include "ext2fs/e2image.h"
 #include "ext2fs/qcow2.h"
 
+#include "support/nls-enable.h"
+#include "support/plausible.h"
 #include "../version.h"
-#include "nls-enable.h"
 
 #define QCOW_OFLAG_COPIED     (1LL << 63)
 #define NO_BLK ((blk64_t) -1)
@@ -419,9 +424,7 @@ static void mark_table_blocks(ext2_filsys fs)
 		    ext2fs_inode_table_loc(fs, i)) {
 			unsigned int end = (unsigned) fs->inode_blocks_per_group;
 			/* skip unused blocks */
-			if (!output_is_blk &&
-			    EXT2_HAS_RO_COMPAT_FEATURE(fs->super,
-						       EXT4_FEATURE_RO_COMPAT_GDT_CSUM))
+			if (!output_is_blk && ext2fs_has_group_desc_csum(fs))
 				end -= (ext2fs_bg_itable_unused(fs, i) /
 					EXT2_INODES_PER_BLOCK(fs->super));
 			for (j = 0, b = ext2fs_inode_table_loc(fs, i);
@@ -1282,7 +1285,7 @@ static void write_raw_image_file(ext2_filsys fs, int fd, int type, int flags)
 
 	mark_table_blocks(fs);
 	if (show_progress)
-		printf("%s", _("Scanning inodes...\n"));
+		fprintf(stderr, "%s", _("Scanning inodes...\n"));
 
 	retval = ext2fs_open_inode_scan(fs, 0, &scan);
 	if (retval) {
@@ -1371,7 +1374,8 @@ static void install_image(char *device, char *image_fn, int type)
 {
 	errcode_t retval;
 	ext2_filsys fs;
-	int open_flag = EXT2_FLAG_IMAGE_FILE | EXT2_FLAG_64BITS;
+	int open_flag = EXT2_FLAG_IMAGE_FILE | EXT2_FLAG_64BITS |
+			EXT2_FLAG_IGNORE_CSUM_ERRORS;
 	int fd = 0;
 	io_manager	io_ptr;
 	io_channel	io;
@@ -1448,7 +1452,7 @@ int main (int argc, char ** argv)
 	ext2_filsys fs;
 	char *image_fn, offset_opt[64];
 	struct ext2_qcow2_hdr *header = NULL;
-	int open_flag = EXT2_FLAG_64BITS;
+	int open_flag = EXT2_FLAG_64BITS | EXT2_FLAG_IGNORE_CSUM_ERRORS;
 	int img_type = 0;
 	int flags = 0;
 	int mount_flags = 0;
@@ -1580,6 +1584,8 @@ int main (int argc, char ** argv)
 		com_err (program_name, retval, _("while trying to open %s"),
 			 device_name);
 		fputs(_("Couldn't find valid filesystem superblock.\n"), stdout);
+		if (retval == EXT2_ET_BAD_MAGIC)
+			check_plausibility(device_name, CHECK_FS_EXIST, NULL);
 		exit(1);
 	}
 

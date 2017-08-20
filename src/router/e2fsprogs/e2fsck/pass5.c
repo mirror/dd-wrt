@@ -27,6 +27,8 @@ static void check_block_bitmaps(e2fsck_t ctx);
 static void check_inode_bitmaps(e2fsck_t ctx);
 static void check_inode_end(e2fsck_t ctx);
 static void check_block_end(e2fsck_t ctx);
+static void check_inode_bitmap_checksum(e2fsck_t ctx);
+static void check_block_bitmap_checksum(e2fsck_t ctx);
 
 void e2fsck_pass5(e2fsck_t ctx)
 {
@@ -64,14 +66,129 @@ void e2fsck_pass5(e2fsck_t ctx)
 	if (ctx->flags & E2F_FLAG_SIGNAL_MASK)
 		return;
 
+	check_inode_bitmap_checksum(ctx);
+	check_block_bitmap_checksum(ctx);
+
 	ext2fs_free_inode_bitmap(ctx->inode_used_map);
 	ctx->inode_used_map = 0;
 	ext2fs_free_inode_bitmap(ctx->inode_dir_map);
 	ctx->inode_dir_map = 0;
 	ext2fs_free_block_bitmap(ctx->block_found_map);
 	ctx->block_found_map = 0;
+	ext2fs_free_block_bitmap(ctx->block_metadata_map);
+	ctx->block_metadata_map = 0;
 
 	print_resource_track(ctx, _("Pass 5"), &rtrack, ctx->fs->io);
+}
+
+static void check_inode_bitmap_checksum(e2fsck_t ctx)
+{
+	struct problem_context	pctx;
+	char		*buf = NULL;
+	dgrp_t		i;
+	int		nbytes;
+	ext2_ino_t	ino_itr;
+	errcode_t	retval;
+
+	if (!ext2fs_has_feature_metadata_csum(ctx->fs->super))
+		return;
+
+	/* If bitmap is dirty from being fixed, checksum will be corrected */
+	if (ext2fs_test_ib_dirty(ctx->fs))
+		return;
+
+	nbytes = (size_t)(EXT2_INODES_PER_GROUP(ctx->fs->super) / 8);
+	retval = ext2fs_get_mem(ctx->fs->blocksize, &buf);
+	if (retval) {
+		com_err(ctx->program_name, 0, "%s",
+		    _("check_inode_bitmap_checksum: Memory allocation error"));
+		fatal_error(ctx, 0);
+	}
+
+	clear_problem_context(&pctx);
+	for (i = 0; i < ctx->fs->group_desc_count; i++) {
+		if (ext2fs_bg_flags_test(ctx->fs, i, EXT2_BG_INODE_UNINIT))
+			continue;
+
+		ino_itr = 1 + (i * (nbytes << 3));
+		retval = ext2fs_get_inode_bitmap_range2(ctx->fs->inode_map,
+							ino_itr, nbytes << 3,
+							buf);
+		if (retval)
+			break;
+
+		if (ext2fs_inode_bitmap_csum_verify(ctx->fs, i, buf, nbytes))
+			continue;
+		pctx.group = i;
+		if (!fix_problem(ctx, PR_5_INODE_BITMAP_CSUM_INVALID, &pctx))
+			continue;
+
+		/*
+		 * Fixing one checksum will rewrite all of them.  The bitmap
+		 * will be checked against the one we made during pass1 for
+		 * discrepancies, and fixed if need be.
+		 */
+		ext2fs_mark_ib_dirty(ctx->fs);
+		break;
+	}
+
+	ext2fs_free_mem(&buf);
+}
+
+static void check_block_bitmap_checksum(e2fsck_t ctx)
+{
+	struct problem_context	pctx;
+	char		*buf = NULL;
+	dgrp_t		i;
+	int		nbytes;
+	blk64_t		blk_itr;
+	errcode_t	retval;
+
+	if (!ext2fs_has_feature_metadata_csum(ctx->fs->super))
+		return;
+
+	/* If bitmap is dirty from being fixed, checksum will be corrected */
+	if (ext2fs_test_bb_dirty(ctx->fs))
+		return;
+
+	nbytes = (size_t)(EXT2_CLUSTERS_PER_GROUP(ctx->fs->super) / 8);
+	retval = ext2fs_get_mem(ctx->fs->blocksize, &buf);
+	if (retval) {
+		com_err(ctx->program_name, 0, "%s",
+		    _("check_block_bitmap_checksum: Memory allocation error"));
+		fatal_error(ctx, 0);
+	}
+
+	clear_problem_context(&pctx);
+	for (i = 0; i < ctx->fs->group_desc_count; i++) {
+		if (ext2fs_bg_flags_test(ctx->fs, i, EXT2_BG_BLOCK_UNINIT))
+			continue;
+
+		blk_itr = EXT2FS_B2C(ctx->fs,
+				     ctx->fs->super->s_first_data_block) +
+			  ((blk64_t) i * (nbytes << 3));
+		retval = ext2fs_get_block_bitmap_range2(ctx->fs->block_map,
+							blk_itr, nbytes << 3,
+							buf);
+		if (retval)
+			break;
+
+		if (ext2fs_block_bitmap_csum_verify(ctx->fs, i, buf, nbytes))
+			continue;
+		pctx.group = i;
+		if (!fix_problem(ctx, PR_5_BLOCK_BITMAP_CSUM_INVALID, &pctx))
+			continue;
+
+		/*
+		 * Fixing one checksum will rewrite all of them.  The bitmap
+		 * will be checked against the one we made during pass1 for
+		 * discrepancies, and fixed if need be.
+		 */
+		ext2fs_mark_bb_dirty(ctx->fs);
+		break;
+	}
+
+	ext2fs_free_mem(&buf);
 }
 
 static void e2fsck_discard_blocks(e2fsck_t ctx, blk64_t start,
@@ -206,11 +323,7 @@ static void check_block_bitmaps(e2fsck_t ctx)
 	problem_t	problem, save_problem;
 	int		fixit, had_problem;
 	errcode_t	retval;
-	int	old_desc_blocks = 0;
-	int	count = 0;
-	int	cmp_block = 0;
 	int	redo_flag = 0;
-	blk64_t	super_blk, old_desc_blk, new_desc_blk;
 	char *actual_buf, *bitmap_buf;
 
 	actual_buf = (char *) e2fsck_allocate_memory(ctx, fs->blocksize,
@@ -277,7 +390,7 @@ redo_counts:
 		 * to do a discard operation.
 		 */
 		if (!first_block_in_bg ||
-		    (group == (int)fs->group_desc_count - 1) ||
+		    (group == fs->group_desc_count - 1) ||
 		    (ctx->options & E2F_OPT_DISCARD))
 			goto no_optimize;
 
@@ -502,8 +615,7 @@ static void check_inode_bitmaps(e2fsck_t ctx)
 		goto errout;
 	}
 
-	csum_flag = EXT2_HAS_RO_COMPAT_FEATURE(fs->super,
-					       EXT4_FEATURE_RO_COMPAT_GDT_CSUM);
+	csum_flag = ext2fs_has_group_desc_csum(fs);
 redo_counts:
 	had_problem = 0;
 	save_problem = 0;

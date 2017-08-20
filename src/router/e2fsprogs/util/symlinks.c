@@ -1,6 +1,10 @@
 #define _FILE_OFFSET_BITS 64
+#ifndef _LARGEFILE_SOURCE
 #define _LARGEFILE_SOURCE
+#endif
+#ifndef _LARGEFILE64_SOURCE
 #define _LARGEFILE64_SOURCE
+#endif
 
 #include <unistd.h>
 #ifndef _POSIX_SOURCE
@@ -166,7 +170,7 @@ static void fix_symlink (char *path, dev_t my_dev)
 	struct stat stbuf, lstbuf;
 	int c, fix_abs = 0, fix_messy = 0, fix_long = 0;
 
-	if ((c = readlink(path, lpath, sizeof(lpath))) == -1) {
+	if ((c = readlink(path, lpath, sizeof(lpath) - 1)) == -1) {
 		perror(path);
 		return;
 	}

@@ -26,23 +26,21 @@
  * rest of the pass 4 tests.
  */
 static int disconnect_inode(e2fsck_t ctx, ext2_ino_t i,
-			    struct ext2_inode *inode)
+			    struct ext2_inode_large *inode)
 {
 	ext2_filsys fs = ctx->fs;
 	struct problem_context	pctx;
 	__u32 eamagic = 0;
 	int extra_size = 0;
 
-	if (EXT2_INODE_SIZE(fs->super) > EXT2_GOOD_OLD_INODE_SIZE) {
-		e2fsck_read_inode_full(ctx, i, inode,EXT2_INODE_SIZE(fs->super),
-				       "pass4: disconnect_inode");
-		extra_size = ((struct ext2_inode_large *)inode)->i_extra_isize;
-	} else {
-		e2fsck_read_inode(ctx, i, inode, "pass4: disconnect_inode");
-	}
+	e2fsck_read_inode_full(ctx, i, EXT2_INODE(inode),
+			       EXT2_INODE_SIZE(fs->super),
+			       "pass4: disconnect_inode");
+	if (EXT2_INODE_SIZE(fs->super) > EXT2_GOOD_OLD_INODE_SIZE)
+		extra_size = inode->i_extra_isize;
 	clear_problem_context(&pctx);
 	pctx.ino = i;
-	pctx.inode = inode;
+	pctx.inode = EXT2_INODE(inode);
 
 	if (EXT2_INODE_SIZE(fs->super) -EXT2_GOOD_OLD_INODE_SIZE -extra_size >0)
 		eamagic = *(__u32 *)(((char *)inode) +EXT2_GOOD_OLD_INODE_SIZE +
@@ -56,7 +54,7 @@ static int disconnect_inode(e2fsck_t ctx, ext2_ino_t i,
 	if (!inode->i_blocks && eamagic != EXT2_EXT_ATTR_MAGIC &&
 	    (LINUX_S_ISREG(inode->i_mode) || LINUX_S_ISDIR(inode->i_mode))) {
 		if (fix_problem(ctx, PR_4_ZERO_LEN_INODE, &pctx)) {
-			e2fsck_clear_inode(ctx, i, inode, 0,
+			e2fsck_clear_inode(ctx, i, EXT2_INODE(inode), 0,
 					   "disconnect_inode");
 			/*
 			 * Fix up the bitmaps...
@@ -92,7 +90,8 @@ void e2fsck_pass4(e2fsck_t ctx)
 {
 	ext2_filsys fs = ctx->fs;
 	ext2_ino_t	i;
-	struct ext2_inode	*inode;
+	struct ext2_inode_large	*inode;
+	int inode_size = EXT2_INODE_SIZE(fs->super);
 #ifdef RESOURCE_TRACK
 	struct resource_track	rtrack;
 #endif
@@ -106,6 +105,15 @@ void e2fsck_pass4(e2fsck_t ctx)
 #ifdef MTRACE
 	mtrace_print("Pass 4");
 #endif
+	/*
+	 * Since pass4 is mostly CPU bound, start readahead of bitmaps
+	 * ahead of pass 5 if we haven't already loaded them.
+	 */
+	if (ctx->readahead_kb &&
+	    (fs->block_map == NULL || fs->inode_map == NULL))
+		e2fsck_readahead(fs, E2FSCK_READA_BBITMAP |
+				     E2FSCK_READA_IBITMAP,
+				 0, fs->group_desc_count);
 
 	clear_problem_context(&pctx);
 
@@ -118,8 +126,7 @@ void e2fsck_pass4(e2fsck_t ctx)
 		if ((ctx->progress)(ctx, 4, 0, maxgroup))
 			return;
 
-	inode = e2fsck_allocate_memory(ctx, EXT2_INODE_SIZE(fs->super),
-				       "scratch inode");
+	inode = e2fsck_allocate_memory(ctx, inode_size, "scratch inode");
 
 	/* Protect loop from wrap-around if s_inodes_count maxed */
 	for (i=1; i <= fs->super->s_inodes_count && i > 0; i++) {
@@ -133,7 +140,8 @@ void e2fsck_pass4(e2fsck_t ctx)
 				if ((ctx->progress)(ctx, 4, group, maxgroup))
 					goto errout;
 		}
-		if (i == EXT2_BAD_INO ||
+		if (i == quota_type2inum(PRJQUOTA, ctx->fs->super) ||
+		    i == EXT2_BAD_INO ||
 		    (i > EXT2_ROOT_INO && i < EXT2_FIRST_INODE(fs->super)))
 			continue;
 		if (!(ext2fs_test_inode_bitmap2(ctx->inode_used_map, i)) ||
@@ -161,9 +169,10 @@ void e2fsck_pass4(e2fsck_t ctx)
 		if (isdir && (link_counted > EXT2_LINK_MAX))
 			link_counted = 1;
 		if (link_counted != link_count) {
-			e2fsck_read_inode(ctx, i, inode, "pass4");
+			e2fsck_read_inode_full(ctx, i, EXT2_INODE(inode),
+					       inode_size, "pass4");
 			pctx.ino = i;
-			pctx.inode = inode;
+			pctx.inode = EXT2_INODE(inode);
 			if ((link_count != inode->i_links_count) && !isdir &&
 			    (inode->i_links_count <= EXT2_LINK_MAX)) {
 				pctx.num = link_count;
@@ -178,7 +187,9 @@ void e2fsck_pass4(e2fsck_t ctx)
 			     link_count == 1 && !(ctx->options & E2F_OPT_NO)) ||
 			    fix_problem(ctx, PR_4_BAD_REF_COUNT, &pctx)) {
 				inode->i_links_count = link_counted;
-				e2fsck_write_inode(ctx, i, inode, "pass4");
+				e2fsck_write_inode_full(ctx, i,
+							EXT2_INODE(inode),
+							inode_size, "pass4");
 			}
 		}
 	}
