@@ -63,6 +63,22 @@ int getcpurev(void)
 		b = getc(fp);
 		if (b == ':')
 			cnt++;
+		if (cnt == 1) {
+			getc(fp);
+			char cpumodel[32];
+			int i = 0;
+
+			for (i = 0; i < 32; i++) {
+				cpumodel[i] = getc(fp);
+				if (cpumodel[i] == '\n')
+					break;
+			}
+			cpumodel[i] = 0;
+			if (strstr(cpumodel, "BCM5357")) {
+				fclose(fp);
+				return 51;
+			}
+		}
 		if (cnt == 3) {
 			getc(fp);
 			char cpurev[32];
