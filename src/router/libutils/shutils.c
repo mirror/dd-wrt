@@ -124,7 +124,7 @@ static void flog(const char *fmt, ...)
 int system2(char *command)
 {
 
-#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900) 	//we must disable this on x86 since nvram is not available at startup
+#if (!defined(HAVE_X86) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)	//we must disable this on x86 since nvram is not available at startup
 
 	if (nvram_matchi("console_debug", 1)) {
 		fprintf(stderr, "system: %s\n", command);
