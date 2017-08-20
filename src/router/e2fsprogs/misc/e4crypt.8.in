@@ -1,0 +1,45 @@
+.TH E4CRYPT 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
+.SH NAME
+e4crypt \- ext4 filesystem encryption utility
+.SH SYNOPSIS
+.B e4crypt add_key -S \fR[\fB -k \fIkeyring\fR ] [\fB-v\fR] [\fB-q\fR] [ \fI path\fR ... ]
+.br
+.B e4crypt new_session
+.br
+.B e4crypt get_policy \fIpath\fR ...
+.br
+.B e4crypt set_policy \fIpolicy path\fR ...
+.SH DESCRIPTION
+.B e4crypt
+performs encryption management for ext4 file systems.
+.SH COMMANDS
+.TP
+.B e4crypt add_key -S \fR[\fB -k \fIkeyring\fR ] [\fB-v\fR] [\fB-q\fR] [ \fI path\fR ... ]
+Prompts the user for a passphrase and inserts it into the specified
+keyring.  If no keyring is specified, e4crypt will use the session
+keyring if it exists or the user session keyring if it does not.
+.IP
+If one or more directory paths are specified, e4crypt will try to
+set the policy of those directories to use the key just entered by
+the user.
+.TP
+.B e4crypt get_policy \fIpath\fR ...
+Print the policy for the directories specified on the command line.
+.TP
+.B e4crypt new_session
+Give the invoking process (typically a shell) a new session keyring,
+discarding its old session keyring.
+.TP
+.B e4crypt set_policy \fIpolicy path\fR ...
+Sets the policy for the directories specified on the command line.
+All directories must be empty to set the policy; if the directory
+already has a policy established, e4crypt will validate that the
+policy matches what was specified.  A policy is an encryption key
+identifier consisting of 16 hexadecimal characters.
+.SH AUTHOR
+Written by Michael Halcrow <mhalcrow@google.com>, Ildar Muslukhov
+<muslukhovi@gmail.com>, and Theodore Ts'o <tytso@mit.edu>
+.SH SEE ALSO
+.BR keyctl (1),
+.BR mke2fs (8),
+.BR mount (8).
