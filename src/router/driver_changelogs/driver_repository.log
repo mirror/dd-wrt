@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3557 | brainslayer | 2017-08-21 09:58:34 +0200 (Mon, 21 Aug 2017) | 1 line
+
+this symbol is now exported by 3.18 as well in latest updated and causes a duplicate which causes ath9k/ath10k fail to load
+------------------------------------------------------------------------
 r3556 | brainslayer | 2017-08-13 17:38:56 +0200 (Sun, 13 Aug 2017) | 1 line
 
 make it even smaller
