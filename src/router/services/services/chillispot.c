@@ -327,7 +327,7 @@ void chilli_config(void)
 	}
 //      if (strlen(nvram_safe_get("chilli_localusers")) > 0)
 //              localusers /tmp/chilli/localusers.db
-	if (strlen(nvram_safe_get("fon_userlist")) > 0)	//only reuse it for testing. will be changed for better integration
+	if (strlen(nvram_safe_get("fon_userlist")))	//only reuse it for testing. will be changed for better integration
 		fprintf(fp, "localusers /tmp/chilli/fonusers.local\n");
 	if (nvram_invmatch("chilli_dns1", "0.0.0.0")
 	    && nvram_invmatch("chilli_dns1", "")) {
@@ -381,7 +381,7 @@ void chilli_config(void)
 		fprintf(fp, "net %s\n", nvram_get("chilli_net"));
 	if (nvram_matchi("chilli_macauth", 1)) {
 		fprintf(fp, "macauth\n");
-		if (strlen(nvram_safe_get("chilli_macpasswd")) > 0)
+		if (strlen(nvram_safe_get("chilli_macpasswd")))
 			fprintf(fp, "macpasswd %s\n", nvram_get("chilli_macpasswd"));
 		else
 			fprintf(fp, "macpasswd password\n");
@@ -440,7 +440,7 @@ void hotspotsys_config(void)
 		unsigned char hash[32];
 		char et0[18];
 		getLANMac(et0);
-		if (strlen(et0) == 0)
+		if (!strlen(et0))
 			strcpy(et0, nvram_safe_get("et0macaddr_safe"));
 
 		md5_begin(&MD);

@@ -60,7 +60,7 @@ void start_milkfish_boot(void)
 		unsigned char hash[32];
 		char et0[18];
 		getLANMac(et0);
-		if (strlen(et0) == 0)
+		if (!strlen(et0))
 			strcpy(et0, nvram_safe_get("et0macaddr_safe"));
 
 		md5_begin(&MD);

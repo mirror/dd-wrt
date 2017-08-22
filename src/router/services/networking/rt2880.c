@@ -91,7 +91,7 @@ void setupSupplicant(char *prefix)
 // -> added habeIchVergessen
 			char *keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
 			char wpaOpts[40];
-			if (strlen(keyExchng) == 0)
+			if (!strlen(keyExchng))
 				nvram_nset("wep", "%s_tls8021xkeyxchng", prefix);
 			strcpy(wpaOpts, "");
 			keyExchng = nvram_nget("%s_tls8021xkeyxchng", prefix);
@@ -122,13 +122,13 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tprivate_key=/tmp/%s/user.prv\n", prefix);
 			fprintf(fp, "\tprivate_key_passwd=\"%s\"\n", nvram_prefix_get("tls8021xpasswd", prefix));
 			fprintf(fp, "\teapol_flags=3\n");
-			if (strlen(nvram_nget("%s_tls8021xphase2", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_tls8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_tls8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_tls8021xanon", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_tls8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_tls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_tls8021xaddopt", prefix))) {
 				sprintf(ath, "%s_tls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -151,13 +151,13 @@ void setupSupplicant(char *prefix)
 				write_nvram(psk, ath);
 				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_peap8021xphase2", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_peap8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xanon", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_peap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_peap8021xaddopt", prefix))) {
 				sprintf(ath, "%s_peap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -171,7 +171,7 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("ttls8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("ttls8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_ttls8021xca", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xca", prefix))) {
 				sprintf(psk, "/tmp/%s", prefix);
 				mkdir(psk, 0700);
 				sprintf(psk, "/tmp/%s/ca.pem", prefix);
@@ -179,13 +179,13 @@ void setupSupplicant(char *prefix)
 				write_nvram(psk, ath);
 				fprintf(fp, "\tca_cert=\"/tmp/%s/ca.pem\"\n", prefix);
 			}
-			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_ttls8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xanon", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_ttls8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_ttls8021xaddopt", prefix))) {
 				sprintf(ath, "%s_ttls8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -201,13 +201,13 @@ void setupSupplicant(char *prefix)
 			fprintf(fp, "\tgroup=CCMP TKIP\n");
 			fprintf(fp, "\tidentity=\"%s\"\n", nvram_prefix_get("leap8021xuser", prefix));
 			fprintf(fp, "\tpassword=\"%s\"\n", nvram_prefix_get("leap8021xpasswd", prefix));
-			if (strlen(nvram_nget("%s_leap8021xphase2", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xphase2", prefix))) {
 				fprintf(fp, "\tphase2=\"%s\"\n", nvram_nget("%s_leap8021xphase2", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xanon", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xanon", prefix))) {
 				fprintf(fp, "\tanonymous_identity=\"%s\"\n", nvram_nget("%s_leap8021xanon", prefix));
 			}
-			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix)) > 0) {
+			if (strlen(nvram_nget("%s_leap8021xaddopt", prefix))) {
 				sprintf(ath, "%s_leap8021xaddopt", prefix);
 				fprintf(fp, "\t");	// tab
 				fwritenvram(ath, fp);
@@ -933,7 +933,7 @@ void configure_wifi_single(int idx)	// madwifi implementation for atheros based
 		sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 		sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
 		wdsdev = nvram_safe_get(wdsdevname);
-		if (strlen(wdsdev) == 0)
+		if (!strlen(wdsdev))
 			continue;
 		if (nvram_matchi(wdsvarname, 0))
 			continue;
@@ -1355,7 +1355,7 @@ void init_network(int idx)
 			sprintf(wdsdevname, "%s_wds%d_if", dev, (11 - s));
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, (11 - s));
 			wdsdev = nvram_safe_get(wdsdevname);
-			if (strlen(wdsdev) == 0)
+			if (!strlen(wdsdev))
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;
@@ -1439,7 +1439,7 @@ void init_network(int idx)
 		if (nvram_get(wdsvarname) == NULL)
 			nvram_seti(wdsvarname, 0);
 		dev = nvram_safe_get(wdsdevname);
-		if (strlen(dev) == 0)
+		if (!strlen(dev))
 			continue;
 
 		// eval ("ifconfig", dev, "down");

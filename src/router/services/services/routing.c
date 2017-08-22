@@ -198,9 +198,7 @@ static int zebra_ospf_init(void)
 		}
 	}
 
-	if (strlen(nvram_safe_get("zebra_conf")) > 0) {
-		fwritenvram("zebra_conf", fp);
-	}
+	fwritenvram("zebra_conf", fp);
 
 	fclose(fp);
 
@@ -209,8 +207,7 @@ static int zebra_ospf_init(void)
 		return errno;
 	}
 
-	if (nvram_matchi("ospfd_copt", 1)
-	    && strlen(nvram_safe_get("ospfd_conf"))) {
+	if (nvram_matchi("ospfd_copt", 1)) {
 		fwritenvram("ospfd_conf", fp);
 	} else {
 		fprintf(fp, "!\n");
@@ -309,9 +306,7 @@ static int zebra_ospf6_init(void)
 		}
 	}
 
-	if (strlen(nvram_safe_get("zebra_conf")) > 0) {
-		fwritenvram("zebra_conf", fp);
-	}
+	fwritenvram("zebra_conf", fp);
 
 	fclose(fp);
 
@@ -320,8 +315,7 @@ static int zebra_ospf6_init(void)
 		return errno;
 	}
 
-	if (nvram_matchi("ospf6d_copt", 1)
-	    && strlen(nvram_safe_get("ospf6d_conf"))) {
+	if (nvram_matchi("ospf6d_copt", 1)) {
 		fwritenvram("ospf6d_conf", fp);
 	} else {
 		fprintf(fp, "!\n");
@@ -434,9 +428,7 @@ static int zebra_ripd_init(void)
 		}
 	}
 
-	if (strlen(nvram_safe_get("zebra_conf")) > 0) {
-		fwritenvram("zebra_conf", fp);
-	}
+	fwritenvram("zebra_conf", fp);
 
 	fclose(fp);
 
@@ -445,8 +437,7 @@ static int zebra_ripd_init(void)
 		return errno;
 	}
 
-	if (nvram_matchi("ripd_copt", 1)
-	    && strlen(nvram_safe_get("ripd_conf"))) {
+	if (nvram_matchi("ripd_copt", 1)) {
 		fwritenvram("ripd_conf", fp);
 	} else {
 
@@ -528,9 +519,7 @@ static int zebra_bgp_init(void)
 		}
 	}
 
-	if (strlen(nvram_safe_get("zebra_conf")) > 0) {
-		fwritenvram("zebra_conf", fp);
-	}
+	fwritenvram("zebra_conf", fp);
 
 	fclose(fp);
 

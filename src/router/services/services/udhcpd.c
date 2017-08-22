@@ -228,11 +228,11 @@ void start_udhcpd(void)
 
 			if (nvram_invmatch("lan_ipaddr", ""))
 				fprintf(fp, " %s", nvram_safe_get("lan_ipaddr"));
-			if (strlen(dns_list->dns_server[0]) > 0)
+			if (strlen(dns_list->dns_server[0]))
 				fprintf(fp, " %s", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]) > 0)
+			if (strlen(dns_list->dns_server[1]))
 				fprintf(fp, " %s", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]) > 0)
+			if (strlen(dns_list->dns_server[2]))
 				fprintf(fp, " %s", dns_list->dns_server[2]);
 
 			fprintf(fp, "\n");
@@ -240,11 +240,11 @@ void start_udhcpd(void)
 	} else {
 		if (dns_list && (strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
 			fprintf(fp, "option dns");
-			if (strlen(dns_list->dns_server[0]) > 0)
+			if (strlen(dns_list->dns_server[0]))
 				fprintf(fp, " %s", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]) > 0)
+			if (strlen(dns_list->dns_server[1]))
 				fprintf(fp, " %s", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]) > 0)
+			if (strlen(dns_list->dns_server[2]))
 				fprintf(fp, " %s", dns_list->dns_server[2]);
 
 			fprintf(fp, "\n");
@@ -267,9 +267,7 @@ void start_udhcpd(void)
 			fprintf(fp, "option domain %s\n", nvram_safe_get("lan_domain"));
 	}
 
-	if (nvram_invmatch("dhcpd_options", "")) {
-		fwritenvram("dhcpd_options", fp);
-	}
+	fwritenvram("dhcpd_options", fp);
 	fclose(fp);
 
 	/*
@@ -282,7 +280,7 @@ void start_udhcpd(void)
 	}
 	char mac[18];
 	getLANMac(mac);
-	if (strlen(mac) == 0)
+	if (!strlen(mac))
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (nvram_matchi("local_dns", 1)) {

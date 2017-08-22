@@ -743,7 +743,7 @@ static void do_portsetup(char *lan, char *ifname)
 
 // #endif
 
-#define PORTSETUPWAN(a) if (strlen(a)>0 && strlen(nvram_safe_get ("wan_ifname2"))>0) \
+#define PORTSETUPWAN(a) if (strlen(a) && strlen(nvram_safe_get ("wan_ifname2"))>0) \
 	    { \
 		strcpy(wan_ifname, nvram_safe_get ("wan_ifname2")); \
 		nvram_set ("wan_ifnames", nvram_safe_get ("wan_ifname2"));\
@@ -767,7 +767,7 @@ void reset_hwaddr(char *ifname)
 
 	strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
 	if (ioctl(s, SIOCGIFHWADDR, &ifr) == 0) {
-		if (strlen(nvram_safe_get("lan_hwaddr")) == 0)
+		if (!strlen(nvram_safe_get("lan_hwaddr")))
 			nvram_set("lan_hwaddr", ether_etoa(ifr.ifr_hwaddr.sa_data, eabuf));
 		if (getRouterBrand() == ROUTER_DLINK_DIR320) {
 			if (strlen(nvram_safe_get("et0macaddr")) == 12) {
@@ -784,7 +784,7 @@ void reset_hwaddr(char *ifname)
 				eval("event", "5", "1", "15");
 			}
 		}
-		if (strlen(nvram_safe_get("et0macaddr")) == 0) {
+		if (!strlen(nvram_safe_get("et0macaddr"))) {
 			char *def = nvram_get("et0macaddr_safe");
 			if (!def)
 				def = nvram_safe_get("lan_hwaddr");
@@ -802,7 +802,7 @@ void reset_hwaddr(char *ifname)
 		}
 	}
 	close(s);
-	if (strlen(nvram_safe_get("lan_hwaddr")) == 0)
+	if (!strlen(nvram_safe_get("lan_hwaddr")))
 		nvram_set("lan_hwaddr", nvram_safe_get("et0macaddr"));	//after all fixes have been made, we set lan_hwaddr to et0macaddr to ensure equalness between all devices based first eth interface
 	// lock mac address on bridge if possible
 	eval("ifconfig", ifname, "hw", "ether", nvram_safe_get("lan_hwaddr"));
@@ -845,7 +845,7 @@ void start_lan(void)
 	strcpy(wan_ifname, nvram_safe_get("wan_ifname"));
 	strcpy(lan_ifnames, nvram_safe_get("lan_ifnames"));
 
-	if (strlen(nvram_safe_get("wan_default")) > 0) {
+	if (strlen(nvram_safe_get("wan_default"))) {
 		PORTSETUPWAN(nvram_safe_get("wan_default"));	// setup
 		// default
 		// wan ports, 
@@ -2736,7 +2736,7 @@ void start_lan(void)
 				nvram_seti(wdsvarname, 0);
 #endif
 			dev = nvram_safe_get(wdsdevname);
-			if (strlen(dev) == 0)
+			if (!strlen(dev))
 				continue;
 			ifconfig(dev, 0, 0, 0);
 
@@ -2930,10 +2930,10 @@ void start_lan(void)
 	br_set_stp_state("br0", getBridgeSTP("br0"));
 	// eval ("rm", "/tmp/hosts");
 	addHost("localhost", "127.0.0.1", 0);
-	if (strlen(nvram_safe_get("wan_hostname")) > 0) {
+	if (strlen(nvram_safe_get("wan_hostname"))) {
 		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 0);
 		addHost(nvram_safe_get("wan_hostname"), nvram_safe_get("lan_ipaddr"), 1);
-	} else if (strlen(nvram_safe_get("router_name")) > 0) {
+	} else if (strlen(nvram_safe_get("router_name"))) {
 		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 0);
 		addHost(nvram_safe_get("router_name"), nvram_safe_get("lan_ipaddr"), 1);
 	}
@@ -3655,7 +3655,7 @@ void start_wan(int status)
 			fprintf(fp, "COUNT=$(($COUNT - 1))\n");
 			fprintf(fp, "sleep 5\n");
 			fprintf(fp, "done\n");
-			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+			if (strlen(nvram_safe_get("ppp_username")) && strlen(nvram_safe_get("ppp_passwd"))) {
 				fprintf(fp, "uqmi -d /dev/cdc-wdm0 --set-client-id wds,${CLIENTID} --start-network %s --auth-type both --username %s --password %s --keep-client-id wds\n",
 					nvram_safe_get("wan_apn"), nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
@@ -3696,7 +3696,7 @@ void start_wan(int status)
 			//set apn and dial
 			FILE *fp = fopen("/tmp/qmi-network.conf", "wb");
 			fprintf(fp, "APN=%s", nvram_safe_get("wan_apn"));
-			if (strlen(nvram_safe_get("ppp_username")) > 0 && strlen(nvram_safe_get("ppp_passwd")) > 0) {
+			if (strlen(nvram_safe_get("ppp_username")) && strlen(nvram_safe_get("ppp_passwd"))) {
 				fprintf(fp, ",BOTH,%s,%s\n", nvram_safe_get("ppp_username"), nvram_safe_get("ppp_passwd"));
 			} else {
 				fprintf(fp, "\n");
