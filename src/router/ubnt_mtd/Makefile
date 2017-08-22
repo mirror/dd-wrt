@@ -9,4 +9,4 @@ mtd:
 	$(CC) $(CFLAGS) -o mtd mtd.c
 	sstrip mtd
 clean:
-	rm -f *.o jffs2
+	rm -f mtd
