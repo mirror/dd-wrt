@@ -49,7 +49,7 @@ void start_olsrd(void)
 	sprintf(net, "%d.%d.%d.0", a, b, c);
 	FILE *fp = fopen("/tmp/olsrd.conf", "wb");
 
-	if (strlen(nvram_safe_get("olsrd_conf")) > 0) {
+	if (strlen(nvram_safe_get("olsrd_conf"))) {
 		fwritenvram("olsrd_conf", fp);
 	} else {
 		fprintf(fp, "DebugLevel\t0\n");

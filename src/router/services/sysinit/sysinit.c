@@ -2342,7 +2342,7 @@ void start_restore_defaults(void)
 		}
 	}
 	free_defaults();
-	if (strlen(nvram_safe_get("http_username")) == 0 || nvram_match("http_username", "admin")) {
+	if (!strlen(nvram_safe_get("http_username")) || nvram_match("http_username", "admin")) {
 		char passout[MD5_OUT_BUFSIZE];
 		nvram_set("http_username", zencrypt("root", passout));
 		nvram_set("http_passwd", zencrypt("admin", passout));
@@ -3414,7 +3414,7 @@ void start_nvram(void)
 
 	char *qos_mac = nvram_safe_get("svqos_macs");
 
-	if (strlen(qos_mac) > 0) {
+	if (strlen(qos_mac)) {
 		char *newqos = calloc(strlen(qos_mac) + 254, 1);
 
 		char level[32], level2[32], data[32], type[32], level3[32], prio[32];
@@ -3431,7 +3431,7 @@ void start_nvram(void)
 				strcpy(prio, "0");
 
 			if (strcmp(type, "hostapd") && strcmp(type, "pppd")) {
-				if (strlen(newqos) > 0)
+				if (strlen(newqos))
 					sprintf(newqos, "%s %s %s %s %s %s %s |", newqos, data, level, level2, type, level3, prio);
 				else
 					sprintf(newqos, "%s %s %s %s %s %s |", data, level, level2, type, level3, prio);
@@ -3445,7 +3445,7 @@ void start_nvram(void)
 
 	char *qos_ip = nvram_safe_get("svqos_ips");
 
-	if (strlen(qos_ip) > 0) {
+	if (strlen(qos_ip)) {
 		char *newip = calloc(strlen(qos_ip) + 254, 1);
 
 		char data[32], level[32], level2[32], level3[32], prio[32];
@@ -3461,7 +3461,7 @@ void start_nvram(void)
 			if (!strcmp(prio, "|"))
 				strcpy(prio, "0");
 
-			if (strlen(newip) > 0)
+			if (strlen(newip))
 				sprintf(newip, "%s %s %s %s %s %s |", newip, data, level, level2, level3, prio);
 			else
 				sprintf(newip, "%s %s %s %s %s |", data, level, level2, level3, prio);

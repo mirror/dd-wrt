@@ -152,7 +152,7 @@ static void set_scanlist(char *dev, char *wif)
 	int c = 0;
 
 	sysprintf("iwpriv %s setscanlist -ALL", dev);
-	if (strlen(sl) > 0 && strcmp(sl, "default")) {
+	if (strlen(sl) && strcmp(sl, "default")) {
 		foreach(var, sl, next) {
 			sprintf(list, "+%s", var);
 			sysprintf("iwpriv %s setscanlist %s", dev, list);
@@ -626,7 +626,7 @@ void configure_single_11n(int count)
 		sprintf(mode, "%s_mode", var);
 		char *vapm = nvram_default_get(mode, "ap");
 		// create device
-		if (strlen(mode) > 0) {
+		if (strlen(mode)) {
 			if (!strcmp(vapm, "wet") || !strcmp(vapm, "sta")
 			    || !strcmp(vapm, "wdssta"))
 				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode sta nosbeacon", var, wif);
@@ -635,7 +635,7 @@ void configure_single_11n(int count)
 			else
 				sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", var, wif);
 			vif = 1;
-			if (strlen(primary) == 0)
+			if (!strlen(primary))
 				strcpy(primary, var);
 			char vathmac[16];
 
@@ -664,7 +664,7 @@ void configure_single_11n(int count)
 		else
 			sysprintf("80211n_wlanconfig %s create wlandev %s wlanmode adhoc nosbeacon", dev, wif);
 
-		if (strlen(primary) == 0)
+		if (!strlen(primary))
 			strcpy(primary, dev);
 	}
 #if 0
@@ -1160,7 +1160,7 @@ void configure_single_11n(int count)
 			sprintf(wdsdevname, "%s_wds%d_if", dev, s);
 			sprintf(wdsmacname, "%s_wds%d_hwaddr", dev, s);
 			wdsdev = nvram_safe_get(wdsdevname);
-			if (strlen(wdsdev) == 0)
+			if (!strlen(wdsdev))
 				continue;
 			if (nvram_matchi(wdsvarname, 0))
 				continue;

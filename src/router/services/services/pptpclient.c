@@ -135,8 +135,7 @@ static void create_pptp_config(char *servername, char *username)
 	fprintf(fp, "noauth\n");
 	//fprintf(fp, "debug\n" "logfd 2\n");
 
-	if (nvram_invmatch("pptp_extraoptions", ""))
-		fwritenvram("pptp_extraoptions", fp);
+	fwritenvram("pptp_extraoptions", fp);
 
 	fclose(fp);
 

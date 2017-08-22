@@ -57,18 +57,18 @@ void start_wifidog(void)
 		fprintf(fp, "SSLAvailable %s\n", nvram_matchi("wd_sslavailable", 1) ? "yes" : "no");
 		fprintf(fp, "SSLPort %s\n", nvram_safe_get("wd_sslport"));
 		fprintf(fp, "HTTPPort %s\n", nvram_safe_get("wd_httpport"));
-		if (strlen(nvram_safe_get("wd_messagefile")) > 0) {
+		if (strlen(nvram_safe_get("wd_messagefile"))) {
 			fprintf(fp, "HtmlMessageFile %s\n", nvram_safe_get("wd_messagefile"));
 		}
 		if (nvram_matchi("wd_auth", 1)) {
-			if (strlen(nvram_safe_get("wd_realm")) > 0)
+			if (strlen(nvram_safe_get("wd_realm")))
 				fprintf(fp, "HTTPDRealm %s\n", nvram_safe_get("wd_realm"));
 			fprintf(fp, "HTTPDUserName %s\n", nvram_safe_get("wd_username"));
 			fprintf(fp, "HTTPDPassword %s\n", nvram_safe_get("wd_password"));
 		}
 		fprintf(fp, "Path %s\n", nvram_safe_get("wd_path"));
 		fprintf(fp, "}\n");
-		if (strlen(nvram_safe_get("wd_config")) > 0) {
+		if (strlen(nvram_safe_get("wd_config"))) {
 			fwritenvram("wd_config", fp);
 		} else {
 			fprintf(fp, "FirewallRuleSet validating-users {\n");
