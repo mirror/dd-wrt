@@ -30,7 +30,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
-#include <cymac.h>
+
 
 #include <samba3.h>
 #include "fs_common.h"

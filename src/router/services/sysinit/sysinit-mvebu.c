@@ -43,7 +43,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 
 #define SIOCGMIIREG	0x8948	/* Read MII PHY register.  */
 #define SIOCSMIIREG	0x8949	/* Write MII PHY register.  */

@@ -1218,3 +1218,7 @@ int writeprocsys(char *path, char *value);
 void set_smp_affinity(int irq, int cpu);
 
 int writevaproc(char *value, char *fmt, ...);
+
+
+void MAC_ADD(char *mac);
+void MAC_SUB(char *mac);

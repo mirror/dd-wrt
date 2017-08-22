@@ -51,7 +51,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 #include "devices/wireless.c"
 
 #define sys_reboot() eval("sync"); eval("event","3","1","15")

@@ -51,7 +51,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 
 #define sys_reboot() eval("sync"); eval("/bin/umount","-a","-r"); eval("event","3","1","15")
 

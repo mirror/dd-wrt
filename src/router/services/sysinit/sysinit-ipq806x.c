@@ -42,7 +42,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 
 #include <arpa/inet.h>
 #include <sys/socket.h>

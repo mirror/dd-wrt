@@ -29,7 +29,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
-#include <cymac.h>
+
 #include "fs_common.h"
 
 static struct fsentry *parsefsentry(char line[256])

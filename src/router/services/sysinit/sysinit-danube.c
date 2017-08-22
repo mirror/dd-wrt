@@ -51,7 +51,7 @@
 #include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
-#include <cymac.h>
+
 #include "devices/wireless.c"
 
 /*
