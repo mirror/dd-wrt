@@ -3074,8 +3074,8 @@ void start_sysinit(void)
 			}
 			nvram_commit();
 		}
-		if (strlen(nvram_safe_get("et2macaddr")) == 0) {
-			if (strlen(nvram_safe_get("et0macaddr")) == 0)
+		if (!strlen(nvram_safe_get("et2macaddr"))) {
+			if (!strlen(nvram_safe_get("et0macaddr")))
 				nvram_set("et2macaddr", nvram_safe_get("0:macaddr"));
 			else
 				nvram_set("et2macaddr", nvram_safe_get("et0macaddr"));

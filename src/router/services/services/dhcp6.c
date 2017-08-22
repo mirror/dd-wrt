@@ -75,7 +75,7 @@ void start_dhcp6c(void)
 	nvram_unset("ipv6_prefix");
 	char mac[18];
 	getLANMac(mac);
-	if (strlen(mac) == 0)
+	if (!strlen(mac))
 		strcpy(mac, nvram_safe_get("et0macaddr_safe"));
 
 	if (ether_atoe(mac, ea)) {

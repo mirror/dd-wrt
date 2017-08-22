@@ -234,11 +234,11 @@ static void do_pppoeconfig(FILE * fp)
 		    && (strlen(dns_list->dns_server[0]) > 0
 			|| strlen(dns_list->dns_server[1]) > 0
 			|| strlen(dns_list->dns_server[2]) > 0)) {	*/
-	if (strlen(dns_list->dns_server[0]) > 0)
+	if (strlen(dns_list->dns_server[0]))
 		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[0]);
-	if (strlen(dns_list->dns_server[1]) > 0)
+	if (strlen(dns_list->dns_server[1]))
 		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[1]);
-	if (strlen(dns_list->dns_server[2]) > 0)
+	if (strlen(dns_list->dns_server[2]))
 		fprintf(fp, "ms-dns %s\n", dns_list->dns_server[2]);
 
 //              }

@@ -223,7 +223,7 @@ static int fillenc(char *encinfo, unsigned char *vp, int ielen)
 		ielen -= 2 + vp[1];
 		vp += 2 + vp[1];
 	}
-	if (strlen(encinfo) > 0)
+	if (strlen(encinfo))
 		encinfo[strlen(encinfo) - 1] = 0;
 	return r;
 }

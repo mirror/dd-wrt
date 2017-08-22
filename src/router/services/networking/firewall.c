@@ -802,7 +802,7 @@ static void nat_postrouting(void)
 		if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 			save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", nvram_safe_get("tvnicfrom"), nvram_safe_get("tvnicaddr"));
 		}
-		if (strlen(wanface) > 0 && wanactive()
+		if (strlen(wanface) && wanactive()
 		    && !nvram_matchi("br0_nat", 0))
 			save2file("-A POSTROUTING -s %s/%d -o %s -j SNAT --to-source %s\n", nvram_safe_get("lan_ipaddr"), loopmask, wanface, wanaddr);
 
@@ -878,7 +878,7 @@ static void nat_postrouting(void)
 		eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "NOTRACK");	//this speeds up networking alot on slow systems 
 		/* the following code must be used in future kernel versions, not yet used. we still need to test it */
 //              eval("iptables", "-t", "raw", "-A", "PREROUTING", "-j", "CT","--notrack");      //this speeds up networking alot on slow systems 
-		if (strlen(wanface) > 0 && wanactive())
+		if (strlen(wanface) && wanactive())
 			if (nvram_matchi("wl_br1_enable", 1))
 				save2file("-A POSTROUTING -o %s -j SNAT --to-source %s\n", wanface, wanaddr);
 	}
@@ -2823,7 +2823,7 @@ void start_firewall(void)
 	strncpy(wanaddr, get_wan_ipaddr(), sizeof(wanaddr));
 
 	if (nvram_match("wan_proto", "pptp")) {
-		if (strlen(nvram_safe_get("pptp_get_ip")) == 0)	// for initial dhcp ip
+		if (!strlen(nvram_safe_get("pptp_get_ip")))	// for initial dhcp ip
 		{
 			if (getSTA())
 				strncpy(wanface, getSTA(), IFNAMSIZ);

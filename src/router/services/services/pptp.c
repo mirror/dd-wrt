@@ -116,20 +116,20 @@ void start_pptpd(void)
 
 			if (nvram_invmatch("lan_ipaddr", ""))
 				fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
-			if (strlen(dns_list->dns_server[0]) > 0)
+			if (strlen(dns_list->dns_server[0]))
 				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]) > 0)
+			if (strlen(dns_list->dns_server[1]))
 				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]) > 0)
+			if (strlen(dns_list->dns_server[2]))
 				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[2]);
 		}
 	} else {
 		if (dns_list && (strlen(dns_list->dns_server[0]) > 0 || strlen(dns_list->dns_server[1]) > 0 || strlen(dns_list->dns_server[2]) > 0)) {
-			if (strlen(dns_list->dns_server[0]) > 0)
+			if (strlen(dns_list->dns_server[0]))
 				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[0]);
-			if (strlen(dns_list->dns_server[1]) > 0)
+			if (strlen(dns_list->dns_server[1]))
 				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[1]);
-			if (strlen(dns_list->dns_server[2]) > 0)
+			if (strlen(dns_list->dns_server[2]))
 				fprintf(fp, "ms-dns  %s\n", dns_list->dns_server[2]);
 		}
 	}
@@ -245,7 +245,7 @@ void start_pptpd(void)
 	lpTemp = nvram_safe_get("pptpd_auth");
 	fp = fopen("/tmp/pptpd/chap-secrets", "w");
 	// fprintf (fp, "root\t*\t%s\t*\n", nvram_safe_get ("http_passwd"));
-	if (strlen(lpTemp) != 0)
+	if (strlen(lpTemp))
 		fprintf(fp, "%s\n", lpTemp);
 	fclose(fp);
 

@@ -185,7 +185,7 @@ void start_config_vlan(void)
 		if (!(hwaddr = nvram_nget("%smacaddr", hwname))) {
 			continue;
 		}
-		if (strlen(hwname) == 0 || strlen(hwaddr) == 0) {
+		if (!strlen(hwname) || !strlen(hwaddr)) {
 			continue;
 		}
 		ether_atoe(hwaddr, ea);
@@ -299,7 +299,7 @@ void start_setup_vlans(void)
 						eval("vconfig", "add", phy, buff);
 						snprintf(buff, 9, "vlan%d", tmp);
 						if (strcmp(nvram_safe_get("wan_ifname"), buff)) {
-							if (strlen(nvram_nget("%s_ipaddr", buff)) > 0)
+							if (strlen(nvram_nget("%s_ipaddr", buff)))
 								eval("ifconfig", buff, nvram_nget("%s_ipaddr", buff), "netmask", nvram_nget("%s_netmask", buff), "up");
 							else
 								eval("ifconfig", buff, "0.0.0.0", "up");
