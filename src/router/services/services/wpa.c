@@ -508,9 +508,10 @@ void start_nas_single(char *type, char *prefix)
 
 	pid_t pid;
 	FILE *fp = { 0 };
+	char **argv;
+
 	if (!strcmp(mode, "-S")) {
 
-		char **argv;
 
 		if (nvram_nmatch("wet", "%s_mode", prefix)
 		    || nvram_nmatch("apstawet", "%s_mode", prefix)) {
@@ -523,14 +524,13 @@ void start_nas_single(char *type, char *prefix)
 			"nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get(ssid), "-w", sec_mode, "-g", nvram_default_get(rekey, "3600"), NULL};
 
 		}
-		_evalpid(argv, NULL, 0, &pid);
 
 	} else {
 		if (!strcmp(auth_mode, "2")
 		    || !strcmp(auth_mode, "64")
 		    || !strcmp(auth_mode, "66")) {
 
-			char *argv[] = { "nas", "-P", pidfile,
+			argv = (char *[]) { "nas", "-P", pidfile,
 				"-H", "34954", "-l",
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m",
@@ -550,7 +550,7 @@ void start_nas_single(char *type, char *prefix)
 
 			sprintf(wepkey, "%s_key%d", prefix, idx);
 
-			char *argv[] = { "nas", "-P", pidfile,
+			argv = (char *[]) { "nas", "-P", pidfile,
 				"-H", "34954", "-l",
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m",
@@ -567,7 +567,7 @@ void start_nas_single(char *type, char *prefix)
 			};
 
 		} else {
-			char *argv[] = { "nas", "-P", pidfile,
+			argv = (char *[]) { "nas", "-P", pidfile,
 				"-H", "34954", "-l",
 				nvram_nmatch("0", "%s_bridged", iface) ? iface : getBridge(iface, tmp), "-i",
 				iface, mode, "-m",
@@ -581,9 +581,9 @@ void start_nas_single(char *type, char *prefix)
 			};
 
 		}
-		_evalpid(argv, NULL, 0, &pid);
 
 	}
+		_evalpid(argv, NULL, 0, &pid);
 
 	fp = fopen(pidfile, "w");
 	if (fp)
