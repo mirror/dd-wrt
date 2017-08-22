@@ -54,7 +54,6 @@
 #include <linux/if_ether.h>
 // #include <linux/mii.h>
 #include <linux/sockios.h>
-#include <cymac.h>
 #include <broadcom.h>
 #include <radiusdb.h>
 

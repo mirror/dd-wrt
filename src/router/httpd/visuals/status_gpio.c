@@ -30,7 +30,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
-#include <cymac.h>
+
 
 void ej_show_status_gpio_output(webs_t wp, int argc, char_t ** argv)
 {

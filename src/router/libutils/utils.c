@@ -58,7 +58,6 @@
 #include <linux/if_ether.h>
 // #include <linux/mii.h>
 #include <linux/sockios.h>
-#include <cymac.h>
 #include <broadcom.h>
 #ifdef HAVE_IPV6
 #include <ifaddrs.h>
@@ -8291,14 +8290,57 @@ int writestr(char *path, char *a)
 	return 0;
 }
 
-#if 0
-int isbridge(char *name)
-{
-	char path[64];
-	struct stat st;
-	bzero(&st, sizeof(struct stat));
-	sprintf(path, "/sys/class/net/%s/bridge", name);
-	return (stat(path, &st) == 0) && (S_ISDIR(st.st_mode));
+#define PER_MAC_LEN	18      // contain '\0'
 
+static void s_MAC_ADD(char *mac, int inc)
+{
+	int i, j;
+	unsigned char m[6];
+	for (j = 0, i = 0; i < PER_MAC_LEN; i += 3, j++) {
+		if (mac[i] >= 'A' && mac[i] <= 'F')
+			mac[i] = mac[i] - 55;
+		if (mac[i + 1] >= 'A' && mac[i + 1] <= 'F')
+			mac[i + 1] = mac[i + 1] - 55;
+		if (mac[i] >= 'a' && mac[i] <= 'f')
+			mac[i] = mac[i] - 87;
+		if (mac[i + 1] >= 'a' && mac[i + 1] <= 'f')
+			mac[i + 1] = mac[i + 1] - 87;
+		if (mac[i] >= '0' && mac[i] <= '9')
+			mac[i] = mac[i] - 48;
+		if (mac[i + 1] >= '0' && mac[i + 1] <= '9')
+			mac[i + 1] = mac[i + 1] - 48;
+		m[j] = mac[i] * 16 + mac[i + 1];
+	}
+	for (i = 5; i >= 3; i--) {
+		if (inc > 0) {
+			if (m[i] == 0xFF) {
+				m[i] = 0x0;
+				continue;
+			} else {
+				m[i] = m[i] + inc;
+				break;
+			}
+		} else {
+			if (m[i] == 0x00) {
+				m[i] = 0xFF;
+				continue;
+			} else {
+				m[i] = m[i] + inc;
+				break;
+			}
+		}
+	}
+	sprintf(mac, "%02X:%02X:%02X:%02X:%02X:%02X", m[0], m[1], m[2], m[3], m[4], m[5]);
 }
-#endif
+
+void MAC_ADD(char *mac)
+{
+
+	s_MAC_ADD(mac, 1);
+}
+
+void MAC_SUB(char *mac)
+{
+
+	s_MAC_ADD(mac, -1);
+}
