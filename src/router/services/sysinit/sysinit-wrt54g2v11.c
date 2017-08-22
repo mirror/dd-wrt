@@ -53,7 +53,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 #include "devices/wireless.c"
 
 extern void vlan_init(int num);

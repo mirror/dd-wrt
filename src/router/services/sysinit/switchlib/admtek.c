@@ -56,7 +56,6 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
 
 #define ADM_PHY_BASE_REG_NUM	0x20
 

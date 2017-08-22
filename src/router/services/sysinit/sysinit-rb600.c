@@ -52,7 +52,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
-#include <cymac.h>
+
 #include "devices/wireless.c"
 
 void start_sysinit(void)

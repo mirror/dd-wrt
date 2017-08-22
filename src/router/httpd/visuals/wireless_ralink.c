@@ -37,7 +37,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <broadcom.h>
-#include <cymac.h>
+
 #include <wlutils.h>
 #include <bcmparams.h>
 #include <dirent.h>

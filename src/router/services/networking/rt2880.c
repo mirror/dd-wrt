@@ -49,7 +49,7 @@
 #include <stdio.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
-#include <cymac.h>
+#include <utils.h>
 #include <shutils.h>
 #include <utils.h>
 #include <unistd.h>

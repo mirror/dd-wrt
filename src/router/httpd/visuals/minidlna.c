@@ -29,7 +29,7 @@
 #include <stdarg.h>
 
 #include <broadcom.h>
-#include <cymac.h>
+
 
 #include <dlna.h>
 #include "fs_common.h"

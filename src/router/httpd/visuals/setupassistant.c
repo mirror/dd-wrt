@@ -31,7 +31,7 @@
 
 #include <broadcom.h>
 #include <wlutils.h>
-#include <cymac.h>
+
 
 void sas_show_wep(webs_t wp, char *prefix);
 void sas_show_preshared(webs_t wp, char *prefix);

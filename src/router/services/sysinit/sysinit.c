@@ -64,7 +64,7 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>
-#include <cymac.h>
+
 #include <glob.h>
 #include <revision.h>
 // #include <ledcontrol.h>
