@@ -90,7 +90,7 @@ static pthread_mutex_t mutex_unl;
 static char *lastlock;
 static char *lastunlock;
 #define mutex_init() pthread_mutex_init(&mutex_unl,NULL)
-#define lock() { \
+/*#define lock() { \
 		    int m_result; \
 		    int m_cnt=0; \
 		while ((m_result=pthread_mutex_trylock(&mutex_unl)) ==EBUSY) { \
@@ -102,13 +102,16 @@ static char *lastunlock;
 			} \
 		} \
 		lastlock = __func__; \
-}
+}*/
 
-//#define lock() pthread_mutex_lock(&mutex_unl)
-#define unlock() { \
+#define lock() pthread_mutex_lock(&mutex_unl)
+#define unlock() pthread_mutex_unlock(&mutex_unl)
+
+
+/*#define unlock() { \
 	pthread_mutex_unlock(&mutex_unl); \
 	lastunlock = __func__; \
-}
+}*/
 #else
 #define mutex_init()
 #define lock()
