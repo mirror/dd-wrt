@@ -109,6 +109,7 @@ void start_post_sysinit(void)
 	start_restore_defaults();
 
 	nvram_seti("wanup", 0);
+	nvram_unset("rc_opt_run");
 	set_ip_forward('1');
 	set_tcp_params();
 #ifdef HAVE_JFFS2
