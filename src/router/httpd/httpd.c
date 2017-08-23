@@ -1664,16 +1664,15 @@ int main(int argc, char **argv)
 		/* Make sure we don't linger a long time if the other end disappears */
 		settimeouts(conn_fp, timeout);
 		fcntl(conn_fp->conn_fd, F_SETFD, fcntl(conn_fp->conn_fd, F_GETFD) | FD_CLOEXEC);
-
-		if (check_action() == ACT_TFTP_UPGRADE ||	// We don't want user to use web during tftp upgrade.
-		    check_action() == ACT_SW_RESTORE || check_action() == ACT_HW_RESTORE) {
+		int action = check_action();
+		if (action == ACT_SW_RESTORE || action == ACT_HW_RESTORE) {
 			fprintf(stderr, "http(s)d: nothing to do...\n");
 			return -1;
 		}
 		get_client_ip_mac(conn_fp->conn_fd, conn_fp);
 #ifdef HAVE_HTTPS
 		if (DO_SSL(conn_fp)) {
-			if (check_action() == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
+			if (action == ACT_WEB_UPGRADE) {	// We don't want user to use web (https) during web (http) upgrade.
 				fprintf(stderr, "httpsd: nothing to do...\n");
 				return -1;
 			}
@@ -1749,7 +1748,7 @@ int main(int argc, char **argv)
 #endif
 		{
 #ifdef HAVE_HTTPS
-			if (check_action() == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
+			if (action == ACT_WEBS_UPGRADE) {	// We don't want user to use web (http) during web (https) upgrade.
 				fprintf(stderr, "httpd: nothing to do...\n");
 				return -1;
 			}

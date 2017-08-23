@@ -826,10 +826,10 @@ int check_action(void)
 	char buf[80] = "";
 
 	if (file_to_buf(ACTION_FILE, buf, sizeof(buf))) {
-		if (!strcmp(buf, "ACT_TFTP_UPGRADE")) {
+/*		if (!strcmp(buf, "ACT_TFTP_UPGRADE")) {
 			fprintf(stderr, "Upgrading from tftp now ...\n");
 			return ACT_TFTP_UPGRADE;
-		}
+		}*/
 #ifdef HAVE_HTTPS
 		else if (!strcmp(buf, "ACT_WEBS_UPGRADE")) {
 			fprintf(stderr, "Upgrading from web (https) now ...\n");
