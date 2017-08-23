@@ -379,8 +379,11 @@ static void usage(void)
 		"Example: To write linux.trx to mtd4 labeled as linux and reboot afterwards\n" "         mtd -r write linux.trx linux\n\n");
 	exit(1);
 }
-
+#ifdef STATIC
+int main(int argc, char **argv)
+#else
 int mtd_main(int argc, char **argv)
+#endif
 {
 	int ch, i, boot, unlock, imagefd = 0, force, quiet, unlocked;
 	char *erase[MAX_ARGS], *device, *imagefile = NULL;
