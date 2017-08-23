@@ -1250,6 +1250,11 @@ int internal_getRouterBrand()
 		return ROUTER_ASUS_AC67U;
 	}
 
+	if (nvram_match("odmpid", "RT-AC1900P")) {
+		setRouter("Asus RT-AC1900P");
+		return ROUTER_ASUS_AC67U;
+	}
+
 	if (nvram_match("odmpid", "RT-AC68A")) {
 		setRouter("Asus RT-AC68A");
 		return ROUTER_ASUS_AC67U;
