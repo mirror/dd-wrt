@@ -826,20 +826,17 @@ int check_action(void)
 	char buf[80] = "";
 
 	if (file_to_buf(ACTION_FILE, buf, sizeof(buf))) {
-/*		if (!strcmp(buf, "ACT_TFTP_UPGRADE")) {
-			fprintf(stderr, "Upgrading from tftp now ...\n");
-			return ACT_TFTP_UPGRADE;
-		}*/
+		if (!strcmp(buf, "ACT_WEB_UPGRADE")) {
+			fprintf(stderr, "Upgrading from web (http) now ...\n");
+			return ACT_WEB_UPGRADE;
+		}
 #ifdef HAVE_HTTPS
 		else if (!strcmp(buf, "ACT_WEBS_UPGRADE")) {
 			fprintf(stderr, "Upgrading from web (https) now ...\n");
 			return ACT_WEBS_UPGRADE;
 		}
 #endif
-		else if (!strcmp(buf, "ACT_WEB_UPGRADE")) {
-			fprintf(stderr, "Upgrading from web (http) now ...\n");
-			return ACT_WEB_UPGRADE;
-		} else if (!strcmp(buf, "ACT_SW_RESTORE")) {
+		 else if (!strcmp(buf, "ACT_SW_RESTORE")) {
 			fprintf(stderr, "Receiving restore command from web ...\n");
 			return ACT_SW_RESTORE;
 		} else if (!strcmp(buf, "ACT_HW_RESTORE")) {
