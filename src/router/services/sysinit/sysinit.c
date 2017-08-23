@@ -896,6 +896,9 @@ void start_run_rc_startup(void)
 	if (f_exists("/tmp/.rc_startup"))
 		eval("/tmp/.rc_startup");
 
+	if (nvram_matchi("rc_opt_run", 1))
+		return;
+	nvram_seti("rc_opt_run", 1);
 	while (count > 0) {
 		directory = opendir("/opt/etc/init.d");
 		if (directory == NULL) {
@@ -904,6 +907,7 @@ void start_run_rc_startup(void)
 		} else {
 			closedir(directory);
 			runStartup("/opt/etc/init.d", "S**");	// if available; run S** startup scripts
+			nvram_seti("rc_opt_run", 0);
 			return;
 		}
 	}
