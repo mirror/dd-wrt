@@ -1530,6 +1530,7 @@ static void resetbtn_period_check(int sig)
 	/* 
 	 * The value is zero during button-pushed. 
 	 */
+	int action = check_action();
 	if (state && nvram_matchi("resetbutton_enable", 1)) {
 		DEBUG("resetbutton: mode=%d, count=%d\n", mode, _count);
 
@@ -1541,7 +1542,7 @@ static void resetbtn_period_check(int sig)
 			mode = 1;
 		}
 		if (++_count > RESET_WAIT_COUNT) {
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
@@ -1550,7 +1551,7 @@ static void resetbtn_period_check(int sig)
 		}
 	} else if ((sesgpio != 0xfff) && (((sesgpio & 0x100) == 0 && (val & pushses)) || ((sesgpio & 0x100) == 0x100 && !(val & pushses)))) {
 		if (!ses_pushed && (++_count > SES_WAIT)) {
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
@@ -1561,7 +1562,7 @@ static void resetbtn_period_check(int sig)
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio == 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
@@ -1573,7 +1574,7 @@ static void resetbtn_period_check(int sig)
 
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi24gpio & 0x100) == 0 && (val & pushwifi24)) || ((wifi24gpio & 0x100) == 0x100 && !(val & pushwifi24)))) {
 		if (!wifi24_pushed && (++_count > SES_WAIT)) {
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
@@ -1584,7 +1585,7 @@ static void resetbtn_period_check(int sig)
 		}
 	} else if ((wifi24gpio != 0xfff && wifi5gpio != 0xfff) && (((wifi5gpio & 0x100) == 0 && (val & pushwifi5)) || ((wifi5gpio & 0x100) == 0x100 && !(val & pushwifi5)))) {
 		if (!wifi5_pushed && (++_count > SES_WAIT)) {
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
@@ -1624,7 +1625,7 @@ static void resetbtn_period_check(int sig)
 				}
 			}
 #else
-			if (check_action() != ACT_IDLE) {	// Don't execute during upgrading
+			if (action != ACT_IDLE) {	// Don't execute during upgrading
 				fprintf(stderr, "resetbutton: nothing to do...\n");
 				resetbtn_alarmtimer(0, 0);	/* Stop the timer alarm */
 				return;
