@@ -237,10 +237,10 @@ void start_init_restart(void)
 		char var[80];
 		char *vifs = nvram_nget("wl%d_vifs", c);
 
-		if (vifs != NULL)
 			foreach(var, vifs, next) {
 			eval("ifconfig", var, "down");
 			}
+		
 	}
 #endif
 
@@ -369,36 +369,6 @@ void start_init_start(void)
 #ifdef HAVE_EMF
 	start_emf();
 #endif
-
-	cprintf("run rc file\n");
-#ifdef HAVE_REGISTER
-#ifndef HAVE_ERC
-	if (isregistered_real())
-#endif
-#endif
-	{
-		stop_run_rc_startup();
-		start_run_rc_startup();
-// start init scripts                           
-		eval("/etc/init.d/rcS");
-		eval("/opt/etc/init.d/rcS");
-		eval("/jffs/etc/init.d/rcS");
-		eval("/mmc/etc/init.d/rcS");
-		// startup script
-		// (siPath impl)
-		cprintf("start modules\n");
-		start_modules();
-#ifdef HAVE_MILKFISH
-		start_milkfish_boot();
-#endif
-		if (nvram_invmatch("rc_custom", ""))	// create
-			// custom
-			// script
-		{
-			nvram2file("rc_custom", "/tmp/custom.sh");
-			chmod("/tmp/custom.sh", 0700);
-		}
-	}
 #ifdef HAVE_CHILLI
 	start_chilli();
 #endif
@@ -419,4 +389,33 @@ void start_init_start(void)
 	start_resetbutton();
 #endif
 
+	cprintf("run rc file\n");
+#ifdef HAVE_REGISTER
+#ifndef HAVE_ERC
+	if (isregistered_real())
+#endif
+#endif
+	{
+// start init scripts                           
+		eval("/etc/init.d/rcS");
+		eval("/opt/etc/init.d/rcS");
+		eval("/jffs/etc/init.d/rcS");
+		eval("/mmc/etc/init.d/rcS");
+		// startup script
+		// (siPath impl)
+		cprintf("start modules\n");
+		start_modules();
+#ifdef HAVE_MILKFISH
+		start_milkfish_boot();
+#endif
+		if (nvram_invmatch("rc_custom", ""))	// create
+			// custom
+			// script
+		{
+			nvram2file("rc_custom", "/tmp/custom.sh");
+			chmod("/tmp/custom.sh", 0700);
+		}
+		stop_run_rc_startup();
+		start_run_rc_startup();
+	}
 }
