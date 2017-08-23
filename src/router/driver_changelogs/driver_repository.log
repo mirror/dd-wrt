@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r3558 | brainslayer | 2017-08-23 02:16:01 +0200 (Wed, 23 Aug 2017) | 1 line
+
+this header cannot be used anymore
+------------------------------------------------------------------------
 r3557 | brainslayer | 2017-08-21 09:58:34 +0200 (Mon, 21 Aug 2017) | 1 line
 
 this symbol is now exported by 3.18 as well in latest updated and causes a duplicate which causes ath9k/ath10k fail to load
