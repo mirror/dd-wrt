@@ -6,3 +6,4 @@ ifneq ($(CONFIG_DIST),"micro-special")
 	$(STRIP) $(INSTALLDIR)/cron/usr/sbin/cron
 endif
 endif
+	@true
