@@ -147,7 +147,9 @@ static int start_services_main(int argc, char **argv)
 
 	start_service_f("wshaper");
 	start_service_f("wland");
+#ifndef HAVE_MICRO
 	start_service_f("cron");
+#endif
 
 #ifdef HAVE_PPTPD
 	start_service_f("pptpd");
@@ -272,8 +274,9 @@ static int stop_services_main(int argc, char **argv)
 	stop_service_f("udhcpd");
 #endif
 	startstop_f("dns_clear_resolv");
+#ifndef HAVE_MICRO
 	stop_service_f("cron");
-
+#endif
 #ifdef HAVE_TFTP
 	stop_service_f("tftpd");
 #endif
@@ -476,7 +479,9 @@ static void handle_index(void)
 	// anymore on wan/lan 
 	// ip changes changes
 	startstop_fdelay("httpd", 2);
+#ifndef HAVE_MICRO
 	startstop_f("cron");
+#endif
 //      start_service_f("anchorfreednat");
 #ifdef HAVE_NOCAT
 	startstop_f("splashd");
@@ -793,7 +798,9 @@ static void handle_management(void)
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	stop_service_f("zebra");
 #endif
+#ifndef HAVE_MICRO
 	stop_service_f("cron");
+#endif
 #ifdef HAVE_UDHCPD
 	stop_service_f("udhcpd");
 #endif
@@ -806,7 +813,9 @@ static void handle_management(void)
 #ifdef HAVE_UDHCPD
 	start_service_f("udhcpd");
 #endif
+#ifndef HAVE_MICRO
 	start_service_f("cron");
+#endif
 #ifdef HAVE_IPV6
 	start_service_f("ipv6");
 #ifdef HAVE_RADVD
@@ -910,7 +919,9 @@ static void handle_spppoe(void)
 static void handle_filters(void)
 {
 
+#ifndef HAVE_MICRO
 	stop_service("cron");
+#endif
 	startstop("firewall");
 #ifdef HAVE_SYSLOG
 	startstop_f("syslog");
@@ -918,7 +929,9 @@ static void handle_filters(void)
 	stop_service("wland");
 	startstop_f("wshaper");
 	start_service_f("wland");
+#ifndef HAVE_MICRO
 	start_service_f("cron");
+#endif
 #ifdef HAVE_NOCAT
 	startstop_f("splashd");
 #endif
@@ -955,7 +968,9 @@ static void handle_routing(void)
 static void handle_alive(void)
 {
 
+#ifndef HAVE_MICRO
 	stop_service("cron");
+#endif
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
@@ -964,7 +979,9 @@ static void handle_alive(void)
 		FORK(eval("/etc/config/schedulerb.startup"));
 		FORK(eval("/etc/config/proxywatchdog.startup"));
 	}
+#ifndef HAVE_MICRO
 	start_service_f("cron");
+#endif
 }
 
 static void handle_forward(void)
@@ -1084,7 +1101,9 @@ static void handle_upgrade(void)
 #ifdef HAVE_UPNP
 	stop_service_f("upnp");
 #endif
+#ifndef HAVE_MICRO
 	stop_service_f("cron");
+#endif
 	stop_running_main(0, NULL);
 
 }

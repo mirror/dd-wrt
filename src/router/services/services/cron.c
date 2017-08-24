@@ -19,7 +19,8 @@
  *
  * $Id:
  */
-
+#ifdef HAVE_CRON
+#ifndef HAVE_MICRO
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -171,3 +172,5 @@ void stop_cron(void)
 	cprintf("done\n");
 	return;
 }
+#endif
+#endif
