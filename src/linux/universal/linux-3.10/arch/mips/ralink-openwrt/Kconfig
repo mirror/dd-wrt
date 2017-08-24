@@ -49,6 +49,7 @@ choice
 		select SYS_SUPPORTS_MIPS_CMP
 		select IRQ_GIC
 		select HW_HAS_PCI
+		select WEAK_REORDERING_BEYOND_LLSC
 
 endchoice
 
