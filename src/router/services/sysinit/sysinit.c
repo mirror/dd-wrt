@@ -888,6 +888,7 @@ void stop_run_rc_startup(void)
 
 void start_run_rc_startup(void)
 {
+#ifndef HAVE_MICRO
 	DIR *directory;
 	int count = 36;		// 36 * 5 s = 180s
 
@@ -911,6 +912,7 @@ void start_run_rc_startup(void)
 			return;
 		}
 	}
+#endif
 }
 
 void stop_run_rc_shutdown(void)
