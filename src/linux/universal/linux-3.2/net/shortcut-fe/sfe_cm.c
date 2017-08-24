@@ -942,7 +942,6 @@ static int sfe_cm_device_event(struct notifier_block *this, unsigned long event,
 	}
 	return NOTIFY_DONE;
 }
-#ifdef SFE_DEBUG
 
 /*
  * sfe_cm_inet_event()
@@ -973,6 +972,7 @@ static int sfe_cm_inet6_event(struct notifier_block *this, unsigned long event, 
 	return NOTIFY_DONE;
 }
 #endif
+#ifdef SFE_DEBUG
 /*
  * sfe_cm_get_exceptions
  * 	dump exception counters
