@@ -324,6 +324,7 @@ struct sfe_ipv6_connection {
 #define SFE_IPV6_CONNECTION_HASH_SIZE (1 << SFE_IPV6_CONNECTION_HASH_SHIFT)
 #define SFE_IPV6_CONNECTION_HASH_MASK (SFE_IPV6_CONNECTION_HASH_SIZE - 1)
 
+#ifdef SFE_DEBUG
 enum sfe_ipv6_exception_events {
 	SFE_IPV6_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE,
 	SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION,
@@ -364,7 +365,6 @@ enum sfe_ipv6_exception_events {
 	SFE_IPV6_EXCEPTION_EVENT_FLOW_COOKIE_ADD_FAIL,
 	SFE_IPV6_EXCEPTION_EVENT_LAST
 };
-
 static char *sfe_ipv6_exception_events_string[SFE_IPV6_EXCEPTION_EVENT_LAST] = {
 	"UDP_HEADER_INCOMPLETE",
 	"UDP_NO_CONNECTION",
@@ -404,7 +404,7 @@ static char *sfe_ipv6_exception_events_string[SFE_IPV6_EXCEPTION_EVENT_LAST] = {
 	"UNHANDLED_PROTOCOL",
 	"FLOW_COOKIE_ADD_FAIL"
 };
-
+#endif
 /*
  * Per-module structure.
  */
@@ -446,8 +446,9 @@ struct sfe_ipv6 {
 	u32 connection_flushes;		/* Number of IPv6 connection flushes */
 	u32 packets_forwarded;		/* Number of IPv6 packets forwarded */
 	u32 packets_not_forwarded;	/* Number of IPv6 packets not forwarded */
+#ifdef SFE_DEBUG
 	u32 exception_events[SFE_IPV6_EXCEPTION_EVENT_LAST];
-
+#endif
 	/*
 	 * Summary statistics.
 	 */
@@ -467,13 +468,17 @@ struct sfe_ipv6 {
 	u64 packets_forwarded64;	/* Number of IPv6 packets forwarded */
 	u64 packets_not_forwarded64;
 					/* Number of IPv6 packets not forwarded */
+#ifdef SFE_DEBUG
 	u64 exception_events64[SFE_IPV6_EXCEPTION_EVENT_LAST];
+#endif
 
 	/*
 	 * Control state.
 	 */
 	struct kobject *sys_sfe_ipv6;	/* sysfs linkage */
+#ifdef SFE_DEBUG
 	int debug_dev;			/* Major number of the debug char device */
+#endif
 	u32 debug_read_seq;		/* sequence number for debug dump */
 };
 
@@ -507,6 +512,7 @@ typedef bool (*sfe_ipv6_debug_xml_write_method_t)(struct sfe_ipv6 *si, char *buf
 
 static struct sfe_ipv6 __si6;
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_get_debug_dev()
  */
@@ -517,7 +523,7 @@ static ssize_t sfe_ipv6_get_debug_dev(struct device *dev, struct device_attribut
  */
 static const struct device_attribute sfe_ipv6_debug_dev_attr =
 	__ATTR(debug_dev, S_IWUSR | S_IRUGO, sfe_ipv6_get_debug_dev, NULL);
-
+#endif
 /*
  * sfe_ipv6_is_ext_hdr()
  *	check if we recognize ipv6 extension header
@@ -777,11 +783,12 @@ static void sfe_ipv6_update_summary_stats(struct sfe_ipv6 *si)
 	si->packets_forwarded = 0;
 	si->packets_not_forwarded64 += si->packets_not_forwarded;
 	si->packets_not_forwarded = 0;
-
+#ifdef SFE_DEBUG
 	for (i = 0; i < SFE_IPV6_EXCEPTION_EVENT_LAST; i++) {
 		si->exception_events64[i] += si->exception_events[i];
 		si->exception_events[i] = 0;
 	}
+#endif
 }
 
 /*
@@ -1171,7 +1178,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	 */
 	if (!pskb_may_pull(skb, (sizeof(struct sfe_ipv6_udp_hdr) + ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1198,7 +1207,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	 */
 	cm = sfe_ipv6_find_connection_match(si, dev, IPPROTO_UDP, src_ip, src_port, dest_ip, dest_port);
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1214,7 +1225,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1241,7 +1254,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(iph->hop_limit < 2)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1257,7 +1272,9 @@ static int sfe_ipv6_recv_udp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(len > cm->xmit_dev_mtu)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UDP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1509,7 +1526,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	 */
 	if (!pskb_may_pull(skb, (sizeof(struct sfe_ipv6_tcp_hdr) + ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1543,14 +1562,18 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		 * For diagnostic purposes we differentiate this here.
 		 */
 		if (likely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) == TCP_FLAG_ACK)) {
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_FAST_FLAGS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
 			DEBUG_TRACE("no connection found - fast flags\n");
 			return 0;
 		}
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NO_CONNECTION_SLOW_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1567,7 +1590,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1594,7 +1619,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely(iph->hop_limit < 2)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1610,7 +1637,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely((len > cm->xmit_dev_mtu) && !skb_is_gso(skb))) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1626,7 +1655,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 	if (unlikely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) != TCP_FLAG_ACK)) {
 		struct sfe_ipv6_connection *c = cm->connection;
 		sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1658,7 +1689,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(seq - (cm->protocol_state.tcp.max_end + 1)) > 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SEQ_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1675,7 +1708,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(data_offs < sizeof(struct sfe_ipv6_tcp_hdr))) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SMALL_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1692,7 +1727,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(!sfe_ipv6_process_tcp_option_sack(tcph, data_offs, &sack))) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_BAD_SACK]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1708,7 +1745,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely(len < data_offs)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_BIG_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1727,7 +1766,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 						- counter_cm->protocol_state.tcp.max_win - 1)) < 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_SEQ_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1743,7 +1784,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - (counter_cm->protocol_state.tcp.end + 1)) > 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_ACK_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1763,7 +1806,9 @@ static int sfe_ipv6_recv_tcp(struct sfe_ipv6 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - left_edge) < 0)) {
 			struct sfe_ipv6_connection *c = cm->connection;
 			sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_TCP_ACK_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1965,7 +2010,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	len -= ihl;
 	if (!pskb_may_pull(skb, ihl + sizeof(struct icmp6hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1980,7 +2027,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	if ((icmph->icmp6_type != ICMPV6_DEST_UNREACH)
 	    && (icmph->icmp6_type != ICMPV6_TIME_EXCEED)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_UNHANDLED_TYPE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1997,7 +2046,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	ihl += sizeof(struct icmp6hdr);
 	if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ip_hdr) + sizeof(struct sfe_ipv6_ext_hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2011,7 +2062,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	icmp_iph = (struct sfe_ipv6_ip_hdr *)(icmph + 1);
 	if (unlikely(icmp_iph->version != 6)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_NON_V6]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2033,7 +2086,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 
 			if (frag_off & SFE_IPV6_FRAG_OFFSET) {
 				spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 				si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_INITIAL_FRAGMENT]++;
+#endif
 				si->packets_not_forwarded++;
 				spin_unlock_bh(&si->lock);
 
@@ -2053,7 +2108,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 		 */
 		if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2082,7 +2139,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 
 	default:
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_IPV6_UNHANDLED_PROTOCOL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2104,7 +2163,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	 */
 	cm = sfe_ipv6_find_connection_match(si, dev, icmp_iph->nexthdr, dest_ip, dest_port, src_ip, src_port);
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2118,7 +2179,9 @@ static int sfe_ipv6_recv_icmp(struct sfe_ipv6 *si, struct sk_buff *skb, struct n
 	 */
 	c = cm->connection;
 	sfe_ipv6_remove_connection(si, c);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV6_EXCEPTION_EVENT_ICMP_FLUSHED_CONNECTION]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2148,7 +2211,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	len = skb->len;
 	if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2162,7 +2227,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	iph = (struct sfe_ipv6_ip_hdr *)skb->data;
 	if (unlikely(iph->version != 6)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_V6]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2176,7 +2243,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	payload_len = ntohs(iph->payload_len);
 	if (unlikely(payload_len > (len - ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV6_EXCEPTION_EVENT_DATAGRAM_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2196,7 +2265,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 
 			if (frag_off & SFE_IPV6_FRAG_OFFSET) {
 				spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 				si->exception_events[SFE_IPV6_EXCEPTION_EVENT_NON_INITIAL_FRAGMENT]++;
+#endif
 				si->packets_not_forwarded++;
 				spin_unlock_bh(&si->lock);
 
@@ -2211,7 +2282,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 		ihl += ext_hdr_len;
 		if (!pskb_may_pull(skb, ihl + sizeof(struct sfe_ipv6_ext_hdr))) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV6_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2236,7 +2309,9 @@ static int sfe_ipv6_recv(struct net_device *dev, struct sk_buff *skb)
 	}
 
 	spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV6_EXCEPTION_EVENT_UNHANDLED_PROTOCOL]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2653,6 +2728,7 @@ static void sfe_ipv6_register_sync_rule_callback(sfe_sync_rule_callback_t sync_r
 	spin_unlock_bh(&si->lock);
 }
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_get_debug_dev()
  */
@@ -2671,7 +2747,7 @@ static ssize_t sfe_ipv6_get_debug_dev(struct device *dev,
 	count = snprintf(buf, (ssize_t)PAGE_SIZE, "%d\n", num);
 	return count;
 }
-
+#endif
 /*
  * sfe_ipv6_destroy_all_rules_for_dev()
  *	Destroy all connections that match a particular device.
@@ -2808,6 +2884,7 @@ done:
 	mod_timer(&si->timer, jiffies + ((HZ + 99) / 100));
 }
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv6_debug_dev_read_start()
  *	Generate part of the XML output.
@@ -3262,7 +3339,7 @@ static struct file_operations sfe_ipv6_debug_dev_fops = {
 	.open = sfe_ipv6_debug_dev_open,
 	.release = sfe_ipv6_debug_dev_release
 };
-
+#endif
 /*
  * sfe_ipv6_init()
  */
@@ -3282,6 +3359,7 @@ static int sfe_ipv6_init(void)
 		goto exit1;
 	}
 
+#ifdef SFE_DEBUG
 	/*
 	 * Create files, one for each parameter supported by this module.
 	 */
@@ -3299,8 +3377,8 @@ static int sfe_ipv6_init(void)
 		DEBUG_ERROR("Failed to register chrdev: %d\n", result);
 		goto exit3;
 	}
-
 	si->debug_dev = result;
+#endif
 
 	/*
 	 * Create a timer to handle periodic statistics.
@@ -3313,8 +3391,9 @@ static int sfe_ipv6_init(void)
 	return 0;
 
 exit3:
+#ifdef SFE_DEBUG
 	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_debug_dev_attr.attr);
-
+#endif
 exit2:
 	kobject_put(si->sys_sfe_ipv6);
 
@@ -3338,9 +3417,10 @@ static void sfe_ipv6_exit(void)
 
 	del_timer_sync(&si->timer);
 
+#ifdef SFE_DEBUG
 	unregister_chrdev(si->debug_dev, "sfe_ipv6");
 
 	sysfs_remove_file(si->sys_sfe_ipv6, &sfe_ipv6_debug_dev_attr.attr);
-
+#endif
 	kobject_put(si->sys_sfe_ipv6);
 }
