@@ -114,10 +114,9 @@ CFLAGS += -DNEED_NOPRINTF
 endif
 
 ifneq ($(CONFIG_DIST),"micro")
-LDFLAGS += -lpthread
-endif
 ifneq ($(CONFIG_DIST),"micro-special")
 LDFLAGS += -lpthread
+endif
 endif
 
 ifeq ($(CONFIG_SUPERCHANNEL),y)
