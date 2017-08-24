@@ -71,6 +71,10 @@ int getcpurev(void)
 				cpumodel[i] = getc(fp);
 				if (cpumodel[i] == '\n')
 					break;
+				if (cpumodel[i] == ':') {
+					cnt++;
+					break;
+				}
 			}
 			cpumodel[i] = 0;
 			if (strstr(cpumodel, "BCM5357")) {
