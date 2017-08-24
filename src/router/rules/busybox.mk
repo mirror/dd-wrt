@@ -499,6 +499,7 @@ endif
 	echo "# CONFIG_FEATURE_TOP_INTERACTIVE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_POWERTOP_INTERACTIVE is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_UNZIP_CDF is not set" >> busybox/.config
+	echo "# CONFIG_FEDORA_COMPAT is not set" >> busybox/.config
 
 	cd busybox && make oldconfig
 	
