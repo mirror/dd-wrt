@@ -300,6 +300,7 @@ struct sfe_ipv4_connection {
 #define SFE_IPV4_CONNECTION_HASH_SIZE (1 << SFE_IPV4_CONNECTION_HASH_SHIFT)
 #define SFE_IPV4_CONNECTION_HASH_MASK (SFE_IPV4_CONNECTION_HASH_SIZE - 1)
 
+#ifdef SFE_DEBUG
 enum sfe_ipv4_exception_events {
 	SFE_IPV4_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE,
 	SFE_IPV4_EXCEPTION_EVENT_UDP_NO_CONNECTION,
@@ -380,7 +381,7 @@ static char *sfe_ipv4_exception_events_string[SFE_IPV4_EXCEPTION_EVENT_LAST] = {
 	"UNHANDLED_PROTOCOL",
 	"CSUM_ERROR"
 };
-
+#endif
 /*
  * Per-module structure.
  */
@@ -422,8 +423,9 @@ struct sfe_ipv4 {
 	u32 connection_flushes;		/* Number of IPv4 connection flushes */
 	u32 packets_forwarded;		/* Number of IPv4 packets forwarded */
 	u32 packets_not_forwarded;	/* Number of IPv4 packets not forwarded */
+#ifdef SFE_DEBUG
 	u32 exception_events[SFE_IPV4_EXCEPTION_EVENT_LAST];
-
+#endif
 	/*
 	 * Summary statistics.
 	 */
@@ -443,13 +445,16 @@ struct sfe_ipv4 {
 	u64 packets_forwarded64;	/* Number of IPv4 packets forwarded */
 	u64 packets_not_forwarded64;
 					/* Number of IPv4 packets not forwarded */
+#ifdef SFE_DEBUG
 	u64 exception_events64[SFE_IPV4_EXCEPTION_EVENT_LAST];
-
+#endif
 	/*
 	 * Control state.
 	 */
 	struct kobject *sys_sfe_ipv4;	/* sysfs linkage */
+#ifdef SFE_DEBUG
 	int debug_dev;			/* Major number of the debug char device */
+#endif
 	u32 debug_read_seq;	/* sequence number for debug dump */
 };
 
@@ -727,11 +732,12 @@ static void sfe_ipv4_update_summary_stats(struct sfe_ipv4 *si)
 	si->packets_forwarded = 0;
 	si->packets_not_forwarded64 += si->packets_not_forwarded;
 	si->packets_not_forwarded = 0;
-
+#ifdef SFE_DEBUG
 	for (i = 0; i < SFE_IPV4_EXCEPTION_EVENT_LAST; i++) {
 		si->exception_events64[i] += si->exception_events[i];
 		si->exception_events[i] = 0;
 	}
+#endif
 }
 
 /*
@@ -1117,7 +1123,9 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	 */
 	if (unlikely(!pskb_may_pull(skb, (sizeof(struct sfe_ipv4_udp_hdr) + ihl)))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UDP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1144,7 +1152,9 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	 */
 	cm = sfe_ipv4_find_sfe_ipv4_connection_match(si, dev, IPPROTO_UDP, src_ip, src_port, dest_ip, dest_port);
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UDP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1160,7 +1170,9 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UDP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1188,7 +1200,9 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely(ttl < 2)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UDP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1204,7 +1218,9 @@ static int sfe_ipv4_recv_udp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely(len > cm->xmit_dev_mtu)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UDP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1476,7 +1492,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	 */
 	if (unlikely(!pskb_may_pull(skb, (sizeof(struct sfe_ipv4_tcp_hdr) + ihl)))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1510,14 +1528,18 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		 * For diagnostic purposes we differentiate this here.
 		 */
 		if (likely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) == TCP_FLAG_ACK)) {
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_NO_CONNECTION_FAST_FLAGS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
 			DEBUG_TRACE("no connection found - fast flags\n");
 			return 0;
 		}
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_NO_CONNECTION_SLOW_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1534,7 +1556,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely(flush_on_find)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_IP_OPTIONS_OR_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1561,7 +1585,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely(ttl < 2)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_SMALL_TTL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1577,7 +1603,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely((len > cm->xmit_dev_mtu) && !skb_is_gso(skb))) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_NEEDS_FRAGMENTATION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1593,7 +1621,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 	if (unlikely((flags & (TCP_FLAG_SYN | TCP_FLAG_RST | TCP_FLAG_FIN | TCP_FLAG_ACK)) != TCP_FLAG_ACK)) {
 		struct sfe_ipv4_connection *c = cm->connection;
 		sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_FLAGS]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1625,7 +1655,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(seq - (cm->protocol_state.tcp.max_end + 1)) > 0)) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_SEQ_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1642,7 +1674,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely(data_offs < sizeof(struct sfe_ipv4_tcp_hdr))) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_SMALL_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1659,7 +1693,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely(!sfe_ipv4_process_tcp_option_sack(tcph, data_offs, &sack))) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_BAD_SACK]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1675,7 +1711,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely(len < data_offs)) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_BIG_DATA_OFFS]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1694,7 +1732,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 						- counter_cm->protocol_state.tcp.max_win - 1)) < 0)) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_SEQ_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1710,7 +1750,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - (counter_cm->protocol_state.tcp.end + 1)) > 0)) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_ACK_EXCEEDS_RIGHT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1730,7 +1772,9 @@ static int sfe_ipv4_recv_tcp(struct sfe_ipv4 *si, struct sk_buff *skb, struct ne
 		if (unlikely((s32)(sack - left_edge) < 0)) {
 			struct sfe_ipv4_connection *c = cm->connection;
 			sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_TCP_ACK_BEFORE_LEFT_EDGE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -1950,7 +1994,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	len -= ihl;
 	if (!pskb_may_pull(skb, pull_len)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1965,7 +2011,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	if ((icmph->type != ICMP_DEST_UNREACH)
 	    && (icmph->type != ICMP_TIME_EXCEEDED)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_UNHANDLED_TYPE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1980,7 +2028,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	pull_len += sizeof(struct sfe_ipv4_ip_hdr);
 	if (!pskb_may_pull(skb, pull_len)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -1994,7 +2044,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	icmp_iph = (struct sfe_ipv4_ip_hdr *)(icmph + 1);
 	if (unlikely(icmp_iph->version != 4)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_NON_V4]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2010,7 +2062,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	pull_len += icmp_ihl - sizeof(struct sfe_ipv4_ip_hdr);
 	if (!pskb_may_pull(skb, pull_len)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_IP_OPTIONS_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2033,7 +2087,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 		pull_len += 8;
 		if (!pskb_may_pull(skb, pull_len)) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_UDP_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2054,7 +2110,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 		pull_len += 8;
 		if (!pskb_may_pull(skb, pull_len)) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_TCP_HEADER_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2069,7 +2127,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 
 	default:
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_IPV4_UNHANDLED_PROTOCOL]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2091,7 +2151,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	 */
 	cm = sfe_ipv4_find_sfe_ipv4_connection_match(si, dev, icmp_iph->protocol, dest_ip, dest_port, src_ip, src_port);
 	if (unlikely(!cm)) {
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_NO_CONNECTION]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2105,7 +2167,9 @@ static int sfe_ipv4_recv_icmp(struct sfe_ipv4 *si, struct sk_buff *skb, struct n
 	 */
 	c = cm->connection;
 	sfe_ipv4_remove_sfe_ipv4_connection(si, c);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV4_EXCEPTION_EVENT_ICMP_FLUSHED_CONNECTION]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2137,7 +2201,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	len = skb->len;
 	if (unlikely(!pskb_may_pull(skb, sizeof(struct sfe_ipv4_ip_hdr)))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_HEADER_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2152,7 +2218,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	tot_len = ntohs(iph->tot_len);
 	if (unlikely(tot_len < sizeof(struct sfe_ipv4_ip_hdr))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_BAD_TOTAL_LENGTH]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2165,7 +2233,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	 */
 	if (unlikely(iph->version != 4)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_NON_V4]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2178,7 +2248,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	 */
 	if (unlikely(tot_len > len)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_DATAGRAM_INCOMPLETE]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2192,7 +2264,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	frag_off = ntohs(iph->frag_off);
 	if (unlikely(frag_off & IP_OFFSET)) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_NON_INITIAL_FRAGMENT]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2214,7 +2288,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	if (unlikely(ip_options)) {
 		if (unlikely(len < ihl)) {
 			spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 			si->exception_events[SFE_IPV4_EXCEPTION_EVENT_IP_OPTIONS_INCOMPLETE]++;
+#endif
 			si->packets_not_forwarded++;
 			spin_unlock_bh(&si->lock);
 
@@ -2227,7 +2303,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 
 	if (unlikely(ip_fast_csum((u8 *)iph, iph->ihl))) {
 		spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 		si->exception_events[SFE_IPV4_EXCEPTION_EVENT_CSUM_ERROR]++;
+#endif
 		si->packets_not_forwarded++;
 		spin_unlock_bh(&si->lock);
 
@@ -2249,7 +2327,9 @@ int sfe_ipv4_recv(struct net_device *dev, struct sk_buff *skb)
 	}
 
 	spin_lock_bh(&si->lock);
+#ifdef SFE_DEBUG
 	si->exception_events[SFE_IPV4_EXCEPTION_EVENT_UNHANDLED_PROTOCOL]++;
+#endif
 	si->packets_not_forwarded++;
 	spin_unlock_bh(&si->lock);
 
@@ -2654,6 +2734,7 @@ void sfe_ipv4_register_sync_rule_callback(sfe_sync_rule_callback_t sync_rule_cal
 	spin_unlock_bh(&si->lock);
 }
 
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv4_get_debug_dev()
  */
@@ -2678,7 +2759,7 @@ static ssize_t sfe_ipv4_get_debug_dev(struct device *dev,
  */
 static const struct device_attribute sfe_ipv4_debug_dev_attr =
 	__ATTR(debug_dev, S_IWUSR | S_IRUGO, sfe_ipv4_get_debug_dev, NULL);
-
+#endif
 /*
  * sfe_ipv4_destroy_all_rules_for_dev()
  *	Destroy all connections that match a particular device.
@@ -2816,7 +2897,7 @@ done:
 }
 
 #define CHAR_DEV_MSG_SIZE 768
-
+#ifdef SFE_DEBUG
 /*
  * sfe_ipv4_debug_dev_read_start()
  *	Generate part of the XML output.
@@ -3269,7 +3350,7 @@ static struct file_operations sfe_ipv4_debug_dev_fops = {
 	.open = sfe_ipv4_debug_dev_open,
 	.release = sfe_ipv4_debug_dev_release
 };
-
+#endif
 /*
  * sfe_ipv4_init()
  */
@@ -3289,6 +3370,7 @@ static int sfe_ipv4_init(void)
 		goto exit1;
 	}
 
+#ifdef SFE_DEBUG
 	/*
 	 * Create files, one for each parameter supported by this module.
 	 */
@@ -3308,7 +3390,7 @@ static int sfe_ipv4_init(void)
 	}
 
 	si->debug_dev = result;
-
+#endif
 	/*
 	 * Create a timer to handle periodic statistics.
 	 */
@@ -3320,8 +3402,9 @@ static int sfe_ipv4_init(void)
 	return 0;
 
 exit3:
+#ifdef SFE_DEBUG
 	sysfs_remove_file(si->sys_sfe_ipv4, &sfe_ipv4_debug_dev_attr.attr);
-
+#endif
 exit2:
 	kobject_put(si->sys_sfe_ipv4);
 
@@ -3344,11 +3427,12 @@ static void sfe_ipv4_exit(void)
 	sfe_ipv4_destroy_all_rules_for_dev(NULL);
 
 	del_timer_sync(&si->timer);
+#ifdef SFE_DEBUG
 
 	unregister_chrdev(si->debug_dev, "sfe_ipv4");
 
 	sysfs_remove_file(si->sys_sfe_ipv4, &sfe_ipv4_debug_dev_attr.attr);
-
+#endif
 	kobject_put(si->sys_sfe_ipv4);
 
 }
