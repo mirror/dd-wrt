@@ -391,6 +391,7 @@ void start_init_start(void)
 #endif
 
 	cprintf("run rc file\n");
+#ifndef HAVE_MICRO
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
 	if (isregistered_real())
@@ -419,4 +420,5 @@ void start_init_start(void)
 		stop_run_rc_startup();
 		start_run_rc_startup();
 	}
+#endif
 }
